@@ -1,0 +1,13 @@
+const applets=[
+{title:'Lines & Marks',href:'lines-and-marks/',category:'drawing',mark:'draw',description:'An ink-like space for drawing lines, marks, and implied forms.'},
+{title:'Focus Vantage',href:'polygon-focus-vantage/',category:'geometry',mark:'polygon',description:'Explore polygonal focus points and changing points of view.'},
+{title:'Fold Explorer',href:'polygon-fold-explorer/',category:'geometry',mark:'fold',description:'A visual study of folds, symmetry, and polygonal transformations.'},
+{title:'Affine Focus',href:'affine-focus-transform-explorer/',category:'geometry',mark:'affine',description:'Transform a focus through skew, scale, and other affine shifts.'},
+{title:'Irregular 3D',href:'polygon-irregular-3d/',category:'geometry',mark:'3d',description:'Investigate irregular polygons as spatial, dimensional structures.'},
+{title:'Username Seeds',href:'username-seeds/',category:'language',mark:'words',description:'A compact generator for name fragments and identity seeds.'},
+{title:'Hrifa Edel',href:'hrifa-edel/',category:'language',mark:'words',description:'A small lexical and naming experiment in the Hrifa world.'},
+{title:'Polygon New Tab',href:'polygon-new-tab/newtab.html',category:'utility',mark:'polygon',description:'A polygon-themed browser new-tab experience.'}];
+const grid=document.querySelector('#applet-grid'),filters=document.querySelector('#filters'),search=document.querySelector('#search'),count=document.querySelector('#count');let activeCategory='all';
+function renderFilters(){filters.innerHTML='';['all',...new Set(applets.map(({category})=>category))].forEach(category=>{const button=document.createElement('button');button.className=`filter${category===activeCategory?' active':''}`;button.textContent=category;button.addEventListener('click',()=>{activeCategory=category;renderFilters();renderApplets()});filters.append(button)})}
+function renderApplets(){const term=search.value.trim().toLowerCase();const visible=applets.filter(applet=>(activeCategory==='all'||applet.category===activeCategory)&&`${applet.title} ${applet.category} ${applet.description}`.toLowerCase().includes(term));count.textContent=`${visible.length} ${visible.length===1?'applet':'applets'}`;grid.innerHTML=visible.length?visible.map((applet,index)=>`<article class="card"><div class="card-top"><span>${applet.category}</span><span>0${index+1}</span></div><div class="card-mark mark-${applet.mark}" aria-hidden="true"></div><h2>${applet.title}</h2><p>${applet.description}</p><a class="launch" href="${applet.href}">Open applet</a></article>`).join(''):'<p class="empty">No applets match that search.</p>'}
+search.addEventListener('input',renderApplets);renderFilters();renderApplets();
