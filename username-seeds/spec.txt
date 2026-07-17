@@ -1,0 +1,572 @@
+# Codex Handoff — Time-Derived Username Generator
+
+## Objective
+
+Build a small static webpage that derives a compound username from the visitor’s current local time.
+
+The username is formed from:
+
+* One word selected from a 10-item `A` list
+* One word selected from a 14-item `B` list
+
+This produces:
+
+[
+10 \times 14 = 140
+]
+
+possible usernames.
+
+The webpage should run entirely client-side and be suitable for hosting with GitHub Pages.
+
+---
+
+## Core Derivation Method
+
+Read the visitor’s current local hour and minute.
+
+Let:
+
+[
+H = \text{hour from 0 to 23}
+]
+
+[
+M = \text{minute from 0 to 59}
+]
+
+Convert the current time into the number of minutes since midnight:
+
+[
+T = 60H + M
+]
+
+Therefore:
+
+[
+0 \leq T \leq 1439
+]
+
+Map that value into the 140-name space:
+
+[
+N = T \bmod 140
+]
+
+Then derive the two list indices:
+
+[
+A_{\text{index}} = \left\lfloor \frac{N}{14} \right\rfloor
+]
+
+[
+B_{\text{index}} = N \bmod 14
+]
+
+The resulting username is:
+
+[
+\text{username} = A[A_{\text{index}}] + B[B_{\text{index}}]
+]
+
+Do not insert spaces, underscores, or hyphens.
+
+---
+
+## Important Mathematical Requirement
+
+Do not calculate both list indices directly from:
+
+```js
+HHMM % 10
+HHMM % 14
+```
+
+Because 10 and 14 share a factor of 2, that approach only reaches 70 of the 140 possible pairs.
+
+The implementation must use the flattened 140-item index method described above.
+
+Because one day has 1,440 minutes:
+
+[
+1440 = 10(140) + 40
+]
+
+Each pairing appears either 10 or 11 times per day.
+
+---
+
+## Word Lists
+
+Store both lists as editable arrays near the top of `script.js`.
+
+### A List — 10 entries
+
+```js
+const wordsA = [
+  "wind",
+  "dusk",
+  "moss",
+  "root",
+  "ash",
+  "glow",
+  "tide",
+  "fog",
+  "stone",
+  "rock"
+];
+```
+
+### B List — 14 entries
+
+Use the user’s final 14-item list.
+
+At present, populate the known entries:
+
+const wordsB =
+ward
+seal
+mark
+plot
+well
+pool
+wake
+fall
+croft
+holt
+span
+fold
+gap
+form
+
+
+Add validation so the page displays an explicit configuration error if:
+
+```js
+wordsA.length !== 10
+```
+
+or:
+
+```js
+wordsB.length !== 14
+```
+
+Do not silently continue with the wrong list lengths.
+
+---
+
+## Required Files
+
+Create:
+
+```text
+index.html
+style.css
+script.js
+README.md
+```
+
+No framework, package manager, build system, backend, database, or external API is needed.
+
+The page should work by opening `index.html` locally and through GitHub Pages.
+
+---
+
+## Interface
+
+Create a restrained, minimal interface.
+
+Display:
+
+1. Page title
+2. Generated username
+3. Current local time
+4. Derivation details
+5. Copy button
+6. Refresh/freeze controls
+7. Optional manual-time tester
+
+Suggested layout:
+
+```text
+Time-Derived Username
+
+stonefold
+
+Local time: 19:45
+Minutes since midnight: 1185
+Flat index: 65
+A index: 4
+B index: 9
+
+[Copy username]
+[Freeze]
+```
+
+The generated username should be the visually dominant element.
+
+---
+
+## Live Updating
+
+The page should update automatically when the minute changes.
+
+Do not unnecessarily recompute every animation frame.
+
+Recommended behavior:
+
+1. Generate immediately on page load.
+2. Check the clock periodically, such as once per second.
+3. Only update the derived username when the minute value changes.
+
+The displayed seconds are optional. The derivation itself must only use hour and minute.
+
+---
+
+## Freeze Function
+
+Add a button that toggles between:
+
+```text
+Freeze
+Resume
+```
+
+When frozen:
+
+* Keep the currently generated username visible.
+* Stop replacing it when the time changes.
+* Show the exact frozen timestamp.
+* The copy button should continue to work.
+
+When resumed:
+
+* Immediately derive the username from the current local time.
+
+This allows the user to keep a generated name on screen while creating an account.
+
+---
+
+## Copy Function
+
+Add a button that copies only the final username to the clipboard.
+
+On success, temporarily change the button text to:
+
+```text
+Copied
+```
+
+Then restore the original text.
+
+Include a fallback for browsers where `navigator.clipboard` is unavailable.
+
+---
+
+## Manual-Time Tester
+
+Include a collapsible section labeled:
+
+```text
+Test another time
+```
+
+Use an HTML time input:
+
+```html
+<input type="time">
+```
+
+When a manual time is entered:
+
+* Calculate the username using that time.
+* Clearly indicate that the page is in manual test mode.
+* Provide a button to return to live local time.
+
+This is for testing and inspecting the 140-name cycle.
+
+The manual tester should use exactly the same derivation function as the live clock.
+
+Do not duplicate the calculation logic.
+
+---
+
+## JavaScript Structure
+
+Use small, clear functions.
+
+Suggested structure:
+
+```js
+function validateWordLists() {}
+
+function getMinutesSinceMidnight(date) {}
+
+function deriveUsernameFromMinutes(minutesSinceMidnight) {}
+
+function deriveUsernameFromDate(date) {}
+
+function renderResult(result, date, mode) {}
+
+function copyUsername() {}
+
+function freezeResult() {}
+
+function resumeLiveMode() {}
+
+function startClock() {}
+```
+
+Suggested result object:
+
+```js
+{
+  username,
+  minutesSinceMidnight,
+  flatIndex,
+  aIndex,
+  bIndex,
+  wordA,
+  wordB
+}
+```
+
+Core function:
+
+```js
+function deriveUsernameFromMinutes(minutesSinceMidnight) {
+  const totalCombinations = wordsA.length * wordsB.length;
+  const flatIndex = minutesSinceMidnight % totalCombinations;
+  const aIndex = Math.floor(flatIndex / wordsB.length);
+  const bIndex = flatIndex % wordsB.length;
+
+  return {
+    username: `${wordsA[aIndex]}${wordsB[bIndex]}`,
+    minutesSinceMidnight,
+    flatIndex,
+    aIndex,
+    bIndex,
+    wordA: wordsA[aIndex],
+    wordB: wordsB[bIndex]
+  };
+}
+```
+
+---
+
+## Example Calculations
+
+### Example: 00:00
+
+[
+T = 0
+]
+
+[
+N = 0 \bmod 140 = 0
+]
+
+[
+A_{\text{index}} = \lfloor 0/14 \rfloor = 0
+]
+
+[
+B_{\text{index}} = 0 \bmod 14 = 0
+]
+
+Result:
+
+```text
+windward
+```
+
+### Example: 01:00
+
+[
+T = 60
+]
+
+[
+N = 60
+]
+
+[
+A_{\text{index}} = \lfloor 60/14 \rfloor = 4
+]
+
+[
+B_{\text{index}} = 60 \bmod 14 = 4
+]
+
+Result:
+
+```text
+ashwell
+```
+
+### Example: 02:20
+
+[
+T = 140
+]
+
+[
+N = 140 \bmod 140 = 0
+]
+
+Result:
+
+```text
+windward
+```
+
+The complete 140-combination sequence repeats every 140 minutes.
+
+---
+
+## Sequence Behavior
+
+The flattened order should be:
+
+```text
+A0+B0
+A0+B1
+...
+A0+B13
+A1+B0
+A1+B1
+...
+A9+B13
+```
+
+After the final pair, it returns to:
+
+```text
+A0+B0
+```
+
+Do not randomize or shuffle the arrays at runtime.
+
+The result must be deterministic:
+
+* Same local hour and minute
+* Same word-list order
+* Same generated username
+
+---
+
+## Styling
+
+Use plain CSS.
+
+Desired character:
+
+* Minimal
+* Quiet
+* Functional
+* Monospace or restrained sans-serif typography
+* Good dark-mode support
+* Responsive on desktop and mobile
+* No gradients
+* No animations beyond subtle button feedback
+* No external font dependency
+
+Use CSS custom properties for colors and spacing.
+
+Respect:
+
+```css
+@media (prefers-color-scheme: dark)
+```
+
+The page should remain readable without JavaScript styling dependencies.
+
+---
+
+## Accessibility
+
+Include:
+
+* Semantic HTML
+* Proper button elements
+* Labels for the time input
+* Visible keyboard focus states
+* Sufficient contrast
+* An `aria-live="polite"` region for the generated username or copy confirmation
+* No interaction that requires a mouse
+
+---
+
+## Privacy and Security
+
+The application should:
+
+* Make no network requests
+* Set no cookies
+* Use no analytics
+* Use no local storage unless needed for a minor UI preference
+* Send no time or username data anywhere
+* Use the browser’s local time only
+
+Add a brief note to the page:
+
+```text
+Generated locally in your browser. No data is transmitted.
+```
+
+This is a naming utility, not a security or authentication mechanism.
+
+---
+
+## README
+
+Document:
+
+1. What the utility does
+2. The 10 × 14 word-list structure
+3. The minutes-since-midnight derivation
+4. Why direct `% 10` and `% 14` on the same value is not used
+5. How to replace words
+6. How to run locally
+7. How to deploy with GitHub Pages
+8. How to attach a custom domain or subdomain
+
+Include basic GitHub Pages instructions:
+
+```text
+Repository Settings
+→ Pages
+→ Deploy from a branch
+→ main
+→ /root
+```
+
+Do not assume that a URL path such as `eipgam.com/deriveuser` can be configured through DNS alone.
+
+Explain:
+
+* `deriveuser.eipgam.com` can be pointed to GitHub Pages with DNS and a custom-domain setting.
+* `eipgam.com/deriveuser/` is easiest when the primary domain site itself is hosted through the same GitHub Pages structure, or when the primary host is configured to route that path.
+
+Do not include `eipgam` in the generated usernames or word arrays. It is only the possible hosting domain.
+
+---
+
+## Acceptance Criteria
+
+The implementation is complete when:
+
+* The page derives a username from the current local hour and minute.
+* It calculates minutes since midnight as `hour * 60 + minute`.
+* It maps the result through one flat 140-item cycle.
+* All 140 A–B combinations are reachable.
+* The generated result updates when the minute changes.
+* The user can freeze and resume the result.
+* The user can copy the username.
+* The user can test an arbitrary time.
+* Invalid word-list lengths produce a visible error.
+* The app works locally without a server.
+* The app deploys successfully on GitHub Pages.
+* No external network requests occur.
+* The README explains the derivation and deployment.

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lines and Marks Ink Sandbox</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Ink controls">
+      <div class="control-main">
+        <header class="brand">
+          <h1>Lines and Marks</h1>
+          <p>Generative ink markmaking on textured paper.</p>
+        </header>
+
+        <section class="control-section" aria-label="Tools">
+          <h2>Tool</h2>
+          <div class="tool-grid">
+            <button class="tool-btn active" type="button" data-tool="freehand">Freehand</button>
+            <button class="tool-btn" type="button" data-tool="line">Line</button>
+            <button class="tool-btn" type="button" data-tool="arc">Arc</button>
+            <button class="tool-btn" type="button" data-tool="ellipse">Ellipse</button>
+            <button class="tool-btn" type="button" data-tool="rect">Rect</button>
+            <button class="tool-btn" type="button" data-tool="polygon">Polygon</button>
+            <button class="tool-btn" type="button" data-tool="region">Region</button>
+          </div>
+        </section>
+
+        <section class="control-section sliders" aria-label="Brush behavior">
+        <h2>Brush</h2>
+        <label class="slider-row" data-tooltip="Effective contact footprint: small tip to broad brush contact. This is not pigment amount." title="Effective contact footprint: small tip to broad brush contact. This is not pigment amount.">
+          <span>Width</span>
+          <input id="width" type="range" min="1" max="250" value="21" step="1" />
+          <output id="widthValue">21</output>
+        </label>
+        <label class="slider-row" data-tooltip="Light touch to firm contact. Higher pressure activates more bristles and deposits more pigment." title="Light touch to firm contact. Higher pressure activates more bristles and deposits more pigment.">
+          <span>Pressure</span>
+          <input id="pressure" type="range" min="0" max="1" value="0.62" step="0.01" />
+          <output id="pressureValue">0.62</output>
+        </label>
+        <div class="xy-control" data-tooltip="Pressure LFO: left/right changes rate, up/down changes intensity." title="Pressure LFO: left/right changes rate, up/down changes intensity.">
+          <div class="xy-label"><span>Pressure var</span><output id="pressureVarianceValue">r 0.35 / i 0.00</output></div>
+          <div class="xy-pad" data-rate="pressureVarianceRate" data-intensity="pressureVarianceIntensity" role="slider" aria-label="Pressure variance rate and intensity">
+            <span class="xy-handle"></span>
+          </div>
+          <input id="pressureVarianceRate" type="hidden" value="0.35" />
+          <input id="pressureVarianceIntensity" type="hidden" value="0" />
+        </div>
+        <div class="xy-control" data-tooltip="Width LFO: left/right changes rate, up/down changes intensity." title="Width LFO: left/right changes rate, up/down changes intensity.">
+          <div class="xy-label"><span>Width var</span><output id="widthVarianceValue">r 0.35 / i 0.00</output></div>
+          <div class="xy-pad" data-rate="widthVarianceRate" data-intensity="widthVarianceIntensity" role="slider" aria-label="Width variance rate and intensity">
+            <span class="xy-handle"></span>
+          </div>
+          <input id="widthVarianceRate" type="hidden" value="0.35" />
+          <input id="widthVarianceIntensity" type="hidden" value="0" />
+        </div>
+        <label class="slider-row" data-tooltip="Wet continuous contact to tooth-sensitive contact. Higher values let paper tooth interrupt deposition." title="Wet continuous contact to tooth-sensitive contact. Higher values let paper tooth interrupt deposition.">
+          <span>Dry brush</span>
+          <input id="dryness" type="range" min="0" max="1" value="0" step="0.01" />
+          <output id="drynessValue">0.00</output>
+        </label>
+        <label class="slider-row" data-tooltip="Unified tip to separated hairs. Higher values expose more individual bristle contact." title="Unified tip to separated hairs. Higher values expose more individual bristle contact.">
+          <span>Bristles</span>
+          <input id="bristles" type="range" min="0" max="1" value="0.57" step="0.01" />
+          <output id="bristlesValue">0.57</output>
+        </label>
+        <label class="slider-row" data-tooltip="Steady edge to hand tremor. Adds perpendicular wobble to the sampled path." title="Steady edge to hand tremor. Adds perpendicular wobble to the sampled path.">
+          <span>Jitter</span>
+          <input id="jitter" type="range" min="0" max="1" value="0.32" step="0.01" />
+          <output id="jitterValue">0.32</output>
+        </label>
+        <label class="slider-row" data-tooltip="Straight pull to wandering pull. Adds slow directional drift along the stroke." title="Straight pull to wandering pull. Adds slow directional drift along the stroke.">
+          <span>Drift</span>
+          <input id="drift" type="range" min="0" max="1" value="0.33" step="0.01" />
+          <output id="driftValue">0.33</output>
+        </label>
+        <label class="slider-row" data-tooltip="Raw input to softened hand path. Higher values reduce small pointer wiggles before rendering." title="Raw input to softened hand path. Higher values reduce small pointer wiggles before rendering.">
+          <span>Smoothing</span>
+          <input id="smoothing" type="range" min="0" max="1" value="0.19" step="0.01" />
+          <output id="smoothingValue">0.19</output>
+        </label>
+        <label class="select-row" title="Ribbon draws one continuous processed footprint. Round cap keeps the previous segmented brush.">
+          <span>Render</span>
+          <select id="rendererMode">
+            <option value="ribbon" selected>Ribbon</option>
+            <option value="roundCap">Round cap</option>
+          </select>
+        </label>
+        <label class="slider-row" title="Number of straight hatch lines generated inside a Region polygon.">
+          <span>Reg lines</span>
+          <input id="regionLineCount" type="range" min="1" max="200" value="16" step="1" />
+          <output id="regionLineCountValue">16</output>
+        </label>
+        <label class="select-row" title="Fixed uses Reg lines as total line count. Per 100px uses Reg lines as density; 50 means one line every 2px.">
+          <span>Reg mode</span>
+          <select id="regionLineMode">
+            <option value="fixed" selected>Fixed</option>
+            <option value="per100">Per 100px</option>
+          </select>
+        </label>
+        <label class="slider-row" title="Brush width used by generated Region hatch lines.">
+          <span>Reg width</span>
+          <input id="regionBrushWidth" type="range" min="1" max="250" value="8" step="1" />
+          <output id="regionBrushWidthValue">8</output>
+        </label>
+        <label class="slider-row" title="Direction of generated Region hatch lines in degrees. 0 is horizontal, 90 is vertical.">
+          <span>Reg angle</span>
+          <input id="regionAngle" type="range" min="0" max="180" value="0" step="1" />
+          <output id="regionAngleValue">0</output>
+        </label>
+        <label class="select-row" title="Region boundary shape. Polygon uses clicked points; Rect and Ellipse are click-drag shapes.">
+          <span>Reg shape</span>
+          <select id="regionShape">
+            <option value="polygon" selected>Polygon</option>
+            <option value="rect">Rect</option>
+            <option value="ellipse">Ellipse</option>
+          </select>
+        </label>
+        </section>
+
+        <section class="control-section sliders" aria-label="Pigment behavior">
+        <h2>Pigment</h2>
+        <label class="slider-row" data-tooltip="Pale pigment to dense pigment. Controls alpha before bristle overlap darkens it." title="Pale pigment to dense pigment. Controls alpha before bristle overlap darkens it.">
+          <span>Density</span>
+          <input id="density" type="range" min="0.12" max="1" value="1" step="0.01" />
+          <output id="densityValue">1.00</output>
+        </label>
+        <label class="slider-row" data-tooltip="Stiff pigment to bridging wash. Higher values bridge tooth breaks without changing brush width." title="Stiff pigment to bridging wash. Higher values bridge tooth breaks without changing brush width.">
+          <span>Wetness</span>
+          <input id="wetness" type="range" min="0" max="1" value="0.72" step="0.01" />
+          <output id="wetnessValue">0.72</output>
+        </label>
+        <label class="slider-row" data-tooltip="Master amount for geometry-based pooling from tight curves and intersections." title="Master amount for geometry-based pooling from tight curves and intersections.">
+          <span>Pooling</span>
+          <input id="pooling" type="range" min="0" max="1" value="1" step="0.01" />
+          <output id="poolingValue">1.00</output>
+        </label>
+        <label class="slider-row" title="Intersection width expansion as a percent of the brush width. 100 means up to one extra brush width at the pooled area.">
+          <span>Pool width</span>
+          <input id="poolWidth" type="range" min="0" max="1000" value="10" step="1" />
+          <output id="poolWidthValue">10</output>
+        </label>
+        <label class="slider-row" title="Intersection pooling propagation radius in canvas pixels.">
+          <span>Pool spread</span>
+          <input id="poolSpread" type="range" min="1" max="100" value="100" step="1" />
+          <output id="poolSpreadValue">100</output>
+        </label>
+        <label class="slider-row" title="How readily straight or near-parallel passages count as pooling intersections.">
+          <span>Straight sens</span>
+          <input id="straightPooling" type="range" min="0" max="1" value="0.45" step="0.01" />
+          <output id="straightPoolingValue">0.45</output>
+        </label>
+        <label class="slider-row" title="Curvature level where tight-curve pooling begins. Lower values trigger pooling on gentler bends.">
+          <span>Curve thresh</span>
+          <input id="curveThreshold" type="range" min="0.005" max="0.16" value="0.028" step="0.001" />
+          <output id="curveThresholdValue">0.028</output>
+        </label>
+        <label class="slider-row" title="How much tight-curve pooling widens the inside of the curve.">
+          <span>Curve width</span>
+          <input id="curveWidth" type="range" min="0" max="100" value="0.65" step="0.01" />
+          <output id="curveWidthValue">0.65</output>
+        </label>
+        <label class="slider-row" title="How many neighboring path samples tight-curve pooling smears across.">
+          <span>Curve smear</span>
+          <input id="curveSpread" type="range" min="0" max="30" value="5" step="1" />
+          <output id="curveSpreadValue">5</output>
+        </label>
+        <label class="slider-row" data-tooltip="Softens curve pooling by adding a little extra bleed around tight bends." title="Softens curve pooling by adding a little extra bleed around tight bends.">
+          <span>Flow</span>
+          <input id="flow" type="range" min="0" max="1" value="0.32" step="0.01" />
+          <output id="flowValue">0.32</output>
+        </label>
+        <label class="slider-row" data-tooltip="Even settling to granular pooling. Higher values emphasize deposits in lower paper regions." title="Even settling to granular pooling. Higher values emphasize deposits in lower paper regions.">
+          <span>Granulate</span>
+          <input id="granulation" type="range" min="0" max="1" value="0.28" step="0.01" />
+          <output id="granulationValue">0.28</output>
+        </label>
+        </section>
+
+        <section class="control-section sliders" aria-label="Paper behavior">
+        <h2>Paper</h2>
+        <label class="slider-row" data-tooltip="Paper ignored to paper dominant. Controls how much tooth affects dry deposition and visible texture." title="Paper ignored to paper dominant. Controls how much tooth affects dry deposition and visible texture.">
+          <span>Influence</span>
+          <input id="texture" type="range" min="0" max="1" value="1" step="0.01" />
+          <output id="textureValue">1.00</output>
+        </label>
+        <label class="slider-row" data-tooltip="Flat sheet to raised surface. Controls height variation in the paper field." title="Flat sheet to raised surface. Controls height variation in the paper field.">
+          <span>Relief</span>
+          <input id="relief" type="range" min="0" max="1" value="0.62" step="0.01" />
+          <output id="reliefValue">0.62</output>
+        </label>
+        <label class="slider-row" data-tooltip="Smooth bristol to cold press. Controls fine tooth/grain, which dry brush uses for deposition." title="Smooth bristol to cold press. Controls fine tooth/grain, which dry brush uses for deposition.">
+          <span>Tooth</span>
+          <input id="toothScale" type="range" min="0" max="1" value="0.68" step="0.01" />
+          <output id="toothScaleValue">0.68</output>
+        </label>
+        <label class="slider-row" data-tooltip="Neutral surface to directional fibers. Adds stretched fiber structure to the paper." title="Neutral surface to directional fibers. Adds stretched fiber structure to the paper.">
+          <span>Fiber</span>
+          <input id="fiberStrength" type="range" min="0" max="1" value="0.54" step="0.01" />
+          <output id="fiberStrengthValue">0.54</output>
+        </label>
+        <label class="slider-row" data-tooltip="Resistant paper to thirsty paper. Feeds the absorbency field used by debug views and paper analysis." title="Resistant paper to thirsty paper. Feeds the absorbency field used by debug views and paper analysis.">
+          <span>Absorb</span>
+          <input id="absorbency" type="range" min="0" max="1" value="0.62" step="0.01" />
+          <output id="absorbencyValue">0.62</output>
+        </label>
+        <label class="seed-row">
+          <span>Seed</span>
+          <input id="seed" type="number" min="0" max="999999" value="2357" step="1" />
+          <button id="randomSeed" type="button">Random</button>
+        </label>
+        </section>
+      </div>
+
+      <div class="control-utility">
+        <section class="control-section actions" aria-label="Actions">
+          <h2>Actions</h2>
+          <div class="action-grid">
+            <button id="undoBtn" type="button">Undo</button>
+            <button id="redoBtn" type="button">Redo</button>
+            <button id="clearBtn" type="button">Clear</button>
+            <button id="exportPngBtn" type="button">PNG</button>
+            <button id="exportSvgBtn" type="button">SVG</button>
+          </div>
+        </section>
+
+        <section class="control-section preset-panel" aria-label="Presets">
+          <h2>Presets</h2>
+          <input id="presetName" class="preset-name" type="text" placeholder="Preset name" />
+          <select id="presetSelect" class="preset-select" aria-label="Saved presets"></select>
+          <div class="preset-actions">
+            <button id="savePresetBtn" type="button">Save</button>
+            <button id="loadPresetBtn" type="button">Load</button>
+            <button id="deletePresetBtn" type="button">Delete</button>
+          </div>
+        </section>
+
+        <section class="control-section debug-panel" aria-label="Debug views">
+          <h2>Debug</h2>
+          <div class="debug-grid">
+            <button class="debug-btn active" type="button" data-debug="none">None</button>
+            <button class="debug-btn" type="button" data-debug="height">Height</button>
+            <button class="debug-btn" type="button" data-debug="tooth">Tooth</button>
+            <button class="debug-btn" type="button" data-debug="absorbency">Absorb</button>
+            <button class="debug-btn" type="button" data-debug="edge">Edge</button>
+            <button class="debug-btn" type="button" data-debug="fiber">Fiber</button>
+            <button class="debug-btn" type="button" data-debug="contact">Contact</button>
+            <button class="debug-btn" type="button" data-debug="pool">Pool</button>
+          </div>
+          <pre id="debugReadout" class="debug-readout">Debug off</pre>
+        </section>
+      </div>
+    </aside>
+
+    <main class="workbench">
+      <div class="canvas-frame">
+        <canvas id="paperCanvas" class="canvas-layer" width="1400" height="900" aria-hidden="true"></canvas>
+        <canvas id="inkCanvas" class="canvas-layer" width="1400" height="900" aria-hidden="true"></canvas>
+        <canvas id="previewCanvas" class="canvas-layer" width="1400" height="900" aria-label="Ink drawing canvas"></canvas>
+      </div>
+      <div class="statusbar">
+        <span id="statusText">Freehand: drag to draw.</span>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="inkline_app.js"></script>
+</body>
+</html>

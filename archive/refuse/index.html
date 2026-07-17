@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inkline Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="panel">
+        <h1>Inkline Studio</h1>
+        <div class="tool-group">
+          <label class="section-label">Tool</label>
+          <div class="tool-buttons">
+            <button class="tool-btn active" data-tool="freehand">Free</button>
+            <button class="tool-btn" data-tool="line">Line</button>
+            <button class="tool-btn" data-tool="arc">Arc</button>
+            <button class="tool-btn" data-tool="ellipse">Ellipse</button>
+            <button class="tool-btn" data-tool="rect">Rect</button>
+            <button class="tool-btn" data-tool="polygon">Polygon</button>
+            <button class="tool-btn" data-tool="eraser">Eraser</button>
+          </div>
+        </div>
+
+        <div class="sliders">
+          <div class="slider-row"><label>Stroke Width</label><input id="width" type="range" min="1" max="30" value="8" step="1" /><span id="widthValue">8</span></div>
+          <div class="slider-row"><label>Ink Density</label><input id="density" type="range" min="0.2" max="1" value="0.82" step="0.02" /><span id="densityValue">0.82</span></div>
+          <div class="slider-row"><label>Jitter</label><input id="jitter" type="range" min="0" max="1" value="0.35" step="0.01" /><span id="jitterValue">0.35</span></div>
+          <div class="slider-row"><label>Drift</label><input id="drift" type="range" min="0" max="1" value="0.28" step="0.01" /><span id="driftValue">0.28</span></div>
+          <div class="slider-row"><label>Feather</label><input id="feather" type="range" min="0" max="1" value="0.46" step="0.01" /><span id="featherValue">0.46</span></div>
+          <div class="slider-row"><label>Pooling</label><input id="pooling" type="range" min="0" max="1" value="0.4" step="0.01" /><span id="poolingValue">0.40</span></div>
+          <div class="slider-row"><label>Dryness</label><input id="dryness" type="range" min="0" max="1" value="0.18" step="0.01" /><span id="drynessValue">0.18</span></div>
+          <div class="slider-row"><label>Texture</label><input id="texture" type="range" min="0" max="1" value="0.28" step="0.01" /><span id="textureValue">0.28</span></div>
+          <div class="slider-row"><label>Smoothing</label><input id="smoothing" type="range" min="0" max="1" value="0.28" step="0.01" /><span id="smoothingValue">0.28</span></div>
+          <div class="slider-row"><label>Seed</label><input id="seed" type="number" min="0" max="9999" value="2357" step="1" /><button id="randomSeed">Random</button></div>
+        </div>
+
+        <div class="actions">
+          <button id="undoBtn">Undo</button>
+          <button id="redoBtn">Redo</button>
+          <button id="clearBtn">Clear</button>
+          <button id="exportPngBtn">Export PNG</button>
+          <button id="exportSvgBtn">Export SVG</button>
+        </div>
+
+        <div class="hint">Draw on the canvas with ink-like imperfections. The active mark is rendered with seeded procedural noise and visible pooling.</div>
+      </div>
+    </aside>
+
+    <main class="canvas-panel">
+      <div class="canvas-wrap">
+        <canvas id="inkCanvas" width="1280" height="760"></canvas>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/roughjs@4.4.1/bundled/rough.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/paper@0.12.15/dist/paper-full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/perfect-freehand@1.0.0/dist/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/simplex-noise@2.4.0/simplex-noise.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-shape@3.1.0/dist/d3-shape.min.js"></script>
+  <script src="inkline_app_lib.js"></script>
+</body>
+</html>

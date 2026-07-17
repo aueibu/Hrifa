@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Irregular Polygon Sweep</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="loft.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">3D</span><div><h1>Irregular Polygon</h1><p>Cross-section sweep studio</p></div></div>
+      <div class="mode-tabs" role="tablist" aria-label="Sweep presets">
+        <button class="mode-tab active" data-preset="twist">Twisted extrusion</button>
+        <button class="mode-tab" data-preset="horn">Tapered horn</button>
+        <button class="mode-tab" data-preset="helix">Helix</button>
+        <button class="mode-tab" data-preset="ring">Ring</button>
+      </div>
+      <div class="top-actions"><button id="undoBtn" class="button ghost">Undo</button><button id="redoBtn" class="button ghost">Redo</button><button id="resetBtn" class="button ghost">Reset</button><button id="fitBtn" class="button accent">Fit object <span>F</span></button></div>
+    </header>
+
+    <section class="layout">
+      <aside class="sidebar left-panel">
+        <section class="panel"><div class="section-kicker">01 / Cross-section</div>
+          <div class="editor-toolbar"><button id="closeBtn" class="button small">Close</button><button id="recenterBtn" class="button small">Recenter</button><button id="clearBtn" class="button small ghost">Clear</button></div>
+          <svg id="polygonEditor" class="polygon-editor" viewBox="0 0 320 320" role="application" aria-label="Polygon editor"></svg>
+          <p class="hint">Click to add points. Drag points to edit. Double-click an edge to insert. Select a point and press Delete to remove it.</p>
+          <div class="toggle-grid"><label class="toggle-line"><input id="gridToggle" type="checkbox" checked> Grid</label><label class="toggle-line"><input id="snapToggle" type="checkbox"> Snap</label><label class="toggle-line"><input id="fillToggle" type="checkbox" checked> Fill</label><label class="toggle-line"><input id="indicesToggle" type="checkbox"> Indices</label></div>
+          <div id="polygonStats" class="metric-strip"></div>
+        </section>
+        <section class="panel"><div class="section-kicker">02 / Loft sections</div><p class="hint">Each section is structural: it becomes a real ring in the final mesh. Select one to edit its polygon above.</p><div id="stationList" class="station-list"></div><div class="editor-toolbar"><button id="addStationBtn" class="button small">Add section</button><button id="duplicateStationBtn" class="button small">Duplicate</button><button id="removeStationBtn" class="button small ghost">Remove</button></div></section>
+        <section class="panel"><div class="section-kicker">03 / Drawn path</div><p class="hint">X/Z side view. Click to add points, drag to move, double-click a line to insert. Select a point and press Delete to remove it.</p><svg id="pathEditor" class="polygon-editor" viewBox="0 0 320 320" role="application" aria-label="Drawn sweep path editor"></svg><label class="toggle-line"><input id="pathSmoothInput" type="checkbox" checked> Smooth spline</label></section>
+        <section class="panel"><div class="section-kicker">04 / Presets</div><div class="preset-grid"><button data-preset="prism">Straight prism</button><button data-preset="horn">Tapered horn</button><button data-preset="twist">Twisted column</button><button data-preset="arc">Curved horn</button><button data-preset="helix">Helix</button><button data-preset="ring">Ring</button><button data-preset="ribbed">Ribbed tube</button><button data-preset="relic">Stepped relic</button></div></section>
+      </aside>
+
+      <section class="workspace">
+        <div class="workspace-head"><div><div class="section-kicker">Generated form</div><h2 id="formTitle">Twisted extrusion</h2></div><div id="statusPill" class="status-pill">Valid polygon</div></div>
+        <div class="viewport-toolbar"><span>Drag to orbit · wheel to zoom · right-drag to pan</span><div><button id="wireBtn" class="layout-btn">Wireframe <kbd>W</kbd></button><button id="edgesBtn" class="layout-btn">Mesh edges</button><button id="boundaryBtn" class="layout-btn">Open edges</button><button id="collisionBtn" class="layout-btn">Collision guides</button><button id="ringsBtn" class="layout-btn active">Rings</button><button id="pathBtn" class="layout-btn active">Path</button><button id="axesBtn" class="layout-btn active">Axes</button></div></div>
+        <div id="viewport" class="viewport"><div class="loading">Preparing 3D viewport…</div></div>
+        <div class="workspace-footer"><span id="meshMeta">—</span><span>Parallel-transport frames · browser-only geometry</span></div>
+      </section>
+
+      <aside class="sidebar right-panel">
+        <section class="panel controls-panel"><div class="section-kicker">03 / Creation mode</div>
+          <label>Mode<select id="modeInput"><option value="straight">Straight extrusion</option><option value="arc">Arc sweep</option><option value="helix">Helix sweep</option><option value="bezier">Bézier sweep</option><option value="drawn">Editable spline path</option><option value="ring">Closed ring sweep</option></select></label>
+          <div class="field-row"><label>Path segments<input id="segmentsInput" type="number" min="2" max="256" value="64"></label><label>Section samples<input id="samplesInput" type="number" min="3" max="128" value="6"></label></div>
+        </section>
+        <section class="panel controls-panel"><div class="section-kicker">04 / Path & transform</div>
+          <label class="range-label">Length / height <output id="lengthValue">6.0</output><input id="lengthInput" type="range" min="0.5" max="20" step="0.1" value="6"></label>
+          <div class="field-row"><label>Start scale<input id="startScaleInput" type="number" min="0.01" max="10" step="0.01" value="1"></label><label>End scale<input id="endScaleNumber" type="number" min="0.01" max="10" step="0.01" value="0.7"></label></div>
+          <label class="range-label">End scale <output id="endScaleValue">0.70</output><input id="endScaleInput" type="range" min="0.1" max="2" step="0.01" value="0.7"></label>
+          <label class="range-label">Twist <output id="twistValue">180°</output><input id="twistInput" type="range" min="-1080" max="1080" step="5" value="180"></label>
+          <div id="curveControls"><label class="range-label">Curve radius <output id="radiusValue">3.0</output><input id="radiusInput" type="range" min="0.5" max="12" step="0.1" value="3"></label><label class="range-label">Turns / arc angle <output id="turnsValue">1.00</output><input id="turnsInput" type="range" min="0.1" max="4" step="0.05" value="1"></label></div>
+          <label>Scale modulation<select id="modulationInput"><option value="linear">Linear</option><option value="constant">Constant</option><option value="sine">Sine</option><option value="pulse">Pulse</option><option value="stepped">Stepped</option></select></label>
+          <div class="field-row"><label>Amplitude<input id="amplitudeInput" type="number" min="0" max="1" step="0.01" value="0"></label><label>Frequency<input id="frequencyInput" type="number" min=".1" max="32" step=".1" value="1"></label></div>
+        </section>
+        <section class="panel controls-panel"><div class="section-kicker">05 / Selected loft section</div>
+          <div id="stationName" class="control-note">Section</div>
+          <div class="field-row"><label>Path position<input id="stationPositionInput" type="number" min="0" max="1" step="0.01"></label><label>Section scale<input id="stationScaleInput" type="number" min="0.01" max="10" step="0.01"></label></div>
+          <div class="field-row"><label>Section rotation<input id="stationRotationInput" type="number" min="-3600" max="3600" step="1"></label><label>Offset X<input id="stationOffsetXInput" type="number" min="-20" max="20" step="0.01"></label></div>
+          <label>Offset Y<input id="stationOffsetYInput" type="number" min="-20" max="20" step="0.01"></label>
+        </section>
+        <section class="panel controls-panel"><div class="section-kicker">06 / Mesh & display</div>
+          <label>Collision handling<select id="collisionModeInput"><option value="preserve">Preserve intersections</option><option value="clearance">Auto clearance</option><option value="merge">Boolean union (crisp)</option></select></label>
+          <button id="recomputeBooleanBtn" class="button small" type="button">Recompute Boolean union</button>
+          <label class="range-label">Clearance margin <output id="clearanceValue">0.08</output><input id="clearanceInput" type="range" min="0" max="0.45" step="0.01" value="0.08"></label>
+          <div class="toggle-grid"><label class="toggle-line"><input id="capStart" type="checkbox" checked> Cap start</label><label class="toggle-line"><input id="capEnd" type="checkbox" checked> Cap end</label><label class="toggle-line"><input id="smoothInput" type="checkbox" checked> Smooth shading</label><label class="toggle-line"><input id="resampleInput" type="checkbox"> Resample boundary</label><label class="toggle-line"><input id="bboxInput" type="checkbox"> Bounds</label><label class="toggle-line"><input id="verticesInput" type="checkbox"> Vertices</label></div>
+          <label class="range-label">Opacity <output id="opacityValue">1.00</output><input id="opacityInput" type="range" min="0.15" max="1" step="0.05" value="1"></label>
+        </section>
+        <section class="panel"><div class="section-kicker">07 / Export</div><label>Filename<input id="filenameInput" value="irregular-sweep"></label><div class="export-grid"><button id="objBtn">OBJ mesh</button><button id="stlBtn">STL mesh</button><button id="saveBtn">Project JSON</button><label class="file-button">Load JSON<input id="loadInput" type="file" accept="application/json"></label></div></section>
+        <section class="panel"><div class="section-kicker">Mesh statistics</div><div id="meshStats" class="metric-grid"></div></section>
+      </aside>
+    </section>
+  </main>
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/OrbitControls.global.js"></script>
+  <script src="vendor/manifold/manifold.wasm.inline.js"></script>
+  <script src="vendor/manifold/manifold.global.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

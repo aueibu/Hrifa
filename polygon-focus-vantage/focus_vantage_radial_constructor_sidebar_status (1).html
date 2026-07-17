@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Focus–Vantage Radial Constructor</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#171a20;
+    --panel2:#1d2129;
+    --line:#343b49;
+    --text:#e8eaf0;
+    --muted:#9aa3b2;
+    --focus:#f2b84b;
+    --vantage:#74b9ff;
+    --mid:#6f7d91;
+    --exo:#ff8f70;
+    --outlook:#9be28f;
+    --f2:#d993ff;
+    --accent:#d7dde8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  body{display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+  aside{
+    background:linear-gradient(180deg,var(--panel),#11141a);
+    border-right:1px solid var(--line);
+    padding:18px;
+    overflow:auto;
+  }
+  h1{font-size:18px;margin:0 0 4px;font-weight:650;letter-spacing:.01em}
+  .subtitle{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:18px}
+  .section{padding:14px 0;border-top:1px solid var(--line)}
+  .section:first-of-type{border-top:0;padding-top:0}
+  .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px}
+  button,select,input[type="range"]{width:100%}
+  button,select{
+    background:var(--panel2);color:var(--text);border:1px solid var(--line);
+    border-radius:7px;padding:9px 10px;font-size:13px
+  }
+  button{cursor:pointer}
+  button:hover{border-color:#667184}
+  button.primary{background:#27303b}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .control{margin:10px 0}
+  .control label{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .control output{color:var(--text)}
+  input[type="range"]{accent-color:#b7c0ce}
+  .check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:8px 0}
+  .check input{width:auto}
+  .legend{display:grid;grid-template-columns:12px 1fr;gap:7px 9px;font-size:12px;color:var(--muted)}
+  .swatch{width:10px;height:10px;border-radius:50%;margin-top:3px}
+  main{position:relative;min-width:0}
+  canvas{display:block;width:100%;height:100%;background:
+    radial-gradient(circle at 50% 45%,rgba(255,255,255,.025),transparent 45%),
+    linear-gradient(#101318,#0c0f13)}
+  .hud{
+    position:absolute;left:16px;bottom:14px;font-size:12px;color:var(--muted);
+    background:rgba(12,15,19,.72);border:1px solid rgba(90,100,116,.45);
+    padding:8px 10px;border-radius:7px;backdrop-filter:blur(6px)
+  }
+  #status{
+    font-size:12px;color:var(--muted);line-height:1.5;
+    background:var(--panel2);border:1px solid var(--line);
+    padding:9px 10px;border-radius:7px
+  }
+  .modebar{
+    position:absolute;left:50%;top:14px;transform:translateX(-50%);
+    display:flex;gap:6px;background:rgba(12,15,19,.75);padding:5px;border:1px solid rgba(90,100,116,.45);border-radius:9px
+  }
+  .modebar button{width:auto;padding:7px 12px;background:transparent}
+  .modebar button.active{background:#28303b}
+  code{color:#d7dce5}
+  .stats-wrap{overflow-x:auto}
+  .stats-table{
+    width:100%;border-collapse:collapse;font-size:11px;color:var(--muted);
+    font-variant-numeric:tabular-nums
+  }
+  .stats-table th,.stats-table td{
+    padding:6px 5px;border-bottom:1px solid rgba(52,59,73,.7);
+    text-align:right;white-space:nowrap
+  }
+  .stats-table th:first-child,.stats-table td:first-child{text-align:left}
+  .stats-table thead th{color:var(--text);font-weight:600}
+  .stats-table tbody tr:last-child td{border-bottom:0}
+  .ratio-title{font-size:11px;color:var(--muted);margin:12px 0 5px}
+  .stats-note{font-size:10px;line-height:1.4;color:#7f8998;margin-top:8px}
+  .diagnostics{font-size:11px;color:var(--muted);line-height:1.45;max-height:180px;overflow:auto}
+  .diagnostics table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  .diagnostics td{padding:3px 0;border-bottom:1px solid rgba(52,59,73,.55)}
+  .diagnostics td:last-child{text-align:right;color:var(--text)}
+  @media(max-width:800px){
+    body{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    aside{max-height:46vh;border-right:0;border-bottom:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+<aside>
+  <h1>Focus–Vantage Radial Constructor</h1>
+  <div class="subtitle">
+    Builds a vantage belt <code>B₁</code>, transfers each edge length along a midpoint-guided ray to create the exo polygon <code>E</code>, then derives the outlook belt <code>B₂</code> and secondary focus <code>F₂</code>.
+  </div>
+
+  <div class="section">
+    <div class="section-title">Placement</div>
+    <div class="row">
+      <button id="setFocus" class="primary">Place focus</button>
+      <button id="addVantage">Add vantage</button>
+    </div>
+    <div class="row">
+      <button id="randomize">Randomize</button>
+      <button id="undo">Undo <span aria-hidden="true">(Ctrl+Z)</span></button>
+      <button id="clear">Clear</button>
+    </div>
+    <div class="control">
+      <label><span>Random vantage count</span><output id="countOut">5</output></label>
+      <input id="count" type="range" min="3" max="12" step="1" value="5" />
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Radial construction</div>
+    <div class="control">
+      <label><span>Construction mode</span></label>
+      <select id="constructionMode">
+        <option value="canonical">Canonical — 1.00× / 0.50</option>
+        <option value="exploration">Exploration — adjustable</option>
+      </select>
+    </div>
+    <div class="control">
+      <label><span>Edge-length transfer</span><output id="transferOut">1.00×</output></label>
+      <input id="transfer" type="range" min="0.25" max="2.5" step="0.01" value="1" />
+    </div>
+    <div class="control">
+      <label><span>Outlook position on ray</span><output id="outlookOut">0.50</output></label>
+      <input id="outlook" type="range" min="0.05" max="0.95" step="0.01" value="0.5" />
+    </div>
+    <div class="control">
+      <label><span>Secondary focus method</span></label>
+      <select id="centroidMode">
+        <option value="vertex">Vertex centroid — equal ray weight</option>
+        <option value="area">Area centroid — filled-shape balance</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Wireframe depth</div>
+    <div class="control">
+      <label><span>Focus height</span><output id="heightOut">140</output></label>
+      <input id="height" type="range" min="20" max="260" step="1" value="140" />
+    </div>
+    <div class="control">
+      <label><span>B₂ depth</span><output id="depthOut">70</output></label>
+      <input id="depth" type="range" min="0" max="180" step="1" value="70" />
+    </div>
+    <div class="control">
+      <label><span>Rotation</span><output id="rotOut">22°</output></label>
+      <input id="rotation" type="range" min="-180" max="180" step="1" value="22" />
+    </div>
+    <div class="control">
+      <label><span>Tilt</span><output id="tiltOut">56°</output></label>
+      <input id="tilt" type="range" min="10" max="85" step="1" value="56" />
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Display</div>
+    <label class="check"><input id="showMidpoints" type="checkbox" checked /> Edge midpoints and guide rays</label>
+    <label class="check"><input id="showExo" type="checkbox" checked /> Exo polygon <code>E</code></label>
+    <label class="check"><input id="showB1" type="checkbox" checked /> Vantage belt <code>B₁</code></label>
+    <label class="check"><input id="showB2" type="checkbox" checked /> Outlook belt <code>B₂</code></label>
+    <label class="check"><input id="showBraces" type="checkbox" checked /> Focus-to-belt braces</label>
+    <label class="check"><input id="showSkin" type="checkbox" checked /> Polyhedral skin</label>
+    <label class="check"><input id="showLabels" type="checkbox" checked /> Labels</label>
+  </div>
+
+
+  <div class="section">
+    <div class="section-title">Polygon statistics</div>
+    <div class="stats-wrap">
+      <table class="stats-table">
+        <thead>
+          <tr><th>Polygon</th><th>Area</th><th>Perim.</th><th>Semi.</th><th>Mean edge</th></tr>
+        </thead>
+        <tbody id="polygonStats"></tbody>
+      </table>
+
+      <div class="ratio-title">Area ratios</div>
+      <table class="stats-table">
+        <tbody id="areaRatios"></tbody>
+      </table>
+
+      <div class="ratio-title">Perimeter ratios</div>
+      <table class="stats-table">
+        <tbody id="perimeterRatios"></tbody>
+      </table>
+    </div>
+    <div class="stats-note">
+      Measurements use canvas units. Ratios are numerator ÷ denominator. B is the original vantage belt B₁.
+    </div>
+  </div>
+
+
+  <div class="section">
+    <div class="section-title">Edge diagnostics</div>
+    <div id="diagnostics" class="diagnostics">Add a focus and at least three vantages.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Construction status</div>
+    <div id="status"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Legend</div>
+    <div class="legend">
+      <span class="swatch" style="background:var(--focus)"></span><span>Primary focus F</span>
+      <span class="swatch" style="background:var(--vantage)"></span><span>Vantages Vᵢ / B₁</span>
+      <span class="swatch" style="background:var(--exo)"></span><span>Exo points Rᵢ / E</span>
+      <span class="swatch" style="background:var(--outlook)"></span><span>Outlooks Oᵢ / B₂</span>
+      <span class="swatch" style="background:var(--f2)"></span><span>Secondary focus F₂</span>
+    </div>
+  </div>
+</aside>
+
+<main>
+  <canvas id="canvas"></canvas>
+  <div class="modebar">
+    <button id="constructionBtn" class="active">Construction</button>
+    <button id="wireframeBtn">Wireframe</button>
+  </div>
+  <div class="hud">Click to place. Drag F or any Vᵢ to reshape. In wireframe mode, drag the empty canvas to rotate.</div>
+</main>
+
+<script>
+(() => {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+  const ui = Object.fromEntries([
+    'setFocus','addVantage','randomize','undo','clear','count','countOut','transfer','transferOut',
+    'outlook','outlookOut','centroidMode','constructionMode','height','heightOut','depth','depthOut',
+    'rotation','rotOut','tilt','tiltOut','showMidpoints','showExo','showB1','showB2',
+    'showBraces','showSkin','showLabels','constructionBtn','wireframeBtn','status','diagnostics',
+    'polygonStats','areaRatios','perimeterRatios'
+  ].map(id => [id, document.getElementById(id)]));
+
+  const colors = {
+    focus:'#f2b84b', vantage:'#74b9ff', mid:'#6f7d91',
+    exo:'#ff8f70', outlook:'#9be28f', f2:'#d993ff',
+    line:'#7f8998', faint:'rgba(125,137,152,.28)', text:'#e8eaf0'
+  };
+
+  let W=0,H=0;
+  let mode='construction';
+  let action='addVantage';
+  let focus=null;
+  let vantages=[];
+  let drag=null;
+  let lastPointer=null;
+
+  function resize(){
+    const r=canvas.getBoundingClientRect();
+    W=r.width; H=r.height;
+    canvas.width=Math.round(W*dpr);
+    canvas.height=Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+  window.addEventListener('resize',resize);
+
+  const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
+  const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+  const mul=(a,s)=>({x:a.x*s,y:a.y*s});
+  const len=a=>Math.hypot(a.x,a.y);
+  const midpoint=(a,b)=>mul(add(a,b),.5);
+
+  function vertexCentroid(poly){
+    if(!poly.length) return null;
+    return mul(poly.reduce((s,p)=>add(s,p),{x:0,y:0}),1/poly.length);
+  }
+
+  function areaCentroid(poly){
+    if(poly.length<3) return vertexCentroid(poly);
+    let A=0,Cx=0,Cy=0;
+    for(let i=0;i<poly.length;i++){
+      const p=poly[i], q=poly[(i+1)%poly.length];
+      const cross=p.x*q.y-q.x*p.y;
+      A += cross;
+      Cx += (p.x+q.x)*cross;
+      Cy += (p.y+q.y)*cross;
+    }
+    A *= .5;
+    if(Math.abs(A)<1e-6) return vertexCentroid(poly);
+    return {x:Cx/(6*A),y:Cy/(6*A)};
+  }
+
+  function polygonArea(poly){
+    if(!poly || poly.length<3) return 0;
+    let sum=0;
+    for(let i=0;i<poly.length;i++){
+      const p=poly[i], q=poly[(i+1)%poly.length];
+      sum += p.x*q.y-q.x*p.y;
+    }
+    return Math.abs(sum)*0.5;
+  }
+
+  function polygonPerimeter(poly){
+    if(!poly || poly.length<2) return 0;
+    let total=0;
+    for(let i=0;i<poly.length;i++){
+      total += len(sub(poly[(i+1)%poly.length],poly[i]));
+    }
+    return total;
+  }
+
+  function polygonStats(poly){
+    const perimeter=polygonPerimeter(poly);
+    return {
+      area:polygonArea(poly),
+      perimeter,
+      semiperimeter:perimeter/2,
+      meanEdge:poly && poly.length ? perimeter/poly.length : 0
+    };
+  }
+
+  function formatMetric(value){
+    if(!Number.isFinite(value)) return '—';
+    if(Math.abs(value)>=10000) return value.toFixed(0);
+    if(Math.abs(value)>=1000) return value.toFixed(1);
+    if(Math.abs(value)>=100) return value.toFixed(2);
+    return value.toFixed(3);
+  }
+
+  function formatRatio(a,b){
+    if(!Number.isFinite(a) || !Number.isFinite(b) || Math.abs(b)<1e-9) return '—';
+    return (a/b).toFixed(3);
+  }
+
+  function updatePolygonStats(g){
+    if(!ui.polygonStats) return;
+
+    const polygons = [
+      {name:'B', points:vantages},
+      {name:'B₂', points:g ? g.outlook : []},
+      {name:'E', points:g ? g.exo : []}
+    ];
+
+    const measured = {};
+    ui.polygonStats.innerHTML = polygons.map(({name,points})=>{
+      const s=polygonStats(points);
+      measured[name]=s;
+      const valid=points.length>=3;
+      return `<tr>
+        <td><strong>${name}</strong></td>
+        <td>${valid?formatMetric(s.area):'—'}</td>
+        <td>${valid?formatMetric(s.perimeter):'—'}</td>
+        <td>${valid?formatMetric(s.semiperimeter):'—'}</td>
+        <td>${valid?formatMetric(s.meanEdge):'—'}</td>
+      </tr>`;
+    }).join('');
+
+    const pairs=[
+      ['B₂','B'],['E','B'],['E','B₂'],
+      ['B','B₂'],['B','E'],['B₂','E']
+    ];
+
+    ui.areaRatios.innerHTML = pairs.map(([a,b])=>
+      `<tr><td>${a} / ${b}</td><td>${formatRatio(measured[a]?.area,measured[b]?.area)}</td></tr>`
+    ).join('');
+
+    ui.perimeterRatios.innerHTML = pairs.map(([a,b])=>
+      `<tr><td>${a} / ${b}</td><td>${formatRatio(measured[a]?.perimeter,measured[b]?.perimeter)}</td></tr>`
+    ).join('');
+  }
+
+  function geometry(){
+    if(!focus || vantages.length<3) return null;
+    const mids=[], exo=[], outlook=[];
+    const transfer=+ui.transfer.value;
+    const t=+ui.outlook.value;
+    for(let i=0;i<vantages.length;i++){
+      const a=vantages[i], b=vantages[(i+1)%vantages.length];
+      const m=midpoint(a,b);
+      const d=sub(m,focus);
+      const L=len(sub(b,a))*transfer;
+      const unit=len(d)>1e-6 ? mul(d,1/len(d)) : {x:1,y:0};
+      const r=add(focus,mul(unit,L));
+      const o=add(focus,mul(sub(r,focus),t));
+      mids.push(m); exo.push(r); outlook.push(o);
+    }
+    const f2=ui.centroidMode.value==='area' ? areaCentroid(outlook) : vertexCentroid(outlook);
+    return {mids,exo,outlook,f2};
+  }
+
+  function clearCanvas(){
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle='rgba(255,255,255,.025)';
+    ctx.lineWidth=1;
+    const step=40;
+    for(let x=(W%step)/2;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=(H%step)/2;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    ctx.restore();
+  }
+
+  function line(a,b,color,width=1,dash=[]){
+    if(!a||!b)return;
+    ctx.save();
+    ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
+  }
+
+  function rayEndpointThrough(f,m,r,extra=18){
+    const d=sub(m,f);
+    const dLen=len(d);
+    if(dLen<1e-9) return r;
+    const unit=mul(d,1/dLen);
+    const farDistance=Math.max(dLen,len(sub(r,f)))+extra;
+    return add(f,mul(unit,farDistance));
+  }
+  function poly(points,color,width=1,closed=true,dash=[]){
+    if(points.length<2)return;
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);
+    ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+    for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
+    if(closed)ctx.closePath();ctx.stroke();ctx.restore();
+  }
+  function point(p,color,r,label){
+    ctx.save();
+    ctx.fillStyle=color;ctx.strokeStyle='#0d1014';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if(label && ui.showLabels.checked){
+      ctx.font='12px system-ui';ctx.fillStyle=colors.text;
+      ctx.fillText(label,p.x+8,p.y-8);
+    }
+    ctx.restore();
+  }
+
+  function drawConstruction(g){
+    if(!focus) return;
+    if(vantages.length>=2 && ui.showB1.checked) poly(vantages,colors.vantage,1.6,true);
+
+    if(g){
+      if(ui.showMidpoints.checked){
+        for(let i=0;i<g.mids.length;i++){
+          const guideEnd=rayEndpointThrough(focus,g.mids[i],g.exo[i]);
+          line(focus,guideEnd,colors.faint,1,[5,5]);
+          point(g.mids[i],colors.mid,3,'M'+(i+1));
+          const rayDir=sub(g.mids[i],focus);
+          const rayLen=len(rayDir);
+          if(rayLen>1e-9){
+            const normal={x:-rayDir.y/rayLen,y:rayDir.x/rayLen};
+            line(add(g.mids[i],mul(normal,-5)),add(g.mids[i],mul(normal,5)),colors.mid,1);
+          }
+        }
+      }
+      if(ui.showExo.checked) poly(g.exo,colors.exo,1.5,true);
+      if(ui.showB2.checked) poly(g.outlook,colors.outlook,1.8,true);
+
+      if(ui.showBraces.checked){
+        for(const o of g.outlook) line(focus,o,'rgba(155,226,143,.35)',1);
+        for(const o of g.outlook) line(g.f2,o,'rgba(217,147,255,.34)',1);
+      }
+
+      for(let i=0;i<g.exo.length;i++){
+        if(ui.showExo.checked) point(g.exo[i],colors.exo,4,'R'+(i+1));
+        point(g.outlook[i],colors.outlook,4,'O'+(i+1));
+      }
+      point(g.f2,colors.f2,6,'F₂');
+    }
+
+    for(let i=0;i<vantages.length;i++) point(vantages[i],colors.vantage,5,'V'+(i+1));
+    point(focus,colors.focus,7,'F');
+  }
+
+  function project3(p){
+    const rot=+ui.rotation.value*Math.PI/180;
+    const tilt=+ui.tilt.value*Math.PI/180;
+    const x=p.x, y=p.y, z=p.z;
+    const xr=x*Math.cos(rot)-y*Math.sin(rot);
+    const yr=x*Math.sin(rot)+y*Math.cos(rot);
+    const yp=yr*Math.cos(tilt)-z*Math.sin(tilt);
+    const zp=yr*Math.sin(tilt)+z*Math.cos(tilt);
+    const scale=1/(1+zp/1200);
+    return {x:W/2+xr*scale,y:H/2+yp*scale,depth:zp};
+  }
+
+  function drawWireframe(g){
+    if(!focus || !g) return;
+    const center=vertexCentroid(vantages.concat([focus])) || {x:W/2,y:H/2};
+    const toLocal=p=>({x:p.x-center.x,y:p.y-center.y});
+    const h=+ui.height.value, d=+ui.depth.value;
+
+    const F=project3({...toLocal(focus),z:h});
+    const V=vantages.map(p=>project3({...toLocal(p),z:0}));
+    const O=g.outlook.map(p=>project3({...toLocal(p),z:-d}));
+    const R=g.exo.map(p=>project3({...toLocal(p),z:-d*.5}));
+    const F2=project3({...toLocal(g.f2),z:-h});
+
+    if(ui.showB1.checked) poly(V,colors.vantage,1.4,true);
+    if(ui.showB2.checked) poly(O,colors.outlook,1.6,true);
+    if(ui.showExo.checked) poly(R,colors.exo,1.2,true,[5,4]);
+
+    if(ui.showSkin.checked){
+      for(let i=0;i<V.length;i++){
+        const j=(i+1)%V.length;
+        line(V[i],V[j],'rgba(215,221,232,.28)',1);
+        line(O[i],O[j],'rgba(215,221,232,.28)',1);
+        line(V[i],O[i],'rgba(215,221,232,.35)',1);
+      }
+    }
+
+    if(ui.showBraces.checked){
+      for(let i=0;i<V.length;i++){
+        line(F,V[i],'rgba(116,185,255,.55)',1);
+        line(O[i],F2,'rgba(217,147,255,.55)',1);
+      }
+    }
+    if(ui.showMidpoints.checked){
+      for(let i=0;i<R.length;i++) line(F,R[i],'rgba(127,137,152,.25)',1,[5,5]);
+    }
+
+    for(let i=0;i<V.length;i++) point(V[i],colors.vantage,4,'V'+(i+1));
+    for(let i=0;i<O.length;i++) point(O[i],colors.outlook,4,'O'+(i+1));
+    if(ui.showExo.checked) for(let i=0;i<R.length;i++) point(R[i],colors.exo,3,'R'+(i+1));
+    point(F,colors.focus,6,'F₁');
+    point(F2,colors.f2,6,'F₂');
+  }
+
+  function updateStatus(g){
+    const ctype=ui.centroidMode.value==='vertex'?'vertex centroid':'area centroid';
+    const n=vantages.length;
+    ui.status.innerHTML =
+      `<strong>${n} vantage${n===1?'':'s'}</strong> · <strong>${ui.constructionMode.value}</strong><br>`+
+      (n>=3 && g ? `F₂ uses the <strong>${ctype}</strong> of B₂.<br>` : `Place at least three vantages to form a closed polygon.<br>`) +
+      `Rᵢ distance = edge length × ${(+ui.transfer.value).toFixed(2)}.<br>`+
+      `The dashed guide is the full ray through Mᵢ; Rᵢ may lie before Mᵢ when the transferred edge is shorter than |FMᵢ|.<br>`+
+      `Oᵢ lies ${(+ui.outlook.value).toFixed(2)} of the way from F to Rᵢ.`;
+  }
+
+  function updateDiagnostics(g){
+    if(!g){ui.diagnostics.textContent='Add a focus and at least three vantages.';return;}
+    const rows=g.mids.map((m,i)=>{
+      const edge=len(sub(vantages[(i+1)%vantages.length],vantages[i]));
+      const fm=len(sub(m,focus));
+      const fr=len(sub(g.exo[i],focus));
+      const cross=(m.x-focus.x)*(g.exo[i].y-focus.y)-(m.y-focus.y)*(g.exo[i].x-focus.x);
+      return `<tr><td>Edge ${i+1}</td><td>L ${formatMetric(edge)} · FM ${formatMetric(fm)} · FR ${formatMetric(fr)} · ${fr<fm?'before':'at/after'} M · col. ${Math.abs(cross)<.01?'ok':formatMetric(Math.abs(cross))}</td></tr>`;
+    }).join('');
+    ui.diagnostics.innerHTML=`<table>${rows}</table>`;
+  }
+
+  function draw(){
+    clearCanvas();
+    const g=geometry();
+    if(mode==='construction') drawConstruction(g); else drawWireframe(g);
+    updateStatus(g);
+    updateDiagnostics(g);
+    updatePolygonStats(g);
+  }
+
+  function randomize(){
+    const n=+ui.count.value;
+    focus={x:W*.5,y:H*.42};
+    vantages=[];
+    const rx=Math.min(W*.28,260), ry=Math.min(H*.25,210);
+    for(let i=0;i<n;i++){
+      const a=-Math.PI/2+i*Math.PI*2/n+(Math.random()-.5)*.18;
+      const jitter=.78+Math.random()*.38;
+      vantages.push({
+        x:focus.x+Math.cos(a)*rx*jitter,
+        y:focus.y+90+Math.sin(a)*ry*jitter
+      });
+    }
+    draw();
+  }
+
+  function hitTest(p){
+    const candidates=[];
+    if(focus)candidates.push({type:'focus',index:-1,p:focus,r:12});
+    vantages.forEach((v,i)=>candidates.push({type:'vantage',index:i,p:v,r:11}));
+    for(const c of candidates) if(Math.hypot(p.x-c.p.x,p.y-c.p.y)<=c.r) return c;
+    return null;
+  }
+
+  function pointerPos(e){
+    const r=canvas.getBoundingClientRect();
+    return {x:e.clientX-r.left,y:e.clientY-r.top};
+  }
+
+  canvas.addEventListener('pointerdown',e=>{
+    const p=pointerPos(e);
+    const hit=hitTest(p);
+    if(hit){
+      drag=hit;canvas.setPointerCapture(e.pointerId);
+    }else if(mode==='wireframe'){
+      drag={type:'rotate'};lastPointer=p;canvas.setPointerCapture(e.pointerId);
+    }else if(action==='setFocus'){
+      focus=p;action='addVantage';draw();
+    }else{
+      vantages.push(p);draw();
+    }
+  });
+
+  canvas.addEventListener('pointermove',e=>{
+    if(!drag)return;
+    const p=pointerPos(e);
+    if(drag.type==='focus'){focus=p;draw()}
+    else if(drag.type==='vantage'){vantages[drag.index]=p;draw()}
+    else if(drag.type==='rotate'){
+      const dx=p.x-lastPointer.x, dy=p.y-lastPointer.y;
+      ui.rotation.value=Math.max(-180,Math.min(180,+ui.rotation.value+dx*.7));
+      ui.tilt.value=Math.max(10,Math.min(85,+ui.tilt.value-dy*.35));
+      lastPointer=p;syncOutputs();draw();
+    }
+  });
+
+  canvas.addEventListener('pointerup',()=>{drag=null;lastPointer=null});
+  canvas.addEventListener('pointercancel',()=>{drag=null;lastPointer=null});
+
+  ui.setFocus.onclick=()=>{action='setFocus';draw()};
+  ui.addVantage.onclick=()=>{action='addVantage';draw()};
+  function undo(){
+    if(vantages.length) vantages.pop();
+    else if(focus) focus=null;
+    action='addVantage';
+    draw();
+  }
+  ui.randomize.onclick=randomize;
+  ui.undo.onclick=undo;
+  ui.clear.onclick=()=>{focus=null;vantages=[];action='addVantage';draw()};
+  window.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z'){
+      e.preventDefault();
+      undo();
+    }
+  });
+
+  ui.constructionBtn.onclick=()=>{
+    mode='construction';
+    ui.constructionBtn.classList.add('active');ui.wireframeBtn.classList.remove('active');draw();
+  };
+  ui.wireframeBtn.onclick=()=>{
+    mode='wireframe';
+    ui.wireframeBtn.classList.add('active');ui.constructionBtn.classList.remove('active');draw();
+  };
+
+  function syncOutputs(){
+    const canonical=ui.constructionMode.value==='canonical';
+    if(canonical){ui.transfer.value='1';ui.outlook.value='.5';}
+    ui.transfer.disabled=canonical;
+    ui.outlook.disabled=canonical;
+    ui.countOut.value=ui.count.value;
+    ui.transferOut.value=(+ui.transfer.value).toFixed(2)+'×';
+    ui.outlookOut.value=(+ui.outlook.value).toFixed(2);
+    ui.heightOut.value=ui.height.value;
+    ui.depthOut.value=ui.depth.value;
+    ui.rotOut.value=ui.rotation.value+'°';
+    ui.tiltOut.value=ui.tilt.value+'°';
+  }
+
+  [
+    'count','transfer','outlook','centroidMode','height','depth','rotation','tilt',
+    'constructionMode','showMidpoints','showExo','showB1','showB2','showBraces','showSkin','showLabels'
+  ].forEach(id=>ui[id].addEventListener('input',()=>{syncOutputs();draw()}));
+
+  syncOutputs();
+  resize();
+  setTimeout(randomize,30);
+})();
+</script>
+</body>
+</html>

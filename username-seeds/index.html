@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A deterministic username from a three-hour local-time cycle.">
+    <title>Time-Derived Username</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="page-shell">
+      <header>
+        <p class="eyebrow">Local naming utility</p>
+        <h1>Time-Derived Username</h1>
+        <p class="intro">A name from this moment's place in a repeating three-hour cycle.</p>
+      </header>
+
+      <section class="result-card" aria-labelledby="username-heading">
+        <p id="mode-label" class="mode-label">Live local time</p>
+        <output id="username" class="username" aria-live="polite" aria-labelledby="username-heading"></output>
+        <h2 id="username-heading" class="sr-only">Generated username</h2>
+        <p id="time-display" class="time-display"></p>
+      </section>
+
+      <section class="details" aria-labelledby="details-heading">
+        <h2 id="details-heading">Derivation</h2>
+        <dl>
+          <div><dt>Minutes since midnight</dt><dd id="minutes-value">—</dd></div>
+          <div><dt>Flat index</dt><dd id="flat-index-value">—</dd></div>
+          <div><dt>A index</dt><dd id="a-index-value">—</dd></div>
+          <div><dt>B index</dt><dd id="b-index-value">—</dd></div>
+          <div><dt>Words</dt><dd id="words-value">—</dd></div>
+        </dl>
+      </section>
+
+      <div class="controls" aria-label="Username controls">
+        <button id="copy-button" type="button">Copy username</button>
+        <button id="freeze-button" type="button" class="secondary">Freeze</button>
+      </div>
+
+      <details class="tester">
+        <summary>Test another time</summary>
+        <div class="tester-content">
+          <label for="manual-time">Time</label>
+          <input id="manual-time" type="time">
+          <div class="tester-actions">
+            <button id="test-time-button" type="button">Test time</button>
+            <button id="return-live-button" type="button" class="secondary">Return to live time</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="list-editor">
+        <summary>Edit word lists</summary>
+        <div class="editor-content">
+          <p>Changes are saved only in this browser on this device. They are not transmitted.</p>
+          <label for="words-a-input">A words <span>(one per line or comma-separated)</span></label>
+          <textarea id="words-a-input" rows="5" spellcheck="false"></textarea>
+          <label for="words-b-input">B words <span>(one per line or comma-separated)</span></label>
+          <textarea id="words-b-input" rows="6" spellcheck="false"></textarea>
+          <div class="editor-actions">
+            <button id="apply-lists-button" type="button">Save and apply lists</button>
+            <button id="reset-lists-button" type="button" class="secondary">Restore defaults</button>
+          </div>
+          <p id="editor-status" class="editor-status" aria-live="polite"></p>
+        </div>
+      </details>
+
+      <p id="configuration-error" class="configuration-error" role="alert" hidden></p>
+      <p id="copy-status" class="sr-only" aria-live="polite"></p>
+      <footer>Generated locally in your browser. No data is transmitted.</footer>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

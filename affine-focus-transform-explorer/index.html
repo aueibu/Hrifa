@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Affine Focus Transform Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="fonts.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">AFT</span><div><h1>Affine Focus</h1><p>Transform Explorer</p></div></div>
+      <div class="mode-tabs" role="tablist"><button class="mode-tab active" data-mode="single">Single focus</button><button class="mode-tab" data-mode="compare">Compare multipliers</button><button class="mode-tab" data-mode="dual">Dual focus</button></div>
+      <div class="top-actions"><button id="resetBtn" class="button ghost">Reset</button><button id="exportJsonBtn" class="button accent">Export JSON</button></div>
+    </header>
+    <section class="layout">
+      <aside class="sidebar left-panel">
+        <section class="panel controls-panel"><div class="section-kicker">01 / Parameters</div>
+          <label>Seed set <input id="seedInput" value="0, 2, 5, 7" spellcheck="false"></label>
+          <div class="field-row"><label>Modulus <input id="modulusInput" type="number" min="2" max="96" value="12"></label><label>Multiplier <input id="multiplierInput" type="number" min="0" value="5"></label></div>
+          <label id="compareMultiplierWrap" class="hidden">Multipliers <input id="compareMultiplierInput" value="1, 5, 7" placeholder="1, 5, 7"></label>
+          <label>Focus domain <select id="focusDomain"><option value="all">All residues</option><option value="seed">Seed residues</option><option value="current">Current set residues</option><option value="custom">Custom list</option></select></label>
+          <label id="customFocusWrap" class="hidden">Custom foci <input id="customFocusInput" placeholder="1, 4, 8"></label>
+          <div class="control-note">T<sub>f,a</sub>(x) = f + a(x − f) mod m</div>
+          <button id="computeBtn" class="button primary wide">Compute closure <span>↵</span></button>
+        </section>
+        <section class="panel family-panel"><div class="section-kicker">02 / Immediate family</div><div id="familyList" class="family-list"></div></section>
+        <section class="panel options-panel"><div class="section-kicker">03 / Display</div>
+          <label class="toggle-line"><input id="showLabels" type="checkbox" checked><span>Node labels</span></label>
+          <label class="toggle-line"><input id="showEdges" type="checkbox" checked><span>Transform edges</span></label>
+          <label class="toggle-line"><input id="subtractFocus" type="checkbox"><span>Subtract focus after transform</span></label>
+          <label class="toggle-line" hidden><input id="animateGraph" type="checkbox"><span>Animate reveal</span></label>
+        </section>
+      </aside>
+      <section class="workspace">
+        <div class="workspace-head"><div><div class="section-kicker">Affine state space</div><h2 id="workspaceTitle">Closure graph</h2></div><div id="statusPill" class="status-pill">Ready</div></div>
+        <nav class="view-tabs"><button class="view-tab active" data-view="graph">Graph</button><button class="view-tab" data-view="timeline">Timeline</button><button class="view-tab" data-view="saturation">Saturation</button></nav>
+        <div id="graphView" class="view active"><div class="graph-toolbar"><span id="graphMeta">0 nodes · 0 transforms</span><div class="segmented"><button class="layout-btn active" data-layout="hierarchy">Hierarchy</button><button class="layout-btn" data-layout="radial">Radial</button><button class="layout-btn" data-layout="scc">SCC</button><span id="zoomReadout" class="zoom-readout">100%</span><button id="zoomReset" class="layout-btn">Reset zoom</button></div></div><div id="graphCanvas" class="graph-canvas"><div class="empty-state"><span class="empty-glyph">ƒ</span><p>Compute a closure to reveal the transform space.</p></div></div></div>
+        <div id="timelineView" class="view"><div id="timelineCanvas" class="timeline"></div></div>
+        <div id="saturationView" class="view"><div id="saturationCanvas" class="saturation"></div></div>
+        <div class="workspace-footer"><div><span class="legend-dot seed"></span> seed <span class="legend-dot derived"></span> derived <span class="legend-line"></span> transform</div><div id="keyboardHint">Click nodes and edges to inspect</div></div>
+      </section>
+      <aside class="sidebar right-panel">
+        <section class="panel inspector-panel"><div class="section-kicker">04 / Inspector</div><div class="inspector-tabs"><button class="inspector-tab active" data-inspector="set">Set</button><button class="inspector-tab" data-inspector="transform">Transform</button><button class="inspector-tab" data-inspector="stats">Stats</button></div><div id="inspectorContent"></div></section>
+        <section class="panel playback-panel"><div class="section-kicker">05 / Playback</div><div class="playback-row"><button id="playBtn" class="play-button">▶</button><div><strong id="playLabel">Play generation</strong><span id="playDetail">Web Audio pitch-class preview</span></div></div><input id="tempoInput" type="range" min="60" max="220" value="116"><div class="range-caption"><span>60 BPM</span><span id="tempoValue">116 BPM</span><span>220 BPM</span></div></section>
+        <section class="panel export-panel"><div class="section-kicker">06 / Export</div><div class="export-grid"><button data-export="csv">CSV</button><button data-export="mermaid">Mermaid</button><button data-export="svg">SVG</button><button data-export="state">State JSON</button></div></section>
+        <section class="panel dual-panel hidden" id="dualPanel"><div class="section-kicker">Dual focus search</div><p class="muted">Enumerate affine maps g(x) = ax + b mod m and compare them against the current closure.</p><button id="dualSearchBtn" class="button primary wide">Search maps</button><div id="dualResults"></div></section>
+      </aside>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

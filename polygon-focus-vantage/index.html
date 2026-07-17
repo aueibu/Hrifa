@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1" name="viewport">
+    <title>
+   Focus&ndash;Vantage Radial Constructor
+    </title>
+    <link href="styles.css" rel="stylesheet">
+  </head>
+  <body>
+    <aside>
+      <h1>
+        Focus&ndash;Vantage Radial Constructor
+      </h1>
+      <div class="subtitle">
+        Builds a vantage belt
+        <code>
+          B₁
+        </code>
+        , transfers each edge length along a midpoint-guided ray to create the exo polygon
+        <code>
+          E
+        </code>
+        , then derives the outlook belt
+        <code>
+          B₂
+        </code>
+        and secondary focus
+        <code>
+          F₂
+        </code>
+        .
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Placement
+        </div>
+        <div class="row">
+          <button class="primary" id="setFocus">
+            Place focus
+          </button>
+          <button id="addVantage">
+            Add vantage
+          </button>
+        </div>
+        <div class="row">
+          <button id="randomize">
+            Randomize
+          </button>
+          <button id="undo">
+            Undo
+            <span aria-hidden="true">
+              (Ctrl+Z)
+            </span>
+          </button>
+        </div>
+        <div class="row">
+          <button id="clear">
+            Clear
+          </button>
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Random vantage count
+            </span>
+            <output id="countOut">
+              5
+            </output>
+          </label>
+          <input id="count" max="12" min="3" type="range" value="5">
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Radial construction
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Construction mode
+            </span>
+          </label>
+          <select id="constructionMode">
+            <option value="canonical">
+              Canonical &mdash; 1.00&times; / 0.50
+            </option>
+            <option value="exploration">
+              Exploration &mdash; adjustable
+            </option>
+          </select>
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Edge-length transfer
+            </span>
+            <output id="transferOut">
+              1.00&times;
+            </output>
+          </label>
+          <input id="transfer" max="2.5" min="0.25" step="0.01" type="range" value="1">
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Outlook position on ray
+            </span>
+            <output id="outlookOut">
+              0.50
+            </output>
+          </label>
+          <input id="outlook" max="0.95" min="0.05" step="0.01" type="range" value="0.5">
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Secondary focus method
+            </span>
+          </label>
+          <select id="centroidMode">
+            <option value="vertex">
+              Vertex centroid &mdash; equal ray weight
+            </option>
+            <option value="area">
+              Area centroid &mdash; filled-shape balance
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Wireframe depth
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Focus height
+            </span>
+            <output id="heightOut">
+              140
+            </output>
+          </label>
+          <input id="height" max="260" min="20" type="range" value="140">
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              B₂ depth
+            </span>
+            <output id="depthOut">
+              70
+            </output>
+          </label>
+          <input id="depth" max="180" min="0" type="range" value="70">
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Rotation
+            </span>
+            <output id="rotOut">
+              22&deg;
+            </output>
+          </label>
+          <input id="rotation" max="180" min="-180" type="range" value="22">
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Tilt
+            </span>
+            <output id="tiltOut">
+              56&deg;
+            </output>
+          </label>
+          <input id="tilt" max="85" min="10" type="range" value="56">
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Display
+        </div>
+        <label class="check">
+          <input checked id="showMidpoints" type="checkbox">
+          Edge midpoints and guide rays
+        </label>
+        <label class="check">
+          <input checked id="showExo" type="checkbox">
+          Exo polygon
+          <code>
+            E
+          </code>
+        </label>
+        <label class="check">
+          <input checked id="showB1" type="checkbox">
+          Vantage belt
+          <code>
+            B₁
+          </code>
+        </label>
+        <label class="check">
+          <input checked id="showB2" type="checkbox">
+          Outlook belt
+          <code>
+            B₂
+          </code>
+        </label>
+        <label class="check">
+          <input id="showTriplets" type="checkbox">
+          Vᵢ&ndash;Oᵢ&ndash;Rᵢ polygons
+        </label>
+        <label class="check">
+          <input id="showF1Outlooks" type="checkbox">
+          Lines from F₁ to all Oᵢ
+        </label>
+        <label class="check">
+          <input id="showF2Vantages" type="checkbox">
+          Lines from F₂ to all Vᵢ
+        </label>
+        <label class="check">
+          <input checked id="showBraces" type="checkbox">
+          Focus-to-belt braces
+        </label>
+        <label class="check">
+          <input checked id="showSkin" type="checkbox">
+          Polyhedral skin
+        </label>
+        <label class="check">
+          <input checked id="showLabels" type="checkbox">
+          Labels
+        </label>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Polygon statistics
+        </div>
+        <div class="stats-wrap">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>
+                  Polygon
+                </th>
+                <th>
+                  Area
+                </th>
+                <th>
+                  Perim.
+                </th>
+                <th>
+                  Semi.
+                </th>
+                <th>
+                  Mean edge
+                </th>
+              </tr>
+            </thead>
+            <tbody id="polygonStats">
+            </tbody>
+          </table>
+          <div class="ratio-title">
+            Area ratios
+          </div>
+          <table class="stats-table">
+            <tbody id="areaRatios">
+            </tbody>
+          </table>
+          <div class="ratio-title">
+            Perimeter ratios
+          </div>
+          <table class="stats-table">
+            <tbody id="perimeterRatios">
+            </tbody>
+          </table>
+        </div>
+        <div class="stats-note">
+          Measurements use canvas units. Ratios are numerator &divide; denominator. B is the original vantage belt B₁.
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Edge diagnostics
+        </div>
+        <div class="diagnostics" id="diagnostics">
+          Add a focus and at least three vantages.
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Construction status
+        </div>
+        <div id="status">
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">
+          Legend
+        </div>
+        <div class="legend">
+          <span class="swatch" style="background:var(--focus)">
+          </span>
+          <span>
+            Primary focus F
+          </span>
+          <span class="swatch" style="background:var(--vantage)">
+          </span>
+          <span>
+            Vantages Vᵢ / B₁
+          </span>
+          <span class="swatch" style="background:var(--exo)">
+          </span>
+          <span>
+            Exo points Rᵢ / E
+          </span>
+          <span class="swatch" style="background:var(--outlook)">
+          </span>
+          <span>
+            Outlooks Oᵢ / B₂
+          </span>
+          <span class="swatch" style="background:var(--f2)">
+          </span>
+          <span>
+            Secondary focus F₂
+          </span>
+        </div>
+      </div>
+    </aside>
+    <main>
+      <canvas id="canvas">
+      </canvas>
+      <div class="modebar">
+        <button class="active" id="constructionBtn">
+          Construction
+        </button>
+        <button id="wireframeBtn">
+          Wireframe
+        </button>
+      </div>
+      <div class="hud">
+        Click to append a vantage; the polygon always closes back to its first point. Drag F or any Vᵢ to reshape. In wireframe mode, drag the empty canvas to rotate.
+      </div>
+    </main>
+    <script src="app.js">
+    </script>
+  </body>
+</html>

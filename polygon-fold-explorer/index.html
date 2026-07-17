@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Polygon Fold Expansion Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside>
+    <h1>Polygon Fold Expansion Explorer</h1>
+    <div class="subtitle">Explore combinatorial folds, reflections, and every possible edge insertion for polygon expansion.</div>
+    <section class="section">
+      <div class="section-title">Polygon</div>
+      <div class="row" hidden><button class="primary" id="drawBtn">Draw vertices</button><button id="closeBtn">Close polygon</button></div>
+      <div class="row"><button id="undoBtn">Undo <span aria-hidden="true">(Ctrl+Z)</span></button><button id="clearBtn">Clear</button></div>
+      <button id="demoBtn">Load concave example</button>
+      <div id="status" class="status"></div>
+    </section>
+    <section class="section">
+      <div class="section-title">Construction layers</div>
+      <label class="check"><input checked id="showPolygon" type="checkbox"> Polygon and edges</label>
+      <label class="check"><input checked id="showLabels" type="checkbox"> Vertex and edge labels</label>
+      <label class="check"><input checked id="showMidpoints" type="checkbox"> Opposite midpoints</label>
+      <label class="check"><input checked id="showCreases" type="checkbox"> Crease lines</label>
+      <label class="check"><input checked id="showChains" type="checkbox"> Fold chains</label>
+      <label class="check"><input checked id="showReflections" type="checkbox"> Reflected points</label>
+      <label class="check"><input id="showCandidates" type="checkbox"> Selected candidate polygon</label>
+    </section>
+    <section class="section legend">
+      <div class="section-title">Legend</div>
+      <div><i class="swatch polygon"></i> source polygon</div>
+      <div><i class="swatch crease"></i> crease</div>
+      <div><i class="swatch plus"></i> + chain / reflection</div>
+      <div><i class="swatch minus"></i> − chain / reflection</div>
+      <div><i class="swatch selected"></i> selected point</div>
+    </section>
+    <section class="section note"><strong>How to use</strong><br>Click to append vertices; the polygon is always closed live. Select a reflection tile on the right, or drag source vertices to recompute the complete hierarchy.</section>
+  </aside>
+  <main>
+    <svg id="canvas" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Polygon construction canvas"></svg>
+    <section class="canvas-inspect">
+      <div class="section-title">Insertion inspection</div>
+      <div id="inspectPanel" class="empty">Select a reflected-point tile to inspect its insertion opportunities.</div>
+    </section>
+    <div class="hud" id="hud">Click to append vertices; the polygon closes live.</div>
+  </main>
+  <aside class="results">
+    <div class="results-head"><div><h2>Result browser</h2><div class="muted" id="summary">No polygon yet</div></div><button id="clearSelection">Reset view</button></div>
+    <div id="browser"><div class="empty">Add at least three vertices to generate folds and reflected-point candidates.</div></div>
+  </aside>
+  <script src="app.js"></script>
+</body>
+</html>

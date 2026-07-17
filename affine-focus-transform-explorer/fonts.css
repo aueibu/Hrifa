@@ -1,0 +1,41 @@
+body,
+button,
+input,
+select,
+textarea{
+  font-family:"Figtree","Segoe UI",Tahoma,sans-serif;
+  font-optical-sizing:auto;
+}
+
+*,
+svg text{
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+}
+
+.brand h1,
+.workspace-head h2,
+.set-title strong{
+  font-family:"Crimson Text",Georgia,serif;
+  font-weight:600;
+  font-variant-ligatures:contextual;
+  font-feature-settings:"tnum" 1,"calt" 1;
+}
+
+.node-label,
+.scc-label{
+  font-family:"Figtree","Segoe UI",Tahoma,sans-serif;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+}
+
+.edge-label,
+.generation-label,
+.residue,
+.table-wrap,
+table,
+.dual-result,
+.control-note{
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+}

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polygon New Tab</title>
+    <link rel="preload" href="TT2020Base-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="TT2020StyleE-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="polygon-canvas" aria-hidden="true"></canvas>
+    <canvas id="crt-glow" aria-hidden="true"></canvas>
+
+    <main class="new-tab">
+      <div class="clock-block">
+        <time id="clock" aria-label="Current time">00:00:00</time>
+        <span id="timezone"></span>
+      </div>
+
+      <div class="bookmark-search-stack">
+      <nav id="bookmark-links" class="bookmark-links" aria-label="Bookmarks" hidden>
+        <div id="bookmark-folder-name" class="bookmark-folder-name"></div>
+        <div id="bookmark-scroll-up" class="bookmark-scroll-indicator" aria-hidden="true" hidden>^</div>
+        <div id="bookmark-list-frame" class="bookmark-list-frame" tabindex="0" aria-label="Bookmark list">
+          <ul id="bookmark-list"></ul>
+        </div>
+        <div id="bookmark-scroll-down" class="bookmark-scroll-indicator" aria-hidden="true" hidden>v</div>
+        <div id="bookmark-pagination" class="bookmark-pagination" hidden>
+          <button id="bookmark-prev" type="button" aria-label="Previous bookmark page">‹</button>
+          <span id="bookmark-page-label"></span>
+          <button id="bookmark-next" type="button" aria-label="Next bookmark page">›</button>
+        </div>
+      </nav>
+
+      <form id="search-form" class="search-form" role="search">
+        <label class="sr-only" for="search-input">Search the web</label>
+        <input
+          id="search-input"
+          name="q"
+          type="search"
+          placeholder="Search"
+          autocomplete="off"
+          autofocus
+        />
+      </form>
+      </div>
+    </main>
+
+    <button id="settings-button" class="settings-button" type="button" aria-label="Open settings">
+      <span aria-hidden="true">···</span>
+    </button>
+
+    <section id="settings-panel" class="settings-panel" aria-hidden="true" aria-labelledby="settings-title">
+      <div class="settings-card">
+        <div class="settings-heading">
+          <h1 id="settings-title">Settings</h1>
+          <button id="close-settings" class="close-button" type="button" aria-label="Close settings">×</button>
+        </div>
+        <label for="provider-select">Search provider</label>
+        <select id="provider-select">
+          <option value="google">Google</option>
+          <option value="bing">Bing</option>
+          <option value="duckduckgo">DuckDuckGo</option>
+          <option value="brave">Brave Search</option>
+          <option value="ecosia">Ecosia</option>
+        </select>
+        <label for="bookmark-folder-select">Bookmark folder</label>
+        <select id="bookmark-folder-select">
+          <option value="">None</option>
+        </select>
+        <label for="mode-select">Polygon mode</label>
+        <select id="mode-select">
+          <option value="background">Fade into background</option>
+          <option value="active">Keep polygons active</option>
+        </select>
+        <label for="origin-mode-select">Point origin behavior</label>
+        <select id="origin-mode-select">
+          <option value="current">Current behavior</option>
+          <option value="previous-points">Inherit a previous edge</option>
+        </select>
+        <label for="collapse-offset-select">Collapse timing</label>
+        <select id="collapse-offset-select">
+          <option value="offset">Offset at 2/3 growth</option>
+          <option value="immediate">Start immediately</option>
+        </select>
+        <div class="threshold-setting">
+          <label for="active-limit">Active polygons before exit <output id="active-limit-value">8</output></label>
+          <input id="active-limit" type="range" min="3" max="25" value="8" />
+        </div>
+        <label class="toggle-setting">
+          <input id="performance-toggle" type="checkbox" />
+          Show performance tracker
+        </label>
+        <label class="toggle-setting">
+          <input id="crt-toggle" type="checkbox" checked />
+          Enable CRT effects
+        </label>
+        <label class="toggle-setting">
+          <input id="animation-delay-toggle" type="checkbox" />
+          Delay polygon animation by 10 seconds
+        </label>
+        <div class="threshold-setting">
+          <label for="bookmark-text-size">Bookmark text size <output id="bookmark-text-size-value">13px</output></label>
+          <input id="bookmark-text-size" type="range" min="10" max="24" value="13" />
+        </div>
+      </div>
+    </section>
+
+    <output id="performance-overlay" aria-live="polite"></output>
+
+    <script src="newtab.js"></script>
+  </body>
+</html>

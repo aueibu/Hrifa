@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hrifa Relic Constructor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">HRIFA · RELIC GRAMMAR</p>
+      <h1>Relic Constructor</h1>
+    </div>
+    <div class="top-actions">
+      <button id="undoBtn" class="ghost" disabled>Undo</button>
+      <button id="redoBtn" class="ghost" disabled>Redo</button>
+      <button id="newBtn" class="ghost">New</button>
+      <button id="saveJsonBtn" class="ghost">Export JSON</button>
+      <label class="ghost file-label">Import JSON<input id="loadJsonInput" type="file" accept="application/json" /></label>
+      <button id="svgBtn">Export SVG</button>
+      <button id="pngBtn">Export PNG</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="panel left-panel">
+      <section>
+        <div class="section-head"><span>01</span><h2>Construct</h2></div>
+        <label>Polygon sides <output id="sidesOut">6</output>
+          <input id="sidesInput" type="range" min="3" max="12" value="6" />
+        </label>
+        <label>Scale relative to selected polygon <output id="scaleOut">1.00×</output>
+          <input id="scaleInput" type="range" min="0.25" max="2" step="0.05" value="1" />
+        </label>
+        <label>Role
+          <select id="roleInput">
+            <option>core</option><option>arm</option><option>spur</option><option>bridge</option>
+            <option>socket</option><option>aperture</option><option>chamber</option><option>rib</option>
+          </select>
+        </label>
+        <button id="addFreeBtn" class="wide">Add free polygon</button>
+      </section>
+
+      <section>
+        <div class="section-head"><span>02</span><h2>Attach</h2></div>
+        <label>Parent
+          <select id="parentSelect"></select>
+        </label>
+        <div class="pair-grid">
+          <label>Parent feature<select id="parentFeature"></select></label>
+          <label>Child feature<select id="childFeature"></select></label>
+        </div>
+        <div class="pair-grid">
+          <label>Parent feature ID<select id="parentIndex"></select></label>
+          <label>Child feature ID<select id="childIndex"></select></label>
+        </div>
+        <label>Relation
+          <select id="relationInput">
+            <option value="anchor" selected>anchor · exact feature coincidence</option>
+            <option value="tangent">tangent</option><option value="penetrating">penetrating</option>
+            <option value="embedded">embedded</option><option value="fused">fused</option>
+            <option value="bridged">bridged</option><option value="suspended">suspended</option>
+          </select>
+        </label>
+        <label>Orientation
+          <select id="orientationInput">
+            <option value="outward">outward radial</option><option value="inward">inward radial</option>
+            <option value="cw">clockwise tangential</option><option value="ccw">counterclockwise tangential</option>
+            <option value="focus">focus-directed</option><option value="free">free angle</option>
+          </select>
+        </label>
+        <label>Angle offset <output id="angleOut">0°</output>
+          <input id="angleInput" type="range" min="-180" max="180" step="5" value="0" />
+        </label>
+        <button id="attachBtn" class="wide">Anchor polygon</button>
+        <p id="pairReadout" class="micro"></p>
+        <p class="micro">Anchor places the selected child feature exactly on the selected parent feature. Other relations add displacement or topology.</p>
+      </section>
+
+      <section>
+        <div class="section-head"><span>03</span><h2>Selection</h2></div>
+        <div id="selectionInfo" class="selection-card">No polygon selected.</div>
+        <div class="button-row">
+          <button id="duplicateBtn" class="ghost">Duplicate</button>
+          <button id="deleteBtn" class="danger">Delete</button>
+        </div>
+        <p class="micro">Drag a free polygon to move it. Attached polygons are positioned by their parent; move or transform that parent instead. Use the mouse wheel over a free polygon to rotate by the snap angle.</p>
+      </section>
+
+      <section>
+        <div class="section-head"><span>03B</span><h2>Polygons &amp; Groups</h2></div>
+        <div id="polygonList" class="polygon-list"></div>
+        <div class="button-row">
+          <button id="selectAllPolysBtn" class="ghost">Select all</button>
+          <button id="clearPolySelectionBtn" class="ghost">Clear</button>
+        </div>
+        <label>Active group
+          <select id="groupSelect"></select>
+        </label>
+        <div class="button-row">
+          <button id="groupSelectedBtn" class="ghost">Group selected</button>
+          <button id="ungroupSelectedBtn" class="ghost">Ungroup</button>
+        </div>
+        <p class="micro">Checked polygons form the working selection. Transform preview uses the active group when one is selected; otherwise it uses the full structure.</p>
+      </section>
+    </aside>
+
+    <section class="stage-wrap">
+      <canvas id="stage"></canvas>
+      <div class="stage-toolbar">
+        <button data-view="construction" class="view-btn active">Construction</button>
+        <button data-view="skeleton" class="view-btn">Skeleton</button>
+                <button data-view="membrane" class="view-btn">Membrane</button>
+        <button data-view="graph" class="view-btn">Graph</button>
+        <label class="canvas-toggle"><input id="showLabelsInput" type="checkbox" /> Feature labels</label>
+        <label class="canvas-toggle"><input id="showRolesInput" type="checkbox" /> Polygon roles</label>
+        <label class="canvas-toggle"><input id="showGhostInput" type="checkbox" checked /> Ghost preview</label>
+      </div>
+      <div class="stage-status"><span id="tierReadout">Tier 0 · Primitive</span><span id="statsReadout"></span></div>
+    </section>
+
+    <aside class="panel right-panel">
+      <section>
+        <div class="section-head"><span>04</span><h2>Edge Language</h2></div>
+        <p class="micro">Click an edge on the canvas, then assign its state.</p>
+        <div id="edgeInfo" class="selection-card">No edge selected.</div>
+        <label>Edge type
+          <select id="edgeTypeInput">
+            <option value="single">single</option>
+            <option value="removed">removed</option>
+            <option value="double">double</option>
+            <option value="hash">hash</option>
+          </select>
+        </label>
+        <div id="doubleControls" class="subcontrols hidden">
+          <label>Parallel line placement
+            <select id="doubleSideInput"><option value="inside">inside</option><option value="outside">outside</option></select>
+          </label>
+          <label>Separation <output id="doubleGapOut">6</output>
+            <input id="doubleGapInput" type="range" min="2" max="16" value="6" />
+          </label>
+        </div>
+        <div id="hashControls" class="subcontrols hidden">
+          <label>Hash count <output id="hashCountOut">2</output>
+            <input id="hashCountInput" type="range" min="1" max="12" value="2" />
+          </label>
+          <label>Hash length <output id="hashLengthOut">10</output>
+            <input id="hashLengthInput" type="range" min="4" max="24" value="10" />
+          </label>
+        </div>
+        <button id="applyEdgeBtn" class="wide">Apply edge style</button>
+        <div class="button-grid">
+          <button data-rule="restore" class="ghost edge-rule">Restore all</button>
+          <button data-rule="attachment" class="ghost edge-rule">Remove attachment edge</button>
+          <button data-rule="opposite" class="ghost edge-rule">Remove opposite edge</button>
+          <button data-rule="alternating" class="ghost edge-rule">Alternate edges</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><span>05</span><h2>Transform</h2></div>
+        <label>Operation
+          <select id="transformModeInput">
+            <option value="transform">transform structure</option>
+            <option value="duplicate">duplicate + transform</option>
+          </select>
+        </label>
+        <label>Reference point
+          <select id="pivotInput">
+            <option value="structure">structure center</option>
+            <option value="canvas">canvas center</option>
+            <option value="selected">selected polygon center</option>
+            <option value="parentFeature">selected parent feature</option>
+          </select>
+        </label>
+        <label>Rotation snap
+          <select id="snapInput"><option value="5" selected>5°</option><option value="15">15°</option><option value="30">30°</option><option value="45">45°</option></select>
+        </label>
+        <label>Scale factor <output id="transformScaleOut">1.10×</output>
+          <input id="transformScaleInput" type="range" min="0.25" max="2" step="0.05" value="1.10" />
+        </label>
+        <div class="button-grid">
+          <button id="rotateLeftBtn" class="ghost">↶ Rotate</button>
+          <button id="rotateRightBtn" class="ghost">Rotate ↷</button>
+          <button id="mirrorXBtn" class="ghost">Mirror X</button>
+          <button id="mirrorYBtn" class="ghost">Mirror Y</button>
+          <button id="scaleDownBtn" class="ghost">Scale ÷</button>
+          <button id="scaleUpBtn" class="ghost">Scale ×</button>
+        </div>
+        <div id="previewActions" class="preview-actions hidden">
+          <button id="commitTransformBtn">Commit preview</button>
+          <button id="cancelTransformBtn" class="ghost">Cancel</button>
+        </div>
+        <p id="transformPreviewInfo" class="micro">Choose an operation to create a ghost preview. Nothing changes until committed.</p>
+        <p class="micro">Duplicate + transform creates a new structure group, new polygon IDs, and remapped internal references.</p>
+      </section>
+
+      <section>
+        <div class="section-head"><span>06</span><h2>Descriptor</h2></div>
+        <textarea id="descriptor" readonly></textarea>
+        <button id="copyDescriptorBtn" class="wide ghost">Copy descriptor</button>
+      </section>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

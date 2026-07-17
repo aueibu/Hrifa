@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Polygon New Tab",
+  "version": "0.1.0",
+  "description": "A minimalist new tab with a clock, search, and generative polygon artwork.",
+  "permissions": ["storage", "bookmarks"],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}

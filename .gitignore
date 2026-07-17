@@ -1,0 +1,40 @@
+# Local Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# JavaScript dependencies and common tool caches
+node_modules/
+.parcel-cache/
+.vite/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Private or generated mail-analysis data
+gmail-analysis/output/
+gmail-analysis/web-output/
+gmail-analysis/tests/*-output/
+*.mbox
+
+# Packaged snapshots and local archives
+*.zip
+*.7z
+.git-history-backups/
+
+# Editor and operating-system clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak
+*~
