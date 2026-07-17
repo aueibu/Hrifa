@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hrifa Relic Constructor</title>
+  <title>Edelmakārī</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar">
     <div>
-      <p class="eyebrow">HRIFA · RELIC GRAMMAR</p>
-      <h1>Relic Constructor</h1>
+      <p class="eyebrow">Hrifa</p>
+      <h1>Edelmakārī</h1>
     </div>
     <div class="top-actions">
       <button id="undoBtn" class="ghost" disabled>Undo</button>
@@ -42,8 +43,9 @@
         <button id="addFreeBtn" class="wide">Add free polygon</button>
       </section>
 
-      <section>
+      <section class="attach-section">
         <div class="section-head"><span>02</span><h2>Attach</h2></div>
+        <p class="section-kicker">Pair the two reference features, then set the frame that governs placement and facing.</p>
         <label>Parent
           <select id="parentSelect"></select>
         </label>
@@ -63,19 +65,21 @@
             <option value="bridged">bridged</option><option value="suspended">suspended</option>
           </select>
         </label>
-        <label>Orientation
+        <label>Anchor Frame
           <select id="orientationInput">
-            <option value="outward">outward radial</option><option value="inward">inward radial</option>
-            <option value="cw">clockwise tangential</option><option value="ccw">counterclockwise tangential</option>
-            <option value="focus">focus-directed</option><option value="free">free angle</option>
+            <option value="outward">Away from parent</option>
+            <option value="inward">Toward parent</option>
+            <option value="cw">Along boundary clockwise</option>
+            <option value="ccw">Along boundary counterclockwise</option>
+            <option value="absolute">Canvas north</option>
           </select>
         </label>
         <label>Angle offset <output id="angleOut">0°</output>
           <input id="angleInput" type="range" min="-180" max="180" step="5" value="0" />
         </label>
         <button id="attachBtn" class="wide">Anchor polygon</button>
-        <p id="pairReadout" class="micro"></p>
-        <p class="micro">Anchor places the selected child feature exactly on the selected parent feature. Other relations add displacement or topology.</p>
+        <div id="pairReadout" class="pair-readout"></div>
+        <p class="micro">The Anchor Frame supplies the axis for relation displacement and initial child facing. Angle offset is applied after the frame is chosen.</p>
       </section>
 
       <section>
