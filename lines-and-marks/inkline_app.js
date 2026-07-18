@@ -692,6 +692,8 @@ function sampleMark(mark) {
     sampled = sampleEllipse(mark.start, mark.end, mark.seed);
   } else if (mark.type === "rect") {
     sampled = sampleRect(mark.start, mark.end);
+  } else if (mark.type === "polyline") {
+    sampled = samplePolyline(mark.points, PATH_SAMPLE_GAP);
   } else if (mark.type === "polygon") {
     const closed = mark.closed ? mark.points.concat([mark.points[0], mark.points[1] || mark.points[0]]) : mark.points;
     sampled = samplePolyline(closed, PATH_SAMPLE_GAP);
@@ -2212,7 +2214,7 @@ function init() {
 
 init();
 
-window.renderEdelInkPng = ({ width, height, lines, settings = {}, paperColor = { r: 249, g: 245, b: 240 }, inkColor = { r: 32, g: 32, b: 31 } }) => {
+window.renderEdelInkPng = ({ width, height, marks = [], lines = [], settings = {}, paperColor = { r: 249, g: 245, b: 240 }, inkColor = { r: 32, g: 32, b: 31 } }) => {
   Object.entries(settings).forEach(([key, value]) => {
     if (controls[key]) controls[key].value = String(value);
   });
@@ -2231,12 +2233,12 @@ window.renderEdelInkPng = ({ width, height, lines, settings = {}, paperColor = {
   paperFieldCache.clear();
   const style = getStyle();
   const seed = Number(settings.seed) || 2357;
-  state.marks = lines.map((line, index) => ({
-    type: "line",
-    start: line.start,
-    end: line.end,
-    points: [],
-    deposits: [],
+  const sourceMarks = marks.length ? marks : lines;
+  state.marks = sourceMarks.map((mark, index) => ({
+    ...mark,
+    type: mark.type || "line",
+    points: mark.points || [],
+    deposits: mark.deposits || [],
     style,
     seed: seed + index * 997
   }));

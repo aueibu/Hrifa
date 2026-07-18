@@ -30,7 +30,7 @@ Exports: SVG, PNG, and a readable Hrifa Edel v3 JSON document.
 
 ### Ink PNG
 
-**Export Ink PNG** sends the visible Edel edge geometry to the Lines-and-Marks brush renderer and downloads a raster-accurate ink rendering. It uses the fixed Edel Ink preset: width 5, seed 2357, Ribbon renderer, wet pooling, and the brush settings supplied for the project. The output uses Edel paper (`#F9F5F0`) and carbon ink (`#20201F`). The renderer is loaded from the sibling `lines-and-marks` app, so both folders must remain together when serving Edel.
+**Export Ink PNG** sends the visible Edel edge geometry to the Lines-and-Marks brush renderer and downloads a raster-accurate ink rendering. Unbroken polygon boundaries are rendered as continuous closed brush paths so pigment can pool at their vertices; cut boundaries become separate open paths. Parallel and hash marks remain individual strokes. It uses the fixed Edel Ink preset: width 5, seed 2357, Ribbon renderer, wet pooling, and the brush settings supplied for the project. The output uses Edel paper (`#F9F5F0`) and carbon ink (`#20201F`). The renderer is loaded from the sibling `lines-and-marks` app, so both folders must remain together when serving Edel.
 
 ## Edel JSON
 
