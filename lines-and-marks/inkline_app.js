@@ -107,8 +107,8 @@ const state = {
 };
 
 const PAPER_SEED = 18341;
-const INK = { r: 24, g: 21, b: 17 };
-const PAPER = { r: 246, g: 239, b: 225 };
+let INK = { r: 24, g: 21, b: 17 };
+let PAPER = { r: 246, g: 239, b: 225 };
 const HEIGHT_CONTRAST = 1.85;
 const HEIGHT_SPLOTCH_SCALE = 1;
 const TOOTH_CONTACT_THRESHOLD = 0.5;
@@ -2211,3 +2211,60 @@ function init() {
 }
 
 init();
+
+window.renderEdelInkPng = ({ width, height, lines, settings = {}, paperColor = { r: 249, g: 245, b: 240 }, inkColor = { r: 32, g: 32, b: 31 } }) => {
+  Object.entries(settings).forEach(([key, value]) => {
+    if (controls[key]) controls[key].value = String(value);
+  });
+  updateLabels();
+  syncXyPads();
+  state.viewWidth = Math.max(1, Math.round(width));
+  state.viewHeight = Math.max(1, Math.round(height));
+  state.pixelRatio = 1;
+  [paperCanvas, inkCanvas, previewCanvas].forEach((layer) => {
+    layer.width = state.viewWidth;
+    layer.height = state.viewHeight;
+  });
+  [paperCtx, inkCtx, previewCtx].forEach((context) => context.setTransform(1, 0, 0, 1, 0, 0));
+  PAPER = { ...paperColor };
+  INK = { ...inkColor };
+  paperFieldCache.clear();
+  const style = getStyle();
+  const seed = Number(settings.seed) || 2357;
+  state.marks = lines.map((line, index) => ({
+    type: "line",
+    start: line.start,
+    end: line.end,
+    points: [],
+    deposits: [],
+    style,
+    seed: seed + index * 997
+  }));
+  rebuildPaperTexture();
+  rebuildInkLayer();
+  const output = document.createElement("canvas");
+  output.width = state.viewWidth;
+  output.height = state.viewHeight;
+  const outputCtx = output.getContext("2d", { alpha: false });
+  outputCtx.drawImage(paperCanvas, 0, 0);
+  outputCtx.drawImage(inkCanvas, 0, 0);
+  return output.toDataURL("image/png");
+};
+
+window.addEventListener("message", (event) => {
+  const message = event.data;
+  if (!message || message.type !== "hrifa-edel-render-ink") return;
+  try {
+    event.source?.postMessage({
+      type: "hrifa-edel-rendered-ink",
+      requestId: message.requestId,
+      dataUrl: window.renderEdelInkPng(message.payload)
+    }, "*");
+  } catch (error) {
+    event.source?.postMessage({
+      type: "hrifa-edel-rendered-ink",
+      requestId: message.requestId,
+      error: error?.message || "Could not render the ink PNG."
+    }, "*");
+  }
+});

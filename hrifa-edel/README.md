@@ -24,9 +24,13 @@ Attachments are live constraints. The saved attachment stores its feature pair, 
 
 ## Edge language
 
-Select an edge on the canvas and assign single, removed, double, or hash styling. Double edges can be placed inside or outside the polygon. Hash edges support adjustable mark count and length.
+Select an edge on the canvas to apply a Solid, Parallel, or Hash mark immediately. Parallel marks can be placed inside or outside and support one to five added parallel lines at a chosen separation. Hash marks support adjustable mark count and length. Structural cuts and restoration are separate operations: remove selected, attachment, opposite, or alternating edges; restore selected edges or all edges on the selected polygon.
 
 Exports: SVG, PNG, and a readable Hrifa Edel v3 JSON document.
+
+### Ink PNG
+
+**Export Ink PNG** sends the visible Edel edge geometry to the Lines-and-Marks brush renderer and downloads a raster-accurate ink rendering. It uses the fixed Edel Ink preset: width 5, seed 2357, Ribbon renderer, wet pooling, and the brush settings supplied for the project. The output uses Edel paper (`#F9F5F0`) and carbon ink (`#20201F`). The renderer is loaded from the sibling `lines-and-marks` app, so both folders must remain together when serving Edel.
 
 ## Edel JSON
 
@@ -69,7 +73,7 @@ Angle offsets and the default rotation snap now support 5-degree increments.
 
 - Undo/redo records complete operation snapshots, not individual polygon or edge mutations.
 - A multi-edge rule, grouped polygon creation, attachment, duplication, deletion, drag, or committed structure transform is reversed as one action.
-- Keyboard shortcuts: Ctrl/Cmd+Z undo; Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo; Q/W decrease/increase candidate sides; E/R decrease/increase child scale by 0.25; A/S cycle child attachment features; Z/X cycle Anchor Frames; K/L cycle edge-language types; Up/Down cycle parent points (including center); Left/Right cycle parent edges (including center); Alt+Up/Down cycle parent polygons; Enter anchors the candidate polygon; and 1 toggles the ghost preview. Shortcuts do not run while a form field has focus.
+- Keyboard shortcuts: Ctrl/Cmd+Z undo; Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo; Q/W decrease/increase candidate sides; E/R decrease/increase child scale by 0.25; A/S cycle child attachment features; Z/X cycle Anchor Frames; Up/Down cycle parent points (including center); Left/Right cycle parent edges (including center); Alt+Up/Down cycle parent polygons; Enter anchors the candidate polygon; and 1 toggles the ghost preview. Shortcuts do not run while a form field has focus.
 
 ## Polygon groups
 
@@ -86,3 +90,7 @@ Angle offsets and the default rotation snap now support 5-degree increments.
 - The source geometry remains unchanged until `Commit preview` is pressed.
 - `Cancel` or Escape discards the preview.
 - Duplicate previews reserve new IDs only on commit and remap internal parent/child attachment references.
+
+## Working relic persistence
+
+The current relic is saved automatically in this browser's local storage after committed edits and restored when the page refreshes. It remains local to that browser and device; use **Export JSON** to keep or move a relic independently. **New** and **Import JSON** intentionally replace the saved working relic.

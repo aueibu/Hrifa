@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="appShell" class="app-shell">
   <header class="topbar">
     <div>
       <p class="eyebrow">Hrifa</p>
@@ -17,10 +18,12 @@
       <button id="undoBtn" class="ghost" disabled>Undo</button>
       <button id="redoBtn" class="ghost" disabled>Redo</button>
       <button id="newBtn" class="ghost">New</button>
-      <button id="saveJsonBtn" class="ghost">Export JSON</button>
+      <button id="grayscaleBtn" class="ghost" aria-pressed="false">Greyscale</button>
       <label class="ghost file-label">Import JSON<input id="loadJsonInput" type="file" accept="application/json" /></label>
+      <button id="saveJsonBtn" class="ghost">Export JSON</button>
       <button id="svgBtn">Export SVG</button>
       <button id="pngBtn">Export PNG</button>
+      <button id="inkPngBtn">Export Ink PNG</button>
     </div>
   </header>
 
@@ -127,22 +130,25 @@
     <aside class="panel right-panel">
       <section>
         <div class="section-head"><span>04</span><h2>Edge Language</h2></div>
-        <p class="micro">Click an edge on the canvas, then assign its state.</p>
+        <p class="micro">Select an edge, then cut, restore, or mark it.</p>
         <div id="edgeInfo" class="selection-card">No edge selected.</div>
-        <label>Edge type
-          <select id="edgeTypeInput">
-            <option value="single">single</option>
-            <option value="removed">removed</option>
-            <option value="double">double</option>
-            <option value="hash">hash</option>
-          </select>
-        </label>
-        <div id="doubleControls" class="subcontrols hidden">
-          <label>Parallel line placement
-            <select id="doubleSideInput"><option value="inside">inside</option><option value="outside">outside</option></select>
+        <div class="edge-control-label">Edge mark</div>
+        <div class="mark-picker" role="group" aria-label="Edge mark">
+          <button type="button" class="edge-mark" data-edge-mark="single" aria-pressed="true">Solid</button>
+          <button type="button" class="edge-mark" data-edge-mark="parallel" aria-pressed="false">Parallel</button>
+          <button type="button" class="edge-mark" data-edge-mark="hash" aria-pressed="false">Hash</button>
+        </div>
+        <div id="parallelControls" class="subcontrols hidden">
+          <div class="edge-control-label">Parallel placement</div>
+          <div class="mark-picker" role="group" aria-label="Parallel line placement">
+            <button type="button" class="parallel-side" data-parallel-side="inside" aria-pressed="true">Inside</button>
+            <button type="button" class="parallel-side" data-parallel-side="outside" aria-pressed="false">Outside</button>
+          </div>
+          <label>Parallel lines <output id="parallelCountOut">1</output>
+            <input id="parallelCountInput" type="range" min="1" max="5" value="1" />
           </label>
-          <label>Separation <output id="doubleGapOut">6</output>
-            <input id="doubleGapInput" type="range" min="2" max="16" value="6" />
+          <label>Separation <output id="parallelGapOut">6</output>
+            <input id="parallelGapInput" type="range" min="2" max="16" value="6" />
           </label>
         </div>
         <div id="hashControls" class="subcontrols hidden">
@@ -153,12 +159,23 @@
             <input id="hashLengthInput" type="range" min="4" max="24" value="10" />
           </label>
         </div>
-        <button id="applyEdgeBtn" class="wide">Apply edge style</button>
-        <div class="button-grid">
-          <button data-rule="restore" class="ghost edge-rule">Restore all</button>
-          <button data-rule="attachment" class="ghost edge-rule">Remove attachment edge</button>
-          <button data-rule="opposite" class="ghost edge-rule">Remove opposite edge</button>
-          <button data-rule="alternating" class="ghost edge-rule">Alternate edges</button>
+        <div class="edge-actions">
+          <div class="edge-action-group">
+            <div class="edge-control-label">Remove</div>
+            <div class="button-grid">
+              <button data-edge-rule="remove-selected" class="ghost">Selected</button>
+              <button data-edge-rule="attachment" class="ghost">Attachment edge</button>
+              <button data-edge-rule="opposite" class="ghost">Opposite edge(s)</button>
+              <button data-edge-rule="alternating" class="ghost">Alternating edges</button>
+            </div>
+          </div>
+          <div class="edge-action-group">
+            <div class="edge-control-label">Restore</div>
+            <div class="button-grid">
+              <button data-edge-rule="restore-selected" class="ghost">Selected</button>
+              <button data-edge-rule="restore-all" class="ghost">All on this polygon</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -207,6 +224,8 @@
       </section>
     </aside>
   </main>
+  </div>
+  <iframe id="inkRendererFrame" class="ink-renderer-frame" src="../lines-and-marks/index.html" title="Ink renderer" aria-hidden="true" tabindex="-1"></iframe>
 
   <script src="app.js"></script>
 </body>
