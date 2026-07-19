@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grid Traversal Workshop</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="inline-edit.css">
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <div><p class="eyebrow">Hrifa / field study</p><h1>Grid Traversal Workshop</h1><p>Define one repeatable compound move per piece, place every token, then let energy, state, and occupancy decide where the field settles.</p></div>
+      <div class="run-controls"><button id="stepButton">Step round</button><button id="runButton">Run</button><button id="resolveButton">Resolve</button><button id="resetPiecesButton" class="quiet">Reset pieces</button><button id="resetGridButton" class="quiet">Reset grid</button></div>
+    </header>
+
+    <section class="workbench">
+      <aside class="side-column">
+        <section class="panel"><div class="panel-title"><h2>Piece editor</h2><button id="newPieceButton" class="text-button">New</button></div>
+          <label>Name<input id="pieceName" value="Foundry worker"></label>
+          <div class="two-fields"><label>Tokens<input id="pieceTokens" type="number" min="1" value="6"></label><label>Energy<input id="pieceEnergy" type="number" min="0" value="24"></label></div>
+          <label>One compound move<input id="pieceMove" value="[F,2.x,2][R,1.o]"></label>
+          <p id="parseReadout" class="parse-readout"></p>
+          <section class="variable-editor" aria-labelledby="variableTitle"><h3 id="variableTitle">Distance variable <code>n</code></h3><p>Use <code>n</code> as a move distance. Each placed token carries its own value.</p><div class="three-fields"><label>Start<input id="nStart" type="number" min="1" value="1"></label><label>Change<input id="nChange" type="number" value="1"></label><label>Every moves<input id="nEvery" type="number" min="1" value="2"></label></div></section>
+          <div class="editor-actions"><button id="savePieceButton">Add piece</button><button id="saveAsNewPieceButton" class="quiet">Save as new piece</button></div>
+        </section>
+
+        <section class="panel"><div class="panel-title"><h2>Stable / placement</h2><button id="deletePieceButton" class="danger">Delete selected</button></div><p id="placementHint">Add a piece to begin.</p><div id="pieceList" class="piece-list"></div></section>
+
+        <section class="panel cost-panel"><h2>Energy rules</h2><div class="cost-grid"><label>Move<input id="moveCost" type="number" min="0" value="1"></label><label>Occupied<input id="occupancyCost" type="number" min="0" value="2"></label></div><p><code>0→1</code> +0 &nbsp; <code>1→2</code> +1 &nbsp; <code>2→3</code> +2</p><p>Every present occupant adds the occupancy cost. A state change charges only when it succeeds.</p></section>
+      </aside>
+
+      <section class="board-column">
+        <section class="panel board-panel"><div class="panel-title"><div><h2>Field</h2><p id="boardMode">Select a piece, then click cells to place its tokens.</p></div><div class="field-controls"><label>Grid size<select id="gridSize"><option value="12">12 × 12</option><option value="16" selected>16 × 16</option><option value="20">20 × 20</option><option value="24">24 × 24</option><option value="32">32 × 32</option><option value="64">64 × 64</option></select></label><label>Cell editor<select id="stateEditor"><option value="place">Place tokens</option><option value="0">State 0</option><option value="1">State 1</option><option value="2">State 2</option><option value="3">State 3</option></select></label></div></div>
+          <div id="board" class="board" aria-label="16 by 16 traversal board"></div>
+          <div class="state-legend"><span><i class="s0"></i>0</span><span><i class="s1"></i>1</span><span><i class="s2"></i>2</span><span><i class="s3"></i>3</span><span><b>Ex</b> exhausted</span><span><b>Un</b> underfunded</span><span><b>Int</b> interrupted</span><span><b>Imp</b> impossible</span></div>
+        </section>
+        <section class="panel event-panel"><div class="panel-title"><h2>Round record</h2><span id="roundReadout">Round 0</span></div><ol id="eventLog" class="event-log"><li>Create a piece, select it, and place all of its tokens.</li></ol></section>
+      </section>
+
+      <aside class="right-column">
+        <section class="panel"><h2>Inspector</h2><div id="inspector" class="inspector"><p>Select a board cell to inspect its state, occupants, and traversal history.</p></div></section>
+        <section class="panel"><h2>Rules in use</h2><ul class="rules"><li>One repeatable compound move per piece.</li><li><code>&gt;</code> and <code>&lt;</code> turn the token's own forward orientation.</li><li>Each token is placed individually.</li><li>Pieces may share a cell.</li><li>Off-board next step = <code>Imp</code>.</li><li>Pieces act one tile at a time, in stable round order.</li></ul></section>
+      </aside>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+::selection {
+  background: var(--plum);
+  color: var(--paper);
+}
+
+.piece-rename {
+  display: block;
+  min-width: 2ch;
+  margin: 0 0 3px;
+  padding: 0 0 2px;
+  border-bottom: 1px dashed var(--plum);
+  color: var(--carbon);
+  font-family: Figtree, Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.1;
+  outline: 0;
+  cursor: text;
+}
+
+.piece-rename:focus {
+  border-bottom: 2px solid var(--plum);
+}
+
+.piece-card strong {
+  font-family: Figtree, Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.variable-editor {
+  margin: 0 0 11px;
+  padding: 9px;
+  border: 1px solid var(--line);
+}
+
+.variable-editor h3 {
+  margin: 0;
+  font-family: Figtree, Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.variable-editor p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.variable-editor code {
+  font-family: "DM Mono", ui-monospace, monospace;
+  color: var(--blue);
+}
+
+.three-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.field-controls {
+  display: grid;
+  grid-template-columns: 108px 142px;
+  gap: 8px;
+  margin-top: -8px;
+}
+
+.field-controls label {
+  display: block;
+  color: var(--carbon);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.field-controls select { margin-top: 5px; }
+
+.token.active { min-width: 23px; font-size: 7px; }
+
+.board[data-size="64"] .token.active { min-width: 14px; height: 11px; padding: 0 1px; font-size: 4px; }

@@ -24,9 +24,11 @@ The portal establishes the shared voice. Each applet may have its own domain-spe
 
 - Default surface: warm paper, not pure white.
 - Primary ink: near-black, softened enough to feel printed rather than clinical.
+- Use a restrained carbon-tinted paper surface for fixed instrument panels (currently `#F1EDE9` in Edel). Keep canvases, editable fields, readout boxes, and other work surfaces on un-tinted Paper `#F9F5F0` so the active material remains visually clear.
 - Build major sections with thin rules, square or nearly square edges, and intentional alignment.
 - Prefer one clear container relationship over several nested decorative cards.
 - Hover and focus states should make the current action obvious, with modest movement only where it helps perception.
+- Select/dropdown fields use an **inset accent hover state**: keep the Paper surface unchanged, change the 1 px field border to Deep blue `#124E78`, and add a 3 px Deep-blue inset bar on the left edge. This indicates editability without turning the field into a filled control. On keyboard focus, retain that treatment and add the standard 3 px Deep-blue focus outline with a 2 px offset.
 
 ### Colour
 

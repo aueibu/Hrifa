@@ -21,9 +21,9 @@
       <button id="grayscaleBtn" class="ghost" aria-pressed="false">Greyscale</button>
       <label class="ghost file-label">Import JSON<input id="loadJsonInput" type="file" accept="application/json" /></label>
       <button id="saveJsonBtn" class="ghost">Export JSON</button>
-      <button id="svgBtn">Export SVG</button>
-      <button id="pngBtn">Export PNG</button>
-      <button id="inkPngBtn">Export Ink PNG</button>
+      <button id="svgBtn" class="primary">Export SVG</button>
+      <button id="pngBtn" class="primary">Export PNG</button>
+      <button id="inkPngBtn" class="primary">Export Ink PNG</button>
     </div>
   </header>
 
@@ -43,7 +43,7 @@
             <option>socket</option><option>aperture</option><option>chamber</option><option>rib</option>
           </select>
         </label>
-        <button id="addFreeBtn" class="wide">Add free polygon</button>
+        <button id="addFreeBtn" class="wide primary">Add free polygon</button>
       </section>
 
       <section class="attach-section">
@@ -80,7 +80,7 @@
         <label>Angle offset <output id="angleOut">0°</output>
           <input id="angleInput" type="range" min="-180" max="180" step="5" value="0" />
         </label>
-        <button id="attachBtn" class="wide">Anchor polygon</button>
+        <button id="attachBtn" class="wide primary">Anchor polygon</button>
         <div id="pairReadout" class="pair-readout"></div>
         <p class="micro">The Anchor Frame supplies the axis for relation displacement and initial child facing. Angle offset is applied after the frame is chosen.</p>
       </section>
@@ -210,7 +210,7 @@
           <button id="scaleUpBtn" class="ghost">Scale ×</button>
         </div>
         <div id="previewActions" class="preview-actions hidden">
-          <button id="commitTransformBtn">Commit preview</button>
+          <button id="commitTransformBtn" class="primary primary-orange">Commit preview</button>
           <button id="cancelTransformBtn" class="ghost">Cancel</button>
         </div>
         <p id="transformPreviewInfo" class="micro">Choose an operation to create a ghost preview. Nothing changes until committed.</p>
