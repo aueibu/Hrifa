@@ -1,0 +1,43 @@
+red #fb4934
+green #b8bb26
+yellow #fabd2f
+blue #83a598
+purple #d3869b
+aqua #8ec07c
+orange #fe8019
+blue-new #6c8eb0
+gray-light (Grey Olive) #9d9b97
+gray (Charcoal Brown) #41413e
+gray-dark (Graphite) #2c2c2a
+red-soft #c85450
+green-soft #a3a355
+yellow-soft #d4ad55
+blue-soft #7c96a0
+purple-soft #b58a9a
+aqua-soft #8aab7e
+orange-soft #cc8355
+blue-new-soft #8098ac
+oxblood #5c1a1e
+hunter-green #33472b
+ochre #8a6a1f
+petrol #2a4147
+eggplant #402038
+pine #2f4a3a
+burnt-orange #7a3a12
+navy #2a3f52
+bg0 #181816
+bg1 #262421
+bg1_5 #35312c
+bg2 #433d37
+bg2_5 #514a43
+bg3 #5f564e
+bg3_5 #6e6359
+bg4 #7c6f64
+fg4 #a89984
+n6 #b4a693
+n5 #bfb3a3
+n4 #cbc0b2
+n3 #d6cec2
+n2 #e2dbd1
+n1 #ede8e1
+paper #f9f5f0

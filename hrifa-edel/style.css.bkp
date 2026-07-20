@@ -3,74 +3,24 @@
 @font-face{font-family:"Hrifa Fraunces";src:url("assets/fonts/Fraunces-Variable.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
 @font-face{font-family:"Hrifa Fraunces";src:url("assets/fonts/Fraunces-Italic-Variable.ttf") format("truetype");font-style:italic;font-weight:100 900;font-display:swap}
 
-/* ---------------------------------------------------------------------
-   THEME TOKENS — three tiers, so a new theme only ever touches tier 1+2.
-   1) Primitives: the raw ink/pigment palette. A theme redefines these.
-   2) Strengths: how strongly a wash/overlay reads. A theme may retune
-      these too — light-on-dark washes read stronger per % than
-      dark-on-light, so dark strengths are generally dialed back.
-   3) Semantics: everything the rest of this file (and the canvas in
-      app.js, via getComputedStyle) actually consumes. Defined ONCE
-      here and never redeclared per theme — they just inherit whatever
-      tier 1/2 values are active.
-   To add a future theme: add a new [data-theme="x"] block overriding
-   tier 1 and 2 only. Nothing else in this file needs to change.
-   --------------------------------------------------------------------- */
 :root{
-  /* 1) primitives (light / default) */
   --paper:#f9f5f0;--carbon:#20201f;--blue:#124e78;--green:#215b3a;--gold:#e4b92d;--orange:#c0522e;--button-orange:#833d25;--plum:#703d64;--red:#a0140f;
-  --shadow-ink:var(--carbon);
-
-  /* 2) strengths (light / default) */
-  --panel-tint-strength:3.5%;--line-strength:38%;--soft-line-strength:16%;
-  --grid-strength:7.5%;--membrane-strength:4.5%;--hover-strength:18%;--shadow-strength:12%;
-
-  /* 3) semantics — UI chrome */
-  --selection:var(--orange);--anchor:var(--green);
-  --blue-hover:color-mix(in srgb,var(--blue) var(--hover-strength),var(--paper));
-  --panel-tint:color-mix(in srgb,var(--carbon) var(--panel-tint-strength),transparent);
-  --line:color-mix(in srgb,var(--carbon) var(--line-strength),transparent);
-  --soft-line:color-mix(in srgb,var(--carbon) var(--soft-line-strength),transparent);
-  --muted:var(--carbon);
-  --shadow:color-mix(in srgb,var(--shadow-ink) var(--shadow-strength),transparent);
-
-  /* 3) semantics — canvas (read live from app.js via getComputedStyle,
-     so the relic itself follows the theme instead of staying hardcoded) */
-  --grid-line:color-mix(in srgb,var(--carbon) var(--grid-strength),transparent);
-  --membrane-fill:color-mix(in srgb,var(--carbon) var(--membrane-strength),transparent);
-  --membrane-fill-selected:color-mix(in srgb,var(--orange) 18%,transparent);
-  --ghost-fill:color-mix(in srgb,var(--orange) 10%,transparent);
-  --attach-line:color-mix(in srgb,var(--green) 90%,transparent);
-  --ghost-ring:color-mix(in srgb,var(--blue) 80%,transparent);
-}
-
-/* "Nightglass" — the same relic examined by candlelight. Jewel-ink
-   accents brightened for contrast against a dark ground; --gold takes
-   over as --shadow-ink so hover/offset accents read as a warm gilt
-   glow rather than a literal drop shadow. See the audit doc for the
-   contrast-ratio math behind each of these. */
-[data-theme="dark"]{
-  --paper:#1c1712;--carbon:#f2e8d5;--blue:#5fb2e0;--green:#55b17f;--gold:#f0c94a;--orange:#e2743f;--button-orange:#d97a45;--plum:#b47ba5;--red:#f2665c;
-  --shadow-ink:var(--gold);
-
-  --panel-tint-strength:2.5%;--line-strength:28%;--soft-line-strength:12%;
-  --grid-strength:5.5%;--membrane-strength:3.5%;--hover-strength:20%;--shadow-strength:55%;
+  --selection:var(--orange);--anchor:var(--green);--blue-hover:color-mix(in srgb,var(--blue) 18%,var(--paper));--panel-tint:color-mix(in srgb,var(--carbon) 3.5%,transparent);--line:color-mix(in srgb,var(--carbon) 38%,transparent);--soft-line:color-mix(in srgb,var(--carbon) 16%,transparent);--muted:var(--carbon);--shadow:color-mix(in srgb,var(--carbon) 12%,transparent)
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--paper);color:var(--carbon);font-family:Figtree,Inter,ui-sans-serif,system-ui,sans-serif}
 body{overflow:hidden}.app-shell{min-height:100%}.app-shell.grayscale{filter:grayscale(1)}.ink-renderer-frame{position:fixed;width:1px;height:1px;right:-2px;bottom:-2px;border:0;opacity:0;pointer-events:none}
-body,.panel,.topbar,.stage-wrap,.selection-card,.pair-readout,.stage-toolbar,.stage-status span,select,textarea{transition:background-color .22s ease,color .22s ease,border-color .22s ease}
 .topbar{height:82px;padding:14px 20px;border-bottom:2px solid var(--carbon);display:flex;align-items:center;justify-content:space-between;background:var(--paper)}
 .eyebrow{margin:0 0 3px;font-family:"DM Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.22em;color:var(--blue);text-transform:uppercase}
 h1{font-family:"Hrifa Fraunces",Fraunces,Georgia,serif;font-size:29px;font-weight:600;letter-spacing:-.045em;line-height:.95;margin:0}
 button,.file-label,select,input,textarea{font:inherit}
 button,.file-label{border:1px solid var(--blue);background:transparent;color:var(--blue);border-radius:0;padding:8px 11px;cursor:pointer;font-size:12px;font-weight:700;transition:transform .14s ease,background .14s ease,box-shadow .14s ease}
-.primary{--primary-color:var(--blue);--primary-lift:color-mix(in srgb,var(--paper) 24%,var(--primary-color));background:var(--primary-color);border-color:var(--primary-color);color:var(--paper)}.primary:hover{background:var(--primary-lift);border-color:var(--primary-color);color:var(--paper);transform:translateY(-1px);box-shadow:2px 2px 0 var(--shadow-ink)}.primary-orange{--primary-color:var(--button-orange)}
+.primary{--primary-color:var(--blue);--primary-lift:color-mix(in srgb,var(--paper) 24%,var(--primary-color));background:var(--primary-color);border-color:var(--primary-color);color:var(--paper)}.primary:hover{background:var(--primary-lift);border-color:var(--primary-color);color:var(--paper);transform:translateY(-1px);box-shadow:2px 2px 0 var(--carbon)}.primary-orange{--primary-color:var(--button-orange)}
 button:focus-visible,.file-label:focus-within,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 button.ghost,.file-label.ghost{background:transparent;color:var(--blue);border-color:var(--blue)}
 button.ghost:hover,.file-label.ghost:hover{background:var(--blue-hover);color:var(--carbon);border-color:var(--blue)}
 button.danger{background:transparent;color:var(--red);border-color:var(--red)}
-button.danger:hover{background:var(--red);color:var(--paper);box-shadow:2px 2px 0 var(--shadow-ink)}
+button.danger:hover{background:var(--red);color:var(--paper);box-shadow:2px 2px 0 var(--carbon)}
 .file-label input{display:none}.top-actions{display:flex;align-items:center;gap:7px}.top-actions>button,.top-actions>.file-label{height:42px;display:inline-flex;align-items:center;justify-content:center}
 .workspace{height:calc(100vh - 82px);display:grid;grid-template-columns:300px minmax(440px,1fr) 310px}
 .panel{overflow:auto;background:var(--panel-tint);border-right:1px solid var(--line)}.right-panel{border-right:0;border-left:1px solid var(--line)}

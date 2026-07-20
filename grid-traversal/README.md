@@ -11,7 +11,8 @@ Double-click a stable piece title to rename it inline. The new name is applied t
 ## Current scope
 
 - Resizable square board: 12 × 12, 16 × 16, 20 × 20, 24 × 24, 32 × 32, or 64 × 64; valid cells, states, and placed pieces are retained when resizing.
-- Move syntax: `[direction,distance.change,intensity]`, chained into one compound move. Distance can be a fixed integer or per-token variable `n`.
+- Each piece has separate cyclic movement and field programs. Movement uses `[F,value]`, `[B,value]`, `[L,value]`, `[R,value]`, `[H,value]`, and turns; field actions use `[+intensity,duration]`, `[-intensity,duration]`, `[xintensity,duration]`, or `[o,duration]`.
+- Field phase delays a piece's first field tick; field rate controls how many simulation rounds occur between field ticks.
 - The `n` editor specifies its starting value, its change, and how many completed movement cores occur before it changes. Every placed token owns an independent `n` value and cadence.
 - `>` turns a token clockwise and `<` turns it counter-clockwise; turns cost no energy and affect no cell.
 - `[H,value]` holds a token in its current cell for that many rounds, with no energy cost or cell action; `value` can be a positive integer or `n`.
@@ -19,8 +20,9 @@ Double-click a stable piece title to rename it inline. The new name is applied t
 - Every token receives its own fixed forward orientation at placement time.
 - Clicking a placement cell opens four directional arrows; choose one to commit that token.
 - Active tokens show their current facing arrow and energy directly on the grid.
-- Each stable piece receives a persistent palette color and fill treatment (solid, ghost, or hatched). The selected-cell panel lists its pieces with matching icons, names, energy, and orientation.
+- Each token receives its own random palette color and fill treatment (solid, ghost, or hatched) when it is placed on the field. The selected-cell panel lists its pieces with matching icons, names, energy, and orientation.
 - `Resolve` runs the same ordered simulation without visual playback, then renders the final field. It pauses after 50,000 rounds if active zero-cost loops remain.
+- `Export PNG` downloads a high-resolution image of the field at its current round, including placed pieces. `Export config` downloads a compact run-provenance JSON: only tokens that participated, the programs and starting placements they actually carried, initial/current non-zero field cells, energy settings, and the current round. It intentionally excludes unused stable pieces, histories, and the timeline record.
 - Each simulation run stores one initial field plus per-round token and cell changes. The Token energy chart labels instance lines (for example, `Foundry worker #3`); clicking a point restores the full field at that round.
 - `Reset grid` removes all placements and restores every cell value to state 0; piece definitions remain in the stable.
 - `Reset pieces` restores every placed token to its original cell, orientation, energy, and active status, and restores every cell value to state 0.

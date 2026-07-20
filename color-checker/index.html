@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Contrast Checker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>Color Contrast Checker</h1>
+  <p class="subtitle">Build a palette, plot every color against every other as a foreground/background pair, and score each pairing against WCAG 2.x contrast requirements.</p>
+</header>
+
+<main>
+  <div class="top-grid">
+    <div class="control-stack">
+    <section class="panel controls" aria-labelledby="add-color-heading">
+      <h2 id="add-color-heading">Add a color</h2>
+      <div class="editor">
+        <input type="color" id="colorPicker" class="swatch-picker" value="#3366ff" aria-label="Pick a color">
+
+        <div class="editor-fields">
+          <div class="field-row">
+            <div class="hex-name-group">
+              <div class="mini-field">
+                <label for="colorText">Hex / CSS color</label>
+                <input type="text" id="colorText" placeholder="#3366ff, rgb(51 102 255), royalblue" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="mini-field">
+                <label for="colorName">Name</label>
+                <input type="text" id="colorName" placeholder="cornflower blue, zen garden…" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+
+            <button type="button" id="addColorBtn">Add to palette</button>
+          </div>
+
+          <div class="sliders stacked">
+            <label for="hueSlider">
+              <span class="slider-label">Hue
+                <input type="number" id="hueNumber" class="slider-number" min="0" max="360" value="225" aria-label="Hue value">
+              </span>
+              <input type="range" id="hueSlider" min="0" max="360" value="225">
+            </label>
+            <label for="satSlider">
+              <span class="slider-label">Saturation
+                <input type="number" id="satNumber" class="slider-number" min="0" max="100" value="90" aria-label="Saturation value">
+              </span>
+              <input type="range" id="satSlider" min="0" max="100" value="90">
+            </label>
+            <label for="lightSlider">
+              <span class="slider-label">Luminance
+                <input type="number" id="lightNumber" class="slider-number" min="0" max="100" value="60" aria-label="Luminance value">
+              </span>
+              <input type="range" id="lightSlider" min="0" max="100" value="60">
+            </label>
+          </div>
+        </div>
+      </div>
+      <p class="error" id="colorError" role="alert"></p>
+    </section>
+
+    <section class="panel global-adjust" aria-labelledby="global-adjust-heading">
+      <div class="section-heading-row">
+        <div>
+          <h2 id="global-adjust-heading">Global adjust</h2>
+          <p class="hint">Preview a non-destructive HSL adjustment across the whole palette. Your original colors stay saved.</p>
+        </div>
+        <button type="button" id="globalAdjustReset" class="ghost-btn">Reset</button>
+      </div>
+      <div class="sliders stacked global-adjust-sliders">
+        <label for="globalHueSlider">
+          <span class="slider-label">Hue shift <output id="globalHueValue" for="globalHueSlider">0°</output></span>
+          <input type="range" id="globalHueSlider" min="-180" max="180" value="0">
+        </label>
+        <label for="globalSatSlider">
+          <span class="slider-label">Saturation <output id="globalSatValue" for="globalSatSlider">0</output></span>
+          <input type="range" id="globalSatSlider" min="-100" max="100" value="0">
+        </label>
+        <label for="globalLightSlider">
+          <span class="slider-label">Lightness <output id="globalLightValue" for="globalLightSlider">0</output></span>
+          <input type="range" id="globalLightSlider" min="-100" max="100" value="0">
+        </label>
+      </div>
+    </section>
+    </div>
+
+    <section class="panel presets-section" aria-labelledby="presets-heading">
+      <h2 id="presets-heading">Saved presets</h2>
+      <ul id="presetList" class="preset-list"></ul>
+      <p id="presetEmpty" class="hint">Save your current palette above to recall it later.</p>
+    </section>
+  </div>
+
+  <section class="panel palette" aria-labelledby="palette-heading">
+    <div class="section-heading-row">
+      <div>
+        <h2 id="palette-heading">Palette <span id="paletteCount" class="count"></span></h2>
+        <p class="hint palette-intro">Drag a color band to change the order used everywhere below. Use Edit for its details.</p>
+      </div>
+      <div class="palette-actions">
+        <button type="button" id="importPaletteBtn" class="ghost-btn">Import</button>
+        <button type="button" id="exportPaletteBtn" class="ghost-btn" hidden>Export</button>
+        <button type="button" id="exportDerivedBtn" class="ghost-btn" hidden>Export derived</button>
+        <button type="button" id="exportGroupedBtn" class="ghost-btn" hidden>Export grouped</button>
+        <button type="button" id="clearPaletteBtn" class="ghost-btn" hidden>Clear all</button>
+      </div>
+    </div>
+    <ul id="paletteList" class="palette-ribbon"></ul>
+    <p id="paletteEmpty" class="hint">Add at least two colors to build the contrast grid.</p>
+
+    <div id="exportFamilyPanel" class="export-family-panel" hidden>
+      <div>
+        <h3>Grouped export families</h3>
+        <p class="hint">Assign each input color to a Light or Dark Surface/Ink role, or to a shared Accent temperature group. Accent exports resolve Primary and Secondary from each theme’s Sample Page selections.</p>
+      </div>
+      <div id="exportFamilyList" class="export-family-list"></div>
+      <div><button type="button" id="downloadGroupedBtn" class="ghost-btn">Download grouped derived export</button></div>
+    </div>
+
+    <div class="preset-save-row">
+      <input type="text" id="presetNameInput" placeholder="Preset name" autocomplete="off" spellcheck="false">
+      <button type="button" id="savePresetBtn" class="ghost-btn">Save as preset</button>
+    </div>
+    <p class="error" id="presetError" role="alert"></p>
+  </section>
+
+  <section class="panel custom-rainbow-section" id="customRainbowSection" hidden aria-labelledby="custom-rainbow-heading">
+    <div class="section-heading-row">
+      <div>
+        <h2 id="custom-rainbow-heading">Custom rainbow</h2>
+        <p class="hint rainbow-intro">A separate palette view: softened colors above, your inputs in the middle, and darkened colors below.</p>
+      </div>
+    </div>
+    <div class="rainbow-recipes" aria-label="Color mixing rules">
+      <label class="rainbow-recipe" for="softenMixColor">
+        <span>Soften with</span>
+        <input type="color" id="softenMixColor" value="#e5dcd7" aria-label="Softening mix color">
+        <input type="range" id="softenMixPercent" min="0" max="100" value="30" aria-label="Softening mix percentage">
+        <output id="softenMixValue" for="softenMixPercent">30%</output>
+        <button type="button" class="rainbow-reset" id="softenMixReset" title="Reset soften color">Reset</button>
+      </label>
+      <label class="rainbow-recipe" for="darkenMixColor">
+        <span>Darken with</span>
+        <input type="color" id="darkenMixColor" value="#1a1a1a" aria-label="Darkening mix color">
+        <input type="range" id="darkenMixPercent" min="0" max="100" value="28" aria-label="Darkening mix percentage">
+        <output id="darkenMixValue" for="darkenMixPercent">28%</output>
+        <button type="button" class="rainbow-reset" id="darkenMixReset" title="Reset darken color">Reset</button>
+      </label>
+    </div>
+    <p class="hint rainbow-rule-hint">Each percentage is the amount of the chosen mixing color. The remaining amount is the palette color.</p>
+    <div class="rainbow-scroll">
+      <div id="customRainbow" class="custom-rainbow" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel custom-rainbow-section" id="temperatureRainbowSection" hidden aria-labelledby="temperature-rainbow-heading">
+    <div class="section-heading-row">
+      <div>
+        <h2 id="temperature-rainbow-heading">Temperature ribbon</h2>
+        <p class="hint rainbow-intro">A separate palette view: warmed colors above, your inputs in the middle, and cooled colors below.</p>
+      </div>
+    </div>
+    <div class="rainbow-recipes" aria-label="Temperature mixing rules">
+      <label class="rainbow-recipe" for="warmMixColor">
+        <span>Warm with</span>
+        <input type="color" id="warmMixColor" value="#ff8a3d" aria-label="Warm mix color">
+        <input type="range" id="warmMixPercent" min="0" max="100" value="22" aria-label="Warm mix percentage">
+        <output id="warmMixValue" for="warmMixPercent">22%</output>
+        <button type="button" class="rainbow-reset" id="warmMixReset" title="Reset warm color">Reset</button>
+      </label>
+      <label class="rainbow-recipe" for="coolMixColor">
+        <span>Cool with</span>
+        <input type="color" id="coolMixColor" value="#559dff" aria-label="Cool mix color">
+        <input type="range" id="coolMixPercent" min="0" max="100" value="22" aria-label="Cool mix percentage">
+        <output id="coolMixValue" for="coolMixPercent">22%</output>
+        <button type="button" class="rainbow-reset" id="coolMixReset" title="Reset cool color">Reset</button>
+      </label>
+    </div>
+    <p class="hint rainbow-rule-hint">Each percentage is the amount of the chosen warm or cool mixing color. The remaining amount is the palette color.</p>
+    <div class="rainbow-scroll">
+      <div id="temperatureRainbow" class="custom-rainbow" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel grid-section" id="gridSection" hidden aria-labelledby="grid-heading">
+    <div class="section-heading-row">
+      <h2 id="grid-heading">Contrast grid</h2>
+      <div class="toggle-group">
+        <label class="toggle">
+          <input type="checkbox" id="swapAxesToggle">
+          Swap rows / columns
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="largeTextToggle">
+          Preview large / bold text
+        </label>
+        <div class="preview-text-control">
+          <label for="previewTextInput">Preview text</label>
+          <input type="text" id="previewTextInput" value="Worm Aglet" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="size-control">
+          <label for="cellSizeSlider">Swatch size</label>
+          <input type="range" id="cellSizeSlider" min="100" max="260" step="4" value="176">
+          <span id="cellSizeValue" class="size-value">176px</span>
+        </div>
+        <div class="vision-control">
+          <label for="visionSelect">Simulate vision</label>
+          <select id="visionSelect">
+            <option value="none">Normal vision</option>
+            <option value="protanopia">Protanopia (red-blind)</option>
+            <option value="deuteranopia">Deuteranopia (green-blind)</option>
+            <option value="tritanopia">Tritanopia (blue-blind)</option>
+            <option value="achromatopsia">Achromatopsia (no color)</option>
+          </select>
+          <button type="button" class="info-btn" id="visionInfoBtn" aria-expanded="false" aria-describedby="visionInfoTooltip" aria-label="About color vision simulation">?</button>
+          <div class="info-tooltip" id="visionInfoTooltip" role="tooltip" hidden>
+            <p>Swatches and samples are recolored using published approximation matrices for each color-vision deficiency (a luma-based grayscale for achromatopsia). This is a visual aid, not a clinically accurate simulation.</p>
+            <p>The <strong>simulated ratio</strong> re-runs the WCAG contrast formula on those recolored values. WCAG's contrast math only looks at luminance, so a pair can pass the real ratio yet still be hard to tell apart under a color vision deficiency that collapses their hues — the simulated ratio surfaces that gap. Treat it as a sanity check, not a certification.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="legend-item"><span class="badge pass">AA</span> normal text &ge; 4.5:1</span>
+      <span class="legend-item"><span class="badge pass">AAA</span> normal text &ge; 7:1</span>
+      <span class="legend-item"><span class="badge pass">AA L</span> large/bold text &ge; 3:1</span>
+      <span class="legend-item"><span class="badge pass">AAA L</span> large/bold text &ge; 4.5:1</span>
+    </div>
+
+    <p class="hint" id="gridAxesHint">Rows are used as the <strong>background</strong>; columns are used as the <strong>foreground (text)</strong>.</p>
+
+    <div class="grid-scroll">
+      <table id="punnettGrid"></table>
+    </div>
+  </section>
+
+  <section class="panel accent-contrast-section" id="accentContrastSection" hidden aria-labelledby="accent-contrast-heading">
+    <h2 id="accent-contrast-heading">Accent contrast</h2>
+    <p class="hint">Choose one or more palette colors as fixed backgrounds. Every other palette color is tested as softened, input, and darkened text.</p>
+    <div id="accentBackgroundSelector" class="accent-background-selector" aria-label="Choose background colors"></div>
+    <div class="accent-comparison-control">
+      <span>Accent colors to compare</span>
+      <div id="accentComparisonSelector" class="accent-background-selector" aria-label="Choose accent colors to compare"></div>
+    </div>
+    <div class="accent-comparison-control">
+      <span>Accent variants to show</span>
+      <div id="accentVariantSelector" class="accent-variant-selector" aria-label="Choose accent variants to show">
+        <button type="button" data-variant="soft" draggable="true">Soft</button><button type="button" data-variant="input" draggable="true">Input</button><button type="button" data-variant="dark" draggable="true">Dark</button><button type="button" data-variant="warm" draggable="true">Warm</button><button type="button" data-variant="cool" draggable="true">Cool</button>
+      </div>
+    </div>
+    <div class="accent-preview-control">
+      <label for="accentPreviewTextInput">Accent preview text</label>
+      <input type="text" id="accentPreviewTextInput" value="■▧◉●Worm Aglet" autocomplete="off" spellcheck="false">
+    </div>
+    <p id="accentContrastEmpty" class="hint"></p>
+    <div class="grid-scroll">
+      <table id="accentContrastGrid"></table>
+    </div>
+  </section>
+
+  <section class="panel sample-page-section" id="samplePageSection" hidden aria-labelledby="sample-page-heading">
+    <h2 id="sample-page-heading">Sample page</h2>
+    <p class="hint">Compare the same accent palette in a light and dark theme. The remaining palette colors become accents.</p>
+    <div class="sample-page-actions">
+      <div class="sample-page-theme-family light-theme-family"><strong>Light theme</strong><div class="sample-page-role"><span>Page surface</span><div id="samplePageLightSurface" class="sample-page-role-swatches" aria-label="Light theme page surface color"></div></div><div class="sample-page-role"><span>Panel surface</span><div id="samplePageLightPanel" class="sample-page-role-swatches" aria-label="Light theme panel surface color"></div></div><div class="sample-page-role"><span>Text</span><div id="samplePageLightText" class="sample-page-role-swatches" aria-label="Light theme text color"></div></div><div class="sample-page-variant-control"><span>Primary accent</span><div id="samplePageLightPrimary" class="accent-variant-selector"><button type="button" data-variant="soft">Soft</button><button type="button" data-variant="input">Input</button><button type="button" data-variant="dark">Dark</button><button type="button" data-variant="warm">Warm</button><button type="button" data-variant="cool">Cool</button></div></div><div class="sample-page-variant-control"><span>Secondary accent</span><div id="samplePageLightSecondary" class="accent-variant-selector"><button type="button" data-variant="soft">Soft</button><button type="button" data-variant="input">Input</button><button type="button" data-variant="dark">Dark</button><button type="button" data-variant="warm">Warm</button><button type="button" data-variant="cool">Cool</button></div></div></div>
+      <div class="sample-page-theme-family dark-theme-family"><strong>Dark theme</strong><div class="sample-page-role"><span>Page surface</span><div id="samplePageDarkSurface" class="sample-page-role-swatches" aria-label="Dark theme page surface color"></div></div><div class="sample-page-role"><span>Panel surface</span><div id="samplePageDarkPanel" class="sample-page-role-swatches" aria-label="Dark theme panel surface color"></div></div><div class="sample-page-role"><span>Text</span><div id="samplePageDarkText" class="sample-page-role-swatches" aria-label="Dark theme text color"></div></div><div class="sample-page-variant-control"><span>Primary accent</span><div id="samplePageDarkPrimary" class="accent-variant-selector"><button type="button" data-variant="soft">Soft</button><button type="button" data-variant="input">Input</button><button type="button" data-variant="dark">Dark</button><button type="button" data-variant="warm">Warm</button><button type="button" data-variant="cool">Cool</button></div></div><div class="sample-page-variant-control"><span>Secondary accent</span><div id="samplePageDarkSecondary" class="accent-variant-selector"><button type="button" data-variant="soft">Soft</button><button type="button" data-variant="input">Input</button><button type="button" data-variant="dark">Dark</button><button type="button" data-variant="warm">Warm</button><button type="button" data-variant="cool">Cool</button></div></div></div>
+      <div class="sample-page-accent-picker"><span>Accent colors</span><div id="samplePageAccentSelector" class="sample-page-role-swatches" aria-label="Choose colors to use as accents"></div></div>
+      <button type="button" id="openSamplePageBtn">Open sample page in new tab</button>
+      <span id="samplePageStatus" class="hint"></span>
+    </div>
+    <p id="samplePageError" class="error" role="alert"></p>
+  </section>
+
+  <section class="panel sample-ratios-section" id="sampleRatiosSection" hidden aria-labelledby="sample-ratios-heading">
+    <h2 id="sample-ratios-heading">Sample theme ratios</h2>
+    <p class="hint">Each selected Sample page accent variant against its theme panel surface.</p>
+    <div id="sampleRatiosGrid" class="sample-ratios-grid"></div>
+  </section>
+
+  <section class="panel rankings-section" id="rankingsSection" hidden aria-labelledby="rankings-heading">
+    <h2 id="rankings-heading">Rankings</h2>
+    <p class="hint">Every unique pair, best contrast first. Contrast ratio is direction-independent, so each pair appears once.</p>
+    <div class="grid-scroll">
+      <table id="rankingsTable">
+        <thead id="rankingsHead"></thead>
+        <tbody id="rankingsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel color-field-section" id="colorFieldSection" hidden aria-labelledby="color-field-heading">
+    <h2 id="color-field-heading">Palette color field</h2>
+    <p class="hint">Hue runs left to right; luminance runs from dark at the bottom to light at the top. Each point uses its actual color, so its saturation remains visible.</p>
+    <div class="color-field-plot">
+      <span class="color-field-y-axis">Luminance</span>
+      <canvas id="colorFieldCanvas" role="img" aria-label="Palette colors positioned by hue and luminance"></canvas>
+    </div>
+    <div class="color-field-x-axis"><span>0° red</span><span>Hue</span><span>360° red</span></div>
+    <div id="colorFieldLegend" class="color-field-legend"></div>
+  </section>
+
+  <section class="panel oklab-view-section" id="oklabViewSection" hidden aria-labelledby="oklab-view-heading">
+    <h2 id="oklab-view-heading">Palette in 3D OKLab</h2>
+    <p class="hint">Drag to rotate. The vertical axis is perceived lightness; <code>a</code> runs green to red and <code>b</code> runs blue to yellow.</p>
+    <canvas id="oklabViewCanvas" class="oklab-view-canvas" role="img" aria-label="Interactive 3D OKLab plot of the palette"></canvas>
+    <div id="oklabViewLegend" class="color-field-legend"></div>
+  </section>
+</main>
+
+<footer class="app-footer">
+  <p>Contrast is calculated using the WCAG 2.x relative luminance formula: (L1 + 0.05) / (L2 + 0.05).</p>
+</footer>
+
+<div class="popover-backdrop" id="editBackdrop" hidden></div>
+<div class="popover" id="editPopover" role="dialog" aria-modal="true" aria-labelledby="editPopoverTitle" hidden>
+  <div class="popover-header">
+    <h3 id="editPopoverTitle">Edit color</h3>
+    <button type="button" class="icon-btn" id="editCloseBtn" aria-label="Close">&times;</button>
+  </div>
+  <div class="popover-body">
+    <div class="editor-fields compact">
+      <div class="field-row">
+        <input type="color" id="editColorPicker" class="swatch-picker" aria-label="Pick a color">
+        <input type="text" id="editColorText" placeholder="#3366ff" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field-row">
+        <input type="text" id="editColorName" placeholder="color name" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="sliders stacked">
+        <label for="editHueSlider">
+          <span class="slider-label">Hue
+            <input type="number" id="editHueNumber" class="slider-number" min="0" max="360" aria-label="Hue value">
+          </span>
+          <input type="range" id="editHueSlider" min="0" max="360">
+        </label>
+        <label for="editSatSlider">
+          <span class="slider-label">Saturation
+            <input type="number" id="editSatNumber" class="slider-number" min="0" max="100" aria-label="Saturation value">
+          </span>
+          <input type="range" id="editSatSlider" min="0" max="100">
+        </label>
+        <label for="editLightSlider">
+          <span class="slider-label">Luminance
+            <input type="number" id="editLightNumber" class="slider-number" min="0" max="100" aria-label="Luminance value">
+          </span>
+          <input type="range" id="editLightSlider" min="0" max="100">
+        </label>
+      </div>
+    </div>
+  </div>
+  <p class="error" id="editColorError" role="alert"></p>
+  <div class="popover-actions">
+    <button type="button" class="ghost-btn danger" id="editDeleteBtn">Remove</button>
+    <div class="popover-actions-right">
+      <button type="button" class="ghost-btn" id="editCancelBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="popover-backdrop" id="importBackdrop" hidden></div>
+<div class="popover import-popover" id="importPopover" role="dialog" aria-modal="true" aria-labelledby="importPopoverTitle" hidden>
+  <div class="popover-header">
+    <h3 id="importPopoverTitle">Import palette</h3>
+    <button type="button" class="icon-btn" id="importCloseBtn" aria-label="Close">&times;</button>
+  </div>
+  <p class="hint">One color per line — hex, <code>rgb()</code>, <code>hsl()</code>, or a CSS name. Added to the current palette; duplicates are skipped.</p>
+  <textarea id="importTextarea" rows="8" placeholder="#3366ff&#10;tomato&#10;rgb(20 20 20)"></textarea>
+  <label class="ghost-btn file-btn" for="importFileInput">Choose a .txt file&hellip;</label>
+  <input type="file" id="importFileInput" accept=".txt,text/plain" hidden>
+  <p class="error" id="importError" role="alert"></p>
+  <div class="popover-actions">
+    <span></span>
+    <div class="popover-actions-right">
+      <button type="button" class="ghost-btn" id="importCancelBtn">Cancel</button>
+      <button type="button" id="importSubmitBtn">Import</button>
+    </div>
+  </div>
+</div>
+
+<script src="color-names.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

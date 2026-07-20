@@ -1,0 +1,156 @@
+/* ============================================================
+   PRIMITIVES
+   Base hues + literal neutral ramps — hand-authored, not
+   mechanically derivable from each other. Nothing outside
+   this file should reference these directly.
+   ============================================================ */
+:root {
+  /* core accent hues */
+  --red:      #fb4934;
+  --green:    #b8bb26;
+  --yellow:   #fabd2f;
+  --blue:     #83a598;
+  --purple:   #d3869b;
+  --aqua:     #8ec07c;
+  --orange:   #fe8019;
+  --blue-new: #6c8eb0;
+
+  /* grays — near-neutral, ~2-3% sat (not derivable from one base) */
+  --gray-light: #9d9b97; /* Grey Olive */
+  --gray:       #41413e; /* Charcoal Brown */
+  --gray-dark:  #2c2c2a; /* Graphite */
+
+  /* dark surface ramp: bg0 -> bg4 */
+  --bg0:   #181816;
+  --bg1:   #262421;
+  --bg1-5: #35312c;
+  --bg2:   #433d37;
+  --bg2-5: #514a43;
+  --bg3:   #5f564e;
+  --bg3-5: #6e6359;
+  --bg4:   #7c6f64;
+
+  /* light surface ramp: fg4 -> paper */
+  --fg4:   #a89984;
+  --n6:    #b4a693;
+  --n5:    #bfb3a3;
+  --n4:    #cbc0b2;
+  --n3:    #d6cec2;
+  --n2:    #e2dbd1;
+  --n1:    #ede8e1;
+  --paper: #f9f5f0;
+}
+
+/* ============================================================
+   DERIVED
+   Soft/dark accent variants computed at use-time instead of
+   stored as literals — this is what keeps the token count from
+   scaling with every new accent. Requires color-mix() support
+   (Baseline/all evergreen browsers since 2023; no IE).
+
+   Note: these are close in spirit to, but not pixel-identical
+   to, the hand-tuned values in gruvbox-extended.txt. If a
+   specific accent needs to match exactly, override it below
+   with a literal instead of relying on the mix.
+   ============================================================ */
+:root {
+  --red-soft:      color-mix(in srgb, var(--red)      70%, var(--gray-light) 30%);
+  --green-soft:    color-mix(in srgb, var(--green)    70%, var(--gray-light) 30%);
+  --yellow-soft:   color-mix(in srgb, var(--yellow)   70%, var(--gray-light) 30%);
+  --blue-soft:     color-mix(in srgb, var(--blue)     70%, var(--gray-light) 30%);
+  --purple-soft:   color-mix(in srgb, var(--purple)   70%, var(--gray-light) 30%);
+  --aqua-soft:     color-mix(in srgb, var(--aqua)     70%, var(--gray-light) 30%);
+  --orange-soft:   color-mix(in srgb, var(--orange)   70%, var(--gray-light) 30%);
+  --blue-new-soft: color-mix(in srgb, var(--blue-new) 70%, var(--gray-light) 30%);
+
+  --red-dark:      color-mix(in srgb, var(--red)      55%, black 45%); /* oxblood */
+  --green-dark:    color-mix(in srgb, var(--green)    55%, black 45%); /* hunter-green */
+  --yellow-dark:   color-mix(in srgb, var(--yellow)   55%, black 45%); /* ochre */
+  --blue-dark:     color-mix(in srgb, var(--blue)     55%, black 45%); /* petrol */
+  --purple-dark:   color-mix(in srgb, var(--purple)   55%, black 45%); /* eggplant */
+  --aqua-dark:     color-mix(in srgb, var(--aqua)     55%, black 45%); /* pine */
+  --orange-dark:   color-mix(in srgb, var(--orange)   55%, black 45%); /* burnt-orange */
+  --blue-new-dark: color-mix(in srgb, var(--blue-new) 55%, black 45%); /* navy */
+}
+
+/* ============================================================
+   SEMANTIC
+   The only layer components should ever reference. ~20 names
+   instead of 42+ — swap themes by toggling data-theme, nothing
+   else changes.
+   ============================================================ */
+:root[data-theme="dark"] {
+  --surface-bg:      var(--bg0);
+  --surface-raised:  var(--bg1);
+  --surface-overlay: var(--bg2);
+  --border:          var(--bg3);
+  --border-strong:   var(--bg3-5);
+
+  --text:            var(--paper);
+  --text-muted:      var(--bg4);
+  --text-disabled:   var(--gray);
+
+  /* chrome — the app's operating controls (buttons, sliders, dropdowns, focus) */
+  --chrome-accent:      var(--blue-new);
+  --chrome-accent-soft: var(--blue-new-soft);
+  --chrome-accent-strong: var(--blue-new-dark);
+
+  /* work surface — the applet's actual subject matter (points, edges, objects).
+     Never reuse a chrome token here, even where a value might coincide — see
+     Design Philosophy.md > Design tokens > "Two domains, never shared by name". */
+  --point-idle:     var(--green);    /* available, unselected */
+  --point-hover:    var(--blue);     /* hovered, not yet selected */
+  --point-active:   var(--purple);   /* selected / current / provisional */
+  --point-relation: var(--orange);   /* secondary relation or comparison accent */
+
+  --emphasis: var(--yellow); /* rare warm/editorial highlight; never default selection */
+  --critical: var(--red-dark); /* oxblood — destructive/irreversible, shared across domains */
+
+  --danger:          var(--red);
+  --danger-soft:     var(--red-soft);
+  --danger-strong:   var(--red-dark);
+
+  --success:         var(--green);
+  --success-soft:    var(--green-soft);
+  --success-strong:  var(--green-dark);
+
+  --warning:         var(--yellow);
+  --warning-soft:    var(--yellow-soft);
+  --warning-strong:  var(--yellow-dark);
+}
+
+:root[data-theme="light"] {
+  --surface-bg:      var(--paper);
+  --surface-raised:  var(--n1);
+  --surface-overlay: var(--n2);
+  --border:          var(--n4);
+  --border-strong:   var(--n5);
+
+  --text:            var(--bg0);
+  --text-muted:      var(--fg4);
+  --text-disabled:   var(--gray-light);
+
+  --chrome-accent:      var(--blue-new);
+  --chrome-accent-soft: var(--blue-new-soft);
+  --chrome-accent-strong: var(--blue-new-dark);
+
+  --point-idle:     var(--green);
+  --point-hover:    var(--blue);
+  --point-active:   var(--purple);
+  --point-relation: var(--orange);
+
+  --emphasis: var(--yellow);
+  --critical: var(--red-dark);
+
+  --danger:          var(--red);
+  --danger-soft:     var(--red-soft);
+  --danger-strong:   var(--red-dark);
+
+  --success:         var(--green);
+  --success-soft:    var(--green-soft);
+  --success-strong:  var(--green-dark);
+
+  --warning:         var(--yellow);
+  --warning-soft:    var(--yellow-soft);
+  --warning-strong:  var(--yellow-dark);
+}
