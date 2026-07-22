@@ -58,9 +58,13 @@ function cycleParentAnchor(kind,delta){const p=polyById($('parentSelect').value)
 function cycleParentPolygon(delta){if(!polygons.length)return;cycleSelect('parentSelect',delta);const p=polyById($('parentSelect').value);if(!p)return;selectedPolyId=p.id;selectedPolygonIds=new Set([p.id]);updateSelection();draw();}
 
 function readTheme(){
+  // Work-surface roles only — canvas code must never reach for a chrome
+  // token (e.g. --chrome-accent), even where the values happen to look
+  // similar. See design-tokens/README.md.
   const styles=getComputedStyle(document.documentElement),v=name=>styles.getPropertyValue(name).trim();
   return {
-    ink:v('--carbon'),paper:v('--paper'),blue:v('--blue'),green:v('--green'),orange:v('--orange'),plum:v('--plum'),
+    ink:v('--neutral-text'),paper:v('--neutral-surface-bg'),
+    hover:v('--work-surface-hover'),active:v('--work-surface-active'),idle:v('--work-surface-idle'),relation:v('--work-surface-relation'),
     grid:v('--grid-line'),membrane:v('--membrane-fill'),selMembrane:v('--membrane-fill-selected'),
     ghostFill:v('--ghost-fill'),attachLine:v('--attach-line'),ghostRing:v('--ghost-ring')
   };
@@ -69,43 +73,44 @@ let uiTheme=readTheme();
 function drawGrid(){const r=canvas.getBoundingClientRect();ctx.save();ctx.strokeStyle=uiTheme.grid;ctx.lineWidth=1;for(let x=0;x<r.width;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,r.height);ctx.stroke();}for(let y=0;y<r.height;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(r.width,y);ctx.stroke();}ctx.restore();}
 function edgeOffset(a,b,p,side,gap){const d=norm({x:-(b.y-a.y),y:b.x-a.x});const m=midpoint(a,b),toward={x:p.x-m.x,y:p.y-m.y};let sign=(d.x*toward.x+d.y*toward.y)>=0?1:-1;if(side==='outside')sign*=-1;return{x:d.x*gap*sign,y:d.y*gap*sign};}
 function strokeLine(a,b,width=1.6,style=null){ctx.strokeStyle=style||uiTheme.ink;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
-function drawEdge(a,b,p,edge,selected=false,hovered=false){if(edge.type==='removed')return;const color=hovered?uiTheme.blue:selected?uiTheme.orange:uiTheme.ink,width=hovered?3.15:selected?3.15:1.65;strokeLine(a,b,width,color);if(edge.type==='parallel'||edge.type==='double'){for(let line=1;line<=Math.max(1,edge.parallelCount||1);line++){const o=edgeOffset(a,b,p,edge.doubleSide,edge.gap*line);strokeLine({x:a.x+o.x,y:a.y+o.y},{x:b.x+o.x,y:b.y+o.y},hovered?2.2:1.35,color);}}if(edge.type==='hash'){const d={x:b.x-a.x,y:b.y-a.y},n=norm({x:-d.y,y:d.x});for(let k=1;k<=edge.hashCount;k++){const t=k/(edge.hashCount+1),m={x:a.x+d.x*t,y:a.y+d.y*t},h=edge.hashLength/2;strokeLine({x:m.x-n.x*h,y:m.y-n.y*h},{x:m.x+n.x*h,y:m.y+n.y*h},hovered?2:1.25,color);}}
+const HOVER_WIDTH_SCALE=2.0;
+function drawEdge(a,b,p,edge,selected=false,hovered=false){if(edge.type==='removed')return;const color=hovered?uiTheme.hover:selected?uiTheme.active:uiTheme.ink,edgeBase=1.65,parallelBase=1.35,hashBase=1.25,width=hovered?edgeBase*HOVER_WIDTH_SCALE:selected?3.15:edgeBase;strokeLine(a,b,width,color);if(edge.type==='parallel'||edge.type==='double'){for(let line=1;line<=Math.max(1,edge.parallelCount||1);line++){const o=edgeOffset(a,b,p,edge.doubleSide,edge.gap*line);strokeLine({x:a.x+o.x,y:a.y+o.y},{x:b.x+o.x,y:b.y+o.y},hovered?parallelBase*HOVER_WIDTH_SCALE:parallelBase,color);}}if(edge.type==='hash'){const d={x:b.x-a.x,y:b.y-a.y},n=norm({x:-d.y,y:d.x});for(let k=1;k<=edge.hashCount;k++){const t=k/(edge.hashCount+1),m={x:a.x+d.x*t,y:a.y+d.y*t},h=edge.hashLength/2;strokeLine({x:m.x-n.x*h,y:m.y-n.y*h},{x:m.x+n.x*h,y:m.y+n.y*h},hovered?hashBase*HOVER_WIDTH_SCALE:hashBase,color);}}
 }
 function drawFeatureLabels(p,v){
  ctx.save();ctx.font='9px ui-monospace';ctx.textAlign='center';ctx.textBaseline='middle';
  for(let i=0;i<v.length;i++){
    const a=v[i],b=v[(i+1)%v.length],m=midpoint(a,b),rv=norm({x:a.x-p.x,y:a.y-p.y}),rm=norm({x:m.x-p.x,y:m.y-p.y});
-   ctx.fillStyle=uiTheme.orange;ctx.fillText(`V${i}`,a.x+rv.x*13,a.y+rv.y*13);
-   ctx.fillStyle=uiTheme.green;ctx.fillText(`M${i}`,m.x+rm.x*12,m.y+rm.y*12);
-   ctx.fillStyle=uiTheme.plum;ctx.fillText(`E${i}`,m.x-rm.x*12,m.y-rm.y*12);
+   ctx.fillStyle=uiTheme.active;ctx.fillText(`V${i}`,a.x+rv.x*13,a.y+rv.y*13);
+   ctx.fillStyle=uiTheme.idle;ctx.fillText(`M${i}`,m.x+rm.x*12,m.y+rm.y*12);
+   ctx.fillStyle=uiTheme.relation;ctx.fillText(`E${i}`,m.x-rm.x*12,m.y-rm.y*12);
  }
  ctx.restore();
 }
 function drawPolygon(p){const v=vertices(p),sel=p.id===selectedPolyId,hovered=hoverTarget?.poly.id===p.id,hoverFeature=hovered?hoverTarget.feature:null,hoverIndex=hovered?hoverTarget.index:null;ctx.save();if(viewMode==='membrane'){ctx.fillStyle=sel?uiTheme.selMembrane:uiTheme.membrane;ctx.beginPath();v.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.fill();}
  for(let i=0;i<v.length;i++){const edgeSel=selectedEdge&&selectedEdge.polyId===p.id&&selectedEdges.includes(i),edgeHover=(hoverFeature==='edge'||hoverFeature==='edge midpoint')&&hoverIndex===i;drawEdge(v[i],v[(i+1)%v.length],p,p.edges[i],edgeSel,edgeHover);}
- if(viewMode==='construction')for(let i=0;i<v.length;i++){const q=v[i],pointHover=hoverFeature==='vertex'&&hoverIndex===i;ctx.fillStyle=pointHover?uiTheme.blue:sel?uiTheme.orange:uiTheme.green;ctx.beginPath();ctx.arc(q.x,q.y,pointHover?4.8:sel?3.6:3,0,TAU);ctx.fill();}
+ if(viewMode==='construction')for(let i=0;i<v.length;i++){const q=v[i],pointHover=hoverFeature==='vertex'&&hoverIndex===i;ctx.fillStyle=pointHover?uiTheme.hover:sel?uiTheme.active:uiTheme.idle;ctx.beginPath();ctx.arc(q.x,q.y,pointHover?4.8:sel?3.6:3,0,TAU);ctx.fill();}
  if(viewMode==='construction'||viewMode==='graph'){
-   const centerHover=hoverFeature==='center'||hoverFeature==='polygon';ctx.fillStyle=uiTheme.paper;ctx.strokeStyle=centerHover?uiTheme.blue:sel?uiTheme.orange:uiTheme.ink;ctx.lineWidth=centerHover?2.5:sel?1.68:1.4;ctx.beginPath();ctx.arc(p.x,p.y,centerHover?14:sel?12:10,0,TAU);ctx.fill();ctx.stroke();
-   ctx.fillStyle=centerHover?uiTheme.blue:sel?uiTheme.orange:uiTheme.ink;ctx.font='10px "DM Mono", ui-monospace';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillText(String(p.id),p.x,p.y+3.5);
-   if(showPolygonRoles){ctx.font='9px ui-monospace';ctx.textBaseline='top';ctx.fillStyle=sel?uiTheme.orange:uiTheme.green;ctx.fillText(p.role,p.x,p.y+13);}
+   const centerHover=hoverFeature==='center'||hoverFeature==='polygon';ctx.fillStyle=uiTheme.paper;ctx.strokeStyle=centerHover?uiTheme.hover:sel?uiTheme.active:uiTheme.ink;ctx.lineWidth=centerHover?2.5:sel?1.68:1.4;ctx.beginPath();ctx.arc(p.x,p.y,centerHover?14:sel?12:10,0,TAU);ctx.fill();ctx.stroke();
+   ctx.fillStyle=centerHover?uiTheme.hover:sel?uiTheme.active:uiTheme.ink;ctx.font='10px "DM Mono", ui-monospace';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillText(String(p.id),p.x,p.y+3.5);
+   if(showPolygonRoles){ctx.font='9px ui-monospace';ctx.textBaseline='top';ctx.fillStyle=sel?uiTheme.active:uiTheme.idle;ctx.fillText(p.role,p.x,p.y+13);}
  }
  if(showFeatureLabels)drawFeatureLabels(p,v);
  ctx.restore();}
-function drawAttachments(){if(viewMode!=='construction'&&viewMode!=='graph')return;ctx.save();ctx.setLineDash([5,5]);ctx.lineWidth=1;for(const a of attachments){const p=polyById(a.parentId),c=polyById(a.childId);if(!p||!c)continue;ctx.strokeStyle=uiTheme.attachLine;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(c.x,c.y);ctx.stroke();if(viewMode==='graph'){const m=midpoint(p,c);ctx.setLineDash([]);ctx.fillStyle=uiTheme.paper;ctx.strokeStyle=uiTheme.plum;ctx.fillRect(m.x-32,m.y-8,64,16);ctx.strokeRect(m.x-32,m.y-8,64,16);ctx.fillStyle=uiTheme.ink;ctx.font='9px "DM Mono", ui-monospace';ctx.textAlign='center';ctx.fillText(a.relation,m.x,m.y+3);ctx.setLineDash([5,5]);}}
+function drawAttachments(){if(viewMode!=='construction'&&viewMode!=='graph')return;ctx.save();ctx.setLineDash([5,5]);ctx.lineWidth=1;for(const a of attachments){const p=polyById(a.parentId),c=polyById(a.childId);if(!p||!c)continue;ctx.strokeStyle=uiTheme.attachLine;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(c.x,c.y);ctx.stroke();if(viewMode==='graph'){const m=midpoint(p,c);ctx.setLineDash([]);ctx.fillStyle=uiTheme.paper;ctx.strokeStyle=uiTheme.relation;ctx.fillRect(m.x-32,m.y-8,64,16);ctx.strokeRect(m.x-32,m.y-8,64,16);ctx.fillStyle=uiTheme.ink;ctx.font='9px "DM Mono", ui-monospace';ctx.textAlign='center';ctx.fillText(a.relation,m.x,m.y+3);ctx.setLineDash([5,5]);}}
 ctx.restore();}
-function drawAnchorCue(){if(showGhost||viewMode!=='construction')return;const parent=polyById($('parentSelect').value);if(!parent)return;const point=featurePoint(parent,$('parentFeature').value,+$('parentIndex').value),angle=anchorFrameAngle(parent,$('parentFeature').value,+$('parentIndex').value,$('orientationInput').value,+$('angleInput').value),u={x:Math.cos(angle),y:Math.sin(angle)},start={x:point.x+u.x*36,y:point.y+u.y*36},tip={x:point.x+u.x*10,y:point.y+u.y*10},head=9;ctx.save();ctx.strokeStyle=uiTheme.orange;ctx.fillStyle=uiTheme.orange;ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(tip.x+Math.cos(angle+.65)*head,tip.y+Math.sin(angle+.65)*head);ctx.lineTo(tip.x+Math.cos(angle-.65)*head,tip.y+Math.sin(angle-.65)*head);ctx.closePath();ctx.fill();ctx.strokeStyle=uiTheme.blue;ctx.beginPath();ctx.arc(point.x,point.y,7.2,0,TAU);ctx.stroke();ctx.restore();}
+function drawAnchorCue(){if(showGhost||viewMode!=='construction')return;const parent=polyById($('parentSelect').value);if(!parent)return;const point=featurePoint(parent,$('parentFeature').value,+$('parentIndex').value),angle=anchorFrameAngle(parent,$('parentFeature').value,+$('parentIndex').value,$('orientationInput').value,+$('angleInput').value),u={x:Math.cos(angle),y:Math.sin(angle)},start={x:point.x+u.x*36,y:point.y+u.y*36},tip={x:point.x+u.x*10,y:point.y+u.y*10},head=9;ctx.save();ctx.strokeStyle=uiTheme.active;ctx.fillStyle=uiTheme.active;ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(tip.x+Math.cos(angle+.65)*head,tip.y+Math.sin(angle+.65)*head);ctx.lineTo(tip.x+Math.cos(angle-.65)*head,tip.y+Math.sin(angle-.65)*head);ctx.closePath();ctx.fill();ctx.strokeStyle=uiTheme.hover;ctx.beginPath();ctx.arc(point.x,point.y,7.2,0,TAU);ctx.stroke();ctx.restore();}
 function drawGhost(){
  if(!showGhost || viewMode!=='construction' || !polygons.length)return;
  const ghost=buildProposedChild(false);if(!ghost)return;
  const v=vertices(ghost),parent=polyById($('parentSelect').value),pf=$('parentFeature').value,pi=+$('parentIndex').value,cf=$('childFeature').value,ci=+$('childIndex').value;
- ctx.save();ctx.globalAlpha=.48;ctx.setLineDash([8,6]);ctx.strokeStyle=uiTheme.orange;ctx.lineWidth=1.8;ctx.beginPath();v.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.stroke();ctx.setLineDash([]);
+ ctx.save();ctx.globalAlpha=.48;ctx.setLineDash([8,6]);ctx.strokeStyle=uiTheme.active;ctx.lineWidth=1.8;ctx.beginPath();v.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.stroke();ctx.setLineDash([]);
  ctx.fillStyle=uiTheme.ghostFill;ctx.fill();
- const childPoint=featurePoint(ghost,cf,ci);ctx.fillStyle=uiTheme.orange;ctx.beginPath();ctx.arc(childPoint.x,childPoint.y,4.5,0,TAU);ctx.fill();
+ const childPoint=featurePoint(ghost,cf,ci);ctx.fillStyle=uiTheme.active;ctx.beginPath();ctx.arc(childPoint.x,childPoint.y,4.5,0,TAU);ctx.fill();
  if(parent){const parentPoint=featurePoint(parent,pf,pi);ctx.strokeStyle=uiTheme.ghostRing;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(parentPoint.x,parentPoint.y,6,0,TAU);ctx.stroke();}
  if(showFeatureLabels)drawFeatureLabels(ghost,v);
  ctx.restore();
 }
-function drawTransformPreview(){if(!pendingTransform)return;ctx.save();ctx.globalAlpha=.42;ctx.setLineDash([8,6]);for(const p of pendingTransform.previewPolygons){const v=vertices(p);ctx.strokeStyle=uiTheme.orange;ctx.lineWidth=2;ctx.beginPath();v.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.stroke();}ctx.restore();}
+function drawTransformPreview(){if(!pendingTransform)return;ctx.save();ctx.globalAlpha=.42;ctx.setLineDash([8,6]);for(const p of pendingTransform.previewPolygons){const v=vertices(p);ctx.strokeStyle=uiTheme.active;ctx.lineWidth=2;ctx.beginPath();v.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();ctx.stroke();}ctx.restore();}
  function draw(){refreshAttachmentConstraints();const r=canvas.getBoundingClientRect();ctx.clearRect(0,0,r.width,r.height);drawGrid();drawAttachments();for(const p of polygons)drawPolygon(p);drawAnchorCue();drawGhost();drawTransformPreview();updateStats();}
 
 function featureIndexOptions(type,count,intersectionCount=0){

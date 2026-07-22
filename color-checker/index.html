@@ -9,7 +9,7 @@
 <body>
 <header class="app-header">
   <h1>Color Contrast Checker</h1>
-  <p class="subtitle">Build a palette, plot every color against every other as a foreground/background pair, and score each pairing against WCAG 2.x contrast requirements.</p>
+  <p class="subtitle">Build a palette, plot every color against every other as a foreground/background pair, and score each pairing against APCA (Advanced Perceptual Contrast Algorithm) guidance.</p>
 </header>
 
 <main>
@@ -217,17 +217,17 @@
           <button type="button" class="info-btn" id="visionInfoBtn" aria-expanded="false" aria-describedby="visionInfoTooltip" aria-label="About color vision simulation">?</button>
           <div class="info-tooltip" id="visionInfoTooltip" role="tooltip" hidden>
             <p>Swatches and samples are recolored using published approximation matrices for each color-vision deficiency (a luma-based grayscale for achromatopsia). This is a visual aid, not a clinically accurate simulation.</p>
-            <p>The <strong>simulated ratio</strong> re-runs the WCAG contrast formula on those recolored values. WCAG's contrast math only looks at luminance, so a pair can pass the real ratio yet still be hard to tell apart under a color vision deficiency that collapses their hues — the simulated ratio surfaces that gap. Treat it as a sanity check, not a certification.</p>
+            <p>The <strong>simulated Lc</strong> re-runs the APCA contrast formula on those recolored values. APCA's contrast math only looks at luminance, so a pair can pass the real Lc yet still be hard to tell apart under a color vision deficiency that collapses their hues — the simulated Lc surfaces that gap. Treat it as a sanity check, not a certification.</p>
           </div>
         </div>
       </div>
     </div>
 
     <div class="legend">
-      <span class="legend-item"><span class="badge pass">AA</span> normal text &ge; 4.5:1</span>
-      <span class="legend-item"><span class="badge pass">AAA</span> normal text &ge; 7:1</span>
-      <span class="legend-item"><span class="badge pass">AA L</span> large/bold text &ge; 3:1</span>
-      <span class="legend-item"><span class="badge pass">AAA L</span> large/bold text &ge; 4.5:1</span>
+      <span class="legend-item"><span class="badge pass">Body</span> fluent body text &ge; Lc 75</span>
+      <span class="legend-item"><span class="badge pass">Large</span> larger text &ge; Lc 60</span>
+      <span class="legend-item"><span class="badge warn">Bold</span> large/bold text &ge; Lc 45</span>
+      <span class="legend-item"><span class="badge warn">Spot</span> spot-readable/non-text &ge; Lc 30</span>
     </div>
 
     <p class="hint" id="gridAxesHint">Rows are used as the <strong>background</strong>; columns are used as the <strong>foreground (text)</strong>.</p>
@@ -269,6 +269,7 @@
       <div class="sample-page-theme-family dark-theme-family"><strong>Dark theme</strong><div class="sample-page-role"><span>Page surface</span><div id="samplePageDarkSurface" class="sample-page-role-swatches" aria-label="Dark theme page surface color"></div></div><div class="sample-page-role"><span>Panel surface</span><div id="samplePageDarkPanel" class="sample-page-role-swatches" aria-label="Dark theme panel surface color"></div></div><div class="sample-page-role"><span>Text</span><div id="samplePageDarkText" class="sample-page-role-swatches" aria-label="Dark theme text color"></div></div><div class="sample-page-variant-control"><span>Primary accent</span><div id="samplePageDarkPrimary" class="accent-variant-selector"><button type="button" data-variant="soft">Soft</button><button type="button" data-variant="input">Input</button><button type="button" data-variant="dark">Dark</button><button type="button" data-variant="warm">Warm</button><button type="button" data-variant="cool">Cool</button></div></div><div class="sample-page-variant-control"><span>Secondary accent</span><div id="samplePageDarkSecondary" class="accent-variant-selector"><button type="button" data-variant="soft">Soft</button><button type="button" data-variant="input">Input</button><button type="button" data-variant="dark">Dark</button><button type="button" data-variant="warm">Warm</button><button type="button" data-variant="cool">Cool</button></div></div></div>
       <div class="sample-page-accent-picker"><span>Accent colors</span><div id="samplePageAccentSelector" class="sample-page-role-swatches" aria-label="Choose colors to use as accents"></div></div>
       <button type="button" id="openSamplePageBtn">Open sample page in new tab</button>
+      <button type="button" id="openUiSampleBtn">UI Sample</button>
       <span id="samplePageStatus" class="hint"></span>
     </div>
     <p id="samplePageError" class="error" role="alert"></p>
@@ -282,7 +283,7 @@
 
   <section class="panel rankings-section" id="rankingsSection" hidden aria-labelledby="rankings-heading">
     <h2 id="rankings-heading">Rankings</h2>
-    <p class="hint">Every unique pair, best contrast first. Contrast ratio is direction-independent, so each pair appears once.</p>
+    <p class="hint">Every unique pair, best |Lc| first. APCA contrast is direction-sensitive (text vs. background), so each pair appears twice.</p>
     <div class="grid-scroll">
       <table id="rankingsTable">
         <thead id="rankingsHead"></thead>
@@ -311,7 +312,7 @@
 </main>
 
 <footer class="app-footer">
-  <p>Contrast is calculated using the WCAG 2.x relative luminance formula: (L1 + 0.05) / (L2 + 0.05).</p>
+  <p>Contrast is calculated using APCA (Advanced Perceptual Contrast Algorithm) — <a href="https://github.com/Myndex/apca-w3" target="_blank" rel="noopener">apca-w3</a>, W3-licensed reference implementation. Lc values are signed and direction-sensitive: positive means dark text on a light background, negative means light text on a dark background.</p>
 </footer>
 
 <div class="popover-backdrop" id="editBackdrop" hidden></div>

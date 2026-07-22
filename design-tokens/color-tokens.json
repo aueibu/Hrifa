@@ -1,0 +1,186 @@
+{
+  "color": {
+    "base": {
+      "gray": {
+        "50": { "value": "#f6efe7", "type": "color", "locked": true },
+        "100": { "value": "#ece5e0", "type": "color" },
+        "200": { "value": "#cec8c5", "type": "color" },
+        "300": { "value": "#bbb6b0", "type": "color" },
+        "400": { "value": "#a19d97", "type": "color" },
+        "500": { "value": "#86837f", "type": "color" },
+        "600": { "value": "#696663", "type": "color" },
+        "700": { "value": "#52514f", "type": "color" },
+        "800": { "value": "#383736", "type": "color" },
+        "900": { "value": "#1e1a1a", "type": "color" },
+        "950": { "value": "#141111", "type": "color", "locked": true }
+      },
+      "red": {
+        "50": { "value": "#a0140f", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#f9e1de", "type": "color", "locked": true },
+        "200": { "value": "#f0bdb3", "type": "color" },
+        "300": { "value": "#e3a8a2", "type": "color" },
+        "400": { "value": "#d88885", "type": "color" },
+        "500": { "value": "#e5504b", "type": "color" },
+        "600": { "value": "#ae4242", "type": "color" },
+        "700": { "value": "#823b3b", "type": "color" },
+        "800": { "value": "#542c27", "type": "color" },
+        "900": { "value": "#281717", "type": "color" },
+        "950": { "value": "#141111", "type": "color" }
+      },
+      "orange": {
+        "50": { "value": "#cc5500", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#f2e4d4", "type": "color", "locked": true },
+        "200": { "value": "#f3bf90", "type": "color" },
+        "300": { "value": "#f1a57b", "type": "color" },
+        "400": { "value": "#e68451", "type": "color" },
+        "500": { "value": "#d95d35", "type": "color" },
+        "600": { "value": "#935832", "type": "color" },
+        "700": { "value": "#694b2f", "type": "color" },
+        "800": { "value": "#413526", "type": "color" },
+        "900": { "value": "#1f1a17", "type": "color" },
+        "950": { "value": "#15110f", "type": "color" }
+      },
+      "yellow": {
+        "50": { "value": "#e4b92d", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#f5e6af", "type": "color", "locked": true },
+        "200": { "value": "#e2c86b", "type": "color" },
+        "300": { "value": "#d5b442", "type": "color" },
+        "400": { "value": "#b99b3b", "type": "color" },
+        "500": { "value": "#9b803f", "type": "color" },
+        "600": { "value": "#776440", "type": "color" },
+        "700": { "value": "#5d4f3b", "type": "color" },
+        "800": { "value": "#3d362f", "type": "color" },
+        "900": { "value": "#1f1a17", "type": "color" },
+        "950": { "value": "#14110f", "type": "color" }
+      },
+      "ygreen": {
+        "50": { "value": "#47792d", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#dfeacd", "type": "color", "locked": true },
+        "200": { "value": "#bad0a1", "type": "color" },
+        "300": { "value": "#a5c07c", "type": "color" },
+        "400": { "value": "#89a85a", "type": "color" },
+        "500": { "value": "#6c8e3c", "type": "color" },
+        "600": { "value": "#546f29", "type": "color" },
+        "700": { "value": "#465631", "type": "color" },
+        "800": { "value": "#323a28", "type": "color" },
+        "900": { "value": "#181d15", "type": "color" },
+        "950": { "value": "#10120f", "type": "color" }
+      },
+      "green": {
+        "50": { "value": "#0a5237", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints." },
+        "100": { "value": "#d5ecdd", "type": "color", "locked": true },
+        "200": { "value": "#96d7b1", "type": "color" },
+        "300": { "value": "#7bc69b", "type": "color" },
+        "400": { "value": "#57ae7f", "type": "color" },
+        "500": { "value": "#3e9367", "type": "color" },
+        "600": { "value": "#2d734f", "type": "color" },
+        "700": { "value": "#325943", "type": "color" },
+        "800": { "value": "#253c2e", "type": "color" },
+        "900": { "value": "#151d18", "type": "color" },
+        "950": { "value": "#0f1210", "type": "color" }
+      },
+      "teal": {
+        "50": { "value": "#449eab", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#cfebf2", "type": "color", "locked": true },
+        "200": { "value": "#92d4df", "type": "color" },
+        "300": { "value": "#5fc5d6", "type": "color" },
+        "400": { "value": "#4aaaba", "type": "color" },
+        "500": { "value": "#2590a3", "type": "color" },
+        "600": { "value": "#326e7f", "type": "color" },
+        "700": { "value": "#2f5759", "type": "color" },
+        "800": { "value": "#263b38", "type": "color" },
+        "900": { "value": "#131d1f", "type": "color" },
+        "950": { "value": "#0d1313", "type": "color" }
+      },
+      "blue": {
+        "50": { "value": "#3eaad5", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#d9e8f6", "type": "color", "locked": true },
+        "200": { "value": "#aacdec", "type": "color" },
+        "300": { "value": "#7cbeea", "type": "color" },
+        "400": { "value": "#68a2d7", "type": "color" },
+        "500": { "value": "#5686c2", "type": "color" },
+        "600": { "value": "#3d6a92", "type": "color" },
+        "700": { "value": "#2c5474", "type": "color" },
+        "800": { "value": "#263949", "type": "color" },
+        "900": { "value": "#121c23", "type": "color" },
+        "950": { "value": "#0c1216", "type": "color" }
+      },
+      "purple": {
+        "50": { "value": "#553d70", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#ebe3f9", "type": "color", "locked": true },
+        "200": { "value": "#d0c3e9", "type": "color" },
+        "300": { "value": "#c0ade6", "type": "color" },
+        "400": { "value": "#a892d7", "type": "color" },
+        "500": { "value": "#8e78bc", "type": "color" },
+        "600": { "value": "#715b9e", "type": "color" },
+        "700": { "value": "#59487b", "type": "color" },
+        "800": { "value": "#3a334a", "type": "color" },
+        "900": { "value": "#1d1925", "type": "color" },
+        "950": { "value": "#121117", "type": "color" }
+      },
+      "magenta": {
+        "50": { "value": "#7a2469", "type": "color", "comment": "Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints.", "locked": true },
+        "100": { "value": "#f5e0ef", "type": "color", "locked": true },
+        "200": { "value": "#edbadf", "type": "color" },
+        "300": { "value": "#e1a4d1", "type": "color" },
+        "400": { "value": "#cc87bb", "type": "color" },
+        "500": { "value": "#b967a6", "type": "color" },
+        "600": { "value": "#905081", "type": "color" },
+        "700": { "value": "#6d4364", "type": "color" },
+        "800": { "value": "#443140", "type": "color" },
+        "900": { "value": "#211920", "type": "color" },
+        "950": { "value": "#141014", "type": "color" }
+      }
+    },
+    "theme": {
+      "light": {
+        "neutral": {
+          "surface-bg": { "value": "{color.base.gray.50}", "type": "color", "comment": "Default page/canvas background." },
+          "surface-raised": { "value": "{color.base.gray.100}", "type": "color", "comment": "Panels and instrument chrome." },
+          "surface-overlay": { "value": "{color.base.gray.200}", "type": "color", "comment": "Modals, dropdowns, popovers." },
+          "border": { "value": "{color.base.gray.300}", "type": "color", "comment": "Default rules and dividers." },
+          "border-strong": { "value": "{color.base.gray.400}", "type": "color", "comment": "Emphasized rules, active containers." },
+          "text": { "value": "{color.base.gray.950}", "type": "color", "comment": "Default ink." },
+          "text-muted": { "value": "{color.base.gray.700}", "type": "color", "comment": "Secondary or supporting text." },
+          "text-disabled": { "value": "{color.base.gray.400}", "type": "color", "comment": "Disabled labels and values." },
+          "shadow": { "value": "{color.base.gray.800}", "type": "color", "comment": "Drop-shadow / offset-accent ink." }
+        },
+        "chrome": {
+          "accent": { "value": "{color.base.blue.700}", "type": "color", "comment": "Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code." }
+        },
+        "work-surface": {
+          "idle": { "value": "{color.base.green.800}", "type": "color", "comment": "Available but unselected points, edges, or objects." },
+          "hover": { "value": "{color.base.orange.500}", "type": "color", "comment": "Hovered point/edge/object, prior to selection." },
+          "active": { "value": "{color.base.orange.600}", "type": "color", "comment": "Selected, current, or provisional/preview geometry. Shares a hue with hover by deliberate choice; distinguished by size/weight/dash treatment instead of colour." },
+          "relation": { "value": "{color.base.purple.700}", "type": "color", "comment": "A second object referenced against the active one — comparison, not selection." }
+        },
+        "emphasis": { "value": "{color.base.yellow.500}", "type": "color", "comment": "Rare warm or editorial highlight. Never the default selection colour." },
+        "critical": { "value": "{color.base.red.500}", "type": "color", "comment": "Destructive, critical, or irreversible action — deliberately deeper than the base red." }
+      },
+      "dark": {
+        "neutral": {
+          "surface-bg": { "value": "{color.base.gray.900}", "type": "color", "comment": "Default page/canvas background." },
+          "surface-raised": { "value": "{color.base.gray.950}", "type": "color", "comment": "Panels and instrument chrome." },
+          "surface-overlay": { "value": "{color.base.gray.800}", "type": "color", "comment": "Modals, dropdowns, popovers." },
+          "border": { "value": "{color.base.gray.700}", "type": "color", "comment": "Default rules and dividers." },
+          "border-strong": { "value": "{color.base.gray.600}", "type": "color", "comment": "Emphasized rules, active containers." },
+          "text": { "value": "{color.base.gray.50}", "type": "color", "comment": "Default ink." },
+          "text-muted": { "value": "{color.base.gray.400}", "type": "color", "comment": "Secondary or supporting text." },
+          "text-disabled": { "value": "{color.base.gray.600}", "type": "color", "comment": "Disabled labels and values." },
+          "shadow": { "value": "{color.base.gray.300}", "type": "color", "comment": "Drop-shadow / offset-accent ink." }
+        },
+        "chrome": {
+          "accent": { "value": "{color.base.purple.400}", "type": "color", "comment": "Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code." }
+        },
+        "work-surface": {
+          "idle": { "value": "{color.base.green.300}", "type": "color", "comment": "Available but unselected points, edges, or objects." },
+          "hover": { "value": "{color.base.orange.200}", "type": "color", "comment": "Hovered point/edge/object, prior to selection." },
+          "active": { "value": "{color.base.orange.300}", "type": "color", "comment": "Selected, current, or provisional/preview geometry. Shares a hue with hover by deliberate choice; distinguished by size/weight/dash treatment instead of colour." },
+          "relation": { "value": "{color.base.purple.300}", "type": "color", "comment": "A second object referenced against the active one — comparison, not selection." }
+        },
+        "emphasis": { "value": "{color.base.yellow.300}", "type": "color", "comment": "Rare warm or editorial highlight. Never the default selection colour." },
+        "critical": { "value": "{color.base.red.500}", "type": "color", "comment": "Destructive, critical, or irreversible action — deliberately deeper/more intense than the other dark-theme accents." }
+      }
+    }
+  }
+}

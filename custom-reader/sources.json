@@ -1,0 +1,14 @@
+[
+  { "name": "Aeon", "url": "https://aeon.co/feed.rss", "fullContent": false },
+  { "name": "Psyche", "url": "https://psyche.co/feed.rss", "fullContent": false },
+  { "name": "The Conversation", "url": "https://theconversation.com/global/articles.atom", "fullContent": true },
+  { "name": "Poetry Foundation", "url": "https://www.poetryfoundation.org/rss/poemoftheday", "fullContent": false },
+  { "name": "Tricycle", "url": "https://tricycle.org/feed/", "fullContent": false },
+  { "name": "NYRB", "url": "http://feeds.feedburner.com/nybooks", "fullContent": false },
+  { "name": "LRB", "url": "https://www.lrb.co.uk/feeds/rss", "fullContent": false },
+  { "name": "Read a Little Poetry", "url": "https://readalittlepoetry.com/feed/", "fullContent": false },
+  { "name": "Via Negativa", "url": "https://www.vianegativa.us/feed/", "fullContent": false },
+  { "name": "And Other Poems", "url": "https://andotherpoems.com/feed/", "fullContent": false },
+  { "name": "AP News (via Google News)", "url": "https://news.google.com/rss/search?q=site:apnews.com&hl=en-US&gl=US&ceid=US:en", "fullContent": false },
+  { "name": "Reuters (via Google News)", "url": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en", "fullContent": false }
+]

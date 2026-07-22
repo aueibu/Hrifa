@@ -106,48 +106,113 @@
     };
   }
 
-  // ---------- WCAG contrast math ----------
+  // ---------- APCA (Advanced Perceptual Contrast Algorithm) contrast math ----------
+  // Port of apca-w3 0.1.9 "G-4g" core (APCAcontrast + sRGBtoY):
+  // https://github.com/Myndex/apca-w3 — W3-licensed reference implementation.
 
-  function relativeLuminance({ r, g, b }) {
-    const lin = (c) => {
-      c /= 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    };
-    const R = lin(r), G = lin(g), B = lin(b);
-    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
-  }
-
-  function contrastRatio(rgbA, rgbB) {
-    const l1 = relativeLuminance(rgbA);
-    const l2 = relativeLuminance(rgbB);
-    const lighter = Math.max(l1, l2);
-    const darker = Math.min(l1, l2);
-    return (lighter + 0.05) / (darker + 0.05);
-  }
-
-  const WCAG_THRESHOLDS = {
-    aaNormal: 4.5,
-    aaaNormal: 7,
-    aaLarge: 3,
-    aaaLarge: 4.5,
+  const SA98G = {
+    mainTRC: 2.4,
+    sRco: 0.2126729,
+    sGco: 0.7151522,
+    sBco: 0.0721750,
+    normBG: 0.56,
+    normTXT: 0.57,
+    revTXT: 0.62,
+    revBG: 0.65,
+    blkThrs: 0.022,
+    blkClmp: 1.414,
+    scaleBoW: 1.14,
+    scaleWoB: 1.14,
+    loBoWoffset: 0.027,
+    loWoBoffset: 0.027,
+    deltaYmin: 0.0005,
+    loClip: 0.1,
   };
 
-  function evaluate(ratio) {
+  // Linearized, coefficient-weighted luminance (Y) for sRGB 0-255 channels.
+  function sRGBtoY({ r, g, b }) {
+    const simpleExp = (channel) => Math.pow(channel / 255, SA98G.mainTRC);
+    return SA98G.sRco * simpleExp(r) + SA98G.sGco * simpleExp(g) + SA98G.sBco * simpleExp(b);
+  }
+
+  // Signed perceptual contrast (Lc) between text luminance and background luminance.
+  // Order matters — swapping text/bg does NOT just flip the sign of the same magnitude.
+  // Positive Lc = dark text on a light background; negative Lc = light text on a dark background.
+  function apcaContrast(txtY, bgY) {
+    if (Number.isNaN(txtY) || Number.isNaN(bgY) || Math.min(txtY, bgY) < 0 || Math.max(txtY, bgY) > 1.1) {
+      return 0;
+    }
+    const softClamp = (y) => (y > SA98G.blkThrs ? y : y + Math.pow(SA98G.blkThrs - y, SA98G.blkClmp));
+    const txt = softClamp(txtY);
+    const bg = softClamp(bgY);
+    if (Math.abs(bg - txt) < SA98G.deltaYmin) return 0;
+
+    let output;
+    if (bg > txt) {
+      const sapc = (Math.pow(bg, SA98G.normBG) - Math.pow(txt, SA98G.normTXT)) * SA98G.scaleBoW;
+      output = sapc < SA98G.loClip ? 0 : sapc - SA98G.loBoWoffset;
+    } else {
+      const sapc = (Math.pow(bg, SA98G.revBG) - Math.pow(txt, SA98G.revTXT)) * SA98G.scaleWoB;
+      output = sapc > -SA98G.loClip ? 0 : sapc + SA98G.loWoBoffset;
+    }
+    return output * 100;
+  }
+
+  // Convenience wrapper taking sRGB text/background colors directly.
+  function apcaLc(textRgb, bgRgb) {
+    return apcaContrast(sRGBtoY(textRgb), sRGBtoY(bgRgb));
+  }
+
+  // APCA's published "simple mode" guidance bands, mapping |Lc| to the smallest
+  // text weight/size it's suitable for. See https://readtech.org/ARC/tests/visual-contrast-of-text/
+  const APCA_LEVELS = {
+    body: 75,   // fluent body text, ~14px normal weight and up
+    large: 60,  // larger text, ~18px normal / ~14px bold
+    bold: 45,   // large or bold text, ~24px normal / ~18px bold
+    spot: 30,   // spot-readable / non-text (icons, placeholder text)
+  };
+
+  function evaluate(lc) {
+    const abs = Math.abs(lc);
     return {
-      ratio,
-      aaNormal: ratio >= WCAG_THRESHOLDS.aaNormal,
-      aaaNormal: ratio >= WCAG_THRESHOLDS.aaaNormal,
-      aaLarge: ratio >= WCAG_THRESHOLDS.aaLarge,
-      aaaLarge: ratio >= WCAG_THRESHOLDS.aaaLarge,
+      lc,
+      body: abs >= APCA_LEVELS.body,
+      large: abs >= APCA_LEVELS.large,
+      bold: abs >= APCA_LEVELS.bold,
+      spot: abs >= APCA_LEVELS.spot,
     };
   }
 
-  // Best WCAG level an evaluated ratio actually clears, as a compact label/badge class.
+  // Best APCA guidance band an evaluated Lc actually clears, as a compact label/badge class.
   function bestLevel(evalResult) {
-    if (evalResult.aaaNormal) return { label: "AAA", cls: "pass" };
-    if (evalResult.aaNormal) return { label: "AA", cls: "pass" };
-    if (evalResult.aaLarge) return { label: "AA Large", cls: "warn" };
+    if (evalResult.body) return { label: "Body", cls: "pass" };
+    if (evalResult.large) return { label: "Large", cls: "pass" };
+    if (evalResult.bold) return { label: "Bold", cls: "warn" };
+    if (evalResult.spot) return { label: "Spot", cls: "warn" };
     return { label: "Fail", cls: "fail" };
+  }
+
+  // Minimum |Lc| APCA's simple-mode guidance calls for at a given rendered text
+  // size/weight. Bold text is treated as roughly one size-step more forgiving
+  // than the same point size set normal weight. Not the full APCA font matrix —
+  // just enough resolution to flag specimen text against how it's actually rendered.
+  function minLcForSize(px, bold) {
+    const effective = bold ? px + 6 : px;
+    if (effective >= 36) return APCA_LEVELS.spot;
+    if (effective >= 24) return APCA_LEVELS.bold;
+    if (effective >= 18) return APCA_LEVELS.large;
+    return APCA_LEVELS.body;
+  }
+
+  // Small pass/fail dot for annotating one specific rendered text/background pair.
+  // The hover tooltip carries the exact Lc and what it needed to clear, so the dot
+  // works as a diagnostic marker rather than just a decoration.
+  function apcaFlagHtml(textRgb, bgRgb, px, bold, label) {
+    const lc = apcaLc(textRgb, bgRgb);
+    const minLc = minLcForSize(px, bold);
+    const pass = Math.abs(lc) >= minLc;
+    const title = `${label ? label + " — " : ""}${toHex(textRgb)} on ${toHex(bgRgb)}: ${lc.toFixed(1)} Lc (needs ≥ ${minLc} at ~${Math.round(px)}px${bold ? " bold" : ""})`;
+    return `<span class="apca-flag ${pass ? "pass" : "fail"}" title="${escapeHtml(title)}"></span>`;
   }
 
   // ---------- Color vision deficiency simulation ----------
@@ -386,7 +451,7 @@
 
   function savePresets() {
     try {
-      localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets.map((p) => ({ name: p.name, hexes: p.hexes }))));
+      localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets.map((p) => ({ name: p.name, hexes: p.hexes, mix: p.mix || null, samplePage: p.samplePage || null }))));
     } catch (e) {
       // storage unavailable — silently skip persistence
     }
@@ -402,7 +467,13 @@
     if (!Array.isArray(stored)) return;
     stored.forEach((p) => {
       if (p && typeof p.name === "string" && Array.isArray(p.hexes)) {
-        presets.push({ id: nextPresetId++, name: p.name, hexes: p.hexes.filter((h) => parseColor(h)) });
+        presets.push({
+          id: nextPresetId++,
+          name: p.name,
+          hexes: p.hexes.filter((h) => parseColor(h)),
+          mix: p.mix && typeof p.mix === "object" ? p.mix : null,
+          samplePage: p.samplePage && typeof p.samplePage === "object" ? p.samplePage : null,
+        });
       }
     });
   }
@@ -575,6 +646,7 @@
   const samplePageDarkSecondary = document.getElementById("samplePageDarkSecondary");
   const samplePageAccentSelector = document.getElementById("samplePageAccentSelector");
   const openSamplePageBtn = document.getElementById("openSamplePageBtn");
+  const openUiSampleBtn = document.getElementById("openUiSampleBtn");
   const samplePageStatus = document.getElementById("samplePageStatus");
   const samplePageError = document.getElementById("samplePageError");
   const sampleRatiosSection = document.getElementById("sampleRatiosSection");
@@ -1112,6 +1184,86 @@
 
   // ---------- Presets ----------
 
+  // Captures the soften/darken/warm/cool mix recipe controls so a preset can
+  // restore the exact modifier colors/percentages used alongside its palette.
+  function currentMixState() {
+    return {
+      softenColor: softenMixColor.value,
+      softenPercent: softenMixPercent.value,
+      darkenColor: darkenMixColor.value,
+      darkenPercent: darkenMixPercent.value,
+      warmColor: warmMixColor.value,
+      warmPercent: warmMixPercent.value,
+      coolColor: coolMixColor.value,
+      coolPercent: coolMixPercent.value,
+    };
+  }
+
+  function applyPresetMix(mix) {
+    if (!mix) return;
+    const assign = (input, setting, value) => {
+      if (typeof value !== "string" || !value) return;
+      input.value = value;
+      setting.save(value);
+    };
+    assign(softenMixColor, softenMixColorSetting, mix.softenColor);
+    assign(softenMixPercent, softenMixPercentSetting, mix.softenPercent);
+    assign(darkenMixColor, darkenMixColorSetting, mix.darkenColor);
+    assign(darkenMixPercent, darkenMixPercentSetting, mix.darkenPercent);
+    assign(warmMixColor, warmMixColorSetting, mix.warmColor);
+    assign(warmMixPercent, warmMixPercentSetting, mix.warmPercent);
+    assign(coolMixColor, coolMixColorSetting, mix.coolColor);
+    assign(coolMixPercent, coolMixPercentSetting, mix.coolPercent);
+    softenMixValue.value = softenMixValue.textContent = `${softenMixPercent.value}%`;
+    darkenMixValue.value = darkenMixValue.textContent = `${darkenMixPercent.value}%`;
+    warmMixValue.value = warmMixValue.textContent = `${warmMixPercent.value}%`;
+    coolMixValue.value = coolMixValue.textContent = `${coolMixPercent.value}%`;
+  }
+
+  // Captures the Sample Page role/variant/accent choices, keyed by hex rather
+  // than palette id, since a loaded preset rebuilds the palette with new ids.
+  function currentSamplePageState() {
+    return {
+      lightSurface: samplePageLightSurface.dataset.value,
+      lightPanel: samplePageLightPanel.dataset.value,
+      lightText: samplePageLightText.dataset.value,
+      darkSurface: samplePageDarkSurface.dataset.value,
+      darkPanel: samplePageDarkPanel.dataset.value,
+      darkText: samplePageDarkText.dataset.value,
+      lightPrimary: samplePageLightPrimarySetting.load(),
+      lightSecondary: samplePageLightSecondarySetting.load(),
+      darkPrimary: samplePageDarkPrimarySetting.load(),
+      darkSecondary: samplePageDarkSecondarySetting.load(),
+      accentHexes: palette.filter((c) => samplePageAccentHexes.has(c.id)).map((c) => c.hex),
+    };
+  }
+
+  function applyPresetSamplePage(samplePage) {
+    if (!samplePage) return;
+    const assignSetting = (setting, value) => {
+      if (typeof value === "string" && value) setting.save(value);
+    };
+    assignSetting(samplePageLightSurfaceSetting, samplePage.lightSurface);
+    assignSetting(samplePageLightPanelSetting, samplePage.lightPanel);
+    assignSetting(samplePageLightTextSetting, samplePage.lightText);
+    assignSetting(samplePageDarkSurfaceSetting, samplePage.darkSurface);
+    assignSetting(samplePageDarkPanelSetting, samplePage.darkPanel);
+    assignSetting(samplePageDarkTextSetting, samplePage.darkText);
+    assignSetting(samplePageLightPrimarySetting, samplePage.lightPrimary);
+    assignSetting(samplePageLightSecondarySetting, samplePage.lightSecondary);
+    assignSetting(samplePageDarkPrimarySetting, samplePage.darkPrimary);
+    assignSetting(samplePageDarkSecondarySetting, samplePage.darkSecondary);
+    samplePageAccentHexes.clear();
+    if (Array.isArray(samplePage.accentHexes)) {
+      samplePage.accentHexes.forEach((hex) => {
+        const color = palette.find((c) => c.hex === hex);
+        if (color) samplePageAccentHexes.add(color.id);
+      });
+    }
+    samplePageAccentsConfigured = true;
+    saveSamplePageAccents();
+  }
+
   function saveCurrentAsPreset() {
     const name = presetNameInput.value.trim();
     if (!palette.length) {
@@ -1126,7 +1278,13 @@
       presetError.textContent = `A preset named "${name}" already exists.`;
       return;
     }
-    presets.push({ id: nextPresetId++, name, hexes: palette.map((c) => c.hex) });
+    presets.push({
+      id: nextPresetId++,
+      name,
+      hexes: palette.map((c) => c.hex),
+      mix: currentMixState(),
+      samplePage: currentSamplePageState(),
+    });
     activePresetName = name;
     presetNameInput.value = "";
     presetError.textContent = "";
@@ -1151,6 +1309,8 @@
       }
     });
     activePresetName = preset.name;
+    applyPresetMix(preset.mix);
+    applyPresetSamplePage(preset.samplePage);
     renderAll();
   }
 
@@ -1524,22 +1684,24 @@
       palette.forEach((colColor) => {
         const td = document.createElement("td");
         const isSelf = rowColor.id === colColor.id;
-        const ratio = contrastRatio(rowColor.rgb, colColor.rgb);
-        const level = bestLevel(evaluate(ratio));
         const bgColor = swapped ? colColor : rowColor;
         const fgColor = swapped ? rowColor : colColor;
+        const lc = apcaLc(fgColor.rgb, bgColor.rgb);
+        const level = bestLevel(evaluate(lc));
         const sampleBg = simulating ? toHex(simulateVision(bgColor.rgb, visionMode)) : bgColor.hex;
         const sampleFg = simulating ? toHex(simulateVision(fgColor.rgb, visionMode)) : fgColor.hex;
-        const simRatio = simulating ? contrastRatio(simulateVision(rowColor.rgb, visionMode), simulateVision(colColor.rgb, visionMode)) : null;
-        const ratioTitle = simulating
-          ? `Contrast ratio ${ratio.toFixed(2)}:1. Simulated (${VISION_LABELS[visionMode]}): ${simRatio.toFixed(2)}:1.`
-          : `Contrast ratio ${ratio.toFixed(2)}:1.`;
+        const simLc = simulating ? apcaLc(simulateVision(fgColor.rgb, visionMode), simulateVision(bgColor.rgb, visionMode)) : null;
+        const simLevel = simulating ? bestLevel(evaluate(simLc)) : null;
+        const lcTitle = simulating
+          ? `Lc ${lc.toFixed(1)}. Simulated (${VISION_LABELS[visionMode]}): ${simLc.toFixed(1)}.`
+          : `Lc ${lc.toFixed(1)}.`;
+        const badgeTitle = simulating ? `${simLevel.label} (simulated: ${VISION_LABELS[visionMode]}. Actual: ${level.label})` : level.label;
         const cell = document.createElement("div");
         cell.className = "cell" + (isSelf ? " self" : "");
         cell.innerHTML = `<div class="sample${large ? " large" : ""}" style="background:${sampleBg};color:${sampleFg}">
           <span class="band-text">${previewText}</span>
-          ${levelBadgeHtml(level, "level-badge")}
-          <div class="ratio-overlay"><span class="ratio-pill" title="${ratioTitle}">${ratio.toFixed(2)}:1</span></div>
+          <span class="badge ${(simulating ? simLevel : level).cls} level-badge" title="${badgeTitle}">${(simulating ? simLevel : level).label}</span>
+          <div class="ratio-overlay"><span class="ratio-pill" title="${lcTitle}">${lc.toFixed(1)} Lc</span>${simulating ? `<span class="ratio-pill sim" title="${lcTitle}">${simLc.toFixed(1)} Lc</span>` : ""}</div>
         </div>`;
         td.appendChild(cell);
         tr.appendChild(td);
@@ -1647,19 +1809,21 @@
         const accentIndex = palette.indexOf(accent);
         cell.innerHTML = `<div class="cell accent-cell"><div class="sample-stack">${variants.map((variant) => {
           const accentRgb = variant.colors[accentIndex];
-          const ratio = contrastRatio(background.rgb, accentRgb);
-          const level = bestLevel(evaluate(ratio));
+          const lc = apcaLc(accentRgb, background.rgb);
+          const level = bestLevel(evaluate(lc));
           const sampleBg = simulating ? toHex(simulateVision(background.rgb, visionMode)) : background.hex;
           const sampleFg = simulating ? toHex(simulateVision(accentRgb, visionMode)) : toHex(accentRgb);
-          const simRatio = simulating ? contrastRatio(simulateVision(background.rgb, visionMode), simulateVision(accentRgb, visionMode)) : null;
-          const ratioTitle = simulating
-            ? `${variant.label}: ${ratio.toFixed(2)}:1. Simulated (${VISION_LABELS[visionMode]}): ${simRatio.toFixed(2)}:1.`
-            : `${variant.label}: ${ratio.toFixed(2)}:1.`;
+          const simLc = simulating ? apcaLc(simulateVision(accentRgb, visionMode), simulateVision(background.rgb, visionMode)) : null;
+          const simLevel = simulating ? bestLevel(evaluate(simLc)) : null;
+          const lcTitle = simulating
+            ? `${variant.label}: ${lc.toFixed(1)} Lc. Simulated (${VISION_LABELS[visionMode]}): ${simLc.toFixed(1)} Lc.`
+            : `${variant.label}: ${lc.toFixed(1)} Lc.`;
+          const badgeTitle = simulating ? `${simLevel.label} (simulated: ${VISION_LABELS[visionMode]}. Actual: ${level.label})` : level.label;
           return `<div class="sample-band" style="background:${sampleBg};color:${sampleFg}">
             <span class="band-label">${variant.shortLabel}</span>
-            ${levelBadgeHtml(level, "band-level")}
+            <span class="badge ${(simulating ? simLevel : level).cls} band-level" title="${badgeTitle}">${(simulating ? simLevel : level).label}</span>
             <span class="accent-band-text"><span class="accent-text-12">${previewText}</span><span class="accent-text-18">${previewText}</span><span class="accent-text-24">${previewText}</span></span>
-            <span class="ratio-pill band-ratio" title="${ratioTitle}">${ratio.toFixed(2)}:1</span>
+            <span class="ratio-pill band-ratio" title="${lcTitle}">${lc.toFixed(1)} Lc</span>${simulating ? `<span class="ratio-pill sim band-ratio" title="${lcTitle}">${simLc.toFixed(1)} Lc</span>` : ""}
           </div>`;
         }).join("")}</div></div>`;
         tr.appendChild(cell);
@@ -1670,35 +1834,55 @@
     accentContrastGrid.appendChild(tbody);
   }
 
+  // Resolves a saved role setting to a palette id. Handles legacy values that were
+  // stored as a hex string (pre-id-based persistence) by migrating them to the id.
+  function resolveSamplePageRoleId(setting) {
+    const raw = setting.load();
+    if (!raw) return null;
+    if (/^\d+$/.test(raw)) {
+      const id = Number(raw);
+      return palette.some((color) => color.id === id) ? id : null;
+    }
+    const match = palette.find((color) => color.hex === raw);
+    if (match) setting.save(String(match.id));
+    return match ? match.id : null;
+  }
+
   function renderSamplePagePanel() {
     const show = palette.length >= 3;
     samplePageSection.hidden = !show;
     if (!show) return;
-    const colorsByLightness = [...palette].sort((a, b) => relativeLuminance(a.rgb) - relativeLuminance(b.rgb));
-    const darkest = colorsByLightness[0].hex;
-    const lightest = colorsByLightness.at(-1).hex;
-    const ensurePaletteValue = (group, saved, fallback) => {
-      const value = palette.some((color) => color.hex === saved) ? saved : fallback;
-      group.dataset.value = value;
-      group.innerHTML = palette.map((color) => `<button type="button" class="sample-page-role-swatch${color.hex === value ? " selected" : ""}" data-hex="${color.hex}" data-palette-id="${color.id}" title="${color.name || color.hex} · ${color.hex}" aria-pressed="${color.hex === value}"><span style="background:${color.hex}"></span><code>${color.hex}</code></button>`).join("");
+    const colorsByLightness = [...palette].sort((a, b) => sRGBtoY(a.rgb) - sRGBtoY(b.rgb));
+    const darkestId = colorsByLightness[0].id;
+    const lightestId = colorsByLightness.at(-1).id;
+    const ensurePaletteValue = (group, savedId, fallbackId) => {
+      const color = palette.find((c) => c.id === savedId) || palette.find((c) => c.id === fallbackId) || palette[0];
+      group.dataset.value = color.hex;
+      group.dataset.id = String(color.id);
+      group.innerHTML = palette.map((c) => `<button type="button" class="sample-page-role-swatch${c.id === color.id ? " selected" : ""}" data-hex="${c.hex}" data-palette-id="${c.id}" title="${c.name || c.hex} · ${c.hex}" aria-pressed="${c.id === color.id}"><span style="background:${c.hex}"></span><code>${c.hex}</code></button>`).join("");
+      return color.id;
     };
-    ensurePaletteValue(samplePageLightSurface, samplePageLightSurfaceSetting.load(), lightest);
-    ensurePaletteValue(samplePageDarkSurface, samplePageDarkSurfaceSetting.load(), darkest);
-    ensurePaletteValue(samplePageLightPanel, samplePageLightPanelSetting.load(), samplePageLightSurface.dataset.value);
-    ensurePaletteValue(samplePageDarkPanel, samplePageDarkPanelSetting.load(), samplePageDarkSurface.dataset.value);
-    if (!palette.some((color) => color.hex === samplePageLightPanelSetting.load())) {
-      samplePageLightPanelSetting.save(samplePageLightPanel.dataset.value);
+    const lightSurfaceId = ensurePaletteValue(samplePageLightSurface, resolveSamplePageRoleId(samplePageLightSurfaceSetting), lightestId);
+    const darkSurfaceId = ensurePaletteValue(samplePageDarkSurface, resolveSamplePageRoleId(samplePageDarkSurfaceSetting), darkestId);
+    const savedLightPanelId = resolveSamplePageRoleId(samplePageLightPanelSetting);
+    const lightPanelId = ensurePaletteValue(samplePageLightPanel, savedLightPanelId, lightSurfaceId);
+    const savedDarkPanelId = resolveSamplePageRoleId(samplePageDarkPanelSetting);
+    const darkPanelId = ensurePaletteValue(samplePageDarkPanel, savedDarkPanelId, darkSurfaceId);
+    if (savedLightPanelId !== lightPanelId) {
+      samplePageLightPanelSetting.save(String(lightPanelId));
     }
-    if (!palette.some((color) => color.hex === samplePageDarkPanelSetting.load())) {
-      samplePageDarkPanelSetting.save(samplePageDarkPanel.dataset.value);
+    if (savedDarkPanelId !== darkPanelId) {
+      samplePageDarkPanelSetting.save(String(darkPanelId));
     }
-    ensurePaletteValue(samplePageLightText, samplePageLightTextSetting.load(), samplePageDarkSurface.dataset.value);
-    ensurePaletteValue(samplePageDarkText, samplePageDarkTextSetting.load(), samplePageLightSurface.dataset.value);
-    if (!palette.some((color) => color.hex === samplePageLightTextSetting.load())) {
-      samplePageLightTextSetting.save(samplePageLightText.dataset.value);
+    const savedLightTextId = resolveSamplePageRoleId(samplePageLightTextSetting);
+    const lightTextId = ensurePaletteValue(samplePageLightText, savedLightTextId, darkSurfaceId);
+    const savedDarkTextId = resolveSamplePageRoleId(samplePageDarkTextSetting);
+    const darkTextId = ensurePaletteValue(samplePageDarkText, savedDarkTextId, lightSurfaceId);
+    if (savedLightTextId !== lightTextId) {
+      samplePageLightTextSetting.save(String(lightTextId));
     }
-    if (!palette.some((color) => color.hex === samplePageDarkTextSetting.load())) {
-      samplePageDarkTextSetting.save(samplePageDarkText.dataset.value);
+    if (savedDarkTextId !== darkTextId) {
+      samplePageDarkTextSetting.save(String(darkTextId));
     }
     const syncSampleVariant = (container, setting, fallback) => {
       const selected = ["soft", "input", "dark", "warm", "cool"].includes(setting.load()) ? setting.load() : fallback;
@@ -1725,6 +1909,7 @@
     const accentCount = availableAccents.filter((color) => samplePageAccentHexes.has(color.id)).length;
     const ready = samplePageLightSurface.dataset.value !== samplePageDarkSurface.dataset.value && accentCount > 0 && lightPrimary && lightSecondary && darkPrimary && darkSecondary;
     openSamplePageBtn.disabled = !ready;
+    openUiSampleBtn.disabled = !ready;
     samplePageStatus.textContent = ready
       ? `${accentCount} accent${accentCount === 1 ? "" : "s"} · light uses Input + Dark · dark uses Soft + Input`
       : "Choose different light and dark surfaces and leave an accent color available.";
@@ -1740,8 +1925,8 @@
     const keys = ["soft", "input", "dark", "warm", "cool"];
     const pick = (setting, fallback) => keys.includes(setting.load()) ? setting.load() : fallback;
     const themes = [
-      { name: "Light", panel: samplePageLightPanel.dataset.value, variants: [pick(samplePageLightPrimarySetting, "input"), pick(samplePageLightSecondarySetting, "dark")] },
-      { name: "Dark", panel: samplePageDarkPanel.dataset.value, variants: [pick(samplePageDarkPrimarySetting, "soft"), pick(samplePageDarkSecondarySetting, "input")] },
+      { name: "Light", surface: lightSurface, panel: samplePageLightPanel.dataset.value, text: samplePageLightText.dataset.value, variants: [pick(samplePageLightPrimarySetting, "input"), pick(samplePageLightSecondarySetting, "dark")] },
+      { name: "Dark", surface: darkSurface, panel: samplePageDarkPanel.dataset.value, text: samplePageDarkText.dataset.value, variants: [pick(samplePageDarkPrimarySetting, "soft"), pick(samplePageDarkSecondarySetting, "input")] },
     ];
     if (!accents.length || themes.some((theme) => !theme.panel)) { sampleRatiosSection.hidden = true; sampleRatiosGrid.innerHTML = ""; return; }
     const base = paletteVariants();
@@ -1751,21 +1936,36 @@
       const index = palette.indexOf(accent);
       return { soft: toHex(base[0].colors[index]), input: accent.hex, dark: toHex(base[2].colors[index]), warm: toHex(mixRgb(accent.rgb, warmWith, Number(warmMixPercent.value) / 100)), cool: toHex(mixRgb(accent.rgb, coolWith, Number(coolMixPercent.value) / 100)) };
     };
+    // Aggregate stat plus a pass-count against Lc 60 (Large text) — a sensible
+    // generic bar for UI-scale accent text whose exact rendered size isn't known here.
     const statsFor = (panel, key) => {
-      const values = accents.map((accent) => contrastRatio(hexToRgb(panel), hexToRgb(colorsForAccent(accent)[key])));
+      const values = accents.map((accent) => apcaLc(hexToRgb(colorsForAccent(accent)[key]), hexToRgb(panel)));
       const average = values.reduce((sum, value) => sum + value, 0) / values.length;
       const deviation = Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) / values.length);
-      return `${average.toFixed(2)} ± ${deviation.toFixed(2)}`;
+      const passCount = values.filter((value) => Math.abs(value) >= APCA_LEVELS.large).length;
+      const dotCls = passCount === values.length ? "pass" : "fail";
+      return `${average.toFixed(1)} ± ${deviation.toFixed(1)} Lc <span class="apca-flag ${dotCls}" title="${escapeHtml(`${passCount}/${values.length} accents clear Lc ${APCA_LEVELS.large} (Large text) against this panel`)}"></span> <i>${passCount}/${values.length} ≥ Large 60</i>`;
+    };
+    // The theme's own text role is never exercised by the accent stats above, so
+    // check it directly against both surface and panel — the most common real reads.
+    const textStatsFor = (theme) => {
+      const textRgb = hexToRgb(theme.text);
+      const surfaceRgb = hexToRgb(theme.surface);
+      const panelRgb = hexToRgb(theme.panel);
+      const surfaceLc = apcaLc(textRgb, surfaceRgb);
+      const panelLc = apcaLc(textRgb, panelRgb);
+      return `<span>Text vs Surface <b>${surfaceLc.toFixed(1)} Lc</b> ${apcaFlagHtml(textRgb, surfaceRgb, 16, false, "Text on surface")}</span>` +
+        `<span>Text vs Panel <b>${panelLc.toFixed(1)} Lc</b> ${apcaFlagHtml(textRgb, panelRgb, 16, false, "Text on panel")}</span>`;
     };
     sampleRatiosGrid.innerHTML = themes.map((theme) => {
-      const stats = `<div class="sample-ratio-stats"><span>Input <b>${statsFor(theme.panel, "input")}</b></span><span>Primary <b>${statsFor(theme.panel, theme.variants[0])}</b></span><span>Secondary <b>${statsFor(theme.panel, theme.variants[1])}</b></span></div>`;
+      const stats = `<div class="sample-ratio-stats">${textStatsFor(theme)}<span>Input <b>${statsFor(theme.panel, "input")}</b></span><span>Primary <b>${statsFor(theme.panel, theme.variants[0])}</b></span><span>Secondary <b>${statsFor(theme.panel, theme.variants[1])}</b></span></div>`;
       return `<section class="sample-ratio-theme"><h3>${theme.name} theme</h3>${stats}<div class="sample-ratio-theme-grid">${accents.flatMap((accent) => {
       const index = palette.indexOf(accent);
       const colors = colorsForAccent(accent);
       return theme.variants.map((key, index) => {
         const foreground = colors[key];
-        const ratio = contrastRatio(hexToRgb(theme.panel), hexToRgb(foreground)).toFixed(2);
-        return `<article class="sample-ratio-card"><div class="sample-ratio-color"><code>${theme.panel}</code><span class="sample-ratio-swatch" style="background:${theme.panel}"></span></div><div class="sample-ratio-color"><code>${foreground}</code><span class="sample-ratio-swatch" style="background:${foreground}"></span></div><span class="sample-ratio-value">${index ? "Secondary" : "Primary"} · ${ratio}:1</span></article>`;
+        const lc = apcaLc(hexToRgb(foreground), hexToRgb(theme.panel)).toFixed(1);
+        return `<article class="sample-ratio-card"><div class="sample-ratio-color"><code>${theme.panel}</code><span class="sample-ratio-swatch" style="background:${theme.panel}"></span></div><div class="sample-ratio-color"><code>${foreground}</code><span class="sample-ratio-swatch" style="background:${foreground}"></span></div><span class="sample-ratio-value">${index ? "Secondary" : "Primary"} · ${lc} Lc</span></article>`;
       });
     }).join("")}</div></section>`;
     }).join("");
@@ -1811,13 +2011,30 @@
         const secondaryKey = theme.variants[1];
         const primary = variantColors[primaryKey];
         const secondary = variantColors[secondaryKey];
-        const inputRatio = contrastRatio(hexToRgb(primary), hexToRgb(theme.panel)).toFixed(2);
+        const panelRgb = hexToRgb(theme.panel);
+        const primaryRgb = hexToRgb(primary);
+        const secondaryRgb = hexToRgb(secondary);
+        const inputLc = apcaLc(primaryRgb, panelRgb).toFixed(1);
         const activeStates = [
           { className: "t18", color: primary },
           { className: "t24", color: secondary }
         ];
         const tertiary = primary;
-        const variantRatio = contrastRatio(hexToRgb(secondary), hexToRgb(theme.panel)).toFixed(2);
+        const tertiaryRgb = primaryRgb;
+        const variantLc = apcaLc(secondaryRgb, panelRgb).toFixed(1);
+        // t18/t24 are literally 18pt/24pt (24px/32px) normal weight — check at
+        // the size actually rendered just below, not an abstract band.
+        const primaryTypeFlag = apcaFlagHtml(primaryRgb, panelRgb, 24, false, "Primary type specimen (18pt)");
+        const secondaryTypeFlag = apcaFlagHtml(secondaryRgb, panelRgb, 32, false, "Secondary type specimen (24pt)");
+        const titleFlag = apcaFlagHtml(primaryRgb, panelRgb, 20, true, "Title (h2)");
+        const subtitleFlag = apcaFlagHtml(secondaryRgb, panelRgb, 14.4, true, "Subtitle");
+        const bodyFlag = apcaFlagHtml(secondaryRgb, panelRgb, 13.12, false, "Body copy");
+        const noteFlag1 = apcaFlagHtml(tertiaryRgb, panelRgb, 11.52, false, "Note text");
+        const noteFlag2 = apcaFlagHtml(secondaryRgb, panelRgb, 11.52, false, "Note text");
+        const themeTextRgb = hexToRgb(theme.text);
+        const primaryButtonFlag = apcaFlagHtml(themeTextRgb, primaryRgb, 16, false, "Primary button label");
+        const outlineButtonFlag = apcaFlagHtml(tertiaryRgb, panelRgb, 16, false, "Secondary (outline) button label");
+        const statusButtonFlag = apcaFlagHtml(secondaryRgb, panelRgb, 16, false, "Status button label");
         const previousPaletteAccent = accents[(exampleIndex - 1 + accents.length) % accents.length];
         const nextPaletteAccent = accents[(exampleIndex + 1) % accents.length];
         const resolveAccentVariant = (paletteAccent, variantKey) => {
@@ -1845,23 +2062,24 @@
           return { primary: otherColors[primaryKey], secondary: otherColors[secondaryKey] };
         });
         return `<article class="accent-example" style="--primary:${primary};--secondary:${secondary};--input:${primary}">
-          <header><span class="accent-index">${accentIndex + 1}</span><code>${primary}</code><span class="contrast-ratio">Primary ${inputRatio}:1 · Secondary ${variantRatio}:1</span></header>
+          <header><span class="accent-index">${accentIndex + 1}</span><code>${primary}</code><span class="contrast-ratio">Primary ${inputLc} Lc · Secondary ${variantLc} Lc</span></header>
           <div class="type-specimen">
-            ${activeStates.map((state) => `<p class="${state.className}" style="color:${state.color}">${preview}</p>`).join("")}
+            <p class="t18" style="color:${primary}">${preview}${primaryTypeFlag}</p>
+            <p class="t24" style="color:${secondary}">${preview}${secondaryTypeFlag}</p>
           </div>
-          <h2 style="color:${primary}">Measured title text</h2>
-          <p class="subtitle" style="color:${secondary}">A practical subtitle for this accent.</p>
-          <p class="small-body" style="color:${secondary}">${lorem}</p>
-          <p class="note" style="color:${tertiary}">Smaller primary note text, <a href="#" style="color:${primary}">a useful inline link</a>, and a quieter secondary detail.</p>
-          <p class="note" style="color:${secondary}">Smaller modifier note text, with the same compact supporting detail.</p>
+          <h2 style="color:${primary}">Measured title text${titleFlag}</h2>
+          <p class="subtitle" style="color:${secondary}">A practical subtitle for this accent.${subtitleFlag}</p>
+          <p class="small-body" style="color:${secondary}">${lorem}${bodyFlag}</p>
+          <p class="note" style="color:${tertiary}">Smaller primary note text, <a href="#" style="color:${primary}">a useful inline link</a>, and a quieter secondary detail.${noteFlag1}</p>
+          <p class="note" style="color:${secondary}">Smaller modifier note text, with the same compact supporting detail.${noteFlag2}</p>
           <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:.8rem 0"><p style="margin:0;color:${primary};font:600 .85rem/1.35 Figtree,system-ui,sans-serif">Jer mi je mučno biti slab,<br>jer mi je mučno biti sam<br>(kada bih mogo biti jak,<br>kada bih mogo biti drag)</p><p style="margin:0;color:${secondary};font:600 .85rem/1.35 Figtree,system-ui,sans-serif">Jer mi je mučno biti slab,<br>jer mi je mučno biti sam<br>(kada bih mogo biti jak,<br>kada bih mogo biti drag)</p></div>
           <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:.8rem 0"><blockquote style="margin:0;padding-left:8px;border-left:2px solid ${primary};color:${primary};font:600 1rem/1.35 'Crimson Text',Georgia,serif">Gáttir allar,<br>áðr gangi fram,<br>um skoðask skyli,<br>um skyggnast skyli.</blockquote><blockquote style="margin:0;padding-left:8px;border-left:2px solid ${secondary};color:${secondary};font:600 1rem/1.35 'Crimson Text',Georgia,serif">Gáttir allar,<br>áðr gangi fram,<br>um skoðask skyli,<br>um skyggnast skyli.</blockquote></div>
           <div style="color:${tertiary};margin:.7rem 0"><p class="data-line" style="margin:1px 0">Δx = [x₂ − x₁] / n</p><p class="data-line" style="margin:1px 0">‖v‖² = ⟨v, v⟩ ≥ 0</p><p class="data-line" style="margin:1px 0">(x + y)ⁿ = Σₖ₌₀ⁿ C(n,k)xⁿ⁻ᵏyᵏ</p></div>
           <div style="color:${secondary};margin:.7rem 0"><p class="data-line" style="margin:1px 0">Δx = [x₂ − x₁] / n</p><p class="data-line" style="margin:1px 0">‖v‖² = ⟨v, v⟩ ≥ 0</p><p class="data-line" style="margin:1px 0">(x + y)ⁿ = Σₖ₌₀ⁿ C(n,k)xⁿ⁻ᵏyᵏ</p></div>
           <div class="ui-row">
-            <button style="background:${primary}">Primary action</button>
-            <button class="outline" style="color:${tertiary};border-color:${tertiary}">Secondary action</button>
-            <button class="status" style="color:${secondary};border-color:${secondary}">Status</button>
+            <button style="background:${primary};color:${theme.text}">Primary action${primaryButtonFlag}</button>
+            <button class="outline" style="color:${tertiary};border-color:${tertiary}">Secondary action${outlineButtonFlag}</button>
+            <button class="status" style="color:${secondary};border-color:${secondary}">Status${statusButtonFlag}</button>
           </div>
           <div class="control-samples" style="color:${tertiary}"><label>Sample slider<input type="range" value="58" style="accent-color:${primary}"></label><label>Sample dropdown<select style="border-color:${secondary};color:${tertiary}"><option>Choose an option</option><option>Second option</option></select></label><label>Sample input<input placeholder="A quiet input" style="border-color:${secondary};color:${tertiary}"></label></div>
           <div class="geometry">${polygonSpecimenSvg(secondary, primary, previousAccent, nextAccent)}</div>
@@ -1871,22 +2089,163 @@
       }).join("");
       const typography = themeIndex === 0 ? `<style>@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');body{font-family:Figtree,system-ui,sans-serif}.page-intro h1{font-family:Fraunces,Georgia,serif;font-weight:700}.page-nav span,.accent-example header,.contrast-ratio,.data-line{font-family:'DM Mono',ui-monospace,monospace}.accent-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.subtitle{margin:.25rem 0 .5rem;font-size:.9rem;font-weight:600}.small-body{font-size:.82rem}.note{font-size:.72rem}.data-line{margin:.7rem 0;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ui-row .status{background:transparent}.control-samples{display:grid;gap:8px;margin-top:14px}.control-samples label{font-size:.7rem}.control-samples input,.control-samples select{display:block;width:100%;margin-top:4px;padding:6px;border:1px solid;border-radius:5px;background:transparent;color:inherit;font:inherit}.control-samples input[type=range]{padding:0;border:0;border-radius:0}.control-samples select{height:31px}.accent-point-line{position:relative;display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:25px;margin:10px 0 0;padding:3px 5px}.accent-point-line:before{content:"";position:absolute;z-index:0;left:0;right:0;top:50%;height:2px;background:var(--line)}.accent-point-line span{position:relative;z-index:1;padding:0 2px;background:var(--panel);font:500 .75rem/1 'DM Mono',ui-monospace,monospace}@media(max-width:1100px){.accent-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:840px){.accent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.accent-grid{grid-template-columns:1fr}}</style>` : "";
       const norseTypeface = themeIndex === 0 ? `<style>@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');</style>` : "";
+      const themeTextRgb = hexToRgb(theme.text);
+      const surfaceRgb = hexToRgb(theme.surface);
+      const headingFlag = apcaFlagHtml(themeTextRgb, surfaceRgb, 35, true, "Page heading (h1)");
+      const introBodyFlag = apcaFlagHtml(themeTextRgb, surfaceRgb, 16, false, "Intro body text");
       return `${typography}${norseTypeface}<section class="page-specimen" style="--surface:${theme.surface};--panel:${theme.panel};--ink:${theme.text};color:${theme.text}" data-background="${theme.surface}">
         <div class="page-nav"><strong>${theme.kind === "light" ? "Light" : "Dark"} theme</strong><span>${theme.surface}</span><span>Archive</span><span>About</span></div>
-        <div class="page-intro"><p>Palette sample page</p><h1>Colors in a working document</h1><p>${lorem}</p></div>
+        <div class="page-intro"><p>Palette sample page</p><h1>Colors in a working document${headingFlag}</h1><p>${lorem}${introBodyFlag}</p></div>
         <div class="accent-grid">${accentExamples}</div>
       </section>`;
     }).join("");
     return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palette sample page</title><style>
-      *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#15171b;color:#16181c} .page-specimen{--ink:#202124;background:var(--surface);padding:28px clamp(18px,4vw,56px) 52px;min-height:100vh}.page-nav{display:flex;gap:18px;align-items:center;padding-bottom:18px;border-bottom:1px solid color-mix(in srgb,var(--ink) 22%,transparent);font-size:.82rem}.page-nav strong{margin-right:auto}.page-intro{max-width:740px;padding:42px 0 28px}.page-intro p:first-child{text-transform:uppercase;letter-spacing:.12em;font-size:.74rem}.page-intro h1{font-size:clamp(2.2rem,6vw,4.5rem);line-height:.95;margin:.2em 0}.page-intro p{line-height:1.6;max-width:62ch}.accent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}.accent-example{padding:18px;border:1px solid color-mix(in srgb,var(--ink) 26%,transparent);border-radius:12px;background:var(--panel);box-shadow:0 4px 18px color-mix(in srgb,var(--ink) 10%,transparent)}.accent-example header{display:flex;gap:8px;align-items:center}.accent-index{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--input);color:#fff;font-size:.72rem}.accent-example code{font-size:.75rem}.contrast-ratio{margin-left:auto;font:700 .78rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}.type-specimen{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--ink) 18%,transparent)}.type-specimen p{margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.t12{font-size:12pt}.t18{font-size:18pt}.t24{font-size:24pt}.accent-example h2{font-size:1.25rem;margin:18px 0 8px}.accent-example p{line-height:1.5}.ui-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}.ui-row button{border:1px solid transparent;border-radius:6px;padding:8px 10px;color:#fff;font:inherit;cursor:pointer}.ui-row .outline{background:transparent}.badge{border:1px solid;border-radius:999px;padding:5px 9px;font-size:.78rem}label{display:block;font-size:.78rem;font-weight:600}input{display:block;width:100%;margin-top:5px;padding:8px;border:1px solid;border-radius:6px;background:transparent;font:inherit}.geometry{margin-top:20px;border-top:1px solid color-mix(in srgb,var(--ink) 18%,transparent);padding-top:14px}.geometry svg{width:100%;height:auto;display:block}.glyph-specimen{margin-top:20px;border-top:1px solid color-mix(in srgb,var(--ink) 18%,transparent);padding-top:14px}.glyph-specimen h3{margin:0 0 10px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}.glyph-rack{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;font-size:1.15rem;line-height:1;text-align:center}.glyph-rack span{padding:3px 0;border:1px solid color-mix(in srgb,var(--ink) 12%,transparent)}@media(max-width:640px){.page-specimen{padding:20px}.page-nav{gap:10px}.page-nav span{display:none}.page-nav span:first-of-type{display:inline}.accent-grid{grid-template-columns:1fr}.glyph-rack{grid-template-columns:repeat(12,1fr)}}</style></head><body>${specimens}</body></html>`;
+      *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#15171b;color:#16181c} .page-specimen{--ink:#202124;background:var(--surface);padding:28px clamp(18px,4vw,56px) 52px;min-height:100vh}.page-nav{display:flex;gap:18px;align-items:center;padding-bottom:18px;border-bottom:1px solid color-mix(in srgb,var(--ink) 22%,transparent);font-size:.82rem}.page-nav strong{margin-right:auto}.page-intro{max-width:740px;padding:42px 0 28px}.page-intro p:first-child{text-transform:uppercase;letter-spacing:.12em;font-size:.74rem}.page-intro h1{font-size:clamp(2.2rem,6vw,4.5rem);line-height:.95;margin:.2em 0}.page-intro p{line-height:1.6;max-width:62ch}.accent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}.accent-example{padding:18px;border:1px solid color-mix(in srgb,var(--ink) 26%,transparent);border-radius:12px;background:var(--panel);box-shadow:0 4px 18px color-mix(in srgb,var(--ink) 10%,transparent)}.accent-example header{display:flex;gap:8px;align-items:center}.accent-index{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--input);color:#fff;font-size:.72rem}.accent-example code{font-size:.75rem}.contrast-ratio{margin-left:auto;font:700 .78rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}.type-specimen{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--ink) 18%,transparent)}.type-specimen p{margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.t12{font-size:12pt}.t18{font-size:18pt}.t24{font-size:24pt}.accent-example h2{font-size:1.25rem;margin:18px 0 8px}.accent-example p{line-height:1.5}.ui-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}.ui-row button{border:1px solid transparent;border-radius:6px;padding:8px 10px;font:inherit;cursor:pointer}.apca-flag{display:inline-block;width:8px;height:8px;margin-left:5px;border-radius:50%;vertical-align:middle;cursor:help;box-shadow:0 0 0 1px rgba(255,255,255,.7)}.apca-flag.pass{background:#2fa864}.apca-flag.fail{background:#e05263}.ui-row .outline{background:transparent}.badge{border:1px solid;border-radius:999px;padding:5px 9px;font-size:.78rem}label{display:block;font-size:.78rem;font-weight:600}input{display:block;width:100%;margin-top:5px;padding:8px;border:1px solid;border-radius:6px;background:transparent;font:inherit}.geometry{margin-top:20px;border-top:1px solid color-mix(in srgb,var(--ink) 18%,transparent);padding-top:14px}.geometry svg{width:100%;height:auto;display:block}.glyph-specimen{margin-top:20px;border-top:1px solid color-mix(in srgb,var(--ink) 18%,transparent);padding-top:14px}.glyph-specimen h3{margin:0 0 10px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}.glyph-rack{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;font-size:1.15rem;line-height:1;text-align:center}.glyph-rack span{padding:3px 0;border:1px solid color-mix(in srgb,var(--ink) 12%,transparent)}@media(max-width:640px){.page-specimen{padding:20px}.page-nav{gap:10px}.page-nav span{display:none}.page-nav span:first-of-type{display:inline}.accent-grid{grid-template-columns:1fr}.glyph-rack{grid-template-columns:repeat(12,1fr)}}</style></head><body>${specimens}</body></html>`;
   }
 
-  function openSamplePage() {
+  function uiSampleAccentColors(accent) {
+    const variants = paletteVariants();
+    const warmWith = parseColor(warmMixColor.value) || { r: 255, g: 138, b: 61 };
+    const coolWith = parseColor(coolMixColor.value) || { r: 85, g: 157, b: 255 };
+    const index = palette.indexOf(accent);
+    return {
+      soft: toHex(variants[0].colors[index]),
+      input: accent.hex,
+      dark: toHex(variants[2].colors[index]),
+      warm: toHex(mixRgb(accent.rgb, warmWith, Number(warmMixPercent.value) / 100)),
+      cool: toHex(mixRgb(accent.rgb, coolWith, Number(coolMixPercent.value) / 100)),
+    };
+  }
+
+  function uiSampleCanvasSvg(primary, secondary, tertiary, ghost) {
+    const nodes = [
+      { x: 90, y: 70 }, { x: 210, y: 38 }, { x: 320, y: 78 }, { x: 350, y: 180 },
+      { x: 270, y: 262 }, { x: 150, y: 268 }, { x: 66, y: 178 },
+    ];
+    const solidEdges = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 0]];
+    const dashedEdges = [[0, 3], [1, 5], [2, 6]];
+    const ghostOffset = { x: 24, y: -16 };
+    const gridPositions = [40, 84, 128, 172, 216, 260, 304, 348, 392];
+    const gridLines = gridPositions.map((pos) => `<line x1="${pos}" y1="8" x2="${pos}" y2="352" />`).join("")
+      + gridPositions.map((pos) => `<line x1="8" y1="${pos}" x2="392" y2="${pos}" />`).join("");
+    const solidPath = solidEdges.map(([a, b]) => `<line x1="${nodes[a].x}" y1="${nodes[a].y}" x2="${nodes[b].x}" y2="${nodes[b].y}" stroke="${primary}" stroke-width="2.5" />`).join("");
+    const dashedPath = dashedEdges.map(([a, b]) => `<line x1="${nodes[a].x}" y1="${nodes[a].y}" x2="${nodes[b].x}" y2="${nodes[b].y}" stroke="${secondary}" stroke-width="2" stroke-dasharray="6 5" />`).join("");
+    const ghostPolygon = `<polygon points="${nodes.map((n) => `${n.x + ghostOffset.x},${n.y + ghostOffset.y}`).join(" ")}" fill="${ghost}" fill-opacity="0.14" stroke="${ghost}" stroke-opacity="0.4" stroke-width="1.5" stroke-dasharray="3 4" />`;
+    const ghostPoints = nodes.map((n) => `<circle cx="${n.x + ghostOffset.x}" cy="${n.y + ghostOffset.y}" r="4" fill="${ghost}" fill-opacity="0.35" />`).join("");
+    const points = nodes.map((n, index) => {
+      if (index === 1) return `<circle cx="${n.x}" cy="${n.y}" r="9" fill="${primary}" filter="url(#uiSampleGlow)" /><circle cx="${n.x}" cy="${n.y}" r="5" fill="${primary}" />`;
+      if (index === 4) return `<circle cx="${n.x}" cy="${n.y}" r="5.5" fill="${secondary}" />`;
+      return `<circle cx="${n.x}" cy="${n.y}" r="4.5" fill="none" stroke="${tertiary}" stroke-width="2" />`;
+    }).join("");
+    return `<svg class="ui-sample-canvas-svg" viewBox="0 0 400 360" role="img" aria-label="Sample working canvas with points, edges, a glow node, and a ghost trace">
+      <defs><filter id="uiSampleGlow" x="-140%" y="-140%" width="380%" height="380%"><feGaussianBlur stdDeviation="6" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
+      <g class="ui-sample-grid">${gridLines}</g>
+      ${ghostPolygon}
+      ${ghostPoints}
+      ${dashedPath}
+      ${solidPath}
+      ${points}
+    </svg>`;
+  }
+
+  function buildUiSampleHtml(themes, accents) {
+    const specimens = themes.map((theme) => {
+      const primaryKey = theme.variants[0];
+      const secondaryKey = theme.variants[1];
+      const primaryAccent = accents[0];
+      const secondaryAccent = accents[1] || accents[0];
+      const tertiaryAccent = accents[2] || accents[0];
+      const primary = uiSampleAccentColors(primaryAccent)[primaryKey];
+      const secondary = uiSampleAccentColors(secondaryAccent)[secondaryKey];
+      const tertiary = uiSampleAccentColors(tertiaryAccent)[secondaryKey];
+      const ghost = tertiary;
+      const panelRgb = hexToRgb(theme.panel);
+      const primaryNodeFlag = apcaFlagHtml(hexToRgb(primary), panelRgb, 16, false, "Primary (glow) node vs canvas");
+      const secondaryNodeFlag = apcaFlagHtml(hexToRgb(secondary), panelRgb, 16, false, "Secondary node vs canvas");
+      const tertiaryNodeFlag = apcaFlagHtml(hexToRgb(tertiary), panelRgb, 16, false, "Outline node / ghost vs canvas");
+      const themeTextRgb = hexToRgb(theme.text);
+      const headingFlag = apcaFlagHtml(themeTextRgb, panelRgb, 14, true, "Panel heading");
+      const layers = accents.map((accent) => {
+        const colors = uiSampleAccentColors(accent);
+        const color = colors[primaryKey];
+        const lc = apcaLc(hexToRgb(color), panelRgb).toFixed(1);
+        const flag = apcaFlagHtml(hexToRgb(color), panelRgb, 13, false, `${accent.name || accent.hex} layer vs canvas`);
+        return `<li class="ui-sample-layer"><span class="ui-sample-layer-swatch" style="background:${color}"></span><code>${color}</code><span class="ui-sample-layer-lc">${lc} Lc${flag}</span></li>`;
+      }).join("");
+      return `<section class="ui-sample-specimen" style="--surface:${theme.surface};--panel:${theme.panel};--ink:${theme.text};color:${theme.text}" data-background="${theme.surface}">
+        <div class="ui-sample-top"><strong>${theme.kind === "light" ? "Light" : "Dark"} applet UI</strong><span>${theme.surface}</span></div>
+        <div class="ui-sample-layout">
+          <div class="ui-sample-panel ui-sample-panel-left">
+            <h3>Controls${headingFlag}</h3>
+            <label>Grid mode<select style="border-color:${secondary}"><option>Cartesian</option><option>Radial</option><option>Isometric</option></select></label>
+            <label>Render style<select style="border-color:${secondary}"><option>Solid</option><option>Dashed</option><option>Glow</option></select></label>
+            <label>Point density<input type="range" value="64" style="accent-color:${primary}"></label>
+            <label>Edge weight<input type="range" value="40" style="accent-color:${primary}"></label>
+            <label>Glow intensity<input type="range" value="72" style="accent-color:${secondary}"></label>
+            <div class="ui-sample-buttons">
+              <button style="background:${primary};color:#fff">Trace</button>
+              <button class="outline" style="color:${tertiary};border-color:${tertiary}">Pause</button>
+              <button class="outline" style="color:${secondary};border-color:${secondary}">Reset</button>
+            </div>
+            <div class="ui-sample-readout">Nodes: 7 &middot; Edges: 10 &middot; Energy: 0.62</div>
+          </div>
+          <div class="ui-sample-panel-center">
+            <div class="ui-sample-canvas" style="color:${theme.text}">${uiSampleCanvasSvg(primary, secondary, tertiary, ghost)}</div>
+            <div class="ui-sample-legend">
+              <span><i style="background:${primary}"></i>Solid edge${primaryNodeFlag}</span>
+              <span><i style="background:${secondary}"></i>Dashed edge${secondaryNodeFlag}</span>
+              <span><i style="background:${primary};box-shadow:0 0 6px 2px ${primary}"></i>Glow node</span>
+              <span><i style="background:${ghost};opacity:.5"></i>Ghost trace${tertiaryNodeFlag}</span>
+            </div>
+          </div>
+          <div class="ui-sample-panel ui-sample-panel-right">
+            <h3>Layers</h3>
+            <ul class="ui-sample-layer-list">${layers}</ul>
+            <label>Ghost opacity<input type="range" value="28" style="accent-color:${tertiary}"></label>
+            <label>Snap<select style="border-color:${secondary}"><option>Off</option><option>Grid</option><option>Angle</option></select></label>
+          </div>
+        </div>
+      </section>`;
+    }).join("");
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palette UI sample</title><style>
+      *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#15171b;color:#16181c}
+      .ui-sample-specimen{--ink:#202124;background:var(--surface);padding:24px clamp(14px,3vw,40px) 40px;min-height:100vh}
+      .ui-sample-top{display:flex;gap:14px;align-items:center;padding-bottom:14px;border-bottom:1px solid color-mix(in srgb,var(--ink) 22%,transparent);font-size:.82rem}
+      .ui-sample-top strong{margin-right:auto}
+      .ui-sample-layout{display:grid;grid-template-columns:200px minmax(0,1fr) 200px;gap:16px;margin-top:20px;align-items:start}
+      .ui-sample-panel{padding:14px;border:1px solid color-mix(in srgb,var(--ink) 26%,transparent);border-radius:10px;background:var(--panel);box-shadow:0 4px 18px color-mix(in srgb,var(--ink) 10%,transparent)}
+      .ui-sample-panel h3{margin:0 0 12px;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+      .ui-sample-panel label{display:block;margin-bottom:10px;font-size:.72rem;font-weight:600}
+      .ui-sample-panel select,.ui-sample-panel input{display:block;width:100%;margin-top:4px;padding:6px;border:1px solid;border-radius:5px;background:transparent;color:inherit;font:inherit}
+      .ui-sample-panel input[type=range]{padding:0;border:0;border-radius:0}
+      .ui-sample-buttons{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+      .ui-sample-buttons button{border:1px solid transparent;border-radius:6px;padding:6px 9px;font:inherit;font-size:.72rem;cursor:pointer}
+      .ui-sample-buttons .outline{background:transparent}
+      .ui-sample-readout{padding-top:10px;border-top:1px solid color-mix(in srgb,var(--ink) 18%,transparent);font:500 .68rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;opacity:.8}
+      .ui-sample-panel-center{min-width:0}
+      .ui-sample-canvas{border:1px solid color-mix(in srgb,var(--ink) 26%,transparent);border-radius:10px;background:var(--panel);padding:10px;box-shadow:0 4px 18px color-mix(in srgb,var(--ink) 10%,transparent)}
+      .ui-sample-canvas-svg{width:100%;height:auto;display:block}
+      .ui-sample-grid{stroke:currentColor;stroke-width:1;opacity:.25}
+      .ui-sample-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:.72rem}
+      .ui-sample-legend span{display:inline-flex;align-items:center;gap:6px}
+      .ui-sample-legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+      .apca-flag{display:inline-block;width:8px;height:8px;margin-left:5px;border-radius:50%;vertical-align:middle;cursor:help;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
+      .apca-flag.pass{background:#2fa864}
+      .apca-flag.fail{background:#e05263}
+      .ui-sample-layer-list{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:6px}
+      .ui-sample-layer{display:grid;grid-template-columns:14px auto 1fr;align-items:center;gap:6px;font-size:.72rem}
+      .ui-sample-layer-swatch{width:14px;height:14px;border-radius:3px;border:1px solid color-mix(in srgb,var(--ink) 25%,transparent)}
+      .ui-sample-layer-lc{justify-self:end;font:500 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;opacity:.8}
+      @media(max-width:900px){.ui-sample-layout{grid-template-columns:1fr}}
+      </style></head><body>${specimens}</body></html>`;
+  }
+
+  function resolveSamplePageThemes() {
     const lightSurface = samplePageLightSurface.dataset.value;
     const darkSurface = samplePageDarkSurface.dataset.value;
     const roleHexes = new Set([lightSurface, samplePageLightPanel.dataset.value, samplePageLightText.dataset.value, darkSurface, samplePageDarkPanel.dataset.value, samplePageDarkText.dataset.value]);
     const accents = palette.filter((color) => !roleHexes.has(color.hex) && samplePageAccentHexes.has(color.id));
-    if (lightSurface === darkSurface || !accents.length) return;
+    if (lightSurface === darkSurface || !accents.length) return null;
     const selectedVariant = (setting, fallback) => {
       const variant = setting.load();
       return ["soft", "input", "dark", "warm", "cool"].includes(variant) ? variant : fallback;
@@ -1895,13 +2254,33 @@
       { kind: "light", surface: lightSurface, panel: samplePageLightPanel.dataset.value, text: samplePageLightText.dataset.value, variants: [selectedVariant(samplePageLightPrimarySetting, "input"), selectedVariant(samplePageLightSecondarySetting, "dark")] },
       { kind: "dark", surface: darkSurface, panel: samplePageDarkPanel.dataset.value, text: samplePageDarkText.dataset.value, variants: [selectedVariant(samplePageDarkPrimarySetting, "soft"), selectedVariant(samplePageDarkSecondarySetting, "input")] },
     ];
+    return { themes, accents };
+  }
+
+  function openSamplePage() {
+    const context = resolveSamplePageThemes();
+    if (!context) return;
     const sampleWindow = window.open("", "_blank");
     if (!sampleWindow) {
       samplePageError.textContent = "The new tab was blocked by the browser. Allow pop-ups for this app and try again.";
       return;
     }
     sampleWindow.document.open();
-    sampleWindow.document.write(buildSamplePageHtml(themes, accents));
+    sampleWindow.document.write(buildSamplePageHtml(context.themes, context.accents));
+    sampleWindow.document.close();
+    sampleWindow.opener = null;
+  }
+
+  function openUiSample() {
+    const context = resolveSamplePageThemes();
+    if (!context) return;
+    const sampleWindow = window.open("", "_blank");
+    if (!sampleWindow) {
+      samplePageError.textContent = "The new tab was blocked by the browser. Allow pop-ups for this app and try again.";
+      return;
+    }
+    sampleWindow.document.open();
+    sampleWindow.document.write(buildUiSampleHtml(context.themes, context.accents));
     sampleWindow.document.close();
     sampleWindow.opener = null;
   }
@@ -1918,40 +2297,43 @@
     const visionMode = visionSelect.value;
     const simulating = visionMode !== "none";
 
+    // APCA is direction-sensitive (Lc(text=A,bg=B) != Lc(text=B,bg=A)), so each
+    // unordered palette pair produces two directional rows here.
     const pairs = [];
     for (let i = 0; i < palette.length; i++) {
       for (let j = i + 1; j < palette.length; j++) {
-        const a = palette[i], b = palette[j];
-        const ratio = contrastRatio(a.rgb, b.rgb);
-        const entry = { a, b, ...evaluate(ratio) };
-        if (simulating) {
-          const simRatio = contrastRatio(simulateVision(a.rgb, visionMode), simulateVision(b.rgb, visionMode));
-          entry.simRatio = simRatio;
-          entry.simLevel = bestLevel(evaluate(simRatio));
-        }
-        pairs.push(entry);
+        [[palette[i], palette[j]], [palette[j], palette[i]]].forEach(([text, bg]) => {
+          const lc = apcaLc(text.rgb, bg.rgb);
+          const entry = { text, bg, ...evaluate(lc) };
+          if (simulating) {
+            const simLc = apcaLc(simulateVision(text.rgb, visionMode), simulateVision(bg.rgb, visionMode));
+            entry.simLc = simLc;
+            entry.simLevel = bestLevel(evaluate(simLc));
+          }
+          pairs.push(entry);
+        });
       }
     }
-    pairs.sort((x, y) => y.ratio - x.ratio);
+    pairs.sort((x, y) => Math.abs(y.lc) - Math.abs(x.lc));
 
-    const headLabels = ["Pair", "Ratio", "AA Normal", "AAA Normal", "AA Large", "AAA Large"];
-    if (simulating) headLabels.push(`Simulated Ratio`, `Simulated Level`);
+    const headLabels = ["Text / Background", "Lc", "Body 75", "Large 60", "Bold 45", "Spot 30"];
+    if (simulating) headLabels.push(`Simulated Lc`, `Simulated Level`);
     rankingsHead.innerHTML = `<tr>${headLabels.map((h) => `<th scope="col">${h}</th>`).join("")}</tr>`;
 
     rankingsBody.innerHTML = pairs.map((p) => `
       <tr>
         <td>
           <span class="pair-swatches">
-            <span class="pair-swatch" style="background:${p.a.hex}"></span><span class="pair-swatch" style="background:${p.b.hex}"></span>
+            <span class="pair-swatch" style="background:${p.bg.hex}"></span><span class="pair-swatch" style="background:${p.text.hex}"></span>
           </span>
-          <span class="pair-hex">${p.a.hex} / ${p.b.hex}</span>
+          <span class="pair-hex">${p.text.hex} on ${p.bg.hex}</span>
         </td>
-        <td class="ratio-value">${p.ratio.toFixed(2)}:1</td>
-        <td>${resultIcon(p.aaNormal)}</td>
-        <td>${resultIcon(p.aaaNormal)}</td>
-        <td>${resultIcon(p.aaLarge)}</td>
-        <td>${resultIcon(p.aaaLarge)}</td>
-        ${simulating ? `<td class="ratio-value">${p.simRatio.toFixed(2)}:1</td><td>${levelBadgeHtml(p.simLevel)}</td>` : ""}
+        <td class="ratio-value">${p.lc.toFixed(1)} Lc</td>
+        <td>${resultIcon(p.body)}</td>
+        <td>${resultIcon(p.large)}</td>
+        <td>${resultIcon(p.bold)}</td>
+        <td>${resultIcon(p.spot)}</td>
+        ${simulating ? `<td class="ratio-value">${p.simLc.toFixed(1)} Lc</td><td>${levelBadgeHtml(p.simLevel)}</td>` : ""}
       </tr>
     `).join("");
   }
@@ -2002,7 +2384,7 @@
       const hsl = rgbToHsl(color.rgb);
       const x = hsl.h / 360 * rect.width;
       const y = (1 - hsl.l / 100) * rect.height;
-      const labelColor = relativeLuminance(color.rgb) > 0.35 ? "#101216" : "#ffffff";
+      const labelColor = sRGBtoY(color.rgb) > 0.35 ? "#101216" : "#ffffff";
       ctx.beginPath();
       ctx.arc(x, y, 10, 0, Math.PI * 2);
       ctx.fillStyle = color.hex;
@@ -2111,7 +2493,7 @@
       ctx.lineWidth = 2;
       ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
       ctx.stroke();
-      ctx.fillStyle = relativeLuminance(color.rgb) > 0.35 ? "#101216" : "#ffffff";
+      ctx.fillStyle = sRGBtoY(color.rgb) > 0.35 ? "#101216" : "#ffffff";
       ctx.font = "600 10px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -2204,7 +2586,7 @@
     control.addEventListener("click", (event) => {
       const swatch = event.target.closest(".sample-page-role-swatch");
       if (!swatch) return;
-      setting.save(swatch.dataset.hex);
+      setting.save(swatch.dataset.paletteId);
       renderAdjustedPalette();
     });
   });
@@ -2226,6 +2608,7 @@
     renderAdjustedPalette();
   });
   openSamplePageBtn.addEventListener("click", openSamplePage);
+  openUiSampleBtn.addEventListener("click", openUiSample);
   swapAxesToggle.addEventListener("change", () => {
     swapAxesSetting.save(swapAxesToggle.checked);
     renderAdjustedPalette();

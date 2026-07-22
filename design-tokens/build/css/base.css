@@ -1,0 +1,116 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --gray-50: #f6efe7;
+  --gray-100: #ece5e0;
+  --gray-200: #cec8c5;
+  --gray-300: #bbb6b0;
+  --gray-400: #a19d97;
+  --gray-500: #86837f;
+  --gray-600: #696663;
+  --gray-700: #52514f;
+  --gray-800: #383736;
+  --gray-900: #1e1a1a;
+  --gray-950: #141111;
+  --red-50: #a0140f; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --red-100: #f9e1de;
+  --red-200: #f0bdb3;
+  --red-300: #e3a8a2;
+  --red-400: #d88885;
+  --red-500: #e5504b;
+  --red-600: #ae4242;
+  --red-700: #823b3b;
+  --red-800: #542c27;
+  --red-900: #281717;
+  --red-950: #141111;
+  --orange-50: #cc5500; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --orange-100: #f2e4d4;
+  --orange-200: #f3bf90;
+  --orange-300: #f1a57b;
+  --orange-400: #e68451;
+  --orange-500: #d95d35;
+  --orange-600: #935832;
+  --orange-700: #694b2f;
+  --orange-800: #413526;
+  --orange-900: #1f1a17;
+  --orange-950: #15110f;
+  --yellow-50: #e4b92d; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --yellow-100: #f5e6af;
+  --yellow-200: #e2c86b;
+  --yellow-300: #d5b442;
+  --yellow-400: #b99b3b;
+  --yellow-500: #9b803f;
+  --yellow-600: #776440;
+  --yellow-700: #5d4f3b;
+  --yellow-800: #3d362f;
+  --yellow-900: #1f1a17;
+  --yellow-950: #14110f;
+  --ygreen-50: #47792d; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --ygreen-100: #dfeacd;
+  --ygreen-200: #bad0a1;
+  --ygreen-300: #a5c07c;
+  --ygreen-400: #89a85a;
+  --ygreen-500: #6c8e3c;
+  --ygreen-600: #546f29;
+  --ygreen-700: #465631;
+  --ygreen-800: #323a28;
+  --ygreen-900: #181d15;
+  --ygreen-950: #10120f;
+  --green-50: #0a5237; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --green-100: #d5ecdd;
+  --green-200: #96d7b1;
+  --green-300: #7bc69b;
+  --green-400: #57ae7f;
+  --green-500: #3e9367;
+  --green-600: #2d734f;
+  --green-700: #325943;
+  --green-800: #253c2e;
+  --green-900: #151d18;
+  --green-950: #0f1210;
+  --teal-50: #449eab; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --teal-100: #cfebf2;
+  --teal-200: #92d4df;
+  --teal-300: #5fc5d6;
+  --teal-400: #4aaaba;
+  --teal-500: #2590a3;
+  --teal-600: #326e7f;
+  --teal-700: #2f5759;
+  --teal-800: #263b38;
+  --teal-900: #131d1f;
+  --teal-950: #0d1313;
+  --blue-50: #3eaad5; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --blue-100: #d9e8f6;
+  --blue-200: #aacdec;
+  --blue-300: #7cbeea;
+  --blue-400: #68a2d7;
+  --blue-500: #5686c2;
+  --blue-600: #3d6a92;
+  --blue-700: #2c5474;
+  --blue-800: #263949;
+  --blue-900: #121c23;
+  --blue-950: #0c1216;
+  --purple-50: #553d70; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --purple-100: #ebe3f9;
+  --purple-200: #d0c3e9;
+  --purple-300: #c0ade6;
+  --purple-400: #a892d7;
+  --purple-500: #8e78bc;
+  --purple-600: #715b9e;
+  --purple-700: #59487b;
+  --purple-800: #3a334a;
+  --purple-900: #1d1925;
+  --purple-950: #121117;
+  --magenta-50: #7a2469; /** Vivid brand/flag exception — not part of the light-to-dark ramp; do not use for tints. */
+  --magenta-100: #f5e0ef;
+  --magenta-200: #edbadf;
+  --magenta-300: #e1a4d1;
+  --magenta-400: #cc87bb;
+  --magenta-500: #b967a6;
+  --magenta-600: #905081;
+  --magenta-700: #6d4364;
+  --magenta-800: #443140;
+  --magenta-900: #211920;
+  --magenta-950: #141014;
+}

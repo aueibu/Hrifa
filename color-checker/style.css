@@ -1200,6 +1200,10 @@ main {
   z-index: 3;
 }
 
+.band-ratio.sim {
+  bottom: calc(3px + 1.6em);
+}
+
 /* Accent contrast */
 
 .accent-background-selector {
@@ -1426,6 +1430,25 @@ main {
   cursor: not-allowed;
 }
 
+#openUiSampleBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#openUiSampleBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+#openUiSampleBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .accent-preview-control {
   display: flex;
   align-items: center;
@@ -1548,6 +1571,27 @@ main {
 
 .result-icon.fail {
   color: var(--fail-bg);
+}
+
+/* APCA diagnostic flag: a small pass/fail dot with a hover tooltip carrying
+   the exact Lc value and what size/weight of text it was checked against. */
+.apca-flag {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 4px;
+  border-radius: 50%;
+  vertical-align: middle;
+  cursor: help;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.apca-flag.pass {
+  background: var(--pass-bg);
+}
+
+.apca-flag.fail {
+  background: var(--fail-bg);
 }
 
 /* Palette color field */

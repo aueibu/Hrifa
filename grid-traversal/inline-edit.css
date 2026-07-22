@@ -1,6 +1,6 @@
 ::selection {
-  background: var(--plum);
-  color: var(--paper);
+  background: var(--chrome-accent);
+  color: var(--neutral-surface-bg);
 }
 
 .piece-rename {
@@ -8,8 +8,8 @@
   min-width: 2ch;
   margin: 0 0 3px;
   padding: 0 0 2px;
-  border-bottom: 1px dashed var(--plum);
-  color: var(--carbon);
+  border-bottom: 1px dashed var(--chrome-accent);
+  color: var(--neutral-text);
   font-family: Figtree, Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 15px;
   font-weight: 600;
@@ -19,7 +19,7 @@
 }
 
 .piece-rename:focus {
-  border-bottom: 2px solid var(--plum);
+  border-bottom: 2px solid var(--chrome-accent);
 }
 
 .piece-card strong {
@@ -57,7 +57,7 @@
 
 .variable-editor code {
   font-family: "DM Mono", ui-monospace, monospace;
-  color: var(--blue);
+  color: var(--chrome-accent);
 }
 
 .three-fields {
@@ -75,7 +75,7 @@
 
 .field-controls label {
   display: block;
-  color: var(--carbon);
+  color: var(--neutral-text);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: .04em;
@@ -84,9 +84,17 @@
 
 .field-controls select { margin-top: 5px; }
 
-.token.active { min-width: 23px; font-size: 7px; }
+/* font-size needs !important: renderTokenLabels() in app.js always sets an
+   inline font-size on every label (clamped 7-11px from cell size), which
+   otherwise beats any class rule regardless of specificity — these two
+   rules exist specifically to go below that clamp's 7px floor on dense
+   grids, so they have to win over the inline style. */
+.token-label.active { display: inline-block; min-width: 23px; font-size: 7px !important; }
 
-.board[data-size="64"] .token.active { min-width: 14px; height: 11px; padding: 0 1px; font-size: 4px; }
+/* #tokenLabels (where .token-label lives) is a sibling of the canvas, not a
+   descendant — data-size="64" is set on .board itself, so this has to reach
+   sideways via :has() rather than a plain descendant selector. */
+.canvas-wrap:has(.board[data-size="64"]) .token-label.active { min-width: 14px; height: 11px; padding: 0 1px; font-size: 4px !important; }
 
 canvas.board {
   display: block;
@@ -102,15 +110,15 @@ canvas.board {
 .token-label {
   position: absolute;
   transform: translate(-50%, -50%);
-  color: var(--paper);
+  color: var(--neutral-surface-bg);
   font-family: "DM Mono", ui-monospace, monospace;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
 }
 
-.token-label.rest { color: var(--carbon); }
-.token-label.ghost, .token-label.hatch { color: var(--carbon); }
+.token-label.rest { color: var(--neutral-text); }
+.token-label.ghost, .token-label.hatch { color: var(--neutral-text); }
 
 .cell-pieces { display: grid; gap: 7px; }
 
@@ -130,16 +138,16 @@ canvas.board {
 .piece-icon {
   width: 16px;
   height: 16px;
-  border: 1px solid var(--carbon);
+  border: 1px solid var(--neutral-text);
 }
 
-.piece-icon.blue { --piece-color: var(--blue); }
-.piece-icon.green { --piece-color: var(--green); }
-.piece-icon.gold { --piece-color: var(--gold); }
-.piece-icon.plum { --piece-color: var(--plum); }
+/* Piece identity palette — one hue + shade from --token-* in style.css,
+   assigned per piece at random (see createVisual() in app.js) and set
+   directly as an inline custom property (icon.style.setProperty), since
+   shade is a per-piece runtime value rather than a fixed class. */
 .piece-icon.solid { background: var(--piece-color); }
-.piece-icon.ghost { background: color-mix(in srgb, var(--piece-color) 24%, var(--paper)); }
-.piece-icon.hatch { background: repeating-linear-gradient(135deg, var(--piece-color) 0 2px, var(--paper) 2px 5px); }
+.piece-icon.ghost { background: color-mix(in srgb, var(--piece-color) 24%, var(--neutral-surface-bg)); }
+.piece-icon.hatch { background: repeating-linear-gradient(135deg, var(--piece-color) 0 2px, var(--neutral-surface-bg) 2px 5px); }
 
 .cell-piece strong { display: block; font-family: Figtree, Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; }
 .cell-piece small { display: block; margin-top: 1px; color: var(--muted); font-family: "DM Mono", ui-monospace, monospace; font-size: 9px; }
@@ -150,12 +158,12 @@ canvas.board {
   z-index: 12;
   max-width: 210px;
   padding: 5px 7px;
-  border: 1px solid var(--carbon);
-  background: var(--paper);
-  color: var(--carbon);
+  border: 1px solid var(--neutral-text);
+  background: var(--neutral-surface-bg);
+  color: var(--neutral-text);
   font-family: "DM Mono", ui-monospace, monospace;
   font-size: 10px;
   line-height: 1.35;
   pointer-events: none;
-  box-shadow: 2px 2px 0 var(--carbon);
+  box-shadow: 2px 2px 0 var(--neutral-shadow);
 }

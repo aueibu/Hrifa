@@ -1,0 +1,22 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root, [data-theme="light"] {
+  --neutral-surface-bg: var(--gray-50); /** Default page/canvas background. */
+  --neutral-surface-raised: var(--gray-100); /** Panels and instrument chrome. */
+  --neutral-surface-overlay: var(--gray-200); /** Modals, dropdowns, popovers. */
+  --neutral-border: var(--gray-300); /** Default rules and dividers. */
+  --neutral-border-strong: var(--gray-400); /** Emphasized rules, active containers. */
+  --neutral-text: var(--gray-950); /** Default ink. */
+  --neutral-text-muted: var(--gray-700); /** Secondary or supporting text. */
+  --neutral-text-disabled: var(--gray-400); /** Disabled labels and values. */
+  --neutral-shadow: var(--gray-800); /** Drop-shadow / offset-accent ink. */
+  --chrome-accent: var(--blue-700); /** Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code. */
+  --work-surface-idle: var(--green-800); /** Available but unselected points, edges, or objects. */
+  --work-surface-hover: var(--orange-500); /** Hovered point/edge/object, prior to selection. */
+  --work-surface-active: var(--orange-600); /** Selected, current, or provisional/preview geometry. Shares a hue with hover by deliberate choice; distinguished by size/weight/dash treatment instead of colour. */
+  --work-surface-relation: var(--purple-700); /** A second object referenced against the active one — comparison, not selection. */
+  --emphasis: var(--yellow-500); /** Rare warm or editorial highlight. Never the default selection colour. */
+  --critical: var(--red-500); /** Destructive, critical, or irreversible action — deliberately deeper than the base red. */
+}

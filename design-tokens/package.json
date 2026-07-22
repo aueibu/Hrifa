@@ -1,0 +1,14 @@
+{
+  "name": "design-tokens",
+  "version": "1.0.0",
+  "description": "Shared Hrifa colour token source (Style Dictionary). Builds base.css, light.css, and dark.css consumed by every applet.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "style-dictionary build --config config.js"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "style-dictionary": "^5.5.0"
+  }
+}

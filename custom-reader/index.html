@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="description" content="A curated digest of recent articles from a chosen set of sources." />
+<title>Custom Reader — Hrifa</title>
+<link rel="stylesheet" href="../design-tokens/build/css/base.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/light.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/dark.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="page" id="page">
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">HRIFA / CUSTOM READER</p>
+      <h1>Today's digest</h1>
+      <p id="generatedAt" class="generated"></p>
+    </header>
+
+    <section id="errorBanner" class="error-banner" hidden></section>
+
+    <section aria-label="Filter by source" class="source-filter">
+      <div id="sourceFilters" class="filters"></div>
+      <div class="view-toggle" id="viewToggle" role="group" aria-label="Layout">
+        <button type="button" class="view-btn" data-view="list">List</button>
+        <button type="button" class="view-btn" data-view="columns">Columns</button>
+      </div>
+      <button type="button" id="backToStartBtn" class="back-to-start-btn" hidden>&#8617; Back to start</button>
+      <p id="count" class="count" aria-live="polite"></p>
+    </section>
+
+    <section aria-label="Digest items" class="items-scroll">
+      <ul id="itemList" class="item-list"></ul>
+      <div id="columnBoard" class="column-board" hidden></div>
+    </section>
+
+    <footer>
+      <span>Sorted by recency. Edit <code>sources.json</code> and run <code>node build.js</code> to refresh.</span>
+    </footer>
+  </main>
+
+  <aside id="readingPane" class="reading-pane" aria-hidden="true">
+    <div id="paneResizeHandle" class="pane-resize-handle" title="Drag to resize"></div>
+    <div id="paneContent" class="pane-content"></div>
+  </aside>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

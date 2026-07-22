@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Grid Traversal Workshop</title>
+  <link rel="stylesheet" href="../design-tokens/build/css/base.css" />
+  <link rel="stylesheet" href="../design-tokens/build/css/light.css" />
+  <link rel="stylesheet" href="../design-tokens/build/css/dark.css" />
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="inline-edit.css">
 </head>
@@ -11,7 +14,7 @@
   <main>
     <header class="masthead">
       <div><p class="eyebrow">Hrifa / field study</p><h1>Grid Traversal Workshop</h1><p>Define one repeatable compound move per piece, place every token, then let energy, state, and occupancy decide where the field settles.</p></div>
-      <div class="run-controls"><button id="stepButton">Step round</button><button id="runButton">Run</button><label class="speed-control">Speed<input id="simSpeed" type="range" min="1" max="25" value="5"><output id="simSpeedValue">5×</output></label><button id="resolveButton">Resolve</button><button id="exportPngButton" class="quiet">Export PNG</button><button id="exportConfigButton" class="quiet">Export config</button><button id="resetPiecesButton" class="quiet">Reset pieces</button><button id="resetGridButton" class="quiet">Reset grid</button></div>
+      <div class="run-controls"><button id="stepButton">Step round</button><button id="runButton">Run</button><label class="speed-control">Speed<input id="simSpeed" type="range" min="1" max="25" value="5"><output id="simSpeedValue">5×</output></label><button id="resolveButton">Resolve</button><button id="exportPngButton" class="quiet">Export PNG</button><button id="exportConfigButton" class="quiet">Export config</button><button id="resetPiecesButton" class="quiet">Reset pieces</button><button id="resetGridButton" class="quiet">Reset grid</button><button id="themeButton" class="quiet" aria-pressed="false">Dark</button></div>
     </header>
 
     <section class="workbench">

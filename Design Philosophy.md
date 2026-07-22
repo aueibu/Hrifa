@@ -34,28 +34,29 @@ The portal establishes the shared voice. Each applet may have its own domain-spe
 
 #### Palette
 
-Palette values live in code as CSS custom properties, layered per the [Design tokens](#design-tokens) system below; this table is the source of truth for what each role means and which hue fills it in each theme. Both themes share the same nine primitives (seven accents, one cool "chrome" blue, and a neutral gray family) — only surface/text roles invert between them.
+Palette values live in code as CSS custom properties, generated from the shared [`design-tokens`](../design-tokens/README.md) package (Style Dictionary) at the repo root and layered per the [Design tokens](#design-tokens) system below; this table is the source of truth for what each role means and which base hue/step fills it in each theme. The base ramp is built on USWDS 3's palette (`gray`, `red`, `orange`, `yellow`, `ygreen`, `green`, `teal`, `blue`, `purple`, `magenta` — each with 50–950 steps, `gray` moving from a warm charcoal at the dark end to parchment at the light end); only which hue/step a role points at changes between light and dark. `neutral.*` surface/text roles invert direction between themes; the *raised* surface (panels/chrome) sits one step further from the base page surface toward the ink end of the ramp in both themes, so panels read as a consistently receded plane relative to the page.
 
 | Role | Domain | Property | Light | Dark | Intended use |
 | --- | --- | --- | --- | --- | --- |
-| Surface | Shared | `--surface-bg` | Paper `#F9F5F0` | `#181816` | Default page/canvas background. |
-| Surface, raised | Shared | `--surface-raised` | `#EDE8E1` | `#262421` | Panels and instrument chrome. |
-| Surface, overlay | Shared | `--surface-overlay` | `#E2DBD1` | `#433D37` | Modals, dropdowns, popovers. |
-| Border | Shared | `--border` | `#CBC0B2` | `#5F564E` | Default rules and dividers. |
-| Border, strong | Shared | `--border-strong` | `#BFB3A3` | `#6E6359` | Emphasized rules, active containers. |
-| Text | Shared | `--text` | `#181816` | Paper `#F9F5F0` | Default ink. |
-| Text, muted | Shared | `--text-muted` | `#A89984` | `#7C6F64` | Secondary or supporting text. |
-| Text, disabled | Shared | `--text-disabled` | Grey Olive `#9D9B97` | Charcoal Brown `#41413E` | Disabled labels and values. |
-| Chrome accent | Chrome | `--chrome-accent` | Blue-new `#6C8EB0` | Blue-new `#6C8EB0` | Buttons, sliders, links, focus rings, dropdown hover/inset accent. |
-| Chrome accent, soft | Chrome | `--chrome-accent-soft` | derived | derived | Hover fill behind ghost buttons and menu items. |
-| Work-surface idle | Work surface | `--point-idle` | Green `#B8BB26` | Green `#B8BB26` | Available but unselected points, edges, or objects. |
-| Work-surface hover | Work surface | `--point-hover` | Blue `#83A598` | Blue `#83A598` | Hovered point/edge/object, prior to selection — deliberately a different hue from the chrome accent, per the domain rule below. |
-| Work-surface active | Work surface | `--point-active` | Purple `#D3869B` | Purple `#D3869B` | Selected, current, or provisional/preview geometry. Preview is distinguished from committed selection by a ghost/dashed treatment, not a separate hue. |
-| Work-surface relation | Work surface | `--point-relation` | Orange `#FE8019` | Orange `#FE8019` | A second object referenced against the active one — comparison, not selection. |
-| Emphasis | Shared, rare | `--emphasis` | Yellow `#FABD2F` | Yellow `#FABD2F` | Rare warm or editorial highlight. Never the default selection colour. |
-| Critical | Shared | `--critical` | Oxblood *(derived, ~`#8A281D`)* | Oxblood *(derived, ~`#8A281D`)* | Destructive, critical, or irreversible action — deliberately deeper than the base red so it reads as serious, not merely alerting. |
+| Surface | Shared | `--neutral-surface-bg` | `gray.50` `#F6EFE7` | `gray.900` `#232221` | Default page/canvas background. |
+| Surface, raised | Shared | `--neutral-surface-raised` | `gray.100` `#ECE5E0` | `gray.950` `#1C1B1A` | Panels and instrument chrome. |
+| Surface, overlay | Shared | `--neutral-surface-overlay` | `gray.200` `#CEC8C5` | `gray.800` `#2F2E2D` | Modals, dropdowns, popovers. |
+| Border | Shared | `--neutral-border` | `gray.300` `#CEC8C2` | `gray.700` `#4E4C4A` | Default rules and dividers. |
+| Border, strong | Shared | `--neutral-border-strong` | `gray.400` `#B7B2AC` | `gray.600` `#716E6B` | Emphasized rules, active containers. |
+| Text | Shared | `--neutral-text` | `gray.950` `#1C1B1A` | `gray.50` `#F6EFE7` | Default ink. |
+| Text, muted | Shared | `--neutral-text-muted` | `gray.700` `#4E4C4A` | `gray.400` `#B7B2AC` | Secondary or supporting text. |
+| Text, disabled | Shared | `--neutral-text-disabled` | `gray.400` `#B7B2AC` | `gray.600` `#716E6B` | Disabled labels and values. |
+| Shadow | Shared | `--neutral-shadow` | `gray.800` `#2F2E2D` | `gray.300` `#CEC8C2` | Drop-shadow / offset-accent ink (button hover offsets, panel shadow). |
+| Chrome accent | Chrome | `--chrome-accent` | `blue.600` `#3673A4` | `blue.300` `#AACDEF` | Buttons, sliders, links, focus rings, dropdown hover/inset accent. |
+| Chrome accent, soft | Chrome | `--chrome-accent-hover` (app-local, per applet) | derived | derived | Hover fill behind ghost buttons and menu items — a `color-mix()` of `--chrome-accent`, not a token; see [Design tokens](#design-tokens). |
+| Work-surface idle | Work surface | `--work-surface-idle` | `green.600` `#327C55` | `green.300` `#88DAAB` | Available but unselected points, edges, or objects. |
+| Work-surface hover | Work surface | `--work-surface-hover` | `orange.600` `#9E5F36` | `orange.300` `#F4BDA4` | Hovered point/edge/object, prior to selection. |
+| Work-surface active | Work surface | `--work-surface-active` | `orange.600` `#9E5F36` | `orange.300` `#F4BDA4` | Selected, current, or provisional/preview geometry. Deliberately shares hover's hue — the two states are told apart by size/weight/dash treatment, not colour. When both a hover and an active/preview cue can appear on the same element, keep that non-colour distinction unambiguous. |
+| Work-surface relation | Work surface | `--work-surface-relation` | `purple.600` `#7863A4` | `purple.300` `#D0C2ED` | A second object referenced against the active one — comparison, not selection. |
+| Emphasis | Shared, rare | `--emphasis` | `yellow.600` `#806C45` | `yellow.300` `#EAC649` | Rare warm or editorial highlight. Never the default selection colour. |
+| Critical | Shared | `--critical` | `red.800` `#3E2927` | `red.400` `#EE9E99` | Destructive, critical, or irreversible action — deliberately deeper than the base red in light mode, and more intense than the other dark-mode accents in dark mode, so it reads as serious rather than merely alerting. |
 
-Aqua and the lighter/darker steps of the gray family are reserved: primitives that exist in the palette but have no assigned role yet. Introduce a role for one of them before reaching for a tenth hue — this is the complete accent set; do not expand it casually.
+Accent roles draw from a fixed shade band per theme so contrast stays predictable: light theme uses 500–800 (extending to 400/900 when a role needs more range), dark theme uses 300–500 (extending to 200/600). `teal`, `ygreen`, and `magenta` are reserved: base hues that exist in the palette but have no assigned semantic role yet. Introduce a role for one of them before reaching for an eleventh hue — this is the complete accent set; do not expand it casually.
 
 Do not use every accent in every view. Most screens should be surface, text, and border first, with colour reserved for meaningful state.
 
@@ -95,7 +96,7 @@ Four families are acceptable because their roles are distinct. Do not substitute
 
 ## Design tokens
 
-Every applet exposes colour and state through named custom properties, layered so a hue can be retuned without touching every place it's used, and so intent is legible in the code itself rather than only in a hex value.
+Every applet exposes colour and state through named custom properties, layered so a hue can be retuned without touching every place it's used, and so intent is legible in the code itself rather than only in a hex value. The base palette and the semantic layer below are generated once, at the repo root, by the [`design-tokens`](../design-tokens/README.md) package (`color-tokens.json` + Style Dictionary) — every applet links the same `build/css/{base,light,dark}.css` rather than hand-authoring its own primitives. An applet's own stylesheet should add only its two derived tiers (strengths, `color-mix()` combinations) on top; see Edel's `style.css` for the pattern.
 
 ### Two domains, never shared by name
 
@@ -112,9 +113,9 @@ Name states, not colours. Every interactive element — chrome or work-surface �
 
 ### Three layers, so the token count stays small
 
-1. **Primitives** — the raw hues from the palette table, one custom property per hue, defined once per theme. Nothing outside the token definitions should reference these directly.
-2. **Derived** — soft/muted or dark/deep variants computed from primitives at use-time (e.g. via `color-mix()`) rather than hand-authored as separate literals. This keeps the token count from scaling linearly as new accents or variants get added.
-3. **Semantic** — the only layer components and canvas-drawing code should reference: names like `--chrome-accent`, `--point-hover`, `--point-active`, `--point-idle`, `--surface-bg`, `--text-muted`, built from the chrome/work-surface split above. Where canvas code reads computed styles into a JS object (as Edel's `uiTheme` does), that object's keys should carry the same semantic names, not the primitive hue names — so `uiTheme.pointHover` stays legible independent of which hue currently backs it.
+1. **Primitives** — the raw ten-hue base ramp (`gray`, `red`, `orange`, `yellow`, `ygreen`, `green`, `teal`, `blue`, `purple`, `magenta`, each 50–950), defined once in `design-tokens/color-tokens.json` and shared by every applet via `base.css`. Nothing outside the token definitions should reference these directly.
+2. **Derived** — soft/muted or dark/deep variants computed from the semantic layer at use-time (e.g. via `color-mix()`) rather than hand-authored as separate literals, kept in each applet's own stylesheet rather than in the shared token JSON. This keeps the token count from scaling linearly as new accents or variants get added.
+3. **Semantic** — the only layer components and canvas-drawing code should reference: `--neutral-surface-bg`, `--neutral-surface-raised`, `--neutral-surface-overlay`, `--neutral-border`, `--neutral-border-strong`, `--neutral-text`, `--neutral-text-muted`, `--neutral-text-disabled`, `--neutral-shadow`, `--chrome-accent`, `--work-surface-idle`, `--work-surface-hover`, `--work-surface-active`, `--work-surface-relation`, `--emphasis`, `--critical` — built from `design-tokens/color-tokens.json`'s `color.theme.light.*` / `color.theme.dark.*`, scoped by a `[data-theme]` selector so light and dark share the same variable names. Where canvas code reads computed styles into a JS object (as Edel's `uiTheme` does), that object's keys should carry the same semantic sense, not the primitive hue names — so `uiTheme.active`/`uiTheme.hover`/`uiTheme.idle`/`uiTheme.relation` stay legible independent of which hue currently backs them.
 
 ## Applying the system to Hrifa Edel
 
