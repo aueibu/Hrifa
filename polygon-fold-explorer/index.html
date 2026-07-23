@@ -4,18 +4,35 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Polygon Fold Expansion Explorer</title>
+  <link rel="stylesheet" href="../design-tokens/build/css/base.css">
+  <link rel="stylesheet" href="../design-tokens/build/css/light.css">
+  <link rel="stylesheet" href="../design-tokens/build/css/dark.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <aside>
+    <p class="eyebrow">Hrifa / polygon study</p>
     <h1>Polygon Fold Expansion Explorer</h1>
     <div class="subtitle">Explore combinatorial folds, reflections, and every possible edge insertion for polygon expansion.</div>
+    <button id="themeButton" class="quiet theme-toggle" aria-pressed="false">Dark</button>
+    <section class="section">
+      <div class="section-title">Mode</div>
+      <div class="row"><button class="primary" id="modeFreeformBtn">Freeform</button><button id="modeLatticeBtn">Lattice Seed</button></div>
+    </section>
     <section class="section">
       <div class="section-title">Polygon</div>
       <div class="row" hidden><button class="primary" id="drawBtn">Draw vertices</button><button id="closeBtn">Close polygon</button></div>
       <div class="row"><button id="undoBtn">Undo <span aria-hidden="true">(Ctrl+Z)</span></button><button id="clearBtn">Clear</button></div>
       <button id="demoBtn">Load concave example</button>
       <div id="status" class="status"></div>
+    </section>
+    <section class="section" id="latticeSection" hidden>
+      <div class="section-title">Lattice Seed</div>
+      <label class="field">Spacing (px)<input id="latticeSpacingInput" type="number" min="10" max="200" value="40"></label>
+      <label class="field">Min radius<input id="minRadiusInput" type="number" min="0" max="25" value="0"></label>
+      <label class="field">Max radius<input id="maxRadiusInput" type="number" min="1" max="25" value="6"></label>
+      <label class="check"><input id="convexHullOnly" type="checkbox"> Convex hull only</label>
+      <div class="row"><input id="randomizeNInput" type="number" min="3" max="40" value="6"><button id="randomizeBtn">Randomize</button></div>
     </section>
     <section class="section">
       <div class="section-title">Construction layers</div>
@@ -26,6 +43,11 @@
       <label class="check"><input checked id="showChains" type="checkbox"> Fold chains</label>
       <label class="check"><input checked id="showReflections" type="checkbox"> Reflected points</label>
       <label class="check"><input id="showCandidates" type="checkbox"> Selected candidate polygon</label>
+      <label class="check"><input checked id="showLatticeGrid" type="checkbox"> Lattice grid</label>
+    </section>
+    <section class="section">
+      <div class="section-title">Metrics</div>
+      <div id="metricsPanel" class="status">No polygon yet</div>
     </section>
     <section class="section legend">
       <div class="section-title">Legend</div>
