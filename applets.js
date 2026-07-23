@@ -4,6 +4,7 @@ const applets=[
 {title:'Fold Explorer',href:'polygon-fold-explorer/',category:'geometry',mark:'fold',description:'A visual study of folds, symmetry, and polygonal transformations.'},
 {title:'Affine Focus',href:'affine-focus-transform-explorer/',category:'geometry',mark:'affine',description:'Transform a focus through skew, scale, and other affine shifts.'},
 {title:'Irregular 3D',href:'polygon-irregular-3d/',category:'geometry',mark:'3d',description:'Investigate irregular polygons as spatial, dimensional structures.'},
+{title:'Annulus Explorer',href:'polygon-annulus-explorer/',category:'geometry',mark:'annulus',description:'Enumerate every lattice polygon that contains a disk annulus, up to congruence.'},
 {title:'Username Seeds',href:'username-seeds/',category:'language',mark:'words',description:'A compact generator for name fragments and identity seeds.'},
 {title:'Hrifa Edel',href:'hrifa-edel/',category:'language',mark:'words',description:'A small lexical and naming experiment in the Hrifa world.'},
 {title:'Polygon New Tab',href:'polygon-new-tab/newtab.html',category:'utility',mark:'polygon',description:'A polygon-themed browser new-tab experience.'},

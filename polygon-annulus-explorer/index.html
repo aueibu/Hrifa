@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Annulus Polygon Explorer</title>
+  <meta name="description" content="Enumerate every lattice n-gon containing a disk annulus, up to congruence." />
+  <link rel="stylesheet" href="../design-tokens/build/css/base.css" />
+  <link rel="stylesheet" href="../design-tokens/build/css/light.css" />
+  <link rel="stylesheet" href="../design-tokens/build/css/dark.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Hrifa / Geometry</p>
+        <h1>Annulus Polygon Explorer</h1>
+      </div>
+      <div class="top-actions">
+        <button id="themeBtn" class="ghost" type="button" aria-pressed="false">Nightglass</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel left-panel">
+        <section>
+          <div class="section-head"><span>01</span><h2>Lattice</h2></div>
+          <div class="preset-row" role="group" aria-label="Lattice presets">
+            <button type="button" class="preset-btn" data-preset="square">Square</button>
+            <button type="button" class="preset-btn" data-preset="triangular">Triangular</button>
+            <button type="button" class="preset-btn" data-preset="rectangular">Rectangular</button>
+          </div>
+          <div class="pair-grid">
+            <label>v1 x <input id="v1x" type="number" step="0.01" value="1" /></label>
+            <label>v1 y <input id="v1y" type="number" step="0.01" value="0" /></label>
+          </div>
+          <div class="pair-grid">
+            <label>v2 x <input id="v2x" type="number" step="0.01" value="0" /></label>
+            <label>v2 y <input id="v2y" type="number" step="0.01" value="1" /></label>
+          </div>
+          <p class="micro" id="latticeMeta">—</p>
+        </section>
+
+        <section>
+          <div class="section-head"><span>02</span><h2>Annulus</h2></div>
+          <label>Inner radius min<sub>R</sub> <output id="minROut">1.50</output>
+            <input id="minRInput" type="range" min="0.5" max="6" step="0.05" value="1.5" />
+          </label>
+          <label>Outer radius max<sub>R</sub> <output id="maxROut">2.60</output>
+            <input id="maxRInput" type="range" min="0.5" max="8" step="0.05" value="2.6" />
+          </label>
+          <div class="ratio-readout" id="ratioReadout">
+            <span class="ratio-label">Floor-ratio check</span>
+            <span class="ratio-value" id="ratioValue">—</span>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-head"><span>03</span><h2>Enumeration</h2></div>
+          <label>Polygon sides n <output id="nOut">4</output>
+            <input id="nInput" type="range" min="3" max="12" step="1" value="4" />
+          </label>
+          <label class="toggle-line"><input id="edgePurityInput" type="checkbox" checked /><span>Edge purity (reject extra lattice points on edges)</span></label>
+
+          <details class="advanced">
+            <summary>Subset-count guard (advanced)</summary>
+            <p class="micro">Before enumerating, the tool computes C(annulus&nbsp;points,&nbsp;n) — the number of vertex subsets to check — and refuses to run if it exceeds this guard, rather than freezing the tab.</p>
+            <label>Max combinations <output id="maxCombosOut">500,000</output>
+              <input id="maxCombosInput" type="range" min="10000" max="2000000" step="10000" value="500000" />
+            </label>
+          </details>
+
+          <button id="generateBtn" class="wide primary">Generate <span>↵</span></button>
+          <p class="status-line" id="statusLine">Ready.</p>
+        </section>
+      </aside>
+
+      <section class="stage-wrap">
+        <svg id="stage" class="stage-svg"></svg>
+        <div class="stage-toolbar">
+          <button id="zoomResetBtn" type="button" class="view-btn">Reset view</button>
+          <span class="stage-hint">Scroll to zoom · drag to pan</span>
+        </div>
+        <div class="stage-legend">
+          <span><i class="swatch swatch-idle"></i>annulus point</span>
+          <span><i class="swatch swatch-muted"></i>lattice point</span>
+          <span><i class="swatch swatch-active"></i>selected</span>
+          <span><i class="swatch swatch-relation"></i>mirror partner</span>
+        </div>
+      </section>
+
+      <aside class="panel right-panel">
+        <section class="results-head">
+          <div class="section-head"><span>04</span><h2>Results</h2></div>
+          <p class="micro" id="resultsSummary">Generate a set to see results.</p>
+        </section>
+        <section class="results-list-wrap">
+          <div id="resultsList" class="results-list"></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

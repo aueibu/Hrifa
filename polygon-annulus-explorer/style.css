@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+/* ---------------------------------------------------------------------
+   THEME TOKENS — the base palette and the light/dark semantic layer
+   (--neutral-*, --chrome-accent, --work-surface-*, --emphasis,
+   --critical) come from the shared ../design-tokens build (base.css,
+   light.css, dark.css — linked in index.html before this file). See
+   design-tokens/README.md for the full token architecture.
+   This file adds two more tiers on top of that semantic layer:
+   1) Strengths: how strongly a wash/overlay reads. Light-on-dark
+      washes read stronger per % than dark-on-light, so dark strengths
+      are dialed back — retuned per theme below.
+   2) Derived: color-mix() combinations computed at use-time, kept out
+      of the token JSON so token count doesn't scale with every hover/
+      wash variant. Everything past this block references only the
+      semantic layer above — never a base hue directly.
+   --------------------------------------------------------------------- */
+:root{
+  /* strengths (light / default) */
+  --panel-tint-strength:3.5%;--line-strength:38%;--soft-line-strength:16%;
+  --grid-strength:8%;--disk-strength:6%;--hover-strength:18%;--shadow-strength:12%;
+
+  /* derived — UI chrome */
+  --chrome-accent-hover:color-mix(in srgb,var(--chrome-accent) var(--hover-strength),var(--neutral-surface-bg));
+  --panel-tint:color-mix(in srgb,var(--neutral-text) var(--panel-tint-strength),transparent);
+  --line:color-mix(in srgb,var(--neutral-text) var(--line-strength),transparent);
+  --soft-line:color-mix(in srgb,var(--neutral-text) var(--soft-line-strength),transparent);
+  --muted:var(--neutral-text-muted);
+  --shadow:color-mix(in srgb,var(--neutral-shadow) var(--shadow-strength),transparent);
+
+  /* derived — canvas (work-surface roles only; canvas code must never
+     reach for a chrome token, even where values happen to look similar) */
+  --grid-dot:color-mix(in srgb,var(--neutral-text) var(--grid-strength),transparent);
+  --disk-fill:color-mix(in srgb,var(--work-surface-idle) var(--disk-strength),transparent);
+  --disk-line:color-mix(in srgb,var(--work-surface-idle) 55%,transparent);
+  --idle-fill:color-mix(in srgb,var(--work-surface-idle) 22%,var(--neutral-surface-bg));
+  --active-fill:color-mix(in srgb,var(--work-surface-active) 20%,var(--neutral-surface-bg));
+  --relation-fill:color-mix(in srgb,var(--work-surface-relation) 16%,var(--neutral-surface-bg));
+}
+
+/* "Nightglass" — the same instrument by candlelight. --neutral-shadow
+   comes from design-tokens' dark.css scoped to this same
+   [data-theme="dark"] selector; this block only retunes strengths. */
+[data-theme="dark"]{
+  --panel-tint-strength:2.5%;--line-strength:28%;--soft-line-strength:12%;
+  --grid-strength:6%;--disk-strength:9%;--hover-strength:20%;--shadow-strength:55%;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);font-family:Figtree,Inter,ui-sans-serif,system-ui,sans-serif}
+body{overflow:hidden}
+.app-shell{min-height:100%}
+body,.panel,.topbar,.stage-wrap,.results-list,.result-card,.stage-toolbar,.status-line,select,input,textarea{transition:background-color .2s ease,color .2s ease,border-color .2s ease}
+
+.topbar{height:74px;padding:12px 20px;border-bottom:2px solid var(--neutral-text);display:flex;align-items:center;justify-content:space-between;background:var(--neutral-surface-bg)}
+.eyebrow{margin:0 0 3px;font-family:"DM Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.22em;color:var(--chrome-accent);text-transform:uppercase}
+h1{font-family:Fraunces,Georgia,serif;font-size:25px;font-weight:600;letter-spacing:-.035em;line-height:.95;margin:0}
+button,select,input,textarea{font:inherit;color:inherit}
+button{border:1px solid var(--chrome-accent);background:transparent;color:var(--chrome-accent);border-radius:0;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:700;transition:transform .14s ease,background .14s ease,box-shadow .14s ease}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--chrome-accent);outline-offset:2px}
+button.ghost{background:transparent;color:var(--chrome-accent);border-color:var(--chrome-accent)}
+button.ghost:hover{background:var(--chrome-accent-hover);color:var(--neutral-text)}
+button.ghost[aria-pressed="true"]{background:var(--chrome-accent);color:var(--neutral-surface-bg)}
+button.primary{background:var(--chrome-accent);border-color:var(--chrome-accent);color:var(--neutral-surface-bg)}
+button.primary:hover{transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutral-shadow)}
+button.primary:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+button.wide{width:100%;margin-top:10px}
+button span{float:right;opacity:.6}
+
+.workspace{height:calc(100vh - 74px);display:grid;grid-template-columns:296px minmax(420px,1fr) 320px}
+.panel{overflow:auto;background:var(--panel-tint);border-right:1px solid var(--line)}
+.right-panel{border-right:0;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.panel section{padding:16px 18px 18px;border-bottom:1px solid var(--line)}
+.section-head{display:flex;align-items:baseline;gap:9px;margin-bottom:10px}
+.section-head span{font-family:"DM Mono",ui-monospace,monospace;font-size:10px;color:var(--neutral-text);font-variant-numeric:tabular-nums}
+.section-head h2{font-family:Fraunces,Georgia,serif;font-size:16px;letter-spacing:-.02em;margin:0;font-weight:600}
+
+label{display:block;font-size:11px;color:var(--muted);margin:10px 0;font-weight:600}
+label output{float:right;color:var(--neutral-text);font-family:"DM Mono",ui-monospace,monospace;font-size:10px;font-variant-numeric:tabular-nums}
+input[type=number]{width:100%;margin-top:6px;background:var(--neutral-surface-bg);border:1px solid var(--line);color:var(--neutral-text);border-radius:0;padding:6px 7px;font-family:"DM Mono",ui-monospace,monospace;font-size:12px}
+input[type=number]:hover,input[type=number]:focus{border-color:var(--chrome-accent)}
+input[type=range]{width:100%;margin-top:8px;accent-color:var(--chrome-accent)}
+.pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.preset-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+.preset-btn{padding:7px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
+.micro{font-size:10px;line-height:1.5;color:var(--muted);margin:9px 0 0}
+
+.toggle-line{display:flex;gap:8px;align-items:center;color:var(--muted);margin:12px 0;font-weight:600}
+.toggle-line input{width:auto;margin:0;accent-color:var(--chrome-accent)}
+
+.ratio-readout{margin-top:12px;padding:9px 10px;border:1px solid var(--line);border-left:4px solid var(--chrome-accent);background:var(--neutral-surface-bg);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ratio-readout.fail{border-left-color:var(--critical)}
+.ratio-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ratio-value{font-family:"DM Mono",ui-monospace,monospace;font-size:11px;color:var(--neutral-text)}
+.ratio-readout.fail .ratio-value{color:var(--critical)}
+
+.advanced{margin:14px 0;border:1px solid var(--soft-line);padding:8px 10px}
+.advanced summary{cursor:pointer;font-size:11px;font-weight:700;color:var(--neutral-text)}
+.advanced .micro{margin-top:8px}
+
+.status-line{margin:10px 0 0;padding:8px 9px;border:1px solid var(--line);background:var(--neutral-surface-bg);font-family:"DM Mono",ui-monospace,monospace;font-size:10px;line-height:1.5;min-height:34px}
+.status-line.err{border-color:var(--critical);color:var(--critical)}
+.status-line.ok{border-left:3px solid var(--work-surface-idle)}
+
+.stage-wrap{position:relative;min-width:0;background:var(--neutral-surface-bg);overflow:hidden}
+.stage-svg{display:block;width:100%;height:100%;cursor:grab}
+.stage-svg.panning{cursor:grabbing}
+.stage-toolbar{position:absolute;top:13px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--neutral-surface-bg);border:1px solid var(--neutral-text);padding:5px 10px;box-shadow:3px 3px 0 var(--shadow)}
+.view-btn{border:0;background:transparent;color:var(--muted);padding:5px 8px;font-size:11px}
+.view-btn:hover{background:var(--chrome-accent-hover);color:var(--neutral-text)}
+.stage-hint{font-size:10px;color:var(--muted);white-space:nowrap}
+.stage-legend{position:absolute;left:16px;bottom:14px;display:flex;gap:14px;background:var(--neutral-surface-bg);border:1px solid var(--line);padding:6px 10px;font-size:10px;color:var(--muted)}
+.stage-legend span{display:inline-flex;align-items:center;gap:5px}
+.swatch{width:8px;height:8px;border-radius:50%;display:inline-block}
+.swatch-idle{background:var(--work-surface-idle)}
+.swatch-muted{background:var(--neutral-text-disabled)}
+.swatch-active{background:var(--work-surface-active)}
+.swatch-relation{background:var(--work-surface-relation)}
+.pt-idle{fill:var(--work-surface-idle)}
+.pt-muted{fill:var(--neutral-text-disabled);opacity:.7}
+
+.results-head{flex-shrink:0}
+.results-list-wrap{flex:1;overflow:auto;min-height:0}
+.results-list{display:flex;flex-direction:column;gap:1px;background:var(--line)}
+.result-card{background:var(--neutral-surface-bg);padding:12px 14px;cursor:pointer;display:grid;grid-template-columns:60px 1fr;gap:10px}
+.result-card:hover{background:var(--idle-fill)}
+.result-card.selected{background:var(--active-fill);box-shadow:inset 4px 0 0 var(--work-surface-active)}
+.result-thumb{width:60px;height:48px;display:block}
+.result-thumb polygon,.result-thumb path{fill:color-mix(in srgb,var(--work-surface-idle) 18%,transparent);stroke:var(--work-surface-idle);stroke-width:2.4}
+.result-card.selected .result-thumb polygon,.result-card.selected .result-thumb path{stroke:var(--work-surface-active);fill:color-mix(in srgb,var(--work-surface-active) 20%,transparent)}
+.result-meta{min-width:0}
+.result-title{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:5px}
+.result-title strong{font-family:"DM Mono",ui-monospace,monospace;font-size:11px;color:var(--neutral-text)}
+.chir-tag{font-size:9px;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border:1px solid var(--line);color:var(--muted)}
+.chir-tag.chiral{border-color:var(--work-surface-relation);color:var(--work-surface-relation)}
+.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-family:"DM Mono",ui-monospace,monospace;font-size:10px;color:var(--muted)}
+.result-stats b{color:var(--neutral-text);font-weight:500}
+.mirror-link{margin-top:6px;font-size:10px;color:var(--work-surface-relation);background:transparent;border:0;padding:0;text-decoration:underline;cursor:pointer;font-weight:700}
+.mirror-link:hover{opacity:.75}
+.no-mirror{margin-top:6px;font-size:10px;color:var(--muted)}
+.empty-results{padding:24px 16px;color:var(--muted);font-size:12px;line-height:1.5}
+
+@media(max-width:1100px){
+  .workspace{grid-template-columns:250px minmax(360px,1fr) 270px}
+}
