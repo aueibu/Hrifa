@@ -386,6 +386,11 @@
     }
     classes.sort((a, b) => a.area - b.area);
     classes.forEach((c, i) => (c.id = i));
+    // properKeyToIndex was built against pre-sort array positions; rebuild
+    // it against final ids so a properKey always resolves to the correct
+    // classes[] entry (app.js's mirror-partner lookup relies on this).
+    properKeyToIndex.clear();
+    classes.forEach((c) => properKeyToIndex.set(c.properKey, c.id));
 
     return {
       totalSubsetsChecked: combosCount,
