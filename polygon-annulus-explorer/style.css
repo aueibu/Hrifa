@@ -36,6 +36,14 @@
   --idle-fill:color-mix(in srgb,var(--work-surface-idle) 22%,var(--neutral-surface-bg));
   --active-fill:color-mix(in srgb,var(--work-surface-active) 20%,var(--neutral-surface-bg));
   --relation-fill:color-mix(in srgb,var(--work-surface-relation) 16%,var(--neutral-surface-bg));
+
+  /* true-alpha variants (mixed toward transparent, not the opaque page
+     background) for the lattice-stage polygon overlay only, so interior
+     lattice points and an overlapping mirror partner stay visible through
+     the fill. Kept separate from --active-fill/--relation-fill above,
+     which back the opaque result-card selected-state background. */
+  --stage-active-fill:color-mix(in srgb,var(--work-surface-active) 22%,transparent);
+  --stage-relation-fill:color-mix(in srgb,var(--work-surface-relation) 16%,transparent);
 }
 
 /* "Nightglass" — the same instrument by candlelight. --neutral-shadow
@@ -131,8 +139,10 @@ input[type=range]{width:100%;margin-top:8px;accent-color:var(--chrome-accent)}
 .result-meta{min-width:0}
 .result-title{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:5px}
 .result-title strong{font-family:"DM Mono",ui-monospace,monospace;font-size:11px;color:var(--neutral-text)}
+.tag-row{display:flex;align-items:center;gap:4px;flex-shrink:0}
 .chir-tag{font-size:9px;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border:1px solid var(--line);color:var(--muted)}
 .chir-tag.chiral{border-color:var(--work-surface-relation);color:var(--work-surface-relation)}
+.sym-tag{font-size:9px;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border:1px solid var(--emphasis);color:var(--emphasis)}
 .result-stats{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-family:"DM Mono",ui-monospace,monospace;font-size:10px;color:var(--muted)}
 .result-stats b{color:var(--neutral-text);font-weight:500}
 .card-actions{margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}

@@ -183,6 +183,24 @@
     return { seq: best, str: bestStr };
   }
 
+  // Largest k (dividing n) such that rotating the polygon by 360/k degrees
+  // maps it onto itself -- i.e. the (length, turn) sequence is periodic with
+  // period n/k. Returns 1 when the polygon has no non-trivial rotational
+  // symmetry. Values in seq are already rounded, so exact comparison is safe.
+  function rotationalSymmetryOrder(seq) {
+    const n = seq.length;
+    for (let d = 1; d < n; d++) {
+      if (n % d !== 0) continue;
+      let periodic = true;
+      for (let i = 0; i < n; i++) {
+        const a = seq[i], b = seq[(i + d) % n];
+        if (a[0] !== b[0] || a[1] !== b[1]) { periodic = false; break; }
+      }
+      if (periodic) return n / d;
+    }
+    return 1;
+  }
+
   function mirrorVertices(vertices) {
     // Negating y alone flips the polygon's traversal handedness (CCW <-> CW)
     // without correcting for it, so the resulting turning-angle sequence
@@ -200,7 +218,8 @@
     const mrot = rotateCanonical(mseq);
     const chiral = rot.str !== mrot.str;
     const fullStr = rot.str < mrot.str ? rot.str : mrot.str;
-    return { properKey: rot.str, mirrorKey: mrot.str, fullKey: fullStr, chiral };
+    const rotationalSymmetry = rotationalSymmetryOrder(seq);
+    return { properKey: rot.str, mirrorKey: mrot.str, fullKey: fullStr, chiral, rotationalSymmetry };
   }
 
   // ---------------- polygon stats ----------------
@@ -333,7 +352,10 @@
       totalValid++;
       const sig = fullSignature(poly, roundDp);
       if (!properMap.has(sig.properKey)) {
-        properMap.set(sig.properKey, { rep: poly, count: 0, fullKey: sig.fullKey, chiral: sig.chiral });
+        properMap.set(sig.properKey, {
+          rep: poly, count: 0, fullKey: sig.fullKey, chiral: sig.chiral,
+          rotationalSymmetry: sig.rotationalSymmetry,
+        });
       }
       properMap.get(sig.properKey).count++;
     }
@@ -350,6 +372,7 @@
       const stats = polygonStats(cls.rep, fullLattice);
       classes.push({
         vertices: cls.rep, orbitSize: cls.count, chiral: cls.chiral,
+        rotationalSymmetry: cls.rotationalSymmetry,
         fullKey: cls.fullKey, properKey, mirrorPartnerProperKey: null, ...stats,
       });
       properKeyToIndex.set(properKey, classes.length - 1);
@@ -376,7 +399,7 @@
   const LatticeCore = {
     generateLattice, annulusPoints, cross, onSegmentStrict, segmentsProperlyIntersect,
     containmentCandidate, containmentFloorRatio, segMinDistToOrigin,
-    polygonSignature, rotateCanonical, mirrorVertices,
+    polygonSignature, rotateCanonical, mirrorVertices, rotationalSymmetryOrder,
     fullSignature, area, convexHull, pointInPolygonStrict, polygonStats, round, keyOf,
     nCrSafe, combinationsGen, computeClasses,
   };

@@ -189,6 +189,7 @@
   function cardHtml(c) {
     const mirrorIdx = c.mirrorPartnerProperKey ? result.properKeyToIndex.get(c.mirrorPartnerProperKey) : null;
     const chirLabel = c.chiral ? "chiral" : "achiral";
+    const symTag = c.rotationalSymmetry > 1 ? `<span class="sym-tag">${c.rotationalSymmetry}-fold</span>` : "";
     let mirrorHtml = "";
     if (mirrorIdx != null) {
       mirrorHtml = `<button type="button" class="mirror-link" data-mirror-index="${mirrorIdx}">→ view mirror partner (#${mirrorIdx})</button>`;
@@ -198,7 +199,7 @@
     return `<article class="result-card${c.id === selectedId ? " selected" : ""}" data-id="${c.id}">
       <div class="result-thumb">${miniShapeSvg(c.vertices)}</div>
       <div class="result-meta">
-        <div class="result-title"><strong>n=${c.vertices.length} · #${c.id}</strong><span class="chir-tag${c.chiral ? " chiral" : ""}">${chirLabel}</span></div>
+        <div class="result-title"><strong>n=${c.vertices.length} · #${c.id}</strong><span class="tag-row"><span class="chir-tag${c.chiral ? " chiral" : ""}">${chirLabel}</span>${symTag}</span></div>
         <div class="result-stats">
           <span>area <b>${round(c.area, 4)}</b></span>
           <span>orbit <b>${c.orbitSize}</b></span>
@@ -233,6 +234,7 @@
         proper: JSON.parse(c.properKey),
         full: JSON.parse(c.fullKey),
         chiral: c.chiral,
+        rotationalSymmetry: c.rotationalSymmetry,
       },
       mirrorPartnerId: mirrorIdx,
       stats: {
@@ -346,7 +348,7 @@
   function drawPolygonOverlay(parts, vertices, kind, dotR) {
     const isActive = kind === "active";
     const strokeVar = isActive ? "var(--work-surface-active)" : "var(--work-surface-relation)";
-    const fillVar = isActive ? "var(--active-fill)" : "var(--relation-fill)";
+    const fillVar = isActive ? "var(--stage-active-fill)" : "var(--stage-relation-fill)";
     const dash = isActive ? "" : 'stroke-dasharray="6 4"';
     const pts = vertices.map(([x, y]) => `${x},${-y}`).join(" ");
     parts.push(
