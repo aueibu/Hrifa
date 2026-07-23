@@ -184,7 +184,13 @@
   }
 
   function mirrorVertices(vertices) {
-    return vertices.map(([x, y]) => [x, -y]);
+    // Negating y alone flips the polygon's traversal handedness (CCW <-> CW)
+    // without correcting for it, so the resulting turning-angle sequence
+    // compares as "always opposite sign" to the original under rotation-only
+    // canonicalization -- reversing the order here restores a matching
+    // (consistently-oriented) traversal so achiral shapes correctly compare
+    // equal to their own reflection.
+    return vertices.map(([x, y]) => [x, -y]).reverse();
   }
 
   function fullSignature(vertices, roundDp) {
