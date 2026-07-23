@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ramp Studio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Ramp Studio</h1>
+<p class="sub">Add up to 16 base colors — each gets a full 50–950 ramp derived the same way as the rest of this palette: linear OKLCH-lightness per stop, chroma held at a fraction of the sRGB gamut ceiling (tune below), checked for contrast against your own grey fields.</p>
+
+<div class="layout">
+  <div>
+    <div class="panel">
+      <h2>Grey fields</h2>
+      <div class="field-row"><label>50</label><input type="color" id="grey-50-picker"><input type="text" id="grey-50-text"></div>
+      <div class="field-row"><label>100</label><input type="color" id="grey-100-picker"><input type="text" id="grey-100-text"></div>
+      <div class="field-row"><label>900</label><input type="color" id="grey-900-picker"><input type="text" id="grey-900-text"></div>
+      <div class="field-row"><label>950</label><input type="color" id="grey-950-picker"><input type="text" id="grey-950-text"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Derivation pipeline</h2>
+      <div class="slider-row">
+        <div class="lbl"><span>chroma fraction</span><span id="frac-val">0.78</span></div>
+        <input type="range" id="frac-slider" min="0.3" max="1" step="0.01" value="0.78">
+      </div>
+      <div class="slider-row">
+        <div class="lbl"><span>chroma cap</span><span id="cap-val">0.165</span></div>
+        <input type="range" id="cap-slider" min="0.05" max="0.35" step="0.005" value="0.165">
+      </div>
+      <p style="font-size:.68rem;color:var(--ink-muted);line-height:1.5;margin:8px 0 0">Fraction = how much of the max in-gamut chroma each stop uses (higher = punchier, more garish). Cap = hard ceiling regardless of gamut (keeps the most saturated hues from going neon).</p>
+    </div>
+
+    <div class="panel">
+      <h2>Tint (100) &amp; ink (950) fills</h2>
+      <div class="slider-row">
+        <div class="lbl"><span>tint fraction</span><span id="tint-frac-val">0.35</span></div>
+        <input type="range" id="tint-frac-slider" min="0" max="1" step="0.01" value="0.35">
+      </div>
+      <div class="slider-row">
+        <div class="lbl"><span>tint cap</span><span id="tint-cap-val">0.040</span></div>
+        <input type="range" id="tint-cap-slider" min="0" max="0.2" step="0.005" value="0.04">
+      </div>
+      <div class="slider-row">
+        <div class="lbl"><span>ink fraction</span><span id="ink-frac-val">0.35</span></div>
+        <input type="range" id="ink-frac-slider" min="0" max="1" step="0.01" value="0.35">
+      </div>
+      <div class="slider-row">
+        <div class="lbl"><span>ink cap</span><span id="ink-cap-val">0.030</span></div>
+        <input type="range" id="ink-cap-slider" min="0" max="0.2" step="0.005" value="0.03">
+      </div>
+      <p style="font-size:.68rem;color:var(--ink-muted);line-height:1.5;margin:8px 0 0">Stops 100 and 950 aren't part of the main ramp — they're soft fill colors (hover backgrounds, selected rows), deliberately much lower chroma. Raise these if you want visible pastel tints instead of near-white/near-black.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Palette (<span id="color-count">0</span>/16)</h2>
+      <div id="color-list"></div>
+      <button class="add-btn" id="add-color-btn">+ add color</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="view-toggle" id="view-toggle">
+      <button class="view-btn active" data-view="cards">Cards</button>
+      <button class="view-btn" data-view="grid">Full swatch</button>
+    </div>
+    <div id="results"></div>
+    <div class="wheel-section">
+      <h2>Hue spacing</h2>
+      <div id="wheel-container"></div>
+      <div class="wheel-hint">drag a dot to change that color's hue</div>
+      <div id="gap-warnings"></div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
