@@ -207,9 +207,71 @@
           <span>I <b>${c.interiorCount}</b></span>
           <span>B <b>${c.boundaryCount}</b></span>
         </div>
-        ${mirrorHtml}
+        <div class="card-actions">
+          ${mirrorHtml}
+          <button type="button" class="copy-descriptor-btn" data-copy-id="${c.id}">Copy descriptor</button>
+        </div>
       </div>
     </article>`;
+  }
+
+  function buildDescriptor(c) {
+    const mirrorIdx = c.mirrorPartnerProperKey ? result.properKeyToIndex.get(c.mirrorPartnerProperKey) : null;
+    return {
+      format: "hrifa-annulus-polygon",
+      version: 1,
+      lattice: { v1: state.v1, v2: state.v2 },
+      annulus: { minR: state.minR, maxR: state.maxR },
+      n: state.n,
+      edgePurity: state.checkEdges,
+      id: c.id,
+      vertices: c.vertices.map(([x, y]) => [round(x, 6), round(y, 6)]),
+      signature: {
+        // canonical (edge length, turning angle) sequence -- the
+        // translation/rotation/reflection-invariant identity of the
+        // shape itself, independent of where this instance landed
+        proper: JSON.parse(c.properKey),
+        full: JSON.parse(c.fullKey),
+        chiral: c.chiral,
+      },
+      mirrorPartnerId: mirrorIdx,
+      stats: {
+        area: round(c.area, 6),
+        convexMeasure: c.convexMeasure,
+        isConvex: c.isConvex,
+        interiorCount: c.interiorCount,
+        boundaryCount: c.boundaryCount,
+        orbitSize: c.orbitSize,
+      },
+    };
+  }
+
+  function fallbackCopy(text, done) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch {}
+    document.body.removeChild(ta);
+    done();
+  }
+
+  function copyDescriptor(id, btn) {
+    const cls = result && result.classes[id];
+    if (!cls) return;
+    const text = JSON.stringify(buildDescriptor(cls), null, 2);
+    const original = btn.textContent;
+    const done = () => {
+      btn.textContent = "Copied";
+      setTimeout(() => { btn.textContent = original; }, 900);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
   }
 
   function miniShapeSvg(vertices) {
@@ -246,6 +308,12 @@
       el.addEventListener("click", (ev) => {
         ev.stopPropagation();
         selectClass(parseInt(el.dataset.mirrorIndex, 10));
+      });
+    });
+    wrap.querySelectorAll(".copy-descriptor-btn").forEach((el) => {
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        copyDescriptor(parseInt(el.dataset.copyId, 10), el);
       });
     });
   }

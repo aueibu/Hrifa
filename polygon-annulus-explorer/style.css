@@ -135,9 +135,12 @@ input[type=range]{width:100%;margin-top:8px;accent-color:var(--chrome-accent)}
 .chir-tag.chiral{border-color:var(--work-surface-relation);color:var(--work-surface-relation)}
 .result-stats{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-family:"DM Mono",ui-monospace,monospace;font-size:10px;color:var(--muted)}
 .result-stats b{color:var(--neutral-text);font-weight:500}
-.mirror-link{margin-top:6px;font-size:10px;color:var(--work-surface-relation);background:transparent;border:0;padding:0;text-decoration:underline;cursor:pointer;font-weight:700}
+.card-actions{margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mirror-link{font-size:10px;color:var(--work-surface-relation);background:transparent;border:0;padding:0;text-decoration:underline;cursor:pointer;font-weight:700}
 .mirror-link:hover{opacity:.75}
-.no-mirror{margin-top:6px;font-size:10px;color:var(--muted)}
+.no-mirror{font-size:10px;color:var(--muted)}
+.copy-descriptor-btn{margin-left:auto;padding:4px 8px;font-size:9px;text-transform:uppercase;letter-spacing:.03em;border:1px solid var(--chrome-accent);background:transparent;color:var(--chrome-accent);cursor:pointer;font-weight:700}
+.copy-descriptor-btn:hover{background:var(--chrome-accent-hover);color:var(--neutral-text)}
 .empty-results{padding:24px 16px;color:var(--muted);font-size:12px;line-height:1.5}
 
 @media(max-width:1100px){
