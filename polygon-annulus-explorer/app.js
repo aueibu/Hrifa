@@ -17,7 +17,7 @@
   const state = {
     v1: [1, 0], v2: [0, 1],
     minR: 1.5, maxR: 2.6, n: 4,
-    checkEdges: true, maxCombos: 500000,
+    checkEdges: true, rejectCollinear: true, maxCombos: 500000,
   };
 
   let lattice = { all: [], annulus: [] };
@@ -83,6 +83,7 @@
     state.maxR = parseFloat($("maxRInput").value);
     state.n = parseInt($("nInput").value, 10);
     state.checkEdges = $("edgePurityInput").checked;
+    state.rejectCollinear = $("strictVerticesInput").checked;
     state.maxCombos = parseInt($("maxCombosInput").value, 10);
   }
 
@@ -157,6 +158,7 @@
               n: state.n,
               minR: state.minR,
               checkEdges: state.checkEdges,
+              rejectCollinear: state.rejectCollinear,
               maxCombos: state.maxCombos,
             });
             if (res.skipped) {
@@ -225,6 +227,7 @@
       annulus: { minR: state.minR, maxR: state.maxR },
       n: state.n,
       edgePurity: state.checkEdges,
+      strictVertices: state.rejectCollinear,
       id: c.id,
       vertices: c.vertices.map(([x, y]) => [round(x, 6), round(y, 6)]),
       signature: {
@@ -493,6 +496,7 @@
       onNChanged();
     });
     $("edgePurityInput").addEventListener("change", onMinorParamsChanged);
+    $("strictVerticesInput").addEventListener("change", onMinorParamsChanged);
     $("maxCombosInput").addEventListener("input", () => {
       $("maxCombosOut").textContent = Number($("maxCombosInput").value).toLocaleString();
       onMinorParamsChanged();

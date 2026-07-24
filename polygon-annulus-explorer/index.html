@@ -62,6 +62,8 @@
             <input id="nInput" type="range" min="3" max="12" step="1" value="4" />
           </label>
           <label class="toggle-line"><input id="edgePurityInput" type="checkbox" checked /><span>Edge purity (reject extra lattice points on edges)</span></label>
+          <label class="toggle-line"><input id="strictVerticesInput" type="checkbox" checked /><span>Strict vertices (reject collinear/180° vertices)</span></label>
+          <p class="micro">Edge purity only catches a foreign point sitting on someone else's edge — it won't catch a chosen vertex that's collinear with its own two neighbors (e.g. an n=8 subset that's really a square traced through its own edge midpoints). This is a separate check for that.</p>
 
           <details class="advanced">
             <summary>Subset-count guard (advanced)</summary>

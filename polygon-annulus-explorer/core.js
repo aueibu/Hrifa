@@ -90,7 +90,7 @@
   //
   // Returns the ordered vertex array, or null if no valid polygon exists for
   // this subset under the containment + edge-purity constraints.
-  function containmentCandidate(subset, minR, latticeForEdgeCheck, checkEdges) {
+  function containmentCandidate(subset, minR, latticeForEdgeCheck, checkEdges, rejectCollinear) {
     const withAngles = subset.map((p) => [p, Math.atan2(p[1], p[0])]);
     withAngles.sort((a, b) => a[1] - b[1]);
     for (let i = 0; i < withAngles.length; i++) {
@@ -101,6 +101,19 @@
     }
     const poly = withAngles.map((x) => x[0]);
     const n = poly.length;
+
+    // A vertex collinear with both its neighbors isn't a real corner -- the
+    // subset is really tracing a lower-sided shape through one of its own
+    // straight edges (e.g. an n=8 subset that's actually a square traced
+    // through its own edge midpoints). Edge purity alone doesn't catch this:
+    // the "extra" point is one of the chosen vertices, not a foreign point
+    // sitting on someone else's edge, so it never trips that check.
+    if (rejectCollinear) {
+      for (let i = 0; i < n; i++) {
+        const prev = poly[(i - 1 + n) % n], cur = poly[i], next = poly[(i + 1) % n];
+        if (Math.abs(cross(prev, cur, next)) < 1e-7) return null;
+      }
+    }
 
     // defensive simplicity check (proven redundant when containment holds,
     // kept cheap and explicit rather than assumed)
@@ -336,7 +349,7 @@
   // pairing via the rotation+reflection key, and stats. Returns
   // { skipped: reason } if the subset-count guard trips, otherwise
   // { totalSubsetsChecked, totalValid, classes, fullClassCount }.
-  function computeClasses({ annulus, fullLattice, n, minR, checkEdges, maxCombos, roundDp = 6 }) {
+  function computeClasses({ annulus, fullLattice, n, minR, checkEdges, rejectCollinear, maxCombos, roundDp = 6 }) {
     if (annulus.length < n) return { skipped: `only ${annulus.length} annulus points, need ${n}` };
 
     const combosCount = nCrSafe(annulus.length, n);
@@ -347,7 +360,7 @@
     let totalValid = 0;
     const properMap = new Map(); // properKey -> { rep, count, fullKey, chiral }
     for (const subset of combinationsGen(annulus, n)) {
-      const poly = containmentCandidate(subset, minR, fullLattice, checkEdges);
+      const poly = containmentCandidate(subset, minR, fullLattice, checkEdges, rejectCollinear);
       if (!poly) continue;
       totalValid++;
       const sig = fullSignature(poly, roundDp);
