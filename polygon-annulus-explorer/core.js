@@ -393,6 +393,18 @@
   // count, fullKey, chiral, rotationalSymmetry } -- count is a per-range
   // partial orbit size, meant to be summed across ranges by mergeProperMaps.
   function scanRange({ annulus, fullLattice, n, minR, checkEdges, rejectCollinear, roundDp, startRank, endRank }) {
+    if (!Number.isFinite(startRank) || !Number.isFinite(endRank) || endRank < startRank) {
+      // Most likely cause: app.js and worker.js disagree on the message
+      // shape (e.g. one is a stale cached copy from before a protocol
+      // change), so startRank/endRank arrived as undefined. That used to
+      // fail silently deep inside the unranking math with a cryptic
+      // "reading '1' of undefined" once the bad rank produced an empty
+      // subset -- fail loudly here instead, with an actionable message.
+      throw new Error(
+        `scanRange got an invalid rank range (startRank=${startRank}, endRank=${endRank}) -- ` +
+        `if this followed a page update, a hard refresh usually fixes a stale cached script.`
+      );
+    }
     let totalValid = 0;
     const properMap = new Map();
     for (const subset of combinationRangeGen(annulus, n, startRank, endRank)) {
