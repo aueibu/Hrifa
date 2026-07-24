@@ -371,6 +371,108 @@
     }
   }
 
+  // ---------------- export / load full result set ----------------
+
+  function download(name, type, data) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([data], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  function buildResultsExport() {
+    return {
+      format: "hrifa-annulus-results",
+      version: 1,
+      lattice: { v1: state.v1, v2: state.v2 },
+      annulus: { minR: state.minR, maxR: state.maxR },
+      n: state.n,
+      edgePurity: state.checkEdges,
+      strictVertices: state.rejectCollinear,
+      totalSubsetsChecked: result.totalSubsetsChecked,
+      totalValid: result.totalValid,
+      fullClassCount: result.fullClassCount,
+      // fullLattice/annulus aren't included -- they're cheap and
+      // deterministic to regenerate from lattice/annulus above on load,
+      // and omitting them keeps the file from ballooning on top of classes.
+      classes: result.classes,
+    };
+  }
+
+  function exportResults() {
+    if (!result) return;
+    const data = JSON.stringify(buildResultsExport(), null, 2);
+    download(`annulus-n${state.n}-r${state.minR}-${state.maxR}.json`, "application/json", data);
+  }
+
+  function loadResultsFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try {
+        data = JSON.parse(reader.result);
+      } catch (e) {
+        setStatus("Load failed — not valid JSON.", "err");
+        return;
+      }
+      if (data.format !== "hrifa-annulus-results" || !Array.isArray(data.classes)) {
+        setStatus("Load failed — not a recognized results file.", "err");
+        return;
+      }
+
+      cancelCompute();
+
+      state.v1 = data.lattice.v1;
+      state.v2 = data.lattice.v2;
+      state.minR = data.annulus.minR;
+      state.maxR = data.annulus.maxR;
+      state.n = data.n;
+      state.checkEdges = !!data.edgePurity;
+      state.rejectCollinear = !!data.strictVertices;
+
+      $("v1x").value = state.v1[0]; $("v1y").value = state.v1[1];
+      $("v2x").value = state.v2[0]; $("v2y").value = state.v2[1];
+      $("minRInput").value = state.minR; $("minROut").textContent = state.minR.toFixed(2);
+      $("maxRInput").value = state.maxR; $("maxROut").textContent = state.maxR.toFixed(2);
+      $("nInput").value = state.n; $("nOut").textContent = state.n;
+      $("edgePurityInput").checked = state.checkEdges;
+      $("strictVerticesInput").checked = state.rejectCollinear;
+
+      try {
+        lattice.all = LC.generateLattice(state.v1, state.v2, state.maxR);
+        lattice.annulus = LC.annulusPoints(lattice.all, state.minR, state.maxR);
+        $("latticeMeta").textContent =
+          `${lattice.all.length} lattice points within maxᵣ · ${lattice.annulus.length} in annulus`;
+      } catch (e) {
+        lattice = { all: [], annulus: [] };
+        $("latticeMeta").textContent = "Basis vectors are linearly dependent — pick two independent vectors.";
+      }
+      resetView();
+      updateFloorRatio();
+
+      result = {
+        totalSubsetsChecked: data.totalSubsetsChecked,
+        totalValid: data.totalValid,
+        classes: data.classes,
+        properKeyToIndex: new Map(data.classes.map((c) => [c.properKey, c.id])),
+        fullClassCount: data.fullClassCount,
+      };
+      hasGeneratedOnce = true;
+      selectedId = null;
+      setStatus(
+        `Loaded from file · ${data.totalValid} raw valid polygons · ${data.classes.length} proper classes · ` +
+        `${data.fullClassCount} full (congruence) classes.`,
+        "ok"
+      );
+      renderResults();
+      renderStage();
+    };
+    reader.onerror = () => setStatus("Load failed — couldn't read the file.", "err");
+    reader.readAsText(file);
+  }
+
   function miniShapeSvg(vertices) {
     const xs = vertices.map((v) => v[0]), ys = vertices.map((v) => v[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -386,6 +488,7 @@
 
   function renderResults() {
     const wrap = $("resultsList");
+    $("exportResultsBtn").disabled = !result;
     if (!result) {
       wrap.innerHTML = '<p class="empty-results">No results yet — set parameters and press Generate.</p>';
       $("resultsSummary").textContent = "Generate a set to see results.";
@@ -595,6 +698,11 @@
     });
     $("generateBtn").addEventListener("click", onGenerate);
     $("cancelBtn").addEventListener("click", () => cancelCompute("Cancelled."));
+    $("exportResultsBtn").addEventListener("click", exportResults);
+    $("loadResultsInput").addEventListener("change", (e) => {
+      loadResultsFile(e.target.files[0]);
+      e.target.value = ""; // allow re-selecting the same file later
+    });
 
     initPanZoom();
     readInputs();

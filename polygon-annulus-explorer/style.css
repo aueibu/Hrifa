@@ -64,18 +64,19 @@ body,.panel,.topbar,.stage-wrap,.results-list,.result-card,.stage-toolbar,.statu
 .eyebrow{margin:0 0 3px;font-family:"DM Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.22em;color:var(--chrome-accent);text-transform:uppercase}
 h1{font-family:Fraunces,Georgia,serif;font-size:25px;font-weight:600;letter-spacing:-.035em;line-height:.95;margin:0}
 button,select,input,textarea{font:inherit;color:inherit}
-button{border:1px solid var(--chrome-accent);background:transparent;color:var(--chrome-accent);border-radius:0;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:700;transition:transform .14s ease,background .14s ease,box-shadow .14s ease}
+button,.file-label{border:1px solid var(--chrome-accent);background:transparent;color:var(--chrome-accent);border-radius:0;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:700;transition:transform .14s ease,background .14s ease,box-shadow .14s ease;display:inline-flex;align-items:center;justify-content:center}
 button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--chrome-accent);outline-offset:2px}
-button.ghost{background:transparent;color:var(--chrome-accent);border-color:var(--chrome-accent)}
-button.ghost:hover{background:var(--chrome-accent-hover);color:var(--neutral-text)}
+button.ghost,.file-label.ghost{background:transparent;color:var(--chrome-accent);border-color:var(--chrome-accent)}
+button.ghost:hover,.file-label.ghost:hover{background:var(--chrome-accent-hover);color:var(--neutral-text)}
 button.ghost[aria-pressed="true"]{background:var(--chrome-accent);color:var(--neutral-surface-bg)}
 button.primary{background:var(--chrome-accent);border-color:var(--chrome-accent);color:var(--neutral-surface-bg)}
 button.primary:hover{transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutral-shadow)}
-button.primary:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
-button.wide{width:100%;margin-top:10px}
+button.primary:disabled,button:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+button.wide,.file-label.wide{width:100%;margin-top:10px}
 button span{float:right;opacity:.6}
+.file-label input{display:none}
 .button-row{display:flex;gap:8px;margin-top:10px}
-.button-row button.wide{width:auto;flex:1;margin-top:0}
+.button-row button.wide,.button-row .file-label.wide{width:auto;flex:1;margin-top:0}
 
 .workspace{height:calc(100vh - 74px);display:grid;grid-template-columns:296px minmax(420px,1fr) 320px}
 .panel{overflow:auto;background:var(--panel-tint);border-right:1px solid var(--line)}
