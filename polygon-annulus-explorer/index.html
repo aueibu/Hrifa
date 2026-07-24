@@ -67,13 +67,16 @@
 
           <details class="advanced">
             <summary>Subset-count guard (advanced)</summary>
-            <p class="micro">Before enumerating, the tool computes C(annulus&nbsp;points,&nbsp;n) — the number of vertex subsets to check — and refuses to run if it exceeds this guard, rather than freezing the tab.</p>
+            <p class="micro">Before enumerating, the tool computes C(annulus&nbsp;points,&nbsp;n) — the number of vertex subsets to check — and refuses to run if it exceeds this guard. The search itself runs in a background worker, so it won't freeze the page, but a very large count can still take minutes of CPU time.</p>
             <label>Max combinations <output id="maxCombosOut">500,000</output>
               <input id="maxCombosInput" type="range" min="10000" max="2000000" step="10000" value="500000" />
             </label>
           </details>
 
-          <button id="generateBtn" class="wide primary">Generate <span>↵</span></button>
+          <div class="button-row">
+            <button id="generateBtn" class="wide primary">Generate <span>↵</span></button>
+            <button id="cancelBtn" class="wide ghost" type="button" hidden>Cancel</button>
+          </div>
           <p class="status-line" id="statusLine">Ready.</p>
         </section>
       </aside>

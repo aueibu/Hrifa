@@ -88,6 +88,7 @@
   }
 
   function onParamsChanged(latticeChanged) {
+    if (worker) cancelCompute(); // params changed mid-search -- its result would be for stale data
     result = null;
     selectedId = null;
 
@@ -125,7 +126,23 @@
   function onNChanged() { readInputs(); onParamsChanged(false); }
   function onMinorParamsChanged() { readInputs(); onParamsChanged(false); }
 
-  // ---------------- generate ----------------
+  // ---------------- generate (runs off the main thread via worker.js) ----------------
+
+  let worker = null;
+  let computeToken = 0;
+  const computeStart = { t: 0 };
+
+  function setComputing(isComputing) {
+    $("generateBtn").disabled = isComputing;
+    $("cancelBtn").hidden = !isComputing;
+  }
+
+  function cancelCompute(statusText) {
+    if (worker) { worker.terminate(); worker = null; }
+    computeToken++; // invalidates any in-flight worker response
+    setComputing(false);
+    if (statusText) setStatus(statusText, "");
+  }
 
   function onGenerate() {
     readInputs();
@@ -135,54 +152,74 @@
       return;
     }
 
-    const btn = $("generateBtn");
-    btn.disabled = true;
-    setStatus("Computing…", "");
+    const floorOk = updateFloorRatio();
+    if (!floorOk) {
+      const floor = LC.containmentFloorRatio(state.n);
+      result = null;
+      selectedId = null;
+      setStatus(
+        `Skipped — maxᵣ/minᵣ = ${round(state.maxR / state.minR, 4)} is below sec(π/${state.n}) = ${round(floor, 4)}, ` +
+        `so no ${state.n}-gon can contain the inner disk while keeping vertices within maxᵣ. No subsets were checked.`,
+        "err"
+      );
+      renderResults();
+      renderStage();
+      return;
+    }
 
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        try {
-          const floorOk = updateFloorRatio();
-          if (!floorOk) {
-            const floor = LC.containmentFloorRatio(state.n);
-            result = null;
-            setStatus(
-              `Skipped — maxᵣ/minᵣ = ${round(state.maxR / state.minR, 4)} is below sec(π/${state.n}) = ${round(floor, 4)}, ` +
-              `so no ${state.n}-gon can contain the inner disk while keeping vertices within maxᵣ. No subsets were checked.`,
-              "err"
-            );
-          } else {
-            const res = LC.computeClasses({
-              annulus: lattice.annulus,
-              fullLattice: lattice.all,
-              n: state.n,
-              minR: state.minR,
-              checkEdges: state.checkEdges,
-              rejectCollinear: state.rejectCollinear,
-              maxCombos: state.maxCombos,
-            });
-            if (res.skipped) {
-              result = null;
-              setStatus("Skipped — " + res.skipped, "err");
-            } else {
-              result = res;
-              setStatus(
-                `C(${lattice.annulus.length},${state.n}) = ${res.totalSubsetsChecked} subsets checked · ` +
-                `${res.totalValid} raw valid polygons · ${res.classes.length} proper classes · ` +
-                `${res.fullClassCount} full (congruence) classes.`,
-                "ok"
-              );
-            }
-          }
-        } catch (e) {
+    if (worker) { worker.terminate(); worker = null; }
+    const token = ++computeToken;
+    setComputing(true);
+    computeStart.t = performance.now();
+    setStatus("Computing in the background — the page stays responsive; press Cancel to abort.", "");
+
+    worker = new Worker("worker.js");
+    worker.onmessage = (e) => {
+      if (token !== computeToken) return; // superseded by a newer run
+      setComputing(false);
+      worker = null;
+      const elapsed = ((performance.now() - computeStart.t) / 1000).toFixed(1);
+      const msg = e.data;
+      if (!msg.ok) {
+        result = null;
+        setStatus("Error: " + msg.error, "err");
+      } else {
+        const res = msg.result;
+        if (res.skipped) {
           result = null;
-          setStatus("Error: " + e.message, "err");
+          setStatus("Skipped — " + res.skipped, "err");
+        } else {
+          result = res;
+          setStatus(
+            `C(${lattice.annulus.length},${state.n}) = ${res.totalSubsetsChecked} subsets checked in ${elapsed}s · ` +
+            `${res.totalValid} raw valid polygons · ${res.classes.length} proper classes · ` +
+            `${res.fullClassCount} full (congruence) classes.`,
+            "ok"
+          );
         }
-        selectedId = null;
-        renderResults();
-        renderStage();
-        btn.disabled = false;
-      }, 10);
+      }
+      selectedId = null;
+      renderResults();
+      renderStage();
+    };
+    worker.onerror = (e) => {
+      if (token !== computeToken) return;
+      setComputing(false);
+      worker = null;
+      result = null;
+      selectedId = null;
+      setStatus("Worker error: " + e.message, "err");
+      renderResults();
+      renderStage();
+    };
+    worker.postMessage({
+      annulus: lattice.annulus,
+      fullLattice: lattice.all,
+      n: state.n,
+      minR: state.minR,
+      checkEdges: state.checkEdges,
+      rejectCollinear: state.rejectCollinear,
+      maxCombos: state.maxCombos,
     });
   }
 
@@ -502,6 +539,7 @@
       onMinorParamsChanged();
     });
     $("generateBtn").addEventListener("click", onGenerate);
+    $("cancelBtn").addEventListener("click", () => cancelCompute("Cancelled."));
 
     initPanZoom();
     readInputs();

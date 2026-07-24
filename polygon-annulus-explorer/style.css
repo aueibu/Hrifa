@@ -74,6 +74,8 @@ button.primary:hover{transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutr
 button.primary:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
 button.wide{width:100%;margin-top:10px}
 button span{float:right;opacity:.6}
+.button-row{display:flex;gap:8px;margin-top:10px}
+.button-row button.wide{width:auto;flex:1;margin-top:0}
 
 .workspace{height:calc(100vh - 74px);display:grid;grid-template-columns:296px minmax(420px,1fr) 320px}
 .panel{overflow:auto;background:var(--panel-tint);border-right:1px solid var(--line)}
