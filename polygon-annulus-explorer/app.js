@@ -88,7 +88,7 @@
   }
 
   function onParamsChanged(latticeChanged) {
-    if (worker) cancelCompute(); // params changed mid-search -- its result would be for stale data
+    if (workers.length) cancelCompute(); // params changed mid-search -- its result would be for stale data
     result = null;
     selectedId = null;
 
@@ -126,9 +126,12 @@
   function onNChanged() { readInputs(); onParamsChanged(false); }
   function onMinorParamsChanged() { readInputs(); onParamsChanged(false); }
 
-  // ---------------- generate (runs off the main thread via worker.js) ----------------
+  // ---------------- generate (parallel search across several workers) ----------------
 
-  let worker = null;
+  const MAX_WORKERS = 8;
+  const MIN_SUBSETS_PER_WORKER = 20000; // below this, a second worker's spin-up cost isn't worth it
+
+  let workers = [];
   let computeToken = 0;
   const computeStart = { t: 0 };
 
@@ -137,11 +140,22 @@
     $("cancelBtn").hidden = !isComputing;
   }
 
+  function stopAllWorkers() {
+    for (const w of workers) w.terminate();
+    workers = [];
+  }
+
   function cancelCompute(statusText) {
-    if (worker) { worker.terminate(); worker = null; }
+    stopAllWorkers();
     computeToken++; // invalidates any in-flight worker response
     setComputing(false);
     if (statusText) setStatus(statusText, "");
+  }
+
+  function pickWorkerCount(combosCount) {
+    const cores = navigator.hardwareConcurrency || 4;
+    const cap = Math.max(1, Math.min(cores, MAX_WORKERS));
+    return Math.max(1, Math.min(cap, Math.floor(combosCount / MIN_SUBSETS_PER_WORKER)));
   }
 
   function onGenerate() {
@@ -167,60 +181,101 @@
       return;
     }
 
-    if (worker) { worker.terminate(); worker = null; }
+    const combosCount = LC.nCrSafe(lattice.annulus.length, state.n);
+    if (combosCount > state.maxCombos) {
+      result = null;
+      selectedId = null;
+      setStatus(`Skipped — C(${lattice.annulus.length},${state.n})=${combosCount} exceeds guard (${state.maxCombos})`, "err");
+      renderResults();
+      renderStage();
+      return;
+    }
+
+    stopAllWorkers();
     const token = ++computeToken;
     setComputing(true);
     computeStart.t = performance.now();
-    setStatus("Computing in the background — the page stays responsive; press Cancel to abort.", "");
 
-    worker = new Worker("worker.js");
-    worker.onmessage = (e) => {
-      if (token !== computeToken) return; // superseded by a newer run
+    const workerCount = pickWorkerCount(combosCount);
+    const chunkSize = Math.ceil(combosCount / workerCount);
+    const maps = [];
+    let combinedTotalValid = 0;
+    let doneCount = 0;
+    let failed = null;
+
+    const reportProgress = () => {
+      setStatus(
+        `Computing in the background across ${workerCount} worker${workerCount > 1 ? "s" : ""} ` +
+        `(${doneCount}/${workerCount} done) — the page stays responsive; press Cancel to abort.`,
+        ""
+      );
+    };
+    reportProgress();
+
+    const finish = () => {
       setComputing(false);
-      worker = null;
+      workers = [];
       const elapsed = ((performance.now() - computeStart.t) / 1000).toFixed(1);
-      const msg = e.data;
-      if (!msg.ok) {
+      if (failed) {
         result = null;
-        setStatus("Error: " + msg.error, "err");
+        setStatus("Error: " + failed, "err");
       } else {
-        const res = msg.result;
-        if (res.skipped) {
-          result = null;
-          setStatus("Skipped — " + res.skipped, "err");
-        } else {
-          result = res;
-          setStatus(
-            `C(${lattice.annulus.length},${state.n}) = ${res.totalSubsetsChecked} subsets checked in ${elapsed}s · ` +
-            `${res.totalValid} raw valid polygons · ${res.classes.length} proper classes · ` +
-            `${res.fullClassCount} full (congruence) classes.`,
-            "ok"
-          );
-        }
+        const merged = LC.mergeProperMaps(maps);
+        const { classes, properKeyToIndex, fullClassCount } = LC.finalizeClasses(merged, lattice.all);
+        result = {
+          totalSubsetsChecked: combosCount,
+          totalValid: combinedTotalValid,
+          classes,
+          properKeyToIndex,
+          fullClassCount,
+        };
+        setStatus(
+          `C(${lattice.annulus.length},${state.n}) = ${combosCount} subsets checked in ${elapsed}s across ${workerCount} worker${workerCount > 1 ? "s" : ""} · ` +
+          `${combinedTotalValid} raw valid polygons · ${classes.length} proper classes · ` +
+          `${fullClassCount} full (congruence) classes.`,
+          "ok"
+        );
       }
       selectedId = null;
       renderResults();
       renderStage();
     };
-    worker.onerror = (e) => {
-      if (token !== computeToken) return;
-      setComputing(false);
-      worker = null;
-      result = null;
-      selectedId = null;
-      setStatus("Worker error: " + e.message, "err");
-      renderResults();
-      renderStage();
-    };
-    worker.postMessage({
-      annulus: lattice.annulus,
-      fullLattice: lattice.all,
-      n: state.n,
-      minR: state.minR,
-      checkEdges: state.checkEdges,
-      rejectCollinear: state.rejectCollinear,
-      maxCombos: state.maxCombos,
-    });
+
+    for (let start = 0, i = 0; start < combosCount; start += chunkSize, i++) {
+      const end = Math.min(start + chunkSize, combosCount);
+      const w = new Worker("worker.js");
+      workers.push(w);
+      w.onmessage = (e) => {
+        if (token !== computeToken) return; // superseded by a newer run
+        const msg = e.data;
+        if (!msg.ok) {
+          failed = failed || msg.error;
+        } else {
+          combinedTotalValid += msg.totalValid;
+          maps.push(msg.properMap);
+        }
+        doneCount++;
+        if (doneCount < workerCount) reportProgress();
+        else finish();
+      };
+      w.onerror = (e) => {
+        if (token !== computeToken) return;
+        failed = failed || e.message;
+        doneCount++;
+        if (doneCount >= workerCount) finish();
+      };
+      w.postMessage({
+        annulus: lattice.annulus,
+        fullLattice: lattice.all,
+        n: state.n,
+        minR: state.minR,
+        checkEdges: state.checkEdges,
+        rejectCollinear: state.rejectCollinear,
+        roundDp: 6,
+        startRank: start,
+        endRank: end,
+      });
+    }
   }
 
   // ---------------- results list ----------------

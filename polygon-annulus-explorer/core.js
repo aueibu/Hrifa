@@ -344,22 +344,58 @@
     }
   }
 
-  // Runs the full pipeline for one n: subset-count guard, containment
-  // filtering, proper-congruence grouping (orbit size per class), mirror
-  // pairing via the rotation+reflection key, and stats. Returns
-  // { skipped: reason } if the subset-count guard trips, otherwise
-  // { totalSubsetsChecked, totalValid, classes, fullClassCount }.
-  function computeClasses({ annulus, fullLattice, n, minR, checkEdges, rejectCollinear, maxCombos, roundDp = 6 }) {
-    if (annulus.length < n) return { skipped: `only ${annulus.length} annulus points, need ${n}` };
-
-    const combosCount = nCrSafe(annulus.length, n);
-    if (combosCount > maxCombos) {
-      return { skipped: `C(${annulus.length},${n})=${combosCount} exceeds guard (${maxCombos})` };
+  // Combinatorial-number-system unranking: the rank-th k-combination of
+  // {0,...,n-1} in the same lexicographic order combinationsGen produces,
+  // computed directly in O(k*n) rather than by stepping through every
+  // preceding combination. This is what lets a worker start scanning at an
+  // arbitrary offset into the combination space instead of only at rank 0 --
+  // the basis for splitting one search across several workers.
+  function unrankCombination(n, k, rank) {
+    const result = [];
+    let r = rank, a = 0;
+    for (let i = 0; i < k; i++) {
+      for (let v = a; v < n; v++) {
+        const c = nCrSafe(n - v - 1, k - i - 1);
+        if (r < c) { result.push(v); a = v + 1; break; }
+        r -= c;
+      }
     }
+    return result;
+  }
 
+  // Like combinationsGen, but yields only ranks [startRank, endRank) of the
+  // full lexicographic sequence -- one unrank to find the starting point,
+  // then the same cheap increment-based stepping as combinationsGen for the
+  // rest of the range.
+  function* combinationRangeGen(arr, k, startRank, endRank) {
+    const n = arr.length;
+    if (startRank >= endRank) return;
+    const idx = unrankCombination(n, k, startRank);
+    let count = startRank;
+    while (true) {
+      yield idx.map((i) => arr[i]);
+      count++;
+      if (count >= endRank) return;
+      let i = k - 1;
+      while (i >= 0 && idx[i] === i + n - k) i--;
+      if (i < 0) return;
+      idx[i]++;
+      for (let j = i + 1; j < k; j++) idx[j] = idx[j - 1] + 1;
+    }
+  }
+
+  // The per-subset scanning work, over one rank range of the combination
+  // space -- containment filtering + congruence-signature grouping, with no
+  // cross-range knowledge needed. This is the unit of work a worker runs;
+  // running it once over the full [0, combosCount) range (what
+  // computeClasses does below) is just the degenerate single-worker case.
+  // Returns { totalValid, properMap } where properMap is properKey -> { rep,
+  // count, fullKey, chiral, rotationalSymmetry } -- count is a per-range
+  // partial orbit size, meant to be summed across ranges by mergeProperMaps.
+  function scanRange({ annulus, fullLattice, n, minR, checkEdges, rejectCollinear, roundDp, startRank, endRank }) {
     let totalValid = 0;
-    const properMap = new Map(); // properKey -> { rep, count, fullKey, chiral }
-    for (const subset of combinationsGen(annulus, n)) {
+    const properMap = new Map();
+    for (const subset of combinationRangeGen(annulus, n, startRank, endRank)) {
       const poly = containmentCandidate(subset, minR, fullLattice, checkEdges, rejectCollinear);
       if (!poly) continue;
       totalValid++;
@@ -372,7 +408,33 @@
       }
       properMap.get(sig.properKey).count++;
     }
+    return { totalValid, properMap };
+  }
 
+  // Combines properMaps from any number of scanRange calls (e.g. one per
+  // worker) into one, summing orbit counts for a properKey found in more
+  // than one range. Which range's `rep`/`fullKey`/`chiral` survives for a
+  // shared key is arbitrary -- by construction they describe the same
+  // congruence class, so any of them is equally valid as the representative.
+  function mergeProperMaps(maps) {
+    const merged = new Map();
+    for (const m of maps) {
+      for (const [key, cls] of m.entries()) {
+        if (!merged.has(key)) {
+          merged.set(key, { rep: cls.rep, count: 0, fullKey: cls.fullKey, chiral: cls.chiral, rotationalSymmetry: cls.rotationalSymmetry });
+        }
+        merged.get(key).count += cls.count;
+      }
+    }
+    return merged;
+  }
+
+  // The rest of the pipeline after scanning: proper-congruence class list,
+  // mirror pairing via the rotation+reflection key, stats, and the
+  // area-sorted id assignment. Operates purely on the (already merged)
+  // properKey -> class map, independent of how many ranges/workers produced
+  // it. Returns { classes, properKeyToIndex, fullClassCount }.
+  function finalizeClasses(properMap, fullLattice) {
     const byFull = new Map();
     for (const [properKey, cls] of properMap.entries()) {
       if (!byFull.has(cls.fullKey)) byFull.set(cls.fullKey, []);
@@ -405,13 +467,33 @@
     properKeyToIndex.clear();
     classes.forEach((c) => properKeyToIndex.set(c.properKey, c.id));
 
-    return {
-      totalSubsetsChecked: combosCount,
-      totalValid,
-      classes,
-      properKeyToIndex,
-      fullClassCount: byFull.size,
-    };
+    return { classes, properKeyToIndex, fullClassCount: byFull.size };
+  }
+
+  // Runs the full pipeline for one n: subset-count guard, containment
+  // filtering, proper-congruence grouping (orbit size per class), mirror
+  // pairing via the rotation+reflection key, and stats. Single-threaded --
+  // scans the whole [0, combosCount) range itself. Returns
+  // { skipped: reason } if the subset-count guard trips, otherwise
+  // { totalSubsetsChecked, totalValid, classes, fullClassCount }. The
+  // browser UI instead parallelizes by calling scanRange in several workers
+  // over disjoint sub-ranges and combining with mergeProperMaps +
+  // finalizeClasses; this function is the single-range special case of that
+  // same pipeline, kept as the simple entry point for Node/tests.
+  function computeClasses({ annulus, fullLattice, n, minR, checkEdges, rejectCollinear, maxCombos, roundDp = 6 }) {
+    if (annulus.length < n) return { skipped: `only ${annulus.length} annulus points, need ${n}` };
+
+    const combosCount = nCrSafe(annulus.length, n);
+    if (combosCount > maxCombos) {
+      return { skipped: `C(${annulus.length},${n})=${combosCount} exceeds guard (${maxCombos})` };
+    }
+
+    const { totalValid, properMap } = scanRange({
+      annulus, fullLattice, n, minR, checkEdges, rejectCollinear, roundDp, startRank: 0, endRank: combosCount,
+    });
+    const { classes, properKeyToIndex, fullClassCount } = finalizeClasses(properMap, fullLattice);
+
+    return { totalSubsetsChecked: combosCount, totalValid, classes, properKeyToIndex, fullClassCount };
   }
 
   const LatticeCore = {
@@ -419,7 +501,8 @@
     containmentCandidate, containmentFloorRatio, segMinDistToOrigin,
     polygonSignature, rotateCanonical, mirrorVertices, rotationalSymmetryOrder,
     fullSignature, area, convexHull, pointInPolygonStrict, polygonStats, round, keyOf,
-    nCrSafe, combinationsGen, computeClasses,
+    nCrSafe, combinationsGen, unrankCombination, combinationRangeGen,
+    scanRange, mergeProperMaps, finalizeClasses, computeClasses,
   };
   if (typeof module !== "undefined" && module.exports) {
     module.exports = LatticeCore;
