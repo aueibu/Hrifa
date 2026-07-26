@@ -88,6 +88,7 @@
   }
 
   function onParamsChanged(latticeChanged) {
+    if (workers.length) cancelCompute(); // params changed mid-search -- its result would be for stale data
     result = null;
     selectedId = null;
 
@@ -125,7 +126,37 @@
   function onNChanged() { readInputs(); onParamsChanged(false); }
   function onMinorParamsChanged() { readInputs(); onParamsChanged(false); }
 
-  // ---------------- generate ----------------
+  // ---------------- generate (parallel search across several workers) ----------------
+
+  const MAX_WORKERS = 8;
+  const MIN_SUBSETS_PER_WORKER = 20000; // below this, a second worker's spin-up cost isn't worth it
+
+  let workers = [];
+  let computeToken = 0;
+  const computeStart = { t: 0 };
+
+  function setComputing(isComputing) {
+    $("generateBtn").disabled = isComputing;
+    $("cancelBtn").hidden = !isComputing;
+  }
+
+  function stopAllWorkers() {
+    for (const w of workers) w.terminate();
+    workers = [];
+  }
+
+  function cancelCompute(statusText) {
+    stopAllWorkers();
+    computeToken++; // invalidates any in-flight worker response
+    setComputing(false);
+    if (statusText) setStatus(statusText, "");
+  }
+
+  function pickWorkerCount(combosCount) {
+    const cores = navigator.hardwareConcurrency || 4;
+    const cap = Math.max(1, Math.min(cores, MAX_WORKERS));
+    return Math.max(1, Math.min(cap, Math.floor(combosCount / MIN_SUBSETS_PER_WORKER)));
+  }
 
   function onGenerate() {
     readInputs();
@@ -135,55 +166,116 @@
       return;
     }
 
-    const btn = $("generateBtn");
-    btn.disabled = true;
-    setStatus("Computing…", "");
+    const floorOk = updateFloorRatio();
+    if (!floorOk) {
+      const floor = LC.containmentFloorRatio(state.n);
+      result = null;
+      selectedId = null;
+      setStatus(
+        `Skipped — maxᵣ/minᵣ = ${round(state.maxR / state.minR, 4)} is below sec(π/${state.n}) = ${round(floor, 4)}, ` +
+        `so no ${state.n}-gon can contain the inner disk while keeping vertices within maxᵣ. No subsets were checked.`,
+        "err"
+      );
+      renderResults();
+      renderStage();
+      return;
+    }
 
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        try {
-          const floorOk = updateFloorRatio();
-          if (!floorOk) {
-            const floor = LC.containmentFloorRatio(state.n);
-            result = null;
-            setStatus(
-              `Skipped — maxᵣ/minᵣ = ${round(state.maxR / state.minR, 4)} is below sec(π/${state.n}) = ${round(floor, 4)}, ` +
-              `so no ${state.n}-gon can contain the inner disk while keeping vertices within maxᵣ. No subsets were checked.`,
-              "err"
-            );
-          } else {
-            const res = LC.computeClasses({
-              annulus: lattice.annulus,
-              fullLattice: lattice.all,
-              n: state.n,
-              minR: state.minR,
-              checkEdges: state.checkEdges,
-              rejectCollinear: state.rejectCollinear,
-              maxCombos: state.maxCombos,
-            });
-            if (res.skipped) {
-              result = null;
-              setStatus("Skipped — " + res.skipped, "err");
-            } else {
-              result = res;
-              setStatus(
-                `C(${lattice.annulus.length},${state.n}) = ${res.totalSubsetsChecked} subsets checked · ` +
-                `${res.totalValid} raw valid polygons · ${res.classes.length} proper classes · ` +
-                `${res.fullClassCount} full (congruence) classes.`,
-                "ok"
-              );
-            }
-          }
-        } catch (e) {
-          result = null;
-          setStatus("Error: " + e.message, "err");
+    const combosCount = LC.nCrSafe(lattice.annulus.length, state.n);
+    if (combosCount > state.maxCombos) {
+      result = null;
+      selectedId = null;
+      setStatus(`Skipped — C(${lattice.annulus.length},${state.n})=${combosCount} exceeds guard (${state.maxCombos})`, "err");
+      renderResults();
+      renderStage();
+      return;
+    }
+
+    stopAllWorkers();
+    const token = ++computeToken;
+    setComputing(true);
+    computeStart.t = performance.now();
+
+    const workerCount = pickWorkerCount(combosCount);
+    const chunkSize = Math.ceil(combosCount / workerCount);
+    const maps = [];
+    let combinedTotalValid = 0;
+    let doneCount = 0;
+    let failed = null;
+
+    const reportProgress = () => {
+      setStatus(
+        `Computing in the background across ${workerCount} worker${workerCount > 1 ? "s" : ""} ` +
+        `(${doneCount}/${workerCount} done) — the page stays responsive; press Cancel to abort.`,
+        ""
+      );
+    };
+    reportProgress();
+
+    const finish = () => {
+      setComputing(false);
+      workers = [];
+      const elapsed = ((performance.now() - computeStart.t) / 1000).toFixed(1);
+      if (failed) {
+        result = null;
+        setStatus("Error: " + failed, "err");
+      } else {
+        const merged = LC.mergeProperMaps(maps);
+        const { classes, properKeyToIndex, fullClassCount } = LC.finalizeClasses(merged, lattice.all);
+        result = {
+          totalSubsetsChecked: combosCount,
+          totalValid: combinedTotalValid,
+          classes,
+          properKeyToIndex,
+          fullClassCount,
+        };
+        setStatus(
+          `C(${lattice.annulus.length},${state.n}) = ${combosCount} subsets checked in ${elapsed}s across ${workerCount} worker${workerCount > 1 ? "s" : ""} · ` +
+          `${combinedTotalValid} raw valid polygons · ${classes.length} proper classes · ` +
+          `${fullClassCount} full (congruence) classes.`,
+          "ok"
+        );
+      }
+      selectedId = null;
+      renderResults();
+      renderStage();
+    };
+
+    for (let start = 0, i = 0; start < combosCount; start += chunkSize, i++) {
+      const end = Math.min(start + chunkSize, combosCount);
+      const w = new Worker("worker.js");
+      workers.push(w);
+      w.onmessage = (e) => {
+        if (token !== computeToken) return; // superseded by a newer run
+        const msg = e.data;
+        if (!msg.ok) {
+          failed = failed || msg.error;
+        } else {
+          combinedTotalValid += msg.totalValid;
+          maps.push(msg.properMap);
         }
-        selectedId = null;
-        renderResults();
-        renderStage();
-        btn.disabled = false;
-      }, 10);
-    });
+        doneCount++;
+        if (doneCount < workerCount) reportProgress();
+        else finish();
+      };
+      w.onerror = (e) => {
+        if (token !== computeToken) return;
+        failed = failed || e.message;
+        doneCount++;
+        if (doneCount >= workerCount) finish();
+      };
+      w.postMessage({
+        annulus: lattice.annulus,
+        fullLattice: lattice.all,
+        n: state.n,
+        minR: state.minR,
+        checkEdges: state.checkEdges,
+        rejectCollinear: state.rejectCollinear,
+        roundDp: 6,
+        startRank: start,
+        endRank: end,
+      });
+    }
   }
 
   // ---------------- results list ----------------
@@ -279,6 +371,108 @@
     }
   }
 
+  // ---------------- export / load full result set ----------------
+
+  function download(name, type, data) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([data], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  function buildResultsExport() {
+    return {
+      format: "hrifa-annulus-results",
+      version: 1,
+      lattice: { v1: state.v1, v2: state.v2 },
+      annulus: { minR: state.minR, maxR: state.maxR },
+      n: state.n,
+      edgePurity: state.checkEdges,
+      strictVertices: state.rejectCollinear,
+      totalSubsetsChecked: result.totalSubsetsChecked,
+      totalValid: result.totalValid,
+      fullClassCount: result.fullClassCount,
+      // fullLattice/annulus aren't included -- they're cheap and
+      // deterministic to regenerate from lattice/annulus above on load,
+      // and omitting them keeps the file from ballooning on top of classes.
+      classes: result.classes,
+    };
+  }
+
+  function exportResults() {
+    if (!result) return;
+    const data = JSON.stringify(buildResultsExport(), null, 2);
+    download(`annulus-n${state.n}-r${state.minR}-${state.maxR}.json`, "application/json", data);
+  }
+
+  function loadResultsFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try {
+        data = JSON.parse(reader.result);
+      } catch (e) {
+        setStatus("Load failed — not valid JSON.", "err");
+        return;
+      }
+      if (data.format !== "hrifa-annulus-results" || !Array.isArray(data.classes)) {
+        setStatus("Load failed — not a recognized results file.", "err");
+        return;
+      }
+
+      cancelCompute();
+
+      state.v1 = data.lattice.v1;
+      state.v2 = data.lattice.v2;
+      state.minR = data.annulus.minR;
+      state.maxR = data.annulus.maxR;
+      state.n = data.n;
+      state.checkEdges = !!data.edgePurity;
+      state.rejectCollinear = !!data.strictVertices;
+
+      $("v1x").value = state.v1[0]; $("v1y").value = state.v1[1];
+      $("v2x").value = state.v2[0]; $("v2y").value = state.v2[1];
+      $("minRInput").value = state.minR; $("minROut").textContent = state.minR.toFixed(2);
+      $("maxRInput").value = state.maxR; $("maxROut").textContent = state.maxR.toFixed(2);
+      $("nInput").value = state.n; $("nOut").textContent = state.n;
+      $("edgePurityInput").checked = state.checkEdges;
+      $("strictVerticesInput").checked = state.rejectCollinear;
+
+      try {
+        lattice.all = LC.generateLattice(state.v1, state.v2, state.maxR);
+        lattice.annulus = LC.annulusPoints(lattice.all, state.minR, state.maxR);
+        $("latticeMeta").textContent =
+          `${lattice.all.length} lattice points within maxᵣ · ${lattice.annulus.length} in annulus`;
+      } catch (e) {
+        lattice = { all: [], annulus: [] };
+        $("latticeMeta").textContent = "Basis vectors are linearly dependent — pick two independent vectors.";
+      }
+      resetView();
+      updateFloorRatio();
+
+      result = {
+        totalSubsetsChecked: data.totalSubsetsChecked,
+        totalValid: data.totalValid,
+        classes: data.classes,
+        properKeyToIndex: new Map(data.classes.map((c) => [c.properKey, c.id])),
+        fullClassCount: data.fullClassCount,
+      };
+      hasGeneratedOnce = true;
+      selectedId = null;
+      setStatus(
+        `Loaded from file · ${data.totalValid} raw valid polygons · ${data.classes.length} proper classes · ` +
+        `${data.fullClassCount} full (congruence) classes.`,
+        "ok"
+      );
+      renderResults();
+      renderStage();
+    };
+    reader.onerror = () => setStatus("Load failed — couldn't read the file.", "err");
+    reader.readAsText(file);
+  }
+
   function miniShapeSvg(vertices) {
     const xs = vertices.map((v) => v[0]), ys = vertices.map((v) => v[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -294,6 +488,7 @@
 
   function renderResults() {
     const wrap = $("resultsList");
+    $("exportResultsBtn").disabled = !result;
     if (!result) {
       wrap.innerHTML = '<p class="empty-results">No results yet — set parameters and press Generate.</p>';
       $("resultsSummary").textContent = "Generate a set to see results.";
@@ -502,6 +697,12 @@
       onMinorParamsChanged();
     });
     $("generateBtn").addEventListener("click", onGenerate);
+    $("cancelBtn").addEventListener("click", () => cancelCompute("Cancelled."));
+    $("exportResultsBtn").addEventListener("click", exportResults);
+    $("loadResultsInput").addEventListener("change", (e) => {
+      loadResultsFile(e.target.files[0]);
+      e.target.value = ""; // allow re-selecting the same file later
+    });
 
     initPanZoom();
     readInputs();
