@@ -1,0 +1,66 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: Syntax and token build
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          files=(
+            applets.js
+            a-stone-throw/app.js
+            affine-focus-transform-explorer/app.js
+            color-checker/app.js
+            color-checker/color-names.js
+            custom-reader/app.js
+            custom-reader/build.js
+            custom-reader/serve.js
+            grid-traversal/app.js
+            hrifa-edel/app.js
+            lines-and-marks/hatch_regions.js
+            lines-and-marks/inkline_app.js
+            palette-chroma/app.js
+            polygon-annulus-explorer/app.js
+            polygon-annulus-explorer/core.js
+            polygon-annulus-explorer/worker.js
+            polygon-focus-vantage/app.js
+            polygon-fold-explorer/app.js
+            polygon-irregular-3d/app.js
+            polygon-new-tab/newtab.js
+            username-seeds/script.js
+          )
+          for file in "${files[@]}"; do
+            node --check "$file"
+          done
+
+      - name: Compile PDF Ingest application
+        run: python -m py_compile pdf-ingest/app.py
+
+      - name: Build Design Tokens
+        run: |
+          npm ci --prefix design-tokens
+          npm run build --prefix design-tokens

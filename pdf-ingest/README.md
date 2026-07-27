@@ -20,6 +20,11 @@ python -m venv .venv
 
 Then open http://localhost:5000
 
+## Local environment
+
+The `.venv/` directory is deliberately local and ignored by Git. Do not add it
+to commits; install or recreate it with the setup commands above instead.
+
 ## Settings
 
 - **Output layout** — one Markdown file per PDF, or one file per page.
