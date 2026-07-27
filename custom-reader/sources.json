@@ -9,6 +9,6 @@
   { "name": "Read a Little Poetry", "url": "https://readalittlepoetry.com/feed/", "fullContent": false },
   { "name": "Via Negativa", "url": "https://www.vianegativa.us/feed/", "fullContent": false },
   { "name": "And Other Poems", "url": "https://andotherpoems.com/feed/", "fullContent": false },
-  { "name": "AP News (via Google News)", "url": "https://news.google.com/rss/search?q=site:apnews.com&hl=en-US&gl=US&ceid=US:en", "fullContent": false },
-  { "name": "Reuters (via Google News)", "url": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en", "fullContent": false }
+  { "name": "AP News (via Google News)", "url": "https://news.google.com/rss/search?q=site:apnews.com&hl=en-US&gl=US&ceid=US:en", "fullContent": false, "resolveGoogleNews": true },
+  { "name": "Reuters (via Google News)", "url": "https://news.google.com/rss/search?q=site:reuters.com&hl=en-US&gl=US&ceid=US:en", "fullContent": false, "resolveGoogleNews": true }
 ]
