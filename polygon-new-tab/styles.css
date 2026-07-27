@@ -264,6 +264,53 @@ body::after {
 .settings-card input[type="range"] { width: 100%; }
 .settings-card select { padding: 10px; border: 1px solid var(--line); border-radius: 7px; background: #181a1e; color: var(--ink); font: inherit; }
 .settings-card select + label { margin-top: 18px; }
+.custom-engines-setting { margin-top: 18px; }
+.custom-engine-list { display: flex; flex-direction: column; gap: 8px; margin: 0 0 8px; padding: 0; list-style: none; }
+.custom-engine-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  grid-template-areas: "name keyword remove" "url url url";
+  gap: 6px 8px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.custom-engine-row input[type="text"],
+.custom-engine-row input[type="url"] {
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #181a1e;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+}
+.custom-engine-row .engine-name { grid-area: name; }
+.custom-engine-row .engine-keyword { grid-area: keyword; }
+.custom-engine-row .engine-url { grid-area: url; }
+.custom-engine-row .remove-engine-button {
+  grid-area: remove;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.custom-engine-row .remove-engine-button:hover { color: var(--ink); }
+.add-engine-button {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.add-engine-button:hover { color: var(--ink); border-color: var(--ink); }
 .threshold-setting { margin-top: 18px; }
 .threshold-setting label { display: flex; justify-content: space-between; }
 .threshold-setting output { color: var(--ink); }

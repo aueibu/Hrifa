@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PDF Ingest</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap">
+  <h1>PDF Ingest</h1>
+  <p class="subtitle">Convert a PDF into LLM-readable Markdown (text, tables, images) using PyMuPDF / pymupdf4llm.</p>
+
+  <div class="field">
+    <label>PDF queue</label>
+    <div class="row">
+      <button type="button" id="browse_files">Add file(s)...</button>
+      <button type="button" id="clear_queue">Clear queue</button>
+      <span id="queue_count" class="queue_count"></span>
+    </div>
+    <div id="queue_list" class="queue_list"></div>
+  </div>
+
+  <div class="field">
+    <label>Output directory</label>
+    <div class="row">
+      <input type="text" id="out_dir" value="{{ default_out }}">
+      <button type="button" id="browse_dir">Browse...</button>
+    </div>
+  </div>
+
+  <fieldset>
+    <legend>Settings</legend>
+
+    <div class="field">
+      <label>Output layout</label>
+      <div class="row">
+        <label class="radio"><input type="radio" name="layout" value="single" checked> One Markdown file per PDF</label>
+        <label class="radio"><input type="radio" name="layout" value="per_page"> One Markdown file per page</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="checkbox"><input type="checkbox" id="extract_images" checked> Extract embedded images/figures to a subfolder</label>
+    </div>
+
+    <div class="field">
+      <label for="dpi">Image / rasterization DPI</label>
+      <input type="number" id="dpi" value="150" min="72" max="600" style="width:6em">
+    </div>
+
+    <div class="field">
+      <label for="table_strategy">Table detection strategy</label>
+      <select id="table_strategy">
+        {% for s in table_strategies %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="page_range">Page range (optional)</label>
+      <input type="text" id="page_range" placeholder="e.g. 1-12,15  (blank = all pages)">
+      <p class="hint">Applies to every file in the queue - leave blank when queuing files with different page counts.</p>
+    </div>
+
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" id="use_ocr" {% if not ocr_available %}disabled{% endif %}>
+        OCR fallback for pages with no text layer (scanned pages)
+      </label>
+      {% if not ocr_available %}
+      <p class="warn">Tesseract OCR was not found on this system. Install Tesseract-OCR for Windows and ensure
+      it is on your PATH to enable this option.</p>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label>Processing mode</label>
+      <div class="row">
+        <label class="radio"><input type="radio" name="cpu_mode" value="multi" checked> Multi-core (parallel)</label>
+        <label class="radio"><input type="radio" name="cpu_mode" value="single"> Single-core (sequential)</label>
+      </div>
+    </div>
+
+    <div class="field" id="max_cores_field">
+      <label for="max_cores">Max CPU cores to use ({{ cpu_count }} detected)</label>
+      <input type="number" id="max_cores" value="{{ cpu_count }}" min="1" max="{{ cpu_count }}" style="width:6em">
+    </div>
+  </fieldset>
+
+  <button type="button" id="process_btn">Start Queue</button>
+
+  <div id="status"></div>
+  <div id="progress_wrap" class="progress_wrap" style="display:none">
+    <div class="progress_bar"><div id="progress_fill" class="progress_fill"></div></div>
+    <div id="progress_text" class="progress_text"></div>
+  </div>
+
+  <div id="run_panels" class="run_panels" style="display:none">
+    <div class="stats_panel">
+      <h3>Run Info</h3>
+      <table class="stats_table">
+        <tr><td>File</td><td id="stat_filename">-</td></tr>
+        <tr><td>Pages in PDF</td><td id="stat_page_count">-</td></tr>
+        <tr><td>Pages processing</td><td id="stat_processing_count">-</td></tr>
+        <tr><td>Workers</td><td id="stat_workers">-</td></tr>
+        <tr><td>Elapsed</td><td id="stat_elapsed">-</td></tr>
+        <tr><td>Avg time / page</td><td id="stat_avg">-</td></tr>
+      </table>
+    </div>
+    <div class="page_log_panel">
+      <h3>Page Progress</h3>
+      <div id="page_log" class="page_log"></div>
+    </div>
+  </div>
+
+  <pre id="log"></pre>
+</div>
+
+<script>
+async function browse(url, targetId) {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.path) document.getElementById(targetId).value = data.path;
+}
+document.getElementById('browse_dir').onclick = () => browse('/browse-dir', 'out_dir');
+
+// --- Queue management ---
+let queueItems = []; // [{path, filename}] - editable local queue before a run starts
+let queueLocked = false; // true while a job is running (server-driven queue view)
+
+function basename(path) {
+  const parts = path.split(/[\\/]/);
+  return parts[parts.length - 1];
+}
+
+function statusLabel(status) {
+  return {pending: 'Pending', running: 'Processing', done: 'Done', error: 'Error'}[status] || status;
+}
+
+function renderQueue(items, editable) {
+  const list = document.getElementById('queue_list');
+  const count = document.getElementById('queue_count');
+  count.textContent = items.length ? `${items.length} file(s)` : '';
+  list.textContent = '';
+  items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'queue_row';
+    if (item.status) row.classList.add('status_' + item.status);
+
+    const name = document.createElement('span');
+    name.className = 'queue_filename';
+    name.textContent = item.filename;
+    row.appendChild(name);
+
+    if (item.status) {
+      const badge = document.createElement('span');
+      badge.className = 'queue_badge badge_' + item.status;
+      badge.textContent = statusLabel(item.status);
+      row.appendChild(badge);
+      if (item.status === 'error' && item.error) {
+        badge.title = item.error;
+      }
+    }
+
+    if (editable) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'queue_remove';
+      removeBtn.textContent = '×';
+      removeBtn.onclick = () => {
+        queueItems.splice(i, 1);
+        renderQueue(queueItems, true);
+      };
+      row.appendChild(removeBtn);
+    }
+
+    list.appendChild(row);
+  });
+}
+renderQueue(queueItems, true);
+
+document.getElementById('browse_files').onclick = async () => {
+  const res = await fetch('/browse-files');
+  const data = await res.json();
+  const paths = data.paths || [];
+  const existing = new Set(queueItems.map(q => q.path));
+  for (const p of paths) {
+    if (!existing.has(p)) {
+      queueItems.push({path: p, filename: basename(p)});
+      existing.add(p);
+    }
+  }
+  renderQueue(queueItems, true);
+};
+
+document.getElementById('clear_queue').onclick = () => {
+  if (queueLocked) return;
+  queueItems = [];
+  renderQueue(queueItems, true);
+};
+
+function updateCpuModeUI() {
+  const single = document.querySelector('input[name="cpu_mode"]:checked').value === 'single';
+  document.getElementById('max_cores').disabled = single;
+  document.getElementById('max_cores_field').style.opacity = single ? 0.5 : 1;
+}
+document.querySelectorAll('input[name="cpu_mode"]').forEach(el => el.addEventListener('change', updateCpuModeUI));
+updateCpuModeUI();
+
+let pollHandle = null;
+
+function stopPolling() {
+  if (pollHandle) {
+    clearInterval(pollHandle);
+    pollHandle = null;
+  }
+}
+
+function renderProgress(data) {
+  const wrap = document.getElementById('progress_wrap');
+  const fill = document.getElementById('progress_fill');
+  const text = document.getElementById('progress_text');
+  if (data.total > 0) {
+    wrap.style.display = 'block';
+    const pct = Math.round((data.current / data.total) * 100);
+    fill.style.width = pct + '%';
+    text.textContent = `Page ${data.current} / ${data.total} (${pct}%)`;
+  } else {
+    wrap.style.display = 'block';
+    fill.style.width = '0%';
+    text.textContent = 'Starting...';
+  }
+}
+
+function formatDuration(seconds) {
+  if (!seconds || seconds < 0) return '0s';
+  if (seconds < 60) return seconds.toFixed(1) + 's';
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}m ${s}s`;
+}
+
+function renderStats(data) {
+  const panels = document.getElementById('run_panels');
+  const meta = data.meta;
+  if (!meta) {
+    panels.style.display = 'none';
+    return;
+  }
+  panels.style.display = 'flex';
+  document.getElementById('stat_filename').textContent = meta.filename;
+  document.getElementById('stat_page_count').textContent = meta.page_count;
+  document.getElementById('stat_processing_count').textContent = meta.processing_count;
+  document.getElementById('stat_workers').textContent = `${meta.workers} (of ${meta.cpu_count} cores)`;
+  document.getElementById('stat_elapsed').textContent = formatDuration(data.elapsed_seconds);
+  document.getElementById('stat_avg').textContent = data.avg_seconds_per_page
+    ? data.avg_seconds_per_page.toFixed(2) + 's'
+    : '-';
+
+  const pageLogEl = document.getElementById('page_log');
+  const pageLog = data.page_log || [];
+  if (pageLogEl.childElementCount !== pageLog.length) {
+    pageLogEl.textContent = '';
+    for (const line of pageLog) {
+      const div = document.createElement('div');
+      div.textContent = line;
+      pageLogEl.appendChild(div);
+    }
+    pageLogEl.scrollTop = pageLogEl.scrollHeight;
+  }
+}
+
+function setQueueLocked(locked) {
+  queueLocked = locked;
+  document.getElementById('browse_files').disabled = locked;
+  document.getElementById('clear_queue').disabled = locked;
+}
+
+async function pollProgress() {
+  const btn = document.getElementById('process_btn');
+  const statusEl = document.getElementById('status');
+  const logEl = document.getElementById('log');
+
+  const res = await fetch('/progress');
+  const data = await res.json();
+  renderProgress(data);
+  renderStats(data);
+  if (data.queue) {
+    renderQueue(data.queue, false);
+  }
+
+  if (!data.running) {
+    stopPolling();
+    btn.disabled = false;
+    setQueueLocked(false);
+    const doneCount = (data.queue || []).filter(q => q.status === 'done').length;
+    const errorCount = (data.queue || []).filter(q => q.status === 'error').length;
+    if (errorCount) {
+      statusEl.textContent = `Finished: ${doneCount} done, ${errorCount} failed.`;
+      statusEl.className = 'err';
+    } else {
+      statusEl.textContent = `Finished: ${doneCount} file(s) done.`;
+      statusEl.className = 'ok';
+    }
+    logEl.textContent = (data.log || []).join('\n');
+  }
+}
+
+document.getElementById('process_btn').onclick = async () => {
+  const btn = document.getElementById('process_btn');
+  const statusEl = document.getElementById('status');
+  const logEl = document.getElementById('log');
+
+  if (queueItems.length === 0) {
+    statusEl.textContent = 'Queue is empty - add file(s) first.';
+    statusEl.className = 'err';
+    return;
+  }
+
+  btn.disabled = true;
+  setQueueLocked(true);
+  statusEl.textContent = 'Processing...';
+  statusEl.className = '';
+  logEl.textContent = '';
+  document.getElementById('page_log').textContent = '';
+  document.getElementById('run_panels').style.display = 'none';
+  renderProgress({current: 0, total: 0});
+
+  const payload = {
+    pdf_paths: queueItems.map(q => q.path),
+    out_dir: document.getElementById('out_dir').value,
+    layout: document.querySelector('input[name="layout"]:checked').value,
+    extract_images: document.getElementById('extract_images').checked,
+    dpi: document.getElementById('dpi').value,
+    table_strategy: document.getElementById('table_strategy').value,
+    page_range: document.getElementById('page_range').value,
+    use_ocr: document.getElementById('use_ocr').checked,
+    cpu_mode: document.querySelector('input[name="cpu_mode"]:checked').value,
+    max_cores: document.getElementById('max_cores').value,
+  };
+
+  try {
+    const res = await fetch('/process', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      statusEl.textContent = 'Failed.';
+      statusEl.className = 'err';
+      logEl.textContent = (data.log || []).join('\n');
+      btn.disabled = false;
+      setQueueLocked(false);
+      return;
+    }
+    stopPolling();
+    pollHandle = setInterval(pollProgress, 500);
+  } catch (e) {
+    statusEl.textContent = 'Failed.';
+    statusEl.className = 'err';
+    logEl.textContent = String(e);
+    btn.disabled = false;
+    setQueueLocked(false);
+  }
+};
+</script>
+</body>
+</html>

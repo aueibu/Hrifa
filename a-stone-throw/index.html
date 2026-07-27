@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A Stone's Throw — Drop Simulator</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=3">
 <script type="importmap">
 {
   "imports": {
@@ -17,56 +17,73 @@
 </head>
 <body>
 <header>
-  <h1>A Stone&rsquo;s Throw</h1>
-  <p class="subtitle">Drop objects onto a surface and see where they land.</p>
+  <div class="header-row">
+    <div>
+      <h1>A Stone&rsquo;s Throw</h1>
+      <p class="subtitle">Drop objects onto a surface and see where they land.</p>
+    </div>
+    <div class="action-bar">
+      <button id="dropBtn" type="button" class="primary">Drop <kbd>D</kbd></button>
+      <button id="resetBtn" type="button">Reset <kbd>R</kbd></button>
+      <button id="copyBtn" type="button">Copy results</button>
+      <button id="exportBtn" type="button">Export JSON</button>
+    </div>
+  </div>
+  <p id="status" class="status">Add items to the batch, then drop.</p>
 </header>
 
 <main>
-  <section class="panel controls">
-    <div class="control-group">
-      <h2>Surface</h2>
-      <label for="surfaceSelect">Type</label>
-      <select id="surfaceSelect"></select>
+  <section class="panel surface-panel">
+    <h2 class="section-title">Surface</h2>
+    <label for="surfaceSelect">Type</label>
+    <select id="surfaceSelect"></select>
 
-      <label for="textureSelect">Texture</label>
-      <select id="textureSelect">
-        <option value="smooth">Smooth</option>
-        <option value="rough">Rough</option>
-      </select>
+    <label for="textureSelect">Texture</label>
+    <select id="textureSelect">
+      <option value="smooth">Smooth</option>
+      <option value="rough">Rough</option>
+    </select>
 
-      <label for="angleSlider">Tilt: <span id="angleValue">0&deg;</span></label>
-      <input type="range" id="angleSlider" min="0" max="30" value="0" step="1">
+    <dl class="props-grid">
+      <div class="prop-row"><dt>Friction</dt><dd id="surfaceFriction">&mdash;</dd></div>
+      <div class="prop-row"><dt>Restitution</dt><dd id="surfaceRestitution">&mdash;</dd></div>
+    </dl>
+    <details class="info-details">
+      <summary>Data source</summary>
+      <p id="surfaceInfo" class="status"></p>
+    </details>
 
-      <label for="heightSlider">Drop height: <span id="heightValue">1.0 m</span></label>
-      <input type="range" id="heightSlider" min="0.1" max="4" value="1" step="0.1">
+    <label for="angleSlider">Tilt: <span id="angleValue">0&deg;</span></label>
+    <input type="range" id="angleSlider" min="0" max="30" value="0" step="1">
+
+    <label for="heightSlider">Drop height: <span id="heightValue">1.0 m</span></label>
+    <input type="range" id="heightSlider" min="0.1" max="4" value="1" step="0.1">
+
+    <label for="speedSlider">Playback speed: <span id="speedValue">1.0&times;</span></label>
+    <input type="range" id="speedSlider" min="0.1" max="3" value="1" step="0.1">
+  </section>
+
+  <section class="panel stage">
+    <div id="sceneContainer">
+      <div id="fpsCounter" class="fps-counter">-- FPS</div>
     </div>
+  </section>
 
+  <section class="panel interact-panel">
     <div class="control-group">
-      <h2>Grid</h2>
-      <label for="colsInput">Columns</label>
-      <input type="number" id="colsInput" min="2" max="50" value="6">
-      <label for="rowsInput">Rows</label>
-      <input type="number" id="rowsInput" min="2" max="50" value="6">
-    </div>
-
-    <div class="control-group">
-      <h2>Shape</h2>
-      <label for="shapeSelect">Form</label>
-      <select id="shapeSelect"></select>
-
-      <label for="sizeSlider">Target size: <span id="sizeValue">0.06 m</span></label>
-      <input type="range" id="sizeSlider" min="0.01" max="0.3" value="0.06" step="0.01">
-
-      <label for="meshUpload">Import shape (.obj / .stl)</label>
-      <input type="file" id="meshUpload" accept=".obj,.stl">
-      <p id="uploadStatus" class="status"></p>
-    </div>
-
-    <div class="control-group">
-      <h2>Material</h2>
+      <h2 class="section-title">Material</h2>
       <label for="materialSelect">Type</label>
       <select id="materialSelect"></select>
-      <p id="materialInfo" class="status"></p>
+
+      <dl class="props-grid">
+        <div class="prop-row"><dt>Density</dt><dd id="materialDensity">&mdash;</dd></div>
+        <div class="prop-row"><dt>Restitution</dt><dd id="materialRestitution">&mdash;</dd></div>
+        <div class="prop-row"><dt>Friction</dt><dd id="materialFriction">&mdash;</dd></div>
+      </dl>
+      <details class="info-details">
+        <summary>Data source</summary>
+        <p id="materialInfo" class="status"></p>
+      </details>
 
       <div class="advanced-props" id="customMaterialProps">
         <label for="densitySlider">Density (kg/m&sup3;): <span id="densityValue">0</span></label>
@@ -81,32 +98,59 @@
     </div>
 
     <div class="control-group">
-      <h2>Batch</h2>
+      <h3 class="subsection-title">Shape</h3>
+      <label for="shapeSelect">Form</label>
+      <select id="shapeSelect"></select>
+
+      <label for="sizeSlider">Target size: <span id="sizeValue">0.06 m</span></label>
+      <input type="range" id="sizeSlider" min="0.01" max="0.3" value="0.06" step="0.01">
+
+      <div class="divider"><span>or import a mesh</span></div>
+      <label for="meshUpload">.obj / .stl file</label>
+      <input type="file" id="meshUpload" accept=".obj,.stl">
+      <p id="uploadStatus" class="status"></p>
+    </div>
+
+    <div class="control-group">
+      <h3 class="subsection-title">Batch</h3>
       <label for="countInput">Count</label>
       <input type="number" id="countInput" min="1" max="60" value="10">
       <button id="addItemBtn" type="button">Add to batch</button>
+
+      <div class="batch-list-label">Current batch</div>
       <ul id="batchList" class="batch-list"></ul>
     </div>
-
-    <div class="control-group actions">
-      <button id="dropBtn" type="button" class="primary">Drop</button>
-      <button id="resetBtn" type="button">Reset</button>
-      <button id="copyBtn" type="button">Copy results</button>
-      <p id="status" class="status">Add items to the batch, then drop.</p>
-    </div>
-  </section>
-
-  <section class="panel stage">
-    <div id="sceneContainer"></div>
-  </section>
-
-  <section class="panel results">
-    <h2>Results</h2>
-    <div id="resultsSummary" class="results-summary">No drops yet.</div>
-    <div id="resultsGrid" class="results-grid"></div>
   </section>
 </main>
 
-<script type="module" src="app.js?v=28"></script>
+<section class="panel results">
+  <div class="results-header">
+    <h2 class="section-title">Results</h2>
+    <div class="grid-controls">
+      <label for="colsInput">Cols</label>
+      <input type="number" id="colsInput" min="2" max="50" value="6">
+      <label for="rowsInput">Rows</label>
+      <input type="number" id="rowsInput" min="2" max="50" value="6">
+    </div>
+  </div>
+  <div id="resultsSummary" class="results-summary">No drops yet.</div>
+  <div id="resultsGrid" class="results-grid"></div>
+</section>
+
+<details class="panel references">
+  <summary>Friction &amp; restitution references</summary>
+  <p class="status">Materials and surfaces above are dry, room-temperature midpoints drawn from these general engineering references &mdash; real values vary with finish, moisture, and impact speed. Wood restitution and blanket roughness/tile roughness etc. are our own qualitative model, not literature values.</p>
+  <ul>
+    <li>Engineering ToolBox, &quot;Friction and Friction Coefficients for Various Material Combinations,&quot; engineeringtoolbox.com/friction-coefficients-d_778.html</li>
+    <li>Engineering ToolBox, &quot;Coefficients of Restitution,&quot; engineeringtoolbox.com/restitution-coefficients-d_622.html</li>
+    <li>Avallone &amp; Baumeister (eds.), <em>Marks' Standard Handbook for Mechanical Engineers</em>, 11th ed., Table 3.2.1 (friction coefficients of metals)</li>
+    <li>R. Cross, &quot;The bounce of a ball,&quot; <em>American Journal of Physics</em> 67, 222 (1999)</li>
+    <li>USDA Forest Products Laboratory, <em>Wood Handbook: Wood as an Engineering Material</em>, Ch. 4 (Janka hardness) &amp; Ch. 5 (friction properties)</li>
+    <li>Nigg &amp; Herzog, <em>Biomechanics of the Musculo-Skeletal System</em> &mdash; natural turf traction/friction testing</li>
+    <li>B.S. Gupta, &quot;Friction in Textile Materials,&quot; in <em>Friction in Textile Materials</em> (Woodhead Publishing)</li>
+  </ul>
+</details>
+
+<script type="module" src="app.js?v=38"></script>
 </body>
 </html>

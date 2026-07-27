@@ -20,6 +20,8 @@ const crtToggle = document.querySelector("#crt-toggle");
 const animationDelayToggle = document.querySelector("#animation-delay-toggle");
 const bookmarkTextSizeInput = document.querySelector("#bookmark-text-size");
 const bookmarkTextSizeValue = document.querySelector("#bookmark-text-size-value");
+const customEngineList = document.querySelector("#custom-engine-list");
+const addCustomEngineButton = document.querySelector("#add-custom-engine");
 const bookmarkFolderSelect = document.querySelector("#bookmark-folder-select");
 const bookmarkLinks = document.querySelector("#bookmark-links");
 const bookmarkFolderName = document.querySelector("#bookmark-folder-name");
@@ -50,6 +52,7 @@ let dashedAccentCountdown = 20 + Math.floor(Math.random() * 16);
 let dashedAccentPending = false;
 let expansionHandoffTriggered = false;
 let bookmarkItems = [];
+let customEngines = [];
 let showPerformance = false;
 let crtEnabled = true;
 let delayAnimations = false;
@@ -89,6 +92,124 @@ function getSetting(key, fallback) {
 function saveSetting(key, value) {
   if (globalThis.chrome?.storage?.local) chrome.storage.local.set({ [key]: value });
   else localStorage.setItem(key, value);
+}
+
+function makeEngineId() {
+  return globalThis.crypto?.randomUUID ? crypto.randomUUID() : `engine-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function loadCustomEngines() {
+  const raw = await getSetting("customSearchEngines", "[]");
+  try {
+    const parsed = JSON.parse(raw);
+    customEngines = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    customEngines = [];
+  }
+  renderCustomEngineOptions();
+  renderCustomEngineList();
+}
+
+function saveCustomEngines() {
+  saveSetting("customSearchEngines", JSON.stringify(customEngines));
+}
+
+function renderCustomEngineOptions() {
+  const previousValue = providerSelect.value;
+  providerSelect.querySelectorAll('option[value^="custom:"]').forEach((option) => option.remove());
+  customEngines.forEach((engine) => {
+    providerSelect.append(new Option(engine.name || "Untitled engine", `custom:${engine.id}`));
+  });
+  if (previousValue.startsWith("custom:") && customEngines.some((engine) => `custom:${engine.id}` === previousValue)) {
+    providerSelect.value = previousValue;
+  } else if (previousValue.startsWith("custom:")) {
+    providerSelect.value = "google";
+  }
+}
+
+function renderCustomEngineList() {
+  customEngineList.replaceChildren();
+  customEngines.forEach((engine) => {
+    const item = document.createElement("li");
+    item.className = "custom-engine-row";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "engine-name";
+    nameInput.placeholder = "Name";
+    nameInput.value = engine.name || "";
+    nameInput.setAttribute("aria-label", "Search engine name");
+    nameInput.addEventListener("change", () => {
+      engine.name = nameInput.value.trim();
+      saveCustomEngines();
+      renderCustomEngineOptions();
+    });
+
+    const keywordInput = document.createElement("input");
+    keywordInput.type = "text";
+    keywordInput.className = "engine-keyword";
+    keywordInput.placeholder = "Keyword (e.g. phil)";
+    keywordInput.value = engine.keyword || "";
+    keywordInput.setAttribute("aria-label", "Search engine keyword");
+    keywordInput.addEventListener("change", () => {
+      engine.keyword = keywordInput.value.trim().toLowerCase().replace(/\s+/g, "");
+      keywordInput.value = engine.keyword;
+      saveCustomEngines();
+    });
+
+    const urlInput = document.createElement("input");
+    urlInput.type = "url";
+    urlInput.className = "engine-url";
+    urlInput.placeholder = "URL template with %s in place of the query";
+    urlInput.value = engine.urlTemplate || "";
+    urlInput.setAttribute("aria-label", "Search engine URL template");
+    urlInput.addEventListener("change", () => {
+      engine.urlTemplate = urlInput.value.trim();
+      saveCustomEngines();
+    });
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "remove-engine-button";
+    removeButton.setAttribute("aria-label", `Remove ${engine.name || "search engine"}`);
+    removeButton.textContent = "×";
+    removeButton.addEventListener("click", () => {
+      customEngines = customEngines.filter((candidate) => candidate.id !== engine.id);
+      saveCustomEngines();
+      renderCustomEngineOptions();
+      renderCustomEngineList();
+    });
+
+    item.append(nameInput, keywordInput, urlInput, removeButton);
+    customEngineList.append(item);
+  });
+}
+
+function addCustomEngine() {
+  const engine = { id: makeEngineId(), name: "", keyword: "", urlTemplate: "" };
+  customEngines.push(engine);
+  saveCustomEngines();
+  renderCustomEngineOptions();
+  renderCustomEngineList();
+  const lastRow = customEngineList.lastElementChild;
+  lastRow?.querySelector(".engine-name")?.focus();
+}
+
+function buildCustomEngineUrl(engine, query) {
+  const encoded = encodeURIComponent(query);
+  return engine.urlTemplate.includes("%s")
+    ? engine.urlTemplate.replaceAll("%s", encoded)
+    : engine.urlTemplate + encoded;
+}
+
+function matchCustomEngineKeyword(raw) {
+  const spaceIndex = raw.indexOf(" ");
+  if (spaceIndex <= 0) return null;
+  const keyword = raw.slice(0, spaceIndex).toLowerCase();
+  const query = raw.slice(spaceIndex + 1).trim();
+  if (!query) return null;
+  const engine = customEngines.find((candidate) => candidate.keyword && candidate.keyword === keyword && candidate.urlTemplate);
+  return engine ? { engine, query } : null;
 }
 
 function bookmarkApiAvailable() {
@@ -691,11 +812,27 @@ function resetArtwork() {
 
 searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const query = searchInput.value.trim();
-  if (!query) return;
+  const raw = searchInput.value.trim();
+  if (!raw) return;
+
+  const keywordMatch = matchCustomEngineKeyword(raw);
+  if (keywordMatch) {
+    window.location.href = buildCustomEngineUrl(keywordMatch.engine, keywordMatch.query);
+    return;
+  }
+
   const provider = await getSetting("searchProvider", "google");
-  window.location.href = providers[provider] + encodeURIComponent(query);
+  if (provider.startsWith("custom:")) {
+    const engine = customEngines.find((candidate) => `custom:${candidate.id}` === provider);
+    if (engine?.urlTemplate) {
+      window.location.href = buildCustomEngineUrl(engine, raw);
+      return;
+    }
+  }
+  window.location.href = (providers[provider] || providers.google) + encodeURIComponent(raw);
 });
+
+addCustomEngineButton.addEventListener("click", addCustomEngine);
 
 document.querySelector("#settings-button").addEventListener("click", () => {
   settingsPanel.classList.add("is-open");
@@ -771,7 +908,9 @@ bookmarkListFrame.addEventListener("keydown", (event) => {
 bookmarkScrollUp.addEventListener("click", () => scrollBookmarks(-1));
 bookmarkScrollDown.addEventListener("click", () => scrollBookmarks(1));
 
-getSetting("searchProvider", "google").then((value) => { providerSelect.value = providers[value] ? value : "google"; });
+Promise.all([loadCustomEngines(), getSetting("searchProvider", "google")]).then(([, value]) => {
+  providerSelect.value = providers[value] || value.startsWith("custom:") ? value : "google";
+});
 getSetting("animationMode", "background").then((value) => { animationMode = value === "active" ? "active" : "background"; modeSelect.value = animationMode; });
 getSetting("pointGenerationMode", "current").then((value) => {
   pointGenerationMode = value === "previous-points" ? value : "current";

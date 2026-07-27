@@ -4,7 +4,7 @@
     ctx = canvas.getContext('2d'),
     dpr = Math.max(1, devicePixelRatio || 1);
   const ids =
-    'setFocus addVantage randomize undo clear count countOut transfer transferOut outlook outlookOut centroidMode constructionMode height heightOut depth depthOut rotation rotOut tilt tiltOut showMidpoints showExo showB1 showB2 showTriplets showF1Outlooks showF2Vantages showBraces showSkin showLabels constructionBtn wireframeBtn status diagnostics polygonStats areaRatios perimeterRatios'
+    'setFocus addVantage randomize undo clear count countOut transfer transferOut transferLabel anchorMode split splitOut splitControl radiusModel outlook outlookOut centroidMode constructionMode height heightOut depth depthOut rotation rotOut tilt tiltOut showMidpoints showExo showB1 showB2 showTriplets showF1Outlooks showF2Vantages showBraces showSkin showLabels constructionBtn wireframeBtn status diagnostics polygonStats areaRatios perimeterRatios'
     .split(' ');
   const ui = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
   const colors = {
@@ -98,27 +98,62 @@
     .toFixed(1) : Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(3);
   const ratio = (a, b) => !Number.isFinite(a) || !Number.isFinite(b) || Math.abs(b) < 1e-9 ? '—' : (a / b).toFixed(3);
 
+  function anchorPoint(a, b, f, mode, s)
+  {
+    if (mode === 'pedal')
+    {
+      const d = sub(b, a),
+        denom = d.x * d.x + d.y * d.y;
+      if (denom < 1e-9) return midpoint(a, b);
+      const proj = ((f.x - a.x) * d.x + (f.y - a.y) * d.y) / denom;
+      return add(a, mul(d, proj))
+    }
+    if (mode === 'split') return add(a, mul(sub(b, a), s));
+    return midpoint(a, b)
+  }
+
   function geometry()
   {
     if (!focus || vantages.length < MIN_CONSTRUCTION_POINTS) return null;
-    const mids = [],
-      exo = [],
-      outlook = [],
+    const anchorMode = ui.anchorMode.value,
+      splitT = +ui.split.value,
+      radiusModel = ui.radiusModel.value,
       t = +ui.outlook.value,
-      k = +ui.transfer.value;
+      k = +ui.transfer.value,
+      anchors = [],
+      dists = [],
+      edgeLengths = [];
     for (let i = 0; i < vantages.length; i++)
     {
       const a = vantages[i],
         b = vantages[(i + 1) % vantages.length],
-        m = midpoint(a, b),
+        m = anchorPoint(a, b, focus, anchorMode, splitT);
+      anchors.push(m);
+      dists.push(len(sub(m, focus)));
+      edgeLengths.push(len(sub(b, a)))
+    }
+    // Inversion is scale-sensitive: invert through a circle sized to the
+    // construction's own mean anchor distance, not a raw pixel value, so k
+    // stays a dimensionless ratio and nothing collapses or blows up.
+    const meanDist = dists.reduce((s, v) => s + v, 0) / dists.length,
+      inversionRadius = k * meanDist,
+      mids = [],
+      exo = [],
+      outlook = [];
+    for (let i = 0; i < vantages.length; i++)
+    {
+      const m = anchors[i],
+        distA = dists[i],
         d = sub(m, focus),
-        L = len(sub(b, a)) * k,
-        u = len(d) > 1e-6 ? mul(d, 1 / len(d)) :
+        u = distA > 1e-6 ? mul(d, 1 / distA) :
         {
           x: 1,
           y: 0
         },
-        r = add(focus, mul(u, L));
+        radius = radiusModel === 'homothety' ? distA * k :
+        radiusModel === 'inversive' ? (inversionRadius * inversionRadius) / Math.max(distA, 1e-6) :
+        edgeLengths[i] * k,
+        r = add(focus, mul(u, radius));
       mids.push(m);
       exo.push(r);
       outlook.push(add(focus, mul(sub(r, focus), t)))
@@ -127,6 +162,7 @@
       mids,
       exo,
       outlook,
+      meanDist,
       f2: ui.centroidMode.value === 'area' ? areaCentroid(outlook) : vertexCentroid(outlook)
     }
   }
@@ -280,7 +316,7 @@
       if (ui.showMidpoints.checked) g.mids.forEach((m, i) =>
       {
         line(focus, rayEnd(focus, m, g.exo[i]), colors.faint, 1, [5, 5]);
-        point(m, colors.mid, 3, 'M' + (i + 1));
+        point(m, colors.mid, 3, 'A' + (i + 1));
         const d = sub(m, focus),
           n = len(d);
         if (n) line(add(m, mul(
@@ -410,7 +446,7 @@
         fm = len(sub(m, focus)),
         fr = len(sub(g.exo[i], focus)),
         cross = (m.x - focus.x) * (g.exo[i].y - focus.y) - (m.y - focus.y) * (g.exo[i].x - focus.x);
-      return `<tr><td>Edge ${i+1}</td><td>L ${metric(L)} · FM ${metric(fm)} · FR ${metric(fr)} · ${fr<fm?'before':'at/after'} M · col. ${Math.abs(cross)<.01?'ok':metric(Math.abs(cross))}</td></tr>`
+      return `<tr><td>Edge ${i+1}</td><td>L ${metric(L)} · FA ${metric(fm)} · FR ${metric(fr)} · ${fr<fm?'before':'at/after'} A · col. ${Math.abs(cross)<.01?'ok':metric(Math.abs(cross))}</td></tr>`
     }).join('') + '</table>'
   }
 
@@ -420,12 +456,24 @@
     const g = geometry();
     mode === 'construction' ? construction(g) : wire(g);
     const n = vantages.length,
-      ct = ui.centroidMode.value === 'vertex' ? 'vertex' : 'area';
+      ct = ui.centroidMode.value === 'vertex' ? 'vertex' : 'area',
+      anchorLabel =
+      {
+        midpoint: 'edge midpoint',
+        pedal: 'pedal foot (⊥ projection of F onto the edge line)',
+        split: `split point at t = ${(+ui.split.value).toFixed(2)} along the edge`
+      } [ui.anchorMode.value],
+      radiusModel = ui.radiusModel.value,
+      radiusDesc = radiusModel === 'homothety' ?
+      `Rᵢ = F + k·(Aᵢ − F) — a homothety of the anchor points, k = ${(+ui.transfer.value).toFixed(2)}.` :
+      radiusModel === 'inversive' ?
+      `Rᵢ = F + d̂ᵢ·((k·r̄)² / |Aᵢ − F|) — circle inversion through radius k·r̄, r̄ = mean |A−F|${g?' = '+metric(g.meanDist):''}, k = ${(+ui.transfer.value).toFixed(2)}.` :
+      `Rᵢ distance = edge length × ${(+ui.transfer.value).toFixed(2)}.`;
     ui.status.innerHTML =
       `<strong>${n} vantage${n===1?'':'s'}</strong> · <strong>${ui.constructionMode.value}</strong><br>` + (g ?
         `F₂ uses the <strong>${ct} centroid</strong> of B₂.<br>` :
         'Add at least three vantages to activate the radial construction.<br>') +
-      `The polygon is always closed: the last vantage connects to the first.<br>Rᵢ distance = edge length × ${(+ui.transfer.value).toFixed(2)}.<br>The dashed guide is the full ray through Mᵢ.<br>Oᵢ lies ${(+ui.outlook.value).toFixed(2)} of the way from F to Rᵢ.`;
+      `The polygon is always closed: the last vantage connects to the first.<br>Anchor Aᵢ: ${anchorLabel}.<br>${radiusDesc}<br>The dashed guide is the full ray through Aᵢ.<br>Oᵢ lies ${(+ui.outlook.value).toFixed(2)} of the way from F to Rᵢ.`;
     diagnostics(g);
     stats(g)
   }
@@ -584,8 +632,23 @@
     }
   });
 
+  function applyRadiusModelDefaults()
+  {
+    const rm = ui.radiusModel.value;
+    ui.transfer.min = '0.25';
+    ui.transfer.max = '2.5';
+    ui.transfer.step = '0.01';
+    if (+ui.transfer.value < 0.25 || +ui.transfer.value > 2.5) ui.transfer.value = '1';
+    ui.transferLabel.textContent = rm === 'inversive' ? 'Inversion ratio k (× mean |A−F|)' :
+      rm === 'homothety' ? 'Homothety ratio k' : 'Edge-length transfer'
+  }
+
   function sync()
   {
+    const isDefaultModel = ui.anchorMode.value === 'midpoint' && ui.radiusModel.value === 'edge';
+    ui.constructionMode.querySelector('option[value="canonical"]').disabled = !isDefaultModel;
+    if (!isDefaultModel && ui.constructionMode.value === 'canonical') ui.constructionMode.value = 'exploration';
+    applyRadiusModelDefaults();
     const canonical = ui.constructionMode.value === 'canonical';
     if (canonical)
     {
@@ -594,15 +657,17 @@
     }
     ui.transfer.disabled = canonical;
     ui.outlook.disabled = canonical;
+    ui.splitControl.style.display = ui.anchorMode.value === 'split' ? '' : 'none';
     ui.countOut.value = ui.count.value;
     ui.transferOut.value = (+ui.transfer.value).toFixed(2) + '×';
+    ui.splitOut.value = (+ui.split.value).toFixed(2);
     ui.outlookOut.value = (+ui.outlook.value).toFixed(2);
     ui.heightOut.value = ui.height.value;
     ui.depthOut.value = ui.depth.value;
     ui.rotOut.value = ui.rotation.value + '°';
     ui.tiltOut.value = ui.tilt.value + '°'
   }
-  'count transfer outlook centroidMode constructionMode height depth rotation tilt showMidpoints showExo showB1 showB2 showTriplets showF1Outlooks showF2Vantages showBraces showSkin showLabels'
+  'count transfer outlook anchorMode split radiusModel centroidMode constructionMode height depth rotation tilt showMidpoints showExo showB1 showB2 showTriplets showF1Outlooks showF2Vantages showBraces showSkin showLabels'
   .split(' ').forEach(id => ui[id].addEventListener('input', () =>
   {
     sync();

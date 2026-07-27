@@ -18,7 +18,15 @@
         <code>
           B₁
         </code>
-        , transfers each edge length along a midpoint-guided ray to create the exo polygon
+        , picks an anchor point
+        <code>
+          Aᵢ
+        </code>
+        on each edge (midpoint, pedal foot, or a parametrized split), then projects it from
+        <code>
+          F
+        </code>
+        under one of three radius models &mdash; edge-length transfer, homothety, or circle inversion &mdash; to create the exo polygon
         <code>
           E
         </code>
@@ -94,6 +102,53 @@
         <div class="control">
           <label>
             <span>
+              Ray anchor point
+            </span>
+          </label>
+          <select id="anchorMode">
+            <option value="midpoint">
+              Edge midpoint &mdash; Aᵢ = (Vᵢ+Vᵢ₊₁)/2
+            </option>
+            <option value="pedal">
+              Pedal foot &mdash; &perp; projection of F onto the edge line
+            </option>
+            <option value="split">
+              Parametrized split &mdash; Aᵢ = Vᵢ + t(Vᵢ₊₁&minus;Vᵢ)
+            </option>
+          </select>
+        </div>
+        <div class="control" id="splitControl">
+          <label>
+            <span>
+              Split position t
+            </span>
+            <output id="splitOut">
+              0.50
+            </output>
+          </label>
+          <input id="split" max="1" min="0" step="0.01" type="range" value="0.5">
+        </div>
+        <div class="control">
+          <label>
+            <span>
+              Radius model
+            </span>
+          </label>
+          <select id="radiusModel">
+            <option value="edge">
+              Edge-length transfer &mdash; r = Lᵢ&middot;k
+            </option>
+            <option value="homothety">
+              Homothety &mdash; r = k&middot;|Aᵢ&minus;F| (global similarity)
+            </option>
+            <option value="inversive">
+              Inversive &mdash; r = (k&middot;r&#772;)&sup2; / |Aᵢ&minus;F|, r&#772; = mean |A&minus;F| (circle inversion)
+            </option>
+          </select>
+        </div>
+        <div class="control">
+          <label>
+            <span id="transferLabel">
               Edge-length transfer
             </span>
             <output id="transferOut">
@@ -184,7 +239,7 @@
         </div>
         <label class="check">
           <input checked id="showMidpoints" type="checkbox">
-          Edge midpoints and guide rays
+          Edge anchors and guide rays
         </label>
         <label class="check">
           <input checked id="showExo" type="checkbox">

@@ -1,0 +1,247 @@
+body {
+  font-family: -apple-system, Segoe UI, Arial, sans-serif;
+  background: #1e1f23;
+  color: #e6e6e6;
+  margin: 0;
+  padding: 2rem;
+}
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+}
+h1 {
+  margin-bottom: 0.2rem;
+}
+.subtitle {
+  color: #9a9aa0;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+fieldset {
+  border: 1px solid #3a3b40;
+  border-radius: 6px;
+  margin: 1.5rem 0;
+  padding: 1rem 1.2rem;
+}
+legend {
+  color: #9a9aa0;
+  padding: 0 0.4rem;
+}
+.field {
+  margin-bottom: 1rem;
+}
+.field label {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #c9c9cf;
+}
+.row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+input[type="text"], input[type="number"], select {
+  background: #2a2b30;
+  border: 1px solid #45464c;
+  color: #e6e6e6;
+  border-radius: 4px;
+  padding: 0.5rem;
+  flex: 1;
+}
+select {
+  flex: none;
+}
+.radio, .checkbox {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 1.5rem;
+  color: #e6e6e6 !important;
+}
+button {
+  background: #4a6cf7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+button:hover {
+  background: #3c5ce0;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+#status {
+  margin-top: 1rem;
+  font-weight: bold;
+}
+#status.ok { color: #4ade80; }
+#status.err { color: #f87171; }
+.progress_wrap {
+  margin-top: 0.6rem;
+}
+.progress_bar {
+  background: #2a2b30;
+  border: 1px solid #45464c;
+  border-radius: 4px;
+  height: 0.8rem;
+  overflow: hidden;
+}
+.progress_fill {
+  background: #4a6cf7;
+  height: 100%;
+  width: 0%;
+  transition: width 0.2s ease;
+}
+.progress_text {
+  font-size: 0.85rem;
+  color: #9a9aa0;
+  margin-top: 0.3rem;
+}
+#log {
+  white-space: pre-wrap;
+  background: #17181b;
+  border: 1px solid #3a3b40;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+  min-height: 3rem;
+  font-size: 0.85rem;
+}
+.warn {
+  color: #f5b942;
+  font-size: 0.85rem;
+  margin: 0.3rem 0 0;
+}
+.run_panels {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: flex-start;
+}
+.stats_panel, .page_log_panel {
+  background: #17181b;
+  border: 1px solid #3a3b40;
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+}
+.stats_panel {
+  flex: 0 0 280px;
+}
+.page_log_panel {
+  flex: 1;
+  min-width: 0;
+}
+.stats_panel h3, .page_log_panel h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  color: #9a9aa0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.stats_table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.stats_table td {
+  padding: 0.25rem 0;
+  vertical-align: top;
+}
+.stats_table td:first-child {
+  color: #9a9aa0;
+  padding-right: 0.8rem;
+  white-space: nowrap;
+}
+.stats_table td:last-child {
+  color: #e6e6e6;
+  text-align: right;
+  width: 100%;
+}
+.page_log {
+  font-family: Consolas, "SF Mono", monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  max-height: 24rem; /* ~20 lines at 0.8rem font / 1.5 line-height */
+  overflow-y: auto;
+  color: #c9c9cf;
+}
+.page_log div {
+  padding: 0.05rem 0;
+  border-bottom: 1px solid #232428;
+}
+.hint {
+  color: #9a9aa0;
+  font-size: 0.8rem;
+  margin: 0.3rem 0 0;
+}
+.queue_count {
+  color: #9a9aa0;
+  font-size: 0.85rem;
+}
+.queue_list {
+  margin-top: 0.6rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  border: 1px solid #3a3b40;
+  border-radius: 6px;
+  background: #17181b;
+}
+.queue_list:empty {
+  display: none;
+}
+.queue_row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.7rem;
+  border-bottom: 1px solid #232428;
+  font-size: 0.85rem;
+}
+.queue_row:last-child {
+  border-bottom: none;
+}
+.queue_filename {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #e6e6e6;
+}
+.queue_badge {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge_pending {
+  background: #2a2b30;
+  color: #9a9aa0;
+}
+.badge_running {
+  background: #1e3a8a;
+  color: #93c5fd;
+}
+.badge_done {
+  background: #14532d;
+  color: #4ade80;
+}
+.badge_error {
+  background: #7f1d1d;
+  color: #f87171;
+}
+.queue_remove {
+  background: transparent;
+  color: #9a9aa0;
+  padding: 0 0.4rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+.queue_remove:hover {
+  background: transparent;
+  color: #f87171;
+}
