@@ -23,6 +23,11 @@
 
     <section aria-label="Filter by source" class="source-filter">
       <div id="sourceFilters" class="filters"></div>
+      <div class="saved-tools">
+        <button type="button" id="savedFilterBtn" class="filter">Saved <span id="savedCount">0</span></button>
+        <button type="button" id="exportSavedBtn" class="saved-tool-btn">Export saved</button>
+        <label class="saved-tool-btn import-saved-btn">Import saved<input id="importSavedInput" type="file" accept="application/json,.json" hidden /></label>
+      </div>
       <div class="view-toggle" id="viewToggle" role="group" aria-label="Layout">
         <button type="button" class="view-btn" data-view="list">List</button>
         <button type="button" class="view-btn" data-view="columns">Columns</button>
@@ -37,7 +42,8 @@
     </section>
 
     <footer>
-      <span>Sorted by recency. The digest refreshes daily; the time above records the latest completed build.</span>
+      <span>Sorted by recency. The digest refreshes daily; the time above records the latest completed build. Saved articles stay on this browser until you remove them or clear site data.</span>
+      <span id="bookmarkStatus" class="bookmark-status" aria-live="polite"></span>
     </footer>
   </main>
 
