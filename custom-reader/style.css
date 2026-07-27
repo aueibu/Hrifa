@@ -105,6 +105,11 @@ html,body{margin:0;min-height:100%;background:var(--neutral-surface-bg);color:va
 .pane-meta .item-source{color:var(--chrome-accent)}
 .pane-header h2{margin:0;font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
 .pane-actions{display:flex;align-items:center;gap:8px}
+.reading-mode-toggle{display:flex;overflow:hidden;border:1px solid var(--neutral-border);border-radius:6px}
+.reading-mode-btn{padding:5px 8px;border:0;border-left:1px solid var(--neutral-border);background:transparent;color:var(--neutral-text-muted);font:500 11px Figtree,sans-serif;cursor:pointer}
+.reading-mode-btn:first-child{border-left:0}
+.reading-mode-btn:hover{color:var(--neutral-text)}
+.reading-mode-btn.active{background:var(--chrome-accent);color:var(--neutral-surface-bg)}
 .pane-close{flex-shrink:0;width:28px;height:28px;border:1px solid var(--neutral-border);border-radius:50%;background:transparent;color:var(--neutral-text-muted);font-size:15px;line-height:1;cursor:pointer}
 .pane-close:hover{border-color:var(--chrome-accent);color:var(--chrome-accent)}
 .bookmark-toggle{flex-shrink:0;padding:5px 9px;border:1px solid var(--neutral-border);border-radius:6px;background:transparent;color:var(--neutral-text-muted);font:500 12px Figtree,sans-serif;cursor:pointer}
@@ -126,6 +131,9 @@ html,body{margin:0;min-height:100%;background:var(--neutral-surface-bg);color:va
 .pane-body h2,.pane-body h3,.pane-body h4{font-family:Fraunces,Georgia,serif;color:var(--neutral-text);margin:20px 0 10px}
 .pane-body .read-original{display:inline-block;margin-top:4px;color:var(--chrome-accent);font:600 13px Figtree,sans-serif;text-decoration:none}
 .pane-body .read-original:hover{text-decoration:underline}
+.original-page{height:100%;display:flex;flex-direction:column}
+.original-page-note{flex-shrink:0;font-family:Figtree,sans-serif !important;font-size:13px !important;line-height:1.45 !important;color:var(--neutral-text-muted) !important}
+.original-page-frame{flex:1;min-height:560px;width:100%;border:1px solid var(--neutral-border);border-radius:4px;background:var(--neutral-surface-bg)}
 
 @media (max-width:900px){
   .reading-pane.open{position:fixed;inset:0;width:100%;z-index:60}

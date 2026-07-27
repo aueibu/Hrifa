@@ -1,6 +1,10 @@
-name: Refresh reader and deploy Pages
+name: Deploy Pages and refresh reader
 
 on:
+  # UI and site changes deploy immediately, without contacting reader sources.
+  push:
+    branches:
+      - main
   # A deliberately modest crawl: once per day at 11:17 UTC. GitHub's scheduler
   # can run later than its requested time, so the digest itself records the
   # actual generation time shown to readers.
@@ -28,6 +32,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up Node.js
+        if: github.event_name != 'push'
         uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -35,10 +40,23 @@ jobs:
           cache-dependency-path: custom-reader/package-lock.json
 
       - name: Build the current reader digest
+        if: github.event_name != 'push'
         working-directory: custom-reader
         run: |
           npm ci
           node build.js
+
+      # The digest is intentionally not committed. On a code-only push, carry
+      # the live copy forward so that deployment is immediate but does not
+      # crawl any publisher feeds. The query value bypasses the short CDN cache.
+      - name: Reuse the latest deployed digest
+        if: github.event_name == 'push'
+        working-directory: custom-reader
+        run: |
+          curl --fail --location --retry 3 --max-time 30 \
+            "https://aueibu.github.io/Hrifa/custom-reader/feed-data.json?run=${{ github.run_id }}" \
+            --output feed-data.json
+          test -s feed-data.json
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

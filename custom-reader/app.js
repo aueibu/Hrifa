@@ -28,6 +28,7 @@
   let activeSource = "all";
   let view = "list";
   let selectedLink = null;
+  let readingMode = "reader";
   const columnPages = new Map();
   const visitedLinks = new Set();
   const bookmarks = new Map();
@@ -159,7 +160,14 @@
     // item.content is sanitized HTML produced at build time (build.js runs it
     // through DOMPurify), so it's safe to inject directly here — the frontend
     // never touches untrusted markup itself.
-    const body = item.content || `<p class="no-content">Full text isn't available inline for this source.</p>`;
+    const readerBody = item.content || `<p class="no-content">Full text isn't available from this feed. Try Original page to see whether this publisher allows in-reader viewing.</p>`;
+    const body = readingMode === "original"
+      ? `
+          <div class="original-page">
+            <p class="original-page-note">This is the publisher's page, shown only if the publisher permits embedding. If it does not appear, use Open original.</p>
+            <iframe class="original-page-frame" src="${escapeAttr(item.link)}" title="Original article: ${escapeAttr(item.title)}" sandbox="allow-forms allow-popups allow-scripts" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>`
+      : readerBody;
     paneContentEl.innerHTML = `
       <div class="pane-inner">
         <div class="pane-header">
@@ -168,13 +176,17 @@
             <h2>${escapeHtml(item.title)}</h2>
           </div>
           <div class="pane-actions">
+            <div class="reading-mode-toggle" role="group" aria-label="Reading mode">
+              <button type="button" class="reading-mode-btn${readingMode === "reader" ? " active" : ""}" data-reading-mode="reader">Reader</button>
+              <button type="button" class="reading-mode-btn${readingMode === "original" ? " active" : ""}" data-reading-mode="original">Original</button>
+            </div>
             <button type="button" class="bookmark-toggle${bookmarks.has(item.link) ? " saved" : ""}" aria-pressed="${bookmarks.has(item.link)}">${bookmarks.has(item.link) ? "Saved" : "Save"}</button>
             <button type="button" class="pane-close" aria-label="Close">&times;</button>
           </div>
         </div>
         <div class="pane-body">
           ${body}
-          <a class="read-original" href="${escapeAttr(item.link)}" target="_blank" rel="noopener">Read on ${escapeHtml(item.source)} &rarr;</a>
+          <a class="read-original" href="${escapeAttr(item.link)}" target="_blank" rel="noopener">Open original on ${escapeHtml(item.source)} &rarr;</a>
         </div>
       </div>`;
     paneContentEl.querySelector(".pane-body").scrollTop = 0;
@@ -284,7 +296,9 @@
   }
 
   function selectItem(link) {
-    selectedLink = selectedLink === link ? null : link;
+    const nextLink = selectedLink === link ? null : link;
+    if (nextLink !== selectedLink) readingMode = "reader";
+    selectedLink = nextLink;
     if (selectedLink === link) markVisited(link);
     renderItems();
     renderReadingPane();
@@ -336,6 +350,11 @@
   readingPaneEl.addEventListener("click", (e) => {
     if (e.target.closest(".pane-close")) selectItem(selectedLink);
     if (e.target.closest(".bookmark-toggle")) toggleBookmark(selectedLink);
+    const modeButton = e.target.closest(".reading-mode-btn");
+    if (modeButton && modeButton.dataset.readingMode !== readingMode) {
+      readingMode = modeButton.dataset.readingMode;
+      renderReadingPane();
+    }
   });
 
   savedFilterBtn.addEventListener("click", () => {
