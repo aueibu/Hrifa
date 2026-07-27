@@ -24,11 +24,16 @@ const path = require("path");
 const { JSDOM } = require("jsdom");
 const createDOMPurify = require("dompurify");
 const { Readability } = require("@mozilla/readability");
+const { GoogleDecoder } = require("google-news-url-decoder");
 
 const SOURCES_PATH = path.join(__dirname, "sources.json");
 const OUTPUT_PATH = path.join(__dirname, "feed-data.json");
 const FETCH_TIMEOUT_MS = 15000;
 const FULL_CONTENT_CONCURRENCY = 3;
+// Google News keeps RSS article URLs behind an opaque redirect. Resolve only
+// the newest entries from each opted-in source, in batches against Google, so
+// a daily build does not turn into a broad publisher-page crawl.
+const GOOGLE_NEWS_RESOLVE_MAX_PER_SOURCE = 12;
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 const ALLOWED_TAGS = ["p", "br", "strong", "b", "em", "i", "a", "img", "figure", "figcaption", "blockquote", "ul", "ol", "li", "h2", "h3", "h4", "code", "pre"];
@@ -145,14 +150,53 @@ async function fetchText(url, { timeoutMs = FETCH_TIMEOUT_MS } = {}) {
   }
 }
 
-async function fetchFeed({ name, url, fullContent }) {
+async function fetchFeed({ name, url, fullContent, resolveGoogleNews }) {
   try {
     const xml = await fetchText(url);
-    const items = parseFeed(xml).map((item) => ({ ...item, source: name, fullContent: !!fullContent }));
+    const items = parseFeed(xml).map((item) => ({ ...item, source: name, fullContent: !!fullContent, resolveGoogleNews: !!resolveGoogleNews }));
     return { name, ok: true, items };
   } catch (err) {
     return { name, ok: false, error: err.message, items: [] };
   }
+}
+
+function isHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch (e) {
+    return false;
+  }
+}
+
+async function resolveGoogleNewsUrls(items) {
+  const decoder = new GoogleDecoder();
+  const bySource = new Map();
+  items.filter((item) => item.resolveGoogleNews).forEach((item) => {
+    if (!bySource.has(item.source)) bySource.set(item.source, []);
+    bySource.get(item.source).push(item);
+  });
+
+  let resolved = 0;
+  let failed = 0;
+  for (const [source, sourceItems] of bySource) {
+    const candidates = sourceItems.slice(0, GOOGLE_NEWS_RESOLVE_MAX_PER_SOURCE);
+    try {
+      const results = await decoder.decodeBatch(candidates.map((item) => item.link));
+      results.forEach((result, index) => {
+        if (result && result.status && isHttpUrl(result.decoded_url)) {
+          candidates[index].link = result.decoded_url;
+          resolved++;
+        } else {
+          failed++;
+        }
+      });
+    } catch (err) {
+      failed += candidates.length;
+      console.warn(`  could not resolve ${source} Google News URLs: ${err.message}`);
+    }
+  }
+  return { resolved, failed };
 }
 
 // Fetches an article's own page and runs Readability on it — the same
@@ -195,7 +239,7 @@ async function main() {
   const results = await Promise.all(sources.map(fetchFeed));
 
   const seen = new Set();
-  const items = results
+  let items = results
     .flatMap((r) => r.items)
     .filter((item) => {
       if (seen.has(item.link)) return false;
@@ -203,6 +247,14 @@ async function main() {
       return true;
     })
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  const googleResolved = await resolveGoogleNewsUrls(items);
+  const canonicalSeen = new Set();
+  items = items.filter((item) => {
+    if (canonicalSeen.has(item.link)) return false;
+    canonicalSeen.add(item.link);
+    return true;
+  });
 
   let scraped = 0;
   let scrapeFailed = 0;
@@ -226,6 +278,7 @@ async function main() {
   items.forEach((item) => {
     delete item.fullContent;
     delete item.feedContentRaw;
+    delete item.resolveGoogleNews;
   });
 
   const errors = results.filter((r) => !r.ok).map(({ name, error }) => ({ name, error }));
@@ -237,6 +290,7 @@ async function main() {
 
   console.log(`Wrote ${items.length} items from ${results.length - errors.length}/${results.length} sources to feed-data.json`);
   console.log(`  fetched full article HTML for ${scraped} item(s); ${scrapeFailed} fell back to the feed's own markup`);
+  console.log(`  resolved ${googleResolved.resolved} Google News URL(s); ${googleResolved.failed} retained their Google News link`);
   errors.forEach((e) => console.warn(`  skipped ${e.name}: ${e.error}`));
 }
 
