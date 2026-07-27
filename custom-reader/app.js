@@ -165,7 +165,12 @@
       ? `
           <div class="original-page">
             <p class="original-page-note">This is the publisher's page, shown only if the publisher permits embedding. If it does not appear, use Open original.</p>
-            <iframe class="original-page-frame" src="${escapeAttr(item.link)}" title="Original article: ${escapeAttr(item.title)}" sandbox="allow-forms allow-popups allow-scripts" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            <iframe class="original-page-frame" src="${escapeAttr(item.link)}" title="Original article: ${escapeAttr(item.title)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            <section class="frame-diagnostics" aria-label="Original page diagnostics">
+              <div class="frame-diagnostics-head"><span>Frame diagnostics</span><button type="button" class="copy-frame-diagnostics">Copy</button></div>
+              <p class="frame-diagnostics-note">The browser cannot expose errors or page text from a publisher's cross-origin frame. This records only events the reader itself can observe.</p>
+              <ol class="frame-diagnostics-log"></ol>
+            </section>
           </div>`
       : readerBody;
     paneContentEl.innerHTML = `
@@ -190,6 +195,47 @@
         </div>
       </div>`;
     paneContentEl.querySelector(".pane-body").scrollTop = 0;
+    if (readingMode === "original") bindFrameDiagnostics(item);
+  }
+
+  function addFrameDiagnostic(message) {
+    const log = paneContentEl.querySelector(".frame-diagnostics-log");
+    if (!log) return;
+    const line = document.createElement("li");
+    line.textContent = `${new Date().toLocaleTimeString()} — ${message}`;
+    log.append(line);
+  }
+
+  function bindFrameDiagnostics(item) {
+    const frame = paneContentEl.querySelector(".original-page-frame");
+    if (!frame) return;
+    addFrameDiagnostic(`Requested ${new URL(item.link).origin}.`);
+    frame.addEventListener("load", () => {
+      addFrameDiagnostic("Browser reported that the frame loaded. This can also happen when a publisher renders its own error page.");
+    });
+    frame.addEventListener("error", () => {
+      addFrameDiagnostic("Browser reported a frame loading error.");
+    });
+  }
+
+  async function copyFrameDiagnostics(button) {
+    const item = itemForLink(selectedLink);
+    const entries = [...paneContentEl.querySelectorAll(".frame-diagnostics-log li")].map((line) => line.textContent);
+    const report = [
+      "Custom Reader original-page diagnostics",
+      `Source: ${item ? item.source : "unknown"}`,
+      `Article: ${item ? item.title : "unknown"}`,
+      `URL: ${item ? item.link : "unknown"}`,
+      "Note: publisher-frame errors are not readable by this app.",
+      ...entries,
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(report);
+      button.textContent = "Copied";
+      setTimeout(() => { button.textContent = "Copy"; }, 1500);
+    } catch (e) {
+      button.textContent = "Copy failed";
+    }
   }
 
   // Drag-to-resize: the handle sits on the pane's left edge; dragging it sets
@@ -355,6 +401,8 @@
       readingMode = modeButton.dataset.readingMode;
       renderReadingPane();
     }
+    const copyButton = e.target.closest(".copy-frame-diagnostics");
+    if (copyButton) copyFrameDiagnostics(copyButton);
   });
 
   savedFilterBtn.addEventListener("click", () => {
