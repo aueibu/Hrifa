@@ -165,12 +165,12 @@
       ? `
           <div class="original-page">
             <p class="original-page-note">This is the publisher's page, shown only if the publisher permits embedding. If it does not appear, use Open original.</p>
-            <iframe class="original-page-frame" src="${escapeAttr(item.link)}" title="Original article: ${escapeAttr(item.title)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin" referrerpolicy="strict-origin-when-cross-origin"></iframe>
             <section class="frame-diagnostics" aria-label="Original page diagnostics">
               <div class="frame-diagnostics-head"><span>Frame diagnostics</span><button type="button" class="copy-frame-diagnostics">Copy</button></div>
               <p class="frame-diagnostics-note">The browser cannot expose errors or page text from a publisher's cross-origin frame. This records only events the reader itself can observe.</p>
               <ol class="frame-diagnostics-log"></ol>
             </section>
+            <iframe class="original-page-frame" src="${escapeAttr(item.link)}" title="Original article: ${escapeAttr(item.title)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin" referrerpolicy="strict-origin-when-cross-origin"></iframe>
           </div>`
       : readerBody;
     paneContentEl.innerHTML = `
