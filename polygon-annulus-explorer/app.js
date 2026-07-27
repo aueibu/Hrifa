@@ -88,9 +88,11 @@
   }
 
   function onParamsChanged(latticeChanged) {
-    if (workers.length) cancelCompute(); // params changed mid-search -- its result would be for stale data
-    result = null;
-    selectedId = null;
+    // Cancel an in-flight search (its result would be for stale params),
+    // but leave any already-displayed results in place -- editing controls
+    // shouldn't discard a completed search. Generate confirms before
+    // actually replacing them (see onGenerate).
+    if (workers.length) cancelCompute();
 
     if (!(state.minR < state.maxR)) {
       lattice = { all: [], annulus: [] };
@@ -117,7 +119,14 @@
 
     updateFloorRatio();
     renderResults();
-    setStatus(hasGeneratedOnce ? "Parameters changed — press Generate to re-run the enumeration." : "Ready. Press Generate to enumerate.", "");
+    setStatus(
+      result && result.classes && result.classes.length
+        ? "Parameters changed — press Generate to replace the current results with a new search."
+        : hasGeneratedOnce
+          ? "Parameters changed — press Generate to re-run the enumeration."
+          : "Ready. Press Generate to enumerate.",
+      ""
+    );
     renderStage();
   }
 
@@ -169,26 +178,32 @@
     const floorOk = updateFloorRatio();
     if (!floorOk) {
       const floor = LC.containmentFloorRatio(state.n);
-      result = null;
-      selectedId = null;
+      // Nothing is being replaced -- this attempt never reaches a real
+      // search, so the currently-displayed results (if any) are left alone.
       setStatus(
         `Skipped — maxᵣ/minᵣ = ${round(state.maxR / state.minR, 4)} is below sec(π/${state.n}) = ${round(floor, 4)}, ` +
         `so no ${state.n}-gon can contain the inner disk while keeping vertices within maxᵣ. No subsets were checked.`,
         "err"
       );
-      renderResults();
-      renderStage();
       return;
     }
 
     const combosCount = LC.nCrSafe(lattice.annulus.length, state.n);
     if (combosCount > state.maxCombos) {
-      result = null;
-      selectedId = null;
       setStatus(`Skipped — C(${lattice.annulus.length},${state.n})=${combosCount} exceeds guard (${state.maxCombos})`, "err");
-      renderResults();
-      renderStage();
       return;
+    }
+
+    if (result && result.classes && result.classes.length) {
+      const count = result.classes.length;
+      const ok = window.confirm(
+        `Running a new search will replace the current ${count} result${count === 1 ? "" : "s"}. ` +
+        `Export first if you want to keep them. Continue?`
+      );
+      if (!ok) {
+        setStatus("Generate cancelled — keeping the current results.", "");
+        return;
+      }
     }
 
     stopAllWorkers();
@@ -420,6 +435,18 @@
       if (data.format !== "hrifa-annulus-results" || !Array.isArray(data.classes)) {
         setStatus("Load failed — not a recognized results file.", "err");
         return;
+      }
+
+      if (result && result.classes && result.classes.length) {
+        const count = result.classes.length;
+        const ok = window.confirm(
+          `Loading this file will replace the current ${count} result${count === 1 ? "" : "s"}. ` +
+          `Export first if you want to keep them. Continue?`
+        );
+        if (!ok) {
+          setStatus("Load cancelled — keeping the current results.", "");
+          return;
+        }
       }
 
       cancelCompute();
