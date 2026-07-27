@@ -1,0 +1,65 @@
+name: Refresh reader and deploy Pages
+
+on:
+  # A deliberately modest crawl: once per day at 11:17 UTC. GitHub's scheduler
+  # can run later than its requested time, so the digest itself records the
+  # actual generation time shown to readers.
+  schedule:
+    - cron: "17 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: custom-reader/package-lock.json
+
+      - name: Build the current reader digest
+        working-directory: custom-reader
+        run: |
+          npm ci
+          node build.js
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      # The site is still authored from the repository root, but the generated
+      # feed data is deployed as an artifact rather than committed to main.
+      - name: Assemble Pages artifact
+        run: |
+          site_dir="$RUNNER_TEMP/hrifa-pages"
+          mkdir -p "$site_dir"
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'custom-reader/node_modules' \
+            ./ "$site_dir/"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/hrifa-pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
