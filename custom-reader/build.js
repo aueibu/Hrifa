@@ -37,7 +37,7 @@ const GOOGLE_NEWS_RESOLVE_MAX_PER_SOURCE = 12;
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 const ALLOWED_TAGS = ["p", "br", "strong", "b", "em", "i", "a", "img", "figure", "figcaption", "blockquote", "ul", "ol", "li", "h2", "h3", "h4", "code", "pre"];
-const ALLOWED_ATTR = ["href", "src", "alt", "title"];
+const ALLOWED_ATTR = ["href", "src", "alt", "title", "data-reader-font-kind", "data-reader-italic"];
 
 function unwrapCdata(text) {
   return text.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").trim();
@@ -69,6 +69,28 @@ function htmlToText(html) {
     .trim();
 }
 
+// Preserve typography as a small semantic hint rather than carrying publisher
+// CSS into the reader. This keeps reader text locally styled and predictable
+// while honouring an explicit inline source declaration when one is available.
+function readerFontKind(fontFamily) {
+  const family = String(fontFamily || "").toLowerCase();
+  if (!family) return null;
+  if (/monospace|courier|consolas|menlo|monaco|code/.test(family)) return "mono";
+  if (/sans-serif|sans serif|arial|helvetica|verdana|tahoma|figtree|inter|ui-sans/.test(family)) return "sans";
+  if (/serif|georgia|times|garamond|baskerville|crimson|palatino/.test(family)) return "serif";
+  return null;
+}
+
+function annotateReaderTypography(document) {
+  document.body.querySelectorAll("[style]").forEach((element) => {
+    const kind = readerFontKind(element.style.fontFamily);
+    if (kind) element.setAttribute("data-reader-font-kind", kind);
+    if (/italic|oblique/i.test(element.style.fontStyle) || /(?:^|[;\s])(?:italic|oblique)(?:[;\s]|$)/i.test(element.getAttribute("style") || "")) {
+      element.setAttribute("data-reader-italic", "true");
+    }
+  });
+}
+
 // Sanitizes a raw HTML fragment down to a small allowlist of tags/attributes
 // via DOMPurify (using jsdom as the DOM backend — jsdom is DOMPurify's
 // officially supported Node target; a lighter DOM shim was tried first and
@@ -78,6 +100,7 @@ function sanitizeHtml(rawHtmlFragment, baseUrl) {
   if (!rawHtmlFragment) return "";
   const dom = new JSDOM(`<!doctype html><body>${rawHtmlFragment}</body>`, { url: baseUrl });
   const { document } = dom.window;
+  annotateReaderTypography(document);
   // DOMPurify sanitizes the raw attribute string, not a resolved URL, so
   // relative src/href need resolving to absolute first — reading the `.src`/
   // `.href` IDL property (rather than getAttribute) gives jsdom's already-
