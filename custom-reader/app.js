@@ -670,7 +670,19 @@
     }
   });
 
+  function closeCompactMenus(except = null) {
+    document.querySelectorAll(".source-overflow[open], .compact-menu[open]").forEach((menu) => {
+      if (menu !== except) menu.removeAttribute("open");
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    const clickedMenu = e.target.closest(".source-overflow, .compact-menu");
+    closeCompactMenus(clickedMenu);
+  });
+
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCompactMenus();
     if (e.key === "Escape" && selectedLink) selectItem(selectedLink);
   });
 

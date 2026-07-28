@@ -22,6 +22,7 @@
     <section id="errorBanner" class="error-banner" hidden></section>
 
     <section aria-label="Filter by source" class="source-filter">
+      <div class="source-stack">
       <div id="sourceFilters" class="filters"></div>
       <div class="group-tools" aria-label="Source groups">
         <label class="group-picker-label" for="sourceGroupSelect">Group</label>
@@ -36,6 +37,14 @@
           </div>
         </details>
       </div>
+      </div>
+      <div class="view-stack">
+      <div class="view-toggle" id="viewToggle" role="group" aria-label="Layout">
+        <button type="button" class="view-btn" data-view="list">List</button>
+        <button type="button" class="view-btn" data-view="columns">Columns</button>
+      </div>
+      <button type="button" id="backToStartBtn" class="back-to-start-btn" hidden>&#8617; Back to start</button>
+      </div>
       <div class="saved-tools">
         <button type="button" id="savedFilterBtn" class="filter">Saved <span id="savedCount">0</span></button>
         <div id="savedActions" class="saved-actions" hidden>
@@ -43,11 +52,6 @@
           <label class="saved-tool-btn import-saved-btn">Import<input id="importSavedInput" type="file" accept="application/json,.json" hidden /></label>
         </div>
       </div>
-      <div class="view-toggle" id="viewToggle" role="group" aria-label="Layout">
-        <button type="button" class="view-btn" data-view="list">List</button>
-        <button type="button" class="view-btn" data-view="columns">Columns</button>
-      </div>
-      <button type="button" id="backToStartBtn" class="back-to-start-btn" hidden>&#8617; Back to start</button>
       <p id="count" class="count" aria-live="polite"></p>
     </section>
 
