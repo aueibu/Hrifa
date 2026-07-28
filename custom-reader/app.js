@@ -18,22 +18,50 @@
   const exportSavedBtn = document.querySelector("#exportSavedBtn");
   const importSavedInput = document.querySelector("#importSavedInput");
   const bookmarkStatusEl = document.querySelector("#bookmarkStatus");
+  const sourceGroupSelect = document.querySelector("#sourceGroupSelect");
+  const newSourceGroupBtn = document.querySelector("#newSourceGroupBtn");
+  const editSourceGroupBtn = document.querySelector("#editSourceGroupBtn");
+  const setDefaultViewBtn = document.querySelector("#setDefaultViewBtn");
+  const clearDefaultViewBtn = document.querySelector("#clearDefaultViewBtn");
+  const sourceGroupDialog = document.querySelector("#sourceGroupDialog");
+  const sourceGroupForm = document.querySelector("#sourceGroupForm");
+  const sourceGroupDialogTitle = document.querySelector("#sourceGroupDialogTitle");
+  const sourceGroupNameInput = document.querySelector("#sourceGroupNameInput");
+  const sourceGroupChoices = document.querySelector("#sourceGroupChoices");
+  const sourceGroupError = document.querySelector("#sourceGroupError");
+  const closeSourceGroupDialogBtn = document.querySelector("#closeSourceGroupDialogBtn");
+  const cancelSourceGroupBtn = document.querySelector("#cancelSourceGroupBtn");
+  const deleteSourceGroupBtn = document.querySelector("#deleteSourceGroupBtn");
 
   const VIEW_STORAGE_KEY = "customReader.view";
   const PANE_WIDTH_STORAGE_KEY = "customReader.paneWidth";
   const VISITED_STORAGE_KEY = "customReader.visited";
   const BOOKMARKS_STORAGE_KEY = "customReader.bookmarks";
+  const SOURCE_GROUPS_STORAGE_KEY = "customReader.sourceGroups";
+  const DEFAULT_STATE_STORAGE_KEY = "customReader.defaultState";
   const BOOKMARK_EXPORT_VERSION = 1;
   const COLUMN_PAGE_SIZE = 5;
+  const GROUP_FILTER_PREFIX = "group:";
   let activeSource = "all";
   let view = "list";
+  let sourceGroups = [];
+  let defaultState = null;
+  let editingGroupId = null;
   let selectedLink = null;
   let readingMode = "reader";
   const columnPages = new Map();
   const visitedLinks = new Set();
   const bookmarks = new Map();
   try {
-    view = localStorage.getItem(VIEW_STORAGE_KEY) === "columns" ? "columns" : "list";
+    const storedDefault = JSON.parse(localStorage.getItem(DEFAULT_STATE_STORAGE_KEY) || "null");
+    defaultState = normalizeDefaultState(storedDefault);
+    if (defaultState) {
+      activeSource = defaultState.activeSource;
+      view = defaultState.view;
+    } else {
+      view = localStorage.getItem(VIEW_STORAGE_KEY) === "columns" ? "columns" : "list";
+    }
+    sourceGroups = normalizeSourceGroups(JSON.parse(localStorage.getItem(SOURCE_GROUPS_STORAGE_KEY) || "[]"));
     JSON.parse(localStorage.getItem(VISITED_STORAGE_KEY) || "[]").forEach((link) => visitedLinks.add(link));
     const storedBookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_STORAGE_KEY) || "[]");
     (Array.isArray(storedBookmarks) ? storedBookmarks : []).forEach((bookmark) => {
@@ -44,6 +72,61 @@
     // storage unavailable — fall back to list view / no visited history
   }
   let data = { items: [], errors: [], generatedAt: null };
+
+  function normalizeSourceGroups(value) {
+    if (!Array.isArray(value)) return [];
+    const seenIds = new Set();
+    return value.flatMap((group) => {
+      if (!group || typeof group !== "object" || typeof group.id !== "string" || seenIds.has(group.id)) return [];
+      const name = typeof group.name === "string" ? group.name.trim().slice(0, 80) : "";
+      const sources = Array.isArray(group.sources)
+        ? [...new Set(group.sources.filter((source) => typeof source === "string" && source.trim()).map((source) => source.trim().slice(0, 160)))].slice(0, 100)
+        : [];
+      if (!name || !sources.length) return [];
+      seenIds.add(group.id);
+      return [{ id: group.id, name, sources }];
+    });
+  }
+
+  function normalizeDefaultState(value) {
+    if (!value || typeof value !== "object") return null;
+    const active = typeof value.activeSource === "string" ? value.activeSource : "all";
+    return { activeSource: active, view: value.view === "columns" ? "columns" : "list" };
+  }
+
+  function sourceNames() {
+    return [...new Set(data.items.map((item) => item.source))].sort((a, b) => a.localeCompare(b));
+  }
+
+  function activeGroupId() {
+    return activeSource.startsWith(GROUP_FILTER_PREFIX) ? activeSource.slice(GROUP_FILTER_PREFIX.length) : null;
+  }
+
+  function activeGroup() {
+    const id = activeGroupId();
+    return id ? sourceGroups.find((group) => group.id === id) || null : null;
+  }
+
+  function saveSourceGroups() {
+    try {
+      localStorage.setItem(SOURCE_GROUPS_STORAGE_KEY, JSON.stringify(sourceGroups));
+      return true;
+    } catch (e) {
+      setBookmarkStatus("Could not save source groups in this browser.");
+      return false;
+    }
+  }
+
+  function saveDefaultState() {
+    try {
+      defaultState = { activeSource, view };
+      localStorage.setItem(DEFAULT_STATE_STORAGE_KEY, JSON.stringify(defaultState));
+      setBookmarkStatus("This source selection and layout will open by default.");
+      renderGroupTools();
+    } catch (e) {
+      setBookmarkStatus("Could not save a default view in this browser.");
+    }
+  }
 
   function relativeTime(iso) {
     if (!iso) return "undated";
@@ -120,7 +203,7 @@
   }
 
   function renderFilters() {
-    const sources = ["all", ...new Set(data.items.map((item) => item.source))];
+    const sources = ["all", ...sourceNames()];
     filtersEl.innerHTML = "";
     sources.forEach((source) => {
       const button = document.createElement("button");
@@ -136,6 +219,19 @@
       filtersEl.append(button);
     });
     renderSavedTools();
+    renderGroupTools();
+  }
+
+  function renderGroupTools() {
+    const selectedGroup = activeGroup();
+    if (activeGroupId() && !selectedGroup) activeSource = "all";
+    sourceGroupSelect.innerHTML = '<option value="all">All sources</option>'
+      + sourceGroups.map((group) => `<option value="${escapeAttr(group.id)}">${escapeHtml(group.name)}</option>`).join("");
+    sourceGroupSelect.value = selectedGroup ? selectedGroup.id : "all";
+    editSourceGroupBtn.disabled = !selectedGroup;
+    const isDefault = defaultState && defaultState.activeSource === activeSource && defaultState.view === view;
+    setDefaultViewBtn.textContent = isDefault ? "Current default" : "Set current as default";
+    clearDefaultViewBtn.hidden = !defaultState;
   }
 
   function itemHtml(item, { showSource } = { showSource: true }) {
@@ -281,6 +377,8 @@
   function visibleItems() {
     if (activeSource === "all") return data.items;
     if (activeSource === "saved") return savedItems();
+    const group = activeGroup();
+    if (group) return data.items.filter((item) => group.sources.includes(item.source));
     return data.items.filter((item) => item.source === activeSource);
   }
 
@@ -412,6 +510,100 @@
     renderItems();
   });
 
+  sourceGroupSelect.addEventListener("change", () => {
+    activeSource = sourceGroupSelect.value === "all" ? "all" : `${GROUP_FILTER_PREFIX}${sourceGroupSelect.value}`;
+    columnPages.clear();
+    renderFilters();
+    renderItems();
+  });
+
+  function openSourceGroupDialog(group = null) {
+    editingGroupId = group ? group.id : null;
+    sourceGroupDialogTitle.textContent = group ? "Edit source group" : "New source group";
+    sourceGroupNameInput.value = group ? group.name : "";
+    sourceGroupChoices.innerHTML = sourceNames().map((source) => {
+      const checked = group && group.sources.includes(source) ? " checked" : "";
+      return `<label class="source-choice"><input type="checkbox" name="group-source" value="${escapeAttr(source)}"${checked} />${escapeHtml(source)}</label>`;
+    }).join("");
+    sourceGroupError.hidden = true;
+    sourceGroupError.textContent = "";
+    deleteSourceGroupBtn.hidden = !group;
+    sourceGroupDialog.showModal();
+    sourceGroupNameInput.focus();
+  }
+
+  function closeSourceGroupDialog() {
+    if (sourceGroupDialog.open) sourceGroupDialog.close();
+    editingGroupId = null;
+  }
+
+  newSourceGroupBtn.addEventListener("click", () => openSourceGroupDialog());
+  editSourceGroupBtn.addEventListener("click", () => {
+    const group = activeGroup();
+    if (group) openSourceGroupDialog(group);
+  });
+  closeSourceGroupDialogBtn.addEventListener("click", closeSourceGroupDialog);
+  cancelSourceGroupBtn.addEventListener("click", closeSourceGroupDialog);
+
+  sourceGroupForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = sourceGroupNameInput.value.trim().slice(0, 80);
+    const sources = [...sourceGroupChoices.querySelectorAll('input[name="group-source"]:checked')].map((input) => input.value);
+    if (!name) {
+      sourceGroupError.textContent = "Give this group a name.";
+      sourceGroupError.hidden = false;
+      return;
+    }
+    if (!sources.length) {
+      sourceGroupError.textContent = "Choose at least one source.";
+      sourceGroupError.hidden = false;
+      return;
+    }
+    const duplicate = sourceGroups.find((group) => group.name.localeCompare(name, undefined, { sensitivity: "accent" }) === 0 && group.id !== editingGroupId);
+    if (duplicate) {
+      sourceGroupError.textContent = "A group already has that name.";
+      sourceGroupError.hidden = false;
+      return;
+    }
+    const id = editingGroupId || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : `group-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    const nextGroup = { id, name, sources };
+    sourceGroups = editingGroupId
+      ? sourceGroups.map((group) => group.id === editingGroupId ? nextGroup : group)
+      : [...sourceGroups, nextGroup];
+    activeSource = `${GROUP_FILTER_PREFIX}${id}`;
+    columnPages.clear();
+    saveSourceGroups();
+    closeSourceGroupDialog();
+    renderFilters();
+    renderItems();
+    setBookmarkStatus(`Source group “${name}” saved.`);
+  });
+
+  deleteSourceGroupBtn.addEventListener("click", () => {
+    const group = sourceGroups.find((candidate) => candidate.id === editingGroupId);
+    if (!group) return;
+    sourceGroups = sourceGroups.filter((candidate) => candidate.id !== group.id);
+    if (activeSource === `${GROUP_FILTER_PREFIX}${group.id}`) activeSource = "all";
+    if (defaultState && defaultState.activeSource === `${GROUP_FILTER_PREFIX}${group.id}`) {
+      defaultState = null;
+      try { localStorage.removeItem(DEFAULT_STATE_STORAGE_KEY); } catch (e) { /* storage unavailable */ }
+    }
+    columnPages.clear();
+    saveSourceGroups();
+    closeSourceGroupDialog();
+    renderFilters();
+    renderItems();
+    setBookmarkStatus(`Source group “${group.name}” deleted.`);
+  });
+
+  setDefaultViewBtn.addEventListener("click", saveDefaultState);
+  clearDefaultViewBtn.addEventListener("click", () => {
+    defaultState = null;
+    try { localStorage.removeItem(DEFAULT_STATE_STORAGE_KEY); } catch (e) { /* storage unavailable */ }
+    renderGroupTools();
+    setBookmarkStatus("Default view cleared.");
+  });
+
   exportSavedBtn.addEventListener("click", () => {
     const payload = JSON.stringify({ version: BOOKMARK_EXPORT_VERSION, exportedAt: new Date().toISOString(), bookmarks: [...bookmarks.values()] }, null, 2);
     const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
@@ -464,6 +656,7 @@
         // storage unavailable — view choice just won't persist
       }
       renderViewToggle();
+      renderGroupTools();
       renderItems();
     });
   });

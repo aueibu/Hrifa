@@ -23,6 +23,14 @@
 
     <section aria-label="Filter by source" class="source-filter">
       <div id="sourceFilters" class="filters"></div>
+      <div class="group-tools" aria-label="Source groups">
+        <label class="group-picker-label" for="sourceGroupSelect">Group</label>
+        <select id="sourceGroupSelect" class="group-picker"></select>
+        <button type="button" id="newSourceGroupBtn" class="saved-tool-btn">New group</button>
+        <button type="button" id="editSourceGroupBtn" class="saved-tool-btn" disabled>Edit group</button>
+        <button type="button" id="setDefaultViewBtn" class="saved-tool-btn">Set current as default</button>
+        <button type="button" id="clearDefaultViewBtn" class="saved-tool-btn" hidden>Clear default</button>
+      </div>
       <div class="saved-tools">
         <button type="button" id="savedFilterBtn" class="filter">Saved <span id="savedCount">0</span></button>
         <button type="button" id="exportSavedBtn" class="saved-tool-btn">Export saved</button>
@@ -52,6 +60,26 @@
     <div id="paneContent" class="pane-content"></div>
   </aside>
 </div>
+<dialog id="sourceGroupDialog" class="source-group-dialog" aria-labelledby="sourceGroupDialogTitle">
+  <form id="sourceGroupForm" method="dialog">
+    <div class="source-group-dialog-head">
+      <h2 id="sourceGroupDialogTitle">New source group</h2>
+      <button type="button" class="pane-close" id="closeSourceGroupDialogBtn" aria-label="Close">&times;</button>
+    </div>
+    <label class="group-name-field">Group name<input id="sourceGroupNameInput" name="group-name" maxlength="80" required autocomplete="off" placeholder="e.g. Poetry" /></label>
+    <fieldset class="group-source-list">
+      <legend>Sources in this group</legend>
+      <div id="sourceGroupChoices"></div>
+    </fieldset>
+    <p id="sourceGroupError" class="group-form-error" hidden></p>
+    <div class="source-group-dialog-actions">
+      <button type="button" id="deleteSourceGroupBtn" class="saved-tool-btn danger-btn" hidden>Delete group</button>
+      <span></span>
+      <button type="button" id="cancelSourceGroupBtn" class="saved-tool-btn">Cancel</button>
+      <button type="submit" class="saved-tool-btn primary-btn">Save group</button>
+    </div>
+  </form>
+</dialog>
 <script src="app.js"></script>
 </body>
 </html>
