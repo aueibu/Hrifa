@@ -91,6 +91,11 @@ const SOURCES = {
     verified: false,
   },
   none: { short: 'user-defined', full: 'No literature reference — set directly by the user.', verified: false },
+  opticsReflectance: {
+    short: 'computed: Fresnel reflectance from measured optical constants (refractiveindex.info)',
+    full: 'color lightness (the L channel in HSL; hue/saturation are still a visual match to the material\'s known appearance) is computed from real, published complex refractive index data n,k at 550nm via the normal-incidence Fresnel reflectance R = ((n-1)^2+k^2)/((n+1)^2+k^2), L = R. Sources, all via the refractiveindex.info-hosted public-domain database: titanium/iron/copper/chromium/nickel/vanadium — P.B. Johnson & R.W. Christy, Phys. Rev. B 6, 4370 (1972) [Cu] and Phys. Rev. B 9, 5056 (1974) [Ti,V,Cr,Fe,Ni]; aluminum — A.D. Rakic, Appl. Opt. 34, 4755 (1995); zinc — W.S.M. Werner, K. Glantschnig, C. Ambrosch-Draxl, J. Phys. Chem. Ref. Data 38, 1013 (2009); zirconium — M.R. Querry, "Optical Constants" report, CRDEC-CR-88009 (1985); niobium — A.I. Golovashkin et al., Sov. Phys. JETP (1969 dataset); graphite (carbon) — H.-J. Hagemann, W. Gudat, C. Kunz, J. Opt. Soc. Am. 65, 742 (1975). Non-metals use the closest available real diffuse-reflectance/transmittance figure as an L proxy rather than a matched physical quantity, flagged per-entry: PTFE ~99% diffuse reflectance (it is the basis for Spectralon calibration standards; Labsphere technical guide); PMMA ~92% clear-sheet transmittance (Plexiglas/Rohm datasheet); sapphire ~85% (midpoint of 80-90% visible transmittance range cited across manufacturer sapphire-window datasheets); granite ~60% albedo (a single general geological-albedo reference — lower confidence than the others here, no per-composition figure was found). Deliberately NOT applied to tungsten, lead, molybdenum, magnesium, bismuth, tin, antimony, cast iron, or nylon: the first five have real optical data but it describes an optically clean, mirror-polished surface, which for these particular metals diverges sharply from the dull/oxidized look a bulk object actually has (e.g. tungsten and lead read as dark in practice despite a clean film reflecting >80%); tin and antimony have no visible-range n,k data in this database; cast iron is an alloy plus graphite flakes with no clean elemental analog; nylon 6,6 had no citable reflectance figure anywhere searched. Those nine keep their original hand-matched color unchanged.',
+    verified: true,
+  },
 };
 
 // Unified material catalog — every material this app knows about, whether it
@@ -108,24 +113,28 @@ const SOURCES = {
 // SOURCES.graphiteEstimate / SOURCES.expandedRosterEMHCardarelli). sourceRef
 // points into SOURCES above. roughness is this material's default surface
 // bump-scale when used as a surface (visual/physical, no literature source);
-// only meaningful for roles including 'surface'.
+// only meaningful for roles including 'surface'. color's hue/saturation are
+// still a hand-eyeballed match to the material's known real-world appearance;
+// where a colorRef is present, its lightness is instead computed from real
+// data (see SOURCES.opticsReflectance) — everything else keeps a hand-matched
+// lightness too.
 const MATERIAL_LIBRARY = {
   tungsten:   { label: 'Tungsten (W)',      density: 19250, E: 400e9,   nu: 0.28, HV: 385,  color: '#4a4a4a', metal: true,  sourceRef: 'asmRefractory',      roles: ['object', 'surface'], roughness: 0.15 },
-  titanium:   { label: 'Titanium (Ti)',     density: 4500,  E: 105e9,   nu: 0.34, HV: 150,  color: '#8a8d90', metal: true,  sourceRef: 'hardnessEstimate',   roles: ['object', 'surface'], roughness: 0.15 },
+  titanium:   { label: 'Titanium (Ti)',     density: 4500,  E: 105e9,   nu: 0.34, HV: 150,  color: '#929497', metal: true,  sourceRef: 'hardnessEstimate',   colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
   bismuth:    { label: 'Bismuth (Bi)',      density: 9808,  E: 32e9,    nu: 0.33, HV: 7,    color: '#b98c7a', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.2 },
-  carbon:     { label: 'Carbon (graphite)', density: 2200,  E: 11e9,    nu: 0.20, HV: null, color: '#2b2b2b', metal: false, sourceRef: 'graphiteEstimate',   roles: ['object', 'surface'], roughness: 0.1, restitutionEstimate: 0.22, frictionEstimate: 0.3 },
-  aluminum:   { label: 'Aluminum (Al)',     density: 2700,  E: 69e9,    nu: 0.33, HV: 23,   color: '#d6d6d6', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.15 },
-  iron:       { label: 'Iron (Fe)',         density: 7870,  E: 205e9,   nu: 0.28, HV: 90,   color: '#6e6f72', metal: true,  sourceRef: 'asmVol1Iron',        roles: ['object', 'surface'], roughness: 0.15 },
-  copper:     { label: 'Copper (Cu)',       density: 8930,  E: 128e9,   nu: 0.34, HV: 60,   color: '#b5651d', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.15 },
+  carbon:     { label: 'Carbon (graphite)', density: 2200,  E: 11e9,    nu: 0.20, HV: null, color: '#242424', metal: false, sourceRef: 'graphiteEstimate',   colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.1, restitutionEstimate: 0.22, frictionEstimate: 0.3 },
+  aluminum:   { label: 'Aluminum (Al)',     density: 2700,  E: 69e9,    nu: 0.33, HV: 23,   color: '#e9e9e9', metal: true,  sourceRef: 'asmAlloySupplement', colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
+  iron:       { label: 'Iron (Fe)',         density: 7870,  E: 205e9,   nu: 0.28, HV: 90,   color: '#808185', metal: true,  sourceRef: 'asmVol1Iron',        colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
+  copper:     { label: 'Copper (Cu)',       density: 8930,  E: 128e9,   nu: 0.34, HV: 60,   color: '#e59b5a', metal: true,  sourceRef: 'asmAlloySupplement', colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
   lead:       { label: 'Lead (Pb)',         density: 11350, E: 16e9,    nu: 0.44, HV: 4.5,  color: '#5c5c66', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.2 },
-  zinc:       { label: 'Zinc (Zn)',         density: 7140,  E: 90e9,    nu: 0.25, HV: 42,   color: '#c9d6dc', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.15 },
-  vanadium:   { label: 'Vanadium (V)',      density: 6160,  E: 130.5e9, nu: 0.36, HV: 72,   color: '#8f9aa6', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.15 },
-  chromium:   { label: 'Chromium (Cr)',     density: 7190,  E: 248e9,   nu: 0.21, HV: 125,  color: '#b8bcbf', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.12 },
-  nickel:     { label: 'Nickel (Ni)',       density: 8902,  E: 207e9,   nu: 0.31, HV: 64,   color: '#cfcfc2', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.15 },
+  zinc:       { label: 'Zinc (Zn)',         density: 7140,  E: 90e9,    nu: 0.25, HV: 42,   color: '#d6e0e5', metal: true,  sourceRef: 'asmAlloySupplement', colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
+  vanadium:   { label: 'Vanadium (V)',      density: 6160,  E: 130.5e9, nu: 0.36, HV: 72,   color: '#7a8796', metal: true,  sourceRef: 'asmPureMetals',      colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
+  chromium:   { label: 'Chromium (Cr)',     density: 7190,  E: 248e9,   nu: 0.21, HV: 125,  color: '#888e93', metal: true,  sourceRef: 'asmPureMetals',      colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.12 },
+  nickel:     { label: 'Nickel (Ni)',       density: 8902,  E: 207e9,   nu: 0.31, HV: 64,   color: '#afaf99', metal: true,  sourceRef: 'asmPureMetals',      colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
   tin:        { label: 'Tin (Sn)',          density: 7170,  E: 41.6e9,  nu: 0.33, HV: 3.9,  color: '#d9d9d9', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.15 },
   antimony:   { label: 'Antimony (Sb)',     density: 6697,  E: 77.8e9,  nu: 0.33, HV: 44,   color: '#a8a8a8', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.2 },
-  zirconium:  { label: 'Zirconium (Zr)',    density: 6500,  E: 99.3e9,  nu: 0.35, HV: 225,  color: '#c8c8c0', metal: true,  sourceRef: 'hardnessEstimate',   roles: ['object', 'surface'], roughness: 0.15 },
-  niobium:    { label: 'Niobium (Nb)',      density: 8570,  E: 103e9,   nu: 0.38, HV: 78,   color: '#a6a6a6', metal: true,  sourceRef: 'hardnessEstimate',   roles: ['object', 'surface'], roughness: 0.15 },
+  zirconium:  { label: 'Zirconium (Zr)',    density: 6500,  E: 99.3e9,  nu: 0.35, HV: 225,  color: '#9a9a8b', metal: true,  sourceRef: 'hardnessEstimate',   colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
+  niobium:    { label: 'Niobium (Nb)',      density: 8570,  E: 103e9,   nu: 0.38, HV: 78,   color: '#8f8f8f', metal: true,  sourceRef: 'hardnessEstimate',   colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.15 },
   molybdenum: { label: 'Molybdenum (Mo)',   density: 10220, E: 325e9,   nu: 0.32, HV: 210,  color: '#909090', metal: true,  sourceRef: 'asmRefractory',      roles: ['object', 'surface'], roughness: 0.15 },
   magnesium:  { label: 'Magnesium (Mg)',    density: 1738,  E: 45e9,    nu: 0.35, HV: 30,   color: '#c4c4b8', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.18 },
 
@@ -138,11 +147,11 @@ const MATERIAL_LIBRARY = {
   // friction fall back to a flagged literature-informed estimate — see
   // SOURCES.expandedRosterEMHCardarelli / SOURCES.castIronValidated.
   castIron: { label: 'Cast Iron (gray)',        density: 7400, E: 124e9, nu: 0.25,  HV: 235,  color: '#3b3b3d', metal: true,  sourceRef: 'castIronValidated',           roles: ['object', 'surface'], roughness: 0.2 },
-  granite:  { label: 'Granite',                 density: 2700, E: 55e9,  nu: null,  HV: null, color: '#8c8478', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.35, restitutionEstimate: 0.75, frictionEstimate: 0.5 },
-  pmma:     { label: 'PMMA (Acrylic)',          density: 1185, E: 3.06e9, nu: null, HV: null, color: '#cfe3e6', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.6, frictionEstimate: 0.35 },
-  sapphire: { label: 'Sapphire / Alumina (Corundum)', density: 3975, E: 398e9, nu: 0.24, HV: null, color: '#eae3d6', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.85, frictionEstimate: 0.2 },
+  granite:  { label: 'Granite',                 density: 2700, E: 55e9,  nu: null,  HV: null, color: '#a19b91', metal: false, sourceRef: 'expandedRosterEMHCardarelli', colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.35, restitutionEstimate: 0.75, frictionEstimate: 0.5 },
+  pmma:     { label: 'PMMA (Acrylic)',          density: 1185, E: 3.06e9, nu: null, HV: null, color: '#e4eff1', metal: false, sourceRef: 'expandedRosterEMHCardarelli', colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.6, frictionEstimate: 0.35 },
+  sapphire: { label: 'Sapphire / Alumina (Corundum)', density: 3975, E: 398e9, nu: 0.24, HV: null, color: '#e5dccc', metal: false, sourceRef: 'expandedRosterEMHCardarelli', colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.85, frictionEstimate: 0.2 },
   nylon:    { label: 'Nylon 6,6',               density: 1140, E: 3.3e9, nu: 0.43,  HV: null, color: '#e3d9c6', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.1, restitutionEstimate: 0.45, frictionEstimate: 0.3 },
-  ptfe:     { label: 'PTFE (Teflon)',           density: 2215, E: 0.62e9, nu: null, HV: null, color: '#f2f2ef', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.2, frictionEstimate: 0.05 },
+  ptfe:     { label: 'PTFE (Teflon)',           density: 2215, E: 0.62e9, nu: null, HV: null, color: '#fdfdfc', metal: false, sourceRef: 'expandedRosterEMHCardarelli', colorRef: 'opticsReflectance', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.2, frictionEstimate: 0.05 },
 
   // 18 named wood species (16 hardwood/softwood species plus White Oak and
   // Northern Red Oak) — USDA Wood Handbook, Table 4-3a, 12% MC. density is
