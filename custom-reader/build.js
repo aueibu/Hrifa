@@ -27,7 +27,7 @@ const { Readability } = require("@mozilla/readability");
 const { GoogleDecoder } = require("google-news-url-decoder");
 
 const SOURCES_PATH = path.join(__dirname, "sources.json");
-const OUTPUT_PATH = path.join(__dirname, "feed-data.json");
+const OUTPUT_PATH = process.env.READER_OUTPUT_PATH || path.join(__dirname, "feed-data.json");
 const FETCH_TIMEOUT_MS = 15000;
 const FULL_CONTENT_CONCURRENCY = 3;
 // Google News keeps RSS article URLs behind an opaque redirect. Resolve only
@@ -138,25 +138,72 @@ function parseFeed(xml) {
   return items;
 }
 
-async function fetchText(url, { timeoutMs = FETCH_TIMEOUT_MS } = {}) {
+async function fetchResponse(url, { timeoutMs = FETCH_TIMEOUT_MS, headers = {} } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: controller.signal, headers: { "user-agent": USER_AGENT } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.text();
+    return await fetch(url, {
+      signal: controller.signal,
+      headers: { "user-agent": USER_AGENT, ...headers },
+    });
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function fetchFeed({ name, url, fullContent, resolveGoogleNews }) {
+async function fetchText(url, options = {}) {
+  const res = await fetchResponse(url, options);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.text();
+}
+
+function conditionalHeaders(cache) {
+  const headers = {};
+  if (cache?.etag) headers["if-none-match"] = cache.etag;
+  if (cache?.lastModified) headers["if-modified-since"] = cache.lastModified;
+  return headers;
+}
+
+function responseCache(res) {
+  const etag = res.headers.get("etag");
+  const lastModified = res.headers.get("last-modified");
+  return {
+    ...(etag ? { etag } : {}),
+    ...(lastModified ? { lastModified } : {}),
+  };
+}
+
+function isGoogleNewsUrl(value) {
   try {
-    const xml = await fetchText(url);
+    return new URL(value).hostname === "news.google.com";
+  } catch (e) {
+    return false;
+  }
+}
+
+async function fetchFeed({ name, url, fullContent, resolveGoogleNews }, cache, previousItems) {
+  try {
+    const res = await fetchResponse(url, { headers: conditionalHeaders(cache) });
+    if (res.status === 304) {
+      if (!cache) throw new Error("HTTP 304 without a cached feed");
+      return {
+        name,
+        ok: true,
+        notModified: true,
+        cache,
+        items: previousItems.map((item) => ({
+          ...item,
+          fullContent: false,
+          resolveGoogleNews: !!resolveGoogleNews && isGoogleNewsUrl(item.link),
+        })),
+      };
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const xml = await res.text();
     const items = parseFeed(xml).map((item) => ({ ...item, source: name, fullContent: !!fullContent, resolveGoogleNews: !!resolveGoogleNews }));
-    return { name, ok: true, items };
+    return { name, ok: true, notModified: false, cache: responseCache(res), items };
   } catch (err) {
-    return { name, ok: false, error: err.message, items: [] };
+    return { name, ok: false, error: err.message, cache, items: [] };
   }
 }
 
@@ -172,7 +219,7 @@ function isHttpUrl(value) {
 async function resolveGoogleNewsUrls(items) {
   const decoder = new GoogleDecoder();
   const bySource = new Map();
-  items.filter((item) => item.resolveGoogleNews).forEach((item) => {
+  items.filter((item) => item.resolveGoogleNews && isGoogleNewsUrl(item.link)).forEach((item) => {
     if (!bySource.has(item.source)) bySource.set(item.source, []);
     bySource.get(item.source).push(item);
   });
@@ -229,14 +276,26 @@ async function main() {
   const sources = JSON.parse(fs.readFileSync(SOURCES_PATH, "utf8"));
 
   let previousContent = new Map();
+  let previousItemsBySource = new Map();
+  let previousSourceCache = {};
   try {
     const previous = JSON.parse(fs.readFileSync(OUTPUT_PATH, "utf8"));
-    previousContent = new Map(previous.items.filter((i) => i.content).map((i) => [i.link, i.content]));
+    const previousItems = Array.isArray(previous.items) ? previous.items : [];
+    previousContent = new Map(previousItems.filter((i) => i.content).map((i) => [i.link, i.content]));
+    previousItems.forEach((item) => {
+      if (!previousItemsBySource.has(item.source)) previousItemsBySource.set(item.source, []);
+      previousItemsBySource.get(item.source).push(item);
+    });
+    previousSourceCache = previous.sourceCache && typeof previous.sourceCache === "object" ? previous.sourceCache : {};
   } catch (e) {
     // no previous run to reuse — fine, everything gets fetched fresh
   }
 
-  const results = await Promise.all(sources.map(fetchFeed));
+  const results = await Promise.all(sources.map((source) => fetchFeed(
+    source,
+    previousSourceCache[source.name],
+    previousItemsBySource.get(source.name) || []
+  )));
 
   const seen = new Set();
   let items = results
@@ -282,13 +341,18 @@ async function main() {
   });
 
   const errors = results.filter((r) => !r.ok).map(({ name, error }) => ({ name, error }));
+  const sourceCache = Object.fromEntries(results
+    .filter((result) => result.cache)
+    .map((result) => [result.name, result.cache]));
+  const notModified = results.filter((result) => result.ok && result.notModified).length;
 
   fs.writeFileSync(
     OUTPUT_PATH,
-    JSON.stringify({ generatedAt: new Date().toISOString(), items, errors }, null, 2)
+    JSON.stringify({ generatedAt: new Date().toISOString(), items, errors, sourceCache }, null, 2)
   );
 
   console.log(`Wrote ${items.length} items from ${results.length - errors.length}/${results.length} sources to feed-data.json`);
+  console.log(`  ${notModified} source(s) returned 304 Not Modified and reused their cached items`);
   console.log(`  fetched full article HTML for ${scraped} item(s); ${scrapeFailed} fell back to the feed's own markup`);
   console.log(`  resolved ${googleResolved.resolved} Google News URL(s); ${googleResolved.failed} retained their Google News link`);
   errors.forEach((e) => console.warn(`  skipped ${e.name}: ${e.error}`));

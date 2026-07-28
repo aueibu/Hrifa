@@ -39,6 +39,21 @@ jobs:
           cache: npm
           cache-dependency-path: custom-reader/package-lock.json
 
+      # The deployed digest carries each feed's ETag/Last-Modified validators.
+      # Restore it before a refresh so unchanged sources can reply 304 and we
+      # can reuse their existing items instead of downloading them again.
+      - name: Restore the latest reader digest for conditional refreshes
+        if: github.event_name != 'push'
+        working-directory: custom-reader
+        run: |
+          if curl --fail --location --retry 3 --max-time 30 \
+            "https://aueibu.github.io/Hrifa/custom-reader/feed-data.json?run=${{ github.run_id }}" \
+            --output feed-data.json; then
+            test -s feed-data.json
+          else
+            echo "No deployed digest available; refreshing all sources without validators."
+          fi
+
       - name: Build the current reader digest
         if: github.event_name != 'push'
         working-directory: custom-reader
