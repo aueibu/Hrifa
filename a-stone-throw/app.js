@@ -16,178 +16,362 @@ const MAX_BUMP_HEIGHT = 0.03; // meters, at roughness 1.0
 const MIN_SUBSTEPS = 4;
 const MAX_SUBSTEPS = 96;
 
-// Short bibliography backing the friction/restitution numbers below. Every
-// non-custom material/surface cites one of these via frictionRef/restitutionRef,
-// shown to the user in the material/surface info line. `verified: true` means the
-// number was pulled from the actual page/table this session (fetched and read);
-// without it, the citation is a well-known reference category we could not
-// directly confirm the text of (paywalled, or the fetch returned unreadable
-// binary — noted per-entry). Real friction/restitution vary with finish,
-// moisture, and impact velocity regardless of source.
+// Bibliography backing the material/surface physics below. Density, elastic
+// modulus, and hardness for the 18 elements, the 6 promoted non-metal
+// materials (cast iron, granite, PMMA, sapphire/alumina, nylon, PTFE), and the
+// 18 named wood species (16 species plus White Oak and Northern Red Oak) come
+// from the project's ASM Handbook extraction, EMH/Cardarelli mining, and USDA
+// Wood Handbook mining (see the ASM_Material_Properties_Reference.xlsx
+// reference workbook, "Material Properties" sheet, for the exact table/page
+// per material). Self-coefficient-of-restitution is COMPUTED at drop time via
+// a validated elastic-plastic yield model for every ductile material (not
+// looked up), and friction uses real CRC-measured values where available,
+// falling back to a hardness-ranked or literature-informed estimate
+// otherwise. Every material in this roster is available as both an object
+// and a surface. See resolvePairPhysics().
 const SOURCES = {
-  crcSteelSteel: {
-    short: 'CRC Handbook of Physical Quantities (1997), steel-on-steel',
-    full: 'CRC Handbook of Physical Quantities (1997), μk=0.57 for dry steel-on-steel — confirmed via hypertextbook.com/facts/2005/steel.shtml, which compiles this figure alongside 4 other textbook sources ranging 0.09–0.6',
+  asmPureMetals: {
+    short: 'ASM Handbook Vol. 2, "Properties of Pure Metals"',
+    full: 'ASM Handbook Vol. 2 (Nonferrous Alloys and Special-Purpose Materials), "Properties of Pure Metals" article — primary source for density, elastic modulus, and hardness of most elements in this roster.',
     verified: true,
   },
-  schoolForChampionsCopperSteel: {
-    short: 'School for Champions friction reference, copper-on-steel',
-    full: 'School for Champions compiled friction table, μ=0.44 for copper-on-steel — confirmed via hypertextbook.com/facts/2005/steel.shtml',
+  asmVol1Iron: {
+    short: 'ASM Handbook Vol. 1, iron density/modulus/hardness tables',
+    full: 'ASM Handbook Vol. 1 (Irons, Steels, and High-Performance Alloys): pure iron assembled from a theoretical full-density figure, a powder-metallurgy density-vs-modulus table extrapolated to full density, and a ferritic-ingot-iron wear-rate table for hardness.',
     verified: true,
   },
-  mechguruAlSteel: {
-    short: 'MechGuru compiled friction table, aluminum-on-steel',
-    full: 'mechguru.com, "Typical Coefficient of Friction Values for Common Materials" — aluminum-steel μs=0.35/μk=0.25, aluminum-aluminum μs=0.42/μk=0.34 (compiled from multiple engineering sources, page itself flags the values as approximate)',
+  asmRefractory: {
+    short: 'ASM Handbook Vol. 2, "Refractory Metals and Alloys," Table 2 & 7',
+    full: 'ASM Handbook Vol. 2, "Refractory Metals and Alloys" article, Tables 2 and 7 — used for tungsten and molybdenum, cross-checked against niobium.',
     verified: true,
   },
-  physicsFactbookDropTest: {
-    short: 'Physics Factbook drop-test (Midwood HS, 2005)',
-    full: 'J. Bennett & R. Meepagala, Midwood HS Science Research Program (2005), via hypertextbook.com/facts/2006/restitution.shtml — measured, dropped from 92cm onto a concrete floor: golf ball 0.858, rubber-band ball 0.828, billiard ball 0.804, hand ball 0.752, hard plastic ball 0.688, glass marble 0.658, wooden ball 0.603, steel ball bearing 0.597. Also used to anchor the concrete surface\'s own restitution baseline (0.6, close to the steel/wood figures) - since this app models material and surface restitution as separate values that get averaged, and this dataset already reports combined (object+surface) results, there is some double-counting inherent in the model; 0.6 was chosen so the average of concrete (0.6) and steel (0.6) reproduces the measured 0.597 almost exactly.',
+  asmAlloySupplement: {
+    short: 'ASM Handbook Vol. 2, closest unalloyed/dilute wrought-alloy grade',
+    full: 'One property (usually hardness or modulus) was not tabulated as an explicit number for the pure element in the reviewed ASM text; a standard engineering reference value or the closest unalloyed/dilute alloy grade in the same ASM volume was substituted instead. See the reference workbook\'s Material Properties sheet, Notes column, for the specific substitution.',
     verified: true,
   },
-  wearHardMetalEstimate: {
-    short: 'interpolated from hard-metal friction/restitution trend',
-    full: 'No direct published friction/restitution figures found for pure (non-carbide) tungsten this session; value is interpolated within the hard-metal range bounded by the verified steel and aluminum figures above, not a directly measured number',
+  hardnessEstimate: {
+    short: 'non-ASM hardness estimate (titanium, zirconium, niobium)',
+    full: 'ASM\'s "Properties of Pure Metals" article has no Mechanical Properties data for this element (a confirmed gap in the source, checked against the original book pages). Hardness is a standard external reference value or is bounded by more-alloyed grades of the same element elsewhere in the ASM volume; self-COR/friction computed from it inherit that added uncertainty.',
     verified: false,
   },
-  ductileMetalEstimate: {
-    short: 'interpolated from ductility/hardness trend',
-    full: 'No directly measured restitution figure found for this metal this session; estimated relative to the verified steel/wood drop-test values by ductility (softer, more energy-absorbing metals bounce less)',
+  graphiteEstimate: {
+    short: 'web search: isostatic graphite manufacturer datasheets',
+    full: 'No ASM, CRC, Stronge, or Johnson source in this project\'s document set has density, modulus, or hardness data for carbon/graphite. Density and elastic modulus (~11 GPa, midpoint of a 9.8-13.7 GPa typical isostatic-grade range) were sourced via web search from isostatic-graphite manufacturer datasheets (Tokai Carbon, Olmec) — a real but grade-averaged, non-primary source. Graphite is also a brittle, layered material outside the validated ductile elastic-plastic yield model used for the other 17 elements (the same category as the ceramics/rock this project explicitly flagged as "no formula, genuine gap"), so its restitution and friction are flagged literature-informed placeholders, not computed from the formula.',
     verified: false,
   },
-  woodFrictionCompiled: {
-    short: 'compiled wood-friction sources (0.25-0.55 range)',
-    full: 'Compiled from mechguru.com (wood-wood μs=0.25), hypertextbook.com/facts/2005/wood.shtml (student incline-plane tests, wood-on-copper μs=0.26), and general textbook consensus (wood-on-wood dry range 0.25-0.55, mean measured ≈0.38). The primary USDA Forest Products Laboratory Wood Handbook chapter PDF was fetched this session but returned as unreadable encoded binary, so its specific table could not be directly confirmed and is not cited here.',
+  expandedRosterEMHCardarelli: {
+    short: 'EMH Desk Edition + Materials Handbook (Cardarelli) — non-metal roster',
+    full: 'Density, elastic modulus, and hardness for granite, PMMA/acrylic, sapphire/alumina, nylon 6,6, and PTFE come from the project\'s mining of the compiled Engineered Materials Handbook (EMH Desk Edition 1-4) and Materials Handbook 2017 (Cardarelli) — see the reference workbook\'s Material Properties sheet for the exact tables. All five are outside the validated Stronge/Johnson ductile elastic-plastic yield model: granite and sapphire/alumina are brittle ceramics/rock (same "no formula, genuine gap" category as diamond, per the COR Methodology sheet); PMMA, nylon, and PTFE are polymers whose damping behavior isn\'t derivable from bulk elastic constants without a measured calibration point this project doesn\'t have. Their restitution and (except where a direct CRC friction measurement exists) friction are flagged literature-informed placeholders, not computed from the formula. Sapphire/alumina\'s surface role is this app\'s own extension beyond the reference workbook, which only scoped it as an object — added as a ceramics-surface example.',
     verified: true,
   },
-  turfFriction: {
-    short: 'natural turf friction (unsourced estimate)',
-    full: 'No usable object-on-grass friction figure found yet. Nigg & Herzog, Biomechanics of the Musculo-Skeletal System was checked directly (index has no traction/turf/playing-surface entries) and ruled out. Remaining candidates are sports-surface-engineering papers (e.g. FIFA Quality Programme turf test methods) rather than biomechanics texts, since those measure shoe/cleat traction (a different, stud-penetration-driven number) rather than plain sliding friction.',
+  castIronValidated: {
+    short: 'Materials Handbook (Cardarelli) + EMH; self-COR computed (Stronge/Johnson)',
+    full: 'Cast iron (gray, ASTM A48 Grade 40) density and modulus from Materials Handbook 2017 (Cardarelli), Table 2.14; hardness and supplementary tensile ranges from EMH Desk Edition 1-4. Unlike granite/sapphire/PMMA/nylon/PTFE, cast iron has a real ductile phase (ferrite/pearlite matrix), so the same validated Stronge/Johnson elastic-plastic yield model used for the 18 pure elements applies directly — self-COR is computed, not estimated. Poisson\'s ratio is Johnson\'s generic cast-iron value (Contact Mechanics, Table 5.1), not grade-specific.',
+    verified: true,
+  },
+  usdaWoodHandbook: {
+    short: 'USDA Wood Handbook, Table 4-3a / 4-1 / 4-2 (species-specific, 12% MC)',
+    full: 'Density (specific gravity x 1000) and elastic modulus (parallel-to-grain static bending MOE) for all 18 wood entries (16 named species plus White Oak and Northern Red Oak) come from the USDA Forest Products Laboratory Wood Handbook, Table 4-3a (metric, 12% moisture content); the two Oak entries additionally have full anisotropic Poisson\'s-ratio data from Tables 4-1/4-2. Wood is a highly anisotropic, non-ductile material — the same "no formula, genuine gap" category as granite/sapphire in this project\'s COR Methodology — so HV is left null and the validated Stronge/Johnson ductile model is never applied. restitutionEstimate is a density-based interpolation (0.55 base at SG 0.55, +-0.5 x (SG-0.55), clamped 0.35-0.65): denser, stiffer species are assumed to lose relatively less energy to crushing on impact than lighter, softer ones, consistent with the Handbook\'s own per-species impact-bending (drop-height-to-failure) figures trending the same direction with density. frictionEstimate (0.4) is anchored on real CRC Handbook of Chemistry and Physics oak-on-oak dry sliding friction (0.48 parallel-to-grain, 0.32 perpendicular — the two directly measured wood-wood values in this project\'s sources), averaged since this app does not model grain orientation; the oak entries themselves use the measured 0.48 directly via CRC_FRICTION rather than the estimate. Janka side hardness (a different, non-Vickers indentation scale) is recorded in the reference workbook per species but not used here, since it isn\'t Tabor-convertible to the Vickers-equivalent Y this app\'s formula needs.',
+    verified: true,
+  },
+  strongeJohnsonModel: {
+    short: 'computed: Stronge/Johnson elastic-plastic yield model',
+    full: 'Self-coefficient-of-restitution is computed per material from density, elastic modulus, Poisson\'s ratio, and Tabor-derived yield stress (Y = HV x 9.80665/3), using the closed-form yield-onset velocity relation rho*v_Y^2/Y = 29.55*(Y/E*)^4 and e* = (v_Y/v)^(1/4) above it (W.J. Stronge, Impact Mechanics, 2nd ed., Cambridge 2018; cross-confirmed against K.L. Johnson, Contact Mechanics, 1985, eq. 11.39/11.44). Validated against Stronge\'s own Table 6.1 measured yield velocities for mild steel, brass, and two aluminum alloys (same order of magnitude, 20%-3x). Object-on-surface composite restitution uses the energetic composite-COR formula (Coaplen, Stronge & Ravani, Int. J. Impact Eng. 30(6), 2004), weighted by each material\'s yield stress.',
+    verified: true,
+  },
+  crcFriction: {
+    short: 'CRC Handbook of Chemistry and Physics, measured dry sliding friction',
+    full: 'CRC Handbook of Chemistry and Physics, Internet Edition — real measured dry (unlubricated), room-temperature sliding-friction values for this exact or a closely analogous object/surface pair (mild steel used as the iron-surface proxy).',
+    verified: true,
+  },
+  frictionFallback: {
+    short: 'hardness-ranked friction estimate (no direct CRC measurement)',
+    full: 'No direct or closely analogous CRC-measured friction value exists for this object/surface pair. Falls back to mu = 0.60 - 0.45 x normalized log10(hardness), spanning this roster\'s Vickers-hardness range (3.9-225 HV) — a weaker, ranking-based estimate rather than a measured figure.',
     verified: false,
-  },
-  softSurfaceBounce: {
-    short: 'cushioned-surface bounce testing (not verified this session)',
-    full: 'General sports-surface engineering literature on soft/cushioned surface coefficients of restitution (foam, carpet, textile underlay). Referenced from general knowledge of this literature category; not fetched/confirmed this session.',
-    verified: false,
-  },
-  textileFriction: {
-    short: 'KES-F "MIU" steel-probe-on-fabric friction (~0.1-0.45)',
-    full: 'KES-F (Kawabata Evaluation System for Fabrics) "MIU" parameter: a smooth-steel-probe-on-fabric friction coefficient, the direct analog to a rigid object sliding on our blanket surface (unlike fabric-on-fabric friction, see below). Multiple independent published measurements converge on cotton woven fabric MIU ~0.1-0.3, smooth fibers (Tencel/soy) ~0.2-0.3, coarser fiber (hemp) ~0.45. These figures come from search-result summaries of several papers (e.g. studies using the KES-FB4 AUTO tester); direct fetches of the source pages (MDPI, ResearchGate) returned HTTP 403 each time this session, so treat as corroborated-by-convergence rather than a single primary source read in full. Cross-checked against B.S. Gupta, "Friction in Textile Materials" (Woodhead Publishing), Ch.5, Table 5.3 (book p.207, directly read this session): measured fabric-ON-FABRIC kinetic friction of 5 woven fabrics (C6-C10) under a 25 gf sled load gave mu ~ 1.96-2.40 - much higher because soft-on-soft contact has far more real contact area than a rigid probe on fabric, confirming MIU-type values are the right regime for this surface.',
-    verified: true,
-  },
-  engToolboxRestitution: {
-    short: 'Engineering ToolBox — restitution coefficients (not verified this session)',
-    full: 'Engineering ToolBox, "Coefficients of Restitution," engineeringtoolbox.com/restitution-coefficients-d_622.html. Direct fetch returned HTTP 403 this session, so figures are not directly confirmed.',
-    verified: false,
-  },
-  engToolboxFriction: {
-    short: 'Engineering ToolBox — friction coefficients (not verified this session)',
-    full: 'Engineering ToolBox, "Friction and Friction Coefficients for Various Material Combinations," engineeringtoolbox.com/friction-coefficients-d_778.html. Direct fetch returned HTTP 403 this session, so figures are not directly confirmed.',
-    verified: false,
-  },
-  glassFrictionProxy: {
-    short: 'Physics Factbook glass friction (glaze proxy)',
-    full: 'Physics Factbook (M. Caban, W. Daniel, A. Grisales, 2005), via hypertextbook.com/facts/2005/glass.shtml, directly fetched: static friction on glass — steel (key chain) 0.19, copper (penny) 0.15, paper (card) 0.22. Used as a proxy for glazed ceramic tile, since a glaze is essentially a fused glass surface. Not a direct tile measurement, but the same hard-smooth-surface regime.',
-    verified: true,
-  },
-  iso10545TileRestitution: {
-    short: 'ISO 10545-5 ceramic tile impact resilience (0.85-0.88)',
-    full: 'ISO 10545-5 (impact resistance of ceramic tiles): a steel ball is dropped onto the tile under a fixed low impact energy (0.27 J) and the resilience/restitution coefficient is measured. A study reported via search-result summary (qualicer.org conference paper) found conventional and glass-ceramic glazes both measured 0.85-0.88, with little difference between glaze types. The primary PDF was fetched this session but returned unreadable encoded/scanned content, so this is confirmed via a secondary summary of the paper, not a direct read of the standard or the data table itself.',
-    verified: true,
-  },
-  hypertextboxConcreteFriction: {
-    short: 'Physics Factbook concrete friction (rubber-on-concrete only)',
-    full: 'Physics Factbook, via hypertextbook.com/facts/2006/MatthewMichaels.shtml, directly fetched: the only concrete pairing with data is rubber-on-concrete, kinetic mu 0.6-0.85 dry (Engineering ToolBox and School for Champions compiled figures cited on that page) down to 0.25-0.3 wet (Simon Fraser University 2001). No hard-object (metal/wood/glass) on-concrete friction figure was found this session. Rubber runs substantially higher friction than hard objects on the same surface (the same gap seen between rubber-tile ~0.6-0.85 and glass-tile ~0.15-0.22), so this value is used here as an upper-bound estimate, likely an overestimate for the rigid objects this sim actually drops.',
-    verified: true,
   },
   none: { short: 'user-defined', full: 'No literature reference — set directly by the user.', verified: false },
 };
 
-// Metal friction is dry/kinetic against steel (the common reference surface in the
-// cited tables); restitution is a solid-ball drop-test value. Copper and steel
-// numbers below are directly verified (see SOURCES); aluminum's friction is
-// verified via a compiled table, but its restitution and all of tungsten's values
-// are estimates — flagged as such in their SOURCES entries.
-const MATERIALS = {
-  copper: {
-    label: 'Copper', density: 8960, restitution: 0.4, friction: 0.44, color: '#b5651d', metal: true,
-    frictionRef: 'schoolForChampionsCopperSteel', restitutionRef: 'ductileMetalEstimate',
-  },
-  steel: {
-    label: 'Steel', density: 7850, restitution: 0.6, friction: 0.57, color: '#c7c9cc', metal: true,
-    frictionRef: 'crcSteelSteel', restitutionRef: 'physicsFactbookDropTest',
-  },
-  tungsten: {
-    label: 'Tungsten', density: 19300, restitution: 0.55, friction: 0.45, color: '#4d4d4d', metal: true,
-    frictionRef: 'wearHardMetalEstimate', restitutionRef: 'wearHardMetalEstimate',
-  },
-  aluminum: {
-    label: 'Aluminum', density: 2700, restitution: 0.5, friction: 0.3, color: '#d6d6d6', metal: true,
-    frictionRef: 'mechguruAlSteel', restitutionRef: 'ductileMetalEstimate',
-  },
-  balsa: { label: 'Balsa wood (Janka 90)', density: 160, janka: 90, color: '#f0dcb0' },
-  pine: { label: 'Pine wood (Janka 420)', density: 450, janka: 420, color: '#d8b878' },
-  oak: { label: 'Oak wood (Janka 1290)', density: 750, janka: 1290, color: '#a97845' },
-  hickory: { label: 'Hickory wood (Janka 1820)', density: 830, janka: 1820, color: '#8a5a2e' },
-  ipe: { label: 'Ipe wood (Janka 3510)', density: 1075, janka: 3510, color: '#5c3a21' },
-  custom: {
-    label: 'Custom (Hrifa material)', density: 2000, restitution: 0.4, friction: 0.4, color: '#5aa9e6', custom: true,
-    frictionRef: 'none', restitutionRef: 'none',
-  },
+// Unified material catalog — every material this app knows about, whether it
+// can be dropped as an object, used as a surface, or both, matching the
+// project reference workbook's own "Role in Project" column (Object / Object
+// & Surface). Adding a future surface-only material (tile, ceramics, concrete,
+// fabric, paper, ...) is just a new entry here with roles: ['surface'] — no
+// separate surface table to keep in sync.
+//
+// density kg/m3, E (tension) Pa, nu = Poisson's ratio, HV = Vickers-equivalent
+// hardness (null/omitted = no formula-usable hardness for this material, either
+// because none was found (graphite) or because it's a brittle ceramic/rock or
+// polymer outside the validated ductile model's range (granite, PMMA, sapphire,
+// nylon, PTFE) — see restitutionEstimate/frictionEstimate below and
+// SOURCES.graphiteEstimate / SOURCES.expandedRosterEMHCardarelli). sourceRef
+// points into SOURCES above. roughness is this material's default surface
+// bump-scale when used as a surface (visual/physical, no literature source);
+// only meaningful for roles including 'surface'.
+const MATERIAL_LIBRARY = {
+  tungsten:   { label: 'Tungsten (W)',      density: 19250, E: 400e9,   nu: 0.28, HV: 385,  color: '#4a4a4a', metal: true,  sourceRef: 'asmRefractory',      roles: ['object', 'surface'], roughness: 0.15 },
+  titanium:   { label: 'Titanium (Ti)',     density: 4500,  E: 105e9,   nu: 0.34, HV: 150,  color: '#8a8d90', metal: true,  sourceRef: 'hardnessEstimate',   roles: ['object', 'surface'], roughness: 0.15 },
+  bismuth:    { label: 'Bismuth (Bi)',      density: 9808,  E: 32e9,    nu: 0.33, HV: 7,    color: '#b98c7a', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.2 },
+  carbon:     { label: 'Carbon (graphite)', density: 2200,  E: 11e9,    nu: 0.20, HV: null, color: '#2b2b2b', metal: false, sourceRef: 'graphiteEstimate',   roles: ['object', 'surface'], roughness: 0.1, restitutionEstimate: 0.22, frictionEstimate: 0.3 },
+  aluminum:   { label: 'Aluminum (Al)',     density: 2700,  E: 69e9,    nu: 0.33, HV: 23,   color: '#d6d6d6', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.15 },
+  iron:       { label: 'Iron (Fe)',         density: 7870,  E: 205e9,   nu: 0.28, HV: 90,   color: '#6e6f72', metal: true,  sourceRef: 'asmVol1Iron',        roles: ['object', 'surface'], roughness: 0.15 },
+  copper:     { label: 'Copper (Cu)',       density: 8930,  E: 128e9,   nu: 0.34, HV: 60,   color: '#b5651d', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.15 },
+  lead:       { label: 'Lead (Pb)',         density: 11350, E: 16e9,    nu: 0.44, HV: 4.5,  color: '#5c5c66', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.2 },
+  zinc:       { label: 'Zinc (Zn)',         density: 7140,  E: 90e9,    nu: 0.25, HV: 42,   color: '#c9d6dc', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.15 },
+  vanadium:   { label: 'Vanadium (V)',      density: 6160,  E: 130.5e9, nu: 0.36, HV: 72,   color: '#8f9aa6', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.15 },
+  chromium:   { label: 'Chromium (Cr)',     density: 7190,  E: 248e9,   nu: 0.21, HV: 125,  color: '#b8bcbf', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.12 },
+  nickel:     { label: 'Nickel (Ni)',       density: 8902,  E: 207e9,   nu: 0.31, HV: 64,   color: '#cfcfc2', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.15 },
+  tin:        { label: 'Tin (Sn)',          density: 7170,  E: 41.6e9,  nu: 0.33, HV: 3.9,  color: '#d9d9d9', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.15 },
+  antimony:   { label: 'Antimony (Sb)',     density: 6697,  E: 77.8e9,  nu: 0.33, HV: 44,   color: '#a8a8a8', metal: true,  sourceRef: 'asmPureMetals',      roles: ['object', 'surface'], roughness: 0.2 },
+  zirconium:  { label: 'Zirconium (Zr)',    density: 6500,  E: 99.3e9,  nu: 0.35, HV: 225,  color: '#c8c8c0', metal: true,  sourceRef: 'hardnessEstimate',   roles: ['object', 'surface'], roughness: 0.15 },
+  niobium:    { label: 'Niobium (Nb)',      density: 8570,  E: 103e9,   nu: 0.38, HV: 78,   color: '#a6a6a6', metal: true,  sourceRef: 'hardnessEstimate',   roles: ['object', 'surface'], roughness: 0.15 },
+  molybdenum: { label: 'Molybdenum (Mo)',   density: 10220, E: 325e9,   nu: 0.32, HV: 210,  color: '#909090', metal: true,  sourceRef: 'asmRefractory',      roles: ['object', 'surface'], roughness: 0.15 },
+  magnesium:  { label: 'Magnesium (Mg)',    density: 1738,  E: 45e9,    nu: 0.35, HV: 30,   color: '#c4c4b8', metal: true,  sourceRef: 'asmAlloySupplement', roles: ['object', 'surface'], roughness: 0.18 },
+
+  // Promoted from the reference workbook's "Provisional Materials" / "Additional
+  // Candidate Materials" staging sheets into its main Material Properties list
+  // (their "(proposed)" role tag was dropped there to match). Cast iron has a
+  // real ductile phase, so it runs through the same validated formula as the 18
+  // elements above; the other five are brittle ceramics/rock or polymers
+  // outside that model's range, so HV is left null and their restitution/
+  // friction fall back to a flagged literature-informed estimate — see
+  // SOURCES.expandedRosterEMHCardarelli / SOURCES.castIronValidated.
+  castIron: { label: 'Cast Iron (gray)',        density: 7400, E: 124e9, nu: 0.25,  HV: 235,  color: '#3b3b3d', metal: true,  sourceRef: 'castIronValidated',           roles: ['object', 'surface'], roughness: 0.2 },
+  granite:  { label: 'Granite',                 density: 2700, E: 55e9,  nu: null,  HV: null, color: '#8c8478', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.35, restitutionEstimate: 0.75, frictionEstimate: 0.5 },
+  pmma:     { label: 'PMMA (Acrylic)',          density: 1185, E: 3.06e9, nu: null, HV: null, color: '#cfe3e6', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.6, frictionEstimate: 0.35 },
+  sapphire: { label: 'Sapphire / Alumina (Corundum)', density: 3975, E: 398e9, nu: 0.24, HV: null, color: '#eae3d6', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.85, frictionEstimate: 0.2 },
+  nylon:    { label: 'Nylon 6,6',               density: 1140, E: 3.3e9, nu: 0.43,  HV: null, color: '#e3d9c6', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.1, restitutionEstimate: 0.45, frictionEstimate: 0.3 },
+  ptfe:     { label: 'PTFE (Teflon)',           density: 2215, E: 0.62e9, nu: null, HV: null, color: '#f2f2ef', metal: false, sourceRef: 'expandedRosterEMHCardarelli', roles: ['object', 'surface'], roughness: 0.05, restitutionEstimate: 0.2, frictionEstimate: 0.05 },
+
+  // 18 named wood species (16 hardwood/softwood species plus White Oak and
+  // Northern Red Oak) — USDA Wood Handbook, Table 4-3a, 12% MC. density is
+  // specific gravity x 1000; E is parallel-to-grain static bending MOE. Wood
+  // is anisotropic and non-ductile (HV left null, same "no formula" category
+  // as granite/sapphire — see SOURCES.usdaWoodHandbook), so restitutionEstimate
+  // is a density-based interpolation and frictionEstimate is anchored on real
+  // CRC oak-on-oak sliding friction; the two oak entries additionally get a
+  // direct CRC_FRICTION self-pair entry instead of relying on the estimate.
+  ashWhite:        { label: 'Ash, white',              density: 600,  E: 12e9,   nu: null, HV: null, color: '#d8c9a3', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.58, frictionEstimate: 0.4 },
+  beechAmerican:   { label: 'Beech, American',         density: 640,  E: 11.9e9, nu: null, HV: null, color: '#e8d4a0', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.60, frictionEstimate: 0.4 },
+  birchYellow:     { label: 'Birch, yellow',           density: 620,  E: 13.9e9, nu: null, HV: null, color: '#e6c78c', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.59, frictionEstimate: 0.4 },
+  cherryBlack:     { label: 'Cherry, black',           density: 500,  E: 10.3e9, nu: null, HV: null, color: '#7a3b2e', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.53, frictionEstimate: 0.4 },
+  hickoryShagbark: { label: 'Hickory, shagbark',       density: 720,  E: 14.9e9, nu: null, HV: null, color: '#c9a066', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.64, frictionEstimate: 0.4 },
+  mapleSugar:      { label: 'Maple, sugar',            density: 630,  E: 12.6e9, nu: null, HV: null, color: '#e8d9b5', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.59, frictionEstimate: 0.4 },
+  mapleRed:        { label: 'Maple, red',              density: 540,  E: 11.3e9, nu: null, HV: null, color: '#d9b98a', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.55, frictionEstimate: 0.4 },
+  walnutBlack:     { label: 'Walnut, black',           density: 550,  E: 11.6e9, nu: null, HV: null, color: '#5a3a29', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.55, frictionEstimate: 0.4 },
+  yellowPoplar:    { label: 'Yellow-poplar',           density: 420,  E: 10.9e9, nu: null, HV: null, color: '#cbb98a', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.49, frictionEstimate: 0.4 },
+  douglasFirCoast: { label: 'Douglas-fir, Coast',      density: 480,  E: 13.4e9, nu: null, HV: null, color: '#c08a52', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.52, frictionEstimate: 0.4 },
+  pineLoblolly:    { label: 'Pine, loblolly',          density: 510,  E: 12.3e9, nu: null, HV: null, color: '#d9a96b', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.53, frictionEstimate: 0.4 },
+  pineLongleaf:    { label: 'Pine, longleaf',          density: 590,  E: 13.7e9, nu: null, HV: null, color: '#c99a5c', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.57, frictionEstimate: 0.4 },
+  pinePonderosa:   { label: 'Pine, ponderosa',         density: 400,  E: 8.9e9,  nu: null, HV: null, color: '#e0b784', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.48, frictionEstimate: 0.4 },
+  spruceSitka:     { label: 'Spruce, Sitka',           density: 360,  E: 9.9e9,  nu: null, HV: null, color: '#e8dcc0', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.46, frictionEstimate: 0.4 },
+  redwoodOldGrowth:{ label: 'Redwood, old-growth',     density: 400,  E: 9.2e9,  nu: null, HV: null, color: '#8b4535', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.48, frictionEstimate: 0.4 },
+  cedarWesternRed: { label: 'Cedar, western red',      density: 320,  E: 7.7e9,  nu: null, HV: null, color: '#a85c3a', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.44, frictionEstimate: 0.4 },
+  oakWhite:        { label: 'Oak, white',              density: 680,  E: 12.3e9, nu: null, HV: null, color: '#c8a672', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.62, frictionEstimate: 0.4 },
+  oakNorthernRed:  { label: 'Oak, northern red',       density: 630,  E: 12.5e9, nu: null, HV: null, color: '#b8875a', metal: false, sourceRef: 'usdaWoodHandbook', roles: ['object', 'surface'], roughness: 0.22, restitutionEstimate: 0.59, frictionEstimate: 0.4 },
 };
 
-// Woods don't share a single hardness metric with metals, so we derive
-// restitution/friction from Janka hardness (lbf) instead of hand-tuning each species.
-// The friction endpoints (0.3-0.55) match the compiled wood-friction range in
-// woodFrictionCompiled. The restitution endpoints are a modeled interpolation
-// between a soft/porous low-bounce limit and the verified "wooden ball on concrete"
-// drop-test value (0.603, physicsFactbookDropTest) as the dense-hardwood limit —
-// there's no published restitution-vs-hardness curve for wood, so the curve shape
-// itself is our own model, anchored at one verified endpoint.
-function resolveMaterialPhysics(mat) {
-  if (mat.janka !== undefined) {
-    const t = Math.min(1, mat.janka / 3600);
-    return { restitution: 0.15 + t * 0.4, friction: 0.55 - t * 0.25 };
-  }
-  return { restitution: mat.restitution, friction: mat.friction };
+const OBJECT_MATERIAL_KEYS = Object.keys(MATERIAL_LIBRARY).filter((k) => MATERIAL_LIBRARY[k].roles.includes('object'));
+const SURFACE_MATERIAL_KEYS = Object.keys(MATERIAL_LIBRARY).filter((k) => MATERIAL_LIBRARY[k].roles.includes('surface'));
+
+const CUSTOM_MATERIAL = {
+  label: 'Custom (Hrifa material)', density: 2000, restitution: 0.4, friction: 0.4, color: '#5aa9e6', metal: false, custom: true,
+};
+
+const MATERIALS = {};
+OBJECT_MATERIAL_KEYS.forEach((k) => { MATERIALS[k] = MATERIAL_LIBRARY[k]; });
+MATERIALS.custom = CUSTOM_MATERIAL;
+
+// ---------- Impact physics: self-COR, composite COR, friction ----------
+// See SOURCES.strongeJohnsonModel / SOURCES.crcFriction / SOURCES.frictionFallback.
+
+const G = 9.82; // matches world gravity magnitude used below
+const DEFAULT_RESTITUTION_ESTIMATE = 0.3; // safety-net only — every current HV-less material sets its own restitutionEstimate
+const DEFAULT_FRICTION_ESTIMATE = 0.3; // safety-net only — every current HV-less material sets its own frictionEstimate
+
+function yieldStressPa(HV) {
+  return (HV * 9.80665 / 3) * 1e6; // Tabor: Y = HV / 3, HV in kgf/mm^2 -> MPa -> Pa
 }
 
+// Self-coefficient-of-restitution of a material dropped on itself, as a
+// function of actual impact speed (m/s). Below the yield-onset velocity v_Y,
+// impact is effectively elastic (e~1); above it, e falls off as (v_Y/v)^(1/4).
+// Returns null for a material with no HV (outside this model's validated
+// ductile-metal range) — the caller falls back to that material's own
+// restitutionEstimate (see compositeCOR).
+function selfCOR(mat, impactSpeed) {
+  if (!mat.HV) return null;
+  const Y = yieldStressPa(mat.HV);
+  const Estar = mat.E / (2 * (1 - mat.nu * mat.nu));
+  const vY = Math.sqrt((29.55 * Y * Math.pow(Y / Estar, 4)) / mat.density);
+  if (impactSpeed <= vY) return 1;
+  return Math.min(1, Math.pow(vY / impactSpeed, 0.25));
+}
+
+// Energetic composite COR for an object of material A landing on a surface of
+// material B (Coaplen, Stronge & Ravani 2004): e^2 = (e1^2/k1 + e2^2/k2) /
+// (1/k1 + 1/k2), with contact stiffness k_i ~ Y_i in the fully-plastic regime
+// this project's impact speeds always fall in. If either material has no HV
+// (e.g. graphite, or a future fabric/paper surface), its own flagged
+// restitutionEstimate stands in for that side instead of the formula.
+function compositeCOR(matA, matB, impactSpeed) {
+  const eA = selfCOR(matA, impactSpeed);
+  const eB = selfCOR(matB, impactSpeed);
+  const fallbackA = matA.restitutionEstimate ?? DEFAULT_RESTITUTION_ESTIMATE;
+  const fallbackB = matB.restitutionEstimate ?? DEFAULT_RESTITUTION_ESTIMATE;
+  if (eA == null && eB == null) return clamp01((fallbackA + fallbackB) / 2);
+  if (eA == null) return clamp01((fallbackA + eB) / 2);
+  if (eB == null) return clamp01((fallbackB + eA) / 2);
+  const YA = matA.HV, YB = matB.HV; // ratio-only — any consistent unit works
+  return Math.sqrt((eA * eA / YA + eB * eB / YB) / (1 / YA + 1 / YB));
+}
+
+// Real measured dry-sliding friction (CRC Handbook of Chemistry and Physics),
+// keyed 'objectKey|surfaceKey' (iron surface = mild-steel proxy throughout).
+const CRC_FRICTION = {
+  'aluminum|aluminum': 1.4,
+  'aluminum|iron': 0.47,
+  'copper|copper': 1.6,
+  'copper|iron': 0.36,
+  'nickel|nickel': 0.53,
+  'nickel|iron': 0.64,
+  'zinc|iron': 0.21,
+  'tin|iron': 0.32,
+  'lead|iron': 0.95,
+  'iron|iron': 0.57,
+  'tungsten|iron': 0.5,
+  'castIron|castIron': 0.15,
+  'nylon|nylon': 0.2,
+  'nylon|iron': 0.4,
+  'ptfe|ptfe': 0.04,
+  'ptfe|iron': 0.04,
+  'sapphire|sapphire': 0.2,
+  // Real measured oak-on-oak dry sliding friction (CRC), parallel-to-grain
+  // value (0.48); perpendicular-to-grain (0.32) and both static figures
+  // (0.62/0.54) are documented in SOURCES.usdaWoodHandbook but not modeled
+  // separately since this app doesn't track grain orientation. CRC doesn't
+  // distinguish oak species, so the same measurement applies to both.
+  'oakWhite|oakWhite': 0.48,
+  'oakNorthernRed|oakNorthernRed': 0.48,
+  'oakWhite|oakNorthernRed': 0.48,
+  'oakNorthernRed|oakWhite': 0.48,
+};
+const FRICTION_HV_MIN = 3.9, FRICTION_HV_MAX = 225; // this roster's Vickers-hardness range (tin .. zirconium estimate)
+
+function frictionFallback(objMat) {
+  if (!objMat.HV) return objMat.frictionEstimate ?? DEFAULT_FRICTION_ESTIMATE;
+  const t = clamp01((Math.log10(objMat.HV) - Math.log10(FRICTION_HV_MIN)) / (Math.log10(FRICTION_HV_MAX) - Math.log10(FRICTION_HV_MIN)));
+  return 0.6 - 0.45 * t;
+}
+
+function frictionFor(objKey, surfKey, objMat) {
+  const direct = CRC_FRICTION[`${objKey}|${surfKey}`];
+  return direct !== undefined ? direct : frictionFallback(objMat);
+}
+
+// Single source of truth for (object material key, surface material key, drop
+// height in meters) -> {restitution, friction}. Used by both the live info
+// panel and the actual physics body at drop time, so what's shown before
+// dropping is exactly what gets simulated.
+function resolvePairPhysics(objKey, surfKey, dropHeightM) {
+  const objMat = MATERIAL_LIBRARY[objKey];
+  const surfMat = MATERIAL_LIBRARY[surfKey];
+  const impactSpeed = Math.sqrt(2 * G * Math.max(0, dropHeightM));
+  const restitution = compositeCOR(objMat, surfMat, impactSpeed);
+  const friction = frictionFor(objKey, surfKey, objMat);
+  return { restitution, friction };
+}
+
+// Listed in this order so "Cube" is the default selection (populateSelects
+// appends options in insertion order, and <select> defaults to the first) —
+// matches the project's actual 20mm-cube drop simulation. "Target size" means
+// edge length for Cube, long-axis length for the 2:1 prism, diameter for
+// Sphere/Ovoid, and circumdiameter for the Platonic/Archimedean/Catalan/
+// Johnson solids. `group` drives the <optgroup> the shape select is split
+// into (see populateSelects) — needed once the Archimedean/Catalan/Johnson
+// sets (118 more shapes, see POLYHEDRA_DATA below) turn this from 9 options
+// into ~127.
 const PRIMITIVE_SHAPES = {
-  sphere: { label: 'Sphere' },
-  box: { label: 'Box' },
-  cylinder: { label: 'Cylinder (coin/disc)' },
+  cube: { label: 'Cube', group: 'Basic' },
+  sphere: { label: 'Sphere', group: 'Basic' },
+  rect2to1: { label: 'Rectangular prism (2:1)', group: 'Basic' },
+  ovoid: { label: 'Ovoid (ellipsoid)', group: 'Basic' },
+  cylinder: { label: 'Cylinder (coin/disc)', group: 'Basic' },
+  tetrahedron: { label: 'Tetrahedron', group: 'Platonic solids' },
+  octahedron: { label: 'Octahedron', group: 'Platonic solids' },
+  dodecahedron: { label: 'Dodecahedron', group: 'Platonic solids' },
+  icosahedron: { label: 'Icosahedron', group: 'Platonic solids' },
 };
 
-// friction/restitution are literature-informed midpoints (see SOURCES); roughness
-// is purely a visual/physical bump-scale design parameter with no literature
-// source — it drives the heightfield amplitude and canvas texture density, not a
-// measured surface-finish quantity.
-const SURFACE_PRESETS = {
-  blanket: {
-    label: 'Blanket', friction: 0.4, roughness: 0.5, restitution: 0.05, base: '#4d3a63', accent: '#6b4f8a',
-    frictionRef: 'textileFriction', restitutionRef: 'softSurfaceBounce',
-  },
-  grass: {
-    label: 'Grass', friction: 0.55, roughness: 0.75, restitution: 0.15, base: '#356134', accent: '#4c8c4a',
-    frictionRef: 'turfFriction', restitutionRef: 'engToolboxRestitution',
-  },
-  tile: {
-    label: 'Tile', friction: 0.2, roughness: 0.05, restitution: 0.85, base: '#bcbcb4', accent: '#d8d8d0',
-    frictionRef: 'glassFrictionProxy', restitutionRef: 'iso10545TileRestitution',
-  },
-  paper: {
-    label: 'Paper', friction: 0.35, roughness: 0.1, restitution: 0.2, base: '#e4ddc6', accent: '#f5f0e1',
-    frictionRef: 'engToolboxFriction', restitutionRef: 'engToolboxRestitution',
-  },
-  wood: {
-    label: 'Wood', friction: 0.45, roughness: 0.2, restitution: 0.55, base: '#8a5f37', accent: '#b5834f',
-    frictionRef: 'woodFrictionCompiled', restitutionRef: 'physicsFactbookDropTest',
-  },
-  concrete: {
-    label: 'Concrete', friction: 0.6, roughness: 0.6, restitution: 0.6, base: '#7d7d75', accent: '#9a9a92',
-    frictionRef: 'hypertextboxConcreteFriction', restitutionRef: 'physicsFactbookDropTest',
-  },
+// Populated at boot from polyhedra-data.json (fetched alongside RAPIER.init()
+// — see boot()) — 8 prisms, 8 antiprisms, 13 Archimedean solids, 13 Catalan
+// solids (the polar dual of each Archimedean solid — this project computed
+// those itself since the source dataset has no Catalan category), and all 92
+// Johnson solids (134 shapes total). Source: github.com/finnp/polyhedra
+// (derived from George Hart's "Virtual Polyhedra" data). Flat map keyed by
+// shape id -> { label, group, vertices }; vertices are pre-normalized
+// (recentered on centroid, scaled so circumradius = 0.5) so every entry can
+// share the exact same s/2 circumradius convention as the hardcoded Platonic
+// solids above — see buildPrimitiveGeometryAndShape() and
+// estimateBoundingRadius(). Stays {} (shapes just don't appear) if the fetch
+// fails, so a missing file can't crash the app.
+const POLYHEDRA_DATA = {};
+const POLYHEDRA_GROUP_LABELS = {
+  prisms: 'Prisms',
+  antiprisms: 'Antiprisms',
+  archimedean: 'Archimedean solids',
+  catalan: 'Catalan solids',
+  johnson: 'Johnson solids',
 };
+
+async function loadPolyhedraData() {
+  try {
+    const res = await fetch('./polyhedra-data.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    Object.entries(POLYHEDRA_GROUP_LABELS).forEach(([source, groupLabel]) => {
+      Object.entries(data[source] || {}).forEach(([key, entry]) => {
+        POLYHEDRA_DATA[key] = { label: entry.label, group: groupLabel, vertices: entry.vertices };
+      });
+    });
+  } catch (err) {
+    console.warn('polyhedra-data.json failed to load — Archimedean/Catalan/Johnson shapes will be unavailable.', err);
+  }
+}
+
+// Ovoid is approximated as a smooth prolate-spheroid ellipsoid (taller than
+// wide), not a true asymmetric egg curve with one blunter end — flagged here
+// since both the geometry and the bounding-radius estimate below depend on it.
+const OVOID_RX_FACTOR = 0.4;
+const OVOID_RY_FACTOR = 0.575;
+const OVOID_RZ_FACTOR = 0.4;
+
+// Lightens a '#rrggbb' color toward white by `amount` (0-1) — used to derive a
+// surface's canvas-texture accent tint from its own material color, so a new
+// surface material (tile, ceramics, concrete, fabric, paper, ...) doesn't need
+// a hand-picked accent color, just an entry in MATERIAL_LIBRARY.
+function lightenColor(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  const mix = (c) => Math.round(c + (255 - c) * amount);
+  return `#${[mix(r), mix(g), mix(b)].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
+// Every material with role 'surface' in MATERIAL_LIBRARY, ready to drop onto.
+// Friction and restitution are NOT stored here: they depend on the (object,
+// surface, drop height) triple and are computed by resolvePairPhysics().
+const SURFACE_PRESETS = {};
+SURFACE_MATERIAL_KEYS.forEach((key) => {
+  const mat = MATERIAL_LIBRARY[key];
+  SURFACE_PRESETS[key] = {
+    label: mat.label,
+    materialKey: key,
+    roughness: mat.roughness ?? 0.15,
+    base: mat.color,
+    accent: lightenColor(mat.color, 0.2),
+  };
+});
 
 const TEXTURE_MULT = {
   smooth: { friction: 0.75, roughness: 0.4 },
@@ -222,7 +406,9 @@ boot();
 
 async function boot() {
   try {
-    await RAPIER.init();
+    // Run in parallel — the polyhedra fetch is a small local file and
+    // shouldn't gate RAPIER's (much slower) WASM init.
+    await Promise.all([RAPIER.init(), loadPolyhedraData()]);
     init();
   } catch (err) {
     const box = document.createElement('div');
@@ -301,6 +487,7 @@ function wireDom() {
   heightSlider.addEventListener('input', () => {
     heightValue.textContent = `${parseFloat(heightSlider.value).toFixed(1)} m`;
     updatePreview();
+    updateMaterialInfo();
   });
   speedSlider.addEventListener('input', () => {
     speedValue.textContent = `${parseFloat(speedSlider.value).toFixed(1)}×`;
@@ -312,6 +499,8 @@ function wireDom() {
   textureSelect.addEventListener('change', drawGroundTexture);
   surfaceSelect.addEventListener('change', updateSurfaceInfo);
   textureSelect.addEventListener('change', updateSurfaceInfo);
+  surfaceSelect.addEventListener('change', updateMaterialInfo);
+  textureSelect.addEventListener('change', updateMaterialInfo);
   colsInput.addEventListener('change', drawGroundTexture);
   rowsInput.addEventListener('change', drawGroundTexture);
 
@@ -361,18 +550,46 @@ function populateSelects() {
     surfaceSelect.appendChild(opt);
   });
 
-  Object.entries(PRIMITIVE_SHAPES).forEach(([key, preset]) => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = preset.label;
-    shapeSelect.appendChild(opt);
-  });
+  populateShapeSelect();
 
   Object.entries(MATERIALS).forEach(([key, preset]) => {
     const opt = document.createElement('option');
     opt.value = key;
     opt.textContent = preset.label;
     materialSelect.appendChild(opt);
+  });
+}
+
+// Builds the shape <select> as a series of <optgroup>s rather than one flat
+// list — going from 9 shapes to ~127 (9 basic/Platonic + 13 Archimedean + 13
+// Catalan + 92 Johnson) makes a flat list unusable. PRIMITIVE_SHAPES supplies
+// "Basic"/"Platonic solids"; POLYHEDRA_DATA (fetched at boot, may be empty if
+// that fetch failed) supplies the other three groups. Group order here is the
+// display order.
+function populateShapeSelect() {
+  const groupOrder = ['Basic', 'Platonic solids', 'Prisms', 'Antiprisms', 'Archimedean solids', 'Catalan solids', 'Johnson solids'];
+  const byGroup = {};
+  groupOrder.forEach((g) => { byGroup[g] = []; });
+
+  Object.entries(PRIMITIVE_SHAPES).forEach(([key, preset]) => {
+    byGroup[preset.group].push({ key, label: preset.label });
+  });
+  Object.entries(POLYHEDRA_DATA).forEach(([key, entry]) => {
+    byGroup[entry.group].push({ key, label: entry.label });
+  });
+
+  groupOrder.forEach((groupLabel) => {
+    const entries = byGroup[groupLabel];
+    if (entries.length === 0) return; // e.g. Archimedean/Catalan/Johnson if the fetch failed
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = groupLabel;
+    entries.forEach(({ key, label }) => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = label;
+      optgroup.appendChild(opt);
+    });
+    shapeSelect.appendChild(optgroup);
   });
 }
 
@@ -385,8 +602,8 @@ function getSurface() {
   const mult = TEXTURE_MULT[textureSelect.value];
   return {
     ...preset,
-    friction: preset.friction * mult.friction,
     roughness: preset.roughness * mult.roughness,
+    frictionMult: mult.friction, // applied to the computed pair friction, not stored on the preset
   };
 }
 
@@ -445,11 +662,18 @@ function setupScene() {
 }
 
 // Keeps the canvas a perfect square sized to fill the stage panel's available
-// height (the binding constraint once the side panels claim their width),
-// rather than a fixed box with leftover padding around it.
+// space, capped by WHICHEVER of width/height is smaller — not just height.
+// The stage's own clientWidth already reflects the CSS grid's minmax(280px, 1fr)
+// middle column (see styles.css), so this can't grow past what's actually left
+// after the two 250px/300px side panels — that's what previously caused a
+// horizontal scrollbar on wide-but-short-content windows, since the square was
+// sized purely from clientHeight and the grid track (max-content) let it force
+// the row wider than the viewport instead of shrinking to fit.
 function resizeStage() {
   const stageEl = sceneContainerEl.parentElement;
-  const size = Math.max(280, Math.floor(stageEl.clientHeight || window.innerHeight * 0.7));
+  const availableWidth = stageEl.clientWidth || window.innerWidth;
+  const availableHeight = stageEl.clientHeight || window.innerHeight * 0.7;
+  const size = Math.max(280, Math.floor(Math.min(availableWidth, availableHeight)));
   sceneContainerEl.style.width = `${size}px`;
   sceneContainerEl.style.height = `${size}px`;
   camera.aspect = 1;
@@ -621,10 +845,13 @@ function setupPhysicsWorld(surface, angleRad) {
     heights,
     { x: GROUND_SIZE, y: 1, z: GROUND_SIZE }
   )
-    .setFriction(surface.friction)
-    .setRestitution(surface.restitution)
-    .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Average)
-    .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Average);
+    // Zeroed out deliberately: friction/restitution are now computed per
+    // object (see createPhysicsBody/resolvePairPhysics) and injected via the
+    // Max combine rule below, so the ground collider must never win the max.
+    .setFriction(0)
+    .setRestitution(0)
+    .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max)
+    .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max);
   world.createCollider(groundColliderDesc, groundBody);
 
   if (groundMesh) updateGroundVisualGeometry(HEIGHTFIELD_SEGMENTS, HEIGHTFIELD_SEGMENTS, amplitude, seed);
@@ -632,25 +859,100 @@ function setupPhysicsWorld(surface, angleRad) {
 
 // ---------- Shapes ----------
 
+// Flat Float32Array of every vertex position in a geometry — the input format
+// RAPIER.ColliderDesc.convexHull() expects. Shared by the ovoid and Platonic
+// solid shapes below, and mirrors the same extraction already used for
+// imported .obj/.stl meshes (see handleMeshUpload/registerCustomShape).
+function verticesFromGeometry(geom) {
+  const pos = geom.getAttribute('position');
+  const flat = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    flat[i * 3] = pos.getX(i);
+    flat[i * 3 + 1] = pos.getY(i);
+    flat[i * 3 + 2] = pos.getZ(i);
+  }
+  return flat;
+}
+
+function convexColliderFromGeometry(geom) {
+  const desc = RAPIER.ColliderDesc.convexHull(verticesFromGeometry(geom));
+  if (desc) return desc;
+  // Degenerate fallback (shouldn't happen for these built-in convex shapes) —
+  // same bounding-box fallback used for degenerate imported meshes.
+  geom.computeBoundingBox();
+  const size = new THREE.Vector3();
+  geom.boundingBox.getSize(size);
+  return RAPIER.ColliderDesc.cuboid(Math.max(0.005, size.x / 2), Math.max(0.005, size.y / 2), Math.max(0.005, size.z / 2));
+}
+
+function buildEllipsoidGeometry(rx, ry, rz) {
+  const geom = new THREE.SphereGeometry(1, 24, 18);
+  const pos = geom.getAttribute('position');
+  for (let i = 0; i < pos.count; i++) {
+    pos.setXYZ(i, pos.getX(i) * rx, pos.getY(i) * ry, pos.getZ(i) * rz);
+  }
+  pos.needsUpdate = true;
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// Platonic solids (Tetrahedron/Octahedron/Dodecahedron/Icosahedron) and the
+// ovoid have no matching exact Rapier collider primitive, so their physics
+// shape is a convex hull over the same vertices as the rendered geometry —
+// exact for the Platonic solids (Three.js's PolyhedronGeometry is already
+// convex) and a close approximation for the ovoid's smooth surface.
 function buildPrimitiveGeometryAndShape(kind, sizeMeters) {
+  const s = sizeMeters;
   if (kind === 'sphere') {
-    const r = sizeMeters / 2;
+    const r = s / 2;
     return { three: new THREE.SphereGeometry(r, 20, 16), colliderDesc: RAPIER.ColliderDesc.ball(r) };
   }
   if (kind === 'cylinder') {
-    const r = sizeMeters / 2;
-    const hgt = sizeMeters * 0.35;
+    const r = s / 2;
+    const hgt = s * 0.35;
     return {
       three: new THREE.CylinderGeometry(r, r, hgt, 24),
       colliderDesc: RAPIER.ColliderDesc.cylinder(hgt / 2, r),
     };
   }
-  const s = sizeMeters;
-  const depth = s * 0.8;
-  return {
-    three: new THREE.BoxGeometry(s, depth, depth),
-    colliderDesc: RAPIER.ColliderDesc.cuboid(s / 2, depth / 2, depth / 2),
-  };
+  if (kind === 'rect2to1') {
+    // A true 2:1:1 rectangular prism — long axis = target size.
+    const short = s / 2;
+    return { three: new THREE.BoxGeometry(s, short, short), colliderDesc: RAPIER.ColliderDesc.cuboid(s / 2, short / 2, short / 2) };
+  }
+  if (kind === 'ovoid') {
+    const geom = buildEllipsoidGeometry(s * OVOID_RX_FACTOR, s * OVOID_RY_FACTOR, s * OVOID_RZ_FACTOR);
+    return { three: geom, colliderDesc: convexColliderFromGeometry(geom) };
+  }
+  if (kind === 'tetrahedron') {
+    const geom = new THREE.TetrahedronGeometry(s / 2);
+    return { three: geom, colliderDesc: convexColliderFromGeometry(geom) };
+  }
+  if (kind === 'octahedron') {
+    const geom = new THREE.OctahedronGeometry(s / 2);
+    return { three: geom, colliderDesc: convexColliderFromGeometry(geom) };
+  }
+  if (kind === 'dodecahedron') {
+    const geom = new THREE.DodecahedronGeometry(s / 2);
+    return { three: geom, colliderDesc: convexColliderFromGeometry(geom) };
+  }
+  if (kind === 'icosahedron') {
+    const geom = new THREE.IcosahedronGeometry(s / 2);
+    return { three: geom, colliderDesc: convexColliderFromGeometry(geom) };
+  }
+  // Any Archimedean/Catalan/Johnson solid (see POLYHEDRA_DATA) — same convex-
+  // hull-over-vertices approach as the Platonic solids/ovoid above, just with
+  // the vertex list coming from fetched data instead of a Three.js built-in
+  // generator. Pre-normalized to circumradius 0.5, so scaling by `s` alone
+  // reproduces the same "target size = circumdiameter" convention.
+  if (POLYHEDRA_DATA[kind]) {
+    const points = POLYHEDRA_DATA[kind].vertices.map(([x, y, z]) => new THREE.Vector3(x * s, y * s, z * s));
+    const geom = new ConvexGeometry(points);
+    geom.computeVertexNormals();
+    return { three: geom, colliderDesc: convexColliderFromGeometry(geom) };
+  }
+  // 'cube' and any unrecognized legacy kind (e.g. the old 'box') fall through here.
+  return { three: new THREE.BoxGeometry(s, s, s), colliderDesc: RAPIER.ColliderDesc.cuboid(s / 2, s / 2, s / 2) };
 }
 
 function registerCustomShape(name, points) {
@@ -731,60 +1033,66 @@ function updateAdvancedLabels() {
   frictionValue.textContent = parseFloat(frictionSlider.value).toFixed(2);
 }
 
-// Short "(source)" suffix for a friction/restitution pair. Woods cite the compiled
-// wood-friction sources for the friction range but note the restitution curve is
-// our own model (see resolveMaterialPhysics), since no per-species restitution
-// data exists.
-function citeMaterial(preset) {
-  if (preset.custom) return SOURCES.none.short;
-  if (preset.janka !== undefined) return `friction: ${SOURCES.woodFrictionCompiled.short}; restitution: modeled from Janka hardness, not directly measured`;
-  return `friction: ${SOURCES[preset.frictionRef].short}; restitution: ${SOURCES[preset.restitutionRef].short}`;
+// Short "(source)" line for the currently selected object material, resolved
+// against whichever surface is currently selected (restitution/friction are a
+// property of the PAIR, not the object alone — see resolvePairPhysics).
+function citeMaterial(key) {
+  if (key === 'custom') return SOURCES.none.short;
+  const el = MATERIAL_LIBRARY[key];
+  const surfKey = SURFACE_PRESETS[surfaceSelect.value].materialKey;
+  if (el.HV == null) {
+    return `density/modulus: ${SOURCES[el.sourceRef].short}; restitution/friction: ${SOURCES.graphiteEstimate.short}`;
+  }
+  const frictionSrc = CRC_FRICTION[`${key}|${surfKey}`] !== undefined ? SOURCES.crcFriction.short : SOURCES.frictionFallback.short;
+  return `density/modulus/hardness: ${SOURCES[el.sourceRef].short}; restitution: ${SOURCES.strongeJohnsonModel.short}; friction: ${frictionSrc}`;
 }
 
 function updateMaterialInfo() {
-  const preset = MATERIALS[materialSelect.value];
-  customPropsEl.style.display = preset.custom ? 'block' : 'none';
-  let density, restitution, friction, jankaNote = '';
-  if (preset.custom) {
+  const key = materialSelect.value;
+  customPropsEl.style.display = key === 'custom' ? 'block' : 'none';
+  let density, restitution, friction;
+  if (key === 'custom') {
     density = parseFloat(densitySlider.value);
     restitution = parseFloat(hardnessSlider.value);
     friction = parseFloat(frictionSlider.value);
   } else {
-    const phys = resolveMaterialPhysics(preset);
-    density = preset.density;
+    const el = MATERIAL_LIBRARY[key];
+    const surfKey = SURFACE_PRESETS[surfaceSelect.value].materialKey;
+    const dropHeightM = parseFloat(heightSlider.value) || 0;
+    const phys = resolvePairPhysics(key, surfKey, dropHeightM);
+    const mult = TEXTURE_MULT[textureSelect.value].friction;
+    density = el.density;
     restitution = phys.restitution;
-    friction = phys.friction;
-    if (preset.janka !== undefined) jankaNote = ` (Janka ${preset.janka})`;
+    friction = clamp01(phys.friction * mult);
   }
   materialDensityEl.textContent = `${density} kg/m³`;
   materialRestitutionEl.textContent = restitution.toFixed(2);
-  materialFrictionEl.textContent = `${friction.toFixed(2)}${jankaNote}`;
-  materialInfoEl.textContent = citeMaterial(preset);
+  materialFrictionEl.textContent = friction.toFixed(2);
+  materialInfoEl.textContent = citeMaterial(key);
 }
 
 function updateSurfaceInfo() {
   const surface = getSurface();
-  const preset = SURFACE_PRESETS[surfaceSelect.value];
-  surfaceFrictionEl.textContent = surface.friction.toFixed(2);
-  surfaceRestitutionEl.textContent = surface.restitution.toFixed(2);
-  surfaceInfoEl.textContent = `friction: ${SOURCES[preset.frictionRef].short}; restitution: ${SOURCES[preset.restitutionRef].short}`;
+  const el = MATERIAL_LIBRARY[surface.materialKey];
+  surfaceFrictionEl.textContent = 'see Material panel';
+  surfaceRestitutionEl.textContent = 'see Material panel';
+  surfaceInfoEl.textContent = `${el.label} — density/modulus/hardness: ${SOURCES[el.sourceRef].short}. Friction and restitution depend on which object material is dropped on it (composite of both materials' properties), shown in the Material panel once a drop height and object are chosen.`;
 }
 
 function resolveCurrentMaterial() {
   const key = materialSelect.value;
-  const preset = MATERIALS[key];
-  if (preset.custom) {
+  if (key === 'custom') {
     return {
-      label: 'Custom',
+      key: 'custom', custom: true, label: 'Custom',
       density: parseFloat(densitySlider.value),
       restitution: parseFloat(hardnessSlider.value),
       friction: parseFloat(frictionSlider.value),
-      color: preset.color,
+      color: CUSTOM_MATERIAL.color,
       metal: false,
     };
   }
-  const phys = resolveMaterialPhysics(preset);
-  return { label: preset.label, density: preset.density, restitution: phys.restitution, friction: phys.friction, color: preset.color, metal: !!preset.metal };
+  const el = MATERIAL_LIBRARY[key];
+  return { key, label: el.label, density: el.density, color: el.color, metal: !!el.metal };
 }
 
 // ---------- Batch ----------
@@ -793,7 +1101,9 @@ function buildItemDefFromControls() {
   const shapeVal = shapeSelect.value;
   const isMesh = !!customShapes[shapeVal];
   const material = resolveCurrentMaterial();
-  const shapeLabel = isMesh ? customShapes[shapeVal].label : PRIMITIVE_SHAPES[shapeVal].label;
+  const shapeLabel = isMesh
+    ? customShapes[shapeVal].label
+    : (PRIMITIVE_SHAPES[shapeVal] || POLYHEDRA_DATA[shapeVal]).label;
   return {
     shapeKind: isMesh ? 'mesh' : shapeVal,
     meshId: isMesh ? shapeVal : undefined,
@@ -852,9 +1162,18 @@ function jitterMaterialForRoughness(material, roughness) {
 // Creates the Rapier body+collider only — rendering is handled separately via
 // a shared InstancedMesh per batch entry (see createInstancedGroup), since a
 // large batch as one Mesh per object means one draw call per object.
-function createPhysicsBody(itemDef, x, y, z, roughness) {
+// `surface` is the resolved getSurface() result for the round; restitution/
+// friction are resolved HERE (not baked into itemDef at batch-add time) so a
+// mixed-material batch gets the correct pair physics per object, and so
+// changing surface/height after adding items to the batch is still honored.
+function createPhysicsBody(itemDef, x, y, z, surface, dropHeightM) {
   let colliderDesc;
-  const jitteredMaterial = jitterMaterialForRoughness(itemDef.material, roughness);
+  const mat = itemDef.material;
+  const basePhysics = mat.custom
+    ? { restitution: mat.restitution, friction: mat.friction }
+    : resolvePairPhysics(mat.key, surface.materialKey, dropHeightM);
+  const friction = clamp01(basePhysics.friction * (mat.custom ? 1 : surface.frictionMult));
+  const jitteredMaterial = jitterMaterialForRoughness({ friction, restitution: basePhysics.restitution }, surface.roughness);
 
   if (itemDef.shapeKind === 'mesh') {
     const shapeData = customShapes[itemDef.meshId];
@@ -882,11 +1201,14 @@ function createPhysicsBody(itemDef, x, y, z, roughness) {
   }
 
   colliderDesc
-    .setDensity(itemDef.material.density)
+    .setDensity(mat.density)
     .setFriction(jitteredMaterial.friction)
     .setRestitution(jitteredMaterial.restitution)
-    .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Average)
-    .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Average);
+    // Max combine + a zeroed-out ground collider (see setupPhysicsWorld) means
+    // this already-composited pair value is what Rapier actually uses,
+    // regardless of what other materials are in the same batch.
+    .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max)
+    .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max);
 
   const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
   const initialQuat = new THREE.Quaternion().setFromAxisAngle(axis, Math.random() * Math.PI * 2);
@@ -900,9 +1222,9 @@ function createPhysicsBody(itemDef, x, y, z, roughness) {
   const body = world.createRigidBody(bodyDesc);
   world.createCollider(colliderDesc, body);
 
-  if (roughness > 0) {
+  if (surface.roughness > 0) {
     body.setAngvel(
-      { x: (Math.random() - 0.5) * roughness * 4, y: (Math.random() - 0.5) * roughness * 4, z: (Math.random() - 0.5) * roughness * 4 },
+      { x: (Math.random() - 0.5) * surface.roughness * 4, y: (Math.random() - 0.5) * surface.roughness * 4, z: (Math.random() - 0.5) * surface.roughness * 4 },
       true
     );
   }
@@ -962,10 +1284,16 @@ function hideInstance(obj) {
 // than the real shape.
 function estimateBoundingRadius(itemDef) {
   const s = itemDef.sizeMeters;
-  if (itemDef.shapeKind === 'sphere') return s / 2;
-  if (itemDef.shapeKind === 'cylinder') return 0.5 * Math.hypot(s, s * 0.35);
-  if (itemDef.shapeKind === 'mesh') return s * 0.75;
-  const depth = s * 0.8;
+  const kind = itemDef.shapeKind;
+  if (kind === 'sphere') return s / 2;
+  if (kind === 'cylinder') return 0.5 * Math.hypot(s, s * 0.35);
+  if (kind === 'mesh') return s * 0.75;
+  if (kind === 'rect2to1') { const short = s / 2; return 0.5 * Math.hypot(s, short, short); }
+  if (kind === 'ovoid') return s * OVOID_RY_FACTOR; // tallest semi-axis = farthest vertex from center
+  if (kind === 'tetrahedron' || kind === 'octahedron' || kind === 'dodecahedron' || kind === 'icosahedron') return s / 2; // built at exactly this circumradius
+  if (POLYHEDRA_DATA[kind]) return s / 2; // Archimedean/Catalan/Johnson solids — normalized to circumradius 0.5, so s/2 at target size s
+  if (kind === 'cube') return 0.5 * Math.sqrt(3) * s; // half the space diagonal
+  const depth = s * 0.8; // legacy 'box' fallback
   return 0.5 * Math.hypot(s, depth, depth);
 }
 
@@ -1098,6 +1426,7 @@ function dropAll() {
   const spawnPositions = previewObjects.map((p) => ({ x: p.x, y: p.y, z: p.z }));
   clearPreview();
 
+  const dropHeightM = parseFloat(heightSlider.value) || 0;
   let idx = 0;
   batch.forEach((entry) => {
     const instancedMesh = createInstancedGroup(entry.itemDef, entry.count);
@@ -1105,7 +1434,7 @@ function dropAll() {
     for (let i = 0; i < entry.count; i++) {
       const { x, y, z } = spawnPositions[idx];
       idx++;
-      const body = createPhysicsBody(entry.itemDef, x, y, z, surface.roughness);
+      const body = createPhysicsBody(entry.itemDef, x, y, z, surface, dropHeightM);
       activeObjects.push({ body, group: instancedMesh, instanceId: i, scale, settled: false, offSurface: false, stableFrames: 0 });
     }
   });
@@ -1113,7 +1442,10 @@ function dropAll() {
   running = true;
   roundSimSeconds = 0;
   lastResult = null;
-  dropBtn.disabled = true;
+  // Deliberately left enabled (see dropAll's teardownRound() call above): Drop
+  // doubles as an interrupt-and-restart, so a mid-round or just-settled click
+  // (or the D hotkey) always tears down whatever's active and starts fresh
+  // rather than requiring Reset first.
   statusEl.textContent = `Dropping ${activeObjects.length} item(s)…`;
   resultsSummaryEl.textContent = 'Simulating…';
   resultsGridEl.innerHTML = '';
@@ -1163,7 +1495,9 @@ function checkRoundProgress() {
 
 function finishRound(timedOut) {
   running = false;
-  dropBtn.disabled = false;
+  // dropBtn's disabled state is governed solely by renderBatchList() (batch
+  // empty or not) — see the note in dropAll() for why it's never disabled
+  // just because a round is in progress.
 
   activeObjects.forEach((obj) => {
     if (!obj.settled && !obj.offSurface) freezeBody(obj);

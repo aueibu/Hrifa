@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A Stone's Throw — Drop Simulator</title>
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=5">
 <script type="importmap">
 {
   "imports": {
@@ -57,7 +57,7 @@
     <input type="range" id="angleSlider" min="0" max="30" value="0" step="1">
 
     <label for="heightSlider">Drop height: <span id="heightValue">1.0 m</span></label>
-    <input type="range" id="heightSlider" min="0.1" max="4" value="1" step="0.1">
+    <input type="range" id="heightSlider" min="0.1" max="3" value="1" step="0.1">
 
     <label for="speedSlider">Playback speed: <span id="speedValue">1.0&times;</span></label>
     <input type="range" id="speedSlider" min="0.1" max="3" value="1" step="0.1">
@@ -102,8 +102,8 @@
       <label for="shapeSelect">Form</label>
       <select id="shapeSelect"></select>
 
-      <label for="sizeSlider">Target size: <span id="sizeValue">0.06 m</span></label>
-      <input type="range" id="sizeSlider" min="0.01" max="0.3" value="0.06" step="0.01">
+      <label for="sizeSlider">Target size: <span id="sizeValue">0.02 m</span></label>
+      <input type="range" id="sizeSlider" min="0.01" max="0.3" value="0.02" step="0.01">
 
       <div class="divider"><span>or import a mesh</span></div>
       <label for="meshUpload">.obj / .stl file</label>
@@ -128,9 +128,9 @@
     <h2 class="section-title">Results</h2>
     <div class="grid-controls">
       <label for="colsInput">Cols</label>
-      <input type="number" id="colsInput" min="2" max="50" value="6">
+      <input type="number" id="colsInput" min="2" max="50" value="10">
       <label for="rowsInput">Rows</label>
-      <input type="number" id="rowsInput" min="2" max="50" value="6">
+      <input type="number" id="rowsInput" min="2" max="50" value="10">
     </div>
   </div>
   <div id="resultsSummary" class="results-summary">No drops yet.</div>
@@ -139,18 +139,23 @@
 
 <details class="panel references">
   <summary>Friction &amp; restitution references</summary>
-  <p class="status">Materials and surfaces above are dry, room-temperature midpoints drawn from these general engineering references &mdash; real values vary with finish, moisture, and impact speed. Wood restitution and blanket roughness/tile roughness etc. are our own qualitative model, not literature values.</p>
+  <p class="status">Density, elastic modulus, and hardness for the 18 elements, 6 promoted non-metal materials (cast iron, granite, PMMA, sapphire/alumina, nylon, PTFE), and 18 named wood species (16 species plus White Oak and Northern Red Oak — more surface-only materials like tile, concrete, and fabric can be added later the same way) are drawn from the sources below. Every material is available as both an object and a surface. Restitution is COMPUTED per drop (not looked up) from those properties via a validated elastic-plastic yield model, at the actual impact speed for the selected drop height, for every ductile material; friction uses real measured values where available and a hardness-ranked estimate otherwise. Graphite, granite, PMMA, sapphire/alumina, nylon, PTFE, and all wood species are brittle ceramics/rock, polymers, or anisotropic wood outside this model's validated ductile range — their values are flagged literature-informed placeholders, not computed. Real friction/restitution vary with finish, moisture, and impact speed regardless of source; see the project's ASM_Material_Properties_Reference.xlsx reference workbook for the full per-material sourcing and derivation.</p>
   <ul>
-    <li>Engineering ToolBox, &quot;Friction and Friction Coefficients for Various Material Combinations,&quot; engineeringtoolbox.com/friction-coefficients-d_778.html</li>
-    <li>Engineering ToolBox, &quot;Coefficients of Restitution,&quot; engineeringtoolbox.com/restitution-coefficients-d_622.html</li>
-    <li>Avallone &amp; Baumeister (eds.), <em>Marks' Standard Handbook for Mechanical Engineers</em>, 11th ed., Table 3.2.1 (friction coefficients of metals)</li>
-    <li>R. Cross, &quot;The bounce of a ball,&quot; <em>American Journal of Physics</em> 67, 222 (1999)</li>
-    <li>USDA Forest Products Laboratory, <em>Wood Handbook: Wood as an Engineering Material</em>, Ch. 4 (Janka hardness) &amp; Ch. 5 (friction properties)</li>
-    <li>Nigg &amp; Herzog, <em>Biomechanics of the Musculo-Skeletal System</em> &mdash; natural turf traction/friction testing</li>
-    <li>B.S. Gupta, &quot;Friction in Textile Materials,&quot; in <em>Friction in Textile Materials</em> (Woodhead Publishing)</li>
+    <li>ASM Handbook Vol. 1, <em>Properties and Selection: Irons, Steels, and High-Performance Alloys</em></li>
+    <li>ASM Handbook Vol. 2, <em>Properties and Selection: Nonferrous Alloys and Special-Purpose Materials</em> &mdash; &quot;Properties of Pure Metals&quot; and &quot;Refractory Metals and Alloys&quot; articles</li>
+    <li>ASM Handbook Vol. 8, <em>Mechanical Testing and Evaluation</em></li>
+    <li>CRC Handbook of Chemistry and Physics, Internet Edition &mdash; measured dry sliding-friction table</li>
+    <li>W.J. Stronge, <em>Impact Mechanics</em>, 2nd ed. (Cambridge University Press, 2018)</li>
+    <li>K.L. Johnson, <em>Contact Mechanics</em> (Cambridge University Press, 1985)</li>
+    <li>J. Coaplen, W.J. Stronge &amp; B. Ravani, &quot;Work equivalent composite coefficient of restitution,&quot; <em>International Journal of Impact Engineering</em> 30(6), 581&ndash;592 (2004)</li>
+    <li>Engineered Materials Handbook, Desk Edition (compiled Vols. 1&ndash;4) &mdash; cast iron, granite, PMMA, sapphire/alumina, nylon, and PTFE properties</li>
+    <li>F. Cardarelli, <em>Materials Handbook</em>, 3rd ed. (Springer, 2018) &mdash; cast iron, granite, PMMA, sapphire/alumina, nylon, and PTFE properties</li>
+    <li>Tokai Carbon and Olmec isostatic-graphite datasheets (web search, carbon/graphite density &amp; modulus only &mdash; not in any of the above)</li>
+    <li>USDA Forest Products Laboratory, <em>Wood Handbook: Wood as an Engineering Material</em> &mdash; density, elastic modulus, Poisson's ratio (oak species), and CRC-referenced friction for the 18 named wood species</li>
+    <li>George Hart, <em>Virtual Polyhedra</em> data, via the <code>finnp/polyhedra</code> dataset (github.com/finnp/polyhedra) &mdash; vertex coordinates for the 8 prism, 8 antiprism, 13 Archimedean, and 92 Johnson solid shapes; the 13 Catalan solid shapes are computed by this app as the polar dual of each Archimedean solid, not separately sourced</li>
   </ul>
 </details>
 
-<script type="module" src="app.js?v=38"></script>
+<script type="module" src="app.js?v=49"></script>
 </body>
 </html>
