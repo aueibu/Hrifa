@@ -26,15 +26,22 @@
       <div class="group-tools" aria-label="Source groups">
         <label class="group-picker-label" for="sourceGroupSelect">Group</label>
         <select id="sourceGroupSelect" class="group-picker"></select>
-        <button type="button" id="newSourceGroupBtn" class="saved-tool-btn">New group</button>
-        <button type="button" id="editSourceGroupBtn" class="saved-tool-btn" disabled>Edit group</button>
-        <button type="button" id="setDefaultViewBtn" class="saved-tool-btn">Set current as default</button>
-        <button type="button" id="clearDefaultViewBtn" class="saved-tool-btn" hidden>Clear default</button>
+        <details class="compact-menu group-menu">
+          <summary class="compact-menu-trigger" aria-label="Group actions" title="Group actions">&#8942;</summary>
+          <div class="compact-menu-panel">
+            <button type="button" id="newSourceGroupBtn" class="compact-menu-item">New group</button>
+            <button type="button" id="editSourceGroupBtn" class="compact-menu-item" disabled>Edit current group</button>
+            <button type="button" id="setDefaultViewBtn" class="compact-menu-item">Set current as default</button>
+            <button type="button" id="clearDefaultViewBtn" class="compact-menu-item" hidden>Clear default</button>
+          </div>
+        </details>
       </div>
       <div class="saved-tools">
         <button type="button" id="savedFilterBtn" class="filter">Saved <span id="savedCount">0</span></button>
-        <button type="button" id="exportSavedBtn" class="saved-tool-btn">Export saved</button>
-        <label class="saved-tool-btn import-saved-btn">Import saved<input id="importSavedInput" type="file" accept="application/json,.json" hidden /></label>
+        <div id="savedActions" class="saved-actions" hidden>
+          <button type="button" id="exportSavedBtn" class="saved-tool-btn">Export</button>
+          <label class="saved-tool-btn import-saved-btn">Import<input id="importSavedInput" type="file" accept="application/json,.json" hidden /></label>
+        </div>
       </div>
       <div class="view-toggle" id="viewToggle" role="group" aria-label="Layout">
         <button type="button" class="view-btn" data-view="list">List</button>

@@ -15,6 +15,7 @@
   const paneResizeHandleEl = document.querySelector("#paneResizeHandle");
   const savedFilterBtn = document.querySelector("#savedFilterBtn");
   const savedCountEl = document.querySelector("#savedCount");
+  const savedActionsEl = document.querySelector("#savedActions");
   const exportSavedBtn = document.querySelector("#exportSavedBtn");
   const importSavedInput = document.querySelector("#importSavedInput");
   const bookmarkStatusEl = document.querySelector("#bookmarkStatus");
@@ -199,13 +200,14 @@
     const count = bookmarks.size;
     savedCountEl.textContent = count;
     savedFilterBtn.classList.toggle("active", activeSource === "saved");
+    savedActionsEl.hidden = activeSource !== "saved";
     exportSavedBtn.disabled = count === 0;
   }
 
   function renderFilters() {
-    const sources = ["all", ...sourceNames()];
+    const sources = sourceNames();
     filtersEl.innerHTML = "";
-    sources.forEach((source) => {
+    ["all"].forEach((source) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `filter${source === activeSource ? " active" : ""}`;
@@ -218,6 +220,31 @@
       });
       filtersEl.append(button);
     });
+    if (sources.length) {
+      const overflow = document.createElement("details");
+      overflow.className = "source-overflow";
+      const summary = document.createElement("summary");
+      summary.className = "filter source-overflow-trigger";
+      summary.textContent = "Sources";
+      overflow.append(summary);
+      const menu = document.createElement("div");
+      menu.className = "source-overflow-menu";
+      sources.forEach((source) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "source-overflow-item";
+        button.textContent = source;
+        button.addEventListener("click", () => {
+          activeSource = source;
+          columnPages.clear();
+          renderFilters();
+          renderItems();
+        });
+        menu.append(button);
+      });
+      overflow.append(menu);
+      filtersEl.append(overflow);
+    }
     renderSavedTools();
     renderGroupTools();
   }
@@ -275,6 +302,7 @@
           <div>
             <div class="pane-meta"><span class="item-source">${escapeHtml(item.source)}</span><span>${relativeTime(item.date)}</span></div>
             <h2>${escapeHtml(item.title)}</h2>
+            <a class="pane-open-original" href="${escapeAttr(item.link)}" target="_blank" rel="noopener">Open original on ${escapeHtml(item.source)} &rarr;</a>
           </div>
           <div class="pane-actions">
             <div class="reading-mode-toggle" role="group" aria-label="Reading mode">

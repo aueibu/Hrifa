@@ -26,7 +26,24 @@ html,body{margin:0;min-height:100%;background:var(--neutral-surface-bg);color:va
 .group-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .group-picker-label{font-family:"DM Mono",ui-monospace,monospace;font-size:11px;color:var(--neutral-text-muted);text-transform:uppercase;letter-spacing:.06em}
 .group-picker{min-width:130px;max-width:210px;padding:5px 25px 5px 9px;border:1px solid var(--neutral-border);border-radius:6px;background:var(--neutral-surface-bg);color:var(--neutral-text);font:500 12px Figtree,sans-serif}
+.source-overflow{position:relative}
+.source-overflow summary{list-style:none}
+.source-overflow summary::-webkit-details-marker,.compact-menu summary::-webkit-details-marker{display:none}
+.source-overflow-trigger{display:block}
+.source-overflow-menu,.compact-menu-panel{position:absolute;z-index:20;top:calc(100% + 6px);right:0;min-width:180px;padding:5px;border:1px solid var(--neutral-border-strong);border-radius:6px;background:var(--neutral-surface-raised);box-shadow:0 10px 24px color-mix(in srgb,var(--neutral-shadow) 22%,transparent)}
+.source-overflow-menu{max-height:min(360px,60vh);overflow-y:auto}
+.source-overflow-item,.compact-menu-item{display:block;width:100%;padding:7px 9px;border:0;border-radius:4px;background:transparent;color:var(--neutral-text);font:500 12px Figtree,sans-serif;text-align:left;cursor:pointer}
+.source-overflow-item:hover,.compact-menu-item:hover:not(:disabled){background:color-mix(in srgb,var(--chrome-accent) 12%,transparent);color:var(--chrome-accent)}
+.compact-menu{position:relative}
+.compact-menu-trigger{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--neutral-border);border-radius:6px;color:var(--neutral-text-muted);font-size:19px;line-height:1;cursor:pointer;list-style:none}
+.compact-menu-trigger:hover{border-color:var(--chrome-accent);color:var(--chrome-accent)}
+.compact-menu-item:disabled{opacity:.45;cursor:default}
 .saved-tools{display:flex;align-items:center;gap:6px}
+.saved-actions{display:flex;align-items:center;gap:6px}
+
+@media (hover:hover){
+  .source-overflow:hover .source-overflow-menu{display:block}
+}
 .filter{padding:5px 12px;border:1px solid var(--neutral-border);border-radius:999px;background:transparent;color:var(--neutral-text-muted);font:500 12px Figtree,sans-serif;cursor:pointer}
 .filter:hover{border-color:var(--chrome-accent);color:var(--neutral-text)}
 .filter.active{border-color:var(--chrome-accent);color:var(--chrome-accent);background:color-mix(in srgb, var(--chrome-accent) 12%, transparent)}
@@ -125,6 +142,8 @@ html,body{margin:0;min-height:100%;background:var(--neutral-surface-bg);color:va
 .pane-meta{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;font-family:"DM Mono",ui-monospace,monospace;font-size:11px;color:var(--neutral-text-muted)}
 .pane-meta .item-source{color:var(--chrome-accent)}
 .pane-header h2{margin:0;font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.pane-open-original{display:inline-block;margin-top:8px;color:var(--chrome-accent);font:600 12px Figtree,sans-serif;text-decoration:none}
+.pane-open-original:hover{text-decoration:underline}
 .pane-actions{display:flex;align-items:center;gap:8px}
 .reading-mode-toggle{display:flex;overflow:hidden;border:1px solid var(--neutral-border);border-radius:6px}
 .reading-mode-btn{padding:5px 8px;border:0;border-left:1px solid var(--neutral-border);background:transparent;color:var(--neutral-text-muted);font:500 11px Figtree,sans-serif;cursor:pointer}
