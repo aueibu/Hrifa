@@ -11,6 +11,7 @@ const applets = [
   { title: 'Fold Explorer', href: 'polygon-fold-explorer/', category: 'geometry', status: 'experimental', runtime: 'Static browser app', mark: 'fold', description: 'Study folds, reflections, and the generated space of polygonal transformations.' },
   { title: 'Affine Focus', href: 'affine-focus-transform-explorer/', category: 'geometry', status: 'experimental', runtime: 'Static browser app', mark: 'affine', description: 'Explore affine focus transformations and their finite closure graph.' },
   { title: 'Irregular 3D', href: 'polygon-irregular-3d/', category: 'geometry', status: 'experimental', runtime: 'Static browser app', mark: '3d', description: 'Investigate irregular polygons as spatial cross-section sweeps.' },
+  { title: 'Triangle Construction', href: 'three-radii-triangle-construction/', category: 'geometry', status: 'maintained', runtime: 'Static browser app', mark: 'annulus', description: 'Build three linked triangles from a shared pool of three radii using a compass-and-straightedge rule set.' },
   { title: 'Color Checker', href: 'color-checker/', category: 'colour', status: 'maintained', runtime: 'Static browser app', mark: 'colour', description: 'Inspect named colours, contrast, and palette relationships.' },
   { title: 'Palette Chroma', href: 'palette-chroma/', category: 'colour', status: 'maintained', runtime: 'Static browser app', mark: 'colour', description: 'Derive high-chroma colour ramps and inspect their perceptual progression.' },
   { title: 'Username Seeds', href: 'username-seeds/', category: 'language', status: 'maintained', runtime: 'Static browser app', mark: 'words', description: 'Generate time-derived name fragments from editable local word lists.' },
@@ -48,16 +49,24 @@ function renderApplets() {
   ));
   count.textContent = `${visible.length} ${visible.length === 1 ? 'applet' : 'applets'}`;
   grid.innerHTML = visible.length
-    ? visible.map((applet, index) => `<article class="card">
+    ? visible.map((applet, index) => `<article class="card" data-href="${applet.href}">
         <div class="card-top"><span>${applet.category}</span><span class="card-top-right"><span class="status status-${applet.status}">${applet.status}</span><span>${String(index + 1).padStart(2, '0')}</span></span></div>
         <div class="card-mark mark-${applet.mark}" aria-hidden="true"></div>
         <h2>${applet.title}</h2>
         <p>${applet.description}</p>
         <p class="runtime">${applet.runtime}</p>
-        <a class="launch" href="${applet.href}">Open applet</a>
+        <a class="launch" href="${applet.href}" target="_blank" rel="noopener">Open applet</a>
       </article>`).join('')
     : '<p class="empty">No applets match that search.</p>';
 }
+
+// The whole card is clickable; clicks on the launch link already open a
+// new tab natively, so this only needs to handle the rest of the card.
+grid.addEventListener('click', (event) => {
+  const card = event.target.closest('.card');
+  if (!card || event.target.closest('a')) return;
+  window.open(card.dataset.href, '_blank', 'noopener');
+});
 
 search.addEventListener('input', renderApplets);
 renderFilters();
