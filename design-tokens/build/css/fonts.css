@@ -1,0 +1,22 @@
+/**
+ * Hand-authored, not part of the Style Dictionary colour build — see
+ * ../../README.md > Typography. Kept alongside base/light/dark.css because
+ * that is the one directory every applet already links from; there is no
+ * "typography-tokens.json" or build step behind this file, just the shared
+ * @import plus the four role variables from Design Philosophy.md's
+ * typography system.
+ *
+ * Crimson Text (the reading-mode role) is deliberately left out of this
+ * @import: it is meant to be rare, and importing it on every page would
+ * charge that cost to applets that never use it. An applet that adopts
+ * --font-reading should add its own supplemental @import for just that
+ * family, on top of this file.
+ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+:root {
+  --font-display: Fraunces, Georgia, serif; /** Applet titles, large section titles, rare high-emphasis moments. */
+  --font-ui: Figtree, Inter, ui-sans-serif, system-ui, sans-serif; /** Buttons, labels, instructions, paragraphs, dense routine interface text. */
+  --font-mono: "DM Mono", Consolas, ui-monospace, monospace; /** Coordinates, values, operation history, identifiers, tags, counts. */
+  --font-reading: "Crimson Text", Georgia, serif; /** Longer notes, lore, explanations. Import the family locally before use. */
+}

@@ -1,0 +1,206 @@
+<title>Hrifa — icon workshop</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+:root{
+  --paper:#f6efe7;--panel:#ece5e0;--ink:#141111;--rule:#a19d97;--muted:#52514f;
+  --accent:#2c5474;--red:#ea6255;--blue:#2d5cbb;--lime:#d9e966;--magenta:#8d3f6b;
+}
+@media (prefers-color-scheme: dark){
+  :root{--paper:#1e1a1a;--panel:#141111;--ink:#f6efe7;--rule:#696663;--muted:#a19d97;--accent:#a892d7}
+}
+:root[data-theme="dark"]{--paper:#1e1a1a;--panel:#141111;--ink:#f6efe7;--rule:#696663;--muted:#a19d97;--accent:#a892d7}
+:root[data-theme="light"]{--paper:#f6efe7;--panel:#ece5e0;--ink:#141111;--rule:#a19d97;--muted:#52514f;--accent:#2c5474}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Mono",ui-monospace,monospace}
+.wrap{max-width:820px;margin:0 auto;padding:2rem 1.25rem 4rem}
+.intro{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+h1{font-family:Fraunces,Georgia,serif;font-size:clamp(1.8rem,5vw,2.6rem);font-weight:500;letter-spacing:-.02em;margin:0 0 2.5rem;text-wrap:balance}
+
+.applet{margin:0 0 3rem;padding-top:1.75rem;border-top:1px solid var(--rule)}
+.applet:first-of-type{border-top:0;padding-top:0}
+.applet-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 4px;flex-wrap:wrap}
+.applet-name{font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:500;letter-spacing:-.01em;margin:0}
+.applet-note{font-size:11px;color:var(--muted);margin:0 0 16px;max-width:60ch;line-height:1.5}
+
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:60px 24px;margin-top:46px}
+.cand{display:flex;flex-direction:column;align-items:center;gap:6px}
+.stage{position:relative;width:360px;max-width:100%;height:78px;margin:46px 0 56px;background:var(--panel);border:1px solid var(--rule);border-radius:4px;overflow:visible}
+.stage::before,.stage::after{content:"";position:absolute;border:2px solid currentColor;box-sizing:border-box}
+.cand-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:6px}
+.cand-label b{color:var(--ink);font-weight:500}
+
+/* Hrifa Edel — attach polygon relics, mark their edges */
+.he-a::before{width:100px;height:100px;left:60px;top:-6px;transform:rotate(16deg)}
+.he-a::after{width:80px;height:80px;left:170px;top:34px;transform:rotate(-20deg);border-color:var(--red)}
+.he-b::before{width:118px;height:118px;left:76px;top:4px;transform:rotate(8deg)}
+.he-b::after{width:32px;height:32px;left:212px;top:50px;transform:rotate(45deg);border-color:var(--red)}
+.he-c::before{width:108px;height:108px;left:90px;top:10px;transform:rotate(20deg)}
+.he-c::after{width:108px;height:108px;left:118px;top:10px;transform:rotate(-20deg);border-color:var(--red)}
+.he-d::before{width:104px;height:104px;left:54px;top:4px;transform:skew(-16deg,8deg)}
+.he-d::after{width:104px;height:104px;left:158px;top:16px;transform:rotate(24deg);border-color:var(--red)}
+
+/* Annulus Explorer — centered concentric pair */
+.an-a::before{width:126px;height:126px;left:117px;top:-24px;border-radius:50%}
+.an-a::after{width:58px;height:58px;left:151px;top:10px;border-radius:50%;border-color:var(--red)}
+.an-b::before{width:126px;height:126px;left:117px;top:-24px;border-radius:50%;border-width:20px}
+.an-b::after{width:22px;height:22px;left:40px;top:48px;transform:rotate(20deg);border-color:var(--red)}
+.an-c::before{width:160px;height:160px;left:100px;top:-41px}
+.an-c::after{width:70px;height:70px;left:145px;top:4px;border-radius:50%;border-width:16px;border-color:var(--red)}
+.an-d::before{width:126px;height:126px;left:117px;top:-24px;border-radius:50%}
+.an-d::after{width:58px;height:58px;left:151px;top:10px;border-radius:50%;border-style:dashed;border-color:var(--red)}
+
+/* Fold Explorer — dashed polygon, not ellipse */
+.fe-a::before{width:120px;height:120px;left:120px;top:-21px;border-style:dashed}
+.fe-a::after{width:0;height:78px;left:180px;top:0;border-left:2px solid var(--ink);border-top:0;border-right:0;border-bottom:0}
+.fe-b::before{width:110px;height:110px;left:-30px;top:10px;transform:rotate(45deg)}
+.fe-b::after{width:0;height:78px;left:130px;top:0;border-left:2px dashed var(--red);border-top:0;border-right:0;border-bottom:0}
+.fe-c::before{width:96px;height:96px;left:44px;top:-9px;transform:skewY(-12deg)}
+.fe-c::after{width:96px;height:96px;left:220px;top:-9px;transform:skewY(12deg);border-color:var(--red)}
+.fe-d::before{width:126px;height:126px;left:117px;top:-24px;border-style:dashed}
+.fe-d::after{width:58px;height:58px;left:265px;top:-18px;transform:rotate(20deg);border-color:var(--red)}
+
+/* Irregular 3D — cross-section sweep */
+.i3-a::before{width:112px;height:112px;left:45px;top:-17px;transform:skew(-18deg,8deg)}
+.i3-a::after{width:84px;height:84px;left:203px;top:22px;transform:skew(-18deg,8deg);border-color:var(--red)}
+.i3-b::before{width:120px;height:120px;left:36px;top:-21px;transform:skew(-14deg,6deg)}
+.i3-b::after{width:120px;height:120px;left:110px;top:9px;transform:skew(-14deg,6deg);border-color:var(--red)}
+.i3-c::before{width:124px;height:110px;left:44px;top:-11px;border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
+.i3-c::after{width:88px;height:80px;left:200px;top:20px;border-radius:40% 60% 45% 55%/55% 45% 60% 40%;border-color:var(--red)}
+.i3-d::before{width:114px;height:114px;left:56px;top:-18px;transform:rotate(8deg)}
+.i3-d::after{width:74px;height:74px;left:205px;top:15px;transform:rotate(38deg);border-color:var(--red)}
+
+/* Triangle Construction — compass and straightedge */
+.tc-a::before{width:118px;height:118px;left:121px;top:-20px;border-radius:50%;border-style:dashed}
+.tc-a::after{width:0;height:0;left:140px;top:16px;border-left:36px solid transparent;border-right:36px solid transparent;border-bottom:62px solid var(--red);border-top:0}
+.tc-b::before{width:0;height:0;left:90px;top:6px;border-left:44px solid transparent;border-right:44px solid transparent;border-bottom:76px solid var(--ink);border-top:0}
+.tc-b::after{width:0;height:0;left:205px;top:30px;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:52px solid var(--red);border-top:0}
+.tc-c::before{width:16px;height:16px;left:172px;top:50px;border-radius:50%;background:var(--ink);border:0}
+.tc-c::after{width:0;height:0;left:130px;top:10px;border-left:50px solid transparent;border-right:50px solid transparent;border-bottom:50px solid var(--red);border-top:0}
+.tc-d::before{width:118px;height:118px;left:121px;top:-20px;border-radius:50%;border-style:dashed}
+.tc-d::after{width:16px;height:16px;left:172px;top:-6px;border-radius:50%;background:var(--red);border:0;box-shadow:-76px 96px 0 var(--red),76px 96px 0 var(--red)}
+
+/* Palette Chroma — perceptual progression, distinct from Color Checker */
+.pc-a::before{width:14px;height:14px;left:30px;top:52px;border-radius:50%;background:var(--lime);border:0;box-shadow:46px -14px 0 2px var(--red),96px -32px 0 5px var(--blue)}
+.pc-a::after{width:130px;height:1px;left:30px;top:56px;background:var(--rule);border:0;transform:rotate(-18deg)}
+.pc-b::before{width:190px;height:26px;left:30px;top:34px;background:linear-gradient(90deg,var(--lime),var(--red),var(--blue));transform:rotate(-6deg);border:0}
+.pc-b::after{width:40px;height:40px;left:250px;top:8px;border-radius:50%;border-width:5px}
+.pc-c::before{width:110px;height:110px;left:135px;top:-16px;border-radius:50%;border-style:dashed}
+.pc-c::after{width:18px;height:18px;left:262px;top:48px;border-radius:50%;background:var(--red);border:0}
+.pc-d::before{width:96px;height:96px;left:60px;top:-9px;border-radius:50%;border-color:var(--lime)}
+.pc-d::after{width:96px;height:96px;left:170px;top:-9px;border-radius:50%;border-color:var(--red)}
+
+/* Polygon New Tab — browser chrome plus polygon */
+.pn-a::before{width:110px;height:32px;left:34px;top:0;border-radius:12px 12px 0 0}
+.pn-a::after{width:88px;height:88px;left:180px;top:-6px;transform:rotate(18deg);border-color:var(--red)}
+.pn-b::before{width:220px;height:100px;left:70px;top:16px}
+.pn-b::after{width:70px;height:70px;left:250px;top:-30px;transform:rotate(24deg);border-color:var(--red)}
+.pn-c::before{width:130px;height:36px;left:110px;top:0;border-radius:16px 16px 0 0}
+.pn-c::after{width:100px;height:100px;left:118px;top:28px;transform:rotate(30deg);border-color:var(--red)}
+.pn-d::before{width:230px;height:108px;left:56px;top:-15px;border-radius:16px}
+.pn-d::after{width:62px;height:62px;left:149px;top:8px;transform:rotate(15deg);border-color:var(--red)}
+
+/* Custom Reader — curated recency digest */
+.cr-a::before{width:220px;height:80px;left:42px;top:16px;background:repeating-linear-gradient(180deg,var(--ink) 0 3px,transparent 3px 24px);border:0}
+.cr-a::after{width:18px;height:18px;left:28px;top:16px;border-radius:50%;background:var(--red);border:0}
+.cr-b::before{width:100px;height:88px;left:44px;top:12px;transform:skewY(8deg);border-right:0}
+.cr-b::after{width:100px;height:88px;left:180px;top:12px;transform:skewY(-8deg);border-color:var(--red)}
+.cr-c::before{width:220px;height:100px;left:70px;top:6px;border-radius:10px}
+.cr-c::after{width:160px;height:34px;left:100px;top:32px;background:repeating-linear-gradient(180deg,var(--red) 0 3px,transparent 3px 13px);border:0}
+.cr-d::before{width:120px;height:140px;left:120px;top:-12px}
+.cr-d::after{width:36px;height:36px;left:192px;top:-8px;transform:rotate(45deg);background:var(--panel);border-color:var(--red)}
+</style>
+
+<div class="wrap">
+  <p class="intro">Hrifa / workbench — icon workshop</p>
+  <h1>Eight marks to redraw</h1>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Hrifa Edel</p></div>
+    <p class="applet-note">Currently reuses the Focus Vantage mark. Verb: attach — two relic forms meeting at an edge.</p>
+    <div class="row">
+      <div class="cand"><div class="stage he-a"></div><p class="cand-label"><b>A</b> overlapping pair</p></div>
+      <div class="cand"><div class="stage he-b"></div><p class="cand-label"><b>B</b> relic + edge mark</p></div>
+      <div class="cand"><div class="stage he-c"></div><p class="cand-label"><b>C</b> woven symmetric pair</p></div>
+      <div class="cand"><div class="stage he-d"></div><p class="cand-label"><b>D</b> skew meets rotate</p></div>
+    </div>
+  </section>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Annulus Explorer</p></div>
+    <p class="applet-note">Same idea, corrected: both rings share one center. Verb: contain — a ring holding lattice points.</p>
+    <div class="row">
+      <div class="cand"><div class="stage an-a"></div><p class="cand-label"><b>A</b> centered pair (fix)</p></div>
+      <div class="cand"><div class="stage an-b"></div><p class="cand-label"><b>B</b> donut + lattice point</p></div>
+      <div class="cand"><div class="stage an-c"></div><p class="cand-label"><b>C</b> ring inside boundary</p></div>
+      <div class="cand"><div class="stage an-d"></div><p class="cand-label"><b>D</b> dashed inner ring</p></div>
+    </div>
+  </section>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Fold Explorer</p></div>
+    <p class="applet-note">Keeping the dash and the crease, dropping the ellipse for an actual foldable form.</p>
+    <div class="row">
+      <div class="cand"><div class="stage fe-a"></div><p class="cand-label"><b>A</b> dashed square + crease</p></div>
+      <div class="cand"><div class="stage fe-b"></div><p class="cand-label"><b>B</b> clipped wedge + crease</p></div>
+      <div class="cand"><div class="stage fe-c"></div><p class="cand-label"><b>C</b> mirrored halves</p></div>
+      <div class="cand"><div class="stage fe-d"></div><p class="cand-label"><b>D</b> dashed square + flap</p></div>
+    </div>
+  </section>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Irregular 3D</p></div>
+    <p class="applet-note">Verb: sweep — an irregular cross-section extruded or twisted through space.</p>
+    <div class="row">
+      <div class="cand"><div class="stage i3-a"></div><p class="cand-label"><b>A</b> parallel sweep</p></div>
+      <div class="cand"><div class="stage i3-b"></div><p class="cand-label"><b>B</b> layered slices</p></div>
+      <div class="cand"><div class="stage i3-c"></div><p class="cand-label"><b>C</b> irregular blob pair</p></div>
+      <div class="cand"><div class="stage i3-d"></div><p class="cand-label"><b>D</b> rotational twist</p></div>
+    </div>
+  </section>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Triangle Construction</p></div>
+    <p class="applet-note">Currently reuses the Annulus mark. Verb: construct — compass guide plus straightedge triangle.</p>
+    <div class="row">
+      <div class="cand"><div class="stage tc-a"></div><p class="cand-label"><b>A</b> circle + inscribed triangle</p></div>
+      <div class="cand"><div class="stage tc-b"></div><p class="cand-label"><b>B</b> two linked triangles</p></div>
+      <div class="cand"><div class="stage tc-c"></div><p class="cand-label"><b>C</b> shared vertex</p></div>
+      <div class="cand"><div class="stage tc-d"></div><p class="cand-label"><b>D</b> three construction points</p></div>
+    </div>
+  </section>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Palette Chroma</p></div>
+    <p class="applet-note">Currently reuses the Color Checker mark. Verb: progress — a ramp climbing, not a swatch picked.</p>
+    <div class="row">
+      <div class="cand"><div class="stage pc-a"></div><p class="cand-label"><b>A</b> ascending dot ramp</p></div>
+      <div class="cand"><div class="stage pc-b"></div><p class="cand-label"><b>B</b> ramp under a loupe</p></div>
+      <div class="cand"><div class="stage pc-c"></div><p class="cand-label"><b>C</b> hue wheel + point</p></div>
+      <div class="cand"><div class="stage pc-d"></div><p class="cand-label"><b>D</b> overlapping blend</p></div>
+    </div>
+  </section>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Polygon New Tab</p></div>
+    <p class="applet-note">Currently reuses the Focus Vantage mark. Verb: open — browser chrome framing a polygon.</p>
+    <div class="row">
+      <div class="cand"><div class="stage pn-a"></div><p class="cand-label"><b>A</b> tab + separate polygon</p></div>
+      <div class="cand"><div class="stage pn-b"></div><p class="cand-label"><b>B</b> window + peeking polygon</p></div>
+      <div class="cand"><div class="stage pn-c"></div><p class="cand-label"><b>C</b> tab + integrated polygon</p></div>
+      <div class="cand"><div class="stage pn-d"></div><p class="cand-label"><b>D</b> window + inset polygon</p></div>
+    </div>
+  </section>
+
+  <section class="applet">
+    <div class="applet-head"><p class="applet-name">Custom Reader</p></div>
+    <p class="applet-note">Currently reuses the Username Seeds mark. Verb: digest — a curated list, not a single page.</p>
+    <div class="row">
+      <div class="cand"><div class="stage cr-a"></div><p class="cand-label"><b>A</b> line list + bullet</p></div>
+      <div class="cand"><div class="stage cr-b"></div><p class="cand-label"><b>B</b> open book</p></div>
+      <div class="cand"><div class="stage cr-c"></div><p class="cand-label"><b>C</b> article card</p></div>
+      <div class="cand"><div class="stage cr-d"></div><p class="cand-label"><b>D</b> folded-corner page</p></div>
+    </div>
+  </section>
+</div>

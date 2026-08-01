@@ -6,7 +6,7 @@ every cross-frame browser capability.
 
 ## Workbench portal
 
-1. Open the root `index.html` and confirm that 15 applet cards appear.
+1. Open the root `index.html` and confirm that 16 applet cards appear.
 2. Select **simulation** and confirm that Grid Traversal and A Stone's Throw
    remain.
 3. Search for `PDF Ingest`; confirm one card and its `Local Python service`
@@ -35,6 +35,16 @@ every cross-frame browser capability.
 2. Confirm the simulated object settles and its landing result is rendered.
 3. Change one material or surface property and confirm the next run is treated
    as a distinct configuration rather than silently reusing the prior result.
+
+## Triangle Construction
+
+1. In Setup, confirm the three default radii load and Start construction advances to Stage 1.
+2. Drag the A2 or A3 handle and confirm its placement arc/point set updates without shifting A1.
+3. Pick 3 intersection points, confirm T1 locks, and advance through Stage 2 and Stage 3 the same
+   way.
+4. In the finished view, toggle construction circles, anchor points, and vertices, then export SVG
+   and JSON and confirm both downloads are non-empty.
+5. Refresh the page mid-construction and confirm the saved stage and choices are restored.
 
 ## PDF Ingest
 

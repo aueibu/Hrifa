@@ -7,6 +7,8 @@
   const countEl = document.querySelector("#count");
   const listEl = document.querySelector("#itemList");
   const columnBoardEl = document.querySelector("#columnBoard");
+  const pageEl = document.querySelector("#page");
+  const itemsScrollEl = document.querySelector(".items-scroll");
   const viewToggleEl = document.querySelector("#viewToggle");
   const backToStartBtn = document.querySelector("#backToStartBtn");
   const shellEl = document.querySelector(".shell");
@@ -48,6 +50,7 @@
   let sourceGroups = [];
   let defaultState = null;
   let editingGroupId = null;
+  let headerScrollFrame = null;
   let selectedLink = null;
   let readingMode = "reader";
   const columnPages = new Map();
@@ -73,6 +76,18 @@
     // storage unavailable — fall back to list view / no visited history
   }
   let data = { items: [], errors: [], generatedAt: null };
+
+  function syncHeaderDensity() {
+    pageEl.classList.toggle("is-condensed", itemsScrollEl.scrollTop > 32);
+  }
+
+  itemsScrollEl.addEventListener("scroll", () => {
+    if (headerScrollFrame !== null) return;
+    headerScrollFrame = requestAnimationFrame(() => {
+      syncHeaderDensity();
+      headerScrollFrame = null;
+    });
+  }, { passive: true });
 
   function normalizeSourceGroups(value) {
     if (!Array.isArray(value)) return [];
@@ -416,37 +431,58 @@
     listEl.innerHTML = visible.length ? visible.map((item) => itemHtml(item)).join("") : '<li class="empty">No items match that filter.</li>';
   }
 
+  function columnHtml(source, sourceItems) {
+    const totalPages = Math.max(1, Math.ceil(sourceItems.length / COLUMN_PAGE_SIZE));
+    const page = Math.min(columnPages.get(source) || 0, totalPages - 1);
+    const pageItems = sourceItems.slice(page * COLUMN_PAGE_SIZE, page * COLUMN_PAGE_SIZE + COLUMN_PAGE_SIZE);
+    return `
+      <div class="column" data-source="${escapeAttr(source)}">
+        <div class="column-head"><h2>${escapeHtml(source)}</h2><span>${sourceItems.length}</span></div>
+        <ul class="item-list">${pageItems.map((item) => itemHtml(item, { showSource: false })).join("")}</ul>
+        <div class="column-pager">
+          <button type="button" class="pager-btn" data-source="${escapeAttr(source)}" data-dir="-1" ${page === 0 ? "disabled" : ""}>&larr; Prev</button>
+          <span class="pager-status">Page ${page + 1} of ${totalPages}</span>
+          <button type="button" class="pager-btn" data-source="${escapeAttr(source)}" data-dir="1" ${page >= totalPages - 1 ? "disabled" : ""}>Next &rarr;</button>
+        </div>
+      </div>`;
+  }
+
   function renderColumns(visible) {
     listEl.hidden = true;
     columnBoardEl.hidden = false;
     const sources = [...new Set(visible.map((item) => item.source))];
     columnBoardEl.innerHTML = sources.length
-      ? sources
-          .map((source) => {
-            const sourceItems = visible.filter((item) => item.source === source);
-            const totalPages = Math.max(1, Math.ceil(sourceItems.length / COLUMN_PAGE_SIZE));
-            const page = Math.min(columnPages.get(source) || 0, totalPages - 1);
-            const pageItems = sourceItems.slice(page * COLUMN_PAGE_SIZE, page * COLUMN_PAGE_SIZE + COLUMN_PAGE_SIZE);
-            return `
-        <div class="column">
-          <div class="column-head"><h2>${escapeHtml(source)}</h2><span>${sourceItems.length}</span></div>
-          <ul class="item-list">${pageItems.map((item) => itemHtml(item, { showSource: false })).join("")}</ul>
-          <div class="column-pager">
-            <button type="button" class="pager-btn" data-source="${escapeAttr(source)}" data-dir="-1" ${page === 0 ? "disabled" : ""}>&larr; Prev</button>
-            <span class="pager-status">Page ${page + 1} of ${totalPages}</span>
-            <button type="button" class="pager-btn" data-source="${escapeAttr(source)}" data-dir="1" ${page >= totalPages - 1 ? "disabled" : ""}>Next &rarr;</button>
-          </div>
-        </div>`;
-          })
-          .join("")
+      ? sources.map((source) => columnHtml(source, visible.filter((item) => item.source === source))).join("")
       : '<p class="empty">No items match that filter.</p>';
   }
 
-  function renderItems() {
+  function renderColumnPage(source) {
+    const sourceItems = visibleItems().filter((item) => item.source === source);
+    const column = [...columnBoardEl.querySelectorAll(".column")].find((element) => element.dataset.source === source);
+    if (!column || !sourceItems.length) return false;
+    const scrollTop = itemsScrollEl.scrollTop;
+    column.outerHTML = columnHtml(source, sourceItems);
+    itemsScrollEl.scrollTop = scrollTop;
+    syncHeaderDensity();
+    return true;
+  }
+
+  function restoreDigestScroll(scrollTop) {
+    itemsScrollEl.scrollTop = scrollTop;
+    syncHeaderDensity();
+    requestAnimationFrame(() => {
+      itemsScrollEl.scrollTop = scrollTop;
+      syncHeaderDensity();
+    });
+  }
+
+  function renderItems({ preserveScroll = false } = {}) {
+    const scrollTop = preserveScroll ? itemsScrollEl.scrollTop : null;
     const visible = visibleItems();
     countEl.textContent = `${visible.length} ${visible.length === 1 ? "item" : "items"}`;
     if (view === "columns") renderColumns(visible);
     else renderList(visible);
+    if (scrollTop !== null) restoreDigestScroll(scrollTop);
   }
 
   function renderViewToggle() {
@@ -472,7 +508,7 @@
     if (nextLink !== selectedLink) readingMode = "reader";
     selectedLink = nextLink;
     if (selectedLink === link) markVisited(link);
-    renderItems();
+    renderItems({ preserveScroll: true });
     renderReadingPane();
   }
 
@@ -491,7 +527,7 @@
     saveBookmarks();
     if (activeSource === "saved" && !bookmarks.has(link)) selectedLink = null;
     renderSavedTools();
-    renderItems();
+    renderItems({ preserveScroll: true });
     renderReadingPane();
   }
 
@@ -507,8 +543,9 @@
     if (pagerBtn) {
       const source = pagerBtn.dataset.source;
       const dir = Number(pagerBtn.dataset.dir);
+      pagerBtn.blur();
       columnPages.set(source, Math.max(0, (columnPages.get(source) || 0) + dir));
-      renderItems();
+      if (!renderColumnPage(source)) renderItems({ preserveScroll: true });
       return;
     }
     handleItemClick(e);
@@ -516,7 +553,7 @@
 
   backToStartBtn.addEventListener("click", () => {
     columnPages.clear();
-    renderItems();
+    renderItems({ preserveScroll: true });
   });
 
   readingPaneEl.addEventListener("click", (e) => {

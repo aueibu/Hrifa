@@ -1,0 +1,98 @@
+/* ---------------------------------------------------------------------
+   THEME TOKENS — the base palette and the light/dark semantic layer
+   (--neutral-*, --chrome-accent) come from the shared ../design-tokens
+   build (base.css, light.css, dark.css — linked in index.html before
+   this file). See design-tokens/README.md and Design Philosophy.md.
+   The generation colors (--gen-a/b/c) and triangle colors (--tri-t1/
+   t2/t3) are parallel categories, not an idle/hover/active state, so
+   per Design Philosophy > Design tokens > "Three layers" they reference
+   base hues directly rather than reusing a --work-surface-* role.
+   --point-idle is a local override of the same idea: unselected
+   candidate points are drawn directly on top of the A-generation
+   scaffold circles, so it must stay visibly distinct from --gen-a in
+   both themes rather than reusing --neutral-text-muted, which in dark
+   mode happens to share --gray-400 with --gen-a and made the points
+   disappear into the scaffold there.
+   --------------------------------------------------------------------- */
+:root{
+  --gen-a:var(--gray-500);
+  --gen-b:var(--blue-600);
+  --gen-c:var(--green-600);
+  --tri-t1:var(--red-600);
+  --tri-t2:var(--blue-700);
+  --tri-t3:var(--green-700);
+  --point-idle:var(--gray-700);
+}
+[data-theme="dark"]{
+  --gen-a:var(--gray-400);
+  --gen-b:var(--blue-400);
+  --gen-c:var(--green-400);
+  --tri-t1:var(--red-400);
+  --tri-t2:var(--blue-300);
+  --tri-t3:var(--green-300);
+  --point-idle:var(--gray-200);
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  font-family: var(--font-ui);
+  background: var(--neutral-surface-bg); color: var(--neutral-text);
+}
+#app { display: flex; height: 100vh; min-height: 0; }
+#canvasPane {
+  flex: 1 1 auto; display: flex; flex-direction: column;
+  padding: 16px; min-width: 0; min-height: 0;
+}
+#canvasHeader {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+#canvasHeader h1 { font-family: var(--font-display); font-size: 17px; font-weight: 500; margin: 0; letter-spacing: -0.01em; }
+#headerRight { display: flex; align-items: center; gap: 10px; }
+#stageLabel { font-family: var(--font-mono); font-size: 11px; color: var(--neutral-text-muted); }
+button.quiet { background: transparent; padding: 4px 9px; }
+button.icon-button { padding: 4px 8px; font-size: 15px; line-height: 1; }
+#svgWrap {
+  flex: 1 1 auto; min-height: 0; background: var(--neutral-surface-raised); border: 1px solid var(--neutral-border);
+  border-radius: 6px; overflow: hidden; position: relative;
+}
+svg {
+  width: 100%; height: 100%; display: block; cursor: default;
+  -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+  touch-action: none;
+}
+svg text { font-family: var(--font-mono); }
+#sidebar {
+  width: 340px; flex: 0 0 340px; background: var(--neutral-surface-raised);
+  border-left: 1px solid var(--neutral-border); overflow-y: auto; padding: 16px;
+}
+h2.stageTitle { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--chrome-accent); margin: 0 0 10px 0; }
+.block { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--neutral-border); }
+.block:last-child { border-bottom: none; }
+.row { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; gap: 8px; }
+label { font-size: 12px; color: var(--neutral-text); }
+select, input[type=number] {
+  font-size: 12px; padding: 3px 5px; border: 1px solid var(--neutral-border); border-radius: 4px;
+  background: var(--neutral-surface-bg); color: var(--neutral-text);
+}
+button {
+  font-size: 12px; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--neutral-border);
+  background: var(--neutral-surface-bg); cursor: pointer; color: var(--neutral-text);
+}
+button:hover { border-color: var(--chrome-accent); color: var(--chrome-accent); }
+button.primary { background: var(--chrome-accent); border-color: var(--chrome-accent); color: var(--neutral-surface-bg); }
+button.primary:hover { opacity: 0.9; color: var(--neutral-surface-bg); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.dice { padding: 4px 8px; }
+.note { font-size: 11px; color: var(--neutral-text-muted); line-height: 1.4; margin: 4px 0; }
+.valid { color: var(--green-600); }
+.invalid { color: var(--red-600); }
+.pointList { font-size: 11px; color: var(--neutral-text-muted); margin-top: 4px; }
+.selCount { font-weight: 600; }
+.circleDot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
+#footerBtns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.arcTip { font-size: 11px; color: var(--neutral-text-muted); }
+.legend { display:flex; gap:12px; font-size:11px; color:var(--neutral-text-muted); flex-wrap:wrap; margin-top:6px;}
+.legend span { display:flex; align-items:center; gap:4px; }
+.swatch { width:10px; height:2px; display:inline-block; }

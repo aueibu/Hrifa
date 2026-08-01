@@ -15,7 +15,7 @@
   <main class="shell">
     <header class="hero">
       <p class="eyebrow">HRIFA / CUSTOM READER</p>
-      <h1>Today's digest</h1>
+      <h1>Today's Digest</h1>
       <p id="generatedAt" class="generated"></p>
     </header>
 
@@ -25,7 +25,8 @@
       <div class="source-stack">
       <div id="sourceFilters" class="filters"></div>
       <div class="group-tools" aria-label="Source groups">
-        <label class="group-picker-label" for="sourceGroupSelect">Group</label>
+        <label class="sr-only" for="sourceGroupSelect">Group</label>
+        <span class="group-picker-prefix" aria-hidden="true">Group:</span>
         <select id="sourceGroupSelect" class="group-picker"></select>
         <details class="compact-menu group-menu">
           <summary class="compact-menu-trigger" aria-label="Group actions" title="Group actions">&#8942;</summary>
@@ -43,16 +44,18 @@
         <button type="button" class="view-btn" data-view="list">List</button>
         <button type="button" class="view-btn" data-view="columns">Columns</button>
       </div>
-      <button type="button" id="backToStartBtn" class="back-to-start-btn" hidden>&#8617; Back to start</button>
+      <button type="button" id="backToStartBtn" class="back-to-start-btn" aria-label="Reset column pages" title="Reset column pages" hidden>&#8634;</button>
       </div>
-      <div class="saved-tools">
-        <button type="button" id="savedFilterBtn" class="filter">Saved <span id="savedCount">0</span></button>
-        <div id="savedActions" class="saved-actions" hidden>
-          <button type="button" id="exportSavedBtn" class="saved-tool-btn">Export</button>
-          <label class="saved-tool-btn import-saved-btn">Import<input id="importSavedInput" type="file" accept="application/json,.json" hidden /></label>
+      <div class="right-stack">
+        <div class="saved-tools">
+          <button type="button" id="savedFilterBtn" class="filter">Saved <span id="savedCount">0</span></button>
+          <div id="savedActions" class="saved-actions" hidden>
+            <button type="button" id="exportSavedBtn" class="saved-tool-btn">Export</button>
+            <label class="saved-tool-btn import-saved-btn">Import<input id="importSavedInput" type="file" accept="application/json,.json" hidden /></label>
+          </div>
         </div>
+        <p id="count" class="count" aria-live="polite"></p>
       </div>
-      <p id="count" class="count" aria-live="polite"></p>
     </section>
 
     <section aria-label="Digest items" class="items-scroll">

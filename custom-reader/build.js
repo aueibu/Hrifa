@@ -30,6 +30,8 @@ const SOURCES_PATH = path.join(__dirname, "sources.json");
 const OUTPUT_PATH = process.env.READER_OUTPUT_PATH || path.join(__dirname, "feed-data.json");
 const FETCH_TIMEOUT_MS = 15000;
 const FULL_CONTENT_CONCURRENCY = 3;
+const RETENTION_DAYS = 30;
+const MIN_RETAINED_ITEMS_PER_SOURCE = 50;
 // Google News keeps RSS article URLs behind an opaque redirect. Resolve only
 // the newest entries from each opted-in source, in batches against Google, so
 // a daily build does not turn into a broad publisher-page crawl.
@@ -295,6 +297,24 @@ async function mapWithConcurrency(items, limit, worker) {
   return results;
 }
 
+// The feeds themselves are often shallow (especially for low-frequency
+// journals), so retain an archive per source. Keep every item from the last
+// 30 days; once that window is smaller than 50 items, fill the remaining
+// places with the newest older articles. High-volume sources may therefore
+// exceed 50 items, but only when their 30-day window requires it.
+function retainSourceItems(currentItems, previousItems, now = Date.now()) {
+  const currentLinks = new Set(currentItems.map((item) => item.link));
+  const byLink = new Map(currentItems.map((item) => [item.link, item]));
+  previousItems.forEach((item) => {
+    if (!byLink.has(item.link)) byLink.set(item.link, item);
+  });
+  const cutoff = now - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const sorted = [...byLink.values()].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  const recent = sorted.filter((item) => (item.date && new Date(item.date).getTime() >= cutoff) || (currentLinks.has(item.link) && !item.date));
+  const older = sorted.filter((item) => !recent.includes(item));
+  return [...recent, ...older.slice(0, Math.max(0, MIN_RETAINED_ITEMS_PER_SOURCE - recent.length))];
+}
+
 async function main() {
   const sources = JSON.parse(fs.readFileSync(SOURCES_PATH, "utf8"));
 
@@ -322,7 +342,10 @@ async function main() {
 
   const seen = new Set();
   let items = results
-    .flatMap((r) => r.items)
+    .flatMap((result) => retainSourceItems(
+      result.items,
+      previousItemsBySource.get(result.name) || []
+    ))
     .filter((item) => {
       if (seen.has(item.link)) return false;
       seen.add(item.link);

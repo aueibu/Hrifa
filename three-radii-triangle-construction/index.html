@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three-Radii Triangle Construction</title>
+<link rel="stylesheet" href="../design-tokens/build/css/base.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/light.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/dark.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/fonts.css" />
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="canvasPane">
+    <div id="canvasHeader">
+      <h1>Three-Radii Triangle Construction</h1>
+      <div id="headerRight">
+        <div id="stageLabel">Setup</div>
+        <button id="startOverButton" class="quiet icon-button" title="Start over">↺</button>
+        <button id="themeButton" class="quiet" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <div id="svgWrap">
+      <svg id="svg" viewBox="0 0 800 600"></svg>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div id="sidebar"></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
