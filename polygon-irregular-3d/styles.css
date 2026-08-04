@@ -8,7 +8,7 @@
    the four work-surface states, so it references a base hue primitive
    directly rather than a semantic role, same as Grid Traversal's
    token-identity palette. */
-:root{--status-ok:var(--green-300);--shadow:0 16px 40px color-mix(in srgb,var(--neutral-shadow) 25%,transparent)}
+:root{--status-ok:var(--green-300)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--neutral-surface-bg);color:var(--neutral-text);font:13px/1.4 var(--font-ui);min-height:100vh}
 button,input,select{font:inherit;color:inherit}
@@ -23,14 +23,16 @@ button{cursor:pointer}
 .mode-tab,.layout-btn{border:0;background:none;color:var(--neutral-text-muted);padding:9px 12px}
 .mode-tab.active,.layout-btn.active{color:var(--neutral-text);background:var(--neutral-surface-raised);border-bottom:2px solid var(--chrome-accent)}
 .top-actions{margin-left:auto;display:flex;gap:8px}
-.button,.preset-grid button,.export-grid button,.file-button{border:1px solid var(--neutral-border);background:var(--neutral-surface-raised);color:var(--neutral-text);border-radius:3px;padding:8px 10px}
-.button:hover,.preset-grid button:hover,.export-grid button:hover,.file-button:hover{border-color:var(--chrome-accent)}
+.button,.preset-grid button,.export-grid button,.file-button{border:1px solid var(--neutral-border);border-radius:0;background:var(--neutral-surface-raised);color:var(--neutral-text);padding:8px 10px;font-size:11px;cursor:pointer;transition:border-color .14s ease,color .14s ease,transform .14s ease,box-shadow .14s ease}
+.button:hover,.preset-grid button:hover,.export-grid button:hover,.file-button:hover{border-color:var(--chrome-accent);color:var(--chrome-accent);transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutral-shadow)}
 .button.accent{background:var(--chrome-accent);color:var(--neutral-surface-bg);border-color:var(--chrome-accent);font-weight:600}
+.button.accent:hover{background:var(--neutral-surface-bg);color:var(--chrome-accent)}
 .button.ghost{background:transparent}
 .button.small{padding:6px 8px;font-size:11px}
 .layout{display:grid;grid-template-columns:320px minmax(460px,1fr) 315px;gap:16px;padding-top:16px}
-.sidebar{display:flex;flex-direction:column;gap:16px}
-.panel{background:var(--neutral-surface-raised);border:1px solid var(--neutral-border);border-radius:4px;box-shadow:var(--shadow);padding:15px}
+.sidebar{display:flex;flex-direction:column;border:1px solid var(--neutral-border)}
+.panel{background:var(--neutral-surface-raised);border-bottom:1px solid var(--neutral-border);padding:15px}
+.panel:last-child{border-bottom:0}
 .section-kicker{color:var(--neutral-text-muted);font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px}
 .editor-toolbar{display:flex;gap:6px;margin-bottom:10px}
 .polygon-editor{width:100%;aspect-ratio:1;background:var(--neutral-surface-bg);border:1px solid var(--neutral-border);display:block;touch-action:none}
@@ -52,7 +54,7 @@ button{cursor:pointer}
 .workspace{min-width:0;display:flex;flex-direction:column}
 .workspace-head{height:58px;display:flex;align-items:flex-start;justify-content:space-between}
 .workspace-head h2{font-family:var(--font-display);font-weight:600;font-size:24px;margin:0}
-.status-pill{font-size:11px;color:var(--status-ok);border:1px solid color-mix(in srgb,var(--status-ok) 45%,transparent);background:color-mix(in srgb,var(--status-ok) 14%,var(--neutral-surface-bg));padding:5px 9px;border-radius:20px}
+.status-pill{font-size:11px;color:var(--status-ok);border:1px solid color-mix(in srgb,var(--status-ok) 45%,transparent);background:color-mix(in srgb,var(--status-ok) 14%,var(--neutral-surface-bg));padding:5px 9px}
 .viewport-toolbar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--neutral-border);color:var(--neutral-text-muted);font-size:11px;padding:0 0 8px}
 .viewport{position:relative;flex:1;min-height:600px;border:1px solid var(--neutral-border);background:var(--neutral-surface-bg);overflow:hidden}
 .viewport canvas{display:block;width:100%;height:100%}
@@ -61,7 +63,7 @@ button{cursor:pointer}
 .controls-panel label{display:block;color:var(--neutral-text-muted);font-size:11px;margin-bottom:11px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .field-row label{min-width:0}
-input,select{width:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);border:1px solid var(--neutral-border);border-radius:3px;padding:8px;margin-top:5px;outline:none}
+input,select{width:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);border:1px solid var(--neutral-border);border-radius:0;padding:8px;margin-top:5px;outline:none}
 input:focus,select:focus{border-color:var(--chrome-accent)}
 .range-label output{float:right;color:var(--chrome-accent);font-family:var(--font-mono)}
 .range-label input[type=range]{accent-color:var(--chrome-accent);padding:0}
