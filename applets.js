@@ -18,7 +18,8 @@ const applets = [
   { title: 'Polygon New Tab', href: 'polygon-new-tab/newtab.html', category: 'utility', status: 'maintained', runtime: 'Browser new-tab page', mark: 'newtab', description: 'A polygon-themed browser new-tab experience.' },
   { title: 'Custom Reader', href: 'custom-reader/', category: 'utility', status: 'maintained', runtime: 'Static browser app plus local feed build', mark: 'reader', description: 'Read a curated digest compiled from selected feeds and sorted by recency.' },
   { title: 'PDF Ingest', href: 'pdf-ingest/', category: 'utility', status: 'maintained', runtime: 'Local Python service', mark: 'document', description: 'Convert PDFs into LLM-readable Markdown, with table, image, and OCR options.' },
-  { title: 'Concentric Polygon Drift', href: 'concentric-polygon-drift/', category: 'geometry', status: 'experimental', runtime: 'Static browser app', mark: 'drift', description: 'Watch nested polygons rotate and drift around a shared center, and inspect their changing aspects.' }
+  { title: 'Concentric Polygon Drift', href: 'concentric-polygon-drift/', category: 'geometry', status: 'experimental', runtime: 'Static browser app', mark: 'drift', description: 'Watch nested polygons rotate and drift around a shared center, and inspect their changing aspects.' },
+  { title: 'Point Construction', href: 'point-construction/', category: 'geometry', status: 'experimental', runtime: 'Static browser app', mark: 'construct', description: 'Generate points on a grid and resolve each into a line, arc, circle, or point via a two-phase role-then-execute rule set.' }
 ];
 
 // Each mark is drawn in a normalized 100x36 viewBox, independent of the
@@ -41,6 +42,7 @@ const marks = {
   reader: () => '<svg viewBox="0 0 100 36" preserveAspectRatio="none"><path d="M18,26 L18,5 L82,5 L82,25"/><rect class="i-blue" x="23" y="9" width="16" height="15"/><rect class="i-red" x="46" y="9" width="16" height="13"/><line x1="66" y1="7" x2="66" y2="35"/></svg>',
   document: () => '<svg viewBox="0 0 100 36" preserveAspectRatio="none"><rect x="16" y="1.2" width="26" height="33.6"/><line x1="21.6" y1="8.5" x2="36.4" y2="8.5"/><line x1="21.6" y1="15" x2="36.4" y2="15"/><line x1="21.6" y1="21.5" x2="36.4" y2="21.5"/><path class="i-red" d="M36.4,8.5 L42,8.5 L67,21.5"/><path class="i-red" d="M36.4,15 L42,15 L67,21.5"/><path class="i-red" d="M36.4,21.5 L86,21.5"/></svg>',
   drift: () => '<svg viewBox="0 0 100 36" preserveAspectRatio="none"><circle cx="50" cy="18" r="16"/><rect class="i-red" x="38" y="6" width="24" height="24" transform="rotate(15 50 18)"/><circle class="i-fill i-blue" cx="50" cy="18" r="2.5"/></svg>',
+  construct: () => '<svg viewBox="0 0 100 36" preserveAspectRatio="none"><line x1="14" y1="30" x2="38" y2="10"/><circle class="i-red" cx="62" cy="20" r="10"/><path class="i-blue" d="M74,9 Q88,18 74,29"/><circle class="i-fill" cx="14" cy="30" r="2.6"/><circle class="i-fill" cx="38" cy="10" r="2.6"/></svg>',
 };
 
 const grid = document.querySelector('#applet-grid');

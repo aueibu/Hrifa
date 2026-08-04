@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Point Construction</title>
+<meta name="description" content="Generative geometry: points on a grid resolve into lines, arcs, circles, and points via a two-phase role-then-execute construction rule set.">
+<link rel="stylesheet" href="../design-tokens/build/css/base.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/light.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/dark.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/fonts.css" />
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="shell">
+  <header>
+    <div class="heading">
+      <h1>Point Construction</h1>
+      <p class="sub">generative geometry · line / arc / circle / point assignment</p>
+    </div>
+    <button id="themeToggle" aria-pressed="false">Dark</button>
+  </header>
+
+  <div id="layout">
+    <div id="controlsPanel">
+      <div class="panel">
+        <h2>Generation</h2>
+        <div class="field">
+          <label>Point count <span class="val" id="countVal">11</span></label>
+          <input type="range" id="countSlider" min="7" max="15" value="11" step="1">
+        </div>
+        <div class="row">
+          <button class="btn primary" id="regenBtn">New points</button>
+          <button class="btn" id="reprocessBtn">Re-run</button>
+        </div>
+        <div class="checkline"><input type="checkbox" id="guidesChk" checked><label for="guidesChk">show construction guides</label></div>
+        <div class="checkline"><input type="checkbox" id="gridChk" checked><label for="gridChk">show grid</label></div>
+        <div class="checkline"><input type="checkbox" id="labelsChk"><label for="labelsChk">show point indices</label></div>
+        <div class="checkline"><input type="checkbox" id="arcCircleChk"><label for="arcCircleChk">show each arc's true circle</label></div>
+        <button class="btn full" id="exportBtn" style="margin-top:12px;">Export SVG</button>
+        <div id="identityTag"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Construction Rules</h2>
+        <div class="field">
+          <label>Line / arc uses Nth-closest point <span class="val" id="nthVal">1st</span></label>
+          <input type="range" id="nthClosest" min="1" max="6" value="1" step="1">
+        </div>
+        <div class="field">
+          <label style="margin-bottom:8px;">Arc apex placement</label>
+          <select id="apexMode">
+            <option value="ratio" selected>Ratio-placed from m toward selected endpoint</option>
+            <option value="coincide">Coincide with found point (m)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="margin-bottom:8px;">Arc curve style</label>
+          <select id="curveStyle">
+            <option value="circular" selected>True circular arc (flattens to a line when near-infinite)</option>
+            <option value="bezier">Quadratic curve (always curved)</option>
+            <option value="conic">Rational conic (weighted — dial through ellipse/parabola/hyperbola)</option>
+            <option value="catenary">Catenary arch (hanging-chain shape through j/apex/k)</option>
+          </select>
+        </div>
+        <div class="field" id="conicWeightField" style="margin-bottom:0;display:none;">
+          <label>Conic weight w <span class="val" id="conicWeightVal">1.00</span></label>
+          <input type="range" id="conicWeight" min="0.05" max="4" value="1" step="0.05">
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Circle Inversion</h2>
+        <p style="margin:0 0 12px;font-family:var(--font-ui);font-size:0.78rem;color:var(--neutral-text-muted);line-height:1.5;">Prototype: hold a circle <b>or arc</b> constant and invert everything else through it — P′ = O + (r²/|P−O|²)(P−O), using its own center and radius (an arc's circle is whatever passes through its j/apex/k — the whole circle is pointwise fixed, not just the visible arc portion). Lines/arcs not through it become arcs; circles become circles; anything through it maps to a line.</p>
+        <div class="row">
+          <button class="btn full" id="pickInversionBtn">Pick constant circle/arc</button>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn" id="prevCircleBtn" title="Previous" style="flex:0 0 auto;padding-left:12px;padding-right:12px;">‹</button>
+          <select id="circleSwap" style="flex:1;"></select>
+          <button class="btn" id="nextCircleBtn" title="Next" style="flex:0 0 auto;padding-left:12px;padding-right:12px;">›</button>
+        </div>
+        <div id="inversionStatus" class="checkline" style="margin-top:10px;">Nothing held constant — construction shown as-is.</div>
+        <button class="btn full" id="clearInversionBtn" style="margin-top:10px;display:none;">Clear</button>
+      </div>
+
+      <div class="panel">
+        <h2>Type weights</h2>
+        <div class="field"><label>Line <span class="val" id="wLineVal">30</span></label><input type="range" id="wLine" min="0" max="100" value="30"></div>
+        <div class="field"><label>Arc <span class="val" id="wArcVal">30</span></label><input type="range" id="wArc" min="0" max="100" value="30"></div>
+        <div class="field"><label>Circle <span class="val" id="wCircleVal">25</span></label><input type="range" id="wCircle" min="0" max="100" value="25"></div>
+        <div class="field"><label>Point <span class="val" id="wPointVal">15</span></label><input type="range" id="wPoint" min="0" max="100" value="15"></div>
+      </div>
+    </div>
+
+    <div id="canvasCard">
+      <div id="canvasWrap"><canvas id="cv" width="500" height="500"></canvas></div>
+      <div id="legend">
+        <span class="legend-item"><span class="swatch" style="background:var(--shape-line)"></span>line</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--shape-arc)"></span>arc</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--shape-circle)"></span>circle</span>
+        <span class="legend-item"><span class="swatch" style="background:var(--shape-point)"></span>point</span>
+      </div>
+    </div>
+
+    <div id="inspectorPanel">
+      <div class="panel">
+        <h2>Inspector</h2>
+        <div id="statsPanel"><div class="stats-empty">Hover a line, arc, circle, or point to see its construction stats.</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="log-tabs">
+          <button class="log-tab active" id="logTabConstruction" type="button">Construction</button>
+          <button class="log-tab" id="logTabInversion" type="button">Inversion</button>
+        </div>
+        <div id="log"></div>
+        <div id="inversionLog" style="display:none;"></div>
+        <div class="note" id="constructionNotes">Two-phase model: <b>(1)</b> every point's role is decided first, all at once — line/arc counts are forced even, flipping any odd one out to a plain point so nothing gets pre-assigned a role it can never execute. <b>(2)</b> P0→Pn then executes: circle radius = da²/db from its fixed center; line/arc points pair only with other same-role points (ranked by the Nth-closest control); the arc apex <b>m</b> is whichever existing point lands nearest the ratio-placed point <b>l</b>.</div>
+        <div class="note" id="constructionNotes2">Guide line numbers: <b>1</b> = closest reference point, <b>2</b> = next-closest. <b>AB</b>/<b>AC</b> mark the two distances feeding a ratio calculation (see the endpoint labeled in each formula).</div>
+        <div class="note" id="inversionNotes" style="display:none;">P′ = O + (r²/|P−O|²)(P−O), using the constant circle's own center O and radius r. Lines/arcs not through it become arcs (via the circle through O and their inverted endpoints); circles become circles; anything through the constant maps to a line.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="exportOverlay">
+  <div id="exportModal">
+    <h3>Export SVG</h3>
+    <p>Right-click the image below → "Save image as…" (same as saving the canvas), or copy the raw markup from the box underneath.</p>
+    <div id="exportImgWrap"><img id="exportImg" alt="Exported construction SVG"></div>
+    <textarea id="exportSource" readonly onclick="this.select()"></textarea>
+    <div class="row">
+      <button class="btn" id="exportCopyBtn">Copy SVG markup</button>
+      <button class="btn primary" id="exportCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

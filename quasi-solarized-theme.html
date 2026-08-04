@@ -1,0 +1,164 @@
+<title>Hrifa — quasi-solarized theme (reference)</title>
+<style>
+:root{
+  --bg:#12181f;
+  --surface:#1a222c;
+  --surface-2:#212b37;
+  --ink:#e7ecf1;
+  --ink-dim:#8b9aac;
+  --line-grid:#26313d;
+  --paper:#0d1319;
+  --accent:#e8a33d;
+  --c-line:#5fb3d9;
+  --c-arc:#d97fb8;
+  --c-circle:#e8a33d;
+  --c-point:#7fd99a;
+  --border:#2a3542;
+}
+:root[data-theme="light"]{
+  --bg:#eef1f4;
+  --surface:#ffffff;
+  --surface-2:#f4f6f8;
+  --ink:#1b2430;
+  --ink-dim:#5c6b7a;
+  --line-grid:#dbe2e8;
+  --paper:#ffffff;
+  --accent:#b5691a;
+  --c-line:#1f7fa8;
+  --c-arc:#a83e82;
+  --c-circle:#b5691a;
+  --c-point:#2f8f5b;
+  --border:#d7dde3;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#eef1f4;--surface:#ffffff;--surface-2:#f4f6f8;--ink:#1b2430;--ink-dim:#5c6b7a;
+    --line-grid:#dbe2e8;--paper:#ffffff;--accent:#b5691a;--c-line:#1f7fa8;--c-arc:#a83e82;
+    --c-circle:#b5691a;--c-point:#2f8f5b;--border:#d7dde3;
+  }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;}
+.wrap{max-width:900px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+.intro{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 10px;}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);font-weight:600;letter-spacing:0.01em;margin:0 0 10px;text-wrap:balance;}
+.note{font-family:-apple-system,"Segoe UI",sans-serif;font-size:0.85rem;color:var(--ink-dim);line-height:1.6;max-width:64ch;margin:0 0 2.5rem;}
+.note b{color:var(--ink);}
+button#themeToggle{background:none;border:1px solid var(--border);color:var(--ink-dim);border-radius:5px;padding:5px 11px;font-family:ui-monospace,monospace;font-size:0.72rem;cursor:pointer;position:fixed;top:20px;right:20px;}
+button#themeToggle:hover{color:var(--ink);border-color:var(--ink-dim);}
+
+section{margin-bottom:2.75rem;}
+section h2{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--ink-dim);font-weight:600;margin:0 0 14px;border-top:1px solid var(--border);padding-top:14px;}
+
+.swatch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+.swatch{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);}
+.swatch-color{height:64px;}
+.swatch-meta{padding:9px 10px;font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:0.72rem;color:var(--ink-dim);}
+.swatch-meta b{display:block;color:var(--ink);font-size:0.78rem;font-family:-apple-system,"Segoe UI",sans-serif;margin-bottom:2px;}
+
+.type-sample{display:flex;flex-direction:column;gap:16px;}
+.type-row{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.type-row .role{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-dim);width:110px;flex:0 0 auto;}
+.type-row .sample-display{font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;font-size:1.4rem;color:var(--ink);}
+.type-row .sample-ui{font-family:-apple-system,"Segoe UI",sans-serif;font-size:1rem;color:var(--ink);}
+.type-row .sample-mono{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:0.95rem;color:var(--ink);}
+
+.demo-shapes{display:flex;gap:24px;align-items:center;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;}
+.demo-shapes svg{overflow:visible;}
+</style>
+<div class="wrap">
+  <button id="themeToggle">Dark</button>
+  <p class="intro">Hrifa / design reference — not part of the live token build</p>
+  <h1>Quasi-solarized theme</h1>
+  <p class="note">This is the palette and type stack improvised while prototyping <b>Point Construction</b>, before that applet was migrated onto the shared <code>design-tokens</code> system. It reads like a cool, desaturated riff on Solarized — a dark ink-blue/near-black ground with a warm amber accent and a spread of muted line/arc/circle/point hues. Kept here standalone so it can be looked at again later: as a candidate seasonal theme, a one-off applet identity, or just discarded. It is <b>not wired into</b> <code>design-tokens</code> and changes here have no effect on any applet.</p>
+
+  <section>
+    <h2>Neutrals &amp; accent</h2>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:var(--bg)"></div><div class="swatch-meta"><b>bg</b>page ground</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--surface)"></div><div class="swatch-meta"><b>surface</b>panels / cards</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--surface-2)"></div><div class="swatch-meta"><b>surface-2</b>inputs / overlays</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--paper)"></div><div class="swatch-meta"><b>paper</b>canvas ground</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--border)"></div><div class="swatch-meta"><b>border</b>rules / dividers</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--ink)"></div><div class="swatch-meta"><b>ink</b>primary text</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--ink-dim)"></div><div class="swatch-meta"><b>ink-dim</b>muted text</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--accent)"></div><div class="swatch-meta"><b>accent</b>buttons / focus</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Construction-role hues</h2>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:var(--c-line)"></div><div class="swatch-meta"><b>c-line</b>cool blue</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--c-arc)"></div><div class="swatch-meta"><b>c-arc</b>rose magenta</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--c-circle)"></div><div class="swatch-meta"><b>c-circle</b>= accent (amber)</div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--c-point)"></div><div class="swatch-meta"><b>c-point</b>muted green</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Hue-variant demo (~44° spread)</h2>
+    <p class="note" style="margin-bottom:14px;">Each role's base hue gets shifted across however many instances exist on screen, so multiple objects of the same role stay tellable apart without leaving the family. This is the one piece of the original prototype worth keeping regardless of which palette wins — see <code>variantColor()</code> in <a href="point-construction/app.js" style="color:var(--ink-dim)">point-construction/app.js</a>.</p>
+    <div class="demo-shapes" id="hueDemo"></div>
+  </section>
+
+  <section>
+    <h2>Typography</h2>
+    <div class="type-sample">
+      <div class="type-row"><span class="role">display</span><span class="sample-display">Iowan Old Style — Point Construction</span></div>
+      <div class="type-row"><span class="role">ui</span><span class="sample-ui">-apple-system / Segoe UI — Line / arc uses Nth-closest point</span></div>
+      <div class="type-row"><span class="role">mono</span><span class="sample-mono">ui-monospace — P3 → CIRCLE · center=P3 refs a=P8(101) ratio 0.80:1 → r=80.4</span></div>
+    </div>
+  </section>
+</div>
+<script>
+const root = document.documentElement;
+const btn = document.getElementById('themeToggle');
+let dark = matchMedia('(prefers-color-scheme: dark)').matches;
+function apply(){ root.setAttribute('data-theme', dark?'dark':'light'); btn.textContent = dark?'Light':'Dark'; }
+apply();
+btn.addEventListener('click', ()=>{ dark = !dark; apply(); });
+
+// same hexToHsl/variantColor pair as point-construction/app.js, reproduced here
+// standalone so this reference page has no dependency on that applet's script.
+function hexToHsl(hex){
+  const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h=0, s=0; const l=(max+min)/2;
+  if(max!==min){
+    const d=max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=(g-b)/d+(g<b?6:0); break;
+      case g: h=(b-r)/d+2; break;
+      default: h=(r-g)/d+4;
+    }
+    h/=6;
+  }
+  return {h:h*360, s:s*100, l:l*100};
+}
+function variantColor(baseHex, index, total){
+  const {h,s,l} = hexToHsl(baseHex);
+  if(total<=1) return `hsl(${h.toFixed(1)} ${s.toFixed(1)}% ${l.toFixed(1)}%)`;
+  const spread = 44;
+  const step = spread/Math.max(total-1,1);
+  const newH = (h - spread/2 + step*index + 360) % 360;
+  const lJit = l + (index%2===0 ? -5 : 5);
+  return `hsl(${newH.toFixed(1)} ${s.toFixed(1)}% ${Math.min(85,Math.max(30,lJit)).toFixed(1)}%)`;
+}
+function cssVar(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
+function renderDemo(){
+  const demo = document.getElementById('hueDemo');
+  const roles = [['c-line',5],['c-arc',4],['c-circle',3],['c-point',6]];
+  demo.innerHTML = roles.map(([role,count])=>{
+    const base = cssVar('--'+role);
+    const dots = Array.from({length:count}, (_,i)=>{
+      const col = variantColor(base, i, count);
+      return `<circle cx="${14+i*22}" cy="18" r="9" fill="${col}"/>`;
+    }).join('');
+    return `<svg width="${14+count*22}" height="36" viewBox="0 0 ${14+count*22} 36">${dots}</svg>`;
+  }).join('');
+}
+renderDemo();
+btn.addEventListener('click', renderDemo);
+</script>

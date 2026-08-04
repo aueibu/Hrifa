@@ -1,0 +1,111 @@
+/* ---------------------------------------------------------------------
+   THEME TOKENS — base palette and light/dark semantic layer (--neutral-*,
+   --chrome-accent) come from the shared ../design-tokens build (base.css,
+   light.css, dark.css — linked in index.html before this file).
+   --shape-* are the four construction-role colours (line/arc/circle/point);
+   each element on the canvas gets a hue-shifted variant of its --shape-*
+   base (see variantColor() in app.js) so multiple instances of the same
+   role stay distinguishable without leaving the family.
+   --line / --panel-tint are derived color-mix() chrome tokens (not part of
+   the design-tokens build) matching the strengths used by
+   polygon-annulus-explorer / grid-traversal, so this applet's flush,
+   hairline-divided "workbench" panels read consistent with theirs rather
+   than reinventing a third value by eye.
+   --------------------------------------------------------------------- */
+:root{
+  --shape-line: var(--blue-600);
+  --shape-arc: var(--magenta-600);
+  --shape-circle: var(--orange-600);
+  --shape-point: var(--green-600);
+
+  --panel-tint-strength: 3.5%;
+  --line-strength: 38%;
+  --panel-tint: color-mix(in srgb, var(--neutral-text) var(--panel-tint-strength), transparent);
+  --line: color-mix(in srgb, var(--neutral-text) var(--line-strength), transparent);
+}
+[data-theme="dark"]{
+  --shape-line: var(--blue-300);
+  --shape-arc: var(--magenta-300);
+  --shape-circle: var(--orange-300);
+  --shape-point: var(--green-300);
+
+  --panel-tint-strength: 2.5%;
+  --line-strength: 28%;
+}
+
+*{box-sizing:border-box;}
+body{margin:0;background:var(--neutral-surface-bg);color:var(--neutral-text);font-family:var(--font-ui);}
+#shell{max-width:1680px;margin:0 auto;padding:0 24px 60px;}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 4px;border-bottom:2px solid var(--neutral-text);margin-bottom:22px;flex-wrap:wrap;}
+header .heading{display:flex;flex-direction:column;gap:2px;}
+h1{font-family:var(--font-display);font-size:1.45rem;font-weight:500;margin:0;letter-spacing:-0.01em;text-wrap:balance;}
+.sub{font-family:var(--font-mono);font-size:0.68rem;color:var(--chrome-accent);text-transform:uppercase;letter-spacing:0.14em;margin:0;}
+button{font:inherit;cursor:pointer;transition:transform .14s ease, background .14s ease, box-shadow .14s ease;}
+#themeToggle{background:transparent;border:1px solid var(--chrome-accent);color:var(--chrome-accent);border-radius:0;padding:6px 12px;font-family:var(--font-mono);font-size:0.7rem;}
+#themeToggle:hover{background:var(--chrome-accent);color:var(--neutral-surface-bg);}
+#themeToggle[aria-pressed="true"]{background:var(--chrome-accent);color:var(--neutral-surface-bg);}
+
+#layout{display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr) minmax(320px,380px);border-top:1px solid var(--line);border-left:1px solid var(--line);}
+@media (max-width:1250px){#layout{grid-template-columns:minmax(220px,260px) minmax(0,1fr);}#inspectorPanel{grid-column:1 / -1;}}
+@media (max-width:780px){#layout{grid-template-columns:1fr;}#inspectorPanel{grid-column:auto;}}
+
+#controlsPanel,#canvasCard,#inspectorPanel{background:var(--panel-tint);border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0;}
+
+#canvasCard{padding:20px;}
+#canvasWrap{position:relative;width:100%;aspect-ratio:1/1;background:var(--neutral-surface-bg);border:1px solid var(--line);overflow:hidden;}
+canvas{width:100%;height:100%;display:block;}
+#legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-family:var(--font-mono);font-size:0.72rem;color:var(--neutral-text-muted);}
+.legend-item{display:flex;align-items:center;gap:6px;}
+.swatch{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+#statsPanel{padding:12px 14px;background:var(--neutral-surface-bg);border:1px solid var(--line);height:240px;overflow-y:auto;}
+#statsPanel .stats-empty{font-family:var(--font-ui);font-size:0.8rem;color:var(--neutral-text-muted);}
+#statsPanel .stats-head{font-family:var(--font-mono);font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
+#statsPanel dl{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:12px;row-gap:4px;margin:0;font-family:var(--font-mono);font-size:0.76rem;}
+#statsPanel dt{color:var(--neutral-text-muted);}
+#statsPanel dd{margin:0;color:var(--neutral-text);overflow-wrap:break-word;}
+
+.panel{padding:16px;border-bottom:1px solid var(--line);}
+.panel h2{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--chrome-accent);font-family:var(--font-mono);font-weight:600;margin:0 0 12px;}
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:flex;justify-content:space-between;font-size:0.82rem;color:var(--neutral-text);margin-bottom:5px;font-family:var(--font-ui);}
+.field label span.val{font-family:var(--font-mono);color:var(--neutral-text-muted);font-size:0.78rem;}
+input[type=range]{width:100%;accent-color:var(--chrome-accent);}
+select{width:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);border:1px solid var(--line);border-radius:0;padding:7px 8px;font:inherit;font-size:0.82rem;}
+.row{display:flex;gap:8px;}
+.btn{flex:1;background:var(--neutral-surface-bg);border:1px solid var(--chrome-accent);color:var(--chrome-accent);border-radius:0;padding:9px 10px;font-family:var(--font-ui);font-size:0.85rem;font-weight:600;}
+.btn:hover{background:var(--chrome-accent);color:var(--neutral-surface-bg);transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutral-shadow);}
+.btn.primary{background:var(--chrome-accent);color:var(--neutral-surface-bg);border-color:var(--chrome-accent);}
+.btn.primary:hover{background:var(--neutral-surface-bg);color:var(--chrome-accent);}
+.btn.full{width:100%;}
+.checkline{display:flex;align-items:center;gap:8px;font-size:0.82rem;font-family:var(--font-ui);margin-top:10px;}
+
+.log-tabs{display:flex;gap:2px;margin-bottom:12px;border-bottom:1px solid var(--line);}
+.log-tab{background:transparent;border:none;border-radius:0;padding:6px 4px 8px;margin-right:14px;font-family:var(--font-mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--neutral-text-muted);border-bottom:2px solid transparent;margin-bottom:-1px;}
+.log-tab:hover{color:var(--neutral-text);}
+.log-tab.active{color:var(--chrome-accent);border-bottom-color:var(--chrome-accent);}
+
+#log,#inversionLog{font-family:var(--font-mono);font-size:0.74rem;line-height:1.55;color:var(--neutral-text-muted);max-height:320px;overflow-y:auto;white-space:pre-wrap;}
+#log .step{color:var(--neutral-text);}
+#log .step-point,#inversionLog .step-point{color:var(--shape-point);}
+#log .step-line,#inversionLog .step-line{color:var(--shape-line);}
+#log .step-arc,#inversionLog .step-arc{color:var(--shape-arc);}
+#log .step-circle,#inversionLog .step-circle{color:var(--shape-circle);}
+#inversionLog .step-meta{color:var(--neutral-text);font-weight:600;}
+#inversionLog .step-undefined{color:var(--critical);}
+.note{font-family:var(--font-ui);font-size:0.78rem;color:var(--neutral-text-muted);line-height:1.5;margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;}
+.note b{color:var(--neutral-text);}
+#identityTag{margin-top:8px;font-family:var(--font-mono);font-size:0.72rem;color:var(--neutral-text-muted);text-align:center;letter-spacing:0.04em;}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-thumb{background:var(--line);}
+
+#exportOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:100;padding:24px;}
+#exportOverlay.open{display:flex;}
+#exportModal{background:var(--neutral-surface-bg);border:1px solid var(--line);max-width:640px;width:100%;max-height:90vh;overflow-y:auto;padding:20px;}
+#exportModal h3{font-family:var(--font-display);font-weight:500;margin:0 0 4px;font-size:1.1rem;}
+#exportModal p{margin:0 0 14px;font-size:0.8rem;color:var(--neutral-text-muted);font-family:var(--font-ui);line-height:1.5;}
+#exportImgWrap{background:var(--panel-tint);border:1px solid var(--line);padding:8px;margin-bottom:14px;}
+#exportImgWrap img{display:block;width:100%;height:auto;}
+#exportModal textarea{width:100%;height:110px;font-family:var(--font-mono);font-size:0.68rem;background:var(--panel-tint);color:var(--neutral-text-muted);border:1px solid var(--line);border-radius:0;padding:8px;resize:vertical;}
+#exportModal .row{margin-top:12px;}
