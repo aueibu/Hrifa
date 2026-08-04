@@ -1,0 +1,21 @@
+/* Local typography polish layered on top of the shared design-tokens
+   fonts.css (Figtree via var(--font-ui), Fraunces via var(--font-display)
+   — see styles.css). This file only adds OpenType feature settings that
+   don't belong in the shared file: tabular figures for the graph/table
+   data throughout, and contextual ligatures for the Fraunces headings. */
+textarea{
+  font-family:var(--font-ui);
+}
+
+*,
+svg text{
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+}
+
+.brand h1,
+.workspace-head h2,
+.set-title strong{
+  font-variant-ligatures:contextual;
+  font-feature-settings:"tnum" 1,"calt" 1;
+}
