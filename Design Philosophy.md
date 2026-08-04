@@ -47,7 +47,7 @@ Palette values live in code as CSS custom properties, generated from the shared 
 | Text, muted | Shared | `--neutral-text-muted` | `gray.700` `#4E4C4A` | `gray.400` `#B7B2AC` | Secondary or supporting text. |
 | Text, disabled | Shared | `--neutral-text-disabled` | `gray.400` `#B7B2AC` | `gray.600` `#716E6B` | Disabled labels and values. |
 | Shadow | Shared | `--neutral-shadow` | `gray.800` `#2F2E2D` | `gray.300` `#CEC8C2` | Drop-shadow / offset-accent ink (button hover offsets, panel shadow). |
-| Chrome accent | Chrome | `--chrome-accent` | `blue.600` `#3673A4` | `blue.300` `#AACDEF` | Buttons, sliders, links, focus rings, dropdown hover/inset accent. |
+| Chrome accent | Chrome | `--chrome-accent` | `blue.700` `#2C5474` | `purple.400` `#A892D7` | Buttons, sliders, links, focus rings, dropdown hover/inset accent. |
 | Chrome accent, soft | Chrome | `--chrome-accent-hover` (app-local, per applet) | derived | derived | Hover fill behind ghost buttons and menu items — a `color-mix()` of `--chrome-accent`, not a token; see [Design tokens](#design-tokens). |
 | Work-surface idle | Work surface | `--work-surface-idle` | `green.600` `#327C55` | `green.300` `#88DAAB` | Available but unselected points, edges, or objects. |
 | Work-surface hover | Work surface | `--work-surface-hover` | `orange.600` `#9E5F36` | `orange.300` `#F4BDA4` | Hovered point/edge/object, prior to selection. |
