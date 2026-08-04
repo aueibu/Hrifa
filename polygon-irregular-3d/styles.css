@@ -10,7 +10,7 @@
    token-identity palette. */
 :root{--status-ok:var(--green-300);--shadow:0 16px 40px color-mix(in srgb,var(--neutral-shadow) 25%,transparent)}
 *{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at 52% -20%,color-mix(in srgb,var(--neutral-surface-overlay) 55%,var(--neutral-surface-bg)) 0,var(--neutral-surface-bg) 60%);color:var(--neutral-text);font:13px/1.4 var(--font-ui);min-height:100vh}
+body{margin:0;background:var(--neutral-surface-bg);color:var(--neutral-text);font:13px/1.4 var(--font-ui);min-height:100vh}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 .app-shell{max-width:1740px;margin:auto;min-height:100vh;padding:18px 22px}
@@ -30,7 +30,7 @@ button{cursor:pointer}
 .button.small{padding:6px 8px;font-size:11px}
 .layout{display:grid;grid-template-columns:320px minmax(460px,1fr) 315px;gap:16px;padding-top:16px}
 .sidebar{display:flex;flex-direction:column;gap:16px}
-.panel{background:color-mix(in srgb,var(--neutral-surface-raised) 92%,var(--neutral-surface-bg));border:1px solid var(--neutral-border);border-radius:4px;box-shadow:var(--shadow);padding:15px}
+.panel{background:var(--neutral-surface-raised);border:1px solid var(--neutral-border);border-radius:4px;box-shadow:var(--shadow);padding:15px}
 .section-kicker{color:var(--neutral-text-muted);font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px}
 .editor-toolbar{display:flex;gap:6px;margin-bottom:10px}
 .polygon-editor{width:100%;aspect-ratio:1;background:var(--neutral-surface-bg);border:1px solid var(--neutral-border);display:block;touch-action:none}
@@ -54,7 +54,7 @@ button{cursor:pointer}
 .workspace-head h2{font-family:var(--font-display);font-weight:600;font-size:24px;margin:0}
 .status-pill{font-size:11px;color:var(--status-ok);border:1px solid color-mix(in srgb,var(--status-ok) 45%,transparent);background:color-mix(in srgb,var(--status-ok) 14%,var(--neutral-surface-bg));padding:5px 9px;border-radius:20px}
 .viewport-toolbar{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--neutral-border);color:var(--neutral-text-muted);font-size:11px;padding:0 0 8px}
-.viewport{position:relative;flex:1;min-height:600px;border:1px solid var(--neutral-border);background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--neutral-surface-raised) 70%,var(--neutral-surface-bg)),var(--neutral-surface-bg) 68%);overflow:hidden}
+.viewport{position:relative;flex:1;min-height:600px;border:1px solid var(--neutral-border);background:var(--neutral-surface-bg);overflow:hidden}
 .viewport canvas{display:block;width:100%;height:100%}
 .loading{display:grid;place-items:center;height:100%;color:var(--neutral-text-muted)}
 .workspace-footer{display:flex;justify-content:space-between;color:var(--neutral-text-muted);font-size:11px;padding:11px 2px}
