@@ -57,9 +57,10 @@ three-tier token guidance.
 ## Typography
 
 `build/css/fonts.css` is the shared home for the four-role type system in
-[Design Philosophy.md](../Design%20Philosophy.md) — one `@import` for the
-Google-hosted families, plus role variables every applet should reference
-instead of hand-rolling its own font stack:
+[Design Philosophy.md](../Design%20Philosophy.md) — a Google-hosted `@import`
+for DM Mono and Figtree, self-hosted `@font-face` rules for Fraunces (see
+below), plus role variables every applet should reference instead of
+hand-rolling its own font stack:
 
 | Variable | Family | Role |
 | --- | --- | --- |
@@ -67,6 +68,13 @@ instead of hand-rolling its own font stack:
 | `--font-ui` | Figtree | Buttons, labels, instructions, paragraphs, dense routine interface text. |
 | `--font-mono` | DM Mono | Coordinates, values, operation history, identifiers, tags, counts. |
 | `--font-reading` | Crimson Text | Longer notes, lore, explanations — rare; import the family locally before use (see the comment in `fonts.css`). |
+
+Fraunces is served from local files (`build/fonts/Fraunces-Variable.ttf` and
+`Fraunces-Italic-Variable.ttf`) rather than the same Google `@import` as the
+other two families. Google's css2 endpoint serves a subset that drops glyphs
+this family needs — accents, macrons — which silently breaks on any heading
+that uses them. Do not move Fraunces back onto the Google `@import` without
+re-checking glyph coverage first.
 
 Add it alongside the colour files:
 
