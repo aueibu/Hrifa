@@ -19,15 +19,8 @@
   --outlook           : var(--green-300);
   --f2                : var(--magenta-300);
 }
-* {
-  box-sizing          : border-box
-}
 html,body {
-  margin              : 0;
-  height              : 100%;
-  background          : var(--neutral-surface-bg);
-  color               : var(--neutral-text);
-  font-family         : var(--font-ui)
+  height              : 100%
 }
 body {
   display             : grid;

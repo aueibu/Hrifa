@@ -1,11 +1,11 @@
 {
   "name": "design-tokens",
-  "version": "1.1.0",
-  "description": "Shared Hrifa colour token source (Style Dictionary) plus hand-authored fonts.css and components.css. Builds base.css, light.css, and dark.css; components.css/fonts.css are checked in directly. All consumed by every applet.",
+  "version": "1.2.0",
+  "description": "Shared Hrifa colour token source (Style Dictionary) plus hand-authored fonts.css and components.css. Builds base.css, light.css, dark.css, and hrifa.css (base+light+dark+components bundled); fonts.css is checked in directly and stays separate. hrifa.css is the one file every applet actually links. All consumed by every applet.",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "style-dictionary build --config config.js"
+    "build": "style-dictionary build --config config.js && node build-bundle.js"
   },
   "license": "ISC",
   "devDependencies": {

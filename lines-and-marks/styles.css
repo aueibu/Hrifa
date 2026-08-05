@@ -2,20 +2,13 @@
   color-scheme: light;
 }
 
-* {
-  box-sizing: border-box;
-}
-
 body {
   min-height: 100vh;
-  margin: 0;
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--neutral-text) 4%, transparent) 1px, transparent 1px),
     linear-gradient(180deg, color-mix(in srgb, var(--neutral-text) 3%, transparent) 1px, transparent 1px),
     var(--neutral-surface-bg);
   background-size: 34px 34px, 34px 34px, auto;
-  color: var(--neutral-text);
-  font-family: var(--font-ui);
 }
 
 button,

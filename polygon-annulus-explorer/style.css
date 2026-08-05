@@ -1,29 +1,18 @@
 
 /* ---------------------------------------------------------------------
-   THEME TOKENS — the base palette and the light/dark semantic layer
-   (--neutral-*, --chrome-accent, --work-surface-*, --emphasis,
-   --critical) come from the shared ../design-tokens build (base.css,
-   light.css, dark.css — linked in index.html before this file). See
-   design-tokens/README.md for the full token architecture.
-   This file adds two more tiers on top of that semantic layer:
-   1) Strengths: how strongly a wash/overlay reads. Light-on-dark
-      washes read stronger per % than dark-on-light, so dark strengths
-      are dialed back — retuned per theme below.
-   2) Derived: color-mix() combinations computed at use-time, kept out
-      of the token JSON so token count doesn't scale with every hover/
-      wash variant. Everything past this block references only the
-      semantic layer above — never a base hue directly.
-   --------------------------------------------------------------------- */
+   THEME TOKENS — the base palette, the light/dark semantic layer, and the
+   shared derived chrome tints (--line, --soft-line, --panel-tint,
+   --chrome-accent-hover, and their -strength knobs) all come from the
+   shared ../design-tokens build (hrifa.css, linked in index.html before
+   this file). See design-tokens/README.md for the full token architecture.
+   This file adds local strengths/derived tints for the CANVAS specifically
+   — work-surface washes with no shared equivalent because they're this
+   applet's own visual motif (the grid dots, the disk fill), not a generic
+   chrome pattern. --muted is a local alias for readability. Everything
+   past this block references only the semantic layer, the shared derived
+   tints, or this local canvas tier — never a base hue directly. */
 :root{
-  /* strengths (light / default) */
-  --panel-tint-strength:3.5%;--line-strength:38%;--soft-line-strength:16%;
-  --grid-strength:8%;--disk-strength:6%;--hover-strength:18%;--shadow-strength:12%;
-
-  /* derived — UI chrome */
-  --chrome-accent-hover:color-mix(in srgb,var(--chrome-accent) var(--hover-strength),var(--neutral-surface-bg));
-  --panel-tint:color-mix(in srgb,var(--neutral-text) var(--panel-tint-strength),transparent);
-  --line:color-mix(in srgb,var(--neutral-text) var(--line-strength),transparent);
-  --soft-line:color-mix(in srgb,var(--neutral-text) var(--soft-line-strength),transparent);
+  --grid-strength:8%;--disk-strength:6%;--shadow-strength:12%;
   --muted:var(--neutral-text-muted);
   --shadow:color-mix(in srgb,var(--neutral-shadow) var(--shadow-strength),transparent);
 
@@ -49,12 +38,10 @@
    comes from design-tokens' dark.css scoped to this same
    [data-theme="dark"] selector; this block only retunes strengths. */
 [data-theme="dark"]{
-  --panel-tint-strength:2.5%;--line-strength:28%;--soft-line-strength:12%;
-  --grid-strength:6%;--disk-strength:9%;--hover-strength:20%;--shadow-strength:55%;
+  --grid-strength:6%;--disk-strength:9%;--shadow-strength:55%;
 }
 
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);font-family:var(--font-ui)}
+html,body{height:100%}
 body{overflow:hidden}
 .app-shell{min-height:100%}
 body,.panel,.topbar,.stage-wrap,.results-list,.result-card,.stage-toolbar,.status-line,select,input,textarea{transition:background-color .2s ease,color .2s ease,border-color .2s ease}

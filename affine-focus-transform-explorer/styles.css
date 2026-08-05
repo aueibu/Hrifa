@@ -12,8 +12,7 @@
    authored uses var(--work-surface-active) — see the two-domain split in
    Design Philosophy > Design tokens. */
 :root{--seed:var(--purple-300);--derived:var(--blue-300);--transform-edge:var(--orange-300);--highlight:var(--yellow-300);--status-ok:var(--green-300);--variant:var(--magenta-300)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--neutral-surface-bg);color:var(--neutral-text);font:13px/1.4 var(--font-ui);min-height:100vh}
+body{font-size:13px;line-height:1.4;min-height:100vh}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 .app-shell{max-width:1680px;margin:auto;min-height:100vh;padding:18px 22px}

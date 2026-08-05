@@ -1,40 +1,26 @@
 /* ---------------------------------------------------------------------
-   THEME TOKENS — base palette and light/dark semantic layer (--neutral-*,
-   --chrome-accent) come from the shared ../design-tokens build (base.css,
-   light.css, dark.css — linked in index.html before this file).
+   THEME TOKENS — base palette, light/dark semantic layer (--neutral-*,
+   --chrome-accent), and the shared derived chrome tints (--line,
+   --panel-tint, etc.) all come from the shared ../design-tokens build
+   (hrifa.css, linked in index.html before this file).
    --shape-* are the four construction-role colours (line/arc/circle/point);
    each element on the canvas gets a hue-shifted variant of its --shape-*
    base (see variantColor() in app.js) so multiple instances of the same
    role stay distinguishable without leaving the family.
-   --line / --panel-tint are derived color-mix() chrome tokens (not part of
-   the design-tokens build) matching the strengths used by
-   polygon-annulus-explorer / grid-traversal, so this applet's flush,
-   hairline-divided "workbench" panels read consistent with theirs rather
-   than reinventing a third value by eye.
    --------------------------------------------------------------------- */
 :root{
   --shape-line: var(--blue-600);
   --shape-arc: var(--magenta-600);
   --shape-circle: var(--orange-600);
   --shape-point: var(--green-600);
-
-  --panel-tint-strength: 3.5%;
-  --line-strength: 38%;
-  --panel-tint: color-mix(in srgb, var(--neutral-text) var(--panel-tint-strength), transparent);
-  --line: color-mix(in srgb, var(--neutral-text) var(--line-strength), transparent);
 }
 [data-theme="dark"]{
   --shape-line: var(--blue-300);
   --shape-arc: var(--magenta-300);
   --shape-circle: var(--orange-300);
   --shape-point: var(--green-300);
-
-  --panel-tint-strength: 2.5%;
-  --line-strength: 28%;
 }
 
-*{box-sizing:border-box;}
-body{margin:0;background:var(--neutral-surface-bg);color:var(--neutral-text);font-family:var(--font-ui);}
 #shell{max-width:1680px;margin:0 auto;padding:0 24px 60px;}
 header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 4px;border-bottom:2px solid var(--neutral-text);margin-bottom:22px;flex-wrap:wrap;}
 header .heading{display:flex;flex-direction:column;gap:2px;}

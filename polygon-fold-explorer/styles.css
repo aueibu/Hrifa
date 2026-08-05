@@ -1,37 +1,28 @@
 /* ---------------------------------------------------------------------
-   THEME TOKENS — the base palette and the light/dark semantic layer
-   (--neutral-*, --chrome-accent, --work-surface-*, --emphasis,
-   --critical) come from the shared ../design-tokens build (base.css,
-   light.css, dark.css — linked in index.html before this file). See
+   THEME TOKENS — the base palette, the light/dark semantic layer, and the
+   shared derived chrome tints (--line, --soft-line, --panel-tint,
+   --chrome-accent-hover) all come from the shared ../design-tokens build
+   (hrifa.css, linked in index.html before this file). See
    design-tokens/README.md for the full token architecture and
    Design Philosophy.md for the usage rules.
-   This file adds two more tiers on top of that semantic layer:
-   1) Derived: color-mix() combinations computed at use-time, kept out
-      of the token JSON so token count doesn't scale with every
-      reference-line/tint variant (--line, --soft-line, --panel-tint).
-   2) Categorical: --fold-plus/--fold-minus, a local two-way palette for
-      the "+"/"-" fold chains — these are parallel categories, not an
-      idle/hover/active state, so per Design Philosophy > Design tokens
-      > "Three layers" they reference base hues directly rather than
-      reusing a --work-surface-* role.
+   This file adds one local tier on top of that: Categorical —
+   --fold-plus/--fold-minus, a local two-way palette for the "+"/"-" fold
+   chains. These are parallel categories, not an idle/hover/active state,
+   so per Design Philosophy > Design tokens > "Three layers" they reference
+   base hues directly rather than reusing a --work-surface-* role.
    Everything else in this file (and in app.js, via SVG var() fills)
-   should reference only the semantic layer or these two tiers.
+   should reference only the semantic layer, the shared derived tints, or
+   this one local tier.
    --------------------------------------------------------------------- */
 :root{
-  --panel-tint-strength:4%;--line-strength:32%;--soft-line-strength:14%;
-  --panel-tint:color-mix(in srgb,var(--neutral-text) var(--panel-tint-strength),transparent);
-  --line:color-mix(in srgb,var(--neutral-text) var(--line-strength),transparent);
-  --soft-line:color-mix(in srgb,var(--neutral-text) var(--soft-line-strength),transparent);
   --fold-plus:var(--orange-600);
   --fold-minus:var(--teal-600);
 }
 [data-theme="dark"]{
-  --panel-tint-strength:3%;--line-strength:26%;--soft-line-strength:11%;
   --fold-plus:var(--orange-300);
   --fold-minus:var(--teal-300);
 }
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);font-family:var(--font-ui)}
+html,body{height:100%}
 body{display:grid;grid-template-columns:228px minmax(380px,1fr) 440px;overflow:hidden}
 aside{background:var(--neutral-surface-raised);padding:14px;overflow:auto}
 aside:first-child{border-right:1px solid var(--neutral-border)}

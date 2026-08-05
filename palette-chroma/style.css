@@ -29,11 +29,7 @@
   --warning: var(--orange-300);
 }
 
-* { box-sizing: border-box; }
-body {
-  margin: 0; background: var(--bg); color: var(--ink);
-  font-family: var(--font-ui); padding: 22px 20px 70px;
-}
+body { padding: 22px 20px 70px; }
 img{max-width:100%}
 h1 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; margin: 0 0 4px; }
 h2 { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-muted); }

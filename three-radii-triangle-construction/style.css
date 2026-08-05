@@ -32,12 +32,7 @@
   --tri-t3:var(--green-300);
   --point-idle:var(--gray-200);
 }
-* { box-sizing: border-box; }
-html, body {
-  margin: 0; padding: 0; height: 100%;
-  font-family: var(--font-ui);
-  background: var(--neutral-surface-bg); color: var(--neutral-text);
-}
+html, body { height: 100%; }
 #app { display: flex; height: 100vh; min-height: 0; }
 #canvasPane {
   flex: 1 1 auto; display: flex; flex-direction: column;

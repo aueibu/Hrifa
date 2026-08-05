@@ -5,6 +5,35 @@ components) are recorded here, newest first. This package has no build step
 for `components.css`/`fonts.css` — they're hand-authored and checked in — so
 this file is the only record of what changed and why.
 
+## 1.2.0
+
+- Added `build-bundle.js`, run as the second half of `npm run build`: emits
+  `build/css/hrifa.css`, a concatenation of `base.css` + `light.css` +
+  `dark.css` + `components.css` in that order. This is now the one file
+  every applet actually links, instead of four separate `<link>` tags in a
+  specific order — which is exactly how `components.css` ended up missing
+  from 14 apps after it was added (nothing wrong with the architecture,
+  just no single place that forced every app to pick it up). `fonts.css`
+  stays a separate link; it's the one piece still legitimately optional
+  per applet. Source files stay split (generated vs hand-authored, and
+  light/dark as separate Style Dictionary build targets) — see
+  README.md > "Why not one source file" for the reasoning; only the
+  *consumed* artifact is now unified.
+- Rewired all 17 applet `index.html` files (`a-stone-throw`,
+  `affine-focus-transform-explorer`, `color-checker`,
+  `concentric-polygon-drift`, `custom-reader`, `grid-traversal`,
+  `hrifa-edel`, the portal `index.html`, `lines-and-marks`,
+  `palette-chroma`, `point-construction`, `polygon-annulus-explorer`,
+  `polygon-focus-vantage`, `polygon-fold-explorer`, `polygon-irregular-3d`,
+  `three-radii-triangle-construction`, `username-seeds`) onto `hrifa.css`.
+  `polygon-fold-explorer` is still the only applet whose own `style.css`
+  has had its duplicate button/select/panel/typography rules actually
+  *removed* in favour of the shared ones — the other 16 now load the
+  correct shared CSS but still carry their own (mostly duplicate, now
+  colour-correct) local rules on top, which the cascade resolves by
+  specificity/order. Full de-duplication per app is the next step, not
+  yet done.
+
 ## 1.1.0
 
 - Added `build/css/components.css`: canonical `.btn`/`.btn--outline`/

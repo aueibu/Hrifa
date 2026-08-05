@@ -4,14 +4,8 @@
    The simulated material colors in app.js (stone, metal, wood, etc.) are
    content, not chrome — they stay as literal hex describing the physical
    material being rendered, not theme. */
-* { box-sizing: border-box; }
-
 body {
-  margin: 0;
-  background: var(--neutral-surface-bg);
-  color: var(--neutral-text);
   padding: 1rem 1.5rem 1.5rem;
-  font-family: var(--font-ui);
 }
 
 header {

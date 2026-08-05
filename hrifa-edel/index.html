@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Edelmakārī</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="../design-tokens/build/css/base.css" />
-  <link rel="stylesheet" href="../design-tokens/build/css/light.css" />
-  <link rel="stylesheet" href="../design-tokens/build/css/dark.css" />
+  <link rel="stylesheet" href="../design-tokens/build/css/hrifa.css" />
   <link rel="stylesheet" href="../design-tokens/build/css/fonts.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -19,15 +17,15 @@
       <h1>Edelmakārī</h1>
     </div>
     <div class="top-actions">
-      <button id="undoBtn" class="ghost" disabled>Undo</button>
-      <button id="redoBtn" class="ghost" disabled>Redo</button>
-      <button id="newBtn" class="ghost">New</button>
-      <button id="grayscaleBtn" class="ghost" aria-pressed="false">Greyscale</button>
-      <label class="ghost file-label">Import JSON<input id="loadJsonInput" type="file" accept="application/json" /></label>
-      <button id="saveJsonBtn" class="ghost">Export JSON</button>
-      <button id="svgBtn" class="primary">Export SVG</button>
-      <button id="pngBtn" class="primary">Export PNG</button>
-      <button id="inkPngBtn" class="primary">Export Ink PNG</button>
+      <button id="undoBtn" class="btn--outline" disabled>Undo</button>
+      <button id="redoBtn" class="btn--outline" disabled>Redo</button>
+      <button id="newBtn" class="btn--outline">New</button>
+      <button id="grayscaleBtn" class="btn--outline" aria-pressed="false">Greyscale</button>
+      <label class="btn btn--outline file-label">Import JSON<input id="loadJsonInput" type="file" accept="application/json" /></label>
+      <button id="saveJsonBtn" class="btn--outline">Export JSON</button>
+      <button id="svgBtn" class="btn">Export SVG</button>
+      <button id="pngBtn" class="btn">Export PNG</button>
+      <button id="inkPngBtn" class="btn">Export Ink PNG</button>
     </div>
   </header>
 
@@ -47,7 +45,7 @@
             <option>socket</option><option>aperture</option><option>chamber</option><option>rib</option>
           </select>
         </label>
-        <button id="addFreeBtn" class="wide primary">Add free polygon</button>
+        <button id="addFreeBtn" class="wide btn">Add free polygon</button>
       </section>
 
       <section class="attach-section">
@@ -84,7 +82,7 @@
         <label>Angle offset <output id="angleOut">0°</output>
           <input id="angleInput" type="range" min="-180" max="180" step="5" value="0" />
         </label>
-        <button id="attachBtn" class="wide primary">Anchor polygon</button>
+        <button id="attachBtn" class="wide btn">Anchor polygon</button>
         <div id="pairReadout" class="pair-readout"></div>
         <p class="micro">The Anchor Frame supplies the axis for relation displacement and initial child facing. Angle offset is applied after the frame is chosen.</p>
       </section>
@@ -93,8 +91,8 @@
         <div class="section-head"><span>03</span><h2>Selection</h2></div>
         <div id="selectionInfo" class="selection-card">No polygon selected.</div>
         <div class="button-row">
-          <button id="duplicateBtn" class="ghost">Duplicate</button>
-          <button id="deleteBtn" class="danger">Delete</button>
+          <button id="duplicateBtn" class="btn--outline">Duplicate</button>
+          <button id="deleteBtn" class="btn--danger">Delete</button>
         </div>
         <p class="micro">Drag a free polygon to move it. Attached polygons are positioned by their parent; move or transform that parent instead. Use the mouse wheel over a free polygon to rotate by the snap angle.</p>
       </section>
@@ -103,15 +101,15 @@
         <div class="section-head"><span>03B</span><h2>Polygons &amp; Groups</h2></div>
         <div id="polygonList" class="polygon-list"></div>
         <div class="button-row">
-          <button id="selectAllPolysBtn" class="ghost">Select all</button>
-          <button id="clearPolySelectionBtn" class="ghost">Clear</button>
+          <button id="selectAllPolysBtn" class="btn--outline">Select all</button>
+          <button id="clearPolySelectionBtn" class="btn--outline">Clear</button>
         </div>
         <label>Active group
           <select id="groupSelect"></select>
         </label>
         <div class="button-row">
-          <button id="groupSelectedBtn" class="ghost">Group selected</button>
-          <button id="ungroupSelectedBtn" class="ghost">Ungroup</button>
+          <button id="groupSelectedBtn" class="btn--outline">Group selected</button>
+          <button id="ungroupSelectedBtn" class="btn--outline">Ungroup</button>
         </div>
         <p class="micro">Checked polygons form the working selection. Transform preview uses the active group when one is selected; otherwise it uses the full structure.</p>
       </section>
@@ -167,17 +165,17 @@
           <div class="edge-action-group">
             <div class="edge-control-label">Remove</div>
             <div class="button-grid">
-              <button data-edge-rule="remove-selected" class="ghost">Selected</button>
-              <button data-edge-rule="attachment" class="ghost">Attachment edge</button>
-              <button data-edge-rule="opposite" class="ghost">Opposite edge(s)</button>
-              <button data-edge-rule="alternating" class="ghost">Alternating edges</button>
+              <button data-edge-rule="remove-selected" class="btn--outline">Selected</button>
+              <button data-edge-rule="attachment" class="btn--outline">Attachment edge</button>
+              <button data-edge-rule="opposite" class="btn--outline">Opposite edge(s)</button>
+              <button data-edge-rule="alternating" class="btn--outline">Alternating edges</button>
             </div>
           </div>
           <div class="edge-action-group">
             <div class="edge-control-label">Restore</div>
             <div class="button-grid">
-              <button data-edge-rule="restore-selected" class="ghost">Selected</button>
-              <button data-edge-rule="restore-all" class="ghost">All on this polygon</button>
+              <button data-edge-rule="restore-selected" class="btn--outline">Selected</button>
+              <button data-edge-rule="restore-all" class="btn--outline">All on this polygon</button>
             </div>
           </div>
         </div>
@@ -206,16 +204,16 @@
           <input id="transformScaleInput" type="range" min="0.25" max="2" step="0.05" value="1.10" />
         </label>
         <div class="button-grid">
-          <button id="rotateLeftBtn" class="ghost">↶ Rotate</button>
-          <button id="rotateRightBtn" class="ghost">Rotate ↷</button>
-          <button id="mirrorXBtn" class="ghost">Mirror X</button>
-          <button id="mirrorYBtn" class="ghost">Mirror Y</button>
-          <button id="scaleDownBtn" class="ghost">Scale ÷</button>
-          <button id="scaleUpBtn" class="ghost">Scale ×</button>
+          <button id="rotateLeftBtn" class="btn--outline">↶ Rotate</button>
+          <button id="rotateRightBtn" class="btn--outline">Rotate ↷</button>
+          <button id="mirrorXBtn" class="btn--outline">Mirror X</button>
+          <button id="mirrorYBtn" class="btn--outline">Mirror Y</button>
+          <button id="scaleDownBtn" class="btn--outline">Scale ÷</button>
+          <button id="scaleUpBtn" class="btn--outline">Scale ×</button>
         </div>
         <div id="previewActions" class="preview-actions hidden">
-          <button id="commitTransformBtn" class="primary primary-emphasis">Commit preview</button>
-          <button id="cancelTransformBtn" class="ghost">Cancel</button>
+          <button id="commitTransformBtn" class="btn btn--emphasis">Commit preview</button>
+          <button id="cancelTransformBtn" class="btn--outline">Cancel</button>
         </div>
         <p id="transformPreviewInfo" class="micro">Choose an operation to create a ghost preview. Nothing changes until committed.</p>
         <p class="micro">Duplicate + transform creates a new structure group, new polygon IDs, and remapped internal references.</p>
@@ -224,7 +222,7 @@
       <section>
         <div class="section-head"><span>06</span><h2>Descriptor</h2></div>
         <textarea id="descriptor" readonly></textarea>
-        <button id="copyDescriptorBtn" class="wide ghost">Copy descriptor</button>
+        <button id="copyDescriptorBtn" class="wide btn--outline">Copy descriptor</button>
       </section>
     </aside>
   </main>

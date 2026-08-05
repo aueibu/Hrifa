@@ -36,12 +36,14 @@
  * `class="btn btn--outline"`, not just the modifier alone, even though the
  * modifier's higher specificity would win either way.
  *
- * Only reads the shared semantic + ink tokens (base.css/light.css/dark.css
- * must be linked first) — never an applet-local derived variable like
- * --line or --chrome-accent-hover, since those aren't guaranteed to exist
- * in an applet that hasn't defined them. An applet may still layer its own
- * derived tiers on top for local flavor; it should never need to for this
- * file to render correctly on its own.
+ * The button rules below only read the shared semantic + ink tokens
+ * (base.css/light.css/dark.css must be linked first) — never an
+ * applet-local derived variable, so this file renders correctly with
+ * nothing but the token layer loaded. (The "derived chrome tints" section
+ * further down, --line/--soft-line/--panel-tint/--chrome-accent-hover, IS
+ * itself part of this file now — see that section's own comment for why.
+ * An applet may still layer its own additional derived tiers on top for
+ * local flavor.)
  *
  * Colour architecture: every button reads two local custom properties,
  * --btn-color and --btn-ink, rather than hardcoding a token per variant.
@@ -87,6 +89,52 @@
  * already serves both, so --chrome-accent-text just reuses --chrome-accent
  * there.
  */
+
+/* ---- base page reset ----
+ * Also universal boilerplate, same problem as the button rules and the
+ * derived tints below: near-every applet's own stylesheet opened with its
+ * own copy of `* { box-sizing: border-box }` plus a `body` rule setting
+ * margin:0 and the same three semantic tokens (surface-bg/text/font-ui).
+ * An applet's own stylesheet should only need `html`/`body` rules for
+ * genuine local layout (height:100%, min-width, padding, overflow) on top
+ * of this — not to redeclare the shared defaults.
+ */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--neutral-surface-bg);
+  color: var(--neutral-text);
+  font-family: var(--font-ui);
+}
+
+/* ---- derived chrome tints ----
+ * color-mix() combinations computed from semantic tokens at use-time —
+ * Design Philosophy's tier-2 "Derived" layer. This used to be copy-pasted,
+ * near-verbatim, into 5+ applets' own :root blocks (--line/--soft-line/
+ * --panel-tint at 38%/16%/3.5% light, 28%/12%/2.5% dark; --chrome-accent-hover
+ * at 18%/20%) — the same "identical boilerplate in every app" problem
+ * components.css's button rules were built to fix, just not caught until
+ * later. Centralized here now. An applet with a genuine reason to differ
+ * can still override --line-strength etc. locally (redeclaring the single
+ * number is a real, small local decision; redeclaring the whole color-mix()
+ * formula is the boilerplate this replaces).
+ */
+:root {
+  --line-strength: 38%;
+  --soft-line-strength: 16%;
+  --panel-tint-strength: 3.5%;
+  --hover-strength: 18%;
+  --line: color-mix(in srgb, var(--neutral-text) var(--line-strength), transparent);
+  --soft-line: color-mix(in srgb, var(--neutral-text) var(--soft-line-strength), transparent);
+  --panel-tint: color-mix(in srgb, var(--neutral-text) var(--panel-tint-strength), transparent);
+  --chrome-accent-hover: color-mix(in srgb, var(--chrome-accent) var(--hover-strength), var(--neutral-surface-bg));
+}
+[data-theme="dark"] {
+  --line-strength: 28%;
+  --soft-line-strength: 12%;
+  --panel-tint-strength: 2.5%;
+  --hover-strength: 20%;
+}
 
 button, input, select, textarea, .btn { font: inherit; }
 

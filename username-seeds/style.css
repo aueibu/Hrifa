@@ -10,16 +10,10 @@
   --space: clamp(1rem, 3vw, 1.75rem);
 }
 
-* { box-sizing: border-box; }
 body {
-  margin: 0;
   min-width: 20rem;
-  background: var(--neutral-surface-bg);
-  color: var(--neutral-text);
-  font-family: var(--font-ui);
   line-height: 1.5;
 }
-button, input { font: inherit; }
 .page-shell { width: min(100% - 2rem, 42rem); margin: 0 auto; padding: clamp(2.5rem, 8vw, 6rem) 0 2rem; }
 .eyebrow, .mode-label { margin: 0; color: var(--neutral-text-muted); font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
 h1 { margin: 0.35rem 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(1.7rem, 5vw, 2.5rem); letter-spacing: -0.03em; line-height: 1.1; }

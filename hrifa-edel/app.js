@@ -202,7 +202,7 @@ async function exportInkPng(){const button=$('inkPngBtn'),original=button.textCo
 
 for(const f of FEATURES){$('parentFeature').add(new Option(f,f));$('childFeature').add(new Option(f,f));}
 const themeBtn=document.createElement('button');
-themeBtn.id='themeBtn';themeBtn.type='button';themeBtn.className='ghost';
+themeBtn.id='themeBtn';themeBtn.type='button';themeBtn.className='btn--outline';
 themeBtn.setAttribute('aria-pressed','false');themeBtn.textContent='Nightglass';
 $('grayscaleBtn').insertAdjacentElement('afterend',themeBtn);
 themeBtn.onclick=()=>setTheme(document.documentElement.dataset.theme!=='dark');

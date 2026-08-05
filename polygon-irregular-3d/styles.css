@@ -9,8 +9,7 @@
    directly rather than a semantic role, same as Grid Traversal's
    token-identity palette. */
 :root{--status-ok:var(--green-300)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--neutral-surface-bg);color:var(--neutral-text);font:13px/1.4 var(--font-ui);min-height:100vh}
+body{font-size:13px;line-height:1.4;min-height:100vh}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 .app-shell{max-width:1740px;margin:auto;min-height:100vh;padding:18px 22px}
