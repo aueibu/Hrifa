@@ -1,0 +1,6 @@
+/**
+ * Scoped to this component rather than the shell-wide font <link> in
+ * index.html: Crimson Text is meant to be rare (long-form notes/lore), so
+ * only pages that actually import Reading should pay for the download.
+ */
+@import 'https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap';

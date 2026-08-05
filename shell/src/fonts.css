@@ -1,0 +1,27 @@
+/**
+ * Fraunces is self-hosted rather than pulled from Google Fonts: the css2
+ * endpoint only lets you parameterize registered axes (wght, opsz) via URL,
+ * not custom axes like WONK, so there's no way to request the wonky
+ * letterforms through that API. Self-hosting the actual variable font file
+ * lets font-variation-settings turn WONK on directly. Same TTFs as
+ * design-tokens/build/fonts.
+ */
+@font-face {
+  font-family: Fraunces;
+  src: url('/fonts/Fraunces-Variable.ttf') format('truetype-variations');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Fraunces;
+  src: url('/fonts/Fraunces-Italic-Variable.ttf') format('truetype-variations');
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.mantine-Title-root {
+  font-variation-settings: 'WONK' 1;
+}

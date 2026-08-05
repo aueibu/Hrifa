@@ -27,6 +27,7 @@ node_modules/
 .vscode/
 .idea/
 .claude/
+/CLAUDE.md
 .DS_Store
 Thumbs.db
 Desktop.ini
