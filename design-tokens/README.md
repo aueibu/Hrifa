@@ -18,20 +18,88 @@ apps link to directly — no bundler, no runtime dependency on Node. Typography
    reference. Split into two domains that are never read across each other:
    - `neutral.*` — surface/border/text roles shared by both domains
      (`surface-bg`, `surface-raised`, `surface-overlay`, `border`,
-     `border-strong`, `text`, `text-muted`, `text-disabled`).
+     `border-strong`, `text`, `text-secondary`, `text-muted`, `text-disabled`).
    - `chrome.accent` — the app's own controls: buttons, sliders, dropdowns,
-     focus rings.
+     focus rings. `chrome.ink` is its required pair — see "Fill tokens need an
+     ink pair" below.
    - `work-surface.{idle,hover,active,relation}` — the applet's actual subject
      matter: canvas points, edges, cells, whatever the user directly
      manipulates. Deliberately different hues from `chrome.accent` so a reader
      can tell tool from subject at a glance.
    - `emphasis` / `critical` — rare warm highlight / destructive action,
-     shared by both domains.
+     shared by both domains. `critical-ink` is `critical`'s ink pair.
 
    Compiles to `build/css/light.css` (`:root, [data-theme="light"]`) and
    `build/css/dark.css` (`[data-theme="dark"]`). Both files define the *same*
    variable names (e.g. `--chrome-accent`) — only the selector and the value
    differ, so switching `data-theme` on `<html>`/`<body>` retheme the page.
+
+### Fill tokens need an ink pair
+
+`--neutral-text`/`--neutral-surface-bg` invert cleanly between themes because
+they're built that way on purpose — light theme's ink is dark, dark theme's
+ink is light, always at opposite ends of the ramp from that theme's own
+surface. Accent-ish fills (`--chrome-accent`, `--critical`) don't follow that
+rule: `--chrome-accent` is a *dark-toned* colour in **both** themes (blue.700
+light, blue.600 dark), and `--critical` is the same red.500 value in both
+themes. Neither one inverts, so text sitting on top of one of these fills
+must **never** reach for `--neutral-surface-bg` or `--neutral-text` — those
+only happen to produce the right contrast in whichever theme the fill's
+luminance happens to favour, and silently break the other theme (or break
+outright the next time the fill's hue/step is retuned, which is exactly what
+happened when the dark chrome accent moved from purple.400 to blue.600).
+
+Instead, every fill role that text can sit on top of gets its own `-ink`
+companion token — `--chrome-ink` (`gray.50`, fixed light) and `--critical-ink`
+(`gray.950`, fixed dark) — picked once, deliberately, for contrast against
+that specific fill, and does not vary by theme unless the fill itself does.
+When you introduce a new filled surface (a new button variant, a badge, a
+chip), give it an `-ink` token rather than reaching for a neutral text role.
+
+### The reverse case: a fill token used AS text
+
+The same fill roles (`--chrome-accent` and friends, `--critical`) also get
+read directly as running text in plenty of places — link-styled text,
+`.eyebrow` labels, outline-button labels — without any fill involved at all.
+This looks like it should just work (it's the same colour, why would it need
+its own token?), but it doesn't: a colour chosen to be dark enough to serve
+as a fill (so it can pair with a *fixed* ink token) is, in dark theme, too
+dark to itself pass 4.5:1 as text against `--neutral-surface-bg` — confirmed
+by contrast math, not just eyeballing: `--chrome-accent`'s dark value is
+~3.0:1 as text, well under the 4.5:1 AA minimum for anything smaller than
+~18.7px bold. Fill-suitability wants low luminance (to contrast with a light
+fixed ink); text-on-near-black wants high luminance. Those two requirements
+are mutually exclusive for one value in dark theme — there is no better
+single dark-mode number to pick.
+
+This applies to `color` first and foremost, not `border-color`. A resting
+border is a WCAG *non-text* UI component (3:1 minimum, WCAG 1.4.11), and the
+fill tokens already clear that bar even where they fail the text-contrast
+one — `--chrome-accent`'s dark value is ~3.0:1, just over that line. So a
+bordered control's resting border should keep using the fill token, the
+actual theming-identity colour — only the *label* moves to the `-text`
+variant. A focus ring is also only held to the 3:1 non-text minimum, so it
+could likewise stay on the fill token — but it's a reasonable, separate
+choice to give it the higher-contrast `-text` value instead anyway, since a
+focus indicator benefits from more margin than the bare minimum to be
+spotted quickly while tabbing. That's a deliberate per-element call, not a
+rule that every non-text use must follow.
+
+So every chrome accent (and `--critical`) has an `-text` counterpart:
+`--chrome-accent-text`, `--chrome-accent-secondary-text`,
+`--chrome-accent-tertiary-text`, `--critical-text`. Light theme has enough
+contrast headroom that one value already works for both fill and text, so
+each `-text` token just reuses its base token's light value; dark theme uses
+a lighter step of the same hue (the `.400` step, landing around 6.4:1).
+`--critical` has the mirror-image problem — its one fixed red.500 value
+happens to pass as text in dark theme (~4.6:1) but fails in light (~3.3:1) —
+so `critical-text` is asymmetric: `red.700` light, `red.400` dark.
+
+Any CSS that sets `color` to a fill token directly should use its `-text`
+counterpart instead; leave `border-color`/`outline-color` on the fill token
+itself. `components.css` does this via a third local property, `--btn-text`,
+which only ever appears on a `color` declaration — never `border-color` or
+`outline` — alongside `--btn-color`/`--btn-ink`.
 
 To add a role, add a token under `color.theme.light.*` and
 `color.theme.dark.*` pointing at a base hue/step, then `npm run build`. Do not
@@ -44,6 +112,7 @@ existing eleven first.
 <link rel="stylesheet" href="../design-tokens/build/css/base.css" />
 <link rel="stylesheet" href="../design-tokens/build/css/light.css" />
 <link rel="stylesheet" href="../design-tokens/build/css/dark.css" />
+<link rel="stylesheet" href="../design-tokens/build/css/components.css" />
 <link rel="stylesheet" href="style.css" />
 ```
 
@@ -53,6 +122,35 @@ own `style.css` should reference only the semantic variables above — never a
 base hue/step directly — and layer any derived values (soft hover fills,
 etc.) on top via `color-mix()` at use-time, per the Design Philosophy's
 three-tier token guidance.
+
+## Components
+
+`build/css/components.css` is the shared home for the components common to
+every applet: buttons (`.btn`, `.btn--outline`, `.btn--secondary`,
+`.btn--tertiary`, `.btn--danger`, `.btn--unstyled`), `select`, and
+checkbox/radio/range accent colour. Hand-authored and checked in, same
+status as `fonts.css` — no build step. Link it after `dark.css` and before
+the applet's own `style.css` (see above) so an applet's local rules can
+still override specific declarations if it has a genuine local need, but
+never has to re-derive the base rule from scratch.
+
+Naming mostly follows USWDS's button vocabulary (the design system the base
+colour ramp is itself built on), with `.btn--secondary`/`.btn--tertiary` as
+Hrifa's own addition — two more chrome hues (`--chrome-accent-secondary` =
+green, `--chrome-accent-tertiary` = purple) for actions that need visual
+weight without being the primary CTA or a destructive one. See the header
+comment in `components.css` for the full naming mapping and reasoning.
+Nothing outside buttons, selects, and checkbox/radio/range is standardized
+yet; an applet's own stylesheet still owns everything else.
+
+Every button reads two local custom properties, `--btn-color`/`--btn-ink`,
+rather than hardcoding a token per variant — a colour modifier only needs to
+reassign those two, and hover/focus/outline all respond automatically. Two
+hover treatments are used deliberately: filled buttons tint `--btn-color`
+with a little `gray.100` and lift slightly; outline buttons wash in a little
+`--btn-color` against the page background instead, with no lift (matching
+Hrifa Edel's existing `--chrome-accent-hover` pattern, generalized to any
+`--btn-color`).
 
 ## Typography
 

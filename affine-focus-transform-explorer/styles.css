@@ -19,7 +19,7 @@ button{cursor:pointer}
 .app-shell{max-width:1680px;margin:auto;min-height:100vh;padding:18px 22px}
 .topbar{height:65px;display:flex;align-items:center;gap:28px;border-bottom:1px solid var(--neutral-border)}
 .brand{display:flex;align-items:center;gap:12px;min-width:260px}
-.brand-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--chrome-accent);color:var(--chrome-accent);font-size:11px;letter-spacing:.12em}
+.brand-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--chrome-accent);color:var(--chrome-accent-text);font-size:11px;letter-spacing:.12em}
 .brand h1{font-family:var(--font-display);font-weight:600;font-size:17px;margin:0}
 .brand p{margin:1px 0 0;color:var(--neutral-text-muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
 .mode-tabs{display:flex;gap:4px}
@@ -27,9 +27,9 @@ button{cursor:pointer}
 .mode-tab.active,.view-tab.active,.inspector-tab.active,.layout-btn.active{color:var(--neutral-text);background:var(--neutral-surface-raised);border-bottom:2px solid var(--chrome-accent)}
 .top-actions{margin-left:auto;display:flex;gap:8px}
 .button,.export-grid button{border:1px solid var(--neutral-border);border-radius:0;background:var(--neutral-surface-raised);color:var(--neutral-text);padding:9px 12px;font-size:11px;cursor:pointer;transition:border-color .14s ease,color .14s ease,transform .14s ease,box-shadow .14s ease}
-.button:hover,.export-grid button:hover{border-color:var(--chrome-accent);color:var(--chrome-accent);transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutral-shadow)}
-.button.accent,.button.primary{background:var(--chrome-accent);color:var(--neutral-surface-bg);border-color:var(--chrome-accent);font-weight:600}
-.button.accent:hover,.button.primary:hover{background:var(--neutral-surface-bg);color:var(--chrome-accent)}
+.button:hover,.export-grid button:hover{border-color:var(--chrome-accent);color:var(--chrome-accent-text);transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutral-shadow)}
+.button.accent,.button.primary{background:var(--chrome-accent);color:var(--chrome-ink);border-color:var(--chrome-accent);font-weight:600}
+.button.accent:hover,.button.primary:hover{background:var(--neutral-surface-bg);color:var(--chrome-accent-text)}
 .button.ghost{background:transparent}
 .button.wide{width:100%;margin-top:8px}
 .button span{float:right;opacity:.55}
@@ -43,7 +43,7 @@ button{cursor:pointer}
 .field-row label{min-width:0}
 input,select{width:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);border:1px solid var(--neutral-border);border-radius:0;padding:8px;margin-top:5px;outline:none}
 input:focus,select:focus{border-color:var(--chrome-accent)}
-.control-note{padding:10px;background:var(--neutral-surface-bg);border:1px solid var(--neutral-border);color:var(--chrome-accent);font-family:var(--font-mono);font-size:11px}
+.control-note{padding:10px;background:var(--neutral-surface-bg);border:1px solid var(--neutral-border);color:var(--chrome-accent-text);font-family:var(--font-mono);font-size:11px}
 .hidden{display:none}
 .family-list{display:flex;flex-direction:column;gap:6px}
 .family-card{display:flex;align-items:center;justify-content:space-between;padding:8px 9px;background:var(--neutral-surface-raised);border-left:3px solid var(--derived)}
@@ -85,7 +85,7 @@ th{color:var(--neutral-text-muted);font-weight:400;background:var(--neutral-surf
 .playback-row{display:flex;gap:10px;align-items:center}
 .playback-row strong,.playback-row span{display:block}
 .playback-row span{color:var(--neutral-text-muted);font-size:11px}
-.play-button{width:38px;height:38px;border-radius:50%;border:1px solid var(--chrome-accent);background:color-mix(in srgb,var(--chrome-accent) 16%,var(--neutral-surface-bg));color:var(--chrome-accent)}
+.play-button{width:38px;height:38px;border-radius:50%;border:1px solid var(--chrome-accent);background:color-mix(in srgb,var(--chrome-accent) 16%,var(--neutral-surface-bg));color:var(--chrome-accent-text)}
 input[type=range]{accent-color:var(--chrome-accent);padding:0}
 .range-caption{display:flex;justify-content:space-between;color:var(--neutral-text-muted);font-size:10px}
 .export-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}

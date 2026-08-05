@@ -141,12 +141,19 @@
           "border": { "value": "{color.base.gray.300}", "type": "color", "comment": "Default rules and dividers." },
           "border-strong": { "value": "{color.base.gray.400}", "type": "color", "comment": "Emphasized rules, active containers." },
           "text": { "value": "{color.base.gray.950}", "type": "color", "comment": "Default ink." },
-          "text-muted": { "value": "{color.base.gray.700}", "type": "color", "comment": "Secondary or supporting text." },
+          "text-secondary": { "value": "{color.base.gray.900}", "type": "color", "comment": "Secondary or supporting text — labels, captions, instructional copy. Legible at a glance, subordinate to default ink." },
+          "text-muted": { "value": "{color.base.gray.700}", "type": "color", "comment": "Tertiary or de-emphasized text — fine print, nested meta, quiet instrument chrome." },
           "text-disabled": { "value": "{color.base.gray.400}", "type": "color", "comment": "Disabled labels and values." },
           "shadow": { "value": "{color.base.gray.800}", "type": "color", "comment": "Drop-shadow / offset-accent ink." }
         },
         "chrome": {
-          "accent": { "value": "{color.base.blue.700}", "type": "color", "comment": "Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code." }
+          "accent": { "value": "{color.base.blue.700}", "type": "color", "comment": "Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code." },
+          "accent-secondary": { "value": "{color.base.green.700}", "type": "color", "comment": "Secondary button/control accent — a second chrome hue for an action that needs visual weight but isn't the primary CTA. Same shade-band convention as chrome.accent (700 light / 600 dark) so it shares --chrome-ink without needing its own ink token." },
+          "accent-tertiary": { "value": "{color.base.purple.700}", "type": "color", "comment": "Tertiary button/control accent, third chrome hue. Same shade-band convention as chrome.accent. Note: shares its light-mode step (purple.700) with work-surface.relation — a tuning candidate, not yet resolved." },
+          "accent-text": { "value": "{color.base.blue.700}", "type": "color", "comment": "Chrome-accent used AS text/border directly on a neutral surface (outline-button text, links, eyebrow labels) rather than as a fill. Distinct from accent because a fill needs to be dark enough to pair with fixed --chrome-ink, while standalone text needs to be light enough to read against the page itself — in light theme one value satisfies both (reuses accent's value here), but they diverge in dark theme. See design-tokens/README.md > \"Fill tokens need an ink pair\"." },
+          "accent-secondary-text": { "value": "{color.base.green.700}", "type": "color", "comment": "accent-secondary's text/border counterpart — see accent-text." },
+          "accent-tertiary-text": { "value": "{color.base.purple.700}", "type": "color", "comment": "accent-tertiary's text/border counterpart — see accent-text." },
+          "ink": { "value": "{color.base.gray.50}", "type": "color", "comment": "Text/icon colour for content sitting on a chrome-accent fill (filled buttons, active slider handles). Chrome-accent's fill is dark-toned in both themes, so unlike the neutral text roles this does not invert with theme — it stays a fixed light ink. Also used by accent-secondary and accent-tertiary, which were deliberately chosen at matching luminance so one ink token covers all three." }
         },
         "work-surface": {
           "idle": { "value": "{color.base.green.800}", "type": "color", "comment": "Available but unselected points, edges, or objects." },
@@ -155,7 +162,9 @@
           "relation": { "value": "{color.base.purple.700}", "type": "color", "comment": "A second object referenced against the active one — comparison, not selection." }
         },
         "emphasis": { "value": "{color.base.yellow.500}", "type": "color", "comment": "Rare warm or editorial highlight. Never the default selection colour." },
-        "critical": { "value": "{color.base.red.500}", "type": "color", "comment": "Destructive, critical, or irreversible action — deliberately deeper than the base red." }
+        "critical": { "value": "{color.base.red.500}", "type": "color", "comment": "Destructive, critical, or irreversible action — deliberately deeper than the base red." },
+        "critical-ink": { "value": "{color.base.gray.950}", "type": "color", "comment": "Text/icon colour for content sitting on a critical fill (danger-button hover, alert banners). Critical is a fixed red.500 in both themes and reads better with dark text than light, so — like chrome.ink — this stays fixed rather than inverting with theme." },
+        "critical-text": { "value": "{color.base.red.700}", "type": "color", "comment": "Critical used AS text/border directly on a neutral surface (danger-outline buttons, error copy) rather than as a fill. --critical is a fixed red.500 in both themes, which happens to pass as text against the dark surface (~4.6:1) but fails against the light one (~3.3:1) — the reverse of chrome's problem, but the same root cause: a value tuned for one role doesn't automatically work for the other. red.700 restores light-theme contrast to ~7:1." }
       },
       "dark": {
         "neutral": {
@@ -165,12 +174,19 @@
           "border": { "value": "{color.base.gray.700}", "type": "color", "comment": "Default rules and dividers." },
           "border-strong": { "value": "{color.base.gray.600}", "type": "color", "comment": "Emphasized rules, active containers." },
           "text": { "value": "{color.base.gray.50}", "type": "color", "comment": "Default ink." },
-          "text-muted": { "value": "{color.base.gray.400}", "type": "color", "comment": "Secondary or supporting text." },
+          "text-secondary": { "value": "{color.base.gray.200}", "type": "color", "comment": "Secondary or supporting text — labels, captions, instructional copy. Legible at a glance, subordinate to default ink." },
+          "text-muted": { "value": "{color.base.gray.400}", "type": "color", "comment": "Tertiary or de-emphasized text — fine print, nested meta, quiet instrument chrome." },
           "text-disabled": { "value": "{color.base.gray.600}", "type": "color", "comment": "Disabled labels and values." },
           "shadow": { "value": "{color.base.gray.300}", "type": "color", "comment": "Drop-shadow / offset-accent ink." }
         },
         "chrome": {
-          "accent": { "value": "{color.base.purple.400}", "type": "color", "comment": "Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code." }
+          "accent": { "value": "{color.base.blue.600}", "type": "color", "comment": "Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code." },
+          "accent-secondary": { "value": "{color.base.green.600}", "type": "color", "comment": "Secondary button/control accent — a second chrome hue for an action that needs visual weight but isn't the primary CTA. Same shade-band convention as chrome.accent (700 light / 600 dark) so it shares --chrome-ink without needing its own ink token." },
+          "accent-tertiary": { "value": "{color.base.purple.600}", "type": "color", "comment": "Tertiary button/control accent, third chrome hue. Same shade-band convention as chrome.accent." },
+          "accent-text": { "value": "{color.base.blue.400}", "type": "color", "comment": "Chrome-accent used AS text/border directly on a neutral surface (outline-button text, links, eyebrow labels) rather than as a fill. blue.600 (accent's own dark value) is 3.0:1 against --neutral-surface-bg as text — fails WCAG AA. blue.400 is ~6.4:1. A fill needs to be dark enough to pair with fixed --chrome-ink; standalone text needs the opposite (light enough to read against a near-black page) — the two constraints are mutually exclusive in dark theme, hence two tokens. See design-tokens/README.md > \"Fill tokens need an ink pair\"." },
+          "accent-secondary-text": { "value": "{color.base.green.400}", "type": "color", "comment": "accent-secondary's text/border counterpart — see accent-text. green.600 is 3.0:1 as text; green.400 is ~6.4:1." },
+          "accent-tertiary-text": { "value": "{color.base.purple.400}", "type": "color", "comment": "accent-tertiary's text/border counterpart — see accent-text. purple.600 is 3.0:1 as text; purple.400 is ~6.4:1." },
+          "ink": { "value": "{color.base.gray.50}", "type": "color", "comment": "Text/icon colour for content sitting on a chrome-accent fill (filled buttons, active slider handles). Chrome-accent's fill is dark-toned in both themes, so unlike the neutral text roles this does not invert with theme — it stays a fixed light ink. Also used by accent-secondary and accent-tertiary, which were deliberately chosen at matching luminance so one ink token covers all three." }
         },
         "work-surface": {
           "idle": { "value": "{color.base.green.300}", "type": "color", "comment": "Available but unselected points, edges, or objects." },
@@ -179,7 +195,9 @@
           "relation": { "value": "{color.base.purple.300}", "type": "color", "comment": "A second object referenced against the active one — comparison, not selection." }
         },
         "emphasis": { "value": "{color.base.yellow.300}", "type": "color", "comment": "Rare warm or editorial highlight. Never the default selection colour." },
-        "critical": { "value": "{color.base.red.500}", "type": "color", "comment": "Destructive, critical, or irreversible action — deliberately deeper/more intense than the other dark-theme accents." }
+        "critical": { "value": "{color.base.red.500}", "type": "color", "comment": "Destructive, critical, or irreversible action — deliberately deeper/more intense than the other dark-theme accents." },
+        "critical-ink": { "value": "{color.base.gray.950}", "type": "color", "comment": "Text/icon colour for content sitting on a critical fill (danger-button hover, alert banners). Critical is a fixed red.500 in both themes and reads better with dark text than light, so — like chrome.ink — this stays fixed rather than inverting with theme." },
+        "critical-text": { "value": "{color.base.red.400}", "type": "color", "comment": "Critical used AS text/border directly on a neutral surface (danger-outline buttons, error copy) rather than as a fill. See the light-theme comment for the full explanation. red.400 gives ~6.4:1 against the dark surface, more margin than --critical's own ~4.6:1." }
       }
     }
   }

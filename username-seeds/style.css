@@ -26,7 +26,7 @@ h1 { margin: 0.35rem 0 0; font-family: var(--font-display); font-weight: 600; fo
 .intro { margin: 0.75rem 0 2rem; color: var(--neutral-text-muted); }
 .result-card, .details, .tester, .list-editor { border: 1px solid var(--neutral-border); border-radius: 0; background: var(--neutral-surface-raised); }
 .result-card { padding: var(--space); }
-.username { display: block; overflow-wrap: anywhere; margin: 0.4rem 0 0.6rem; color: var(--chrome-accent); font-family: var(--font-mono); font-size: clamp(2.25rem, 10vw, 4.5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.username { display: block; overflow-wrap: anywhere; margin: 0.4rem 0 0.6rem; color: var(--chrome-accent-text); font-family: var(--font-mono); font-size: clamp(2.25rem, 10vw, 4.5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
 .time-display { margin: 0; color: var(--neutral-text-muted); font-family: var(--font-mono); }
 .details { margin-top: 1rem; padding: var(--space); }
 h2 { margin: 0 0 0.8rem; font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -34,11 +34,11 @@ dl { margin: 0; }
 dl div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-top: 1px solid var(--neutral-border); }
 dt { color: var(--neutral-text-muted); } dd { margin: 0; text-align: right; font-family: var(--font-mono); }
 .controls, .tester-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1rem; }
-button { cursor: pointer; min-height: 2.6rem; border: 1px solid var(--chrome-accent); border-radius: 0; padding: 0.5rem 0.8rem; background: var(--chrome-accent); color: var(--neutral-surface-bg); font-weight: 600; transition: background-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease; }
-button:hover { background: var(--neutral-surface-bg); color: var(--chrome-accent); transform: translateY(-1px); box-shadow: 2px 2px 0 var(--neutral-shadow); }
+button { cursor: pointer; min-height: 2.6rem; border: 1px solid var(--chrome-accent); border-radius: 0; padding: 0.5rem 0.8rem; background: var(--chrome-accent); color: var(--chrome-ink); font-weight: 600; transition: background-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease; }
+button:hover { background: var(--neutral-surface-bg); color: var(--chrome-accent-text); transform: translateY(-1px); box-shadow: 2px 2px 0 var(--neutral-shadow); }
 button.secondary { border-color: var(--neutral-border); background: transparent; color: var(--neutral-text); font-weight: 400; }
-button.secondary:hover { border-color: var(--chrome-accent); color: var(--chrome-accent); background: transparent; }
-button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--chrome-accent); outline-offset: 3px; }
+button.secondary:hover { border-color: var(--chrome-accent); color: var(--chrome-accent-text); background: transparent; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--chrome-accent-text); outline-offset: 3px; }
 .tester, .list-editor { margin-top: 1rem; }
 summary { cursor: pointer; padding: 0.9rem var(--space); font-family: var(--font-ui); }
 .tester-content { display: grid; gap: 0.5rem; padding: 0 var(--space) var(--space); }

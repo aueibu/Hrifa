@@ -161,7 +161,7 @@ button {
 
 button:hover {
   border-color: var(--chrome-accent);
-  color: var(--chrome-accent);
+  color: var(--chrome-accent-text);
   transform: translateY(-1px);
   box-shadow: 2px 2px 0 var(--neutral-shadow);
 }
@@ -169,19 +169,19 @@ button:hover {
 button.primary {
   background: var(--chrome-accent);
   border-color: var(--chrome-accent);
-  color: var(--neutral-surface-bg);
+  color: var(--chrome-ink);
   font-weight: 600;
 }
 
 button.primary:hover {
   background: var(--neutral-surface-bg);
-  color: var(--chrome-accent);
+  color: var(--chrome-accent-text);
 }
 
 button.primary kbd {
   background: color-mix(in srgb, var(--neutral-surface-bg) 20%, transparent);
   border-color: color-mix(in srgb, var(--neutral-surface-bg) 40%, transparent);
-  color: var(--neutral-surface-bg);
+  color: var(--chrome-ink);
 }
 
 button:disabled {
@@ -283,7 +283,7 @@ button:disabled {
 .info-details summary {
   cursor: pointer;
   font-size: 0.75rem;
-  color: var(--chrome-accent);
+  color: var(--chrome-accent-text);
   list-style: none;
   display: inline-flex;
   align-items: center;

@@ -1,6 +1,6 @@
 ::selection {
   background: var(--chrome-accent);
-  color: var(--neutral-surface-bg);
+  color: var(--chrome-ink);
 }
 
 .piece-rename {
@@ -57,7 +57,7 @@
 
 .variable-editor code {
   font-family: var(--font-mono);
-  color: var(--chrome-accent);
+  color: var(--chrome-accent-text);
 }
 
 .three-fields {

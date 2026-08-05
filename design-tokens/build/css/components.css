@@ -1,0 +1,218 @@
+/**
+ * Hand-authored, not part of the Style Dictionary colour build — same
+ * status as fonts.css in this directory (see its header comment). Covers
+ * the three components common to every current applet: buttons, selects,
+ * and checkbox/range accents. Nothing else is standardized yet — an
+ * applet's own stylesheet still owns its layout, panels, and any
+ * component this file doesn't define.
+ *
+ * Naming mostly follows USWDS's button vocabulary (the same system
+ * color-tokens.json's base ramp is built on — see its header comment),
+ * translated to Hrifa's own namespace:
+ *   .usa-button              -> .btn
+ *   .usa-button--outline     -> .btn--outline
+ *   .usa-button--secondary   -> .btn--danger     (deliberate departure: USWDS
+ *                                overloads "secondary" to mean their red/
+ *                                destructive variant, which reads as "lower
+ *                                emphasis" to anyone who doesn't already know
+ *                                that convention. Uses --critical/--critical-ink
+ *                                — same semantic role USWDS's secondary fills
+ *                                — under a name that says what it does.)
+ *   .usa-button--unstyled    -> .btn--unstyled
+ *   (no USWDS equivalent)    -> .btn--secondary / .btn--tertiary  (Hrifa's
+ *                                own addition — a second and third chrome
+ *                                hue, --chrome-accent-secondary/-tertiary,
+ *                                for actions that need visual weight but
+ *                                aren't the primary CTA — closer to Carbon's
+ *                                or Polaris's "secondary" than USWDS's)
+ *   disabled state           -> :disabled attribute, not a class, in both
+ *
+ * `.btn` is a class rather than relying on the bare `button` element
+ * selector alone, so it can also be put on an `<a>` or `<label>` acting as
+ * a button (e.g. a styled file-input trigger) — the same reason USWDS
+ * does it. Bare `<button>` still gets the filled look for free without
+ * any class, so a plain `<button>Save</button>` looks correct by default;
+ * add a modifier to opt into a variant. Recommended markup mirrors USWDS:
+ * `class="btn btn--outline"`, not just the modifier alone, even though the
+ * modifier's higher specificity would win either way.
+ *
+ * Only reads the shared semantic + ink tokens (base.css/light.css/dark.css
+ * must be linked first) — never an applet-local derived variable like
+ * --line or --chrome-accent-hover, since those aren't guaranteed to exist
+ * in an applet that hasn't defined them. An applet may still layer its own
+ * derived tiers on top for local flavor; it should never need to for this
+ * file to render correctly on its own.
+ *
+ * Colour architecture: every button reads two local custom properties,
+ * --btn-color and --btn-ink, rather than hardcoding a token per variant.
+ * The base rule sets them to --chrome-accent/--chrome-ink; each colour
+ * modifier (.btn--secondary, .btn--tertiary, .btn--danger) only needs to
+ * reassign those two properties, and every state (hover, focus, outline)
+ * reads from them generically. That's what makes `class="btn btn--outline
+ * btn--secondary"` work without a combinatorial set of one-off rules per
+ * colour-times-style pairing — a modifier changes the root, states change
+ * in response, nothing is redeclared per combination.
+ *
+ * Two hover treatments, chosen deliberately per surface rather than one
+ * generic hover for everything:
+ *   - Filled buttons mix --btn-color with a slight amount of gray.100 (a
+ *     fixed base step, same in both themes — not a semantic token, so it
+ *     doesn't invert with theme) and lift slightly (translateY + offset
+ *     shadow). This is the "pressed paper lifting up" cue already used
+ *     across Hrifa's filled controls.
+ *   - Outline buttons wash in a little of --btn-color against the page
+ *     background instead — the same transparent-tint hover already used in
+ *     Hrifa Edel's `--chrome-accent-hover` (`color-mix(chrome-accent 18%,
+ *     surface-bg)`), generalized here to any --btn-color. No lift: a
+ *     transparent surface picking up a light tint doesn't want the same
+ *     "this is a solid object lifting" cue a filled surface does.
+ *
+ * A third local property, --btn-text, backs the button LABEL (outline mode,
+ * unstyled mode) and the focus ring — never the resting border-color.
+ * Border stays on --btn-color, the actual theming-identity stop, in every
+ * non-focus state: it's a WCAG non-text UI component (3:1 minimum), and
+ * --btn-color already clears that even in dark theme, where it's too dark
+ * to pass as running text (4.5:1 minimum — a stricter bar `color` is held
+ * to). The focus ring could likewise get away with --btn-color (3:1 is the
+ * applicable minimum for it too), but deliberately uses the higher-contrast
+ * --btn-text instead — a focus indicator benefits from more margin than the
+ * bare minimum, since it needs to be spotted quickly while tabbing; that's
+ * a separate design choice from the label's, not a byproduct of it.
+ * --chrome-accent-text is a *different* token from --chrome-accent because
+ * a fill needs to be dark enough to pair with the fixed --btn-ink, while a
+ * label sitting directly on --neutral-surface-bg needs the opposite (light
+ * enough to read against a near-black dark-theme page) — the two needs are
+ * mutually exclusive for one value in dark theme (see color-tokens.json's
+ * accent-text comments for the contrast numbers). Light theme has enough headroom that one value
+ * already serves both, so --chrome-accent-text just reuses --chrome-accent
+ * there.
+ */
+
+button, input, select, textarea, .btn { font: inherit; }
+
+/* ---- buttons ---- */
+
+.btn, button {
+  --btn-color: var(--chrome-accent);
+  --btn-ink: var(--chrome-ink);
+  --btn-text: var(--chrome-accent-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--btn-color);
+  border-radius: 0;
+  background: var(--btn-color);
+  color: var(--btn-ink);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.btn:hover, button:hover {
+  background: color-mix(in srgb, var(--btn-color) 85%, var(--gray-100) 15%);
+  border-color: color-mix(in srgb, var(--btn-color) 85%, var(--gray-100) 15%);
+  color: var(--btn-ink);
+  box-shadow: 2px 2px 0 var(--neutral-shadow);
+  transform: translateY(-1px);
+}
+.btn:focus-visible, button:focus-visible {
+  outline: 3px solid var(--btn-text);
+  outline-offset: 2px;
+}
+.btn:disabled, button:disabled,
+.btn[aria-disabled="true"] {
+  opacity: .4;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn--secondary { --btn-color: var(--chrome-accent-secondary); --btn-text: var(--chrome-accent-secondary-text); }
+.btn--tertiary { --btn-color: var(--chrome-accent-tertiary); --btn-text: var(--chrome-accent-tertiary-text); }
+.btn--danger { --btn-color: var(--critical); --btn-ink: var(--critical-ink); --btn-text: var(--critical-text); }
+
+/* Resting border stays on --btn-color, the actual theming-identity stop —
+   a border is a WCAG non-text UI component (3:1 minimum, WCAG 1.4.11), and
+   --btn-color already clears that (~3.0:1+) even where it's too dark to
+   pass as running TEXT (4.5:1). Only `color` (the label itself) switches to
+   --btn-text, the property actually held to the stricter text-contrast bar
+   — see the file header for why the focus ring makes the opposite call. */
+.btn--outline {
+  background: transparent;
+  color: var(--btn-text);
+  border-color: var(--btn-color);
+}
+.btn--outline:hover {
+  background: color-mix(in srgb, var(--btn-color) 18%, var(--neutral-surface-bg) 82%);
+  color: var(--neutral-text);
+  border-color: var(--btn-color);
+  box-shadow: none;
+  transform: none;
+}
+
+.btn--unstyled {
+  background: transparent;
+  border: 0;
+  padding: 2px 0;
+  color: var(--btn-text);
+  font-weight: 600;
+  box-shadow: none;
+}
+.btn--unstyled:hover {
+  background: transparent;
+  color: var(--btn-text);
+  text-decoration: underline;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ---- form fields ---- */
+
+select, input, textarea {
+  background: var(--neutral-surface-bg);
+  color: var(--neutral-text);
+  border: 1px solid var(--neutral-border);
+  border-radius: 0;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+input, textarea {
+  transition: border-color .12s ease;
+}
+input:hover, textarea:hover,
+input:focus-visible, textarea:focus-visible {
+  border-color: var(--chrome-accent);
+}
+input:focus-visible, textarea:focus-visible {
+  outline: 3px solid var(--chrome-accent);
+  outline-offset: 2px;
+}
+
+/* Select gets the documented inset-accent hover/focus treatment (Design
+   Philosophy > Surfaces and lines): border flips to the accent colour and
+   a 3px accent bar insets from the left edge, rather than a filled state —
+   signals editability without turning the field into a filled control. */
+select {
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+select:hover {
+  border-color: var(--chrome-accent);
+  box-shadow: inset 3px 0 0 var(--chrome-accent);
+}
+select:focus-visible {
+  border-color: var(--chrome-accent);
+  box-shadow: inset 3px 0 0 var(--chrome-accent);
+  outline: 3px solid var(--chrome-accent);
+  outline-offset: 2px;
+}
+
+/* ---- checkbox / radio / range accents ---- */
+
+input[type="checkbox"], input[type="radio"], input[type="range"] {
+  accent-color: var(--chrome-accent);
+  border: none;
+  padding: 0;
+}

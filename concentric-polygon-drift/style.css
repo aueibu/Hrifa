@@ -111,7 +111,7 @@ svg text { font-family: var(--font-mono); }
   border-left: 1px solid var(--neutral-border); overflow-y: auto; padding: 16px;
 }
 h2.stageTitle { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--chrome-accent); margin: 0 0 10px 0; }
+  color: var(--chrome-accent-text); margin: 0 0 10px 0; }
 .block { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--neutral-border); }
 .block:last-child { border-bottom: none; }
 .row { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; gap: 8px; }
@@ -126,9 +126,9 @@ button {
   background: var(--neutral-surface-bg); cursor: pointer; color: var(--neutral-text);
 }
 button.full { width: 100%; margin: 4px 0; }
-button:hover { border-color: var(--chrome-accent); color: var(--chrome-accent); }
-button.primary { background: var(--chrome-accent); border-color: var(--chrome-accent); color: var(--neutral-surface-bg); }
-button.primary:hover { opacity: 0.9; color: var(--neutral-surface-bg); }
+button:hover { border-color: var(--chrome-accent); color: var(--chrome-accent-text); }
+button.primary { background: var(--chrome-accent); border-color: var(--chrome-accent); color: var(--chrome-ink); }
+button.primary:hover { opacity: 0.9; color: var(--chrome-ink); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 .note { font-size: 11px; color: var(--neutral-text-muted); line-height: 1.4; margin: 4px 0; }
 table.dataTable { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 10.5px; margin-top: 6px; }

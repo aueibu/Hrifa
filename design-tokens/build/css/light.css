@@ -9,14 +9,23 @@
   --neutral-border: var(--gray-300); /** Default rules and dividers. */
   --neutral-border-strong: var(--gray-400); /** Emphasized rules, active containers. */
   --neutral-text: var(--gray-950); /** Default ink. */
-  --neutral-text-muted: var(--gray-700); /** Secondary or supporting text. */
+  --neutral-text-secondary: var(--gray-900); /** Secondary or supporting text — labels, captions, instructional copy. Legible at a glance, subordinate to default ink. */
+  --neutral-text-muted: var(--gray-700); /** Tertiary or de-emphasized text — fine print, nested meta, quiet instrument chrome. */
   --neutral-text-disabled: var(--gray-400); /** Disabled labels and values. */
   --neutral-shadow: var(--gray-800); /** Drop-shadow / offset-accent ink. */
   --chrome-accent: var(--blue-700); /** Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code. */
+  --chrome-accent-secondary: var(--green-700); /** Secondary button/control accent — a second chrome hue for an action that needs visual weight but isn't the primary CTA. Same shade-band convention as chrome.accent (700 light / 600 dark) so it shares --chrome-ink without needing its own ink token. */
+  --chrome-accent-tertiary: var(--purple-700); /** Tertiary button/control accent, third chrome hue. Same shade-band convention as chrome.accent. Note: shares its light-mode step (purple.700) with work-surface.relation — a tuning candidate, not yet resolved. */
+  --chrome-accent-text: var(--blue-700); /** Chrome-accent used AS text/border directly on a neutral surface (outline-button text, links, eyebrow labels) rather than as a fill. Distinct from accent because a fill needs to be dark enough to pair with fixed --chrome-ink, while standalone text needs to be light enough to read against the page itself — in light theme one value satisfies both (reuses accent's value here), but they diverge in dark theme. See design-tokens/README.md > "Fill tokens need an ink pair". */
+  --chrome-accent-secondary-text: var(--green-700); /** accent-secondary's text/border counterpart — see accent-text. */
+  --chrome-accent-tertiary-text: var(--purple-700); /** accent-tertiary's text/border counterpart — see accent-text. */
+  --chrome-ink: var(--gray-50); /** Text/icon colour for content sitting on a chrome-accent fill (filled buttons, active slider handles). Chrome-accent's fill is dark-toned in both themes, so unlike the neutral text roles this does not invert with theme — it stays a fixed light ink. Also used by accent-secondary and accent-tertiary, which were deliberately chosen at matching luminance so one ink token covers all three. */
   --work-surface-idle: var(--green-800); /** Available but unselected points, edges, or objects. */
   --work-surface-hover: var(--orange-500); /** Hovered point/edge/object, prior to selection. */
   --work-surface-active: var(--orange-600); /** Selected, current, or provisional/preview geometry. Shares a hue with hover by deliberate choice; distinguished by size/weight/dash treatment instead of colour. */
   --work-surface-relation: var(--purple-700); /** A second object referenced against the active one — comparison, not selection. */
   --emphasis: var(--yellow-500); /** Rare warm or editorial highlight. Never the default selection colour. */
   --critical: var(--red-500); /** Destructive, critical, or irreversible action — deliberately deeper than the base red. */
+  --critical-ink: var(--gray-950); /** Text/icon colour for content sitting on a critical fill (danger-button hover, alert banners). Critical is a fixed red.500 in both themes and reads better with dark text than light, so — like chrome.ink — this stays fixed rather than inverting with theme. */
+  --critical-text: var(--red-700); /** Critical used AS text/border directly on a neutral surface (danger-outline buttons, error copy) rather than as a fill. --critical is a fixed red.500 in both themes, which happens to pass as text against the dark surface (~4.6:1) but fails against the light one (~3.3:1) — the reverse of chrome's problem, but the same root cause: a value tuned for one role doesn't automatically work for the other. red.700 restores light-theme contrast to ~7:1. */
 }

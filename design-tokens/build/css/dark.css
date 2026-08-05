@@ -9,14 +9,23 @@
   --neutral-border: var(--gray-700); /** Default rules and dividers. */
   --neutral-border-strong: var(--gray-600); /** Emphasized rules, active containers. */
   --neutral-text: var(--gray-50); /** Default ink. */
-  --neutral-text-muted: var(--gray-400); /** Secondary or supporting text. */
+  --neutral-text-secondary: var(--gray-200); /** Secondary or supporting text — labels, captions, instructional copy. Legible at a glance, subordinate to default ink. */
+  --neutral-text-muted: var(--gray-400); /** Tertiary or de-emphasized text — fine print, nested meta, quiet instrument chrome. */
   --neutral-text-disabled: var(--gray-600); /** Disabled labels and values. */
   --neutral-shadow: var(--gray-300); /** Drop-shadow / offset-accent ink. */
-  --chrome-accent: var(--purple-400); /** Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code. */
+  --chrome-accent: var(--blue-600); /** Buttons, sliders, links, focus rings, dropdown hover/inset accent. Domain: chrome (operating controls) — never read by work-surface code. */
+  --chrome-accent-secondary: var(--green-600); /** Secondary button/control accent — a second chrome hue for an action that needs visual weight but isn't the primary CTA. Same shade-band convention as chrome.accent (700 light / 600 dark) so it shares --chrome-ink without needing its own ink token. */
+  --chrome-accent-tertiary: var(--purple-600); /** Tertiary button/control accent, third chrome hue. Same shade-band convention as chrome.accent. */
+  --chrome-accent-text: var(--blue-400); /** Chrome-accent used AS text/border directly on a neutral surface (outline-button text, links, eyebrow labels) rather than as a fill. blue.600 (accent's own dark value) is 3.0:1 against --neutral-surface-bg as text — fails WCAG AA. blue.400 is ~6.4:1. A fill needs to be dark enough to pair with fixed --chrome-ink; standalone text needs the opposite (light enough to read against a near-black page) — the two constraints are mutually exclusive in dark theme, hence two tokens. See design-tokens/README.md > "Fill tokens need an ink pair". */
+  --chrome-accent-secondary-text: var(--green-400); /** accent-secondary's text/border counterpart — see accent-text. green.600 is 3.0:1 as text; green.400 is ~6.4:1. */
+  --chrome-accent-tertiary-text: var(--purple-400); /** accent-tertiary's text/border counterpart — see accent-text. purple.600 is 3.0:1 as text; purple.400 is ~6.4:1. */
+  --chrome-ink: var(--gray-50); /** Text/icon colour for content sitting on a chrome-accent fill (filled buttons, active slider handles). Chrome-accent's fill is dark-toned in both themes, so unlike the neutral text roles this does not invert with theme — it stays a fixed light ink. Also used by accent-secondary and accent-tertiary, which were deliberately chosen at matching luminance so one ink token covers all three. */
   --work-surface-idle: var(--green-300); /** Available but unselected points, edges, or objects. */
   --work-surface-hover: var(--orange-200); /** Hovered point/edge/object, prior to selection. */
   --work-surface-active: var(--orange-300); /** Selected, current, or provisional/preview geometry. Shares a hue with hover by deliberate choice; distinguished by size/weight/dash treatment instead of colour. */
   --work-surface-relation: var(--purple-300); /** A second object referenced against the active one — comparison, not selection. */
   --emphasis: var(--yellow-300); /** Rare warm or editorial highlight. Never the default selection colour. */
   --critical: var(--red-500); /** Destructive, critical, or irreversible action — deliberately deeper/more intense than the other dark-theme accents. */
+  --critical-ink: var(--gray-950); /** Text/icon colour for content sitting on a critical fill (danger-button hover, alert banners). Critical is a fixed red.500 in both themes and reads better with dark text than light, so — like chrome.ink — this stays fixed rather than inverting with theme. */
+  --critical-text: var(--red-400); /** Critical used AS text/border directly on a neutral surface (danger-outline buttons, error copy) rather than as a fill. See the light-theme comment for the full explanation. red.400 gives ~6.4:1 against the dark surface, more margin than --critical's own ~4.6:1. */
 }
