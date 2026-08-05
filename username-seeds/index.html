@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A deterministic username from a three-hour local-time cycle.">
     <title>Time-Derived Username</title>
+    <script>
+      (function () {
+        var media = matchMedia('(prefers-color-scheme: dark)');
+        var applyTheme = function () {
+          document.documentElement.dataset.theme = media.matches ? 'dark' : 'light';
+        };
+        applyTheme();
+        media.addEventListener('change', applyTheme);
+      })();
+    </script>
+    <link rel="stylesheet" href="../design-tokens/build/css/base.css">
+    <link rel="stylesheet" href="../design-tokens/build/css/light.css">
+    <link rel="stylesheet" href="../design-tokens/build/css/dark.css">
+    <link rel="stylesheet" href="../design-tokens/build/css/fonts.css">
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
