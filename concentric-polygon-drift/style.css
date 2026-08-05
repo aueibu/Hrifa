@@ -124,7 +124,6 @@ button.full { width: 100%; margin: 4px 0; }
 button:hover { border-color: var(--chrome-accent); color: var(--chrome-accent-text); }
 button.primary { background: var(--chrome-accent); border-color: var(--chrome-accent); color: var(--chrome-ink); }
 button.primary:hover { opacity: 0.9; color: var(--chrome-ink); }
-button:disabled { opacity: 0.4; cursor: not-allowed; }
 .note { font-size: 11px; color: var(--neutral-text-muted); line-height: 1.4; margin: 4px 0; }
 table.dataTable { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 10.5px; margin-top: 6px; }
 table.dataTable th, table.dataTable td { padding: 3px 4px; text-align: right; border-bottom: 1px solid var(--neutral-border); }

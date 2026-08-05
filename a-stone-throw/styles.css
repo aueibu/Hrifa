@@ -137,7 +137,6 @@ input[type="number"]:focus-visible, input[type="range"]:focus-visible {
 
 input[type="range"] {
   width: 100%;
-  accent-color: var(--chrome-accent);
 }
 
 button {
@@ -178,12 +177,6 @@ button.primary kbd {
   color: var(--chrome-ink);
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
 
 .advanced-props {
   margin-top: 0.6rem;

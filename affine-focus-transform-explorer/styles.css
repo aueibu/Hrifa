@@ -48,7 +48,7 @@ input:focus,select:focus{border-color:var(--chrome-accent)}
 .family-card{display:flex;align-items:center;justify-content:space-between;padding:8px 9px;background:var(--neutral-surface-raised);border-left:3px solid var(--derived)}
 .family-card .small{color:var(--neutral-text-muted);font-size:11px}
 .toggle-line{display:flex;gap:8px;align-items:center;color:var(--neutral-text-muted);margin:9px 0}
-.toggle-line input{width:auto;margin:0;accent-color:var(--chrome-accent)}
+.toggle-line input{width:auto;margin:0}
 .workspace{min-width:0}
 .workspace-head{height:58px;display:flex;align-items:flex-start;justify-content:space-between}
 .workspace-head h2{font-family:var(--font-display);font-weight:600;font-size:24px;margin:0}
@@ -85,7 +85,7 @@ th{color:var(--neutral-text-muted);font-weight:400;background:var(--neutral-surf
 .playback-row strong,.playback-row span{display:block}
 .playback-row span{color:var(--neutral-text-muted);font-size:11px}
 .play-button{width:38px;height:38px;border-radius:50%;border:1px solid var(--chrome-accent);background:color-mix(in srgb,var(--chrome-accent) 16%,var(--neutral-surface-bg));color:var(--chrome-accent-text)}
-input[type=range]{accent-color:var(--chrome-accent);padding:0}
+input[type=range]{padding:0}
 .range-caption{display:flex;justify-content:space-between;color:var(--neutral-text-muted);font-size:10px}
 .export-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .export-grid button{padding:7px}

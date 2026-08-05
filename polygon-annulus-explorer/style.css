@@ -57,7 +57,6 @@ button.ghost:hover,.file-label.ghost:hover{background:var(--chrome-accent-hover)
 button.ghost[aria-pressed="true"]{background:var(--chrome-accent);color:var(--chrome-ink)}
 button.primary{background:var(--chrome-accent);border-color:var(--chrome-accent);color:var(--chrome-ink)}
 button.primary:hover{transform:translateY(-1px);box-shadow:2px 2px 0 var(--neutral-shadow)}
-button.primary:disabled,button:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
 button.wide,.file-label.wide{width:100%;margin-top:10px}
 button span{float:right;opacity:.6}
 .file-label input{display:none}
@@ -76,14 +75,14 @@ label{display:block;font-size:11px;color:var(--muted);margin:10px 0;font-weight:
 label output{float:right;color:var(--neutral-text);font-family:var(--font-mono);font-size:10px;font-variant-numeric:tabular-nums}
 input[type=number]{width:100%;margin-top:6px;background:var(--neutral-surface-bg);border:1px solid var(--line);color:var(--neutral-text);border-radius:0;padding:6px 7px;font-family:var(--font-mono);font-size:12px}
 input[type=number]:hover,input[type=number]:focus{border-color:var(--chrome-accent)}
-input[type=range]{width:100%;margin-top:8px;accent-color:var(--chrome-accent)}
+input[type=range]{width:100%;margin-top:8px}
 .pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .preset-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
 .preset-btn{padding:7px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
 .micro{font-size:10px;line-height:1.5;color:var(--muted);margin:9px 0 0}
 
 .toggle-line{display:flex;gap:8px;align-items:center;color:var(--muted);margin:12px 0;font-weight:600}
-.toggle-line input{width:auto;margin:0;accent-color:var(--chrome-accent)}
+.toggle-line input{width:auto;margin:0}
 
 .ratio-readout{margin-top:12px;padding:9px 10px;border:1px solid var(--line);border-left:4px solid var(--chrome-accent);background:var(--neutral-surface-bg);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .ratio-readout.fail{border-left-color:var(--critical)}

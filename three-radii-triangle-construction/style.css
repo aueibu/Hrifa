@@ -78,7 +78,6 @@ button {
 button:hover { border-color: var(--chrome-accent); color: var(--chrome-accent-text); }
 button.primary { background: var(--chrome-accent); border-color: var(--chrome-accent); color: var(--chrome-ink); }
 button.primary:hover { opacity: 0.9; color: var(--chrome-ink); }
-button:disabled { opacity: 0.4; cursor: not-allowed; }
 button.dice { padding: 4px 8px; }
 .note { font-size: 11px; color: var(--neutral-text-muted); line-height: 1.4; margin: 4px 0; }
 .valid { color: var(--green-600); }

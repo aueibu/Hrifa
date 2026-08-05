@@ -46,7 +46,7 @@ button{cursor:pointer}
 .hint{color:var(--neutral-text-muted);font-size:11px;margin:8px 0}
 .toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
 .toggle-line{display:flex;gap:7px;align-items:center;color:var(--neutral-text-muted);font-size:11px}
-.toggle-line input{width:auto;margin:0;accent-color:var(--chrome-accent)}
+.toggle-line input{width:auto;margin:0}
 .metric-strip{margin-top:10px;color:var(--neutral-text-muted);font-family:var(--font-mono);font-size:10px}
 .preset-grid,.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .preset-grid button,.export-grid button,.file-button{font-size:11px;text-align:left}
@@ -65,7 +65,7 @@ button{cursor:pointer}
 input,select{width:100%;background:var(--neutral-surface-bg);color:var(--neutral-text);border:1px solid var(--neutral-border);border-radius:0;padding:8px;margin-top:5px;outline:none}
 input:focus,select:focus{border-color:var(--chrome-accent)}
 .range-label output{float:right;color:var(--chrome-accent-text);font-family:var(--font-mono)}
-.range-label input[type=range]{accent-color:var(--chrome-accent);padding:0}
+.range-label input[type=range]{padding:0}
 .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .metric{background:var(--neutral-surface-raised);padding:8px}
 .metric strong{display:block;font-size:16px}
