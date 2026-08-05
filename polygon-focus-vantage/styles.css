@@ -1,16 +1,23 @@
+/* This app is dark-only (data-theme is forced to "dark" in index.html —
+   there is no light variant), so it reads the shared dark semantic layer
+   (design-tokens/build/css/{base,dark}.css) directly rather than
+   switching. --focus/--vantage/--exo/--outlook/--f2 are a local
+   categorical palette for the canvas visualization: they tell point
+   *kinds* apart (focus, vantage, exo-point, outlook, secondary focus),
+   not one of the four work-surface states, so per Design Philosophy >
+   Design tokens > "Three layers" they reference base hue primitives
+   directly rather than a semantic role (same pattern as Grid Traversal's
+   token-identity palette). app.js reads these via getComputedStyle
+   rather than duplicating the hex, since Canvas 2D can't consume
+   var() directly.
+*/
 :root {
-  --bg                : #0f1115;
-  --panel             : #171a20;
-  --panel2            : #1d2129;
-  --line              : #343b49;
-  --text              : #e8eaf0;
-  --muted             : #9aa3b2;
-  --focus             : #f2b84b;
-  --vantage           : #74b9ff;
-  --mid               : #6f7d91;
-  --exo               : #ff8f70;
-  --outlook           : #9be28f;
-  --f2                : #d993ff;
+  --focus             : var(--yellow-300);
+  --vantage           : var(--blue-300);
+  --mid               : var(--neutral-text-muted);
+  --exo               : var(--orange-300);
+  --outlook           : var(--green-300);
+  --f2                : var(--magenta-300);
 }
 * {
   box-sizing          : border-box
@@ -18,9 +25,9 @@
 html,body {
   margin              : 0;
   height              : 100%;
-  background          : var(--bg);
-  color               : var(--text);
-  font-family         : Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif
+  background          : var(--neutral-surface-bg);
+  color               : var(--neutral-text);
+  font-family         : var(--font-ui)
 }
 body {
   display             : grid;
@@ -28,26 +35,27 @@ body {
   overflow            : hidden
 }
 aside {
-  background          : linear-gradient(180deg,var(--panel),#11141a);
-  border-right        : 1px solid var(--line);
+  background          : var(--neutral-surface-raised);
+  border-right        : 1px solid var(--neutral-border);
   padding             : 18px;
   overflow            : auto
 }
 h1 {
-  font-size           : 18px;
+  font-family         : var(--font-display);
+  font-size           : 19px;
   margin              : 0 0 4px;
-  font-weight         : 650;
-  letter-spacing      : .01em
+  font-weight         : 600;
+  letter-spacing      : -.01em
 }
 .subtitle {
   font-size           : 12px;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   line-height         : 1.45;
   margin-bottom       : 18px
 }
 .section {
   padding             : 14px 0;
-  border-top          : 1px solid var(--line)
+  border-top          : 1px solid var(--neutral-border)
 }
 .section:first-of-type {
   border-top          : 0;
@@ -57,28 +65,43 @@ h1 {
   font-size           : 11px;
   text-transform      : uppercase;
   letter-spacing      : .12em;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   margin-bottom       : 10px
 }
 button,select,input[type="range"] {
   width               : 100%
 }
 button,select {
-  background          : var(--panel2);
-  color               : var(--text);
-  border              : 1px solid var(--line);
-  border-radius       : 7px;
+  background          : var(--neutral-surface-bg);
+  color               : var(--neutral-text);
+  border              : 1px solid var(--neutral-border);
+  border-radius       : 0;
   padding             : 9px 10px;
   font-size           : 13px
 }
 button {
-  cursor              : pointer
+  cursor              : pointer;
+  transition          : border-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease
 }
 button:hover {
-  border-color        : #667184
+  border-color        : var(--chrome-accent);
+  color               : var(--chrome-accent);
+  transform           : translateY(-1px);
+  box-shadow          : 2px 2px 0 var(--neutral-shadow)
+}
+select:hover, select:focus-visible {
+  border-color        : var(--chrome-accent);
+  box-shadow          : inset 3px 0 0 var(--chrome-accent)
 }
 button.primary {
-  background          : #27303b
+  background          : var(--chrome-accent);
+  border-color        : var(--chrome-accent);
+  color               : var(--neutral-surface-bg);
+  font-weight         : 600
+}
+button.primary:hover {
+  background          : var(--neutral-surface-bg);
+  color               : var(--chrome-accent)
 }
 .row {
   display             : grid;
@@ -94,21 +117,25 @@ button.primary {
   justify-content     : space-between;
   gap                 : 12px;
   font-size           : 12px;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   margin-bottom       : 5px
 }
 .control output {
-  color               : var(--text)
+  color               : var(--neutral-text)
 }
 input[type="range"] {
-  accent-color        : #b7c0ce
+  accent-color        : var(--chrome-accent)
+}
+input[type="range"]:focus-visible {
+  outline             : 3px solid var(--chrome-accent);
+  outline-offset      : 2px
 }
 .check {
   display             : flex;
   align-items         : center;
   gap                 : 8px;
   font-size           : 12px;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   margin              : 8px 0
 }
 .check input {
@@ -119,7 +146,7 @@ input[type="range"] {
   grid-template-columns: 12px 1fr;
   gap                 : 7px 9px;
   font-size           : 12px;
-  color               : var(--muted)
+  color               : var(--neutral-text-muted)
 }
 .swatch {
   width               : 10px;
@@ -135,28 +162,29 @@ canvas {
   display             : block;
   width               : 100%;
   height              : 100%;
-  background          : radial-gradient(circle at 50% 45%,rgba(255,255,255,.025),transparent 45%),linear-gradient(#101318,#0c0f13)
+  background          : var(--neutral-surface-bg)
 }
 .hud {
   position            : absolute;
   left                : 16px;
   bottom              : 14px;
   font-size           : 12px;
-  color               : var(--muted);
-  background          : rgba(12,15,19,.72);
-  border              : 1px solid rgba(90,100,116,.45);
+  font-family         : var(--font-mono);
+  color               : var(--neutral-text-muted);
+  background          : color-mix(in srgb, var(--neutral-surface-raised) 88%, transparent);
+  border              : 1px solid var(--neutral-border);
   padding             : 8px 10px;
-  border-radius       : 7px;
+  border-radius       : 0;
   backdrop-filter     : blur(6px)
 }
 #status {
   font-size           : 12px;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   line-height         : 1.5;
-  background          : var(--panel2);
-  border              : 1px solid var(--line);
+  background          : var(--neutral-surface-raised);
+  border              : 1px solid var(--neutral-border);
   padding             : 9px 10px;
-  border-radius       : 7px
+  border-radius       : 0
 }
 .modebar {
   position            : absolute;
@@ -165,21 +193,25 @@ canvas {
   transform           : translateX(-50%);
   display             : flex;
   gap                 : 6px;
-  background          : rgba(12,15,19,.75);
+  background          : color-mix(in srgb, var(--neutral-surface-raised) 90%, transparent);
   padding             : 5px;
-  border              : 1px solid rgba(90,100,116,.45);
-  border-radius       : 9px
+  border              : 1px solid var(--neutral-border);
+  border-radius       : 0
 }
 .modebar button {
   width               : auto;
   padding             : 7px 12px;
-  background          : transparent
+  background          : transparent;
+  border-color        : transparent
 }
 .modebar button.active {
-  background          : #28303b
+  background          : color-mix(in srgb, var(--chrome-accent) 18%, var(--neutral-surface-raised));
+  border-color        : var(--chrome-accent);
+  color               : var(--chrome-accent)
 }
 code {
-  color               : #d7dce5
+  color               : var(--neutral-text);
+  font-family         : var(--font-mono)
 }
 .stats-wrap {
   overflow-x          : auto
@@ -188,12 +220,12 @@ code {
   width               : 100%;
   border-collapse     : collapse;
   font-size           : 11px;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   font-variant-numeric: tabular-nums
 }
 .stats-table th,.stats-table td {
   padding             : 6px 5px;
-  border-bottom       : 1px solid rgba(52,59,73,.7);
+  border-bottom       : 1px solid var(--neutral-border);
   text-align          : right;
   white-space         : nowrap
 }
@@ -201,7 +233,7 @@ code {
   text-align          : left
 }
 .stats-table thead th {
-  color               : var(--text);
+  color               : var(--neutral-text);
   font-weight         : 600
 }
 .stats-table tbody tr:last-child td {
@@ -209,18 +241,18 @@ code {
 }
 .ratio-title {
   font-size           : 11px;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   margin              : 12px 0 5px
 }
 .stats-note {
   font-size           : 10px;
   line-height         : 1.4;
-  color               : #7f8998;
+  color               : var(--neutral-text-muted);
   margin-top          : 8px
 }
 .diagnostics {
   font-size           : 11px;
-  color               : var(--muted);
+  color               : var(--neutral-text-muted);
   line-height         : 1.45;
   max-height          : 180px;
   overflow            : auto
@@ -232,11 +264,11 @@ code {
 }
 .diagnostics td {
   padding             : 3px 0;
-  border-bottom       : 1px solid rgba(52,59,73,.55)
+  border-bottom       : 1px solid var(--neutral-border)
 }
 .diagnostics td:last-child {
   text-align          : right;
-  color               : var(--text)
+  color               : var(--neutral-text)
 }
 @media(max-width:800px) {
   body {
@@ -246,6 +278,6 @@ code {
   aside {
     max-height          : 46vh;
     border-right        : 0;
-    border-bottom       : 1px solid var(--line)
+    border-bottom       : 1px solid var(--neutral-border)
   }
 }

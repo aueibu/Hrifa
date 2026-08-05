@@ -7,17 +7,23 @@
     'setFocus addVantage randomize undo clear count countOut transfer transferOut transferLabel anchorMode split splitOut splitControl radiusModel outlook outlookOut centroidMode constructionMode height heightOut depth depthOut rotation rotOut tilt tiltOut showMidpoints showExo showB1 showB2 showTriplets showF1Outlooks showF2Vantages showBraces showSkin showLabels constructionBtn wireframeBtn status diagnostics polygonStats areaRatios perimeterRatios'
     .split(' ');
   const ui = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+  // Reads the categorical palette and ink from CSS custom properties
+  // (see styles.css :root) rather than duplicating hex here, since
+  // Canvas 2D can't consume var() directly the way SVG/CSS can.
+  const rootStyle = getComputedStyle(document.documentElement);
+  const tokenColor = name => rootStyle.getPropertyValue(name).trim();
   const colors = {
-    focus: '#f2b84b',
-    vantage: '#74b9ff',
-    mid: '#6f7d91',
-    exo: '#ff8f70',
-    outlook: '#9be28f',
-    f2: '#d993ff',
+    focus: tokenColor('--focus'),
+    vantage: tokenColor('--vantage'),
+    mid: tokenColor('--mid'),
+    exo: tokenColor('--exo'),
+    outlook: tokenColor('--outlook'),
+    f2: tokenColor('--f2'),
     triplet: 'rgba(255,196,112,.2)',
     tripletLine: 'rgba(255,196,112,.78)',
     faint: 'rgba(125,137,152,.28)',
-    text: '#e8eaf0'
+    text: tokenColor('--neutral-text'),
+    rim: tokenColor('--neutral-surface-bg')
   };
   let W = 0,
     H = 0,
@@ -283,7 +289,7 @@
   {
     ctx.save();
     ctx.fillStyle = c;
-    ctx.strokeStyle = '#0d1014';
+    ctx.strokeStyle = colors.rim;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
