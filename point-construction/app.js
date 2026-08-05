@@ -34,6 +34,7 @@ let rng = mulberry32(Date.now() & 0xffffffff);
 
 // ---------- geometry helpers ----------
 const dist = (p,q)=>Math.hypot(p.x-q.x, p.y-q.y);
+const TAU = Math.PI*2;
 function unit(v){ const L=Math.hypot(v.x,v.y)||1; return {x:v.x/L, y:v.y/L}; }
 function sub(a,b){ return {x:a.x-b.x, y:a.y-b.y}; }
 function add(a,b){ return {x:a.x+b.x, y:a.y+b.y}; }
@@ -184,23 +185,84 @@ function arcAvoiding(center, r, aStart, aEnd, avoid){
   const anticlockwise = deltaAvoid < deltaE; // if O falls on the increasing sweep, take the other way
   return { center, r, startAngle: as, endAngle: ae, anticlockwise };
 }
-// What a circle OR an arc contributes as the inversion's O/r: a circle uses its own
-// center/radius directly; an arc uses the circle implied by its own three points
-// (j, apex, k) — every point on that circle, including the whole arc, is pointwise
-// fixed by inversion through its own center/radius, so "holding an arc constant"
-// is exactly as valid as holding a circle constant, just with a partial curve as
-// the visible portion of a circle that's still there in full mathematically.
-// Returns null for anything else, or for a flattened (degenerate/infinite-radius) arc.
+function segmentProjection(p, a, b){
+  const ab=sub(b,a);
+  const lengthSquared=ab.x*ab.x+ab.y*ab.y;
+  const t=lengthSquared ? ((p.x-a.x)*ab.x+(p.y-a.y)*ab.y)/lengthSquared : 0;
+  return { t, point:add(a, scale(ab, t)) };
+}
+// What a circle OR a *circular* arc contributes as the inversion's O/r: a circle
+// uses its own center/radius; a circular arc uses its supporting circle. A Bézier,
+// conic, or catenary may be inverted THROUGH a circle, but is not itself an
+// inversion circle, so it cannot be held constant in this control.
 function inversionSourceFor(el){
   if(el.type==='circle') return { O: el.center, r: el.radius };
-  if(el.type==='arc'){
+  if(el.type==='arc' && document.getElementById('curveStyle').value==='circular'){
     const c = arcThroughPoints(el.j, el.apex, el.k);
     return c ? { O: c.center, r: c.r } : null;
   }
   return null;
 }
 
-// Returns a render-ready descriptor: {kind:'point'|'line'|'circle'|'arc', ...} or null
+// The source path must be shared by drawing, picking, and inversion. In particular,
+// an element with role "arc" is not necessarily a circular arc in the selected mode.
+function arcPathPoints(el, steps=160){
+  const curveStyle = document.getElementById('curveStyle').value;
+  if(curveStyle==='circular'){
+    const c = arcThroughPoints(el.j, el.apex, el.k);
+    if(!c) return [el.j, el.k];
+    const sweep = c.anticlockwise
+      ? -(((c.startAngle-c.endAngle)%TAU+TAU)%TAU)
+      : (((c.endAngle-c.startAngle)%TAU+TAU)%TAU);
+    const pts=[];
+    for(let i=0;i<=steps;i++){
+      const a=c.startAngle+sweep*(i/steps);
+      pts.push({x:c.center.x+c.r*Math.cos(a), y:c.center.y+c.r*Math.sin(a)});
+    }
+    return pts;
+  }
+  if(curveStyle==='conic') return sampleConic(el.j, el.control, el.k, +document.getElementById('conicWeight').value, steps);
+  if(curveStyle==='catenary'){
+    const cat = sampleCatenary(el.j, el.apex, el.k, steps);
+    return cat ? cat.pts : [el.j, el.k];
+  }
+  const pts=[];
+  for(let i=0;i<=steps;i++) pts.push(bezierPoint(el.j, el.control, el.k, i/steps));
+  return pts;
+}
+
+function circularArcContainsPoint(arc, point){
+  if(Math.abs(dist(arc.center, point)-arc.r) > INVERSION_EPS) return false;
+  const angle=Math.atan2(point.y-arc.center.y, point.x-arc.center.x);
+  const span=arc.anticlockwise
+    ? ((arc.startAngle-arc.endAngle)%TAU+TAU)%TAU
+    : ((arc.endAngle-arc.startAngle)%TAU+TAU)%TAU;
+  const progress=arc.anticlockwise
+    ? ((arc.startAngle-angle)%TAU+TAU)%TAU
+    : ((angle-arc.startAngle)%TAU+TAU)%TAU;
+  return progress <= span+1e-6;
+}
+
+// A non-circular curve has no circle/line shortcut under inversion. Sample its
+// displayed geometry and invert every sample. Break the path around O: that point
+// maps to infinity, so joining across it would draw a false finite segment.
+function invertPath(points, O, r){
+  const paths=[];
+  let path=[];
+  for(const point of points){
+    if(dist(point,O) < INVERSION_EPS){
+      if(path.length>1) paths.push(path);
+      path=[];
+      continue;
+    }
+    const inverted=invertPoint(point,O,r);
+    if(inverted) path.push(inverted);
+  }
+  if(path.length>1) paths.push(path);
+  return paths;
+}
+
+// Returns a render-ready descriptor: {kind:'point'|'line'|'rays'|'circle'|'arc'|'path', ...} or null
 // if el itself is at/through the inversion center (an undefined image).
 function invertMark(el, O, r){
   if(el.type==='point'){
@@ -221,10 +283,35 @@ function invertMark(el, O, r){
     return {kind:'circle', center: add(O, scale(sub(el.center,O), k)), radius: Math.abs(k)*el.radius};
   }
   if(el.type==='line'){
-    if(perpDistToLine(O, el.j, el.k) < INVERSION_EPS){
-      const jp = invertPoint(el.j, O, r), kp = invertPoint(el.k, O, r);
+    const projection=segmentProjection(O, el.j, el.k);
+    const lineDistance=dist(O, projection.point);
+    if(lineDistance < 1e-6){
+      // Inversion preserves the supporting line. For a finite segment, though,
+      // whether O belongs to the segment is decisive: a crossing becomes two
+      // unbounded rays, while a segment wholly on one side remains finite.
+      if(projection.t < 0 || projection.t > 1){
+        const jp=invertPoint(el.j, O, r), kp=invertPoint(el.k, O, r);
+        if(!jp || !kp) return null;
+        return {kind:'line', a:jp, b:kp};
+      }
+      if(projection.t === 0){
+        const kp=invertPoint(el.k, O, r);
+        if(!kp) return null;
+        const towardInfinity=unit(sub(el.k, O));
+        return {kind:'rays', rays:[{a:kp, b:add(kp, scale(towardInfinity, 2000))}]};
+      }
+      if(projection.t === 1){
+        const jp=invertPoint(el.j, O, r);
+        if(!jp) return null;
+        const towardInfinity=unit(sub(el.j, O));
+        return {kind:'rays', rays:[{a:jp, b:add(jp, scale(towardInfinity, 2000))}]};
+      }
+      const jp=invertPoint(el.j, O, r), kp=invertPoint(el.k, O, r);
       if(!jp || !kp) return null;
-      return {kind:'line', a: jp, b: kp}; // through O → maps to itself (repositioned)
+      return {kind:'rays', rays:[
+        {a:jp, b:add(jp, scale(unit(sub(el.j, O)), 2000))},
+        {a:kp, b:add(kp, scale(unit(sub(el.k, O)), 2000))},
+      ]};
     }
     const jp = invertPoint(el.j, O, r), kp = invertPoint(el.k, O, r);
     if(!jp || !kp) return null;
@@ -233,6 +320,15 @@ function invertMark(el, O, r){
     return {kind:'arc', ...arcAvoiding(cc.center, cc.r, jp, kp, O)};
   }
   if(el.type==='arc'){
+    if(document.getElementById('curveStyle').value!=='circular'){
+      const paths = invertPath(arcPathPoints(el), O, r);
+      return paths.length ? {kind:'path', paths} : null;
+    }
+    const sourceArc=arcThroughPoints(el.j, el.apex, el.k);
+    if(sourceArc && circularArcContainsPoint(sourceArc, O)){
+      const paths=invertPath(arcPathPoints(el, 320), O, r);
+      return paths.length ? {kind:'path', paths} : null;
+    }
     const jp = invertPoint(el.j, O, r), ap = invertPoint(el.apex, O, r), kp = invertPoint(el.k, O, r);
     if(!jp || !ap || !kp) return null;
     const arc = arcThroughPoints(jp, ap, kp);
@@ -420,8 +516,123 @@ let result = { elements: [], log: [] };
 let hoveredIndex = null;
 let inversionCircleIndex = null; // index into result.elements of the constant circle, or null
 let pickingInversionCircle = false;
+let tractrixLeadIndex = null;
+let pickingTractrixLead = false;
+let tractrixAnimationFrame = null;
+let spiralSourceIndex = null;
+let pickingSpiralSource = false;
 
 function cssVar(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+function leadPathPoints(el, steps=240){
+  if(el.type==='line'){
+    const pts=[];
+    for(let i=0;i<=steps;i++) pts.push(lerp(el.j, el.k, i/steps));
+    return pts;
+  }
+  if(el.type==='arc') return arcPathPoints(el, steps);
+  if(el.type==='circle'){
+    const pts=[];
+    for(let i=0;i<=steps;i++){
+      const a=TAU*i/steps;
+      pts.push({x:el.center.x+el.radius*Math.cos(a), y:el.center.y+el.radius*Math.sin(a)});
+    }
+    return pts;
+  }
+  return null;
+}
+
+// Discrete taut-string construction: each follower step lies on the old tether ray
+// and exactly one tether length from the next lead point. With dense lead samples,
+// this converges to the usual tractrix differential curve.
+function tractrixTrace(lead, tether, side='left', initialFollower=null){
+  if(!lead || lead.length<2 || tether<=0) return null;
+  const initialTangent=unit(sub(lead[1], lead[0]));
+  const normal=side==='right'
+    ? {x:initialTangent.y, y:-initialTangent.x}
+    : {x:-initialTangent.y, y:initialTangent.x};
+  let follower=initialFollower || add(lead[0], scale(normal, tether));
+  const trace=[follower];
+  for(let i=1;i<lead.length;i++){
+    const oldLead=lead[i-1], nextLead=lead[i];
+    const direction=unit(sub(oldLead, follower));
+    const offset=sub(follower, nextLead);
+    const b=2*(offset.x*direction.x+offset.y*direction.y);
+    const c=offset.x*offset.x+offset.y*offset.y-tether*tether;
+    const discriminant=b*b-4*c;
+    if(discriminant < -1e-6) continue;
+    const root=Math.sqrt(Math.max(0, discriminant));
+    const candidates=[(-b-root)/2, (-b+root)/2].filter(s=>s>=-1e-6);
+    if(!candidates.length) continue;
+    const step=Math.max(0, Math.min(...candidates));
+    follower=add(follower, scale(direction, step));
+    trace.push(follower);
+  }
+  return trace;
+}
+function currentTractrix(){
+  if(tractrixLeadIndex===null) return null;
+  const lead=result.elements[tractrixLeadIndex];
+  const path=lead ? leadPathPoints(lead) : null;
+  if(!path) return null;
+  const tether=+document.getElementById('tractrixLength').value;
+  const side=document.getElementById('tractrixSide').value;
+  const apexIndex=Math.round((path.length-1) * (+document.getElementById('tractrixApex').value/100));
+  const compressionLead=path.slice(0, apexIndex+1);
+  const tensionLead=path.slice(apexIndex);
+  if(compressionLead.length<2 || tensionLead.length<2) return null;
+  const apexTangent=unit(sub(tensionLead[1], tensionLead[0]));
+  const apexNormal=side==='right'
+    ? {x:apexTangent.y, y:-apexTangent.x}
+    : {x:-apexTangent.y, y:apexTangent.x};
+  const apex=add(path[apexIndex], scale(apexNormal, tether));
+  const reverseCompressionLead=compressionLead.slice().reverse();
+  const oppositeSide=side==='left' ? 'right' : 'left';
+  // Run the earlier, actual part of the lead away from the apex under tension,
+  // then reverse it: in forward time that is the rod's compression arm.
+  const compression=tractrixTrace(reverseCompressionLead, tether, oppositeSide, apex);
+  const tension=tractrixTrace(tensionLead, tether, side, apex);
+  if(!compression || !tension) return null;
+  const compressionForward=compression.slice().reverse();
+  return {
+    compression: compressionForward,
+    tension,
+    trace: compressionForward.concat(tension.slice(1)),
+    lead: path,
+    apexLead: path[apexIndex],
+  };
+}
+function spiralSourceFor(el){
+  if(el.type==='circle') return {center:el.center, radius:el.radius, baseAngle:0};
+  if(el.type==='arc' && document.getElementById('curveStyle').value==='circular'){
+    const circle=arcThroughPoints(el.j, el.apex, el.k);
+    return circle ? {center:circle.center, radius:circle.r, baseAngle:circle.startAngle} : null;
+  }
+  return null;
+}
+// Inverse of the involute of a circle of radius a about the same centre:
+// a/(1+t²) · (cos t + t sin t, sin t − t cos t). This is the exact
+// spiral (polar) tractrix, not the general rod-trace construction above.
+function spiralTractrixPoints(source, turns, phaseDegrees, direction, steps=480){
+  const pts=[];
+  const phase=source.baseAngle+phaseDegrees*Math.PI/180;
+  const maxT=turns*TAU;
+  for(let i=0;i<=steps;i++){
+    const t=direction*maxT*(i/steps);
+    const denom=1+t*t;
+    const x=source.radius*(Math.cos(t)+t*Math.sin(t))/denom;
+    const y=source.radius*(Math.sin(t)-t*Math.cos(t))/denom;
+    const c=Math.cos(phase), s=Math.sin(phase);
+    pts.push({x:source.center.x+c*x-s*y, y:source.center.y+s*x+c*y});
+  }
+  return pts;
+}
+function currentSpiralTractrix(){
+  if(spiralSourceIndex===null) return null;
+  const source=spiralSourceFor(result.elements[spiralSourceIndex]);
+  if(!source) return null;
+  return spiralTractrixPoints(source, +document.getElementById('spiralTurns').value, +document.getElementById('spiralPhase').value, +document.getElementById('spiralDirection').value);
+}
 
 // ---------- per-instance color variants (same family, distinguishable members) ----------
 // Preserves the ~44° hue-shift spread across however many instances of a role exist,
@@ -464,16 +675,16 @@ function bezierPoint(j,c,k,t){
   const mt=1-t;
   return {x:mt*mt*j.x+2*mt*t*c.x+t*t*k.x, y:mt*mt*j.y+2*mt*t*c.y+t*t*k.y};
 }
-function distToBezier(p, j, c, k){
-  let best = Infinity;
-  for(let t=0;t<=1;t+=0.04){ best = Math.min(best, dist(p, bezierPoint(j,c,k,t))); }
+function distToPolyline(p, pts){
+  let best=Infinity;
+  for(let i=1;i<pts.length;i++) best=Math.min(best, distToSegment(p, pts[i-1], pts[i]));
   return best;
 }
 function hitTest(mouse){
   for(let i=result.elements.length-1;i>=0;i--){
     const el = result.elements[i];
     if(el.type==='line' && distToSegment(mouse, el.j, el.k) < 7) return i;
-    if(el.type==='arc' && distToBezier(mouse, el.j, el.control, el.k) < 7) return i;
+    if(el.type==='arc' && distToPolyline(mouse, arcPathPoints(el, 96)) < 7) return i;
     if(el.type==='circle' && Math.abs(dist(mouse, el.center) - el.radius) < 7) return i;
     if(el.type==='point' && dist(mouse, el.p) < 11) return i;
   }
@@ -768,7 +979,7 @@ function draw(){
   for(const el of result.elements) typeCounts[el.type]++;
   const typeSeen = {line:0, arc:0, circle:0, point:0};
 
-  const invActive = inversionCircleIndex !== null;
+  const invActive = inversionCircleIndex !== null && !!inversionSourceFor(result.elements[inversionCircleIndex]);
 
   result.elements.forEach((el, elIndex) => {
     const idx = typeSeen[el.type]++;
@@ -903,10 +1114,20 @@ function draw(){
           dot(img.p, col, 3.5, 1, true);
         } else if(img.kind==='line'){
           ctx.beginPath(); ctx.moveTo(img.a.x, img.a.y); ctx.lineTo(img.b.x, img.b.y); ctx.stroke();
+        } else if(img.kind==='rays'){
+          for(const ray of img.rays){
+            ctx.beginPath(); ctx.moveTo(ray.a.x, ray.a.y); ctx.lineTo(ray.b.x, ray.b.y); ctx.stroke();
+          }
         } else if(img.kind==='circle'){
           ctx.beginPath(); ctx.arc(img.center.x, img.center.y, img.radius, 0, Math.PI*2); ctx.stroke();
         } else if(img.kind==='arc'){
           ctx.beginPath(); ctx.arc(img.center.x, img.center.y, img.r, img.startAngle, img.endAngle, img.anticlockwise); ctx.stroke();
+        } else if(img.kind==='path'){
+          for(const path of img.paths){
+            ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y);
+            for(let i=1;i<path.length;i++) ctx.lineTo(path[i].x, path[i].y);
+            ctx.stroke();
+          }
         }
         ctx.restore();
       }
@@ -922,6 +1143,50 @@ function draw(){
     }
     ctx.restore();
   });
+
+  const tractrix=currentTractrix();
+  if(tractrix && tractrix.trace.length>1){
+    const tractrixColor=cssVar('--ink-selection') || cssVar('--chrome-accent-text');
+    ctx.save();
+    // Both branches derive solely from the selected lead: the earlier samples
+    // compress into the apex, and later samples pull away from it.
+    ctx.strokeStyle=tractrixColor; ctx.lineWidth=2; ctx.globalAlpha=0.56; ctx.setLineDash([2,4]);
+    ctx.beginPath(); ctx.moveTo(tractrix.compression[0].x, tractrix.compression[0].y);
+    for(let i=1;i<tractrix.compression.length;i++) ctx.lineTo(tractrix.compression[i].x, tractrix.compression[i].y);
+    ctx.stroke();
+    ctx.lineWidth=2.5; ctx.globalAlpha=0.92; ctx.setLineDash([7,3]);
+    ctx.beginPath(); ctx.moveTo(tractrix.tension[0].x, tractrix.tension[0].y);
+    for(let i=1;i<tractrix.tension.length;i++) ctx.lineTo(tractrix.tension[i].x, tractrix.tension[i].y);
+    ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle=tractrixColor;
+    const apex=tractrix.compression[tractrix.compression.length-1];
+    ctx.globalAlpha=1; ctx.beginPath(); ctx.arc(apex.x, apex.y, 3, 0, TAU); ctx.fill();
+    if(document.getElementById('tractrixMotion').checked){
+      const progress=(performance.now()/7000)%1;
+      const i=Math.min(tractrix.trace.length-1, Math.floor(progress*(tractrix.trace.length-1)));
+      const leader=tractrix.lead[i], follower=tractrix.trace[i];
+      ctx.globalAlpha=0.32; ctx.lineWidth=1.2; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(leader.x, leader.y); ctx.lineTo(follower.x, follower.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=0.72;
+      ctx.beginPath(); ctx.arc(leader.x, leader.y, 3.5, 0, TAU); ctx.fill();
+      ctx.globalAlpha=0.9;
+      ctx.beginPath(); ctx.arc(follower.x, follower.y, 4.5, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  const spiral=currentSpiralTractrix();
+  if(spiral && spiral.length>1){
+    const spiralColor=cssVar('--chrome-accent-secondary-text') || cssVar('--shape-circle');
+    ctx.save();
+    ctx.strokeStyle=spiralColor; ctx.lineWidth=2.2; ctx.globalAlpha=0.9;
+    ctx.beginPath(); ctx.moveTo(spiral[0].x, spiral[0].y);
+    for(let i=1;i<spiral.length;i++) ctx.lineTo(spiral[i].x, spiral[i].y);
+    ctx.stroke();
+    ctx.fillStyle=spiralColor; ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(spiral[0].x, spiral[0].y, 3, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
 
   if(showLabels){
     ctx.fillStyle = inkDim; ctx.font = `10px ${monoFont}`; ctx.textAlign='center';
@@ -985,6 +1250,29 @@ function resetInversion(){
   pickingInversionCircle = false;
   updateInversionStatus();
 }
+function resetTractrix(){
+  tractrixLeadIndex = null;
+  pickingTractrixLead = false;
+  updateTractrixStatus();
+  syncTractrixAnimation();
+}
+function resetSpiralTractrix(){
+  spiralSourceIndex=null;
+  pickingSpiralSource=false;
+  updateSpiralStatus();
+}
+function syncTractrixAnimation(){
+  if(tractrixAnimationFrame!==null){
+    cancelAnimationFrame(tractrixAnimationFrame);
+    tractrixAnimationFrame=null;
+  }
+  if(!document.getElementById('tractrixMotion').checked || tractrixLeadIndex===null) return;
+  const tick=()=>{
+    draw();
+    tractrixAnimationFrame=requestAnimationFrame(tick);
+  };
+  tractrixAnimationFrame=requestAnimationFrame(tick);
+}
 
 function reprocess(){
   const nth = +document.getElementById('nthClosest').value;
@@ -993,6 +1281,8 @@ function reprocess(){
   hoveredIndex = null;
   renderStats(null);
   resetInversion();
+  resetTractrix();
+  resetSpiralTractrix();
   draw();
   renderLog();
   updateIdentity();
@@ -1009,6 +1299,8 @@ function reexecute(){
   hoveredIndex = null;
   renderStats(null);
   resetInversion();
+  resetTractrix();
+  resetSpiralTractrix();
   draw();
   renderLog();
   updateIdentity();
@@ -1045,16 +1337,47 @@ document.getElementById('nthClosest').addEventListener('input', e=>{
 document.getElementById('apexMode').addEventListener('change', reexecute);
 document.getElementById('curveStyle').addEventListener('change', e=>{
   document.getElementById('conicWeightField').style.display = e.target.value==='conic' ? '' : 'none';
+  // An arc is a valid constant only while it is displayed as a circular arc.
+  if(inversionCircleIndex !== null && !inversionSourceFor(result.elements[inversionCircleIndex])) resetInversion();
+  else updateInversionStatus();
+  if(spiralSourceIndex !== null && !spiralSourceFor(result.elements[spiralSourceIndex])) resetSpiralTractrix();
+  else updateSpiralStatus();
   draw();
 });
 document.getElementById('conicWeight').addEventListener('input', e=>{
   document.getElementById('conicWeightVal').textContent = (+e.target.value).toFixed(2);
+  if(inversionCircleIndex !== null && !inversionSourceFor(result.elements[inversionCircleIndex])) resetInversion();
+  else updateInversionStatus();
+  if(spiralSourceIndex !== null && !spiralSourceFor(result.elements[spiralSourceIndex])) resetSpiralTractrix();
+  else updateSpiralStatus();
   draw();
 });
 document.getElementById('guidesChk').addEventListener('change', draw);
 document.getElementById('gridChk').addEventListener('change', draw);
 document.getElementById('labelsChk').addEventListener('change', draw);
 document.getElementById('arcCircleChk').addEventListener('change', draw);
+document.getElementById('tractrixLength').addEventListener('input', e=>{
+  document.getElementById('tractrixLengthVal').textContent=e.target.value;
+  draw();
+});
+document.getElementById('tractrixApex').addEventListener('input', e=>{
+  document.getElementById('tractrixApexVal').textContent=e.target.value+'%';
+  draw();
+});
+document.getElementById('tractrixSide').addEventListener('change', draw);
+document.getElementById('tractrixMotion').addEventListener('change', ()=>{
+  syncTractrixAnimation();
+  draw();
+});
+document.getElementById('spiralTurns').addEventListener('input', e=>{
+  document.getElementById('spiralTurnsVal').textContent=(+e.target.value).toFixed(1);
+  draw();
+});
+document.getElementById('spiralPhase').addEventListener('input', e=>{
+  document.getElementById('spiralPhaseVal').textContent=e.target.value+'°';
+  draw();
+});
+document.getElementById('spiralDirection').addEventListener('change', draw);
 
 ['wLine','wArc','wCircle','wPoint'].forEach(id=>{
   document.getElementById(id).addEventListener('input', e=>{
@@ -1068,12 +1391,46 @@ function canvasCoords(e){
   const scale = 500 / rect.width;
   return { x: (e.clientX - rect.left) * scale, y: (e.clientY - rect.top) * scale };
 }
+function isTractrixLead(el){ return !!el && ['line','arc','circle'].includes(el.type); }
+function tractrixLeadLabel(el){ return el ? elementLabel(el) : ''; }
+function updateTractrixStatus(){
+  const status=document.getElementById('tractrixStatus');
+  const pickBtn=document.getElementById('pickTractrixLeadBtn');
+  const clearBtn=document.getElementById('clearTractrixBtn');
+  if(pickingTractrixLead){
+    status.textContent='Click a line, circle, or displayed arc on the canvas…';
+    pickBtn.textContent='Cancel';
+  } else if(tractrixLeadIndex!==null){
+    status.textContent=`Following ${tractrixLeadLabel(result.elements[tractrixLeadIndex])} with a taut tether.`;
+    pickBtn.textContent='Pick lead curve';
+  } else {
+    status.textContent='No lead curve selected.';
+    pickBtn.textContent='Pick lead curve';
+  }
+  clearBtn.style.display=tractrixLeadIndex!==null ? '' : 'none';
+}
+function updateSpiralStatus(){
+  const status=document.getElementById('spiralStatus');
+  const pickBtn=document.getElementById('pickSpiralSourceBtn');
+  const clearBtn=document.getElementById('clearSpiralBtn');
+  if(pickingSpiralSource){
+    status.textContent='Click a circle or true circular arc on the canvas…';
+    pickBtn.textContent='Cancel';
+  } else if(spiralSourceIndex!==null){
+    status.textContent=`Exact spiral tractrix from ${elementLabel(result.elements[spiralSourceIndex])}.`;
+    pickBtn.textContent='Pick circle/circular arc';
+  } else {
+    status.textContent='No circle source selected.';
+    pickBtn.textContent='Pick circle/circular arc';
+  }
+  clearBtn.style.display=spiralSourceIndex!==null ? '' : 'none';
+}
 
 cv.addEventListener('mousemove', e=>{
   const hit = hitTest(canvasCoords(e));
   if(hit !== hoveredIndex){
     hoveredIndex = hit;
-    cv.style.cursor = pickingInversionCircle ? 'crosshair' : (hit===null ? 'default' : 'pointer');
+    cv.style.cursor = (pickingInversionCircle || pickingTractrixLead || pickingSpiralSource) ? 'crosshair' : (hit===null ? 'default' : 'pointer');
     renderStats(hit===null ? null : result.elements[hit]);
     draw();
   }
@@ -1102,11 +1459,13 @@ function describeInversion(el, O, r){
     return {cls:'step-circle', text:`${label} (r=${el.radius.toFixed(1)}) → circle via closed-form map, center ${p(img.center)} r=${img.radius.toFixed(1)}`};
   }
   if(el.type==='line'){
+    if(img.kind==='rays') return {cls:'step-line', text:`${label} → ${img.rays.length===1 ? 'RAY' : 'TWO RAYS'} (the finite segment reaches the inversion center)`};
     if(img.kind==='line') return {cls:'step-line', text:`${label} → LINE, repositioned (it passed through the constant)`};
     return {cls:'step-line', text:`${label} → ARC via the circle through O and its inverted endpoints, center ${p(img.center)} r=${img.r.toFixed(1)}`};
   }
   if(el.type==='arc'){
     if(img.kind==='line') return {cls:'step-arc', text:`${label} → LINE (its three inverted points landed collinear)`};
+    if(img.kind==='path') return {cls:'step-arc', text:`${label} → transformed ${document.getElementById('curveStyle').value} curve, sampled point-by-point`};
     return {cls:'step-arc', text:`${label} → ARC via j/apex/k refit, center ${p(img.center)} r=${img.r.toFixed(1)}`};
   }
   return {cls:'step', text:`${label} → (${img.kind})`};
@@ -1144,16 +1503,16 @@ function updateInversionStatus(){
   const clearBtn = document.getElementById('clearInversionBtn');
   const pickBtn = document.getElementById('pickInversionBtn');
   if(pickingInversionCircle){
-    status.textContent = 'Click a circle or (non-flattened) arc on the canvas…';
+    status.textContent = 'Click a circle or non-flattened circular arc on the canvas…';
     pickBtn.textContent = 'Cancel';
   } else if(inversionCircleIndex !== null){
     const el = result.elements[inversionCircleIndex];
     const src = el ? inversionSourceFor(el) : null;
     status.textContent = src ? `Holding ${constantLabel(el)} constant — everything else shown inverted through it.` : 'Nothing held constant — construction shown as-is.';
-    pickBtn.textContent = 'Pick constant circle/arc';
+    pickBtn.textContent = 'Pick constant circle/circular arc';
   } else {
     status.textContent = 'Nothing held constant — construction shown as-is.';
-    pickBtn.textContent = 'Pick constant circle/arc';
+    pickBtn.textContent = 'Pick constant circle/circular arc';
   }
   clearBtn.style.display = inversionCircleIndex !== null ? '' : 'none';
   renderInversionLog();
@@ -1174,7 +1533,7 @@ function populateCircleSwap(){
   const nextBtn = document.getElementById('nextCircleBtn');
   const idxs = constantCandidateIndices();
   if(idxs.length === 0){
-    sel.innerHTML = '<option value="">No circles/arcs in this construction</option>';
+    sel.innerHTML = '<option value="">No circles/circular arcs in this construction</option>';
     sel.disabled = true;
   } else {
     const options = idxs.map(i => {
@@ -1208,15 +1567,31 @@ document.getElementById('prevCircleBtn').addEventListener('click', ()=>cycleCirc
 document.getElementById('nextCircleBtn').addEventListener('click', ()=>cycleCircle(1));
 
 cv.addEventListener('click', e=>{
-  if(!pickingInversionCircle) return;
   const hit = hitTest(canvasCoords(e));
-  pickingInversionCircle = false;
-  if(hit !== null && inversionSourceFor(result.elements[hit])){
-    inversionCircleIndex = hit;
+  if(pickingInversionCircle){
+    pickingInversionCircle = false;
+    if(hit !== null && inversionSourceFor(result.elements[hit])) inversionCircleIndex = hit;
+    cv.style.cursor = 'default';
+    updateInversionStatus();
+    draw();
+    return;
   }
-  cv.style.cursor = 'default';
-  updateInversionStatus();
-  draw();
+  if(pickingTractrixLead){
+    pickingTractrixLead=false;
+    if(hit !== null && isTractrixLead(result.elements[hit])) tractrixLeadIndex=hit;
+    cv.style.cursor='default';
+    updateTractrixStatus();
+    syncTractrixAnimation();
+    draw();
+    return;
+  }
+  if(pickingSpiralSource){
+    pickingSpiralSource=false;
+    if(hit!==null && spiralSourceFor(result.elements[hit])) spiralSourceIndex=hit;
+    cv.style.cursor='default';
+    updateSpiralStatus();
+    draw();
+  }
 });
 document.getElementById('pickInversionBtn').addEventListener('click', ()=>{
   if(pickingInversionCircle){
@@ -1224,8 +1599,49 @@ document.getElementById('pickInversionBtn').addEventListener('click', ()=>{
   } else {
     pickingInversionCircle = true;
     inversionCircleIndex = null;
+    pickingTractrixLead = false;
+    pickingSpiralSource = false;
   }
   updateInversionStatus();
+  updateSpiralStatus();
+  draw();
+});
+document.getElementById('pickTractrixLeadBtn').addEventListener('click', ()=>{
+  if(pickingTractrixLead){
+    pickingTractrixLead=false;
+  } else {
+    pickingTractrixLead=true;
+    tractrixLeadIndex=null;
+    pickingInversionCircle=false;
+    pickingSpiralSource=false;
+  }
+  updateInversionStatus();
+  updateTractrixStatus();
+  updateSpiralStatus();
+  syncTractrixAnimation();
+  draw();
+});
+document.getElementById('clearTractrixBtn').addEventListener('click', ()=>{
+  resetTractrix();
+  draw();
+});
+document.getElementById('pickSpiralSourceBtn').addEventListener('click', ()=>{
+  if(pickingSpiralSource){
+    pickingSpiralSource=false;
+  } else {
+    pickingSpiralSource=true;
+    spiralSourceIndex=null;
+    pickingInversionCircle=false;
+    pickingTractrixLead=false;
+  }
+  updateInversionStatus();
+  updateTractrixStatus();
+  updateSpiralStatus();
+  syncTractrixAnimation();
+  draw();
+});
+document.getElementById('clearSpiralBtn').addEventListener('click', ()=>{
+  resetSpiralTractrix();
   draw();
 });
 document.getElementById('clearInversionBtn').addEventListener('click', ()=>{

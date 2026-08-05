@@ -68,10 +68,11 @@
       </div>
 
       <div class="panel">
-        <h2>Circle Inversion</h2>
+        <h2>Circle Inversion <span class="help-popover"><button class="help-popover__trigger" type="button" aria-label="About circle inversion">i</button><span class="help-popover__content" role="tooltip">Hold a circle, or a true circular arc via its supporting circle, constant. Lines and circular arcs have circle/line images. B&eacute;zier, conic, and catenary curves are instead transformed point-by-point; a path through the inversion center is split at infinity.</span></span></h2>
+        <p class="note" style="margin:0 0 12px;">Only a true circular arc can be held constant. Bezier, conic, and catenary curves are instead inverted point-by-point through the selected circle and remain transformed curves.</p>
         <p style="margin:0 0 12px;font-family:var(--font-ui);font-size:0.78rem;color:var(--neutral-text-muted);line-height:1.5;">Prototype: hold a circle <b>or arc</b> constant and invert everything else through it — P′ = O + (r²/|P−O|²)(P−O), using its own center and radius (an arc's circle is whatever passes through its j/apex/k — the whole circle is pointwise fixed, not just the visible arc portion). Lines/arcs not through it become arcs; circles become circles; anything through it maps to a line.</p>
         <div class="row">
-          <button class="btn full" id="pickInversionBtn">Pick constant circle/arc</button>
+          <button class="btn full" id="pickInversionBtn">Pick constant circle/circular arc</button>
         </div>
         <div class="row" style="margin-top:8px;">
           <button class="btn" id="prevCircleBtn" title="Previous" style="flex:0 0 auto;padding-left:12px;padding-right:12px;">‹</button>
@@ -80,6 +81,49 @@
         </div>
         <div id="inversionStatus" class="checkline" style="margin-top:10px;">Nothing held constant — construction shown as-is.</div>
         <button class="btn full" id="clearInversionBtn" style="margin-top:10px;display:none;">Clear</button>
+      </div>
+
+      <div class="panel">
+        <h2>Curve Derivation · Rod trace <span class="help-popover"><button class="help-popover__trigger" type="button" aria-label="About rod trace derivation">i</button><span class="help-popover__content" role="tooltip">Choose a line, circle, or displayed arc as the lead path. Its samples before the marked apex form the rigid rod's compression branch; samples after it form the tension branch. The source curve stays unchanged.</span></span></h2>
+        <p class="note" style="margin:0 0 12px;">Choose a line, circle, or displayed arc as the lead path. A follower begins one tether length behind it and traces the constrained pull.</p>
+        <div class="field">
+          <label>Tether length <span class="val" id="tractrixLengthVal">48</span></label>
+          <input type="range" id="tractrixLength" min="12" max="140" value="48" step="1">
+        </div>
+        <div class="field">
+          <label>Apex along lead <span class="val" id="tractrixApexVal">50%</span></label>
+          <input type="range" id="tractrixApex" min="10" max="90" value="50" step="1">
+        </div>
+        <div class="field">
+          <label style="margin-bottom:8px;">Initial follower side</label>
+          <select id="tractrixSide">
+            <option value="left" selected>Left of lead direction</option>
+            <option value="right">Right of lead direction</option>
+          </select>
+        </div>
+        <div class="checkline"><input type="checkbox" id="tractrixMotion"><label for="tractrixMotion">show moving pull guide</label></div>
+        <button class="btn full" id="pickTractrixLeadBtn">Pick lead curve</button>
+        <div id="tractrixStatus" class="checkline" style="margin-top:10px;">No lead curve selected.</div>
+        <button class="btn full" id="clearTractrixBtn" style="margin-top:10px;display:none;">Clear rod trace</button>
+      </div>
+
+      <div class="panel">
+        <h2>Special Derivation · Spiral tractrix <span class="help-popover"><button class="help-popover__trigger" type="button" aria-label="About spiral tractrix">i</button><span class="help-popover__content" role="tooltip">An exact polar tractrix derived from a circle or true circular arc: equivalently, invert that circle's involute about its center. The leash length is the source circle radius.</span></span></h2>
+        <div class="field">
+          <label>Turns <span class="val" id="spiralTurnsVal">3.0</span></label>
+          <input type="range" id="spiralTurns" min="0.5" max="8" value="3" step="0.25">
+        </div>
+        <div class="field">
+          <label>Start phase <span class="val" id="spiralPhaseVal">0°</span></label>
+          <input type="range" id="spiralPhase" min="0" max="359" value="0" step="1">
+        </div>
+        <div class="field">
+          <label style="margin-bottom:8px;">Winding</label>
+          <select id="spiralDirection"><option value="1" selected>Counter-clockwise</option><option value="-1">Clockwise</option></select>
+        </div>
+        <button class="btn full" id="pickSpiralSourceBtn">Pick circle/circular arc</button>
+        <div id="spiralStatus" class="checkline" style="margin-top:10px;">No circle source selected.</div>
+        <button class="btn full" id="clearSpiralBtn" style="margin-top:10px;display:none;">Clear spiral tractrix</button>
       </div>
 
       <div class="panel">
