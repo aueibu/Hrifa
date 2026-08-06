@@ -151,7 +151,7 @@ export const applets: Applet[] = [
   },
   {
     title: 'Point Construction',
-    href: 'point-construction/',
+    href: '/point-construction',
     category: 'geometry',
     status: 'experimental',
     runtime: 'Static browser app',

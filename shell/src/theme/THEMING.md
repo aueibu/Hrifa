@@ -26,3 +26,11 @@ steps in that ramp; they are not independent color values.
   into a universal panel abstraction.
 - Review every theme edit in the Theme Gallery in both color schemes before
   using it in a port.
+
+## Canvas diagrams
+
+`diagram.ts` owns the shared visual contract for canvas-based tools. An applet
+engine emits semantic geometry such as a primary mark, construction guide,
+marker, or annotation; it does not choose colors, opacity, dash patterns,
+strokes, or fonts. The page supplies `resolveDiagramStyle()` to its engine so
+the active shell theme remains the single rendering authority.
