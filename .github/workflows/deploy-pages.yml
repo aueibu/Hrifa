@@ -92,6 +92,7 @@ jobs:
             --exclude '.git' \
             --exclude '.github' \
             --exclude 'custom-reader/node_modules' \
+            --exclude 'point-construction' \
             --exclude 'shell' \
             ./ "$site_dir/"
           rsync -a shell/dist/ "$site_dir/"
