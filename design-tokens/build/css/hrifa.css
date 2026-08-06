@@ -452,3 +452,65 @@ input[type="checkbox"], input[type="radio"], input[type="range"] {
   border: none;
   padding: 0;
 }
+
+/* ---- contextual help popover ----
+ * A compact explanation attached to a nearby control or heading. Local
+ * --help-* aliases make its visual role explicit while mapping entirely to
+ * shared semantic tokens, so every consumer inherits the active theme.
+ */
+.help-popover {
+  --help-surface: var(--neutral-surface-bg);
+  --help-border: var(--chrome-accent);
+  --help-text: var(--neutral-text);
+  --help-shadow: var(--neutral-shadow);
+  display: inline-flex;
+  position: relative;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.help-popover__trigger {
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: 1px solid var(--help-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--chrome-accent-text);
+  font: 600 10px/13px var(--font-mono);
+  text-align: center;
+  cursor: help;
+}
+.help-popover__trigger:hover,
+.help-popover__trigger:focus-visible {
+  background: var(--help-border);
+  color: var(--chrome-ink);
+  outline: none;
+  box-shadow: none;
+  transform: none;
+}
+.help-popover__content {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  top: 21px;
+  width: 235px;
+  padding: 9px 10px;
+  background: var(--help-surface);
+  border: 1px solid var(--help-border);
+  box-shadow: 3px 3px 0 var(--help-shadow);
+  color: var(--help-text);
+  font: normal 0.76rem/1.45 var(--font-ui);
+  text-transform: none;
+  letter-spacing: normal;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .14s ease;
+}
+.help-popover:hover .help-popover__content,
+.help-popover:focus-within .help-popover__content {
+  visibility: visible;
+  opacity: 1;
+}

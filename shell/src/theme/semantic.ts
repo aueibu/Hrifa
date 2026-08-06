@@ -15,5 +15,8 @@ export const semanticVariablesResolver: CSSVariablesResolver = () => ({
     '--text-muted': 'var(--mantine-color-dimmed)',
   },
   light: {},
-  dark: {},
+  dark: {
+    '--mantine-color-blue-light': 'var(--mantine-color-blue-9)',
+    '--mantine-color-blue-light-hover': 'var(--mantine-color-blue-8)',
+  },
 });

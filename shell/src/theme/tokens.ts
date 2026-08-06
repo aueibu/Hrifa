@@ -1,11 +1,33 @@
 import type { MantineColorsTuple } from '@mantine/core';
+import { defaultMarkerHues, defaultMarkerRamp, type MarkerHues, type MarkerRamp } from './markers';
+
+export type ColorShade = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export type PrimaryRampCurve = 'even' | 'soft' | 'dramatic';
+
+export interface PrimaryRamp {
+  core: string;
+  contrast: number;
+  curve: PrimaryRampCurve;
+  endpointChroma: number;
+}
 
 export interface ThemeTokens {
   white: string;
   black: string;
   gray: MantineColorsTuple;
   dark: MantineColorsTuple;
+  primary: MantineColorsTuple;
+  primaryShade: { light: ColorShade; dark: ColorShade };
+  primaryRamp: PrimaryRamp;
+  markerHues: MarkerHues;
+  markerRamp: MarkerRamp;
 }
+
+type StoredThemeTokens = Omit<ThemeTokens, 'primaryRamp' | 'markerHues' | 'markerRamp'> & {
+  primaryRamp?: PrimaryRamp;
+  markerHues?: MarkerHues;
+  markerRamp?: MarkerRamp;
+};
 
 export const themeTokensStorageKey = 'shell.theme-tokens.v1';
 
@@ -40,9 +62,71 @@ export const defaultThemeTokens: ThemeTokens = {
     '#1f1f1f',
     '#141414',
   ],
+  primary: [
+    '#e7f5ff',
+    '#d0ebff',
+    '#a5d8ff',
+    '#74c0fc',
+    '#4dabf7',
+    '#339af0',
+    '#228be6',
+    '#1c7ed6',
+    '#1971c2',
+    '#1864ab',
+  ],
+  primaryShade: { light: 6, dark: 8 },
+  primaryRamp: {
+    core: '#228be6',
+    contrast: 90,
+    curve: 'even',
+    endpointChroma: 100,
+  },
+  markerHues: defaultMarkerHues,
+  markerRamp: defaultMarkerRamp,
 };
 
-export function isThemeTokens(value: unknown): value is ThemeTokens {
+function isPrimaryRamp(value: unknown): value is PrimaryRamp {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'core' in value &&
+    typeof value.core === 'string' &&
+    'contrast' in value &&
+    typeof value.contrast === 'number' &&
+    'curve' in value &&
+    (value.curve === 'even' || value.curve === 'soft' || value.curve === 'dramatic') &&
+    'endpointChroma' in value &&
+    typeof value.endpointChroma === 'number'
+  );
+}
+
+function isMarkerHues(value: unknown): value is MarkerHues {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Object.entries(defaultMarkerHues).every(
+      ([name]) => name in value && typeof value[name as keyof typeof value] === 'number'
+    )
+  );
+}
+
+function isMarkerRamp(value: unknown): value is MarkerRamp {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'fraction' in value &&
+    typeof value.fraction === 'number' &&
+    'cap' in value &&
+    typeof value.cap === 'number' &&
+    (!('endBoost' in value) || typeof value.endBoost === 'number') &&
+    'curve' in value &&
+    (value.curve === 'even' || value.curve === 'soft' || value.curve === 'dramatic')
+  );
+}
+
+export function isThemeTokens(value: unknown): value is StoredThemeTokens {
+  const isColorShade = (shade: unknown): shade is ColorShade =>
+    typeof shade === 'number' && Number.isInteger(shade) && shade >= 0 && shade <= 9;
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -57,8 +141,36 @@ export function isThemeTokens(value: unknown): value is ThemeTokens {
     'dark' in value &&
     Array.isArray(value.dark) &&
     value.dark.length === 10 &&
-    value.dark.every((color) => typeof color === 'string')
+    value.dark.every((color) => typeof color === 'string') &&
+    'primary' in value &&
+    Array.isArray(value.primary) &&
+    value.primary.length === 10 &&
+    value.primary.every((color) => typeof color === 'string') &&
+    'primaryShade' in value &&
+    typeof value.primaryShade === 'object' &&
+    value.primaryShade !== null &&
+    'light' in value.primaryShade &&
+    isColorShade(value.primaryShade.light) &&
+    'dark' in value.primaryShade &&
+    isColorShade(value.primaryShade.dark) &&
+    (!('primaryRamp' in value) || isPrimaryRamp(value.primaryRamp)) &&
+    (!('markerHues' in value) || isMarkerHues(value.markerHues)) &&
+    (!('markerRamp' in value) || isMarkerRamp(value.markerRamp))
   );
+}
+
+export function normalizeThemeTokens(tokens: StoredThemeTokens): ThemeTokens {
+  return {
+    ...tokens,
+    primaryRamp: tokens.primaryRamp ?? {
+      core: tokens.primary[6],
+      contrast: 90,
+      curve: 'even',
+      endpointChroma: 100,
+    },
+    markerHues: tokens.markerHues ?? defaultMarkerHues,
+    markerRamp: { ...defaultMarkerRamp, ...tokens.markerRamp },
+  };
 }
 
 export function loadThemeTokens(): ThemeTokens {
@@ -67,7 +179,7 @@ export function loadThemeTokens(): ThemeTokens {
     if (saved) {
       const parsed: unknown = JSON.parse(saved);
       if (isThemeTokens(parsed)) {
-        return parsed;
+        return normalizeThemeTokens(parsed);
       }
     }
   } catch {
