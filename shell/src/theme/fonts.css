@@ -1,7 +1,7 @@
 /**
  * Fraunces is self-hosted rather than pulled from Google Fonts: the css2
  * endpoint only lets you parameterize registered axes (wght, opsz) via URL,
- * not custom axes like WONK, so there's no way to request the wonky
+ * not custom axes like WONK, so there is no way to request the wonky
  * letterforms through that API. Self-hosting the actual variable font file
  * lets font-variation-settings turn WONK on directly. Same TTFs as
  * design-tokens/build/fonts.

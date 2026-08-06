@@ -1,0 +1,6 @@
+@import './fonts.css';
+
+body {
+  background: var(--surface);
+  color: var(--text);
+}

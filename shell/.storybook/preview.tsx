@@ -3,7 +3,8 @@ import '@mantine/core/styles.css';
 import { useEffect } from 'react';
 import { useGlobals } from 'storybook/preview-api';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
-import { theme } from '../src/theme';
+import { semanticVariablesResolver, theme } from '../src/theme';
+import '../src/theme/global.css';
 
 export const parameters = {
   layout: 'fullscreen',
@@ -53,7 +54,11 @@ export const decorators = [
 
     const scheme = (context.globals.theme || 'light') as 'light' | 'dark';
     return (
-      <MantineProvider theme={theme} forceColorScheme={scheme}>
+      <MantineProvider
+        theme={theme}
+        cssVariablesResolver={semanticVariablesResolver}
+        forceColorScheme={scheme}
+      >
         <ColorSchemeScript />
         {renderStory()}
       </MantineProvider>

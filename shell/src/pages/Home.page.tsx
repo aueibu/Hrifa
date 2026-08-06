@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AppShell,
+  Anchor,
   Badge,
   Card,
   Chip,
@@ -46,7 +47,12 @@ export function HomePage() {
           <Mono size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.08em' }}>
             Hrifa / Workbench
           </Mono>
-          <ColorSchemeToggle />
+          <Group gap="md">
+            <Anchor component={Link} to="/theme" size="sm">
+              Theme editor
+            </Anchor>
+            <ColorSchemeToggle />
+          </Group>
         </Group>
       </AppShell.Header>
 

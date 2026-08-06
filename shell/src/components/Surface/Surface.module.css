@@ -1,0 +1,15 @@
+.root {
+  background: var(--panel);
+  border-color: var(--border);
+  border-radius: var(--radius-panel);
+  color: var(--text);
+}
+
+.root[data-tone='raised'] {
+  background: var(--panel-raised);
+  box-shadow: var(--shadow-panel);
+}
+
+.root[data-tone='inset'] {
+  background: var(--panel-inset);
+}

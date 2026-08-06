@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { HomePage } from './pages/Home.page';
 import { NotFoundPage } from './pages/NotFound.page';
+import { ThemeEditorPage } from './pages/ThemeEditor.page';
 import { UsernameSeedsPage } from './pages/UsernameSeeds.page';
 
 const router = createBrowserRouter([
@@ -12,6 +13,11 @@ const router = createBrowserRouter([
   {
     path: '/username-seeds',
     element: <UsernameSeedsPage />,
+    errorElement: <NotFoundPage />,
+  },
+  {
+    path: '/theme',
+    element: <ThemeEditorPage />,
     errorElement: <NotFoundPage />,
   },
   {
