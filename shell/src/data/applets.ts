@@ -158,4 +158,13 @@ export const applets: Applet[] = [
     description:
       'Generate points on a grid and resolve each into a line, arc, circle, or point via a two-phase role-then-execute rule set.',
   },
+  {
+    title: 'Radial Growth Tree',
+    href: '/radial-growth-tree',
+    category: 'geometry',
+    status: 'experimental',
+    runtime: 'Static browser app',
+    description:
+      'Project a polyhedron onto a toroidal lattice, mix it with a cat-map, and grow a directed-ray branching tree from a chosen origin.',
+  },
 ];

@@ -34,3 +34,23 @@ engine emits semantic geometry such as a primary mark, construction guide,
 marker, or annotation; it does not choose colors, opacity, dash patterns,
 strokes, or fonts. The page supplies `resolveDiagramStyle()` to its engine so
 the active shell theme remains the single rendering authority.
+
+Tools with their own vocabulary add a dedicated resolver next to
+`resolveDiagramStyle` rather than overloading it, and reuse the shared contract
+for anything it already decides. The Radial Growth Tree's
+`resolveGrowthTreeStyle()` embeds `resolveDiagramStyle()` as `base` and draws
+its grid lines, dashed guides, hover rings, and point radii from it; it adds
+only genuinely new roles — the O/P/Q construction circles, tree/dead-end/branch
+marks, a neutral for field points, and a few ultra-faint fills (halo, search
+cones) with no base analog. `resolveSolidViewStyle()` covers the 3D solid roles
+(per-origin-type colors, wireframe, axis, grid). All roles map to Mantine
+palette variables so both schemes resolve automatically. The palette resolves to
+`oklch()`, which canvas 2D renders directly; the Three.js view converts each role
+color to hex through a probe canvas because THREE.Color cannot parse `oklch()`.
+
+Fixed palette shades (`--mantine-color-*-6`) are identical in light and dark —
+only the neutral roles adapt — so categorical canvas hues route through
+`markHue`, which reads `data-mantine-color-scheme` and picks a lighter step on
+dark / darker step on light to hold contrast against the scheme-adaptive panel.
+Neutral roles (`dimmed`, `default-border`, `text`) already adapt and are read
+directly. Engines re-resolve on scheme change via their `restyle()` hook.
