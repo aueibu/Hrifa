@@ -167,4 +167,31 @@ export const applets: Applet[] = [
     description:
       'Project a polyhedron onto a toroidal lattice, mix it with a cat-map, and grow a directed-ray branching tree from a chosen origin.',
   },
+  {
+    title: 'Interval Placement',
+    href: '/interval-placement',
+    category: 'sound',
+    status: 'experimental',
+    runtime: 'Static browser app',
+    description:
+      'Place a set of intervals in a pitch window under different placement strategies and rank the resulting voicings by a roughness/ratio dissonance model.',
+  },
+  {
+    title: 'Composition Workbench',
+    href: '/composition-workbench',
+    category: 'sound',
+    status: 'experimental',
+    runtime: 'Static browser app',
+    description:
+      'Explore compositional modules, shape musical parameters, and inspect their construction and provenance.',
+  },
+  {
+    title: 'Segment Tangent Construction',
+    href: '/segment-tangent-construction',
+    category: 'geometry',
+    status: 'experimental',
+    runtime: 'Static browser app',
+    description:
+      'Construct tangent lines from segmented arcs, derive ratio and rotation sets from the geometry, and generate Fokker periodicity blocks with sonification.',
+  },
 ];

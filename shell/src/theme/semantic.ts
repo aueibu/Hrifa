@@ -5,6 +5,7 @@ export const semanticVariablesResolver: CSSVariablesResolver = () => ({
     '--accent': 'var(--mantine-primary-color-filled)',
     '--focus-ring': 'var(--mantine-primary-color-filled)',
     '--radius-panel': 'var(--mantine-radius-default)',
+    '--radius-control': 'var(--mantine-radius-sm)',
     '--shadow-panel': 'var(--mantine-shadow-xs)',
     '--surface': 'var(--mantine-color-body)',
     '--panel': 'var(--mantine-color-default)',

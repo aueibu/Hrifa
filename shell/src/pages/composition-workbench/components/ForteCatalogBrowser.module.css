@@ -1,0 +1,85 @@
+.layout {
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  grid-template-columns: minmax(18rem, 1fr) minmax(18rem, 0.85fr);
+}
+
+.catalogList {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  height: 23rem;
+  overflow-y: auto;
+}
+
+.catalogEntry {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: 4.5rem minmax(0, 1fr) minmax(5.5rem, auto);
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+  width: 100%;
+}
+
+.catalogEntry:last-child {
+  border-bottom: 0;
+}
+
+.catalogEntry:hover,
+.catalogEntry[data-selected="true"] {
+  background: var(--mantine-primary-color-light);
+}
+
+.preview {
+  background: var(--panel-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  min-width: 0;
+  padding: var(--mantine-spacing-md);
+}
+
+.clock {
+  display: block;
+  margin-inline: auto;
+  max-height: 15rem;
+  width: min(100%, 15rem);
+}
+
+.clockRing {
+  fill: var(--panel);
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.clockPoint {
+  fill: var(--panel);
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.clockPoint[data-active="true"] {
+  fill: var(--mantine-primary-color-filled);
+  stroke: var(--mantine-primary-color-filled);
+}
+
+.clockLabel {
+  fill: var(--mantine-color-text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 12px;
+  text-anchor: middle;
+}
+
+.realizedSet {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 48rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .catalogList {
+    height: 16rem;
+  }
+}

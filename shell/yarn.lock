@@ -293,6 +293,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.25.6, @babel/runtime@npm:^7.29.2":
+  version: 7.29.7
+  resolution: "@babel/runtime@npm:7.29.7"
+  checksum: 10c0/ca11572f7146b21e0bde6a9ed4bb6a89eafbee5f0944c7eb54d0d8a2dac962c33638a1d611e14faa71dfbb92b4b5f9236232208568a6b7d5c6f3f39ddb91771e
+  languageName: node
+  linkType: hard
+
 "@babel/template@npm:^7.27.1":
   version: 7.27.1
   resolution: "@babel/template@npm:7.27.1"
@@ -2155,6 +2162,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/katex@npm:^0.16.8":
+  version: 0.16.8
+  resolution: "@types/katex@npm:0.16.8"
+  checksum: 10c0/0661609353f4f5e62bd2dc78da99e842761c6474b19f2268b195bbe9dbf20e6f766a31155d79eec2e7c3eff4e7eba4b30f4f519e9c6a11c75bb45e257a2ddb69
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:^26.0.0":
   version: 26.1.2
   resolution: "@types/node@npm:26.1.2"
@@ -2654,6 +2668,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"automation-events@npm:^7.0.9":
+  version: 7.1.19
+  resolution: "automation-events@npm:7.1.19"
+  dependencies:
+    "@babel/runtime": "npm:^7.29.2"
+    tslib: "npm:^2.8.1"
+  checksum: 10c0/f95b1c589c6ddf68521b916285e79449493c9c3cf836bca51ac24aae9af7d5c2881bc4d5be1e59cf1a046be8e7e9aa59fb3eed03d72adb1c51fe51ab03d3d911
+  languageName: node
+  linkType: hard
+
 "balanced-match@npm:^1.0.0":
   version: 1.0.2
   resolution: "balanced-match@npm:1.0.2"
@@ -2883,6 +2907,13 @@ __metadata:
   version: 0.1.8
   resolution: "colorparsley@npm:0.1.8"
   checksum: 10c0/8135f61042f2775994b1d88fbb3383a49f968986420466e28e68548fc134b549776a058c4882b71ae39cb54bba5f0f74104820571081e88e05f11d388626aff8
+  languageName: node
+  linkType: hard
+
+"commander@npm:^8.3.0":
+  version: 8.3.0
+  resolution: "commander@npm:8.3.0"
+  checksum: 10c0/8b043bb8322ea1c39664a1598a95e0495bfe4ca2fad0d84a92d7d1d8d213e2a155b441d2470c8e08de7c4a28cf2bc6e169211c49e1b21d9f7edc6ae4d9356060
   languageName: node
   linkType: hard
 
@@ -4003,6 +4034,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"katex@npm:^0.18.4":
+  version: 0.18.4
+  resolution: "katex@npm:0.18.4"
+  dependencies:
+    commander: "npm:^8.3.0"
+  bin:
+    katex: cli.js
+  checksum: 10c0/a8ecf3079c1748c15856b25f4175a98b6fc5d8e7f567afe8dcf4f63673159036fd2c50527621ec338c6144ae8e18a0103ffd820e175165f6659881c9d9a711b9
+  languageName: node
+  linkType: hard
+
 "keyv@npm:^5.6.0":
   version: 5.6.0
   resolution: "keyv@npm:5.6.0"
@@ -4286,6 +4328,7 @@ __metadata:
     "@testing-library/react": "npm:^16.3.0"
     "@testing-library/user-event": "npm:^14.6.1"
     "@types/apca-w3": "npm:^0"
+    "@types/katex": "npm:^0.16.8"
     "@types/node": "npm:^26.0.0"
     "@types/react": "npm:^19.2.2"
     "@types/react-dom": "npm:^19.2.1"
@@ -4294,6 +4337,7 @@ __metadata:
     apca-w3: "npm:0.1.9"
     identity-obj-proxy: "npm:^3.0.0"
     jsdom: "npm:^30.0.0"
+    katex: "npm:^0.18.4"
     oxc-config-mantine: "npm:^1.0.0"
     oxfmt: "npm:^0.61.0"
     oxlint: "npm:^1.70.0"
@@ -4308,6 +4352,7 @@ __metadata:
     stylelint: "npm:^17.0.0"
     stylelint-config-standard-scss: "npm:^17.0.0"
     three: "npm:^0.185.1"
+    tone: "npm:^15.1.22"
     typescript: "npm:7.0.2"
     vite: "npm:^8.0.0"
     vitest: "npm:^4.1.0"
@@ -5735,6 +5780,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"standardized-audio-context@npm:^25.3.70":
+  version: 25.3.77
+  resolution: "standardized-audio-context@npm:25.3.77"
+  dependencies:
+    "@babel/runtime": "npm:^7.25.6"
+    automation-events: "npm:^7.0.9"
+    tslib: "npm:^2.7.0"
+  checksum: 10c0/41d5e3a64b881691fecd709313045ab9bddb864ed79c6eb51490056cec080e808e9f5b3ef94d734567b9da88f9c95e68cc63a3a0343374b2f865b1a961fb46ef
+  languageName: node
+  linkType: hard
+
 "std-env@npm:^4.0.0-rc.1":
   version: 4.0.0
   resolution: "std-env@npm:4.0.0"
@@ -6197,6 +6253,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tone@npm:^15.1.22":
+  version: 15.5.36
+  resolution: "tone@npm:15.5.36"
+  dependencies:
+    standardized-audio-context: "npm:^25.3.70"
+    tslib: "npm:^2.3.1"
+  checksum: 10c0/b5b1cd20297037a75157e519aeefcc0799ab4ecc50fbe4deddcd69b0ef538f452920d99167195337c2a6e6fb56e1083afde4ea7b12a3d3b8ef31a385b71634de
+  languageName: node
+  linkType: hard
+
 "tough-cookie@npm:^6.0.2":
   version: 6.0.2
   resolution: "tough-cookie@npm:6.0.2"
@@ -6240,7 +6306,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.4.0":
+"tslib@npm:^2.3.1, tslib@npm:^2.4.0, tslib@npm:^2.7.0, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62

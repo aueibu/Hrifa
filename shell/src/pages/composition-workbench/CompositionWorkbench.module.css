@@ -1,0 +1,308 @@
+.workspace {
+  align-items: start;
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  grid-template-columns: minmax(16rem, 19rem) minmax(26rem, 1fr) minmax(19rem, 24rem);
+}
+
+.compositionWorkspace {
+  align-items: stretch;
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  grid-template-columns: minmax(20rem, 24rem) minmax(0, 1fr);
+}
+
+.moduleRail {
+  max-height: calc(100dvh - 6.5rem);
+  min-height: calc(100dvh - 12rem);
+  overflow-y: auto;
+  position: sticky;
+  top: calc(56px + var(--mantine-spacing-md));
+}
+
+.moduleRailContent {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: calc(100dvh - 15rem);
+}
+
+.moduleRailHeading {
+  flex-wrap: nowrap;
+}
+
+.moduleLink {
+  border-radius: var(--radius-control);
+}
+
+.moduleRailDescription {
+  margin-top: auto;
+}
+
+.interferenceSurface {
+  min-width: 0;
+  width: 100%;
+}
+
+.interferenceLayout {
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  grid-template-rows: minmax(24rem, 1fr) auto;
+  min-height: calc(100dvh - 15rem);
+}
+
+.resultInspector {
+  min-height: 24rem;
+  min-width: 0;
+}
+
+.pattern {
+  display: flex;
+  flex: 1;
+  gap: 0.2rem;
+  min-width: 8rem;
+}
+
+.pulse {
+  background: var(--panel-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  display: block;
+  height: 0.75rem;
+  min-width: 0.3rem;
+  width: 100%;
+}
+
+.pulse[data-active="true"] {
+  background: var(--mantine-primary-color-filled);
+  border-color: var(--mantine-primary-color-filled);
+}
+
+.stickyColumn {
+  position: sticky;
+  top: calc(56px + var(--mantine-spacing-md));
+}
+
+.generatorRow {
+  align-items: center;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1.25rem minmax(7rem, 1fr) 3rem minmax(7rem, 9rem) 1.75rem;
+  min-height: 2rem;
+  min-width: 22rem;
+}
+
+.generatorTable {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.generatorTableHeader {
+  color: var(--text-muted);
+  display: grid;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  gap: 0.4rem;
+  grid-template-columns: 1.25rem minmax(7rem, 1fr) 3rem minmax(7rem, 9rem) 1.75rem;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+  min-width: 22rem;
+}
+
+.generatorRows {
+  max-height: 9rem;
+  overflow-y: auto;
+}
+
+.moduleParameterRow {
+  align-items: center;
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  min-height: 1.75rem;
+}
+
+.volumeControl,
+.volumeControl > div:first-child {
+  min-width: 0;
+  width: 100%;
+}
+
+.moduleHint {
+  line-height: 1.25;
+  min-height: 2rem;
+}
+
+.durationTimeline {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  display: flex;
+  min-height: 4rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.durationBlock {
+  align-items: center;
+  background: color-mix(in srgb, var(--mantine-primary-color-filled) 18%, transparent);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-basis: 0;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-sm);
+  justify-content: center;
+  min-width: 1.25rem;
+}
+
+.durationBlock:nth-child(even) {
+  background: color-mix(in srgb, var(--mantine-primary-color-filled) 30%, transparent);
+}
+
+.measureBoundary {
+  border-left: 2px solid var(--mantine-color-text);
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.durationText {
+  overflow-wrap: anywhere;
+}
+
+.attackLane {
+  align-items: center;
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+}
+
+.attackCells {
+  display: grid;
+  gap: 1px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(2px, 1fr);
+}
+
+.attackCells > span {
+  background: var(--panel-inset);
+  border-radius: 1px;
+  height: 1.25rem;
+}
+
+.attackCells > span[data-active="true"] {
+  background: var(--mantine-primary-color-filled);
+}
+
+.pitchPlot {
+  background: var(--panel-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  min-height: 20rem;
+  overflow: hidden;
+}
+
+.pitchPlot svg {
+  display: block;
+  height: 20rem;
+  width: 100%;
+}
+
+.pitchPlot text {
+  fill: var(--mantine-color-text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 18px;
+}
+
+.pitchGridLine {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.pitchLine {
+  fill: none;
+  stroke: var(--mantine-primary-color-filled);
+  stroke-width: 3;
+}
+
+.pitchPoint {
+  fill: var(--mantine-primary-color-filled);
+  stroke: var(--panel);
+  stroke-width: 3;
+}
+
+.pitchValues {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 76rem) {
+  .workspace {
+    grid-template-columns: minmax(15rem, 18rem) minmax(24rem, 1fr);
+  }
+
+  .inspector {
+    grid-column: 1 / -1;
+  }
+
+  .stickyColumn {
+    position: static;
+  }
+}
+
+@media (max-width: 64rem) {
+  .compositionWorkspace,
+  .interferenceLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .moduleRail,
+  .moduleRailContent {
+    min-height: auto;
+  }
+
+  .moduleRail {
+    position: static;
+  }
+
+  .moduleRailDescription {
+    margin-top: 0;
+  }
+
+  .interferenceLayout {
+    grid-template-rows: auto;
+    min-height: auto;
+  }
+
+  .resultInspector {
+    min-height: 20rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .headerContent {
+    align-content: center;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: var(--mantine-spacing-xs);
+    justify-content: center;
+  }
+
+  .headerContent > div:last-child {
+    gap: var(--mantine-spacing-sm);
+    margin-top: 0;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inspector {
+    grid-column: auto;
+  }
+
+  .durationBlock {
+    font-size: var(--mantine-font-size-xs);
+    min-width: 0;
+  }
+}

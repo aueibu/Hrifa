@@ -1,0 +1,121 @@
+.root {
+  min-width: 0;
+}
+
+:global([data-mantine-color-scheme='light']) .root {
+  --composition-modified-background: var(--mantine-color-orange-4);
+  --composition-modified-border: var(--mantine-color-orange-7);
+  --composition-modified-text: var(--mantine-color-white);
+}
+
+:global([data-mantine-color-scheme='dark']) .root {
+  --composition-modified-background: color-mix(
+    in srgb,
+    var(--mantine-color-orange-5) 22%,
+    var(--panel)
+  );
+  --composition-modified-border: var(--mantine-color-orange-5);
+  --composition-modified-text: var(--mantine-color-white);
+}
+
+.header {
+  margin-bottom: var(--mantine-spacing-xs);
+}
+
+.laneHeaders {
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.laneHeader {
+  background: var(--panel-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  min-width: 0;
+  padding: 0.25rem 0.2rem;
+  text-align: center;
+}
+
+.laneHeader[data-selected='true'] {
+  background: var(--mantine-primary-color-light);
+  border-color: var(--mantine-primary-color-light-color);
+  color: var(--mantine-primary-color-light-color);
+}
+
+.grid {
+  background-color: var(--panel-inset);
+  background-image:
+    linear-gradient(to right, var(--border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 25% 14.2857%;
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-control) var(--radius-control);
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: auto;
+  padding: 0.3rem;
+  position: relative;
+}
+
+.connections {
+  height: 100%;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+}
+
+.connection {
+  fill: none;
+  stroke: var(--mantine-primary-color-filled);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.connection[data-muted='true'] {
+  opacity: 0.35;
+  stroke-dasharray: 5 4;
+}
+
+.connection[data-selected='true'] {
+  filter: drop-shadow(0 0 3px var(--mantine-primary-color-filled));
+  stroke-width: 3;
+}
+
+.connectionHit {
+  fill: none;
+  outline: none;
+  pointer-events: stroke;
+  stroke: transparent;
+  stroke-width: 16;
+  vector-effect: non-scaling-stroke;
+}
+
+.connectionHit:focus,
+.connectionHit:focus-visible {
+  outline: none;
+  stroke: transparent;
+}
+
+g:has(.connectionHit:focus-visible) > .connection {
+  filter: drop-shadow(0 0 3px var(--mantine-primary-color-filled));
+  stroke-width: 3;
+}
+
+.junction {
+  fill: var(--mantine-primary-color-filled);
+  stroke: var(--panel);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.junction[data-active='true'] {
+  filter: drop-shadow(0 0 4px var(--mantine-primary-color-filled));
+  stroke: var(--mantine-primary-color-light-color);
+  stroke-width: 3;
+}

@@ -1,0 +1,13 @@
+.root {
+  align-items: center;
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  min-height: 1.75rem;
+}
+
+.fader,
+.fader > div:first-child {
+  min-width: 0;
+  width: 100%;
+}

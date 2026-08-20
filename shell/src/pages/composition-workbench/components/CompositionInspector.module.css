@@ -1,0 +1,50 @@
+.root {
+  border-top: 1px solid var(--border);
+  margin-top: var(--mantine-spacing-md);
+  min-height: 15rem;
+  padding-top: var(--mantine-spacing-sm);
+}
+
+.heading {
+  letter-spacing: 0.04em;
+}
+
+.routePath {
+  background: var(--panel-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-xs);
+  overflow: hidden;
+  padding: 0.35rem 0.45rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section {
+  border-top: 1px solid var(--border);
+  padding-top: var(--mantine-spacing-xs);
+}
+
+.parameterRow {
+  align-items: center;
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: minmax(5rem, 0.9fr) minmax(7rem, 1.1fr);
+  min-height: 1.75rem;
+}
+
+.parameterRow > :last-child {
+  min-width: 0;
+}
+
+.changed {
+  color: var(--mantine-primary-color-light-color);
+}
+
+.contextSummary {
+  background: var(--panel-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  padding: var(--mantine-spacing-sm);
+}
