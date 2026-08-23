@@ -23,7 +23,16 @@ import type {
 } from '../compositionRouting';
 import { formatPitchClassGroup, type ForteSetSelection } from '../forteCatalog';
 import type { DataPacket } from '../model';
-import { interpretPitchList, previewMidicents, type PitchInputFormat } from '../pitch';
+import {
+  formatMidicents,
+  interpretPitchList,
+  pitchClassGroupToArray,
+  pitchClassNames,
+  pitchGroupToArray,
+  type PitchClassItemValue,
+  type PitchInputFormat,
+  type PitchItemValue,
+} from '../pitch';
 import {
   acceptsFiniteNumber,
   acceptsNumberOrString,
@@ -181,16 +190,34 @@ export function PitchListModule({
       ? 'pitch-class'
       : (upstream.encoding ?? format)
     : format;
-  const pitchGroups = interpreted.packet.items.map((item) => ({
-    id: item.id,
-    label: item.value.label,
-    pitches: item.value.pitches.map((pitch, pitchIndex) => ({
-      id: `${item.id}:pitch:${pitchIndex}`,
-      label: pitch.label,
-      midicents: previewMidicents(pitch, Number(previewOctave)),
-    })),
-    provenance: item.provenance,
-  }));
+  const pitchGroups =
+    interpreted.packet.domain === 'pitchClass'
+      ? interpreted.packet.items.map((item) => {
+          const pitchClasses = pitchClassGroupToArray(item.value as PitchClassItemValue);
+          return {
+            id: item.id,
+            label: item.label ?? '',
+            pitches: pitchClasses.map((pitchClass, pitchIndex) => ({
+              id: `${item.id}:pitch:${pitchIndex}`,
+              label: pitchClassNames[pitchClass],
+              midicents: (Number(previewOctave) + 1) * 1200 + pitchClass * 100,
+            })),
+            provenance: item.provenance,
+          };
+        })
+      : interpreted.packet.items.map((item) => {
+          const pitches = pitchGroupToArray(item.value as PitchItemValue);
+          return {
+            id: item.id,
+            label: item.label ?? '',
+            pitches: pitches.map((midicents, pitchIndex) => ({
+              id: `${item.id}:pitch:${pitchIndex}`,
+              label: formatMidicents(midicents),
+              midicents,
+            })),
+            provenance: item.provenance,
+          };
+        });
   const pitchVoices = pitchGroups.flatMap((group) => group.pitches);
   const minimum = Math.min(...pitchVoices.map((point) => point.midicents), 6000);
   const maximum = Math.max(...pitchVoices.map((point) => point.midicents), 6000);

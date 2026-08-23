@@ -64,7 +64,7 @@ describe('melodicization', () => {
       musicalPosition(3, 4),
       musicalPosition(1),
     ]);
-    expect(result.packet.items.map((item) => item.value.pitches[0].midicents)).toEqual([
+    expect(result.packet.items.map((item) => item.value.pitches[0])).toEqual([
       6000, 6200, 6000, 6200,
     ]);
     expect(result.packet.frame).toMatchObject({
@@ -93,7 +93,7 @@ describe('melodicization', () => {
       musicalPosition(5, 4),
       musicalPosition(3, 2),
     ]);
-    expect(result.packet.items.map((item) => item.value.pitches[0].midicents)).toEqual([
+    expect(result.packet.items.map((item) => item.value.pitches[0])).toEqual([
       6000, 6200, 6400, 6500, 6700,
     ]);
     expect(result.packet.items.map((item) => item.provenance.at(-1)?.parameters)).toMatchObject([
@@ -140,9 +140,12 @@ describe('melodicization', () => {
     const result = run('cycle', { pitches });
 
     expect(result.packet.items).toHaveLength(4);
-    expect(
-      result.packet.items.map((item) => item.value.pitches.map((pitch) => pitch.midicents))
-    ).toEqual([[6000], [6000, 6400, 6700], [6200], [6000]]);
+    expect(result.packet.items.map((item) => item.value.pitches)).toEqual([
+      [6000],
+      [6000, 6400, 6700],
+      [6200],
+      [6000],
+    ]);
     expect(result.packet.items[1].value.onset).toEqual(musicalPosition(1, 2));
   });
 

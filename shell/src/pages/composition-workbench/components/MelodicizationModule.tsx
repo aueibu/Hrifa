@@ -42,6 +42,7 @@ import {
   type MusicalDuration,
   type MusicalTimeline,
 } from '../musicalTime';
+import { pitchLabel } from '../routeTreatments';
 import { signalTypeRegistry } from '../signalTypes';
 import { rhythmInterpretableDomains } from '../routeTreatments';
 import {
@@ -262,12 +263,12 @@ export function MelodicizationModule({
   const pianoRollNotes = useMemo(
     () =>
       result.packet.items.flatMap((item) =>
-        item.value.pitches.map((pitch, pitchIndex) => ({
+        item.value.pitches.map((midicents, pitchIndex) => ({
           id: `${item.id}:pitch:${pitchIndex}`,
           start: rationalToNumber(item.value.onset.quarterNotes),
           duration: rationalToNumber(item.value.duration.quarterNotes),
-          pitchMidicents: pitch.midicents,
-          label: pitch.label,
+          pitchMidicents: midicents,
+          label: pitchLabel(midicents),
           velocity: item.value.velocity,
         }))
       ),
@@ -511,8 +512,10 @@ export function MelodicizationModule({
                             </Table.Td>
                             <Table.Td>
                               {item.value.pitches.length > 1
-                                ? `[${item.value.pitches.map((pitch) => pitch.label).join(' ')}]`
-                                : item.value.pitches[0]?.label}
+                                ? `[${item.value.pitches.map((midicents) => pitchLabel(midicents)).join(' ')}]`
+                                : item.value.pitches[0] !== undefined
+                                  ? pitchLabel(item.value.pitches[0])
+                                  : ''}
                             </Table.Td>
                             <Table.Td ff="monospace">
                               {rationalLabel(item.value.interOnset)}

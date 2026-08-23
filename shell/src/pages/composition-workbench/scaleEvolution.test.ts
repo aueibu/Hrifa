@@ -5,11 +5,6 @@ import {
   stagePitchClassesPacket,
   synchronizeRotations,
 } from "./scaleEvolution";
-import type { PitchClassValue, PitchGroupValue } from "./pitch";
-
-function pitchClassOf(group: PitchGroupValue) {
-  return (group.pitches[0] as PitchClassValue).pitchClass;
-}
 
 describe("scaleEvolution", () => {
   it("rejects empty or non-positive-integer interval sequences", () => {
@@ -81,37 +76,36 @@ describe("scaleEvolution", () => {
     const result = evolveScale([3, 2]);
     const packet = stagePitchClassesPacket(result, 0, 'src');
     expect(packet.items).toHaveLength(2);
-    // Stage 1: 2+1+2 from root 0 -> pitch classes 0,2,3,5, each PitchGroupValue-wrapped
-    expect(packet.items[0].value.map(pitchClassOf)).toEqual([0, 2, 3, 5]);
+    // Stage 1: 2+1+2 from root 0 -> pitch classes 0,2,3,5 (bare, bracketed as one bank item)
+    expect(packet.items[0].value).toEqual([0, 2, 3, 5]);
     expect(packet.items[0].label).toBe('C-D-D#-F');
     // Stage 2: 1+1+1+1+1 from root 0 -> the full chromatic run 0..5
-    expect(packet.items[1].value.map(pitchClassOf)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(packet.items[1].value).toEqual([0, 1, 2, 3, 4, 5]);
   });
 
   it("realizes stage pitch classes from an arbitrary root, wrapping mod 12", () => {
     const result = evolveScale([3, 2]);
     const packet = stagePitchClassesPacket(result, 10, 'src');
     // Stage 1 durations 2,1,2 from root 10 -> 10,12,13,15 -> mod 12 -> 10,0,1,3
-    expect(packet.items[0].value.map(pitchClassOf)).toEqual([10, 0, 1, 3]);
+    expect(packet.items[0].value).toEqual([10, 0, 1, 3]);
   });
 
-  it("keeps stage pitch-class items PitchGroupValue-wrapped so a future bank-entry selector needs no reinterpretation", () => {
+  it("keeps stage pitch-class items as bare number[] so a future bank-entry selector needs no reinterpretation", () => {
     const result = evolveScale([3, 2]);
     const packet = stagePitchClassesPacket(result, 0, 'src');
     for (const item of packet.items) {
-      for (const group of item.value) {
-        expect(group.pitches).toHaveLength(1);
-        expect(typeof pitchClassOf(group)).toBe('number');
-        expect(typeof group.label).toBe('string');
+      expect(Array.isArray(item.value)).toBe(true);
+      for (const pitchClass of item.value) {
+        expect(typeof pitchClass).toBe('number');
       }
+      expect(typeof item.label).toBe('string');
     }
   });
 
-  it("realizes the final stage as a single pitch-class list output, PitchGroupValue-wrapped for Melodicization", () => {
+  it("realizes the final stage as a single pitch-class list output, one bare number per degree", () => {
     const result = evolveScale([3, 2]);
     const packet = finalPitchClassesPacket(result, 0, 'src');
     expect(packet.domain).toBe('pitchClass');
-    const pitchClasses = packet.items.map((item) => pitchClassOf(item.value as PitchGroupValue));
-    expect(pitchClasses).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(packet.items.map((item) => item.value)).toEqual([0, 1, 2, 3, 4, 5]);
   });
 });

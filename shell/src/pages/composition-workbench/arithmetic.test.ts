@@ -1,7 +1,6 @@
 import { computeArithmetic } from './arithmetic';
 import { defaultModuloTreatment } from './moduloTreatment';
 import { packet, type DataDomain, type DataPacket } from './model';
-import type { PitchGroupValue } from './pitch';
 
 function numberPacket(values: number[], domain: DataDomain = 'integer'): DataPacket<number> {
   return packet(
@@ -13,19 +12,18 @@ function numberPacket(values: number[], domain: DataDomain = 'integer'): DataPac
 
 // Each element of `groups` is one bracketed pitch group (a chord); a single-number group is
 // an unbracketed pitch, matching how Pitch List normalizes `60 [60 64 67] 62` into 3 groups.
+// Both 'pitch' and 'pitchClass' items are bare numbers/number[] — no wrapper. Test values are
+// authored as MIDI note numbers for 'pitch' (scaled to midicents here) and as raw 0-11 integers
+// for 'pitchClass'.
 function pitchGroupPacket(groups: number[][], domain: 'pitch' | 'pitchClass' = 'pitch'): DataPacket {
   return packet(
     groups.length === 1 ? 'value' : 'list',
     domain,
     groups.map((midis, index) => {
-      const pitches = midis.map((n) =>
-        domain === 'pitchClass'
-          ? { pitchClass: n, label: String(n), sourceValue: n }
-          : { midicents: n * 100, label: String(n), sourceValue: n }
-      );
+      const values = domain === 'pitch' ? midis.map((midi) => midi * 100) : midis;
       return {
         id: `g:${index}`,
-        value: { pitches, label: pitches.map((p) => p.label).join(' ') } satisfies PitchGroupValue,
+        value: values.length > 1 ? values : values[0],
         provenance: [],
       };
     })
@@ -170,10 +168,11 @@ describe('computeArithmetic', () => {
     });
     expect(result.errors).toEqual([]);
     expect(result.packet.domain).toBe('integer');
-    // B was a grouped domain (one pitch in a group), so the result keeps that shape — a
-    // length-1 array, not unwrapped to a bare number. Matches Lisp: (om+ 1 (list 60)) => (61),
-    // not the bare atom 61 — a one-element list stays a list.
-    expect(result.packet.items[0].value).toEqual([6001]);
+    // B was a single unbracketed pitch — already a bare number (no wrapper), so combining it
+    // with A's bare number naturally stays a bare number. Only an actually-bracketed multi-note
+    // group would combine into an array (see "broadcasts a scalar fallback across every pitch
+    // in a bracketed chord" above).
+    expect(result.packet.items[0].value).toEqual(6001);
   });
 
   it('warns on divide by zero and produces Infinity', () => {
@@ -222,17 +221,13 @@ describe('computeArithmetic', () => {
 
     it('broadcasts a scalar fallback over a single unbracketed pitch (transposition)', () => {
       const result = run({ a: pitchGroupPacket([[60]]), fallbackB: 200 });
-      const groups = result.packet.items.map((item) => item.value as PitchGroupValue);
-      expect(groups[0].pitches.map((p) => (p as { midicents: number }).midicents)).toEqual([6200]);
+      expect(result.packet.items.map((item) => item.value)).toEqual([6200]);
       expect(result.packet.domain).toBe('pitch');
     });
 
     it('broadcasts a scalar fallback across every pitch in a bracketed chord', () => {
       const result = run({ a: pitchGroupPacket([[60, 64, 67]]), fallbackB: 100 });
-      const groups = result.packet.items.map((item) => item.value as PitchGroupValue);
-      expect(groups[0].pitches.map((p) => (p as { midicents: number }).midicents)).toEqual([
-        6100, 6500, 6800,
-      ]);
+      expect(result.packet.items.map((item) => item.value)).toEqual([[6100, 6500, 6800]]);
     });
 
     it('broadcasts a single-pitch group across a multi-pitch chord group', () => {
@@ -240,10 +235,7 @@ describe('computeArithmetic', () => {
         a: pitchGroupPacket([[60, 64, 67]]),
         b: pitchGroupPacket([[100]]),
       });
-      const groups = result.packet.items.map((item) => item.value as PitchGroupValue);
-      expect(groups[0].pitches.map((p) => (p as { midicents: number }).midicents)).toEqual([
-        16000, 16400, 16700,
-      ]);
+      expect(result.packet.items.map((item) => item.value)).toEqual([[16000, 16400, 16700]]);
     });
 
     it('pairs two equal-size chord groups elementwise, matching the outer list pairing rule', () => {
@@ -251,24 +243,27 @@ describe('computeArithmetic', () => {
         a: pitchGroupPacket([[60, 64, 67]]),
         b: pitchGroupPacket([[1, 2, 3]]),
       });
-      const groups = result.packet.items.map((item) => item.value as PitchGroupValue);
-      expect(groups[0].pitches.map((p) => (p as { midicents: number }).midicents)).toEqual([
-        6100, 6600, 7000,
-      ]);
+      expect(result.packet.items.map((item) => item.value)).toEqual([[6100, 6600, 7000]]);
     });
 
     it('wraps pitchClass results into 0-11 regardless of the modulo toggle', () => {
       const result = run({ a: pitchGroupPacket([[10]], 'pitchClass'), fallbackB: 5 });
-      const groups = result.packet.items.map((item) => item.value as PitchGroupValue);
-      expect(groups[0].pitches.map((p) => (p as { pitchClass: number }).pitchClass)).toEqual([3]);
+      expect(result.packet.items.map((item) => item.value)).toEqual([3]);
       expect(result.packet.domain).toBe('pitchClass');
     });
 
-    it('keeps a grouped side\'s structure even when the other side is a mismatched flat domain', () => {
+    it('falls back to an honest neutral domain for a mismatched flat domain (single unbracketed pitch)', () => {
       const result = run({ a: pitchGroupPacket([[60]]), b: numberPacket([5], 'duration') });
       expect(result.errors).toEqual([]);
       expect(result.packet.domain).toBe('integer');
-      expect(result.packet.items[0].value).toEqual([6005]);
+      expect(result.packet.items[0].value).toEqual(6005);
+    });
+
+    it('keeps a bracketed multi-note chord\'s array structure when the other side is a mismatched flat domain', () => {
+      const result = run({ a: pitchGroupPacket([[60, 64]]), b: numberPacket([5], 'duration') });
+      expect(result.errors).toEqual([]);
+      expect(result.packet.domain).toBe('integer');
+      expect(result.packet.items[0].value).toEqual([6005, 6405]);
     });
 
     it('adds two pitch-class lists of separate single-note groups elementwise: [0 1 4] + [2 3 5] = [2 4 9]', () => {
@@ -276,8 +271,7 @@ describe('computeArithmetic', () => {
         a: pitchGroupPacket([[0], [1], [4]], 'pitchClass'),
         b: pitchGroupPacket([[2], [3], [5]], 'pitchClass'),
       });
-      const groups = result.packet.items.map((item) => item.value as PitchGroupValue);
-      expect(groups.map((g) => (g.pitches[0] as { pitchClass: number }).pitchClass)).toEqual([2, 4, 9]);
+      expect(result.packet.items.map((item) => item.value)).toEqual([2, 4, 9]);
       expect(result.packet.items.length).toBe(3);
     });
   });

@@ -11,7 +11,7 @@ import {
   type MusicalDuration,
   type MusicalPosition,
 } from './musicalTime';
-import { asPitchGroup, type PitchGroupValue, type PitchValue } from './pitch';
+import { pitchGroupToArray, type PitchItemValue } from './pitch';
 
 export type PitchAllocation = 'cycle' | 'cycle-rhythm' | 'zip' | 'cartesian';
 
@@ -19,8 +19,14 @@ export interface NoteEventValue {
   onset: MusicalPosition;
   interOnset: MusicalDuration;
   duration: MusicalDuration;
-  pitches: PitchValue[];
+  /** Bare midicents, one per sounding pitch — no wrapper object (see pitch.ts). */
+  pitches: number[];
   velocity: number;
+}
+
+interface ConcretePitchGroup {
+  pitches: number[];
+  label: string;
 }
 
 export interface MelodicizationResult {
@@ -45,13 +51,9 @@ function emptyResult(errors: string[]): MelodicizationResult {
 
 function concretePitchGroups(packetValue: DataPacket) {
   return packetValue.items.flatMap((item) => {
-    const group = asPitchGroup(item.value as PitchValue | PitchGroupValue);
-    const pitches = group.pitches as Partial<PitchValue>[];
-    return pitches.length &&
-      pitches.every(
-        (pitch) => typeof pitch.midicents === 'number' && Number.isFinite(pitch.midicents)
-      )
-      ? [{ item, value: { ...group, pitches: pitches as PitchValue[] } }]
+    const pitches = pitchGroupToArray(item.value as PitchItemValue);
+    return pitches.length && pitches.every((midicents) => Number.isFinite(midicents))
+      ? [{ item, value: { pitches, label: item.label ?? '' } satisfies ConcretePitchGroup }]
       : [];
   });
 }

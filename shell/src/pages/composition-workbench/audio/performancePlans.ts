@@ -232,11 +232,11 @@ export function createNotePacketPerformancePlan({
     timebase: { kind: "musical", timeline },
     duration,
     events: packet.items.flatMap((item) =>
-      item.value.pitches.map((pitch, pitchIndex) => ({
+      item.value.pitches.map((midicents, pitchIndex) => ({
         id: `${sourceId}:performance:${item.id}:pitch:${pitchIndex}`,
         at: item.value.onset,
         duration: item.value.duration,
-        pitchMidicents: pitch.midicents,
+        pitchMidicents: midicents,
         velocity: item.value.velocity,
         instrumentId,
         busId: "preview" as const,

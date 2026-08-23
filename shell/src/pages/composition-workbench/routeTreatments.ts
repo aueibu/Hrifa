@@ -1,5 +1,11 @@
 import type { DataDomain, DataItem, DataPacket, Provenance } from './model';
-import { asPitchGroup, type PitchClassValue, type PitchGroupValue, type PitchValue } from './pitch';
+import {
+  pitchClassGroupLabel,
+  pitchClassGroupToArray,
+  pitchGroupToArray,
+  type PitchClassItemValue,
+  type PitchItemValue,
+} from './pitch';
 
 export interface PitchRouteTreatment {
   bypassed: boolean;
@@ -180,125 +186,114 @@ function voicePitchClasses(
   });
 }
 
+// Shared invert/transpose math on bare pitch-class numbers — no wrapper to unpack, since a
+// pitchClass item's value is already `number | number[]`.
+function transformPitchClasses(pitchClasses: number[], treatment: PitchRouteTreatment): number[] {
+  return pitchClasses.map((pitchClass) =>
+    modulo((treatment.inverted ? -pitchClass : pitchClass) + treatment.transposition, 12)
+  );
+}
+
+function pitchClassSequenceSteps(
+  treatment: PitchRouteTreatment,
+  routeId: string,
+  sourceItemId: string
+): Provenance[] {
+  const steps: Provenance[] = [];
+  if (treatment.inverted) {
+    steps.push({
+      sourceModuleInstance: routeId,
+      sourceItemIds: [sourceItemId],
+      transformation: 'invert-pitch-classes',
+      parameters: { axis: 0 },
+    });
+  }
+  if (treatment.transposition !== 0) {
+    steps.push({
+      sourceModuleInstance: routeId,
+      sourceItemIds: [sourceItemId],
+      transformation: 'transpose-pitch-classes',
+      parameters: { semitones: treatment.transposition },
+    });
+  }
+  return steps;
+}
+
+function pitchGroupLabel(value: PitchItemValue): string {
+  const values = pitchGroupToArray(value);
+  const label = values.map((midicents) => pitchLabel(midicents)).join(' ');
+  return values.length > 1 ? `[${label}]` : label;
+}
+
 function concreteGroupFromPitchClasses(
-  group: PitchGroupValue,
+  values: number[],
   treatment: PitchRouteTreatment,
   routeId: string,
   sourceItemId: string
 ) {
-  const sourcePitchClasses = group.pitches.map((pitch) => (pitch as PitchClassValue).pitchClass);
-  const transformedPitchClasses = sourcePitchClasses.map((pitchClass) =>
-    modulo((treatment.inverted ? -pitchClass : pitchClass) + treatment.transposition, 12)
-  );
+  const transformedPitchClasses = transformPitchClasses(values, treatment);
   const midiNotes = voicePitchClasses(
     transformedPitchClasses,
     treatment.registerBaseMidi,
     treatment.voicingInversion
   );
-  const steps: Provenance[] = [];
-  if (treatment.inverted) {
-    steps.push({
+  const steps = [
+    ...pitchClassSequenceSteps(treatment, routeId, sourceItemId),
+    {
       sourceModuleInstance: routeId,
       sourceItemIds: [sourceItemId],
-      transformation: 'invert-pitch-classes',
-      parameters: { axis: 0 },
-    });
-  }
-  if (treatment.transposition !== 0) {
-    steps.push({
-      sourceModuleInstance: routeId,
-      sourceItemIds: [sourceItemId],
-      transformation: 'transpose-pitch-classes',
-      parameters: { semitones: treatment.transposition },
-    });
-  }
-  steps.push({
-    sourceModuleInstance: routeId,
-    sourceItemIds: [sourceItemId],
-    transformation: 'assign-register',
-    parameters: {
-      registerBaseMidi: treatment.registerBaseMidi,
-      voicing: 'ascending-close',
-      voicingInversion: treatment.voicingInversion,
+      transformation: 'assign-register',
+      parameters: {
+        registerBaseMidi: treatment.registerBaseMidi,
+        voicing: 'ascending-close',
+        voicingInversion: treatment.voicingInversion,
+      },
     },
-  });
-  const pitches: PitchValue[] = midiNotes.map((midi) => ({
-    midicents: midi * 100,
-    label: pitchLabel(midi * 100),
-    sourceValue: midi,
-  }));
-  const label = pitches.map((pitch) => pitch.label).join(' ');
-  return {
-    value: { pitches, label } satisfies PitchGroupValue,
-    label: pitches.length > 1 ? `[${label}]` : label,
-    steps,
-  };
+  ];
+  const midicents = midiNotes.map((midi) => midi * 100);
+  const value: PitchItemValue = midicents.length > 1 ? midicents : midicents[0];
+  return { value, label: pitchGroupLabel(value), steps };
 }
 
 function transformedPitchClassGroup(
-  group: PitchGroupValue,
+  values: number[],
+  wasArray: boolean,
   treatment: PitchRouteTreatment,
   routeId: string,
   sourceItemId: string
 ) {
-  const sourcePitchClasses = group.pitches.map((pitch) => (pitch as PitchClassValue).pitchClass);
-  const transformedPitchClasses = sourcePitchClasses.map((pitchClass) =>
-    modulo((treatment.inverted ? -pitchClass : pitchClass) + treatment.transposition, 12)
-  );
-  const steps: Provenance[] = [];
-  if (treatment.inverted) {
-    steps.push({
-      sourceModuleInstance: routeId,
-      sourceItemIds: [sourceItemId],
-      transformation: 'invert-pitch-classes',
-      parameters: { axis: 0 },
-    });
-  }
-  if (treatment.transposition !== 0) {
-    steps.push({
-      sourceModuleInstance: routeId,
-      sourceItemIds: [sourceItemId],
-      transformation: 'transpose-pitch-classes',
-      parameters: { semitones: treatment.transposition },
-    });
-  }
-  const pitches: PitchClassValue[] = transformedPitchClasses.map((pitchClass) => ({
-    pitchClass,
-    label: pitchClassNames[pitchClass],
-    sourceValue: pitchClass,
-  }));
-  const label = pitches.map((pitch) => pitch.label).join(' ');
+  const transformed = transformPitchClasses(values, treatment);
+  const value: PitchClassItemValue = wasArray ? transformed : transformed[0];
   return {
-    value: { pitches, label } satisfies PitchGroupValue,
-    label: pitches.length > 1 ? `[${label}]` : label,
-    steps,
+    value,
+    label: pitchClassGroupLabel(value),
+    steps: pitchClassSequenceSteps(treatment, routeId, sourceItemId),
   };
 }
 
 function transformedConcreteGroup(
-  group: PitchGroupValue,
+  values: number[],
+  wasArray: boolean,
   treatment: PitchRouteTreatment,
   routeId: string,
   sourceItemId: string
 ) {
   const axisMidicents = treatment.inversionAxisMidi * 100;
-  let pitches = group.pitches.map((pitch) => {
-    const concrete = pitch as PitchValue;
-    const invertedMidicents = treatment.inverted
-      ? axisMidicents * 2 - concrete.midicents
-      : concrete.midicents;
-    const midicents = invertedMidicents + treatment.transposition * 100;
-    return { ...concrete, midicents, label: pitchLabel(midicents) };
+  let midicents = values.map((concreteMidicents) => {
+    const inverted = treatment.inverted
+      ? axisMidicents * 2 - concreteMidicents
+      : concreteMidicents;
+    return inverted + treatment.transposition * 100;
   });
-  if (pitches.length > 1 && treatment.voicingInversion !== 0) {
+  if (midicents.length > 1 && treatment.voicingInversion !== 0) {
     let previous = Number.NEGATIVE_INFINITY;
-    pitches = rotate(pitches, treatment.voicingInversion).map((pitch) => {
-      let midicents = pitch.midicents;
-      while (midicents <= previous) {
-        midicents += 1200;
+    midicents = rotate(midicents, treatment.voicingInversion).map((value) => {
+      let bumped = value;
+      while (bumped <= previous) {
+        bumped += 1200;
       }
-      previous = midicents;
-      return { ...pitch, midicents, label: pitchLabel(midicents) };
+      previous = bumped;
+      return bumped;
     });
   }
   const steps: Provenance[] = [];
@@ -326,27 +321,18 @@ function transformedConcreteGroup(
       parameters: { inversion: treatment.voicingInversion },
     });
   }
-  const label = pitches.map((pitch) => pitch.label).join(' ');
-  return {
-    value: { pitches, label } satisfies PitchGroupValue,
-    label: pitches.length > 1 ? `[${label}]` : label,
-    steps,
-  };
+  const value: PitchItemValue = wasArray ? midicents : midicents[0];
+  return { value, label: pitchGroupLabel(value), steps };
 }
 
-function midiNoteGroupFromRaw(value: unknown, base: number): PitchGroupValue {
-  // An item's raw value is a single number for most numeric sources, but can also already be a
-  // number[] — a chord that survived a mismatched-domain Arithmetic combination as a raw array
-  // rather than a PitchGroupValue (see arithmetic.ts). Treat both as "one or more MIDI notes,"
-  // each offset from `base` — a raw 0 means "the base note," not "MIDI note 0."
-  const midis = Array.isArray(value) ? value.map(Number) : [Number(value)];
-  const pitches: PitchValue[] = midis.map((raw) => {
-    const midi = raw + base;
-    const midicents = midi * 100;
-    return { midicents, label: pitchLabel(midicents), sourceValue: midi };
-  });
-  const label = pitches.map((pitch) => pitch.label).join(' ');
-  return { pitches, label: pitches.length > 1 ? `[${label}]` : label };
+// An item's raw value is a single number for most numeric sources, but can also already be a
+// number[] — a chord that survived a mismatched-domain Arithmetic combination as a raw array.
+// Treat both as "one or more MIDI notes," each offset from `base` — a raw 0 means "the base
+// note," not "MIDI note 0."
+function midiNoteValuesFromRaw(value: unknown, base: number): { values: number[]; wasArray: boolean } {
+  const wasArray = Array.isArray(value);
+  const midis = wasArray ? (value as unknown[]).map(Number) : [Number(value)];
+  return { values: midis.map((raw) => (raw + base) * 100), wasArray };
 }
 
 export function applyPitchRouteTreatment(
@@ -369,15 +355,48 @@ export function applyPitchRouteTreatment(
   }
   const keepAsPitchClass = source.domain === 'pitchClass' && !treatment.voiceAsPitch;
   const sequenced = sequenceItems(source.items, routeId, treatment.retrograde, treatment.rotation);
+
+  if (source.domain === 'pitchClass') {
+    // Bare `number | number[]` items — no wrapper to unpack or rebuild. Kept as its own branch
+    // rather than merged with 'pitch' below since the transform math genuinely differs (mod-12
+    // wrap vs. no wrap), even though both now share the same bare-value representation.
+    const items = sequenced.map((item) => {
+      const raw = item.value as PitchClassItemValue;
+      const values = pitchClassGroupToArray(raw);
+      const transformed = keepAsPitchClass
+        ? transformedPitchClassGroup(values, Array.isArray(raw), treatment, routeId, item.id)
+        : concreteGroupFromPitchClasses(values, treatment, routeId, item.id);
+      return {
+        ...item,
+        value: transformed.value,
+        label: transformed.label,
+        provenance: [...item.provenance, ...transformed.steps],
+      };
+    });
+    return {
+      ...source,
+      domain: keepAsPitchClass ? 'pitchClass' : 'pitch',
+      encoding: keepAsPitchClass ? source.encoding : 'midicent',
+      items,
+      metadata: {
+        ...source.metadata,
+        routeTreatment: treatment,
+        routeId,
+        sourceDomain: source.domain,
+      },
+    };
+  }
+
+  // 'pitch' domain, or a generic numeric source being read as MIDI notes — both bare
+  // `number | number[]`, same as pitchClass above.
   const items = sequenced.map((item) => {
-    const group = readsAsMidi
-      ? midiNoteGroupFromRaw(item.value, treatment.midiNoteBase)
-      : asPitchGroup(item.value as PitchValue | PitchClassValue | PitchGroupValue);
-    const transformed = keepAsPitchClass
-      ? transformedPitchClassGroup(group, treatment, routeId, item.id)
-      : source.domain === 'pitchClass'
-        ? concreteGroupFromPitchClasses(group, treatment, routeId, item.id)
-        : transformedConcreteGroup(group, treatment, routeId, item.id);
+    const { values, wasArray } = readsAsMidi
+      ? midiNoteValuesFromRaw(item.value, treatment.midiNoteBase)
+      : {
+          values: pitchGroupToArray(item.value as PitchItemValue),
+          wasArray: Array.isArray(item.value),
+        };
+    const transformed = transformedConcreteGroup(values, wasArray, treatment, routeId, item.id);
     const interpretStep: Provenance[] = readsAsMidi
       ? [
           {
@@ -397,8 +416,8 @@ export function applyPitchRouteTreatment(
   });
   return {
     ...source,
-    domain: keepAsPitchClass ? 'pitchClass' : 'pitch',
-    encoding: keepAsPitchClass ? source.encoding : 'midicent',
+    domain: 'pitch',
+    encoding: 'midicent',
     items,
     metadata: {
       ...source.metadata,

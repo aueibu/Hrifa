@@ -57,19 +57,15 @@ function compatibleNumeric(output: PublishedCompositionOutput) {
 
 // The raw numbers an operand actually contributes — the same decomposition computeArithmetic
 // itself uses (rawNumericTree), not a separately re-derived value that could drift from what's
-// really being combined. Decomposes by the OPERAND'S OWN domain, not the result's — A and B can
-// legitimately be different domains now, and the result's domain falls back to `integer` when
-// they don't match, which would decompose a still-structured pitch-group item as a bare number
-// (NaN) if used here instead. An unconnected port's fallback is always a bare number regardless
-// of domain (mirrors computeArithmetic's own aTree/bTree construction) — decomposing it as if it
-// were a pitch group would crash on `.pitches`.
+// really being combined. Every domain's item value, pitch and pitchClass included, is already
+// `number | number[]` by construction, so decomposition no longer depends on which domain
+// produced it — an unconnected port's fallback (a bare typed-in number) passes through the
+// same way.
 function rawOperandLine(source: DataPacket | undefined, fallback: number) {
   if (!source) {
     return String(fallback);
   }
-  return source.items
-    .map((item) => formatNumericTree(rawNumericTree(source.domain, item.value)))
-    .join(', ');
+  return source.items.map((item) => formatNumericTree(rawNumericTree(item.value))).join(', ');
 }
 
 function acceptsOperator(value: unknown): value is ArithmeticOperator {
@@ -277,7 +273,7 @@ export function ArithmeticModule({
               <Text span ff="monospace">
                 {result.packet.items
                   .slice(0, 64)
-                  .map((item) => formatNumericTree(rawNumericTree(result.packet.domain, item.value)))
+                  .map((item) => formatNumericTree(rawNumericTree(item.value)))
                   .join(', ')}
                 {result.packet.items.length > 64 ? `, … (${result.packet.items.length} items)` : ''}
               </Text>

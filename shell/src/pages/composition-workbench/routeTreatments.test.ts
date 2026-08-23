@@ -51,11 +51,7 @@ describe('composition route treatments', () => {
     const result = applyPitchRouteTreatment(source, defaultPitchRouteTreatment)!;
 
     expect(result).toMatchObject({ kind: 'list', domain: 'pitchClass' });
-    expect(
-      (result.items[0].value as { pitches: { pitchClass: number }[] }).pitches.map(
-        (pitch) => pitch.pitchClass
-      )
-    ).toEqual([0, 3, 7]);
+    expect(result.items[0].value).toEqual([0, 3, 7]);
   });
 
   it('transposes and inverts raw pitch classes mod 12 with voiceAsPitch off', () => {
@@ -71,11 +67,7 @@ describe('composition route treatments', () => {
     })!;
 
     expect(result.domain).toBe('pitchClass');
-    expect(
-      (result.items[0].value as { pitches: { pitchClass: number }[] }).pitches.map(
-        (pitch) => pitch.pitchClass
-      )
-    ).toEqual([2, 11, 7]);
+    expect(result.items[0].value).toEqual([2, 11, 7]);
   });
 
   it('voices pitch classes into a concrete register when voiceAsPitch is on', () => {
@@ -90,11 +82,7 @@ describe('composition route treatments', () => {
     })!;
 
     expect(result).toMatchObject({ kind: 'list', domain: 'pitch', encoding: 'midicent' });
-    expect(
-      (result.items[0].value as { pitches: { midicents: number }[] }).pitches.map(
-        (pitch) => pitch.midicents
-      )
-    ).toEqual([6000, 6300, 6700]);
+    expect(result.items[0].value).toEqual([6000, 6300, 6700]);
     expect(result.items[0].provenance.at(-1)).toMatchObject({
       transformation: 'assign-register',
       parameters: { registerBaseMidi: 60, voicing: 'ascending-close' },
@@ -140,12 +128,8 @@ describe('composition route treatments', () => {
       transposition: 7,
     })!;
 
-    expect(
-      (result.items[0].value as { pitches: { midicents: number }[] }).pitches[0].midicents
-    ).toBe(6700);
-    expect(
-      (source.items[0].value as { pitches: { midicents: number }[] }).pitches[0].midicents
-    ).toBe(6000);
+    expect(result.items[0].value).toBe(6700);
+    expect(source.items[0].value).toBe(6000);
   });
 
   it('rotates, retrogrades, and scales rhythm material with provenance', () => {
@@ -291,11 +275,7 @@ describe('composition route treatments', () => {
       midiNoteBase: 0,
     })!;
     expect(result.domain).toBe('pitch');
-    expect(
-      (result.items[0].value as { pitches: { midicents: number }[] }).pitches.map(
-        (pitch) => pitch.midicents
-      )
-    ).toEqual([6000]);
+    expect(result.items[0].value).toBe(6000);
     expect(result.items.map((item) => item.label)).toEqual(['C4', 'D4', 'E4']);
   });
 
@@ -311,9 +291,7 @@ describe('composition route treatments', () => {
       midiNoteBase: 0,
       transposition: 2,
     })!;
-    expect(
-      (result.items[0].value as { pitches: { midicents: number }[] }).pitches[0].midicents
-    ).toBe(6200);
+    expect(result.items[0].value).toBe(6200);
   });
 
   it('defaults the MIDI note base to 60 (C4), offsetting raw values from there', () => {
@@ -326,9 +304,7 @@ describe('composition route treatments', () => {
       ...defaultPitchRouteTreatment,
       readAsMidiNotes: true,
     })!;
-    expect(
-      (result.items[0].value as { pitches: { midicents: number }[] }).pitches[0].midicents
-    ).toBe(6000);
+    expect(result.items[0].value).toBe(6000);
     expect(result.items[0].label).toBe('C4');
   });
 
@@ -345,11 +321,7 @@ describe('composition route treatments', () => {
       midiNoteBase: 0,
     })!;
     expect(result.domain).toBe('pitch');
-    expect(
-      (result.items[0].value as { pitches: { midicents: number }[] }).pitches.map(
-        (pitch) => pitch.midicents
-      )
-    ).toEqual([300, 700]);
+    expect(result.items[0].value).toEqual([300, 700]);
     expect(result.items[0].label).toBe('[E♭-1 G-1]');
   });
 });

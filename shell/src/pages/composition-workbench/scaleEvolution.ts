@@ -12,7 +12,8 @@
  */
 
 import { packet, type DataItem, type DataPacket } from "./model";
-import { realizePitchGroups, scalePitchClassPacket } from "./scaleConstruction";
+import { pitchClassNames } from "./pitch";
+import { realizePitchClasses, scalePitchClassPacket } from "./scaleConstruction";
 
 export interface ScaleEvolutionStage {
   intervals: number[];
@@ -190,17 +191,15 @@ export function stagePitchClassesPacket(
   root: number,
   sourceId: string,
 ) {
-  // Each bank item's value is a PitchGroupValue[] — the same per-degree shape
-  // scalePitchClassPacket uses for its own list items — not a bare number[]. A future
-  // "select one bank entry" consumer must be able to re-emit a chosen stage as an
-  // ordinary pitch-class list without reinterpreting raw numbers; building the correct
-  // shape here means there is nothing left to get wrong at that point.
-  const items = result.stages.map((stage, index) => {
-    const groups = realizePitchGroups(stage.durations, root);
+  // Each bank item's value is a bare number[] — the whole stage's scale as one bracketed
+  // pitch-class group, matching PitchClassItemValue's array form exactly. No wrapper
+  // needed: a bank entry that IS a chord is already the right shape for that domain.
+  const items: DataItem<number[]>[] = result.stages.map((stage, index) => {
+    const pitchClasses = realizePitchClasses(stage.durations, root);
     return {
       id: `${sourceId}:stage-pitches:${index}`,
-      value: groups,
-      label: groups.map((group) => group.label).join('-'),
+      value: pitchClasses,
+      label: pitchClasses.map((pitchClass) => pitchClassNames[pitchClass]).join('-'),
       provenance: [
         {
           sourceModuleInstance: sourceId,

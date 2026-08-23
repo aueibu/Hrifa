@@ -5,7 +5,7 @@ import {
   scaleSequence,
 } from "./scaleConstruction";
 import { applyPitchRouteTreatment, defaultPitchRouteTreatment } from "./routeTreatments";
-import type { PitchGroupValue, PitchValue } from "./pitch";
+import { pitchGroupToArray, type PitchItemValue } from "./pitch";
 
 describe("scaleConstruction", () => {
   it("rejects empty or non-positive-integer interval sequences", () => {
@@ -63,12 +63,11 @@ describe("scaleConstruction", () => {
     expect(realizeScale([2, 2, 1], 60)).toEqual([60, 62, 64, 65]);
   });
 
-  it("emits pitch-class packet items as PitchGroupValue-wrapped PitchClassValue, matching Pitch List's own shape", () => {
+  it("emits pitch-class packet items as bare numbers, matching every other domain's item shape", () => {
     const packet = scalePitchClassPacket([2, 2, 1], 0, "src");
     expect(packet.domain).toBe("pitchClass");
-    const first = packet.items[0].value as PitchGroupValue;
-    expect(first.pitches).toHaveLength(1);
-    expect(first.pitches[0]).toMatchObject({ pitchClass: 0, label: "C" });
+    expect(packet.items.map((item) => item.value)).toEqual([0, 2, 4, 5]);
+    expect(packet.items[0].label).toBe("C");
   });
 
   it("voices as concrete pitch without producing NaN midicents (regression: Melodicization's 'must contain finite concrete midicent values' error)", () => {
@@ -80,14 +79,11 @@ describe("scaleConstruction", () => {
     );
     expect(voiced?.domain).toBe("pitch");
     for (const item of voiced!.items) {
-      const group = item.value as PitchGroupValue;
-      for (const pitch of group.pitches as PitchValue[]) {
-        expect(Number.isFinite(pitch.midicents)).toBe(true);
+      for (const midicents of pitchGroupToArray(item.value as PitchItemValue)) {
+        expect(Number.isFinite(midicents)).toBe(true);
       }
     }
     // C-D-E-F from root 0 -> MIDI 60,62,64,65 (register floor 60) -> midicents 6000..6500
-    expect(
-      voiced!.items.map((item) => ((item.value as PitchGroupValue).pitches[0] as PitchValue).midicents),
-    ).toEqual([6000, 6200, 6400, 6500]);
+    expect(voiced!.items.map((item) => item.value)).toEqual([6000, 6200, 6400, 6500]);
   });
 });

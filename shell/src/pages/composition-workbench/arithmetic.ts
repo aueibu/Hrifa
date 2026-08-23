@@ -2,7 +2,7 @@ import { positiveModulo } from './alignment';
 import type { PitchAllocation } from './melodicization';
 import { applyModulo, type ModuloTreatment } from './moduloTreatment';
 import { packet, type DataItem, type DataDomain, type DataPacket, type Provenance } from './model';
-import type { PitchClassValue, PitchGroupValue, PitchValue } from './pitch';
+import type { PitchClassItemValue, PitchItemValue } from './pitch';
 import { pitchLabel } from './routeTreatments';
 
 export type ArithmeticOperator =
@@ -157,27 +157,20 @@ function mapTree(tree: NumericTree, fn: (value: number) => number): NumericTree 
   return typeof tree === 'number' ? fn(tree) : tree.map((item) => mapTree(item, fn));
 }
 
-function decomposeGroup(domain: DataDomain, value: unknown): NumericTree {
-  const group = value as PitchGroupValue;
-  return group.pitches.map((pitch) =>
-    domain === 'pitchClass' ? (pitch as PitchClassValue).pitchClass : (pitch as PitchValue).midicents
-  );
-}
-
 // Exposed so the UI can show exactly the raw numbers an operation actually used — the same
 // decomposition computeArithmetic itself runs, not a separate/re-derived display value that
-// could silently drift from what's really being combined. Used on BOTH an operand's raw item
-// (a domain-typed value like PitchGroupValue that genuinely needs decomposing) and a result
-// item (already a plain number or number[] once computed — decomposing it again would be
-// wrong, so a value that's already numeric just passes through as-is).
-export function rawNumericTree(domain: DataDomain, value: unknown): NumericTree {
+// could silently drift from what's really being combined. Every domain's item value, pitch and
+// pitchClass included, is already `number | number[]` by construction (no wrapper to unwrap);
+// this only falls back to `Number(value)` for a genuinely unexpected shape. No domain parameter
+// is needed any more — decomposition no longer depends on which domain produced the value.
+export function rawNumericTree(value: unknown): NumericTree {
   if (typeof value === 'number') {
     return value;
   }
   if (Array.isArray(value)) {
     return value as NumericTree;
   }
-  return isGroupedDomain(domain) ? decomposeGroup(domain, value) : Number(value);
+  return Number(value);
 }
 
 export function formatNumericTree(tree: NumericTree): string {
@@ -195,17 +188,22 @@ function flattenTree(tree: NumericTree, out: number[] = []): number[] {
   return out;
 }
 
-function recomposeGroup(domain: DataDomain, tree: NumericTree): PitchGroupValue {
+function recomposeGroup(
+  domain: DataDomain,
+  tree: NumericTree
+): { value: PitchClassItemValue | PitchItemValue; label: string } {
   const numbers = flattenTree(tree);
-  const pitches: (PitchValue | PitchClassValue)[] =
-    domain === 'pitchClass'
-      ? numbers.map((raw) => {
-          const pitchClass = positiveModulo(Math.round(raw), 12);
-          return { pitchClass, label: pitchClassNames[pitchClass], sourceValue: pitchClass };
-        })
-      : numbers.map((midicents) => ({ midicents, label: pitchLabel(midicents), sourceValue: midicents }));
-  const label = pitches.map((pitch) => pitch.label).join(' ');
-  return { pitches, label: pitches.length > 1 ? `[${label}]` : label };
+  if (domain === 'pitchClass') {
+    const pitchClasses = numbers.map((raw) => positiveModulo(Math.round(raw), 12));
+    const label = pitchClasses.map((pitchClass) => pitchClassNames[pitchClass]).join(' ');
+    const wrappedLabel = pitchClasses.length > 1 ? `[${label}]` : label;
+    const value: PitchClassItemValue = pitchClasses.length > 1 ? pitchClasses : pitchClasses[0];
+    return { value, label: wrappedLabel };
+  }
+  const label = numbers.map((midicents) => pitchLabel(midicents)).join(' ');
+  const wrappedLabel = numbers.length > 1 ? `[${label}]` : label;
+  const value: PitchItemValue = numbers.length > 1 ? numbers : numbers[0];
+  return { value, label: wrappedLabel };
 }
 
 export function computeArithmetic({
@@ -273,11 +271,11 @@ export function computeArithmetic({
     const aItem = aItems[aIndex];
     const bItem = bItems[bIndex];
     // Each side decomposes by its OWN domain, not a shared one — A and B can legitimately be
-    // different domains (OM's om+ doesn't care what a list "means"). An unconnected port's
-    // fallback is always a bare typed-in number regardless of domain, so it must not be run
-    // through decomposeGroup.
-    const aTree: NumericTree = groupedA ? decomposeGroup(a!.domain, aItem.value) : Number(aItem.value);
-    const bTree: NumericTree = groupedB ? decomposeGroup(b!.domain, bItem.value) : Number(bItem.value);
+    // different domains (OM's om+ doesn't care what a list "means"). Every domain's item value
+    // is already `number | number[]`; rawNumericTree's only real job left is the unconnected
+    // fallback case (a bare typed-in number).
+    const aTree: NumericTree = rawNumericTree(aItem.value);
+    const bTree: NumericTree = rawNumericTree(bItem.value);
     const { tree, warnings } = combineTrees(operator, aTree, bTree, combineStrategy);
     warnings.forEach((warning) => warningCounts.set(warning, (warningCounts.get(warning) ?? 0) + 1));
     // Anything structurally nested — a grouped-domain output, or a mismatched-domain
@@ -288,11 +286,12 @@ export function computeArithmetic({
       structurallyNested && modulo.enabled
         ? mapTree(tree, (value) => positiveModulo(value, modulo.divisor))
         : tree;
-    const value = groupedOutput ? recomposeGroup(domain, finalTree) : (finalTree as number | number[]);
+    const recomposed = groupedOutput ? recomposeGroup(domain, finalTree) : undefined;
+    const value = recomposed ? recomposed.value : (finalTree as number | number[]);
     return {
       id: `${instanceId}:arithmetic:${index}`,
       value,
-      label: groupedOutput ? (value as PitchGroupValue).label : formatNumericTree(finalTree),
+      label: recomposed ? recomposed.label : formatNumericTree(finalTree),
       provenance: [
         ...aItem.provenance,
         ...(isUnary ? [] : bItem.provenance),
@@ -327,7 +326,7 @@ export function computeArithmetic({
 
   // Fully flat results still route through the shared applyModulo building block (with its
   // provenance-append behavior); anything structurally nested already folded modulo in above,
-  // since applyModulo's DataItem<number> shape doesn't fit an array or PitchGroupValue item.
+  // since applyModulo's DataItem<number> shape doesn't fit an array-valued item.
   const finalItems =
     structurallyNested || !modulo.enabled ? items : applyModulo(items as DataItem<number>[], modulo);
   const kind = finalItems.length === 1 ? ('value' as const) : ('list' as const);

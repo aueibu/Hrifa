@@ -6,7 +6,7 @@
  */
 
 import { packet, type DataItem, type DataPacket } from "./model";
-import { pitchClassNames, type PitchClassValue, type PitchGroupValue } from "./pitch";
+import { pitchClassNames } from "./pitch";
 
 export interface ScaleSequence {
   intervals: number[];
@@ -112,39 +112,28 @@ export function melodicFormsPacket(
 }
 
 /**
- * PitchGroupValue-wrapped PitchClassValue objects, one per scale degree — the shape
- * pitch.ts's own parsePitchClass (and Pitch List's packets) already use. Every producer
- * of pitchClass material, whether a single realized scale (scalePitchClassPacket) or a
- * bank of alternative scales (scaleEvolution's stagePitchClassesPacket), must build its
- * items from this shape. Emitting a bare number here silently breaks Melodicization's
- * "voice as concrete pitch" route treatment: asPitchGroup would wrap the bare number as
- * { pitches: [number] } rather than { pitches: [PitchClassValue] }, and
- * concreteGroupFromPitchClasses's `pitch.pitchClass` lookup then reads undefined off a
- * number, producing NaN midicents and the "must contain finite concrete midicent
- * values" error downstream.
+ * Bare pitch-class numbers (0-11), one per scale degree — no wrapper object. A pitchClass
+ * item's stored value is just a number, matching every other domain's items and matching
+ * how OM itself represents pitch material. Used both for a single realized scale
+ * (scalePitchClassPacket, one item per degree) and for a bank of alternative scales
+ * (scaleEvolution's stagePitchClassesPacket, one bank item per stage holding the whole
+ * `number[]` scale — which is already exactly a valid bracketed-group pitchClass value,
+ * no separate representation needed).
  */
-export function realizePitchGroups(intervals: number[], root: number): PitchGroupValue[] {
-  return realizeScale(intervals, root).map((value) => {
-    const pitchClass = ((value % 12) + 12) % 12;
-    const pitch: PitchClassValue = {
-      pitchClass,
-      label: pitchClassNames[pitchClass],
-      sourceValue: pitchClass,
-    };
-    return { pitches: [pitch], label: pitch.label };
-  });
+export function realizePitchClasses(intervals: number[], root: number): number[] {
+  return realizeScale(intervals, root).map((value) => ((value % 12) + 12) % 12);
 }
 
 export function scalePitchClassPacket(
   intervals: number[],
   root: number,
   sourceId: string,
-): DataPacket<PitchGroupValue> {
-  const groups = realizePitchGroups(intervals, root);
-  const items: DataItem<PitchGroupValue>[] = groups.map((group, index) => ({
+): DataPacket<number> {
+  const pitchClasses = realizePitchClasses(intervals, root);
+  const items: DataItem<number>[] = pitchClasses.map((pitchClass, index) => ({
     id: `${sourceId}:degree:${index}`,
-    value: group,
-    label: group.label,
+    value: pitchClass,
+    label: pitchClassNames[pitchClass],
     provenance: [
       {
         sourceModuleInstance: sourceId,
