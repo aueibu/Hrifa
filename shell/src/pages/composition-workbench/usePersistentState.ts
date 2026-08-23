@@ -39,6 +39,22 @@ export const compositionStateKeys = {
   melodicizationVolume: 'hrifa.composition-workbench.melodicization.preview-volume.v1',
   melodicizationPianoRollView: 'hrifa.composition-workbench.melodicization.piano-roll-view.v1',
   melodicizationInspector: 'hrifa.composition-workbench.melodicization.inspector.v1',
+  fractioningA: 'hrifa.composition-workbench.fractioning.a.v1',
+  fractioningB: 'hrifa.composition-workbench.fractioning.b.v1',
+  fractioningUnit: 'hrifa.composition-workbench.fractioning.preview-unit.v1',
+  fractioningVolume: 'hrifa.composition-workbench.fractioning.preview-volume.v1',
+  fractioningMidiNote: 'hrifa.composition-workbench.fractioning.midi-note.v1',
+  pairCompositionA: 'hrifa.composition-workbench.pair-composition.a.v1',
+  pairCompositionB: 'hrifa.composition-workbench.pair-composition.b.v1',
+  pairCompositionMode: 'hrifa.composition-workbench.pair-composition.mode.v1',
+  pairCompositionUnit: 'hrifa.composition-workbench.pair-composition.preview-unit.v1',
+  pairCompositionVolume: 'hrifa.composition-workbench.pair-composition.preview-volume.v1',
+  pairCompositionMidiNote: 'hrifa.composition-workbench.pair-composition.midi-note.v1',
+  scaleConstructionIntervals: 'hrifa.composition-workbench.scale-construction.intervals.v1',
+  scaleConstructionRoot: 'hrifa.composition-workbench.scale-construction.root.v1',
+  scaleConstructionPermutationMode: 'hrifa.composition-workbench.scale-construction.permutation-mode.v1',
+  scaleEvolutionIntervals: 'hrifa.composition-workbench.scale-evolution.intervals.v1',
+  scaleEvolutionRoot: 'hrifa.composition-workbench.scale-evolution.root.v1',
 } as const;
 
 export function usePersistentState<T>(
@@ -77,6 +93,8 @@ export const acceptsNumberOrString = (value: unknown): value is number | string 
   typeof value === 'number' || typeof value === 'string';
 export const acceptsFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
+export const acceptsIntegerList = (value: unknown): value is number[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'number' && Number.isInteger(item));
 
 export function compositionInstanceStateKey(
   baseKey: string,

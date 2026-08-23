@@ -1,4 +1,4 @@
-import type { DataItem, DataPacket, Provenance } from './model';
+import type { DataDomain, DataItem, DataPacket, Provenance } from './model';
 import { asPitchGroup, type PitchClassValue, type PitchGroupValue, type PitchValue } from './pitch';
 
 export interface PitchRouteTreatment {
@@ -33,6 +33,13 @@ export interface RhythmRouteTreatment {
   retrograde: boolean;
   rotation: number;
   durationScale: number;
+  // Off by default: a source that isn't already `list | duration | interOnset` (e.g. Arithmetic's
+  // output, whatever domain it lands on) has no rhythm meaning of its own. Turning this on
+  // attempts to interpret each item as a positive inter-onset duration and stamps the packet
+  // `duration` domain + `interOnset` role; left off, the source passes through unconverted, so a
+  // consumer that requires rhythm (Melodicization) errors until this is explicitly turned on —
+  // same pattern as pitch's `readAsMidiNotes`.
+  interpretAsRhythm: boolean;
 }
 
 export const defaultPitchRouteTreatment: PitchRouteTreatment = {
@@ -54,6 +61,7 @@ export const defaultRhythmRouteTreatment: RhythmRouteTreatment = {
   retrograde: false,
   rotation: 0,
   durationScale: 1,
+  interpretAsRhythm: false,
 };
 
 export function isPitchRouteTreatmentIdentity(treatment: PitchRouteTreatment, source?: DataPacket) {
@@ -72,8 +80,14 @@ export function isPitchRouteTreatmentIdentity(treatment: PitchRouteTreatment, so
   );
 }
 
-export function isRhythmRouteTreatmentIdentity(treatment: RhythmRouteTreatment) {
+export function isValidRhythmSource(source?: DataPacket) {
+  return Boolean(source) && source!.kind === 'list' && source!.domain === 'duration' && source!.role === 'interOnset';
+}
+
+export function isRhythmRouteTreatmentIdentity(treatment: RhythmRouteTreatment, source?: DataPacket) {
+  const stillInterpretsAsRhythm = source && !isValidRhythmSource(source) && treatment.interpretAsRhythm;
   return (
+    !stillInterpretsAsRhythm &&
     !treatment.bypassed &&
     !treatment.retrograde &&
     treatment.rotation === 0 &&
@@ -395,15 +409,79 @@ export function applyPitchRouteTreatment(
   };
 }
 
+// Domains a rhythm route is willing to attempt to interpret as inter-onset durations — plain
+// numeric meanings where "duration" is a plausible reading. Deliberately excludes pitch,
+// pitchClass, note, boolean, symbol, and text: those aren't "a list of durations, onsets, etc."
+// and shouldn't be guessed into one. Exported so the rhythm-inlet source picker (which decides
+// what's even selectable before Quick Adjust runs) filters on exactly the same domains this
+// interpretation step will actually accept.
+export const rhythmInterpretableDomains = new Set<DataDomain>([
+  'integer',
+  'rational',
+  'duration',
+  'onset',
+  'interval',
+  'cycleLength',
+  'pulseCount',
+  'phaseOffset',
+]);
+
+export const rhythmInterpretationError =
+  'Not a valid rhythm — every item must be a positive number (integer, rational, duration, onset, ' +
+  'interval, cycleLength, pulseCount, or phaseOffset domain, no chords or grouped values).';
+
+// Attempts the explicit "read as rhythm" conversion: every item must already be a bare finite
+// positive number (not an array/object — a mismatched-domain chord has no honest duration
+// reading) in one of the plain numeric domains above. Any single failure rejects the whole
+// conversion rather than silently dropping or clamping the bad items — the caller surfaces
+// `rhythmInterpretationError` as a packet warning instead.
+function interpretRhythmSource(source: DataPacket, routeId: string): DataPacket | null {
+  if ((source.kind !== 'list' && source.kind !== 'value') || !rhythmInterpretableDomains.has(source.domain)) {
+    return null;
+  }
+  if (!source.items.every((item) => typeof item.value === 'number' && Number.isFinite(item.value) && item.value > 0)) {
+    return null;
+  }
+  const items = source.items.map((item) => ({
+    ...item,
+    label: String(item.value),
+    provenance: [
+      ...item.provenance,
+      {
+        sourceModuleInstance: routeId,
+        sourceItemIds: [item.id],
+        transformation: 'interpret-as-rhythm',
+      },
+    ],
+  }));
+  const extent = items.reduce((total, item) => total + (item.value as number), 0);
+  return {
+    ...source,
+    kind: 'list',
+    domain: 'duration',
+    role: 'interOnset',
+    frame: source.frame ?? { topology: 'cyclic', unit: 'pulse', extent, origin: 0 },
+    items,
+  };
+}
+
 export function applyRhythmRouteTreatment(
   source: DataPacket | undefined,
   treatment: RhythmRouteTreatment,
   routeId = 'route:melodicization:rhythm'
 ): DataPacket | undefined {
-  if (!source || treatment.bypassed || source.kind !== 'list' || source.domain !== 'duration') {
+  if (!source || treatment.bypassed) {
     return source;
   }
-  const sequenced = sequenceItems(source.items, routeId, treatment.retrograde, treatment.rotation);
+  const alreadyRhythm = isValidRhythmSource(source);
+  if (!alreadyRhythm && !treatment.interpretAsRhythm) {
+    return source;
+  }
+  const base = alreadyRhythm ? source : interpretRhythmSource(source, routeId);
+  if (!base) {
+    return { ...source, warnings: [...source.warnings, rhythmInterpretationError] };
+  }
+  const sequenced = sequenceItems(base.items, routeId, treatment.retrograde, treatment.rotation);
   const items = sequenced.map((item) => {
     const scaled = Number(item.value) * treatment.durationScale;
     const scaleStep: Provenance[] =
@@ -425,27 +503,25 @@ export function applyRhythmRouteTreatment(
     };
   });
   return {
-    ...source,
+    ...base,
     items,
-    frame: source.frame
+    frame: base.frame
       ? {
-          ...source.frame,
+          ...base.frame,
           extent:
-            source.frame.extent === undefined
-              ? undefined
-              : source.frame.extent * treatment.durationScale,
-          grouping: source.frame.grouping
+            base.frame.extent === undefined ? undefined : base.frame.extent * treatment.durationScale,
+          grouping: base.frame.grouping
             ? {
-                ...source.frame.grouping,
-                units: source.frame.grouping.units * treatment.durationScale,
-                boundaries: source.frame.grouping.boundaries.map(
+                ...base.frame.grouping,
+                units: base.frame.grouping.units * treatment.durationScale,
+                boundaries: base.frame.grouping.boundaries.map(
                   (boundary) => boundary * treatment.durationScale
                 ),
               }
             : undefined,
         }
       : undefined,
-    metadata: { ...source.metadata, routeTreatment: treatment, routeId },
+    metadata: { ...base.metadata, routeTreatment: treatment, routeId },
   };
 }
 
@@ -486,11 +562,14 @@ export function pitchTreatmentSummary(treatment: PitchRouteTreatment, source?: D
   return parts.join(' · ') || 'Identity';
 }
 
-export function rhythmTreatmentSummary(treatment: RhythmRouteTreatment) {
+export function rhythmTreatmentSummary(treatment: RhythmRouteTreatment, source?: DataPacket) {
   if (treatment.bypassed) {
     return 'Bypassed';
   }
   const parts: string[] = [];
+  if (source && !isValidRhythmSource(source)) {
+    parts.push(treatment.interpretAsRhythm ? 'Read as rhythm' : 'Not a rhythm yet');
+  }
   if (treatment.retrograde) {
     parts.push('Retrograde');
   }
@@ -532,6 +611,7 @@ export function acceptsRhythmRouteTreatment(value: unknown): value is RhythmRout
     typeof candidate.bypassed === 'boolean' &&
     typeof candidate.retrograde === 'boolean' &&
     Number.isFinite(candidate.rotation) &&
-    Number.isFinite(candidate.durationScale)
+    Number.isFinite(candidate.durationScale) &&
+    typeof candidate.interpretAsRhythm === 'boolean'
   );
 }

@@ -55,6 +55,7 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; label
     { id: 'a', label: 'A' },
     { id: 'b', label: 'B' },
   ],
+  'scale-evolution': [{ id: 'sequence', label: 'Sequence' }],
 };
 
 interface FlowPoint {
@@ -447,7 +448,9 @@ export function CompositionLaneGrid({
                 ? `Pitches | ${primaryOutput.packet.items.length}`
                 : instance.moduleId === 'arithmetic'
                   ? `Result | ${primaryOutput.packet.items.length}`
-                  : `Notes | ${primaryOutput.packet.items.length}`;
+                  : instance.moduleId === 'fractioning'
+                    ? `Durations | ${primaryOutput.packet.items.length}`
+                    : `Notes | ${primaryOutput.packet.items.length}`;
           const inletPorts: FlowCellPort[] = (routedModulePorts[instance.moduleId] ?? []).map(
             ({ id: port, label: portName }) => {
               const descriptor = incoming.find((candidate) => candidate.port === port);

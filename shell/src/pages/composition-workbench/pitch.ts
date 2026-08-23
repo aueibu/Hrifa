@@ -40,7 +40,7 @@ const pitchClassByLetter: Record<string, number> = {
   A: 9,
   B: 11,
 };
-const pitchClassNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+export const pitchClassNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 function tokenizePitchGroups(value: string) {
   const groups: string[][] = [];

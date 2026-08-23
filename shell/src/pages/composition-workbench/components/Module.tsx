@@ -54,9 +54,11 @@ export function ModuleOutput({
   const role =
     packet.role === 'interOnset'
       ? 'inter-onset'
-      : packet.role === 'pitchMaterial'
-        ? 'pitch-material'
-        : packet.role;
+      : packet.role === 'interUnit'
+        ? 'inter-unit'
+        : packet.role === 'pitchMaterial'
+          ? 'pitch-material'
+          : packet.role;
   const description = [packet.kind, domain, packet.encoding, role, packet.frame?.topology]
     .filter(Boolean)
     .join(' | ');

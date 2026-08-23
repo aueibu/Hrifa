@@ -54,8 +54,8 @@ const rhythmSignalType: SignalTypeDefinition<RhythmRouteTreatment> = {
   default: defaultRhythmRouteTreatment,
   matches: (source) => source?.kind === 'list' && source?.domain === 'duration',
   accepts: acceptsRhythmRouteTreatment,
-  isIdentity: (treatment) => isRhythmRouteTreatmentIdentity(treatment),
-  summary: (treatment) => rhythmTreatmentSummary(treatment),
+  isIdentity: isRhythmRouteTreatmentIdentity,
+  summary: rhythmTreatmentSummary,
   apply: applyRhythmRouteTreatment,
 };
 

@@ -1,13 +1,25 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
-import type { RhythmRouteTreatment } from '../routeTreatments';
+import type { DataPacket } from '../model';
+import {
+  applyRhythmRouteTreatment,
+  isValidRhythmSource,
+  rhythmInterpretationError,
+  type RhythmRouteTreatment,
+} from '../routeTreatments';
 import classes from './CompositionInspector.module.css';
 
 interface RhythmTreatmentEditorProps {
   treatment: RhythmRouteTreatment;
+  source?: DataPacket;
   onChange(value: RhythmRouteTreatment): void;
 }
 
-export function RhythmTreatmentEditor({ treatment, onChange }: RhythmTreatmentEditorProps) {
+export function RhythmTreatmentEditor({ treatment, source, onChange }: RhythmTreatmentEditorProps) {
+  const sourceNeedsInterpretation = Boolean(source) && !isValidRhythmSource(source);
+  const interpretationFailed =
+    sourceNeedsInterpretation &&
+    treatment.interpretAsRhythm &&
+    applyRhythmRouteTreatment(source, treatment)?.warnings.includes(rhythmInterpretationError);
   const update = (patch: Partial<RhythmRouteTreatment>) => onChange({ ...treatment, ...patch });
   return (
     <Stack className={classes.section} gap={4}>
@@ -20,6 +32,32 @@ export function RhythmTreatmentEditor({ treatment, onChange }: RhythmTreatmentEd
           onChange={(event) => update({ bypassed: event.currentTarget.checked })}
         />
       </div>
+      {sourceNeedsInterpretation && (
+        <div className={classes.parameterRow}>
+          <Text size="xs" className={treatment.interpretAsRhythm ? classes.changed : undefined}>
+            Interpret as rhythm
+          </Text>
+          <Switch
+            size="xs"
+            aria-label="Interpret source as an inter-onset rhythm"
+            checked={treatment.interpretAsRhythm}
+            onChange={(event) => update({ interpretAsRhythm: event.currentTarget.checked })}
+          />
+        </div>
+      )}
+      {sourceNeedsInterpretation && !treatment.interpretAsRhythm && (
+        <Text size="xs" c="dimmed">
+          This source ({source!.domain}) isn't rhythm material yet — a consumer that requires an
+          inter-onset duration list will error until this is turned on. Only positive numbers in a
+          plain numeric domain (integer, rational, duration, onset, interval, cycleLength,
+          pulseCount, phaseOffset) can convert.
+        </Text>
+      )}
+      {interpretationFailed && (
+        <Text size="xs" c="red">
+          {rhythmInterpretationError}
+        </Text>
+      )}
       <div className={classes.parameterRow}>
         <Text size="xs" className={treatment.retrograde ? classes.changed : undefined}>
           Retrograde

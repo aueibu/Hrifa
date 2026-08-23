@@ -1,7 +1,15 @@
 import type { CompositionOutputRef } from './compositionRouting';
 import { signalTypeRegistry, type SignalTypeId } from './signalTypes';
 
-export type CompositionModuleId = 'interference' | 'pitch-list' | 'melodicization' | 'arithmetic';
+export type CompositionModuleId =
+  | 'interference'
+  | 'pitch-list'
+  | 'melodicization'
+  | 'arithmetic'
+  | 'fractioning'
+  | 'pair-composition'
+  | 'scale-construction'
+  | 'scale-evolution';
 export type CompositionLaneId = 1 | 2 | 3 | 4;
 
 export interface CompositionModuleInstance {
@@ -36,6 +44,10 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   'pitch-list': 'Pitch List',
   melodicization: 'Melodicization',
   arithmetic: 'Arithmetic',
+  fractioning: 'Fractioning',
+  'pair-composition': 'Pair Composition',
+  'scale-construction': 'Scale Construction',
+  'scale-evolution': 'Scale Evolution',
 };
 
 export const defaultCompositionInstances: CompositionModuleInstance[] = [
@@ -90,7 +102,11 @@ function isModuleId(value: unknown): value is CompositionModuleId {
     value === 'interference' ||
     value === 'pitch-list' ||
     value === 'melodicization' ||
-    value === 'arithmetic'
+    value === 'arithmetic' ||
+    value === 'fractioning' ||
+    value === 'pair-composition' ||
+    value === 'scale-construction' ||
+    value === 'scale-evolution'
   );
 }
 

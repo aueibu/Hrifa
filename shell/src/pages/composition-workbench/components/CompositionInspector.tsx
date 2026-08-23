@@ -42,6 +42,10 @@ const moduleDescriptions: Record<CompositionModuleId, string> = {
   'pitch-list': 'Authors ordered pitch groups and pitch-class material.',
   melodicization: 'Combines treated rhythm and pitch inputs into note events.',
   arithmetic: 'Combines two numeric inputs with an OM-style operator, plus an optional modulo post-process.',
+  fractioning: 'Authors a rhythmic resultant by fractioning around the axis of symmetry (Schillinger ch. 4), distinct from binary synchronization.',
+  'pair-composition': 'Pairs a fractioning statement with a binary-synchronization statement into a balanced, expanded, or contracted phrase (Schillinger ch. 5).',
+  'scale-construction': 'Authors a pitch-interval sequence and its melodic-form permutations (Schillinger Book II ch. 1-2).',
+  'scale-evolution': 'Synchronizes an interval sequence with its own circular permutations within one shared period, evolving richer scale families (Schillinger Book I ch. 13 / Book II ch. 3 §A).',
 };
 
 function portLabel(port: string) {
@@ -189,7 +193,7 @@ export function CompositionInspector({
           <PitchTreatmentEditor treatment={treatment as never} source={output?.packet} onChange={update} />
         )}
         {binding.signalType === 'rhythm' && (
-          <RhythmTreatmentEditor treatment={treatment as never} onChange={update} />
+          <RhythmTreatmentEditor treatment={treatment as never} source={output?.packet} onChange={update} />
         )}
         {binding.signalType === 'numeric' && (
           <NumericTreatmentEditor treatment={treatment as never} onChange={update} />

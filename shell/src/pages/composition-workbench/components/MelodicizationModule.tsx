@@ -43,6 +43,7 @@ import {
   type MusicalTimeline,
 } from '../musicalTime';
 import { signalTypeRegistry } from '../signalTypes';
+import { rhythmInterpretableDomains } from '../routeTreatments';
 import {
   acceptsBoolean,
   acceptsFiniteNumber,
@@ -85,12 +86,14 @@ function rationalLabel(duration: MusicalDuration) {
   return denominator === 1 ? `${numerator} qn` : `${numerator}/${denominator} qn`;
 }
 
+// Any outlet can be wired to the rhythm inlet — Melodicization errors on its own if what arrives
+// still isn't a valid inter-onset rhythm once routed through Quick Adjust. A source already
+// carrying `duration`/`interOnset` needs no conversion; a plain numeric domain (e.g. Arithmetic's
+// output, which never carries a role) is offered too, since the Rhythm Quick Adjust panel now
+// offers an explicit "Interpret as rhythm" conversion for exactly that case — matching how the
+// pitch inlet already offers `numericPitchCandidateDomains` for "Read as MIDI notes".
 function compatibleRhythm(output: PublishedCompositionOutput) {
-  return (
-    output.packet.kind === 'list' &&
-    output.packet.domain === 'duration' &&
-    output.packet.role === 'interOnset'
-  );
+  return output.packet.kind === 'list' && rhythmInterpretableDomains.has(output.packet.domain);
 }
 
 // Any outlet can be wired to any inlet — Melodicization errors on its own if what arrives still

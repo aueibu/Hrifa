@@ -21,6 +21,7 @@ export type DataDomain =
 
 export type DataRole =
   | 'interOnset'
+  | 'interUnit'
   | 'generatorValue'
   | 'pitchMaterial'
   | 'parameter'

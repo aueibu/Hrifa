@@ -7,6 +7,7 @@ import {
   defaultRhythmRouteTreatment,
   isPitchRouteTreatmentIdentity,
   isRhythmRouteTreatmentIdentity,
+  rhythmInterpretationError,
 } from './routeTreatments';
 
 describe('composition route treatments', () => {
@@ -174,6 +175,86 @@ describe('composition route treatments', () => {
       'rotate-sequence',
       'scale-durations',
     ]);
+  });
+
+  it('leaves a generic numeric source untouched by default (not rhythm material yet)', () => {
+    const source = packet(
+      'list',
+      'integer',
+      [2, 1, 3].map((value, index) => ({ id: `n:${index}`, value, provenance: [] }))
+    );
+    const result = applyRhythmRouteTreatment(source, defaultRhythmRouteTreatment);
+    expect(result).toBe(source);
+    expect(result?.domain).toBe('integer');
+  });
+
+  it('interprets a generic plain-number source as an inter-onset rhythm when turned on', () => {
+    const source = packet(
+      'list',
+      'integer',
+      [2, 1, 3].map((value, index) => ({ id: `n:${index}`, value, provenance: [] }))
+    );
+    const result = applyRhythmRouteTreatment(source, {
+      ...defaultRhythmRouteTreatment,
+      interpretAsRhythm: true,
+    })!;
+
+    expect(result).toMatchObject({ kind: 'list', domain: 'duration', role: 'interOnset' });
+    expect(result.items.map((item) => item.value)).toEqual([2, 1, 3]);
+    expect(result.frame).toMatchObject({ topology: 'cyclic', unit: 'pulse', extent: 6, origin: 0 });
+    expect(result.items[0].provenance.at(-1)).toMatchObject({ transformation: 'interpret-as-rhythm' });
+  });
+
+  it('applies retrograde/rotate/scale on top of an interpreted rhythm', () => {
+    const source = packet(
+      'list',
+      'onset',
+      [2, 1, 3].map((value, index) => ({ id: `n:${index}`, value, provenance: [] }))
+    );
+    const result = applyRhythmRouteTreatment(source, {
+      ...defaultRhythmRouteTreatment,
+      interpretAsRhythm: true,
+      retrograde: true,
+      durationScale: 2,
+    })!;
+
+    expect(result.items.map((item) => item.value)).toEqual([6, 2, 4]);
+  });
+
+  it('rejects interpretation of non-positive or grouped values and reports why, without converting', () => {
+    const withZero = packet(
+      'list',
+      'integer',
+      [2, 0, 3].map((value, index) => ({ id: `n:${index}`, value, provenance: [] }))
+    );
+    const zeroResult = applyRhythmRouteTreatment(withZero, {
+      ...defaultRhythmRouteTreatment,
+      interpretAsRhythm: true,
+    })!;
+    expect(zeroResult.domain).toBe('integer');
+    expect(zeroResult.warnings).toContain(rhythmInterpretationError);
+
+    const withChord = packet('list', 'integer', [{ id: 'g:0', value: [3, 7], provenance: [] }]);
+    const chordResult = applyRhythmRouteTreatment(withChord, {
+      ...defaultRhythmRouteTreatment,
+      interpretAsRhythm: true,
+    })!;
+    expect(chordResult.domain).toBe('integer');
+    expect(chordResult.warnings).toContain(rhythmInterpretationError);
+  });
+
+  it('refuses to interpret pitch-domain material as rhythm', () => {
+    const source = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'midi-note',
+      inlineText: '60, 62, 64',
+    }).packet;
+    const result = applyRhythmRouteTreatment(source, {
+      ...defaultRhythmRouteTreatment,
+      interpretAsRhythm: true,
+    })!;
+    expect(result.domain).toBe('pitch');
+    expect(result.warnings).toContain(rhythmInterpretationError);
   });
 
   it('bypasses without changing the packet identity', () => {

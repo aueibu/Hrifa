@@ -155,6 +155,51 @@ export function createInterferencePreviewPlan({
   };
 }
 
+/** Sequential preview for a plain duration list (fractioning, pair composition): one note per
+ * duration, onsets accumulated left to right, all sounding the same pitch. */
+export function createDurationSequencePreviewPlan({
+  sourceId,
+  durations,
+  midiNote,
+  unitSeconds,
+}: {
+  sourceId: string;
+  durations: number[];
+  midiNote: number;
+  unitSeconds: number;
+}): SecondsPerformancePlan {
+  let atSeconds = 0;
+  const events = durations.map((duration, index): SecondsPerformanceEvent => {
+    const event: SecondsPerformanceEvent = {
+      id: `${sourceId}:attack:${index}`,
+      atSeconds,
+      durationSeconds: Math.min(0.12, duration * unitSeconds * 0.85),
+      pitchMidicents: midiNote * 100,
+      velocity: 1,
+      instrumentId: "preview.sine",
+      busId: "preview",
+      provenance: [
+        {
+          sourceModuleInstance: sourceId,
+          sourceItemIds: [],
+          transformation: "realize-duration-sequence",
+          parameters: { index, duration, unitSeconds },
+        },
+      ],
+    };
+    atSeconds += duration * unitSeconds;
+    return event;
+  });
+  return {
+    id: `${sourceId}:duration-sequence-preview`,
+    sourceId,
+    timebase: { kind: "seconds" },
+    durationSeconds: atSeconds,
+    events,
+    warnings: [],
+  };
+}
+
 export function createNotePacketPerformancePlan({
   sourceId,
   packet,

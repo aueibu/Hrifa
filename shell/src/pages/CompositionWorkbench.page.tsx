@@ -7,12 +7,16 @@ import { AudioEngineProvider } from './composition-workbench/audio/AudioEnginePr
 import { ArithmeticModule } from './composition-workbench/components/ArithmeticModule';
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionLaneGrid } from './composition-workbench/components/CompositionLaneGrid';
+import { FractioningModule } from './composition-workbench/components/FractioningModule';
 import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
 import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
 import { ModuleLibrary } from './composition-workbench/components/ModuleLibrary';
 import { ModulePatch } from './composition-workbench/components/ModulePatch';
 import { PacketInspector } from './composition-workbench/components/PacketInspector';
+import { PairCompositionModule } from './composition-workbench/components/PairCompositionModule';
 import { PitchListModule } from './composition-workbench/components/PitchListModule';
+import { ScaleConstructionModule } from './composition-workbench/components/ScaleConstructionModule';
+import { ScaleEvolutionModule } from './composition-workbench/components/ScaleEvolutionModule';
 import {
   outputRefKey,
   type CompositionOutputRef,
@@ -90,6 +94,30 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.arithmeticCombineStrategy,
     compositionStateKeys.arithmeticModulo,
   ],
+  fractioning: [
+    compositionStateKeys.fractioningA,
+    compositionStateKeys.fractioningB,
+    compositionStateKeys.fractioningUnit,
+    compositionStateKeys.fractioningVolume,
+    compositionStateKeys.fractioningMidiNote,
+  ],
+  'pair-composition': [
+    compositionStateKeys.pairCompositionA,
+    compositionStateKeys.pairCompositionB,
+    compositionStateKeys.pairCompositionMode,
+    compositionStateKeys.pairCompositionUnit,
+    compositionStateKeys.pairCompositionVolume,
+    compositionStateKeys.pairCompositionMidiNote,
+  ],
+  'scale-construction': [
+    compositionStateKeys.scaleConstructionIntervals,
+    compositionStateKeys.scaleConstructionRoot,
+    compositionStateKeys.scaleConstructionPermutationMode,
+  ],
+  'scale-evolution': [
+    compositionStateKeys.scaleEvolutionIntervals,
+    compositionStateKeys.scaleEvolutionRoot,
+  ],
 };
 
 const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signalType: SignalTypeId }[]>> = {
@@ -101,6 +129,7 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signa
     { id: 'a', signalType: 'numeric' },
     { id: 'b', signalType: 'numeric' },
   ],
+  'scale-evolution': [{ id: 'sequence', signalType: 'numeric' }],
 };
 
 function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
@@ -523,6 +552,35 @@ export function CompositionWorkbenchPage() {
                           />
                         ) : instance.moduleId === 'arithmetic' ? (
                           <ArithmeticModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            outputs={publishedCompositionOutputs}
+                            routeState={routeState}
+                            onBind={(port, source) =>
+                              bindModulePort(instance.id, instance.moduleId, port, source)
+                            }
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'fractioning' ? (
+                          <FractioningModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'pair-composition' ? (
+                          <PairCompositionModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'scale-construction' ? (
+                          <ScaleConstructionModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'scale-evolution' ? (
+                          <ScaleEvolutionModule
                             instanceId={instance.id}
                             instanceLabel={instanceLabel}
                             outputs={publishedCompositionOutputs}
