@@ -448,7 +448,7 @@ export function CompositionWorkbenchPage() {
 
   return (
     <AudioEngineProvider>
-      <AppShell header={{ height: { base: 112, sm: 56 } }} padding="md">
+      <AppShell header={{ height: 56 }} padding="md">
         <AppShell.Header>
           <Group h="100%" px="md" justify="space-between" className={classes.headerContent}>
             <Group gap="sm">
@@ -465,13 +465,6 @@ export function CompositionWorkbenchPage() {
         </AppShell.Header>
         <AppShell.Main>
           <Stack gap="md">
-            <div>
-              <Text c="dimmed" size="sm">
-                Work directly with a compositional procedure. Open Construction when you need to
-                inspect or alter the machinery beneath it.
-              </Text>
-            </div>
-
             {evaluation.errors.map((error) => (
               <Surface key={error} p="sm">
                 <Text c="red">{error}</Text>
