@@ -2,8 +2,11 @@ import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
 import {
+  boundOutput,
+  compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
+  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -36,8 +39,8 @@ function parseIntervalText(value: string) {
     .filter((n) => Number.isInteger(n) && n > 0);
 }
 
-function compatibleIntervalSource(output: PublishedCompositionOutput) {
-  return output.packet.kind === 'list' && output.packet.domain === 'interval';
+function compatibleIntervalSource(packet: DataPacket) {
+  return packet.kind === 'list' && packet.domain === 'interval';
 }
 
 function rawIntervalLine(source: DataPacket | undefined) {
@@ -74,22 +77,23 @@ export function ScaleEvolutionModule({
   );
 
   const binding = routeState.sequence;
-  const outputMap = useMemo(
-    () => new Map(outputs.map((output) => [outputRefKey(output.ref), output])),
-    [outputs],
+  const hasConnection = Boolean(binding?.source && binding.source.instanceId !== instanceId);
+  const sequenceOutput = boundOutput(outputs, binding?.source);
+  const resolvedSequence = useMemo(
+    () =>
+      hasConnection
+        ? resolvePacketFromOutput(sequenceOutput, binding?.source?.index, `route:${instanceId}:sequence`)
+        : undefined,
+    [hasConnection, sequenceOutput, binding?.source?.index, instanceId],
   );
-  const connectedOutput =
-    binding?.source && binding.source.instanceId !== instanceId
-      ? outputMap.get(outputRefKey(binding.source))
-      : undefined;
 
   const fallbackIntervals = useMemo(() => parseIntervalText(intervalText), [intervalText]);
   const sourceIntervals = useMemo(() => {
-    if (connectedOutput) {
-      return connectedOutput.packet.items.map((item) => Number(item.value));
+    if (resolvedSequence) {
+      return resolvedSequence.items.map((item) => Number(item.value));
     }
     return fallbackIntervals;
-  }, [connectedOutput, fallbackIntervals]);
+  }, [resolvedSequence, fallbackIntervals]);
 
   const generated = useMemo(() => {
     if (!sourceIntervals.length) {
@@ -148,9 +152,7 @@ export function ScaleEvolutionModule({
     onOutputsChange?.(instanceId, publishedOutputs);
   }, [instanceId, onOutputsChange, publishedOutputs]);
 
-  const sequenceOptions = outputs
-    .filter((output) => output.ref.instanceId !== instanceId && compatibleIntervalSource(output))
-    .map((output) => ({ value: outputRefKey(output.ref), label: output.label }));
+  const sequenceOptions = compositionOutputOptions(outputs, instanceId, compatibleIntervalSource);
 
   function resetScaleEvolution() {
     setIntervalText('3, 2');
@@ -189,7 +191,7 @@ export function ScaleEvolutionModule({
               <Stack gap="lg">
                 <Text size="xs" c="dimmed">
                   Input: <Text span ff="monospace">{sourceIntervals.join(' + ')}</Text>
-                  {connectedOutput ? ' (connected)' : ' (typed)'}
+                  {resolvedSequence ? ' (connected)' : ' (typed)'}
                 </Text>
                 {generated.result.stages.map((stage, index) => (
                   <div key={index}>
@@ -267,7 +269,7 @@ export function ScaleEvolutionModule({
               )}
               {binding?.source && (
                 <Text size="xs" c="dimmed" ff="monospace">
-                  {rawIntervalLine(connectedOutput?.packet)}
+                  {rawIntervalLine(resolvedSequence)}
                 </Text>
               )}
               <div className={classes.moduleParameterRow}>

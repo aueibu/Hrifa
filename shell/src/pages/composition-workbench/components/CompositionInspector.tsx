@@ -1,5 +1,9 @@
 import { Badge, Button, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core';
-import type { CompositionOutputRef, PublishedCompositionOutput } from '../compositionRouting';
+import {
+  boundOutput,
+  describeOutputRef,
+  type PublishedCompositionOutput,
+} from '../compositionRouting';
 import {
   compositionLanes,
   compositionInstanceLabel,
@@ -27,14 +31,6 @@ interface CompositionInspectorProps {
   onAddModule(moduleId: CompositionModuleId, lane: CompositionLaneId): void;
   onRemoveModule(instanceId: string): void;
   onRouteTreatment(instanceId: string, port: string, treatment: unknown): void;
-}
-
-function outputFor(outputs: PublishedCompositionOutput[], ref: CompositionOutputRef | undefined) {
-  return ref
-    ? outputs.find(
-        (output) => output.ref.instanceId === ref.instanceId && output.ref.port === ref.port
-      )
-    : undefined;
 }
 
 const moduleDescriptions: Record<CompositionModuleId, string> = {
@@ -157,9 +153,10 @@ export function CompositionInspector({
     ? compositionInstanceLabel(receiver, instances)
     : 'Missing receiver';
   const binding = routeState[selected.port];
-  const output = outputFor(outputs, binding?.source);
+  const output = boundOutput(outputs, binding?.source);
   const sourceLabel =
-    output?.label ?? (binding?.source ? `Missing source · ${binding.source.port}` : 'No source');
+    describeOutputRef(outputs, binding?.source) ??
+    (binding?.source ? `Missing source · ${binding.source.port}` : 'No source');
 
   if (!binding) {
     return null;

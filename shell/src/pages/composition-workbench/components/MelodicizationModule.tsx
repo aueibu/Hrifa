@@ -25,8 +25,11 @@ import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import type { PlaybackSession } from '../audio/types';
 import {
+  boundOutput,
+  compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
+  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -93,8 +96,8 @@ function rationalLabel(duration: MusicalDuration) {
 // output, which never carries a role) is offered too, since the Rhythm Quick Adjust panel now
 // offers an explicit "Interpret as rhythm" conversion for exactly that case — matching how the
 // pitch inlet already offers `numericPitchCandidateDomains` for "Read as MIDI notes".
-function compatibleRhythm(output: PublishedCompositionOutput) {
-  return output.packet.kind === 'list' && rhythmInterpretableDomains.has(output.packet.domain);
+function compatibleRhythm(packet: DataPacket) {
+  return packet.kind === 'list' && rhythmInterpretableDomains.has(packet.domain);
 }
 
 // Any outlet can be wired to any inlet — Melodicization errors on its own if what arrives still
@@ -113,12 +116,12 @@ const numericPitchCandidateDomains = new Set([
   'phaseOffset',
 ]);
 
-function compatiblePitches(output: PublishedCompositionOutput) {
+function compatiblePitches(packet: DataPacket) {
   return (
-    output.packet.kind === 'list' &&
-    (output.packet.domain === 'pitch' ||
-      output.packet.domain === 'pitchClass' ||
-      numericPitchCandidateDomains.has(output.packet.domain))
+    packet.kind === 'list' &&
+    (packet.domain === 'pitch' ||
+      packet.domain === 'pitchClass' ||
+      numericPitchCandidateDomains.has(packet.domain))
   );
 }
 
@@ -195,37 +198,37 @@ export function MelodicizationModule({
   const playRequestVersion = useRef(0);
   const playheadFrame = useRef<number | null>(null);
 
-  const outputMap = useMemo(
-    () => new Map(outputs.map((output) => [outputRefKey(output.ref), output])),
-    [outputs]
+  const rhythmOutput = boundOutput(outputs, bindingRhythm?.source);
+  const pitchOutput = boundOutput(outputs, bindingPitches?.source);
+  const resolvedRhythm = useMemo(
+    () => resolvePacketFromOutput(rhythmOutput, bindingRhythm?.source?.index, `route:${instanceId}:rhythm`),
+    [rhythmOutput, bindingRhythm?.source?.index, instanceId]
   );
-  const rhythmOutput = bindingRhythm?.source
-    ? outputMap.get(outputRefKey(bindingRhythm.source))
-    : undefined;
-  const pitchOutput = bindingPitches?.source
-    ? outputMap.get(outputRefKey(bindingPitches.source))
-    : undefined;
+  const resolvedPitches = useMemo(
+    () => resolvePacketFromOutput(pitchOutput, bindingPitches?.source?.index, `route:${instanceId}:pitches`),
+    [pitchOutput, bindingPitches?.source?.index, instanceId]
+  );
   const treatedRhythm = useMemo(
     () =>
       bindingRhythm
         ? signalTypeRegistry[bindingRhythm.signalType].apply(
-            rhythmOutput?.packet,
+            resolvedRhythm,
             bindingRhythm.treatment,
             `route:${instanceId}:rhythm`
           )
         : undefined,
-    [bindingRhythm, rhythmOutput?.packet, instanceId]
+    [bindingRhythm, resolvedRhythm, instanceId]
   );
   const treatedPitches = useMemo(
     () =>
       bindingPitches
         ? signalTypeRegistry[bindingPitches.signalType].apply(
-            pitchOutput?.packet,
+            resolvedPitches,
             bindingPitches.treatment,
             `route:${instanceId}:pitches`
           )
         : undefined,
-    [bindingPitches, pitchOutput?.packet, instanceId]
+    [bindingPitches, resolvedPitches, instanceId]
   );
   const pulseUnit =
     melodicizationPulseOptions.find((option) => option.value === pulseValue)?.duration ??
@@ -412,18 +415,10 @@ export function MelodicizationModule({
     setAudioStatus('Melodicization module reset.');
   }
 
-  const rhythmOptions: { value: string; label: string; disabled?: boolean }[] = outputs
-    .filter(compatibleRhythm)
-    .map((output) => ({
-      value: outputRefKey(output.ref),
-      label: output.label,
-    }));
-  const pitchOptions: { value: string; label: string; disabled?: boolean }[] = outputs
-    .filter(compatiblePitches)
-    .map((output) => ({
-      value: outputRefKey(output.ref),
-      label: output.label,
-    }));
+  const rhythmOptions: { value: string; label: string; disabled?: boolean }[] =
+    compositionOutputOptions(outputs, instanceId, compatibleRhythm);
+  const pitchOptions: { value: string; label: string; disabled?: boolean }[] =
+    compositionOutputOptions(outputs, instanceId, compatiblePitches);
   const missingRhythmBinding = Boolean(bindingRhythm?.source && !rhythmOutput);
   const missingPitchBinding = Boolean(bindingPitches?.source && !pitchOutput);
   if (bindingRhythm?.source && missingRhythmBinding) {

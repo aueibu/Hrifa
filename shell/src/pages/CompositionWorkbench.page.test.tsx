@@ -269,7 +269,7 @@ describe('CompositionWorkbenchPage', () => {
     await user.paste('60 [60 64 67] 62');
     expect(screen.getByText('3 groups', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
     expect(screen.getByText('5 pitches', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Pitch list C4 | C4 E4 G4 | D4' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Pitch list C4 | [C4 E4 G4] | D4' })).toBeInTheDocument();
     await setVolumeToThirty(user, 'Pitch preview volume');
   });
 
@@ -377,6 +377,7 @@ describe('CompositionWorkbenchPage', () => {
 
     expect(screen.getByText('Route · Pitch input')).toBeInTheDocument();
     expect(screen.getByText('Pitch List · Pitches → Melodicization · Pitches')).toBeInTheDocument();
+    await user.click(screen.getByRole('switch', { name: 'Voice pitch class as concrete pitch' }));
     expect(screen.getByText('22 events', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
     expect(screen.getByText('66 notes', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
 

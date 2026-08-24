@@ -10,8 +10,11 @@ import {
   type ArithmeticOperator,
 } from '../arithmetic';
 import {
+  boundOutput,
+  compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
+  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -48,11 +51,8 @@ const numericDomains = new Set([
   'pitchClass',
 ]);
 
-function compatibleNumeric(output: PublishedCompositionOutput) {
-  return (
-    (output.packet.kind === 'list' || output.packet.kind === 'value') &&
-    numericDomains.has(output.packet.domain)
-  );
+function compatibleNumeric(packet: DataPacket) {
+  return (packet.kind === 'list' || packet.kind === 'value') && numericDomains.has(packet.domain);
 }
 
 // The raw numbers an operand actually contributes — the same decomposition computeArithmetic
@@ -150,35 +150,37 @@ export function ArithmeticModule({
   const isUnary = operator === 'exp';
   const bindingA = routeState.a;
   const bindingB = routeState.b;
-  const outputMap = useMemo(
-    () => new Map(outputs.map((output) => [outputRefKey(output.ref), output])),
-    [outputs]
-  );
   // A binding pointing at this same instance (stale data, or otherwise) would feed the
   // module's own output back into itself: a new packet object every render, which never
   // reads as "unchanged" downstream and infinite-loops the composition view. Treat it as
   // disconnected rather than crash.
-  const outputA =
-    bindingA?.source && bindingA.source.instanceId !== instanceId
-      ? outputMap.get(outputRefKey(bindingA.source))
-      : undefined;
-  const outputB =
-    bindingB?.source && bindingB.source.instanceId !== instanceId
-      ? outputMap.get(outputRefKey(bindingB.source))
-      : undefined;
+  const selfBoundA = bindingA?.source?.instanceId === instanceId;
+  const selfBoundB = bindingB?.source?.instanceId === instanceId;
+  const outputA = boundOutput(outputs, bindingA?.source);
+  const outputB = boundOutput(outputs, bindingB?.source);
+  const resolvedA = useMemo(
+    () =>
+      selfBoundA ? undefined : resolvePacketFromOutput(outputA, bindingA?.source?.index, `route:${instanceId}:a`),
+    [selfBoundA, outputA, bindingA?.source?.index, instanceId]
+  );
+  const resolvedB = useMemo(
+    () =>
+      selfBoundB ? undefined : resolvePacketFromOutput(outputB, bindingB?.source?.index, `route:${instanceId}:b`),
+    [selfBoundB, outputB, bindingB?.source?.index, instanceId]
+  );
   const treatedA = useMemo(
     () =>
       bindingA
-        ? signalTypeRegistry[bindingA.signalType].apply(outputA?.packet, bindingA.treatment, `route:${instanceId}:a`)
+        ? signalTypeRegistry[bindingA.signalType].apply(resolvedA, bindingA.treatment, `route:${instanceId}:a`)
         : undefined,
-    [bindingA, outputA?.packet, instanceId]
+    [bindingA, resolvedA, instanceId]
   );
   const treatedB = useMemo(
     () =>
       bindingB
-        ? signalTypeRegistry[bindingB.signalType].apply(outputB?.packet, bindingB.treatment, `route:${instanceId}:b`)
+        ? signalTypeRegistry[bindingB.signalType].apply(resolvedB, bindingB.treatment, `route:${instanceId}:b`)
         : undefined,
-    [bindingB, outputB?.packet, instanceId]
+    [bindingB, resolvedB, instanceId]
   );
 
   const result = useMemo(
@@ -219,12 +221,7 @@ export function ArithmeticModule({
     setFallbackB(defaults.b);
   }
 
-  const aOptions = outputs
-    .filter((output) => output.ref.instanceId !== instanceId && compatibleNumeric(output))
-    .map((output) => ({
-      value: outputRefKey(output.ref),
-      label: output.label,
-    }));
+  const aOptions = compositionOutputOptions(outputs, instanceId, compatibleNumeric);
 
   const showCombineStrategy =
     !isUnary &&
