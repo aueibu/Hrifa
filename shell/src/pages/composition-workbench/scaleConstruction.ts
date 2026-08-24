@@ -6,7 +6,7 @@
  */
 
 import { packet, type DataItem, type DataPacket } from "./model";
-import { pitchClassNames } from "./pitch";
+import { pitchClassName } from "./pitch";
 
 export interface ScaleSequence {
   intervals: number[];
@@ -120,20 +120,21 @@ export function melodicFormsPacket(
  * `number[]` scale — which is already exactly a valid bracketed-group pitchClass value,
  * no separate representation needed).
  */
-export function realizePitchClasses(intervals: number[], root: number): number[] {
-  return realizeScale(intervals, root).map((value) => ((value % 12) + 12) % 12);
+export function realizePitchClasses(intervals: number[], root: number, edo = 12): number[] {
+  return realizeScale(intervals, root).map((value) => ((value % edo) + edo) % edo);
 }
 
 export function scalePitchClassPacket(
   intervals: number[],
   root: number,
   sourceId: string,
+  edo = 12,
 ): DataPacket<number> {
-  const pitchClasses = realizePitchClasses(intervals, root);
+  const pitchClasses = realizePitchClasses(intervals, root, edo);
   const items: DataItem<number>[] = pitchClasses.map((pitchClass, index) => ({
     id: `${sourceId}:degree:${index}`,
     value: pitchClass,
-    label: pitchClassNames[pitchClass],
+    label: pitchClassName(pitchClass, edo),
     provenance: [
       {
         sourceModuleInstance: sourceId,
@@ -145,6 +146,6 @@ export function scalePitchClassPacket(
   }));
   return packet("list", "pitchClass", items, [], undefined, {
     role: "pitchMaterial",
-    encoding: "chromatic-12",
+    encoding: `chromatic-${edo}`,
   });
 }

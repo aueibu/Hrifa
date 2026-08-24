@@ -21,13 +21,14 @@ import type {
   CompositionModuleRoutingProps,
   PublishedCompositionOutput,
 } from '../compositionRouting';
+import { useCompositionSettings } from '../compositionSettings';
 import { formatPitchClassGroup, type ForteSetSelection } from '../forteCatalog';
 import type { DataPacket } from '../model';
 import {
   formatMidicents,
   interpretPitchList,
   pitchClassGroupToArray,
-  pitchClassNames,
+  pitchClassName,
   pitchGroupToArray,
   type PitchClassItemValue,
   type PitchInputFormat,
@@ -91,6 +92,8 @@ export function PitchListModule({
   upstream,
   onOutputsChange,
 }: PitchListModuleProps) {
+  const { settings } = useCompositionSettings();
+  const edo = settings.edo;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'pitch-list');
   const [format, setFormat] = usePersistentState<PitchInputFormat>(
     stateKey(compositionStateKeys.pitchFormat),
@@ -169,8 +172,9 @@ export function PitchListModule({
         inlineText: inlineValues,
         inlineProvenance,
         upstream,
+        edo,
       }),
-    [format, inlineProvenance, inlineValues, instanceId, upstream]
+    [format, inlineProvenance, inlineValues, instanceId, upstream, edo]
   );
   const publishedOutput = useMemo<PublishedCompositionOutput>(
     () => ({
@@ -194,13 +198,14 @@ export function PitchListModule({
     interpreted.packet.domain === 'pitchClass'
       ? interpreted.packet.items.map((item) => {
           const pitchClasses = pitchClassGroupToArray(item.value as PitchClassItemValue);
+          const centsPerStep = 1200 / edo;
           return {
             id: item.id,
             label: item.label ?? '',
             pitches: pitchClasses.map((pitchClass, pitchIndex) => ({
               id: `${item.id}:pitch:${pitchIndex}`,
-              label: pitchClassNames[pitchClass],
-              midicents: (Number(previewOctave) + 1) * 1200 + pitchClass * 100,
+              label: pitchClassName(pitchClass, edo),
+              midicents: (Number(previewOctave) + 1) * 1200 + pitchClass * centsPerStep,
             })),
             provenance: item.provenance,
           };

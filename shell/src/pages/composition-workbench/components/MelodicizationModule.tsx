@@ -34,6 +34,7 @@ import {
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
+import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import { melodicizationPulseOptions, melodicize, type PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
@@ -133,6 +134,8 @@ export function MelodicizationModule({
   onBind,
   onOutputsChange,
 }: MelodicizationModuleProps) {
+  const { settings } = useCompositionSettings();
+  const edo = settings.edo;
   const bindingRhythm = routeState.rhythm;
   const bindingPitches = routeState.pitches;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'melodicization');
@@ -214,10 +217,11 @@ export function MelodicizationModule({
         ? signalTypeRegistry[bindingRhythm.signalType].apply(
             resolvedRhythm,
             bindingRhythm.treatment,
-            `route:${instanceId}:rhythm`
+            `route:${instanceId}:rhythm`,
+            edo
           )
         : undefined,
-    [bindingRhythm, resolvedRhythm, instanceId]
+    [bindingRhythm, resolvedRhythm, instanceId, edo]
   );
   const treatedPitches = useMemo(
     () =>
@@ -225,10 +229,11 @@ export function MelodicizationModule({
         ? signalTypeRegistry[bindingPitches.signalType].apply(
             resolvedPitches,
             bindingPitches.treatment,
-            `route:${instanceId}:pitches`
+            `route:${instanceId}:pitches`,
+            edo
           )
         : undefined,
-    [bindingPitches, resolvedPitches, instanceId]
+    [bindingPitches, resolvedPitches, instanceId, edo]
   );
   const pulseUnit =
     melodicizationPulseOptions.find((option) => option.value === pulseValue)?.duration ??

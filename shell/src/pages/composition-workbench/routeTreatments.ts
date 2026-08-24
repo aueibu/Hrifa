@@ -162,10 +162,16 @@ export function pitchLabel(midicents: number) {
   return `${pitchClassNames[pitchClass]}${octave}${cents ? ` ${cents > 0 ? '+' : ''}${cents}c` : ''}`;
 }
 
+// Voices a set of pitch classes (0..edo-1) above a register floor, in midicents (100 cents = 1
+// semitone at 12-EDO; generically, an octave is always 1200 cents regardless of edo — edo only
+// says how many equal steps subdivide it). Midicents rather than integer MIDI notes because a
+// non-12-EDO step generally lands between semitones; MIDI note numbers can't represent that,
+// cents-from-a-reference can.
 function voicePitchClasses(
   pitchClasses: number[],
   registerBaseMidi: number,
-  voicingInversion: number
+  voicingInversion: number,
+  edo = 12
 ) {
   if (!pitchClasses.length) {
     return [];
@@ -174,23 +180,27 @@ function voicePitchClasses(
     [...pitchClasses].sort((left, right) => left - right),
     voicingInversion
   );
-  const octaveBase = Math.floor(registerBaseMidi / 12) * 12;
-  let previous = registerBaseMidi - 1;
+  const stepCents = 1200 / edo;
+  const registerBaseCents = registerBaseMidi * 100;
+  const octaveBaseCents = Math.floor(registerBaseCents / 1200) * 1200;
+  let previous = registerBaseCents - 1;
   return ordered.map((pitchClass) => {
-    let midi = octaveBase + pitchClass;
-    while (midi < registerBaseMidi || midi <= previous) {
-      midi += 12;
+    let cents = octaveBaseCents + pitchClass * stepCents;
+    while (cents < registerBaseCents || cents <= previous) {
+      cents += 1200;
     }
-    previous = midi;
-    return midi;
+    previous = cents;
+    return cents;
   });
 }
 
 // Shared invert/transpose math on bare pitch-class numbers — no wrapper to unpack, since a
-// pitchClass item's value is already `number | number[]`.
-function transformPitchClasses(pitchClasses: number[], treatment: PitchRouteTreatment): number[] {
+// pitchClass item's value is already `number | number[]`. `transposition` is in edo steps, not
+// semitones, once edo differs from 12 — the route treatment's transposition field is always
+// "steps of the source's own tuning," which is semitones exactly when that tuning is 12-EDO.
+function transformPitchClasses(pitchClasses: number[], treatment: PitchRouteTreatment, edo = 12): number[] {
   return pitchClasses.map((pitchClass) =>
-    modulo((treatment.inverted ? -pitchClass : pitchClass) + treatment.transposition, 12)
+    modulo((treatment.inverted ? -pitchClass : pitchClass) + treatment.transposition, edo)
   );
 }
 
@@ -229,13 +239,15 @@ function concreteGroupFromPitchClasses(
   values: number[],
   treatment: PitchRouteTreatment,
   routeId: string,
-  sourceItemId: string
+  sourceItemId: string,
+  edo = 12
 ) {
-  const transformedPitchClasses = transformPitchClasses(values, treatment);
-  const midiNotes = voicePitchClasses(
+  const transformedPitchClasses = transformPitchClasses(values, treatment, edo);
+  const midicents = voicePitchClasses(
     transformedPitchClasses,
     treatment.registerBaseMidi,
-    treatment.voicingInversion
+    treatment.voicingInversion,
+    edo
   );
   const steps = [
     ...pitchClassSequenceSteps(treatment, routeId, sourceItemId),
@@ -250,7 +262,6 @@ function concreteGroupFromPitchClasses(
       },
     },
   ];
-  const midicents = midiNotes.map((midi) => midi * 100);
   const value: PitchItemValue = midicents.length > 1 ? midicents : midicents[0];
   return { value, label: pitchGroupLabel(value), steps };
 }
@@ -260,13 +271,14 @@ function transformedPitchClassGroup(
   wasArray: boolean,
   treatment: PitchRouteTreatment,
   routeId: string,
-  sourceItemId: string
+  sourceItemId: string,
+  edo = 12
 ) {
-  const transformed = transformPitchClasses(values, treatment);
+  const transformed = transformPitchClasses(values, treatment, edo);
   const value: PitchClassItemValue = wasArray ? transformed : transformed[0];
   return {
     value,
-    label: pitchClassGroupLabel(value),
+    label: pitchClassGroupLabel(value, edo),
     steps: pitchClassSequenceSteps(treatment, routeId, sourceItemId),
   };
 }
@@ -338,7 +350,8 @@ function midiNoteValuesFromRaw(value: unknown, base: number): { values: number[]
 export function applyPitchRouteTreatment(
   source: DataPacket | undefined,
   treatment: PitchRouteTreatment,
-  routeId = 'route:melodicization:pitches'
+  routeId = 'route:melodicization:pitches',
+  edo = 12
 ): DataPacket | undefined {
   if (!source || treatment.bypassed || source.kind !== 'list') {
     return source;
@@ -364,8 +377,8 @@ export function applyPitchRouteTreatment(
       const raw = item.value as PitchClassItemValue;
       const values = pitchClassGroupToArray(raw);
       const transformed = keepAsPitchClass
-        ? transformedPitchClassGroup(values, Array.isArray(raw), treatment, routeId, item.id)
-        : concreteGroupFromPitchClasses(values, treatment, routeId, item.id);
+        ? transformedPitchClassGroup(values, Array.isArray(raw), treatment, routeId, item.id, edo)
+        : concreteGroupFromPitchClasses(values, treatment, routeId, item.id, edo);
       return {
         ...item,
         value: transformed.value,

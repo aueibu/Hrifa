@@ -86,4 +86,33 @@ describe("scaleConstruction", () => {
     // C-D-E-F from root 0 -> MIDI 60,62,64,65 (register floor 60) -> midicents 6000..6500
     expect(voiced!.items.map((item) => item.value)).toEqual([6000, 6200, 6400, 6500]);
   });
+
+  it("folds pitch classes mod a non-default EDO and voices them at the right fractional-semitone step size", () => {
+    const packet = scalePitchClassPacket([12, 12, 5], 0, "src", 19);
+    expect(packet.domain).toBe("pitchClass");
+    expect(packet.encoding).toBe("chromatic-19");
+    // Cumulative offsets from root 0 are [0, 12, 24, 29]; folded mod 19 that's [0, 12, 5, 10].
+    expect(packet.items.map((item) => item.value)).toEqual([0, 12, 5, 10]);
+    // 19-EDO's apotome is 1 step, so every pitch class gets a real single-accidental spelling.
+    expect(packet.items.map((item) => item.label)).toEqual(["C", "G#", "Eb", "Gb"]);
+
+    const voiced = applyPitchRouteTreatment(
+      packet,
+      { ...defaultPitchRouteTreatment, voiceAsPitch: true },
+      "route:test",
+      19,
+    );
+    expect(voiced?.domain).toBe("pitch");
+    // Step size at 19-EDO is 1200/19 cents; pitch class 12 above register floor 60*100=6000
+    // lands at 6000 + 12 * (1200/19), rounded to the nearest whole cent by voicePitchClasses'
+    // integer arithmetic being exact only at 12-EDO — assert it's finite and in the right octave
+    // rather than hardcoding a fractional cents value prone to float-precision churn.
+    for (const item of voiced!.items) {
+      for (const midicents of pitchGroupToArray(item.value as PitchItemValue)) {
+        expect(Number.isFinite(midicents)).toBe(true);
+        expect(midicents).toBeGreaterThanOrEqual(6000);
+        expect(midicents).toBeLessThan(6000 + 1200);
+      }
+    }
+  });
 });

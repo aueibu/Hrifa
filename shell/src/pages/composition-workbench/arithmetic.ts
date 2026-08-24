@@ -2,7 +2,7 @@ import { positiveModulo } from './alignment';
 import type { PitchAllocation } from './melodicization';
 import { applyModulo, type ModuloTreatment } from './moduloTreatment';
 import { packet, type DataItem, type DataDomain, type DataPacket, type Provenance } from './model';
-import type { PitchClassItemValue, PitchItemValue } from './pitch';
+import { pitchClassName, type PitchClassItemValue, type PitchItemValue } from './pitch';
 import { pitchLabel } from './routeTreatments';
 
 export type ArithmeticOperator =
@@ -177,8 +177,6 @@ export function formatNumericTree(tree: NumericTree): string {
   return typeof tree === 'number' ? String(tree) : `[${tree.map(formatNumericTree).join(', ')}]`;
 }
 
-const pitchClassNames = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
-
 function flattenTree(tree: NumericTree, out: number[] = []): number[] {
   if (typeof tree === 'number') {
     out.push(tree);
@@ -190,12 +188,13 @@ function flattenTree(tree: NumericTree, out: number[] = []): number[] {
 
 function recomposeGroup(
   domain: DataDomain,
-  tree: NumericTree
+  tree: NumericTree,
+  edo = 12
 ): { value: PitchClassItemValue | PitchItemValue; label: string } {
   const numbers = flattenTree(tree);
   if (domain === 'pitchClass') {
-    const pitchClasses = numbers.map((raw) => positiveModulo(Math.round(raw), 12));
-    const label = pitchClasses.map((pitchClass) => pitchClassNames[pitchClass]).join(' ');
+    const pitchClasses = numbers.map((raw) => positiveModulo(Math.round(raw), edo));
+    const label = pitchClasses.map((pitchClass) => pitchClassName(pitchClass, edo)).join(' ');
     const wrappedLabel = pitchClasses.length > 1 ? `[${label}]` : label;
     const value: PitchClassItemValue = pitchClasses.length > 1 ? pitchClasses : pitchClasses[0];
     return { value, label: wrappedLabel };
@@ -215,6 +214,7 @@ export function computeArithmetic({
   fallbackB,
   combineStrategy,
   modulo,
+  edo = 12,
 }: {
   instanceId: string;
   operator: ArithmeticOperator;
@@ -224,6 +224,7 @@ export function computeArithmetic({
   fallbackB: number;
   combineStrategy: PitchAllocation;
   modulo: ModuloTreatment;
+  edo?: number;
 }): ArithmeticResult {
   const isUnary = operator === 'exp';
 
@@ -286,7 +287,7 @@ export function computeArithmetic({
       structurallyNested && modulo.enabled
         ? mapTree(tree, (value) => positiveModulo(value, modulo.divisor))
         : tree;
-    const recomposed = groupedOutput ? recomposeGroup(domain, finalTree) : undefined;
+    const recomposed = groupedOutput ? recomposeGroup(domain, finalTree, edo) : undefined;
     const value = recomposed ? recomposed.value : (finalTree as number | number[]);
     return {
       id: `${instanceId}:arithmetic:${index}`,

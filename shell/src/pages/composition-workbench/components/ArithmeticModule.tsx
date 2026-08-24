@@ -19,6 +19,7 @@ import {
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
+import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { PitchAllocation } from '../melodicization';
 import { defaultModuloTreatment, type ModuloTreatment } from '../moduloTreatment';
@@ -120,6 +121,8 @@ export function ArithmeticModule({
   onBind,
   onOutputsChange,
 }: ArithmeticModuleProps) {
+  const { settings } = useCompositionSettings();
+  const edo = settings.edo;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'arithmetic');
   const [operator, setOperator] = usePersistentState<ArithmeticOperator>(
     stateKey(compositionStateKeys.arithmeticOperator),
@@ -171,16 +174,16 @@ export function ArithmeticModule({
   const treatedA = useMemo(
     () =>
       bindingA
-        ? signalTypeRegistry[bindingA.signalType].apply(resolvedA, bindingA.treatment, `route:${instanceId}:a`)
+        ? signalTypeRegistry[bindingA.signalType].apply(resolvedA, bindingA.treatment, `route:${instanceId}:a`, edo)
         : undefined,
-    [bindingA, resolvedA, instanceId]
+    [bindingA, resolvedA, instanceId, edo]
   );
   const treatedB = useMemo(
     () =>
       bindingB
-        ? signalTypeRegistry[bindingB.signalType].apply(resolvedB, bindingB.treatment, `route:${instanceId}:b`)
+        ? signalTypeRegistry[bindingB.signalType].apply(resolvedB, bindingB.treatment, `route:${instanceId}:b`, edo)
         : undefined,
-    [bindingB, resolvedB, instanceId]
+    [bindingB, resolvedB, instanceId, edo]
   );
 
   const result = useMemo(
@@ -194,8 +197,9 @@ export function ArithmeticModule({
         fallbackB: Number(fallbackB) || 0,
         combineStrategy,
         modulo,
+        edo,
       }),
-    [instanceId, operator, treatedA, treatedB, fallbackA, fallbackB, combineStrategy, modulo]
+    [instanceId, operator, treatedA, treatedB, fallbackA, fallbackB, combineStrategy, modulo, edo]
   );
 
   const publishedOutput = useMemo<PublishedCompositionOutput>(

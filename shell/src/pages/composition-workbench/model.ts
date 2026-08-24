@@ -28,7 +28,9 @@ export type DataRole =
   | 'pattern'
   | 'rejection';
 
-export type DataEncoding = 'midi-note' | 'midicent' | 'note-name' | 'chromatic-12';
+// `chromatic-${edo}` covers any EDO (chromatic-12, chromatic-19, chromatic-24, ...) — the octave
+// divides into `edo` equal pitch-class steps; 12 is just the default, not a hardcoded ceiling.
+export type DataEncoding = 'midi-note' | 'midicent' | 'note-name' | `chromatic-${number}`;
 
 export interface PacketGrouping {
   id: string;

@@ -24,14 +24,148 @@ export function pitchClassGroupToArray(value: PitchClassItemValue): number[] {
   return Array.isArray(value) ? value : [value];
 }
 
-export function pitchClassGroupLabel(value: PitchClassItemValue): string {
+// General meantone pitch-class spelling, not a 12-EDO special case with a numeric fallback
+// everywhere else. Any EDO with a usable best-fifth approximation (12, 19, 31, and others) gets
+// real letter names generated from that fifth via the standard line-of-fifths construction
+// (F C G D A E B, extended by sharps/flats): for each step, find its nearest natural letter and
+// express the distance as an accidental. The size of one accidental (the "apotome") falls out of
+// the fifth itself — 1 step at 12- and 19-EDO, 2 steps at 31-EDO — so nothing about which EDOs
+// get letters is hardcoded.
+//
+// When the apotome is even, its half is a genuine, separately-meaningful pitch in that tuning
+// (31-EDO's defining feature: sharps and flats are distinct, and there's a real note *between* a
+// natural and its neighboring single-sharp/flat) — rendered with an up/down-notation arrow
+// rather than stacking a second whole accidental, since every case actually reachable this way
+// (12, 19, 31) stays within one accidental of the nearest natural. A step further out than that
+// falls back to its plain number rather than guessing an unfamiliar double-accidental spelling.
+const naturalLetters = ['F', 'C', 'G', 'D', 'A', 'E', 'B'] as const;
+const halfSharpSuffix = '↑'; // ↑ — "ups and downs" notation for a half-accidental raise
+const halfFlatSuffix = '↓'; // ↓ — same, for a half-accidental lower
+
+interface MeantoneSpelling {
+  edo: number;
+  fifth: number;
+  apotome: number;
+  halfUnit?: number;
+  naturals: { letter: (typeof naturalLetters)[number]; position: number }[];
+}
+
+const meantoneSpellingCache = new Map<number, MeantoneSpelling | undefined>();
+
+function meantoneSpellingFor(edo: number): MeantoneSpelling | undefined {
+  if (meantoneSpellingCache.has(edo)) {
+    return meantoneSpellingCache.get(edo);
+  }
+  const fifth = Math.round(edo * Math.log2(1.5));
+  const apotome = 7 * fifth - 4 * edo;
+  // A degenerate "fifth" (out of range, or an apotome that isn't a small positive step) means
+  // this EDO has no usable meantone-style letter spelling at all.
+  const spelling: MeantoneSpelling | undefined =
+    fifth > 0 && fifth < edo && apotome > 0 && apotome <= edo / 2
+      ? {
+          edo,
+          fifth,
+          apotome,
+          halfUnit: apotome % 2 === 0 ? apotome / 2 : undefined,
+          naturals: naturalLetters.map((letter, index) => {
+            const k = index - 1; // F=-1, C=0, G=1, D=2, A=3, E=4, B=5
+            return { letter, position: (((k * fifth) % edo) + edo) % edo };
+          }),
+        }
+      : undefined;
+  meantoneSpellingCache.set(edo, spelling);
+  return spelling;
+}
+
+export function pitchClassName(pitchClass: number, edo = 12): string {
+  const step = ((pitchClass % edo) + edo) % edo;
+  const spelling = meantoneSpellingFor(edo);
+  if (!spelling) {
+    return String(step);
+  }
+  // Shortest signed distance from each natural to `step`, picking the nearest; on an exact tie
+  // (the classic 12-EDO black-key case) prefer the sharp side, matching this app's existing
+  // "always sharp, never flat" convention for 12-EDO.
+  let best: { letter: string; distance: number } | undefined;
+  for (const natural of spelling.naturals) {
+    let distance = step - natural.position;
+    if (distance > edo / 2) distance -= edo;
+    if (distance < -edo / 2) distance += edo;
+    if (
+      !best ||
+      Math.abs(distance) < Math.abs(best.distance) ||
+      (Math.abs(distance) === Math.abs(best.distance) && distance > best.distance)
+    ) {
+      best = { letter: natural.letter, distance };
+    }
+  }
+  const { letter, distance } = best!;
+  const magnitude = Math.abs(distance);
+  if (magnitude === 0) return letter;
+  if (magnitude === spelling.apotome) return letter + (distance > 0 ? '#' : 'b');
+  if (magnitude === spelling.apotome * 2) return letter + (distance > 0 ? '##' : 'bb');
+  if (spelling.halfUnit !== undefined && magnitude === spelling.halfUnit) {
+    return letter + (distance > 0 ? halfSharpSuffix : halfFlatSuffix);
+  }
+  return String(step);
+}
+
+// The inverse of pitchClassName, for parsing typed pitch-class input back into a step number —
+// accepts exactly the spellings pitchClassName can produce for the given edo, so display and
+// input stay symmetric rather than accepting a wider or narrower vocabulary than what's shown.
+function parseMeantoneSpelling(token: string, edo: number): number | undefined {
+  const match = /^([A-Ga-g])(##|bb|#|♯|b|♭|↑|↓)?$/.exec(token);
+  if (!match) return undefined;
+  const spelling = meantoneSpellingFor(edo);
+  if (!spelling) return undefined;
+  const natural = spelling.naturals.find((n) => n.letter === match[1].toUpperCase());
+  if (!natural) return undefined;
+  const rawAccidental = match[2];
+  const accidental =
+    rawAccidental === '♯' ? '#' : rawAccidental === '♭' ? 'b' : rawAccidental;
+  let offset: number | undefined;
+  switch (accidental) {
+    case undefined:
+      offset = 0;
+      break;
+    case '#':
+      offset = spelling.apotome;
+      break;
+    case 'b':
+      offset = -spelling.apotome;
+      break;
+    case '##':
+      offset = spelling.apotome * 2;
+      break;
+    case 'bb':
+      offset = -spelling.apotome * 2;
+      break;
+    case halfSharpSuffix:
+      offset = spelling.halfUnit;
+      break;
+    case halfFlatSuffix:
+      offset = spelling.halfUnit === undefined ? undefined : -spelling.halfUnit;
+      break;
+  }
+  if (offset === undefined) return undefined;
+  return (((natural.position + offset) % edo) + edo) % edo;
+}
+
+export function pitchClassGroupLabel(value: PitchClassItemValue, edo = 12): string {
   const values = pitchClassGroupToArray(value);
-  const label = values.map((pitchClass) => pitchClassNames[pitchClass]).join(' ');
+  const label = values.map((pitchClass) => pitchClassName(pitchClass, edo)).join(' ');
   return values.length > 1 ? `[${label}]` : label;
 }
 
-export function pitchClassPreviewMidicents(value: PitchClassItemValue, previewOctave: number): number[] {
-  return pitchClassGroupToArray(value).map((pitchClass) => (previewOctave + 1) * 1200 + pitchClass * 100);
+export function pitchClassPreviewMidicents(
+  value: PitchClassItemValue,
+  previewOctave: number,
+  edo = 12
+): number[] {
+  const centsPerStep = 1200 / edo;
+  return pitchClassGroupToArray(value).map(
+    (pitchClass) => (previewOctave + 1) * 1200 + pitchClass * centsPerStep
+  );
 }
 
 // The literal text the user typed for one pitch(-class) item (e.g. "Bb", not the canonical
@@ -122,17 +256,23 @@ interface ParsedToken {
   spelling?: string;
 }
 
-function parsePitchClassToken(token: string): ParsedToken | string {
+function parsePitchClassToken(token: string, edo = 12): ParsedToken | string {
   const numeric = Number(token);
   if (Number.isInteger(numeric)) {
-    if (numeric < 0 || numeric > 11) return `${token}: pitch-class integers must be from 0 to 11`;
+    if (numeric < 0 || numeric > edo - 1) return `${token}: pitch-class integers must be from 0 to ${edo - 1}`;
     return { value: numeric };
   }
-  const match = /^([A-Ga-g])([#b♯♭]?)$/.exec(token);
-  if (!match) return `${token}: enter a pitch-class integer or name such as 0, C, F#, or Bb`;
-  const spelling = `${match[1].toUpperCase()}${match[2]}`;
-  const value = (pitchClassByLetter[match[1].toUpperCase()] + accidentalOffset(match[2]) + 12) % 12;
-  return { value, spelling };
+  // A letter name only has a standard meaning where this EDO has a usable meantone spelling
+  // (pitchClassName's own criterion — see meantoneSpellingFor) — and only for the exact
+  // spellings that generates, so a typed name always round-trips to the label that would be
+  // shown for it.
+  const value = parseMeantoneSpelling(token, edo);
+  if (value === undefined) {
+    return meantoneSpellingFor(edo)
+      ? `${token}: enter a pitch-class integer from 0 to ${edo - 1}, or a note name such as C, F#, or Bb`
+      : `${token}: enter a pitch-class integer from 0 to ${edo - 1} (this EDO has no standard note-name spelling)`;
+  }
+  return { value, spelling: token.length > 1 ? `${token[0].toUpperCase()}${token.slice(1)}` : token.toUpperCase() };
 }
 
 function parseConcretePitchToken(
@@ -158,15 +298,15 @@ function parseConcretePitchToken(
   return { value: format === 'midi-note' ? value * 100 : value };
 }
 
-function parseToken(token: string, format: PitchInputFormat): ParsedToken | string {
+function parseToken(token: string, format: PitchInputFormat, edo = 12): ParsedToken | string {
   return format === 'pitch-class'
-    ? parsePitchClassToken(token)
+    ? parsePitchClassToken(token, edo)
     : parseConcretePitchToken(token, format);
 }
 
-function labelForToken(value: number, format: PitchInputFormat, spelling?: string): string {
+function labelForToken(value: number, format: PitchInputFormat, edo = 12, spelling?: string): string {
   if (spelling) return spelling;
-  return format === 'pitch-class' ? pitchClassNames[value] : formatMidicents(value);
+  return format === 'pitch-class' ? pitchClassName(value, edo) : formatMidicents(value);
 }
 
 export function pitchFrequency(midicents: number) {
@@ -179,12 +319,14 @@ export function interpretPitchList({
   inlineText,
   inlineProvenance,
   upstream,
+  edo = 12,
 }: {
   instanceId: string;
   format: PitchInputFormat;
   inlineText: string;
   inlineProvenance?: InlinePitchGroupProvenance;
   upstream?: DataPacket;
+  edo?: number;
 }): InterpretedPitchList {
   // Already the target shape — a pitch(-class) item's value is already bare, nothing to
   // rewrap or reinterpret. This is domain-preserving regardless of the currently-selected
@@ -212,7 +354,7 @@ export function interpretPitchList({
   const spellings: PitchSpellings = {};
 
   sourceItems.forEach(({ tokens, sourceId, inherited }, index) => {
-    const parsed = tokens.map((token) => parseToken(token, format));
+    const parsed = tokens.map((token) => parseToken(token, format, edo));
     const groupErrors = parsed.filter((value): value is string => typeof value === 'string');
     if (groupErrors.length) {
       errors.push(...groupErrors);
@@ -224,7 +366,7 @@ export function interpretPitchList({
     const id = `${instanceId}:pitch-group:${index}`;
     // A typed letter-name spelling becomes both the displayed label (matching prior behavior:
     // "Bb" displayed as "Bb", not canonicalized to "A#") and the source-metadata record.
-    const label = parsedTokens.map((p) => labelForToken(p.value, format, p.spelling)).join(' ');
+    const label = parsedTokens.map((p) => labelForToken(p.value, format, edo, p.spelling)).join(' ');
     if (parsedTokens.some((p) => p.spelling)) {
       spellings[id] = label;
     }
@@ -259,7 +401,7 @@ export function interpretPitchList({
         source: upstream ? 'upstream' : 'inline',
         ...(Object.keys(spellings).length ? { spellings } : {}),
       },
-      { role: 'pitchMaterial', encoding: format === 'pitch-class' ? 'chromatic-12' : format }
+      { role: 'pitchMaterial', encoding: format === 'pitch-class' ? `chromatic-${edo}` : format }
     ),
     errors,
     source: upstream ? 'upstream' : 'inline',

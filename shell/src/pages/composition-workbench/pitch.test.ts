@@ -212,6 +212,79 @@ describe('pitch-list interpretation', () => {
     expect(interpreted.source).toBe('upstream');
   });
 
+  it('reads pitch classes against a non-default EDO, with real letter names since 19-EDO has a clean meantone spelling', () => {
+    const result = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: '0, 10, 18',
+      edo: 19,
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.packet.items.map((item) => item.value)).toEqual([0, 10, 18]);
+    // 19-EDO's apotome is 1 step, so every step has an unambiguous single-accidental spelling
+    // (nearest natural, sharp preferred on an exact tie) — not a plain step number.
+    expect(result.packet.items.map((item) => item.label)).toEqual(['C', 'Gb', 'B#']);
+    expect(result.packet.encoding).toBe('chromatic-19');
+
+    const outOfRange = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: '19',
+      edo: 19,
+    });
+    expect(outOfRange.errors[0]).toMatch(/0 to 18/);
+
+    const letterName = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: 'C, Gb, B#',
+      edo: 19,
+    });
+    expect(letterName.errors).toEqual([]);
+    expect(letterName.packet.items.map((item) => item.value)).toEqual([0, 10, 18]);
+  });
+
+  it('spells 31-EDO with quarter-tone (half-sharp/half-flat) accidentals, since its apotome is 2 steps', () => {
+    const result = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: '0, 1, 2, 4',
+      edo: 31,
+    });
+    expect(result.errors).toEqual([]);
+    // Nearest to C: step 1 is a half-sharp (half of the 2-step apotome), step 2 is a full sharp.
+    // Nearest to D (step 5): step 4 is a half-flat.
+    expect(result.packet.items.map((item) => item.label)).toEqual(['C', 'C↑', 'C#', 'D↓']);
+
+    const roundTrip = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: 'C, C↑, C#, D↓',
+      edo: 31,
+    });
+    expect(roundTrip.errors).toEqual([]);
+    expect(roundTrip.packet.items.map((item) => item.value)).toEqual([0, 1, 2, 4]);
+  });
+
+  it('falls back to plain step numbers for an EDO with no usable meantone spelling (7-EDO: apotome collapses to 0)', () => {
+    const result = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: '0, 3',
+      edo: 7,
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.packet.items.map((item) => item.label)).toEqual(['0', '3']);
+
+    const letterName = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: 'C',
+      edo: 7,
+    });
+    expect(letterName.errors[0]).toMatch(/no standard note-name spelling/);
+  });
+
   it('converts midicents to frequency without semitone quantization', () => {
     expect(pitchFrequency(6900)).toBeCloseTo(440);
     expect(pitchFrequency(6950)).toBeCloseTo(452.893, 3);

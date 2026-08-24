@@ -2,7 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
 import type { CompositionModuleRoutingProps, PublishedCompositionOutput } from '../compositionRouting';
-import { pitchClassNames } from '../pitch';
+import { useCompositionSettings } from '../compositionSettings';
+import { pitchClassName } from '../pitch';
 import {
   melodicFormsPacket,
   realizeScale,
@@ -48,6 +49,8 @@ export function ScaleConstructionModule({
   instanceLabel,
   onOutputsChange,
 }: ScaleConstructionModuleProps) {
+  const { settings } = useCompositionSettings();
+  const edo = settings.edo;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'scale-construction');
   const [intervals, setIntervals] = usePersistentState<number[]>(
     stateKey(compositionStateKeys.scaleConstructionIntervals),
@@ -87,8 +90,8 @@ export function ScaleConstructionModule({
     [generated.result, intervals, permutationMode, instanceId],
   );
   const pitchClassOutput = useMemo(
-    () => (generated.result ? scalePitchClassPacket(intervals, Number(root), instanceId) : undefined),
-    [generated.result, intervals, root, instanceId],
+    () => (generated.result ? scalePitchClassPacket(intervals, Number(root), instanceId, edo) : undefined),
+    [generated.result, intervals, root, instanceId, edo],
   );
   const offsets = useMemo(() => realizeScale(intervals, Number(root)), [intervals, root]);
 
@@ -162,11 +165,11 @@ export function ScaleConstructionModule({
               <Stack gap="lg">
                 <div>
                   <Text fw={600} size="sm" mb={4}>
-                    Scale (from root {pitchClassNames[((Number(root) % 12) + 12) % 12]})
+                    Scale (from root {pitchClassName(((Number(root) % edo) + edo) % edo, edo)})
                   </Text>
                   <Text ff="monospace" size="sm" className={classes.pitchValues}>
                     {offsets
-                      .map((offset) => pitchClassNames[((offset % 12) + 12) % 12])
+                      .map((offset) => pitchClassName(((offset % edo) + edo) % edo, edo))
                       .join(' - ')}
                   </Text>
                   <Text ff="monospace" size="sm" mt={4} className={classes.durationText}>
@@ -211,8 +214,11 @@ export function ScaleConstructionModule({
                 <Select
                   size="xs"
                   aria-label="Root pitch class"
-                  data={pitchClassNames.map((name, value) => ({ value: String(value), label: name }))}
-                  value={String(((Number(root) % 12) + 12) % 12)}
+                  data={Array.from({ length: edo }, (_, value) => ({
+                    value: String(value),
+                    label: pitchClassName(value, edo),
+                  }))}
+                  value={String(((Number(root) % edo) + edo) % edo)}
                   onChange={(value) => value !== null && setRoot(Number(value))}
                 />
               </div>

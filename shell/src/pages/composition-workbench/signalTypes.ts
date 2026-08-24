@@ -24,7 +24,7 @@ export interface SignalTypeDefinition<T> {
   accepts(value: unknown): value is T;
   isIdentity(treatment: T, source?: DataPacket): boolean;
   summary(treatment: T, source?: DataPacket): string;
-  apply(source: DataPacket | undefined, treatment: T, routeId: string): DataPacket | undefined;
+  apply(source: DataPacket | undefined, treatment: T, routeId: string, edo?: number): DataPacket | undefined;
 }
 
 export interface NumericRouteTreatment {

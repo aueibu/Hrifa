@@ -12,7 +12,7 @@
  */
 
 import { packet, type DataItem, type DataPacket } from "./model";
-import { pitchClassNames } from "./pitch";
+import { pitchClassName } from "./pitch";
 import { realizePitchClasses, scalePitchClassPacket } from "./scaleConstruction";
 
 export interface ScaleEvolutionStage {
@@ -190,16 +190,17 @@ export function stagePitchClassesPacket(
   result: ScaleEvolutionResult,
   root: number,
   sourceId: string,
+  edo = 12,
 ) {
   // Each bank item's value is a bare number[] — the whole stage's scale as one bracketed
   // pitch-class group, matching PitchClassItemValue's array form exactly. No wrapper
   // needed: a bank entry that IS a chord is already the right shape for that domain.
   const items: DataItem<number[]>[] = result.stages.map((stage, index) => {
-    const pitchClasses = realizePitchClasses(stage.durations, root);
+    const pitchClasses = realizePitchClasses(stage.durations, root, edo);
     return {
       id: `${sourceId}:stage-pitches:${index}`,
       value: pitchClasses,
-      label: pitchClasses.map((pitchClass) => pitchClassNames[pitchClass]).join('-'),
+      label: pitchClasses.map((pitchClass) => pitchClassName(pitchClass, edo)).join('-'),
       provenance: [
         {
           sourceModuleInstance: sourceId,
@@ -212,7 +213,7 @@ export function stagePitchClassesPacket(
   });
   return packet("bank", "pitchClass", items, [], { root }, {
     role: "pitchMaterial",
-    encoding: "chromatic-12",
+    encoding: `chromatic-${edo}`,
   });
 }
 
@@ -220,10 +221,11 @@ export function finalPitchClassesPacket(
   result: ScaleEvolutionResult,
   root: number,
   sourceId: string,
+  edo = 12,
 ) {
   const last = result.stages[result.stages.length - 1];
   if (!last) {
     return packet("list", "pitchClass", [], ["Evolution produced no stages."]);
   }
-  return scalePitchClassPacket(last.durations, root, sourceId);
+  return scalePitchClassPacket(last.durations, root, sourceId, edo);
 }

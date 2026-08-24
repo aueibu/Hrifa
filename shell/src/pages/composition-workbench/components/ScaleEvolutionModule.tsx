@@ -11,9 +11,10 @@ import {
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
+import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { DataPacket } from '../model';
-import { pitchClassNames } from '../pitch';
+import { pitchClassName } from '../pitch';
 import {
   evolveScale,
   finalPitchClassesPacket,
@@ -64,6 +65,8 @@ export function ScaleEvolutionModule({
   onBind,
   onOutputsChange,
 }: ScaleEvolutionModuleProps) {
+  const { settings } = useCompositionSettings();
+  const edo = settings.edo;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'scale-evolution');
   const [intervalText, setIntervalText] = usePersistentState(
     stateKey(compositionStateKeys.scaleEvolutionIntervals),
@@ -115,12 +118,14 @@ export function ScaleEvolutionModule({
     [generated.result, instanceId],
   );
   const stagePitchesPacket = useMemo(
-    () => (generated.result ? stagePitchClassesPacket(generated.result, Number(root), instanceId) : undefined),
-    [generated.result, root, instanceId],
+    () =>
+      generated.result ? stagePitchClassesPacket(generated.result, Number(root), instanceId, edo) : undefined,
+    [generated.result, root, instanceId, edo],
   );
   const finalPitchesPacket = useMemo(
-    () => (generated.result ? finalPitchClassesPacket(generated.result, Number(root), instanceId) : undefined),
-    [generated.result, root, instanceId],
+    () =>
+      generated.result ? finalPitchClassesPacket(generated.result, Number(root), instanceId, edo) : undefined,
+    [generated.result, root, instanceId, edo],
   );
 
   const publishedOutputs = useMemo<PublishedCompositionOutput[]>(() => {
@@ -277,8 +282,11 @@ export function ScaleEvolutionModule({
                 <Select
                   size="xs"
                   aria-label="Root pitch class"
-                  data={pitchClassNames.map((name, value) => ({ value: String(value), label: name }))}
-                  value={String(((Number(root) % 12) + 12) % 12)}
+                  data={Array.from({ length: edo }, (_, value) => ({
+                    value: String(value),
+                    label: pitchClassName(value, edo),
+                  }))}
+                  value={String(((Number(root) % edo) + edo) % edo)}
                   onChange={(value) => value !== null && setRoot(Number(value))}
                 />
               </div>

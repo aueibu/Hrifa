@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Anchor, AppShell, Button, Group, Stack, Tabs, Text, Textarea, Title } from '@mantine/core';
+import { ActionIcon, Anchor, AppShell, Button, Group, Stack, Tabs, Text, Textarea, Title } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { ArithmeticModule } from './composition-workbench/components/ArithmeticModule';
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionLaneGrid } from './composition-workbench/components/CompositionLaneGrid';
+import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
 import { FractioningModule } from './composition-workbench/components/FractioningModule';
 import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
 import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
@@ -22,6 +23,7 @@ import {
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from './composition-workbench/compositionRouting';
+import { CompositionSettingsProvider } from './composition-workbench/compositionSettings';
 import {
   acceptsCompositionInspectorTarget,
   acceptsCompositionInstances,
@@ -151,6 +153,7 @@ export function CompositionWorkbenchPage() {
   );
   const [jsonText, setJsonText] = useState('');
   const [managementStatus, setManagementStatus] = useState('');
+  const [settingsOpened, setSettingsOpened] = useState(false);
   const [activeView, setActiveView] = usePersistentState<'composition' | 'construction'>(
     compositionStateKeys.activeView,
     'composition',
@@ -447,6 +450,7 @@ export function CompositionWorkbenchPage() {
   }
 
   return (
+    <CompositionSettingsProvider>
     <AudioEngineProvider>
       <AppShell header={{ height: 56 }} padding="md">
         <AppShell.Header>
@@ -460,9 +464,23 @@ export function CompositionWorkbenchPage() {
                 Composition Workbench
               </Title>
             </Group>
-            <ColorSchemeToggle />
+            <Group gap="xs">
+              <ActionIcon
+                variant="default"
+                size="lg"
+                aria-label="Workbench settings"
+                onClick={() => setSettingsOpened(true)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </ActionIcon>
+              <ColorSchemeToggle />
+            </Group>
           </Group>
         </AppShell.Header>
+        <CompositionSettingsPanel opened={settingsOpened} onClose={() => setSettingsOpened(false)} />
         <AppShell.Main>
           <Stack gap="md">
             {evaluation.errors.map((error) => (
@@ -685,5 +703,6 @@ export function CompositionWorkbenchPage() {
         </AppShell.Main>
       </AppShell>
     </AudioEngineProvider>
+    </CompositionSettingsProvider>
   );
 }
