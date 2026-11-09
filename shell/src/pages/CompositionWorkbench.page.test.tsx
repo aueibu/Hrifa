@@ -537,6 +537,29 @@ describe('CompositionWorkbenchPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('refits the piano roll each time Melodicization is opened', async () => {
+    const user = userEvent.setup();
+    localStorage.removeItem(compositionWorkbenchStorageKey);
+    Object.values(compositionStateKeys).forEach((key) => localStorage.removeItem(key));
+    const framedView = JSON.stringify({
+      pixelsPerQuarter: 40,
+      pixelsPerSemitone: 16,
+      scrollLeft: 120,
+      scrollTop: 300,
+      followPlayback: false,
+      framed: true,
+    });
+    localStorage.setItem(compositionStateKeys.melodicizationPianoRollView, framedView);
+    const view = () =>
+      JSON.parse(localStorage.getItem(compositionStateKeys.melodicizationPianoRollView) ?? '{}');
+    // Stored before mount: rendering the page with another module open keeps the framing.
+    renderPersistedPage();
+    expect(view().framed).toBe(true);
+    await openCompositionModule(user, 'Melodicization');
+    await waitFor(() => expect(view().framed).toBe(false));
+    expect(view().pixelsPerQuarter).toBe(40);
+  });
+
   it('inspects generated pattern provenance', async () => {
     const user = userEvent.setup();
     renderPage();

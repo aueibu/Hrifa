@@ -62,6 +62,8 @@ type InputPort = 'rhythm' | 'pitches';
 export interface MelodicizationModuleProps extends CompositionModuleRoutingProps {
   instanceId: string;
   instanceLabel: string;
+  /** Shown in the workspace. Each time it becomes so, the piano roll refits to the notes. */
+  active?: boolean;
   outputs: PublishedCompositionOutput[];
   routeState: ModuleRouteState;
   onBind(port: InputPort, source: CompositionOutputRef | null): void;
@@ -117,6 +119,7 @@ function compatiblePitches(packet: DataPacket) {
 export function MelodicizationModule({
   instanceId,
   instanceLabel,
+  active = true,
   outputs,
   routeState,
   onBind,
@@ -161,6 +164,13 @@ export function MelodicizationModule({
       );
     }
   );
+  // Opening the module refits the piano roll: clearing `framed` makes PianoRoll fit the notes
+  // as soon as it is visible and measured. Zooming or scrolling afterwards sticks until next time.
+  useEffect(() => {
+    if (active) {
+      setPianoRollView((view) => (view.framed ? { ...view, framed: false } : view));
+    }
+  }, [active, setPianoRollView]);
   const [inspectorExpanded, setInspectorExpanded] = usePersistentState(
     stateKey(compositionStateKeys.melodicizationInspector),
     false,

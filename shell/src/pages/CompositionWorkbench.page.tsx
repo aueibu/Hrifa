@@ -645,6 +645,7 @@ export function CompositionWorkbenchPage() {
                           <MelodicizationModule
                             instanceId={instance.id}
                             instanceLabel={instanceLabel}
+                            active={activeCompositionInstanceId === instance.id}
                             outputs={publishedCompositionOutputs}
                             routeState={routeState}
                             onBind={(port, source) =>
