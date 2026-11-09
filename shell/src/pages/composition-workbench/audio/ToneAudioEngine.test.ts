@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { defaultMusicalTimeline, musicalDuration, musicalPosition } from '../musicalTime';
 import { ToneAudioEngine } from './ToneAudioEngine';
 import type { MusicalPerformancePlan, SecondsPerformancePlan } from './types';
@@ -6,6 +6,7 @@ import type { MusicalPerformancePlan, SecondsPerformancePlan } from './types';
 function createFakeTone() {
   const gains: FakeGain[] = [];
   const instruments: FakePolySynth[] = [];
+  const players: FakePlayer[] = [];
   const scheduled: { callback(time: number): void; time: number }[] = [];
   const transport = {
     PPQ: 960,
@@ -41,6 +42,17 @@ function createFakeTone() {
     }
   }
 
+  class FakePlayer {
+    start = vi.fn();
+    stop = vi.fn();
+    dispose = vi.fn();
+    connect = vi.fn(() => this);
+
+    constructor(public buffer: unknown) {
+      players.push(this);
+    }
+  }
+
   class FakePolySynth {
     triggerAttackRelease = vi.fn();
     releaseAll = vi.fn();
@@ -64,11 +76,22 @@ function createFakeTone() {
       Synth: class {},
       MembraneSynth: class {},
       Ticks: vi.fn((value: number) => value),
-      getContext: vi.fn(() => ({ rawContext: { fake: 'context' } })),
+      Player: FakePlayer,
+      getContext: vi.fn(() => ({
+        sampleRate: 1000,
+        rawContext: {
+          fake: 'context',
+          createBuffer: (_channels: number, length: number) => {
+            const data = [new Float32Array(length), new Float32Array(length)];
+            return { channels: data, getChannelData: (i: number) => data[i] };
+          },
+        },
+      })),
       getTransport: vi.fn(() => transport),
     },
     gains,
     instruments,
+    players,
     scheduled,
     transport,
   };
@@ -117,6 +140,12 @@ function musicalPlan(sourceId: string): MusicalPerformancePlan {
     ],
   };
 }
+
+const library = vi.hoisted(() => ({ voice: vi.fn() }));
+vi.mock('./soundfontLibrary', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./soundfontLibrary')>()),
+  soundfontVoice: library.voice,
+}));
 
 describe('ToneAudioEngine', () => {
   it('schedules plans through shared buses and exposes live session gain', async () => {
@@ -278,6 +307,171 @@ describe('ToneAudioEngine', () => {
     });
   });
 
+  describe('SoundFont voices', () => {
+    const bank = { name: 'fake bank' };
+    const patch = { bankMSB: 0, bankLSB: 0, program: 53, isDrum: false };
+
+    function soundfontPlan(sourceId: string): SecondsPerformancePlan {
+      const base = plan(sourceId);
+      return {
+        ...base,
+        events: [
+          { ...base.events[0], instrumentId: 'sf2:Heaven.sf2%231|0:0:53', pitchMidicents: 6050 },
+          { ...base.events[0], id: 'synth', instrumentId: 'preview.triangle' },
+        ],
+      };
+    }
+
+    function setup() {
+      const fake = createFakeTone();
+      library.voice.mockReturnValue({ fileId: 'Heaven.sf2#1', bank, patch, name: 'Voice Oohs' });
+      const render = vi.fn(async (options: { notes: { at: number }[]; sampleRate: number }) => ({
+        left: new Float32Array(3000).fill(0.25),
+        right: new Float32Array(3000).fill(-0.25),
+        sampleRate: options.sampleRate,
+      }));
+      const engine = new ToneAudioEngine(
+        async () => fake.tone as never,
+        async () => ({}) as never,
+        async () => ({ renderSoundfont: render }) as never
+      );
+      return { fake, engine, render };
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+      library.voice.mockReset();
+    });
+
+    it('renders the SoundFont notes ahead of time and starts the audio with the plan', async () => {
+      const { fake, engine, render } = setup();
+      await engine.play({ plan: soundfontPlan('oohs') });
+
+      expect(render).toHaveBeenCalledOnce();
+      const options = render.mock.calls[0][0] as unknown as {
+        bank: unknown;
+        sampleRate: number;
+        notes: {
+          at: number;
+          durationSeconds: number;
+          midi: number;
+          velocity: number;
+          patch: unknown;
+        }[];
+      };
+      expect(options.bank).toBe(bank);
+      expect(options.sampleRate).toBe(1000);
+      expect(options.notes).toEqual([
+        { at: 0.25, durationSeconds: 0.2, midi: 60.5, velocity: 0.75, patch },
+      ]);
+      // the rendered audio is copied into a stereo buffer and started at the plan's start
+      expect(fake.players).toHaveLength(1);
+      const buffer = fake.players[0].buffer as { channels: Float32Array[] };
+      expect(buffer.channels[0][100]).toBe(0.25);
+      expect(buffer.channels[1][100]).toBe(-0.25);
+      expect(fake.players[0].start).toHaveBeenCalledWith(10.06);
+      engine.dispose();
+    });
+
+    it("still plays the plan's synth notes on voices and leaves the SoundFont notes off them", async () => {
+      const { fake, engine } = setup();
+      await engine.play({ plan: soundfontPlan('oohs') });
+
+      expect(fake.instruments).toHaveLength(1);
+      expect(fake.instruments[0].triggerAttackRelease).toHaveBeenCalledOnce();
+      engine.dispose();
+    });
+
+    it('does not render or build a player for plans without SoundFont notes', async () => {
+      const { fake, engine, render } = setup();
+      await engine.play({ plan: plan('plain') });
+
+      expect(render).not.toHaveBeenCalled();
+      expect(fake.players).toHaveLength(0);
+      engine.dispose();
+    });
+
+    it("converts musical positions to seconds with the plan's tempo and starts on the transport", async () => {
+      const { fake, engine, render } = setup();
+      const base = musicalPlan('musical-oohs');
+      const musical: MusicalPerformancePlan = {
+        ...base,
+        events: [{ ...base.events[0], instrumentId: 'sf2:Heaven.sf2%231|0:0:53' }],
+      };
+      await engine.play({ plan: musical });
+
+      const options = render.mock.calls[0][0] as unknown as {
+        notes: { at: number; durationSeconds: number }[];
+      };
+      // the fixture's event sits half a quarter note in and lasts a quarter note, at the default tempo
+      expect(options.notes[0].at).toBeCloseTo(0.25);
+      expect(options.notes[0].durationSeconds).toBeCloseTo(0.125);
+      // the player waits for the transport's first tick of the plan instead of starting at once
+      expect(fake.players[0].start).not.toHaveBeenCalled();
+      const starter = fake.scheduled.find((entry) => entry.time === 60);
+      expect(starter).toBeDefined();
+      starter!.callback(21);
+      expect(fake.players[0].start).toHaveBeenCalledWith(21);
+      engine.dispose();
+    });
+
+    it('refuses to mix SoundFont notes into a looping plan', async () => {
+      const { engine } = setup();
+      const base = musicalPlan('loop-oohs');
+      const musical: MusicalPerformancePlan = {
+        ...base,
+        events: [{ ...base.events[0], instrumentId: 'sf2:Heaven.sf2%231|0:0:53' }],
+      };
+
+      await expect(engine.play({ plan: musical, loop: true })).rejects.toThrow('looping');
+      expect(engine.playing).toBe(false);
+      engine.dispose();
+    });
+
+    it('says so when the SoundFont file is not open', async () => {
+      const { engine } = setup();
+      library.voice.mockReturnValue(undefined);
+
+      await expect(engine.play({ plan: soundfontPlan('oohs') })).rejects.toThrow('not loaded');
+      expect(engine.playing).toBe(false);
+      engine.dispose();
+    });
+
+    it('lets the rendered release finish playing after the plan ends', async () => {
+      vi.useFakeTimers();
+      const { fake, engine } = setup();
+      await engine.play({ plan: soundfontPlan('oohs') });
+      const bus = fake.gains.find(
+        (gain) => gain.dispose.mock.calls.length === 0 && gain !== fake.gains[0]
+      )!;
+
+      vi.advanceTimersByTime(1400); // plan (1 s) + 0.3 s: the session finishes
+      expect(engine.playing).toBe(false);
+      expect(bus.dispose).not.toHaveBeenCalled();
+      expect(fake.players[0].dispose).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(3000); // the rendered audio is 3 s long
+      expect(bus.dispose).toHaveBeenCalledOnce();
+      expect(fake.players[0].stop).toHaveBeenCalled();
+      expect(fake.players[0].dispose).toHaveBeenCalledOnce();
+    });
+
+    it('fades the audio over a moment when stopped by hand', async () => {
+      vi.useFakeTimers();
+      const { fake, engine } = setup();
+      const session = await engine.play({ plan: soundfontPlan('oohs') });
+      const bus = fake.gains.find((gain) => gain !== fake.gains[0])!;
+
+      session.stop();
+      expect(bus.gain.rampTo).toHaveBeenCalledWith(0, 0.08);
+      expect(fake.players[0].stop).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(200);
+      expect(fake.players[0].stop).toHaveBeenCalled();
+      expect(bus.dispose).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('sampled instruments', () => {
     function createFakeSmplr(options: { failFirst?: boolean } = {}) {
       const instruments: {
@@ -391,6 +585,72 @@ describe('ToneAudioEngine', () => {
       await expect(engine.play({ plan: orphan })).rejects.toThrow('not loaded');
       expect(engine.playing).toBe(false);
       engine.dispose();
+    });
+
+    describe('release tails', () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      async function startPiano(fake: ReturnType<typeof createFakeTone>, sourceId = 'piano-a') {
+        const { smplr, instruments } = createFakeSmplr();
+        const engine = new ToneAudioEngine(
+          async () => fake.tone as never,
+          async () => smplr as never
+        );
+        const session = await engine.play({ plan: sampledPlan(sourceId) });
+        // gains: the master, then the instrument's own output, then the session's bus
+        return { engine, session, instruments, out: fake.gains[1], bus: fake.gains[2] };
+      }
+
+      it('lets the release of a finished plan ring out before taking its bus down', async () => {
+        vi.useFakeTimers();
+        const fake = createFakeTone();
+        const { engine, bus, out, instruments } = await startPiano(fake);
+
+        // the plan is one second long; it finishes 0.3 s later
+        vi.advanceTimersByTime(1400);
+        expect(engine.playing).toBe(false);
+        expect(bus.dispose).not.toHaveBeenCalled();
+        expect(out.disconnect).toHaveBeenCalledTimes(1); // only the initial re-route
+
+        vi.advanceTimersByTime(4600);
+        expect(bus.dispose).toHaveBeenCalledOnce();
+        expect(out.disconnect).toHaveBeenCalledTimes(2);
+        expect(instruments[0].stop).toHaveBeenCalledOnce();
+      });
+
+      it('fades sampled voices over a moment when a session is stopped by hand', async () => {
+        vi.useFakeTimers();
+        const fake = createFakeTone();
+        const { session, bus } = await startPiano(fake);
+
+        session.stop();
+        expect(bus.gain.rampTo).toHaveBeenCalledWith(0, 0.08);
+        expect(bus.dispose).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(200);
+        expect(bus.dispose).toHaveBeenCalledOnce();
+      });
+
+      it('does not stop the notes of a newer session when an older session finishes tearing down', async () => {
+        vi.useFakeTimers();
+        const fake = createFakeTone();
+        const { smplr, instruments } = createFakeSmplr();
+        const engine = new ToneAudioEngine(
+          async () => fake.tone as never,
+          async () => smplr as never
+        );
+        const first = await engine.play({ plan: sampledPlan('piano-a') });
+        first.stop();
+        await engine.play({ plan: sampledPlan('piano-a') });
+
+        vi.advanceTimersByTime(300);
+        // the first session's teardown ran, but the output now belongs to the second session
+        expect(instruments[0].stop).not.toHaveBeenCalled();
+        expect(engine.playing).toBe(true);
+        engine.dispose();
+      });
     });
 
     it('never loads the sampler for synth-only plans', async () => {

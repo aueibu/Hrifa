@@ -131,3 +131,6 @@ storybook-static
 .pnp.*
 
 .DS_Store
+
+# Large SoundFonts served by the dev server only
+local-soundfonts/

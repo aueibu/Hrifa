@@ -4,6 +4,10 @@ import { Anchor, AppShell, Group, Tabs, Text, Title } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
+import {
+  hasSoundfontVoice,
+  isSoundfontVoice,
+} from './composition-workbench/audio/soundfontLibrary';
 import { noteNames, chordsOf } from './scale-explorer/chords';
 import { CompareTab, type CompareEntry } from './scale-explorer/components/CompareTab';
 import { EditVectorTab } from './scale-explorer/components/EditVectorTab';
@@ -27,6 +31,7 @@ import {
 } from './scale-explorer/components/SummaryPanel';
 import {
   chordScript,
+  DEFAULT_VOICE,
   scaleScript,
   type ChordItem,
   type ChordStyle,
@@ -75,6 +80,11 @@ function ScaleExplorer() {
   const [lastRoot, setLastRoot] = useState(0);
   const { playingKey, now, context, loading, error, start, stop } = useScalePlayback();
   const soundfont = useSoundfont();
+  // a remembered SoundFont voice plays on the default synth until its file is open again
+  const voice =
+    isSoundfontVoice(settings.voice) && !hasSoundfontVoice(settings.voice)
+      ? DEFAULT_VOICE
+      : settings.voice;
 
   useEffect(() => saveSettings(settings), [settings]);
 
@@ -224,7 +234,7 @@ function ScaleExplorer() {
         dot = at >= 0 ? at + 1 : null;
       }
     }
-    void start(key, scaleScript([{ modeIndex: -1, root: rootOf(s0), z }], settings.voice), dot);
+    void start(key, scaleScript([{ modeIndex: -1, root: rootOf(s0), z }], voice), dot);
   };
 
   const playMode = (idx: number) => {
@@ -238,7 +248,7 @@ function ScaleExplorer() {
     const m = view.view[idx];
     void start(
       modePlayKey(idx),
-      scaleScript([{ modeIndex: idx, root: rootOf(m.abs[0]), z: m.z }], settings.voice)
+      scaleScript([{ modeIndex: idx, root: rootOf(m.abs[0]), z: m.z }], voice)
     );
   };
 
@@ -254,7 +264,7 @@ function ScaleExplorer() {
       'all',
       scaleScript(
         view.view.map((m, i) => ({ modeIndex: i, root: rootOf(m.abs[0]), z: m.z })),
-        settings.voice
+        voice
       )
     );
   };
@@ -285,7 +295,7 @@ function ScaleExplorer() {
       // close the run on the first chord, an octave up
       items.push({ ...items[0], midis: items[0].midis.map((x) => x + 12) });
     }
-    void start(key, chordScript(items, settings.chordStyle as ChordStyle, settings.voice));
+    void start(key, chordScript(items, settings.chordStyle as ChordStyle, voice));
   };
 
   const copy = async () => {
@@ -388,7 +398,6 @@ function ScaleExplorer() {
               loading={loading}
               error={error}
               soundfont={soundfont}
-              onOpenSoundfont={(file) => void soundfont.open(file)}
               onDroneOn={setDroneOn}
               onPlayAll={playAll}
               set={set}

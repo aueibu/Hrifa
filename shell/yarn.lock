@@ -3423,7 +3423,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fflate@npm:~0.8.2":
+"fflate@npm:0.8.3, fflate@npm:~0.8.2":
   version: 0.8.3
   resolution: "fflate@npm:0.8.3"
   checksum: 10c0/eab181ca37f5348ae76d4b6f840e0026e30220e33153289ac942222d8b9638237d486507dbcc09878d724095bd354993a2ee48bbee99c8f2c6440d4448719aa7
@@ -4349,7 +4349,7 @@ __metadata:
     react-dom: "npm:^19.2.0"
     react-router-dom: "npm:^7.9.4"
     smplr: "npm:^1.0.0"
-    soundfont2: "npm:^0.5.0"
+    spessasynth_core: "npm:^4.4.9"
     storybook: "npm:^10.0.0"
     stylelint: "npm:^17.0.0"
     stylelint-config-standard-scss: "npm:^17.0.0"
@@ -5752,13 +5752,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"soundfont2@npm:^0.5.0":
-  version: 0.5.0
-  resolution: "soundfont2@npm:0.5.0"
-  checksum: 10c0/38af85d58e9ca2a1173ee17f7b925fb898b9874b471734ab6b2b17200db876ff4bcd8e5fb2092b20306d4675ea9f8dd590f1208d978330553a564b362e17bb9c
-  languageName: node
-  linkType: hard
-
 "source-map-js@npm:^1.0.1":
   version: 1.0.2
   resolution: "source-map-js@npm:1.0.2"
@@ -5777,6 +5770,16 @@ __metadata:
   version: 0.6.1
   resolution: "source-map@npm:0.6.1"
   checksum: 10c0/ab55398007c5e5532957cb0beee2368529618ac0ab372d789806f5718123cc4367d57de3904b4e6a4170eb5a0b0f41373066d02ca0735a0c4d75c7d328d3e011
+  languageName: node
+  linkType: hard
+
+"spessasynth_core@npm:^4.4.9":
+  version: 4.4.9
+  resolution: "spessasynth_core@npm:4.4.9"
+  dependencies:
+    fflate: "npm:0.8.3"
+    stb-vorbis: "npm:latest"
+  checksum: 10c0/01e9d79cd4ef09375adec4e6745fab931330bb4aacec0706343e466d41b4f5d5249c3ac58d55a0b6426bf6a079d8bdae8053ffe23d83e592010485376d43411a
   languageName: node
   linkType: hard
 
@@ -5804,6 +5807,13 @@ __metadata:
     automation-events: "npm:^7.0.9"
     tslib: "npm:^2.7.0"
   checksum: 10c0/41d5e3a64b881691fecd709313045ab9bddb864ed79c6eb51490056cec080e808e9f5b3ef94d734567b9da88f9c95e68cc63a3a0343374b2f865b1a961fb46ef
+  languageName: node
+  linkType: hard
+
+"stb-vorbis@npm:latest":
+  version: 0.0.7
+  resolution: "stb-vorbis@npm:0.0.7"
+  checksum: 10c0/7f68fd0f014f83487032b58ffb3ec2c8fe1a2de3b560939b6dc86d94a6a68a59076606bec17d5ed670f370d6e0ae9aa757b88093d8183335c8ebc94e75340a69
   languageName: node
   linkType: hard
 

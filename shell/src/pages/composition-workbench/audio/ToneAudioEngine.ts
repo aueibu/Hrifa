@@ -1,4 +1,3 @@
-import type { SmplrPreset } from 'smplr';
 import type { Gain, PolySynth } from 'tone';
 import { volumePercentToGain } from '../audio';
 import {
@@ -23,8 +22,8 @@ import {
   type TransportSettings,
 } from '../transport';
 import { instrumentDefinition, type SampledInstrumentDefinition } from './instrumentRegistry';
-import { soundfontPreset } from './soundfontLibrary';
-import { presetToSmplr } from './soundfontPreset';
+import { soundfontVoice } from './soundfontLibrary';
+import type { SoundfontNote } from './soundfontSynth';
 import type {
   AudioEngine,
   InstrumentId,
@@ -40,6 +39,12 @@ import type {
 
 type ToneModule = typeof import('tone');
 type SamplerModule = typeof import('smplr');
+type SoundfontRenderer = typeof import('./soundfontSynth');
+
+/** Longest release a sampled voice is allowed to ring (the sampled players clamp their releases to this). */
+const SAMPLED_TAIL_SECONDS = 4.5;
+/** When a session is stopped by hand, sampled voices fade over this long instead of being cut. */
+const STOP_FADE_SECONDS = 0.08;
 
 /** What the engine needs from any voice, whether synthesized or sampled. */
 interface Voice {
@@ -51,6 +56,11 @@ interface Voice {
   ): void;
   releaseAll(): void;
   dispose(): void;
+  /**
+   * Sampled voices keep ringing after their last note ends. When a session finishes on its own, its buses
+   * stay up this long so a note's release plays out instead of being cut at the plan's end.
+   */
+  tailSeconds?: number;
 }
 
 /**
@@ -73,6 +83,8 @@ interface SampleVoice {
 interface SampledEntry {
   out: Gain;
   instrument: SampleVoice;
+  /** The session bus `out` currently feeds. */
+  bus?: Gain;
 }
 
 interface ActiveSession {
@@ -101,6 +113,17 @@ function clampGain(gain: number) {
   return Math.max(0, Math.min(1, gain));
 }
 
+/** A SoundFont note is rendered ahead of time rather than triggered on a voice. */
+const isSoundfontEvent = (event: PerformanceEvent) =>
+  instrumentDefinition(event.instrumentId).kind === 'soundfont';
+
+interface SoundfontPlayback {
+  busId: string;
+  buffer: AudioBuffer;
+  /** Length of the rendered audio, which includes the notes' release tails. */
+  seconds: number;
+}
+
 function isSecondsPlan(plan: PerformancePlan): plan is SecondsPerformancePlan {
   return plan.timebase.kind === 'seconds';
 }
@@ -117,7 +140,9 @@ export class ToneAudioEngine implements AudioEngine {
 
   constructor(
     private readonly loadTone: () => Promise<ToneModule> = () => import('tone'),
-    private readonly loadSampler: () => Promise<SamplerModule> = () => import('smplr')
+    private readonly loadSampler: () => Promise<SamplerModule> = () => import('smplr'),
+    private readonly loadSoundfontRenderer: () => Promise<SoundfontRenderer> = () =>
+      import('./soundfontSynth')
   ) {}
 
   get playing() {
@@ -183,6 +208,10 @@ export class ToneAudioEngine implements AudioEngine {
     }
     const tone = await this.ensureReady();
     await this.loadSampledVoices(tone, request.plan);
+    const soundfonts = await this.renderSoundfontEvents(tone, request.plan);
+    if (original.loop && soundfonts.length) {
+      throw new Error('SoundFont voices cannot be used in a looping plan yet.');
+    }
     const id = sessionId(request.plan.sourceId);
     const state: ActiveSession = {
       id,
@@ -203,9 +232,14 @@ export class ToneAudioEngine implements AudioEngine {
     this.sessions.set(id, state);
     this.notify();
 
+    const players = soundfonts.map((playback, index) =>
+      this.addSoundfontPlayer(tone, state, playback, index, request.busGains)
+    );
     if (isSecondsPlan(request.plan)) {
       const start = tone.now() + 0.06;
-      [...request.plan.events]
+      players.forEach((player) => player.start(start));
+      request.plan.events
+        .filter((event) => !isSoundfontEvent(event))
         .sort((left, right) => left.atSeconds - right.atSeconds)
         .forEach((event) => this.scheduleSecondsEvent(tone, state, event, start, request.busGains));
 
@@ -222,7 +256,18 @@ export class ToneAudioEngine implements AudioEngine {
             length: (original.plan as MusicalPerformancePlan).duration.quarterNotes,
           }
         : undefined;
-      this.scheduleMusicalPlan(tone, state, request.plan, request.busGains, loop);
+      const playable = {
+        ...request.plan,
+        events: request.plan.events.filter((event) => !isSoundfontEvent(event)),
+      };
+      this.scheduleMusicalPlan(tone, state, playable, request.busGains, loop, (baseTicks) =>
+        players.forEach((player) => {
+          const scheduleId = tone
+            .getTransport()
+            .schedule((time) => player.start(time), tone.Ticks(baseTicks));
+          state.transportScheduleIds.push(scheduleId);
+        })
+      );
     }
 
     return {
@@ -277,24 +322,10 @@ export class ToneAudioEngine implements AudioEngine {
           const definition = instrumentDefinition(id) as SampledInstrumentDefinition;
           const out = new tone.Gain(1);
           const destination = out.input as unknown as AudioNode;
-          let instrument: SampleVoice;
-          if (definition.file) {
-            const preset = soundfontPreset(id);
-            if (!preset) {
-              out.dispose();
-              throw new Error('The SoundFont for this sound is not loaded. Open the file again.');
-            }
-            // a preset of a file the user opened: build its regions and buffers ourselves
-            instrument = smplr.Instrument<object>((ctx, _options, plugin) => {
-              const { json, buffers } = presetToSmplr(preset, ctx);
-              return plugin.loadInstrument(json as unknown as SmplrPreset, buffers);
-            })(context, { destination });
-          } else {
-            instrument = smplr.Soundfont(context, {
-              instrument: definition.soundfont,
-              destination,
-            });
-          }
+          const instrument: SampleVoice = smplr.Soundfont(context, {
+            instrument: definition.soundfont,
+            destination,
+          });
           entry = { out, instrument };
           this.sampled.set(id, entry);
         }
@@ -308,6 +339,94 @@ export class ToneAudioEngine implements AudioEngine {
         }
       })
     );
+  }
+
+  /**
+   * Render every SoundFont note of the plan to audio, one buffer per bus. The synthesizer runs ahead of
+   * playback, so this finishes before the session is created and scheduling never waits on it.
+   */
+  private async renderSoundfontEvents(
+    tone: ToneModule,
+    plan: PerformancePlan
+  ): Promise<SoundfontPlayback[]> {
+    const events = plan.events.filter(isSoundfontEvent);
+    if (!events.length) {
+      return [];
+    }
+    const groups = new Map<
+      string,
+      {
+        busId: string;
+        voice: NonNullable<ReturnType<typeof soundfontVoice>>;
+        notes: SoundfontNote[];
+      }
+    >();
+    const tempoMap = isSecondsPlan(plan) ? undefined : plan.timebase.timeline.tempoMap;
+    events.forEach((event) => {
+      const voice = soundfontVoice(event.instrumentId);
+      if (!voice) {
+        throw new Error('The SoundFont for this sound is not loaded. Open the file again.');
+      }
+      const key = `${voice.fileId}|${event.busId}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = { busId: event.busId, voice, notes: [] };
+        groups.set(key, group);
+      }
+      let at: number;
+      let durationSeconds: number;
+      if ('atSeconds' in event) {
+        at = event.atSeconds;
+        durationSeconds = event.durationSeconds;
+      } else {
+        at = musicalPositionToSeconds(event.at, tempoMap!);
+        durationSeconds =
+          musicalPositionToSeconds(addDuration(event.at, event.duration), tempoMap!) - at;
+      }
+      group.notes.push({
+        at,
+        durationSeconds,
+        midi: event.pitchMidicents / 100,
+        velocity: Math.max(0, Math.min(1, event.velocity)),
+        patch: voice.patch,
+      });
+    });
+    const renderer = await this.loadSoundfontRenderer();
+    const context = tone.getContext();
+    const sampleRate = context.sampleRate;
+    return Promise.all(
+      [...groups.values()].map(async (group) => {
+        const rendered = await renderer.renderSoundfont({
+          bank: group.voice.bank,
+          notes: group.notes,
+          sampleRate,
+        });
+        const buffer = context.rawContext.createBuffer(2, rendered.left.length, sampleRate);
+        buffer.getChannelData(0).set(rendered.left);
+        buffer.getChannelData(1).set(rendered.right);
+        return { busId: group.busId, buffer, seconds: rendered.left.length / sampleRate };
+      })
+    );
+  }
+
+  /** Put a rendered SoundFont buffer on its bus. The session owns the player and its tail. */
+  private addSoundfontPlayer(
+    tone: ToneModule,
+    session: ActiveSession,
+    playback: SoundfontPlayback,
+    index: number,
+    initialGains: Record<string, number> | undefined
+  ) {
+    const bus = this.getBus(tone, session, playback.busId, initialGains?.[playback.busId] ?? 1);
+    const player = new tone.Player(playback.buffer).connect(bus) as import('tone').Player;
+    session.instruments.set(`soundfont:${index}`, {
+      triggerAttackRelease: () => undefined,
+      releaseAll: () => player.stop(),
+      dispose: () => player.dispose(),
+      // the rendered audio already holds the release tails; let a finished plan play them out
+      tailSeconds: playback.seconds,
+    });
+    return player;
   }
 
   private async ensureReady() {
@@ -338,7 +457,8 @@ export class ToneAudioEngine implements AudioEngine {
     session: ActiveSession,
     plan: MusicalPerformancePlan,
     initialGains: Record<string, number> | undefined,
-    loop?: { start: Rational; length: Rational }
+    loop?: { start: Rational; length: Rational },
+    onBaseTicks?: (baseTicks: number) => void
   ) {
     if (compareRational(plan.duration.quarterNotes, rational(0)) <= 0) {
       throw new Error('A musical performance plan requires a positive duration.');
@@ -410,6 +530,8 @@ export class ToneAudioEngine implements AudioEngine {
       session.transportScheduleIds.push(scheduleId);
     });
 
+    onBaseTicks?.(baseTicks);
+
     [...plan.events]
       .sort(
         (left, right) =>
@@ -479,8 +601,11 @@ export class ToneAudioEngine implements AudioEngine {
         if (!entry) {
           throw new Error(`Sampled instrument ${event.instrumentId} was not loaded.`);
         }
+        // Re-route the shared output to this session's bus. A tail still ringing from an earlier session keeps
+        // sounding, now through this bus.
         entry.out.disconnect();
         entry.out.connect(bus);
+        entry.bus = bus;
         const voice: Voice = {
           triggerAttackRelease: (frequency, durationSeconds, time, velocity) => {
             const midi = 69 + 12 * Math.log2(frequency / 440);
@@ -493,11 +618,25 @@ export class ToneAudioEngine implements AudioEngine {
               velocity: Math.round(velocity * 127),
             });
           },
-          releaseAll: () => entry.instrument.stop(),
-          dispose: () => entry.out.disconnect(),
+          // only stop and unplug while this session still owns the output; a later session may have taken it
+          releaseAll: () => {
+            if (entry.bus === bus) {
+              entry.instrument.stop();
+            }
+          },
+          dispose: () => {
+            if (entry.bus === bus) {
+              entry.out.disconnect();
+              entry.bus = undefined;
+            }
+          },
+          tailSeconds: SAMPLED_TAIL_SECONDS,
         };
         session.instruments.set(instrumentKey, voice);
         return voice;
+      }
+      if (definition.kind === 'soundfont') {
+        throw new Error('SoundFont notes are rendered ahead of time, not triggered on a voice.');
       }
       instrument = (
         definition.kind === 'membrane'
@@ -548,11 +687,35 @@ export class ToneAudioEngine implements AudioEngine {
     if (session.looping && transport) {
       transport.loop = false;
     }
+    // Synth voices are released and disposed at once. Sampled voices ring on: after a natural finish their
+    // release tails get time to play out, and after a manual stop they fade quickly, instead of being cut.
+    const ringing: Voice[] = [];
     session.instruments.forEach((instrument) => {
-      instrument.releaseAll();
-      instrument.dispose();
+      if (instrument.tailSeconds === undefined) {
+        instrument.releaseAll();
+        instrument.dispose();
+      } else {
+        ringing.push(instrument);
+      }
     });
-    session.buses.forEach((bus) => bus.dispose());
+    const buses = [...session.buses.values()];
+    if (ringing.length === 0) {
+      buses.forEach((bus) => bus.dispose());
+    } else {
+      if (!completed) {
+        buses.forEach((bus) => bus.gain.rampTo(0, STOP_FADE_SECONDS));
+      }
+      const wait = completed
+        ? Math.max(...ringing.map((voice) => voice.tailSeconds ?? 0))
+        : STOP_FADE_SECONDS + 0.04;
+      globalThis.setTimeout(() => {
+        ringing.forEach((voice) => {
+          voice.releaseAll();
+          voice.dispose();
+        });
+        buses.forEach((bus) => bus.dispose());
+      }, wait * 1000);
+    }
     this.sessions.delete(id);
     if (completed) {
       session.onComplete?.();

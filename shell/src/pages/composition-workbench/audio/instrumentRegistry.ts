@@ -25,13 +25,24 @@ export interface SampledInstrumentDefinition {
   id: InstrumentId;
   kind: 'sampled';
   label: string;
-  /** The General MIDI patch name; empty for a voice from a SoundFont file. */
+  /** The General MIDI patch name. */
   soundfont: string;
-  /** True for a preset of a SoundFont file the user opened (the preset comes from soundfontLibrary.ts). */
-  file?: boolean;
 }
 
-export type InstrumentDefinition = SynthInstrumentDefinition | SampledInstrumentDefinition;
+/**
+ * A preset of a SoundFont file the user opened (see soundfontLibrary.ts). It is played by a full SoundFont
+ * synthesizer that renders a plan's notes ahead of time (soundfontSynth.ts), not note by note.
+ */
+export interface SoundfontInstrumentDefinition {
+  id: InstrumentId;
+  kind: 'soundfont';
+  label: string;
+}
+
+export type InstrumentDefinition =
+  | SynthInstrumentDefinition
+  | SampledInstrumentDefinition
+  | SoundfontInstrumentDefinition;
 
 export const instrumentRegistry: Record<StaticInstrumentId, InstrumentDefinition> = {
   'preview.sine': {
@@ -134,7 +145,7 @@ export const sampledInstruments = Object.values(instrumentRegistry).filter(
 /** The definition for any instrument id, including voices from opened SoundFont files. */
 export function instrumentDefinition(id: InstrumentId): InstrumentDefinition {
   if (id.startsWith('sf2:')) {
-    return { id, kind: 'sampled', label: 'SoundFont', soundfont: '', file: true };
+    return { id, kind: 'soundfont', label: 'SoundFont' };
   }
   return instrumentRegistry[id as StaticInstrumentId];
 }

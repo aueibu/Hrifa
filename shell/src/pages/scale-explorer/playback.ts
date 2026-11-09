@@ -29,7 +29,11 @@ export const VOICE_CHOICES = [
   },
 ];
 
+/** A voice from a SoundFont file: `sf2:<file>|<bank msb>:<bank lsb>:<program>` (the file itself is opened separately). */
+const SOUNDFONT_VOICE = /^sf2:[^|]+\|\d+:\d+:\d+$/;
+
 export const isVoice = (value: unknown): value is InstrumentId =>
+  (typeof value === 'string' && SOUNDFONT_VOICE.test(value)) ||
   VOICE_CHOICES.some((g) => g.items.some((i) => i.value === value));
 
 export const isSampledVoice = (id: InstrumentId) =>
@@ -106,6 +110,14 @@ function newPlan(sourceId: string): SecondsPerformancePlan {
   };
 }
 
+/**
+ * Synth and sampled voices take the level as a gain (0.4 is a comfortable note), but a SoundFont preset reads it
+ * as MIDI velocity, where a low value means a soft, dull, quiet note by design. Shift SoundFont voices up to a
+ * normal playing velocity, keeping the same differences between notes, arpeggios, and chords.
+ */
+const levelFor = (instrumentId: InstrumentId, gain: number) =>
+  instrumentId.startsWith('sf2:') ? Math.min(1, 0.4 + gain) : gain;
+
 function noteEvent(
   plan: SecondsPerformancePlan,
   midi: number,
@@ -117,7 +129,7 @@ function noteEvent(
   const event: SecondsPerformanceEvent = {
     id: `${plan.sourceId}:${plan.events.length}`,
     pitchMidicents: midicents(midi),
-    velocity,
+    velocity: levelFor(instrumentId, velocity),
     instrumentId,
     busId: NOTE_BUS,
     provenance: [],

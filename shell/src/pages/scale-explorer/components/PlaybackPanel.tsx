@@ -14,7 +14,7 @@ import {
 } from '../playback';
 import type { PlayAs, Settings } from '../settings';
 import { PLAYBACK_HINT } from '../texts';
-import type { SoundfontState } from '../useSoundfont';
+import type { useSoundfont } from '../useSoundfont';
 
 interface PlaybackPanelProps {
   settings: Settings;
@@ -25,8 +25,7 @@ interface PlaybackPanelProps {
   loading: boolean;
   /** Why the last playback could not start, if it could not. */
   error: string | null;
-  soundfont: SoundfontState;
-  onOpenSoundfont: (file: File) => void;
+  soundfont: ReturnType<typeof useSoundfont>;
   onDroneOn: (on: boolean) => void;
   onPlayAll: () => void;
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
@@ -40,7 +39,6 @@ export function PlaybackPanel({
   loading,
   error,
   soundfont,
-  onOpenSoundfont,
   onDroneOn,
   onPlayAll,
   set,
@@ -49,22 +47,36 @@ export function PlaybackPanel({
   const chosen = parseSoundfontVoice(settings.voice);
   const chosenPreset =
     fileInfo && chosen?.fileId === fileInfo.id
-      ? fileInfo.presets.find((p) => p.bank === chosen.bank && p.program === chosen.program)
+      ? fileInfo.presets.find(
+          (p) =>
+            p.bank === chosen.bank && p.bankLSB === chosen.bankLSB && p.program === chosen.program
+        )
       : undefined;
-  const soundData = chosenPreset
-    ? [
-        ...VOICE_CHOICES,
-        { group: 'SoundFont', items: [{ value: settings.voice, label: chosenPreset.name }] },
-      ]
-    : VOICE_CHOICES;
+  // a SoundFont voice remembered from an earlier visit shows while its file is not open yet
+  const pendingVoice = chosen && !chosenPreset;
+  const soundData =
+    chosenPreset || pendingVoice
+      ? [
+          ...VOICE_CHOICES,
+          {
+            group: 'SoundFont',
+            items: [
+              {
+                value: settings.voice,
+                label: chosenPreset ? chosenPreset.name : 'SoundFont (open the file to use)',
+              },
+            ],
+          },
+        ]
+      : VOICE_CHOICES;
   const presetData = fileInfo
     ? [...new Set(fileInfo.presets.map((p) => p.bank))].map((bank) => ({
-        group: bank === 0 ? 'General MIDI (bank 0)' : `Bank ${bank}`,
+        group: bank === 128 ? 'Drum kits' : bank === 0 ? 'General MIDI (bank 0)' : `Bank ${bank}`,
         items: fileInfo.presets
           .filter((p) => p.bank === bank)
           .map((p) => ({
-            value: soundfontVoiceId(fileInfo.id, p.bank, p.program),
-            label: `${String(p.program + 1).padStart(3, '0')} ${p.name}`,
+            value: soundfontVoiceId(fileInfo.id, p),
+            label: `${String(p.program + 1).padStart(3, '0')}${p.bankLSB ? `.${p.bankLSB}` : ''} ${p.name}`,
           })),
       }))
     : [];
@@ -136,13 +148,39 @@ export function PlaybackPanel({
             data={soundData}
             onChange={(v) => v && set('voice', v as InstrumentId)}
           />
-          <FileButton accept=".sf2" onChange={(file) => file && onOpenSoundfont(file)}>
-            {(props) => (
-              <Button size="xs" variant="default" loading={soundfont.loading} {...props}>
-                Open SoundFont…
+          {soundfont.canRemember ? (
+            <Button
+              size="xs"
+              variant="default"
+              loading={soundfont.loading}
+              onClick={() => void soundfont.pick()}
+            >
+              Open SoundFont…
+            </Button>
+          ) : (
+            <FileButton accept=".sf2" onChange={(file) => file && void soundfont.openFile(file)}>
+              {(props) => (
+                <Button size="xs" variant="default" loading={soundfont.loading} {...props}>
+                  Open SoundFont…
+                </Button>
+              )}
+            </FileButton>
+          )}
+          {soundfont.remembered && !fileInfo && (
+            <Group gap={4}>
+              <Button
+                size="xs"
+                variant="light"
+                loading={soundfont.loading}
+                onClick={() => void soundfont.reconnect()}
+              >
+                Reconnect {soundfont.remembered.name}
               </Button>
-            )}
-          </FileButton>
+              <Button size="xs" variant="subtle" onClick={() => void soundfont.forget()}>
+                Forget
+              </Button>
+            </Group>
+          )}
           {fileInfo && (
             <Select
               size="xs"
@@ -186,7 +224,12 @@ export function PlaybackPanel({
         {fileInfo && (
           <Text size="xs" c="dimmed">
             {fileInfo.fileName} ({Math.round(fileInfo.sizeBytes / 1048576)} MB). Samples load per
-            preset the first time it plays, and the file is forgotten when the page reloads.
+            preset the first time it plays.{' '}
+            {soundfont.source === 'local-folder'
+              ? 'It comes from the dev server’s local folder, so it loads again by itself after a reload.'
+              : soundfont.canRemember
+                ? 'The browser remembers this file, so after a reload use Reconnect.'
+                : 'This browser cannot remember the file, so open it again after a reload.'}
           </Text>
         )}
         {loading && (
