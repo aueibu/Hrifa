@@ -15,6 +15,7 @@ import {
 import { Surface } from '../../../components/Surface/Surface';
 import { volumePercentToGain } from '../audio';
 import { createInterferencePreviewPlan, GROUPING_BUS } from '../audio/performancePlans';
+import { transportRhythmContext } from '../rhythmRealization';
 import type {
   CompositionModuleRoutingProps,
   PublishedCompositionOutput,
@@ -239,7 +240,6 @@ export function InterferenceModule({
     if (!generated.result) {
       return;
     }
-    const unitSeconds = pulseSeconds(settings.transport);
     const previewEvents = generatorAttackCount(patterns, generated.result.recurrence);
     if (previewEvents > MAX_PREVIEW_EVENTS) {
       preview.setStatus(
@@ -247,8 +247,9 @@ export function InterferenceModule({
       );
       return;
     }
-    const totalSeconds = generated.result.recurrence * unitSeconds;
+    const totalSeconds = generated.result.recurrence * pulseSeconds(settings.transport);
     const plan = createInterferencePreviewPlan({
+      ...transportRhythmContext(settings.transport),
       sourceId: instanceId,
       patterns,
       sounds: drafts.map((draft, index) =>
@@ -256,7 +257,6 @@ export function InterferenceModule({
       ),
       groupingSound: layerSound(settings.sounds.metronome, 2),
       result: generated.result,
-      unitSeconds,
       grouping,
     });
     void preview.play(

@@ -1,5 +1,4 @@
 import {
-  generatorAttackTimes,
   metronomeGridClicks,
   type GroupingOption,
   type InterferenceResult,
@@ -9,13 +8,19 @@ import type { DataPacket, Provenance } from "../model";
 import {
   addDuration,
   compareRational,
+  multiplyRational,
   musicalDuration,
+  rational,
+  subtractRational,
+  type MusicalDuration,
   type MusicalTimeline,
 } from "../musicalTime";
 import { pitchFrequency } from "../pitch";
+import { createRhythmPreviewPlan } from "../rhythmRealization";
 import type { ResolvedSound } from "../sounds";
 import type {
   InstrumentId,
+  MusicalPerformanceEvent,
   MusicalPerformancePlan,
   SecondsPerformanceEvent,
   SecondsPerformancePlan,
@@ -91,157 +96,95 @@ export function createPitchPreviewPlan({
   };
 }
 
+/**
+ * Interference's preview in musical time: each generator is a cyclic inter-onset rhythm realized
+ * through the shared rhythm realization (rhythmRealization.ts), unrolled over the resultant's
+ * recurrence, plus the grouping click on its own bus. The click lengths are musical, not
+ * wall-clock: an accented click is a 1/16 of a quarter note, an unaccented one a 1/32.
+ */
 export function createInterferencePreviewPlan({
   sourceId,
   patterns,
   sounds,
   result,
-  unitSeconds,
+  pulseUnit,
+  timeline,
   grouping,
   groupingSound = { instrumentId: "sound.click", pitchMidicents: frequencyToMidicents(2400) },
+  gatePercent,
 }: {
   sourceId: string;
   patterns: number[][];
   /** One per generator (see sounds.ts layerSound). */
   sounds: ResolvedSound[];
   result: InterferenceResult;
-  unitSeconds: number;
+  /** Musical length of one pulse (the transport's pulse value). */
+  pulseUnit: MusicalDuration;
+  timeline: MusicalTimeline;
   grouping?: GroupingOption;
   /** The metronome's tertiary voice. */
   groupingSound?: ResolvedSound;
-}): SecondsPerformancePlan {
-  const generatorEvents = patterns.flatMap((pattern, generatorIndex) =>
-    generatorAttackTimes(pattern, result.recurrence).map(
-      (time): SecondsPerformanceEvent => ({
-        id: `${sourceId}:generator:${generatorIndex}:attack:${time}`,
-        atSeconds: time * unitSeconds,
-        durationSeconds: Math.min(0.12, unitSeconds * 0.85),
-        pitchMidicents: sounds[generatorIndex].pitchMidicents,
-        velocity: 1,
-        instrumentId: sounds[generatorIndex].instrumentId,
-        busId: "preview",
-        provenance: [
-          {
-            sourceModuleInstance: sourceId,
-            sourceItemIds: [`generator:${generatorIndex}`],
-            transformation: "realize-generator-attack",
-            parameters: { time, unitSeconds },
-          },
-        ],
-      }),
-    ),
-  );
+  gatePercent?: number;
+}): MusicalPerformancePlan {
+  const generators = createRhythmPreviewPlan({
+    sourceId,
+    pulseUnit,
+    timeline,
+    gatePercent,
+    layers: patterns.map((pattern, index) => {
+      const period = pattern.reduce((total, duration) => total + duration, 0);
+      const repeats = period > 0 ? Math.round(result.recurrence / period) : 0;
+      return {
+        layerId: `generator:${index}`,
+        steps: Array.from({ length: repeats }, () => pattern).flat().map((duration) => ({ duration })),
+        sound: sounds[index],
+      };
+    }),
+  });
+  const end = multiplyRational(pulseUnit.quarterNotes, result.recurrence);
+  const duration = compareRational(generators.duration.quarterNotes, end) > 0
+    ? generators.duration.quarterNotes
+    : end;
   const metronomeEvents = grouping
-    ? metronomeGridClicks(result.recurrence, grouping.units).map(
-        ({ time, accented }): SecondsPerformanceEvent => ({
-          id: `${sourceId}:grouping:${time}`,
-          atSeconds: time * unitSeconds,
-          durationSeconds: accented ? 0.04 : 0.02,
-          // Every grid unit ticks lightly; each group's start is louder.
-          pitchMidicents: groupingSound.pitchMidicents,
-          velocity: accented ? 0.8 : 0.3,
-          instrumentId: groupingSound.instrumentId,
-          busId: GROUPING_BUS,
-          provenance: [
+    ? metronomeGridClicks(result.recurrence, grouping.units).flatMap(
+        ({ time, accented }): MusicalPerformanceEvent[] => {
+          const at = multiplyRational(pulseUnit.quarterNotes, time);
+          const room = subtractRational(duration, at);
+          const wanted = accented ? rational(1, 16) : rational(1, 32);
+          const length = compareRational(wanted, room) <= 0 ? wanted : room;
+          if (compareRational(length, rational(0)) <= 0) {
+            return [];
+          }
+          return [
             {
-              sourceModuleInstance: sourceId,
-              sourceItemIds: [grouping.id],
-              transformation: "realize-grouping-metronome",
-              parameters: { time, units: grouping.units, accented },
+              id: `${sourceId}:grouping:${time}`,
+              at: { quarterNotes: at },
+              duration: { quarterNotes: length },
+              // Every grid unit ticks lightly; each group's start is louder.
+              pitchMidicents: groupingSound.pitchMidicents,
+              velocity: accented ? 0.8 : 0.3,
+              instrumentId: groupingSound.instrumentId,
+              busId: GROUPING_BUS,
+              provenance: [
+                {
+                  sourceModuleInstance: sourceId,
+                  sourceItemIds: [grouping.id],
+                  transformation: "realize-grouping-metronome",
+                  parameters: { time, units: grouping.units, accented },
+                },
+              ],
             },
-          ],
-        }),
+          ];
+        },
       )
     : [];
 
   return {
+    ...generators,
     id: `${sourceId}:interference-preview`,
-    sourceId,
-    timebase: { kind: "seconds" },
-    durationSeconds: result.recurrence * unitSeconds,
-    events: [...generatorEvents, ...metronomeEvents],
-    warnings: [],
+    duration: { quarterNotes: duration },
+    events: [...generators.events, ...metronomeEvents],
   };
-}
-
-export interface DurationLayer {
-  /** Distinguishes layers in event ids and provenance. */
-  id: string;
-  durations: number[];
-  sound: ResolvedSound;
-  /** Units of silence before the first attack (a rhythm that starts after the downbeat). */
-  startOffset?: number;
-}
-
-/**
- * Preview for one or more plain duration lists played together (Rhythm Householder's A/B): one
- * attack per duration, onsets accumulated left to right, each layer on its own sound.
- */
-export function createLayeredDurationPreviewPlan({
-  sourceId,
-  layers,
-  unitSeconds,
-}: {
-  sourceId: string;
-  layers: DurationLayer[];
-  unitSeconds: number;
-}): SecondsPerformancePlan {
-  let durationSeconds = 0;
-  const events = layers.flatMap((layer) => {
-    let atSeconds = Math.max(0, layer.startOffset ?? 0) * unitSeconds;
-    const layerEvents = layer.durations.map((duration, index): SecondsPerformanceEvent => {
-      const event: SecondsPerformanceEvent = {
-        id: `${sourceId}:${layer.id}:attack:${index}`,
-        atSeconds,
-        durationSeconds: Math.min(0.12, duration * unitSeconds * 0.85),
-        pitchMidicents: layer.sound.pitchMidicents,
-        velocity: 1,
-        instrumentId: layer.sound.instrumentId,
-        busId: "preview",
-        provenance: [
-          {
-            sourceModuleInstance: sourceId,
-            sourceItemIds: [],
-            transformation: "realize-duration-sequence",
-            parameters: { layer: layer.id, index, duration, unitSeconds },
-          },
-        ],
-      };
-      atSeconds += duration * unitSeconds;
-      return event;
-    });
-    durationSeconds = Math.max(durationSeconds, atSeconds);
-    return layerEvents;
-  });
-  return {
-    id: `${sourceId}:duration-sequence-preview`,
-    sourceId,
-    timebase: { kind: "seconds" },
-    durationSeconds,
-    events,
-    warnings: [],
-  };
-}
-
-/** Sequential preview for a single plain duration list (fractioning, pair composition, …). */
-export function createDurationSequencePreviewPlan({
-  sourceId,
-  durations,
-  sound,
-  unitSeconds,
-  startOffset = 0,
-}: {
-  sourceId: string;
-  durations: number[];
-  sound: ResolvedSound;
-  unitSeconds: number;
-  startOffset?: number;
-}): SecondsPerformancePlan {
-  return createLayeredDurationPreviewPlan({
-    sourceId,
-    unitSeconds,
-    layers: [{ id: "rhythm", durations, sound, startOffset }],
-  });
 }
 
 export function createNotePacketPerformancePlan({

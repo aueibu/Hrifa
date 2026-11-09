@@ -94,17 +94,28 @@ describe("performance-plan compilation", () => {
         { instrumentId: "preview.triangle", pitchMidicents: 5500 },
       ],
       result,
-      unitSeconds: 0.16,
+      pulseUnit: musicalDuration(1, 4),
+      timeline: defaultMusicalTimeline,
       grouping,
     });
 
-    expect(plan.durationSeconds).toBeCloseTo(0.96);
+    expect(plan.timebase.kind).toBe("musical");
+    // Six sixteenth-note pulses of resultant.
+    expect(plan.duration.quarterNotes).toEqual({ numerator: 3, denominator: 2 });
     expect(plan.events.filter((event) => event.busId === "preview")).toHaveLength(5);
     expect(plan.events.filter((event) => event.busId === "grouping")).toHaveLength(6);
     expect(plan.events[0]).toMatchObject({
-      atSeconds: 0,
+      at: { quarterNotes: { numerator: 0, denominator: 1 } },
       pitchMidicents: 4800,
       instrumentId: "preview.sine",
+    });
+    // Generator attacks sound for 95% of their own slot (2 pulses = 1/2 quarter).
+    expect(plan.events[0].duration.quarterNotes).toEqual({ numerator: 19, denominator: 40 });
+    // Every grouping click ends inside the plan, so the engine accepts it.
+    plan.events.forEach((event) => {
+      const end = event.at.quarterNotes.numerator / event.at.quarterNotes.denominator +
+        event.duration.quarterNotes.numerator / event.duration.quarterNotes.denominator;
+      expect(end).toBeLessThanOrEqual(1.5 + 1e-9);
     });
     expect(plan.events.filter((event) => event.busId === "grouping" && event.velocity > 0.5)).toHaveLength(1);
     expect(plan.events.every((event) => event.provenance.length > 0)).toBe(true);

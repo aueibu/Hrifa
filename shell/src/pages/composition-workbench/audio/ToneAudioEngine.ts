@@ -6,6 +6,7 @@ import {
   musicalPositionToTicks,
   musicalPositionToSeconds,
   rational,
+  type Rational,
 } from '../musicalTime';
 import { volumePercentToGain } from '../audio';
 import { pitchFrequency } from '../pitch';
@@ -13,6 +14,7 @@ import { defaultSoundSettings, type SoundSet } from '../sounds';
 import {
   applyTransport,
   COUNT_IN_BUS,
+  countInQuarterNotes,
   countInSeconds,
   defaultTransportSettings,
   METER_BUS,
@@ -43,6 +45,10 @@ interface ActiveSession {
   timebaseKind: 'seconds' | 'musical';
   /** performance.now() when the material (not the count-in) starts sounding. */
   startedAtMs: number;
+  /** True while this session holds the global transport in loop mode. */
+  looping: boolean;
+  /** Length of one pass in seconds when looping. */
+  loopSeconds?: number;
   transportScheduleIds: number[];
   timer?: ReturnType<typeof globalThis.setTimeout>;
   onComplete?: () => void;
@@ -96,7 +102,9 @@ export class ToneAudioEngine implements AudioEngine {
 
   clock(sourceId: string) {
     const session = [...this.sessions.values()].find((candidate) => candidate.sourceId === sourceId);
-    return session ? { startedAtMs: session.startedAtMs } : undefined;
+    return session
+      ? { startedAtMs: session.startedAtMs, ...(session.looping ? { loopSeconds: session.loopSeconds } : {}) }
+      : undefined;
   }
 
   private notify() {
@@ -104,6 +112,9 @@ export class ToneAudioEngine implements AudioEngine {
   }
 
   async play(original: PlaybackRequest): Promise<PlaybackSession> {
+    if (original.loop && original.plan.timebase.kind !== 'musical') {
+      throw new Error('Looping requires a musical performance plan.');
+    }
     const request: PlaybackRequest = original.followTransport
       ? {
           ...original,
@@ -130,6 +141,7 @@ export class ToneAudioEngine implements AudioEngine {
       buses: new Map(),
       instruments: new Map(),
       timebaseKind: request.plan.timebase.kind,
+      looping: false,
       // Both timebases start 60 ms ahead (see the scheduling below).
       startedAtMs:
         performance.now() +
@@ -152,7 +164,15 @@ export class ToneAudioEngine implements AudioEngine {
         (request.plan.durationSeconds + 0.3) * 1000
       );
     } else {
-      this.scheduleMusicalPlan(tone, state, request.plan, request.busGains);
+      // One pass is the caller's own plan length; applyTransport lengthens the scheduled plan with
+      // count-in and click tails, which must not become part of the loop.
+      const loop = original.loop
+        ? {
+            start: original.followTransport ? countInQuarterNotes(this.transport) : rational(0),
+            length: (original.plan as MusicalPerformancePlan).duration.quarterNotes,
+          }
+        : undefined;
+      this.scheduleMusicalPlan(tone, state, request.plan, request.busGains, loop);
     }
 
     return {
@@ -209,7 +229,8 @@ export class ToneAudioEngine implements AudioEngine {
     tone: ToneModule,
     session: ActiveSession,
     plan: MusicalPerformancePlan,
-    initialGains: Record<string, number> | undefined
+    initialGains: Record<string, number> | undefined,
+    loop?: { start: Rational; length: Rational }
   ) {
     if (compareRational(plan.duration.quarterNotes, rational(0)) <= 0) {
       throw new Error('A musical performance plan requires a positive duration.');
@@ -242,6 +263,35 @@ export class ToneAudioEngine implements AudioEngine {
     );
     transport.bpm.value = tempoChanges[0].bpm;
 
+    let loopStartTicks = 0;
+    if (loop) {
+      // Loop points are whole ticks so every pass restarts on the same tick; a pass length that is
+      // not a whole number of ticks (a 7-tuplet at 960 PPQ) is rounded, drifting under half a tick.
+      loopStartTicks = Math.round(baseTicks + musicalDurationToTicks({ quarterNotes: loop.start }, ppq));
+      const loopEndTicks =
+        loopStartTicks + Math.round(musicalDurationToTicks({ quarterNotes: loop.length }, ppq));
+      if (loopEndTicks <= loopStartTicks) {
+        throw new Error('A looping plan requires a pass of at least one tick.');
+      }
+      // Tone reads a bare number as seconds, so ticks go in as "<n>i" notation.
+      transport.loopStart = `${loopStartTicks}i`;
+      transport.loopEnd = `${loopEndTicks}i`;
+      transport.loop = true;
+      session.looping = true;
+      session.loopSeconds = musicalPositionToSeconds(
+        { quarterNotes: loop.length },
+        plan.timebase.timeline.tempoMap
+      );
+      if (tempoChanges.length > 1) {
+        // Each pass starts at the plan's opening tempo, not wherever the last pass left it.
+        const resetId = transport.schedule(
+          (time) => transport.bpm.setValueAtTime(tempoChanges[0].bpm, time),
+          tone.Ticks(loopStartTicks)
+        );
+        session.transportScheduleIds.push(resetId);
+      }
+    }
+
     tempoChanges.slice(1).forEach((change) => {
       const scheduleId = transport.schedule(
         (time) => transport.bpm.setValueAtTime(change.bpm, time),
@@ -259,14 +309,16 @@ export class ToneAudioEngine implements AudioEngine {
         this.scheduleMusicalEvent(tone, session, event, plan, baseTicks, ppq, initialGains)
       );
 
-    const completionId = transport.schedule(
-      (time) => {
-        void time;
-        globalThis.setTimeout(() => this.finishSession(session.id, true), 0);
-      },
-      tone.Ticks(baseTicks + musicalDurationToTicks(plan.duration, ppq))
-    );
-    session.transportScheduleIds.push(completionId);
+    if (!loop) {
+      const completionId = transport.schedule(
+        (time) => {
+          void time;
+          globalThis.setTimeout(() => this.finishSession(session.id, true), 0);
+        },
+        tone.Ticks(baseTicks + musicalDurationToTicks(plan.duration, ppq))
+      );
+      session.transportScheduleIds.push(completionId);
+    }
     if (transport.state !== 'started') {
       transport.start(tone.now() + 0.06);
     }
@@ -358,6 +410,9 @@ export class ToneAudioEngine implements AudioEngine {
     }
     const transport = this.tone?.getTransport();
     session.transportScheduleIds.forEach((scheduleId) => transport?.clear(scheduleId));
+    if (session.looping && transport) {
+      transport.loop = false;
+    }
     session.instruments.forEach((instrument) => {
       instrument.releaseAll();
       instrument.dispose();

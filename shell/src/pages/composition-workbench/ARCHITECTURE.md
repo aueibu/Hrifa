@@ -136,6 +136,8 @@ The interface may present a musical position in Bitwig-style `BAR.BEAT.TICK.%` n
 
 The workbench owns one lazily started `AudioEngine`. It centralizes browser audio activation, Tone.js scheduling, the master output, an instrument registry, and named buses. Each playback request returns a source-scoped session with live bus gain and independent stop behavior. Starting another preview from the same source replaces that source's prior session without stopping other modules.
 
+**Looping.** `PlaybackRequest.loop` repeats a musical plan seamlessly until stopped, using Tone's transport loop points over one pass (the plan's own `duration`, not the click-extended length `applyTransport` produces). A count-in sounds once, before the loop begins; the meter click restarts each pass. Loop points are whole ticks, so a pass that is not a whole number of ticks (a 7-tuplet at 960 PPQ) is rounded, drifting under half a tick per pass. `onComplete` never fires for a looping session, `clock()` reports `loopSeconds` for a wrapping playhead, and stopping releases the global loop. Seconds plans cannot loop. The mixer sets `loop` from its `loopable` result.
+
 Standalone rhythm and pitch modules may create provisional seconds-based audition plans. Their local gate, register, and instrument choices remain realization controls and do not alter their output packets.
 
 **Global transport.** Tempo, meter, pulse value, metronome, and count-in are workbench-wide settings (`transport.ts`, stored in `compositionSettings.tsx`, edited in the header `TransportBar`). Every rhythm preview takes its pulse length from the transport (`pulseSeconds`) instead of a per-module unit, and passes `followTransport: true` so the engine adds meter clicks (on the `meter` bus, whose gain is the metronome switch, so it toggles live) and an optional one-bar count-in. Melodicization's tempo, display meter, and pulse value are the transport's, so its note output follows the global pulse value. Interference's grouping click is a separate `grouping` bus layered on the meter click. Pitch List keeps its own step length, since a pitch list has no rhythm. **Preview voices.** `sounds.ts` defines two global voice sets (rhythm and metronome), each a base pitch plus primary/secondary/tertiary voices with a sound type (click, woodblock, drum, tone) and a cents offset. Modules play layer *n* on voice *n* (`layerSound`) unless the module stores its own `SoundOverride` for that layer (`SoundOverrideControl`): Interference per generator, Rhythm Householder for input (A) and candidate (B, plus an A/B button that plays both), Fractioning and Pair Composition for their single rhythm. Meter clicks use the metronome's primary (downbeat) and secondary voices; Interference's grouping click uses its tertiary. Percussive types sound in a fixed register relative to the written pitch (`soundRegisterSemitones`). Modules register their main preview with `useTransportPreview` so the header Play button and the space bar start the selected module; Stop and space-while-playing stop every preview. A composed rhythm-and-pitch result should instead pass through an explicit combination operation that emits `events | note` in musical time; playback must not pair unrelated packet streams invisibly.
@@ -224,6 +226,41 @@ An inter-onset list says how far apart attacks are, not where the first one fall
 - A bank whose entries start in different places lists them in `metadata.entryOrigins`, and selecting an entry gives the resulting list that entry's start.
 - Output summaries show `starts +n` for a rhythm that doesn't start on the downbeat.
 
+## Rhythm realization
+
+Status: implemented in `rhythmRealization.ts`. Interference, Fractioning, Pair Composition and Rhythm Householder previews all realize through it (`createRhythmPreviewPlan`, `createInterferencePreviewPlan`), and Mixer compiles `materialFromRhythmPacket` against the same function. The rests-and-ties encoding below is supported by the function but not yet by packets.
+
+**Principle.** A rhythm packet is data in its own unit (usually pulses). Realization is the one explicit step that gives it musical time, a voice, and an articulation. This follows OpenMusic's split between a rhythm and the container that interprets it: an RT carries proportions, while the container's `Qvalue` (an abstract unit, 1/qvalue of a quarter note) and `QTempo` give those units a physical meaning. Here the equivalents are the transport's pulse value and tempo. Tempo is never part of the realization; the engine's timeline resolves it.
+
+**Contract.** One pure function turns a rhythm packet into musical-time events:
+
+- **In:** a `list | duration | inter-onset` packet (with its frame), the musical duration of one pulse (from the transport's pulse value), a resolved voice (`layerSound`), and optional channel parameters: start offset and gate.
+- **Out:** events with exact rational `at` and `duration` in quarter notes (`MusicalPerformanceEvent`), a `busId`, and provenance pointing back to the source items. A `MusicalPerformancePlan` is built from them.
+- **Frame.** `origin` becomes a leading offset, in pulses mapped through the same pulse value. A cyclic `extent` is reported as the loop length but never unrolled here. Unrolling to a horizon, and the loop policy that governs it (`free`, `restart with longest`, `once`), belong to whoever compiles several sources into one plan (Mixer), not to this function.
+- **Not in the contract:** tempo, metronome, count-in and looping. Those belong to the transport and the engine.
+
+**Gate.** Gate sets how long an event sounds as a percentage of the time slot to the next attack, from 1% through 200%, as in Melodicization's articulation and Pitch List's gate. It is a realization parameter, never part of the packet. OpenMusic likewise keeps legato on the playing object (chord-seq), not in the rhythm. The default is 95%: connected but not blurred, like a pianist's legato where each note releases just before the next attack. Percussive voices decay on their own and barely depend on it, while sustained voices (`tone`, sine) need a musical gate so their length scales with the pulse. The old fixed 0.12 s cap has no musical equivalent and is not carried over. A gate applies to the whole sounding span of an event, which for tied notes is the full tied length.
+
+**Rests and ties (proposed).** Inter-onset lists have no way to say "silence" or "continue the previous note". OpenMusic encodes both in the rhythm tree itself: a negative number is a rest and a float is a tie (`(1 1.0 -1 1)`). Rests and ties are rhythm data, not articulation, so they belong in the packet.
+
+- **Rest:** a negative duration. Its magnitude is the length of silence, `-2` is a two-pulse rest. It consumes time like any other item but produces no event.
+- **Tie:** JavaScript cannot tell `1.0` from `1`, so OpenMusic's float convention cannot be copied. Instead a tied item carries an explicit flag, `tie: true`, on the `DataItem`. A tied item produces no new attack. It extends the preceding sounding event by its own duration. A tie directly after a rest, or as the first item of a linear packet, is invalid and reported as a warning, not silently dropped.
+- **Compatibility.** A rhythm containing rests or ties is not interchangeable with one that does not. Consumers that assume positive durations (Arithmetic's numeric domains, the Householder and Fractioning arithmetic, Interference's own sums) must declare that they accept them. Until they do, such a packet is not offered at their inlets, rather than being silently reinterpreted. The "interpret as rhythm" opt-in stays the explicit place where a numeric source becomes a rhythm.
+- **Relation to start offset.** `frame.origin` and a leading rest describe the same silence. A cyclic frame keeps `origin` because the wrap-around semantics differ (see "Where a rhythm starts"). Modules may emit a leading rest instead where that is clearer, and realization treats the two identically.
+- **Totals.** Rests count toward the span (`Σ|d|`) and ties do too. A cyclic frame's `extent` must equal that sum.
+
+Open decision: the exact home of the tie flag (a typed optional field on `DataItem` restricted to inter-onset lists, versus `packet.metadata`).
+
+## Mixer
+
+The Mixer auditions several ideas together: a preview layer one step before a committed arrangement, not a timeline. It is a sink. It publishes no outputs and, for now, no `layers` packet; what a committed multi-stream packet should be needs more thought.
+
+- **Channels are its inlets.** The receiver's route state is the single source of truth for which channels exist and in what order. Each channel is one port with a stable id (`ch-…`, never a display index), shown as `Ch 1`, `Ch 2` by position. Adding or removing a channel adds or removes a route binding; its persisted settings (`mixerChannels`) are pruned to match. Because route bindings are ordinary, each channel gets Quick Adjust (a rhythm channel's retrograde, rotate, duration scale and start offset) before it is mixed.
+- **What a channel plays.** An `events | note` stream plays directly; an inter-onset rhythm is realized on a rhythm voice through the shared rhythm realization (voice by channel position unless overridden, gate default 95%). A numeric list must be explicitly interpreted as rhythm on its route; a pitch list has no rhythm and is reported, never guessed at.
+- **Loop policies** (`mixer.ts`, per channel): `free` repeats at the channel's own period, so together the free channels repeat every least common multiple of their periods, the realignment period (the meta interference pattern); `restart with longest` cuts and restarts together at the longest looping cycle's end; `once` plays a single time. A start offset rotates a looping channel (as cyclic `origin` does) and delays a one-shot. The realignment period is shown beside the module.
+- **One plan, one transport start.** Play compiles every channel into a single musical-time plan with the mixer's instance id as `sourceId`, so channels stay phase-locked, and loops it (`PlaybackRequest.loop`) when it is exactly one period of the pattern. A realignment beyond the horizon (64 bars of 4/4) or an oversized event count is truncated or refused with a warning, not unrolled silently.
+- **Levels.** Each channel has its own bus. Level, mute and solo are live and combine with the master fader; the loop policy, offset, gate and sources apply on the next Play.
+
 ## Rhythm Householder
 
 Rhythm Householder (`householder.ts`) alters a rhythm along a chosen bias axis while keeping its attack count and total span. It takes a rhythm inlet (`list | duration | inter-onset`, with the usual route-level "Interpret as rhythm") and an optional numeric `axis` inlet. It publishes `selected` (an ordinary inter-onset list) and `candidates` (`bank | duration | inter-onset`, one durations array per entry), both keeping the input frame. Attack j of a candidate inherits the provenance of input attack j, since both modes keep attack order.
@@ -240,8 +277,10 @@ Rhythm Householder shows layered (A/B) playback. Two shared pieces do most of it
 `useModulePreview` (`useModulePreview.ts`) runs the preview, and `DurationStrip`
 (`components/DurationStrip.tsx`) draws the numbered bar with its playhead.
 
-1. **Timing comes from the transport.** Rhythm previews use `pulseSeconds(settings.transport)` for
-   one pulse; don't add a per-module tempo, unit, or meter control. Musical-time plans
+1. **Timing comes from the transport.** Rhythm previews build a musical-time plan with
+   `createRhythmPreviewPlan` and `transportRhythmContext(settings.transport)` (pulse value and
+   timeline); `musicalPlanSeconds(plan)` gives the length for a status line. `pulseSeconds` remains
+   only for drawing a playhead. Don't add a per-module tempo, unit, or meter control. Musical-time plans
    (Melodicization) use the transport's tempo, meter, and pulse value.
 2. **Play through `useModulePreview`.** It stops the previous session, keeps the volume and any
    extra buses live, owns the status line (`preview.status`), and clears playing state on a global
@@ -252,7 +291,7 @@ Rhythm Householder shows layered (A/B) playback. Two shared pieces do most of it
    and give each layer a `SoundOverrideControl` with the override in the module's persistent state
    (default `null` = use the voice). Don't hard-code an instrument or pitch for a rhythm layer.
    Two layers you'd want to compare get an A/B button
-   (`createLayeredDurationPreviewPlan` with one layer each).
+   (`createRhythmPreviewPlan` with one layer each).
 4. **Give the hook a `transportPlay`** for the main preview, so the header Play button and the
    space bar start it.
 5. **Draw durations with `DurationStrip`** and pass `playhead={{ sourceId, unitSeconds }}`; it

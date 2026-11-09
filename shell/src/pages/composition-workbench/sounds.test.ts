@@ -1,4 +1,6 @@
-import { createLayeredDurationPreviewPlan } from './audio/performancePlans';
+import type { SecondsPerformancePlan } from './audio/types';
+import { defaultMusicalTimeline, musicalDuration, musicalPositionToSeconds } from './musicalTime';
+import { createRhythmPreviewPlan } from './rhythmRealization';
 import {
   defaultSoundSettings,
   formatOffset,
@@ -54,12 +56,14 @@ describe('sound voices', () => {
 
 describe('sound use in previews', () => {
   it('plays A/B layers together on their own sounds', () => {
-    const plan = createLayeredDurationPreviewPlan({
+    // 16th-note pulses at 120 BPM: one pulse is 0.125 s.
+    const plan = createRhythmPreviewPlan({
       sourceId: 'hh',
-      unitSeconds: 0.1,
+      pulseUnit: musicalDuration(1, 4),
+      timeline: defaultMusicalTimeline,
       layers: [
-        { id: 'input', durations: [3, 3, 2], sound: layerSound(set, 0) },
-        { id: 'candidate', durations: [2, 3, 3], startOffset: 1, sound: layerSound(set, 1) },
+        { layerId: 'input', steps: [3, 3, 2].map((duration) => ({ duration })), sound: layerSound(set, 0) },
+        { layerId: 'candidate', steps: [2, 3, 3].map((duration) => ({ duration })), origin: 1, sound: layerSound(set, 1) },
       ],
     });
     expect(plan.events).toHaveLength(6);
@@ -67,23 +71,23 @@ describe('sound use in previews', () => {
     expect(
       plan.events
         .filter((event) => event.instrumentId === 'sound.woodblock')
-        .map((event) => Math.round(event.atSeconds * 10))
+        .map((event) => Math.round(musicalPositionToSeconds(event.at, defaultMusicalTimeline.tempoMap) / 0.125))
     ).toEqual([1, 3, 6]);
-    expect(plan.durationSeconds).toBeCloseTo(0.9);
+    expect(musicalPositionToSeconds({ quarterNotes: plan.duration.quarterNotes }, defaultMusicalTimeline.tempoMap)).toBeCloseTo(1.125);
   });
 
   it('clicks downbeats on the metronome primary voice and other beats on the secondary', () => {
-    const plan = applyTransport(
-      createLayeredDurationPreviewPlan({ sourceId: 's', unitSeconds: 0.125, layers: [] }),
-      defaultTransportSettings,
-      set
-    );
+    const empty: SecondsPerformancePlan = {
+      id: 's:empty',
+      sourceId: 's',
+      timebase: { kind: 'seconds' },
+      durationSeconds: 0,
+      events: [],
+      warnings: [],
+    };
+    const plan = applyTransport(empty, defaultTransportSettings, set);
     expect(plan.events).toHaveLength(0);
-    const clicked = applyTransport(
-      { ...createLayeredDurationPreviewPlan({ sourceId: 's', unitSeconds: 0.125, layers: [] }), durationSeconds: 2 },
-      defaultTransportSettings,
-      set
-    );
+    const clicked = applyTransport({ ...empty, durationSeconds: 2 }, defaultTransportSettings, set);
     const clicks = clicked.events.filter((event) => event.busId === METER_BUS);
     expect(clicks.map((event) => event.instrumentId)).toEqual([
       'sound.tone',

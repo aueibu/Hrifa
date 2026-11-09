@@ -8,6 +8,7 @@ import {
 import {
   compositionInstanceLabel,
   compositionLanes,
+  mixerPortLabels,
   type CompositionInspectorTarget,
   type CompositionLaneId,
   type CompositionModuleId,
@@ -46,7 +47,13 @@ interface RouteDescriptor {
   identity: boolean;
 }
 
-const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; label: string }[]>> = {
+interface PortLabel {
+  id: string;
+  label: string;
+  shortLabel?: string;
+}
+
+const routedModulePorts: Partial<Record<CompositionModuleId, PortLabel[]>> = {
   melodicization: [
     { id: 'rhythm', label: 'Rhythm' },
     { id: 'pitches', label: 'Pitch' },
@@ -61,6 +68,11 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; label
     { id: 'axis', label: 'Axis' },
   ],
 };
+
+/** A module's inlets: fixed per module, except the mixer, whose channels live in its route state. */
+function inletsFor(moduleId: CompositionModuleId, routeState: ModuleRouteStates[string] | undefined) {
+  return moduleId === 'mixer' ? mixerPortLabels(routeState) : routedModulePorts[moduleId];
+}
 
 interface FlowPoint {
   x: number;
@@ -145,8 +157,8 @@ export function CompositionLaneGrid({
   const { layouts, rowCount } = createLayout(instances);
   const layoutById = new Map(layouts.map((layout) => [layout.instance.id, layout]));
   const descriptors: RouteDescriptor[] = layouts.flatMap((layout) => {
-    const ports = routedModulePorts[layout.instance.moduleId];
     const routeState = routes[layout.instance.id];
+    const ports = inletsFor(layout.instance.moduleId, routeState);
     if (!ports || !routeState) {
       return [];
     }
@@ -374,9 +386,11 @@ export function CompositionLaneGrid({
                       selected.port === descriptor.port;
                     const muted = descriptor.bypassed || !descriptor.output;
                     const portName =
-                      routedModulePorts[descriptor.receiver.instance.moduleId]?.find(
-                        (candidate) => candidate.id === descriptor.port
-                      )?.label ?? descriptor.port;
+                      inletsFor(
+                        descriptor.receiver.instance.moduleId,
+                        routes[descriptor.receiver.instance.id]
+                      )?.find((candidate) => candidate.id === descriptor.port)?.label ??
+                      descriptor.port;
                     const ariaLabel = `Select ${portName.toLowerCase()} route from ${sourceLabel} to ${destinationLabel}`;
                     return (
                       <g key={descriptor.id}>
@@ -416,7 +430,11 @@ export function CompositionLaneGrid({
             instance.moduleId === 'interference'
               ? instanceOutputs.find((candidate) => candidate.ref.port === 'resultant')
               : instanceOutputs[0];
-          const subtitle = primaryOutput
+          const isMixer = instance.moduleId === 'mixer';
+          const mixerChannelCount = Object.keys(routes[instance.id] ?? {}).length;
+          const subtitle = isMixer
+            ? `mix | ${mixerChannelCount} ${mixerChannelCount === 1 ? 'channel' : 'channels'}`
+            : primaryOutput
             ? `${primaryOutput.packet.kind} | ${primaryOutput.packet.domain}`
             : instance.moduleId === 'melodicization'
               ? 'events | note'
@@ -439,12 +457,18 @@ export function CompositionLaneGrid({
           // expected/informational, not an error: it gets a small flag on the card's edge
           // instead of hijacking the footer with alarming text.
           const footerWarnings = primaryOutput?.packet.warnings ?? [];
-          const footerError = !primaryOutput;
-          const footerDetail = !primaryOutput
+          // The mixer is a sink: it publishes nothing, so "no output" is its normal state and only
+          // an empty mix is a problem.
+          const footerError = isMixer ? incoming.length === 0 : !primaryOutput;
+          const footerDetail = footerError
             ? 'Connect this module’s required inputs to produce output.'
             : undefined;
           const noticeDetail = footerWarnings.length > 0 ? footerWarnings.join('\n') : undefined;
-          const footer = !primaryOutput
+          const footer = isMixer
+            ? incoming.length
+              ? `Channels | ${incoming.length}`
+              : 'Needs inputs'
+            : !primaryOutput
             ? 'Needs inputs'
             : instanceOutputs.length > 1
               ? '' // Multiple valid outputs: no single count is representative.
@@ -455,15 +479,15 @@ export function CompositionLaneGrid({
                   : instance.moduleId === 'fractioning'
                     ? `Durations | ${primaryOutput.packet.items.length}`
                     : `Notes | ${primaryOutput.packet.items.length}`;
-          const inletPorts: FlowCellPort[] = (routedModulePorts[instance.moduleId] ?? []).map(
-            ({ id: port, label: portName }) => {
+          const inletPorts: FlowCellPort[] = (inletsFor(instance.moduleId, routes[instance.id]) ?? []).map(
+            ({ id: port, label: portName, shortLabel }) => {
               const descriptor = incoming.find((candidate) => candidate.port === port);
               if (!descriptor) {
                 return {
                   id: port,
                   elementKey: inletElementKey(instance.id, port),
                   label: `${portName} input | unconnected`,
-                  shortLabel: portName[0],
+                  shortLabel: shortLabel ?? portName[0],
                   ariaLabel: `${portName} input | unconnected`,
                   unavailable: true,
                 };
@@ -474,7 +498,7 @@ export function CompositionLaneGrid({
                 label: `${descriptor.output?.label ?? 'Missing source'} → ${label}${
                   descriptor.identity ? '' : ` | ${descriptor.summary}`
                 }`,
-                shortLabel: portName[0],
+                shortLabel: shortLabel ?? portName[0],
                 ariaLabel: descriptor.identity
                   ? `Inspect ${portName.toLowerCase()} inlet`
                   : `Adjust ${portName.toLowerCase()} route: ${descriptor.summary}`,

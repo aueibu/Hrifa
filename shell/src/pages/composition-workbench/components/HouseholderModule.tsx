@@ -18,9 +18,11 @@ import {
 } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
 import {
-  createLayeredDurationPreviewPlan,
-  type DurationLayer,
-} from '../audio/performancePlans';
+  createRhythmPreviewPlan,
+  musicalPlanSeconds,
+  transportRhythmContext,
+  type RhythmPreviewLayer,
+} from '../rhythmRealization';
 import {
   boundOutput,
   compositionOutputOptions,
@@ -521,32 +523,32 @@ export function HouseholderModule({
   });
 
   const rhythmVoices = compositionSettings.sounds.rhythm;
-  const inputLayer = (): DurationLayer => ({
-    id: 'input',
-    durations: inputDurations,
-    startOffset: inputOrigin,
+  const inputLayer = (): RhythmPreviewLayer => ({
+    layerId: 'input',
+    steps: inputDurations.map((duration) => ({ duration })),
+    origin: inputOrigin,
     sound: layerSound(rhythmVoices, 0, layerOverrides.input),
   });
-  const candidateLayer = (candidate: HouseholderCandidate): DurationLayer => ({
-    id: 'candidate',
-    durations: candidate.durations,
-    startOffset: candidate.origin ?? inputOrigin,
+  const candidateLayer = (candidate: HouseholderCandidate): RhythmPreviewLayer => ({
+    layerId: 'candidate',
+    steps: candidate.durations.map((duration) => ({ duration })),
+    origin: candidate.origin ?? inputOrigin,
     sound: layerSound(rhythmVoices, 1, layerOverrides.candidate),
   });
 
-  function playPreview(layers: DurationLayer[], what: string) {
-    if (!layers.some((layer) => layer.durations.length)) {
+  function playPreview(layers: RhythmPreviewLayer[], what: string) {
+    if (!layers.some((layer) => layer.steps.length)) {
       preview.setStatus('Nothing to preview yet.');
       return;
     }
-    const plan = createLayeredDurationPreviewPlan({
+    const plan = createRhythmPreviewPlan({
       sourceId: instanceId,
+      ...transportRhythmContext(compositionSettings.transport),
       layers,
-      unitSeconds: pulseSeconds(compositionSettings.transport),
     });
-    void preview.play(plan, `Playing ${what} for ${plan.durationSeconds.toFixed(1)} seconds.`);
+    void preview.play(plan, `Playing ${what} for ${musicalPlanSeconds(plan).toFixed(1)} seconds.`);
     // After play(): its opening stop() clears the previous layers.
-    setPlayingLayers(layers.map((layer) => layer.id));
+    setPlayingLayers(layers.map((layer) => layer.layerId));
   }
 
   function resetModule() {

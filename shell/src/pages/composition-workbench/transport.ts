@@ -9,11 +9,14 @@ import { defaultSoundSettings, layerSound, type SoundSet } from './sounds';
 import {
   addRational,
   compareRational,
+  defaultMusicalTimeline,
   multiplyRational,
   musicalDuration,
+  musicalPosition,
   rational,
   type MusicalDuration,
   type MusicalPosition,
+  type MusicalTimeline,
   type Rational,
 } from './musicalTime';
 
@@ -82,6 +85,17 @@ export function transportPulse(settings: Pick<TransportSettings, 'pulse'>) {
   );
 }
 
+/** The transport's tempo and meter as the musical timeline a musical-time plan is scheduled on. */
+export function transportTimeline(settings: Pick<TransportSettings, 'tempo' | 'meter'>): MusicalTimeline {
+  const { numerator, denominator } = parseMeter(settings.meter);
+  return {
+    ...defaultMusicalTimeline,
+    id: `transport:${settings.tempo}:${settings.meter}`,
+    tempoMap: [{ at: musicalPosition(0), bpm: settings.tempo }],
+    meterMap: [{ atBar: 1, numerator, denominator }],
+  };
+}
+
 const quarterSeconds = (tempo: number) => 60 / tempo;
 
 /** Seconds per rhythm pulse at the current tempo. */
@@ -93,6 +107,15 @@ export function pulseSeconds(settings: Pick<TransportSettings, 'tempo' | 'pulse'
 /** Length of one meter beat (the meter's denominator note) in quarter notes. */
 export function beatQuarterNotes(settings: Pick<TransportSettings, 'meter'>) {
   return 4 / parseMeter(settings.meter).denominator;
+}
+
+/**
+ * The count-in's length in quarter notes (one bar of the meter), or zero when it is off. This is
+ * how far applyTransport shifts a musical plan's material, and where a looped plan's loop begins.
+ */
+export function countInQuarterNotes(settings: Pick<TransportSettings, 'meter' | 'countIn'>): Rational {
+  const { numerator, denominator } = parseMeter(settings.meter);
+  return settings.countIn ? multiplyRational(rational(4, denominator), numerator) : rational(0);
 }
 
 export function barSeconds(settings: Pick<TransportSettings, 'tempo' | 'meter'>) {
@@ -186,7 +209,7 @@ export function applyTransport(
 
   const musical = plan as MusicalPerformancePlan;
   const beat = rational(4, parseMeter(settings.meter).denominator);
-  const shift = settings.countIn ? multiplyRational(beat, numerator) : rational(0);
+  const shift = countInQuarterNotes(settings);
   const clickLength = rational(1, 32);
   const beatAt = (index: number, offset: Rational): MusicalPosition => ({
     quarterNotes: addRational(multiplyRational(beat, index), offset),

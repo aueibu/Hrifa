@@ -63,6 +63,13 @@ export interface PlaybackRequest {
    * time grid is the transport's pulse; leave off for anything timed independently of it.
    */
   followTransport?: boolean;
+  /**
+   * Repeat the plan seamlessly until stopped. Musical plans only: the plan's own `duration` is
+   * one pass, and a plan built to loop (the mixer's `loopable`) must be exactly one period of its
+   * pattern. The count-in, when on, sounds once before the first pass; the meter click restarts
+   * with each pass. `onComplete` never fires for a looping session.
+   */
+  loop?: boolean;
   onComplete?(): void;
 }
 
@@ -76,6 +83,8 @@ export interface PlaybackSession {
 
 export interface PlaybackClock {
   startedAtMs: number;
+  /** Length of one pass in seconds when the session loops; a playhead wraps at this. */
+  loopSeconds?: number;
 }
 
 export interface AudioEngine {

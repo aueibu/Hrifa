@@ -62,6 +62,8 @@ export const compositionStateKeys = {
   householderUnit: 'hrifa.composition-workbench.rhythm-householder.preview-unit.v1',
   householderVolume: 'hrifa.composition-workbench.rhythm-householder.preview-volume.v1',
   householderSounds: 'hrifa.composition-workbench.rhythm-householder.sounds.v1',
+  mixerChannels: 'hrifa.composition-workbench.mixer.channels.v1',
+  mixerVolume: 'hrifa.composition-workbench.mixer.volume.v1',
 } as const;
 
 export function usePersistentState<T>(

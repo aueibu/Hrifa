@@ -59,9 +59,10 @@ export function useModulePreview({
 
   /**
    * Plays a plan, replacing anything this module was playing. Resolves true once sound has
-   * started, false if it failed or a newer request superseded it.
+   * started, false if it failed or a newer request superseded it. `loop` repeats a musical plan
+   * until stopped (see PlaybackRequest.loop); a looping preview never reports 'complete'.
    */
-  async function play(plan: PerformancePlan, message: string) {
+  async function play(plan: PerformancePlan, message: string, options: { loop?: boolean } = {}) {
     stop('');
     const version = requestVersion.current;
     setStatus(message);
@@ -70,6 +71,7 @@ export function useModulePreview({
         plan,
         busGains: { preview: volumePercentToGain(volume), ...busGains },
         followTransport,
+        loop: options.loop,
         onComplete: () => {
           if (session.current === started) {
             end('complete', 'Preview complete.');

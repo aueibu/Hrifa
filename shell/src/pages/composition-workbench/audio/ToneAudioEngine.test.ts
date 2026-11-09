@@ -11,6 +11,9 @@ function createFakeTone() {
     PPQ: 960,
     ticks: 0,
     state: 'stopped' as 'stopped' | 'started',
+    loop: false,
+    loopStart: '' as string,
+    loopEnd: '' as string,
     bpm: { value: 120, setValueAtTime: vi.fn() },
     schedule: vi.fn((callback: (time: number) => void, time: number) => {
       scheduled.push({ callback, time });
@@ -197,5 +200,79 @@ describe('ToneAudioEngine', () => {
     fake.scheduled[1].callback(20);
     expect(fake.instruments[0].triggerAttackRelease).toHaveBeenCalledWith(440, 0.75, 20, 0.75);
     engine.dispose();
+  });
+
+  describe('looping', () => {
+    it('loops the transport over one pass, never completes, and releases the loop on stop', async () => {
+      const fake = createFakeTone();
+      const engine = new ToneAudioEngine(async () => fake.tone as never);
+      const onComplete = vi.fn();
+      const session = await engine.play({ plan: musicalPlan('mix'), loop: true, onComplete });
+
+      // The plan starts 1/16 quarter after the transport's current tick (60 of 960 PPQ).
+      expect(fake.transport.loop).toBe(true);
+      expect(fake.transport.loopStart).toBe('60i');
+      expect(fake.transport.loopEnd).toBe('1020i');
+      // One scheduled event, and no completion callback to end the session.
+      expect(fake.scheduled).toHaveLength(1);
+      expect(engine.clock('mix')?.loopSeconds).toBeCloseTo(0.5);
+
+      session.stop();
+      expect(fake.transport.loop).toBe(false);
+      expect(onComplete).not.toHaveBeenCalled();
+      engine.dispose();
+    });
+
+    it('does not loop the count-in: the loop begins after it', async () => {
+      const fake = createFakeTone();
+      const engine = new ToneAudioEngine(async () => fake.tone as never);
+      engine.setTransport({
+        tempo: 120,
+        meter: '4/4',
+        pulse: '1/4',
+        metronome: true,
+        metronomeVolume: 30,
+        countIn: true,
+      });
+      await engine.play({ plan: musicalPlan('mix'), loop: true, followTransport: true });
+
+      // A 4/4 count-in is four quarter notes (3840 ticks); one pass is still the caller's 1 quarter.
+      expect(fake.transport.loopStart).toBe('3900i');
+      expect(fake.transport.loopEnd).toBe('4860i');
+      engine.dispose();
+    });
+
+    it('rounds a pass that is not a whole number of ticks instead of drifting', async () => {
+      const fake = createFakeTone();
+      const engine = new ToneAudioEngine(async () => fake.tone as never);
+      const sevenths: MusicalPerformancePlan = {
+        ...musicalPlan('mix'),
+        duration: musicalDuration(4, 7),
+        events: [],
+      };
+      await engine.play({ plan: sevenths, loop: true });
+
+      // 4/7 of 960 ticks is 548.57; the loop uses 549 for every pass.
+      expect(Number.parseInt(fake.transport.loopEnd, 10) - Number.parseInt(fake.transport.loopStart, 10)).toBe(549);
+      engine.dispose();
+    });
+
+    it('does not report a loop length for ordinary sessions', async () => {
+      const fake = createFakeTone();
+      const engine = new ToneAudioEngine(async () => fake.tone as never);
+      await engine.play({ plan: musicalPlan('melody') });
+      expect(engine.clock('melody')).not.toHaveProperty('loopSeconds');
+      expect(fake.transport.loop).toBe(false);
+      engine.dispose();
+    });
+
+    it('refuses to loop a seconds plan', async () => {
+      const fake = createFakeTone();
+      const engine = new ToneAudioEngine(async () => fake.tone as never);
+      await expect(engine.play({ plan: plan('pitch-list'), loop: true })).rejects.toThrow(
+        /musical performance plan/
+      );
+      engine.dispose();
+    });
   });
 });

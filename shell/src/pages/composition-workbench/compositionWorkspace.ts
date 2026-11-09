@@ -10,7 +10,8 @@ export type CompositionModuleId =
   | 'pair-composition'
   | 'scale-construction'
   | 'scale-evolution'
-  | 'rhythm-householder';
+  | 'rhythm-householder'
+  | 'mixer';
 export type CompositionLaneId = 1 | 2 | 3 | 4;
 
 export interface CompositionModuleInstance {
@@ -50,6 +51,7 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   'scale-construction': 'Scale Construction',
   'scale-evolution': 'Scale Evolution',
   'rhythm-householder': 'Rhythm Householder',
+  mixer: 'Mixer',
 };
 
 export const defaultCompositionInstances: CompositionModuleInstance[] = [
@@ -68,6 +70,28 @@ export const compositionLanes: CompositionLaneDefinition[] = [
 export function nextAvailableRow(instances: CompositionModuleInstance[], laneId: CompositionLaneId) {
   const rowsInLane = instances.filter((instance) => instance.laneId === laneId).map((instance) => instance.row);
   return rowsInLane.length ? Math.max(...rowsInLane) + 1 : 1;
+}
+
+/**
+ * Mixer inlets are not a fixed list: each channel is one port, identified by a stable id (never a
+ * display index, so removing or reordering channels never redirects a connection). The receiver's
+ * route state is the single source of truth for which channels exist, in order.
+ */
+export function newMixerChannelId() {
+  return `ch-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function defaultMixerPorts(): { id: string; signalType: SignalTypeId }[] {
+  return [newMixerChannelId(), newMixerChannelId()].map((id) => ({ id, signalType: 'numeric' }));
+}
+
+/** Labels for the mixer's channels, numbered by position: Ch 1, Ch 2, … */
+export function mixerPortLabels(routeState: ModuleRouteState | undefined) {
+  return Object.keys(routeState ?? {}).map((id, index) => ({
+    id,
+    label: `Ch ${index + 1}`,
+    shortLabel: String(index + 1),
+  }));
 }
 
 export function createDefaultModuleRouteState(
@@ -109,7 +133,8 @@ function isModuleId(value: unknown): value is CompositionModuleId {
     value === 'pair-composition' ||
     value === 'scale-construction' ||
     value === 'scale-evolution' ||
-    value === 'rhythm-householder'
+    value === 'rhythm-householder' ||
+    value === 'mixer'
   );
 }
 

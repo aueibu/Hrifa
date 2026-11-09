@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Button, Group, NumberInput, Stack, Text, Title } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
-import { createDurationSequencePreviewPlan } from '../audio/performancePlans';
 import type { CompositionModuleRoutingProps, PublishedCompositionOutput } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
+import { createRhythmPreviewPlan, musicalPlanSeconds, transportRhythmContext } from '../rhythmRealization';
 import { pulseSeconds } from '../transport';
 import { fractioningDurationPacket, generateFractioning } from '../fractioning';
 import {
@@ -82,13 +82,18 @@ export function FractioningModule({ instanceId, instanceLabel, onOutputsChange }
     if (!generated.result) {
       return;
     }
-    const plan = createDurationSequencePreviewPlan({
+    const plan = createRhythmPreviewPlan({
       sourceId: instanceId,
-      durations: generated.result.durations,
-      sound: layerSound(settings.sounds.rhythm, 0, soundOverride),
-      unitSeconds: pulseSeconds(settings.transport),
+      ...transportRhythmContext(settings.transport),
+      layers: [
+        {
+          layerId: 'rhythm',
+          steps: generated.result.durations.map((duration) => ({ duration })),
+          sound: layerSound(settings.sounds.rhythm, 0, soundOverride),
+        },
+      ],
     });
-    void preview.play(plan, `Playing fractioning ${a}÷${b} for ${plan.durationSeconds.toFixed(1)} seconds.`);
+    void preview.play(plan, `Playing fractioning ${a}÷${b} for ${musicalPlanSeconds(plan).toFixed(1)} seconds.`);
   }
 
   function resetFractioning() {

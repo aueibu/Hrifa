@@ -12,6 +12,7 @@ import { FractioningModule } from './composition-workbench/components/Fractionin
 import { HouseholderModule } from './composition-workbench/components/HouseholderModule';
 import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
 import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
+import { MixerModule } from './composition-workbench/components/MixerModule';
 import { ModuleLibrary } from './composition-workbench/components/ModuleLibrary';
 import { ModulePatch } from './composition-workbench/components/ModulePatch';
 import { PacketInspector } from './composition-workbench/components/PacketInspector';
@@ -35,6 +36,8 @@ import {
   compositionInstanceLabel,
   createDefaultModuleRouteState,
   defaultCompositionInstances,
+  defaultMixerPorts,
+  newMixerChannelId,
   nextAvailableRow,
   type CompositionInspectorTarget,
   type CompositionLaneId,
@@ -133,9 +136,13 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.householderVolume,
     compositionStateKeys.householderSounds,
   ],
+  mixer: [compositionStateKeys.mixerChannels, compositionStateKeys.mixerVolume],
 };
 
+// The mixer's inlets are its channels, which the receiver's route state owns, so it declares none
+// here; an empty list still marks it as a routed module.
 const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signalType: SignalTypeId }[]>> = {
+  mixer: [],
   melodicization: [
     { id: 'rhythm', signalType: 'rhythm' },
     { id: 'pitches', signalType: 'pitch' },
@@ -265,6 +272,40 @@ export function CompositionWorkbenchPage() {
       setActiveCompositionInstanceId(instanceId);
     },
     [compositionOutputs, setActiveCompositionInstanceId, setCompositionInspectorTarget, setModuleRouteStates]
+  );
+
+  const addMixerChannel = useCallback(
+    (instanceId: string) => {
+      setModuleRouteStates((current) => ({
+        ...current,
+        [instanceId]: {
+          ...current[instanceId],
+          ...createDefaultModuleRouteState([{ id: newMixerChannelId(), signalType: 'numeric' }]),
+        },
+      }));
+    },
+    [setModuleRouteStates]
+  );
+
+  const removeMixerChannel = useCallback(
+    (instanceId: string, port: string) => {
+      setModuleRouteStates((current) => {
+        const receiver = current[instanceId];
+        if (!receiver || !(port in receiver) || Object.keys(receiver).length <= 1) {
+          return current;
+        }
+        return {
+          ...current,
+          [instanceId]: Object.fromEntries(Object.entries(receiver).filter(([key]) => key !== port)),
+        };
+      });
+      setCompositionInspectorTarget((target) =>
+        target.kind === 'route' && target.instanceId === instanceId && target.port === port
+          ? { kind: 'module', instanceId }
+          : target
+      );
+    },
+    [setCompositionInspectorTarget, setModuleRouteStates]
   );
 
   const updateRouteTreatment = useCallback(
@@ -428,7 +469,7 @@ export function CompositionWorkbenchPage() {
       ...current,
       { id: instanceId, moduleId, laneId, row: nextAvailableRow(current, laneId) },
     ]);
-    const ports = routedModulePorts[moduleId];
+    const ports = moduleId === 'mixer' ? defaultMixerPorts() : routedModulePorts[moduleId];
     if (ports) {
       setModuleRouteStates((current) => ({
         ...current,
@@ -600,6 +641,18 @@ export function CompositionWorkbenchPage() {
                               bindModulePort(instance.id, instance.moduleId, port, source)
                             }
                             onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'mixer' ? (
+                          <MixerModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            outputs={publishedCompositionOutputs}
+                            routeState={routeState}
+                            onBind={(port, source) =>
+                              bindModulePort(instance.id, instance.moduleId, port, source)
+                            }
+                            onAddChannel={() => addMixerChannel(instance.id)}
+                            onRemoveChannel={(port) => removeMixerChannel(instance.id, port)}
                           />
                         ) : instance.moduleId === 'fractioning' ? (
                           <FractioningModule
