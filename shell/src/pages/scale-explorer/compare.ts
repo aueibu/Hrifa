@@ -172,6 +172,7 @@ export function currentRow(
 
 export type SortKey =
   | 'rep'
+  | 'forte'
   | 'hem'
   | 'coh'
   | 'ratio'
@@ -187,6 +188,7 @@ export type SortKey =
 
 export const COLUMNS: { k: SortKey; label: string; tip?: 'rve' | 'zs' }[] = [
   { k: 'rep', label: 'Set' },
+  { k: 'forte', label: 'Forte' },
   { k: 'hem', label: 'Hem' },
   { k: 'coh', label: 'Coh' },
   { k: 'ratio', label: 'Chaining' },
@@ -211,6 +213,8 @@ export function sortRows(
     let d: number;
     if (col === 'rep') {
       d = compareRotations(a.z, b.z, conv);
+    } else if (col === 'forte') {
+      d = a.forteOrder - b.forteOrder;
     } else if (col === 'icv') {
       const x = icvText(a.icv);
       const y = icvText(b.icv);

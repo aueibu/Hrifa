@@ -1,6 +1,7 @@
 import type { CSSProperties, KeyboardEvent } from 'react';
 import type { SemitoneStats } from '../pitchSets';
 import { fifthLines, ringPoint, semitoneArc } from '../ringGeometry';
+import { ARC, OPACITY, ROLE, STROKE, useScaleStyle } from '../useScaleStyle';
 import classes from '../ScaleExplorer.module.css';
 
 const CX = 160;
@@ -51,6 +52,7 @@ export function PitchRing({
   soundingDot,
   onToggle,
 }: PitchRingProps) {
+  const style = useScaleStyle();
   const sel = new Set(selection);
   const nC = compares.length;
   const kD = nC + 1;
@@ -75,7 +77,9 @@ export function PitchRing({
     }
   };
 
-  const style = { '--dot-sound-width': `${((dotR * 4) / NODE_R).toFixed(2)}px` } as CSSProperties;
+  const soundWidth = {
+    '--dot-sound-width': `${((dotR * 4) / NODE_R).toFixed(2)}px`,
+  } as CSSProperties;
 
   return (
     <svg
@@ -84,38 +88,63 @@ export function PitchRing({
       viewBox="0 0 320 320"
       role="group"
       aria-label="Twelve-note ring"
-      style={style}
+      style={soundWidth}
     >
-      <circle className={classes.guide} cx={CX} cy={CY} r={R} />
-      <polygon className={classes.poly} points={mainPoints} />
+      <circle
+        cx={CX}
+        cy={CY}
+        r={R}
+        fill="none"
+        stroke={ROLE.border}
+        strokeWidth={STROKE.hairline}
+      />
+      <polygon
+        points={mainPoints}
+        fill={style.accent}
+        fillOpacity={OPACITY.soft}
+        stroke={style.accent}
+        strokeWidth={STROKE.line}
+        strokeLinejoin="round"
+      />
       {compares.map((c, i) =>
         c.abs.length > 1 ? (
           <polygon
             key={c.slot}
-            className={classes.polyc}
-            data-slot={c.slot}
             points={polyPoints(c.abs.map((p) => dotAt(p, i + 1)))}
+            fill="none"
+            stroke={style.slotColor(c.slot)}
+            strokeOpacity={OPACITY.strong}
+            strokeWidth={STROKE.line}
+            strokeLinejoin="round"
           />
         ) : null
       )}
       <g>
-        {semis.edges.map((e) => (
-          <path
-            key={e.x}
-            className={classes.arc}
-            data-chain={e.ch}
-            d={semitoneArc(e.x, CX, CY, ARC_R)}
-          />
-        ))}
+        {semis.edges.map((e) => {
+          const arc = e.ch ? ARC.chained : ARC.isolated;
+          return (
+            <path
+              key={e.x}
+              d={semitoneArc(e.x, CX, CY, ARC_R)}
+              fill="none"
+              stroke={style.accent}
+              strokeWidth={arc.width}
+              strokeDasharray={arc.dash}
+              strokeLinecap={e.ch ? 'butt' : 'round'}
+            />
+          );
+        })}
       </g>
       {showFifths && (
         <g>
           {fifthLines(sel, at, 25, 22, 7, 0.1).map((f) => (
             <path
               key={f.from}
-              className={classes.fifth}
-              data-kind={f.kind}
               d={f.d}
+              fill="none"
+              stroke={f.kind === 'ok' ? style.fifthPresent : style.fifthMissing}
+              strokeWidth={STROKE.mark}
+              strokeLinecap="round"
               markerEnd={f.kind === 'ok' ? 'url(#se-arrow)' : undefined}
             />
           ))}
@@ -147,26 +176,41 @@ export function PitchRing({
                   const dp = dotAt(pc, ck);
                   const inSet = ck === 0 ? sel.has(pc) : compares[ck - 1].abs.includes(pc);
                   const lit = sounding && soundingDot === ck;
+                  const color = style.slotColor(ck === 0 ? 'L' : compares[ck - 1].slot);
                   return (
                     <g key={ck}>
                       <circle
-                        className={classes.dot}
                         cx={dp[0]}
                         cy={dp[1]}
                         r={dotR}
-                        data-on={inSet}
-                        data-slot={ck === 0 ? 'L' : compares[ck - 1].slot}
-                        data-sound={lit}
+                        fill={inSet ? color : ROLE.panel}
+                        stroke={lit ? ROLE.text : inSet ? color : ROLE.border}
+                        strokeWidth={lit ? 'var(--dot-sound-width)' : STROKE.line}
                       />
                       {lit && (
-                        <circle className={classes.halo} cx={dp[0]} cy={dp[1]} r={dotR * 1.7} />
+                        <circle
+                          cx={dp[0]}
+                          cy={dp[1]}
+                          r={dotR * 1.7}
+                          fill="none"
+                          stroke={ROLE.text}
+                          strokeWidth={STROKE.mark}
+                          pointerEvents="none"
+                        />
                       )}
                     </g>
                   );
                 })
               ) : (
                 // nobody uses this pitch class: one centered unfilled ring instead of several tiny empty dots
-                <circle className={classes.dot} cx={p[0]} cy={p[1]} r={dotR} data-slot="L" />
+                <circle
+                  cx={p[0]}
+                  cy={p[1]}
+                  r={dotR}
+                  fill={ROLE.panel}
+                  stroke={ROLE.border}
+                  strokeWidth={STROKE.line}
+                />
               ))}
             <text
               className={`${classes.label} ${classes.pcn}`}
@@ -189,6 +233,7 @@ export function PitchRing({
 
 /** Marker for the fifth arrows; rendered once per page. */
 export function RingMarkerDefs() {
+  const style = useScaleStyle();
   return (
     <svg className={classes.defs} width="0" height="0" aria-hidden="true" focusable="false">
       <defs>
@@ -201,7 +246,7 @@ export function RingMarkerDefs() {
           markerHeight="4.5"
           orient="auto"
         >
-          <path className={classes.arrow} d="M0,0 L6,3 L0,6 z" />
+          <path d="M0,0 L6,3 L0,6 z" fill={style.fifthPresent} />
         </marker>
       </defs>
     </svg>

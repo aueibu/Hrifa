@@ -5,6 +5,12 @@
  * number[] of pitch classes) instead of living in module globals.
  */
 
+import {
+  findForteEntry,
+  forteCatalog,
+  intervalClassVector,
+} from '../composition-workbench/forteCatalog';
+
 export type PrimeConvention = 'rahn' | 'forte';
 
 /** Position on the line of fifths for each interval (semitones) above the root. The tritone (6) is resolved per mode. */
@@ -80,21 +86,8 @@ export function buildMode(k: number, abs: number[]): Mode {
   };
 }
 
-export function icvOf(pcs: number[]): number[] {
-  const v = [0, 0, 0, 0, 0, 0];
-  for (let i = 0; i < pcs.length; i++) {
-    for (let j = i + 1; j < pcs.length; j++) {
-      let d = Math.abs(pcs[i] - pcs[j]) % 12;
-      if (d > 6) {
-        d = 12 - d;
-      }
-      if (d) {
-        v[d - 1]++;
-      }
-    }
-  }
-  return v;
-}
+/** Interval vector; shared with the Composition Workbench's Forte catalog so both agree. */
+export const icvOf = (pcs: number[]): number[] => intervalClassVector(pcs);
 
 export function icvText(v: number[]): string {
   return `<${v.join(Math.max(...v) > 9 ? ' ' : '')}>`;
@@ -378,6 +371,10 @@ export interface CatalogRow extends SetAnalysis {
   rve: number | null;
   zsz: number | null;
   mirrorKey: string;
+  /** Forte number of the set class (e.g. "7-35"), from the shared Forte catalog. */
+  forte: string | null;
+  /** Position in the Forte catalog, for sorting in Forte's own order. */
+  forteOrder: number;
 }
 
 const catalogCache = new Map<string, CatalogRow[]>();
@@ -409,6 +406,7 @@ export function catalog(n: number, merge: boolean, conv: PrimeConvention): Catal
     seen.add(key);
     const row = analyze(r.rep);
     const rv = rangeVsExpectedFrom(row);
+    const forte = findForteEntry(r.rep);
     rows.push({
       ...row,
       key,
@@ -416,6 +414,8 @@ export function catalog(n: number, merge: boolean, conv: PrimeConvention): Catal
       rve: rv ? rv.z : null,
       zsz: rv ? rv.zs : null,
       mirrorKey: keyOf(key === keyOf(r.a) ? r.mirror : r.a),
+      forte: forte?.forteNumber ?? null,
+      forteOrder: forte ? forteCatalog.indexOf(forte) : -1,
     });
   }
   catalogCache.set(cacheKey, rows);

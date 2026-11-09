@@ -6,6 +6,7 @@ import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { noteNames, chordsOf } from './scale-explorer/chords';
 import { CompareTab, type CompareEntry } from './scale-explorer/components/CompareTab';
+import { EditVectorTab } from './scale-explorer/components/EditVectorTab';
 import { InfoDrawer } from './scale-explorer/components/InfoDrawer';
 import { InputPanel } from './scale-explorer/components/InputPanel';
 import {
@@ -18,6 +19,7 @@ import {
 import { NeighboursPanel } from './scale-explorer/components/NeighboursPanel';
 import { RingMarkerDefs, type RingCompare } from './scale-explorer/components/PitchRing';
 import { PlaybackPanel } from './scale-explorer/components/PlaybackPanel';
+import { SpacesTab } from './scale-explorer/components/SpacesTab';
 import {
   playKeyFor,
   SummaryPanel,
@@ -38,15 +40,19 @@ import {
 } from './scale-explorer/scaleView';
 import { loadSettings, MAJOR_SCALE, saveSettings, type Settings } from './scale-explorer/settings';
 import { useDrone, useScalePlayback } from './scale-explorer/usePlayback';
+import { ScaleStyleProvider } from './scale-explorer/useScaleStyle';
+import { useSoundfont } from './scale-explorer/useSoundfont';
 import classes from './scale-explorer/ScaleExplorer.module.css';
 
-type TabId = 'scale' | 'compare';
+type TabId = 'scale' | 'compare' | 'vector' | 'spaces';
 const MAX_COMPARES = 4;
 
 export function ScaleExplorerPage() {
   return (
     <AudioEngineProvider>
-      <ScaleExplorer />
+      <ScaleStyleProvider>
+        <ScaleExplorer />
+      </ScaleStyleProvider>
     </AudioEngineProvider>
   );
 }
@@ -54,7 +60,9 @@ export function ScaleExplorerPage() {
 function ScaleExplorer() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab: TabId = searchParams.get('tab') === 'compare' ? 'compare' : 'scale';
+  const tabParam = searchParams.get('tab');
+  const tab: TabId =
+    tabParam === 'compare' || tabParam === 'vector' || tabParam === 'spaces' ? tabParam : 'scale';
   const [compares, setCompares] = useState<CompareEntry[]>([]);
   const [compareNote, setCompareNote] = useState('');
   const [compareSize, setCompareSize] = useState(() => settings.selection.length || 7);
@@ -65,7 +73,8 @@ function ScaleExplorer() {
   const [scrollTo, setScrollTo] = useState<{ index: number } | null>(null);
   const [droneOn, setDroneOn] = useState(false);
   const [lastRoot, setLastRoot] = useState(0);
-  const { playingKey, now, start, stop } = useScalePlayback();
+  const { playingKey, now, context, loading, error, start, stop } = useScalePlayback();
+  const soundfont = useSoundfont();
 
   useEffect(() => saveSettings(settings), [settings]);
 
@@ -172,7 +181,8 @@ function ScaleExplorer() {
   };
 
   const setTab = (next: string | null) => {
-    const value: TabId = next === 'compare' ? 'compare' : 'scale';
+    const value: TabId =
+      next === 'compare' || next === 'vector' || next === 'spaces' ? next : 'scale';
     if (value === 'compare' && selection.length >= 1) {
       setCompareSize(selection.length);
     }
@@ -182,7 +192,7 @@ function ScaleExplorer() {
   // ----- derived comparison data (shown only on the Compare tab) -----
   const s0 = selection[0] ?? 0;
   const activeCompares: (CompareEntry & { abs: number[] })[] =
-    tab === 'compare' && selection.length
+    tab !== 'scale' && selection.length
       ? compares.map((c) => ({
           ...c,
           abs: c.z.map((x) => (x + s0) % 12).sort((a, b) => a - b),
@@ -206,7 +216,7 @@ function ScaleExplorer() {
       return;
     }
     let dot: number | null = null;
-    if (tab === 'compare') {
+    if (tab !== 'scale') {
       if (loaded) {
         dot = 0;
       } else {
@@ -214,7 +224,7 @@ function ScaleExplorer() {
         dot = at >= 0 ? at + 1 : null;
       }
     }
-    void start(key, scaleScript([{ modeIndex: -1, root: rootOf(s0), z }]), dot);
+    void start(key, scaleScript([{ modeIndex: -1, root: rootOf(s0), z }], settings.voice), dot);
   };
 
   const playMode = (idx: number) => {
@@ -226,7 +236,10 @@ function ScaleExplorer() {
       return;
     }
     const m = view.view[idx];
-    void start(modePlayKey(idx), scaleScript([{ modeIndex: idx, root: rootOf(m.abs[0]), z: m.z }]));
+    void start(
+      modePlayKey(idx),
+      scaleScript([{ modeIndex: idx, root: rootOf(m.abs[0]), z: m.z }], settings.voice)
+    );
   };
 
   const playAll = () => {
@@ -239,7 +252,10 @@ function ScaleExplorer() {
     }
     void start(
       'all',
-      scaleScript(view.view.map((m, i) => ({ modeIndex: i, root: rootOf(m.abs[0]), z: m.z })))
+      scaleScript(
+        view.view.map((m, i) => ({ modeIndex: i, root: rootOf(m.abs[0]), z: m.z })),
+        settings.voice
+      )
     );
   };
 
@@ -269,7 +285,7 @@ function ScaleExplorer() {
       // close the run on the first chord, an octave up
       items.push({ ...items[0], midis: items[0].midis.map((x) => x + 12) });
     }
-    void start(key, chordScript(items, settings.chordStyle as ChordStyle));
+    void start(key, chordScript(items, settings.chordStyle as ChordStyle, settings.voice));
   };
 
   const copy = async () => {
@@ -303,12 +319,14 @@ function ScaleExplorer() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Main className={classes.scope}>
+      <AppShell.Main>
         <RingMarkerDefs />
         <Tabs value={tab} onChange={setTab} mb="md">
           <Tabs.List aria-label="Views">
             <Tabs.Tab value="scale">Scale</Tabs.Tab>
             <Tabs.Tab value="compare">Compare</Tabs.Tab>
+            <Tabs.Tab value="vector">Edit Vector</Tabs.Tab>
+            <Tabs.Tab value="spaces">Spaces</Tabs.Tab>
           </Tabs.List>
         </Tabs>
 
@@ -367,6 +385,10 @@ function ScaleExplorer() {
               names={names}
               droneOn={droneOn}
               playingAll={playingKey === 'all'}
+              loading={loading}
+              error={error}
+              soundfont={soundfont}
+              onOpenSoundfont={(file) => void soundfont.open(file)}
               onDroneOn={setDroneOn}
               onPlayAll={playAll}
               set={set}
@@ -393,6 +415,7 @@ function ScaleExplorer() {
                   onCloseAll={() => setOpen(new Set())}
                   playingKey={playingKey}
                   now={now}
+                  context={context}
                   onSort={(mode) => set('sortMode', mode)}
                   onExpansion={(e) => set('expansion', e)}
                   onNameMode={(mode) => set('nameMode', mode)}
@@ -421,6 +444,39 @@ function ScaleExplorer() {
                 onToggleCompare={toggleCompare}
                 onLoad={loadSet}
                 onPlay={(z) => playScale(z, false)}
+              />
+            )}
+            {tab === 'vector' && (
+              <EditVectorTab
+                selection={selection}
+                merge={settings.cmpMerge}
+                onMerge={(on) => set('cmpMerge', on)}
+                strict={settings.strictSwap}
+                onStrict={(on) => set('strictSwap', on)}
+                conv={settings.cmpConv}
+                compares={compares}
+                spectrumMode={settings.spectrumMode}
+                onSpectrumMode={(mode) => set('spectrumMode', mode)}
+                playingKey={playingKey}
+                onToggleCompare={toggleCompare}
+                onLoad={loadSet}
+                onPlay={(z) => playScale(z, false)}
+              />
+            )}
+            {tab === 'spaces' && (
+              <SpacesTab
+                selection={selection}
+                compares={compares}
+                conv={settings.cmpConv}
+                spectrumMode={settings.spectrumMode}
+                onSpectrumMode={(mode) => set('spectrumMode', mode)}
+                scatterX={settings.scatterX}
+                scatterY={settings.scatterY}
+                onScatterAxes={(x, y) =>
+                  setSettings((prev) => ({ ...prev, scatterX: x, scatterY: y }))
+                }
+                onToggle={toggle}
+                onToggleCompare={toggleCompare}
               />
             )}
           </div>

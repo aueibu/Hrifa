@@ -5,6 +5,8 @@ import { sgn } from '../format';
 import { pathLayout } from '../neighbours';
 import { linkInfo, type Mode } from '../pitchSets';
 import { NEIGHBOURS_HINT } from '../texts';
+import { LINK, OPACITY, STROKE, useScaleStyle } from '../useScaleStyle';
+import { LineSample } from './Legend';
 import classes from '../ScaleExplorer.module.css';
 
 interface NeighboursPanelProps {
@@ -17,6 +19,7 @@ interface NeighboursPanelProps {
 
 /** Modes placed by fifths brightness and linked by how many notes differ, plus a common-tones matrix. */
 export function NeighboursPanel({ view, pathMax, onPathMax, onPick }: NeighboursPanelProps) {
+  const style = useScaleStyle();
   const layout = pathLayout(view, pathMax);
   if (!layout) {
     return null;
@@ -52,12 +55,22 @@ export function NeighboursPanel({ view, pathMax, onPathMax, onPick }: Neighbours
       >
         {layout.links.map((l, i) =>
           l.curve ? (
-            <path key={i} className={classes.link} data-d={l.d} d={l.curve} />
+            <path
+              key={i}
+              d={l.curve}
+              fill="none"
+              stroke={style.links[l.d - 1]}
+              strokeOpacity={LINK.opacities[l.d - 1]}
+              strokeWidth={LINK.widths[l.d - 1]}
+              strokeLinecap="round"
+            />
           ) : (
             <line
               key={i}
-              className={classes.link}
-              data-d={l.d}
+              stroke={style.links[l.d - 1]}
+              strokeOpacity={LINK.opacities[l.d - 1]}
+              strokeWidth={LINK.widths[l.d - 1]}
+              strokeLinecap="round"
               x1={l.line![0]}
               y1={l.line![1]}
               x2={l.line![2]}
@@ -68,8 +81,10 @@ export function NeighboursPanel({ view, pathMax, onPathMax, onPick }: Neighbours
         {layout.nodes.map((n) => (
           <g key={n.index} className={classes.peak} onClick={() => onPick(n.index)}>
             <circle
-              className={classes.peakNode}
-              data-root={n.mode.k === 1 && !n.mode.srcs.length}
+              fill={style.accent}
+              fillOpacity={n.mode.k === 1 && !n.mode.srcs.length ? 1 : OPACITY.soft}
+              stroke={style.accent}
+              strokeWidth={STROKE.line}
               cx={n.x}
               cy={n.y}
               r={11}
@@ -86,7 +101,11 @@ export function NeighboursPanel({ view, pathMax, onPathMax, onPick }: Neighbours
       <Group gap="md" mt="xs" aria-label="Link colours">
         {distances.map((i) => (
           <Group key={i} gap={6} opacity={i > layout.shown ? 0.4 : 1}>
-            <span className={classes.linkSwatch} data-d={i} />
+            <LineSample
+              color={style.links[i - 1]}
+              width={LINK.widths[i - 1]}
+              opacity={LINK.opacities[i - 1]}
+            />
             <Text size="xs">
               {i} {i === 1 ? 'note' : 'notes'} · {layout.counts[i]}
             </Text>
@@ -130,8 +149,11 @@ export function NeighboursPanel({ view, pathMax, onPathMax, onPick }: Neighbours
                         return (
                           <Table.Td
                             key={b.k}
-                            className={classes.cell}
-                            data-d={li.d >= 1 && li.d <= 6 ? li.d : undefined}
+                            bg={
+                              li.d >= 1 && li.d <= 6
+                                ? `color-mix(in srgb, ${style.links[li.d - 1]} ${OPACITY.soft * 100}%, transparent)`
+                                : undefined
+                            }
                           >
                             <Data size="sm">{li.c}</Data>
                           </Table.Td>
@@ -144,7 +166,7 @@ export function NeighboursPanel({ view, pathMax, onPathMax, onPick }: Neighbours
             </Table.ScrollContainer>
             <Text size="xs" c="dimmed" mt="xs">
               Each cell counts the notes two modes share when both start on the same root. Cell
-              color matches the arc color for that number of differing notes.
+              color matches the line color for that number of differing notes.
             </Text>
           </Accordion.Panel>
         </Accordion.Item>

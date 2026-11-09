@@ -4,14 +4,40 @@
  * touches Web Audio directly: playback is data (a plan) so it can later be routed through the workbench's
  * mixer and transport unchanged.
  */
+import { sampledInstruments } from '../composition-workbench/audio/instrumentRegistry';
 import type {
   InstrumentId,
   SecondsPerformanceEvent,
   SecondsPerformancePlan,
 } from '../composition-workbench/audio/types';
 
+/** The voice scale and chord playback use unless one is chosen. */
+export const DEFAULT_VOICE: InstrumentId = 'preview.triangle-soft';
+
+/** Voices offered for scale and chord playback: synthesized, then sampled (downloaded on first use). */
+export const VOICE_CHOICES = [
+  {
+    group: 'Synth',
+    items: [
+      { value: 'preview.triangle-soft', label: 'Soft triangle' },
+      { value: 'preview.sine', label: 'Sine' },
+    ],
+  },
+  {
+    group: 'Sampled',
+    items: sampledInstruments.map((d) => ({ value: d.id, label: d.label })),
+  },
+];
+
+export const isVoice = (value: unknown): value is InstrumentId =>
+  VOICE_CHOICES.some((g) => g.items.some((i) => i.value === value));
+
+export const isSampledVoice = (id: InstrumentId) =>
+  id.startsWith('sf2:') || sampledInstruments.some((d) => d.id === id);
+
 export const SCALE_SOURCE = 'scale-explorer.play';
-export const DRONE_SOURCE = 'scale-explorer.drone';
+/** The drone alternates between two sources so a re-pitched drone can fade in while the old one fades out. */
+export const DRONE_SOURCES = ['scale-explorer.drone.a', 'scale-explorer.drone.b'] as const;
 export const NOTE_BUS = 'scale-explorer.notes';
 export const DRONE_BUS = 'scale-explorer.drone';
 
@@ -85,13 +111,14 @@ function noteEvent(
   midi: number,
   atSeconds: number,
   durationSeconds: number,
-  velocity: number
+  velocity: number,
+  instrumentId: InstrumentId
 ): SecondsPerformanceEvent {
   const event: SecondsPerformanceEvent = {
     id: `${plan.sourceId}:${plan.events.length}`,
     pitchMidicents: midicents(midi),
     velocity,
-    instrumentId: 'preview.triangle',
+    instrumentId,
     busId: NOTE_BUS,
     provenance: [],
     atSeconds,
@@ -109,7 +136,10 @@ export interface ScaleItem {
 }
 
 /** Each mode played upward from its first note to the octave, one after another. */
-export function scaleScript(items: ScaleItem[]): PlaybackScript {
+export function scaleScript(
+  items: ScaleItem[],
+  instrumentId: InstrumentId = DEFAULT_VOICE
+): PlaybackScript {
   const plan = newPlan(SCALE_SOURCE);
   const cues: Cue[] = [];
   let t = 0;
@@ -120,7 +150,7 @@ export function scaleScript(items: ScaleItem[]): PlaybackScript {
     notes.forEach((midi, i) => {
       const at = t + i * NOTE_STEP_SECONDS;
       const dur = NOTE_STEP_SECONDS * 0.92;
-      noteEvent(plan, midi, at, dur, 0.4);
+      noteEvent(plan, midi, at, dur, 0.4, instrumentId);
       cues.push({
         atSeconds: at,
         durationSeconds: dur,
@@ -145,7 +175,11 @@ export interface ChordItem {
 }
 
 /** Chords one after another, each as an arpeggio, a block, or an arpeggio then a block. */
-export function chordScript(items: ChordItem[], style: ChordStyle): PlaybackScript {
+export function chordScript(
+  items: ChordItem[],
+  style: ChordStyle,
+  instrumentId: InstrumentId = DEFAULT_VOICE
+): PlaybackScript {
   const plan = newPlan(SCALE_SOURCE);
   const cues: Cue[] = [];
   let t = 0;
@@ -155,7 +189,7 @@ export function chordScript(items: ChordItem[], style: ChordStyle): PlaybackScri
     if (style === 'arp' || style === 'both') {
       item.midis.forEach((midi, j) => {
         const at = cursor + j * ARP_SECONDS;
-        noteEvent(plan, midi, at, ARP_SECONDS * 1.7, 0.3);
+        noteEvent(plan, midi, at, ARP_SECONDS * 1.7, 0.3, instrumentId);
         cues.push({
           ...base,
           atSeconds: at,
@@ -166,7 +200,7 @@ export function chordScript(items: ChordItem[], style: ChordStyle): PlaybackScri
       cursor += item.midis.length * ARP_SECONDS + 0.12;
     }
     if (style === 'block' || style === 'both') {
-      item.midis.forEach((midi) => noteEvent(plan, midi, cursor, HOLD_SECONDS, 0.2));
+      item.midis.forEach((midi) => noteEvent(plan, midi, cursor, HOLD_SECONDS, 0.2, instrumentId));
       cues.push({ ...base, atSeconds: cursor, durationSeconds: HOLD_SECONDS, pcs: item.pcs });
       cursor += HOLD_SECONDS;
     }
@@ -177,11 +211,15 @@ export function chordScript(items: ChordItem[], style: ChordStyle): PlaybackScri
 }
 
 /** A long held tone for the drone. Played as its own source so it sounds under melodies and can be re-pitched. */
-export function dronePlan(pitchClass: number, wave: DroneWave): SecondsPerformancePlan {
-  const plan = newPlan(DRONE_SOURCE);
+export function dronePlan(
+  pitchClass: number,
+  wave: DroneWave,
+  sourceId: string
+): SecondsPerformancePlan {
+  const plan = newPlan(sourceId);
   plan.durationSeconds = DRONE_SECONDS;
   plan.events.push({
-    id: `${DRONE_SOURCE}:0`,
+    id: `${sourceId}:0`,
     pitchMidicents: midicents(36 + pitchClass),
     velocity: 1,
     instrumentId: WAVE_INSTRUMENT[wave],

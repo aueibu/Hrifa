@@ -1,14 +1,32 @@
-import { Button, Group, Select, Slider, Stack, Text } from '@mantine/core';
+import { Button, FileButton, Group, Select, Slider, Stack, Text } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
-import { DRONE_WAVES, type ChordStyle, type DroneWave } from '../playback';
+import {
+  parseSoundfontVoice,
+  soundfontVoiceId,
+} from '../../composition-workbench/audio/soundfontLibrary';
+import type { InstrumentId } from '../../composition-workbench/audio/types';
+import {
+  DRONE_WAVES,
+  isSampledVoice,
+  VOICE_CHOICES,
+  type ChordStyle,
+  type DroneWave,
+} from '../playback';
 import type { PlayAs, Settings } from '../settings';
 import { PLAYBACK_HINT } from '../texts';
+import type { SoundfontState } from '../useSoundfont';
 
 interface PlaybackPanelProps {
   settings: Settings;
   names: string[];
   droneOn: boolean;
   playingAll: boolean;
+  /** Samples for the chosen voice are downloading. */
+  loading: boolean;
+  /** Why the last playback could not start, if it could not. */
+  error: string | null;
+  soundfont: SoundfontState;
+  onOpenSoundfont: (file: File) => void;
   onDroneOn: (on: boolean) => void;
   onPlayAll: () => void;
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
@@ -19,10 +37,37 @@ export function PlaybackPanel({
   names,
   droneOn,
   playingAll,
+  loading,
+  error,
+  soundfont,
+  onOpenSoundfont,
   onDroneOn,
   onPlayAll,
   set,
 }: PlaybackPanelProps) {
+  const fileInfo = soundfont.info;
+  const chosen = parseSoundfontVoice(settings.voice);
+  const chosenPreset =
+    fileInfo && chosen?.fileId === fileInfo.id
+      ? fileInfo.presets.find((p) => p.bank === chosen.bank && p.program === chosen.program)
+      : undefined;
+  const soundData = chosenPreset
+    ? [
+        ...VOICE_CHOICES,
+        { group: 'SoundFont', items: [{ value: settings.voice, label: chosenPreset.name }] },
+      ]
+    : VOICE_CHOICES;
+  const presetData = fileInfo
+    ? [...new Set(fileInfo.presets.map((p) => p.bank))].map((bank) => ({
+        group: bank === 0 ? 'General MIDI (bank 0)' : `Bank ${bank}`,
+        items: fileInfo.presets
+          .filter((p) => p.bank === bank)
+          .map((p) => ({
+            value: soundfontVoiceId(fileInfo.id, p.bank, p.program),
+            label: `${String(p.program + 1).padStart(3, '0')} ${p.name}`,
+          })),
+      }))
+    : [];
   const zeroName = settings.dronePc === 'follow' ? 'C' : names[settings.dronePc];
   return (
     <Surface aria-label="Playback">
@@ -84,6 +129,35 @@ export function PlaybackPanel({
           </Stack>
           <Select
             size="xs"
+            label="Sound"
+            w={170}
+            allowDeselect={false}
+            value={settings.voice}
+            data={soundData}
+            onChange={(v) => v && set('voice', v as InstrumentId)}
+          />
+          <FileButton accept=".sf2" onChange={(file) => file && onOpenSoundfont(file)}>
+            {(props) => (
+              <Button size="xs" variant="default" loading={soundfont.loading} {...props}>
+                Open SoundFont…
+              </Button>
+            )}
+          </FileButton>
+          {fileInfo && (
+            <Select
+              size="xs"
+              label="Preset"
+              w={240}
+              searchable
+              allowDeselect={false}
+              data={presetData}
+              value={chosenPreset ? settings.voice : null}
+              placeholder={`${fileInfo.presets.length} presets`}
+              onChange={(v) => v && set('voice', v as InstrumentId)}
+            />
+          )}
+          <Select
+            size="xs"
             label="Chords"
             w={190}
             allowDeselect={false}
@@ -99,6 +173,33 @@ export function PlaybackPanel({
             {playingAll ? '■ Stop' : '▶ Play all modes'}
           </Button>
         </Group>
+        {soundfont.loading && (
+          <Text size="xs" c="dimmed" role="status">
+            Reading the SoundFont file…
+          </Text>
+        )}
+        {soundfont.error && (
+          <Text size="xs" c="red" role="alert">
+            {soundfont.error}
+          </Text>
+        )}
+        {fileInfo && (
+          <Text size="xs" c="dimmed">
+            {fileInfo.fileName} ({Math.round(fileInfo.sizeBytes / 1048576)} MB). Samples load per
+            preset the first time it plays, and the file is forgotten when the page reloads.
+          </Text>
+        )}
+        {loading && (
+          <Text size="xs" c="dimmed" role="status">
+            Loading {isSampledVoice(settings.voice) ? 'the samples for this sound' : 'audio'}…
+          </Text>
+        )}
+        {error && (
+          <Text size="xs" c="red" role="alert">
+            Could not start playback: {error}. Sampled sounds download when first used, so check
+            your connection, or choose a synth sound.
+          </Text>
+        )}
         <Text size="xs" c="dimmed">
           {PLAYBACK_HINT}
         </Text>

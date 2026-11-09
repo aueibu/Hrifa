@@ -4,9 +4,10 @@ import { Surface } from '../../../components/Surface/Surface';
 import { axisLabel } from '../format';
 import type { InversionMode, SemitoneStats } from '../pitchSets';
 import type { NowPlaying } from '../usePlayback';
+import { ARC, STROKE, useScaleStyle } from '../useScaleStyle';
+import { LineSample } from './Legend';
 import { PianoKeys } from './PianoKeys';
 import { PitchRing, type RingCompare } from './PitchRing';
-import classes from '../ScaleExplorer.module.css';
 
 interface InputPanelProps {
   selection: number[];
@@ -48,6 +49,7 @@ export function InputPanel(props: InputPanelProps) {
     onCopy,
   } = props;
   const [copyLabel, setCopyLabel] = useState('Copy results');
+  const style = useScaleStyle();
   const soundingPcs = now?.pcs ?? new Set<number>();
 
   const copy = async () => {
@@ -92,13 +94,13 @@ export function InputPanel(props: InputPanelProps) {
         </SimpleGrid>
         <Group gap="md" justify="center">
           <Group gap={6}>
-            <i className={classes.swatch} />
+            <LineSample color={style.accent} width={ARC.isolated.width} />
             <Text size="xs" c="dimmed">
               isolated semitone
             </Text>
           </Group>
           <Group gap={6}>
-            <i className={classes.swatch} data-tone="warn" />
+            <LineSample color={style.accent} width={ARC.chained.width} dash={ARC.chained.dash} />
             <Text size="xs" c="dimmed">
               chained semitone
             </Text>
@@ -106,13 +108,13 @@ export function InputPanel(props: InputPanelProps) {
           {showFifths && (
             <>
               <Group gap={6}>
-                <i className={classes.swatch} data-tone="good" />
+                <LineSample color={style.fifthPresent} width={STROKE.mark} arrow />
                 <Text size="xs" c="dimmed">
                   P5 above present
                 </Text>
               </Group>
               <Group gap={6}>
-                <i className={classes.swatch} data-tone="bad" />
+                <LineSample color={style.fifthMissing} width={STROKE.mark} />
                 <Text size="xs" c="dimmed">
                   P5 above missing
                 </Text>

@@ -11,6 +11,7 @@ import {
   Table,
   Text,
   Title,
+  Tooltip,
   UnstyledButton,
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
@@ -33,6 +34,8 @@ import { fmt, sgn1, TIP_RANGE_VS_EXPECTED, TIP_RANGE_VS_SIZE } from '../format';
 import { binom, catalog, icvText, type CatalogRow, type PrimeConvention } from '../pitchSets';
 import type { CompareSort, RankDirection } from '../settings';
 import { COMPARE_TABLE_HINT } from '../texts';
+import { OPACITY, ROLE, STROKE, useScaleStyle } from '../useScaleStyle';
+import { Swatch } from './Legend';
 import classes from '../ScaleExplorer.module.css';
 
 export interface CompareEntry {
@@ -184,21 +187,23 @@ export function CompareTab(props: CompareTabProps) {
               <Table.Tr>
                 <Table.Th />
                 {columns.map((c) => (
-                  <Table.Th key={c.k} title={tipFor(c.tip)}>
-                    <UnstyledButton
-                      fz="xs"
-                      fw={700}
-                      onClick={() =>
-                        props.onSort(
-                          sort.k === c.k
-                            ? { k: c.k, dir: sort.dir === 1 ? -1 : 1 }
-                            : { k: c.k, dir: 1 }
-                        )
-                      }
-                    >
-                      {c.label}
-                      {sort.k === c.k ? (sort.dir > 0 ? ' ▲' : ' ▼') : ''}
-                    </UnstyledButton>
+                  <Table.Th key={c.k}>
+                    <Tooltip label={tipFor(c.tip)} disabled={!c.tip} multiline w={320} withArrow>
+                      <UnstyledButton
+                        fz="xs"
+                        fw={700}
+                        onClick={() =>
+                          props.onSort(
+                            sort.k === c.k
+                              ? { k: c.k, dir: sort.dir === 1 ? -1 : 1 }
+                              : { k: c.k, dir: 1 }
+                          )
+                        }
+                      >
+                        {c.label}
+                        {sort.k === c.k ? (sort.dir > 0 ? ' ▲' : ' ▼') : ''}
+                      </UnstyledButton>
+                    </Tooltip>
                   </Table.Th>
                 ))}
                 <Table.Th>Mirror</Table.Th>
@@ -246,12 +251,7 @@ interface SetRowProps {
 function SetRow({ r, merge, hasRve, me, entry, playing, onToggle, onPlay, onLoad }: SetRowProps) {
   const mirror = r.self ? 'self' : `${merge ? 'also ' : ''}[${r.mirrorKey}]`;
   return (
-    <Table.Tr
-      className={classes.compareRow}
-      data-me={me}
-      data-slot={entry?.slot}
-      onClick={onToggle}
-    >
+    <Table.Tr className={classes.compareRow} data-me={me} onClick={onToggle}>
       <Table.Td>
         <ActionIcon
           size="sm"
@@ -267,9 +267,12 @@ function SetRow({ r, merge, hasRve, me, entry, playing, onToggle, onPlay, onLoad
       </Table.Td>
       <Table.Td>
         <Group gap={6} wrap="nowrap">
-          {entry && <i className={classes.swatch} data-slot={entry.slot} />}
+          {entry && <Swatch slot={entry.slot} />}
           <Data size="sm">{`[${r.key}]`}</Data>
         </Group>
+      </Table.Td>
+      <Table.Td>
+        <Data size="sm">{r.forte ?? '—'}</Data>
       </Table.Td>
       <Table.Td>{r.hem}</Table.Td>
       <Table.Td>{r.coh}</Table.Td>
@@ -323,6 +326,7 @@ const TOP = 12;
 const BASE = 78;
 
 function MetricChart({ metric, rows, current, rank, filter, onFilter }: MetricChartProps) {
+  const style = useScaleStyle();
   const vals = rows.map((r) => r[metric.k] as number);
   const cur = current ? (current[metric.k] as number | null) : null;
   const hist = histogramBars(vals, metric.format);
@@ -334,9 +338,11 @@ function MetricChart({ metric, rows, current, rank, filter, onFilter }: MetricCh
   return (
     <Surface>
       <Group justify="space-between" mb={4}>
-        <Title order={3} size="h6" title={tipFor(metric.tip)}>
-          {metric.label}
-        </Title>
+        <Tooltip label={tipFor(metric.tip)} disabled={!metric.tip} multiline w={320} withArrow>
+          <Title order={3} size="h6">
+            {metric.label}
+          </Title>
+        </Tooltip>
         {rk && (
           <Badge variant="light" size="sm">
             #{rk.place} of {rk.total}
@@ -350,7 +356,14 @@ function MetricChart({ metric, rows, current, rank, filter, onFilter }: MetricCh
         role="img"
         aria-label={`Histogram of ${metric.label}`}
       >
-        <line className={classes.chartAxis} x1={8} y1={BASE} x2={W - 8} y2={BASE} />
+        <line
+          stroke={ROLE.border}
+          strokeWidth={STROKE.hairline}
+          x1={8}
+          y1={BASE}
+          x2={W - 8}
+          y2={BASE}
+        />
         {hist.bars.map((b, k) => {
           const h = (b.count / maxC) * (BASE - TOP);
           const x = 8 + k * bw;
@@ -366,9 +379,10 @@ function MetricChart({ metric, rows, current, rank, filter, onFilter }: MetricCh
               {b.count > 0 && (
                 <>
                   <rect
-                    className={classes.bar}
-                    data-cur={barHasValue(hist, k, cur)}
-                    data-sel={isSel}
+                    fill={style.accent}
+                    fillOpacity={barHasValue(hist, k, cur) ? 1 : OPACITY.soft}
+                    stroke={isSel ? ROLE.text : 'none'}
+                    strokeWidth={STROKE.line}
                     x={x + 1}
                     y={BASE - h}
                     width={Math.max(1, bw - 2)}

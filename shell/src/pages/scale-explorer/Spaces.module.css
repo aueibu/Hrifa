@@ -1,0 +1,69 @@
+/* Spaces tab structure and text. Set colors are resolved in TypeScript (useScaleStyle); this file holds
+   only layout, text, and interaction states, using the shell's semantic roles. */
+.chart {
+  display: block;
+  height: auto;
+  max-width: 48rem;
+  width: 100%;
+}
+
+.label {
+  fill: var(--text-muted);
+  font-size: 9px;
+  text-anchor: middle;
+}
+
+.labelStrong {
+  fill: var(--text);
+  font-size: 11px;
+}
+
+.labelEnd {
+  text-anchor: end;
+}
+
+/* Tonnetz */
+.node {
+  cursor: pointer;
+}
+
+.node:hover .nodeBase {
+  stroke: var(--mantine-color-text);
+}
+
+.nodeLabelOn {
+  fill: var(--mantine-primary-color-contrast);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* set-class map */
+.point {
+  cursor: pointer;
+  fill: var(--text-muted);
+  fill-opacity: 0.45;
+  stroke: var(--panel);
+  stroke-width: 1;
+}
+
+.point[data-multi='true'] {
+  fill-opacity: 0.85;
+}
+
+.point:hover {
+  fill: var(--mantine-color-text);
+  fill-opacity: 1;
+}
+
+.marker {
+  pointer-events: none;
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+
+.markerLabel {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+}

@@ -4,7 +4,7 @@ import type { PlaybackSession } from '../composition-workbench/audio/types';
 import {
   activeCues,
   DRONE_BUS,
-  DRONE_SOURCE,
+  DRONE_SOURCES,
   dronePlan,
   droneGain,
   NOTE_BUS,
@@ -14,6 +14,13 @@ import {
 } from './playback';
 
 /** What is sounding right now, for the ring, keys, mode rows and chord chips to light up. */
+/** Which mode row and chord chip the current performance is in. Unlike `NowPlaying` it holds through the gaps
+ * between notes, so row and chip highlights stay steady while a mode plays. */
+export interface PlayingContext {
+  modeIndex: number;
+  chordKey?: string;
+}
+
 export interface NowPlaying {
   pcs: ReadonlySet<number>;
   modeIndex: number;
@@ -32,6 +39,9 @@ export function useScalePlayback() {
   const engine = useAudioEngine();
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [now, setNow] = useState<NowPlaying | null>(null);
+  const [context, setContext] = useState<PlayingContext | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const token = useRef(0);
   const frame = useRef(0);
   const lastCue = useRef('');
@@ -43,6 +53,8 @@ export function useScalePlayback() {
     lastCue.current = '';
     setPlayingKey(null);
     setNow(null);
+    setContext(null);
+    setLoading(false);
   }, [engine]);
 
   const start = useCallback(
@@ -50,8 +62,11 @@ export function useScalePlayback() {
       stop();
       const mine = token.current;
       setPlayingKey(key);
+      setError(null);
+      setLoading(true);
+      let session: PlaybackSession;
       try {
-        await engine.play({
+        session = await engine.play({
           plan: script.plan,
           busGains: { [NOTE_BUS]: 0.8 },
           onComplete: () => {
@@ -60,18 +75,24 @@ export function useScalePlayback() {
               lastCue.current = '';
               setPlayingKey(null);
               setNow(null);
+              setContext(null);
             }
           },
         });
-      } catch {
+      } catch (e) {
         if (token.current === mine) {
           setPlayingKey(null);
+          setLoading(false);
+          setError(e instanceof Error ? e.message : 'Could not start playback.');
         }
         return;
       }
       if (token.current !== mine) {
+        // stopped while samples were still loading: do not let the late session sound
+        session.stop();
         return;
       }
+      setLoading(false);
       const startedAt = engine.clock(SCALE_SOURCE)?.startedAtMs ?? performance.now() + 60;
       const tick = () => {
         if (token.current !== mine) {
@@ -82,6 +103,13 @@ export function useScalePlayback() {
         const id = last
           ? `${last.modeIndex}|${last.chordKey ?? ''}|${active.flatMap((c) => c.pcs).join(',')}`
           : '';
+        if (last) {
+          setContext((prev) =>
+            prev?.modeIndex === last.modeIndex && prev.chordKey === last.chordKey
+              ? prev
+              : { modeIndex: last.modeIndex, chordKey: last.chordKey }
+          );
+        }
         if (id !== lastCue.current) {
           lastCue.current = id;
           setNow(
@@ -112,7 +140,7 @@ export function useScalePlayback() {
     [engine]
   );
 
-  return { playingKey, now, start, stop };
+  return { playingKey, now, context, loading, error, start, stop };
 }
 
 interface DroneOptions {
@@ -123,30 +151,49 @@ interface DroneOptions {
   volume: number;
 }
 
-/** A sustained tone under everything else. Re-pitching restarts it; volume changes ramp live. */
+/** Time a drone takes to fade out when it is replaced or switched off. */
+const DRONE_FADE_MS = 140;
+
+function fadeOut(session: PlaybackSession) {
+  session.setBusGain(DRONE_BUS, 0);
+  setTimeout(() => session.stop(), DRONE_FADE_MS);
+}
+
+/**
+ * A sustained tone under everything else. Re-pitching starts the new tone on the other drone source and fades
+ * the old one out, so there is no click at the change; volume changes ramp live.
+ */
 export function useDrone({ on, pitchClass, wave, volume }: DroneOptions) {
   const engine = useAudioEngine();
   const session = useRef<PlaybackSession | null>(null);
+  const turn = useRef(0);
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
 
   useEffect(() => {
     if (!on) {
-      engine.stopSource(DRONE_SOURCE);
-      session.current = null;
+      if (session.current) {
+        fadeOut(session.current);
+        session.current = null;
+      }
       return undefined;
     }
     let cancelled = false;
+    const source = DRONE_SOURCES[turn.current++ % DRONE_SOURCES.length];
     engine
       .play({
-        plan: dronePlan(pitchClass, wave),
+        plan: dronePlan(pitchClass, wave, source),
         busGains: { [DRONE_BUS]: droneGain(wave, volumeRef.current) },
       })
       .then((s) => {
         if (cancelled) {
           s.stop();
-        } else {
-          session.current = s;
+          return;
+        }
+        const previous = session.current;
+        session.current = s;
+        if (previous) {
+          fadeOut(previous);
         }
       })
       .catch(() => undefined);
@@ -159,5 +206,10 @@ export function useDrone({ on, pitchClass, wave, volume }: DroneOptions) {
     session.current?.setBusGain(DRONE_BUS, droneGain(wave, volume));
   }, [volume, wave]);
 
-  useEffect(() => () => engine.stopSource(DRONE_SOURCE), [engine]);
+  useEffect(
+    () => () => {
+      DRONE_SOURCES.forEach((id) => engine.stopSource(id));
+    },
+    [engine]
+  );
 }

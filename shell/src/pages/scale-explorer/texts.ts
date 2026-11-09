@@ -24,3 +24,15 @@ export const chordFootnote = (n: number, anchor: boolean) =>
       ? 'Each chord is named from the note it was stacked from, its anchor, so C A F stays a C chord built on C. Where the notes also read as a familiar chord on another root, that reading follows an equals sign, such as = F maj/C. Chords with no standard name show their stacked intervals.'
       : 'A chord keeps the scale note it was stacked from as its root whenever that gives a complete chord, so C E G A reads C maj6. Only when that reading is incomplete is another note tried as root, preferring the fewest extra notes beyond a plain triad or seventh, with the lowest note after a slash, such as A min/C.'
   }`;
+
+export const SPECTRUM_CHANGE_HINT =
+  'Click a result row to compare it with the loaded set. The bars show how the interval content shifts between Fourier components, so a swap reads as power moving from one component to another.';
+
+export const VECTOR_RESULTS_HINT =
+  'Each interval class value counts how many pairs of notes sit that far apart, so the six values always add up to the same total for a given set size. Raising one value means another has to fall, or several shift at once. The grey number beside each button is how many set classes of this size you would get by pressing it. Click a row to compare it with the loaded set, or press Load to switch to it.';
+
+export const TONNETZ_HINT =
+  'Perfect fifths run left to right, major thirds up and to the right, minor thirds up and to the left. An upward triangle is a major triad and a downward one a minor triad. The lattice is a small torus, so the same pitch class appears several times. Click any node to add or remove it from the loaded set. Add comparison sets from the Compare or Edit Vector tab.';
+
+export const PHASE_HINT =
+  'Each circle wraps the twelve pitch classes around once for component k (k times around for the full octave), with pitch class 0 at the top. The arrow points at the average position of the notes. Its length is how strongly they bunch (the bar chart shows the same as power), and its angle is the phase. Phases keep which transposition you have, while the lengths alone give the interval vector. The major and minor third cycles of the Tonnetz are the phases of components 3 and 4.';

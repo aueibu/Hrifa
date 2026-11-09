@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef } from 'react';
-import { Button, Group, Select, Stack, Table, Text } from '@mantine/core';
+import { Button, Group, Select, Stack, Table, Text, Tooltip } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
 import { chordsOf, noteNames, spellPcs, type NameMode } from '../chords';
@@ -14,7 +14,9 @@ import {
 } from '../scaleView';
 import type { SortMode } from '../settings';
 import { chordFootnote, MODES_HINT } from '../texts';
-import type { NowPlaying } from '../usePlayback';
+import type { NowPlaying, PlayingContext } from '../usePlayback';
+import { useScaleStyle } from '../useScaleStyle';
+import { Swatch } from './Legend';
 import { MiniRing } from './MiniRing';
 import classes from '../ScaleExplorer.module.css';
 
@@ -35,6 +37,7 @@ interface ModesPanelProps {
   onCloseAll: () => void;
   playingKey: string | null;
   now: NowPlaying | null;
+  context: PlayingContext | null;
   onSort: (mode: SortMode) => void;
   onExpansion: (e: number | 'all') => void;
   onNameMode: (mode: NameMode) => void;
@@ -45,7 +48,7 @@ interface ModesPanelProps {
 }
 
 export function ModesPanel(props: ModesPanelProps) {
-  const { v, o, open, playingKey, now, showFifths } = props;
+  const { v, o, open, playingKey, now, context, showFifths } = props;
   const { view } = v;
   const names = noteNames(o.flats);
   const n = view[0].z.length;
@@ -146,7 +149,7 @@ export function ModesPanel(props: ModesPanelProps) {
               const title = `${m.ks.length > 1 ? 'Modes' : 'Mode'} ${m.ks.join(', ')}${
                 o.invMode === 'root' ? ' inverted' : ''
               }`;
-              const isNow = now?.modeIndex === idx;
+              const isNow = context?.modeIndex === idx;
               const playing = playingKey === modePlayKey(idx);
               return (
                 <Fragment key={key}>
@@ -191,7 +194,7 @@ export function ModesPanel(props: ModesPanelProps) {
                         pcs={pcs}
                         names={names}
                         showFifths={showFifths}
-                        soundingPcs={isNow ? (now?.pcs ?? new Set()) : new Set()}
+                        soundingPcs={now?.modeIndex === idx ? now.pcs : new Set()}
                       />
                     </Table.Td>
                     <Table.Td>
@@ -233,7 +236,7 @@ export function ModesPanel(props: ModesPanelProps) {
                           o={o}
                           pathMax={props.pathMax}
                           playingKey={playingKey}
-                          chordKey={now?.modeIndex === idx ? now.chordKey : undefined}
+                          chordKey={context?.modeIndex === idx ? context.chordKey : undefined}
                           onPlayChord={props.onPlayChord}
                         />
                       </Table.Td>
@@ -270,6 +273,7 @@ function ModeDetail({
   chordKey,
   onPlayChord,
 }: ModeDetailProps) {
+  const style = useScaleStyle();
   const n = m.z.length;
   const ctx = chordContext(m, o);
   const groups = neighboursOf(m, view, pathMax).filter((g) => g.items.length);
@@ -278,7 +282,9 @@ function ModeDetail({
       <Text size="xs" c="dimmed" w={150} flex="none">
         {label}
       </Text>
-      <Data size="sm">{value}</Data>
+      <Text ff="monospace" size="sm" component="div">
+        {value}
+      </Text>
     </Group>
   );
   return (
@@ -366,22 +372,43 @@ function ModeDetail({
                       {chords.map((c) => {
                         const ck = chordPlayKey(idx, k, e, c.i);
                         return (
-                          <button
+                          <Tooltip
                             key={c.i}
-                            type="button"
-                            className={classes.chip}
-                            data-family={c.fam}
-                            data-now={chordKey === ck || playingKey === ck}
-                            title={`Notes: ${c.notes} · stacked intervals: ${c.rel.join(' ')}${
+                            multiline
+                            w={300}
+                            withArrow
+                            label={`Notes: ${c.notes} · stacked intervals: ${c.rel.join(' ')}${
                               c.reading ? ` · tertian reading: ${c.reading}` : ''
                             }${c.alt ? ` · also: ${c.alt}` : ''}`}
-                            onClick={() => onPlayChord(idx, k, e, c.i)}
                           >
-                            <b>{c.rootName}</b> {c.q}
-                            {c.bassName ? `/${c.bassName}` : ''}
-                            {c.reading && <small> = {c.reading}</small>}
-                            {c.alt && !c.altHidden && <small> {c.alt}</small>}
-                          </button>
+                            <span
+                              className={classes.chipWrap}
+                              data-now={chordKey === ck || playingKey === ck}
+                            >
+                              <Button
+                                size="compact-sm"
+                                variant="default"
+                                leftSection={<Swatch color={style.familyColor(c.fam)} />}
+                                onClick={() => onPlayChord(idx, k, e, c.i)}
+                              >
+                                <Text span fw={700} size="sm">
+                                  {c.rootName}
+                                </Text>
+                                &nbsp;{c.q}
+                                {c.bassName ? `/${c.bassName}` : ''}
+                                {c.reading && (
+                                  <Text span size="xs" c="dimmed">
+                                    &nbsp;= {c.reading}
+                                  </Text>
+                                )}
+                                {c.alt && !c.altHidden && (
+                                  <Text span size="xs" c="dimmed">
+                                    &nbsp;{c.alt}
+                                  </Text>
+                                )}
+                              </Button>
+                            </span>
+                          </Tooltip>
                         );
                       })}
                     </Group>

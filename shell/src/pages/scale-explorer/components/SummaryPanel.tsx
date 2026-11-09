@@ -1,8 +1,9 @@
-import { ActionIcon, Button, Group, Table, Text } from '@mantine/core';
+import { ActionIcon, Button, Group, Table, Text, Tooltip } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
 import type { SummaryRow } from '../scaleView';
-import classes from '../ScaleExplorer.module.css';
+import { useScaleStyle } from '../useScaleStyle';
+import { Swatch } from './Legend';
 
 export interface SummaryColumn {
   /** Comparison slot 0-3. */
@@ -37,6 +38,7 @@ export function SummaryPanel({
   onRemove,
   onClearAll,
 }: SummaryPanelProps) {
+  const style = useScaleStyle();
   const loadedZ = pcs.map((x) => (x - pcs[0] + 12) % 12);
   const known = new Set(rows.map((r) => r.label));
   const extra: SummaryRow[] = [];
@@ -69,7 +71,7 @@ export function SummaryPanel({
       {(columns.length > 0 || note) && (
         <Group gap="xs" mb="sm" wrap="wrap">
           <Group gap={6} wrap="nowrap">
-            <i className={classes.swatch} />
+            <Swatch />
             <Text size="sm">Loaded</Text>
             <Data size="sm">{`{${pcs.join(', ')}}`}</Data>
             <ActionIcon
@@ -82,8 +84,8 @@ export function SummaryPanel({
             </ActionIcon>
           </Group>
           {columns.map((c) => (
-            <Group key={c.slot} gap={6} wrap="nowrap" className={classes[`slot${c.slot}`]}>
-              <i className={classes.swatch} data-slot={c.slot} />
+            <Group key={c.slot} gap={6} wrap="nowrap" c={style.slotColor(c.slot)}>
+              <Swatch slot={c.slot} />
               <Data size="sm" c="inherit">{`[${c.z.join(' ')}]`}</Data>
               <ActionIcon
                 size="sm"
@@ -121,14 +123,16 @@ export function SummaryPanel({
             {rows.map((r) => (
               <Table.Tr key={r.label}>
                 <Table.Td w="40%">
-                  <Text size="xs" c="dimmed" title={r.tip}>
-                    {r.label}
-                  </Text>
+                  <Tooltip label={r.tip} disabled={!r.tip} multiline w={320} withArrow>
+                    <Text size="xs" c="dimmed" span>
+                      {r.label}
+                    </Text>
+                  </Tooltip>
                 </Table.Td>
                 <Table.Td>{r.plain ? <Text size="sm">{r.value}</Text> : cell(r)}</Table.Td>
                 {!r.plain &&
                   columns.map((c) => (
-                    <Table.Td key={c.slot} className={classes[`slot${c.slot}`]}>
+                    <Table.Td key={c.slot} c={style.slotColor(c.slot)}>
                       {cell(lookup(c, r.label))}
                     </Table.Td>
                   ))}
@@ -137,15 +141,17 @@ export function SummaryPanel({
             {extra.map((r) => (
               <Table.Tr key={`x-${r.label}`}>
                 <Table.Td w="40%">
-                  <Text size="xs" c="dimmed" title={r.tip}>
-                    {r.label}
-                  </Text>
+                  <Tooltip label={r.tip} disabled={!r.tip} multiline w={320} withArrow>
+                    <Text size="xs" c="dimmed" span>
+                      {r.label}
+                    </Text>
+                  </Tooltip>
                 </Table.Td>
                 <Table.Td>
                   <Data size="sm">—</Data>
                 </Table.Td>
                 {columns.map((c) => (
-                  <Table.Td key={c.slot} className={classes[`slot${c.slot}`]}>
+                  <Table.Td key={c.slot} c={style.slotColor(c.slot)}>
                     {cell(lookup(c, r.label))}
                   </Table.Td>
                 ))}

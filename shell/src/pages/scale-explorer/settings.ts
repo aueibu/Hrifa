@@ -1,7 +1,8 @@
+/** Persisted explorer preferences, same load/save pattern as the other ports. */
+import type { InstrumentId } from '../composition-workbench/audio/types';
 import type { NameMode } from './chords';
 import type { InversionMode, PrimeConvention } from './pitchSets';
-/** Persisted explorer preferences, same load/save pattern as the other ports. */
-import type { ChordStyle, DroneWave } from './playback';
+import { DEFAULT_VOICE, isVoice, type ChordStyle, type DroneWave } from './playback';
 
 export type SortMode = 'start' | 'fifths';
 export type PlayAs = 'rotation' | 'zero';
@@ -30,10 +31,19 @@ export interface Settings {
   droneWave: DroneWave;
   droneVolume: number;
   chordStyle: ChordStyle;
+  /** The voice scales and chords play with. */
+  voice: InstrumentId;
   cmpMerge: boolean;
   cmpConv: PrimeConvention;
   cmpRank: RankDirection;
   cmpSort: CompareSort;
+  /** Edit Vector: allow only single +1/−1 swaps. */
+  strictSwap: boolean;
+  /** Spectrum charts: grouped by Fourier component or by scale. */
+  spectrumMode: 'comp' | 'set';
+  /** Spaces: Fourier components (1-6) on the set-class map's axes. */
+  scatterX: number;
+  scatterY: number;
 }
 
 const KEY = 'hrifa.scale-explorer.settings.v1';
@@ -55,10 +65,15 @@ export function defaultSettings(): Settings {
     droneWave: 'sawtooth',
     droneVolume: 0.5,
     chordStyle: 'block',
+    voice: DEFAULT_VOICE,
     cmpMerge: false,
     cmpConv: 'rahn',
     cmpRank: 'high',
     cmpSort: { k: 'hem', dir: 1 },
+    strictSwap: false,
+    spectrumMode: 'comp',
+    scatterX: 5,
+    scatterY: 3,
   };
 }
 
@@ -110,6 +125,7 @@ export function sanitizeSettings(raw: unknown): Settings {
         ? s.droneVolume
         : d.droneVolume,
     chordStyle: oneOf(s.chordStyle, ['block', 'arp', 'both'], d.chordStyle),
+    voice: isVoice(s.voice) ? s.voice : d.voice,
     cmpMerge: bool(s.cmpMerge, d.cmpMerge),
     cmpConv: oneOf(s.cmpConv, ['rahn', 'forte'], d.cmpConv),
     cmpRank: oneOf(s.cmpRank, ['high', 'low'], d.cmpRank),
@@ -117,6 +133,10 @@ export function sanitizeSettings(raw: unknown): Settings {
       k: typeof sort.k === 'string' ? sort.k : d.cmpSort.k,
       dir: sort.dir === -1 ? -1 : 1,
     },
+    strictSwap: bool(s.strictSwap, d.strictSwap),
+    spectrumMode: oneOf(s.spectrumMode, ['comp', 'set'], d.spectrumMode),
+    scatterX: int(s.scatterX, 1, 6, d.scatterX),
+    scatterY: int(s.scatterY, 1, 6, d.scatterY),
   };
 }
 
