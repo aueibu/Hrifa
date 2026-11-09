@@ -34,6 +34,7 @@ import type { ModuleRouteState } from '../compositionWorkspace';
 import { channelBusGains, compileMixerPlan, mixerRealignment, type MixerChannel } from '../mixer';
 import {
   acceptsMixerChannels,
+  DEFAULT_MIXER_GAIN_PERCENT,
   defaultMixerChannelSettings,
   describeChannelLength,
   isMixerSourceCandidate,
@@ -134,7 +135,7 @@ export function MixerModule({
   );
   const [masterVolume, setMasterVolume] = usePersistentState(
     stateKey(compositionStateKeys.mixerVolume),
-    60,
+    DEFAULT_MIXER_GAIN_PERCENT,
     acceptsFiniteNumber
   );
   const [rollView, setRollView] = usePersistentState<PianoRollViewState>(
@@ -769,6 +770,7 @@ export function MixerModule({
                         <VolumeControl
                           accessibleLabel={`Channel ${index + 1} volume`}
                           label="Level"
+                          decibels
                           value={channel.gainPercent}
                           onChange={(value) => updateChannel(port, { gainPercent: value })}
                         />
@@ -823,6 +825,7 @@ export function MixerModule({
               <VolumeControl
                 accessibleLabel="Mixer master volume"
                 label="Master"
+                decibels
                 value={masterVolume}
                 onChange={setMasterVolume}
               />

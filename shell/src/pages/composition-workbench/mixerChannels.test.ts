@@ -1,3 +1,4 @@
+import { volumePercentLabel } from './audio';
 import { defaultMixerPorts, mixerPortLabels } from './compositionWorkspace';
 import type { NoteEventValue } from './melodicization';
 import { compileMixerPlan, defaultChannelConfig } from './mixer';
@@ -123,6 +124,7 @@ describe('channel settings persistence guard', () => {
   it('accepts the defaults and an empty record, and rejects malformed entries', () => {
     expect(acceptsMixerChannels({})).toBe(true);
     expect(acceptsMixerChannels({ a: defaultMixerChannelSettings })).toBe(true);
+    expect(volumePercentLabel(defaultMixerChannelSettings.gainPercent)).toBe('-10.0 dB');
     expect(acceptsMixerChannels({ a: { ...defaultMixerChannelSettings, loop: 'sideways' } })).toBe(
       false
     );

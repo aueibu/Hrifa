@@ -35,10 +35,13 @@ export interface MixerChannelSettings {
 
 export type MixerChannelsState = Record<string, MixerChannelSettings>;
 
+/** −10 dB (a gain of 10^(−10/20) ≈ 0.316), leaving headroom for several channels to sum. */
+export const DEFAULT_MIXER_GAIN_PERCENT = Math.round(1000 * 10 ** (-10 / 20)) / 10;
+
 export const defaultMixerChannelSettings: MixerChannelSettings = {
   loop: 'free',
   offsetPulses: 0,
-  gainPercent: 100,
+  gainPercent: DEFAULT_MIXER_GAIN_PERCENT,
   muted: false,
   solo: false,
   gatePercent: DEFAULT_GATE_PERCENT,
