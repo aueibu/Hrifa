@@ -70,20 +70,18 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByRole('button', { name: /Preview/ })).toBeEnabled();
   });
 
-  it('offers an optional grouping metronome', async () => {
+  it('offers a grouping click alongside the transport metronome', async () => {
     const user = userEvent.setup();
     renderPage();
-    const metronome = screen.getByRole('switch', { name: /Grouping metronome/ });
-    const previewVolume = screen.getByRole('slider', { name: 'Interference preview volume' });
-    const volume = screen.getByRole('slider', { name: 'Metronome volume' });
-    expect(metronome).not.toBeChecked();
-    expect(volume).not.toHaveAttribute('aria-disabled');
-    await setVolumeToThirty(user, 'Interference preview volume');
-    await setVolumeToThirty(user, 'Metronome volume');
+    const groupingClick = screen.getByRole('switch', { name: /Click the grouping/ });
+    const metronome = screen.getByRole('button', { name: 'Metronome' });
+    expect(groupingClick).not.toBeChecked();
+    expect(metronome).toHaveAttribute('aria-pressed', 'false');
+    await user.click(groupingClick);
     await user.click(metronome);
-    expect(metronome).toBeChecked();
-    expect(previewVolume).toHaveAttribute('aria-valuenow', '30');
-    expect(volume).toHaveAttribute('aria-valuenow', '30');
+    expect(groupingClick).toBeChecked();
+    expect(metronome).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('textbox', { name: 'Tempo' })).toHaveValue('120 BPM');
   });
 
   it('supports adding another authored generator list', async () => {

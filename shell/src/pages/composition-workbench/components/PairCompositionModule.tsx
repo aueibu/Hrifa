@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Button, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
-import { volumePercentToGain } from '../audio';
-import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { createDurationSequencePreviewPlan } from '../audio/performancePlans';
-import type { PlaybackSession } from '../audio/types';
 import type { CompositionModuleRoutingProps, PublishedCompositionOutput } from '../compositionRouting';
-import { midiNoteName } from '../interference';
+import { useCompositionSettings } from '../compositionSettings';
+import { pulseSeconds } from '../transport';
 import {
   generatePairComposition,
   pairCompositionDurationPacket,
@@ -20,14 +18,13 @@ import {
   compositionStateKeys,
   usePersistentState,
 } from '../usePersistentState';
+import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
+import { useModulePreview } from '../useModulePreview';
+import { DurationStrip } from './DurationStrip';
 import { Module, ModuleOutput, ModuleSection } from './Module';
+import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
-
-const pitchOptions = Array.from({ length: 88 }, (_, index) => {
-  const note = index + 21;
-  return { value: String(note), label: `${midiNoteName(note)} | ${note}` };
-});
 
 const modeOptions: { value: PairCompositionMode; label: string }[] = [
   { value: 'balancing', label: 'Balancing' },
@@ -58,20 +55,21 @@ export function PairCompositionModule({
     (value): value is PairCompositionMode => typeof value === 'string' && isMode(value),
   );
   const [midiNote, setMidiNote] = usePersistentState(stateKey(compositionStateKeys.pairCompositionMidiNote), 48, acceptsFiniteNumber);
-  const [unitMilliseconds, setUnitMilliseconds] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.pairCompositionUnit),
-    160,
-    acceptsNumberOrString,
+  // The preview's sound: the primary rhythm voice unless overridden here. A pitch saved before
+  // voices existed (anything but the old default C3) still counts as a Tone override.
+  const [soundSetting, setSoundSetting] = usePersistentState<SoundOverride | null>(
+    stateKey(compositionStateKeys.pairCompositionSound),
+    null,
+    (value): value is SoundOverride | null => value === null || isSoundOverride(value)
   );
+  const soundOverride: SoundOverride | null =
+    soundSetting ?? (midiNote !== 48 ? { type: 'tone', midicents: midiNote * 100 } : null);
   const [previewVolume, setPreviewVolume] = usePersistentState(
     stateKey(compositionStateKeys.pairCompositionVolume),
     30,
     acceptsFiniteNumber,
   );
-  const [audioStatus, setAudioStatus] = useState('');
-  const audioEngine = useAudioEngine();
-  const playbackSession = useRef<PlaybackSession | null>(null);
-  const playRequestVersion = useRef(0);
+  const { settings } = useCompositionSettings();
 
   const generated = useMemo(() => {
     try {
@@ -107,72 +105,35 @@ export function PairCompositionModule({
     onOutputsChange?.(instanceId, publishedOutputs);
   }, [instanceId, onOutputsChange, publishedOutputs]);
 
-  useEffect(
-    () => () => {
-      playRequestVersion.current += 1;
-      playbackSession.current?.stop();
-      playbackSession.current = null;
-    },
-    [],
-  );
+  const preview = useModulePreview({
+    instanceId,
+    volume: previewVolume,
+    followTransport: true,
+    transportPlay: playPreview,
+  });
 
-  useEffect(() => {
-    playbackSession.current?.setBusGain('preview', volumePercentToGain(previewVolume));
-  }, [previewVolume]);
-
-  function stopPreview(message = 'Preview stopped.') {
-    playRequestVersion.current += 1;
-    playbackSession.current?.stop();
-    playbackSession.current = null;
-    setAudioStatus(message);
-  }
-
-  async function playPreview() {
+  function playPreview() {
     if (!generated.result) {
       return;
     }
-    const unitSeconds = Number(unitMilliseconds) / 1000;
-    if (!Number.isFinite(unitSeconds) || unitSeconds <= 0) {
-      setAudioStatus('Unit duration must be a positive number.');
-      return;
-    }
-    stopPreview('');
-    const requestVersion = playRequestVersion.current;
     const plan = createDurationSequencePreviewPlan({
       sourceId: instanceId,
       durations: generated.result.durations,
-      midiNote,
-      unitSeconds,
+      sound: layerSound(settings.sounds.rhythm, 0, soundOverride),
+      unitSeconds: pulseSeconds(settings.transport),
     });
-    setAudioStatus(`Playing ${mode} ${a}÷${b} for ${plan.durationSeconds.toFixed(1)} seconds.`);
-    try {
-      const session = await audioEngine.play({
-        plan,
-        busGains: { preview: volumePercentToGain(previewVolume) },
-        onComplete: () => {
-          playbackSession.current = null;
-          setAudioStatus('Preview complete.');
-        },
-      });
-      if (requestVersion !== playRequestVersion.current) {
-        session.stop();
-        return;
-      }
-      playbackSession.current = session;
-    } catch (error) {
-      setAudioStatus(error instanceof Error ? error.message : 'Audio preview could not start.');
-    }
+    void preview.play(plan, `Playing ${mode} ${a}÷${b} for ${plan.durationSeconds.toFixed(1)} seconds.`);
   }
 
   function resetPairComposition() {
-    stopPreview('');
+    preview.stop('');
     setA(3);
     setB(2);
     setMode('balancing');
     setMidiNote(48);
-    setUnitMilliseconds(160);
+    setSoundSetting(null);
     setPreviewVolume(30);
-    setAudioStatus('Pair Composition module reset.');
+    preview.setStatus('Pair Composition module reset.');
   }
 
   return (
@@ -202,29 +163,14 @@ export function PairCompositionModule({
           ) : (
             generated.result && (
               <Stack gap="lg">
-                <div>
-                  <Text fw={600} size="sm" mb={4}>
-                    Combined durations
-                  </Text>
-                  <div
-                    className={classes.durationTimeline}
-                    aria-label={`Combined durations ${generated.result.durations.join(' ')}`}
-                  >
-                    {generated.result.durations.map((duration, index) => (
-                      <span
-                        className={classes.durationBlock}
-                        key={index}
-                        style={{ flexGrow: duration }}
-                        title={`Duration ${duration}`}
-                      >
-                        {duration}
-                      </span>
-                    ))}
-                  </div>
-                  <Text ff="monospace" size="sm" mt={4} className={classes.durationText}>
-                    {generated.result.durations.join(' + ')}
-                  </Text>
-                </div>
+                <DurationStrip
+                  label="Combined durations"
+                  durations={generated.result.durations}
+                  cyclic={false}
+                  showSum
+                  blockTitle={(_, duration) => `Duration ${duration}`}
+                  playhead={{ sourceId: instanceId, unitSeconds: pulseSeconds(settings.transport) }}
+                />
                 <div>
                   <Text fw={600} size="sm" mb={4}>
                     Segments
@@ -266,7 +212,7 @@ export function PairCompositionModule({
           }
           footer={
             <Text size="xs" c="dimmed" truncate aria-live="polite">
-              {audioStatus || 'Preview volume and unit controls remain live.'}
+              {preview.status || 'Plays at the transport tempo; volume stays live.'}
             </Text>
           }
         >
@@ -292,14 +238,16 @@ export function PairCompositionModule({
                 />
               </div>
               <div className={classes.moduleParameterRow}>
-                <Text size="xs">Pitch</Text>
-                <Select
-                  searchable
-                  size="xs"
-                  aria-label="Preview pitch"
-                  value={String(midiNote)}
-                  data={pitchOptions}
-                  onChange={(value) => value && setMidiNote(Number(value))}
+                <Text size="xs">Sound</Text>
+                <SoundOverrideControl
+                  label="Preview"
+                  set={settings.sounds.rhythm}
+                  voiceIndex={0}
+                  value={soundOverride}
+                  onChange={(sound) => {
+                    setSoundSetting(sound);
+                    setMidiNote(48);
+                  }}
                 />
               </div>
             </Stack>
@@ -307,18 +255,6 @@ export function PairCompositionModule({
 
           <ModuleSection label="Preview">
             <Stack gap="xs">
-              <div className={classes.moduleParameterRow}>
-                <Text size="xs">Unit</Text>
-                <NumberInput
-                  size="xs"
-                  aria-label="Preview unit"
-                  suffix=" ms"
-                  min={20}
-                  max={2000}
-                  value={unitMilliseconds}
-                  onChange={setUnitMilliseconds}
-                />
-              </div>
               <VolumeControl
                 accessibleLabel="Pair composition preview volume"
                 label="Volume"
@@ -329,7 +265,7 @@ export function PairCompositionModule({
                 <Button size="compact-sm" onClick={playPreview}>
                   ▶ Preview
                 </Button>
-                <Button size="compact-sm" variant="default" onClick={() => stopPreview()}>
+                <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
                   ■ Stop
                 </Button>
               </Group>

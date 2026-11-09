@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   ActionIcon,
   Alert,
   Badge,
   Button,
   Group,
-  NumberInput,
   Select,
   Stack,
   Switch,
@@ -15,9 +14,7 @@ import {
 } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
 import { volumePercentToGain } from '../audio';
-import { useAudioEngine } from '../audio/AudioEngineProvider';
-import { createInterferencePreviewPlan } from '../audio/performancePlans';
-import type { PlaybackSession } from '../audio/types';
+import { createInterferencePreviewPlan, GROUPING_BUS } from '../audio/performancePlans';
 import type {
   CompositionModuleRoutingProps,
   PublishedCompositionOutput,
@@ -31,19 +28,24 @@ import {
   interferenceDurationPacket,
   interferenceGeneratorDurationPacket,
   MAX_PREVIEW_EVENTS,
-  midiNoteName,
   parseGeneratorValues,
 } from '../interference';
 import {
   acceptsBoolean,
   acceptsFiniteNumber,
-  acceptsNumberOrString,
   acceptsString,
   compositionStateKeys,
   compositionInstanceStateKey,
   usePersistentState,
 } from '../usePersistentState';
+import { useCompositionSettings } from '../compositionSettings';
+import { pulseSeconds } from '../transport';
+import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { Module, ModuleOutput, ModuleSection } from './Module';
+import { useModulePreview } from '../useModulePreview';
+import { DurationStrip } from './DurationStrip';
+import { Playhead } from './Playhead';
+import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -51,19 +53,35 @@ interface GeneratorDraft {
   id: string;
   label: string;
   valueText: string;
-  midiNote: number;
+  /**
+   * This generator's own sound; null or absent plays it on the rhythm voice matching its position
+   * (generator 1 → primary, 2 → secondary, …).
+   */
+  sound?: SoundOverride | null;
+  /** Saved before voices existed: the generator's tone pitch. Read once as a Tone override. */
+  midiNote?: number;
 }
 
-const pitchOptions = Array.from({ length: 88 }, (_, index) => {
-  const note = index + 21;
-  return { value: String(note), label: `${midiNoteName(note)} | ${note}` };
-});
-
 const initialGenerators: GeneratorDraft[] = [
-  { id: 'generator-a', label: 'Generator 1', valueText: '2', midiNote: 48 },
-  { id: 'generator-b', label: 'Generator 2', valueText: '3', midiNote: 55 },
-  { id: 'generator-c', label: 'Generator 3', valueText: '5', midiNote: 60 },
+  { id: 'generator-a', label: 'Generator 1', valueText: '2' },
+  { id: 'generator-b', label: 'Generator 2', valueText: '3' },
+  { id: 'generator-c', label: 'Generator 3', valueText: '5' },
 ];
+
+// The pitches generators got automatically before voices existed. A saved pitch that differs was
+// chosen by hand, so it carries over as a Tone override; a default one gives way to the voices.
+function legacyDefaultMidiNote(index: number) {
+  return [48, 55, 60][index] ?? Math.min(84, 48 + index * 5);
+}
+
+function generatorOverride(draft: GeneratorDraft, index: number): SoundOverride | null {
+  if (draft.sound !== undefined) {
+    return draft.sound;
+  }
+  return typeof draft.midiNote === 'number' && draft.midiNote !== legacyDefaultMidiNote(index)
+    ? { type: 'tone', midicents: draft.midiNote * 100 }
+    : null;
+}
 
 function nextGeneratorId() {
   return `interference-generator-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
@@ -95,7 +113,8 @@ export function InterferenceModule({
           typeof draft.id === 'string' &&
           typeof draft.label === 'string' &&
           typeof draft.valueText === 'string' &&
-          typeof draft.midiNote === 'number'
+          (draft.midiNote === undefined || typeof draft.midiNote === 'number') &&
+          (draft.sound === undefined || draft.sound === null || isSoundOverride(draft.sound))
       )
   );
   const [groupingId, setGroupingId] = usePersistentState(
@@ -103,30 +122,20 @@ export function InterferenceModule({
     'recurrence',
     acceptsString
   );
-  const [unitMilliseconds, setUnitMilliseconds] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.interferenceUnit),
-    160,
-    acceptsNumberOrString
-  );
   const [previewVolume, setPreviewVolume] = usePersistentState(
     stateKey(compositionStateKeys.interferenceVolume),
     30,
     acceptsFiniteNumber
   );
-  const [metronomeEnabled, setMetronomeEnabled] = usePersistentState(
+  // The grouping click (formerly this module's own metronome): ticks the selected grouping on
+  // top of the transport's meter click, at the transport's metronome volume.
+  const [groupingClick, setGroupingClick] = usePersistentState(
     stateKey(compositionStateKeys.interferenceMetronome),
     false,
     acceptsBoolean
   );
-  const [metronomeVolume, setMetronomeVolume] = usePersistentState(
-    stateKey(compositionStateKeys.interferenceMetronomeVolume),
-    30,
-    acceptsFiniteNumber
-  );
-  const [audioStatus, setAudioStatus] = useState('');
-  const audioEngine = useAudioEngine();
-  const playbackSession = useRef<PlaybackSession | null>(null);
-  const playRequestVersion = useRef(0);
+  const { settings } = useCompositionSettings();
+  const groupingGain = groupingClick ? volumePercentToGain(settings.transport.metronomeVolume) : 0;
 
   const authored = useMemo(
     () =>
@@ -192,23 +201,13 @@ export function InterferenceModule({
     }
   }, [groupingId, groupings]);
 
-  useEffect(
-    () => () => {
-      playRequestVersion.current += 1;
-      playbackSession.current?.stop();
-      playbackSession.current = null;
-    },
-    []
-  );
-
-  useEffect(() => {
-    playbackSession.current?.setBusGain('preview', volumePercentToGain(previewVolume));
-  }, [previewVolume]);
-
-  useEffect(() => {
-    const targetGain = metronomeEnabled ? volumePercentToGain(metronomeVolume) : 0;
-    playbackSession.current?.setBusGain('metronome', targetGain);
-  }, [metronomeEnabled, metronomeVolume]);
+  const preview = useModulePreview({
+    instanceId,
+    volume: previewVolume,
+    followTransport: true,
+    busGains: { [GROUPING_BUS]: groupingGain },
+    transportPlay: playPreview,
+  });
 
   function updateDraft(id: string, change: Partial<GeneratorDraft>) {
     setDrafts((current) =>
@@ -223,7 +222,7 @@ export function InterferenceModule({
         id: nextGeneratorId(),
         label: `Generator ${current.length + 1}`,
         valueText: String(current.length + 3),
-        midiNote: Math.min(84, 48 + current.length * 5),
+        sound: null,
       },
     ]);
   }
@@ -236,74 +235,43 @@ export function InterferenceModule({
     );
   }
 
-  function stopPreview(message = 'Preview stopped.') {
-    playRequestVersion.current += 1;
-    playbackSession.current?.stop();
-    playbackSession.current = null;
-    setAudioStatus(message);
-  }
-
-  async function playPreview() {
+  function playPreview() {
     if (!generated.result) {
       return;
     }
-    const unitSeconds = Number(unitMilliseconds) / 1000;
-    if (!Number.isFinite(unitSeconds) || unitSeconds <= 0) {
-      setAudioStatus('Unit duration must be a positive number.');
-      return;
-    }
+    const unitSeconds = pulseSeconds(settings.transport);
     const previewEvents = generatorAttackCount(patterns, generated.result.recurrence);
     if (previewEvents > MAX_PREVIEW_EVENTS) {
-      setAudioStatus(
+      preview.setStatus(
         `This preview would schedule ${previewEvents} generator attacks; the safety limit is ${MAX_PREVIEW_EVENTS}.`
       );
       return;
     }
     const totalSeconds = generated.result.recurrence * unitSeconds;
-    stopPreview('');
-    const requestVersion = playRequestVersion.current;
     const plan = createInterferencePreviewPlan({
       sourceId: instanceId,
       patterns,
-      midiNotes: drafts.map((draft) => draft.midiNote),
+      sounds: drafts.map((draft, index) =>
+        layerSound(settings.sounds.rhythm, index, generatorOverride(draft, index))
+      ),
+      groupingSound: layerSound(settings.sounds.metronome, 2),
       result: generated.result,
       unitSeconds,
       grouping,
     });
-    setAudioStatus(
-      `Playing ${patterns.map(formatGeneratorPattern).join(' + ')} for ${totalSeconds.toFixed(1)} seconds. Metronome controls are live.`
+    void preview.play(
+      plan,
+      `Playing ${patterns.map(formatGeneratorPattern).join(' + ')} for ${totalSeconds.toFixed(1)} seconds. Click controls are live.`
     );
-    try {
-      const session = await audioEngine.play({
-        plan,
-        busGains: {
-          preview: volumePercentToGain(previewVolume),
-          metronome: metronomeEnabled ? volumePercentToGain(metronomeVolume) : 0,
-        },
-        onComplete: () => {
-          playbackSession.current = null;
-          setAudioStatus('Preview complete.');
-        },
-      });
-      if (requestVersion !== playRequestVersion.current) {
-        session.stop();
-        return;
-      }
-      playbackSession.current = session;
-    } catch (error) {
-      setAudioStatus(error instanceof Error ? error.message : 'Audio preview could not start.');
-    }
   }
 
   function resetInterference() {
-    stopPreview('');
+    preview.stop('');
     setDrafts(initialGenerators);
     setGroupingId('recurrence');
-    setUnitMilliseconds(160);
     setPreviewVolume(30);
-    setMetronomeEnabled(false);
-    setMetronomeVolume(30);
-    setAudioStatus('Interference module reset.');
+    setGroupingClick(false);
+    preview.setStatus('Interference module reset.');
   }
 
   return (
@@ -344,42 +312,31 @@ export function InterferenceModule({
                   </Text>
                 </div>
 
-                <div>
-                  <Text fw={600} size="sm" mb={4}>
-                    Resultant durations
-                  </Text>
-                  <div
-                    className={classes.durationTimeline}
-                    aria-label={`Resultant durations ${generated.result.durations.join(' ')}`}
-                  >
-                    {generated.result.durations.map((duration, index) => (
-                      <span
-                        className={classes.durationBlock}
-                        key={`${generated.result.attacks[index].time}:${duration}`}
-                        style={{ flexGrow: duration }}
-                        title={`Attack ${generated.result.attacks[index].time}; duration ${duration}`}
-                      >
-                        {duration}
-                      </span>
-                    ))}
-                    {grouping &&
-                      Array.from(
-                        { length: Math.floor((generated.result.recurrence - 1) / grouping.units) },
-                        (_, index) => (
-                          <span
-                            className={classes.measureBoundary}
-                            key={index}
-                            style={{
-                              left: `${((index + 1) * grouping.units * 100) / generated.result.recurrence}%`,
-                            }}
-                          />
-                        )
-                      )}
-                  </div>
-                  <Text ff="monospace" size="sm" mt={4} className={classes.durationText}>
-                    {generated.result.durations.join(' + ')}
-                  </Text>
-                </div>
+                <DurationStrip
+                  label="Resultant durations"
+                  durations={generated.result.durations}
+                  cyclic={false}
+                  showSum
+                  blockTitle={(index, duration) =>
+                    `Attack ${generated.result.attacks[index].time}; duration ${duration}`
+                  }
+                  overlay={
+                    grouping &&
+                    Array.from(
+                      { length: Math.floor((generated.result.recurrence - 1) / grouping.units) },
+                      (_, index) => (
+                        <span
+                          className={classes.measureBoundary}
+                          key={index}
+                          style={{
+                            left: `${((index + 1) * grouping.units * 100) / generated.result.recurrence}%`,
+                          }}
+                        />
+                      )
+                    )
+                  }
+                  playhead={{ sourceId: instanceId, unitSeconds: pulseSeconds(settings.transport) }}
+                />
 
                 <div>
                   <Text fw={600} size="sm" mb={4}>
@@ -403,6 +360,12 @@ export function InterferenceModule({
                               {Array.from({ length: generated.result.recurrence }, (_, time) => (
                                 <span key={time} data-active={attackTimes.has(time)} />
                               ))}
+                              <Playhead
+                                sourceId={instanceId}
+                                unitSeconds={pulseSeconds(settings.transport)}
+                                length={generated.result.recurrence}
+                                cyclic={false}
+                              />
                             </div>
                           </div>
                         );
@@ -441,8 +404,8 @@ export function InterferenceModule({
           }
           footer={
             <Text size="xs" c="dimmed" truncate aria-live="polite">
-              {audioStatus ||
-                'Generator pitches sound independently; volume and metronome controls remain live.'}
+              {preview.status ||
+                'Plays at the transport tempo; volume and click controls stay live.'}
             </Text>
           }
         >
@@ -452,7 +415,7 @@ export function InterferenceModule({
                 <span>#</span>
                 <span>Pattern</span>
                 <span>Period</span>
-                <span>Pitch</span>
+                <span>Sound</span>
                 <span />
               </div>
               <div className={classes.generatorRows}>
@@ -474,15 +437,12 @@ export function InterferenceModule({
                     <Text ff="monospace" size="xs" ta="center">
                       {parsed.values.length ? generatorPeriod(parsed.values) : '—'}
                     </Text>
-                    <Select
-                      searchable
-                      size="xs"
-                      aria-label={`${draft.label} pitch`}
-                      value={String(draft.midiNote)}
-                      data={pitchOptions}
-                      onChange={(value) =>
-                        value && updateDraft(draft.id, { midiNote: Number(value) })
-                      }
+                    <SoundOverrideControl
+                      label={draft.label}
+                      set={settings.sounds.rhythm}
+                      voiceIndex={index}
+                      value={generatorOverride(draft, index)}
+                      onChange={(sound) => updateDraft(draft.id, { sound, midiNote: undefined })}
                     />
                     <ActionIcon
                       variant="subtle"
@@ -520,43 +480,24 @@ export function InterferenceModule({
 
           <ModuleSection label="Preview">
             <Stack gap="xs">
-              <div className={classes.moduleParameterRow}>
-                <Text size="xs">Unit</Text>
-                <NumberInput
-                  size="xs"
-                  aria-label="Preview unit"
-                  suffix=" ms"
-                  min={20}
-                  max={2000}
-                  value={unitMilliseconds}
-                  onChange={setUnitMilliseconds}
-                />
-              </div>
               <VolumeControl
                 accessibleLabel="Interference preview volume"
                 label="Volume"
                 value={previewVolume}
                 onChange={setPreviewVolume}
               />
-              <VolumeControl
-                accessibleLabel="Metronome volume"
-                label={
-                  <Switch
-                    size="xs"
-                    label="Metro"
-                    aria-label="Grouping metronome"
-                    checked={metronomeEnabled}
-                    onChange={(event) => setMetronomeEnabled(event.currentTarget.checked)}
-                  />
-                }
-                value={metronomeVolume}
-                onChange={setMetronomeVolume}
+              <Switch
+                size="xs"
+                label="Click the grouping"
+                description="Ticks each grouping on the metronome's tertiary voice, on top of the meter click, at the transport's click volume."
+                checked={groupingClick}
+                onChange={(event) => setGroupingClick(event.currentTarget.checked)}
               />
               <Group gap="xs" wrap="nowrap">
                 <Button size="compact-sm" onClick={playPreview}>
                   ▶ Preview
                 </Button>
-                <Button size="compact-sm" variant="default" onClick={() => stopPreview()}>
+                <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
                   ■ Stop
                 </Button>
               </Group>

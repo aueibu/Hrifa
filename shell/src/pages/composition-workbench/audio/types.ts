@@ -1,3 +1,5 @@
+import type { SoundSet } from '../sounds';
+import type { TransportSettings } from '../transport';
 import type { Provenance } from '../model';
 import type { MusicalDuration, MusicalPosition, MusicalTimeline } from '../musicalTime';
 
@@ -5,7 +7,11 @@ export type InstrumentId =
   | 'preview.sine'
   | 'preview.triangle'
   | 'preview.click'
-  | 'preview.click-accent';
+  | 'preview.click-accent'
+  | 'sound.click'
+  | 'sound.woodblock'
+  | 'sound.drum'
+  | 'sound.tone';
 
 interface PerformanceEventBase {
   id: string;
@@ -50,6 +56,11 @@ export type PerformancePlan = SecondsPerformancePlan | MusicalPerformancePlan;
 export interface PlaybackRequest {
   plan: PerformancePlan;
   busGains?: Record<string, number>;
+  /**
+   * Add the global transport's meter clicks and count-in (see transport.ts). For previews whose
+   * time grid is the transport's pulse; leave off for anything timed independently of it.
+   */
+  followTransport?: boolean;
   onComplete?(): void;
 }
 
@@ -61,9 +72,24 @@ export interface PlaybackSession {
   stop(): void;
 }
 
+export interface PlaybackClock {
+  startedAtMs: number;
+}
+
 export interface AudioEngine {
   play(request: PlaybackRequest): Promise<PlaybackSession>;
   stopSource(sourceId: string): void;
   stopAll(): void;
+  /** True while any preview is sounding. */
+  readonly playing: boolean;
+  /** Called whenever a preview starts or ends; returns an unsubscribe function. */
+  subscribe(listener: () => void): () => void;
+  /**
+   * Where a source's sounding preview is, for drawing a playhead: `startedAtMs` is the
+   * performance.now() time the plan's own material begins (after any count-in).
+   */
+  clock(sourceId: string): PlaybackClock | undefined;
+  /** The global transport; metronome changes apply live to sounding previews. */
+  setTransport(settings: TransportSettings, metronomeSounds?: SoundSet): void;
   dispose(): void;
 }

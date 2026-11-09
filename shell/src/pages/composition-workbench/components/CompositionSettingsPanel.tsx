@@ -1,5 +1,6 @@
 import { Drawer, NumberInput, Stack, Text, Title } from '@mantine/core';
 import { useCompositionSettings } from '../compositionSettings';
+import { SoundSetEditor } from './SoundControls';
 
 // New settings get their own <Title>-headed section below, in whatever grouping makes sense —
 // this file only needs a new control added to it; compositionSettings.tsx is where the actual
@@ -39,6 +40,36 @@ export function CompositionSettingsPanel({
               </Text>
             )}
           </Stack>
+        </div>
+        <div>
+          <Title order={4} size="h6" mb={4}>
+            Rhythm sounds
+          </Title>
+          <Text size="xs" c="dimmed" mb="xs">
+            Modules play their layers on these voices in order — Interference's generators 1, 2, 3;
+            Rhythm Householder's input and candidate — unless a module sets its own sound. Clicks and
+            woodblocks sound two to three octaves above the written pitch and drums two below, so one
+            pitch suits every sound.
+          </Text>
+          <SoundSetEditor
+            name="Rhythm"
+            set={settings.sounds.rhythm}
+            onChange={(rhythm) => updateSettings({ sounds: { ...settings.sounds, rhythm } })}
+          />
+        </div>
+        <div>
+          <Title order={4} size="h6" mb={4}>
+            Metronome sounds
+          </Title>
+          <Text size="xs" c="dimmed" mb="xs">
+            Primary marks each downbeat, secondary the other beats, tertiary Interference's grouping
+            click.
+          </Text>
+          <SoundSetEditor
+            name="Metronome"
+            set={settings.sounds.metronome}
+            onChange={(metronome) => updateSettings({ sounds: { ...settings.sounds, metronome } })}
+          />
         </div>
       </Stack>
     </Drawer>

@@ -7,7 +7,18 @@ import {
   musicalPositionToSeconds,
   rational,
 } from '../musicalTime';
+import { volumePercentToGain } from '../audio';
 import { pitchFrequency } from '../pitch';
+import { defaultSoundSettings, type SoundSet } from '../sounds';
+import {
+  applyTransport,
+  COUNT_IN_BUS,
+  countInSeconds,
+  defaultTransportSettings,
+  METER_BUS,
+  transportBusGain,
+  type TransportSettings,
+} from '../transport';
 import { instrumentRegistry } from './instrumentRegistry';
 import type {
   AudioEngine,
@@ -30,6 +41,8 @@ interface ActiveSession {
   buses: Map<string, Gain>;
   instruments: Map<string, PolySynth>;
   timebaseKind: 'seconds' | 'musical';
+  /** performance.now() when the material (not the count-in) starts sounding. */
+  startedAtMs: number;
   transportScheduleIds: number[];
   timer?: ReturnType<typeof globalThis.setTimeout>;
   onComplete?: () => void;
@@ -51,10 +64,57 @@ export class ToneAudioEngine implements AudioEngine {
   private tone?: ToneModule;
   private master?: Gain;
   private sessions = new Map<string, ActiveSession>();
+  private listeners = new Set<() => void>();
+  private transport: TransportSettings = defaultTransportSettings;
+  private metronomeSounds: SoundSet = defaultSoundSettings.metronome;
 
   constructor(private readonly loadTone: () => Promise<ToneModule> = () => import('tone')) {}
 
-  async play(request: PlaybackRequest): Promise<PlaybackSession> {
+  get playing() {
+    return this.sessions.size > 0;
+  }
+
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  setTransport(settings: TransportSettings, metronomeSounds?: SoundSet) {
+    this.transport = settings;
+    this.metronomeSounds = metronomeSounds ?? this.metronomeSounds;
+    this.sessions.forEach((session) =>
+      [METER_BUS, COUNT_IN_BUS].forEach((busId) => {
+        const gain = transportBusGain(busId, settings, volumePercentToGain);
+        if (gain !== undefined) {
+          this.setBusGain(session.id, busId, gain);
+        }
+      })
+    );
+  }
+
+  clock(sourceId: string) {
+    const session = [...this.sessions.values()].find((candidate) => candidate.sourceId === sourceId);
+    return session ? { startedAtMs: session.startedAtMs } : undefined;
+  }
+
+  private notify() {
+    this.listeners.forEach((listener) => listener());
+  }
+
+  async play(original: PlaybackRequest): Promise<PlaybackSession> {
+    const request: PlaybackRequest = original.followTransport
+      ? {
+          ...original,
+          plan: applyTransport(original.plan, this.transport, this.metronomeSounds),
+          busGains: {
+            ...original.busGains,
+            [METER_BUS]: transportBusGain(METER_BUS, this.transport, volumePercentToGain)!,
+            [COUNT_IN_BUS]: transportBusGain(COUNT_IN_BUS, this.transport, volumePercentToGain)!,
+          },
+        }
+      : original;
     this.stopSource(request.plan.sourceId);
     if (request.plan.timebase.kind === 'musical') {
       [...this.sessions.values()]
@@ -70,10 +130,16 @@ export class ToneAudioEngine implements AudioEngine {
       buses: new Map(),
       instruments: new Map(),
       timebaseKind: request.plan.timebase.kind,
+      // Both timebases start 60 ms ahead (see the scheduling below).
+      startedAtMs:
+        performance.now() +
+        60 +
+        (original.followTransport ? countInSeconds(this.transport) * 1000 : 0),
       transportScheduleIds: [],
       onComplete: request.onComplete,
     };
     this.sessions.set(id, state);
+    this.notify();
 
     if (isSecondsPlan(request.plan)) {
       const start = tone.now() + 0.06;
@@ -246,10 +312,19 @@ export class ToneAudioEngine implements AudioEngine {
     let instrument = session.instruments.get(instrumentKey);
     if (!instrument) {
       const definition = instrumentRegistry[event.instrumentId];
-      instrument = new tone.PolySynth(tone.Synth, {
-        oscillator: { type: definition.oscillator },
-        envelope: definition.envelope,
-      }).connect(bus);
+      instrument = (
+        definition.kind === 'membrane'
+          ? new tone.PolySynth(tone.MembraneSynth, {
+              pitchDecay: definition.pitchDecay,
+              octaves: definition.octaves,
+              oscillator: { type: definition.oscillator },
+              envelope: definition.envelope,
+            })
+          : new tone.PolySynth(tone.Synth, {
+              oscillator: { type: definition.oscillator },
+              envelope: definition.envelope,
+            })
+      ).connect(bus) as PolySynth;
       session.instruments.set(instrumentKey, instrument);
     }
     return instrument;
@@ -292,5 +367,6 @@ export class ToneAudioEngine implements AudioEngine {
     if (completed) {
       session.onComplete?.();
     }
+    this.notify();
   }
 }

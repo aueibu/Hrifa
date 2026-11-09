@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Badge,
@@ -13,10 +13,7 @@ import {
   Title,
 } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
-import { volumePercentToGain } from '../audio';
-import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
-import type { PlaybackSession } from '../audio/types';
 import type {
   CompositionModuleRoutingProps,
   PublishedCompositionOutput,
@@ -43,6 +40,7 @@ import {
   usePersistentState,
 } from '../usePersistentState';
 import { ForteCatalogBrowser } from './ForteCatalogBrowser';
+import { useModulePreview } from '../useModulePreview';
 import { Module, ModuleOutput, ModuleSection } from './Module';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
@@ -134,11 +132,7 @@ export function PitchListModule({
     30,
     acceptsFiniteNumber
   );
-  const [audioStatus, setAudioStatus] = useState('');
   const [catalogOpened, setCatalogOpened] = useState(false);
-  const audioEngine = useAudioEngine();
-  const playbackSession = useRef<PlaybackSession | null>(null);
-  const playRequestVersion = useRef(0);
 
   const inlineProvenance = useMemo(
     () =>
@@ -236,27 +230,12 @@ export function PitchListModule({
     })),
   }));
 
-  useEffect(
-    () => () => {
-      playRequestVersion.current += 1;
-      playbackSession.current?.stop();
-      playbackSession.current = null;
-    },
-    []
-  );
+  // Header Play starts this preview too, but it keeps its own step length: a pitch list has no
+  // rhythm, so it isn't tied to the transport's pulse.
+  const preview = useModulePreview({ instanceId, volume, transportPlay: playPreview });
+  const setAudioStatus = preview.setStatus;
 
-  useEffect(() => {
-    playbackSession.current?.setBusGain('preview', volumePercentToGain(volume));
-  }, [volume]);
-
-  function stopPreview(message = 'Preview stopped.') {
-    playRequestVersion.current += 1;
-    playbackSession.current?.stop();
-    playbackSession.current = null;
-    setAudioStatus(message);
-  }
-
-  async function playPreview() {
+  function playPreview() {
     const stepSeconds = Number(stepMilliseconds) / 1000;
     if (!Number.isFinite(stepSeconds) || stepSeconds <= 0) {
       setAudioStatus('Step duration must be a positive number.');
@@ -270,37 +249,18 @@ export function PitchListModule({
       setAudioStatus('This preview exceeds the 4096-note safety limit.');
       return;
     }
-    stopPreview('');
-    const requestVersion = playRequestVersion.current;
     const { plan, audibleEvents, skippedEvents } = createPitchPreviewPlan({
       sourceId: instanceId,
       groups: pitchGroups,
       stepSeconds,
       gatePercent,
     });
-    const totalSeconds = plan.durationSeconds;
-    setAudioStatus(
+    void preview.play(
+      plan,
       skippedEvents === 0
-        ? `Playing ${pitchGroups.length} pitch groups over ${totalSeconds.toFixed(1)} seconds.`
+        ? `Playing ${pitchGroups.length} pitch groups over ${plan.durationSeconds.toFixed(1)} seconds.`
         : `Playing ${audibleEvents} audible pitches; ${skippedEvents} lie outside 20–20,000 Hz.`
     );
-    try {
-      const session = await audioEngine.play({
-        plan,
-        busGains: { preview: volumePercentToGain(volume) },
-        onComplete: () => {
-          playbackSession.current = null;
-          setAudioStatus('Preview complete.');
-        },
-      });
-      if (requestVersion !== playRequestVersion.current) {
-        session.stop();
-        return;
-      }
-      playbackSession.current = session;
-    } catch (error) {
-      setAudioStatus(error instanceof Error ? error.message : 'Audio preview could not start.');
-    }
   }
 
   function changeFormat(value: string | null) {
@@ -314,7 +274,7 @@ export function PitchListModule({
   }
 
   function replaceWithForteSet(selection: ForteSetSelection) {
-    stopPreview('');
+    preview.stop('');
     setFormat('pitch-class');
     setInlineValues(formatPitchClassGroup(selection.pitchClasses));
     setCatalogOrigins({ '0': selection });
@@ -335,7 +295,7 @@ export function PitchListModule({
   }
 
   function resetPitchList() {
-    stopPreview('');
+    preview.stop('');
     setFormat('midi-note');
     setInlineValues(initialValues['midi-note']);
     setCatalogOrigins({});
@@ -466,7 +426,7 @@ export function PitchListModule({
             output={<ModuleOutput name="Pitches" packet={interpreted.packet} />}
             footer={
               <Text size="xs" c="dimmed" truncate aria-live="polite">
-                {audioStatus || 'Preview timing does not alter the pitch-list output.'}
+                {preview.status || 'Preview timing does not alter the pitch-list output.'}
               </Text>
             }
           >
@@ -575,7 +535,7 @@ export function PitchListModule({
                   <Button size="compact-sm" onClick={playPreview}>
                     ▶ Preview
                   </Button>
-                  <Button size="compact-sm" variant="default" onClick={() => stopPreview()}>
+                  <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
                     ■ Stop
                   </Button>
                 </Group>

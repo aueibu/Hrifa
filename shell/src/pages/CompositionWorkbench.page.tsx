@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ActionIcon, Anchor, AppShell, Button, Group, Stack, Tabs, Text, Textarea, Title } from '@mantine/core';
+import { ActionIcon, AppShell, Button, Group, Stack, Tabs, Text, Textarea, Title, Tooltip } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
@@ -18,6 +18,8 @@ import { PairCompositionModule } from './composition-workbench/components/PairCo
 import { PitchListModule } from './composition-workbench/components/PitchListModule';
 import { ScaleConstructionModule } from './composition-workbench/components/ScaleConstructionModule';
 import { ScaleEvolutionModule } from './composition-workbench/components/ScaleEvolutionModule';
+import { TransportBar } from './composition-workbench/components/TransportBar';
+import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
 import {
   outputRefKey,
   type CompositionOutputRef,
@@ -102,6 +104,7 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.fractioningUnit,
     compositionStateKeys.fractioningVolume,
     compositionStateKeys.fractioningMidiNote,
+    compositionStateKeys.fractioningSound,
   ],
   'pair-composition': [
     compositionStateKeys.pairCompositionA,
@@ -110,6 +113,7 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.pairCompositionUnit,
     compositionStateKeys.pairCompositionVolume,
     compositionStateKeys.pairCompositionMidiNote,
+    compositionStateKeys.pairCompositionSound,
   ],
   'scale-construction': [
     compositionStateKeys.scaleConstructionIntervals,
@@ -452,19 +456,30 @@ export function CompositionWorkbenchPage() {
   return (
     <CompositionSettingsProvider>
     <AudioEngineProvider>
+    <PreviewRegistryProvider>
       <AppShell header={{ height: 56 }} padding="md">
         <AppShell.Header>
-          <Group h="100%" px="md" justify="space-between" className={classes.headerContent}>
-            <Group gap="sm">
-              <Anchor component={Link} to="/" size="sm">
-                &larr; Workbench
-              </Anchor>
-              <Text c="dimmed">/</Text>
-              <Title order={1} size="h4">
+          <div className={classes.headerBar}>
+            <Group gap="xs" wrap="nowrap">
+              <Tooltip label="Back to Workbench">
+                <ActionIcon
+                  component={Link}
+                  to="/"
+                  variant="subtle"
+                  size="lg"
+                  aria-label="Back to Workbench"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </ActionIcon>
+              </Tooltip>
+              <Title order={1} className={classes.visuallyHidden}>
                 Composition Workbench
               </Title>
             </Group>
-            <Group gap="xs">
+            <TransportBar selectedInstanceId={activeCompositionInstanceId} />
+            <Group gap="xs" wrap="nowrap" justify="flex-end">
               <ActionIcon
                 variant="default"
                 size="lg"
@@ -478,7 +493,7 @@ export function CompositionWorkbenchPage() {
               </ActionIcon>
               <ColorSchemeToggle />
             </Group>
-          </Group>
+          </div>
         </AppShell.Header>
         <CompositionSettingsPanel opened={settingsOpened} onClose={() => setSettingsOpened(false)} />
         <AppShell.Main>
@@ -702,6 +717,7 @@ export function CompositionWorkbenchPage() {
           </Stack>
         </AppShell.Main>
       </AppShell>
+    </PreviewRegistryProvider>
     </AudioEngineProvider>
     </CompositionSettingsProvider>
   );

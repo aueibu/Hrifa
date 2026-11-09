@@ -60,6 +60,7 @@ function createFakeTone() {
       Gain: FakeGain,
       PolySynth: FakePolySynth,
       Synth: class {},
+      MembraneSynth: class {},
       Ticks: vi.fn((value: number) => value),
       getTransport: vi.fn(() => transport),
     },

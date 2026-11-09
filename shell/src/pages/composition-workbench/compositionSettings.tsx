@@ -6,6 +6,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import {
+  defaultTransportSettings,
+  isValidMeter,
+  MAX_TEMPO,
+  MIN_TEMPO,
+  transportPulseOptions,
+  type TransportSettings,
+} from './transport';
+import { defaultSoundSettings, sanitizeSoundSettings, type SoundSettings } from './sounds';
 
 // Global, workbench-wide settings — as opposed to per-module state (which lives in each
 // module's own usePersistentState calls) or per-route treatments (routeTreatments.ts). A
@@ -24,10 +33,18 @@ export interface CompositionSettings {
   // display stay fixed at 12-EDO regardless of this setting — that's real MIDI, not abstract
   // pitch-class material, and has no other meaning to redefine.
   edo: number;
+  // Tempo, meter, pulse length, metronome and count-in — the DAW-style transport in the header.
+  // Every rhythm preview follows it, so rhythms sound at the same speed in every module and line
+  // up with one shared beat. See transport.ts.
+  transport: TransportSettings;
+  // Primary/secondary/tertiary preview voices for rhythm and for the metronome. See sounds.ts.
+  sounds: SoundSettings;
 }
 
 export const defaultCompositionSettings: CompositionSettings = {
   edo: 12,
+  transport: defaultTransportSettings,
+  sounds: defaultSoundSettings,
 };
 
 // Each field is read and validated independently, then merged over the defaults. A stored blob
@@ -39,7 +56,34 @@ function sanitizeCompositionSettings(raw: unknown): CompositionSettings {
     typeof candidate.edo === 'number' && Number.isInteger(candidate.edo) && candidate.edo >= 1
       ? candidate.edo
       : defaultCompositionSettings.edo;
-  return { edo };
+  return {
+    edo,
+    transport: sanitizeTransport(candidate.transport),
+    sounds: sanitizeSoundSettings(candidate.sounds),
+  };
+}
+
+function sanitizeTransport(raw: unknown): TransportSettings {
+  const candidate = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const fallback = defaultTransportSettings;
+  const tempo =
+    typeof candidate.tempo === 'number' && Number.isFinite(candidate.tempo)
+      ? Math.min(MAX_TEMPO, Math.max(MIN_TEMPO, candidate.tempo))
+      : fallback.tempo;
+  const volume =
+    typeof candidate.metronomeVolume === 'number' && Number.isFinite(candidate.metronomeVolume)
+      ? Math.min(100, Math.max(0, candidate.metronomeVolume))
+      : fallback.metronomeVolume;
+  return {
+    tempo,
+    meter: isValidMeter(candidate.meter) ? candidate.meter : fallback.meter,
+    pulse: transportPulseOptions.some((option) => option.value === candidate.pulse)
+      ? (candidate.pulse as string)
+      : fallback.pulse,
+    metronome: typeof candidate.metronome === 'boolean' ? candidate.metronome : fallback.metronome,
+    metronomeVolume: volume,
+    countIn: typeof candidate.countIn === 'boolean' ? candidate.countIn : fallback.countIn,
+  };
 }
 
 const STORAGE_KEY = 'hrifa.composition-workbench.settings.v1';
@@ -56,6 +100,7 @@ function readStoredSettings(): CompositionSettings {
 interface CompositionSettingsContextValue {
   settings: CompositionSettings;
   updateSettings(patch: Partial<CompositionSettings>): void;
+  updateTransport(patch: Partial<TransportSettings>): void;
 }
 
 const CompositionSettingsContext = createContext<CompositionSettingsContextValue | undefined>(
@@ -77,8 +122,14 @@ export function CompositionSettingsProvider({ children }: { children: ReactNode 
     setSettings((current) => sanitizeCompositionSettings({ ...current, ...patch }));
   }, []);
 
+  const updateTransport = useCallback((patch: Partial<TransportSettings>) => {
+    setSettings((current) =>
+      sanitizeCompositionSettings({ ...current, transport: { ...current.transport, ...patch } })
+    );
+  }, []);
+
   return (
-    <CompositionSettingsContext.Provider value={{ settings, updateSettings }}>
+    <CompositionSettingsContext.Provider value={{ settings, updateSettings, updateTransport }}>
       {children}
     </CompositionSettingsContext.Provider>
   );

@@ -89,7 +89,10 @@ describe("performance-plan compilation", () => {
     const plan = createInterferencePreviewPlan({
       sourceId: "interference",
       patterns,
-      midiNotes: [48, 55],
+      sounds: [
+        { instrumentId: "preview.sine", pitchMidicents: 4800 },
+        { instrumentId: "preview.triangle", pitchMidicents: 5500 },
+      ],
       result,
       unitSeconds: 0.16,
       grouping,
@@ -97,13 +100,13 @@ describe("performance-plan compilation", () => {
 
     expect(plan.durationSeconds).toBeCloseTo(0.96);
     expect(plan.events.filter((event) => event.busId === "preview")).toHaveLength(5);
-    expect(plan.events.filter((event) => event.busId === "metronome")).toHaveLength(6);
+    expect(plan.events.filter((event) => event.busId === "grouping")).toHaveLength(6);
     expect(plan.events[0]).toMatchObject({
       atSeconds: 0,
       pitchMidicents: 4800,
       instrumentId: "preview.sine",
     });
-    expect(plan.events.some((event) => event.instrumentId === "preview.click-accent")).toBe(true);
+    expect(plan.events.filter((event) => event.busId === "grouping" && event.velocity > 0.5)).toHaveLength(1);
     expect(plan.events.every((event) => event.provenance.length > 0)).toBe(true);
   });
 

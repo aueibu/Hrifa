@@ -136,7 +136,9 @@ The interface may present a musical position in Bitwig-style `BAR.BEAT.TICK.%` n
 
 The workbench owns one lazily started `AudioEngine`. It centralizes browser audio activation, Tone.js scheduling, the master output, an instrument registry, and named buses. Each playback request returns a source-scoped session with live bus gain and independent stop behavior. Starting another preview from the same source replaces that source's prior session without stopping other modules.
 
-Standalone rhythm and pitch modules may create provisional seconds-based audition plans. Their local step, pulse, gate, register, instrument, and metronome choices remain realization controls and do not alter their output packets. A composed rhythm-and-pitch result should instead pass through an explicit combination operation that emits `events | note` in musical time; playback must not pair unrelated packet streams invisibly.
+Standalone rhythm and pitch modules may create provisional seconds-based audition plans. Their local gate, register, and instrument choices remain realization controls and do not alter their output packets.
+
+**Global transport.** Tempo, meter, pulse value, metronome, and count-in are workbench-wide settings (`transport.ts`, stored in `compositionSettings.tsx`, edited in the header `TransportBar`). Every rhythm preview takes its pulse length from the transport (`pulseSeconds`) instead of a per-module unit, and passes `followTransport: true` so the engine adds meter clicks (on the `meter` bus, whose gain is the metronome switch, so it toggles live) and an optional one-bar count-in. Melodicization's tempo, display meter, and pulse value are the transport's, so its note output follows the global pulse value. Interference's grouping click is a separate `grouping` bus layered on the meter click. Pitch List keeps its own step length, since a pitch list has no rhythm. **Preview voices.** `sounds.ts` defines two global voice sets (rhythm and metronome), each a base pitch plus primary/secondary/tertiary voices with a sound type (click, woodblock, drum, tone) and a cents offset. Modules play layer *n* on voice *n* (`layerSound`) unless the module stores its own `SoundOverride` for that layer (`SoundOverrideControl`): Interference per generator, Rhythm Householder for input (A) and candidate (B, plus an A/B button that plays both), Fractioning and Pair Composition for their single rhythm. Meter clicks use the metronome's primary (downbeat) and secondary voices; Interference's grouping click uses its tertiary. Percussive types sound in a fixed register relative to the written pitch (`soundRegisterSemitones`). Modules register their main preview with `useTransportPreview` so the header Play button and the space bar start the selected module; Stop and space-while-playing stop every preview. A composed rhythm-and-pitch result should instead pass through an explicit combination operation that emits `events | note` in musical time; playback must not pair unrelated packet streams invisibly.
 
 Tone.js is contained behind the Hrifa-owned engine contract. Module components and musical operations do not import Tone classes, which keeps the realization compiler testable and leaves room for later renderers such as offline export or Web MIDI.
 
@@ -221,6 +223,44 @@ An inter-onset list says how far apart attacks are, not where the first one fall
 - Melodicization shifts every attack by the start; bar lines do not move, which is what places the attacks off the beat. Duration previews play the leading silence.
 - A bank whose entries start in different places lists them in `metadata.entryOrigins`, and selecting an entry gives the resulting list that entry's start.
 - Output summaries show `starts +n` for a rhythm that doesn't start on the downbeat.
+
+## Adding a module with playback
+
+The default for any new module that previews sound. Fractioning is the smallest complete example;
+Rhythm Householder shows layered (A/B) playback. Two shared pieces do most of it:
+`useModulePreview` (`useModulePreview.ts`) runs the preview, and `DurationStrip`
+(`components/DurationStrip.tsx`) draws the numbered bar with its playhead.
+
+1. **Timing comes from the transport.** Rhythm previews use `pulseSeconds(settings.transport)` for
+   one pulse; don't add a per-module tempo, unit, or meter control. Musical-time plans
+   (Melodicization) use the transport's tempo, meter, and pulse value.
+2. **Play through `useModulePreview`.** It stops the previous session, keeps the volume and any
+   extra buses live, owns the status line (`preview.status`), and clears playing state on a global
+   Stop. Pass `followTransport: true` for anything on the transport's pulse grid, so the metronome
+   and count-in apply; leave it off only for previews with no pulse (Pitch List). Module-owned
+   playback state (highlighted layers, a custom playhead) is cleared in `onEnd`.
+3. **Sounds come from the voices.** Play layer *n* on `layerSound(settings.sounds.rhythm, n, override)`
+   and give each layer a `SoundOverrideControl` with the override in the module's persistent state
+   (default `null` = use the voice). Don't hard-code an instrument or pitch for a rhythm layer.
+   Two layers you'd want to compare get an A/B button
+   (`createLayeredDurationPreviewPlan` with one layer each).
+4. **Give the hook a `transportPlay`** for the main preview, so the header Play button and the
+   space bar start it.
+5. **Draw durations with `DurationStrip`** and pass `playhead={{ sourceId, unitSeconds }}`; it
+   handles late starts and the playhead. With several strips, set `playhead.visible` for the ones
+   actually sounding. For any other display (e.g. Interference's attack lanes), add
+   `<Playhead … />` as the container's **last** child (`durationBlock` colors alternate with
+   `:nth-child`).
+6. **Give the module its own volume fader** (the hook's `volume`, on the `preview` bus). The
+   `meter`, `count-in`, and `grouping` buses are reserved for clicks.
+7. **Use the module's instance id as the plan's `sourceId`.** The playhead, global Stop, and
+   `stopSource` all find a preview by it.
+8. **Store new persistent keys** in `compositionStateKeys` and list them under the module's
+   `instanceStateKeys` in `CompositionWorkbench.page.tsx`, so deleting the module clears them.
+
+Global Stop (header button or space while playing) ends sessions without calling `onComplete`;
+`useModulePreview` notices and calls `onEnd('stopped')`, so don't play through `audioEngine.play`
+directly from a module.
 
 ## Rules for extending the vocabulary
 

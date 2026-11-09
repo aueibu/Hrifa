@@ -1,0 +1,14 @@
+/* Doubled class: outranks container rules such as `.attackCells > span`. */
+.playhead.playhead {
+  border-radius: 0;
+  height: auto;
+  background: var(--mantine-color-red-filled);
+  bottom: 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mantine-color-body) 60%, transparent);
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transform: translateX(-1px);
+  width: 2px;
+  z-index: 2;
+}

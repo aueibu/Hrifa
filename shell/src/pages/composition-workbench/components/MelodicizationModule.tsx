@@ -5,7 +5,6 @@ import {
   Button,
   Collapse,
   Group,
-  NumberInput,
   Select,
   Slider,
   Stack,
@@ -20,10 +19,7 @@ import {
   type PianoRollViewState,
 } from '../../../components/PianoRoll';
 import { Surface } from '../../../components/Surface/Surface';
-import { volumePercentToGain } from '../audio';
-import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
-import type { PlaybackSession } from '../audio/types';
 import {
   boundOutput,
   compositionOutputOptions,
@@ -35,8 +31,9 @@ import {
   type PublishedCompositionOutput,
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
+import { countInSeconds, parseMeter, transportPulse } from '../transport';
 import type { ModuleRouteState } from '../compositionWorkspace';
-import { melodicizationPulseOptions, melodicize, type PitchAllocation } from '../melodicization';
+import { melodicize, type PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
 import {
   defaultMusicalTimeline,
@@ -46,14 +43,12 @@ import {
   type MusicalDuration,
   type MusicalTimeline,
 } from '../musicalTime';
-import { pitchLabel } from '../routeTreatments';
+import { pitchLabel, rhythmInterpretableDomains } from '../routeTreatments';
 import { signalTypeRegistry } from '../signalTypes';
-import { rhythmInterpretableDomains } from '../routeTreatments';
+import { useModulePreview, type PreviewEnd } from '../useModulePreview';
 import {
   acceptsBoolean,
   acceptsFiniteNumber,
-  acceptsNumberOrString,
-  acceptsString,
   compositionStateKeys,
   compositionInstanceStateKey,
   usePersistentState,
@@ -77,13 +72,6 @@ const allocationOptions = [
   { value: 'cycle-rhythm', label: 'Cycle attacks across pitches' },
   { value: 'zip', label: 'Zip and stop at the shorter input' },
   { value: 'cartesian', label: 'Every pitch at every attack' },
-];
-
-const meterOptions = [
-  { value: '4/4', label: '4/4' },
-  { value: '3/4', label: '3/4' },
-  { value: '5/4', label: '5/4' },
-  { value: '7/8', label: '7/8' },
 ];
 
 function rationalLabel(duration: MusicalDuration) {
@@ -145,25 +133,10 @@ export function MelodicizationModule({
     (value): value is PitchAllocation =>
       value === 'cycle' || value === 'cycle-rhythm' || value === 'zip' || value === 'cartesian'
   );
-  const [pulseValue, setPulseValue] = usePersistentState(
-    stateKey(compositionStateKeys.melodicizationPulse),
-    '1/4',
-    acceptsString
-  );
   const [articulationPercent, setArticulationPercent] = usePersistentState(
     stateKey(compositionStateKeys.melodicizationArticulation),
     100,
     acceptsFiniteNumber
-  );
-  const [tempo, setTempo] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.melodicizationTempo),
-    120,
-    acceptsNumberOrString
-  );
-  const [meter, setMeter] = usePersistentState(
-    stateKey(compositionStateKeys.melodicizationMeter),
-    '4/4',
-    acceptsString
   );
   const [volume, setVolume] = usePersistentState(
     stateKey(compositionStateKeys.melodicizationVolume),
@@ -193,12 +166,7 @@ export function MelodicizationModule({
     false,
     acceptsBoolean
   );
-  const [audioStatus, setAudioStatus] = useState('');
   const [playheadQuarterNotes, setPlayheadQuarterNotes] = useState(0);
-  const [previewPlaying, setPreviewPlaying] = useState(false);
-  const audioEngine = useAudioEngine();
-  const playbackSession = useRef<PlaybackSession | null>(null);
-  const playRequestVersion = useRef(0);
   const playheadFrame = useRef<number | null>(null);
 
   const rhythmOutput = boundOutput(outputs, bindingRhythm?.source);
@@ -235,9 +203,10 @@ export function MelodicizationModule({
         : undefined,
     [bindingPitches, resolvedPitches, instanceId, edo]
   );
-  const pulseUnit =
-    melodicizationPulseOptions.find((option) => option.value === pulseValue)?.duration ??
-    melodicizationPulseOptions[2].duration;
+  // Tempo, meter, and pulse value come from the header transport, shared by every module.
+  const transport = settings.transport;
+  const { tempo, meter } = transport;
+  const pulseUnit = transportPulse(transport).duration;
   const result = useMemo(
     () =>
       melodicize({
@@ -250,7 +219,7 @@ export function MelodicizationModule({
       }),
     [allocation, articulationPercent, instanceId, pulseUnit, treatedPitches, treatedRhythm]
   );
-  const [meterNumerator, meterDenominator] = meter.split('/').map(Number);
+  const { numerator: meterNumerator, denominator: meterDenominator } = parseMeter(meter);
   const timeline = useMemo<MusicalTimeline>(
     () => ({
       ...defaultMusicalTimeline,
@@ -317,9 +286,6 @@ export function MelodicizationModule({
 
   useEffect(
     () => () => {
-      playRequestVersion.current += 1;
-      playbackSession.current?.stop();
-      playbackSession.current = null;
       if (playheadFrame.current !== null) {
         cancelAnimationFrame(playheadFrame.current);
       }
@@ -327,28 +293,27 @@ export function MelodicizationModule({
     []
   );
 
-  useEffect(() => {
-    playbackSession.current?.setBusGain('preview', volumePercentToGain(volume));
-  }, [volume]);
-
-  function stopPreview(message = 'Preview stopped.') {
-    playRequestVersion.current += 1;
-    playbackSession.current?.stop();
-    playbackSession.current = null;
+  function endPlayhead(reason: PreviewEnd) {
     if (playheadFrame.current !== null) {
       cancelAnimationFrame(playheadFrame.current);
       playheadFrame.current = null;
     }
-    setPlayheadQuarterNotes(0);
-    setPreviewPlaying(false);
-    setAudioStatus(message);
+    setPlayheadQuarterNotes(reason === 'complete' ? pianoRollDuration : 0);
   }
+
+  const preview = useModulePreview({
+    instanceId,
+    volume,
+    followTransport: true,
+    transportPlay: playPreview,
+    onEnd: endPlayhead,
+  });
 
   function startPlayhead(bpm: number) {
     if (playheadFrame.current !== null) {
       cancelAnimationFrame(playheadFrame.current);
     }
-    const startsAt = performance.now() + 60;
+    const startsAt = performance.now() + 60 + countInSeconds(transport) * 1000;
     const draw = (now: number) => {
       const position = Math.max(0, ((now - startsAt) / 1000) * (bpm / 60));
       setPlayheadQuarterNotes(Math.min(pianoRollDuration, position));
@@ -363,61 +328,37 @@ export function MelodicizationModule({
 
   async function playPreview() {
     if (result.errors.length || !result.packet.items.length) {
-      setAudioStatus('Connect valid rhythm and pitch material before previewing.');
+      preview.setStatus('Connect valid rhythm and pitch material before previewing.');
       return;
     }
-    if (!Number.isFinite(Number(tempo)) || Number(tempo) <= 0) {
-      setAudioStatus('Preview tempo must be a positive number.');
-      return;
-    }
-    stopPreview('');
-    const requestVersion = playRequestVersion.current;
+    let plan;
     try {
-      const plan = createNotePacketPerformancePlan({
+      plan = createNotePacketPerformancePlan({
         sourceId: instanceId,
         packet: result.packet,
         timeline,
       });
-      const session = await audioEngine.play({
-        plan,
-        busGains: { preview: volumePercentToGain(volume) },
-        onComplete: () => {
-          playbackSession.current = null;
-          if (playheadFrame.current !== null) {
-            cancelAnimationFrame(playheadFrame.current);
-            playheadFrame.current = null;
-          }
-          setPlayheadQuarterNotes(pianoRollDuration);
-          setPreviewPlaying(false);
-          setAudioStatus('Preview complete.');
-        },
-      });
-      if (requestVersion !== playRequestVersion.current) {
-        session.stop();
-        return;
-      }
-      playbackSession.current = session;
-      startPlayhead(Number(tempo));
-      setPreviewPlaying(true);
-      setAudioStatus(
-        `Playing ${result.packet.items.length} events and ${pianoRollNotes.length} notes at ${Number(tempo)} BPM on the musical transport.`
-      );
     } catch (error) {
-      setAudioStatus(error instanceof Error ? error.message : 'Audio preview could not start.');
+      preview.setStatus(error instanceof Error ? error.message : 'Audio preview could not start.');
+      return;
+    }
+    const started = await preview.play(
+      plan,
+      `Playing ${result.packet.items.length} events and ${pianoRollNotes.length} notes at ${tempo} BPM on the musical transport.`
+    );
+    if (started) {
+      startPlayhead(tempo);
     }
   }
 
   function resetMelodicization() {
-    stopPreview('');
+    preview.stop('');
     setAllocation('cycle');
-    setPulseValue('1/4');
     setArticulationPercent(100);
-    setTempo(120);
-    setMeter('4/4');
     setVolume(30);
     setPianoRollView(defaultPianoRollView);
     setInspectorExpanded(false);
-    setAudioStatus('Melodicization module reset.');
+    preview.setStatus('Melodicization module reset.');
   }
 
   const rhythmOptions: { value: string; label: string; disabled?: boolean }[] =
@@ -481,7 +422,7 @@ export function MelodicizationModule({
                 view={pianoRollView}
                 onViewChange={setPianoRollView}
                 playhead={playheadQuarterNotes}
-                isPlaying={previewPlaying}
+                isPlaying={preview.playing}
               />
               <div>
                 <Button
@@ -549,7 +490,7 @@ export function MelodicizationModule({
           output={<ModuleOutput name="Notes" packet={result.packet} />}
           footer={
             <Text size="xs" c="dimmed" truncate aria-live="polite">
-              {audioStatus ||
+              {preview.status ||
                 'Note events retain musical time; preview tempo does not rewrite them.'}
             </Text>
           }
@@ -590,14 +531,6 @@ export function MelodicizationModule({
                 value={allocation}
                 onChange={(value) => value && setAllocation(value as PitchAllocation)}
               />
-              <Select
-                size="xs"
-                label="Pulse value"
-                description="Explicitly interprets one source pulse in musical time."
-                data={melodicizationPulseOptions.map(({ value, label }) => ({ value, label }))}
-                value={pulseValue}
-                onChange={(value) => value && setPulseValue(value)}
-              />
               <div className={classes.moduleParameterRow}>
                 <Text size="xs">Articulation</Text>
                 <Group gap="xs" wrap="nowrap" className={classes.volumeControl}>
@@ -618,25 +551,10 @@ export function MelodicizationModule({
 
           <ModuleSection label="Preview">
             <Stack gap="xs">
-              <div className={classes.moduleParameterRow}>
-                <Text size="xs">Tempo</Text>
-                <NumberInput
-                  size="xs"
-                  aria-label="Melodicization preview tempo"
-                  suffix=" BPM"
-                  min={20}
-                  max={400}
-                  value={tempo}
-                  onChange={setTempo}
-                />
-              </div>
-              <Select
-                size="xs"
-                label="Display meter"
-                data={meterOptions}
-                value={meter}
-                onChange={(value) => value && setMeter(value)}
-              />
+              <Text size="xs" c="dimmed">
+                One pulse = one {transportPulse(transport).label.toLowerCase()}, in {meter} at {tempo}{' '}
+                BPM. Set these in the transport at the top of the page.
+              </Text>
               <VolumeControl
                 accessibleLabel="Melodicization preview volume"
                 label="Volume"
@@ -647,7 +565,7 @@ export function MelodicizationModule({
                 <Button size="compact-sm" onClick={playPreview}>
                   ▶ Preview
                 </Button>
-                <Button size="compact-sm" variant="default" onClick={() => stopPreview()}>
+                <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
                   ■ Stop
                 </Button>
               </Group>
