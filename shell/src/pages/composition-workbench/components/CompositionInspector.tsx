@@ -1,4 +1,5 @@
-import { Badge, Button, Group, Stack, Text, Title } from '@mantine/core';
+import { useState, type ReactNode } from 'react';
+import { Badge, Button, Collapse, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core';
 import {
   boundOutput,
   describeOutputRef,
@@ -61,19 +62,9 @@ function CanvasPart({
   const binding = route ? routes[route.instanceId]?.[route.port] : undefined;
   if (!route || !binding) {
     return (
-      <Stack gap="xs">
-        <div>
-          <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
-            Canvas &amp; cables
-          </Text>
-          <Title order={3} size="h5">
-            Patch canvas
-          </Title>
-        </div>
-        <Text size="xs" c="dimmed">
-          Select a cable to adjust how its material is treated between modules.
-        </Text>
-      </Stack>
+      <Text size="xs" c="dimmed">
+        Select a cable to adjust how its material is treated between modules.
+      </Text>
     );
   }
 
@@ -146,28 +137,18 @@ function ModulePart({
   const instance = instances.find((candidate) => candidate.id === activeInstanceId);
   if (!instance) {
     return (
-      <Stack gap="xs">
-        <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
-          Module
-        </Text>
-        <Text size="xs" c="dimmed">
-          Select a module on the canvas.
-        </Text>
-      </Stack>
+      <Text size="xs" c="dimmed">
+        Select a module on the canvas.
+      </Text>
     );
   }
   const moduleName = compositionInstanceLabel(instance, instances);
   return (
-    <Stack gap="sm">
-      <div>
-        <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
-          Module
-        </Text>
-        <Title order={3} size="h5">
-          {moduleName} module
-        </Title>
-      </div>
-      <Text size="sm">{moduleDescriptions[instance.moduleId]}</Text>
+    <Stack gap="xs">
+      <Title order={3} size="h6">
+        {moduleName} module
+      </Title>
+      <Text size="xs">{moduleDescriptions[instance.moduleId]}</Text>
       <Button variant="light" color="red" onClick={() => onRemoveModule(instance.id)}>
         Remove {moduleName}
       </Button>
@@ -175,16 +156,40 @@ function ModulePart({
   );
 }
 
+/** A collapsible inspector section, like a Bitwig panel section. */
+function Part({ label, children }: { label: string; children: ReactNode }) {
+  const [expanded, setExpanded] = useState(true);
+  return (
+    <div className={classes.part}>
+      <UnstyledButton
+        className={classes.partHeader}
+        aria-expanded={expanded}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+          <path d={expanded ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'} />
+        </svg>
+        <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
+          {label}
+        </Text>
+      </UnstyledButton>
+      <Collapse expanded={expanded}>
+        <div className={classes.partBody}>{children}</div>
+      </Collapse>
+    </div>
+  );
+}
+
 /** Two stacked parts: canvas and cables above, the active module below. */
 export function CompositionInspector(props: CompositionInspectorProps) {
   return (
     <div className={classes.panel}>
-      <div className={classes.part}>
+      <Part label="Canvas & cables">
         <CanvasPart {...props} />
-      </div>
-      <div className={classes.part}>
+      </Part>
+      <Part label="Module">
         <ModulePart {...props} />
-      </div>
+      </Part>
     </div>
   );
 }

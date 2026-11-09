@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ActionIcon, AppShell, Button, Group, Stack, Tabs, Text, Textarea, Title, Tooltip } from '@mantine/core';
+import {
+  ActionIcon,
+  AppShell,
+  Button,
+  Group,
+  MantineThemeProvider,
+  Stack,
+  Tabs,
+  Text,
+  Textarea,
+  Title,
+  Tooltip,
+} from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
@@ -8,6 +20,8 @@ import { ArithmeticModule } from './composition-workbench/components/ArithmeticM
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
+import { SplitStage, clampSplit } from './composition-workbench/components/SplitStage';
+import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
 import { FractioningModule } from './composition-workbench/components/FractioningModule';
 import { HouseholderModule } from './composition-workbench/components/HouseholderModule';
 import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
@@ -210,6 +224,21 @@ export function CompositionWorkbenchPage() {
     defaultCompositionInstances,
     acceptsCompositionInstances,
     migrateCompositionInstances
+  );
+  const [canvasSplit, setCanvasSplit] = usePersistentState<number>(
+    compositionStateKeys.canvasSplit,
+    0.5,
+    (value): value is number => typeof value === 'number' && Number.isFinite(value)
+  );
+  const [detailCollapsed, setDetailCollapsed] = usePersistentState<boolean>(
+    compositionStateKeys.detailCollapsed,
+    false,
+    (value): value is boolean => typeof value === 'boolean'
+  );
+  const [inspectorOpen, setInspectorOpen] = usePersistentState<boolean>(
+    compositionStateKeys.inspectorOpen,
+    true,
+    (value): value is boolean => typeof value === 'boolean'
   );
   const [compositionOutputs, setCompositionOutputs] = useState<
     Record<string, PublishedCompositionOutput>
@@ -470,8 +499,10 @@ export function CompositionWorkbenchPage() {
     (instanceId: string) => {
       setActiveCompositionInstanceId(instanceId);
       setCompositionInspectorTarget({ kind: 'module', instanceId });
+      // Opening a module brings its editor back if the detail panel was collapsed.
+      setDetailCollapsed(false);
     },
-    [setActiveCompositionInstanceId, setCompositionInspectorTarget]
+    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setDetailCollapsed]
   );
   const selectCompositionRoute = useCallback(
     (instanceId: string, port: string) => {
@@ -536,7 +567,8 @@ export function CompositionWorkbenchPage() {
     <CompositionSettingsProvider>
     <AudioEngineProvider>
     <PreviewRegistryProvider>
-      <AppShell header={{ height: 56 }} padding="md">
+      <MantineThemeProvider theme={compactWorkbenchTheme}>
+      <AppShell header={{ height: 56 }} padding="md" className={classes.workbench}>
         <AppShell.Header>
           <div className={classes.headerBar}>
             <Group gap="xs" wrap="nowrap">
@@ -593,10 +625,10 @@ export function CompositionWorkbenchPage() {
                 <Tabs.Tab value="construction">Construction</Tabs.Tab>
               </Tabs.List>
 
-              <Tabs.Panel value="composition" pt="md">
-                <div className={classes.compositionWorkspace}>
-                  <Surface className={classes.patchPanel}>
-                    <div className={classes.patchPanelContent}>
+              <Tabs.Panel value="composition" pt="xs">
+                <div className={classes.compositionWorkspace} data-inspector={inspectorOpen}>
+                  {inspectorOpen && (
+                    <div className={classes.inspectorColumn}>
                       <CompositionInspector
                         selected={compositionInspectorTarget}
                         activeInstanceId={activeCompositionInstanceId}
@@ -606,6 +638,14 @@ export function CompositionWorkbenchPage() {
                         onRemoveModule={removeCompositionModule}
                         onRouteTreatment={updateRouteTreatment}
                       />
+                    </div>
+                  )}
+                  <SplitStage
+                    split={clampSplit(canvasSplit)}
+                    onSplit={setCanvasSplit}
+                    collapsed={detailCollapsed}
+                    onCollapsed={setDetailCollapsed}
+                    top={
                       <CompositionCanvas
                         activeInstanceId={activeCompositionInstanceId}
                         selected={compositionInspectorTarget}
@@ -618,9 +658,23 @@ export function CompositionWorkbenchPage() {
                         onMoveModules={placeCompositionModules}
                         onTidy={placeCompositionModules}
                         onAddModule={addCompositionModule}
+                        toolbarStart={
+                          <ActionIcon
+                            variant={inspectorOpen ? 'light' : 'subtle'}
+                            aria-label={inspectorOpen ? 'Hide inspector' : 'Show inspector'}
+                            aria-pressed={inspectorOpen}
+                            onClick={() => setInspectorOpen((open) => !open)}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                              <rect x="3" y="4" width="18" height="16" rx="2" />
+                              <path d="M9 4v16" />
+                            </svg>
+                          </ActionIcon>
+                        }
                       />
-                    </div>
-                  </Surface>
+                    }
+                    bottom={
+                      <div className={classes.detailBody}>
                   {compositionInstances.map((instance) => {
                     const instanceLabel = compositionInstanceLabel(instance, compositionInstances);
                     const routeState =
@@ -725,10 +779,13 @@ export function CompositionWorkbenchPage() {
                         No modules placed
                       </Title>
                       <Text c="dimmed" size="sm" mt="xs">
-                        Select a numbered lane and add a module from its Inspector.
+                        Use Add module in the canvas toolbar to place one.
                       </Text>
                     </Surface>
                   )}
+                      </div>
+                    }
+                  />
                 </div>
               </Tabs.Panel>
 
@@ -805,6 +862,7 @@ export function CompositionWorkbenchPage() {
           </Stack>
         </AppShell.Main>
       </AppShell>
+      </MantineThemeProvider>
     </PreviewRegistryProvider>
     </AudioEngineProvider>
     </CompositionSettingsProvider>

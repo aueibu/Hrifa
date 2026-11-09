@@ -9,7 +9,20 @@
   background: var(--panel-inset);
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
-  padding: var(--mantine-spacing-sm);
+}
+
+.partHeader {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.3rem var(--mantine-spacing-xs);
+  width: 100%;
+}
+
+.partBody {
+  border-top: 1px solid var(--border);
+  padding: var(--mantine-spacing-xs);
 }
 
 .heading {

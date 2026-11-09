@@ -1,0 +1,64 @@
+.stage {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.top,
+.bottom {
+  min-height: 0;
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The detail panel scrolls on its own so the canvas stays in view. */
+.bottom {
+  overflow: auto;
+}
+
+.bottom[hidden] {
+  display: none;
+}
+
+.divider {
+  align-items: center;
+  background: var(--panel-inset);
+  border-block: 1px solid var(--border);
+  display: flex;
+  gap: var(--mantine-spacing-xs);
+  padding-inline: var(--mantine-spacing-xs);
+}
+
+.grip {
+  cursor: row-resize;
+  flex: 1 1 auto;
+  height: 1rem;
+  position: relative;
+  touch-action: none;
+}
+
+/* A short centred handle line, like a panel splitter. */
+.grip::after {
+  background: var(--border);
+  border-radius: var(--radius-hairline);
+  content: '';
+  height: 3px;
+  inset: 0;
+  margin: auto;
+  position: absolute;
+  width: 3rem;
+}
+
+.grip:hover::after,
+.grip:focus-visible::after {
+  background: var(--mantine-primary-color-filled);
+}
+
+.divider[data-collapsed='true'] .grip {
+  cursor: default;
+}

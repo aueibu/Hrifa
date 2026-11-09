@@ -24,5 +24,17 @@
         "ignorePseudoClasses": ["global"]
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/pages/composition-workbench/**/*.css"],
+      "rules": {
+        "declaration-property-value-allowed-list": {
+          "/^border(-[a-z]+)*-radius$/": [
+            "/^(0|inherit|var\\(--radius-[a-z-]+\\))( (0|var\\(--radius-[a-z-]+\\)))*$/"
+          ]
+        }
+      }
+    }
+  ]
 }

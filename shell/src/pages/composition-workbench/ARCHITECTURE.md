@@ -174,7 +174,15 @@ Quick Adjust is generalized across a `signalTypes.ts` registry keyed by the conn
 
 The canvas gives routes less visual weight than modules. An identity route is a bare but generously clickable bezier cable; only an active treatment receives a compact summary badge on the cable. Each cable leaves its source's outlet and enters the receiver's inlet at the exact port tip, and every receiver of an output gets its own cable (there is no shared trunk or junction). The source module reports its downstream-use count on its outlet. Selecting a cable highlights and inspects that receiver-owned route; selecting a module emphasises every cable in its upstream and downstream flow. Equal-looking edge treatments remain independent unless the user explicitly promotes them to a shared processing object; visual coincidence never changes ownership.
 
-## Patch canvas visual conventions
+## Workbench frame and density
+
+The composition view is a Bitwig-style frame that fits the viewport: a collapsible left inspector, then the patch canvas above a detail panel that holds the active module's editor. A draggable (and keyboard-resizable) divider sets the split; the detail panel can be collapsed to a bar, and opening a module re-expands it. Collapsing hides the panel with CSS only, because module editors publish their outputs and must stay mounted. Split, collapse and inspector visibility persist per browser.
+
+The inspector has two collapsible parts: Canvas & cables (Quick Adjust for the selected cable) above, and Module (the active module) below. A selected cable makes its receiving module the active one, so both parts are filled together.
+
+Control density comes from `compactTheme.ts`, merged into the app theme with `MantineThemeProvider` around this page only: smaller default sizes for buttons, inputs, badges, switches and action icons, and tighter default radius. It sets component defaults only, so colours and every other page are untouched, and a component that passes an explicit `size` keeps it.
+
+Corner radius is defined once, in the `.workbench` class on the page root (`CompositionWorkbench.module.css`): it sets `--radius-control`, `--radius-panel`, `--radius-hairline` and Mantine's `--mantine-radius-default` from one `--workbench-radius`. A nested theme provider cannot change Mantine's CSS variables, which is why the radius lives in CSS and not in `compactTheme.ts`. Workbench styles must use those variables: stylelint (`.stylelintrc.json`, scoped to `src/pages/composition-workbench/`) rejects any `border-radius` that is not `0`, `inherit` or a `var(--radius-*)`. Menus and other Mantine portals render outside the root and keep the app's default radius.
 
 Inlets sit on a card's top edge and outlets on its bottom edge, as in Max, Pd and OpenMusic, so signal reads top to bottom. Each port carries an invisible React Flow handle at its outer tip. Until the browser has measured a card, estimated handle positions keep cables drawn roughly right; once measured, the real positions win (the estimates are dropped from the node, otherwise every re-render would reset them).
 

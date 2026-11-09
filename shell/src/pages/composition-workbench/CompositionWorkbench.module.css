@@ -5,23 +5,39 @@
   grid-template-columns: minmax(16rem, 19rem) minmax(26rem, 1fr) minmax(19rem, 24rem);
 }
 
+/* The workbench's corner radii, defined once. Everything here reads the variables below, and
+   stylelint rejects a hard-coded border-radius in this folder, so tuning the look is this one
+   block. Mantine's own components follow through --mantine-radius-default. */
+.workbench {
+  --workbench-radius: var(--mantine-radius-xs);
+  --mantine-radius-default: var(--workbench-radius);
+  --radius-control: var(--workbench-radius);
+  --radius-panel: var(--workbench-radius);
+  --radius-hairline: 2px;
+}
+
+/* Bitwig-style frame: inspector on the left; canvas over a detail panel on the right. The whole
+   workspace fits the viewport and each region scrolls on its own. */
 .compositionWorkspace {
   align-items: stretch;
   display: grid;
-  gap: var(--mantine-spacing-md);
+  gap: var(--mantine-spacing-xs);
   grid-template-columns: minmax(0, 1fr);
+  height: calc(100dvh - 56px - 6.25rem);
+  min-height: 30rem;
 }
 
-/* The patch canvas gets the full width; the active module's editor sits below it. */
-.patchPanel {
-  min-width: 0;
+.compositionWorkspace[data-inspector='true'] {
+  grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
 }
 
-.patchPanelContent {
-  align-items: start;
-  display: grid;
-  gap: var(--mantine-spacing-md);
-  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+.inspectorColumn {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.detailBody {
+  padding: var(--mantine-spacing-xs);
 }
 
 .moduleRailHeading {
@@ -184,7 +200,7 @@
 
 .attackCells > span {
   background: var(--panel-inset);
-  border-radius: 1px;
+  border-radius: var(--radius-hairline);
   height: 1.25rem;
 }
 
@@ -244,7 +260,7 @@
 
 .visuallyHidden {
   border: 0;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   height: 1px;
   margin: -1px;
   overflow: hidden;
@@ -270,9 +286,13 @@
 
 @media (max-width: 64rem) {
   .compositionWorkspace,
-  .patchPanelContent,
+  .compositionWorkspace[data-inspector='true'],
   .interferenceLayout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .compositionWorkspace {
+    height: auto;
   }
 
   .moduleRailDescription {

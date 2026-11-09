@@ -1,4 +1,13 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import {
   applyNodeChanges,
   Background,
@@ -56,6 +65,8 @@ interface CompositionCanvasProps {
   onMoveModules(positions: Record<string, CanvasPosition>): void;
   onTidy(positions: Record<string, CanvasPosition>): void;
   onAddModule(moduleId: CompositionModuleId): void;
+  /** Extra controls at the start of the canvas toolbar, such as panel toggles. */
+  toolbarStart?: ReactNode;
 }
 
 interface RouteDescriptor {
@@ -271,6 +282,7 @@ function CanvasBody({
   onMoveModules,
   onTidy,
   onAddModule,
+  toolbarStart,
 }: CompositionCanvasProps) {
   const colorScheme = useComputedColorScheme('light');
   const { fitView } = useReactFlow();
@@ -556,21 +568,20 @@ function CanvasBody({
 
   return (
     <div className={classes.root}>
-      <Group justify="space-between" className={classes.header} wrap="nowrap">
-        <div>
-          <Title order={2} size="h5">
+      <Group justify="space-between" className={classes.header} wrap="nowrap" gap="xs">
+        <Group gap="xs" wrap="nowrap" className={classes.titleGroup}>
+          {toolbarStart}
+          <Title order={2} size="sm">
             Patch canvas
           </Title>
-          <Text c="dimmed" size="xs">
+          <Text c="dimmed" size="xs" className={classes.hint}>
             Drag to arrange; Ctrl-click or Shift-drag to select several
           </Text>
-        </div>
+        </Group>
         <Group gap="xs" wrap="nowrap">
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <Button size="compact-sm" variant="light">
-                Add module
-              </Button>
+              <Button variant="light">Add module</Button>
             </Menu.Target>
             <Menu.Dropdown>
               {(Object.keys(compositionModuleLabels) as CompositionModuleId[]).map((moduleId) => (
@@ -581,7 +592,6 @@ function CanvasBody({
             </Menu.Dropdown>
           </Menu>
           <Button
-            size="compact-sm"
             variant="default"
             disabled={instances.length === 0}
             onClick={handleTidy}
