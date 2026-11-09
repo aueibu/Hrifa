@@ -101,7 +101,7 @@ export interface GrowthTreeStyle {
  * a darker step on light to hold contrast either way. `data-mantine-color-scheme`
  * is the attribute Mantine stamps on <html>.
  */
-function markHue(root: Element): (name: string) => string {
+export function markHue(root: Element): (name: string) => string {
   const css = getComputedStyle(root);
   const shade = root.getAttribute('data-mantine-color-scheme') === 'dark' ? 5 : 7;
   return (name: string) => css.getPropertyValue(`--mantine-color-${name}-${shade}`).trim();
@@ -367,5 +367,47 @@ export function resolveSolidViewStyle(root: Element = document.documentElement):
     gridMain: hue('yellow'),
     gridSub: value('--mantine-color-default-border'),
     opacity: { gridPlane: 0.7, dropLine: 0.6, snapLine: 0.9 },
+  };
+}
+
+/**
+ * Roles for chord-family coding in the Scale Explorer: the colored edge on each derived-chord chip. A
+ * dedicated resolver, per THEMING.md, because the vocabulary (chord families) belongs to this tool alone;
+ * everything the shared contract already decides comes from `base`. Families that name no chord type
+ * (clusters, unnamed shapes) take the neutral, and quartal and quintal chords share one "stacked" family.
+ */
+export type ChordFamilyRole =
+  | 'major'
+  | 'minor'
+  | 'diminished'
+  | 'augmented'
+  | 'suspended'
+  | 'stacked'
+  | 'augmentedSixth'
+  | 'neutral';
+
+export interface ScaleExplorerStyle {
+  base: DiagramStyle;
+  chordFamily: Record<ChordFamilyRole, string>;
+}
+
+export function resolveScaleExplorerStyle(
+  root: Element = document.documentElement
+): ScaleExplorerStyle {
+  const css = getComputedStyle(root);
+  const hue = markHue(root);
+
+  return {
+    base: resolveDiagramStyle(root),
+    chordFamily: {
+      major: hue('yellow'),
+      minor: hue('indigo'),
+      diminished: hue('red'),
+      augmented: hue('orange'),
+      suspended: hue('violet'),
+      stacked: hue('cyan'),
+      augmentedSixth: hue('pink'),
+      neutral: css.getPropertyValue('--mantine-color-dimmed').trim(),
+    },
   };
 }

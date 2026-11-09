@@ -145,6 +145,14 @@ export const forteCatalog: ForteCatalogEntry[] = catalogCore.map((entry) => {
   };
 });
 
+let forteByClass: Map<string, ForteCatalogEntry> | undefined;
+
+/** The Forte set class a pitch-class set belongs to (any transposition or inversion), if it has one. */
+export function findForteEntry(pitchClasses: number[]): ForteCatalogEntry | undefined {
+  forteByClass ??= new Map(forteCatalog.map((entry) => [classKey(entry.primeForm), entry]));
+  return forteByClass.get(classKey(pitchClasses));
+}
+
 export function realizeForteSet(
   entry: ForteCatalogEntry,
   transposition: number,
