@@ -33,6 +33,14 @@ async function openCompositionModule(
   await user.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
 }
 
+async function addCompositionModule(
+  user: ReturnType<typeof userEvent.setup>,
+  name: 'Pitch List' | 'Melodicization'
+) {
+  await user.click(screen.getByRole('button', { name: 'Add module' }));
+  await user.click(await screen.findByRole('menuitem', { name }));
+}
+
 async function setVolumeToThirty(user: ReturnType<typeof userEvent.setup>, accessibleName: string) {
   const slider = screen.getByRole('slider', { name: accessibleName });
   slider.focus();
@@ -92,78 +100,87 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByRole('button', { name: 'Remove Generator 4' })).toBeEnabled();
   });
 
-  it('uses the modular lane grid as the composition navigator', async () => {
+  it('uses the patch canvas as the composition navigator', async () => {
     const user = userEvent.setup();
     renderPage();
-    const grid = screen.getByLabelText('Composition modular lane grid');
-    expect(grid).toBeInTheDocument();
-    expect(
-      Array.from(grid.querySelectorAll('[data-module-slot="true"]')).map(
-        (slot) => (slot as HTMLElement).style.gridRow
-      )
-    ).toEqual(['1', '1', '1']);
+    const grid = screen.getByLabelText('Composition canvas');
+    expect(grid.querySelectorAll('[data-module-slot="true"]')).toHaveLength(3);
     expect(within(grid).queryByRole('button', { name: /Note events/ })).not.toBeInTheDocument();
     expect(within(grid).getByRole('button', { name: /^Melodicization/ })).toHaveTextContent(
       'Notes | 0'
     );
-    expect(screen.getByRole('button', { name: 'Select lane 1' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select lane 2' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select lane 3' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Select lane 2' }));
-    expect(screen.getByRole('heading', { name: 'Lane 2' })).toBeInTheDocument();
+    // Placement is stored as free canvas coordinates.
+    expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toContain(
+      '"moduleId":"melodicization","x":100,"y":170'
+    );
     await openCompositionModule(user, 'Pitch List');
     expect(screen.getByRole('heading', { name: 'Pitch List', level: 2 })).toBeInTheDocument();
     await openCompositionModule(user, 'Melodicization');
-    const moduleLane = screen.getByRole('combobox', { name: 'Melodicization module lane' });
-    expect(moduleLane).toHaveValue('3');
-    await user.click(moduleLane);
-    await user.click(screen.getByRole('option', { name: '1' }));
-    expect(
-      within(screen.getByLabelText('Composition modular lane grid')).getByRole('button', {
-        name: /^Melodicization/,
-      })
-    ).toHaveAttribute('data-lane', '1');
-    await waitFor(() =>
-      expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toContain(
-        '"moduleId":"melodicization","laneId":1'
-      )
-    );
+    expect(screen.getByRole('heading', { name: 'Melodicization', level: 2 })).toBeInTheDocument();
     await openCompositionModule(user, 'Interference');
     expect(screen.getByRole('heading', { name: 'Interference', level: 2 })).toBeInTheDocument();
   }, 15_000);
 
-  it('removes modules and adds them back to a selected lane', async () => {
+  it('removes modules and adds them back from the canvas', async () => {
     const user = userEvent.setup();
     renderPage();
-    const grid = screen.getByLabelText('Composition modular lane grid');
+    const grid = screen.getByLabelText('Composition canvas');
 
     await openCompositionModule(user, 'Pitch List');
     await user.click(screen.getByRole('button', { name: 'Remove Pitch List' }));
     expect(within(grid).queryByRole('button', { name: /^Pitch List/ })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Select lane 3' }));
-    await user.click(screen.getByRole('button', { name: 'Add Pitch List' }));
-    expect(within(grid).getByRole('button', { name: /^Pitch List/ })).toHaveAttribute(
-      'data-lane',
-      '3'
-    );
+    await addCompositionModule(user, 'Pitch List');
+    expect(within(grid).getByRole('button', { name: /^Pitch List/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Pitch List', level: 2 })).toBeInTheDocument();
     await waitFor(() => {
-      expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toContain(
-        '"moduleId":"pitch-list","laneId":3'
+      expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toMatch(
+        /"moduleId":"pitch-list","x":\d+,"y":\d+/
       );
     });
+  }, 15_000);
+
+  it('Ctrl-click builds a multi-selection without changing the inspected module', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const grid = screen.getByLabelText('Composition canvas');
+    const slot = (name: RegExp) =>
+      within(grid).getByRole('button', { name }).closest('.react-flow__node') as HTMLElement;
+
+    await openCompositionModule(user, 'Interference');
+    await user.keyboard('{Control>}');
+    await user.click(within(grid).getByRole('button', { name: /^Pitch List/ }));
+    await user.click(within(grid).getByRole('button', { name: /^Melodicization/ }));
+    await user.keyboard('{/Control}');
+
+    expect(slot(/^Pitch List/)).toHaveClass('selected');
+    expect(slot(/^Melodicization/)).toHaveClass('selected');
+    // Modifier clicks only select; the module editor stays on Interference.
+    expect(screen.getByRole('heading', { name: 'Interference', level: 2 })).toBeInTheDocument();
+  }, 15_000);
+
+  it('opens a project saved with lane and row placements', () => {
+    localStorage.setItem(
+      compositionStateKeys.compositionInstances,
+      JSON.stringify([
+        { id: 'interference', moduleId: 'interference', laneId: 1, row: 1 },
+        { id: 'pitch-list', moduleId: 'pitch-list', laneId: 2, row: 1 },
+        { id: 'melodicization', moduleId: 'melodicization', laneId: 3, row: 2 },
+      ])
+    );
+    renderPersistedPage();
+    const grid = screen.getByLabelText('Composition canvas');
+    expect(grid.querySelectorAll('[data-module-slot="true"]')).toHaveLength(3);
+    expect(within(grid).getByRole('button', { name: /^Melodicization/ })).toBeInTheDocument();
   }, 15_000);
 
   it('places any number of independently authored module instances', async () => {
     const user = userEvent.setup();
     renderPage();
-    const grid = screen.getByLabelText('Composition modular lane grid');
+    const grid = screen.getByLabelText('Composition canvas');
 
-    await user.click(screen.getByRole('button', { name: 'Select lane 1' }));
-    await user.click(screen.getByRole('button', { name: 'Add Pitch List' }));
-    await user.click(screen.getByRole('button', { name: 'Select lane 1' }));
-    await user.click(screen.getByRole('button', { name: 'Add Pitch List' }));
+    await addCompositionModule(user, 'Pitch List');
+    await addCompositionModule(user, 'Pitch List');
 
     expect(within(grid).getAllByRole('button', { name: /^Pitch List/ })).toHaveLength(3);
     expect(screen.getByRole('heading', { name: 'Pitch List 3', level: 2 })).toBeInTheDocument();
@@ -175,18 +192,23 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByRole('textbox', { name: 'Pitch values' })).toHaveValue(
       '60, 62, 64, 67, 66.5'
     );
-    expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toContain(
-      '"moduleId":"pitch-list","laneId":1'
-    );
+    // Each new module lands in its own free slot rather than on top of another.
+    const stored = JSON.parse(localStorage.getItem(compositionStateKeys.compositionInstances)!) as {
+      moduleId: string;
+      x: number;
+      y: number;
+    }[];
+    const pitchLists = stored.filter((instance) => instance.moduleId === 'pitch-list');
+    expect(pitchLists).toHaveLength(3);
+    expect(new Set(pitchLists.map((instance) => `${instance.x},${instance.y}`)).size).toBe(3);
   }, 20_000);
 
   it('keeps duplicate Melodicization receiver bindings independent', async () => {
     const user = userEvent.setup();
     renderPage();
-    const grid = screen.getByLabelText('Composition modular lane grid');
+    const grid = screen.getByLabelText('Composition canvas');
 
-    await user.click(screen.getByRole('button', { name: 'Select lane 1' }));
-    await user.click(screen.getByRole('button', { name: 'Add Melodicization' }));
+    await addCompositionModule(user, 'Melodicization');
     expect(screen.getByRole('heading', { name: 'Melodicization 2', level: 2 })).toBeInTheDocument();
 
     const secondPitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
@@ -202,9 +224,6 @@ describe('CompositionWorkbenchPage', () => {
     expect(
       within(grid).getByRole('button', { name: 'Inspect outlet Pitch List · Pitches' })
     ).toHaveAttribute('title', expect.stringContaining('2 downstream uses'));
-    expect(
-      within(grid).getByLabelText('Pitch List · Pitches used by 2 routes')
-    ).toBeInTheDocument();
     const pitchBranches = within(grid).getAllByRole('button', {
       name: /Select pitch route from Pitch List · Pitches to Melodicization/,
     });
@@ -339,10 +358,17 @@ describe('CompositionWorkbenchPage', () => {
     await user.click(screen.getByRole('button', { name: 'Show event table' }));
     expect(screen.getByText('1.1.1.00')).toBeInTheDocument();
 
+    // Rearranging the canvas never rewires the patch.
+    await user.click(screen.getByRole('button', { name: 'Tidy' }));
+    await waitFor(() =>
+      expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toContain(
+        '"moduleId":"melodicization","x":100,"y":'
+      )
+    );
+    expect(localStorage.getItem(compositionStateKeys.compositionInstances)).not.toContain(
+      '"moduleId":"melodicization","x":100,"y":170'
+    );
     await openCompositionModule(user, 'Melodicization');
-    const moduleLane = screen.getByRole('combobox', { name: 'Melodicization module lane' });
-    await user.click(moduleLane);
-    await user.click(screen.getByRole('option', { name: '1' }));
     expect(screen.getByRole('combobox', { name: 'Rhythm source' })).toHaveValue(
       'Interference · Resultant'
     );

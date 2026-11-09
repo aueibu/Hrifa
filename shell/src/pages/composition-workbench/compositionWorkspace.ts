@@ -12,13 +12,16 @@ export type CompositionModuleId =
   | 'scale-evolution'
   | 'rhythm-householder'
   | 'mixer';
-export type CompositionLaneId = 1 | 2 | 3 | 4;
 
+/**
+ * A module placed on the free canvas. `x`/`y` are the card's top-left corner in canvas units; they
+ * are pure presentation and never affect routing.
+ */
 export interface CompositionModuleInstance {
   id: string;
   moduleId: CompositionModuleId;
-  laneId: CompositionLaneId;
-  row: number;
+  x: number;
+  y: number;
 }
 
 export interface ModuleRouteBinding {
@@ -33,13 +36,7 @@ export type ModuleRouteStates = Record<string, ModuleRouteState>;
 export type CompositionInspectorTarget =
   | { kind: 'module'; instanceId: string }
   | { kind: 'route'; instanceId: string; port: string }
-  | { kind: 'lane'; laneId: CompositionLaneId };
-
-export interface CompositionLaneDefinition {
-  id: CompositionLaneId;
-  label: string;
-  description: string;
-}
+  | { kind: 'canvas' };
 
 export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   interference: 'Interference',
@@ -55,21 +52,48 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
 };
 
 export const defaultCompositionInstances: CompositionModuleInstance[] = [
-  { id: 'interference', moduleId: 'interference', laneId: 1, row: 1 },
-  { id: 'pitch-list', moduleId: 'pitch-list', laneId: 2, row: 1 },
-  { id: 'melodicization', moduleId: 'melodicization', laneId: 3, row: 1 },
+  { id: 'interference', moduleId: 'interference', x: 0, y: 0 },
+  { id: 'pitch-list', moduleId: 'pitch-list', x: 200, y: 0 },
+  { id: 'melodicization', moduleId: 'melodicization', x: 100, y: 170 },
 ];
 
-export const compositionLanes: CompositionLaneDefinition[] = [
-  { id: 1, label: '1', description: 'Neutral spatial lane for arranging modules and routes.' },
-  { id: 2, label: '2', description: 'Neutral spatial lane for arranging modules and routes.' },
-  { id: 3, label: '3', description: 'Neutral spatial lane for arranging modules and routes.' },
-  { id: 4, label: '4', description: 'Neutral spatial lane for arranging modules and routes.' },
-];
+// Saved projects from the lane/row grid: one lane was a 200-unit column, one row a 170-unit step.
+const legacyLanePitch = 200;
+const legacyRowPitch = 170;
 
-export function nextAvailableRow(instances: CompositionModuleInstance[], laneId: CompositionLaneId) {
-  const rowsInLane = instances.filter((instance) => instance.laneId === laneId).map((instance) => instance.row);
-  return rowsInLane.length ? Math.max(...rowsInLane) + 1 : 1;
+/**
+ * Upgrades saved `{ laneId, row }` placements to canvas `{ x, y }` so existing projects open with
+ * the same relative arrangement. Already-migrated entries pass through unchanged.
+ */
+export function migrateCompositionInstances(value: unknown): unknown {
+  if (!Array.isArray(value)) {
+    return value;
+  }
+  return value.map((candidate) => {
+    if (!candidate || typeof candidate !== 'object') {
+      return candidate;
+    }
+    const legacy = candidate as Record<string, unknown>;
+    if (isFiniteNumber(legacy.x) && isFiniteNumber(legacy.y)) {
+      return { id: legacy.id, moduleId: legacy.moduleId, x: legacy.x, y: legacy.y };
+    }
+    if (
+      typeof legacy.laneId === 'number' &&
+      typeof legacy.row === 'number' &&
+      Number.isInteger(legacy.laneId) &&
+      Number.isInteger(legacy.row) &&
+      legacy.laneId >= 1 &&
+      legacy.row >= 1
+    ) {
+      return {
+        id: legacy.id,
+        moduleId: legacy.moduleId,
+        x: (legacy.laneId - 1) * legacyLanePitch,
+        y: (legacy.row - 1) * legacyRowPitch,
+      };
+    }
+    return candidate;
+  });
 }
 
 /**
@@ -115,12 +139,8 @@ export function compositionInstanceLabel(
   return siblings.length > 1 ? `${base} ${index + 1}` : base;
 }
 
-function isLaneId(value: unknown): value is CompositionLaneId {
-  return value === 1 || value === 2 || value === 3 || value === 4;
-}
-
-function isRow(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 function isModuleId(value: unknown): value is CompositionModuleId {
@@ -165,8 +185,8 @@ export function acceptsCompositionInstances(value: unknown): value is Compositio
       typeof instance.id !== 'string' ||
       ids.has(instance.id) ||
       !isModuleId(instance.moduleId) ||
-      !isLaneId(instance.laneId) ||
-      !isRow(instance.row)
+      !isFiniteNumber(instance.x) ||
+      !isFiniteNumber(instance.y)
     ) {
       return false;
     }
@@ -210,5 +230,5 @@ export function acceptsCompositionInspectorTarget(
   if (target.kind === 'route') {
     return typeof target.instanceId === 'string' && typeof target.port === 'string';
   }
-  return target.kind === 'lane' && isLaneId(target.laneId);
+  return target.kind === 'canvas';
 }

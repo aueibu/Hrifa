@@ -1,10 +1,10 @@
-import type { CSSProperties } from 'react';
+import { Handle, Position } from '@xyflow/react';
 import { Menu, UnstyledButton } from '@mantine/core';
 import classes from './FlowCell.module.css';
 
 export interface FlowCellPort {
+  /** Doubles as the canvas handle id, so cables attach to exactly this port. */
   id: string;
-  elementKey: string;
   label: string;
   shortLabel: string;
   ariaLabel?: string;
@@ -30,18 +30,28 @@ interface FlowCellProps {
   active?: boolean;
   selected?: boolean;
   flowActive?: boolean;
-  laneId: number;
   instanceId: string;
-  style: CSSProperties;
   onSelect(): void;
 }
 
-const MAX_VISIBLE_PORTS = 5;
+export const MAX_VISIBLE_PORTS = 5;
+
+/** An invisible anchor at the port's outer tip: cables start and end exactly here. */
+function PortHandle({ port, edge }: { port: FlowCellPort; edge: 'top' | 'bottom' }) {
+  return (
+    <Handle
+      id={port.id}
+      type={edge === 'top' ? 'target' : 'source'}
+      position={edge === 'top' ? Position.Top : Position.Bottom}
+      isConnectable={false}
+      className={classes.handle}
+    />
+  );
+}
 
 function PortControl({ port }: { port: FlowCellPort }) {
   const commonProps = {
     className: classes.port,
-    'data-flow-port-key': port.elementKey,
     'data-modified': port.modified || undefined,
     'data-selected': port.selected || undefined,
     'data-bypassed': port.bypassed || undefined,
@@ -81,17 +91,18 @@ function PortRail({ ports, edge }: { ports: FlowCellPort[]; edge: 'top' | 'botto
       {directPorts.map((port) => (
         <span key={port.id} className={classes.portTrack}>
           <PortControl port={port} />
+          <PortHandle port={port} edge={edge} />
         </span>
       ))}
       {hasOverflow && (
         <span className={classes.portTrack}>
+          {overflowPorts.map((port) => (
+            <PortHandle key={port.id} port={port} edge={edge} />
+          ))}
           <Menu position={edge === 'top' ? 'top' : 'bottom'} withinPortal>
             <Menu.Target>
               <UnstyledButton
                 className={classes.port}
-                data-flow-port-overflow-keys={JSON.stringify(
-                  overflowPorts.map((port) => port.elementKey)
-                )}
                 aria-label={`Show ${overflowPorts.length} more ${edge === 'top' ? 'inlets' : 'outlets'}`}
                 title={`${overflowPorts.length} more ${edge === 'top' ? 'inlets' : 'outlets'}`}
               >
@@ -124,28 +135,24 @@ export function FlowCell({
   active,
   selected,
   flowActive,
-  laneId,
   instanceId,
-  style,
   onSelect,
 }: FlowCellProps) {
   return (
-    <div
-      className={classes.slot}
-      data-module-slot="true"
-      data-lane={laneId}
-      data-instance-id={instanceId}
-      style={style}
-    >
+    <div className={classes.slot} data-module-slot="true" data-instance-id={instanceId}>
       {inlets.length > 0 && <PortRail ports={inlets} edge="top" />}
       <UnstyledButton
         className={classes.card}
-        data-lane={laneId}
         data-instance-id={instanceId}
         data-active={active || undefined}
         data-selected={selected || undefined}
         data-flow-active={flowActive || undefined}
-        onClick={onSelect}
+        // A modifier-click is building a multi-selection, not opening this module.
+        onClick={(event) => {
+          if (!(event.ctrlKey || event.metaKey || event.shiftKey)) {
+            onSelect();
+          }
+        }}
       >
         {noticeDetail && <span className={classes.noticeFlag} title={noticeDetail} aria-hidden="true" />}
         <span className={classes.title}>{title}</span>

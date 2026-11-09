@@ -1,0 +1,118 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+:global([data-mantine-color-scheme='light']) .root {
+  --composition-modified-background: var(--mantine-color-orange-4);
+  --composition-modified-border: var(--mantine-color-orange-7);
+  --composition-modified-text: var(--mantine-color-white);
+}
+
+:global([data-mantine-color-scheme='dark']) .root {
+  --composition-modified-background: color-mix(
+    in srgb,
+    var(--mantine-color-orange-5) 22%,
+    var(--panel)
+  );
+  --composition-modified-border: var(--mantine-color-orange-5);
+  --composition-modified-text: var(--mantine-color-white);
+}
+
+.header {
+  margin-bottom: var(--mantine-spacing-xs);
+}
+
+.flow {
+  --xy-background-color: var(--panel-inset);
+  --xy-background-pattern-color: var(--border);
+  --xy-node-background-color-default: transparent;
+  --xy-node-border-default: none;
+  --xy-node-boxshadow-selected-default: none;
+  --xy-minimap-background-color: var(--panel);
+  --xy-controls-button-background-color: var(--panel);
+  --xy-controls-button-color: var(--mantine-color-text);
+  --xy-controls-button-border-color: var(--border);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  height: clamp(22rem, 46dvh, 34rem);
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Nodes are plain cards; the card draws its own chrome. */
+.flow :global(.react-flow__node) {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* Cards in a multi-selection (two or more): dashed ring, distinct from the inspected card's fill. */
+.flow[data-multi-selection='true'] :global(.react-flow__node.selected) > div {
+  border-radius: var(--radius-control);
+  outline: 2px dashed var(--mantine-primary-color-filled);
+  outline-offset: 3px;
+}
+
+.minimap {
+  height: 80px;
+  width: 120px;
+}
+
+.connection {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--mantine-primary-color-filled);
+  stroke-width: 2;
+}
+
+.connection[data-muted='true'] {
+  opacity: 0.35;
+  stroke-dasharray: 5 4;
+}
+
+.connection[data-related='true'] {
+  stroke-width: 3;
+}
+
+.connection[data-selected='true'] {
+  filter: drop-shadow(0 0 3px var(--mantine-primary-color-filled));
+  stroke-width: 3;
+}
+
+.connectionHit {
+  cursor: pointer;
+  fill: none;
+  outline: none;
+  pointer-events: stroke;
+  stroke: transparent;
+  stroke-width: 16;
+}
+
+.connectionHit:focus,
+.connectionHit:focus-visible {
+  outline: none;
+  stroke: transparent;
+}
+
+g:has(.connectionHit:focus-visible) > .connection {
+  filter: drop-shadow(0 0 3px var(--mantine-primary-color-filled));
+  stroke-width: 3;
+}
+
+.edgeBadge {
+  background: var(--composition-modified-background);
+  border: 1px solid var(--composition-modified-border);
+  border-radius: var(--radius-control);
+  color: var(--composition-modified-text);
+  cursor: pointer;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.6rem;
+  line-height: 1;
+  padding: 0.18rem 0.3rem;
+  pointer-events: all;
+  position: absolute;
+}

@@ -9,23 +9,19 @@
   align-items: stretch;
   display: grid;
   gap: var(--mantine-spacing-md);
-  grid-template-columns: minmax(20rem, 24rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.moduleRail {
-  max-height: calc(100dvh - 6.5rem);
-  min-height: calc(100dvh - 12rem);
-  overflow-y: auto;
-  position: sticky;
-  top: calc(56px + var(--mantine-spacing-md));
+/* The patch canvas gets the full width; the active module's editor sits below it. */
+.patchPanel {
+  min-width: 0;
 }
 
-.moduleRailContent {
-  align-items: stretch;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  min-height: calc(100dvh - 15rem);
+.patchPanelContent {
+  align-items: start;
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
 }
 
 .moduleRailHeading {
@@ -274,17 +270,9 @@
 
 @media (max-width: 64rem) {
   .compositionWorkspace,
+  .patchPanelContent,
   .interferenceLayout {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .moduleRail,
-  .moduleRailContent {
-    min-height: auto;
-  }
-
-  .moduleRail {
-    position: static;
   }
 
   .moduleRailDescription {

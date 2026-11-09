@@ -6,7 +6,7 @@ import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { ArithmeticModule } from './composition-workbench/components/ArithmeticModule';
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
-import { CompositionLaneGrid } from './composition-workbench/components/CompositionLaneGrid';
+import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
 import { FractioningModule } from './composition-workbench/components/FractioningModule';
 import { HouseholderModule } from './composition-workbench/components/HouseholderModule';
@@ -28,6 +28,7 @@ import {
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from './composition-workbench/compositionRouting';
+import { nextFreePosition, type Position } from './composition-workbench/compositionLayout';
 import { CompositionSettingsProvider } from './composition-workbench/compositionSettings';
 import {
   acceptsCompositionInspectorTarget,
@@ -37,10 +38,9 @@ import {
   createDefaultModuleRouteState,
   defaultCompositionInstances,
   defaultMixerPorts,
+  migrateCompositionInstances,
   newMixerChannelId,
-  nextAvailableRow,
   type CompositionInspectorTarget,
-  type CompositionLaneId,
   type CompositionModuleId,
   type CompositionModuleInstance,
   type ModuleRouteStates,
@@ -208,7 +208,8 @@ export function CompositionWorkbenchPage() {
   >(
     compositionStateKeys.compositionInstances,
     defaultCompositionInstances,
-    acceptsCompositionInstances
+    acceptsCompositionInstances,
+    migrateCompositionInstances
   );
   const [compositionOutputs, setCompositionOutputs] = useState<
     Record<string, PublishedCompositionOutput>
@@ -464,16 +465,27 @@ export function CompositionWorkbenchPage() {
   const selected = selectedId ? evaluation.modules.get(selectedId) : undefined;
   const publishedCompositionOutputs = Object.values(compositionOutputs);
 
-  function selectCompositionModule(instanceId: string) {
-    setActiveCompositionInstanceId(instanceId);
-    setCompositionInspectorTarget({ kind: 'module', instanceId });
-  }
+  // Stable identities: the canvas memoizes its cards on these callbacks.
+  const selectCompositionModule = useCallback(
+    (instanceId: string) => {
+      setActiveCompositionInstanceId(instanceId);
+      setCompositionInspectorTarget({ kind: 'module', instanceId });
+    },
+    [setActiveCompositionInstanceId, setCompositionInspectorTarget]
+  );
+  const selectCompositionRoute = useCallback(
+    (instanceId: string, port: string) => {
+      setActiveCompositionInstanceId(instanceId);
+      setCompositionInspectorTarget({ kind: 'route', instanceId, port });
+    },
+    [setActiveCompositionInstanceId, setCompositionInspectorTarget]
+  );
 
-  function addCompositionModule(moduleId: CompositionModuleId, laneId: CompositionLaneId) {
+  function addCompositionModule(moduleId: CompositionModuleId) {
     const instanceId = uniqueId(moduleId);
     setCompositionInstances((current) => [
       ...current,
-      { id: instanceId, moduleId, laneId, row: nextAvailableRow(current, laneId) },
+      { id: instanceId, moduleId, ...nextFreePosition(current) },
     ]);
     const ports = moduleId === 'mixer' ? defaultMixerPorts() : routedModulePorts[moduleId];
     if (ports) {
@@ -509,8 +521,15 @@ export function CompositionWorkbenchPage() {
       selectCompositionModule(remaining[0].id);
     } else {
       setActiveCompositionInstanceId(null);
-      setCompositionInspectorTarget({ kind: 'lane', laneId: removed.laneId });
+      setCompositionInspectorTarget({ kind: 'canvas' });
     }
+  }
+
+  // Used for both drops (one card or a whole selection) and Tidy.
+  function placeCompositionModules(positions: Record<string, Position>) {
+    setCompositionInstances((current) =>
+      current.map((instance) => ({ ...instance, ...(positions[instance.id] ?? {}) }))
+    );
   }
 
   return (
@@ -576,45 +595,29 @@ export function CompositionWorkbenchPage() {
 
               <Tabs.Panel value="composition" pt="md">
                 <div className={classes.compositionWorkspace}>
-                  <Surface className={classes.moduleRail}>
-                    <div className={classes.moduleRailContent}>
-                      <CompositionLaneGrid
+                  <Surface className={classes.patchPanel}>
+                    <div className={classes.patchPanelContent}>
+                      <CompositionInspector
+                        selected={compositionInspectorTarget}
+                        activeInstanceId={activeCompositionInstanceId}
+                        outputs={publishedCompositionOutputs}
+                        instances={compositionInstances}
+                        routes={moduleRouteStates}
+                        onRemoveModule={removeCompositionModule}
+                        onRouteTreatment={updateRouteTreatment}
+                      />
+                      <CompositionCanvas
                         activeInstanceId={activeCompositionInstanceId}
                         selected={compositionInspectorTarget}
                         instances={compositionInstances}
                         routes={moduleRouteStates}
                         outputs={publishedCompositionOutputs}
                         onSelectModule={selectCompositionModule}
-                        onSelectRoute={(instanceId, port) => {
-                          setActiveCompositionInstanceId(instanceId);
-                          setCompositionInspectorTarget({ kind: 'route', instanceId, port });
-                        }}
-                        onSelectLane={(laneId) =>
-                          setCompositionInspectorTarget({ kind: 'lane', laneId })
-                        }
-                      />
-                      <CompositionInspector
-                        selected={compositionInspectorTarget}
-                        outputs={publishedCompositionOutputs}
-                        instances={compositionInstances}
-                        routes={moduleRouteStates}
-                        onModuleLane={(instanceId, laneId) =>
-                          setCompositionInstances((current) =>
-                            current.map((instance) =>
-                              instance.id === instanceId ? { ...instance, laneId } : instance
-                            )
-                          )
-                        }
-                        onModuleRow={(instanceId, row) =>
-                          setCompositionInstances((current) =>
-                            current.map((instance) =>
-                              instance.id === instanceId ? { ...instance, row } : instance
-                            )
-                          )
-                        }
+                        onSelectRoute={selectCompositionRoute}
+                        onSelectCanvas={() => setCompositionInspectorTarget({ kind: 'canvas' })}
+                        onMoveModules={placeCompositionModules}
+                        onTidy={placeCompositionModules}
                         onAddModule={addCompositionModule}
-                        onRemoveModule={removeCompositionModule}
-                        onRouteTreatment={updateRouteTreatment}
                       />
                     </div>
                   </Surface>

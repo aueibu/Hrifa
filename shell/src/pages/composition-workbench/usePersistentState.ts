@@ -72,7 +72,9 @@ export const compositionStateKeys = {
 export function usePersistentState<T>(
   key: string,
   fallback: T | (() => T),
-  accepts: (value: unknown) => value is T
+  accepts: (value: unknown) => value is T,
+  // Upgrades an older saved shape before it is validated, so old projects keep loading.
+  migrate?: (value: unknown) => unknown
 ): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     const fallbackValue = typeof fallback === 'function' ? (fallback as () => T)() : fallback;
@@ -81,7 +83,8 @@ export function usePersistentState<T>(
       if (saved === null) {
         return fallbackValue;
       }
-      const parsed: unknown = JSON.parse(saved);
+      const raw: unknown = JSON.parse(saved);
+      const parsed = migrate ? migrate(raw) : raw;
       return accepts(parsed) ? parsed : fallbackValue;
     } catch {
       return fallbackValue;
