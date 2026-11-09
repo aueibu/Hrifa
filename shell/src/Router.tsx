@@ -6,6 +6,7 @@ import { NotFoundPage } from './pages/NotFound.page';
 import { PointConstructionPage } from './pages/PointConstruction.page';
 import { RadialGrowthTreePage } from './pages/RadialGrowthTree.page';
 import { RagaExplorerPage } from './pages/RagaExplorer.page';
+import { ScaleExplorerPage } from './pages/ScaleExplorer.page';
 import { SegmentTangentConstructionPage } from './pages/SegmentTangentConstruction.page';
 import { ThemeEditorPage } from './pages/ThemeEditor.page';
 import { UsernameSeedsPage } from './pages/UsernameSeeds.page';
@@ -50,6 +51,11 @@ const router = createBrowserRouter(
     {
       path: '/theme',
       element: <ThemeEditorPage />,
+      errorElement: <NotFoundPage />,
+    },
+    {
+      path: '/scale-explorer',
+      element: <ScaleExplorerPage />,
       errorElement: <NotFoundPage />,
     },
     {

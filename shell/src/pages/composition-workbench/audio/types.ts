@@ -6,6 +6,8 @@ import type { MusicalDuration, MusicalPosition, MusicalTimeline } from '../music
 export type InstrumentId =
   | 'preview.sine'
   | 'preview.triangle'
+  | 'preview.sawtooth'
+  | 'preview.square'
   | 'preview.click'
   | 'preview.click-accent'
   | 'sound.click'

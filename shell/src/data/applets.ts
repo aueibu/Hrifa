@@ -203,4 +203,13 @@ export const applets: Applet[] = [
     description:
       'Browse 6,000+ Carnatic ragas by clicking pitches or searching, see each one on a chromatic ring and a Sa-to-Sa rung ladder, follow its melakarta family, twins, and variants, and preview it by ear with an optional tanpura drone.',
   },
+  {
+    title: 'Scale Explorer',
+    href: '/scale-explorer',
+    category: 'sound',
+    status: 'experimental',
+    runtime: 'Static browser app',
+    description:
+      'Pick a pitch-class set on a keyboard and ring to see its modes, interval vector, fifths brightness and derived chords, hear them against a drone, and compare it with every other set class of the same size.',
+  },
 ];

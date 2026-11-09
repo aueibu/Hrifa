@@ -7,7 +7,7 @@ export interface InstrumentDefinition {
   /** Membrane only: how fast and how far (in octaves) the pitch falls after the attack. */
   pitchDecay?: number;
   octaves?: number;
-  oscillator: 'sine' | 'triangle' | 'square';
+  oscillator: 'sine' | 'triangle' | 'sawtooth' | 'square';
   envelope: {
     attack: number;
     decay: number;
@@ -26,6 +26,17 @@ export const instrumentRegistry: Record<InstrumentId, InstrumentDefinition> = {
     id: 'preview.triangle',
     oscillator: 'triangle',
     envelope: { attack: 0.008, decay: 0.01, sustain: 0.9, release: 0.01 },
+  },
+  // Sustained timbres for held tones (the Scale Explorer drone).
+  'preview.sawtooth': {
+    id: 'preview.sawtooth',
+    oscillator: 'sawtooth',
+    envelope: { attack: 0.08, decay: 0.01, sustain: 0.9, release: 0.25 },
+  },
+  'preview.square': {
+    id: 'preview.square',
+    oscillator: 'square',
+    envelope: { attack: 0.08, decay: 0.01, sustain: 0.9, release: 0.25 },
   },
   'preview.click': {
     id: 'preview.click',
