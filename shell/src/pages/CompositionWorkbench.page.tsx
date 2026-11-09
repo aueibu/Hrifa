@@ -19,6 +19,7 @@ import { PairCompositionModule } from './composition-workbench/components/PairCo
 import { PitchListModule } from './composition-workbench/components/PitchListModule';
 import { ScaleConstructionModule } from './composition-workbench/components/ScaleConstructionModule';
 import { ScaleEvolutionModule } from './composition-workbench/components/ScaleEvolutionModule';
+import { SnapshotMenu } from './composition-workbench/components/SnapshotMenu';
 import { TransportBar } from './composition-workbench/components/TransportBar';
 import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
 import {
@@ -492,6 +493,7 @@ export function CompositionWorkbenchPage() {
             </Group>
             <TransportBar selectedInstanceId={activeCompositionInstanceId} />
             <Group gap="xs" wrap="nowrap" justify="flex-end">
+              <SnapshotMenu />
               <ActionIcon
                 variant="default"
                 size="lg"

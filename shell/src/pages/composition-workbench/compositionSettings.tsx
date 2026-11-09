@@ -86,7 +86,7 @@ function sanitizeTransport(raw: unknown): TransportSettings {
   };
 }
 
-const STORAGE_KEY = 'hrifa.composition-workbench.settings.v1';
+export const STORAGE_KEY = 'hrifa.composition-workbench.settings.v1';
 
 function readStoredSettings(): CompositionSettings {
   try {
