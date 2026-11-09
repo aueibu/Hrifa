@@ -94,6 +94,7 @@ jobs:
             --exclude 'custom-reader/node_modules' \
             --exclude 'point-construction' \
             --exclude 'shell' \
+            --exclude '/raga-explorer/' \
             ./ "$site_dir/"
           rsync -a shell/dist/ "$site_dir/"
           cp shell/dist/index.html "$site_dir/404.html"
