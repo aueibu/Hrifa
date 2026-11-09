@@ -103,10 +103,16 @@ export function resolvePacketFromOutput(
       },
     ],
   }));
+  // A bank whose entries start in different places (Rhythm Householder's candidates) lists each
+  // entry's start in metadata.entryOrigins; the selected entry carries its own.
+  const entryOrigins = bank.metadata?.entryOrigins;
+  const entryOrigin = Array.isArray(entryOrigins) ? entryOrigins[clamped] : undefined;
+  const frame =
+    bank.frame && typeof entryOrigin === "number" ? { ...bank.frame, origin: entryOrigin } : bank.frame;
   return packet("list", bank.domain, items, bank.warnings, bank.metadata, {
     role: bank.role,
     encoding: bank.encoding,
-    frame: bank.frame,
+    frame,
   });
 }
 

@@ -4,6 +4,7 @@ import {
   applyRhythmRouteTreatment,
   isValidRhythmSource,
   rhythmInterpretationError,
+  rhythmOffset,
   type RhythmRouteTreatment,
 } from '../routeTreatments';
 import classes from './CompositionInspector.module.css';
@@ -95,6 +96,20 @@ export function RhythmTreatmentEditor({ treatment, source, onChange }: RhythmTre
           step={1}
           value={treatment.durationScale}
           onChange={(value) => update({ durationScale: Math.max(1, Math.trunc(Number(value) || 1)) })}
+        />
+      </div>
+      <div className={classes.parameterRow}>
+        <Text size="xs" className={rhythmOffset(treatment) !== 0 ? classes.changed : undefined}>
+          Start offset
+        </Text>
+        <NumberInput
+          size="xs"
+          aria-label="Rhythm start offset in pulses"
+          description="Pulses after the downbeat; wraps in loops."
+          min={-256}
+          max={256}
+          value={rhythmOffset(treatment)}
+          onChange={(value) => update({ offset: Math.trunc(Number(value) || 0) })}
         />
       </div>
     </Stack>

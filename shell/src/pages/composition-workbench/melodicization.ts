@@ -6,11 +6,13 @@ import {
   musicalDuration,
   musicalPosition,
   multiplyRational,
+  pulsesToMusicalDuration,
   rational,
   rationalToNumber,
   type MusicalDuration,
   type MusicalPosition,
 } from './musicalTime';
+import { rhythmOrigin } from './rhythmFrame';
 import { pitchGroupToArray, type PitchItemValue } from './pitch';
 
 export type PitchAllocation = 'cycle' | 'cycle-rhythm' | 'zip' | 'cartesian';
@@ -122,7 +124,21 @@ export function melodicize({
           (_, attackIndex) => pulseValues[attackIndex % pulseValues.length]
         )
       : pulseValues;
-  const accumulated = accumulatePulseDurations(rhythmicSpineValues, pulseUnit);
+  // The rhythm may start after the downbeat (frame.origin, see rhythmFrame.ts). Every attack
+  // shifts by that start; bar lines don't, which is what puts the attacks off the beat.
+  const origin = rhythmOrigin(rhythm);
+  if (!Number.isSafeInteger(origin)) {
+    return emptyResult(['The rhythm must start on a whole pulse.']);
+  }
+  const start = pulsesToMusicalDuration(origin, pulseUnit);
+  const unshifted = accumulatePulseDurations(rhythmicSpineValues, pulseUnit);
+  const accumulated = {
+    ...unshifted,
+    placements: unshifted.placements.map((placement) => ({
+      ...placement,
+      at: addDuration(placement.at, start),
+    })),
+  };
   const pairings: { attackIndex: number; rhythmIndex: number; pitchIndex: number }[] = [];
   if (allocation === 'cycle') {
     accumulated.placements.forEach((_, attackIndex) => {
@@ -194,6 +210,7 @@ export function melodicize({
             attackIndex,
             rhythmIndex,
             pitchIndex,
+            rhythmOrigin: origin,
           },
         },
       ],

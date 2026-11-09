@@ -213,6 +213,15 @@ Pitch-class connections default to staying raw pitch-class (`voiceAsPitch: false
 
 An optional modulo post-process — a toggle plus divisor, applied to the module's output after the arithmetic operation — is a reusable building block (`moduloTreatment.ts` + `ModuloControl.tsx`) rather than something inlined into Arithmetic specifically, following the same shared-component precedent as `VolumeControl.tsx`.
 
+## Where a rhythm starts
+
+An inter-onset list says how far apart attacks are, not where the first one falls. That lives in the frame's `origin`: the first attack's position in frame units, measured from the downbeat (`rhythmFrame.ts`). Origin 0 is a downbeat start. In a cyclic frame `0 ≤ origin < cycle`: the durations still sum to the cycle, and the last one wraps into the next cycle's first attack, so a loop starting on pulse 2 sounds its first two pulses as the tail of the previous cycle. In a linear frame, origin is a leading rest and `extent = origin + Σ durations`.
+
+- Rhythm routes have a **Start offset** Quick Adjust, in pulses after scaling. It wraps in loops; in a linear frame, starting before the downbeat is clamped with a warning. Retrograde and rotate reorder durations and keep the first attack at the rhythm's start. Duration scale scales the start along with the durations. Routes saved before offsets existed read as offset 0.
+- Melodicization shifts every attack by the start; bar lines do not move, which is what places the attacks off the beat. Duration previews play the leading silence.
+- A bank whose entries start in different places lists them in `metadata.entryOrigins`, and selecting an entry gives the resulting list that entry's start.
+- Output summaries show `starts +n` for a rhythm that doesn't start on the downbeat.
+
 ## Rules for extending the vocabulary
 
 - Add a kind only when the structure is genuinely different, not because a new module produced it.

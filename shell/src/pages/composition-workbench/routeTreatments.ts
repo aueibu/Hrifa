@@ -1,3 +1,4 @@
+import { normalizeRhythmOrigin, rhythmOrigin } from './rhythmFrame';
 import type { DataDomain, DataItem, DataPacket, Provenance } from './model';
 import {
   pitchClassGroupLabel,
@@ -39,6 +40,12 @@ export interface RhythmRouteTreatment {
   retrograde: boolean;
   rotation: number;
   durationScale: number;
+  /**
+   * Moves where the rhythm starts, in pulses after scaling (see rhythmFrame.ts). Wraps around a
+   * cyclic frame; in a linear frame it adds or removes leading rest. Optional because routes
+   * saved before it existed don't carry it — read it with `rhythmOffset()`.
+   */
+  offset?: number;
   // Off by default: a source that isn't already `list | duration | interOnset` (e.g. Arithmetic's
   // output, whatever domain it lands on) has no rhythm meaning of its own. Turning this on
   // attempts to interpret each item as a positive inter-onset duration and stamps the packet
@@ -67,8 +74,13 @@ export const defaultRhythmRouteTreatment: RhythmRouteTreatment = {
   retrograde: false,
   rotation: 0,
   durationScale: 1,
+  offset: 0,
   interpretAsRhythm: false,
 };
+
+export function rhythmOffset(treatment: RhythmRouteTreatment) {
+  return treatment.offset ?? 0;
+}
 
 export function isPitchRouteTreatmentIdentity(treatment: PitchRouteTreatment, source?: DataPacket) {
   const stillVoicesToConcretePitch = source?.domain === 'pitchClass' && treatment.voiceAsPitch;
@@ -97,7 +109,8 @@ export function isRhythmRouteTreatmentIdentity(treatment: RhythmRouteTreatment, 
     !treatment.bypassed &&
     !treatment.retrograde &&
     treatment.rotation === 0 &&
-    treatment.durationScale === 1
+    treatment.durationScale === 1 &&
+    rhythmOffset(treatment) === 0
   );
 }
 
@@ -534,14 +547,30 @@ export function applyRhythmRouteTreatment(
       provenance: [...item.provenance, ...scaleStep],
     };
   });
+  // Retrograde and rotation reorder the durations; the first attack stays where the rhythm
+  // started. Scaling stretches that start along with everything else; the offset then moves it.
+  const scale = treatment.durationScale;
+  const topology = base.frame?.topology ?? 'cyclic';
+  const scaledDurationTotal = items.reduce((total, item) => total + Number(item.value), 0);
+  const requestedOrigin = rhythmOrigin(base) * scale + rhythmOffset(treatment);
+  const { origin, clamped } = normalizeRhythmOrigin(requestedOrigin, topology, scaledDurationTotal);
+  const scaledExtent = base.frame?.extent === undefined ? undefined : base.frame.extent * scale;
+  const extent =
+    scaledExtent === undefined || topology === 'cyclic'
+      ? scaledExtent
+      : scaledExtent + (origin - rhythmOrigin(base) * scale);
+  const warnings = clamped
+    ? [...base.warnings, 'Start offset would begin before the frame; started on the downbeat instead.']
+    : base.warnings;
   return {
     ...base,
     items,
+    warnings,
     frame: base.frame
       ? {
           ...base.frame,
-          extent:
-            base.frame.extent === undefined ? undefined : base.frame.extent * treatment.durationScale,
+          origin,
+          extent,
           grouping: base.frame.grouping
             ? {
                 ...base.frame.grouping,
@@ -552,7 +581,9 @@ export function applyRhythmRouteTreatment(
               }
             : undefined,
         }
-      : undefined,
+      : origin !== 0
+        ? { topology: 'cyclic', unit: 'pulse', extent: scaledDurationTotal, origin }
+        : undefined,
     metadata: { ...base.metadata, routeTreatment: treatment, routeId },
   };
 }
@@ -611,6 +642,9 @@ export function rhythmTreatmentSummary(treatment: RhythmRouteTreatment, source?:
   if (treatment.durationScale !== 1) {
     parts.push(`×${treatment.durationScale}`);
   }
+  if (rhythmOffset(treatment) !== 0) {
+    parts.push(`Start ${rhythmOffset(treatment) > 0 ? '+' : ''}${rhythmOffset(treatment)}`);
+  }
   return parts.join(' · ') || 'Identity';
 }
 
@@ -644,6 +678,7 @@ export function acceptsRhythmRouteTreatment(value: unknown): value is RhythmRout
     typeof candidate.retrograde === 'boolean' &&
     Number.isFinite(candidate.rotation) &&
     Number.isFinite(candidate.durationScale) &&
+    (candidate.offset === undefined || Number.isFinite(candidate.offset)) &&
     typeof candidate.interpretAsRhythm === 'boolean'
   );
 }

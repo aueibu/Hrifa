@@ -63,6 +63,10 @@ export function ModuleOutput({
     .filter(Boolean)
     .join(' | ');
   const extent = packet.frame?.extent;
+  const start =
+    packet.role === 'interOnset' && (packet.frame?.origin ?? 0) > 0
+      ? `starts +${packet.frame!.origin}`
+      : '';
   const unit = packet.frame?.unit ?? 'unit';
   const musicalExtent = packet.frame?.musicalExtent?.quarterNotes;
   const extentDescription = musicalExtent
@@ -82,6 +86,7 @@ export function ModuleOutput({
         <Text size="xs" c="dimmed" truncate>
           {description} | {packet.items.length} items
           {extentDescription ? ` | ${extentDescription}` : ''}
+          {start ? ` | ${start}` : ''}
         </Text>
       </Group>
       {children}
