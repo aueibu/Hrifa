@@ -41,6 +41,7 @@ const moduleDescriptions: Record<CompositionModuleId, string> = {
   fractioning: 'Authors a rhythmic resultant by fractioning around the axis of symmetry (Schillinger ch. 4), distinct from binary synchronization.',
   'pair-composition': 'Pairs a fractioning statement with a binary-synchronization statement into a balanced, expanded, or contracted phrase (Schillinger ch. 5).',
   'scale-construction': 'Authors a pitch-interval sequence and its melodic-form permutations (Schillinger Book II ch. 1-2).',
+  'rhythm-householder': 'Alters a rhythm along a bias axis while keeping its attack count and span: reflects the duration vector (Householder), or re-places attacks against an accent or early/late axis.',
   'scale-evolution': 'Synchronizes an interval sequence with its own circular permutations within one shared period, evolving richer scale families (Schillinger Book I ch. 13 / Book II ch. 3 §A).',
 };
 

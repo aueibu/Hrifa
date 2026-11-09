@@ -9,6 +9,7 @@ import { CompositionInspector } from './composition-workbench/components/Composi
 import { CompositionLaneGrid } from './composition-workbench/components/CompositionLaneGrid';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
 import { FractioningModule } from './composition-workbench/components/FractioningModule';
+import { HouseholderModule } from './composition-workbench/components/HouseholderModule';
 import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
 import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
 import { ModuleLibrary } from './composition-workbench/components/ModuleLibrary';
@@ -124,6 +125,13 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.scaleEvolutionIntervals,
     compositionStateKeys.scaleEvolutionRoot,
   ],
+  'rhythm-householder': [
+    compositionStateKeys.householderSettings,
+    compositionStateKeys.householderSelected,
+    compositionStateKeys.householderUnit,
+    compositionStateKeys.householderVolume,
+    compositionStateKeys.householderSounds,
+  ],
 };
 
 const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signalType: SignalTypeId }[]>> = {
@@ -136,6 +144,10 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signa
     { id: 'b', signalType: 'numeric' },
   ],
   'scale-evolution': [{ id: 'sequence', signalType: 'numeric' }],
+  'rhythm-householder': [
+    { id: 'rhythm', signalType: 'rhythm' },
+    { id: 'axis', signalType: 'numeric' },
+  ],
 };
 
 function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
@@ -603,6 +615,17 @@ export function CompositionWorkbenchPage() {
                           <ScaleConstructionModule
                             instanceId={instance.id}
                             instanceLabel={instanceLabel}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'rhythm-householder' ? (
+                          <HouseholderModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            outputs={publishedCompositionOutputs}
+                            routeState={routeState}
+                            onBind={(port, source) =>
+                              bindModulePort(instance.id, instance.moduleId, port, source)
+                            }
                             onOutputsChange={reconcileCompositionOutputs}
                           />
                         ) : instance.moduleId === 'scale-evolution' ? (

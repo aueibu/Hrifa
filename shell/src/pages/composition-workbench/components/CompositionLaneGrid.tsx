@@ -56,6 +56,10 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; label
     { id: 'b', label: 'B' },
   ],
   'scale-evolution': [{ id: 'sequence', label: 'Sequence' }],
+  'rhythm-householder': [
+    { id: 'rhythm', label: 'Rhythm' },
+    { id: 'axis', label: 'Axis' },
+  ],
 };
 
 interface FlowPoint {

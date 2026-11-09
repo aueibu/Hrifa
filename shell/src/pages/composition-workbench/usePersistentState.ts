@@ -57,6 +57,11 @@ export const compositionStateKeys = {
   scaleConstructionPermutationMode: 'hrifa.composition-workbench.scale-construction.permutation-mode.v1',
   scaleEvolutionIntervals: 'hrifa.composition-workbench.scale-evolution.intervals.v1',
   scaleEvolutionRoot: 'hrifa.composition-workbench.scale-evolution.root.v1',
+  householderSettings: 'hrifa.composition-workbench.rhythm-householder.settings.v1',
+  householderSelected: 'hrifa.composition-workbench.rhythm-householder.selected.v1',
+  householderUnit: 'hrifa.composition-workbench.rhythm-householder.preview-unit.v1',
+  householderVolume: 'hrifa.composition-workbench.rhythm-householder.preview-volume.v1',
+  householderSounds: 'hrifa.composition-workbench.rhythm-householder.sounds.v1',
 } as const;
 
 export function usePersistentState<T>(

@@ -9,7 +9,8 @@ export type CompositionModuleId =
   | 'fractioning'
   | 'pair-composition'
   | 'scale-construction'
-  | 'scale-evolution';
+  | 'scale-evolution'
+  | 'rhythm-householder';
 export type CompositionLaneId = 1 | 2 | 3 | 4;
 
 export interface CompositionModuleInstance {
@@ -48,6 +49,7 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   'pair-composition': 'Pair Composition',
   'scale-construction': 'Scale Construction',
   'scale-evolution': 'Scale Evolution',
+  'rhythm-householder': 'Rhythm Householder',
 };
 
 export const defaultCompositionInstances: CompositionModuleInstance[] = [
@@ -106,7 +108,8 @@ function isModuleId(value: unknown): value is CompositionModuleId {
     value === 'fractioning' ||
     value === 'pair-composition' ||
     value === 'scale-construction' ||
-    value === 'scale-evolution'
+    value === 'scale-evolution' ||
+    value === 'rhythm-householder'
   );
 }
 
