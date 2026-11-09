@@ -171,6 +171,18 @@
   z-index: 2;
 }
 
+.note[data-colored] {
+  background: var(--note-color);
+  border-color: color-mix(in srgb, var(--note-color) 72%, black);
+}
+
+/* A colored note keeps its own color while sounding; the ring marks it, not an orange fill. */
+.note[data-colored][data-active] {
+  background: var(--note-color);
+  border-color: var(--mantine-color-text);
+  box-shadow: 0 0 0 2px var(--mantine-color-text);
+}
+
 .playhead {
   background: var(--mantine-color-red-filled);
   bottom: 0;

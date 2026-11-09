@@ -4,7 +4,9 @@ import { compileMixerPlan, defaultChannelConfig } from './mixer';
 import {
   acceptsMixerChannels,
   defaultMixerChannelSettings,
+  describeChannelLength,
   isMixerSourceCandidate,
+  mixerChannelColor,
   mixerChannelMaterial,
 } from './mixerChannels';
 import { packet, type DataItem } from './model';
@@ -141,5 +143,25 @@ describe('mixer ports', () => {
     const state = Object.fromEntries(ports.map((port) => [port.id, {} as never]));
     expect(mixerPortLabels(state).map((port) => port.label)).toEqual(['Ch 1', 'Ch 2']);
     expect(mixerPortLabels(undefined)).toEqual([]);
+  });
+});
+
+describe('channel presentation', () => {
+  it('describes a cycle in pulses and bars', () => {
+    // 105 sixteenth pulses = 26.25 quarters = 6.5625 bars of 4/4.
+    expect(describeChannelLength(26.25, 0.25, 4)).toBe('105 pulses · 6.56 bars');
+    expect(describeChannelLength(4, 0.25, 4)).toBe('16 pulses · 1 bar');
+    expect(describeChannelLength(0.25, 0.25, 4)).toBe('1 pulse · 0.06 bars');
+  });
+
+  it('leaves out pulses when the length is not a whole number of them', () => {
+    expect(describeChannelLength(1.1, 0.25, 4)).toBe('0.28 bars');
+  });
+
+  it('gives each channel a distinct hue that is never the red playhead', () => {
+    const colors = Array.from({ length: 8 }, (_, index) => mixerChannelColor(index));
+    expect(new Set(colors).size).toBe(8);
+    expect(colors.some((color) => color.includes('red'))).toBe(false);
+    expect(mixerChannelColor(8)).toBe(mixerChannelColor(0));
   });
 });

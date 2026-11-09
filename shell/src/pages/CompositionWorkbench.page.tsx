@@ -136,7 +136,13 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.householderVolume,
     compositionStateKeys.householderSounds,
   ],
-  mixer: [compositionStateKeys.mixerChannels, compositionStateKeys.mixerVolume],
+  mixer: [
+    compositionStateKeys.mixerChannels,
+    compositionStateKeys.mixerVolume,
+    compositionStateKeys.mixerRollView,
+    compositionStateKeys.mixerRollMode,
+    compositionStateKeys.mixerLaneScale,
+  ],
 };
 
 // The mixer's inlets are its channels, which the receiver's route state owns, so it declares none

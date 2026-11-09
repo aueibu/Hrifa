@@ -54,4 +54,38 @@ describe("PianoRoll", () => {
     expect(view.pixelsPerSemitone).toBe(27.5);
     expect(view.followPlayback).toBe(true);
   });
+
+  it("colors a note that carries its own color and leaves the rest on the theme", () => {
+    render(
+      <PianoRoll
+        notes={[
+          { id: "a", start: 0, duration: 1, pitchMidicents: 6000, label: "A", color: "rgb(1, 2, 3)" },
+          { id: "b", start: 1, duration: 1, pitchMidicents: 6200, label: "B" },
+        ]}
+        duration={2}
+        gridLines={[]}
+        view={{ ...defaultPianoRollView, framed: true }}
+        onViewChange={() => undefined}
+      />,
+    );
+    const colored = screen.getByTitle("A · 0.000 qn · 1.000 qn");
+    expect(colored).toHaveAttribute("data-colored");
+    expect(colored.style.getPropertyValue("--note-color")).toBe("rgb(1, 2, 3)");
+    expect(screen.getByTitle("B · 1.000 qn · 1.000 qn")).not.toHaveAttribute("data-colored");
+  });
+
+  it("can hide its toolbar for a compact roll whose view the owner sets", () => {
+    render(
+      <PianoRoll
+        notes={notes}
+        duration={2}
+        gridLines={[]}
+        view={{ ...defaultPianoRollView, framed: true }}
+        onViewChange={() => undefined}
+        showToolbar={false}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Fit notes" })).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /2 notes/ })).toBeInTheDocument();
+  });
 });

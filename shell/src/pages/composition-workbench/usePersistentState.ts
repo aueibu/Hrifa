@@ -64,6 +64,9 @@ export const compositionStateKeys = {
   householderSounds: 'hrifa.composition-workbench.rhythm-householder.sounds.v1',
   mixerChannels: 'hrifa.composition-workbench.mixer.channels.v1',
   mixerVolume: 'hrifa.composition-workbench.mixer.volume.v1',
+  mixerRollView: 'hrifa.composition-workbench.mixer.roll-view.v1',
+  mixerRollMode: 'hrifa.composition-workbench.mixer.roll-mode.v1',
+  mixerLaneScale: 'hrifa.composition-workbench.mixer.lane-scale.v1',
 } as const;
 
 export function usePersistentState<T>(

@@ -150,3 +150,34 @@ export function mixerChannelMaterial(
     };
   }
 }
+
+// Distinct hues for telling channels apart in the roll. Red is left out: it is the playhead.
+const channelColorNames = ['blue', 'orange', 'teal', 'grape', 'lime', 'cyan', 'pink', 'yellow'];
+
+/** A CSS color for the channel at this position; repeats after eight channels. */
+export function mixerChannelColor(index: number) {
+  return `var(--mantine-color-${channelColorNames[index % channelColorNames.length]}-filled)`;
+}
+
+/**
+ * How long a channel's cycle is, in the units a composer counts in: transport pulses (when the
+ * length is a whole number of them) and bars of the current meter. Takes lengths in quarter notes.
+ */
+export function describeChannelLength(
+  periodQuarters: number,
+  pulseQuarters: number,
+  barQuarters: number
+) {
+  const parts: string[] = [];
+  const pulses = periodQuarters / pulseQuarters;
+  if (Number.isFinite(pulses) && Math.abs(pulses - Math.round(pulses)) < 1e-9) {
+    const whole = Math.round(pulses);
+    parts.push(`${whole} ${whole === 1 ? 'pulse' : 'pulses'}`);
+  }
+  const bars = periodQuarters / barQuarters;
+  if (Number.isFinite(bars)) {
+    const text = bars.toFixed(2).replace(/\.?0+$/, '');
+    parts.push(`${text} ${text === '1' ? 'bar' : 'bars'}`);
+  }
+  return parts.join(' · ');
+}

@@ -5,6 +5,8 @@ export interface PianoRollNote {
   pitchMidicents: number;
   label: string;
   velocity?: number;
+  /** A CSS color for this note, such as `var(--mantine-color-teal-filled)`; unset uses the theme's primary color. */
+  color?: string;
 }
 
 export interface PianoRollGridLine {

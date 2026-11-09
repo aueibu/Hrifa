@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionIcon, Button, Group, Switch, Text } from "@mantine/core";
-import type { PianoRollGridLine, PianoRollNote, PianoRollViewState } from "./model";
-import classes from "./PianoRoll.module.css";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { ActionIcon, Button, Group, Switch, Text } from '@mantine/core';
+import type { PianoRollGridLine, PianoRollNote, PianoRollViewState } from './model';
+import classes from './PianoRoll.module.css';
 
 const KEYBOARD_WIDTH = 4.5 * 16;
 const RULER_HEIGHT = 2 * 16;
@@ -20,6 +20,8 @@ export interface PianoRollProps {
   isPlaying?: boolean;
   height?: number;
   ariaLabel?: string;
+  /** Hide the zoom and follow controls, for a compact roll whose view is set by its owner. */
+  showToolbar?: boolean;
 }
 
 function clamp(value: number, minimum: number, maximum: number) {
@@ -27,7 +29,7 @@ function clamp(value: number, minimum: number, maximum: number) {
 }
 
 function midiPitchLabel(midi: number) {
-  const pitchClasses = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+  const pitchClasses = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
   return `${pitchClasses[midi % 12]}${Math.floor(midi / 12) - 1}`;
 }
 
@@ -50,7 +52,8 @@ export function PianoRoll({
   playhead,
   isPlaying = false,
   height = 440,
-  ariaLabel = "Piano roll",
+  ariaLabel = 'Piano roll',
+  showToolbar = true,
 }: PianoRollProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height });
@@ -60,14 +63,14 @@ export function PianoRoll({
   const playheadX = playhead === undefined ? undefined : playhead * view.pixelsPerQuarter;
   const grid = useMemo(() => {
     const explicit = new Map(
-      gridLines.map((line) => [Math.round(line.at * 1_000_000), line] as const),
+      gridLines.map((line) => [Math.round(line.at * 1_000_000), line] as const)
     );
     const subdivision = adaptiveSubdivision(view.pixelsPerQuarter);
     const result: Array<PianoRollGridLine & { subdivision: boolean }> = [];
     for (let at = 0; at <= safeDuration + subdivision / 2; at += subdivision) {
       const exact = explicit.get(Math.round(at * 1_000_000));
       result.push(
-        exact ? { ...exact, subdivision: false } : { at, kind: "beat", subdivision: true },
+        exact ? { ...exact, subdivision: false } : { at, kind: 'beat', subdivision: true }
       );
     }
     gridLines.forEach((line) => {
@@ -118,17 +121,17 @@ export function PianoRoll({
     const pixelsPerSemitone = clamp(
       (viewport.height - RULER_HEIGHT - 16) / pitchSpan,
       MIN_PITCH_ZOOM,
-      MAX_PITCH_ZOOM,
+      MAX_PITCH_ZOOM
     );
     const pixelsPerQuarter = clamp(
       (viewport.width - KEYBOARD_WIDTH - 24) / safeDuration,
       MIN_TIME_ZOOM,
-      MAX_TIME_ZOOM,
+      MAX_TIME_ZOOM
     );
     const scrollTop = clamp(
       (127 - highest - 1.5) * pixelsPerSemitone,
       0,
-      128 * pixelsPerSemitone - viewport.height + RULER_HEIGHT,
+      128 * pixelsPerSemitone - viewport.height + RULER_HEIGHT
     );
     changeView({
       pixelsPerQuarter,
@@ -153,7 +156,7 @@ export function PianoRoll({
       scrollLeft: clamp(
         playheadX - (viewport.width - KEYBOARD_WIDTH) / 2,
         0,
-        timelineWidth - viewport.width + KEYBOARD_WIDTH,
+        timelineWidth - viewport.width + KEYBOARD_WIDTH
       ),
     });
   }
@@ -182,7 +185,7 @@ export function PianoRoll({
       scrollLeft: Math.max(
         0,
         musicalCenter * pixelsPerQuarter -
-          Math.max(0, (element?.clientWidth ?? viewport.width) - KEYBOARD_WIDTH) / 2,
+          Math.max(0, (element?.clientWidth ?? viewport.width) - KEYBOARD_WIDTH) / 2
       ),
       framed: true,
     });
@@ -197,14 +200,14 @@ export function PianoRoll({
     const pixelsPerSemitone = clamp(
       view.pixelsPerSemitone * factor,
       MIN_PITCH_ZOOM,
-      MAX_PITCH_ZOOM,
+      MAX_PITCH_ZOOM
     );
     changeView({
       pixelsPerSemitone,
       scrollTop: Math.max(
         0,
         (127 - pitchAtCenter) * pixelsPerSemitone -
-          Math.max(0, (element?.clientHeight ?? viewport.height) - RULER_HEIGHT) / 2,
+          Math.max(0, (element?.clientHeight ?? viewport.height) - RULER_HEIGHT) / 2
       ),
       framed: true,
     });
@@ -212,67 +215,69 @@ export function PianoRoll({
 
   return (
     <div className={classes.root} aria-label={ariaLabel}>
-      <Group justify="space-between" gap="xs" className={classes.toolbar}>
-        <Group gap={4} wrap="nowrap">
-          <Button size="compact-xs" variant="default" onClick={fitNotes}>
-            Fit notes
-          </Button>
-          <ActionIcon
-            size="sm"
-            variant="default"
-            aria-label="Zoom out in time"
-            onClick={() => zoomTime(0.8)}
-          >
-            −
-          </ActionIcon>
-          <Text size="xs" ff="monospace" className={classes.zoomReadout}>
-            Time
-          </Text>
-          <ActionIcon
-            size="sm"
-            variant="default"
-            aria-label="Zoom in in time"
-            onClick={() => zoomTime(1.25)}
-          >
-            +
-          </ActionIcon>
-          <ActionIcon
-            size="sm"
-            variant="default"
-            aria-label="Zoom out in pitch"
-            onClick={() => zoomPitch(0.8)}
-          >
-            −
-          </ActionIcon>
-          <Text size="xs" ff="monospace" className={classes.zoomReadout}>
-            Pitch
-          </Text>
-          <ActionIcon
-            size="sm"
-            variant="default"
-            aria-label="Zoom in in pitch"
-            onClick={() => zoomPitch(1.25)}
-          >
-            +
-          </ActionIcon>
+      {showToolbar && (
+        <Group justify="space-between" gap="xs" className={classes.toolbar}>
+          <Group gap={4} wrap="nowrap">
+            <Button size="compact-xs" variant="default" onClick={fitNotes}>
+              Fit notes
+            </Button>
+            <ActionIcon
+              size="sm"
+              variant="default"
+              aria-label="Zoom out in time"
+              onClick={() => zoomTime(0.8)}
+            >
+              −
+            </ActionIcon>
+            <Text size="xs" ff="monospace" className={classes.zoomReadout}>
+              Time
+            </Text>
+            <ActionIcon
+              size="sm"
+              variant="default"
+              aria-label="Zoom in in time"
+              onClick={() => zoomTime(1.25)}
+            >
+              +
+            </ActionIcon>
+            <ActionIcon
+              size="sm"
+              variant="default"
+              aria-label="Zoom out in pitch"
+              onClick={() => zoomPitch(0.8)}
+            >
+              −
+            </ActionIcon>
+            <Text size="xs" ff="monospace" className={classes.zoomReadout}>
+              Pitch
+            </Text>
+            <ActionIcon
+              size="sm"
+              variant="default"
+              aria-label="Zoom in in pitch"
+              onClick={() => zoomPitch(1.25)}
+            >
+              +
+            </ActionIcon>
+          </Group>
+          <Group gap="xs" wrap="nowrap">
+            <Button
+              size="compact-xs"
+              variant="subtle"
+              disabled={playhead === undefined}
+              onClick={centerPlayhead}
+            >
+              Center playhead
+            </Button>
+            <Switch
+              size="xs"
+              label="Follow playback"
+              checked={view.followPlayback}
+              onChange={(event) => changeView({ followPlayback: event.currentTarget.checked })}
+            />
+          </Group>
         </Group>
-        <Group gap="xs" wrap="nowrap">
-          <Button
-            size="compact-xs"
-            variant="subtle"
-            disabled={playhead === undefined}
-            onClick={centerPlayhead}
-          >
-            Center playhead
-          </Button>
-          <Switch
-            size="xs"
-            label="Follow playback"
-            checked={view.followPlayback}
-            onChange={(event) => changeView({ followPlayback: event.currentTarget.checked })}
-          />
-        </Group>
-      </Group>
+      )}
 
       <div
         ref={scroller}
@@ -298,7 +303,7 @@ export function PianoRoll({
           <div className={classes.corner} aria-hidden="true" />
           <div className={classes.ruler} aria-hidden="true">
             {grid
-              .filter((line) => line.kind === "bar")
+              .filter((line) => line.kind === 'bar')
               .map((line) => (
                 <span key={`ruler:${line.at}`} style={{ left: line.at * view.pixelsPerQuarter }}>
                   {line.label}
@@ -320,7 +325,7 @@ export function PianoRoll({
                     top: (127 - midi) * view.pixelsPerSemitone,
                   }}
                 >
-                  {pitchClass === 0 ? midiPitchLabel(midi) : ""}
+                  {pitchClass === 0 ? midiPitchLabel(midi) : ''}
                 </div>
               );
             })}
@@ -361,6 +366,7 @@ export function PianoRoll({
                   key={note.id}
                   className={classes.note}
                   data-active={active || undefined}
+                  data-colored={note.color ? true : undefined}
                   title={`${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
                   style={{
                     height: noteHeight,
@@ -370,9 +376,10 @@ export function PianoRoll({
                       (127 - pitch) * view.pixelsPerSemitone +
                       (view.pixelsPerSemitone - noteHeight) / 2,
                     width: noteWidth,
+                    ...(note.color ? ({ '--note-color': note.color } as CSSProperties) : {}),
                   }}
                 >
-                  {noteWidth > 34 ? note.label : ""}
+                  {noteWidth > 34 ? note.label : ''}
                 </span>
               );
             })}

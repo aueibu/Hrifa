@@ -146,6 +146,27 @@ describe('limits and guards', () => {
     expect(result.realignment).toBeUndefined();
     expect(rationalToNumber(result.plan!.duration.quarterNotes)).toBe(40);
     expect(result.warnings.join(' ')).toMatch(/horizon/);
+    expect(result.truncated).toBe(true);
+  });
+
+  it('defaults the horizon to 128 bars of 4/4 and flags what falls beyond it', () => {
+    // 21 and 23 quarter notes realign after 483 quarters (120.75 bars): inside 128 bars.
+    const inside = compile([channel('a', 21, [0]), channel('b', 23, [0])]);
+    expect(inside.loopable).toBe(true);
+    expect(inside.truncated).toBe(false);
+    expect(rationalToNumber(inside.plan!.duration.quarterNotes)).toBe(483);
+
+    // 31 and 37 realign after 1147 quarters: beyond it, so only the first 512 quarters play.
+    const beyond = compile([channel('a', 31, [0]), channel('b', 37, [0])]);
+    expect(beyond.loopable).toBe(false);
+    expect(beyond.truncated).toBe(true);
+    expect(rationalToNumber(beyond.plan!.duration.quarterNotes)).toBe(512);
+  });
+
+  it('is not truncated when nothing loops or the pattern closes', () => {
+    expect(compile([channel('a', 4, [0], { loop: 'once' })]).truncated).toBe(false);
+    expect(compile([channel('a', 3, [0]), channel('b', 4, [0])]).truncated).toBe(false);
+    expect(compile([]).truncated).toBe(false);
   });
 
   it('refuses an oversized plan rather than building it', () => {

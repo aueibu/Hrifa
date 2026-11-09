@@ -1,7 +1,25 @@
-import { useEffect } from 'react';
-import { Badge, Button, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Group,
+  NumberInput,
+  SegmentedControl,
+  Select,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
+import {
+  PianoRoll,
+  defaultPianoRollView,
+  type PianoRollViewState,
+} from '../../../components/PianoRoll';
 import { Surface } from '../../../components/Surface/Surface';
 import { volumePercentToGain } from '../audio';
+import { useAudioEngine } from '../audio/AudioEngineProvider';
 import {
   boundOutput,
   compositionOutputOptions,
@@ -17,15 +35,25 @@ import { channelBusGains, compileMixerPlan, mixerRealignment, type MixerChannel 
 import {
   acceptsMixerChannels,
   defaultMixerChannelSettings,
+  describeChannelLength,
   isMixerSourceCandidate,
   loopPolicyOptions,
   MAX_GATE_PERCENT,
   MIN_GATE_PERCENT,
+  mixerChannelColor,
   mixerChannelMaterial,
   type MixerChannelMaterial,
   type MixerChannelSettings,
   type MixerChannelsState,
 } from '../mixerChannels';
+import {
+  cycleProgress,
+  lanePlayhead,
+  laneView,
+  mixerLane,
+  mixerRoll,
+  mixerRollGrid,
+} from '../mixerRoll';
 import { pulsesToMusicalDuration, rationalToNumber } from '../musicalTime';
 import { transportRhythmContext } from '../rhythmRealization';
 import { signalTypeRegistry } from '../signalTypes';
@@ -38,6 +66,7 @@ import {
   compositionStateKeys,
   usePersistentState,
 } from '../usePersistentState';
+import { CycleProgressBar } from './CycleProgressBar';
 import { Module, ModuleSection } from './Module';
 import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
@@ -54,15 +83,36 @@ interface MixerModuleProps {
   onRemoveChannel(port: string): void;
 }
 
-function channelStatus(material: MixerChannelMaterial) {
-  if (material.status === 'empty') {
-    return 'No source';
+// A stable number per packet object, so the heavy work below re-runs when a source actually
+// changes and not on every render (the workbench page rebuilds its outputs array each time).
+const packetIds = new WeakMap<object, number>();
+let nextPacketId = 1;
+function packetKey(packet: object | undefined) {
+  if (!packet) {
+    return 0;
   }
-  if (material.status === 'error') {
-    return material.message;
+  let id = packetIds.get(packet);
+  if (!id) {
+    id = nextPacketId;
+    nextPacketId += 1;
+    packetIds.set(packet, id);
   }
-  const count = material.material.events.length;
-  return `${material.source === 'notes' ? 'Notes' : 'Rhythm'} | ${count} ${count === 1 ? 'event' : 'events'}`;
+  return id;
+}
+
+function acceptsRollView(value: unknown): value is PianoRollViewState {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as PianoRollViewState;
+  return (
+    Number.isFinite(candidate.pixelsPerQuarter) &&
+    Number.isFinite(candidate.pixelsPerSemitone) &&
+    Number.isFinite(candidate.scrollLeft) &&
+    Number.isFinite(candidate.scrollTop) &&
+    typeof candidate.followPlayback === 'boolean' &&
+    typeof candidate.framed === 'boolean'
+  );
 }
 
 export function MixerModule({
@@ -75,6 +125,7 @@ export function MixerModule({
   onRemoveChannel,
 }: MixerModuleProps) {
   const { settings } = useCompositionSettings();
+  const engine = useAudioEngine();
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'mixer');
   const [channelState, setChannelState] = usePersistentState<MixerChannelsState>(
     stateKey(compositionStateKeys.mixerChannels),
@@ -86,6 +137,29 @@ export function MixerModule({
     60,
     acceptsFiniteNumber
   );
+  const [rollView, setRollView] = usePersistentState<PianoRollViewState>(
+    stateKey(compositionStateKeys.mixerRollView),
+    defaultPianoRollView,
+    acceptsRollView
+  );
+  const [rollMode, setRollMode] = usePersistentState<'composite' | 'lanes'>(
+    stateKey(compositionStateKeys.mixerRollMode),
+    'composite',
+    (value): value is 'composite' | 'lanes' => value === 'composite' || value === 'lanes'
+  );
+  // The lanes' shared time scale in pixels per quarter note; null fits the longest cycle.
+  const [laneScale, setLaneScale] = usePersistentState<number | null>(
+    stateKey(compositionStateKeys.mixerLaneScale),
+    null,
+    (value): value is number | null =>
+      value === null || (typeof value === 'number' && Number.isFinite(value) && value > 0)
+  );
+  const [playhead, setPlayhead] = useState(0);
+  // Quarter notes since the material began, not wrapped: counts cycles and passes.
+  const [elapsed, setElapsed] = useState(0);
+  const playedPass = useRef(1);
+  const lanesRef = useRef<HTMLDivElement>(null);
+  const [lanesWidth, setLanesWidth] = useState(0);
 
   const ports = Object.keys(routeState);
   const settingsFor = (port: string): MixerChannelSettings => ({
@@ -113,64 +187,117 @@ export function MixerModule({
   }, [portKey, setChannelState]);
 
   const { pulseUnit, timeline } = transportRhythmContext(settings.transport);
-
-  const channels = ports.map((port, index) => {
-    const binding = routeState[port];
-    const channel = settingsFor(port);
-    const output = boundOutput(outputs, binding?.source);
-    const resolved = resolvePacketFromOutput(
-      output,
-      binding?.source?.index,
-      `route:${instanceId}:${port}`
-    );
-    const treated = binding
-      ? signalTypeRegistry[binding.signalType].apply(
-          resolved,
-          binding.treatment,
-          `route:${instanceId}:${port}`,
-          settings.edo
-        )
-      : undefined;
-    const material = mixerChannelMaterial(treated, {
-      sourceId: instanceId,
-      channelId: port,
-      pulseUnit,
-      sound: layerSound(settings.sounds.rhythm, index, channel.sound),
-      gatePercent: channel.gatePercent,
-    });
-    return { port, index, binding, channel, material };
-  });
-
-  const mixerChannels: MixerChannel[] = channels.flatMap(({ port, channel, material }) =>
-    material.status === 'ready'
-      ? [
-          {
-            config: {
-              id: port,
-              loop: channel.loop,
-              offset: pulsesToMusicalDuration(channel.offsetPulses, pulseUnit),
-              gainPercent: channel.gainPercent,
-              muted: channel.muted,
-              solo: channel.solo,
-            },
-            material: material.material,
-          },
-        ]
-      : []
-  );
-  const realignment = mixerRealignment(mixerChannels);
   const pulseQuarters = rationalToNumber(pulseUnit.quarterNotes);
   const { numerator: meterNumerator, denominator: meterDenominator } = parseMeter(
     settings.transport.meter
   );
   const barQuarters = (4 * meterNumerator) / meterDenominator;
-  const realignmentText = realignment
-    ? `Realigns every ${Math.round(rationalToNumber(realignment.quarterNotes) / pulseQuarters)} pulses (${(
-        rationalToNumber(realignment.quarterNotes) / barQuarters
+
+  // Everything that depends on what the sources are, not on levels: each channel's material, the
+  // compiled plan, and the realignment period. Levels, mute and solo never re-run it.
+  const signature = [
+    ports
+      .map((port) => {
+        const binding = routeState[port];
+        const channel = settingsFor(port);
+        return [
+          port,
+          packetKey(boundOutput(outputs, binding?.source)?.packet),
+          binding?.source?.index ?? '',
+          binding?.signalType ?? '',
+          JSON.stringify(binding?.treatment ?? null),
+          channel.loop,
+          channel.offsetPulses,
+          channel.gatePercent,
+          JSON.stringify(channel.sound),
+        ].join('~');
+      })
+      .join('||'),
+    settings.transport.pulse,
+    settings.transport.tempo,
+    settings.transport.meter,
+    settings.edo,
+    JSON.stringify(settings.sounds.rhythm),
+  ].join('|||');
+
+  const mix = useMemo(() => {
+    const channels = ports.map((port, index) => {
+      const binding = routeState[port];
+      const channel = settingsFor(port);
+      const output = boundOutput(outputs, binding?.source);
+      const resolved = resolvePacketFromOutput(
+        output,
+        binding?.source?.index,
+        `route:${instanceId}:${port}`
+      );
+      const treated = binding
+        ? signalTypeRegistry[binding.signalType].apply(
+            resolved,
+            binding.treatment,
+            `route:${instanceId}:${port}`,
+            settings.edo
+          )
+        : undefined;
+      const material = mixerChannelMaterial(treated, {
+        sourceId: instanceId,
+        channelId: port,
+        pulseUnit,
+        sound: layerSound(settings.sounds.rhythm, index, channel.sound),
+        gatePercent: channel.gatePercent,
+      });
+      return { port, index, binding, material };
+    });
+    const mixerChannels: MixerChannel[] = channels.flatMap(({ port, material }) =>
+      material.status === 'ready'
+        ? [
+            {
+              config: {
+                id: port,
+                loop: settingsFor(port).loop,
+                offset: pulsesToMusicalDuration(settingsFor(port).offsetPulses, pulseUnit),
+                gainPercent: 100,
+                muted: false,
+                solo: false,
+              },
+              material: material.material,
+            },
+          ]
+        : []
+    );
+    const compiled = mixerChannels.length
+      ? compileMixerPlan({ sourceId: instanceId, timeline, channels: mixerChannels })
+      : undefined;
+    return { channels, mixerChannels, compiled, realignment: mixerRealignment(mixerChannels) };
+    // Keyed by `signature`, which covers every input read above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature]);
+
+  const roll = useMemo(
+    () => mixerRoll(mix.compiled?.plan, instanceId, ports),
+    [mix, instanceId, portKey]
+  );
+  const rollGrid = useMemo(
+    () => mixerRollGrid(roll.duration, meterNumerator, meterDenominator),
+    [roll.duration, meterNumerator, meterDenominator]
+  );
+  // A new mix refits the roll as soon as it is visible; zooming or scrolling sticks until then.
+  useEffect(() => {
+    setRollView((view) => (view.framed ? { ...view, framed: false } : view));
+  }, [mix, setRollView]);
+
+  // The channels realign later than the horizon, so the plan is only the start of the pattern.
+  const truncated = Boolean(mix.compiled?.truncated);
+  const previewBars = Math.round(roll.duration / barQuarters);
+  const realignmentLength = mix.realignment
+    ? describeChannelLength(
+        rationalToNumber(mix.realignment.quarterNotes),
+        pulseQuarters,
+        barQuarters
       )
-        .toFixed(2)
-        .replace(/\.?0+$/, '')} bars)`
-    : mixerChannels.some((channel) => channel.config.loop !== 'once')
+    : '';
+  const realignmentText = mix.realignment
+    ? `Realigns every ${realignmentLength}${truncated ? ` (beyond the ${previewBars}-bar preview)` : ''}`
+    : mix.mixerChannels.some((channel) => channel.config.loop !== 'once')
       ? 'No realignment period within reach'
       : '';
 
@@ -181,33 +308,112 @@ export function MixerModule({
     followTransport: true,
     busGains: channelBusGains(
       instanceId,
-      channels.map(({ port, channel }) => ({
+      ports.map((port) => ({
+        ...settingsFor(port),
         id: port,
-        loop: channel.loop,
         offset: pulsesToMusicalDuration(0, pulseUnit),
-        gainPercent: channel.gainPercent,
-        muted: channel.muted,
-        solo: channel.solo,
       })),
       (percent) => volumePercentToGain(percent) * masterGain
     ),
     transportPlay: playMix,
   });
 
+  // Each ready channel's own cycle, drawn on one shared time scale so a short cycle is visibly
+  // shorter than a long one, as clips of different lengths are in a clip launcher.
+  const lanes = useMemo(
+    () =>
+      mix.channels.flatMap(({ port, index, material }) => {
+        if (material.status !== 'ready') {
+          return [];
+        }
+        const channel = settingsFor(port);
+        const offset = pulsesToMusicalDuration(channel.offsetPulses, pulseUnit);
+        return [
+          {
+            port,
+            index,
+            channel,
+            period: rationalToNumber(material.material.period.quarterNotes),
+            offset: rationalToNumber(offset.quarterNotes),
+            ...mixerLane(material.material, { loop: channel.loop, offset }, index),
+          },
+        ];
+      }),
+    // `settingsFor` and `pulseUnit` are covered by `mix`'s signature and the channel settings.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mix, channelState, pulseUnit]
+  );
+  const longestLoop = Math.max(
+    1,
+    ...lanes.filter((lane) => lane.channel.loop !== 'once').map((lane) => lane.period)
+  );
+  const longestLane = Math.max(1, ...lanes.map((lane) => lane.duration));
+  const LANE_KEYBOARD_WIDTH = 72;
+  const autoLaneScale = Math.min(
+    192,
+    Math.max(4, ((lanesWidth || 720) - LANE_KEYBOARD_WIDTH - 24) / longestLane)
+  );
+  const sharedScale = laneScale ?? autoLaneScale;
+  const LANE_HEIGHT = 140;
+  // How far a channel is through the whole pass, from one sync point to the next.
+  const progressFor = (lane: (typeof lanes)[number]) =>
+    mix.compiled?.plan
+      ? cycleProgress(
+          preview.playing ? playhead : 0,
+          roll.duration,
+          { loop: lane.channel.loop, period: lane.period },
+          longestLoop
+        )
+      : undefined;
+
+  useEffect(() => {
+    const element = lanesRef.current;
+    if (!element || rollMode !== 'lanes') {
+      return;
+    }
+    const observer = new ResizeObserver(([entry]) => setLanesWidth(entry.contentRect.width));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [rollMode]);
+
+  // The playhead follows the engine's clock, wrapping at the pass length while the mix loops, so
+  // every channel's hits line up against the same moving line.
+  useEffect(() => {
+    if (!preview.playing) {
+      setPlayhead(0);
+      setElapsed(0);
+      return;
+    }
+    const quartersPerSecond = settings.transport.tempo / 60;
+    let frame = 0;
+    const tick = () => {
+      const clock = engine.clock(instanceId);
+      if (clock) {
+        const quarters = Math.max(
+          0,
+          ((performance.now() - clock.startedAtMs) / 1000) * quartersPerSecond
+        );
+        const pass = clock.loopSeconds ? clock.loopSeconds * quartersPerSecond : playedPass.current;
+        setPlayhead(clock.loopSeconds ? quarters % pass : Math.min(quarters, pass));
+        setElapsed(quarters);
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [engine, instanceId, preview.playing, settings.transport.tempo]);
+
   function playMix() {
-    if (!mixerChannels.length) {
-      preview.setStatus('Connect at least one playable source.');
+    const result = mix.compiled;
+    if (!result?.plan) {
+      preview.setStatus(result?.warnings.join(' ') || 'Connect at least one playable source.');
       return;
     }
-    const result = compileMixerPlan({ sourceId: instanceId, timeline, channels: mixerChannels });
-    if (!result.plan) {
-      preview.setStatus(result.warnings.join(' ') || 'Nothing to play.');
-      return;
-    }
+    playedPass.current = rationalToNumber(result.plan.duration.quarterNotes);
     const notes = result.warnings.length ? ` ${result.warnings[0]}` : '';
     void preview.play(
       result.plan,
-      `Playing ${mixerChannels.length} ${mixerChannels.length === 1 ? 'channel' : 'channels'}${
+      `Playing ${mix.mixerChannels.length} ${mix.mixerChannels.length === 1 ? 'channel' : 'channels'}${
         result.loopable ? ', looping' : ''
       }.${notes}`,
       { loop: result.loopable }
@@ -218,10 +424,29 @@ export function MixerModule({
     preview.stop('');
     setChannelState({});
     setMasterVolume(60);
+    setRollView(defaultPianoRollView);
     preview.setStatus('Mixer reset. Channel sources stay connected.');
   }
 
-  const connected = channels.filter(({ material }) => material.status === 'ready').length;
+  const connected = mix.channels.filter(({ material }) => material.status === 'ready').length;
+
+  function channelStatus(material: MixerChannelMaterial) {
+    if (material.status === 'empty') {
+      return 'No source';
+    }
+    if (material.status === 'error') {
+      return material.message;
+    }
+    const count = material.material.events.length;
+    const length = describeChannelLength(
+      rationalToNumber(material.material.period.quarterNotes),
+      pulseQuarters,
+      barQuarters
+    );
+    return `${material.source === 'notes' ? 'Notes' : 'Rhythm'} | ${count} ${count === 1 ? 'event' : 'events'} | ${length}`;
+  }
+
+  const options = compositionOutputOptions(outputs, instanceId, isMixerSourceCandidate);
 
   return (
     <Surface className={classes.interferenceSurface}>
@@ -245,24 +470,219 @@ export function MixerModule({
           </Group>
 
           <Stack gap="md">
-            {channels.map(({ port, index, binding, channel, material }) => {
-              const options = compositionOutputOptions(outputs, instanceId, isMixerSourceCandidate);
+            <div>
+              <Group justify="space-between" mb="xs" wrap="wrap" gap="xs">
+                <SegmentedControl
+                  size="xs"
+                  aria-label="Roll view"
+                  value={rollMode}
+                  onChange={(value) => setRollMode(value as 'composite' | 'lanes')}
+                  data={[
+                    { value: 'composite', label: 'Composite' },
+                    { value: 'lanes', label: 'Per channel' },
+                  ]}
+                />
+                {rollMode === 'lanes' && (
+                  <Group gap={4} wrap="nowrap">
+                    <Text size="xs" c="dimmed">
+                      Shared time scale
+                    </Text>
+                    <ActionIcon
+                      size="sm"
+                      variant="default"
+                      aria-label="Zoom lanes out"
+                      onClick={() => setLaneScale(Math.max(2, sharedScale * 0.8))}
+                    >
+                      −
+                    </ActionIcon>
+                    <ActionIcon
+                      size="sm"
+                      variant="default"
+                      aria-label="Zoom lanes in"
+                      onClick={() => setLaneScale(Math.min(256, sharedScale * 1.25))}
+                    >
+                      +
+                    </ActionIcon>
+                    <Button
+                      size="compact-xs"
+                      variant="subtle"
+                      disabled={laneScale === null}
+                      onClick={() => setLaneScale(null)}
+                    >
+                      Fit longest
+                    </Button>
+                  </Group>
+                )}
+                {preview.playing && mix.compiled?.loopable && (
+                  <Text size="xs" c="dimmed" aria-live="off">
+                    Pass {Math.floor(elapsed / Math.max(1e-9, playedPass.current)) + 1}
+                  </Text>
+                )}
+              </Group>
+              {truncated && (
+                <Alert color="yellow" variant="light" p="xs" mb="xs" title="Preview only">
+                  <Text size="xs">
+                    {mix.realignment
+                      ? `These channels realign every ${realignmentLength}, beyond the ${previewBars}-bar limit.`
+                      : 'The realignment period of these channels is too large to compute.'}{' '}
+                    The first {previewBars} bars play once and do not loop, and the progress bars
+                    measure progress through this preview, not toward the true sync.
+                  </Text>
+                </Alert>
+              )}
+              {rollMode === 'composite' ? (
+                <PianoRoll
+                  ariaLabel="Mixer composite roll"
+                  notes={roll.notes}
+                  duration={roll.duration}
+                  gridLines={rollGrid}
+                  view={rollView}
+                  onViewChange={setRollView}
+                  playhead={playhead}
+                  isPlaying={preview.playing}
+                  height={320}
+                />
+              ) : (
+                <div ref={lanesRef}>
+                  <Stack gap="xs">
+                    {lanes.map((lane) => {
+                      const progress = progressFor(lane);
+                      const unit = lane.channel.loop === 'free' ? 'cycle' : 'restart';
+                      const cycle = progress
+                        ? preview.playing
+                          ? ` · ${unit} ${progress.current} of ${progress.cycles}${truncated ? ' (preview)' : ''}`
+                          : ` · ${progress.cycles} ${progress.cycles === 1 ? unit : `${unit}s`} ${
+                              truncated ? 'in the preview' : 'per pass'
+                            }`
+                        : '';
+                      const loopLabel =
+                        loopPolicyOptions.find((option) => option.value === lane.channel.loop)
+                          ?.label ?? lane.channel.loop;
+                      return (
+                        <div key={lane.port}>
+                          <Group gap="xs" mb={2} wrap="nowrap">
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                background: mixerChannelColor(lane.index),
+                                borderRadius: 2,
+                                flex: 'none',
+                                height: 10,
+                                width: 10,
+                              }}
+                            />
+                            <Text size="xs" fw={700}>
+                              Ch {lane.index + 1}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {describeChannelLength(lane.period, pulseQuarters, barQuarters)} ·{' '}
+                              {loopLabel}
+                              {cycle}
+                            </Text>
+                          </Group>
+                          {progress && (
+                            <div style={{ marginBottom: 4 }}>
+                              <CycleProgressBar
+                                progress={progress}
+                                color={mixerChannelColor(lane.index)}
+                                unit={unit}
+                                ariaLabel={`Channel ${lane.index + 1} progress to realignment`}
+                              />
+                            </div>
+                          )}
+                          <PianoRoll
+                            ariaLabel={`Channel ${lane.index + 1} cycle`}
+                            notes={lane.notes}
+                            duration={lane.duration}
+                            gridLines={mixerRollGrid(
+                              lane.duration,
+                              meterNumerator,
+                              meterDenominator
+                            )}
+                            view={laneView(lane.notes, sharedScale, LANE_HEIGHT)}
+                            onViewChange={() => undefined}
+                            playhead={
+                              preview.playing
+                                ? lanePlayhead(
+                                    playhead,
+                                    {
+                                      loop: lane.channel.loop,
+                                      period: lane.period,
+                                      offset: lane.offset,
+                                    },
+                                    longestLoop
+                                  )
+                                : 0
+                            }
+                            isPlaying={preview.playing}
+                            height={LANE_HEIGHT}
+                            showToolbar={false}
+                          />
+                        </div>
+                      );
+                    })}
+                  </Stack>
+                </div>
+              )}
+              {rollMode === 'composite' && roll.total > roll.notes.length && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  Showing the first {roll.notes.length} of {roll.total} events.
+                </Text>
+              )}
+              {!lanes.length && rollMode === 'lanes' && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  Connect a source to a channel to see its cycle.
+                </Text>
+              )}
+              {rollMode === 'composite' && !mix.compiled?.plan && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  Connect a source to a channel to see every channel together.
+                </Text>
+              )}
+            </div>
+            {mix.channels.map(({ port, index, binding, material }) => {
+              const channel = settingsFor(port);
               const isRhythm = material.status === 'ready' && material.source === 'rhythm';
+              // In the lanes view the bar sits on each lane instead.
+              const stripLane =
+                rollMode === 'composite' ? lanes.find((lane) => lane.port === port) : undefined;
+              const stripProgress = stripLane ? progressFor(stripLane) : undefined;
               return (
                 <Surface key={port} p="sm" aria-label={`Channel ${index + 1}`}>
                   <Stack gap="xs">
-                    <Group justify="space-between" wrap="nowrap">
-                      <Text fw={700} size="sm">
-                        Ch {index + 1}
-                      </Text>
-                      <Text
-                        size="xs"
-                        c={material.status === 'error' ? 'red' : 'dimmed'}
-                        truncate
-                        aria-live="polite"
-                      >
-                        {channelStatus(material)}
-                      </Text>
+                    {stripProgress && (
+                      <CycleProgressBar
+                        progress={stripProgress}
+                        color={mixerChannelColor(index)}
+                        unit={channel.loop === 'free' ? 'cycle' : 'restart'}
+                        ariaLabel={`Channel ${index + 1} progress to realignment`}
+                      />
+                    )}
+                    <Group justify="space-between" wrap="nowrap" align="start">
+                      <Group gap="xs" wrap="nowrap" align="start">
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            background: mixerChannelColor(index),
+                            borderRadius: 2,
+                            flex: 'none',
+                            height: 14,
+                            marginTop: 2,
+                            width: 14,
+                          }}
+                        />
+                        <Text fw={700} size="sm">
+                          Ch {index + 1}
+                        </Text>
+                        <Text
+                          size="xs"
+                          c={material.status === 'error' ? 'red' : 'dimmed'}
+                          aria-live="polite"
+                          style={{ paddingTop: 2 }}
+                        >
+                          {channelStatus(material)}
+                        </Text>
+                      </Group>
                       <Button
                         size="compact-xs"
                         variant="subtle"

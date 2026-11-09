@@ -85,7 +85,7 @@ export interface MixerPlanOptions {
   sourceId: string;
   timeline: MusicalTimeline;
   channels: MixerChannel[];
-  /** Longest window the mixer will unroll. Default 64 bars of 4/4 (256 quarter notes). */
+  /** Longest window the mixer will unroll. Default 128 bars of 4/4 (512 quarter notes). */
   maxHorizon?: MusicalDuration;
   /** Refuse to build a plan larger than this many events. */
   maxEvents?: number;
@@ -101,10 +101,16 @@ export interface MixerPlanResult {
    * without a seam. False when the horizon truncated it or every channel is `once`.
    */
   loopable: boolean;
+  /**
+   * True when the looping channels do not realign within the horizon, so the plan is only the
+   * first part of a longer pattern: it plays once and does not close, and any progress measured
+   * along it is progress through this preview, not toward the true sync.
+   */
+  truncated: boolean;
   warnings: string[];
 }
 
-export const defaultMaxHorizon = musicalDuration(256);
+export const defaultMaxHorizon = musicalDuration(512);
 export const defaultMaxEvents = 20_000;
 
 export function channelBusId(sourceId: string, channelId: string) {
@@ -174,7 +180,7 @@ function floorDivide(value: Rational, period: Rational) {
 }
 
 /** value mod period, in [0, period). */
-function modRational(value: Rational, period: Rational) {
+export function modRational(value: Rational, period: Rational) {
   return subtractRational(value, multiplyRational(period, floorDivide(value, period)));
 }
 
@@ -271,7 +277,7 @@ export function compileMixerPlan({
       warnings.push(`Channel ${channel.config.id} has no playable material and was left out.`)
     );
   if (!usable.length) {
-    return { loopable: false, warnings: [...warnings, 'Nothing to play.'] };
+    return { loopable: false, truncated: false, warnings: [...warnings, 'Nothing to play.'] };
   }
 
   const periodOf = (channel: MixerChannel) => channel.material.period.quarterNotes;
@@ -290,6 +296,7 @@ export function compileMixerPlan({
 
   let duration: Rational;
   let loopable = false;
+  let truncated = false;
   let realignment: MusicalDuration | undefined;
   if (!loopers.length) {
     duration = onceEnd;
@@ -306,6 +313,7 @@ export function compileMixerPlan({
     }
   } else {
     duration = horizon;
+    truncated = true;
     warnings.push(
       realignmentValue
         ? 'The channels realign later than the horizon, so only the first part of the pattern plays.'
@@ -413,6 +421,7 @@ export function compileMixerPlan({
   if (tooMany) {
     return {
       loopable: false,
+      truncated,
       realignment,
       warnings: [
         ...warnings,
@@ -435,6 +444,7 @@ export function compileMixerPlan({
     },
     realignment,
     loopable,
+    truncated,
     warnings,
   };
 }
