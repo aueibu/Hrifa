@@ -1,4 +1,6 @@
+import type { SmplrPreset } from 'smplr';
 import type { Gain, PolySynth } from 'tone';
+import { volumePercentToGain } from '../audio';
 import {
   addDuration,
   compareRational,
@@ -8,7 +10,6 @@ import {
   rational,
   type Rational,
 } from '../musicalTime';
-import { volumePercentToGain } from '../audio';
 import { pitchFrequency } from '../pitch';
 import { defaultSoundSettings, type SoundSet } from '../sounds';
 import {
@@ -21,9 +22,12 @@ import {
   transportBusGain,
   type TransportSettings,
 } from '../transport';
-import { instrumentRegistry } from './instrumentRegistry';
+import { instrumentDefinition, type SampledInstrumentDefinition } from './instrumentRegistry';
+import { soundfontPreset } from './soundfontLibrary';
+import { presetToSmplr } from './soundfontPreset';
 import type {
   AudioEngine,
+  InstrumentId,
   MusicalPerformanceEvent,
   MusicalPerformancePlan,
   PlaybackRequest,
@@ -35,13 +39,48 @@ import type {
 } from './types';
 
 type ToneModule = typeof import('tone');
+type SamplerModule = typeof import('smplr');
+
+/** What the engine needs from any voice, whether synthesized or sampled. */
+interface Voice {
+  triggerAttackRelease(
+    frequency: number,
+    durationSeconds: number,
+    time: number,
+    velocity: number
+  ): void;
+  releaseAll(): void;
+  dispose(): void;
+}
+
+/**
+ * A loaded sampled instrument. It outlives sessions (its samples are the expensive part), so it keeps its own
+ * output gain and is routed to whichever session's bus is playing it; a session's `dispose` only unplugs it.
+ */
+/** The part of a `smplr` instrument the engine uses. */
+interface SampleVoice {
+  readonly ready: Promise<unknown>;
+  start(event: {
+    note: number;
+    detune?: number;
+    time?: number;
+    duration?: number;
+    velocity?: number;
+  }): unknown;
+  stop(): void;
+}
+
+interface SampledEntry {
+  out: Gain;
+  instrument: SampleVoice;
+}
 
 interface ActiveSession {
   id: string;
   sourceId: string;
   active: boolean;
   buses: Map<string, Gain>;
-  instruments: Map<string, PolySynth>;
+  instruments: Map<string, Voice>;
   timebaseKind: 'seconds' | 'musical';
   /** performance.now() when the material (not the count-in) starts sounding. */
   startedAtMs: number;
@@ -73,8 +112,13 @@ export class ToneAudioEngine implements AudioEngine {
   private listeners = new Set<() => void>();
   private transport: TransportSettings = defaultTransportSettings;
   private metronomeSounds: SoundSet = defaultSoundSettings.metronome;
+  private smplr?: SamplerModule;
+  private sampled = new Map<InstrumentId, SampledEntry>();
 
-  constructor(private readonly loadTone: () => Promise<ToneModule> = () => import('tone')) {}
+  constructor(
+    private readonly loadTone: () => Promise<ToneModule> = () => import('tone'),
+    private readonly loadSampler: () => Promise<SamplerModule> = () => import('smplr')
+  ) {}
 
   get playing() {
     return this.sessions.size > 0;
@@ -101,9 +145,14 @@ export class ToneAudioEngine implements AudioEngine {
   }
 
   clock(sourceId: string) {
-    const session = [...this.sessions.values()].find((candidate) => candidate.sourceId === sourceId);
+    const session = [...this.sessions.values()].find(
+      (candidate) => candidate.sourceId === sourceId
+    );
     return session
-      ? { startedAtMs: session.startedAtMs, ...(session.looping ? { loopSeconds: session.loopSeconds } : {}) }
+      ? {
+          startedAtMs: session.startedAtMs,
+          ...(session.looping ? { loopSeconds: session.loopSeconds } : {}),
+        }
       : undefined;
   }
 
@@ -133,6 +182,7 @@ export class ToneAudioEngine implements AudioEngine {
         .forEach((session) => this.finishSession(session.id, false));
     }
     const tone = await this.ensureReady();
+    await this.loadSampledVoices(tone, request.plan);
     const id = sessionId(request.plan.sourceId);
     const state: ActiveSession = {
       id,
@@ -198,8 +248,66 @@ export class ToneAudioEngine implements AudioEngine {
 
   dispose() {
     this.stopAll();
+    this.sampled.forEach((entry) => {
+      entry.instrument.stop();
+      entry.out.dispose();
+    });
+    this.sampled.clear();
     this.master?.dispose();
     this.master = undefined;
+  }
+
+  /** Download (once) every sampled instrument the plan uses, so scheduling never waits on the network. */
+  private async loadSampledVoices(tone: ToneModule, plan: PerformancePlan) {
+    const wanted = new Set<InstrumentId>(
+      plan.events
+        .map((event) => event.instrumentId)
+        .filter((id) => instrumentDefinition(id).kind === 'sampled')
+    );
+    if (!wanted.size) {
+      return;
+    }
+    this.smplr ??= await this.loadSampler();
+    const smplr = this.smplr;
+    const context = tone.getContext().rawContext as unknown as AudioContext;
+    await Promise.all(
+      [...wanted].map(async (id) => {
+        let entry = this.sampled.get(id);
+        if (!entry) {
+          const definition = instrumentDefinition(id) as SampledInstrumentDefinition;
+          const out = new tone.Gain(1);
+          const destination = out.input as unknown as AudioNode;
+          let instrument: SampleVoice;
+          if (definition.file) {
+            const preset = soundfontPreset(id);
+            if (!preset) {
+              out.dispose();
+              throw new Error('The SoundFont for this sound is not loaded. Open the file again.');
+            }
+            // a preset of a file the user opened: build its regions and buffers ourselves
+            instrument = smplr.Instrument<object>((ctx, _options, plugin) => {
+              const { json, buffers } = presetToSmplr(preset, ctx);
+              return plugin.loadInstrument(json as unknown as SmplrPreset, buffers);
+            })(context, { destination });
+          } else {
+            instrument = smplr.Soundfont(context, {
+              instrument: definition.soundfont,
+              destination,
+            });
+          }
+          entry = { out, instrument };
+          this.sampled.set(id, entry);
+        }
+        try {
+          await entry.instrument.ready;
+        } catch (error) {
+          // a failed download must not leave a dead instrument cached: the next play tries again
+          this.sampled.delete(id);
+          entry.out.dispose();
+          throw error;
+        }
+      })
+    );
   }
 
   private async ensureReady() {
@@ -267,7 +375,9 @@ export class ToneAudioEngine implements AudioEngine {
     if (loop) {
       // Loop points are whole ticks so every pass restarts on the same tick; a pass length that is
       // not a whole number of ticks (a 7-tuplet at 960 PPQ) is rounded, drifting under half a tick.
-      loopStartTicks = Math.round(baseTicks + musicalDurationToTicks({ quarterNotes: loop.start }, ppq));
+      loopStartTicks = Math.round(
+        baseTicks + musicalDurationToTicks({ quarterNotes: loop.start }, ppq)
+      );
       const loopEndTicks =
         loopStartTicks + Math.round(musicalDurationToTicks({ quarterNotes: loop.length }, ppq));
       if (loopEndTicks <= loopStartTicks) {
@@ -363,7 +473,32 @@ export class ToneAudioEngine implements AudioEngine {
     const instrumentKey = `${event.busId}:${event.instrumentId}`;
     let instrument = session.instruments.get(instrumentKey);
     if (!instrument) {
-      const definition = instrumentRegistry[event.instrumentId];
+      const definition = instrumentDefinition(event.instrumentId);
+      if (definition.kind === 'sampled') {
+        const entry = this.sampled.get(event.instrumentId);
+        if (!entry) {
+          throw new Error(`Sampled instrument ${event.instrumentId} was not loaded.`);
+        }
+        entry.out.disconnect();
+        entry.out.connect(bus);
+        const voice: Voice = {
+          triggerAttackRelease: (frequency, durationSeconds, time, velocity) => {
+            const midi = 69 + 12 * Math.log2(frequency / 440);
+            const note = Math.round(midi);
+            entry.instrument.start({
+              note,
+              detune: (midi - note) * 100,
+              time,
+              duration: durationSeconds,
+              velocity: Math.round(velocity * 127),
+            });
+          },
+          releaseAll: () => entry.instrument.stop(),
+          dispose: () => entry.out.disconnect(),
+        };
+        session.instruments.set(instrumentKey, voice);
+        return voice;
+      }
       instrument = (
         definition.kind === 'membrane'
           ? new tone.PolySynth(tone.MembraneSynth, {

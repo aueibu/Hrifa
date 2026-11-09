@@ -27,14 +27,13 @@ function createFakeTone() {
 
   class FakeGain {
     gain = { rampTo: vi.fn() };
+    input = {};
     dispose = vi.fn();
+    disconnect = vi.fn();
+    connect = vi.fn(() => this);
 
     constructor(public value: number) {
       gains.push(this);
-    }
-
-    connect() {
-      return this;
     }
 
     toDestination() {
@@ -65,6 +64,7 @@ function createFakeTone() {
       Synth: class {},
       MembraneSynth: class {},
       Ticks: vi.fn((value: number) => value),
+      getContext: vi.fn(() => ({ rawContext: { fake: 'context' } })),
       getTransport: vi.fn(() => transport),
     },
     gains,
@@ -253,7 +253,9 @@ describe('ToneAudioEngine', () => {
       await engine.play({ plan: sevenths, loop: true });
 
       // 4/7 of 960 ticks is 548.57; the loop uses 549 for every pass.
-      expect(Number.parseInt(fake.transport.loopEnd, 10) - Number.parseInt(fake.transport.loopStart, 10)).toBe(549);
+      expect(
+        Number.parseInt(fake.transport.loopEnd, 10) - Number.parseInt(fake.transport.loopStart, 10)
+      ).toBe(549);
       engine.dispose();
     });
 
@@ -272,6 +274,132 @@ describe('ToneAudioEngine', () => {
       await expect(engine.play({ plan: plan('pitch-list'), loop: true })).rejects.toThrow(
         /musical performance plan/
       );
+      engine.dispose();
+    });
+  });
+
+  describe('sampled instruments', () => {
+    function createFakeSmplr(options: { failFirst?: boolean } = {}) {
+      const instruments: {
+        patch: string | undefined;
+        destination: unknown;
+        ready: Promise<void>;
+        start: ReturnType<typeof vi.fn>;
+        stop: ReturnType<typeof vi.fn>;
+      }[] = [];
+      let failures = options.failFirst ? 1 : 0;
+      const smplr = {
+        Soundfont: vi.fn(
+          (_context: unknown, config: { instrument?: string; destination?: unknown }) => {
+            const failing = failures > 0;
+            failures = Math.max(0, failures - 1);
+            const instrument = {
+              patch: config.instrument,
+              destination: config.destination,
+              ready: failing ? Promise.reject(new Error('offline')) : Promise.resolve(),
+              start: vi.fn(),
+              stop: vi.fn(),
+            };
+            instrument.ready.catch(() => undefined);
+            instruments.push(instrument);
+            return instrument;
+          }
+        ),
+      };
+      return { smplr, instruments };
+    }
+
+    function sampledPlan(sourceId: string): SecondsPerformancePlan {
+      const base = plan(sourceId);
+      return {
+        ...base,
+        events: [{ ...base.events[0], instrumentId: 'gm.piano', pitchMidicents: 6950 }],
+      };
+    }
+
+    it('loads the General MIDI patch once and plays notes through it with their detune', async () => {
+      const fake = createFakeTone();
+      const { smplr, instruments } = createFakeSmplr();
+      const engine = new ToneAudioEngine(
+        async () => fake.tone as never,
+        async () => smplr as never
+      );
+      await engine.play({ plan: sampledPlan('piano-a') });
+
+      expect(smplr.Soundfont).toHaveBeenCalledOnce();
+      expect(instruments[0].patch).toBe('acoustic_grand_piano');
+      expect(instruments[0].start).toHaveBeenCalledOnce();
+      const event = instruments[0].start.mock.calls[0][0];
+      expect(event.note).toBe(70);
+      expect(event.detune).toBeCloseTo(-50);
+      expect(event.time).toBeCloseTo(10.31);
+      expect(event.duration).toBe(0.2);
+      expect(event.velocity).toBe(95);
+      // no synth was built for it
+      expect(fake.instruments).toHaveLength(0);
+      engine.dispose();
+    });
+
+    it('keeps the samples across sessions and unplugs the instrument when a session ends', async () => {
+      const fake = createFakeTone();
+      const { smplr, instruments } = createFakeSmplr();
+      const engine = new ToneAudioEngine(
+        async () => fake.tone as never,
+        async () => smplr as never
+      );
+      const first = await engine.play({ plan: sampledPlan('piano-a') });
+      // gains: the master, then the instrument's own output, then the session's bus
+      const output = fake.gains[1];
+      first.stop();
+      await engine.play({ plan: sampledPlan('piano-a') });
+
+      expect(smplr.Soundfont).toHaveBeenCalledOnce();
+      expect(instruments[0].start).toHaveBeenCalledTimes(2);
+      expect(output.disconnect).toHaveBeenCalled();
+      engine.dispose();
+      expect(instruments[0].stop).toHaveBeenCalled();
+    });
+
+    it('does not cache an instrument whose samples failed to load', async () => {
+      const fake = createFakeTone();
+      const { smplr } = createFakeSmplr({ failFirst: true });
+      const engine = new ToneAudioEngine(
+        async () => fake.tone as never,
+        async () => smplr as never
+      );
+      await expect(engine.play({ plan: sampledPlan('piano-a') })).rejects.toThrow('offline');
+      expect(engine.playing).toBe(false);
+
+      await engine.play({ plan: sampledPlan('piano-a') });
+      expect(smplr.Soundfont).toHaveBeenCalledTimes(2);
+      engine.dispose();
+    });
+
+    it('refuses a SoundFont voice whose file is not open, and starts nothing', async () => {
+      const fake = createFakeTone();
+      const { smplr } = createFakeSmplr();
+      const engine = new ToneAudioEngine(
+        async () => fake.tone as never,
+        async () => smplr as never
+      );
+      const base = plan('sf2-voice');
+      const orphan: SecondsPerformancePlan = {
+        ...base,
+        events: [{ ...base.events[0], instrumentId: 'sf2:missing.sf2%2312|0:0' }],
+      };
+
+      await expect(engine.play({ plan: orphan })).rejects.toThrow('not loaded');
+      expect(engine.playing).toBe(false);
+      engine.dispose();
+    });
+
+    it('never loads the sampler for synth-only plans', async () => {
+      const fake = createFakeTone();
+      const loadSampler = vi.fn(async () => ({}) as never);
+      const engine = new ToneAudioEngine(async () => fake.tone as never, loadSampler);
+      await engine.play({ plan: plan('synth-only') });
+
+      expect(loadSampler).not.toHaveBeenCalled();
       engine.dispose();
     });
   });

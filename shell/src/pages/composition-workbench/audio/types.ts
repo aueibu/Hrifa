@@ -3,9 +3,10 @@ import type { TransportSettings } from '../transport';
 import type { Provenance } from '../model';
 import type { MusicalDuration, MusicalPosition, MusicalTimeline } from '../musicalTime';
 
-export type InstrumentId =
+export type StaticInstrumentId =
   | 'preview.sine'
   | 'preview.triangle'
+  | 'preview.triangle-soft'
   | 'preview.sawtooth'
   | 'preview.square'
   | 'preview.click'
@@ -13,7 +14,22 @@ export type InstrumentId =
   | 'sound.click'
   | 'sound.woodblock'
   | 'sound.drum'
-  | 'sound.tone';
+  | 'sound.tone'
+  | 'gm.piano'
+  | 'gm.guitar'
+  | 'gm.harp'
+  | 'gm.marimba'
+  | 'gm.vibraphone'
+  | 'gm.organ'
+  | 'gm.flute'
+  | 'gm.clarinet'
+  | 'gm.violin'
+  | 'gm.cello';
+
+/** A voice from a SoundFont file the user opened: `sf2:<file>|<bank>:<program>` (see soundfontLibrary.ts). */
+export type SoundfontVoiceId = `sf2:${string}`;
+
+export type InstrumentId = StaticInstrumentId | SoundfontVoiceId;
 
 interface PerformanceEventBase {
   id: string;

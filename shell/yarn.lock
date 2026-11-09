@@ -4349,6 +4349,7 @@ __metadata:
     react-dom: "npm:^19.2.0"
     react-router-dom: "npm:^7.9.4"
     smplr: "npm:^1.0.0"
+    soundfont2: "npm:^0.5.0"
     storybook: "npm:^10.0.0"
     stylelint: "npm:^17.0.0"
     stylelint-config-standard-scss: "npm:^17.0.0"
@@ -5748,6 +5749,13 @@ __metadata:
     ip: "npm:^2.0.0"
     smart-buffer: "npm:^4.2.0"
   checksum: 10c0/43f69dbc9f34fc8220bc51c6eea1c39715ab3cfdb115d6e3285f6c7d1a603c5c75655668a5bbc11e3c7e2c99d60321fb8d7ab6f38cda6a215fadd0d6d0b52130
+  languageName: node
+  linkType: hard
+
+"soundfont2@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "soundfont2@npm:0.5.0"
+  checksum: 10c0/38af85d58e9ca2a1173ee17f7b925fb898b9874b471734ab6b2b17200db876ff4bcd8e5fb2092b20306d4675ea9f8dd590f1208d978330553a564b362e17bb9c
   languageName: node
   linkType: hard
 
