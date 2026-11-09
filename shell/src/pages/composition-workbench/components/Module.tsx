@@ -48,8 +48,14 @@ export function Module({ name, status, output, footer, onReset, children }: Modu
 export function ModuleOutput({
   name,
   packet,
+  stacked,
   children,
-}: PropsWithChildren<{ name: string; packet: DataPacket }>) {
+}: PropsWithChildren<{
+  name: string;
+  packet: DataPacket;
+  /** Name above details, for narrow places such as the inspector; the default is one line. */
+  stacked?: boolean;
+}>) {
   const domain = packet.domain === 'pitchClass' ? 'pitch-class' : packet.domain;
   const role =
     packet.role === 'interOnset'
@@ -74,6 +80,21 @@ export function ModuleOutput({
     : extent !== undefined
       ? `${extent} ${unit}${extent === 1 ? '' : 's'}`
       : '';
+  if (stacked) {
+    return (
+      <div className={classes.outputStacked}>
+        <Text size="xs" fw={600}>
+          {name}
+        </Text>
+        <Text size="xs" c="dimmed">
+          {description} | {packet.items.length} items
+          {extentDescription ? ` | ${extentDescription}` : ''}
+          {start ? ` | ${start}` : ''}
+        </Text>
+        {children}
+      </div>
+    );
+  }
   return (
     <Group justify="space-between" gap="xs" wrap="nowrap">
       <Group gap="xs" wrap="nowrap" className={classes.outputSummary}>

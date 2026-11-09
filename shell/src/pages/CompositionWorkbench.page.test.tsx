@@ -159,6 +159,24 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByRole('heading', { name: 'Interference', level: 2 })).toBeInTheDocument();
   }, 15_000);
 
+  it('keeps a module’s setup controls in the inspector, and reachable when it is hidden', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const inspector = screen
+      .getByRole('button', { name: /^Module$/ })
+      .closest('[class*="_part_"]') as HTMLElement;
+
+    // Setup (preview volume) lives in the inspector's Module part; shaping stays in the panel.
+    expect(
+      within(inspector).getByRole('slider', { name: 'Interference preview volume' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Generator 1 pattern' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Hide inspector' }));
+    // With the inspector hidden the same controls fall back into the module panel.
+    expect(screen.getByRole('slider', { name: 'Interference preview volume' })).toBeInTheDocument();
+  }, 15_000);
+
   it('opens a project saved with lane and row placements', () => {
     localStorage.setItem(
       compositionStateKeys.compositionInstances,

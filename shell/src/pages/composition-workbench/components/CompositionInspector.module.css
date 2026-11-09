@@ -20,6 +20,18 @@
   width: 100%;
 }
 
+/* Empty until the active module portals its setup controls in. */
+.moduleSlot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.moduleSlot:not(:empty) {
+  border-top: 1px solid var(--border);
+  padding-top: var(--mantine-spacing-xs);
+}
+
 .partBody {
   border-top: 1px solid var(--border);
   padding: var(--mantine-spacing-xs);

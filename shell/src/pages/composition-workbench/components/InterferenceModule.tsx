@@ -4,15 +4,12 @@ import {
   Alert,
   Badge,
   Button,
-  Group,
   Select,
   Stack,
   Switch,
   Text,
   TextInput,
-  Title,
 } from '@mantine/core';
-import { Surface } from '../../../components/Surface/Surface';
 import { volumePercentToGain } from '../audio';
 import { createInterferencePreviewPlan, GROUPING_BUS } from '../audio/performancePlans';
 import { transportRhythmContext } from '../rhythmRealization';
@@ -42,7 +39,9 @@ import {
 import { useCompositionSettings } from '../compositionSettings';
 import { pulseSeconds } from '../transport';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
-import { Module, ModuleOutput, ModuleSection } from './Module';
+import { ModuleOutput } from './Module';
+import { ModuleDevice } from './ModuleDevice';
+import { InspectorSection, ModuleInspectorContent } from './ModuleHost';
 import { useModulePreview } from '../useModulePreview';
 import { DurationStrip } from './DurationStrip';
 import { Playhead } from './Playhead';
@@ -274,142 +273,113 @@ export function InterferenceModule({
     preview.setStatus('Interference module reset.');
   }
 
-  return (
-    <Surface className={classes.interferenceSurface}>
-      <div className={classes.interferenceLayout}>
-        <div className={classes.resultInspector}>
-          <Group justify="space-between" align="start" mb="md">
-            <div>
-              <Title order={2} size="h3">
-                {instanceLabel}
-              </Title>
-              <Text c="dimmed" size="sm">
-                Resultant {patterns.map(formatGeneratorPattern).join(' + ')}
-              </Text>
-            </div>
-            {generated.result && (
-              <Group gap="xs">
-                <Badge variant="outline">LCM {generated.result.recurrence}</Badge>
-                <Badge variant="outline">{generated.result.attacks.length} attacks</Badge>
-              </Group>
-            )}
-          </Group>
-          {generated.error ? (
-            <Alert color="red" title="No resultant">
-              {generated.error}
-            </Alert>
-          ) : (
-            generated.result &&
-            patterns.length > 1 && (
-              <Stack gap="lg">
-                <div>
-                  <Text fw={600} size="sm">
-                    Grouping
-                  </Text>
-                  <Text size="sm">{grouping?.label}</Text>
-                  <Text size="xs" c="dimmed">
-                    {grouping?.description}
-                  </Text>
-                </div>
-
-                <DurationStrip
-                  label="Resultant durations"
-                  durations={generated.result.durations}
-                  cyclic={false}
-                  showSum
-                  blockTitle={(index, duration) =>
-                    `Attack ${generated.result.attacks[index].time}; duration ${duration}`
-                  }
-                  overlay={
-                    grouping &&
-                    Array.from(
-                      { length: Math.floor((generated.result.recurrence - 1) / grouping.units) },
-                      (_, index) => (
-                        <span
-                          className={classes.measureBoundary}
-                          key={index}
-                          style={{
-                            left: `${((index + 1) * grouping.units * 100) / generated.result.recurrence}%`,
-                          }}
-                        />
-                      )
-                    )
-                  }
-                  playhead={{ sourceId: instanceId, unitSeconds: pulseSeconds(settings.transport) }}
+  const view = generated.error ? (
+    <Alert color="red" title="No resultant">
+      {generated.error}
+    </Alert>
+  ) : (
+    generated.result &&
+    patterns.length > 1 && (
+      <>
+        <DurationStrip
+          label="Resultant durations"
+          durations={generated.result.durations}
+          cyclic={false}
+          showSum
+          blockTitle={(index, duration) =>
+            `Attack ${generated.result.attacks[index].time}; duration ${duration}`
+          }
+          overlay={
+            grouping &&
+            Array.from(
+              { length: Math.floor((generated.result.recurrence - 1) / grouping.units) },
+              (_, index) => (
+                <span
+                  className={classes.measureBoundary}
+                  key={index}
+                  style={{
+                    left: `${((index + 1) * grouping.units * 100) / generated.result.recurrence}%`,
+                  }}
                 />
-
-                <div>
-                  <Text fw={600} size="sm" mb={4}>
-                    Generator attacks
-                  </Text>
-                  {generated.result.recurrence <= 128 ? (
-                    <Stack gap={3}>
-                      {patterns.map((pattern, generatorIndex) => {
-                        const attackTimes = new Set(
-                          generatorAttackTimes(pattern, generated.result.recurrence)
-                        );
-                        return (
-                          <div className={classes.attackLane} key={drafts[generatorIndex].id}>
-                            <Text ff="monospace" size="xs">
-                              G{generatorIndex + 1}
-                            </Text>
-                            <div
-                              className={classes.attackCells}
-                              aria-label={`Generator ${generatorIndex + 1} pattern ${pattern.join(' + ')}; period ${generatorPeriod(pattern)}`}
-                            >
-                              {Array.from({ length: generated.result.recurrence }, (_, time) => (
-                                <span key={time} data-active={attackTimes.has(time)} />
-                              ))}
-                              <Playhead
-                                sourceId={instanceId}
-                                unitSeconds={pulseSeconds(settings.transport)}
-                                length={generated.result.recurrence}
-                                cyclic={false}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </Stack>
-                  ) : (
-                    <Text size="xs" c="dimmed">
-                      The {generated.result.recurrence}-unit attack grid is hidden above 128 units;
-                      the exact durations remain available above.
-                    </Text>
-                  )}
-                </div>
-              </Stack>
+              )
             )
+          }
+          playhead={{ sourceId: instanceId, unitSeconds: pulseSeconds(settings.transport) }}
+        />
+
+        <div>
+          <Text fw={600} size="xs" mb={4}>
+            Generator attacks
+          </Text>
+          {generated.result.recurrence <= 128 ? (
+            <Stack gap={3}>
+              {patterns.map((pattern, generatorIndex) => {
+                const attackTimes = new Set(
+                  generatorAttackTimes(pattern, generated.result.recurrence)
+                );
+                return (
+                  <div className={classes.attackLane} key={drafts[generatorIndex].id}>
+                    <Text ff="monospace" size="xs">
+                      G{generatorIndex + 1}
+                    </Text>
+                    <div
+                      className={classes.attackCells}
+                      aria-label={`Generator ${generatorIndex + 1} pattern ${pattern.join(' + ')}; period ${generatorPeriod(pattern)}`}
+                    >
+                      {Array.from({ length: generated.result.recurrence }, (_, time) => (
+                        <span key={time} data-active={attackTimes.has(time)} />
+                      ))}
+                      <Playhead
+                        sourceId={instanceId}
+                        unitSeconds={pulseSeconds(settings.transport)}
+                        length={generated.result.recurrence}
+                        cyclic={false}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </Stack>
+          ) : (
+            <Text size="xs" c="dimmed">
+              The {generated.result.recurrence}-unit attack grid is hidden above 128 units; the
+              exact durations remain available above.
+            </Text>
           )}
         </div>
+      </>
+    )
+  );
 
-        <Module
-          name={instanceLabel}
-          status={
-            generated.result ? `LCM ${generated.result.recurrence}` : 'Needs valid generators'
-          }
-          onReset={resetInterference}
-          output={
-            publishedOutputs.length ? (
-              <Stack gap="xs">
-                {publishedOutputs.map((output) => (
-                  <ModuleOutput
-                    key={output.ref.port}
-                    name={output.label.replace(`${instanceLabel} · `, '')}
-                    packet={output.packet}
-                  />
-                ))}
-              </Stack>
-            ) : undefined
-          }
-          footer={
-            <Text size="xs" c="dimmed" truncate aria-live="polite">
-              {preview.status ||
-                'Plays at the transport tempo; volume and click controls stay live.'}
-            </Text>
-          }
-        >
-          <ModuleSection label="Generators" grow>
+  return (
+    <ModuleDevice
+      name={instanceLabel}
+      status={`Resultant ${patterns.map(formatGeneratorPattern).join(' + ')}`}
+      badges={
+        generated.result && (
+          <>
+            <Badge variant="outline">LCM {generated.result.recurrence}</Badge>
+            <Badge variant="outline">{generated.result.attacks.length} attacks</Badge>
+          </>
+        )
+      }
+      actions={
+        <>
+          <Button onClick={playPreview}>▶ Preview</Button>
+          <Button variant="default" onClick={() => preview.stop()}>
+            ■ Stop
+          </Button>
+        </>
+      }
+      onReset={resetInterference}
+      footer={
+        <Text size="xs" c="dimmed" truncate aria-live="polite">
+          {preview.status || 'Plays at the transport tempo; volume and click controls stay live.'}
+        </Text>
+      }
+      controls={
+        <>
+          <InspectorSection label="Generators">
             <div className={classes.generatorTable}>
               <div className={classes.generatorTableHeader} aria-hidden="true">
                 <span>#</span>
@@ -425,7 +395,6 @@ export function InterferenceModule({
                       {index + 1}
                     </Text>
                     <TextInput
-                      size="xs"
                       aria-label={`${draft.label} pattern`}
                       title={parsed.error ?? 'Repeating impulse durations'}
                       value={draft.valueText}
@@ -446,7 +415,6 @@ export function InterferenceModule({
                     />
                     <ActionIcon
                       variant="subtle"
-                      size="sm"
                       aria-label={`Remove ${draft.label}`}
                       disabled={drafts.length <= 2}
                       onClick={() => removeGenerator(draft.id)}
@@ -456,30 +424,27 @@ export function InterferenceModule({
                   </div>
                 ))}
               </div>
-              <Button variant="subtle" size="compact-xs" onClick={addGenerator}>
+              <Button variant="subtle" onClick={addGenerator}>
                 + Generator
               </Button>
             </div>
-          </ModuleSection>
+          </InspectorSection>
 
-          <ModuleSection label="Grouping">
-            <Stack gap="xs">
-              <Select
-                size="xs"
-                aria-label="Grouping"
-                value={grouping?.id ?? null}
-                data={groupings.map((option) => ({ value: option.id, label: option.label }))}
-                onChange={(value) => setGroupingId(value ?? 'recurrence')}
-                disabled={!groupings.length}
-              />
-              <Text size="xs" c="dimmed" className={classes.moduleHint}>
-                {grouping?.description ?? 'Choose how the recurrence is divided.'}
-              </Text>
-            </Stack>
-          </ModuleSection>
+          <InspectorSection label="Grouping">
+            <Select
+              aria-label="Grouping"
+              value={grouping?.id ?? null}
+              data={groupings.map((option) => ({ value: option.id, label: option.label }))}
+              onChange={(value) => setGroupingId(value ?? 'recurrence')}
+              disabled={!groupings.length}
+            />
+            <Text size="xs" c="dimmed" className={classes.moduleHint}>
+              {grouping?.description ?? 'Choose how the recurrence is divided.'}
+            </Text>
+          </InspectorSection>
 
-          <ModuleSection label="Preview">
-            <Stack gap="xs">
+          <ModuleInspectorContent>
+            <InspectorSection label="Preview">
               <VolumeControl
                 accessibleLabel="Interference preview volume"
                 label="Volume"
@@ -487,24 +452,29 @@ export function InterferenceModule({
                 onChange={setPreviewVolume}
               />
               <Switch
-                size="xs"
                 label="Click the grouping"
                 description="Ticks each grouping on the metronome's tertiary voice, on top of the meter click, at the transport's click volume."
                 checked={groupingClick}
                 onChange={(event) => setGroupingClick(event.currentTarget.checked)}
               />
-              <Group gap="xs" wrap="nowrap">
-                <Button size="compact-sm" onClick={playPreview}>
-                  ▶ Preview
-                </Button>
-                <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
-                  ■ Stop
-                </Button>
-              </Group>
-            </Stack>
-          </ModuleSection>
-        </Module>
-      </div>
-    </Surface>
+            </InspectorSection>
+            {publishedOutputs.length > 0 && (
+              <InspectorSection label="Outputs">
+                {publishedOutputs.map((output) => (
+                  <ModuleOutput
+                    key={output.ref.port}
+                    name={output.label.replace(`${instanceLabel} · `, '')}
+                    packet={output.packet}
+                    stacked
+                  />
+                ))}
+              </InspectorSection>
+            )}
+          </ModuleInspectorContent>
+        </>
+      }
+    >
+      {view}
+    </ModuleDevice>
   );
 }

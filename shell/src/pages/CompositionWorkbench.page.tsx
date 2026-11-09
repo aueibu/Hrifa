@@ -20,6 +20,10 @@ import { ArithmeticModule } from './composition-workbench/components/ArithmeticM
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
+import {
+  ModuleActiveContext,
+  ModuleInspectorSlotContext,
+} from './composition-workbench/components/ModuleHost';
 import { SplitStage, clampSplit } from './composition-workbench/components/SplitStage';
 import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
 import { FractioningModule } from './composition-workbench/components/FractioningModule';
@@ -225,9 +229,11 @@ export function CompositionWorkbenchPage() {
     acceptsCompositionInstances,
     migrateCompositionInstances
   );
+  // The inspector element the active module's setup controls are portaled into.
+  const [moduleInspectorSlot, setModuleInspectorSlot] = useState<HTMLElement | null>(null);
   const [canvasSplit, setCanvasSplit] = usePersistentState<number>(
     compositionStateKeys.canvasSplit,
-    0.5,
+    0.6,
     (value): value is number => typeof value === 'number' && Number.isFinite(value)
   );
   const [detailCollapsed, setDetailCollapsed] = usePersistentState<boolean>(
@@ -636,6 +642,7 @@ export function CompositionWorkbenchPage() {
                         instances={compositionInstances}
                         routes={moduleRouteStates}
                         onRemoveModule={removeCompositionModule}
+                        onModuleSlot={setModuleInspectorSlot}
                         onRouteTreatment={updateRouteTreatment}
                       />
                     </div>
@@ -674,6 +681,7 @@ export function CompositionWorkbenchPage() {
                       />
                     }
                     bottom={
+                      <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
                       <div className={classes.detailBody}>
                   {compositionInstances.map((instance) => {
                     const instanceLabel = compositionInstanceLabel(instance, compositionInstances);
@@ -681,7 +689,14 @@ export function CompositionWorkbenchPage() {
                       moduleRouteStates[instance.id] ??
                       createDefaultModuleRouteState(routedModulePorts[instance.moduleId] ?? []);
                     return (
-                      <div key={instance.id} hidden={activeCompositionInstanceId !== instance.id}>
+                      <div
+                        key={instance.id}
+                        className={classes.moduleHost}
+                        hidden={activeCompositionInstanceId !== instance.id}
+                      >
+                        <ModuleActiveContext.Provider
+                          value={activeCompositionInstanceId === instance.id}
+                        >
                         {instance.moduleId === 'interference' ? (
                           <InterferenceModule
                             instanceId={instance.id}
@@ -770,6 +785,7 @@ export function CompositionWorkbenchPage() {
                             onOutputsChange={reconcileCompositionOutputs}
                           />
                         )}
+                        </ModuleActiveContext.Provider>
                       </div>
                     );
                   })}
@@ -784,6 +800,7 @@ export function CompositionWorkbenchPage() {
                     </Surface>
                   )}
                       </div>
+                      </ModuleInspectorSlotContext.Provider>
                     }
                   />
                 </div>

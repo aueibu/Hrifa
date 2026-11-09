@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Checkbox,
-  Group,
   NumberInput,
   Radio,
   SegmentedControl,
@@ -13,10 +12,8 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from '@mantine/core';
-import { Surface } from '../../../components/Surface/Surface';
 import {
   createRhythmPreviewPlan,
   musicalPlanSeconds,
@@ -64,7 +61,9 @@ import {
 } from '../usePersistentState';
 import { useModulePreview } from '../useModulePreview';
 import { DurationStrip } from './DurationStrip';
-import { Module, ModuleOutput, ModuleSection } from './Module';
+import { ModuleOutput } from './Module';
+import { ModuleDevice } from './ModuleDevice';
+import { InspectorSection, ModuleInspectorContent } from './ModuleHost';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -565,128 +564,268 @@ export function HouseholderModule({
   const inputDurations = rhythm?.items.map((item) => Number(item.value)) ?? [];
   const inputOrigin = rhythmOrigin(rhythm);
 
-  return (
-    <Surface className={classes.interferenceSurface}>
-      <div className={classes.interferenceLayout}>
-        <div className={classes.resultInspector}>
-          <Group justify="space-between" align="start" mb="md">
-            <div>
-              <Title order={2} size="h3">
-                {instanceLabel}
-              </Title>
-              <Text c="dimmed" size="sm">
-                {settings.mode === 'reflect'
-                  ? 'Reflects the duration vector along an axis, keeping attack count and total span.'
-                  : 'Re-places attacks on the slot grid to change where they land, keeping attack count and total span.'}
+  const view = computed.error ? (
+    <Alert color="red" title="No candidates">
+      {computed.error}
+    </Alert>
+  ) : (
+    <>
+      <DurationStrip
+        label="Input"
+        durations={inputDurations}
+        origin={inputOrigin}
+        cyclic={cyclic}
+        playhead={{
+          sourceId: instanceId,
+          unitSeconds: pulseSeconds(compositionSettings.transport),
+          visible: playingLayers.includes('input'),
+        }}
+      />
+      {selected && (
+        <DurationStrip
+          label={`Candidate ${clampedIndex + 1}`}
+          durations={selected.durations}
+          origin={selected.origin ?? inputOrigin}
+          cyclic={cyclic}
+          playhead={{
+            sourceId: instanceId,
+            unitSeconds: pulseSeconds(compositionSettings.transport),
+            visible: playingLayers.includes('candidate'),
+          }}
+        />
+      )}
+      {computed.warnings.length > 0 && (
+        <Alert color="yellow" title="Householder report" p="xs">
+          <Stack gap={4}>
+            {computed.warnings.map((warning) => (
+              <Text size="xs" key={warning}>
+                {warning}
               </Text>
-            </div>
-            <Group gap="xs">
-              <Badge variant="outline">{computed.candidates.length} candidates</Badge>
-              {computed.search && <Badge variant="outline">{computed.search} search</Badge>}
-            </Group>
-          </Group>
-
-          {computed.error ? (
-            <Alert color="red" title="No candidates">
-              {computed.error}
-            </Alert>
-          ) : (
-            <Stack gap="md">
-              <DurationStrip
-                label="Input"
-                durations={inputDurations}
-                origin={inputOrigin}
-                cyclic={cyclic}
-                playhead={{
-                  sourceId: instanceId,
-                  unitSeconds: pulseSeconds(compositionSettings.transport),
-                  visible: playingLayers.includes('input'),
-                }}
-              />
-              {selected && (
-                <DurationStrip
-                  label={`Candidate ${clampedIndex + 1}`}
-                  durations={selected.durations}
-                  origin={selected.origin ?? inputOrigin}
-                  cyclic={cyclic}
-                  playhead={{
-                    sourceId: instanceId,
-                    unitSeconds: pulseSeconds(compositionSettings.transport),
-                    visible: playingLayers.includes('candidate'),
-                  }}
-                />
-              )}
-              {computed.warnings.length > 0 && (
-                <Alert color="yellow" title="Householder report">
-                  <Stack gap={4}>
-                    {computed.warnings.map((warning) => (
-                      <Text size="sm" key={warning}>
-                        {warning}
-                      </Text>
-                    ))}
-                  </Stack>
-                </Alert>
-              )}
-              <Radio.Group
-                label="Candidates"
-                description={
-                  settings.mode === 'reflect'
-                    ? 'Full requested reflection first, then steps back toward the input.'
-                    : 'Best match first: closest to each axis target, then least movement.'
-                }
-                value={String(clampedIndex)}
-                onChange={(value) => setSelectedIndex(Number(value))}
-              >
-                <Stack gap="xs" mt="xs">
-                  {computed.candidates.map((candidate, index) => (
-                    <Radio
-                      key={index}
-                      value={String(index)}
-                      label={
-                        <Text ff="monospace" size="sm">
-                          {candidate.durations.join(' ')}
-                          {(candidate.origin ?? inputOrigin) > 0
-                            ? ` · starts +${candidate.origin ?? inputOrigin}`
-                            : ''}
-                          {candidate.isInput ? ' (input)' : ''}
-                        </Text>
-                      }
-                      description={candidateDescription(candidate, settings.mode)}
-                    />
-                  ))}
-                </Stack>
-              </Radio.Group>
-            </Stack>
-          )}
-        </div>
-
-        <Module
-          name={instanceLabel}
-          status={selected ? `${computed.candidates.length} candidates` : 'Needs a rhythm'}
-          onReset={resetModule}
-          output={
-            publishedOutputs.length ? (
-              <Stack gap="xs">
-                {publishedOutputs.map((output) => (
-                  <ModuleOutput
-                    key={output.ref.port}
-                    name={output.label.replace(`${instanceLabel} · `, '')}
-                    packet={output.packet}
-                  />
-                ))}
-              </Stack>
-            ) : undefined
+            ))}
+          </Stack>
+        </Alert>
+      )}
+      {/* A fixed-height list with its own scroll: many candidates never lengthen the panel. */}
+      <div className={classes.candidateList}>
+        <Radio.Group
+          label="Candidates"
+          description={
+            settings.mode === 'reflect'
+              ? 'Full requested reflection first, then steps back toward the input.'
+              : 'Best match first: closest to each axis target, then least movement.'
           }
-          footer={
-            <Text size="xs" c="dimmed" truncate aria-live="polite">
-              {preview.status || 'Preview controls stay live.'}
-            </Text>
-          }
+          value={String(clampedIndex)}
+          onChange={(value) => setSelectedIndex(Number(value))}
         >
-          <ModuleSection label="Inputs">
-            <Stack gap="xs">
+          <Stack gap={6} mt="xs">
+            {computed.candidates.map((candidate, index) => (
+              <Radio
+                key={index}
+                value={String(index)}
+                label={
+                  <Text ff="monospace" size="xs">
+                    {candidate.durations.join(' ')}
+                    {(candidate.origin ?? inputOrigin) > 0
+                      ? ` · starts +${candidate.origin ?? inputOrigin}`
+                      : ''}
+                    {candidate.isInput ? ' (input)' : ''}
+                  </Text>
+                }
+                description={candidateDescription(candidate, settings.mode)}
+              />
+            ))}
+          </Stack>
+        </Radio.Group>
+      </div>
+    </>
+  );
+
+  return (
+    <ModuleDevice
+      name={instanceLabel}
+      badges={
+        <>
+          <Badge variant="outline">{computed.candidates.length} candidates</Badge>
+          {computed.search && <Badge variant="outline">{computed.search} search</Badge>}
+        </>
+      }
+      actions={
+        <>
+          <Button
+            disabled={!selected}
+            onClick={() =>
+              selected && playPreview([candidateLayer(selected)], `candidate ${clampedIndex + 1}`)
+            }
+          >
+            ▶ Candidate
+          </Button>
+          <Button
+            variant="default"
+            disabled={!inputDurations.length}
+            onClick={() => playPreview([inputLayer()], 'the input')}
+          >
+            ▶ Input
+          </Button>
+          <Tooltip label="Input and candidate together, each on its own sound">
+            <Button
+              variant="default"
+              disabled={!selected || !inputDurations.length}
+              onClick={() =>
+                selected &&
+                playPreview(
+                  [inputLayer(), candidateLayer(selected)],
+                  `the input against candidate ${clampedIndex + 1}`
+                )
+              }
+            >
+              ▶ A/B
+            </Button>
+          </Tooltip>
+          <Button variant="default" onClick={() => preview.stop()}>
+            ■
+          </Button>
+        </>
+      }
+      onReset={resetModule}
+      footer={
+        <Text size="xs" c="dimmed" truncate aria-live="polite">
+          {preview.status ||
+            (settings.mode === 'reflect'
+              ? 'Reflects the duration vector along an axis, keeping attack count and total span.'
+              : 'Re-places attacks on the slot grid to change where they land, keeping attack count and total span.')}
+        </Text>
+      }
+      controls={
+        <>
+          <InspectorSection label="Mode">
+            <SegmentedControl
+              fullWidth
+              aria-label="Householder mode"
+              data={[
+                { value: 'reflect', label: 'Reflect' },
+                { value: 'metric', label: 'Metric' },
+              ]}
+              value={settings.mode}
+              onChange={(value) => {
+                update({ mode: value as HouseholderMode });
+                setSelectedIndex(0);
+              }}
+            />
+            {settings.mode === 'reflect' ? (
+              <>
+                <Select
+                  label="Axis"
+                  data={reflectPresetOptions}
+                  value={settings.reflectPreset}
+                  allowDeselect={false}
+                  disabled={axisRouted}
+                  onChange={(value) => value && update({ reflectPreset: value as ReflectAxisPreset })}
+                />
+                {settings.reflectPreset === 'custom' && !axisRouted && (
+                  <TextInput
+                    label="Custom contour"
+                    description="One value per attack, cycled."
+                    value={settings.customAxis}
+                    onChange={(event) => update({ customAxis: event.currentTarget.value })}
+                  />
+                )}
+                <CoefficientSlider
+                  label="Axis coefficient"
+                  value={settings.reflectCoefficient}
+                  onChange={(value) => update({ reflectCoefficient: value })}
+                />
+                <NumberInput
+                  label="Morph steps"
+                  min={1}
+                  max={8}
+                  value={settings.reflectSteps}
+                  onChange={(value) =>
+                    update({
+                      reflectSteps: Math.max(1, Math.min(8, Math.floor(Number(value) || 1))),
+                    })
+                  }
+                />
+              </>
+            ) : (
+              <>
+                {(['accent', 'position'] as MetricAxisKey[]).map((key) => (
+                  <Stack gap={4} key={key}>
+                    <Checkbox
+                      label={metricAxisLabels[key]}
+                      checked={settings[key].enabled}
+                      onChange={(event) =>
+                        update({
+                          [key]: { ...settings[key], enabled: event.currentTarget.checked },
+                        })
+                      }
+                    />
+                    {settings[key].enabled && (
+                      <>
+                        {key === 'accent' && (
+                          <TextInput
+                            label="Accent pattern"
+                            description="Weight per grid slot, repeating."
+                            value={settings.accentPattern}
+                            onChange={(event) => update({ accentPattern: event.currentTarget.value })}
+                          />
+                        )}
+                        <CoefficientSlider
+                          label={`${metricAxisLabels[key]} coefficient`}
+                          value={settings[key].coefficient}
+                          onChange={(value) =>
+                            update({ [key]: { ...settings[key], coefficient: value } })
+                          }
+                        />
+                        <NumberInput
+                          label="Weight"
+                          min={0}
+                          step={0.25}
+                          decimalScale={2}
+                          value={settings[key].weight}
+                          onChange={(value) =>
+                            update({
+                              [key]: {
+                                ...settings[key],
+                                weight: Math.max(0, Number(value) || 0),
+                              },
+                            })
+                          }
+                        />
+                      </>
+                    )}
+                  </Stack>
+                ))}
+                <Checkbox
+                  label="Keep the start where the input's is"
+                  description="Off lets candidates begin off the beat."
+                  checked={settings.pinStart ?? false}
+                  onChange={(event) => update({ pinStart: event.currentTarget.checked })}
+                />
+                <NumberInput
+                  label="Keep identity"
+                  description="Penalty for changing the distances between attacks. Favours displacing the whole rhythm over reshaping it."
+                  min={0}
+                  step={0.25}
+                  decimalScale={2}
+                  value={identityWeight}
+                  onChange={(value) => update({ identity: Math.max(0, Number(value) || 0) })}
+                />
+                <NumberInput
+                  label="Stay close"
+                  description="Penalty for moving attacks away from the input."
+                  min={0}
+                  step={0.05}
+                  decimalScale={2}
+                  value={settings.closeness}
+                  onChange={(value) => update({ closeness: Math.max(0, Number(value) || 0) })}
+                />
+              </>
+            )}
+          </InspectorSection>
+
+          <ModuleInspectorContent>
+            <InspectorSection label="Inputs">
               <Select
-                size="xs"
                 label="Rhythm source"
                 placeholder="Connect a rhythm"
                 clearable
@@ -696,7 +835,6 @@ export function HouseholderModule({
               />
               {settings.mode === 'reflect' && (
                 <Select
-                  size="xs"
                   label="Axis source"
                   description="Optional. A connected axis replaces the preset."
                   placeholder="Use the preset below"
@@ -706,155 +844,10 @@ export function HouseholderModule({
                   onChange={(value) => onBind('axis', value ? parseOutputRef(value) : null)}
                 />
               )}
-            </Stack>
-          </ModuleSection>
+            </InspectorSection>
 
-          <ModuleSection label="Mode" grow>
-            <Stack gap="xs">
-              <SegmentedControl
-                size="xs"
-                fullWidth
-                aria-label="Householder mode"
-                data={[
-                  { value: 'reflect', label: 'Reflect' },
-                  { value: 'metric', label: 'Metric' },
-                ]}
-                value={settings.mode}
-                onChange={(value) => {
-                  update({ mode: value as HouseholderMode });
-                  setSelectedIndex(0);
-                }}
-              />
-              {settings.mode === 'reflect' ? (
-                <>
-                  <Select
-                    size="xs"
-                    label="Axis"
-                    data={reflectPresetOptions}
-                    value={settings.reflectPreset}
-                    allowDeselect={false}
-                    disabled={axisRouted}
-                    onChange={(value) =>
-                      value && update({ reflectPreset: value as ReflectAxisPreset })
-                    }
-                  />
-                  {settings.reflectPreset === 'custom' && !axisRouted && (
-                    <TextInput
-                      size="xs"
-                      label="Custom contour"
-                      description="One value per attack, cycled."
-                      value={settings.customAxis}
-                      onChange={(event) => update({ customAxis: event.currentTarget.value })}
-                    />
-                  )}
-                  <CoefficientSlider
-                    label="Axis coefficient"
-                    value={settings.reflectCoefficient}
-                    onChange={(value) => update({ reflectCoefficient: value })}
-                  />
-                  <NumberInput
-                    size="xs"
-                    label="Morph steps"
-                    min={1}
-                    max={8}
-                    value={settings.reflectSteps}
-                    onChange={(value) =>
-                      update({
-                        reflectSteps: Math.max(1, Math.min(8, Math.floor(Number(value) || 1))),
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <>
-                  {(['accent', 'position'] as MetricAxisKey[]).map((key) => (
-                    <Stack gap={4} key={key}>
-                      <Checkbox
-                        size="xs"
-                        label={metricAxisLabels[key]}
-                        checked={settings[key].enabled}
-                        onChange={(event) =>
-                          update({
-                            [key]: { ...settings[key], enabled: event.currentTarget.checked },
-                          })
-                        }
-                      />
-                      {settings[key].enabled && (
-                        <>
-                          {key === 'accent' && (
-                            <TextInput
-                              size="xs"
-                              label="Accent pattern"
-                              description="Weight per grid slot, repeating."
-                              value={settings.accentPattern}
-                              onChange={(event) =>
-                                update({ accentPattern: event.currentTarget.value })
-                              }
-                            />
-                          )}
-                          <CoefficientSlider
-                            label={`${metricAxisLabels[key]} coefficient`}
-                            value={settings[key].coefficient}
-                            onChange={(value) =>
-                              update({ [key]: { ...settings[key], coefficient: value } })
-                            }
-                          />
-                          <NumberInput
-                            size="xs"
-                            label="Weight"
-                            min={0}
-                            step={0.25}
-                            decimalScale={2}
-                            value={settings[key].weight}
-                            onChange={(value) =>
-                              update({
-                                [key]: {
-                                  ...settings[key],
-                                  weight: Math.max(0, Number(value) || 0),
-                                },
-                              })
-                            }
-                          />
-                        </>
-                      )}
-                    </Stack>
-                  ))}
-                  <Checkbox
-                    size="xs"
-                    label="Keep the start where the input's is"
-                    description="Off lets candidates begin off the beat."
-                    checked={settings.pinStart ?? false}
-                    onChange={(event) => update({ pinStart: event.currentTarget.checked })}
-                  />
-                  <NumberInput
-                    size="xs"
-                    label="Keep identity"
-                    description="Penalty for changing the distances between attacks. Favours displacing the whole rhythm over reshaping it."
-                    min={0}
-                    step={0.25}
-                    decimalScale={2}
-                    value={identityWeight}
-                    onChange={(value) => update({ identity: Math.max(0, Number(value) || 0) })}
-                  />
-                  <NumberInput
-                    size="xs"
-                    label="Stay close"
-                    description="Penalty for moving attacks away from the input."
-                    min={0}
-                    step={0.05}
-                    decimalScale={2}
-                    value={settings.closeness}
-                    onChange={(value) => update({ closeness: Math.max(0, Number(value) || 0) })}
-                  />
-                </>
-              )}
-            </Stack>
-          </ModuleSection>
-
-          <ModuleSection label="Grid">
-            <Stack gap="xs">
+            <InspectorSection label="Grid">
               <Select
-                size="xs"
                 label="Resolution"
                 data={gridOptions}
                 value={String(settings.grid)}
@@ -862,7 +855,6 @@ export function HouseholderModule({
                 onChange={(value) => value && update({ grid: Number(value) })}
               />
               <NumberInput
-                size="xs"
                 label="Minimum duration (grid steps)"
                 min={1}
                 value={settings.minUnits}
@@ -870,11 +862,9 @@ export function HouseholderModule({
                   update({ minUnits: Math.max(1, Math.floor(Number(value) || 1)) })
                 }
               />
-            </Stack>
-          </ModuleSection>
+            </InspectorSection>
 
-          <ModuleSection label="Preview">
-            <Stack gap="xs">
+            <InspectorSection label="Preview">
               <div className={classes.moduleParameterRow}>
                 <Text size="xs">Input (A)</Text>
                 <SoundOverrideControl
@@ -901,49 +891,25 @@ export function HouseholderModule({
                 value={previewVolume}
                 onChange={setPreviewVolume}
               />
-              <Group gap="xs" wrap="nowrap">
-                <Button
-                  size="compact-sm"
-                  disabled={!selected}
-                  onClick={() =>
-                    selected &&
-                    playPreview([candidateLayer(selected)], `candidate ${clampedIndex + 1}`)
-                  }
-                >
-                  ▶ Candidate
-                </Button>
-                <Button
-                  size="compact-sm"
-                  variant="default"
-                  disabled={!inputDurations.length}
-                  onClick={() => playPreview([inputLayer()], 'the input')}
-                >
-                  ▶ Input
-                </Button>
-                <Tooltip label="Input and candidate together, each on its own sound">
-                  <Button
-                    size="compact-sm"
-                    variant="default"
-                    disabled={!selected || !inputDurations.length}
-                    onClick={() =>
-                      selected &&
-                      playPreview(
-                        [inputLayer(), candidateLayer(selected)],
-                        `the input against candidate ${clampedIndex + 1}`
-                      )
-                    }
-                  >
-                    ▶ A/B
-                  </Button>
-                </Tooltip>
-                <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
-                  ■
-                </Button>
-              </Group>
-            </Stack>
-          </ModuleSection>
-        </Module>
-      </div>
-    </Surface>
+            </InspectorSection>
+
+            {publishedOutputs.length > 0 && (
+              <InspectorSection label="Outputs">
+                {publishedOutputs.map((output) => (
+                  <ModuleOutput
+                    key={output.ref.port}
+                    name={output.label.replace(`${instanceLabel} · `, '')}
+                    packet={output.packet}
+                    stacked
+                  />
+                ))}
+              </InspectorSection>
+            )}
+          </ModuleInspectorContent>
+        </>
+      }
+    >
+      {view}
+    </ModuleDevice>
   );
 }

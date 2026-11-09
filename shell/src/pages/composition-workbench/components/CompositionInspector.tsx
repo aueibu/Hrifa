@@ -27,6 +27,8 @@ interface CompositionInspectorProps {
   instances: CompositionModuleInstance[];
   routes: ModuleRouteStates;
   onRemoveModule(instanceId: string): void;
+  /** Receives the element the active module's setup controls are portaled into. */
+  onModuleSlot(element: HTMLElement | null): void;
   onRouteTreatment(instanceId: string, port: string, treatment: unknown): void;
 }
 
@@ -133,7 +135,11 @@ function ModulePart({
   activeInstanceId,
   instances,
   onRemoveModule,
-}: Pick<CompositionInspectorProps, 'activeInstanceId' | 'instances' | 'onRemoveModule'>) {
+  onModuleSlot,
+}: Pick<
+  CompositionInspectorProps,
+  'activeInstanceId' | 'instances' | 'onRemoveModule' | 'onModuleSlot'
+>) {
   const instance = instances.find((candidate) => candidate.id === activeInstanceId);
   if (!instance) {
     return (
@@ -152,6 +158,8 @@ function ModulePart({
       <Button variant="light" color="red" onClick={() => onRemoveModule(instance.id)}>
         Remove {moduleName}
       </Button>
+      {/* The active module's setup controls are portaled in here; see ModuleHost. */}
+      <div ref={onModuleSlot} className={classes.moduleSlot} />
     </Stack>
   );
 }
@@ -173,7 +181,7 @@ function Part({ label, children }: { label: string; children: ReactNode }) {
           {label}
         </Text>
       </UnstyledButton>
-      <Collapse expanded={expanded}>
+      <Collapse expanded={expanded} keepMounted>
         <div className={classes.partBody}>{children}</div>
       </Collapse>
     </div>

@@ -1,0 +1,84 @@
+.device {
+  background: var(--panel-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.title {
+  min-width: 0;
+}
+
+.indicator {
+  background: var(--mantine-primary-color-filled);
+  border-radius: var(--radius-control);
+  display: block;
+  height: 0.75rem;
+  width: 0.25rem;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* The two columns scroll independently, so the header and footer never leave the panel. */
+.controls,
+.view {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 0.5rem;
+}
+
+.controls {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+/* Strips and lanes keep their natural height; a child that should flex sets its own `flex`. */
+.view > * {
+  flex: none;
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  min-height: 1.5rem;
+  padding: 0.2rem 0.5rem;
+}
+
+@media (max-width: 48rem) {
+  .device {
+    height: auto;
+  }
+
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .controls {
+    border-bottom: 1px solid var(--border);
+    border-right: 0;
+  }
+}
