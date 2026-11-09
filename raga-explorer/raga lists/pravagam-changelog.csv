@@ -1,0 +1,278 @@
+﻿Sheet Row,Raga,Source Page,Fields changed,Old Aroha,Old Avaroha,Old Vakra,Old Ref,New Ref,New Aroha,New Avaroha,New Vakra
+75,Madhukari (Raga 1),[p66],"aroha,avaroha",S M1 G1 M1 P D1,N2 P M1 G1 R1 S N2,Yes,P,P,S M1 G1 M1 P D1 N2,P M1 G1 R1 S N2,Yes
+109,BhinnaPanchamam (Raga 4),[p68],"aroha,avaroha,ref",S R1 G1 R1 M1 P D1 P S,N3 D1 P M1 G1 R1 S P N3 N3,Yes,S,P,S R1 G1 R1 M1 P D1 P N3 N3 S,S N3 D1 P M1 G1 R1 S,Yes
+110,BhinnaPanchamam (Raga 5),[p68],"aroha,avaroha,ref",S R1 G1 G1 R1 M1 P D1 S,N3 D1 M1 G1 G1 R1 S P N3 N3,Yes,S,AC,S R1 G1 G1 R1 M1 P D1 P N3 N3 S,S N3 D1 M1 G1 G1 R1 S,Yes
+178,Veeravikrama (Raga 1),[p71],ref,S R1 G1 M1 P D2 N2 S,S N2 P D2 M1 G1 R1 S,Yes,P,AE,S R1 G1 M1 P D2 N2 S,S N2 P D2 M1 G1 R1 S,Yes
+186,Ghanashyamalangi (Raga 1),[p72],"aroha,avaroha",S G1 M1 P D2 N3 P S,S S N3 D2 P M1 G1 R1 S,Yes,P,P,S G1 M1 P D2 N3 P S S,S N3 D2 P M1 G1 R1 S,Yes
+219,Desyasurati (Raga 1),[p74],"aroha,avaroha",S M1 R1 G1 M1 P D3,N3 P M1 G1 R1 S N3 S,Yes,AE,AE,S M1 R1 G1 M1 P D3 N3,P M1 G1 R1 S N3 S,Yes
+220,Desyasurati (Raga 2),[p74],"aroha,avaroha",S M1 R1 G1 M1 P D3,N3 P M1 G1 R1 S R1 S,Yes,P,P,S M1 R1 G1 M1 P D3 N3,P M1 G1 R1 S R1 S,Yes
+221,Desyasurati (Raga 3),[p74],"aroha,avaroha",S M1 R1 G1 M1 P D3,N3 P M1 G1 R1 S N3,Yes,P,P,S M1 R1 G1 M1 P D3 N3,P M1 G1 R1 S N3,Yes
+259,Chayagowri (Raga 1),[p76],ref,SRMGMPNDNS,SNDPMGMRS,Yes,S,AE,SRMGMPNDNS,SNDPMGMRS,Yes
+401,SamaVasantham (Raga 1),[p81],"avaroha,vakra",S R1 G2 M1 P N2 S,S N2 D1 P M1 G2 R1 S R1,Yes,,R,S R1 G2 M1 P N2 S,S N2 D1 P M1 G2 R1 S,No
+470,MohanaNattai (Raga 2),[p84],ref,SGMPDPMPNNS,SNPDDPMGS,Yes,S,AC,SGMPDPMPNNS,SNPDDPMGS,Yes
+480,Shoka Varali (Raga 2),[p84],"aroha,vakra",SGMNDP,DPMGRS,Yes,AE,AE,SGMN,DPMGRS,No
+606,BhindhuHerali (Raga 1),[p90],"aroha,avaroha,ref",S R1 G2 R1 G2 M1 P D3 M1 S,N3 D3 P M1 G2 R1 S P D3 N3,Yes,S,AJ,S R1 G2 R1 G2 M1 P D3 M1 P D3 N3 S,S N3 D3 P M1 G2 R1 S,Yes
+623,Rupavathi (Raga 1),[p90],"aroha,avaroha",S R1 M1 P P S,S S N3 D3 N3 P M1 G2 S,Yes,AC,AC,S R1 M1 P P S S,S N3 D3 N3 P M1 G2 S,Yes
+643,HejejjeeIsari (Raga 4),[p92],ref,SRGRMGMPDNS,SDNDMGRS,Yes,S,R,SRGRMGMPDNS,SDNDMGRS,Yes
+779,Bhibhasu (Raga 1),[p99],"avaroha,ref,vakra",S R1 G3 P D1 S,S D1 P M1 R1 S S R1 G3 P D1 N3 S S N3 D1 P G3 R1 S P S R1 G3 P D1 S S D1 P G3 R1 S S S R1 G3 P D1 N3 S N3 D1 P G3 R1 S S S R1 S G3 P D1 S S N3 D1 P M1 P D1 P G3 R1 S,Yes,S,AE,S R1 G3 P D1 S,S D1 P M1 R1 S,No
+794,Chaya Gaula (Raga 2),[p99],ref,S R M P D P M P D S N S,S N D D P M G S R S,Yes,S,AC,S R M P D P M P D S N S,S N D D P M G S R S,Yes
+806,Dakka (Raga 1),[p99],ref,S R S G M G P M D N S,S N D M G P M R S,Yes,S,R,S R S G M G P M D N S,S N D M G P M R S,Yes
+884,KamalaPanchamam (Raga 1),[p102],ref,SPMGRGMPDNS,SDPMGRS,Yes,S,R,SPMGRGMPDNS,SDPMGRS,Yes
+894,KarnatakaSaranga (Raga 1),[p102],"aroha,ref",SRGMGPNDMPDS,SDMPMGRS,Yes,S,R,SRGMGPNDMPDNS,SDMPMGRS,Yes
+896,KarnatakaSaranga (Raga 3),[p102],"avaroha,ref",SRGMPNDMPDNS,DSMPMGRS,Yes,S,P,SRGMPNDMPDNS,SDMPMGRS,Yes
+916,Lalitha Panchamam 4,[p103],ref,S R G M P D N S,S N D P M G R S,,L,R,S R G M P D N S,S N D P M G R S,
+933,Mangala Kaisika (Raga 5),[p103],ref,SRGMPMGPDNS,SNDPMGRS,Yes,S,AC,SRGMPMGPDNS,SNDPMGRS,Yes
+935,Mangala Kaisika (Raga 7),[p103],ref,S R1 G3 R1 S M1 G3 M1 P D1,S N3 D1 P M1 G3 R1 G3 R1 S,Yes,0,O,S R1 G3 R1 S M1 G3 M1 P D1,S N3 D1 P M1 G3 R1 G3 R1 S,Yes
+950,MargaSanjivini (Raga 1),[p104],ref,SRGRMPDNPDPS,SNDPMGRS,Yes,S,R,SRGRMPDNPDPS,SNDPMGRS,Yes
+964,Meghavali (Raga 1),[p104],ref,S R1 M1 P D1 N3 S,SNDNPMRMGRGS,Yes,M,R,S R1 M1 P D1 N3 S,SNDNPMRMGRGS,Yes
+973,Nadhanamakriya (Raga 4),[p105],"aroha,avaroha",S R1 M1 G3 M1 P D1,N3 N3 D1 P M1 G3 R1 S,Yes,AE,AE,S R1 M1 G3 M1 P D1 N3,N3 D1 P M1 G3 R1 S,Yes
+983,Padi (Raga 6),[p105],ref,R1 M1 P D1 P N3 S,S N3 P D1 P M1 R1 S,Yes,S,AC,R1 M1 P D1 P N3 S,S N3 P D1 P M1 R1 S,Yes
+996,Parasara (Raga 1),[p105],"aroha,avaroha,ref",S R1 G3 R1 M1 P N3 D1 N3,S N3 D1 G3 R1 S R1 P D1 N3,Yes,S,R,S R1 G3 R1 M1 P N3 D1 N3 P D1 N3 S,S N3 D1 G3 R1 S,Yes
+1000,Parasu (Raga 4),[p105],ref,S M1 G3 M1 P M1 P D1 N3 S,S N3 D1 P M1 G3 R1 S,Yes,0,O,S M1 G3 M1 P M1 P D1 N3 S,S N3 D1 P M1 G3 R1 S,Yes
+1007,PurnaPanchamam (Raga 1),[p106],avaroha,P M1 S R1 G3 P,D1 P M1 G3 R1 S N3,Yes,R,R,P M1 S R1 G3 P,D1 D1 P M1 G3 R1 S N3,Yes
+1017,Purvi (Raga 5),[p106],"aroha,avaroha",S R1 G3 P D1 N3 P S,N3 D1 P M1 D1 M1 G3 R1 S,Yes,AE,AE,S R1 G3 P D1 N3 P,S N3 D1 P M1 D1 M1 G3 R1 S,Yes
+1069,SindhuRamakriya (Raga 4),[p108],ref,S G3 M1 P D1 N3 S,S N3 P D1 M1 G3 S,Yes,0,O,S G3 M1 P D1 N3 S,S N3 P D1 M1 G3 S,Yes
+1075,ShouriVilasitha (Raga 1),[p108],"aroha,avaroha",N3 D1 N3 S R1 G3 M1 P M1 P D1,N3 D1 P M1 G3 R1 S N3 D1 N3 S,Yes,R,R,N3 D1 N3 S R1 G3 M1 P M1 P D1 N3,D1 P M1 G3 R1 S N3 D1 N3 S,Yes
+1202,NatchatraChudamani (Raga 1),[p112],"aroha,avaroha",S R1 S G3 M1 G3 M1 D2 N2,S N2 S M1 G3 P M1 R1 G3 S,Yes,R,R,S R1 S G3 M1 G3 M1 D2 N2 S,N2 S M1 G3 P M1 R1 G3 S,Yes
+1207,PurnaGandhari (Raga 1),[p112],"aroha,avaroha",P D2 N2 D2 S R1 G3 M1 P,D2 P M1 G3 R1 S N2 D2 N2 P,Yes,AE,AE,P D2 N2 D2 S R1 G3 M1 P D2,P M1 G3 R1 S N2 D2 N2 P,Yes
+1209,PurnaPanchamam (Raga 1),[p112],"aroha,avaroha",P M1 S R1 S M1 P,D2 D2 P M1 G3 R1 S N2,Yes,R,R,P M1 S R1 S M1 P D2,D2 P M1 G3 R1 S N2,Yes
+1210,Rasakalanidhi (Raga 1),[p112],"aroha,avaroha",S P M1 D2 N2 D2,P M1 G3 M1 R1 S N2,Yes,P,P,S P M1 D2 N2,D2 P M1 G3 M1 R1 S N2,Yes
+1211,Rasakalanidhi (Raga 2),[p112],"aroha,avaroha",S P M1 D2 N2 D2 P,M1 G3 M1 R1 S N2 S,Yes,AE,AE,S P M1 D2 N2,D2 P M1 G3 M1 R1 S N2 S,Yes
+1235,Thekkali (Raga 1),[p113],"avaroha,ref,vakra",S R1 G3 P D2 N2 S,S N2 D2 P M1 R1 S G3 S R1 P D2 N2 S S N2 D2 P R1 S,Yes,R,AG,S R1 G3 P D2 N2 S,S N2 D2 P M1 R1 S,No
+1243,Vedambari (Raga 1),[p113],"aroha,avaroha",S R1 G3 R1 M1 G3 M1 S N2 D2 N2 D2,P M1 G3 R1 N2 D2 P N2 S G3 R1 S,Yes,R,R,S R1 G3 R1 M1 G3 M1 N2 D2 P N2 S,S N2 D2 N2 D2 P M1 G3 R1 G3 R1 S,Yes
+1274,Kallola (Raga 1),[p115],"aroha,avaroha",S R1 M1 G3 M1 P D2 P N3 S N3,D2 P M1 N3 D2 M1 D2 N3 S G3 R1 S,Yes,R,R,S R1 M1 G3 M1 P D2 P N3 D2 N3 S,S N3 D2 P M1 N3 D2 M1 G3 R1 S,Yes
+1276,Kallola (Raga 3),[p115],"aroha,avaroha",S R1 M1 G3 M1 P D2 P S N3 D2,P M1 N3 D2 N3 D2 S M1 G3 R1 S,Yes,P,P,S R1 M1 G3 M1 P D2 P N3 D2 S,S N3 D2 P M1 N3 D2 M1 G3 R1 S,Yes
+1287,KunthalaSaranga (Raga 1),[p115],"aroha,avaroha",N3 S R1 G3 M1 P D2 N3 D2,P M1 G3 R1 S N3 D2 N3 S,Yes,R,R,N3 S R1 G3 M1 P D2 N3,D2 P M1 G3 R1 S N3 D2 N3 S,Yes
+1288,KunthalaSaranga (Raga 2),[p115],"aroha,avaroha",N3 S R1 G3 M1 P D2,N3 D2 P M1 G3 R1 S N3,Yes,AJ,AJ,N3 S R1 G3 M1 P D2 N3,D2 P M1 G3 R1 S N3,Yes
+1369,SuddhaGandhariSR (Raga 1),[p118],aroha,G3 R1 G3 M1 P D3 P N3 D3 N3 S,S N3 D3 P M1 G3 R1 S,Yes,R,R,S R1 G3 R1 G3 M1 P D3 P N3 D3 N3 S,S N3 D3 P M1 G3 R1 S,Yes
+1388,ChittaRanjani (Raga 2),[p119],"aroha,avaroha",S R2 G2 R2 G2 M1 P D1,N1 N1 D1 P M1 R2 G2 R2 S,Yes,R,R,S R2 G2 R2 G2 M1 P D1 N1,N1 D1 P M1 R2 G2 R2 S,Yes
+1399,KankaraBramari (Raga 5),[p119],"aroha,avaroha",S R2 G2 M1 P D1 N1 D1,S D1 N1 D1 P M1 G2 R2 S,Yes,P,P,S R2 G2 M1 P D1 N1 D1 S,D1 N1 D1 P M1 G2 R2 S,Yes
+1400,Kankara Priya (Raga 1),[p119],"aroha,avaroha",S G2 R2 G2 M1 P D1 N1,S D1 N1 D1 P M1 G2 R2 S,Yes,P,P,S G2 R2 G2 M1 P D1 N1 S,D1 N1 D1 P M1 G2 R2 S,Yes
+1463,Chandika (Raga 1),[p122],"aroha,avaroha",S R2 G2 M1 D1 N2 S,D1 S N2 D1 M1 G2 R2 S,Yes,AE,AE,S R2 G2 M1 D1 N2 S D1,S N2 D1 M1 G2 R2 S,Yes
+1466,Chapa Gantarava (Raga 2),[p122],"aroha,avaroha",S G2 M1 P N2 D1,P M1 G2 R2 S N2 S,Yes,R,R,S G2 M1 P N2,D1 P M1 G2 R2 S N2 S,Yes
+1476,Deva Kriya (Raga 2),[p122],"aroha,avaroha",S R2 S R2 G2 G2 M1 N2,D1 N2 D1 P M1 G2 R2 S,Yes,R,R,S R2 S R2 G2 G2 M1 N2 D1 N2,D1 P M1 G2 R2 S,Yes
+1477,Deva Kriya (Raga 3),[p122],"aroha,avaroha",S R2 G2 M1 N2 D1,N2 P M1 G2 R2 S N2,Yes,R,R,S R2 G2 M1 N2 D1 N2,P M1 G2 R2 S N2,Yes
+1505,Ganta (Raga 1),[p123],"aroha,avaroha",S G2 R2 G2 M1 P D1 P N2 S N2,D1 M1 G2 M1 P M1 D1 N2 S G2 R2 S,Yes,AE,AE,S G2 R2 G2 M1 P D1 P N2 D1 N2 S,S N2 D1 M1 G2 M1 P M1 G2 R2 S,Yes
+1519,HankiGhantarava (Raga 1),[p124],"aroha,avaroha",S R2 G2 M1 R2 M1 P N2 D1 S N2 D1 N2 P,N2 D1 M1 G2 R2 N2 P D1 N2 S G2 M1 R2 G2 S,Yes,AE,AE,S R2 G2 M1 R2 M1 P N2 D1 N2 P D1 N2 S,S N2 D1 N2 P N2 D1 M1 G2 R2 G2 M1 R2 G2 S,Yes
+1523,Hamsa Gantarava (Raga 1),[p124],"aroha,avaroha",S R2 G2 M1 G2 M1 P N2 D1 S N2 D1 N2 P,N2 D1 M1 G2 R2 N2 P D1 N2 S G2 M1 R2 G2 S,Yes,AJ,AJ,S R2 G2 M1 G2 M1 P N2 D1 N2 P D1 N2 S,S N2 D1 N2 P N2 D1 M1 G2 R2 G2 M1 R2 G2 S,Yes
+1535,InduGhantarava (Raga 4),[p124],"aroha,avaroha",S G2 M1 P D1 P,N2 D1 P M1 G2 R2 S,Yes,AJ,AJ,S G2 M1 P D1 P N2,D1 P M1 G2 R2 S,Yes
+1536,InduGhantarava (Raga 5),[p124],ref,S G2 M1 P D1 N2 S,S D1 P G2 R2 S,No,p,P,S G2 M1 P D1 N2 S,S D1 P G2 R2 S,No
+1554,Jingla (Raga 3),[p125],ref,S R2 G2 M1 P D1 P S,S N2 D1 P M1 G2 R2 S,Yes,0,O,S R2 G2 M1 P D1 P S,S N2 D1 P M1 G2 R2 S,Yes
+1585,Kumara Ranjani (Raga 1),[p126],"aroha,avaroha",D1 N2 S R2 G2 P D1 N2,D1 P R2 G2 R2 S N2 S,Yes,R,R,D1 N2 S R2 G2 P D1,N2 D1 P R2 G2 R2 S N2 S,Yes
+1588,LathaHitha (Raga 1),[p126],"aroha,avaroha",S R2 G2 P D1 N2,S D1 P M1 G2 R2 S,No,R,R,S R2 G2 P D1 N2 S,D1 P M1 G2 R2 S,No
+1606,Manorama (Raga 1),[p127],ref,S R2 G2 M1 P D1 P S,S N2 D1 P M1 R2 G2 S,Yes,0,O,S R2 G2 M1 P D1 P S,S N2 D1 P M1 R2 G2 S,Yes
+1623,NagaGandhari (Raga 2),[p127],"aroha,avaroha",S R2 G2 M1 P D1,N2 D1 P M1 G2 S,No,R,R,S R2 G2 M1 P D1 N2,D1 P M1 G2 S,No
+1625,NagaHindolam (NadaHindolam) N S GM R S R (Raga 1),[p127],"aroha,avaroha",S G2 R2 M1 D1 G2 M1 P,D1 S N2 P D1 P M1 G2 R2,Yes,,R,S G2 R2 M1 D1 G2 M1 P D1 N2 S,S N2 P D1 P M1 G2 R2 G2 M1 R2 S,Yes
+1630,Nari Ritigowla (Raga 2),[p127],"aroha,avaroha",S G2 R2 G2 M1 N2 D1 M1 N2 S N2,D1 M1 G2 M1 P M1 N2 S G2 R2 S,Yes,P,P,S G2 R2 G2 M1 N2 D1 M1 N2 N2 S,S N2 D1 M1 G2 M1 P M1 G2 R2 S,Yes
+1647,Pandi (Raga 1),[p128],"aroha,avaroha",S R2 P D1 S P,M1 G2 R2 S N2 P,Yes,P,P,S R2 P D1 S,P M1 G2 R2 S N2 P,Yes
+1660,Pushpalata (Raga 1),[p128],ref,S R2 G2 M1 P N2 S,S N2 P M1 G2 R2 S,No,0,O,S R2 G2 M1 P N2 S,S N2 P M1 G2 R2 S,No
+1661,Raja Manjari (Raja Mandari) GR GM GS R (Raga 1),[p128],avaroha,S G2 M1 P D1 P N2 S,S N2 D1 P M1 N2 D1 M1,Yes,,R,S G2 M1 P D1 P N2 S,S N2 D1 P M1 N2 D1 M1 G2 R2 G2 M1 G2 S,Yes
+1700,SindhuGanta (Raga 1),[p130],"aroha,avaroha",S G2 M1 P D1 P,N2 D1 P M1 G2 R2 S,Yes,AE,AE,S G2 M1 P D1 P N2,D1 P M1 G2 R2 S,Yes
+1717,SuddhaTaranginiSGM (Raga 1),[p130],"aroha,vakra",P N2 S,S N2 D1 M1 G2 R2 S,Yes,AE,AE,S G2 M1 P N2 S,S N2 D1 M1 G2 R2 S,No
+1724,SyamalaVasantham (Raga 1),[p130],"aroha,avaroha",S N2 D1 N2 D1 R2 G2 M1 P D1 S M1 G2 R2 S,S N2 D1 N2 S,Yes,R,R,S N2 D1 N2 D1 R2 G2 M1 P D1,S M1 G2 R2 S S N2 D1 N2 S,Yes
+1738,VasanthaVarali (Raga 2),[p131],"aroha,avaroha",S R2 M1 P D1,N2 D1 P G2 R2 S,No,R,R,S R2 M1 P D1 N2,D1 P G2 R2 S,No
+1763,KarnatakaDeva Gandhari (Raga 1),[p132],"aroha,avaroha",N3 S G2 M1 P D1,P M1 G2 R2 S N3,Yes,AE,AE,N3 S G2 M1 P,D1 P M1 G2 R2 S N3,Yes
+1766,KarnatakaDeva Gandhari (Raga 4),[p132],"aroha,avaroha",S G2 M1 P D1,S N3 D1 M1 G2 S,No,P,P,S G2 M1 P D1 S,N3 D1 M1 G2 S,No
+1774,KuvalayanandamSR (Raga 1),[p133],"aroha,vakra",G2 M1 P S,S N3 D1 M1 G2 S,Yes,AV,AV,S R2 G2 M1 P S,S N3 D1 M1 G2 S,No
+1776,Madhavi (Raga 2),[p133],"aroha,avaroha,ref",S R2 G2 M1 D1 N3 D1 P S,N3 P G2 R2 S R2 M1 D1 N3,Yes,S,R,S R2 G2 M1 D1 N3 D1 P M1 D1 N3 S,S N3 P G2 R2 S,Yes
+1784,PushpaManohariSM (Raga 1),[p133],aroha,G2 P D1 N3 D1 S,S N3 D1 M1 G2 R2 S,Yes,R,R,S M1 G2 P D1 N3 D1 S,S N3 D1 M1 G2 R2 S,Yes
+1795,Soma Giri (Raga 2),[p133],"aroha,avaroha",N3 S R2 G2 M1 P,D1 P M1 G2 R2 S N3,Yes,AE,AE,N3 S R2 G2 M1 P D1,P M1 G2 R2 S N3,Yes
+1833,Brindavani (Raga 1),[p135],"aroha,avaroha",S R2 M1 P N2,S N2 P M1 R2 S,No,AC,AC,S R2 M1 P N2 S,N2 P M1 R2 S,No
+1854,ChittaRanjani (Raga 2),[p135],"aroha,avaroha",S R2 G2 M1 P D2 N2,S N2 D2 P M1 G2 R2 S,No,AJ,AJ,S R2 G2 M1 P D2 N2 S,N2 D2 P M1 G2 R2 S,No
+1872,DhanaKapi (Raga 1),[p136],"aroha,avaroha",M1 P D2 N2 S R2 G2 R2 G2 M1 P R2,G2 P M1 G2 R2 S N2 D2 P D2 N2 S,Yes,S,S,M1 P D2 N2 S R2 G2 R2 G2 M1 P,R2 G2 P M1 G2 R2 S N2 D2 P D2 N2 S,Yes
+1876,DhavalikaLeela (Raga 1),[p136],"aroha,avaroha",S N2 S R2 G2 M1 P N2,D2 D2 P M1 G2 R2 S N2 S,Yes,R,R,S N2 S R2 G2 M1 P N2 D2,D2 P M1 G2 R2 S N2 S,Yes
+1882,Durbar (Raga 2),[p136],"aroha,avaroha",S R2 G2 M1 P D2 N2,S N2 D2 P M1 G2 R2 S,No,AC,AC,S R2 G2 M1 P D2 N2 S,N2 D2 P M1 G2 R2 S,No
+1907,Huseni (Raga 2),[p137],"aroha,avaroha",S R2 G2 M1 P D2 N2,S N2 D2 P M1 G2 R2 S,No,AC,AC,S R2 G2 M1 P D2 N2 S,N2 D2 P M1 G2 R2 S,No
+1943,KannadaMallaruSGM (Raga 1),[p138],"aroha,vakra",P D2 S,S N2 D2 M1 G2 S,Yes,R,R,S G2 M1 P D2 S,S N2 D2 M1 G2 S,No
+1945,Kapi Jingla (Raga 1),[p138],"aroha,avaroha",S N2 S R2 G2 M1 M1,G2 R2 S N2 D2 N2 S,Yes,AJ,AJ,S N2 S R2 G2 M1,M1 G2 R2 S N2 D2 N2 S,Yes
+1947,Kapi (Raga 2),[p138],"aroha,avaroha,ref",S R2 G2 M1 R2 P M1 P S,N2 D2 P M1 G2 R2 S D2 N2,Yes,S,AE,S R2 G2 M1 R2 P M1 P D2 N2 S,S N2 D2 P M1 G2 R2 S,Yes
+1949,Kapi (Raga 4),[p139],"aroha,avaroha,ref",S R2 G2 M1 R2 P M1 P S N2,D2 P M1 R2 G2 M1 R2 S R2 S N2,Yes,S,R,S R2 G2 M1 R2 P M1 P S N2 S,S N2 D2 P M1 R2 G2 M1 R2 S,Yes
+1953,Kapi (Raga 8),[p139],"aroha,avaroha",S R2 G2 M1 P D2 N2,S N2 D2 P M1 G2 R2 S,No,AC,AC,S R2 G2 M1 P D2 N2 S,N2 D2 P M1 G2 R2 S,No
+1954,Karava Simhala (Samavarali) DPS (Raga 1),[p139],aroha,S G2 R2 G2 M1 P D2 N2 M1,S N2 P D2 P M1 G2 R2 S,Yes,R,R,S G2 R2 G2 M1 P D2 N2 M1 D2 P S,S N2 P D2 P M1 G2 R2 S,Yes
+1960,KarnaRanjani (Raga 1),[p139],ref,S R2 G2 M1 G2 P D2 S,S N2 D2 P M1 G2 R2 S,Yes,0,O,S R2 G2 M1 G2 P D2 S,S N2 D2 P M1 G2 R2 S,Yes
+1970,KowsikaLalitha (Raga 1),[p139],"aroha,avaroha,ref",S G2 M1 G2 M1 D2 P N2 S,N2 D2 M1 G2 S R2 S R2 D2 N2,Yes,S,R,S G2 M1 G2 M1 D2 P N2 D2 N2 S,S N2 D2 M1 G2 S R2 S,Yes
+1991,Malavi Sri (Raga 1),[p140],"aroha,avaroha",S G2 M1 P N2 S N2 N2,D2 P M1 P N2 D2 M1 G2 S,Yes,AC,AC,S G2 M1 P N2 S,N2 N2 D2 P M1 P N2 D2 M1 G2 S,Yes
+1993,Malavi Sri (Raga 3),[p140],"aroha,avaroha",S M1 G2 M1 P N2 D2,P D2 S N2 D2 M1 G2 S,Yes,R,R,S M1 G2 M1 P N2 D2 P D2,S N2 D2 M1 G2 S,Yes
+1996,Manjari (Raga 2),[p140],"aroha,avaroha,ref",S R2 G2 R2 G2 M1 M1 P N2 S,N2 D2 P M1 G2 R2 S R2 D2 N2,Yes,S,R,S R2 G2 R2 G2 M1 M1 P N2 D2 N2 S,S N2 D2 P M1 G2 R2 S,Yes
+2036,NadhaTarangini (Raga 2),[p142],"aroha,avaroha",S P M1 R2 P D2 S,P N2 D2 P M1 G2 R2 S,Yes,R,R,S P M1 R2 P D2,S P N2 D2 P M1 G2 R2 S,Yes
+2044,NagaGandhari (Raga 2),[p142],ref,S R2 G2 M1 P D2 N2,S N2 D2 P M1 G2 R2 S,No,p,P,S R2 G2 M1 P D2 N2,S N2 D2 P M1 G2 R2 S,No
+2045,NagaGandhari (Raga 3),[p142],"aroha,avaroha",S R2 G2 M1 P D2,N2 D2 P M1 G2 R2 S,No,P,P,S R2 G2 M1 P D2 N2,D2 P M1 G2 R2 S,No
+2073,PhalaRanjani (Raga 1),[p143],avaroha,S G2 M1 P M1 D2 S,S N2 D2 P M1 G2 M1 R2,Yes,S,,S G2 M1 P M1 D2 S,S N2 D2 P M1 G2 M1 R2 S,Yes
+2083,PrathiMadhyamavatiSR (Raga 1),[p143],"aroha,vakra",M1 P N2 S,S N2 P M1 R2 S,Yes,A,A,S R2 M1 P N2 S,S N2 P M1 R2 S,No
+2100,Ravalika Leela (Raga 1),[p143],"aroha,avaroha",S N2 S R2 G2 M1 P D2,N2 D2 P G2 R2 S N2 S,Yes,L,L,S N2 S R2 G2 M1 P D2 N2,D2 P G2 R2 S N2 S,Yes
+2103,Rithi Gaula (Raga 3),[p144],"aroha,avaroha",S G2 R2 G2 M1 N2 D2 S N2 D2 M1,G2 M1 P M1 N2 N2 S M1 G2 R2 S,Yes,AJ,AJ,S G2 R2 G2 M1 N2 D2 M1 N2 N2 S,S N2 D2 M1 G2 M1 P M1 G2 R2 S,Yes
+2110,Saindavi (Raga 1),[p144],"aroha,avaroha",N2 D2 N2 S R2 G2 M1,P N2 D2 P M1 G2 R2 S,Yes,AE,AE,N2 D2 N2 S R2 G2 M1 P N2,D2 P M1 G2 R2 S,Yes
+2111,Saindavi (Raga 2),[p144],"aroha,avaroha",N2 D2 N2 S R2 G2 M1 P D2 S N2,D2 P M1 G2 R2 S N2 S N2 D2 N2 S,Yes,R,R,N2 D2 N2 S R2 G2 M1 P D2 N2 S,S N2 D2 P M1 G2 R2 S N2 D2 N2 S,Yes
+2114,Saindavi (Raga 5),[p144],"aroha,avaroha",N2 D2 N2 S R2 G2 M1 P,M1 G2 R2 S N2 D2 N2 S,Yes,P,P,N2 D2 N2 S R2 G2 M1,P M1 G2 R2 S N2 D2 N2 S,Yes
+2131,Sarmila (Raga 1),[p144],"aroha,avaroha",S R2 G2 M1 R2 M1 P N2 D2 S N2 D2 N2 D2,M1 G2 M1 R2 G2 N2 P D2 N2 S R2 M1 G2 S,Yes,R,R,S R2 G2 M1 R2 M1 P N2 D2 N2 P D2 N2 S,S N2 D2 N2 D2 M1 G2 M1 R2 G2 R2 M1 G2 S,Yes
+2158,Subhangi (Raga 2),[p145],"aroha,avaroha",S M1 R2 G2 M1 P D2,N2 D2 P M1 G2 R2 S N2,Yes,P,P,S M1 R2 G2 M1 P D2 N2,D2 P M1 G2 R2 S N2,Yes
+2173,SugunaBhushaniSGM (Raga 1),[p146],aroha,P M1 D2 N2 S,S N2 D2 P M1 D2 M1 R2 S,Yes,R,R,S G2 M1 P M1 D2 N2 S,S N2 D2 P M1 D2 M1 R2 S,Yes
+2222,Malhar (Raga 1),[p148],"aroha,avaroha",S N3 S G2 R2 P M1 N3 S N3 D2,P M1 G2 R2 S D2 N3 S N3 D2 N3 S,Yes,R,R,S N3 S G2 R2 P M1 N3 D2 N3 S,S N3 D2 P M1 G2 R2 S N3 D2 N3 S,Yes
+2258,BhanuDeepakamSR (Raga 1),[p149],"aroha,vakra",G2 M1 P D3 N3 S,S N3 P M1 R2 S,Yes,AE,AE,S R2 G2 M1 P D3 N3 S,S N3 P M1 R2 S,No
+2286,SriBhanudeepamSR (Raga 1),[p150],"aroha,vakra",G2 M1 P D3 N3 S,S N3 P M1 R2 S,Yes,AB,AB,S R2 G2 M1 P D3 N3 S,S N3 P M1 R2 S,No
+2295,VasanthaVarali (Raga 1),[p150],"aroha,avaroha",S R2 M1 P D3 N3 S,N3 D3 P M1 G2 R2 S N3,Yes,L,L,S R2 M1 P D3 N3,S N3 D3 P M1 G2 R2 S N3,Yes
+2296,VasanthaVarali (Raga 2),[p150],"aroha,avaroha",S R2 M1 P D3 N3 S,N3 D3 P G2 R2 S N3,Yes,R,R,S R2 M1 P D3 N3,S N3 D3 P G2 R2 S N3,Yes
+2330,Mahuri (Raga 1),[p152],"aroha,avaroha",S R2 G3 R2 M1 P,N1 D1 P M1 G3 R2 S,Yes,R,R,S R2 G3 R2 M1 P N1,D1 P M1 G3 R2 S,Yes
+2391,Sukra Jyothi (Raga 2),[p154],"aroha,avaroha",S R2 M1 G3 R2 M1 P D1 S N2 D1,P M1 G3 M1 N2 D1 S G3 R2 S R2 S,Yes,R,R,S R2 M1 G3 R2 M1 P D1 N2 D1 S,S N2 D1 P M1 G3 M1 G3 R2 S R2 S,Yes
+2443,Madhurya (Raga 1),[p156],"aroha,avaroha",P N3 S R2 G3 M1,P M1 G3 S N3 D1 P,Yes,AE,AE,P N3 S R2 G3 M1 P,M1 G3 S N3 D1 P,Yes
+2447,Manimaya (Raga 1),[p156],"aroha,avaroha",S N3 S R2 G3 M1 P,D1 P M1 G3 R2 S N3 S,Yes,AE,AE,S N3 S R2 G3 M1 P D1,P M1 G3 R2 S N3 S,Yes
+2450,Manjula (Raga 1),[p156],"aroha,avaroha",P S N3 S R2 G3 M1,P M1 G3 R2 S N3 D1 P,Yes,AE,AE,P S N3 S R2 G3 M1 P,M1 G3 R2 S N3 D1 P,Yes
+2482,Rishi KethuPriyaSR (Raga 1),[p157],"aroha,vakra",G3 M1 P N3 S,S N3 P M1 G3 R2 S,Yes,AE,AE,S R2 G3 M1 P N3 S,S N3 P M1 G3 R2 S,No
+2550,Behag (Raga 1),[p160],"aroha,avaroha",S R2 G3 M1 S G3 M1 P N2 S N2 P D2 N2,D2 P M1 G3 R2 D2 N2 P D2 N2 S G3 M1 G3 S,Yes,R,R,S R2 G3 M1 S G3 M1 P N2 D2 N2 P D2 N2 S,S N2 P D2 N2 D2 P M1 G3 R2 G3 M1 G3 S,Yes
+2561,ChampakaVidhari (Raga 1),[p160],"aroha,avaroha",S M1 G3 M1 P N2 D2 M1 S N2 D2 N2 M1,D2 M1 G3 P D2 N2 S R2 M1 G3 R2 G3 S,Yes,R,R,S M1 G3 M1 P N2 D2 M1 P D2 N2 S,S N2 D2 N2 M1 D2 M1 G3 R2 M1 G3 R2 G3 S,Yes
+2569,ChayaTarangini (Raga 2),[p161],"aroha,avaroha",S R2 G3 R2 G3 M1 P D2 S N2 D2,P M1 G3 M1 N2 D2 N2 S R2 G3 R2 S,Yes,R,R,S R2 G3 R2 G3 M1 P D2 N2 D2 N2 S,S N2 D2 P M1 G3 M1 R2 G3 R2 S,Yes
+2585,DhanaKapi (Raga 1),[p161],"aroha,avaroha",M1 P D2 N2 S R2 G3 R2 G3 M1,P P M1 G3 R2 N2 D2 P D2 N2 S,Yes,S,S,M1 P D2 N2 S R2 G3 R2 G3 M1 P,P M1 G3 R2 N2 D2 P D2 N2 S,Yes
+2608,Dwijavanthi (Raga 2),[p162],"aroha,avaroha",S R2 G3 M1 P M1 D2 P S D2 P D2,N2 D2 P M1 N2 D2 N2 S G3 M1 G3 R2 S,Yes,R,R,S R2 G3 M1 P M1 D2 P N2 D2 N2 S,S D2 P D2 N2 D2 P M1 G3 M1 G3 R2 S,Yes
+2609,Dwijavanthi (Raga 3),[p162],"aroha,avaroha",S R2 G3 M1 P M1 D2 S N2 D2 P D2 N2 D2,P M1 P N2 D2 N2 S M1 G3 R2 G3 M1 G3 S,Yes,R,R,S R2 G3 M1 P M1 D2 P N2 D2 N2 S,S N2 D2 P D2 N2 D2 P M1 M1 G3 R2 G3 M1 G3 S,Yes
+2612,Durbar (Raga 2),[p162],"aroha,avaroha",N2 S R2 S R2 S R2 G3 S,D2 P M1 R2 M1 R2 M1 R2 S,Yes,R,R,N2 S R2 S R2 S R2 G3,S D2 P M1 R2 M1 R2 M1 R2 S,Yes
+2644,HemaMandara (Raga 1),[p163],"aroha,avaroha",N2 D2 N2 S R2 M1 G3 M1 D2 P M1,G3 M1 R2 S P D2 N2 N2 D2 N2 S,Yes,R,R,N2 D2 N2 S R2 M1 G3 M1 P D2 N2,D2 P M1 G3 M1 R2 S N2 D2 N2 S,Yes
+2645,HemaMandara (Raga 2),[p163],"aroha,avaroha",N2 D2 N2 S R2 M1 G3 M1 P D2,N2 N2 D2 P M1 G3 R2 S N2 D2,Yes,AJ,AJ,N2 D2 N2 S R2 M1 G3 M1 P D2 N2,N2 D2 P M1 G3 R2 S N2 D2,Yes
+2653,IndhuKausika (IndhuGaulika) MGS (Raga 1),[p163],avaroha,S R2 G3 M1 P D2 N2 S,S D2 N2 P D2 M1 G3 R2,Yes,R,R,S R2 G3 M1 P D2 N2 S,S D2 N2 P D2 M1 G3 R2 M1 G3 S,Yes
+2657,Janjuti (Raga 1),[p163],"aroha,avaroha",D2 S R2 G3 M1 P D2 N2 D2,P M1 G3 R2 S N2 D2 P D2 S,Yes,AE,AE,D2 S R2 G3 M1 P D2 N2,D2 P M1 G3 R2 S N2 D2 P D2 S,Yes
+2667,Jujavanthi (Raga 3),[p164],"aroha,avaroha",S R2 G3 M1 P D2 S,S N2 D2 P M1 G3 R2 S N2 D2 N2 S R2 M1 G3 R2 S,Yes,AC,AC,S R2 G3 M1 P D2 S N2 D2 N2 S,S N2 D2 P M1 G3 R2 S R2 M1 G3 R2 S,Yes
+2674,Kamas (Raga 3),[p164],"aroha,avaroha",S G3 M1 P D2 N2 R2,S N2 D2 P M1 G3 S,Yes,P,P,S G3 M1 P D2 N2,R2 S N2 D2 P M1 G3 S,Yes
+2675,Kamas (Raga 4),[p164],"aroha,avaroha",S G3 P D2 N2 S R2,S N2 D2 P M1 G3 S,Yes,P,P,S G3 P D2 N2 S,R2 S N2 D2 P M1 G3 S,Yes
+2681,Kampavathi (Raga 1),[p164],"aroha,avaroha",S R2 G3 M1 P D2,N2 N2 D2 P M1 G3 S,No,R,R,S R2 G3 M1 P D2 N2,N2 D2 P M1 G3 S,No
+2703,KunthalaVaraliS (Raga 1),[p165],aroha,M1 P D2 N2 D2 S,S N2 D2 P M1 S,Yes,AE,AE,S M1 P D2 N2 D2 S,S N2 D2 P M1 S,Yes
+2712,MadhyaKokila (Raga 1),[p165],"aroha,avaroha",S R2 P D2,N2 D2 P R2 S,No,AG,AG,S R2 P D2 N2,D2 P R2 S,No
+2733,MatthaKoki (Raga 2),[p166],"aroha,avaroha",S R2 P D2,N2 D2 P R2 S,No,P,P,S R2 P D2 N2,D2 P R2 S,No
+2735,MatthaKoki (Raga 4),[p166],"aroha,avaroha",S R2 P D2 N2,S D2 P S R2,Yes,AV,AV,S R2 P D2 N2 S,D2 P S R2,Yes
+2739,Mattha Kokila (Raga 3),[p166],"aroha,avaroha",S R2 N2 D2 P,N2 D2 P S R2 S,Yes,R,R,S R2 N2 D2 P N2,D2 P S R2 S,Yes
+2740,Maya TaranginiSR (Raga 1),[p166],aroha,M1 G3 M1 P N2 S,S N2 D2 P M1 G3 R2 S,Yes,P,P,S R2 M1 G3 M1 P N2 S,S N2 D2 P M1 G3 R2 S,Yes
+2758,Narayana Gaula (Raga 4),[p166],"aroha,avaroha",R2 M1 P N2 D2 N2 S N2,D2 P M1 G3 R2 G3 R2 S,Yes,AC,AC,R2 M1 P N2 D2 N2 S,N2 D2 P M1 G3 R2 G3 R2 S,Yes
+2776,NatyaManohari (Raga 1),[p167],"aroha,avaroha",S G3 M1 P D2 N2,S N2 P M1 G3 S,No,R,R,S G3 M1 P D2 N2 S,N2 P M1 G3 S,No
+2790,Neela Prabha (Raga 1),[p167],avaroha,S R2 G3 M1 P D2 N2 S,S N2 D2 M1 P M1 R2 G3 R2 R2 M1 G3 R2 S,Yes,R,R,S R2 G3 M1 P D2 N2 S,S N2 D2 M1 P M1 R2 G3 R2,Yes
+2806,Pratapa Varali (Raga 2),[p168],"aroha,avaroha",S R2 M1 P D2 N2 D2 S N2 D2,P M1 G3 R2 S R2 P N2 D2 S,Yes,,R,S R2 M1 P D2 N2 D2 P N2 D2 S,S N2 D2 P M1 G3 R2 S,Yes
+2826,Ravichandrika (Raga 2),[p169],"aroha,avaroha",S R2 G3 M1 P D2 N2 S N2,D2 M1 G3 R2 S R2 D2 N2 D2 S,Yes,,R,S R2 G3 M1 P D2 N2 D2 N2 D2 S,S N2 D2 M1 G3 R2 S,Yes
+2840,Sala Keeka (Raga 1),[p169],"aroha,avaroha",S R2 G3 M1 P N2 D2 P,M1 G3 S N2 D2 N2 P N2 S,Yes,AE,AE,S R2 G3 M1 P N2,D2 P M1 G3 S N2 D2 N2 P N2 S,Yes
+2846,Sanchalitha (Raga 1),[p169],"aroha,avaroha",S R2 G3 M1 G3 P N2 D2 N2 S N2 D2 N2,P D2 M1 P P D2 N2 S G3 R2 M1 R2 G3 S,Yes,AE,AE,S R2 G3 M1 G3 P N2 D2 N2 P D2 N2 S,S N2 D2 N2 P D2 M1 P G3 R2 M1 R2 G3 S,Yes
+2866,SindhuSurati (Raga 2),[p170],"aroha,avaroha",S R2 M1 P N2 S,S N2 S S N2 D2 P M1 R2 M1 G3 R2 S,Yes,R,R,S R2 M1 P N2 S S N2 S,S N2 D2 P M1 R2 M1 G3 R2 S,Yes
+2936,VedaghoshaPriya (Raga 1),[p172],"aroha,avaroha",D2 N2 S R2 G3 M1 P,M1 G3 R2 S N2 D2 N2 P,Yes,P,P,D2 N2 S R2 G3 M1,P M1 G3 R2 S N2 D2 N2 P,Yes
+2937,VedaghoshaPriya (Raga 2),[p172],"aroha,avaroha",N2 D2 N2 S R2 G3 M1 P,M1 G3 R2 S N2 D2 P D2,Yes,AE,AE,N2 D2 N2 S R2 G3 M1,P M1 G3 R2 S N2 D2 P D2,Yes
+2941,Yuvaratna (Raga 1),[p172],"aroha,avaroha,ref",S R2 G3 M1 P M1 D2 N2 S N2 D2,P M1 R2 G3 M1 R2 S R2 P D2 N2,Yes,S,R,S R2 G3 M1 P M1 D2 N2 P D2 N2 S,S N2 D2 P M1 R2 G3 M1 R2 S,Yes
+2980,BhuvanaSundaraSR (Raga 1),[p174],"aroha,vakra",G3 M1 N3 S,S N3 D2 P M1 G3 R2 S,Yes,AJ,AJ,S R2 G3 M1 N3 S,S N3 D2 P M1 G3 R2 S,No
+2986,Chandrika (Purna Chandrika) N S (Raga 1),[p174],avaroha,N3 N3 S R2 M1 P N3 S,N3 S D2 M1 P D2 P M1 R2,Yes,S,S,N3 N3 S R2 M1 P N3 S,N3 S D2 M1 P D2 P M1 R2 N3 S,Yes
+2995,Chenchukamboji (Raga 1),[p174],"aroha,avaroha,ref",S G3 R2 G3 M1 P M1 D2 N3 S,N3 P M1 G3 R2 S P N3 D2 N3,Yes,S,O,S G3 R2 G3 M1 P M1 D2 N3 P N3 D2 N3 S,S N3 P M1 G3 R2 S,Yes
+3002,Dhadhyomathi (Raga 1),[p175],"aroha,avaroha,ref",S R2 G3 R2 M1 G3 M1 S N3,P M1 G3 R2 S R2 P D2 N3,Yes,S,R,S R2 G3 R2 M1 G3 M1 P D2 N3 S,S N3 P M1 G3 R2 S,Yes
+3008,Dhakshayani (Raga 1),[p175],"aroha,avaroha,ref",S R2 G3 M1 N3 D2 M1 S N3,D2 P M1 G3 R2 S R2 P D2 N3,Yes,S,R,S R2 G3 M1 N3 D2 M1 P D2 N3 S,S N3 D2 P M1 G3 R2 S,Yes
+3015,DhevaGandhari (Raga 1),[p175],"aroha,avaroha,ref",S R2 G3 M1 G3 R2 M1 P S,N3 D2 P M1 G3 R2 S M1 S N3,Yes,S,AE,S R2 G3 M1 G3 R2 M1 P M1 S N3 S,S N3 D2 P M1 G3 R2 S,Yes
+3016,DhevaGandhari (Raga 2),[p175],"aroha,avaroha",S R2 M1 P D2 N3 S R2 S,N3 D2 P M1 G3 S R2 G3 R2 S,Yes,R,R,S R2 M1 P D2 N3 S R2,S N3 D2 P M1 G3 S R2 G3 R2 S,Yes
+3048,Gauda Mallar (Raga 3),[p176],"aroha,avaroha,ref",S R2 G3 M1 M1 G3 M1 S N3,D2 P M1 G3 R2 S R2 P D2 N3,Yes,S,R,S R2 G3 M1 M1 G3 M1 P D2 N3 S,S N3 D2 P M1 G3 R2 S,Yes
+3053,GuhyaDhyuthi (Raga 2),[p176],"aroha,avaroha",S R2 G3 P D2 N3 D2 P S N3,D2 P M1 G3 R2 S R2 D2 P S,Yes,,R,S R2 G3 P D2 N3 D2 P D2 P S,S N3 D2 P M1 G3 R2 S,Yes
+3087,Julavu (Raga 2),[p177],"aroha,avaroha",P D2 N3 S R2 G3 M1 P,S M1 G3 R2 S N3 D2 P M1,Yes,R,R,P D2 N3 S R2 G3 M1 P S,M1 G3 R2 S N3 D2 P M1,Yes
+3103,Kannada (Raga 2),[p178],"aroha,avaroha,ref",G3 R2 G3 R2 G3 M1 P S D2,P M1 G3 M1 R2 S R2 M1 D2 N3,Yes,S,R,G3 R2 G3 R2 G3 M1 P M1 D2 N3 S,S D2 P M1 G3 M1 R2 S,Yes
+3126,Kumara Vilasitha (Raga 1),[p178],"aroha,avaroha,ref",S M1 G3 M1 D2 N3 S N3 D2,P M1 D2 M1 G3 R2 S P D2 N3,Yes,S,AE,S M1 G3 M1 D2 N3 P D2 N3 S,S N3 D2 P M1 D2 M1 G3 R2 S,Yes
+3128,Kurinji (Raga 1),[p179],"aroha,avaroha",S N3 S R2 G3 M1 P,D2 P M1 G3 R2 S N3 S,Yes,AE,AE,S N3 S R2 G3 M1 P D2,P M1 G3 R2 S N3 S,Yes
+3141,MadhavaPriya (Raga 1),[p179],"aroha,avaroha",S R2 G3 R2 M1 G3 M1 N3 S N3 D2 M1 N3,D2 P M1 G3 M1 P D2 N3 S R2 G3 R2 S,Yes,R,R,S R2 G3 R2 M1 G3 M1 N3 G3 M1 P D2 N3 S,S N3 D2 M1 N3 D2 P M1 R2 G3 R2 S,Yes
+3142,Mahurim (Raga 1),[p179],"aroha,avaroha,ref",S M1 G3 M1 R2 G3 M1 P S,D2 P M1 R2 G3 M1 S D2 N3,Yes,S,AJ,S M1 G3 M1 R2 G3 M1 P D2 N3 S,S D2 P M1 R2 G3 M1 S,Yes
+3143,Maahuri (Raga 1),[p179],"aroha,avaroha",S R2 G3 R2 M1 P,N3 D2 P M1 G3 R2 S,Yes,AE,AE,S R2 G3 R2 M1 P N3,D2 P M1 G3 R2 S,Yes
+3144,Maahuri (Raga 2),[p179],"aroha,avaroha,ref",S M1 G3 M1 R2 G3 M1 P S N3,D2 P M1 R2 G3 M1 S R2 D2 N3,Yes,S,R,S M1 G3 M1 R2 G3 M1 P D2 N3 S,S N3 D2 P M1 R2 G3 M1 S,Yes
+3160,NagaDhwani (Raga 1),[p180],"aroha,avaroha,ref",S R2 S M1 G3 D2 M1 P N3,D2 S N3 D2 N3 P M1 G3 S N3,Yes,S,AE,S R2 S M1 G3 D2 M1 P N3 D2 N3 S,S N3 D2 N3 P M1 G3 S,Yes
+3161,NagaDhwani (Raga 2),[p180],"aroha,avaroha",S G3 R2 G3 M1 G3 M1 P D2 N3 S N3 D2 N3 D2 P M1 D2,P D2 P N3 D2 N3 P D2 N3 S M1 R2 G3 M1 G3 R2 G3 S,Yes,R,R,S G3 R2 G3 M1 G3 M1 P D2 N3 D2 P N3 D2 N3 P D2 N3 S,S N3 D2 N3 D2 P M1 D2 P M1 R2 G3 M1 G3 R2 G3 S,Yes
+3162,Naga Dhawali (Raga 1),[p180],"aroha,avaroha,ref",S R2 S M1 G3 M1 P N3 S,N3 D2 N3 P M1 G3 S P D2 N3,Yes,S,P,S R2 S M1 G3 M1 P N3 D2 N3 S,S N3 D2 N3 P M1 G3 S,Yes
+3166,Navroj (Raga 1),[p180],"aroha,avaroha",P D2 N3 S R2 G3 M1,P M1 G3 R2 S N3 D2 P,Yes,R,R,P D2 N3 S R2 G3 M1 P,M1 G3 R2 S N3 D2 P,Yes
+3167,Navroj (Raga 2),[p180],"aroha,avaroha",P D2 N3 S R2 G3 M1 P,S M1 G3 R2 S N3 D2 P,Yes,R,R,P D2 N3 S R2 G3 M1 P S,M1 G3 R2 S N3 D2 P,Yes
+3168,Navroj (Raga 3),[p180],"aroha,avaroha",P D2 N3 S R2 G3 M1 P P M1,G3 R2 S N3 D2 N3 P D2 N3 S,Yes,P,P,P D2 N3 S R2 G3 M1 P,P M1 G3 R2 S N3 D2 N3 P D2 N3 S,Yes
+3171,NarayaniDesakshi (Raga 1),[p180],"aroha,avaroha,ref",S R2 M1 G3 R2 G3 M1 P S N3,D2 P M1 G3 R2 S D2 S D2 N3,Yes,S,AE,S R2 M1 G3 R2 G3 M1 P D2 N3 S,S N3 D2 P M1 G3 R2 S D2 S,Yes
+3178,Neelambari (Raga 1),[p180],"aroha,avaroha",S,S R2 G3 M1 P D2 P N3 N3 S S N3 P M1 G3 R2 G3 R2 N3 D2 N3 S M1 G3 S,Yes,AE,AE,SRGMPDPNNSNDNS,S N3 P M1 G3 R2 G3 R2 M1 G3 S,Yes
+3210,Purva Gowla (Raga 3),[p181],"aroha,avaroha,ref",S R2 G3 M1 P N3 D2 N3 P S,N3 D2 N3 P M1 G3 R2 S P D2 N3,Yes,S,P,S R2 G3 M1 P N3 D2 N3 P D2 N3 S,S N3 D2 N3 P M1 G3 R2 S,Yes
+3211,Purva Gowla (Raga 4),[p181],"aroha,avaroha,ref",S G3 R2 G3 S R2 M1 P S,N3 D2 P M1 G3 R2 S D2 N3,Yes,S,AC,S G3 R2 G3 S R2 M1 P D2 N3 S,S N3 D2 P M1 G3 R2 S,Yes
+3215,Raga Mallika (Raga 1),[p182],"aroha,avaroha,ref",S R2 G3 M1 N3 D2 M1 P S N3,D2 P M1 R2 M1 G3 S R2 D2 N3,Yes,S,R,S R2 G3 M1 N3 D2 M1 P D2 N3 S,S N3 D2 P M1 R2 M1 G3 S,Yes
+3231,Sankara (Raga 1),[p182],"aroha,avaroha",S G3 P N3 D2 S N3 S N3,D2 M1 P G3 R2 G3 S R2 S,Yes,S,S,S G3 P N3 D2 S N3,S N3 D2 M1 P G3 R2 G3 S R2 S,Yes
+3236,SankaraMohana (Raga 1),[p182],"aroha,avaroha",S R2 G3 P N3 D2 S,N3 S D2 P G3 R2 S,Yes,S,S,S R2 G3 P N3 D2 S N3,S D2 P G3 R2 S,Yes
+3262,Sri Mahabalagiri (Raga 1),[p183],ref,S R2 M1 P D2 N3 S,S N3 D2 P M1 R2 S N3 S,Yes,0,O,S R2 M1 P D2 N3 S,S N3 D2 P M1 R2 S N3 S,Yes
+3265,Sritha Pasvini (Raga 1),[p183],"aroha,avaroha",S N3 D2 S R2 G3 M1 P D2,N3 D2 P M1 G3 R2 S N3 D2 S,Yes,R,R,S N3 D2 S R2 G3 M1 P D2 N3,D2 P M1 G3 R2 S N3 D2 S,Yes
+3282,Tharavali (Raga 1),[p184],"aroha,avaroha",S R2 M1 G3 S,S G3 M1 P D2 N3 S S N3 S D2 N3 D2 P M1 G3 R2,Yes,R,R,S R2 M1 G3 S S G3 M1 P D2 N3 S,S N3 S D2 N3 D2 P M1 G3 R2,Yes
+3351,Kalavathi (Raga 2),[p187],"aroha,avaroha,ref",S R3 G3 M1 P D1 N1 S N1 D1,S M1 R3 G3 M1 R3 S D1 P D1,Yes,S,AC,S R3 G3 M1 P D1 N1 D1 P D1 S,S N1 D1 S M1 R3 G3 M1 R3 S,Yes
+3378,ChitraVaditha (Raga 1),[p189],"aroha,avaroha,ref",S G3 R3 G3 M1 D1 M1 S D1,P M1 R3 G3 R3 S P D1 N2,Yes,S,AE,S G3 R3 G3 M1 D1 M1 P D1 N2 S,S D1 P M1 R3 G3 R3 S,Yes
+3391,Kusuma KallolaSPM (Raga 1),[p189],aroha,R3 G3 M1 P S,S D1 P M1 G3 M1 R3 S,Yes,AE,AE,S P M1 R3 G3 M1 P S,S D1 P M1 G3 M1 R3 S,Yes
+3414,SamanthaJingla (Raga 2),[p190],avaroha,S R3 G3 M1 P D1 N2 S,S N2 P D1 N2 P M1 R3 G3 R3 S P,Yes,,P,S R3 G3 M1 P D1 N2 S,S N2 P D1 N2 P M1 R3 G3 R3 S,Yes
+3436,HindolaNayakiSM (Raga 1),[p191],aroha,G3 M1 P S,S N3 D1 P M1 G3 M1 R3 S,Yes,AE,AE,S M1 G3 M1 P S,S N3 D1 P M1 G3 M1 R3 S,Yes
+3447,Paksuka Mana (Raga 1),[p192],"aroha,avaroha,ref",S M1 G3 R3 G3 M1 S N3 D1,P M1 G3 R3 S P N3 D1 N3,Yes,S,AE,S M1 G3 R3 G3 M1 P N3 D1 N3 S,S N3 D1 P M1 G3 R3 S,Yes
+3526,Soka Varali (Raga 1),[p196],"aroha,avaroha,vakra",S G3 M1 N3 D2,P M1 G3 R3 S,Yes,R,R,S G3 M1 N3,D2 P M1 G3 R3 S,No
+3533,Syamala (Raga 1),[p196],"aroha,avaroha",S G3 R3 G3 M1 P D2 N3 D2,P S N3 D2 P M1 G3 R3 S,Yes,R,R,S G3 R3 G3 M1 P D2 N3 D2 P,S N3 D2 P M1 G3 R3 S,Yes
+3534,ThandavollasiniSR (Raga 1),[p196],"aroha,vakra",G3 P D2 N3 S,S N3 D2 P G3 R3 S,Yes,AE,AE,S R3 G3 P D2 N3 S,S N3 D2 P G3 R3 S,No
+3593,BhogaSaveri (Raga 2),[p199],"aroha,avaroha,ref",S M2 P D1 N1 D1 D1 P,M2 G1 R1 S R1 P M2 G1 R1,Yes,S,R,S M2 P D1 N1 D1 P M2 G1 R1 S,D1 P M2 G1 R1 S,Yes
+3594,BhogaSaveri (Raga 3),[p199],"aroha,avaroha",S R1 G1 M2 P D1,N1 D1 P M2 G1 R1 S,No,R,R,S R1 G1 M2 P D1 N1,D1 P M2 G1 R1 S,No
+3631,Saudhari (Raga 1),[p200],"aroha,avaroha,ref",S R1 G1 R1 M2 G1 M2 S N1,D1 P M2 G1 R1 S R1 P D1 N1,Yes,S,R,S R1 G1 R1 M2 G1 M2 P D1 N1 S,S N1 D1 P M2 G1 R1 S,Yes
+3651,JaganMohanam AE (Raga 1),[p201],"avaroha,ref",S R1 M2 P D1 S N2 S,S N2 D1 P M2 G1 R1,Yes,S,AE,S R1 M2 P D1 S N2 S,S N2 D1 P M2 G1 R1 S,Yes
+3658,Kusumavali (Raga 1),[p201],"aroha,avaroha",N2 S R1 G1 M2 P D1,N2 D1 P M2 G1 R1 S N2,Yes,AE,AE,N2 S R1 G1 M2 P D1 N2,D1 P M2 G1 R1 S N2,Yes
+3662,MaruvaChandrika (Raga 1),[p201],"aroha,avaroha",S N2 S R1 G1 M2 P D1,N2 N2 D1 P M2 G1 R1 G1 S,Yes,AE,AE,S N2 S R1 G1 M2 P D1 N2,N2 D1 P M2 G1 R1 G1 S,Yes
+3663,MaruvaChandrika (Raga 2),[p201],"aroha,avaroha",S N2 S R1 G1 M2 P D1,N2 D1 P M2 G1 R1 G1 S,Yes,R,R,S N2 S R1 G1 M2 P D1 N2,D1 P M2 G1 R1 G1 S,Yes
+3707,KokilaPanchamam (Raga 3),[p204],"aroha,avaroha",S G1 R1 S,S P D1 N3 S S N3 D1 P P D1 N3 S,Yes,R,R,S G1 R1 S S P D1 N3 S,S N3 D1 P P D1 N3 S,Yes
+3732,Varali ThilakamS (Raga 1),[p204],"aroha,vakra",R1 G1 M2 D1 N3 S,S N3 D1 M2 G1 R1 S,Yes,AE,AE,S R1 G1 M2 D1 N3 S,S N3 D1 M2 G1 R1 S,No
+3739,DeergaNandini (Raga 1),[p205],"aroha,avaroha",P D2 N2 S G1 M2 R1 M2 P,N2 D2 P M2 G1 R1 S N2 D2 P,Yes,AE,AE,P D2 N2 S G1 M2 R1 M2 P N2,D2 P M2 G1 R1 S N2 D2 P,Yes
+3754,Navarasa (Raga 1),[p205],"avaroha,ref",S R1 M2 G1 M2 P D2 N2 S,S N2 D2 P M2 G1 P M2 R1 R1 G1 R1,Yes,S,R,S R1 M2 G1 M2 P D2 N2 S,S N2 D2 P M2 G1 P M2 R1 G1 R1 S,Yes
+3762,Sindhunattakurinji (Raga 2),[p206],ref,S R1 G1 M2 P D2 N2 S,S N2 D2 P M2 G1 R1 S,No,p,P,S R1 G1 M2 P D2 N2 S,S N2 D2 P M2 G1 R1 S,No
+3773,Visiambari (Raga 1),[p206],"aroha,avaroha,ref",S R1 M2 P M2 G1 M2 S N2 D2,P M2 G1 M2 R1 S P P D2 N2,Yes,S,P,S R1 M2 P M2 G1 M2 P D2 N2 S,S N2 D2 P M2 G1 M2 R1 S,Yes
+3774,Adivasu (Raga 1),[p207],"aroha,avaroha",S R1 G1 M2 P M2 D2,N3 S N3 D2 M2 G1 S,Yes,AE,AE,S R1 G1 M2 P M2 D2 N3 S,N3 D2 M2 G1 S,Yes
+3825,AnandaBhogi (Raga 1),[p209],"aroha,avaroha",S R1 G1 M2 P N3 D3,N3 D3 P M2 G1 R1 S N3,Yes,AE,AE,S R1 G1 M2 P N3 D3 N3,D3 P M2 G1 R1 S N3,Yes
+3828,Gandarvam (Raga 1),[p209],"aroha,avaroha",M2 P D3 N3 S R1 G1 R1,S N3 P M2 P D3 N3 S,Yes,AE,AE,M2 P D3 N3 S R1 G1,R1 S N3 P M2 P D3 N3 S,Yes
+3830,Gandarvam (Raga 3),[p209],"aroha,avaroha",P D3 N3 P R1 G1 R1 S,N3 P M2 P D3 N3 S N3 P,Yes,R,R,P D3 N3 P R1 G1 R1 S N3 P,M2 P D3 N3 S N3 P,Yes
+3831,Gandarvam (Raga 4),[p209],"aroha,avaroha",M2 P D3 N3 S R1,G1 D3 R1 S N3 P M2,Yes,P,P,M2 P D3 N3 S R1 G1,D3 R1 S N3 P M2,Yes
+3832,Gandarvam (Raga 5),[p209],"aroha,avaroha",M2 P D3 N3 S R1 D3,S N3 P M2 P D3 N3 S,Yes,AB,AB,M2 P D3 N3 S R1,D3 S N3 P M2 P D3 N3 S,Yes
+3833,Gantaravam (Raga 1),[p209],"aroha,avaroha",M2 P D3 N3 S R1 G1 M2 P G1,R1 S N3 P M2 P D3 N3 S N3 P,Yes,P,P,M2 P D3 N3 S R1 G1 M2 P G1 R1 S,N3 P M2 P D3 N3 S N3 P,Yes
+3834,Gopathi (Raga 1),[p209],"aroha,avaroha",S R1 G1 M2 P D3,N3 P M2 R1 G1 R1 S,Yes,AE,AE,S R1 G1 M2 P D3 N3,P M2 R1 G1 R1 S,Yes
+3835,Gopathi (Raga 2),[p209],"aroha,avaroha",N3 S R1 M2 P D3 N3 P,M2 G1 R1 S N3 S N3 S,Yes,R,R,N3 S R1 M2 P D3 N3,P M2 G1 R1 S N3 S N3 S,Yes
+3848,MaruvaLalitha (Raga 1),[p209],"aroha,avaroha",P D3 N3 S R1 G1 M2,P P M2 G1 R1 S N3 P,Yes,AE,AE,P D3 N3 S R1 G1 M2 P,P M2 G1 R1 S N3 P,Yes
+3854,Raghu Leela (Raga 1),[p210],"aroha,avaroha",S M2 R1 P M2 G1 M2 P S N3 D3 N3 P,M2 G1 M2 M2 R1 M2 P N3 S R1 M2 G1 R1 S,Yes,AE,AE,S M2 R1 P M2 G1 M2 P M2 R1 M2 P N3 S,S N3 D3 N3 P M2 G1 M2 R1 M2 G1 R1 S,Yes
+3855,Raghu Leela (Raga 2),[p210],"aroha,avaroha",S M2 R1 P M2 G1 M2 P S N3 D3 N3,P M2 G1 R1 R1 M2 P N3 S M2 G1 R1 S,Yes,R,R,S M2 R1 P M2 G1 M2 P R1 M2 P N3 S,S N3 D3 N3 P M2 G1 R1 M2 G1 R1 S,Yes
+3965,BhanuDhanyasi (Raga 1),[p215],"aroha,avaroha",S R1 G2 N3 D1 N3 D1,P M2 G2 R1 S N3 S,Yes,R,R,S R1 G2 N3 D1 N3,D1 P M2 G2 R1 S N3 S,Yes
+3979,GarudaVardhini (Raga 1),[p215],"aroha,avaroha,ref",S R1 G2 M2 N3 D1 M2 P,S N3 P M2 R1 S R1 D1 N3,Yes,S,R,S R1 G2 M2 N3 D1 M2 P D1 N3 S,S N3 P M2 R1 S,Yes
+4058,Maruva Gowri (Raga 2),[p218],"aroha,avaroha",S G2 R1 G2 M2 P D2,N2 D2 M2 P M2 G2 R1 S,Yes,P,P,S G2 R1 G2 M2 P D2 N2,D2 M2 P M2 G2 R1 S,Yes
+4059,Maruva Gowri (Raga 3),[p218],"aroha,avaroha",S G2 R1 G2 M2 P D2,N2 D2 P M2 G2 R1 S N2,Yes,P,P,S G2 R1 G2 M2 P D2 N2,D2 P M2 G2 R1 S N2,Yes
+4065,Purasuya (Raga 1),[p219],"aroha,avaroha,ref",S R1 M2 G2 R1 M2 P S N2,D2 P M2 G2 R1 S N2 D2 N2,Yes,S,AE,S R1 M2 G2 R1 M2 P N2 D2 N2 S,S N2 D2 P M2 G2 R1 S,Yes
+4082,Abhiru (Raga 2),[p220],"aroha,avaroha",S R1 G2 R1 M2 P N3,S D2 P M2 G2 R1 S,Yes,R,R,S R1 G2 R1 M2 P N3 S,D2 P M2 G2 R1 S,Yes
+4083,Abhiru (Raga 3),[p220],"aroha,avaroha,ref",S G2 R1 N3 N3 S G2 D2 P M2 P G2 S,S D2 P G2 S R1 G2 R1 N3,Yes,S,R,S G2 R1 N3 N3 S G2 G2 R1 N3 S,D2 P M2 P G2 S S D2 P G2 S,Yes
+4084,Abhiru (Raga 4),[p220],"aroha,avaroha",S G2 R1 G2 M2 P,N3 S D2 P M2 G2 S,Yes,R,R,S G2 R1 G2 M2 P N3 S,D2 P M2 G2 S,Yes
+4085,Abhiru (Raga 5),[p220],"aroha,avaroha",P D2 N3 S M2 G2,M2 P M2 G2 S N3 D2,Yes,P,P,P D2 N3 S M2 G2 M2,P M2 G2 S N3 D2,Yes
+4086,Abhiru (Raga 6),[p220],"aroha,avaroha",P D2 N3 S M2 G2 M2,P P M2 D2 S N3 D2 S,Yes,AB,AB,P D2 N3 S M2 G2 M2 P,P M2 D2 S N3 D2 S,Yes
+4104,Maruva Saranga (Raga 1),[p220],"aroha,avaroha",S N3 S R1 G2 M2 P M2,D2 N3 D2 P M2 G2 R1 G2 S,Yes,AE,AE,S N3 S R1 G2 M2 P M2 D2 N3,D2 P M2 G2 R1 G2 S,Yes
+4105,Maruva Saranga (Raga 2),[p221],"aroha,avaroha",S R1 S R1 G2 M2 M2,D2 N3 D2 P M2 G2 R1 S,Yes,P,P,S R1 S R1 G2 M2 M2 D2 N3,D2 P M2 G2 R1 S,Yes
+4116,SakthakalaVardhani (Raga 1),[p221],"aroha,avaroha,ref",S R1 G2 R1 M2 P D2 P N3 S N3 D2,P M2 G2 R1 G2 S R1 D2 N3 P D2 N3,Yes,S,R,S R1 G2 R1 M2 P D2 P N3 D2 N3 P D2 N3 S,S N3 D2 P M2 G2 R1 G2 S,Yes
+4128,Vijaya Sri (Raga 2),[p221],ref,S R1 G2 M2 P N3 S,S N3 P M2 G2 R1 S,No,p,P,S R1 G2 M2 P N3 S,S N3 P M2 G2 R1 S,No
+4160,KannadaVelavali (Raga 1),[p223],"aroha,avaroha",P N3 S R1 G2 M2 P P,M2 G2 R1 S N3 D3 N3 P,Yes,AE,AE,P N3 S R1 G2 M2 P,P M2 G2 R1 S N3 D3 N3 P,Yes
+4181,Suka Swaravali (Raga 1),[p223],"aroha,avaroha",S N3 S R1 G2 M2 P D3,N3 P M2 G2 R1 S N3 S,Yes,AE,AE,S N3 S R1 G2 M2 P D3 N3,P M2 G2 R1 S N3 S,Yes
+4182,Suka Swaravali (Raga 2),[p223],"aroha,avaroha",S R1 G2 M2 P D3,N3 P M2 G2 R1 S N3,Yes,P,P,S R1 G2 M2 P D3 N3,P M2 G2 R1 S N3,Yes
+4325,Purvi (Raga 1),[p230],"aroha,avaroha",S R1 G3 M2 P D1 N3 D1,S N3 D1 P M2 G3 R1 S,Yes,R,R,S R1 G3 M2 P D1 N3 D1 S,N3 D1 P M2 G3 R1 S,Yes
+4359,ThatikaPanchamam (Raga 1),[p231],"aroha,avaroha",S G3 R1 G3 M2 P M2 S N3 D1,P M2 G3 R1 S R1 D1 N3 P S,Yes,,R,S G3 R1 G3 M2 P M2 D1 N3 P S,S N3 D1 P M2 G3 R1 S,Yes
+4373,AnandaBhogi (Raga 1),[p232],"aroha,avaroha",S R1 G3 M2 P N2 D2,N2 D2 P M2 R1 S N2,Yes,P,P,S R1 G3 M2 P N2 D2 N2,D2 P M2 R1 S N2,Yes
+4376,BairavaDhwaniS (Raga 1),[p232],aroha,R1 G3 M2 P M2 N2 D2 S,S D2 P M2 G3 R1 S,Yes,AE,AE,S R1 G3 M2 P M2 N2 D2 S,S D2 P M2 G3 R1 S,Yes
+4377,Chintaramani (Raga 1),[p232],"aroha,avaroha",S G3 M2 P D2 N2 D2,P M2 P G3 R1 S N2 S,Yes,R,R,S G3 M2 P D2 N2,D2 P M2 P G3 R1 S N2 S,Yes
+4378,Chintamani (Raga 1),[p232],"aroha,avaroha",S G3 M2 P D2 N2 D2,P M2 P G3 R1 S N2 S,Yes,AE,AE,S G3 M2 P D2 N2,D2 P M2 P G3 R1 S N2 S,Yes
+4379,DharmaKottani (Raga 1),[p232],"aroha,avaroha,ref",S R1 G3 R1 G3 M2 P D2 S D2,N2 P M2 G3 R1 P N2 D2 P N2,Yes,S,P,S R1 G3 R1 G3 M2 P D2 N2 D2 P N2 S,S D2 N2 P M2 G3 R1,Yes
+4386,Hamsa Gamani (Raga 2),[p232],ref,S G3 M2 P D2 N2 D2 S,S N2 D2 P M2 G3 R1 S,Yes,0,O,S G3 M2 P D2 N2 D2 S,S N2 D2 P M2 G3 R1 S,Yes
+4390,Jagadambari (Raga 1),[p232],"aroha,avaroha",S R1 G3 M2 P D2 N2 D2,P M2 P G3 R1 S N2 S,Yes,P,P,S R1 G3 M2 P D2 N2,D2 P M2 P G3 R1 S N2 S,Yes
+4391,Kaladharani (Raga 1),[p232],"aroha,avaroha",S G3 R1 G3 M2 P N2 D2,N2 D2 P M2 G3 R1 S N2 S,Yes,AE,AE,S G3 R1 G3 M2 P N2 D2 N2,D2 P M2 G3 R1 S N2 S,Yes
+4408,PadmaGantana (Raga 1),[p233],"aroha,avaroha,ref",S R1 G3 R1 G3 M2 P D2 S D2,N2 P G3 M2 R1 S R1 N2 D2 P N2,Yes,S,R,S R1 G3 R1 G3 M2 P D2 N2 D2 P N2 S,S D2 N2 P G3 M2 R1 S,Yes
+4410,Pavitri (Raga 1),[p233],"aroha,avaroha",P M2 P D2 N2 S R1 G3 M2,P P M2 G3 R1 S N2 D2 P,Yes,AE,AE,P M2 P D2 N2 S R1 G3 M2 P,P M2 G3 R1 S N2 D2 P,Yes
+4411,Pavitri (Raga 2),[p233],"aroha,avaroha",P M2 P D2 N2 S R1 G3 M2,P P M2 G3 R1 S N2 D2 P,Yes,R,R,P M2 P D2 N2 S R1 G3 M2 P,P M2 G3 R1 S N2 D2 P,Yes
+4432,Sri Kari (Raga 2),[p234],"aroha,avaroha",S R1 G3 P M2 D2,N2 P M2 G3 R1 S N2,Yes,P,P,S R1 G3 P M2 D2 N2,P M2 G3 R1 S N2,Yes
+4449,Alankari (Raga 1),[p235],ref,S G3 M2 D2 N3 D2 S,S N3 D2 M2 G3 S,Yes,0,O,S G3 M2 D2 N3 D2 S,S N3 D2 M2 G3 S,Yes
+4464,Devasraya (Raga 1),[p235],"aroha,avaroha,vakra",S R1 G3 M2 D2 N3 S,S S N3 D2 M2 G3 R1 S,No,R,R,S R1 G3 M2 D2 N3 S S,S N3 D2 M2 G3 R1 S,Yes
+4503,Purva Kalyani (Raga 1),[p236],"aroha,avaroha,ref",S R1 G3 M2 P D2 N3 S N3,D2 P M2 G3 R1 S P D2 P,Yes,S,AE,S R1 G3 M2 P D2 N3 P D2 P S,S N3 D2 P M2 G3 R1 S,Yes
+4504,Purva Kalyani (Raga 2),[p236],"aroha,avaroha,ref",S R1 G3 M2 P D2 N3 S N3,P M2 G3 R1 S R1 P D2 P,Yes,S,R,S R1 G3 M2 P D2 N3 P D2 P S,S N3 P M2 G3 R1 S,Yes
+4517,Sohini (Raga 1),[p237],ref,S G3 M2 D2 N3 S,S N3 D2 M2 G3 R1 S,No,0,O,S G3 M2 D2 N3 S,S N3 D2 M2 G3 R1 S,No
+4560,Veera Prathapam (Raga 1),[p239],"aroha,avaroha",S N3 D3 S R1 G3 M2 P D3,N3 D3 P M2 G3 R1 S N3 D3 S,Yes,R,R,S N3 D3 S R1 G3 M2 P D3 N3,D3 P M2 G3 R1 S N3 D3 S,Yes
+4573,HamsaPrabhavali (Raga 1),[p240],"aroha,avaroha",S N1 S R2 G2 M2 P D1,N1 D1 S P G2 R2 G2 S,Yes,R,R,S N1 S R2 G2 M2 P D1 N1,D1 S P G2 R2 G2 S,Yes
+4574,HamsaPrabhavali (Raga 2),[p240],"aroha,avaroha",S N1 S R2 N1 G2 M2 P,D1 N1 D1 S P R2 G2 S,Yes,R,R,S N1 S R2 N1 G2 M2 P D1 N1,D1 S P R2 G2 S,Yes
+4576,HamsaBhushavali (Raga 1),[p240],"aroha,avaroha",S N1 S R2 G2 M2 P D1,N1 D1 P M2 G2 R2 G2 S,Yes,P,P,S N1 S R2 G2 M2 P D1 N1,D1 P M2 G2 R2 G2 S,Yes
+4738,Kesarava Loka (Raga 2),[p247],"aroha,avaroha",S R2 M2 P D2 S,N2 D2 P M2 G2 R2 S,No,L,L,S R2 M2 P D2,S N2 D2 P M2 G2 R2 S,No
+4743,Mandini (Raga 1),[p247],ref,S M2 G2 M2 P D2 N2 S,S N2 P M2 P G2 R2 S,Yes,p,P,S M2 G2 M2 P D2 N2 S,S N2 P M2 P G2 R2 S,Yes
+4853,Nishadam (Raga 6),[p251],"aroha,avaroha",S R2 G2 R2 S N3 D3,M2 P N3 D3 M2 G2 R2 S,Yes,P,P,S R2 G2 R2 S N3 D3 M2,P N3 D3 M2 G2 R2 S,Yes
+4894,TharangaLeela (Raga 1),[p253],"aroha,avaroha,ref",S R2 G3 R2 M2 P D1 N1,S N1 M2 G3 R2 S D1 M2 N1,Yes,S,AE,S R2 G3 R2 M2 P D1 N1 D1 M2 N1 S,S N1 M2 G3 R2 S,Yes
+4914,MangayarkarasiS (Raga 1),[p254],"aroha,vakra",R2 G3 M2 P N2 S,S D1 P M2 G3 R2 S,Yes,AB,AB,S R2 G3 M2 P N2 S,S D1 P M2 G3 R2 S,No
+4952,BhinnaNishadam (Raga 1),[p256],"aroha,avaroha",S N3 S R2 G3 M2 P D1,N3 P M2 G3 R2 S N3 S,Yes,AE,AE,S N3 S R2 G3 M2 P D1 N3,P M2 G3 R2 S N3 S,Yes
+4953,BhinnaNishadam (Raga 2),[p256],"aroha,avaroha",S R2 G3 M2 P D1,N3 P M2 G3 R2 S N3,Yes,P,P,S R2 G3 M2 P D1 N3,P M2 G3 R2 S N3,Yes
+4994,Naimapriya (Raga 2),[p257],"aroha,avaroha",S R2 M2 G3 M2 D1 P D1 S,N3 D1 P M2 G3 P M2 G3 R2 S,Yes,AB,AB,S R2 M2 G3 M2 D1 P D1,S N3 D1 P M2 G3 P M2 G3 R2 S,Yes
+5001,PurnaNishadam (Raga 2),[p258],"aroha,avaroha",P D1 N3 S R2 G3 M2 P,M2 G3 S R2 S N3 D1 P,Yes,P,P,P D1 N3 S R2 G3 M2,P M2 G3 S R2 S N3 D1 P,Yes
+5024,SuddhaKalanidhi (Raga 3),[p258],"aroha,avaroha",S G3 P D1 N3 D1,P M2 G3 R2 S N3 S,Yes,P,P,S G3 P D1 N3,D1 P M2 G3 R2 S N3 S,Yes
+5073,PanchaMurthi (Raga 1),[p260],"aroha,avaroha",S R2 G3 M2 P D2 N2 D2,P M2 P G3 R2 S N2 S,Yes,AE,AE,S R2 G3 M2 P D2 N2,D2 P M2 P G3 R2 S N2 S,Yes
+5122,BhoopKalyani (Raga 2),[p262],"aroha,avaroha",P D2 S R2 G3 M2 P P M2,G3 M2 G3 R2 S N3 D2 P D2 S,Yes,AL,AL,P D2 S R2 G3 M2 P,P M2 G3 M2 G3 R2 S N3 D2 P D2 S,Yes
+5130,Chethulavali (Raga 1),[p262],"aroha,avaroha,ref",S R2 G3 R2 G3 M2 P S N3 D2,N3 P M2 R2 G3 R2 S R2 N3 D2 N3,Yes,S,R,S R2 G3 R2 G3 M2 P N3 D2 N3 S,S N3 D2 N3 P M2 R2 G3 R2 S,Yes
+5133,Desa (Raga 1),[p262],"aroha,avaroha,ref",S R2 G3 P M2 D2 N3 S N3 D2,P M2 G3 M2 R2 G3 S R2 S D2 P,Yes,S,R,S R2 G3 P M2 D2 N3 S D2 P S,S N3 D2 P M2 G3 M2 R2 G3 S,Yes
+5251,YamunaKalyani (Raga 4),[p266],"aroha,avaroha",S R2 G3 M2 P D2,S D2 P M2 G3 R2 S,No,P,P,S R2 G3 M2 P D2 S,D2 P M2 G3 R2 S,No
+5279,SarvaManavathi (Raga 1),[p268],"aroha,avaroha",S M2 G3 M2 P N3 D3 N3 S N3 D3,N3 P G3 M2 P D3 S G3 R2 G3 S,Yes,L,L,S M2 G3 M2 P N3 D3 N3 P D3 S,S N3 D3 N3 P G3 M2 G3 R2 G3 S,Yes
+5320,HindolaDesakshi (Raga 1),[p271],"aroha,avaroha",S N2 S R3 G3 M2 P,D1 N2 D1 P M2 G3 R3 S,Yes,AE,AE,S N2 S R3 G3 M2 P D1,N2 D1 P M2 G3 R3 S,Yes
+5417,Pratapa Saranga AE (Raga 1),[p275],"avaroha,ref,vakra",S R3 G3 M2 P D2 S,S N3 D2 P M2 G3,Yes,S,AE,S R3 G3 M2 P D2 S,S N3 D2 P M2 G3 S,No
+5445,Rasamanjari (Raga 3),[p276],ref,SRGSPMPNDNS,SNDNPPMPRGS,Yes,S,AC,SRGSPMPNDNS,SNDNPPMPRGS,Yes

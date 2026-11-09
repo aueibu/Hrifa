@@ -1,0 +1,1048 @@
+[
+  {
+    "hindustani_name": "Kalyan",
+    "swara": "S-R-G-M-P-D-N-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      6,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 65,
+    "melakarta_name": "Mechakalyani",
+    "western_mode": "Lydian",
+    "bifurcation": " Yaman + Bilawal ",
+    "exact_matches": [
+      "Yaman",
+      "Shuddha Kalyan"
+    ],
+    "enclosed_matches": [
+      "Bhupali",
+      "Deshkar",
+      "Jait Kalyan",
+      "Adbhut Kalyan",
+      "Hansadhwani",
+      "Hindol",
+      "Pahadi",
+      "Kesari Kalyan",
+      "Amritvarshini",
+      "Malashree",
+      "Raj Kalyan",
+      "Maru",
+      "Shivangi",
+      "Shankara (also see the Kalyan raganga )"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Bilawal",
+    "swara": "S-R-G-m-P-D-N-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      5,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 29,
+    "melakarta_name": "Dhirashankarabharanam",
+    "western_mode": "Major",
+    "bifurcation": " Bilawal + Bilawal ",
+    "exact_matches": [
+      "Bilawal",
+      "Tilak Kamod",
+      "Nat",
+      "Loom",
+      "Asa",
+      "Bihari",
+      "Dagori",
+      "Gagan Vihang",
+      "Hem Bihag",
+      "Chaya Malhar",
+      "Hemant",
+      "Mand",
+      "Maluha",
+      "Manjari Bihag",
+      "Savani",
+      "Swanandi"
+    ],
+    "enclosed_matches": [
+      "Bhupali",
+      "Durga",
+      "Pahadi",
+      "Hansadhwani",
+      "Kaushik Dhwani",
+      "Bhinna Shadja",
+      "Shuddha Malhar",
+      "Jaldhar Kedar",
+      "Deshkar",
+      "Shankara",
+      "Rasaranjani",
+      "Jait Kalyan",
+      "Kesari Kalyan",
+      "Adbhut Kalyan",
+      "Gaud",
+      "Shivangi",
+      "Bhavani",
+      "Malashree (also see the Bilawal raganga )"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Khamaj",
+    "swara": "S-R-G-m-P-D-n-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      5,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 28,
+    "melakarta_name": "Harikambhoji",
+    "western_mode": "Mixolydian",
+    "bifurcation": " Bilawal + Kafi ",
+    "exact_matches": [
+      "Khamaj",
+      "Jhinjhoti",
+      "Gaoti",
+      "Sakh",
+      "Kambhoji",
+      "Khambavati",
+      "Sameshwari",
+      "Kalashri"
+    ],
+    "enclosed_matches": [
+      "Bhupali",
+      "Durga",
+      "Megh",
+      "Gorakh Kalyan",
+      "Kalavati",
+      "Jansammohini",
+      "Rageshri",
+      "Bhavani",
+      "Deshkar",
+      "Jait Kalyan",
+      "Durgawati",
+      "Pahadi",
+      "Madhumad Sarang",
+      "Malashree",
+      "Jaldhar Kedar",
+      "Shuddha Malhar",
+      "Shivangi",
+      "Narayani (also see the Khamaj raganga )"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Kafi",
+    "swara": "S-R-g-m-P-D-n-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      5,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 22,
+    "melakarta_name": "Kharaharapriya",
+    "western_mode": "Dorian",
+    "bifurcation": " Kafi + Kafi ",
+    "exact_matches": [
+      "Kafi",
+      "Bageshri",
+      "Bhimpalasi",
+      "Shahana",
+      "Desi",
+      "Dhanashree",
+      "Hussaini Kanada",
+      "Mudriki Kanada",
+      "Raisa Kanada"
+    ],
+    "enclosed_matches": [
+      "Durga",
+      "Dhani",
+      "Megh",
+      "Abhogi",
+      "Shivranjani",
+      "Gorakh Kalyan",
+      "Bhavani",
+      "Durgawati",
+      "Gaudgiri Malhar",
+      "Madhumad Sarang",
+      "Jaldhar Kedar",
+      "Manavi",
+      "Shuddha Malhar",
+      "Narayani",
+      "Nayaki Kanada",
+      "Suha Kanada",
+      "Sundarkauns (also see the Kafi raganga )"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Asavari",
+    "swara": "S-R-g-m-P-d-n-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      5,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 20,
+    "melakarta_name": "Natabhairavi",
+    "western_mode": "Aeolian",
+    "bifurcation": " Kafi + Bhairavi ",
+    "exact_matches": [
+      "Darbari",
+      "Kaunsi Kanada",
+      "Adana",
+      "Jaunpuri",
+      "Kaushiki",
+      "Sampurna Malkauns"
+    ],
+    "enclosed_matches": [
+      "Malkauns",
+      "Megh",
+      "Dhani",
+      "Gopika Basant",
+      "Gaudgiri Malhar",
+      "Madhumad Sarang",
+      "Nayaki Kanada",
+      "Pancham Malkauns",
+      "Shobhawari",
+      "Sarangkauns",
+      "Japaniya",
+      "Suha Kanada"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Bhairavi",
+    "swara": "S-r-g-m-P-d-n-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      5,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 8,
+    "melakarta_name": "Hanumatodi",
+    "western_mode": "Phrygian",
+    "bifurcation": " Bhairavi + Bhairavi ",
+    "exact_matches": [
+      "Bhairavi",
+      "Bilaskhani Todi",
+      "Darjeeling"
+    ],
+    "enclosed_matches": [
+      "Malkauns",
+      "Dhani",
+      "Bhupali Todi",
+      "Bairagi",
+      "Bairagi Todi",
+      "Saheli Todi",
+      "Gunkali",
+      "Gunakri",
+      "Gopika Basant",
+      "Pancham Malkauns"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Bhairav",
+    "swara": "S-r-G-m-P-d-N-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      5,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 15,
+    "melakarta_name": "Mayamalavagowla",
+    "western_mode": "Double Harmonic",
+    "bifurcation": " Bhairav + Bhairav ",
+    "exact_matches": [
+      "Bhairav",
+      "Kalingada",
+      "Gauri"
+    ],
+    "enclosed_matches": [
+      "Jogiya",
+      "Bibhas",
+      "Devranjani",
+      "Gunakri",
+      "Gunkali",
+      "Bangal Bhairav",
+      "Zeelaf",
+      "Malashree",
+      "Triveni",
+      "Reva (also see the Bhairav raganga )"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Marwa",
+    "swara": "S-r-G-M-P-D-N-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      6,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 53,
+    "melakarta_name": "Gamanashrama",
+    "western_mode": "Lydian b2",
+    "bifurcation": " Marwa + Bilawal ",
+    "exact_matches": [
+      "Puriya Kalyan",
+      "Shree Kalyan",
+      "Purva",
+      "Baradi"
+    ],
+    "enclosed_matches": [
+      "Marwa",
+      "Puriya",
+      "Sohini",
+      "Hindol",
+      "Hansa Narayani",
+      "Malavi",
+      "Shivangi",
+      "Malashree"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Poorvi",
+    "swara": "S-r-G-M-P-d-N-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      6,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 51,
+    "melakarta_name": "Kamavardhani",
+    "western_mode": "Lydian b2 b6",
+    "bifurcation": " Marwa + Bhairav ",
+    "exact_matches": [
+      "Shree",
+      "Puriya Dhanashree",
+      "Basant",
+      "Gauri Basant",
+      "Jaitashree",
+      "Tankeshree"
+    ],
+    "enclosed_matches": [
+      "Bibhas",
+      "Din ki Puriya",
+      "Hansa Narayani",
+      "Malashree",
+      "Reva",
+      "Triveni"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Todi",
+    "swara": "S-r-g-M-P-d-N-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      6,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 45,
+    "melakarta_name": "Shubhapantuvarali",
+    "western_mode": "Lydian b2 b3 b6",
+    "bifurcation": " Todi + Bhairav ",
+    "exact_matches": [
+      "Todi",
+      "Multani",
+      "Annapurna"
+    ],
+    "enclosed_matches": [
+      "Bhupali Todi",
+      "Gujiri Todi",
+      "Firozkhani Todi (also see the Todi raganga )"
+    ],
+    "is_bhatkhande_10": true
+  },
+  {
+    "hindustani_name": "Latangi",
+    "swara": "S-R-G-M-P-d-N-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      6,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 63,
+    "melakarta_name": "Latangi",
+    "western_mode": "Lydian b6",
+    "bifurcation": " Yaman + Bhairav ",
+    "exact_matches": [
+      "Latangi"
+    ],
+    "enclosed_matches": [
+      "Amritvarshini",
+      "Hansadhwani",
+      "Malashree"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Madhuvanti",
+    "swara": "S-R-g-M-P-D-N-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      6,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 59,
+    "melakarta_name": "Dharmavati",
+    "western_mode": "Lydian b3",
+    "bifurcation": " Madhuvanti + Bilawal ",
+    "exact_matches": [
+      "Madhuvanti",
+      "Anjani Kalyan"
+    ],
+    "enclosed_matches": [
+      "Shivawanti",
+      "Shivranjani",
+      "Vijayanagari"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Madhu Multani",
+    "swara": "S-r-g-M-P-D-N-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      6,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 47,
+    "melakarta_name": "Suvarnangi",
+    "western_mode": "Lydian b2 b3",
+    "bifurcation": " Todi + Bilawal ",
+    "exact_matches": [
+      "Madhu Multani"
+    ],
+    "enclosed_matches": [
+      "(none found)"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Simhendra Madhyamam",
+    "swara": "S-R-g-M-P-d-N-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      6,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 57,
+    "melakarta_name": "Simhendramadhyamam",
+    "western_mode": "Hungarian Minor",
+    "bifurcation": " Madhuvanti + Bhairav ",
+    "exact_matches": [
+      "Simhendra Madhyamam"
+    ],
+    "enclosed_matches": [
+      "Japaniya"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Vachaspati",
+    "swara": "S-R-G-M-P-D-n-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      6,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 64,
+    "melakarta_name": "Vachaspati",
+    "western_mode": "Lydian Dominant",
+    "bifurcation": " Yaman + Kafi ",
+    "exact_matches": [
+      "Vachaspati"
+    ],
+    "enclosed_matches": [
+      "Bhupali",
+      "Deshkar",
+      "Devshri",
+      "Jait Kalyan",
+      "Jansammohini",
+      "Kalavati",
+      "Kameshwari",
+      "Malashree",
+      "Pahadi",
+      "Saraswati",
+      "Shivangi"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Rampriya",
+    "swara": "S-r-G-M-P-D-n-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      6,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 52,
+    "melakarta_name": "Ramapriya",
+    "western_mode": "Lydian b2 b7",
+    "bifurcation": " Marwa + Kafi ",
+    "exact_matches": [
+      "Rampriya"
+    ],
+    "enclosed_matches": [
+      "Amirkhani Kauns",
+      "Kalavati",
+      "Malashree",
+      "Malavi",
+      "Malay Marutam",
+      "Shivangi",
+      "Sundarkali"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Rishabhapriya",
+    "swara": "S-R-G-M-P-d-n-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      6,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 62,
+    "melakarta_name": "Rishabhapriya",
+    "western_mode": "Lydian b6 b7",
+    "bifurcation": " Yaman + Bhairavi ",
+    "exact_matches": [
+      "Rishabhapriya"
+    ],
+    "enclosed_matches": [
+      "Amirkhani Kauns",
+      "Devshri",
+      "Malashree",
+      "Sehera"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Namanarayani",
+    "swara": "S-r-G-M-P-d-n-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      6,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 50,
+    "melakarta_name": "Namanarayani",
+    "western_mode": "Phrygian Dominant #4",
+    "bifurcation": " Marwa + Bhairavi ",
+    "exact_matches": [
+      "Dhaarini"
+    ],
+    "enclosed_matches": [
+      "Amirkhani Kauns",
+      "Bibhas",
+      "Malashree",
+      "Reva",
+      "Sundarkali"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Hemavati",
+    "swara": "S-R-g-M-P-D-n-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      6,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 58,
+    "melakarta_name": "Hemavati",
+    "western_mode": "Dorian #4",
+    "bifurcation": " Madhuvanti + Kafi ",
+    "exact_matches": [
+      "Hemavati",
+      "Madhukant"
+    ],
+    "enclosed_matches": [
+      "Chandramadhu",
+      "Devshri",
+      "Harikauns",
+      "Kameshwari",
+      "Lilavati",
+      "Madhukauns",
+      "Manavi",
+      "Saraswati",
+      "Shivawanti",
+      "Shivranjani",
+      "Vijayanagari"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Chandni Todi",
+    "swara": "S-r-g-M-P-D-n-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      6,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 46,
+    "melakarta_name": "Shadvidhamargini",
+    "western_mode": "Dorian b2 #4",
+    "bifurcation": " Todi + Kafi ",
+    "exact_matches": [
+      "Chandni Todi"
+    ],
+    "enclosed_matches": [
+      "Bairagi Todi",
+      "Chandramadhu",
+      "Harikauns",
+      "Lilavati",
+      "Madhukauns",
+      "Salagavarali"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Shanmukhpriya",
+    "swara": "S-R-g-M-P-d-n-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      6,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 56,
+    "melakarta_name": "Shanmukhapriya",
+    "western_mode": "Aeolian #4",
+    "bifurcation": " Madhuvanti + Bhairavi ",
+    "exact_matches": [
+      "Shanmukhpriya"
+    ],
+    "enclosed_matches": [
+      "Chandramadhu",
+      "Devshri",
+      "Japaniya",
+      "Madhukauns",
+      "Tivrakauns"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Komal Ramkali",
+    "swara": "S-r-g-M-P-d-n-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      6,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 44,
+    "melakarta_name": "Bhavapriya",
+    "western_mode": "Phrygian #4",
+    "bifurcation": " Todi + Bhairavi ",
+    "exact_matches": [
+      "Komal Ramkali"
+    ],
+    "enclosed_matches": [
+      "Bairagi Todi",
+      "Bhupali Todi",
+      "Chandramadhu",
+      "Firozkhani Todi",
+      "Madhukauns",
+      "Mangal Gujari",
+      "Saheli Todi",
+      "Tivrakauns"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Bhatiyari Bhairav",
+    "swara": "S-r-G-m-P-D-N-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      5,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 17,
+    "melakarta_name": "Suryakantam",
+    "western_mode": "Ionian b2",
+    "bifurcation": " Bhairav + Bilawal ",
+    "exact_matches": [
+      "Bhatiyari Bhairav",
+      "Mangal Bhairav",
+      "Dakshinatya Basant"
+    ],
+    "enclosed_matches": [
+      "Bhinna Shadja",
+      "Kaushik Dhwani",
+      "Malashree",
+      "Shivangi"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Nat Bhairav",
+    "swara": "S-R-G-m-P-d-N-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      5,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 27,
+    "melakarta_name": "Sarasangi",
+    "western_mode": "Harmonic Major",
+    "bifurcation": " Bilawal + Bhairav ",
+    "exact_matches": [
+      "Nat Bhairav"
+    ],
+    "enclosed_matches": [
+      "Chandraprabha",
+      "Devranjani",
+      "Hansadhwani",
+      "Malashree",
+      "Shobhawari",
+      "Zeelaf"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Patdeep",
+    "swara": "S-R-g-m-P-D-N-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      5,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 23,
+    "melakarta_name": "Gaurimanohari",
+    "western_mode": "Melodic Minor",
+    "bifurcation": " Kafi + Bilawal ",
+    "exact_matches": [
+      "Patdeep"
+    ],
+    "enclosed_matches": [
+      "Abhogi",
+      "Bhavani",
+      "Durga",
+      "Jaldhar Kedar",
+      "Madhuranjani",
+      "Rajeshwari",
+      "Rangeshwari",
+      "Rasaranjani",
+      "Shivranjani",
+      "Shuddha Malhar"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Kokilapriya",
+    "swara": "S-r-g-m-P-D-N-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      5,
+      7,
+      9,
+      11
+    ],
+    "melakarta_num": 11,
+    "melakarta_name": "Kokilapriya",
+    "western_mode": "Neapolitan Major",
+    "bifurcation": " Bhairavi + Bilawal ",
+    "exact_matches": [
+      "Kokilapriya"
+    ],
+    "enclosed_matches": [
+      "Madhuranjani",
+      "Rajeshwari"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Kirwani",
+    "swara": "S-R-g-m-P-d-N-S",
+    "semitones": [
+      0,
+      2,
+      3,
+      5,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 21,
+    "melakarta_name": "Kiravani",
+    "western_mode": "Harmonic Minor",
+    "bifurcation": " Kafi + Bhairav ",
+    "exact_matches": [
+      "Kirwani"
+    ],
+    "enclosed_matches": [
+      "Chandrakauns",
+      "Chandraprabha",
+      "Devranjani",
+      "Japaniya",
+      "Madhuranjani",
+      "Rangeshwari",
+      "Shobhawari"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Ardhanarishvara",
+    "swara": "S-r-g-m-P-d-N-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      5,
+      7,
+      8,
+      11
+    ],
+    "melakarta_num": 9,
+    "melakarta_name": "Dhenuka",
+    "western_mode": "Phrygian ♮7",
+    "bifurcation": " Bhairavi + Bhairav ",
+    "exact_matches": [
+      "Ardhanarishvara"
+    ],
+    "enclosed_matches": [
+      "Antardhwani",
+      "Bhupali Todi",
+      "Chandrakauns",
+      "Devranjani",
+      "Gunakri",
+      "Gunkali",
+      "Jogiya",
+      "Madhuranjani",
+      "Viyogavarali"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Ahir Bhairav",
+    "swara": "S-r-G-m-P-D-n-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      5,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 16,
+    "melakarta_name": "Chakravakam",
+    "western_mode": "Mixolydian b2",
+    "bifurcation": " Bhairav + Kafi ",
+    "exact_matches": [
+      "Ahir Bhairav"
+    ],
+    "enclosed_matches": [
+      "Bairagi",
+      "Kalavati",
+      "Malashree",
+      "Malay Marutam",
+      "Shivangi",
+      "Sundarkali"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Charukeshi",
+    "swara": "S-R-G-m-P-d-n-S",
+    "semitones": [
+      0,
+      2,
+      4,
+      5,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 26,
+    "melakarta_name": "Charukesi",
+    "western_mode": "Mixolydian b6",
+    "bifurcation": " Bilawal + Bhairavi ",
+    "exact_matches": [
+      "Charukeshi",
+      "Malayalam"
+    ],
+    "enclosed_matches": [
+      "Gangeshwari",
+      "Imratkauns",
+      "Madhumad Sarang",
+      "Malashree",
+      "Megh",
+      "Sarangkauns",
+      "Shiv Manjari",
+      "Shobhawari",
+      "Zeelaf"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Basant Mukhari",
+    "swara": "S-r-G-m-P-d-n-S",
+    "semitones": [
+      0,
+      1,
+      4,
+      5,
+      7,
+      8,
+      10
+    ],
+    "melakarta_num": 14,
+    "melakarta_name": "Vakulabharanam",
+    "western_mode": "Phrygian Dominant",
+    "bifurcation": " Bhairav + Bhairavi ",
+    "exact_matches": [
+      "Basant Mukhari",
+      "Prabhakali"
+    ],
+    "enclosed_matches": [
+      "Bairagi",
+      "Bangal Bhairav",
+      "Bibhas",
+      "Gangeshwari",
+      "Gunakri",
+      "Gunkali",
+      "Malashree",
+      "Reva",
+      "Sundarkali",
+      "Zeelaf"
+    ],
+    "is_bhatkhande_10": false
+  },
+  {
+    "hindustani_name": "Ahiri",
+    "swara": "S-r-g-m-P-D-n-S",
+    "semitones": [
+      0,
+      1,
+      3,
+      5,
+      7,
+      9,
+      10
+    ],
+    "melakarta_num": 10,
+    "melakarta_name": "Natakapriya",
+    "western_mode": "Dorian b2",
+    "bifurcation": " Bhairavi + Kafi ",
+    "exact_matches": [
+      "Ahiri",
+      "Prabhateshwari",
+      "Jaiwanti Todi"
+    ],
+    "enclosed_matches": [
+      "Bairagi",
+      "Bairagi Todi",
+      "Deen Todi",
+      "Dhani",
+      "Lilavati",
+      "Parameshwari",
+      "Salagavarali",
+      "Sundarkauns"
+    ],
+    "is_bhatkhande_10": false
+  }
+]

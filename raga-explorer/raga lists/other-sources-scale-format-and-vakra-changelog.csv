@@ -1,0 +1,332 @@
+﻿File,Row,Raga,Field,Before,After,Why
+CLEAN-carnatic-pasted-dataset-list.csv,437,Deepakam,Vakra,No,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,647,Ganavaradhi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,846,Ilakanti,Aroha,S M G M P D N S',S M2 G1 M2 P D1 N3 S',"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-carnatic-pasted-dataset-list.csv,846,Ilakanti,Avaroha,S' N D P G R M G S,S' N3 D1 P G1 R1 M2 G1 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-carnatic-pasted-dataset-list.csv,846,Ilakanti,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,966,Kalyani,Vakra,No,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1136,Kokilapriya,Vakra,No,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1524,Narireethigoula,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1640,Pathi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1644,Pavani,Vakra,No,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1645,Pavani,Vakra,No,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1756,Raghupriya,Vakra,No,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1777,Ramapriya,Vakra,No,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1871,Sakalabhiravi,Vakra,Needs Review,No,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,1971,Saravathi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-carnatic-pasted-dataset-list.csv,2040,Simhvachandana,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,19,Ganasamavarali,Vakra,Yes,No,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,24,Bhanumati,Vakra,Yes,No,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,50,Punnagatodi,Avaroha,R1 S N2 D1 D1 N2 S R1 G2 M,R1 S N2 D1 D1 N2 S R1 G2 M1,1 bare letter(s) given the parent melakarta digit
+CLEAN-musiclegato-carnatic-raga-list.csv,51,PunnagaVarali,Vakra,Yes,No,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,131,Nadanamakriya,Vakra,Yes,No,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,136,PoorvikaVasanta,Aroha,S M1 G3 M1 D N3 S,S M1 G3 M1 D1 N3 S,1 bare letter(s) given the parent melakarta digit
+CLEAN-musiclegato-carnatic-raga-list.csv,255,Bhimpalas,Vakra,Yes,No,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,484,Julavu,Vakra,Yes,No,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,653,Garigadya,Vakra,Yes,No,turn-back rule
+CLEAN-musiclegato-carnatic-raga-list.csv,683,Madhumaalathi,Vakra,Yes,No,turn-back rule
+CLEAN-nerur-carnatic-raga-list.csv,78,punnAgavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-nerur-carnatic-raga-list.csv,99,nAdhanAmakriya,Vakra,Yes,No,turn-back rule
+CLEAN-nerur-carnatic-raga-list.csv,140,chiththaranjani,Vakra,Yes,No,turn-back rule
+CLEAN-nerur-carnatic-raga-list.csv,180,vasantha varALi 1,Vakra,Yes,No,turn-back rule
+CLEAN-nerur-carnatic-raga-list.csv,181,vasantha varALi 2,Vakra,Yes,No,turn-back rule
+CLEAN-nerur-carnatic-raga-list.csv,245,navaroj,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,30,Bhānumati,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,60,Punnāgatodi,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,76,Gunāvati,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,151,Nadanamakriya,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,225,Chapagantarva,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,228,Dhanashree,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,519,Julavu,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,604,Salagam,Aroha,S R1 G1 M2 P D1 N1 S S',S R1 G1 M2 P D1 N1 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,604,Salagam,Avaroha,S' S N1 D1 P M2 G1 R1 S,S' N1 D1 P M2 G1 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,607,Jalarnavam,Aroha,S R1 G1 M2 P D1 N2 S S',S R1 G1 M2 P D1 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,607,Jalarnavam,Avaroha,S' S N2 D1 P M2 G1 R1 S,S' N2 D1 P M2 G1 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,610,Jhalavarali,Aroha,S R1 G1 M2 P D1 N3 S S',S R1 G1 M2 P D1 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,610,Jhalavarali,Avaroha,S' S N3 D1 P M2 G1 R1 S,S' N3 D1 P M2 G1 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,619,Navaneetam,Aroha,S R1 G1 M2 P D2 N2 S S',S R1 G1 M2 P D2 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,619,Navaneetam,Avaroha,S' S N2 D2 P M2 G1 R1 S,S' N2 D2 P M2 G1 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,621,Pavani,Aroha,S R1 G1 M2 P D2 N3 S S',S R1 G1 M2 P D2 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,621,Pavani,Avaroha,S' S N3 D2 P M2 G1 R1 S,S' N3 D2 P M2 G1 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,626,Raghupriya,Aroha,S R1 G1 M2 P D3 N3 S S',S R1 G1 M2 P D3 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,626,Raghupriya,Avaroha,S' S N3 D3 P M2 G1 R1 S,S' N3 D3 P M2 G1 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,631,Gavambhodi,Aroha,S R1 G2 M2 P D1 N1 S S',S R1 G2 M2 P D1 N1 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,631,Gavambhodi,Avaroha,S' S N1 D1 P M2 G2 R1 S,S' N1 D1 P M2 G2 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,638,Bhavapriya,Aroha,S R1 G2 M2 P D1 N2 S S',S R1 G2 M2 P D1 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,638,Bhavapriya,Avaroha,S' S N2 D1 P M2 G2 R1 S,S' N2 D1 P M2 G2 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,639,Bhavāni,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,642,Shubhapantuvarali,Aroha,S R1 G2 M2 P D1 N3 S S',S R1 G2 M2 P D1 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,642,Shubhapantuvarali,Avaroha,S' S N3 D1 P M2 G2 R1 S,S' N3 D1 P M2 G2 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,656,Shadvidamargini,Aroha,S R1 G2 M2 P D2 N2 S S',S R1 G2 M2 P D2 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,656,Shadvidamargini,Avaroha,S' S N2 D2 P M2 G2 R1 S,S' N2 D2 P M2 G2 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,662,Suvarnangi,Aroha,S R1 G2 M2 P D2 N3 S S',S R1 G2 M2 P D2 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,662,Suvarnangi,Avaroha,S' S N3 D2 P M2 G2 R1 S,S' N3 D2 P M2 G2 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,667,Divyamani,Aroha,S R1 G2 M2 P D3 N3 S S',S R1 G2 M2 P D3 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,667,Divyamani,Avaroha,S' S N3 D3 P M2 G2 R1 S,S' N3 D3 P M2 G2 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,679,Namanarayani,Aroha,S R1 G3 M2 P D1 N2 S S',S R1 G3 M2 P D1 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,679,Namanarayani,Avaroha,S' S N2 D1 P M2 G3 R1 S,S' N2 D1 P M2 G3 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,683,Kamavardhani,Aroha,S R1 G3 M2 P D1 N3 S S',S R1 G3 M2 P D1 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,683,Kamavardhani,Avaroha,S' S N3 D1 P M2 G3 R1 S,S' N3 D1 P M2 G3 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,699,Ramapriya,Aroha,S R1 G3 M2 P D2 N2 S S',S R1 G3 M2 P D2 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,699,Ramapriya,Avaroha,S' S N2 D2 P M2 G3 R1 S,S' N2 D2 P M2 G3 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,713,Gamanashrama,Aroha,S R1 G3 M2 P D2 N3 S S',S R1 G3 M2 P D2 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,713,Gamanashrama,Avaroha,S' S N3 D2 P M2 G3 R1 S,S' N3 D2 P M2 G3 R1 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,731,Shamalangi,Aroha,S R2 G2 M2 P D1 N1 S S',S R2 G2 M2 P D1 N1 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,731,Shamalangi,Avaroha,S' S N1 D1 P M2 G2 R2 S,S' N1 D1 P M2 G2 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,735,Shanmukhapriya,Aroha,S R2 G2 M2 P D1 N2 S S',S R2 G2 M2 P D1 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,735,Shanmukhapriya,Avaroha,S' S N2 D1 P M2 G2 R2 S,S' N2 D1 P M2 G2 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,740,Garigadya,Vakra,Yes,No,turn-back rule
+CLEAN-raga-of-the-week-repo-list.csv,748,Simhendramadhyamam,Aroha,S R2 G2 M2 P D1 N3 S S',S R2 G2 M2 P D1 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,748,Simhendramadhyamam,Avaroha,S' S N3 D1 P M2 G2 R2 S,S' N3 D1 P M2 G2 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,759,Hemavati,Aroha,S R2 G2 M2 P D2 N2 S S',S R2 G2 M2 P D2 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,759,Hemavati,Avaroha,S' S N2 D2 P M2 G2 R2 S,S' N2 D2 P M2 G2 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,772,Dharmavati,Aroha,S R2 G2 M2 P D2 N3 S S',S R2 G2 M2 P D2 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,772,Dharmavati,Avaroha,S' S N3 D2 P M2 G2 R2 S,S' N3 D2 P M2 G2 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,784,Neetimati,Aroha,S R2 G2 M2 P D3 N3 S S',S R2 G2 M2 P D3 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,784,Neetimati,Avaroha,S' S N3 D3 P M2 G2 R2 S,S' N3 D3 P M2 G2 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,791,Kantamani,Aroha,S R2 G3 M2 P D1 N1 S S',S R2 G3 M2 P D1 N1 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,791,Kantamani,Avaroha,S' S N1 D1 P M2 G3 R2 S,S' N1 D1 P M2 G3 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,795,Rishabhapriya,Aroha,S R2 G3 M2 P D1 N2 S S',S R2 G3 M2 P D1 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,795,Rishabhapriya,Avaroha,S' S N2 D1 P M2 G3 R2 S,S' N2 D1 P M2 G3 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,801,Latangi,Aroha,S R2 G3 M2 P D1 N3 S S',S R2 G3 M2 P D1 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,801,Latangi,Avaroha,S' S N3 D1 P M2 G3 R2 S,S' N3 D1 P M2 G3 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,813,Vachaspati,Aroha,S R2 G3 M2 P D2 N2 S S',S R2 G3 M2 P D2 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,813,Vachaspati,Avaroha,S' S N2 D2 P M2 G3 R2 S,S' N2 D2 P M2 G3 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,853,Chitrambari,Aroha,S R2 G3 M2 P D3 N3 S S',S R2 G3 M2 P D3 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,853,Chitrambari,Avaroha,S' S N3 D3 P M2 G3 R2 S,S' N3 D3 P M2 G3 R2 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,859,Sucharitra,Aroha,S R3 G3 M2 P D1 N1 S S',S R3 G3 M2 P D1 N1 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,859,Sucharitra,Avaroha,S' S N1 D1 P M2 G3 R3 S,S' N1 D1 P M2 G3 R3 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,861,Jyoti-sarupini,Aroha,S R3 G3 M2 P D1 N2 S S',S R3 G3 M2 P D1 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,861,Jyoti-sarupini,Avaroha,S' S N2 D1 P M2 G3 R3 S,S' N2 D1 P M2 G3 R3 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,866,Dhatuvardhani,Aroha,S R3 G3 M2 P D1 N3 S S',S R3 G3 M2 P D1 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,866,Dhatuvardhani,Avaroha,S' S N3 D1 P M2 G3 R3 S,S' N3 D1 P M2 G3 R3 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,871,Nasikabhushani,Aroha,S R3 G3 M2 P D2 N2 S S',S R3 G3 M2 P D2 N2 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,871,Nasikabhushani,Avaroha,S' S N2 D2 P M2 G3 R3 S,S' N2 D2 P M2 G3 R3 S,doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,875,Kosalam,Aroha,S R3 G3 M2 P D2 N3 S S',S R3 G3 M2 P D2 N3 S',doubled tonic S S' collapsed
+CLEAN-raga-of-the-week-repo-list.csv,875,Kosalam,Avaroha,S' S N3 D2 P M2 G3 R3 S,S' N3 D2 P M2 G3 R3 S,doubled tonic S S' collapsed
+CLEAN-raga-pravagam-list.csv,914,Lalitha Panchamam 1,Vakra,,Yes,turn-back rule
+CLEAN-raga-pravagam-list.csv,915,Lalitha Panchamam 2,Vakra,,Yes,turn-back rule
+CLEAN-raga-pravagam-list.csv,916,Lalitha Panchamam 3,Vakra,,Yes,turn-back rule
+CLEAN-raga-pravagam-list.csv,917,Lalitha Panchamam 4,Vakra,,No,turn-back rule
+CLEAN-raga-pravagam-list.csv,918,Lalitha Panchamam 5,Vakra,,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,225,mangaLabhUSaNi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,226,mangaLabhUSaNi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,279,bhAmAgauLa,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,280,bhAnugauLa,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,410,mAlakOsh,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,427,nAgavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,442,punnAgaODi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,445,punnAgavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,448,punnAgavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,449,punnAgavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,450,punnAgavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,472,sArathigauLa,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,482,shuddhasAmantam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,483,shuddhasAmantam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,486,shuddhasAmantam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,552,gaurIbangALA,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,744,sindhubhairavi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,757,vasantakannaDa,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,917,karikadya,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1022,pUrvadarshi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1135,chIkamara,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1344,nAdanAmakriyA,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1345,nAdanAmakriyA,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1346,nAdanAmakriyA,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1676,shivAnandi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1724,chAyAvati,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1774,kuntaLasArangA,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1887,S,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1890,S,Aroha,G R2 G2 M1 P D1 N1 D1 S,G2 R2 G2 M1 P D1 N1 D1 S,2 bare letter(s) filled from the row itself
+CLEAN-royal-carpet-janya-list.csv,1890,S,Avaroha,S N1 D1 P M1 G2 R2 G R2 S,S N1 D1 P M1 G2 R2 G2 R2 S,2 bare letter(s) filled from the row itself
+CLEAN-royal-carpet-janya-list.csv,1890,S,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1972,bhaNDi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1990,cApagaNTa,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1995,cApagantarva,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,1997,cApagantarva,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2014,dhanAshrI,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2175,mAnji,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2204,nAgagAndhAri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2205,nAgagAndhAri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2234,pANDi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2268,sAmaghaNTArava,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2282,saumyamanOhari,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2283,saumyamanOhari,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2322,tAmOdini,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2338,vasantavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2376,karnATakadEvagAndhAri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2377,karnATakadEvagAndhAri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2438,pIlU,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2457,sOmagiri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2710,madhumadsArang,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2728,maNirangu,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2773,nAgagAndhAri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2811,paTadIp,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,2857,saindhavi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3116,vasantavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3117,vasantavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3118,vasantavarALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3329,mAdhuryarAgam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3330,mAdhuryarAgam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3336,maNimaya,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3592,jAnjUTi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3632,khamAs,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3634,khamAs,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3635,khamAs,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3895,suraTi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,3988,biyaNDigAndhAram,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4058,gAndhAra,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4098,jAlaprabhAla,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4105,jangla,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4113,jilAp,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4114,julAvu,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4115,julAvu,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4116,julavu,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4117,julavu,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4118,julAvu,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4119,julAvu,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4159,kolli,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4160,kollikappanam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4170,kurinji,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4226,navarOj,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4227,navarOj,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4229,navarOj,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4230,navarOj,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4702,cApagantarva,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4763,bhOgasAvEri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4765,bhOgasAvEri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4836,kusumAvaLi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4837,kusumAvaLi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4866,bhOgadhvaja,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4894,kOkilapancamam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4907,nAgabhOgi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4908,nAgabhOgi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4913,rAgabhOgi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,4999,punnAgavrALi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5027,gandharvam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5031,gandharvam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5040,gOmati,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5047,gOpati,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5060,mAruvalalita,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5112,kOkilagIrvANi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5151,bhramarabhOgi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5582,sukhasvarAvaLi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5935,pavitri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,5937,pavitri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6197,dEvamALavi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6198,dEvamALavi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6215,kurugadya,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6414,madhuvanti,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6476,aimadiyAL,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6477,ambikA,Aroha,N S G2 M2 P N S,N3 S G2 M2 P N3 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6477,ambikA,Avaroha,S N D P M2 G2 R2 S,S N3 D2 P M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6477,ambikA,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6478,aNNaDarkkadhipati,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6479,aNNal,Avaroha,S N D P M2 G2 R2 S,S N3 D2 P M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6479,aNNal,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6480,araNapriyan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6481,aruguNannAyaki,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6482,aruLnAyakan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6483,aruNajvalita,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6484,asati,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6485,ashvati,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6486,bAlagAmbhIrya,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6487,bhUpAvaLi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6488,bhUSAvaLI,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6489,budhan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6490,budhanmaNI,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6491,cALai,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6492,cANan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6493,cErakurinji,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6494,chOLakurinji,Aroha,S R2 G2 M2 P N S,S R2 G2 M2 P N3 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6494,chOLakurinji,Avaroha,S D P G2 S,S D2 P G2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6494,chOLakurinji,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6495,cintAmaNi,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6496,damya,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6497,dayALan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6498,dayALan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6499,dhAmavati,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6500,dharmavati,Aroha,S R2 G2 M2 P D N S,S R2 G2 M2 P D2 N3 S,2 bare letter(s) given the parent melakarta digit
+CLEAN-royal-carpet-janya-list.csv,6500,dharmavati,Avaroha,S N D P M2 G2 R2 S,S N3 D2 P M2 G2 R2 S,2 bare letter(s) given the parent melakarta digit
+CLEAN-royal-carpet-janya-list.csv,6500,dharmavati,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6501,dharmiNi,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6502,dhaumya,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6503,dhaumya,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6504,dhaumya,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6505,dhavaLAngi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6506,dhIrAkAri,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6507,dhIrakuntali,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6508,dhIrakuntam,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6509,dhirnkari,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6510,garuDavarALi,Aroha,S R2 G2 P N S,S R2 G2 P N3 S,"digits copied from the same raga (same name, same swara sequence) in carnatic-pasted-dataset"
+CLEAN-royal-carpet-janya-list.csv,6510,garuDavarALi,Avaroha,S N P M2 G2 R2 S,S N3 P M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in carnatic-pasted-dataset"
+CLEAN-royal-carpet-janya-list.csv,6510,garuDavarALi,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6511,garvamanjari,Aroha,S G2 M2 P D S,S G2 M2 P D2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6511,garvamanjari,Avaroha,S N D M2 G2 R2 S,S N3 D2 M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6511,garvamanjari,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6512,gaurikriyA,Aroha,S G2 M2 P D N S,S G2 M2 P D3 N3 S,"digits copied from the same raga (same name, same swara sequence) in royal-carpet-janya"
+CLEAN-royal-carpet-janya-list.csv,6512,gaurikriyA,Avaroha,S N D N P M2 G2 S,S N3 D3 N3 P M2 G2 S,"digits copied from the same raga (same name, same swara sequence) in royal-carpet-janya"
+CLEAN-royal-carpet-janya-list.csv,6512,gaurikriyA,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6513,hamsanAdam,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6514,hamsanAdam,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6515,himayagiri,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6516,jIvan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6517,kaikavashi,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6518,kaikavashi,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6519,kaNNan,Aroha,S R2 G2 M2 D S,S R2 G2 M2 D2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6519,kaNNan,Avaroha,S N P M2 G2 R2 S,S N3 P M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6519,kaNNan,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6520,kAraNapriyOn,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6521,kArmukhavati,Aroha,S R2 G2 M2 D N S,S R2 G2 M2 D2 N3 S,"digits copied from the same raga (same name, same swara sequence) in musiclegato-carnatic-raga"
+CLEAN-royal-carpet-janya-list.csv,6521,kArmukhavati,Avaroha,S N D M2 G2 R2 S,S N3 D2 M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in musiclegato-carnatic-raga"
+CLEAN-royal-carpet-janya-list.csv,6521,kArmukhavati,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6522,karpUrabharaNi,Aroha,S R2 G2 M2 P D S,S R2 G2 M2 P D2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6522,karpUrabharaNi,Avaroha,S D P M2 P G2 R2 S,S D2 P M2 P G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6522,karpUrabharaNi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6523,karpUrabharaNi,Aroha,S R2 G2 P M2 P D S,S R2 G2 P M2 P D2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6523,karpUrabharaNi,Avaroha,S D P M2 P G2 R2 S,S D2 P M2 P G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in raga-pravagam"
+CLEAN-royal-carpet-janya-list.csv,6523,karpUrabharaNi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6524,kEkayam,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6525,kOzhakkurinji,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6526,kumilam,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6527,kunal,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6528,lalitasimhAravam,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6529,madhumAlati,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6530,madhuvanti,Aroha,N S G2 M2 P N S,N2 S G2 M2 P N2 S,"digits copied from the same raga (same name, same swara sequence) in royal-carpet-janya"
+CLEAN-royal-carpet-janya-list.csv,6530,madhuvanti,Avaroha,S N D P M2 G2 R2 S,S N2 D2 P M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in royal-carpet-janya"
+CLEAN-royal-carpet-janya-list.csv,6530,madhuvanti,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6531,maruVumnAyaki,Vakra,Needs Review,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6532,mOhanakuranji,Aroha,S R2 G2 P D N P N S,S R2 G2 P D2 N3 P N3 S,"digits copied from the same raga (same name, same swara sequence) in carnatic-pasted-dataset"
+CLEAN-royal-carpet-janya-list.csv,6532,mOhanakuranji,Avaroha,S N D P M2 G2 R2 S,S N3 D2 P M2 G2 R2 S,"digits copied from the same raga (same name, same swara sequence) in carnatic-pasted-dataset"
+CLEAN-royal-carpet-janya-list.csv,6532,mOhanakuranji,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6533,muktAvaLi,Vakra,Needs Review,Yes,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6731,shuddhauttari,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6755,bhinnaniSAdam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6857,shuddhakalAnidhi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,6987,vatsam,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,7252,rAmakuntali,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,7254,rAmakuntali,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,7274,hindOLadEshAkSi,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,7323,Ishagiri,Vakra,Yes,No,turn-back rule
+CLEAN-royal-carpet-janya-list.csv,7406,amarAvati,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,31,Bhānumati,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,64,Punnāgatodi,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,65,Punnagavarali,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,84,Gunāvati,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,110,Kalkada,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,162,Nadanamakriya,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,245,Chapagantarva,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,248,Dhanashree,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,271,Poornashađjam,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,282,Sutradhāri,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,319,Bhimpalasi {Hindustani},Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,425,Velāvali,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,432,Gayakamandini,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,534,Rāgeshree,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,546,Shyāmā,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,568,Ārabhi,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,591,Julavu,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,609,Navaroj,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,718,Bhavāni,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,827,Garigadya,Vakra,Yes,No,turn-back rule
+CLEAN-wikipedia-janya-raga-list.csv,866,Madhumālti {Hindustani},Vakra,Yes,No,turn-back rule

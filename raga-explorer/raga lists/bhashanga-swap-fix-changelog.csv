@@ -1,0 +1,22 @@
+﻿Source List,CSV Row,Raga Name,Change,Before,After,Effect
+RAGA-OF-THE-WEEK,70,Udayaravichandrika,digit swap corrected,aroha: S G2 M1 P N2 S' | avaroha: S' N2 P M1 G2 S,aroha: S G2 M1 P N3 S' | avaroha: S' N3 P M1 G2 S,Bhashanga Yes -> No; Vakra No -> No
+NERUR,93,lalithA,digit swap corrected,aroha: S R1 G3 M1 D2 N3 S | avaroha: S N3 D2 M1 G3 R1 S,aroha: S R1 G3 M1 D1 N3 S | avaroha: S N3 D1 M1 G3 R1 S,Bhashanga Yes -> No; Vakra No -> No
+NERUR,122,Gantha,digit swap corrected,aroha: S G2 R2 G2 M1 P D2 P N2 D2 N2 S | avaroha: S N2 D2 P M1 G2 R2 S,aroha: S G2 R2 G2 M1 P D1 P N2 D1 N2 S | avaroha: S N2 D1 P M1 G2 R2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+ROYAL-CARPET,2854,rItigauLa,digit swap corrected,aroha: S G2 R2 G2 M1 D1 N2 D1 S | avaroha: S N2 D1 M1 G2 M1 P M1 G2 R2 S,aroha: S G2 R2 G2 M1 D2 N2 D2 S | avaroha: S N2 D2 M1 G2 M1 P M1 G2 R2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+ROYAL-CARPET,2963,svararanjani,digit swap corrected,aroha: S R2 G2 M1 D2 N3 S | avaroha: S N3 P M1 G2 M1 R2 S,aroha: S R2 G2 M1 D2 N2 S | avaroha: S N2 P M1 G2 M1 R2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+NERUR,181,vasantha varALi 2,digit swap corrected,aroha: S R2 M1 P D3 N3 | avaroha: N3 D3 P M1 G1 R2 S N3,aroha: S R2 M1 P D3 N3 | avaroha: N3 D3 P M1 G2 R2 S N3,Bhashanga Yes -> No; Vakra No -> No
+MUSICLEGATO,384,Gavathi,digit swap corrected,aroha: S M1 P N3 S | avaroha: S D2 M1 P G3 M1 R2 N3 S,aroha: S M1 P N2 S | avaroha: S D2 M1 P G3 M1 R2 N2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+ROYAL-CARPET,3841,shahAna,digit swap corrected,aroha: G3 R2 S R2 G3 M1 P M1 D2 N3 S | avaroha: S N3 D2 P M1 G3 R2 S,aroha: G3 R2 S R2 G3 M1 P M1 D2 N2 S | avaroha: S N2 D2 P M1 G3 R2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+WIKIPEDIA,569,Atāna,digit swap corrected,aroha: S R2 M1 P N2 S' | avaroha: S' N2 D2 P M1 G2 M1 R2 S,aroha: S R2 M1 P N3 S' | avaroha: S' N3 D2 P M1 G3 M1 R2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+WIKIPEDIA,675,Ganavaridhi,digit swap corrected,aroha: S M1 R3 G3 M1 P D2 N2 S' | avaroha: S' D2 N2 P M1 R3 S,aroha: S M1 R3 G3 M1 P D2 N3 S' | avaroha: S' D2 N3 P M1 R3 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+ROYAL-CARPET,6361,sarvAngi,digit swap corrected,aroha: S R2 M1 D1 N3 S | avaroha: S N3 D1 M1 G3 S R2 S,aroha: S R2 M2 D1 N3 S | avaroha: S N3 D1 M2 G2 S R2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+ROYAL-CARPET,6546,gaurikriyA,digit swap corrected,aroha: S G2 M2 P D3 N3 S | avaroha: S N3 D3 N3 P M2 G2 S,aroha: S G2 M2 P D2 N3 S | avaroha: S N3 D2 N3 P M2 G2 S,Bhashanga Yes -> No; Vakra Yes -> Yes
+ROYAL-CARPET,6564,madhuvanti,digit swap corrected,aroha: N2 S G2 M2 P N2 S | avaroha: S N2 D2 P M2 G2 R2 S,aroha: N3 S G2 M2 P N3 S | avaroha: S N3 D2 P M2 G2 R2 S,Bhashanga Yes -> No; Vakra No -> No
+MUSICLEGATO,741,Shilangi,digit swap corrected,aroha: S G2 M2 P N3 S | avaroha: S N3 P M2 G2 S,aroha: S G3 M2 P N3 S | avaroha: S N3 P M2 G3 S,Bhashanga Yes -> No; Vakra No -> No
+NERUR,79,sindhu bhairavi,parent melakarta changed,melakarta 10 nAtakapriya,melakarta 20 naTabhairavi,Bhashanga Yes -> Yes
+PRAVAGAM,44,Subhasri (Raga 1),Bhashanga derived: a swara off the parent is in the scale,Unknown,Yes,S R1 G1 M1 M2 D1 N1 S || S N1 D1 M2 M1 G1 R1 S
+PRAVAGAM,957,MayaLalith (Raga 1),Bhashanga derived: a swara off the parent is in the scale,Unknown,Yes,S R1 G3 M1 M2 D1 N3 S || S N3 D1 M2 M1 G3 R1 S
+PRAVAGAM,1305,Rohini (Raga 1),Bhashanga derived: a swara off the parent is in the scale,Unknown,Yes,S R1 G3 M1 M2 D2 N3 S || S N3 D2 M2 M1 G3 R1 S
+PRAVAGAM,1332,Suryalalith (Raga 1),Bhashanga derived: a swara off the parent is in the scale,Unknown,Yes,S R1 G3 M1 M2 D2 N3 S || S N3 D2 M2 M1 G3 R1 S
+PRAVAGAM,3242,Sankara Lalith (Raga 1),Bhashanga derived: a swara off the parent is in the scale,Unknown,Yes,S R2 G3 M1 M2 D2 N3 S || S N3 D2 M2 M1 G3 R2 S
+PRAVAGAM,5448,Priyasri (Raga 1),Bhashanga derived: a swara off the parent is in the scale,Unknown,Yes,S R3 G3 M1 M2 D3 N3 S || S N3 D3 M2 M1 G3 R3 S

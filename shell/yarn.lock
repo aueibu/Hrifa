@@ -4348,6 +4348,7 @@ __metadata:
     react: "npm:^19.2.0"
     react-dom: "npm:^19.2.0"
     react-router-dom: "npm:^7.9.4"
+    smplr: "npm:^1.0.0"
     storybook: "npm:^10.0.0"
     stylelint: "npm:^17.0.0"
     stylelint-config-standard-scss: "npm:^17.0.0"
@@ -5719,6 +5720,13 @@ __metadata:
   version: 4.2.0
   resolution: "smart-buffer@npm:4.2.0"
   checksum: 10c0/a16775323e1404dd43fabafe7460be13a471e021637bc7889468eb45ce6a6b207261f454e4e530a19500cc962c4cc5348583520843b363f4193cee5c00e1e539
+  languageName: node
+  linkType: hard
+
+"smplr@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "smplr@npm:1.0.0"
+  checksum: 10c0/a50fa5095a307dfde687b86b0f3011dfdac5208660fe6b2dfcd93c6ec931c7275813aa8d27c66e64f4ed25a4bf1a3f86abdbd3d79ffdb25b9dd89e26230e43ee
   languageName: node
   linkType: hard
 

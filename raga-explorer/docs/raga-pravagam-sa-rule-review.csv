@@ -1,0 +1,424 @@
+Melakarta Number,Melakarta Name,Raga Name,Variant,Arohanam,Avarohanam,Ref,Confidence,Raw Row Text,Source Page
+02,Ratnangi,Ghanta,1,S R G M P D N P N,S N D P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end),4. Ghanta SR GM PDN PN SN DPM GR SN R,66
+02,Ratnangi,Gowrigandhari,2,S M R G M P D N,D S N D P M G R S,L,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SM R GM PDN D S N DPM GR S L,66
+02,Ratnangi,Madhukari,1,S M G M P D N,P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),13. Madhukari SM GM PDN PM GR SN P,66
+03,Ganamurthi,BhinnaPanchamam,4,S R G R M P D P,S N D P M G R S,P N N S,FLAGGED: sa-rule (aroha-end),4 SR GR M PDP SN DPM GR S P | N N S,68
+03,Ganamurthi,BhinnaPanchamam,5,S R G G R M P D,S N D M G G R S,PN N S,FLAGGED: sa-rule (aroha-end),5 SR GGR M PD SN DM GGR S AC | PN N S,68
+05,Manavathi,Ghanashyamalangi,1,S G M P D N P S S,S N D P M G R S,P,FLAGGED: sa-rule (aroha-end-dup),6. Ghanashyamalangi SGM PDN PS S SN DPM GR S P,72
+05,Manavathi,Jayasaveri,1,S M R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),8. Jayasaveri SM R GM PDN DPM GR SN S AE,72
+05,Manavathi,Mangalabhushani,1,S D S N S R G M,P M G R S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),14. Mangalabhushani SDS N SR GM P M GR SN DP AE,72
+05,Manavathi,Mangalabhushani,2,P D S N S R G M,M G R S N D P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),2 PDSN SR GM M GR SN DP P,72
+05,Manavathi,Mangalabhushani,3,P D N S R G M P,M G R S N D P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),3 PDN SR GM P M GR SN DP P,72
+05,Manavathi,Mangalabhushani,4,P D N S R G M P,P M G R S N D P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),4 PDN SR GM P PM GR SN D P P,72
+06,Dhanarupi,Desyasurati,1,S M R G M P D N,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),4. Desyasurati SM R GM PDN PM GR SN S AE,74
+06,Dhanarupi,Desyasurati,2,S M R G M P D N,P M G R S R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SM R GM PDN PM GR SR S P,74
+06,Dhanarupi,Desyasurati,3,S M R G M P D N,P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),3 SM R GM PDN PM GR SN P,74
+07,Senavathi,Bhama Gaula,1,D S R G M P D N,D P M G R S N D P,L,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),3. Bhama Gaula DSR GM PD N DPM GR SN DP L,76
+07,Senavathi,BhanuGaula,1,D S R G M P D N,D P M G R S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),4. BhanuGaula DSR GM PD N DPM GR SN DP AE,76
+07,Senavathi,Chayagowri,1,S R M G M P,S N D P M G M R S,N DN S,FLAGGED: sa-rule (aroha-end),9. Chayagowri SR M GM P SN DPM GM R S AE | N DN S,76
+08,Hanumathodi,Ghanta,1,S R G M P D N D P M,G R S N D P N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),28. Ghanta SR GM PDN DPM GR SN D | PN S AE,79
+08,Hanumathodi,Nagavarali,1,S N S R G M P D,P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),61. Nagavarali SN SR GM P D PM GR SN S R,80
+08,Hanumathodi,Nagavarali,2,N S G R G M P D,P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 N SGR GM PD PM GR SN R,80
+08,Hanumathodi,Nagavarali,3,S R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM PDN DPM GR SN S AE,80
+08,Hanumathodi,Nagavarali,4,S G R G M P D,D P M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),4 SGR GM PD DPM GR S P,80
+08,Hanumathodi,Nagavarali,5,N S R G M P D,P M G R S N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),5 N SR GM PD PM GR SN S P,80
+08,Hanumathodi,Nagavarali,6,N S R G M P D,P D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),6 N SR GM PD PDPM GR S N P,81
+08,Hanumathodi,PunnagaThodi,1,N D N S R G M P D N,D P M G R S N D N,S AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),67. PunnagaThodi N DN SR GM P DN DPM GR SN DN S AE,81
+08,Hanumathodi,PunnagaThodi,2,N S R G M P,P M G R S N D,AB,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 N SR GM P PM GR SN D AB,81
+08,Hanumathodi,PunnagaThodi,3,N D N S R G M P,D P M G R S N D N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),3 N DN SR GM P DPM GR SN DN P,81
+08,Hanumathodi,PunnagaVarali,1,N S R G M P D N,D P M G R S N,AC,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),68. PunnagaVarali N SR GM PDN DPM GR SN AC,81
+08,Hanumathodi,PunnagaVarali,2,S R G M P D N,N D P M G R S N S,R,FLAGGED: sa-rule (aroha-end),2 SR GM PDN N DPM GR SN S R,81
+08,Hanumathodi,PunnagaVarali,3,N S R G M P D N,N D P M P G R S,P,FLAGGED: sa-rule (aroha-end),3 N SR GM PDN N DPM PGR S P,81
+08,Hanumathodi,PunnagaVarali,4,N S R G M P D N,D P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),5 N SR GM PDN DPM GR SN S R,81
+08,Hanumathodi,SamaVasantham,1,S R G M P N,S S N D P M,G R SR,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start-dup),78. SamaVasantham SR GM PN SS N D P M G R | SR,81
+08,Hanumathodi,Sarathi Gowla,1,N S R G M P D N,S S N P M G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start-dup),80. Sarathi Gowla N SR GM PDN S SN PM GR S AE,81
+08,Hanumathodi,SuddhaSamantham,1,D S R M P D,D P M G R S D S,AE,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),89. SuddhaSamantham DSR M PD DPM GR SD S AE,82
+08,Hanumathodi,SuddhaSamantham,2,S R G R M P D,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR GR M PD DPM GR S R,82
+08,Hanumathodi,SuddhaSamantham,4,S G R M P D,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),4 SGR M PD DPM GR S R,82
+08,Hanumathodi,SuddhaSamantham,5,D S R M P D,D P M R S,P,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),5 DSR M PD DPM R S P,82
+08,Hanumathodi,SuddhaSamantham,6,D S R M P D P M G R S,S R M G M P D P M G R S,P,FLAGGED: sa-rule (aroha-start),6 DSR M PD P SR M GM PDPM | M GR S GR S P,82
+08,Hanumathodi,SuddhaSamantham,7,D S R M P D,D P M G R S,P,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),7 DSR M PD DPM GR S P,82
+09,Dhenuka,Gowri Bangala,1,D S R M P D N,D P M G R S N D S,AE,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),16. Gowri Bangala DSR M PDN DPM GR SN DS AE,83
+09,Dhenuka,Gowri Bangala,2,D S R M P D N,D P M G R S N D P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),2 DSR M PDN DPM GR SN DP P,83
+09,Dhenuka,Shoka Varali,1,S G M N D P,P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),34. Shoka Varali SGM N DP PM GR S R,84
+09,Dhenuka,Shoka Varali,2,S G M N,D P M G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SGM N DPM GR S AE,84
+09,Dhenuka,Shoka Varali,3,S G M N D P,P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SGM N DP PM GR S R,84
+10,Nataka Priya,SindhuBhairavi,1,M P D N D S R G M,G R S N D P M G M,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),47. SindhuBhairavi M PDN DSR GM GR SN D PM GM AE,87
+10,Nataka Priya,SindhuBhairavi,2,M P D N S R G M,G R S N D P M G M,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),2 M PDN SR GM GR SN D PM GM P,87
+10,Nataka Priya,SindhuBhairavi,3,M P D N S R G M,G R S N D P M G,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),3 M PDN SR GM GR SN D PM G P,87
+10,Nataka Priya,VasanthaKannada,1,S R G M P N,D P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),53. VasanthaKannada SR GM PN DPM GR SN AE,87
+11,Kokila Priya,NadaMukhari,1,S R G M P S,S N D P M G R,P,FLAGGED: sa-rule (avaroha-end),17. NadaMukhari SR GM PS SN DPM GR P,88
+12,Rupavathi,Rupavathi,1,S R M P P S S,S N D N P M G S,AC,FLAGGED: sa-rule (aroha-end-dup),15. Rupavathi SR M PPS S SN DN PM GS AC,90
+13,Gayaka Priya,HejejjeeIsari,3,S R G R M G M P,S N D P M G R S,R N DS,FLAGGED: sa-rule (aroha-end),3 SR GR M GM P SN DPM GR S R | N DS,92
+13,Gayaka Priya,HejejjeeIsari,4,S R G R M G M P,S D N D M G R S,R DN S,FLAGGED: sa-rule (aroha-end),4 SR GR M GM P SDN DM GR S R | DN S,92
+13,Gayaka Priya,Karikadya,1,N S G M P D N,D P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),21. Karikadya N SGM PDN DPM GR SN R,93
+13,Gayaka Priya,NavarasaChandrika,2,S R G P M D S,S D P M S R G,P,FLAGGED: sa-rule (avaroha-end),2 SR GPM D S SDPM SR G P,93
+13,Gayaka Priya,Suravarali,3,S M P D N,S N D P M S,P,FLAGGED: sa-rule (aroha-end),3 SM PDN SN DPM S P,94
+14,Vakula Bharanam,LalithaPanchamam,1,R S G M D N S,S N D P M G R S,AC,FLAGGED: sa-rule (aroha-start),19. LalithaPanchamam R SGM DN S SN DPM GR S AC,95
+14,Vakula Bharanam,Poorvadharsi,1,S R S G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),26. Poorvadharsi SR SGM P DN DPM GR SN S AE,96
+14,Vakula Bharanam,Poorvadharsi,2,S G M P D N,D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SGM PDN DPM GR SN P,96
+15,Maya Malava Gaula,Cheekamaram,1,S R G M P D N,N D P M G R S N,AO,FLAGGED: sa-rule (aroha-end;avaroha-end),30. Cheekamaram SR GM PDN N DPM GR SN AO,99
+15,Maya Malava Gaula,Dakka,1,S R S G M G P M,S N D M G P M R S,R DN S,FLAGGED: sa-rule (aroha-end),35. Dakka SR SGM GPM SN DM GPM R S R | DN S,99
+15,Maya Malava Gaula,Gomukhi,1,G R S M P D N S,S N D P R G S,AE,FLAGGED: sa-rule (aroha-start),63. Gomukhi GR SM PDNS SN DPR GS AE,101
+15,Maya Malava Gaula,Jaganmohini,3,R S G M P N S,S N P M G R S,P,FLAGGED: sa-rule (aroha-start),3 R SGM PN S SN PM GR S P,101
+15,Maya Malava Gaula,KamalaPanchamam,1,S P M G R G M,S D P M G R S,R PDN S,FLAGGED: sa-rule (aroha-end),85. KamalaPanchamam SPM GR GM SDPM GR S R | PDN S,102
+15,Maya Malava Gaula,KarnatakaSaranga,1,S R G M G P N D M,S D M P M G R S,R PDN S,FLAGGED: sa-rule (aroha-end),88. KarnatakaSaranga SR GM GPN DM SDM PM GR S R | PDN S,102
+15,Maya Malava Gaula,KarnatakaSaranga,3,S R G M P N D M,S D M P M G R S,P PDN S,FLAGGED: sa-rule (aroha-end),3 SR GM PN DM SDM PM GR S P | PDN S,102
+15,Maya Malava Gaula,Kunkumambari,1,S N D N S R G M,D P M G R S N D N S,R SN DN,FLAGGED: sa-rule (aroha-end;avaroha-start),93. Kunkumambari SN DN SR GM DPM GR SN DN S R | SN DN,102
+15,Maya Malava Gaula,Kunkumambari,2,S N D N S N G M,D P M G R S N D N S,P PN DN,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SN DN SN GM DPM GR SN DN S P | PN DN,102
+15,Maya Malava Gaula,Mangala Kaisika,2,S M G M P M G M,S N D P M G R S,R,FLAGGED: sa-rule (aroha-end),2 SM GM PM GM SN DPM GR S R,103
+15,Maya Malava Gaula,Mangala Kaisika,3,S R G M S M G M P M,G M S N D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM SM GM | PM GM SN DPM GR S R,103
+15,Maya Malava Gaula,Mangala Kaisika,6,S M G M P,S N D P M G R S,AP,FLAGGED: sa-rule (aroha-end),6. SM GM P SN DPM GR S AP,103
+15,Maya Malava Gaula,Mangala Kaisika,7,S R G R S M G M P D,S N D P M G R G R S,0,FLAGGED: sa-rule (aroha-end),7. SR GR SM GM PD SN DPM GR GR S 0,103
+15,Maya Malava Gaula,Mangala Kaisika,9,S M G M P M,P N D P M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),9. SM GM PM PN DPM GR S P,103
+15,Maya Malava Gaula,MargaSanjivini,1,S R G R M P D N,S N D P M G R S,R PDP S,FLAGGED: sa-rule (aroha-end),116. MargaSanjivini SR GR M PDN SN DPM GR S R | PDP S,104
+15,Maya Malava Gaula,Meghavali,1,S R M P D N S,S N D N P M,R M,FLAGGED: sa-rule (avaroha-end),123. Meghavali SR M PDN S SN DN PM R M,104
+15,Maya Malava Gaula,Nadhanamakriya,1,S R G M P D N,N D P M G R S,R,FLAGGED: sa-rule (aroha-end),128. Nadhanamakriya SR GM PDN N DPM GR S R,105
+15,Maya Malava Gaula,Nadhanamakriya,2,S R G M P D N,S N D P M G R S,R,FLAGGED: sa-rule (aroha-end),2 SR GM PDN SN DPM GR S R,105
+15,Maya Malava Gaula,Nadhanamakriya,4,S R M G M P D N,N D P M G R S,AE,FLAGGED: sa-rule (aroha-end),4 SR M GM PDN N DPM GR S AE,105
+15,Maya Malava Gaula,Nadhanamakriya,5,S R G M P D N,N D P M G S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end),5 SR GM PDN N DPM GSN P,105
+15,Maya Malava Gaula,Nadhanamakriya,6,S R G M P D N,D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),6 SR GM PDN DPM GR SN P,105
+15,Maya Malava Gaula,Padi,6,R M P D P N S,S N P D P M,R S,FLAGGED: sa-rule (avaroha-end;aroha-start),6 R M PDPN S SN PD PM R S,105
+15,Maya Malava Gaula,Parasara,1,S R G R M P N D N,S N D G R S R P D N,S,FLAGGED: sa-rule (aroha-end;avaroha-end),141. Parasara SR GR M PN DN SN DGR S R | PDN S,105
+15,Maya Malava Gaula,PurnaPanchamam,1,P M S R G P,D D P M G R,S N R,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start;avaroha-start-dup),148. PurnaPanchamam PM SR GP DDPM GR S N R,106
+15,Maya Malava Gaula,PurnaPanchamam,3,S R G M P D,P M G R S,AB,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM PD PM GR S AB,106
+15,Maya Malava Gaula,PurnaPanchamam,4,S R G M P D,S D P M G R S,P,FLAGGED: sa-rule (aroha-end),4 SR GM PD SDPM GR S P,106
+15,Maya Malava Gaula,Purvi,5,S R G P D N P,S N D P M D M G R S,AE,FLAGGED: sa-rule (aroha-end),5 SR GPD N P SN DPM DM GR S AE,106
+15,Maya Malava Gaula,SakalakalaVardhani,1,S R G M P D N,D P M G R S N D N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),169. SakalakalaVardhani SR GM PDN DPM GR SN DN S R,107
+15,Maya Malava Gaula,SamanthaDeepakamSR,1,G M P N S,S N P M G R S,P,FLAGGED: sa-rule (aroha-start),172. SamanthaDeepakamSR GM PN S SN PM GR S P,107
+15,Maya Malava Gaula,ShouriVilasitha,1,N D N S R G M P M P D N,D P M G R S N D N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),188. ShouriVilasitha N DN SR GM | PM PDN DPM GR SN DN S R,108
+15,Maya Malava Gaula,Vasantha,3,R S G M D N S,S N D N D M G M M P M G R S,AC,FLAGGED: sa-rule (aroha-start),3 R SGM DN S SN DN DM GM | M PM GR S AC,109
+16,Chakravakam,NatchatraChudamani,1,S R S G M G M D N,S N S M G P M R G S,R,FLAGGED: sa-rule (aroha-end),54. NatchatraChudamani SR SGM GM DN S N SM GPM R GS R,112
+16,Chakravakam,PurnaGandhari,1,P D N D S R G M P D,P M G R S N D N P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),59. PurnaGandhari PDN D SR GM PD PM GR SN DN P AE,112
+16,Chakravakam,PurnaPanchamam,1,P M S R S M P D,D P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),61. PurnaPanchamam PM SR SM PD DPM GR SN R,112
+16,Chakravakam,Rasakalanidhi,1,S P M D N,D P M G M,R SN P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),62. Rasakalanidhi SPM DN DPM GM R SN P,112
+16,Chakravakam,Rasakalanidhi,2,S P M D N D P M,G M R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SPM DN DPM GM R SN S AE,112
+16,Chakravakam,Santhaswarupi,1,S G R M P D N,S N D N P M R S,AE,FLAGGED: sa-rule (aroha-end),67. Santhaswarupi SGR M PDN SN DN PM R S AE,112
+16,Chakravakam,Sathyavathi,1,G P D S S N D N,P D P G R,S AP,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),71. Sathyavathi GPD S SN DN PDP GR S AP,113
+16,Chakravakam,Sivanandi,1,S M G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),72. Sivanandi S M G M P D N D P M G R S N S AE,113
+16,Chakravakam,Sivanandi,2,S M G M P D N,N D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end),2 S M G M P D N N D P M G R S N P,113
+16,Chakravakam,Sri Kaivalyam,1,S R M P D N S,S S D P M G R S,A,FLAGGED: sa-rule (avaroha-start-dup),74. Sri Kaivalyam SR M PDN S SSD PM GR S A,113
+16,Chakravakam,Suposhini,1,S D N S R G M P,M G R S N D N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),79. Suposhini SDN SR GM P M GR SN DN S AE,113
+16,Chakravakam,Subhashini,1,D N S R G M P,M G R S N S D,AP,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),80. Subhashini DN SR GM P M GR SN SD AP,113
+16,Chakravakam,Subhashini,2,S D N S R G M P,M G R S N D N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SDN SR GM P M GR SN DN S P,113
+16,Chakravakam,ThoyaVegavahini,1,S R G M P D N,S N D P M G R S,AC,FLAGGED: sa-rule (aroha-end),85. ThoyaVegavahini SR GM PDN SN DPM GR S AC,113
+17,Surya Kantham,Ananta,1,R S M P D N S,S P M G R S,AE,FLAGGED: sa-rule (aroha-start),3. Ananta R SM PDN S SPM GR S AE,114
+17,Surya Kantham,KunthalaSaranga,1,N S R G M P D N,D P M G R S N D N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),31. KunthalaSaranga N SR GM PDN DPM GR SN DN S R,115
+17,Surya Kantham,KunthalaSaranga,2,N S R G M P D N,D P M G R S N,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 N SR GM PDN DPM GR SN AJ,115
+18,Hatakambari,SuddhaGandhariSR,1,G R G M P D P N D N,S S N D P M G R S,R,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start-dup),20. SuddhaGandhariSR GR GM PD | PN DN S SN DPM GR S R,118
+19,Jankaradhwani,ChittaRanjani,1,S R G R G M P D,N D P M R G R S,AE,FLAGGED: sa-rule (aroha-end),9. ChittaRanjani SR GR GM PD N DPM R GR S AE,119
+19,Jankaradhwani,ChittaRanjani,2,S R G R G M P D N,N D P M R G R S,R,FLAGGED: sa-rule (aroha-end),2 SR GR GM PDN N DPM R GR S R,119
+19,Jankaradhwani,KankaraBramari,5,S R G M P D N D S,D N D P M G R S,P,FLAGGED: sa-rule (avaroha-start),5 SR GM PDN DS DN DPM GR S P,119
+19,Jankaradhwani,Kankara Priya,1,S G R G M P D N S,D N D P M G R S,P,FLAGGED: sa-rule (avaroha-start),15. Kankara Priya SGR GM PDN S DN DPM GR S P,119
+20,Natabhairavi,Bhosala,1,S R P D N S,S D P M G R,R,FLAGGED: sa-rule (avaroha-end),15. Bhosala SR PDN S SDPM GR R,122
+20,Natabhairavi,Chandika,1,S R G M D N S D,S N D M G R S,AE,FLAGGED: sa-rule (aroha-end),22. Chandika SR GM DN S D SN DM GR S AE,122
+20,Natabhairavi,Chapa Gantarava,1,S G M P N,D M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),24. Chapa Gantarava SGM PN DM GR SN AE,122
+20,Natabhairavi,(Chapaganta),1,S G M P N,D P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SGM PN DPM GR SN S R,122
+20,Natabhairavi,(Chapaganta),4,S G M P N,D M G R S,AB,FLAGGED: sa-rule (aroha-end;avaroha-start),5 SGM PN DM GR S AB,122
+20,Natabhairavi,Deva Kriya,1,S R G M N D N,P D M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),30. Deva Kriya SR GM N DN PDM GR SN AE,122
+20,Natabhairavi,Deva Kriya,2,S R S R G G M,N D N D P M G R S,R,FLAGGED: sa-rule (aroha-end),2 SR SR GGM N DN DPM GR S R,122
+20,Natabhairavi,Deva Kriya,3,S R G M N D N,P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),3 SR GM N DN PM GR SN R,122
+20,Natabhairavi,Gopika Vasantham,3,R S R G M P D P N,S S N D P M G R,M G S AC,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start-dup),3 R SR GM PDPN S SN DPM GR M G S AC,124
+20,Natabhairavi,InduGhantarava,1,S G M P D P N,D P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),70. InduGhantarava SGM PD PN DPM GR SN AE,124
+20,Natabhairavi,InduGhantarava,4,S G M P D P N,D P M G R S,AJ,FLAGGED: sa-rule (aroha-end;avaroha-start),4 SGM PD PN DPM GR S AJ,124
+20,Natabhairavi,Kumara Ranjani,1,D N S R G P D,N D P R G R S N S,R,FLAGGED: sa-rule (aroha-end;aroha-start),106. Kumara Ranjani DN SR G PD N DPR GR SN S R,126
+20,Natabhairavi,LathaHitha,1,S R G P D N S,D P M G R S,R,FLAGGED: sa-rule (avaroha-start),109. LathaHitha SR GPD N S DPM GR S R,126
+20,Natabhairavi,Manji,5,N S R G M P D N,S S N D P M G R S,AC,FLAGGED: sa-rule (aroha-end;avaroha-start-dup),5 N SR GM PDN S SN DPM GR S AC,126
+20,Natabhairavi,NagaGandhari,1,S R G M P D N,N D P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end),131. NagaGandhari SR GM PDN N DPM GR SN AE,127
+20,Natabhairavi,NagaGandhari,2,S R G M P D N,D P M G S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR GM PDN DPM GS R,127
+20,Natabhairavi,NagaHindolam,1,S G R M D G M,P D S N P D P M,GR,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),132. NagaHindolam SGR M DGM PD SN PD PM GR,127
+20,Natabhairavi,Nari Ritigowla,2,S G R G M N D M N,S N D M G M P M N S,GR S P,FLAGGED: sa-rule (aroha-end),2 SGR GM N DM N SN DM GM PM | N S GR S P,127
+20,Natabhairavi,(Jayanthisri) Pandi,1,S R P D S,P M G R S N P,P,FLAGGED: sa-rule (avaroha-end;avaroha-start),149. Pandi SR PD S PM GR SN P P,128
+20,Natabhairavi,Raja Manjari,1,S G M P D P N,S S N D P M,N DM,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start-dup),158. Raja Manjari SGM PD PN S SN DPM N DM,128
+20,Natabhairavi,SindhuGanta,1,S G M P D P N,D P M G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),187. SindhuGanta SGM PD PN DPM GR S AE,130
+20,Natabhairavi,SowmyaManohari,1,M P D N S R G M P S,S M G R S N D P M,R,FLAGGED: sa-rule (avaroha-end;aroha-start),189. SowmyaManohari M PDN SR GM P S SM GR SN D PM R,130
+20,Natabhairavi,Sri Gantanam,1,S G M P N S,D P M G R G S,AB,FLAGGED: sa-rule (avaroha-start),190. Sri Gantanam SGM PN S DPM GR GS AB,130
+20,Natabhairavi,SuddhaTaranginiSGM,1,P N S,S N D M G R S,AE,FLAGGED: sa-rule (aroha-start),200. SuddhaTaranginiSGM PN S SN DM GR S AE,130
+20,Natabhairavi,Thamodini,1,S R G M D S,S N D P M G R,R,FLAGGED: sa-rule (avaroha-end),208. Thamodini SR GM DS SN D PM GR R,130
+20,Natabhairavi,VasanthaVarali,1,S R M P D N,N D P G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end),218. VasanthaVarali SR M PDN N DPGR SN AE,131
+20,Natabhairavi,VasanthaVarali,2,S R M P D N,D P G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR M PDN DPGR S R,131
+21,Keeravani,KarnatakaDeva,1,N S G M P,D P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),17. KarnatakaDeva N SGM P DPM GR SN AE,132
+21,Keeravani,Gandhari,1,N S G M P D,P M G R S N,AP,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 N SGM PD PM GR SN AP,132
+21,Keeravani,KuvalayanandamSR,1,G M P S,S N D M G S,AV,FLAGGED: sa-rule (aroha-start),23. KuvalayanandamSR GM PS SN DM GS AV,133
+21,Keeravani,Madhavi,2,S R G M D N D P,S N P G R S R M D N,S,FLAGGED: sa-rule (aroha-end;avaroha-end),2 SR GM DN D P SN PGR S R | M DN S,133
+21,Keeravani,PushpaManohariSM,1,G P D N D S,S N D M G R S,R,FLAGGED: sa-rule (aroha-start),30. PushpaManohariSM GPDN DS SN DM GR S R,133
+21,Keeravani,Soma Giri,1,N S R G M P D,P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),37. Soma Giri N SR GM PD PM GR SN S R,133
+21,Keeravani,Soma Giri,2,N S R G M P D,P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 N SR GM PD PM GR SN AE,133
+22,Kharaharapriya,BhalaGoshi,2,S R G M N D S,S N D P M G R,R,FLAGGED: sa-rule (avaroha-end),2 SR GM N DS SN DPM GR R,134
+22,Kharaharapriya,(Madyamavathi) ChittaRanjani,1,N S R G M P D N,N D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end),38. ChittaRanjani N SR GM PDN N DPM GR SN P,135
+22,Kharaharapriya,DesyaKannada,1,R G M P D N S,S N P G M R S,AJ,FLAGGED: sa-rule (aroha-start),40. DesyaKannada R GM PDN S SN PGM R S AJ,136
+22,Kharaharapriya,DhanaKapi,1,M P D N S R G R G M P,R G P M G R S N D P D N S,S,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),50. DhanaKapi M P DN SR GR GM P R GPM GR SN D P DN S S,136
+22,Kharaharapriya,DhavalikaLeela,1,S N S R G M P N D,D P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),54. DhavalikaLeela SN SR GM PN D DPM GR SN S R,136
+22,Kharaharapriya,KannadaMallaruSGM,1,P D S S N,D M G S,R,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),101. KannadaMallaruSGM PD S SN DM GS R,138
+22,Kharaharapriya,Kapi Jingla,1,S N S R G M,M G R S N D N S,AJ,FLAGGED: sa-rule (aroha-end;avaroha-start),102. Kapi Jingla SN SR GM M GR SN DN S AJ,138
+22,Kharaharapriya,Kapi,2,S R G M R P M P,S N D P M G R S,DN S,FLAGGED: sa-rule (aroha-end),2 SR GM R PM P SN DPM GR S AE | DN S,138
+22,Kharaharapriya,Kapi,4,S R G M R P M P,S N D P M R G M R S,R SN S,FLAGGED: sa-rule (aroha-end),4 SR GM R PM P SN DPM R GM RS R | SN S,139
+22,Kharaharapriya,Devaghandari KarnatakaKapi,1,S R G M P D N S,S N D P M G M R S R G M,P,FLAGGED: sa-rule (avaroha-end),106. KarnatakaKapi SR GM PDN S SN DPM GM R | SR GM P,139
+22,Kharaharapriya,KowsikaLalitha,1,S G M G M D P N,S N D M G S R S,R DN S,FLAGGED: sa-rule (aroha-end),117. KowsikaLalitha SGM GM DPN SN DM GSR S R | DN S,139
+22,Kharaharapriya,Malavi Sri,1,S G M P N S,N N D P M P N D M G S,AC,FLAGGED: sa-rule (avaroha-start-dup),136. Malavi Sri SGM PN S N N DPM PN D | M GS AC,140
+22,Kharaharapriya,Malavi Sri,3,S M G M P N D P D,S N D M G S,R,FLAGGED: sa-rule (aroha-end),3 SM GM PN DP D SN DM GS R,140
+22,Kharaharapriya,Manjari,2,S R G R G M M P N,S N D P M G R S,R DN S,FLAGGED: sa-rule (aroha-end),2 SR GR GM M PN SN DPM GR S R | DN S,140
+22,Kharaharapriya,Mani Rangu,4,R M M P N N S,S N P M G R R S,AC,FLAGGED: sa-rule (aroha-start),4 R M M PN N S SN PM GR R S AC,141
+22,Kharaharapriya,Manohari,3,S G R G M P D S,D D P M G R G S,R,FLAGGED: sa-rule (avaroha-start;avaroha-start-dup),3 SGR GM PD S DDPM GR G S R,141
+22,Kharaharapriya,NadhaTarangini,2,S P M R P D,S P N D P M G R S,R,FLAGGED: sa-rule (aroha-end),2 SPM R PD SPN D PM GR S R,142
+22,Kharaharapriya,NagaGandhari,1,N S R G M P D N,N D P M G R S N,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end),158. NagaGandhari N SR GM PDN N DPM GR SN AJ,142
+22,Kharaharapriya,NagaGandhari,2,S R G M P D N,S N D P M G R S,p,FLAGGED: sa-rule (aroha-end),2 SR GM PDN SN DPM GR S p,142
+22,Kharaharapriya,NagaGandhari,3,S R G M P D N,D P M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM PDN DPM GR S P,142
+22,Kharaharapriya,Nigama Gamini,1,M G S G M N S,S N M G M G S,x,FLAGGED: sa-rule (aroha-start),169. Nigama Gamini M GSGM N S SN M GM GS x,142
+22,Kharaharapriya,Patta Deep,1,N S G M P N S,S N D P M G R S N S G R,S,FLAGGED: sa-rule (avaroha-end),182. Patta Deep N SGM PN S SN DPM GR SN S GR S,143
+22,Kharaharapriya,PrathiMadhyamavatiSR,1,M P N S,S N P M R S,A,FLAGGED: sa-rule (aroha-start),184. PrathiMadhyamavatiSR M PN S SN PM R S A,143
+22,Kharaharapriya,Ravalika Leela,1,S N S R G M P D N,D P G R S N S,L,FLAGGED: sa-rule (aroha-end;avaroha-start),200. Ravalika Leela SN SR GM P DN DPGR S N S L,143
+22,Kharaharapriya,Sahana,1,S R G M P M,D N S N D P M,GR GR S AC,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),205. Sahana SR GM PM DN S N DPM GR GR S AC,144
+22,Kharaharapriya,Saindavi,1,N D N S R G M,P N D P M G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),206. Saindavi N DN SR GM PN DPM GR S AE,144
+22,Kharaharapriya,Saindavi,2,N D N S R G M P D,S N D P M G R S N S,N DN S R,FLAGGED: sa-rule (aroha-end),2 N DN SR GM P D SN DPM GR S | N S N DN S R,144
+22,Kharaharapriya,Saindavi,4,N D N S R G M P D N,D P M G R S N D N,S R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),4 N DN SR GM P DN DPM GR SN DN S R,144
+22,Kharaharapriya,Saindavi,5,N D N S R G M,P M G R S N D N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),5 N DN SR GM PM GR SN DN S P,144
+22,Kharaharapriya,Saindavi,6,N S R G M P D N,D P M G R S N D,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),6 N SR GM PDN DPM GR SN D P,144
+22,Kharaharapriya,Saindavi,7,N D N S R G M P,M G R S N D N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),7 N DN SR GM P M GR SN DN S P,144
+22,Kharaharapriya,Sri,2,R M P N S S N P D,N P M R G R,S AC,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start),2 R M PN S SN PD N PM R GR S AC,145
+22,Kharaharapriya,Subhangi,1,S M R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),233. Subhangi SM R GM PDN DPM GR SN S AE,145
+22,Kharaharapriya,Subhangi,2,S M R G M P D N,D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SM R GM PDN DPM GR SN P,145
+22,Kharaharapriya,SugunaBhushaniSGM,1,P M D N S,S N D P M D M R S,R,FLAGGED: sa-rule (aroha-start),245. SugunaBhushaniSGM PM DN S SN D PM DM R S R,146
+24,Varuna Priya,BhanuDeepakamSR,1,G M P D N S,S N P M R S,AE,FLAGGED: sa-rule (aroha-start),2. BhanuDeepakamSR GM PDN S SN PM R S AE,149
+24,Varuna Priya,SriBhanudeepamSR,1,G M P D N S,S N P M R S,AB,FLAGGED: sa-rule (aroha-start),24. SriBhanudeepamSR GM PDN S SN PM R S AB,150
+24,Varuna Priya,VasanthaVarali,1,S R M P D N,S N D P M G R,SN L,FLAGGED: sa-rule (aroha-end;avaroha-end),33. VasanthaVarali SR M PDN SN DPM GR SN L,150
+24,Varuna Priya,VasanthaVarali,2,S R M P D N,S N D P G R,SN R,FLAGGED: sa-rule (aroha-end;avaroha-end),2 SR M PDN SN DP GR SN R,150
+24,Varuna Priya,VeeraVasantham,4,R M M P N D N,S S N P M R G S,AC,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start-dup),4 R M M PN DN S SN PM R GS AC,150
+25,Mararanjani,Mahuri,1,S R G R M P N,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),20. Mahuri SR GR M PN DPM GR S R,152
+27,Sarasangi,BinnaGandhari,1,S R G M P D N,D P M G M R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),5. BinnaGandhari SR GM PDN DPM GM R S AE,155
+27,Sarasangi,BinnaGandhari,2,S R G M P D S,D P M G M R S,R,FLAGGED: sa-rule (avaroha-start),2 SR GM PD S DPM GM R S R,155
+27,Sarasangi,Keta Priya MadhuKari,1,S M G M P D N,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),27. MadhuKari SM GM PDN PM GR SN S AE,156
+27,Sarasangi,Madhurya,1,P N S R G M P,M G S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),29. Madhurya PN SR GM P M GSN DP AE,156
+27,Sarasangi,Madhurya,2,N S R G M P D N,N D P M G R S N,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end),2 N SR GM PDN N DPM GR SN AJ,156
+27,Sarasangi,Manimaya,1,S N S R G M P D,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),31. Manimaya SN SR GM P D PM GR SN S AE,156
+27,Sarasangi,Manimaya,2,S M G M P D,S M G R S N S,P,FLAGGED: sa-rule (aroha-end),2 SM GM PD SM GR SN S P,156
+27,Sarasangi,Manimaya,3,S R G M P D,P M G R S N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM PD PM GR SN S P,156
+27,Sarasangi,Manjula,1,P S N S R G M P,M G R S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),32. Manjula PSN SR GM P M GR SN DP AE,156
+27,Sarasangi,Rishi KethuPriyaSR,1,G M P N S,S N P M G R S,AE,FLAGGED: sa-rule (aroha-start),53. Rishi KethuPriyaSR G M PN S SN PM GR S AE,157
+28,Harikambodi,DhanaKapi,1,M P D N S R G R G M P,P M G R N D P D N S,S,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),45. DhanaKapi M PDN SR G | R GM P PM GR N DPD N S S,161
+28,Harikambodi,Dheva Ghosha Priya,1,D N S R G M P D,D P M G R S N D,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),52. Dheva Ghosha Priya DN SR GM P D DPM GR SN D AJ,161
+28,Harikambodi,DwaithaParipurni,1,S R G M P D N,P M R M G S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),61. DwaithaParipurni SR GM PDN PM R M GSN S R,162
+28,Harikambodi,DwaithaParipurni,2,S R G M P D N,D P M R M G S,AJ,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR GM PDN DPM R M GS AJ,162
+28,Harikambodi,DwaithaParipurni,3,S R G M P D N,P M R M G S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),3 SR GM PDN PM R M GSN P,162
+28,Harikambodi,Durbar,2,N S R S R S R G,S D P M R M R M R S,R,FLAGGED: sa-rule (aroha-end),2 N SR SR SR G SDPM R M R M R S R,162
+28,Harikambodi,HemaMandara,1,N D N S R M G M P D N,D P M G M R S N D N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),91. HemaMandara N DN SR M GM DPM GM R S | PDN N DN S R,163
+28,Harikambodi,HemaMandara,2,N D N S R M G M P D N,N D P M G R S N D,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end),2 N DN SR M GM | PDN N DPM GR SN D AJ,163
+28,Harikambodi,Janjuti,1,D S R G M P D N,D P M G R S N D P D S,AE,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),99. Janjuti DSR GM PD N DPM GR SN D | PDS AE,163
+28,Harikambodi,Janjuti,2,S N D S R G M P D N,D P M G R S N D P D S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SN D SR GM PDN DPM GR SN D | PDS R,163
+28,Harikambodi,Kamas,2,S G M P D N S,R S N D P M G S,R,FLAGGED: sa-rule (avaroha-start),2 SGM PDN S R SN DPM G S R,164
+28,Harikambodi,Kamas,3,S G M P D N,R S N D P M G S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SGM PDN R SN DPM G S P,164
+28,Harikambodi,Kamas,4,S G P D N S,R S N D P M G S,P,FLAGGED: sa-rule (avaroha-start),4 SGP DN S R SN DPM G S P,164
+28,Harikambodi,Kampavathi,1,S R G M P D N,N D P M G S,R,FLAGGED: sa-rule (aroha-end),114. Kampavathi SR GM PDN N DPM GS R,164
+28,Harikambodi,KokilaDhwani,2,S R G M D N D N,S N D N P M G R S,R,FLAGGED: sa-rule (aroha-end),2 SR GM DN DN SN DN PM GR S R,165
+28,Harikambodi,KunthalaVaraliS,1,M P D N D S,S N D P M S,AE,FLAGGED: sa-rule (aroha-start),129 KunthalaVaraliS M PDN DS SN DPM S AE,165
+28,Harikambodi,MadhyaKokila,1,S R P D N,D P R S,AG,FLAGGED: sa-rule (aroha-end;avaroha-start),136. MadhyaKokila SR PDN DPR S AG,165
+28,Harikambodi,MatthaKoki,1,S R P D N,D P S R S R,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),150. MatthaKoki SR PDN DPSR SR P,166
+28,Harikambodi,MatthaKoki,2,S R P D N,D P R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR PDN DPR S P,166
+28,Harikambodi,MatthaKoki,4,S R P D N,S D P S R,AV,FLAGGED: sa-rule (aroha-end;avaroha-end),4 SR PDN S DPSR AV,166
+28,Harikambodi,MatthaKoki,5,S R D P N,D P S R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),5 SR DPN DPSR SN P,166
+28,Harikambodi,Mattha Kokila,3,S R N D P N,D P S R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR N DPN DPSR S R,166
+28,Harikambodi,Maya TaranginiSR,1,M G M P N S,S N D P M G R S,P,FLAGGED: sa-rule (aroha-start),152. Maya TaranginiSR MGM PN S SN DPM GR S P,166
+28,Harikambodi,Narayana Gaula,2,S R M P N D N S,S N D P M G R S N,R,FLAGGED: sa-rule (avaroha-end),2 SR M PN DN S SN DPM GR SN R,166
+28,Harikambodi,Narayana Gaula,4,R M P N D N S,N D P M G R G R S,AC,FLAGGED: sa-rule (aroha-start),4 R M PN DN S N DPM GR GR S AC,166
+28,Harikambodi,NatyaManohari,1,S G M P D N,S N P M G S,R,FLAGGED: sa-rule (aroha-end),171. NatyaManohari SGM PDN S N PM GS R,167
+28,Harikambodi,Neelambari,4,S R G M S G M,P N S N D P M G M,R GR S P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),4 SR GM SGM PN S N DPM GM R GR S P,167
+28,Harikambodi,Pratapa Varali,2,S R M P D N D,S N D P M G R S,R PN DS,FLAGGED: sa-rule (aroha-end),2 SR M PDN D SN DPM GR S R | PN DS,168
+28,Harikambodi,Ravichandrika,2,S R G M P D N,S N D M G R S,R DN DS,FLAGGED: sa-rule (aroha-end),2 SR GM PDN SN DM GR S R | DN DS,169
+28,Harikambodi,Sala Keeka,1,S R G M P N D P M,G S N D N P N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),212. Sala Keeka SR GM PN DPM GSN D | N PN S AE,169
+28,Harikambodi,Swara Vedi,1,S M G M P N D N,S S N D N P M G,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start-dup),264. Swara Vedi SM GM PN DN S SN DN PM G AJ,171
+28,Harikambodi,Umabaranam,2,S R G M P D S N,S N P M R G M R S,P,FLAGGED: sa-rule (aroha-end),2 SR GM PD SN SN PM R GM R S P,172
+28,Harikambodi,VedaghoshaPriya,1,D N S R G M P M,G R S N D N P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),288. VedaghoshaPriya DN SR GM PM GR SN DN P P,172
+28,Harikambodi,VedaghoshaPriya,2,N D N S R G M,P M G R S N D P D,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 N DN SR GM PM GR SN D PD AE,172
+28,Harikambodi,Yuvaratna,1,S R G M P M D N,S N D P M R G M R S,R PDN S,FLAGGED: sa-rule (aroha-end),291 Yuvaratna SR GM PM DN SN DPM R GM R S R | PDN S,172
+29,Dheera Sankarabharanam,BiyandaiGandharam,1,P D N S R G M P,P M G R S N D P,AO,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),26. BiyandaiGandharam PDN SR GM P PM GR SN D P AO,174
+29,Dheera Sankarabharanam,BhuvanaSundaraSR,1,G M N S S N,D P M G R S,AJ,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),30. BhuvanaSundaraSR G M N S SN DPM GR S AJ,174
+29,Dheera Sankarabharanam,Chandrika,1,N N S R M P N S,N S D M P D M R N S,S,FLAGGED: sa-rule (aroha-start-dup),35. Chandrika N N SR M PN S N SDM PD PM R S,174
+29,Dheera Sankarabharanam,(Purna Chandrika),1,N,S,,FLAGGED: sa-rule (aroha-end),(Purna Chandrika) N S,174
+29,Dheera Sankarabharanam,Sankarabaranam Chenchukamboji,1,S G R G M P M D N,S N P M G R S P N D N S,O,FLAGGED: sa-rule (aroha-end),42. Chenchukamboji SGR GM PM DN SN PM GR S O | PN DN S,174
+29,Dheera Sankarabharanam,Dhadhyomathi,1,S R G R M G M,S N P M G R S,R PDN S,FLAGGED: sa-rule (aroha-end),49. Dhadhyomathi SR GR M GM SN PM GR S R | PDN S,175
+29,Dheera Sankarabharanam,Dhakshayani,1,S R G M N D M,S N D P M G R S,R PDN S,FLAGGED: sa-rule (aroha-end),55. Dhakshayani SR GM N DM SN DPM GR S R | PDN S,175
+29,Dheera Sankarabharanam,DhevaGandhari,1,S R G M G R M P,S N D P M G R S,M SN S,FLAGGED: sa-rule (aroha-end),60. DhevaGandhari SR GM GR M P SN DPM GR S AE | M SN S,175
+29,Dheera Sankarabharanam,DhevaGandhari,2,S R M P D N S R,S N D P M G S R G R S,R,FLAGGED: sa-rule (aroha-end),2 SR M PDN SR SN DPM G SR | GR S R,175
+29,Dheera Sankarabharanam,Gandharam,1,P D N S R G M P,P M G R S N D P,AO,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),78. Gandharam PDN SR GM P PM GR SN D P AO,176
+29,Dheera Sankarabharanam,Gauda Mallar,3,S R G M M G M,S N D P M G R S,R PDN S,FLAGGED: sa-rule (aroha-end),3 SR GM M GM SN DPM GR S R | PDN S,176
+29,Dheera Sankarabharanam,GuhyaDhyuthi,2,S R G P D N D P,S N D P M G R S,R DPS,FLAGGED: sa-rule (aroha-end),2 SR GPD N DP SN DPM GR S R | DPS,176
+29,Dheera Sankarabharanam,Jalaprabhava,1,M P D N S R G M,M G R S N D P M,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),107. Jalaprabhava M PDN SR GM M GR SN DPM AJ,177
+29,Dheera Sankarabharanam,Jangla Raga,1,N D N S R G M P D N,D P M G R S N D N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),109. Jangla Raga N DN SR GM P DN DPM GR SN DN S R,177
+29,Dheera Sankarabharanam,Jalavu,1,P N S R G M P,P M G R S N S,R,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),113. Jalavu PN SR GM P PM GR SN S R,177
+29,Dheera Sankarabharanam,Julavu,1,P D N S R G M P,M G R S N D P M,R,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),114. Julavu PDN SR GM P M GR SN DPM R,177
+29,Dheera Sankarabharanam,Julavu,2,P D N S R G M P S,M G R S N D P M,R,FLAGGED: sa-rule (avaroha-end;aroha-start;avaroha-start),2 PDN SR GM PS M GR SN DPM R,177
+29,Dheera Sankarabharanam,Julavu,3,P N S R G M P,P M G R S N D P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),3 PN SR GM P PM GR SN D P P,177
+29,Dheera Sankarabharanam,Julavu,4,P N S R G M P,P M G R S N P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),4 PN SR GM P PM GR SN P AE,177
+29,Dheera Sankarabharanam,Kannada,2,G R G R G M P,S D P M G M R S,R M DN S,FLAGGED: sa-rule (aroha-end;aroha-start),2 GR GR GM P SDPM GM R S R | M DN S,178
+29,Dheera Sankarabharanam,Kannada,3,G R S G M P M D N,S S N S D P M P M,GR S P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start-dup),3 GR SGM PM DN S SN S DPM PM GR S P,178
+29,Dheera Sankarabharanam,Kolli,1,P D N S R G M P,P M G R S N D P,AO,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),134. Kolli PDN SR GM P PM GR SN D P AO,178
+29,Dheera Sankarabharanam,Kolli Kappanam,1,P D N S R G M P,P M G R S N D P,AO,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),135. Kolli Kappanam PDN SR GM P PM GR SN D P AO,178
+29,Dheera Sankarabharanam,Kumara Vilasitha,1,S M G M D N,S N D P M D M G R S P D N S,AE,FLAGGED: sa-rule (aroha-end),138. Kumara Vilasitha SM GM DN SN DPM DM GR S AE | PDN S,178
+29,Dheera Sankarabharanam,Kurinji,1,S N S R G M P D,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),140. Kurinji SN SR GM P D PM GR SN S AE,179
+29,Dheera Sankarabharanam,Kurinji,2,S N S R G M P,D P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SN SR GM P DPM GR SN S R,179
+29,Dheera Sankarabharanam,Kurinji,3,S R S G R M P S,D P M G R S N S,R,FLAGGED: sa-rule (avaroha-start),3 SR SGR M PS DPM GR SN S R,179
+29,Dheera Sankarabharanam,Kurinji,5,S R G M P D,D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),5 SR GM PD DPM GR SN P,179
+29,Dheera Sankarabharanam,Mahurim,1,S M G M R G M P,S D P M R G M S,DN S,FLAGGED: sa-rule (aroha-end),149. Mahurim SM GM R GM P SDPM R GM S AJ | DN S,179
+29,Dheera Sankarabharanam,Maahuri,1,S R G R M P N,D P M G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),150. Maahuri SR GR M PN DPM GR S AE,179
+29,Dheera Sankarabharanam,Maahuri,2,S M G M R G M P,S N D P M R G M S,R DN S,FLAGGED: sa-rule (aroha-end),2 SM GM R GM P SN DPM R GM S R | DN S,179
+29,Dheera Sankarabharanam,Maahuri,3,S R M G P N,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR M GPN DPM GR S R,179
+29,Dheera Sankarabharanam,Megharagakurinji,1,S R G M P D N,S N P M G R S,AO,FLAGGED: sa-rule (aroha-end),159. Megharagakurinji SR GM PDN SN PM GR S AO,179
+29,Dheera Sankarabharanam,Naga Dhawali,1,S R S M G M P N,S N D N P M G S,P DN S,FLAGGED: sa-rule (aroha-end),165. Naga Dhawali SR SM GM PN SN DN PM GS P | DN S,180
+29,Dheera Sankarabharanam,Navroj,1,P D N S R G M P,M G R S N D P,R,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),168. Navroj PDN SR GM P M GR SN DP R,180
+29,Dheera Sankarabharanam,Navroj,2,P D N S R G M P S,M G R S N D P,R,FLAGGED: sa-rule (avaroha-end;aroha-start;avaroha-start),2 PDN SR GM PS M GR SN DP R,180
+29,Dheera Sankarabharanam,Navroj,3,P D N S R G M P,P M G R S N D N P D N S,P,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),3 PDN SR GM P PM GR SN DN P | DN S P,180
+29,Dheera Sankarabharanam,Navroj,4,P D N S R G M P,P M G R S N D P,AC,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),4 PDN SR GM P PM GR SN D P AC,180
+29,Dheera Sankarabharanam,Navroj,5,P D N S R G M,P M G R S N D P,AJ,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),5 PDN SR GM PM GR SN D P AJ,180
+29,Dheera Sankarabharanam,NarayaniDesakshi,1,S R M G R G M P,S N D P M G R S D S,DN S,FLAGGED: sa-rule (aroha-end),169. NarayaniDesakshi SR M GR GM P SN DPM GR SD S AE | DN S,180
+29,Dheera Sankarabharanam,Neelambari,1,S S R G M P D P N N S,S N P M G R G R N D N S M G S,AE,FLAGGED: sa-rule (aroha-start-dup),173. Neelambari SSR GM PDP N N S SN PM GR GR | N DN S M GS AE,180
+29,Dheera Sankarabharanam,Purva Gowla,3,S R G M P N D N P,S N D N P M G R S,P DN S,FLAGGED: sa-rule (aroha-end),3 SR GM PN DN P SN DN PM GR S P | DN S,181
+29,Dheera Sankarabharanam,Purva Gowla,4,S G R G S R M P,S N D P M G R S,DN S,FLAGGED: sa-rule (aroha-end),4 SGR GSR M P SN DPM GR S AC | DN S,181
+29,Dheera Sankarabharanam,Raga Mallika,1,S R G M N D M P,S N D P M R M G S,R DN S,FLAGGED: sa-rule (aroha-end),201. Raga Mallika SR GM N DM P SN DPM R M GS R | DN S,182
+29,Dheera Sankarabharanam,Ranjana Gowri,1,S D P N S R G M P N,D P M G R S N D P S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),203. Ranjana Gowri SDPN SR GM PN DPM GR SN DPS R,182
+29,Dheera Sankarabharanam,Sritha Pasvini,1,S N D S R G M P D N,D P M G R S N D S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),243. Sritha Pasvini SN D SR GM P DN DPM GR SN DS R,183
+32,Ragavardhini,ChitraVaditha,1,S G R G M D M,S D P M R G R S,PDN S,FLAGGED: sa-rule (aroha-end),1. ChitraVaditha SGR GM DM SDPM R GR S AE | PDN S,189
+32,Ragavardhini,Kusuma KallolaSPM,1,R G M P S,S D P M G M R S,AE,FLAGGED: sa-rule (aroha-start),13. Kusuma KallolaSPM R GM PS SDPM GM R S AE,189
+32,Ragavardhini,SamanthaJingla,2,S R G M P D N S,S N P D N P M R G R,SP,FLAGGED: sa-rule (avaroha-end),2 SR GM PDN S SN PD N PM R GR SP,190
+33,Gangeya Bhushani,HindolaNayakiSM,1,G M P S,S N D P M G M R S,AE,FLAGGED: sa-rule (aroha-start),14. HindolaNayakiSM GM PS SN DPM GM R S AE,191
+35,Sulini,Soka Varali,1,S G M N,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),27. Soka Varali SGM N DPM GR S R,196
+35,Sulini,Syamala,1,S G R G M P D N,D P S N D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),33. Syamala SGR GM PDN DP SN DPM GR S R,196
+35,Sulini,ThandavollasiniSR,1,G P D N S,S N D P G R S,AE,FLAGGED: sa-rule (aroha-start),34. ThandavollasiniSR G PDN S SN DP GR S AE,196
+36,Chalanata,Chapa Gantarava,1,S G M P N,D M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),5. Chapa Gantarava SGM PN DM GR SN R,197
+36,Chalanata,PurnaNattai,1,S R G M P D N,S N D P M G R S,w,FLAGGED: sa-rule (aroha-end),22. PurnaNattai SR GM PDN SN DPM GR S w,198
+37,Salakam,BhogaSaveri,1,S R M P D N,D P M G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),6. BhogaSaveri SR M PDN DPM GR S AE,199
+37,Salakam,BhogaSaveri,2,S M P D N D,D P M G R S,R PM GR S,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SM PDN D DPM GR S R | PM GR S,199
+37,Salakam,BhogaSaveri,3,S R G M P D N,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM PDN DPM GR S R,199
+37,Salakam,NadhaBramari,1,S G R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),20. NadhaBramari SGR GM PDN DPM GR SN S AE,200
+37,Salakam,Naga Gupti,2,S G R G M P D N,P D M G R S N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SGR GM PDN PDM GR SN S P,200
+37,Salakam,Saudhari,1,S R G R M G M,S N D P M G R S,R PDN S,FLAGGED: sa-rule (aroha-end),33. Saudhari SR GR M GM SN DPM GR S R | PDN S,200
+38,Jalarnavam,Kusumavali,1,N S R G M P D N,D P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),11. Kusumavali N SR GM PDN DPM GR SN AE,201
+38,Jalarnavam,Kusumavali,2,N S R G M P D N,N D P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end),2 N SR GM PDN N DPM GR SN R,201
+38,Jalarnavam,MaruvaChandrika,1,S N S R G M P D N,N D P M G R G S,AE,FLAGGED: sa-rule (aroha-end),13. MaruvaChandrika SN SR GM P DN N DPM GR G S AE,201
+38,Jalarnavam,MaruvaChandrika,2,S N S R G M P D N,D P M G R G S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SN SR GM P DN DPM GR GS R,201
+38,Jalarnavam,MaruvaChandrika,3,S R G M P D N,N D P M G R G S,AB,FLAGGED: sa-rule (aroha-end),3 SR GM PDN N DPM GR G S AB,201
+38,Jalarnavam,SindhuDesya,3,S R G S M P N,S N D P M G R S,AB,FLAGGED: sa-rule (aroha-end),3 SR GSM PN SN DPM GR S AB,202
+39,Jhalavarali,(amruthaVarshini) KokilaPanchamam,5,P D N S R G R,S N D P D N S,P,FLAGGED: sa-rule (aroha-end;aroha-start),5 PDN SR GR SN DP DN S P,204
+39,Jhalavarali,NagaBhogi,1,S R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),27. NagaBhogi SR GM PDN DPM GR SN S AE,204
+39,Jhalavarali,NagaBhogi,2,S R G M P D N,D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SR GM PDN DPM GR SN P,204
+39,Jhalavarali,NagaBhogi,3,S R G M P D N,N D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end),3 SR GM PDN N DPM GR SN P,204
+39,Jhalavarali,Raga Bhogi,1,S R G M P D N,D P M G R S N D,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),31. Raga Bhogi SR GM PDN DPM GR SN D R,204
+39,Jhalavarali,Varali ThilakamS,1,R G M D N S,S N D M G R S,AE,FLAGGED: sa-rule (aroha-start),41. Varali ThilakamS R GM DN S SN DM GR S AE,204
+40,Navaneetham,DeergaNandini,1,P D N S G M R M P N,D P M G R S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),2. DeergaNandini PDN S GM R M PN DPM GR SN DP AE,205
+40,Navaneetham,Visiambari,1,S R M P M G M,S N D P M G M R S,P PDN S,FLAGGED: sa-rule (aroha-end),28. Visiambari SR M PM GM SN DPM GM R S P | PDN S,206
+41,Pavani,Adivasu,1,S R G M P M D N,S N D M G S,AE,FLAGGED: sa-rule (aroha-end),1. Adivasu SR GM PM DN S N DM GS AE,207
+41,Pavani,PunnagaVarali,1,S R G M P D N,N D P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end),23. PunnagaVarali SR GM PDN N DPM GR SN R,208
+41,Pavani,PurnaPanchamam,1,S R G M P D,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),27. PurnaPanchamam SR GM PD DPM GR S R,208
+42,Raghupriya,AnandaBhogi,1,S R G M P N D N,D P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2. AnandaBhogi SR GM PN DN DPM GR SN AE,209
+42,Raghupriya,AnandaBhogi,2,S R G M P N D N,D P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR GM PN DN DPM GR SN S R,209
+42,Raghupriya,Gandarvam,1,M P D N S R G,R S N P M P D N S,AE,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),4. Gandarvam M PDN SR G R SN PM PDN S AE,209
+42,Raghupriya,Gandarvam,2,P D N S R G R S,N P M P D N S N S,R,FLAGGED: sa-rule (aroha-start),2 PDN SR GR S N PM PDN SN S R,209
+42,Raghupriya,Gandarvam,3,P D N P R G R,S N P M P D N,SN P R,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start),3 PDN PR GR SN P M PDN SN P R,209
+42,Raghupriya,Gandarvam,4,M P D N S R G,D R S N P M,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),4 M PDN SR G DR SN PM P,209
+42,Raghupriya,Gandarvam,5,M P D N S R,D S N P M P D N S,AB,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),5 M PDN SR DSN PM P DN S AB,209
+42,Raghupriya,Gantaravam,1,M P D N S R G M P G R S,N P M P D N S N P,P,FLAGGED: sa-rule (avaroha-end;aroha-start),5. Gantaravam M PDN SR GM | PGR S N PM PDN SN P P,209
+42,Raghupriya,Gopathi,1,S R G M P D N,P M R G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),6. Gopathi SR GM PDN PM R GR S AE,209
+42,Raghupriya,(Gomathi),1,N S R M P D N,P M G R S N S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 N SR M PDN PM GR SN SN S R,209
+42,Raghupriya,(Gomathi),2,S R G M P D N,P M R G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM PDN PM R GR SN S R,209
+42,Raghupriya,(Gomathi),3,S R M P D N,P M R G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),4 SR M PDN PM R GR S R,209
+42,Raghupriya,MaruvaLalitha,1,P D N S R G M P,P M G R S N P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),17. MaruvaLalitha PDN SR GM P PM GR SN P AE,209
+42,Raghupriya,Thoomala,1,S R G M D N,P M R G R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),26. Thoomala SR GM DN PM R GR S AE,210
+44,Bhava Priya,BhogaSaveri,1,S R M P D N,D P M G R S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),8. BhogaSaveri SR M PDN DPM GR S R,213
+44,Bhava Priya,BramaraBhogi,1,M P D N S R G,M G R S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),9. BramaraBhogi M PDN SR G M GR SN DP AE,213
+44,Bhava Priya,BramaraBhogi,2,M P D N S R S,M G R S N D P,R,FLAGGED: sa-rule (avaroha-end;aroha-start;avaroha-start),2 M PDN SR S M GR SN DP R,213
+45,Subhapantuvarali,BhanuDhanyasi,1,S R G N D N,D P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),4. BhanuDhanyasi SR GN DN DPM GR SN S R,215
+45,Subhapantuvarali,BhanuDhanyasi,2,S R G M N D N,D P M G R S R S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR GM N DN DPM GR SR S AE,215
+45,Subhapantuvarali,GarudaVardhini,1,S R G M N D M,P S N P M R S,R DN S,FLAGGED: sa-rule (aroha-end;avaroha-start),16. GarudaVardhini SR GM N DM P SN PM R S R | DN S,215
+45,Subhapantuvarali,Kanaka Deeparam,1,S G M P D P N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),23. Kanaka Deeparam SGM PD PN DPM GR SN S AE,216
+45,Subhapantuvarali,Kanaka Deeparam,2,S G M P D P N,D P M G R S N,AB,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SGM PD PN DPM GR SN AB,216
+45,Subhapantuvarali,Subha Varali,1,S M R G M P D N,D P M G R S N S,L,FLAGGED: sa-rule (aroha-end;avaroha-start),54. Subha Varali SM R GM PDN DPM GR SN S L,217
+46,Shadvidha Margini,Maruva Gowri,1,S G R G M P D N,D M P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),23. Maruva Gowri SGR GM PDN DM PM GR SN AE,218
+46,Shadvidha Margini,Maruva Gowri,2,S G R G M P D N,D M P M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SGR GM PDN DM PM GR S P,218
+46,Shadvidha Margini,Maruva Gowri,3,S G R G M P D N,D P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),3 SGR GM PDN DPM GR SN P,218
+46,Shadvidha Margini,Purasuya,1,S R M G R M P,S N D P M G R S,N DN S,FLAGGED: sa-rule (aroha-end),29. Purasuya SR M GR M P SN DPM GR S AE | N DN S,219
+47,Suvarnangi,Abhiru,2,S R G R M P N S,D P M G R S,R,FLAGGED: sa-rule (avaroha-start),2 SR GR M PN S DPM GR S R,220
+47,Suvarnangi,Abhiru,3,S G R N N S G D P M,P G S S D P G S,R GR N S,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SGR N N S G DPM PG SS DPG S R | GR N S,220
+47,Suvarnangi,Abhiru,4,S G R G M P N S,D P M G S,R,FLAGGED: sa-rule (avaroha-start),4 SGR GM PN S DPM GS R,220
+47,Suvarnangi,Abhiru,5,P D N S M G M,P M G S N D,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),5 PDN SM GM PM GSN D P,220
+47,Suvarnangi,Abhiru,6,P D N S M G M P,P M D S N D S,AB,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),6 PDN SM GM P PM DSN D S AB,220
+47,Suvarnangi,Maruva Saranga,1,S N S R G M P M,D N D P M G R G S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),17. Maruva Saranga SN SR GM PM DN DPM GR GS AE,220
+47,Suvarnangi,Maruva Saranga,2,S R S R G M M D N,D P M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR SR GM M DN DPM GR S P,221
+47,Suvarnangi,Maruva Saranga,3,S R G M P M D N,D P M G R G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SR GM PM DN DPM GR GR S P,221
+48,Divyamani,KannadaVelavali,1,P N S R G M P,P M G R S N D N,P AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),20. KannadaVelavali PN SR GM P PM GR SN DN P AE,223
+48,Divyamani,KannadaVelavali,2,P N S R G M P,M G R S N D N S,R,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),2 PN SR GM P M GR SN DN S R,223
+48,Divyamani,Suka Swaravali,1,S N S R G M P D N,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),34. Suka Swaravali SN SR GM P DN PM GR SN S AE,223
+48,Divyamani,Suka Swaravali,2,S R G M P D N,P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SR GM PDN PM GR SN P,223
+49,Dhavalambari,Bammani,1,R S G M D N S,S N D M G R S,P,FLAGGED: sa-rule (aroha-start),2. Bammani R SGM DN S SN DM GR S P,224
+51,Kamavardhini,Sakti Tarangini,1,S R M G R P M D N S,S N D P M R G S S,R,FLAGGED: sa-rule (avaroha-end-dup),66. Sakti Tarangini SR M GR PM DN S SN DPM R G SS R,230
+51,Kamavardhini,ThatikaPanchamam,1,S G R G M P M,S N D P M G R S,R DN PS,FLAGGED: sa-rule (aroha-end),88. ThatikaPanchamam SGR GM PM SN DPM GR S R | DN PS,231
+51,Kamavardhini,Vilambini,2,P M G M P N D N,S S N D N P M G S,R,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start-dup),2 PM GM PN DN S SN DN PM GS R,231
+52,Rama Priya,AnandaBhogi,1,S R G M P N D N,D P M R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),1. AnandaBhogi SR GM PN DN DPM R SN P,232
+52,Rama Priya,BairavaDhwaniS,1,R G M P M N D S,S D P M G R S,AE,FLAGGED: sa-rule (aroha-start),4. BairavaDhwaniS R GM PM N DS SDPM GR S AE,232
+52,Rama Priya,Chintaramani,1,S G M P D N,D P M P G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),5. Chintaramani SGM PDN DPM PGR S N S R,232
+52,Rama Priya,(Singaramani) Chintamani,1,S G M P D N,D P M P G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),6. Chintamani SGM PDN DPM PGR S N S AE,232
+52,Rama Priya,DharmaKottani,1,S R G R G M P D N D P N S,S D N P M G R,P,FLAGGED: sa-rule (avaroha-end),7. DharmaKottani SR GR GM PD SDN PM GR P | N DPN S,232
+52,Rama Priya,Jagadambari,1,S R G M P D N,D P M P G R S N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),16. Jagadambari SR GM PDN DPM PGR S N S P,232
+52,Rama Priya,Kaladharani,1,S G R G M P N D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),17. Kaladharani SGR GM PN D N DPM GR SN S AE,232
+52,Rama Priya,Pavitri,1,P M P D N S R G M,P P M G R S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start;avaroha-start-dup),32. Pavitri PM PDN SR GM P PM GR SN D P AE,233
+52,Rama Priya,Pavitri,2,P M P D N S R G M,P P M G R S N D P,R,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start;avaroha-start-dup),2 PM PDN SR GM P PM GR SN D P R,233
+52,Rama Priya,Pavitri,3,P D N S R G M P,P M G R S N D P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),3 PDN SR GM P PM GR SN D P P,233
+52,Rama Priya,Soundarya,1,S R G P M D N,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),43. Soundarya SR GPM DN PM GR SN S AE,234
+52,Rama Priya,Sri Kari,2,S R G P M D N,P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SR GPM DN PM GR SN P,234
+53,Gamanasrama,Devasraya,1,S R G M D N S S,S N D M G R S,R,FLAGGED: sa-rule (aroha-end-dup),15. Devasraya SR GM DN S S SN DM GR S R,235
+53,Gamanasrama,GhaganaSarasiruha,1,S G R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),22. GhaganaSarasiruha SGR GM PDN DPM GR SN S AE,236
+53,Gamanasrama,Purva Kalyani,1,S R G M P D N,S N D P M G R S,PDP S,FLAGGED: sa-rule (aroha-end),51. Purva Kalyani SR GM PDN SN DPM GR S AE | PDP S,236
+53,Gamanasrama,Purva Kalyani,2,S R G M P D N,S N P M G R S,R PDP S,FLAGGED: sa-rule (aroha-end),2 SR GM PDN SN PM GR S R | PDP S,236
+54,Viswambari,Veera Prathapam,1,S N D S R G M P D N,D P M G R S N D S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),32. Veera Prathapam SN D SR GM PDN DPM GR SN DS R,239
+55,Syamalangi,HamsaPrabhavali,1,S N S R G M P D N,D S P G R G S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),10. HamsaPrabhavali SN SR GM P DN DSP GR GS R,240
+55,Syamalangi,HamsaPrabhavali,2,S N S R N G M,P D N D S P R G S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SN SR N GM P DN DSPR G S R,240
+55,Syamalangi,HamsaBhushavali,1,S N S R G M P D N,D P M G R G S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),12. HamsaBhushavali SN SR GM P DN DPM GR GS P,240
+55,Syamalangi,Sruthiranjani,1,S R G M P D N,N D P M G S R S,R,FLAGGED: sa-rule (aroha-end),27. Sruthiranjani SR GM PDN N DPM GSR S R,241
+56,Shanmukha Priya,Deva Malavi,1,S R G M P D N,N D P M G R S N,AE,FLAGGED: sa-rule (aroha-end;avaroha-end),12. Deva Malavi SR GM PDN N DPM GR SN AE,242
+56,Shanmukha Priya,Deva Malavi,2,S R G M P D N,D P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SR GM PDN DPM GR SN R,242
+56,Shanmukha Priya,KariKadya,1,N S G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),21. KariKadya N SGM PDN DPM GR SN S AE,242
+56,Shanmukha Priya,KariKadya,2,N S G P M D N,D M P G R S N,AB,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 N SGPM DN DM PGR SN AB,242
+56,Shanmukha Priya,KuruGadhya,1,N S G M P D N,D P M G R S N,AB,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),24. KuruGadhya N SGM PDN DPM GR SN AB,243
+58,Hemavathi,Kesarava Loka,2,S R M P D S N,D P M G R S,L,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR M PD SN DPM GR S L,247
+60,Neethimathi,Nishadam,5,S R G R G S N D,M P N P M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),5 SR GR GSN D M PN PM GR S P,251
+60,Neethimathi,Nishadam,6,S R G R S N D M,P N D M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),6 SR GR SN DM PN DM GR S P,251
+60,Neethimathi,PunnagaThodi,1,S R G M P D N,N D P M G R S,R,FLAGGED: sa-rule (aroha-end),21. PunnagaThodi SR GM PDN N DPM GR S R,251
+61,Kanthamani,SruthiRanjani,1,S R G M P D N,N D P M G S R S,AE,FLAGGED: sa-rule (aroha-end),26. SruthiRanjani SR GM PDN N DPM GSR S AE,253
+61,Kanthamani,SruthiRanjani,4,S R G M P D N,N D P M G R S,P,FLAGGED: sa-rule (aroha-end),4 SR GM PDN N DPM GR S P,253
+61,Kanthamani,TharangaLeela,1,S R G R M P D N,S N M G R S D M,N S,FLAGGED: sa-rule (aroha-end;avaroha-end),28. TharangaLeela SR GR M PDN SN M GR S AE | DM N S,253
+62,Rishabha Priya,MangayarkarasiS,1,R G M P N S,S D P M G R S,AB,FLAGGED: sa-rule (aroha-start),15. MangayarkarasiS R GM PN S SDPM GR S AB,254
+62,Rishabha Priya,SuddhaPuttari,1,S N S R G M P D,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),35. SuddhaPuttari SN SR GM P D DPM GR SN S AE,255
+62,Rishabha Priya,SuddhaPuttari,2,S N S R S M P D,D P M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SN SR SM P D DPM GR SN S R,255
+62,Rishabha Priya,SuddhaUttari,1,S R G M P D,D P M G R S N,AB,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),37. SuddhaUttari SR GM PD DPM GR SN AB,255
+63,Lathangi,BhinnaNishadam,1,S N S R G M P D N,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),6. BhinnaNishadam SN SR GM P DN PM GR SN S AE,256
+63,Lathangi,BhinnaNishadam,2,S R G M P D N,P M G R S N,P,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SR GM PDN PM GR SN P,256
+63,Lathangi,Dhosha Rahitha Swarupi,1,P M P D N S G,R S N D P M P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),15. Dhosha Rahitha Swarupi PM PDN S G R SN DPM P AE,256
+63,Lathangi,Dhosha Rahitha Swarupi,2,S M P D N S,R S N D P M,P L,FLAGGED: sa-rule (avaroha-end;avaroha-start),2 SM PDN S R SN DPM P L,256
+63,Lathangi,Komali,3,G R G M P N D M,P S S D N M G R S,P,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),3 GR GM PN DM PS SDN M GR S P,257
+63,Lathangi,Naimapriya,2,S R M G M D P D,S N D P M G P M G R S,AB,FLAGGED: sa-rule (aroha-end),2 SR M GM DPD SN DPM G PM | GR S AB,257
+63,Lathangi,PurnaNishadam,1,P D N D S R G M,P M G S R S N D P,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),44. PurnaNishadam PDN D SR GM PM GSR SN DP AE,258
+63,Lathangi,PurnaNishadam,2,P D N S R G M,P M G S R S N D P,P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),2 PDN SR GM PM GSR SN DP P,258
+63,Lathangi,SuddhaKalanidhi,1,S G P D N D,P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),63. SuddhaKalanidhi SGP DN D PM GR SN S AE,258
+63,Lathangi,SuddhaKalanidhi,2,S G P D N,D P M G R S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SGP DN DPM GR S P,258
+63,Lathangi,SuddhaKalanidhi,3,S G P D N,D P M G R S N S,P,FLAGGED: sa-rule (aroha-end;avaroha-start),3 SGP DN DPM GR SN S P,258
+64,Vachaspathi,PanchaMurthi,1,S R G M P D N,D P M P G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),34. PanchaMurthi SR GM PDN DPM PGR S N S AE,260
+64,Vachaspathi,PanchaMurthi,2,S R G M P D N,D P M P G R S N,AV,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SR GM PDN DPM PGR S N AV,260
+64,Vachaspathi,Pranavakari,1,P N D N S R G M,P M G R S N D N,P AE,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start;avaroha-start),38. Pranavakari P N D N S R G M P M G R S N D N P AE,260
+64,Vachaspathi,Pranavakari,2,S N D N S R G M,P M G R S N D N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),2 S N D N S R G M P M G R S N D N S R,260
+64,Vachaspathi,Vatsam,1,G M P D N S,S N D P M S,R,FLAGGED: sa-rule (aroha-start),60. Vatsam GM PDN S SN DPM S R,261
+65,Mechakalyani,Anandhi,1,D N S M M P D N P D M P S,N S S N P D M P G M D P,S,FLAGGED: sa-rule (avaroha-end;aroha-start),3. Anandhi DN SM M PDN N S-S -N P -DM - | PDM PS P-GM DP S,262
+65,Mechakalyani,AnandhKalyani,1,D N S M M P D N,N S S N P D M,-P,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start),4. AnandhKalyani DN S-M M P- DN N S-S -N P -DM -P,262
+65,Mechakalyani,BhoopKalyani,2,P D S R G M P,P M G M G R S N D P D S,AL,FLAGGED: sa-rule (aroha-end;aroha-start;avaroha-start),2 PDSR GM P PM GM GR SN | DPD S AL,262
+65,Mechakalyani,Chethulavali,1,S R G R G M P,S N D N P M R G R S N D N S,R,FLAGGED: sa-rule (aroha-end),17. Chethulavali SR GR GM P SN DN PM R GR S R | N DN S,262
+65,Mechakalyani,Desa,1,S R G P M D N,S N D P M G M R G S S D P S,R,FLAGGED: sa-rule (aroha-end),20. Desa SR GPM DN SN DPM GM R G S R | SDP S,262
+65,Mechakalyani,Nand,1,D N S M M P D N P D M P S,N S S N P D M P G M P S,S,FLAGGED: sa-rule (aroha-start),75. Nand DN SH -M M P- N S-S -N P -DM - | DN P- DM PS PG-M P S S,264
+65,Mechakalyani,YamunaKalyani,4,S R G M P D S,D P M G R S,P,FLAGGED: sa-rule (avaroha-start),4 SR GM PD S DPM GR S P,266
+66,Chitrambari,SarvaManavathi,1,S M G M P N D N S N D N P G M P D S,G R G S,L,FLAGGED: sa-rule (avaroha-start),24. SarvaManavathi SM GM PN DN SN DN PGM | PDS GR GS L,268
+67,Sucharitra,Rama Kunthali,1,S R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),15. Rama Kunthali SR GM PDN DPM GR SN S AE,269
+67,Sucharitra,Rama Kunthali,2,S R G M P D N,D P M G R S N D,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),2 SR GM PDN DPM GR SN D R,269
+67,Sucharitra,Rama Kunthali,3,S R G M P D N,D P M G R S N,R,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start),3 SR GM PDN DPM GR SN R,269
+67,Sucharitra,SenaJayanthi,1,S R G M P D N,S S D P M G R,AE,FLAGGED: sa-rule (aroha-end;avaroha-end;avaroha-start-dup),21. SenaJayanthi SR GM PDN S SDPM GR AE,269
+68,Jyothi Swarupini,HindolaDesakshi,1,S N S R G M P D,N D P M G R S,AE,FLAGGED: sa-rule (aroha-end),4. HindolaDesakshi SN SR GM P D N DPM GR S AE,271
+68,Jyothi Swarupini,HindolaDesakshi,3,N S R G M P D,N D P M G R S,R,FLAGGED: sa-rule (aroha-end),3 N SR GM PD N DPM GR S R,271
+69,Dhathu Vardhani,Isagiri,1,S R G M P D N,P D M G R S N S,R,FLAGGED: sa-rule (aroha-end;avaroha-start),15. Isagiri SR GM PDN PDM GR SN S R,272
+69,Dhathu Vardhani,Isagiri,2,S R G M P D N,D P M G R S N S,AE,FLAGGED: sa-rule (aroha-end;avaroha-start),2 SR GM PDN DPM GR SN S AE,272
+72,Rasika Priya,Amaravathi,1,R G P N S R G M S P G,S N D P M G P D N S R S N,L,FLAGGED: sa-rule (aroha-end;avaroha-end;aroha-start),2. Amaravathi R GPN SR GM SPG SN D PM G | PDN S R SN L,276
+72,Rasika Priya,Rasamanjari,3,S R G S P M P N,S N D N P P M P R G S D N S,AC,FLAGGED: sa-rule (aroha-end),3 SR GS PM PN SN DN PPM PR G S AC | DN S,276

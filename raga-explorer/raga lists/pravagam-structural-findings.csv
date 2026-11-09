@@ -1,0 +1,33 @@
+﻿Type,Sheet Row,Page,Detail
+Delete row (not a raga),4563,238,chakra header 'BRAHMA - SHA' parsed as a raga
+Delete row (not a raga),4600,240,chakra header 'DESI - PA' parsed as a raga
+Missing row,after 579,88,item 11 Kokila Kamavardhani: Aroha S G M P M N D N S / Avaroha S N P D M G S / Ref AE
+Missing row (ADDED to sheet),after 779,99,Bhibhasu variants 2-5 (row 779 currently holds all five variants concatenated in one aroha/avaroha): 16.2 S R G P D N S / S N D P G R S / P; 16.3 S R G P D S / S N D P G R S / S; 16.4 S R G P D N / S N D P G R S / S; 16.5 S R S G P D S / S N D P M P D P G R S / S. Row 779 itself should be variant 1: S R G P D S / S D P M R S / AE
+Missing row (ADDED to sheet),after 1235,113,Thekkali variant 2: S R P D N S / S N D P R S / R (row 1235 holds variants 1 and 2 concatenated; variant 1 should be S R G P D N S / S N D P M R S / AG)
+Missing row,after 1460,122,item 19 Chakra Dhari: Aroha S R M G P D N S / Avaroha S D P M G R S / Ref AJ
+Missing row,after 1685,129,item 175.6 Saramathi (Kalidasa Priya) variant 6: Aroha S R G M P D N S / Avaroha N D M G S R S / Ref P
+Missing row,after 1841,135,item 29 Chakra: Aroha S R M P N S / Avaroha S N P M G S / Ref AE
+Missing row,after 1841,135,item 30.1 Chakra Pradiptam (variant 1): Aroha S R G M P D N S / Avaroha S N D M G S / Ref R
+Missing row,after 3190,181,item 185 Pazham Panzaram (Sankarabaranam): Aroha S R G M P D N S / Avaroha S N D P M G R S / Ref AO
+Missing row,after 3546,197,item 11 Kokila Nata: Aroha S R G M P D N S / Avaroha S N P M G R S / Ref AE
+Missing row,after 4607,242,item 7 Chakra Manjari: Aroha S R G M D P D N S / Avaroha S D P M R S / Ref AE
+Missing row,after 4708,245,item 37 (2nd line) Sunadapriya (Sunadanapriya): Aroha S R G M P S / Avaroha S N D P M G R S / Ref AE
+Missing row,after 4820,249,item 47 Suvarna Mukhari: Aroha S G M P D N S / Avaroha S N D M G R S / Ref AE
+Row is a different raga,1842,135,currently keyed Brindavani Sarang var 2; matches printed Chakra Pradiptam variant 2: S R G P M D N S / S N D M G R S / AJ
+Row with no matching printed line,2281,149,Navaneetha Pancham var 2: printed p149 shows a single line for item 19 (S G M D P D N S / S N P M R S / AE); no line matches this row's avaroha S N D P M G S / ref P
+Name/item cleanup,3190,,name -> Paura Prakasa. name polluted by text of following entry 185
+Name/item cleanup,4708,,name -> Sunadapriya. name polluted with next line's swara text
+Name/item cleanup,4716,,"name -> Bhukti Priya (Yaksha Priya), item -> 4. row is item 4 Bhukti Priya mis-keyed as Bhramara Puttari var 4; aroha/avaroha were empty"
+Name/item cleanup,2207,,"name -> Gambhira Ranjani, item -> 10A. printed as 10A; no Ref printed (—)"
+"Name cleanup (variant 6 missing, see above)",1681,129,row is Saramathi variant 5 with the text of variant 6's name attached
+Source prints no scale,2526,159,"item 9 Aparupam: 'Chayalaka Raga', Ref C, no aroha/avaroha. printed as 'CHAYALAKA RAGA / NATTAKURINJI, HARIKAMBOJI, KAMAS CHAYA' - no aroha/avaroha in source; file row is keyed Angalatha var 9"
+Source prints no scale,4482,236,"item 30 Indhu Kesari: 'Chayalaka Raga', Ref C, no aroha/avaroha. printed 'Chayalaka Raga' with no aroha/avaroha; file row is keyed Indhu Ganthi var 30"
+Rows without source data,"2348, 2349, 2350",152,"34 Sathvidhi, 35 Simhela Vasantham, 36 Veeradhi Vasantham: scale letters match the printed page, but these rows have no Source Page, no Notes/ref, no variant digits (letters run together), and no '(Raga 1)' name suffix; Ref (AE/P/AE etc.) not recorded"
+Wrapped across a page break,2790,167-168,"item 177 Neela Prabha: p167 prints aroha S R G M P D N S / avaroha S N D M P M R G R / Ref R; the top of p168 then prints a further 'M G R S' with a Ref R, so the avaroha may continue across the page break (S N D M P M R G R M G R S). File currently has S N D M P M R G R."
+Wrapped across a page break,3126,178-179,Kumara Vilasitha (item 138): aroha S M G M D N is completed by 'P D N S' printed at the top of p179 (full aroha S M G M D N P D N S); see corrections file
+Source numbering quirk (no action),,193,"the book prints item number 6 twice (6 Ganga, 6. Ganavarithi); file has both as item 6"
+Source numbering quirk (no action),,202,item printed '29.' (Ravi Prabhavali) between 18 and 20 - source typo for 19; file keeps it as 29. Also item 25 Vanaja Mukhi is printed with a strike-through line across it
+Source numbering quirk (no action),,217,"item number 49 printed twice (49 Shadakshari, 49 Siva Panthuvarali); page 217 also prints item 65 Veera Leela struck through"
+Source numbering quirk (no action),5442,276,"item 18 is printed twice (18 Priyasri, 18 Rakthakshi); item 10 is skipped (9 then 11)"
+Source numbering quirk (no action),2207,147,"item printed '10A' (Gambhira Ranjani), keyed as a second item 10 in the sheet"
+Hyphen notation (kept as printed),"5115, 5116, 5196",262,"Anandhi, Anandh Kalyani, Nand use hyphen phrase notation ('P--DM P S -GM DP S' etc.); these only make sense as printed and were not normalised"

@@ -1,0 +1,6 @@
+﻿Source List,Raga Name,Change,Before,After
+PASTED,Navarasa,scale split into aroha/avaroha,aroha: (blank) | avaroha: S' R1 G3 M1 N3 D1 N3 S' S' N3 P M1 R1 S,aroha: S R1 G3 M1 N3 D1 N3 S' | avaroha: S' N3 P M1 R1 S
+PASTED,Nigamanasa,scale split into aroha/avaroha,aroha: (blank) | avaroha: S' R1 G2 M2 P D3 N3 S' S' D3 N3 P M2 R1 G2 M2 R1 S,aroha: S R1 G2 M2 P D3 N3 S' | avaroha: S' D3 N3 P M2 R1 G2 M2 R1 S
+PASTED,Sudhdhakalanidhi,row removed,aroha: S G3 P D1 N3 D1 P M2 G3 R2 S S | avaroha: (blank),"(removed: it is Pravagam Suddhakalanidhi (Raga 2), aroha and avaroha run together plus a stray S; the raga has 6 variants in Royal Carpet and Pravagam)"
+PASTED,Ganavaradhi,row removed (no melakarta number),aroha: S M R G M P D N S' | avaroha: S' D N P M R S,(removed at the user's request)
+PASTED,Pathi,row removed (no melakarta number),aroha: S R M P D P N S' | avaroha: S' N P D P P M R S,(removed at the user's request)

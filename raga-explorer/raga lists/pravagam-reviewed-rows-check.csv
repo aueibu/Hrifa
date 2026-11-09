@@ -1,0 +1,22 @@
+﻿Sheet Row,Page,Item,Raga Name (current),Melakarta,Current Aroha,Current Avaroha,Current Ref,Proposed Aroha,Proposed Avaroha,Proposed Ref,What differs,Note,Accept? (Y/N)
+172,71,21,Trimurthi (Raga 1),Vanaspathi,S M1 D2 S,S D2 M1 S,,S M1 D2 S,S D2 M1 S,BE,ref,"Ref printed ""BE"" (not in bibliography); sheet blank",Y
+178,71,27,Veeravikrama (Raga 1),Vanaspathi,S R1 G1 M1 P D2 N2 S,S N2 P D2 M1 G1 R1 S,P,S R1 G1 M1 P D2 N2 S,S N2 P D2 M1 G1 R1 S,AE,ref,,Y
+259,76,9,Chayagowri (Raga 1),Senavathi,SRMGMPNDNS,SNDPMGMRS,S,SRMGMPNDNS,SNDPMGMRS,AE,ref,,Y
+470,84,25,MohanaNattai (Raga 2),Dhenuka,SGMPDPMPNNS,SNPDDPMGS,S,SGMPDPMPNNS,SNPDDPMGS,AC,ref,,Y
+480,84,34,Shoka Varali (Raga 2),Dhenuka,SGMNDP,DPMGRS,AE,SGMN,DPMGRS,AE,aroha,sheet aroha has extra D P: the book prints aroha S G M N and avaroha D P M G R S,Y
+642,92,11,HejejjeeIsari (Raga 3),Gayaka Priya,SRGRMGMPNDS,SNDPMGRS,,SRGRMGMPNDS,SNDPMGRS,R,ref,,Y
+643,92,11,HejejjeeIsari (Raga 4),Gayaka Priya,SRGRMGMPDNS,SDNDMGRS,S,SRGRMGMPDNS,SDNDMGRS,R,ref,,Y
+794,99,27,Chaya Gaula (Raga 2),Maya Malava Gaula,S R M P D P M P D S N S,S N D D P M G S R S,S,S R M P D P M P D S N S,S N D D P M G S R S,AC,ref,,Y
+806,99,35,Dakka (Raga 1),Maya Malava Gaula,S R S G M G P M D N S,S N D M G P M R S,S,S R S G M G P M D N S,S N D M G P M R S,R,ref,,Y
+884,102,85,KamalaPanchamam (Raga 1),Maya Malava Gaula,SPMGRGMPDNS,SDPMGRS,S,SPMGRGMPDNS,SDPMGRS,R,ref,,Y
+894,102,88,KarnatakaSaranga (Raga 1),Maya Malava Gaula,SRGMGPNDMPDS,SDMPMGRS,S,SRGMGPNDMPDNS,SDMPMGRS,R,"aroha, ref",wrapped line,Y
+896,102,88,KarnatakaSaranga (Raga 3),Maya Malava Gaula,SRGMPNDMPDNS,DSMPMGRS,S,SRGMPNDMPDNS,SDMPMGRS,P,"avaroha, ref",wrapped line,Y
+901,102,93,Kunkumambari (Raga 1),Maya Malava Gaula,SNDNSRGMSNDN,DPMGRSNDNS,,SNDNSRGMSNDN,DPMGRSNDNS,R,ref,,Y
+902,102,93,Kunkumambari (Raga 2),Maya Malava Gaula,SNDNSNGMPNDN,DPMGRSNDNS,,SNDNSNGMPNDN,DPMGRSNDNS,P,ref,,Y
+916,103,98,Lalitha Panchamam 4,Maya Malava Gaula,S R G M P D N S,S N D P M G R S,L,S R G M P D N S,S N D P M G R S,R,ref,,Y
+933,103,109,Mangala Kaisika (Raga 5),Maya Malava Gaula,SRGMPMGPDNS,SNDPMGRS,S,SRGMPMGPDNS,SNDPMGRS,AC,ref,,Y
+935,103,109,Mangala Kaisika (Raga 7),Maya Malava Gaula,S R1 G3 R1 S M1 G3 M1 P D1,S N3 D1 P M1 G3 R1 G3 R1 S,0,S R1 G3 R1 S M1 G3 M1 P D1,S N3 D1 P M1 G3 R1 G3 R1 S,O,ref,sheet keeps printed digit 0; book prints 0 where O is meant,Y
+950,104,116,MargaSanjivini (Raga 1),Maya Malava Gaula,SRGRMPDNPDPS,SNDPMGRS,S,SRGRMPDNPDPS,SNDPMGRS,R,ref,,Y
+983,105,135,Padi (Raga 6),Maya Malava Gaula,R1 M1 P D1 P N3 S,S N3 P D1 P M1 R1 S,S,R1 M1 P D1 P N3 S,S N3 P D1 P M1 R1 S,AC,ref,,Y
+1007,106,148,PurnaPanchamam (Raga 1),Maya Malava Gaula,P M1 S R1 G3 P,D1 P M1 G3 R1 S N3,R,P M1 S R1 G3 P,D1 D1 P M1 G3 R1 S N3,R,avaroha,avaroha begins with a doubled D as printed (D D P M G R S N),Y
+5445,276,19,Rasamanjari (Raga 3),Rasika Priya,SRGSPMPNDNS,SNDNPPMPRGS,S,SRGSPMPNDNS,SNDNPPMPRGS,AC,ref,,Y

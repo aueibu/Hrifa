@@ -1,0 +1,882 @@
+Row Type,Melakarta Number,Melakarta Name,Raga Name,Aroha,Avaroha,Vakra,Bhashanga,Notes,Source
+Melakarta,1,Kanakangi,Kanakangi,S R1 G1 M1 P D1 N1 S',S' N1 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Kanakatodi,S R1 G1 M1 P D1 S',S' N1 D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Kanakāmbari,S R1 M1 P D1 S',S' N1 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Karnātaka Shuddha Sāveri,S R1 M1 P D1 S',S' D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Latantapriya,S R1 G1 M1 P D1 S',S' D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Lavangi (Raga created by M. Balamuralikrishna),S R1 M1 D1 S',S' D1 M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Megha,S R1 M1 P D1 N1 D1 P S',S' N1 D1 P M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Mādhavapriyā,S R1 G1 P D1 N1 S',S' N1 D1 P G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Rishabhavilāsa,S R1 M1 P D1 S',S' D1 P M1 R1 M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Sarvashree,S M1 P S',S' P M1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Suddha Mukhāri,S R1 M1 P D1 S',S' N1 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Tatillatika,S R1 M1 P D1 S',S' D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,1,Kanakangi,Vāgeeshwari,S R1 G1 M1 P D1 S',S' D1 M1 P G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,2,Ratnangi,Ratnangi,S R1 G1 M1 P D1 N2 S',S' N2 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,2,Ratnangi,Ganamukhāri,S R1 M1 D1 S',S' N2 D1 M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,2,Ratnangi,Phenadhyuti,S R1 M1 P D1 P N2 S',S' N2 D1 P M1 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,2,Ratnangi,Ratnavarāli,S R1 M1 P N2 D1 S',S' N2 P M1 R1 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,2,Ratnangi,Revati,S R1 M1 P N2 S',S' N2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,2,Ratnangi,Shreemani,S R1 G1 P D1 S',S' N2 D1 P G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,2,Ratnangi,Shreemati,S R1 G1 P D1 S',S' N2 D1 P G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,2,Ratnangi,Svadhya,S R1 M1 P N2 S',S' N2 D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,3,Ganamurti,Ganamurti,S R1 G1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,3,Ganamurti,Bhinnapanchamam,S R1 G1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,3,Ganamurti,Gānasāmavarāli,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,3,Ganamurti,Nādharanjani,S R1 M1 D1 N3 S',S' N3 D1 M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,3,Ganamurti,Poorvavarāli,S R1 M1 P D1 S',S' N3 D1 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,3,Ganamurti,Sāmavarāli,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 G1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,4,Vanaspati,Vanaspati,S R1 G1 M1 P D2 N2 S',S' N2 D2 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,4,Vanaspati,Bhānumati,N2 S M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,4,Vanaspati,Rasāli,S R1 M1 P D2 N2 S',S' D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,4,Vanaspati,Vanāvali,S R1 M1 P D2 N2 S',S' D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,4,Vanaspati,Vittalapriya,S R1 M1 P D2 S',S' D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,5,Manavati,Manavati,S R1 G1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,5,Manavati,Ghanashyāmalā,S G1 M1 P D2 S',S' D2 N3 P M1 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,5,Manavati,Kunjari,S R1 M1 P D2 P S',S' N3 D2 P M1 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,5,Manavati,Manoranjani,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,6,Tanarupi,Tanarupi,S R1 G1 M1 P D3 N3 S',S' N3 D3 P M1 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,6,Tanarupi,Tanukeerti,S R1 M1 P N3 S',S' N3 D3 N3 P M1 G1 M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,7,Senavati,Senavati,S R1 G2 M1 P D1 N1 S',S' N1 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,7,Senavati,Bhogi,S G2 M1 P D1 N1 D1 S',S' N1 D1 P M1 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,7,Senavati,Chitthakarshani,S R1 G2 M1 D1 S',S' D1 M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,7,Senavati,Navarasa Mālā,S R1 G2 M1 P D1 S',S' N1 D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,7,Senavati,Senāgrani,S R1 G2 R1 M1 G2 M1 P N1 D1 S',S' N1 D1 P M1 G2 M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,7,Senavati,Sindhu Gowri,S R1 G2 M1 P D1 N1 S',S' N1 D1 M1 G2 M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,8,Hanumatodi,Hanumatodi,S R1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Amrita Dhanyāsi,S R1 G2 M1 P N2 S',S' N2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Bhadratodi,S R1 G2 M1 D1 S',S' N2 D1 P G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Bhoopālam,S R1 G2 P D1 S',S' D1 P G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Bhānuchandrika,S M1 D1 N2 S',S' N2 D1 M1 G1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Chandrikatodi,S G2 M1 P D1 S',S' D1 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Deshikatodi,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Dhanyāsi,S G2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Divyamālati,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Janatodi,S R1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Kalāsāveri,S R1 G2 P N2 S',S' N2 P G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Kanakasāveri,S R1 M1 P D1 S',S' N2 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Nāgavarāli,S R1 G2 M1 P M1 D1 N2 S',S' N2 D1 P M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Prabhupriya,S G2 M1 P D1 S',S' D1 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Punnāgatodi,N1 S R1 G2 M1 P,P M1 G2 R1 S N2 D1,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Shravanamallika,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Shuddha Seemantini,S R1 G2 M1 P D1 S',S' D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Shuddha Todi,S R1 G2 M1 D1 N2 S',S' N2 D1 M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Sowjanya,S R1 M1 D1 S',S' D1 M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,8,Hanumatodi,Swarnamalli,S G2 M1 P D1 N1 S',S' N2 D1 P M1 G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Melakarta,9,Dhenuka,Dhenuka,S R1 G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,9,Dhenuka,Bhinnashadjam,S R1 G2 R1 P M1 P N3 S',S' D1 P M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,9,Dhenuka,Dhunibhinnashadjam,S R1 G2 R1 P M1 P N3 S',S' D1 P M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,9,Dhenuka,Mohananāta,S G2 M1 P D1 P M1 P N3 S',S' N3 P D1 P M1 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,9,Dhenuka,Udayaravichandrika,S G2 M1 P N3 S',S' N3 P M1 G2 S,No,No,"[2026-09-21] CORRECTED: off-parent swara variant(s) N2 replaced with melakarta 9's own (3 other source(s) agree with the parent). Was aroha ""S G2 M1 P N2 S'"" and avaroha ""S' N2 P M1 G2 S""; Bhashanga Yes -> No, Vakra No -> No. [2026-09-21] NOTE: the original digits (see CORRECTED above) fit as a plain janya of melakarta 8, 10, 20 and 22, where other sources also list this raga, so the printed mela may be the slip instead of the digits. Kept under mela 9 with the corrected digits (user decision).",raga-of-the-week-repo-list.csv
+Janya,9,Dhenuka,Vasanthatodi,S R1 G2 M1 D1 N3 S',S' N3 D1 M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,10,Natakapriya,Natakapriya,S R1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Alankārapriya,S R1 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Bhāgyashabari,S R1 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Deeparamu,S R1 G2 M1 P D2 N2 S',S' N2 D2 N2 P M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Gunāvati,S R1 M1 P D2 S,S D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Hindoladeshikam,S M1 R1 G2 M1 P D2 N2 S',S' P N2 D2 M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Kanakadri,S R1 G2 P D2 S',S' N2 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Mātangakāmini,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Natābharanam,S R1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Niranjana,S R1 G2 M1 P D2 S',S' N2 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Nātyadhārana,S R1 M1 P D2 S',S' N2 D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Shivashakti,S G2 M1 D2 S',S' N2 D2 M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,10,Natakapriya,Shānthabhāshini,S R1 G2 M1 P D2 S',S' N2 D2 P M1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,11,Kokilapriya,Kokilapriya,S R1 G2 M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Bhimsen (Raga created by Mahesh Mahadev),S G2 M1 P N3 S',S' N3 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Chitramani,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Jnānachintāmani,S R1 M1 D2 N3 S',S' N3 D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Kokilāravam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G2 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Kowmāri,S R1 G2 M1 P D2 S',S' N3 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Shuddha Lalitha,S P M1 D2 N3 S',S' N3 S D2 P M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Vardhani,S G2 M1 P M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Vasantamalli,S G2 M1 P N3 S',S' D2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,11,Kokilapriya,Vasantanārāyani,S R1 G2 M1 P S',S' N3 D2 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,12,Rupavati,Rupavati,S R1 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,12,Rupavati,Rowpyanaka,S M1 P D3 N3 S',S' N3 P M1 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,12,Rupavati,Shyāmakalyāni,S M1 G2 M1 P D3 N3 S',S' N3 P D3 N3 P M1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,13,Gayakapriya,Gayakapriya,S R1 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,13,Gayakapriya,Geya Hejjajji,S R1 M1 G3 M1 P D1 S',S' N3 D1 P M1 G3 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,13,Gayakapriya,Hejjajji,S R1 G3 M1 P D1 S',S' N1 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,13,Gayakapriya,Kalpanadhārini,S G3 M1 P D1 S',S' N1 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,13,Gayakapriya,Kalākānti,S R1 G3 M1 D1 N1 S',S' N1 D1 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,14,Vakulabharanam,Vakulabharanam,S R1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Amudhasurabhi,S M1 G3 M1 P D1 S',S' N2 D1 P M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Devipriya,S G3 P N2 S',S' N2 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Kalindaja,S R1 G3 M1 P N2 S',S' N2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Kuvalayabharanam,S R1 G3 M1 D1 N1 S',S' N1 D1 M1 G3 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Mukthipradayini (Raga created by Mahesh Mahadev),S R1 G3 P N2 S',S' N2 P D1 P G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Sallapa,S G3 M1 D1 N2 S',S' N2 D1 M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Shuddha Kāmbhoji,S G3 R1 M1 P N2 S',S' N2 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Soma,S R1 P M1 D1 N2 S',S' N2 D1 M1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Sūryā,S G3 M1 D1 N2 S',S' N2 D1 M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Vasanta Mukhāri,S M1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Vasantabhairavi,S R1 G3 M1 D1 N2 S',S' N2 D1 M1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Vijayollāsini,S R1 G3 M1 P M1 D1 N2 S',S' N2 D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,14,Vakulabharanam,Vātee Vasantabhairavi,S R1 G3 M1 D1 N2 S',S' N2 D1 M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,15,Mayamalavagowla,Mayamalavagowla,S R1 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Ardhradesi,S R1 G3 M1 P D1 N3 S',S' D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Bhāvini,S G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Bowli,S R1 G3 P D1 S',S' N3 D1 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Bowli Rāmakriya,S R1 G3 P D1 S',S' N3 P D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Chandrachooda,S M1 G3 M1 P D1 S',S' N3 D1 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Chāruvardhani,S R1 M1 P D1 N3 S',S' D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Chāyagowla,S R1 M1 G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Deshyagowla,S R1 P D1 N3 S',S' N3 D1 P R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Devaranji,S M1 P D1 P N3 S',S' N3 D1 P M1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Ekakshari,S R1 G3 M1 P D1 N3 S',S' N1 P M1 R1 G3 M1 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Ghanasindhu,S M1 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Gowla,S R1 M1 P N3 S',S' N3 P M1 R1 G3 M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Gowlipantu,S R1 M1 P N3 S',S' N3 D1 P M1 D1 M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Gowri,S R1 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Gummakāmbhoji,S R1 G3 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Gundakriya,S R1 M1 P N3 S',S' N3 P D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Gurjari,S R1 G3 M1 P D1 N3 S',S' D1 N3 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Jaganmohini,S G3 M1 P N3 S',S' N3 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Kalyānakesari,S R1 G3 P D1 S',S' D1 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Kannadabangāla,S R1 M1 G3 M1 D1 P D1 S',S' D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Karnātaka Sāranga,S R1 G3 M1 P D1 N3 S',S' N3 D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Lalitapanchamam,S R1 G3 M1 D1 N3 S',S' N3 D1 M1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Lalitā,S R1 G3 M1 D1 N3 S',S' N3 D1 M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Malahari,S R1 M1 P D1 S',S' D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Mallikavasantam,S G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Mangalakaishiki,S R1 M1 G3 D1 P S',S' N3 D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Manolayam,S R1 M1 P D1 S',S' N3 D1 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Maruva,S G3 M1 D1 N3 S',S' N3 D1 P G3 M1 G3 R1 S R1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Mechabowli,S R1 G3 P D1 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Megharanjani,S R1 G3 M1 N3 S',S' N3 M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Mālavakurinji,S G3 P D1 N3 S',S' N3 D1 M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Mālavapanchamam,S R1 G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Mārgadesi,S R1 G3 R1 G3 D1 M1 P D1 S',S' D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Nadanamakriya,S R1 G3 M1 P D1 N3,N3 D1 P M1 G3 R1 S N3,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Poornalalita,S R1 G3 M1 P D1 S',S' D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Poorvi,S R1 G3 M1 D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Pratāpadhanyāsi,S G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Pratāparanjani,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Puranirmai,S R1 G3 P D1 S',S' N3 D1 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Pādi,S R1 M1 P N3 S',S' N3 P D1 P M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Revagupti,S R1 G3 P D1 S',S' D1 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Rukhmāmbari,S R1 G3 P N3 S',S' N3 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Rāmakali,S R1 G3 P D1 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Rāmakriya,S G3 M1 P D1 N3 S',S' N3 P D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Salanganāta,S R1 M1 P D1 S',S' D1 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Satyāvati,S G3 R1 G3 P D1 S',S' N3 D1 N3 P D1 P G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Sindhu Rāmakriya,S G3 M1 P D1 N3 S',S' N3 P M1 G3 R1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Surasindhu,S M1 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 R1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Sāmantadeepara,S R1 G3 M1 P N3 S',S' N3 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Sāranga Nāta,S R1 M1 P D1 S',S' N3 S D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Sāveri,S R1 M1 P D1 S',S' N3 D1 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Takka,S R1 S G3 M1 G3 P M1 D1 N3 S',S' N3 D1 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Tārakagowla,S G3 M1 D1 N3 S',S' N3 D1 M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Ushāvali,S R1 M1 P D1 S',S' N3 D1 M1 P M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,15,Mayamalavagowla,Vishārada,S R1 M1 P N3 S',S' N3 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,16,Chakravakam,Chakravakam,S R1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Bhakthapriya,S G3 M1 P D2 N2 S',S' N2 D2 P M1 R1 M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Bhujāngini,S R1 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Bindhumālini,S G3 R1 G3 M1 P N2 S',S' N2 S D2 P G3 M1 P G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Chakranārāyani,S R1 M1 P D2 N2 S',S' N2 D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Ghoshini,S M1 G3 M1 P D2 N2 D2 S',S' N2 D2 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Guhapriya,S R1 G3 M1 P P M1 D2 N2 S',S' N2 D2 P M1 G3 S R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Kalāvati,S R1 M1 P D2 S',S' D2 P M1 G3 S R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Kokilā,S R1 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Malayamārutam,S R1 G3 P D2 N2 S',S' N2 D2 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Mukthāngi,S R1 G3 M1 P D2 N2 S',S' D2 N2 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Mukundamālini,S R1 G2 P D2 S',S' D2 P G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Poornapanchamam,P M1 S R1 S M1 P D2,D2 P M1 G3 R1 S N2,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Pravritti,S G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Rasikaranjani,S R1 G3 P S',S' D2 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Rudra Panchami,S G3 M1 D2 N2 S',S' N3 D2 M1 G3 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Rāgamanjari,S R1 M1 P D2 S',S' N2 D2 M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Shree Nabhomārgini,S G3 M1 P D2 N2 S',S' D2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Shyāmali,S G3 P D2 N2 S',S' N2 D2 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Toyavegavāhini,S R1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Valaji,S G3 P D2 N2 S',S' N2 D2 P G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Veenadhāri,S R1 G3 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Vegavāhini,S R1 G3 M1 D2 N2 D2 S',S' N2 D2 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,16,Chakravakam,Āhir Bhairavi,S R1 G3 M1 P N2 D2 M1 P D2 S',S' N2 D2 P M1 P G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,17,Suryakantam,Suryakantam,S R1 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Bhairavam,S R1 G3 M1 P D2 N3 S',S' D2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Chāyāvathi,S R1 G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Haridarpa,S R1 G3 M1 P D2 N3 S',S' D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Jayasamvardhani,S G3 M1 P D2 N3 S',S' N3 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Jeevantikā,S R1 M1 P D2 N3 S',S' N3 D2 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Kusumamāruta,S M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 G3 M1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Nāgachooḍāmani,S R1 G3 M1 P D2 S',S' D2 N2 D2 P M1 G3 M1 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Rohini,S R1 G3 M1 M2 D2 N3 S',S' N3 D2 M2 M1 G3 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Sowrāshtram,S R1 G3 M1 P M1 D2 N3 S',S' N3 D2 N2 D2 P M1 G3 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Suddha Gowla,S R1 M1 P N3 S',S' N3 P M1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Supradeepam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G3 M1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Sāmakannada,S R2 M1 G2 M1 P D2 N3 S',S' N3 D2 P M1 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,17,Suryakantam,Vasanthā,S M1 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,18,Hātakāmbari,Hātakāmbari,S R1 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,18,Hātakāmbari,Hamsanantini,S G3 M1 P S',S' P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,18,Hātakāmbari,Jayashuddhamālavi,S R1 G3 M1 P N3 S',S' N3 D3 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,18,Hātakāmbari,Kallola,S P D3 N3 S',S' N3 D3 P M1 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,18,Hātakāmbari,Simhala,S R1 G3 M1 P D3 N3 S',S' N3 D3 N3 P M1 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,19,Jhankaradhvani,Jhankaradhvani,S R2 G2 M1 P D1 N1 S',S' N1 D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,19,Jhankaradhvani,Bhārati,S R2 G2 M1 P S',S' P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,19,Jhankaradhvani,Chittaranjani,S R2 G2 M1 P D1 N1,N1 D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,19,Jhankaradhvani,Jalmika,S R2 G1 M1 P D1 N1 S',S' N1 D1 P M1 G1 S R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,19,Jhankaradhvani,Lalitabhairavi,S G2 M1 P D1 S',S' N1 D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,20,Natabhairavi,Natabhairavi,S R2 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Abheri (Dikshitar School),S M1 G2 M1 P P S',S' N2 D2 P M1 G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Amrithavāhini,S R2 M1 P D1 N2 S',S' N2 D1 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Bhuvanagāndhāri,S R2 M1 P N2 S',S' N2 D1 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Chapagantarva,S G2 M1 P N2,D1 M1 G2 R2 S N2,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Darbāri Kānada,N2 S R2 G2 R2 S M1 P D1 N2 S',S' D1 N2 P M1 P G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Devakriya,S R2 M1 P N2 S',S' N2 D1 N2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Dhanashree,N2 S G2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Dharmaprakāshini,S R2 M1 P N2 S',S' N2 D1 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Dilipika Vasantha,S G2 M1 P D1 P N2 S',S' D1 P M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Divyagāndhāri,S G2 M1 P D1 N2 S',S' N2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Gopikāvasantam,S R2 G2 M1 P D1 P N2,S N2 D1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Hindolam,S G2 M1 D1 N2 S',S' N2 D1 M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Hindolavasanta,S G2 M1 P D1 N2 D1 S',S' N2 D1 P M1 D2 M1 G2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Indughantarava,S G2 M1 P D1 P,N2 D1 P M1 G2 R2 S N2,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Jayanthashrī,S G2 M1 D1 N2 S',S' N2 D1 M1 P M1 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Jingaḷa,S R2 G2 M1 P D1 N2 D1 P S',S' N2 D1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Kanakavasantham,S G2 M1 P N2 D1 S',S' N2 D1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Kshanika,S G2 M1 P D1 S',S' D1 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Kātyāyani,S R2 G2 P D1 S',S' D1 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Mahati cf. Mela  (Mahathi),S G2 P D1 N2 S',S' N2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Mānji,S R2 G2 M1 P D2 N2 S',S' N2 D1 P M1 P M1 P G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Navarathna Vilāsam,S R2 G2 M1 P D1 P S',S' D1 P M1 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Nāgagāndhāri,S R2 M1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Nārērētigowla,S G2 R2 G2 M1 N2 D1 M1 N2 N2 S',S' N2 D1 M1 G2 M1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Nīlamati,S G2 M1 P D1 N2 S',S' N2 D1 M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Nīlaveni,S R2 G2 M1 P D1 N2 D1 S',S' D1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Rājarājeshwari,S R2 M1 P D1 S',S' N2 D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Sharadapriya,S R2 G2 P N2 S',S' N2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Shree Navarasachandrika,S R2 G2 M1 P D1 S',S' D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Shuddha Desi,S R2 G2 R2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Shuddha Sālavi,S G2 M1 P N2 S',S' N2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Sindhu Dhanyāsi,S G2 M1 P N2 S',S' N2 D1 M1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Sukumāri,S G2 M1 P N2 D1 N2 S',S' N2 P M1 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Sushama (Raga created by M. Balamuralikrishna),S R2 M1 P D1 S',S' D1 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Sāramati,S R2 G2 M1 P D1 N2 S',S' N2 D1 M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Sāranga Kāpi,S R1 P M1 R1 P R1 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Tarkshika,S R2 M1 P N2 S',S' N2 D1 P M1 R2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Udayarāga,S G2 M1 P N2 S',S' N2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,Vasantavarāli,S R2 M1 P D1 S',S' N2 D1 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,20,Natabhairavi,mArgahindOLaM,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Melakarta,21,Keeravani,Keeravani,S R2 G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Aymmukhan,S G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Beethovanapriya (invented by Ramesh Vinayakam),G2 P N3 S R2 G2 M1 P D1,P M2 P R2 M1 G2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Bhānupriya,S R2 G2 D1 N3 S',S' N3 D1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Chandrika,S R2 G2 P D1 N3 S',S' N3 D1 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Gaganabhoopālam,S M1 G2 M1 P D1 N3,S N3 D1 M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Hamsapancama,S G2 M1 P N3 D1 N3 P S',S' N3 D1 M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Hamsavāhini,S R2 M1 P D1 N3 S',S' N3 D1 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Jayashree,S R2 G2 M1 P D1 N3 D1 S',S' N3 D1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,"Kadaram (Chandrakosh, Chandrakauns, Chandrakaush)",S G2 M1 D1 N3 S',S' N3 D1 M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Kalyāna Vasantam,S G2 M1 D1 N3 S',S' N3 D1 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Keeranāvali,S R2 G2 M1 P D1 N3 S',S' P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Kusumāvali,S G2 M1 P D1 S',S' N3 D1 P M1 G2 M1 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Mishramanolayam,S R2 M1 P D1 S',S' D2 D1 P M1 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Mādhavi,S M1 G2 M1 P D1 N3 S',S' N3 D1 P M1 S M1 G2 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Priyadarshani,S R2 M1 D1 N3 S',S' N3 D1 M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Rishipriya,S R2 G2 M1 P D1 N3 S',S' N3 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Shrothasvini,S G2 M1 P N3 S',S' N3 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Sāmapriya,S R2 M1 P D1 S',S' D1 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,21,Keeravani,Vasanthamanohari,S R2 G2 M1 D1 N3 S',S' N3 D1 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,22,Kharaharapriya,Kharaharapriya,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Abheri,S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Abhogi,S R2 G2 M1 D2 S',S' D2 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Agnikopa,S G2 M1 P N2 S',S' N2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Andolikā,S R2 M1 P N2 S',S' N2 D2 M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Bageshri,S G2 M1 D2 N2 S',S' N2 D2 M1 P D2 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Bhagavatapriya,S R2 G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Bhagavathpriya,S R2 G2 M1 R2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Bālachandrika,S G2 M1 P D2 N2 S',S' N2 D2 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Chakrapradipta,S R2 G2 M1 P M1 D2 N2 S',S' N2 D2 M1 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Chittaranjani,S R2 G2 M1 P D2 N2,N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Darbar,S R2 M1 P D2 N2 S,R2 S N2 S D2 P M1 R2 G2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Dayavati,S R2 G2 P N2 S',S' N2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Deva Manohari,S R2 M1 P D2 N2 S',S' N2 D2 N2 P M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Devāmruthavarshani,S R2 G2 M1 N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Dilipika,S R2 G2 M1 P N2 D2 N2 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Gowla Kannada,S R2 G2 M1 P D2 N2 S',S' N2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Hamsa ābheri,S G2 P M1 P N2 S',S' N2 D2 P M1 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Haridasapriya,S P M1 G3 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Harinārāyani,S R2 G2 M1 P M1 D2 N2 S',S' N2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Jatādhāri,S R2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Jayamanohari,S R2 G2 M1 D2 S',S' N2 D2 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Jayanthasena,S G2 M1 P D2 S',S' N2 D2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Jayanārāyani,S R2 G2 M1 P D2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Kalika,S R2 G2 P D2 N2 S',S' N2 D2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Kalānidhi,S R2 G2 M1 S P M1 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Kanadā,S R2 G2 M1 D2 N2 S',S' N2 P M1 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Kannadagowla,S R2 G2 M1 P N2 S',S' N2 D2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Karnaranjani,S R2 G2 M1 G2 P D2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Karnātaka Devagāndhari,S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Karnātaka Hindolam,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Karnātaka Kāpi,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Kowmodaki,S R2 G2 M1 P D2 N2 S',S' D2 P G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Kowshika,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Kāpijingala,S N2 S R2 G2 M1,M1 G2 R2 S N2 D2 N2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Lalitamanohari,S G2 M1 P D2 N2 S',S' N2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Madhyamarāvali,S R2 G2 P D2 N2 S',S' N2 D2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Madhyamāvathi,S R2 M1 P N2 S',S' N2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Mahānandhi,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Mandāmari,S R2 M1 P D2 S',S' N2 S D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Mangalāvathi,S R2 M1 P D2 S',S' D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Manirangu,S R2 M1 P N2 S',S' N2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Manjari,S G2 R2 G2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Manohari,S G2 R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Manorama,S R2 G2 M1 P D1 P S',S' N2 D1 P M1 G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Maruvadhanyāsi,S G2 M1 P D2 S',S' N2 D2 P M1 D2 M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Mishramanolayam,S R2 M1 P D1 S',S' D2 D1 P M1 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Mādhavamanohari,S R2 G2 M1 P N2 D2 N2 S',S' N2 D2 M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Mālavashree,S G2 M1 P N2 D2 N2 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Māyapradeeptam,S M1 G2 M1 P D2 N2 S',S' D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nigamagāmini,M1 G2 S G2 M1 N2 S',S' N2 M1 G2 M1 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nirmalāngi,S R2 M1 P N2 S',S' N2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nādachintāmani,S R2 G2 M1 N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nādatārangini,S P M1 R2 G2 S',S' P N2 D2 P M1 G2 R2 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nādavarangini,S P M1 N2 D2 N2 S',S' P N2 D2 P M1 G2 R2 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nāgari,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nāgavalli,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Nāyaki,S R2 M1 P D2 N2 D2 P S',S' N2 D2 P M1 R2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Omkāri,S R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Panchamam,S R2 D2 P N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Phalamanjari,S G2 M1 D2 S',S' N2 D2 P M1 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Phalaranjani,S G2 M1 P M1 D2 S',S' N2 D2 P M1 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Poornakalānidhi,S G2 M1 P D2 N2 S',S' D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Pushpalathika,S R2 G2 M1 P N2 S',S' N2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Ratipatipriya,S R2 G2 P N2 S',S' N2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Reethigowla,S G2 R2 G2 M1 N2 D2 M1 N2 N2 S',S' N2 D2 M1 G2 M1 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Rudrapriyā,S R2 G2 M1 P D2 N2 S',S' N2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Saindhavi,N2 D2 N2 S R2 G2 M1 P D2 N2,D2 P M1 G2 R2 S N2 D2 N2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Sangrama,S R2 M1 D2 N2 P S',S' N2 D2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Sankrāndanapriyā,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Sarvachoodāmani,S R2 M1 G2 M1 P D2 N2 S',S' N2 P D2 N2 D2 P M1 G2 R2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Shivapriyā,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Shivaranjani,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Shree,S R2 M1 P N2 S',S' N2 P D2 N2 P M1 R2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Shree Manohari,S G2 R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Shree Manoranjani,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Shreeranjani,S R2 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Siddhasena,S G2 R2 G2 M1 P D2 S',S' N2 D2 M1 P M1 R2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Suddha Bangāla,S R2 M1 P D2 S',S' D2 P M1 R2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Suddha Bhairavi,S G2 M1 P N2 D2 S',S' N2 D2 M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Suddha Dhanyāsi,S G2 M1 P N2 S',S' N2 P M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Suddha Hindolam (Varamu),S G2 M1 D2 N2 S',S' N2 D2 M1 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Suddha Manohari,S R2 G2 M1 P D2 S',S' N2 P M1 R2 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Suddha Velāvali,S R2 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Sugunabhooshani,S G2 M1 P M1 D2 N2 S',S' N2 D2 P M1 D2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Swarabhooshani,S G2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Swarakalānidhi,S M1 G2 M1 P D2 N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Swararanjani,S R2 G2 M1 D2 N2 S',S' N2 P M1 G2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Sālagabhairavi,S R2 M1 P D2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Tavamukhāri,S R2 G2 P D2 S',S' N2 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Vajrakānti,S G2 M1 P N2 S',S' N2 D1 P M1 G2 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Ādi Kāpi,S R2 M1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,22,Kharaharapriya,Āryamati,S R2 G2 P D2 S',S' N2 D2 P D2 M1 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,23,Gourimanohari,Gourimanohari,S R2 G2 M1 P D2 N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,23,Gourimanohari,Gowrishankar,S R2 G2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,23,Gourimanohari,Hamsadeepika,S R2 G2 M1 D2 S',S' N3 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,23,Gourimanohari,Hrudkamali,S R2 M1 D2 N3 S',S' N3 D2 M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,23,Gourimanohari,Lavanthika,S R2 M1 P N3 S',S' N3 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,23,Gourimanohari,Sundaramanohari,S R2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,23,Gourimanohari,Thyagaraja Mangalam,S G2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,23,Gourimanohari,Vasantashree (Amba Manohari),S R2 G2 M1 D2 N3 S',S' N3 D2 M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,24,Varunapriya,Varunapriya,S R2 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,24,Varunapriya,Veeravasantham,S R2 G2 M1 P S',S' N3 D3 P M1 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,25,Mararajnani,Mararajnani,S R2 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,25,Mararajnani,Devasalaga,S G3 P D1 N1 S',S' N1 D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,25,Mararajnani,Kesari,S R2 G3 M1 P M1 D1 P D1 S',S' D1 N1 D1 P M1 G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,25,Mararajnani,Rājathilaka,S R2 G3 M1 P S',S' P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,25,Mararajnani,Sharāvathi,S R2 G3 M1 P D1 N1 D1 S',S' N1 D1 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,26,Charukesi,Charukesi,S R2 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,26,Charukesi,Chirswaroopi,S R2 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,26,Charukesi,Māravi,S G3 M1 P N2 S',S' N2 D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,26,Charukesi,Poorvadhanyāsi,S M1 G3 M1 N2 S',S' N2 D1 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,26,Charukesi,Shiva Manohari,S M1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,26,Charukesi,Shukrajyothi,S R2 G3 M1 P D1 N2 S',S' N2 P D1 M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,26,Charukesi,Ushābharanam,S G3 M1 D1 P M1 D1 N2 S',S' N2 D1 P M1 G3 R2 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,27,Sarasangi,Sarasangi,S R2 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Haripriya,S R1 G3 M1 P S',S' N3 D1 P M1 G3 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Kamalā Manohari,S G3 M1 P N3 S',S' N3 D1 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Madhulika,S R2 G3 M1 N3 S',S' N3 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Nalinakānthi,S G3 R2 M1 P N3 S',S' N3 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Neelamani,S R2 M1 P D1 N3 S',S' N3 D1 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Salavi,S G3 R2 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Saraseeruha,S R2 G3 M1 D1 N1 D1 S',S' N1 D1 M1 G3 R2,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Sarasānana,S R2 G3 M1 D1 N3 S',S' N3 D1 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Simhavāhini,S G2 M1 P D1 N3 S',S' N3 D1 P M1 G3 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Sowrasenā,S R2 M1 P D1 S',S' N3 D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Srirangapriya,S R2 G3 M1 P D1 S',S' D1 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Surasena,S R2 M1 P D1 S',S' N3 D1 P M1 G3 S R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,27,Sarasangi,Vasanthi,S R2 G3 P D1 S',S' D1 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,28,Harikambhoji,Harikambhoji,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Ambhojini,S R2 G3 M1 D2 S',S' D2 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Andhali,S R2 M1 P N2 S',S' N2 P M1 R2 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Aparoopam,S R2 G3 M1 P N2 D2 N2 S',S' D2 M1 G3 R2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Bahudāri,S G3 M1 P D2 N2 S',S' N2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Bālahamsa,S R2 M1 P D2 S',S' N2 D2 P M1 R2 M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Chandrahasitham,S R2 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Chāyalagakhamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Chāyatārangini,S R2 M1 G3 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Dasharatipriya,S M1 G3 M1 P D2 N2 D2 S',S' N2 D2 P M1 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Dayaranjani,S R2 M1 P D2 S',S' N2 D2 M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Deshākshi,S R2 G3 P D2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Eeshaivaridhi,S R2 M1 D2 N2 S',S' N2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Eeshamanohari,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 R2 M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Guhamanohari,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Guharanjani,S R2 S M1 P D2 N2 S',S' N2 D2 N2 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Gāndhāralola,S R2 M1 P D2 S',S' N2 D2 P M1 G3 M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Hamsaroopini,S R2 G3 P D2 S',S' N2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Haridasapriya,S P M1 G3 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Harikedāragowla,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Harikedāram,S R2 G3 M1 P D2 N2 S N2 S',S' N2 S D2 N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Harini,S G3 M1 P D2 N2 D2 S',S' N2 S N2 D2 P M1 G3 M1 G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Harithapriya,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Hemasāranga,S R2 G3 M1 P D2 N2 D2 S',S' P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Jaithshree,S R2 G3 P D2 S',S' D2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Jana Sammodhini,S R2 G3 P D2 N2 S',S' N2 D2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Jayarāma,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Jujahuli,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Karnātaka Behāg,S R2 G3 M1 P D2 N2 S',S' N2 D2 N2 P D2 M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Karnātaka Devagāndhāri,S G3 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Karnātaka Khamās,S G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Kedāragowla,S R2 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Keshavapriyā,S R2 S M1 P D2 N2 S',S' N2 S P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Kokiladhwani,S R2 G3 M1 D2 N2 D2 S',S' N2 D2 N2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Kokilavarāli,S R2 M1 P D2 S',S' N2 D2 M1 P M1 G3 R2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Kunthalavarāli,S M1 P D2 N2 D2 S',S' N2 D2 P M1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Kāpi Nārāyani,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Madhurakokila,S R2 G3 D2 N2 S',S' N2 D2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Mahathi,S G3 P N2 S',S' N2 P G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Mahuri,S R2 M1 G3 R2 G3 P D2 S',S' N2 D2 P M1 G3 R2 S R2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Manjupriya,S G3 M1 P N2 S',S' N2 D2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Manoharam,S R2 G3 M1 D2 N2 S',S' N2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Mattakokila,S R2 P D2 N2 D2 S',S' D2 N2 D2 P R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Meghana,S M1 G3 M1 P D2 S',S' N2 D2 M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Mohanam,S R2 G3 P D2 S',S' D2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Mālavi,S R2 G3 M1 P N2 M1 D2 N2 S',S' N2 D2 N2 P M1 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Narani,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Navarasa Kalānidhi,S R2 M1 P S N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Navarasa kannada,S G3 M1 P S',S' N2 D2 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Neela,S G3 M1 D2 N2 S',S' N2 D2 M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Nādavalli,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Nāgaswarāvali,S G3 M1 P D2 S',S' D2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Nārāyanagowla,S R2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 R2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Nārāyani,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Nāttai Nārāyani,S R2 G3 M1 D2 N2 D2 S',S' N2 D2 P M1 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Parameshwarapriyā,S R2 G3 M1 P N2 S',S' N2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Pashupathipriyā,S R2 M1 P M1 D2 S',S' D2 M1 P R2 M1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Poornakāmbhoji,S R2 G3 M1 P N2 S',S' D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Pratāpa Nāttai,S R2 G3 M1 D2 P D2 N3 S',S' N3 D2 P M1 G3 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Pratāpavarāli,S R2 M1 P D2 P S',S' D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Pravalajyoti,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Pārsi,S R2 G3 M1 D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Ravi Chandrikā,S R2 G3 M1 D2 S',S' N2 D2 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Rāgapanjaramu,S R2 M1 P D2 N2 D2 S',S' N2 D2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Rāgavinodini,S R2 G3 M1 D2 S',S' D2 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Sahāna,S R2 G3 M1 P M1 D2 N2 S',S' N2 S D2 N2 D2 P M1 G3 M1 R2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Saraswathi Manohari,S R2 G3 M1 D2 S',S' D2 N2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Sathvamanjari,S R2 M1 P D2 S',S' N2 D2 P M1 N2 D2 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Shakunthala,S R2 G3 M1 D2 N2 S',S' N2 D2 M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Shankaraharigowla,S R2 G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Shenchukāmbhoji,S P M1 D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Shiva Kāmbhoji,S R2 G3 M1 N2 S',S' N2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Simhavikrama,S R2 G3 R2 M1 P D2 P N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Sindhu Kannada,S M1 G3 M1 R2 G3 M1 P D2 P S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Sindhu Surutti,S R2 M1 P N2 S S N2 S',S' N2 D2 P M1 R2 M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Suddha,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Suddha Khamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Suddha Varāli,S R2 G3 M1 D2 N2 S',S' N2 D2 N2 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Suddhatarangini,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Sumanapriyā,S R2 G3 M1 P D2 P S',S' D2 S P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Suposhini,S R2 S M1 P N2 D2 S',S' D2 P M1 R2 M1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Surutti,S R2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 P M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Suvarnakriyā,S R2 G3 P N2 D2 S',S' N2 P G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Swaravedi,S M1 G3 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Swarāvali,S M1 G3 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Sāvithri,S G3 M1 P N2 S',S' N2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Tilakavathi,S R2 G3 M1 P D2 P S',S' D2 P M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Umābharanam,S R2 G3 M1 P D2 N2 S',S' N2 P M1 R2 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Vaishnavi,S R2 G3 M1 P D2 S',S' D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Veenavadini,S R2 G3 P N2 S',S' N2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Vivardhani,S R2 M1 P S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,28,Harikambhoji,Yadukula Kāmbhoji,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,29,Śankarābharaṇaṃ,Śankarābharaṇaṃ,S R2 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Bangāla,S R2 G3 M1 P M1 R2 P S',S' N3 P M1 R2 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Begada,S G3 R2 G3 M1 P D2 P S',S' N2 D2 P M1 G3 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Behāg Deshikam,S R2 G3 M1 M2 P D2 N3 S',S' N3 D2 P M2 M1 G3 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Buddhamanohari,S R2 G3 M1 S P S',S' P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Buddharanjani,S R2 G3 M1 P S',S' N3 P M1 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Chāyashankarābharanam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Chāyā,S P M1 P D2 P N3 R2 S',S' D2 P M1 P D2 P G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Dharmalakhi,S M1 P D2 N3 S',S' N3 D2 P M1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Dhurvanki,S R2 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Gajagowri,S R2 M1 G3 M1 N3 P D2 S',S' N3 D2 P M1 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Garudadhvani,S R2 G3 M1 P D2 N3 S',S' D2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Gowdamalhār,S R2 M1 P D2 S',S' N3 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Hamsadhwani,S R2 G3 P N3 S',S' N3 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Hamsavinodhini,S R2 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Jana Ranjani,S R2 G3 M1 P D2 P N3 S',S' D2 P M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Julavu,P D2 N3 S R2 G3 M1 P,M1 G3 R2 S N3 D2 P M1,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kamaripriyā,S G3 M1 D2 N3 S',S' N3 D2 M1 M1 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kannada,S R2 G3 M1 P M1 D2 N3 S',S' N3 S D2 P M1 G3 M1 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kathanakuthuhalam,S R2 M1 D2 N3 G3 P S',S' N3 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kedaram,S M1 G3 M1 P N3 S',S' N3 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kokilabhāshani,S R2 G3 M1 P D2 N3 S',S' N3 P M1 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kolahalam,S P M1 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kurinji,S N3 S R2 G3 M1 P D2,D2 P M1 G3 R2 S N3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kusumavichithra,S G3 R2 G3 M1 P N3 P D2 N3 S',S' D2 N3 D2 M1 G3 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Kutuhala,S R2 M1 N3 D2 P N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Lahari,S R2 G3 P D2 S',S' D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Mohanadhwani,S R2 G3 P D2 S',S' N3 P D2 P G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Māyadravila,S R2 G3 M1 P D2 N3 S',S' N2 P M1 P G3 M1 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Niroshta,S R2 G3 D2 N3 S',S' N3 D2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Nāgabhooshani,S R2 M1 P D2 N3 S',S' D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Nāgadhwani,S R2 S M1 G3 M1 P N3 D2 N3 S',S' N3 D2 N3 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Nārāyanadeshākshi,S R2 M1 G3 R2 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Poornachandrika,S R2 G3 M1 P D2 P S',S' N3 P M1 R2 G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Poornagowla,S R2 G3 M1 P N3 D2 N3 P D2 N3 S',S' N3 D2 N3 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Poorvagowla,S G3 R2 G3 S R2 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Rathnabhooshani,S R2 G3 M1 P S',S' P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Reetuvilāsa,S G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Shankara,S G3 P S',S' N3 D2 P G3 P R2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Shankaraharigowla,S R2 G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Shankaramohana,S R2 G3 P N3 D2 S N3,S D2 P G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Shankari,S G3 P N3 S',S' N3 P G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Sindhu,S M1 P D2 S',S' N3 D2 M1 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Sindhu Mandāri,S R2 G3 M1 P S',S' N3 D2 P G3 M1 P M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Suddha Mālavi,S R2 G3 M1 P N3 S',S' D2 N3 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Suddha Sārang,S R2 G3 M1 P D2 N3 D2 S',S' D2 P M1 R2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Suddha Sāveri,S R2 M1 P D2 S',S' D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Suddha Vasantha,S R2 G3 M1 P N3 S',S' N3 D2 N3 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Suranandini,S R2 G3 P D2 N3 S',S' N3 D2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Suraranjani,S G3 P R2 M1 D2 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Sāranga Mallār,S R2 M1 P D2 N3 S',S' N3 D2 P M1 R2 S N3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Tāndavam,S G3 P D2 N3 S',S' N3 D2 P G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Vallabhi,S R2 G3 M1 P D2 N3 S',S' N3 D2 N3 D2 P M1 P G3 M1 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Vasanthamalai,S R2 M1 P N3 S',S' D2 P M1 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Vedhāndhagamana,S G3 M1 P N3 S',S' N3 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Veerapratāpa,S G3 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Vilāsini,S R2 G3 M1 P N3 S',S' N3 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,29,Śankarābharaṇaṃ,Ānandharoopa,S R2 G3 P D2 N3 S',S' N3 D2 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,30,Naganandini,Naganandini,S R2 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,30,Naganandini,Gambheeravani,S G3 P M1 D3 N3 S',S' N3 P M1 G3 R2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,30,Naganandini,Lalithagāndharva,S R2 G3 M1 P D3 N3 S',S' N3 P G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,30,Naganandini,Nāgabharanam,S R2 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,30,Naganandini,Sāmanta,S R2 G3 M1 P D3 N3 S',S' N3 D3 N3 D3 P M1 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,31,Yagapriya,Yagapriya,S R3 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,31,Yagapriya,Damarugapriya,S R3 G3 P D1 N1 S',S' N1 D1 P G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,31,Yagapriya,Desharanjani,S R3 M1 P D1 N1 S',S' N1 D1 P M1 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,31,Yagapriya,Deshyathodi,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,31,Yagapriya,Kalāhamsa,S R3 G3 M1 P D1 S',S' N1 D1 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,31,Yagapriya,Kalāvathi,S R3 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,31,Yagapriya,Niranjani,S R3 M1 D1 N1 S',S' N1 D1 M1 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,31,Yagapriya,Prathāpahamsi,S G3 M1 P N1 D1 N1 S',S' N1 D1 P M1 G3 M1 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,32,Ragavardhini,Ragavardhini,S R3 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,32,Ragavardhini,Amudagāndhāri,S G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,32,Ragavardhini,Dhowmya,S R3 G3 M1 P D1 N2 P S',S' N2 D1 P M1 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,32,Ragavardhini,Hindoladarbār,S G3 M1 P S',S' N2 D1 P M1 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,32,Ragavardhini,Ramyā,S R3 G3 M1 P D1 N2 P S',S' N2 D1 P M1 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,32,Ragavardhini,Rāgachoodāmani,S R3 G3 M1 P N2 S',S' N2 D1 M1 R3 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,32,Ragavardhini,Sāmantajingala,S R3 G3 M1 P D1 N2 S',S' N2 P D1 N2 P M1 G3 M1 R3 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,33,Gangeyabhushani,Gangeyabhushani,S R3 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,33,Gangeyabhushani,Gangātarangini,S R3 G3 M1 P D1 N3 S',S' N3 D1 P M1 M1 G3 M1 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,34,Vagadheeswari,Vagadheeswari,S R3 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Amarasindhu,S R3 G3 P D2 N2 S',S' N2 D2 P G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Bhogachāyā Nāttai,S R3 G3 R3 G3 M1 P N2 N2 S',S' N2 D2 N2 P S N2 P M1 M1 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Bhānumanjari,S R3 G3 M1 P N2 S',S' N2 P M1 R3 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Chāyanāttai,S R3 G3 M1 P M1 P S',S' N2 D2 N2 P M1 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Drāvida Kalāvati,S R3 G3 P D2 S',S' N2 D2 P G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Maghathi,S R3 M1 P D2 N2 S',S' N2 D2 P M1 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Mohanāngi,S R3 G3 P D2 S',S' D2 P G3 P D2 P G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Murali,S R3 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Sharadabharana,S M1 G3 M1 P M1 D2 N2 S',S' N2 D2 M1 P M1 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,34,Vagadheeswari,Vikhavathi,S R3 G3 P D2 S',S' D2 P G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,35,Shulini,Shulini,S R3 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,35,Shulini,Dheerahindolam,S G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,35,Shulini,Shailadeshākshhi,S M1 G3 P D2 S',S' N3 D2 S N3 P M1 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,35,Shulini,Shokavarāli,S G3 D2 N3,D2 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,35,Shulini,Suryavasantham,S M1 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,36,Chalanta,Chalanta,S R3 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,36,Chalanta,Devanāttai,S G3 M1 P S',S' N3 D3 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,36,Chalanta,Gambheeranāṭṭai,S G3 M1 P N3 S',S' N3 P M1 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,36,Chalanta,Ganaranjani,S R3 G3 M1 P M1 D3 N3 S',S' N3 D3 P M1 P M1 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,36,Chalanta,Nāṭṭai,S R3 G3 M1 P N3 S',S' N3 P M1 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,37,Salagam,Salagam,S R1 G1 M2 P D1 N1 S',S' N1 D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,37,Salagam,Bhogasāveri,S R1 M2 D1 N1,D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,37,Salagam,Sowgandhini,S R1 M2 P D1 S',S' N1 D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,38,Jalarnavam,Jalarnavam,S R1 G1 M2 P D1 N2 S',S' N2 D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,38,Jalarnavam,Jaganmohana,S R1 G1 M2 P D2 S',S' N2 D1 P M2 G1 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,38,Jalarnavam,Jaganmohinam,S R1 G1 M2 P D1 N2 S',S' N2 D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,39,Jhalavarali,Jhalavarali,S R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Bhoopālapanchamam,S G1 R1 G1 P M2 D1 S',S' P D1 M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Dhālivarāli,S R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Godari,S R1 G1 R1 M2 G1 M2 P D1 N3 S',S' N3 D1 P M2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Janāvali,S G2 R1 G2 M2 P D1 N3 D1 S',S' N3 D1 P M2 G2 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Jālasugandhi,S R1 G1 M2 P D1 S',S' D1 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Karunāmritavarshini,S R1 G1 M2 P D1 N3 P S',S' N3 D1 M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Kokilapanchamam,S G1 R1 G1 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,39,Jhalavarali,Varāli,S G1 R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,40,Navaneetam,Navaneetam,S R1 G1 M2 P D2 N2 S',S' N2 D2 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,40,Navaneetam,Nabhomani,S G1 R1 G1 M2 P S',S' N2 D2 P M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,41,Pavani,Pavani,S R1 G1 M2 P D2 N3 S',S' N3 D2 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,41,Pavani,Chandrajyothi,S R1 G1 M2 P D2 S',S' D2 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,41,Pavani,Kumbhini,S G1 R1 G1 M2 P N3 D2 N3 S',S' N3 D2 P M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,41,Pavani,Poornalalitha,S R1 M2 G1 R1 M2 P N3 D2 N3 S',S' N3 D2 P M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,41,Pavani,Prabhāvali,S R1 M2 P D2 N3 S',S' N3 D2 M2 P M2 R1 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,42,Raghupriya,Raghupriya,S R1 G1 M2 P D3 N3 S',S' N3 D3 P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,42,Raghupriya,Gomathi,S R1 G1 M2 P D3 N3,P M2 G1 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,42,Raghupriya,Gāndharva,M2 P D3 N3 S R1 G1,R1 S N3 P M2 P,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,42,Raghupriya,Raghuleela,S M2 R1 P M2 G1 M2 P M2 R1 M2 P N3 S',S' N3 D3 N3 P M2 G1 M2 R1 M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,42,Raghupriya,Ravi Kriyā,S G1 R1 G1 M2 P D3 N3 S',S' N3 P M2 G1 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,43,Gavambhodi,Gavambhodi,S R1 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,43,Gavambhodi,Geervāni,S R1 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,43,Gavambhodi,Kanchanabowli,S G2 M2 P D1 S',S' N1 D1 P M1 G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,43,Gavambhodi,Mahathi,S G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,43,Gavambhodi,Mechagāndhāri,S R3 G3 M1 P D2 N2 S',S' N2 D2 N2 P M1 G3 M1 R3 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,43,Gavambhodi,Suvarnadeepakam,S R1 G2 M2 P D1 S',S' D1 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,43,Gavambhodi,Vijayabhooshāvali,S R1 G3 M2 P S',S' N3 D3 P M2 G3 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Melakarta,44,Bhavapriya,Bhavapriya,S R1 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,44,Bhavapriya,Bhavāni,S R1 G2 M2 D1 N2 S,S N2 D1 M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,44,Bhavapriya,Bhavāni,S R1 G2 M2 P D1 P N2 S',S' N2 D1 P M2 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,44,Bhavapriya,Kanchanāvathi,S R1 G2 M2 P N2 S',S' N2 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,45,Shubhapantuvarali,Shubhapantuvarali,S R1 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Arunāngi,S R1 M2 P N3 D1 S',S' N3 D1 M2 R1 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Bandhuvarāli,S M2 S N3 D1 P M2,D1 M2 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Bhānudhanyāsi,S R1 G2 M2 N3 D1 N3,D1 P M2 G2 R1 S N3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Bhānukeeravāni,S R1 G2 M2 P D1 N3 S',S' N3 D1 M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Chāyaranjani,S G2 M2 P N2 S',S' N2 D1 P M2 G2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Dhowreyani,S R1 G2 M2 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Hindusthāni Todi,N3 R1 G2 M2 D1 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,Vakra is No by the pitch-based rule in sargam_intervals.py (no aroha step falls and no avaroha step rises).,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Jālakesari,S R1 M2 P D1 N3 S',S' D1 P M2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Kumudhachandrikā,S G2 M2 D1 S',S' N3 D1 M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Mahānandhini,S M2 G2 M2 P D1 N3 S',S' D1 N3 D1 P M2 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Parpathi,S G2 M2 P N3 S',S' N3 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Shekharachandrikā,S R1 G2 M2 D1 N3 S',S' N3 D1 M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,45,Shubhapantuvarali,Shivapanthuvarāli,S R1 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,46,Shadvidamargini,Shadvidamargini,S R1 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,46,Shadvidamargini,Ganahemāvati,S G2 M2 P N2 S',S' N2 D2 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,46,Shadvidamargini,Indhudhanyāsi,S G2 M2 D2 N2 S',S' N2 D2 P D2 M2 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,46,Shadvidamargini,Shreekānti,S G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,46,Shadvidamargini,Sthavarājam,S R1 M2 P D2 S',S' N2 D2 M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,46,Shadvidamargini,Teevravāhini,S R1 G2 M2 P D2 P N2 S',S' N2 D2 P M2 G2 R1 G2 M2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,47,Suvarnangi,Suvarnangi,S R1 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,47,Suvarnangi,Abhiru,S R1 G2 R1 M2 P N3 S',S' D2 P M2 G2 R1 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,47,Suvarnangi,Rathikā,S M2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,47,Suvarnangi,Sowveeram,S R1 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,47,Suvarnangi,Vijayashree,S R1 G2 M2 P N2 S',S' N2 P M2 G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Melakarta,48,Divyamani,Divyamani,S R1 G2 M2 P D3 N3 S',S' N3 D3 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,48,Divyamani,Deshamukhāri,S R1 G2 M2 P D3 N3 D3 S',S' D3 N3 D3 P M2 G2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,48,Divyamani,Dundubi,S R1 G2 M2 P D3 N3 S',S' N3 P M2 G2 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,48,Divyamani,Jeevanthikā,S M2 P D3 N3 S',S' N3 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,48,Divyamani,Jeevanthini,S M2 P D3 N3 S',S' N3 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,48,Divyamani,Suddha Gāndhāri,S R1 G2 M2 N3 S',S' N3 D3 N3 S N3 P M2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,49,Dhavalambari,Dhavalambari,S R1 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,49,Dhavalambari,Abhirāmam,S R1 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,49,Dhavalambari,Bhinnapauarali,S M2 P D1 N1 D1 S',S' N1 D1 P M2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,49,Dhavalambari,Dharmini,S R1 G3 M2 D1 N1 S',S' N1 D1 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,49,Dhavalambari,Dhavalāngam,S R1 G3 M2 P D1 S',S' N1 D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,49,Dhavalambari,Sudharmini,S R1 M2 P D1 N1 S',S' N1 D1 M1 G3 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Melakarta,50,Namanarayani,Namanarayani,S R1 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,50,Namanarayani,Narmada,S R1 G3 M2 D1 N2 S',S' N2 D1 M2 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,50,Namanarayani,Nāmadeshi,S R1 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,50,Namanarayani,Swaramanjari,S G3 M2 P D1 S',S' N2 D1 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,51,Kamavardhani,Kamavardhani,S R1 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Bhogavasantha,S R1 G3 M2 D1 N3 S',S' N3 D1 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Deepakam,S R2 M2 P D1 P S',S' N3 D1 N3 P M2 G3 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Gamakapriyā,S R1 G3 M2 P N3 D1 S',S' D1 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Gamanapriyā,S R1 G3 M2 P N3 D1 S',S' D1 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Hamsanārāyani,S R1 G3 M2 P S',S' N3 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Indumathi,S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Kamalāptapriyā,S R1 G3 M2 P D1 S',S' D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Kumudhakriyā,S R1 G3 M2 D1 S',S' N3 D1 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Kāshirāmakriyā,S G3 R1 G3 M2 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Mandāri,S R1 G3 M2 P N3 S',S' N3 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Māruthi,S R1 M2 P N3 S',S' N3 D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Ponni,S G3 M2 P N3 S',S' N3 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Prathāpa,S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,Tāndavapriyā,S R1 G3 M2 P S',S' P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,51,Kamavardhani,ādhi Panchama,S R1 P D1 N3 S',S' N3 D1 N3 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,52,Ramapriya,Ramapriya,S R1 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Chintaramani,S G3 M2 P D2 N2 S',S' D2 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Hamsagamini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 D2 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Lokaranjani,S G3 M2 P M2 D2 N2 S',S' N2 D2 N2 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Meghashyāmala,S G3 M2 P D2 N2 D2 P S',S' N2 D2 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Namoveenapaani (creation by Siri Girish),S G3 M2 D2 N2 S',S' N2 D2 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Patalāmbari,S R1 G3 M2 D2 S',S' D2 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Raktimārgini,S P M2 D2 N2 S',S' N2 D2 P M2 P G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Ramāmanohari,S R1 G3 M2 P D2 S',S' N2 D2 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Rasavinodini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Reethi Chandrikā,S R1 G3 M2 P D2 S',S' N2 D2 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Seemantinipriyā,S R1 G3 M2 D2 N2 S',S' N2 D2 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Sukhakari,S R1 S P D2 N2 S',S' N2 D2 P M2 G3 S R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,52,Ramapriya,Vedhaswaroopi,S R1 G3 M2 P D2 N3 P S',S' N3 D2 P N3 P M2 G3 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Melakarta,53,Gamanashrama,Gamanashrama,S R1 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Alankāri,S G3 M2 D2 N3 D2 S',S' N3 D2 M2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Dvigāndhārabhooshani,S R1 G2 G3 G2 P D2 S',S' D2 P G2 G3 G2 R1 S D2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Gamakakriyā,S R1 G3 M2 P D2 S',S' N3 D2 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Hamsānandi,S R1 G3 M2 D2 N3 S',S' N3 D2 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Mechakāngi,S R1 G3 M2 P D2 P N3 S',S' N3 P D2 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Padmakalyāni,S G3 P N3 S',S' N3 D2 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Poorvi Kalyāni,S R1 G3 M2 P D2 P S',S' N3 D2 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Sharabadhvāja,S R1 G3 M2 P D2 S',S' D2 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,53,Gamanashrama,Vaishaka,S R1 G3 M2 P D2 N3 S',S' N3 D2 N3 P M2 G3 M2 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,54,Vishwambari,Vishwambari,S R1 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,54,Vishwambari,Hemāngi,S R1 G3 M2 D3 S',S' D3 M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,54,Vishwambari,Pooshakalyāni,S R1 G3 M2 P D3 N3 S',S' N3 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,54,Vishwambari,Sharadhyuthi,S R1 G3 M2 P D3 N3 D3 S',S' N3 D3 P M2 G3 R1 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,54,Vishwambari,Suddhakriyā,S R1 M2 M2 P D3 S',S' D3 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,54,Vishwambari,Sundarāngi,S R1 G3 P D3 N3 S',S' N3 D3 P G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,54,Vishwambari,Vamshavathi,S R1 G3 M2 P D3 N3 S',S' N3 P M2 G3 R1 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,54,Vishwambari,Vijayavasantham,S M2 P D3 N3 S',S' N3 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,55,Shamalangi,Shamalangi,S R2 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,55,Shamalangi,Deshāvali,S R2 G2 M2 D1 N1 D1 S',S' N1 D1 M2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,55,Shamalangi,Shyāmalam,S R2 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,55,Shamalangi,Vijayamālavi,S R2 M2 P D1 S',S' N1 D1 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,56,Shanmukhapriya,Shanmukhapriya,S R2 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Bhāshini,S G2 R2 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R1 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Chintāmani,S G2 R2 G2 M2 G2 R2 G2 P M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Chāmaram,S R2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Dhanakari,S G2 P D1 N2 S',S' N2 D1 M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Garigadya,N2 S G2 M2 P D1 N2,D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Gopikathilakam,S R2 G2 M2 P N2 S',S' N2 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Kokilanandhi,S G2 M2 D1 N2 S',S' N2 D1 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Rājeshwari,S R2 G2 P N2 S',S' N2 D1 P M1 G2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Samudrapriyā,S G2 M2 P N2 S',S' N2 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Shanmukhi (Trimoorti),S R1 G2 M2 D1 N2 S',S' N2 D1 M2 G2 R1 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Sumanasaranjani,S G2 M2 P N2 S',S' N2 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,56,Shanmukhapriya,Vasukari,S G2 M2 P D1 N2 S',S' N2 D1 M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,57,Simhendramadhyamam,Simhendramadhyamam,S R2 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Ghantana,S R2 G2 M2 D1 N3 S',S' N3 D1 M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Jayachoodāmani,S G2 M2 P D1 S',S' N3 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Pranavapriyā,S R2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Sarvāngi,S R2 M2 D1 N3 S',S' N3 D1 M2 G2 S R3 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Seshanādam,S R2 G2 M2 P D1 S',S' N3 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Suddha,S R2 G2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Sunādapriyā,S R2 G2 M2 P S',S' N3 D1 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Urmikā,S R2 G2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Vijayasaraswathi,S G2 M2 P D1 N3 S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,57,Simhendramadhyamam,Ānandavalli,S G2 M2 P N3 S',S' N3 P M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,58,Hemavati,Hemavati,S R2 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Chandrarekhā,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Deshisimhāravam,S R2 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Hamsabhramari,S R2 G2 M2 P D2 S',S' N2 D2 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Hemapriya,S R2 G2 M2 D2 S',S' D2 M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Hemāmbari,S R2 G2 M2 P D2 N2 S',S' P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Kshemakari,S R2 M2 D2 N2 S',S' N2 D2 M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Madhukowns,S G2 M2 P N2 P S',S' N2 P M2 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Shakthiroopini,S G2 M2 D2 S',S' N2 D2 M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Simhārava,S R2 M2 P N2 S',S' N2 P M2 R2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Vijayashrāngi,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Vijayasāranga,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,58,Hemavati,Yāgini,S R2 M2 P N2 S',S' N2 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,59,Dharmavati,Dharmavati,S R2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Dhāmavathi,S R2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Gowrikriya,S G2 M2 P D2 N3 S',S' N3 D2 N3 P M2 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Karmukhāvati,S R2 G2 M2 D2 N3 S',S' N3 D2 M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Karpoora Bharani,S R2 G2 P M2 P D2 S',S' D2 P M2 P G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Lalitasimharavam,S R2 G2 M2 P S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Moharanjani,S R2 G2 P D2 S',S' N3 D2 M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Ranjani,S R2 G2 M2 D2 S',S' N3 D2 M2 G2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Sri Tyagaraja (Raga created by Mahesh Mahadev),S G2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Varada,S R2 M2 P N3 S',S' N3 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Vijayanāgari,S R2 G2 M2 P D2 S',S' D2 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,59,Dharmavati,Vishveshwarapriyā,S R2 M2 P N3 S',S' N3 D2 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,60,Neetimati,Neetimati,S R2 G2 M2 P D3 N3 S',S' N3 D3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,60,Neetimati,Amarasenapriyā,S R2 M2 P N2 S',S' N3 P M2 G2 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,60,Neetimati,Deshyagānavaridhi,S R2 G2 M2 P D3 N3 P S',S' N3 S P M2 G2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,60,Neetimati,Kaikavashi,S R2 G2 M2 P D3 N3 S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,60,Neetimati,Nisshadham,S R2 G2 M2 P D3 N3 S',S' N3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,60,Neetimati,Nuthanachandrikā,S R2 G2 M2 P D3 N3 S',S' N3 P D3 N3 P M2 G2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,60,Neetimati,Rathnasāranga,S R2 G2 M2 P N3 S',S' N3 D3 P M2 G2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,61,Kantamani,Kantamani,S R2 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,61,Kantamani,Kanakakusumāvali,S R2 G3 M2 P D2 S',S' D2 P M2 G3 R2 S,No,Yes,,raga-of-the-week-repo-list.csv
+Janya,61,Kantamani,Kunthalam,S R2 G3 M2 P D1 S',S' N1 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,61,Kantamani,Shruthiranjani,S R2 G3 M2 P D1 N1,N1 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,62,Rishabhapriya,Rishabhapriya,S R2 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,62,Rishabhapriya,Gopriya,S R2 G3 M2 D1 N2 S',S' N2 D1 M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,62,Rishabhapriya,Poornasāveri,S R2 M2 P D1 S',S' N2 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,62,Rishabhapriya,Rathipriyā,S R2 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,62,Rishabhapriya,Rathnabhānu,S R2 M2 P N2 D1 N2 S',S' N2 D1 P M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,62,Rishabhapriya,Suddha Sāranga,S G3 M2 P N2 S',S' D1 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,63,Latangi,Latangi,S R2 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Chitrachandrika,S G3 R2 G3 M2 P N3 D1 S',S' N3 D1 M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Geethapriyā,S R2 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Hamsalatha,S R2 G3 P N3 S',S' N3 D1 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Kananapriyā,S R2 G3 M2 P M2 D1 N3 S',S' D1 N3 P M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Karunākari,S M2 P D1 N3 D1 S',S' N3 D1 P M2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Lalithāngi,S R2 G3 M2 D1 N3 S',S' N3 D1 M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Ramani,S G3 M2 P N3 S',S' N3 D1 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Rathnakānthi,S R2 G3 M2 P N3 S',S' N3 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Raviswaroopini,S G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Sajjananandhi,S R2 G3 M2 P D1 N3 S',S' N3 D1 M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,63,Latangi,Skandamanorama,S R2 M2 P N3 S',S' N3 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,64,Vachaspati,Vachaspati,S R2 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Bhagavataranjana,S R2 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Bhogeeshwari,S R2 G3 P D2 N2 D2 S',S' N2 D2 P M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Bhooshāvali,S R2 G3 M2 P D2 S',S' N2 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Bhooshāvathi,S R2 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Dwigāndhārabhooshani,S R1 G2 G3 G2 P D2 S',S' D2 P G2 G3 G2 R1 S D2 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Gaganamohini,S G3 P D2 N2 S',S' N2 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Gurupriya,S R2 G3 M2 D2 N2 S',S' N2 D2 M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Hrdhini,S G3 M2 P N2 S',S' N2 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Mangalakari,S R2 P M2 P D2 N2 S',S' N2 D2 P G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Mukthidāyini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Nādhabrahma,S P M2 P D2 N2 S',S' N2 D2 P M2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Pranavākāri,P N2 D2 N2 S R2 G3 M2,P M2 G3 R2 S N2 D2 N2 P,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Saraswathi,S R2 M2 P D2 S',S' N2 D2 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Shivaranjani (Original),S R2 G3 M2 D2 P N2 S',S' N2 D2 P D2 M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Triveni,S R2 M2 P D2 N2 S',S' N2 D2 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,64,Vachaspati,Utthari,S G3 M2 P D2 N2 S',S' N2 D2 M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,65,Kalyani,Kalyani,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Amritha Behāg,S M2 G3 P N3 S,D2 N3 D2 M2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Amritha Kalyani (Raga created by Mahesh Mahadev),S G3 M2 P N3 S',S' N3 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Aprameya,S R2 M2 P D2 S',S' N3 D2 M2 G3 M2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Bhoopkalyāni,S R2 G3 P D2 S',S' N3 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Chandrakāntha,S R2 G3 M2 P D2 N3 S',S' N3 D2 N3 P M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Hamsakalyāni,S R2 G3 P N3 S',S' N3 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Kalyānadāyini,S R2 G3 M2 D2 N3 S',S' N3 D2 M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Kannadamaruva,S G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Kowmoda,S R2 G3 M2 N3 S',S' N3 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Kunthalashreekānti,S G3 M2 P D2 N3 S',S' N3 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Mohana Kalyāni,S R2 G3 P D2 S',S' N3 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Mrgānandhana,S R2 G3 D2 N3 S',S' N3 D2 M2 D2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Nāndhakalyāni,S G3 M2 D2 N3 S',S' N3 D2 M2 G3 M2 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Pramodhini,S G3 M2 P D2 S',S' D2 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Rajasadhaka (Raga created by Mahesh Mahadev),S R2 G3 P D2 S',S' N3 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Shilangi,S G3 M2 P N3 S',S' N3 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Shānthakalyāni,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Suddha Koshala,S G3 M2 P S',S' N3 D2 M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Swayambhooshwara Rāga,S G3 P S',S' P G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Sāranga Tārangini,S R2 M2 P D2 N3 S',S' N3 D2 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Vandanadhārini,S R2 M2 P D2 S',S' D2 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,65,Kalyani,Vivāhapriyā,S R2 M2 P D2 N3 S',S' N3 D2 P M2 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,66,Chitrambari,Chitrambari,S R2 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,66,Chitrambari,Amritavarshini,S G3 M2 P N3 S',S' N3 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,66,Chitrambari,Chaturāngini,S R2 G3 M2 P N3 S',S' N3 D3 N3 P G3 M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,66,Chitrambari,Chitrasindhu,S G3 M2 P N3 S',S' N3 D3 P M2 G3 R2 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,66,Chitrambari,Churnikavinodhini,S R2 G3 M2 P D3 N3 S',S' N3 D3 N3 P M2 G3 R2 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,66,Chitrambari,Vijayakoshalam,S R2 G3 M2 P S',S' N3 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,67,Sucharitra,Sucharitra,S R3 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,67,Sucharitra,Santhāna Manjari,S R3 G3 M2 P D1 S',S' N1 D1 P M2 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,68,Jyoti-sarupini,Jyoti-sarupini,S R3 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,68,Jyoti-sarupini,Deepavarāli,S R3 M2 P N2 S',S' N2 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,68,Jyoti-sarupini,Jyothi,S R3 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,68,Jyoti-sarupini,Jyothishmathi,S R3 G3 M2 P S',S' N2 D1 M2 P M2 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,68,Jyoti-sarupini,Rāmagiri,S R3 M2 G3 M2 P D1 N2 S',S' D1 N2 D1 P M2 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Melakarta,69,Dhatuvardhani,Dhatuvardhani,S R3 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,69,Dhatuvardhani,Dhowtha Panchamam,S R3 G3 M2 P N3 P S',S' N3 D1 P M2 R3 G3 M2 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,69,Dhatuvardhani,Dhwithiyapanchamam,S R3 G3 M2 P N3 P S',S' N3 D1 P M2 R3 M2 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,69,Dhatuvardhani,Sumukham,S R3 M2 N3 S',S' N3 M2 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,69,Dhatuvardhani,Tavapriyā,S R3 M2 P N3 S',S' N3 D1 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,70,Nasikabhushani,Nasikabhushani,S R3 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,70,Nasikabhushani,Marakathagowla,S R3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,70,Nasikabhushani,Nāsāmani,S R3 S M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,70,Nasikabhushani,Thilakamandāri,S R3 M2 P D2 S',S' D2 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,71,Kosalam,Kosalam,S R3 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,71,Kosalam,Ayodhya,S G3 M2 P N3 S',S' D2 P M2 G3 M2 R3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,71,Kosalam,Kusumākaram,S R3 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Melakarta,72,Rasikapriya,Rasikapriya,S R3 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,72,Rasikapriya,Hamsagiri,S R3 G3 M2 P D3 N3 S',S' N3 P D3 N3 P M2 G3 S,Yes,No,,raga-of-the-week-repo-list.csv
+Janya,72,Rasikapriya,Ishtārangini,S R3 M2 P N3 S',S' N3 D3 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv
+Janya,72,Rasikapriya,Nāgagiri,S G3 M2 P D2 P S',S' D2 P M2 G3 S,Yes,Yes,,raga-of-the-week-repo-list.csv
+Janya,72,Rasikapriya,Rasamanjari,S R3 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R3 S,No,No,,raga-of-the-week-repo-list.csv

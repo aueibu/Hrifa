@@ -194,4 +194,13 @@ export const applets: Applet[] = [
     description:
       'Construct tangent lines from segmented arcs, derive ratio and rotation sets from the geometry, and generate Fokker periodicity blocks with sonification.',
   },
+  {
+    title: 'Raga Explorer',
+    href: '/raga-explorer',
+    category: 'sound',
+    status: 'experimental',
+    runtime: 'Static browser app',
+    description:
+      'Browse 6,000+ Carnatic ragas by clicking pitches or searching, see each one on a chromatic ring and a Sa-to-Sa rung ladder, follow its melakarta family, twins, and variants, and preview it by ear with an optional tanpura drone.',
+  },
 ];

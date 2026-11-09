@@ -1,0 +1,19 @@
+﻿Source List,CSV Row,Raga Name,Change,Before,After,Detail
+MUSICLEGATO,24,Bhanumati,note added (mela kept),melakarta 22,melakarta 22,the page says 4; the scale fits 22
+MUSICLEGATO,25,Rasali,parent melakarta changed,melakarta 22,melakarta 4,Bhashanga Yes -> No
+MUSICLEGATO,26,VanaVali,parent melakarta changed,melakarta 22,melakarta 4,Bhashanga Yes -> No
+MUSICLEGATO,841,Shivashakti,row added,,S G2 M1 D2 S / S N2 D2 M1 G2 S,Vakra No; Bhashanga No
+MUSICLEGATO,82,Kalkada,variant 1 of 2 restored,aroha: S R1 G3 P D1 N1 S | avaroha: S R1 G3 P D1 S S N1 D1 P G3 R1 S,aroha: S R1 G3 P D1 N1 S | avaroha: S N1 D1 P G3 R1 S,
+MUSICLEGATO,842,Kalkada,variant 2 of 2 added,,aroha: S R1 G3 P D1 S | avaroha: S N1 D1 P G3 R1 S,
+MUSICLEGATO,167,Poorna Panchamam,page split restored,aroha: P M1 S R1 S M1 P | avaroha: D2 D2 P M1 G3 R1 S N2,aroha: P M1 S R1 S M1 P D2 | avaroha: D2 P M1 G3 R1 S N2,Vakra Yes -> Yes
+MUSICLEGATO,203,Indughantarava,page split restored,aroha: S G2 M1 P D1 P N2 | avaroha: D1 P M1 G2 R2 S N2,aroha: S G2 M1 P D1 P | avaroha: N2 D1 P M1 G2 R2 S N2,Vakra Yes -> Yes
+MUSICLEGATO,258,Darbar,page split restored,aroha: S R2 M1 P D2 N2 S R2 S | avaroha: N2 S D2 P M1 R2 G2 G2 R2 S,aroha: S R2 M1 P D2 N2 S | avaroha: R2 S N2 S D2 P M1 R2 G2 G2 R2 S,Vakra Yes -> Yes
+MUSICLEGATO,273,Kapijingala,page split restored,aroha: S N2 S R2 G2 M1 M1 | avaroha: G2 R2 S N2 D2 N2 S,aroha: S N2 S R2 G2 M1 | avaroha: M1 G2 R2 S N2 D2 N2 S,Vakra Yes -> Yes
+MUSICLEGATO,395,Jinjothi,page split restored,aroha: D2 S R2 G3 M1 P D2 N2 D2 | avaroha: P M1 G3 R2 S N2 D2 P D2 S,aroha: D2 S R2 G3 M1 P D2 N2 | avaroha: D2 P M1 G3 R2 S N2 D2 P D2 S,Vakra Yes -> Yes
+MUSICLEGATO,443,Chenjuruthi,page split restored,aroha: D2 S R2 G3 M1 P D2 N2 N2 D2 | avaroha: P M1 G3 R2 S N2 D2 P D2 S,aroha: D2 S R2 G3 M1 P D2 N2 | avaroha: N2 D2 P M1 G3 R2 S N2 D2 P D2 S,Vakra Yes -> Yes
+MUSICLEGATO,448,Sindhu Suruti,page split restored,aroha: S R2 M1 P N2 S | avaroha: S N2 S S N2 D2 P M1 R2 M1 G3 R2 S,aroha: S R2 M1 P N2 S S N2 S | avaroha: S N2 D2 P M1 R2 M1 G3 R2 S,Vakra Yes -> Yes
+MUSICLEGATO,507,ShankaraMohana,page split restored,aroha: S R2 G3 P N3 D2 S | avaroha: N3 S D2 P G3 R2 S,aroha: S R2 G3 P N3 D2 S N3 | avaroha: S D2 P G3 R2 S,Vakra Yes -> Yes
+MUSICLEGATO,549,Shokavarali,page split restored,aroha: S G3 D2 N3 D2 | avaroha: P M1 G3 R3 S,aroha: S G3 D2 N3 | avaroha: D2 P M1 G3 R3 S,Vakra Yes -> No
+MUSICLEGATO,569,Gomati,page split restored,aroha: S R1 G1 M2 P D3 | avaroha: N3 P M2 G1 R1 S,aroha: S R1 G1 M2 P D3 N3 | avaroha: P M2 G1 R1 S,Vakra No -> No
+MUSICLEGATO,617,Puriya Dhanashree,page split restored,aroha: N3 R1 G3 M2 P D1 P N3 S R1 | avaroha: N3 D1 P M2 G3 M2 R1 G3 R1 S,aroha: N3 R1 G3 M2 P D1 P N3 S | avaroha: R1 N3 D1 P M2 G3 M2 R1 G3 R1 S,Vakra Yes -> Yes
+MUSICLEGATO,653,Garigadya,page split restored,aroha: N2 S G2 M2 P D1 | avaroha: N2 D1 P M2 G2 R2 S,aroha: N2 S G2 M2 P D1 N2 | avaroha: D1 P M2 G2 R2 S,Vakra No -> No

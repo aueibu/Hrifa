@@ -1,0 +1,982 @@
+Row Type,Melakarta Number,Raga Name,Aroha,Avaroha,Needs Review
+Melakarta (primary name),1,Kanakāngi,S R1 G1 M1 P D1 N1 S',S' N1 D1 P M1 G1 R1 S,N
+Janya,1,Kanakāmbari,S R1 M1 P D1 S',S' N1 D1 P M1 G1 R1 S,N
+Janya,1,Kanakatodi,S R1 G1 M1 P D1 S',S' N1 D1 P M1 R1 S,N
+Janya,1,Mādhavapriyā,S R1 G1 P D1 N1 S',S' N1 D1 P G1 R1 S,N
+Janya,1,Karnātaka Shuddha Sāveri,S R1 M1 P D1 S',S' D1 P M1 R1 S,N
+Janya,1,Latantapriya,S R1 G1 M1 P D1 S',S' D1 P M1 R1 S,N
+Janya,1,Lavangi(Raga created by M. Balamuralikrishna),S R1 M1 D1 S',S' D1 M1 R1 S,N
+Janya,1,Megha,S R1 M1 P D1 N1 D1 P S',S' N1 D1 P M1 R1 S,N
+Janya,1,Rishabhavilāsa,S R1 M1 P D1 S',S' D1 P M1 R1 M1 R1 S,N
+Janya,1,Sarvashree,S M1 P S',S' P M1 S,N
+Janya,1,Suddha Mukhāri,S R1 M1 P D1 S',S' N1 D1 P M1 G1 R1 S,N
+Janya,1,Tatillatika,S R1 M1 P D1 S',S' D1 P M1 R1 S,N
+Janya,1,Vāgeeshwari,S R1 G1 M1 P D1 S',S' D1 M1 P G1 R1 S,N
+Melakarta (primary name),2,Ratnāngi,S R1 G1 M1 P D1 N2 S',S' N2 D1 P M1 G1 R1 S,N
+Janya,2,Phenadhyuti,S R1 M1 P D1 P N2 S',S' N2 D1 P M1 G1 R1 S,N
+Janya,2,Ganamukhāri,S R1 M1 D1 S',S' N2 D1 M1 R1 S,N
+Janya,2,Ratnavarāli,S R1 M1 P N2 D1 S',S' N2 P M1 R1 G1 R1 S,N
+Janya,2,Revati,S R1 M1 P N2 S',S' N2 P M1 R1 S,N
+Janya,2,Shreemani,S R1 G1 P D1 S',S' N2 D1 P G1 R1 S,N
+Janya,2,Shreemati,S R1 G1 P D1 S',S' N2 D1 P G1 R1 S,N
+Janya,2,Svadhya,S R1 M1 P N2 S',S' N2 D1 P M1 R1 S,N
+Melakarta (primary name),3,Gānamūrti,S R1 G1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,N
+Janya,3,Gānasāmavarāli,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,N
+Janya,3,Bhinnapanchamam,S R1 G1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,N
+Janya,3,Bhınyyapancħatmam,S R1 G1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,N
+Janya,3,Nādharanjani,S R1 M1 D1 N3 S',S' N3 D1 M1 G1 R1 S,N
+Janya,3,Poorvavarāli,S R1 M1 P D1 S',S' N3 D1 P M1 G1 R1 S,N
+Janya,3,Sāmavarāli,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 G1 S,N
+Melakarta (primary name),4,Vanaspati,S R1 G1 M1 P D2 N2 S',S' N2 D2 P M1 G1 R1 S,N
+Janya,4,Bhānumati,N2 S M1 P N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,4,Rasāli,S R1 M1 P D2 N2 S',S' D2 P M1 R1 S,N
+Janya,4,Vanāvali,S R1 M1 P D2 N2 S',S' D2 P M1 R1 S,N
+Janya,4,Vittalapriya,S R1 M1 P D2 S',S' D2 P M1 R1 S,N
+Melakarta (primary name),5,Mānavati,S R1 G1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,N
+Janya,5,Manoranjani,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,N
+Janya,5,Ghanashyāmalā,S G1 M1 P D2 S',S' D2 N3 P M1 G1 R1 S,N
+Janya,5,Kunjari,S R1 M1 P D2 P S',S' N3 D2 P M1 G1 R1 S,N
+Melakarta (primary name),6,Tānarūpi,S R1 G1 M1 P D3 N3 S',S' N3 D3 P M1 G1 R1 S,N
+Janya,6,Tanukeerti,S R1 M1 P N3 S',S' N3 D3 N3 P M1 G1 M1 R1 S,N
+Melakarta (primary name),7,Senāvati,S R1 G2 M1 P D1 N1 S',S' N1 D1 P M1 G2 R1 S,N
+Janya,7,Senāgrani,S R1 G2 R1 M1 G2 M1 P N1 D1 S',S' N1 D1 P M1 G2 M1 G2 R1 S,N
+Janya,7,Bhogi,S G2 M1 P D1 N1 D1 S',S' N1 D1 P M1 G2 S,N
+Janya,7,Chitthakarshani,S R1 G2 M1 D1 S',S' D1 M1 G2 R1 S,N
+Janya,7,Navarasa Mālā,S R1 G2 M1 P D1 S',S' N1 D1 P M1 R1 S,N
+Janya,7,Sindhu Gowri,S R1 G2 M1 P D1 N1 S',S' N1 D1 M1 G2 M1 R1 S,N
+Melakarta (primary name),8,Hanumatodi,S R1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Janatodi,S R1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Āhiri,S R1 S G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,N
+Janya,8,Amrita Dhanyāsi,S R1 G2 M1 P N2 S',S' N2 P M1 G2 R1 S,N
+Janya,8,Asāveri,S R1 M1 P D1 S',S' N2 S P D1 M1 P R1 G2 R1 S,N
+Janya,8,Bhānuchandrika,S M1 D1 N2 S',S' N2 D1 M1 G1 S,N
+Janya,8,Bhadratodi,S R1 G2 M1 D1 S',S' N2 D1 P G2 S,N
+Janya,8,Bhoopālam,S R1 G2 P D1 S',S' D1 P G2 R1 S,N
+Janya,8,Chandrikatodi,S G2 M1 P D1 S',S' D1 P M1 G2 S,N
+Janya,8,Deshikatodi,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Dhanyāsi,S G2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Divyamālati,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 S,N
+Janya,8,Ghanta,S G2 R2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Kalāsāveri,S R1 G2 P N2 S',S' N2 P G2 R1 S,N
+Janya,8,Kanakasāveri,S R1 M1 P D1 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Nāgavarāli,S R1 G2 M1 P M1 D1 N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Prabhupriya,S G2 M1 P D1 S',S' D1 P M1 G2 S,N
+Janya,8,Punnāgatodi,N1 S R1 G2 M1 P,P M1 G2 R1 S N2 D1,N
+Janya,8,Punnagavarali,N2 S R1 G2 M1 P D1 N2,N2 D1 P M1 G2 R1 S N2,N
+Janya,8,Shravanamallika,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,8,Sowjanya,S R1 M1 D1 S',S' D1 M1 R1 S,N
+Janya,8,Shuddha Seemantini,S R1 G2 M1 P D1 S',S' D1 P M1 G2 R1 S,N
+Janya,8,Shuddha Todi,S R1 G2 M1 D1 N2 S',S' N2 D1 M1 G2 R1 S,N
+Janya,8,Sindhubhairavi,S R2 G2 M1 G2 P D1 N2 S,N2 D1 P M1 G2 R1 S N2 S,N
+Janya,8,Srimati,S G2 R1 G2 M1 P D1 P D2 N2 S',S' N2 D1 P M1 P M1 G2 R1 S,N
+Janya,8,Swarnamalli,S G2 M1 P D1 N1 S',S' N2 D1 P M1 G2 R1 S,N
+Melakarta (primary name),9,Dhenukā,S R1 G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 R1 S,N
+Janya,9,Dhunibhinnashadjam,S R1 G2 R1 P M1 P N3 S',S' D1 P M1 G2 R1 S,N
+Janya,9,Bhinnashadjam,S R1 G2 R1 P M1 P N3 S',S' D1 P M1 G2 R1 S,N
+Janya,9,Mohananāta,S G2 M1 P D1 P M1 P N3 S',S' N3 P D1 P M1 G2 S,N
+Janya,9,Udayaravichandrika,S G2 M1 P N3 S',S' N3 P M1 G2 S,N
+Janya,9,Vasanthatodi,S R1 G2 M1 D1 N3 S',S' N3 D1 M1 R1 S,N
+Melakarta (primary name),10,Nātakapriyā,S R1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R1 S,N
+Janya,10,Natābharanam,S R1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R1 S,N
+Janya,10,Alankārapriya,S R1 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R1 S,N
+Janya,10,Bhāgyashabari,S R1 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R1 S,N
+Janya,10,Deeparamu,S R1 G2 M1 P D2 N2 S',S' N2 D2 N2 P M1 G2 R1 S,N
+Janya,10,Gunāvati,S R1 M1 P D2 S,S D2 P M1 R1 S,N
+Janya,10,Hindoladeshikam,S M1 R1 G2 M1 P D2 N2 S',S' P N2 D2 M1 G2 R1 S,N
+Janya,10,Kanakadri,S R1 G2 P D2 S',S' N2 D2 P M1 G2 R1 S,N
+Janya,10,Mātangakāmini,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 S,N
+Janya,10,Nātyadhārana,S R1 M1 P D2 S',S' N2 D2 P M1 R1 S,N
+Janya,10,Niranjana,S R1 G2 M1 P D2 S',S' N2 D2 P M1 G2 R1 S,N
+Janya,10,Shānthabhāshini,S R1 G2 M1 P D2 S',S' N2 D2 P M1 S,N
+Janya,10,Shivashakti,S G2 M1 D2 S',S' N2 D2 M1 G2 S,N
+Melakarta (primary name),11,Kokilapriyā,S R1 G2 M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,N
+Janya,11,Kokilāravam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G2 R2 S,N
+Janya,11,Bhimsen (Raga created by Mahesh Mahadev),S,S' N3 D2 P M1 G2 R1 S,N
+Janya,11,Bhakthirasa (Raga created by Rishabh Jagadeesh),S,S' N3 P M1 G2 S,N
+Janya,11,Chitramani,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,N
+Janya,11,Jnānachintāmani,S R1 M1 D2 N3 S',S' N3 D2 P M1 R1 S,N
+Janya,11,Kowmāri,S R1 G2 M1 P D2 S',S' N3 D2 P M1 G2 R1 S,N
+Janya,11,Shuddha Lalitha,S P M1 D2 N3 S',S' N3 S D2 P M1 G2 R1 S,N
+Janya,11,Vardhani,S G2 M1 P M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,N
+Janya,11,Vasantamalli,S G2 M1 P N3 S',S' D2 P M1 G2 S,N
+Janya,11,Vasantanārāyani,S R1 G2 M1 P S',S' N3 D2 P M1 G2 R1 S,N
+Melakarta (primary name),12,Rūpavati,S R1 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R1 S,N
+Janya,12,Rowpyanaka,S M1 P D3 N3 S',S' N3 P M1 G2 R1 S,N
+Janya,12,Shyāmakalyāni,S M1 G2 M1 P D3 N3 S',S' N3 P D3 N3 P M1 G2 R1 S,N
+Melakarta (primary name),13,Gāyakapriyā,S R1 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R1 S,N
+Janya,13,Geya Hejjajji,S R1 M1 G3 M1 P D1 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,13,Hejjajji,S R1 G3 M1 P D1 S',S' N1 D1 P M1 G3 R1 S,N
+Janya,13,Kalākānti,S R1 G3 M1 D1 N1 S',S' N1 D1 P G3 R1 S,N
+Janya,13,Kalkada,S R1 G3 P D1 N1 S,S' N1 D1 P G3 R1 S,N
+Janya,13,Kalpanadhārini,S G3 M1 P D1 S',S' N1 D1 P M1 G3 R1 S,N
+Melakarta (primary name),14,Vakuḷābharaṇam,S R1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,N
+Janya,14,Āhiri,S R1 S G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,N
+Janya,14,Vātee Vasantabhairavi,S R1 G3 M1 D1 N2 S',S' N2 D1 M1 G3 R1 S,N
+Janya,14,Amudhasurabhi,S M1 G3 M1 P D1 S',S' N2 D1 P M1 R1 S,N
+Janya,14,Devipriya,S G3 P N2 S',S' N2 D1 P M1 G3 R1 S,N
+Janya,14,Kalindaja,S R1 G3 M1 P N2 S',S' N2 P M1 G3 R1 S,N
+Janya,14,Kuvalayabharanam,S R1 G3 M1 D1 N1 S',S' N1 D1 M1 G3 R1 S,N
+Janya,14,Mukthipradayini (Raga created by Mahesh Mahadev)[4],S R1 G3 P N2 S',S' N2 P D1 P G3 R1 S,N
+Janya,14,Sallapa,S G3 M1 D1 N2 S',S' N2 D1 M1 G3 S,N
+Janya,14,Soma,S R1 P M1 D1 N2 S',S' N2 D1 M1 P M1 G3 R1 S,N
+Janya,14,Sūryā,S G3 M1 D1 N2 S',S' N2 D1 M1 G3 S,N
+Janya,14,Shuddha Kāmbhoji,S G3 R1 M1 P N2 S',S' N2 P M1 G3 R1 S,N
+Janya,14,Vasantabhairavi,S R1 G3 M1 D1 N2 S',S' N2 D1 M1 P M1 G3 R1 S,N
+Janya,14,Vasanta Mukhāri,S M1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,N
+Janya,14,Vijayollāsini,S R1 G3 M1 P M1 D1 N2 S',S' N2 D1 P M1 G3 R1 S,N
+Melakarta (primary name),15,Māyāmāḻavagouḻai,S R1 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Ardhradesi,S R1 G3 M1 P D1 N3 S',S' D1 P M1 G3 R1 S,N
+Janya,15,Bhāvini,S G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 S,N
+Janya,15,Bibhās {Hindustani},S R1 G3 P D1 S',S' D1 P M1 R1 S,N
+Janya,15,Bowli,S R1 G3 P D1 S',S' N3 D1 P G3 R1 S,N
+Janya,15,Bowli Rāmakriya,S R1 G3 P D1 S',S' N3 P D1 P M1 G3 R1 S,N
+Janya,15,Chāruvardhani,S R1 M1 P D1 N3 S',S' D1 P M1 G3 R1 S,N
+Janya,15,Chāyagowla,S R1 M1 G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Chandrachooda,S M1 G3 M1 P D1 S',S' N3 D1 P M1 G3 S,N
+Janya,15,Deshyagowla,S R1 P D1 N3 S',S' N3 D1 P R1 S,N
+Janya,15,Devaranji,S M1 P D1 P N3 S',S' N3 D1 P M1 S,N
+Janya,15,Ekakshari,S R1 G3 M1 P D1 N3 S',S' N1 P M1 R1 G3 M1 R1 S,N
+Janya,15,Ghanasindhu,S M1 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Gowla,S R1 M1 P N3 S',S' N3 P M1 R1 G3 M1 R1 S,N
+Janya,15,Gowlipantu,S R1 M1 P N3 S',S' N3 D1 P M1 D1 M1 G3 R1 S,N
+Janya,15,Gowri,S R1 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Gummakāmbhoji,S R1 G3 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Gundakriya,S R1 M1 P N3 S',S' N3 P D1 P M1 G3 R1 S,N
+Janya,15,Gurjari,S R1 G3 M1 P D1 N3 S',S' D1 N3 P M1 G3 R1 S,N
+Janya,15,Jaganmohini,S G3 M1 P N3 S',S' N3 P M1 G3 R1 S,N
+Janya,15,Kalyānakesari,S R1 G3 P D1 S',S' D1 P G3 R1 S,N
+Janya,15,Kannadabangāla,S R1 M1 G3 M1 D1 P D1 S',S' D1 P M1 G3 R1 S,N
+Janya,15,Karnātaka Sāranga,S R1 G3 M1 P D1 N3 S',S' N3 D1 P M1 R1 S,N
+Janya,15,Lalitā,S R1 G3 M1 D1 N3 S',S' N3 D1 M1 G3 R1 S,N
+Janya,15,Lalitapanchamam,S R1 G3 M1 D1 N3 S',S' N3 D1 M1 P M1 G3 R1 S,N
+Janya,15,Mālavakurinji,S G3 P D1 N3 S',S' N3 D1 M1 R1 S,N
+Janya,15,Mālavapanchamam,S R1 G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Mārgadesi,S R1 G3 R1 G3 D1 M1 P D1 S',S' D1 P M1 G3 R1 S,N
+Janya,15,Malahari,S R1 M1 P D1 S',S' D1 P M1 G3 R1 S,N
+Janya,15,Mallikavasantam,S G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Mangalakaishiki,S R1 M1 G3 D1 P S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Manolayam,S R1 M1 P D1 S',S' N3 D1 P M1 R1 S,N
+Janya,15,Maruva,S G3 M1 D1 N3 S',S' N3 D1 P G3 M1 G3 R1 S R1 G3 R1 S,N
+Janya,15,Mechabowli,S R1 G3 P D1 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Megharanjani,S R1 G3 M1 N3 S',S' N3 M1 G3 R1 S,N
+Janya,15,Nadanamakriya,S R1 G3 M1 P D1 N3,N3 D1 P M1 G3 R1 S N3,N
+Janya,15,Pādi,S R1 M1 P N3 S',S' N3 P D1 P M1 R1 S,N
+Janya,15,Pharaju (Paras) {Hindustani},S G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Poornalalita,S R1 G3 M1 P D1 S',S' D1 P M1 G3 R1 S,N
+Janya,15,Poorvi,S R1 G3 M1 D1 N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Poorvikavasanta,S M1 G3 M1 D N3 S',S' N3 D1 M1 P M1 G3 R1 S,N
+Janya,15,Pratāpadhanyāsi,S G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Pratāparanjani,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Puranirmai,S R1 G3 P D1 S',S' N3 D1 P G3 R1 S,N
+Janya,15,Rāmakali,S R1 G3 P D1 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Rāmakriya,S G3 M1 P D1 N3 S',S' N3 P D1 P M1 G3 R1 S,N
+Janya,15,Revagupti,S R1 G3 P D1 S',S' D1 P G3 R1 S,N
+Janya,15,Rukhmāmbari,S R1 G3 P N3 S',S' N3 P G3 R1 S,N
+Janya,15,Sāmantadeepara,S R1 G3 M1 P N3 S',S' N3 P M1 G3 R1 S,N
+Janya,15,Sāranga Nāta,S R1 M1 P D1 S',S' N3 S D1 P M1 G3 R1 S,N
+Janya,15,Sāveri,S R1 M1 P D1 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Salanganāta,S R1 M1 P D1 S',S' D1 P G3 R1 S,N
+Janya,15,Satyāvati,S G3 R1 G3 P D1 S',S' N3 D1 N3 P D1 P G3 R1 S,N
+Janya,15,Sindhu Rāmakriya,S G3 M1 P D1 N3 S',S' N3 P M1 G3 R1 G3 S,N
+Janya,15,Surasindhu,S M1 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 R1 G3 R1 S,N
+Janya,15,Tārakagowla,S G3 M1 D1 N3 S',S' N3 D1 M1 G3 S,N
+Janya,15,Takka,S R1 S G3 M1 G3 P M1 D1 N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,15,Ushāvali,S R1 M1 P D1 S',S' N3 D1 M1 P M1 R1 S,N
+Janya,15,Vishārada,S R1 M1 P N3 S',S' N3 P M1 R1 S,N
+Melakarta (primary name),16,Chakravākam,S R1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,N
+Janya,16,Toyavegavāhini,S R1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,N
+Janya,16,Āhir Bhairavi,S R1 G3 M1 P N2 D2 M1 P D2 S',S' N2 D2 P M1 P G3 R1 S,N
+Janya,16,Bhakthapriya,S G3 M1 P D2 N2 S',S' N2 D2 P M1 R1 M1 G3 S,N
+Janya,16,Bhujāngini,S R1 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R1 S,N
+Janya,16,Bindhumālini,S G3 R1 G3 M1 P N2 S',S' N2 S D2 P G3 M1 P G3 R1 S,N
+Janya,16,Chakranārāyani,S R1 M1 P D2 N2 S',S' N2 D2 P M1 R1 S,N
+Janya,16,Ghoshini,S M1 G3 M1 P D2 N2 D2 S',S' N2 D2 P M1 G3 R1 S,N
+Janya,16,Guhapriya,S R1 G3 M1 P P M1 D2 N2 S',S' N2 D2 P M1 G3 S R1 S,N
+Janya,16,Kalāvati,S R1 M1 P D2 S',S' D2 P M1 G3 S R1 S,N
+Janya,16,Kokilā,S R1 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R1 S,N
+Janya,16,Malayamārutam,S R1 G3 P D2 N2 S',S' N2 D2 P G3 R1 S,N
+Janya,16,Mukthāngi,S R1 G3 M1 P D2 N2 S',S' D2 N2 P M1 G3 R1 S,N
+Janya,16,Mukundamālini,S R1 G2 P D2 S',S' D2 P G2 R1 S,N
+Janya,16,Poornapanchamam,P M1 S R1 S M1 P D2,D2 P M1 G3 R1 S N2,N
+Janya,16,Pravritti,S G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,N
+Janya,16,Rāgamanjari,S R1 M1 P D2 S',S' N2 D2 M1 R1 S,N
+Janya,16,Rasikaranjani,S R1 G3 P S',S' D2 P G3 R1 S,N
+Janya,16,Rudra Panchami,S G3 M1,S' N3 D2,N
+Janya,16,Samya (Raga created by Mahesh Mahadev)[5],S R1 G3 P N2 S',S' N2 P M1 G3 R1 S,N
+Janya,16,Shree Nabhomārgini,S G3 M1 P D2 N2 S',S' D2 P M1 G3 R1 S,N
+Janya,16,Shyāmali,S G3 P D2 N2 S',S' N2 D2 P G3 R1 S,N
+Janya,16,Subhāshini,S D2 N2 D R1 G3 M1 P,M1 G3 R1 S N2 D2 N2 S,N
+Janya,16,Valaji,S G3 P D2 N2 S',S' N2 D2 P G3 S,N
+Janya,16,Veenadhāri,S R1 G3 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,N
+Janya,16,Vegavāhini,S R1 G3 M1 D2 N2 D2 S',S' N2 D2 P M1 G3 R1 S,N
+Melakarta (primary name),17,Sūryakāntam,S R1 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 S,N
+Janya,17,Chāyāvathi,S R1 G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R1 S,N
+Janya,17,Bhairavam,S R1 G3 M1 P D2 N3 S',S' D2 P M1 G3 R1 S,N
+Janya,17,Haridarpa,S R1 G3 M1 P D2 N3 S',S' D2 P M1 R1 S,N
+Janya,17,Jayasamvardhani,S G3 M1 P D2 N3 S',S' N3 P M1 G3 R1 S,N
+Janya,17,Jeevantikā,S R1 M1 P D2 N3 S',S' N3 D2 P M1 R1 S,N
+Janya,17,Kusumamāruta,S M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 G3 M1 S,N
+Janya,17,Nāgachooḍāmani,S R1 G3 M1 P D2 S',S' D2 N2 D2 P M1 G3 M1 R2 S,N
+Janya,17,Rohini,S R1 G3 M1 M2 D2 N3 S',S' N3 D2 M2 M1 G3 R1 S,N
+Janya,17,Sāmakannada,S R2 M1 G2 M1 P D2 N3 S',S' N3 D2 P M1 R1 S,N
+Janya,17,Sowrāshtram,S R1 G3 M1 P M1 D2 N3 S',S' N3 D2 N2 D2 P M1 G3 R1 S,N
+Janya,17,Suddha Gowla,S R1 M1 P N3 S',S' N3 P M1 R1 S,N
+Janya,17,Supradeepam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G3 M1 R1 S,N
+Janya,17,Vasanthā,S M1 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R1 S,N
+Melakarta (primary name),18,Hātakāmbari,S R1 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R1 S,N
+Janya,18,Jayashuddhamālavi,S R1 G3 M1 P N3 S',S' N3 D3 P M1 G3 R1 S,N
+Janya,18,Hamsanantini,S G3 M1 P S',S' P M1 G3 R1 S,N
+Janya,18,Kallola,S P D3 N3 S',S' N3 D3 P M1 G3 R1 S,N
+Janya,18,Simhala,S R1 G3 M1 P D3 N3 S',S' N3 D3 N3 P M1 G3 R1 S,N
+Melakarta (primary name),19,Jhankāradhvani,S R2 G2 M1 P D1 N1 S',S' N1 D1 P M1 G2 R2 S,N
+Janya,19,Jhankārabhramari,S R2 G2 M1 P D1 N1 D1 P D1 S,S N1 D1 P M1 G2 R2 S,N
+Janya,19,Bhārati,S R2 G2 M1 P S',S' P M1 G2 R2 S,N
+Janya,19,Chittaranjani,S R2 G2 M1 P D1 N1,N1 D1 P M1 G2 R2 S,N
+Janya,19,Jalmika,S R2 G1 M1 P D1 N1 S',S' N1 D1 P M1 G1 S R2 S,N
+Janya,19,Lalitabhairavi,S G2 M1 P D1 S',S' N1 D1 P M1 G2 R2 S,N
+Janya,19,Poornalalita,S G2 R2 M1 P S,S N1 D1 P M1 G2 R2 S,N
+Melakarta (primary name),20,Natabhairavi,S R2 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Nārērētigowla,S G2 R2 G2 M1 N2 D1 M1 N2 N2 S',S' N2 D1 M1 G2 M1 P M1 G2 R2 S,N
+Janya,20,Abheri (Dikshitar School),S M1 G2 M1 P P S',S' N2 D2 P M1 G2 R2 S,N
+Janya,20,Anandabhairavi,S G2 R2 G2 M1 P D2 P S',S' N2 D2 P M1 G2 R2 S,N
+Janya,20,Amrithavāhini,S R2 M1 P D1 N2 S',S' N2 D1 M1 G2 R2 S,N
+Janya,20,Bhairavi,S G2 R2 G2 M1 P D2 N2 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Bhuvanagāndhāri,S R2 M1 P N2 S',S' N2 D1 P M1 G2 S,N
+Janya,20,Chapagantarva,S G2 M1 P N2,D1 M1 G2 R2 S N2,N
+Janya,20,Darbāri Kānada,N2 S R2 G2 R2 S M1 P D1 N2 S',S' D1 N2 P M1 P G2 M1 R2 S,N
+Janya,20,Devakriya,S R2 M1 P N2 S',S' N2 D1 N2 P M1 G2 R2 S,N
+Janya,20,Dhanashree,N2 S G2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,20,Dharmaprakāshini,S R2 M1 P N2 S',S' N2 D1 M1 G2 R2 S,N
+Janya,20,Dilipika Vasantha,S G2 M1 P D1 P N2 S',S' D1 P M1 R2 S,N
+Janya,20,Divyagāndhāri,S G2 M1 P D1 N2 S',S' N2 P M1 G2 S,N
+Janya,20,Gopikāvasantam,S R2 G2 M1 P D1 P N2,S N2 D1 P M1 G2 R2 S,N
+Janya,20,Hindolam,S G2 M1 D1 N2 S',S' N2 D1 M1 G2 S,N
+Janya,20,Hindolavasanta,S G2 M1 P D1 N2 D1 S',S' N2 D1 P M1 D2 M1 G2 S,N
+Janya,20,Indughantarava,S G2 M1 P D1 P,N2 D1 P M1 G2 R2 S N2,N
+Janya,20,Jayanthashrī,S G2 M1 D1 N2 S',S' N2 D1 M1 P M1 G2 S,N
+Janya,20,Jingaḷa,S R2 G2 M1 P D1 N2 D1 P S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Jaunpuri {Hindustani},S R2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Kātyāyani,S R2 G2 P D1 S',S' D1 P G2 R2 S,N
+Janya,20,Kamakhyapriya (Raga created by Mahesh Mahadev)[6],S R2 M1 P D1 N2 S',S' N2 P M1 G2 R2 S,N
+Janya,20,Kanakavasantham,S G2 M1 P N2 D1 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Kshanika,S G2 M1 P D1 S',S' D1 P M1 G2 S,N
+Janya,20,Mānji,S R2 G2 M1 P D2 N2 S',S' N2 D1 P M1 P M1 P G2 R2 S,N
+Janya,20,Mahati cf. Mela 28&43 (Mahathi),S G2 P D1 N2 S',S' N2 P G2 R2 S,N
+Janya,20,Malkosh / Malkauns,S G2 M1 D1 N2 S',S' N2 D1 M1 G2 S,N
+Janya,20,mArgahindOLaM,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 S,N
+Janya,20,Nāgagāndhāri,S R2 M1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Navarathna Vilāsam,S R2 G2 M1 P D1 P S',S' D1 P M1 G2 M1 R2 S,N
+Janya,20,Nīlamati,S G2 M1 P D1 N2 S',S' N2 D1 M1 G2 S,N
+Janya,20,Nīlaveni,S R2 G2 M1 P D1 N2 D1 S',S' D1 P M1 G2 R2 S,N
+Janya,20,Poornashađjam,S R2 G2 M1 N2 N2 S,S' N2 P M1 G2 R2 S,N
+Janya,20,Rājarājeshwari,S R2 M1 P D1 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Sāramati,S R2 G2 M1 P D1 N2 S',S' N2 D1 M1 G2 S,N
+Janya,20,Sāranga Kāpi,S R1 P M1 R1 P R1 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,20,Sharadapriya,S R2 G2 P N2 S',S' N2 P G2 R2 S,N
+Janya,20,Shree Navarasachandrika,S R2 G2 M1 P D1 S',S' D1 P M1 G2 R2 S,N
+Janya,20,Sindhu Dhanyāsi,S G2 M1 P N2 S',S' N2 D1 M1 P M1 G2 R2 S,N
+Janya,20,Shuddha Desi,S R2 G2 R2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,20,Shuddha Sālavi,S G2 M1 P N2 S',S' N2 P M1 R2 S,N
+Janya,20,Sukumāri,S G2 M1 P N2 D1 N2 S',S' N2 P M1 G2 M1 R2 S,N
+Janya,20,Sushama (Raga created by M. Balamuralikrishna),S R2 M1 P D1 S',S' D1 P M1 R2 S,N
+Janya,20,Sutradhāri,S R2 M1 P D1 S,S D1 P M1 R2 S,N
+Janya,20,Tarkshika,S R2 M1 P N2 S',S' N2 D1 P M1 R2 G2 R2 S,N
+Janya,20,Udayarāga,S G2 M1 P N2 S',S' N2 P M1 G2 S,N
+Janya,20,Vasantavarāli,S R2 M1 P D1 S',S' N2 D1 P G2 R2 S,N
+Melakarta (primary name),21,Kīravāṇi,S R2 G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 R2 S,N
+Janya,21,Keeranāvali,S R2 G2 M1 P D1 N3 S',S' P M1 G2 R2 S,N
+Janya,21,Aymmukhan,S G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 S,N
+Janya,21,Bhānupriya,S R2 G2 D1 N3 S',S' N3 D1 G2 R2 S,N
+Janya,21,Beethovanapriya (invented by Ramesh Vinayakam[7]),'G2 'P 'N3 S R2 G2 M1 P D1,P M2 P R2 M1 G2 S,N
+Janya,21,Chandrika,S R2 G2 P D1 N3 S',S' N3 D1 P G2 R2 S,N
+Janya,21,Gaganabhoopālam,S M1 G2 M1 P D1 N3,S N3 D1 M1 G2 R2 S,N
+Janya,21,Hamsapancama,S G2 M1 P N3 D1 N3 P S',S' N3 D1 M1 G2 R2 S,N
+Janya,21,Hamsavāhini,S R2 M1 P D1 N3 S',S' N3 D1 P M1 R2 S,N
+Janya,21,Jayashree,S R2 G2 M1 P D1 N3 D1 S',S' N3 D1 P M1 G2 R2 S,N
+Janya,21,"Kadaram (Chandrakosh, Chandrakauns, Chandrakaush)",S G2 M1 D1 N3 S',S' N3 D1 M1 G2 S,N
+Janya,21,Kalyāna Vasantam,S G2 M1 D1 N3 S',S' N3 D1 P M1 G2 R2 S,N
+Janya,21,Kusumāvali,S G2 M1 P D1 S',S' N3 D1 P M1 G2 M1 R1 S,N
+Janya,21,Mādhavi,S M1 G2 M1 P D1 N3 S',S' N3 D1 P M1 S M1 G2 R1 S,N
+Janya,21,Mishramanolayam,S R2 M1 P D1 S',S' D2 D1 P M1 R2 S,N
+Janya,21,Priyadarshani,S R2 M1 D1 N3 S',S' N3 D1 M1 R2 S,N
+Janya,21,Rishipriya,S R2 G2 M1 P D1 N3 S',S' N3 P M1 G2 R2 S,N
+Janya,21,Sāmapriya,S R2 M1 P D1 S',S' D1 P M1 R2 S,N
+Janya,21,Shrothasvini,S G2 M1 P N3 S',S' N3 P M1 G2 S,N
+Janya,21,Vasanthamanohari,S R2 G2 M1 D1 N3 S',S' N3 D1 M1 G2 R2 S,N
+Melakarta (primary name),22,Kharaharapriyā,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Shree,S R2 M1 P N2 S',S' N2 P D2 N2 P M1 R2 G2 R2 S,N
+Janya,22,Andolikā,S R2 M1 P N2 S',S' N2 D2 M1 R2 S,N
+Janya,22,Abheri,S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Abhogi,S R2 G2 M1 D2 S',S' D2 M1 G2 R2 S,N
+Janya,22,Ādi Kāpi,S R2 M1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Āryamati,S R2 G2 P D2 S',S' N2 D2 P D2 M1 G2 R2 S,N
+Janya,22,Agnikopa,S G2 M1 P N2 S',S' N2 P M1 G2 R2 S,N
+Janya,22,Bālachandrika,S G2 M1 P D2 N2 S',S' N2 D2 M1 G2 R2 S,N
+Janya,22,Basant Bahār {Hindustani},S M2 P G3 M2 N3 D1 N3 S,R2 S N2 D2 P M1 G2 M1 G2 R2 S,N
+Janya,22,Bageshri,S G2 M1 D2 N2 S',S' N2 D2 M1 P D2 G2 M1 R2 S,N
+Janya,22,Bhagavatapriya,S R2 G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Bhagavathpriya,S R2 G2 M1 R2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,N
+Janya,22,Bhimpalasi {Hindustani},N2 S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Brindāvana Sāranga {Hindustani},S R2 M1 P N3 S',S' N2 P M1 R2 G2 R2 S,N
+Janya,22,Brindāvani {Hindustani},S R2 M1 P N3 S',S' N2 P M1 R2 S,N
+Janya,22,Chakrapradipta,S R2 G2 M1 P M1 D2 N2 S',S' N2 D2 M1 G2 S,N
+Janya,22,Chittaranjani,S R2 G2 M1 P D2 N2,N2 D2 P M1 G2 R2 S,N
+Janya,22,Darbar,S R2 M1 P D2 N2 S,R2 S N2 S D2 P M1 R2 G2 G2 R2 S,N
+Janya,22,Dayavati,S R2 G2 P N2 S',S' N2 P M1 G2 S,N
+Janya,22,Devāmruthavarshani,S R2 G2 M1 N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Deva Manohari,S R2 M1 P D2 N2 S',S' N2 D2 N2 P M1 R2 S,N
+Janya,22,Dhanakāpi,S R2 M1 P N2 S,S N2 D2 N2 P M1 G2 R2 S,N
+Janya,22,Dilipika,S R2 G2 M1 P N2 D2 N2 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Gowla Kannada,S R2 G2 M1 P D2 N2 S',S' N2 P M1 G2 S,N
+Janya,22,Gāra {Hindustani},S G2 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 G2 R2 S N3 S N2 D2 S,N
+Janya,22,Hamsa ābheri,S G2 P M1 P N2 S',S' N2 D2 P M1 G2 S,N
+Janya,22,Haridasapriya,S P M1 G3 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,N
+Janya,22,Harinārāyani,S R2 G2 M1 P M1 D2 N2 S',S' N2 P M1 G2 R2 S,N
+Janya,22,Hindustāni Kāpi,S R2 M1 P N2 S',S' N2 D2 N2 P M1 G2 M1 D2 P G2 R2 S N2 S,N
+Janya,22,Huseni,S R2 G2 M1 P N2 D2 N2 S,S' N2 D1 P M1 G2 R2 S,N
+Janya,22,Jatādhāri,S R2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,N
+Janya,22,Jayamanohari,S R2 G2 M1 D2 S',S' N2 D2 M1 G2 R2 S,N
+Janya,22,Jayanārāyani,S R2 G2 M1 P D2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Jayanthasena,S G2 M1 P D2 S',S' N2 D2 P M1 G2 S,N
+Janya,22,Jog {Hindustani},S G3 M1 P N2 S',S' N2 P M1 G3 M1 G2 S,N
+Janya,22,Kanadā,S R2 P G2 M1 D2 N2 S',S' N2 P M1 G2 M1 R2 S,N
+Janya,22,Kāpi,S R2 M1 P N3 S',S' N2 D2 N2 P M1 G2 R2 S,N
+Janya,22,Kāpijingala,S N2 S R2 G2 M1,M1 G2 R2 S N2 D2 N2 S,N
+Janya,22,Kalānidhi,S R2 G2 M1 S P M1 D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Kalika,S R2 G2 P D2 N2 S',S' N2 D2 P G2 R2 S,N
+Janya,22,Kannadagowla,S R2 G2 M1 P N2 S',S' N2 D2 P M1 G2 S,N
+Janya,22,Karnātaka Hindolam,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 S,N
+Janya,22,Karnātaka Kāpi,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Karnātaka Devagāndhari,S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Karnaranjani,S R2 G2 M1 G2 P D2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Kowmodaki,S R2 G2 M1 P D2 N2 S',S' D2 P G2 S,N
+Janya,22,Kowshika,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 M1 R2 S,N
+Janya,22,Lalitamanohari,S G2 M1 P D2 N2 S',S' N2 P M1 G2 R2 S,N
+Janya,22,Mādhavamanohari,S R2 G2 M1 P N2 D2 N2 S',S' N2 D2 M1 G2 R2 S,N
+Janya,22,Mālavashree,S G2 M1 P N2 D2 N2 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Māyapradeeptam,S M1 G2 M1 P D2 N2 S',S' D2 P M1 G2 R2 S,N
+Janya,22,Madhyamarāvali,S R2 G2 P D2 N2 S',S' N2 D2 P G2 R2 S,N
+Janya,22,Madhyamāvathi,S R2 M1 P N2 S',S' N2 P M1 R2 S,N
+Janya,22,Mahānandhi,S R2 G2 P D2 S',S' D2 P G2 R2 S,N
+Janya,22,Mandāmari,S R2 M1 P D2 S',S' N2 S D2 P M1 G2 R2 S,N
+Janya,22,Mangalāvathi,S R2 M1 P D2 S',S' D2 P M1 G2 R2 S,N
+Janya,22,Manirangu,S R2 M1 P N2 S',S' N2 P M1 G2 R2 S,N
+Janya,22,Manjari,S G2 R2 G2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Manohari,S G2 R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,N
+Janya,22,Manorama,S R2 G2 M1 P D1 P S',S' N2 D1 P M1 G2 R2 S,N
+Janya,22,Maruvadhanyāsi,S G2 M1 P D2 S',S' N2 D2 P M1 D2 M1 G2 R2 S,N
+Janya,22,Mishramanolayam,S R2 M1 P D1 S',S' D2 D1 P M1 R2 S,N
+Janya,22,Mishra shivaranjani,S R2 G2 P D2 S',S' D2 P G2 R2 S,N
+Janya,22,Malhar or Miyān ki Malhār {Hindustani},S R2 P M1 P N2 D2 N3 S',S' N2 P M1 P G2 M1 R2 S,N
+Janya,22,Mukhāri,S R2 M1 P N2 D2 S',S' N2 D1 P M1 G2 R2 S,N
+Janya,22,Nādachintāmani,S R2 G2 M1 N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Nādatārangini,S P M1 R2 G2 S',S' P N2 D2 P M1 G2 R2 G2 S,N
+Janya,22,Nādavarangini,S P M1 N2 D2 N2 S',S' P N2 D2 P M1 G2 R2 G2 S,N
+Janya,22,Nāgari,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G2 S,N
+Janya,22,Nāgavalli,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,N
+Janya,22,Nāyaki,S R2 M1 P D2 N2 D2 P S',S' N2 D2 P M1 R2 G2 R2 S,N
+Janya,22,Nigamagāmini,M1 G2 S G2 M1 N2 S',S' N2 M1 G2 M1 G2 S,N
+Janya,22,Nirmalāngi,S R2 M1 P N2 S',S' N2 P M1 R2 S,N
+Janya,22,Omkāri,S R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,N
+Janya,22,Panchamam,S R2 D2 P N2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Phalamanjari,S G2 M1 D2 S',S' N2 D2 P M1 G2 M1 R2 S,N
+Janya,22,Phalaranjani,S G2 M1 P M1 D2 S',S' N2 D2 P M1 G2 M1 R2 S,N
+Janya,22,Pilu(peelu) {Hindustani},N3 S G3 M1 P N3 S',S' N2 D2 P D1 P M1 G2 R2 S N3 S,N
+Janya,22,Poornakalānidhi,S G2 M1 P D2 N2 S',S' D2 P M1 G2 R2 S,N
+Janya,22,Pushpalathika,S R2 G2 M1 P N2 S',S' N2 P M1 G2 R2 S,N
+Janya,22,Ratipatipriya,S R2 G2 P N2 S',S' N2 P G2 R2 S,N
+Janya,22,Reethigowla,S G2 R2 G2 M1 N2 D2 M1 N2 N2 S',S' N2 D2 M1 G2 M1 P M1 G2 R2 S,N
+Janya,22,Rudrapriyā,S R2 G2 M1 P D2 N2 S',S' N2 P M1 G2 R2 S,N
+Janya,22,Sahāna (Original),S R2 G2 M1 P M1 D2 N2 S',S' N2 D2 P M1 G2 G2 R2 G2 R2 S,N
+Janya,22,Sālagabhairavi,S R2 M1 P D2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Sārang {Hindustani},S R2 M1 P N2 S',S' N2 P M1 R2 S,N
+Janya,22,Saindhavi,N2 D2 N2 S R2 G2 M1 P D2 N2,D2 P M1 G2 R2 S N2 D2 N2 S,N
+Janya,22,Sangrama,S R2 M1 D2 N2 P S',S' N2 D2 G2 R2 S,N
+Janya,22,Sankrāndanapriyā,S R2 G2 P D2 S',S' D2 P G2 R2 S,N
+Janya,22,Sarvachoodāmani,S R2 M1 G2 M1 P D2 N2 S',S' N2 P D2 N2 D2 P M1 G2 R2 G2 R2 S,N
+Janya,22,Shivapriyā,S R2 G2 P D2 S',S' D2 P G2 R2 S,N
+Janya,22,Shivaranjani,S R2 G2 P D2 S',S' D2 P G2 R2 S,N
+Janya,22,Shree Manohari,S G2 R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,N
+Janya,22,Shree Manoranjani,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 R2 S,N
+Janya,22,Shreeranjani,S R2 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R2 S,N
+Janya,22,Siddhasena,S G2 R2 G2 M1 P D2 S',S' N2 D2 M1 P M1 R2 G2 R2 S,N
+Janya,22,Suddha Bangāla,S R2 M1 P D2 S',S' D2 P M1 R2 G2 R2 S,N
+Janya,22,Suddha Bhairavi,S G2 M1 P N2 D2 S',S' N2 D2 M1 G2 R2 S,N
+Janya,22,Suddha Dhanyāsi,S G2 M1 P N2 S',S' N2 P M1 G2 S,N
+Janya,22,Suddha Hindolam (Varamu),S G2 M1 D2 N2 S',S' N2 D2 M1 G2 S,N
+Janya,22,Suddha Manohari,S R2 G2 M1 P D2 S',S' N2 P M1 R2 G2 S,N
+Janya,22,Suddha Velāvali,S R2 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,N
+Janya,22,Sugunabhooshani,S G2 M1 P M1 D2 N2 S',S' N2 D2 P M1 D2 M1 R2 S,N
+Janya,22,Swarabhooshani,S G2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,N
+Janya,22,Swarakalānidhi,S M1 G2 M1 P D2 N2 S',S' N2 D2 N2 P M1 G2 R2 S,N
+Janya,22,Swararanjani,S R2 G2 M1 D2 N2 S',S' N2 P M1 G2 M1 R2 S,N
+Janya,22,Tavamukhāri,S R2 G2 P D2 S',S' N2 D2 P M1 G2 R2 S,N
+Janya,22,Vajrakānti,S G2 M1 P N2 S',S' N2 D1 P M1 G2 R2 S,N
+Melakarta (primary name),23,Gourimanohari,S R2 G2 M1 P D2 N3 S',S' N3 D2 P M1 G2 R2 S,N
+Janya,23,Gowrivelāvali,S R2 G2 S R2 M1 P D2 S,S' N3 D2 P M1 G2 R2 S,N
+Janya,23,Gowrishankar,S R2 G2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,N
+Janya,23,Hamsadeepika,S R2 G2 M1 D2 S',S' N3 D2 P M1 G2 R2 S,N
+Janya,23,Hrudkamali,S R2 M1 D2 N3 S',S' N3 D2 M1 R2 S,N
+Janya,23,Lavanthika,S R2 M1 P N3 S',S' N3 P M1 R2 S,N
+Janya,23,Sundaramanohari,S R2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,N
+Janya,23,Patdīp {Hindustani},N3 S G2 M1 P N3 S',S' N3 D2 P M1 P G2 M1 G2 R2 S,N
+Janya,23,Thyagaraja Mangalam,S G2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,N
+Janya,23,Vasantashree (Amba Manohari),S R2 G2 M1 D2 N3 S',S' N3 D2 M1 G2 R2 S,N
+Janya,23,Velāvali,S G2 M1 D2 N3 S,S N3 D2 P M1 G2 R2 S,N
+Melakarta (primary name),24,Varuṇapriyā,S R2 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R2 S,N
+Janya,24,Veeravasantham,S R2 G2 M1 P S',S' N3 D3 P M1 G2 R2 S,N
+Melakarta (primary name),25,Māraranjani,S R2 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R2 S,N
+Janya,25,Sharāvathi,S R2 G3 M1 P D1 N1 D1 S',S' N1 D1 P M1 G3 R2 S,N
+Janya,25,Devasalaga,S G3 P D1 N1 S',S' N1 D1 P M1 G3 R2 S,N
+Janya,25,Kesari,S R2 G3 M1 P M1 D1 P D1 S',S' D1 N1 D1 P M1 G2 R2 S,N
+Janya,25,Gayakamandini,S R2 G3 M1 P D1 S,S D1 P M1 G3 R2 S,N
+Janya,25,Rājathilaka,S R2 G3 M1 P S',S' P M1 G3 R2 S,N
+Melakarta (primary name),26,Chārukesi,S R2 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,N
+Janya,26,Tarangini,S R2 G3 P D1 N2 D1 S,S D1 P M1 G3 R2 S,N
+Janya,26,Chirswaroopi,S R2 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,N
+Janya,26,Māravi,S G3 M1 P N2 S',S' N2 D1 P M1 G3 R2 S,N
+Janya,26,Poorvadhanyāsi,S M1 G3 M1 N2 S',S' N2 D1 P M1 G3 R2 S,N
+Janya,26,Shiva Manohari,S M1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,N
+Janya,26,Shukrajyothi,S R2 G3 M1 P D1 N2 S',S' N2 P D1 M1 G3 R2 S,N
+Janya,26,Ushābharanam,S G3 M1 D1 P M1 D1 N2 S',S' N2 D1 P M1 G3 R2 G3 M1 R2 S,N
+Melakarta (primary name),27,Sarasāngi,S R2 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R2 S,N
+Janya,27,Sowrasenā,S R2 M1 P D1 S',S' N3 D1 P M1 G3 R2 S,N
+Janya,27,Haripriya,S R1 G3 M1 P S',S' N3 D1 P M1 G3 S,N
+Janya,27,Srirangapriya,S R2 G3 M1 P D1 S',S' D1 P M1 G3 R2 S,N
+Janya,27,Kamalā Manohari,S G3 M1 P N3 S',S' N3 D1 P M1 G3 S,N
+Janya,27,Madhulika,S R2 G3 M1 N3 S',S' N3 M1 G3 R2 S,N
+Janya,27,Nalinakānthi,S G3 R2 M1 P N3 S',S' N3 P M1 G3 R2 S,N
+Janya,27,Neelamani,S R2 M1 P D1 N3 S',S' N3 D1 P M1 R2 S,N
+Janya,27,Salavi,S G3 R2 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 G3 R2 S,N
+Janya,27,Sarasānana,S R2 G3 M1 D1 N3 S',S' N3 D1 M1 G3 R2 S,N
+Janya,27,Saraseeruha,S R2 G3 M1 D1 N1 D1 S',S' N1 D1 M1 G3 R2,N
+Janya,27,Simhavāhini,S G2 M1 P D1 N3 S',S' N3 D1 P M1 G3 R2 S,N
+Janya,27,Surasena,S R2 M1 P D1 S',S' N3 D1 P M1 G3 S R2 S,N
+Janya,27,Sutradhāri,S R2 M1 P D1 S',S' D1 P M1 R2 S,N
+Janya,27,Vasanthi,S R2 G3 P D1 S',S' D1 P G3 R2 S,N
+Melakarta (primary name),28,Harikāmbhōji,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Harikedāragowla,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Ambhojini,S R2 G3 M1 D2 S',S' D2 M1 G3 R2 S,N
+Janya,28,Andhali,S R2 M1 P N2 S',S' N2 P M1 R2 G3 M1 R2 S,N
+Janya,28,Aparoopam,S R2 G3 M1 P N2 D2 N2 S',S' D2 M1 G3 R2 G3 S,N
+Janya,28,Bālahamsa,S R2 M1 P D2 S',S' N2 D2 P M1 R2 M1 G3 S,N
+Janya,28,Bahudāri,S G3 M1 P D2 N2 S',S' N2 P M1 G3 S,N
+Janya,28,Chāyalagakhamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Chāyatārangini,S R2 M1 G3 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Chandrahasitham,S R2 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R2 S,N
+Janya,28,Dasharatipriya,S M1 G3 M1 P D2 N2 D2 S',S' N2 D2 P M1 G3 M1 R2 S,N
+Janya,28,Dayaranjani,S R2 M1 P D2 S',S' N2 D2 M1 G3 S,N
+Janya,28,Desh {Hindustani},S R2 M1 P N3 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Deshākshi,S R2 G3 P D2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Deshkār {Hindustani},S R2 G3 P D2 S',S' D2 P G3 R2 S,N
+Janya,28,Dwaithachintāmani,S G3 M1 D2 N2 S,S N2 D2 M1 P G3 R2 S,N
+Janya,28,Dwijāvanthi /Jujāvanthi,S R2 M1 G3 M1 P D2 S',S' N2 D2 P M1 G3 M1 R2 G2 R2 S N2 D2 N2 S,N
+Janya,28,Eeshamanohari,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 R2 M1 G3 R2 S,N
+Janya,28,Eeshaivaridhi,S R2 M1 D2 N2 S',S' N2 P M1 R2 S,N
+Janya,28,Gāndhāralola,S R2 M1 P D2 S',S' N2 D2 P M1 G3 M1 G3 R2 S,N
+Janya,28,Gāra {Hindustani},S G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 G2 R2 S N3 S N2 D2 S,N
+Janya,28,Gavati {Hindustani},S M1 P N2 S',S' D2 M1 P G3 M1 R2 N2 S,N
+Janya,28,Guhamanohari,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,N
+Janya,28,Guharanjani,S R2 S M1 P D2 N2 S',S' N2 D2 N2 P M1 G3 S,N
+Janya,28,Hamsaroopini,S R2 G3 P D2 S',S' N2 P M1 R2 S,N
+Janya,28,Haridasapriya,S P M1 G3 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,N
+Janya,28,Harikedāram,S R2 G3 M1 P D2 N2 S N2 S',S' N2 S D2 N2 D2 P M1 G3 R2 S,N
+Janya,28,Harini,S G3 M1 P D2 N2 D2 S',S' N2 S N2 D2 P M1 G3 M1 G2 R2 S,N
+Janya,28,Harithapriya,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 G3 R2 S,N
+Janya,28,Hemasāranga,S R2 G3 M1 P D2 N2 D2 S',S' P M1 G3 R2 S,N
+Janya,28,Jaijaiwanti {Hindustani},S D2 N2 R2 S R2 G3 M1 P M1 G3 M1 G3 R2 M1 P N3 S',S' N2 D2 P D2 M1 G3 M1 R2 G2 R2 S N3 S,N
+Janya,28,Jaithshree,S R2 G3 P D2 S',S' D2 P G3 R2 S,N
+Janya,28,Jana Sammodhini,S R2 G3 P D2 N2 S',S' N2 D2 P G3 R2 S,N
+Janya,28,Jayarāma,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,N
+Janya,28,Jhinjoti {Hindustani},D2 S R2 G3 M1 P D2 N2,D2 P M1 G3 R2 S N2 D2 P D2 S,N
+Janya,28,Jujahuli,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,N
+Janya,28,Kāmbhoji,S R2 G3 M1 P D2 S',S N2 D2 P M1 G3 R2 S N3 P D2 S',N
+Janya,28,Kāpi Nārāyani,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Khamāj {Hindustani},S G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Kamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Karnātaka Behāg,S R2 G3 M1 P D2 N2 S',S' N2 D2 N2 P D2 M1 G3 R2 S,N
+Janya,28,Karnātaka Devagāndhāri,S G3 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Karnātaka Khamās,S G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,N
+Janya,28,Kedāragowla,S R2 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Keshavapriyā,S R2 S M1 P D2 N2 S',S' N2 S P M1 G3 R2 S,N
+Janya,28,Kokiladhwani,S R2 G3 M1 D2 N2 D2 S',S' N2 D2 N2 P M1 G3 R2 S,N
+Janya,28,Kokilavarāli,S R2 M1 P D2 S',S' N2 D2 M1 P M1 G3 R2 G3 S,N
+Janya,28,Kunthalavarāli,S M1 P D2 N2 D2 S',S' N2 D2 P M1 S,N
+Janya,28,Mālavi,S R2 G3 M1 P N2 M1 D2 N2 S',S' N2 D2 N2 P M1 G3 M1 R2 S,N
+Janya,28,Madhurakokila,S R2 G3 D2 N2 S',S' N2 D2 G3 R2 S,N
+Janya,28,Mahathi,S G3 P N2 S',S' N2 P G3 S,N
+Janya,28,Mahuri,S R2 M1 G3 R2 G3 P D2 S',S' N2 D2 P M1 G3 R2 S R2 G3 R2 S,N
+Janya,28,Manjupriya,S G3 M1 P N2 S',S' N2 D2 P G3 R2 S,N
+Janya,28,Manoharam,S R2 G3 M1 D2 N2 S',S' N2 P M1 R2 S,N
+Janya,28,Mattakokila,S R2 P D2 N2 D2 S',S' D2 N2 D2 P R2 S,N
+Janya,28,Meghana,S M1 G3 M1 P D2 S',S' N2 D2 M1 G3 S,N
+Janya,28,Mohanam,S R2 G3 P D2 S',S' D2 P G3 R2 S,N
+Janya,28,Nādavalli,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,N
+Janya,28,Nāgaswarāvali,S G3 M1 P D2 S',S' D2 P M1 G3 S,N
+Janya,28,Nārāyanagowla,S R2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 R2 G3 S,N
+Janya,28,Nārāyani,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,N
+Janya,28,Nāttai Kurinji,S R2 G3 M1 N2 D2 N2 P D2 N2 S,S' N2 D2 M1 G3 M1 P G3 R2 S,N
+Janya,28,Nāttai Nārāyani,S R2 G3 M1 D2 N2 D2 S',S' N2 D2 P M1 G3 M1 R2 S,N
+Janya,28,Nandhkowns {Hindustani},S G3 M1 P M1 D2 N2 S',S' N2 D2 P M1 G3 S G3 S,N
+Janya,28,Narani,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,N
+Janya,28,Navarasa Kalānidhi,S R2 M1 P S N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Navarasa kannada,S G3 M1 P S',S' N2 D2 M1 G3 R2 S,N
+Janya,28,Neela,S G3 M1 D2 N2 S',S' N2 D2 M1 G3 S,N
+Janya,28,Pārsi,S R2 G3 M1 D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Parameshwarapriyā,S R2 G3 M1 P N2 S',S' N2 P M1 R2 S,N
+Janya,28,Pashupathipriyā,S R2 M1 P M1 D2 S',S' D2 M1 P R2 M1 S,N
+Janya,28,Poornakāmbhoji,S R2 G3 M1 P N2 S',S' D2 P M1 G3 R2 S,N
+Janya,28,Pratāpa Nāttai,S R2 G3 M1 D2 P D2 N3 S',S' N3 D2 P M1 G3 S,N
+Janya,28,Pratāpavarāli,S R2 M1 P D2 P S',S' D2 P M1 G3 R2 S,N
+Janya,28,Pravalajyoti,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,N
+Janya,28,Rāgapanjaramu,S R2 M1 P D2 N2 D2 S',S' N2 D2 M1 R2 S,N
+Janya,28,Rāgavinodini,S R2 G3 M1 D2 S',S' D2 M1 G3 R2 S,N
+Janya,28,Rāgeshree,S G3 M1 D2 N2 S,S' N2 D2 M1 G3 R2 S,N
+Janya,28,Ravi Chandrikā,S R2 G3 M1 D2 S',S' N2 D2 M1 G3 R2 S,N
+Janya,28,Sāvithri,S G3 M1 P N2 S',S' N2 P M1 G3 S,N
+Janya,28,Sahāna,S R2 G3 M1 P M1 D2 N2 S',S' N2 S D2 N2 D2 P M1 G3 M1 R2 G3 R2 S,N
+Janya,28,Saraswathi Manohari,S R2 G3 M1 D2 S',S' D2 N2 P M1 G3 R2 S,N
+Janya,28,Sathvamanjari,S R2 M1 P D2 S',S' N2 D2 P M1 N2 D2 M1 R2 S,N
+Janya,28,Shakunthala,S R2 G3 M1 D2 N2 S',S' N2 D2 M1 G3 S,N
+Janya,28,Shankaraharigowla,S R2 G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Shenchukāmbhoji,S P M1 D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Chenjurutti,D2 S R2 G3 M1 P D2 N2,N2 D2 P M1 G3 R2 S N2 D2 P D2 S,N
+Janya,28,Shiva Kāmbhoji,S R2 G3 M1 N2 S',S' N2 P M1 G3 R2 S,N
+Janya,28,Surutti,S R2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 P M1 R2 S,N
+Janya,28,Shyāmā,S R2 M1 P D2 S,S D2 P M1 G3 R2 S,N
+Janya,28,Simhavikrama,S R2 G3 R2 M1 P D2 P N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Sindhu Kannada,S M1 G3 M1 R2 G3 M1 P D2 P S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Sindhu Surutti,S R2 M1 P N2 S S N2 S',S' N2 D2 P M1 R2 M1 G3 R2 S,N
+Janya,28,Suddha Khamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Suddha Varāli,S R2 G3 M1 D2 N2 S',S' N2 D2 N2 P M1 G3 S,N
+Janya,28,Suddha,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,N
+Janya,28,Suddhatarangini,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Sumanapriyā,S R2 G3 M1 P D2 P S',S' D2 S P M1 G3 R2 S,N
+Janya,28,Suposhini,S R2 S M1 P N2 D2 S',S' D2 P M1 R2 M1 S,N
+Janya,28,Suvarnakriyā,S R2 G3 P N2 D2 S',S' N2 P G3 R2 S,N
+Janya,28,Swarāvali,S M1 G3 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Swaravedi,S M1 G3 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 S,N
+Janya,28,Tilakavathi,S R2 G3 M1 P D2 P S',S' D2 P M1 R2 S,N
+Janya,28,Tilang {Hindustani},S G3 M1 P N3 S',S' N2 P M1 G3 S,N
+Janya,28,Umābharanam,S R2 G3 M1 P D2 N2 S',S' N2 P M1 R2 G3 M1 R2 S,N
+Janya,28,Vaishnavi,S R2 G3 M1 P D2 S',S' D2 P M1 G3 R2 S,N
+Janya,28,Veenavadini,S R2 G3 P N2 S',S' N2 P G3 R2 S,N
+Janya,28,Vivardhani,S R2 M1 P S',S' N2 D2 P M1 G3 R2 S,N
+Janya,28,Yadukula Kāmbhoji,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 S,N
+Melakarta (primary name),29,Dhīraśankarābharaṇam,S R2 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Ānandharoopa,S R2 G3 P D2 N3 S',S' N3 D2 P G3 R2 S,N
+Janya,29,Ārabhi,S R2 M1 P D2 S,S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Atāna,S R2 M1 P N2 S',S' N2 D2 P M1 G2 M1 R2 S,N
+Janya,29,Bangāla,S R2 G3 M1 P M1 R2 P S',S' N3 P M1 R2 G3 M1 R2 S,N
+Janya,29,Begada,S G3 R2 G3 M1 P D2 P S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Behāg (Carnatic adaptation),S G3 M1 P N3 D2 N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Behāg Deshikam,S R2 G3 M1 M2 P D2 N3 S',S' N3 D2 P M2 M1 G3 R2 S,N
+Janya,29,Bihag {Original/Hindustani},N3 S G3 M1 P N3 S',S' N3 D2 P M2 P G3 M1 G3 R2 S,N
+Janya,29,Bilahari,S R2 G3 P D2 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Buddhamanohari,S R2 G3 M1 S P S',S' P M1 G3 R2 S,N
+Janya,29,Buddharanjani,S R2 G3 M1 P S',S' N3 P M1 G3 M1 R2 S,N
+Janya,29,Chāyā,S P M1 P D2 P N3 R2 S',S' D2 P M1 P D2 P G3 M1 R2 S,N
+Janya,29,Chāyashankarābharanam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 S,N
+Janya,29,Devagāndhāri,S R2 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Dharmalakhi,S M1 P D2 N3 S',S' N3 D2 P M1 S,N
+Janya,29,Dhurvanki,S R2 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Durga {Hindustani},S R2 M1 D2 P D2 S',S' D2 P M1 R2 S,N
+Janya,29,Gajagowri,S R2 M1 G3 M1 N3 P D2 S',S' N3 D2 P M1 P M1 G3 R2 S,N
+Janya,29,Garudadhvani,S R2 G3 M1 P D2 N3 S',S' D2 P G3 R2 S,N
+Janya,29,Gowdamalhār,S R2 M1 P D2 S',S' N3 M1 G3 R2 S,N
+Janya,29,Hamsadhwani,S R2 G3 P N3 S',S' N3 P G3 R2 S,N
+Janya,29,Hamsavinodhini,S R2 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R2 S,N
+Janya,29,Hemant {Hindustani},N3 S D2 N3 S G3 G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Jana Ranjani,S R2 G3 M1 P D2 P N3 S',S' D2 P M1 R2 S,N
+Janya,29,Julavu,P D2 N3 S R2 G3 M1 P,M1 G3 R2 S N3 D2 P M1,N
+Janya,29,Kamaripriyā,S G3 M1 D2 N3 S',S' N3 D2 M1 M1 G3 M1 R2 S,N
+Janya,29,Kannada,S R2 G3 M1 P M1 D2 N3 S',S' N3 S D2 P M1 G3 M1 G3 M1 R2 S,N
+Janya,29,Kathanakuthuhalam,S R2 M1 D2 N3 G3 P S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Kaushikadhwani / Bhinna shadaj {Hindustani},S G3 M1 D2 N3 S',S' N3 D2 M1 G3 S,N
+Janya,29,Kedaram,S M1 G3 M1 P N3 S',S' N3 P M1 G3 R2 S,N
+Janya,29,Kokilabhāshani,S R2 G3 M1 P D2 N3 S',S' N3 P M1 G3 M1 R2 S,N
+Janya,29,Kolahalam,S P M1 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Kurinji,S N3 S R2 G3 M1 P D2,D2 P M1 G3 R2 S N3 S,N
+Janya,29,Kusumavichithra,S G3 R2 G3 M1 P N3 P D2 N3 S',S' D2 N3 D2 M1 G3 P M1 G3 R2 S,N
+Janya,29,Kutuhala,S R2 M1 N3 D2 P N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Lahari,S R2 G3 P D2 S',S' D2 P M1 G3 R2 S,N
+Janya,29,Mānd {Hindustani},S G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Māyadravila,S R2 G3 M1 P D2 N3 S',S' N2 P M1 P G3 M1 R2 S,N
+Janya,29,Mohanadhwani,S R2 G3 P D2 S',S' N3 P D2 P G3 R2 S,N
+Janya,29,Nāgabhooshani,S R2 M1 P D2 N3 S',S' D2 P M1 R2 S,N
+Janya,29,Nāgadhwani,S R2 S M1 G3 M1 P N3 D2 N3 S',S' N3 D2 N3 P M1 G3 S,N
+Janya,29,Nārāyanadeshākshi,S R2 M1 G3 R2 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Navaroj,P D2 N3 S R2 G3 M1 P,M1 G1 R3 S N2 D2 P,N
+Janya,29,Neelāmbari,S R2 G3 M1 P D2 P N3 S',S' N3 P M1 G3 R2 G3 S,N
+Janya,29,Niroshta,S R2 G3 D2 N3 S',S' N3 D2 G3 R2 S,N
+Janya,29,Pahādi {Hindustani},S R2 G3 P D2 P D2 S,N3 D2 P G3 M1 G3 R2 S N3 D2 P D2 S,N
+Janya,29,Poornachandrika,S R2 G3 M1 P D2 P S',S' N3 P M1 R2 G3 M1 R2 S,N
+Janya,29,Poornagowla,S R2 G3 M1 P N3 D2 N3 P D2 N3 S',S' N3 D2 N3 P M1 G3 R2 S,N
+Janya,29,Poorvagowla,S G3 R2 G3 S R2 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Rathnabhooshani,S R2 G3 M1 P S',S' P M1 G3 R2 S,N
+Janya,29,Reetuvilāsa,S G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 S,N
+Janya,29,Sāranga Mallār,S R2 M1 P D2 N3 S',S' N3 D2 P M1 R2 S N3 S,N
+Janya,29,Shankara,S G3 P S',S' N3 D2 P G3 P R2 G3 S,N
+Janya,29,Shankara {Hindustani},S G3 P N3 D2 S' N3 S',S' N3 D2 P G3 P G3 R2 S,N
+Janya,29,Shankaraharigowla,S R2 G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,N
+Janya,29,Shankaramohana,S R2 G3 P N3 D2 S N3,S D2 P G3 R2 S,N
+Janya,29,Shankari,S G3 P N3 S',S' N3 P G3 S,N
+Janya,29,Sindhu,S M1 P D2 S',S' N3 D2 M1 P M1 G3 R2 S,N
+Janya,29,Sindhu Mandāri,S R2 G3 M1 P S',S' N3 D2 P G3 M1 P M1 R2 S,N
+Janya,29,Suddha Mālavi,S R2 G3 M1 P N3 S',S' D2 N3 P M1 G3 R2 S,N
+Janya,29,Suddha Sārang,S R2 G3 M1 P D2 N3 D2 S',S' D2 P M1 R2 G3 R2 S,N
+Janya,29,Suddha Sāveri,S R2 M1 P D2 S',S' D2 P M1 R2 S,N
+Janya,29,Suddha Vasantha,S R2 G3 M1 P N3 S',S' N3 D2 N3 P M1 G3 S,N
+Janya,29,Suranandini,S R2 G3 P D2 N3 S',S' N3 D2 P G3 R2 S,N
+Janya,29,Suraranjani,S G3 P R2 M1 D2 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Tāndavam,S G3 P D2 N3 S',S' N3 D2 P G3 S,N
+Janya,29,Vallabhi,S R2 G3 M1 P D2 N3 S',S' N3 D2 N3 D2 P M1 P G3 M1 R2 S,N
+Janya,29,Vasanthamalai,S R2 M1 P N3 S',S' D2 P M1 R2 S,N
+Janya,29,Vedhāndhagamana,S G3 M1 P N3 S',S' N3 P M1 G3 S,N
+Janya,29,Veerapratāpa,S G3 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,N
+Janya,29,Vilāsini,S R2 G3 M1 P N3 S',S' N3 P M1 G3 R2 S,N
+Melakarta (primary name),30,Nāganandini,S R2 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R2 S,N
+Janya,30,Nāgabharanam,S R2 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R2 S,N
+Janya,30,Gambheeravani,S G3 P M1 D3 N3 S',S' N3 P M1 G3 R2 G3 R2 S,N
+Janya,30,Lalithagāndharva,S R2 G3 M1 P D3 N3 S',S' N3 P G3 R2 S,N
+Janya,30,Sāmanta,S R2 G3 M1 P D3 N3 S',S' N3 D3 N3 D3 P M1 G3 R2 S,N
+Melakarta (primary name),31,Yāgapriyā,S R3 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R3 S,N
+Janya,31,Kalāvathi,S R3 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R3 S,N
+Janya,31,Damarugapriya,S R3 G3 P D1 N1 S',S' N1 D1 P G3 R3 S,N
+Janya,31,Desharanjani,S R3 M1 P D1 N1 S',S' N1 D1 P M1 R3 S,N
+Janya,31,Deshyathodi,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,N
+Janya,31,Kalāhamsa,S R3 G3 M1 P D1 S',S' N1 D1 P M1 G3 R3 S,N
+Janya,31,Niranjani,S R3 M1 D1 N1 S',S' N1 D1 M1 R3 S,N
+Janya,31,Prathāpahamsi,S G3 M1 P N1 D1 N1 S',S' N1 D1 P M1 G3 M1 R3 S,N
+Melakarta (primary name),32,Rāgavardhini,S R3 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R3 S,N
+Janya,32,Rāgachoodāmani,S R3 G3 M1 P N2 S',S' N2 D1 M1 R3 G3 S,N
+Janya,32,Amudagāndhāri,S G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R3 S,N
+Janya,32,Dhowmya,S R3 G3 M1 P D1 N2 P S',S' N2 D1 P M1 G3 R3 S,N
+Janya,32,Hindoladarbār,S G3 M1 P S',S' N2 D1 P M1 R3 S,N
+Janya,32,Ramyā,S R3 G3 M1 P D1 N2 P S',S' N2 D1 P M1 G3 R3 S,N
+Janya,32,Sāmantajingala,S R3 G3 M1 P D1 N2 S',S' N2 P D1 N2 P M1 G3 M1 R3 G3 S,N
+Melakarta (primary name),33,Gāngeyabhuśani,S R3 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R3 S,N
+Janya,33,Gangātarangini,S R3 G3 M1 P D1 N3 S',S' N3 D1 P M1 M1 G3 M1 R3 S,N
+Melakarta (primary name),34,Vāgadhīśvari,S R3 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R3 S,N
+Janya,34,Amarasindhu,S R3 G3 P D2 N2 S',S' N2 D2 P G3 R3 S,N
+Janya,34,Bhogachāyā Nāttai,S R3 G3 R3 G3 M1 P N2 N2 S',S' N2 D2 N2 P S N2 P M1 M1 R3 S,N
+Janya,34,Bhānumanjari,S R3 G3 M1 P N2 S',S' N2 P M1 R3 G3 R3 S,N
+Janya,34,Chāyanāttai,S R3 G3 M1 P M1 P S',S' N2 D2 N2 P M1 R3 S,N
+Janya,34,Maghathi,S R3 M1 P D2 N2 S',S' N2 D2 P M1 R3 S,N
+Janya,34,Drāvida Kalāvati,S R3 G3 P D2 S',S' N2 D2 P G3 R3 S,N
+Janya,34,Mohanāngi,S R3 G3 P D2 S',S' D2 P G3 P D2 P G3 R3 S,N
+Janya,34,Murali,S R3 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R3 S,N
+Janya,34,Sharadabharana,S M1 G3 M1 P M1 D2 N2 S',S' N2 D2 M1 P M1 R3 S,N
+Janya,34,Vikhavathi,S R3 G3 P D2 S',S' D2 P G3 R3 S,N
+Melakarta (primary name),35,Śūlini,S R3 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R3 S,N
+Janya,35,Shailadeshākshhi,S M1 G3 P D2 S',S' N3 D2 S N3 P M1 G3 S,N
+Janya,35,Suryavasantham,S M1 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R3 S,N
+Janya,35,Dheerahindolam,S G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R3 S,N
+Janya,35,Ganavaridhi,S M1 R3 G3 M1 P D2 N2 S',S' D2 N2 P M1 R3 S,N
+Janya,35,Shokavarāli,S G3 D2 N3,D2 P M1 G3 R3 S,N
+Melakarta (primary name),36,Chalanāṭṭai,S R3 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R3 S,N
+Janya,36,Devanāttai,S G3 M1 P S',S' N3 D3 P M1 G3 R3 S,N
+Janya,36,Gambheeranāṭṭai,S G3 M1 P N3 S',S' N3 P M1 G3 S,N
+Janya,36,Ganaranjani,S R3 G3 M1 P M1 D3 N3 S',S' N3 D3 P M1 P M1 R3 S,N
+Janya,36,Nāṭṭai,S R3 G3 M1 P N3 S',S' N3 P M1 G3 R3 S,N
+Melakarta (primary name),37,Sālagam,S R1 G1 M2 P D1 N1 S',S' N1 D1 P M2 G1 R1 S,N
+Janya,37,Sowgandhini,S R1 M2 P D1 S',S' N1 D1 P M2 G1 R1 S,N
+Janya,37,Bhogasāveri,S R1 M2 D1 N1,D1 P M2 G1 R1 S,N
+Melakarta (primary name),38,Jalārnavam,S R1 G1 M2 P D1 N2 S',S' N2 D1 P M2 G1 R1 S,N
+Janya,38,Jaganmohinam,S R1 G1 M2 P D1 N2 S',S' N2 D1 P M2 G1 R1 S,N
+Janya,38,Jaganmohana,S R1 G1 M2 P D2 S',S' N2 D1 P M2 G1 R1 S,N
+Melakarta (primary name),39,Jhālavarāḷi,S R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,N
+Janya,39,Dhālivarāli,S R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,N
+Janya,39,Bhoopālapanchamam,S G1 R1 G1 P M2 D1 S',S' P D1 M2 G1 R1 S,N
+Janya,39,Godari,S R1 G1 R1 M2 G1 M2 P D1 N3 S',S' N3 D1 P M2 R1 S,N
+Janya,39,Jālasugandhi,S R1 G1 M2 P D1 S',S' D1 P M2 G1 R1 S,N
+Janya,39,Janāvali,S G2 R1 G2 M2 P D1 N3 D1 S',S' N3 D1 P M2 G2 R1 S,N
+Janya,39,Karunāmritavarshini,S R1 G1 M2 P D1 N3 P S',S' N3 D1 M2 G1 R1 S,N
+Janya,39,Kokilapanchamam,S G1 R1 G1 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,N
+Janya,39,Varāli,S G1 R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,N
+Melakarta (primary name),40,Navanītam,S R1 G1 M2 P D2 N2 S',S' N2 D2 P M2 G1 R1 S,N
+Janya,40,Nabhomani,S G1 R1 G1 M2 P S',S' N2 D2 P M2 G1 R1 S,N
+Melakarta (primary name),41,Pāvani,S R1 G1 M2 P D2 N3 S',S' N3 D2 P M2 G1 R1 S,N
+Janya,41,Kumbhini,S G1 R1 G1 M2 P N3 D2 N3 S',S' N3 D2 P M2 G1 R1 S,N
+Janya,41,Chandrajyothi,S R1 G1 M2 P D2 S',S' D2 P M2 G1 R1 S,N
+Janya,41,Prabhāvali,S R1 M2 P D2 N3 S',S' N3 D2 M2 P M2 R1 G1 R1 S,N
+Janya,41,Poornalalitha,S R1 M2 G1 R1 M2 P N3 D2 N3 S',S' N3 D2 P M2 G1 R1 S,N
+Janya,41,Poornapanchamam,S R1 G1 M2 P D2,D2 P M2 G1 R1 S,N
+Melakarta (primary name),42,Raghupriyā,S R1 G1 M2 P D3 N3 S',S' N3 D3 P M2 G1 R1 S,N
+Janya,42,Ravi Kriyā,S G1 R1 G1 M2 P D3 N3 S',S' N3 P M2 G1 R1 S,N
+Janya,42,Gāndharva,M2 P D3 N3 S R1 G1,R1 S N3 P M2 P,N
+Janya,42,Gomathi,S R1 G1 M2 P D3 N3,P M2 G1 R1 S,N
+Janya,42,Raghuleela,S M2 R1 P M2 G1 M2 P M2 R1 M2 P N3 S',S' N3 D3 N3 P M2 G1 M2 R1 M2 G1 R1 S,N
+Melakarta (primary name),43,Ghavāmbhodi,S R1 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,N
+Janya,43,Geervāni,S R1 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,N
+Janya,43,Kanchanabowli,S G2 M2 P D1 S',S' N1 D1 P M1 G2 R1 S,N
+Janya,43,Mahathi,S G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 S,N
+Janya,43,Mechagāndhāri,S R3 G3 M1 P D2 N2 S',S' N2 D2 N2 P M1 G3 M1 R3 S,N
+Janya,43,Suvarnadeepakam,S R1 G2 M2 P D1 S',S' D1 P M2 G2 R1 S,N
+Janya,43,Vijayabhooshāvali,S R1 G3 M2 P S',S' N3 D3 P M2 G3 R1 S,N
+Melakarta (primary name),44,Bhavapriyā,S R1 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R1 S,N
+Janya,44,Bhavāni,S R1 G2 M2 D1 N2 S,S N2 D1 M2 G2 R1 S,N
+Janya,44,Bhavāni,S R1 G2 M2 P D1 P N2 S',S' N2 D1 P M2 G2 R1 S,N
+Janya,44,Kanchanāvathi,S R1 G2 M2 P N2 S',S' N2 P M2 G2 R1 S,N
+Melakarta (primary name),45,Śubhapantuvarāḷi,S R1 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R1 S,N
+Janya,45,Shivapanthuvarāli,S R1 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R1 S,N
+Janya,45,Arunāngi,S R1 M2 P N3 D1 S',S' N3 D1 M2 R1 G2 R1 S,N
+Janya,45,Bandhuvarāli,S M2 S N3 D1 P M2,D1 M2 G2 R1 S,N
+Janya,45,Bhānudhanyāsi,S R1 G2 M2 N3 D1 N3,D1 P M2 G2 R1 S N3 S,N
+Janya,45,Bhānukeeravāni,S R1 G2 M2 P D1 N3 S',S' N3 D1 M2 G2 R1 S,N
+Janya,45,Chāyaranjani,S G2 M2 P N3 S',S' N3 D1 P M2 G2 S,N
+Janya,45,Dhowreyani,S R1 G2 M2 N3 S',S' N3 D1 P M2 G2 R1 S,N
+Janya,45,Hindusthāni Todi,N3 R1 G2 M2 D1 N3 S',S' N3 D1 P M2 G2 R1 S,N
+Janya,45,Jālakesari,S R1 M2 P D1 N3 S',S' D1 P M2 R1 S,N
+Janya,45,Kumudhachandrikā,S G2 M2 D1 S',S' N3 D1 M2 G2 R1 S,N
+Janya,45,Mahānandhini,S M2 G2 M2 P D1 N3 S',S' D1 N3 D1 P M2 G2 R1 S,N
+Janya,45,Multani {Hindustani},S G2 M2 P N3 S',S' N3 D1 P M2 G2 R1 S,N
+Janya,45,Parpathi,S G2 M2 P N3 S',S' N3 P M2 G2 S,N
+Janya,45,Shekharachandrikā,S R1 G2 M2 D1 N3 S',S' N3 D1 M2 G2 R1 S,N
+Melakarta (primary name),46,Śadvidamārgini,S R1 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R1 S,N
+Janya,46,Sthavarājam,S R1 M2 P D2 S',S' N2 D2 M2 G2 S,N
+Janya,46,Ganahemāvati,S G2 M2 P N2 S',S' N2 D2 P M2 G2 S,N
+Janya,46,Indhudhanyāsi,S G2 M2 D2 N2 S',S' N2 D2 P D2 M2 G2 R1 S,N
+Janya,46,Shreekānti,S G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 S,N
+Janya,46,Teevravāhini,S R1 G2 M2 P D2 P N2 S',S' N2 D2 P M2 G2 R1 G2 M2 R1 S,N
+Janya,46,Vaishalini,R1 G2 M2 D2 N2,N2 D2 M2 G2 R1,N
+Melakarta (primary name),47,Suvarnāngi,S R1 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,N
+Janya,47,Sowveeram,S R1 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,N
+Janya,47,Abhiru,S R1 G2 R1 M2 P N3 S',S' D2 P M2 G2 R1 G2 S,N
+Janya,47,Rathikā,S M2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,N
+Janya,47,Vijayashree,S R1 G2 M2 P N2 S',S' N2 P M2 G2 R1 S,N
+Melakarta (primary name),48,Divyamaṇi,S R1 G2 M2 P D3 N3 S',S' N3 D3 P M2 G2 R1 S,N
+Janya,48,Jeevanthikā,S M2 P D3 N3 S',S' N3 P M2 G2 S,N
+Janya,48,Deshamukhāri,S R1 G2 M2 P D3 N3 D3 S',S' D3 N3 D3 P M2 G2 R1 S,N
+Janya,48,Dundubi,S R1 G2 M2 P D3 N3 S',S' N3 P M2 G2 R1 S,N
+Janya,48,Jeevanthini,S M2 P D3 N3 S',S' N3 P M2 G2 S,N
+Janya,48,Suddha Gāndhāri,S R1 G2 M2 N3 S',S' N3 D3 N3 S N3 P M2 R1 S,N
+Melakarta (primary name),49,Dhavaḻāmbari,S R1 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R1 S,N
+Janya,49,Dhavalāngam,S R1 G3 M2 P D1 S',S' N1 D1 P M2 G3 R1 S,N
+Janya,49,Abhirāmam,S R1 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,N
+Janya,49,Bhinnapauarali,S M2 P D1 N1 D1 S',S' N1 D1 P M2 G3 S,N
+Janya,49,Dharmini,S R1 G3 M2 D1 N1 S',S' N1 D1 M2 G3 R1 S,N
+Janya,49,Sudharmini,S R1 M2 P D1 N1 S',S' N1 D1 M1 G3 R2 S,N
+Melakarta (primary name),50,Nāmanārāyaṇi,S R1 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R1 S,N
+Janya,50,Nāmadeshi,S R1 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R1 S,N
+Janya,50,Narmada,S R1 G3 M2 D1 N2 S',S' N2 D1 M2 P M2 G3 R1 S,N
+Janya,50,Neelanjana (Raga created by Mahesh Mahadev)[8],S R1 G3 P N2 S',S' N2 P M2 G3 R1 S,N
+Janya,50,Swaramanjari,S G3 M2 P D1 S',S' N2 D1 P M2 G3 S,N
+Melakarta (primary name),51,Panthuvarāli (Kāmavardhini),S R1 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R1 S,N
+Janya,51,Kāshirāmakriyā,S G3 R1 G3 M2 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,N
+Janya,51,Mandāri,S R1 G3 M2 P N3 S',S' N3 P M2 G3 R1 S,N
+Janya,51,ādhi Panchama,S R1 P D1 N3 S',S' N3 D1 N3 P M2 G3 R1 S,N
+Janya,51,Basant /Vasant {Hindustani},S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 M2 N3 D1 M2 G3 R1 S,N
+Janya,51,Basant Bahār {Hindustani},S M2 P G3 M2 N3 D1 N3 S,R2 S N2 D2 P M1 G2 M1 G2 R2 S,N
+Janya,51,Bhogavasantha,S R1 G3 M2 D1 N3 S',S' N3 D1 M2 G3 R1 S,N
+Janya,51,Deepakam,S R2 M2 P D1 P S',S' N3 D1 N3 P M2 G3 R1 S,N
+Janya,51,Gamakapriyā,S R1 G3 M2 P N3 D1 S',S' D1 P M2 G3 R1 S,N
+Janya,51,Gamanapriyā,S R1 G3 M2 P N3 D1 S',S' D1 P M2 G3 R1 S,N
+Janya,51,Hamsanārāyani,S R1 G3 M2 P S',S' N3 P M2 G3 R1 S,N
+Janya,51,Indumathi,S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 S,N
+Janya,51,Kamalāptapriyā,S R1 G3 M2 P D1 S',S' D1 P M2 G3 R1 S,N
+Janya,51,Kumudhakriyā,S R1 G3 M2 D1 S',S' N3 D1 M2 G3 R1 S,N
+Janya,51,Māruthi,S R1 M2 P N3 S',S' N3 D1 P M2 G3 R1 S,N
+Janya,51,Ponni,S G3 M2 P N3 S',S' N3 P M2 G3 R1 S,N
+Janya,51,Prathāpa,S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 R1 S,N
+Janya,51,Puriya Dhanashree {Hindustani},N3 R1 G3 M2 P D1 P N3 S,R1 N3 D1 P M2 G3 M2 R1 G3 R1 S,N
+Janya,51,Tāndavapriyā,S R1 G3 M2 P S',S' P M2 G3 R1 S,N
+Melakarta (primary name),52,Rāmapriyā,S R1 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R1 S,N
+Janya,52,Ramāmanohari,S R1 G3 M2 P D2 S',S' N2 D2 P M2 G3 R1 S,N
+Janya,52,Chintaramani,S G3 M2 P D2 N2 S',S' D2 P M2 G3 R1 S,N
+Janya,52,Hamsagamini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 D2 P M2 G3 R1 S,N
+Janya,52,Lokaranjani,S G3 M2 P M2 D2 N2 S',S' N2 D2 N2 P M2 G3 R1 S,N
+Janya,52,Meghashyāmala,S G3 M2 P D2 N2 D2 P S',S' N2 D2 P M2 G3 R1 S,N
+Janya,52,Namoveenapaani (creation by Siri Girish),S G3 M2 D2 N2 S',S' N2 D2 M2 G3 R1 S,N
+Janya,52,Patalāmbari,S R1 G3 M2 D2 S',S' D2 M2 G3 R1 S,N
+Janya,52,Raktimārgini,S P M2 D2 N2 S',S' N2 D2 P M2 P G3 R1 S,N
+Janya,52,Rasavinodini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 S,N
+Janya,52,Reethi Chandrikā,S R1 G3 M2 P D2 S',S' N2 D2 P M2 G3 R1 S,N
+Janya,52,Seemantinipriyā,S R1 G3 M2 D2 N2 S',S' N2 D2 M2 G3 R1 S,N
+Janya,52,Sukhakari,S R1 S P D2 N2 S',S' N2 D2 P M2 G3 S R1 S,N
+Janya,52,Vedhaswaroopi,S R1 G3 M2 P D2 N3 P S',S' N3 D2 P N3 P M2 G3 S,N
+Melakarta (primary name),53,Gamanāśrama,S R1 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R1 S,N
+Janya,53,Gamakakriyā,S R1 G3 M2 P D2 S',S' N3 D2 P M2 G3 R1 S,N
+Janya,53,Alankāri,S G3 M2 D2 N3 D2 S',S' N3 D2 M2 G3 S,N
+Janya,53,Bhatiyār {Hindustani},S D2 P D2 M2 P G3 M2 D2 S,R1 N3 D2 P M2 P G3 R1 S,N
+Janya,53,Dvigāndhārabhooshani,S R1 G2 G3 G2 P D2 S',S' D2 P G2 G3 G2 R1 S D2 S,N
+Janya,53,Hamsānandi,S R1 G3 M2 D2 N3 S',S' N3 D2 M2 G3 R1 S,N
+Janya,53,Mechakāngi,S R1 G3 M2 P D2 P N3 S',S' N3 P D2 P M2 G3 R1 S,N
+Janya,53,Padmakalyāni,S G3 P N3 S',S' N3 D2 P M2 G3 S,N
+Janya,53,Poorvi Kalyāni,S R1 G3 M2 P D2 P S',S' N3 D2 P M2 G3 R1 S,N
+Janya,53,Sharabadhvāja,S R1 G3 M2 P D2 S',S' D2 P G3 R1 S,N
+Janya,53,Sohini {Hindustani},S G3 M2 D2 N3 S',S' N3 D2 M2 G3 R1 S,N
+Janya,53,Vaishaka,S R1 G3 M2 P D2 N3 S',S' N3 D2 N3 P M2 G3 M2 R1 S,N
+Melakarta (primary name),54,Viśvambari,S R1 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R1 S,N
+Janya,54,Vamshavathi,S R1 G3 M2 P D3 N3 S',S' N3 P M2 G3 R1 S,N
+Janya,54,Hemāngi,S R1 G3 M2 D3 S',S' D3 M2 G3 R1 S,N
+Janya,54,Pooshakalyāni,S R1 G3 M2 P D3 N3 S',S' N3 P M2 G3 R1 S,N
+Janya,54,Sharadhyuthi,S R1 G3 M2 P D3 N3 D3 S',S' N3 D3 P M2 G3 R1 S,N
+Janya,54,Suddhakriyā,S R1 M2 M2 P D3 S',S' D3 P M2 G3 R1 S,N
+Janya,54,Sundarāngi,S R1 G3 P D3 N3 S',S' N3 D3 P G3 R1 S,N
+Janya,54,Vijayavasantham,S M2 P D3 N3 S',S' N3 P M2 G3 S,N
+Melakarta (primary name),55,Śāmaḻāngi,S R2 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R2 S,N
+Janya,55,Shyāmalam,S R2 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R2 S,N
+Janya,55,Deshāvali,S R2 G2 M2 D1 N1 D1 S',S' N1 D1 M2 G2 R2 S,N
+Janya,55,Vijayamālavi,S R2 M2 P D1 S',S' N1 D1 P M2 R2 S,N
+Melakarta (primary name),56,Śanmukhapriyā,S R2 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R2 S,N
+Janya,56,Chāmaram,S R2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R2 S,N
+Janya,56,Bhāshini,S G2 R2 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R1 S,N
+Janya,56,Chintāmani,S G2 R2 G2 M2 G2 R2 G2 P M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,N
+Janya,56,Dhanakari,S G2 P D1 N2 S',S' N2 D1 M2 G2 S,N
+Janya,56,Garigadya,N2 S G2 M2 P D1 N2,D1 P M2 G2 R2 S,N
+Janya,56,Gopikathilakam,S R2 G2 M2 P N2 S',S' N2 P M2 G2 R2 S,N
+Janya,56,Kokilanandhi,S G2 M2 D1 N2 S',S' N2 D1 P M2 G2 S,N
+Janya,56,Rājeshwari,S R2 G2 P N2 S',S' N2 D1 P M1 G2 S,N
+Janya,56,Samudrapriyā,S G2 M2 P N2 S',S' N2 P M2 G2 S,N
+Janya,56,Shanmukhi (Trimoorti),S R1 G2 M2 D1 N2 S',S' N2 D1 M2 G2 R1 S,N
+Janya,56,Sumanasaranjani,S G2 M2 P N2 S',S' N2 P M2 G2 S,N
+Janya,56,Vasukari,S G2 M2 P D1 N2 S',S' N2 D1 M2 G2 S,N
+Melakarta (primary name),57,Simhendramadhyamam(Sumadhyuti),S R2 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R2 S,N
+Janya,57,Ānandavalli,S G2 M2 P N3 S',S' N3 P M2 G2 S,N
+Janya,57,Ghantana,S R2 G2 M2 D1 N3 S',S' N3 D1 M2 G2 R2 S,N
+Janya,57,Jayachoodāmani,S G2 M2 P D1 S',S' N3 D1 P M2 G2 R2 S,N
+Janya,57,Pranavapriyā,S R2 M2 P N3 S',S' N3 P M2 G2 R2 S,N
+Janya,57,Sarvāngi,S R2 M2 D1 N3 S',S' N3 D1 M2 G2 S R3 S,N
+Janya,57,Seshanādam,S R2 G2 M2 P D1 S',S' N3 D1 P M2 G2 R2 S,N
+Janya,57,Suddha,S R2 G2 M2 P N3 S',S' N3 P M2 G2 R2 S,N
+Janya,57,Sunādapriyā,S R2 G2 M2 P S',S' N3 D1 P M2 G2 R2 S,N
+Janya,57,Urmikā,S R2 G2 M2 P N3 S',S' N3 P M2 G2 R2 S,N
+Janya,57,Vijayasaraswathi,S G2 M2 P D1 N3 S',S' N3 P M2 G2 R2 S,N
+Melakarta (primary name),58,Hemavati,S R2 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,N
+Janya,58,Deshisimhāravam,S R2 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,N
+Janya,58,Chandrarekhā,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,N
+Janya,58,Hamsabhramari,S R2 G2 M2 P D2 S',S' N2 D2 P M2 G2 R2 S,N
+Janya,58,Hemāmbari,S R2 G2 M2 P D2 N2 S',S' P M2 G2 R2 S,N
+Janya,58,Hemapriya,S R2 G2 M2 D2 S',S' D2 M2 G2 R2 S,N
+Janya,58,Kshemakari,S R2 M2 D2 N2 S',S' N2 D2 M2 R2 S,N
+Janya,58,Madhukowns,S G2 M2 P N2 P S',S' N2 P M2 G2 S,N
+Janya,58,Shakthiroopini,S G2 M2 D2 S',S' N2 D2 M2 G2 S,N
+Janya,58,Simhārava,S R2 M2 P N2 S',S' N2 P M2 R2 G2 R2 S,N
+Janya,58,Vijayasāranga,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,N
+Janya,58,Vijayashrāngi,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,N
+Janya,58,Yāgini,S R2 M2 P N2 S',S' N2 P M2 R2 S,N
+Melakarta (primary name),59,Dharmavati,S R2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R2 S,N
+Janya,59,Dhāmavathi,S R2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R2 S,N
+Janya,59,Sri Tyagaraja (Raga created by Mahesh Mahadev)[9],S G2 M2 P,S' N3,N
+Janya,59,Gowrikriya,S G2 M2 P D2 N3 S',S' N3 D2 N3 P M2 G2 S,N
+Janya,59,Karmukhāvati,S R2 G2 M2 D2 N3 S',S' N3 D2 M2 G2 R2 S,N
+Janya,59,Karpoora Bharani,S R2 G2 P M2 P D2 S',S' D2 P M2 P G2 R2 S,N
+Janya,59,Lalitasimharavam,S R2 G2 M2 P S',S' N3 P M2 G2 R2 S,N
+Janya,59,Madhumālti {Hindustani},N3 S G2 M2 P S',S' N3 D2 P M2 G2 R2 S,N
+Janya,59,Madhuvanthi {Hindustani},S G2 M2 P N3 S',S' N3 D2 P M2 G2 R2 S,N
+Janya,59,Moharanjani,S R2 G2 P D2 S',S' N3 D2 M2 G2 S,N
+Janya,59,Ranjani,S R2 G2 M2 D2 S',S' N3 D2 M2 G2 S,N
+Janya,59,Varada,S R2 M2 P N3 S',S' N3 P M2 R2 S,N
+Janya,59,Vijayanāgari,S R2 G2 M2 P D2 S',S' D2 P M2 G2 R2 S,N
+Janya,59,Vishveshwarapriyā,S R2 M2 P N3 S',S' N3 D2 P M2 R2 S,N
+Melakarta (primary name),60,Nītimati,S R2 G2 M2 P D3 N3 S',S' N3 D3 P M2 G2 R2 S,N
+Janya,60,Nisshadham,S R2 G2 M2 P D3 N3 S',S' N3 P M2 G2 R2 S,N
+Janya,60,Amarasenapriyā,S R2 M2 P N2 S',S' N3 P M2 G2 R2 S,N
+Janya,60,Deshyagānavaridhi,S R2 G2 M2 P D3 N3 P S',S' N3 S P M2 G2 R2 S,N
+Janya,60,Hamsanādam,S R2 M2 P D3 N3 S',S N3 D3 P M2 R2 S',N
+Janya,60,Kaikavashi,S R2 G2 M2 P D3 N3 S',S' N3 P M2 G2 R2 S,N
+Janya,60,Nuthanachandrikā,S R2 G2 M2 P D3 N3 S',S' N3 P D3 N3 P M2 G2 S,N
+Janya,60,Rathnasāranga,S R2 G2 M2 P N3 S',S' N3 D3 P M2 G2 R2 S,N
+Melakarta (primary name),61,Kāntāmani,S R2 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R2 S,N
+Janya,61,Kunthalam,S R2 G3 M2 P D1 S',S' N1 D1 P M2 G3 R2 S,N
+Janya,61,Kanakakusumāvali,S R2 G3 M2 P D2 S',S' D2 P M2 G3 R2 S,N
+Janya,61,Shruthiranjani,S R2 G3 M2 P D1 N1,N1 D1 P M2 G3 R2 S,N
+Melakarta (primary name),62,Riśabhapriyā,S R2 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R2 S,N
+Janya,62,Rathipriyā,S R2 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R2 S,N
+Janya,62,Gopriya,S R2 G3 M2 D1 N2 S',S' N2 D1 M2 G3 R2 S,N
+Janya,62,Poornasāveri,S R2 M2 P D1 S',S' N2 D1 P M2 G3 R2 S,N
+Janya,62,Rathnabhānu,S R2 M2 P N2 D1 N2 S',S' N2 D1 P M2 G3 R2 S,N
+Janya,62,Suddha Sāranga,S G3 M2 P N2 S',S' D1 P M2 G3 S,N
+Melakarta (primary name),63,Latāngi,S R2 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R2 S,N
+Janya,63,Geethapriyā,S R2 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R2 S,N
+Janya,63,Chitrachandrika,S G3 R2 G3 M2 P N3 D1 S',S' N3 D1 M2 G3 R2 S,N
+Janya,63,Hamsalatha,S R2 G3 P N3 S',S' N3 D1 P M2 G3 R2 S,N
+Janya,63,Kananapriyā,S R2 G3 M2 P M2 D1 N3 S',S' D1 N3 P M2 G3 R2 S,N
+Janya,63,Karunākari,S M2 P D1 N3 D1 S',S' N3 D1 P M2 S,N
+Janya,63,Lalithāngi,S R2 G3 M2 D1 N3 S',S' N3 D1 M2 G3 R2 S,N
+Janya,63,Ramani,S G3 M2 P N3 S',S' N3 D1 P M2 G3 S,N
+Janya,63,Rathnakānthi,S R2 G3 M2 P N3 S',S' N3 P M2 G3 R2 S,N
+Janya,63,Raviswaroopini,S G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 S,N
+Janya,63,Sajjananandhi,S R2 G3 M2 P D1 N3 S',S' N3 D1 M2 G3 R2 S,N
+Janya,63,Skandamanorama,S R2 M2 P N3 S',S' N3 P M2 R2 S,N
+Melakarta (primary name),64,Vāchaspati,S R2 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,N
+Janya,64,Bhooshāvathi,S R2 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,N
+Janya,64,Bhagavataranjana,S R2 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,N
+Janya,64,Bhogeeshwari,S R2 G3 P D2 N2 D2 S',S' N2 D2 P M2 G3 R2 S,N
+Janya,64,Bhooshāvali,S R2 G3 M2 P D2 S',S' N2 D2 P M2 G3 R2 S,N
+Janya,64,Dwigāndhārabhooshani,S R1 G2 G3 G2 P D2 S',S' D2 P G2 G3 G2 R1 S D2 S,N
+Janya,64,Gaganamohini,S G3 P D2 N2 S',S' N2 P M2 G3 S,N
+Janya,64,Gurupriya,S R2 G3 M2 D2 N2 S',S' N2 D2 M2 G3 R2 S,N
+Janya,64,Hrdhini,S G3 M2 P N2 S',S' N2 P M2 G3 S,N
+Janya,64,Mangalakari,S R2 P M2 P D2 N2 S',S' N2 D2 P G3 R2 S,N
+Janya,64,Mukthidāyini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 S,N
+Janya,64,Nādhabrahma,S P M2 P D2 N2 S',S' N2 D2 P M2 G3 S,N
+Janya,64,Pranavākāri,P N2 D2 N2 S R2 G3 M2,P M2 G3 R2 S N2 D2 N2 P,N
+Janya,64,Saraswathi,S R2 M2 P D2 S',S' N2 D2 P M2 R2 S,N
+Janya,64,Shivaranjani (Original),S R2 G3 M2 D2 P N2 S',S' N2 D2 P D2 M2 G3 R2 S,N
+Janya,64,Triveni,S R2 M2 P D2 N2 S',S' N2 D2 P M2 R2 S,N
+Janya,64,Utthari,S G3 M2 P D2 N2 S',S' N2 D2 M2 G3 S,N
+Melakarta (primary name),65,Mechakalyāni,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R2 S,N
+Janya,65,Shānthakalyāni,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R2 S,N
+Janya,65,Amritha Kalyani (Raga created by Mahesh Mahadev)[4],S G3 M2 P,S' N3 D2 P M2 G3 R2 S,N
+Janya,65,Amritha Behāg,S M2 G3 P N3 S,D2 N3 D2 M2 G3 S,N
+Janya,65,Aprameya,S R2 M2 P D2 S',S' N3 D2 M2 G3 M2 R2 S,N
+Janya,65,Bhoopkalyāni,S R2 G3 P D2 S',S' N3 D2 P M2 G3 R2 S,N
+Janya,65,Bhoopāli {Hindustani},S R2 G3 P D2 S',S' D2 P G3 R2 S,N
+Janya,65,Chandrakāntha,S R2 G3 M2 P D2 N3 S',S' N3 D2 N3 P M2 G3 R2 S,N
+Janya,65,Hameer {Hindustani},S R2 S G3 M1 D2 N3 D2 S',S' N3 D2 N3 P G3 M1 D2 M2 P D2 P G3 M1 R2 S,N
+Janya,65,Hameer Kalyāni {carnatic interpretation of Kedar},S P M2 P D2 N3 S',S' N3 D2 P M2 M1 G3 P M1 R2 S',N
+Janya,65,Hamsakalyāni,S R2 G3 P N3 S',S' N3 D2 P M2 G3 R2 S,N
+Janya,65,Kalyānadāyini,S R2 G3 M2 D2 N3 S',S' N3 D2 M2 G3 R2 S,N
+Janya,65,Kannadamaruva,S G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 S,N
+Janya,65,Kedār {Hindustani},S ,S' N3 D2 P M2 P ,N
+Janya,65,Kowmoda,S R2 G3 M2 N3 S',S' N3 P M2 G3 S,N
+Janya,65,Kunthalashreekānti,S G3 M2 P D2 N3 S',S' N3 P M2 G3 R2 S,N
+Janya,65,Mohana Kalyāni,S R2 G3 P D2 S',S' N3 D2 P M2 G3 R2 S,N
+Janya,65,Mrgānandhana,S R2 G3 D2 N3 S',S' N3 D2 M2 D2 G3 R2 S,N
+Janya,65,Nada Kalyani (Raga created by Mahesh Mahadev)[4],S R2 M2 P N3 S',S' N3 D2 M2 G3 R2 S,N
+Janya,65,Nāndhakalyāni,S G3 M2 D2 N3 S',S' N3 D2 M2 G3 M2 R2 S,N
+Janya,65,Pramodhini,S G3 M2 P D2 S',S' D2 P M2 G3 S,N
+Janya,65,Rajasadhaka (Raga created by Mahesh Mahadev)[4],S R2 G3 P D2 S',S' N3 P M2 R2 S,N
+Janya,65,Sāranga,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 R2 G3 M1 R2 S',N
+Janya,65,Sāranga Tārangini,S R2 M2 P D2 N3 S',S' N3 D2 P M2 R2 S,N
+Janya,65,Shilangi,S G3 M2 P N3 S',S' N3 P M2 G3 S,N
+Janya,65,Shuddha Sārang {Hindustani},N3 S R2 M2 P N3 S',S' N3 D2 P M2 P M1 R2 S N3 S,N
+Janya,65,Suddha Koshala,S G3 M2 P S',S' N3 D2 M2 G3 R2 S,N
+Janya,65,Shyām Kalyān {Hindustani},N3 S R2 M2 P N3 S',S' N3 D2 P M2 P D2 P G3 M1 P G3 M1 R2 S N3 S,N
+Janya,65,Sunādavinodini / Hindol of Hindustani,S G3 M2 D2 N3 S',S' N3 D2 M2 G3 S,N
+Janya,65,Swayambhooshwara Rāga,S G3 P S',S' P G3 S,N
+Janya,65,Vandanadhārini,S R2 M2 P D2 S',S' D2 P M2 R2 S,N
+Janya,65,Vivāhapriyā [10],S R2 M2 P D2 N3 S',S' N3 D2 P M2 R2 S,N
+Janya,65,Yamuna Kalyāni / Yaman Kalyan {Hindustani},S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 M1 G3 R2 S,N
+Melakarta (primary name),66,Chitrāmbari,S R2 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R2 S,N
+Janya,66,Chaturāngini,S R2 G3 M2 P N3 S',S' N3 D3 N3 P G3 M2 G3 R2 S,N
+Janya,66,Amritavarshini,S G3 M2 P N3 S',S' N3 P M2 G3 S,N
+Janya,66,Chitrasindhu,S G3 M2 P N3 S',S' N3 D3 P M2 G3 R2 S,N
+Janya,66,Churnikavinodhini,S R2 G3 M2 P D3 N3 S',S' N3 D3 N3 P M2 G3 R2 S,N
+Janya,66,Vijayakoshalam,S R2 G3 M2 P S',S' N3 P M2 G3 S,N
+Melakarta (primary name),67,Sucharitrā,S R3 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R3 S,N
+Janya,67,Santhāna Manjari,S R3 G3 M2 P D1 S',S' N1 D1 P M2 R3 S,N
+Melakarta (primary name),68,Jyothisvarūpiṇi,S R3 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R3 S,N
+Janya,68,Jyothi,S R3 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 S,N
+Janya,68,Deepavarāli,S R3 M2 P N2 S',S' N2 P M2 G3 R3 S,N
+Janya,68,Jyothishmathi,S R3 G3 M2 P S',S' N2 D1 M2 P M2 G3 R3 S,N
+Janya,68,Rāmagiri,S R3 M2 G3 M2 P D1 N2 S',S' D1 N2 D1 P M2 G3 R3 S,N
+Melakarta (primary name),69,Dhātuvardhani,S R3 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R3 S,N
+Janya,69,Dhowtha Panchamam,S R3 G3 M2 P N3 P S',S' N3 D1 P M2 R3 G3 M2 R3 S,N
+Janya,69,Dhwithiyapanchamam,S R3 G3 M2 P N3 P S',S' N3 D1 P M2 R3 M2 G3 R3 S,N
+Janya,69,Sumukham,S R3 M2 N3 S',S' N3 M2 R3 S,N
+Janya,69,Tavapriyā,S R3 M2 P N3 S',S' N3 D1 P M2 G3 R3 S,N
+Melakarta (primary name),70,Nāsikābhūśaṇi,S R3 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,N
+Janya,70,Nāsāmani,S R3 S M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,N
+Janya,70,Marakathagowla,S R3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,N
+Janya,70,Thilakamandāri,S R3 M2 P D2 S',S' D2 P M2 G3 R3 S,N
+Melakarta (primary name),71,Kōsalam,S R3 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R3 S,N
+Janya,71,Kusumākaram,S R3 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R3 S,N
+Janya,71,Ayodhya,S G3 M2 P N3 S',S' D2 P M2 G3 M2 R3 S,N
+Melakarta (primary name),72,Rasikapriyā,S R3 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R3 S,N
+Janya,72,Rasamanjari,S R3 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R3 S,N
+Janya,72,Hamsagiri,S R3 G3 M2 P D3 N3 S',S' N3 P D3 N3 P M2 G3 S,N
+Janya,72,Ishtārangini,S R3 M2 P N3 S',S' N3 D3 P M2 G3 R3 S,N
+Janya,72,Nāgagiri,S G3 M2 P D2 P S',S' D2 P M2 G3 S,N

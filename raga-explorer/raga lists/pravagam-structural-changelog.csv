@@ -1,0 +1,27 @@
+﻿Change,Page,Item,Raga,Detail
+Deleted row (chakra heading parsed as a raga),[p238],,(unknown) (Raga 9),Aroha 'R1' Avaroha 'M2'
+Deleted row (chakra heading parsed as a raga),[p240],,(unknown) (Raga 10),Aroha 'D1' Avaroha 'S'
+Deleted row (no matching printed line),[p149],19,NavaneethaPancha am (Raga 2),Aroha 'S G2 M1 D3 P D3 N3 S' Avaroha 'S N3 D3 P M1 G2 S' Ref P; p149 prints only S G M D P D N S / S N P M R S / AE for item 19
+Re-keyed (was Brindavani Sarang variant 2),[p135],30,Chakra Pradiptam (Raga 2),"now Chakra Pradiptam (Raga 2), item 30"
+Name cleaned (note text from variant 6 removed),[p129],175,Saramathi (Raga 5),now Saramathi (Raga 5)
+Name cleaned (text of item 185 removed),[p181],184,Paura Prakasa (Raga 1),now Paura Prakasa (Raga 1); annotation (Sankarabaranam) moved to Pazham Panzaram
+Name cleaned (text of next line removed),[p245],37,Sunadapriya (Raga 2),now Sunadapriya (Raga 2): the book prints the label 2 on this (AC) line
+Re-keyed (was an empty row named Bhramara Puttari variant 4),[p246],4,Bhukti Priya (Yaksha Priya) (Raga 1),"now Bhukti Priya (Yaksha Priya), item 4: S R2 M2 P N2 S / S N2 D2 P M2 G2 R2 S / AJ"
+Name cleaned,[p182],217,Sankara Lalith (Raga 1),now Sankara Lalith (Raga 1); book note 'M Prathimadyamam' kept in Notes
+Name/item cleaned,[p147],10A,Gambhira Ranjani (Raga 1),"now Gambhira Ranjani (Raga 1), item 10A as printed; garbled ref text replaced"
+Re-keyed / emptied (book prints no scale),[p159],9,Aparupam (Raga 1),"now Aparupam (Raga 1), item 9; aroha/avaroha blank"
+Re-keyed / emptied (book prints no scale),[p236],30,Indhu Kesari (Raga 1),"now Indhu Kesari (Raga 1), item 30; aroha/avaroha blank"
+Scale completed across page break,[p167],177,Neela Prabha (Raga 1),avaroha 'S N2 D2 M1 P M1 R2 G3 R2' -> 'S N2 D2 M1 P M1 R2 G3 R2 M1 G3 R2 S' (p168 prints M G R S)
+"Filled in (row had no page, ref, melakarta name or notes)",[p152],34,Sathvidhi (Raga 1),"p152, Ref P, digits from parent melakarta 25"
+"Filled in (row had no page, ref, melakarta name or notes)",[p152],35,Simhela Vasantham (Raga 1),"p152, Ref AE, digits from parent melakarta 25"
+"Filled in (row had no page, ref, melakarta name or notes)",[p152],36,Veeradhi Vasantham (Raga 1),"p152, Ref AE, digits from parent melakarta 25"
+Added missing row,[p88],11,Kokila Kamavardhani (Raga 1),Aroha S G2 M1 P M1 N3 D2 N3 S / Avaroha S N3 P D2 M1 G2 S / Ref AE
+Added missing row,[p122],19,Chakra Dhari (Raga 1),Aroha S R2 M1 G2 P D1 N2 S / Avaroha S D1 P M1 G2 R2 S / Ref AJ
+Added missing row,[p129],175,Saramathi (Kalidasa Priya) (Raga 6),Aroha S R2 G2 M1 P D1 N2 S / Avaroha N2 D1 M1 G2 S R2 S / Ref P
+Added missing row,[p135],29,Chakra (Raga 1),Aroha S R2 M1 P N2 S / Avaroha S N2 P M1 G2 S / Ref AE
+Added missing row,[p135],30,Chakra Pradiptam (Raga 1),Aroha S R2 G2 M1 P D2 N2 S / Avaroha S N2 D2 M1 G2 S / Ref R
+Added missing row,[p181],185,Pazham Panzaram (Raga 1),Aroha S R2 G3 M1 P D2 N3 S / Avaroha S N3 D2 P M1 G3 R2 S / Ref AO
+Added missing row,[p197],11,Kokila Nata (Raga 1),Aroha S R3 G3 M1 P D3 N3 S / Avaroha S N3 P M1 G3 R3 S / Ref AE
+Added missing row,[p242],7,Chakra Manjari (Raga 1),Aroha S R2 G2 M2 D1 P D1 N2 S / Avaroha S D1 P M2 R2 S / Ref AE
+Added missing row,[p245],37,Sunadapriya (Sunadanapriya) (Raga 1),Aroha S R2 G2 M2 P S / Avaroha S N3 D1 P M2 G2 R2 S / Ref AE
+Added missing row,[p249],47,Suvarna Mukhari (Raga 1),Aroha S G2 M2 P D2 N3 S / Avaroha S N3 D2 M2 G2 R2 S / Ref AE

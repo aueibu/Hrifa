@@ -1,0 +1,1015 @@
+Row Type,Melakarta Number,Melakarta Name,Raga Name,Aroha,Avaroha,Vakra,Bhashanga,Notes,Source
+Melakarta,1,Kanakāngi,Kanakāngi,S R1 G1 M1 P D1 N1 S',S' N1 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Kanakāmbari,S R1 M1 P D1 S',S' N1 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Kanakatodi,S R1 G1 M1 P D1 S',S' N1 D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Mādhavapriyā,S R1 G1 P D1 N1 S',S' N1 D1 P G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Karnātaka Shuddha Sāveri,S R1 M1 P D1 S',S' D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Latantapriya,S R1 G1 M1 P D1 S',S' D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Lavangi(Raga created by M. Balamuralikrishna),S R1 M1 D1 S',S' D1 M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Megha,S R1 M1 P D1 N1 D1 P S',S' N1 D1 P M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Rishabhavilāsa,S R1 M1 P D1 S',S' D1 P M1 R1 M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Sarvashree,S M1 P S',S' P M1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Suddha Mukhāri,S R1 M1 P D1 S',S' N1 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Tatillatika,S R1 M1 P D1 S',S' D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,1,Kanakāngi,Vāgeeshwari,S R1 G1 M1 P D1 S',S' D1 M1 P G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,2,Ratnāngi,Ratnāngi,S R1 G1 M1 P D1 N2 S',S' N2 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,2,Ratnāngi,Phenadhyuti,S R1 M1 P D1 P N2 S',S' N2 D1 P M1 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,2,Ratnāngi,Ganamukhāri,S R1 M1 D1 S',S' N2 D1 M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,2,Ratnāngi,Ratnavarāli,S R1 M1 P N2 D1 S',S' N2 P M1 R1 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,2,Ratnāngi,Revati,S R1 M1 P N2 S',S' N2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,2,Ratnāngi,Shreemani,S R1 G1 P D1 S',S' N2 D1 P G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,2,Ratnāngi,Shreemati,S R1 G1 P D1 S',S' N2 D1 P G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,2,Ratnāngi,Svadhya,S R1 M1 P N2 S',S' N2 D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,3,Gānamūrti,Gānamūrti,S R1 G1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,3,Gānamūrti,Gānasāmavarāli,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,3,Gānamūrti,Bhinnapanchamam,S R1 G1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,3,Gānamūrti,Bhınyyapancħatmam,S R1 G1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,3,Gānamūrti,Nādharanjani,S R1 M1 D1 N3 S',S' N3 D1 M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,3,Gānamūrti,Poorvavarāli,S R1 M1 P D1 S',S' N3 D1 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,3,Gānamūrti,Sāmavarāli,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G1 R1 G1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,4,Vanaspati,Vanaspati,S R1 G1 M1 P D2 N2 S',S' N2 D2 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,4,Vanaspati,Bhānumati,N2 S M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,4,Vanaspati,Rasāli,S R1 M1 P D2 N2 S',S' D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,4,Vanaspati,Vanāvali,S R1 M1 P D2 N2 S',S' D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,4,Vanaspati,Vittalapriya,S R1 M1 P D2 S',S' D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,5,Mānavati,Mānavati,S R1 G1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,5,Mānavati,Manoranjani,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,5,Mānavati,Ghanashyāmalā,S G1 M1 P D2 S',S' D2 N3 P M1 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,5,Mānavati,Kunjari,S R1 M1 P D2 P S',S' N3 D2 P M1 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,6,Tānarūpi,Tānarūpi,S R1 G1 M1 P D3 N3 S',S' N3 D3 P M1 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,6,Tānarūpi,Tanukeerti,S R1 M1 P N3 S',S' N3 D3 N3 P M1 G1 M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,7,Senāvati,Senāvati,S R1 G2 M1 P D1 N1 S',S' N1 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,7,Senāvati,Senāgrani,S R1 G2 R1 M1 G2 M1 P N1 D1 S',S' N1 D1 P M1 G2 M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,7,Senāvati,Bhogi,S G2 M1 P D1 N1 D1 S',S' N1 D1 P M1 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,7,Senāvati,Chitthakarshani,S R1 G2 M1 D1 S',S' D1 M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,7,Senāvati,Navarasa Mālā,S R1 G2 M1 P D1 S',S' N1 D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,7,Senāvati,Sindhu Gowri,S R1 G2 M1 P D1 N1 S',S' N1 D1 M1 G2 M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,8,Hanumatodi,Hanumatodi,S R1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Janatodi,S R1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Āhiri,S R1 S G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R2 G2 / G3 D2 N3.,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Amrita Dhanyāsi,S R1 G2 M1 P N2 S',S' N2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Asāveri,S R1 M1 P D1 S',S' N2 S P D1 M1 P R1 G2 R1 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R2.,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Bhānuchandrika,S M1 D1 N2 S',S' N2 D1 M1 G1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Bhadratodi,S R1 G2 M1 D1 S',S' N2 D1 P G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Bhoopālam,S R1 G2 P D1 S',S' D1 P G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Chandrikatodi,S G2 M1 P D1 S',S' D1 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Deshikatodi,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Dhanyāsi,S G2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Divyamālati,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Ghanta,S G2 R2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R2 D2.,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Kalāsāveri,S R1 G2 P N2 S',S' N2 P G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Kanakasāveri,S R1 M1 P D1 S',S' N2 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Nāgavarāli,S R1 G2 M1 P M1 D1 N2 S',S' N2 D1 P M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Prabhupriya,S G2 M1 P D1 S',S' D1 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Punnāgatodi,N1 S R1 G2 M1 P,P M1 G2 R1 S N2 D1,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Punnagavarali,N2 S R1 G2 M1 P D1 N2,N2 D1 P M1 G2 R1 S N2,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R2.,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Shravanamallika,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Sowjanya,S R1 M1 D1 S',S' D1 M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Shuddha Seemantini,S R1 G2 M1 P D1 S',S' D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Shuddha Todi,S R1 G2 M1 D1 N2 S',S' N2 D1 M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Sindhubhairavi,S R2 G2 M1 G2 P D1 N2 S,N2 D1 P M1 G2 R1 S N2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R2 G3 M2 D2 N3.,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Srimati,S G2 R1 G2 M1 P D1 P D2 N2 S',S' N2 D1 P M1 P M1 G2 R1 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: D2.,wikipedia-janya-raga-list.csv
+Janya,8,Hanumatodi,Swarnamalli,S G2 M1 P D1 N1 S',S' N2 D1 P M1 G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Melakarta,9,Dhenukā,Dhenukā,S R1 G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,9,Dhenukā,Dhunibhinnashadjam,S R1 G2 R1 P M1 P N3 S',S' D1 P M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,9,Dhenukā,Bhinnashadjam,S R1 G2 R1 P M1 P N3 S',S' D1 P M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,9,Dhenukā,Mohananāta,S G2 M1 P D1 P M1 P N3 S',S' N3 P D1 P M1 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,9,Dhenukā,Udayaravichandrika,S G2 M1 P N3 S',S' N3 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,9,Dhenukā,Vasanthatodi,S R1 G2 M1 D1 N3 S',S' N3 D1 M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,10,Nātakapriyā,Nātakapriyā,S R1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Natābharanam,S R1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Alankārapriya,S R1 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Bhāgyashabari,S R1 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Deeparamu,S R1 G2 M1 P D2 N2 S',S' N2 D2 N2 P M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Gunāvati,S R1 M1 P D2 S,S D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Hindoladeshikam,S M1 R1 G2 M1 P D2 N2 S',S' P N2 D2 M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Kanakadri,S R1 G2 P D2 S',S' N2 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Mātangakāmini,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Nātyadhārana,S R1 M1 P D2 S',S' N2 D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Niranjana,S R1 G2 M1 P D2 S',S' N2 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Shānthabhāshini,S R1 G2 M1 P D2 S',S' N2 D2 P M1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,10,Nātakapriyā,Shivashakti,S G2 M1 D2 S',S' N2 D2 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,11,Kokilapriyā,Kokilapriyā,S R1 G2 M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Kokilāravam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G2 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Bhimsen (Raga created by Mahesh Mahadev),S G2 M1 P N3 S',S' N3 D2 P M1 G2 R1 S,No,No,"[2026-09-21] SCALE RESTORED from the Wikipedia page: the list held aroha ""S"" and avaroha ""S' N3 D2 P M1 G2 R1 S"", which had been cut short.",wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Bhakthirasa (Raga created by Rishabh Jagadeesh),S G2 M1 P N3 S',S' N3 P M1 G2 S,No,No,"[2026-09-21] SCALE RESTORED from the Wikipedia page: the list held aroha ""S"" and avaroha ""S' N3 P M1 G2 S"", which had been cut short.",wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Chitramani,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Jnānachintāmani,S R1 M1 D2 N3 S',S' N3 D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Kowmāri,S R1 G2 M1 P D2 S',S' N3 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Shuddha Lalitha,S P M1 D2 N3 S',S' N3 S D2 P M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Vardhani,S G2 M1 P M1 P D2 N3 S',S' N3 D2 P M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Vasantamalli,S G2 M1 P N3 S',S' D2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,11,Kokilapriyā,Vasantanārāyani,S R1 G2 M1 P S',S' N3 D2 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,12,Rūpavati,Rūpavati,S R1 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,12,Rūpavati,Rowpyanaka,S M1 P D3 N3 S',S' N3 P M1 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,12,Rūpavati,Shyāmakalyāni,S M1 G2 M1 P D3 N3 S',S' N3 P D3 N3 P M1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,13,Gāyakapriyā,Gāyakapriyā,S R1 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,13,Gāyakapriyā,Geya Hejjajji,S R1 M1 G3 M1 P D1 S',S' N3 D1 P M1 G3 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,13,Gāyakapriyā,Hejjajji,S R1 G3 M1 P D1 S',S' N1 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,13,Gāyakapriyā,Kalākānti,S R1 G3 M1 D1 N1 S',S' N1 D1 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,13,Gāyakapriyā,Kalkada,S R1 G3 P D1 N1 S,S' N1 D1 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,13,Gāyakapriyā,Kalpanadhārini,S G3 M1 P D1 S',S' N1 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,14,Vakuḷābharaṇam,Vakuḷābharaṇam,S R1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Āhiri,S R1 S G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R2 G2 / G3 D2 N3.,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Vātee Vasantabhairavi,S R1 G3 M1 D1 N2 S',S' N2 D1 M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Amudhasurabhi,S M1 G3 M1 P D1 S',S' N2 D1 P M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Devipriya,S G3 P N2 S',S' N2 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Kalindaja,S R1 G3 M1 P N2 S',S' N2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Kuvalayabharanam,S R1 G3 M1 D1 N1 S',S' N1 D1 M1 G3 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Mukthipradayini (Raga created by Mahesh Mahadev)[4],S R1 G3 P N2 S',S' N2 P D1 P G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Sallapa,S G3 M1 D1 N2 S',S' N2 D1 M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Soma,S R1 P M1 D1 N2 S',S' N2 D1 M1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Sūryā,S G3 M1 D1 N2 S',S' N2 D1 M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Shuddha Kāmbhoji,S G3 R1 M1 P N2 S',S' N2 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Vasantabhairavi,S R1 G3 M1 D1 N2 S',S' N2 D1 M1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Vasanta Mukhāri,S M1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,14,Vakuḷābharaṇam,Vijayollāsini,S R1 G3 M1 P M1 D1 N2 S',S' N2 D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,15,Māyāmāḻavagouḻai,Māyāmāḻavagouḻai,S R1 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Ardhradesi,S R1 G3 M1 P D1 N3 S',S' D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Bhāvini,S G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Bibhās {Hindustani},S R1 G3 P D1 S',S' D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Bowli,S R1 G3 P D1 S',S' N3 D1 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Bowli Rāmakriya,S R1 G3 P D1 S',S' N3 P D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Chāruvardhani,S R1 M1 P D1 N3 S',S' D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Chāyagowla,S R1 M1 G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Chandrachooda,S M1 G3 M1 P D1 S',S' N3 D1 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Deshyagowla,S R1 P D1 N3 S',S' N3 D1 P R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Devaranji,S M1 P D1 P N3 S',S' N3 D1 P M1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Ekakshari,S R1 G3 M1 P D1 N3 S',S' N1 P M1 R1 G3 M1 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Ghanasindhu,S M1 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Gowla,S R1 M1 P N3 S',S' N3 P M1 R1 G3 M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Gowlipantu,S R1 M1 P N3 S',S' N3 D1 P M1 D1 M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Gowri,S R1 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Gummakāmbhoji,S R1 G3 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Gundakriya,S R1 M1 P N3 S',S' N3 P D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Gurjari,S R1 G3 M1 P D1 N3 S',S' D1 N3 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Jaganmohini,S G3 M1 P N3 S',S' N3 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Kalyānakesari,S R1 G3 P D1 S',S' D1 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Kannadabangāla,S R1 M1 G3 M1 D1 P D1 S',S' D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Karnātaka Sāranga,S R1 G3 M1 P D1 N3 S',S' N3 D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Lalitā,S R1 G3 M1 D1 N3 S',S' N3 D1 M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Lalitapanchamam,S R1 G3 M1 D1 N3 S',S' N3 D1 M1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Mālavakurinji,S G3 P D1 N3 S',S' N3 D1 M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Mālavapanchamam,S R1 G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Mārgadesi,S R1 G3 R1 G3 D1 M1 P D1 S',S' D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Malahari,S R1 M1 P D1 S',S' D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Mallikavasantam,S G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Mangalakaishiki,S R1 M1 G3 D1 P S',S' N3 D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Manolayam,S R1 M1 P D1 S',S' N3 D1 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Maruva,S G3 M1 D1 N3 S',S' N3 D1 P G3 M1 G3 R1 S R1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Mechabowli,S R1 G3 P D1 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Megharanjani,S R1 G3 M1 N3 S',S' N3 M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Nadanamakriya,S R1 G3 M1 P D1 N3,N3 D1 P M1 G3 R1 S N3,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Pādi,S R1 M1 P N3 S',S' N3 P D1 P M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Pharaju (Paras) {Hindustani},S G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Poornalalita,S R1 G3 M1 P D1 S',S' D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Poorvi,S R1 G3 M1 D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Poorvikavasanta,S M1 G3 M1 D1 N3 S',S' N3 D1 M1 P M1 G3 R1 S,Yes,No,"D (bare, no variant digit in source) inferred as D1 from parent melakarta 15",wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Pratāpadhanyāsi,S G3 M1 P N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Pratāparanjani,S R1 M1 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Puranirmai,S R1 G3 P D1 S',S' N3 D1 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Rāmakali,S R1 G3 P D1 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Rāmakriya,S G3 M1 P D1 N3 S',S' N3 P D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Revagupti,S R1 G3 P D1 S',S' D1 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Rukhmāmbari,S R1 G3 P N3 S',S' N3 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Sāmantadeepara,S R1 G3 M1 P N3 S',S' N3 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Sāranga Nāta,S R1 M1 P D1 S',S' N3 S D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Sāveri,S R1 M1 P D1 S',S' N3 D1 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Salanganāta,S R1 M1 P D1 S',S' D1 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Satyāvati,S G3 R1 G3 P D1 S',S' N3 D1 N3 P D1 P G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Sindhu Rāmakriya,S G3 M1 P D1 N3 S',S' N3 P M1 G3 R1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Surasindhu,S M1 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 R1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Tārakagowla,S G3 M1 D1 N3 S',S' N3 D1 M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Takka,S R1 S G3 M1 G3 P M1 D1 N3 S',S' N3 D1 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Ushāvali,S R1 M1 P D1 S',S' N3 D1 M1 P M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,15,Māyāmāḻavagouḻai,Vishārada,S R1 M1 P N3 S',S' N3 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,16,Chakravākam,Chakravākam,S R1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Toyavegavāhini,S R1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Āhir Bhairavi,S R1 G3 M1 P N2 D2 M1 P D2 S',S' N2 D2 P M1 P G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Bhakthapriya,S G3 M1 P D2 N2 S',S' N2 D2 P M1 R1 M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Bhujāngini,S R1 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Bindhumālini,S G3 R1 G3 M1 P N2 S',S' N2 S D2 P G3 M1 P G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Chakranārāyani,S R1 M1 P D2 N2 S',S' N2 D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Ghoshini,S M1 G3 M1 P D2 N2 D2 S',S' N2 D2 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Guhapriya,S R1 G3 M1 P P M1 D2 N2 S',S' N2 D2 P M1 G3 S R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Kalāvati,S R1 M1 P D2 S',S' D2 P M1 G3 S R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Kokilā,S R1 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Malayamārutam,S R1 G3 P D2 N2 S',S' N2 D2 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Mukthāngi,S R1 G3 M1 P D2 N2 S',S' D2 N2 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Mukundamālini,S R1 G2 P D2 S',S' D2 P G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Poornapanchamam,P M1 S R1 S M1 P D2,D2 P M1 G3 R1 S N2,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Pravritti,S G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Rāgamanjari,S R1 M1 P D2 S',S' N2 D2 M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Rasikaranjani,S R1 G3 P S',S' D2 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Rudra Panchami,S G3 M1 D2 N2 S',S' N3 D2 M1 G3 R1 S,No,Yes,"[2026-09-21] SCALE RESTORED from the Wikipedia page: the list held aroha ""S G3 M1"" and avaroha ""S' N3 D2"", which had been cut short.",wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Samya (Raga created by Mahesh Mahadev)[5],S R1 G3 P N2 S',S' N2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Shree Nabhomārgini,S G3 M1 P D2 N2 S',S' D2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Shyāmali,S G3 P D2 N2 S',S' N2 D2 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Subhāshini,S D2 N2 D2 R1 G3 M1 P,M1 G3 R1 S N2 D2 N2 S,Yes,No,"D (bare, no variant digit in source) inferred as D2 from parent melakarta 16",wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Valaji,S G3 P D2 N2 S',S' N2 D2 P G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Veenadhāri,S R1 G3 P D2 N2 S',S' N2 D2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,16,Chakravākam,Vegavāhini,S R1 G3 M1 D2 N2 D2 S',S' N2 D2 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,17,Sūryakāntam,Sūryakāntam,S R1 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Chāyāvathi,S R1 G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Bhairavam,S R1 G3 M1 P D2 N3 S',S' D2 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Haridarpa,S R1 G3 M1 P D2 N3 S',S' D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Jayasamvardhani,S G3 M1 P D2 N3 S',S' N3 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Jeevantikā,S R1 M1 P D2 N3 S',S' N3 D2 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Kusumamāruta,S M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 G3 M1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Nāgachooḍāmani,S R1 G3 M1 P D2 S',S' D2 N2 D2 P M1 G3 M1 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Rohini,S R1 G3 M1 M2 D2 N3 S',S' N3 D2 M2 M1 G3 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Sāmakannada,S R2 M1 G2 M1 P D2 N3 S',S' N3 D2 P M1 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Sowrāshtram,S R1 G3 M1 P M1 D2 N3 S',S' N3 D2 N2 D2 P M1 G3 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Suddha Gowla,S R1 M1 P N3 S',S' N3 P M1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Supradeepam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G3 M1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,17,Sūryakāntam,Vasanthā,S M1 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,18,Hātakāmbari,Hātakāmbari,S R1 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,18,Hātakāmbari,Jayashuddhamālavi,S R1 G3 M1 P N3 S',S' N3 D3 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,18,Hātakāmbari,Hamsanantini,S G3 M1 P S',S' P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,18,Hātakāmbari,Kallola,S P D3 N3 S',S' N3 D3 P M1 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,18,Hātakāmbari,Simhala,S R1 G3 M1 P D3 N3 S',S' N3 D3 N3 P M1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,19,Jhankāradhvani,Jhankāradhvani,S R2 G2 M1 P D1 N1 S',S' N1 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Jhankārabhramari,S R2 G2 M1 P D1 N1 D1 P D1 S,S N1 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Bhārati,S R2 G2 M1 P S',S' P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Chittaranjani,S R2 G2 M1 P D1 N1,N1 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Jalmika,S R2 G1 M1 P D1 N1 S',S' N1 D1 P M1 G1 S R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Lalitabhairavi,S G2 M1 P D1 S',S' N1 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Poornalalita,S G2 R2 M1 P S,S N1 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,20,Natabhairavi,Natabhairavi,S R2 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Nārērētigowla,S G2 R2 G2 M1 N2 D1 M1 N2 N2 S',S' N2 D1 M1 G2 M1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Abheri (Dikshitar School),S M1 G2 M1 P P S',S' N2 D2 P M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Anandabhairavi,S G2 R2 G2 M1 P D2 P S',S' N2 D2 P M1 G2 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G3 D1 N3.,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Amrithavāhini,S R2 M1 P D1 N2 S',S' N2 D1 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Bhairavi,S G2 R2 G2 M1 P D2 N2 S',S' N2 D1 P M1 G2 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: D2.,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Bhuvanagāndhāri,S R2 M1 P N2 S',S' N2 D1 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Chapagantarva,S G2 M1 P N2,D1 M1 G2 R2 S N2,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Darbāri Kānada,N2 S R2 G2 R2 S M1 P D1 N2 S',S' D1 N2 P M1 P G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Devakriya,S R2 M1 P N2 S',S' N2 D1 N2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Dhanashree,N2 S G2 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Dharmaprakāshini,S R2 M1 P N2 S',S' N2 D1 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Dilipika Vasantha,S G2 M1 P D1 P N2 S',S' D1 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Divyagāndhāri,S G2 M1 P D1 N2 S',S' N2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Gopikāvasantam,S R2 G2 M1 P D1 P N2,S N2 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Hindolam,S G2 M1 D1 N2 S',S' N2 D1 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Hindolavasanta,S G2 M1 P D1 N2 D1 S',S' N2 D1 P M1 D2 M1 G2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Indughantarava,S G2 M1 P D1 P,N2 D1 P M1 G2 R2 S N2,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Jayanthashrī,S G2 M1 D1 N2 S',S' N2 D1 M1 P M1 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Jingaḷa,S R2 G2 M1 P D1 N2 D1 P S',S' N2 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Jaunpuri {Hindustani},S R2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Kātyāyani,S R2 G2 P D1 S',S' D1 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Kamakhyapriya (Raga created by Mahesh Mahadev)[6],S R2 M1 P D1 N2 S',S' N2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Kanakavasantham,S G2 M1 P N2 D1 S',S' N2 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Kshanika,S G2 M1 P D1 S',S' D1 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Mānji,S R2 G2 M1 P D2 N2 S',S' N2 D1 P M1 P M1 P G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Mahati cf. Mela 28&43 (Mahathi),S G2 P D1 N2 S',S' N2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Malkosh / Malkauns,S G2 M1 D1 N2 S',S' N2 D1 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,mArgahindOLaM,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Nāgagāndhāri,S R2 M1 G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Navarathna Vilāsam,S R2 G2 M1 P D1 P S',S' D1 P M1 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Nīlamati,S G2 M1 P D1 N2 S',S' N2 D1 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Nīlaveni,S R2 G2 M1 P D1 N2 D1 S',S' D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Poornashađjam,S R2 G2 M1 N2 N2 S,S' N2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Rājarājeshwari,S R2 M1 P D1 S',S' N2 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Sāramati,S R2 G2 M1 P D1 N2 S',S' N2 D1 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Sāranga Kāpi,S R1 P M1 R1 P R1 M1 P N2 S',S' N2 D1 P M1 G2 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Sharadapriya,S R2 G2 P N2 S',S' N2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Shree Navarasachandrika,S R2 G2 M1 P D1 S',S' D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Sindhu Dhanyāsi,S G2 M1 P N2 S',S' N2 D1 M1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Shuddha Desi,S R2 G2 R2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Shuddha Sālavi,S G2 M1 P N2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Sukumāri,S G2 M1 P N2 D1 N2 S',S' N2 P M1 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Sushama (Raga created by M. Balamuralikrishna),S R2 M1 P D1 S',S' D1 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Sutradhāri,S R2 M1 P D1 S,S D1 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Tarkshika,S R2 M1 P N2 S',S' N2 D1 P M1 R2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Udayarāga,S G2 M1 P N2 S',S' N2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Vasantavarāli,S R2 M1 P D1 S',S' N2 D1 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,21,Kīravāṇi,Kīravāṇi,S R2 G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Keeranāvali,S R2 G2 M1 P D1 N3 S',S' P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Aymmukhan,S G2 M1 P D1 N3 S',S' N3 D1 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Bhānupriya,S R2 G2 D1 N3 S',S' N3 D1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Beethovanapriya (invented by Ramesh Vinayakam[7]),'G2 'P 'N3 S R2 G2 M1 P D1,P M2 P R2 M1 G2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Chandrika,S R2 G2 P D1 N3 S',S' N3 D1 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Gaganabhoopālam,S M1 G2 M1 P D1 N3,S N3 D1 M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Hamsapancama,S G2 M1 P N3 D1 N3 P S',S' N3 D1 M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Hamsavāhini,S R2 M1 P D1 N3 S',S' N3 D1 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Jayashree,S R2 G2 M1 P D1 N3 D1 S',S' N3 D1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,"Kadaram (Chandrakosh, Chandrakauns, Chandrakaush)",S G2 M1 D1 N3 S',S' N3 D1 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Kalyāna Vasantam,S G2 M1 D1 N3 S',S' N3 D1 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Kusumāvali,S G2 M1 P D1 S',S' N3 D1 P M1 G2 M1 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Mādhavi,S M1 G2 M1 P D1 N3 S',S' N3 D1 P M1 S M1 G2 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Mishramanolayam,S R2 M1 P D1 S',S' D2 D1 P M1 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Priyadarshani,S R2 M1 D1 N3 S',S' N3 D1 M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Rishipriya,S R2 G2 M1 P D1 N3 S',S' N3 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Sāmapriya,S R2 M1 P D1 S',S' D1 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Shrothasvini,S G2 M1 P N3 S',S' N3 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,21,Kīravāṇi,Vasanthamanohari,S R2 G2 M1 D1 N3 S',S' N3 D1 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,22,Kharaharapriyā,Kharaharapriyā,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Shree,S R2 M1 P N2 S',S' N2 P D2 N2 P M1 R2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Andolikā,S R2 M1 P N2 S',S' N2 D2 M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Abheri,S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Abhogi,S R2 G2 M1 D2 S',S' D2 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Ādi Kāpi,S R2 M1 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Āryamati,S R2 G2 P D2 S',S' N2 D2 P D2 M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Agnikopa,S G2 M1 P N2 S',S' N2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Bālachandrika,S G2 M1 P D2 N2 S',S' N2 D2 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Basant Bahār {Hindustani},S M2 P G3 M2 N3 D1 N3 S,R2 S N2 D2 P M1 G2 M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Bageshri,S G2 M1 D2 N2 S',S' N2 D2 M1 P D2 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Bhagavatapriya,S R2 G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Bhagavathpriya,S R2 G2 M1 R2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Bhimpalasi {Hindustani},N2 S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Brindāvana Sāranga {Hindustani},S R2 M1 P N3 S',S' N2 P M1 R2 G2 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Brindāvani {Hindustani},S R2 M1 P N3 S',S' N2 P M1 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Chakrapradipta,S R2 G2 M1 P M1 D2 N2 S',S' N2 D2 M1 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Chittaranjani,S R2 G2 M1 P D2 N2,N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Darbar,S R2 M1 P D2 N2 S,R2 S N2 S D2 P M1 R2 G2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Dayavati,S R2 G2 P N2 S',S' N2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Devāmruthavarshani,S R2 G2 M1 N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Deva Manohari,S R2 M1 P D2 N2 S',S' N2 D2 N2 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Dhanakāpi,S R2 M1 P N2 S,S N2 D2 N2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Dilipika,S R2 G2 M1 P N2 D2 N2 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Gowla Kannada,S R2 G2 M1 P D2 N2 S',S' N2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Gāra {Hindustani},S G2 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 G2 R2 S N3 S N2 D2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G3 D1 N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Hamsa ābheri,S G2 P M1 P N2 S',S' N2 D2 P M1 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Haridasapriya,S P M1 G3 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Harinārāyani,S R2 G2 M1 P M1 D2 N2 S',S' N2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Hindustāni Kāpi,S R2 M1 P N2 S',S' N2 D2 N2 P M1 G2 M1 D2 P G2 R2 S N2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G3 D1 N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Huseni,S R2 G2 M1 P N2 D2 N2 S,S' N2 D1 P M1 G2 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: D1.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Jatādhāri,S R2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Jayamanohari,S R2 G2 M1 D2 S',S' N2 D2 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Jayanārāyani,S R2 G2 M1 P D2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Jayanthasena,S G2 M1 P D2 S',S' N2 D2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Jog {Hindustani},S G3 M1 P N2 S',S' N2 P M1 G3 M1 G2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G2.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kanadā,S R2 P G2 M1 D2 N2 S',S' N2 P M1 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kāpi,S R2 M1 P N3 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G3 D1 N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kāpijingala,S N2 S R2 G2 M1,M1 G2 R2 S N2 D2 N2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kalānidhi,S R2 G2 M1 S P M1 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kalika,S R2 G2 P D2 N2 S',S' N2 D2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kannadagowla,S R2 G2 M1 P N2 S',S' N2 D2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Karnātaka Hindolam,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Karnātaka Kāpi,S R2 G2 M1 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Karnātaka Devagāndhari,S G2 M1 P N2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Karnaranjani,S R2 G2 M1 G2 P D2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kowmodaki,S R2 G2 M1 P D2 N2 S',S' D2 P G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Kowshika,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Lalitamanohari,S G2 M1 P D2 N2 S',S' N2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mādhavamanohari,S R2 G2 M1 P N2 D2 N2 S',S' N2 D2 M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mālavashree,S G2 M1 P N2 D2 N2 P D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Māyapradeeptam,S M1 G2 M1 P D2 N2 S',S' D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Madhyamarāvali,S R2 G2 P D2 N2 S',S' N2 D2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Madhyamāvathi,S R2 M1 P N2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mahānandhi,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mandāmari,S R2 M1 P D2 S',S' N2 S D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mangalāvathi,S R2 M1 P D2 S',S' D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Manirangu,S R2 M1 P N2 S',S' N2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Manjari,S G2 R2 G2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Manohari,S G2 R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Manorama,S R2 G2 M1 P D1 P S',S' N2 D1 P M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Maruvadhanyāsi,S G2 M1 P D2 S',S' N2 D2 P M1 D2 M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mishramanolayam,S R2 M1 P D1 S',S' D2 D1 P M1 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mishra shivaranjani,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R1 G3 M1 M2 D1 N2 N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Malhar or Miyān ki Malhār {Hindustani},S R2 P M1 P N2 D2 N3 S',S' N2 P M1 P G2 M1 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Mukhāri,S R2 M1 P N2 D2 S',S' N2 D1 P M1 G2 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: D1.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nādachintāmani,S R2 G2 M1 N2 D2 N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nādatārangini,S P M1 R2 G2 S',S' P N2 D2 P M1 G2 R2 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nādavarangini,S P M1 N2 D2 N2 S',S' P N2 D2 P M1 G2 R2 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nāgari,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nāgavalli,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nāyaki,S R2 M1 P D2 N2 D2 P S',S' N2 D2 P M1 R2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nigamagāmini,M1 G2 S G2 M1 N2 S',S' N2 M1 G2 M1 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Nirmalāngi,S R2 M1 P N2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Omkāri,S R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Panchamam,S R2 D2 P N2 S',S' N2 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Phalamanjari,S G2 M1 D2 S',S' N2 D2 P M1 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Phalaranjani,S G2 M1 P M1 D2 S',S' N2 D2 P M1 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Pilu(peelu) {Hindustani},N3 S G3 M1 P N3 S',S' N2 D2 P D1 P M1 G2 R2 S N3 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G3 D1 N3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Poornakalānidhi,S G2 M1 P D2 N2 S',S' D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Pushpalathika,S R2 G2 M1 P N2 S',S' N2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Ratipatipriya,S R2 G2 P N2 S',S' N2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Reethigowla,S G2 R2 G2 M1 N2 D2 M1 N2 N2 S',S' N2 D2 M1 G2 M1 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Rudrapriyā,S R2 G2 M1 P D2 N2 S',S' N2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Sahāna (Original),S R2 G2 M1 P M1 D2 N2 S',S' N2 D2 P M1 G2 G2 R2 G2 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G3.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Sālagabhairavi,S R2 M1 P D2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Sārang {Hindustani},S R2 M1 P N2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Saindhavi,N2 D2 N2 S R2 G2 M1 P D2 N2,D2 P M1 G2 R2 S N2 D2 N2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Sangrama,S R2 M1 D2 N2 P S',S' N2 D2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Sankrāndanapriyā,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Sarvachoodāmani,S R2 M1 G2 M1 P D2 N2 S',S' N2 P D2 N2 D2 P M1 G2 R2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Shivapriyā,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Shivaranjani,S R2 G2 P D2 S',S' D2 P G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Shree Manohari,S G2 R2 G2 M1 P D2 S',S' D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Shree Manoranjani,S G2 M1 D2 N2 S',S' N2 D2 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Shreeranjani,S R2 G2 M1 D2 N2 S',S' N2 D2 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Siddhasena,S G2 R2 G2 M1 P D2 S',S' N2 D2 M1 P M1 R2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Suddha Bangāla,S R2 M1 P D2 S',S' D2 P M1 R2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Suddha Bhairavi,S G2 M1 P N2 D2 S',S' N2 D2 M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Suddha Dhanyāsi,S G2 M1 P N2 S',S' N2 P M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Suddha Hindolam (Varamu),S G2 M1 D2 N2 S',S' N2 D2 M1 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Suddha Manohari,S R2 G2 M1 P D2 S',S' N2 P M1 R2 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Suddha Velāvali,S R2 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Sugunabhooshani,S G2 M1 P M1 D2 N2 S',S' N2 D2 P M1 D2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Swarabhooshani,S G2 M1 P D2 N2 S',S' N2 D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Swarakalānidhi,S M1 G2 M1 P D2 N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Swararanjani,S R2 G2 M1 D2 N2 S',S' N2 P M1 G2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Tavamukhāri,S R2 G2 P D2 S',S' N2 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Vajrakānti,S G2 M1 P N2 S',S' N2 D1 P M1 G2 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Melakarta,23,Gourimanohari,Gourimanohari,S R2 G2 M1 P D2 N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Gowrivelāvali,S R2 G2 S R2 M1 P D2 S,S' N3 D2 P M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Gowrishankar,S R2 G2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Hamsadeepika,S R2 G2 M1 D2 S',S' N3 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Hrudkamali,S R2 M1 D2 N3 S',S' N3 D2 M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Lavanthika,S R2 M1 P N3 S',S' N3 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Sundaramanohari,S R2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Patdīp {Hindustani},N3 S G2 M1 P N3 S',S' N3 D2 P M1 P G2 M1 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Thyagaraja Mangalam,S G2 M1 P N3 S',S' N3 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Vasantashree (Amba Manohari),S R2 G2 M1 D2 N3 S',S' N3 D2 M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Velāvali,S G2 M1 D2 N3 S,S N3 D2 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,24,Varuṇapriyā,Varuṇapriyā,S R2 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,24,Varuṇapriyā,Veeravasantham,S R2 G2 M1 P S',S' N3 D3 P M1 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,25,Māraranjani,Māraranjani,S R2 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,25,Māraranjani,Sharāvathi,S R2 G3 M1 P D1 N1 D1 S',S' N1 D1 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,25,Māraranjani,Devasalaga,S G3 P D1 N1 S',S' N1 D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,25,Māraranjani,Kesari,S R2 G3 M1 P M1 D1 P D1 S',S' D1 N1 D1 P M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,25,Māraranjani,Gayakamandini,S R2 G3 M1 P D1 S,S D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,25,Māraranjani,Rājathilaka,S R2 G3 M1 P S',S' P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,26,Chārukesi,Chārukesi,S R2 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Tarangini,S R2 G3 P D1 N2 D1 S,S D1 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Chirswaroopi,S R2 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Māravi,S G3 M1 P N2 S',S' N2 D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Poorvadhanyāsi,S M1 G3 M1 N2 S',S' N2 D1 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Shiva Manohari,S M1 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Shukrajyothi,S R2 G3 M1 P D1 N2 S',S' N2 P D1 M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Ushābharanam,S G3 M1 D1 P M1 D1 N2 S',S' N2 D1 P M1 G3 R2 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,27,Sarasāngi,Sarasāngi,S R2 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Sowrasenā,S R2 M1 P D1 S',S' N3 D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Haripriya,S R1 G3 M1 P S',S' N3 D1 P M1 G3 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Srirangapriya,S R2 G3 M1 P D1 S',S' D1 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Kamalā Manohari,S G3 M1 P N3 S',S' N3 D1 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Madhulika,S R2 G3 M1 N3 S',S' N3 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Nalinakānthi,S G3 R2 M1 P N3 S',S' N3 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Neelamani,S R2 M1 P D1 N3 S',S' N3 D1 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Salavi,S G3 R2 G3 M1 P D1 N3 D1 S',S' N3 D1 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Sarasānana,S R2 G3 M1 D1 N3 S',S' N3 D1 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Saraseeruha,S R2 G3 M1 D1 N1 D1 S',S' N1 D1 M1 G3 R2,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Simhavāhini,S G2 M1 P D1 N3 S',S' N3 D1 P M1 G3 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Surasena,S R2 M1 P D1 S',S' N3 D1 P M1 G3 S R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Sutradhāri,S R2 M1 P D1 S',S' D1 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,27,Sarasāngi,Vasanthi,S R2 G3 P D1 S',S' D1 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,28,Harikāmbhōji,Harikāmbhōji,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Harikedāragowla,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Ambhojini,S R2 G3 M1 D2 S',S' D2 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Andhali,S R2 M1 P N2 S',S' N2 P M1 R2 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Aparoopam,S R2 G3 M1 P N2 D2 N2 S',S' D2 M1 G3 R2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Bālahamsa,S R2 M1 P D2 S',S' N2 D2 P M1 R2 M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Bahudāri,S G3 M1 P D2 N2 S',S' N2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Chāyalagakhamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Chāyatārangini,S R2 M1 G3 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Chandrahasitham,S R2 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Dasharatipriya,S M1 G3 M1 P D2 N2 D2 S',S' N2 D2 P M1 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Dayaranjani,S R2 M1 P D2 S',S' N2 D2 M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Desh {Hindustani},S R2 M1 P N3 S',S' N2 D2 P M1 G3 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Deshākshi,S R2 G3 P D2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Deshkār {Hindustani},S R2 G3 P D2 S',S' D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Dwaithachintāmani,S G3 M1 D2 N2 S,S N2 D2 M1 P G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Dwijāvanthi /Jujāvanthi,S R2 M1 G3 M1 P D2 S',S' N2 D2 P M1 G3 M1 R2 G2 R2 S N2 D2 N2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G2 N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Eeshamanohari,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 R2 M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Eeshaivaridhi,S R2 M1 D2 N2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Gāndhāralola,S R2 M1 P D2 S',S' N2 D2 P M1 G3 M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Gāra {Hindustani},S G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 G2 R2 S N3 S N2 D2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G2 D1 N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Gavati {Hindustani},S M1 P N2 S',S' D2 M1 P G3 M1 R2 N2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Guhamanohari,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Guharanjani,S R2 S M1 P D2 N2 S',S' N2 D2 N2 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Hamsaroopini,S R2 G3 P D2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Haridasapriya,S P M1 G3 M1 P N2 S',S' N2 D2 N2 P M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Harikedāram,S R2 G3 M1 P D2 N2 S N2 S',S' N2 S D2 N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Harini,S G3 M1 P D2 N2 D2 S',S' N2 S N2 D2 P M1 G3 M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Harithapriya,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Hemasāranga,S R2 G3 M1 P D2 N2 D2 S',S' P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Jaijaiwanti {Hindustani},S D2 N2 R2 S R2 G3 M1 P M1 G3 M1 G3 R2 M1 P N3 S',S' N2 D2 P D2 M1 G3 M1 R2 G2 R2 S N3 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G2 N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Jaithshree,S R2 G3 P D2 S',S' D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Jana Sammodhini,S R2 G3 P D2 N2 S',S' N2 D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Jayarāma,S R2 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Jhinjoti {Hindustani},D2 S R2 G3 M1 P D2 N2,D2 P M1 G3 R2 S N2 D2 P D2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Jujahuli,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Kāmbhoji,S R2 G3 M1 P D2 S',S N2 D2 P M1 G3 R2 S N3 P D2 S',Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Kāpi Nārāyani,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Khamāj {Hindustani},S G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Kamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Karnātaka Behāg,S R2 G3 M1 P D2 N2 S',S' N2 D2 N2 P D2 M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Karnātaka Devagāndhāri,S G3 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Karnātaka Khamās,S G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Kedāragowla,S R2 M1 P N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Keshavapriyā,S R2 S M1 P D2 N2 S',S' N2 S P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Kokiladhwani,S R2 G3 M1 D2 N2 D2 S',S' N2 D2 N2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Kokilavarāli,S R2 M1 P D2 S',S' N2 D2 M1 P M1 G3 R2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Kunthalavarāli,S M1 P D2 N2 D2 S',S' N2 D2 P M1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Mālavi,S R2 G3 M1 P N2 M1 D2 N2 S',S' N2 D2 N2 P M1 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Madhurakokila,S R2 G3 D2 N2 S',S' N2 D2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Mahathi,S G3 P N2 S',S' N2 P G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Mahuri,S R2 M1 G3 R2 G3 P D2 S',S' N2 D2 P M1 G3 R2 S R2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Manjupriya,S G3 M1 P N2 S',S' N2 D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Manoharam,S R2 G3 M1 D2 N2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Mattakokila,S R2 P D2 N2 D2 S',S' D2 N2 D2 P R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Meghana,S M1 G3 M1 P D2 S',S' N2 D2 M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Mohanam,S R2 G3 P D2 S',S' D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nādavalli,S R2 M1 D2 N2 S',S' N2 D2 M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nāgaswarāvali,S G3 M1 P D2 S',S' D2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nārāyanagowla,S R2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 R2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nārāyani,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nāttai Kurinji,S R2 G3 M1 N2 D2 N2 P D2 N2 S,S' N2 D2 M1 G3 M1 P G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nāttai Nārāyani,S R2 G3 M1 D2 N2 D2 S',S' N2 D2 P M1 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nandhkowns {Hindustani},S G3 M1 P M1 D2 N2 S',S' N2 D2 P M1 G3 S G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Narani,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Navarasa Kalānidhi,S R2 M1 P S N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Navarasa kannada,S G3 M1 P S',S' N2 D2 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Neela,S G3 M1 D2 N2 S',S' N2 D2 M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Pārsi,S R2 G3 M1 D2 N2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Parameshwarapriyā,S R2 G3 M1 P N2 S',S' N2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Pashupathipriyā,S R2 M1 P M1 D2 S',S' D2 M1 P R2 M1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Poornakāmbhoji,S R2 G3 M1 P N2 S',S' D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Pratāpa Nāttai,S R2 G3 M1 D2 P D2 N3 S',S' N3 D2 P M1 G3 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Pratāpavarāli,S R2 M1 P D2 P S',S' D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Pravalajyoti,S R2 M1 P D2 N2 S',S' N2 D2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Rāgapanjaramu,S R2 M1 P D2 N2 D2 S',S' N2 D2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Rāgavinodini,S R2 G3 M1 D2 S',S' D2 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Rāgeshree,S G3 M1 D2 N2 S,S' N2 D2 M1 G3 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3 (rarely).,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Ravi Chandrikā,S R2 G3 M1 D2 S',S' N2 D2 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Sāvithri,S G3 M1 P N2 S',S' N2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Sahāna,S R2 G3 M1 P M1 D2 N2 S',S' N2 S D2 N2 D2 P M1 G3 M1 R2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Saraswathi Manohari,S R2 G3 M1 D2 S',S' D2 N2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Sathvamanjari,S R2 M1 P D2 S',S' N2 D2 P M1 N2 D2 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Shakunthala,S R2 G3 M1 D2 N2 S',S' N2 D2 M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Shankaraharigowla,S R2 G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Shenchukāmbhoji,S P M1 D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Chenjurutti,D2 S R2 G3 M1 P D2 N2,N2 D2 P M1 G3 R2 S N2 D2 P D2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G2.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Shiva Kāmbhoji,S R2 G3 M1 N2 S',S' N2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Surutti,S R2 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Shyāmā,S R2 M1 P D2 S,S D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Simhavikrama,S R2 G3 R2 M1 P D2 P N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Sindhu Kannada,S M1 G3 M1 R2 G3 M1 P D2 P S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Sindhu Surutti,S R2 M1 P N2 S S N2 S',S' N2 D2 P M1 R2 M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Suddha Khamās,S M1 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Suddha Varāli,S R2 G3 M1 D2 N2 S',S' N2 D2 N2 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Suddha,S R2 M1 P D2 S',S' N2 D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Suddhatarangini,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Sumanapriyā,S R2 G3 M1 P D2 P S',S' D2 S P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Suposhini,S R2 S M1 P N2 D2 S',S' D2 P M1 R2 M1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Suvarnakriyā,S R2 G3 P N2 D2 S',S' N2 P G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Swarāvali,S M1 G3 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Swaravedi,S M1 G3 M1 P N2 D2 N2 S',S' N2 D2 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Tilakavathi,S R2 G3 M1 P D2 P S',S' D2 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Tilang {Hindustani},S G3 M1 P N3 S',S' N2 P M1 G3 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Umābharanam,S R2 G3 M1 P D2 N2 S',S' N2 P M1 R2 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Vaishnavi,S R2 G3 M1 P D2 S',S' D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Veenavadini,S R2 G3 P N2 S',S' N2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Vivardhani,S R2 M1 P S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Yadukula Kāmbhoji,S R2 M1 P D2 S',S' N2 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,29,Dhīraśankarābharaṇam,Dhīraśankarābharaṇam,S R2 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Ānandharoopa,S R2 G3 P D2 N3 S',S' N3 D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Ārabhi,S R2 M1 P D2 S,S' N3 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Atāna,S R2 M1 P N2 S',S' N2 D2 P M1 G2 M1 R2 S,Yes,Yes,"[2026-09-21] CORRECTED: off-parent swara variant(s) G2, N2 replaced with melakarta 29's own (5 other source(s) agree with the parent). Was aroha ""S R2 M1 P N2 S'"" and avaroha ""S' N2 D2 P M1 G2 M1 R2 S""; Bhashanga Yes -> No, Vakra Yes -> Yes. [2026-09-21] RESTORED: the earlier digit correction (G2 N2 to G3 N3) is undone: the page states G2 and N2 as anya swaras of Atana (melakarta 29). [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: G2 N2.",wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Bangāla,S R2 G3 M1 P M1 R2 P S',S' N3 P M1 R2 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Begada,S G3 R2 G3 M1 P D2 P S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Behāg (Carnatic adaptation),S G3 M1 P N3 D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M2 N2.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Behāg Deshikam,S R2 G3 M1 M2 P D2 N3 S',S' N3 D2 P M2 M1 G3 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Bihag {Original/Hindustani},N3 S G3 M1 P N3 S',S' N3 D2 P M2 P G3 M1 G3 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M2.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Bilahari,S R2 G3 P D2 S',S' N3 D2 P M1 G3 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N2.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Buddhamanohari,S R2 G3 M1 S P S',S' P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Buddharanjani,S R2 G3 M1 P S',S' N3 P M1 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Chāyā,S P M1 P D2 P N3 R2 S',S' D2 P M1 P D2 P G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Chāyashankarābharanam,S R1 M1 P D2 N3 S',S' N3 D2 P M1 G3 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Devagāndhāri,S R2 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N2.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Dharmalakhi,S M1 P D2 N3 S',S' N3 D2 P M1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Dhurvanki,S R2 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Durga {Hindustani},S R2 M1 D2 P D2 S',S' D2 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Gajagowri,S R2 M1 G3 M1 N3 P D2 S',S' N3 D2 P M1 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Garudadhvani,S R2 G3 M1 P D2 N3 S',S' D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Gowdamalhār,S R2 M1 P D2 S',S' N3 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Hamsadhwani,S R2 G3 P N3 S',S' N3 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Hamsavinodhini,S R2 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Hemant {Hindustani},N3 S D2 N3 S G3 G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Jana Ranjani,S R2 G3 M1 P D2 P N3 S',S' D2 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Julavu,P D2 N3 S R2 G3 M1 P,M1 G3 R2 S N3 D2 P M1,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kamaripriyā,S G3 M1 D2 N3 S',S' N3 D2 M1 M1 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kannada,S R2 G3 M1 P M1 D2 N3 S',S' N3 S D2 P M1 G3 M1 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kathanakuthuhalam,S R2 M1 D2 N3 G3 P S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kaushikadhwani / Bhinna shadaj {Hindustani},S G3 M1 D2 N3 S',S' N3 D2 M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kedaram,S M1 G3 M1 P N3 S',S' N3 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kokilabhāshani,S R2 G3 M1 P D2 N3 S',S' N3 P M1 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kolahalam,S P M1 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kurinji,S N3 S R2 G3 M1 P D2,D2 P M1 G3 R2 S N3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kusumavichithra,S G3 R2 G3 M1 P N3 P D2 N3 S',S' D2 N3 D2 M1 G3 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Kutuhala,S R2 M1 N3 D2 P N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Lahari,S R2 G3 P D2 S',S' D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Mānd {Hindustani},S G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R1 G2 M2 D1 N2.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Māyadravila,S R2 G3 M1 P D2 N3 S',S' N2 P M1 P G3 M1 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Mohanadhwani,S R2 G3 P D2 S',S' N3 P D2 P G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Nāgabhooshani,S R2 M1 P D2 N3 S',S' D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Nāgadhwani,S R2 S M1 G3 M1 P N3 D2 N3 S',S' N3 D2 N3 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Nārāyanadeshākshi,S R2 M1 G3 R2 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Navaroj,P D2 N3 S R2 G3 M1 P,M1 G3 R2 S N2 D2 P,No,Yes,"Vakra is Yes by the pitch-based rule in sargam_intervals.py (avaroha G1->R3 +1). Avaroha digits corrected from M1 G1 R3 S N2 D2 P: G1, R3 and N2 are not swaras of parent melakarta 29 and were not marked as anya swaras; Nerur and Royal Carpet give M1 G3 R2 S N3 D2 P. Vakra and Bhashanga recomputed. [2026-09-21] RESTORED: N2 is kept: the page states N2 as Navaroj's anya swara. The G1 and R3 stay corrected to G3 and R2 (user ruling: they are not swaras of melakarta 29 and are not stated as anya). [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N2.",wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Neelāmbari,S R2 G3 M1 P D2 P N3 S',S' N3 P M1 G3 R2 G3 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N2.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Niroshta,S R2 G3 D2 N3 S',S' N3 D2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Pahādi {Hindustani},S R2 G3 P D2 P D2 S,N3 D2 P G3 M1 G3 R2 S N3 D2 P D2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: R1 G2 M2 D1 N2.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Poornachandrika,S R2 G3 M1 P D2 P S',S' N3 P M1 R2 G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Poornagowla,S R2 G3 M1 P N3 D2 N3 P D2 N3 S',S' N3 D2 N3 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Poorvagowla,S G3 R2 G3 S R2 M1 P D2 N3 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Rathnabhooshani,S R2 G3 M1 P S',S' P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Reetuvilāsa,S G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Sāranga Mallār,S R2 M1 P D2 N3 S',S' N3 D2 P M1 R2 S N3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Shankara,S G3 P S',S' N3 D2 P G3 P R2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Shankara {Hindustani},S G3 P N3 D2 S' N3 S',S' N3 D2 P G3 P G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Shankaraharigowla,S R2 G3 M1 P D2 N3 S',S' N2 D2 P M1 G3 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Shankaramohana,S R2 G3 P N3 D2 S N3,S D2 P G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Shankari,S G3 P N3 S',S' N3 P G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Sindhu,S M1 P D2 S',S' N3 D2 M1 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Sindhu Mandāri,S R2 G3 M1 P S',S' N3 D2 P G3 M1 P M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Suddha Mālavi,S R2 G3 M1 P N3 S',S' D2 N3 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Suddha Sārang,S R2 G3 M1 P D2 N3 D2 S',S' D2 P M1 R2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Suddha Sāveri,S R2 M1 P D2 S',S' D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Suddha Vasantha,S R2 G3 M1 P N3 S',S' N3 D2 N3 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Suranandini,S R2 G3 P D2 N3 S',S' N3 D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Suraranjani,S G3 P R2 M1 D2 S',S' N3 D2 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Tāndavam,S G3 P D2 N3 S',S' N3 D2 P G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Vallabhi,S R2 G3 M1 P D2 N3 S',S' N3 D2 N3 D2 P M1 P G3 M1 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Vasanthamalai,S R2 M1 P N3 S',S' D2 P M1 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Vedhāndhagamana,S G3 M1 P N3 S',S' N3 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Veerapratāpa,S G3 M1 P D2 S',S' N3 D2 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Vilāsini,S R2 G3 M1 P N3 S',S' N3 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,30,Nāganandini,Nāganandini,S R2 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,30,Nāganandini,Nāgabharanam,S R2 G2 M1 P D3 N3 S',S' N3 D3 P M1 G2 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,30,Nāganandini,Gambheeravani,S G3 P M1 D3 N3 S',S' N3 P M1 G3 R2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,30,Nāganandini,Lalithagāndharva,S R2 G3 M1 P D3 N3 S',S' N3 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,30,Nāganandini,Sāmanta,S R2 G3 M1 P D3 N3 S',S' N3 D3 N3 D3 P M1 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,31,Yāgapriyā,Yāgapriyā,S R3 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,31,Yāgapriyā,Kalāvathi,S R3 G3 M1 P D1 N1 S',S' N1 D1 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,31,Yāgapriyā,Damarugapriya,S R3 G3 P D1 N1 S',S' N1 D1 P G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,31,Yāgapriyā,Desharanjani,S R3 M1 P D1 N1 S',S' N1 D1 P M1 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,31,Yāgapriyā,Deshyathodi,S G2 M1 P D1 N2 S',S' N2 D1 P M1 G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,31,Yāgapriyā,Kalāhamsa,S R3 G3 M1 P D1 S',S' N1 D1 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,31,Yāgapriyā,Niranjani,S R3 M1 D1 N1 S',S' N1 D1 M1 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,31,Yāgapriyā,Prathāpahamsi,S G3 M1 P N1 D1 N1 S',S' N1 D1 P M1 G3 M1 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,32,Rāgavardhini,Rāgavardhini,S R3 G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,32,Rāgavardhini,Rāgachoodāmani,S R3 G3 M1 P N2 S',S' N2 D1 M1 R3 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,32,Rāgavardhini,Amudagāndhāri,S G3 M1 P D1 N2 S',S' N2 D1 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,32,Rāgavardhini,Dhowmya,S R3 G3 M1 P D1 N2 P S',S' N2 D1 P M1 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,32,Rāgavardhini,Hindoladarbār,S G3 M1 P S',S' N2 D1 P M1 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,32,Rāgavardhini,Ramyā,S R3 G3 M1 P D1 N2 P S',S' N2 D1 P M1 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,32,Rāgavardhini,Sāmantajingala,S R3 G3 M1 P D1 N2 S',S' N2 P D1 N2 P M1 G3 M1 R3 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,33,Gāngeyabhuśani,Gāngeyabhuśani,S R3 G3 M1 P D1 N3 S',S' N3 D1 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,33,Gāngeyabhuśani,Gangātarangini,S R3 G3 M1 P D1 N3 S',S' N3 D1 P M1 M1 G3 M1 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,34,Vāgadhīśvari,Vāgadhīśvari,S R3 G3 M1 P D2 N2 S',S' N2 D2 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Amarasindhu,S R3 G3 P D2 N2 S',S' N2 D2 P G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Bhogachāyā Nāttai,S R3 G3 R3 G3 M1 P N2 N2 S',S' N2 D2 N2 P S N2 P M1 M1 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Bhānumanjari,S R3 G3 M1 P N2 S',S' N2 P M1 R3 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Chāyanāttai,S R3 G3 M1 P M1 P S',S' N2 D2 N2 P M1 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Maghathi,S R3 M1 P D2 N2 S',S' N2 D2 P M1 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Drāvida Kalāvati,S R3 G3 P D2 S',S' N2 D2 P G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Mohanāngi,S R3 G3 P D2 S',S' D2 P G3 P D2 P G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Murali,S R3 G3 M1 D2 N2 S',S' N2 D2 M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Sharadabharana,S M1 G3 M1 P M1 D2 N2 S',S' N2 D2 M1 P M1 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,34,Vāgadhīśvari,Vikhavathi,S R3 G3 P D2 S',S' D2 P G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,35,Śūlini,Śūlini,S R3 G3 M1 P D2 N3 S',S' N3 D2 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,35,Śūlini,Shailadeshākshhi,S M1 G3 P D2 S',S' N3 D2 S N3 P M1 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,35,Śūlini,Suryavasantham,S M1 G3 M1 D2 N3 S',S' N3 D2 M1 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,35,Śūlini,Dheerahindolam,S G3 M1 D2 N3 S',S' N3 D2 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,35,Śūlini,Ganavaridhi,S M1 R3 G3 M1 P D2 N2 S',S' D2 N2 P M1 R3 S,Yes,Yes,"[2026-09-21] CORRECTED: off-parent swara variant(s) N2 replaced with melakarta 35's own (2 other source(s) agree with the parent). Was aroha ""S M1 R3 G3 M1 P D2 N2 S'"" and avaroha ""S' D2 N2 P M1 R3 S""; Bhashanga Yes -> No, Vakra Yes -> Yes. [2026-09-21] NOTE: the original digits (see CORRECTED above) fit as a plain janya of melakarta 34, where other sources also list this raga, so the printed mela may be the slip instead of the digits. Kept under mela 35 with the corrected digits (user decision). [2026-09-21] RESTORED: the page prints this N2 scale and the N3 scale as two variants under melakarta 35, so the earlier N3 correction is undone (it would duplicate variant 2). Bhashanga Yes (N2 is not melakarta 35's).",wikipedia-janya-raga-list.csv
+Janya,35,Śūlini,Shokavarāli,S G3 D2 N3,D2 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,36,Chalanāṭṭai,Chalanāṭṭai,S R3 G3 M1 P D3 N3 S',S' N3 D3 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,36,Chalanāṭṭai,Devanāttai,S G3 M1 P S',S' N3 D3 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,36,Chalanāṭṭai,Gambheeranāṭṭai,S G3 M1 P N3 S',S' N3 P M1 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,36,Chalanāṭṭai,Ganaranjani,S R3 G3 M1 P M1 D3 N3 S',S' N3 D3 P M1 P M1 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,36,Chalanāṭṭai,Nāṭṭai,S R3 G3 M1 P N3 S',S' N3 P M1 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,37,Sālagam,Sālagam,S R1 G1 M2 P D1 N1 S',S' N1 D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,37,Sālagam,Sowgandhini,S R1 M2 P D1 S',S' N1 D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,37,Sālagam,Bhogasāveri,S R1 M2 D1 N1,D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,38,Jalārnavam,Jalārnavam,S R1 G1 M2 P D1 N2 S',S' N2 D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,38,Jalārnavam,Jaganmohinam,S R1 G1 M2 P D1 N2 S',S' N2 D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,38,Jalārnavam,Jaganmohana,S R1 G1 M2 P D2 S',S' N2 D1 P M2 G1 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Melakarta,39,Jhālavarāḷi,Jhālavarāḷi,S R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Dhālivarāli,S R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Bhoopālapanchamam,S G1 R1 G1 P M2 D1 S',S' P D1 M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Godari,S R1 G1 R1 M2 G1 M2 P D1 N3 S',S' N3 D1 P M2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Jālasugandhi,S R1 G1 M2 P D1 S',S' D1 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Janāvali,S G2 R1 G2 M2 P D1 N3 D1 S',S' N3 D1 P M2 G2 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Karunāmritavarshini,S R1 G1 M2 P D1 N3 P S',S' N3 D1 M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Kokilapanchamam,S G1 R1 G1 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,39,Jhālavarāḷi,Varāli,S G1 R1 G1 M2 P D1 N3 S',S' N3 D1 P M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,40,Navanītam,Navanītam,S R1 G1 M2 P D2 N2 S',S' N2 D2 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,40,Navanītam,Nabhomani,S G1 R1 G1 M2 P S',S' N2 D2 P M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,41,Pāvani,Pāvani,S R1 G1 M2 P D2 N3 S',S' N3 D2 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,41,Pāvani,Kumbhini,S G1 R1 G1 M2 P N3 D2 N3 S',S' N3 D2 P M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,41,Pāvani,Chandrajyothi,S R1 G1 M2 P D2 S',S' D2 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,41,Pāvani,Prabhāvali,S R1 M2 P D2 N3 S',S' N3 D2 M2 P M2 R1 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,41,Pāvani,Poornalalitha,S R1 M2 G1 R1 M2 P N3 D2 N3 S',S' N3 D2 P M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,41,Pāvani,Poornapanchamam,S R1 G1 M2 P D2,D2 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,42,Raghupriyā,Raghupriyā,S R1 G1 M2 P D3 N3 S',S' N3 D3 P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,42,Raghupriyā,Ravi Kriyā,S G1 R1 G1 M2 P D3 N3 S',S' N3 P M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,42,Raghupriyā,Gāndharva,M2 P D3 N3 S R1 G1,R1 S N3 P M2 P,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,42,Raghupriyā,Gomathi,S R1 G1 M2 P D3 N3,P M2 G1 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,42,Raghupriyā,Raghuleela,S M2 R1 P M2 G1 M2 P M2 R1 M2 P N3 S',S' N3 D3 N3 P M2 G1 M2 R1 M2 G1 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,43,Ghavāmbhodi,Ghavāmbhodi,S R1 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,43,Ghavāmbhodi,Geervāni,S R1 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,43,Ghavāmbhodi,Kanchanabowli,S G2 M2 P D1 S',S' N1 D1 P M1 G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,43,Ghavāmbhodi,Mahathi,S G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,43,Ghavāmbhodi,Mechagāndhāri,S R3 G3 M1 P D2 N2 S',S' N2 D2 N2 P M1 G3 M1 R3 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,43,Ghavāmbhodi,Suvarnadeepakam,S R1 G2 M2 P D1 S',S' D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,43,Ghavāmbhodi,Vijayabhooshāvali,S R1 G3 M2 P S',S' N3 D3 P M2 G3 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Melakarta,44,Bhavapriyā,Bhavapriyā,S R1 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,44,Bhavapriyā,Bhavāni,S R1 G2 M2 D1 N2 S,S N2 D1 M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,44,Bhavapriyā,Bhavāni,S R1 G2 M2 P D1 P N2 S',S' N2 D1 P M2 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,44,Bhavapriyā,Kanchanāvathi,S R1 G2 M2 P N2 S',S' N2 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,45,Śubhapantuvarāḷi,Śubhapantuvarāḷi,S R1 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Shivapanthuvarāli,S R1 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Arunāngi,S R1 M2 P N3 D1 S',S' N3 D1 M2 R1 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Bandhuvarāli,S M2 S N3 D1 P M2,D1 M2 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Bhānudhanyāsi,S R1 G2 M2 N3 D1 N3,D1 P M2 G2 R1 S N3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Bhānukeeravāni,S R1 G2 M2 P D1 N3 S',S' N3 D1 M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Chāyaranjani,S G2 M2 P N3 S',S' N3 D1 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Dhowreyani,S R1 G2 M2 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Hindusthāni Todi,N3 R1 G2 M2 D1 N3 S',S' N3 D1 P M2 G2 R1 S,No,No,Vakra is No by the pitch-based rule in sargam_intervals.py (no aroha step falls and no avaroha step rises).,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Jālakesari,S R1 M2 P D1 N3 S',S' D1 P M2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Kumudhachandrikā,S G2 M2 D1 S',S' N3 D1 M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Mahānandhini,S M2 G2 M2 P D1 N3 S',S' D1 N3 D1 P M2 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Multani {Hindustani},S G2 M2 P N3 S',S' N3 D1 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Parpathi,S G2 M2 P N3 S',S' N3 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,45,Śubhapantuvarāḷi,Shekharachandrikā,S R1 G2 M2 D1 N3 S',S' N3 D1 M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,46,Śadvidamārgini,Śadvidamārgini,S R1 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,46,Śadvidamārgini,Sthavarājam,S R1 M2 P D2 S',S' N2 D2 M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,46,Śadvidamārgini,Ganahemāvati,S G2 M2 P N2 S',S' N2 D2 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,46,Śadvidamārgini,Indhudhanyāsi,S G2 M2 D2 N2 S',S' N2 D2 P D2 M2 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,46,Śadvidamārgini,Shreekānti,S G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,46,Śadvidamārgini,Teevravāhini,S R1 G2 M2 P D2 P N2 S',S' N2 D2 P M2 G2 R1 G2 M2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,46,Śadvidamārgini,Vaishalini,R1 G2 M2 D2 N2,N2 D2 M2 G2 R1,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,47,Suvarnāngi,Suvarnāngi,S R1 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,47,Suvarnāngi,Sowveeram,S R1 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,47,Suvarnāngi,Abhiru,S R1 G2 R1 M2 P N3 S',S' D2 P M2 G2 R1 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,47,Suvarnāngi,Rathikā,S M2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,47,Suvarnāngi,Vijayashree,S R1 G2 M2 P N2 S',S' N2 P M2 G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Melakarta,48,Divyamaṇi,Divyamaṇi,S R1 G2 M2 P D3 N3 S',S' N3 D3 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,48,Divyamaṇi,Jeevanthikā,S M2 P D3 N3 S',S' N3 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,48,Divyamaṇi,Deshamukhāri,S R1 G2 M2 P D3 N3 D3 S',S' D3 N3 D3 P M2 G2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,48,Divyamaṇi,Dundubi,S R1 G2 M2 P D3 N3 S',S' N3 P M2 G2 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,48,Divyamaṇi,Jeevanthini,S M2 P D3 N3 S',S' N3 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,48,Divyamaṇi,Suddha Gāndhāri,S R1 G2 M2 N3 S',S' N3 D3 N3 S N3 P M2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,49,Dhavaḻāmbari,Dhavaḻāmbari,S R1 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,49,Dhavaḻāmbari,Dhavalāngam,S R1 G3 M2 P D1 S',S' N1 D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,49,Dhavaḻāmbari,Abhirāmam,S R1 M2 P D1 N1 S',S' N1 D1 P M2 G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,49,Dhavaḻāmbari,Bhinnapauarali,S M2 P D1 N1 D1 S',S' N1 D1 P M2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,49,Dhavaḻāmbari,Dharmini,S R1 G3 M2 D1 N1 S',S' N1 D1 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,49,Dhavaḻāmbari,Sudharmini,S R1 M2 P D1 N1 S',S' N1 D1 M1 G3 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Melakarta,50,Nāmanārāyaṇi,Nāmanārāyaṇi,S R1 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,50,Nāmanārāyaṇi,Nāmadeshi,S R1 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,50,Nāmanārāyaṇi,Narmada,S R1 G3 M2 D1 N2 S',S' N2 D1 M2 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,50,Nāmanārāyaṇi,Neelanjana (Raga created by Mahesh Mahadev)[8],S R1 G3 P N2 S',S' N2 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,50,Nāmanārāyaṇi,Swaramanjari,S G3 M2 P D1 S',S' N2 D1 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,51,Panthuvarāli (Kāmavardhini),Panthuvarāli (Kāmavardhini),S R1 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Kāshirāmakriyā,S G3 R1 G3 M2 P D1 N3 S',S' N3 D1 P M1 G3 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Mandāri,S R1 G3 M2 P N3 S',S' N3 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),ādhi Panchama,S R1 P D1 N3 S',S' N3 D1 N3 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Basant /Vasant {Hindustani},S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 M2 N3 D1 M2 G3 R1 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Basant Bahār {Hindustani},S M2 P G3 M2 N3 D1 N3 S,R2 S N2 D2 P M1 G2 M1 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Bhogavasantha,S R1 G3 M2 D1 N3 S',S' N3 D1 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Deepakam,S R2 M2 P D1 P S',S' N3 D1 N3 P M2 G3 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Gamakapriyā,S R1 G3 M2 P N3 D1 S',S' D1 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Gamanapriyā,S R1 G3 M2 P N3 D1 S',S' D1 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Hamsanārāyani,S R1 G3 M2 P S',S' N3 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Indumathi,S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Kamalāptapriyā,S R1 G3 M2 P D1 S',S' D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Kumudhakriyā,S R1 G3 M2 D1 S',S' N3 D1 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Māruthi,S R1 M2 P N3 S',S' N3 D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Ponni,S G3 M2 P N3 S',S' N3 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Prathāpa,S G3 M2 D1 N3 S',S' N3 D1 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Puriya Dhanashree {Hindustani},N3 R1 G3 M2 P D1 P N3 S,R1 N3 D1 P M2 G3 M2 R1 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,51,Panthuvarāli (Kāmavardhini),Tāndavapriyā,S R1 G3 M2 P S',S' P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,52,Rāmapriyā,Rāmapriyā,S R1 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Ramāmanohari,S R1 G3 M2 P D2 S',S' N2 D2 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Chintaramani,S G3 M2 P D2 N2 S',S' D2 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Hamsagamini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 D2 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Lokaranjani,S G3 M2 P M2 D2 N2 S',S' N2 D2 N2 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Meghashyāmala,S G3 M2 P D2 N2 D2 P S',S' N2 D2 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Namoveenapaani (creation by Siri Girish),S G3 M2 D2 N2 S',S' N2 D2 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Patalāmbari,S R1 G3 M2 D2 S',S' D2 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Raktimārgini,S P M2 D2 N2 S',S' N2 D2 P M2 P G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Rasavinodini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Reethi Chandrikā,S R1 G3 M2 P D2 S',S' N2 D2 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Seemantinipriyā,S R1 G3 M2 D2 N2 S',S' N2 D2 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Sukhakari,S R1 S P D2 N2 S',S' N2 D2 P M2 G3 S R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,52,Rāmapriyā,Vedhaswaroopi,S R1 G3 M2 P D2 N3 P S',S' N3 D2 P N3 P M2 G3 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Melakarta,53,Gamanāśrama,Gamanāśrama,S R1 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Gamakakriyā,S R1 G3 M2 P D2 S',S' N3 D2 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Alankāri,S G3 M2 D2 N3 D2 S',S' N3 D2 M2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Bhatiyār {Hindustani},S D2 P D2 M2 P G3 M2 D2 S,R1 N3 D2 P M2 P G3 R1 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Dvigāndhārabhooshani,S R1 G2 G3 G2 P D2 S',S' D2 P G2 G3 G2 R1 S D2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Hamsānandi,S R1 G3 M2 D2 N3 S',S' N3 D2 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Mechakāngi,S R1 G3 M2 P D2 P N3 S',S' N3 P D2 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Padmakalyāni,S G3 P N3 S',S' N3 D2 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Poorvi Kalyāni,S R1 G3 M2 P D2 P S',S' N3 D2 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Sharabadhvāja,S R1 G3 M2 P D2 S',S' D2 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Sohini {Hindustani},S G3 M2 D2 N3 S',S' N3 D2 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,53,Gamanāśrama,Vaishaka,S R1 G3 M2 P D2 N3 S',S' N3 D2 N3 P M2 G3 M2 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,54,Viśvambari,Viśvambari,S R1 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,54,Viśvambari,Vamshavathi,S R1 G3 M2 P D3 N3 S',S' N3 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,54,Viśvambari,Hemāngi,S R1 G3 M2 D3 S',S' D3 M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,54,Viśvambari,Pooshakalyāni,S R1 G3 M2 P D3 N3 S',S' N3 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,54,Viśvambari,Sharadhyuthi,S R1 G3 M2 P D3 N3 D3 S',S' N3 D3 P M2 G3 R1 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,54,Viśvambari,Suddhakriyā,S R1 M2 M2 P D3 S',S' D3 P M2 G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,54,Viśvambari,Sundarāngi,S R1 G3 P D3 N3 S',S' N3 D3 P G3 R1 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,54,Viśvambari,Vijayavasantham,S M2 P D3 N3 S',S' N3 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,55,Śāmaḻāngi,Śāmaḻāngi,S R2 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,55,Śāmaḻāngi,Shyāmalam,S R2 G2 M2 P D1 N1 S',S' N1 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,55,Śāmaḻāngi,Deshāvali,S R2 G2 M2 D1 N1 D1 S',S' N1 D1 M2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,55,Śāmaḻāngi,Vijayamālavi,S R2 M2 P D1 S',S' N1 D1 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,56,Śanmukhapriyā,Śanmukhapriyā,S R2 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Chāmaram,S R2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Bhāshini,S G2 R2 G2 M2 P D1 N2 S',S' N2 D1 P M2 G2 R1 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Chintāmani,S G2 R2 G2 M2 G2 R2 G2 P M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Dhanakari,S G2 P D1 N2 S',S' N2 D1 M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Garigadya,N2 S G2 M2 P D1 N2,D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Gopikathilakam,S R2 G2 M2 P N2 S',S' N2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Kokilanandhi,S G2 M2 D1 N2 S',S' N2 D1 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Rājeshwari,S R2 G2 P N2 S',S' N2 D1 P M1 G2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Samudrapriyā,S G2 M2 P N2 S',S' N2 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Shanmukhi (Trimoorti),S R1 G2 M2 D1 N2 S',S' N2 D1 M2 G2 R1 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Sumanasaranjani,S G2 M2 P N2 S',S' N2 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,56,Śanmukhapriyā,Vasukari,S G2 M2 P D1 N2 S',S' N2 D1 M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,57,Simhendramadhyamam(Sumadhyuti),Simhendramadhyamam(Sumadhyuti),S R2 G2 M2 P D1 N3 S',S' N3 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Ānandavalli,S G2 M2 P N3 S',S' N3 P M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Ghantana,S R2 G2 M2 D1 N3 S',S' N3 D1 M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Jayachoodāmani,S G2 M2 P D1 S',S' N3 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Pranavapriyā,S R2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Sarvāngi,S R2 M2 D1 N3 S',S' N3 D1 M2 G2 S R3 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Seshanādam,S R2 G2 M2 P D1 S',S' N3 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Suddha,S R2 G2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Sunādapriyā,S R2 G2 M2 P S',S' N3 D1 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Urmikā,S R2 G2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,57,Simhendramadhyamam(Sumadhyuti),Vijayasaraswathi,S G2 M2 P D1 N3 S',S' N3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,58,Hemavati,Hemavati,S R2 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Deshisimhāravam,S R2 G2 M2 P D2 N2 S',S' N2 D2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Chandrarekhā,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Hamsabhramari,S R2 G2 M2 P D2 S',S' N2 D2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Hemāmbari,S R2 G2 M2 P D2 N2 S',S' P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Hemapriya,S R2 G2 M2 D2 S',S' D2 M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Kshemakari,S R2 M2 D2 N2 S',S' N2 D2 M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Madhukowns,S G2 M2 P N2 P S',S' N2 P M2 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Shakthiroopini,S G2 M2 D2 S',S' N2 D2 M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Simhārava,S R2 M2 P N2 S',S' N2 P M2 R2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Vijayasāranga,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Vijayashrāngi,S R2 G2 M2 P D2 S',S' N2 D2 M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,58,Hemavati,Yāgini,S R2 M2 P N2 S',S' N2 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,59,Dharmavati,Dharmavati,S R2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Dhāmavathi,S R2 G2 M2 P D2 N3 S',S' N3 D2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Sri Tyagaraja (Raga created by Mahesh Mahadev)[9],S G2 M2 P N3 S',S' N3 P M2 G2 R2 S,No,No,"[2026-09-21] SCALE RESTORED from the Wikipedia page: the list held aroha ""S G2 M2 P"" and avaroha ""S' N3"", which had been cut short.",wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Gowrikriya,S G2 M2 P D2 N3 S',S' N3 D2 N3 P M2 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Karmukhāvati,S R2 G2 M2 D2 N3 S',S' N3 D2 M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Karpoora Bharani,S R2 G2 P M2 P D2 S',S' D2 P M2 P G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Lalitasimharavam,S R2 G2 M2 P S',S' N3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Madhumālti {Hindustani},N3 S G2 M2 P S',S' N3 D2 P M2 G2 R2 S,No,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Madhuvanthi {Hindustani},S G2 M2 P N3 S',S' N3 D2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Moharanjani,S R2 G2 P D2 S',S' N3 D2 M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Ranjani,S R2 G2 M2 D2 S',S' N3 D2 M2 G2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Varada,S R2 M2 P N3 S',S' N3 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Vijayanāgari,S R2 G2 M2 P D2 S',S' D2 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,59,Dharmavati,Vishveshwarapriyā,S R2 M2 P N3 S',S' N3 D2 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,60,Nītimati,Nītimati,S R2 G2 M2 P D3 N3 S',S' N3 D3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Nisshadham,S R2 G2 M2 P D3 N3 S',S' N3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Amarasenapriyā,S R2 M2 P N2 S',S' N3 P M2 G2 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Deshyagānavaridhi,S R2 G2 M2 P D3 N3 P S',S' N3 S P M2 G2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Hamsanādam,S R2 M2 P D3 N3 S',S N3 D3 P M2 R2 S,No,No,"[2026-09-22] CORRECTED: the closing Sa was marked upper octave (S'); every other Hamsanadam row, from every source, and this row's own sibling variant on the page end their avaroha on plain S. Read as a typo and corrected. Was avaroha ""S N3 D3 P M2 R2 S'""; Vakra Yes -> No.",wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Kaikavashi,S R2 G2 M2 P D3 N3 S',S' N3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Nuthanachandrikā,S R2 G2 M2 P D3 N3 S',S' N3 P D3 N3 P M2 G2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Rathnasāranga,S R2 G2 M2 P N3 S',S' N3 D3 P M2 G2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,61,Kāntāmani,Kāntāmani,S R2 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,61,Kāntāmani,Kunthalam,S R2 G3 M2 P D1 S',S' N1 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,61,Kāntāmani,Kanakakusumāvali,S R2 G3 M2 P D2 S',S' D2 P M2 G3 R2 S,No,Yes,,wikipedia-janya-raga-list.csv
+Janya,61,Kāntāmani,Shruthiranjani,S R2 G3 M2 P D1 N1,N1 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,62,Riśabhapriyā,Riśabhapriyā,S R2 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,62,Riśabhapriyā,Rathipriyā,S R2 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,62,Riśabhapriyā,Gopriya,S R2 G3 M2 D1 N2 S',S' N2 D1 M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,62,Riśabhapriyā,Poornasāveri,S R2 M2 P D1 S',S' N2 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,62,Riśabhapriyā,Rathnabhānu,S R2 M2 P N2 D1 N2 S',S' N2 D1 P M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,62,Riśabhapriyā,Suddha Sāranga,S G3 M2 P N2 S',S' D1 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,63,Latāngi,Latāngi,S R2 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Geethapriyā,S R2 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Chitrachandrika,S G3 R2 G3 M2 P N3 D1 S',S' N3 D1 M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Hamsalatha,S R2 G3 P N3 S',S' N3 D1 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Kananapriyā,S R2 G3 M2 P M2 D1 N3 S',S' D1 N3 P M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Karunākari,S M2 P D1 N3 D1 S',S' N3 D1 P M2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Lalithāngi,S R2 G3 M2 D1 N3 S',S' N3 D1 M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Ramani,S G3 M2 P N3 S',S' N3 D1 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Rathnakānthi,S R2 G3 M2 P N3 S',S' N3 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Raviswaroopini,S G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Sajjananandhi,S R2 G3 M2 P D1 N3 S',S' N3 D1 M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,63,Latāngi,Skandamanorama,S R2 M2 P N3 S',S' N3 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,64,Vāchaspati,Vāchaspati,S R2 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Bhooshāvathi,S R2 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Bhagavataranjana,S R2 M2 P D2 N2 S',S' N2 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Bhogeeshwari,S R2 G3 P D2 N2 D2 S',S' N2 D2 P M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Bhooshāvali,S R2 G3 M2 P D2 S',S' N2 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Dwigāndhārabhooshani,S R1 G2 G3 G2 P D2 S',S' D2 P G2 G3 G2 R1 S D2 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Gaganamohini,S G3 P D2 N2 S',S' N2 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Gurupriya,S R2 G3 M2 D2 N2 S',S' N2 D2 M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Hrdhini,S G3 M2 P N2 S',S' N2 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Mangalakari,S R2 P M2 P D2 N2 S',S' N2 D2 P G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Mukthidāyini,S G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Nādhabrahma,S P M2 P D2 N2 S',S' N2 D2 P M2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Pranavākāri,P N2 D2 N2 S R2 G3 M2,P M2 G3 R2 S N2 D2 N2 P,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Saraswathi,S R2 M2 P D2 S',S' N2 D2 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Shivaranjani (Original),S R2 G3 M2 D2 P N2 S',S' N2 D2 P D2 M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Triveni,S R2 M2 P D2 N2 S',S' N2 D2 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,64,Vāchaspati,Utthari,S G3 M2 P D2 N2 S',S' N2 D2 M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,65,Mechakalyāni,Mechakalyāni,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Shānthakalyāni,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Amritha Kalyani (Raga created by Mahesh Mahadev)[4],S G3 M2 P N3 S',S' N3 D2 P M2 G3 R2 S,No,No,"[2026-09-21] SCALE RESTORED from the Wikipedia page: the list held aroha ""S G3 M2 P"" and avaroha ""S' N3 D2 P M2 G3 R2 S"", which had been cut short.",wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Amritha Behāg,S M2 G3 P N3 S,D2 N3 D2 M2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Aprameya,S R2 M2 P D2 S',S' N3 D2 M2 G3 M2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Bhoopkalyāni,S R2 G3 P D2 S',S' N3 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Bhoopāli {Hindustani},S R2 G3 P D2 S',S' D2 P G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Chandrakāntha,S R2 G3 M2 P D2 N3 S',S' N3 D2 N3 P M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Hameer {Hindustani},S R2 S G3 M1 D2 N3 D2 S',S' N3 D2 N3 P G3 M1 D2 M2 P D2 P G3 M1 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Hameer Kalyāni {carnatic interpretation of Kedar},S P M2 P D2 N3 S',S' N3 D2 P M2 M1 G3 P M1 R2 S',Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1 N2.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Hamsakalyāni,S R2 G3 P N3 S',S' N3 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Kalyānadāyini,S R2 G3 M2 D2 N3 S',S' N3 D2 M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Kannadamaruva,S G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Kedār {Hindustani},S M1 G3 P D2 N3 S',S' N3 D2 P M2 P M1 S R2 S,Yes,Yes,"[2026-09-21] SCALE RESTORED from the Wikipedia page: the list held aroha ""S"" and avaroha ""S' N3 D2 P M2 P"", which had been cut short. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.",wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Kowmoda,S R2 G3 M2 N3 S',S' N3 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Kunthalashreekānti,S G3 M2 P D2 N3 S',S' N3 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Mohana Kalyāni,S R2 G3 P D2 S',S' N3 D2 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Mrgānandhana,S R2 G3 D2 N3 S',S' N3 D2 M2 D2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Nada Kalyani (Raga created by Mahesh Mahadev)[4],S R2 M2 P N3 S',S' N3 D2 M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Nāndhakalyāni,S G3 M2 D2 N3 S',S' N3 D2 M2 G3 M2 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Pramodhini,S G3 M2 P D2 S',S' D2 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Rajasadhaka (Raga created by Mahesh Mahadev)[4],S R2 G3 P D2 S',S' N3 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Sāranga,S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 R2 G3 M1 R2 S',Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Sāranga Tārangini,S R2 M2 P D2 N3 S',S' N3 D2 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Shilangi,S G3 M2 P N3 S',S' N3 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Shuddha Sārang {Hindustani},N3 S R2 M2 P N3 S',S' N3 D2 P M2 P M1 R2 S N3 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Suddha Koshala,S G3 M2 P S',S' N3 D2 M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Shyām Kalyān {Hindustani},N3 S R2 M2 P N3 S',S' N3 D2 P M2 P D2 P G3 M1 P G3 M1 R2 S N3 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Sunādavinodini / Hindol of Hindustani,S G3 M2 D2 N3 S',S' N3 D2 M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Swayambhooshwara Rāga,S G3 P S',S' P G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Vandanadhārini,S R2 M2 P D2 S',S' D2 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Vivāhapriyā [10],S R2 M2 P D2 N3 S',S' N3 D2 P M2 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Yamuna Kalyāni / Yaman Kalyan {Hindustani},S R2 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 M1 G3 R2 S,Yes,Yes,[2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Melakarta,66,Chitrāmbari,Chitrāmbari,S R2 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,66,Chitrāmbari,Chaturāngini,S R2 G3 M2 P N3 S',S' N3 D3 N3 P G3 M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,66,Chitrāmbari,Amritavarshini,S G3 M2 P N3 S',S' N3 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,66,Chitrāmbari,Chitrasindhu,S G3 M2 P N3 S',S' N3 D3 P M2 G3 R2 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,66,Chitrāmbari,Churnikavinodhini,S R2 G3 M2 P D3 N3 S',S' N3 D3 N3 P M2 G3 R2 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,66,Chitrāmbari,Vijayakoshalam,S R2 G3 M2 P S',S' N3 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,67,Sucharitrā,Sucharitrā,S R3 G3 M2 P D1 N1 S',S' N1 D1 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,67,Sucharitrā,Santhāna Manjari,S R3 G3 M2 P D1 S',S' N1 D1 P M2 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,68,Jyothisvarūpiṇi,Jyothisvarūpiṇi,S R3 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,68,Jyothisvarūpiṇi,Jyothi,S R3 G3 M2 P D1 N2 S',S' N2 D1 P M2 G3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,68,Jyothisvarūpiṇi,Deepavarāli,S R3 M2 P N2 S',S' N2 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,68,Jyothisvarūpiṇi,Jyothishmathi,S R3 G3 M2 P S',S' N2 D1 M2 P M2 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,68,Jyothisvarūpiṇi,Rāmagiri,S R3 M2 G3 M2 P D1 N2 S',S' D1 N2 D1 P M2 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,69,Dhātuvardhani,Dhātuvardhani,S R3 G3 M2 P D1 N3 S',S' N3 D1 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,69,Dhātuvardhani,Dhowtha Panchamam,S R3 G3 M2 P N3 P S',S' N3 D1 P M2 R3 G3 M2 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,69,Dhātuvardhani,Dhwithiyapanchamam,S R3 G3 M2 P N3 P S',S' N3 D1 P M2 R3 M2 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,69,Dhātuvardhani,Sumukham,S R3 M2 N3 S',S' N3 M2 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,69,Dhātuvardhani,Tavapriyā,S R3 M2 P N3 S',S' N3 D1 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,70,Nāsikābhūśaṇi,Nāsikābhūśaṇi,S R3 G3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,70,Nāsikābhūśaṇi,Nāsāmani,S R3 S M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,70,Nāsikābhūśaṇi,Marakathagowla,S R3 M2 P D2 N2 S',S' N2 D2 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,70,Nāsikābhūśaṇi,Thilakamandāri,S R3 M2 P D2 S',S' D2 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Melakarta,71,Kōsalam,Kōsalam,S R3 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,71,Kōsalam,Kusumākaram,S R3 G3 M2 P D2 N3 S',S' N3 D2 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,71,Kōsalam,Ayodhya,S G3 M2 P N3 S',S' D2 P M2 G3 M2 R3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Melakarta,72,Rasikapriyā,Rasikapriyā,S R3 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,72,Rasikapriyā,Rasamanjari,S R3 G3 M2 P D3 N3 S',S' N3 D3 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,72,Rasikapriyā,Hamsagiri,S R3 G3 M2 P D3 N3 S',S' N3 P D3 N3 P M2 G3 S,Yes,No,,wikipedia-janya-raga-list.csv
+Janya,72,Rasikapriyā,Ishtārangini,S R3 M2 P N3 S',S' N3 D3 P M2 G3 R3 S,No,No,,wikipedia-janya-raga-list.csv
+Janya,72,Rasikapriyā,Nāgagiri,S G3 M2 P D2 P S',S' D2 P M2 G3 S,Yes,Yes,,wikipedia-janya-raga-list.csv
+Janya,13,Gāyakapriyā,Kalkada,S R1 G3 P D1 S',S' N1 D1 P G3 R1 S,No,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Jhankārabhramari,S R2 G2 M1 P D1 S,S N1 D1 P M1 G2 R2 S,No,No,[2026-09-21] VARIANT 2 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Jhankārabhramari,S R2 G2 M1 P D1 N1 D1 S,S D1 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 3 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Jhankārabhramari,S R2 G2 M1 P D1 N1 D1 S,S N1 D1 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 4 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Jhankārabhramari,S G2 R2 G2 M1 P D1 N1 D1 S,S N1 D1 P M1 G2 R2 G2 R2 S,Yes,No,"[2026-09-21] VARIANT 5 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] SWARA DIGITS: bare letter(s) given the parent melakarta 19's own variant (page: aroha 'S G2 R2 G M1 P D1 N1 D1 S', avaroha 'S N1 D1 P M1 G2 R2 G R2 S').",wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Jhankārabhramari,S R2 G2 M1 P D1 N1 D1 S,D1 N1 D1 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 6 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Poornalalita,S G2 R2 G2 R2 M1 P S,S N1 D1 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 2 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Poornalalita,S R2 G2 R2 M1 P S,S N1 D1 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 3 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Poornalalita,S R2 G2 M1 P S,S N1 D1 P M1 G2 R2 S,No,No,[2026-09-21] VARIANT 4 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,19,Jhankāradhvani,Poornalalita,S G2 R2 G2 M1 P S,S N1 D1 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 5 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,20,Natabhairavi,Poornashađjam,S R2 G2 M1 N2 S',S N2 P M1 G2 R2 S,No,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,22,Kharaharapriyā,Huseni,S R2 G3 M1 P N3 D2 M1 P N3 S',S N3 S P D2 M1 P G3 R2 S,Yes,Yes,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: D1.,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Gowrivelāvali,S R2 G1 G2 S R2 M1 M1 P D2 D2 S',S N3 D2 P M1 G1 G2 R2 S,Yes,Yes,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Velāvali,S R2 M1 P D2 S,S N3 D2 P M1 G2 R2 S,No,No,[2026-09-21] VARIANT 2 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Velāvali,S R2 G2 M1 P D2 S,S N3 D2 P M1 G2 S,No,No,[2026-09-21] VARIANT 3 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Velāvali,S G2 R2 M1 P D2 S,S N3 D2 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 4 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Velāvali,S R2 G2 S R2 M1 P D2 S,S N3 D2 P M1 G2 R2 S,Yes,No,[2026-09-21] VARIANT 5 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,23,Gourimanohari,Velāvali,S R2 M1 P D2 N3 S,S N3 D2 P M1 G2 R2 S,No,No,[2026-09-21] VARIANT 6 of 6 on the Wikipedia page: the page lists 6 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,26,Chārukesi,Tarangini,S R2 G3 P D1 N2 D1 P D1 S,S D1 P G3 R2 S G3 M1 R2 G3 S,Yes,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Dwaithachintāmani,S G3 M1 D2 N2 S,S N2 D2 M1 G3 R2 S,No,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nāttai Kurinji,S R2 G3 M1 D2 N2 S,S N2 D2 M1 G3 S,No,No,[2026-09-21] VARIANT 2 of 3 on the Wikipedia page: the page lists 3 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Nāttai Kurinji,S R2 G3 M1 N2 D2 N2 P D2 N2 S',S N2 D2 M1 G3 M1 P M1 G3 R2 S,Yes,No,[2026-09-21] VARIANT 3 of 3 on the Wikipedia page: the page lists 3 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Rāgeshree,S G3 M1 D2 N2 S',S N2 D2 N3 D2 M1 G3 R2 S,Yes,Yes,[2026-09-21] VARIANT 3 of 3 on the Wikipedia page: the page lists 3 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: N3 (rarely).,wikipedia-janya-raga-list.csv
+Janya,28,Harikāmbhōji,Shyāmā,S R2 G3 S R2 P M1 D2 D2 S,S D2 P M1 G3 R2 S,Yes,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,29,Dhīraśankarābharaṇam,Ārabhi,S R2 M1 P D2 S',S D2 P M1 G3 R2 S,No,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,35,Śūlini,Ganavaridhi,S M1 R3 G3 M1 P D2 N3 S',S' D2 N3 P M1 R3 S,Yes,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,60,Nītimati,Hamsanādam,S R2 M2 P N3 S,S N3 P M2 R2 S,No,No,[2026-09-21] VARIANT 2 of 2 on the Wikipedia page: the page lists 2 scales for this raga in one row (separated by line breaks); the first extraction kept only the first.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Hameer Kalyāni {carnatic interpretation of Kedar},S R2 S P M2 P D2 N3 S',S N3 D2 P M2 G3 M1 G3 R2 S',Yes,Yes,[2026-09-21] VARIANT 2 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1 N2.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Hameer Kalyāni {carnatic interpretation of Kedar},S R2 S P M2 N3 D2 S N3 S',S N3 D2 P M2 G3 M1 R2 S,Yes,Yes,"[2026-09-21] VARIANT 3 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1 N2. [2026-09-21] SWARA DIGITS: bare letter(s) given the parent melakarta 65's own variant (page: aroha 'S R2 S P M2 N3 D2 S N3 S'', avaroha 'S N3 D2 P M2 G M1 R2 S').",wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Hameer Kalyāni {carnatic interpretation of Kedar},S R2 G3 M2 P D2 N3 P D2 P S',S N3 D2 P G3 M1 G3 R2 S',Yes,Yes,[2026-09-21] VARIANT 4 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1 N2.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Hameer Kalyāni {carnatic interpretation of Kedar},S P M2 P D2 N3 S',S N3 D2 P G3 M1 G3 R2 S,Yes,Yes,[2026-09-21] VARIANT 5 of 5 on the Wikipedia page: the page lists 5 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1 N2.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Sāranga,S R2 S P M2 P D2 N3 S',S N3 S D2 P M2 R2 G3 M1 R2 S',Yes,Yes,[2026-09-21] VARIANT 2 of 3 on the Wikipedia page: the page lists 3 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv
+Janya,65,Mechakalyāni,Sāranga,S P M2 P D2 N3 S',S N3 D2 P M2 R2 G3 M1 R2 S,Yes,Yes,[2026-09-21] VARIANT 3 of 3 on the Wikipedia page: the page lists 3 scales for this raga in one row (separated by line breaks); the first extraction kept only the first. [2026-09-21] BHASHANGA: the Wikipedia page states anya swara: M1.,wikipedia-janya-raga-list.csv

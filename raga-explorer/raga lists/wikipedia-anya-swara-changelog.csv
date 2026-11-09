@@ -1,0 +1,59 @@
+﻿Source List,CSV Row,Raga Name,Change,Before,After,Detail
+WIKIPEDIA,94,Bhimsen (Raga created by Mahesh Mahadev),truncated scale restored,aroha: S | avaroha: S' N3 D2 P M1 G2 R1 S,aroha: S G2 M1 P N3 S' | avaroha: S' N3 D2 P M1 G2 R1 S,Bhashanga No -> No
+WIKIPEDIA,95,Bhakthirasa (Raga created by Rishabh Jagadeesh),truncated scale restored,aroha: S | avaroha: S' N3 P M1 G2 S,aroha: S G2 M1 P N3 S' | avaroha: S' N3 P M1 G2 S,Bhashanga No -> No
+WIKIPEDIA,204,Rudra Panchami,truncated scale restored,aroha: S G3 M1 | avaroha: S' N3 D2,aroha: S G3 M1 D2 N2 S' | avaroha: S' N3 D2 M1 G3 R1 S,Bhashanga Yes -> Yes
+WIKIPEDIA,861,Sri Tyagaraja (Raga created by Mahesh Mahadev)[9],truncated scale restored,aroha: S G2 M2 P | avaroha: S' N3,aroha: S G2 M2 P N3 S' | avaroha: S' N3 P M2 G2 R2 S,Bhashanga No -> No
+WIKIPEDIA,922,Amritha Kalyani (Raga created by Mahesh Mahadev)[4],truncated scale restored,aroha: S G3 M2 P | avaroha: S' N3 D2 P M2 G3 R2 S,aroha: S G3 M2 P N3 S' | avaroha: S' N3 D2 P M2 G3 R2 S,Bhashanga No -> No
+WIKIPEDIA,933,Kedār {Hindustani},truncated scale restored,aroha: S | avaroha: S' N3 D2 P M2 P,aroha: S M1 G3 P D2 N3 S' | avaroha: S' N3 D2 P M2 P M1 S R2 S,Bhashanga No -> Yes
+WIKIPEDIA,569,Atāna,anya swara restored,aroha: S R2 M1 P N3 S' | avaroha: S' N3 D2 P M1 G3 M1 R2 S,aroha: S R2 M1 P N2 S' | avaroha: S' N2 D2 P M1 G2 M1 R2 S,
+WIKIPEDIA,609,Navaroj,anya swara restored,aroha: P D2 N3 S R2 G3 M1 P | avaroha: M1 G3 R2 S N3 D2 P,aroha: P D2 N3 S R2 G3 M1 P | avaroha: M1 G3 R2 S N2 D2 P,
+WIKIPEDIA,49,Āhiri,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: R2 G2 / G3 D2 N3
+WIKIPEDIA,51,Asāveri,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: R2
+WIKIPEDIA,59,Ghanta,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: R2 D2
+WIKIPEDIA,65,Punnagavarali,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: R2
+WIKIPEDIA,70,Sindhubhairavi,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: R2 G3 M2 D2 N3
+WIKIPEDIA,71,Srimati,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: D2
+WIKIPEDIA,113,Āhiri,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: R2 G2 / G3 D2 N3
+WIKIPEDIA,241,Anandabhairavi,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G3 D1 N3
+WIKIPEDIA,243,Bhairavi,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: D2
+WIKIPEDIA,320,Brindāvana Sāranga {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,321,Brindāvani {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,331,Gāra {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G3 D1 N3
+WIKIPEDIA,335,Hindustāni Kāpi,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: G3 D1 N3
+WIKIPEDIA,336,Huseni,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: D1
+WIKIPEDIA,341,Jog {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G2
+WIKIPEDIA,343,Kāpi,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G3 D1 N3
+WIKIPEDIA,369,Mishra shivaranjani,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: R1 G3 M1 M2 D1 N2 N3
+WIKIPEDIA,370,Malhar or Miyān ki Malhār {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,371,Mukhāri,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: D1
+WIKIPEDIA,384,Pilu(peelu) {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G3 D1 N3
+WIKIPEDIA,390,Sahāna (Original),Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: G3
+WIKIPEDIA,469,Desh {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,473,Dwijāvanthi /Jujāvanthi,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G2 N3
+WIKIPEDIA,477,Gāra {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G2 D1 N3
+WIKIPEDIA,487,Jaijaiwanti {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: G2 N3
+WIKIPEDIA,493,Kāmbhoji,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,495,Khamāj {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,496,Kamās,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,534,Rāgeshree,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: N3 (rarely)
+WIKIPEDIA,543,Chenjurutti,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: G2
+WIKIPEDIA,560,Tilang {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: N3
+WIKIPEDIA,569,Atāna,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: G2 N2
+WIKIPEDIA,572,Behāg (Carnatic adaptation),Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: M2 N2
+WIKIPEDIA,574,Bihag {Original/Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M2
+WIKIPEDIA,575,Bilahari,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: N2
+WIKIPEDIA,580,Devagāndhāri,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: N2
+WIKIPEDIA,603,Mānd {Hindustani},Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: R1 G2 M2 D1 N2
+WIKIPEDIA,609,Navaroj,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: N2
+WIKIPEDIA,610,Neelāmbari,Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: N2
+WIKIPEDIA,612,Pahādi {Hindustani},Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: R1 G2 M2 D1 N2
+WIKIPEDIA,769,Basant /Vasant {Hindustani},Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,801,Bhatiyār {Hindustani},Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,866,Madhumālti {Hindustani},Bhashanga set from the page,Bhashanga No,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,928,Hameer {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,929,Hameer Kalyāni {carnatic interpretation of Kedar},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M1 N2
+WIKIPEDIA,933,Kedār {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,942,Sāranga,Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,945,Shuddha Sārang {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,947,Shyām Kalyān {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M1
+WIKIPEDIA,952,Yamuna Kalyāni / Yaman Kalyan {Hindustani},Bhashanga set from the page,Bhashanga Yes,Bhashanga Yes,anya swara: M1

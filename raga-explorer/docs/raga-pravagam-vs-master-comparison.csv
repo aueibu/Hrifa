@@ -1,0 +1,656 @@
+Pravagam Title,Pravagam Melakarta,Pravagam Aroha,Pravagam Avaroha,Issue,Detail,Source Page
+Kanakambari 2,01,S R G M P D N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Kanakāmbari 1' (mela 1) has: SGRGMPDNDS/SNDPMGRGRS ;; SGRGMPDNDS/SNDPMGRS ;; SGRGMPNSDS/SNDPMGRS ;; SRGMPDNDS/SNDPMGRGRS ;; SRGMPDNS/SNDPMGRGRS ;; SRGMPDS/SNDPMGRS ;; SRMPDS/SNDMGRS ;; SRMPDS/SNDPMGRS,64
+Kanakambari 3,01,S G R G M P D N D S,S N D M P G R G R S,SWARA DISAGREEMENT,master 'Kanakāmbari 1' (mela 1) has: SGRGMPDNDS/SNDPMGRGRS ;; SGRGMPDNDS/SNDPMGRS ;; SGRGMPNSDS/SNDPMGRS ;; SRGMPDNDS/SNDPMGRGRS ;; SRGMPDNS/SNDPMGRGRS ;; SRGMPDS/SNDPMGRS ;; SRMPDS/SNDMGRS ;; SRMPDS/SNDPMGRS,64
+KeerthiPriya 1 2,01,S R M P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Keerthipriya' (mela 1) has: SRGMPDS/SNDPMGRS,65
+Srimati,02,S R G P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Srimati' under mela 8 instead of 02,67
+Ukavani,02,S R G M D N S,S N D M G R S,MELAKARTA MISMATCH,master has 'Ukavani' under mela 21 instead of 02,67
+Bherikarnika,03,S R M P D N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Bherikarnika 1' (mela 3) has: SRGMPDNDS/SNDPMGRS ;; SRMDNDS/SNDPMGRS,68
+BhinnaPanchamam 2,03,S G M P D N S,S N D M P M G R S,SWARA DISAGREEMENT,master 'Bhinnapanchamam 1' (mela 3) has: SGMPDNS/SNDMPGRS ;; SGMPDNS/SNDPMGRS ;; SRGGRMPDPNNS/SNDMGGRS ;; SRGMPDNS/SNDPMGRS ;; SRMDNS/SNDPMGRS,68
+BhinnaPanchamam 4,03,S R G R M P D P,S N D P M G R S,SWARA DISAGREEMENT,master 'Bhinnapanchamam 1' (mela 3) has: SGMPDNS/SNDMPGRS ;; SGMPDNS/SNDPMGRS ;; SRGGRMPDPNNS/SNDMGGRS ;; SRGMPDNS/SNDPMGRS ;; SRMDNS/SNDPMGRS,68
+BhinnaPanchamam 5,03,S R G G R M P D,S N D M G G R S,SWARA DISAGREEMENT,master 'Bhinnapanchamam 1' (mela 3) has: SGMPDNS/SNDMPGRS ;; SGMPDNS/SNDPMGRS ;; SRGGRMPDPNNS/SNDMGGRS ;; SRGMPDNS/SNDPMGRS ;; SRMDNS/SNDPMGRS,68
+Chayagowla 1,03,S R G R M P D N S,S D N P M G R S,MELAKARTA MISMATCH,master has 'Chāyagowla' under mela 15 instead of 03,68
+Chayagowla 2,03,S R G R M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Chāyagowla' under mela 15 instead of 03,68
+Chayagowla 3,03,S R G R M P D N S,S D N P M G S R S,MELAKARTA MISMATCH,master has 'Chāyagowla' under mela 15 instead of 03,68
+Chayavela 1,03,S R G R M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Chayavela' (mela 3) has: SRGRMPDNS/SDNPMGRS,68
+Lalithathodi 1,03,S R G M P S,S N D P M G R S,SWARA DISAGREEMENT,master 'Lalithathodi2' (mela 3) has: SRGMPS/SNDMGRS,68
+Purva Varali 2,03,S R M P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrvavarALi' (mela 3) has: SRMPDNS/SNDPMGRS ;; SRMPDS/SNDPMGRSNDNS,69
+Mandamari,04,S R M P N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Mandāmari 1' under mela 22 instead of 04,70
+Vanamali,04,S R G P D N S,S N P M R S,SWARA DISAGREEMENT,master 'vanamAli' (mela 4) has: SRMPDNS/SDPMRS,71
+Chitramani,05,S R M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Chitramani' under mela 11 instead of 05,72
+Ghanashyamalangi,05,S G M P D N P S,S N D P M G R S,SWARA DISAGREEMENT,master 'ghanashyAmalAngi' (mela 5) has: SGMPDNPSS/SDPRGS,72
+Kamya 2,05,S R G P N S,S N D P M G R G S,SWARA DISAGREEMENT,master 'Kamya 1' (mela 5) has: SRGPDNS/SNDPMGRGS ;; SRGPDNS/SNDPMGRS,72
+Mangaladesika 1,05,S R G M P N D S,S N D P G M G R S,SWARA DISAGREEMENT,master 'Mangaladesika 1' (mela 5) has: SRGMPDNDS/SNPDMGRS ;; SRGMPDNS/SNPDMGRS ;; SRGMPNDS/SNDPMGRS ;; SRGMPNDS/SNMDMGRS ;; SRGMPNDS/SNPDMGRS,72
+Manoranjani 3,05,S R M P D N S,S N D P M P M R G R S,SWARA DISAGREEMENT,master 'Manoranjani 1' (mela 5) has: SRMPDNS/SNDPDMGRS ;; SRMPDNS/SNDPMGRS ;; SRMPDNS/SNSDPMPMRGS,73
+Tharunipriya,06,S R G D N S,S N D G R S,MELAKARTA MISMATCH,master has 'Tharunipriya 1' under mela 64 instead of 06,75
+Bhogi 5,07,S G R M P D N S,S N D P M D P M G R S,SWARA DISAGREEMENT,master 'Bhogi 1' (mela 7) has: SGMPDNDS/SNDMPGS ;; SGMPDNDS/SNDPMGRS ;; SGMPDNDS/SNDPMGS ;; SGMPDNS/SNDPMGRS ;; SGRMPDNS/SNDPMDPMGR,76
+Senapathi,07,S R G M P N S,S N D P D M G R S,SWARA DISAGREEMENT,master 'Senapathi 1' (mela 7) has: SRGMPDNS/SNDPMGRS ;; SRGMPNS/SNDPMGRS,77
+Swarna Malli,07,S G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Swarnamalli 1' under mela 8 instead of 07,77
+Ahiri 2,08,S R M G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Ahiri1' (mela 8) has: SMGMPDNS/SNDPMGRS ;; SRSGMPDNS/SNDPMGRS ;; SRSMGMPDNS/SNPDPMGMGRS,78
+Bharathi,08,S R G M P D N S,S N P M G R S,MELAKARTA MISMATCH,"master has 'Bharathi2' under mela 44, 45 instead of 08",78
+Bhoopalam 2,08,S R G P D S,S N D P G R S,SWARA DISAGREEMENT,master 'Bhoopālam' (mela 8) has: SRGPDS/SDPGRS,78
+ChandraKantha,08,S R G M P D N S,S P D N D P M G S R S,MELAKARTA MISMATCH,master has 'Chandrakāntha' under mela 65 instead of 08,79
+ChayaBauli 1,08,S R G M S P M D N S,S N P D M G R S,SWARA DISAGREEMENT,master 'chAyAbauLi' (mela 8) has: SRGMSPMDNS/SNDPMGRS,79
+Ghanta 1,08,S R G M P D N D P M,G R S N D P N S,SWARA DISAGREEMENT,master 'Ghanta1 1' (mela 8) has: SGRGMPNS/SNDPMGRS ;; SGRMPNS/SNDPMGRS ;; SRGMPDN/DPMGRSNDPNS,79
+KanakaMandana 2,08,S R G M P D N S,S D P M P M G R S,SWARA DISAGREEMENT,master 'kanakamandana' (mela 8) has: SRGMPDNS/SDPMPGRS,80
+KannadaSalavi,08,S G M P D S,S D P M G S,MELAKARTA MISMATCH,master has 'kannaDasALavi' under mela 20 instead of 08,80
+Malini,08,S R G M P S,S N D M G R S,MELAKARTA MISMATCH,"master has 'Malini 1' under mela 14, 36, 7 instead of 08",80
+Nagavarali 1,08,S N S R G M P D,P M G R S N S,SWARA DISAGREEMENT,master 'Nāgavarāli 1' (mela 8) has: NSGRGMPD/PMGRS ;; NSGRGMPD/PMGRSN ;; NSRGMPD/PDPMGRSN ;; SGRGMPD/DPMGRS ;; SNSRMPD/PMGRSNS ;; SRGMPMDNS/SNDPMGRS,80
+Nagavarali 3,08,S R G M P D N,D P M G R S N S,SWARA DISAGREEMENT,master 'Nāgavarāli 1' (mela 8) has: NSGRGMPD/PMGRS ;; NSGRGMPD/PMGRSN ;; NSRGMPD/PDPMGRSN ;; SGRGMPD/DPMGRS ;; SNSRMPD/PMGRSNS ;; SRGMPMDNS/SNDPMGRS,80
+Nagavarali 5,08,N S R G M P D,P M G R S N S,SWARA DISAGREEMENT,master 'Nāgavarāli 1' (mela 8) has: NSGRGMPD/PMGRS ;; NSGRGMPD/PMGRSN ;; NSRGMPD/PDPMGRSN ;; SGRGMPD/DPMGRS ;; SNSRMPD/PMGRSNS ;; SRGMPMDNS/SNDPMGRS,80
+Nagavarali 7,08,S R G M P M D N S,S N D M P G R S,SWARA DISAGREEMENT,master 'Nāgavarāli 1' (mela 8) has: NSGRGMPD/PMGRS ;; NSGRGMPD/PMGRSN ;; NSRGMPD/PDPMGRSN ;; SGRGMPD/DPMGRS ;; SNSRMPD/PMGRSNS ;; SRGMPMDNS/SNDPMGRS,81
+PunnagaVarali 4,08,N S R G M P D N,D P M G R S N S,SWARA DISAGREEMENT,master 'PunnagaVarali 1' (mela 8) has: NSRGMPD/DPMGRSN ;; NSRGMPDN/DPMGRSN ;; NSRGMPDN/NDPMGRSN ;; NSRGMPDN/NDPMGRSNS ;; NSRGMPDN/NDPMPGRS ;; NSRGMPDNNDPMGRSN/ ;; SRGMPDN/NDPMGRSN ;; SRGMPDN/NDPMGRSNS,81
+Ravana Priya,08,S R G M P D N S,S D P M G S,SWARA DISAGREEMENT,master 'rAvaNApriyA' (mela 8) has: SRGMPDNS/SDPMGRS,81
+BhinnaShadjam 3,09,S R M P N S,S D P M G R S,SWARA DISAGREEMENT,master 'Bhinnashadjam 1' (mela 9) has: SRGRDMPNS/SDPMGRS ;; SRGRPMPNS/SDPMGRS ;; SRMPNS/SDRMGRS,83
+Bhoopalam,09,S R G P D S,S D P G R S,MELAKARTA MISMATCH,"master has 'Bhoopālam' under mela 15, 8 instead of 09",83
+Chandrika,09,S G M D N S,S N D M G S,MELAKARTA MISMATCH,"master has 'Chandrika2' under mela 18, 21 instead of 09",83
+Dakka 1,09,S R M G M P D N S,S D P M M G R G S,SWARA DISAGREEMENT,master 'Dakka' (mela 9) has: SGMPMDNS/SNDPMGRS ;; SRMGMPDNS/SDPMMGRDS,83
+Dakka 2,09,S G P M D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Dakka' (mela 9) has: SGMPMDNS/SNDPMGRS ;; SRMGMPDNS/SDPMMGRDS,83
+Dakka 4,09,S G P M D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Dakka' (mela 9) has: SGMPMDNS/SNDPMGRS ;; SRMGMPDNS/SDPMMGRDS,83
+Neela,09,S R G M D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Neela' under mela 28 instead of 09,84
+Purva Barasu,09,S M G M D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'pUrvabarasu' under mela 10 instead of 09,84
+Natabharanam 1,10,S G M P N D N S,S N D N P M G R S,SWARA DISAGREEMENT,master 'Natābharanam 1' (mela 10) has: SGMPNDNS/SNDNPNPMGGRRS ;; SRGMPDNS/SNDNPMGMRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNPMGRS ;; SRGMPDPNS/SNDPMGMRS ;; SRGMPDPNS/SNDPMGRS ;; SRGMPDS/SNDPMGRS,86
+Natabharanam 3,10,S R G M P D P N S,S N D M G M G R S,SWARA DISAGREEMENT,master 'Natābharanam 1' (mela 10) has: SGMPNDNS/SNDNPNPMGGRRS ;; SRGMPDNS/SNDNPMGMRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNPMGRS ;; SRGMPDPNS/SNDPMGMRS ;; SRGMPDPNS/SNDPMGRS ;; SRGMPDS/SNDPMGRS,86
+PoorvaRamakriya 2,10,S R G M P N D N S,S N P G M R G S,SWARA DISAGREEMENT,master 'Poorvaramakriya 1' (mela 10) has: SRGMPNDNS/SNDPMGRS ;; SRGMPNDNS/SNPDMGRS ;; SRGMPNNS/SNPDMGRS,86
+Puranakam,10,S R G M D S,S D M G R S,MELAKARTA MISMATCH,master has 'purANakam' under mela 15 instead of 10,86
+Vaijayanthi 2,10,S G M P D S,S D P M G S,SWARA DISAGREEMENT,master 'Vaijayanthi 1' (mela 10) has: SGMPDS/SDPGRS ;; SRGPDS/SDPGRS,87
+YogaMathi 2,10,S R G M D N S,S D P M G R S,SWARA DISAGREEMENT,master 'Yogamathi' (mela 10) has: SRGMDNS/SDPMRGRS,87
+ChayaSaindhavi 3,11,S R G M P D P N S,S D N P M G S,SWARA DISAGREEMENT,master 'Chayasaindhavi 1' (mela 11) has: SRGMPDPNS/SDNPMGRS ;; SRGMPDPNS/SNDPMGRS ;; SRGMPDPNS/SNDPMGS,88
+Payasvini 2,11,S G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'pAyasvini' (mela 11) has: SGMPDNS/SNDPMGS,89
+Vardhini 1,11,S G M P D N S,S N P D P M G S,MELAKARTA MISMATCH,"master has 'vardhini' under mela 24, 69 instead of 11",89
+Vardhini 2,11,S G M P M P D N S,S N D P D P M G R S,MELAKARTA MISMATCH,"master has 'vardhini' under mela 24, 69 instead of 11",89
+Vasanthi,11,S R G P N S,S N P G R S,MELAKARTA MISMATCH,"master has 'Vasanthi' under mela 22, 27 instead of 11",89
+Kalakanti 1,13,S R M P N D N S,S N D P G R S,SWARA DISAGREEMENT,master 'Kalākānti 1' (mela 13) has: SRGMDNS/SNDPGRS ;; SRMPDNS/SNDPMRS,92
+Kalakanti 2,13,S R G M P N D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Kalākānti 1' (mela 13) has: SRGMDNS/SNDPGRS ;; SRMPDNS/SNDPMRS,92
+Kalakanti 3,13,S R M P D N S,S N D P G R S,SWARA DISAGREEMENT,master 'Kalākānti 1' (mela 13) has: SRGMDNS/SNDPGRS ;; SRMPDNS/SNDPMRS,92
+Kalakanti 5,13,S R M P D N S,S N D P M R M G S,SWARA DISAGREEMENT,master 'Kalākānti 1' (mela 13) has: SRGMDNS/SNDPGRS ;; SRMPDNS/SNDPMRS,92
+Kalkada 2,13,S G M D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Kalkada 1' (mela 13) has: SRGPDNS/SNDPGRS ;; SRGPDNSSRGPDS/SNDPGRS ;; SRMPDNS/SNDPMRS,93
+Kalkada 3,13,S R G M R G M P D N S,S N P D N D P M G R S,SWARA DISAGREEMENT,master 'Kalkada 1' (mela 13) has: SRGPDNS/SNDPGRS ;; SRGPDNSSRGPDS/SNDPGRS ;; SRMPDNS/SNDPMRS,93
+Kalkada 4,13,S R M G R G M P D N S,S N P D N D P M G R S,SWARA DISAGREEMENT,master 'Kalkada 1' (mela 13) has: SRGPDNS/SNDPGRS ;; SRGPDNSSRGPDS/SNDPGRS ;; SRMPDNS/SNDPMRS,93
+Kaltada 2,13,S G M D N S,S N D M G R S,SWARA DISAGREEMENT,master 'kaltaDa' (mela 13) has: SRGPDNS/SNDNPGRS ;; SRGPDNS/SNDPGRS,93
+Kaltada 3,13,S R G M R G M P D N S,S N P D N D P M G R S,SWARA DISAGREEMENT,master 'kaltaDa' (mela 13) has: SRGPDNS/SNDNPGRS ;; SRGPDNS/SNDPGRS,93
+Kaltada 4,13,S R M G R G M P D N S,S N P D N D P M G R S,SWARA DISAGREEMENT,master 'kaltaDa' (mela 13) has: SRGPDNS/SNDNPGRS ;; SRGPDNS/SNDPGRS,93
+Kesari,13,S R G M P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Kesari 1' under mela 25 instead of 13,93
+KunthalaKambhoji 1,13,S G M D N D S,S N D P M G S,SWARA DISAGREEMENT,master 'Kunthalakambhoji 1' (mela 13) has: SGMPDNDS/SNDPMGS ;; SGPDNDS/SNDPMGS,93
+Nama Narayani,13,S R M P D N S,S P D N P M R S,MELAKARTA MISMATCH,"master has 'Namanarayani' under mela 49, 50 instead of 13",93
+Sarva Mangala,13,S R G M P D N S P N S,S N D P G R S,SWARA DISAGREEMENT,master 'sarvamangaLa' (mela 13) has: SRGMPDNSPN/SNDPGRS,94
+Suravarali 2,13,S M P D N S,S N D P M P S,SWARA DISAGREEMENT,master 'Suravarali 1' (mela 13) has: SMPDN/SNDPMS ;; SMPDNS/SNDPMDS ;; SMPDNS/SNDPMS ;; SMPDNS/SNPDMS,94
+Ahiri 2,14,S R S M G M P D N S,S N D P M G M R S,SWARA DISAGREEMENT,master 'Ahiri3' (mela 14) has: SRSGMPDNS/SNDPMGRS,95
+Chandrika,14,S R G M P N S,S N P M G R S,MELAKARTA MISMATCH,"master has 'Chandrika2' under mela 18, 21 instead of 14",95
+Panchamam,14,S M G M P D N S,S N D N D P M G R S,MELAKARTA MISMATCH,master has 'Panchamam 1' under mela 22 instead of 14,96
+Thandavollasini,14,S R G P D N S,S N D P G R S,MELAKARTA MISMATCH,master has 'Thandavollasini' under mela 35 instead of 14,96
+AndhraDesika 1,15,S G M P D N S,S D P M G R S,SWARA DISAGREEMENT,master 'Andhradesika' (mela 15) has: SRGMPDNS/SNPDPMGRS,98
+Bauli 2,15,S R G P D N S,S N D P G R S,SWARA DISAGREEMENT,master 'bauLi' (mela 15) has: SRGPDNDS/SNDPGRS ;; SRGPDS/SNDPGRS,98
+BharmaKesari,15,S R G P D N S,S D N D M G R S,SWARA DISAGREEMENT,master 'bharmakEsari' (mela 15) has: SRGPDNS/SNDNMGRS,98
+Chandrachooda,15,S G M P D S,S N D P M G S,SWARA DISAGREEMENT,master 'Chandrachooda' (mela 15) has: SMGMPDS/SNDPMGS,99
+Chaya Gaula 2,15,S R M P D P M P D S N S,S N D D P M G S R S,SWARA DISAGREEMENT,master 'chAyAgauLa' (mela 15) has: SRGRMPDNS/SDNPMGS ;; SRMDMPNS/SNDPMGRS ;; SRMPDPMPDS/SNDDPMGSRS ;; SRMPNS/SNDPMGRS ;; SRMPNS/SNDPMGSRS,99
+Chaya Gaula 3,15,S R M G M P N S,S N D P M G R S,SWARA DISAGREEMENT,master 'chAyAgauLa' (mela 15) has: SRGRMPDNS/SDNPMGS ;; SRMDMPNS/SNDPMGRS ;; SRMPDPMPDS/SNDDPMGSRS ;; SRMPNS/SNDPMGRS ;; SRMPNS/SNDPMGSRS,99
+Dakka 1,15,S R S G M G P M,S N D M G P M R S,SWARA DISAGREEMENT,master 'Dakka' (mela 15) has: SGMDDNDS/SDMGRGS ;; SGMPMGMDNS/SNDMPMGMRGS ;; SRGMGMDNS/SNPMGMPRGS ;; SRSGMGMPMDNS/SNDMGSMRS ;; SRSGMGPMDNS/SNDMGPMRS,99
+Dakka 3,15,S R S G M G M P M D D N N S,S N D M G S M R S,SWARA DISAGREEMENT,master 'Dakka' (mela 15) has: SGMDDNDS/SDMGRGS ;; SGMPMGMDNS/SNDMPMGMRGS ;; SRGMGMDNS/SNPMGMPRGS ;; SRSGMGMPMDNS/SNDMGSMRS ;; SRSGMGPMDNS/SNDMGPMRS,99
+Dheeramathi,15,S R M P D S,S D P M R G R S,MELAKARTA MISMATCH,"master has 'Dheeramathi1' under mela 13, 29 instead of 15",100
+Ekaleela,15,S R G R M P N D N P D S,S D P M G R S,SWARA DISAGREEMENT,master 'Ekaleela' (mela 15) has: SGRGMPNDNPDS/SDPMGRS,100
+Gaula 1,15,S R G M R M P N S,S N P M G R S,SWARA DISAGREEMENT,master 'gauLa' (mela 15) has: SRGMRMPNS/SNPMGMRS ;; SRMPNS/SNPMGMRGMR,100
+Gaula 2,15,S R M P N S,S N P M R G M R S,SWARA DISAGREEMENT,master 'gauLa' (mela 15) has: SRGMRMPNS/SNPMGMRS ;; SRMPNS/SNPMGMRGMR,100
+Gaula 3,15,S R G R M P N S,S N P M G M R S,SWARA DISAGREEMENT,master 'gauLa' (mela 15) has: SRGMRMPNS/SNPMGMRS ;; SRMPNS/SNPMGMRGMR,100
+Gauri 2,15,S R M P D N S,S N D P M P M G R S,SWARA DISAGREEMENT,master 'gauri' (mela 15) has: SRGMPDNS/SNDPMPMGRS ;; SRMNS/SNDPMGRS ;; SRMPDPNS/SNDPMGRS ;; SRMPNS/SNDPGRS ;; SRMPNS/SNDPMGRS ;; SRSPDNS/SNDPSRS,100
+Gundakriya 2,15,S R G R M P N D N S,S N D P M G R R G R S,SWARA DISAGREEMENT,master 'Gundakriya 1' (mela 15) has: SRGMPDNS/SNPMGMDPMG ;; SRGRMNDNS/SNDPMGRGRS ;; SRGRMPNDNS/SNDPMGRRGR ;; SRGRMPNS/SNPDMGRS ;; SRGRMPNS/SNPDPMGRS ;; SRMPNS/SNPDPGRS ;; SRMPNS/SNPDPMGRS ;; SRPMNS/SNPDPMGRS,101
+Gundakriya 4,15,S R G M P D N S,S N P M G M D P M G R S,SWARA DISAGREEMENT,master 'Gundakriya 1' (mela 15) has: SRGMPDNS/SNPMGMDPMG ;; SRGRMNDNS/SNDPMGRGRS ;; SRGRMPNDNS/SNDPMGRRGR ;; SRGRMPNS/SNPDMGRS ;; SRGRMPNS/SNPDPMGRS ;; SRMPNS/SNPDPGRS ;; SRMPNS/SNPDPMGRS ;; SRPMNS/SNPDPMGRS,101
+Gurjari 3,15,S R G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Gurjari 1' (mela 15) has: SRGMPDNS/SDNDPMGRS ;; SRGMPDNS/SDNPMGRS ;; SRGMPDNS/SDPMGRS ;; SRGMPDNS/SDSNDPMGGRS ;; SRGPDS/SDPMGRS,101
+Janavarali,15,S G R G M D N D S,S N D P M G M R G M R S,SWARA DISAGREEMENT,master 'janavarALi' (mela 15) has: SGRGMDNDS/SNDPMGMRGM,101
+Jekarnika,15,S M G M P D N S,S N P M G R S,SWARA DISAGREEMENT,master 'jEkarNikA' (mela 15) has: SMGMPDNS/SNDMGRS,101
+Jogi 1,15,S R M P D S,S D N D P M R M G R S,SWARA DISAGREEMENT,master 'jOgi' (mela 15) has: SRMPDS/SDNDMRMGS ;; SRMPDS/SDNDPMRMGR,102
+KannadaBangala 5,15,S R M G M D N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Kannadabangāla 1' (mela 15) has: SGMDNDS/SDPMGRS ;; SGMGMDNDS/SDPMGRS ;; SRGMDNDS/SNDPMGRS ;; SRMGMDPDS/SDPMGRS ;; SRMGMPDS/SDPMGRS ;; SRMGPDMDS/SDPMGRS ;; SRMPDS/SDPMGRS,102
+KarnatakaSaranga 1,15,S R G M G P N D M,S D M P M G R S,SWARA DISAGREEMENT,master 'Karnātaka Sāranga 1' (mela 15) has: SRGMGPNDMPDNS/SDMPMGRS ;; SRGMPDNS/SDMPMGRS ;; SRGMPDNS/SNDPMRS,102
+KarnatakaSaranga 3,15,S R G M P N D M,S D M P M G R S,SWARA DISAGREEMENT,master 'Karnātaka Sāranga 1' (mela 15) has: SRGMGPNDMPDNS/SDMPMGRS ;; SRGMPDNS/SDMPMGRS ;; SRGMPDNS/SNDPMRS,102
+Lalitha 1,15,S R S M D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Lalitha1' (mela 15) has: SRGMDNS/SNDMGRS,102
+Lalitha 2,15,S R G D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Lalitha1' (mela 15) has: SRGMDNS/SNDMGRS,102
+Lalitha 3,15,S M G D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Lalitha1' (mela 15) has: SRGMDNS/SNDMGRS,103
+Lalitha 4,15,S R G M P M D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Lalitha1' (mela 15) has: SRGMDNS/SNDMGRS,103
+Lalitha,15,S R G M D N S,S N D M P M G R S,SWARA DISAGREEMENT,master 'Lalitha1' (mela 15) has: SRGMDNS/SNDMGRS,103
+Panchamam 2 1,15,S G M D N S,S N D P M G M R S,MELAKARTA MISMATCH,master has 'Panchamam 1' under mela 22 instead of 15,103
+Panchamam 2 2,15,S R G M P M D N S,S N D M G R S,MELAKARTA MISMATCH,master has 'Panchamam 1' under mela 22 instead of 15,103
+Panchamam 2 3,15,S R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Panchamam 1' under mela 22 instead of 15,103
+Panchamam 2 4,15,S R G M P D N S,S N D M P M G R S,MELAKARTA MISMATCH,master has 'Panchamam 1' under mela 22 instead of 15,103
+Maruva 3,15,S G M P D N S,S N D P M D M P M G S,SWARA DISAGREEMENT,master 'Maruva 1' (mela 15) has: SGMDNS/SNDPDMGRS ;; SGMDNS/SNDPGMGRS ;; SGMDNS/SNDPGMGRSRGRS ;; SGMDNS/SNDPGMGSRGRS ;; SGMPDNDPS/SNDPDMGRS ;; SGMPDNDPS/SNDPMDMPMGRS ;; SGMPDNS/SNDPMDMPMGRS ;; SGMPNS/SNDMPMGRS ;; SRMPNS/SNDPMGMRS,104
+Maruva 5,15,S G M D N P S,S N D P D M G R S,SWARA DISAGREEMENT,master 'Maruva 1' (mela 15) has: SGMDNS/SNDPDMGRS ;; SGMDNS/SNDPGMGRS ;; SGMDNS/SNDPGMGRSRGRS ;; SGMDNS/SNDPGMGSRGRS ;; SGMPDNDPS/SNDPDMGRS ;; SGMPDNDPS/SNDPMDMPMGRS ;; SGMPDNS/SNDPMDMPMGRS ;; SGMPNS/SNDMPMGRS ;; SRMPNS/SNDPMGMRS,104
+Marga Desi 1,15,S R G P D S,S D P M G R S,SWARA DISAGREEMENT,master 'Mārgadesi 1' (mela 15) has: SGMPDNS/SNDPMGRS ;; SRGMPDNS/SDMPGRS ;; SRGPDS/SDMPGRS ;; SRGRGDMPDS/SDPMGRS ;; SRGRGDMPDS/SDPMPGRS,104
+MargaSanjivini,15,S R G R M P D N,S N D P M G R S,SWARA DISAGREEMENT,master 'mArgasanjIvini' (mela 15) has: SRGRMPDNPD/SNDPMGRS,104
+Meghavali,15,S R M P D N S,S N D N P M,SWARA DISAGREEMENT,master 'mEghAvaLi' (mela 15) has: SRMPDNS/SNDNPMRMGR,104
+Navabhasura 2,15,S R G P N S,S N D M G R G M S,SWARA DISAGREEMENT,master 'Navabhasura' (mela 15) has: SRGPNS/SNDMGRMGS,105
+Padi 6,15,R M P D P N S,S N P D P M,SWARA DISAGREEMENT,master 'Pādi 1' (mela 15) has: RMPDPNS/SNDMPMGMRG ;; SRGMPDS/SNDPMGRS ;; SRMPDPNS/SDPMRS ;; SRMPNS/SNDPMPMGRS ;; SRMPNS/SNMDPMRS ;; SRMPNS/SNPDMRS ;; SRMPNS/SNPDPMRS,105
+PrakaraRanjani,15,S R G P N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Prakararanjani' (mela 15) has: SRGMPNS/SNDPMGRS,106
+Purvi 2,15,S R G M P D N P S,S N D P D P M G R S,SWARA DISAGREEMENT,master 'pUrvi 1' (mela 15) has: SGRGMPDNDPS/SNDPMGPMGRS ;; SRGMDNDS/SNDPMDMGRS ;; SRGMDNS/SNDPMGRS ;; SRGMPDNDS/SNDPMDMGRS ;; SRGMPDNPS/SNDPDDGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDS/SNDPMGRS ;; SRGPDNP/SNDPMDMGRS ;; SRGPDNS/SNDPMGS,106
+Purvi 6,15,S R G M D N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrvi 1' (mela 15) has: SGRGMPDNDPS/SNDPMGPMGRS ;; SRGMDNDS/SNDPMDMGRS ;; SRGMDNS/SNDPMGRS ;; SRGMPDNDS/SNDPMDMGRS ;; SRGMPDNPS/SNDPDDGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDS/SNDPMGRS ;; SRGPDNP/SNDPMDMGRS ;; SRGPDNS/SNDPMGS,106
+Purvi 8,15,S G R D M P D N D P S,S N D P M G M M G R S,SWARA DISAGREEMENT,master 'pUrvi 1' (mela 15) has: SGRGMPDNDPS/SNDPMGPMGRS ;; SRGMDNDS/SNDPMDMGRS ;; SRGMDNS/SNDPMGRS ;; SRGMPDNDS/SNDPMDMGRS ;; SRGMPDNPS/SNDPDDGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDS/SNDPMGRS ;; SRGPDNP/SNDPMDMGRS ;; SRGPDNS/SNDPMGS,106
+Raja Pradipika,15,S G R G M P D N S,S N D P M G M P G R S,MELAKARTA MISMATCH,master has 'rAjapradIpikA' under mela 22 instead of 15,106
+Ram Bhavali,15,S R G M P D N S,S N D N P D P M G R G M G S,SWARA DISAGREEMENT,master 'rAmbhAvaLi' (mela 15) has: SRGMPDNS/SNDNPDPMGRS,106
+Sarangagaula 2,15,S R G M P N S,S N P D N P M G M R G R S,SWARA DISAGREEMENT,master 'sArangagauLa' (mela 15) has: SRGMPNS/SNPDNPMGMRGMGRS,107
+Sowrashtram 1,15,S R G M P D N S,S N D P M G M R S,MELAKARTA MISMATCH,master has 'Sowrāshtram' under mela 17 instead of 15,108
+Sowrashtram 2,15,S R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Sowrāshtram' under mela 17 instead of 15,108
+Sowrashtram 3,15,S R G M P M D N S,S N D N D P M G P M R S,MELAKARTA MISMATCH,master has 'Sowrāshtram' under mela 17 instead of 15,108
+SuddhaKriya 1,15,S R P M P D S,S D P M G R S,MELAKARTA MISMATCH,master has 'Suddhakriyā' under mela 54 instead of 15,108
+SuddhaKriya 2,15,S R G P D N S,S D P M G R S,MELAKARTA MISMATCH,master has 'Suddhakriyā' under mela 54 instead of 15,108
+SuddhaKriya 3,15,S R M P D P N S,S N D P M R G M R S,MELAKARTA MISMATCH,master has 'Suddhakriyā' under mela 54 instead of 15,108
+SuddhaKriya 4,15,S R M P D P N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Suddhakriyā' under mela 54 instead of 15,108
+SuddhaKriya 5,15,S R G M P D S,S D P M G R S,MELAKARTA MISMATCH,master has 'Suddhakriyā' under mela 54 instead of 15,108
+SuddhaKriya 6,15,S R P M P D S,S D P M G R S,MELAKARTA MISMATCH,master has 'Suddhakriyā' under mela 54 instead of 15,108
+SuddhaKriya 7,15,S R P M P D S,S D P M R G M R S,MELAKARTA MISMATCH,master has 'Suddhakriyā' under mela 54 instead of 15,108
+Vasantha 1,15,S G M D N S,S N D M G R S,MELAKARTA MISMATCH,"master has 'Vasanthā 1' under mela 17, 29 instead of 15",109
+Vasantha 2,15,S G M D N S,S N D P M G R S,MELAKARTA MISMATCH,"master has 'Vasanthā 1' under mela 17, 29 instead of 15",109
+Vasantha 3,15,R S G M D N S,S N D N D M G M M P M G R S,MELAKARTA MISMATCH,"master has 'Vasanthā 1' under mela 17, 29 instead of 15",109
+Vasantha 4,15,S G M D N S,S N D M G M P M G R S,MELAKARTA MISMATCH,"master has 'Vasanthā 1' under mela 17, 29 instead of 15",109
+VasanthaManohari,15,S R G M P D N S,S N P M G S,MELAKARTA MISMATCH,"master has 'Vasanthamanohari 1' under mela 2, 21 instead of 15",109
+Bhujangini 2,16,S R G M P D S,S N P D M G R S,SWARA DISAGREEMENT,master 'Bhujāngini 1' (mela 16) has: SRGMDNS/SNDMGRS ;; SRGMGMNDNS/SNDMGRS ;; SRGMPDS/SNDMGRS ;; SRSMGMNDNS/SNDMGRS,110
+Chayavathi,16,S R G M D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Chāyāvathi' under mela 17 instead of 16,111
+Kalavathi 1,16,S R M P D S,S D P M G R S,MELAKARTA MISMATCH,master has 'Kalāvathi 1' under mela 31 instead of 16,111
+Kalavathi 2,16,S R G M P D N S,S N D N P M G R S,MELAKARTA MISMATCH,master has 'Kalāvathi 1' under mela 31 instead of 16,111
+Kalavathi 3,16,S R G M P D P S,S N D N P M G R S,MELAKARTA MISMATCH,master has 'Kalāvathi 1' under mela 31 instead of 16,111
+Kalavathi 4,16,S R G M P D N P S,S N D N P M G R S,MELAKARTA MISMATCH,master has 'Kalāvathi 1' under mela 31 instead of 16,111
+Manasija Priya 1,16,S R G M P M D N S,S D N P M G R S,SWARA DISAGREEMENT,master 'Manasijapriya 1' (mela 16) has: SRGMPDNDPMDNS/SNDPMGRS ;; SRGMPMDNS/SNDPMGRS,112
+Manasija Priya 2,16,S R G M P D N D P M D N S,S D N P M G R S,SWARA DISAGREEMENT,master 'Manasijapriya 1' (mela 16) has: SRGMPDNDPMDNS/SNDPMGRS ;; SRGMPMDNS/SNDPMGRS,112
+Mukthangi,16,S R G P M P D N S,S D N P M G R S,SWARA DISAGREEMENT,master 'Mukthāngi 1' (mela 16) has: SRGMPDNS/SDNPMGRS ;; SRGPMPDNS/SNDPMGRS,112
+PurnaMalini,16,S R G M N D N P D N S,S D M G R S,SWARA DISAGREEMENT,master 'pUrNamAlini' (mela 16) has: SRGMNDNPDN/SDMGRS,112
+Rasakalanidhi 1,16,S P M D N,D P M G M,SWARA DISAGREEMENT,master 'Rasakalanidhi 1' (mela 16) has: SPMDN/DPMGMRSN ;; SPMDN/DPMGMRSNS ;; SPMDNS/DPMGMRSNS,112
+Rasakalanidhi 2,16,S P M D N D P M,G M R S N S,SWARA DISAGREEMENT,master 'Rasakalanidhi 1' (mela 16) has: SPMDN/DPMGMRSN ;; SPMDN/DPMGMRSNS ;; SPMDNS/DPMGMRSNS,112
+Sathyavathi,16,G P D S S N D N,P D P G R,MELAKARTA MISMATCH,"master has 'Sathyavathi1' under mela 15, 67 instead of 16",113
+Suposhini,16,S D N S R G M P,M G R S N D N S,MELAKARTA MISMATCH,master has 'Suposhini 1' under mela 28 instead of 16,113
+Vasanthi,16,S M D N S,S N D P M G P M R S,MELAKARTA MISMATCH,"master has 'Vasanthi' under mela 22, 27 instead of 16",113
+Vedambari,16,S R G R M G M N D P N S,S N D N D P M G R G R S,SWARA DISAGREEMENT,master 'vEdAmbari' (mela 16) has: SRGRMGMNDP/SNDNDPMGRGS,113
+Ahiri,17,S M G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Ahiri' (mela 17) has: SGMPDNS/SNDPMGRS,114
+Chayavathi 2,17,S R G M D D D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Chāyāvathi' (mela 17) has: SRGMDNS/SNDPMGRS,114
+HarithaPriya,17,S R M P D S,S D P M R S,MELAKARTA MISMATCH,master has 'Harithapriya 1' under mela 28 instead of 17,114
+Jeevanthika,17,S R M P D N S,S N D P M R S,MELAKARTA MISMATCH,master has 'Jeevanthikā' under mela 48 instead of 17,114
+Kallola 1,17,S R M G M P D P N D N S,S N D P M N D M G R S,MELAKARTA MISMATCH,master has 'Kallola 1' under mela 18 instead of 17,115
+Kallola 2,17,S R M G M P N D N S,S N D P M N D M G R S,MELAKARTA MISMATCH,master has 'Kallola 1' under mela 18 instead of 17,115
+Kallola 3,17,S R M G M P D P N D S,S N D P M N D M G R S,MELAKARTA MISMATCH,master has 'Kallola 1' under mela 18 instead of 17,115
+Kallola 4,17,S R G P D S,S N P M S,MELAKARTA MISMATCH,master has 'Kallola 1' under mela 18 instead of 17,115
+Naga Malini,17,S R G M P D S,S D N D P M G M R S,SWARA DISAGREEMENT,master 'nAgamAlini' (mela 17) has: SGMPDNS/SNDPMGS,115
+Sindhu 4,17,S M P M D S,S N D M P M G R S,SWARA DISAGREEMENT,master 'Sindhu1 1' (mela 17) has: SGRMPDNS/SDPMGRGS ;; SMMPMDS/SNDMPMGRS ;; SMMPMPDS/SNDMGMRS ;; SMPMDS/SNDMPGMRS ;; SRGRMPS/SNDPNDPMGRS,116
+Suddha Gandhari,18,S R G R G M P D P N D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Suddha Gāndhāri 1' under mela 48 instead of 18,118
+SuddhaMalavi 1,18,S G R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Suddha Mālavi' under mela 29 instead of 18,118
+SuddhaMalavi 2,18,S R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Suddha Mālavi' under mela 29 instead of 18,118
+SuddhaMalavi 3,18,S G R G M P D N S,S D N P M G R S,MELAKARTA MISMATCH,master has 'Suddha Mālavi' under mela 29 instead of 18,118
+Bharathi,19,S R G M P S,S P M G R S,MELAKARTA MISMATCH,"master has 'Bharathi2' under mela 44, 45 instead of 19",119
+PurnaLalitha 1,19,S G R G R M P S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrnalalitha' (mela 19) has: SGRMPS/SNDPMGRS,120
+PurnaLalitha 2,19,S R G R M P S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrnalalitha' (mela 19) has: SGRMPS/SNDPMGRS,120
+PurnaLalitha 3,19,S R G M P S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrnalalitha' (mela 19) has: SGRMPS/SNDPMGRS,120
+PurnaLalitha 4,19,S G R G M P S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrnalalitha' (mela 19) has: SGRMPS/SNDPMGRS,120
+AdiBhairavi 1,20,S G R G M P D S,S D P M P G R S,MELAKARTA MISMATCH,master has 'Adibhairavi' under mela 19 instead of 20,121
+AdiBhairavi 2,20,S M G M P D S,S N D P G R S,MELAKARTA MISMATCH,master has 'Adibhairavi' under mela 19 instead of 20,121
+AdiBhairavi 3,20,S G M D N D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Adibhairavi' under mela 19 instead of 20,121
+Agni Kopa 1,20,S G M P N S,S N P M G R S,MELAKARTA MISMATCH,master has 'Agnikopa' under mela 22 instead of 20,121
+Agni Kopa 2,20,S R G M P N S,S N P M G S,MELAKARTA MISMATCH,master has 'Agnikopa' under mela 22 instead of 20,121
+Agni Kopa 3,20,S R G M P N S,S N P M G R S,MELAKARTA MISMATCH,master has 'Agnikopa' under mela 22 instead of 20,121
+Bhosala,20,S R P D N S,S D P M G R,SWARA DISAGREEMENT,master 'bhOsala' (mela 20) has: SRPDNS/SDPMRS,122
+Chandika,20,S R G M D N S D,S N D M G R S,SWARA DISAGREEMENT,master 'Chandika' (mela 20) has: SRGMDNS/SNDMGRS,122
+ChandraKantha,20,S R G M P N S,S N P M R G R S,MELAKARTA MISMATCH,master has 'Chandrakāntha' under mela 65 instead of 20,122
+Deva Kriya 2,20,S R S R G G M,N D N D P M G R S,SWARA DISAGREEMENT,master 'Devakriya 1' (mela 20) has: SRGMNDN/PDMGRSN ;; SRGMNDN/PMGRSN ;; SRGMNS/SNDPDMGRS ;; SRMPDS/SDMPMRS ;; SRMPNS/SNDNPMGRS ;; SRSGGMN/PDMGRS ;; SRSRGGMNDN/DPMGRS,122
+DhanaPratapa,20,S R G M P D N D S,S D P M G R S,SWARA DISAGREEMENT,master 'dhanapratApa' (mela 20) has: SGMPDNS/SNPMRS,123
+Dhanyasi,20,N S G M P N S,N D P M G R S,MELAKARTA MISMATCH,"master has 'Dhanyāsi' under mela 22, 8 instead of 20",123
+DhavalaVahini,20,S R M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'dhavaLavAhini' (mela 20) has: SRGPNS/SNDPMGRS,123
+Gamana Tarangini,20,S R M G R M N D N S P D N S,S N D P G R S,SWARA DISAGREEMENT,master 'gamanatarangiNi' (mela 20) has: SRMGRMNDNS/SNDPGRS,123
+Gana Pratapa,20,S R G M P D N D S,S D P M G R S,SWARA DISAGREEMENT,master 'gAnapratApa' (mela 20) has: SRGMPDNDS/SDMGRS,123
+HindolaVasantham 1,20,S G M P D N D S,S N D P M D M G S,MELAKARTA MISMATCH,master has 'Hindolavasantham2' under mela 26 instead of 20,124
+HindolaVasantham 2,20,S G M D N S,S N D P M G R G S,MELAKARTA MISMATCH,master has 'Hindolavasantham2' under mela 26 instead of 20,124
+HindolaVasantham 3,20,S G M D N S,S N D P M D G R G S,MELAKARTA MISMATCH,master has 'Hindolavasantham2' under mela 26 instead of 20,124
+HindolaVasantham 4,20,N S G M P D S,S N D P D N D M G R G S,MELAKARTA MISMATCH,master has 'Hindolavasantham2' under mela 26 instead of 20,124
+HindolaVasantham 5,20,S G M P D S,S N D M G S,MELAKARTA MISMATCH,master has 'Hindolavasantham2' under mela 26 instead of 20,124
+HindolaVasantham 6,20,S G M P D S,S N D P D N D M G S,MELAKARTA MISMATCH,master has 'Hindolavasantham2' under mela 26 instead of 20,124
+KamalaVasantham,20,S G M P N S,S N D M G S R S,MELAKARTA MISMATCH,master has 'Kamalavasantham 1' under mela 37 instead of 20,125
+Kannada(Mallaru),20,S G M P D S,S N D M G S,MELAKARTA MISMATCH,master has 'kannaDamallAru' under mela 22 instead of 20,125
+KarnikaRanjani,20,S R G M P M D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'karNikaranjani' (mela 20) has: SRGMPMDNS/SNDMGRS,125
+Kesarangi,20,S R M G M D N S,S D N P M G R S,MELAKARTA MISMATCH,master has 'kEsarangi' under mela 15 instead of 20,126
+Kokilavarali 2,20,S R G R M P D N D S,S N D N P M R G R S,SWARA DISAGREEMENT,master 'Kokilavarali 1' (mela 20) has: SGRGMPDNDS/SNDNPMRGRS ;; SRGRMPDNDS/SDNDPMRGRS,126
+Kshanika,20,S M R D N D S,S D P N D M R S,SWARA DISAGREEMENT,master 'Kshanika' (mela 20) has: SGMPDS/SDPMGS,126
+Kumara Ranjani,20,D N S R G P D,N D P R G R S N S,SWARA DISAGREEMENT,master 'kumAraranjani' (mela 20) has: DNSRGPD/NDPRGRSRS,126
+Mahathi,20,S P P D N S,S N P G R S,MELAKARTA MISMATCH,"master has 'Mahathi' under mela 28, 43 instead of 20",126
+Manavali,20,S G M N D N S,S D P M G R S N D N S,SWARA DISAGREEMENT,master 'manAvaLi' (mela 20) has: SGMNDNS/SDPMGRSNDN,126
+Manji 4,20,S G R G M N D N S,S N D P M P G R S,SWARA DISAGREEMENT,master 'Mānji 1' (mela 20) has: NSRGMPDNS/SNDPMGRS ;; SRGMNDNPDNS/SNDPMGMPGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNDPMPGRS ;; SRGMPDNS/SNDPMPMPGRS ;; SRGMPDNS/SNPMGRS ;; SRGMPNDNPDNS/SNDPMGMPGRS ;; SRGMPNS/SNPMGRS ;; SRGRGMNDNS/SNDPMPGRS,126
+Manorama 1,20,S R G M P D P S,S N D P M R G S,SWARA DISAGREEMENT,master 'manOramA' (mela 20) has: SRGMPDPS/SNDPMGRGS,127
+Manorama 2,20,S R G M P D P S,S N D P M G R S,SWARA DISAGREEMENT,master 'manOramA' (mela 20) has: SRGMPDPS/SNDPMGRGS,127
+MohanaVarali,20,S R G M P D N D S,S D N D M P G R S,SWARA DISAGREEMENT,master 'mOhanavarALi' (mela 20) has: SRGMPDNDS/SNDNMPGRS,127
+NatyaVardhini 2,20,S R G M D N S,S N P M R G R S,SWARA DISAGREEMENT,master 'nATyavardhini' (mela 20) has: SRGMDNS/SNDPMRGMRS,128
+NavarasaChandrika,20,S R G M P D S,S D P M G R S,MELAKARTA MISMATCH,"master has 'Navarasachandrika1 1' under mela 13, 49 instead of 20",128
+Rasa Kalambika,20,S M G D N D N S,S N D G R S,SWARA DISAGREEMENT,master 'rasakalambikA' (mela 20) has: SMGDNPDNS/SNDPGRS,128
+Saramathi 1,20,S R G M P D N S,S N D M G S R S,MELAKARTA MISMATCH,master has 'Saramathi 1' under mela 22 instead of 20,129
+Saramathi 2,20,S R G P D N S,S N D P M G S R S,MELAKARTA MISMATCH,master has 'Saramathi 1' under mela 22 instead of 20,129
+Saramathi 3,20,S R G M P D N S,S N D M G S,MELAKARTA MISMATCH,master has 'Saramathi 1' under mela 22 instead of 20,129
+Saramathi 4,20,S R G M P D N S,S N D P G R S,MELAKARTA MISMATCH,master has 'Saramathi 1' under mela 22 instead of 20,129
+Saramathi 5,20,S R G M P D N S,S N D P M G S R S,MELAKARTA MISMATCH,master has 'Saramathi 1' under mela 22 instead of 20,129
+(Kalidasa Priya) 6,20,S R G M P D N S,N D M G S R S,SWARA DISAGREEMENT,master 'kALidAsapriyA' (mela 20) has: SRGMPDNS/SNPMGS,129
+Saranga Kapi 2,20,S R P M N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Sāranga Kāpi 1' (mela 20) has: SRPMNS/SNDPGRS ;; SRPMPNS/SNDPMGRS ;; SRPMRMPNS/SNDPGRS ;; SRPMRPRMPN/SNDPMGRS ;; SRPMRPRMPNS/SNDPMGRS ;; SRSMRPRMPNS/SNDPMGRS,129
+Saranga Kapi 3,20,S R P M R M P N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Sāranga Kāpi 1' (mela 20) has: SRPMNS/SNDPGRS ;; SRPMPNS/SNDPMGRS ;; SRPMRMPNS/SNDPGRS ;; SRPMRPRMPN/SNDPMGRS ;; SRPMRPRMPNS/SNDPMGRS ;; SRSMRPRMPNS/SNDPMGRS,129
+SuddhaDhanyasi 1,20,S G M P N S,S N P M G S,MELAKARTA MISMATCH,master has 'Suddha Dhanyāsi 1' under mela 22 instead of 20,130
+SuddhaDhanyasi 2,20,S G M P N S,S N P M R S,MELAKARTA MISMATCH,master has 'Suddha Dhanyāsi 1' under mela 22 instead of 20,130
+UdayaRavichandrika 1,20,S G M P N S,S N P M G S,MELAKARTA MISMATCH,"master has 'Udayaravichandrika 1' under mela 22, 9 instead of 20",131
+UdayaRavichandrika 2,20,S R G M P D N S,S D P M R S,MELAKARTA MISMATCH,"master has 'Udayaravichandrika 1' under mela 22, 9 instead of 20",131
+UdayaRavichandrika 3,20,S R M P S N S,S N P M G M R S,MELAKARTA MISMATCH,"master has 'Udayaravichandrika 1' under mela 22, 9 instead of 20",131
+VasanthaVarali 1,20,S R M P D N,N D P G R S N,MELAKARTA MISMATCH,master has 'vasantha varALi 1' under mela 24 instead of 20,131
+VasanthaVarali 2,20,S R M P D N,D P G R S,MELAKARTA MISMATCH,master has 'vasantha varALi 1' under mela 24 instead of 20,131
+InduDhavali 1,21,S R M G S M P D N S,S N D P M G S,SWARA DISAGREEMENT,master 'Indudhavali 1' (mela 21) has: SRGMSMPDNS/SNDPMGS ;; SRMPDNS/SNDPMGRS,132
+Keeranavali 3,21,S R M P D N S,S N P D P M P G R S,SWARA DISAGREEMENT,master 'Keeranāvali 1' (mela 21) has: SRGMPDNS/SDPMGRS ;; SRGMPDNS/SPMGRS,132
+Madhavi 2,21,S R G M D N D P,S N P G R S R M D N,SWARA DISAGREEMENT,master 'Mādhavi 1' (mela 21) has: SMGMPDNS/SNDPMGRS ;; SMGMPDNS/SNDPMPMGRS ;; SMGMPDNS/SNDPMSMGRS ;; SRGMDNDPMDNS/SNPGRS,133
+Agnikopam,22,S G M P N S,S N P M G R S,MELAKARTA MISMATCH,master has 'Agnikopam 1' under mela 20 instead of 22,134
+BhogaKannada,22,S R G M P D P N S,S N D N P M G M R G S,SWARA DISAGREEMENT,master 'Bhogakannada 1' (mela 22) has: SRGMPDNPS/SNDNPMGMRGS ;; SRMPDPNS/SDNPDMGRGS,135
+Brindavana,22,S R M P N S,S N P M R G S,MELAKARTA MISMATCH,master has 'Brindavana' under mela 27 instead of 22,135
+Saranga 1,22,S R M P N S,S N P M R M R G S,MELAKARTA MISMATCH,"master has 'sAranga' under mela 27, 64, 65 instead of 22",135
+Saranga 2,22,S R M P N S,S N P M R G S,MELAKARTA MISMATCH,"master has 'sAranga' under mela 27, 64, 65 instead of 22",135
+Saranga 3,22,S R M P N S,S N P M G S,MELAKARTA MISMATCH,"master has 'sAranga' under mela 27, 64, 65 instead of 22",135
+Chandra Kala 2,22,S R G M P M D N S,S D P M G R S,SWARA DISAGREEMENT,master 'Chandrakala 1' (mela 22) has: SRGMPMDNS/SDPMGMS ;; SRGMPMDNS/SDPMGS ;; SRGMPMDNS/SNDPGMS,135
+ChandraMandana 1,22,S R G M P M D N S,S N D P M G M R S,SWARA DISAGREEMENT,master 'Chandramandana' (mela 22) has: SRGMPMDNS/SNPMGMRS,135
+DevaGandhari 2,22,S G M P N S,S N D P M R S,SWARA DISAGREEMENT,master 'dEvagAndhAri' (mela 22) has: SGMPDS/SNDPMGRS ;; SRSGMPDPNS/SNDPMGRS ;; SRSGMPPNS/SNDPMGRS,136
+DevaManohari 4,22,S R M P D N P M P N S,S N D N P M R S,SWARA DISAGREEMENT,master 'Deva Manohari 1' (mela 22) has: SRGMPDS/SNPMGRS ;; SRMPDNPMPN/SNDNPMRS ;; SRMPDNS/SNDNPMGRS ;; SRMPDNS/SNDNPMRS ;; SRMPDNS/SNPMRS ;; SRMPNDNS/SNDMGRS ;; SRMPNDNS/SNDPMGRS,136
+Devaranjani 2,22,S R G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Devaranjani1 1' (mela 22) has: SGMPDNS/SNDMGRS ;; SGRMPDNS/SDPMGRS ;; SRGMPDNS/SDPMGRS,136
+Devaranjani 3,22,S R G M P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Devaranjani1 1' (mela 22) has: SGMPDNS/SNDMGRS ;; SGRMPDNS/SDPMGRS ;; SRGMPDNS/SDPMGRS,136
+DhanaKapi,22,M P D N S R G R G M P,R G P M G R S N D P D N S,SWARA DISAGREEMENT,master 'DhanaKapi 1' (mela 22) has: MPDNSRGRGM/PMGRSNDPDNS ;; SRMPNS/SNDNPMGRS,136
+Gharava Simhala,22,S G R G M P D N P D P S,S N P D P M G R S,SWARA DISAGREEMENT,master 'gharavasimhaLa' (mela 22) has: SGRGMPDNPD/SNPDPMGRS,137
+Hanokaha 2,22,S R G R M P N D S,S N D M G R S,SWARA DISAGREEMENT,master 'Hanokaha 1' (mela 22) has: SRGRMPMDNS/SNDNPMRGMRS ;; SRGRMPNDNS/SNDNPMRGMRS,137
+HindolaVasantham,22,S G M P D N D S,S N D P M D M G S,MELAKARTA MISMATCH,master has 'Hindolavasantham2' under mela 26 instead of 22,137
+Kalanidhi,22,S R G M S P M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Kalānidhi 1' (mela 22) has: SPGMSPMDNS/SNDPMGRS ;; SRGMSMPDNS/SNDPMGRS ;; SRGMSPMDNS/SNDPMGRS,138
+Kapi 2,22,S R G M R P M P,S N D P M G R S,SWARA DISAGREEMENT,master 'Kapi 1' (mela 22) has: SGRMPNS/SNDNPMGRS ;; SRGMPDNS/NDPMGRS ;; SRGMPDNS/SNDPMGRGMRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNDPMRGMRS ;; SRGMPNS/SDNPMPDNPMRGMRS ;; SRGMRPMPDNS/SNDPMGRS ;; SRGMRPMPSNS/SNDPMRGMRS ;; SRMPNS/SNDNPMGMRS ;; SRMPNS/SNDNPMGRS,138
+Kapi 3,22,S R G M P N S,S N D N P M G M D P G R S N S,SWARA DISAGREEMENT,master 'Kapi 1' (mela 22) has: SGRMPNS/SNDNPMGRS ;; SRGMPDNS/NDPMGRS ;; SRGMPDNS/SNDPMGRGMRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNDPMRGMRS ;; SRGMPNS/SDNPMPDNPMRGMRS ;; SRGMRPMPDNS/SNDPMGRS ;; SRGMRPMPSNS/SNDPMRGMRS ;; SRMPNS/SNDNPMGMRS ;; SRMPNS/SNDNPMGRS,139
+Kapi 4,22,S R G M R P M P,S N D P M R G M R S,SWARA DISAGREEMENT,master 'Kapi 1' (mela 22) has: SGRMPNS/SNDNPMGRS ;; SRGMPDNS/NDPMGRS ;; SRGMPDNS/SNDPMGRGMRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNDPMRGMRS ;; SRGMPNS/SDNPMPDNPMRGMRS ;; SRGMRPMPDNS/SNDPMGRS ;; SRGMRPMPSNS/SNDPMRGMRS ;; SRMPNS/SNDNPMGMRS ;; SRMPNS/SNDNPMGRS,139
+Kapi 7,22,S G R M P D N S,S N P G R M R S,SWARA DISAGREEMENT,master 'Kapi 1' (mela 22) has: SGRMPNS/SNDNPMGRS ;; SRGMPDNS/NDPMGRS ;; SRGMPDNS/SNDPMGRGMRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNDPMRGMRS ;; SRGMPNS/SDNPMPDNPMRGMRS ;; SRGMRPMPDNS/SNDPMGRS ;; SRGMRPMPSNS/SNDPMRGMRS ;; SRMPNS/SNDNPMGMRS ;; SRMPNS/SNDNPMGRS,139
+Karava Simhala,22,S G R G M P D N M D P S,S N P D P M G R S,SWARA DISAGREEMENT,master 'karavasimhaLa' (mela 22) has: SGRGMPDNMD/SNPDPMGRS,139
+LayaMadhya,22,S R M P D N S,S D P M G R S,SWARA DISAGREEMENT,master 'layamadhya' (mela 22) has: SRMPDNS/SDPMRS,140
+Madana,22,S R G M N D N P D S,S N D N P M R G S,SWARA DISAGREEMENT,master 'madana' (mela 22) has: SRGMNDNPDS/SNDNPMGRS,140
+Manjari 2,22,S R G R G M M P N,S N D P M G R S,SWARA DISAGREEMENT,master 'Manjari 1' (mela 22) has: SGRGMPNDNS/SNDNPMRGRS ;; SGRGMPNDNS/SNDPMGRS ;; SRGMDNS/SNDMGRS ;; SRGMPNDNS/SNDPMGRS ;; SRGRGMMPNDS/SNDPMGRS,140
+Manjari 4,22,S R G P N D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Manjari 1' (mela 22) has: SGRGMPNDNS/SNDNPMRGRS ;; SGRGMPNDNS/SNDPMGRS ;; SRGMDNS/SNDMGRS ;; SRGMPNDNS/SNDPMGRS ;; SRGRGMMPNDS/SNDPMGRS,140
+Mani Rangu 4,22,R M M P N N S,S N P M G R R S,SWARA DISAGREEMENT,master 'Manirangu 1' (mela 22) has: RMMPNNS/SNDMGRRS ;; SRMGMNS/SNPMGRS ;; SRMGMPNS/SNPMGRS ;; SRMPNS/SNPMGRS,141
+Manohari 3,22,S G R G M P D S,D P M G R G S,SWARA DISAGREEMENT,master 'Manohari 1' (mela 22) has: SGRGMPDS/SDDPMGRGS ;; SGRGMPDS/SDPMGRS ;; SGRGMPDS/SNDMGRGS ;; SGRMPNS/SDPMGRS ;; SRGMPDS/SDPMGRS,141
+Mukhari 2,22,S R M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Mukhari 1' (mela 22) has: SRGMPDNDS/SNDPMGRS ;; SRMPDNDS/SNDPMGRS ;; SRMPDNDS/SNPMGS ;; SRMPNDS/SNDPMGRS,141
+NagaGandhari 2,22,S R G M P D N,S N D P M G R S,SWARA DISAGREEMENT,master 'nAgagAndhAri' (mela 22) has: NSRGMPDN/NDPMGRSN ;; SRGMPDN/DPMGRS ;; SRGMPDN/NDPMGRS,142
+Natikai Mani,22,S R G M P D N S,S N P M G R S,SWARA DISAGREEMENT,master 'nAtikaimaNi' (mela 22) has: SRGMPDNS/SNPMRS,142
+Nirmala Gaula 1,22,S R M G M R G M D N P D N S,S D P M G R S R S,SWARA DISAGREEMENT,master 'nirmalagauLa' (mela 22) has: SRMGMRGMDNPDNS/SDPMGRGRS,142
+Nirmala Gaula 2,22,S R M G M R G M D N P D N S,S D P M G R S,SWARA DISAGREEMENT,master 'nirmalagauLa' (mela 22) has: SRMGMRGMDNPDNS/SDPMGRGRS,142
+Niroshta,22,S R G D N S,S N D G R S,MELAKARTA MISMATCH,"master has 'Niroshta' under mela 29, 65 instead of 22",142
+Patta Deep,22,N S G M P N S,S N D P M G R S N S G R,SWARA DISAGREEMENT,master 'Pattadeep' (mela 22) has: NSGMPNS/SNDPMGRSNSGRS,143
+Purva Mukhari,22,S M G M P D N D S,S N P M G R S,MELAKARTA MISMATCH,"master has 'pUrvamukhari' under mela 1, 2 instead of 22",143
+Ranga Leela 2,22,S R G M P D N S,S N D P M D P M G R S,SWARA DISAGREEMENT,master 'Rangaleela' (mela 22) has: SRGMPDNS/SNDMGRS,143
+Sahana,22,S R G M P M,D N S N D P M,MELAKARTA MISMATCH,master has 'Sahāna 1' under mela 28 instead of 22,144
+SamanthaSalavi,22,S R G M P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Samanthasalavi 1' under mela 21 instead of 22,144
+Sama Mukhari,22,S R G M P D N S,S D N D M P M G S,SWARA DISAGREEMENT,master 'sAmamukhAri' (mela 22) has: SRGMPDNS/SNDNMPMGS,144
+Sankara Priya,22,S R M P N D P S,S N D M G R S,MELAKARTA MISMATCH,master has 'Sankarapriya' under mela 49 instead of 22,144
+Saramathi,22,S R G M P D N S,S N D M G S R S,SWARA DISAGREEMENT,master 'Saramathi 1' (mela 22) has: SRGMPDNS/SNDMDSRS ;; SRGMPDNS/SNDMGS,145
+Sardhalangi,22,S G M D N S,S N D M G S,MELAKARTA MISMATCH,master has 'Sardhalangi' under mela 4 instead of 22,145
+Sivapriya,22,S R G P D S,S D P G R S,MELAKARTA MISMATCH,master has 'Sivapriya' under mela 44 instead of 22,145
+SuddhaDhanyasi,22,S G M P N S,S N D M G S,SWARA DISAGREEMENT,master 'Suddha Dhanyāsi 1' (mela 22) has: SGMPNPS/SNPMGS ;; SGMPNS/SNPMGS ;; SRMPNPS/SNPMGS,145
+Supravahini,22,S R G M P N D M P N D N S,S N D P M G M S,SWARA DISAGREEMENT,master 'supravAhini' (mela 22) has: SRGMPNDMPNS/SNDPMGMS,146
+Vasantha,22,S G M D N S,S N D M G R S,MELAKARTA MISMATCH,"master has 'Vasanthā 1' under mela 17, 29 instead of 22",146
+Vasi Manjari,22,S R G M P D N S,S N D P M P D M R G M G S,SWARA DISAGREEMENT,master 'vasimanjari' (mela 22) has: SRGMPDNS/SNDPMPDPMRS,146
+Chandrika,23,S G M P N S,S D P M G R S,MELAKARTA MISMATCH,"master has 'Chandrika2' under mela 18, 21 instead of 23",147
+Gamakyam,23,S R M P D N S,S N D P M G P M G R S,SWARA DISAGREEMENT,master 'Gamakyam' (mela 23) has: SRMPDNS/SNDPMGPMRGS,147
+Kamakya,23,S R M P D N S,S N D P M G P M R G S,SWARA DISAGREEMENT,master 'kamakya' (mela 23) has: SRMPDNS/SNPMGPMRGS,147
+Malhar,23,S N S G R P M N D N S,S N D P M G R S N D N S,SWARA DISAGREEMENT,master 'malhar' (mela 23) has: SNSGRPMNDNS/SNDPMGRSNDS,148
+NagaPanchamam 1,23,S M P N D S,S D M G R S,SWARA DISAGREEMENT,master 'Nagapanchamam 1' (mela 23) has: SDMPNS/SDMGRS ;; SMPDNDS/SDMGRS ;; SMPDNS/SDMGRS,148
+Surya Kauns,23,S G M D N S,S N D M G S,SWARA DISAGREEMENT,master 'sUryakauns' (mela 23) has: SGMPDS/SNDMGS,148
+Velavali 3,23,S R G M D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Velavali 1' (mela 23) has: SGMDNS/SNDPMGRS ;; SGRMPDS/SNDPMGRS ;; SRGMPDS/SNDPMGRS ;; SRGMPDS/SNDPMGS ;; SRGSRMPDS/SNDPMGRS ;; SRMPDS/SNDPMGRS,148
+Veeravasantham,23,S R M P S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Veeravasantham' under mela 24 instead of 23,148
+Godavari,24,S G P D N S,S N D P G R S,MELAKARTA MISMATCH,master has 'gOdAvarI' under mela 43 instead of 24,149
+HamsaBhoopalam 2,24,S R G M P S,S N D N P M G R S,SWARA DISAGREEMENT,master 'Hamsabhoopalam' (mela 24) has: SRGMPS/SNDNPMGS,149
+VasanthaVarali 1,24,S R M P D N,S N D P M G R,SWARA DISAGREEMENT,master 'vasantha varALi 1' (mela 24) has: SRMPDN/NDPGRSN ;; SRMPDN/NDPMGRSN,150
+VasanthaVarali 2,24,S R M P D N,S N D P G R,SWARA DISAGREEMENT,master 'vasantha varALi 1' (mela 24) has: SRMPDN/NDPGRSN ;; SRMPDN/NDPMGRSN,150
+VeeraVasantham 1,24,S G R M P S,S N D N P M G R G R S,SWARA DISAGREEMENT,master 'Veeravasantham' (mela 24) has: SRGMPS/SNDPMGRS,150
+VeeraVasantham 2,24,S G R M P S,S N D P M G R G R S,SWARA DISAGREEMENT,master 'Veeravasantham' (mela 24) has: SRGMPS/SNDPMGRS,150
+VeeraVasantham 3,24,S G R M P S,S N D P M G R S,SWARA DISAGREEMENT,master 'Veeravasantham' (mela 24) has: SRGMPS/SNDPMGRS,150
+VeeraVasantham 4,24,R M M P N D N S,S N P M R G S,SWARA DISAGREEMENT,master 'Veeravasantham' (mela 24) has: SRGMPS/SNDPMGRS,150
+Devakoti,25,S R G M P D N S,S D P M R G R S,MELAKARTA MISMATCH,master has 'Devakoti' under mela 50 instead of 25,151
+Kamarupi,25,S G M P M D N P S,S N D P M G R S,MELAKARTA MISMATCH,master has 'kAmarUpi' under mela 52 instead of 25,151
+Paranam 2,25,S R M P D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Paranam' (mela 25) has: SRMPDNS/SNDPMGPMRS,152
+ChandraJyothi,26,S R G M P D N S,S N D P G M R S,MELAKARTA MISMATCH,master has 'Chandrajyothi 1' under mela 41 instead of 26,153
+Chintamani,26,S R G M S M P D N S,S D N P M G R S,MELAKARTA MISMATCH,master has 'Chintāmani 1' under mela 56 instead of 26,153
+Saman,26,S R G M P N S,S N D M G R S,SWARA DISAGREEMENT,master 'sAman' (mela 26) has: SRGMPNS/SNPMGRS,154
+Simhanadam,26,S R G P N S,S D P M G S,MELAKARTA MISMATCH,master has 'Simhanadam' under mela 38 instead of 26,154
+BhogaLeela 2,27,S R G P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Bhogaleela' (mela 27) has: SMGMPDNS/SNDPGRS,155
+BhogaLeela 3,27,S R G P D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Bhogaleela' (mela 27) has: SMGMPDNS/SNDPGRS,155
+Madhurya 2,27,N S R G M P D N,N D P M G R S N,SWARA DISAGREEMENT,master 'Madhurya' (mela 27) has: PNSRGMP/MGSNDP,156
+Manimaya 3,27,S R G M P D,P M G R S N S,SWARA DISAGREEMENT,master 'Manimaya 1' (mela 27) has: SMGMPD/SMGRSNS ;; SNSRGMPD/PMGRSNS ;; SNSRGMPD/SNDPMGRS ;; SRGMPD/PMGRSN,156
+Rama Manohari 4,27,S G M P N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Ramamanohari1 1' (mela 27) has: SGMNS/SNDPMGS ;; SGMPNS/SNDPMGS ;; SGMPNS/SNDPMGSRS,157
+RangaManohari,27,S G M P D N S,S N D P M G R G S,SWARA DISAGREEMENT,master 'rangamanOhari' (mela 27) has: SGMPDNS/SDMGRGS,157
+Ratna Mani 1,27,S M G M R G M P D N S,S N D P M R G S,MELAKARTA MISMATCH,master has 'ratnamaNi' under mela 11 instead of 27,157
+Ratna Mani 2,27,S M G M R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'ratnamaNi' under mela 11 instead of 27,157
+Sama Varali,27,S R M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'sAmavarALi' (mela 27) has: SRMPDNS/SNDPMGRGS,157
+Saranga Kapi,27,S R P M R P R M P N S,S N D P M G R S,SWARA DISAGREEMENT,master 'sArangakApi' (mela 27) has: SRPMRPRMPN/SNDPMGRS,157
+Saraswathi,27,S R M P D S,S D N P M G R S,MELAKARTA MISMATCH,master has 'Saraswathi' under mela 64 instead of 27,157
+SaraswathiManohari,27,S R G M D S,S N D P M R S,MELAKARTA MISMATCH,master has 'Saraswathi Manohari' under mela 28 instead of 27,157
+Sarvangi,27,S R M D N S,S N D M G S R S,MELAKARTA MISMATCH,master has 'Sarvāngi 1' under mela 57 instead of 27,157
+Vasanthi 1,27,S M D N S,S N D P M G P M R S,SWARA DISAGREEMENT,master 'Vasanthi 1' (mela 27) has: SGPDS/SDPGRS ;; SNDNS/SNDPMGPMRS ;; SRGPDS/SDPGRS,158
+Atana 1,28,S R G P D N S,S N D P M P G R S,MELAKARTA MISMATCH,master has 'Atana 1' under mela 29 instead of 28,159
+Atana 2,28,S G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Atana 1' under mela 29 instead of 28,159
+Atana 3,28,S G R M P D P N S,S N D P M P G R S,MELAKARTA MISMATCH,master has 'Atana 1' under mela 29 instead of 28,159
+Atana 4,28,S R M P N S,S N D P M P G R S,MELAKARTA MISMATCH,master has 'Atana 1' under mela 29 instead of 28,159
+Atana 5,28,S R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Atana 1' under mela 29 instead of 28,159
+Balahamsa 2,28,S R G M P D S,S N D P M R M G S,SWARA DISAGREEMENT,master 'Bālahamsa 1' (mela 28) has: SRGMPDS/SNDPMGRS ;; SRMPDS/SNDPMRMGS,159
+Bangala 1,28,S R G M P S,S N P M R G R S,SWARA DISAGREEMENT,master 'bangALa' (mela 28) has: SRGMNPS/SNPMRGRS ;; SRGMPMRPS/SNPMRGRS ;; SRGMRPS/SNDNPMGRS,160
+Bangala 4,28,S R G M P S,S N P M R G R S,SWARA DISAGREEMENT,master 'bangALa' (mela 28) has: SRGMNPS/SNPMRGRS ;; SRGMPMRPS/SNPMRGRS ;; SRGMRPS/SNDNPMGRS,160
+Bangala 5,28,S R G M R P S,S N P M R G R S,SWARA DISAGREEMENT,master 'bangALa' (mela 28) has: SRGMNPS/SNPMRGRS ;; SRGMPMRPS/SNPMRGRS ;; SRGMRPS/SNDNPMGRS,160
+Behag 2,28,S R G M P D N S,S N D N P D P M G R G R S,SWARA DISAGREEMENT,master 'Behag 1' (mela 28) has: SGMPNDNS/SNDPMGMGRS ;; SRGMPDNS/SNDNPDPMGRGMGS ;; SRGMSGMPNDNPDNS/SNPDNDPMGRGMGS,160
+Bilahari 2,28,S R G P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'bilahari' (mela 28) has: SRGPDS/SNDPDNPDPMGRS,160
+ChandraKala,28,S R G M P M D N S,S D P M G S,MELAKARTA MISMATCH,master has 'Chandrakala 1' under mela 22 instead of 28,160
+ChayaKambhoji,28,S G P D N D S,S N D P G S,SWARA DISAGREEMENT,master 'chAyAkAmbhOji' (mela 28) has: SGPDNS/SNDPGS,160
+ChayaTarangini 2,28,S R G R G M P D N D N S,S N D P M G M R G R S,SWARA DISAGREEMENT,master 'Chāyatārangini 1' (mela 28) has: SRGMPNS/SNDPMGRS ;; SRGRGMPDND/SNDPMGMRGRS ;; SRMGMPNS/SNDPMDMRGRS ;; SRMGMPNS/SNDPMGRS,161
+ChayaTarangini 4,28,S R G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Chāyatārangini 1' (mela 28) has: SRGMPNS/SNDPMGRS ;; SRGRGMPDND/SNDPMGMRGRS ;; SRMGMPNS/SNDPMDMRGRS ;; SRMGMPNS/SNDPMGRS,161
+DhanaKapi,28,M P D N S R G R G M P,P M G R N D P D N S,SWARA DISAGREEMENT,master 'dhanakApi' (mela 28) has: MPDNSRGRGM/PMGRNDPDNS,161
+Ekagrani 1,28,S R G P D N S,S N D N P M G M R S,MELAKARTA MISMATCH,master has 'EkAgraNi' under mela 46 instead of 28,162
+Ekagrani 2,28,S R M P D N S,S N D N P M G M R S,MELAKARTA MISMATCH,master has 'EkAgraNi' under mela 46 instead of 28,162
+Ganavaridhi 1,28,S G M P N S,S N P M R S,SWARA DISAGREEMENT,master 'gAnavAridhi' (mela 28) has: SGMPDNS/SNPMGS ;; SGMPNS/SNPMGS,162
+Ganavaridhi 2,28,S G M P D N S,S N P M R S,SWARA DISAGREEMENT,master 'gAnavAridhi' (mela 28) has: SGMPDNS/SNPMGS ;; SGMPNS/SNPMGS,162
+HemaMandara 1,28,N D N S R M G M P D N,D P M G M R S N D N S,SWARA DISAGREEMENT,master 'hEmamandAra' (mela 28) has: NDNSRMGMPDN/DPMGMRSDNS,163
+HemaMandara 2,28,N D N S R M G M P D N,N D P M G R S N D,SWARA DISAGREEMENT,master 'hEmamandAra' (mela 28) has: NDNSRMGMPDN/DPMGMRSDNS,163
+Janasammodhini,28,S R G P D S,S D P G R S,SWARA DISAGREEMENT,master 'Jana Sammodhini' (mela 28) has: SRGPDNS/SNDPGRS,163
+Janjuti 2,28,S N D S R G M P D N,D P M G R S N D P D S,SWARA DISAGREEMENT,master 'jAnjUTi 1' (mela 28) has: DSRGMPDN/DPMGRSNDPDS ;; SRGMPDN/NDPMGRSNDPDS,163
+JayaBhavani,28,S R M D S,S D M R S D N R M S,SWARA DISAGREEMENT,master 'jayabhavAni' (mela 28) has: SRMDS/SDMRSDNRM,163
+Kannada-,28,S R G M P N S,S N D P M G S,SWARA DISAGREEMENT,master 'kannaDa' (mela 28) has: SRGMPDNS/SNDPMGRS,164
+Behag,28,S R G M P D N S,S N D N P M G R S,SWARA DISAGREEMENT,master 'Behag 1' (mela 28) has: SGMPNDNS/SNDPMGMGRS ;; SRGMPDNS/SNDNPDPMGRGMGS ;; SRGMSGMPNDNPDNS/SNPDNDPMGRGMGS,165
+Kedara Gaula 2,28,S R M P N S,S N D P M G R G S,SWARA DISAGREEMENT,master 'kEdAragauLa' (mela 28) has: SRMPNS/SNDPMGRGRS ;; SRMPNS/SNDPMGRS,165
+KokilaDhwani 2,28,S R G M D N D N,S N D N P M G R S,SWARA DISAGREEMENT,master 'Kokiladhwani 1' (mela 28) has: SRGMDNDNS/SNDNPMGRS ;; SRGMDNDS/SNDNPMGRS ;; SRGMDNDS/SNDPMGRS,165
+Mahati,28,S G P N S,S N P G S,MELAKARTA MISMATCH,master has 'mahati' under mela 20 instead of 28,165
+Mallaru 2,28,S R M G M P D P S,S D P M R S,SWARA DISAGREEMENT,master 'mallAru' (mela 28) has: SRMGMPDPDS/SDPMRS ;; SRMPNS/SNDMGRS ;; SRMPNS/SNPMRS,165
+Mallaru 3,28,S R G M P D P S,S D P M R S,SWARA DISAGREEMENT,master 'mallAru' (mela 28) has: SRMGMPDPDS/SDPMRS ;; SRMPNS/SNDMGRS ;; SRMPNS/SNPMRS,165
+Mannankari,28,S G M N D N P D N S,S D P M P G R S,SWARA DISAGREEMENT,master 'mannankari' (mela 28) has: SGMNDNPDNS/SDPMGRS,166
+Mohanam 2,28,S R G P D S,S D P R G R S,SWARA DISAGREEMENT,master 'Mohanam 1' (mela 28) has: SGRGPDS/SDPRGPGRS ;; SRGPDS/SDPGRS ;; SRGPDS/SDRGRS,166
+Narayana Gaula 1,28,S R M P N D N S,S N D P M G R G R S,SWARA DISAGREEMENT,master 'nArAyaNagauLa' (mela 28) has: RMPNDNS/NDPMGRGRS ;; SRMPDNS/SNDPMGGRS,166
+Narayana Gaula 2,28,S R M P N D N S,S N D P M G R S N,SWARA DISAGREEMENT,master 'nArAyaNagauLa' (mela 28) has: RMPNDNS/NDPMGRGRS ;; SRMPDNS/SNDPMGGRS,166
+Narayana Gaula 3,28,S R M P D N S,S N D P M G R G R S,SWARA DISAGREEMENT,master 'nArAyaNagauLa' (mela 28) has: RMPNDNS/NDPMGRGRS ;; SRMPDNS/SNDPMGGRS,166
+Natika,28,S R M D N S,S N D M R S,MELAKARTA MISMATCH,master has 'naTika' under mela 33 instead of 28,167
+Natta Mallaru 1,28,S G R M P D S,S N D P M R G R S,SWARA DISAGREEMENT,master 'naTTamallAru' (mela 28) has: SGRMPDS/SDNPMGRS,167
+NatyaManohari,28,S G M P D N,S N P M G S,SWARA DISAGREEMENT,master 'nATyamanOhari' (mela 28) has: SGMPDNS/SNPMRS,167
+Navarasa,28,S R M P S N S,S N D P M G R S,MELAKARTA MISMATCH,"master has 'Navarasa 1' under mela 15, 40, 43 instead of 28",167
+Kalanidhi,28,S R M P D P S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Kalānidhi 1' under mela 22 instead of 28,167
+Nayaki 2,28,S G M P D S,S D P D N D P M G R S,SWARA DISAGREEMENT,master 'nAyaki' (mela 28) has: SGMPDS/SDPDNDPMGR ;; SRMPDNS/SNDPMGRS,167
+Neelambari 1,28,S R G M P D N P S,S N D P M G R G S,MELAKARTA MISMATCH,master has 'Neelambari 1' under mela 29 instead of 28,167
+Neelambari 2,28,S R G M S G M N S,S N P D N P M G M R G R M G S,MELAKARTA MISMATCH,master has 'Neelambari 1' under mela 29 instead of 28,167
+Neelambari 3,28,S R G P D P N S,S N P M G R G S,MELAKARTA MISMATCH,master has 'Neelambari 1' under mela 29 instead of 28,167
+Neelambari 4,28,S R G M S G M,P N S N D P M G M,MELAKARTA MISMATCH,master has 'Neelambari 1' under mela 29 instead of 28,167
+Neelambari 5,28,S R G M P D N S,S N D P M G R G S,MELAKARTA MISMATCH,master has 'Neelambari 1' under mela 29 instead of 28,167
+Padmini 2,28,S R M P D N S,S N D M R S,SWARA DISAGREEMENT,master 'Padmini' (mela 28) has: SRMPDNS/SNDPMRS,168
+Prabhavathi,28,S G P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Prabhavathi 1' under mela 41 instead of 28,168
+Pratapa Varali 1,28,S R M P S,S D P M G R S,SWARA DISAGREEMENT,master 'Pratāpavarāli 1' (mela 28) has: SRMPDNDPNDS/SNDPMGRS ;; SRMPDPS/SDPMGRS ;; SRMPDS/SDPMGRS ;; SRMPS/SDPGRS,168
+Pratapa Varali 2,28,S R M P D N D,S N D P M G R S,SWARA DISAGREEMENT,master 'Pratāpavarāli 1' (mela 28) has: SRMPDNDPNDS/SNDPMGRS ;; SRMPDPS/SDPMGRS ;; SRMPDS/SDPMGRS ;; SRMPS/SDPGRS,168
+Ragamanjari,28,S R M P N D S,S N D M R S,SWARA DISAGREEMENT,master 'rAgamanjari' (mela 28) has: SRMPDNS/SNDMRS,168
+Ravichandrika 2,28,S R G M P D N,S N D M G R S,SWARA DISAGREEMENT,master 'Ravi Chandrikā 1' (mela 28) has: SRGMDNDS/SNDMGRS ;; SRGMDS/SNDMGRS ;; SRGMPDNDNDS/SNDMGRS,169
+Sahana 2,28,S R G M M D N S,S N D P M G M R S,SWARA DISAGREEMENT,master 'Sahāna 1' (mela 28) has: SRGMPMDNS/SNDPMGMRGRS ;; SRGMPMDNS/SNSDNDPMGMRGRS,169
+Sahana 3,28,S R G M P M D N S,S N D P M G M R G S,SWARA DISAGREEMENT,master 'Sahāna 1' (mela 28) has: SRGMPMDNS/SNDPMGMRGRS ;; SRGMPMDNS/SNSDNDPMGMRGRS,169
+Sahana 4,28,S R G M P M D N S,S D P M G M R S,SWARA DISAGREEMENT,master 'Sahāna 1' (mela 28) has: SRGMPMDNS/SNDPMGMRGRS ;; SRGMPMDNS/SNSDNDPMGMRGRS,169
+Sahana 5,28,S R G M P M D N S,S N S D P M G M R G R S,SWARA DISAGREEMENT,master 'Sahāna 1' (mela 28) has: SRGMPMDNS/SNDPMGMRGRS ;; SRGMPMDNS/SNSDNDPMGMRGRS,169
+Sala Keeka,28,S R G M P N D P M,G S N D N P N S,SWARA DISAGREEMENT,master 'Salakeeka' (mela 28) has: SRGMPN/DPMGSNDNPNS,169
+Sama 3,28,S R M P M D S,S D P M G R S,SWARA DISAGREEMENT,master 'Sama1' (mela 28) has: SRMDPDS/SDPMGRS ;; SRMPDS/SDPMGRS,169
+Sanjeevini,28,S G M P D N S,S N D P M R S,MELAKARTA MISMATCH,master has 'Sanjeevini' under mela 21 instead of 28,169
+Siva Priya,28,S M P D N S,S N P M G R S,MELAKARTA MISMATCH,master has 'Sivapriya' under mela 44 instead of 28,170
+Sumana Priya 1,28,S R G M G P D P S,S D P P G M R S,SWARA DISAGREEMENT,master 'Sumanapriyā 1' (mela 28) has: SRGMGPDPS/SDSPGMRS ;; SRGMPDPS/SDSPMGRS ;; SRMGGPDPS/SDPPGMRS,171
+Swara Vali 1,28,S M G M P N D N S,S N P D M G R S,SWARA DISAGREEMENT,master 'Swarāvali' (mela 28) has: SMGMPNDNS/SNDPMGRS,171
+Swara Vali 2,28,S M G M P N D N S,S N D M G R G R S,SWARA DISAGREEMENT,master 'Swarāvali' (mela 28) has: SMGMPNDNS/SNDPMGRS,171
+Swara Vali 3,28,S M G M P N D N S,S N P M G R G R S,SWARA DISAGREEMENT,master 'Swarāvali' (mela 28) has: SMGMPNDNS/SNDPMGRS,171
+Vallabhi,28,S R G M P D N S,S N D N D P M P G M R S,MELAKARTA MISMATCH,master has 'Vallabhi' under mela 29 instead of 28,172
+Varavarnini,28,S R G M D N S,S N D M G R S,MELAKARTA MISMATCH,master has 'Varavarnini' under mela 3 instead of 28,172
+VasanthaKannada,28,S G R G M P N D N S,S N D M G R G S,MELAKARTA MISMATCH,master has 'Vasanthakannada 1' under mela 10 instead of 28,172
+Vivardhini,28,S R M P S,S N D P M G R S,MELAKARTA MISMATCH,master has 'vivardhini' under mela 29 instead of 28,172
+VedaghoshaPriya 1,28,D N S R G M P M,G R S N D N P,SWARA DISAGREEMENT,master 'Vedaghoshapriya 1' (mela 28) has: DNSRGM/PMGRSNDNP ;; DNSRGMPD/DPMGRGSNDNS ;; NDNSRGM/PMGRSNDNP,172
+VedaghoshaPriya 2,28,N D N S R G M,P M G R S N D P D,SWARA DISAGREEMENT,master 'Vedaghoshapriya 1' (mela 28) has: DNSRGM/PMGRSNDNP ;; DNSRGMPD/DPMGRGSNDNS ;; NDNSRGM/PMGRSNDNP,172
+Yuvaratna,28,S R G M P M D N,S N D P M R G M R S,SWARA DISAGREEMENT,master 'yuvaratna' (mela 28) has: SRGMPMDNPDNS/SNDPMRGMRS,172
+______________________________________________________________________ Ahiri Nata 1,29,S M G M P D N S,S N P D N P G M G S,SWARA DISAGREEMENT,master 'Ahirinata 1' (mela 29) has: SMGMPDNS/SNDNPGMMGS ;; SMGMPDNS/SNDPMGS ;; SMGMPDNS/SNDPNPGMGS ;; SMGMPDNS/SNPDNPGMS ;; SMGPDNS/SNPDNPGMGS,173
+______________________________________________________________________ Ahiri Nata 2,29,S M G M P D N S,S N P D N P G M M G S,SWARA DISAGREEMENT,master 'Ahirinata 1' (mela 29) has: SMGMPDNS/SNDNPGMMGS ;; SMGMPDNS/SNDPMGS ;; SMGMPDNS/SNDPNPGMGS ;; SMGMPDNS/SNPDNPGMS ;; SMGPDNS/SNPDNPGMGS,173
+Agama Priya,29,S R G M P M D N S,S N P D N P M G R G S,MELAKARTA MISMATCH,master has 'agamapriyA' under mela 45 instead of 29,173
+Arabhi 2,29,S R M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Arabhi 1' (mela 29) has: SRMPDNS/SNPDPMGRS ;; SRMPDS/SNDPMGRS,173
+Atana,29,S R M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Atana 1' (mela 29) has: SRMPDPS/SNPMGMRS ;; SRMPNS/SNDPMGMRS ;; SRMPNS/SNDPMGRS ;; SRMPNS/SNDPMPGRS,173
+Bidal 2,29,S R G R G R M P M D N D P N S,S N D P M G R S,SWARA DISAGREEMENT,master 'bidal' (mela 29) has: SGRGRMPMDRDPNS/SNDPMGRS ;; SRGRGRMPMDNDPNS/SNDPMGS,174
+Chandrika,29,N S R M P N S,N S D M P D P M R N S,MELAKARTA MISMATCH,"master has 'Chandrika2' under mela 18, 21 instead of 29",174
+Chaya,29,S R G M P D P S,S N D P M P D P G R S,SWARA DISAGREEMENT,master 'Chāyā' (mela 29) has: SPMPDPNRS/SDPMPDPGMRS ;; SPMPDPNRS/SDPMPDPMGRS,174
+Chaya-,29,S R M P D N S,S N D P M R S,SWARA DISAGREEMENT,master 'Chāyā' (mela 29) has: SPMPDPNRS/SDPMPDPGMRS ;; SPMPDPNRS/SDPMPDPMGRS,174
+Dakka,29,S G M D N S,S N D M G S,MELAKARTA MISMATCH,"master has 'Dakka' under mela 15, 39, 9 instead of 29",175
+Dheeramathi 2,29,S G R G M P M N D S,S N P M P M G R S,SWARA DISAGREEMENT,master 'Dheeramathi2' (mela 29) has: SGRGMPMNDS/SNPDSPMGRS,175
+Gaganambari 2,29,S R G M P D N S,S N D P G R S,SWARA DISAGREEMENT,master 'gaganAmbari' (mela 29) has: SRGMPDNS/SNDPMRS,176
+Gana Lolam,29,S R G M P N S,S N P D P M G M R S,SWARA DISAGREEMENT,master 'gAnalOlam' (mela 29) has: SRGMPNS/SNPDMGMRS,176
+Gana Tarangini,29,S R M P D N P S,S P N D M G S,SWARA DISAGREEMENT,master 'gAnatarangiNi' (mela 29) has: SRMPDNPS/SPSDMGS,176
+Gaja Gowri,29,S R M G M N P D S,S N D M P M G R S,SWARA DISAGREEMENT,master 'Gajagowri' (mela 29) has: SRMGMNPDS/SNDPMPMGRS,176
+Gauda Sarang,29,S G R M G P R S,S D P M G M G R M S,SWARA DISAGREEMENT,master 'gauDasArang' (mela 29) has: SGRMGPRS/SDPMGMGRM,176
+Gauda Mallar 2,29,S R M P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'gauDamallAr' (mela 29) has: SNMPDS/SNDPMGRS ;; SRGMMGMPDN/SNDPMGRS ;; SRMPDS/SNDMGRS,176
+Gauda Mallar 3,29,S R G M M G M,S N D P M G R S,SWARA DISAGREEMENT,master 'gauDamallAr' (mela 29) has: SNMPDS/SNDPMGRS ;; SRGMMGMPDN/SNDPMGRS ;; SRMPDS/SNDMGRS,176
+Gauda Mallar 4,29,S R M P D S,S N D M M G R S,SWARA DISAGREEMENT,master 'gauDamallAr' (mela 29) has: SNMPDS/SNDPMGRS ;; SRGMMGMPDN/SNDPMGRS ;; SRMPDS/SNDMGRS,176
+HelaPrabhata 1,29,S R G M P D N D S,S D N D P M R G R S,SWARA DISAGREEMENT,master 'hELaprabhAta' (mela 29) has: SRGMPDNDS/SDNDPMGRS,177
+Jayasindhu 2,29,S R G R M P S,S N D P N D M G R S,SWARA DISAGREEMENT,master 'jayasindhu' (mela 29) has: SRGRMPS/SNPDNDMGRS,177
+Kamala 3,29,S R M P N S,S N P M R S,SWARA DISAGREEMENT,master 'kamala' (mela 29) has: SGMDNS/SNPMGMRS ;; SRGMPMDNS/SNDNPMPGRS,178
+Kanada 1,29,S R G M P M D N S,S N P D N D P M G M R S,MELAKARTA MISMATCH,master has 'Kanadā 1' under mela 22 instead of 29,178
+Kanada 2,29,S G M D N S,S N P M G M R S,MELAKARTA MISMATCH,master has 'Kanadā 1' under mela 22 instead of 29,178
+Kanada 3,29,S R G M P M D N S,S N D N P M P G R S,MELAKARTA MISMATCH,master has 'Kanadā 1' under mela 22 instead of 29,178
+Kannada 2,29,G R G R G M P,S D P M G M R S,SWARA DISAGREEMENT,master 'Kannada 1' (mela 29) has: GRSGMPMDNS/NDPMPMGRS ;; GRSGMPMDNS/SDPPMGRS ;; GRSGMPMDNS/SNSDPMPGMRS ;; GRSRGMPMDN/SDPMGMRS ;; SGMDNS/SDPMGMRS ;; SGMDNS/SNPMGMRS ;; SGMPMDNS/SDPMGMRNS ;; SGMPMDNS/SNSDPMGMRS ;; SGMPMDNS/SNSDPMPGMRS ;; SMGMDNS/SDPMGMRS ;; SRGMPMDNS/SNDNPMPGRS ;; SRGMPMDNS/SNDPMGRS ;; SRGMPMDNS/SNPDNDPMGMRS ;; SRGMPMDNS/SNSDNPMGMRS ;; SRGMPMDNS/SNSDPMGMGMRS ;; SRGMPMDNS/SNSDPMPGMRS,178
+Kannada 3,29,G R S G M P M D N S,S N S D P M P M G R S,SWARA DISAGREEMENT,master 'Kannada 1' (mela 29) has: GRSGMPMDNS/NDPMPMGRS ;; GRSGMPMDNS/SDPPMGRS ;; GRSGMPMDNS/SNSDPMPGMRS ;; GRSRGMPMDN/SDPMGMRS ;; SGMDNS/SDPMGMRS ;; SGMDNS/SNPMGMRS ;; SGMPMDNS/SDPMGMRNS ;; SGMPMDNS/SNSDPMGMRS ;; SGMPMDNS/SNSDPMPGMRS ;; SMGMDNS/SDPMGMRS ;; SRGMPMDNS/SNDNPMPGRS ;; SRGMPMDNS/SNDPMGRS ;; SRGMPMDNS/SNPDNDPMGMRS ;; SRGMPMDNS/SNSDNPMGMRS ;; SRGMPMDNS/SNSDPMGMGMRS ;; SRGMPMDNS/SNSDPMPGMRS,178
+Kedaram 4,29,S M G M P N S,S N P M M G R S,SWARA DISAGREEMENT,master 'Kedaram 1' (mela 29) has: SGMPNS/SNPMGRGS ;; SGMPNS/SNPMGRS ;; SMGMPNS/SNPMGMDMGRS ;; SMGMPNS/SNPMGMDPMGRS ;; SMGMPNS/SNPMGRS,178
+Kumara Vilasitha,29,S M G M D N,S N D P M D M G R S P D N S,SWARA DISAGREEMENT,master 'Kumaravilasitha' (mela 29) has: SMGMDNPDNS/SNDPMDMGRS,178
+Kurinji 3,29,S R S G R M P S,D P M G R S N S,SWARA DISAGREEMENT,master 'Kurinji 1' (mela 29) has: SNSRGMP/DPMGRSNS ;; SNSRGMPD/DPMGRSN ;; SNSRGMPD/DPMGRSNNS ;; SNSRGMPD/DPMGRSNS ;; SNSRGMPD/PMGRSNS ;; SRGMGMPNNS/SNDPDPMRS ;; SRGMPD/DPMGRSN ;; SRSGPMPS/DPMGRSNS,179
+Kurinji 4,29,S R G M G M P N N S,S N P N D D P M G R S,SWARA DISAGREEMENT,master 'Kurinji 1' (mela 29) has: SNSRGMP/DPMGRSNS ;; SNSRGMPD/DPMGRSN ;; SNSRGMPD/DPMGRSNNS ;; SNSRGMPD/DPMGRSNS ;; SNSRGMPD/PMGRSNS ;; SRGMGMPNNS/SNDPDPMRS ;; SRGMPD/DPMGRSN ;; SRSGPMPS/DPMGRSNS,179
+MadhavaPriya,29,S R G R M G M N G M P D N S,S N D M N D P M R G R S,SWARA DISAGREEMENT,master 'mAdhavapriyA' (mela 29) has: SRGRMDNPDNS/SNDMNDPMRGRS,179
+Mahurim,29,S M G M R G M P,S D P M R G M S,SWARA DISAGREEMENT,master 'mAhurim' (mela 29) has: SMGMRGMPDNS/SDPMRGMS,179
+Mayadravila,29,S R G M P D N S,S N P R G M R G R S,SWARA DISAGREEMENT,master 'Māyadravila 1' (mela 29) has: SRGMPDNS/SNPMPGMRS ;; SRGMPDNS/SNPMRGMRGS ;; SRGMPDNS/SNPMRGMRS,179
+NagaDhwani 1,29,S R S M G D M P N D N S,S N D N P M G S,SWARA DISAGREEMENT,master 'Nāgadhwani 1' (mela 29) has: SRGMPDNS/SMGMPNDNS ;; SRSMGMPNDNS/SNDNPMGS,180
+NagaDhwani 2,29,S G R G M G M P D N D P N D N P D N S,S N D N P M D P M R G M G R G S,SWARA DISAGREEMENT,master 'Nāgadhwani 1' (mela 29) has: SRGMPDNS/SMGMPNDNS ;; SRSMGMPNDNS/SNDNPMGS,180
+Narayani 1,29,S R M G R G M P D S,S N P N D P D M P M G R S,SWARA DISAGREEMENT,master 'nArAyaNi' (mela 29) has: SRGMPDS/SNMNDMGRGS ;; SRGMPDS/SNPNDPDMPGRS,180
+Narayani 2,29,S R G M P D S,S N P N D P D M P M G R S,SWARA DISAGREEMENT,master 'nArAyaNi' (mela 29) has: SRGMPDS/SNMNDMGRGS ;; SRGMPDS/SNPNDPDMPGRS,180
+Narayani 3,29,S R G M P D S,S N P N D P M G R G S,SWARA DISAGREEMENT,master 'nArAyaNi' (mela 29) has: SRGMPDS/SNMNDMGRGS ;; SRGMPDS/SNPNDPDMPGRS,180
+Neelambari,29,S R G M P D P N N S N D N S,S N P M G R G R M G S,SWARA DISAGREEMENT,master 'Neelambari 1' (mela 29) has: SRGMPDPNS/SNPMGRGS ;; SRGMPNS/SNPDNPMGRGS,180
+Sahana 1,29,S R G M P M D N S,S N D P M G M G R S,MELAKARTA MISMATCH,master has 'Sahāna 1' under mela 28 instead of 29,182
+Sahana 2,29,S R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Sahāna 1' under mela 28 instead of 29,182
+Sahana 3,29,S R G M P M D N S,S N D P M G M R G R S,MELAKARTA MISMATCH,master has 'Sahāna 1' under mela 28 instead of 29,182
+Sama,29,S R G S R P M D D S,S D P M G R S,SWARA DISAGREEMENT,master 'Sama2 1' (mela 29) has: SRGSPMDDS/SDPMGRS ;; SRMPDS/SDPMGRS,182
+Sankari,29,S G P N S,S N P G S,MELAKARTA MISMATCH,master has 'Sankari' under mela 28 instead of 29,182
+SindhuMukhari,29,S G R G M P S,S N D P N D M G R S,MELAKARTA MISMATCH,master has 'sindhumukhAri' under mela 7 instead of 29,183
+249.Suddha Saranga,29,S R G M P D N D S,S D P M R G R S,MELAKARTA MISMATCH,master has 'Suddha Sāranga 1' under mela 62 instead of 29,184
+Vivardhini 1,29,S R M P S,S N D P M G R G S,SWARA DISAGREEMENT,master 'vivardhini' (mela 29) has: SRMPS/SNDPMGRS,184
+Vivardhini 2,29,S R M P D P S,S N D P M G R G S,SWARA DISAGREEMENT,master 'vivardhini' (mela 29) has: SRMPS/SNDPMGRS,184
+NagaBhashini,30,S G R G M D N S,S N P M G R S,SWARA DISAGREEMENT,master 'Nagabhashini 1' (mela 30) has: SGRGMDNS/SNPMRS ;; SGRGMPDNS/SNPMGRS ;; SGRGMPDNS/SNPMRS,185
+Ranjani,31,S R G M D S,S N D M G S R S,MELAKARTA MISMATCH,master has 'Ranjani 1' under mela 59 instead of 31,188
+HindolaKapi 2,32,S R G M P N S,S N D P M G S,SWARA DISAGREEMENT,master 'Hindolakapi 1' (mela 32) has: SRGMPMPS/SNDPMGS ;; SRGMPS/SNDPMGS,189
+Rama Manohari,32,S G M P N S,S N D P M G S,SWARA DISAGREEMENT,master 'rAmamanOhari' (mela 32) has: SGMPNS/SNDPMGRS,190
+Ganga Tarangini 3,33,S R G M P S,S N D P M G R S,SWARA DISAGREEMENT,master 'Gangātarangini 1' (mela 33) has: SRGMPDNS/SNDPMMGMRS ;; SRGMPDNS/SNDPSGMRS ;; SRGMPDNS/SNPDMGMRS ;; SRGMPNDNS/SNDPMDMGRS ;; SRGMPS/SNDMPMRS ;; SRGMPS/SNDNPMRS ;; SRGMPS/SNDPMGMRS ;; SRGMPS/SNDPMRS,191
+HindolaMalavi,33,S M P D N D S,S N D P M R S,SWARA DISAGREEMENT,master 'Hindolamalavi 1' (mela 33) has: SMPDNDS/SNDMGMRS ;; SMPDNDS/SNDMPMRS,191
+HindolaSaveri 2,33,S G M P P D N S,S N P D M R S,SWARA DISAGREEMENT,master 'Hindolasaveri 1' (mela 33) has: SGMMPDNS/SNPDMRS ;; SGMPMDNS/SNPDMRS,191
+(NadaHindola),33,S G M P S,S N P R S,MELAKARTA MISMATCH,master has 'nAdahindOLa' under mela 20 instead of 33,192
+BhogaChayaNattai 1,34,S R G R G M P N N S,S N D N P S N P M R S,SWARA DISAGREEMENT,master 'Bhogachāyā Nāttai 1' (mela 34) has: SRGMPNNS/SNDNPMRS ;; SRGRGMPNNS/SNDNPSNPMMRS,193
+BhogaChayaNattai 2,34,S R G M P N N S,S N D N P N S P M R S,SWARA DISAGREEMENT,master 'Bhogachāyā Nāttai 1' (mela 34) has: SRGMPNNS/SNDNPMRS ;; SRGRGMPNNS/SNDNPSNPMMRS,193
+Chaya Nattai 2,34,S R G M P S,S N D N P M R S,SWARA DISAGREEMENT,master 'Chāyanāttai' (mela 34) has: SRGMPMPS/SNDNPMRS,193
+Ganga,34,S R G M P D N S,S N P M G R S,MELAKARTA MISMATCH,master has 'gangA' under mela 16 instead of 34,193
+Desakshi 1,35,S R G P D S,S N D P M G M R S,MELAKARTA MISMATCH,master has 'Desakshi 1' under mela 29 instead of 35,195
+Desakshi 2,35,S R G P D S,S N D M G R S,MELAKARTA MISMATCH,master has 'Desakshi 1' under mela 29 instead of 35,195
+Desakshi 3,35,S R G P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Desakshi 1' under mela 29 instead of 35,195
+Desakshi 4,35,S R G M D S,S N D P M G M R S,MELAKARTA MISMATCH,master has 'Desakshi 1' under mela 29 instead of 35,195
+NalinaHamsi 1,35,S R G M P D N S,S N D P M R S,SWARA DISAGREEMENT,master 'nalinahamsi' (mela 35) has: SRGMPNDS/SNDPMRS ;; SRGMPNS/SNDPMRS,195
+Saila Desakshi,35,S M G P D S,S N D S N P M R S,MELAKARTA MISMATCH,master has 'Sailadesakshi' under mela 33 instead of 35,196
+Soma Deepakam,35,S G M P M D N S,S D P M G M R S,MELAKARTA MISMATCH,master has 'Somadeepakam' under mela 24 instead of 35,196
+Srungarini,35,S G R P M P S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Srungarini 1' under mela 6 instead of 35,196
+ArunaChandrika,36,S G M P N S,S N P M G S,MELAKARTA MISMATCH,master has 'Arunachandrika 1' under mela 22 instead of 36,197
+Nattai 1,36,S R G M P D N S,S N P M R S,SWARA DISAGREEMENT,master 'Nāṭṭai' (mela 36) has: SRGMPNS/SNPMGRS,197
+Nattai 2,36,S R G M D N S,S N P M R S,SWARA DISAGREEMENT,master 'Nāṭṭai' (mela 36) has: SRGMPNS/SNPMGRS,197
+Nattai 3,36,S R G M P D N P N S,S N P M R S,SWARA DISAGREEMENT,master 'Nāṭṭai' (mela 36) has: SRGMPNS/SNPMGRS,197
+Nattai 4,36,S R G M P D N P N S,S N P D N P M R S,SWARA DISAGREEMENT,master 'Nāṭṭai' (mela 36) has: SRGMPNS/SNPMGRS,197
+Nattai 5,36,S R G M P N P D N S,S N P M R S,SWARA DISAGREEMENT,master 'Nāṭṭai' (mela 36) has: SRGMPNS/SNPMGRS,198
+Nattai 6,36,S R G M P D N S,S N P M R S,SWARA DISAGREEMENT,master 'Nāṭṭai' (mela 36) has: SRGMPNS/SNPMGRS,198
+Nattai 7,36,S R G M P D N P N S,S N P M R S,SWARA DISAGREEMENT,master 'Nāṭṭai' (mela 36) has: SRGMPNS/SNPMGRS,198
+Udaya Ravi Chandrika 1,36,S R S M R M P S N S,S N P M R S,MELAKARTA MISMATCH,"master has 'Udayaravichandrika 1' under mela 22, 9 instead of 36",198
+Udaya Ravi Chandrika 2,36,S R G M D N S,S N D M G R S,MELAKARTA MISMATCH,"master has 'Udayaravichandrika 1' under mela 22, 9 instead of 36",198
+Udaya Ravi Chandrika 3,36,S R P M D N S,S N D M R S,MELAKARTA MISMATCH,"master has 'Udayaravichandrika 1' under mela 22, 9 instead of 36",198
+BhogaSaveri 2,37,S M P D N D,D P M G R S,SWARA DISAGREEMENT,master 'Bhogasāveri 1' (mela 37) has: SMPDNDPMGRS/DPMGRS ;; SRGMPDN/DPMGRS ;; SRMDN/DPMGRS ;; SRMPDN/DPMGRS ;; SRMPDN/DPMGRSN ;; SRMPDNS/SNDPMGRS ;; SRPDN/DPMGRSN,199
+Saudhari,37,S R G R M G M,S N D P M G R S,SWARA DISAGREEMENT,master 'saudhAri' (mela 37) has: SRGRMGMPDN/SNDPMGRS,200
+Simhala,37,S R G M P D N S,S N D N P M G R S,SWARA DISAGREEMENT,master 'simhaLa' (mela 37) has: SRGMPDNS/SNDPMGS,200
+Simharava,37,S R M P N S,S N P M R G R S,SWARA DISAGREEMENT,master 'simhArava' (mela 37) has: SRMPNS/SNPMNRGRS,200
+Bhoga Rasali,38,S R G M D P N S,S N D N P M G R S,SWARA DISAGREEMENT,master 'Bhogarasali 1' (mela 38) has: SRGMDNS/SNDNPMGRS ;; SRGMPDNS/SNDNPMGRS,201
+Devamukhi,38,S R G P D S,S D P M G R S,MELAKARTA MISMATCH,master has 'Devamukhi' under mela 28 instead of 38,201
+Kamalasana,38,S R G M P N D S,S N P D P M G R S,MELAKARTA MISMATCH,master has 'kamalAsana' under mela 17 instead of 38,201
+AdiPanchamam,39,S G R G M P D N D P S,S P M G R S,MELAKARTA MISMATCH,master has 'Adipanchamam 1' under mela 48 instead of 39,203
+Ilakanti,39,S M G M P D N S,S N D P G R M G S,MELAKARTA MISMATCH,master has 'Ilakanti' under mela  instead of 39,203
+Tharangini,39,S R M G R M P D N D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Tharangini 1' under mela 26 instead of 39,204
+Navarasa,40,S R M G M P D N S,S N D P M G P M R R G R S,SWARA DISAGREEMENT,master 'navarasa' (mela 40) has: SRMGMPDNS/SNDPMGPMRGRS,205
+Visiambari,40,S R M P M G M,S N D P M G M R S,SWARA DISAGREEMENT,master 'visiambari' (mela 40) has: SRMPMGMPDNS/SNDPMGMRS,206
+Adivasu,41,S R G M P M D N,S N D M G S,SWARA DISAGREEMENT,master 'Adivasu 1' (mela 41) has: SRGMPMDNS/NDMGS ;; SRGMPMDNS/SNDMGS,207
+ChandraJyothi 3,41,S R G M P D P N S,S N P D P M G R G S,SWARA DISAGREEMENT,master 'Chandrajyothi 1' (mela 41) has: SRGMPDPNS/SNPDMGRS ;; SRGMPDS/SDPMGRS,207
+Mukthavali,41,S G R G M P D N S,S N P D P M P G R S,MELAKARTA MISMATCH,"master has 'Mukthavali1 1' under mela 58, 62 instead of 41",207
+Natana Deeparam 1,41,S R G M D N S,S N M D G R G S,SWARA DISAGREEMENT,master 'Natanadeeparam 1' (mela 41) has: SRGMDNS/SNDMGRGS ;; SRGMDNS/SNDMGRS ;; SRGMDNS/SNMGRGS ;; SRGMDNS/SNMGRS,207
+Prabhavati 1,41,S R M P D N S,S N D M P M R G R S,MELAKARTA MISMATCH,"master has 'prabhAvati' under mela 28, 46 instead of 41",207
+Prabhavati 2,41,S R M P D N S,S N D P M G R S,MELAKARTA MISMATCH,"master has 'prabhAvati' under mela 28, 46 instead of 41",207
+PratiMadhyamam,41,S R M P D S,S D P M G R S,SWARA DISAGREEMENT,master 'pratimadhyamam' (mela 41) has: SRMPNS/SNPMGRS,208
+PunnagaVarali,41,S R G M P D N,N D P M G R S N,MELAKARTA MISMATCH,master has 'PunnagaVarali 1' under mela 8 instead of 41,208
+Purna Gaula,41,S R M G R M P N D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrNagauLa' (mela 41) has: SRMGRMPNDN/SNDPMGRS,208
+PurnaLalitha,41,S R G R M P S,S N D P M G R S,MELAKARTA MISMATCH,master has 'pUrnalalitha' under mela 19 instead of 41,208
+Vasukari,41,S R M P D N P M P N D N S,S N D P M R S,SWARA DISAGREEMENT,master 'vasukari' (mela 41) has: SRMPDNPMPN/SNDPMRS,208
+Raghu Leela 2,42,S M R P M G M P R M P N S,S N D N P M G R M G R S,SWARA DISAGREEMENT,master 'Raghuleela' (mela 42) has: SMRPMGMPMRMPNS/SNDNPMGMRMGRS,210
+Raghu Leela 3,42,S M R P G M P N S,S N D N P M G M R M G R S,SWARA DISAGREEMENT,master 'Raghuleela' (mela 42) has: SMRPMGMPMRMPNS/SNDNPMGMRMGRS,210
+Ravi Kriya 2,42,S R S G R G M P D N S,S N P M G R S,SWARA DISAGREEMENT,master 'Ravi Kriyā 1' (mela 42) has: SGRGMPDNS/SNPMGRS ;; SGRGMPNDNS/SNPMGRS ;; SRSGRGMPDN/SNPMGRS,210
+Anjanavati,43,S R G M P D S,S D P M G R S,MELAKARTA MISMATCH,master has 'anjanavati' under mela 22 instead of 43,211
+Geervani 1,43,S R G R M G M P N P N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Geervāni 1' (mela 43) has: SRGMPDNDPS/SNDPMGRS ;; SRGMPDNS/SNDPMGRS,211
+Geervani 2,43,S R G R G M G M D N P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Geervāni 1' (mela 43) has: SRGMPDNDPS/SNDPMGRS ;; SRGMPDNS/SNDPMGRS,211
+Geervani 3,43,S R G M P D N D P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Geervāni 1' (mela 43) has: SRGMPDNDPS/SNDPMGRS ;; SRGMPDNS/SNDPMGRS,211
+Geervani 4,43,S R G R M G M D N P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Geervāni 1' (mela 43) has: SRGMPDNDPS/SNDPMGRS ;; SRGMPDNS/SNDPMGRS,211
+Geervani 5,43,S R G R M G M D N S N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Geervāni 1' (mela 43) has: SRGMPDNDPS/SNDPMGRS ;; SRGMPDNS/SNDPMGRS,211
+Kalavasantham 2,43,S G M P D N S,S N P M R S,SWARA DISAGREEMENT,master 'Kalavasantham 1' (mela 43) has: SGMNDS/SNDMGS ;; SGMPDNS/SNPMGS ;; SRGMPDS/SNPMGRS,211
+KanakaVasantham,43,S G M P N D S,S N D M G S,MELAKARTA MISMATCH,master has 'Kanakavasantham 1' under mela 20 instead of 43,211
+Navarasa,43,S G M P D N S,S N D M G S,SWARA DISAGREEMENT,master 'navarasa' (mela 43) has: SGMPDNDS/SNDMGS,212
+Peethambari,43,S R M P D N S,S N D P M G S,SWARA DISAGREEMENT,master 'Peethambari2' (mela 43) has: SRMPDNS/SNDPMRS,212
+Sinjini,43,S G M P N S,S N P M G S,MELAKARTA MISMATCH,master has 'Sinjini1' under mela 19 instead of 43,212
+Mallaru 1,44,S R G M P N S,S D P M G R S,SWARA DISAGREEMENT,master 'mallAru' (mela 44) has: SRGMPNS/SNPMGRS ;; SRMGMPDPS/SDPMRS,213
+SamanthaVelavali 2,44,S R G M D N D S,S D N P M G R S,SWARA DISAGREEMENT,master 'Samanthavelavali 1' (mela 44) has: SRGMDNDS/SNDPMGRS ;; SRGMDPDS/SDNPMGRS ;; SRGMPDS/SNDPMGRS,214
+GarudaVardhini,45,S R G M N D M,P S N P M R S,SWARA DISAGREEMENT,master 'garuDavardhini' (mela 45) has: SRGMNDMPDN/SNPMRS,215
+Himaja,45,S R G M D M P D N S,S N D P M R G R S,SWARA DISAGREEMENT,master 'himaja' (mela 45) has: SRGMDMPDNS/SNDPMRMGRS,215
+Latha Mani,45,S R G P M P D P S,S N D P M D M G R S,MELAKARTA MISMATCH,master has 'Lathamani' under mela 63 instead of 45,216
+MahaNandini,45,S M G M P D N S,S D N D M G R S,MELAKARTA MISMATCH,"master has 'mahAnandini' under mela 17, 58 instead of 45",216
+PanthuVarali,45,S R G M P D N S,S N D P M D M G R S,MELAKARTA MISMATCH,master has 'Panthuvarali' under mela 51 instead of 45,216
+Parai,45,S R M P N S,S N P M R S,SWARA DISAGREEMENT,master 'parai' (mela 45) has: SRMPNS/SMPMRS,216
+Parvathi,45,S G M P N S,S N D P M G S,MELAKARTA MISMATCH,master has 'Parvathi' under mela 72 instead of 45,216
+Ramakali,45,S R G P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Rāmakali 1' under mela 15 instead of 45,216
+Shadakshari,45,S G R G M P D N S,S N D M G R S,MELAKARTA MISMATCH,master has 'Shadakshari' under mela 46 instead of 45,217
+Deekshangi,46,S R S M P D N S,S N D P M G S R S,SWARA DISAGREEMENT,master 'Deekshangi' (mela 46) has: SRSMPDNS/SNDPMGRS,218
+Prabhavathi,46,S R G M P D S,S N D P M G S,MELAKARTA MISMATCH,master has 'Prabhavathi 1' under mela 41 instead of 46,219
+Purasuya,46,S R M G R M P,S N D P M G R S,SWARA DISAGREEMENT,master 'purasUya' (mela 46) has: SRMGRMPNDNS/SNDPMGRS,219
+PurnaShyamala,46,S R G M P D N S,S D P M R G R S,SWARA DISAGREEMENT,master 'pUrNashyAmaLa' (mela 46) has: SRGMPDNS/SDMRGRS,219
+SabhaVigraha,46,S R M P N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'sabhAvigraha' (mela 46) has: SRMPDNS/SNDPMGRS,219
+Abhiru 3,47,S G R N N S G D P M,P G S S D P G S,SWARA DISAGREEMENT,master 'Abhiru 1' (mela 47) has: PDNSMGM/PMGSND ;; PDNSMGM/PMGSNDNS ;; PDNSMGMP/MGSNDP ;; PDNSMGMP/PMDSNDS ;; SGRGMPNS/DPMGS ;; SGRNNSGGRNS/DPMPGSSDPGS ;; SGRNNSGRNS/DPMGSSDPGS ;; SNDNPND/SMGMPMGS ;; SRGMPDNS/SNDMGRS ;; SRGNS/SDPMPGRS ;; SRGRMPNS/DPMGRS ;; SRGRMPNS/SDPMGRGS ;; SRGRMPNS/SDPMGS,220
+ChandraJyothi 1,47,S R G M P N S,S N P M G R S,MELAKARTA MISMATCH,master has 'Chandrajyothi 1' under mela 41 instead of 47,220
+ChandraJyothi 2,47,S R G M P D S,S D P M G R S,MELAKARTA MISMATCH,master has 'Chandrajyothi 1' under mela 41 instead of 47,220
+Maruva Saranga 1,47,S N S R G M P M,D N D P M G R G S,SWARA DISAGREEMENT,master 'Maruvasaranga 1' (mela 47) has: SNSRGMPMDN/DPMGRGS ;; SNSRGMPMDNS/DPMGRGS ;; SNSRGPMDN/DPMGRS ;; SRGMPMDN/DPMGRGS ;; SRSRGMPMDN/DPMGRGS,220
+Maruva Saranga 2,47,S R S R G M M D N,D P M G R S,SWARA DISAGREEMENT,master 'Maruvasaranga 1' (mela 47) has: SNSRGMPMDN/DPMGRGS ;; SNSRGMPMDNS/DPMGRGS ;; SNSRGPMDN/DPMGRS ;; SRGMPMDN/DPMGRGS ;; SRSRGMPMDN/DPMGRGS,221
+Maruva Saranga 3,47,S R G M P M D N,D P M G R G R S,SWARA DISAGREEMENT,master 'Maruvasaranga 1' (mela 47) has: SNSRGMPMDN/DPMGRGS ;; SNSRGMPMDNS/DPMGRGS ;; SNSRGPMDN/DPMGRS ;; SRGMPMDN/DPMGRGS ;; SRSRGMPMDN/DPMGRGS,221
+Rathika 2,47,S R G R G M P D N S,S N D P M G M R S,SWARA DISAGREEMENT,master 'Rathikā 1' (mela 47) has: SGRGMPDNS/SNDPMGRS ;; SMGMPDNS/SNDPMGRS,221
+Senamanohari 1,47,S G M P D N D S,S N D P M G R G S,SWARA DISAGREEMENT,master 'Senamanohari 1' (mela 47) has: SGMPDNSS/SNDPMGRGS ;; SRGMPDNDS/SNDPMGRGS ;; SRGMPDNS/SNDPMGRGS,221
+Desakshi,48,S R G P D S,S N D P M G M R S,MELAKARTA MISMATCH,master has 'Desakshi 1' under mela 29 instead of 48,222
+Desa Mukhari,48,S R G M P D N D S,S D N D P M G R S,MELAKARTA MISMATCH,master has 'Desamukhari 1' under mela 25 instead of 48,222
+Jeevanthika,48,S R G M P D N S,S N P M G R S,SWARA DISAGREEMENT,master 'Jeevanthikā' (mela 48) has: SMPDNS/SNPMGS,223
+JeevanThini 2,48,S R G M D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Jeevanthini' (mela 48) has: SMPDNS/SNPMGS,223
+KannadaVelavali 1,48,P N S R G M P,P M G R S N D N,SWARA DISAGREEMENT,master 'Kannadavelavali 1' (mela 48) has: PNSRGMP/MGRSNDNP ;; PNSRGMP/PMGRSNDNP,223
+KannadaVelavali 2,48,P N S R G M P,M G R S N D N S,SWARA DISAGREEMENT,master 'Kannadavelavali 1' (mela 48) has: PNSRGMP/MGRSNDNP ;; PNSRGMP/PMGRSNDNP,223
+Niga Manasa,48,S R G M P D N S,S D N P M R G M G R S,SWARA DISAGREEMENT,master 'Nigamanasa 1' (mela 48) has: /SRGMPDNSSDNPMRGMRS ;; SRGMPDNS/SDNPMRGMRS,223
+Prabhasa 2,48,S R G M P D S,S N D P M G R G M G S,SWARA DISAGREEMENT,master 'prabhAsa' (mela 48) has: SRGMPDS/SNDPMGRGS,223
+Nirmada,50,S R G M D N S,S N D P M P G R S,SWARA DISAGREEMENT,master 'nirmada' (mela 50) has: SRGMDNS/SNDPPMPGRS,227
+AdiPanchamam,51,S R P D N S,S N D N P M G R S,MELAKARTA MISMATCH,master has 'Adipanchamam 1' under mela 48 instead of 51,228
+Chintamani,51,S G M D N S,S N D M G R S,MELAKARTA MISMATCH,master has 'Chintāmani 1' under mela 56 instead of 51,228
+Dharmini 2,51,S R G M D N S,S N P M D G R S,SWARA DISAGREEMENT,master 'Dharmini 1' (mela 51) has: SRGMDNS/SNPDMGRS ;; SRGMDNS/SNPMDMGRS,228
+Himaja,51,S R G M D M P P N D S,S N D P M G M R S,SWARA DISAGREEMENT,master 'himaja' (mela 51) has: SRGMDMPPND/SNDPMGMRS,229
+KanakaSabhai,51,S G P D S,S N P M R S,SWARA DISAGREEMENT,master 'kanakasabhai' (mela 51) has: SGPDS/SNDMGRS,229
+KumudaPrabha,51,S R G D N S,S D M G R G S,SWARA DISAGREEMENT,master 'kumudaprabhA' (mela 51) has: SRGDNS/SPMGRGS,229
+Rama Kriya 4,51,S R G M P D N S,S N S D P M D M G R S,SWARA DISAGREEMENT,master 'Ramakriya 1' (mela 51) has: SRGMPDNS/SDNPMGRS ;; SRGMPDNS/SNDMGRS ;; SRGMPDNS/SNDPDMGRS ;; SRGMPDNS/SNDPMDMGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNSDPMGMGRS,230
+SudhaKesari,51,S R G M D N S,S D N P D M G R S,SWARA DISAGREEMENT,master 'sudhAkEsari' (mela 51) has: SRGMDNS/SDNPDMGRSNS,231
+Thamra Ranjani,51,S R G M P N D N S,S N D P M G M S,MELAKARTA MISMATCH,master has 'Thamraranjani' under mela 46 instead of 51,231
+ThandavaPriya,51,S R G M P S,S P M G R S,MELAKARTA MISMATCH,master has 'Thandavapriya 1' under mela 49 instead of 51,231
+Kamarupi,52,S G M P M D N P S,S N D P M G R S,SWARA DISAGREEMENT,master 'kAmarUpi' (mela 52) has: SGMPMDNS/SNDPMGRS,232
+NayanaBhashini 2,52,S R G M P N D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Nayanabhashini 1' (mela 52) has: SRGMPNDNDS/SNDNPGMGS ;; SRGMPNDNS/SNDNPGMGS,233
+Rama Manohari 2,52,S R G M P D N S,S N D P M D M G R S,SWARA DISAGREEMENT,master 'Ramāmanohari 1' (mela 52) has: SRGMPDNDS/SNDPMGRS ;; SRGMPDNDS/SNDPMGSRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNDPMPMGRS ;; SRGMPDS/SNDPMGRS,233
+Desya Maruva,53,S R M P N S,S N P M R S,MELAKARTA MISMATCH,master has 'Desyamaruva' under mela 54 instead of 53,235
+Leelavathi,53,S R G M D S,S N D M G R S,MELAKARTA MISMATCH,master has 'Leelavathi' under mela 55 instead of 53,236
+Namagan,53,S G M P N S,S D P G R S,MELAKARTA MISMATCH,master has 'nAmagan' under mela 45 instead of 53,236
+Purva Kalyani 1,53,S R G M P D N,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrvakalyANi' (mela 53) has: SRGMPDNDPS/SDPMGRS ;; SRGMPDNDPS/SNDPMGRS ;; SRGMPDNDS/SNDPMRS ;; SRGMPDNPDPS/SNPMGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDPS/SNDPMGRS,236
+Purva Kalyani 2,53,S R G M P D N,S N P M G R S,SWARA DISAGREEMENT,master 'pUrvakalyANi' (mela 53) has: SRGMPDNDPS/SDPMGRS ;; SRGMPDNDPS/SNDPMGRS ;; SRGMPDNDS/SNDPMRS ;; SRGMPDNPDPS/SNPMGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDPS/SNDPMGRS,236
+Purva Kalyani 3,53,S R G M P D N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'pUrvakalyANi' (mela 53) has: SRGMPDNDPS/SDPMGRS ;; SRGMPDNDPS/SNDPMGRS ;; SRGMPDNDS/SNDPMRS ;; SRGMPDNPDPS/SNPMGRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDPS/SNDPMGRS,237
+SuddhaBangala,54,S R M P D S,S D P M R G R S,MELAKARTA MISMATCH,master has 'Suddha Bangāla' under mela 22 instead of 54,239
+SuddhaGandhari,54,S R G M N S,S N D N P M R S,MELAKARTA MISMATCH,master has 'Suddha Gāndhāri 1' under mela 48 instead of 54,239
+SuddhaKriya,54,S R P M P D S,S D P M G R S,SWARA DISAGREEMENT,master 'Suddhakriyā' (mela 54) has: SRMMPDS/SDPMGRS,239
+SuddhaSaranga,54,S R G M P D N D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Suddha Sāranga 1' under mela 62 instead of 54,239
+Vaisakham 2,54,S R G M P D N D S,S N D N P M G M R S,SWARA DISAGREEMENT,master 'Vaisakham' (mela 54) has: SRGMPDNS/SNDNPMGMRS,239
+Vaisakham 3,54,S R G M P D N S,S N D P M G M R S,SWARA DISAGREEMENT,master 'Vaisakham' (mela 54) has: SRGMPDNS/SNDNPMGMRS,239
+HamsaPrabhavali 1,55,S N S R G M P D N,D S P G R G S,SWARA DISAGREEMENT,master 'Hamsaprabhavali 1' (mela 55) has: SNSRGMPDN/DPMGRGS ;; SNSRGMPDN/DSMGRGS ;; SNSRNGMPDN/DSMRGS,240
+HamsaPrabhavali 2,55,S N S R N G M,P D N D S P R G S,SWARA DISAGREEMENT,master 'Hamsaprabhavali 1' (mela 55) has: SNSRGMPDN/DPMGRGS ;; SNSRGMPDN/DSMGRGS ;; SNSRNGMPDN/DSMRGS,240
+Prithvi,55,S G M P N D S,S N D P M R S,SWARA DISAGREEMENT,master 'prithvi' (mela 55) has: SGMPDNS/SNDPMRS,240
+Sruthiranjani,55,S R G M P D N,N D P M G S R S,MELAKARTA MISMATCH,master has 'Sruthiranjani1 1' under mela 36 instead of 55,241
+Syama,55,S R M P N S,S N P M R S,MELAKARTA MISMATCH,master has 'Syama' under mela 28 instead of 55,241
+Bhashini 2,56,S G R G M P N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Bhāshini' (mela 56) has: SGRGMPDNS/SNDPMGRS,242
+Chamaram 2,56,S R G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Chāmaram 1' (mela 56) has: SGRGMPNS/SNDPMGRS ;; SRMPDNS/SNDPMGRS,242
+Chinthamani,56,S R P M P D N S,S P D P M G R S,MELAKARTA MISMATCH,master has 'Chinthamani1' under mela 7 instead of 56,242
+KariKadya 1,56,N S G M P D N,D P M G R S N S,SWARA DISAGREEMENT,master 'karikadya' (mela 56) has: NSGPMDN/DMPGRSN,242
+MadanaMohini,56,S R G M P D N S,S N D M G S,SWARA DISAGREEMENT,master 'madanamOhini' (mela 56) has: SGRGMPDNS/SNDMGS,243
+Parvathi,56,S G M P N S,S D P M R S,MELAKARTA MISMATCH,master has 'Parvathi' under mela 72 instead of 56,243
+Siva Priya,56,S R G P N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Sivapriya' under mela 44 instead of 56,243
+Shikari,56,S G R G M P D N D S,S N D M G R S,MELAKARTA MISMATCH,master has 'shIkari' under mela 27 instead of 56,243
+(Gottani) 1,57,S R G M P D N S,S N D G R S,SWARA DISAGREEMENT,master 'goTTani' (mela 57) has: SRGMDNS/SNDMGRS ;; SRGMPDNS/SNDMGRS ;; SRGMPDNS/SNDMPDMGRS,244
+(Gottani) 2,57,S R G M D N S,S N D N G R S,SWARA DISAGREEMENT,master 'goTTani' (mela 57) has: SRGMDNS/SNDMGRS ;; SRGMPDNS/SNDMGRS ;; SRGMPDNS/SNDMPDMGRS,244
+RaviChandrika,57,S R M P N D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Ravi Chandrikā 1' under mela 28 instead of 57,245
+Sarvangi 2,57,S R M P D N S,S N G M G S,SWARA DISAGREEMENT,master 'Sarvāngi 1' (mela 57) has: SRMDNS/SNDMGS ;; SRMDNS/SNDMGSRS ;; SRMPDNS/SNDMGS ;; SRMPNS/SNDMGRS ;; SRMPNS/SNDMGS ;; SRPDNS/SNDMGS,245
+Seemanthini 2,57,S R G M P D N S,S P M G R G R S,SWARA DISAGREEMENT,master 'Seemanthini' (mela 57) has: SRGMPDNS/SPMGRS,245
+Seemanthini 3,57,S R G M P D N S,S P M P R G R S,SWARA DISAGREEMENT,master 'Seemanthini' (mela 57) has: SRGMPDNS/SPMGRS,245
+Sunadapriya 2,57,S R G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Sunādapriyā' (mela 57) has: SRGMPS/SNDPMGRS,245
+HemaVahini,58,S R P M P D N S,S D P M G R S,SWARA DISAGREEMENT,master 'Hemavahini 1' (mela 58) has: SRPMPDNS/SDPMGS ;; SRPMPDNS/SPMGRS,246
+MadhuVanthi,58,N S G M P N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Madhuvanthi 1' under mela 59 instead of 58,247
+Mukthavali 2,58,N S R G R M P D S,S N D N P D M P M R G R S,SWARA DISAGREEMENT,master 'Mukthavali1 1' (mela 58) has: SRGRMPDNS/SNDNPDMPMRGRS ;; SRGRMPDS/SNDNPDMPMRGRS,247
+Simharavam,58,S R M P N S,S N P M R G R S,MELAKARTA MISMATCH,master has 'simhAravam' under mela 59 instead of 58,247
+VijayaSamantham 2,58,S G M P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Vijayasamantham 1' (mela 58) has: SGMPDS/SNDMGRS ;; SGMPDS/SNPMRGRS ;; SRGMPDS/SNDPMGRS,247
+Bhushavali,59,S R G R M P N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'bhUshavaLi' under mela 64 instead of 59,248
+Chintamani,59,S R M D N S,S N D M G R S,MELAKARTA MISMATCH,master has 'Chintāmani 1' under mela 56 instead of 59,248
+Dhoumya 1,59,S R G M P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Dhoumya' under mela 32 instead of 59,248
+Dhoumya 2,59,S R G M P D N P S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Dhoumya' under mela 32 instead of 59,248
+Dhoumya 3,59,S R M P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Dhoumya' under mela 32 instead of 59,248
+GouriKriya,59,S G M P D N S,S N D N P M G S,MELAKARTA MISMATCH,master has 'Gourikriya 1' under mela 60 instead of 59,248
+Muktavali,59,S R G R M P D N S,S N D N P D M P M R G R S,SWARA DISAGREEMENT,master 'muktAvaLi' (mela 59) has: SRMPDNS/SNDNPDMMPRGRS,249
+BalaCharithra,60,S R G R M P D N D S,S N D N P M G S,SWARA DISAGREEMENT,master 'Balacharithra 1' (mela 60) has: SRGRMPDNDS/SNDNPMGRS ;; SRGRMPDNDS/SNDPMGS,250
+Gowri Kriya 1,60,S G M P D N S,S N D N P M G S,MELAKARTA MISMATCH,master has 'Gowrikriya' under mela 59 instead of 60,250
+Gowri Kriya 2,60,S G M P D N S,S N D N M G S,MELAKARTA MISMATCH,master has 'Gowrikriya' under mela 59 instead of 60,250
+HamsaNadam 1,60,S R M P D N S,S N D N P M S,SWARA DISAGREEMENT,master 'Hamsanadam 1' (mela 60) has: SRMPDNS/SNDNPMRS ;; SRMPDNS/SNDPMRS ;; SRMPDS/SNDNPMRS ;; SRMPNS/SNDNPMRS ;; SRMPNS/SNPMRS,250
+Kunthala 1,61,S R G M P D N D S,S N D P M G M R S,MELAKARTA MISMATCH,master has 'Kunthala1 1' under mela 16 instead of 61,252
+Kunthala 2,61,S R G M P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Kunthala1 1' under mela 16 instead of 61,252
+SruthiRanjani 1,61,S R G M P D N,N D P M G S R S,MELAKARTA MISMATCH,master has 'Sruthiranjani1 1' under mela 36 instead of 61,253
+SruthiRanjani 2,61,S R G M P D N S,S N D P M G S R S,MELAKARTA MISMATCH,master has 'Sruthiranjani1 1' under mela 36 instead of 61,253
+SruthiRanjani 3,61,S R G M P D N S,S N D P M G M R S,MELAKARTA MISMATCH,master has 'Sruthiranjani1 1' under mela 36 instead of 61,253
+SruthiRanjani 4,61,S R G M P D N,N D P M G R S,MELAKARTA MISMATCH,master has 'Sruthiranjani1 1' under mela 36 instead of 61,253
+TharangaLeela,61,S R G R M P D N,S N M G R S D M,SWARA DISAGREEMENT,master 'Tharangaleela' (mela 61) has: SRGRMPDNDMNS/SNMGRS,253
+JoudaGandhari,62,S R G M P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Joudagandhari' under mela 68 instead of 62,254
+RathnaBhanu 1,62,S R G M G R M P N D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'Rathnabhānu 1' (mela 62) has: SRMGRMPNDNS/SNDPMGRS ;; SRMPNDNS/SNDPMGRS,255
+Sivanayaki 1,62,S R M P D N S,S D P M G R S,MELAKARTA MISMATCH,master has 'Sivanayaki' under mela 63 instead of 62,255
+Sivanayaki 2,62,S R M P D N S,S D P G S,MELAKARTA MISMATCH,master has 'Sivanayaki' under mela 63 instead of 62,255
+BhoopKalyani,63,S R G P D S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Bhoopkalyāni 1' under mela 65 instead of 63,256
+Gananayaki 1,63,S G M N D P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'gaNanAyaki' under mela 65 instead of 63,256
+Gananayaki 2,63,S R G M P N D M P S,S D N M G R S,MELAKARTA MISMATCH,master has 'gaNanAyaki' under mela 65 instead of 63,256
+JanaRanjani,63,S G R M P D N S,S N D P M R S,MELAKARTA MISMATCH,"master has 'Jana Ranjani 1' under mela 29, 30 instead of 63",257
+Komali 3,63,G R G M P N D M,P S S D N M G R S,SWARA DISAGREEMENT,master 'Komali 1' (mela 63) has: GRGMPNDMPS/SDNMGRS ;; SRGMPDPS/SDPSNSDPMGRS ;; SRGMPNDMPS/SDNMGRS,257
+Sutradhari,63,S G P D N S,S N D P G S,MELAKARTA MISMATCH,"master has 'Sutradhari' under mela 20, 27 instead of 63",258
+Amari,64,S R G M P N S,S D P M G R S,SWARA DISAGREEMENT,master 'amari' (mela 64) has: SGMPNS/SDPMGRS,259
+Barbara 2,64,S R M R G M D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Barbara 1' (mela 64) has: SGMPDNS/SNDMGS ;; SGMRGMDNDS/SNDMGRS ;; SGMRGMDNS/SNDMGRS ;; SRGRGMDNS/SNDGRS,259
+Barbara 3,64,S G M R G M D N S,S N D G R S,SWARA DISAGREEMENT,master 'Barbara 1' (mela 64) has: SGMPDNS/SNDMGS ;; SGMRGMDNDS/SNDMGRS ;; SGMRGMDNS/SNDMGRS ;; SRGRGMDNS/SNDGRS,259
+Bhushavali 2,64,S R P M P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'bhUshavaLi' (mela 64) has: SRGMPDS/SNDPMGRS,259
+Bhushavali 3,64,S R G M P D N S,S N D P M G R S,SWARA DISAGREEMENT,master 'bhUshavaLi' (mela 64) has: SRGMPDS/SNDPMGRS,259
+Jaganmohini,64,S G P N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Jaganmohini 1' under mela 15 instead of 64,259
+Jalodharam,64,S R G M P D N S,S N D N P G M G R S,MELAKARTA MISMATCH,master has 'jalOdharam' under mela 63 instead of 64,260
+Karunakaran 2,64,S R G M D S,S N P M R S,SWARA DISAGREEMENT,master 'karuNAkaran' (mela 64) has: SRGMDS/SNPMGRS,260
+Kiradharini,64,S G M P D S,S D P M G S,MELAKARTA MISMATCH,master has 'kiradhAriNi' under mela 65 instead of 64,260
+Pranavakari 1,64,P N D N S R G M,P M G R S N D N,SWARA DISAGREEMENT,master 'Pranavākāri 1' (mela 64) has: PNDNSRGM/PMGRSNDNP ;; SNDNDRGM/PMGRSNDNS,260
+Pranavakari 2,64,S N D N S R G M,P M G R S N D N S,SWARA DISAGREEMENT,master 'Pranavākāri 1' (mela 64) has: PNDNSRGM/PMGRSNDNP ;; SNDNDRGM/PMGRSNDNS,260
+Saranga 1,64,S R G M P D N S,S N D P M R S,SWARA DISAGREEMENT,master 'sAranga' (mela 64) has: SRGMPDNS/SDPMRGRS ;; SRGMPDNS/SNDPMRGMRS,260
+Saranga 2,64,S R G M P N S,S N D P M R G M R S,SWARA DISAGREEMENT,master 'sAranga' (mela 64) has: SRGMPDNS/SDPMRGRS ;; SRGMPDNS/SNDPMRGMRS,260
+Saraswathi 1,64,S R M P D S,S N D P M G R S,SWARA DISAGREEMENT,master 'Saraswathi' (mela 64) has: SRMPDS/SNDPMRS,260
+Saraswathi 2,64,S R M P D S,S N D M G R S,SWARA DISAGREEMENT,master 'Saraswathi' (mela 64) has: SRMPDS/SNDPMRS,260
+Siva Priya,64,S G M D N S,S N D M G S,MELAKARTA MISMATCH,master has 'Sivapriya' under mela 44 instead of 64,261
+BhoopKalyani 2,65,P D S R G M P,P M G M G R S N D P D S,SWARA DISAGREEMENT,master 'Bhoopkalyāni 1' (mela 65) has: SRGPDS/SNDPMGRS ;; SRMPDS/SNDPMGRS,262
+BrindavanaSaranga,65,S R M P N S,S N P M R S,MELAKARTA MISMATCH,master has 'Brindavanasaranga 1' under mela 22 instead of 65,262
+ChandraKantham,65,S R G M P D N S,S N D P M G R S,MELAKARTA MISMATCH,master has 'Chandrakantham1 1' under mela 8 instead of 65,262
+HaraManohari,65,S R G R M P N D N P D N S,S N D P M G M R S,SWARA DISAGREEMENT,master 'haramanOhari' (mela 65) has: SRGRMPNDNP/SNDPMGMRS,263
+Koumoda 1,65,S R G M N S,S N P M G S,SWARA DISAGREEMENT,master 'Koumoda' (mela 65) has: SRGMNS/SNMGRS,264
+Mohanam,65,S R G P D S,S D P G R S,MELAKARTA MISMATCH,master has 'Mohanam 1' under mela 28 instead of 65,264
+Nirja Ravana,65,S G M G P D N S,S N D N D P M G M G R S,SWARA DISAGREEMENT,master 'nirjarAvaNa' (mela 65) has: SGMGPDNS/SNDNDPMGMGS,265
+Saranga 3,65,S R G M P D N S,S D P M R G R S,SWARA DISAGREEMENT,master 'sAranga 1' (mela 65) has: SRGMPDNS/SDPMRGMRS ;; SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNDPMRGMRS,265
+Swara Ranjani,65,S G M P N S,S N P M G S,MELAKARTA MISMATCH,master has 'Swararanjani 1' under mela 22 instead of 65,266
+Amrithavarshini 1,66,S G M P N S,S N P M G S,MELAKARTA MISMATCH,master has 'Amrithavarshini1' under mela 39 instead of 66,267
+Amrithavarshini 2,66,S G M P N S,S N D P M G S,MELAKARTA MISMATCH,master has 'Amrithavarshini1' under mela 39 instead of 66,267
+Chandrika,66,S G M D N S,S N D M G S,MELAKARTA MISMATCH,"master has 'Chandrika2' under mela 18, 21 instead of 66",267
+JaganMohana,66,S G M P N S,S N P M G R S,MELAKARTA MISMATCH,master has 'Jaganmohana' under mela 38 instead of 66,267
+SenaJayanthi,67,S R G M P D N S,S D P M G R,SWARA DISAGREEMENT,master 'Senajayanthi 1' (mela 67) has: SRGMPDNS/SDPMGRS ;; SRGMPDNS/SDPMGS,269
+HindolaDesakshi 2,68,S R S R G M P D S,S D P M G R S,SWARA DISAGREEMENT,master 'Hindoladesakshi 1' (mela 68) has: NSRGMPD/NDPMGRS ;; SNSRGMPD/NDPMGRS ;; SNSRGMPDN/DPMGRS ;; SNSRGMPDS/NDPMGRS,271
+DhowthaPanchamam 1,69,S R G M P D N S,S N D P M R G S,SWARA DISAGREEMENT,master 'Dhowtha Panchamam 1' (mela 69) has: SRGMPDNS/SNDPMGRS ;; SRGMPNPS/SNDPMRGMRS,272
+DhowthaPanchamam 3,69,S R G M P D N S,S N D P M R G S,SWARA DISAGREEMENT,master 'Dhowtha Panchamam 1' (mela 69) has: SRGMPDNS/SNDPMGRS ;; SRGMPNPS/SNDPMRGMRS,272
+DhowthaPanchamam 4,69,S R G M P N P S,S N D P M R M G S,SWARA DISAGREEMENT,master 'Dhowtha Panchamam 1' (mela 69) has: SRGMPDNS/SNDPMGRS ;; SRGMPNPS/SNDPMRGMRS,272
+Vardhini 2,69,S R G M P M N D S,S N D P M G R S,SWARA DISAGREEMENT,master 'vardhini' (mela 69) has: SMGMPNDS/SNDPMGRS ;; SRGMPMNDS/SNDPMSRS,273
+Nasamani 2,70,S R G M P S,S N D N P M R S,SWARA DISAGREEMENT,master 'Nāsāmani 1' (mela 70) has: SRGMPDNS/SNDPMGRS ;; SRGMPMPS/SNDNPMRS ;; SRSMPDNS/SNDPMGRS,274
+Nasamani 3,70,S R G M P D N S,S N D P M R G S,SWARA DISAGREEMENT,master 'Nāsāmani 1' (mela 70) has: SRGMPDNS/SNDPMGRS ;; SRGMPMPS/SNDNPMRS ;; SRSMPDNS/SNDPMGRS,274
+Rasamanjari 3,72,S R G S P M P N,S N D N P P M P R G S D N S,SWARA DISAGREEMENT,master 'Rasamanjari 1' (mela 72) has: SRGMPDNS/SNDPMGRS ;; SRGMPDNS/SNPMGRS ;; SRGMPDNS/SNPMRS ;; SRGSPMPNDN/SNDNPPMPRGS,276
+Sarasa Priya,72,S R G M D N S,S N D M G R S,SWARA DISAGREEMENT,master 'Sarasapriya 1' (mela 72) has: SRMGDNS/SNDMGRS ;; SRMGMPDNS/SNPDMGRS,276
