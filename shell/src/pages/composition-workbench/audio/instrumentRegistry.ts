@@ -89,6 +89,13 @@ export const instrumentRegistry: Record<StaticInstrumentId, InstrumentDefinition
     oscillator: 'square',
     envelope: { attack: 0, decay: 0.012, sustain: 0, release: 0.005 },
   },
+  // Between click and tone: a pitched triangle that peaks at once and dies away in a fraction of a
+  // second, like a short plucked note. No sustain, so attacks stay crisp whatever the note length.
+  'sound.pluck': {
+    id: 'sound.pluck',
+    oscillator: 'triangle',
+    envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.05 },
+  },
   'sound.woodblock': {
     id: 'sound.woodblock',
     kind: 'membrane',

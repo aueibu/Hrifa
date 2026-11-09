@@ -1,11 +1,14 @@
+import { instrumentRegistry } from './audio/instrumentRegistry';
 import type { SecondsPerformancePlan } from './audio/types';
 import { defaultMusicalTimeline, musicalDuration, musicalPositionToSeconds } from './musicalTime';
 import { createRhythmPreviewPlan } from './rhythmRealization';
 import {
   defaultSoundSettings,
   formatOffset,
+  isSoundOverride,
   layerSound,
   sanitizeSoundSettings,
+  soundTypeOptions,
   voiceSound,
   type SoundSet,
 } from './sounds';
@@ -35,6 +38,39 @@ describe('sound voices', () => {
       instrumentId: 'sound.tone',
       pitchMidicents: 5500,
     });
+  });
+
+  it('offers a pluck between click and tone, sounding at the written pitch', () => {
+    const labels = soundTypeOptions.map((option) => option.label);
+    expect(labels.indexOf('Pluck')).toBeGreaterThan(labels.indexOf('Click'));
+    expect(labels.indexOf('Pluck')).toBeLessThan(labels.indexOf('Tone'));
+
+    expect(layerSound(set, 0, { type: 'pluck', midicents: 6000 })).toEqual({
+      instrumentId: 'sound.pluck',
+      pitchMidicents: 6000,
+    });
+  });
+
+  it('plays the pluck as a short percussive pitched voice, and keeps it when stored', () => {
+    const synth = (id: 'sound.click' | 'sound.pluck') => {
+      const definition = instrumentRegistry[id];
+      if (definition.kind === 'sampled' || definition.kind === 'soundfont') {
+        throw new Error(`${id} is a synthesized voice.`);
+      }
+      return definition;
+    };
+    const pluck = synth('sound.pluck');
+    expect(pluck.kind).toBeUndefined(); // an ordinary synth voice, not a membrane hit
+    // Percussive: no sustain, so a rhythm's attacks stay crisp, and a decay well under a second.
+    expect(pluck.envelope.sustain).toBe(0);
+    expect(pluck.envelope.decay).toBeGreaterThan(synth('sound.click').envelope.decay);
+    expect(pluck.envelope.decay).toBeLessThan(0.5);
+
+    expect(isSoundOverride({ type: 'pluck', midicents: 6000 })).toBe(true);
+    const repaired = sanitizeSoundSettings({
+      rhythm: { baseMidicents: 6000, voices: [{ type: 'pluck', offsetCents: 0 }] },
+    });
+    expect(repaired.rhythm.voices[0].type).toBe('pluck');
   });
 
   it('formats offsets in semitones and cents', () => {

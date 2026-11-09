@@ -12,6 +12,7 @@ export type StaticInstrumentId =
   | 'preview.click'
   | 'preview.click-accent'
   | 'sound.click'
+  | 'sound.pluck'
   | 'sound.woodblock'
   | 'sound.drum'
   | 'sound.tone'

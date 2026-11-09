@@ -8,10 +8,11 @@ import { midiNoteName } from './interference';
  * primary, candidate → secondary), and any module may override a layer with its own sound and
  * pitch. Stored with the other global settings (compositionSettings.tsx).
  */
-export type SoundType = 'click' | 'woodblock' | 'drum' | 'tone';
+export type SoundType = 'click' | 'pluck' | 'woodblock' | 'drum' | 'tone';
 
 export const soundTypeOptions: { value: SoundType; label: string }[] = [
   { value: 'click', label: 'Click' },
+  { value: 'pluck', label: 'Pluck' },
   { value: 'woodblock', label: 'Woodblock' },
   { value: 'drum', label: 'Drum' },
   { value: 'tone', label: 'Tone' },
@@ -19,6 +20,7 @@ export const soundTypeOptions: { value: SoundType; label: string }[] = [
 
 const soundInstrument: Record<SoundType, InstrumentId> = {
   click: 'sound.click',
+  pluck: 'sound.pluck',
   woodblock: 'sound.woodblock',
   drum: 'sound.drum',
   tone: 'sound.tone',
@@ -26,10 +28,12 @@ const soundInstrument: Record<SoundType, InstrumentId> = {
 
 /**
  * Percussive sounds play in their own register relative to the written pitch, so one pitch suits
- * every sound type: a click three octaves up, a woodblock two up, a drum two down.
+ * every sound type: a click three octaves up, a woodblock two up, a drum two down. Pitched voices
+ * (pluck, tone) sound at the written pitch.
  */
 export const soundRegisterSemitones: Record<SoundType, number> = {
   click: 36,
+  pluck: 0,
   woodblock: 24,
   drum: -24,
   tone: 0,
