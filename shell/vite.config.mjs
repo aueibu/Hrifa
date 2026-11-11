@@ -55,6 +55,8 @@ export default defineConfig({
   plugins: [react(), localSoundfonts()],
   test: {
     globals: true,
+    // Node 25+ ships an experimental global localStorage that shadows jsdom's.
+    execArgv: ['--no-experimental-webstorage'],
     environment: 'jsdom',
     setupFiles: './vitest.setup.mjs',
     // React Flow is inlined so the d3-drag stub in vitest.setup.mjs reaches it.

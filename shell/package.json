@@ -15,6 +15,7 @@
     "format:write": "oxfmt -c oxfmt.config.mjs --write \"**/*.{ts,tsx}\"",
     "vitest": "vitest run",
     "vitest:watch": "vitest",
+    "check:workbench": "npm run typecheck && oxfmt -c oxfmt.config.mjs --check \"src/pages/composition-workbench/**/*.{ts,tsx}\" && oxlint -c oxlint.config.mjs src/pages/composition-workbench && stylelint \"src/pages/composition-workbench/**/*.css\" --cache && vitest run src/pages/composition-workbench",
     "test": "npm run typecheck && npm run format:test && npm run lint && npm run vitest && npm run build",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build"
