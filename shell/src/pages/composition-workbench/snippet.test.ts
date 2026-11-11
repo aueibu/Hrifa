@@ -3,7 +3,13 @@ import { melodicize, type NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, rationalToNumber } from './musicalTime';
 import { interpretPitchList } from './pitch';
-import { acceptsSnippets, canCaptureSelection, captureSnippet } from './snippet';
+import {
+  acceptsSnippets,
+  canCaptureSelection,
+  captureSnippet,
+  editSnippetNote,
+  type Snippet,
+} from './snippet';
 
 function rhythm(values = [2, 1, 1, 2]) {
   return packet(
@@ -23,8 +29,11 @@ function notes(): DataPacket<NoteEventValue> {
   const result = melodicize({
     instanceId: 'melodicization',
     rhythm: rhythm(),
-    pitches: interpretPitchList({ instanceId: 'pitch-list', format: 'midi-note', inlineText: '60, 62, 66.5' })
-      .packet,
+    pitches: interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'midi-note',
+      inlineText: '60, 62, 66.5',
+    }).packet,
     allocation: 'cycle',
     pulseUnit: musicalDuration(1, 4),
     articulationPercent: 100,
@@ -33,7 +42,12 @@ function notes(): DataPacket<NoteEventValue> {
   return result.packet;
 }
 
-const base = { id: 'snip-1', createdAt: '2026-11-11T00:00:00Z', name: 'Gesture', moduleInstance: 'mel-1' };
+const base = {
+  id: 'snip-1',
+  createdAt: '2026-11-11T00:00:00Z',
+  name: 'Gesture',
+  moduleInstance: 'mel-1',
+};
 
 describe('captureSnippet', () => {
   it('captures a note selection and starts it at zero with exact time', () => {
@@ -53,7 +67,11 @@ describe('captureSnippet', () => {
       rationalToNumber(original) - rationalToNumber(first),
       12
     );
-    expect(result.snippet.packet.frame).toMatchObject({ topology: 'linear', origin: 0, unit: 'quarterNote' });
+    expect(result.snippet.packet.frame).toMatchObject({
+      topology: 'linear',
+      origin: 0,
+      unit: 'quarterNote',
+    });
   });
 
   it('keeps pitches, microtones, velocity and packet semantics', () => {
@@ -163,5 +181,48 @@ describe('captureSnippet', () => {
     expect(restored).toEqual([result.snippet]);
     expect(acceptsSnippets([{ ...result.snippet, schemaVersion: 2 }])).toBe(false);
     expect(acceptsSnippets('nope')).toBe(false);
+  });
+});
+
+describe('editSnippetNote', () => {
+  function snippetOf(): Snippet {
+    const source = notes();
+    const result = captureSnippet({
+      ...base,
+      note: 'first',
+      packet: source,
+      itemIds: [source.items[1].id],
+    });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+    return result.snippet;
+  }
+
+  it('changes only the note and leaves packet, id and createdAt identical', () => {
+    const original = snippetOf();
+    const before = JSON.stringify(original);
+    const edited = editSnippetNote(original, 'second');
+    expect(edited.note).toBe('second');
+    expect(edited.packet).toBe(original.packet);
+    expect(edited.id).toBe(original.id);
+    expect(edited.createdAt).toBe(original.createdAt);
+    expect({ ...edited, note: undefined }).toEqual({ ...original, note: undefined });
+    expect(JSON.stringify(original)).toBe(before);
+  });
+
+  it('clears the note when the text is blank, and survives persistence', () => {
+    const cleared = editSnippetNote(snippetOf(), '   ');
+    expect('note' in cleared).toBe(false);
+    const restored: unknown = JSON.parse(JSON.stringify([editSnippetNote(snippetOf(), 'kept')]));
+    expect(acceptsSnippets(restored)).toBe(true);
+    expect((restored as Snippet[])[0].note).toBe('kept');
+  });
+
+  it('still loads a saved v1 desk that has no note, and can add one', () => {
+    const { note: _note, ...noNote } = snippetOf();
+    const restored: unknown = JSON.parse(JSON.stringify([noNote]));
+    expect(acceptsSnippets(restored)).toBe(true);
+    expect(editSnippetNote((restored as Snippet[])[0], 'added').note).toBe('added');
   });
 });

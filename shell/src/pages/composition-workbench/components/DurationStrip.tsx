@@ -134,7 +134,9 @@ export function DurationStrip({
 }) {
   const start = steps ? '' : describeRhythmOrigin(origin);
   const total = durations.reduce((sum, value) => sum + value, 0) + (cyclic || steps ? 0 : origin);
-  const notation = steps ? steps.map((step) => formatRhythmStep(step)) : durations.map(formatPulses);
+  const notation = steps
+    ? steps.map((step) => formatRhythmStep(step))
+    : durations.map(formatPulses);
   const segments = steps ? stepSegments(steps) : stripSegments(durations, origin, cyclic);
   const ticks = visibleBoundaries(boundaries, total);
   const infoBar = useInfoBarActive();
@@ -176,47 +178,48 @@ export function DurationStrip({
     <div style={widthShare === undefined ? undefined : { width: `${widthShare * 100}%` }}>
       {labelPlacement === 'above' && heading}
       <div className={classes.stripFrame}>
-      <div
-        className={classes.durationTimeline}
-        aria-label={`${label} ${notation.join(' ')}${start ? `, ${start}` : ''}`}
-      >
-        {segments.map((segment, index) => (
-          <span
-            className={classes.durationBlock}
-            key={index}
-            data-tie={segment.tie || undefined}
-            data-info={blockInfo(segment)}
-            title={infoBar ? undefined : blockInfo(segment)}
-            style={{
-              ...(pxPerPulse === undefined || !(total > 0)
-                ? { flexGrow: segment.width }
-                : { flex: 'none', minWidth: 0, width: `${(segment.width / total) * 100}%` }),
-              ...(segment.kind === 'attack'
-                ? {}
-                : { opacity: 0.55, fontStyle: 'italic', background: 'transparent' }),
-            }}
-          >
-            {pxPerPulse === undefined || labelFits(segment.width * pxPerPulse, segment.text, BLOCK_CHAR_PX)
-              ? segment.text
-              : ''}
-          </span>
-        ))}
-        {/* Ticks sit inside the strip, on its top and bottom edges, at each grouping boundary. */}
-        {ticks.map((boundary) =>
-          (['top', 'bottom'] as const).map((edge) => (
+        <div
+          className={classes.durationTimeline}
+          aria-label={`${label} ${notation.join(' ')}${start ? `, ${start}` : ''}`}
+        >
+          {segments.map((segment, index) => (
             <span
-              key={`${edge}-${boundary}`}
-              className={classes.groupTick}
-              data-edge={edge}
-              style={{ left: `${(boundary * 100) / total}%` }}
-              aria-hidden="true"
-            />
-          ))
-        )}
-        {overlay}
-        {/* Last, so it doesn't shift the blocks' alternating colours. */}
-        {playhead && <Playhead {...playhead} length={total} cyclic={cyclic} />}
-      </div>
+              className={classes.durationBlock}
+              key={index}
+              data-tie={segment.tie || undefined}
+              data-info={blockInfo(segment)}
+              title={infoBar ? undefined : blockInfo(segment)}
+              style={{
+                ...(pxPerPulse === undefined || !(total > 0)
+                  ? { flexGrow: segment.width }
+                  : { flex: 'none', minWidth: 0, width: `${(segment.width / total) * 100}%` }),
+                ...(segment.kind === 'attack'
+                  ? {}
+                  : { opacity: 0.55, fontStyle: 'italic', background: 'transparent' }),
+              }}
+            >
+              {pxPerPulse === undefined ||
+              labelFits(segment.width * pxPerPulse, segment.text, BLOCK_CHAR_PX)
+                ? segment.text
+                : ''}
+            </span>
+          ))}
+          {/* Ticks sit inside the strip, on its top and bottom edges, at each grouping boundary. */}
+          {ticks.map((boundary) =>
+            (['top', 'bottom'] as const).map((edge) => (
+              <span
+                key={`${edge}-${boundary}`}
+                className={classes.groupTick}
+                data-edge={edge}
+                style={{ left: `${(boundary * 100) / total}%` }}
+                aria-hidden="true"
+              />
+            ))
+          )}
+          {overlay}
+          {/* Last, so it doesn't shift the blocks' alternating colours. */}
+          {playhead && <Playhead {...playhead} length={total} cyclic={cyclic} />}
+        </div>
       </div>
       {labelPlacement === 'below' && heading}
       {showSum && (

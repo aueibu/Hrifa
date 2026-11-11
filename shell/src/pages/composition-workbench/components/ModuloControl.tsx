@@ -26,7 +26,9 @@ export function ModuloControl({ value, onChange }: ModuloControlProps) {
             min={1}
             step={1}
             value={value.divisor}
-            onChange={(divisor) => onChange({ ...value, divisor: Math.max(1, Math.trunc(Number(divisor) || 1)) })}
+            onChange={(divisor) =>
+              onChange({ ...value, divisor: Math.max(1, Math.trunc(Number(divisor) || 1)) })
+            }
           />
         )}
       </Group>

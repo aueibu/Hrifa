@@ -1,7 +1,5 @@
 import { packet, type DataPacket, type Provenance } from './model';
 import {
-  accumulatePulseDurations,
-  addDuration,
   compareRational,
   musicalDuration,
   musicalPosition,
@@ -13,9 +11,9 @@ import {
   type MusicalDuration,
   type MusicalPosition,
 } from './musicalTime';
+import { pitchGroupToArray, type PitchItemValue } from './pitch';
 import { rhythmOrigin } from './rhythmFrame';
 import { rhythmAttacks, type RhythmStep } from './rhythmRealization';
-import { pitchGroupToArray, type PitchItemValue } from './pitch';
 
 export type PitchAllocation = 'cycle' | 'cycle-rhythm' | 'zip' | 'cartesian';
 
@@ -113,7 +111,9 @@ function melodicizeUnguarded({
 
   const pulseValues = rhythm.items.map((item) => Number(item.value));
   if (pulseValues.some((value) => !Number.isFinite(value) || value === 0)) {
-    return emptyResult(['Every inter-onset duration must be a nonzero number of pulses; a rest is negative.']);
+    return emptyResult([
+      'Every inter-onset duration must be a nonzero number of pulses; a rest is negative.',
+    ]);
   }
   const pitchGroups = concretePitchGroups(pitches);
   if (pitchGroups.length !== pitches.items.length) {
@@ -139,7 +139,9 @@ function melodicizeUnguarded({
   const single = rhythmAttacks(steps, origin, { cyclic: rhythm.frame?.topology === 'cyclic' });
   const attacksPerCycle = single.attacks.length;
   if (!attacksPerCycle) {
-    return emptyResult(['The rhythm has no attacks to place pitches on; it is all rests and ties.']);
+    return emptyResult([
+      'The rhythm has no attacks to place pitches on; it is all rests and ties.',
+    ]);
   }
   const pitchCount = pitchGroups.length;
 
@@ -160,7 +162,10 @@ function melodicizeUnguarded({
       : allocation === 'cycle-rhythm'
         ? Math.ceil(pitchCount / attacksPerCycle)
         : 1;
-  const spine = repeats === 1 ? single : rhythmAttacks(Array.from({ length: repeats }, () => steps).flat(), origin);
+  const spine =
+    repeats === 1
+      ? single
+      : rhythmAttacks(Array.from({ length: repeats }, () => steps).flat(), origin);
   const attacks =
     allocation === 'cartesian'
       ? spine.attacks.slice(0, cartesianCount)
@@ -343,7 +348,9 @@ function melodicizeUnguarded({
  * comes back as an error on the result, never as an exception: this runs while a module renders, and
  * a throw there would take the whole page down.
  */
-export function melodicize(options: Parameters<typeof melodicizeUnguarded>[0]): MelodicizationResult {
+export function melodicize(
+  options: Parameters<typeof melodicizeUnguarded>[0]
+): MelodicizationResult {
   try {
     return melodicizeUnguarded(options);
   } catch (error) {

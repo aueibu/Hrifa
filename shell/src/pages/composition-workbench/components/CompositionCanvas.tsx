@@ -52,7 +52,6 @@ import {
   type CompositionModuleInstance,
   type ModuleRouteStates,
 } from '../compositionWorkspace';
-import { signalTypeRegistry } from '../signalTypes';
 import {
   categoryOfInlet,
   categoryOfModule,
@@ -60,6 +59,7 @@ import {
   signalCategoryColor,
   type SignalCategory,
 } from '../signalCategories';
+import { signalTypeRegistry } from '../signalTypes';
 import { FlowCell, MAX_VISIBLE_PORTS, type FlowCellPort } from './FlowCell';
 import classes from './CompositionCanvas.module.css';
 
@@ -285,11 +285,13 @@ function connectedFlow(start: string, descriptors: RouteDescriptor[]) {
 function ModuleMenuItems({ onPick }: { onPick(moduleId: CompositionModuleId): void }) {
   return (
     <>
-      {(Object.keys(compositionModuleLabels) as CompositionModuleId[]).filter(isAddableModule).map((moduleId) => (
-        <Menu.Item key={moduleId} onClick={() => onPick(moduleId)}>
-          {compositionModuleLabels[moduleId]}
-        </Menu.Item>
-      ))}
+      {(Object.keys(compositionModuleLabels) as CompositionModuleId[])
+        .filter(isAddableModule)
+        .map((moduleId) => (
+          <Menu.Item key={moduleId} onClick={() => onPick(moduleId)}>
+            {compositionModuleLabels[moduleId]}
+          </Menu.Item>
+        ))}
     </>
   );
 }
@@ -417,8 +419,8 @@ function CanvasBody({
               : instance.moduleId === 'arithmetic'
                 ? `Result | ${primaryOutput.packet.items.length}`
                 : instance.moduleId === 'fractioning' ||
-                  instance.moduleId === 'rhythm-list' ||
-                  instance.moduleId === 'rhythm-edit'
+                    instance.moduleId === 'rhythm-list' ||
+                    instance.moduleId === 'rhythm-edit'
                   ? `Durations | ${primaryOutput.packet.items.length}`
                   : instance.moduleId === 'snippet'
                     ? `${primaryOutput.packet.kind} | ${primaryOutput.packet.items.length}`
@@ -639,7 +641,10 @@ function CanvasBody({
           }}
           onPaneContextMenu={(event) => {
             event.preventDefault();
-            const at = { x: (event as ReactMouseEvent).clientX, y: (event as ReactMouseEvent).clientY };
+            const at = {
+              x: (event as ReactMouseEvent).clientX,
+              y: (event as ReactMouseEvent).clientY,
+            };
             const point = screenToFlowPosition(at);
             setContextMenu({
               screen: at,
@@ -666,7 +671,12 @@ function CanvasBody({
           zoomActivationKeyCode={['Control', 'Meta']}
         >
           {/* Dots, not lines: nothing snaps to the grid, so it only gives a sense of scale. */}
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1.6} color="color-mix(in srgb, var(--panel-well) 20%, var(--panel-body))" />
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={20}
+            size={1.6}
+            color="color-mix(in srgb, var(--panel-well) 20%, var(--panel-body))"
+          />
           <Panel position="bottom-left" className={classes.tools}>
             <Menu position="top-start" withinPortal>
               <Menu.Target>

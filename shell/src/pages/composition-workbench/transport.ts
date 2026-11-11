@@ -5,7 +5,6 @@ import type {
   SecondsPerformanceEvent,
   SecondsPerformancePlan,
 } from './audio/types';
-import { defaultSoundSettings, layerSound, type SoundSet } from './sounds';
 import {
   addRational,
   compareRational,
@@ -19,6 +18,7 @@ import {
   type MusicalTimeline,
   type Rational,
 } from './musicalTime';
+import { defaultSoundSettings, layerSound, type SoundSet } from './sounds';
 
 /**
  * The workbench-wide transport: one tempo, meter, and pulse length every rhythm preview follows,
@@ -49,7 +49,12 @@ export const defaultTransportSettings: TransportSettings = {
 };
 
 /** Values are the pulse length in quarter notes (Melodicization's original pulse options). */
-export const transportPulseOptions: { value: string; label: string; symbol: string; duration: MusicalDuration }[] = [
+export const transportPulseOptions: {
+  value: string;
+  label: string;
+  symbol: string;
+  duration: MusicalDuration;
+}[] = [
   { value: '1/1', label: 'Quarter note', symbol: '♩', duration: musicalDuration(1) },
   { value: '1/2', label: 'Eighth note', symbol: '♪', duration: musicalDuration(1, 2) },
   { value: '1/4', label: 'Sixteenth note', symbol: '16th', duration: musicalDuration(1, 4) },
@@ -81,12 +86,15 @@ export function parseMeter(meter: string) {
 
 export function transportPulse(settings: Pick<TransportSettings, 'pulse'>) {
   return (
-    transportPulseOptions.find((option) => option.value === settings.pulse) ?? transportPulseOptions[2]
+    transportPulseOptions.find((option) => option.value === settings.pulse) ??
+    transportPulseOptions[2]
   );
 }
 
 /** The transport's tempo and meter as the musical timeline a musical-time plan is scheduled on. */
-export function transportTimeline(settings: Pick<TransportSettings, 'tempo' | 'meter'>): MusicalTimeline {
+export function transportTimeline(
+  settings: Pick<TransportSettings, 'tempo' | 'meter'>
+): MusicalTimeline {
   const { numerator, denominator } = parseMeter(settings.meter);
   return {
     ...defaultMusicalTimeline,
@@ -113,7 +121,9 @@ export function beatQuarterNotes(settings: Pick<TransportSettings, 'meter'>) {
  * The count-in's length in quarter notes (one bar of the meter), or zero when it is off. This is
  * how far applyTransport shifts a musical plan's material, and where a looped plan's loop begins.
  */
-export function countInQuarterNotes(settings: Pick<TransportSettings, 'meter' | 'countIn'>): Rational {
+export function countInQuarterNotes(
+  settings: Pick<TransportSettings, 'meter' | 'countIn'>
+): Rational {
   const { numerator, denominator } = parseMeter(settings.meter);
   return settings.countIn ? multiplyRational(rational(4, denominator), numerator) : rational(0);
 }
@@ -132,7 +142,11 @@ export function countInSeconds(settings: TransportSettings) {
 export const METER_BUS = 'meter';
 export const COUNT_IN_BUS = 'count-in';
 
-export function transportBusGain(busId: string, settings: TransportSettings, toGain: (percent: number) => number) {
+export function transportBusGain(
+  busId: string,
+  settings: TransportSettings,
+  toGain: (percent: number) => number
+) {
   if (busId === METER_BUS) {
     return settings.metronome ? toGain(settings.metronomeVolume) : 0;
   }
@@ -197,7 +211,9 @@ export function applyTransport(
       durationSeconds: seconds.durationSeconds + shift,
       events: [
         ...(settings.countIn
-          ? beats(numerator).map((click) => clickEvent(click, click.index * beatSeconds, COUNT_IN_BUS))
+          ? beats(numerator).map((click) =>
+              clickEvent(click, click.index * beatSeconds, COUNT_IN_BUS)
+            )
           : []),
         ...seconds.events.map((event) => ({ ...event, atSeconds: event.atSeconds + shift })),
         ...beats(beatCount).map((click) =>

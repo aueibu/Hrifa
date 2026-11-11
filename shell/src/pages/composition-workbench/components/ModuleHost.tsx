@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Text } from '@mantine/core';
-import { InfoTooltip } from './hoverInfo';
 import type { PublishedCompositionOutput } from '../compositionRouting';
+import { InfoTooltip } from './hoverInfo';
 import { ModuleOutput } from './Module';
 import { SendToDeskButton } from './SendToDeskButton';
 import classes from './ModuleHost.module.css';

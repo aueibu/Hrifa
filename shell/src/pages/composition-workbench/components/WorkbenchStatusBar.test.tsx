@@ -59,7 +59,7 @@ describe('workbench status bar', () => {
     expect(screen.getByText('Plays the preview')).toBeTruthy();
   });
 
-  it('shows a help label\'s text in the bar and leaves no pop-up tooltip when the bar is there', () => {
+  it("shows a help label's text in the bar and leaves no pop-up tooltip when the bar is there", () => {
     render(<Harness />);
     fireEvent.mouseOver(screen.getByText('Phase'));
     expect(screen.getByText('Explains the phase')).toBeTruthy();
@@ -70,7 +70,9 @@ describe('workbench status bar', () => {
   it('toggles the inspector and opens settings from the ends', () => {
     const onToggle = vi.fn();
     const onSettings = vi.fn();
-    const { rerender } = render(<Harness onToggle={onToggle} onSettings={onSettings} open={false} />);
+    const { rerender } = render(
+      <Harness onToggle={onToggle} onSettings={onSettings} open={false} />
+    );
     const toggle = screen.getByRole('button', { name: 'Show inspector' });
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(toggle);
@@ -80,13 +82,19 @@ describe('workbench status bar', () => {
     fireEvent.click(settings);
     expect(onSettings).toHaveBeenCalledTimes(1);
     rerender(<Harness onToggle={onToggle} onSettings={onSettings} open settingsOpen />);
-    expect(screen.getByRole('button', { name: 'Hide inspector' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Hide settings' }).getAttribute('aria-pressed')).toBe('true');
+    expect(
+      screen.getByRole('button', { name: 'Hide inspector' }).getAttribute('aria-pressed')
+    ).toBe('true');
+    expect(screen.getByRole('button', { name: 'Hide settings' }).getAttribute('aria-pressed')).toBe(
+      'true'
+    );
   });
 
   it('keeps a pop-up tooltip for help text where there is no bar', () => {
     // Without the provider (other pages, tests) the label still gets its data-info but a tooltip works.
     const { container } = render(<InfoTooltip help="Explains the phase">Phase</InfoTooltip>);
-    expect(container.querySelector('[data-info]')?.getAttribute('data-info')).toBe('Explains the phase');
+    expect(container.querySelector('[data-info]')?.getAttribute('data-info')).toBe(
+      'Explains the phase'
+    );
   });
 });

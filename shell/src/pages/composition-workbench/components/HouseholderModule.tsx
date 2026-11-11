@@ -15,12 +15,6 @@ import {
   Tooltip,
 } from '@mantine/core';
 import {
-  createRhythmPreviewPlan,
-  musicalPlanSeconds,
-  transportRhythmContext,
-  type RhythmPreviewLayer,
-} from '../rhythmRealization';
-import {
   boundOutput,
   compositionOutputOptions,
   outputRefKey,
@@ -31,9 +25,6 @@ import {
   type PublishedCompositionOutput,
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
-import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
-import { pulseSeconds } from '../transport';
-import { SoundOverrideControl } from './SoundControls';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import {
   householderCandidatesPacket,
@@ -51,19 +42,28 @@ import {
 } from '../householder';
 import type { DataPacket } from '../model';
 import { rhythmOrigin } from '../rhythmFrame';
+import {
+  createRhythmPreviewPlan,
+  musicalPlanSeconds,
+  transportRhythmContext,
+  type RhythmPreviewLayer,
+} from '../rhythmRealization';
 import { isValidRhythmSource, rhythmInterpretableDomains } from '../routeTreatments';
 import { signalTypeRegistry } from '../signalTypes';
+import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
+import { pulseSeconds } from '../transport';
+import { useModulePreview } from '../useModulePreview';
 import {
   acceptsFiniteNumber,
   compositionInstanceStateKey,
   compositionStateKeys,
   usePersistentState,
 } from '../usePersistentState';
-import { useModulePreview } from '../useModulePreview';
 import { DurationStrip } from './DurationStrip';
-import { SourceMenu } from './SourceMenu';
 import { ModuleDevice } from './ModuleDevice';
 import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
+import { SoundOverrideControl } from './SoundControls';
+import { SourceMenu } from './SourceMenu';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -719,7 +719,9 @@ export function HouseholderModule({
                   value={settings.reflectPreset}
                   allowDeselect={false}
                   disabled={axisRouted}
-                  onChange={(value) => value && update({ reflectPreset: value as ReflectAxisPreset })}
+                  onChange={(value) =>
+                    value && update({ reflectPreset: value as ReflectAxisPreset })
+                  }
                 />
                 {settings.reflectPreset === 'custom' && !axisRouted && (
                   <TextInput
@@ -766,7 +768,9 @@ export function HouseholderModule({
                             label="Accent pattern"
                             description="Weight per grid slot, repeating."
                             value={settings.accentPattern}
-                            onChange={(event) => update({ accentPattern: event.currentTarget.value })}
+                            onChange={(event) =>
+                              update({ accentPattern: event.currentTarget.value })
+                            }
                           />
                         )}
                         <CoefficientSlider

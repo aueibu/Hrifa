@@ -1,5 +1,3 @@
-import { normalizeRhythmOrigin, rhythmOrigin } from './rhythmFrame';
-import { rhythmItemNotation } from './rhythmNotation';
 import type { DataDomain, DataItem, DataPacket, Provenance } from './model';
 import {
   pitchClassGroupLabel,
@@ -8,6 +6,8 @@ import {
   type PitchClassItemValue,
   type PitchItemValue,
 } from './pitch';
+import { normalizeRhythmOrigin, rhythmOrigin } from './rhythmFrame';
+import { rhythmItemNotation } from './rhythmNotation';
 
 export interface PitchRouteTreatment {
   bypassed: boolean;
@@ -86,7 +86,10 @@ export function rhythmOffset(treatment: RhythmRouteTreatment) {
 export function isPitchRouteTreatmentIdentity(treatment: PitchRouteTreatment, source?: DataPacket) {
   const stillVoicesToConcretePitch = source?.domain === 'pitchClass' && treatment.voiceAsPitch;
   const stillReadsAsMidi =
-    source && source.domain !== 'pitch' && source.domain !== 'pitchClass' && treatment.readAsMidiNotes;
+    source &&
+    source.domain !== 'pitch' &&
+    source.domain !== 'pitchClass' &&
+    treatment.readAsMidiNotes;
   return (
     !stillVoicesToConcretePitch &&
     !stillReadsAsMidi &&
@@ -100,11 +103,20 @@ export function isPitchRouteTreatmentIdentity(treatment: PitchRouteTreatment, so
 }
 
 export function isValidRhythmSource(source?: DataPacket) {
-  return Boolean(source) && source!.kind === 'list' && source!.domain === 'duration' && source!.role === 'interOnset';
+  return (
+    Boolean(source) &&
+    source!.kind === 'list' &&
+    source!.domain === 'duration' &&
+    source!.role === 'interOnset'
+  );
 }
 
-export function isRhythmRouteTreatmentIdentity(treatment: RhythmRouteTreatment, source?: DataPacket) {
-  const stillInterpretsAsRhythm = source && !isValidRhythmSource(source) && treatment.interpretAsRhythm;
+export function isRhythmRouteTreatmentIdentity(
+  treatment: RhythmRouteTreatment,
+  source?: DataPacket
+) {
+  const stillInterpretsAsRhythm =
+    source && !isValidRhythmSource(source) && treatment.interpretAsRhythm;
   return (
     !stillInterpretsAsRhythm &&
     !treatment.bypassed &&
@@ -214,7 +226,11 @@ function voicePitchClasses(
 // pitchClass item's value is already `number | number[]`. `transposition` is in edo steps, not
 // semitones, once edo differs from 12 — the route treatment's transposition field is always
 // "steps of the source's own tuning," which is semitones exactly when that tuning is 12-EDO.
-function transformPitchClasses(pitchClasses: number[], treatment: PitchRouteTreatment, edo = 12): number[] {
+function transformPitchClasses(
+  pitchClasses: number[],
+  treatment: PitchRouteTreatment,
+  edo = 12
+): number[] {
   return pitchClasses.map((pitchClass) =>
     modulo((treatment.inverted ? -pitchClass : pitchClass) + treatment.transposition, edo)
   );
@@ -308,9 +324,7 @@ function transformedConcreteGroup(
 ) {
   const axisMidicents = treatment.inversionAxisMidi * 100;
   let midicents = values.map((concreteMidicents) => {
-    const inverted = treatment.inverted
-      ? axisMidicents * 2 - concreteMidicents
-      : concreteMidicents;
+    const inverted = treatment.inverted ? axisMidicents * 2 - concreteMidicents : concreteMidicents;
     return inverted + treatment.transposition * 100;
   });
   if (midicents.length > 1 && treatment.voicingInversion !== 0) {
@@ -357,7 +371,10 @@ function transformedConcreteGroup(
 // number[] — a chord that survived a mismatched-domain Arithmetic combination as a raw array.
 // Treat both as "one or more MIDI notes," each offset from `base` — a raw 0 means "the base
 // note," not "MIDI note 0."
-function midiNoteValuesFromRaw(value: unknown, base: number): { values: number[]; wasArray: boolean } {
+function midiNoteValuesFromRaw(
+  value: unknown,
+  base: number
+): { values: number[]; wasArray: boolean } {
   const wasArray = Array.isArray(value);
   const midis = wasArray ? (value as unknown[]).map(Number) : [Number(value)];
   return { values: midis.map((raw) => (raw + base) * 100), wasArray };
@@ -484,10 +501,17 @@ export const rhythmInterpretationError =
 // conversion rather than silently dropping or clamping the bad items — the caller surfaces
 // `rhythmInterpretationError` as a packet warning instead.
 function interpretRhythmSource(source: DataPacket, routeId: string): DataPacket | null {
-  if ((source.kind !== 'list' && source.kind !== 'value') || !rhythmInterpretableDomains.has(source.domain)) {
+  if (
+    (source.kind !== 'list' && source.kind !== 'value') ||
+    !rhythmInterpretableDomains.has(source.domain)
+  ) {
     return null;
   }
-  if (!source.items.every((item) => typeof item.value === 'number' && Number.isFinite(item.value) && item.value > 0)) {
+  if (
+    !source.items.every(
+      (item) => typeof item.value === 'number' && Number.isFinite(item.value) && item.value > 0
+    )
+  ) {
     return null;
   }
   const items = source.items.map((item) => ({
@@ -554,7 +578,10 @@ export function applyRhythmRouteTreatment(
   // started. Scaling stretches that start along with everything else; the offset then moves it.
   const scale = treatment.durationScale;
   const topology = base.frame?.topology ?? 'cyclic';
-  const scaledDurationTotal = items.reduce((total, item) => total + Math.abs(Number(item.value)), 0);
+  const scaledDurationTotal = items.reduce(
+    (total, item) => total + Math.abs(Number(item.value)),
+    0
+  );
   const requestedOrigin = rhythmOrigin(base) * scale + rhythmOffset(treatment);
   const { origin, clamped } = normalizeRhythmOrigin(requestedOrigin, topology, scaledDurationTotal);
   const scaledExtent = base.frame?.extent === undefined ? undefined : base.frame.extent * scale;
@@ -563,7 +590,10 @@ export function applyRhythmRouteTreatment(
       ? scaledExtent
       : scaledExtent + (origin - rhythmOrigin(base) * scale);
   const warnings = clamped
-    ? [...base.warnings, 'Start offset would begin before the frame; started on the downbeat instead.']
+    ? [
+        ...base.warnings,
+        'Start offset would begin before the frame; started on the downbeat instead.',
+      ]
     : base.warnings;
   return {
     ...base,

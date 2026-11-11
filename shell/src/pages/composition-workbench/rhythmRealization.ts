@@ -129,11 +129,18 @@ export function rhythmAttacks(
   });
   if (tiedIn && previous) {
     const first = attacks[0];
-    if (cyclic && first && first !== previous && first.index === steps.findIndex((s) => s.duration > 0)) {
+    if (
+      cyclic &&
+      first &&
+      first !== previous &&
+      first.index === steps.findIndex((s) => s.duration > 0)
+    ) {
       setSlot(previous, addRational(previous.slot, first.slot));
       attacks.shift();
     } else {
-      warnings.push(`Step ${lastTieStep} ends with a tie and has nothing to continue; it is ignored.`);
+      warnings.push(
+        `Step ${lastTieStep} ends with a tie and has nothing to continue; it is ignored.`
+      );
     }
   }
   return {

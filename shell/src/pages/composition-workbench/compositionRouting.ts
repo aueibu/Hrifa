@@ -1,4 +1,4 @@
-import { packet, type DataItem, type DataPacket } from "./model";
+import { packet, type DataItem, type DataPacket } from './model';
 import { hasRestsOrTies } from './rhythmNotation';
 
 export interface CompositionOutputRef {
@@ -41,11 +41,13 @@ export function outputPortKey(ref: CompositionOutputRef) {
 }
 
 export function parseOutputRef(value: string): CompositionOutputRef {
-  const [instanceId, port, indexText] = value.split("|");
+  const [instanceId, port, indexText] = value.split('|');
   if (!instanceId || !port) {
-    throw new Error("Invalid composition output reference.");
+    throw new Error('Invalid composition output reference.');
   }
-  return indexText === undefined ? { instanceId, port } : { instanceId, port, index: Number(indexText) };
+  return indexText === undefined
+    ? { instanceId, port }
+    : { instanceId, port, index: Number(indexText) };
 }
 
 function findOutput(outputs: PublishedCompositionOutput[], ref: CompositionOutputRef) {
@@ -81,12 +83,12 @@ export function resolvePacketFromOutput(
   if (!output) {
     return undefined;
   }
-  if (index === undefined || output.packet.kind !== "bank") {
+  if (index === undefined || output.packet.kind !== 'bank') {
     return output.packet;
   }
   const bank = output.packet;
   if (!bank.items.length) {
-    return packet("list", bank.domain, [], ["Selected bank has no entries."]);
+    return packet('list', bank.domain, [], ['Selected bank has no entries.']);
   }
   const clamped = clampedBankIndex(bank, index);
   const entry = bank.items[clamped];
@@ -99,7 +101,7 @@ export function resolvePacketFromOutput(
       {
         sourceModuleInstance: sourceId,
         sourceItemIds: [entry.id],
-        transformation: "select-bank-entry",
+        transformation: 'select-bank-entry',
         parameters: { index: clamped, position },
       },
     ],
@@ -109,8 +111,10 @@ export function resolvePacketFromOutput(
   const entryOrigins = bank.metadata?.entryOrigins;
   const entryOrigin = Array.isArray(entryOrigins) ? entryOrigins[clamped] : undefined;
   const frame =
-    bank.frame && typeof entryOrigin === "number" ? { ...bank.frame, origin: entryOrigin } : bank.frame;
-  return packet("list", bank.domain, items, bank.warnings, bank.metadata, {
+    bank.frame && typeof entryOrigin === 'number'
+      ? { ...bank.frame, origin: entryOrigin }
+      : bank.frame;
+  return packet('list', bank.domain, items, bank.warnings, bank.metadata, {
     role: bank.role,
     encoding: bank.encoding,
     frame,
@@ -122,7 +126,10 @@ export function resolvePacketFromOutput(
  * used to detect a genuinely missing/disconnected source, distinct from a bank whose entry
  * count merely shrank (that case clamps in resolvePacketFromOutput instead of reporting missing).
  */
-export function boundOutput(outputs: PublishedCompositionOutput[], ref: CompositionOutputRef | undefined) {
+export function boundOutput(
+  outputs: PublishedCompositionOutput[],
+  ref: CompositionOutputRef | undefined
+) {
   return ref ? findOutput(outputs, ref) : undefined;
 }
 
@@ -148,9 +155,9 @@ function entryGroupPath(bank: DataPacket, index: number): string[] {
   const entryGroups = bank.metadata?.entryGroups;
   const group = Array.isArray(entryGroups) ? entryGroups[index] : undefined;
   if (Array.isArray(group)) {
-    return group.filter((part): part is string => typeof part === "string");
+    return group.filter((part): part is string => typeof part === 'string');
   }
-  return typeof group === "string" ? [group] : [];
+  return typeof group === 'string' ? [group] : [];
 }
 
 // Only the innermost folder joins the label: outer ones are navigation, and would make a
@@ -172,7 +179,7 @@ export function describeOutputRef(
   if (!output) {
     return undefined;
   }
-  if (ref.index === undefined || output.packet.kind !== "bank") {
+  if (ref.index === undefined || output.packet.kind !== 'bank') {
     return output.label;
   }
   const index = clampedBankIndex(output.packet, ref.index);
@@ -191,7 +198,9 @@ function packetHasRestsOrTies(packet: DataPacket): boolean {
   }
   if (packet.kind === 'bank') {
     return packet.items.some(
-      (item) => Array.isArray(item.value) && item.value.some((entry) => typeof entry === 'number' && entry < 0)
+      (item) =>
+        Array.isArray(item.value) &&
+        item.value.some((entry) => typeof entry === 'number' && entry < 0)
     );
   }
   return hasRestsOrTies(packet.items);
@@ -222,11 +231,11 @@ export function compositionOutputOptions(
       continue;
     }
     // Published labels read "<module> · <output>"; the path lets a menu show modules first.
-    const split = output.label.indexOf(" · ");
+    const split = output.label.indexOf(' · ');
     const outputPath =
       split < 0 ? [output.label] : [output.label.slice(0, split), output.label.slice(split + 3)];
-    if (output.packet.kind === "bank") {
-      if (isCompatible({ ...output.packet, kind: "list" })) {
+    if (output.packet.kind === 'bank') {
+      if (isCompatible({ ...output.packet, kind: 'list' })) {
         output.packet.items.forEach((item, index) => {
           const entry = item.label ?? `Entry ${index + 1}`;
           const groups = entryGroupPath(output.packet, index);

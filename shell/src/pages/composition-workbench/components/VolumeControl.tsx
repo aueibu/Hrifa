@@ -1,13 +1,13 @@
-import type { ReactNode } from "react";
-import { Group, Slider, Text } from "@mantine/core";
+import type { ReactNode } from 'react';
+import { Group, Slider, Text } from '@mantine/core';
 import {
   FADER_FLOOR_DB,
   volumeDbLabel,
   volumeDbToPercent,
   volumePercentLabel,
   volumePercentToDb,
-} from "../audio";
-import classes from "./VolumeControl.module.css";
+} from '../audio';
+import classes from './VolumeControl.module.css';
 
 interface VolumeControlProps {
   accessibleLabel: string;
@@ -29,7 +29,7 @@ export function VolumeControl({
   const db = volumePercentToDb(value);
   return (
     <div className={classes.root}>
-      {typeof label === "string" ? <Text size="xs">{label}</Text> : label}
+      {typeof label === 'string' ? <Text size="xs">{label}</Text> : label}
       <Group gap="xs" wrap="nowrap" className={classes.fader}>
         {decibels ? (
           <Slider
@@ -42,7 +42,13 @@ export function VolumeControl({
             onChange={(next) => onChange(volumeDbToPercent(next))}
           />
         ) : (
-          <Slider thumbLabel={accessibleLabel} min={0} max={100} value={value} onChange={onChange} />
+          <Slider
+            thumbLabel={accessibleLabel}
+            min={0}
+            max={100}
+            value={value}
+            onChange={onChange}
+          />
         )}
         <Text ff="monospace" size="xs" w="4.25rem" ta="right">
           {decibels ? volumeDbLabel(db) : volumePercentLabel(value)}

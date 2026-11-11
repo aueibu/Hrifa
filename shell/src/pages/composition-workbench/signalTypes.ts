@@ -24,7 +24,12 @@ export interface SignalTypeDefinition<T> {
   accepts(value: unknown): value is T;
   isIdentity(treatment: T, source?: DataPacket): boolean;
   summary(treatment: T, source?: DataPacket): string;
-  apply(source: DataPacket | undefined, treatment: T, routeId: string, edo?: number): DataPacket | undefined;
+  apply(
+    source: DataPacket | undefined,
+    treatment: T,
+    routeId: string,
+    edo?: number
+  ): DataPacket | undefined;
 }
 
 export interface NumericRouteTreatment {
@@ -34,7 +39,11 @@ export interface NumericRouteTreatment {
 export const defaultNumericRouteTreatment: NumericRouteTreatment = { bypassed: false };
 
 function acceptsNumericRouteTreatment(value: unknown): value is NumericRouteTreatment {
-  return Boolean(value) && typeof value === 'object' && typeof (value as NumericRouteTreatment).bypassed === 'boolean';
+  return (
+    Boolean(value) &&
+    typeof value === 'object' &&
+    typeof (value as NumericRouteTreatment).bypassed === 'boolean'
+  );
 }
 
 const pitchSignalType: SignalTypeDefinition<PitchRouteTreatment> = {

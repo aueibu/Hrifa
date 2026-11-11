@@ -86,7 +86,15 @@ export function SplitStage({
           aria-expanded={!collapsed}
           onClick={() => onCollapsed(!collapsed)}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            aria-hidden
+          >
             <path d={collapsed ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} />
           </svg>
         </ActionIcon>

@@ -11,10 +11,10 @@
  * dressed up as a special rule.
  */
 
-import { generateFractioning } from "./fractioning";
-import { packet, type DataPacket } from "./model";
+import { generateFractioning } from './fractioning';
+import { packet, type DataPacket } from './model';
 
-export type PairCompositionMode = "balancing" | "expanding" | "contracting";
+export type PairCompositionMode = 'balancing' | 'expanding' | 'contracting';
 
 export interface PairCompositionSegment {
   label: string;
@@ -51,10 +51,10 @@ export function binarySynchronizationDurations(a: number, b: number) {
 export function generatePairComposition(
   a: number,
   b: number,
-  mode: PairCompositionMode,
+  mode: PairCompositionMode
 ): PairCompositionResult {
   if (!Number.isInteger(a) || !Number.isInteger(b) || b <= 0 || a <= b) {
-    throw new Error("Composing a pair requires whole numbers with a strictly greater than b.");
+    throw new Error('Composing a pair requires whole numbers with a strictly greater than b.');
   }
 
   const sync = binarySynchronizationDurations(a, b);
@@ -62,7 +62,7 @@ export function generatePairComposition(
   const syncLabel = `Binary sync ${a}÷${b}`;
   const fracLabel = `Fractioning ${a}÷${b}`;
 
-  if (mode === "expanding") {
+  if (mode === 'expanding') {
     return {
       mode,
       a,
@@ -76,7 +76,7 @@ export function generatePairComposition(
     };
   }
 
-  if (mode === "contracting") {
+  if (mode === 'contracting') {
     return {
       mode,
       a,
@@ -103,7 +103,7 @@ export function generatePairComposition(
     });
   }
   if (tail > 0) {
-    segments.push({ label: "Balancing remainder", durations: [tail] });
+    segments.push({ label: 'Balancing remainder', durations: [tail] });
   }
 
   return {
@@ -111,7 +111,8 @@ export function generatePairComposition(
     a,
     b,
     period: 2 * a * a,
-    durations: tail > 0 ? [...fractioning, ...repeatedSync, tail] : [...fractioning, ...repeatedSync],
+    durations:
+      tail > 0 ? [...fractioning, ...repeatedSync, tail] : [...fractioning, ...repeatedSync],
     segments,
   };
 }
@@ -121,7 +122,7 @@ function durationsPacket(
   sourceId: string,
   port: string,
   extent: number,
-  parameters: Record<string, unknown>,
+  parameters: Record<string, unknown>
 ): DataPacket<number> {
   let onset = 0;
   const items = durations.map((duration, index) => {
@@ -132,7 +133,7 @@ function durationsPacket(
         {
           sourceModuleInstance: sourceId,
           sourceItemIds: [] as string[],
-          transformation: "pair-composition",
+          transformation: 'pair-composition',
           parameters: { ...parameters, index, attackTime: onset },
         },
       ],
@@ -140,22 +141,18 @@ function durationsPacket(
     onset += duration;
     return item;
   });
-  return packet(
-    "list",
-    "duration",
-    items,
-    [],
-    undefined,
-    { role: "interOnset", frame: { topology: "cyclic", unit: "pulse", extent, origin: 0 } },
-  );
+  return packet('list', 'duration', items, [], undefined, {
+    role: 'interOnset',
+    frame: { topology: 'cyclic', unit: 'pulse', extent, origin: 0 },
+  });
 }
 
 /** Combined output: the full concatenated pair-composition duration series. */
 export function pairCompositionDurationPacket(
   result: PairCompositionResult,
-  sourceId: string,
+  sourceId: string
 ): DataPacket<number> {
-  return durationsPacket(result.durations, sourceId, "combined", result.period, {
+  return durationsPacket(result.durations, sourceId, 'combined', result.period, {
     mode: result.mode,
     a: result.a,
     b: result.b,
@@ -165,7 +162,7 @@ export function pairCompositionDurationPacket(
 /** One output per labeled segment (fractioning statement, sync statement, remainder, ...). */
 export function pairCompositionSegmentPackets(
   result: PairCompositionResult,
-  sourceId: string,
+  sourceId: string
 ): { port: string; label: string; packet: DataPacket<number> }[] {
   return result.segments.map((segment, index) => ({
     port: `segment:${index}`,
@@ -175,7 +172,7 @@ export function pairCompositionSegmentPackets(
       sourceId,
       `segment:${index}`,
       segment.durations.reduce((sum, value) => sum + value, 0),
-      { mode: result.mode, a: result.a, b: result.b, segment: segment.label },
+      { mode: result.mode, a: result.a, b: result.b, segment: segment.label }
     ),
   }));
 }

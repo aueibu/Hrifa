@@ -44,7 +44,13 @@ describe('rhythm diff measures', () => {
     // 1 1 1 1 becomes 2 1 1 1/2. Edges sat at 0 1 2 3 4 and now sit at 0 2 3 4 4.5; the longer total,
     // 4.5, is the whole.
     const lines = diffLines([1, 1, 1, 1], [2, 1, 1, 0.5]);
-    expect(lines.map((line) => line.direction)).toEqual(['still', 'later', 'later', 'later', 'later']);
+    expect(lines.map((line) => line.direction)).toEqual([
+      'still',
+      'later',
+      'later',
+      'later',
+      'later',
+    ]);
     // Against the original position: 1 -> 2 is +100%, 2 -> 3 is +50%, 3 -> 4 is +33%, 4 -> 4.5 is +12.5%.
     expect(lines.map((line) => line.relative)).toEqual([0, 1, 0.5, 1 / 3, 0.125]);
     // Against the whole: every shift is 1 pulse of 4.5, except the last at half a pulse.
@@ -107,7 +113,7 @@ describe('rhythm diff drawing', () => {
     expect(curvePath(40, 40, 36)).toBe('M 40 0 C 40 18, 40 18, 40 36');
   });
 
-  it('places each edge in px where its block edge is, inside the strips\' 1px border', () => {
+  it("places each edge in px where its block edge is, inside the strips' 1px border", () => {
     // Input 2 2 on a 102px strip; result 2 3 on a 102px strip. Blocks span 100px inside the borders.
     const lines = diffLinesPx([2, 2], [2, 3], 102, 102);
     expect(lines.map((line) => line.x1)).toEqual([1, 51, 101]);
@@ -159,7 +165,11 @@ describe('rhythm diff drawing', () => {
       />
     );
     const paths = [...container.querySelectorAll<SVGPathElement>('path[data-direction]')];
-    expect(paths.map((path) => path.getAttribute('data-direction'))).toEqual(['still', 'still', 'later']);
+    expect(paths.map((path) => path.getAttribute('data-direction'))).toEqual([
+      'still',
+      'still',
+      'later',
+    ]);
     expect(paths.map((path) => path.style.strokeOpacity)).toEqual(['0.2', '0.2', '1']);
     expect(paths.map((path) => path.style.strokeWidth)).toEqual(['2', '2', '8']);
   });
@@ -177,7 +187,13 @@ describe('hover text for the curves', () => {
   it('puts the explanation on each curve and a wide target on top of it', () => {
     const scroller = fakeScroller({ scrollWidth: 900, clientWidth: 900, scrollLeft: 0 });
     const { container } = render(
-      <RhythmDiff inputLengths={[2, 2]} editedLengths={[2, 3]} inputShare={1} editedShare={1} scroller={scroller} />
+      <RhythmDiff
+        inputLengths={[2, 2]}
+        editedLengths={[2, 3]}
+        inputShare={1}
+        editedShare={1}
+        scroller={scroller}
+      />
     );
     const groups = [...container.querySelectorAll('g[data-info]')];
     expect(groups.map((group) => group.getAttribute('data-info'))).toEqual([

@@ -1,6 +1,6 @@
-import type { DataItem, DataPacket, ParameterFrame } from "./model";
+import type { DataItem, DataPacket, ParameterFrame } from './model';
 
-export type AlignmentMode = "zip" | "cycle" | "cartesian";
+export type AlignmentMode = 'zip' | 'cycle' | 'cartesian';
 export const maximumCartesianFrames = 256;
 
 export interface AlignmentResult {
@@ -9,10 +9,10 @@ export interface AlignmentResult {
   error?: string;
 }
 
-type NamedInput = { name: "length" | "impulses" | "offset"; packet: DataPacket<number> };
+type NamedInput = { name: 'length' | 'impulses' | 'offset'; packet: DataPacket<number> };
 
 function isScalar(input: NamedInput) {
-  return input.packet.kind === "value" && input.packet.items.length === 1;
+  return input.packet.kind === 'value' && input.packet.items.length === 1;
 }
 
 function frameFrom(items: DataItem<number>[]): ParameterFrame {
@@ -29,22 +29,22 @@ export function alignParameterPackets(
   impulses: DataPacket<number>,
   offset: DataPacket<number>,
   mode: AlignmentMode,
-  limit = maximumCartesianFrames,
+  limit = maximumCartesianFrames
 ): AlignmentResult {
   const inputs: NamedInput[] = [
-    { name: "length", packet: length },
-    { name: "impulses", packet: impulses },
-    { name: "offset", packet: offset },
+    { name: 'length', packet: length },
+    { name: 'impulses', packet: impulses },
+    { name: 'offset', packet: offset },
   ];
   if (inputs.some((input) => input.packet.items.length === 0)) {
-    return { frames: [], warnings: [], error: "Every parameter input needs at least one item." };
+    return { frames: [], warnings: [], error: 'Every parameter input needs at least one item.' };
   }
 
   const streams = inputs.filter((input) => !isScalar(input));
-  if (mode === "cartesian") {
+  if (mode === 'cartesian') {
     const count = inputs.reduce(
       (product, input) => product * (isScalar(input) ? 1 : input.packet.items.length),
-      1,
+      1
     );
     if (count > limit) {
       return {
@@ -67,24 +67,27 @@ export function alignParameterPackets(
 
   const counts = streams.map((input) => input.packet.items.length);
   const frameCount = counts.length
-    ? mode === "zip"
+    ? mode === 'zip'
       ? Math.min(...counts)
       : Math.max(...counts)
     : 1;
   const warnings: string[] = [];
-  if (mode === "zip") {
+  if (mode === 'zip') {
     for (const input of streams) {
       const unused = input.packet.items.length - frameCount;
-      if (unused > 0)
+      if (unused > 0) {
         warnings.push(
-          `${input.name}: ${unused} trailing item${unused === 1 ? "" : "s"} unused by Zip.`,
+          `${input.name}: ${unused} trailing item${unused === 1 ? '' : 's'} unused by Zip.`
         );
+      }
     }
   }
   const frames = Array.from({ length: frameCount }, (_, index) => {
     const items = inputs.map((input) => {
-      if (isScalar(input)) return input.packet.items[0];
-      const itemIndex = mode === "cycle" ? index % input.packet.items.length : index;
+      if (isScalar(input)) {
+        return input.packet.items[0];
+      }
+      const itemIndex = mode === 'cycle' ? index % input.packet.items.length : index;
       return input.packet.items[itemIndex];
     });
     return frameFrom(items);

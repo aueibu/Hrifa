@@ -81,7 +81,10 @@ describe('sound voices', () => {
 
   it('repairs stored settings field by field, keeping the primary at the base pitch', () => {
     const repaired = sanitizeSoundSettings({
-      rhythm: { baseMidicents: 5500, voices: [{ type: 'drum', offsetCents: 300 }, { type: 'kazoo' }] },
+      rhythm: {
+        baseMidicents: 5500,
+        voices: [{ type: 'drum', offsetCents: 300 }, { type: 'kazoo' }],
+      },
     });
     expect(repaired.rhythm.baseMidicents).toBe(5500);
     expect(repaired.rhythm.voices[0]).toEqual({ type: 'drum', offsetCents: 0 });
@@ -98,8 +101,17 @@ describe('sound use in previews', () => {
       pulseUnit: musicalDuration(1, 4),
       timeline: defaultMusicalTimeline,
       layers: [
-        { layerId: 'input', steps: [3, 3, 2].map((duration) => ({ duration })), sound: layerSound(set, 0) },
-        { layerId: 'candidate', steps: [2, 3, 3].map((duration) => ({ duration })), origin: 1, sound: layerSound(set, 1) },
+        {
+          layerId: 'input',
+          steps: [3, 3, 2].map((duration) => ({ duration })),
+          sound: layerSound(set, 0),
+        },
+        {
+          layerId: 'candidate',
+          steps: [2, 3, 3].map((duration) => ({ duration })),
+          origin: 1,
+          sound: layerSound(set, 1),
+        },
       ],
     });
     expect(plan.events).toHaveLength(6);
@@ -107,9 +119,16 @@ describe('sound use in previews', () => {
     expect(
       plan.events
         .filter((event) => event.instrumentId === 'sound.woodblock')
-        .map((event) => Math.round(musicalPositionToSeconds(event.at, defaultMusicalTimeline.tempoMap) / 0.125))
+        .map((event) =>
+          Math.round(musicalPositionToSeconds(event.at, defaultMusicalTimeline.tempoMap) / 0.125)
+        )
     ).toEqual([1, 3, 6]);
-    expect(musicalPositionToSeconds({ quarterNotes: plan.duration.quarterNotes }, defaultMusicalTimeline.tempoMap)).toBeCloseTo(1.125);
+    expect(
+      musicalPositionToSeconds(
+        { quarterNotes: plan.duration.quarterNotes },
+        defaultMusicalTimeline.tempoMap
+      )
+    ).toBeCloseTo(1.125);
   });
 
   it('clicks downbeats on the metronome primary voice and other beats on the secondary', () => {

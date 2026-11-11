@@ -11,7 +11,8 @@ interface PitchTreatmentEditorProps {
 
 export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreatmentEditorProps) {
   const sourceIsPitchClass = source?.domain === 'pitchClass';
-  const sourceIsGenericNumeric = Boolean(source) && source!.domain !== 'pitch' && !sourceIsPitchClass;
+  const sourceIsGenericNumeric =
+    Boolean(source) && source!.domain !== 'pitch' && !sourceIsPitchClass;
   const interpretedAsPitch = !sourceIsGenericNumeric || treatment.readAsMidiNotes;
   const showVoicingControls = interpretedAsPitch && (!sourceIsPitchClass || treatment.voiceAsPitch);
   const update = (patch: Partial<PitchRouteTreatment>) => onChange({ ...treatment, ...patch });
@@ -65,7 +66,10 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
         {interpretedAsPitch && (
           <>
             <div className={classes.parameterRow}>
-              <Text size="xs" className={treatment.transposition !== 0 ? classes.changed : undefined}>
+              <Text
+                size="xs"
+                className={treatment.transposition !== 0 ? classes.changed : undefined}
+              >
                 Transpose
               </Text>
               <NumberInput
@@ -171,7 +175,10 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
         {showVoicingControls && (
           <>
             <div className={classes.parameterRow}>
-              <Text size="xs" className={treatment.voicingInversion !== 0 ? classes.changed : undefined}>
+              <Text
+                size="xs"
+                className={treatment.voicingInversion !== 0 ? classes.changed : undefined}
+              >
                 Inversion
               </Text>
               <NumberInput

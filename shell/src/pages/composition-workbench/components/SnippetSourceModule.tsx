@@ -1,6 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Text } from '@mantine/core';
-import type { CompositionModuleRoutingProps, PublishedCompositionOutput } from '../compositionRouting';
+import type {
+  CompositionModuleRoutingProps,
+  PublishedCompositionOutput,
+} from '../compositionRouting';
 import { useDesk } from '../desk';
 import { ModuleDevice } from './ModuleDevice';
 import { ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';

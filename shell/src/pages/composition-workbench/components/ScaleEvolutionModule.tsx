@@ -46,7 +46,9 @@ function compatibleIntervalSource(packet: DataPacket) {
 }
 
 function rawIntervalLine(source: DataPacket | undefined) {
-  if (!source) return '';
+  if (!source) {
+    return '';
+  }
   return source.items.map((item) => String(item.value)).join(', ');
 }
 

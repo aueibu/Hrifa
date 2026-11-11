@@ -102,7 +102,13 @@ export function presetStrata(id: MistPresetId): MistStratum[] {
   return [0, 1, 2].map((i) => {
     const base = defaultStratum(i);
     if (id === 'soft-drift') {
-      return { ...base, speed: [0.125, 0.1, 0.0625][i], phase: i / 16, center: i * 0.5, amplitude: 0.4 };
+      return {
+        ...base,
+        speed: [0.125, 0.1, 0.0625][i],
+        phase: i / 16,
+        center: i * 0.5,
+        amplitude: 0.4,
+      };
     }
     if (id === 'ripple') {
       return { ...base, speed: [1, 1.25, 1.5][i], phase: i / 4, center: i, amplitude: 1 };
@@ -363,7 +369,8 @@ export function buildTable(stratum: MistStratum, index: number, seed: string): n
     return walkTable(stratum, index, seed, walkPointCount(stratum));
   }
   if (stratum.waveform === 'custom') {
-    const points = stratum.custom && stratum.custom.length >= 2 ? stratum.custom : curveShape('sine');
+    const points =
+      stratum.custom && stratum.custom.length >= 2 ? stratum.custom : curveShape('sine');
     return points.map(clampCurve);
   }
   return [];
@@ -451,10 +458,12 @@ export function roundToStep(value: number, step: number) {
 }
 
 function gcdBig(a: bigint, b: bigint): bigint {
-  while (b !== 0n) {
-    [a, b] = [b, a % b];
+  let x = a;
+  let y = b;
+  while (y !== 0n) {
+    [x, y] = [y, x % y];
   }
-  return a;
+  return x;
 }
 
 /**
@@ -592,7 +601,12 @@ export function buildMistField(settings: MistSettings): MistField {
   };
   const wave = (index: number, s: number) => {
     const stratum = settings.strata[index];
-    return evaluateWave(stratum, tables.get(index) ?? [], passesAt(stratum, s), settings.interpolation);
+    return evaluateWave(
+      stratum,
+      tables.get(index) ?? [],
+      passesAt(stratum, s),
+      settings.interpolation
+    );
   };
   return {
     strataIndices,
@@ -694,7 +708,9 @@ export function mistChordsPacket(
     id: `${instanceId}:chord:${step}`,
     value: row,
     label: row.length > 1 ? `[${row.map(formatValue).join(' ')}]` : formatValue(row[0] ?? 0),
-    provenance: [stepProvenance(instanceId, settings, { step, position: sampling.positions[step] })],
+    provenance: [
+      stepProvenance(instanceId, settings, { step, position: sampling.positions[step] }),
+    ],
   }));
   return packet('list', mistDomain(settings), items, sampling.warnings, undefined, {
     frame: { topology: 'linear', unit: 'abstract', extent: items.length },

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
-import { acceptsSnippets, type Snippet } from './snippet';
+import { acceptsSnippets, editSnippetNote, type Snippet } from './snippet';
 import { compositionStateKeys, usePersistentState } from './usePersistentState';
 
 /**
@@ -11,6 +11,7 @@ interface DeskContextValue {
   addSnippet(snippet: Snippet): void;
   removeSnippet(id: string): void;
   renameSnippet(id: string, name: string): void;
+  setSnippetNote(id: string, note: string): void;
 }
 
 const DeskContext = createContext<DeskContextValue | undefined>(undefined);
@@ -36,9 +37,16 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       ),
     [setSnippets]
   );
+  const setSnippetNote = useCallback(
+    (id: string, note: string) =>
+      setSnippets((current) =>
+        current.map((snippet) => (snippet.id === id ? editSnippetNote(snippet, note) : snippet))
+      ),
+    [setSnippets]
+  );
   const value = useMemo(
-    () => ({ snippets, addSnippet, removeSnippet, renameSnippet }),
-    [snippets, addSnippet, removeSnippet, renameSnippet]
+    () => ({ snippets, addSnippet, removeSnippet, renameSnippet, setSnippetNote }),
+    [snippets, addSnippet, removeSnippet, renameSnippet, setSnippetNote]
   );
   return <DeskContext.Provider value={value}>{children}</DeskContext.Provider>;
 }

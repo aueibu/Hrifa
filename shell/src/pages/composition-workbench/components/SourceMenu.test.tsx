@@ -3,7 +3,11 @@ import { render, screen, userEvent } from '@test-utils';
 import { buildSourceTree, SourceMenu, type SourceOption } from './SourceMenu';
 
 const options: SourceOption[] = [
-  { value: 'int|resultant', label: 'Interference · Resultant', path: ['Interference', 'Resultant'] },
+  {
+    value: 'int|resultant',
+    label: 'Interference · Resultant',
+    path: ['Interference', 'Resultant'],
+  },
   { value: 'int|g1', label: 'Interference · Generator 1', path: ['Interference', 'Generator 1'] },
   { value: 'pl|pitches', label: 'Pitch List · Pitches', path: ['Pitch List', 'Pitches'] },
   {
@@ -49,7 +53,12 @@ function Harness({ initial = null }: { initial?: string | null }) {
       placeholder="Connect a rhythm"
       options={[
         ...options,
-        { value: 'gone|x', label: 'Missing source · x', path: ['Missing source', 'x'], disabled: true },
+        {
+          value: 'gone|x',
+          label: 'Missing source · x',
+          path: ['Missing source', 'x'],
+          disabled: true,
+        },
       ]}
       value={value}
       onChange={setValue}
@@ -73,7 +82,9 @@ describe('SourceMenu', () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(screen.getByRole('button', { name: 'Rhythm source' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Scale Construction · Sequence' }));
+    await user.click(
+      await screen.findByRole('menuitem', { name: 'Scale Construction · Sequence' })
+    );
     await user.click(await screen.findByRole('menuitem', { name: 'Mode 2' }));
 
     expect(screen.getByRole('button', { name: 'Rhythm source' })).toHaveTextContent(

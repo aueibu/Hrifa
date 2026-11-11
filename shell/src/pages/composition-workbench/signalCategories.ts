@@ -1,5 +1,5 @@
-import type { DataPacket } from './model';
 import type { CompositionModuleId } from './compositionWorkspace';
+import type { DataPacket } from './model';
 
 /**
  * What a port or module is about, for color on the patch canvas. This is not the routing signal type
@@ -10,7 +10,10 @@ import type { CompositionModuleId } from './compositionWorkspace';
 export type SignalCategory = 'rhythm' | 'pitch' | 'events' | 'audio' | 'numeric';
 
 /** The `--mark-<hue>` that draws a category; `null` is the neutral muted text color. */
-export const signalCategoryHue: Record<SignalCategory, 'yellow' | 'orange' | 'green' | 'red' | null> = {
+export const signalCategoryHue: Record<
+  SignalCategory,
+  'yellow' | 'orange' | 'green' | 'red' | null
+> = {
   rhythm: 'yellow',
   pitch: 'orange',
   events: 'green',

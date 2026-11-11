@@ -146,7 +146,12 @@ function AuditionButton({ label, sound }: { label: string; sound: SoundOverride 
   const audition = useAudition();
   return (
     <Tooltip label={`Hear ${label.toLowerCase()} (${soundLabel(sound)})`}>
-      <ActionIcon variant="subtle" size="sm" aria-label={`Hear ${label}`} onClick={() => audition(sound)}>
+      <ActionIcon
+        variant="subtle"
+        size="sm"
+        aria-label={`Hear ${label}`}
+        onClick={() => audition(sound)}
+      >
         ▶
       </ActionIcon>
     </Tooltip>
@@ -291,4 +296,3 @@ export function SoundOverrideControl({
     </Popover>
   );
 }
-

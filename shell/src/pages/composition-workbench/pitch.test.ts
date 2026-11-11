@@ -95,12 +95,14 @@ describe('pitch-list interpretation', () => {
     expect(result.packet.items.map((item) => item.label)).toEqual(['C', 'D', 'Bb']);
     // ...and the literal spelling is recorded once, on the packet, keyed by item id.
     const bbItem = result.packet.items[2];
-    expect((result.packet.metadata?.spellings as Record<string, string> | undefined)?.[bbItem.id]).toBe(
-      'Bb'
-    );
+    expect(
+      (result.packet.metadata?.spellings as Record<string, string> | undefined)?.[bbItem.id]
+    ).toBe('Bb');
     // A plain integer input has nothing to preserve — no spelling entry for it.
     const zeroItem = result.packet.items[0];
-    expect((result.packet.metadata?.spellings as Record<string, string> | undefined)?.[zeroItem.id]).toBeUndefined();
+    expect(
+      (result.packet.metadata?.spellings as Record<string, string> | undefined)?.[zeroItem.id]
+    ).toBeUndefined();
   });
 
   it('preserves the literal typed note-name spelling as source metadata too', () => {
@@ -110,9 +112,9 @@ describe('pitch-list interpretation', () => {
       inlineText: 'Bb3',
     });
     const item = result.packet.items[0];
-    expect((result.packet.metadata?.spellings as Record<string, string> | undefined)?.[item.id]).toBe(
-      'Bb3'
-    );
+    expect(
+      (result.packet.metadata?.spellings as Record<string, string> | undefined)?.[item.id]
+    ).toBe('Bb3');
   });
 
   it('retains catalog provenance on the pitch group that supplied it', () => {
@@ -299,9 +301,9 @@ describe('convertPitchText', () => {
     expect(convertPitchText({ text: midi.text, from: 'midicent', to: 'midi-note' }).text).toBe(
       '60, 62, 66.5'
     );
-    expect(
-      convertPitchText({ text: 'C4, D4, F#4', from: 'note-name', to: 'midi-note' }).text
-    ).toBe('60, 62, 66');
+    expect(convertPitchText({ text: 'C4, D4, F#4', from: 'note-name', to: 'midi-note' }).text).toBe(
+      '60, 62, 66'
+    );
     expect(convertPitchText({ text: '60, 61, 71', from: 'midi-note', to: 'note-name' }).text).toBe(
       'C4, C#4, B4'
     );
@@ -317,7 +319,11 @@ describe('convertPitchText', () => {
     const toNames = convertPitchText({ text: '66.5', from: 'midi-note', to: 'note-name' });
     expect(toNames.text).toBe('G4');
     expect(toNames.notes).toEqual(['1 value rounded to the nearest semitone.']);
-    const toClasses = convertPitchText({ text: '60, 62, 74', from: 'midi-note', to: 'pitch-class' });
+    const toClasses = convertPitchText({
+      text: '60, 62, 74',
+      from: 'midi-note',
+      to: 'pitch-class',
+    });
     expect(toClasses.text).toBe('0, 2, 2');
     expect(toClasses.notes).toContain('Octaves are not kept in pitch classes.');
   });

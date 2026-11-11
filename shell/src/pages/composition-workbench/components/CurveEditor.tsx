@@ -39,7 +39,10 @@ export function CurveEditor({ points, onChange }: CurveEditorProps) {
     const box = svg.getBoundingClientRect();
     const viewX = ((event.clientX - box.left) / box.width) * viewWidth;
     const viewY = ((event.clientY - box.top) / box.height) * viewHeight;
-    const index = Math.min(count - 1, Math.max(0, Math.floor(((viewX - padX) / innerWidth) * count)));
+    const index = Math.min(
+      count - 1,
+      Math.max(0, Math.floor(((viewX - padX) / innerWidth) * count))
+    );
     const value = clampCurve(1 - 2 * ((viewY - padY) / innerHeight));
     return { index, value };
   }
@@ -95,7 +98,13 @@ export function CurveEditor({ points, onChange }: CurveEditorProps) {
               className={classes.curveGrid}
             />
           ))}
-          <line x1={padX} x2={padX + innerWidth} y1={yOf(0)} y2={yOf(0)} className={classes.curveZero} />
+          <line
+            x1={padX}
+            x2={padX + innerWidth}
+            y1={yOf(0)}
+            y2={yOf(0)}
+            className={classes.curveZero}
+          />
           <polyline points={polyline} className={classes.curveLine} />
           <line
             x1={xOf(count - 1, count)}
@@ -106,7 +115,13 @@ export function CurveEditor({ points, onChange }: CurveEditorProps) {
           />
           {count <= 96 &&
             points.map((value, i) => (
-              <circle key={i} cx={xOf(i, count)} cy={yOf(value)} r={2.5} className={classes.curveDot} />
+              <circle
+                key={i}
+                cx={xOf(i, count)}
+                cy={yOf(value)}
+                r={2.5}
+                className={classes.curveDot}
+              />
             ))}
         </svg>
       </div>
@@ -139,11 +154,7 @@ export function CurveEditor({ points, onChange }: CurveEditorProps) {
         >
           Invert
         </Button>
-        <Button
-          size="compact-xs"
-          variant="default"
-          onClick={() => onChange([...points].reverse())}
-        >
+        <Button size="compact-xs" variant="default" onClick={() => onChange([...points].reverse())}>
           Reverse
         </Button>
         <Button

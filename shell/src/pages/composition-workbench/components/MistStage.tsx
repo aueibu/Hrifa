@@ -18,7 +18,8 @@ const strataHues = [
   'indigo',
   'grape',
 ];
-export const strataColor = (index: number) => `var(--mark-${strataHues[index % strataHues.length]})`;
+export const strataColor = (index: number) =>
+  `var(--mark-${strataHues[index % strataHues.length]})`;
 
 // One SVG: the scrolling ridgeline on the left, the live vertical slice on the right.
 const plotLeft = 40;
@@ -201,16 +202,22 @@ export const MistStage = memo(function MistStage({
   const plotBottom = plotHeight - 26;
   const rowBase = (k: number) => plotTop + ridgeHeight * 0.5 + k * rowPitch;
   // A stratum's shape scaled by its amplitude, around its own row (the center only matters on the slice).
-  const waveOf = (index: number, s: number) => settings.strata[index].amplitude * field.wave(index, s);
+  const waveOf = (index: number, s: number) =>
+    settings.strata[index].amplitude * field.wave(index, s);
 
   // The slice: mapped values at now, unrounded so the dots glide.
   const outLow = Math.min(settings.mapLow, settings.mapHigh);
   const outHigh = Math.max(settings.mapLow, settings.mapHigh);
   const outSpan = outHigh - outLow || 1;
-  const sliceY = (mapped: number) => plotBottom - ((mapped - outLow) / outSpan) * (plotBottom - plotTop);
+  const sliceY = (mapped: number) =>
+    plotBottom - ((mapped - outLow) / outSpan) * (plotBottom - plotTop);
   const here = field.at(position);
   const dotYs = here.mapped.map(sliceY);
-  const labelYs = relaxLabels(dotYs.map((y) => y + 4), plotTop + 4, plotBottom + 4);
+  const labelYs = relaxLabels(
+    dotYs.map((y) => y + 4),
+    plotTop + 4,
+    plotBottom + 4
+  );
   const ticks = [outLow, (outLow + outHigh) / 2, outHigh];
 
   function pan(event: React.PointerEvent<SVGRectElement>) {
@@ -403,10 +410,21 @@ export const MistStage = memo(function MistStage({
             }}
           />
 
-          <text x={sliceAxisX - 70} y={plotTop - 10} textAnchor="middle" className={classes.sliceTitle}>
+          <text
+            x={sliceAxisX - 70}
+            y={plotTop - 10}
+            textAnchor="middle"
+            className={classes.sliceTitle}
+          >
             now
           </text>
-          <line x1={sliceAxisX} x2={sliceAxisX} y1={plotTop} y2={plotBottom} className={classes.sliceAxis} />
+          <line
+            x1={sliceAxisX}
+            x2={sliceAxisX}
+            y1={plotTop}
+            y2={plotBottom}
+            className={classes.sliceAxis}
+          />
           {ticks.map((tick) => (
             <g key={tick}>
               <line
@@ -431,7 +449,13 @@ export const MistStage = memo(function MistStage({
                 className={classes.leader}
                 stroke={strataColor(index)}
               />
-              <circle cx={sliceAxisX} cy={dotYs[k]} r={7} className={classes.dot} fill={strataColor(index)} />
+              <circle
+                cx={sliceAxisX}
+                cy={dotYs[k]}
+                r={7}
+                className={classes.dot}
+                fill={strataColor(index)}
+              />
               <text x={sliceAxisX + 30} y={labelYs[k]} className={classes.sliceLabel}>
                 {index + 1} · {formatNumber(here.mapped[k])}
               </text>
@@ -505,7 +529,9 @@ export const MistStage = memo(function MistStage({
             const next = typeof value === 'number' ? value : Number(value);
             if (Number.isFinite(next) && value !== '') {
               // Typing a position stays in the current cycle.
-              setPosition(cycleLength ? Math.floor(position / cycleLength) * cycleLength + next : next);
+              setPosition(
+                cycleLength ? Math.floor(position / cycleLength) * cycleLength + next : next
+              );
             }
           }}
         />

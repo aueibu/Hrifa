@@ -22,10 +22,10 @@ export function volumeDbToPercent(db: number) {
 }
 
 export function volumeDbLabel(db: number) {
-  return db <= FADER_FLOOR_DB ? "−∞ dB" : `${db.toFixed(1)} dB`;
+  return db <= FADER_FLOOR_DB ? '−∞ dB' : `${db.toFixed(1)} dB`;
 }
 
 export function volumePercentLabel(percent: number) {
   const gain = volumePercentToGain(percent);
-  return gain === 0 ? "−∞ dB" : `${(20 * Math.log10(gain)).toFixed(1)} dB`;
+  return gain === 0 ? '−∞ dB' : `${(20 * Math.log10(gain)).toFixed(1)} dB`;
 }

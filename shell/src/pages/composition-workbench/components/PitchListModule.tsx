@@ -42,7 +42,12 @@ import {
 } from '../usePersistentState';
 import { ForteCatalogBrowser } from './ForteCatalogBrowser';
 import { ModuleDevice } from './ModuleDevice';
-import { HelpTip, InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
+import {
+  HelpTip,
+  InspectorSection,
+  ModuleInspectorContent,
+  ModuleOutputsSection,
+} from './ModuleHost';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -229,8 +234,12 @@ export function PitchListModule({
   // The vertical axis fits the pitches actually present, with a margin, and the plot is taller the
   // wider their span (a narrow melody is a shallow strip, a wide one gets room). Gridlines fall on
   // whole semitones, whole tones, minor thirds, tritones, octaves... whichever keeps about seven or fewer.
-  const dataLow = pitchVoices.length ? Math.min(...pitchVoices.map((point) => point.midicents)) : 6000;
-  const dataHigh = pitchVoices.length ? Math.max(...pitchVoices.map((point) => point.midicents)) : 6000;
+  const dataLow = pitchVoices.length
+    ? Math.min(...pitchVoices.map((point) => point.midicents))
+    : 6000;
+  const dataHigh = pitchVoices.length
+    ? Math.max(...pitchVoices.map((point) => point.midicents))
+    : 6000;
   const dataSpan = Math.max(200, dataHigh - dataLow);
   const margin = dataSpan * 0.12;
   const axisLow = (dataLow + dataHigh) / 2 - dataSpan / 2 - margin;
@@ -421,7 +430,12 @@ export function PitchListModule({
                   )}
                   {group.pitches.map((pitch) => (
                     <g key={pitch.id}>
-                      <circle cx={group.x} cy={pitch.y} r={dotRadius} className={classes.pitchPoint} />
+                      <circle
+                        cx={group.x}
+                        cy={pitch.y}
+                        r={dotRadius}
+                        className={classes.pitchPoint}
+                      />
                       {coordinates.length <= 24 && (
                         <text x={group.x} y={Math.max(18, pitch.y - 14)} textAnchor="middle">
                           {pitch.label}

@@ -74,8 +74,23 @@ describe('programs', () => {
     // As in Grid Traversal, n changes after every 2 completed blocks (the x block and the r block
     // each count): n = 1 for the first x, 2 for the second, 3 for the third.
     const actions = runProgram(blocks, 9, { start: 1, change: 1, every: 2 }, { phase: 0, rate: 1 });
-    expect(actions).toEqual(['keep', 'rest', 'keep', 'keep', 'rest', 'keep', 'keep', 'keep', 'rest']);
-    const shrinking = runProgram(blocks, 6, { start: 2, change: -5, every: 1 }, { phase: 0, rate: 1 });
+    expect(actions).toEqual([
+      'keep',
+      'rest',
+      'keep',
+      'keep',
+      'rest',
+      'keep',
+      'keep',
+      'keep',
+      'rest',
+    ]);
+    const shrinking = runProgram(
+      blocks,
+      6,
+      { start: 2, change: -5, every: 1 },
+      { phase: 0, rate: 1 }
+    );
     expect(shrinking.slice(0, 3)).toEqual(['keep', 'keep', 'rest']);
   });
 
@@ -116,7 +131,11 @@ describe('structure', () => {
   });
 
   it('reports a tie that ends a linear rhythm', () => {
-    const result = editRhythm({ instanceId: 'e', source: rhythm([1, 2], 'linear'), program: 'x ~' });
+    const result = editRhythm({
+      instanceId: 'e',
+      source: rhythm([1, 2], 'linear'),
+      program: 'x ~',
+    });
     expect(result.packet?.warnings.join(' ')).toMatch(/ends with a tie/);
   });
 
@@ -266,7 +285,7 @@ describe('rules', () => {
   });
 });
 
-describe('scaling the original to the edit\'s length', () => {
+describe("scaling the original to the edit's length", () => {
   it('stretches every note by one exact factor to reach the target length', () => {
     // 2 1 3 sums to 6; at length 9 every note is 3/2 as long.
     expect(scaleStepsToLength([{ duration: 2 }, { duration: 1 }, { duration: 3 }], 9)).toEqual([
@@ -300,10 +319,19 @@ describe('tracing a program', () => {
     const trace = traceProgram(blocks, 8, noVariable, { phase: 1, rate: 2 });
     // Note 1 waits (phase). Ticks fall on notes 2, 4, 6, 8; notes 3, 5, 7 are skipped.
     expect(trace.map((note) => note.state)).toEqual([
-      'waiting', 'tick', 'skipped', 'tick', 'skipped', 'tick', 'skipped', 'tick',
+      'waiting',
+      'tick',
+      'skipped',
+      'tick',
+      'skipped',
+      'tick',
+      'skipped',
+      'tick',
     ]);
     // Four ticks make [x,2] then [r,1] then the start of [x,2] again: blocks 0, 0, 1, 2.
-    expect(trace.filter((note) => note.state === 'tick').map((note) => [note.action, note.block])).toEqual([
+    expect(
+      trace.filter((note) => note.state === 'tick').map((note) => [note.action, note.block])
+    ).toEqual([
       ['keep', 0],
       ['keep', 0],
       ['rest', 1],
@@ -312,25 +340,66 @@ describe('tracing a program', () => {
   });
 
   it('lets a block grow with n, so its bracket covers more ticks each time', () => {
-    const growing = traceProgram(parseStructureProgram('[x,n][r,1]').blocks, 9, { start: 1, change: 1, every: 2 }, { phase: 0, rate: 1 });
+    const growing = traceProgram(
+      parseStructureProgram('[x,n][r,1]').blocks,
+      9,
+      { start: 1, change: 1, every: 2 },
+      { phase: 0, rate: 1 }
+    );
     const sizes = new Map<number, number>();
     growing.forEach((note) => {
-      if (note.block !== undefined) sizes.set(note.block, (sizes.get(note.block) ?? 0) + 1);
+      if (note.block !== undefined) {
+        sizes.set(note.block, (sizes.get(note.block) ?? 0) + 1);
+      }
     });
     expect([...sizes.values()]).toEqual([1, 1, 2, 1, 3, 1].slice(0, sizes.size));
   });
 
   it('gives editRhythm tracks for programs and rules, and none for a program that is empty', () => {
     const source = rhythm([2, 2, 2, 2, 2, 2]);
-    const programmed = editRhythm({ instanceId: 'e', source, program: '[x,2][r,1]', lengths: '*2' });
-    expect(programmed.tracks?.structure?.map((note) => note.action)).toEqual(['x', 'x', 'r', 'x', 'x', 'r']);
+    const programmed = editRhythm({
+      instanceId: 'e',
+      source,
+      program: '[x,2][r,1]',
+      lengths: '*2',
+    });
+    expect(programmed.tracks?.structure?.map((note) => note.action)).toEqual([
+      'x',
+      'x',
+      'r',
+      'x',
+      'x',
+      'r',
+    ]);
     expect(programmed.tracks?.length?.every((note) => note.action === '*2')).toBe(true);
     const lengthOnly = editRhythm({ instanceId: 'e', source, lengths: '*2' });
     expect(lengthOnly.tracks?.structure).toBeUndefined();
-    const ruled = editRhythm({ instanceId: 'e', source, mode: 'rules', rules: 'every 3: r\n2: *3/2' });
-    expect(ruled.tracks?.structure?.map((note) => note.state)).toEqual(['tick', 'skipped', 'skipped', 'tick', 'skipped', 'skipped']);
-    expect(ruled.tracks?.length?.map((note) => note.action)).toEqual([undefined, '*3/2', undefined, undefined, undefined, undefined]);
-    expect(editRhythm({ instanceId: 'e', source }).tracks).toEqual({ structure: undefined, length: undefined });
+    const ruled = editRhythm({
+      instanceId: 'e',
+      source,
+      mode: 'rules',
+      rules: 'every 3: r\n2: *3/2',
+    });
+    expect(ruled.tracks?.structure?.map((note) => note.state)).toEqual([
+      'tick',
+      'skipped',
+      'skipped',
+      'tick',
+      'skipped',
+      'skipped',
+    ]);
+    expect(ruled.tracks?.length?.map((note) => note.action)).toEqual([
+      undefined,
+      '*3/2',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    expect(editRhythm({ instanceId: 'e', source }).tracks).toEqual({
+      structure: undefined,
+      length: undefined,
+    });
   });
 });
 
@@ -342,8 +411,14 @@ describe('bare multipliers and decimals', () => {
     expect(parseLengthAction('*1/2')).toEqual(half);
     expect(parseLengthAction('*.5')).toEqual(half);
     expect(parseLengthAction('*0.5')).toEqual(half);
-    expect(parseLengthAction('3/5')).toEqual({ kind: 'multiply', factor: { numerator: 3, denominator: 5 } });
-    expect(parseLengthAction('*1.5')).toEqual({ kind: 'multiply', factor: { numerator: 3, denominator: 2 } });
+    expect(parseLengthAction('3/5')).toEqual({
+      kind: 'multiply',
+      factor: { numerator: 3, denominator: 5 },
+    });
+    expect(parseLengthAction('*1.5')).toEqual({
+      kind: 'multiply',
+      factor: { numerator: 3, denominator: 2 },
+    });
   });
 
   it('does not read a bare whole number or decimal as a multiplier', () => {
@@ -351,19 +426,36 @@ describe('bare multipliers and decimals', () => {
     expect(parseLengthAction('.5')).toBeUndefined();
     expect(parseLengthAction('0.5')).toBeUndefined();
     expect(parseLengthAction('1.5')).toBeUndefined();
-    expect(editRhythm({ instanceId: 'e', source: rhythm([2]), lengths: '2' }).errors[0]).toMatch(/2:/);
+    expect(editRhythm({ instanceId: 'e', source: rhythm([2]), lengths: '2' }).errors[0]).toMatch(
+      /2:/
+    );
   });
 
   it('reads a leading slash as a divisor', () => {
     expect(parseLengthAction('/2')).toEqual(half);
-    expect(parseLengthAction('/.5')).toEqual({ kind: 'multiply', factor: { numerator: 2, denominator: 1 } });
-    expect(parseLengthAction('/3')).toEqual({ kind: 'multiply', factor: { numerator: 1, denominator: 3 } });
+    expect(parseLengthAction('/.5')).toEqual({
+      kind: 'multiply',
+      factor: { numerator: 2, denominator: 1 },
+    });
+    expect(parseLengthAction('/3')).toEqual({
+      kind: 'multiply',
+      factor: { numerator: 1, denominator: 3 },
+    });
   });
 
   it('keeps the other operators and refuses a zero or unreadable multiplier', () => {
-    expect(parseLengthAction('+.5')).toEqual({ kind: 'add', pulses: { numerator: 1, denominator: 2 } });
-    expect(parseLengthAction('-1/2')).toEqual({ kind: 'subtract', pulses: { numerator: 1, denominator: 2 } });
-    expect(parseLengthAction('=.25')).toEqual({ kind: 'set', pulses: { numerator: 1, denominator: 4 } });
+    expect(parseLengthAction('+.5')).toEqual({
+      kind: 'add',
+      pulses: { numerator: 1, denominator: 2 },
+    });
+    expect(parseLengthAction('-1/2')).toEqual({
+      kind: 'subtract',
+      pulses: { numerator: 1, denominator: 2 },
+    });
+    expect(parseLengthAction('=.25')).toEqual({
+      kind: 'set',
+      pulses: { numerator: 1, denominator: 4 },
+    });
     expect(parseLengthAction('0')).toBeUndefined();
     expect(parseLengthAction('/0')).toBeUndefined();
     expect(parseLengthAction('1/0')).toBeUndefined();
@@ -374,7 +466,9 @@ describe('bare multipliers and decimals', () => {
     const source = () => rhythm([4, 2, 6]);
     const expected = '2 1 3';
     for (const lengths of ['*1/2', '1/2', '*.5', '/2', '[1/2,3]', '[*.5,3]', '[/2,3]']) {
-      expect(written(editRhythm({ instanceId: 'e', source: source(), lengths })), lengths).toBe(expected);
+      expect(written(editRhythm({ instanceId: 'e', source: source(), lengths })), lengths).toBe(
+        expected
+      );
     }
     expect(
       written(editRhythm({ instanceId: 'e', source: source(), mode: 'rules', rules: 'all: 1/2' }))
@@ -383,6 +477,8 @@ describe('bare multipliers and decimals', () => {
       written(editRhythm({ instanceId: 'e', source: source(), mode: 'rules', rules: 'all: *.5' }))
     ).toBe(expected);
     // Double, then the original, alternating: the double needs its star.
-    expect(written(editRhythm({ instanceId: 'e', source: rhythm([1, 1, 1, 1]), lengths: '*2 o' }))).toBe('2 1 2 1');
+    expect(
+      written(editRhythm({ instanceId: 'e', source: rhythm([1, 1, 1, 1]), lengths: '*2 o' }))
+    ).toBe('2 1 2 1');
   });
 });

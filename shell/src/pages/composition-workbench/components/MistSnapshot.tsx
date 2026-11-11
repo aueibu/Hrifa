@@ -90,8 +90,11 @@ export const MistSnapshot = memo(function MistSnapshot({
   return (
     <>
       <Text size="xs" c="dimmed">
-        Extracted: {count} {count === 1 ? 'step' : 'steps'} from {formatNumber(sampling.positions[0])}
-        {count > 1 ? ` to ${formatNumber(lastPosition)}, every ${formatNumber(settings.stride)}` : ''}
+        Extracted: {count} {count === 1 ? 'step' : 'steps'} from{' '}
+        {formatNumber(sampling.positions[0])}
+        {count > 1
+          ? ` to ${formatNumber(lastPosition)}, every ${formatNumber(settings.stride)}`
+          : ''}
       </Text>
       <div className={classes.plot}>
         <svg
@@ -102,14 +105,20 @@ export const MistSnapshot = memo(function MistSnapshot({
         >
           {ticks.map((tick) => (
             <g key={tick}>
-              <line x1={left} x2={right} y1={y(tick)} y2={y(tick)} className={classes.snapshotGrid} />
+              <line
+                x1={left}
+                x2={right}
+                y1={y(tick)}
+                y2={y(tick)}
+                className={classes.snapshotGrid}
+              />
               <text x={left - 10} y={y(tick) + 4} textAnchor="end">
                 {formatNumber(tick)}
               </text>
             </g>
           ))}
           {spacing >= minStepSpacing &&
-            sampling.positions.map((position, step) => (
+            sampling.positions.map((_position, step) => (
               <line
                 key={`step:${step}`}
                 x1={x(step)}
@@ -169,7 +178,7 @@ export const MistSnapshot = memo(function MistSnapshot({
           <text x={left} y={viewHeight - 4}>
             unit
           </text>
-          {sampling.positions.map((position, step) => (
+          {sampling.positions.map((_position, step) => (
             <rect
               key={`hit:${step}`}
               x={x(step) - Math.max(spacing, 8) / 2}

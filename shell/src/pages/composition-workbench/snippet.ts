@@ -1,5 +1,5 @@
-import type { DataItem, DataKind, DataPacket } from './model';
 import type { NoteEventValue } from './melodicization';
+import type { DataItem, DataKind, DataPacket } from './model';
 import {
   addRational,
   compareRational,
@@ -201,6 +201,16 @@ export function captureSnippet(request: CaptureRequest): CaptureResult {
   };
 }
 
+/**
+ * Edit a snippet's note. Returns a new snippet: only `note` differs, and `packet`, `id` and
+ * `createdAt` are the same references. Blank text clears the note (the key is removed).
+ */
+export function editSnippetNote(snippet: Snippet, note: string): Snippet {
+  const { note: _previous, ...rest } = snippet;
+  const trimmed = note.trim();
+  return trimmed ? { ...rest, note: trimmed } : rest;
+}
+
 /** For `usePersistentState`: a shape check, so a corrupt or newer desk falls back instead of crashing. */
 export function acceptsSnippets(value: unknown): value is Snippet[] {
   return (
@@ -216,6 +226,7 @@ export function acceptsSnippets(value: unknown): value is Snippet[] {
         typeof snippet.id === 'string' &&
         typeof snippet.name === 'string' &&
         typeof snippet.createdAt === 'string' &&
+        (snippet.note === undefined || typeof snippet.note === 'string') &&
         typeof packet === 'object' &&
         packet !== null &&
         typeof packet.kind === 'string' &&

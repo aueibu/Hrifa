@@ -12,7 +12,9 @@ describe('DurationStrip grouping ticks', () => {
     expect(ticks.map((tick) => tick.dataset.edge)).toEqual(['top', 'bottom', 'top', 'bottom']);
     expect(ticks.map((tick) => tick.style.left)).toEqual(['25%', '25%', '75%', '75%']);
     // They sit inside the strip itself.
-    expect(ticks.every((tick) => tick.parentElement?.getAttribute('aria-label')?.startsWith('Edited'))).toBe(true);
+    expect(
+      ticks.every((tick) => tick.parentElement?.getAttribute('aria-label')?.startsWith('Edited'))
+    ).toBe(true);
   });
 
   it('draws the cycle edges as boundaries, ignores anything outside, and draws nothing without any', () => {

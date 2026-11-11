@@ -123,7 +123,11 @@ export function ProgramTrack({
           >
             {note.state === 'tick'
               ? pxPerPulse === undefined ||
-                labelFits(Math.abs(lengths[index] ?? 0) * pxPerPulse, note.action ?? '', TRACK_CHAR_PX)
+                labelFits(
+                  Math.abs(lengths[index] ?? 0) * pxPerPulse,
+                  note.action ?? '',
+                  TRACK_CHAR_PX
+                )
                 ? note.action
                 : ''
               : note.state === 'skipped'

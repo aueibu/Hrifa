@@ -40,8 +40,9 @@ export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
             />
             {settings.edo !== 12 && (
               <Text size="xs" c="dimmed">
-                At {settings.edo}-EDO, pitch classes display as plain step numbers (0–{settings.edo - 1})
-                rather than letter names — there's no standard note-name convention outside 12-EDO.
+                At {settings.edo}-EDO, pitch classes display as plain step numbers (0–
+                {settings.edo - 1}) rather than letter names — there's no standard note-name
+                convention outside 12-EDO.
               </Text>
             )}
           </Stack>
@@ -52,9 +53,9 @@ export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
           </Title>
           <Text size="xs" c="dimmed" mb="xs">
             Modules play their layers on these voices in order — Interference's generators 1, 2, 3;
-            Rhythm Householder's input and candidate — unless a module sets its own sound. Clicks and
-            woodblocks sound two to three octaves above the written pitch and drums two below, so one
-            pitch suits every sound.
+            Rhythm Householder's input and candidate — unless a module sets its own sound. Clicks
+            and woodblocks sound two to three octaves above the written pitch and drums two below,
+            so one pitch suits every sound.
           </Text>
           <SoundSetEditor
             name="Rhythm"

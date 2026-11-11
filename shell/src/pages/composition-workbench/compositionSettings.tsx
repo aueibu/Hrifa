@@ -1,11 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { defaultSoundSettings, sanitizeSoundSettings, type SoundSettings } from './sounds';
 import {
   defaultTransportSettings,
   isValidMeter,
@@ -14,7 +8,6 @@ import {
   transportPulseOptions,
   type TransportSettings,
 } from './transport';
-import { defaultSoundSettings, sanitizeSoundSettings, type SoundSettings } from './sounds';
 
 // Global, workbench-wide settings — as opposed to per-module state (which lives in each
 // module's own usePersistentState calls) or per-route treatments (routeTreatments.ts). A

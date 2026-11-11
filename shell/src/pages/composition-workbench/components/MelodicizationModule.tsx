@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Badge, Button, Group, Select, Slider, Table, Text } from '@mantine/core';
+import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   defaultPianoRollView,
   PianoRoll,
@@ -18,10 +19,8 @@ import {
   type PublishedCompositionOutput,
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
-import { newSnippetId, useDesk } from '../desk';
-import { captureSnippet } from '../snippet';
-import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import type { ModuleRouteState } from '../compositionWorkspace';
+import { newSnippetId, useDesk } from '../desk';
 import { melodicize, type PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
 import {
@@ -34,6 +33,7 @@ import {
 } from '../musicalTime';
 import { pitchLabel, rhythmInterpretableDomains } from '../routeTreatments';
 import { signalTypeRegistry } from '../signalTypes';
+import { captureSnippet } from '../snippet';
 import { countInSeconds, parseMeter, transportPulse } from '../transport';
 import { useModulePreview, type PreviewEnd } from '../useModulePreview';
 import {
@@ -545,9 +545,7 @@ export function MelodicizationModule({
   return (
     <ModuleDevice
       name={instanceLabel}
-      status={
-        result.errors.length ? 'Needs inputs' : 'Rhythm as temporal spine; pitches allocated'
-      }
+      status={result.errors.length ? 'Needs inputs' : 'Rhythm as temporal spine; pitches allocated'}
       badges={
         <>
           <Badge variant="outline">{result.packet.items.length} events</Badge>

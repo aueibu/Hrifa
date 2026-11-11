@@ -1,6 +1,6 @@
 import { computeArithmetic } from './arithmetic';
-import { defaultModuloTreatment } from './moduloTreatment';
 import { packet, type DataDomain, type DataPacket } from './model';
+import { defaultModuloTreatment } from './moduloTreatment';
 
 function numberPacket(values: number[], domain: DataDomain = 'integer'): DataPacket<number> {
   return packet(
@@ -15,7 +15,10 @@ function numberPacket(values: number[], domain: DataDomain = 'integer'): DataPac
 // Both 'pitch' and 'pitchClass' items are bare numbers/number[] — no wrapper. Test values are
 // authored as MIDI note numbers for 'pitch' (scaled to midicents here) and as raw 0-11 integers
 // for 'pitchClass'.
-function pitchGroupPacket(groups: number[][], domain: 'pitch' | 'pitchClass' = 'pitch'): DataPacket {
+function pitchGroupPacket(
+  groups: number[][],
+  domain: 'pitch' | 'pitchClass' = 'pitch'
+): DataPacket {
   return packet(
     groups.length === 1 ? 'value' : 'list',
     domain,
@@ -183,9 +186,9 @@ describe('computeArithmetic', () => {
 
   it('warns on floor-divide by zero', () => {
     const result = run({ operator: 'floorDivide', a: numberPacket([5]), b: numberPacket([0]) });
-    expect(Number.isNaN(result.packet.items[0].value) || result.packet.items[0].value === Infinity).toBe(
-      true
-    );
+    expect(
+      Number.isNaN(result.packet.items[0].value) || result.packet.items[0].value === Infinity
+    ).toBe(true);
     expect(result.messages.some((message) => message.includes('divided by zero'))).toBe(true);
   });
 
@@ -209,7 +212,11 @@ describe('computeArithmetic', () => {
   });
 
   it('leaves values untouched when modulo is disabled', () => {
-    const result = run({ a: numberPacket([20]), b: numberPacket([5]), modulo: { enabled: false, divisor: 12 } });
+    const result = run({
+      a: numberPacket([20]),
+      b: numberPacket([5]),
+      modulo: { enabled: false, divisor: 12 },
+    });
     expect(result.packet.items.map((item) => item.value)).toEqual([25]);
   });
 
@@ -259,7 +266,7 @@ describe('computeArithmetic', () => {
       expect(result.packet.items[0].value).toEqual(6005);
     });
 
-    it('keeps a bracketed multi-note chord\'s array structure when the other side is a mismatched flat domain', () => {
+    it("keeps a bracketed multi-note chord's array structure when the other side is a mismatched flat domain", () => {
       const result = run({ a: pitchGroupPacket([[60, 64]]), b: numberPacket([5], 'duration') });
       expect(result.errors).toEqual([]);
       expect(result.packet.domain).toBe('integer');

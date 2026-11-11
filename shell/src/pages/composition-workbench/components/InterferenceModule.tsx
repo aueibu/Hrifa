@@ -12,11 +12,11 @@ import {
 } from '@mantine/core';
 import { volumePercentToGain } from '../audio';
 import { createInterferencePreviewPlan, GROUPING_BUS } from '../audio/performancePlans';
-import { transportRhythmContext } from '../rhythmRealization';
 import type {
   CompositionModuleRoutingProps,
   PublishedCompositionOutput,
 } from '../compositionRouting';
+import { useCompositionSettings } from '../compositionSettings';
 import {
   generateInterference,
   generatorAttackCount,
@@ -28,6 +28,10 @@ import {
   MAX_PREVIEW_EVENTS,
   parseGeneratorValues,
 } from '../interference';
+import { transportRhythmContext } from '../rhythmRealization';
+import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
+import { pulseSeconds } from '../transport';
+import { useModulePreview } from '../useModulePreview';
 import {
   acceptsBoolean,
   acceptsFiniteNumber,
@@ -36,13 +40,9 @@ import {
   compositionInstanceStateKey,
   usePersistentState,
 } from '../usePersistentState';
-import { useCompositionSettings } from '../compositionSettings';
-import { pulseSeconds } from '../transport';
-import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
-import { ModuleDevice } from './ModuleDevice';
-import { HelpTip, InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
-import { useModulePreview } from '../useModulePreview';
 import { DurationStrip } from './DurationStrip';
+import { ModuleDevice } from './ModuleDevice';
+import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { Playhead } from './Playhead';
 import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';

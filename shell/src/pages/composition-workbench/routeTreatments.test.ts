@@ -186,7 +186,9 @@ describe('composition route treatments', () => {
     expect(result).toMatchObject({ kind: 'list', domain: 'duration', role: 'interOnset' });
     expect(result.items.map((item) => item.value)).toEqual([2, 1, 3]);
     expect(result.frame).toMatchObject({ topology: 'cyclic', unit: 'pulse', extent: 6, origin: 0 });
-    expect(result.items[0].provenance.at(-1)).toMatchObject({ transformation: 'interpret-as-rhythm' });
+    expect(result.items[0].provenance.at(-1)).toMatchObject({
+      transformation: 'interpret-as-rhythm',
+    });
   });
 
   it('applies retrograde/rotate/scale on top of an interpreted rhythm', () => {
@@ -312,9 +314,7 @@ describe('composition route treatments', () => {
     // Arithmetic keeps a grouped side's structure as a raw array when domains mismatch (see
     // arithmetic.test.ts's "falls back to an honest neutral domain..." case) — item.value can
     // be [3, 7], not just a bare number.
-    const source = packet('list', 'integer', [
-      { id: 'g:0', value: [3, 7], provenance: [] },
-    ]);
+    const source = packet('list', 'integer', [{ id: 'g:0', value: [3, 7], provenance: [] }]);
     const result = applyPitchRouteTreatment(source, {
       ...defaultPitchRouteTreatment,
       readAsMidiNotes: true,

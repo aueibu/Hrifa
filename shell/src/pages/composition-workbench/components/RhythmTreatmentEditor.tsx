@@ -95,7 +95,9 @@ export function RhythmTreatmentEditor({ treatment, source, onChange }: RhythmTre
           max={16}
           step={1}
           value={treatment.durationScale}
-          onChange={(value) => update({ durationScale: Math.max(1, Math.trunc(Number(value) || 1)) })}
+          onChange={(value) =>
+            update({ durationScale: Math.max(1, Math.trunc(Number(value) || 1)) })
+          }
         />
       </div>
       <div className={classes.parameterRow}>

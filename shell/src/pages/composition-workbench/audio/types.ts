@@ -1,7 +1,7 @@
-import type { SoundSet } from '../sounds';
-import type { TransportSettings } from '../transport';
 import type { Provenance } from '../model';
 import type { MusicalDuration, MusicalPosition, MusicalTimeline } from '../musicalTime';
+import type { SoundSet } from '../sounds';
+import type { TransportSettings } from '../transport';
 
 export type StaticInstrumentId =
   | 'preview.sine'

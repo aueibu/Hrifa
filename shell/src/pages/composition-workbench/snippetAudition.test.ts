@@ -25,8 +25,11 @@ function notes(): DataPacket<NoteEventValue> {
   return melodicize({
     instanceId: 'mel',
     rhythm,
-    pitches: interpretPitchList({ instanceId: 'p', format: 'midi-note', inlineText: '60, 62, 66.5' })
-      .packet,
+    pitches: interpretPitchList({
+      instanceId: 'p',
+      format: 'midi-note',
+      inlineText: '60, 62, 66.5',
+    }).packet,
     allocation: 'cycle',
     pulseUnit: musicalDuration(1, 4),
     articulationPercent: 100,

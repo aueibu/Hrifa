@@ -1,10 +1,6 @@
-import {
-  metronomeGridClicks,
-  type GroupingOption,
-  type InterferenceResult,
-} from "../interference";
-import type { NoteEventValue } from "../melodicization";
-import type { DataPacket, Provenance } from "../model";
+import { metronomeGridClicks, type GroupingOption, type InterferenceResult } from '../interference';
+import type { NoteEventValue } from '../melodicization';
+import type { DataPacket, Provenance } from '../model';
 import {
   addDuration,
   compareRational,
@@ -14,20 +10,20 @@ import {
   subtractRational,
   type MusicalDuration,
   type MusicalTimeline,
-} from "../musicalTime";
-import { pitchFrequency } from "../pitch";
-import { createRhythmPreviewPlan } from "../rhythmRealization";
-import type { ResolvedSound } from "../sounds";
+} from '../musicalTime';
+import { pitchFrequency } from '../pitch';
+import { createRhythmPreviewPlan } from '../rhythmRealization';
+import type { ResolvedSound } from '../sounds';
 import type {
   InstrumentId,
   MusicalPerformanceEvent,
   MusicalPerformancePlan,
   SecondsPerformanceEvent,
   SecondsPerformancePlan,
-} from "./types";
+} from './types';
 
 /** Interference's grouping click — separate from the transport's meter click (transport.ts). */
-export const GROUPING_BUS = "grouping";
+export const GROUPING_BUS = 'grouping';
 
 const MIN_AUDIBLE_FREQUENCY = 20;
 const MAX_AUDIBLE_FREQUENCY = 20_000;
@@ -74,19 +70,19 @@ export function createPitchPreviewPlan({
           durationSeconds: soundingDuration,
           pitchMidicents: pitch.midicents,
           velocity: 1,
-          instrumentId: "preview.triangle",
-          busId: "preview",
+          instrumentId: 'preview.triangle',
+          busId: 'preview',
           provenance: group.provenance,
         },
       ];
-    }),
+    })
   );
   const voiceCount = groups.reduce((total, group) => total + group.pitches.length, 0);
   return {
     plan: {
       id: `${sourceId}:pitch-preview`,
       sourceId,
-      timebase: { kind: "seconds" },
+      timebase: { kind: 'seconds' },
       durationSeconds,
       events,
       warnings,
@@ -110,7 +106,7 @@ export function createInterferencePreviewPlan({
   pulseUnit,
   timeline,
   grouping,
-  groupingSound = { instrumentId: "sound.click", pitchMidicents: frequencyToMidicents(2400) },
+  groupingSound = { instrumentId: 'sound.click', pitchMidicents: frequencyToMidicents(2400) },
   gatePercent,
 }: {
   sourceId: string;
@@ -136,15 +132,18 @@ export function createInterferencePreviewPlan({
       const repeats = period > 0 ? Math.round(result.recurrence / period) : 0;
       return {
         layerId: `generator:${index}`,
-        steps: Array.from({ length: repeats }, () => pattern).flat().map((duration) => ({ duration })),
+        steps: Array.from({ length: repeats }, () => pattern)
+          .flat()
+          .map((duration) => ({ duration })),
         sound: sounds[index],
       };
     }),
   });
   const end = multiplyRational(pulseUnit.quarterNotes, result.recurrence);
-  const duration = compareRational(generators.duration.quarterNotes, end) > 0
-    ? generators.duration.quarterNotes
-    : end;
+  const duration =
+    compareRational(generators.duration.quarterNotes, end) > 0
+      ? generators.duration.quarterNotes
+      : end;
   const metronomeEvents = grouping
     ? metronomeGridClicks(result.recurrence, grouping.units).flatMap(
         ({ time, accented }): MusicalPerformanceEvent[] => {
@@ -169,13 +168,13 @@ export function createInterferencePreviewPlan({
                 {
                   sourceModuleInstance: sourceId,
                   sourceItemIds: [grouping.id],
-                  transformation: "realize-grouping-metronome",
+                  transformation: 'realize-grouping-metronome',
                   parameters: { time, units: grouping.units, accented },
                 },
               ],
             },
           ];
-        },
+        }
       )
     : [];
 
@@ -191,18 +190,18 @@ export function createNotePacketPerformancePlan({
   sourceId,
   packet,
   timeline,
-  instrumentId = "preview.triangle",
+  instrumentId = 'preview.triangle',
 }: {
   sourceId: string;
   packet: DataPacket<NoteEventValue>;
   timeline: MusicalTimeline;
   instrumentId?: InstrumentId;
 }): MusicalPerformancePlan {
-  if (packet.kind !== "events" || packet.domain !== "note") {
-    throw new Error("Musical playback requires an events | note packet.");
+  if (packet.kind !== 'events' || packet.domain !== 'note') {
+    throw new Error('Musical playback requires an events | note packet.');
   }
   if (!packet.items.length) {
-    throw new Error("Musical playback requires at least one note event.");
+    throw new Error('Musical playback requires at least one note event.');
   }
 
   const frameExtent = packet.frame?.musicalExtent ?? musicalDuration(0);
@@ -216,7 +215,7 @@ export function createNotePacketPerformancePlan({
   return {
     id: `${sourceId}:note-events-preview`,
     sourceId,
-    timebase: { kind: "musical", timeline },
+    timebase: { kind: 'musical', timeline },
     duration,
     events: packet.items.flatMap((item) =>
       item.value.pitches.map((midicents, pitchIndex) => ({
@@ -226,9 +225,9 @@ export function createNotePacketPerformancePlan({
         pitchMidicents: midicents,
         velocity: item.value.velocity,
         instrumentId,
-        busId: "preview" as const,
+        busId: 'preview' as const,
         provenance: item.provenance,
-      })),
+      }))
     ),
     warnings: packet.warnings,
   };

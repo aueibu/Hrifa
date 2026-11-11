@@ -107,7 +107,9 @@ export function lineWidth(line: Pick<DiffLine, 'weight'>): number {
  * follows light and dark mode.
  */
 /** What hovering an edge's curve says. */
-export function edgeInfo(line: Pick<DiffLine, 'index' | 'direction' | 'shift' | 'relative'>): string {
+export function edgeInfo(
+  line: Pick<DiffLine, 'index' | 'direction' | 'shift' | 'relative'>
+): string {
   if (line.direction === 'still') {
     return `Edge ${line.index + 1}: does not move`;
   }
@@ -165,7 +167,9 @@ export function diffLinesPx(
 
 /** The lines that touch the horizontal range [left, right] in px: only these need drawing. */
 export function linesInRange(lines: DiffLinePx[], left: number, right: number): DiffLinePx[] {
-  return lines.filter((line) => Math.max(line.x1, line.x2) >= left && Math.min(line.x1, line.x2) <= right);
+  return lines.filter(
+    (line) => Math.max(line.x1, line.x2) >= left && Math.min(line.x1, line.x2) <= right
+  );
 }
 
 /** How far beyond the visible part to draw, in px, so a scroll shows curves already in place. */
@@ -183,7 +187,10 @@ interface DrawWindow {
 /** The part of a roll of `content` px worth drawing for the view at `scrollLeft`, in whole steps. */
 export function drawWindow(scrollLeft: number, viewWidth: number, content: number): DrawWindow {
   const left = Math.max(0, Math.floor((scrollLeft - DRAW_MARGIN) / DRAW_STEP) * DRAW_STEP);
-  const right = Math.min(content, Math.ceil((scrollLeft + viewWidth + DRAW_MARGIN) / DRAW_STEP) * DRAW_STEP);
+  const right = Math.min(
+    content,
+    Math.ceil((scrollLeft + viewWidth + DRAW_MARGIN) / DRAW_STEP) * DRAW_STEP
+  );
   return { left, right, content };
 }
 
@@ -222,7 +229,9 @@ export function RhythmDiff({
       frame = 0;
       const next = drawWindow(element.scrollLeft, element.clientWidth, element.scrollWidth);
       setDrawn((current) =>
-        current.left === next.left && current.right === next.right && current.content === next.content
+        current.left === next.left &&
+        current.right === next.right &&
+        current.content === next.content
           ? current
           : next
       );
@@ -234,7 +243,8 @@ export function RhythmDiff({
     };
     measure();
     element.addEventListener('scroll', schedule, { passive: true });
-    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
+    const observer =
+      typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
     observer?.observe(element);
     return () => {
       element.removeEventListener('scroll', schedule);
@@ -247,7 +257,12 @@ export function RhythmDiff({
   const lines =
     drawn.content > 0
       ? linesInRange(
-          diffLinesPx(inputLengths, editedLengths, inputShare * drawn.content, editedShare * drawn.content),
+          diffLinesPx(
+            inputLengths,
+            editedLengths,
+            inputShare * drawn.content,
+            editedShare * drawn.content
+          ),
           drawn.left,
           drawn.right
         )

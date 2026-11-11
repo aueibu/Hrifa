@@ -1,6 +1,6 @@
-import { Badge, Code, Group, ScrollArea, Stack, Table, Text, Title } from "@mantine/core";
-import { Data } from "../../../components/Data/Data";
-import { Surface } from "../../../components/Surface/Surface";
+import { Badge, Code, Group, ScrollArea, Stack, Table, Text, Title } from '@mantine/core';
+import { Data } from '../../../components/Data/Data';
+import { Surface } from '../../../components/Surface/Surface';
 import type {
   DataItem,
   DataPacket,
@@ -8,23 +8,23 @@ import type {
   RejectedFrame,
   RhythmPattern,
   ValidParameterFrame,
-} from "../model";
-import { RhythmPatternPreview } from "./RhythmPatternPreview";
+} from '../model';
+import { RhythmPatternPreview } from './RhythmPatternPreview';
 
 function ItemValue({ item, packet }: { item: DataItem; packet: DataPacket }) {
-  if (packet.domain === "rhythmPattern") {
+  if (packet.domain === 'rhythmPattern') {
     const pattern = item.value as RhythmPattern;
     return (
       <Stack gap={4}>
         <RhythmPatternPreview pattern={pattern} />
         <Text size="xs">
-          length {pattern.length} | impulses {pattern.impulses} | requested offset{" "}
+          length {pattern.length} | impulses {pattern.impulses} | requested offset{' '}
           {pattern.requestedOffset} | effective offset {pattern.effectiveOffset}
         </Text>
       </Stack>
     );
   }
-  if (packet.domain === "parameterFrame") {
+  if (packet.domain === 'parameterFrame') {
     const frame = item.value as ValidParameterFrame;
     return (
       <Data size="xs">
@@ -32,7 +32,7 @@ function ItemValue({ item, packet }: { item: DataItem; packet: DataPacket }) {
       </Data>
     );
   }
-  if (packet.domain === "rejectedFrame") {
+  if (packet.domain === 'rejectedFrame') {
     const frame = item.value as RejectedFrame;
     return (
       <Text size="xs">
@@ -65,7 +65,7 @@ function PacketView({ name, packet }: { name: string; packet: DataPacket }) {
             No items.
           </Text>
         )}
-        {packet.domain === "parameterFrame" && packet.items.length > 0 && (
+        {packet.domain === 'parameterFrame' && packet.items.length > 0 && (
           <Table withTableBorder striped>
             <Table.Thead>
               <Table.Tr>
@@ -105,9 +105,9 @@ function PacketView({ name, packet }: { name: string; packet: DataPacket }) {
               {item.provenance.map((entry, index) => (
                 <Code key={`${entry.transformation}:${index}`} block>
                   {entry.transformation} | {entry.sourceModuleInstance}
-                  {"\n"}sources: {entry.sourceItemIds.join(", ") || "authored"}
-                  {entry.parameterFrameId ? `\nframe: ${entry.parameterFrameId}` : ""}
-                  {entry.parameters ? `\nparameters: ${JSON.stringify(entry.parameters)}` : ""}
+                  {'\n'}sources: {entry.sourceItemIds.join(', ') || 'authored'}
+                  {entry.parameterFrameId ? `\nframe: ${entry.parameterFrameId}` : ''}
+                  {entry.parameters ? `\nparameters: ${JSON.stringify(entry.parameters)}` : ''}
                 </Code>
               ))}
             </Stack>

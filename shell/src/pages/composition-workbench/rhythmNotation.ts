@@ -39,7 +39,9 @@ export function parseRhythmText(text: string): ParsedRhythmText {
     .forEach((raw) => {
       const match = token.exec(raw);
       if (!match) {
-        errors.push(`${raw}: enter a length in pulses such as 2, 6/5 or 1.5, a rest such as r1, or a tie such as 2~`);
+        errors.push(
+          `${raw}: enter a length in pulses such as 2, 6/5 or 1.5, a rest such as r1, or a tie such as 2~`
+        );
         return;
       }
       const [, rest, digits, tie] = match;
@@ -53,7 +55,9 @@ export function parseRhythmText(text: string): ParsedRhythmText {
         errors.push(`${raw}: a rest cannot be tied`);
         return;
       }
-      steps.push(rest ? { duration: -pulses } : { duration: pulses, ...(tie ? { tie: true } : {}) });
+      steps.push(
+        rest ? { duration: -pulses } : { duration: pulses, ...(tie ? { tie: true } : {}) }
+      );
     });
   return { steps, errors };
 }

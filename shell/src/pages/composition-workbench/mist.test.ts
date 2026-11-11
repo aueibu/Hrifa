@@ -48,7 +48,12 @@ describe('tables', () => {
   });
 
   it('keeps a walk inside [-1, 1] and joins its cycle without a jump', () => {
-    const walk: MistStratum = { ...defaultStratum(), waveform: 'walk', walkPoints: 64, walkStep: 0.4 };
+    const walk: MistStratum = {
+      ...defaultStratum(),
+      waveform: 'walk',
+      walkPoints: 64,
+      walkStep: 0.4,
+    };
     const table = buildTable(walk, 0, 'seam');
     expect(Math.max(...table.map(Math.abs))).toBeLessThanOrEqual(1);
     const steps = table.map((value, i) => Math.abs(table[(i + 1) % table.length] - value));
@@ -210,7 +215,13 @@ describe('shape', () => {
 describe('drawn curves', () => {
   it('uses the drawn points as one cycle, clamped, and wraps the seam', () => {
     const custom = [0, 1, 0, -5];
-    const stratum: MistStratum = { ...defaultStratum(), waveform: 'custom', custom, speed: 0.25, phase: 0 };
+    const stratum: MistStratum = {
+      ...defaultStratum(),
+      waveform: 'custom',
+      custom,
+      speed: 0.25,
+      phase: 0,
+    };
     expect(buildTable(stratum, 0, 's')).toEqual([0, 1, 0, -1]);
     // Between the last point and the first the curve is joined, not cut.
     const field = buildMistField(settingsWith([stratum]));
@@ -258,9 +269,39 @@ describe('saved settings', () => {
     const old = {
       ...base,
       strata: [
-        { enabled: true, waveform: 'sine', loop: 16, speed: 1, phase: 4, center: 0, amplitude: 1, walkStep: 0.25, smoothing: 1 },
-        { enabled: true, waveform: 'walk', loop: 24, speed: 0.5, phase: 0, center: 1, amplitude: 1, walkStep: 0.25, smoothing: 2 },
-        { enabled: true, waveform: 'sine', loop: 8, speed: 0, phase: 0, center: 0, amplitude: 1, walkStep: 0.25, smoothing: 1 },
+        {
+          enabled: true,
+          waveform: 'sine',
+          loop: 16,
+          speed: 1,
+          phase: 4,
+          center: 0,
+          amplitude: 1,
+          walkStep: 0.25,
+          smoothing: 1,
+        },
+        {
+          enabled: true,
+          waveform: 'walk',
+          loop: 24,
+          speed: 0.5,
+          phase: 0,
+          center: 1,
+          amplitude: 1,
+          walkStep: 0.25,
+          smoothing: 2,
+        },
+        {
+          enabled: true,
+          waveform: 'sine',
+          loop: 8,
+          speed: 0,
+          phase: 0,
+          center: 0,
+          amplitude: 1,
+          walkStep: 0.25,
+          smoothing: 1,
+        },
       ],
     };
     const migrated = migrateMistSettings(old);

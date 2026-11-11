@@ -5,8 +5,8 @@
  * instead of durations.
  */
 
-import { packet, type DataItem, type DataPacket } from "./model";
-import { pitchClassName } from "./pitch";
+import { packet, type DataItem, type DataPacket } from './model';
+import { pitchClassName } from './pitch';
 
 export interface ScaleSequence {
   intervals: number[];
@@ -15,7 +15,7 @@ export interface ScaleSequence {
 
 export function scaleSequence(intervals: number[]): ScaleSequence {
   if (!intervals.length || intervals.some((value) => !Number.isInteger(value) || value <= 0)) {
-    throw new Error("A scale requires one or more positive whole-number intervals.");
+    throw new Error('A scale requires one or more positive whole-number intervals.');
   }
   return { intervals, period: intervals.reduce((sum, value) => sum + value, 0) };
 }
@@ -28,10 +28,10 @@ export function scaleSequence(intervals: number[]): ScaleSequence {
  */
 export function generateMelodicForms(
   intervals: number[],
-  mode: "general" | "circular",
+  mode: 'general' | 'circular'
 ): number[][] {
   return generateMelodicFamilies(intervals, mode).flatMap((family) =>
-    family.forms.map((form) => form.values),
+    family.forms.map((form) => form.values)
   );
 }
 
@@ -59,13 +59,13 @@ export interface MelodicFamily {
  */
 export function generateMelodicFamilies(
   intervals: number[],
-  mode: "general" | "circular",
+  mode: 'general' | 'circular'
 ): MelodicFamily[] {
   const count = intervals.length;
   const identity = intervals.map((_, index) => index);
   // Every rotation orbit has exactly one member beginning with position 0: use it as the base.
   const bases =
-    mode === "circular"
+    mode === 'circular'
       ? [identity]
       : indexPermutations(identity.slice(1)).map((rest) => [0, ...rest]);
   return bases
@@ -82,7 +82,7 @@ export function generateMelodicFamilies(
 }
 
 export function cycleLabel(cycle: number): string {
-  return cycle === 0 ? "Cycle 0 (original)" : `Cycle ${cycle}`;
+  return cycle === 0 ? 'Cycle 0 (original)' : `Cycle ${cycle}`;
 }
 
 /** No menu level lists more than this many entries (cycles or folders of them). */
@@ -106,13 +106,17 @@ export function cycleFolders(cycle: number, familyCount: number): string[] {
   for (const folderSize of sizes) {
     const start = Math.floor(cycle / folderSize) * folderSize;
     const end = Math.min(start + folderSize, familyCount) - 1;
-    if (end > start) folders.push(`Cycles ${start}–${end}`);
+    if (end > start) {
+      folders.push(`Cycles ${start}–${end}`);
+    }
   }
   return folders;
 }
 
 function indexPermutations(values: number[]): number[][] {
-  if (values.length <= 1) return [values.slice()];
+  if (values.length <= 1) {
+    return [values.slice()];
+  }
   const results: number[][] = [];
   values.forEach((value, index) => {
     const rest = [...values.slice(0, index), ...values.slice(index + 1)];
@@ -127,7 +131,9 @@ function countInversions(order: number[]): number {
   let inversions = 0;
   for (let i = 0; i < order.length; i += 1) {
     for (let j = i + 1; j < order.length; j += 1) {
-      if (order[i] > order[j]) inversions += 1;
+      if (order[i] > order[j]) {
+        inversions += 1;
+      }
     }
   }
   return inversions;
@@ -135,7 +141,9 @@ function countInversions(order: number[]): number {
 
 function compareOrders(a: number[], b: number[]): number {
   for (let i = 0; i < a.length; i += 1) {
-    if (a[i] !== b[i]) return a[i] - b[i];
+    if (a[i] !== b[i]) {
+      return a[i] - b[i];
+    }
   }
   return 0;
 }
@@ -164,21 +172,21 @@ export function scaleSequencePacket(sequence: ScaleSequence, sourceId: string): 
       {
         sourceModuleInstance: sourceId,
         sourceItemIds: [],
-        transformation: "scale-construction",
+        transformation: 'scale-construction',
         parameters: { intervals: sequence.intervals, index },
       },
     ],
   }));
-  return packet("list", "interval", items, [], undefined, {
-    role: "interUnit",
-    frame: { topology: "cyclic", unit: "abstract", extent: sequence.period, origin: 0 },
+  return packet('list', 'interval', items, [], undefined, {
+    role: 'interUnit',
+    frame: { topology: 'cyclic', unit: 'abstract', extent: sequence.period, origin: 0 },
   });
 }
 
 export function melodicFormsPacket(
   intervals: number[],
-  mode: "general" | "circular",
-  sourceId: string,
+  mode: 'general' | 'circular',
+  sourceId: string
 ): DataPacket<number[]> {
   const families = generateMelodicFamilies(intervals, mode);
   const period = intervals.reduce((sum, value) => sum + value, 0);
@@ -188,17 +196,17 @@ export function melodicFormsPacket(
       return {
         id: `${sourceId}:form:${index}`,
         value: form.values,
-        label: form.values.join("+"),
+        label: form.values.join('+'),
         provenance: [
           {
             sourceModuleInstance: sourceId,
             sourceItemIds: [],
-            transformation: mode === "circular" ? "circular-permutation" : "general-permutation",
+            transformation: mode === 'circular' ? 'circular-permutation' : 'general-permutation',
             parameters: { intervals, mode, index, family: family.cycle, shift: form.shift },
           },
         ],
       };
-    }),
+    })
   );
   // A bank with several families names each entry's family so a source picker can nest them;
   // a single family (circular mode) needs no extra level.
@@ -209,13 +217,20 @@ export function melodicFormsPacket(
           family.forms.map(() => [
             ...cycleFolders(family.cycle, families.length),
             cycleLabel(family.cycle),
-          ]),
+          ])
         )
       : undefined;
-  return packet("bank", "interval", items, [], { mode, period, familyCount: families.length, entryGroups }, {
-    role: "interUnit",
-    frame: { topology: "cyclic", unit: "abstract", extent: period, origin: 0 },
-  });
+  return packet(
+    'bank',
+    'interval',
+    items,
+    [],
+    { mode, period, familyCount: families.length, entryGroups },
+    {
+      role: 'interUnit',
+      frame: { topology: 'cyclic', unit: 'abstract', extent: period, origin: 0 },
+    }
+  );
 }
 
 /**
@@ -235,7 +250,7 @@ export function scalePitchClassPacket(
   intervals: number[],
   root: number,
   sourceId: string,
-  edo = 12,
+  edo = 12
 ): DataPacket<number> {
   const pitchClasses = realizePitchClasses(intervals, root, edo);
   const items: DataItem<number>[] = pitchClasses.map((pitchClass, index) => ({
@@ -246,13 +261,13 @@ export function scalePitchClassPacket(
       {
         sourceModuleInstance: sourceId,
         sourceItemIds: [],
-        transformation: "realize-scale",
+        transformation: 'realize-scale',
         parameters: { intervals, root, degree: index },
       },
     ],
   }));
-  return packet("list", "pitchClass", items, [], undefined, {
-    role: "pitchMaterial",
+  return packet('list', 'pitchClass', items, [], undefined, {
+    role: 'pitchMaterial',
     encoding: `chromatic-${edo}`,
   });
 }

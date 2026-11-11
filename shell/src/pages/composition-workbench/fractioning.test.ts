@@ -1,13 +1,13 @@
-import { fractioningShiftCount, generateFractioning } from "./fractioning";
+import { fractioningShiftCount, generateFractioning } from './fractioning';
 
-describe("fractioning", () => {
-  it("rejects invalid or malformed generator pairs", () => {
+describe('fractioning', () => {
+  it('rejects invalid or malformed generator pairs', () => {
     expect(() => generateFractioning(3, 3)).toThrow();
     expect(() => generateFractioning(2, 3)).toThrow();
     expect(() => generateFractioning(3.5, 2)).toThrow();
   });
 
-  it("computes the number of staggered minor-generator clocks", () => {
+  it('computes the number of staggered minor-generator clocks', () => {
     expect(fractioningShiftCount(3, 2)).toBe(2);
     expect(fractioningShiftCount(7, 3)).toBe(5);
   });
@@ -54,7 +54,7 @@ describe("fractioning", () => {
     expect(new Set(sevenByThree.durations)).toEqual(new Set([1, 2, 3]));
   });
 
-  it("is symmetric about the pattern centre, as Absil notes for every case", () => {
+  it('is symmetric about the pattern centre, as Absil notes for every case', () => {
     for (const [a, b] of [
       [3, 2],
       [4, 3],

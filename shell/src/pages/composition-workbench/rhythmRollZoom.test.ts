@@ -38,23 +38,48 @@ describe('rhythm roll zoom', () => {
     // Content 4000px wide, view 400px wide at scrollLeft 1800: the middle is at 2000 (half way).
     // Doubling the content keeps the middle at half way: 4000 - 200.
     expect(
-      scrollLeftAfterZoom({ scrollLeft: 1800, viewWidth: 400, oldContentWidth: 4000, newContentWidth: 8000 })
+      scrollLeftAfterZoom({
+        scrollLeft: 1800,
+        viewWidth: 400,
+        oldContentWidth: 4000,
+        newContentWidth: 8000,
+      })
     ).toBe(3800);
     // Zooming out re-centres on the same point.
     expect(
-      scrollLeftAfterZoom({ scrollLeft: 3800, viewWidth: 400, oldContentWidth: 8000, newContentWidth: 4000 })
+      scrollLeftAfterZoom({
+        scrollLeft: 3800,
+        viewWidth: 400,
+        oldContentWidth: 8000,
+        newContentWidth: 4000,
+      })
     ).toBe(1800);
   });
 
   it('never scrolls outside the content', () => {
     expect(
-      scrollLeftAfterZoom({ scrollLeft: 0, viewWidth: 400, oldContentWidth: 8000, newContentWidth: 4000 })
+      scrollLeftAfterZoom({
+        scrollLeft: 0,
+        viewWidth: 400,
+        oldContentWidth: 8000,
+        newContentWidth: 4000,
+      })
     ).toBe(0);
     expect(
-      scrollLeftAfterZoom({ scrollLeft: 3600, viewWidth: 400, oldContentWidth: 4000, newContentWidth: 2000 })
+      scrollLeftAfterZoom({
+        scrollLeft: 3600,
+        viewWidth: 400,
+        oldContentWidth: 4000,
+        newContentWidth: 2000,
+      })
     ).toBe(1600);
     expect(
-      scrollLeftAfterZoom({ scrollLeft: 0, viewWidth: 400, oldContentWidth: 300, newContentWidth: 200 })
+      scrollLeftAfterZoom({
+        scrollLeft: 0,
+        viewWidth: 400,
+        oldContentWidth: 300,
+        newContentWidth: 200,
+      })
     ).toBe(0);
   });
 });

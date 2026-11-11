@@ -58,7 +58,10 @@ function MetronomeIcon() {
 }
 
 const meterData = transportMeterOptions.map((value) => ({ value, label: value }));
-const pulseData = transportPulseOptions.map(({ value, label }) => ({ value, label: `Pulse = ${label.toLowerCase()}` }));
+const pulseData = transportPulseOptions.map(({ value, label }) => ({
+  value,
+  label: `Pulse = ${label.toLowerCase()}`,
+}));
 
 function isTypingTarget(target: EventTarget | null) {
   return (
@@ -129,7 +132,13 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
   // Space toggles play/stop, as in a DAW — unless focus is in a control that uses the key itself.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.code !== 'Space' || event.repeat || event.ctrlKey || event.metaKey || event.altKey) {
+      if (
+        event.code !== 'Space' ||
+        event.repeat ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey
+      ) {
         return;
       }
       if (isTypingTarget(event.target)) {
@@ -149,7 +158,9 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
   return (
     <Group gap={6} wrap="nowrap" role="toolbar" aria-label="Transport">
       <Tooltip
-        label={playSelected ? 'Play the selected module (Space)' : 'The selected module has no preview'}
+        label={
+          playSelected ? 'Play the selected module (Space)' : 'The selected module has no preview'
+        }
       >
         <ActionIcon
           variant={playing ? 'light' : 'filled'}
@@ -162,7 +173,12 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
         </ActionIcon>
       </Tooltip>
       <Tooltip label="Stop all previews (Space while playing)">
-        <ActionIcon variant="default" size="lg" aria-label="Stop all previews" onClick={() => engine.stopAll()}>
+        <ActionIcon
+          variant="default"
+          size="lg"
+          aria-label="Stop all previews"
+          onClick={() => engine.stopAll()}
+        >
           <StopIcon />
         </ActionIcon>
       </Tooltip>
@@ -176,7 +192,9 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
         clampBehavior="blur"
         allowDecimal={false}
         value={transport.tempo}
-        onChange={(value) => typeof value === 'number' && value >= MIN_TEMPO && updateTransport({ tempo: value })}
+        onChange={(value) =>
+          typeof value === 'number' && value >= MIN_TEMPO && updateTransport({ tempo: value })
+        }
       />
       <Group gap={6} wrap="nowrap" visibleFrom="sm">
         <MeterAndPulse transport={transport} update={updateTransport} />
@@ -195,7 +213,15 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
       <Popover position="bottom" withArrow shadow="md" width={260}>
         <Popover.Target>
           <ActionIcon variant="subtle" size="lg" aria-label="Metronome options">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              aria-hidden
+            >
               <path d="M6 9l6 6 6-6" />
             </svg>
           </ActionIcon>

@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Badge, Button, Group, Stack, Text, TextInput, Title } from "@mantine/core";
-import { Surface } from "../../../components/Surface/Surface";
-import type { ModuleDefinition } from "../model";
+import { useState } from 'react';
+import { Badge, Button, Group, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Surface } from '../../../components/Surface/Surface';
+import type { ModuleDefinition } from '../model';
 
 export function ModuleLibrary({
   definitions,
@@ -10,11 +10,11 @@ export function ModuleLibrary({
   definitions: ModuleDefinition[];
   onAdd: (definition: ModuleDefinition) => void;
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const filtered = definitions.filter((definition) =>
     `${definition.title} ${definition.description} ${definition.category}`
       .toLowerCase()
-      .includes(query.toLowerCase()),
+      .includes(query.toLowerCase())
   );
   return (
     <Surface>

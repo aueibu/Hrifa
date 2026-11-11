@@ -1,4 +1,4 @@
-export type InterferenceAlignment = "zip" | "cycle" | "cartesian";
+export type InterferenceAlignment = 'zip' | 'cycle' | 'cartesian';
 
 export interface InterferenceGenerator {
   id: string;
@@ -28,7 +28,7 @@ export interface GroupingOption {
   id: string;
   label: string;
   units: number;
-  family: "recurrence" | "generator" | "complementary" | "alien";
+  family: 'recurrence' | 'generator' | 'complementary' | 'alien';
   description: string;
 }
 
@@ -62,39 +62,39 @@ export function parseGeneratorValues(value: string) {
     .filter(Boolean);
   const numbers = tokens.map(Number);
   if (!tokens.length) {
-    return { values: [], error: "Enter at least one generator value." };
+    return { values: [], error: 'Enter at least one generator value.' };
   }
   if (numbers.some((number) => !Number.isInteger(number) || number <= 0)) {
-    return { values: [], error: "Generator values must be positive whole numbers." };
+    return { values: [], error: 'Generator values must be positive whole numbers.' };
   }
   return { values: numbers };
 }
 
 export function alignGeneratorValues(
   generators: InterferenceGenerator[],
-  alignment: InterferenceAlignment,
+  alignment: InterferenceAlignment
 ): { frames: InterferenceFrame[]; error?: string } {
   if (generators.length < 2) {
-    return { frames: [], error: "Add at least two generators." };
+    return { frames: [], error: 'Add at least two generators.' };
   }
   if (generators.some((generator) => generator.values.length === 0)) {
-    return { frames: [], error: "Every generator needs at least one value." };
+    return { frames: [], error: 'Every generator needs at least one value.' };
   }
 
   let sourceIndices: number[][];
-  if (alignment === "zip") {
+  if (alignment === 'zip') {
     const count = Math.min(...generators.map((generator) => generator.values.length));
     sourceIndices = Array.from({ length: count }, (_, index) => generators.map(() => index));
-  } else if (alignment === "cycle") {
+  } else if (alignment === 'cycle') {
     const count = Math.max(...generators.map((generator) => generator.values.length));
     sourceIndices = Array.from({ length: count }, (_, index) =>
-      generators.map((generator) => index % generator.values.length),
+      generators.map((generator) => index % generator.values.length)
     );
   } else {
     sourceIndices = generators.reduce<number[][]>(
       (frames, generator) =>
         frames.flatMap((frame) => generator.values.map((_, index) => [...frame, index])),
-      [[]],
+      [[]]
     );
   }
 
@@ -110,7 +110,7 @@ export function alignGeneratorValues(
       id: `interference-frame:${frameIndex}`,
       sourceIndices: indices,
       values: indices.map(
-        (sourceIndex, generatorIndex) => generators[generatorIndex].values[sourceIndex],
+        (sourceIndex, generatorIndex) => generators[generatorIndex].values[sourceIndex]
       ),
     })),
   };
@@ -150,16 +150,16 @@ export function generateInterference(generators: number[] | number[][]): Interfe
     patterns.length < 2 ||
     patterns.some(
       (pattern) =>
-        !pattern.length || pattern.some((value) => !Number.isInteger(value) || value <= 0),
+        !pattern.length || pattern.some((value) => !Number.isInteger(value) || value <= 0)
     )
   ) {
-    throw new Error("Interference requires at least two positive whole-number generators.");
+    throw new Error('Interference requires at least two positive whole-number generators.');
   }
   const periods = patterns.map(generatorPeriod);
   const recurrence = leastCommonMultiple(periods);
   if (!Number.isSafeInteger(recurrence) || recurrence > MAX_RECURRENCE_UNITS) {
     throw new Error(
-      `The shared recurrence is ${recurrence} units; the preview limit is ${MAX_RECURRENCE_UNITS}.`,
+      `The shared recurrence is ${recurrence} units; the preview limit is ${MAX_RECURRENCE_UNITS}.`
     );
   }
 
@@ -176,7 +176,7 @@ export function generateInterference(generators: number[] | number[][]): Interfe
     .map(([time, generatorIndices]) => ({ time, generatorIndices }));
   if (attacks.length > MAX_ATTACKS) {
     throw new Error(
-      `The resultant has ${attacks.length} attacks; the preview limit is ${MAX_ATTACKS}.`,
+      `The resultant has ${attacks.length} attacks; the preview limit is ${MAX_ATTACKS}.`
     );
   }
   const durations = attacks.map((attack, index) => {
@@ -188,32 +188,32 @@ export function generateInterference(generators: number[] | number[][]): Interfe
 
 export function interferenceDurationPacket(
   result: InterferenceResult,
-  generators: Pick<InterferenceGenerator, "id">[],
-  grouping?: GroupingOption,
+  generators: Pick<InterferenceGenerator, 'id'>[],
+  grouping?: GroupingOption
 ): DataPacket<number> {
   const boundaries = grouping
     ? Array.from(
         { length: Math.ceil(result.recurrence / grouping.units) },
-        (_, index) => index * grouping.units,
+        (_, index) => index * grouping.units
       )
     : undefined;
 
   return packet(
-    "list",
-    "duration",
+    'list',
+    'duration',
     result.durations.map((duration, index) => {
       const attack = result.attacks[index];
       const sourceItemIds = attack.generatorIndices.map(
-        (generatorIndex) => generators[generatorIndex]?.id ?? `generator:${generatorIndex}`,
+        (generatorIndex) => generators[generatorIndex]?.id ?? `generator:${generatorIndex}`
       );
       return {
         id: `interference:attack:${attack.time}`,
         value: duration,
         provenance: [
           {
-            sourceModuleInstance: "interference",
+            sourceModuleInstance: 'interference',
             sourceItemIds,
-            transformation: "interference-resultant",
+            transformation: 'interference-resultant',
             parameters: {
               attackTime: attack.time,
               recurrence: result.recurrence,
@@ -226,10 +226,10 @@ export function interferenceDurationPacket(
     [],
     { attackTimes: result.attacks.map((attack) => attack.time) },
     {
-      role: "interOnset",
+      role: 'interOnset',
       frame: {
-        topology: "cyclic",
-        unit: "pulse",
+        topology: 'cyclic',
+        unit: 'pulse',
         extent: result.recurrence,
         origin: 0,
         grouping: grouping
@@ -241,27 +241,27 @@ export function interferenceDurationPacket(
             }
           : undefined,
       },
-    },
+    }
   );
 }
 
 export function interferenceGeneratorDurationPacket(
   pattern: number[],
-  generator: Pick<InterferenceGenerator, "id" | "label">,
-  generatorIndex: number,
+  generator: Pick<InterferenceGenerator, 'id' | 'label'>,
+  generatorIndex: number
 ): DataPacket<number> {
   const period = generatorPeriod(pattern);
   return packet(
-    "list",
-    "duration",
+    'list',
+    'duration',
     pattern.map((duration, durationIndex) => ({
       id: `interference:${generator.id}:duration:${durationIndex}`,
       value: duration,
       provenance: [
         {
-          sourceModuleInstance: "interference",
+          sourceModuleInstance: 'interference',
           sourceItemIds: [generator.id],
-          transformation: "interference-generator-lane",
+          transformation: 'interference-generator-lane',
           parameters: {
             generatorId: generator.id,
             generatorIndex,
@@ -278,21 +278,21 @@ export function interferenceGeneratorDurationPacket(
       attackTimes: generatorAttackTimes(pattern, period),
     },
     {
-      role: "interOnset",
+      role: 'interOnset',
       frame: {
-        topology: "cyclic",
-        unit: "pulse",
+        topology: 'cyclic',
+        unit: 'pulse',
         extent: period,
         origin: 0,
       },
-    },
+    }
   );
 }
 
 export function generatorAttackCount(generators: number[] | number[][], recurrence: number) {
   return normalizeGeneratorPatterns(generators).reduce(
     (count, pattern) => count + (recurrence / generatorPeriod(pattern)) * pattern.length,
-    0,
+    0
   );
 }
 
@@ -306,11 +306,11 @@ export function metronomeGridClicks(recurrence: number, groupingUnits: number) {
 export function groupingOptions(values: number[], recurrence: number): GroupingOption[] {
   const options: GroupingOption[] = [
     {
-      id: "recurrence",
+      id: 'recurrence',
       label: `Complete recurrence | ${recurrence}`,
       units: recurrence,
-      family: "recurrence",
-      description: "One measure contains the complete resultant.",
+      family: 'recurrence',
+      description: 'One measure contains the complete resultant.',
     },
   ];
   const seen = new Set([recurrence]);
@@ -320,8 +320,8 @@ export function groupingOptions(values: number[], recurrence: number): GroupingO
         id: `generator:${index}`,
         label: `Generator ${index + 1} | ${value}`,
         units: value,
-        family: "generator",
-        description: "Schillinger grouping by a generator.",
+        family: 'generator',
+        description: 'Schillinger grouping by a generator.',
       });
       seen.add(value);
     }
@@ -333,8 +333,8 @@ export function groupingOptions(values: number[], recurrence: number): GroupingO
         id: `complementary:${index}`,
         label: `Complementary to generator ${index + 1} | ${complementary}`,
         units: complementary,
-        family: "complementary",
-        description: "Schillinger grouping by a complementary factor, generalized to the LCM.",
+        family: 'complementary',
+        description: 'Schillinger grouping by a complementary factor, generalized to the LCM.',
       });
       seen.add(complementary);
     }
@@ -351,27 +351,23 @@ export function groupingOptions(values: number[], recurrence: number): GroupingO
         id: `alien:${units}`,
         label: `Alien divisor | ${units}`,
         units,
-        family: "alien",
-        description: "Absil/Schillinger alien measure grouping: another divisor of the recurrence.",
+        family: 'alien',
+        description: 'Absil/Schillinger alien measure grouping: another divisor of the recurrence.',
       });
       seen.add(units);
     }
   }
   return options.sort((left, right) =>
-    left.family === "recurrence"
-      ? -1
-      : right.family === "recurrence"
-        ? 1
-        : left.units - right.units,
+    left.family === 'recurrence' ? -1 : right.family === 'recurrence' ? 1 : left.units - right.units
   );
 }
 
 export function midiNoteName(note: number) {
-  const names = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+  const names = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
   return `${names[note % 12]}${Math.floor(note / 12) - 1}`;
 }
 
 export function midiNoteFrequency(note: number) {
   return 440 * 2 ** ((note - 69) / 12);
 }
-import { packet, type DataPacket } from "./model";
+import { packet, type DataPacket } from './model';

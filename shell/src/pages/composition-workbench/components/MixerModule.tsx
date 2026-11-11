@@ -69,8 +69,8 @@ import {
 } from '../usePersistentState';
 import { CycleProgressBar } from './CycleProgressBar';
 import { Module, ModuleSection } from './Module';
-import { SourceMenu } from './SourceMenu';
 import { SoundOverrideControl } from './SoundControls';
+import { SourceMenu } from './SourceMenu';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 

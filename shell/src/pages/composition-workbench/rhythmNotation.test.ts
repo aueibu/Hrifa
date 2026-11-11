@@ -22,7 +22,9 @@ describe('rhythm notation', () => {
     expect(parseRhythmText('r2~').errors[0]).toMatch(/cannot be tied/);
     expect(parseRhythmText('0').errors[0]).toMatch(/greater than zero/);
     expect(parseRhythmText('1.x').errors).toHaveLength(1);
-    expect(parseRhythmText('6/5 1.5 r3/2').steps.map((step) => step.duration)).toEqual([1.2, 1.5, -1.5]);
+    expect(parseRhythmText('6/5 1.5 r3/2').steps.map((step) => step.duration)).toEqual([
+      1.2, 1.5, -1.5,
+    ]);
   });
 });
 
@@ -39,16 +41,28 @@ function rhythm(text: string) {
     })),
     [],
     undefined,
-    { role: 'interOnset', frame: { topology: 'cyclic', unit: 'pulse', extent: steps.reduce((t, s) => t + Math.abs(s.duration), 0) } }
+    {
+      role: 'interOnset',
+      frame: {
+        topology: 'cyclic',
+        unit: 'pulse',
+        extent: steps.reduce((t, s) => t + Math.abs(s.duration), 0),
+      },
+    }
   );
 }
 
 const written = (source?: DataPacket) =>
-  formatRhythmText((source?.items ?? []).map((item) => ({ duration: Number(item.value), tie: item.tie })));
+  formatRhythmText(
+    (source?.items ?? []).map((item) => ({ duration: Number(item.value), tie: item.tie }))
+  );
 
 describe('rests and ties through route treatments', () => {
   it('rotates items with their own tie markers', () => {
-    const out = applyRhythmRouteTreatment(rhythm('1 2~ 3'), { ...defaultRhythmRouteTreatment, rotation: 1 });
+    const out = applyRhythmRouteTreatment(rhythm('1 2~ 3'), {
+      ...defaultRhythmRouteTreatment,
+      rotation: 1,
+    });
     expect(written(out)).toBe('2~ 3 1');
   });
 
@@ -59,7 +73,10 @@ describe('rests and ties through route treatments', () => {
   });
 
   it('scales rests by magnitude, keeps the sign, and counts the span as the sum of lengths', () => {
-    const out = applyRhythmRouteTreatment(rhythm('2~ 1 r2'), { ...defaultRhythmRouteTreatment, durationScale: 2 });
+    const out = applyRhythmRouteTreatment(rhythm('2~ 1 r2'), {
+      ...defaultRhythmRouteTreatment,
+      durationScale: 2,
+    });
     expect(written(out)).toBe('4~ 2 r4');
     expect(out?.frame?.extent).toBe(10);
   });

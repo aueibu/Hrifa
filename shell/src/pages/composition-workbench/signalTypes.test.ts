@@ -1,5 +1,5 @@
-import { signalTypeFor, signalTypeRegistry } from './signalTypes';
 import { packet, type DataPacket } from './model';
+import { signalTypeFor, signalTypeRegistry } from './signalTypes';
 
 function samplePacket(domain: DataPacket['domain'], kind: DataPacket['kind'] = 'list'): DataPacket {
   return packet(kind, domain, [{ id: '0', value: 1, provenance: [] }]);
@@ -35,13 +35,21 @@ describe('signalTypeRegistry', () => {
 
   it('pitch apply() only transforms pitch/pitchClass domains, passing everything else through', () => {
     const source = samplePacket('duration');
-    const result = signalTypeRegistry.pitch.apply(source, signalTypeRegistry.pitch.default, 'route:test');
+    const result = signalTypeRegistry.pitch.apply(
+      source,
+      signalTypeRegistry.pitch.default,
+      'route:test'
+    );
     expect(result).toBe(source);
   });
 
   it('rhythm apply() only transforms duration-domain lists, passing everything else through', () => {
     const source = samplePacket('pitch');
-    const result = signalTypeRegistry.rhythm.apply(source, signalTypeRegistry.rhythm.default, 'route:test');
+    const result = signalTypeRegistry.rhythm.apply(
+      source,
+      signalTypeRegistry.rhythm.default,
+      'route:test'
+    );
     expect(result).toBe(source);
   });
 

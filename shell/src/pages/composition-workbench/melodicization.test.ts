@@ -132,9 +132,19 @@ describe('melodicization', () => {
     const items = result.packet.items;
 
     expect(items).toHaveLength(20);
-    expect(new Set(items.map((item) => item.value.onset.quarterNotes.numerator / item.value.onset.quarterNotes.denominator)).size).toBe(20);
+    expect(
+      new Set(
+        items.map(
+          (item) =>
+            item.value.onset.quarterNotes.numerator / item.value.onset.quarterNotes.denominator
+        )
+      ).size
+    ).toBe(20);
     const pairs = items.map((item) => {
-      const parameters = item.provenance.at(-1)!.parameters as { rhythmIndex: number; pitchIndex: number };
+      const parameters = item.provenance.at(-1)!.parameters as {
+        rhythmIndex: number;
+        pitchIndex: number;
+      };
       return `${parameters.rhythmIndex}:${parameters.pitchIndex}`;
     });
     expect(new Set(pairs).size).toBe(20);
@@ -144,7 +154,10 @@ describe('melodicization', () => {
   it('still covers every pair when the cycle lengths share a factor', () => {
     const result = run('cartesian');
     const pairs = result.packet.items.map((item) => {
-      const parameters = item.provenance.at(-1)!.parameters as { rhythmIndex: number; pitchIndex: number };
+      const parameters = item.provenance.at(-1)!.parameters as {
+        rhythmIndex: number;
+        pitchIndex: number;
+      };
       return `${parameters.rhythmIndex}:${parameters.pitchIndex}`;
     });
 
@@ -161,7 +174,10 @@ describe('melodicization', () => {
 
     expect(events).toHaveLength(2);
     expect(events.map((item) => item.value.pitches)).toEqual([[6000], [6200]]);
-    expect(events.map((item) => item.value.onset)).toEqual([musicalPosition(0), musicalPosition(5, 4)]);
+    expect(events.map((item) => item.value.onset)).toEqual([
+      musicalPosition(0),
+      musicalPosition(5, 4),
+    ]);
     expect(events[0].value.interOnset).toEqual(musicalDuration(3, 4));
     expect(result.packet.frame).toMatchObject({ musicalExtent: musicalDuration(6, 4) });
   });

@@ -26,19 +26,27 @@ import {
 import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { DataPacket } from '../model';
-import { rhythmOrigin } from '../rhythmFrame';
 import {
   editRhythm,
   scaleStepsToLength,
   type GroupingPolicy,
   type RhythmEditMode,
 } from '../rhythmEdit';
+import { rhythmOrigin } from '../rhythmFrame';
 import {
   createRhythmPreviewPlan,
   musicalPlanSeconds,
   transportRhythmContext,
   type RhythmPreviewLayer,
 } from '../rhythmRealization';
+import {
+  clampCellWidth,
+  DEFAULT_CELL_WIDTH,
+  fitCellWidth,
+  scrollLeftAfterZoom,
+  zoomedCellWidth,
+  type Viewport,
+} from '../rhythmRollZoom';
 import { isValidRhythmSource, rhythmInterpretableDomains } from '../routeTreatments';
 import { signalTypeRegistry } from '../signalTypes';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
@@ -52,19 +60,8 @@ import {
   compositionStateKeys,
   usePersistentState,
 } from '../usePersistentState';
-import {
-  clampCellWidth,
-  DEFAULT_CELL_WIDTH,
-  fitCellWidth,
-  scrollLeftAfterZoom,
-  zoomedCellWidth,
-  type Viewport,
-} from '../rhythmRollZoom';
 import { DurationStrip } from './DurationStrip';
 import { FollowPlayhead, type FollowMode } from './FollowPlayhead';
-import { RollScrollbar } from './RollScrollbar';
-import { NoteGuides, ProgramTrack } from './ProgramTrack';
-import { RhythmDiff, RhythmDiffLegend } from './RhythmDiff';
 import { ModuleDevice } from './ModuleDevice';
 import {
   HelpTip,
@@ -74,6 +71,9 @@ import {
   ModuleOutputsSection,
   type ModuleNotice,
 } from './ModuleHost';
+import { NoteGuides, ProgramTrack } from './ProgramTrack';
+import { RhythmDiff, RhythmDiffLegend } from './RhythmDiff';
+import { RollScrollbar } from './RollScrollbar';
 import { SoundOverrideControl } from './SoundControls';
 import { SourceMenu } from './SourceMenu';
 import { VolumeControl } from './VolumeControl';
@@ -240,7 +240,9 @@ export function RhythmEditModule({
   const scrollerRef = useRef<HTMLDivElement>(null);
   // The fraction of the roll under the middle of the view when a zoom was asked for, so the zoom can
   // keep that point in place once the new width is laid out.
-  const zoomAnchor = useRef<{ scrollLeft: number; viewWidth: number; contentWidth: number } | null>(null);
+  const zoomAnchor = useRef<{ scrollLeft: number; viewWidth: number; contentWidth: number } | null>(
+    null
+  );
   // Where the zoom bar wants the roll scrolled to once the width it asked for is laid out.
   const pendingScroll = useRef<number | null>(null);
   // Which strips the current preview is sounding, so only their playheads move.
@@ -413,9 +415,11 @@ export function RhythmEditModule({
   const scaledOrigin = inputOrigin * lengthFactor;
   // Wide enough that the shortest note on any row is `cellWidth` px across: the horizontal zoom.
   const shortest = Math.min(
-    ...[...inputLengths, ...editedLengths, ...scaledSteps.map((step) => Math.abs(step.duration))].filter(
-      (length) => length > 0
-    )
+    ...[
+      ...inputLengths,
+      ...editedLengths,
+      ...scaledSteps.map((step) => Math.abs(step.duration)),
+    ].filter((length) => length > 0)
   );
   const canvasPxFor = (width: number) =>
     Number.isFinite(shortest)
@@ -431,7 +435,8 @@ export function RhythmEditModule({
     }
     const measure = () => setViewWidth(element.clientWidth);
     measure();
-    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure);
+    const observer =
+      typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure);
     observer?.observe(element);
     return () => observer?.disconnect();
   }, [input, edited.packet]);
@@ -512,90 +517,92 @@ export function RhythmEditModule({
               lined up with the others. */}
           <div className={classes.rhythmScroller} ref={scrollerRef}>
             <div style={{ width: `max(100%, ${canvasPx}px)` }}>
-            {/* The tracks and the Input strip share one box, so they have the same width and edges, and
+              {/* The tracks and the Input strip share one box, so they have the same width and edges, and
                 one set of guide lines can run through both. */}
-            <div className={classes.guided} style={{ width: `${(inputTotal / scale) * 100}%` }}>
-            {showTracks && (edited.tracks?.structure || edited.tracks?.length) && (
-              <NoteGuides lengths={inputLengths} />
-            )}
-            {showTracks && (edited.tracks?.structure || edited.tracks?.length) && (
-              <div className={classes.programTracks}>
-                {edited.tracks.structure && (
-                  <ProgramTrack
-                    label={mode === 'rules' ? 'Rules' : 'Structure'}
-                    detail={
-                      mode === 'rules'
-                        ? undefined
-                        : timingDetail(editSettings.programPhase, editSettings.programRate)
-                    }
-                    lengths={inputLengths}
-                    notes={edited.tracks.structure}
-                    pxPerPulse={pxPerPulse}
-                  />
+              <div className={classes.guided} style={{ width: `${(inputTotal / scale) * 100}%` }}>
+                {showTracks && (edited.tracks?.structure || edited.tracks?.length) && (
+                  <NoteGuides lengths={inputLengths} />
                 )}
-                {edited.tracks.length && (
-                  <ProgramTrack
-                    label="Length"
-                    detail={timingDetail(editSettings.lengthPhase, editSettings.lengthRate)}
-                    lengths={inputLengths}
-                    notes={edited.tracks.length}
-                    pxPerPulse={pxPerPulse}
-                  />
+                {showTracks && (edited.tracks?.structure || edited.tracks?.length) && (
+                  <div className={classes.programTracks}>
+                    {edited.tracks.structure && (
+                      <ProgramTrack
+                        label={mode === 'rules' ? 'Rules' : 'Structure'}
+                        detail={
+                          mode === 'rules'
+                            ? undefined
+                            : timingDetail(editSettings.programPhase, editSettings.programRate)
+                        }
+                        lengths={inputLengths}
+                        notes={edited.tracks.structure}
+                        pxPerPulse={pxPerPulse}
+                      />
+                    )}
+                    {edited.tracks.length && (
+                      <ProgramTrack
+                        label="Length"
+                        detail={timingDetail(editSettings.lengthPhase, editSettings.lengthRate)}
+                        lengths={inputLengths}
+                        notes={edited.tracks.length}
+                        pxPerPulse={pxPerPulse}
+                      />
+                    )}
+                  </div>
                 )}
+                <DurationStrip
+                  label="Input"
+                  durations={inputLengths}
+                  steps={stepsOf(input)}
+                  cyclic={cyclic}
+                  boundaries={groupingMarks(input)}
+                  pxPerPulse={pxPerPulse}
+                  playhead={{
+                    sourceId: instanceId,
+                    unitSeconds: pulseSeconds(settings.transport),
+                    visible: playingLayers.includes('input'),
+                  }}
+                />
               </div>
-            )}
-            <DurationStrip
-              label="Input"
-              durations={inputLengths}
-              steps={stepsOf(input)}
-              cyclic={cyclic}
-              boundaries={groupingMarks(input)}
-              pxPerPulse={pxPerPulse}
-              playhead={{
-                sourceId: instanceId,
-                unitSeconds: pulseSeconds(settings.transport),
-                visible: playingLayers.includes('input'),
-              }}
-            />
-            </div>
-            <RhythmDiff
-              inputLengths={inputLengths}
-              editedLengths={editedLengths}
-              inputShare={inputTotal / scale}
-              editedShare={editedTotal / scale}
-              scroller={scrollerRef}
-            />
-            <DurationStrip
-              label="Result"
-              durations={editedLengths}
-              steps={stepsOf(edited.packet)}
-              cyclic={cyclic}
-              boundaries={groupingMarks(edited.packet)}
-              labelPlacement="below"
-              widthShare={editedTotal / scale}
-              pxPerPulse={pxPerPulse}
-              playhead={{
-                sourceId: instanceId,
-                unitSeconds: pulseSeconds(settings.transport),
-                visible: playingLayers.includes('edited'),
-              }}
-            />
-            <div className={classes.scaledOriginal}>
+              <RhythmDiff
+                inputLengths={inputLengths}
+                editedLengths={editedLengths}
+                inputShare={inputTotal / scale}
+                editedShare={editedTotal / scale}
+                scroller={scrollerRef}
+              />
               <DurationStrip
-                label="Input scaled to the result's length"
-                durations={scaledSteps.map((step) => Math.abs(step.duration))}
-                steps={scaledSteps}
+                label="Result"
+                durations={editedLengths}
+                steps={stepsOf(edited.packet)}
                 cyclic={cyclic}
-                boundaries={(groupingMarks(input) ?? []).map((boundary) => boundary * lengthFactor)}
+                boundaries={groupingMarks(edited.packet)}
+                labelPlacement="below"
                 widthShare={editedTotal / scale}
                 pxPerPulse={pxPerPulse}
                 playhead={{
                   sourceId: instanceId,
                   unitSeconds: pulseSeconds(settings.transport),
-                  visible: playingLayers.includes('scaled'),
+                  visible: playingLayers.includes('edited'),
                 }}
               />
-            </div>
+              <div className={classes.scaledOriginal}>
+                <DurationStrip
+                  label="Input scaled to the result's length"
+                  durations={scaledSteps.map((step) => Math.abs(step.duration))}
+                  steps={scaledSteps}
+                  cyclic={cyclic}
+                  boundaries={(groupingMarks(input) ?? []).map(
+                    (boundary) => boundary * lengthFactor
+                  )}
+                  widthShare={editedTotal / scale}
+                  pxPerPulse={pxPerPulse}
+                  playhead={{
+                    sourceId: instanceId,
+                    unitSeconds: pulseSeconds(settings.transport),
+                    visible: playingLayers.includes('scaled'),
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -634,7 +641,11 @@ export function RhythmEditModule({
               >
                 Fit
               </Button>
-              <Button size="compact-xs" variant="default" onClick={() => zoomTo(DEFAULT_CELL_WIDTH)}>
+              <Button
+                size="compact-xs"
+                variant="default"
+                onClick={() => zoomTo(DEFAULT_CELL_WIDTH)}
+              >
                 Reset
               </Button>
               <Text size="xs" c="dimmed">
@@ -744,7 +755,9 @@ export function RhythmEditModule({
                 />
                 <Group gap="xs" grow>
                   <NumberInput
-                    label={<HelpTip help="Notes that pass before the program starts.">Phase</HelpTip>}
+                    label={
+                      <HelpTip help="Notes that pass before the program starts.">Phase</HelpTip>
+                    }
                     aria-label="Structure program phase"
                     min={0}
                     value={editSettings.programPhase}

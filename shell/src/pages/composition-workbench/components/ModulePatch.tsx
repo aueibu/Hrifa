@@ -8,11 +8,11 @@ import {
   Text,
   TextInput,
   Title,
-} from "@mantine/core";
-import { Data } from "../../../components/Data/Data";
-import { Surface } from "../../../components/Surface/Surface";
-import type { EvaluatedModule, PatchDocument } from "../model";
-import { contractsCompatible, getDefinition } from "../registry";
+} from '@mantine/core';
+import { Data } from '../../../components/Data/Data';
+import { Surface } from '../../../components/Surface/Surface';
+import type { EvaluatedModule, PatchDocument } from '../model';
+import { contractsCompatible, getDefinition } from '../registry';
 
 interface ModulePatchProps {
   patch: PatchDocument;
@@ -25,14 +25,14 @@ interface ModulePatchProps {
   onDelete(id: string): void;
 }
 
-function statusColor(status: EvaluatedModule["evaluation"]["status"] | undefined) {
-  if (status === "error") {
-    return "red";
+function statusColor(status: EvaluatedModule['evaluation']['status'] | undefined) {
+  if (status === 'error') {
+    return 'red';
   }
-  if (status === "warning") {
-    return "yellow";
+  if (status === 'warning') {
+    return 'yellow';
   }
-  return "green";
+  return 'green';
 }
 
 export function ModulePatch(props: ModulePatchProps) {
@@ -54,8 +54,8 @@ export function ModulePatch(props: ModulePatchProps) {
         return (
           <Surface
             key={instance.id}
-            tone={props.selectedId === instance.id ? "raised" : "default"}
-            className={props.selectedId === instance.id ? undefined : ""}
+            tone={props.selectedId === instance.id ? 'raised' : 'default'}
+            className={props.selectedId === instance.id ? undefined : ''}
           >
             <Stack gap="sm">
               <Group justify="space-between" align="start">
@@ -69,21 +69,21 @@ export function ModulePatch(props: ModulePatchProps) {
                   </div>
                 </Group>
                 <Badge color={statusColor(result?.evaluation.status)} variant="light">
-                  {result?.evaluation.status ?? "blocked"}
+                  {result?.evaluation.status ?? 'blocked'}
                 </Badge>
               </Group>
 
               {Object.entries(definition.inputs).map(([port, contract]) => {
                 const current = props.patch.connections.find(
                   (connection) =>
-                    connection.toInstanceId === instance.id && connection.toPort === port,
+                    connection.toInstanceId === instance.id && connection.toPort === port
                 );
                 const options = instances
                   .filter((candidate) => candidate.order < instance.order)
                   .flatMap((candidate) => {
                     const candidateDefinition = getDefinition(
                       candidate.definitionId,
-                      candidate.definitionVersion,
+                      candidate.definitionVersion
                     );
                     if (!candidateDefinition) {
                       return [];
@@ -111,18 +111,18 @@ export function ModulePatch(props: ModulePatchProps) {
 
               {definition.parameters.map((field) => {
                 const value = instance.parameters[field.key];
-                if (field.type === "select") {
+                if (field.type === 'select') {
                   return (
                     <Select
                       key={field.key}
                       label={field.label}
                       data={field.options ?? []}
-                      value={String(value ?? "")}
+                      value={String(value ?? '')}
                       onChange={(next) => next && props.onParameter(instance.id, field.key, next)}
                     />
                   );
                 }
-                if (field.type === "integer") {
+                if (field.type === 'integer') {
                   return (
                     <NumberInput
                       key={field.key}
@@ -138,7 +138,7 @@ export function ModulePatch(props: ModulePatchProps) {
                     key={field.key}
                     label={field.label}
                     description="Comma-separated integers"
-                    value={Array.isArray(value) ? value.join(", ") : ""}
+                    value={Array.isArray(value) ? value.join(', ') : ''}
                     onChange={(event) => {
                       const values = event.currentTarget.value
                         .split(/[\s,]+/)

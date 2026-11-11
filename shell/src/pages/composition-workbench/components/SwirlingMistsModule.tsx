@@ -53,8 +53,8 @@ import { MistStage, strataColor } from './MistStage';
 import { ModuleDevice } from './ModuleDevice';
 import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { VolumeControl } from './VolumeControl';
-import classes from './SwirlingMists.module.css';
 import workbench from '../CompositionWorkbench.module.css';
+import classes from './SwirlingMists.module.css';
 
 export interface SwirlingMistsModuleProps extends CompositionModuleRoutingProps {
   instanceId: string;
@@ -123,8 +123,16 @@ export function SwirlingMistsModule({
     () =>
       sampling.strataIndices.length && sampling.positions.length
         ? [
-            { ref: { instanceId, port: 'chords' }, label: `${instanceLabel} · Chords`, packet: chords },
-            { ref: { instanceId, port: 'voices' }, label: `${instanceLabel} · Voices`, packet: voices },
+            {
+              ref: { instanceId, port: 'chords' },
+              label: `${instanceLabel} · Chords`,
+              packet: chords,
+            },
+            {
+              ref: { instanceId, port: 'voices' },
+              label: `${instanceLabel} · Voices`,
+              packet: voices,
+            },
           ]
         : [],
     [instanceId, instanceLabel, chords, voices, sampling]
@@ -142,7 +150,9 @@ export function SwirlingMistsModule({
   function updateStratum(index: number, patch: Partial<MistStratum>) {
     setSettings((current) => ({
       ...current,
-      strata: current.strata.map((stratum, i) => (i === index ? { ...stratum, ...patch } : stratum)),
+      strata: current.strata.map((stratum, i) =>
+        i === index ? { ...stratum, ...patch } : stratum
+      ),
     }));
   }
 
@@ -254,7 +264,9 @@ export function SwirlingMistsModule({
         min={1}
         max={maxMistCycles}
         value={stratum.cycles}
-        onChange={(value) => updateStratum(index, { cycles: Math.round(numberOr(value, stratum.cycles)) })}
+        onChange={(value) =>
+          updateStratum(index, { cycles: Math.round(numberOr(value, stratum.cycles)) })
+        }
       />
       <NumberInput
         size="xs"
@@ -288,7 +300,9 @@ export function SwirlingMistsModule({
         min={0}
         decimalScale={3}
         value={stratum.amplitude}
-        onChange={(value) => updateStratum(index, { amplitude: numberOr(value, stratum.amplitude) })}
+        onChange={(value) =>
+          updateStratum(index, { amplitude: numberOr(value, stratum.amplitude) })
+        }
       />
       <ActionIcon
         variant="subtle"
@@ -321,7 +335,9 @@ export function SwirlingMistsModule({
             min={0}
             decimalScale={3}
             value={stratum.walkStep}
-            onChange={(value) => updateStratum(index, { walkStep: numberOr(value, stratum.walkStep) })}
+            onChange={(value) =>
+              updateStratum(index, { walkStep: numberOr(value, stratum.walkStep) })
+            }
           />
           <NumberInput
             size="xs"
@@ -357,236 +373,238 @@ export function SwirlingMistsModule({
 
   return (
     <>
-    <Modal
-      opened={curveStratum !== undefined}
-      onClose={() => setEditingCurve(null)}
-      title={editingCurve !== null ? `Draw stratum ${editingCurve + 1}` : ''}
-      size="lg"
-    >
-      {curveStratum && editingCurve !== null && (
-        <>
-          <Text size="xs" c="dimmed" mb="xs">
-            Drag across the plot to draw one loop. The curve repeats, and the dashed line is where the
-            end leads back into the start. Changes apply immediately.
-          </Text>
-          <CurveEditor
-            points={curveStratum.custom ?? curveShape('sine')}
-            onChange={(points) => updateStratum(editingCurve, { custom: points })}
-          />
-        </>
-      )}
-    </Modal>
-    <ModuleDevice
-      name={instanceLabel}
-      status={`${sampling.strataIndices.length} strata, ${count} steps`}
-      badges={
-        realign ? (
-          <Badge
-            variant="outline"
-            title={
-              passes
-                ? `The field repeats every ${Number(realign.period.toFixed(3))} units, in which the strata complete ${passes.join(' : ')} passes`
-                : 'The whole field repeats after this many units'
-            }
-          >
-            repeats every {Number(realign.period.toFixed(3))}
-            {passes ? ` · ${passes.join(' : ')} passes` : ''}
-            {realign.steps !== undefined && settings.stride !== 1
-              ? ` (${Number(realign.steps.toFixed(3))} steps)`
-              : ''}
-          </Badge>
-        ) : (
-          <Badge variant="outline">no repeat</Badge>
-        )
-      }
-      actions={
-        <>
-          <Button onClick={playPreview}>▶ Play</Button>
-          <Button variant="default" onClick={() => preview.stop()}>
-            ■ Stop
-          </Button>
-        </>
-      }
-      onReset={reset}
-      footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
-          {preview.status ||
-            sampling.warnings[0] ||
-            'Preview reads each step as MIDI notes; the outputs are plain numbers.'}
-        </Text>
-      }
-      controls={
-        <>
-          <InspectorSection label="Sampling">
-            <Select
-              size="xs"
-              label="Preset"
-              placeholder="Apply a preset…"
-              data={mistPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
-              value={null}
-              onChange={applyPreset}
+      <Modal
+        opened={curveStratum !== undefined}
+        onClose={() => setEditingCurve(null)}
+        title={editingCurve !== null ? `Draw stratum ${editingCurve + 1}` : ''}
+        size="lg"
+      >
+        {curveStratum && editingCurve !== null && (
+          <>
+            <Text size="xs" c="dimmed" mb="xs">
+              Drag across the plot to draw one loop. The curve repeats, and the dashed line is where
+              the end leads back into the start. Changes apply immediately.
+            </Text>
+            <CurveEditor
+              points={curveStratum.custom ?? curveShape('sine')}
+              onChange={(points) => updateStratum(editingCurve, { custom: points })}
             />
-            <NumberInput
-              size="xs"
-              label="Steps"
-              min={1}
-              max={maxMistSteps}
-              value={settings.steps}
-              onChange={(value) => update({ steps: Math.round(numberOr(value, settings.steps)) })}
-            />
-            <NumberInput
-              size="xs"
-              label="Start"
-              decimalScale={6}
-              value={settings.start}
-              onChange={(value) => update({ start: numberOr(value, settings.start) })}
-            />
-            <NumberInput
-              size="xs"
-              label="Stride"
-              description="Positions between samples. Speed 1 is one pass per position."
-              step={0.0625}
-              decimalScale={6}
-              value={settings.stride}
-              onChange={(value) => update({ stride: numberOr(value, settings.stride) })}
-            />
-          </InspectorSection>
-          <InspectorSection label="Strata">
-            <div style={{ overflowX: 'auto' }}>
-              <div className={classes.strataTable}>
-                <span />
-                <span className={classes.headerCell}>Wave</span>
-                <span className={classes.headerCell}>Cycles</span>
-                <span className={classes.headerCell}>Speed</span>
-                <span className={classes.headerCell}>Phase</span>
-                <span className={classes.headerCell}>Center</span>
-                <span className={classes.headerCell}>Amp</span>
-                <span />
-                {stratumRows}
-              </div>
-            </div>
-            <Button
-              variant="default"
-              size="xs"
-              disabled={settings.strata.length >= maxMistStrata}
-              onClick={addStratum}
+          </>
+        )}
+      </Modal>
+      <ModuleDevice
+        name={instanceLabel}
+        status={`${sampling.strataIndices.length} strata, ${count} steps`}
+        badges={
+          realign ? (
+            <Badge
+              variant="outline"
+              title={
+                passes
+                  ? `The field repeats every ${Number(realign.period.toFixed(3))} units, in which the strata complete ${passes.join(' : ')} passes`
+                  : 'The whole field repeats after this many units'
+              }
             >
-              + Stratum
+              repeats every {Number(realign.period.toFixed(3))}
+              {passes ? ` · ${passes.join(' : ')} passes` : ''}
+              {realign.steps !== undefined && settings.stride !== 1
+                ? ` (${Number(realign.steps.toFixed(3))} steps)`
+                : ''}
+            </Badge>
+          ) : (
+            <Badge variant="outline">no repeat</Badge>
+          )
+        }
+        actions={
+          <>
+            <Button onClick={playPreview}>▶ Play</Button>
+            <Button variant="default" onClick={() => preview.stop()}>
+              ■ Stop
             </Button>
-          </InspectorSection>
-
-          <ModuleInspectorContent>
-            <InspectorSection label="Source">
-              <TextInput
-                size="xs"
-                label="Seed"
-                description="Random walks repeat exactly for the same seed."
-                value={settings.seed}
-                onChange={(event) => update({ seed: event.currentTarget.value.slice(0, 24) })}
-              />
+          </>
+        }
+        onReset={reset}
+        footer={
+          <Text size="xs" c="dimmed" truncate aria-live="polite">
+            {preview.status ||
+              sampling.warnings[0] ||
+              'Preview reads each step as MIDI notes; the outputs are plain numbers.'}
+          </Text>
+        }
+        controls={
+          <>
+            <InspectorSection label="Sampling">
               <Select
                 size="xs"
-                label="Interpolation"
-                allowDeselect={false}
-                data={[
-                  { value: 'linear', label: 'Linear' },
-                  { value: 'nearest', label: 'Nearest cell' },
-                ]}
-                value={settings.interpolation}
-                onChange={(value) => value && update({ interpolation: value as MistInterpolation })}
-              />
-            </InspectorSection>
-            <InspectorSection label="Output range">
-              <Text size="xs" c="dimmed">
-                The field&apos;s full reach maps onto this range, so values do not move when the window
-                does.
-              </Text>
-              <NumberInput
-                size="xs"
-                label="Low"
-                value={settings.mapLow}
-                onChange={(value) => update({ mapLow: numberOr(value, settings.mapLow) })}
+                label="Preset"
+                placeholder="Apply a preset…"
+                data={mistPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
+                value={null}
+                onChange={applyPreset}
               />
               <NumberInput
                 size="xs"
-                label="High"
-                value={settings.mapHigh}
-                onChange={(value) => update({ mapHigh: numberOr(value, settings.mapHigh) })}
+                label="Steps"
+                min={1}
+                max={maxMistSteps}
+                value={settings.steps}
+                onChange={(value) => update({ steps: Math.round(numberOr(value, settings.steps)) })}
               />
               <NumberInput
                 size="xs"
-                label="Round to"
-                description="Outputs are rounded to a multiple of this, e.g. 1, 0.5, 0.01."
-                step={settings.mapStep <= 0.1 ? 0.01 : 0.5}
+                label="Start"
                 decimalScale={6}
-                value={settings.mapStep}
-                onChange={(value) => {
-                  // Any positive step is taken as typed. A half-typed value such as "0" or "0." on the
-                  // way to 0.01 waits for the next key instead of being saved as 0.
-                  const next = typeof value === 'number' ? value : Number(value);
-                  if (value !== '' && Number.isFinite(next) && next > 0) {
-                    update({ mapStep: next });
-                  }
-                }}
+                value={settings.start}
+                onChange={(value) => update({ start: numberOr(value, settings.start) })}
               />
-            </InspectorSection>
-            <InspectorSection label="Preview">
               <NumberInput
                 size="xs"
-                label="Step"
-                suffix=" ms"
-                min={20}
-                max={5000}
-                value={stepMilliseconds}
-                onChange={(value) => setStepMilliseconds(numberOr(value, stepMilliseconds))}
-              />
-              <div className={workbench.moduleParameterRow}>
-                <Text size="xs">Gate</Text>
-                <Group gap="xs" wrap="nowrap" className={workbench.volumeControl}>
-                  <Slider
-                    thumbLabel="Preview gate length"
-                    min={1}
-                    max={200}
-                    value={gatePercent}
-                    onChange={setGatePercent}
-                  />
-                  <Text ff="monospace" size="xs" w="2.5rem" ta="right">
-                    {gatePercent}%
-                  </Text>
-                </Group>
-              </div>
-              <VolumeControl
-                accessibleLabel="Swirling Mists preview volume"
-                label="Volume"
-                value={volume}
-                onChange={setVolume}
+                label="Stride"
+                description="Positions between samples. Speed 1 is one pass per position."
+                step={0.0625}
+                decimalScale={6}
+                value={settings.stride}
+                onChange={(value) => update({ stride: numberOr(value, settings.stride) })}
               />
             </InspectorSection>
-            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={outputs} />
-          </ModuleInspectorContent>
-        </>
-      }
-    >
-      <MistStage
-        instanceId={instanceId}
-        settings={settings}
-        field={field}
-        stepSeconds={stepMilliseconds / 1000}
-        audioPlaying={preview.playing}
-        repeat={realign?.period}
-        span={viewSpan}
-        onSpan={setViewSpan}
-        speed={runSpeed}
-        onSpeed={setRunSpeed}
-      />
-      <MistSnapshot
-        instanceId={instanceId}
-        settings={settings}
-        sampling={sampling}
-        stepSeconds={stepMilliseconds / 1000}
-        audioPlaying={preview.playing}
-      />
-    </ModuleDevice>
+            <InspectorSection label="Strata">
+              <div style={{ overflowX: 'auto' }}>
+                <div className={classes.strataTable}>
+                  <span />
+                  <span className={classes.headerCell}>Wave</span>
+                  <span className={classes.headerCell}>Cycles</span>
+                  <span className={classes.headerCell}>Speed</span>
+                  <span className={classes.headerCell}>Phase</span>
+                  <span className={classes.headerCell}>Center</span>
+                  <span className={classes.headerCell}>Amp</span>
+                  <span />
+                  {stratumRows}
+                </div>
+              </div>
+              <Button
+                variant="default"
+                size="xs"
+                disabled={settings.strata.length >= maxMistStrata}
+                onClick={addStratum}
+              >
+                + Stratum
+              </Button>
+            </InspectorSection>
+
+            <ModuleInspectorContent>
+              <InspectorSection label="Source">
+                <TextInput
+                  size="xs"
+                  label="Seed"
+                  description="Random walks repeat exactly for the same seed."
+                  value={settings.seed}
+                  onChange={(event) => update({ seed: event.currentTarget.value.slice(0, 24) })}
+                />
+                <Select
+                  size="xs"
+                  label="Interpolation"
+                  allowDeselect={false}
+                  data={[
+                    { value: 'linear', label: 'Linear' },
+                    { value: 'nearest', label: 'Nearest cell' },
+                  ]}
+                  value={settings.interpolation}
+                  onChange={(value) =>
+                    value && update({ interpolation: value as MistInterpolation })
+                  }
+                />
+              </InspectorSection>
+              <InspectorSection label="Output range">
+                <Text size="xs" c="dimmed">
+                  The field&apos;s full reach maps onto this range, so values do not move when the
+                  window does.
+                </Text>
+                <NumberInput
+                  size="xs"
+                  label="Low"
+                  value={settings.mapLow}
+                  onChange={(value) => update({ mapLow: numberOr(value, settings.mapLow) })}
+                />
+                <NumberInput
+                  size="xs"
+                  label="High"
+                  value={settings.mapHigh}
+                  onChange={(value) => update({ mapHigh: numberOr(value, settings.mapHigh) })}
+                />
+                <NumberInput
+                  size="xs"
+                  label="Round to"
+                  description="Outputs are rounded to a multiple of this, e.g. 1, 0.5, 0.01."
+                  step={settings.mapStep <= 0.1 ? 0.01 : 0.5}
+                  decimalScale={6}
+                  value={settings.mapStep}
+                  onChange={(value) => {
+                    // Any positive step is taken as typed. A half-typed value such as "0" or "0." on the
+                    // way to 0.01 waits for the next key instead of being saved as 0.
+                    const next = typeof value === 'number' ? value : Number(value);
+                    if (value !== '' && Number.isFinite(next) && next > 0) {
+                      update({ mapStep: next });
+                    }
+                  }}
+                />
+              </InspectorSection>
+              <InspectorSection label="Preview">
+                <NumberInput
+                  size="xs"
+                  label="Step"
+                  suffix=" ms"
+                  min={20}
+                  max={5000}
+                  value={stepMilliseconds}
+                  onChange={(value) => setStepMilliseconds(numberOr(value, stepMilliseconds))}
+                />
+                <div className={workbench.moduleParameterRow}>
+                  <Text size="xs">Gate</Text>
+                  <Group gap="xs" wrap="nowrap" className={workbench.volumeControl}>
+                    <Slider
+                      thumbLabel="Preview gate length"
+                      min={1}
+                      max={200}
+                      value={gatePercent}
+                      onChange={setGatePercent}
+                    />
+                    <Text ff="monospace" size="xs" w="2.5rem" ta="right">
+                      {gatePercent}%
+                    </Text>
+                  </Group>
+                </div>
+                <VolumeControl
+                  accessibleLabel="Swirling Mists preview volume"
+                  label="Volume"
+                  value={volume}
+                  onChange={setVolume}
+                />
+              </InspectorSection>
+              <ModuleOutputsSection instanceLabel={instanceLabel} outputs={outputs} />
+            </ModuleInspectorContent>
+          </>
+        }
+      >
+        <MistStage
+          instanceId={instanceId}
+          settings={settings}
+          field={field}
+          stepSeconds={stepMilliseconds / 1000}
+          audioPlaying={preview.playing}
+          repeat={realign?.period}
+          span={viewSpan}
+          onSpan={setViewSpan}
+          speed={runSpeed}
+          onSpeed={setRunSpeed}
+        />
+        <MistSnapshot
+          instanceId={instanceId}
+          settings={settings}
+          sampling={sampling}
+          stepSeconds={stepMilliseconds / 1000}
+          audioPlaying={preview.playing}
+        />
+      </ModuleDevice>
     </>
   );
 }

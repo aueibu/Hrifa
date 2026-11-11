@@ -3,7 +3,15 @@ import { fireEvent, render, screen } from '@test-utils';
 import { RollScrollbar } from './RollScrollbar';
 
 /** A scroller whose scroll metrics are set by hand, as jsdom does no layout. */
-function fakeScroller({ scrollWidth, clientWidth, scrollLeft }: { scrollWidth: number; clientWidth: number; scrollLeft: number }) {
+function fakeScroller({
+  scrollWidth,
+  clientWidth,
+  scrollLeft,
+}: {
+  scrollWidth: number;
+  clientWidth: number;
+  scrollLeft: number;
+}) {
   const element = document.createElement('div');
   Object.defineProperty(element, 'scrollWidth', { value: scrollWidth, configurable: true });
   Object.defineProperty(element, 'clientWidth', { value: clientWidth, configurable: true });

@@ -1,7 +1,7 @@
 import { positiveModulo } from './alignment';
 import type { PitchAllocation } from './melodicization';
-import { applyModulo, type ModuloTreatment } from './moduloTreatment';
 import { packet, type DataItem, type DataDomain, type DataPacket, type Provenance } from './model';
+import { applyModulo, type ModuloTreatment } from './moduloTreatment';
 import { pitchClassName, type PitchClassItemValue, type PitchItemValue } from './pitch';
 import { pitchLabel } from './routeTreatments';
 
@@ -58,7 +58,11 @@ function emptyResult(errors: string[]): ArithmeticResult {
   return { packet: packet('list', 'integer', [], errors), errors, messages: [] };
 }
 
-function applyOperator(operator: ArithmeticOperator, a: number, b: number): { value: number; warning?: string } {
+function applyOperator(
+  operator: ArithmeticOperator,
+  a: number,
+  b: number
+): { value: number; warning?: string } {
   switch (operator) {
     case 'add':
       return { value: a + b };
@@ -73,7 +77,7 @@ function applyOperator(operator: ArithmeticOperator, a: number, b: number): { va
         ? { value: Math.floor(a / b), warning: 'divided by zero' }
         : { value: Math.floor(a / b) };
     case 'power':
-      return { value: Math.pow(a, b) };
+      return { value: a ** b };
     case 'exp':
       return { value: Math.exp(a) };
   }
@@ -149,7 +153,9 @@ function combineTrees(
   const arrA = a as NumericTree[];
   const arrB = b as NumericTree[];
   const pairs = pairIndices(arrA.length, arrB.length, strategy);
-  const results = pairs.map(({ aIndex, bIndex }) => combineTrees(operator, arrA[aIndex], arrB[bIndex], strategy));
+  const results = pairs.map(({ aIndex, bIndex }) =>
+    combineTrees(operator, arrA[aIndex], arrB[bIndex], strategy)
+  );
   return { tree: results.map((r) => r.tree), warnings: results.flatMap((r) => r.warnings) };
 }
 
@@ -251,7 +257,9 @@ export function computeArithmetic({
   // was grouped and broadcast its structure onto the result.
   const structurallyNested = groupedA || groupedB;
 
-  const aItems: DataItem<unknown>[] = a ? a.items : [{ id: 'fallback', value: fallbackA, provenance: [] }];
+  const aItems: DataItem<unknown>[] = a
+    ? a.items
+    : [{ id: 'fallback', value: fallbackA, provenance: [] }];
   const bItems: DataItem<unknown>[] = isUnary
     ? [{ id: 'unused', value: 0, provenance: [] as Provenance[] }]
     : b
@@ -278,7 +286,9 @@ export function computeArithmetic({
     const aTree: NumericTree = rawNumericTree(aItem.value);
     const bTree: NumericTree = rawNumericTree(bItem.value);
     const { tree, warnings } = combineTrees(operator, aTree, bTree, combineStrategy);
-    warnings.forEach((warning) => warningCounts.set(warning, (warningCounts.get(warning) ?? 0) + 1));
+    warnings.forEach((warning) =>
+      warningCounts.set(warning, (warningCounts.get(warning) ?? 0) + 1)
+    );
     // Anything structurally nested — a grouped-domain output, or a mismatched-domain
     // combination where one side happened to be grouped — folds modulo in here via mapTree,
     // since applyModulo's DataItem<number> shape only fits a genuinely flat number. Fully flat
@@ -318,10 +328,14 @@ export function computeArithmetic({
   ) {
     const used = Math.min(aItems.length, bItems.length);
     if (aItems.length > used) {
-      messages.push(`${aItems.length - used} trailing A item${aItems.length - used === 1 ? '' : 's'} unused by Zip.`);
+      messages.push(
+        `${aItems.length - used} trailing A item${aItems.length - used === 1 ? '' : 's'} unused by Zip.`
+      );
     }
     if (bItems.length > used) {
-      messages.push(`${bItems.length - used} trailing B item${bItems.length - used === 1 ? '' : 's'} unused by Zip.`);
+      messages.push(
+        `${bItems.length - used} trailing B item${bItems.length - used === 1 ? '' : 's'} unused by Zip.`
+      );
     }
   }
 
@@ -329,7 +343,9 @@ export function computeArithmetic({
   // provenance-append behavior); anything structurally nested already folded modulo in above,
   // since applyModulo's DataItem<number> shape doesn't fit an array-valued item.
   const finalItems =
-    structurallyNested || !modulo.enabled ? items : applyModulo(items as DataItem<number>[], modulo);
+    structurallyNested || !modulo.enabled
+      ? items
+      : applyModulo(items as DataItem<number>[], modulo);
   const kind = finalItems.length === 1 ? ('value' as const) : ('list' as const);
 
   return {

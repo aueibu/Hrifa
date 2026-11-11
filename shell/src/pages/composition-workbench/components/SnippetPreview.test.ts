@@ -31,6 +31,8 @@ describe('rhythmBars', () => {
     expect(rhythmBars(durations([]))).toBeNull();
     expect(rhythmBars(durations([1, 'x']))).toBeNull();
     expect(rhythmBars(durations([1, 0]))).toBeNull();
-    expect(rhythmBars(packet('list', 'integer', [{ id: 'a', value: 1, provenance: [] }]))).toBeNull();
+    expect(
+      rhythmBars(packet('list', 'integer', [{ id: 'a', value: 1, provenance: [] }]))
+    ).toBeNull();
   });
 });

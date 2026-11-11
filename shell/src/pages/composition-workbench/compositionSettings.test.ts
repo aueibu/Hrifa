@@ -1,5 +1,5 @@
-import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { renderHook, act } from '@testing-library/react';
 import {
   CompositionSettingsProvider,
   defaultCompositionSettings,

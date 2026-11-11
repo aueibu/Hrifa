@@ -11,9 +11,9 @@
  * rotation and union.
  */
 
-import { packet, type DataItem, type DataPacket } from "./model";
-import { pitchClassName } from "./pitch";
-import { realizePitchClasses, scalePitchClassPacket } from "./scaleConstruction";
+import { packet, type DataItem, type DataPacket } from './model';
+import { pitchClassName } from './pitch';
+import { realizePitchClasses, scalePitchClassPacket } from './scaleConstruction';
 
 export interface ScaleEvolutionStage {
   intervals: number[];
@@ -24,7 +24,7 @@ export interface ScaleEvolutionStage {
   collapsedToNeutral: boolean;
 }
 
-export type ScaleEvolutionTermination = "collapsed" | "cycle";
+export type ScaleEvolutionTermination = 'collapsed' | 'cycle';
 
 export interface ScaleEvolutionResult {
   stages: ScaleEvolutionStage[];
@@ -45,7 +45,7 @@ const MAX_STAGES = 64;
  */
 export function rotations(intervals: number[]): number[][] {
   return intervals.map((_, shift) =>
-    intervals.map((_, index) => intervals[(index + shift) % intervals.length]),
+    intervals.map((_, index) => intervals[(index + shift) % intervals.length])
   );
 }
 
@@ -55,7 +55,7 @@ export function rotations(intervals: number[]): number[][] {
  */
 export function synchronizeRotations(intervals: number[]): ScaleEvolutionStage {
   if (!intervals.length || intervals.some((value) => !Number.isInteger(value) || value <= 0)) {
-    throw new Error("Scale evolution requires one or more positive whole-number intervals.");
+    throw new Error('Scale evolution requires one or more positive whole-number intervals.');
   }
   const period = intervals.reduce((sum, value) => sum + value, 0);
   const rotated = rotations(intervals);
@@ -92,19 +92,19 @@ export function synchronizeRotations(intervals: number[]): ScaleEvolutionStage {
  */
 export function evolveScale(intervals: number[]): ScaleEvolutionResult {
   const stages: ScaleEvolutionStage[] = [];
-  const seen = new Set<string>([intervals.join(",")]);
+  const seen = new Set<string>([intervals.join(',')]);
   let current = intervals;
-  let terminationReason: ScaleEvolutionTermination = "collapsed";
+  let terminationReason: ScaleEvolutionTermination = 'collapsed';
   for (let step = 0; step < MAX_STAGES; step += 1) {
     const stage = synchronizeRotations(current);
     stages.push(stage);
     if (stage.collapsedToNeutral) {
-      terminationReason = "collapsed";
+      terminationReason = 'collapsed';
       break;
     }
-    const signature = stage.durations.join(",");
+    const signature = stage.durations.join(',');
     if (seen.has(signature)) {
-      terminationReason = "cycle";
+      terminationReason = 'cycle';
       break;
     }
     seen.add(signature);
@@ -115,17 +115,17 @@ export function evolveScale(intervals: number[]): ScaleEvolutionResult {
 
 export function scaleEvolutionStagesPacket(
   result: ScaleEvolutionResult,
-  sourceId: string,
+  sourceId: string
 ): DataPacket<number[]> {
   const items: DataItem<number[]>[] = result.stages.map((stage, index) => ({
     id: `${sourceId}:stage:${index}`,
     value: stage.durations,
-    label: stage.durations.join("+"),
+    label: stage.durations.join('+'),
     provenance: [
       {
         sourceModuleInstance: sourceId,
         sourceItemIds: [],
-        transformation: "scale-evolution",
+        transformation: 'scale-evolution',
         parameters: {
           stage: index,
           inputIntervals: stage.intervals,
@@ -136,26 +136,36 @@ export function scaleEvolutionStagesPacket(
     ],
   }));
   const warnings =
-    result.terminationReason === "cycle"
+    result.terminationReason === 'cycle'
       ? [
           `Evolution stopped after ${result.stages.length} stage(s): the pattern repeated an earlier stage rather than reaching a neutral collapse.`,
         ]
       : [];
-  return packet("bank", "interval", items, warnings, { terminationReason: result.terminationReason }, {
-    role: "interUnit",
-    frame: {
-      topology: "cyclic",
-      unit: "abstract",
-      extent: result.stages[0]?.period ?? 0,
-      origin: 0,
-    },
-  });
+  return packet(
+    'bank',
+    'interval',
+    items,
+    warnings,
+    { terminationReason: result.terminationReason },
+    {
+      role: 'interUnit',
+      frame: {
+        topology: 'cyclic',
+        unit: 'abstract',
+        extent: result.stages[0]?.period ?? 0,
+        origin: 0,
+      },
+    }
+  );
 }
 
-export function finalStagePacket(result: ScaleEvolutionResult, sourceId: string): DataPacket<number> {
+export function finalStagePacket(
+  result: ScaleEvolutionResult,
+  sourceId: string
+): DataPacket<number> {
   const last = result.stages[result.stages.length - 1];
   if (!last) {
-    return packet("list", "interval", [], ["Evolution produced no stages."]);
+    return packet('list', 'interval', [], ['Evolution produced no stages.']);
   }
   const items: DataItem<number>[] = last.durations.map((value, index) => ({
     id: `${sourceId}:final:${index}`,
@@ -164,17 +174,17 @@ export function finalStagePacket(result: ScaleEvolutionResult, sourceId: string)
       {
         sourceModuleInstance: sourceId,
         sourceItemIds: [],
-        transformation: "scale-evolution-final",
+        transformation: 'scale-evolution-final',
         parameters: { stage: result.stages.length - 1, period: last.period },
       },
     ],
   }));
   const warnings = last.collapsedToNeutral
-    ? ["Final stage collapsed to a neutral (all-semitone) scale."]
+    ? ['Final stage collapsed to a neutral (all-semitone) scale.']
     : [];
-  return packet("list", "interval", items, warnings, undefined, {
-    role: "interUnit",
-    frame: { topology: "cyclic", unit: "abstract", extent: last.period, origin: 0 },
+  return packet('list', 'interval', items, warnings, undefined, {
+    role: 'interUnit',
+    frame: { topology: 'cyclic', unit: 'abstract', extent: last.period, origin: 0 },
   });
 }
 
@@ -190,7 +200,7 @@ export function stagePitchClassesPacket(
   result: ScaleEvolutionResult,
   root: number,
   sourceId: string,
-  edo = 12,
+  edo = 12
 ) {
   // Each bank item's value is a bare number[] — the whole stage's scale as one bracketed
   // pitch-class group, matching PitchClassItemValue's array form exactly. No wrapper
@@ -205,27 +215,34 @@ export function stagePitchClassesPacket(
         {
           sourceModuleInstance: sourceId,
           sourceItemIds: [],
-          transformation: "scale-evolution-realize",
+          transformation: 'scale-evolution-realize',
           parameters: { stage: index, root, durations: stage.durations },
         },
       ],
     };
   });
-  return packet("bank", "pitchClass", items, [], { root }, {
-    role: "pitchMaterial",
-    encoding: `chromatic-${edo}`,
-  });
+  return packet(
+    'bank',
+    'pitchClass',
+    items,
+    [],
+    { root },
+    {
+      role: 'pitchMaterial',
+      encoding: `chromatic-${edo}`,
+    }
+  );
 }
 
 export function finalPitchClassesPacket(
   result: ScaleEvolutionResult,
   root: number,
   sourceId: string,
-  edo = 12,
+  edo = 12
 ) {
   const last = result.stages[result.stages.length - 1];
   if (!last) {
-    return packet("list", "pitchClass", [], ["Evolution produced no stages."]);
+    return packet('list', 'pitchClass', [], ['Evolution produced no stages.']);
   }
   return scalePitchClassPacket(last.durations, root, sourceId, edo);
 }

@@ -89,8 +89,12 @@ export function pitchClassName(pitchClass: number, edo = 12): string {
   let best: { letter: string; distance: number } | undefined;
   for (const natural of spelling.naturals) {
     let distance = step - natural.position;
-    if (distance > edo / 2) distance -= edo;
-    if (distance < -edo / 2) distance += edo;
+    if (distance > edo / 2) {
+      distance -= edo;
+    }
+    if (distance < -edo / 2) {
+      distance += edo;
+    }
     if (
       !best ||
       Math.abs(distance) < Math.abs(best.distance) ||
@@ -101,9 +105,15 @@ export function pitchClassName(pitchClass: number, edo = 12): string {
   }
   const { letter, distance } = best!;
   const magnitude = Math.abs(distance);
-  if (magnitude === 0) return letter;
-  if (magnitude === spelling.apotome) return letter + (distance > 0 ? '#' : 'b');
-  if (magnitude === spelling.apotome * 2) return letter + (distance > 0 ? '##' : 'bb');
+  if (magnitude === 0) {
+    return letter;
+  }
+  if (magnitude === spelling.apotome) {
+    return letter + (distance > 0 ? '#' : 'b');
+  }
+  if (magnitude === spelling.apotome * 2) {
+    return letter + (distance > 0 ? '##' : 'bb');
+  }
   if (spelling.halfUnit !== undefined && magnitude === spelling.halfUnit) {
     return letter + (distance > 0 ? halfSharpSuffix : halfFlatSuffix);
   }
@@ -115,14 +125,19 @@ export function pitchClassName(pitchClass: number, edo = 12): string {
 // input stay symmetric rather than accepting a wider or narrower vocabulary than what's shown.
 function parseMeantoneSpelling(token: string, edo: number): number | undefined {
   const match = /^([A-Ga-g])(##|bb|#|♯|b|♭|↑|↓)?$/.exec(token);
-  if (!match) return undefined;
+  if (!match) {
+    return undefined;
+  }
   const spelling = meantoneSpellingFor(edo);
-  if (!spelling) return undefined;
+  if (!spelling) {
+    return undefined;
+  }
   const natural = spelling.naturals.find((n) => n.letter === match[1].toUpperCase());
-  if (!natural) return undefined;
+  if (!natural) {
+    return undefined;
+  }
   const rawAccidental = match[2];
-  const accidental =
-    rawAccidental === '♯' ? '#' : rawAccidental === '♭' ? 'b' : rawAccidental;
+  const accidental = rawAccidental === '♯' ? '#' : rawAccidental === '♭' ? 'b' : rawAccidental;
   let offset: number | undefined;
   switch (accidental) {
     case undefined:
@@ -147,7 +162,9 @@ function parseMeantoneSpelling(token: string, edo: number): number | undefined {
       offset = spelling.halfUnit === undefined ? undefined : -spelling.halfUnit;
       break;
   }
-  if (offset === undefined) return undefined;
+  if (offset === undefined) {
+    return undefined;
+  }
   return (((natural.position + offset) % edo) + edo) % edo;
 }
 
@@ -201,8 +218,12 @@ function tokenizePitchGroups(value: string) {
   const errors: string[] = [];
   let cursor = 0;
   while (cursor < value.length) {
-    while (cursor < value.length && /[\s,]/.test(value[cursor])) cursor += 1;
-    if (cursor >= value.length) break;
+    while (cursor < value.length && /[\s,]/.test(value[cursor])) {
+      cursor += 1;
+    }
+    if (cursor >= value.length) {
+      break;
+    }
     if (value[cursor] === ']') {
       errors.push(`Unexpected closing bracket at character ${cursor + 1}.`);
       cursor += 1;
@@ -219,14 +240,19 @@ function tokenizePitchGroups(value: string) {
         errors.push('Nested chord brackets are not supported.');
       } else {
         const tokens = contents.split(/[\s,]+/).filter(Boolean);
-        if (tokens.length) groups.push(tokens);
-        else errors.push('Chord brackets must contain at least one pitch.');
+        if (tokens.length) {
+          groups.push(tokens);
+        } else {
+          errors.push('Chord brackets must contain at least one pitch.');
+        }
       }
       cursor = closesAt + 1;
       continue;
     }
     let endsAt = cursor;
-    while (endsAt < value.length && !/[\s,[\]]/.test(value[endsAt])) endsAt += 1;
+    while (endsAt < value.length && !/[\s,[\]]/.test(value[endsAt])) {
+      endsAt += 1;
+    }
     groups.push([value.slice(cursor, endsAt)]);
     cursor = endsAt;
   }
@@ -234,8 +260,12 @@ function tokenizePitchGroups(value: string) {
 }
 
 function accidentalOffset(accidental = '') {
-  if (accidental === '#' || accidental === '♯') return 1;
-  if (accidental === 'b' || accidental === '♭') return -1;
+  if (accidental === '#' || accidental === '♯') {
+    return 1;
+  }
+  if (accidental === 'b' || accidental === '♭') {
+    return -1;
+  }
   return 0;
 }
 
@@ -259,7 +289,9 @@ interface ParsedToken {
 function parsePitchClassToken(token: string, edo = 12): ParsedToken | string {
   const numeric = Number(token);
   if (Number.isInteger(numeric)) {
-    if (numeric < 0 || numeric > edo - 1) return `${token}: pitch-class integers must be from 0 to ${edo - 1}`;
+    if (numeric < 0 || numeric > edo - 1) {
+      return `${token}: pitch-class integers must be from 0 to ${edo - 1}`;
+    }
     return { value: numeric };
   }
   // A letter name only has a standard meaning where this EDO has a usable meantone spelling
@@ -272,7 +304,10 @@ function parsePitchClassToken(token: string, edo = 12): ParsedToken | string {
       ? `${token}: enter a pitch-class integer from 0 to ${edo - 1}, or a note name such as C, F#, or Bb`
       : `${token}: enter a pitch-class integer from 0 to ${edo - 1} (this EDO has no standard note-name spelling)`;
   }
-  return { value, spelling: token.length > 1 ? `${token[0].toUpperCase()}${token.slice(1)}` : token.toUpperCase() };
+  return {
+    value,
+    spelling: token.length > 1 ? `${token[0].toUpperCase()}${token.slice(1)}` : token.toUpperCase(),
+  };
 }
 
 function parseConcretePitchToken(
@@ -281,7 +316,9 @@ function parseConcretePitchToken(
 ): ParsedToken | string {
   if (format === 'note-name') {
     const match = /^([A-Ga-g])([#b♯♭]?)(-?\d+)$/.exec(token);
-    if (!match) return `${token}: enter a note name with octave, such as C4, F#3, or Bb5`;
+    if (!match) {
+      return `${token}: enter a note name with octave, such as C4, F#3, or Bb5`;
+    }
     const spelling = `${match[1].toUpperCase()}${match[2]}${match[3]}`;
     const midi =
       (Number(match[3]) + 1) * 12 +
@@ -291,7 +328,9 @@ function parseConcretePitchToken(
   }
 
   const value = Number(token);
-  if (!Number.isFinite(value)) return `${token}: enter a finite number`;
+  if (!Number.isFinite(value)) {
+    return `${token}: enter a finite number`;
+  }
   if (format === 'midi-note' && (value < 0 || value > 127)) {
     return `${token}: MIDI-note values must be from 0 to 127`;
   }
@@ -304,8 +343,15 @@ function parseToken(token: string, format: PitchInputFormat, edo = 12): ParsedTo
     : parseConcretePitchToken(token, format);
 }
 
-function labelForToken(value: number, format: PitchInputFormat, edo = 12, spelling?: string): string {
-  if (spelling) return spelling;
+function labelForToken(
+  value: number,
+  format: PitchInputFormat,
+  edo = 12,
+  spelling?: string
+): string {
+  if (spelling) {
+    return spelling;
+  }
   return format === 'pitch-class' ? pitchClassName(value, edo) : formatMidicents(value);
 }
 
@@ -361,18 +407,24 @@ export function convertPitchText({
     const midicents = from === 'pitch-class' ? (octave + 1) * 1200 + value * centsPerStep : value;
     if (to === 'pitch-class') {
       const step = Math.round(midicents / centsPerStep);
-      if (Math.abs(step * centsPerStep - midicents) > 1e-6) rounded += 1;
+      if (Math.abs(step * centsPerStep - midicents) > 1e-6) {
+        rounded += 1;
+      }
       return String(((step % edo) + edo) % edo);
     }
     if (to === 'midicent') {
       return trimNumber(midicents);
     }
     if (to === 'midi-note') {
-      if (midicents < 0 || midicents > 12700) outOfRange += 1;
+      if (midicents < 0 || midicents > 12700) {
+        outOfRange += 1;
+      }
       return trimNumber(midicents / 100);
     }
     const semitone = Math.round(midicents / 100);
-    if (Math.abs(semitone * 100 - midicents) > 1e-6) rounded += 1;
+    if (Math.abs(semitone * 100 - midicents) > 1e-6) {
+      rounded += 1;
+    }
     const name = pitchClassNames[((semitone % 12) + 12) % 12];
     return `${name}${Math.floor(semitone / 12) - 1}`;
   };
@@ -455,7 +507,9 @@ export function interpretPitchList({
     const id = `${instanceId}:pitch-group:${index}`;
     // A typed letter-name spelling becomes both the displayed label (matching prior behavior:
     // "Bb" displayed as "Bb", not canonicalized to "A#") and the source-metadata record.
-    const label = parsedTokens.map((p) => labelForToken(p.value, format, edo, p.spelling)).join(' ');
+    const label = parsedTokens
+      .map((p) => labelForToken(p.value, format, edo, p.spelling))
+      .join(' ');
     if (parsedTokens.some((p) => p.spelling)) {
       spellings[id] = label;
     }
@@ -478,7 +532,9 @@ export function interpretPitchList({
     });
   });
 
-  if (!sourceItems.length) errors.push('Enter at least one pitch value.');
+  if (!sourceItems.length) {
+    errors.push('Enter at least one pitch value.');
+  }
   const domain = format === 'pitch-class' ? 'pitchClass' : 'pitch';
   return {
     packet: packet(

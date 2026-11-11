@@ -163,7 +163,10 @@ export function RhythmListModule({
         },
       ],
     });
-    void preview.play(plan, `Playing the rhythm for ${musicalPlanSeconds(plan).toFixed(1)} seconds.`);
+    void preview.play(
+      plan,
+      `Playing the rhythm for ${musicalPlanSeconds(plan).toFixed(1)} seconds.`
+    );
   }
 
   function resetRhythmList() {

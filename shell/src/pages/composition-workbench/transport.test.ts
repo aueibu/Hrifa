@@ -1,5 +1,5 @@
-import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { renderHook, act } from '@testing-library/react';
 import type { MusicalPerformancePlan, SecondsPerformancePlan } from './audio/types';
 import { CompositionSettingsProvider, useCompositionSettings } from './compositionSettings';
 import { musicalDuration, musicalPosition, rationalToNumber } from './musicalTime';
@@ -14,7 +14,10 @@ import {
   type TransportSettings,
 } from './transport';
 
-const transport = (patch: Partial<TransportSettings> = {}) => ({ ...defaultTransportSettings, ...patch });
+const transport = (patch: Partial<TransportSettings> = {}) => ({
+  ...defaultTransportSettings,
+  ...patch,
+});
 
 function secondsPlan(durationSeconds: number): SecondsPerformancePlan {
   return {
@@ -60,12 +63,17 @@ describe('applyTransport', () => {
     const plan = applyTransport(secondsPlan(4), transport()) as SecondsPerformancePlan;
     const clicks = plan.events.filter((event) => event.busId === METER_BUS);
     expect(clicks.map((click) => click.atSeconds)).toEqual([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5]);
-    expect(clicks.filter((click) => click.pitchMidicents === clicks[0].pitchMidicents)).toHaveLength(2);
+    expect(
+      clicks.filter((click) => click.pitchMidicents === clicks[0].pitchMidicents)
+    ).toHaveLength(2);
     expect(plan.durationSeconds).toBe(4);
   });
 
   it('counts in one bar and shifts the material after it', () => {
-    const plan = applyTransport(secondsPlan(2), transport({ countIn: true, meter: '3/4' })) as SecondsPerformancePlan;
+    const plan = applyTransport(
+      secondsPlan(2),
+      transport({ countIn: true, meter: '3/4' })
+    ) as SecondsPerformancePlan;
     expect(plan.events.filter((event) => event.busId === COUNT_IN_BUS)).toHaveLength(3);
     expect(plan.events.find((event) => event.id === 'note')?.atSeconds).toBeCloseTo(1.75);
     expect(plan.events.find((event) => event.busId === METER_BUS)?.atSeconds).toBeCloseTo(1.5);
@@ -104,13 +112,18 @@ describe('applyTransport', () => {
     const at = (id: string) =>
       rationalToNumber(plan.events.find((event) => event.id === id)!.at.quarterNotes);
     expect(at('note')).toBe(5);
-    expect(plan.events.filter((event) => event.busId === METER_BUS).map((event) => rationalToNumber(event.at.quarterNotes))).toEqual([4, 5, 6]);
+    expect(
+      plan.events
+        .filter((event) => event.busId === METER_BUS)
+        .map((event) => rationalToNumber(event.at.quarterNotes))
+    ).toEqual([4, 5, 6]);
     expect(rationalToNumber(plan.duration.quarterNotes)).toBe(7);
   });
 });
 
 describe('transport settings', () => {
-  const wrapper = ({ children }: { children: ReactNode }) => CompositionSettingsProvider({ children });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    CompositionSettingsProvider({ children });
 
   beforeEach(() => localStorage.clear());
 
@@ -119,6 +132,10 @@ describe('transport settings', () => {
     const { result } = renderHook(() => useCompositionSettings(), { wrapper });
     expect(result.current.settings).toMatchObject({ edo: 19, transport: defaultTransportSettings });
     act(() => result.current.updateTransport({ tempo: 90, metronome: true, meter: 'nonsense' }));
-    expect(result.current.settings.transport).toMatchObject({ tempo: 90, metronome: true, meter: '4/4' });
+    expect(result.current.settings.transport).toMatchObject({
+      tempo: 90,
+      metronome: true,
+      meter: '4/4',
+    });
   });
 });

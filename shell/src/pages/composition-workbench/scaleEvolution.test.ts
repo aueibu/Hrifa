@@ -4,16 +4,16 @@ import {
   rotations,
   stagePitchClassesPacket,
   synchronizeRotations,
-} from "./scaleEvolution";
+} from './scaleEvolution';
 
-describe("scaleEvolution", () => {
-  it("rejects empty or non-positive-integer interval sequences", () => {
+describe('scaleEvolution', () => {
+  it('rejects empty or non-positive-integer interval sequences', () => {
     expect(() => synchronizeRotations([])).toThrow();
     expect(() => synchronizeRotations([2, 0])).toThrow();
     expect(() => synchronizeRotations([2, -1])).toThrow();
   });
 
-  it("generates every rotation without deduplicating coincident ones", () => {
+  it('generates every rotation without deduplicating coincident ones', () => {
     // A prime-length sequence with a repeated value (4, 4, 3) still yields 3 distinct
     // rotations as sequences, but the function must not special-case that — it always
     // returns exactly `length` rotations, generated in full.
@@ -42,7 +42,7 @@ describe("scaleEvolution", () => {
 
   it("reproduces Book II's stated quintinomial collapse of the 3+2 family to neutral", () => {
     const result = evolveScale([3, 2]);
-    expect(result.terminationReason).toBe("collapsed");
+    expect(result.terminationReason).toBe('collapsed');
     expect(result.stages).toHaveLength(2);
     expect(result.stages[0].durations).toEqual([2, 1, 2]);
     expect(result.stages[1].durations).toEqual([1, 1, 1, 1, 1]);
@@ -57,22 +57,22 @@ describe("scaleEvolution", () => {
     expect(stage.collapsedToNeutral).toBe(false);
   });
 
-  it("terminates by cycle detection rather than looping forever on a fixed point", () => {
+  it('terminates by cycle detection rather than looping forever on a fixed point', () => {
     // A single-interval "scale" (period = its own value) has exactly one rotation,
     // which synchronizes to itself: an immediate fixed point.
     const result = evolveScale([4]);
     expect(result.stages).toHaveLength(1);
-    expect(result.terminationReason === "collapsed" || result.terminationReason === "cycle").toBe(
-      true,
+    expect(result.terminationReason === 'collapsed' || result.terminationReason === 'cycle').toBe(
+      true
     );
   });
 
-  it("never returns more stages than the safety cap even in degenerate cases", () => {
+  it('never returns more stages than the safety cap even in degenerate cases', () => {
     const result = evolveScale([7, 5, 3]);
     expect(result.stages.length).toBeLessThanOrEqual(64);
   });
 
-  it("realizes every stage as an actual pitch-class scale, not just interval numbers", () => {
+  it('realizes every stage as an actual pitch-class scale, not just interval numbers', () => {
     const result = evolveScale([3, 2]);
     const packet = stagePitchClassesPacket(result, 0, 'src');
     expect(packet.items).toHaveLength(2);
@@ -83,14 +83,14 @@ describe("scaleEvolution", () => {
     expect(packet.items[1].value).toEqual([0, 1, 2, 3, 4, 5]);
   });
 
-  it("realizes stage pitch classes from an arbitrary root, wrapping mod 12", () => {
+  it('realizes stage pitch classes from an arbitrary root, wrapping mod 12', () => {
     const result = evolveScale([3, 2]);
     const packet = stagePitchClassesPacket(result, 10, 'src');
     // Stage 1 durations 2,1,2 from root 10 -> 10,12,13,15 -> mod 12 -> 10,0,1,3
     expect(packet.items[0].value).toEqual([10, 0, 1, 3]);
   });
 
-  it("keeps stage pitch-class items as bare number[] so a future bank-entry selector needs no reinterpretation", () => {
+  it('keeps stage pitch-class items as bare number[] so a future bank-entry selector needs no reinterpretation', () => {
     const result = evolveScale([3, 2]);
     const packet = stagePitchClassesPacket(result, 0, 'src');
     for (const item of packet.items) {
@@ -102,7 +102,7 @@ describe("scaleEvolution", () => {
     }
   });
 
-  it("realizes the final stage as a single pitch-class list output, one bare number per degree", () => {
+  it('realizes the final stage as a single pitch-class list output, one bare number per degree', () => {
     const result = evolveScale([3, 2]);
     const packet = finalPitchClassesPacket(result, 0, 'src');
     expect(packet.domain).toBe('pitchClass');

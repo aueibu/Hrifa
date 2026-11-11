@@ -2,7 +2,11 @@ import { render } from '@test-utils';
 import type { TrackNote } from '../rhythmEdit';
 import { NoteGuides, ProgramTrack, trackBlocks } from './ProgramTrack';
 
-const tick = (action: string, block: number): TrackNote<string> => ({ state: 'tick', action, block });
+const tick = (action: string, block: number): TrackNote<string> => ({
+  state: 'tick',
+  action,
+  block,
+});
 const skipped: TrackNote<string> = { state: 'skipped' };
 const waiting: TrackNote<string> = { state: 'waiting' };
 
@@ -23,7 +27,12 @@ describe('program track', () => {
   it('draws a cell per note, an action on ticks, a dot where skipped, and a bracket per block', () => {
     const notes = [waiting, tick('x', 0), skipped, tick('r', 1)];
     const { container, getByText } = render(
-      <ProgramTrack label="Structure" detail="phase 1, rate 2" lengths={[1, 1, 1, 1]} notes={notes} />
+      <ProgramTrack
+        label="Structure"
+        detail="phase 1, rate 2"
+        lengths={[1, 1, 1, 1]}
+        notes={notes}
+      />
     );
     const cells = [...container.querySelectorAll<HTMLElement>('[data-state]')];
     expect(cells.map((cell) => cell.dataset.state)).toEqual(['waiting', 'tick', 'skipped', 'tick']);

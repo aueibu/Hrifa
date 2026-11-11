@@ -100,7 +100,11 @@ describe('rhythmAttacks', () => {
   });
 
   it('chains ties and reports a tie into a rest or off a linear end, then ignores it', () => {
-    const chain = rhythmAttacks([{ duration: 1, tie: true }, { duration: 2, tie: true }, { duration: 1 }]);
+    const chain = rhythmAttacks([
+      { duration: 1, tie: true },
+      { duration: 2, tie: true },
+      { duration: 1 },
+    ]);
     expect(chain.attacks.map((a) => [a.atPulses, a.slotPulses])).toEqual([[0, 4]]);
     const intoRest = rhythmAttacks([{ duration: 1, tie: true }, { duration: -1 }, { duration: 1 }]);
     expect(intoRest.attacks.map((a) => [a.atPulses, a.slotPulses])).toEqual([

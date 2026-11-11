@@ -182,11 +182,7 @@ export function SourceMenu({
             <Menu.Divider />
           </>
         )}
-        {tree.length ? (
-          tree.map(renderNode)
-        ) : (
-          <Menu.Label>No compatible sources</Menu.Label>
-        )}
+        {tree.length ? tree.map(renderNode) : <Menu.Label>No compatible sources</Menu.Label>}
       </Menu.Dropdown>
     </Menu>
   );

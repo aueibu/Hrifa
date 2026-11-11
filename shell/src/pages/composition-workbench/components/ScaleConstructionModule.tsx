@@ -163,7 +163,7 @@ export function ScaleConstructionModule({
     acceptsPermutationMode
   );
   const [intervalText, setIntervalText] = usePersistentState(
-    stateKey(compositionStateKeys.scaleConstructionIntervals + '.text'),
+    stateKey(`${compositionStateKeys.scaleConstructionIntervals}.text`),
     intervals.join(', '),
     acceptsString
   );

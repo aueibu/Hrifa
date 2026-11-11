@@ -116,7 +116,11 @@ export function dragBodyAndZoom(
   const zoomed =
     dy === 0
       ? viewport
-      : zoomViewport(viewport, ZOOM_STEP ** (-dy / pixelsPerStep), viewport.start + viewport.span / 2);
+      : zoomViewport(
+          viewport,
+          ZOOM_STEP ** (-dy / pixelsPerStep),
+          viewport.start + viewport.span / 2
+        );
   return dragBody(zoomed, dx);
 }
 

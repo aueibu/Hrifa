@@ -1,38 +1,38 @@
-import { generateInterference, groupingOptions } from "../interference";
-import { melodicize } from "../melodicization";
-import { packet } from "../model";
-import { defaultMusicalTimeline, musicalDuration } from "../musicalTime";
-import { interpretPitchList } from "../pitch";
+import { generateInterference, groupingOptions } from '../interference';
+import { melodicize } from '../melodicization';
+import { packet } from '../model';
+import { defaultMusicalTimeline, musicalDuration } from '../musicalTime';
+import { interpretPitchList } from '../pitch';
 import {
   createInterferencePreviewPlan,
   createNotePacketPerformancePlan,
   createPitchPreviewPlan,
   frequencyToMidicents,
-} from "./performancePlans";
+} from './performancePlans';
 
-describe("performance-plan compilation", () => {
-  it("turns a pitch list into timed, provenance-preserving audition events", () => {
+describe('performance-plan compilation', () => {
+  it('turns a pitch list into timed, provenance-preserving audition events', () => {
     const provenance = [
       {
-        sourceModuleInstance: "pitch-list",
-        sourceItemIds: ["inline:0"],
-        transformation: "read-as-midicent",
+        sourceModuleInstance: 'pitch-list',
+        sourceItemIds: ['inline:0'],
+        transformation: 'read-as-midicent',
       },
     ];
     const result = createPitchPreviewPlan({
-      sourceId: "pitch-list",
+      sourceId: 'pitch-list',
       groups: [
         {
-          id: "group:0",
+          id: 'group:0',
           pitches: [
-            { id: "pitch:0", midicents: 6000 },
-            { id: "pitch:1", midicents: 6400 },
+            { id: 'pitch:0', midicents: 6000 },
+            { id: 'pitch:1', midicents: 6400 },
           ],
           provenance,
         },
         {
-          id: "group:1",
-          pitches: [{ id: "pitch:2", midicents: 6200 }],
+          id: 'group:1',
+          pitches: [{ id: 'pitch:2', midicents: 6200 }],
           provenance: [],
         },
       ],
@@ -46,8 +46,8 @@ describe("performance-plan compilation", () => {
       {
         atSeconds: 0,
         pitchMidicents: 6000,
-        instrumentId: "preview.triangle",
-        busId: "preview",
+        instrumentId: 'preview.triangle',
+        busId: 'preview',
         provenance,
       },
       { atSeconds: 0, pitchMidicents: 6400 },
@@ -57,18 +57,18 @@ describe("performance-plan compilation", () => {
     expect(result.skippedEvents).toBe(0);
   });
 
-  it("keeps inaudible pitch values out of the renderer without changing list duration", () => {
+  it('keeps inaudible pitch values out of the renderer without changing list duration', () => {
     const result = createPitchPreviewPlan({
-      sourceId: "pitch-list",
+      sourceId: 'pitch-list',
       groups: [
         {
-          id: "audible",
-          pitches: [{ id: "audible:pitch", midicents: 6900 }],
+          id: 'audible',
+          pitches: [{ id: 'audible:pitch', midicents: 6900 }],
           provenance: [],
         },
         {
-          id: "inaudible",
-          pitches: [{ id: "inaudible:pitch", midicents: 20_000 }],
+          id: 'inaudible',
+          pitches: [{ id: 'inaudible:pitch', midicents: 20_000 }],
           provenance: [],
         },
       ],
@@ -82,16 +82,16 @@ describe("performance-plan compilation", () => {
     expect(result.skippedEvents).toBe(1);
   });
 
-  it("combines generator attacks and grouping clicks into named buses", () => {
+  it('combines generator attacks and grouping clicks into named buses', () => {
     const patterns = [[2], [3]];
     const result = generateInterference(patterns);
     const grouping = groupingOptions([2, 3], result.recurrence)[0];
     const plan = createInterferencePreviewPlan({
-      sourceId: "interference",
+      sourceId: 'interference',
       patterns,
       sounds: [
-        { instrumentId: "preview.sine", pitchMidicents: 4800 },
-        { instrumentId: "preview.triangle", pitchMidicents: 5500 },
+        { instrumentId: 'preview.sine', pitchMidicents: 4800 },
+        { instrumentId: 'preview.triangle', pitchMidicents: 5500 },
       ],
       result,
       pulseUnit: musicalDuration(1, 4),
@@ -99,61 +99,64 @@ describe("performance-plan compilation", () => {
       grouping,
     });
 
-    expect(plan.timebase.kind).toBe("musical");
+    expect(plan.timebase.kind).toBe('musical');
     // Six sixteenth-note pulses of resultant.
     expect(plan.duration.quarterNotes).toEqual({ numerator: 3, denominator: 2 });
-    expect(plan.events.filter((event) => event.busId === "preview")).toHaveLength(5);
-    expect(plan.events.filter((event) => event.busId === "grouping")).toHaveLength(6);
+    expect(plan.events.filter((event) => event.busId === 'preview')).toHaveLength(5);
+    expect(plan.events.filter((event) => event.busId === 'grouping')).toHaveLength(6);
     expect(plan.events[0]).toMatchObject({
       at: { quarterNotes: { numerator: 0, denominator: 1 } },
       pitchMidicents: 4800,
-      instrumentId: "preview.sine",
+      instrumentId: 'preview.sine',
     });
     // Generator attacks sound for 95% of their own slot (2 pulses = 1/2 quarter).
     expect(plan.events[0].duration.quarterNotes).toEqual({ numerator: 19, denominator: 40 });
     // Every grouping click ends inside the plan, so the engine accepts it.
     plan.events.forEach((event) => {
-      const end = event.at.quarterNotes.numerator / event.at.quarterNotes.denominator +
+      const end =
+        event.at.quarterNotes.numerator / event.at.quarterNotes.denominator +
         event.duration.quarterNotes.numerator / event.duration.quarterNotes.denominator;
       expect(end).toBeLessThanOrEqual(1.5 + 1e-9);
     });
-    expect(plan.events.filter((event) => event.busId === "grouping" && event.velocity > 0.5)).toHaveLength(1);
+    expect(
+      plan.events.filter((event) => event.busId === 'grouping' && event.velocity > 0.5)
+    ).toHaveLength(1);
     expect(plan.events.every((event) => event.provenance.length > 0)).toBe(true);
   });
 
-  it("normalizes renderer frequencies to midicents", () => {
+  it('normalizes renderer frequencies to midicents', () => {
     expect(frequencyToMidicents(440)).toBe(6900);
   });
 
-  it("keeps composed note packets in musical time for transport playback", () => {
+  it('keeps composed note packets in musical time for transport playback', () => {
     const rhythm = packet(
-      "list",
-      "duration",
+      'list',
+      'duration',
       [2, 1].map((value, index) => ({ id: `rhythm:${index}`, value, provenance: [] })),
       [],
       undefined,
-      { role: "interOnset", frame: { topology: "cyclic", unit: "pulse", extent: 3 } },
+      { role: 'interOnset', frame: { topology: 'cyclic', unit: 'pulse', extent: 3 } }
     );
     const pitches = interpretPitchList({
-      instanceId: "pitch-list",
-      format: "midi-note",
-      inlineText: "[60 64], 62",
+      instanceId: 'pitch-list',
+      format: 'midi-note',
+      inlineText: '[60 64], 62',
     }).packet;
     const notes = melodicize({
-      instanceId: "melodicization",
+      instanceId: 'melodicization',
       rhythm,
       pitches,
-      allocation: "cycle",
+      allocation: 'cycle',
       pulseUnit: musicalDuration(1, 4),
       articulationPercent: 150,
     }).packet;
     const plan = createNotePacketPerformancePlan({
-      sourceId: "melodicization",
+      sourceId: 'melodicization',
       packet: notes,
       timeline: defaultMusicalTimeline,
     });
 
-    expect(plan.timebase.kind).toBe("musical");
+    expect(plan.timebase.kind).toBe('musical');
     expect(plan.events[0]).toMatchObject({
       at: { quarterNotes: { numerator: 0, denominator: 1 } },
       duration: { quarterNotes: { numerator: 3, denominator: 4 } },

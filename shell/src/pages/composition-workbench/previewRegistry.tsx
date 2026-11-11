@@ -53,7 +53,9 @@ export function PreviewRegistryProvider({ children }: { children: ReactNode }) {
   const registry = useRef<PreviewRegistry | null>(null);
   registry.current ??= createPreviewRegistry();
   return (
-    <PreviewRegistryContext.Provider value={registry.current}>{children}</PreviewRegistryContext.Provider>
+    <PreviewRegistryContext.Provider value={registry.current}>
+      {children}
+    </PreviewRegistryContext.Provider>
   );
 }
 
@@ -62,18 +64,12 @@ export function useTransportPreview(instanceId: string, play: () => void) {
   const registry = useContext(PreviewRegistryContext);
   const latest = useRef(play);
   latest.current = play;
-  useEffect(
-    () => registry?.register(instanceId, () => latest.current()),
-    [registry, instanceId]
-  );
+  useEffect(() => registry?.register(instanceId, () => latest.current()), [registry, instanceId]);
 }
 
 /** The selected module's preview, or undefined when it has none. */
 export function useRegisteredPreview(instanceId: string | null | undefined) {
   const registry = useContext(PreviewRegistryContext);
-  useSyncExternalStore(
-    registry?.subscribe ?? (() => () => {}),
-    registry?.version ?? (() => 0)
-  );
+  useSyncExternalStore(registry?.subscribe ?? (() => () => {}), registry?.version ?? (() => 0));
   return registry?.get(instanceId);
 }

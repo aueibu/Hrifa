@@ -159,7 +159,9 @@ export function FlowCell({
         data-selected={selected || undefined}
         data-flow-active={flowActive || undefined}
         data-category={category}
-        style={category ? ({ '--category': signalCategoryColor(category) } as CSSProperties) : undefined}
+        style={
+          category ? ({ '--category': signalCategoryColor(category) } as CSSProperties) : undefined
+        }
         // A modifier-click is building a multi-selection, not opening this module.
         onClick={(event) => {
           if (!(event.ctrlKey || event.metaKey || event.shiftKey)) {
@@ -167,7 +169,9 @@ export function FlowCell({
           }
         }}
       >
-        {noticeDetail && <span className={classes.noticeFlag} title={noticeDetail} aria-hidden="true" />}
+        {noticeDetail && (
+          <span className={classes.noticeFlag} title={noticeDetail} aria-hidden="true" />
+        )}
         <span className={classes.title}>{title}</span>
         <span className={classes.subtitle}>{subtitle}</span>
         {footer && (

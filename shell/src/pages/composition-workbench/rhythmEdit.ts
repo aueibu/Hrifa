@@ -200,7 +200,11 @@ function parseProgram<A>(
       continue;
     }
     const characters = splitCharacters ? [...word].map(parseAction) : [];
-    if (splitCharacters && characters.length && characters.every((action) => action !== undefined)) {
+    if (
+      splitCharacters &&
+      characters.length &&
+      characters.every((action) => action !== undefined)
+    ) {
       characters.forEach((action) => blocks.push({ action: action as A, count: 1 }));
     } else {
       errors.push(`${word}: ${hint}`);
@@ -341,7 +345,9 @@ function selectorFor(selector: string): EditRule['select'] | undefined {
       return undefined;
     }
     return (lengths) =>
-      lengths.flatMap((_, index) => (index + 1 >= from && (index + 1 - from) % step === 0 ? [index] : []));
+      lengths.flatMap((_, index) =>
+        index + 1 >= from && (index + 1 - from) % step === 0 ? [index] : []
+      );
   }
   const compare = /^(>=|<=|>|<)\s*(\d+\/\d+|\d*\.\d+|\d+)$/.exec(text);
   if (compare) {
@@ -355,7 +361,8 @@ function selectorFor(selector: string): EditRule['select'] | undefined {
       '<': (length) => length < limit - 1e-9,
       '<=': (length) => length <= limit + 1e-9,
     };
-    return (lengths) => lengths.flatMap((length, index) => (test[compare[1]](length) ? [index] : []));
+    return (lengths) =>
+      lengths.flatMap((length, index) => (test[compare[1]](length) ? [index] : []));
   }
   // Note numbers and ranges: `3`, `3-5`, `1, 3, 5-6`.
   const parts = text.split(/\s*,\s*|\s+/).filter(Boolean);
@@ -581,7 +588,7 @@ export function editRhythm({
       ruleSources[index] = rule.text;
     }
   }
-  const textOf = <A,>(trace: TrackNote<A>[], format: (action: A) => string): TrackNote<string>[] =>
+  const textOf = <A>(trace: TrackNote<A>[], format: (action: A) => string): TrackNote<string>[] =>
     trace.map((note) => ({
       ...note,
       action: note.action === undefined ? undefined : format(note.action),
@@ -734,7 +741,10 @@ export function editRhythm({
  * is the input read at the edit's overall length, to hear or see what the edit did beyond changing
  * how long the whole thing is.
  */
-export function scaleStepsToLength<T extends { duration: number }>(steps: T[], target: number): T[] {
+export function scaleStepsToLength<T extends { duration: number }>(
+  steps: T[],
+  target: number
+): T[] {
   const total = steps.reduce((sum, step) => sum + Math.abs(step.duration), 0);
   if (!(total > 0) || !(target > 0)) {
     return steps.map((step) => ({ ...step }));
@@ -744,7 +754,9 @@ export function scaleStepsToLength<T extends { duration: number }>(steps: T[], t
     rational(rationalFromNumber(total).denominator, rationalFromNumber(total).numerator)
   );
   return steps.map((step) => {
-    const length = rationalToNumber(multiplyRational(rationalFromNumber(Math.abs(step.duration)), factor));
+    const length = rationalToNumber(
+      multiplyRational(rationalFromNumber(Math.abs(step.duration)), factor)
+    );
     return { ...step, duration: step.duration < 0 ? -length : length };
   });
 }

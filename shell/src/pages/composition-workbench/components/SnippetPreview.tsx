@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import type { DataPacket } from '../model';
 import type { NoteEventValue } from '../melodicization';
+import type { DataPacket } from '../model';
 import { rationalToNumber } from '../musicalTime';
 import { categoryOfPacket, signalCategoryColor } from '../signalCategories';
 import classes from './DeskView.module.css';
@@ -47,7 +47,9 @@ export function rhythmBars(packet: DataPacket) {
     return null;
   }
   const lengths = packet.items.map((item) => item.value);
-  if (!lengths.every((value) => typeof value === 'number' && Number.isFinite(value) && value !== 0)) {
+  if (
+    !lengths.every((value) => typeof value === 'number' && Number.isFinite(value) && value !== 0)
+  ) {
     return null;
   }
   const spans = (lengths as number[]).map(Math.abs);
@@ -81,7 +83,10 @@ export function SnippetPreview({ packet }: { packet: DataPacket }) {
     const extent = eventExtent(events);
     const pitches = events.items.flatMap((item) => item.value.pitches);
     const centre = pitches.length ? (Math.min(...pitches) + Math.max(...pitches)) / 200 : 60;
-    const span = Math.max(MIN_SEMITONES, pitches.length ? (Math.max(...pitches) - Math.min(...pitches)) / 100 + 2 : 0);
+    const span = Math.max(
+      MIN_SEMITONES,
+      pitches.length ? (Math.max(...pitches) - Math.min(...pitches)) / 100 + 2 : 0
+    );
     const rowHeight = Math.max(2, Math.min(6, HEIGHT / span));
     return events.items.flatMap((item) =>
       item.value.pitches.map((midicents, index) => ({
@@ -107,7 +112,14 @@ export function SnippetPreview({ packet }: { packet: DataPacket }) {
         style={{ color }}
       >
         {notes.map((note) => (
-          <rect key={note.key} x={note.x} y={note.y} width={note.width} height={note.height} fill="currentColor" />
+          <rect
+            key={note.key}
+            x={note.x}
+            y={note.y}
+            width={note.width}
+            height={note.height}
+            fill="currentColor"
+          />
         ))}
       </svg>
     );

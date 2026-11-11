@@ -5,7 +5,6 @@ import { useCompositionSettings } from '../compositionSettings';
 import { useDesk } from '../desk';
 import type { NoteEventValue } from '../melodicization';
 import type { DataPacket } from '../model';
-import { rationalToNumber } from '../musicalTime';
 import type { Snippet } from '../snippet';
 import { transportTimeline } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -20,7 +19,10 @@ function isNoteSnippet(snippet: Snippet) {
 function describe(snippet: Snippet) {
   const { packet } = snippet;
   const extent = packet.frame?.extent;
-  const length = extent === undefined ? '' : ` · ${Number(extent.toFixed(3))} ${packet.frame?.unit === 'quarterNote' ? 'qn' : (packet.frame?.unit ?? '')}`;
+  const length =
+    extent === undefined
+      ? ''
+      : ` · ${Number(extent.toFixed(3))} ${packet.frame?.unit === 'quarterNote' ? 'qn' : (packet.frame?.unit ?? '')}`;
   return `${packet.kind} | ${packet.domain} · ${packet.items.length}${length}`;
 }
 
@@ -30,7 +32,7 @@ function describe(snippet: Snippet) {
  * here reaches the patch until the user asks (see ARCHITECTURE.md, "The desk").
  */
 export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): void }) {
-  const { snippets, removeSnippet, renameSnippet } = useDesk();
+  const { snippets, removeSnippet, renameSnippet, setSnippetNote } = useDesk();
   const { settings } = useCompositionSettings();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -94,6 +96,22 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
                 }
               }}
             />
+            <TextInput
+              size="xs"
+              variant="unstyled"
+              aria-label="Snippet note"
+              placeholder="Add a note"
+              classNames={{ input: classes.noteInput }}
+              // Keyed on the stored note so an external change shows up in the uncontrolled input.
+              key={`note-${snippet.id}-${snippet.note ?? ''}`}
+              defaultValue={snippet.note ?? ''}
+              onBlur={(event) => {
+                const note = event.currentTarget.value.trim();
+                if (note !== (snippet.note ?? '')) {
+                  setSnippetNote(snippet.id, note);
+                }
+              }}
+            />
             <div className={classes.screen}>
               <SnippetPreview packet={snippet.packet} />
             </div>
@@ -133,7 +151,9 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
                     setConfirmingId(snippet.id);
                   }
                 }}
-                onBlur={() => setConfirmingId((current) => (current === snippet.id ? null : current))}
+                onBlur={() =>
+                  setConfirmingId((current) => (current === snippet.id ? null : current))
+                }
               >
                 {confirmingId === snippet.id ? 'Confirm delete' : 'Delete'}
               </Button>

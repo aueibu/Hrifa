@@ -8,7 +8,7 @@
  * of a+1 arithmetic progressions of length a, offset in a fixed way, taken over one period a^2.
  */
 
-import { packet, type DataPacket } from "./model";
+import { packet, type DataPacket } from './model';
 
 export interface FractioningResult {
   /** a^2, the pattern's recurrence length in time units. */
@@ -24,10 +24,12 @@ export function fractioningShiftCount(a: number, b: number) {
 
 export function generateFractioning(a: number, b: number): FractioningResult {
   if (!Number.isInteger(a) || !Number.isInteger(b) || a <= 0 || b <= 0) {
-    throw new Error("Fractioning requires two positive whole-number generators.");
+    throw new Error('Fractioning requires two positive whole-number generators.');
   }
   if (a <= b) {
-    throw new Error("Fractioning requires a major generator a strictly greater than the minor generator b.");
+    throw new Error(
+      'Fractioning requires a major generator a strictly greater than the minor generator b.'
+    );
   }
 
   const period = a * a;
@@ -55,11 +57,11 @@ export function fractioningDurationPacket(
   result: FractioningResult,
   a: number,
   b: number,
-  sourceId: string,
+  sourceId: string
 ): DataPacket<number> {
   return packet(
-    "list",
-    "duration",
+    'list',
+    'duration',
     result.durations.map((duration, index) => ({
       id: `${sourceId}:attack:${result.attacks[index]}`,
       value: duration,
@@ -67,7 +69,7 @@ export function fractioningDurationPacket(
         {
           sourceModuleInstance: sourceId,
           sourceItemIds: [`generator:a:${a}`, `generator:b:${b}`],
-          transformation: "fractioning-resultant",
+          transformation: 'fractioning-resultant',
           parameters: { a, b, attackTime: result.attacks[index], period: result.period },
         },
       ],
@@ -75,8 +77,8 @@ export function fractioningDurationPacket(
     [],
     { attackTimes: result.attacks },
     {
-      role: "interOnset",
-      frame: { topology: "cyclic", unit: "pulse", extent: result.period, origin: 0 },
-    },
+      role: 'interOnset',
+      frame: { topology: 'cyclic', unit: 'pulse', extent: result.period, origin: 0 },
+    }
   );
 }
