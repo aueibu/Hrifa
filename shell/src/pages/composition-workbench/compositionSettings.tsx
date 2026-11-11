@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { recordChange, registerHistoryApplier } from './history';
 import { defaultSoundSettings, sanitizeSoundSettings, type SoundSettings } from './sounds';
 import {
   defaultTransportSettings,
@@ -81,6 +90,21 @@ function sanitizeTransport(raw: unknown): TransportSettings {
 
 export const STORAGE_KEY = 'hrifa.composition-workbench.settings.v1';
 
+/**
+ * History key for the authored part of the settings (EDO, tempo, meter, pulse). Virtual: it is
+ * never written to storage, which keeps holding the whole settings object.
+ */
+const AUTHORED_HISTORY_KEY = `${STORAGE_KEY}#authored`;
+
+function authoredRaw(settings: CompositionSettings) {
+  return JSON.stringify({
+    edo: settings.edo,
+    tempo: settings.transport.tempo,
+    meter: settings.transport.meter,
+    pulse: settings.transport.pulse,
+  });
+}
+
 function readStoredSettings(): CompositionSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -111,15 +135,70 @@ export function CompositionSettingsProvider({ children }: { children: ReactNode 
     }
   }, [settings]);
 
-  const updateSettings = useCallback((patch: Partial<CompositionSettings>) => {
-    setSettings((current) => sanitizeCompositionSettings({ ...current, ...patch }));
+  // Settings live outside usePersistentState, so they record through the shared history here.
+  // The ref lets several updates in one event build on each other.
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const commit = useCallback((compute: (current: CompositionSettings) => CompositionSettings) => {
+    const previous = settingsRef.current;
+    const next = compute(previous);
+    settingsRef.current = next;
+    setSettings(next);
+    // Only the authored settings are undoable; playback ones (metronome, count-in, voices) are not.
+    recordChange({
+      key: AUTHORED_HISTORY_KEY,
+      previous: authoredRaw(previous),
+      next: authoredRaw(next),
+      virtual: true,
+    });
   }, []);
 
-  const updateTransport = useCallback((patch: Partial<TransportSettings>) => {
-    setSettings((current) =>
-      sanitizeCompositionSettings({ ...current, transport: { ...current.transport, ...patch } })
-    );
-  }, []);
+  // Undo and redo write their target back through here.
+  useEffect(
+    () =>
+      registerHistoryApplier(AUTHORED_HISTORY_KEY, (raw) => {
+        try {
+          const authored = JSON.parse(raw) as {
+            edo: number;
+            tempo: number;
+            meter: string;
+            pulse: string;
+          };
+          const current = settingsRef.current;
+          // Playback settings stay as they are now; only the authored ones go back.
+          const restored = sanitizeCompositionSettings({
+            ...current,
+            edo: authored.edo,
+            transport: {
+              ...current.transport,
+              tempo: authored.tempo,
+              meter: authored.meter,
+              pulse: authored.pulse,
+            },
+          });
+          settingsRef.current = restored;
+          setSettings(restored);
+          return true;
+        } catch {
+          return false;
+        }
+      }),
+    []
+  );
+
+  const updateSettings = useCallback(
+    (patch: Partial<CompositionSettings>) =>
+      commit((current) => sanitizeCompositionSettings({ ...current, ...patch })),
+    [commit]
+  );
+
+  const updateTransport = useCallback(
+    (patch: Partial<TransportSettings>) =>
+      commit((current) =>
+        sanitizeCompositionSettings({ ...current, transport: { ...current.transport, ...patch } })
+      ),
+    [commit]
+  );
 
   return (
     <CompositionSettingsContext.Provider value={{ settings, updateSettings, updateTransport }}>

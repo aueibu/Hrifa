@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ActionIcon,
@@ -53,6 +53,7 @@ import {
 import { nextFreePosition, type Position } from './composition-workbench/compositionLayout';
 import { CompositionSettingsProvider } from './composition-workbench/compositionSettings';
 import { DeskProvider } from './composition-workbench/desk';
+import { recordChange, recordGroup } from './composition-workbench/history';
 import {
   acceptsCompositionInspectorTarget,
   acceptsCompositionInstances,
@@ -117,6 +118,7 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
   ],
   'pitch-list': [
     compositionStateKeys.pitchFormat,
+    compositionStateKeys.pitchConvertOnChange,
     compositionStateKeys.pitchValues,
     compositionStateKeys.pitchCatalogOrigins,
     compositionStateKeys.pitchStep,
@@ -162,6 +164,7 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.scaleConstructionIntervals,
     compositionStateKeys.scaleConstructionRoot,
     compositionStateKeys.scaleConstructionPermutationMode,
+    `${compositionStateKeys.scaleConstructionIntervals}.text`,
   ],
   'scale-evolution': [
     compositionStateKeys.scaleEvolutionIntervals,
@@ -211,11 +214,21 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signa
   'rhythm-edit': [{ id: 'rhythm', signalType: 'rhythm' }],
 };
 
+/**
+ * Removes an instance's stored state and records each removed raw value in the history, so undoing
+ * the delete can write them back before the module remounts (its hooks read storage only once).
+ * Call inside recordGroup so the removal is one step with the instance list change.
+ */
 function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
   try {
-    instanceStateKeys[instance.moduleId].forEach((key) =>
-      localStorage.removeItem(compositionInstanceStateKey(key, instance.id, instance.moduleId))
-    );
+    instanceStateKeys[instance.moduleId].forEach((base) => {
+      const key = compositionInstanceStateKey(base, instance.id, instance.moduleId);
+      const previous = localStorage.getItem(key);
+      localStorage.removeItem(key);
+      if (previous !== null) {
+        recordChange({ key, previous, next: null }, { coalesce: false });
+      }
+    });
   } catch {
     // Removing the in-memory instance still succeeds when storage is unavailable.
   }
@@ -249,7 +262,9 @@ export function CompositionWorkbenchPage() {
     compositionStateKeys.compositionInstances,
     defaultCompositionInstances,
     acceptsCompositionInstances,
-    migrateCompositionInstances
+    migrateCompositionInstances,
+    // Add, remove and move are discrete actions, never merged with a neighbour.
+    { coalesce: false }
   );
   // The inspector element the active module's setup controls are portaled into.
   const [moduleInspectorSlot, setModuleInspectorSlot] = useState<HTMLElement | null>(null);
@@ -288,6 +303,36 @@ export function CompositionWorkbenchPage() {
     acceptsModuleRouteStates
   );
   const evaluation = useMemo(() => evaluatePatch(patch), [patch]);
+
+  // Undoing an add, or a stored id for a removed module, can leave the active module missing.
+  useEffect(() => {
+    if (
+      activeCompositionInstanceId !== null &&
+      !compositionInstances.some((instance) => instance.id === activeCompositionInstanceId)
+    ) {
+      setActiveCompositionInstanceId(compositionInstances[0]?.id ?? null);
+    }
+  }, [activeCompositionInstanceId, compositionInstances, setActiveCompositionInstanceId]);
+
+  // The same for the inspector target (selection is not history, so this is never a step).
+  useEffect(() => {
+    if (
+      compositionInspectorTarget.kind !== 'canvas' &&
+      !compositionInstances.some((instance) => instance.id === compositionInspectorTarget.instanceId)
+    ) {
+      setCompositionInspectorTarget({ kind: 'canvas' });
+    }
+  }, [compositionInspectorTarget, compositionInstances, setCompositionInspectorTarget]);
+
+  // Outputs published by a module that is gone (an undone add) must not linger as sources.
+  useEffect(() => {
+    setCompositionOutputs((current) => {
+      const live = Object.entries(current).filter(([, output]) =>
+        compositionInstances.some((instance) => instance.id === output.ref.instanceId)
+      );
+      return live.length === Object.keys(current).length ? current : Object.fromEntries(live);
+    });
+  }, [compositionInstances]);
 
   const reconcileCompositionOutputs = useCallback(
     (instanceId: string, outputs: PublishedCompositionOutput[]) => {
@@ -423,22 +468,25 @@ export function CompositionWorkbenchPage() {
     snippetId?: string
   ) {
     const instanceId = uniqueId(moduleId);
-    setCompositionInstances((current) => [
-      ...current,
-      {
-        id: instanceId,
-        moduleId,
-        ...(position ?? nextFreePosition(current)),
-        ...(snippetId ? { snippetId } : {}),
-      },
-    ]);
-    const ports = moduleId === 'mixer' ? defaultMixerPorts() : routedModulePorts[moduleId];
-    if (ports) {
-      setModuleRouteStates((current) => ({
+    // The instance and its route state are one undo step.
+    recordGroup(() => {
+      setCompositionInstances((current) => [
         ...current,
-        [instanceId]: createDefaultModuleRouteState(ports),
-      }));
-    }
+        {
+          id: instanceId,
+          moduleId,
+          ...(position ?? nextFreePosition(current)),
+          ...(snippetId ? { snippetId } : {}),
+        },
+      ]);
+      const ports = moduleId === 'mixer' ? defaultMixerPorts() : routedModulePorts[moduleId];
+      if (ports) {
+        setModuleRouteStates((current) => ({
+          ...current,
+          [instanceId]: createDefaultModuleRouteState(ports),
+        }));
+      }
+    });
     selectCompositionModule(instanceId);
   }
 
@@ -448,20 +496,23 @@ export function CompositionWorkbenchPage() {
       return;
     }
     const remaining = compositionInstances.filter((candidate) => candidate.id !== instanceId);
-    removeCompositionInstanceStorage(removed);
-    setCompositionInstances(remaining);
+    // The instance, its route state and its stored per-module state are one undo step.
+    recordGroup(() => {
+      removeCompositionInstanceStorage(removed);
+      setCompositionInstances(remaining);
+      if (routedModulePorts[removed.moduleId]) {
+        setModuleRouteStates((current) => {
+          const next = { ...current };
+          delete next[instanceId];
+          return next;
+        });
+      }
+    });
     setCompositionOutputs((current) =>
       Object.fromEntries(
         Object.entries(current).filter(([, output]) => output.ref.instanceId !== instanceId)
       )
     );
-    if (routedModulePorts[removed.moduleId]) {
-      setModuleRouteStates((current) => {
-        const next = { ...current };
-        delete next[instanceId];
-        return next;
-      });
-    }
     if (remaining[0]) {
       selectCompositionModule(remaining[0].id);
     } else {

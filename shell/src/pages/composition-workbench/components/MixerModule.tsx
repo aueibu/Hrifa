@@ -31,6 +31,7 @@ import {
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
+import { foldIntoHistory } from '../history';
 import { channelBusGains, compileMixerPlan, mixerRealignment, type MixerChannel } from '../mixer';
 import {
   acceptsMixerChannels,
@@ -174,16 +175,19 @@ export function MixerModule({
       [port]: { ...defaultMixerChannelSettings, ...current[port], ...patch },
     }));
 
-  // A removed channel takes its settings with it.
+  // A removed channel takes its settings with it. Folded into the removal's undo step, so undoing
+  // it brings the channel's settings back too.
   const portKey = ports.join('|');
   useEffect(() => {
-    setChannelState((current) => {
-      const stale = Object.keys(current).filter((port) => !ports.includes(port));
-      if (!stale.length) {
-        return current;
-      }
-      return Object.fromEntries(Object.entries(current).filter(([port]) => ports.includes(port)));
-    });
+    foldIntoHistory(() =>
+      setChannelState((current) => {
+        const stale = Object.keys(current).filter((port) => !ports.includes(port));
+        if (!stale.length) {
+          return current;
+        }
+        return Object.fromEntries(Object.entries(current).filter(([port]) => ports.includes(port)));
+      })
+    );
     // `ports` is derived from portKey.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portKey, setChannelState]);

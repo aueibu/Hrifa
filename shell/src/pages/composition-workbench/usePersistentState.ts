@@ -1,4 +1,12 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
+import { recordChange, registerHistoryApplier } from './history';
 
 export const compositionStateKeys = {
   selectedConstructionModule: 'hrifa.composition-workbench.ui.selected-construction-module.v1',
@@ -99,12 +107,94 @@ export const compositionStateKeys = {
   mixerLaneScale: 'hrifa.composition-workbench.mixer.lane-scale.v1',
 } as const;
 
+/**
+ * Keys whose changes never become undo steps: what is showing (selection, view, scroll, zoom,
+ * panels, follow), and preview-only settings (volumes, steps, units, gates, octaves, sounds,
+ * audition). Authored content (patterns, values, routes, instances, the desk) is everything else.
+ * The classification lives here, beside the key list, not in each module. Dead keys are listed too.
+ */
+export const unrecordedStateKeys: ReadonlySet<string> = new Set<string>([
+  // Selection, layout and view.
+  compositionStateKeys.selectedConstructionModule,
+  compositionStateKeys.moduleQuery,
+  compositionStateKeys.activeView,
+  compositionStateKeys.activeCompositionModule,
+  compositionStateKeys.compositionInspectorTarget,
+  compositionStateKeys.canvasSplit,
+  compositionStateKeys.detailCollapsed,
+  compositionStateKeys.inspectorOpen,
+  compositionStateKeys.workspaceView,
+  compositionStateKeys.settingsOpen,
+  compositionStateKeys.melodicizationPianoRollView,
+  compositionStateKeys.melodicizationInspector,
+  compositionStateKeys.mixerRollView,
+  compositionStateKeys.mixerRollMode,
+  compositionStateKeys.mixerLaneScale,
+  compositionStateKeys.mistViewSpan,
+  compositionStateKeys.mistRunSpeed,
+  compositionStateKeys.rhythmEditCellWidth,
+  compositionStateKeys.rhythmEditFollow,
+  compositionStateKeys.rhythmEditShowTracks,
+  compositionStateKeys.rhythmEditAudition,
+  compositionStateKeys.householderSelected,
+  // Preview-only: volumes, steps, units, gates, octaves, sounds, clicks.
+  compositionStateKeys.interferenceUnit,
+  compositionStateKeys.interferenceVolume,
+  compositionStateKeys.interferenceMetronome,
+  compositionStateKeys.interferenceMetronomeVolume,
+  compositionStateKeys.rhythmEditSound,
+  compositionStateKeys.rhythmEditVolume,
+  compositionStateKeys.rhythmListSound,
+  compositionStateKeys.rhythmListVolume,
+  compositionStateKeys.pitchStep,
+  compositionStateKeys.pitchGate,
+  compositionStateKeys.pitchOctave,
+  compositionStateKeys.pitchVolume,
+  compositionStateKeys.melodicizationVolume,
+  compositionStateKeys.fractioningUnit,
+  compositionStateKeys.fractioningVolume,
+  compositionStateKeys.fractioningMidiNote,
+  compositionStateKeys.fractioningSound,
+  compositionStateKeys.pairCompositionUnit,
+  compositionStateKeys.pairCompositionVolume,
+  compositionStateKeys.pairCompositionMidiNote,
+  compositionStateKeys.pairCompositionSound,
+  compositionStateKeys.householderUnit,
+  compositionStateKeys.householderVolume,
+  compositionStateKeys.householderSounds,
+  compositionStateKeys.mistStep,
+  compositionStateKeys.mistGate,
+  compositionStateKeys.mistVolume,
+  compositionStateKeys.mixerVolume,
+]);
+
+/** Whether changes to this stored key (per-instance suffix included) are undoable. */
+export function isRecordedStateKey(key: string) {
+  return !unrecordedStateKeys.has(key.split('.instance.')[0]);
+}
+
+export interface PersistentStateOptions {
+  /** Overrides the central classification for this one hook. */
+  recorded?: boolean;
+  /** False for discrete actions that must never merge with the next change. Default true. */
+  coalesce?: boolean;
+}
+
+function serialize(value: unknown): string | null {
+  try {
+    return JSON.stringify(value) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function usePersistentState<T>(
   key: string,
   fallback: T | (() => T),
   accepts: (value: unknown) => value is T,
   // Upgrades an older saved shape before it is validated, so old projects keep loading.
-  migrate?: (value: unknown) => unknown
+  migrate?: (value: unknown) => unknown,
+  options?: PersistentStateOptions
 ): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     const fallbackValue = typeof fallback === 'function' ? (fallback as () => T)() : fallback;
@@ -121,6 +211,17 @@ export function usePersistentState<T>(
     }
   });
 
+  // The latest value, kept current inside a handler too, so updaters resolve against what earlier
+  // calls in the same event produced and the recorder sees the true previous and next.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const rawRef = useRef<string | null>(null);
+  const acceptsRef = useRef(accepts);
+  acceptsRef.current = accepts;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
+  // Mount and migration writes go through here and never record.
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
@@ -129,7 +230,52 @@ export function usePersistentState<T>(
     }
   }, [key, value]);
 
-  return [value, setValue];
+  // Undo and redo write their target raw value back through this.
+  useEffect(
+    () =>
+      registerHistoryApplier(key, (raw) => {
+        try {
+          const parsed: unknown = JSON.parse(raw);
+          if (!acceptsRef.current(parsed)) {
+            return false;
+          }
+          valueRef.current = parsed;
+          rawRef.current = raw;
+          setValue(parsed);
+          return true;
+        } catch {
+          return false;
+        }
+      }),
+    [key]
+  );
+
+  const set = useCallback(
+    (action: SetStateAction<T>) => {
+      const previous = valueRef.current;
+      const next = typeof action === 'function' ? (action as (current: T) => T)(previous) : action;
+      if (Object.is(next, previous)) {
+        return;
+      }
+      valueRef.current = next;
+      setValue(next);
+      if (!(optionsRef.current?.recorded ?? isRecordedStateKey(key))) {
+        return;
+      }
+      const previousRaw = rawRef.current ?? serialize(previous);
+      const nextRaw = serialize(next);
+      rawRef.current = nextRaw;
+      if (previousRaw !== null && nextRaw !== null) {
+        recordChange(
+          { key, previous: previousRaw, next: nextRaw },
+          { coalesce: optionsRef.current?.coalesce }
+        );
+      }
+    },
+    [key]
+  );
+
+  return [value, set];
 }
 
 export const acceptsString = (value: unknown): value is string => typeof value === 'string';

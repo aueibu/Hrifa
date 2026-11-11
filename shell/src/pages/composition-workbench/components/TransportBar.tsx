@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { useCompositionSettings } from '../compositionSettings';
+import { useHistory } from '../history';
 import { useRegisteredPreview } from '../previewRegistry';
 import {
   MAX_TEMPO,
@@ -34,6 +35,44 @@ function StopIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <rect x="4" y="4" width="16" height="16" rx="1.5" />
+    </svg>
+  );
+}
+
+function UndoIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M9 14L4 9l5-5" />
+      <path d="M4 9h10a6 6 0 010 12h-3" />
+    </svg>
+  );
+}
+
+function RedoIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M15 14l5-5-5-5" />
+      <path d="M20 9H10a6 6 0 000 12h3" />
     </svg>
   );
 }
@@ -123,6 +162,7 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
     () => engine.playing
   );
   const playSelected = useRegisteredPreview(selectedInstanceId);
+  const { undo, redo, canUndo, canRedo } = useHistory();
 
   const metronomeSounds = settings.sounds.metronome;
   useEffect(() => {
@@ -155,8 +195,59 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [engine, playSelected]);
 
+  // Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z or Ctrl+Y redoes, from anywhere including text boxes: the
+  // workbench history is what a change in a field undoes, so the browser's own per-field undo must
+  // not take over.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.altKey || !(event.ctrlKey || event.metaKey)) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      const isUndo = key === 'z' && !event.shiftKey;
+      const isRedo = (key === 'z' && event.shiftKey) || (key === 'y' && !event.metaKey);
+      if (!isUndo && !isRedo) {
+        return;
+      }
+      event.preventDefault();
+      if (isUndo) {
+        undo();
+      } else {
+        redo();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [undo, redo]);
+
   return (
     <Group gap={6} wrap="nowrap" role="toolbar" aria-label="Transport">
+      <Group gap={6} wrap="nowrap" role="group" aria-label="History" mr="sm">
+        <Tooltip label="Undo the last change (Ctrl+Z)">
+          <ActionIcon
+            variant="default"
+            size="lg"
+            aria-label="Undo"
+            data-info="Undo the last change to the patch, a module or the desk. History lasts until the page is reloaded."
+            disabled={!canUndo}
+            onClick={undo}
+          >
+            <UndoIcon />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Redo the undone change (Ctrl+Shift+Z)">
+          <ActionIcon
+            variant="default"
+            size="lg"
+            aria-label="Redo"
+            data-info="Redo the change you just undid."
+            disabled={!canRedo}
+            onClick={redo}
+          >
+            <RedoIcon />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
       <Tooltip
         label={
           playSelected ? 'Play the selected module (Space)' : 'The selected module has no preview'

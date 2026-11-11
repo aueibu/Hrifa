@@ -17,6 +17,7 @@ import type {
   PublishedCompositionOutput,
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
+import { foldIntoHistory } from '../history';
 import {
   generateInterference,
   generatorAttackCount,
@@ -196,7 +197,8 @@ export function InterferenceModule({
 
   useEffect(() => {
     if (groupings.length && !groupings.some((option) => option.id === groupingId)) {
-      setGroupingId('recurrence');
+      // An automatic reset: it folds into the change that caused it, never its own undo step.
+      foldIntoHistory(() => setGroupingId('recurrence'));
     }
   }, [groupingId, groupings]);
 

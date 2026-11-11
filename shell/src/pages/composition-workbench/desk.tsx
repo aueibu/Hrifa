@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
 import {
   acceptsSnippets,
   convertSnippetToPitchClass,
@@ -38,34 +38,72 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   const [snippets, setSnippets] = usePersistentState<Snippet[]>(
     compositionStateKeys.desk,
     [],
-    acceptsSnippets
+    acceptsSnippets,
+    undefined,
+    // Every desk change is its own undo step, never merged with a neighbour.
+    { coalesce: false }
   );
-  const addSnippet = useCallback(
-    (snippet: Snippet) => setSnippets((current) => [...current, snippet]),
+  // Undo and redo are workbench-wide (history.ts); the desk only records through its setter. The
+  // ref lets several changes in one event see each other.
+  const snippetsRef = useRef(snippets);
+  snippetsRef.current = snippets;
+
+  /**
+   * The single path for every desk change. `updater` returns the next list, or the same array to
+   * change nothing (no history entry). A real change records through the shared history.
+   */
+  const applyChange = useCallback(
+    (updater: (current: Snippet[]) => Snippet[]) => {
+      const current = snippetsRef.current;
+      const next = updater(current);
+      if (next === current) {
+        return;
+      }
+      snippetsRef.current = next;
+      setSnippets(next);
+    },
     [setSnippets]
+  );
+
+  const addSnippet = useCallback(
+    (snippet: Snippet) => applyChange((current) => [...current, snippet]),
+    [applyChange]
   );
   const removeSnippet = useCallback(
-    (id: string) => setSnippets((current) => current.filter((snippet) => snippet.id !== id)),
-    [setSnippets]
+    (id: string) =>
+      applyChange((current) => {
+        const next = current.filter((snippet) => snippet.id !== id);
+        return next.length === current.length ? current : next;
+      }),
+    [applyChange]
   );
   const renameSnippet = useCallback(
     (id: string, name: string) =>
-      setSnippets((current) =>
-        current.map((snippet) => (snippet.id === id ? { ...snippet, name } : snippet))
+      applyChange((current) =>
+        current.some((snippet) => snippet.id === id && snippet.name !== name)
+          ? current.map((snippet) => (snippet.id === id ? { ...snippet, name } : snippet))
+          : current
       ),
-    [setSnippets]
+    [applyChange]
   );
   const setSnippetNote = useCallback(
     (id: string, note: string) =>
-      setSnippets((current) =>
-        current.map((snippet) => (snippet.id === id ? editSnippetNote(snippet, note) : snippet))
-      ),
-    [setSnippets]
+      applyChange((current) => {
+        const target = current.find((snippet) => snippet.id === id);
+        if (!target) {
+          return current;
+        }
+        const edited = editSnippetNote(target, note);
+        return edited.note === target.note
+          ? current
+          : current.map((snippet) => (snippet.id === id ? edited : snippet));
+      }),
+    [applyChange]
   );
   const duplicateSnippetById = useCallback(
     (id: string) => {
       const request = { id: newSnippetId(), createdAt: new Date().toISOString() };
-      setSnippets((current) => {
+      applyChange((current) => {
         const index = current.findIndex((snippet) => snippet.id === id);
         if (index < 0) {
           return current;
@@ -75,11 +113,11 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    [setSnippets]
+    [applyChange]
   );
   const convertToPitchClassById = useCallback(
     (id: string, options: { edo: number; snap?: boolean }): PitchClassConversionResult => {
-      const source = snippets.find((snippet) => snippet.id === id);
+      const source = snippetsRef.current.find((snippet) => snippet.id === id);
       if (!source) {
         return { ok: false, error: 'That snippet is no longer on the desk.' };
       }
@@ -91,7 +129,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       if (!result.ok) {
         return result;
       }
-      setSnippets((current) => {
+      applyChange((current) => {
         const index = current.findIndex((snippet) => snippet.id === id);
         if (index < 0) {
           return current;
@@ -102,7 +140,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       });
       return result;
     },
-    [snippets, setSnippets]
+    [applyChange]
   );
   const value = useMemo(
     () => ({
