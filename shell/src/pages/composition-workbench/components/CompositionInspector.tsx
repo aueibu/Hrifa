@@ -44,6 +44,7 @@ const moduleDescriptions: Record<CompositionModuleId, string> = {
   'scale-construction': 'Authors a pitch-interval sequence and its melodic-form permutations (Schillinger Book II ch. 1-2).',
   'rhythm-householder': 'Alters a rhythm along a bias axis while keeping its attack count and span: reflects the duration vector (Householder), or re-places attacks against an accent or early/late axis.',
   'swirling-mists': 'Layered looping waves sampled into numbers: one chord per step and one melody per stratum, mapped to a range you set.',
+  snippet: 'A snippet from the desk, placed as a source. It publishes a copy of the captured material unchanged.',
   mixer: 'Auditions several ideas together: each connected channel loops on its own cycle, so the mix becomes a meta interference pattern. A preview layer before arranging, not a timeline.',
   'scale-evolution': 'Synchronizes an interval sequence with its own circular permutations within one shared period, evolving richer scale families (Schillinger Book I ch. 13 / Book II ch. 3 §A).',
 };

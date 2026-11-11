@@ -14,6 +14,7 @@ export type CompositionModuleId =
   | 'rhythm-householder'
   | 'rhythm-edit'
   | 'swirling-mists'
+  | 'snippet'
   | 'mixer';
 
 /**
@@ -25,6 +26,13 @@ export interface CompositionModuleInstance {
   moduleId: CompositionModuleId;
   x: number;
   y: number;
+  /** A `snippet` module only: the desk snippet it publishes. It is not added from the Add menu. */
+  snippetId?: string;
+}
+
+/** Modules the Add module menu offers. A snippet module is made from a desk card instead. */
+export function isAddableModule(moduleId: CompositionModuleId) {
+  return moduleId !== 'snippet';
 }
 
 export interface ModuleRouteBinding {
@@ -54,6 +62,7 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   'rhythm-householder': 'Rhythm Householder',
   'rhythm-edit': 'Rhythm Edit',
   'swirling-mists': 'Swirling Mists',
+  snippet: 'Snippet',
   mixer: 'Mixer',
 };
 
@@ -81,7 +90,13 @@ export function migrateCompositionInstances(value: unknown): unknown {
     }
     const legacy = candidate as Record<string, unknown>;
     if (isFiniteNumber(legacy.x) && isFiniteNumber(legacy.y)) {
-      return { id: legacy.id, moduleId: legacy.moduleId, x: legacy.x, y: legacy.y };
+      return {
+        id: legacy.id,
+        moduleId: legacy.moduleId,
+        x: legacy.x,
+        y: legacy.y,
+        ...(typeof legacy.snippetId === 'string' ? { snippetId: legacy.snippetId } : {}),
+      };
     }
     if (
       typeof legacy.laneId === 'number' &&
@@ -163,6 +178,7 @@ function isModuleId(value: unknown): value is CompositionModuleId {
     value === 'rhythm-householder' ||
     value === 'rhythm-edit' ||
     value === 'swirling-mists' ||
+    value === 'snippet' ||
     value === 'mixer'
   );
 }
@@ -195,7 +211,8 @@ export function acceptsCompositionInstances(value: unknown): value is Compositio
       ids.has(instance.id) ||
       !isModuleId(instance.moduleId) ||
       !isFiniteNumber(instance.x) ||
-      !isFiniteNumber(instance.y)
+      !isFiniteNumber(instance.y) ||
+      (instance.snippetId !== undefined && typeof instance.snippetId !== 'string')
     ) {
       return false;
     }

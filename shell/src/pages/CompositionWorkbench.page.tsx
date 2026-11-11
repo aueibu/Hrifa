@@ -34,6 +34,7 @@ import {
   type WorkspaceView,
 } from './composition-workbench/components/WorkbenchStatusBar';
 import { DeskView } from './composition-workbench/components/DeskView';
+import { SnippetSourceModule } from './composition-workbench/components/SnippetSourceModule';
 import { PairCompositionModule } from './composition-workbench/components/PairCompositionModule';
 import { PitchListModule } from './composition-workbench/components/PitchListModule';
 import { SwirlingMistsModule } from './composition-workbench/components/SwirlingMistsModule';
@@ -84,6 +85,8 @@ function uniqueId(prefix: string) {
 }
 
 const instanceStateKeys: Record<CompositionModuleId, string[]> = {
+  // A snippet module keeps nothing of its own: the desk owns the material.
+  snippet: [],
   interference: [
     compositionStateKeys.interferenceDrafts,
     compositionStateKeys.interferenceGrouping,
@@ -407,11 +410,20 @@ export function CompositionWorkbenchPage() {
     [setActiveCompositionInstanceId, setCompositionInspectorTarget]
   );
 
-  function addCompositionModule(moduleId: CompositionModuleId, position?: Position) {
+  function addCompositionModule(
+    moduleId: CompositionModuleId,
+    position?: Position,
+    snippetId?: string
+  ) {
     const instanceId = uniqueId(moduleId);
     setCompositionInstances((current) => [
       ...current,
-      { id: instanceId, moduleId, ...(position ?? nextFreePosition(current)) },
+      {
+        id: instanceId,
+        moduleId,
+        ...(position ?? nextFreePosition(current)),
+        ...(snippetId ? { snippetId } : {}),
+      },
     ]);
     const ports = moduleId === 'mixer' ? defaultMixerPorts() : routedModulePorts[moduleId];
     if (ports) {
@@ -535,7 +547,12 @@ export function CompositionWorkbenchPage() {
                       <>
                       {/* Both stay mounted: the canvas keeps its viewport while the desk is shown. */}
                       <div style={{ height: '100%' }} hidden={workspaceView !== 'desk'}>
-                        <DeskView onMakeSource={undefined} />
+                        <DeskView
+                          onMakeSource={(snippet) => {
+                            addCompositionModule('snippet', undefined, snippet.id);
+                            setWorkspaceView('canvas');
+                          }}
+                        />
                       </div>
                       <div style={{ height: '100%' }} hidden={workspaceView !== 'canvas'}>
                       <CompositionCanvas
@@ -571,7 +588,14 @@ export function CompositionWorkbenchPage() {
                         <ModuleActiveContext.Provider
                           value={activeCompositionInstanceId === instance.id}
                         >
-                        {instance.moduleId === 'interference' ? (
+                        {instance.moduleId === 'snippet' ? (
+                          <SnippetSourceModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            snippetId={instance.snippetId}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'interference' ? (
                           <InterferenceModule
                             instanceId={instance.id}
                             instanceLabel={instanceLabel}

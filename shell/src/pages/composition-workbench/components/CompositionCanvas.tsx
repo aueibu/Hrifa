@@ -45,6 +45,7 @@ import {
 import {
   compositionInstanceLabel,
   compositionModuleLabels,
+  isAddableModule,
   mixerPortLabels,
   type CompositionInspectorTarget,
   type CompositionModuleId,
@@ -284,7 +285,7 @@ function connectedFlow(start: string, descriptors: RouteDescriptor[]) {
 function ModuleMenuItems({ onPick }: { onPick(moduleId: CompositionModuleId): void }) {
   return (
     <>
-      {(Object.keys(compositionModuleLabels) as CompositionModuleId[]).map((moduleId) => (
+      {(Object.keys(compositionModuleLabels) as CompositionModuleId[]).filter(isAddableModule).map((moduleId) => (
         <Menu.Item key={moduleId} onClick={() => onPick(moduleId)}>
           {compositionModuleLabels[moduleId]}
         </Menu.Item>
@@ -419,7 +420,9 @@ function CanvasBody({
                   instance.moduleId === 'rhythm-list' ||
                   instance.moduleId === 'rhythm-edit'
                   ? `Durations | ${primaryOutput.packet.items.length}`
-                  : `Notes | ${primaryOutput.packet.items.length}`;
+                  : instance.moduleId === 'snippet'
+                    ? `${primaryOutput.packet.kind} | ${primaryOutput.packet.items.length}`
+                    : `Notes | ${primaryOutput.packet.items.length}`;
       const selectRoute = (descriptor: RouteDescriptor) =>
         onSelectRoute(descriptor.receiver.id, descriptor.port);
       const inlets: FlowCellPort[] = (inletsFor(instance.moduleId, routes[instance.id]) ?? []).map(

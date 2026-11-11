@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NODE_WIDTH, nextFreePosition, tidyLayout } from './compositionLayout';
 import {
   acceptsCompositionInstances,
+  isAddableModule,
   migrateCompositionInstances,
   type CompositionModuleInstance,
 } from './compositionWorkspace';
@@ -102,6 +103,18 @@ describe('migrateCompositionInstances', () => {
     expect(
       migrateCompositionInstances([{ id: 'a', moduleId: 'mixer', x: 12, y: 34, laneId: 2, row: 1 }])
     ).toEqual([{ id: 'a', moduleId: 'mixer', x: 12, y: 34 }]);
+  });
+
+  it('keeps the snippet a snippet module points at, and rejects a non-string one', () => {
+    const saved = [{ id: 's', moduleId: 'snippet', x: 1, y: 2, snippetId: 'snippet-abc' }];
+    expect(migrateCompositionInstances(saved)).toEqual(saved);
+    expect(acceptsCompositionInstances(migrateCompositionInstances(saved))).toBe(true);
+    expect(acceptsCompositionInstances([{ ...saved[0], snippetId: 7 }])).toBe(false);
+  });
+
+  it('keeps a snippet module out of the Add module menu', () => {
+    expect(isAddableModule('snippet')).toBe(false);
+    expect(isAddableModule('mixer')).toBe(true);
   });
 
   it('rejects a placement with neither shape', () => {
