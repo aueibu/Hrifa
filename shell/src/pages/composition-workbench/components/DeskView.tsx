@@ -37,7 +37,8 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
   const preview = useModulePreview({
     instanceId: 'desk',
     volume: 30,
-    followTransport: false,
+    // On the transport like every other preview, so the metronome and count-in apply.
+    followTransport: true,
     transportPlay: () => undefined,
     onEnd: () => setPlayingId(null),
   });

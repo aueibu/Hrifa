@@ -131,7 +131,12 @@ pages do not restyle them.
 | View toggle | Independent on/off that changes only the interface (show grid, follow playhead, collapse) | No fill; the icon or label changes to `--accent` |
 | Action | Does something once (Play, Reset, Tidy) | Pressed state only; no persistent active look |
 
-Selection and focus keep using the accent. Accent never encodes data (see above). Where a bar is a
+**Selection** of an item, such as a card on the canvas or a note in a piano roll, is an outline in
+`--text`: light in dark mode, dark in light mode, so it follows the scheme without a second token.
+Use a 1px border in `--text` plus a 1px outline, about two pixels in all, with no halo and no fill
+change, so the item keeps its own color. A selection marquee is a 1px `--text` border over a
+see-through tint (`color-mix(in srgb, var(--text) 8%, transparent)`), so what it covers stays visible.
+**Focus** rings keep using the accent. Accent never encodes data (see above). Where a bar is a
 different kind of surface, for example the status bar, it may collapse these distinctions, but say so
 in a comment.
 

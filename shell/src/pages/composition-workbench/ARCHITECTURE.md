@@ -349,6 +349,59 @@ Global Stop (header button or space while playing) ends sessions without calling
 `useModulePreview` notices and calls `onEnd('stopped')`, so don't play through `audioEngine.play`
 directly from a module.
 
+## The desk
+
+The desk is where material is set aside to be reused. Everything else in the workbench derives its output from something; the desk holds copies the composer chose to keep, and a snippet can be placed back into a patch as a source. Status: the first slice is built (capture from a piano roll, the desk view, audition, Make source). Pitch-class conversion, snapshots and variations, blank clips and editing a snippet are not built.
+
+### Snippet
+
+A snippet (`snippet.ts`) is a named, frozen `DataPacket`:
+
+```ts
+interface Snippet {
+  schemaVersion: 1;
+  id: string;
+  name: string;
+  note?: string;
+  createdAt: string;
+  packet: DataPacket;          // any kind and domain
+  origin?: { moduleInstance: string; portId?: string; itemIds: string[] };
+}
+```
+
+The packet already carries its own kind, domain, role and frame, so routing compatibility works on a snippet unchanged and nothing about the desk is specific to notes. `origin` records where a capture came from and is information only: nothing follows it afterwards, and capture is a copy. Items keep their original ids, so a captured event is still recognisable as the event it came from, and each gains a `capture-snippet` provenance step. `schemaVersion` exists because packet shapes will evolve; `acceptsSnippets` rejects a corrupt or newer desk so the page falls back to an empty one instead of crashing.
+
+The desk is a list of snippets in one persisted key (`compositionStateKeys.desk`), per browser, provided by `DeskProvider` at the workbench root so every module sends to, and every view reads from, the same list.
+
+### Capture
+
+Capture takes a packet and, optionally, a set of item ids. Without ids it captures the whole packet, which works for any kind. With ids it needs a handler for that kind in `captureHandlers` (`snippet.ts`), which selects the items and makes the result self-contained. A kind with no handler is refused with an explanation, never guessed at. Today only `events | note` has one: it keeps the selected notes in packet order, shifts them so the earliest starts at zero (exact rational time), makes the frame linear with origin 0 and drops the source grouping with a warning, because its boundaries are positions in the source. Pitch is stored absolutely.
+
+To support a new kind (a drawn curve, a painted gesture):
+
+1. Add a handler to `captureHandlers` for partial capture, if selecting part of it means something. It must return a self-contained packet: positions rebased, a frame that describes the part, no references into the source.
+2. Add a preview branch to `SnippetPreview`, which chooses a renderer from the packet's signal category (`signalCategories.ts`) and falls back to the values as text.
+3. Add audition in `DeskView` if the kind can be played; the card disables the button otherwise.
+4. Keep the packet JSON-safe (plain numbers, strings and arrays), since the desk is serialised as is, and bump `schemaVersion` if the stored shape changes.
+
+The desk, persistence and the source module need no change.
+
+### Selection, tools and actions
+
+The piano roll's selection is opt-in (`onSelectionChange`) and reports ids of sources, not rectangles: a chord is several rectangles of one event, so a note carries an optional `sourceId` and selecting any pitch of a chord selects the whole event. Geometry (`noteRect`, `notesInRect`) lives in `PianoRoll/selection.ts` and is shared by drawing and hit testing. A selected item is an outline in `--text` and a marquee shows what it would select while it is dragged (see THEMING.md, "State grammar").
+
+Editor chrome (`components/EditorPalette`) separates two kinds of control. A **tool** is a mode that stays active and changes what a click does: mutually exclusive, styled as a Tab. An **action** does something once to the selection: no persistent active look. An editor is given one list of each by its owner and renders them three ways from the same list: palette buttons on its right edge, a right-click menu (right-clicking an unselected note selects it first) and plain-key shortcuts when it has focus. Adding an action in one place adds it everywhere. Melodicization's roll offers Send to desk (D) and Audition (P); the rhythm grid, curve editor and texture canvas should reuse the same chrome.
+
+### Desk view and audition
+
+The desk is a workspace view beside the patch canvas, switched from the status bar (`WorkspaceView`: canvas or desk). Both stay mounted and share one grid cell. The inactive one is hidden with opacity, `visibility`, `pointer-events` and `inert`, never `display: none`: the canvas measures its own box, so collapsing it made it refit to a tiny view, and its elements set `visibility: visible` themselves, so `visibility` alone let its nodes show through the desk.
+
+Cards preview a snippet, rename it, delete it (two clicks) and audition it. Audition runs on the transport (`followTransport`), so the metronome and count-in apply as for any module preview. A selection auditioned from a roll plays rebased to zero, so the roll's playhead starts at where the selection sits in the clip and covers its length.
+
+### Make source
+
+Make source places a snippet on the canvas as a `snippet` module (`SnippetSourceModule`). The instance carries a `snippetId` (kept through migration of saved placements) and publishes the snippet's packet unchanged on one output, so any module that accepts that kind of packet can read it; a note snippet can feed the Mixer. The desk owns the material and the module keeps no state of its own. If the snippet is deleted the module publishes nothing and receivers show a missing source, as for any removed source. It is not in the Add module menu, so a desk item never lands on the canvas unless the composer asks.
+
 ## Direction: rolling playback and arrangement
 
 The end goal for playback is a **rolling scheduler**, and the arrangement view is what will need it. Today a `PerformancePlan` is a finished, finite list of events that the engine schedules up front. That suits a short plan (a mixer pass, a single module's preview), but a timeline arrangement needs the engine to ask for events as time advances: edit while playing, jump to a position, loop a region, change tempo, and open a large project without building every event first. DAWs work this way, scheduling a short lookahead window ahead of the audio clock.
