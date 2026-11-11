@@ -40,8 +40,10 @@ describe('marker hue collisions', () => {
   });
 
   it('uses more of the available gamut at the endpoints when end boost is enabled', () => {
-    const standard = markerPalette(defaultMarkerHues.blue, defaultMarkerRamp);
-    const boosted = markerPalette(defaultMarkerHues.blue, { ...defaultMarkerRamp, endBoost: 1 });
+    // The default ramp already uses the full gamut, so boost is measured from a partial fraction.
+    const partial = { ...defaultMarkerRamp, fraction: 80 };
+    const standard = markerPalette(defaultMarkerHues.blue, partial);
+    const boosted = markerPalette(defaultMarkerHues.blue, { ...partial, endBoost: 1 });
 
     expect(boosted[0]).not.toBe(standard[0]);
     expect(boosted[6]).toBe(standard[6]);

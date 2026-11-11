@@ -35,10 +35,10 @@ export function resolveDiagramStyle(root: Element = document.documentElement): D
 
   return {
     marks: {
-      line: value('--mantine-color-blue-6'),
-      arc: value('--mantine-color-grape-6'),
-      circle: value('--mantine-color-orange-6'),
-      point: value('--mantine-color-green-6'),
+      line: value('--mark-blue'),
+      arc: value('--mark-violet'),
+      circle: value('--mark-orange'),
+      point: value('--mark-green'),
     },
     guide: { crosshairSize: 5, dash: [3, 3], lineWidth: 1, markerRadius: 2, opacity: 0.35 },
     // `ctx.font` does not resolve `var()` — unlike DOM CSS, canvas 2D font
@@ -54,7 +54,7 @@ export function resolveDiagramStyle(root: Element = document.documentElement): D
     sourcePoint: { radius: 3.2 },
     grid: { lineWidth: 0.5, opacity: 0.3 },
     hoverPoint: { radius: 7, lineWidth: 1.5 },
-    hoverHighlight: value('--mantine-color-orange-4'),
+    hoverHighlight: value('--mark-orange'),
   };
 }
 
@@ -95,16 +95,14 @@ export interface GrowthTreeStyle {
 
 /**
  * A scheme-aware categorical-hue picker. Mantine's fixed palette shades (e.g.
- * `--mantine-color-orange-6`) are identical in light and dark — only the neutral
- * roles adapt — so a shade tuned for one scheme washes out in the other. Canvas
- * marks sit on the scheme-adaptive panel, so we pick a lighter step on dark and
- * a darker step on light to hold contrast either way. `data-mantine-color-scheme`
- * is the attribute Mantine stamps on <html>.
+ * `--mantine-color-orange-6`) are identical in light and dark, so a shade tuned
+ * for one scheme washes out in the other. `--mark-<hue>` (see semantic.ts) is
+ * the hue drawn as a mark on a panel, already tuned per scheme to hold 3:1 or
+ * more there, and is a hex string, so canvas, SVG and Three.js can all read it.
  */
 export function markHue(root: Element): (name: string) => string {
   const css = getComputedStyle(root);
-  const shade = root.getAttribute('data-mantine-color-scheme') === 'dark' ? 5 : 7;
-  return (name: string) => css.getPropertyValue(`--mantine-color-${name}-${shade}`).trim();
+  return (name: string) => css.getPropertyValue(`--mark-${name}`).trim();
 }
 
 export function resolveGrowthTreeStyle(root: Element = document.documentElement): GrowthTreeStyle {

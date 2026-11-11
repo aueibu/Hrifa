@@ -47,7 +47,7 @@ import {
   type MarkerHues,
   type MarkerRamp,
 } from '../theme/markers';
-import { semanticVariablesResolver } from '../theme/semantic';
+import { createSemanticResolver } from '../theme/semantic';
 import { useThemeEditor } from '../theme/ThemeProvider';
 import {
   isThemeTokens,
@@ -67,12 +67,15 @@ interface HslColor {
   l: number;
 }
 
+// Mantine's stock role mapping, except where semantic.ts overrides it: the page is its own tier,
+// generic borders are one step subtler than control outlines, and light-mode hover is gray-1.
 const stockRoles = {
   light: [
-    ['Page', 'white'],
+    ['Page', 'gray-0'],
     ['Panel / card', 'white'],
-    ['Hover', 'gray-0'],
-    ['Border', 'gray-4'],
+    ['Hover', 'gray-1'],
+    ['Border', 'gray-2'],
+    ['Control border', 'gray-4'],
     ['Text', 'black'],
     ['Muted text', 'gray-6'],
     ['Placeholder / disabled text', 'gray-5'],
@@ -80,10 +83,11 @@ const stockRoles = {
     ['Disabled border', 'gray-3'],
   ],
   dark: [
-    ['Page', 'dark-7'],
-    ['Panel / card', 'dark-6'],
+    ['Page', 'dark-8'],
+    ['Panel / card', 'dark-7'],
     ['Hover', 'dark-5'],
-    ['Border', 'dark-4'],
+    ['Border', 'dark-5'],
+    ['Control border', 'dark-4'],
     ['Text', 'dark-0'],
     ['Muted text', 'dark-2'],
     ['Placeholder / disabled text', 'dark-3'],
@@ -220,9 +224,10 @@ function ContrastReadout({ pairs, title }: { pairs: ContrastPair[]; title: strin
 function neutralContrastPairs(tokens: ThemeTokens, scheme: 'light' | 'dark'): ContrastPair[] {
   if (scheme === 'light') {
     return [
-      { label: 'Main text on page', text: tokens.black, background: tokens.white },
-      { label: 'Muted text on page', text: tokens.gray[6], background: tokens.white },
-      { label: 'Main text on hover', text: tokens.black, background: tokens.gray[0] },
+      { label: 'Main text on panel', text: tokens.black, background: tokens.white },
+      { label: 'Muted text on panel', text: tokens.gray[6], background: tokens.white },
+      { label: 'Subtle text on panel', text: tokens.gray[5], background: tokens.white },
+      { label: 'Main text on hover', text: tokens.black, background: tokens.gray[1] },
       {
         label: 'Disabled text on disabled surface',
         text: tokens.gray[5],
@@ -232,8 +237,9 @@ function neutralContrastPairs(tokens: ThemeTokens, scheme: 'light' | 'dark'): Co
   }
 
   return [
-    { label: 'Main text on page', text: tokens.dark[0], background: tokens.dark[7] },
-    { label: 'Muted text on page', text: tokens.dark[2], background: tokens.dark[7] },
+    { label: 'Main text on panel', text: tokens.dark[0], background: tokens.dark[7] },
+    { label: 'Muted text on panel', text: tokens.dark[2], background: tokens.dark[7] },
+    { label: 'Subtle text on panel', text: tokens.dark[3], background: tokens.dark[7] },
     { label: 'Main text on hover', text: tokens.dark[0], background: tokens.dark[5] },
     {
       label: 'Disabled text on disabled surface',
@@ -245,11 +251,11 @@ function neutralContrastPairs(tokens: ThemeTokens, scheme: 'light' | 'dark'): Co
 
 function interactionContrastPairs(tokens: ThemeTokens, scheme: 'light' | 'dark'): ContrastPair[] {
   const active = tokens.primary[tokens.primaryShade[scheme]];
-  const page = scheme === 'light' ? tokens.white : tokens.dark[7];
+  const panel = scheme === 'light' ? tokens.white : tokens.dark[7];
 
   return [
     { label: 'Filled action text', text: tokens.white, background: active },
-    { label: 'Link / focus on page', text: active, background: page },
+    { label: 'Link / focus on panel', text: active, background: panel },
     { label: 'Selected control text', text: tokens.white, background: active },
   ];
 }
@@ -354,7 +360,7 @@ function ThemePreview({ scheme }: { scheme: 'light' | 'dark' }) {
   return (
     <MantineProvider
       theme={previewTheme}
-      cssVariablesResolver={semanticVariablesResolver}
+      cssVariablesResolver={createSemanticResolver(draft)}
       forceColorScheme={scheme}
     >
       <Stack
@@ -983,7 +989,7 @@ export function ThemeEditorPage() {
             </Stack>
             <MantineProvider
               theme={createAppTheme(draft)}
-              cssVariablesResolver={semanticVariablesResolver}
+              cssVariablesResolver={createSemanticResolver(draft)}
               forceColorScheme={editorScheme}
             >
               <Stack gap="md">

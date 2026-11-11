@@ -35,48 +35,60 @@ export const themeTokensStorageKey = 'shell.theme-tokens.v1';
 export const neutralScaleSteps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
 
 /** Chosen shell neutral foundation, while retaining Mantine's stock role behavior. */
+/*
+ * One warm neutral family, lightest to darkest in each ramp, tuned so Mantine's stock role mapping
+ * (see semantic.ts for the three places the app overrides it) gives real surface and text tiers:
+ *   light  gray-0 page · white panel · gray-1 hover/inset · gray-2 border · gray-4 control border
+ *          gray-5 subtle text · gray-6 muted text · black main text
+ *   dark   dark-9 well · dark-8 page · dark-7 panel · dark-6 raised/input/slot · dark-5 border/hover/
+ *          body · dark-4 control border · dark-3 subtle text · dark-2 muted text · dark-0 main text
+ *          (the dark ramp is a barely-warm gray; the light ramp is warmer)
+ */
 export const defaultThemeTokens: ThemeTokens = {
   white: '#fbf9f5',
-  black: '#141111',
+  black: '#1b1814',
   gray: [
-    '#CCCBCA',
-    '#f1f3f5',
-    '#e9ecef',
-    '#dee2e6',
-    '#ced4da',
-    '#7a8688',
-    '#2c2525',
-    '#495057',
-    '#343a40',
-    '#212529',
+    '#f3f0ea',
+    '#ece8e0',
+    '#ddd7cc',
+    '#b8b0a3',
+    '#8c8478',
+    '#6f685e',
+    '#554f47',
+    '#3a352f',
+    '#27231f',
+    '#1b1814',
   ],
+  // Slightly warm grays with wide steps, sampled from Bitwig's dark UI (see THEMING.md, "Studio tiers").
   dark: [
-    '#f6efe7',
-    '#b8b8b8',
-    '#d8d8d8',
-    '#a4a4a4',
-    '#333333',
-    '#434343',
-    '#212121',
-    '#1c1c1c',
-    '#1f1f1f',
-    '#141414',
+    '#e6e3df',
+    '#cbc8c4',
+    '#b4b1ad',
+    '#a19e9a',
+    '#85827e',
+    '#464442',
+    '#3a3836',
+    '#32302e',
+    '#2a2826',
+    '#1d1b19',
   ],
+  // The marker ramp at hue 235, a cyan-leaning blue near Bitwig's accent (the blue mark stays at 250): the one interactive accent.
   primary: [
-    '#e7f5ff',
-    '#d0ebff',
-    '#a5d8ff',
-    '#74c0fc',
-    '#4dabf7',
-    '#339af0',
-    '#228be6',
-    '#1c7ed6',
-    '#1971c2',
-    '#1864ab',
+    '#ebf7ff',
+    '#c8eaff',
+    '#9cdaff',
+    '#54c4ff',
+    '#00abed',
+    '#008ec5',
+    '#00729f',
+    '#005d82',
+    '#004867',
+    '#003249',
   ],
-  primaryShade: { light: 6, dark: 8 },
+  // The same step in both schemes: white text holds 4.5:1 or more on it either way.
+  primaryShade: { light: 6, dark: 6 },
   primaryRamp: {
-    core: '#228be6',
+    core: '#00729f',
     contrast: 90,
     curve: 'even',
     endpointChroma: 100,

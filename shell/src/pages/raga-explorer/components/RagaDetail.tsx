@@ -162,7 +162,7 @@ export function RagaDetail({ raga, index, playingNote, onSelect }: RagaDetailPro
                   steps={chainSteps(raga.arohaChain)}
                   fromTokens={arohaTokens}
                   toTokens={arohaTokens}
-                  color="var(--mantine-color-blue-6)"
+                  color="var(--mark-blue)"
                 />
               </Stack>
               <Stack gap={2}>
@@ -173,7 +173,7 @@ export function RagaDetail({ raga, index, playingNote, onSelect }: RagaDetailPro
                   steps={chainSteps(raga.avarohaChain)}
                   fromTokens={avarohaTokens}
                   toTokens={avarohaTokens}
-                  color="var(--mantine-color-grape-6)"
+                  color="var(--mark-grape)"
                 />
               </Stack>
             </Group>

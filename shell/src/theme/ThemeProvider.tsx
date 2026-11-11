@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { MantineProvider } from '@mantine/core';
 import { createAppTheme } from './foundation';
-import { semanticVariablesResolver } from './semantic';
+import { createSemanticResolver } from './semantic';
 import {
   defaultThemeTokens,
   loadThemeTokens,
@@ -23,6 +23,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   const [applied, setApplied] = useState(loadThemeTokens);
   const [draft, setDraft] = useState(applied);
   const theme = useMemo(() => createAppTheme(applied), [applied]);
+  const resolver = useMemo(() => createSemanticResolver(applied), [applied]);
 
   function apply() {
     setApplied(draft);
@@ -45,7 +46,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
 
   return (
     <ThemeEditorContext.Provider value={{ applied, draft, setDraft, apply, reset }}>
-      <MantineProvider theme={theme} cssVariablesResolver={semanticVariablesResolver}>
+      <MantineProvider theme={theme} cssVariablesResolver={resolver}>
         {children}
       </MantineProvider>
     </ThemeEditorContext.Provider>

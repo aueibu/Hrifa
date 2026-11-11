@@ -102,7 +102,7 @@ export function LadderDiagram({
       <polyline
         points={arohaPts.map((p) => `${p.x},${p.y}`).join(' ')}
         fill="none"
-        stroke="var(--mantine-color-blue-6)"
+        stroke="var(--mark-blue)"
         strokeWidth={1.75}
       />
       {arohaPts.map((p, i) => (
@@ -111,10 +111,10 @@ export function LadderDiagram({
           cx={p.x}
           cy={p.y}
           r={playingNote?.part === 'aroha' && playingNote.index === i ? 4.5 : 2.6}
-          fill="var(--mantine-color-blue-6)"
+          fill="var(--mark-blue)"
           stroke={
             playingNote?.part === 'aroha' && playingNote.index === i
-              ? 'var(--mantine-color-orange-5)'
+              ? 'var(--mark-orange)'
               : 'none'
           }
           strokeWidth={2}
@@ -127,7 +127,7 @@ export function LadderDiagram({
       <polyline
         points={avarohaPts.map((p) => `${p.x},${p.y}`).join(' ')}
         fill="none"
-        stroke="var(--mantine-color-grape-6)"
+        stroke="var(--mark-grape)"
         strokeWidth={1.75}
       />
       {avarohaPts.map((p, i) => (
@@ -136,10 +136,10 @@ export function LadderDiagram({
           cx={p.x}
           cy={p.y}
           r={playingNote?.part === 'avaroha' && playingNote.index === i ? 4.5 : 2.6}
-          fill="var(--mantine-color-grape-6)"
+          fill="var(--mark-grape)"
           stroke={
             playingNote?.part === 'avaroha' && playingNote.index === i
-              ? 'var(--mantine-color-orange-5)'
+              ? 'var(--mark-orange)'
               : 'none'
           }
           strokeWidth={2}
@@ -154,7 +154,7 @@ export function LadderDiagram({
         y={height - 2}
         textAnchor="middle"
         fontSize={9}
-        fill="var(--mantine-color-blue-6)"
+        fill="var(--mark-blue)"
       >
         aroha &#8599;
       </text>
@@ -163,7 +163,7 @@ export function LadderDiagram({
         y={height - 2}
         textAnchor="middle"
         fontSize={9}
-        fill="var(--mantine-color-grape-6)"
+        fill="var(--mark-grape)"
       >
         avaroha &#8600;
       </text>

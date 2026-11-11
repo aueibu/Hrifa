@@ -151,7 +151,7 @@ export function RingDiagram({
               <circle
                 r={r + 3}
                 fill="none"
-                stroke="var(--mantine-color-blue-5)"
+                stroke="var(--mark-blue)"
                 strokeWidth={1.5}
               />
             )}
@@ -160,7 +160,7 @@ export function RingDiagram({
                 <circle
                   r={r + 3}
                   fill="none"
-                  stroke="var(--mantine-color-red-5)"
+                  stroke="var(--mark-red)"
                   strokeWidth={1.5}
                 />
                 <line
@@ -168,13 +168,13 @@ export function RingDiagram({
                   y1={-(r + 3) * 0.7}
                   x2={(r + 3) * 0.7}
                   y2={(r + 3) * 0.7}
-                  stroke="var(--mantine-color-red-6)"
+                  stroke="var(--mark-red)"
                   strokeWidth={1.5}
                 />
               </>
             )}
             {isHighlighted && (
-              <circle r={r + 5} fill="none" stroke="var(--mantine-color-orange-5)" strokeWidth={2}>
+              <circle r={r + 5} fill="none" stroke="var(--mark-orange)" strokeWidth={2}>
                 <animate
                   attributeName="r"
                   values={`${r + 3};${r + 6};${r + 3}`}
@@ -187,7 +187,7 @@ export function RingDiagram({
               <circle
                 r={r + 0.8}
                 fill="none"
-                stroke="var(--mantine-color-red-5)"
+                stroke="var(--mark-red)"
                 strokeWidth={1.2}
                 strokeDasharray="1.5 1.2"
               />
@@ -197,8 +197,8 @@ export function RingDiagram({
               fill={
                 isUsed
                   ? isSa
-                    ? 'var(--mantine-color-orange-6)'
-                    : 'var(--mantine-color-blue-6)'
+                    ? 'var(--mark-orange)'
+                    : 'var(--mark-blue)'
                   : 'var(--mantine-color-body)'
               }
               stroke={isUsed ? 'transparent' : 'var(--mantine-color-dimmed)'}
@@ -221,8 +221,8 @@ export function RingDiagram({
                   cx={outwardX * aboveDotOffset}
                   cy={outwardY * aboveDotOffset}
                   r={dotR}
-                  fill={aboveUsed ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-body)'}
-                  stroke="var(--mantine-color-teal-6)"
+                  fill={aboveUsed ? 'var(--mark-teal)' : 'var(--mantine-color-body)'}
+                  stroke="var(--mark-teal)"
                   strokeWidth={0.8}
                 >
                   <title>{aboveUsed ? '5th above: present' : '5th above: missing (imperfection)'}</title>
@@ -231,8 +231,8 @@ export function RingDiagram({
                   cx={outwardX * belowDotOffset}
                   cy={outwardY * belowDotOffset}
                   r={dotR}
-                  fill={belowUsed ? 'var(--mantine-color-grape-6)' : 'var(--mantine-color-body)'}
-                  stroke="var(--mantine-color-grape-6)"
+                  fill={belowUsed ? 'var(--mark-grape)' : 'var(--mantine-color-body)'}
+                  stroke="var(--mark-grape)"
                   strokeWidth={0.8}
                 >
                   <title>{belowUsed ? '5th below: present' : '5th below: missing'}</title>
@@ -256,14 +256,14 @@ export function RingDiagram({
             <>
               <line
                 {...aboveLine}
-                stroke={used.has(above) ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-dimmed)'}
+                stroke={used.has(above) ? 'var(--mark-teal)' : 'var(--mantine-color-dimmed)'}
                 strokeWidth={1}
                 strokeDasharray={used.has(above) ? undefined : '2 1.5'}
                 opacity={0.9}
               />
               <line
                 {...belowLine}
-                stroke={used.has(below) ? 'var(--mantine-color-grape-6)' : 'var(--mantine-color-dimmed)'}
+                stroke={used.has(below) ? 'var(--mark-grape)' : 'var(--mantine-color-dimmed)'}
                 strokeWidth={1}
                 strokeDasharray={used.has(below) ? undefined : '2 1.5'}
                 opacity={0.9}
