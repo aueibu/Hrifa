@@ -210,15 +210,20 @@
   cursor: pointer;
 }
 
-/* Selection uses the accent (THEMING.md, "State grammar"); an outline, not a shadow, in both schemes. */
+/*
+ * Selected reads like a selected card on the canvas and in Bitwig: a light outline in --text (white
+ * in dark mode, dark in light mode), two pixels in all, with no halo. The note keeps its own fill.
+ */
 .note[data-selected] {
-  outline: 2px solid var(--accent);
+  border-color: var(--text);
+  outline: 1px solid var(--text);
   z-index: 2;
 }
 
+/* A see-through fill, so the notes under the marquee stay visible while it is dragged. */
 .marquee {
-  background: var(--accent-tint);
-  border: 1px dashed var(--accent);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border: 1px solid var(--text);
   pointer-events: none;
   position: absolute;
   z-index: 4;

@@ -121,6 +121,9 @@ export function PianoRoll({
     setMenuAt({ x: event.clientX, y: event.clientY });
   }
   const [marquee, setMarquee] = useState<PixelRect | null>(null);
+  // While a marquee is dragged: the selection it would make. Drawn as selected, committed on release.
+  const [marqueeIds, setMarqueeIds] = useState<string[] | null>(null);
+  const shown = useMemo(() => (marqueeIds ? new Set(marqueeIds) : selected), [marqueeIds, selected]);
   const drag = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
 
   function rollPoint(event: ReactPointerEvent<HTMLElement>) {
@@ -153,13 +156,17 @@ export function PianoRoll({
       return;
     }
     start.moved = true;
-    setMarquee(rectFromCorners(start.x, start.y, point.x, point.y));
+    const rect = rectFromCorners(start.x, start.y, point.x, point.y);
+    setMarquee(rect);
+    // Show what the marquee would select while it is dragged, not only after release.
+    setMarqueeIds(marqueeSelection(selectedIds ?? [], notesInRect(notes, view, rect), start.additive));
   }
 
   function endMarquee(event: ReactPointerEvent<HTMLDivElement>) {
     const start = drag.current;
     drag.current = null;
     setMarquee(null);
+    setMarqueeIds(null);
     if (!start || !onSelectionChange) {
       return;
     }
@@ -462,6 +469,7 @@ export function PianoRoll({
             onPointerCancel={() => {
               drag.current = null;
               setMarquee(null);
+              setMarqueeIds(null);
             }}
             onContextMenu={openMenu}
             onKeyDown={(event) => {
@@ -516,7 +524,7 @@ export function PianoRoll({
                   className={classes.note}
                   data-active={active || undefined}
                   data-colored={note.color ? true : undefined}
-                  data-selected={selected.has(selectionId(note)) || undefined}
+                  data-selected={shown.has(selectionId(note)) || undefined}
                   data-info={`${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
                   title={infoBar ? undefined : `${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
                   onPointerDown={

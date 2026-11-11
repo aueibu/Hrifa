@@ -316,15 +316,19 @@ export function MelodicizationModule({
     onEnd: endPlayhead,
   });
 
-  function startPlayhead(bpm: number) {
+  // The playhead runs in the roll's own time. Auditioning a selection plays it from its own start, so
+  // the playhead begins at where the selection sits in the roll (`from`) and covers its `length`.
+  function startPlayhead(bpm: number, from = 0, length = pianoRollDuration) {
     if (playheadFrame.current !== null) {
       cancelAnimationFrame(playheadFrame.current);
     }
     const startsAt = performance.now() + 60 + countInSeconds(transport) * 1000;
+    const end = from + length;
+    setPlayheadQuarterNotes(from);
     const draw = (now: number) => {
-      const position = Math.max(0, ((now - startsAt) / 1000) * (bpm / 60));
-      setPlayheadQuarterNotes(Math.min(pianoRollDuration, position));
-      if (position < pianoRollDuration) {
+      const position = from + Math.max(0, ((now - startsAt) / 1000) * (bpm / 60));
+      setPlayheadQuarterNotes(Math.min(end, position));
+      if (position < end) {
         playheadFrame.current = requestAnimationFrame(draw);
       } else {
         playheadFrame.current = null;
@@ -388,7 +392,16 @@ export function MelodicizationModule({
             packet: captured.snippet.packet as typeof result.packet,
             timeline,
           });
-          await preview.play(plan, `Auditioning ${selectedIds.length} selected.`);
+          const started = await preview.play(plan, `Auditioning ${selectedIds.length} selected.`);
+          if (started) {
+            const chosen = new Set(selectedIds);
+            const from = Math.min(
+              ...result.packet.items
+                .filter((item) => chosen.has(item.id))
+                .map((item) => rationalToNumber(item.value.onset.quarterNotes))
+            );
+            startPlayhead(Number(tempo), from, captured.snippet.packet.frame?.extent ?? 1);
+          }
         } catch (error) {
           preview.setStatus(error instanceof Error ? error.message : 'Audition could not start.');
         }
