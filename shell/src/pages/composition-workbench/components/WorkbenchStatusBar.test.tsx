@@ -1,8 +1,15 @@
 import { fireEvent, render, screen } from '@test-utils';
 import { InfoBarActiveContext, InfoTooltip } from './hoverInfo';
-import { WorkbenchStatusBar } from './WorkbenchStatusBar';
+import { WorkbenchStatusBar, type WorkspaceView } from './WorkbenchStatusBar';
 
-function Harness({ onToggle = vi.fn(), onSettings = vi.fn(), open = false, settingsOpen = false }) {
+function Harness({
+  onToggle = vi.fn(),
+  onSettings = vi.fn(),
+  open = false,
+  settingsOpen = false,
+  view = 'canvas' as WorkspaceView,
+  onView = vi.fn(),
+}) {
   return (
     <InfoBarActiveContext.Provider value>
       <div>
@@ -17,12 +24,23 @@ function Harness({ onToggle = vi.fn(), onSettings = vi.fn(), open = false, setti
         onToggleInspector={onToggle}
         settingsOpen={settingsOpen}
         onToggleSettings={onSettings}
+        view={view}
+        onView={onView}
       />
     </InfoBarActiveContext.Provider>
   );
 }
 
 describe('workbench status bar', () => {
+  it('switches the workspace view, marking the current one', () => {
+    const onView = vi.fn();
+    render(<Harness view="canvas" onView={onView} />);
+    expect(screen.getByRole('radio', { name: 'Canvas' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('radio', { name: 'Desk' }).getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(screen.getByRole('radio', { name: 'Desk' }));
+    expect(onView).toHaveBeenCalledWith('desk');
+  });
+
   it('shows what the pointer is on, found from the nearest element with data-info', () => {
     render(<Harness />);
     expect(screen.getByText(/Hover over a control/)).toBeTruthy();

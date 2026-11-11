@@ -22,3 +22,35 @@
 .info {
   text-align: center;
 }
+
+.views {
+  display: flex;
+  gap: 1px;
+  margin-left: 0.5rem;
+}
+
+/* Tab class (THEMING.md): the active view is a filled --panel-body surface in --text; the rest muted. */
+.view {
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.view:hover {
+  color: var(--text);
+}
+
+.view[data-active] {
+  background: var(--panel-body);
+  color: var(--text);
+}
+
+.view:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

@@ -11,16 +11,27 @@ const idleText = 'Hover over a control, a note or a line for details.';
  * middle is driven by `data-info` attributes (see `useHoverInfo`), so only this component updates as
  * the pointer moves.
  */
+export type WorkspaceView = 'canvas' | 'desk';
+
+const views: { id: WorkspaceView; label: string; info: string }[] = [
+  { id: 'canvas', label: 'Canvas', info: 'Show the patch canvas: modules and the cables between them.' },
+  { id: 'desk', label: 'Desk', info: 'Show the desk: snippets set aside for reuse.' },
+];
+
 export function WorkbenchStatusBar({
   inspectorOpen,
   onToggleInspector,
   settingsOpen,
   onToggleSettings,
+  view,
+  onView,
 }: {
   inspectorOpen: boolean;
   onToggleInspector(): void;
   settingsOpen: boolean;
   onToggleSettings(): void;
+  view: WorkspaceView;
+  onView(view: WorkspaceView): void;
 }) {
   const info = useHoverInfo();
   return (
@@ -43,6 +54,23 @@ export function WorkbenchStatusBar({
             <path d="M9 4v16" />
           </svg>
         </ActionIcon>
+        {/* Mutually exclusive, so these follow the Tab class: the active view is filled, the rest muted. */}
+        <div className={classes.views} role="radiogroup" aria-label="Workspace view">
+          {views.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              role="radio"
+              aria-checked={view === entry.id}
+              className={classes.view}
+              data-active={view === entry.id || undefined}
+              data-info={entry.info}
+              onClick={() => onView(entry.id)}
+            >
+              {entry.label}
+            </button>
+          ))}
+        </div>
       </div>
       <Text className={classes.info} size="sm" c={info ? undefined : 'dimmed'} truncate aria-live="polite">
         {info || idleText}

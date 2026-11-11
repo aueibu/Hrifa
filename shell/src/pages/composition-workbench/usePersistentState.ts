@@ -13,6 +13,7 @@ export const compositionStateKeys = {
   detailCollapsed: 'hrifa.composition-workbench.ui.detail-collapsed.v1',
   inspectorOpen: 'hrifa.composition-workbench.ui.inspector-open.v1',
   desk: 'hrifa.composition-workbench.desk.snippets.v1',
+  workspaceView: 'hrifa.composition-workbench.ui.workspace-view.v1',
   settingsOpen:'hrifa.composition-workbench.ui.settings-open.v1',
   moduleRouteStates: 'hrifa.composition-workbench.routing.module-routes.v1',
   melodicizationBindings: 'hrifa.composition-workbench.routing.melodicization.v1',

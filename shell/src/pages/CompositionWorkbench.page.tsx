@@ -29,7 +29,11 @@ import { InterferenceModule } from './composition-workbench/components/Interfere
 import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
 import { MixerModule } from './composition-workbench/components/MixerModule';
 import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
-import { WorkbenchStatusBar } from './composition-workbench/components/WorkbenchStatusBar';
+import {
+  WorkbenchStatusBar,
+  type WorkspaceView,
+} from './composition-workbench/components/WorkbenchStatusBar';
+import { DeskView } from './composition-workbench/components/DeskView';
 import { PairCompositionModule } from './composition-workbench/components/PairCompositionModule';
 import { PitchListModule } from './composition-workbench/components/PitchListModule';
 import { SwirlingMistsModule } from './composition-workbench/components/SwirlingMistsModule';
@@ -248,6 +252,11 @@ export function CompositionWorkbenchPage() {
     compositionStateKeys.detailCollapsed,
     false,
     (value): value is boolean => typeof value === 'boolean'
+  );
+  const [workspaceView, setWorkspaceView] = usePersistentState<WorkspaceView>(
+    compositionStateKeys.workspaceView,
+    'canvas',
+    (value): value is WorkspaceView => value === 'canvas' || value === 'desk'
   );
   const [inspectorOpen, setInspectorOpen] = usePersistentState<boolean>(
     compositionStateKeys.inspectorOpen,
@@ -523,6 +532,12 @@ export function CompositionWorkbenchPage() {
                     collapsed={detailCollapsed}
                     onCollapsed={setDetailCollapsed}
                     top={
+                      <>
+                      {/* Both stay mounted: the canvas keeps its viewport while the desk is shown. */}
+                      <div style={{ height: '100%' }} hidden={workspaceView !== 'desk'}>
+                        <DeskView onMakeSource={undefined} />
+                      </div>
+                      <div style={{ height: '100%' }} hidden={workspaceView !== 'canvas'}>
                       <CompositionCanvas
                         activeInstanceId={activeCompositionInstanceId}
                         selected={compositionInspectorTarget}
@@ -536,6 +551,8 @@ export function CompositionWorkbenchPage() {
                         onTidy={placeCompositionModules}
                         onAddModule={addCompositionModule}
                       />
+                      </div>
+                      </>
                     }
                     bottom={
                       <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
@@ -698,6 +715,8 @@ export function CompositionWorkbenchPage() {
             onToggleInspector={() => setInspectorOpen((open) => !open)}
             settingsOpen={settingsOpened}
             onToggleSettings={() => setSettingsOpened((open) => !open)}
+            view={workspaceView}
+            onView={setWorkspaceView}
           />
         </AppShell.Footer>
       </AppShell>
