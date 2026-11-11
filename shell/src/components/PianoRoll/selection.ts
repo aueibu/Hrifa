@@ -46,13 +46,22 @@ function overlaps(a: PixelRect, b: PixelRect) {
   );
 }
 
-/** The ids of every note the rectangle touches, in the order the notes were given. */
+/** What selecting a note selects: its source (a whole chord) when it has one, otherwise itself. */
+export function selectionId(note: PianoRollNote): string {
+  return note.sourceId ?? note.id;
+}
+
+/**
+ * The selection ids of every note the rectangle touches, in the order the notes were given. A chord
+ * the rectangle only partly covers is selected whole, and appears once.
+ */
 export function notesInRect(
   notes: PianoRollNote[],
   view: Pick<PianoRollViewState, 'pixelsPerQuarter' | 'pixelsPerSemitone'>,
   rect: PixelRect
 ): string[] {
-  return notes.filter((note) => overlaps(noteRect(note, view), rect)).map((note) => note.id);
+  const ids = notes.filter((note) => overlaps(noteRect(note, view), rect)).map(selectionId);
+  return ids.filter((id, index) => ids.indexOf(id) === index);
 }
 
 /**

@@ -47,6 +47,7 @@ import {
 } from './composition-workbench/compositionRouting';
 import { nextFreePosition, type Position } from './composition-workbench/compositionLayout';
 import { CompositionSettingsProvider } from './composition-workbench/compositionSettings';
+import { DeskProvider } from './composition-workbench/desk';
 import {
   acceptsCompositionInspectorTarget,
   acceptsCompositionInstances,
@@ -450,6 +451,7 @@ export function CompositionWorkbenchPage() {
 
   return (
     <CompositionSettingsProvider>
+    <DeskProvider>
     <AudioEngineProvider>
     <PreviewRegistryProvider>
       <MantineThemeProvider theme={compactWorkbenchTheme}>
@@ -703,6 +705,7 @@ export function CompositionWorkbenchPage() {
       </MantineThemeProvider>
     </PreviewRegistryProvider>
     </AudioEngineProvider>
+    </DeskProvider>
     </CompositionSettingsProvider>
   );
 }

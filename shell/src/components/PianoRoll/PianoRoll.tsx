@@ -4,8 +4,17 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
+import {
+  actionEnabled,
+  EditorContextMenu,
+  EditorPalette,
+  shortcutMatch,
+  type EditorAction,
+  type EditorTool,
+} from '../EditorPalette';
 import { ActionIcon, Button, Group, Switch, Text } from '@mantine/core';
 import type { PianoRollGridLine, PianoRollNote, PianoRollViewState } from './model';
 import {
@@ -14,6 +23,7 @@ import {
   noteRect,
   notesInRect,
   rectFromCorners,
+  selectionId,
   type PixelRect,
 } from './selection';
 import { useInfoBarActive } from '../InfoBar';
@@ -45,6 +55,12 @@ export interface PianoRollProps {
    */
   selectedIds?: string[];
   onSelectionChange?(ids: string[]): void;
+  /** Mutually exclusive modes, shown on the palette at the roll's right edge. */
+  tools?: EditorTool[];
+  activeTool?: string;
+  onToolChange?(id: string): void;
+  /** One-shot actions on the selection: palette buttons, right-click menu items and key shortcuts. */
+  actions?: EditorAction[];
 }
 
 function clamp(value: number, minimum: number, maximum: number) {
@@ -79,10 +95,31 @@ export function PianoRoll({
   showToolbar = true,
   selectedIds,
   onSelectionChange,
+  tools,
+  activeTool,
+  onToolChange,
+  actions,
 }: PianoRollProps) {
   const infoBar = useInfoBarActive();
   const selectable = onSelectionChange !== undefined;
   const selected = useMemo(() => new Set(selectedIds ?? []), [selectedIds]);
+  const actionContext = useMemo(() => ({ selectedIds: selectedIds ?? [] }), [selectedIds]);
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
+
+  function openMenu(event: ReactMouseEvent<HTMLDivElement>) {
+    if (!selectable || !actions?.length) {
+      return;
+    }
+    event.preventDefault();
+    const box = event.currentTarget.getBoundingClientRect();
+    const point = { left: event.clientX - box.left, top: event.clientY - box.top, width: 1, height: 1 };
+    const [hit] = notesInRect(notes, view, point);
+    // Right-clicking a note outside the selection selects it first, as editors usually do.
+    if (hit !== undefined && !selected.has(hit)) {
+      onSelectionChange?.([hit]);
+    }
+    setMenuAt({ x: event.clientX, y: event.clientY });
+  }
   const [marquee, setMarquee] = useState<PixelRect | null>(null);
   const drag = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
 
@@ -361,6 +398,7 @@ export function PianoRoll({
         </Group>
       )}
 
+      <div className={classes.body}>
       <div
         ref={scroller}
         className={classes.scroller}
@@ -425,9 +463,25 @@ export function PianoRoll({
               drag.current = null;
               setMarquee(null);
             }}
+            onContextMenu={openMenu}
             onKeyDown={(event) => {
-              if (selectable && event.key === 'Escape') {
+              if (!selectable) {
+                return;
+              }
+              if (event.key === 'Escape') {
                 onSelectionChange?.([]);
+                return;
+              }
+              const tool = shortcutMatch(tools ?? [], event);
+              if (tool) {
+                event.preventDefault();
+                onToolChange?.(tool.id);
+                return;
+              }
+              const action = shortcutMatch(actions ?? [], event);
+              if (action && actionEnabled(action, actionContext)) {
+                event.preventDefault();
+                action.run(actionContext);
               }
             }}
           >
@@ -462,7 +516,7 @@ export function PianoRoll({
                   className={classes.note}
                   data-active={active || undefined}
                   data-colored={note.color ? true : undefined}
-                  data-selected={selected.has(note.id) || undefined}
+                  data-selected={selected.has(selectionId(note)) || undefined}
                   data-info={`${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
                   title={infoBar ? undefined : `${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
                   onPointerDown={
@@ -476,7 +530,7 @@ export function PianoRoll({
                           onSelectionChange(
                             clickSelection(
                               selectedIds ?? [],
-                              note.id,
+                              selectionId(note),
                               event.shiftKey || event.ctrlKey || event.metaKey
                             )
                           );
@@ -514,6 +568,24 @@ export function PianoRoll({
           </div>
         </div>
       </div>
+      {selectable && (
+        <EditorPalette
+          tools={tools}
+          activeTool={activeTool}
+          onToolChange={onToolChange}
+          actions={actions}
+          context={actionContext}
+        />
+      )}
+      </div>
+      {selectable && actions && (
+        <EditorContextMenu
+          at={menuAt}
+          onClose={() => setMenuAt(null)}
+          actions={actions}
+          context={actionContext}
+        />
+      )}
     </div>
   );
 }

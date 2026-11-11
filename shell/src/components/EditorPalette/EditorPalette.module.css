@@ -1,0 +1,62 @@
+/*
+ * Controls sit on the control tiers, never on a screen (THEMING.md rule 2). A tool follows the Tab
+ * class: the active one is a filled --panel-body surface in --text, the rest are --text-muted. An
+ * action has no persistent active look, only a pressed state.
+ */
+.palette {
+  background: var(--chrome);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  width: 3.25rem;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.group + .group {
+  margin-top: 0.25rem;
+}
+
+.tool,
+.action {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  line-height: 1.1;
+  padding: 0.35rem 0.2rem;
+  text-align: center;
+}
+
+.tool:hover,
+.action:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.tool[data-active] {
+  background: var(--panel-body);
+  color: var(--text);
+}
+
+.action {
+  background: var(--panel-slot);
+}
+
+.action:active:not(:disabled) {
+  background: var(--panel-body);
+  color: var(--text);
+}
+
+.action:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.tool:focus-visible,
+.action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

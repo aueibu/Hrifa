@@ -18,6 +18,9 @@ import {
   type PublishedCompositionOutput,
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
+import { newSnippetId, useDesk } from '../desk';
+import { captureSnippet } from '../snippet';
+import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import { melodicize, type PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
@@ -245,6 +248,7 @@ export function MelodicizationModule({
       result.packet.items.flatMap((item) =>
         item.value.pitches.map((midicents, pitchIndex) => ({
           id: `${item.id}:pitch:${pitchIndex}`,
+          sourceId: item.id,
           start: rationalToNumber(item.value.onset.quarterNotes),
           duration: rationalToNumber(item.value.duration.quarterNotes),
           pitchMidicents: midicents,
@@ -328,6 +332,69 @@ export function MelodicizationModule({
     };
     playheadFrame.current = requestAnimationFrame(draw);
   }
+
+  // Selected events, by packet item id. Ids that no longer exist (the inputs changed) fall away.
+  const [rawSelection, setSelection] = useState<string[]>([]);
+  const selection = useMemo(() => {
+    const known = new Set(result.packet.items.map((item) => item.id));
+    return rawSelection.filter((id) => known.has(id));
+  }, [rawSelection, result.packet.items]);
+  const [rollTool, setRollTool] = useState('select');
+  const { addSnippet } = useDesk();
+
+  function captureSelection(ids: string[]) {
+    return captureSnippet({
+      id: newSnippetId(),
+      createdAt: new Date().toISOString(),
+      name: `${instanceLabel} · ${ids.length} ${ids.length === 1 ? 'note' : 'notes'}`,
+      packet: result.packet,
+      moduleInstance: instanceId,
+      portId: 'notes',
+      itemIds: ids,
+    });
+  }
+
+  const rollTools: EditorTool[] = [{ id: 'select', label: 'Select', shortcut: 'v' }];
+  const rollActions: EditorAction[] = [
+    {
+      id: 'send-to-desk',
+      label: 'Send to desk',
+      shortcut: 'd',
+      run({ selectedIds }) {
+        const captured = captureSelection(selectedIds);
+        if (!captured.ok) {
+          preview.setStatus(captured.error);
+          return;
+        }
+        addSnippet(captured.snippet);
+        preview.setStatus(
+          [`Sent ${selectedIds.length} to the desk.`, ...captured.warnings].join(' ')
+        );
+      },
+    },
+    {
+      id: 'audition-selection',
+      label: 'Audition',
+      shortcut: 'p',
+      async run({ selectedIds }) {
+        const captured = captureSelection(selectedIds);
+        if (!captured.ok) {
+          preview.setStatus(captured.error);
+          return;
+        }
+        try {
+          const plan = createNotePacketPerformancePlan({
+            sourceId: instanceId,
+            packet: captured.snippet.packet as typeof result.packet,
+            timeline,
+          });
+          await preview.play(plan, `Auditioning ${selectedIds.length} selected.`);
+        } catch (error) {
+          preview.setStatus(error instanceof Error ? error.message : 'Audition could not start.');
+        }
+      },
+    },
+  ];
 
   async function playPreview() {
     if (result.errors.length || !result.packet.items.length) {
@@ -415,6 +482,12 @@ export function MelodicizationModule({
           onViewChange={setPianoRollView}
           playhead={playheadQuarterNotes}
           isPlaying={preview.playing}
+          selectedIds={selection}
+          onSelectionChange={setSelection}
+          tools={rollTools}
+          activeTool={rollTool}
+          onToolChange={setRollTool}
+          actions={rollActions}
         />
         <div className={classes.candidateList}>
           <Table striped highlightOnHover withRowBorders>

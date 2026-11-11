@@ -345,7 +345,7 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByText('22 notes', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
     expect(screen.getByText(/events \| note \| cyclic/)).toBeInTheDocument();
     expect(
-      screen.getByRole('img', { name: 'Melodicization piano roll; 22 notes' })
+      screen.getByRole('group', { name: 'Melodicization piano roll; 22 notes, 0 selected' })
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', {

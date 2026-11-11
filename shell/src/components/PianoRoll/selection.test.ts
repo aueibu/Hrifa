@@ -40,6 +40,18 @@ describe('piano roll selection', () => {
     expect(notesInRect(notes, view, { left: 900, top: 900, width: 10, height: 10 })).toEqual([]);
   });
 
+  it('selects a whole chord once, even when the marquee touches one pitch', () => {
+    const chord = [
+      { ...note('c1', 0, 1, 60), sourceId: 'event-1' },
+      { ...note('c2', 0, 1, 64), sourceId: 'event-1' },
+      { ...note('d', 1, 1, 67), sourceId: 'event-2' },
+    ];
+    const low = noteRect(chord[0], view);
+    expect(notesInRect(chord, view, low)).toEqual(['event-1']);
+    const both = rectFromCorners(0, 0, 1000, 5000);
+    expect(notesInRect(chord, view, both)).toEqual(['event-1', 'event-2']);
+  });
+
   it('plain click replaces the selection; toggle adds and removes', () => {
     expect(clickSelection(['a', 'b'], 'c', false)).toEqual(['c']);
     expect(clickSelection(['a'], 'b', true)).toEqual(['a', 'b']);
