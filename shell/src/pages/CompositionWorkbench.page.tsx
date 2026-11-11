@@ -221,6 +221,13 @@ function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
   }
 }
 
+/**
+ * The view that is not showing. visibility alone is not enough: the canvas's own elements set
+ * `visibility: visible`, which wins over a hidden parent, so its nodes showed through the desk.
+ * Opacity hides everything under it, and pointer-events keeps it from taking clicks.
+ */
+const inactiveViewStyle = { opacity: 0, pointerEvents: 'none', visibility: 'hidden' } as const;
+
 export function CompositionWorkbenchPage() {
   const [patch] = useState<PatchDocument>(() => loadSavedPatch(createDefaultPatch));
   const [activeCompositionInstanceId, setActiveCompositionInstanceId] = usePersistentState<
@@ -559,7 +566,7 @@ export function CompositionWorkbenchPage() {
                           minHeight: '100%',
                           minWidth: 0,
                           overflow: 'hidden',
-                          ...(workspaceView === 'desk' ? {} : { visibility: 'hidden' }),
+                          ...(workspaceView === 'desk' ? { zIndex: 1 } : inactiveViewStyle),
                         }}
                         inert={workspaceView !== 'desk'}
                       >
@@ -578,7 +585,7 @@ export function CompositionWorkbenchPage() {
                           gridArea: '1 / 1',
                           minHeight: 0,
                           minWidth: 0,
-                          ...(workspaceView === 'canvas' ? {} : { visibility: 'hidden' }),
+                          ...(workspaceView === 'canvas' ? { zIndex: 1 } : inactiveViewStyle),
                         }}
                         inert={workspaceView !== 'canvas'}
                       >
