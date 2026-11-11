@@ -154,12 +154,13 @@ export function mixerChannelMaterial(
   }
 }
 
-// Distinct hues for telling channels apart in the roll. Red is left out: it is the playhead.
-const channelColorNames = ['blue', 'orange', 'teal', 'grape', 'lime', 'cyan', 'pink', 'yellow'];
+// Distinct hues for telling channels apart in the roll, in the theme's order of separation. Red is
+// left out: it is the playhead.
+const channelColorNames = ['blue', 'orange', 'green', 'pink', 'cyan', 'yellow', 'violet', 'teal'];
 
-/** A CSS color for the channel at this position; repeats after eight channels. */
+/** A theme mark color for the channel at this position; repeats after eight channels. */
 export function mixerChannelColor(index: number) {
-  return `var(--mantine-color-${channelColorNames[index % channelColorNames.length]}-filled)`;
+  return `var(--mark-${channelColorNames[index % channelColorNames.length]})`;
 }
 
 /**

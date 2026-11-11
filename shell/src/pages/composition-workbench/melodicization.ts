@@ -8,11 +8,13 @@ import {
   multiplyRational,
   pulsesToMusicalDuration,
   rational,
+  rationalFromNumber,
   rationalToNumber,
   type MusicalDuration,
   type MusicalPosition,
 } from './musicalTime';
 import { rhythmOrigin } from './rhythmFrame';
+import { rhythmAttacks, type RhythmStep } from './rhythmRealization';
 import { pitchGroupToArray, type PitchItemValue } from './pitch';
 
 export type PitchAllocation = 'cycle' | 'cycle-rhythm' | 'zip' | 'cartesian';
@@ -39,6 +41,10 @@ export interface MelodicizationResult {
 
 const MAX_NOTE_EVENTS = 4096;
 
+function greatestCommonDivisor(first: number, second: number): number {
+  return second === 0 ? first : greatestCommonDivisor(second, first % second);
+}
+
 function inheritedProvenance(...groups: Provenance[][]) {
   return groups.flatMap((group) => group);
 }
@@ -60,7 +66,7 @@ function concretePitchGroups(packetValue: DataPacket) {
   });
 }
 
-export function melodicize({
+function melodicizeUnguarded({
   instanceId,
   rhythm,
   pitches,
@@ -106,8 +112,8 @@ export function melodicize({
   }
 
   const pulseValues = rhythm.items.map((item) => Number(item.value));
-  if (pulseValues.some((value) => !Number.isSafeInteger(value) || value <= 0)) {
-    return emptyResult(['Every inter-onset duration must be a positive whole pulse count.']);
+  if (pulseValues.some((value) => !Number.isFinite(value) || value === 0)) {
+    return emptyResult(['Every inter-onset duration must be a nonzero number of pulses; a rest is negative.']);
   }
   const pitchGroups = concretePitchGroups(pitches);
   if (pitchGroups.length !== pitches.items.length) {
@@ -117,55 +123,72 @@ export function melodicize({
     return emptyResult(['Rhythm and pitch inputs must both contain at least one item.']);
   }
 
-  const rhythmicSpineValues =
-    allocation === 'cycle-rhythm'
-      ? Array.from(
-          { length: pitchGroups.length },
-          (_, attackIndex) => pulseValues[attackIndex % pulseValues.length]
-        )
-      : pulseValues;
   // The rhythm may start after the downbeat (frame.origin, see rhythmFrame.ts). Every attack
   // shifts by that start; bar lines don't, which is what puts the attacks off the beat.
   const origin = rhythmOrigin(rhythm);
-  if (!Number.isSafeInteger(origin)) {
-    return emptyResult(['The rhythm must start on a whole pulse.']);
+  if (!Number.isFinite(origin)) {
+    return emptyResult(['The rhythm must start on a finite pulse.']);
   }
-  const start = pulsesToMusicalDuration(origin, pulseUnit);
-  const unshifted = accumulatePulseDurations(rhythmicSpineValues, pulseUnit);
-  const accumulated = {
-    ...unshifted,
-    placements: unshifted.placements.map((placement) => ({
-      ...placement,
-      at: addDuration(placement.at, start),
-    })),
-  };
-  const pairings: { attackIndex: number; rhythmIndex: number; pitchIndex: number }[] = [];
+  // Rests and ties live in the rhythm (see rhythmNotation.ts). A rest makes no attack and takes no
+  // pitch; a tie merges the next item into the note it starts, which takes one pitch.
+  const steps: RhythmStep[] = rhythm.items.map((item) => ({
+    duration: Number(item.value),
+    tie: item.tie,
+    itemId: item.id,
+  }));
+  const single = rhythmAttacks(steps, origin, { cyclic: rhythm.frame?.topology === 'cyclic' });
+  const attacksPerCycle = single.attacks.length;
+  if (!attacksPerCycle) {
+    return emptyResult(['The rhythm has no attacks to place pitches on; it is all rests and ties.']);
+  }
+  const pitchCount = pitchGroups.length;
+
+  // Cartesian walks both cycles in step: attack k takes rhythm slot k mod A and pitch group k mod P,
+  // and the pitch side steps once each time the pair of cycles realigns (every lcm(A, P) attacks).
+  // That plays every pitch group at every rhythm slot exactly once, A x P attacks in all, as
+  // successive rhythm cycles. When A and P share no factor it is just two cycles running until
+  // they realign. Cycle-rhythm repeats the rhythm until every pitch group has played once.
+  const cartesianCount = allocation === 'cartesian' ? attacksPerCycle * pitchCount : 0;
+  if (cartesianCount > MAX_NOTE_EVENTS) {
+    return emptyResult([
+      `This cartesian allocation would create ${cartesianCount} attacks; the limit is ${MAX_NOTE_EVENTS}.`,
+    ]);
+  }
+  const repeats =
+    allocation === 'cartesian'
+      ? pitchCount
+      : allocation === 'cycle-rhythm'
+        ? Math.ceil(pitchCount / attacksPerCycle)
+        : 1;
+  const spine = repeats === 1 ? single : rhythmAttacks(Array.from({ length: repeats }, () => steps).flat(), origin);
+  const attacks =
+    allocation === 'cartesian'
+      ? spine.attacks.slice(0, cartesianCount)
+      : allocation === 'cycle-rhythm'
+        ? spine.attacks.slice(0, pitchCount)
+        : spine.attacks;
+  const realignEvery = cartesianCount
+    ? cartesianCount / greatestCommonDivisor(attacksPerCycle, pitchCount)
+    : 0;
+
+  const pairings: { attackIndex: number; pitchIndex: number }[] = [];
   if (allocation === 'cycle') {
-    accumulated.placements.forEach((_, attackIndex) => {
-      pairings.push({
-        attackIndex,
-        rhythmIndex: attackIndex,
-        pitchIndex: attackIndex % pitchGroups.length,
-      });
+    attacks.forEach((_, attackIndex) => {
+      pairings.push({ attackIndex, pitchIndex: attackIndex % pitchCount });
     });
   } else if (allocation === 'cycle-rhythm') {
-    pitchGroups.forEach((_, pitchIndex) => {
-      pairings.push({
-        attackIndex: pitchIndex,
-        rhythmIndex: pitchIndex % rhythm.items.length,
-        pitchIndex,
-      });
-    });
+    attacks.forEach((_, attackIndex) => pairings.push({ attackIndex, pitchIndex: attackIndex }));
   } else if (allocation === 'zip') {
-    const count = Math.min(accumulated.placements.length, pitchGroups.length);
+    const count = Math.min(attacks.length, pitchCount);
     for (let index = 0; index < count; index += 1) {
-      pairings.push({ attackIndex: index, rhythmIndex: index, pitchIndex: index });
+      pairings.push({ attackIndex: index, pitchIndex: index });
     }
   } else {
-    accumulated.placements.forEach((_, attackIndex) => {
-      pitchGroups.forEach((_, pitchIndex) =>
-        pairings.push({ attackIndex, rhythmIndex: attackIndex, pitchIndex })
-      );
+    attacks.forEach((_, attackIndex) => {
+      pairings.push({
+        attackIndex,
+        pitchIndex: (attackIndex + Math.floor(attackIndex / realignEvery)) % pitchCount,
+      });
     });
   }
 
@@ -180,23 +203,29 @@ export function melodicize({
   }
 
   const articulation = rational(articulationPercent, 100);
-  const items = pairings.map(({ attackIndex, rhythmIndex, pitchIndex }, eventIndex) => {
+  const items = pairings.map(({ attackIndex, pitchIndex }, eventIndex) => {
+    const attack = attacks[attackIndex];
+    const rhythmIndex = attack.index % steps.length;
     const rhythmItem = rhythm.items[rhythmIndex];
     const pitchGroup = pitchGroups[pitchIndex];
-    const placement = accumulated.placements[attackIndex];
+    const onset: MusicalPosition = {
+      quarterNotes: multiplyRational(pulseUnit.quarterNotes, attack.at),
+    };
+    // The slot runs from this attack to the end of its last tied item, never across a rest.
+    const slot = { quarterNotes: multiplyRational(pulseUnit.quarterNotes, attack.slot) };
     const soundingDuration = {
-      quarterNotes: multiplyRational(placement.duration.quarterNotes, articulation),
+      quarterNotes: multiplyRational(slot.quarterNotes, articulation),
     };
     return {
       id: `${instanceId}:note-group:${rhythmItem.id}:${pitchGroup.item.id}:${eventIndex}`,
       value: {
-        onset: placement.at,
-        interOnset: placement.duration,
+        onset,
+        interOnset: slot,
         duration: soundingDuration,
         pitches: pitchGroup.value.pitches,
         velocity: 1,
       },
-      label: `${pitchGroup.value.label} @ ${placement.at.quarterNotes.numerator}/${placement.at.quarterNotes.denominator}`,
+      label: `${pitchGroup.value.label} @ ${onset.quarterNotes.numerator}/${onset.quarterNotes.denominator}`,
       provenance: [
         ...inheritedProvenance(rhythmItem.provenance, pitchGroup.item.provenance),
         {
@@ -217,35 +246,41 @@ export function melodicize({
     };
   });
 
-  const usedRhythmCount =
-    allocation === 'zip' || allocation === 'cycle-rhythm'
-      ? Math.min(rhythm.items.length, pitchGroups.length)
-      : rhythm.items.length;
-  const lastPlacement = accumulated.placements[pairings.at(-1)!.attackIndex];
-  const musicalExtent = addDuration(lastPlacement.at, lastPlacement.duration);
+  const lastAttack = attacks[pairings.at(-1)!.attackIndex];
+  const lastEndPulses = lastAttack.atPulses + lastAttack.slotPulses;
+  const endPulses =
+    allocation === 'cycle'
+      ? single.endPulses
+      : allocation === 'cartesian'
+        ? spine.endPulses
+        : lastEndPulses;
+  const musicalExtent = pulsesToMusicalDuration(endPulses, pulseUnit);
+  const usedAllAttacks = allocation === 'zip' ? pairings.length === attacksPerCycle : true;
   const topology =
-    allocation !== 'cycle-rhythm' &&
-    rhythm.frame?.topology === 'cyclic' &&
-    usedRhythmCount === rhythm.items.length
+    allocation !== 'cycle-rhythm' && rhythm.frame?.topology === 'cyclic' && usedAllAttacks
       ? 'cyclic'
       : 'linear';
-  const warnings = [...rhythm.warnings, ...pitches.warnings];
+  const warnings = [...rhythm.warnings, ...pitches.warnings, ...single.warnings];
   const messages: string[] = [];
-  if (allocation === 'zip' && rhythm.items.length > usedRhythmCount) {
-    const unused = rhythm.items.length - usedRhythmCount;
+  if (allocation === 'zip' && attacksPerCycle > pairings.length) {
+    const unused = attacksPerCycle - pairings.length;
     messages.push(`${unused} trailing rhythm item${unused === 1 ? '' : 's'} unused by Zip.`);
   }
-  if (allocation === 'zip' && pitchGroups.length > usedRhythmCount) {
-    const unused = pitchGroups.length - usedRhythmCount;
+  if (allocation === 'zip' && pitchCount > pairings.length) {
+    const unused = pitchCount - pairings.length;
     messages.push(`${unused} trailing pitch group${unused === 1 ? '' : 's'} unused by Zip.`);
   }
 
   const sourceGrouping = rhythm.frame?.grouping;
-  const outputPulseExtent = rhythmicSpineValues.reduce((total, value) => total + value, 0);
-  const sourcePulseExtent =
-    rhythm.frame?.extent ?? pulseValues.reduce((total, value) => total + value, 0);
+  const outputPulseExtent =
+    allocation === 'cycle-rhythm'
+      ? lastEndPulses - origin
+      : allocation === 'cartesian'
+        ? spine.spanPulses
+        : single.spanPulses;
+  const sourcePulseExtent = rhythm.frame?.extent ?? single.spanPulses;
   const groupingBoundaries =
-    sourceGrouping && allocation === 'cycle-rhythm'
+    sourceGrouping && (allocation === 'cycle-rhythm' || allocation === 'cartesian')
       ? Array.from({ length: Math.ceil(outputPulseExtent / sourcePulseExtent) }, (_, cycleIndex) =>
           sourceGrouping.boundaries.map((boundary) => boundary + cycleIndex * sourcePulseExtent)
         )
@@ -259,15 +294,17 @@ export function melodicize({
         boundaries: groupingBoundaries!.map(
           (boundary) => boundary * rationalToNumber(pulseUnit.quarterNotes)
         ),
+        // Grouping units and boundaries are pulse counts that may be fractions (an edited rhythm's
+        // grouping follows its notes), so they become exact rationals rather than integer ratios.
         musicalUnits: {
-          quarterNotes: multiplyRational(pulseUnit.quarterNotes, sourceGrouping.units),
+          quarterNotes: multiplyRational(
+            pulseUnit.quarterNotes,
+            rationalFromNumber(sourceGrouping.units)
+          ),
         },
-        musicalBoundaries: groupingBoundaries!.map((boundary) =>
-          musicalPosition(
-            pulseUnit.quarterNotes.numerator * boundary,
-            pulseUnit.quarterNotes.denominator
-          )
-        ),
+        musicalBoundaries: groupingBoundaries!.map((boundary) => ({
+          quarterNotes: multiplyRational(pulseUnit.quarterNotes, rationalFromNumber(boundary)),
+        })),
       }
     : undefined;
 
@@ -299,6 +336,21 @@ export function melodicize({
     errors: [],
     messages,
   };
+}
+
+/**
+ * Turns a rhythm and a pitch list into note events. Anything that goes wrong while resolving time
+ * comes back as an error on the result, never as an exception: this runs while a module renders, and
+ * a throw there would take the whole page down.
+ */
+export function melodicize(options: Parameters<typeof melodicizeUnguarded>[0]): MelodicizationResult {
+  try {
+    return melodicizeUnguarded(options);
+  } catch (error) {
+    return emptyResult([
+      `Melodicization could not place these notes: ${error instanceof Error ? error.message : String(error)}`,
+    ]);
+  }
 }
 
 export const melodicizationPulseOptions = [

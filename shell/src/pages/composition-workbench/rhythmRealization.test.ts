@@ -61,8 +61,8 @@ describe('rhythmAttacks', () => {
 
   it('extends the preceding event through a tie', () => {
     const { attacks, spanPulses } = rhythmAttacks([
-      { duration: 2 },
-      { duration: 1, tie: true },
+      { duration: 2, tie: true },
+      { duration: 1 },
       { duration: 2 },
     ]);
     expect(attacks.map((a) => [a.atPulses, a.slotPulses])).toEqual([
@@ -72,15 +72,56 @@ describe('rhythmAttacks', () => {
     expect(spanPulses).toBe(5);
   });
 
-  it('reports a tie that has nothing to continue and sounds it as a rest', () => {
-    const afterRest = rhythmAttacks([
-      { duration: 1 },
-      { duration: -1 },
-      { duration: 1, tie: true },
+  it('keeps fractional pulse counts exact', () => {
+    // 2 x 3/5 = 6/5 and 1 x 3/5 = 3/5, held as floats and recovered exactly.
+    const { attacks, spanPulses } = rhythmAttacks([
+      { duration: 2 * (3 / 5) },
+      { duration: 2 * (3 / 5) },
+      { duration: 3 / 5 },
     ]);
-    expect(afterRest.attacks).toHaveLength(1);
-    expect(afterRest.warnings[0]).toMatch(/tie with nothing to continue/);
-    expect(rhythmAttacks([{ duration: 1, tie: true }]).attacks).toHaveLength(0);
+    expect(attacks.map((a) => a.at)).toEqual([
+      { numerator: 0, denominator: 1 },
+      { numerator: 6, denominator: 5 },
+      { numerator: 12, denominator: 5 },
+    ]);
+    expect(attacks[2].slot).toEqual({ numerator: 3, denominator: 5 });
+    expect(spanPulses).toBeCloseTo(3);
+    const events = realizeRhythm({
+      sourceId: 's',
+      layerId: 'a',
+      pulseUnit: sixteenth,
+      sound,
+      gatePercent: 100,
+      steps: [{ duration: 6 / 5 }, { duration: 3 / 5 }],
+    }).events;
+    // A pulse is a sixteenth (1/4 quarter note): 6/5 pulses is 3/10 of a quarter note.
+    expect(events[1].at.quarterNotes).toEqual({ numerator: 3, denominator: 10 });
+    expect(events[1].duration.quarterNotes).toEqual({ numerator: 3, denominator: 20 });
+  });
+
+  it('chains ties and reports a tie into a rest or off a linear end, then ignores it', () => {
+    const chain = rhythmAttacks([{ duration: 1, tie: true }, { duration: 2, tie: true }, { duration: 1 }]);
+    expect(chain.attacks.map((a) => [a.atPulses, a.slotPulses])).toEqual([[0, 4]]);
+    const intoRest = rhythmAttacks([{ duration: 1, tie: true }, { duration: -1 }, { duration: 1 }]);
+    expect(intoRest.attacks.map((a) => [a.atPulses, a.slotPulses])).toEqual([
+      [0, 1],
+      [2, 1],
+    ]);
+    expect(intoRest.warnings[0]).toMatch(/tied into a rest/);
+    const offEnd = rhythmAttacks([{ duration: 1 }, { duration: 2, tie: true }]);
+    expect(offEnd.attacks).toHaveLength(2);
+    expect(offEnd.warnings[0]).toMatch(/ends with a tie/);
+  });
+
+  it('wraps a tie off the end of a cyclic rhythm onto its first step', () => {
+    const steps = [{ duration: 1 }, { duration: 2 }, { duration: 1, tie: true }];
+    const looped = rhythmAttacks(steps, 0, { cyclic: true });
+    expect(looped.attacks.map((a) => [a.atPulses, a.slotPulses])).toEqual([
+      [1, 2],
+      [3, 2],
+    ]);
+    expect(looped.warnings).toEqual([]);
+    expect(rhythmAttacks(steps).attacks).toHaveLength(3);
   });
 
   it('skips zero or non-finite steps with a warning rather than guessing', () => {
@@ -126,7 +167,7 @@ describe('realizeRhythm', () => {
       pulseUnit: sixteenth,
       sound,
       gatePercent: 100,
-      steps: [{ duration: 2 }, { duration: 2, tie: true }],
+      steps: [{ duration: 2, tie: true }, { duration: 2 }],
     });
     expect(q(tied.events[0].duration)).toBe(1);
     expect(q(realize([4], { gatePercent: 999 }).events[0].duration)).toBe(2);
@@ -239,6 +280,18 @@ describe('materialFromRhythmPacket', () => {
       options
     );
     expect(material.events.map((e) => q(e.at) * 4)).toEqual([3, 0, 1]);
+  });
+
+  it('plays rests as silence and ties as one longer event, counting both in the period', () => {
+    const tied = rhythm([2, 1, -1, 2], { topology: 'cyclic', extent: 6 });
+    tied.items[0].tie = true;
+    const material = materialFromRhythmPacket(tied, { ...options, gatePercent: 100 });
+    // 2~ 1 is one 3-pulse event at 0; r1 is silence; the 2 attacks at pulse 4.
+    expect(material.events.map((e) => [q(e.at) * 4, q(e.duration) * 4])).toEqual([
+      [0, 3],
+      [4, 2],
+    ]);
+    expect(q(material.period)).toBe(1.5);
   });
 
   it('uses origin plus span as the period of a linear rhythm', () => {

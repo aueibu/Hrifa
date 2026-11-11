@@ -61,9 +61,9 @@ import {
 } from '../usePersistentState';
 import { useModulePreview } from '../useModulePreview';
 import { DurationStrip } from './DurationStrip';
-import { ModuleOutput } from './Module';
+import { SourceMenu } from './SourceMenu';
 import { ModuleDevice } from './ModuleDevice';
-import { InspectorSection, ModuleInspectorContent } from './ModuleHost';
+import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -825,21 +825,19 @@ export function HouseholderModule({
 
           <ModuleInspectorContent>
             <InspectorSection label="Inputs">
-              <Select
+              <SourceMenu
                 label="Rhythm source"
                 placeholder="Connect a rhythm"
-                clearable
-                data={rhythmOptions}
+                options={rhythmOptions}
                 value={bindingRhythm?.source ? outputRefKey(bindingRhythm.source) : null}
                 onChange={(value) => onBind('rhythm', value ? parseOutputRef(value) : null)}
               />
               {settings.mode === 'reflect' && (
-                <Select
+                <SourceMenu
                   label="Axis source"
                   description="Optional. A connected axis replaces the preset."
                   placeholder="Use the preset below"
-                  clearable
-                  data={axisOptions}
+                  options={axisOptions}
                   value={bindingAxis?.source ? outputRefKey(bindingAxis.source) : null}
                   onChange={(value) => onBind('axis', value ? parseOutputRef(value) : null)}
                 />
@@ -893,18 +891,7 @@ export function HouseholderModule({
               />
             </InspectorSection>
 
-            {publishedOutputs.length > 0 && (
-              <InspectorSection label="Outputs">
-                {publishedOutputs.map((output) => (
-                  <ModuleOutput
-                    key={output.ref.port}
-                    name={output.label.replace(`${instanceLabel} · `, '')}
-                    packet={output.packet}
-                    stacked
-                  />
-                ))}
-              </InspectorSection>
-            )}
+            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={publishedOutputs} />
           </ModuleInspectorContent>
         </>
       }

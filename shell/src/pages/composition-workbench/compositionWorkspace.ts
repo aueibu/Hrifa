@@ -4,6 +4,7 @@ import { signalTypeRegistry, type SignalTypeId } from './signalTypes';
 export type CompositionModuleId =
   | 'interference'
   | 'pitch-list'
+  | 'rhythm-list'
   | 'melodicization'
   | 'arithmetic'
   | 'fractioning'
@@ -11,6 +12,8 @@ export type CompositionModuleId =
   | 'scale-construction'
   | 'scale-evolution'
   | 'rhythm-householder'
+  | 'rhythm-edit'
+  | 'swirling-mists'
   | 'mixer';
 
 /**
@@ -41,6 +44,7 @@ export type CompositionInspectorTarget =
 export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   interference: 'Interference',
   'pitch-list': 'Pitch List',
+  'rhythm-list': 'Rhythm List',
   melodicization: 'Melodicization',
   arithmetic: 'Arithmetic',
   fractioning: 'Fractioning',
@@ -48,6 +52,8 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   'scale-construction': 'Scale Construction',
   'scale-evolution': 'Scale Evolution',
   'rhythm-householder': 'Rhythm Householder',
+  'rhythm-edit': 'Rhythm Edit',
+  'swirling-mists': 'Swirling Mists',
   mixer: 'Mixer',
 };
 
@@ -147,6 +153,7 @@ function isModuleId(value: unknown): value is CompositionModuleId {
   return (
     value === 'interference' ||
     value === 'pitch-list' ||
+    value === 'rhythm-list' ||
     value === 'melodicization' ||
     value === 'arithmetic' ||
     value === 'fractioning' ||
@@ -154,6 +161,8 @@ function isModuleId(value: unknown): value is CompositionModuleId {
     value === 'scale-construction' ||
     value === 'scale-evolution' ||
     value === 'rhythm-householder' ||
+    value === 'rhythm-edit' ||
+    value === 'swirling-mists' ||
     value === 'mixer'
   );
 }

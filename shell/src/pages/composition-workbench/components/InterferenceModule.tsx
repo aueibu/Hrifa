@@ -39,9 +39,8 @@ import {
 import { useCompositionSettings } from '../compositionSettings';
 import { pulseSeconds } from '../transport';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
-import { ModuleOutput } from './Module';
 import { ModuleDevice } from './ModuleDevice';
-import { InspectorSection, ModuleInspectorContent } from './ModuleHost';
+import { HelpTip, InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { useModulePreview } from '../useModulePreview';
 import { DurationStrip } from './DurationStrip';
 import { Playhead } from './Playhead';
@@ -430,7 +429,10 @@ export function InterferenceModule({
             </div>
           </InspectorSection>
 
-          <InspectorSection label="Grouping">
+          <InspectorSection
+            label="Grouping"
+            help={grouping?.description ?? 'Choose how the recurrence is divided.'}
+          >
             <Select
               aria-label="Grouping"
               value={grouping?.id ?? null}
@@ -438,9 +440,6 @@ export function InterferenceModule({
               onChange={(value) => setGroupingId(value ?? 'recurrence')}
               disabled={!groupings.length}
             />
-            <Text size="xs" c="dimmed" className={classes.moduleHint}>
-              {grouping?.description ?? 'Choose how the recurrence is divided.'}
-            </Text>
           </InspectorSection>
 
           <ModuleInspectorContent>
@@ -458,18 +457,7 @@ export function InterferenceModule({
                 onChange={(event) => setGroupingClick(event.currentTarget.checked)}
               />
             </InspectorSection>
-            {publishedOutputs.length > 0 && (
-              <InspectorSection label="Outputs">
-                {publishedOutputs.map((output) => (
-                  <ModuleOutput
-                    key={output.ref.port}
-                    name={output.label.replace(`${instanceLabel} · `, '')}
-                    packet={output.packet}
-                    stacked
-                  />
-                ))}
-              </InspectorSection>
-            )}
+            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={publishedOutputs} />
           </ModuleInspectorContent>
         </>
       }

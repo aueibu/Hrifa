@@ -27,8 +27,8 @@
 
 .divider {
   align-items: center;
-  background: var(--panel-inset);
-  border-block: 1px solid var(--border);
+  background: var(--panel-body);
+  border-block: 1px solid var(--grid);
   display: flex;
   gap: var(--mantine-spacing-xs);
   padding-inline: var(--mantine-spacing-xs);
@@ -44,7 +44,7 @@
 
 /* A short centred handle line, like a panel splitter. */
 .grip::after {
-  background: var(--border);
+  background: var(--panel-well);
   border-radius: var(--radius-hairline);
   content: '';
   height: 3px;
@@ -56,7 +56,7 @@
 
 .grip:hover::after,
 .grip:focus-visible::after {
-  background: var(--mantine-primary-color-filled);
+  background: var(--accent);
 }
 
 .divider[data-collapsed='true'] .grip {

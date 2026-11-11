@@ -1,4 +1,5 @@
 import { normalizeRhythmOrigin, rhythmOrigin } from './rhythmFrame';
+import { rhythmItemNotation } from './rhythmNotation';
 import type { DataDomain, DataItem, DataPacket, Provenance } from './model';
 import {
   pitchClassGroupLabel,
@@ -157,6 +158,8 @@ function sequenceItems<T>(
   retrograde: boolean,
   rotation: number
 ) {
+  // A tie marker belongs to its item and ties it into whatever item follows. Reversal and rotation
+  // reorder the items and every marker travels with its own item: `1 2~ 3` reversed is `3 2~ 1`.
   const ordered = rotate(retrograde ? [...items].reverse() : [...items], rotation);
   return ordered.map((item) => ({
     ...item,
@@ -543,7 +546,7 @@ export function applyRhythmRouteTreatment(
     return {
       ...item,
       value: scaled,
-      label: String(scaled),
+      label: rhythmItemNotation({ value: scaled, tie: item.tie }),
       provenance: [...item.provenance, ...scaleStep],
     };
   });
@@ -551,7 +554,7 @@ export function applyRhythmRouteTreatment(
   // started. Scaling stretches that start along with everything else; the offset then moves it.
   const scale = treatment.durationScale;
   const topology = base.frame?.topology ?? 'cyclic';
-  const scaledDurationTotal = items.reduce((total, item) => total + Number(item.value), 0);
+  const scaledDurationTotal = items.reduce((total, item) => total + Math.abs(Number(item.value)), 0);
   const requestedOrigin = rhythmOrigin(base) * scale + rhythmOffset(treatment);
   const { origin, clamped } = normalizeRhythmOrigin(requestedOrigin, topology, scaledDurationTotal);
   const scaledExtent = base.frame?.extent === undefined ? undefined : base.frame.extent * scale;

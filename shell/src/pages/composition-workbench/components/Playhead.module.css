@@ -2,9 +2,9 @@
 .playhead.playhead {
   border-radius: 0;
   height: auto;
-  background: var(--mantine-color-red-filled);
+  background: var(--mark-red);
   bottom: 0;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mantine-color-body) 60%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel) 60%, transparent);
   pointer-events: none;
   position: absolute;
   top: 0;

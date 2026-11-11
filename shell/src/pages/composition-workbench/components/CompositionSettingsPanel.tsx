@@ -1,21 +1,26 @@
-import { Drawer, NumberInput, Stack, Text, Title } from '@mantine/core';
+import { CloseButton, Group, NumberInput, Stack, Text, Title } from '@mantine/core';
 import { useCompositionSettings } from '../compositionSettings';
 import { SoundSetEditor } from './SoundControls';
+import classes from './CompositionSettingsPanel.module.css';
 
 // New settings get their own <Title>-headed section below, in whatever grouping makes sense —
 // this file only needs a new control added to it; compositionSettings.tsx is where the actual
 // field/default/validation lives.
-export function CompositionSettingsPanel({
-  opened,
-  onClose,
-}: {
-  opened: boolean;
-  onClose(): void;
-}) {
+/**
+ * The workbench's settings as a panel docked beside the canvas, like the inspector on the other
+ * side, so it can stay open while you work. The status bar opens and closes it.
+ */
+export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
   const { settings, updateSettings } = useCompositionSettings();
 
   return (
-    <Drawer opened={opened} onClose={onClose} title="Workbench settings" position="right">
+    <aside className={classes.panel} aria-label="Workbench settings">
+      <Group justify="space-between" wrap="nowrap" className={classes.header}>
+        <Title order={2} size="sm">
+          Workbench settings
+        </Title>
+        <CloseButton size="sm" aria-label="Close settings" onClick={onClose} />
+      </Group>
       <Stack gap="lg">
         <div>
           <Title order={4} size="h6" mb={4}>
@@ -72,6 +77,6 @@ export function CompositionSettingsPanel({
           />
         </div>
       </Stack>
-    </Drawer>
+    </aside>
   );
 }

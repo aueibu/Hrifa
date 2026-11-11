@@ -6,48 +6,40 @@
   min-width: 0;
 }
 
-.titleGroup {
-  min-width: 0;
+/* A modified-treatment badge on a cable: the orange tint, which the theme tunes for each scheme. */
+.root {
+  --composition-modified-background: var(--tint-orange-bg);
+  --composition-modified-border: var(--mark-orange);
+  --composition-modified-text: var(--tint-orange-text);
 }
 
-.hint {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Add module and Tidy sit just above React Flow's zoom controls (three 26px buttons plus a gap). */
+.tools {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: calc(15px + 82px);
 }
 
-:global([data-mantine-color-scheme='light']) .root {
-  --composition-modified-background: var(--mantine-color-orange-4);
-  --composition-modified-border: var(--mantine-color-orange-7);
-  --composition-modified-text: var(--mantine-color-white);
-}
-
-:global([data-mantine-color-scheme='dark']) .root {
-  --composition-modified-background: color-mix(
-    in srgb,
-    var(--mantine-color-orange-5) 22%,
-    var(--panel)
-  );
-  --composition-modified-border: var(--mantine-color-orange-5);
-  --composition-modified-text: var(--mantine-color-white);
-}
-
-.header {
-  margin-bottom: var(--mantine-spacing-xs);
+/* A zero-size anchor at the right-click point, for the module menu to open from. */
+.contextAnchor {
+  height: 0;
+  pointer-events: none;
+  position: fixed;
+  width: 0;
 }
 
 .flow {
-  --xy-background-color: var(--panel-inset);
-  --xy-background-pattern-color: var(--border);
+  --xy-background-color: var(--panel-well);
+  --xy-background-pattern-color: color-mix(in srgb, var(--panel-well) 70%, var(--panel-body));
   --xy-node-background-color-default: transparent;
   --xy-node-border-default: none;
   --xy-node-boxshadow-selected-default: none;
-  --xy-minimap-background-color: var(--panel);
-  --xy-controls-button-background-color: var(--panel);
-  --xy-controls-button-color: var(--mantine-color-text);
-  --xy-controls-button-border-color: var(--border);
+  --xy-minimap-background-color: var(--panel-slot);
+  --xy-controls-button-background-color: var(--panel-header);
+  --xy-controls-button-color: var(--text);
+  --xy-controls-button-border-color: var(--grid);
 
-  border: 1px solid var(--border);
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   /* Fill whatever height the stage gives the canvas. */
   flex: 1 1 0;
@@ -67,7 +59,7 @@
 /* Cards in a multi-selection (two or more): dashed ring, distinct from the inspected card's fill. */
 .flow[data-multi-selection='true'] :global(.react-flow__node.selected) > div {
   border-radius: var(--radius-control);
-  outline: 2px dashed var(--mantine-primary-color-filled);
+  outline: 2px dashed var(--text-muted);
   outline-offset: 3px;
 }
 
@@ -79,7 +71,7 @@
 .connection {
   fill: none;
   pointer-events: none;
-  stroke: var(--mantine-primary-color-filled);
+  stroke: var(--category, var(--accent));
   stroke-width: 2;
 }
 
@@ -93,7 +85,7 @@
 }
 
 .connection[data-selected='true'] {
-  filter: drop-shadow(0 0 3px var(--mantine-primary-color-filled));
+  filter: drop-shadow(0 0 3px var(--text));
   stroke-width: 3;
 }
 
@@ -113,7 +105,7 @@
 }
 
 g:has(.connectionHit:focus-visible) > .connection {
-  filter: drop-shadow(0 0 3px var(--mantine-primary-color-filled));
+  filter: drop-shadow(0 0 3px var(--text));
   stroke-width: 3;
 }
 

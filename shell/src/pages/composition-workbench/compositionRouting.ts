@@ -1,4 +1,5 @@
 import { packet, type DataItem, type DataPacket } from "./model";
+import { hasRestsOrTies } from './rhythmNotation';
 
 export interface CompositionOutputRef {
   instanceId: string;
@@ -138,6 +139,27 @@ export function resolveBoundPacket(
   return ref ? resolvePacketFromOutput(findOutput(outputs, ref), ref.index, sourceId) : undefined;
 }
 
+/**
+ * The folders a bank entry sits in, from metadata.entryGroups (parallel to the bank's items, like
+ * entryOrigins). Each element is one folder name, or a path of nested folder names outermost
+ * first; an entry with none sits directly under its output.
+ */
+function entryGroupPath(bank: DataPacket, index: number): string[] {
+  const entryGroups = bank.metadata?.entryGroups;
+  const group = Array.isArray(entryGroups) ? entryGroups[index] : undefined;
+  if (Array.isArray(group)) {
+    return group.filter((part): part is string => typeof part === "string");
+  }
+  return typeof group === "string" ? [group] : [];
+}
+
+// Only the innermost folder joins the label: outer ones are navigation, and would make a
+// connected source's name needlessly long.
+function entryLabel(outputLabel: string, groups: string[], entry: string) {
+  const innermost = groups[groups.length - 1];
+  return innermost ? `${outputLabel} · ${innermost} · ${entry}` : `${outputLabel} · ${entry}`;
+}
+
 /** A human-readable description of a bound source, including which bank entry when relevant. */
 export function describeOutputRef(
   outputs: PublishedCompositionOutput[],
@@ -155,7 +177,24 @@ export function describeOutputRef(
   }
   const index = clampedBankIndex(output.packet, ref.index);
   const entry = output.packet.items[index];
-  return `${output.label} · ${entry?.label ?? `Entry ${index + 1}`}`;
+  return entryLabel(
+    output.label,
+    entryGroupPath(output.packet, index),
+    entry?.label ?? `Entry ${index + 1}`
+  );
+}
+
+/** Whether an inter-onset list, or any entry of an inter-onset bank, has a rest or starts a tie. */
+function packetHasRestsOrTies(packet: DataPacket): boolean {
+  if (packet.role !== 'interOnset') {
+    return false;
+  }
+  if (packet.kind === 'bank') {
+    return packet.items.some(
+      (item) => Array.isArray(item.value) && item.value.some((entry) => typeof entry === 'number' && entry < 0)
+    );
+  }
+  return hasRestsOrTies(packet.items);
 }
 
 /**
@@ -168,26 +207,40 @@ export function describeOutputRef(
 export function compositionOutputOptions(
   outputs: PublishedCompositionOutput[],
   currentInstanceId: string,
-  isCompatible: (candidate: DataPacket) => boolean
-): { value: string; label: string }[] {
-  const options: { value: string; label: string }[] = [];
+  isCompatible: (candidate: DataPacket) => boolean,
+  { allowRestsAndTies = false }: { allowRestsAndTies?: boolean } = {}
+): { value: string; label: string; path: string[] }[] {
+  const options: { value: string; label: string; path: string[] }[] = [];
   for (const output of outputs) {
     if (output.ref.instanceId === currentInstanceId) {
       continue;
     }
+    // A rhythm with rests or ties is not interchangeable with a plain duration list. Only a
+    // consumer that understands them (Melodicization, Mixer) is offered it; the rest would drop
+    // the ties or read a rest as a number, so they never see it (ARCHITECTURE.md, "Rests and ties").
+    if (!allowRestsAndTies && packetHasRestsOrTies(output.packet)) {
+      continue;
+    }
+    // Published labels read "<module> · <output>"; the path lets a menu show modules first.
+    const split = output.label.indexOf(" · ");
+    const outputPath =
+      split < 0 ? [output.label] : [output.label.slice(0, split), output.label.slice(split + 3)];
     if (output.packet.kind === "bank") {
       if (isCompatible({ ...output.packet, kind: "list" })) {
         output.packet.items.forEach((item, index) => {
+          const entry = item.label ?? `Entry ${index + 1}`;
+          const groups = entryGroupPath(output.packet, index);
           options.push({
             value: outputRefKey({ ...output.ref, index }),
-            label: `${output.label} · ${item.label ?? `Entry ${index + 1}`}`,
+            label: entryLabel(output.label, groups, entry),
+            path: [...outputPath, ...groups, entry],
           });
         });
       }
       continue;
     }
     if (isCompatible(output.packet)) {
-      options.push({ value: outputRefKey(output.ref), label: output.label });
+      options.push({ value: outputRefKey(output.ref), label: output.label, path: outputPath });
     }
   }
   return options;

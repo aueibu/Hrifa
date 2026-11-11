@@ -7,7 +7,9 @@
  * such as the mixer decides repeats.
  *
  * Steps follow OpenMusic's rhythm encoding where JavaScript allows: a negative duration is a
- * rest, and a tie is an explicit flag (OpenMusic's float marker cannot survive `1.0 === 1`).
+ * rest, and a tie is an explicit flag (OpenMusic's float marker cannot survive `1.0 === 1`). The
+ * flag sits on the step that starts the tie (`2~ 1` is one three-pulse event), not on the one that
+ * continues it.
  */
 
 import type { InstrumentId, MusicalPerformanceEvent, MusicalPerformancePlan } from './audio/types';
@@ -15,11 +17,14 @@ import type { ChannelEvent, ChannelMaterial } from './mixer';
 import type { DataPacket, Provenance } from './model';
 import {
   addDuration,
+  addRational,
   compareRational,
   multiplyRational,
   musicalPosition,
   musicalPositionToSeconds,
   rational,
+  rationalFromNumber,
+  rationalToNumber,
   subtractRational,
   type MusicalDuration,
   type MusicalPosition,
@@ -38,7 +43,7 @@ export const MAX_GATE_PERCENT = 200;
 export interface RhythmStep {
   /** Pulses. Negative is a rest of that length. */
   duration: number;
-  /** Continue the preceding sounding event instead of attacking. */
+  /** Tied into the next step: that step continues this event instead of attacking. */
   tie?: boolean;
   /** Source item id, carried into provenance. */
   itemId?: string;
@@ -49,6 +54,9 @@ export interface RhythmAttack {
   atPulses: number;
   /** Pulses until the next attack, including any tied continuation. */
   slotPulses: number;
+  /** The same two values as exact fractions of a pulse; time arithmetic uses these. */
+  at: Rational;
+  slot: Rational;
   itemId?: string;
 }
 
@@ -61,33 +69,79 @@ export interface RhythmAttacks {
   warnings: string[];
 }
 
-/** Resolves steps into attack positions and slot lengths. Pure; works in pulses. */
-export function rhythmAttacks(steps: RhythmStep[], origin = 0): RhythmAttacks {
+/**
+ * Resolves steps into attack positions and slot lengths. Pure; works in pulses.
+ *
+ * A step tied into the next one extends its event by that step's length. A tie into a rest, or off
+ * the end of a linear rhythm, has nothing to continue and is reported and ignored. In a cyclic
+ * rhythm a tie off the end wraps: the first step then continues the last event, and makes no attack
+ * of its own, so a loop sounds it once per cycle as the tail of the previous cycle's last event.
+ */
+export function rhythmAttacks(
+  steps: RhythmStep[],
+  origin = 0,
+  { cyclic = false }: { cyclic?: boolean } = {}
+): RhythmAttacks {
   const attacks: RhythmAttack[] = [];
   const warnings: string[] = [];
-  let cursor = origin;
+  // Pulse counts may be fractions (a duration scaled by 3/5), so positions are summed exactly and
+  // only reported as numbers at the end.
+  const start = rationalFromNumber(origin);
+  let cursor = start;
   let previous: RhythmAttack | undefined;
+  let tiedIn = false;
+  let lastTieStep = 0;
+  const setSlot = (attack: RhythmAttack, slot: Rational) => {
+    attack.slot = slot;
+    attack.slotPulses = rationalToNumber(slot);
+  };
   steps.forEach((step, index) => {
-    const length = Math.abs(step.duration);
-    if (!Number.isFinite(step.duration) || length === 0) {
+    const magnitude = Math.abs(step.duration);
+    if (!Number.isFinite(step.duration) || magnitude === 0) {
       warnings.push(`Step ${index + 1} has no usable duration and was skipped.`);
       return;
     }
+    const length = rationalFromNumber(magnitude);
     if (step.duration < 0) {
-      previous = undefined;
-    } else if (step.tie) {
-      if (previous) {
-        previous.slotPulses += length;
-      } else {
-        warnings.push(`Step ${index + 1} is a tie with nothing to continue; it sounds as a rest.`);
+      if (tiedIn) {
+        warnings.push(`Step ${lastTieStep} is tied into a rest; the tie is ignored.`);
       }
+      previous = undefined;
+      tiedIn = false;
     } else {
-      previous = { index, atPulses: cursor, slotPulses: length, itemId: step.itemId };
-      attacks.push(previous);
+      if (tiedIn && previous) {
+        setSlot(previous, addRational(previous.slot, length));
+      } else {
+        previous = {
+          index,
+          atPulses: rationalToNumber(cursor),
+          slotPulses: magnitude,
+          at: cursor,
+          slot: length,
+          itemId: step.itemId,
+        };
+        attacks.push(previous);
+      }
+      tiedIn = Boolean(step.tie);
+      lastTieStep = index + 1;
     }
-    cursor += length;
+    cursor = addRational(cursor, length);
   });
-  return { attacks, spanPulses: cursor - origin, endPulses: cursor, warnings };
+  if (tiedIn && previous) {
+    const first = attacks[0];
+    if (cyclic && first && first !== previous && first.index === steps.findIndex((s) => s.duration > 0)) {
+      setSlot(previous, addRational(previous.slot, first.slot));
+      attacks.shift();
+    } else {
+      warnings.push(`Step ${lastTieStep} ends with a tie and has nothing to continue; it is ignored.`);
+    }
+  }
+  return {
+    attacks,
+    spanPulses: rationalToNumber(subtractRational(cursor, start)),
+    endPulses: rationalToNumber(cursor),
+    warnings,
+  };
 }
 
 export function clampGatePercent(gatePercent: number) {
@@ -97,8 +151,11 @@ export function clampGatePercent(gatePercent: number) {
   return Math.min(MAX_GATE_PERCENT, Math.max(MIN_GATE_PERCENT, gatePercent));
 }
 
-function pulsesToQuarterNotes(pulses: number, pulseUnit: MusicalDuration): Rational {
-  return multiplyRational(pulseUnit.quarterNotes, rational(pulses));
+function pulsesToQuarterNotes(pulses: number | Rational, pulseUnit: MusicalDuration): Rational {
+  return multiplyRational(
+    pulseUnit.quarterNotes,
+    typeof pulses === 'number' ? rationalFromNumber(pulses) : pulses
+  );
 }
 
 export interface RealizedRhythm {
@@ -116,6 +173,8 @@ export interface RealizeRhythmOptions {
   layerId: string;
   steps: RhythmStep[];
   origin?: number;
+  /** A tie off the end wraps to the first step (see `rhythmAttacks`). */
+  cyclic?: boolean;
   /** Musical length of one pulse (the transport's pulse value). */
   pulseUnit: MusicalDuration;
   sound: ResolvedSound;
@@ -127,16 +186,17 @@ export function realizeRhythm({
   layerId,
   steps,
   origin = 0,
+  cyclic = false,
   pulseUnit,
   sound,
   gatePercent = DEFAULT_GATE_PERCENT,
 }: RealizeRhythmOptions): RealizedRhythm {
   const gate = clampGatePercent(gatePercent);
-  const resolved = rhythmAttacks(steps, origin);
+  const resolved = rhythmAttacks(steps, origin, { cyclic });
   const gateRatio = rational(Math.round(gate * 100), 10_000);
   const events = resolved.attacks.map((attack): ChannelEvent => {
-    const at = pulsesToQuarterNotes(attack.atPulses, pulseUnit);
-    const slot = pulsesToQuarterNotes(attack.slotPulses, pulseUnit);
+    const at = pulsesToQuarterNotes(attack.at, pulseUnit);
+    const slot = pulsesToQuarterNotes(attack.slot, pulseUnit);
     const provenance: Provenance = {
       sourceModuleInstance: sourceId,
       sourceItemIds: attack.itemId ? [attack.itemId] : [],
@@ -253,10 +313,15 @@ export function materialFromRhythmPacket(
     if (typeof item.value !== 'number') {
       throw new Error('Mixer rhythm material requires plain numeric durations.');
     }
-    return { duration: item.value, itemId: item.id };
+    return { duration: item.value, tie: item.tie, itemId: item.id };
   });
   const origin = rhythmOrigin(packet);
-  const realized = realizeRhythm({ ...options, steps, origin });
+  const realized = realizeRhythm({
+    ...options,
+    steps,
+    origin,
+    cyclic: packet.frame?.topology === 'cyclic',
+  });
   const cyclicExtent =
     packet.frame?.topology === 'cyclic' &&
     typeof packet.frame.extent === 'number' &&

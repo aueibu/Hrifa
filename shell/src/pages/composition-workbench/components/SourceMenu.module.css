@@ -1,0 +1,12 @@
+.value {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* No overflow or max-height here: a scrolling parent becomes a clipping boundary, and the
+   submenu would be shifted back inside it instead of opening beside the panel. */
+.dropdown {
+  min-width: 14rem;
+}

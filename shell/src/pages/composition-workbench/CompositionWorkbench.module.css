@@ -16,6 +16,12 @@
   --radius-hairline: 2px;
 }
 
+/* The top and bottom bars sit on their own tier, so Mantine's AppShell rules are redundant. */
+.workbench :global(.mantine-AppShell-header),
+.workbench :global(.mantine-AppShell-footer) {
+  border: 0;
+}
+
 /* Bitwig-style frame: inspector on the left; canvas over a detail panel on the right. The whole
    workspace fits the viewport and each region scrolls on its own. */
 .compositionWorkspace {
@@ -23,7 +29,8 @@
   display: grid;
   gap: var(--mantine-spacing-xs);
   grid-template-columns: minmax(0, 1fr);
-  height: calc(100dvh - 56px - 6.25rem);
+  /* Header, page padding, and the status bar at the bottom. */
+  height: calc(100dvh - 56px - 4.5rem);
   min-height: 30rem;
 }
 
@@ -31,14 +38,27 @@
   grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
 }
 
+/* The settings panel docks on the right, as the inspector does on the left. */
+.compositionWorkspace[data-settings='true'] {
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+}
+
+.compositionWorkspace[data-inspector='true'][data-settings='true'] {
+  grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr) minmax(16rem, 20rem);
+}
+
+.settingsColumn {
+  min-height: 0;
+}
+
 .inspectorColumn {
   min-height: 0;
   overflow-y: auto;
 }
 
+/* The module panel meets the stage's edges, as the canvas above it does, and ends against the status bar. */
 .detailBody {
   height: 100%;
-  padding: var(--mantine-spacing-xs);
 }
 
 /* Fills the detail panel so a device-style module can scroll its own regions. */
@@ -88,8 +108,8 @@
 }
 
 .pulse {
-  background: var(--panel-inset);
-  border: 1px solid var(--border);
+  background: var(--panel-slot);
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   display: block;
   height: 0.75rem;
@@ -98,8 +118,8 @@
 }
 
 .pulse[data-active="true"] {
-  background: var(--mantine-primary-color-filled);
-  border-color: var(--mantine-primary-color-filled);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .stickyColumn {
@@ -158,7 +178,7 @@
 }
 
 .durationTimeline {
-  border: 1px solid var(--border);
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   display: flex;
   min-height: 4rem;
@@ -168,8 +188,8 @@
 
 .durationBlock {
   align-items: center;
-  background: color-mix(in srgb, var(--mantine-primary-color-filled) 18%, transparent);
-  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-right: 1px solid var(--grid);
   display: flex;
   flex-basis: 0;
   font-family: var(--mantine-font-family-monospace);
@@ -178,12 +198,282 @@
   min-width: 1.25rem;
 }
 
+/* A tie runs on into the next block: its right edge is dashed instead of solid. */
+.durationBlock[data-tie='true'] {
+  border-right-style: dashed;
+}
+
 .durationBlock:nth-child(even) {
-  background: color-mix(in srgb, var(--mantine-primary-color-filled) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* A grouping tick sits inside the strip, growing in from its top or bottom edge. */
+.groupTick {
+  background: var(--text-muted);
+  height: 6px;
+  margin-left: -1px;
+  pointer-events: none;
+  position: absolute;
+  width: 2px;
+}
+
+.groupTick[data-edge='top'] {
+  top: 0;
+}
+
+.groupTick[data-edge='bottom'] {
+  bottom: 0;
+}
+
+/* The lines between the Input and Edited strips: each note's start in the input to its start in the
+   edit. A line that moves is drawn stronger than one that stays put. */
+/* The curves are drawn in real px, only for the part of the roll in (or near) view, so the drawing
+   is never wider than the screen: an element wider than the GPU's texture limit gets drawn at a
+   lower resolution and looks blurry. */
+.rhythmDiff {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.rhythmDiffSvg {
+  display: block;
+  position: absolute;
+  top: 0;
+}
+
+/* Each line sets its own color (direction and change from the original, cyan to orange) and its
+   opacity and width (its share of the whole rhythm) inline; see lineColor, lineOpacity, lineWidth. */
+.rhythmDiffHit {
+  fill: none;
+  pointer-events: stroke;
+  stroke: transparent;
+  stroke-width: 12px;
+}
+
+.rhythmDiffLine {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+}
+
+/* The scaled original sits a little apart from the Input/Edited pair it is compared with. */
+/* The rhythm diagram scrolls sideways as one piece; a row's label stays at the left edge. */
+/* The roll fills its panel like Bitwig's note editor: the rows scroll vertically if they must, and the
+   zoom bar and icon bar stay pinned to the bottom, so the user never scrolls the page to reach them. */
+.rollLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+}
+
+.rollMain {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.rollBottom {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.iconBar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  justify-content: space-between;
+}
+
+/* The roll's own scrollbar is hidden: the zoom bar beneath it scrolls and zooms instead. */
+.rhythmScroller {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.rhythmScroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* A Bitwig-style overview bar: the thumb is the part of the roll in view. */
+.rollBar {
+  background: var(--panel-well);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-control);
+  height: 18px;
+  margin-top: 0.25rem;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+}
+
+.rollBarThumb {
+  background: color-mix(in srgb, var(--text-muted) 38%, transparent);
+  border-radius: var(--radius-hairline);
+  bottom: 1px;
+  cursor: grab;
+  position: absolute;
+  top: 1px;
+}
+
+.rollBarThumb:hover,
+.rollBarThumb[data-dragging='true'] {
+  background: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+
+.rollBarThumb[data-dragging='true'] {
+  cursor: grabbing;
+}
+
+.rollBarHandle {
+  background: color-mix(in srgb, var(--text) 55%, transparent);
+  border-radius: var(--radius-hairline);
+  bottom: 2px;
+  cursor: ew-resize;
+  position: absolute;
+  top: 2px;
+  width: 5px;
+}
+
+.rollBarHandle[data-side='left'] {
+  left: 2px;
+}
+
+.rollBarHandle[data-side='right'] {
+  right: 2px;
+}
+
+.rollBarHandle:hover,
+.rollBarHandle[data-dragging='true'] {
+  background: var(--text);
+}
+
+.stickyLabel {
+  left: 0;
+  position: sticky;
+  width: fit-content;
+}
+
+/* One box for the program tracks and the Input strip: guides run behind both. */
+.guided {
+  position: relative;
+}
+
+.noteGuides {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.noteGuide {
+  background: var(--text-muted);
+  bottom: 0;
+  margin-left: -0.5px;
+  opacity: 0.3;
+  position: absolute;
+  top: 0;
+  width: 1px;
+}
+
+.programTracks {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+/* A program laid out note by note, under the same widths as the rhythm strip it goes with. */
+/* The 1px side padding matches the rhythm strip's border, so cell edges fall where its blocks' do. */
+.programTrack {
+  display: flex;
+  padding-inline: 1px;
+  position: relative;
+}
+
+.programTrackCell {
+  box-shadow: inset 1px 0 0 var(--grid);
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.7rem;
+  line-height: 1.5rem;
+  min-width: 0;
+  overflow: hidden;
+  padding-bottom: 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.programTrackCell:first-child {
+  box-shadow: none;
+}
+
+.programTrackCell[data-state='tick'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.programTrackCell[data-state='skipped'] {
+  opacity: 0.5;
+}
+
+.programTrackCell[data-state='waiting'] {
+  background: var(--panel-well);
+}
+
+/* A bracket under the ticks of one block; blocks alternate so neighbours read as separate. */
+.programTrackBlock {
+  background: var(--text-muted);
+  border-radius: var(--radius-hairline);
+  bottom: 0;
+  height: 3px;
+  opacity: 0.8;
+  position: absolute;
+}
+
+.programTrackBlock[data-parity='1'] {
+  background: var(--text);
+  opacity: 0.45;
+}
+
+.scaledOriginal {
+  margin-top: 0.75rem;
+}
+
+.auditionRow {
+  margin-top: 0.75rem;
+}
+
+.rhythmDiffLegend {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.rhythmDiffSwatch {
+  border-radius: var(--radius-hairline);
+  display: inline-block;
+  height: 2px;
+  margin-right: 0.3rem;
+  vertical-align: middle;
+  width: 1rem;
+}
+
+.rhythmDiffSwatch[data-direction='later'] {
+  background: var(--mark-orange);
+}
+
+.rhythmDiffSwatch[data-direction='earlier'] {
+  background: var(--mark-cyan);
 }
 
 .measureBoundary {
-  border-left: 2px solid var(--mantine-color-text);
+  border-left: 2px solid var(--text);
   bottom: 0;
   pointer-events: none;
   position: absolute;
@@ -210,48 +500,55 @@
 }
 
 .attackCells > span {
-  background: var(--panel-inset);
+  background: var(--panel-slot);
   border-radius: var(--radius-hairline);
   height: 1.25rem;
 }
 
 .attackCells > span[data-active="true"] {
-  background: var(--mantine-primary-color-filled);
+  background: var(--accent);
 }
 
+/* The plot keeps its drawn proportions and never grows past a readable size, so on a wide screen it
+   stays a compact figure instead of stretching to fill the panel. */
 .pitchPlot {
-  background: var(--panel-inset);
-  border: 1px solid var(--border);
+  background: var(--panel-well);
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
-  min-height: 20rem;
+  max-inline-size: 44rem;
   overflow: hidden;
 }
 
 .pitchPlot svg {
   display: block;
-  height: 20rem;
+  height: auto;
   width: 100%;
 }
 
 .pitchPlot text {
-  fill: var(--mantine-color-text);
+  fill: var(--text);
   font-family: var(--mantine-font-family-monospace);
   font-size: 18px;
 }
 
+.pitchPlot .pitchAxisLabel {
+  fill: var(--text-muted);
+  font-size: 13px;
+}
+
 .pitchGridLine {
-  stroke: var(--border);
+  stroke: var(--grid);
   stroke-width: 1;
 }
 
 .pitchLine {
   fill: none;
-  stroke: var(--mantine-primary-color-filled);
+  stroke: var(--accent);
   stroke-width: 3;
 }
 
 .pitchPoint {
-  fill: var(--mantine-primary-color-filled);
+  fill: var(--accent);
   stroke: var(--panel);
   stroke-width: 3;
 }
@@ -298,6 +595,8 @@
 @media (max-width: 64rem) {
   .compositionWorkspace,
   .compositionWorkspace[data-inspector='true'],
+  .compositionWorkspace[data-settings='true'],
+  .compositionWorkspace[data-inspector='true'][data-settings='true'],
   .interferenceLayout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -342,7 +641,7 @@
 
 /* A scrollable list inside a device's view column (Householder's candidates). */
 .candidateList {
-  border: 1px solid var(--border);
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   flex: 1 1 8rem;
   min-height: 6rem;

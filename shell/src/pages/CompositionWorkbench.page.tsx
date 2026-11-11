@@ -1,15 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ActionIcon,
   AppShell,
-  Button,
   Group,
   MantineThemeProvider,
   Stack,
-  Tabs,
   Text,
-  Textarea,
   Title,
   Tooltip,
 } from '@mantine/core';
@@ -31,11 +28,13 @@ import { HouseholderModule } from './composition-workbench/components/Householde
 import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
 import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
 import { MixerModule } from './composition-workbench/components/MixerModule';
-import { ModuleLibrary } from './composition-workbench/components/ModuleLibrary';
-import { ModulePatch } from './composition-workbench/components/ModulePatch';
-import { PacketInspector } from './composition-workbench/components/PacketInspector';
+import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
+import { WorkbenchStatusBar } from './composition-workbench/components/WorkbenchStatusBar';
 import { PairCompositionModule } from './composition-workbench/components/PairCompositionModule';
 import { PitchListModule } from './composition-workbench/components/PitchListModule';
+import { SwirlingMistsModule } from './composition-workbench/components/SwirlingMistsModule';
+import { RhythmEditModule } from './composition-workbench/components/RhythmEditModule';
+import { RhythmListModule } from './composition-workbench/components/RhythmListModule';
 import { ScaleConstructionModule } from './composition-workbench/components/ScaleConstructionModule';
 import { ScaleEvolutionModule } from './composition-workbench/components/ScaleEvolutionModule';
 import { SnapshotMenu } from './composition-workbench/components/SnapshotMenu';
@@ -65,15 +64,8 @@ import {
 } from './composition-workbench/compositionWorkspace';
 import { evaluatePatch } from './composition-workbench/evaluator';
 import { createDefaultPatch } from './composition-workbench/examples';
-import type { ModuleDefinition, PatchDocument } from './composition-workbench/model';
-import {
-  exportPatch,
-  importPatch,
-  loadSavedPatch,
-  compositionWorkbenchStorageKey,
-  savePatch,
-} from './composition-workbench/persistence';
-import { moduleDefinitions } from './composition-workbench/registry';
+import type { PatchDocument } from './composition-workbench/model';
+import { loadSavedPatch } from './composition-workbench/persistence';
 import { signalTypeFor, signalTypeRegistry, type SignalTypeId } from './composition-workbench/signalTypes';
 import {
   compositionInstanceStateKey,
@@ -94,6 +86,26 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.interferenceVolume,
     compositionStateKeys.interferenceMetronome,
     compositionStateKeys.interferenceMetronomeVolume,
+  ],
+  'rhythm-edit': [
+    compositionStateKeys.rhythmEditPattern,
+    compositionStateKeys.rhythmEditMode,
+    compositionStateKeys.rhythmEditRules,
+    compositionStateKeys.rhythmEditLengths,
+    compositionStateKeys.rhythmEditGrouping,
+    compositionStateKeys.rhythmEditAudition,
+    compositionStateKeys.rhythmEditShowTracks,
+    compositionStateKeys.rhythmEditFollow,
+    compositionStateKeys.rhythmEditCellWidth,
+    compositionStateKeys.rhythmEditSettings,
+    compositionStateKeys.rhythmEditSound,
+    compositionStateKeys.rhythmEditVolume,
+  ],
+  'rhythm-list': [
+    compositionStateKeys.rhythmListText,
+    compositionStateKeys.rhythmListLoop,
+    compositionStateKeys.rhythmListSound,
+    compositionStateKeys.rhythmListVolume,
   ],
   'pitch-list': [
     compositionStateKeys.pitchFormat,
@@ -154,6 +166,14 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
     compositionStateKeys.householderVolume,
     compositionStateKeys.householderSounds,
   ],
+  'swirling-mists': [
+    compositionStateKeys.mistSettings,
+    compositionStateKeys.mistStep,
+    compositionStateKeys.mistGate,
+    compositionStateKeys.mistVolume,
+    compositionStateKeys.mistViewSpan,
+    compositionStateKeys.mistRunSpeed,
+  ],
   mixer: [
     compositionStateKeys.mixerChannels,
     compositionStateKeys.mixerVolume,
@@ -180,6 +200,7 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signa
     { id: 'rhythm', signalType: 'rhythm' },
     { id: 'axis', signalType: 'numeric' },
   ],
+  'rhythm-edit': [{ id: 'rhythm', signalType: 'rhythm' }],
 };
 
 function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
@@ -193,21 +214,7 @@ function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
 }
 
 export function CompositionWorkbenchPage() {
-  const [patch, setPatch] = useState<PatchDocument>(() => loadSavedPatch(createDefaultPatch));
-  const [selectedId, setSelectedId] = usePersistentState<string | null>(
-    compositionStateKeys.selectedConstructionModule,
-    'rhythm-generator',
-    (value): value is string | null => value === null || typeof value === 'string'
-  );
-  const [jsonText, setJsonText] = useState('');
-  const [managementStatus, setManagementStatus] = useState('');
-  const [settingsOpened, setSettingsOpened] = useState(false);
-  const [activeView, setActiveView] = usePersistentState<'composition' | 'construction'>(
-    compositionStateKeys.activeView,
-    'composition',
-    (value): value is 'composition' | 'construction' =>
-      value === 'composition' || value === 'construction'
-  );
+  const [patch] = useState<PatchDocument>(() => loadSavedPatch(createDefaultPatch));
   const [activeCompositionInstanceId, setActiveCompositionInstanceId] = usePersistentState<
     string | null
   >(
@@ -244,6 +251,12 @@ export function CompositionWorkbenchPage() {
   const [inspectorOpen, setInspectorOpen] = usePersistentState<boolean>(
     compositionStateKeys.inspectorOpen,
     true,
+    (value): value is boolean => typeof value === 'boolean'
+  );
+  // The settings panel is docked like the inspector and remembers whether it was open.
+  const [settingsOpened, setSettingsOpened] = usePersistentState<boolean>(
+    compositionStateKeys.settingsOpen,
+    false,
     (value): value is boolean => typeof value === 'boolean'
   );
   const [compositionOutputs, setCompositionOutputs] = useState<
@@ -364,140 +377,6 @@ export function CompositionWorkbenchPage() {
     [setModuleRouteStates]
   );
 
-  useEffect(() => {
-    if (!savePatch(patch)) {
-      setManagementStatus('Patch changed, but local persistence is unavailable.');
-    }
-  }, [patch]);
-
-  function updateParameter(id: string, key: string, value: unknown) {
-    setPatch((current) => ({
-      ...current,
-      instances: current.instances.map((instance) =>
-        instance.id === id
-          ? { ...instance, parameters: { ...instance.parameters, [key]: value } }
-          : instance
-      ),
-    }));
-  }
-
-  function connect(toInstanceId: string, toPort: string, source: string | null) {
-    setPatch((current) => {
-      const connections = current.connections.filter(
-        (connection) => !(connection.toInstanceId === toInstanceId && connection.toPort === toPort)
-      );
-      if (!source) {
-        return { ...current, connections };
-      }
-      const [fromInstanceId, fromPort] = source.split('|');
-      return {
-        ...current,
-        connections: [
-          ...connections,
-          {
-            id: uniqueId('connection'),
-            fromInstanceId,
-            fromPort,
-            toInstanceId,
-            toPort,
-          },
-        ],
-      };
-    });
-  }
-
-  function addModule(definition: ModuleDefinition) {
-    const id = uniqueId(definition.id);
-    setPatch((current) => ({
-      ...current,
-      instances: [
-        ...current.instances,
-        {
-          id,
-          definitionId: definition.id,
-          definitionVersion: definition.version,
-          parameters: structuredClone(definition.defaultParameters),
-          order: Math.max(-1, ...current.instances.map((instance) => instance.order)) + 1,
-        },
-      ],
-    }));
-    setSelectedId(id);
-  }
-
-  function duplicateModule(id: string) {
-    const source = patch.instances.find((instance) => instance.id === id);
-    if (!source) {
-      return;
-    }
-    const copyId = uniqueId(source.definitionId);
-    setPatch((current) => ({
-      ...current,
-      instances: [
-        ...current.instances,
-        {
-          ...source,
-          id: copyId,
-          parameters: structuredClone(source.parameters),
-          order: Math.max(-1, ...current.instances.map((instance) => instance.order)) + 1,
-        },
-      ],
-    }));
-    setSelectedId(copyId);
-  }
-
-  function deleteModule(id: string) {
-    setPatch((current) => ({
-      ...current,
-      instances: current.instances
-        .filter((instance) => instance.id !== id)
-        .map((instance, index) => ({ ...instance, order: index })),
-      connections: current.connections.filter(
-        (connection) => connection.fromInstanceId !== id && connection.toInstanceId !== id
-      ),
-    }));
-    if (selectedId === id) {
-      setSelectedId(null);
-    }
-  }
-
-  function exportJson() {
-    const value = exportPatch(patch);
-    setJsonText(value);
-    const blob = new Blob([value], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'composition-workbench-patch.v1.json';
-    anchor.click();
-    URL.revokeObjectURL(url);
-    setManagementStatus('Versioned patch JSON exported and copied into the import editor.');
-  }
-
-  function importJson() {
-    try {
-      const imported = importPatch(jsonText);
-      setPatch(imported);
-      setSelectedId(imported.instances[0]?.id ?? null);
-      setManagementStatus('Compatible patch JSON imported.');
-    } catch (error) {
-      setManagementStatus(error instanceof Error ? error.message : 'Patch import failed.');
-    }
-  }
-
-  function resetPatch() {
-    const next = createDefaultPatch();
-    setPatch(next);
-    setSelectedId('rhythm-generator');
-    setJsonText('');
-    try {
-      localStorage.removeItem(compositionWorkbenchStorageKey);
-    } catch {
-      // The in-memory reset still succeeds.
-    }
-    setManagementStatus('Construction example restored.');
-  }
-
-  const selected = selectedId ? evaluation.modules.get(selectedId) : undefined;
   const publishedCompositionOutputs = Object.values(compositionOutputs);
 
   // Stable identities: the canvas memoizes its cards on these callbacks.
@@ -518,11 +397,11 @@ export function CompositionWorkbenchPage() {
     [setActiveCompositionInstanceId, setCompositionInspectorTarget]
   );
 
-  function addCompositionModule(moduleId: CompositionModuleId) {
+  function addCompositionModule(moduleId: CompositionModuleId, position?: Position) {
     const instanceId = uniqueId(moduleId);
     setCompositionInstances((current) => [
       ...current,
-      { id: instanceId, moduleId, ...nextFreePosition(current) },
+      { id: instanceId, moduleId, ...(position ?? nextFreePosition(current)) },
     ]);
     const ports = moduleId === 'mixer' ? defaultMixerPorts() : routedModulePorts[moduleId];
     if (ports) {
@@ -574,7 +453,13 @@ export function CompositionWorkbenchPage() {
     <AudioEngineProvider>
     <PreviewRegistryProvider>
       <MantineThemeProvider theme={compactWorkbenchTheme}>
-      <AppShell header={{ height: 56 }} padding="md" className={classes.workbench}>
+      <InfoBarActiveContext.Provider value>
+      <AppShell
+        header={{ height: 56 }}
+        footer={{ height: 39 }}
+        padding="md"
+        className={classes.workbench}
+      >
         <AppShell.Header>
           <div className={classes.headerBar}>
             <Group gap="xs" wrap="nowrap">
@@ -598,23 +483,11 @@ export function CompositionWorkbenchPage() {
             <TransportBar selectedInstanceId={activeCompositionInstanceId} />
             <Group gap="xs" wrap="nowrap" justify="flex-end">
               <SnapshotMenu />
-              <ActionIcon
-                variant="default"
-                size="lg"
-                aria-label="Workbench settings"
-                onClick={() => setSettingsOpened(true)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              </ActionIcon>
               <ColorSchemeToggle />
             </Group>
           </div>
         </AppShell.Header>
-        <CompositionSettingsPanel opened={settingsOpened} onClose={() => setSettingsOpened(false)} />
-        <AppShell.Main>
+        <AppShell.Main style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}>
           <Stack gap="md">
             {evaluation.errors.map((error) => (
               <Surface key={error} p="sm">
@@ -622,17 +495,12 @@ export function CompositionWorkbenchPage() {
               </Surface>
             ))}
 
-            <Tabs
-              value={activeView}
-              onChange={(value) => value && setActiveView(value as 'composition' | 'construction')}
-            >
-              <Tabs.List aria-label="Workbench view">
-                <Tabs.Tab value="composition">Composition</Tabs.Tab>
-                <Tabs.Tab value="construction">Construction</Tabs.Tab>
-              </Tabs.List>
-
-              <Tabs.Panel value="composition" pt="xs">
-                <div className={classes.compositionWorkspace} data-inspector={inspectorOpen}>
+            <>
+                <div
+                  className={classes.compositionWorkspace}
+                  data-inspector={inspectorOpen}
+                  data-settings={settingsOpened}
+                >
                   {inspectorOpen && (
                     <div className={classes.inspectorColumn}>
                       <CompositionInspector
@@ -665,19 +533,6 @@ export function CompositionWorkbenchPage() {
                         onMoveModules={placeCompositionModules}
                         onTidy={placeCompositionModules}
                         onAddModule={addCompositionModule}
-                        toolbarStart={
-                          <ActionIcon
-                            variant={inspectorOpen ? 'light' : 'subtle'}
-                            aria-label={inspectorOpen ? 'Hide inspector' : 'Show inspector'}
-                            aria-pressed={inspectorOpen}
-                            onClick={() => setInspectorOpen((open) => !open)}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
-                              <rect x="3" y="4" width="18" height="16" rx="2" />
-                              <path d="M9 4v16" />
-                            </svg>
-                          </ActionIcon>
-                        }
                       />
                     }
                     bottom={
@@ -699,6 +554,12 @@ export function CompositionWorkbenchPage() {
                         >
                         {instance.moduleId === 'interference' ? (
                           <InterferenceModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'rhythm-list' ? (
+                          <RhythmListModule
                             instanceId={instance.id}
                             instanceLabel={instanceLabel}
                             onOutputsChange={reconcileCompositionOutputs}
@@ -732,6 +593,12 @@ export function CompositionWorkbenchPage() {
                             onAddChannel={() => addMixerChannel(instance.id)}
                             onRemoveChannel={(port) => removeMixerChannel(instance.id, port)}
                           />
+                        ) : instance.moduleId === 'swirling-mists' ? (
+                          <SwirlingMistsModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
                         ) : instance.moduleId === 'fractioning' ? (
                           <FractioningModule
                             instanceId={instance.id}
@@ -748,6 +615,17 @@ export function CompositionWorkbenchPage() {
                           <ScaleConstructionModule
                             instanceId={instance.id}
                             instanceLabel={instanceLabel}
+                            onOutputsChange={reconcileCompositionOutputs}
+                          />
+                        ) : instance.moduleId === 'rhythm-edit' ? (
+                          <RhythmEditModule
+                            instanceId={instance.id}
+                            instanceLabel={instanceLabel}
+                            outputs={publishedCompositionOutputs}
+                            routeState={routeState}
+                            onBind={(port, source) =>
+                              bindModulePort(instance.id, instance.moduleId, port, source)
+                            }
                             onOutputsChange={reconcileCompositionOutputs}
                           />
                         ) : instance.moduleId === 'rhythm-householder' ? (
@@ -795,7 +673,7 @@ export function CompositionWorkbenchPage() {
                         No modules placed
                       </Title>
                       <Text c="dimmed" size="sm" mt="xs">
-                        Use Add module in the canvas toolbar to place one.
+                        Use Add module on the canvas, or right-click it, to place one.
                       </Text>
                     </Surface>
                   )}
@@ -803,82 +681,25 @@ export function CompositionWorkbenchPage() {
                       </ModuleInspectorSlotContext.Provider>
                     }
                   />
+                  {settingsOpened && (
+                    <div className={classes.settingsColumn}>
+                      <CompositionSettingsPanel onClose={() => setSettingsOpened(false)} />
+                    </div>
+                  )}
                 </div>
-              </Tabs.Panel>
-
-              <Tabs.Panel value="construction" pt="md">
-                <Stack gap="md">
-                  <Group justify="space-between" align="end">
-                    <div>
-                      <Title order={2} size="h3">
-                        Construction
-                      </Title>
-                      <Text c="dimmed" size="sm">
-                        Inspect typed packets, provenance, connections, and the reusable operations
-                        beneath modules.
-                      </Text>
-                      <Text c="dimmed" size="xs">
-                        Scalars broadcast. Zip stops at the shortest stream; Cycle repeats shorter
-                        streams; Cartesian makes every combination up to 256 frames.
-                      </Text>
-                    </div>
-                    <Group gap="xs">
-                      <Button variant="default" onClick={resetPatch}>
-                        Reset construction
-                      </Button>
-                      <Button variant="default" onClick={exportJson}>
-                        Export JSON
-                      </Button>
-                    </Group>
-                  </Group>
-                  <div className={classes.workspace}>
-                    <div className={classes.stickyColumn}>
-                      <Stack gap="md">
-                        <ModuleLibrary definitions={moduleDefinitions} onAdd={addModule} />
-                        <Surface>
-                          <Stack gap="sm">
-                            <Title order={2} size="h4">
-                              Patch management
-                            </Title>
-                            <Textarea
-                              label="Versioned patch JSON"
-                              description="Paste a compatible schema-version 1 patch, or export the current patch here."
-                              rows={8}
-                              value={jsonText}
-                              onChange={(event) => setJsonText(event.currentTarget.value)}
-                            />
-                            <Button variant="default" onClick={importJson}>
-                              Import JSON
-                            </Button>
-                            {managementStatus && (
-                              <Text size="xs" c="dimmed" aria-live="polite">
-                                {managementStatus}
-                              </Text>
-                            )}
-                          </Stack>
-                        </Surface>
-                      </Stack>
-                    </div>
-                    <ModulePatch
-                      patch={patch}
-                      evaluated={evaluation.modules}
-                      selectedId={selectedId}
-                      onSelect={setSelectedId}
-                      onParameter={updateParameter}
-                      onConnect={connect}
-                      onDuplicate={duplicateModule}
-                      onDelete={deleteModule}
-                    />
-                    <div className={`${classes.inspector} ${classes.stickyColumn}`}>
-                      <PacketInspector module={selected} />
-                    </div>
-                  </div>
-                </Stack>
-              </Tabs.Panel>
-            </Tabs>
+            </>
           </Stack>
         </AppShell.Main>
+        <AppShell.Footer>
+          <WorkbenchStatusBar
+            inspectorOpen={inspectorOpen}
+            onToggleInspector={() => setInspectorOpen((open) => !open)}
+            settingsOpen={settingsOpened}
+            onToggleSettings={() => setSettingsOpened((open) => !open)}
+          />
+        </AppShell.Footer>
       </AppShell>
+      </InfoBarActiveContext.Provider>
       </MantineThemeProvider>
     </PreviewRegistryProvider>
     </AudioEngineProvider>

@@ -1,5 +1,5 @@
 .inline {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--grid);
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-xs);
@@ -7,13 +7,12 @@
   padding-top: var(--mantine-spacing-xs);
 }
 
+/* Groups are set apart by space, not a rule. */
 .section {
-  border-top: 1px solid var(--border);
   padding-top: var(--mantine-spacing-xs);
 }
 
 .section:first-child {
-  border-top: 0;
   padding-top: 0;
 }
 
@@ -22,6 +21,44 @@
   letter-spacing: 0.04em;
   line-height: 1;
   margin-bottom: 0.35rem;
+}
+
+/* A label with its explanation in a tooltip. */
+.helpTip {
+  cursor: help;
+  text-decoration: underline dotted var(--text-muted);
+  text-underline-offset: 3px;
+  width: fit-content;
+}
+
+/* Messages from a module: small, with a colored edge, at the top of its controls. */
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.notice {
+  background: var(--panel-well);
+  border-left: 3px solid var(--text-muted);
+  border-radius: var(--radius-hairline);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 0.25rem 0.4rem;
+}
+
+.notice[data-tone='error'] {
+  background: var(--tint-red-bg);
+  border-left-color: var(--mark-red);
+  color: var(--tint-red-text);
+}
+
+.notice[data-tone='warning'] {
+  background: var(--tint-yellow-bg);
+  border-left-color: var(--mark-yellow);
+  color: var(--tint-yellow-text);
 }
 
 .content {

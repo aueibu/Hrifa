@@ -2,8 +2,8 @@ import type { CompositionModuleInstance } from './compositionWorkspace';
 
 /** Canvas geometry shared by the canvas, Tidy and free-spot placement. */
 export const NODE_WIDTH = 148;
-/** A typical card's height (title, subtitle, footer and port rails); real cards size to content. */
-export const NODE_HEIGHT = 104;
+/** Every module is the same size: the card plus a fixed top and bottom port rail. */
+export const NODE_HEIGHT = 112;
 const GAP_X = 52;
 const GAP_Y = 76;
 

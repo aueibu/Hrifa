@@ -1,5 +1,7 @@
+import type { CSSProperties } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Menu, UnstyledButton } from '@mantine/core';
+import { signalCategoryColor, signalCategoryLabel, type SignalCategory } from '../signalCategories';
 import classes from './FlowCell.module.css';
 
 export interface FlowCellPort {
@@ -12,11 +14,15 @@ export interface FlowCellPort {
   selected?: boolean;
   bypassed?: boolean;
   unavailable?: boolean;
+  /** What the port carries (an inlet: what it expects). Colors its badge. */
+  category?: SignalCategory;
   onClick?(): void;
 }
 
 interface FlowCellProps {
   title: string;
+  /** Colors the title. Fixed per module type. */
+  category?: SignalCategory;
   subtitle: string;
   footer: string;
   footerDetail?: string;
@@ -56,7 +62,11 @@ function PortControl({ port }: { port: FlowCellPort }) {
     'data-selected': port.selected || undefined,
     'data-bypassed': port.bypassed || undefined,
     'data-unavailable': port.unavailable || undefined,
-    title: port.label,
+    title: port.category ? `${port.label} | ${signalCategoryLabel[port.category]}` : port.label,
+    'data-category': port.category,
+    style: port.category
+      ? ({ '--category': signalCategoryColor(port.category) } as CSSProperties)
+      : undefined,
   };
   if (!port.onClick) {
     return (
@@ -125,6 +135,7 @@ function PortRail({ ports, edge }: { ports: FlowCellPort[]; edge: 'top' | 'botto
 
 export function FlowCell({
   title,
+  category,
   subtitle,
   footer,
   footerDetail,
@@ -147,6 +158,8 @@ export function FlowCell({
         data-active={active || undefined}
         data-selected={selected || undefined}
         data-flow-active={flowActive || undefined}
+        data-category={category}
+        style={category ? ({ '--category': signalCategoryColor(category) } as CSSProperties) : undefined}
         // A modifier-click is building a multi-selection, not opening this module.
         onClick={(event) => {
           if (!(event.ctrlKey || event.metaKey || event.shiftKey)) {

@@ -309,6 +309,95 @@ function labelForToken(value: number, format: PitchInputFormat, edo = 12, spelli
   return format === 'pitch-class' ? pitchClassName(value, edo) : formatMidicents(value);
 }
 
+export interface ConvertedPitchText {
+  text: string;
+  /** What the conversion could not carry across exactly, for a status line. */
+  notes: string[];
+  /** Set when the text could not be read in its current format; `text` is then unchanged. */
+  errors: string[];
+}
+
+function trimNumber(value: number) {
+  return String(Math.round(value * 10000) / 10000);
+}
+
+/**
+ * Rewrites typed pitch text from one input format to another, keeping the same pitches (and the
+ * same chord brackets). Register formats (MIDI notes, midicents, note names) convert exactly except
+ * that note names carry whole semitones only. Pitch classes have no octave, so going to them drops
+ * it, and coming from them places the pitches in `octave`. Anything that is rounded or dropped is
+ * named in `notes`. If the text does not read under `from`, it is returned unchanged with errors.
+ */
+export function convertPitchText({
+  text,
+  from,
+  to,
+  octave = 4,
+  edo = 12,
+}: {
+  text: string;
+  from: PitchInputFormat;
+  to: PitchInputFormat;
+  octave?: number;
+  edo?: number;
+}): ConvertedPitchText {
+  if (from === to) {
+    return { text, notes: [], errors: [] };
+  }
+  const { groups, errors: shapeErrors } = tokenizePitchGroups(text);
+  const parsedGroups = groups.map((tokens) => tokens.map((token) => parseToken(token, from, edo)));
+  const errors = [
+    ...shapeErrors,
+    ...parsedGroups.flat().filter((value): value is string => typeof value === 'string'),
+  ];
+  if (errors.length) {
+    return { text, notes: [], errors };
+  }
+  const centsPerStep = 1200 / edo;
+  let rounded = 0;
+  let outOfRange = 0;
+  const write = (value: number): string => {
+    // Everything goes through absolute midicents first.
+    const midicents = from === 'pitch-class' ? (octave + 1) * 1200 + value * centsPerStep : value;
+    if (to === 'pitch-class') {
+      const step = Math.round(midicents / centsPerStep);
+      if (Math.abs(step * centsPerStep - midicents) > 1e-6) rounded += 1;
+      return String(((step % edo) + edo) % edo);
+    }
+    if (to === 'midicent') {
+      return trimNumber(midicents);
+    }
+    if (to === 'midi-note') {
+      if (midicents < 0 || midicents > 12700) outOfRange += 1;
+      return trimNumber(midicents / 100);
+    }
+    const semitone = Math.round(midicents / 100);
+    if (Math.abs(semitone * 100 - midicents) > 1e-6) rounded += 1;
+    const name = pitchClassNames[((semitone % 12) + 12) % 12];
+    return `${name}${Math.floor(semitone / 12) - 1}`;
+  };
+  const written = (parsedGroups as { value: number }[][]).map((group) => {
+    const values = group.map((parsed) => write(parsed.value));
+    return values.length > 1 ? `[${values.join(' ')}]` : values[0];
+  });
+  const notes: string[] = [];
+  if (to === 'pitch-class' && from !== 'pitch-class') {
+    notes.push('Octaves are not kept in pitch classes.');
+  }
+  if (from === 'pitch-class' && to !== 'pitch-class') {
+    notes.push(`Pitch classes placed in octave ${octave}.`);
+  }
+  if (rounded) {
+    notes.push(
+      `${rounded} value${rounded === 1 ? '' : 's'} rounded to ${to === 'note-name' ? 'the nearest semitone' : 'a whole step of the scale'}.`
+    );
+  }
+  if (outOfRange) {
+    notes.push(`${outOfRange} value${outOfRange === 1 ? ' is' : 's are'} outside MIDI 0 to 127.`);
+  }
+  return { text: written.join(', '), notes, errors: [] };
+}
+
 export function pitchFrequency(midicents: number) {
   return 440 * 2 ** ((midicents - 6900) / 1200);
 }

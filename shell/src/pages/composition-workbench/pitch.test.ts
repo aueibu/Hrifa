@@ -1,5 +1,6 @@
 import { packet } from './model';
 import {
+  convertPitchText,
   interpretPitchList,
   pitchClassPreviewMidicents,
   pitchFrequency,
@@ -288,5 +289,53 @@ describe('pitch-list interpretation', () => {
   it('converts midicents to frequency without semitone quantization', () => {
     expect(pitchFrequency(6900)).toBeCloseTo(440);
     expect(pitchFrequency(6950)).toBeCloseTo(452.893, 3);
+  });
+});
+
+describe('convertPitchText', () => {
+  it('converts between register formats without losing pitches', () => {
+    const midi = convertPitchText({ text: '60, 62, 66.5', from: 'midi-note', to: 'midicent' });
+    expect(midi).toEqual({ text: '6000, 6200, 6650', notes: [], errors: [] });
+    expect(convertPitchText({ text: midi.text, from: 'midicent', to: 'midi-note' }).text).toBe(
+      '60, 62, 66.5'
+    );
+    expect(
+      convertPitchText({ text: 'C4, D4, F#4', from: 'note-name', to: 'midi-note' }).text
+    ).toBe('60, 62, 66');
+    expect(convertPitchText({ text: '60, 61, 71', from: 'midi-note', to: 'note-name' }).text).toBe(
+      'C4, C#4, B4'
+    );
+  });
+
+  it('keeps chord brackets', () => {
+    expect(
+      convertPitchText({ text: '[60 64 67], 72', from: 'midi-note', to: 'note-name' }).text
+    ).toBe('[C4 E4 G4], C5');
+  });
+
+  it('says what it rounds or drops', () => {
+    const toNames = convertPitchText({ text: '66.5', from: 'midi-note', to: 'note-name' });
+    expect(toNames.text).toBe('G4');
+    expect(toNames.notes).toEqual(['1 value rounded to the nearest semitone.']);
+    const toClasses = convertPitchText({ text: '60, 62, 74', from: 'midi-note', to: 'pitch-class' });
+    expect(toClasses.text).toBe('0, 2, 2');
+    expect(toClasses.notes).toContain('Octaves are not kept in pitch classes.');
+  });
+
+  it('places pitch classes in the chosen octave', () => {
+    const result = convertPitchText({
+      text: '0, 2, [4 7]',
+      from: 'pitch-class',
+      to: 'midi-note',
+      octave: 3,
+    });
+    expect(result.text).toBe('48, 50, [52 55]');
+    expect(result.notes).toEqual(['Pitch classes placed in octave 3.']);
+  });
+
+  it('leaves text that does not read under its current format unchanged', () => {
+    const result = convertPitchText({ text: '60, nope', from: 'midi-note', to: 'midicent' });
+    expect(result.text).toBe('60, nope');
+    expect(result.errors.length).toBeGreaterThan(0);
   });
 });

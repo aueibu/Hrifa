@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Alert, Badge, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core';
-import { Surface } from '../../../components/Surface/Surface';
+import { Alert, Badge, NumberInput, Select, Stack, Text } from '@mantine/core';
 import {
   arithmeticOperatorDefaults,
   arithmeticOperatorLabels,
@@ -22,8 +21,8 @@ import {
 import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { PitchAllocation } from '../melodicization';
-import { defaultModuloTreatment, type ModuloTreatment } from '../moduloTreatment';
 import type { DataPacket } from '../model';
+import { defaultModuloTreatment, type ModuloTreatment } from '../moduloTreatment';
 import { signalTypeRegistry } from '../signalTypes';
 import {
   acceptsNumberOrString,
@@ -31,8 +30,10 @@ import {
   compositionInstanceStateKey,
   usePersistentState,
 } from '../usePersistentState';
+import { ModuleDevice } from './ModuleDevice';
+import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { ModuloControl } from './ModuloControl';
-import { Module, ModuleOutput, ModuleSection } from './Module';
+import { SourceMenu } from './SourceMenu';
 import classes from '../CompositionWorkbench.module.css';
 
 // Plain-number domains, plus pitch/pitchClass — bracketed groups of numbers, which
@@ -163,25 +164,39 @@ export function ArithmeticModule({
   const outputB = boundOutput(outputs, bindingB?.source);
   const resolvedA = useMemo(
     () =>
-      selfBoundA ? undefined : resolvePacketFromOutput(outputA, bindingA?.source?.index, `route:${instanceId}:a`),
+      selfBoundA
+        ? undefined
+        : resolvePacketFromOutput(outputA, bindingA?.source?.index, `route:${instanceId}:a`),
     [selfBoundA, outputA, bindingA?.source?.index, instanceId]
   );
   const resolvedB = useMemo(
     () =>
-      selfBoundB ? undefined : resolvePacketFromOutput(outputB, bindingB?.source?.index, `route:${instanceId}:b`),
+      selfBoundB
+        ? undefined
+        : resolvePacketFromOutput(outputB, bindingB?.source?.index, `route:${instanceId}:b`),
     [selfBoundB, outputB, bindingB?.source?.index, instanceId]
   );
   const treatedA = useMemo(
     () =>
       bindingA
-        ? signalTypeRegistry[bindingA.signalType].apply(resolvedA, bindingA.treatment, `route:${instanceId}:a`, edo)
+        ? signalTypeRegistry[bindingA.signalType].apply(
+            resolvedA,
+            bindingA.treatment,
+            `route:${instanceId}:a`,
+            edo
+          )
         : undefined,
     [bindingA, resolvedA, instanceId, edo]
   );
   const treatedB = useMemo(
     () =>
       bindingB
-        ? signalTypeRegistry[bindingB.signalType].apply(resolvedB, bindingB.treatment, `route:${instanceId}:b`, edo)
+        ? signalTypeRegistry[bindingB.signalType].apply(
+            resolvedB,
+            bindingB.treatment,
+            `route:${instanceId}:b`,
+            edo
+          )
         : undefined,
     [bindingB, resolvedB, instanceId, edo]
   );
@@ -235,80 +250,100 @@ export function ArithmeticModule({
     treatedB!.items.length > 1 &&
     treatedA!.items.length !== treatedB!.items.length;
 
-  return (
-    <Surface className={classes.interferenceSurface}>
-      <div className={classes.interferenceLayout}>
-        <div className={classes.resultInspector}>
-          <Group justify="space-between" align="start" mb="md">
-            <div>
-              <Title order={2} size="h3">
-                {instanceLabel}
-              </Title>
-              <Text c="dimmed" size="sm">
-                {arithmeticOperatorLabels[operator]} applied to A{isUnary ? '' : ' and B'}.
-              </Text>
-            </div>
-            <Group gap="xs">
-              <Badge variant="outline">{result.packet.items.length} items</Badge>
-              <Badge variant="outline">{result.packet.domain}</Badge>
-            </Group>
-          </Group>
+  const resultLine = `${result.packet.items
+    .slice(0, 64)
+    .map((item) => formatNumericTree(rawNumericTree(item.value)))
+    .join(
+      ', '
+    )}${result.packet.items.length > 64 ? `, … (${result.packet.items.length} items)` : ''}`;
 
-          {result.messages.length > 0 && (
-            <Alert color="yellow" title="Arithmetic report">
-              {result.messages.join(' ')}
-            </Alert>
-          )}
+  const view = (
+    <>
+      {result.messages.length > 0 && (
+        <Alert color="yellow" title="Arithmetic report">
+          {result.messages.join(' ')}
+        </Alert>
+      )}
 
-          <Stack gap={2}>
-            <Text size="xs" c="dimmed">
-              A raw: <Text span ff="monospace">{rawOperandLine(treatedA, Number(fallbackA) || 0)}</Text>
-            </Text>
-            {!isUnary && (
-              <Text size="xs" c="dimmed">
-                B raw: <Text span ff="monospace">{rawOperandLine(treatedB, Number(fallbackB) || 0)}</Text>
-              </Text>
-            )}
-            <Text size="xs" c="dimmed">
-              Result raw:{' '}
-              <Text span ff="monospace">
-                {result.packet.items
-                  .slice(0, 64)
-                  .map((item) => formatNumericTree(rawNumericTree(item.value)))
-                  .join(', ')}
-                {result.packet.items.length > 64 ? `, … (${result.packet.items.length} items)` : ''}
-              </Text>
-            </Text>
-          </Stack>
-
-          <Text ff="monospace" size="sm" className={classes.pitchValues}>
-            {result.packet.items
-              .slice(0, 64)
-              .map((item) => item.label)
-              .join(', ')}
-            {result.packet.items.length > 64 ? `, … (${result.packet.items.length} items)` : ''}
+      <Stack gap={2}>
+        <Text size="xs" c="dimmed">
+          A raw:{' '}
+          <Text span ff="monospace">
+            {rawOperandLine(treatedA, Number(fallbackA) || 0)}
           </Text>
-        </div>
+        </Text>
+        {!isUnary && (
+          <Text size="xs" c="dimmed">
+            B raw:{' '}
+            <Text span ff="monospace">
+              {rawOperandLine(treatedB, Number(fallbackB) || 0)}
+            </Text>
+          </Text>
+        )}
+        <Text size="xs" c="dimmed">
+          Result raw:{' '}
+          <Text span ff="monospace">
+            {resultLine}
+          </Text>
+        </Text>
+      </Stack>
 
-        <Module
-          name={instanceLabel}
-          status={`${result.packet.items.length} items`}
-          output={<ModuleOutput name="Result" packet={result.packet} />}
-        >
-          <ModuleSection label="Inputs" grow>
-            <Stack gap="xs">
+      <Text ff="monospace" size="sm" className={classes.pitchValues}>
+        {result.packet.items
+          .slice(0, 64)
+          .map((item) => item.label)
+          .join(', ')}
+        {result.packet.items.length > 64 ? `, … (${result.packet.items.length} items)` : ''}
+      </Text>
+    </>
+  );
+
+  return (
+    <ModuleDevice
+      name={instanceLabel}
+      status={`${arithmeticOperatorLabels[operator]} applied to A${isUnary ? '' : ' and B'}`}
+      badges={
+        <>
+          <Badge variant="outline">{result.packet.items.length} items</Badge>
+          <Badge variant="outline">{result.packet.domain}</Badge>
+        </>
+      }
+      controls={
+        <>
+          <InspectorSection label="Operation">
+            <Select
+              label="Operator"
+              data={operatorOptions}
+              value={operator}
+              allowDeselect={false}
+              onChange={changeOperator}
+            />
+            {showCombineStrategy && (
               <Select
-                size="xs"
+                label="Combine strategy"
+                description="A and B are different lengths."
+                data={combineStrategyOptions}
+                value={combineStrategy}
+                allowDeselect={false}
+                onChange={(value) =>
+                  value && acceptsCombineStrategy(value) && setCombineStrategy(value)
+                }
+              />
+            )}
+            <ModuloControl value={modulo} onChange={setModulo} />
+          </InspectorSection>
+
+          <ModuleInspectorContent>
+            <InspectorSection label="Inputs">
+              <SourceMenu
                 label="A"
                 placeholder="Connect a numeric source"
-                clearable
-                data={aOptions}
+                options={aOptions}
                 value={bindingA?.source ? outputRefKey(bindingA.source) : null}
                 onChange={(value) => onBind('a', value ? parseOutputRef(value) : null)}
               />
               {!bindingA?.source && (
                 <NumberInput
-                  size="xs"
                   aria-label="A fallback value"
                   label="A fallback"
                   value={fallbackA}
@@ -317,18 +352,15 @@ export function ArithmeticModule({
               )}
               {!isUnary && (
                 <>
-                  <Select
-                    size="xs"
+                  <SourceMenu
                     label="B"
                     placeholder="Connect a numeric source"
-                    clearable
-                    data={aOptions}
+                    options={aOptions}
                     value={bindingB?.source ? outputRefKey(bindingB.source) : null}
                     onChange={(value) => onBind('b', value ? parseOutputRef(value) : null)}
                   />
                   {!bindingB?.source && (
                     <NumberInput
-                      size="xs"
                       aria-label="B fallback value"
                       label="B fallback"
                       value={fallbackB}
@@ -337,35 +369,13 @@ export function ArithmeticModule({
                   )}
                 </>
               )}
-            </Stack>
-          </ModuleSection>
-
-          <ModuleSection label="Operation">
-            <Stack gap="xs">
-              <Select
-                size="xs"
-                label="Operator"
-                data={operatorOptions}
-                value={operator}
-                allowDeselect={false}
-                onChange={changeOperator}
-              />
-              {showCombineStrategy && (
-                <Select
-                  size="xs"
-                  label="Combine strategy"
-                  description="A and B are different lengths."
-                  data={combineStrategyOptions}
-                  value={combineStrategy}
-                  allowDeselect={false}
-                  onChange={(value) => value && acceptsCombineStrategy(value) && setCombineStrategy(value)}
-                />
-              )}
-              <ModuloControl value={modulo} onChange={setModulo} />
-            </Stack>
-          </ModuleSection>
-        </Module>
-      </div>
-    </Surface>
+            </InspectorSection>
+            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={[publishedOutput]} />
+          </ModuleInspectorContent>
+        </>
+      }
+    >
+      {view}
+    </ModuleDevice>
   );
 }

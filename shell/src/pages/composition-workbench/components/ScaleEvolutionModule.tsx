@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Alert, Badge, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
-import { Surface } from '../../../components/Surface/Surface';
+import { Alert, Badge, Select, Text, TextInput } from '@mantine/core';
 import {
   boundOutput,
   compositionOutputOptions,
@@ -29,8 +28,10 @@ import {
   compositionStateKeys,
   usePersistentState,
 } from '../usePersistentState';
-import { Module, ModuleOutput, ModuleSection } from './Module';
-import classes from '../CompositionWorkbench.module.css';
+import { DurationStrip } from './DurationStrip';
+import { ModuleDevice } from './ModuleDevice';
+import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
+import { SourceMenu } from './SourceMenu';
 
 function parseIntervalText(value: string) {
   return value
@@ -71,12 +72,12 @@ export function ScaleEvolutionModule({
   const [intervalText, setIntervalText] = usePersistentState(
     stateKey(compositionStateKeys.scaleEvolutionIntervals),
     '3, 2',
-    acceptsString,
+    acceptsString
   );
   const [root, setRoot] = usePersistentState(
     stateKey(compositionStateKeys.scaleEvolutionRoot),
     0,
-    acceptsFiniteNumber,
+    acceptsFiniteNumber
   );
 
   const binding = routeState.sequence;
@@ -85,9 +86,13 @@ export function ScaleEvolutionModule({
   const resolvedSequence = useMemo(
     () =>
       hasConnection
-        ? resolvePacketFromOutput(sequenceOutput, binding?.source?.index, `route:${instanceId}:sequence`)
+        ? resolvePacketFromOutput(
+            sequenceOutput,
+            binding?.source?.index,
+            `route:${instanceId}:sequence`
+          )
         : undefined,
-    [hasConnection, sequenceOutput, binding?.source?.index, instanceId],
+    [hasConnection, sequenceOutput, binding?.source?.index, instanceId]
   );
 
   const fallbackIntervals = useMemo(() => parseIntervalText(intervalText), [intervalText]);
@@ -111,30 +116,42 @@ export function ScaleEvolutionModule({
 
   const stagesPacket = useMemo(
     () => (generated.result ? scaleEvolutionStagesPacket(generated.result, instanceId) : undefined),
-    [generated.result, instanceId],
+    [generated.result, instanceId]
   );
   const finalPacket = useMemo(
     () => (generated.result ? finalStagePacket(generated.result, instanceId) : undefined),
-    [generated.result, instanceId],
+    [generated.result, instanceId]
   );
   const stagePitchesPacket = useMemo(
     () =>
-      generated.result ? stagePitchClassesPacket(generated.result, Number(root), instanceId, edo) : undefined,
-    [generated.result, root, instanceId, edo],
+      generated.result
+        ? stagePitchClassesPacket(generated.result, Number(root), instanceId, edo)
+        : undefined,
+    [generated.result, root, instanceId, edo]
   );
   const finalPitchesPacket = useMemo(
     () =>
-      generated.result ? finalPitchClassesPacket(generated.result, Number(root), instanceId, edo) : undefined,
-    [generated.result, root, instanceId, edo],
+      generated.result
+        ? finalPitchClassesPacket(generated.result, Number(root), instanceId, edo)
+        : undefined,
+    [generated.result, root, instanceId, edo]
   );
 
   const publishedOutputs = useMemo<PublishedCompositionOutput[]>(() => {
     const list: PublishedCompositionOutput[] = [];
     if (stagesPacket) {
-      list.push({ ref: { instanceId, port: 'stages' }, label: `${instanceLabel} · Stages`, packet: stagesPacket });
+      list.push({
+        ref: { instanceId, port: 'stages' },
+        label: `${instanceLabel} · Stages`,
+        packet: stagesPacket,
+      });
     }
     if (finalPacket) {
-      list.push({ ref: { instanceId, port: 'final' }, label: `${instanceLabel} · Final`, packet: finalPacket });
+      list.push({
+        ref: { instanceId, port: 'final' },
+        label: `${instanceLabel} · Final`,
+        packet: finalPacket,
+      });
     }
     if (stagePitchesPacket) {
       list.push({
@@ -151,7 +168,14 @@ export function ScaleEvolutionModule({
       });
     }
     return list;
-  }, [instanceId, instanceLabel, stagesPacket, finalPacket, stagePitchesPacket, finalPitchesPacket]);
+  }, [
+    instanceId,
+    instanceLabel,
+    stagesPacket,
+    finalPacket,
+    stagePitchesPacket,
+    finalPitchesPacket,
+  ]);
 
   useEffect(() => {
     onOutputsChange?.(instanceId, publishedOutputs);
@@ -165,135 +189,116 @@ export function ScaleEvolutionModule({
     onBind('sequence', null);
   }
 
+  const rootValue = ((Number(root) % edo) + edo) % edo;
+
+  const view = generated.error ? (
+    <Alert color="red" title="No evolution">
+      {generated.error}
+    </Alert>
+  ) : (
+    generated.result && (
+      <>
+        <Text size="xs" c="dimmed">
+          Input:{' '}
+          <Text span ff="monospace">
+            {sourceIntervals.join(' + ')}
+          </Text>
+          {resolvedSequence ? ' (connected)' : ' (typed)'}
+        </Text>
+        {generated.result.stages.map((stage, index) => (
+          <div key={index}>
+            <DurationStrip
+              label={`Stage ${index + 1}${stage.collapsedToNeutral ? ' — collapsed to neutral' : ''}`}
+              durations={stage.durations}
+              cyclic={false}
+              showSum
+              blockTitle={(durationIndex, duration) =>
+                `Attack ${stage.attacks[durationIndex]}; duration ${duration}`
+              }
+            />
+            <Text ff="monospace" size="sm" mt={2} c="dimmed">
+              {stagePitchesPacket?.items[index]?.label}
+            </Text>
+          </div>
+        ))}
+        {generated.result.terminationReason === 'cycle' && (
+          <Text size="xs" c="dimmed">
+            Stopped: this stage's durations repeated an earlier stage exactly, rather than reaching
+            a neutral (all-semitone) collapse.
+          </Text>
+        )}
+      </>
+    )
+  );
+
   return (
-    <Surface className={classes.interferenceSurface}>
-      <div className={classes.interferenceLayout}>
-        <div className={classes.resultInspector}>
-          <Group justify="space-between" align="start" mb="md">
-            <div>
-              <Title order={2} size="h3">
-                {instanceLabel}
-              </Title>
-              <Text c="dimmed" size="sm">
-                Synchronizing an interval sequence with its own circular permutations, within one
-                shared period (Book I Ch. 13 / Book II Ch. 3 §A).
-              </Text>
-            </div>
-            {generated.result && (
-              <Group gap="xs">
-                <Badge variant="outline">{generated.result.stages.length} stage(s)</Badge>
-                <Badge variant="outline">{generated.result.terminationReason}</Badge>
-              </Group>
+    <ModuleDevice
+      name={instanceLabel}
+      status={
+        generated.result
+          ? 'Interval sequence against its circular permutations'
+          : 'Needs an interval sequence'
+      }
+      badges={
+        generated.result && (
+          <>
+            <Badge variant="outline">{generated.result.stages.length} stage(s)</Badge>
+            <Badge variant="outline">{generated.result.terminationReason}</Badge>
+          </>
+        )
+      }
+      onReset={resetScaleEvolution}
+      footer={
+        <Text size="xs" c="dimmed" truncate>
+          Synchronizes a sequence with its own circular permutations within one shared period (Book
+          I Ch. 13 / Book II Ch. 3 §A).
+        </Text>
+      }
+      controls={
+        <>
+          <InspectorSection label="Sequence">
+            {!binding?.source && (
+              <TextInput
+                aria-label="Fallback interval sequence"
+                label="Interval sequence"
+                description="e.g. 3, 2. Used when no source is connected."
+                value={intervalText}
+                onChange={(event) => setIntervalText(event.currentTarget.value)}
+              />
             )}
-          </Group>
+            {binding?.source && (
+              <Text size="xs" c="dimmed" ff="monospace">
+                {rawIntervalLine(resolvedSequence)}
+              </Text>
+            )}
+            <Select
+              label="Root"
+              aria-label="Root pitch class"
+              data={Array.from({ length: edo }, (_, value) => ({
+                value: String(value),
+                label: pitchClassName(value, edo),
+              }))}
+              value={String(rootValue)}
+              onChange={(value) => value !== null && setRoot(Number(value))}
+            />
+          </InspectorSection>
 
-          {generated.error ? (
-            <Alert color="red" title="No evolution">
-              {generated.error}
-            </Alert>
-          ) : (
-            generated.result && (
-              <Stack gap="lg">
-                <Text size="xs" c="dimmed">
-                  Input: <Text span ff="monospace">{sourceIntervals.join(' + ')}</Text>
-                  {resolvedSequence ? ' (connected)' : ' (typed)'}
-                </Text>
-                {generated.result.stages.map((stage, index) => (
-                  <div key={index}>
-                    <Text fw={600} size="sm" mb={4}>
-                      Stage {index + 1}
-                      {stage.collapsedToNeutral ? ' — collapsed to neutral' : ''}
-                    </Text>
-                    <div
-                      className={classes.durationTimeline}
-                      aria-label={`Stage ${index + 1} durations ${stage.durations.join(' ')}`}
-                    >
-                      {stage.durations.map((duration, durationIndex) => (
-                        <span
-                          className={classes.durationBlock}
-                          key={`${stage.attacks[durationIndex]}:${duration}`}
-                          style={{ flexGrow: duration }}
-                          title={`Attack ${stage.attacks[durationIndex]}; duration ${duration}`}
-                        >
-                          {duration}
-                        </span>
-                      ))}
-                    </div>
-                    <Text ff="monospace" size="sm" mt={4} className={classes.durationText}>
-                      {stage.durations.join(' + ')}
-                    </Text>
-                    <Text ff="monospace" size="sm" mt={2} c="dimmed">
-                      {stagePitchesPacket?.items[index]?.label}
-                    </Text>
-                  </div>
-                ))}
-                {generated.result.terminationReason === 'cycle' && (
-                  <Text size="xs" c="dimmed">
-                    Stopped: this stage's durations repeated an earlier stage exactly, rather than
-                    reaching a neutral (all-semitone) collapse.
-                  </Text>
-                )}
-              </Stack>
-            )
-          )}
-        </div>
-
-        <Module
-          name={instanceLabel}
-          status={generated.result ? `${generated.result.stages.length} stage(s), ${generated.result.terminationReason}` : 'Needs an interval sequence'}
-          onReset={resetScaleEvolution}
-          output={
-            <Stack gap={4}>
-              {stagesPacket && <ModuleOutput name="Stages" packet={stagesPacket} />}
-              {finalPacket && <ModuleOutput name="Final" packet={finalPacket} />}
-              {stagePitchesPacket && <ModuleOutput name="Stage Pitches" packet={stagePitchesPacket} />}
-              {finalPitchesPacket && <ModuleOutput name="Final Pitches" packet={finalPitchesPacket} />}
-            </Stack>
-          }
-        >
-          <ModuleSection label="Sequence">
-            <Stack gap="xs">
-              <Select
-                size="xs"
+          <ModuleInspectorContent>
+            <InspectorSection label="Inputs">
+              <SourceMenu
                 label="Connect"
                 placeholder="Connect an interval source"
-                clearable
-                data={sequenceOptions}
+                options={sequenceOptions}
                 value={binding?.source ? outputRefKey(binding.source) : null}
                 onChange={(value) => onBind('sequence', value ? parseOutputRef(value) : null)}
               />
-              {!binding?.source && (
-                <TextInput
-                  size="xs"
-                  aria-label="Fallback interval sequence"
-                  label="Fallback"
-                  description="e.g. 3, 2"
-                  value={intervalText}
-                  onChange={(event) => setIntervalText(event.currentTarget.value)}
-                />
-              )}
-              {binding?.source && (
-                <Text size="xs" c="dimmed" ff="monospace">
-                  {rawIntervalLine(resolvedSequence)}
-                </Text>
-              )}
-              <div className={classes.moduleParameterRow}>
-                <Text size="xs">Root</Text>
-                <Select
-                  size="xs"
-                  aria-label="Root pitch class"
-                  data={Array.from({ length: edo }, (_, value) => ({
-                    value: String(value),
-                    label: pitchClassName(value, edo),
-                  }))}
-                  value={String(((Number(root) % edo) + edo) % edo)}
-                  onChange={(value) => value !== null && setRoot(Number(value))}
-                />
-              </div>
-            </Stack>
-          </ModuleSection>
-        </Module>
-      </div>
-    </Surface>
+            </InspectorSection>
+            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={publishedOutputs} />
+          </ModuleInspectorContent>
+        </>
+      }
+    >
+      {view}
+    </ModuleDevice>
   );
 }

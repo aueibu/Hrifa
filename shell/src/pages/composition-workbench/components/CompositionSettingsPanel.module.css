@@ -1,0 +1,16 @@
+/* The settings, docked in the workspace and scrolling on their own. */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-panel);
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--mantine-spacing-xs);
+}
+
+.header {
+  border-bottom: 1px solid var(--grid);
+  margin-bottom: var(--mantine-spacing-sm);
+  padding-bottom: var(--mantine-spacing-xs);
+}

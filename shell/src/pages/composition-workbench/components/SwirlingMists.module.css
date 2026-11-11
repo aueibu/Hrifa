@@ -1,0 +1,199 @@
+.plot {
+  background: var(--panel-well);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.plot svg {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.plot text {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 12px;
+}
+
+.column {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.stepLine {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.stepLineActive {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+
+.ridge {
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.dot {
+  stroke: var(--panel-well);
+  stroke-width: 2;
+}
+
+.readout {
+  font-family: var(--mantine-font-family-monospace);
+  min-block-size: 1.25rem;
+}
+
+.strataTable {
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: auto auto repeat(5, minmax(3.5rem, 1fr)) auto;
+  align-items: center;
+  min-inline-size: 36rem;
+}
+
+.walkRow {
+  display: contents;
+}
+
+.swatch {
+  block-size: 0.75rem;
+  inline-size: 0.75rem;
+  border-radius: var(--radius-hairline);
+}
+
+.headerCell {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.cursor {
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.cursorPlaying {
+  stroke: var(--mark-red);
+  stroke-width: 2.5;
+}
+
+.scrub {
+  fill: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.sliceAxis {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+}
+
+.sliceTitle {
+  text-transform: uppercase;
+}
+
+.leader {
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+
+.plot .sliceLabel {
+  fill: var(--text);
+}
+
+.curveBox {
+  background: var(--panel-well);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-control);
+  touch-action: none;
+  user-select: none;
+}
+
+.curveBox svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  cursor: crosshair;
+}
+
+.curveGrid {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.curveZero {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.curveLine {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.curveSeam {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 3 5;
+  opacity: 0.6;
+}
+
+.curveDot {
+  fill: var(--accent);
+}
+
+.miniCurve {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+
+.restart {
+  stroke-width: 2;
+  opacity: 0.8;
+}
+
+.cycleLine {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+}
+
+.stepBand {
+  /* A bar below the plot, not a shade through it. */
+  fill: var(--grid);
+  opacity: 0.35;
+}
+
+.denseBand {
+  opacity: 0.28;
+}
+
+.snapshotGrid {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.snapshotStep {
+  stroke: var(--grid);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.snapshotHover {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+
+.snapshotVoice {
+  stroke-width: 1.5;
+  opacity: 0.55;
+  stroke-linejoin: round;
+}

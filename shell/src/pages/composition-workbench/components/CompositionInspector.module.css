@@ -6,8 +6,7 @@
 }
 
 .part {
-  background: var(--panel-inset);
-  border: 1px solid var(--border);
+  background: var(--panel-slot);
   border-radius: var(--radius-control);
 }
 
@@ -28,13 +27,11 @@
 }
 
 .moduleSlot:not(:empty) {
-  border-top: 1px solid var(--border);
   padding-top: var(--mantine-spacing-xs);
 }
 
 .partBody {
-  border-top: 1px solid var(--border);
-  padding: var(--mantine-spacing-xs);
+  padding: 0 var(--mantine-spacing-xs) var(--mantine-spacing-xs);
 }
 
 .heading {
@@ -42,8 +39,7 @@
 }
 
 .routePath {
-  background: var(--panel-inset);
-  border: 1px solid var(--border);
+  background: var(--panel-well);
   border-radius: var(--radius-control);
   font-family: var(--mantine-font-family-monospace);
   font-size: var(--mantine-font-size-xs);
@@ -54,7 +50,6 @@
 }
 
 .section {
-  border-top: 1px solid var(--border);
   padding-top: var(--mantine-spacing-xs);
 }
 
@@ -71,12 +66,11 @@
 }
 
 .changed {
-  color: var(--mantine-primary-color-light-color);
+  color: var(--accent-tint-text);
 }
 
 .contextSummary {
-  background: var(--panel-inset);
-  border: 1px solid var(--border);
+  background: var(--panel-well);
   border-radius: var(--radius-control);
   padding: var(--mantine-spacing-sm);
 }

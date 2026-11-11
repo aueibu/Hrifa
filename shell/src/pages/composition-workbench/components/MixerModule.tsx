@@ -69,6 +69,7 @@ import {
 } from '../usePersistentState';
 import { CycleProgressBar } from './CycleProgressBar';
 import { Module, ModuleSection } from './Module';
+import { SourceMenu } from './SourceMenu';
 import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
@@ -447,7 +448,9 @@ export function MixerModule({
     return `${material.source === 'notes' ? 'Notes' : 'Rhythm'} | ${count} ${count === 1 ? 'event' : 'events'} | ${length}`;
   }
 
-  const options = compositionOutputOptions(outputs, instanceId, isMixerSourceCandidate);
+  const options = compositionOutputOptions(outputs, instanceId, isMixerSourceCandidate, {
+    allowRestsAndTies: true,
+  });
 
   return (
     <Surface className={classes.interferenceSurface}>
@@ -695,12 +698,10 @@ export function MixerModule({
                         Remove
                       </Button>
                     </Group>
-                    <Select
-                      size="xs"
+                    <SourceMenu
                       label="Source"
                       placeholder="Connect notes or a rhythm"
-                      clearable
-                      data={options}
+                      options={options}
                       value={binding?.source ? outputRefKey(binding.source) : null}
                       onChange={(value) => onBind(port, value ? parseOutputRef(value) : null)}
                     />

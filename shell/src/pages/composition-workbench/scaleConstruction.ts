@@ -30,24 +30,114 @@ export function generateMelodicForms(
   intervals: number[],
   mode: "general" | "circular",
 ): number[][] {
-  if (mode === "circular") {
-    return intervals.map((_, shift) =>
-      intervals.map((_, index) => intervals[(index + shift) % intervals.length]),
-    );
-  }
-  return generalPermutations(intervals);
+  return generateMelodicFamilies(intervals, mode).flatMap((family) =>
+    family.forms.map((form) => form.values),
+  );
 }
 
-function generalPermutations(values: number[]): number[][] {
+export interface MelodicForm {
+  values: number[];
+  /** The ordering as positions of the original sequence (0-based), so coincident values stay distinct. */
+  order: number[];
+  /** Rotation of the family's base ordering that yields this form (0 = the base itself). */
+  shift: number;
+}
+
+export interface MelodicFamily {
+  /** Cycle: 0 is the family containing the original ordering; later ones are further from it. */
+  cycle: number;
+  /** Adjacent swaps needed to reach the family's base ordering from the original. */
+  inversions: number;
+  forms: MelodicForm[];
+}
+
+/**
+ * Groups the melodic forms into rotation families. Each family is one cyclic arrangement of
+ * the interval positions (its n rotations); the general mode's n! forms split into (n-1)!
+ * families, and the circular mode is exactly cycle 0. Grouping is by position, never
+ * by value, so forms that coincide in value remain separate entries.
+ */
+export function generateMelodicFamilies(
+  intervals: number[],
+  mode: "general" | "circular",
+): MelodicFamily[] {
+  const count = intervals.length;
+  const identity = intervals.map((_, index) => index);
+  // Every rotation orbit has exactly one member beginning with position 0: use it as the base.
+  const bases =
+    mode === "circular"
+      ? [identity]
+      : indexPermutations(identity.slice(1)).map((rest) => [0, ...rest]);
+  return bases
+    .map((base) => ({ base, inversions: countInversions(base) }))
+    .sort((a, b) => a.inversions - b.inversions || compareOrders(a.base, b.base))
+    .map(({ base, inversions }, cycle) => ({
+      cycle,
+      inversions,
+      forms: base.map((_, shift) => {
+        const order = base.map((_, index) => base[(index + shift) % count]);
+        return { values: order.map((position) => intervals[position]), order, shift };
+      }),
+    }));
+}
+
+export function cycleLabel(cycle: number): string {
+  return cycle === 0 ? "Cycle 0 (original)" : `Cycle ${cycle}`;
+}
+
+/** No menu level lists more than this many entries (cycles or folders of them). */
+export const MAX_MENU_ENTRIES = 10;
+
+/**
+ * The "Cycles a–b" folders a cycle sits in, outermost first, chosen so that no menu
+ * level holds more than MAX_MENU_ENTRIES: with up to 10 cycles there are no folders; up to
+ * 100 they go in folders of 10; up to 1000, folders of 100 holding folders of 10; and so on.
+ * A folder that would hold a single cycle is skipped, so that cycle sits beside its
+ * sibling folders instead of inside a redundant "Cycles 100–100".
+ */
+export function cycleFolders(cycle: number, familyCount: number): string[] {
+  let size = 1;
+  const sizes: number[] = [];
+  while (size * MAX_MENU_ENTRIES < familyCount) {
+    size *= MAX_MENU_ENTRIES;
+    sizes.unshift(size);
+  }
+  const folders: string[] = [];
+  for (const folderSize of sizes) {
+    const start = Math.floor(cycle / folderSize) * folderSize;
+    const end = Math.min(start + folderSize, familyCount) - 1;
+    if (end > start) folders.push(`Cycles ${start}–${end}`);
+  }
+  return folders;
+}
+
+function indexPermutations(values: number[]): number[][] {
   if (values.length <= 1) return [values.slice()];
   const results: number[][] = [];
   values.forEach((value, index) => {
     const rest = [...values.slice(0, index), ...values.slice(index + 1)];
-    for (const permutation of generalPermutations(rest)) {
+    for (const permutation of indexPermutations(rest)) {
       results.push([value, ...permutation]);
     }
   });
   return results;
+}
+
+function countInversions(order: number[]): number {
+  let inversions = 0;
+  for (let i = 0; i < order.length; i += 1) {
+    for (let j = i + 1; j < order.length; j += 1) {
+      if (order[i] > order[j]) inversions += 1;
+    }
+  }
+  return inversions;
+}
+
+function compareOrders(a: number[], b: number[]): number {
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
 }
 
 /**
@@ -90,22 +180,39 @@ export function melodicFormsPacket(
   mode: "general" | "circular",
   sourceId: string,
 ): DataPacket<number[]> {
-  const forms = generateMelodicForms(intervals, mode);
+  const families = generateMelodicFamilies(intervals, mode);
   const period = intervals.reduce((sum, value) => sum + value, 0);
-  const items: DataItem<number[]>[] = forms.map((form, index) => ({
-    id: `${sourceId}:form:${index}`,
-    value: form,
-    label: form.join("+"),
-    provenance: [
-      {
-        sourceModuleInstance: sourceId,
-        sourceItemIds: [],
-        transformation: mode === "circular" ? "circular-permutation" : "general-permutation",
-        parameters: { intervals, mode, index },
-      },
-    ],
-  }));
-  return packet("bank", "interval", items, [], { mode, period }, {
+  const items: DataItem<number[]>[] = families.flatMap((family, familyIndex) =>
+    family.forms.map((form, shift) => {
+      const index = familyIndex * (families[0]?.forms.length ?? 0) + shift;
+      return {
+        id: `${sourceId}:form:${index}`,
+        value: form.values,
+        label: form.values.join("+"),
+        provenance: [
+          {
+            sourceModuleInstance: sourceId,
+            sourceItemIds: [],
+            transformation: mode === "circular" ? "circular-permutation" : "general-permutation",
+            parameters: { intervals, mode, index, family: family.cycle, shift: form.shift },
+          },
+        ],
+      };
+    }),
+  );
+  // A bank with several families names each entry's family so a source picker can nest them;
+  // a single family (circular mode) needs no extra level.
+  // With many families, cycles are filed into nested "Cycles a–b" folders.
+  const entryGroups =
+    families.length > 1
+      ? families.flatMap((family) =>
+          family.forms.map(() => [
+            ...cycleFolders(family.cycle, families.length),
+            cycleLabel(family.cycle),
+          ]),
+        )
+      : undefined;
+  return packet("bank", "interval", items, [], { mode, period, familyCount: families.length, entryGroups }, {
     role: "interUnit",
     frame: { topology: "cyclic", unit: "abstract", extent: period, origin: 0 },
   });

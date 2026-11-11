@@ -1,24 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert,
-  Badge,
-  Button,
-  Collapse,
-  Group,
-  Select,
-  Slider,
-  Stack,
-  Table,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Alert, Badge, Button, Group, Select, Slider, Table, Text } from '@mantine/core';
 import {
   defaultPianoRollView,
   PianoRoll,
   type PianoRollGridLine,
   type PianoRollViewState,
 } from '../../../components/PianoRoll';
-import { Surface } from '../../../components/Surface/Surface';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import {
   boundOutput,
@@ -31,7 +18,6 @@ import {
   type PublishedCompositionOutput,
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
-import { countInSeconds, parseMeter, transportPulse } from '../transport';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import { melodicize, type PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
@@ -45,15 +31,17 @@ import {
 } from '../musicalTime';
 import { pitchLabel, rhythmInterpretableDomains } from '../routeTreatments';
 import { signalTypeRegistry } from '../signalTypes';
+import { countInSeconds, parseMeter, transportPulse } from '../transport';
 import { useModulePreview, type PreviewEnd } from '../useModulePreview';
 import {
-  acceptsBoolean,
   acceptsFiniteNumber,
   compositionStateKeys,
   compositionInstanceStateKey,
   usePersistentState,
 } from '../usePersistentState';
-import { Module, ModuleOutput, ModuleSection } from './Module';
+import { ModuleDevice } from './ModuleDevice';
+import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
+import { SourceMenu, type SourceOption } from './SourceMenu';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -73,7 +61,7 @@ const allocationOptions = [
   { value: 'cycle', label: 'Cycle pitches across attacks' },
   { value: 'cycle-rhythm', label: 'Cycle attacks across pitches' },
   { value: 'zip', label: 'Zip and stop at the shorter input' },
-  { value: 'cartesian', label: 'Every pitch at every attack' },
+  { value: 'cartesian', label: 'Every pitch at every attack, in turn' },
 ];
 
 function rationalLabel(duration: MusicalDuration) {
@@ -171,22 +159,27 @@ export function MelodicizationModule({
       setPianoRollView((view) => (view.framed ? { ...view, framed: false } : view));
     }
   }, [active, setPianoRollView]);
-  const [inspectorExpanded, setInspectorExpanded] = usePersistentState(
-    stateKey(compositionStateKeys.melodicizationInspector),
-    false,
-    acceptsBoolean
-  );
   const [playheadQuarterNotes, setPlayheadQuarterNotes] = useState(0);
   const playheadFrame = useRef<number | null>(null);
 
   const rhythmOutput = boundOutput(outputs, bindingRhythm?.source);
   const pitchOutput = boundOutput(outputs, bindingPitches?.source);
   const resolvedRhythm = useMemo(
-    () => resolvePacketFromOutput(rhythmOutput, bindingRhythm?.source?.index, `route:${instanceId}:rhythm`),
+    () =>
+      resolvePacketFromOutput(
+        rhythmOutput,
+        bindingRhythm?.source?.index,
+        `route:${instanceId}:rhythm`
+      ),
     [rhythmOutput, bindingRhythm?.source?.index, instanceId]
   );
   const resolvedPitches = useMemo(
-    () => resolvePacketFromOutput(pitchOutput, bindingPitches?.source?.index, `route:${instanceId}:pitches`),
+    () =>
+      resolvePacketFromOutput(
+        pitchOutput,
+        bindingPitches?.source?.index,
+        `route:${instanceId}:pitches`
+      ),
     [pitchOutput, bindingPitches?.source?.index, instanceId]
   );
   const treatedRhythm = useMemo(
@@ -367,20 +360,27 @@ export function MelodicizationModule({
     setArticulationPercent(100);
     setVolume(30);
     setPianoRollView(defaultPianoRollView);
-    setInspectorExpanded(false);
     preview.setStatus('Melodicization module reset.');
   }
 
-  const rhythmOptions: { value: string; label: string; disabled?: boolean }[] =
-    compositionOutputOptions(outputs, instanceId, compatibleRhythm);
-  const pitchOptions: { value: string; label: string; disabled?: boolean }[] =
-    compositionOutputOptions(outputs, instanceId, compatiblePitches);
+  const rhythmOptions: SourceOption[] = compositionOutputOptions(
+    outputs,
+    instanceId,
+    compatibleRhythm,
+    { allowRestsAndTies: true }
+  );
+  const pitchOptions: SourceOption[] = compositionOutputOptions(
+    outputs,
+    instanceId,
+    compatiblePitches
+  );
   const missingRhythmBinding = Boolean(bindingRhythm?.source && !rhythmOutput);
   const missingPitchBinding = Boolean(bindingPitches?.source && !pitchOutput);
   if (bindingRhythm?.source && missingRhythmBinding) {
     rhythmOptions.push({
       value: outputRefKey(bindingRhythm.source),
       label: `Missing source · ${bindingRhythm.source.port}`,
+      path: ['Missing source', bindingRhythm.source.port],
       disabled: true,
     });
   }
@@ -388,182 +388,154 @@ export function MelodicizationModule({
     pitchOptions.push({
       value: outputRefKey(bindingPitches.source),
       label: `Missing source · ${bindingPitches.source.port}`,
+      path: ['Missing source', bindingPitches.source.port],
       disabled: true,
     });
   }
   const visibleNotes = result.packet.items.slice(0, 128);
 
-  return (
-    <Surface className={classes.interferenceSurface}>
-      <div className={classes.interferenceLayout}>
-        <div className={classes.resultInspector}>
-          <Group justify="space-between" align="start" mb="md">
-            <div>
-              <Title order={2} size="h3">
-                {instanceLabel}
-              </Title>
-              <Text c="dimmed" size="sm">
-                Rhythm as temporal spine; pitch allocation remains explicit.
-              </Text>
-            </div>
-            <Group gap="xs">
-              <Badge variant="outline">{result.packet.items.length} events</Badge>
-              <Badge variant="outline">{pianoRollNotes.length} notes</Badge>
-              <Badge variant="outline">{allocation}</Badge>
-            </Group>
-          </Group>
-
-          {result.errors.length > 0 ? (
-            <Alert color="yellow" title="Melodicization needs material">
-              {result.errors.join(' ')}
-            </Alert>
-          ) : (
-            <Stack gap="md">
-              {result.messages.length > 0 && (
-                <Alert color="yellow" title="Allocation report">
-                  {result.messages.join(' ')}
-                </Alert>
-              )}
-              <PianoRoll
-                ariaLabel="Melodicization piano roll"
-                notes={pianoRollNotes}
-                duration={pianoRollDuration}
-                gridLines={pianoRollGrid}
-                view={pianoRollView}
-                onViewChange={setPianoRollView}
-                playhead={playheadQuarterNotes}
-                isPlaying={preview.playing}
-              />
-              <div>
-                <Button
-                  size="compact-xs"
-                  variant="subtle"
-                  onClick={() => setInspectorExpanded((current) => !current)}
-                >
-                  {inspectorExpanded ? 'Hide event table' : 'Show event table'}
-                </Button>
-                <Collapse expanded={inspectorExpanded}>
-                  <Table.ScrollContainer minWidth={640} maxHeight={420} mt="xs">
-                    <Table striped highlightOnHover withRowBorders>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>#</Table.Th>
-                          <Table.Th>Position</Table.Th>
-                          <Table.Th>Pitch</Table.Th>
-                          <Table.Th>Inter-onset</Table.Th>
-                          <Table.Th>Duration</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {visibleNotes.map((item, index) => (
-                          <Table.Tr key={item.id}>
-                            <Table.Td>{index + 1}</Table.Td>
-                            <Table.Td ff="monospace">
-                              {formatBarBeatTickPercent(item.value.onset, timeline)}
-                            </Table.Td>
-                            <Table.Td>
-                              {item.value.pitches.length > 1
-                                ? `[${item.value.pitches.map((midicents) => pitchLabel(midicents)).join(' ')}]`
-                                : item.value.pitches[0] !== undefined
-                                  ? pitchLabel(item.value.pitches[0])
-                                  : ''}
-                            </Table.Td>
-                            <Table.Td ff="monospace">
-                              {rationalLabel(item.value.interOnset)}
-                            </Table.Td>
-                            <Table.Td ff="monospace">{rationalLabel(item.value.duration)}</Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
-                  {result.packet.items.length > visibleNotes.length && (
-                    <Text size="xs" c="dimmed" mt="xs">
-                      Showing the first {visibleNotes.length} of {result.packet.items.length}{' '}
-                      events.
-                    </Text>
-                  )}
-                </Collapse>
-              </div>
-            </Stack>
+  const view =
+    result.errors.length > 0 ? (
+      <Alert color="yellow" title="Melodicization needs material">
+        {result.errors.join(' ')}
+      </Alert>
+    ) : (
+      <>
+        {result.messages.length > 0 && (
+          <Alert color="yellow" title="Allocation report">
+            {result.messages.join(' ')}
+          </Alert>
+        )}
+        <PianoRoll
+          ariaLabel="Melodicization piano roll"
+          notes={pianoRollNotes}
+          duration={pianoRollDuration}
+          gridLines={pianoRollGrid}
+          view={pianoRollView}
+          onViewChange={setPianoRollView}
+          playhead={playheadQuarterNotes}
+          isPlaying={preview.playing}
+        />
+        <div className={classes.candidateList}>
+          <Table striped highlightOnHover withRowBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>#</Table.Th>
+                <Table.Th>Position</Table.Th>
+                <Table.Th>Pitch</Table.Th>
+                <Table.Th>Inter-onset</Table.Th>
+                <Table.Th>Duration</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {visibleNotes.map((item, index) => (
+                <Table.Tr key={item.id}>
+                  <Table.Td>{index + 1}</Table.Td>
+                  <Table.Td ff="monospace">
+                    {formatBarBeatTickPercent(item.value.onset, timeline)}
+                  </Table.Td>
+                  <Table.Td>
+                    {item.value.pitches.length > 1
+                      ? `[${item.value.pitches.map((midicents) => pitchLabel(midicents)).join(' ')}]`
+                      : item.value.pitches[0] !== undefined
+                        ? pitchLabel(item.value.pitches[0])
+                        : ''}
+                  </Table.Td>
+                  <Table.Td ff="monospace">{rationalLabel(item.value.interOnset)}</Table.Td>
+                  <Table.Td ff="monospace">{rationalLabel(item.value.duration)}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+          {result.packet.items.length > visibleNotes.length && (
+            <Text size="xs" c="dimmed" mt="xs">
+              Showing the first {visibleNotes.length} of {result.packet.items.length} events.
+            </Text>
           )}
         </div>
+      </>
+    );
 
-        <Module
-          name={instanceLabel}
-          status={
-            result.errors.length
-              ? 'Needs inputs'
-              : `${result.packet.items.length} events · ${pianoRollNotes.length} notes`
-          }
-          onReset={resetMelodicization}
-          output={<ModuleOutput name="Notes" packet={result.packet} />}
-          footer={
-            <Text size="xs" c="dimmed" truncate aria-live="polite">
-              {preview.status ||
-                'Note events retain musical time; preview tempo does not rewrite them.'}
-            </Text>
-          }
-        >
-          <ModuleSection label="Inputs" grow>
-            <Stack gap="xs">
-              <Select
-                size="xs"
+  return (
+    <ModuleDevice
+      name={instanceLabel}
+      status={
+        result.errors.length ? 'Needs inputs' : 'Rhythm as temporal spine; pitches allocated'
+      }
+      badges={
+        <>
+          <Badge variant="outline">{result.packet.items.length} events</Badge>
+          <Badge variant="outline">{pianoRollNotes.length} notes</Badge>
+          <Badge variant="outline">{allocation}</Badge>
+        </>
+      }
+      actions={
+        <>
+          <Button onClick={playPreview}>▶ Preview</Button>
+          <Button variant="default" onClick={() => preview.stop()}>
+            ■ Stop
+          </Button>
+        </>
+      }
+      onReset={resetMelodicization}
+      footer={
+        <Text size="xs" c="dimmed" truncate aria-live="polite">
+          {preview.status ||
+            'Note events retain musical time; preview tempo does not rewrite them.'}
+        </Text>
+      }
+      controls={
+        <>
+          <InspectorSection label="Combine">
+            <Select
+              label="Pitch allocation"
+              data={allocationOptions}
+              value={allocation}
+              onChange={(value) => value && setAllocation(value as PitchAllocation)}
+            />
+            <div className={classes.moduleParameterRow}>
+              <Text size="xs">Articulation</Text>
+              <Group gap="xs" wrap="nowrap" className={classes.volumeControl}>
+                <Slider
+                  thumbLabel="Note articulation"
+                  min={1}
+                  max={200}
+                  value={articulationPercent}
+                  onChange={setArticulationPercent}
+                />
+                <Text ff="monospace" size="xs" w="2.8rem" ta="right">
+                  {articulationPercent}%
+                </Text>
+              </Group>
+            </div>
+          </InspectorSection>
+
+          <ModuleInspectorContent>
+            <InspectorSection label="Inputs">
+              <SourceMenu
                 label="Rhythm source"
                 placeholder="Connect inter-onset durations"
-                clearable
-                data={rhythmOptions}
+                options={rhythmOptions}
                 error={
                   missingRhythmBinding ? 'Connected source is no longer available.' : undefined
                 }
                 value={bindingRhythm?.source ? outputRefKey(bindingRhythm.source) : null}
                 onChange={(value) => onBind('rhythm', value ? parseOutputRef(value) : null)}
               />
-              <Select
-                size="xs"
+              <SourceMenu
                 label="Pitch source"
                 placeholder="Connect pitch or pitch-class material"
-                clearable
-                data={pitchOptions}
+                options={pitchOptions}
                 error={missingPitchBinding ? 'Connected source is no longer available.' : undefined}
                 value={bindingPitches?.source ? outputRefKey(bindingPitches.source) : null}
                 onChange={(value) => onBind('pitches', value ? parseOutputRef(value) : null)}
               />
-            </Stack>
-          </ModuleSection>
+            </InspectorSection>
 
-          <ModuleSection label="Combine">
-            <Stack gap="xs">
-              <Select
-                size="xs"
-                label="Pitch allocation"
-                data={allocationOptions}
-                value={allocation}
-                onChange={(value) => value && setAllocation(value as PitchAllocation)}
-              />
-              <div className={classes.moduleParameterRow}>
-                <Text size="xs">Articulation</Text>
-                <Group gap="xs" wrap="nowrap" className={classes.volumeControl}>
-                  <Slider
-                    thumbLabel="Note articulation"
-                    min={1}
-                    max={200}
-                    value={articulationPercent}
-                    onChange={setArticulationPercent}
-                  />
-                  <Text ff="monospace" size="xs" w="2.8rem" ta="right">
-                    {articulationPercent}%
-                  </Text>
-                </Group>
-              </div>
-            </Stack>
-          </ModuleSection>
-
-          <ModuleSection label="Preview">
-            <Stack gap="xs">
+            <InspectorSection label="Preview">
               <Text size="xs" c="dimmed">
-                One pulse = one {transportPulse(transport).label.toLowerCase()}, in {meter} at {tempo}{' '}
-                BPM. Set these in the transport at the top of the page.
+                One pulse = one {transportPulse(transport).label.toLowerCase()}, in {meter} at{' '}
+                {tempo} BPM. Set these in the transport at the top of the page.
               </Text>
               <VolumeControl
                 accessibleLabel="Melodicization preview volume"
@@ -571,18 +543,13 @@ export function MelodicizationModule({
                 value={volume}
                 onChange={setVolume}
               />
-              <Group gap="xs" wrap="nowrap">
-                <Button size="compact-sm" onClick={playPreview}>
-                  ▶ Preview
-                </Button>
-                <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
-                  ■ Stop
-                </Button>
-              </Group>
-            </Stack>
-          </ModuleSection>
-        </Module>
-      </div>
-    </Surface>
+            </InspectorSection>
+            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={[publishedOutput]} />
+          </ModuleInspectorContent>
+        </>
+      }
+    >
+      {view}
+    </ModuleDevice>
   );
 }

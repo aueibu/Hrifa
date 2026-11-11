@@ -89,11 +89,48 @@ export function addDuration(position: MusicalPosition, duration: MusicalDuration
   return { quarterNotes: addRational(position.quarterNotes, duration.quarterNotes) };
 }
 
-export function pulsesToMusicalDuration(pulses: number, pulseUnit: MusicalDuration) {
-  if (!Number.isSafeInteger(pulses) || pulses < 0) {
-    throw new Error('Pulse durations must be nonnegative safe integers.');
+/**
+ * The simplest fraction equal to `value` within floating-point noise, by continued fractions. Pulse
+ * counts such as 6/5 (2 x 3/5) are stored as ordinary numbers; this recovers the exact fraction they
+ * stand for, so time arithmetic stays exact. Throws for a non-finite value.
+ */
+export function rationalFromNumber(value: number, maxDenominator = 1_000_000): Rational {
+  if (!Number.isFinite(value)) {
+    throw new Error('Musical time requires a finite number.');
   }
-  return { quarterNotes: multiplyRational(pulseUnit.quarterNotes, pulses) };
+  if (Number.isSafeInteger(value)) {
+    return rational(value);
+  }
+  const sign = value < 0 ? -1 : 1;
+  const target = Math.abs(value);
+  let [previousNumerator, numerator] = [0, 1];
+  let [previousDenominator, denominator] = [1, 0];
+  let remainder = target;
+  for (let step = 0; step < 40; step += 1) {
+    const whole = Math.floor(remainder);
+    [previousNumerator, numerator] = [numerator, whole * numerator + previousNumerator];
+    [previousDenominator, denominator] = [denominator, whole * denominator + previousDenominator];
+    if (denominator > maxDenominator) {
+      [numerator, denominator] = [previousNumerator, previousDenominator];
+      break;
+    }
+    if (Math.abs(numerator / denominator - target) <= 1e-9 * Math.max(1, target)) {
+      break;
+    }
+    const fraction = remainder - whole;
+    if (fraction < 1e-12) {
+      break;
+    }
+    remainder = 1 / fraction;
+  }
+  return rational(sign * numerator, denominator);
+}
+
+export function pulsesToMusicalDuration(pulses: number, pulseUnit: MusicalDuration) {
+  if (!Number.isFinite(pulses) || pulses < 0) {
+    throw new Error('Pulse durations must be nonnegative finite numbers.');
+  }
+  return { quarterNotes: multiplyRational(pulseUnit.quarterNotes, rationalFromNumber(pulses)) };
 }
 
 export function accumulatePulseDurations(pulses: number[], pulseUnit: MusicalDuration) {

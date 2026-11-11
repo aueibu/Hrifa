@@ -64,6 +64,13 @@ export interface DataItem<T = unknown> {
   value: T;
   provenance: Provenance[];
   label?: string;
+  /**
+   * Inter-onset rhythm items only: this item is tied into the next one, so the next item continues
+   * the sounding event instead of attacking. The marker sits on the item that starts the tie, so
+   * `2~ 1` plays as a single three-pulse event, and it travels with its item through rotation.
+   * Rests are negative durations. See ARCHITECTURE.md, "Rests and ties".
+   */
+  tie?: boolean;
 }
 
 export interface DataPacket<T = unknown> {

@@ -1,9 +1,10 @@
 .slot {
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  /* Keep in step with NODE_WIDTH in compositionLayout.ts. */
+  display: grid;
+  /* Every module is the same size, with or without inlets or outlets: a rail row, the card, a rail
+     row. Keep the width and height in step with NODE_WIDTH and NODE_HEIGHT in compositionLayout.ts. */
+  block-size: 112px;
+  grid-template-rows: 1.1rem minmax(0, 1fr) 1.1rem;
   inline-size: 148px;
   position: relative;
 }
@@ -20,18 +21,29 @@
   width: 1px;
 }
 
+/* Bitwig Grid style: the canvas is the darkest tier and a node is a lighter plate sitting on it. */
 .card {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  /* A shade over the outer 5% at the top and bottom of the plate, as on Bitwig's Grid modules. */
+  --card-shade: color-mix(in srgb, var(--panel-well) 20%, transparent);
+
+  background-color: var(--panel-body);
+  background-image: linear-gradient(
+    to bottom,
+    var(--card-shade),
+    transparent 15%,
+    transparent 85%,
+    var(--card-shade)
+  );
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
-  box-shadow: var(--shadow-control);
+  box-shadow: var(--shadow-control, none);
   box-sizing: border-box;
-  color: var(--mantine-color-text);
+  color: var(--text);
   display: grid;
-  flex: 1 1 auto;
   font-size: 0.74rem;
+  grid-row: 2;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  min-block-size: min-content;
+  min-block-size: 0;
   min-inline-size: 0;
   overflow: hidden;
   padding: 0.4rem 0.3rem;
@@ -41,7 +53,7 @@
 }
 
 .noticeFlag {
-  background: var(--mantine-color-yellow-text);
+  background: var(--mark-yellow);
   border-radius: 0 var(--radius-hairline) var(--radius-hairline) 0;
   bottom: 0.3rem;
   height: 14px;
@@ -50,12 +62,17 @@
   width: 4px;
 }
 
+/* State reads from an outline, as in Bitwig: selected gets a light gray outline; the module open in
+   the workspace and modules in the selected flow get a quieter gray one plus a slightly lighter plate. */
+.card[data-selected='true'] {
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px var(--text);
+}
+
 .card[data-active='true'],
-.card[data-selected='true'],
 .card[data-flow-active='true'] {
-  background: var(--mantine-primary-color-light);
-  border-color: var(--mantine-primary-color-light-color);
-  color: var(--mantine-primary-color-light-color);
+  background-color: color-mix(in srgb, var(--text) 7%, var(--panel-body));
+  border-color: var(--text-muted);
 }
 
 .title,
@@ -69,6 +86,7 @@
 }
 
 .title {
+  color: var(--category, var(--text));
   font-weight: 700;
 }
 
@@ -80,8 +98,8 @@
 
 .footer {
   align-self: end;
-  border-top: 1px solid var(--border);
-  color: var(--mantine-primary-color-light-color);
+  border-top: 1px solid var(--grid);
+  color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
   font-size: 0.58rem;
   font-weight: 400;
@@ -90,15 +108,22 @@
 }
 
 .footer[data-status='error'] {
-  background: var(--mantine-color-red-filled);
-  border-top: none;
-  color: var(--mantine-color-white);
+  background: var(--tint-red-bg);
+  border-top: 1px solid var(--mark-red);
+  color: var(--tint-red-text);
 }
 
 .portRail {
   display: grid;
-  flex: 0 0 auto;
   padding-inline: 0.32rem;
+}
+
+.portRail[data-edge='top'] {
+  grid-row: 1;
+}
+
+.portRail[data-edge='bottom'] {
+  grid-row: 3;
 }
 
 .portTrack {
@@ -110,8 +135,8 @@
 
 .port {
   align-items: center;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: var(--panel-slot);
+  border: 1px solid var(--grid);
   box-sizing: border-box;
   color: var(--text);
   display: inline-flex;
@@ -137,6 +162,11 @@
   border-top: none;
 }
 
+.port[data-category] {
+  border-color: var(--category);
+  color: var(--category);
+}
+
 .port[data-modified='true'] {
   background: var(--composition-modified-background);
   border-color: var(--composition-modified-border);
@@ -144,10 +174,10 @@
 }
 
 .port[data-selected='true'] {
-  border-color: var(--mantine-primary-color-filled);
+  border-color: var(--text);
   box-shadow:
-    0 0 0 1px var(--panel),
-    0 0 0 2px var(--mantine-primary-color-filled);
+    0 0 0 1px var(--panel-well),
+    0 0 0 2px var(--text);
 }
 
 .port[data-modified='true'][data-selected='true'] {

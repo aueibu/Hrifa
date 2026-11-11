@@ -5,8 +5,9 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
-  type ReactNode,
+  type MouseEvent as ReactMouseEvent,
 } from 'react';
 import {
   applyNodeChanges,
@@ -16,6 +17,7 @@ import {
   EdgeLabelRenderer,
   getBezierPath,
   MiniMap,
+  Panel,
   Position,
   ReactFlow,
   ReactFlowProvider,
@@ -28,7 +30,7 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Button, Group, Menu, Text, Title, useComputedColorScheme } from '@mantine/core';
+import { Button, Menu, useComputedColorScheme } from '@mantine/core';
 import {
   NODE_HEIGHT,
   NODE_WIDTH,
@@ -50,6 +52,13 @@ import {
   type ModuleRouteStates,
 } from '../compositionWorkspace';
 import { signalTypeRegistry } from '../signalTypes';
+import {
+  categoryOfInlet,
+  categoryOfModule,
+  categoryOfPacket,
+  signalCategoryColor,
+  type SignalCategory,
+} from '../signalCategories';
 import { FlowCell, MAX_VISIBLE_PORTS, type FlowCellPort } from './FlowCell';
 import classes from './CompositionCanvas.module.css';
 
@@ -64,9 +73,8 @@ interface CompositionCanvasProps {
   onSelectCanvas(): void;
   onMoveModules(positions: Record<string, CanvasPosition>): void;
   onTidy(positions: Record<string, CanvasPosition>): void;
-  onAddModule(moduleId: CompositionModuleId): void;
-  /** Extra controls at the start of the canvas toolbar, such as panel toggles. */
-  toolbarStart?: ReactNode;
+  /** Without a position the module takes the first free slot; a position is in canvas coordinates. */
+  onAddModule(moduleId: CompositionModuleId, position?: CanvasPosition): void;
 }
 
 interface RouteDescriptor {
@@ -97,6 +105,7 @@ const routedModulePorts: Partial<Record<CompositionModuleId, PortLabel[]>> = {
     { id: 'b', label: 'B' },
   ],
   'scale-evolution': [{ id: 'sequence', label: 'Sequence' }],
+  'rhythm-edit': [{ id: 'rhythm', label: 'Rhythm' }],
   'rhythm-householder': [
     { id: 'rhythm', label: 'Rhythm' },
     { id: 'axis', label: 'Axis' },
@@ -176,6 +185,7 @@ interface RouteEdgeData extends Record<string, unknown> {
   muted: boolean;
   related: boolean;
   badge: string | null;
+  category: SignalCategory;
   onSelect(): void;
 }
 type RouteEdge = Edge<RouteEdgeData, 'route'>;
@@ -210,6 +220,7 @@ function RouteEdgeView({
     <>
       <path
         className={classes.connection}
+        style={{ '--category': signalCategoryColor(data.category) } as CSSProperties}
         data-muted={data.muted || undefined}
         data-selected={data.selected || undefined}
         data-related={data.related || undefined}
@@ -270,6 +281,18 @@ function connectedFlow(start: string, descriptors: RouteDescriptor[]) {
   return reachable;
 }
 
+function ModuleMenuItems({ onPick }: { onPick(moduleId: CompositionModuleId): void }) {
+  return (
+    <>
+      {(Object.keys(compositionModuleLabels) as CompositionModuleId[]).map((moduleId) => (
+        <Menu.Item key={moduleId} onClick={() => onPick(moduleId)}>
+          {compositionModuleLabels[moduleId]}
+        </Menu.Item>
+      ))}
+    </>
+  );
+}
+
 function CanvasBody({
   activeInstanceId,
   selected,
@@ -282,10 +305,16 @@ function CanvasBody({
   onMoveModules,
   onTidy,
   onAddModule,
-  toolbarStart,
 }: CompositionCanvasProps) {
   const colorScheme = useComputedColorScheme('light');
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
+  // Where a right-click opened the module menu: the screen point for the menu, the canvas point for the card.
+  const [contextMenu, setContextMenu] = useState<{
+    screen: { x: number; y: number };
+    canvas: CanvasPosition;
+  } | null>(null);
+  // A module placed at a chosen point must stay where it was put, so the re-frame is skipped.
+  const keepView = useRef(false);
   const instanceById = new Map(instances.map((instance) => [instance.id, instance]));
   const descriptors: RouteDescriptor[] = instances.flatMap((instance) => {
     const routeState = routes[instance.id];
@@ -386,7 +415,9 @@ function CanvasBody({
               ? `Pitches | ${primaryOutput.packet.items.length}`
               : instance.moduleId === 'arithmetic'
                 ? `Result | ${primaryOutput.packet.items.length}`
-                : instance.moduleId === 'fractioning'
+                : instance.moduleId === 'fractioning' ||
+                  instance.moduleId === 'rhythm-list' ||
+                  instance.moduleId === 'rhythm-edit'
                   ? `Durations | ${primaryOutput.packet.items.length}`
                   : `Notes | ${primaryOutput.packet.items.length}`;
       const selectRoute = (descriptor: RouteDescriptor) =>
@@ -401,6 +432,7 @@ function CanvasBody({
               shortLabel: shortLabel ?? portName[0],
               ariaLabel: `${portName} input | unconnected`,
               unavailable: true,
+              category: categoryOfInlet(instance.moduleId, port),
             };
           }
           return {
@@ -419,6 +451,7 @@ function CanvasBody({
               selected.port === descriptor.port,
             bypassed: descriptor.bypassed,
             unavailable: !descriptor.output,
+            category: categoryOfInlet(instance.moduleId, port),
             onClick: () => selectRoute(descriptor),
           };
         }
@@ -430,6 +463,7 @@ function CanvasBody({
         }`,
         shortLabel: outputShortLabel(candidate, index),
         ariaLabel: `Inspect outlet ${candidate.label}`,
+        category: categoryOfPacket(candidate.packet),
         selected:
           selectedRoute?.binding.instanceId === instance.id &&
           selectedRoute.binding.port === candidate.ref.port,
@@ -446,6 +480,7 @@ function CanvasBody({
         data: {
           cell: {
             title: label,
+            category: categoryOfModule(instance.moduleId),
             subtitle,
             footer,
             footerDetail,
@@ -539,6 +574,7 @@ function CanvasBody({
                 flowOfSelectedModule.has(descriptor.source.id)
               ),
               badge: descriptor.identity ? null : descriptor.summary,
+              category: categoryOfPacket(descriptor.output.packet),
               onSelect: () => onSelectRoute(descriptor.receiver.id, descriptor.port),
             },
           },
@@ -554,6 +590,10 @@ function CanvasBody({
   useEffect(() => {
     if (instanceCount.current !== instances.length) {
       instanceCount.current = instances.length;
+      if (keepView.current) {
+        keepView.current = false;
+        return;
+      }
       void fitView({ padding: 0.25, maxZoom: 1, duration: 200 });
     }
   }, [instances.length, fitView]);
@@ -568,39 +608,6 @@ function CanvasBody({
 
   return (
     <div className={classes.root}>
-      <Group justify="space-between" className={classes.header} wrap="nowrap" gap="xs">
-        <Group gap="xs" wrap="nowrap" className={classes.titleGroup}>
-          {toolbarStart}
-          <Title order={2} size="sm">
-            Patch canvas
-          </Title>
-          <Text c="dimmed" size="xs" className={classes.hint}>
-            Drag to arrange; Ctrl-click or Shift-drag to select several
-          </Text>
-        </Group>
-        <Group gap="xs" wrap="nowrap">
-          <Menu position="bottom-end" withinPortal>
-            <Menu.Target>
-              <Button variant="light">Add module</Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {(Object.keys(compositionModuleLabels) as CompositionModuleId[]).map((moduleId) => (
-                <Menu.Item key={moduleId} onClick={() => onAddModule(moduleId)}>
-                  {compositionModuleLabels[moduleId]}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
-          <Button
-            variant="default"
-            disabled={instances.length === 0}
-            onClick={handleTidy}
-            title="Rearrange modules top to bottom by signal flow. Connections are not changed."
-          >
-            Tidy
-          </Button>
-        </Group>
-      </Group>
       <div
         className={classes.flow}
         aria-label="Composition canvas"
@@ -623,7 +630,19 @@ function CanvasBody({
               )
             )
           }
-          onPaneClick={onSelectCanvas}
+          onPaneClick={() => {
+            setContextMenu(null);
+            onSelectCanvas();
+          }}
+          onPaneContextMenu={(event) => {
+            event.preventDefault();
+            const at = { x: (event as ReactMouseEvent).clientX, y: (event as ReactMouseEvent).clientY };
+            const point = screenToFlowPosition(at);
+            setContextMenu({
+              screen: at,
+              canvas: { x: Math.round(point.x / 10) * 10, y: Math.round(point.y / 10) * 10 },
+            });
+          }}
           colorMode={colorScheme}
           snapToGrid
           snapGrid={[10, 10]}
@@ -643,11 +662,54 @@ function CanvasBody({
           preventScrolling={false}
           zoomActivationKeyCode={['Control', 'Meta']}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+          {/* Dots, not lines: nothing snaps to the grid, so it only gives a sense of scale. */}
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1.6} color="color-mix(in srgb, var(--panel-well) 20%, var(--panel-body))" />
+          <Panel position="bottom-left" className={classes.tools}>
+            <Menu position="top-start" withinPortal>
+              <Menu.Target>
+                <Button variant="light">Add module</Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <ModuleMenuItems onPick={(moduleId) => onAddModule(moduleId)} />
+              </Menu.Dropdown>
+            </Menu>
+            <Button
+              variant="default"
+              disabled={instances.length === 0}
+              onClick={handleTidy}
+              title="Rearrange modules top to bottom by signal flow. Connections are not changed."
+            >
+              Tidy
+            </Button>
+          </Panel>
           <Controls showInteractive={false} />
           <MiniMap pannable zoomable className={classes.minimap} />
         </ReactFlow>
       </div>
+      <Menu
+        opened={contextMenu !== null}
+        onChange={(opened) => !opened && setContextMenu(null)}
+        position="bottom-start"
+        withinPortal
+      >
+        <Menu.Target>
+          <div
+            className={classes.contextAnchor}
+            style={{ left: contextMenu?.screen.x ?? 0, top: contextMenu?.screen.y ?? 0 }}
+          />
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Label>Add module here</Menu.Label>
+          <ModuleMenuItems
+            onPick={(moduleId) => {
+              if (contextMenu) {
+                keepView.current = true;
+                onAddModule(moduleId, contextMenu.canvas);
+              }
+            }}
+          />
+        </Menu.Dropdown>
+      </Menu>
     </div>
   );
 }

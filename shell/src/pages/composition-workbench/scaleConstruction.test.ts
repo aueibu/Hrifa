@@ -1,5 +1,8 @@
 import {
+  generateMelodicFamilies,
   generateMelodicForms,
+  cycleFolders,
+  melodicFormsPacket,
   realizeScale,
   scalePitchClassPacket,
   scaleSequence,
@@ -56,6 +59,100 @@ describe("scaleConstruction", () => {
       [1, 2, 2],
       [2, 2, 1],
     ]);
+  });
+
+  it("splits general forms into (n-1)! rotation families of n, with the original's family first", () => {
+    const families = generateMelodicFamilies([2, 2, 1], "general");
+    expect(families).toHaveLength(2);
+    expect(families.map((family) => family.cycle)).toEqual([0, 1]);
+    expect(families[0].forms.map((form) => form.values)).toEqual([
+      [2, 2, 1],
+      [2, 1, 2],
+      [1, 2, 2],
+    ]);
+    expect(families[0].forms[0].order).toEqual([0, 1, 2]);
+    expect(families[1].forms[0].order).toEqual([0, 2, 1]);
+    expect(families[1].inversions).toBeGreaterThan(families[0].inversions);
+    // Rotations within a family are cyclic shifts of its base.
+    expect(families[1].forms.map((form) => form.shift)).toEqual([0, 1, 2]);
+  });
+
+  it("makes the circular mode exactly cycle 0, and flattens families in order", () => {
+    const circular = generateMelodicFamilies([3, 1, 2, 2], "circular");
+    expect(circular).toHaveLength(1);
+    expect(generateMelodicFamilies([3, 1, 2, 2], "general")[0]).toEqual(circular[0]);
+    const general = generateMelodicFamilies([3, 1, 2, 2], "general");
+    expect(general).toHaveLength(6);
+    expect(general.flatMap((family) => family.forms)).toHaveLength(24);
+    expect(generateMelodicForms([3, 1, 2, 2], "general")).toHaveLength(24);
+  });
+
+  it("groups by position, so coincident-valued forms stay separate entries", () => {
+    const packet = melodicFormsPacket([2, 2, 1], "general", "src");
+    expect(packet.items).toHaveLength(6);
+    expect(packet.metadata).toMatchObject({ familyCount: 2 });
+    expect(packet.metadata?.entryGroups).toEqual([
+      ...Array(3).fill(["Cycle 0 (original)"]),
+      ...Array(3).fill(["Cycle 1"]),
+    ]);
+    // A single family (circular mode) adds no group level.
+    expect(melodicFormsPacket([2, 2, 1], "circular", "src").metadata?.entryGroups).toBeUndefined();
+    expect(packet.items.map((item) => item.id)).toEqual(
+      [0, 1, 2, 3, 4, 5].map((index) => `src:form:${index}`),
+    );
+    expect(packet.items[3].provenance[0].parameters).toMatchObject({ family: 1, shift: 0 });
+  });
+
+  it("files cycles ten at a time into folders once there are more than 10 families", () => {
+    // 5 intervals -> 4! = 24 families of 5 forms.
+    const packet = melodicFormsPacket([1, 2, 3, 4, 5], "general", "src");
+    const groups = packet.metadata?.entryGroups as string[][];
+    expect(groups).toHaveLength(120);
+    expect(groups[0]).toEqual(["Cycles 0–9", "Cycle 0 (original)"]);
+    expect(groups[10 * 5]).toEqual(["Cycles 10–19", "Cycle 10"]);
+    expect(groups[119]).toEqual(["Cycles 20–23", "Cycle 23"]);
+
+    // 4 intervals -> 3! = 6 families: within the limit, so no folders.
+    const small = melodicFormsPacket([1, 2, 3, 4], "general", "src");
+    expect((small.metadata?.entryGroups as unknown[] | undefined)?.[0]).toEqual(["Cycle 0 (original)"]);
+  });
+
+  it("nests folders of 10, 100, … so no menu level exceeds 10 entries", () => {
+    // 6 intervals -> 5! = 120 families of 6 forms.
+    const groups = melodicFormsPacket([1, 2, 3, 4, 5, 6], "general", "src").metadata
+      ?.entryGroups as string[][];
+    expect(groups).toHaveLength(720);
+    expect(groups[0]).toEqual(["Cycles 0–99", "Cycles 0–9", "Cycle 0 (original)"]);
+    expect(groups[719]).toEqual(["Cycles 100–119", "Cycles 110–119", "Cycle 119"]);
+
+    expect(cycleFolders(3, 10)).toEqual([]);
+    expect(cycleFolders(3, 11)).toEqual(["Cycles 0–9"]);
+    expect(cycleFolders(47, 100)).toEqual(["Cycles 40–49"]);
+    // A lone trailing cycle sits beside the folders rather than in a one-entry folder.
+    expect(cycleFolders(10, 11)).toEqual([]);
+    expect(cycleFolders(100, 101)).toEqual([]);
+  });
+
+  it("keeps every menu level at 10 entries or fewer for any number of cycles", () => {
+    for (let count = 1; count <= 5040; count += count < 1200 ? 1 : 97) {
+      const children = new Map<string, Set<string>>();
+      for (let cycle = 0; cycle < count; cycle += 1) {
+        const path = [...cycleFolders(cycle, count), `Cycle ${cycle}`];
+        path.forEach((part, depth) => {
+          const parent = path.slice(0, depth).join("/");
+          children.set(parent, (children.get(parent) ?? new Set()).add(part));
+        });
+      }
+      for (const entries of children.values()) {
+        expect(entries.size).toBeLessThanOrEqual(10);
+      }
+    }
+  });
+
+  it("handles a single-interval scale", () => {
+    const families = generateMelodicFamilies([5], "general");
+    expect(families).toHaveLength(1);
+    expect(families[0].forms.map((form) => form.values)).toEqual([[5]]);
   });
 
   it("realizes a scale as cumulative offsets from a root, unfolded (no mod-12)", () => {

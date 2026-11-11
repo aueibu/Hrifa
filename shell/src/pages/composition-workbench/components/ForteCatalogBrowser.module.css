@@ -5,7 +5,7 @@
 }
 
 .catalogList {
-  border: 1px solid var(--border);
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   height: 23rem;
   overflow-y: auto;
@@ -13,7 +13,7 @@
 
 .catalogEntry {
   align-items: center;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--grid);
   display: grid;
   gap: var(--mantine-spacing-xs);
   grid-template-columns: 4.5rem minmax(0, 1fr) minmax(5.5rem, auto);
@@ -28,12 +28,12 @@
 
 .catalogEntry:hover,
 .catalogEntry[data-selected="true"] {
-  background: var(--mantine-primary-color-light);
+  background: var(--accent-tint);
 }
 
 .preview {
-  background: var(--panel-inset);
-  border: 1px solid var(--border);
+  background: var(--panel-well);
+  border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   min-width: 0;
   padding: var(--mantine-spacing-md);
@@ -48,23 +48,23 @@
 
 .clockRing {
   fill: var(--panel);
-  stroke: var(--border);
+  stroke: var(--grid);
   stroke-width: 2;
 }
 
 .clockPoint {
   fill: var(--panel);
-  stroke: var(--border);
+  stroke: var(--grid);
   stroke-width: 2;
 }
 
 .clockPoint[data-active="true"] {
-  fill: var(--mantine-primary-color-filled);
-  stroke: var(--mantine-primary-color-filled);
+  fill: var(--accent);
+  stroke: var(--accent);
 }
 
 .clockLabel {
-  fill: var(--mantine-color-text);
+  fill: var(--text);
   font-family: var(--mantine-font-family-monospace);
   font-size: 12px;
   text-anchor: middle;

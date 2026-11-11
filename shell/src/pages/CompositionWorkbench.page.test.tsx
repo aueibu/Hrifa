@@ -1,4 +1,4 @@
-import { render, screen, userEvent, waitFor, within } from '@test-utils';
+import { fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { compositionWorkbenchStorageKey } from './composition-workbench/persistence';
 import { compositionStateKeys } from './composition-workbench/usePersistentState';
 import { CompositionWorkbenchPage } from './CompositionWorkbench.page';
@@ -11,19 +11,6 @@ function renderPage() {
 
 function renderPersistedPage() {
   return render(<CompositionWorkbenchPage />);
-}
-
-function moduleCard(id: string) {
-  const identifier = screen.getByText(new RegExp(`\\| ${id}$`));
-  const card = identifier.closest('[data-tone]');
-  if (!card) {
-    throw new Error(`No module card for ${id}`);
-  }
-  return card as HTMLElement;
-}
-
-async function openConstruction(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('tab', { name: 'Construction' }));
 }
 
 async function openCompositionModule(
@@ -41,6 +28,24 @@ async function addCompositionModule(
   await user.click(await screen.findByRole('menuitem', { name }));
 }
 
+async function chooseSource(
+  user: ReturnType<typeof userEvent.setup>,
+  name: 'Rhythm source' | 'Pitch source',
+  label: string
+) {
+  await user.click(screen.getByRole('button', { name }));
+  // A module with one compatible output is a single item ("Pitch List · Pitches"); a module with
+  // several opens a submenu: the module first, then its output.
+  const direct = screen.queryByRole('menuitem', { name: label });
+  if (direct) {
+    await user.click(direct);
+    return;
+  }
+  const [moduleName, output] = label.split(' · ');
+  await user.click(await screen.findByRole('menuitem', { name: moduleName }));
+  await user.click(await screen.findByRole('menuitem', { name: output }));
+}
+
 async function setVolumeToThirty(user: ReturnType<typeof userEvent.setup>, accessibleName: string) {
   const slider = screen.getByRole('slider', { name: accessibleName });
   slider.focus();
@@ -53,20 +58,8 @@ async function setVolumeToThirty(user: ReturnType<typeof userEvent.setup>, acces
 describe('CompositionWorkbenchPage', () => {
   it('opens in the module-first composition view', () => {
     renderPage();
-    expect(screen.getByRole('tab', { name: 'Composition' })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    );
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Interference' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Construction' })).not.toBeInTheDocument();
-  });
-
-  it('keeps the lower-level patch in the Construction view', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await openConstruction(user);
-    expect(screen.getAllByText('Euclidean Rhythm').length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText(/^Pattern /)).toHaveLength(3);
   });
 
   it('generates the default three-generator interference resultant', () => {
@@ -229,16 +222,16 @@ describe('CompositionWorkbenchPage', () => {
     await addCompositionModule(user, 'Melodicization');
     expect(screen.getByRole('heading', { name: 'Melodicization 2', level: 2 })).toBeInTheDocument();
 
-    const secondPitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
-    await user.click(secondPitchSource);
-    await user.click(screen.getByRole('option', { name: 'Pitch List · Pitches' }));
-    expect(secondPitchSource).toHaveValue('Pitch List · Pitches');
+    await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
+    expect(screen.getByRole('button', { name: 'Pitch source' })).toHaveTextContent(
+      'Pitch List · Pitches'
+    );
 
     await user.click(within(grid).getByRole('button', { name: /^Melodicization 1/ }));
-    expect(screen.getByRole('combobox', { name: 'Pitch source' })).toHaveValue('');
-    const firstPitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
-    await user.click(firstPitchSource);
-    await user.click(screen.getByRole('option', { name: 'Pitch List · Pitches' }));
+    expect(screen.getByRole('button', { name: 'Pitch source' })).toHaveTextContent(
+      'Connect pitch or pitch-class material'
+    );
+    await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
     expect(
       within(grid).getByRole('button', { name: 'Inspect outlet Pitch List · Pitches' })
     ).toHaveAttribute('title', expect.stringContaining('2 downstream uses'));
@@ -260,7 +253,7 @@ describe('CompositionWorkbenchPage', () => {
       'data-flow-active'
     );
     await user.click(within(grid).getByRole('button', { name: /^Melodicization 2/ }));
-    expect(screen.getByRole('combobox', { name: 'Pitch source' })).toHaveValue(
+    expect(screen.getByRole('button', { name: 'Pitch source' })).toHaveTextContent(
       'Pitch List · Pitches'
     );
   }, 20_000);
@@ -270,15 +263,13 @@ describe('CompositionWorkbenchPage', () => {
     renderPage();
 
     await openCompositionModule(user, 'Melodicization');
-    const pitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
-    await user.click(pitchSource);
-    await user.click(screen.getByRole('option', { name: 'Pitch List · Pitches' }));
+    await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
 
     await openCompositionModule(user, 'Pitch List');
     await user.click(screen.getByRole('button', { name: 'Remove Pitch List' }));
     await openCompositionModule(user, 'Melodicization');
 
-    expect(screen.getByRole('combobox', { name: 'Pitch source' })).toHaveValue(
+    expect(screen.getByRole('button', { name: 'Pitch source' })).toHaveTextContent(
       'Missing source · pitches'
     );
     expect(screen.getByText('Connected source is no longer available.')).toBeInTheDocument();
@@ -346,12 +337,8 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.queryByRole('button', { name: 'Use in…' })).not.toBeInTheDocument();
     await openCompositionModule(user, 'Melodicization');
     expect(screen.getByRole('heading', { name: 'Melodicization' })).toBeInTheDocument();
-    const rhythmSource = screen.getByRole('combobox', { name: 'Rhythm source' });
-    await user.click(rhythmSource);
-    await user.click(screen.getByRole('option', { name: 'Interference · Resultant' }));
-    const pitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
-    await user.click(pitchSource);
-    await user.click(screen.getByRole('option', { name: 'Pitch List · Pitches' }));
+    await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
+    await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
 
     await setVolumeToThirty(user, 'Melodicization preview volume');
 
@@ -373,7 +360,6 @@ describe('CompositionWorkbenchPage', () => {
     expect(
       screen.queryByRole('button', { name: /Adjust .* route: Identity/ })
     ).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Show event table' }));
     expect(screen.getByText('1.1.1.00')).toBeInTheDocument();
 
     // Rearranging the canvas never rewires the patch.
@@ -387,10 +373,10 @@ describe('CompositionWorkbenchPage', () => {
       '"moduleId":"melodicization","x":100,"y":170'
     );
     await openCompositionModule(user, 'Melodicization');
-    expect(screen.getByRole('combobox', { name: 'Rhythm source' })).toHaveValue(
+    expect(screen.getByRole('button', { name: 'Rhythm source' })).toHaveTextContent(
       'Interference · Resultant'
     );
-    expect(screen.getByRole('combobox', { name: 'Pitch source' })).toHaveValue(
+    expect(screen.getByRole('button', { name: 'Pitch source' })).toHaveTextContent(
       'Pitch List · Pitches'
     );
     expect(screen.getByText('22 notes', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
@@ -410,12 +396,8 @@ describe('CompositionWorkbenchPage', () => {
     await user.paste('[0 3 7]');
 
     await openCompositionModule(user, 'Melodicization');
-    const rhythmSource = screen.getByRole('combobox', { name: 'Rhythm source' });
-    await user.click(rhythmSource);
-    await user.click(screen.getByRole('option', { name: 'Interference · Resultant' }));
-    const pitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
-    await user.click(pitchSource);
-    await user.click(screen.getByRole('option', { name: 'Pitch List · Pitches' }));
+    await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
+    await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
 
     expect(screen.getByText('Route · Pitch input')).toBeInTheDocument();
     expect(screen.getByText('Pitch List · Pitches → Melodicization · Pitches')).toBeInTheDocument();
@@ -426,7 +408,6 @@ describe('CompositionWorkbenchPage', () => {
     const transpose = screen.getByRole('textbox', { name: 'Pitch route transposition' });
     await user.clear(transpose);
     await user.type(transpose, '2');
-    await user.click(screen.getByRole('button', { name: 'Show event table' }));
     expect(screen.getAllByText('[D4 F4 A4]').length).toBeGreaterThan(0);
     const modifiedPitchInlet = screen.getByRole('button', {
       name: 'Adjust pitch route: +2 st · ≥ MIDI 60',
@@ -443,35 +424,35 @@ describe('CompositionWorkbenchPage', () => {
     );
   }, 15_000);
 
-  it('offers each interference lane at the receiving rhythm input', async () => {
+  it('offers each interference lane under its module at the receiving rhythm input', async () => {
     const user = userEvent.setup();
     renderPage();
     await openCompositionModule(user, 'Melodicization');
 
-    const rhythmSource = screen.getByRole('combobox', { name: 'Rhythm source' });
+    const rhythmSource = screen.getByRole('button', { name: 'Rhythm source' });
     await user.click(rhythmSource);
-    expect(screen.getByRole('option', { name: 'Interference · Resultant' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Interference · Generator 1' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Interference · Generator 2' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Interference · Generator 3' })).toBeInTheDocument();
-    await user.click(screen.getByRole('option', { name: 'Interference · Generator 1' }));
+    // Modules come first; a module with several outputs opens to them, like a track's channels.
+    await user.click(await screen.findByRole('menuitem', { name: 'Interference' }));
+    expect(await screen.findByRole('menuitem', { name: 'Resultant' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Generator 1' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Generator 2' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Generator 3' })).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: 'Generator 1' }));
 
-    expect(rhythmSource).toHaveValue('Interference · Generator 1');
+    expect(rhythmSource).toHaveTextContent('Interference · Generator 1');
   });
 
   it('leaves a removed connected generator visibly disconnected', async () => {
     const user = userEvent.setup();
     renderPage();
     await openCompositionModule(user, 'Melodicization');
-    const rhythmSource = screen.getByRole('combobox', { name: 'Rhythm source' });
-    await user.click(rhythmSource);
-    await user.click(screen.getByRole('option', { name: 'Interference · Generator 3' }));
+    await chooseSource(user, 'Rhythm source', 'Interference · Generator 3');
 
     await openCompositionModule(user, 'Interference');
     await user.click(screen.getByRole('button', { name: 'Remove Generator 3' }));
     await openCompositionModule(user, 'Melodicization');
 
-    expect(screen.getByRole('combobox', { name: 'Rhythm source' })).toHaveValue(
+    expect(screen.getByRole('button', { name: 'Rhythm source' })).toHaveTextContent(
       'Missing source · generator:generator-c'
     );
     expect(screen.getByText('Connected source is no longer available.')).toBeInTheDocument();
@@ -482,12 +463,8 @@ describe('CompositionWorkbenchPage', () => {
     renderPage();
     await openCompositionModule(user, 'Melodicization');
 
-    const rhythmSource = screen.getByRole('combobox', { name: 'Rhythm source' });
-    await user.click(rhythmSource);
-    await user.click(screen.getByRole('option', { name: 'Interference · Resultant' }));
-    const pitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
-    await user.click(pitchSource);
-    await user.click(screen.getByRole('option', { name: 'Pitch List · Pitches' }));
+    await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
+    await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
 
     const allocation = screen.getByRole('combobox', { name: 'Pitch allocation' });
     await user.click(allocation);
@@ -507,12 +484,8 @@ describe('CompositionWorkbenchPage', () => {
     await user.type(screen.getByRole('textbox', { name: 'Pitch values' }), '60, 63, 67');
     await openCompositionModule(user, 'Melodicization');
 
-    const rhythmSource = screen.getByRole('combobox', { name: 'Rhythm source' });
-    await user.click(rhythmSource);
-    await user.click(screen.getByRole('option', { name: 'Interference · Resultant' }));
-    const pitchSource = screen.getByRole('combobox', { name: 'Pitch source' });
-    await user.click(pitchSource);
-    await user.click(screen.getByRole('option', { name: 'Pitch List · Pitches' }));
+    await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
+    await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
     const allocation = screen.getByRole('combobox', { name: 'Pitch allocation' });
     await user.click(allocation);
     await user.click(screen.getByRole('option', { name: 'Zip and stop at the shorter input' }));
@@ -537,10 +510,10 @@ describe('CompositionWorkbenchPage', () => {
     const secondRender = renderPersistedPage();
 
     expect(screen.getByRole('heading', { name: 'Melodicization' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Rhythm source' })).toHaveValue(
+    expect(screen.getByRole('button', { name: 'Rhythm source' })).toHaveTextContent(
       'Interference · Resultant'
     );
-    expect(screen.getByRole('combobox', { name: 'Pitch source' })).toHaveValue(
+    expect(screen.getByRole('button', { name: 'Pitch source' })).toHaveTextContent(
       'Pitch List · Pitches'
     );
     expect(screen.getByRole('combobox', { name: 'Pitch allocation' })).toHaveValue(
@@ -568,19 +541,6 @@ describe('CompositionWorkbenchPage', () => {
     );
   }, 30_000);
 
-  it('changes alignment mode and reevaluates deterministically', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await openConstruction(user);
-    const alignment = screen.getByRole('combobox', { name: 'Alignment' });
-    await user.click(alignment);
-    await user.click(screen.getByRole('option', { name: 'Cartesian' }));
-    expect(alignment).toHaveValue('Cartesian');
-    expect(
-      within(moduleCard('rhythm-generator')).getByText(/patterns: rhythmPattern list/)
-    ).toBeInTheDocument();
-  });
-
   it('refits the piano roll each time Melodicization is opened', async () => {
     const user = userEvent.setup();
     localStorage.removeItem(compositionWorkbenchStorageKey);
@@ -604,37 +564,16 @@ describe('CompositionWorkbenchPage', () => {
     expect(view().pixelsPerQuarter).toBe(40);
   });
 
-  it('inspects generated pattern provenance', async () => {
+  it('inserts a module from the canvas right-click menu', async () => {
     const user = userEvent.setup();
     renderPage();
-    await openConstruction(user);
-    expect(screen.getAllByText('Provenance').length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/requestedOffset/).length).toBeGreaterThan(0);
-  });
-
-  it('displays the routed rejected frame in the combiner inspector', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await openConstruction(user);
-    await user.click(
-      within(moduleCard('parameter-combiner')).getByRole('button', { name: 'Inspect' })
-    );
-    expect(screen.getByText(/impulses 7 exceeds length 4/)).toBeInTheDocument();
-  });
-
-  it('exports and resets the example', async () => {
-    const user = userEvent.setup();
-    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
-    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
-    renderPage();
-    await openConstruction(user);
-    await user.click(screen.getByRole('button', { name: 'Export JSON' }));
-    expect((screen.getByLabelText('Versioned patch JSON') as HTMLTextAreaElement).value).toContain(
-      '"schemaVersion": 1'
-    );
-    await user.click(screen.getByRole('button', { name: 'Reset construction' }));
-    expect(screen.getByText('Construction example restored.')).toBeInTheDocument();
-    createObjectURL.mockRestore();
-    revokeObjectURL.mockRestore();
+    const count = () => screen.queryAllByRole('button', { name: /^Pitch List/ }).length;
+    const before = count();
+    const pane = document.querySelector('.react-flow__pane');
+    expect(pane).not.toBeNull();
+    fireEvent.contextMenu(pane as Element, { clientX: 300, clientY: 200 });
+    expect(await screen.findByText('Add module here')).toBeInTheDocument();
+    await user.click(await screen.findByRole('menuitem', { name: 'Pitch List' }));
+    await waitFor(() => expect(count()).toBe(before + 1));
   });
 });

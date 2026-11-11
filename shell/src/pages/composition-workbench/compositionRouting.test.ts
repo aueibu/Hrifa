@@ -140,7 +140,13 @@ describe("compositionRouting", () => {
         "dest",
         (p) => p.kind === "list" && p.domain === "duration"
       );
-      expect(options).toEqual([{ value: "if|resultant", label: "Interference · Resultant" }]);
+      expect(options).toEqual([
+        {
+          value: "if|resultant",
+          label: "Interference · Resultant",
+          path: ["Interference", "Resultant"],
+        },
+      ]);
     });
 
     it("flattens a compatible bank into one row per entry", () => {
@@ -150,9 +156,55 @@ describe("compositionRouting", () => {
         (p) => p.kind === "list" && p.domain === "interval"
       );
       expect(options).toEqual([
-        { value: "sc|melodicForms|0", label: "Scale Construction · Melodic Forms · 3+2" },
-        { value: "sc|melodicForms|1", label: "Scale Construction · Melodic Forms · 2+3" },
+        {
+          value: "sc|melodicForms|0",
+          label: "Scale Construction · Melodic Forms · 3+2",
+          path: ["Scale Construction", "Melodic Forms", "3+2"],
+        },
+        {
+          value: "sc|melodicForms|1",
+          label: "Scale Construction · Melodic Forms · 2+3",
+          path: ["Scale Construction", "Melodic Forms", "2+3"],
+        },
       ]);
+    });
+
+    it("nests bank entries under their group when the bank names one per entry", () => {
+      const output = bankOutput();
+      output.packet.metadata = { entryGroups: ["Cycle 0 (original)", "Cycle 1"] };
+      const options = compositionOutputOptions(
+        [output],
+        "dest",
+        (p) => p.kind === "list" && p.domain === "interval"
+      );
+      expect(options.map((option) => option.path)).toEqual([
+        ["Scale Construction", "Melodic Forms", "Cycle 0 (original)", "3+2"],
+        ["Scale Construction", "Melodic Forms", "Cycle 1", "2+3"],
+      ]);
+      expect(options[1].label).toBe("Scale Construction · Melodic Forms · Cycle 1 · 2+3");
+      expect(describeOutputRef([output], { instanceId: "sc", port: "melodicForms", index: 1 })).toBe(
+        options[1].label
+      );
+    });
+
+    it("nests entries under several folders when a group is a path, labelling by the innermost", () => {
+      const output = bankOutput();
+      output.packet.metadata = {
+        entryGroups: [["Cycles 0–4", "Cycle 0 (original)"], ["Cycles 5–9", "Cycle 5"]],
+      };
+      const options = compositionOutputOptions(
+        [output],
+        "dest",
+        (p) => p.kind === "list" && p.domain === "interval"
+      );
+      expect(options[1].path).toEqual([
+        "Scale Construction",
+        "Melodic Forms",
+        "Cycles 5–9",
+        "Cycle 5",
+        "2+3",
+      ]);
+      expect(options[1].label).toBe("Scale Construction · Melodic Forms · Cycle 5 · 2+3");
     });
 
     it("excludes an incompatible bank entirely, not one placeholder row", () => {
@@ -168,5 +220,34 @@ describe("compositionRouting", () => {
       const options = compositionOutputOptions([listOutput()], "if", () => true);
       expect(options).toEqual([]);
     });
+  });
+});
+
+describe('rests and ties in source options', () => {
+  const output = (id: string, withRest: boolean): PublishedCompositionOutput => ({
+    ref: { instanceId: id, port: 'result' },
+    label: `${id} · Result`,
+    packet: packet(
+      'list',
+      'duration',
+      [
+        { id: `${id}:0`, value: 2, provenance: [] },
+        { id: `${id}:1`, value: withRest ? -1 : 1, provenance: [] },
+      ],
+      [],
+      undefined,
+      { role: 'interOnset' }
+    ),
+  });
+
+  it('offers a rhythm with rests only to consumers that understand them', () => {
+    const outputs = [output('plain', false), output('resty', true)];
+    const any = () => true;
+    expect(compositionOutputOptions(outputs, 'me', any).map((option) => option.label)).toEqual([
+      'plain · Result',
+    ]);
+    expect(
+      compositionOutputOptions(outputs, 'me', any, { allowRestsAndTies: true }).map((option) => option.label)
+    ).toEqual(['plain · Result', 'resty · Result']);
   });
 });

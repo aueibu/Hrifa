@@ -1,9 +1,11 @@
 import { render, screen } from '@test-utils';
 import {
+  HelpTip,
   InspectorSection,
   ModuleActiveContext,
   ModuleInspectorContent,
   ModuleInspectorSlotContext,
+  ModuleNotices,
 } from './ModuleHost';
 
 function Setup({ slot, active }: { slot: HTMLElement | null; active: boolean }) {
@@ -47,5 +49,39 @@ describe('ModuleInspectorContent', () => {
     expect(slot).toBeEmptyDOMElement();
     expect(screen.queryByText('grid controls')).not.toBeInTheDocument();
     slot.remove();
+  });
+});
+
+describe('help tooltips and notices', () => {
+  it('shows a help label and a section title with the help text kept out of the layout', () => {
+    render(
+      <InspectorSection label="Grouping" help="How the rhythm is divided">
+        <HelpTip help="An explanation">Phase</HelpTip>
+      </InspectorSection>
+    );
+    // The labels are there; the explanations are tooltips, not lines of text in the panel.
+    expect(screen.getByText('Grouping')).toBeTruthy();
+    expect(screen.getByText('Phase')).toBeTruthy();
+    expect(screen.queryByText('An explanation')).toBeNull();
+    expect(screen.queryByText('How the rhythm is divided')).toBeNull();
+  });
+
+  it('lists notices with their tone, and shows nothing when there are none', () => {
+    const { container, rerender } = render(
+      <ModuleNotices
+        items={[
+          { tone: 'error', text: 'Could not read 2x' },
+          { tone: 'warning', text: 'Step 3 ends with a tie' },
+        ]}
+      />
+    );
+    const notices = [...container.querySelectorAll('p')];
+    expect(notices.map((notice) => notice.textContent)).toEqual([
+      'Could not read 2x',
+      'Step 3 ends with a tie',
+    ]);
+    expect(notices.map((notice) => notice.getAttribute('data-tone'))).toEqual(['error', 'warning']);
+    rerender(<ModuleNotices items={[]} />);
+    expect(container.querySelectorAll('p')).toHaveLength(0);
   });
 });

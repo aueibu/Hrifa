@@ -49,7 +49,7 @@ export function CycleProgressBar({ progress, color, unit, ariaLabel }: CycleProg
           aria-hidden="true"
           style={{
             backgroundImage:
-              'linear-gradient(to right, var(--mantine-color-text) 1px, transparent 1px)',
+              'linear-gradient(to right, var(--text) 1px, transparent 1px)',
             backgroundSize: `calc(100% / ${progress.cycles}) 100%`,
             inset: 0,
             opacity: 0.45,

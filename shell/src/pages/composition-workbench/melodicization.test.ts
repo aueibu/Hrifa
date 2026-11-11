@@ -121,14 +121,89 @@ describe('melodicization', () => {
     expect(result.packet.warnings).toContain('2 trailing rhythm items unused by Zip.');
   });
 
-  it('creates simultaneous chord tones with Cartesian allocation', () => {
+  it('plays every pitch at every attack in turn with Cartesian allocation', () => {
+    // Four attacks against five pitches realign after 20 attacks: five rhythm cycles, no stacking.
+    const pitches = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'midi-note',
+      inlineText: '60, 62, 64, 65, 67',
+    }).packet;
+    const result = run('cartesian', { pitches });
+    const items = result.packet.items;
+
+    expect(items).toHaveLength(20);
+    expect(new Set(items.map((item) => item.value.onset.quarterNotes.numerator / item.value.onset.quarterNotes.denominator)).size).toBe(20);
+    const pairs = items.map((item) => {
+      const parameters = item.provenance.at(-1)!.parameters as { rhythmIndex: number; pitchIndex: number };
+      return `${parameters.rhythmIndex}:${parameters.pitchIndex}`;
+    });
+    expect(new Set(pairs).size).toBe(20);
+    expect(result.packet.frame).toMatchObject({ musicalExtent: musicalDuration(30, 4) });
+  });
+
+  it('still covers every pair when the cycle lengths share a factor', () => {
     const result = run('cartesian');
+    const pairs = result.packet.items.map((item) => {
+      const parameters = item.provenance.at(-1)!.parameters as { rhythmIndex: number; pitchIndex: number };
+      return `${parameters.rhythmIndex}:${parameters.pitchIndex}`;
+    });
 
     expect(result.packet.items).toHaveLength(8);
-    expect(result.packet.items.slice(0, 2).map((item) => item.value.onset)).toEqual([
+    expect(new Set(pairs).size).toBe(8);
+  });
+
+  it('skips rests without consuming a pitch and merges tied items into one note', () => {
+    // 2~ 1 is one three-pulse note; r2 is silence; 1 is a one-pulse note. Two attacks, two pitches.
+    const rhythm = rhythmPacket([2, 1, -2, 1]);
+    rhythm.items[0].tie = true;
+    const result = run('cycle', { rhythm });
+    const events = result.packet.items;
+
+    expect(events).toHaveLength(2);
+    expect(events.map((item) => item.value.pitches)).toEqual([[6000], [6200]]);
+    expect(events.map((item) => item.value.onset)).toEqual([musicalPosition(0), musicalPosition(5, 4)]);
+    expect(events[0].value.interOnset).toEqual(musicalDuration(3, 4));
+    expect(result.packet.frame).toMatchObject({ musicalExtent: musicalDuration(6, 4) });
+  });
+
+  it('places notes on fractional pulses exactly', () => {
+    const result = run('cycle', { rhythm: rhythmPacket([2 * (3 / 5), 2 * (3 / 5), 3 / 5]) });
+    expect(result.errors).toEqual([]);
+    expect(result.packet.items.map((item) => item.value.onset)).toEqual([
       musicalPosition(0),
-      musicalPosition(0),
+      musicalPosition(3, 10),
+      musicalPosition(3, 5),
     ]);
+    expect(result.packet.frame).toMatchObject({ musicalExtent: musicalDuration(3, 4) });
+  });
+
+  it('carries a grouping with fractional boundaries and units into musical time', () => {
+    // Rhythm Edit can leave a grouping whose boundaries and unit size are fractions of a pulse.
+    const rhythm = rhythmPacket([2, 1, 1, 2]);
+    rhythm.frame = {
+      ...rhythm.frame!,
+      grouping: { id: 'g', label: 'g', units: 7 / 2, boundaries: [0, 7 / 2, 5 / 3] },
+    };
+    const result = run('cycle', { rhythm });
+    expect(result.errors).toEqual([]);
+    expect(result.packet.frame?.grouping?.musicalUnits).toEqual(musicalDuration(7, 8));
+    expect(result.packet.frame?.grouping?.musicalBoundaries).toEqual([
+      musicalPosition(0),
+      musicalPosition(7, 8),
+      musicalPosition(5, 12),
+    ]);
+  });
+
+  it('reports a failure to place notes as an error instead of throwing', () => {
+    const rhythm = rhythmPacket([2, 1, 1, 2]);
+    rhythm.items[0].value = 1e300;
+    const result = run('cycle', { rhythm });
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+
+  it('refuses a rhythm that is only rests and ties', () => {
+    const result = run('cycle', { rhythm: rhythmPacket([-1, -2]) });
+    expect(result.errors[0]).toMatch(/no attacks/);
   });
 
   it('allocates one complete pitch group to each rhythmic attack', () => {

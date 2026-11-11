@@ -35,12 +35,15 @@ interface CompositionInspectorProps {
 const moduleDescriptions: Record<CompositionModuleId, string> = {
   interference: 'Authors inter-onset duration streams and their resultant.',
   'pitch-list': 'Authors ordered pitch groups and pitch-class material.',
+  'rhythm-list': 'Authors a rhythm by typing it, with rests (r1) and ties (2~).',
+  'rhythm-edit': 'Turns attacks of a connected rhythm into rests and ties from a repeating x / r / ~ pattern, keeping every length.',
   melodicization: 'Combines treated rhythm and pitch inputs into note events.',
   arithmetic: 'Combines two numeric inputs with an OM-style operator, plus an optional modulo post-process.',
   fractioning: 'Authors a rhythmic resultant by fractioning around the axis of symmetry (Schillinger ch. 4), distinct from binary synchronization.',
   'pair-composition': 'Pairs a fractioning statement with a binary-synchronization statement into a balanced, expanded, or contracted phrase (Schillinger ch. 5).',
   'scale-construction': 'Authors a pitch-interval sequence and its melodic-form permutations (Schillinger Book II ch. 1-2).',
   'rhythm-householder': 'Alters a rhythm along a bias axis while keeping its attack count and span: reflects the duration vector (Householder), or re-places attacks against an accent or early/late axis.',
+  'swirling-mists': 'Layered looping waves sampled into numbers: one chord per step and one melody per stratum, mapped to a range you set.',
   mixer: 'Auditions several ideas together: each connected channel loops on its own cycle, so the mix becomes a meta interference pattern. A preview layer before arranging, not a timeline.',
   'scale-evolution': 'Synchronizes an interval sequence with its own circular permutations within one shared period, evolving richer scale families (Schillinger Book I ch. 13 / Book II ch. 3 §A).',
 };
