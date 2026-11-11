@@ -1,6 +1,21 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { ActionIcon, Button, Group, Switch, Text } from '@mantine/core';
 import type { PianoRollGridLine, PianoRollNote, PianoRollViewState } from './model';
+import {
+  clickSelection,
+  marqueeSelection,
+  noteRect,
+  notesInRect,
+  rectFromCorners,
+  type PixelRect,
+} from './selection';
 import { useInfoBarActive } from '../InfoBar';
 import classes from './PianoRoll.module.css';
 
@@ -23,6 +38,13 @@ export interface PianoRollProps {
   ariaLabel?: string;
   /** Hide the zoom and follow controls, for a compact roll whose view is set by its owner. */
   showToolbar?: boolean;
+  /**
+   * Note selection is on when `onSelectionChange` is given: click a note, shift/ctrl-click to toggle,
+   * drag on empty space to marquee-select, and Escape or a click on empty space to clear. The owner
+   * holds the selection, so it can act on it (capture to the desk, for example).
+   */
+  selectedIds?: string[];
+  onSelectionChange?(ids: string[]): void;
 }
 
 function clamp(value: number, minimum: number, maximum: number) {
@@ -55,8 +77,66 @@ export function PianoRoll({
   height = 440,
   ariaLabel = 'Piano roll',
   showToolbar = true,
+  selectedIds,
+  onSelectionChange,
 }: PianoRollProps) {
   const infoBar = useInfoBarActive();
+  const selectable = onSelectionChange !== undefined;
+  const selected = useMemo(() => new Set(selectedIds ?? []), [selectedIds]);
+  const [marquee, setMarquee] = useState<PixelRect | null>(null);
+  const drag = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
+
+  function rollPoint(event: ReactPointerEvent<HTMLElement>) {
+    const box = event.currentTarget.getBoundingClientRect();
+    return { x: event.clientX - box.left, y: event.clientY - box.top };
+  }
+
+  function beginMarquee(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!selectable || event.button !== 0) {
+      return;
+    }
+    const point = rollPoint(event);
+    drag.current = {
+      x: point.x,
+      y: point.y,
+      additive: event.shiftKey || event.ctrlKey || event.metaKey,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.focus();
+  }
+
+  function moveMarquee(event: ReactPointerEvent<HTMLDivElement>) {
+    const start = drag.current;
+    if (!start) {
+      return;
+    }
+    const point = rollPoint(event);
+    if (!start.moved && Math.hypot(point.x - start.x, point.y - start.y) < 4) {
+      return;
+    }
+    start.moved = true;
+    setMarquee(rectFromCorners(start.x, start.y, point.x, point.y));
+  }
+
+  function endMarquee(event: ReactPointerEvent<HTMLDivElement>) {
+    const start = drag.current;
+    drag.current = null;
+    setMarquee(null);
+    if (!start || !onSelectionChange) {
+      return;
+    }
+    if (!start.moved) {
+      // A plain click on empty space clears; with a modifier it leaves the selection alone.
+      if (!start.additive) {
+        onSelectionChange([]);
+      }
+      return;
+    }
+    const point = rollPoint(event);
+    const hit = notesInRect(notes, view, rectFromCorners(start.x, start.y, point.x, point.y));
+    onSelectionChange(marqueeSelection(selectedIds ?? [], hit, start.additive));
+  }
   const scroller = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height });
   const safeDuration = Math.max(1, duration);
@@ -334,8 +414,22 @@ export function PianoRoll({
           </div>
           <div
             className={classes.roll}
-            role="img"
-            aria-label={`${ariaLabel}; ${notes.length} notes`}
+            role={selectable ? 'group' : 'img'}
+            aria-label={`${ariaLabel}; ${notes.length} notes${selectable ? `, ${selected.size} selected` : ''}`}
+            data-selectable={selectable || undefined}
+            tabIndex={selectable ? 0 : undefined}
+            onPointerDown={beginMarquee}
+            onPointerMove={moveMarquee}
+            onPointerUp={endMarquee}
+            onPointerCancel={() => {
+              drag.current = null;
+              setMarquee(null);
+            }}
+            onKeyDown={(event) => {
+              if (selectable && event.key === 'Escape') {
+                onSelectionChange?.([]);
+              }
+            }}
           >
             {Array.from({ length: 129 }, (_, index) => (
               <span
@@ -355,9 +449,8 @@ export function PianoRoll({
               />
             ))}
             {notes.map((note) => {
-              const pitch = note.pitchMidicents / 100;
-              const noteHeight = Math.max(5, view.pixelsPerSemitone * 0.72);
-              const noteWidth = Math.max(3, note.duration * view.pixelsPerQuarter);
+              const rect = noteRect(note, view);
+              const noteWidth = rect.width;
               const active =
                 isPlaying &&
                 playhead !== undefined &&
@@ -369,15 +462,33 @@ export function PianoRoll({
                   className={classes.note}
                   data-active={active || undefined}
                   data-colored={note.color ? true : undefined}
+                  data-selected={selected.has(note.id) || undefined}
                   data-info={`${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
                   title={infoBar ? undefined : `${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
+                  onPointerDown={
+                    selectable
+                      ? (event) => {
+                          if (event.button !== 0) {
+                            return;
+                          }
+                          // Selecting a note must not start a marquee on the roll behind it.
+                          event.stopPropagation();
+                          onSelectionChange(
+                            clickSelection(
+                              selectedIds ?? [],
+                              note.id,
+                              event.shiftKey || event.ctrlKey || event.metaKey
+                            )
+                          );
+                          event.currentTarget.parentElement?.focus();
+                        }
+                      : undefined
+                  }
                   style={{
-                    height: noteHeight,
-                    left: note.start * view.pixelsPerQuarter,
+                    height: rect.height,
+                    left: rect.left,
                     opacity: 0.62 + Math.min(1, Math.max(0, note.velocity ?? 1)) * 0.38,
-                    top:
-                      (127 - pitch) * view.pixelsPerSemitone +
-                      (view.pixelsPerSemitone - noteHeight) / 2,
+                    top: rect.top,
                     width: noteWidth,
                     ...(note.color ? ({ '--note-color': note.color } as CSSProperties) : {}),
                   }}
@@ -386,6 +497,17 @@ export function PianoRoll({
                 </span>
               );
             })}
+            {marquee && (
+              <span
+                className={classes.marquee}
+                style={{
+                  left: marquee.left,
+                  top: marquee.top,
+                  width: marquee.width,
+                  height: marquee.height,
+                }}
+              />
+            )}
             {playheadX !== undefined && (
               <span className={classes.playhead} style={{ left: playheadX }} />
             )}
