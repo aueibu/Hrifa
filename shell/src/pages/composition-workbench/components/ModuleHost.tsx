@@ -4,6 +4,7 @@ import { Text } from '@mantine/core';
 import { InfoTooltip } from './hoverInfo';
 import type { PublishedCompositionOutput } from '../compositionRouting';
 import { ModuleOutput } from './Module';
+import { SendToDeskButton } from './SendToDeskButton';
 import classes from './ModuleHost.module.css';
 
 /**
@@ -49,7 +50,9 @@ export function ModuleOutputsSection({
           name={output.label.replace(`${instanceLabel} · `, '')}
           packet={output.packet}
           stacked
-        />
+        >
+          <SendToDeskButton output={output} />
+        </ModuleOutput>
       ))}
     </InspectorSection>
   );
