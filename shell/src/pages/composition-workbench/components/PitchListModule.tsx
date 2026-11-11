@@ -195,7 +195,8 @@ export function PitchListModule({
   useEffect(() => {
     onOutputsChange?.(instanceId, [publishedOutput]);
   }, [instanceId, onOutputsChange, publishedOutput]);
-  const inputDefinesFormat = upstream?.domain === 'pitch' || upstream?.domain === 'pitchClass';
+  const inputDefinesFormat =
+    upstream?.kind === 'list' && (upstream.domain === 'pitch' || upstream.domain === 'pitchClass');
   const displayedFormat = inputDefinesFormat
     ? upstream.domain === 'pitchClass'
       ? 'pitch-class'

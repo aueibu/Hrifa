@@ -27,6 +27,15 @@ const cyclicInterOnsetDurations: AcceptedPacket = {
   topologies: ['cyclic'],
 };
 
+/**
+ * Timed notes reduced to pitch classes (a desk conversion): they carry no register of their own.
+ * No `encodings` filter, like `pitchLists`: any `chromatic-${edo}` is accepted.
+ */
+const pitchClassEvents: AcceptedPacket = {
+  kind: 'events',
+  domain: 'pitchClass',
+};
+
 const pitchLists: AcceptedPacket[] = [
   { kind: 'list', domain: 'pitch', roles: ['pitchMaterial'] },
   { kind: 'list', domain: 'pitchClass', roles: ['pitchMaterial'] },
@@ -102,14 +111,14 @@ export const compatibleOperations: CompatibleOperation[] = [
     title: 'Transpose',
     description: 'Move every pitch or pitch class by an explicit interval.',
     group: 'direct',
-    accepts: pitchLists,
+    accepts: [...pitchLists, pitchClassEvents],
   },
   {
     id: 'invert-pitches',
     title: 'Invert',
     description: 'Reflect the list around an explicit pitch or pitch-class axis.',
     group: 'direct',
-    accepts: pitchLists,
+    accepts: [...pitchLists, pitchClassEvents],
   },
   {
     id: 'melodicization',
@@ -124,7 +133,7 @@ export const compatibleOperations: CompatibleOperation[] = [
     title: 'Assign register',
     description: 'Turn pitch classes into concrete pitches using an explicit register policy.',
     group: 'interpret',
-    accepts: [{ kind: 'list', domain: 'pitchClass', roles: ['pitchMaterial'] }],
+    accepts: [{ kind: 'list', domain: 'pitchClass', roles: ['pitchMaterial'] }, pitchClassEvents],
   },
 ];
 

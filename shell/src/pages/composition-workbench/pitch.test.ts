@@ -182,6 +182,38 @@ describe('pitch-list interpretation', () => {
     expect(interpreted.packet.items[0].provenance[0].sourceItemIds).toEqual(['math:0']);
   });
 
+  it('does not read an events | pitchClass packet as a bare pitch-class list', () => {
+    const events = packet('events', 'pitchClass', [
+      {
+        id: 'ev:0',
+        value: { onset: 0, pitchClasses: [0, 4, 7] } as unknown as PitchClassItemValue,
+        provenance: [],
+      },
+    ]);
+    const result = interpretPitchList({
+      instanceId: 'pitch-list',
+      format: 'pitch-class',
+      inlineText: '0',
+      upstream: events,
+    });
+    expect(result.packet).not.toBe(events);
+    expect(result.packet.kind).toBe('list');
+    expect(result.packet.items).toHaveLength(0);
+    expect(result.errors[0]).toMatch(/events packet/);
+
+    const list = packet<PitchClassItemValue>('list', 'pitchClass', [
+      { id: 'pc:0', value: 7, provenance: [] },
+    ]);
+    expect(
+      interpretPitchList({
+        instanceId: 'pitch-list',
+        format: 'pitch-class',
+        inlineText: '0',
+        upstream: list,
+      }).packet
+    ).toBe(list);
+  });
+
   it('reinterprets an upstream raw list as pitch classes when format says pitch-class', () => {
     // Regression: routing must not hardcode the concrete-pitch parser for every upstream source
     // that isn't already pitch/pitchClass domain — it must dispatch on `format` per token.

@@ -1,4 +1,9 @@
+import { createElement, type ReactNode } from 'react';
+import { act, render, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { operationsForPacket } from './compatibility';
+import { SnippetPreview } from './components/SnippetPreview';
+import { DeskProvider, useDesk } from './desk';
 import { melodicize, type NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, rationalToNumber } from './musicalTime';
@@ -7,7 +12,13 @@ import {
   acceptsSnippets,
   canCaptureSelection,
   captureSnippet,
+  convertSnippetToPitchClass,
+  duplicateSnippet,
   editSnippetNote,
+  PITCH_GRID_TOLERANCE_MIDICENTS,
+  pitchClassConversionRefusal,
+  type PitchClassConversionResult,
+  type PitchClassEventValue,
   type Snippet,
 } from './snippet';
 
@@ -153,7 +164,28 @@ describe('captureSnippet', () => {
     expect(result.snippet.packet.kind).toBe('list');
     expect(result.snippet.packet.frame).toEqual(source.frame);
     expect(result.snippet.packet.items.map((item) => item.value)).toEqual([2, 1, 1, 2]);
-    expect(result.snippet.origin?.itemIds).toHaveLength(4);
+    expect(result.snippet.origin?.moduleInstance).toBe('mel-1');
+    expect(result.snippet.origin).not.toHaveProperty('itemIds');
+  });
+
+  it('snapshots a whole module output as a copy that does not share state with the source', () => {
+    const source = notes();
+    const before = JSON.stringify(source);
+    const result = captureSnippet({ ...base, packet: source, portId: 'notes' });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+    const { snippet } = result;
+    expect(snippet.origin).toEqual({ moduleInstance: 'mel-1', portId: 'notes' });
+    expect(snippet.packet.items.map((item) => item.id)).toEqual(source.items.map((i) => i.id));
+    expect(snippet.packet.items.at(-1)?.provenance.at(-1)?.transformation).toBe('capture-snippet');
+    expect(snippet.packet).not.toBe(source);
+    expect(snippet.packet.frame).not.toBe(source.frame);
+    expect(() => JSON.stringify(snippet)).not.toThrow();
+    expect(JSON.stringify(source)).toBe(before);
+    // Mutating the source afterwards does not reach the snapshot.
+    source.items[0].value.velocity = 0.123;
+    expect((snippet.packet.items as DataItem<NoteEventValue>[])[0].value.velocity).not.toBe(0.123);
   });
 
   it('refuses a partial capture of a kind it cannot select from, instead of guessing', () => {
@@ -224,5 +256,361 @@ describe('editSnippetNote', () => {
     const restored: unknown = JSON.parse(JSON.stringify([noNote]));
     expect(acceptsSnippets(restored)).toBe(true);
     expect(editSnippetNote((restored as Snippet[])[0], 'added').note).toBe('added');
+  });
+});
+
+describe('duplicateSnippet', () => {
+  function snippetOf(): Snippet {
+    const source = notes();
+    const result = captureSnippet({
+      ...base,
+      note: 'first',
+      packet: source,
+      itemIds: [source.items[0].id, source.items[1].id],
+    });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+    return result.snippet;
+  }
+  const request = { id: 'snip-2', createdAt: '2026-11-12T00:00:00Z' };
+
+  it('makes a new snippet with a fresh id, a variation name and a deep copy of the values', () => {
+    const original = snippetOf();
+    const copy = duplicateSnippet(original, request);
+    expect(copy.id).toBe('snip-2');
+    expect(copy.id).not.toBe(original.id);
+    expect(copy.name).toBe('Gesture (variation)');
+    expect(copy.createdAt).toBe(request.createdAt);
+    expect(copy.note).toBe('first');
+    expect(copy.packet.items.map((item) => item.id)).toEqual(
+      original.packet.items.map((item) => item.id)
+    );
+    expect(copy.packet.items.map((item) => item.value)).toEqual(
+      original.packet.items.map((item) => item.value)
+    );
+    expect(copy.packet.frame).toEqual(original.packet.frame);
+    expect(copy.packet).not.toBe(original.packet);
+    expect(copy.packet.items[0].value).not.toBe(original.packet.items[0].value);
+  });
+
+  it('appends a duplicate-snippet provenance step to every item and leaves the original unchanged', () => {
+    const original = snippetOf();
+    const before = JSON.stringify(original);
+    const copy = duplicateSnippet(original, request);
+    copy.packet.items.forEach((item, index) => {
+      const source = original.packet.items[index];
+      expect(item.provenance.length).toBe(source.provenance.length + 1);
+      expect(item.provenance.slice(0, -1)).toEqual(source.provenance);
+      expect(item.provenance[item.provenance.length - 1]).toMatchObject({
+        sourceItemIds: [source.id],
+        transformation: 'duplicate-snippet',
+        parameters: { snippetId: 'snip-2', sourceSnippetId: 'snip-1' },
+      });
+    });
+    expect(JSON.stringify(original)).toBe(before);
+  });
+
+  it('persists across reload through the desk provider', () => {
+    localStorage.clear();
+    const original = snippetOf();
+    const wrapper = ({ children }: { children: ReactNode }) => DeskProvider({ children });
+    const first = renderHook(() => useDesk(), { wrapper });
+    act(() => first.result.current.addSnippet(original));
+    act(() => first.result.current.duplicateSnippetById(original.id));
+    const names = first.result.current.snippets.map((snippet) => snippet.name);
+    expect(names).toEqual(['Gesture', 'Gesture (variation)']);
+    first.unmount();
+
+    const reloaded = renderHook(() => useDesk(), { wrapper });
+    expect(reloaded.result.current.snippets.map((snippet) => snippet.name)).toEqual(names);
+    const [kept, variation] = reloaded.result.current.snippets;
+    expect(kept).toEqual(original);
+    expect(variation.id).not.toBe(original.id);
+    expect(variation.packet.items[0].provenance.at(-1)?.transformation).toBe('duplicate-snippet');
+    expect(acceptsSnippets(reloaded.result.current.snippets)).toBe(true);
+    reloaded.unmount();
+  });
+});
+
+describe('convertSnippetToPitchClass', () => {
+  const request = { id: 'snip-pc', createdAt: '2026-11-12T00:00:00Z' };
+
+  function noteSnippet(text = '60, 64, 67, 72', allocation: 'cycle' = 'cycle'): Snippet {
+    const result = melodicize({
+      instanceId: 'melodicization',
+      rhythm: rhythm([1, 1, 2, 1]),
+      pitches: interpretPitchList({
+        instanceId: 'pitch-list',
+        format: 'midi-note',
+        inlineText: text,
+      }).packet,
+      allocation,
+      pulseUnit: musicalDuration(1, 4),
+      articulationPercent: 100,
+    });
+    expect(result.errors).toEqual([]);
+    const captured = captureSnippet({ ...base, note: 'arp', packet: result.packet });
+    if (!captured.ok) {
+      throw new Error(captured.error);
+    }
+    return captured.snippet;
+  }
+
+  function converted(source: Snippet): Snippet {
+    const result = convertSnippetToPitchClass(source, request);
+    if (!result.ok) {
+      throw new Error(result.needsSnap ? result.message : result.error);
+    }
+    return result.snippet;
+  }
+
+  it('turns MIDI 60, 64, 67, 72 into 0, 4, 7, 0 and keeps timing, frame and velocity', () => {
+    const source = noteSnippet();
+    const copy = converted(source);
+    const items = copy.packet.items as DataItem<PitchClassEventValue>[];
+    expect(items.map((item) => item.value.pitchClasses)).toEqual([[0], [4], [7], [0]]);
+    expect(copy.packet.kind).toBe('events');
+    expect(copy.packet.domain).toBe('pitchClass');
+    expect(copy.packet.encoding).toBe('chromatic-12');
+    expect(copy.packet.frame).toEqual(source.packet.frame);
+    (source.packet.items as DataItem<NoteEventValue>[]).forEach((item, index) => {
+      expect(items[index].id).toBe(item.id);
+      expect(items[index].value.onset).toEqual(item.value.onset);
+      expect(items[index].value.duration).toEqual(item.value.duration);
+      expect(items[index].value.interOnset).toEqual(item.value.interOnset);
+      expect(items[index].value.velocity).toBe(item.value.velocity);
+      expect('pitches' in items[index].value).toBe(false);
+    });
+  });
+
+  it('makes a new snippet with a fresh id, appends to-pitch-class provenance and leaves the original alone', () => {
+    const source = noteSnippet();
+    const before = JSON.stringify(source);
+    const copy = converted(source);
+    expect(copy.id).toBe('snip-pc');
+    expect(copy.name).toBe('Gesture (pitch classes)');
+    expect(copy.schemaVersion).toBe(1);
+    copy.packet.items.forEach((item, index) => {
+      const original = source.packet.items[index];
+      expect(item.provenance.slice(0, -1)).toEqual(original.provenance);
+      expect(item.provenance.at(-1)).toMatchObject({
+        sourceItemIds: [original.id],
+        transformation: 'to-pitch-class',
+        parameters: { snippetId: 'snip-pc', sourceSnippetId: 'snip-1' },
+      });
+    });
+    expect(JSON.stringify(source)).toBe(before);
+    expect(source.packet.domain).toBe('note');
+  });
+
+  it('reduces chords and upper-octave pitches mod 12, keeping each group', () => {
+    const copy = converted(noteSnippet('[60 64 67] 71 61 [59 73]'));
+    const items = copy.packet.items as DataItem<PitchClassEventValue>[];
+    expect(items.map((item) => item.value.pitchClasses)).toEqual([[0, 4, 7], [11], [1], [11, 1]]);
+  });
+
+  it('refuses a non-note snippet with a message instead of guessing', () => {
+    const captured = captureSnippet({ ...base, packet: rhythm() });
+    if (!captured.ok) {
+      throw new Error(captured.error);
+    }
+    const result = convertSnippetToPitchClass(captured.snippet, request);
+    expect(result).toMatchObject({ ok: false });
+    expect(!result.ok && !result.needsSnap && result.error).toMatch(/note snippets/);
+    expect(pitchClassConversionRefusal(captured.snippet)).toMatch(/list \| duration/);
+  });
+
+  /** The same snippet with each event's pitches replaced by the given midicent groups. */
+  function withPitches(source: Snippet, groups: number[][]): Snippet {
+    const items = (source.packet.items as DataItem<NoteEventValue>[]).map((item, index) => ({
+      ...item,
+      value: { ...item.value, pitches: groups[index] },
+    }));
+    return { ...source, packet: { ...source.packet, items } as DataPacket };
+  }
+
+  const step19 = 1200 / 19;
+
+  it('converts exact 19-EDO steps directly in a 19-EDO project, encoding chromatic-19', () => {
+    // Steps 0, 5, 11, and 19 (an octave up) of a 19-EDO, as midicents from middle C.
+    const source = withPitches(noteSnippet(), [
+      [6000],
+      [6000 + 5 * step19],
+      [6000 + 11 * step19],
+      [6000 + 19 * step19],
+    ]);
+    const result = convertSnippetToPitchClass(source, { ...request, edo: 19 });
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    const items = result.snippet.packet.items as DataItem<PitchClassEventValue>[];
+    expect(result.snippet.packet.encoding).toBe('chromatic-19');
+    expect(result.snippet.packet.domain).toBe('pitchClass');
+    // 6000 midicents is step 95 of 19-EDO (five octaves), so it is pitch class 0.
+    expect(items.map((item) => item.value.pitchClasses)).toEqual([[0], [5], [11], [0]]);
+    expect(items[0].provenance.at(-1)?.parameters).toMatchObject({ edo: 19, snappedCount: 0 });
+  });
+
+  it('asks for a snap when pitches are off the project EDO grid, and changes nothing', () => {
+    const source = noteSnippet('60, 66.5, 64, 67');
+    const before = JSON.stringify(source);
+    const result = convertSnippetToPitchClass(source, { ...request, edo: 12 });
+    expect(result).toMatchObject({ ok: false, needsSnap: true, edo: 12, offGridCount: 1 });
+    expect(result.ok === false && result.needsSnap && result.message).toBe(
+      '1 pitch is off the 12-EDO grid. Snap it to the nearest step?'
+    );
+    expect(JSON.stringify(source)).toBe(before);
+    // Explicitly not snapping behaves the same.
+    expect(convertSnippetToPitchClass(source, { ...request, edo: 12, snap: false })).toMatchObject({
+      needsSnap: true,
+    });
+  });
+
+  it('counts a pitch as on the grid within the tolerance and off it just beyond', () => {
+    const tol = PITCH_GRID_TOLERANCE_MIDICENTS;
+    const near = withPitches(noteSnippet(), [
+      [6000 + tol * 0.9],
+      [6400 - tol * 0.9],
+      [6700],
+      [7200],
+    ]);
+    expect(convertSnippetToPitchClass(near, request).ok).toBe(true);
+    const far = withPitches(noteSnippet(), [[6000 + tol * 1.1], [6400], [6700], [7200]]);
+    expect(convertSnippetToPitchClass(far, request)).toMatchObject({
+      needsSnap: true,
+      offGridCount: 1,
+    });
+  });
+
+  it('treats a 12-EDO melody in a 19-EDO project as off the grid', () => {
+    const result = convertSnippetToPitchClass(noteSnippet(), { ...request, edo: 19 });
+    // 6000 and 7200 are whole octaves, on every grid; 6400 and 6700 are not on the 19-EDO grid.
+    expect(result).toMatchObject({ ok: false, needsSnap: true, edo: 19 });
+    expect(result.ok === false && result.needsSnap && result.offGridCount).toBe(2);
+  });
+
+  it('snaps to the nearest step with snap: true and records it in the provenance parameters', () => {
+    const source = withPitches(noteSnippet(), [[6000], [6400], [6700], [7200]]);
+    const result = convertSnippetToPitchClass(source, { ...request, edo: 19, snap: true });
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    const items = result.snippet.packet.items as DataItem<PitchClassEventValue>[];
+    const expected = [6000, 6400, 6700, 7200].map(
+      (midicents) => Math.round(midicents / step19) % 19
+    );
+    expect(items.map((item) => item.value.pitchClasses)).toEqual(expected.map((pc) => [pc]));
+    expect(result.snippet.packet.encoding).toBe('chromatic-19');
+    expect(items[0].provenance.at(-1)).toMatchObject({
+      transformation: 'to-pitch-class',
+      parameters: { edo: 19, snappedCount: 2 },
+    });
+    expect(source.packet.domain).toBe('note');
+  });
+
+  it('keeps pitch classes in 0..edo-1 for negative and out-of-range midicents, never -0', () => {
+    const source = withPitches(noteSnippet(), [[-100], [-1200], [-6000], [12100]]);
+    const result = convertSnippetToPitchClass(source, request);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    const items = result.snippet.packet.items as DataItem<PitchClassEventValue>[];
+    const classes = items.map((item) => item.value.pitchClasses[0]);
+    expect(classes).toEqual([11, 0, 0, 1]);
+    classes.forEach((value) => expect(Object.is(value, -0)).toBe(false));
+    const small = convertSnippetToPitchClass(
+      withPitches(noteSnippet(), [[-30], [0], [1200], [-1200]]),
+      {
+        ...request,
+        edo: 24,
+        snap: true,
+      }
+    );
+    expect(
+      small.ok &&
+        small.snippet.packet.items.map(
+          (item) => (item.value as PitchClassEventValue).pitchClasses[0]
+        )
+    ).toEqual([23, 0, 0, 0]);
+  });
+
+  it('refuses non-finite pitches and an empty snippet outright', () => {
+    const bad = withPitches(noteSnippet(), [[60], [Number.NaN], [67], [72]]);
+    expect(pitchClassConversionRefusal(bad)).toMatch(/not a finite number/);
+    expect(convertSnippetToPitchClass(bad, { ...request, snap: true })).toMatchObject({
+      ok: false,
+      error: expect.stringMatching(/finite/),
+    });
+    const infinite = withPitches(noteSnippet(), [[Infinity], [0], [0], [0]]);
+    expect(pitchClassConversionRefusal(infinite)).not.toBeNull();
+    const empty = { ...noteSnippet(), packet: { ...noteSnippet().packet, items: [] } };
+    expect(pitchClassConversionRefusal(empty)).toMatch(/nothing to convert/);
+  });
+
+  it('routes a chromatic-19 result through compatibility as a pitch-class source', () => {
+    const source = withPitches(noteSnippet(), [[0], [step19], [2 * step19], [3 * step19]]);
+    const result = convertSnippetToPitchClass(source, { ...request, edo: 19 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(operationsForPacket(result.snippet.packet).map((operation) => operation.id)).toEqual([
+        'transpose-pitches',
+        'invert-pitches',
+        'voice-pitch-classes',
+      ]);
+    }
+  });
+
+  it('routes through compatibility as a pitch-class source, and a note snippet does not', () => {
+    const ids = (value: Snippet) =>
+      operationsForPacket(value.packet).map((operation) => operation.id);
+    const source = noteSnippet();
+    expect(ids(source)).not.toContain('voice-pitch-classes');
+    expect(ids(converted(source))).toEqual([
+      'transpose-pitches',
+      'invert-pitches',
+      'voice-pitch-classes',
+    ]);
+  });
+
+  it('renders in the preview without error, as text', () => {
+    const copy = converted(noteSnippet('[60 64 67] 62 65 69'));
+    const { container, unmount } = render(createElement(SnippetPreview, { packet: copy.packet }));
+    expect(container.textContent).toContain('[0 4 7]');
+    expect(container.textContent).toContain('2  5  9');
+    unmount();
+  });
+
+  it('persists across reload through the desk provider, and is accepted by acceptsSnippets', () => {
+    localStorage.clear();
+    const source = noteSnippet();
+    const wrapper = ({ children }: { children: ReactNode }) => DeskProvider({ children });
+    const first = renderHook(() => useDesk(), { wrapper });
+    act(() => first.result.current.addSnippet(source));
+    let outcome: PitchClassConversionResult | undefined;
+    act(() => {
+      outcome = first.result.current.convertToPitchClassById(source.id, { edo: 12 });
+    });
+    expect(outcome?.ok).toBe(true);
+    const [original, result] = first.result.current.snippets;
+    expect(original).toEqual(source);
+    expect(result.packet.domain).toBe('pitchClass');
+    expect(result.id).not.toBe(source.id);
+    // Refused kinds add nothing and report why.
+    act(() => {
+      outcome = first.result.current.convertToPitchClassById(result.id, { edo: 12 });
+    });
+    expect(!outcome?.ok && !outcome?.needsSnap && outcome?.error).toMatch(/note snippets/);
+    expect(first.result.current.snippets).toHaveLength(2);
+    first.unmount();
+
+    const reloaded = renderHook(() => useDesk(), { wrapper });
+    expect(reloaded.result.current.snippets).toEqual([original, result]);
+    expect(acceptsSnippets(reloaded.result.current.snippets)).toBe(true);
+    expect(acceptsSnippets(JSON.parse(JSON.stringify([result])))).toBe(true);
+    reloaded.unmount();
   });
 });

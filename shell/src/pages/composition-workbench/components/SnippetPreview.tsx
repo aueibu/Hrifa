@@ -17,6 +17,13 @@ export function valueText(value: unknown): string {
   if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
     return String(value);
   }
+  if (typeof value === 'object' && value !== null && 'pitchClasses' in value) {
+    // A pitch-class event: show its pitch classes, as a group when there is more than one.
+    const { pitchClasses } = value as { pitchClasses: unknown };
+    if (Array.isArray(pitchClasses)) {
+      return pitchClasses.length === 1 ? valueText(pitchClasses[0]) : valueText(pitchClasses);
+    }
+  }
   return '…';
 }
 

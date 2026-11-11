@@ -1,5 +1,12 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
-import { acceptsSnippets, editSnippetNote, type Snippet } from './snippet';
+import {
+  acceptsSnippets,
+  convertSnippetToPitchClass,
+  duplicateSnippet,
+  editSnippetNote,
+  type PitchClassConversionResult,
+  type Snippet,
+} from './snippet';
 import { compositionStateKeys, usePersistentState } from './usePersistentState';
 
 /**
@@ -12,6 +19,17 @@ interface DeskContextValue {
   removeSnippet(id: string): void;
   renameSnippet(id: string, name: string): void;
   setSnippetNote(id: string, note: string): void;
+  /** Adds a copy named `<name> (variation)` directly after the original. */
+  duplicateSnippetById(id: string): void;
+  /**
+   * Adds a pitch-class copy (in the given EDO) directly after the original. Returns the conversion
+   * result: `ok` when the copy was added, a refusal, or `needsSnap` when pitches are off the EDO
+   * grid and `snap` was not set. The original is never changed.
+   */
+  convertToPitchClassById(
+    id: string,
+    options: { edo: number; snap?: boolean }
+  ): PitchClassConversionResult;
 }
 
 const DeskContext = createContext<DeskContextValue | undefined>(undefined);
@@ -44,9 +62,67 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       ),
     [setSnippets]
   );
+  const duplicateSnippetById = useCallback(
+    (id: string) => {
+      const request = { id: newSnippetId(), createdAt: new Date().toISOString() };
+      setSnippets((current) => {
+        const index = current.findIndex((snippet) => snippet.id === id);
+        if (index < 0) {
+          return current;
+        }
+        const next = [...current];
+        next.splice(index + 1, 0, duplicateSnippet(current[index], request));
+        return next;
+      });
+    },
+    [setSnippets]
+  );
+  const convertToPitchClassById = useCallback(
+    (id: string, options: { edo: number; snap?: boolean }): PitchClassConversionResult => {
+      const source = snippets.find((snippet) => snippet.id === id);
+      if (!source) {
+        return { ok: false, error: 'That snippet is no longer on the desk.' };
+      }
+      const result = convertSnippetToPitchClass(source, {
+        id: newSnippetId(),
+        createdAt: new Date().toISOString(),
+        ...options,
+      });
+      if (!result.ok) {
+        return result;
+      }
+      setSnippets((current) => {
+        const index = current.findIndex((snippet) => snippet.id === id);
+        if (index < 0) {
+          return current;
+        }
+        const next = [...current];
+        next.splice(index + 1, 0, result.snippet);
+        return next;
+      });
+      return result;
+    },
+    [snippets, setSnippets]
+  );
   const value = useMemo(
-    () => ({ snippets, addSnippet, removeSnippet, renameSnippet, setSnippetNote }),
-    [snippets, addSnippet, removeSnippet, renameSnippet, setSnippetNote]
+    () => ({
+      snippets,
+      addSnippet,
+      removeSnippet,
+      renameSnippet,
+      setSnippetNote,
+      duplicateSnippetById,
+      convertToPitchClassById,
+    }),
+    [
+      snippets,
+      addSnippet,
+      removeSnippet,
+      renameSnippet,
+      setSnippetNote,
+      duplicateSnippetById,
+      convertToPitchClassById,
+    ]
   );
   return <DeskContext.Provider value={value}>{children}</DeskContext.Provider>;
 }

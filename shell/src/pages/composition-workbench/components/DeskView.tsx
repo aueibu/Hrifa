@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Button, Text, TextInput } from '@mantine/core';
+import { Button, Group, Modal, Text, TextInput } from '@mantine/core';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import { useCompositionSettings } from '../compositionSettings';
 import { useDesk } from '../desk';
 import type { NoteEventValue } from '../melodicization';
 import type { DataPacket } from '../model';
-import type { Snippet } from '../snippet';
+import { pitchClassConversionRefusal, type Snippet } from '../snippet';
 import { transportTimeline } from '../transport';
 import { useModulePreview } from '../useModulePreview';
 import { SnippetPreview } from './SnippetPreview';
@@ -32,10 +32,18 @@ function describe(snippet: Snippet) {
  * here reaches the patch until the user asks (see ARCHITECTURE.md, "The desk").
  */
 export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): void }) {
-  const { snippets, removeSnippet, renameSnippet, setSnippetNote } = useDesk();
+  const {
+    snippets,
+    removeSnippet,
+    renameSnippet,
+    setSnippetNote,
+    duplicateSnippetById,
+    convertToPitchClassById,
+  } = useDesk();
   const { settings } = useCompositionSettings();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [snapPrompt, setSnapPrompt] = useState<{ id: string; message: string } | null>(null);
   const preview = useModulePreview({
     instanceId: 'desk',
     volume: 30,
@@ -44,6 +52,17 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
     transportPlay: () => undefined,
     onEnd: () => setPlayingId(null),
   });
+
+  function toPitchClasses(id: string, snap = false) {
+    const result = convertToPitchClassById(id, { edo: settings.edo, snap });
+    if (result.ok) {
+      preview.setStatus('');
+    } else if (result.needsSnap) {
+      setSnapPrompt({ id, message: result.message });
+    } else {
+      preview.setStatus(result.error);
+    }
+  }
 
   async function audition(snippet: Snippet) {
     if (playingId === snippet.id) {
@@ -142,6 +161,26 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
               <Button
                 size="compact-xs"
                 variant="default"
+                data-info="Add a copy of this snippet to the desk, named as a variation, to change without losing the original."
+                onClick={() => duplicateSnippetById(snippet.id)}
+              >
+                Duplicate
+              </Button>
+              <Button
+                size="compact-xs"
+                variant="default"
+                disabled={pitchClassConversionRefusal(snippet) !== null}
+                data-info={
+                  pitchClassConversionRefusal(snippet) ??
+                  `Add a copy of this snippet to the desk with each pitch reduced to its pitch class in the project's ${settings.edo}-EDO (0 to ${settings.edo - 1}), keeping the timing. Pitches off the grid ask before snapping.`
+                }
+                onClick={() => toPitchClasses(snippet.id)}
+              >
+                To pitch classes
+              </Button>
+              <Button
+                size="compact-xs"
+                variant="default"
                 data-info="Remove this snippet from the desk. Modules made from it show a missing source."
                 onClick={() => {
                   if (confirmingId === snippet.id) {
@@ -161,6 +200,31 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
           </div>
         ))}
       </div>
+      <Modal
+        opened={snapPrompt !== null}
+        onClose={() => setSnapPrompt(null)}
+        title="Pitches off the grid"
+        size="sm"
+        transitionProps={{ duration: 0 }}
+      >
+        <Text size="sm">{snapPrompt?.message}</Text>
+        <Group justify="flex-end" mt="md" gap="xs">
+          <Button size="compact-sm" variant="default" onClick={() => setSnapPrompt(null)}>
+            Cancel
+          </Button>
+          <Button
+            size="compact-sm"
+            onClick={() => {
+              if (snapPrompt) {
+                toPitchClasses(snapPrompt.id, true);
+              }
+              setSnapPrompt(null);
+            }}
+          >
+            Snap
+          </Button>
+        </Group>
+      </Modal>
       {preview.status && (
         <Text className={classes.meta} mt="xs">
           {preview.status}

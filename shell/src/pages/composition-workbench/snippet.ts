@@ -37,8 +37,8 @@ export interface SnippetOrigin {
   moduleInstance: string;
   /** The source output port, when the capture came from a module output. */
   portId?: string;
-  /** The ids of the selected items, or every item when the whole packet was captured. */
-  itemIds: string[];
+  /** The ids of the selected items. Absent when the whole packet was captured. */
+  itemIds?: string[];
 }
 
 export interface CaptureRequest {
@@ -152,7 +152,8 @@ export function captureSnippet(request: CaptureRequest): CaptureResult {
 
   let selection: Selection;
   if (itemIds === undefined) {
-    selection = { packet: source, warnings: [] };
+    // A deep copy, so the snippet never shares state with the live module output.
+    selection = { packet: structuredClone(source), warnings: [] };
   } else {
     const handler = captureHandlers[source.kind];
     if (!handler) {
@@ -168,7 +169,6 @@ export function captureSnippet(request: CaptureRequest): CaptureResult {
     selection = result;
   }
 
-  const capturedIds = selection.packet.items.map((item) => item.id);
   const items = selection.packet.items.map((item) => ({
     ...item,
     provenance: [
@@ -195,7 +195,9 @@ export function captureSnippet(request: CaptureRequest): CaptureResult {
       origin: {
         moduleInstance: request.moduleInstance,
         portId: request.portId,
-        itemIds: capturedIds,
+        ...(itemIds === undefined
+          ? {}
+          : { itemIds: selection.packet.items.map((item) => item.id) }),
       },
     },
   };
@@ -209,6 +211,165 @@ export function editSnippetNote(snippet: Snippet, note: string): Snippet {
   const { note: _previous, ...rest } = snippet;
   const trimmed = note.trim();
   return trimmed ? { ...rest, note: trimmed } : rest;
+}
+
+/**
+ * Duplicate a snippet as a variation: a new snippet with a fresh id and the name
+ * `<name> (variation)`, holding a deep copy of the packet so the two never share state. Items keep
+ * their ids and each gains a `duplicate-snippet` provenance step. The original is not touched.
+ * Id and time are caller-supplied so this stays pure.
+ */
+export function duplicateSnippet(
+  snippet: Snippet,
+  request: { id: string; createdAt: string }
+): Snippet {
+  const copy = structuredClone(snippet.packet);
+  const items = copy.items.map((item) => ({
+    ...item,
+    provenance: [
+      ...item.provenance,
+      {
+        sourceModuleInstance: snippet.origin?.moduleInstance ?? 'desk',
+        sourceItemIds: [item.id],
+        transformation: 'duplicate-snippet',
+        parameters: { snippetId: request.id, sourceSnippetId: snippet.id },
+      },
+    ],
+  }));
+  return {
+    ...snippet,
+    id: request.id,
+    name: `${snippet.name} (variation)`,
+    createdAt: request.createdAt,
+    packet: { ...copy, items },
+    origin: snippet.origin && structuredClone(snippet.origin),
+  };
+}
+
+/**
+ * One event of an `events | pitchClass` packet: the note's timing and velocity, with its pitches
+ * reduced to pitch classes (0 to edo - 1, `chromatic-${edo}`). Pitch classes carry no register.
+ */
+export interface PitchClassEventValue {
+  onset: NoteEventValue['onset'];
+  interOnset: NoteEventValue['interOnset'];
+  duration: NoteEventValue['duration'];
+  pitchClasses: number[];
+  velocity: number;
+}
+
+/** A pitch within this many midicents of an EDO step counts as on the grid and is not snapped. */
+export const PITCH_GRID_TOLERANCE_MIDICENTS = 0.5;
+
+export type PitchClassConversionResult =
+  | { ok: true; snippet: Snippet }
+  /** A hard refusal: the snippet cannot be converted at all. */
+  | { ok: false; needsSnap?: false; error: string }
+  /** Some pitches are off the project EDO grid; converting needs `snap: true` (the user's say-so). */
+  | { ok: false; needsSnap: true; edo: number; offGridCount: number; message: string };
+
+/**
+ * Why a snippet can never be converted to pitch classes, or null when it can (possibly after
+ * snapping). Only `events | note` with at least one note and finite pitches converts: anything else
+ * is refused, never guessed at. Off-grid pitches are not a refusal; see `convertSnippetToPitchClass`.
+ */
+export function pitchClassConversionRefusal(snippet: Snippet): string | null {
+  const { packet } = snippet;
+  if (packet.kind !== 'events' || packet.domain !== 'note') {
+    return `Only note snippets (events | note) can be converted to pitch classes, not ${packet.kind} | ${packet.domain}.`;
+  }
+  if (packet.items.length === 0) {
+    return 'There is nothing to convert: the snippet has no notes.';
+  }
+  const items = packet.items as DataItem<NoteEventValue>[];
+  const invalid = items.some((item) =>
+    item.value.pitches.some((midicents) => !Number.isFinite(midicents))
+  );
+  if (invalid) {
+    return 'This snippet has a pitch that is not a finite number, so it cannot be converted. Nothing was converted.';
+  }
+  return null;
+}
+
+/**
+ * Convert an `events | note` snippet to `events | pitchClass` (`chromatic-${edo}`, edo being the
+ * project EDO, default 12): each pitch becomes `round(midicents / (1200 / edo))` mod edo. Timing and
+ * frame are kept; items keep their ids and gain a `to-pitch-class` provenance step. Returns a new
+ * snippet named `<name> (pitch classes)` with a fresh id; the original is not touched. Id and time
+ * are caller-supplied so this stays pure.
+ *
+ * If any pitch is off the EDO grid (further than `PITCH_GRID_TOLERANCE_MIDICENTS` from a step) the
+ * result is `needsSnap` unless `snap` is true; then each pitch rounds to the nearest step and the
+ * provenance parameters record the edo and how many pitches were snapped.
+ */
+export function convertSnippetToPitchClass(
+  snippet: Snippet,
+  request: { id: string; createdAt: string; edo?: number; snap?: boolean }
+): PitchClassConversionResult {
+  const refusal = pitchClassConversionRefusal(snippet);
+  if (refusal) {
+    return { ok: false, error: refusal };
+  }
+  const edo = request.edo ?? 12;
+  if (!Number.isInteger(edo) || edo < 1) {
+    return { ok: false, error: `${edo} is not a valid EDO, so nothing was converted.` };
+  }
+  const step = 1200 / edo;
+  const source = snippet.packet as DataPacket<NoteEventValue>;
+  const isOffGrid = (midicents: number) =>
+    Math.abs(midicents - Math.round(midicents / step) * step) > PITCH_GRID_TOLERANCE_MIDICENTS;
+  const offGridCount = source.items.reduce(
+    (total, item) => total + item.value.pitches.filter(isOffGrid).length,
+    0
+  );
+  if (offGridCount > 0 && !request.snap) {
+    const [subject, pronoun] = offGridCount === 1 ? ['pitch is', 'it'] : ['pitches are', 'them'];
+    return {
+      ok: false,
+      needsSnap: true,
+      edo,
+      offGridCount,
+      message: `${offGridCount} ${subject} off the ${edo}-EDO grid. Snap ${pronoun} to the nearest step?`,
+    };
+  }
+  const copy = structuredClone(source);
+  const items: DataItem<PitchClassEventValue>[] = copy.items.map((item) => {
+    const { pitches, ...timing } = item.value;
+    return {
+      ...item,
+      value: {
+        ...timing,
+        pitchClasses: pitches.map(
+          (midicents) => ((Math.round(midicents / step) % edo) + edo) % edo
+        ),
+      },
+      provenance: [
+        ...item.provenance,
+        {
+          sourceModuleInstance: snippet.origin?.moduleInstance ?? 'desk',
+          sourceItemIds: [item.id],
+          transformation: 'to-pitch-class',
+          parameters: {
+            snippetId: request.id,
+            sourceSnippetId: snippet.id,
+            edo,
+            snappedCount: offGridCount,
+          },
+        },
+      ],
+    };
+  });
+  return {
+    ok: true,
+    snippet: {
+      ...snippet,
+      id: request.id,
+      name: `${snippet.name} (pitch classes)`,
+      createdAt: request.createdAt,
+      packet: { ...copy, domain: 'pitchClass', encoding: `chromatic-${edo}`, items } as DataPacket,
+      origin: snippet.origin && structuredClone(snippet.origin),
+    },
+  };
 }
 
 /** For `usePersistentState`: a shape check, so a corrupt or newer desk falls back instead of crashing. */

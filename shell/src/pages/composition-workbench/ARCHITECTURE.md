@@ -351,7 +351,7 @@ directly from a module.
 
 ## The desk
 
-The desk is where material is set aside to be reused. Everything else in the workbench derives its output from something; the desk holds copies the composer chose to keep, and a snippet can be placed back into a patch as a source. Status: the first slice is built (capture from a piano roll, the desk view, audition, Make source). Pitch-class conversion, snapshots and variations, blank clips and editing a snippet are not built.
+The desk is where material is set aside to be reused. Everything else in the workbench derives its output from something; the desk holds copies the composer chose to keep, and a snippet can be placed back into a patch as a source. Status: built are capture from a piano roll, the desk view, audition, Make source, editing a snippet's note, Duplicate as variation, conversion to pitch classes, and Send to desk under every module output, which snapshots the whole packet as an independent copy (`origin.itemIds` is omitted for a whole capture and set only for a selection). Not built: blank clips, and any "Assign register" step that turns pitch classes back into playable notes.
 
 ### Snippet
 
@@ -365,7 +365,7 @@ interface Snippet {
   note?: string;
   createdAt: string;
   packet: DataPacket;          // any kind and domain
-  origin?: { moduleInstance: string; portId?: string; itemIds: string[] };
+  origin?: { moduleInstance: string; portId?: string; itemIds?: string[] };  // itemIds absent = whole packet
 }
 ```
 
@@ -396,7 +396,15 @@ Editor chrome (`components/EditorPalette`) separates two kinds of control. A **t
 
 The desk is a workspace view beside the patch canvas, switched from the status bar (`WorkspaceView`: canvas or desk). Both stay mounted and share one grid cell. The inactive one is hidden with opacity, `visibility`, `pointer-events` and `inert`, never `display: none`: the canvas measures its own box, so collapsing it made it refit to a tiny view, and its elements set `visibility: visible` themselves, so `visibility` alone let its nodes show through the desk.
 
-Cards preview a snippet, rename it, delete it (two clicks) and audition it. Audition runs on the transport (`followTransport`), so the metronome and count-in apply as for any module preview. A selection auditioned from a roll plays rebased to zero, so the roll's playhead starts at where the selection sits in the clip and covers its length.
+Cards preview a snippet, rename it, edit its note (`editSnippetNote`; blank text clears it), duplicate it, convert it to pitch classes, delete it (two clicks) and audition it. Audition runs on the transport (`followTransport`), so the metronome and count-in apply as for any module preview. A selection auditioned from a roll plays rebased to zero, so the roll's playhead starts at where the selection sits in the clip and covers its length. Audition is disabled for anything but `events | note`, so a pitch-class snippet cannot be auditioned: pitch classes have no register.
+
+### Variations and pitch classes
+
+**Duplicate as variation** (`duplicateSnippet`) adds a copy named `<name> (variation)` directly after the original, with a fresh id, a deep-copied packet, and the note and `origin` copied. Items keep their ids and each gains a `duplicate-snippet` provenance step. The original is untouched, and the two share no state.
+
+**Convert to pitch classes** (`convertSnippetToPitchClass`) adds a copy named `<name> (pitch classes)` after the original. Only a non-empty `events | note` snippet with finite pitches converts; anything else is a hard refusal with an explanation. Each pitch becomes `round(midicents / (1200 / edo))` mod `edo`, where `edo` is the project EDO, and the packet's encoding becomes `chromatic-<edo>`. The result is `events | pitchClass` with items `{ onset, interOnset, duration, pitchClasses, velocity }`: timing and frame are kept and the register is dropped. A pitch within `PITCH_GRID_TOLERANCE_MIDICENTS` of an EDO step is on the grid and converts directly. If any pitch is off the grid the call returns `needsSnap` (with the count) and converts nothing; the desk then prompts Snap or Cancel, and only a call with `snap: true` rounds to the nearest step. Each item gains a `to-pitch-class` provenance step recording `edo` and `snappedCount`.
+
+Pitch-class events are accepted by the `transpose-pitches`, `invert-pitches` and `voice-pitch-classes` entries in `compatibility.ts` for any `chromatic-<edo>`, but that table is only used by tests: real routing is `signalTypes.ts` and the registry's `acceptsPacket`. Pitch List now requires `kind === 'list'` upstream, so an events packet is no longer read as a list.
 
 ### Make source
 

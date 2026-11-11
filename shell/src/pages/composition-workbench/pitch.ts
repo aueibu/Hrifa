@@ -474,13 +474,20 @@ export function interpretPitchList({
   // `format`: connecting a pitchClass upstream while `format` still says "midi-note" (a stale
   // UI selection) still passes the pitchClass packet through as pitchClass, matching how the
   // interface disables the format selector once an upstream connection defines it.
-  if (upstream && (upstream.domain === 'pitch' || upstream.domain === 'pitchClass')) {
+  // Only a list packet is a bare pitch(-class) list; an events packet (e.g. events | pitchClass
+  // from "To pitch classes") has object values and is rejected below, not read as a list.
+  const upstreamIsList = upstream?.kind === 'list';
+  if (
+    upstream &&
+    upstreamIsList &&
+    (upstream.domain === 'pitch' || upstream.domain === 'pitchClass')
+  ) {
     return { packet: upstream, errors: [], source: 'upstream' };
   }
 
   const tokenized = upstream ? undefined : tokenizePitchGroups(inlineText);
   const sourceItems = upstream
-    ? upstream.items.map((item) => ({
+    ? (upstreamIsList ? upstream.items : []).map((item) => ({
         tokens: [String(item.value)],
         sourceId: item.id,
         inherited: item.provenance,
@@ -532,7 +539,9 @@ export function interpretPitchList({
     });
   });
 
-  if (!sourceItems.length) {
+  if (upstream && !upstreamIsList) {
+    errors.push('Connect a list of pitch values; an events packet is not a pitch list.');
+  } else if (!sourceItems.length) {
     errors.push('Enter at least one pitch value.');
   }
   const domain = format === 'pitch-class' ? 'pitchClass' : 'pitch';
