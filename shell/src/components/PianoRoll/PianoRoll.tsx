@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { ActionIcon, Button, Group, Switch, Text } from '@mantine/core';
 import type { PianoRollGridLine, PianoRollNote, PianoRollViewState } from './model';
+import { useInfoBarActive } from '../InfoBar';
 import classes from './PianoRoll.module.css';
 
 const KEYBOARD_WIDTH = 4.5 * 16;
@@ -55,6 +56,7 @@ export function PianoRoll({
   ariaLabel = 'Piano roll',
   showToolbar = true,
 }: PianoRollProps) {
+  const infoBar = useInfoBarActive();
   const scroller = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height });
   const safeDuration = Math.max(1, duration);
@@ -367,7 +369,8 @@ export function PianoRoll({
                   className={classes.note}
                   data-active={active || undefined}
                   data-colored={note.color ? true : undefined}
-                  title={`${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
+                  data-info={`${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
+                  title={infoBar ? undefined : `${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`}
                   style={{
                     height: noteHeight,
                     left: note.start * view.pixelsPerQuarter,
