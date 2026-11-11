@@ -1,11 +1,16 @@
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
+import type { DataPacket } from './model';
 import {
   acceptsSnippets,
+  commitSnippetEdit,
+  createClipFromVersion,
   convertSnippetToPitchClass,
   duplicateSnippet,
   editSnippetNote,
+  restoreSnippetVersion,
   type PitchClassConversionResult,
   type Snippet,
+  type SnippetEditResult,
 } from './snippet';
 import { compositionStateKeys, usePersistentState } from './usePersistentState';
 
@@ -30,6 +35,17 @@ interface DeskContextValue {
     id: string,
     options: { edo: number; snap?: boolean }
   ): PitchClassConversionResult;
+  /**
+   * The edit contract: replace the snippet's packet in place (same id, name and position), adding an
+   * `operation` provenance step to every item. One global undo step. A packet deeply equal to the
+   * current one changes nothing (`ok`, no history entry); an invalid packet or an unknown id is
+   * refused and the desk is untouched.
+   */
+  commitSnippetEditById(id: string, newPacket: DataPacket, operation: string): SnippetEditResult;
+  /** Moves the clip back (or forward) to a kept version; same clip, one undo step. */
+  restoreSnippetVersionById(id: string, versionId: string): SnippetEditResult;
+  /** Adds a new clip made from a version, directly after the original. Returns it. */
+  createClipFromVersionById(id: string, versionId: string): SnippetEditResult;
 }
 
 const DeskContext = createContext<DeskContextValue | undefined>(undefined);
@@ -142,6 +158,73 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     },
     [applyChange]
   );
+  const commitSnippetEditById = useCallback(
+    (id: string, newPacket: DataPacket, operation: string): SnippetEditResult => {
+      const target = snippetsRef.current.find((snippet) => snippet.id === id);
+      if (!target) {
+        return { ok: false, error: 'That snippet is no longer on the desk.' };
+      }
+      const result = commitSnippetEdit(target, newPacket, operation);
+      if (!result.ok) {
+        return result;
+      }
+      if (result.snippet === target) {
+        return result;
+      }
+      applyChange((current) =>
+        current.some((snippet) => snippet.id === id)
+          ? current.map((snippet) => (snippet.id === id ? result.snippet : snippet))
+          : current
+      );
+      return result;
+    },
+    [applyChange]
+  );
+  const restoreSnippetVersionById = useCallback(
+    (id: string, versionId: string): SnippetEditResult => {
+      const target = snippetsRef.current.find((snippet) => snippet.id === id);
+      if (!target) {
+        return { ok: false, error: 'That snippet is no longer on the desk.' };
+      }
+      const result = restoreSnippetVersion(target, versionId);
+      if (!result.ok || result.snippet === target) {
+        return result;
+      }
+      applyChange((current) =>
+        current.some((snippet) => snippet.id === id)
+          ? current.map((snippet) => (snippet.id === id ? result.snippet : snippet))
+          : current
+      );
+      return result;
+    },
+    [applyChange]
+  );
+  const createClipFromVersionById = useCallback(
+    (id: string, versionId: string): SnippetEditResult => {
+      const source = snippetsRef.current.find((snippet) => snippet.id === id);
+      if (!source) {
+        return { ok: false, error: 'That snippet is no longer on the desk.' };
+      }
+      const result = createClipFromVersion(source, versionId, {
+        id: newSnippetId(),
+        createdAt: new Date().toISOString(),
+      });
+      if (!result.ok) {
+        return result;
+      }
+      applyChange((current) => {
+        const index = current.findIndex((snippet) => snippet.id === id);
+        if (index < 0) {
+          return current;
+        }
+        const next = [...current];
+        next.splice(index + 1, 0, result.snippet);
+        return next;
+      });
+      return result;
+    },
+    [applyChange]
+  );
   const value = useMemo(
     () => ({
       snippets,
@@ -151,6 +234,9 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       setSnippetNote,
       duplicateSnippetById,
       convertToPitchClassById,
+      commitSnippetEditById,
+      restoreSnippetVersionById,
+      createClipFromVersionById,
     }),
     [
       snippets,
@@ -160,6 +246,9 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       setSnippetNote,
       duplicateSnippetById,
       convertToPitchClassById,
+      commitSnippetEditById,
+      restoreSnippetVersionById,
+      createClipFromVersionById,
     ]
   );
   return <DeskContext.Provider value={value}>{children}</DeskContext.Provider>;

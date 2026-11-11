@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: ARC.md (Clips and the clip editor). The previous desk arc is archived in `ARC.desk.md` / `PROGRESS.desk.md` (committed at 39bb1af).
-- Current milestone: K1b (built; awaiting human checkpoint)
-- State: arc adopted (uncommitted); K1 and K1b built, reviewed, gate green (53 files / 611 tests). Next: K2 after the K1b checkpoint.
+- Current milestone: K2
+- State: K1 and K1b committed (415e5e3), K1b checkpoint accepted. K2 builder running.
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |

@@ -63,7 +63,9 @@ Let a composer start from a blank clip and edit it directly, without a module fe
 - Stop and ask if full coverage needs refactoring modules beyond routing their state through the shared hook.
 
 ### K2: Edit contract
-- Scope: `commitSnippetEdit(snippet, newPacket, operation)` replaces the packet on the same id, adds an `edit-clip` (or named) provenance step to affected items, and goes through K1's history. Decide and document what a "version" is so the family tree can be added later without rework; do not build the tree viewer here.
+- Scope: `commitSnippetEdit(snippet, newPacket, operation)` replaces the packet on the same id, adds an `edit-clip` (or named) provenance step to affected (added/modified) items, and goes through K1's history. Do not build the tree viewer here (K7).
+- Version model (human decision, 2026-11-11): a clip keeps a stored derivation tree of snapshots, so any earlier state can be viewed, inspected and returned to at any time. Additive optional field on `Snippet` (no schema bump; v1 desks must still load): `lineage?: { head: string; versions: SnippetVersion[]; derivedFrom?: { snippetId; versionId; operation } }` where `SnippetVersion = { id; parentId: string | null; at: ISO string; operation: string; packet }` (design details are the builder's, but: a tree via `parentId`; the current packet is the head version; editing after returning to an earlier version creates a branch). Bounded per clip (count and/or size) with a pruning policy that keeps the tree connected and never drops the head. Never-edited clips store no lineage. Cross-clip derivation: Duplicate and Convert-to-pitch-classes record `derivedFrom` on the new clip. An edit may NOT change `kind`, `domain` or `encoding` (that is a new clip with `derivedFrom`, not an edit).
+- Data operations in K2 (no UI): `commitSnippetEdit`, `restoreSnippetVersion` (same id, head moves to that version, undoable), and `createClipFromVersion` (new clip with `derivedFrom`). All through `applyChange`.
 - Acceptance:
   - [ ] Test: an edit keeps the id, `createdAt` and name, changes the packet, and appends provenance
   - [ ] Test: a Make-source module for that snippet publishes the new packet after an edit
@@ -102,7 +104,7 @@ Let a composer start from a blank clip and edit it directly, without a module fe
 - Human checkpoint after: yes
 
 ### K7 (stretch): Lineage viewer
-- Scope: the family-tree view of how a clip was derived, with Restore here, Create from this, and Open for comparison. Depends on K2's version model.
+- Scope: a "History" button on a clip that opens a panel on the right showing the family tree of how the clip got there (K2's `lineage`: versions, branches and `derivedFrom` links), with preview/inspect of any version and Restore here, Create from this, and Open for comparison, using K2's data operations. Layout and wording are the human's call (checkpoint).
 - Human checkpoint after: yes
 
 ## Final step

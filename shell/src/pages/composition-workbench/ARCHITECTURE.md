@@ -406,6 +406,33 @@ Cards preview a snippet, rename it, edit its note (`editSnippetNote`; blank text
 
 Pitch-class events are accepted by the `transpose-pitches`, `invert-pitches` and `voice-pitch-classes` entries in `compatibility.ts` for any `chromatic-<edo>`, but that table is only used by tests: real routing is `signalTypes.ts` and the registry's `acceptsPacket`. Pitch List now requires `kind === 'list'` upstream, so an events packet is no longer read as a list.
 
+### Edit contract and versions
+
+A clip keeps a stored **derivation tree of snapshots**, so any earlier state can be viewed, inspected and returned to. The stored shape is additive: an optional `Snippet.lineage` (no `schemaVersion` bump; desks without it load unchanged, and `acceptsSnippets` validates it when present).
+
+```ts
+interface Snippet { /* ...as before... */ lineage?: SnippetLineage }
+interface SnippetLineage { head: string; versions: SnippetVersion[]; derivedFrom?: SnippetDerivation }
+interface SnippetVersion { id: string; parentId: string | null; at: string; operation: string; packet?: DataPacket }
+interface SnippetDerivation { snippetId: string; versionId: string | null; operation: string }
+```
+
+- **The head is the clip's current packet.** `Snippet.packet` is the head's content, so the head version stores no `packet` of its own (no duplicate copy). Every other version carries its snapshot. `acceptsSnippets` enforces this: the head has no `packet`, every other version has one, there is exactly one root (`parentId: null`), every `parentId` names a kept version, every version reaches the root (no cycles), and the lineage is plain JSON.
+- **Never-edited clips store no lineage.** The first edit creates the root version (`original`, at the clip's `createdAt`) from the pre-edit packet, then a child that becomes the head.
+- **Derived clips** (Duplicate, Convert to pitch classes, Create from version) are born with a one-version lineage whose `derivedFrom` names the source clip and the source's head version (`versionId`). If the source has never been edited it has no versions yet, so `versionId` is `null`; that means the source's original state, which becomes its root version if it is ever edited. New clips never copy the source's tree.
+
+**Operations** (snippet.ts; the desk exposes each as a context action through `applyChange`, so each is one global undo step with no coalescing):
+
+- `commitSnippetEdit(snippet, newPacket, operation)`: same `id`, `createdAt`, `name`, `note`, `origin`; the packet is a JSON-safe deep copy. Returns `{ ok: false, error }` and never throws for a packet that is not plain JSON (cyclic input included), not a valid packet, or that changes `kind`, `domain` or `encoding` (that is a new clip). A packet deeply equal to the current one changes nothing. Added and modified items gain a provenance step `{ transformation: operation, parameters: { snippetId, versionId, change } }`; unchanged items get none. A reorder-only edit is a real change (arrays compare in order): it records a version but stamps no item. Each edit appends a child of the current head.
+- `restoreSnippetVersion(snippet, versionId)`: the head moves to that version and the packet becomes its snapshot. The version left keeps its snapshot, so nothing is lost. A later edit branches from the restored version.
+- `createClipFromVersion(snippet, versionId, { id, createdAt })`: a new clip `<name> (from earlier)` from that version's packet, with `derivedFrom`.
+
+Make-source modules follow all of this with no extra work: `SnippetSourceModule` reads the snippet by id and republishes its packet, so an edit, a restore or an undo updates its output and every receiver.
+
+**Bounds and pruning.** Each clip's lineage is capped by `MAX_SNIPPET_VERSIONS` (50) and `MAX_LINEAGE_BYTES` (about 2M JSON characters). `pruneLineage` runs on every edit: the root and the head are never dropped; the oldest interior version (one with children, not a branch tip) goes first, then the oldest branch tip; children of a dropped version are re-parented to its parent, so the tree stays connected. A single clip whose root plus head already exceed the byte budget is left as is. Pruning discards those snapshots for good, so the oldest history is lost first. The desk is stored in `localStorage`, which has a small quota; `usePersistentState` swallows a failed write, so on overflow the live desk keeps working but is not saved until space is freed. Large clips with many versions are the likely cause, which is what the caps are for.
+
+**What lineage can and cannot reconstruct.** It can show every kept packet exactly (snapshots capture deletions, reorders, frame and packet-level changes, not just item changes), the parent/branch structure, when and by which operation each version was made, and which clip it came from. It cannot show versions that were pruned, edits that happened before the clip had a lineage (the root is the state at the first edit), or the exact derived-from state when the source was never edited and then changed (`versionId: null` is only resolvable once the source gains a root). Per-item provenance steps mark which items an operation added or modified, but item-id stability is a caller obligation (an editor must keep the id of a moved or changed item); nothing enforces it, so provenance and diffs by id are only as good as the editor. History for undo (history.ts) is separate: bounded, session-only, whole-list.
+
 ### Make source
 
 Make source places a snippet on the canvas as a `snippet` module (`SnippetSourceModule`). The instance carries a `snippetId` (kept through migration of saved placements) and publishes the snippet's packet unchanged on one output, so any module that accepts that kind of packet can read it; a note snippet can feed the Mixer. The desk owns the material and the module keeps no state of its own. If the snippet is deleted the module publishes nothing and receivers show a missing source, as for any removed source. It is not in the Add module menu, so a desk item never lands on the canvas unless the composer asks.
