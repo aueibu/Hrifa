@@ -544,9 +544,25 @@ export function CompositionWorkbenchPage() {
                     collapsed={detailCollapsed}
                     onCollapsed={setDetailCollapsed}
                     top={
-                      <>
-                      {/* Both stay mounted: the canvas keeps its viewport while the desk is shown. */}
-                      <div style={{ height: '100%' }} hidden={workspaceView !== 'desk'}>
+                      <div style={{ display: 'grid', flex: 1, minHeight: 0 }}>
+                      {/*
+                        Both stay mounted and share one grid cell. The inactive one is only
+                        visibility:hidden, never display:none, because the canvas measures its box:
+                        collapsing it to zero made it refit to a tiny view when shown again.
+                      */}
+                      <div
+                        // Height 0 with a full-height minimum: the desk fills the cell but never
+                        // makes the row taller, so it scrolls instead of resizing the canvas.
+                        style={{
+                          gridArea: '1 / 1',
+                          height: 0,
+                          minHeight: '100%',
+                          minWidth: 0,
+                          overflow: 'hidden',
+                          ...(workspaceView === 'desk' ? {} : { visibility: 'hidden' }),
+                        }}
+                        inert={workspaceView !== 'desk'}
+                      >
                         <DeskView
                           onMakeSource={(snippet) => {
                             addCompositionModule('snippet', undefined, snippet.id);
@@ -554,7 +570,18 @@ export function CompositionWorkbenchPage() {
                           }}
                         />
                       </div>
-                      <div style={{ height: '100%' }} hidden={workspaceView !== 'canvas'}>
+                      <div
+                        style={{
+                          // A flex column, as the stage's top pane was: the canvas fills it with flex: 1.
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gridArea: '1 / 1',
+                          minHeight: 0,
+                          minWidth: 0,
+                          ...(workspaceView === 'canvas' ? {} : { visibility: 'hidden' }),
+                        }}
+                        inert={workspaceView !== 'canvas'}
+                      >
                       <CompositionCanvas
                         activeInstanceId={activeCompositionInstanceId}
                         selected={compositionInspectorTarget}
@@ -569,7 +596,7 @@ export function CompositionWorkbenchPage() {
                         onAddModule={addCompositionModule}
                       />
                       </div>
-                      </>
+                      </div>
                     }
                     bottom={
                       <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
