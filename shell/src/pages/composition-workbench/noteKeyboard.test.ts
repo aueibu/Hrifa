@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { MIN_NOTE_QUARTERS } from '../../components/PianoRoll';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import { rationalFromNumber, rationalToNumber } from './musicalTime';
-import { resolveSamePitchOverlaps } from './noteClipEdits';
+import { resizeNotes, resolveSamePitchOverlaps } from './noteClipEdits';
 import {
   navigateSelection,
   navigationOrder,
@@ -293,5 +294,61 @@ describe('Ctrl+Right on a whole selected same-pitch legato run', () => {
         ['c', 2, 2],
       ]);
     }
+  });
+});
+
+describe('performance: thousands of notes', () => {
+  const count = 5000;
+  const big = () =>
+    clip(
+      Array.from({ length: count }, (_, index) =>
+        item(`n${index}`, index * 2, index % 3 === 0 ? 0.25 : 1, [6000 + (index % 12) * 100])
+      )
+    );
+  const ids = (p: DataPacket) => p.items.map((entry) => entry.id);
+
+  it('a select-all grid resize is one pass and equals the per-note result', () => {
+    const before = big();
+    const selected = ids(before);
+    // The per-note reference: the earlier implementation, one id at a time through resizeNotes.
+    const reference = (quarters: number, unit: number) => {
+      const floor = Math.max(unit, MIN_NOTE_QUARTERS);
+      return selected.slice(0, 300).reduce((next, id) => {
+        const current = length(next, id);
+        if (quarters < 0 && current <= floor + 1e-9) {
+          return next;
+        }
+        return resizeNotes(
+          next,
+          [id],
+          quarters < 0 ? Math.max(quarters, floor - current) : quarters
+        );
+      }, before);
+    };
+    const began = performance.now();
+    const longer = resizeNotesByGrid(before, selected, 0.5, 0.5);
+    const shorter = resizeNotesByGrid(before, selected, -0.5, 0.5);
+    expect(performance.now() - began).toBeLessThan(3000);
+    const refLonger = reference(0.5, 0.5);
+    const refShorter = reference(-0.5, 0.5);
+    for (const id of selected.slice(0, 300)) {
+      expect(value(longer, id)).toEqual(value(refLonger, id));
+      expect(value(shorter, id)).toEqual(value(refShorter, id));
+    }
+    for (const index of [2500, 4999]) {
+      const original = length(before, `n${index}`);
+      expect(length(longer, `n${index}`)).toBe(original + 0.5);
+      expect(length(shorter, `n${index}`)).toBe(
+        original <= 0.5 + 1e-9 ? original : Math.max(0.5, original - 0.5)
+      );
+    }
+  });
+
+  it('a resolve with thousands of touched notes on many pitches is fast and leaves no overlap', () => {
+    const grown = resizeNotesByGrid(big(), ids(big()), 0.5, 0.5);
+    const began = performance.now();
+    const resolved = resolveSamePitchOverlaps(grown, big()).packet;
+    expect(performance.now() - began).toBeLessThan(5000);
+    expect(resolved.items.length).toBe(count);
   });
 });

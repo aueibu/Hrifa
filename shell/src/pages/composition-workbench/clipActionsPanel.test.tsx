@@ -713,6 +713,26 @@ describe('pick-pitch mode (Invert and Make all pitches equal)', () => {
     ]);
   });
 
+  it('Enter during a pick is ignored from an unrelated control outside the editor and panel', async () => {
+    const roll = await open(oldClip());
+    await userEvent.click(button('Invert'));
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    try {
+      outside.focus();
+      fireEvent.keyDown(outside, { key: 'Enter' });
+      expect(banner()).not.toBeNull();
+      expect(['n1', 'n2', 'n3'].map(pitchOf)).toEqual([[6000], [6400], [6700]]);
+      // From the panel's own button the default still applies.
+      fireEvent.keyDown(button('Cancel pick'), { key: 'Enter' });
+      expect(banner()).toBeNull();
+      expect(['n1', 'n2', 'n3'].map(pitchOf)).toEqual([[6700], [6300], [6000]]);
+    } finally {
+      outside.remove();
+    }
+    expect(roll).toBeInTheDocument();
+  });
+
   it('switching the tool cancels the pick without an edit', async () => {
     const roll = await openWithE4();
     await userEvent.click(button('Invert'));

@@ -95,11 +95,15 @@ export interface VelocityLaneProps {
   /** The active velocity ramp (a secondary selection), drawn as a dashed line; the owner keeps it. */
   ramp?: VelocityRamp | null;
   /**
-   * Paint can: a ramp was made (on release) or re-curved (right-button drag while the ramp is active,
-   * on release: Alt + right button, or the plain right button as a fallback), with the absolute
-   * velocities it writes by note id. Each report is one edit.
+   * Paint can: a ramp was made (on release) or re-curved (a plain right-button drag while the ramp is
+   * is active, on release), with the absolute velocities it writes by note id. Each report is one edit.
    */
   onRamp?(ramp: VelocityRamp, values: Record<string, number>): void;
+  /**
+   * Paint can: a left press in the lane starts a brand-new ramp, so the previous one is over from that
+   * press on (called once per press, before any `onRamp`). The owner drops its active ramp.
+   */
+  onRampStart?(): void;
   /** The track's height in pixels (default `VELOCITY_LANE_HEIGHT`). */
   height?: number;
   /**
@@ -191,8 +195,6 @@ type LaneGesture =
 
 /** How long after a right-button gesture the browser's context menu is still swallowed (it fires on release). */
 const MENU_GUARD_MS = 1000;
-/** And how long the Alt key's own release is still kept from reaching the browser's menu bar. */
-const ALT_GUARD_MS = 15000;
 
 /** What the lane draws while a tool gesture runs (empty while the press has not moved yet). */
 interface Live {
@@ -243,6 +245,7 @@ export function VelocityLane({
   onSetVelocities,
   ramp,
   onRamp,
+  onRampStart,
   height = VELOCITY_LANE_HEIGHT,
   onHeightChange,
   minHeight = MIN_VELOCITY_LANE_HEIGHT,
@@ -300,10 +303,9 @@ export function VelocityLane({
   const contentRef = useRef<HTMLDivElement>(null);
   const gesture = useRef<LaneGesture | null>(null);
   const [live, setLive] = useState<Live | null>(null);
-  // The browser's context menu and the Alt key's menu-bar activation, held back around a ramp-curve
-  // gesture (guardMenu / guardAlt). Window listeners that remove themselves; none outlives the lane.
+  // The browser's context menu, held back around a ramp-curve gesture (guardMenu). A window listener
+  // that removes itself; it never outlives the lane.
   const menuGuard = useRef<{ stop(): void; timer?: number } | null>(null);
-  const altGuard = useRef<{ stop(): void; timer?: number } | null>(null);
   const lastPoint = useRef<LanePoint | null>(null);
   const snapUnit = gridUnit ?? adaptiveSubdivision(pixelsPerQuarter);
   /** Every head (one per note id), in timeline pixels. */
@@ -440,6 +442,9 @@ export function VelocityLane({
         readouts: [{ x: point.x, y: point.y, text: percentText(percentAtY(point.y, trackHeight)) }],
       });
     } else if (activeTool === 'paint' && onRamp) {
+      // Every left press in Paint starts a ramp from scratch, on a pin or not: the previous ramp is
+      // disarmed right here (it must not come back if this drag catches nothing).
+      onRampStart?.();
       const startPercent = percentAtY(point.y, trackHeight);
       gesture.current = { kind: 'paint', start: point, startPercent };
       setLive(
@@ -522,15 +527,6 @@ export function VelocityLane({
     }
   }
 
-  function stopAltGuard() {
-    const guard = altGuard.current;
-    altGuard.current = null;
-    if (guard) {
-      window.clearTimeout(guard.timer);
-      guard.stop();
-    }
-  }
-
   /**
    * The browser shows its context menu when the right button is RELEASED, at whatever is then under the
    * pointer (a curve drag runs up and down out of the lane, and capture is gone by then), so the menu
@@ -549,42 +545,11 @@ export function VelocityLane({
     menuGuard.current = { stop: () => window.removeEventListener('contextmenu', onMenu, true) };
   }
 
-  /**
-   * Alt pressed and released alone makes the browser focus its menu bar. The Alt of a curve gesture
-   * belongs to the gesture, so its keydown and keyup are cancelled (the keyup ends the guard).
-   */
-  function guardAlt() {
-    if (altGuard.current) {
-      return;
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Alt') {
-        return;
-      }
-      event.preventDefault();
-      if (event.type === 'keyup') {
-        stopAltGuard();
-      }
-    };
-    window.addEventListener('keydown', onKey, true);
-    window.addEventListener('keyup', onKey, true);
-    altGuard.current = {
-      stop: () => {
-        window.removeEventListener('keydown', onKey, true);
-        window.removeEventListener('keyup', onKey, true);
-      },
-    };
-  }
-
-  /** The gesture is over: the guards stay just long enough for the release's menu and the Alt keyup. */
+  /** The gesture is over: the guard stays just long enough for the release's menu. */
   function expireGuards() {
     if (menuGuard.current) {
       window.clearTimeout(menuGuard.current.timer);
       menuGuard.current.timer = window.setTimeout(stopMenuGuard, MENU_GUARD_MS);
-    }
-    if (altGuard.current) {
-      window.clearTimeout(altGuard.current.timer);
-      altGuard.current.timer = window.setTimeout(stopAltGuard, ALT_GUARD_MS);
     }
   }
 
@@ -601,8 +566,8 @@ export function VelocityLane({
   }
 
   /**
-   * A right press on the track while a ramp is active starts the curve gesture (Alt + right button,
-   * or the plain right button as a fallback). Called from the window's capture-phase pointerdown.
+   * A plain right press on the track while a ramp is active starts the curve gesture (no modifier
+   * needed). Called from the window's capture-phase pointerdown.
    */
   function beginCurve(event: PointerEvent) {
     if (!ramp) {
@@ -617,9 +582,6 @@ export function VelocityLane({
       curve: ramp.curve,
     };
     guardMenu();
-    if (event.altKey) {
-      guardAlt();
-    }
     setLive(curveLive(ramp, ramp.curve, event));
     try {
       trackRef.current?.setPointerCapture?.(event.pointerId);
@@ -632,9 +594,6 @@ export function VelocityLane({
     const current = gesture.current;
     if (current?.kind !== 'curve' || !ramp) {
       return;
-    }
-    if (event.altKey) {
-      guardAlt();
     }
     current.curve = curveFromDrag(current.startCurve, event.clientY - current.startY);
     setLive(curveLive(ramp, current.curve, event));
@@ -718,7 +677,6 @@ export function VelocityLane({
   useEffect(
     () => () => {
       stopMenuGuard();
-      stopAltGuard();
     },
     []
   );

@@ -288,8 +288,21 @@ export function moveNotes(
  */
 export function resizeNotes(packet: DataPacket, ids: readonly string[], delta: number): DataPacket {
   const chosen = new Set(ids);
+  return resizeNotesByDeltas(packet, (item) => (chosen.has(item.id) ? delta : undefined));
+}
+
+/**
+ * One pass over the packet that changes each note's length by its own delta (`deltaFor` returns
+ * undefined or 0 to leave a note), each held at `MIN_NOTE_QUARTERS`. The same packet when nothing
+ * changes.
+ */
+export function resizeNotesByDeltas(
+  packet: DataPacket,
+  deltaFor: (item: NoteItem) => number | undefined
+): DataPacket {
   return replaceItems(packet, (item) => {
-    if (!chosen.has(item.id)) {
+    const delta = deltaFor(item);
+    if (delta === undefined) {
       return item;
     }
     const current = quarters(item.value.duration);
@@ -508,17 +521,51 @@ export function resolveSamePitchOverlaps(
     if (pieces.length < 2 || !pieces.some((piece) => piece.touched)) {
       continue;
     }
-    let live = [...pieces];
+    // Live pieces per original note, in time order (the original first, then pieces cut off it).
+    const lists = new Map<number, OverlapPiece[]>();
+    for (const piece of pieces) {
+      lists.set(piece.order, [piece]);
+    }
+    // Which originals overlap which (once, by a sweep): cutting only ever shrinks spans, and a fresh
+    // piece lies inside its source, so no overlap can appear that is not in this index.
+    const neighbours = new Map<number, number[]>();
+    const bySpanStart = [...pieces].sort(
+      (a, b) => compareRational(a.onset, b.onset) || a.order - b.order
+    );
+    let active: OverlapPiece[] = [];
+    for (const piece of bySpanStart) {
+      active = active.filter((other) => compareRational(piece.onset, other.end) < 0);
+      for (const other of active) {
+        if (overlaps(piece, other)) {
+          const mine = neighbours.get(piece.order);
+          if (mine) {
+            mine.push(other.order);
+          } else {
+            neighbours.set(piece.order, [other.order]);
+          }
+          const theirs = neighbours.get(other.order);
+          if (theirs) {
+            theirs.push(piece.order);
+          } else {
+            neighbours.set(other.order, [piece.order]);
+          }
+        }
+      }
+      active.push(piece);
+    }
     let changed = false;
     // A touched note overwrites the pieces that are untouched, and of two touched notes the one with
-    // the LATER ONSET wins (a tie: the later in packet order), whatever the packet order.
-    for (const stamp of pieces) {
-      if (!stamp.touched) {
-        continue;
-      }
-      const yielding = live.filter(
+    // the LATER ONSET wins (a tie: the later in packet order), whatever the packet order. The touched
+    // notes act from the weakest to the strongest, so every winner sees what its losers left (their
+    // fresh halves included) and the result does not depend on the packet order.
+    const stamps = pieces
+      .filter((piece) => piece.touched)
+      .sort((a, b) => (winsOver(a, b) ? 1 : winsOver(b, a) ? -1 : 0));
+    for (const stamp of stamps) {
+      const owners = [...(neighbours.get(stamp.order) ?? [])].sort((a, b) => a - b);
+      const candidates = owners.flatMap((owner) => lists.get(owner) ?? []);
+      const yielding = candidates.filter(
         (other) =>
-          other !== stamp &&
           (!other.touched || winsOver(stamp, other)) &&
           overlaps(stamp, other) &&
           !preExisting(stamp, other)
@@ -531,41 +578,44 @@ export function resolveSamePitchOverlaps(
       if (twin) {
         twin.velocity = stamp.velocity;
         survivorOf.set(stamp.id, twin.id);
-        live = live.filter((piece) => piece !== stamp);
+        lists.set(stamp.order, []);
         continue;
       }
-      const next: OverlapPiece[] = [];
-      for (const other of live) {
-        if (!yielding.includes(other)) {
-          next.push(other);
+      const yieldingSet = new Set(yielding);
+      for (const owner of owners) {
+        const list = lists.get(owner) ?? [];
+        if (!list.some((entry) => yieldingSet.has(entry))) {
           continue;
         }
-        const keepsBefore = compareRational(other.onset, stamp.onset) < 0;
-        const keepsAfter = compareRational(stamp.end, other.end) < 0;
-        const afterPiece: OverlapPiece | null = keepsAfter
-          ? keepsBefore
-            ? { ...other, id: freshId(other.source.id), onset: stamp.end, fresh: true }
-            : null
-          : null;
-        if (keepsBefore) {
-          other.end = stamp.onset;
-          next.push(other);
-        } else if (keepsAfter) {
-          other.onset = stamp.end;
-          next.push(other);
+        const next: OverlapPiece[] = [];
+        for (const other of list) {
+          if (!yieldingSet.has(other)) {
+            next.push(other);
+            continue;
+          }
+          const keepsBefore = compareRational(other.onset, stamp.onset) < 0;
+          const keepsAfter = compareRational(stamp.end, other.end) < 0;
+          const afterPiece: OverlapPiece | null =
+            keepsAfter && keepsBefore
+              ? { ...other, id: freshId(other.source.id), onset: stamp.end, fresh: true }
+              : null;
+          if (keepsBefore) {
+            other.end = stamp.onset;
+            next.push(other);
+          } else if (keepsAfter) {
+            other.onset = stamp.end;
+            next.push(other);
+          }
+          if (afterPiece) {
+            next.push(afterPiece);
+          }
         }
-        if (afterPiece) {
-          next.push(afterPiece);
-        }
+        lists.set(owner, next);
       }
-      live = next;
     }
     if (changed) {
       for (const piece of pieces) {
-        outcome.set(
-          piece.source.id,
-          live.filter((entry) => entry.source === piece.source)
-        );
+        outcome.set(piece.source.id, lists.get(piece.order) ?? []);
       }
     }
   }

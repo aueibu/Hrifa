@@ -1882,12 +1882,12 @@ describe('velocity lane tools in the editor', () => {
       expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'n1,n2,n3');
     });
 
-    it('Alt + right-button drag curves it as ONE more step re-applied from the original endpoints; undo returns to the straight ramp', async () => {
+    it('a plain right-button drag curves it as ONE more step re-applied from the original endpoints; undo returns to the straight ramp', async () => {
       await open(seededClip());
       act(() => tool('Paint').click());
       laneSweep([0, 8], [256, 76]);
       const changes = historyChangeCount();
-      const flags = { button: 2, altKey: true, pointerId: 2 };
+      const flags = { button: 2, pointerId: 2 };
       laneSweep([100, 40], [100, 16], flags);
       expect(fireEvent.contextMenu(track())).toBe(false);
       expect(historyChangeCount()).toBe(changes + 1);
@@ -1939,6 +1939,61 @@ describe('velocity lane tools in the editor', () => {
       );
       expect(screen.queryByTestId('velocity-ramp')).toBeNull();
       expect(roll).toBeInTheDocument();
+    });
+
+    it('a left press on a pin with notes selected starts a fresh ramp; a second left drag replaces the first; right-click without a ramp keeps the menu', async () => {
+      const roll = await open(seededClip());
+      // Select n2 first.
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 150,
+        clientY: rowY(64),
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(roll, { clientX: 150, clientY: rowY(64), pointerId: 1 });
+      act(() => tool('Paint').click());
+      laneSweep([0, 8], [256, 76]);
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'n1,n2,n3');
+      // A press on the pin of n2 (in the lane, selection active): the old ramp is gone at the press.
+      const pin = screen
+        .getAllByTestId('velocity-pin')
+        .find((el) => el.dataset.note?.startsWith('n2'))!;
+      fireEvent.pointerDown(pin, { clientX: 128, clientY: 8, pointerId: 1 });
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'n2');
+      laneMove(256, 76);
+      laneRelease(256, 76);
+      // A fresh ramp over n2 and n3 only (this drag's x range), not the selection or the old ramp.
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'n2,n3');
+      expect(velocityOf('n2')).toBe(1);
+      expect(velocityOf('n3')).toBe(0);
+      expect(velocityOf('n1')).toBe(1);
+      // A second left drag replaces it.
+      laneSweep([0, 76], [128, 8]);
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'n1,n2');
+      expect(velocityOf('n1')).toBe(0);
+      expect(velocityOf('n2')).toBe(1);
+      // A press that catches nothing leaves no ramp (the old one does not come back), and then a
+      // plain right-click is the browser's.
+      laneSweep([60, 8], [90, 76]);
+      expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+      lanePress(100, 40, { button: 2, pointerId: 2 });
+      expect(fireEvent.contextMenu(track())).toBe(true);
+    });
+
+    it("the ramp's Escape is ignored from an unrelated control outside the editor", async () => {
+      await open(seededClip());
+      act(() => tool('Paint').click());
+      laneSweep([0, 8], [256, 76]);
+      const outside = document.createElement('button');
+      document.body.appendChild(outside);
+      try {
+        outside.focus();
+        fireEvent.keyDown(outside, { key: 'Escape' });
+        expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
+        fireEvent.keyDown(track(), { key: 'Escape' });
+        expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+      } finally {
+        outside.remove();
+      }
     });
 
     it('a ramp that changes nothing commits nothing, and Escape cancels a drag', async () => {
@@ -2146,7 +2201,7 @@ describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no d
       laneRelease(256, 76);
       expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
       const changes = historyChangeCount();
-      // The right button goes down in the lane (no Alt: the fallback), the drag runs up out of the
+      // The right button goes down in the lane (a plain right drag, no Alt), the drag runs up out of the
       // lane over the roll, and the release and its contextmenu land on the roll.
       lanePress(100, 40, { button: 2, pointerId: 2 });
       fireEvent.pointerMove(roll, { clientX: 100, clientY: -60, pointerId: 2 });
@@ -2155,18 +2210,11 @@ describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no d
       expect(screen.queryByRole('menu')).toBeNull();
       expect(historyChangeCount()).toBe(changes + 1);
       expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
-      // Alt + right button works the same on the window, and the ramp is still active for it.
-      const alt = { button: 2, altKey: true, pointerId: 3 };
-      lanePress(100, 40, alt);
-      fireEvent.pointerMove(document.body, {
-        clientX: 100,
-        clientY: 200,
-        pointerId: 3,
-        altKey: true,
-      });
-      expect(fireEvent.keyDown(window, { key: 'Alt', altKey: true })).toBe(false);
+      // A second plain right drag works the same on the window, and the ramp is still active for it.
+      const again = { button: 2, pointerId: 3 };
+      lanePress(100, 40, again);
+      fireEvent.pointerMove(document.body, { clientX: 100, clientY: 200, pointerId: 3 });
       fireEvent.pointerUp(window, { button: 2, clientX: 100, clientY: 200, pointerId: 3 });
-      expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(false);
       expect(fireEvent.contextMenu(document.body)).toBe(false);
       expect(historyChangeCount()).toBe(changes + 2);
       // Everything was swallowed once: the browser menu is back for the next right-click.

@@ -1,7 +1,7 @@
 import { MIN_NOTE_QUARTERS } from '../../components/PianoRoll';
 import type { DataPacket } from './model';
 import { rationalToNumber } from './musicalTime';
-import { moveNotes, resizeNotes, isNoteItem, type NoteItem } from './noteClipEdits';
+import { moveNotes, resizeNotesByDeltas, isNoteItem, type NoteItem } from './noteClipEdits';
 
 /**
  * Pure parts of the note editor's keyboard editing (the arrow keys act on the selected notes; the
@@ -110,20 +110,17 @@ export function resizeNotesByGrid(
     return packet;
   }
   const floor = Math.max(unit, MIN_NOTE_QUARTERS);
-  let next = packet;
-  for (const id of ids) {
-    const item = next.items.find((entry) => entry.id === id);
-    if (!item || !isNoteItem(item)) {
-      continue;
+  const chosen = new Set(ids);
+  return resizeNotesByDeltas(packet, (item) => {
+    if (!chosen.has(item.id)) {
+      return undefined;
     }
     const current = rationalToNumber(item.value.duration.quarterNotes);
     if (quarters < 0 && current <= floor + 1e-9) {
-      continue;
+      return undefined;
     }
-    const delta = quarters < 0 ? Math.max(quarters, floor - current) : quarters;
-    next = resizeNotes(next, [id], delta);
-  }
-  return next;
+    return quarters < 0 ? Math.max(quarters, floor - current) : quarters;
+  });
 }
 
 /** The id of a note's roll position: its highest pitch (a chord event sorts by its top note). */
@@ -164,7 +161,8 @@ export function navigateSelection(
   if (order.length === 0) {
     return null;
   }
-  const selected = order.filter((id) => selectedIds.includes(id));
+  const picked = new Set(selectedIds);
+  const selected = order.filter((id) => picked.has(id));
   if (selected.length === 0) {
     return direction === 1 ? order[0] : order[order.length - 1];
   }

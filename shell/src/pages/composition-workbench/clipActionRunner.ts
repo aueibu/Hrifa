@@ -38,13 +38,13 @@ export interface ClipActionDesk {
 }
 
 /**
- * What the overlap rule compares a result against. Normally the packet the action started from. A
- * rotation's wrap pieces (`<id>~r1`, listed in `rotation.pieceIds` by original id) are pieces of
- * their original, not new notes, so `lineage` maps each piece id to its original; and across a
- * session's presses the notes in the packet are already rotated, so the reference puts the session's
- * ORIGINAL notes back (and drops the old pieces): a pair that overlapped before the first press stays
- * pre-existing however far it has rotated. Other producers (duplicate, paste, rotate-values' extra
- * slots) only make genuinely new notes, so they need no lineage.
+ * What the overlap rule compares a result against. Normally the packet the action started from. For a
+ * rotation session (`rotation`), the reference is the action's starting packet with each session
+ * original that it still holds put back in place of its rotated form, and the session's wrap pieces
+ * (listed in `rotation.pieceIds` by original id) left out; `lineage` maps every such piece id to its
+ * original, so a piece in the result counts as the original it came from. A pair that overlapped before
+ * the session's first press therefore stays pre-existing however far it has rotated. Other producers
+ * (duplicate, paste, rotate-values' extra slots) only make genuinely new notes and need no lineage.
  */
 function overlapReference(
   base: DataPacket,
@@ -149,11 +149,7 @@ export function runClipAction(options: {
   }
   // The edit has landed from here on.
   try {
-    channel?.adopt(
-      result,
-      committed.snippet.packet,
-      resolved.packet !== base && survivorOf.size > 0 ? survivorOf : undefined
-    );
+    channel?.adopt(result, committed.snippet.packet, survivorOf.size > 0 ? survivorOf : undefined);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(`The editor could not take the selection after "${actionId}".`, error);

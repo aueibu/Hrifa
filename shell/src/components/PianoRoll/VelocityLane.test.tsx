@@ -338,6 +338,7 @@ describe('VelocityLane tools', () => {
       onMoveTimeRange: vi.fn(),
       onSetVelocities: vi.fn(),
       onRamp: vi.fn(),
+      onRampStart: vi.fn(),
     };
     const view = lane({ tool, gridUnit: 0.5, ...calls, ...props });
     return { ...calls, ...view };
@@ -591,6 +592,57 @@ describe('VelocityLane tools', () => {
       expect(onRamp).not.toHaveBeenCalled();
     });
 
+    it('a left press on a pin in Paint, with a selection, starts a fresh ramp from scratch and drops the old one at the press', () => {
+      const { onRamp, onRampStart } = tools('paint', { ramp: kept, selectedIds: ['a', 'b'] });
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'a,b,chord');
+      // The press lands on the pin of 'b' (x = 2 quarters = 128 px), not on empty lane space.
+      fireEvent.pointerDown(pin('b'), { clientX: 128, clientY: 40, pointerId: 1 });
+      expect(onRampStart).toHaveBeenCalledTimes(1);
+      // The previous ramp's line is gone at once; only this gesture's own head is drawn.
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'b');
+      move(256, 76);
+      release(256, 76);
+      expect(onRamp).toHaveBeenCalledTimes(1);
+      const [made, values] = onRamp.mock.calls[0] as [typeof kept, Record<string, number>];
+      // Heads come only from this drag's x range (b to chord), not from the selection or the old ramp.
+      expect(made.heads.map((head) => head.id)).toEqual(['b', 'chord']);
+      expect(Object.keys(values)).toEqual(['b', 'chord']);
+      expect(made.curve).toBe(0);
+    });
+
+    it('a drag that catches no head disarms the old ramp and reports nothing (the old line does not come back)', () => {
+      const { onRamp, onRampStart, rerender } = tools('paint', { ramp: kept });
+      sweep([60, 8], [90, 76]);
+      expect(onRampStart).toHaveBeenCalledTimes(1);
+      expect(onRamp).not.toHaveBeenCalled();
+      // The owner dropped the ramp on onRampStart.
+      rerender(
+        <VelocityLane
+          notes={notes}
+          pixelsPerQuarter={64}
+          scrollLeft={0}
+          duration={8}
+          tool="paint"
+          gridUnit={0.5}
+          onRamp={onRamp}
+          ramp={null}
+        />
+      );
+      expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+    });
+
+    it('a second left drag makes a second, independent ramp (each is reported whole)', () => {
+      const { onRamp, onRampStart } = tools('paint');
+      sweep([0, 8], [128, 76]);
+      sweep([128, 76], [256, 8]);
+      expect(onRampStart).toHaveBeenCalledTimes(2);
+      expect(onRamp).toHaveBeenCalledTimes(2);
+      const ids = (call: number) =>
+        (onRamp.mock.calls[call][0] as typeof kept).heads.map((head) => head.id);
+      expect(ids(0)).toEqual(['a', 'b']);
+      expect(ids(1)).toEqual(['b', 'chord']);
+    });
+
     it('a kept ramp stays drawn as a dashed line over its heads, only with the Paint tool', () => {
       tools('paint', { ramp: kept });
       expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'a,b,chord');
@@ -599,9 +651,9 @@ describe('VelocityLane tools', () => {
       expect(screen.queryByTestId('velocity-ramp')).toBeNull();
     });
 
-    it('Alt + right-button drag curves it live and reports once on release, from the originals', () => {
+    it('a plain right-button drag curves it live and reports once on release, from the originals', () => {
       const { onRamp } = tools('paint', { ramp: kept });
-      const flags = { button: 2, altKey: true, pointerId: 2 };
+      const flags = { button: 2, pointerId: 2 };
       press(100, 40, flags);
       move(100, 16, flags);
       expect(screen.getByText('Curve 1.0')).toBeInTheDocument();
@@ -619,7 +671,7 @@ describe('VelocityLane tools', () => {
 
     it('a second curve starts from the ramp curve but is applied from the original endpoints', () => {
       const { onRamp } = tools('paint', { ramp: { ...kept, curve: 1 } });
-      const flags = { button: 2, altKey: true, pointerId: 2 };
+      const flags = { button: 2, pointerId: 2 };
       sweep([100, 40], [100, 64], flags);
       // Down 24 px: curve 1 - 1 = 0, the straight ramp again, whatever is on the stems now.
       const values = onRamp.mock.calls[0][1] as Record<string, number>;
@@ -627,8 +679,7 @@ describe('VelocityLane tools', () => {
     });
 
     describe('the right-button curve gesture and the browser menu', () => {
-      const flags = { button: 2, altKey: true, pointerId: 2 };
-      const plain = { button: 2, pointerId: 2 };
+      const flags = { button: 2, pointerId: 2 };
 
       it('swallows the context menu of the gesture wherever it lands (window, other targets), once after release', () => {
         const { onRamp } = tools('paint', { ramp: kept });
@@ -683,37 +734,21 @@ describe('VelocityLane tools', () => {
               ),
           ],
         ];
-        it.each(cancels)(
-          '%s: the menu and Alt guards expire after their delay',
-          (_name, cancel) => {
-            vi.useFakeTimers();
-            try {
-              const { onRamp, ...view } = tools('paint', { ramp: kept });
-              press(100, 40, flags);
-              move(100, 16, flags);
-              cancel({ onRamp, ...view } as ReturnType<typeof tools>);
-              expect(onRamp).not.toHaveBeenCalled();
-              // Without the expiry the guards would stay armed until the next gesture or unmount.
-              vi.advanceTimersByTime(1500);
-              expect(fireEvent.contextMenu(document.body)).toBe(true);
-              vi.advanceTimersByTime(15000);
-              expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(true);
-            } finally {
-              vi.useRealTimers();
-            }
+        it.each(cancels)('%s: the menu guard expires after its delay', (_name, cancel) => {
+          vi.useFakeTimers();
+          try {
+            const { onRamp, ...view } = tools('paint', { ramp: kept });
+            press(100, 40, flags);
+            move(100, 16, flags);
+            cancel({ onRamp, ...view } as ReturnType<typeof tools>);
+            expect(onRamp).not.toHaveBeenCalled();
+            // Without the expiry the guard would stay armed until the next gesture or unmount.
+            vi.advanceTimersByTime(1500);
+            expect(fireEvent.contextMenu(document.body)).toBe(true);
+          } finally {
+            vi.useRealTimers();
           }
-        );
-      });
-
-      it('a plain right-button drag (no Alt) curves the active ramp as a fallback', () => {
-        const { onRamp } = tools('paint', { ramp: kept });
-        press(100, 40, plain);
-        move(100, 16, plain);
-        expect(screen.getByText('Curve 1.0')).toBeInTheDocument();
-        release(100, 16, plain);
-        expect(onRamp).toHaveBeenCalledTimes(1);
-        expect(onRamp.mock.calls[0][0]).toMatchObject({ curve: 1, start: 1, end: 0 });
-        expect(fireEvent.contextMenu(track())).toBe(false);
+        });
       });
 
       it('handles the press, the drag and the release on the window, whatever element they land on', () => {
@@ -723,22 +758,18 @@ describe('VelocityLane tools', () => {
           clientX: 100,
           clientY: 16,
           pointerId: 2,
-          altKey: true,
         });
         expect(screen.getByText('Curve 1.0')).toBeInTheDocument();
         fireEvent.pointerUp(window, { button: 2, clientX: 100, clientY: 16, pointerId: 2 });
         expect(onRamp).toHaveBeenCalledTimes(1);
       });
 
-      it('cancels the Alt key of the gesture so the browser menu bar is not activated', () => {
+      it('does not touch the Alt key at all (the curve needs no modifier)', () => {
         tools('paint', { ramp: kept });
         press(100, 40, flags);
-        expect(fireEvent.keyDown(window, { key: 'Alt', altKey: true })).toBe(false);
+        expect(fireEvent.keyDown(window, { key: 'Alt', altKey: true })).toBe(true);
         release(100, 40, flags);
-        expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(false);
-        // The guard ended with that keyup; other keys were never touched.
         expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(true);
-        expect(fireEvent.keyUp(window, { key: 'a' })).toBe(true);
       });
 
       it('leaves right presses alone when no ramp is active, and outside the lane', () => {
@@ -756,6 +787,18 @@ describe('VelocityLane tools', () => {
         fireEvent.pointerUp(document.body, { button: 2, clientX: 100, clientY: 16, pointerId: 2 });
         expect(fireEvent.contextMenu(document.body)).toBe(true);
         expect(onRamp).not.toHaveBeenCalled();
+      });
+
+      it('plain right-click with no active ramp keeps the browser menu, also after a fresh left ramp press', () => {
+        const calls = tools('paint', { ramp: kept });
+        press(60, 8);
+        expect(calls.onRampStart).toHaveBeenCalledTimes(1);
+        release(60, 8);
+        cleanup();
+        tools('paint');
+        press(100, 40, flags);
+        release(100, 40, flags);
+        expect(fireEvent.contextMenu(track())).toBe(true);
       });
 
       it('removes its window listeners with the lane (no leaks)', () => {

@@ -264,11 +264,6 @@ function startsBandMove(pressed: Element, target: Element, clientX: number, tool
 }
 
 /**
- * The velocity ramp kept after a Paint-can edit, as a secondary selection. Editor-side transient
- * state only (never in the packet or the history). It is live while the packet still holds the notes
- * the ramp wrote (`items`), the Paint tool is active and the selection is the one it was made under.
- */
-/**
  * The rotation session kept after a "rotate in time" press (rotationSession.ts). Editor-side
  * transient state only. It is live while the packet still holds the items the press committed and
  * the selection is the one it left.
@@ -279,10 +274,33 @@ interface ActiveRotation {
   selectionKey: string;
 }
 
+/**
+ * The velocity ramp kept after a Paint-can edit, as a secondary selection. Editor-side transient
+ * state only (never in the packet or the history). It is live while the packet still holds the notes
+ * the ramp wrote (`items`), the Paint tool is active and the selection is the one it was made under.
+ * A left press in the lane in Paint ends it at once (a new ramp starts from scratch).
+ */
 interface ActiveRamp {
   ramp: VelocityRamp;
   items: DataPacket['items'];
   selectionKey: string;
+}
+
+/** Marks the editor's root and the clip actions panel: the scope of the editor's window-level keys. */
+const EDITOR_SCOPE = '[data-note-editor-scope]';
+
+/**
+ * Whether a key event's target is in the editor's scope: inside the editor or the actions panel, or
+ * (with `orBody`) nowhere in particular (the page body or the window).
+ */
+function inEditorScope(target: EventTarget | null, orBody = false): boolean {
+  if (!(target instanceof Element)) {
+    return orBody;
+  }
+  return (
+    !!target.closest(EDITOR_SCOPE) ||
+    (orBody && (target === document.body || target === document.documentElement))
+  );
 }
 
 /**
@@ -345,6 +363,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   const pointerHeld = useRef(false);
   // An Alt+arrow was handled since Alt went down: its keyup must not reach the browser's menu bar.
   const altArrowHandled = useRef(false);
+  // Whether the pointer is over the editor (scopes the ramp's Escape together with the focus).
+  const pointerInside = useRef(false);
   useEffect(() => {
     const down = () => {
       pointerHeld.current = true;
@@ -407,7 +427,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       const typing =
         target &&
         (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-      if (event.key === 'Escape' && !typing) {
+      // Only while the focus or the pointer is in the editor: not from an unrelated control.
+      if (event.key === 'Escape' && !typing && (pointerInside.current || inEditorScope(target))) {
         setRampState(null);
       }
     };
@@ -432,7 +453,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   }, [rotationEnded]);
 
   // While a pick waits, Escape cancels it and Enter applies its default (inversion's middle axis),
-  // wherever the focus is (except a text field). The selection is never touched.
+  // when the focus is in the editor or the actions panel (or nowhere: the page body), never in a text
+  // field or on an unrelated control such as a top-bar button. The selection is never touched.
   const picking = pick !== null;
   useEffect(() => {
     if (!picking) {
@@ -449,7 +471,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       if (event.key === 'Escape') {
         event.preventDefault();
         setPick(null);
-      } else if (event.key === 'Enter' && pick?.onDefault) {
+      } else if (event.key === 'Enter' && pick?.onDefault && inEditorScope(target, true)) {
         event.preventDefault();
         const apply = pick.onDefault;
         setPick(null);
@@ -844,7 +866,16 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   ];
 
   return (
-    <div className={classes.editor}>
+    <div
+      className={classes.editor}
+      data-note-editor-scope=""
+      onPointerEnter={() => {
+        pointerInside.current = true;
+      }}
+      onPointerLeave={() => {
+        pointerInside.current = false;
+      }}
+    >
       <div className={classes.header}>
         <div className={classes.title}>
           <Title order={2} size="xs">
@@ -985,7 +1016,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           if (!pressed || startsBandMove(pressed, target, event.clientX, tool)) {
             return;
           }
-          // A right button on an active ramp curves it (Alt or plain): the band is not part of that gesture.
+          // A right button on an active ramp curves it (plain right drag): the band is not part of that gesture.
           if (event.button === 2 && activeRamp) {
             return;
           }
@@ -1024,6 +1055,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                 onSetVelocities={drawVelocities}
                 ramp={activeRamp}
                 onRamp={applyRamp}
+                onRampStart={() => setRampState(null)}
                 height={preferences.laneHeight ?? undefined}
                 onHeightChange={(laneHeight) => updatePreferences({ laneHeight })}
                 availableHeight={metrics.panelHeight}

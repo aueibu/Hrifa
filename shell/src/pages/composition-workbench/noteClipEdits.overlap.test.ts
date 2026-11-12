@@ -505,3 +505,103 @@ describe('resolveSamePitchOverlaps', () => {
 function step(transformation: string) {
   return { sourceModuleInstance: 'm', sourceItemIds: [], transformation };
 }
+
+describe('resolveSamePitchOverlaps: nested notes, any packet order', () => {
+  const permutations = <T>(list: T[]): T[][] =>
+    list.length <= 1
+      ? [list]
+      : list.flatMap((entry, index) =>
+          permutations([...list.slice(0, index), ...list.slice(index + 1)]).map((rest) => [
+            entry,
+            ...rest,
+          ])
+        );
+  /** The resolved clip as sorted [start, end] spans (ids differ across orders, spans must not). */
+  const spans = (p: DataPacket) =>
+    p.items
+      .map((entry) => {
+        const v = entry.value as NoteEventValue;
+        const from = rationalToNumber(v.onset.quarterNotes);
+        return [from, from + rationalToNumber(v.duration.quarterNotes)] as const;
+      })
+      .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const noOverlap = (all: ReturnType<typeof spans>) =>
+    all.forEach((span, index) => {
+      if (index > 0) {
+        expect(span[0]).toBeGreaterThanOrEqual(all[index - 1][1]);
+      }
+    });
+  const counter = () => {
+    let next = 0;
+    return () => `piece${(next += 1)}`;
+  };
+
+  it('C 0-5, B 1-4, A 2-3 all touched: every order gives the same spans and no overlap', () => {
+    const notes = [item('C', 0, 5, [6000]), item('B', 1, 3, [6000]), item('A', 2, 1, [6000])];
+    const results = permutations(notes).map(
+      (order) => resolveSamePitchOverlaps(clip(order), clip([]), counter()).packet
+    );
+    const reference = spans(results[0]);
+    expect(reference).toEqual([
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+    ]);
+    results.forEach((result) => {
+      expect(spans(result)).toEqual(reference);
+      noOverlap(spans(result));
+    });
+  });
+
+  it('new S 0-4 + new W 1-2 + untouched U 3-5: every order gives the same spans and no overlap', () => {
+    const base = clip([item('U', 3, 2, [6000])]);
+    const notes = [item('S', 0, 4, [6000]), item('W', 1, 1, [6000]), item('U', 3, 2, [6000])];
+    const results = permutations(notes).map(
+      (order) => resolveSamePitchOverlaps(clip(order), base, counter()).packet
+    );
+    const reference = spans(results[0]);
+    expect(reference).toEqual([
+      [0, 1],
+      [1, 2],
+      [2, 4],
+      [4, 5],
+    ]);
+    results.forEach((result) => {
+      expect(spans(result)).toEqual(reference);
+      noOverlap(spans(result));
+    });
+  });
+
+  it('keeps the whole-note result: q, q (dragged), h', () => {
+    const base = clip([item('w', 0, 4, [6000]), item('q', 4, 1, [6000])]);
+    const edited = clip([item('w', 0, 4, [6000]), item('q', 1, 1, [6000])]);
+    const result = resolveSamePitchOverlaps(edited, base, counter()).packet;
+    expect(spans(result)).toEqual([
+      [0, 1],
+      [1, 2],
+      [2, 4],
+    ]);
+  });
+});
+
+describe('resolveSamePitchOverlaps: many notes', () => {
+  it('a long single-pitch run all touched resolves quickly and like a pairwise reference', () => {
+    // 3000 notes of length 2 every 1: each later note overwrites the tail of the earlier one.
+    const count = 3000;
+    const edited = clip(
+      Array.from({ length: count }, (_, index) => item(`n${index}`, index, 2, [6000]))
+    );
+    const began = performance.now();
+    const result = resolveSamePitchOverlaps(edited, clip([]), () => 'x').packet;
+    expect(performance.now() - began).toBeLessThan(5000);
+    expect(result.items).toHaveLength(count);
+    // Every note but the last is cut to one unit by its successor.
+    for (let index = 0; index < count - 1; index += 1) {
+      expect(start(result, index)).toBe(index);
+      expect(length(result, index)).toBe(1);
+    }
+    expect(length(result, count - 1)).toBe(2);
+  });
+});

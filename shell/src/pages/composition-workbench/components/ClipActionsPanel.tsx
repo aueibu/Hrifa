@@ -149,7 +149,13 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
   );
 
   return (
-    <Stack gap="xs" role="group" aria-label="Clip actions" onMouseDown={keepFocus}>
+    <Stack
+      gap="xs"
+      role="group"
+      aria-label="Clip actions"
+      data-note-editor-scope=""
+      onMouseDown={keepFocus}
+    >
       <Text size="xs" fw={600}>
         Actions
       </Text>
