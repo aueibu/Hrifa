@@ -13,6 +13,7 @@ import {
   type CompositionModuleId,
   type ModuleRouteStates,
 } from '../compositionWorkspace';
+import { useOptionalDesk } from '../desk';
 import { signalTypeRegistry } from '../signalTypes';
 import { NumericTreatmentEditor } from './NumericTreatmentEditor';
 import { PitchTreatmentEditor } from './PitchTreatmentEditor';
@@ -23,6 +24,8 @@ interface CompositionInspectorProps {
   selected: CompositionInspectorTarget;
   /** The module open in the main panel; a selected cable makes its receiver active. */
   activeInstanceId: string | null;
+  /** A desk clip open in the main panel; the lower part then shows it instead of a module. */
+  clipId: string | null;
   outputs: PublishedCompositionOutput[];
   instances: CompositionModuleInstance[];
   routes: ModuleRouteStates;
@@ -155,13 +158,29 @@ function CanvasPart({
 /** Lower part: the module being edited in the main panel. */
 function ModulePart({
   activeInstanceId,
+  clipId,
   instances,
   onRemoveModule,
   onModuleSlot,
 }: Pick<
   CompositionInspectorProps,
-  'activeInstanceId' | 'instances' | 'onRemoveModule' | 'onModuleSlot'
+  'activeInstanceId' | 'clipId' | 'instances' | 'onRemoveModule' | 'onModuleSlot'
 >) {
+  const snippets = useOptionalDesk()?.snippets ?? [];
+  const clip = clipId === null ? undefined : snippets.find((entry) => entry.id === clipId);
+  if (clipId !== null) {
+    // The seed of the clip inspector: just which clip is open.
+    return clip ? (
+      <Stack gap="xs">
+        <Title order={3} size="h6">
+          {clip.name}
+        </Title>
+        <Text size="xs">
+          {clip.packet.kind} | {clip.packet.domain}
+        </Text>
+      </Stack>
+    ) : null;
+  }
   const instance = instances.find((candidate) => candidate.id === activeInstanceId);
   if (!instance) {
     return (
@@ -225,7 +244,7 @@ export function CompositionInspector(props: CompositionInspectorProps) {
       <Part label="Canvas & cables">
         <CanvasPart {...props} />
       </Part>
-      <Part label="Module">
+      <Part label={props.clipId === null ? 'Module' : 'Clip'}>
         <ModulePart {...props} />
       </Part>
     </div>

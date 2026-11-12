@@ -15,6 +15,7 @@ import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
 import { ArithmeticModule } from './composition-workbench/components/ArithmeticModule';
+import { ClipEditorSlot } from './composition-workbench/components/ClipEditorSlot';
 import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
@@ -268,6 +269,12 @@ export function CompositionWorkbenchPage() {
       { kind: 'module', instanceId: 'interference' },
       acceptsCompositionInspectorTarget
     );
+  // The bottom panel targets a module (the active one) or, when this is set, a desk clip.
+  const [editorClipTarget, setEditorClipTarget] = usePersistentState<string | null>(
+    compositionStateKeys.editorClipTarget,
+    null,
+    (value): value is string | null => value === null || typeof value === 'string'
+  );
   const [compositionInstances, setCompositionInstances] = usePersistentState<
     CompositionModuleInstance[]
   >(
@@ -315,14 +322,24 @@ export function CompositionWorkbenchPage() {
     acceptsModuleRouteStates
   );
   const evaluation = useMemo(() => evaluatePatch(patch), [patch]);
+  // While a clip is open nothing else is selected: no module counts as active or highlighted.
+  const moduleShown = editorClipTarget === null;
+  const shownInstanceId = moduleShown ? activeCompositionInstanceId : null;
+  const shownInspectorTarget: CompositionInspectorTarget = moduleShown
+    ? compositionInspectorTarget
+    : { kind: 'canvas' };
+  // The panel is blank when neither a clip nor an existing module is open.
+  const panelBlank =
+    moduleShown && !compositionInstances.some((instance) => instance.id === shownInstanceId);
 
   // Undoing an add, or a stored id for a removed module, can leave the active module missing.
+  // The panel then goes blank: no other module is ever promoted in its place.
   useEffect(() => {
     if (
       activeCompositionInstanceId !== null &&
       !compositionInstances.some((instance) => instance.id === activeCompositionInstanceId)
     ) {
-      setActiveCompositionInstanceId(compositionInstances[0]?.id ?? null);
+      setActiveCompositionInstanceId(null);
     }
   }, [activeCompositionInstanceId, compositionInstances, setActiveCompositionInstanceId]);
 
@@ -407,11 +424,15 @@ export function CompositionWorkbenchPage() {
           },
         };
       });
-      setCompositionInspectorTarget({ kind: 'route', instanceId, port });
-      setActiveCompositionInstanceId(instanceId);
+      // Wiring is not a request to open anything: while a clip is open, leave what is open alone.
+      if (editorClipTarget === null) {
+        setCompositionInspectorTarget({ kind: 'route', instanceId, port });
+        setActiveCompositionInstanceId(instanceId);
+      }
     },
     [
       compositionOutputs,
+      editorClipTarget,
       setActiveCompositionInstanceId,
       setCompositionInspectorTarget,
       setModuleRouteStates,
@@ -475,17 +496,37 @@ export function CompositionWorkbenchPage() {
     (instanceId: string) => {
       setActiveCompositionInstanceId(instanceId);
       setCompositionInspectorTarget({ kind: 'module', instanceId });
+      setEditorClipTarget(null);
       // Opening a module brings its editor back if the detail panel was collapsed.
       setDetailCollapsed(false);
     },
-    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setDetailCollapsed]
+    [
+      setActiveCompositionInstanceId,
+      setCompositionInspectorTarget,
+      setDetailCollapsed,
+      setEditorClipTarget,
+    ]
   );
+  const openClipEditor = useCallback(
+    (snippetId: string) => {
+      setEditorClipTarget(snippetId);
+      setDetailCollapsed(false);
+    },
+    [setEditorClipTarget, setDetailCollapsed]
+  );
+  // The open clip is gone: the panel goes blank (nothing open), not back to a module.
+  const clearClipTarget = useCallback(() => {
+    setEditorClipTarget(null);
+    setActiveCompositionInstanceId(null);
+    setCompositionInspectorTarget({ kind: 'canvas' });
+  }, [setEditorClipTarget, setActiveCompositionInstanceId, setCompositionInspectorTarget]);
   const selectCompositionRoute = useCallback(
     (instanceId: string, port: string) => {
       setActiveCompositionInstanceId(instanceId);
       setCompositionInspectorTarget({ kind: 'route', instanceId, port });
+      setEditorClipTarget(null);
     },
-    [setActiveCompositionInstanceId, setCompositionInspectorTarget]
+    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorClipTarget]
   );
 
   function addCompositionModule(
@@ -539,9 +580,8 @@ export function CompositionWorkbenchPage() {
         Object.entries(current).filter(([, output]) => output.ref.instanceId !== instanceId)
       )
     );
-    if (remaining[0]) {
-      selectCompositionModule(remaining[0].id);
-    } else {
+    // Whatever is open stays open; only removing the open module blanks the panel.
+    if (instanceId === activeCompositionInstanceId) {
       setActiveCompositionInstanceId(null);
       setCompositionInspectorTarget({ kind: 'canvas' });
     }
@@ -595,7 +635,7 @@ export function CompositionWorkbenchPage() {
                           Composition Workbench
                         </Title>
                       </Group>
-                      <TransportBar selectedInstanceId={activeCompositionInstanceId} />
+                      <TransportBar selectedInstanceId={shownInstanceId} />
                       <Group gap="xs" wrap="nowrap" justify="flex-end">
                         <DeveloperMenu />
                         <ProjectMenu />
@@ -620,8 +660,9 @@ export function CompositionWorkbenchPage() {
                           {inspectorOpen && (
                             <div className={classes.inspectorColumn}>
                               <CompositionInspector
-                                selected={compositionInspectorTarget}
-                                activeInstanceId={activeCompositionInstanceId}
+                                selected={shownInspectorTarget}
+                                activeInstanceId={shownInstanceId}
+                                clipId={editorClipTarget}
                                 outputs={publishedCompositionOutputs}
                                 instances={compositionInstances}
                                 routes={moduleRouteStates}
@@ -659,6 +700,7 @@ export function CompositionWorkbenchPage() {
                                   inert={workspaceView !== 'desk'}
                                 >
                                   <DeskView
+                                    onOpenClip={(snippet) => openClipEditor(snippet.id)}
                                     onMakeSource={(snippet) => {
                                       addCompositionModule('snippet', undefined, snippet.id);
                                       setWorkspaceView('canvas');
@@ -680,8 +722,8 @@ export function CompositionWorkbenchPage() {
                                   inert={workspaceView !== 'canvas'}
                                 >
                                   <CompositionCanvas
-                                    activeInstanceId={activeCompositionInstanceId}
-                                    selected={compositionInspectorTarget}
+                                    activeInstanceId={shownInstanceId}
+                                    selected={shownInspectorTarget}
                                     instances={compositionInstances}
                                     routes={moduleRouteStates}
                                     outputs={publishedCompositionOutputs}
@@ -700,6 +742,15 @@ export function CompositionWorkbenchPage() {
                             bottom={
                               <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
                                 <div className={classes.detailBody}>
+                                  <div
+                                    className={classes.moduleHost}
+                                    hidden={!panelBlank && editorClipTarget === null}
+                                  >
+                                    <ClipEditorSlot
+                                      snippetId={editorClipTarget}
+                                      onMissing={clearClipTarget}
+                                    />
+                                  </div>
                                   {compositionInstances.map((instance) => {
                                     const instanceLabel = compositionInstanceLabel(
                                       instance,
@@ -714,10 +765,10 @@ export function CompositionWorkbenchPage() {
                                       <div
                                         key={instance.id}
                                         className={classes.moduleHost}
-                                        hidden={activeCompositionInstanceId !== instance.id}
+                                        hidden={shownInstanceId !== instance.id}
                                       >
                                         <ModuleActiveContext.Provider
-                                          value={activeCompositionInstanceId === instance.id}
+                                          value={shownInstanceId === instance.id}
                                         >
                                           {instance.moduleId === 'snippet' ? (
                                             <SnippetSourceModule
@@ -855,7 +906,7 @@ export function CompositionWorkbenchPage() {
                                             <MelodicizationModule
                                               instanceId={instance.id}
                                               instanceLabel={instanceLabel}
-                                              active={activeCompositionInstanceId === instance.id}
+                                              active={shownInstanceId === instance.id}
                                               outputs={publishedCompositionOutputs}
                                               routeState={routeState}
                                               onBind={(port, source) =>

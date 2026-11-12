@@ -31,7 +31,14 @@ function describe(snippet: Snippet) {
  * can be heard, renamed or removed, and made into a source module on the canvas on request. Nothing
  * here reaches the patch until the user asks (see ARCHITECTURE.md, "The desk").
  */
-export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): void }) {
+export function DeskView({
+  onMakeSource,
+  onOpenClip,
+}: {
+  onMakeSource?(snippet: Snippet): void;
+  /** Double-clicking a card (not its fields or buttons) opens the clip in the bottom panel. */
+  onOpenClip?(snippet: Snippet): void;
+}) {
   const {
     snippets,
     loading,
@@ -129,7 +136,15 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
       {saveWarning}
       <div className={classes.grid}>
         {snippets.map((snippet) => (
-          <div key={snippet.id} className={classes.card}>
+          <div
+            key={snippet.id}
+            className={classes.card}
+            onDoubleClick={(event) => {
+              if (!(event.target as Element).closest('input, button, textarea')) {
+                onOpenClip?.(snippet);
+              }
+            }}
+          >
             <TextInput
               size="xs"
               variant="unstyled"

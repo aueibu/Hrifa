@@ -55,4 +55,4 @@ K2b reviewer FAIL (1 high: two tabs can leave the stored desk unloadable; 3 medi
 - Done: every compositionSettings field is recorded via one virtual `#settings` history key (replaces `#authored`), so playback changes are undoable and mark the project unsaved; Developer button + popover on the top bar (DeveloperMenu.tsx, developerOptions.ts, key `hrifa.developer-options.v1`, outside projects and history). Gate green 57 / 678. Committed.
 
 ## Next action
-Start K3 (generalise the bottom panel) with a builder.
+Start K4 (clip types and New clip) with a builder.

@@ -1,0 +1,11 @@
+/* A fill on the panel floor, text by role (THEMING.md rules 1 and 2). */
+.empty {
+  background: var(--panel-slot);
+  color: var(--text);
+  height: 100%;
+  padding: 1rem;
+}
+
+.detail {
+  color: var(--text-muted);
+}

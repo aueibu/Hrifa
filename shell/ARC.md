@@ -122,6 +122,12 @@ Let a composer start from a blank clip and edit it directly, without a module fe
   - [ ] Test: the panel works in both canvas and desk views and the hidden-view rule is unchanged
 - Human checkpoint after: yes (layout and wording)
 
+- Checkpoint decisions (human, 2026-11-11), applied as K3 attempt 2:
+  - Empty-state wording and plain panel accepted for now.
+  - While a clip is open, nothing else is selected: no module counts as active (inspector setup controls, Play selected / Space, canvas and inspector highlight, Melodicization `active`).
+  - Never promote a module. Whatever is open stays open: deleting another module, clicking empty canvas, etc. leave the panel alone. If the open clip is deleted (or vanishes via undo or a project open), the panel shows a blank placeholder (as Bitwig/Ableton do), not a module. Same for deleting the open module: blank placeholder, no promotion of another module.
+  - While a clip is open, the left inspector shows the clip (name and kind) instead of a module, as the seed of the clip inspector (K5b).
+
 ### K4: Clip types and New clip
 - Scope: a clip-type registry (`kind`, `domain`, blank factory, editor id, playable flag). A "New clip" action on the desk with a type picker (notes first; add pitches, rhythm, list when their editors exist). Blank note clip: empty `events | note`, chosen length, linear frame, origin 0.
 - Acceptance:
@@ -138,6 +144,11 @@ Let a composer start from a blank clip and edit it directly, without a module fe
   - [ ] Test: edited notes keep stable item ids
   - [ ] A blank note clip can be filled from nothing and auditioned from the desk
 - Human checkpoint after: yes (does it feel like a clip editor?)
+
+### K5b: Clip inspector and transforms (proposed, human 2026-11-11)
+- Scope: while a clip is open, the left inspector is a per-clip inspector with a handful of quick transforms, like Ableton's MIDI clip panel: e.g. x2 and /2 (time stretch), reverse, legato, plus others to be agreed (transpose, quantize, invert?). Each transform applies through `commitSnippetEdit` as its own version (not a hand edit), and is undoable. Which transforms apply depends on clip type (K4 registry).
+- Acceptance: to be written with the human before building (transform list, layout).
+- Human checkpoint before and after: yes
 
 ### K6 (stretch): Rhythm and list clip editors
 - Scope: scout first. The rhythm editor today is program/rule driven (`RhythmEditModule`) and the curve editor is prop-driven (`CurveEditor`). Decide which primitive editor each clip type needs (duration strip, value list) before building.
