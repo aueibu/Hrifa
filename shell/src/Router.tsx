@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { CompositionWorkbenchPage } from './pages/CompositionWorkbench.page';
+import { HarmonicFieldLabPage } from './pages/HarmonicFieldLab.page';
 import { HomePage } from './pages/Home.page';
 import { IntervalPlacementPage } from './pages/IntervalPlacement.page';
 import { NotFoundPage } from './pages/NotFound.page';
@@ -61,6 +62,11 @@ const router = createBrowserRouter(
     {
       path: '/raga-explorer',
       element: <RagaExplorerPage />,
+      errorElement: <NotFoundPage />,
+    },
+    {
+      path: '/harmonic-field-lab',
+      element: <HarmonicFieldLabPage />,
       errorElement: <NotFoundPage />,
     },
     {

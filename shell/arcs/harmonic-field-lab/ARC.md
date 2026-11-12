@@ -1,6 +1,6 @@
 # ARC: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI
 
-**Status: APPROVED (2026-11-12).** Moved into the shell's multi-arc layout the same day (from `C:\Users\apoor\Documents\Infinitone Tracing\ARC.md`, history in `PROGRESS.md`), and re-ordered so the retuner is written once, in TS, after the core port. Next: C0.
+**Status: APPROVED (2026-11-12).** Moved into the shell's multi-arc layout the same day (from `C:\Users\apoor\Documents\Infinitone Tracing\ARC.md`, history in `PROGRESS.md`), and re-ordered so the retuner is written once, in TS, after the core port. Next: M2.
 
 The source repo `C:\Users\apoor\Documents\Infinitone Tracing` (below: **the Infinitone repo**) keeps the frozen JS prototype (`prototype/`), its contracts (`ARCHITECTURE.md`, `prototype/CORE_SPEC.md`) and the RE notes (`notes/`). Read them by absolute path; never edit them (they are outside this arc's paths, except the one-time freeze note and pointer done at Setup).
 
@@ -85,6 +85,7 @@ Proposal:
   - [ ] `check:hfl` green. One `vite build` run and recorded in PROGRESS.
   - [ ] Page `ARCHITECTURE.md` started in `src/pages/harmonic-field-lab/` (contracts, module map, colour-role mapping plan). `ARCHITECTURE.md` (shell) lists the page and `src/lib/harmonic-field/`. `DECISIONS.md` H-1 (registers prefix H) appended.
   - [ ] Path-scoped commit; lock rows removed after it.
+- Checkpoint decisions (orchestrator, 2026-11-12, for the human to veto): applet status is `experimental` (the `Applet` type only allows `maintained | experimental`; `prototype` would need a Home change outside our locks). `Home.page.test.tsx` needed no edit (it counts `applets.length`). The colour-role plan in the page `ARCHITECTURE.md` uses core hues only for the five severities (cyan, green, yellow, orange, red + the cents number), to confirm at M4.
 - Human checkpoint after: no
 
 ### M2: Retuner engine + Infinitone-parity scorer (TS)

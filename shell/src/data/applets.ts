@@ -212,4 +212,13 @@ export const applets: Applet[] = [
     description:
       'Pick a pitch-class set on a keyboard and ring to see its modes, interval vector, fifths brightness and derived chords, hear them against a drone, and compare it with every other set class of the same size.',
   },
+  {
+    title: 'Harmonic Field Lab',
+    href: '/harmonic-field-lab',
+    category: 'sound',
+    status: 'experimental',
+    runtime: 'Static browser app',
+    description:
+      'Build microtonal note fields from exact ratios and equal divisions, carve scales out of them, and compare chords and intervals against just intonation. Prototype: the page is a placeholder while its core library is ported.',
+  },
 ];
