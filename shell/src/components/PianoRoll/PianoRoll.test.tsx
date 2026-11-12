@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fireEvent, render, screen, userEvent } from '@test-utils';
+import { createEvent, fireEvent, render, screen, userEvent } from '@test-utils';
 import { defaultPianoRollView, type PianoRollViewState } from './model';
 import { PianoRoll } from './PianoRoll';
 
@@ -144,8 +144,10 @@ describe('PianoRoll editing', () => {
     expect(handlers.onAddNote).toHaveBeenCalledTimes(1);
     expect(handlers.onAddNote).toHaveBeenCalledWith({
       start: 1,
+      // From the press point: 130 px is 2.03 quarters, snapped to 2 on the 1/2 grid.
       duration: 2,
       pitchMidicents: 6000,
+      velocity: 0.8,
     });
   });
 
@@ -358,6 +360,7 @@ describe('PianoRoll tools', () => {
       onMoveNotes: vi.fn(),
       onMarqueeRange: vi.fn(),
       onEntryLengthChange: vi.fn(),
+      onEntryVelocityChange: vi.fn(),
     };
     render(
       <PianoRoll
@@ -387,6 +390,7 @@ describe('PianoRoll tools', () => {
       start: 1,
       duration: 1.5,
       pitchMidicents: 6200,
+      velocity: 0.8,
     });
     fireEvent.doubleClick(screen.getByTitle(/^C4/), { clientX: 100, clientY: rowY(60) });
     expect(handlers.onDeleteNotes).toHaveBeenCalledWith(['c4']);
@@ -429,16 +433,17 @@ describe('PianoRoll tools', () => {
       start: 6,
       duration: 2,
       pitchMidicents: 7200,
+      velocity: 0.8,
     });
     expect(handlers.onEntryLengthChange).not.toHaveBeenCalled();
 
     fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 2 });
     expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('80%');
-    fireEvent.pointerMove(roll, { clientX: 400, clientY: rowY(72) - 24, pointerId: 2 });
+    fireEvent.pointerMove(roll, { clientX: 400, clientY: rowY(72) - 28, pointerId: 2 });
     expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('100%');
-    fireEvent.pointerMove(roll, { clientX: 400, clientY: rowY(72) + 48, pointerId: 2 });
+    fireEvent.pointerMove(roll, { clientX: 400, clientY: rowY(72) + 52, pointerId: 2 });
     expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('40%');
-    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72) + 48, pointerId: 2 });
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72) + 52, pointerId: 2 });
     expect(handlers.onAddNote).toHaveBeenLastCalledWith({
       start: 6,
       duration: 2,
@@ -457,6 +462,7 @@ describe('PianoRoll tools', () => {
       start: 6,
       duration: 3,
       pitchMidicents: 7200,
+      velocity: 0.8,
     });
     expect(handlers.onEntryLengthChange).toHaveBeenCalledWith(3);
   });
@@ -529,13 +535,16 @@ describe('PianoRoll tools', () => {
     expect(handlers.onDeleteNotes).toHaveBeenCalledTimes(1);
   });
 
-  it('pencil: sideways jitter in a vertical drag keeps the length, and vice versa', () => {
+  it('pencil: the press point is an x/y pad, so length and velocity are set together, each on its own axis', () => {
     const { handlers, roll } = renderTool('pencil', { entryLength: 2 });
+    // Mostly vertical with some sideways travel: the velocity moves and the length follows x too.
     fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
-    fireEvent.pointerMove(roll, { clientX: 400 + 10, clientY: rowY(72) - 24, pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 400 + 2, clientY: rowY(72) - 28, pointerId: 1 });
     expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('100%');
-    fireEvent.pointerUp(roll, { clientX: 400 + 10, clientY: rowY(72) - 24, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 400 + 2, clientY: rowY(72) - 28, pointerId: 1 });
+    // 2 px sideways is inside the dead zone: the length stays and is not re-remembered.
     expect(handlers.onEntryLengthChange).not.toHaveBeenCalled();
+    expect(handlers.onEntryVelocityChange).toHaveBeenCalledWith(1);
     expect(handlers.onAddNote).toHaveBeenLastCalledWith({
       start: 6,
       duration: 2,
@@ -543,15 +552,114 @@ describe('PianoRoll tools', () => {
       velocity: 1,
     });
 
+    // A mostly sideways drag with a clear vertical component sets both; neither locks the other out.
     fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 2 });
-    fireEvent.pointerMove(roll, { clientX: 400 + 176, clientY: rowY(72) - 10, pointerId: 2 });
-    fireEvent.pointerUp(roll, { clientX: 400 + 176, clientY: rowY(72) - 10, pointerId: 2 });
+    fireEvent.pointerMove(roll, { clientX: 400 + 176, clientY: rowY(72) + 52, pointerId: 2 });
+    fireEvent.pointerUp(roll, { clientX: 400 + 176, clientY: rowY(72) + 52, pointerId: 2 });
+    // From the press point, not the remembered 2: 176 px is 2.75 quarters, snapped to 3.
     expect(handlers.onEntryLengthChange).toHaveBeenCalledWith(3);
+    expect(handlers.onEntryVelocityChange).toHaveBeenLastCalledWith(0.4);
     expect(handlers.onAddNote).toHaveBeenLastCalledWith({
       start: 6,
       duration: 3,
       pitchMidicents: 7200,
+      velocity: 0.4,
     });
+  });
+
+  it('pencil: a velocity drag with sideways wobble past the dead zone gives one grid unit', () => {
+    const { handlers, roll } = renderTool('pencil', { entryLength: 2 });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    // 10 px sideways is past the dead zone and snaps to zero grid steps: the one-unit floor (0.5).
+    fireEvent.pointerMove(roll, { clientX: 410, clientY: rowY(72) + 52, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 410, clientY: rowY(72) + 52, pointerId: 1 });
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith({
+      start: 6,
+      duration: 0.5,
+      pitchMidicents: 7200,
+      velocity: 0.4,
+    });
+  });
+
+  it('pencil: a click uses the remembered velocity', () => {
+    const { handlers, roll } = renderTool('pencil', { entryVelocity: 0.38 });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith(
+      expect.objectContaining({ velocity: 0.38 })
+    );
+    expect(handlers.onEntryVelocityChange).not.toHaveBeenCalled();
+  });
+
+  it('pointer: double-click and hold enters the note and the drag sets its length and velocity', () => {
+    const { handlers, roll } = renderTool('pointer');
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    expect(handlers.onAddNote).not.toHaveBeenCalled();
+    fireEvent.pointerDown(roll, { clientX: 401, clientY: rowY(72), pointerId: 2 });
+    fireEvent.pointerMove(roll, { clientX: 401 + 176, clientY: rowY(72) + 52, pointerId: 2 });
+    fireEvent.pointerUp(roll, { clientX: 401 + 176, clientY: rowY(72) + 52, pointerId: 2 });
+    fireEvent.doubleClick(roll, { clientX: 401 + 176, clientY: rowY(72) + 52 });
+    expect(handlers.onAddNote).toHaveBeenCalledTimes(1);
+    expect(handlers.onAddNote).toHaveBeenCalledWith({
+      start: 6,
+      duration: 3,
+      pitchMidicents: 7200,
+      velocity: 0.4,
+    });
+    expect(handlers.onEntryLengthChange).toHaveBeenCalledWith(3);
+    expect(handlers.onEntryVelocityChange).toHaveBeenCalledWith(0.4);
+    expect(handlers.onDeleteNotes).not.toHaveBeenCalled();
+  });
+
+  it('pointer: a double-press draw held past the double-press window still swallows the dblclick', () => {
+    const { handlers, roll } = renderTool('pointer');
+    const stamp = (event: Event, time: number) =>
+      Object.defineProperty(event, 'timeStamp', { value: time });
+    const fire = (type: 'pointerDown' | 'pointerUp' | 'pointerMove', time: number, x: number) => {
+      const init = { clientX: x, clientY: rowY(72), pointerId: 1 };
+      const event = createEvent[type](roll, init);
+      stamp(event, time);
+      fireEvent(roll, event);
+    };
+    fire('pointerDown', 0, 400);
+    fire('pointerUp', 50, 400);
+    fire('pointerDown', 100, 401);
+    fire('pointerMove', 1500, 401 + 176);
+    fire('pointerUp', 1600, 401 + 176);
+    const dbl = createEvent.dblClick(roll, { clientX: 577, clientY: rowY(72) });
+    stamp(dbl, 1601);
+    fireEvent(roll, dbl);
+    expect(handlers.onAddNote).toHaveBeenCalledTimes(1);
+    expect(handlers.onAddNote).toHaveBeenCalledWith(expect.objectContaining({ duration: 3 }));
+    // An unrelated dblclick well after the release is not swallowed.
+    const later = createEvent.dblClick(roll, { clientX: 70, clientY: rowY(62) });
+    stamp(later, 1600 + 5000);
+    fireEvent(roll, later);
+    expect(handlers.onAddNote).toHaveBeenCalledTimes(2);
+  });
+
+  it('pencil: length grows from the press point on the grid, not from the remembered length', () => {
+    const { handlers, roll } = renderTool('pencil', { entryLength: 0.5, gridUnit: 0.125 });
+    const y = rowY(72);
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: y, pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 424, clientY: y, pointerId: 1 });
+    // The live preview note (the drawing note) already shows 24 px = 0.375 quarters.
+    expect(screen.getByTitle(/0\.375 qn$/)).toBeInTheDocument();
+    fireEvent.pointerUp(roll, { clientX: 424, clientY: y, pointerId: 1 });
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith(
+      expect.objectContaining({ duration: 0.375 })
+    );
+    // Left of the press point: one grid unit.
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: y, pointerId: 2 });
+    fireEvent.pointerUp(roll, { clientX: 300, clientY: y, pointerId: 2 });
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith(
+      expect.objectContaining({ duration: 0.125 })
+    );
+    // A click inside the dead zone keeps the remembered length.
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: y, pointerId: 3 });
+    fireEvent.pointerUp(roll, { clientX: 402, clientY: y, pointerId: 3 });
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith(expect.objectContaining({ duration: 0.5 }));
   });
 
   it('a lost pointer capture or a window blur cancels a running gesture; nothing commits later', () => {
@@ -625,6 +733,7 @@ describe('PianoRoll tools', () => {
       start: 6.25,
       duration: 0.25,
       pitchMidicents: 7200,
+      velocity: 0.8,
     });
     expect(document.querySelectorAll('[data-subdivision]').length).toBe(8 * 4 + 1);
   });

@@ -2,7 +2,7 @@
 
 ## Status
 - Arc: ARC.md (Clips and the clip editor). The previous desk arc is archived in `ARC.desk.md` / `PROGRESS.desk.md` (committed at 39bb1af).
-- Current milestone: K2b (desk storage in IndexedDB), added 2026-11-11
+- Current milestone: K5t-2 (entry drag feel), added 2026-11-12
 - State: K1 and K1b committed (415e5e3), K1b checkpoint accepted. K2 built, uncommitted, reviewed PASS-WITH-HUMAN-CHECK (gate green 54 / 626). Human decided the lineage tree should persist like Google Docs version history and chose full snapshots in IndexedDB over session-only or diff-based history; new milestone K2b added to ARC.md. K2 checkpoint is combined with K2b's.
 
 ## Log
@@ -72,5 +72,8 @@ K5t orchestrator gate green 63 / 750, PianoRoll 39. Reviewer PASS-WITH-HUMAN-CHE
 
 K5t attempt 2 done: split provenance kept on both halves; gestures cancel on lost pointer capture / window blur; pencil dominant-axis lock (a diagonal drag now sets only the dominant one: length OR velocity); readout border uses --grid; double-click on overlapping notes deletes the selected one else the topmost; one default-velocity constant; entryLength clamped on write; focus returns to the roll after picking a tool. Gate green 63 / 752, PianoRoll 45. Committed (K5t is not separately re-reviewed after attempt 2; changes follow the reviewer's own fix list).
 
+## K5t-2 (2026-11-12)
+First pass was written by the orchestrator directly (skipped the ARC flow; human called it out). Reviewer PASS-WITH-HUMAN-CHECK; builder applied its fixes. Human feel feedback then: (a) pointer double-press-and-hold drags over ~500 ms entered an extra note on release: fixed, swallow window now runs from release (and from cancel); (b) length is NOT additive to the remembered length: once past the 4 px dead zone, length = max(one grid unit, snapped distance from the press point). Velocity stays relative to the remembered velocity; velocity floor 0.01. Gate green 63 / 753. Uncommitted. Open question: a vertical velocity drag with 5-15 px of sideways wobble now enters a one-grid-unit note (the old additive rule kept the remembered length); larger length dead zone if it bites.
+
 ## Next action
-Human feel check of K5t (tools, grid, eraser look, tool-label clipping, AltGr). Human suggested a fresh session after this commit: resume from PROGRESS.md. Next milestones: K5a (velocity fill, lane, Ctrl+Shift+drag), then K5b (clip properties and transforms, questions: make-equal on pitches handled per value type; duplicate goes after the selection). WORKFLOW_HANDOFF.md (portable workflow doc) is written but intentionally uncommitted.
+Human feel check of K5t-2 again (hard refresh): pointer double-press-and-hold with a long drag (no extra note), length growing from the press point, wobble case. Then commit, then K5a, then K5b.

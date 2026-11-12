@@ -185,6 +185,16 @@ Let a composer start from a blank clip and edit it directly, without a module fe
 - Acceptance (tests): each tool's gesture above commits the right edit as one undo step and a hand edit; entry length is remembered; knife keeps ids per the rule; eraser deletes only on release and Escape cancels; grid menu changes snapping; number keys switch tools only with the roll focused; Alt+wheel scrolls horizontally; Melodicization and Mixer unchanged.
 - Human checkpoint after: yes (feel).
 
+### K5t-2: Entry drag feel (human 2026-11-12, feel feedback on K5t; before K5a)
+- Supersedes K5t attempt 2's dominant-axis lock for note entry: the press point is the origin of an x/y pad. Left/right sets length and up/down sets velocity, each with its own dead zone (4 px, taken off the travel so values leave the remembered one smoothly), both at once, neither locking the other out.
+- Velocity is remembered like length: the last dragged velocity becomes the next entered note's velocity (per viewer, `hrifa.note-editor.v1`, outside history and packet). Example: drag to 38% and 1q, the next note starts at 38% and 1q. Applies to every mode that drags velocity on entry.
+- Pointer tool: double-click and hold. The second press enters the note at the press point and the drag that follows sets length and velocity (same pad); the dblclick that follows must not delete the new note. A plain dblclick event with no preceding press (keyboard/test path) still enters a note.
+- Pencil: single click places; both drags remain.
+- Acceptance (tests): diagonal drag sets both and reports both remembered values; a click uses the remembered velocity; pointer double-press-and-drag enters one note with both set and deletes nothing; prefs round-trip entryVelocity.
+- Feel feedback 2026-11-12 (after attempt 1): (a) a pointer-tool double-press-and-hold drag longer than ~500 ms entered a second, erroneous note at the release point, because the dblclick-swallow window was measured from the press; it must be measured from the end of the gesture (the dblclick fires on release). (b) Length while dragging is NOT additive to the remembered length (human, 2026-11-12, overrides attempt 1's relative rule): a plain click gives the remembered length; once the drag leaves the 4 px dead zone, length = max(one grid unit, snapped drag distance from the press point), so it grows 1/8, 1/4, 3/8 ... from the origin. Velocity stays relative to the remembered velocity.
+- Process note: the first pass was written by the orchestrator directly, outside the builder/reviewer flow. Corrected by running the reviewer on it.
+- Human checkpoint after: yes (feel).
+
 ### K5a: Velocity editing in the note editor (human 2026-11-11; after K5, before K5b)
 - Velocity shown as note fill: each note's filled-ness reflects its velocity (Bitwig-style), using THEMING mark/tint roles.
 - Lane look (human screenshot): per note a vertical stem with a round pin on top at the note's start time, height = velocity, coloured like the note.

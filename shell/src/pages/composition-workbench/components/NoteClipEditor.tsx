@@ -301,6 +301,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           gridUnit={gridOption.quarters ?? undefined}
           entryLength={preferences.entryLength ?? undefined}
           onEntryLengthChange={(length) => updatePreferences({ entryLength: length })}
+          entryVelocity={preferences.entryVelocity ?? undefined}
+          onEntryVelocityChange={(velocity) => updatePreferences({ entryVelocity: velocity })}
           endMarker={extent > 0 ? extent : undefined}
           notes={notes}
           duration={duration}

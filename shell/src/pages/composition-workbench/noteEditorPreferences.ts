@@ -1,15 +1,17 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
 /**
- * Per-viewer settings of the note clip editor: the length a newly entered note gets (set by dragging
- * sideways while entering one) and the grid subdivision. Like the New clip defaults they live under a
- * key outside the workbench prefix, so a saved project never captures them, and they are never
+ * Per-viewer settings of the note clip editor: the length and velocity a newly entered note gets
+ * (set by dragging sideways and up or down while entering one) and the grid subdivision. Like the
+ * New clip defaults they live under a key outside the workbench prefix, so a saved project never captures them, and they are never
  * recorded in history or written to a clip.
  */
 export const NOTE_EDITOR_PREFERENCES_KEY = 'hrifa.note-editor.v1';
 
 export const MIN_ENTRY_LENGTH = 1 / 32;
 export const MAX_ENTRY_LENGTH = 64;
+/** The quietest remembered entry velocity, so a remembered 0% cannot make silent notes. */
+export const MIN_ENTRY_VELOCITY = 0.01;
 
 /** A grid choice: `quarters` is null for the automatic grid, which adapts to the zoom. */
 export interface GridOption {
@@ -36,11 +38,13 @@ export const GRID_OPTIONS: GridOption[] = [
 export interface NoteEditorPreferences {
   /** Quarter notes; null until the viewer has set one (the grid unit is used). */
   entryLength: number | null;
+  /** 0 to 1; null until the viewer has set one (the default entry velocity is used). */
+  entryVelocity: number | null;
   /** The id of a `GRID_OPTIONS` entry. */
   grid: string;
 }
 
-const defaults: NoteEditorPreferences = { entryLength: null, grid: 'auto' };
+const defaults: NoteEditorPreferences = { entryLength: null, entryVelocity: null, grid: 'auto' };
 
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: NoteEditorPreferences } | null = null;
@@ -70,6 +74,13 @@ export function readNoteEditorPreferences(): NoteEditorPreferences {
         length <= MAX_ENTRY_LENGTH
           ? length
           : null,
+      entryVelocity:
+        typeof parsed.entryVelocity === 'number' &&
+        Number.isFinite(parsed.entryVelocity) &&
+        parsed.entryVelocity >= MIN_ENTRY_VELOCITY &&
+        parsed.entryVelocity <= 1
+          ? parsed.entryVelocity
+          : null,
       grid:
         typeof parsed.grid === 'string' && GRID_OPTIONS.some((option) => option.id === parsed.grid)
           ? parsed.grid
@@ -88,6 +99,11 @@ export function writeNoteEditorPreferences(patch: Partial<NoteEditorPreferences>
     // The range the read accepts, so what is written always reads back.
     next.entryLength = Number.isFinite(next.entryLength)
       ? Math.min(MAX_ENTRY_LENGTH, Math.max(MIN_ENTRY_LENGTH, next.entryLength))
+      : null;
+  }
+  if (next.entryVelocity !== null) {
+    next.entryVelocity = Number.isFinite(next.entryVelocity)
+      ? Math.min(1, Math.max(MIN_ENTRY_VELOCITY, next.entryVelocity))
       : null;
   }
   try {

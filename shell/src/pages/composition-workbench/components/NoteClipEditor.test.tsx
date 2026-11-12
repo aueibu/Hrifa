@@ -150,6 +150,7 @@ describe('the note clip editor', () => {
     expect(first.value).toMatchObject({ pitches: [6000] });
     expect(first.value).toMatchObject({
       onset: { quarterNotes: { numerator: 1, denominator: 1 } },
+      // From the press point: 130 px is 2.03 quarters, snapped to 2.
       duration: { quarterNotes: { numerator: 2, denominator: 1 } },
     });
     expect(second.value).toMatchObject({
@@ -327,7 +328,7 @@ describe('the note clip editor', () => {
     expect(desk.snippets[0].packet.items).toHaveLength(1);
     const [first] = desk.snippets[0].packet.items;
     expect(noteValue(first.id).onset.quarterNotes).toEqual({ numerator: 9, denominator: 2 });
-    expect(noteValue(first.id).duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
+    expect(noteValue(first.id).duration.quarterNotes).toEqual({ numerator: 3, denominator: 2 });
     // The marker does not move with the notes.
     expect(screen.getByTestId('roll-end-bracket').style.left).toBe('256px');
   });
@@ -464,7 +465,7 @@ describe('the note clip editor tools', () => {
     expect(historyChangeCount()).toBe(changes);
   });
 
-  it('pencil: a click adds a note at the remembered length; a drag sets velocity and length, remembered per viewer', async () => {
+  it('pencil: a click adds a note at the remembered length; a drag sets length and velocity together, both remembered per viewer', async () => {
     const roll = await open();
     // The first note takes the grid unit (half a quarter at this zoom).
     drag(roll, { x: 70, y: rowY(60) }, { x: 70, y: rowY(60) });
@@ -473,12 +474,13 @@ describe('the note clip editor tools', () => {
     expect(noteValue(first.id).velocity).toBe(0.8);
     expect(readNoteEditorPreferences().entryLength).toBeNull();
 
-    // Drag mostly sideways (the dominant axis): length 2; the small vertical wobble sets no velocity.
+    // One drag from the press point: 130 px right sets the length to 2, 30 px up raises the velocity to the top.
     drag(roll, { x: 200, y: rowY(64) }, { x: 330, y: rowY(64) - 30 });
     const second = desk.snippets[0].packet.items[1];
     expect(noteValue(second.id).duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
-    expect(noteValue(second.id).velocity).toBe(0.8);
+    expect(noteValue(second.id).velocity).toBe(1);
     expect(readNoteEditorPreferences().entryLength).toBe(2);
+    expect(readNoteEditorPreferences().entryVelocity).toBe(1);
     expect(JSON.parse(localStorage.getItem(NOTE_EDITOR_PREFERENCES_KEY) ?? '{}').entryLength).toBe(
       2
     );
@@ -488,6 +490,7 @@ describe('the note clip editor tools', () => {
     drag(roll, { x: 400, y: rowY(67) }, { x: 400, y: rowY(67) });
     const third = desk.snippets[0].packet.items[2];
     expect(noteValue(third.id).duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
+    expect(noteValue(third.id).velocity).toBe(1);
     expect(historyChangeCount()).toBe(changes + 1);
     expect(JSON.stringify(desk.snippets[0].packet)).not.toContain('entryLength');
     expect(editSteps(third.id)).toEqual(['added']);

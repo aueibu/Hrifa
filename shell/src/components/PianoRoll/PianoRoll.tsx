@@ -76,9 +76,10 @@ export interface PianoRollProps {
    * selection ids (a chord is one id). Times are quarter notes snapped to the grid; pitches are whole
    * semitones in midicents.
    *
-   * - `onAddNote`: with the tool `pencil` active, a click on empty space (a drag sideways sets the
-   *   note's length, a drag up or down its velocity, shown as a percentage), and a double-click on
-   *   empty space with the tool `pointer`.
+   * - `onAddNote`: with the tool `pencil` active, a click on empty space, and with the tool `pointer`
+   *   a double-click on empty space (the second press held). From the press point, a drag sideways
+   *   sets the note's length and a drag up or down its velocity (shown as a percentage), both at
+   *   once; each is remembered for the next note.
    * - `onMoveNotes`: dragging a note moves the whole selection by the deltas.
    * - `onResizeNotes`: dragging a note's right edge changes the selection's durations by the delta.
    * - `onDeleteNotes`: with the tool `eraser` active, the notes swept over while the button was
@@ -135,6 +136,12 @@ export interface PianoRollProps {
    */
   entryLength?: number;
   onEntryLengthChange?(length: number): void;
+  /**
+   * The velocity (0 to 1) a note entered by a click gets; the default entry velocity when unset.
+   * Dragging up or down while entering a note sets a new one and reports it here, like the length.
+   */
+  entryVelocity?: number;
+  onEntryVelocityChange?(velocity: number): void;
   /** With the tool `paint`: one note per grid step swept over, at the pitch under the pointer, on release. */
   onPaintNotes?(notes: PianoRollNewNote[]): void;
   /** With the tool `knife`: a click on a note, with the grid line nearest the pointer (quarter notes). */
@@ -160,6 +167,8 @@ type Gesture =
       y: number;
       /** The length a plain click gives the note. */
       length: number;
+      /** The velocity a drag measures from, and a plain click gives the note. */
+      velocity: number;
     }
   | {
       kind: 'paint';
@@ -181,8 +190,10 @@ interface GesturePreview {
   dDuration: number;
   dVelocity: number;
   drawn?: PianoRollNewNote;
-  /** The pencil's drag changed the length (so it is remembered). */
+  /** The entry drag changed the length (so it is remembered). */
   lengthSet?: boolean;
+  /** The entry drag changed the velocity (so it is remembered). */
+  velocitySet?: boolean;
   /** A percentage that follows the pointer while a note's velocity is set. */
   readout?: { text: string; x: number; y: number };
   painted?: PianoRollNewNote[];
@@ -194,8 +205,14 @@ interface GesturePreview {
 /** A drag shorter than this is a click. */
 const DRAG_PIXELS = 4;
 
+/** Two presses this close together in time and place are a double-click. */
+const DOUBLE_PRESS_MS = 500;
+const DOUBLE_PRESS_PIXELS = 6;
+
 const RESIZE_HANDLE_PIXELS = 6;
 const VELOCITY_RANGE_PIXELS = 120;
+/** The quietest a drawn or remembered velocity can be, so a note is never silent. */
+const MIN_DRAWN_VELOCITY = 0.01;
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -247,6 +264,8 @@ export function PianoRoll({
   gridUnit,
   entryLength,
   onEntryLengthChange,
+  entryVelocity,
+  onEntryVelocityChange,
   onPaintNotes,
   onSplitNote,
 }: PianoRollProps) {
@@ -295,6 +314,12 @@ export function PianoRoll({
   const editable = Boolean(onMoveNotes || onResizeNotes || onVelocityChange);
   const snapUnit = gridUnit ?? adaptiveSubdivision(view.pixelsPerQuarter);
   const entryDefault = entryLength ?? snapUnit;
+  const entryVelocityDefault = clamp(entryVelocity ?? DEFAULT_ENTRY_VELOCITY, 0, 1);
+  // The last empty-space press with the pointer tool, to recognise the second press of a double-click.
+  const lastEmptyPress = useRef<{ time: number; x: number; y: number } | null>(null);
+  // A press-and-hold double-click already entered its note, so the dblclick that follows must not
+  // act on it (it would delete the note it just made).
+  const doubleDrewAt = useRef<number | null>(null);
 
   function snapped(quarters: number) {
     return Math.round(quarters / snapUnit) * snapUnit;
@@ -377,30 +402,39 @@ export function PianoRoll({
       dVelocity: 0,
     };
     if (current.kind === 'draw') {
-      // The drag's dominant axis decides what it sets, so sideways jitter during a vertical
-      // (loudness) drag cannot set the remembered length, nor the reverse.
+      // The press point is the origin of an x/y pad: sideways sets the length, up and down the
+      // velocity, each by its own dead zone and independent of the other, so a drag that wanders
+      // on one axis never locks out the other.
       const dx = point.x - current.x;
       const dy = point.y - current.y;
-      const horizontal = Math.abs(dx) >= Math.abs(dy);
-      const sized = horizontal && Math.abs(dx) >= DRAG_PIXELS;
-      const end = snapped(point.x / view.pixelsPerQuarter);
-      const velocity =
-        !horizontal && Math.abs(dy) >= DRAG_PIXELS
-          ? Math.round(clamp(DEFAULT_ENTRY_VELOCITY - dy / VELOCITY_RANGE_PIXELS, 0, 1) * 100) / 100
-          : undefined;
+      const sized = Math.abs(dx) >= DRAG_PIXELS;
+      const voiced = Math.abs(dy) >= DRAG_PIXELS;
+      // The dead zone is taken off the travel, so the value leaves the remembered one smoothly.
+      const velocity = voiced
+        ? Math.round(
+            clamp(
+              current.velocity - (dy - Math.sign(dy) * DRAG_PIXELS) / VELOCITY_RANGE_PIXELS,
+              MIN_DRAWN_VELOCITY,
+              1
+            ) * 100
+          ) / 100
+        : clamp(current.velocity, MIN_DRAWN_VELOCITY, 1);
+      // Length grows from the press point (the pad origin), not from the remembered length: the
+      // travel snaps to the grid and a drag left of the origin gives one grid unit. A click inside
+      // the dead zone keeps the remembered length.
+      const duration = sized
+        ? Math.max(snapUnit, snapped(dx / view.pixelsPerQuarter))
+        : current.length;
       return {
         ...blank,
         lengthSet: sized,
-        readout: {
-          text: `${Math.round((velocity ?? DEFAULT_ENTRY_VELOCITY) * 100)}%`,
-          x: point.x,
-          y: point.y,
-        },
+        velocitySet: voiced,
+        readout: { text: `${Math.round(velocity * 100)}%`, x: point.x, y: point.y },
         drawn: {
           start: current.start,
-          duration: sized ? Math.max(snapUnit, end - current.start) : current.length,
+          duration,
           pitchMidicents: current.pitchMidicents,
-          ...(velocity === undefined ? {} : { velocity }),
+          velocity,
         },
       };
     }
@@ -472,9 +506,16 @@ export function PianoRoll({
     }
     const point = rollPointAt(event);
     if (current.kind === 'draw') {
+      // The browser's dblclick fires on release: the swallow window runs from here, not the press.
+      if (doubleDrewAt.current !== null) {
+        doubleDrewAt.current = event.timeStamp;
+      }
       const result = previewFor(current, point);
       if (result.lengthSet) {
         onEntryLengthChange?.(result.drawn!.duration);
+      }
+      if (result.velocitySet) {
+        onEntryVelocityChange?.(result.drawn!.velocity!);
       }
       onAddNote?.(result.drawn!);
       return;
@@ -530,6 +571,10 @@ export function PianoRoll({
   }
 
   function cancelGesture() {
+    // A cancelled double-press draw must not let a later dblclick add a note either.
+    if (gesture.current?.kind === 'draw' && doubleDrewAt.current !== null) {
+      doubleDrewAt.current = performance.now();
+    }
     gesture.current = null;
     setPreview(null);
   }
@@ -540,10 +585,7 @@ export function PianoRoll({
     if (!gestureActive) {
       return undefined;
     }
-    const cancel = () => {
-      gesture.current = null;
-      setPreview(null);
-    };
+    const cancel = () => cancelGesture();
     window.addEventListener('blur', cancel);
     return () => window.removeEventListener('blur', cancel);
   }, [gestureActive]);
@@ -570,7 +612,7 @@ export function PianoRoll({
       };
     });
     const entered: PianoRollNote[] = [
-      ...(preview.drawn ? [{ id: '\u0000drawing', label: '', velocity: 1, ...preview.drawn }] : []),
+      ...(preview.drawn ? [{ id: '\u0000drawing', label: '', ...preview.drawn }] : []),
       ...(preview.painted ?? []).map((note, index) => ({
         id: `\u0000paint:${index}`,
         label: '',
@@ -620,6 +662,7 @@ export function PianoRoll({
       x: point.x,
       y: point.y,
       length: entryDefault,
+      velocity: entryVelocityDefault,
     });
   }
 
@@ -645,6 +688,8 @@ export function PianoRoll({
   }
 
   function beginNoteGesture(note: PianoRollNote, event: ReactPointerEvent<HTMLElement>) {
+    doubleDrewAt.current = null;
+    lastEmptyPress.current = null;
     const id = selectionId(note);
     const toggle = event.shiftKey || event.ctrlKey || event.metaKey;
     // The knife splits at the grid line nearest the pointer and leaves the selection as it was.
@@ -716,6 +761,24 @@ export function PianoRoll({
       return;
     }
     const point = rollPoint(event);
+    if (activeTool === 'pointer' && onAddNote) {
+      // Double-click and hold: the second press enters the note where it lands, and the drag that
+      // follows sets its length (sideways) and velocity (up and down), as the pencil does.
+      const previous = lastEmptyPress.current;
+      const now = event.timeStamp;
+      if (
+        previous &&
+        now - previous.time <= DOUBLE_PRESS_MS &&
+        Math.hypot(point.x - previous.x, point.y - previous.y) <= DOUBLE_PRESS_PIXELS
+      ) {
+        lastEmptyPress.current = null;
+        doubleDrewAt.current = now;
+        beginDraw(event);
+        return;
+      }
+      lastEmptyPress.current = { time: now, x: point.x, y: point.y };
+    }
+    doubleDrewAt.current = null;
     drag.current = {
       x: point.x,
       y: point.y,
@@ -731,6 +794,11 @@ export function PianoRoll({
     if (!selectable || activeTool !== 'pointer') {
       return;
     }
+    const drewAt = doubleDrewAt.current;
+    doubleDrewAt.current = null;
+    if (drewAt !== null && event.timeStamp - drewAt <= DOUBLE_PRESS_MS) {
+      return;
+    }
     const box = event.currentTarget.getBoundingClientRect();
     const point = { x: event.clientX - box.left, y: event.clientY - box.top };
     // Overlapping notes: a selected one is drawn on top (z-index), otherwise the one drawn last is.
@@ -742,7 +810,12 @@ export function PianoRoll({
     }
     if (onAddNote) {
       const { index, midi } = cellAt(point);
-      onAddNote({ start: index * snapUnit, duration: entryDefault, pitchMidicents: midi * 100 });
+      onAddNote({
+        start: index * snapUnit,
+        duration: entryDefault,
+        pitchMidicents: midi * 100,
+        velocity: entryVelocityDefault,
+      });
     }
   }
 
@@ -876,13 +949,7 @@ export function PianoRoll({
       0,
       128 * pixelsPerSemitone - viewport.height + RULER_HEIGHT
     );
-    changeView({
-      pixelsPerQuarter,
-      pixelsPerSemitone,
-      scrollLeft: 0,
-      scrollTop,
-      framed: true,
-    });
+    changeView({ pixelsPerQuarter, pixelsPerSemitone, scrollLeft: 0, scrollTop, framed: true });
   }
 
   useEffect(() => {
