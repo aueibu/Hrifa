@@ -1,0 +1,31 @@
+/* The note clip editor fills the bottom panel: a thin header over the piano roll, text by role. */
+.editor {
+  background: var(--panel);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+/* The roll takes all the height left under the header (and, later, above the velocity lane). */
+.rollArea {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.title {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}

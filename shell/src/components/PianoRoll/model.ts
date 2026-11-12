@@ -15,9 +15,25 @@ export interface PianoRollNote {
   color?: string;
 }
 
+/** The shortest note a roll edit makes, in quarter notes (a drag cannot shrink a note below it). */
+export const MIN_NOTE_QUARTERS = 1 / 32;
+
+/** A note drawn in the roll, before its owner gives it an id. Pitch is a whole semitone, in midicents. */
+export interface PianoRollNewNote {
+  start: number;
+  duration: number;
+  pitchMidicents: number;
+}
+
+/** A span of time in quarter notes. */
+export interface PianoRollRange {
+  start: number;
+  end: number;
+}
+
 export interface PianoRollGridLine {
   at: number;
-  kind: "bar" | "beat";
+  kind: 'bar' | 'beat';
   label?: string;
 }
 

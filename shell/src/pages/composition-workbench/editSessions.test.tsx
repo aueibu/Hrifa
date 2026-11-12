@@ -176,4 +176,34 @@ describe('edit sessions', () => {
     });
     expect(result.current.snippets[0].lineage!.versions).toHaveLength(4);
   });
+
+  it('a refused edit returns ok:false and leaves the edit session alone', async () => {
+    const { result } = await renderDesk();
+    act(() => result.current.addSnippet(clip('s5')));
+    const before = plain(result.current.snippets);
+    // A project open freezes the desk: edits, restores and create-from-version are refused.
+    await act(async () => {
+      await result.current.replaceDesk(result.current.snippets, { reloading: true });
+    });
+    const outcomes: boolean[] = [];
+    act(() => {
+      outcomes.push(
+        result.current.commitSnippetEditById('s5', shifted(1), 'edit-clip', { handEdit: true }).ok,
+        result.current.restoreSnippetVersionById('s5', 'any').ok,
+        result.current.createClipFromVersionById('s5', 'any').ok
+      );
+    });
+    expect(outcomes).toEqual([false, false, false]);
+    expect(plain(result.current.snippets)).toEqual(before);
+
+    await act(async () => {
+      await result.current.replaceDesk(result.current.snippets, { restore: true });
+    });
+    act(() => {
+      result.current.commitSnippetEditById('s5', shifted(2), 'edit-clip', { handEdit: true });
+      result.current.commitSnippetEditById('s5', shifted(3), 'edit-clip', { handEdit: true });
+    });
+    // One session: root plus one amended head, as if the refused edit never happened.
+    expect(result.current.snippets[0].lineage!.versions).toHaveLength(2);
+  });
 });

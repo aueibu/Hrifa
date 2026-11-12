@@ -142,13 +142,13 @@
   top: 0;
 }
 
-.timeLine[data-kind="bar"] {
+.timeLine[data-kind='bar'] {
   border-left-color: var(--mantine-color-text);
   border-left-width: 2px;
   opacity: 0.48;
 }
 
-.timeLine[data-kind="beat"] {
+.timeLine[data-kind='beat'] {
   border-left-color: var(--border);
 }
 
@@ -229,6 +229,24 @@
   z-index: 4;
 }
 
+/* The owner's selected time range, which can reach over empty space: a faint band with edge lines. */
+.range {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border-inline: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.roll[data-tool='draw'] {
+  cursor: cell;
+}
+
+.roll[data-tool='erase'] .note {
+  cursor: not-allowed;
+}
+
 .playhead {
   background: var(--mantine-color-red-filled);
   bottom: 0;
@@ -242,4 +260,60 @@
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+/* Fill mode: the roll takes the height its parent gives it, with the toolbar above and the scroller below. */
+.root[data-fill] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.root[data-fill] .body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* A ghost: where a dragged note would land. A see-through --text tint with a dashed --text edge. */
+.ghost {
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+  border: 1px dashed var(--text);
+  color: var(--text);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* The end of the playback area: a line through the roll, with the stretch after it dimmed. */
+.endLine {
+  background: var(--text);
+  bottom: 0;
+  opacity: 0.7;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 2px;
+  z-index: 2;
+}
+
+.afterEnd {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+/* A closing bracket on the ruler, which stays in view while the keys scroll. */
+.ruler .endBracket {
+  border: 2px solid var(--text);
+  border-left: 0;
+  padding: 0;
+  bottom: 4px;
+  opacity: 0.8;
+  position: absolute;
+  top: 4px;
+  transform: translateX(-100%);
+  width: 8px;
 }

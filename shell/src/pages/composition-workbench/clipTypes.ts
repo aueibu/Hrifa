@@ -185,6 +185,8 @@ registerClipType({
   label: 'Notes',
   kind: 'events',
   domain: 'note',
+  // Bound to the piano-roll editor by `registerClipEditor` (components/NoteClipEditor.tsx).
+  editorId: 'note-roll',
   playable: true,
   createBlank: (request) => blankSnippet(request, { kind: 'events', domain: 'note' }),
 });

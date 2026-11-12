@@ -245,7 +245,11 @@ describe('New clip', () => {
   it('one click adds an empty note clip to the desk and opens it in the bottom panel', async () => {
     const user = userEvent.setup();
     await user.click(await renderEmptyDesk());
-    expect(await screen.findByText('No editor for this clip yet.')).toBeVisible();
+    // The Notes type has an editor now (K5): its piano roll opens on the empty clip.
+    expect(
+      await screen.findByRole('group', { name: /Note clip piano roll; 0 notes/ })
+    ).toBeVisible();
+    expect(screen.queryByText('No editor for this clip yet.')).not.toBeInTheDocument();
     const input = await screen.findByDisplayValue('New clip');
     expect(input).toBeVisible();
     expect(canUndo()).toBe(true);

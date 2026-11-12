@@ -346,6 +346,17 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  /** The refusal for an edit that cannot land, checked before anything records an edit session. */
+  const refusal = useCallback((): SnippetEditResult | null => {
+    if (!loadedRef.current) {
+      return { ok: false, error: 'The desk is still loading, so the clip cannot be edited yet.' };
+    }
+    if (!writableRef.current) {
+      return { ok: false, error: 'The desk is not accepting changes right now.' };
+    }
+    return null;
+  }, []);
+
   const addSnippet = useCallback(
     (snippet: Snippet) => {
       applyChange((current) => [...current, snippet]);
@@ -452,6 +463,10 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       if (!target) {
         return { ok: false, error: 'That snippet is no longer on the desk.' };
       }
+      const refused = refusal();
+      if (refused) {
+        return refused;
+      }
       const result = commitSnippetEdit(target, newPacket, operation, {
         handEdit: options?.handEdit,
       });
@@ -470,13 +485,17 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       );
       return result;
     },
-    [applyChange]
+    [applyChange, refusal]
   );
   const restoreSnippetVersionById = useCallback(
     (id: string, versionId: string): SnippetEditResult => {
       const target = snippetsRef.current.find((snippet) => snippet.id === id);
       if (!target) {
         return { ok: false, error: 'That snippet is no longer on the desk.' };
+      }
+      const refused = refusal();
+      if (refused) {
+        return refused;
       }
       const result = restoreSnippetVersion(target, versionId);
       if (!result.ok || result.snippet === target) {
@@ -489,13 +508,17 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       );
       return result;
     },
-    [applyChange]
+    [applyChange, refusal]
   );
   const createClipFromVersionById = useCallback(
     (id: string, versionId: string): SnippetEditResult => {
       const source = snippetsRef.current.find((snippet) => snippet.id === id);
       if (!source) {
         return { ok: false, error: 'That snippet is no longer on the desk.' };
+      }
+      const refused = refusal();
+      if (refused) {
+        return refused;
       }
       const result = createClipFromVersion(source, versionId, {
         id: newSnippetId(),
@@ -515,7 +538,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       });
       return result;
     },
-    [applyChange]
+    [applyChange, refusal]
   );
   const replaceDesk = useCallback(
     (

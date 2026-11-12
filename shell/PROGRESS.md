@@ -60,5 +60,11 @@ K4 orchestrator gate green 59 / 699. Reviewer PASS-WITH-HUMAN-CHECK. To fix in a
 
 K4 attempt 2: one-click New clip with a chevron Popover for per-viewer defaults (clipPreferences.ts, key `hrifa.clip-defaults.v1`, outside history/projects); disabled with reasons while loading/locked; reviewer fixes done. Re-review PASS-WITH-HUMAN-CHECK; orchestrator added trapFocus/returnFocus to the defaults popover. Gate green 59 / 707. Committed. Lows left: click does nothing during the brief project-open freeze; defaults changed in another tab show on next read.
 
+K5 attempt 1 built (PianoRoll optional edit callbacks + selectedRange; noteClipEdits.ts, noteSelection.ts {ids, range}; NoteClipEditor registered as 'note-roll'; tools Select V / Draw B / Erase E, Delete, Louder ] / Softer [; Alt-drag velocity as interim; clamp notes to clip extent; one commit per drag, `edit-notes` handEdit). Builder-run gate green 62 / 727; PianoRoll tests 19 pass. oxfmt reformatted PianoRoll.tsx/test wholesale. Reviewer running.
+
+K5 orchestrator gate green 62 / 727, PianoRoll 19 pass. Reviewer PASS-WITH-HUMAN-CHECK. For attempt 2: (medium) commitSnippetEditById / restoreSnippetVersionById / createClipFromVersionById return ok when applyChange refused (loading/locked/frozen) and the edit session is recorded for a version that never landed: return ok:false and check before touching the session; (low) drag preview clamps per note and ignores clip end; range band stale after undo of a move; Shift/Ctrl marquee drops an earlier empty-space range (note for K5b); moves snap distance not landing (decide in K5b quantize).
+
+K5 attempt 2: reviewer fixes + ghost drag, clip-end bracket (notes may pass it), fill + wheel (plain scrolls keys, Shift sideways, Ctrl time zoom, Ctrl+Alt pitch zoom), "edits are saved" text removed. Gate green 62 / 732, PianoRoll 28. Re-review PASS-WITH-HUMAN-CHECK; orchestrator made Ctrl+wheel ignore sideways-only swipes. Committed. Deferred lows: grid lines built to 256 quarters regardless of view (wasted DOM); only a closing bracket at the clip end; Ctrl+Alt is AltGr on Windows (check pitch zoom).
+
 ## Next action
-Human glance at the New clip split button (both color schemes). Then K5 (note clip editor). K5b open questions: "make all values equal" for pitches; duplicate placement; optional extra transforms (legato, transpose, quantize, inversion, rotate).
+Human browser check of K5 (ghost, bracket, fill/resize, wheel). Then write K5t acceptance with the human and build it.

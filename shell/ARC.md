@@ -143,6 +143,7 @@ Let a composer start from a blank clip and edit it directly, without a module fe
   - Per-clip length and timing editing belongs to the clip inspector (K5b), not to New clip.
 
 ### K5: Note clip editor
+- Selection model (human, 2026-11-11, needed by K5b): a selection is both the selected items and the time range they occupy, and the range can extend over empty space (Bitwig: select a quarter note plus two quarters of empty space; duplicate then copies all 3 beats). Build the editor's selection as items + time range from the start, even if K5 itself only uses the items.
 - Scope: extend `PianoRoll` with edit callbacks (add, move, resize, delete, velocity) so a clip editor can own no state beyond the packet; a `NoteClipEditor` that reads the clip's packet, applies edits via K2, and reuses `EditorPalette` tools and actions. Melodicization's roll must behave exactly as before.
 - Acceptance:
   - [ ] Test: drawing, moving, resizing and deleting notes commit edits to the clip and are undoable
@@ -151,15 +152,46 @@ Let a composer start from a blank clip and edit it directly, without a module fe
   - [ ] A blank note clip can be filled from nothing and auditioned from the desk
 - Human checkpoint after: yes (does it feel like a clip editor?)
 
+- Checkpoint decisions (human, 2026-11-11): "it does feel like a clip editor". Applied as K5 attempt 2:
+  - Ghost drag: while dragging a note to a new pitch/time, the note stays at its original place and a ghost note follows the pointer, its label updating live to the pitch under it; releasing commits the move (then the real note moves). Same idea for resize.
+  - Regular DAW clip end: show bracket markers for the end of the clip's playback area; notes may extend past it (no clamping).
+  - Full-width, resizable view: the roll (and later the velocity lane) spans the whole bottom-panel width and fills its height; the user can zoom horizontally and vertically and the roll resizes with the panel. Mouse wheel over the note area scrolls the keys up/down (Bitwig-style; a modifier for horizontal scroll/zoom per existing roll conventions).
+  - Remove the "Edits are saved to the clip as you make them." text.
+  - Reference layout (human screenshot): notes labelled with pitch name and coloured; bars.beats ruler with a loop band on top; velocity lane underneath with a stem plus round pin per note at its start, coloured like the note; a small overview strip at the bottom. Lane and pins are K5a; ruler/loop band are K5b.
+
+### K5t: Bitwig-style editor tools (human 2026-11-11; after K5, before K5a)
+- Tools selectable by number keys and from a tool menu:
+  1 Pointer (cursor): select/move/resize; double-click an empty cell enters a note.
+  2 Time selection: drag selects a time span, and everything in it (items + range, per the selection model).
+  3 Pencil: single click enters a note.
+  4 Paint can: drag paints notes at the current grid subdivision.
+  5 Knife: click a note to split it at the clicked grid line (current subdivision).
+  6 Eraser: drag over notes; each note crossed gets a diagonal-dashed fill while held; releasing deletes them (cancellable by Escape before release).
+  7 Audition (play notes as clicked) and 8 Step input: later, not in K5t.
+- Note entry in any tool that enters notes: without releasing, dragging left/right sets the new note's length and that length becomes the length for the next entered note (remembered per viewer, outside history and packet); dragging up/down sets its velocity.
+- Grid subdivision control (needed by paint can and knife), reusing existing snap/grid UI if present.
+- Every gesture is one undo step and a hand edit.
+- Acceptance: to be written before building; human checkpoint after (feel).
+
+### K5a: Velocity editing in the note editor (human 2026-11-11; after K5, before K5b)
+- Velocity shown as note fill: each note's filled-ness reflects its velocity (Bitwig-style), using THEMING mark/tint roles.
+- Lane look (human screenshot): per note a vertical stem with a round pin on top at the note's start time, height = velocity, coloured like the note.
+- A velocity sub-panel (lane) under the piano roll, as in Bitwig/Ableton: one bar per note aligned to it in time; drag a bar to set that note's velocity; follows the roll's horizontal zoom/scroll; collapsible.
+- Ctrl+Shift+drag on a clicked note (or the selected group) adjusts velocity, showing the percentage while dragging. For a group, every note moves by the same offset, each clamped on its own at 0 and 100%: from 50 and 25, dragging down takes the 25 note to 0 and further dragging keeps lowering the 50 note past 25. Each note's value is its original value plus the drag offset, clamped, so dragging back up restores the relative spread.
+- Each drag is one undo step and a hand edit (one version per session).
+- Opt-in on PianoRoll so Melodicization and Mixer are unchanged unless the human asks for it there too.
+- Acceptance: to be written before building; human checkpoint after (look and feel).
+
 ### K5b: Clip inspector: clip properties and transforms (human 2026-11-11; after K5)
 - Why after K5: selection transforms and paste-at-position need the note editor's selection and cursor.
-- Clip properties (Bitwig/Ableton-style, shown in the left inspector while a clip is open): total length in bars.beats.ticks format like other DAWs, playback start point, loop start/end (loop on/off), and an internal time signature. These are new clip fields: design them as optional additions (v1 desks still load; stop-and-ask if a schema bump is needed). Editing them is undoable and versioned like other edits.
+- Clip properties (Bitwig/Ableton-style, shown in the left inspector while a clip is open): total length in bars.beats.ticks format like other DAWs, playback start point, loop start/end (loop on/off), and an internal time signature (a new clip takes the project time signature at creation, human 2026-11-11; clips made before K5b take the project's when first shown). These are new clip fields: design them as optional additions (v1 desks still load; stop-and-ask if a schema bump is needed). Editing them is undoable and versioned like other edits.
 - Transforms (human's list), each through `commitSnippetEdit` as its own version (not a hand edit), undoable, applicable per clip type via the K4 registry:
   - whole-clip scaling with quick x2 and /2;
   - selection scaling;
   - reverse (whole clip and selection);
-  - make all values equal (durations for rhythms; other value types to be agreed);
-  - duplicate (clip content / selection, Ableton-style, distinct from the desk card's Duplicate);
+  - make all values equal: dynamic and editor-dependent; one action per value type the editor shows (in the piano roll the user picks which: duration, pitch, velocity, ...);
+  - duplicate (clip content / selection; the copy goes right after the selection, Ableton/Bitwig-style; distinct from the desk card's Duplicate);
+  - legato, transpose, quantize, inversion, and rotation (rotation especially wanted) — human approved 2026-11-11.
   - copy and paste notes, pasting at the selected position in the editor.
 - Acceptance: to be written with the human before building (exact semantics per transform, layout).
 - Human checkpoint before and after: yes
