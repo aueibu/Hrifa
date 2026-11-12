@@ -356,34 +356,57 @@ export function resizeNotesStart(
   });
 }
 
-/** The result of merging duplicates: the packet and which survivor each dropped id went into. */
-export interface MergeDuplicatesResult {
+/** The result of resolving same-pitch overlaps: the packet and what happened to the ids. */
+export interface OverlapResult {
   packet: DataPacket;
-  /** Dropped item id to the id of the note it was merged into (empty when nothing merged). */
+  /** Merged-away id to the id of the note it merged into (empty when nothing merged). */
   survivorOf: ReadonlyMap<string, string>;
+  /** Ids of the new pieces made by splitting a note around a touched one (they exist in `packet`). */
+  created: ReadonlySet<string>;
+  /** Ids of notes that are gone without being merged (a touched note covered them completely). */
+  removed: ReadonlySet<string>;
+}
+
+interface OverlapPiece {
+  /** The item this piece began as (its provenance and the rest of its value come from it). */
+  source: NoteItem;
+  id: string;
+  onset: Rational;
+  end: Rational;
+  velocity: number;
+  /** New or changed against the base packet: such a piece overwrites what it overlaps. */
+  touched: boolean;
+  /** The source's place in packet order (a split piece keeps it): the later one wins an overlap. */
+  order: number;
+  /** A piece made by a split: it has a fresh id. */
+  fresh: boolean;
 }
 
 /**
- * No duplicate notes (Bitwig: notes of one pitch and onset are one note). Two events are duplicates
- * when they have the same onset AND the same pitch set (a chord is a duplicate only of an event with
- * the same pitches, in any order). A single-pitch note never merges into a multi-pitch event and vice
- * versa: partial duplicates are left whole, whatever the item order, so the result does not depend on
- * which came first. Overlapping same-pitch notes with different onsets are left alone.
- *
- * With `base` (the packet before the edit) only what the edit touched is merged. A note is TOUCHED
- * when it is new (its id is not in `base`) or its onset, pitches, duration or velocity differ from its
- * `base` value. Pre-existing duplicates where neither was touched stay as they are. In a group of
- * duplicates with a touched member, the survivor is the first untouched member (it keeps its id and
- * takes the velocity of the last touched member and the longest duration of itself and the touched
- * members), or, with no untouched member, the first touched one (keeping its own velocity); every other
- * TOUCHED member merges away, untouched members stay. Without `base` every note counts as touched, so
- * the first note keeps its id and velocity and takes the longest duration. The same packet, by
- * reference, when nothing merged.
+ * Same-pitch overlap rule (Bitwig: notes of one pitch never overlap, the one you just placed wins).
+ * A TOUCHED single-pitch note (new, or its onset, pitches or duration differ from its `base` value;
+ * velocity and label never count; without `base` every note is touched) that overlaps another
+ * single-pitch note of the same pitch (a shared edge is not an overlap), unless the pair is
+ * PRE-EXISTING: both notes are base notes (or pieces of base notes, `lineage` maps a split's fresh id
+ * to the base note it came from) whose base spans overlapped at that pitch. Pre-existing pairs are
+ * left exactly as they were. Otherwise:
+ *  - with the identical onset AND duration it merges: the other note keeps its id and position and
+ *    takes the touched note's velocity, the touched one is dropped (`survivorOf`);
+ *  - otherwise it OVERWRITES the overlapped span of the other note: the part before keeps the id, the
+ *    part after becomes a new piece (id from `newId`, provenance copied like the knife, label
+ *    recomputed, placed right after the original), a note covered completely is removed, and a note
+ *    overlapped on one side is just shortened (it keeps its id).
+ * Two touched notes that overlap: the one with the later onset wins the overlap (a tie: the later in
+ * packet order). Untouched pairs
+ * (old clips) are left alone, and so are multi-pitch items (chords), which neither overwrite nor are
+ * overwritten. The same packet, by reference, when nothing changes.
  */
-export function mergeDuplicateNotesDetailed(
+export function resolveSamePitchOverlaps(
   packet: DataPacket,
-  base?: DataPacket
-): MergeDuplicatesResult {
+  base?: DataPacket,
+  newId?: () => string,
+  lineage?: ReadonlyMap<string, string>
+): OverlapResult {
   const baseValues = new Map<string, NoteItem>();
   if (base) {
     for (const item of base.items) {
@@ -392,7 +415,8 @@ export function mergeDuplicateNotesDetailed(
       }
     }
   }
-  const touched = (item: NoteItem): boolean => {
+  // Velocity and label never make a note touched: only a change of time or pitch (or being new) does.
+  const isTouched = (item: NoteItem): boolean => {
     if (!base) {
       return true;
     }
@@ -401,88 +425,205 @@ export function mergeDuplicateNotesDetailed(
       !before ||
       compareRational(before.value.onset.quarterNotes, item.value.onset.quarterNotes) !== 0 ||
       compareRational(before.value.duration.quarterNotes, item.value.duration.quarterNotes) !== 0 ||
-      before.value.velocity !== item.value.velocity ||
       before.value.pitches.length !== item.value.pitches.length ||
       before.value.pitches.some((pitch, index) => pitch !== item.value.pitches[index])
     );
   };
-  const groups = new Map<string, NoteItem[]>();
-  for (const item of packet.items) {
-    if (!isNoteItem(item) || item.value.pitches.length === 0) {
-      continue;
+  /** The base note an item is, or is a piece of (a split's fresh half, via `lineage`); else null. */
+  const baseSource = (id: string): NoteItem | null => {
+    const through = lineage?.get(id);
+    return baseValues.get(through !== undefined && baseValues.has(through) ? through : id) ?? null;
+  };
+  const baseSpanOverlaps = (a: NoteItem, b: NoteItem): boolean =>
+    a.id !== b.id &&
+    a.value.pitches.length === 1 &&
+    b.value.pitches.length === 1 &&
+    a.value.pitches[0] === b.value.pitches[0] &&
+    compareRational(
+      a.value.onset.quarterNotes,
+      addRational(b.value.onset.quarterNotes, b.value.duration.quarterNotes)
+    ) < 0 &&
+    compareRational(
+      b.value.onset.quarterNotes,
+      addRational(a.value.onset.quarterNotes, a.value.duration.quarterNotes)
+    ) < 0;
+  /** Both notes (or the base notes they come from) were in the base, one pitch, and overlapped there. */
+  const preExisting = (a: OverlapPiece, b: OverlapPiece): boolean => {
+    if (!base) {
+      return false;
     }
-    const pitches = [...new Set(item.value.pitches)].sort((a, b) => a - b).join(',');
-    const key = `${Math.round(quarters(item.value.onset) * 1e9)}:${pitches}`;
-    const group = groups.get(key);
-    if (group) {
-      group.push(item);
-    } else {
-      groups.set(key, [item]);
+    const first = baseSource(a.source.id);
+    const second = baseSource(b.source.id);
+    return first !== null && second !== null && baseSpanOverlaps(first, second);
+  };
+  // Pieces per pitch, in packet order. Only single-pitch events take part.
+  const byPitch = new Map<number, OverlapPiece[]>();
+  packet.items.forEach((item, order) => {
+    if (!isNoteItem(item) || item.value.pitches.length !== 1) {
+      return;
     }
-  }
-  const dropped = new Map<string, string>();
-  const wanted = new Map<string, { duration: number; velocity?: number }>();
-  for (const group of groups.values()) {
-    if (group.length < 2) {
-      continue;
-    }
-    const touchedMembers = group.filter(touched);
-    if (touchedMembers.length === 0) {
-      continue;
-    }
-    const survivor = group.find((member) => !touchedMembers.includes(member)) ?? touchedMembers[0];
-    const merging = touchedMembers.filter((member) => member !== survivor);
-    if (merging.length === 0) {
-      continue;
-    }
-    const untouchedSurvivor = !touchedMembers.includes(survivor);
-    wanted.set(survivor.id, {
-      duration: Math.max(
-        quarters(survivor.value.duration),
-        ...merging.map((member) => quarters(member.value.duration))
-      ),
-      velocity: untouchedSurvivor ? merging[merging.length - 1].value.velocity : undefined,
-    });
-    merging.forEach((member) => dropped.set(member.id, survivor.id));
-  }
-  if (dropped.size === 0) {
-    return { packet, survivorOf: dropped };
-  }
-  const items = packet.items.flatMap((item) => {
-    if (dropped.has(item.id)) {
-      return [];
-    }
-    const change = wanted.get(item.id);
-    if (!change || !isNoteItem(item)) {
-      return [item];
-    }
-    const velocity = change.velocity ?? item.value.velocity;
-    if (change.duration <= quarters(item.value.duration) && velocity === item.value.velocity) {
-      return [item];
-    }
-    const longer = change.duration > quarters(item.value.duration);
-    const duration: MusicalDuration = longer
-      ? { quarterNotes: rationalFromNumber(change.duration) }
-      : item.value.duration;
-    const slotMatched =
-      compareRational(item.value.interOnset.quarterNotes, item.value.duration.quarterNotes) === 0;
-    const merged: NoteItem = {
-      ...item,
-      value: {
-        ...item.value,
-        duration,
-        velocity,
-        interOnset: slotMatched ? duration : item.value.interOnset,
-      },
+    const piece: OverlapPiece = {
+      source: item,
+      id: item.id,
+      onset: item.value.onset.quarterNotes,
+      end: addRational(item.value.onset.quarterNotes, item.value.duration.quarterNotes),
+      velocity: item.value.velocity,
+      touched: isTouched(item),
+      order,
+      fresh: false,
     };
-    return [merged];
+    const list = byPitch.get(item.value.pitches[0]);
+    if (list) {
+      list.push(piece);
+    } else {
+      byPitch.set(item.value.pitches[0], [piece]);
+    }
   });
-  return { packet: withItems(packet, items), survivorOf: dropped };
+  const taken = new Set(packet.items.map((item) => item.id));
+  const freshId = (sourceId: string): string => {
+    const wanted = newId ? newId() : `${sourceId}:piece`;
+    let id = wanted;
+    for (let suffix = 1; taken.has(id); suffix += 1) {
+      id = `${wanted}~${suffix}`;
+    }
+    taken.add(id);
+    return id;
+  };
+  const survivorOf = new Map<string, string>();
+  /** Source id to the pieces it ended as, in time order (only for the pitches that changed). */
+  const outcome = new Map<string, OverlapPiece[]>();
+  const overlaps = (a: OverlapPiece, b: OverlapPiece) =>
+    compareRational(a.onset, b.end) < 0 && compareRational(b.onset, a.end) < 0;
+  /** Of two touched notes: the later onset (the note's own, before any cutting) wins, then packet order. */
+  const winsOver = (a: OverlapPiece, b: OverlapPiece) => {
+    const by = compareRational(
+      a.source.value.onset.quarterNotes,
+      b.source.value.onset.quarterNotes
+    );
+    return by !== 0 ? by > 0 : a.order > b.order;
+  };
+  const sameSpan = (a: OverlapPiece, b: OverlapPiece) =>
+    compareRational(a.onset, b.onset) === 0 && compareRational(a.end, b.end) === 0;
+  for (const pieces of byPitch.values()) {
+    if (pieces.length < 2 || !pieces.some((piece) => piece.touched)) {
+      continue;
+    }
+    let live = [...pieces];
+    let changed = false;
+    // A touched note overwrites the pieces that are untouched, and of two touched notes the one with
+    // the LATER ONSET wins (a tie: the later in packet order), whatever the packet order.
+    for (const stamp of pieces) {
+      if (!stamp.touched) {
+        continue;
+      }
+      const yielding = live.filter(
+        (other) =>
+          other !== stamp &&
+          (!other.touched || winsOver(stamp, other)) &&
+          overlaps(stamp, other) &&
+          !preExisting(stamp, other)
+      );
+      if (yielding.length === 0) {
+        continue;
+      }
+      changed = true;
+      const twin = yielding.find((other) => sameSpan(stamp, other));
+      if (twin) {
+        twin.velocity = stamp.velocity;
+        survivorOf.set(stamp.id, twin.id);
+        live = live.filter((piece) => piece !== stamp);
+        continue;
+      }
+      const next: OverlapPiece[] = [];
+      for (const other of live) {
+        if (!yielding.includes(other)) {
+          next.push(other);
+          continue;
+        }
+        const keepsBefore = compareRational(other.onset, stamp.onset) < 0;
+        const keepsAfter = compareRational(stamp.end, other.end) < 0;
+        const afterPiece: OverlapPiece | null = keepsAfter
+          ? keepsBefore
+            ? { ...other, id: freshId(other.source.id), onset: stamp.end, fresh: true }
+            : null
+          : null;
+        if (keepsBefore) {
+          other.end = stamp.onset;
+          next.push(other);
+        } else if (keepsAfter) {
+          other.onset = stamp.end;
+          next.push(other);
+        }
+        if (afterPiece) {
+          next.push(afterPiece);
+        }
+      }
+      live = next;
+    }
+    if (changed) {
+      for (const piece of pieces) {
+        outcome.set(
+          piece.source.id,
+          live.filter((entry) => entry.source === piece.source)
+        );
+      }
+    }
+  }
+  if (outcome.size === 0) {
+    return {
+      packet,
+      survivorOf,
+      created: new Set<string>(),
+      removed: new Set<string>(),
+    };
+  }
+  const items: DataItem[] = [];
+  for (const item of packet.items) {
+    const parts = outcome.get(item.id);
+    if (!parts || !isNoteItem(item)) {
+      items.push(item);
+      continue;
+    }
+    // In time order: the original (the part before, or the only part left), then new pieces.
+    for (const part of parts) {
+      items.push(pieceItem(item, part));
+    }
+  }
+  const finalIds = new Set(items.map((item) => item.id));
+  const before = new Set(packet.items.map((item) => item.id));
+  const created = new Set([...finalIds].filter((id) => !before.has(id)));
+  const removed = new Set(
+    [...before].filter((id) => !finalIds.has(id) && !survivorOf.has(id) && outcome.has(id))
+  );
+  return { packet: withItems(packet, items), survivorOf, created, removed };
 }
 
-/** `mergeDuplicateNotesDetailed`'s packet alone. */
-export function mergeDuplicateNotes(packet: DataPacket, base?: DataPacket): DataPacket {
-  return mergeDuplicateNotesDetailed(packet, base).packet;
+/** The item for one piece: the original by reference when nothing about it changed. */
+function pieceItem(source: NoteItem, piece: OverlapPiece): NoteItem {
+  const duration: MusicalDuration = { quarterNotes: subtractRational(piece.end, piece.onset) };
+  const sameSpan =
+    compareRational(piece.onset, source.value.onset.quarterNotes) === 0 &&
+    compareRational(duration.quarterNotes, source.value.duration.quarterNotes) === 0;
+  if (!piece.fresh && sameSpan && piece.velocity === source.value.velocity) {
+    return source;
+  }
+  const onset = { quarterNotes: piece.onset };
+  const slotMatched =
+    piece.fresh ||
+    compareRational(source.value.interOnset.quarterNotes, source.value.duration.quarterNotes) === 0;
+  return {
+    ...source,
+    id: piece.id,
+    value: {
+      ...source.value,
+      onset,
+      duration,
+      velocity: piece.velocity,
+      interOnset: slotMatched ? duration : source.value.interOnset,
+    },
+    label: sameSpan ? source.label : noteLabel(source.value.pitches, onset),
+    provenance: [...source.provenance],
+  };
 }
 
 /**
@@ -643,6 +784,8 @@ export interface TimeMoveResult {
   packet: DataPacket;
   /** The ids of the pieces that were moved or copied, in packet order: what the band then holds. */
   movedIds: string[];
+  /** Fresh id of each cut piece to the id of the note it was cut from (copies are new notes: absent). */
+  pieceOf: ReadonlyMap<string, string>;
 }
 
 /** One piece of `item` over [start, end): `offset` shifts it, `slot` overrides its own-length slot. */
@@ -695,7 +838,14 @@ export function timeMoveResult(
   options: TimeMoveOptions = {}
 ): TimeMoveResult {
   const newId = collisionSafe(packet, makeId);
-  const none: TimeMoveResult = { packet, movedIds: [] };
+  const none: TimeMoveResult = { packet, movedIds: [], pieceOf: new Map() };
+  // Fresh id of a cut piece to the id of the note it was cut from (the overlap rule's lineage).
+  const pieceOf = new Map<string, string>();
+  const piece = (from: DataItem): string => {
+    const id = newId();
+    pieceOf.set(id, pieceOf.get(from.id) ?? from.id);
+    return id;
+  };
   if (!Number.isFinite(range.start) || !Number.isFinite(range.end) || range.end <= range.start) {
     return none;
   }
@@ -751,7 +901,10 @@ export function timeMoveResult(
     if (!leftStays) {
       // Only the right edge cuts: the part that stays is the right one and keeps the id.
       return [
-        { item: notePart(item, insideStart, insideEnd, newId(), undefined, shift), moved: true },
+        {
+          item: notePart(item, insideStart, insideEnd, piece(item), undefined, shift),
+          moved: true,
+        },
         { item: notePart(item, insideEnd, end, item.id), moved: false },
       ];
     }
@@ -763,12 +916,12 @@ export function timeMoveResult(
       item.id,
       slotMatched ? undefined : item.value.interOnset
     );
-    const middle = notePart(item, insideStart, insideEnd, newId(), undefined, shift);
+    const middle = notePart(item, insideStart, insideEnd, piece(item), undefined, shift);
     return rightStays
       ? [
           { item: left, moved: false },
           { item: middle, moved: true },
-          { item: notePart(item, insideEnd, end, newId()), moved: false },
+          { item: notePart(item, insideEnd, end, piece(item)), moved: false },
         ]
       : [
           { item: left, moved: false },
@@ -815,7 +968,7 @@ export function timeMoveResult(
           moved: false,
         };
         return rightRemains
-          ? [left, { item: notePart(item, destTo, end, newId()), moved: false }]
+          ? [left, { item: notePart(item, destTo, end, piece(item)), moved: false }]
           : [left];
       }
       return rightRemains ? [{ item: notePart(item, destTo, end, item.id), moved: false }] : [];
@@ -830,6 +983,7 @@ export function timeMoveResult(
       result.map((entry) => entry.item)
     ),
     movedIds: result.filter((entry) => entry.moved).map((entry) => entry.item.id),
+    pieceOf,
   };
 }
 

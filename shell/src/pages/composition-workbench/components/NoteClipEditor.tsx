@@ -1,5 +1,13 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Menu, Text, Title } from '@mantine/core';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
+import { Badge, Button, Menu, Text, Title, VisuallyHidden } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   adaptiveSubdivision,
@@ -28,8 +36,8 @@ import {
   clipExtent,
   clipRollDuration,
   deleteNotes,
+  isNoteItem,
   mapMergedIds,
-  mergeDuplicateNotesDetailed,
   moveNotes,
   copyNotes,
   newNoteItemId,
@@ -38,6 +46,7 @@ import {
   packetRollNotes,
   resizeNotes,
   resizeNotesStart,
+  resolveSamePitchOverlaps,
   setVelocities,
   splitNote,
   timeMoveDelta,
@@ -46,6 +55,14 @@ import {
 } from '../noteClipEdits';
 import { publishNoteEditor, withdrawNoteEditor, type PickPitchRequest } from '../noteEditorChannel';
 import { GRID_OPTIONS, useNoteEditorPreferences } from '../noteEditorPreferences';
+import {
+  moveNotesInPitch,
+  moveNotesInTime,
+  navigateSelection,
+  navigationOrder,
+  noteKeyEdit,
+  resizeNotesByGrid,
+} from '../noteKeyboard';
 import {
   clearTimeSelection,
   emptyNoteSelection,
@@ -59,6 +76,7 @@ import {
   type TimeRange,
 } from '../noteSelection';
 import { selectionKeyOf, type RotationSessionCore } from '../rotationSession';
+import { pitchLabel } from '../routeTreatments';
 import { scaleDegreeColor } from '../scaleDegreeColor';
 import { jsonEqual } from '../snippet';
 import { parseMeter } from '../transport';
@@ -142,7 +160,7 @@ interface SelectionState {
 }
 
 /**
- * The selection once duplicate notes were merged: dropped ids become their survivors (each once). A
+ * The selection once same-pitch overlaps were resolved: merged-away ids become their survivors (each once), notes an edit covered completely drop out, split pieces are never added. A
  * time selection keeps its span; a note selection's span is recomputed from the survivors.
  */
 function mergedSelection(
@@ -150,7 +168,8 @@ function mergedSelection(
   merged: DataPacket,
   survivorOf: ReadonlyMap<string, string>
 ): NoteSelection {
-  const ids = [...mapMergedIds(selection.ids, survivorOf)];
+  const present = new Set(merged.items.map((item) => item.id));
+  const ids = [...mapMergedIds(selection.ids, survivorOf)].filter((id) => present.has(id));
   return selection.kind === 'time' ? { ...selection, ids } : selectIds(merged, ids);
 }
 
@@ -266,6 +285,26 @@ interface ActiveRamp {
   selectionKey: string;
 }
 
+/**
+ * What a screen reader hears when Alt+arrow lands on a note: its pitch name, where it starts (bar
+ * and beat in the clip's meter), and its place in the navigation order.
+ */
+function describeNote(packet: DataPacket, id: string, meter: string): string {
+  const item = packet.items.find((entry) => entry.id === id);
+  if (!item || !isNoteItem(item)) {
+    return '';
+  }
+  const { numerator, denominator } = parseMeter(meter);
+  const barLength = (numerator * 4) / denominator;
+  const beatLength = 4 / denominator;
+  const onset = rationalToNumber(item.value.onset.quarterNotes);
+  const bar = Math.floor(onset / barLength + 1e-9);
+  const beat = (onset - bar * barLength) / beatLength + 1;
+  const order = navigationOrder(packet);
+  const name = item.value.pitches.map((midicents) => pitchLabel(midicents)).join(' ');
+  return `${name} at bar ${bar + 1} beat ${Number(beat.toFixed(2))}, selected, ${order.indexOf(id) + 1} of ${order.length}`;
+}
+
 function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
@@ -299,10 +338,51 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     moves: [],
   }));
   const [notice, setNotice] = useState<string | null>(null);
+  // Keyboard selection moves ask the roll to scroll the new note into view (token: once per press).
+  const [reveal, setReveal] = useState<{ id: string; token: number } | null>(null);
+  // Whether a pointer button is down anywhere: any drag or lane gesture is one, and the arrow keys
+  // must not edit under it. Window listeners so a release outside the roll still counts.
+  const pointerHeld = useRef(false);
+  // An Alt+arrow was handled since Alt went down: its keyup must not reach the browser's menu bar.
+  const altArrowHandled = useRef(false);
+  useEffect(() => {
+    const down = () => {
+      pointerHeld.current = true;
+    };
+    const up = () => {
+      pointerHeld.current = false;
+    };
+    // A button that is no longer down (its release was lost, such as to a context menu) ends it too.
+    const move = (event: PointerEvent) => {
+      if (event.buttons === 0 && pointerHeld.current) {
+        pointerHeld.current = false;
+      }
+    };
+    window.addEventListener('pointerdown', down, true);
+    window.addEventListener('pointerup', up, true);
+    window.addEventListener('pointercancel', up, true);
+    window.addEventListener('pointermove', move, true);
+    window.addEventListener('lostpointercapture', up, true);
+    window.addEventListener('blur', up);
+    return () => {
+      window.removeEventListener('pointerdown', down, true);
+      window.removeEventListener('pointerup', up, true);
+      window.removeEventListener('pointercancel', up, true);
+      window.removeEventListener('pointermove', move, true);
+      window.removeEventListener('lostpointercapture', up, true);
+      window.removeEventListener('blur', up);
+    };
+  }, []);
   const selection = useMemo(
     () => currentSelection(selectionState, packet),
     [selectionState, packet]
   );
+  // The latest selection, kept in step synchronously by every writer (commit, adopt, navigation), so
+  // a key press under auto-repeat that lands before the next render never reads a stale one.
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  // What assistive technology hears when Alt+arrow moves the selection.
+  const [announcement, setAnnouncement] = useState('');
 
   const selectionKey = selection.ids.join('\u0000');
   // The ramp stays active until another edit (the packet's notes are no longer the ones it wrote), a
@@ -388,8 +468,10 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   // Functional, because one roll event can change the selection twice (a marquee sets the ids, then
   // widens the range).
   function setSelection(change: (current: NoteSelection) => NoteSelection) {
+    const next = change(selectionRef.current);
+    selectionRef.current = next;
     setSelectionState((state) => ({
-      selection: change(currentSelection(state, packet)),
+      selection: next,
       basis: packet,
       moves: state.moves,
     }));
@@ -438,9 +520,13 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       cancelPick: () => setPick(null),
       adopt: (result, committed, survivorOf) => {
         const wanted = result.selection;
-        // A note merged away as a duplicate hands its selection to the note that absorbed it.
+        // A note merged away as a duplicate hands its selection to the note that absorbed it, and a
+        // note an overwrite covered completely is no longer there to select.
+        const present = new Set(committed.items.map((item) => item.id));
         const survivors = (ids: readonly string[]) =>
-          survivorOf?.size ? [...mapMergedIds(ids, survivorOf)] : [...ids];
+          (survivorOf?.size ? [...mapMergedIds(ids, survivorOf)] : [...ids]).filter((id) =>
+            present.has(id)
+          );
         const adopted: NoteSelection = wanted
           ? {
               ids: survivors(wanted.ids),
@@ -454,6 +540,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                 kind: 'time',
               }
             : selectIds(committed, survivors(selection.ids));
+        selectionRef.current = adopted;
         setSelectionState((state) => ({
           selection: adopted,
           basis: committed,
@@ -484,7 +571,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
    */
   function commit(
     edit: (current: DataPacket) => DataPacket,
-    after?: (next: DataPacket) => NoteSelection
+    after?: (next: DataPacket) => NoteSelection,
+    lineage?: ReadonlyMap<string, string>
   ): { base: DataPacket; committed: DataPacket; selection: NoteSelection } | null {
     if (refusal) {
       setNotice(refusal);
@@ -501,11 +589,20 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     if (edited === base) {
       return null;
     }
-    // No duplicate notes: notes of one onset and pitch merge into one, inside this same version and
-    // undo step (and only when something merged). A merged-away note's selection goes to its survivor.
-    const { packet: next, survivorOf } = mergeDuplicateNotesDetailed(edited, base);
-    if (survivorOf.size > 0 && jsonEqual(next.items, base.items)) {
-      // Everything the edit added merged straight back into notes that were already there.
+    // Same-pitch overlaps: a touched note overwrites the span it overlaps on a note of the same pitch
+    // (identical notes merge), inside this same version and undo step, and only when something
+    // changed. A merged-away note's selection goes to its survivor; split pieces are not selected.
+    const resolved = resolveSamePitchOverlaps(
+      edited,
+      base,
+      () => newNoteItemId(snippet.id),
+      lineage
+    );
+    const next = resolved.packet;
+    const survivorOf = resolved.survivorOf;
+    const resolvedChange = next !== edited;
+    if (resolvedChange && jsonEqual(next.items, base.items)) {
+      // Everything the edit added was absorbed by notes that were already there.
       return null;
     }
     const result = commitSnippetEditById(snippet.id, next, NOTE_EDIT_OPERATION, { handEdit: true });
@@ -514,8 +611,9 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       return null;
     }
     setNotice(null);
-    const wanted = after ? after(edited) : followEdit(selection, packet, edited);
-    const nextSelection = survivorOf.size ? mergedSelection(wanted, next, survivorOf) : wanted;
+    const wanted = after ? after(edited) : followEdit(selectionRef.current, current, edited);
+    const nextSelection = resolvedChange ? mergedSelection(wanted, next, survivorOf) : wanted;
+    selectionRef.current = nextSelection;
     setSelectionState((state) => ({
       selection: nextSelection,
       basis: result.snippet.packet,
@@ -542,7 +640,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
 
   function split(id: string, at: number) {
     const right = newNoteItemId(snippet.id);
-    commit((current) => splitNote(current, id, at, right));
+    commit((current) => splitNote(current, id, at, right), undefined, new Map([[right, id]]));
   }
 
   /**
@@ -569,6 +667,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       return;
     }
     let movedIds: string[] = [];
+    const lineage = new Map<string, string>();
     const done = commit(
       (base) => {
         const result = timeMoveResult(
@@ -580,9 +679,11 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           options
         );
         movedIds = result.movedIds;
+        result.pieceOf.forEach((source, piece) => lineage.set(piece, source));
         return result.packet;
       },
-      () => ({ ids: movedIds, range: moved, kind: 'time' })
+      () => ({ ids: movedIds, range: moved, kind: 'time' }),
+      lineage
     );
     if (done) {
       const record: BandMove = {
@@ -675,6 +776,50 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     setNotice(outcome.status === 'committed' ? (outcome.message ?? null) : outcome.message);
   }
 
+  /**
+   * The arrow keys, in the editor's focus scope: act on the selected notes (note noteKeyboard.ts).
+   * Returns whether the key was taken. A time selection takes the key and does nothing.
+   */
+  function runArrowKey(event: ReactKeyboardEvent): boolean {
+    const edit = noteKeyEdit(
+      event.key,
+      { shift: event.shiftKey, alt: event.altKey, mod: event.ctrlKey || event.metaKey },
+      snapUnit
+    );
+    if (!edit) {
+      return false;
+    }
+    if (edit.kind === 'navigate') {
+      altArrowHandled.current = true;
+    }
+    const held = selectionRef.current;
+    if (held.kind === 'time') {
+      return true;
+    }
+    const ids = held.ids;
+    if (edit.kind === 'navigate') {
+      const latest = latestSnippetById(snippet.id)?.packet ?? packet;
+      const chosen = navigateSelection(latest, ids, edit.direction);
+      if (chosen !== null) {
+        setSelection(() => selectIds(latest, [chosen]));
+        setAnnouncement(describeNote(latest, chosen, clipMeter));
+        setReveal((current) => ({ id: chosen, token: (current?.token ?? 0) + 1 }));
+      }
+      return true;
+    }
+    if (ids.length === 0) {
+      return true;
+    }
+    if (edit.kind === 'move') {
+      commit((current) => moveNotesInTime(current, ids, edit.quarters));
+    } else if (edit.kind === 'pitch') {
+      commit((current) => moveNotesInPitch(current, ids, edit.midicents));
+    } else {
+      commit((current) => resizeNotesByGrid(current, ids, edit.quarters, snapUnit));
+    }
+    return true;
+  }
+
   const actions: EditorAction[] = [
     {
       id: 'delete',
@@ -707,6 +852,9 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           </Title>
           <Badge variant="outline">{packet.items.length} notes</Badge>
         </div>
+        <VisuallyHidden role="status" aria-live="polite" data-testid="note-announcement">
+          {announcement}
+        </VisuallyHidden>
         <Text size="xs" c="dimmed" aria-live="polite">
           {notice ??
             (packet.items.length === 0
@@ -759,7 +907,39 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       <div
         className={classes.rollArea}
         role="presentation"
+        onKeyUp={(event) => {
+          // The Alt of an Alt+arrow selection move must not go on to focus the browser's menu bar.
+          if (event.key === 'Alt' && altArrowHandled.current) {
+            altArrowHandled.current = false;
+            event.preventDefault();
+          }
+        }}
         onKeyDown={(event) => {
+          // Arrow keys edit the selected notes (never in a text field, during a pitch pick, under a
+          // drag or lane gesture, or where a child already took the key, such as the lane splitter).
+          const arrowTarget = event.target as HTMLElement;
+          if (
+            !event.defaultPrevented &&
+            !arrowTarget.isContentEditable &&
+            !['INPUT', 'TEXTAREA', 'SELECT'].includes(arrowTarget.tagName)
+          ) {
+            if (pick || pointerHeld.current) {
+              // Ignored while a pick waits or a gesture runs, but Alt+Left/Right is still the
+              // browser's Back/Forward and must not navigate away mid-gesture.
+              if (
+                event.altKey &&
+                !event.ctrlKey &&
+                !event.metaKey &&
+                (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+              ) {
+                altArrowHandled.current = true;
+                event.preventDefault();
+              }
+            } else if (runArrowKey(event)) {
+              event.preventDefault();
+              return;
+            }
+          }
           // Ctrl/Cmd+C and V anywhere in the editor's focus scope (roll, lane, panel body), never
           // while typing in a field and not while a pitch pick waits.
           const target = event.target as HTMLElement;
@@ -876,6 +1056,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                 }
               : null
           }
+          reveal={reveal}
           keyActions={[
             {
               shortcut: 'v',

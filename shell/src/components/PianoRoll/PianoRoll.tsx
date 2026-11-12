@@ -243,6 +243,11 @@ export interface PianoRollProps {
   /** Extra plain-key shortcuts handled while the panel has focus (same guards as tools and actions). */
   keyActions?: Array<{ shortcut: string; run(): void }>;
   /**
+   * Scrolls the roll just far enough to bring a note (its sourceId, or id) fully into view, once
+   * per new token (the owner bumps it after moving the selection by keyboard). Opt-in.
+   */
+  reveal?: { id: string; token: number } | null;
+  /**
    * Pick-pitch mode (opt-in, with selection): the owner is waiting for the user to choose a pitch
    * row. While set, the roll shows `hint` as a banner, highlights the row (and key) under the
    * pointer with a crosshair cursor, and the next primary press on a pitch row in the roll (a note
@@ -416,6 +421,7 @@ export function PianoRoll({
   barGutter,
   pitchColor,
   keyActions,
+  reveal,
   pickPitch,
   toolCursors: withToolCursors = false,
 }: PianoRollProps) {
@@ -1456,6 +1462,52 @@ export function PianoRoll({
       changeView({ ...patch, framed: true });
     }
   }
+
+  // Keyboard selection moves ask for the note to be brought into view (nothing to do before layout).
+  const revealedToken = useRef<number | null>(null);
+  useEffect(() => {
+    if (!reveal || revealedToken.current === reveal.token) {
+      return;
+    }
+    const element = scroller.current;
+    if (!viewport.width || !viewport.height || !element) {
+      return;
+    }
+    revealedToken.current = reveal.token;
+    const rects = notes.filter((note) => (note.sourceId ?? note.id) === reveal.id);
+    if (!rects.length) {
+      return;
+    }
+    const margin = 8;
+    const left = Math.min(...rects.map((note) => note.start)) * view.pixelsPerQuarter;
+    const right =
+      Math.max(...rects.map((note) => note.start + note.duration)) * view.pixelsPerQuarter;
+    let sideways = 0;
+    if (left - margin < view.scrollLeft) {
+      sideways = left - margin - view.scrollLeft;
+    } else if (right + margin > view.scrollLeft + viewport.width) {
+      sideways = Math.min(
+        right + margin - (view.scrollLeft + viewport.width),
+        left - margin - view.scrollLeft
+      );
+    }
+    const rows = rects.map((note) => 127 - note.pitchMidicents / 100);
+    const top = Math.min(...rows) * view.pixelsPerSemitone;
+    const bottom = (Math.max(...rows) + 1) * view.pixelsPerSemitone;
+    const visibleHeight = viewport.height - RULER_HEIGHT;
+    let vertical = 0;
+    if (top - margin < element.scrollTop) {
+      vertical = top - margin - element.scrollTop;
+    } else if (bottom + margin > element.scrollTop + visibleHeight) {
+      vertical = Math.min(
+        bottom + margin - (element.scrollTop + visibleHeight),
+        top - margin - element.scrollTop
+      );
+    }
+    if (sideways !== 0 || vertical !== 0) {
+      scrollBy(sideways, vertical);
+    }
+  });
 
   function fitNotes() {
     if (!notes.length || !viewport.width || !viewport.height) {

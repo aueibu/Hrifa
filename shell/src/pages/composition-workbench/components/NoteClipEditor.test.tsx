@@ -8,6 +8,7 @@ import { canUndo, historyChangeCount, redo, resetHistory, undo } from '../histor
 import type { NoteEventValue } from '../melodicization';
 import { packet, type DataItem } from '../model';
 import { defaultMusicalTimeline, musicalDuration, musicalPosition, rational } from '../musicalTime';
+import { readNoteEditor } from '../noteEditorChannel';
 import { NOTE_EDITOR_PREFERENCES_KEY, readNoteEditorPreferences } from '../noteEditorPreferences';
 import { acceptsSnippets, type Snippet } from '../snippet';
 import { DeskView } from './DeskView';
@@ -1331,15 +1332,15 @@ describe('moving the content of a time selection', () => {
     fireEvent.pointerDown(roll, { clientX: 100, clientY: 5, pointerId: 3 });
     fireEvent.pointerMove(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3, altKey: true });
     fireEvent.pointerUp(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3, altKey: true });
-    // The moved middle (0 to 2) lands on the left piece (0 to 1): same onset and pitch, so they are
-    // one note (the first, w, keeps its id and takes the longer duration), inside the same step.
+    // The moved middle (0 to 2) lands on the left piece (0 to 1) of the same pitch and covers it
+    // completely: the touched note overwrites it (w is gone), inside the same step.
     expect(ids()).toHaveLength(3);
     const spans = desk.snippets[0].packet.items.map((entry) => {
       const value = entry.value as NoteEventValue;
       const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
       return [start, start + value.duration.quarterNotes.numerator];
     });
-    expect(ids()[0]).toBe('w');
+    expect(ids()).not.toContain('w');
     expect(spans).toEqual([
       [0, 2],
       [3, 4],
@@ -2093,13 +2094,14 @@ describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no d
       expect(ids()).toEqual(['n1', 'n2', 'n3']);
     });
 
-    it('the pencil on top of a note lengthens it instead of stacking a copy', async () => {
+    it('the pencil over a shorter note covers it instead of stacking a copy', async () => {
       const roll = await open(seededClip());
       act(() => tool('Pencil').click());
       const changes = historyChangeCount();
       drag(roll, { x: 10, y: rowY(60) }, { x: 10 + 128, y: rowY(60) });
+      // The new 2-quarter C4 covers n1 (0 to 1) completely: n1 is overwritten, not stacked.
       expect(ids()).toHaveLength(3);
-      expect(lengthOf('n1')).toBe(2);
+      expect(ids()).not.toContain('n1');
       expect(historyChangeCount()).toBe(changes + 1);
     });
 
@@ -2170,5 +2172,421 @@ describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no d
       // Everything was swallowed once: the browser menu is back for the next right-click.
       expect(fireEvent.contextMenu(document.body)).toBe(true);
     });
+  });
+});
+
+describe('same-pitch overlaps through the editor', () => {
+  const ids = () => desk.snippets[0].packet.items.map((entry) => entry.id);
+  const spanOf = (id: string) => {
+    const value = noteValue(id);
+    const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
+    return [start, value.duration.quarterNotes.numerator / value.duration.quarterNotes.denominator];
+  };
+
+  it('a quarter dragged onto beat 2 of a whole note makes q, q, h in one undo step', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [seedNote('w', 0, 4, 6000), seedNote('d', 6, 1, 6000)],
+      },
+    });
+    const changes = historyChangeCount();
+    // d (6 to 7) dragged five quarters left lands on beat 2 (1 to 2) of the whole note.
+    drag(
+      screen.getAllByTitle(/^C4 · 6\.000 qn/)[0],
+      { x: 6 * 64 + 20, y: rowY(60) },
+      { x: 6 * 64 + 20 - 5 * 64, y: rowY(60) },
+      roll
+    );
+    expect(historyChangeCount()).toBe(changes + 1);
+    expect(ids()).toHaveLength(3);
+    const spans = ids()
+      .map(spanOf)
+      .sort((a, b) => a[0] - b[0]);
+    expect(spans).toEqual([
+      [0, 1],
+      [1, 1],
+      [2, 2],
+    ]);
+    // The dragged note stays selected; the created piece is not.
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    expect(spanOf('w')).toEqual([0, 1]);
+    expect(spanOf('d')).toEqual([1, 1]);
+    act(() => undo());
+    expect(ids()).toEqual(['w', 'd']);
+  });
+});
+
+describe('keyboard note editing', () => {
+  const ids = () => desk.snippets[0].packet.items.map((entry) => entry.id);
+  const startOf = (id: string) => {
+    const onset = noteValue(id).onset.quarterNotes;
+    return onset.numerator / onset.denominator;
+  };
+  const lengthOf = (id: string) => {
+    const duration = noteValue(id).duration.quarterNotes;
+    return duration.numerator / duration.denominator;
+  };
+  const pitchOf = (id: string) => noteValue(id).pitches[0];
+
+  /** A click on a note (selects it alone), released over the roll. */
+  function select(roll: Element, title: RegExp, x: number, y: number) {
+    fireEvent.pointerDown(screen.getByTitle(title), { clientX: x, clientY: y, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: x, clientY: y, pointerId: 1 });
+  }
+  const selectN1 = (roll: Element) => select(roll, /^C4 · 0\.000 qn/, 20, rowY(60));
+  const selectN2 = (roll: Element) => select(roll, /^E4 · 2\.000 qn/, 140, rowY(64));
+
+  /** Returns false when the key was taken (its default prevented). */
+  const press = (target: Element, init: KeyboardEventInit) => fireEvent.keyDown(target, init);
+
+  it('Left/Right move by one grid division (half a quarter here), one undo step per press, clamped at 0', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    const changes = historyChangeCount();
+    expect(press(roll, { key: 'ArrowRight' })).toBe(false);
+    expect(startOf('n2')).toBe(2.5);
+    expect(press(roll, { key: 'ArrowLeft' })).toBe(false);
+    press(roll, { key: 'ArrowLeft' });
+    expect(startOf('n2')).toBe(1.5);
+    expect(historyChangeCount()).toBe(changes + 3);
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    expect(desk.snippets[0].lineage?.versions.length).toBe(2);
+    act(() => undo());
+    expect(startOf('n2')).toBe(2);
+    // Clamped at the clip start: n1 sits at 0 and does not move (and writes nothing).
+    selectN1(roll);
+    const before = historyChangeCount();
+    expect(press(roll, { key: 'ArrowLeft' })).toBe(false);
+    expect(startOf('n1')).toBe(0);
+    expect(historyChangeCount()).toBe(before);
+  });
+
+  it('Up/Down move one semitone and Shift+Up/Down one octave', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    press(roll, { key: 'ArrowUp' });
+    expect(pitchOf('n2')).toBe(6500);
+    press(roll, { key: 'ArrowDown' });
+    press(roll, { key: 'ArrowDown' });
+    expect(pitchOf('n2')).toBe(6300);
+    press(roll, { key: 'ArrowUp', shiftKey: true });
+    expect(pitchOf('n2')).toBe(7500);
+    press(roll, { key: 'ArrowDown', shiftKey: true });
+    press(roll, { key: 'ArrowDown', shiftKey: true });
+    expect(pitchOf('n2')).toBe(5100);
+  });
+
+  it('refuses a group move at the keyboard ends without moving part of it', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [seedNote('lo', 0, 1, 500), seedNote('hi', 1, 1, 6000)],
+      },
+    });
+    // A marquee over both notes.
+    drag(roll, { x: 1, y: rowY(65) }, { x: 190, y: rowY(4) });
+    expect(roll).toHaveAccessibleName(/2 selected/);
+    const changes = historyChangeCount();
+    expect(press(roll, { key: 'ArrowDown', shiftKey: true })).toBe(false);
+    expect(historyChangeCount()).toBe(changes);
+    expect(pitchOf('lo')).toBe(500);
+    expect(pitchOf('hi')).toBe(6000);
+    // The move that fits is one undo step for the whole group.
+    press(roll, { key: 'ArrowUp' });
+    expect([pitchOf('lo'), pitchOf('hi')]).toEqual([600, 6100]);
+    expect(historyChangeCount()).toBe(changes + 1);
+  });
+
+  it('Shift+Left/Right nudge by the grid unit over 8 (1/32 of a quarter on a 1/8 grid), off the grid', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    // The editor snaps to half a quarter here (Ctrl+Right lengthens by 0.5), so a nudge is 1/16.
+    press(roll, { key: 'ArrowRight', shiftKey: true });
+    expect(startOf('n2')).toBe(2.0625);
+    press(roll, { key: 'ArrowLeft', shiftKey: true });
+    press(roll, { key: 'ArrowLeft', shiftKey: true });
+    expect(startOf('n2')).toBe(1.9375);
+  });
+
+  it('Ctrl/Cmd+Left/Right lengthen and shorten by a division, never below one', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    press(roll, { key: 'ArrowRight', ctrlKey: true });
+    expect(lengthOf('n2')).toBe(1.5);
+    press(roll, { key: 'ArrowLeft', metaKey: true });
+    press(roll, { key: 'ArrowLeft', ctrlKey: true });
+    expect(lengthOf('n2')).toBe(0.5);
+    const changes = historyChangeCount();
+    expect(press(roll, { key: 'ArrowLeft', ctrlKey: true })).toBe(false);
+    expect(lengthOf('n2')).toBe(0.5);
+    expect(historyChangeCount()).toBe(changes);
+  });
+
+  it('Alt+Left/Right walk the selection (onset, then pitch high to low) and stay at the ends', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [
+          seedNote('c', 0, 1, 6000),
+          seedNote('e', 0, 1, 6400),
+          seedNote('g', 0, 1, 6700),
+          seedNote('next', 2, 1, 6000),
+        ],
+      },
+    });
+    const changes = historyChangeCount();
+    const walk = () => {
+      const titles = [...document.querySelectorAll('[data-selected]')].map((node) =>
+        node.getAttribute('title')?.slice(0, 2)
+      );
+      return [...new Set(titles)];
+    };
+    // Nothing selected: Alt+Right takes the first note (the top of the first chord).
+    expect(press(roll, { key: 'ArrowRight', altKey: true })).toBe(false);
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    expect(walk()).toEqual(['G4']);
+    press(roll, { key: 'ArrowRight', altKey: true });
+    expect(walk()).toEqual(['E4']);
+    press(roll, { key: 'ArrowRight', altKey: true });
+    expect(walk()).toEqual(['C4']);
+    press(roll, { key: 'ArrowRight', altKey: true });
+    expect(screen.getByTitle(/^C4 · 2\.000 qn/)).toHaveAttribute('data-selected');
+    press(roll, { key: 'ArrowRight', altKey: true });
+    expect(screen.getByTitle(/^C4 · 2\.000 qn/)).toHaveAttribute('data-selected');
+    // Left walks back.
+    press(roll, { key: 'ArrowLeft', altKey: true });
+    expect(screen.getByTitle(/^C4 · 0\.000 qn/)).toHaveAttribute('data-selected');
+    // Navigation never edits the clip.
+    expect(historyChangeCount()).toBe(changes);
+    // The Alt keyup after an Alt+arrow must not reach the browser's menu bar (once).
+    expect(fireEvent.keyUp(roll, { key: 'Alt' })).toBe(false);
+    expect(fireEvent.keyUp(roll, { key: 'Alt' })).toBe(true);
+  });
+
+  it('Alt+Right on a multi-selection selects the first of them alone; Alt+Left the last', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [
+          seedNote('c', 0, 1, 6000),
+          seedNote('e', 0, 1, 6400),
+          seedNote('g', 0, 1, 6700),
+          seedNote('next', 2, 1, 6000),
+        ],
+      },
+    });
+    // A marquee over the whole chord (x 0 to 60 px, all pitches).
+    drag(roll, { x: 1, y: rowY(70) }, { x: 60, y: rowY(55) });
+    expect(roll).toHaveAccessibleName(/3 selected/);
+    press(roll, { key: 'ArrowRight', altKey: true });
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    expect(screen.getByTitle(/^G4 · 0\.000 qn/)).toHaveAttribute('data-selected');
+    drag(roll, { x: 60, y: rowY(55) }, { x: 1, y: rowY(70) });
+    expect(roll).toHaveAccessibleName(/3 selected/);
+    press(roll, { key: 'ArrowLeft', altKey: true });
+    expect(screen.getByTitle(/^C4 · 0\.000 qn/)).toHaveAttribute('data-selected');
+  });
+
+  it('Alt+Left with nothing selected takes the last note', async () => {
+    const roll = await open(seededClip());
+    press(roll, { key: 'ArrowLeft', altKey: true });
+    expect(screen.getByTitle(/^G4 · 4\.000 qn/)).toHaveAttribute('data-selected');
+  });
+
+  it('moving onto a same-pitch note applies the overlap rule in the same undo step', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [seedNote('w', 0, 4, 6000), seedNote('d', 4, 1, 6000)],
+      },
+    });
+    select(roll, /^C4 · 4.000 qn/, 4 * 64 + 20, rowY(60));
+    const changes = historyChangeCount();
+    // One press (an auto-repeat one too) puts d at 3.5 to 4.5, over the end of the whole note: d
+    // is new ground for w (they only touched), so w is shortened to make room.
+    press(roll, { key: 'ArrowLeft', repeat: true });
+    expect(historyChangeCount()).toBe(changes + 1);
+    expect(startOf('d')).toBe(3.5);
+    expect(ids()).toEqual(['w', 'd']);
+    expect([startOf('w'), lengthOf('w')]).toEqual([0, 3.5]);
+    // The selection stays on the moved note.
+    expect(roll).toHaveAccessibleName(/1 selected/);
+  });
+
+  it('leaves an old overlapping same-pitch pair alone when one of them is nudged', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [seedNote('w', 0, 4, 6000), seedNote('d', 2, 1, 6000)],
+      },
+    });
+    select(roll, /^C4 · 2.000 qn/, 2 * 64 + 20, rowY(60));
+    press(roll, { key: 'ArrowLeft' });
+    expect(startOf('d')).toBe(1.5);
+    expect(ids()).toEqual(['w', 'd']);
+    expect([startOf('w'), lengthOf('w')]).toEqual([0, 4]);
+  });
+
+  it('two presses before a re-render still advance two steps (no stale selection)', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [
+          seedNote('c', 0, 1, 6000),
+          seedNote('e', 0, 1, 6400),
+          seedNote('g', 0, 1, 6700),
+          seedNote('next', 2, 1, 6000),
+        ],
+      },
+    });
+    act(() => {
+      press(roll, { key: 'ArrowRight', altKey: true });
+      press(roll, { key: 'ArrowRight', altKey: true });
+    });
+    expect(screen.getByTitle(/^E4 · 0\.000 qn/)).toHaveAttribute('data-selected');
+    expect(screen.getByTitle(/^G4 · 0\.000 qn/)).not.toHaveAttribute('data-selected');
+  });
+
+  it('a move right after a merge acts on the surviving note', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [seedNote('a', 0, 1, 6000), seedNote('b', 0, 1, 6100)],
+      },
+    });
+    select(roll, /^C♯4 · 0\.000 qn/, 20, rowY(61));
+    act(() => {
+      // b steps down onto a (identical span: it merges into a), then the next press moves a.
+      press(roll, { key: 'ArrowDown' });
+      press(roll, { key: 'ArrowRight' });
+    });
+    expect(ids()).toEqual(['a']);
+    expect(startOf('a')).toBe(0.5);
+    // The survivor is what stays selected: the second press followed the edit against the first
+    // press's result (not a stale render), so the selection did not fall away.
+    expect(readNoteEditor('seeded')!.selection.ids).toEqual(['a']);
+  });
+
+  it('announces Alt navigation to assistive technology', async () => {
+    const base = seededClip();
+    const roll = await open({
+      ...base,
+      packet: {
+        ...base.packet,
+        items: [seedNote('c', 0, 1, 6000), seedNote('g', 0, 1, 6700), seedNote('next', 5, 1, 6000)],
+      },
+    });
+    const status = screen.getByTestId('note-announcement');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    press(roll, { key: 'ArrowRight', altKey: true });
+    expect(status).toHaveTextContent('G4 at bar 1 beat 1, selected, 1 of 3');
+    press(roll, { key: 'ArrowRight', altKey: true });
+    press(roll, { key: 'ArrowRight', altKey: true });
+    expect(status).toHaveTextContent('C4 at bar 2 beat 2, selected, 3 of 3');
+  });
+
+  it('is ignored in text fields and during a pitch pick, and does nothing with a time selection', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    // The field lives INSIDE the roll area, so the editor's own text-field guard is what refuses it.
+    const input = document.createElement('input');
+    roll.append(input);
+    input.focus();
+    expect(document.activeElement).toBe(input);
+    const changes = historyChangeCount();
+    expect(fireEvent.keyDown(input, { key: 'ArrowRight' })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: 'ArrowLeft', altKey: true })).toBe(true);
+    expect(startOf('n2')).toBe(2);
+    expect(historyChangeCount()).toBe(changes);
+    input.remove();
+    // A pick waits: edits are ignored, but the browser's Alt+Left (Back) is still swallowed.
+    act(() => {
+      readNoteEditor('seeded')!.beginPick({ actionId: 'invert', hint: 'Pick', onPick: () => {} });
+    });
+    expect(press(roll, { key: 'ArrowRight' })).toBe(true);
+    expect(startOf('n2')).toBe(2);
+    expect(press(roll, { key: 'ArrowLeft', altKey: true })).toBe(false);
+    act(() => {
+      readNoteEditor('seeded')!.cancelPick();
+    });
+    expect(historyChangeCount()).toBe(changes);
+    // A time selection: the arrows take the key and do nothing.
+    act(() => screen.getByRole('radio', { name: 'Time' }).click());
+    drag(roll, { x: 128, y: 5 }, { x: 256, y: 5 });
+    expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+    expect(press(roll, { key: 'ArrowRight' })).toBe(false);
+    expect(startOf('n2')).toBe(2);
+    expect(historyChangeCount()).toBe(changes);
+  });
+
+  it('is ignored while a pointer drag is running, and live again after it ends', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+      clientX: 160,
+      clientY: rowY(64),
+      pointerId: 2,
+    });
+    expect(press(roll, { key: 'ArrowRight' })).toBe(true);
+    expect(startOf('n2')).toBe(2);
+    fireEvent.pointerUp(roll, { clientX: 160, clientY: rowY(64), pointerId: 2 });
+    expect(press(roll, { key: 'ArrowRight' })).toBe(false);
+    expect(startOf('n2')).toBe(2.5);
+  });
+
+  it('a lost release (pen, touch or mouse) is recovered by the next move with no button down', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    for (const pointerType of ['pen', 'touch', 'mouse']) {
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 160,
+        clientY: rowY(64),
+        pointerId: 3,
+        pointerType,
+      });
+      expect(press(roll, { key: 'ArrowUp' })).toBe(true);
+      fireEvent.pointerMove(window, { pointerId: 3, pointerType, buttons: 0 });
+      expect(press(roll, { key: 'ArrowUp' })).toBe(false);
+      press(roll, { key: 'ArrowDown' });
+    }
+    expect(pitchOf('n2')).toBe(6400);
+    // The other releases: lost capture and window blur.
+    fireEvent.pointerDown(document.querySelector('[title*="· 2.000 qn"]')!, { pointerId: 4 });
+    expect(press(roll, { key: 'ArrowUp' })).toBe(true);
+    fireEvent(window, new Event('lostpointercapture'));
+    expect(press(roll, { key: 'ArrowUp' })).toBe(false);
+    fireEvent.pointerDown(document.querySelector('[title*="· 2.000 qn"]')!, { pointerId: 5 });
+    fireEvent.blur(window);
+    expect(press(roll, { key: 'ArrowUp' })).toBe(false);
+  });
+
+  it('leaves other modified arrows alone and keeps the existing shortcuts working', async () => {
+    const roll = await open(seededClip());
+    selectN2(roll);
+    expect(press(roll, { key: 'ArrowUp', altKey: true })).toBe(true);
+    expect(press(roll, { key: 'ArrowUp', ctrlKey: true })).toBe(true);
+    expect(startOf('n2')).toBe(2);
+    expect(pitchOf('n2')).toBe(6400);
+    press(roll, { key: ']' });
+    expect(noteValue('n2').velocity).toBe(1);
+    press(roll, { key: 'Delete' });
+    expect(ids()).toEqual(['n1', 'n3']);
   });
 });

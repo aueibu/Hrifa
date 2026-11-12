@@ -1195,14 +1195,14 @@ describe('the actions panel sections', () => {
   });
 });
 
-describe('no duplicate notes from the transforms', () => {
+describe('same-pitch overlaps from the transforms', () => {
   const ops = () => versions().map((version) => version.operation);
   const lengthOf = (id: string) => {
     const duration = noteValue(id).duration.quarterNotes;
     return duration.numerator / duration.denominator;
   };
 
-  it('transposing a note onto another note of the same onset merges it, in one version and one undo step', async () => {
+  it('transposing a note onto a shorter note of the same onset overwrites it, in one version and one undo step', async () => {
     const roll = await open(
       oldClip([
         seedNote('a', 0, 6000, 1, 0.4),
@@ -1222,28 +1222,29 @@ describe('no duplicate notes from the transforms', () => {
     await userEvent.clear(field);
     await userEvent.type(field, '-1');
     await userEvent.click(button('Transpose by semitones'));
-    // One note now: a (untouched) keeps its id, takes the edited note's velocity and the longer duration.
-    expect(items().map((item) => item.id)).toEqual(['a', 'c']);
-    expect(noteValue('a').velocity).toBe(0.9);
-    expect(lengthOf('a')).toBe(2);
+    // The transposed note (2 quarters) covers a (1 quarter) completely: a is gone, b stays as it is.
+    expect(items().map((item) => item.id)).toEqual(['b', 'c']);
+    expect(noteValue('b').velocity).toBe(0.9);
+    expect(lengthOf('b')).toBe(2);
     expect(ops()).toEqual(['original', 'transform-transpose']);
-    // The merged-away note's selection went to its survivor.
-    expect([...readNoteEditor('old')!.selection.ids]).toEqual(['a']);
+    // The transposed note stays selected.
+    expect([...readNoteEditor('old')!.selection.ids]).toEqual(['b']);
     expect(roll).toHaveAccessibleName(/, 1 selected/);
     act(() => undo());
     expect(items().map((item) => item.id)).toEqual(['a', 'b', 'c']);
   });
 
-  it('Duplicate onto a note that is already there merges into it (the longest duration), one step', async () => {
+  it('Duplicate onto a shorter note that is already there overwrites it, one step', async () => {
     const roll = await open(
       oldClip([seedNote('a', 0, 6000, 1), seedNote('b', 1, 6000, 0.5), seedNote('c', 4, 6700)])
     );
     selectNote(roll, /^C4 · 0\.000 qn · 1\.000 qn$/, 30, 60);
     expect(roll).toHaveAccessibleName(/, 1 selected/);
     await userEvent.click(button('Duplicate selection'));
-    expect(items().map((item) => item.id)).toEqual(['a', 'b', 'c']);
-    expect(lengthOf('b')).toBe(1);
+    // The copy (1 to 2) covers the half-quarter note b (1 to 1.5) completely: b is gone.
+    const copy = items().find((item) => !['a', 'b', 'c'].includes(item.id))!;
+    expect(items().map((item) => item.id)).toEqual(['a', 'c', copy.id]);
     expect(ops()).toEqual(['original', 'transform-duplicate']);
-    expect([...readNoteEditor('old')!.selection.ids]).toEqual(['b']);
+    expect([...readNoteEditor('old')!.selection.ids]).toEqual([copy.id]);
   });
 });

@@ -3,7 +3,7 @@ import { freezeClipProperties } from './clipProperties';
 import { clipActionById } from './clipTypes';
 import type { DataPacket } from './model';
 import { readNoteClipboard, writeNoteClipboard } from './noteClipboard';
-import { mergeDuplicateNotesDetailed, newNoteItemId } from './noteClipEdits';
+import { newNoteItemId, resolveSamePitchOverlaps, type NoteItem } from './noteClipEdits';
 import { readNoteEditor } from './noteEditorChannel';
 import { jsonEqual, type Snippet } from './snippet';
 
@@ -35,6 +35,35 @@ export interface ClipActionDesk {
     packet: DataPacket,
     operation: string
   ): { ok: true; snippet: Snippet } | { ok: false; error: string };
+}
+
+/**
+ * What the overlap rule compares a result against. Normally the packet the action started from. A
+ * rotation's wrap pieces (`<id>~r1`, listed in `rotation.pieceIds` by original id) are pieces of
+ * their original, not new notes, so `lineage` maps each piece id to its original; and across a
+ * session's presses the notes in the packet are already rotated, so the reference puts the session's
+ * ORIGINAL notes back (and drops the old pieces): a pair that overlapped before the first press stays
+ * pre-existing however far it has rotated. Other producers (duplicate, paste, rotate-values' extra
+ * slots) only make genuinely new notes, so they need no lineage.
+ */
+function overlapReference(
+  base: DataPacket,
+  rotation: { originals: readonly NoteItem[]; pieceIds: Record<string, string[]> } | undefined
+): { reference: DataPacket; lineage: ReadonlyMap<string, string> | undefined } {
+  if (!rotation) {
+    return { reference: base, lineage: undefined };
+  }
+  const lineage = new Map<string, string>();
+  for (const [original, pieces] of Object.entries(rotation.pieceIds)) {
+    for (const piece of pieces) {
+      lineage.set(piece, original);
+    }
+  }
+  const originals = new Map(rotation.originals.map((item) => [item.id, item]));
+  const items = base.items
+    .filter((item) => !lineage.has(item.id))
+    .map((item) => originals.get(item.id) ?? item);
+  return { reference: { ...base, items }, lineage };
 }
 
 export function runClipAction(options: {
@@ -85,15 +114,23 @@ export function runClipAction(options: {
   if (result.packet === base) {
     return { status: 'unchanged', message: result.message ?? 'Nothing to change.' };
   }
-  // No duplicate notes: exact duplicates (same onset and pitch) merge inside this same version, and
-  // only when something merged. A merged rotation session no longer describes the notes, so it ends.
-  const { packet: merged, survivorOf } = mergeDuplicateNotesDetailed(result.packet, base);
-  if (survivorOf.size > 0) {
-    if (jsonEqual(merged.items, base.items)) {
-      // Everything the action added merged straight back into notes that were already there.
+  // Same-pitch overlaps (noteClipEdits.resolveSamePitchOverlaps): a touched note overwrites what it
+  // overlaps and identical notes merge, inside this same version, and only when something changed.
+  // Such a result no longer matches a rotation session's notes, so the session ends.
+  const { reference, lineage } = overlapReference(base, result.rotation);
+  const resolved = resolveSamePitchOverlaps(
+    result.packet,
+    reference,
+    () => newNoteItemId(snippetId),
+    lineage
+  );
+  const survivorOf = resolved.survivorOf;
+  if (resolved.packet !== result.packet) {
+    if (jsonEqual(resolved.packet.items, base.items)) {
+      // Everything the action added was absorbed by notes that were already there.
       return { status: 'unchanged', message: 'Those notes are already in the clip.' };
     }
-    result = { ...result, packet: merged, rotation: undefined };
+    result = { ...result, packet: resolved.packet, rotation: undefined };
   }
   let committed: ReturnType<ClipActionDesk['commitSnippetEditById']>;
   try {
@@ -112,7 +149,11 @@ export function runClipAction(options: {
   }
   // The edit has landed from here on.
   try {
-    channel?.adopt(result, committed.snippet.packet, survivorOf.size > 0 ? survivorOf : undefined);
+    channel?.adopt(
+      result,
+      committed.snippet.packet,
+      resolved.packet !== base && survivorOf.size > 0 ? survivorOf : undefined
+    );
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(`The editor could not take the selection after "${actionId}".`, error);

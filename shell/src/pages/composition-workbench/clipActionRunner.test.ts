@@ -63,7 +63,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const publish = (adopt: () => void, selection = { ids: [] as string[], range: null }) =>
+const publish = (
+  adopt: () => void,
+  selection: { ids: string[]; range: { start: number; end: number } | null } = {
+    ids: [],
+    range: null,
+  }
+) =>
   publishNoteEditor('c', {
     selection,
     gridUnit: undefined,
@@ -198,7 +204,7 @@ describe('runClipAction', () => {
   });
 });
 
-describe('a merge ends the rotation session', () => {
+describe('a resolved overlap ends the rotation session', () => {
   const long = (id: string, start: number, midicents: number): DataItem<NoteEventValue> => {
     const base = note(id, start, midicents);
     const value = base.value as NoteEventValue;
@@ -221,20 +227,134 @@ describe('a merge ends the rotation session', () => {
     return { adopt, outcome, current };
   };
 
-  it('keeps the session when nothing merged', () => {
+  it('keeps the session when nothing overlapped', () => {
     const { adopt, outcome } = rotate([long('x', 0, 6000), long('y', 1, 6400)]);
     expect(outcome.status).toBe('committed');
     expect(adopt.mock.calls[0][0].rotation).toBeTruthy();
     expect(adopt.mock.calls[0][2]).toBeUndefined();
   });
 
-  it('drops the session when the rotation itself lands two pieces on one note', () => {
-    // x wraps to (7, 1) and (0, 1); y lands on (0, 2): the same onset and pitch as x's first piece.
+  it('leaves an old overlapping pair alone when the rotation lands its notes on each other', () => {
+    // x wraps to (7, 1) and (0, 1); y (1, 2) lands on (0, 2), over x's first piece. x and y already
+    // overlapped in the clip as it was, so nothing is resolved and the session stays.
     const { adopt, outcome, current } = rotate([long('x', 0, 6000), long('y', 1, 6000)]);
     expect(outcome.status).toBe('committed');
-    expect(current().items).toHaveLength(2);
-    expect(adopt).toHaveBeenCalledTimes(1);
-    expect(adopt.mock.calls[0][0].rotation).toBeUndefined();
-    expect(adopt.mock.calls[0][2]).toBeInstanceOf(Map);
+    expect(current().items).toHaveLength(3);
+    expect(adopt.mock.calls[0][0].rotation).toBeTruthy();
+    expect(adopt.mock.calls[0][2]).toBeUndefined();
+  });
+
+  /** Runs `presses` rotate-time presses of `amount`, carrying the session the way the editor does. */
+  const rotateSession = (
+    items: DataItem<NoteEventValue>[],
+    amount: string,
+    presses: number,
+    selection: { ids: string[]; range: { start: number; end: number } | null } = {
+      ids: [],
+      range: null,
+    }
+  ) => {
+    const { desk, packet: current } = fakeDesk(clip(items));
+    let rotation: unknown = null;
+    let kept = selection;
+    const adopts: unknown[][] = [];
+    const publishState = () =>
+      publishNoteEditor('c', {
+        selection: kept,
+        gridUnit: undefined,
+        snapUnit: 1,
+        picking: null,
+        beginPick: () => undefined,
+        cancelPick: () => undefined,
+        rotation: rotation as never,
+        adopt: (result, _committed, survivorOf) => {
+          adopts.push([result, survivorOf]);
+          rotation = result.rotation ?? null;
+          if (result.selection) {
+            kept = { ids: [...result.selection.ids], range: result.selection.range };
+          }
+        },
+      });
+    const outcomes = [];
+    for (let press = 0; press < presses; press += 1) {
+      publishState();
+      outcomes.push(
+        runClipAction({
+          snippetId: 'c',
+          fallback: clip([]),
+          actionId: 'rotate-time',
+          params: { amount },
+          desk,
+        })
+      );
+    }
+    return { outcomes, adopts, current, rotation: () => rotation };
+  };
+  const spans = (p: DataPacket) =>
+    p.items
+      .map((item) => {
+        const value = item.value as NoteEventValue;
+        const start =
+          Number(value.onset.quarterNotes.numerator) / Number(value.onset.quarterNotes.denominator);
+        const length =
+          Number(value.duration.quarterNotes.numerator) /
+          Number(value.duration.quarterNotes.denominator);
+        return `${item.id}:${start}-${start + length}`;
+      })
+      .sort();
+
+  it('rotate in time by +7 leaves an old overlapping same-pitch pair uncut and keeps the session', () => {
+    const { outcomes, adopts, current, rotation } = rotateSession(
+      [long('x', 0, 6000), long('y', 1, 6000)],
+      '7',
+      1
+    );
+    expect(outcomes[0].status).toBe('committed');
+    // Nothing was cut: the total sounding length is the original 4 quarters.
+    const total = current().items.reduce((sum, item) => {
+      const d = (item.value as NoteEventValue).duration.quarterNotes;
+      return sum + Number(d.numerator) / Number(d.denominator);
+    }, 0);
+    expect(total).toBe(4);
+    expect(rotation()).toBeTruthy();
+    expect(adopts[0][1]).toBeUndefined();
+    expect(spans(current()).some((entry) => entry.startsWith('y~'))).toBe(false);
+  });
+
+  it('seven +1 rotations in one session never cut the old pair and never end the session', () => {
+    const { outcomes, adopts, current, rotation } = rotateSession(
+      [long('x', 0, 6000), long('y', 1, 6000)],
+      '1',
+      7
+    );
+    expect(outcomes.every((outcome) => outcome.status === 'committed')).toBe(true);
+    expect(adopts.every((entry) => entry[1] === undefined)).toBe(true);
+    expect(rotation()).toBeTruthy();
+    const total = current().items.reduce((sum, item) => {
+      const d = (item.value as NoteEventValue).duration.quarterNotes;
+      return sum + Number(d.numerator) / Number(d.denominator);
+    }, 0);
+    expect(total).toBe(4);
+  });
+
+  it('ends the session when the overlap rule really changes the packet', () => {
+    // x (0-2) and w (5-6, another pitch) are selected; z (3-4) shares x's pitch and is not selected.
+    // Rotating by 3 puts x on z (3-5): z was never overlapped by x, so the rule cuts z.
+    const z = long('z', 3, 6000);
+    const zValue = z.value as NoteEventValue;
+    const shortZ = {
+      ...z,
+      value: { ...zValue, duration: musicalDuration(1), interOnset: musicalDuration(1) },
+    };
+    const { outcomes, adopts, current } = rotateSession(
+      [long('x', 0, 6000), shortZ, { ...note('w', 5, 6400) }],
+      '3',
+      1,
+      { ids: ['x', 'w'], range: { start: 0, end: 6 } }
+    );
+    expect(outcomes[0].status).toBe('committed');
+    expect(adopts).toHaveLength(1);
+    expect((adopts[0][0] as { rotation?: unknown }).rotation).toBeUndefined();
+    expect(spans(current()).some((entry) => entry.startsWith('z:'))).toBe(false);
   });
 });
