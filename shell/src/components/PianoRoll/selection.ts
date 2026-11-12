@@ -23,12 +23,7 @@ export function noteRect(
 }
 
 /** A rectangle from two corners dragged in any direction. */
-export function rectFromCorners(
-  ax: number,
-  ay: number,
-  bx: number,
-  by: number
-): PixelRect {
+export function rectFromCorners(ax: number, ay: number, bx: number, by: number): PixelRect {
   return {
     left: Math.min(ax, bx),
     top: Math.min(ay, by),

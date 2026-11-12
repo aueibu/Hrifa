@@ -24,13 +24,14 @@
   min-width: 0;
 }
 
-.body > .scroller {
-  flex: 1 1 auto;
-  min-width: 0;
+.body:focus {
+  outline: none;
 }
 
 .scroller {
   background: var(--panel-inset);
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: 100%;
   overflow: auto;
   overscroll-behavior: contain;
@@ -211,6 +212,25 @@
 }
 
 /*
+ * Velocity fill (opt-in): --note-fill is the note's own color mixed toward a neutral by its velocity,
+ * and nothing is transparent: velocity shows through saturation only, so notes stay opaque over the grid.
+ * A sounding note keeps its playing look.
+ */
+.note[data-velocity-fill]:not([data-active]) {
+  background-color: var(--note-fill);
+  border-color: color-mix(in srgb, var(--note-fill) 72%, black);
+}
+
+/* These out-specify the fill rule above, so selected and erasing keep their own borders. */
+.note[data-velocity-fill][data-selected]:not([data-active]) {
+  border-color: var(--text);
+}
+
+.note[data-velocity-fill][data-erasing]:not([data-active]) {
+  border-color: var(--text);
+}
+
+/*
  * Selected reads like a selected card on the canvas and in Bitwig: a light outline in --text (white
  * in dark mode, dark in light mode), two pixels in all, with no halo. The note keeps its own fill.
  */
@@ -315,11 +335,20 @@
   min-height: 0;
 }
 
-/* A ghost: where a dragged note would land. A see-through --text tint with a dashed --text edge. */
+.root[data-fill] .body[data-panel] {
+  align-items: stretch;
+}
+
+/*
+ * A ghost: where a dragged note would land. It wears the color of the pitch under it (--ghost-fill,
+ * the same color and velocity saturation as a note there) and is told apart from a real note by its
+ * dashed --text edge and by sitting a little see-through over the note it leaves behind.
+ */
 .ghost {
-  background: color-mix(in srgb, var(--text) 22%, transparent);
+  background: var(--ghost-fill, var(--mantine-primary-color-filled));
   border: 1px dashed var(--text);
-  color: var(--text);
+  color: var(--mantine-color-white);
+  opacity: 0.8;
   pointer-events: none;
   z-index: 3;
 }
@@ -356,4 +385,101 @@
   top: 4px;
   transform: translateX(-100%);
   width: 8px;
+}
+
+/*
+ * Detached scroll (opt-in): the keyboard column sits beside the scroller instead of inside it, and
+ * the scroller scrolls vertically only. The keys slide with the scroller's vertical position.
+ */
+.gutter {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+}
+
+.gutterCorner {
+  background: var(--panel-raised);
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.gutterKeys {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.gutterSlide {
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.gutterSlide .keyboard {
+  border-right: 0;
+  height: 100%;
+  position: relative;
+}
+
+.scroller[data-detached] {
+  overflow-x: hidden;
+}
+
+/*
+ * The unified panel's frame (opt-in): the roll row, the lane slot and the bar row stack in one
+ * column, and the palette beside it spans all of them. Outside the unified panel the column and the
+ * roll row are transparent to layout, so the roll and palette sit side by side as before.
+ */
+.column,
+.rollRow {
+  display: contents;
+}
+
+.column[data-panel] {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.rollRow[data-panel] {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Under the roll, in the same column: room above for the lane's splitter, none when no lane is drawn. */
+.laneSlot {
+  flex: 0 0 auto;
+  padding-top: 0.5rem;
+}
+
+.laneSlot:empty {
+  display: none;
+}
+
+/* The one scrollbar: a gutter as wide as the keys (home of the collapsed lane's icon), then the bar. */
+.barRow {
+  display: flex;
+  flex: 0 0 auto;
+  padding-top: 0.25rem;
+}
+
+.barGutter {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.barCell {
+  flex: 1 1 auto;
+  min-width: 0;
 }

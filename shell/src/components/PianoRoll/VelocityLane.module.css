@@ -1,0 +1,169 @@
+/* The velocity lane under the roll: a header gutter as wide as the keyboard, then the track. */
+.wrapper {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+/*
+ * The splitter is the boundary between roll and lane: an invisible grab strip a few pixels tall
+ * across the boundary, with a thin line that shows on hover, focus and while dragging.
+ */
+.splitter {
+  cursor: row-resize;
+  height: calc(0.5rem + 6px);
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: -0.5rem;
+  touch-action: none;
+  z-index: 6;
+}
+
+.splitter::after {
+  background: transparent;
+  content: '';
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: calc(0.25rem - 1px);
+}
+
+.splitter:hover::after,
+.splitter:focus-visible::after,
+.splitter[data-dragging]::after {
+  background: var(--mantine-primary-color-filled);
+}
+
+.splitter:focus-visible {
+  outline: none;
+}
+
+.lane {
+  /* No side borders and no radius: the lane's x origin is exactly the roll's. */
+  background: var(--panel-inset);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lane[data-collapsed] {
+  background: var(--panel);
+  border-top-color: transparent;
+  width: fit-content;
+}
+
+.header {
+  background: var(--panel-raised);
+  border-right: 1px solid var(--border);
+  align-items: flex-start;
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.2rem 0.35rem;
+}
+
+.lane[data-collapsed] .header {
+  align-items: center;
+  border-right: 0;
+  flex-direction: row;
+  padding-block: 0;
+}
+
+.label {
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.68rem;
+}
+
+.toggle {
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 0.1rem;
+}
+
+.toggle:hover {
+  color: var(--text);
+}
+
+.track {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.content {
+  height: 100%;
+  position: relative;
+}
+
+/* A stem from the pin down to the floor, coloured like its note. */
+.stem {
+  border-left: 2px solid var(--stem-fill, var(--stem-color));
+  position: absolute;
+  width: 0;
+}
+
+.pin {
+  background: var(--stem-fill, var(--stem-color));
+  border: 1px solid color-mix(in srgb, var(--stem-fill, var(--stem-color)) 60%, black);
+  border-radius: 50%;
+  cursor: ns-resize;
+  height: 11px;
+  left: -6.5px;
+  position: absolute;
+  top: -5.5px;
+  touch-action: none;
+  width: 11px;
+}
+
+.pin[data-selected] {
+  outline: 1px solid var(--text);
+}
+
+.readout {
+  background: var(--panel-body);
+  border: 1px solid var(--grid);
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.68rem;
+  left: 10px;
+  line-height: 1;
+  padding: 0.15rem 0.3rem;
+  pointer-events: none;
+  position: absolute;
+  top: -8px;
+  z-index: 2;
+}
+
+/* The roll's vertical grid lines, with the roll's own rules (PianoRoll.module.css `.timeLine`). */
+.timeLine {
+  border-left: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.timeLine[data-kind='bar'] {
+  border-left-color: var(--mantine-color-text);
+  border-left-width: 2px;
+  opacity: 0.48;
+}
+
+.timeLine[data-kind='beat'] {
+  border-left-color: var(--border);
+}
+
+.timeLine[data-subdivision] {
+  border-left-style: dotted;
+  opacity: 0.55;
+}

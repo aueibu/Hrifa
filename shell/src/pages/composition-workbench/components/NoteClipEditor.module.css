@@ -11,9 +11,9 @@
   padding: 0.5rem;
 }
 
-/* The roll takes all the height left under the header (and, later, above the velocity lane). */
+/* The unified panel (roll, velocity lane, scrollbar, palette) takes all the height under the header. */
 .rollArea {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
 }
 

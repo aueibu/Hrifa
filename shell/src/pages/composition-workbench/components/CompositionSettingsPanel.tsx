@@ -1,4 +1,4 @@
-import { CloseButton, Group, NumberInput, Stack, Text, Title } from '@mantine/core';
+import { CloseButton, Group, NumberInput, Stack, Switch, Text, Title } from '@mantine/core';
 import { useCompositionSettings } from '../compositionSettings';
 import { SoundSetEditor } from './SoundControls';
 import classes from './CompositionSettingsPanel.module.css';
@@ -46,6 +46,19 @@ export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
               </Text>
             )}
           </Stack>
+        </div>
+        <div>
+          <Title order={4} size="h6" mb={4}>
+            Note editor
+          </Title>
+          <Switch
+            label="Color notes by scale degree"
+            description="Each note takes a color from its scale degree, counted from C and repeating every octave (steps follow the EDO above). Off uses one color for every note."
+            checked={settings.colorByScaleDegree}
+            onChange={(event) =>
+              updateSettings({ colorByScaleDegree: event.currentTarget.checked })
+            }
+          />
         </div>
         <div>
           <Title order={4} size="h6" mb={4}>

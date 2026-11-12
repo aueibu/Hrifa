@@ -1,9 +1,11 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Badge, Button, Menu, Text, Title } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   defaultPianoRollView,
   PianoRoll,
+  VelocityLane,
+  VelocityLaneToggle,
   type PianoRollGridLine,
   type PianoRollNewNote,
   type PianoRollRange,
@@ -36,6 +38,7 @@ import {
   selectIds,
   type NoteSelection,
 } from '../noteSelection';
+import { scaleDegreeColor } from '../scaleDegreeColor';
 import { parseMeter } from '../transport';
 import classes from './NoteClipEditor.module.css';
 
@@ -139,7 +142,20 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     }));
   }
 
-  const notes = useMemo(() => packetRollNotes(packet), [packet]);
+  // Optionally coloured by scale degree (a setting); otherwise the roll's single note color.
+  const { colorByScaleDegree, edo } = settings;
+  const notes = useMemo(() => {
+    const plain = packetRollNotes(packet);
+    return colorByScaleDegree
+      ? plain.map((note) => ({ ...note, color: scaleDegreeColor(note.pitchMidicents, edo) }))
+      : plain;
+  }, [packet, colorByScaleDegree, edo]);
+  // Previews (entry, paint, ghosts) wear the color of the pitch under the pointer, same function.
+  const pitchColor = useCallback(
+    (pitchMidicents: number) =>
+      colorByScaleDegree ? scaleDegreeColor(pitchMidicents, edo) : undefined,
+    [colorByScaleDegree, edo]
+  );
   const extent = clipExtent(packet);
   const { numerator, denominator } = parseMeter(settings.transport.meter);
   const barLength = (numerator * 4) / denominator;
@@ -209,6 +225,11 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       (current) => deleteNotes(current, ids),
       (next) => pruneSelection(selection, next)
     );
+  }
+
+  /** One offset for every id, each clamped on its own; a roll or lane drag reports it once. */
+  function changeSelectionVelocity(ids: string[], delta: number) {
+    commit((current) => changeVelocity(current, ids, delta));
   }
 
   const actions: EditorAction[] = [
@@ -291,7 +312,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           </Menu>
         </div>
       </div>
-      {/* The roll fills this area. The velocity lane (K5a) goes below it, inside the same column. */}
+      {/* One unified panel: the roll, the velocity lane and the single scrollbar, the palette beside all three. */}
       <div className={classes.rollArea}>
         <PianoRoll
           ariaLabel="Note clip piano roll"
@@ -300,6 +321,48 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           wheelZoom
           gridUnit={gridOption.quarters ?? undefined}
           entryLength={preferences.entryLength ?? undefined}
+          velocityFill
+          detachedScroll
+          pitchColor={pitchColor}
+          lane={(metrics) =>
+            preferences.velocityLaneCollapsed ? null : (
+              <VelocityLane
+                notes={notes}
+                pixelsPerQuarter={view.pixelsPerQuarter}
+                scrollLeft={view.scrollLeft}
+                duration={duration}
+                selectedIds={selection.ids}
+                onCollapsedChange={(velocityLaneCollapsed) =>
+                  updatePreferences({ velocityLaneCollapsed })
+                }
+                onVelocityChange={changeSelectionVelocity}
+                height={preferences.laneHeight ?? undefined}
+                onHeightChange={(laneHeight) => updatePreferences({ laneHeight })}
+                availableHeight={metrics.panelHeight}
+                gridLines={gridLines}
+                gridUnit={gridOption.quarters ?? undefined}
+                viewWidth={metrics.viewWidth}
+                velocityFill
+              />
+            )
+          }
+          barGutter={
+            preferences.velocityLaneCollapsed ? (
+              <VelocityLaneToggle
+                collapsed
+                onCollapsedChange={(velocityLaneCollapsed) =>
+                  updatePreferences({ velocityLaneCollapsed })
+                }
+              />
+            ) : null
+          }
+          keyActions={[
+            {
+              shortcut: 'v',
+              run: () =>
+                updatePreferences({ velocityLaneCollapsed: !preferences.velocityLaneCollapsed }),
+            },
+          ]}
           onEntryLengthChange={(length) => updatePreferences({ entryLength: length })}
           entryVelocity={preferences.entryVelocity ?? undefined}
           onEntryVelocityChange={(velocity) => updatePreferences({ entryVelocity: velocity })}
@@ -325,9 +388,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           onMoveNotes={(ids, delta) => commit((current) => moveNotes(current, ids, delta))}
           onResizeNotes={(ids, delta) => commit((current) => resizeNotes(current, ids, delta))}
           onDeleteNotes={remove}
-          onVelocityChange={(ids, delta) =>
-            commit((current) => changeVelocity(current, ids, delta))
-          }
+          onVelocityChange={changeSelectionVelocity}
         />
       </div>
     </div>

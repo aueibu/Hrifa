@@ -34,9 +34,9 @@ describe('piano roll selection', () => {
 
   it('catches a note the marquee only grazes, and ignores empty space', () => {
     const c = noteRect(notes[2], view);
-    expect(notesInRect(notes, view, { left: c.left + c.width - 1, top: c.top, width: 5, height: 5 })).toEqual([
-      'c',
-    ]);
+    expect(
+      notesInRect(notes, view, { left: c.left + c.width - 1, top: c.top, width: 5, height: 5 })
+    ).toEqual(['c']);
     expect(notesInRect(notes, view, { left: 900, top: 900, width: 10, height: 10 })).toEqual([]);
   });
 

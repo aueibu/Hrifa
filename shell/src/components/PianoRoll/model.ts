@@ -61,3 +61,6 @@ export const defaultPianoRollView: PianoRollViewState = {
   followPlayback: false,
   framed: false,
 };
+
+/** Width of the keyboard column left of the timeline, so a lane under the roll can line up with it. */
+export const PIANO_ROLL_KEYBOARD_WIDTH = 4.5 * 16;

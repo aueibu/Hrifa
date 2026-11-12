@@ -42,12 +42,16 @@ export interface CompositionSettings {
   transport: TransportSettings;
   // Primary/secondary/tertiary preview voices for rhythm and for the metronome. See sounds.ts.
   sounds: SoundSettings;
+  // The note editor colours each note by its scale degree (from C, repeating every octave) instead
+  // of one colour for all. Off by default. See scaleDegreeColor.ts.
+  colorByScaleDegree: boolean;
 }
 
 export const defaultCompositionSettings: CompositionSettings = {
   edo: 12,
   transport: defaultTransportSettings,
   sounds: defaultSoundSettings,
+  colorByScaleDegree: false,
 };
 
 // Each field is read and validated independently, then merged over the defaults. A stored blob
@@ -63,6 +67,7 @@ function sanitizeCompositionSettings(raw: unknown): CompositionSettings {
     edo,
     transport: sanitizeTransport(candidate.transport),
     sounds: sanitizeSoundSettings(candidate.sounds),
+    colorByScaleDegree: candidate.colorByScaleDegree === true,
   };
 }
 

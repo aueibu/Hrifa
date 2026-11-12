@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { MAX_VELOCITY_LANE_HEIGHT, MIN_VELOCITY_LANE_HEIGHT } from '../../components/PianoRoll';
 
 /**
  * Per-viewer settings of the note clip editor: the length and velocity a newly entered note gets
@@ -42,9 +43,19 @@ export interface NoteEditorPreferences {
   entryVelocity: number | null;
   /** The id of a `GRID_OPTIONS` entry. */
   grid: string;
+  /** The velocity lane under the roll is collapsed to its header. */
+  velocityLaneCollapsed: boolean;
+  /** The velocity lane's height in pixels; null until the viewer has dragged it (the default is used). */
+  laneHeight: number | null;
 }
 
-const defaults: NoteEditorPreferences = { entryLength: null, entryVelocity: null, grid: 'auto' };
+const defaults: NoteEditorPreferences = {
+  entryLength: null,
+  entryVelocity: null,
+  grid: 'auto',
+  velocityLaneCollapsed: false,
+  laneHeight: null,
+};
 
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: NoteEditorPreferences } | null = null;
@@ -85,6 +96,14 @@ export function readNoteEditorPreferences(): NoteEditorPreferences {
         typeof parsed.grid === 'string' && GRID_OPTIONS.some((option) => option.id === parsed.grid)
           ? parsed.grid
           : defaults.grid,
+      velocityLaneCollapsed: parsed.velocityLaneCollapsed === true,
+      laneHeight:
+        typeof parsed.laneHeight === 'number' &&
+        Number.isFinite(parsed.laneHeight) &&
+        parsed.laneHeight >= MIN_VELOCITY_LANE_HEIGHT &&
+        parsed.laneHeight <= MAX_VELOCITY_LANE_HEIGHT
+          ? parsed.laneHeight
+          : null,
     };
   } catch {
     // A damaged value reads as the defaults.
@@ -104,6 +123,11 @@ export function writeNoteEditorPreferences(patch: Partial<NoteEditorPreferences>
   if (next.entryVelocity !== null) {
     next.entryVelocity = Number.isFinite(next.entryVelocity)
       ? Math.min(1, Math.max(MIN_ENTRY_VELOCITY, next.entryVelocity))
+      : null;
+  }
+  if (next.laneHeight !== null) {
+    next.laneHeight = Number.isFinite(next.laneHeight)
+      ? Math.min(MAX_VELOCITY_LANE_HEIGHT, Math.max(MIN_VELOCITY_LANE_HEIGHT, next.laneHeight))
       : null;
   }
   try {

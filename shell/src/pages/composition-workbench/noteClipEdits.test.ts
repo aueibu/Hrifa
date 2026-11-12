@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_ENTRY_VELOCITY } from '../../components/PianoRoll';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, musicalPosition, rationalToNumber } from './musicalTime';
@@ -231,6 +232,21 @@ describe('note entry tools', () => {
       true
     );
     expect(addNotes(before, [{ start: 0, duration: 1, pitchMidicents: 6000 }], ['x'])).toBe(before);
+  });
+
+  it('painted notes keep their own velocity, falling back to the default only when absent', () => {
+    const after = addNotes(
+      base(),
+      [
+        { start: 3, duration: 1, pitchMidicents: 7200, velocity: 0.38 },
+        { start: 4, duration: 1, pitchMidicents: 7200 },
+      ],
+      ['p0', 'p1']
+    );
+    expect(after.items.find((entry) => entry.id === 'p0')?.value).toMatchObject({ velocity: 0.38 });
+    expect(after.items.find((entry) => entry.id === 'p1')?.value).toMatchObject({
+      velocity: DEFAULT_ENTRY_VELOCITY,
+    });
   });
 
   it('splits a note: the left half keeps the id, the right half is a fresh item, pitch and velocity kept', () => {

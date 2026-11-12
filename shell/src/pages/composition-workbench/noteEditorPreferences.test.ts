@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { MAX_VELOCITY_LANE_HEIGHT, MIN_VELOCITY_LANE_HEIGHT } from '../../components/PianoRoll';
 import {
   GRID_OPTIONS,
   MAX_ENTRY_LENGTH,
@@ -16,6 +17,8 @@ describe('note editor preferences', () => {
       entryLength: null,
       entryVelocity: null,
       grid: 'auto',
+      velocityLaneCollapsed: false,
+      laneHeight: null,
     });
   });
 
@@ -25,6 +28,8 @@ describe('note editor preferences', () => {
       entryLength: 0.75,
       entryVelocity: null,
       grid: '1/8T',
+      velocityLaneCollapsed: false,
+      laneHeight: null,
     });
     expect(NOTE_EDITOR_PREFERENCES_KEY.startsWith('hrifa.composition-workbench.')).toBe(false);
     localStorage.setItem(
@@ -35,13 +40,27 @@ describe('note editor preferences', () => {
       entryLength: null,
       entryVelocity: null,
       grid: 'auto',
+      velocityLaneCollapsed: false,
+      laneHeight: null,
     });
     localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, '{nope');
     expect(readNoteEditorPreferences()).toEqual({
       entryLength: null,
       entryVelocity: null,
       grid: 'auto',
+      velocityLaneCollapsed: false,
+      laneHeight: null,
     });
+  });
+
+  it('remembers a collapsed velocity lane and reads anything but true as expanded', () => {
+    writeNoteEditorPreferences({ velocityLaneCollapsed: true });
+    expect(readNoteEditorPreferences().velocityLaneCollapsed).toBe(true);
+    localStorage.setItem(
+      NOTE_EDITOR_PREFERENCES_KEY,
+      JSON.stringify({ velocityLaneCollapsed: 'yes' })
+    );
+    expect(readNoteEditorPreferences().velocityLaneCollapsed).toBe(false);
   });
 
   it('clamps a length on write to the range the read accepts, so it always reads back', () => {
@@ -62,6 +81,21 @@ describe('note editor preferences', () => {
     expect(readNoteEditorPreferences().entryVelocity).toBe(0.01);
     localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ entryVelocity: 2 }));
     expect(readNoteEditorPreferences().entryVelocity).toBeNull();
+  });
+
+  it('round-trips the lane height, clamps it on write, and reads out-of-range as null', () => {
+    writeNoteEditorPreferences({ laneHeight: 120 });
+    expect(readNoteEditorPreferences().laneHeight).toBe(120);
+    writeNoteEditorPreferences({ laneHeight: 5000 });
+    expect(readNoteEditorPreferences().laneHeight).toBe(MAX_VELOCITY_LANE_HEIGHT);
+    writeNoteEditorPreferences({ laneHeight: 1 });
+    expect(readNoteEditorPreferences().laneHeight).toBe(MIN_VELOCITY_LANE_HEIGHT);
+    writeNoteEditorPreferences({ laneHeight: null });
+    expect(readNoteEditorPreferences().laneHeight).toBeNull();
+    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ laneHeight: 9999 }));
+    expect(readNoteEditorPreferences().laneHeight).toBeNull();
+    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ laneHeight: 'tall' }));
+    expect(readNoteEditorPreferences().laneHeight).toBeNull();
   });
 
   it('offers 1/1 to 1/32 and the triplets, in quarter notes', () => {

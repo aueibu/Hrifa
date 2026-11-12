@@ -44,6 +44,23 @@ describe('composition settings', () => {
     expect(result.current.settings).toEqual(defaultCompositionSettings);
   });
 
+  it('colors notes by scale degree: off by default, persisted, sanitized, absent from old blobs', () => {
+    expect(defaultCompositionSettings.colorByScaleDegree).toBe(false);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ edo: 19 }));
+    const old = renderHook(() => useCompositionSettings(), { wrapper });
+    expect(old.result.current.settings.colorByScaleDegree).toBe(false);
+    expect(old.result.current.settings.edo).toBe(19);
+    act(() => old.result.current.updateSettings({ colorByScaleDegree: true }));
+    old.unmount();
+    const reloaded = renderHook(() => useCompositionSettings(), { wrapper });
+    expect(reloaded.result.current.settings.colorByScaleDegree).toBe(true);
+    reloaded.unmount();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ colorByScaleDegree: 'yes', edo: 19 }));
+    const bad = renderHook(() => useCompositionSettings(), { wrapper });
+    expect(bad.result.current.settings.colorByScaleDegree).toBe(false);
+    expect(bad.result.current.settings.edo).toBe(19);
+  });
+
   it('rejects a non-positive EDO from updateSettings rather than storing it', () => {
     const { result } = renderHook(() => useCompositionSettings(), { wrapper });
     act(() => result.current.updateSettings({ edo: 0 }));

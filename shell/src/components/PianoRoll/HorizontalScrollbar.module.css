@@ -1,0 +1,10 @@
+.bar {
+  background: var(--panel-inset);
+  overflow-x: scroll;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+}
+
+.spacer {
+  height: 1px;
+}

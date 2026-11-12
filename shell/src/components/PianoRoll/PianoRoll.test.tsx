@@ -200,6 +200,80 @@ describe('PianoRoll editing', () => {
     expect(handlers.onVelocityChange).toHaveBeenCalledWith(['c4'], 0.5);
   });
 
+  it('Alt-drag shows the dragged note percentage, and a group moves by one offset, each clamped', () => {
+    const quiet = [
+      { ...edited[0], velocity: 0.5 },
+      { ...edited[1], velocity: 0.25 },
+    ];
+    const { handlers, roll } = renderRoll({ notes: quiet, selectedIds: ['c4', 'e4'] });
+    const note = screen.getByTitle('C4 · 1.000 qn · 1.000 qn');
+    fireEvent.pointerDown(note, { clientX: 90, clientY: c4Y, altKey: true, pointerId: 1 });
+    // 60 px down is -0.5: the 25% note bottoms out at 0 and the 50% note is at 0.
+    fireEvent.pointerMove(roll, { clientX: 90, clientY: c4Y + 60, pointerId: 1 });
+    expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('0%');
+    fireEvent.pointerMove(roll, { clientX: 90, clientY: c4Y + 30, pointerId: 1 });
+    expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('25%');
+    fireEvent.pointerUp(roll, { clientX: 90, clientY: c4Y + 30, pointerId: 1 });
+    expect(handlers.onVelocityChange).toHaveBeenCalledTimes(1);
+    expect(handlers.onVelocityChange).toHaveBeenCalledWith(['c4', 'e4'], -0.25);
+    expect(handlers.onMoveNotes).not.toHaveBeenCalled();
+  });
+
+  it('Ctrl+Shift does not start a velocity drag', () => {
+    const { handlers, roll } = renderRoll();
+    const note = screen.getByTitle('C4 · 1.000 qn · 1.000 qn');
+    fireEvent.pointerDown(note, {
+      clientX: 90,
+      clientY: c4Y,
+      ctrlKey: true,
+      shiftKey: true,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(roll, { clientX: 90, clientY: c4Y - 60, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 90, clientY: c4Y - 60, pointerId: 1 });
+    expect(handlers.onVelocityChange).not.toHaveBeenCalled();
+  });
+
+  it('velocity fill is opt-in: saturation follows velocity only when asked, with no alpha', () => {
+    const voiced = [
+      { ...edited[0], velocity: 0.2, color: 'var(--mark-red)' },
+      { ...edited[1], velocity: 1, color: 'var(--mark-red)' },
+    ];
+    const { unmount } = render(
+      <PianoRoll
+        notes={voiced}
+        duration={4}
+        gridLines={[]}
+        view={view}
+        onViewChange={() => undefined}
+        velocityFill
+      />
+    );
+    const soft = screen.getByTitle('C4 · 1.000 qn · 1.000 qn');
+    const loud = screen.getByTitle('E4 · 3.000 qn · 1.000 qn');
+    // Opaque: no element opacity and no fill alpha, only the saturation changes.
+    expect(soft.style.opacity).toBe('');
+    expect(soft.style.getPropertyValue('--note-fill-opacity')).toBe('');
+    const mixOf = (element: HTMLElement) =>
+      Number(/ (\d+)%, color-mix/.exec(element.style.getPropertyValue('--note-fill'))![1]);
+    expect(mixOf(soft)).toBeLessThan(mixOf(loud));
+    expect(soft).toHaveAttribute('data-velocity-fill');
+    unmount();
+
+    render(
+      <PianoRoll
+        notes={voiced}
+        duration={4}
+        gridLines={[]}
+        view={view}
+        onViewChange={() => undefined}
+      />
+    );
+    const plain = screen.getByTitle('C4 · 1.000 qn · 1.000 qn');
+    expect(plain).not.toHaveAttribute('data-velocity-fill');
+    expect(plain.style.getPropertyValue('--note-fill')).toBe('');
+  });
+
   it('reports the time a marquee covered, over empty space too', () => {
     const { handlers, roll } = renderRoll();
     fireEvent.pointerDown(roll, { clientX: 130, clientY: 10, pointerId: 1 });
@@ -336,7 +410,7 @@ describe('PianoRoll editing', () => {
     const { roll } = renderRoll({ fill: true });
     const scroller = roll.closest('[class*="scroller"]') as HTMLElement;
     expect(scroller.style.height).toBe('');
-    expect(scroller.parentElement!.parentElement).toHaveAttribute('data-fill');
+    expect(scroller.closest('[data-fill]')).not.toBeNull();
   });
 });
 
@@ -476,12 +550,51 @@ describe('PianoRoll tools', () => {
     expect(handlers.onPaintNotes).not.toHaveBeenCalled();
     fireEvent.pointerUp(roll, { clientX: 600, clientY: rowY(74), pointerId: 1 });
     expect(handlers.onPaintNotes).toHaveBeenCalledTimes(1);
+    // No remembered velocity supplied: the default entry velocity, deliberately carried now.
     expect(handlers.onPaintNotes).toHaveBeenCalledWith([
-      { start: 6, duration: 1, pitchMidicents: 7200 },
-      { start: 7, duration: 1, pitchMidicents: 7200 },
-      { start: 8, duration: 1, pitchMidicents: 7400 },
-      { start: 9, duration: 1, pitchMidicents: 7400 },
+      { start: 6, duration: 1, pitchMidicents: 7200, velocity: 0.8 },
+      { start: 7, duration: 1, pitchMidicents: 7200, velocity: 0.8 },
+      { start: 8, duration: 1, pitchMidicents: 7400, velocity: 0.8 },
+      { start: 9, duration: 1, pitchMidicents: 7400, velocity: 0.8 },
     ]);
+  });
+
+  it('paint: every note of a stroke takes the remembered entry velocity, fixed at press', () => {
+    const { handlers, roll } = renderTool('paint', { gridUnit: 1, entryVelocity: 0.38 });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    // Vertical travel is pitch only: it never reaches the remembered velocity.
+    fireEvent.pointerMove(roll, { clientX: 500, clientY: rowY(72) - 60, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 600, clientY: rowY(74), pointerId: 1 });
+    const notes = handlers.onPaintNotes.mock.calls[0][0];
+    expect(notes).toHaveLength(4);
+    notes.forEach((note: { velocity?: number }) => expect(note.velocity).toBe(0.38));
+    expect(handlers.onEntryVelocityChange).not.toHaveBeenCalled();
+  });
+
+  it('paint: changing the entry velocity mid-stroke does not change that stroke', () => {
+    const onPaintNotes = vi.fn();
+    const props = {
+      notes: sample,
+      duration: 8,
+      gridLines: [],
+      view,
+      onViewChange: () => undefined,
+      selectedIds: [],
+      tools: [{ id: 'paint', label: 'Paint', shortcut: '4' }],
+      activeTool: 'paint',
+      gridUnit: 1,
+      onPaintNotes,
+      onSelectionChange: vi.fn(),
+    };
+    const { rerender } = render(<PianoRoll {...props} entryVelocity={0.38} />);
+    const roll = screen.getByRole('group', { name: /Piano roll/ });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    rerender(<PianoRoll {...props} entryVelocity={0.9} />);
+    fireEvent.pointerMove(roll, { clientX: 500, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 500, clientY: rowY(72), pointerId: 1 });
+    const notes = onPaintNotes.mock.calls[0][0];
+    expect(notes).toHaveLength(2);
+    notes.forEach((note: { velocity?: number }) => expect(note.velocity).toBe(0.38));
   });
 
   it('knife: a click splits at the nearest grid line; at an end or off a note nothing happens', () => {

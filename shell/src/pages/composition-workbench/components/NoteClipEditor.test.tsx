@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
+import { act, cleanup, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import { auditionRefusal, makeSourceRefusal } from '../clipTypes';
@@ -522,6 +522,23 @@ describe('the note clip editor tools', () => {
     expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
   });
 
+  it('paint: every note takes the remembered entry velocity, as one undo step, leaving hand edits alone', async () => {
+    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ entryVelocity: 0.38 }));
+    const roll = await open(seededClip());
+    act(() => tool('Paint').click());
+    const changes = historyChangeCount();
+    drag(roll, { x: 330, y: rowY(76) }, { x: 400, y: rowY(76) });
+    const added = desk.snippets[0].packet.items.slice(3);
+    expect(added).toHaveLength(3);
+    added.forEach((entry) => expect((entry.value as NoteEventValue).velocity).toBe(0.38));
+    expect(noteValue('n1').velocity).not.toBe(0.38);
+    expect(historyChangeCount()).toBe(changes + 1);
+    // Painting never rewrites the remembered velocity.
+    expect(readNoteEditorPreferences().entryVelocity).toBe(0.38);
+    act(() => undo());
+    expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
+  });
+
   it('knife: splits at the nearest grid line; the left half keeps the id, the right gets a new one', async () => {
     await open(seededClip());
     act(() => tool('Knife').click());
@@ -663,5 +680,330 @@ describe('the note clip editor tools', () => {
     drag(roll, { x: 430, y: rowY(76) }, { x: 430, y: rowY(76) });
     const painted = desk.snippets[0].packet.items.at(-1)!.value as NoteEventValue;
     expect(painted.duration.quarterNotes).toEqual({ numerator: 2, denominator: 3 });
+  });
+});
+
+describe('velocity editing in the note clip editor', () => {
+  // The lane is 84 px tall with 8 px of padding, so 68 px is the whole 0 to 100% range.
+  const pinOf = (id: string) =>
+    document.querySelector(`[data-testid="velocity-pin"][data-note="${id}"]`) as HTMLElement;
+
+  it('shows one stem and pin per note, and a pin drag sets that note as one undo step and a hand edit', async () => {
+    await open(seededClip());
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+    const pin = pinOf('n2:pitch:0');
+    const steps = historyChangeCount();
+    fireEvent.pointerDown(pin, { clientX: 0, clientY: 8, pointerId: 1 });
+    fireEvent.pointerMove(pin, { clientX: 0, clientY: 8 + 34, pointerId: 1 });
+    // Nothing is written until release.
+    expect(noteValue('n2').velocity).toBe(1);
+    expect(screen.getByTestId('velocity-lane-readout')).toHaveTextContent('50%');
+    fireEvent.pointerUp(pin, { clientX: 0, clientY: 8 + 34, pointerId: 1 });
+    expect(noteValue('n2').velocity).toBe(0.5);
+    expect(noteValue('n1').velocity).toBe(1);
+    expect(historyChangeCount()).toBe(steps + 1);
+    expect(editSteps('n2')).toEqual(['modified']);
+    act(() => undo());
+    expect(noteValue('n2').velocity).toBe(1);
+  });
+
+  it('collapses the lane and remembers that per viewer', async () => {
+    await open(seededClip());
+    fireEvent.click(screen.getByRole('button', { name: 'Hide velocity lane' }));
+    expect(screen.queryAllByTestId('velocity-stem')).toHaveLength(0);
+    expect(readNoteEditorPreferences().velocityLaneCollapsed).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Show velocity lane' }));
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+  });
+
+  it('V toggles the lane while the roll has focus; a collapsed lane is reopenable by icon and by V', async () => {
+    const roll = await open(seededClip());
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    fireEvent.keyDown(input, { key: 'v' });
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+    // Not focused in the roll: the key reaches nothing.
+    fireEvent.keyDown(document.body, { key: 'v' });
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+    roll.focus();
+    // Modifiers are never taken.
+    fireEvent.keyDown(roll, { key: 'v', ctrlKey: true });
+    fireEvent.keyDown(roll, { key: 'v', metaKey: true });
+    fireEvent.keyDown(roll, { key: 'v', altKey: true });
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+    fireEvent.keyDown(roll, { key: 'v' });
+    expect(screen.queryAllByTestId('velocity-stem')).toHaveLength(0);
+    expect(readNoteEditorPreferences().velocityLaneCollapsed).toBe(true);
+    // Reopen by the icon, collapse again by V, reopen by V.
+    fireEvent.click(screen.getByRole('button', { name: 'Show velocity lane' }));
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+    fireEvent.keyDown(roll, { key: 'V' });
+    expect(screen.queryAllByTestId('velocity-stem')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Show velocity lane' })).toHaveAttribute(
+      'title',
+      expect.stringContaining('V')
+    );
+    fireEvent.keyDown(roll, { key: 'v' });
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+    input.remove();
+  });
+
+  it('keeps the piano keys outside the roll scroller and the scrollbar below the lane', async () => {
+    await open(seededClip());
+    const scroller = document.querySelector('[data-detached]') as HTMLElement;
+    expect(scroller).not.toBeNull();
+    // The keys are in the roll's gutter column, not inside the scrolling area.
+    const keyboard = document.querySelector('[class*="gutterKeys"]') as HTMLElement;
+    expect(keyboard).not.toBeNull();
+    expect(scroller.contains(keyboard)).toBe(false);
+    // The horizontal scrollbar follows the lane in document order, and the toggle is in the lane's key-width gutter.
+    const lane = screen.getByRole('group', { name: 'Velocity lane' });
+    const bar = screen.getByTestId('roll-hscroll');
+    expect(lane.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const header = screen.getByRole('button', { name: 'Hide velocity lane' }).parentElement!;
+    expect(header.style.width).toBe('72px');
+  });
+
+  it('the lane splitter resizes within its limits, remembers the height and resets on double-click', async () => {
+    await open(seededClip());
+    const splitter = screen.getByRole('separator', { name: 'Resize velocity lane' });
+    expect(splitter).toHaveAttribute('aria-orientation', 'horizontal');
+    const height = () =>
+      (screen.getByRole('group', { name: 'Velocity lane' }) as HTMLElement).style.height;
+    expect(height()).toBe('84px');
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(splitter, { clientY: 260, pointerId: 1 });
+    expect(height()).toBe('124px');
+    // Nothing is stored until release.
+    expect(readNoteEditorPreferences().laneHeight).toBeNull();
+    fireEvent.pointerUp(splitter, { clientY: 260, pointerId: 1 });
+    expect(readNoteEditorPreferences().laneHeight).toBe(124);
+    expect(height()).toBe('124px');
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerUp(splitter, { clientY: 9000, pointerId: 1 });
+    expect(readNoteEditorPreferences().laneHeight).toBe(32);
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerUp(splitter, { clientY: -9000, pointerId: 1 });
+    expect(readNoteEditorPreferences().laneHeight).toBe(400);
+    fireEvent.doubleClick(splitter);
+    expect(readNoteEditorPreferences().laneHeight).toBeNull();
+    expect(height()).toBe('84px');
+  });
+
+  it('a cancelled or escaped splitter drag restores the starting height', async () => {
+    await open(seededClip());
+    const splitter = screen.getByRole('separator', { name: 'Resize velocity lane' });
+    const height = () =>
+      (screen.getByRole('group', { name: 'Velocity lane' }) as HTMLElement).style.height;
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(splitter, { clientY: 250, pointerId: 1 });
+    expect(height()).toBe('134px');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(height()).toBe('84px');
+    fireEvent.pointerUp(splitter, { clientY: 250, pointerId: 1 });
+    expect(readNoteEditorPreferences().laneHeight).toBeNull();
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(splitter, { clientY: 250, pointerId: 1 });
+    fireEvent.pointerCancel(splitter, { pointerId: 1 });
+    expect(height()).toBe('84px');
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(splitter, { clientY: 250, pointerId: 1 });
+    fireEvent.lostPointerCapture(splitter, { pointerId: 1 });
+    expect(height()).toBe('84px');
+    expect(readNoteEditorPreferences().laneHeight).toBeNull();
+  });
+
+  it('the splitter is keyboard accessible with the arrow keys', async () => {
+    await open(seededClip());
+    const splitter = screen.getByRole('separator', { name: 'Resize velocity lane' });
+    fireEvent.keyDown(splitter, { key: 'ArrowUp' });
+    expect(readNoteEditorPreferences().laneHeight).toBe(92);
+    fireEvent.keyDown(splitter, { key: 'ArrowDown' });
+    fireEvent.keyDown(splitter, { key: 'ArrowDown' });
+    expect(readNoteEditorPreferences().laneHeight).toBe(76);
+  });
+
+  it('a lane stem wears the same velocity fill as its note', async () => {
+    await open(seededClip());
+    const note = screen.getByTitle(/^C4 · 0\.000 qn/);
+    const stem = document.querySelector(
+      '[data-testid="velocity-stem"][data-note="n1:pitch:0"]'
+    ) as HTMLElement;
+    expect(stem.style.getPropertyValue('--stem-fill')).toBe(
+      note.style.getPropertyValue('--note-fill')
+    );
+    expect(stem.style.getPropertyValue('--stem-opacity')).toBe('');
+    expect(note.style.getPropertyValue('--note-fill-opacity')).toBe('');
+  });
+
+  it('fills notes by velocity, and Alt-drag on a note sets velocity as one undo step', async () => {
+    const roll = await open(seededClip());
+    const note = screen.getByTitle(/^C4 · 0\.000 qn/);
+    expect(note).toHaveAttribute('data-velocity-fill');
+    const steps = historyChangeCount();
+    fireEvent.pointerDown(note, { clientX: 20, clientY: rowY(60), altKey: true, pointerId: 1 });
+    fireEvent.pointerMove(roll, {
+      clientX: 20,
+      clientY: rowY(60) + 60,
+      altKey: true,
+      pointerId: 1,
+    });
+    expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('50%');
+    fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60) + 60, pointerId: 1 });
+    expect(noteValue('n1').velocity).toBe(0.5);
+    expect(historyChangeCount()).toBe(steps + 1);
+    expect(editSteps('n1')).toEqual(['modified']);
+  });
+
+  it('colors notes by scale degree only when the setting is on', async () => {
+    await open(seededClip());
+    expect(screen.getByTitle(/^C4 · 0\.000 qn/)).not.toHaveAttribute('data-colored');
+    cleanup();
+    localStorage.setItem(
+      'hrifa.composition-workbench.settings.v1',
+      JSON.stringify({ colorByScaleDegree: true })
+    );
+    await open(seededClip());
+    const c = screen.getByTitle(/^C4 · 0\.000 qn/);
+    const e = screen.getByTitle(/^E4 · 2\.000 qn/);
+    expect(c).toHaveAttribute('data-colored');
+    expect(c.style.getPropertyValue('--note-color')).toMatch(/^var\(--mark-/);
+    expect(c.style.getPropertyValue('--note-color')).not.toBe(
+      e.style.getPropertyValue('--note-color')
+    );
+    // The lane stem carries the same color as its note.
+    const stem = document.querySelector(
+      '[data-testid="velocity-stem"][data-note="n1:pitch:0"]'
+    ) as HTMLElement;
+    expect(stem.style.getPropertyValue('--stem-color')).toBe(
+      c.style.getPropertyValue('--note-color')
+    );
+  });
+});
+
+describe('the note editor as one panel', () => {
+  const lane = () => screen.getByRole('group', { name: 'Velocity lane' });
+  const pin = (id: string) =>
+    document.querySelector(`[data-testid="velocity-pin"][data-note="${id}"]`) as HTMLElement;
+  const toolRadio = (name: string) => screen.getByRole('radio', { name });
+
+  it('V and the tool numbers work after a click in the lane, because the panel is one focus scope', async () => {
+    await open(seededClip());
+    // A click on the lane background or a pin focuses the panel (the nearest focusable ancestor).
+    const scope = lane().closest('[tabindex="-1"]') as HTMLElement;
+    expect(scope).not.toBeNull();
+    expect(scope).toContainElement(pin('n1:pitch:0'));
+    scope.focus();
+    fireEvent.keyDown(pin('n1:pitch:0'), { key: '4' });
+    expect(toolRadio('Paint')).toBeChecked();
+    fireEvent.keyDown(lane(), { key: 'v' });
+    expect(screen.queryAllByTestId('velocity-stem')).toHaveLength(0);
+    // The collapsed lane's icon lives in the scrollbar row's gutter, and V still brings it back.
+    const bar = screen.getByTestId('roll-hscroll');
+    const reopen = screen.getByRole('button', { name: 'Show velocity lane' });
+    expect(bar.parentElement!.previousElementSibling).toContainElement(reopen);
+    fireEvent.keyDown(reopen, { key: 'v' });
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+    // Still ignored with modifiers (a text field is covered in the roll's panel tests).
+    fireEvent.keyDown(lane(), { key: 'v', ctrlKey: true });
+    expect(screen.getAllByTestId('velocity-stem')).toHaveLength(3);
+  });
+
+  it('the palette spans the roll, the lane and the scrollbar: one panel, one scrollbar', async () => {
+    await open(seededClip());
+    const palette = screen.getByRole('toolbar', { name: 'Editor tools' });
+    const body = palette.parentElement as HTMLElement;
+    // Siblings: the column holding roll, lane and bar, and the palette beside it.
+    const column = body.firstElementChild as HTMLElement;
+    expect(column).toContainElement(screen.getByRole('group', { name: /Note clip piano roll/ }));
+    expect(column).toContainElement(lane());
+    expect(column).toContainElement(screen.getByTestId('roll-hscroll'));
+    expect(screen.getAllByTestId('roll-hscroll')).toHaveLength(1);
+    expect(
+      lane().compareDocumentPosition(screen.getByTestId('roll-hscroll')) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it('Escape during a splitter drag cancels only the drag: the roll keeps its selection', async () => {
+    const roll = await open(seededClip());
+    fireEvent.pointerDown(screen.getByTitle(/^C4 · 0\.000 qn/), {
+      clientX: 20,
+      clientY: rowY(60),
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60), pointerId: 1 });
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    const splitter = screen.getByRole('separator', { name: 'Resize velocity lane' });
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(splitter, { clientY: 250, pointerId: 1 });
+    expect(lane().style.height).toBe('134px');
+    // From the splitter, the roll, or the window: the drag ends, the selection stays.
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    expect(lane().style.height).toBe('84px');
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    fireEvent.pointerDown(splitter, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(splitter, { clientY: 250, pointerId: 1 });
+    fireEvent.keyDown(splitter, { key: 'Escape' });
+    expect(lane().style.height).toBe('84px');
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    // With no drag running, Escape in the roll still clears the selection.
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    expect(roll).toHaveAccessibleName(/0 selected/);
+  });
+
+  it('a lane stored taller than the effective limit is clamped when drawn', async () => {
+    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ laneHeight: 400 }));
+    await open(seededClip());
+    // jsdom has no layout (panel height 0), so only the splitter's own 400 limit applies here;
+    // the share-of-panel limit is covered in VelocityLane's tests with an explicit panel height.
+    expect(lane().style.height).toBe('400px');
+    expect(screen.getByRole('separator', { name: 'Resize velocity lane' })).toHaveAttribute(
+      'aria-valuemax',
+      '400'
+    );
+  });
+
+  it('entry previews wear the degree color of the pitch under the pointer when the setting is on', async () => {
+    localStorage.setItem(
+      'hrifa.composition-workbench.settings.v1',
+      JSON.stringify({ colorByScaleDegree: true })
+    );
+    const roll = await open(seededClip());
+    act(() => toolRadio('Paint').click());
+    const preview = () => [...document.querySelectorAll('[title^=" ·"]')] as HTMLElement[];
+    // 64 px per quarter: press on C4, then sweep to E4.
+    fireEvent.pointerDown(roll, { clientX: 430, clientY: rowY(60), pointerId: 1 });
+    const c4 = preview()[0].style.getPropertyValue('--note-color');
+    expect(c4).toMatch(/^var\(--mark-/);
+    expect(preview()[0]).toHaveAttribute('data-velocity-fill');
+    fireEvent.pointerMove(roll, { clientX: 500, clientY: rowY(64), pointerId: 1 });
+    const colors = preview().map((element) => element.style.getPropertyValue('--note-color'));
+    expect(colors).toContain(c4);
+    expect(colors.some((color) => color !== c4 && color.startsWith('var(--mark-'))).toBe(true);
+    fireEvent.pointerCancel(roll, { pointerId: 1 });
+
+    // A move ghost takes the new pitch's color; the original note keeps its own.
+    act(() => toolRadio('Pointer').click());
+    const note = screen.getByTitle(/^C4 · 0\.000 qn/);
+    const own = note.style.getPropertyValue('--note-color');
+    fireEvent.pointerDown(note, { clientX: 20, clientY: rowY(60), pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 20, clientY: rowY(64), pointerId: 1 });
+    const ghost = document.querySelector('[data-ghost]') as HTMLElement;
+    const ghostColor = ghost.style.getPropertyValue('--ghost-fill');
+    expect(ghostColor).not.toContain(own);
+    expect(ghostColor).toContain('var(--mark-');
+    fireEvent.pointerCancel(roll, { pointerId: 1 });
+  });
+
+  it('with the setting off the previews are the single note color, like the notes', async () => {
+    const roll = await open(seededClip());
+    act(() => toolRadio('Paint').click());
+    fireEvent.pointerDown(roll, { clientX: 430, clientY: rowY(60), pointerId: 1 });
+    const preview = document.querySelector('[title^=" ·"]') as HTMLElement;
+    expect(preview).not.toHaveAttribute('data-colored');
+    expect(preview.style.getPropertyValue('--note-color')).toBe('');
+    fireEvent.pointerCancel(roll, { pointerId: 1 });
   });
 });
