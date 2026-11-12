@@ -239,12 +239,52 @@
   top: 0;
 }
 
-.roll[data-tool='draw'] {
+.roll[data-tool='pencil'],
+.roll[data-tool='paint'] {
   cursor: cell;
 }
 
-.roll[data-tool='erase'] .note {
+.roll[data-tool='eraser'] {
   cursor: not-allowed;
+}
+
+.roll[data-tool='eraser'] .note,
+.roll[data-tool='paint'] .note {
+  cursor: inherit;
+}
+
+.roll[data-tool='knife'] .note {
+  cursor: col-resize;
+}
+
+.roll[data-tool='time'],
+.roll[data-tool='time'] .note {
+  cursor: text;
+}
+
+/* A note the eraser has swept over: a diagonal dashed fill and a dashed edge, until release. */
+.note[data-erasing] {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--text) 70%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+  border-color: var(--text);
+  border-style: dashed;
+}
+
+/* The velocity percentage that follows the pointer while the pencil sets a note's loudness. */
+.readout {
+  background: var(--panel-body);
+  border: 1px solid var(--grid);
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.68rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  pointer-events: none;
+  position: absolute;
+  z-index: 5;
 }
 
 .playhead {

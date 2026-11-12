@@ -1,4 +1,5 @@
 import {
+  DEFAULT_ENTRY_VELOCITY,
   MIN_NOTE_QUARTERS,
   type PianoRollNewNote,
   type PianoRollNote,
@@ -8,6 +9,7 @@ import type { DataItem, DataPacket } from './model';
 import {
   addRational,
   compareRational,
+  subtractRational,
   rationalFromNumber,
   rationalToNumber,
   type MusicalDuration,
@@ -25,9 +27,6 @@ import { pitchLabel } from './routeTreatments';
 
 /** The one operation name every hand edit of notes commits under, so a run of them is one session. */
 export const NOTE_EDIT_OPERATION = 'edit-notes';
-
-/** What a hand-drawn note's loudness starts at (0 to 1, as the other producers write it). */
-export const DEFAULT_NOTE_VELOCITY = 0.8;
 
 const MAX_MIDICENTS = 12700;
 
@@ -122,7 +121,7 @@ export function addNote(
   packet: DataPacket,
   note: PianoRollNewNote,
   id: string,
-  velocity = DEFAULT_NOTE_VELOCITY
+  velocity = DEFAULT_ENTRY_VELOCITY
 ): DataPacket {
   const start = Math.max(0, note.start);
   if (!Number.isFinite(start) || !Number.isFinite(note.duration)) {
@@ -145,6 +144,92 @@ export function addNote(
     provenance: [],
   };
   return withItems(packet, [...packet.items, item]);
+}
+
+/**
+ * Adds several notes at once (the paint can), each with the id at the same index. A note that would
+ * sit exactly on an existing one (same start and pitch) is skipped, so painting over a note twice
+ * does not stack copies. The same packet when nothing was added.
+ */
+export function addNotes(
+  packet: DataPacket,
+  newNotes: readonly PianoRollNewNote[],
+  ids: readonly string[],
+  velocity = DEFAULT_ENTRY_VELOCITY
+): DataPacket {
+  const taken = new Set(
+    packet.items
+      .filter(isNoteItem)
+      .flatMap((item) =>
+        item.value.pitches.map(
+          (pitch) => `${Math.round(quarters(item.value.onset) * 1e6)}:${pitch}`
+        )
+      )
+  );
+  let next = packet;
+  newNotes.forEach((note, index) => {
+    const key = `${Math.round(Math.max(0, note.start) * 1e6)}:${Math.round(note.pitchMidicents)}`;
+    if (taken.has(key)) {
+      return;
+    }
+    taken.add(key);
+    next = addNote(next, note, ids[index], note.velocity ?? velocity);
+  });
+  return next;
+}
+
+/**
+ * Splits an event at `at` (quarter notes), which must fall strictly inside it. Both halves keep the
+ * pitches and velocity. The left half is the original item (same id, shortened), the right half is a
+ * new item with `newId`. The same packet when `at` is not inside the event.
+ */
+export function splitNote(packet: DataPacket, id: string, at: number, newId: string): DataPacket {
+  const index = packet.items.findIndex((item) => item.id === id);
+  const item = packet.items[index];
+  if (!item || !isNoteItem(item) || !Number.isFinite(at)) {
+    return packet;
+  }
+  const start = quarters(item.value.onset);
+  const end = start + quarters(item.value.duration);
+  if (at <= start + 1e-9 || at >= end - 1e-9) {
+    return packet;
+  }
+  const cut = rationalFromNumber(at);
+  const leftLength: MusicalDuration = {
+    quarterNotes: subtractRational(cut, item.value.onset.quarterNotes),
+  };
+  const rightLength: MusicalDuration = {
+    quarterNotes: subtractRational(
+      addRational(item.value.onset.quarterNotes, item.value.duration.quarterNotes),
+      cut
+    ),
+  };
+  const slotMatched =
+    compareRational(item.value.interOnset.quarterNotes, item.value.duration.quarterNotes) === 0;
+  const left: NoteItem = {
+    ...item,
+    value: {
+      ...item.value,
+      duration: leftLength,
+      interOnset: slotMatched ? leftLength : item.value.interOnset,
+    },
+  };
+  const rightOnset = { quarterNotes: cut };
+  const right: NoteItem = {
+    id: newId,
+    value: {
+      ...item.value,
+      onset: rightOnset,
+      duration: rightLength,
+      interOnset: rightLength,
+    },
+    label: noteLabel(item.value.pitches, rightOnset),
+    // A split keeps what the note inherited; the commit adds its own edit step to both halves.
+    provenance: [...item.provenance],
+  };
+  const items = [...packet.items];
+  items.splice(index, 1, left, right);
+  return withItems(packet, items);
 }
 
 /**

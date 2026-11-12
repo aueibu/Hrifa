@@ -4,6 +4,7 @@ import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, musicalPosition, rationalToNumber } from './musicalTime';
 import {
   addNote,
+  addNotes,
   changeVelocity,
   clipExtent,
   clipRollDuration,
@@ -12,6 +13,7 @@ import {
   moveNotes,
   packetRollNotes,
   resizeNotes,
+  splitNote,
 } from './noteClipEdits';
 import { commitSnippetEdit, type Snippet } from './snippet';
 
@@ -203,5 +205,72 @@ describe('note clip edits', () => {
     ]);
     expect(itemsSpan(before, ['a', 'c'])).toEqual({ start: 0, end: 6 });
     expect(itemsSpan(before, ['nope'])).toBeNull();
+  });
+});
+
+describe('note entry tools', () => {
+  it('addNote takes the velocity the entry gesture chose', () => {
+    const after = addNote(base(), { start: 1, duration: 1, pitchMidicents: 7200 }, 'v', 0.4);
+    expect(after.items[3].value).toMatchObject({ velocity: 0.4 });
+  });
+
+  it('paints several notes with their own ids, skipping one exactly on an existing note', () => {
+    const before = base();
+    const after = addNotes(
+      before,
+      [
+        { start: 0, duration: 1, pitchMidicents: 6000 },
+        { start: 1, duration: 1, pitchMidicents: 6000 },
+        { start: 2, duration: 1, pitchMidicents: 6000 },
+      ],
+      ['p0', 'p1', 'p2']
+    );
+    // 'a' already sits at 0 on C4, so only p1 and p2 are new.
+    expect(after.items.map((entry) => entry.id)).toEqual(['a', 'b', 'c', 'p1', 'p2']);
+    expect(after.items.slice(0, 3).every((entry, index) => entry === before.items[index])).toBe(
+      true
+    );
+    expect(addNotes(before, [{ start: 0, duration: 1, pitchMidicents: 6000 }], ['x'])).toBe(before);
+  });
+
+  it('splits a note: the left half keeps the id, the right half is a fresh item, pitch and velocity kept', () => {
+    const before = clip([item('a', 1, 2, [6000, 6400], 0.6), item('z', 5, 1, [6700])]);
+    const after = splitNote(before, 'a', 2, 'right');
+    expect(after.items.map((entry) => entry.id)).toEqual(['a', 'right', 'z']);
+    const [left, right] = after.items.map((entry) => entry.value as NoteEventValue);
+    expect(rationalToNumber(left.onset.quarterNotes)).toBe(1);
+    expect(rationalToNumber(left.duration.quarterNotes)).toBe(1);
+    expect(rationalToNumber(left.interOnset.quarterNotes)).toBe(1);
+    expect(rationalToNumber(right.onset.quarterNotes)).toBe(2);
+    expect(rationalToNumber(right.duration.quarterNotes)).toBe(1);
+    expect(left.pitches).toEqual([6000, 6400]);
+    expect(right.pitches).toEqual([6000, 6400]);
+    expect(left.velocity).toBe(0.6);
+    expect(right.velocity).toBe(0.6);
+    expect(after.items[2]).toBe(before.items[1]);
+    expect(after.items[1].provenance).toEqual([]);
+  });
+
+  it('a split keeps the inherited provenance on both halves (K2)', () => {
+    const inherited = [
+      { sourceModuleInstance: 'm1', sourceItemIds: ['x'], transformation: 'melodicize' },
+    ];
+    const source = { ...item('a', 0, 2, [6000]), provenance: inherited };
+    const after = splitNote(clip([source]), 'a', 1, 'right');
+    expect(after.items[0].provenance).toEqual(inherited);
+    expect(after.items[1].provenance).toEqual(inherited);
+    expect(after.items[1].provenance).not.toBe(source.provenance);
+  });
+
+  it('splits at a triplet line exactly, and refuses a cut at or outside the ends', () => {
+    const before = clip([item('a', 0, 1, [6000])]);
+    const after = splitNote(before, 'a', 1 / 3, 'r');
+    const right = after.items[1].value as NoteEventValue;
+    expect(right.onset.quarterNotes).toEqual({ numerator: 1, denominator: 3 });
+    expect(right.duration.quarterNotes).toEqual({ numerator: 2, denominator: 3 });
+    expect(splitNote(before, 'a', 0, 'r')).toBe(before);
+    expect(splitNote(before, 'a', 1, 'r')).toBe(before);
+    expect(splitNote(before, 'a', 2, 'r')).toBe(before);
+    expect(splitNote(before, 'missing', 0.5, 'r')).toBe(before);
   });
 });

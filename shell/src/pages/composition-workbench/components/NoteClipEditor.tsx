@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Badge, Text, Title } from '@mantine/core';
+import { Fragment, useMemo, useState } from 'react';
+import { Badge, Button, Menu, Text, Title } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   defaultPianoRollView,
@@ -15,6 +15,7 @@ import { useDesk } from '../desk';
 import type { DataPacket } from '../model';
 import {
   addNote,
+  addNotes,
   changeVelocity,
   clipExtent,
   clipRollDuration,
@@ -24,7 +25,9 @@ import {
   NOTE_EDIT_OPERATION,
   packetRollNotes,
   resizeNotes,
+  splitNote,
 } from '../noteClipEdits';
+import { GRID_OPTIONS, useNoteEditorPreferences } from '../noteEditorPreferences';
 import {
   emptyNoteSelection,
   extendRange,
@@ -44,10 +47,17 @@ const VELOCITY_STEP = 0.1;
 /** The grid is drawn this far (quarter notes) whatever the clip's length, so a wide view is covered. */
 const GRID_REACH = 256;
 
+/**
+ * The tools, in Bitwig's order. The digit is the shortcut, matched only while the roll has focus
+ * (the roll handles the key, so a digit typed into a text field is never taken).
+ */
 const tools: EditorTool[] = [
-  { id: 'select', label: 'Select', shortcut: 'v' },
-  { id: 'draw', label: 'Draw', shortcut: 'b' },
-  { id: 'erase', label: 'Erase', shortcut: 'e' },
+  { id: 'pointer', label: 'Pointer', shortcut: '1' },
+  { id: 'time', label: 'Time', shortcut: '2' },
+  { id: 'pencil', label: 'Pencil', shortcut: '3' },
+  { id: 'paint', label: 'Paint', shortcut: '4' },
+  { id: 'knife', label: 'Knife', shortcut: '5' },
+  { id: 'eraser', label: 'Eraser', shortcut: '6' },
 ];
 
 /** Bar and beat lines for a meter such as 4/4, out to `duration` quarter notes. */
@@ -101,7 +111,12 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   // Transient view state: tool, selection (events and the time they occupy), zoom and scroll live in
   // this component only. They are never recorded in the history and never written to the packet.
   const [view, setView] = useState(() => openingView(packet));
-  const [tool, setTool] = useState(() => (packet.items.length > 0 ? 'select' : 'draw'));
+  // Pencil on an empty clip, Pointer otherwise.
+  const [tool, setTool] = useState(() => (packet.items.length > 0 ? 'pointer' : 'pencil'));
+  // Per-viewer: the remembered entry length and the grid. Neither is history or part of a project.
+  const [preferences, updatePreferences] = useNoteEditorPreferences();
+  const gridOption =
+    GRID_OPTIONS.find((option) => option.id === preferences.grid) ?? GRID_OPTIONS[0];
   // The selection remembers the packet it was last computed against (`basis`). When the packet is
   // something else (an undo of a move, another tab's change), the range falls back to the time the
   // selected notes now occupy instead of showing a stale band.
@@ -171,9 +186,22 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   function draw(note: PianoRollNewNote) {
     const id = newNoteItemId(snippet.id);
     commit(
-      (current) => addNote(current, note, id),
+      (current) => addNote(current, note, id, note.velocity),
       (next) => selectIds(next, [id])
     );
+  }
+
+  function paint(painted: PianoRollNewNote[]) {
+    const ids = painted.map(() => newNoteItemId(snippet.id));
+    commit(
+      (current) => addNotes(current, painted, ids),
+      (next) => selectIds(next, ids)
+    );
+  }
+
+  function split(id: string, at: number) {
+    const right = newNoteItemId(snippet.id);
+    commit((current) => splitNote(current, id, at, right));
   }
 
   function remove(ids: string[]) {
@@ -218,9 +246,50 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
         <Text size="xs" c="dimmed" aria-live="polite">
           {notice ??
             (packet.items.length === 0
-              ? 'Empty clip. Draw notes on the grid with the Draw tool.'
+              ? 'Empty clip. Enter notes on the grid with the Pencil tool.'
               : '')}
         </Text>
+        <div className={classes.controls}>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <Button size="compact-xs" variant="default">
+                Tool: {tools.find((entry) => entry.id === tool)?.label}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {tools.map((entry) => (
+                <Menu.Item
+                  key={entry.id}
+                  leftSection={entry.id === tool ? '✓' : undefined}
+                  rightSection={entry.shortcut}
+                  onClick={() => setTool(entry.id)}
+                >
+                  {entry.label}
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <Button size="compact-xs" variant="default">
+                Grid: {gridOption.label}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {GRID_OPTIONS.map((option, index) => (
+                <Fragment key={option.id}>
+                  {(index === 1 || option.id === '1/2T') && <Menu.Divider />}
+                  <Menu.Item
+                    leftSection={option.id === gridOption.id ? '✓' : undefined}
+                    onClick={() => updatePreferences({ grid: option.id })}
+                  >
+                    {option.label}
+                  </Menu.Item>
+                </Fragment>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+        </div>
       </div>
       {/* The roll fills this area. The velocity lane (K5a) goes below it, inside the same column. */}
       <div className={classes.rollArea}>
@@ -229,6 +298,9 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           fill
           ghostDrag
           wheelZoom
+          gridUnit={gridOption.quarters ?? undefined}
+          entryLength={preferences.entryLength ?? undefined}
+          onEntryLengthChange={(length) => updatePreferences({ entryLength: length })}
           endMarker={extent > 0 ? extent : undefined}
           notes={notes}
           duration={duration}
@@ -246,6 +318,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           onToolChange={setTool}
           actions={actions}
           onAddNote={draw}
+          onPaintNotes={paint}
+          onSplitNote={split}
           onMoveNotes={(ids, delta) => commit((current) => moveNotes(current, ids, delta))}
           onResizeNotes={(ids, delta) => commit((current) => resizeNotes(current, ids, delta))}
           onDeleteNotes={remove}

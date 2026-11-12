@@ -29,3 +29,9 @@
   display: flex;
   gap: 0.5rem;
 }
+
+.controls {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+}

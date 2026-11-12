@@ -18,11 +18,18 @@ export interface PianoRollNote {
 /** The shortest note a roll edit makes, in quarter notes (a drag cannot shrink a note below it). */
 export const MIN_NOTE_QUARTERS = 1 / 32;
 
-/** A note drawn in the roll, before its owner gives it an id. Pitch is a whole semitone, in midicents. */
+/** The loudness a note entered in the roll starts at (0 to 1), before a vertical drag changes it. */
+export const DEFAULT_ENTRY_VELOCITY = 0.8;
+
+/**
+ * A note drawn in the roll, before its owner gives it an id. Pitch is a whole semitone, in
+ * midicents. `velocity` (0 to 1) is set only when the entry gesture chose one.
+ */
 export interface PianoRollNewNote {
   start: number;
   duration: number;
   pitchMidicents: number;
+  velocity?: number;
 }
 
 /** A span of time in quarter notes. */

@@ -135,12 +135,12 @@ describe('PianoRoll editing', () => {
   }
 
   it('draws a note on release, one call per drag, snapped to the grid', () => {
-    const { handlers, roll } = renderRoll({ activeTool: 'draw' });
+    const { handlers, roll } = renderRoll({ activeTool: 'pencil' });
     fireEvent.pointerDown(roll, { clientX: 70, clientY: c4Y, pointerId: 1 });
     fireEvent.pointerMove(roll, { clientX: 100, clientY: c4Y, pointerId: 1 });
     expect(handlers.onAddNote).not.toHaveBeenCalled();
-    fireEvent.pointerMove(roll, { clientX: 200, clientY: c4Y + 5, pointerId: 1 });
-    fireEvent.pointerUp(roll, { clientX: 200, clientY: c4Y + 5, pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 200, clientY: c4Y, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 200, clientY: c4Y, pointerId: 1 });
     expect(handlers.onAddNote).toHaveBeenCalledTimes(1);
     expect(handlers.onAddNote).toHaveBeenCalledWith({
       start: 1,
@@ -178,7 +178,7 @@ describe('PianoRoll editing', () => {
     expect(handlers.onMoveNotes).toHaveBeenCalledTimes(1);
   });
 
-  it('resizes from the right edge and erases with the erase tool', () => {
+  it('resizes from the right edge', () => {
     const { handlers, roll } = renderRoll();
     const note = screen.getByTitle('C4 · 1.000 qn · 1.000 qn');
     // The note spans x 64 to 128; the last 6 px is the resize handle.
@@ -187,17 +187,6 @@ describe('PianoRoll editing', () => {
     fireEvent.pointerUp(roll, { clientX: 125 + 64, clientY: c4Y, pointerId: 1 });
     expect(handlers.onResizeNotes).toHaveBeenCalledWith(['c4'], 1);
     expect(handlers.onMoveNotes).not.toHaveBeenCalled();
-  });
-
-  it('erase deletes the clicked note and leaves the selection alone', () => {
-    const { handlers } = renderRoll({ activeTool: 'erase', selectedIds: ['e4'] });
-    fireEvent.pointerDown(screen.getByTitle('C4 · 1.000 qn · 1.000 qn'), {
-      clientX: 90,
-      clientY: c4Y,
-      pointerId: 1,
-    });
-    expect(handlers.onDeleteNotes).toHaveBeenCalledWith(['c4']);
-    expect(handlers.onSelectionChange).not.toHaveBeenCalled();
   });
 
   it('Alt-drag changes velocity by a fraction of the range', () => {
@@ -346,5 +335,322 @@ describe('PianoRoll editing', () => {
     const scroller = roll.closest('[class*="scroller"]') as HTMLElement;
     expect(scroller.style.height).toBe('');
     expect(scroller.parentElement!.parentElement).toHaveAttribute('data-fill');
+  });
+});
+
+describe('PianoRoll tools', () => {
+  const view = { ...defaultPianoRollView, framed: true };
+  // Origin (0, 0) in jsdom. 64 px per quarter; 22 px per semitone; C4 (60) is row 67.
+  const rowY = (midi: number) => (127 - midi) * 22 + 11;
+  const sample = [
+    { id: 'c4', start: 1, duration: 2, pitchMidicents: 6000, label: 'C4', velocity: 0.5 },
+    { id: 'e4', start: 1, duration: 2, pitchMidicents: 6400, label: 'E4' },
+    { id: 'g4', start: 5, duration: 1, pitchMidicents: 6700, label: 'G4' },
+  ];
+
+  function renderTool(tool: string, props: Partial<React.ComponentProps<typeof PianoRoll>> = {}) {
+    const handlers = {
+      onSelectionChange: vi.fn(),
+      onAddNote: vi.fn(),
+      onPaintNotes: vi.fn(),
+      onSplitNote: vi.fn(),
+      onDeleteNotes: vi.fn(),
+      onMoveNotes: vi.fn(),
+      onMarqueeRange: vi.fn(),
+      onEntryLengthChange: vi.fn(),
+    };
+    render(
+      <PianoRoll
+        notes={sample}
+        duration={8}
+        gridLines={[]}
+        view={view}
+        onViewChange={() => undefined}
+        selectedIds={[]}
+        tools={[
+          { id: 'pointer', label: 'Pointer', shortcut: '1' },
+          { id: 'pencil', label: 'Pencil', shortcut: '3' },
+        ]}
+        activeTool={tool}
+        wheelZoom
+        {...handlers}
+        {...props}
+      />
+    );
+    return { handlers, roll: screen.getByRole('group', { name: /Piano roll/ }) };
+  }
+
+  it('pointer: a double-click on empty space adds a note of the entry length, on a note deletes it', () => {
+    const { handlers, roll } = renderTool('pointer', { entryLength: 1.5 });
+    fireEvent.doubleClick(roll, { clientX: 70, clientY: rowY(62) });
+    expect(handlers.onAddNote).toHaveBeenCalledWith({
+      start: 1,
+      duration: 1.5,
+      pitchMidicents: 6200,
+    });
+    fireEvent.doubleClick(screen.getByTitle(/^C4/), { clientX: 100, clientY: rowY(60) });
+    expect(handlers.onDeleteNotes).toHaveBeenCalledWith(['c4']);
+    expect(handlers.onAddNote).toHaveBeenCalledTimes(1);
+  });
+
+  it('other tools ignore a double-click', () => {
+    const { handlers, roll } = renderTool('pencil');
+    fireEvent.doubleClick(roll, { clientX: 70, clientY: rowY(62) });
+    expect(handlers.onAddNote).not.toHaveBeenCalled();
+  });
+
+  it('time selection: drag reports the range and every note starting inside it', () => {
+    const { handlers, roll } = renderTool('time');
+    fireEvent.pointerDown(roll, { clientX: 40, clientY: 5, pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 100, clientY: 900, pointerId: 1 });
+    expect(screen.getByTestId('roll-time-preview').style.left).toBe('32px');
+    fireEvent.pointerUp(roll, { clientX: 100, clientY: 900, pointerId: 1 });
+    // 40 px is 0.625 quarters and 100 px is 1.56: snapped outward to 0.5 and 2 on the 1/2 grid.
+    expect(handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 0.5, end: 2 });
+    expect(handlers.onSelectionChange).toHaveBeenCalledWith(['c4', 'e4']);
+  });
+
+  it('time selection: a note that starts after the range is left out, a click clears', () => {
+    const { handlers, roll } = renderTool('time');
+    fireEvent.pointerDown(roll, { clientX: 340, clientY: 5, pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 380, clientY: 5, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 380, clientY: 5, pointerId: 1 });
+    expect(handlers.onSelectionChange).toHaveBeenLastCalledWith(['g4']);
+    fireEvent.pointerDown(roll, { clientX: 340, clientY: 5, pointerId: 2 });
+    fireEvent.pointerUp(roll, { clientX: 340, clientY: 5, pointerId: 2 });
+    expect(handlers.onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it('pencil: a click adds one note of the entry length; dragging up or down sets velocity with a readout', () => {
+    const { handlers, roll } = renderTool('pencil', { entryLength: 2 });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith({
+      start: 6,
+      duration: 2,
+      pitchMidicents: 7200,
+    });
+    expect(handlers.onEntryLengthChange).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 2 });
+    expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('80%');
+    fireEvent.pointerMove(roll, { clientX: 400, clientY: rowY(72) - 24, pointerId: 2 });
+    expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('100%');
+    fireEvent.pointerMove(roll, { clientX: 400, clientY: rowY(72) + 48, pointerId: 2 });
+    expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('40%');
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72) + 48, pointerId: 2 });
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith({
+      start: 6,
+      duration: 2,
+      pitchMidicents: 7200,
+      velocity: 0.4,
+    });
+    expect(screen.queryByTestId('roll-velocity-readout')).toBeNull();
+  });
+
+  it('pencil: dragging sideways sets the length and reports it for the next note', () => {
+    const { handlers, roll } = renderTool('pencil');
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 400 + 176, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 400 + 176, clientY: rowY(72), pointerId: 1 });
+    expect(handlers.onAddNote).toHaveBeenCalledWith({
+      start: 6,
+      duration: 3,
+      pitchMidicents: 7200,
+    });
+    expect(handlers.onEntryLengthChange).toHaveBeenCalledWith(3);
+  });
+
+  it('paint: one note per grid step swept, each a grid step long, at the pitch under the pointer', () => {
+    const { handlers, roll } = renderTool('paint', { gridUnit: 1 });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    // A fast move skips no step.
+    fireEvent.pointerMove(roll, { clientX: 500, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 600, clientY: rowY(74), pointerId: 1 });
+    expect(handlers.onPaintNotes).not.toHaveBeenCalled();
+    fireEvent.pointerUp(roll, { clientX: 600, clientY: rowY(74), pointerId: 1 });
+    expect(handlers.onPaintNotes).toHaveBeenCalledTimes(1);
+    expect(handlers.onPaintNotes).toHaveBeenCalledWith([
+      { start: 6, duration: 1, pitchMidicents: 7200 },
+      { start: 7, duration: 1, pitchMidicents: 7200 },
+      { start: 8, duration: 1, pitchMidicents: 7400 },
+      { start: 9, duration: 1, pitchMidicents: 7400 },
+    ]);
+  });
+
+  it('knife: a click splits at the nearest grid line; at an end or off a note nothing happens', () => {
+    const { handlers, roll } = renderTool('knife', { gridUnit: 1 });
+    // c4 runs 1 to 3 (x 64 to 192); x 150 is 2.34 quarters, nearest line 2.
+    fireEvent.pointerDown(screen.getByTitle(/^C4/), {
+      clientX: 150,
+      clientY: rowY(60),
+      pointerId: 1,
+    });
+    expect(handlers.onSplitNote).toHaveBeenCalledWith('c4', 2);
+    expect(handlers.onSelectionChange).not.toHaveBeenCalled();
+    // x 70 rounds to the note's own start: no split.
+    fireEvent.pointerDown(screen.getByTitle(/^C4/), {
+      clientX: 70,
+      clientY: rowY(60),
+      pointerId: 2,
+    });
+    expect(handlers.onSplitNote).toHaveBeenCalledTimes(1);
+    fireEvent.pointerDown(roll, { clientX: 20, clientY: rowY(40), pointerId: 3 });
+    expect(handlers.onSplitNote).toHaveBeenCalledTimes(1);
+  });
+
+  it('eraser: sweeping marks notes with a dashed fill, deletes only on release, Escape cancels', () => {
+    const { handlers, roll } = renderTool('eraser');
+    fireEvent.pointerDown(screen.getByTitle(/^C4/), {
+      clientX: 90,
+      clientY: rowY(60),
+      pointerId: 1,
+    });
+    expect(screen.getByTitle(/^C4/)).toHaveAttribute('data-erasing');
+    // Sweep up through E4 in one move: the notes between are sampled, not skipped.
+    fireEvent.pointerMove(roll, { clientX: 90, clientY: rowY(64), pointerId: 1 });
+    expect(screen.getByTitle(/^E4/)).toHaveAttribute('data-erasing');
+    expect(screen.getByTitle(/^G4/)).not.toHaveAttribute('data-erasing');
+    expect(handlers.onDeleteNotes).not.toHaveBeenCalled();
+    fireEvent.pointerUp(roll, { clientX: 90, clientY: rowY(64), pointerId: 1 });
+    expect(handlers.onDeleteNotes).toHaveBeenCalledTimes(1);
+    expect(handlers.onDeleteNotes).toHaveBeenCalledWith(['c4', 'e4']);
+    expect(screen.getByTitle(/^C4/)).not.toHaveAttribute('data-erasing');
+
+    fireEvent.pointerDown(screen.getByTitle(/^G4/), {
+      clientX: 340,
+      clientY: rowY(67),
+      pointerId: 2,
+    });
+    expect(screen.getByTitle(/^G4/)).toHaveAttribute('data-erasing');
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    expect(screen.getByTitle(/^G4/)).not.toHaveAttribute('data-erasing');
+    fireEvent.pointerUp(roll, { clientX: 340, clientY: rowY(67), pointerId: 2 });
+    expect(handlers.onDeleteNotes).toHaveBeenCalledTimes(1);
+  });
+
+  it('pencil: sideways jitter in a vertical drag keeps the length, and vice versa', () => {
+    const { handlers, roll } = renderTool('pencil', { entryLength: 2 });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 400 + 10, clientY: rowY(72) - 24, pointerId: 1 });
+    expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('100%');
+    fireEvent.pointerUp(roll, { clientX: 400 + 10, clientY: rowY(72) - 24, pointerId: 1 });
+    expect(handlers.onEntryLengthChange).not.toHaveBeenCalled();
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith({
+      start: 6,
+      duration: 2,
+      pitchMidicents: 7200,
+      velocity: 1,
+    });
+
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 2 });
+    fireEvent.pointerMove(roll, { clientX: 400 + 176, clientY: rowY(72) - 10, pointerId: 2 });
+    fireEvent.pointerUp(roll, { clientX: 400 + 176, clientY: rowY(72) - 10, pointerId: 2 });
+    expect(handlers.onEntryLengthChange).toHaveBeenCalledWith(3);
+    expect(handlers.onAddNote).toHaveBeenLastCalledWith({
+      start: 6,
+      duration: 3,
+      pitchMidicents: 7200,
+    });
+  });
+
+  it('a lost pointer capture or a window blur cancels a running gesture; nothing commits later', () => {
+    const { handlers, roll } = renderTool('eraser');
+    fireEvent.pointerDown(screen.getByTitle(/^C4/), {
+      clientX: 90,
+      clientY: rowY(60),
+      pointerId: 1,
+    });
+    fireEvent.lostPointerCapture(roll, { pointerId: 1 });
+    expect(screen.getByTitle(/^C4/)).not.toHaveAttribute('data-erasing');
+    fireEvent.pointerUp(roll, { clientX: 90, clientY: rowY(60), pointerId: 1 });
+    expect(handlers.onDeleteNotes).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(screen.getByTitle(/^C4/), {
+      clientX: 90,
+      clientY: rowY(60),
+      pointerId: 2,
+    });
+    expect(screen.getByTitle(/^C4/)).toHaveAttribute('data-erasing');
+    fireEvent(window, new Event('blur'));
+    expect(screen.getByTitle(/^C4/)).not.toHaveAttribute('data-erasing');
+    fireEvent.pointerUp(roll, { clientX: 90, clientY: rowY(60), pointerId: 2 });
+    expect(handlers.onDeleteNotes).not.toHaveBeenCalled();
+  });
+
+  it('a window blur also cancels a pencil entry, and the listener is gone afterwards', () => {
+    const removed = vi.spyOn(window, 'removeEventListener');
+    const { handlers, roll } = renderTool('pencil');
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    expect(screen.getByTestId('roll-velocity-readout')).toBeInTheDocument();
+    fireEvent(window, new Event('blur'));
+    expect(screen.queryByTestId('roll-velocity-readout')).toBeNull();
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    expect(handlers.onAddNote).not.toHaveBeenCalled();
+    expect(removed).toHaveBeenCalledWith('blur', expect.any(Function));
+    removed.mockRestore();
+  });
+
+  it('pointer: a double-click on overlapping notes deletes the selected one, else the topmost', () => {
+    const stacked = [
+      { id: 'under', start: 1, duration: 2, pitchMidicents: 6000, label: 'Under' },
+      { id: 'over', start: 2, duration: 2, pitchMidicents: 6000, label: 'Over' },
+    ];
+    const first = renderTool('pointer', { notes: stacked });
+    fireEvent.doubleClick(first.roll, { clientX: 160, clientY: rowY(60) });
+    expect(first.handlers.onDeleteNotes).toHaveBeenLastCalledWith(['over']);
+  });
+
+  it('pointer: with the lower of two overlapping notes selected, double-click deletes it', () => {
+    const stacked = [
+      { id: 'under', start: 1, duration: 2, pitchMidicents: 6000, label: 'Under' },
+      { id: 'over', start: 2, duration: 2, pitchMidicents: 6000, label: 'Over' },
+    ];
+    const { handlers, roll } = renderTool('pointer', { notes: stacked, selectedIds: ['under'] });
+    fireEvent.doubleClick(roll, { clientX: 160, clientY: rowY(60) });
+    expect(handlers.onDeleteNotes).toHaveBeenLastCalledWith(['under']);
+  });
+
+  it('choosing a tool from the palette returns focus to the roll', () => {
+    const { roll } = renderTool('pointer', { onToolChange: vi.fn() });
+    fireEvent.click(screen.getByRole('radio', { name: 'Pencil' }));
+    expect(roll).toHaveFocus();
+  });
+
+  it('the grid unit sets the snap and draws its own lines', () => {
+    const { handlers, roll } = renderTool('pencil', { gridUnit: 0.25 });
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(72), pointerId: 1 });
+    expect(handlers.onAddNote).toHaveBeenCalledWith({
+      start: 6.25,
+      duration: 0.25,
+      pitchMidicents: 7200,
+    });
+    expect(document.querySelectorAll('[data-subdivision]').length).toBe(8 * 4 + 1);
+  });
+
+  it('number keys switch tools through the roll handler only', () => {
+    const onToolChange = vi.fn();
+    const { roll } = renderTool('pointer', { onToolChange });
+    fireEvent.keyDown(roll, { key: '3' });
+    expect(onToolChange).toHaveBeenCalledWith('pencil');
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    fireEvent.keyDown(input, { key: '1' });
+    expect(onToolChange).toHaveBeenCalledTimes(1);
+    input.remove();
+  });
+
+  it('Alt+wheel scrolls sideways, as Shift does, and Ctrl+Alt still zooms pitch', () => {
+    const changes: PianoRollViewState[] = [];
+    const { roll } = renderTool('pointer', { onViewChange: (next) => changes.push(next) });
+    const scroller = roll.closest('[class*="scroller"]') as HTMLElement;
+    Object.defineProperty(scroller, 'scrollLeft', { value: 0, writable: true });
+    expect(fireEvent.wheel(scroller, { deltaY: 100, altKey: true })).toBe(false);
+    expect(scroller.scrollLeft).toBe(100);
+    expect(fireEvent.wheel(scroller, { deltaY: 50, shiftKey: true })).toBe(false);
+    expect(scroller.scrollLeft).toBe(150);
+    fireEvent.wheel(scroller, { deltaY: -100, ctrlKey: true, altKey: true, clientY: 100 });
+    expect(changes.at(-1)!.pixelsPerSemitone).toBeGreaterThan(view.pixelsPerSemitone);
   });
 });

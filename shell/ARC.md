@@ -171,7 +171,19 @@ Let a composer start from a blank clip and edit it directly, without a module fe
 - Note entry in any tool that enters notes: without releasing, dragging left/right sets the new note's length and that length becomes the length for the next entered note (remembered per viewer, outside history and packet); dragging up/down sets its velocity.
 - Grid subdivision control (needed by paint can and knife), reusing existing snap/grid UI if present.
 - Every gesture is one undo step and a hand edit.
-- Acceptance: to be written before building; human checkpoint after (feel).
+- Agreed behaviour (human, 2026-11-11):
+  - 1 Pointer: double-click empty space adds a note; double-click a note deletes it (Bitwig); click/drag/marquee as K5.
+  - 2 Time selection: drag a time span; selects the range plus every note starting inside it.
+  - 3 Pencil: single click adds a note; before release, horizontal drag sets its length (remembered as the next note's length, per viewer, outside history/packet), vertical drag sets velocity with a % readout.
+  - 4 Paint can: drag lays one note per grid step at the pitch under the pointer, each one grid step long.
+  - 5 Knife: click a note to split it at the nearest grid line; both halves keep pitch and velocity (left keeps the id, right gets a fresh id).
+  - 6 Eraser: sweep over notes; touched notes get a diagonal-dashed fill; release deletes them; Escape cancels.
+  - Grid subdivision menu 1/1 to 1/32 plus triplets; drives snapping, paint can and knife.
+  - Default tool on open: Pencil for an empty clip, Pointer otherwise.
+  - Tool menu beside the grid control listing tools with their numbers; number keys 1-6 switch tools only while the roll has focus.
+  - Mouse: Alt+wheel scrolls left/right (human); Shift+wheel also does; Ctrl+wheel time zoom and Ctrl+Alt+wheel pitch zoom unchanged.
+- Acceptance (tests): each tool's gesture above commits the right edit as one undo step and a hand edit; entry length is remembered; knife keeps ids per the rule; eraser deletes only on release and Escape cancels; grid menu changes snapping; number keys switch tools only with the roll focused; Alt+wheel scrolls horizontally; Melodicization and Mixer unchanged.
+- Human checkpoint after: yes (feel).
 
 ### K5a: Velocity editing in the note editor (human 2026-11-11; after K5, before K5b)
 - Velocity shown as note fill: each note's filled-ness reflects its velocity (Bitwig-style), using THEMING mark/tint roles.

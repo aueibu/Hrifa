@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@test-utils';
+import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import { auditionRefusal, makeSourceRefusal } from '../clipTypes';
@@ -8,6 +8,7 @@ import { canUndo, historyChangeCount, resetHistory, undo } from '../history';
 import type { NoteEventValue } from '../melodicization';
 import { packet, type DataItem } from '../model';
 import { defaultMusicalTimeline, musicalDuration, musicalPosition, rational } from '../musicalTime';
+import { NOTE_EDITOR_PREFERENCES_KEY, readNoteEditorPreferences } from '../noteEditorPreferences';
 import { acceptsSnippets, type Snippet } from '../snippet';
 import { DeskView } from './DeskView';
 import { NoteClipEditor } from './NoteClipEditor';
@@ -135,8 +136,8 @@ describe('the note clip editor', () => {
     const blank = desk.snippets[0];
     expect(blank.packet.items).toHaveLength(0);
 
-    // A blank clip opens with the Draw tool on.
-    expect(screen.getByRole('radio', { name: 'Draw' })).toBeChecked();
+    // A blank clip opens with the Pencil tool on.
+    expect(screen.getByRole('radio', { name: 'Pencil' })).toBeChecked();
     drag(roll, { x: 70, y: rowY(60) }, { x: 200, y: rowY(60) });
     drag(roll, { x: 200, y: rowY(64) }, { x: 200, y: rowY(64) });
 
@@ -204,7 +205,7 @@ describe('the note clip editor', () => {
     expect(noteValue('n2').onset.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
 
     // Draw a new note.
-    act(() => screen.getByRole('radio', { name: 'Draw' }).click());
+    act(() => screen.getByRole('radio', { name: 'Pencil' }).click());
     drag(roll, { x: 390, y: rowY(72) }, { x: 420, y: rowY(72) });
     states.push(plain(desk.snippets[0]));
     expect(desk.snippets[0].packet.items).toHaveLength(4);
@@ -212,7 +213,7 @@ describe('the note clip editor', () => {
     expect(idsBefore).not.toContain(fresh.id);
 
     // Delete n3 with the Delete key after selecting it.
-    act(() => screen.getByRole('radio', { name: 'Select' }).click());
+    act(() => screen.getByRole('radio', { name: 'Pointer' }).click());
     fireEvent.pointerDown(screen.getByTitle(/^G4 · 4\.000 qn/), {
       clientX: 270,
       clientY: rowY(67),
@@ -237,9 +238,9 @@ describe('the note clip editor', () => {
     }
   });
 
-  it('erases a note with the Erase tool', async () => {
+  it('erases a note with the Eraser tool, on release', async () => {
     const roll = await open(seededClip());
-    act(() => screen.getByRole('radio', { name: 'Erase' }).click());
+    act(() => screen.getByRole('radio', { name: 'Eraser' }).click());
     fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
       clientX: 140,
       clientY: rowY(64),
@@ -414,5 +415,250 @@ describe('the note clip editor', () => {
     expect(historyChangeCount()).toBe(changes);
     expect(roll).toHaveAccessibleName(/1 selected/);
     expect(screen.getByText(/not accepting changes/)).toBeInTheDocument();
+  });
+});
+
+describe('the note clip editor tools', () => {
+  const tool = (name: string) => screen.getByRole('radio', { name });
+  const itemIds = () => desk.snippets[0].packet.items.map((entry) => entry.id);
+  const sessionVersions = () => desk.snippets[0].lineage?.versions.length;
+
+  it('opens on Pointer for a clip with notes and on Pencil for an empty one', async () => {
+    await open(seededClip());
+    expect(tool('Pointer')).toBeChecked();
+  });
+
+  it('pointer: double-click on empty space adds a note, on a note deletes it, one undo step each', async () => {
+    const roll = await open(seededClip());
+    const changes = historyChangeCount();
+    fireEvent.doubleClick(roll, { clientX: 450, clientY: rowY(72) });
+    fireEvent.pointerUp(roll, { pointerId: 1 });
+    expect(itemIds()).toHaveLength(4);
+    expect(historyChangeCount()).toBe(changes + 1);
+    expect(desk.snippets[0].packet.items[3].value).toMatchObject({ pitches: [7200] });
+    fireEvent.doubleClick(screen.getByTitle(/^E4 · 2\.000 qn/), {
+      clientX: 140,
+      clientY: rowY(64),
+    });
+    expect(itemIds()).not.toContain('n2');
+    expect(historyChangeCount()).toBe(changes + 2);
+    act(() => undo());
+    expect(itemIds()).toContain('n2');
+    act(() => undo());
+    expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
+  });
+
+  it('time selection: selects the span and the notes starting inside it, without touching the clip', async () => {
+    const roll = await open(seededClip());
+    const before = desk.snippets[0];
+    const changes = historyChangeCount();
+    act(() => tool('Time').click());
+    // 120 px to 300 px: quarters 1.5 to 5 (grid 0.5): n2 (at 2) and n3 (at 4) start inside.
+    drag(roll, { x: 120, y: 5 }, { x: 300, y: 5 });
+    expect(roll).toHaveAccessibleName(/2 selected/);
+    const band = screen.getByTestId('roll-range');
+    // The range covers the dragged span, and n3 runs on to 6.
+    expect(band.style.left).toBe('96px');
+    expect(band.style.width).toBe(`${6 * 64 - 96}px`);
+    expect(desk.snippets[0]).toBe(before);
+    expect(historyChangeCount()).toBe(changes);
+  });
+
+  it('pencil: a click adds a note at the remembered length; a drag sets velocity and length, remembered per viewer', async () => {
+    const roll = await open();
+    // The first note takes the grid unit (half a quarter at this zoom).
+    drag(roll, { x: 70, y: rowY(60) }, { x: 70, y: rowY(60) });
+    const first = desk.snippets[0].packet.items[0];
+    expect(noteValue(first.id).duration.quarterNotes).toEqual({ numerator: 1, denominator: 2 });
+    expect(noteValue(first.id).velocity).toBe(0.8);
+    expect(readNoteEditorPreferences().entryLength).toBeNull();
+
+    // Drag mostly sideways (the dominant axis): length 2; the small vertical wobble sets no velocity.
+    drag(roll, { x: 200, y: rowY(64) }, { x: 330, y: rowY(64) - 30 });
+    const second = desk.snippets[0].packet.items[1];
+    expect(noteValue(second.id).duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
+    expect(noteValue(second.id).velocity).toBe(0.8);
+    expect(readNoteEditorPreferences().entryLength).toBe(2);
+    expect(JSON.parse(localStorage.getItem(NOTE_EDITOR_PREFERENCES_KEY) ?? '{}').entryLength).toBe(
+      2
+    );
+
+    // The next plain click uses it; the preference is not history and not in the packet.
+    const changes = historyChangeCount();
+    drag(roll, { x: 400, y: rowY(67) }, { x: 400, y: rowY(67) });
+    const third = desk.snippets[0].packet.items[2];
+    expect(noteValue(third.id).duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
+    expect(historyChangeCount()).toBe(changes + 1);
+    expect(JSON.stringify(desk.snippets[0].packet)).not.toContain('entryLength');
+    expect(editSteps(third.id)).toEqual(['added']);
+  });
+
+  it('paint: one gesture lays notes on every grid step, as one undo step and one version', async () => {
+    const roll = await open(seededClip());
+    act(() => tool('Paint').click());
+    const changes = historyChangeCount();
+    // At half-quarter steps (32 px): x 330 to 400 covers steps 10 to 12, at E5 (76).
+    drag(roll, { x: 330, y: rowY(76) }, { x: 400, y: rowY(76) });
+    const added = desk.snippets[0].packet.items.slice(3);
+    expect(added).toHaveLength(3);
+    expect(added.map((entry) => (entry.value as NoteEventValue).onset.quarterNotes)).toEqual([
+      { numerator: 5, denominator: 1 },
+      { numerator: 11, denominator: 2 },
+      { numerator: 6, denominator: 1 },
+    ]);
+    added.forEach((entry) => {
+      expect((entry.value as NoteEventValue).pitches).toEqual([7600]);
+      expect((entry.value as NoteEventValue).duration.quarterNotes).toEqual({
+        numerator: 1,
+        denominator: 2,
+      });
+    });
+    expect(historyChangeCount()).toBe(changes + 1);
+    expect(sessionVersions()).toBe(2);
+    act(() => undo());
+    expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
+  });
+
+  it('knife: splits at the nearest grid line; the left half keeps the id, the right gets a new one', async () => {
+    await open(seededClip());
+    act(() => tool('Knife').click());
+    const changes = historyChangeCount();
+    // n3 runs 4 to 6 (x 256 to 384): x 330 is 5.16 quarters, nearest line 5.
+    fireEvent.pointerDown(screen.getByTitle(/^G4 · 4\.000 qn/), {
+      clientX: 330,
+      clientY: rowY(67),
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(screen.getByRole('group', { name: /Note clip piano roll/ }), {
+      pointerId: 1,
+    });
+    expect(itemIds().slice(0, 3)).toEqual(['n1', 'n2', 'n3']);
+    expect(itemIds()).toHaveLength(4);
+    const right = desk.snippets[0].packet.items[3];
+    expect(right.id).not.toBe('n3');
+    expect(noteValue('n3').duration.quarterNotes).toEqual({ numerator: 1, denominator: 1 });
+    expect(noteValue(right.id).onset.quarterNotes).toEqual({ numerator: 5, denominator: 1 });
+    expect(noteValue(right.id).duration.quarterNotes).toEqual({ numerator: 1, denominator: 1 });
+    expect(noteValue(right.id).pitches).toEqual([6700]);
+    expect(noteValue(right.id).velocity).toBe(1);
+    expect(editSteps('n3')).toEqual(['modified']);
+    expect(editSteps(right.id)).toEqual(['added']);
+    expect(historyChangeCount()).toBe(changes + 1);
+    act(() => undo());
+    expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
+    expect(noteValue('n3').duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
+  });
+
+  it('eraser: a sweep deletes every crossed note only on release, as one undo step; Escape cancels', async () => {
+    const roll = await open(seededClip());
+    act(() => tool('Eraser').click());
+    const changes = historyChangeCount();
+    fireEvent.pointerDown(screen.getByTitle(/^C4 · 0\.000 qn/), {
+      clientX: 20,
+      clientY: rowY(60),
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(roll, { clientX: 150, clientY: rowY(64), pointerId: 1 });
+    expect(screen.getByTitle(/^C4 · 0\.000 qn/)).toHaveAttribute('data-erasing');
+    expect(screen.getByTitle(/^E4 · 2\.000 qn/)).toHaveAttribute('data-erasing');
+    expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
+    expect(historyChangeCount()).toBe(changes);
+    fireEvent.pointerUp(roll, { clientX: 150, clientY: rowY(64), pointerId: 1 });
+    expect(itemIds()).toEqual(['n3']);
+    expect(historyChangeCount()).toBe(changes + 1);
+    act(() => undo());
+    expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
+
+    // Escape before release leaves everything alone.
+    const afterUndo = historyChangeCount();
+    fireEvent.pointerDown(screen.getByTitle(/^C4 · 0\.000 qn/), {
+      clientX: 20,
+      clientY: rowY(60),
+      pointerId: 2,
+    });
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60), pointerId: 2 });
+    expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
+    expect(historyChangeCount()).toBe(afterUndo);
+  });
+
+  it('every tool gesture is a hand edit: one version for a run of different tools', async () => {
+    const roll = await open(seededClip());
+    act(() => tool('Paint').click());
+    drag(roll, { x: 330, y: rowY(76) }, { x: 330, y: rowY(76) });
+    act(() => tool('Knife').click());
+    fireEvent.pointerDown(screen.getByTitle(/^G4 · 4\.000 qn/), {
+      clientX: 330,
+      clientY: rowY(67),
+      pointerId: 1,
+    });
+    act(() => tool('Eraser').click());
+    drag(
+      screen.getByTitle(/^C4 · 0\.000 qn/),
+      { x: 20, y: rowY(60) },
+      { x: 20, y: rowY(60) },
+      roll
+    );
+    // The original plus one session version, however many gestures.
+    expect(sessionVersions()).toBe(2);
+  });
+
+  it('number keys switch tools only while the roll has focus, never in a text field', async () => {
+    const roll = await open(seededClip());
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    fireEvent.keyDown(input, { key: '4' });
+    expect(tool('Pointer')).toBeChecked();
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '4' });
+    expect(tool('Paint')).toBeChecked();
+    fireEvent.keyDown(roll, { key: '6' });
+    expect(tool('Eraser')).toBeChecked();
+    fireEvent.keyDown(roll, { key: '1' });
+    expect(tool('Pointer')).toBeChecked();
+    input.remove();
+  });
+
+  it('the tool menu lists the tools with their numbers and switches tool', async () => {
+    const user = userEvent.setup();
+    await open(seededClip());
+    await user.click(screen.getByRole('button', { name: /Tool: Pointer/ }));
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual([
+      '✓Pointer1',
+      'Time2',
+      'Pencil3',
+      'Paint4',
+      'Knife5',
+      'Eraser6',
+    ]);
+    await user.click(screen.getByRole('menuitem', { name: /Knife/ }));
+    expect(tool('Knife')).toBeChecked();
+    expect(screen.getByRole('button', { name: /Tool: Knife/ })).toBeInTheDocument();
+  });
+
+  it('the grid menu changes the snap (and the paint step), and is remembered per viewer', async () => {
+    const user = userEvent.setup();
+    const roll = await open(seededClip());
+    await user.click(screen.getByRole('button', { name: /Grid: Auto/ }));
+    await user.click(await screen.findByRole('menuitem', { name: '1/16' }));
+    expect(screen.getByRole('button', { name: /Grid: 1\/16/ })).toBeInTheDocument();
+    expect(readNoteEditorPreferences().grid).toBe('1/16');
+    // Snap is now a sixteenth (a quarter of a quarter note): a move of 20 px (0.31 quarters) lands on 0.25.
+    drag(
+      screen.getByTitle(/^C4 · 0\.000 qn/),
+      { x: 20, y: rowY(60) },
+      { x: 40, y: rowY(60) },
+      roll
+    );
+    expect(noteValue('n1').onset.quarterNotes).toEqual({ numerator: 1, denominator: 4 });
+    // A triplet grid snaps to thirds.
+    await user.click(screen.getByRole('button', { name: /Grid: 1\/16/ }));
+    await user.click(await screen.findByRole('menuitem', { name: '1/4 triplet' }));
+    act(() => tool('Paint').click());
+    drag(roll, { x: 430, y: rowY(76) }, { x: 430, y: rowY(76) });
+    const painted = desk.snippets[0].packet.items.at(-1)!.value as NoteEventValue;
+    expect(painted.duration.quarterNotes).toEqual({ numerator: 2, denominator: 3 });
   });
 });
