@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Menu, Text, Title } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
@@ -11,6 +11,7 @@ import {
   type PianoRollNewNote,
   type PianoRollRange,
   type PianoRollViewState,
+  type VelocityRamp,
 } from '../../../components/PianoRoll';
 import { freezeClipProperties, readClipProperties } from '../clipProperties';
 import { registerClipEditor, type ClipEditorProps } from '../clipTypes';
@@ -32,6 +33,7 @@ import {
   notesOverlapping,
   packetRollNotes,
   resizeNotes,
+  setVelocities,
   splitNote,
   timeMoveDelta,
   timeMoveResult,
@@ -192,7 +194,22 @@ function currentSelection(state: SelectionState, packet: DataPacket): NoteSelect
  * window origin of a huge clip is already accounted for.
  */
 function startsBandMove(pressed: Element, target: Element, clientX: number, tool: string): boolean {
-  if (!pressed.hasAttribute('data-tool') || (tool !== 'time' && tool !== 'pointer')) {
+  if (!pressed.hasAttribute('data-tool')) {
+    // The lane: only the Time tool moves the band from here, and only from the track's own area
+    // (the header sits left of the track and must not be tested against the scrolled band).
+    if (tool !== 'time' || !target.closest('[data-tool]')) {
+      return false;
+    }
+    const laneBand = pressed.querySelector<HTMLElement>('[data-testid="velocity-range"]');
+    const content = laneBand?.parentElement;
+    if (!laneBand || !content) {
+      return false;
+    }
+    const at = clientX - content.getBoundingClientRect().left;
+    const from = parseFloat(laneBand.style.left);
+    return at >= from && at <= from + parseFloat(laneBand.style.width);
+  }
+  if (tool !== 'time' && tool !== 'pointer') {
     return false;
   }
   if (tool === 'pointer' && target.closest('[data-info]')) {
@@ -207,6 +224,17 @@ function startsBandMove(pressed: Element, target: Element, clientX: number, tool
   return x >= left && x <= left + parseFloat(band.style.width);
 }
 
+/**
+ * The velocity ramp kept after a Paint-can edit, as a secondary selection. Editor-side transient
+ * state only (never in the packet or the history). It is live while the packet still holds the notes
+ * the ramp wrote (`items`), the Paint tool is active and the selection is the one it was made under.
+ */
+interface ActiveRamp {
+  ramp: VelocityRamp;
+  items: DataPacket['items'];
+  selectionKey: string;
+}
+
 function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
@@ -215,7 +243,13 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   // this component only. They are never recorded in the history and never written to the packet.
   const [view, setView] = useState(() => openingView(packet));
   // Pencil on an empty clip, Pointer otherwise.
-  const [tool, setTool] = useState(() => (packet.items.length > 0 ? 'pointer' : 'pencil'));
+  const [tool, setToolState] = useState(() => (packet.items.length > 0 ? 'pointer' : 'pencil'));
+  const [rampState, setRampState] = useState<ActiveRamp | null>(null);
+  // Any tool change ends the ramp (it is a Paint-tool secondary selection).
+  function setTool(next: string) {
+    setToolState(next);
+    setRampState(null);
+  }
   // Per-viewer: the remembered entry length and the grid. Neither is history or part of a project.
   const [preferences, updatePreferences] = useNoteEditorPreferences();
   const gridOption =
@@ -233,6 +267,37 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     () => currentSelection(selectionState, packet),
     [selectionState, packet]
   );
+
+  const selectionKey = selection.ids.join('\u0000');
+  // The ramp stays active until another edit (the packet's notes are no longer the ones it wrote), a
+  // tool change, a selection change or Escape.
+  const activeRamp = useMemo(
+    () =>
+      rampState &&
+      tool === 'paint' &&
+      rampState.selectionKey === selectionKey &&
+      (rampState.items === packet.items || jsonEqual(rampState.items, packet.items))
+        ? rampState.ramp
+        : null,
+    [rampState, tool, selectionKey, packet.items]
+  );
+  const rampActive = activeRamp !== null;
+  useEffect(() => {
+    if (!rampActive) {
+      return undefined;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target &&
+        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+      if (event.key === 'Escape' && !typing) {
+        setRampState(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [rampActive]);
 
   // One band at a time: the cyan time band for a time selection, otherwise the faint neutral band
   // over the span the selected notes occupy.
@@ -415,6 +480,41 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     );
   }
 
+  /** Pencil in the lane: absolute velocities by note id, one hand edit and one undo step. */
+  function drawVelocities(values: Record<string, number>) {
+    commit((current) => setVelocities(current, values));
+  }
+
+  /**
+   * Paint can in the lane: writes the ramp's values (a new ramp, or the same ramp re-applied with a
+   * new curve from its original endpoints and heads) as one edit, then keeps the ramp active as a
+   * secondary selection on the notes it wrote.
+   */
+  function applyRamp(ramp: VelocityRamp, values: Record<string, number>) {
+    const done = commit((current) => setVelocities(current, values));
+    if (!done && refusal) {
+      return;
+    }
+    setRampState({
+      ramp,
+      items: done ? done.committed.items : (latestSnippetById(snippet.id)?.packet ?? packet).items,
+      selectionKey,
+    });
+  }
+
+  function marqueeRange(range: PianoRollRange, timeOnly: boolean, additive?: boolean) {
+    setSelection((current) => {
+      if (!timeOnly) {
+        return extendRange(current, range);
+      }
+      // Every note overlapping the span (an edge touch included), whichever tool dragged it.
+      const next = selectTime(current, range, additive);
+      return next.range && next.kind === 'time'
+        ? { ...next, ids: notesOverlapping(packet, next.range) }
+        : next;
+    });
+  }
+
   /** One offset for every id, each clamped on its own; a roll or lane drag reports it once. */
   function changeSelectionVelocity(ids: string[], delta: number) {
     commit((current) => changeVelocity(current, ids, delta));
@@ -515,6 +615,10 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           if (!pressed || startsBandMove(pressed, target, event.clientX, tool)) {
             return;
           }
+          // Alt + right button on an active ramp curves it: the band is not part of that gesture.
+          if (event.button === 2 && event.altKey && activeRamp) {
+            return;
+          }
           setSelection(clearTimeSelection);
         }}
       >
@@ -542,6 +646,13 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                   updatePreferences({ velocityLaneCollapsed })
                 }
                 onVelocityChange={changeSelectionVelocity}
+                tool={tool}
+                onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
+                onMarqueeRange={marqueeRange}
+                onMoveTimeRange={moveTime}
+                onSetVelocities={drawVelocities}
+                ramp={activeRamp}
+                onRamp={applyRamp}
                 height={preferences.laneHeight ?? undefined}
                 onHeightChange={(laneHeight) => updatePreferences({ laneHeight })}
                 availableHeight={metrics.panelHeight}
@@ -581,18 +692,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           onViewChange={setView}
           selectedIds={selection.ids}
           onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
-          onMarqueeRange={(range: PianoRollRange, timeOnly, additive) =>
-            setSelection((current) => {
-              if (!timeOnly) {
-                return extendRange(current, range);
-              }
-              // Every note overlapping the span (an edge touch included), whichever tool dragged it.
-              const next = selectTime(current, range, additive);
-              return next.range && next.kind === 'time'
-                ? { ...next, ids: notesOverlapping(packet, next.range) }
-                : next;
-            })
-          }
+          onMarqueeRange={marqueeRange}
           onMoveTimeRange={moveTime}
           selectedRange={timeBand}
           selectedItemsRange={notesBand}

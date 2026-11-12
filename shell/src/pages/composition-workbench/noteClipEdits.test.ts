@@ -7,6 +7,7 @@ import {
   addNote,
   addNotes,
   changeVelocity,
+  setVelocities,
   clipExtent,
   clipRollDuration,
   deleteNotes,
@@ -163,6 +164,20 @@ describe('note clip edits', () => {
     expect((changeVelocity(before, ['a'], -0.25).items[0].value as NoteEventValue).velocity).toBe(
       0.75
     );
+  });
+
+  it('sets velocities to absolute values: clamped, rounded, same packet when nothing changes', () => {
+    const before = base();
+    const velocityOf = (packet: DataPacket, index: number) =>
+      (packet.items[index].value as NoteEventValue).velocity;
+    const after = setVelocities(before, { a: 0.3333333, b: 5, c: -1, nope: 0.5 });
+    expect([0, 1, 2].map((index) => velocityOf(after, index))).toEqual([0.333, 1, 0]);
+    expect(after.items.map((entry) => entry.id)).toEqual(before.items.map((entry) => entry.id));
+    const velocities = Object.fromEntries(
+      before.items.map((entry) => [entry.id, (entry.value as NoteEventValue).velocity])
+    );
+    expect(setVelocities(before, velocities)).toBe(before);
+    expect(setVelocities(before, {})).toBe(before);
   });
 
   it('only added and modified notes get the edit step when committed (K2 provenance)', () => {
@@ -396,7 +411,7 @@ describe('moveTimeRange: the time-selection drag', () => {
 
   it('a note that only touches the span stays put: no split, no sliver, no move', () => {
     const before = clip([item('l', 0, 2, [6000]), item('r', 4, 2, [6400])]);
-    expect(moveTimeRange(before, { start: 2, end: 4 }, 3, fresh)).toBe(before);
+    expect(moveTimeRange(before, { start: 2, end: 4 }, 10, fresh)).toBe(before);
   });
 
   it('clamps at the clip start and never moves the span before 0', () => {
@@ -420,14 +435,18 @@ describe('moveTimeRange: the time-selection drag', () => {
     expect(timeMoveDelta({ start: 0, end: 1 }, Number.NaN)).toBe(0);
   });
 
-  it('returns the same packet for no shift, an empty span, a span with no notes or touching only', () => {
+  it('returns the same packet for no shift, an empty span, a span with no notes or touching only (nothing at the destination)', () => {
     const before = clip([item('a', 2, 1, [6000])]);
     expect(moveTimeRange(before, { start: 0, end: 4 }, 0, fresh)).toBe(before);
     expect(moveTimeRange(before, { start: 3, end: 3 }, 2, fresh)).toBe(before);
     expect(moveTimeRange(before, { start: 5, end: 7 }, 2, fresh)).toBe(before);
     // A note that merely ends where the span starts, or starts where it ends, is not inside it.
     expect(moveTimeRange(before, { start: 3, end: 5 }, 2, fresh)).toBe(before);
-    expect(moveTimeRange(before, { start: 0, end: 2 }, 2, fresh)).toBe(before);
+    // Source [0,2] holds nothing (the note only touches), but its destination [2,4] overwrites the note.
+    expect(moveTimeRange(before, { start: 0, end: 2 }, 2, fresh)).not.toBe(before);
+    expect(moveTimeRange(before, { start: 0, end: 2 }, 2, fresh, undefined, { merge: true })).toBe(
+      before
+    );
     expect(moveTimeRange(before, { start: 0, end: 1 }, -3, fresh)).toBe(before);
   });
 
@@ -584,12 +603,26 @@ describe('time-selection move and copy: overwrite (default) and merge', () => {
     expect(result.packet.items[0].id).toBe('w');
   });
 
-  it('an empty span (nothing inside it) changes nothing, whatever lies at the destination', () => {
+  it('an empty source span still overwrites the destination (move and copy); merge and an empty destination stay no-ops', () => {
     const before = clip([item('z', 6, 1, [6400])]);
-    expect(timeMoveResult(before, { start: 0, end: 2 }, 6, fresh).packet).toBe(before);
+    const moved = timeMoveResult(before, { start: 0, end: 2 }, 6, fresh);
+    expect(moved.packet.items).toEqual([]);
+    expect(moved.movedIds).toEqual([]);
+    const copied = timeMoveResult(before, { start: 0, end: 2 }, 6, fresh, undefined, {
+      copy: true,
+    });
+    expect(copied.packet.items).toEqual([]);
+    // A straddled destination edge is cut: the left part keeps the id and is shortened.
+    const cut = timeMoveResult(before, { start: 0, end: 1 }, 6.5, fresh);
+    expect(cut.packet.items.map((entry) => entry.id)).toEqual(['z']);
     expect(
-      timeMoveResult(before, { start: 0, end: 2 }, 6, fresh, undefined, { copy: true }).packet
+      rationalToNumber((cut.packet.items[0].value as NoteEventValue).duration.quarterNotes)
+    ).toBe(0.5);
+    expect(
+      timeMoveResult(before, { start: 0, end: 2 }, 6, fresh, undefined, { merge: true }).packet
     ).toBe(before);
+    // Nothing at the destination either: still the same packet.
+    expect(timeMoveResult(before, { start: 0, end: 2 }, 2, fresh).packet).toBe(before);
   });
 });
 

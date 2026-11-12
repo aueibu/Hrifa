@@ -338,6 +338,27 @@ export function changeVelocity(
   });
 }
 
+/**
+ * Sets each event's velocity to an absolute value (0 to 1, clamped, rounded to a thousandth): the
+ * lane's Pencil and ramp edits. Ids that are not notes are ignored; the same packet when no value
+ * changes.
+ */
+export function setVelocities(
+  packet: DataPacket,
+  values: Readonly<Record<string, number>>
+): DataPacket {
+  return replaceItems(packet, (item) => {
+    const wanted = values[item.id];
+    if (wanted === undefined || !Number.isFinite(wanted)) {
+      return item;
+    }
+    const velocity = Math.round(Math.min(1, Math.max(0, wanted)) * 1000) / 1000;
+    return velocity === item.value.velocity
+      ? item
+      : { ...item, value: { ...item.value, velocity } };
+  });
+}
+
 /** A fresh item id for a hand-drawn note. */
 export function newNoteItemId(snippetId: string): string {
   return `${snippetId}:note:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -449,8 +470,9 @@ function notePart(
  * only touches an edge is left alone, no slivers) and the moved pieces go in. With `merge` the
  * destination notes are kept (overlap allowed). When source and destination overlap, the moved
  * content replaces the overlap. `delta` is rounded to `grid` if given and clamped so the span stays
- * at or after the clip start; nothing moves (the same packet) for no shift, an empty span or no note
- * inside it (an empty block overwrites nothing).
+ * at or after the clip start; nothing moves (the same packet) for no shift or an empty span, and for
+ * no note inside the span unless the destination holds notes to overwrite (an empty block still
+ * clears what it lands on; with `merge` it is a no-op).
  */
 export function timeMoveResult(
   packet: DataPacket,
@@ -540,10 +562,13 @@ export function timeMoveResult(
           { item: middle, moved: true },
         ];
   });
-  if (!changed) {
+  // Merge with nothing inside the span moves nothing. Overwrite with nothing inside still clears the
+  // destination (the empty block overwrites what it lands on).
+  if (!changed && options.merge) {
     return none;
   }
   let result = entries;
+  let overwrote = false;
   if (!options.merge) {
     // Overwrite: clear the destination of everything that is not one of the moved pieces.
     const destFrom = addRational(from, shift);
@@ -560,6 +585,7 @@ export function timeMoveResult(
       if (compareRational(coverStart, coverEnd) >= 0) {
         return [entry];
       }
+      overwrote = true;
       const leftRemains = compareRational(start, destFrom) < 0;
       const rightRemains = compareRational(destTo, end) < 0;
       const slotMatched =
@@ -581,6 +607,9 @@ export function timeMoveResult(
       }
       return rightRemains ? [{ item: notePart(item, destTo, end, item.id), moved: false }] : [];
     });
+  }
+  if (!changed && !overwrote) {
+    return none;
   }
   return {
     packet: withItems(

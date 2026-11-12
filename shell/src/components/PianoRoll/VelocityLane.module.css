@@ -210,3 +210,61 @@
   border-left-style: dotted;
   opacity: 0.55;
 }
+
+/* The tools' cursors: the lane shares the roll's tool. Pins keep their own vertical-drag cursor. */
+.track[data-tool='pencil'],
+.track[data-tool='paint'],
+.track[data-tool='time'] {
+  cursor: crosshair;
+}
+
+.track[data-tool='time'] .pin,
+.track[data-tool='pencil'] .pin,
+.track[data-tool='paint'] .pin {
+  cursor: inherit;
+}
+
+/* A see-through fill, so the pins under the marquee stay visible (the roll's .marquee look). */
+.marquee {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border: 1px solid var(--text);
+  pointer-events: none;
+  position: absolute;
+  z-index: 4;
+}
+
+/* The velocity ramp: a dashed line through its heads, the secondary-selection look (accent, dashed). */
+.ramp {
+  height: 100%;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 3;
+}
+
+.ramp polyline,
+.ramp circle {
+  fill: none;
+  stroke: var(--accent);
+  stroke-dasharray: 5 4;
+  stroke-width: 1.5;
+}
+
+/* A gesture's percent readout, placed in lane coordinates beside the pointer or a ramp end. */
+.floatReadout {
+  background: var(--panel-body);
+  border: 1px solid var(--grid);
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.68rem;
+  line-height: 1;
+  margin: -1.4rem 0 0 8px;
+  padding: 0.15rem 0.3rem;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  z-index: 5;
+}

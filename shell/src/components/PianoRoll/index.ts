@@ -6,3 +6,4 @@ export * from './grid';
 export * from './gridDensity';
 export * from './timelineLayout';
 export * from './velocityFill';
+export * from './velocityLaneTools';

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@test-utils';
+import { cleanup, fireEvent, render, screen } from '@test-utils';
 import { rollGridLines } from './grid';
 import { PIANO_ROLL_KEYBOARD_WIDTH } from './model';
 import { velocityFillColor } from './velocityFill';
@@ -313,5 +313,355 @@ describe('VelocityLane height limits', () => {
     fireEvent.keyDown(splitter(), { key: 'Escape' });
     expect(above).toHaveBeenCalledTimes(1);
     document.removeEventListener('keydown', above);
+  });
+});
+
+// Velocity at y: 8 px padding, 68 px range, so 100% is y 8, 50% is y 42, 0% is y 76.
+describe('VelocityLane tools', () => {
+  const track = () => screen.getByRole('group', { name: 'Velocity lane' });
+  const press = (x: number, y: number, extra: object = {}) =>
+    fireEvent.pointerDown(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+  const move = (x: number, y: number, extra: object = {}) =>
+    fireEvent.pointerMove(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+  const release = (x: number, y: number, extra: object = {}) =>
+    fireEvent.pointerUp(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+  const sweep = (from: [number, number], to: [number, number], extra: object = {}) => {
+    press(from[0], from[1], extra);
+    move(to[0], to[1], extra);
+    release(to[0], to[1], extra);
+  };
+
+  function tools(tool: string, props: Partial<React.ComponentProps<typeof VelocityLane>> = {}) {
+    const calls = {
+      onSelectionChange: vi.fn(),
+      onMarqueeRange: vi.fn(),
+      onMoveTimeRange: vi.fn(),
+      onSetVelocities: vi.fn(),
+      onRamp: vi.fn(),
+    };
+    const view = lane({ tool, gridUnit: 0.5, ...calls, ...props });
+    return { ...calls, ...view };
+  }
+
+  describe('Pointer: box select', () => {
+    it('selects the pins the rectangle touches (a chord is one id), draws a marquee and shows them selected live', () => {
+      const { onSelectionChange } = tools('pointer');
+      press(100, 30);
+      move(140, 70);
+      expect(screen.getByTestId('velocity-marquee')).toBeInTheDocument();
+      expect(pin('b')).toHaveAttribute('data-selected');
+      release(140, 70);
+      expect(onSelectionChange).toHaveBeenCalledWith(['b']);
+      expect(screen.queryByTestId('velocity-marquee')).toBeNull();
+      sweep([240, 0], [300, 20]);
+      expect(onSelectionChange).toHaveBeenLastCalledWith(['chord']);
+    });
+
+    it('shift/ctrl adds to the selection; a rectangle over no pin selects nothing and is not a time selection', () => {
+      const { onSelectionChange, onMarqueeRange } = tools('pointer', { selectedIds: ['a'] });
+      sweep([100, 30], [140, 70], { shiftKey: true });
+      expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'b']);
+      sweep([60, 10], [90, 20]);
+      expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+      expect(onMarqueeRange).not.toHaveBeenCalled();
+    });
+
+    it('a press on empty lane space with no drag clears; with a modifier it leaves the selection', () => {
+      const { onSelectionChange } = tools('pointer', { selectedIds: ['a'] });
+      press(60, 30);
+      release(61, 30);
+      expect(onSelectionChange).toHaveBeenCalledWith([]);
+      onSelectionChange.mockClear();
+      press(60, 30, { ctrlKey: true });
+      release(60, 30, { ctrlKey: true });
+      expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it('Escape cancels a marquee: nothing is reported', () => {
+      const { onSelectionChange } = tools('pointer');
+      press(100, 30);
+      move(140, 70);
+      fireEvent.keyDown(track(), { key: 'Escape' });
+      expect(screen.queryByTestId('velocity-marquee')).toBeNull();
+      release(140, 70);
+      expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it('dragging a pin still edits the velocity (group rule), not a marquee', () => {
+      const { onVelocityChange, onSelectionChange } = tools('pointer', { selectedIds: ['a', 'b'] });
+      fireEvent.pointerDown(pin('b'), { clientX: 128, clientY: 59, pointerId: 1 });
+      fireEvent.pointerMove(pin('b'), { clientX: 128, clientY: 59 - 34, pointerId: 1 });
+      fireEvent.pointerUp(pin('b'), { clientX: 128, clientY: 59 - 34, pointerId: 1 });
+      expect(onVelocityChange).toHaveBeenCalledWith(['a', 'b'], 0.5);
+      expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it('adds the window origin in a windowed lane, as the roll does', () => {
+      const onSelectionChange = vi.fn();
+      const far = [
+        {
+          id: 'far',
+          start: 2_000_064 / 64,
+          duration: 1,
+          pitchMidicents: 6000,
+          label: 'C4',
+          velocity: 1,
+        },
+      ];
+      render(
+        <VelocityLane
+          notes={far}
+          pixelsPerQuarter={64}
+          scrollLeft={2_000_100}
+          duration={70_000}
+          viewWidth={800}
+          tool="pointer"
+          onSelectionChange={onSelectionChange}
+        />
+      );
+      // Content coordinates 40 to 80 are timeline 2_000_040 to 2_000_080: the pin at 2_000_064.
+      sweep([40, 0], [80, 40]);
+      expect(onSelectionChange).toHaveBeenCalledWith(['far']);
+    });
+  });
+
+  describe('Time: select and move a span', () => {
+    it('selects a span like the roll (snapped outward) and every note overlapping it', () => {
+      const { onSelectionChange, onMarqueeRange } = tools('time');
+      sweep([120, 30], [300, 30]);
+      expect(onMarqueeRange).toHaveBeenCalledWith({ start: 1.5, end: 5 }, true);
+      expect(onSelectionChange).toHaveBeenCalledWith(['b', 'chord']);
+    });
+
+    it('draws the span while dragging; shift is additive', () => {
+      const { onMarqueeRange } = tools('time');
+      press(120, 30);
+      move(300, 30);
+      expect(screen.getByTestId('velocity-range-preview').style.left).toBe('96px');
+      release(300, 30);
+      sweep([120, 30], [300, 30], { shiftKey: true });
+      expect(onMarqueeRange).toHaveBeenLastCalledWith({ start: 1.5, end: 5 }, true, true);
+    });
+
+    it('a click without a drag clears', () => {
+      const { onSelectionChange, onMarqueeRange } = tools('time');
+      press(10, 30);
+      release(10, 30);
+      expect(onSelectionChange).toHaveBeenCalledWith([]);
+      expect(onMarqueeRange).not.toHaveBeenCalled();
+    });
+
+    it('pressing inside the band and dragging moves it: one report, snapped, held at 0, with a preview', () => {
+      const { onMoveTimeRange, onSelectionChange } = tools('time', {
+        selectedRange: { start: 1.5, end: 5 },
+      });
+      press(200, 30);
+      move(200 + 128, 30);
+      expect(screen.getByTestId('velocity-range-preview').style.left).toBe(`${3.5 * 64}px`);
+      expect(screen.queryByTestId('velocity-range')).toBeNull();
+      release(200 + 128, 30);
+      expect(onMoveTimeRange).toHaveBeenCalledTimes(1);
+      expect(onMoveTimeRange).toHaveBeenCalledWith({ start: 1.5, end: 5 }, 2);
+      expect(onSelectionChange).not.toHaveBeenCalled();
+      sweep([200, 30], [200 - 1000, 30]);
+      expect(onMoveTimeRange).toHaveBeenLastCalledWith({ start: 1.5, end: 5 }, -1.5);
+    });
+
+    it('Alt merges and Ctrl copies (read at release); Escape cancels; a click in the band clears', () => {
+      const { onMoveTimeRange, onSelectionChange } = tools('time', {
+        selectedRange: { start: 1.5, end: 5 },
+      });
+      sweep([200, 30], [264, 30], { altKey: true });
+      expect(onMoveTimeRange).toHaveBeenLastCalledWith({ start: 1.5, end: 5 }, 1, {
+        copy: false,
+        merge: true,
+      });
+      sweep([200, 30], [264, 30], { ctrlKey: true });
+      expect(onMoveTimeRange).toHaveBeenLastCalledWith({ start: 1.5, end: 5 }, 1, {
+        copy: true,
+        merge: false,
+      });
+      onMoveTimeRange.mockClear();
+      press(200, 30);
+      move(264, 30);
+      fireEvent.keyDown(track(), { key: 'Escape' });
+      release(264, 30);
+      expect(onMoveTimeRange).not.toHaveBeenCalled();
+      press(200, 30);
+      release(200, 30);
+      expect(onSelectionChange).toHaveBeenCalledWith([]);
+      expect(onMoveTimeRange).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Pencil: freehand velocity', () => {
+    it('every head crossed gets the y at its x, a fast jump skips none, one report on release', () => {
+      const { onSetVelocities } = tools('pencil');
+      press(0, 8);
+      move(256, 76);
+      expect(screen.getByTestId('velocity-gesture-readout')).toHaveTextContent('0%');
+      // Previewed on the stems before anything is reported.
+      expect(onSetVelocities).not.toHaveBeenCalled();
+      expect(pin('b')).toHaveAttribute('data-velocity', '0.500');
+      release(256, 76);
+      expect(onSetVelocities).toHaveBeenCalledTimes(1);
+      const values = onSetVelocities.mock.calls[0][0] as Record<string, number>;
+      expect(Object.keys(values).sort()).toEqual(['a', 'b', 'chord']);
+      expect(values.a).toBe(1);
+      expect(values.b).toBeCloseTo(0.5, 6);
+      expect(values.chord).toBe(0);
+    });
+
+    it('works right to left and clamps y to the lane', () => {
+      const { onSetVelocities } = tools('pencil');
+      sweep([300, -200], [0, 500]);
+      const values = onSetVelocities.mock.calls[0][0] as Record<string, number>;
+      expect(values.chord).toBe(1);
+      expect(values.a).toBe(0);
+    });
+
+    it('a press that crosses no head, or Escape, reports nothing', () => {
+      const { onSetVelocities } = tools('pencil');
+      sweep([60, 30], [90, 30]);
+      press(0, 30);
+      move(200, 30);
+      fireEvent.keyDown(track(), { key: 'Escape' });
+      expect(pin('b')).toHaveAttribute('data-velocity', '0.250');
+      release(200, 30);
+      expect(onSetVelocities).not.toHaveBeenCalled();
+    });
+
+    it('a press on a pin draws (does not drag the pin)', () => {
+      const { onSetVelocities, onVelocityChange } = tools('pencil');
+      fireEvent.pointerDown(pin('b'), { clientX: 128, clientY: 8, pointerId: 1 });
+      fireEvent.pointerUp(track(), { clientX: 128, clientY: 8, pointerId: 1 });
+      expect(onVelocityChange).not.toHaveBeenCalled();
+      expect(onSetVelocities).toHaveBeenCalledWith({ b: 1 });
+    });
+  });
+
+  describe('Paint can: velocity ramp', () => {
+    const kept = {
+      heads: [
+        { id: 'a', x: 0 },
+        { id: 'b', x: 2 },
+        { id: 'chord', x: 4 },
+      ],
+      start: 1,
+      end: 0,
+      curve: 0,
+    };
+
+    it('press sets the start %, release the end %: end heads exact, the rest linear by time, dashed line shown live', () => {
+      const { onRamp } = tools('paint');
+      press(0, 8);
+      move(256, 76);
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'a,b,chord');
+      expect(screen.getByTestId('velocity-ramp-line')).toBeInTheDocument();
+      expect(screen.getAllByTestId('velocity-gesture-readout').map((el) => el.textContent)).toEqual(
+        ['100%', '0%']
+      );
+      release(256, 76);
+      expect(onRamp).toHaveBeenCalledTimes(1);
+      const [ramp, values] = onRamp.mock.calls[0] as [typeof kept, Record<string, number>];
+      expect(values.a).toBe(1);
+      expect(values.b).toBeCloseTo(0.5, 6);
+      expect(values.chord).toBe(0);
+      // Stored in quarter notes, press side first, with no curve.
+      expect(ramp).toMatchObject({ start: 1, end: 0, curve: 0 });
+      expect(ramp.heads).toEqual(kept.heads);
+    });
+
+    it('dragging right to left starts at the press side', () => {
+      const { onRamp } = tools('paint');
+      sweep([256, 8], [0, 76]);
+      const values = onRamp.mock.calls[0][1] as Record<string, number>;
+      expect(values.chord).toBe(1);
+      expect(values.a).toBe(0);
+    });
+
+    it('Escape cancels; a press that covers no head reports nothing', () => {
+      const { onRamp } = tools('paint');
+      press(0, 8);
+      move(256, 76);
+      fireEvent.keyDown(track(), { key: 'Escape' });
+      expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+      release(256, 76);
+      sweep([60, 8], [90, 76]);
+      expect(onRamp).not.toHaveBeenCalled();
+    });
+
+    it('a kept ramp stays drawn as a dashed line over its heads, only with the Paint tool', () => {
+      tools('paint', { ramp: kept });
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'a,b,chord');
+      cleanup();
+      tools('pointer', { ramp: kept });
+      expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+    });
+
+    it('Alt + right-button drag curves it live and reports once on release, from the originals', () => {
+      const { onRamp } = tools('paint', { ramp: kept });
+      const flags = { button: 2, altKey: true, pointerId: 2 };
+      press(100, 40, flags);
+      move(100, 16, flags);
+      expect(screen.getByText('Curve 1.0')).toBeInTheDocument();
+      // Live: the middle head follows the curve (up 24 px is curve 1: t^0.5 of the way down).
+      expect(pin('b').getAttribute('data-velocity')).toBe((1 - Math.sqrt(0.5)).toFixed(3));
+      expect(onRamp).not.toHaveBeenCalled();
+      release(100, 16, flags);
+      expect(onRamp).toHaveBeenCalledTimes(1);
+      const [curved, values] = onRamp.mock.calls[0] as [typeof kept, Record<string, number>];
+      expect(curved).toMatchObject({ curve: 1, start: 1, end: 0 });
+      expect(values.a).toBe(1);
+      expect(values.chord).toBe(0);
+      expect(values.b).toBeCloseTo(1 - Math.sqrt(0.5), 6);
+    });
+
+    it('a second curve starts from the ramp curve but is applied from the original endpoints', () => {
+      const { onRamp } = tools('paint', { ramp: { ...kept, curve: 1 } });
+      const flags = { button: 2, altKey: true, pointerId: 2 };
+      sweep([100, 40], [100, 64], flags);
+      // Down 24 px: curve 1 - 1 = 0, the straight ramp again, whatever is on the stems now.
+      const values = onRamp.mock.calls[0][1] as Record<string, number>;
+      expect(values.b).toBeCloseTo(0.5, 6);
+    });
+
+    it('suppresses the context menu for the curve gesture only, and ignores a plain right press', () => {
+      const { onRamp } = tools('paint', { ramp: kept });
+      const flags = { button: 2, altKey: true, pointerId: 2 };
+      press(100, 40, flags);
+      release(100, 40, flags);
+      expect(fireEvent.contextMenu(track())).toBe(false);
+      // A later left press ends the suppression.
+      press(100, 40);
+      release(100, 40);
+      expect(fireEvent.contextMenu(track())).toBe(true);
+      // A right press without Alt does nothing.
+      fireEvent.pointerDown(track(), { button: 2, clientX: 100, clientY: 40, pointerId: 3 });
+      fireEvent.pointerUp(track(), { button: 2, clientX: 100, clientY: 20, pointerId: 3 });
+      expect(fireEvent.contextMenu(track())).toBe(true);
+      // Neither an unmoved curve gesture nor a plain right press reports a ramp.
+      expect(onRamp).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Eraser and Knife do nothing in the lane', () => {
+    it.each(['eraser', 'knife'])(
+      '%s: sweeps report nothing, a pin still drags as before',
+      (name) => {
+        const calls = tools(name, { selectedRange: { start: 1.5, end: 5 } });
+        sweep([0, 8], [256, 76]);
+        sweep([200, 30], [300, 30]);
+        expect(calls.onSelectionChange).not.toHaveBeenCalled();
+        expect(calls.onSetVelocities).not.toHaveBeenCalled();
+        expect(calls.onRamp).not.toHaveBeenCalled();
+        expect(calls.onMoveTimeRange).not.toHaveBeenCalled();
+        expect(calls.onMarqueeRange).not.toHaveBeenCalled();
+        fireEvent.pointerDown(pin('b'), { clientX: 128, clientY: 59, pointerId: 1 });
+        fireEvent.pointerMove(pin('b'), { clientX: 128, clientY: 25, pointerId: 1 });
+        fireEvent.pointerUp(pin('b'), { clientX: 128, clientY: 25, pointerId: 1 });
+        expect(calls.onVelocityChange).toHaveBeenCalledWith(['b'], 0.5);
+      }
+    );
   });
 });

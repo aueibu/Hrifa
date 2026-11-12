@@ -8,19 +8,35 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { gridWindow, rollGridLines } from './grid';
+import { adaptiveSubdivision } from './gridDensity';
 import {
   PIANO_ROLL_KEYBOARD_WIDTH,
   type PianoRollGridLine,
   type PianoRollGridSource,
   type PianoRollNote,
 } from './model';
-import { selectionId } from './selection';
+import { marqueeSelection, selectionId, type PixelRect } from './selection';
 import { layerSpan, timelineLayout } from './timelineLayout';
 import { velocityFillColor, velocityLevel as level } from './velocityFill';
+import {
+  curveFromDrag,
+  LANE_PAD,
+  laneHeads,
+  laneRect,
+  pencilSample,
+  percentAtY,
+  PIN_RADIUS,
+  pinsInRect,
+  rampHeads,
+  rampValues,
+  snapSpan,
+  velocityY,
+  type LanePoint,
+  type RampPoint,
+  type VelocityRamp,
+} from './velocityLaneTools';
 import classes from './VelocityLane.module.css';
 
-/** Room above and below the stems, so a pin at 0% or 100% is not cut off. */
-const LANE_PAD = 8;
 /** The lane's default drawing height, in pixels, and the range its splitter allows. */
 export const VELOCITY_LANE_HEIGHT = 84;
 export const MIN_VELOCITY_LANE_HEIGHT = 32;
@@ -29,6 +45,15 @@ export const MAX_VELOCITY_LANE_HEIGHT = 400;
 const KEY_STEP = 8;
 /** A drag that moved the velocity less than this is a click. */
 const MIN_CHANGE = 0.01;
+/** A press that moves less than this (pixels) is a click. */
+const DRAG_PIXELS = 4;
+/** The tools under which a pin still drags its velocity (Pointer, and Eraser/Knife, which do nothing else here). */
+const PIN_TOOLS = new Set(['pointer', 'eraser', 'knife']);
+
+interface LaneRange {
+  start: number;
+  end: number;
+}
 
 export interface VelocityLaneProps {
   notes: PianoRollNote[];
@@ -48,6 +73,31 @@ export interface VelocityLaneProps {
    * ends at its own original value plus the offset, clamped.
    */
   onVelocityChange?(ids: string[], delta: number): void;
+  /**
+   * The roll's active tool (default: Pointer). Pointer box-selects pins, Time selects (and moves) a
+   * time span, Pencil draws velocities, Paint ramps them; Eraser and Knife do nothing in the lane.
+   * Each tool is opt-in through its callbacks below.
+   */
+  tool?: string;
+  /** Selection ids (note ids; a chord is one id), as the roll reports them. */
+  onSelectionChange?(ids: string[]): void;
+  /** Reported when a Time-tool drag ends, like the roll's `onMarqueeRange` (always `timeOnly`). */
+  onMarqueeRange?(range: LaneRange, timeOnly: boolean, additive?: boolean): void;
+  /** Dragging the time band's content (Time tool), reported once on release like the roll's. */
+  onMoveTimeRange?(
+    range: LaneRange,
+    delta: number,
+    options?: { copy?: boolean; merge?: boolean }
+  ): void;
+  /** Pencil: absolute velocities (0 to 1) by note id, reported once on release. */
+  onSetVelocities?(values: Record<string, number>): void;
+  /** The active velocity ramp (a secondary selection), drawn as a dashed line; the owner keeps it. */
+  ramp?: VelocityRamp | null;
+  /**
+   * Paint can: a ramp was made (on release) or re-curved (Alt + right-button drag, on release), with
+   * the absolute velocities it writes by note id. Each report is one edit.
+   */
+  onRamp?(ramp: VelocityRamp, values: Record<string, number>): void;
   /** The track's height in pixels (default `VELOCITY_LANE_HEIGHT`). */
   height?: number;
   /**
@@ -116,6 +166,36 @@ interface Resize {
   limit: number;
 }
 
+type LaneGesture =
+  | { kind: 'marquee'; start: LanePoint; additive: boolean; moved: boolean }
+  | { kind: 'time'; startX: number; additive: boolean; moved: boolean }
+  | {
+      kind: 'timeMove';
+      range: LaneRange;
+      startX: number;
+      moved: boolean;
+      copy: boolean;
+      merge: boolean;
+    }
+  | { kind: 'pencil'; last: LanePoint; values: Map<string, number> }
+  | { kind: 'paint'; start: LanePoint; startPercent: number }
+  | { kind: 'curve'; startY: number; startCurve: number; curve: number };
+
+/** What the lane draws while a tool gesture runs (empty while the press has not moved yet). */
+interface Live {
+  marquee?: PixelRect;
+  marqueeIds?: string[];
+  /** The time span being selected, or the moved span (`moveRange` is where the move started). */
+  timeRange?: LaneRange;
+  moveRange?: LaneRange;
+  /** Velocities previewed on the stems, by note id. */
+  values?: Map<string, number>;
+  /** The ramp's points (timeline pixels) for the dashed line. */
+  line?: RampPoint[];
+  /** Readouts in lane coordinates (timeline x, y from the track's top). */
+  readouts?: Array<{ x: number; y: number; text: string }>;
+}
+
 interface Drag {
   noteId: string;
   ids: string[];
@@ -124,10 +204,14 @@ interface Drag {
   base: number;
 }
 
+const percentText = (value: number) => `${Math.round(value * 100)}%`;
+
 /**
  * A velocity lane to sit under a PianoRoll: one stem with a round pin on top per note, at the
  * note's start, as tall as its velocity and coloured like the note. It follows the roll's zoom and
- * scroll, collapses to its header, and a pin drags to set the note's velocity.
+ * scroll, collapses to its header, and a pin drags to set the note's velocity. It shares the roll's
+ * tool: Pointer box-selects pins, Time selects and moves a span, Pencil draws velocities and Paint
+ * ramps them (see the tool props).
  */
 export function VelocityLane({
   notes,
@@ -139,6 +223,13 @@ export function VelocityLane({
   collapsed = false,
   onCollapsedChange,
   onVelocityChange,
+  tool,
+  onSelectionChange,
+  onMarqueeRange,
+  onMoveTimeRange,
+  onSetVelocities,
+  ramp,
+  onRamp,
   height = VELOCITY_LANE_HEIGHT,
   onHeightChange,
   minHeight = MIN_VELOCITY_LANE_HEIGHT,
@@ -190,9 +281,314 @@ export function VelocityLane({
   const [preview, setPreview] = useState<{ ids: ReadonlySet<string>; delta: number } | null>(null);
   const [readout, setReadout] = useState<{ id: string; text: string } | null>(null);
   const selected = new Set(selectedIds);
+  const activeTool = tool ?? 'pointer';
+  const trackRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const gesture = useRef<LaneGesture | null>(null);
+  const [live, setLive] = useState<Live | null>(null);
+  // The browser's context menu is suppressed only for the Alt + right-button curve gesture.
+  const suppressMenu = useRef(false);
+  const snapUnit = gridUnit ?? adaptiveSubdivision(pixelsPerQuarter);
+  /** Every head (one per note id), in timeline pixels. */
+  const heads = useMemo(() => laneHeads(notes, pixelsPerQuarter), [notes, pixelsPerQuarter]);
+
+  /** A pointer in lane coordinates: timeline x (the window origin added, as the roll does) and y from the track's top. */
+  function laneAt(event: { clientX: number; clientY: number }): LanePoint {
+    const content = contentRef.current?.getBoundingClientRect();
+    const track = trackRef.current?.getBoundingClientRect();
+    return {
+      x: event.clientX - (content?.left ?? 0) + layout.origin,
+      y: event.clientY - (track?.top ?? 0),
+    };
+  }
+
+  function insideBand(x: number) {
+    return (
+      !!selectedRange &&
+      selectedRange.end > selectedRange.start &&
+      x >= selectedRange.start * pixelsPerQuarter &&
+      x <= selectedRange.end * pixelsPerQuarter
+    );
+  }
+
+  /** The live picture of a ramp: its values on the stems, the dashed line and a readout at each end. */
+  function rampLive(points: RampPoint[], extra: Live = {}): Live {
+    const ends = points.length > 1 ? [points[0], points[points.length - 1]] : points.slice(0, 1);
+    return {
+      ...extra,
+      values: new Map(points.map((point) => [point.id, point.value])),
+      line: points,
+      readouts: [
+        ...ends.map((point) => ({
+          x: point.x,
+          y: velocityY(point.value, trackHeight),
+          text: percentText(point.value),
+        })),
+        ...(extra.readouts ?? []),
+      ],
+    };
+  }
+
+  function endGesture() {
+    gesture.current = null;
+    setLive(null);
+  }
+
+  function sample(current: Extract<LaneGesture, { kind: 'pencil' }>, point: LanePoint) {
+    pencilSample(heads, current.last, point, trackHeight).forEach((value, id) =>
+      current.values.set(id, value)
+    );
+    current.last = point;
+  }
+
+  function paintPoints(current: Extract<LaneGesture, { kind: 'paint' }>, point: LanePoint) {
+    return rampValues(
+      rampHeads(heads, current.start.x, point.x, PIN_RADIUS),
+      current.startPercent,
+      percentAtY(point.y, trackHeight)
+    );
+  }
+
+  /** A ramp's points at this zoom (its stored x are quarter notes), re-applied from its originals. */
+  function rampPoints(source: VelocityRamp, curve: number): RampPoint[] {
+    return rampValues(
+      source.heads.map((head) => ({ ...head, x: head.x * pixelsPerQuarter })),
+      source.start,
+      source.end,
+      curve
+    );
+  }
+
+  function moveDelta(current: Extract<LaneGesture, { kind: 'timeMove' }>, x: number) {
+    // Time only, on the grid, and the span never starts before 0.
+    return Math.max(
+      Math.round((x - current.startX) / pixelsPerQuarter / snapUnit) * snapUnit,
+      -current.range.start
+    );
+  }
+
+  function modeText(current: { copy: boolean; merge: boolean }) {
+    return [current.copy ? 'Copy' : null, current.merge ? 'Merge' : null]
+      .filter(Boolean)
+      .join(' + ');
+  }
+
+  /** The ids of every note overlapping a span, an edge touch included (the roll's rule), once each. */
+  function idsOverlapping(range: LaneRange) {
+    const ids = notes
+      .filter(
+        (note) => note.start + note.duration >= range.start - 1e-9 && note.start <= range.end + 1e-9
+      )
+      .map(selectionId);
+    return ids.filter((id, index) => ids.indexOf(id) === index);
+  }
+
+  function beginTrack(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button === 2) {
+      // Alt + right button on an active ramp curves it; any other right press is left alone.
+      if (event.altKey && ramp && activeTool === 'paint' && onRamp) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressMenu.current = true;
+        gesture.current = {
+          kind: 'curve',
+          startY: event.clientY,
+          startCurve: ramp.curve,
+          curve: ramp.curve,
+        };
+        const point = laneAt(event);
+        setLive(
+          rampLive(rampPoints(ramp, ramp.curve), {
+            readouts: [{ x: point.x, y: point.y, text: `Curve ${ramp.curve.toFixed(1)}` }],
+          })
+        );
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      }
+      return;
+    }
+    suppressMenu.current = false;
+    if (event.button !== 0) {
+      return;
+    }
+    const point = laneAt(event);
+    const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+    if (activeTool === 'pointer' && onSelectionChange) {
+      gesture.current = { kind: 'marquee', start: point, additive, moved: false };
+      setLive({});
+    } else if (activeTool === 'time' && (onMarqueeRange || onMoveTimeRange || onSelectionChange)) {
+      if (onMoveTimeRange && selectedRange && insideBand(point.x)) {
+        gesture.current = {
+          kind: 'timeMove',
+          range: { ...selectedRange },
+          startX: point.x,
+          moved: false,
+          copy: event.ctrlKey || event.metaKey,
+          merge: event.altKey,
+        };
+      } else {
+        gesture.current = { kind: 'time', startX: point.x, additive, moved: false };
+      }
+      setLive({});
+    } else if (activeTool === 'pencil' && onSetVelocities) {
+      const values = pencilSample(heads, null, point, trackHeight);
+      gesture.current = { kind: 'pencil', last: point, values };
+      setLive({
+        values: new Map(values),
+        readouts: [{ x: point.x, y: point.y, text: percentText(percentAtY(point.y, trackHeight)) }],
+      });
+    } else if (activeTool === 'paint' && onRamp) {
+      const startPercent = percentAtY(point.y, trackHeight);
+      gesture.current = { kind: 'paint', start: point, startPercent };
+      setLive(
+        rampLive(
+          rampValues(rampHeads(heads, point.x, point.x, PIN_RADIUS), startPercent, startPercent)
+        )
+      );
+    } else {
+      return;
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function moveTrack(event: ReactPointerEvent<HTMLDivElement>) {
+    const current = gesture.current;
+    if (!current) {
+      return;
+    }
+    const point = laneAt(event);
+    if (current.kind === 'marquee') {
+      if (
+        !current.moved &&
+        Math.hypot(point.x - current.start.x, point.y - current.start.y) < DRAG_PIXELS
+      ) {
+        return;
+      }
+      current.moved = true;
+      const rect = laneRect(current.start, point);
+      setLive({
+        marquee: rect,
+        marqueeIds: marqueeSelection(
+          selectedIds,
+          pinsInRect(heads, rect, trackHeight),
+          current.additive
+        ),
+      });
+    } else if (current.kind === 'time') {
+      if (!current.moved && Math.abs(point.x - current.startX) < DRAG_PIXELS) {
+        return;
+      }
+      current.moved = true;
+      setLive({ timeRange: snapSpan(current.startX, point.x, pixelsPerQuarter, snapUnit) });
+    } else if (current.kind === 'timeMove') {
+      current.copy = event.ctrlKey || event.metaKey;
+      current.merge = event.altKey;
+      if (!current.moved && Math.abs(point.x - current.startX) < DRAG_PIXELS) {
+        return;
+      }
+      current.moved = true;
+      const delta = moveDelta(current, point.x);
+      setLive({
+        moveRange: current.range,
+        timeRange: { start: current.range.start + delta, end: current.range.end + delta },
+        readouts:
+          current.copy || current.merge
+            ? [{ x: point.x, y: point.y, text: modeText(current) }]
+            : [],
+      });
+    } else if (current.kind === 'pencil') {
+      sample(current, point);
+      setLive({
+        values: new Map(current.values),
+        readouts: [{ x: point.x, y: point.y, text: percentText(percentAtY(point.y, trackHeight)) }],
+      });
+    } else if (current.kind === 'paint') {
+      setLive(rampLive(paintPoints(current, point)));
+    } else if (ramp) {
+      current.curve = curveFromDrag(current.startCurve, event.clientY - current.startY);
+      setLive(
+        rampLive(rampPoints(ramp, current.curve), {
+          readouts: [{ x: point.x, y: point.y, text: `Curve ${current.curve.toFixed(1)}` }],
+        })
+      );
+    }
+  }
+
+  function finishTrack(event: ReactPointerEvent<HTMLDivElement>) {
+    const current = gesture.current;
+    if (!current) {
+      return;
+    }
+    const point = laneAt(event);
+    endGesture();
+    if (current.kind === 'marquee') {
+      if (!current.moved) {
+        // A plain click on empty lane space clears; with a modifier it leaves the selection alone.
+        if (!current.additive) {
+          onSelectionChange?.([]);
+        }
+        return;
+      }
+      const hit = pinsInRect(heads, laneRect(current.start, point), trackHeight);
+      onSelectionChange?.(marqueeSelection(selectedIds, hit, current.additive));
+    } else if (current.kind === 'time') {
+      if (!current.moved) {
+        if (!current.additive) {
+          onSelectionChange?.([]);
+        }
+        return;
+      }
+      const range = snapSpan(current.startX, point.x, pixelsPerQuarter, snapUnit);
+      onSelectionChange?.(marqueeSelection(selectedIds, idsOverlapping(range), current.additive));
+      if (current.additive) {
+        onMarqueeRange?.(range, true, true);
+      } else {
+        onMarqueeRange?.(range, true);
+      }
+    } else if (current.kind === 'timeMove') {
+      if (!current.moved) {
+        // A press in the band without a drag is a click: it clears, like a click on empty space.
+        onSelectionChange?.([]);
+        return;
+      }
+      current.copy = event.ctrlKey || event.metaKey;
+      current.merge = event.altKey;
+      const delta = moveDelta(current, point.x);
+      if (delta !== 0) {
+        if (current.copy || current.merge) {
+          onMoveTimeRange?.(current.range, delta, { copy: current.copy, merge: current.merge });
+        } else {
+          onMoveTimeRange?.(current.range, delta);
+        }
+      }
+    } else if (current.kind === 'pencil') {
+      sample(current, point);
+      if (current.values.size) {
+        onSetVelocities?.(Object.fromEntries(current.values));
+      }
+    } else if (current.kind === 'paint') {
+      const points = paintPoints(current, point);
+      if (!points.length) {
+        return;
+      }
+      const made: VelocityRamp = {
+        heads: points.map((entry) => ({ id: entry.id, x: entry.x / pixelsPerQuarter })),
+        start: current.startPercent,
+        end: percentAtY(point.y, trackHeight),
+        curve: 0,
+      };
+      onRamp?.(made, Object.fromEntries(points.map((entry) => [entry.id, entry.value])));
+    } else if (ramp && current.curve !== ramp.curve) {
+      // Re-applied from the ramp's original endpoints and heads with the new curve, never stacked.
+      const curved = { ...ramp, curve: current.curve };
+      onRamp?.(
+        curved,
+        Object.fromEntries(rampPoints(curved, curved.curve).map((entry) => [entry.id, entry.value]))
+      );
+    }
+  }
 
   function begin(note: PianoRollNote, event: ReactPointerEvent<HTMLElement>) {
-    if (event.button !== 0 || !onVelocityChange) {
+    if (event.button !== 0 || !onVelocityChange || !PIN_TOOLS.has(activeTool)) {
       return;
     }
     event.stopPropagation();
@@ -308,6 +704,32 @@ export function VelocityLane({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [resizing]);
 
+  // A tool gesture is cancelled by Escape (stopped here, so the roll does not also clear the
+  // selection) or by the window losing focus; nothing is reported.
+  const gesturing = live !== null;
+  useEffect(() => {
+    if (!gesturing) {
+      return undefined;
+    }
+    const cancelGesture = () => {
+      gesture.current = null;
+      setLive(null);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        event.preventDefault();
+        cancelGesture();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('blur', cancelGesture);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('blur', cancelGesture);
+    };
+  }, [gesturing]);
+
   function splitterKey(event: ReactKeyboardEvent<HTMLElement>) {
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
       return;
@@ -319,6 +741,21 @@ export function VelocityLane({
       onHeightChange?.(next);
     }
   }
+
+  const shownSelection = live?.marqueeIds ? new Set(live.marqueeIds) : selected;
+  // The ramp's dashed line: live while a gesture shapes it, otherwise the kept ramp.
+  const linePoints =
+    live?.line ?? (ramp && activeTool === 'paint' ? rampPoints(ramp, ramp.curve) : null);
+  const marqueeSpan = live?.marquee
+    ? layerSpan(layout, live.marquee.left, live.marquee.width)
+    : null;
+  const previewSpan = live?.timeRange
+    ? layerSpan(
+        layout,
+        live.timeRange.start * pixelsPerQuarter,
+        (live.timeRange.end - live.timeRange.start) * pixelsPerQuarter
+      )
+    : null;
 
   return (
     <div className={classes.wrapper}>
@@ -349,12 +786,25 @@ export function VelocityLane({
         </div>
         {!collapsed && (
           <div
+            ref={trackRef}
             className={classes.track}
             role="group"
             aria-label="Velocity lane"
+            data-tool={activeTool}
             style={{ height: trackHeight }}
+            onPointerDown={beginTrack}
+            onPointerMove={moveTrack}
+            onPointerUp={finishTrack}
+            onPointerCancel={endGesture}
+            onLostPointerCapture={endGesture}
+            onContextMenu={(event) => {
+              if (suppressMenu.current) {
+                event.preventDefault();
+              }
+            }}
           >
             <div
+              ref={contentRef}
               className={classes.content}
               style={{
                 width: layout.windowed
@@ -373,11 +823,18 @@ export function VelocityLane({
                   style={{ left: line.at * pixelsPerQuarter - layout.origin }}
                 />
               ))}
-              {rangeSpan && (
+              {rangeSpan && !live?.moveRange && (
                 <span
                   className={classes.range}
                   data-testid="velocity-range"
                   style={{ left: rangeSpan.left, width: rangeSpan.width }}
+                />
+              )}
+              {previewSpan && (
+                <span
+                  className={classes.range}
+                  data-testid="velocity-range-preview"
+                  style={{ left: previewSpan.left, width: previewSpan.width }}
                 />
               )}
               {notes.map((note) => {
@@ -387,7 +844,11 @@ export function VelocityLane({
                 }
                 const id = selectionId(note);
                 const shifted = preview?.ids.has(id) ? preview.delta : 0;
-                const velocity = Math.min(1, Math.max(0, level(note.velocity) + shifted));
+                const drawn = live?.values?.get(id);
+                const velocity =
+                  drawn !== undefined
+                    ? Math.min(1, Math.max(0, drawn))
+                    : Math.min(1, Math.max(0, level(note.velocity) + shifted));
                 const baseColor = note.color ?? 'var(--mantine-primary-color-filled)';
                 const top = LANE_PAD + (1 - velocity) * span;
                 return (
@@ -414,7 +875,7 @@ export function VelocityLane({
                       className={classes.pin}
                       data-testid="velocity-pin"
                       data-note={note.id}
-                      data-selected={selected.has(id) || undefined}
+                      data-selected={shownSelection.has(id) || undefined}
                       data-velocity={velocity.toFixed(3)}
                       title={`${note.label} · ${Math.round(velocity * 100)}%`}
                       onPointerDown={(event) => begin(note, event)}
@@ -430,6 +891,58 @@ export function VelocityLane({
                     )}
                   </div>
                 );
+              })}
+              {linePoints && linePoints.length > 0 && (
+                <svg
+                  className={classes.ramp}
+                  data-testid="velocity-ramp"
+                  data-ids={linePoints.map((point) => point.id).join(',')}
+                  aria-hidden="true"
+                >
+                  <polyline
+                    data-testid="velocity-ramp-line"
+                    fill="none"
+                    points={linePoints
+                      .map(
+                        (point) =>
+                          `${point.x - layout.origin},${velocityY(point.value, trackHeight)}`
+                      )
+                      .join(' ')}
+                  />
+                  {linePoints.map((point) => (
+                    <circle
+                      key={point.id}
+                      cx={point.x - layout.origin}
+                      cy={velocityY(point.value, trackHeight)}
+                      r={PIN_RADIUS + 3}
+                    />
+                  ))}
+                </svg>
+              )}
+              {marqueeSpan && live?.marquee && (
+                <span
+                  className={classes.marquee}
+                  data-testid="velocity-marquee"
+                  style={{
+                    left: marqueeSpan.left,
+                    top: live.marquee.top,
+                    width: marqueeSpan.width,
+                    height: live.marquee.height,
+                  }}
+                />
+              )}
+              {live?.readouts?.map((entry, index) => {
+                const at = layerSpan(layout, entry.x);
+                return at ? (
+                  <span
+                    key={index}
+                    className={classes.floatReadout}
+                    data-testid="velocity-gesture-readout"
+                    style={{ left: at.left, top: entry.y }}
+                  >
+                    {entry.text}
+                  </span>
+                ) : null;
               })}
             </div>
           </div>

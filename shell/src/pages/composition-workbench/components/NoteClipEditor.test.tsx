@@ -1524,47 +1524,68 @@ describe('moving the content of a time selection', () => {
     });
   });
 
-  it('an empty span just moves the band: no edit, no history', async () => {
+  it('an empty span over an empty destination just moves the band: no edit, no history', async () => {
     const roll = await open(wholeNoteClip());
-    // 4.5 to 5.5 holds no note start and crosses none.
+    // 4.5 to 5.5 holds no note; half a quarter later (5 to 6) it only touches z (starts at 6).
     selectSpan(roll, 288, 352);
     const before = desk.snippets[0];
     const changes = historyChangeCount();
     fireEvent.pointerDown(roll, { clientX: 300, clientY: 5, pointerId: 3 });
-    fireEvent.pointerMove(roll, { clientX: 300 - 64, clientY: 5, pointerId: 3 });
-    fireEvent.pointerUp(roll, { clientX: 300 - 64, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 300 + 32, clientY: 5, pointerId: 3 });
+    fireEvent.pointerUp(roll, { clientX: 300 + 32, clientY: 5, pointerId: 3 });
     expect(desk.snippets[0]).toBe(before);
     expect(historyChangeCount()).toBe(changes);
-    expect(screen.getByTestId('roll-range').style.left).toBe(`${3.5 * 64}px`);
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${5 * 64}px`);
   });
 
-  it('moving an empty span selects the notes now under the band, so Delete works on them', async () => {
+  it('an empty span still overwrites the destination: one undo step, the band lands there', async () => {
     const roll = await open(wholeNoteClip());
-    // 4.5 to 5.5 is empty; one quarter later it is 5.5 to 6.5, over z (6 to 7).
+    // 4.5 to 5.5 is empty; one quarter later it is 5.5 to 6.5 and cuts z (6 to 7) to 6.5 to 7.
     selectSpan(roll, 288, 352);
-    expect(roll).toHaveAccessibleName(/0 selected/);
+    const changes = historyChangeCount();
     fireEvent.pointerDown(roll, { clientX: 300, clientY: 5, pointerId: 3 });
     fireEvent.pointerMove(roll, { clientX: 300 + 64, clientY: 5, pointerId: 3 });
     fireEvent.pointerUp(roll, { clientX: 300 + 64, clientY: 5, pointerId: 3 });
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${5.5 * 64}px`);
+    expect(historyChangeCount()).toBe(changes + 1);
+    expect(ids()).toEqual(['w', 'z']);
+    expect(onsetOf('z')).toEqual(rational(13, 2));
+    expect(lengthOf('z')).toEqual({ numerator: 1, denominator: 2 });
+    expect(roll).toHaveAccessibleName(/0 selected/);
+    act(() => {
+      undo();
+    });
+    expect(lengthOf('z')).toEqual({ numerator: 1, denominator: 1 });
+  });
+
+  it('Alt (merge) with an empty span keeps the destination notes and selects the ones under the band', async () => {
+    const roll = await open(wholeNoteClip());
+    selectSpan(roll, 288, 352);
+    const before = desk.snippets[0];
+    const flags = { pointerId: 3, altKey: true };
+    fireEvent.pointerDown(roll, { clientX: 300, clientY: 5, ...flags });
+    fireEvent.pointerMove(roll, { clientX: 300 + 64, clientY: 5, ...flags });
+    fireEvent.pointerUp(roll, { clientX: 300 + 64, clientY: 5, ...flags });
+    expect(desk.snippets[0]).toBe(before);
     expect(screen.getByTestId('roll-range').style.left).toBe(`${5.5 * 64}px`);
     expect(roll).toHaveAccessibleName(/1 selected/);
     fireEvent.keyDown(roll, { key: 'Delete' });
     expect(ids()).toEqual(['w']);
   });
 
-  it('a note that only touches the band is selected but stays put when the content moves', async () => {
+  it('a note that only touches the band is selected but stays put; the destination is overwritten', async () => {
     const roll = await open(wholeNoteClip());
     // 4 to 6: w ends at 4 and z starts at 6, both only touch the span.
     selectSpan(roll, 256, 384);
     expect(roll).toHaveAccessibleName(/2 selected/);
-    const before = desk.snippets[0];
     fireEvent.pointerDown(roll, { clientX: 300, clientY: 5, pointerId: 3 });
     fireEvent.pointerMove(roll, { clientX: 300 + 128, clientY: 5, pointerId: 3 });
     fireEvent.pointerUp(roll, { clientX: 300 + 128, clientY: 5, pointerId: 3 });
-    // Nothing inside the span: no edit; the band moved and now overlaps z (6 to 7 vs 6 to 8).
-    expect(desk.snippets[0]).toBe(before);
+    // Nothing inside the span moves, but the block lands on 6 to 8 and overwrites z; w is untouched.
+    expect(ids()).toEqual(['w']);
+    expect(lengthOf('w')).toEqual({ numerator: 4, denominator: 1 });
     expect(screen.getByTestId('roll-range').style.left).toBe(`${6 * 64}px`);
-    expect(roll).toHaveAccessibleName(/1 selected/);
+    expect(roll).toHaveAccessibleName(/0 selected/);
   });
 
   it('the Pointer tool moves from empty space in the band too, and the move ghost wears the pitch color', async () => {
@@ -1687,5 +1708,262 @@ describe('a time selection survives edits, undo and outside changes', () => {
     fireEvent.keyDown(roll, { key: ']' });
     expect(band().style.left).toBe('96px');
     expect(band().style.width).toBe(`${5 * 64 - 96}px`);
+  });
+});
+
+describe('velocity lane tools in the editor', () => {
+  // jsdom lays nothing out: lane x is the timeline x (64 px per quarter), y runs from the track top
+  // (84 px tall, 8 px padding: 100% at y 8, 0% at y 76). n1 at x 0, n2 at 128, n3 at 256, all 100%.
+  const tool = (name: string) => screen.getByRole('radio', { name });
+  const track = () => screen.getByRole('group', { name: 'Velocity lane' });
+  const velocityOf = (id: string) => noteValue(id).velocity;
+  const ids = () => desk.snippets[0].packet.items.map((entry) => entry.id);
+  const sessionVersions = () => desk.snippets[0].lineage?.versions.length;
+  const lanePress = (x: number, y: number, extra: object = {}) =>
+    fireEvent.pointerDown(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+  const laneMove = (x: number, y: number, extra: object = {}) =>
+    fireEvent.pointerMove(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+  const laneRelease = (x: number, y: number, extra: object = {}) =>
+    fireEvent.pointerUp(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+  const laneSweep = (from: [number, number], to: [number, number], extra: object = {}) => {
+    lanePress(from[0], from[1], extra);
+    laneMove(to[0], to[1], extra);
+    laneRelease(to[0], to[1], extra);
+  };
+
+  describe('Pointer', () => {
+    it('a box over velocity heads selects those notes; shift adds; a press on empty space clears', async () => {
+      const roll = await open(seededClip());
+      laneSweep([100, 0], [140, 83]);
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      laneSweep([240, 0], [280, 83], { shiftKey: true });
+      expect(roll).toHaveAccessibleName(/2 selected/);
+      // The selection is the roll's: Delete removes exactly those notes.
+      fireEvent.keyDown(roll, { key: 'Delete' });
+      expect(ids()).toEqual(['n1']);
+      act(() => undo());
+      lanePress(60, 40);
+      laneRelease(60, 40);
+      expect(roll).toHaveAccessibleName(/0 selected/);
+    });
+
+    it('a box that catches no pin is not a time selection', async () => {
+      const roll = await open(seededClip());
+      laneSweep([40, 10], [90, 60]);
+      expect(roll).toHaveAccessibleName(/0 selected/);
+      expect(screen.queryByTestId('velocity-range')).toBeNull();
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+    });
+  });
+
+  describe('Time', () => {
+    async function laneTimeSelected() {
+      const roll = await open(seededClip());
+      act(() => tool('Time').click());
+      // 120 to 300 px: quarters 1.5 to 5, so n2 (2) and n3 (4 to 6) overlap it.
+      laneSweep([120, 30], [300, 30]);
+      return roll;
+    }
+
+    it('selects a span like the roll: the same band in both, the notes overlapping it', async () => {
+      const roll = await laneTimeSelected();
+      expect(screen.getByTestId('velocity-range').style.left).toBe('96px');
+      expect(screen.getByTestId('roll-range').style.left).toBe('96px');
+      expect(screen.getByTestId('roll-range').style.width).toBe(`${5 * 64 - 96}px`);
+      expect(roll).toHaveAccessibleName(/2 selected/);
+    });
+
+    it('a press elsewhere in the lane clears the band first and starts a new span', async () => {
+      await laneTimeSelected();
+      laneSweep([0, 30], [60, 30]);
+      expect(screen.getByTestId('velocity-range').style.left).toBe('0px');
+      expect(screen.getAllByTestId('velocity-range')).toHaveLength(1);
+    });
+
+    it('a press inside the band moves its content: one undo step, a hand edit, the band follows', async () => {
+      const roll = await laneTimeSelected();
+      const changes = historyChangeCount();
+      laneSweep([200, 30], [200 + 256, 30]);
+      // n2 (2 to 3) and n3 (4 to 6, cut at 5) moved 4 later, overwriting what they landed on.
+      expect(historyChangeCount()).toBe(changes + 1);
+      expect(screen.getByTestId('velocity-range').style.left).toBe(`${5.5 * 64}px`);
+      expect(screen.getByTestId('roll-range').style.left).toBe(`${5.5 * 64}px`);
+      expect(sessionVersions()).toBe(2);
+      expect(editSteps('n2')).toEqual(['modified']);
+      expect(roll).toHaveAccessibleName(/selected/);
+      act(() => undo());
+      expect(ids()).toEqual(['n1', 'n2', 'n3']);
+      expect(screen.getByTestId('velocity-range').style.left).toBe('96px');
+    });
+
+    it('Escape cancels the move: nothing commits and the band stays', async () => {
+      await laneTimeSelected();
+      const before = desk.snippets[0];
+      const changes = historyChangeCount();
+      lanePress(200, 30);
+      laneMove(200 + 256, 30);
+      expect(screen.getByTestId('velocity-range-preview').style.left).toBe(`${5.5 * 64}px`);
+      fireEvent.keyDown(track(), { key: 'Escape' });
+      laneRelease(200 + 256, 30);
+      expect(desk.snippets[0]).toBe(before);
+      expect(historyChangeCount()).toBe(changes);
+      expect(screen.getByTestId('velocity-range').style.left).toBe('96px');
+    });
+
+    it('a press inside the band that never moves clears it and edits nothing', async () => {
+      const roll = await laneTimeSelected();
+      const before = desk.snippets[0];
+      lanePress(200, 30);
+      laneRelease(200, 30);
+      expect(desk.snippets[0]).toBe(before);
+      expect(roll).toHaveAccessibleName(/0 selected/);
+    });
+  });
+
+  describe('Pencil', () => {
+    it('draws the y at each head crossed: one undo step, a hand edit, the selection kept; a readout while drawing', async () => {
+      const roll = await open(seededClip());
+      act(() => tool('Pencil').click());
+      const changes = historyChangeCount();
+      lanePress(0, 42);
+      laneMove(256, 42);
+      expect(screen.getByTestId('velocity-gesture-readout')).toHaveTextContent('50%');
+      expect(historyChangeCount()).toBe(changes);
+      laneRelease(256, 42);
+      expect([velocityOf('n1'), velocityOf('n2'), velocityOf('n3')]).toEqual([0.5, 0.5, 0.5]);
+      expect(historyChangeCount()).toBe(changes + 1);
+      expect(sessionVersions()).toBe(2);
+      expect(editSteps('n2')).toEqual(['modified']);
+      expect(roll).toHaveAccessibleName(/0 selected/);
+      act(() => undo());
+      expect([velocityOf('n1'), velocityOf('n2'), velocityOf('n3')]).toEqual([1, 1, 1]);
+    });
+
+    it('a sloped fast drag sets every head in between from the line', async () => {
+      await open(seededClip());
+      act(() => tool('Pencil').click());
+      laneSweep([0, 8], [256, 76]);
+      expect([velocityOf('n1'), velocityOf('n2'), velocityOf('n3')]).toEqual([1, 0.5, 0]);
+    });
+
+    it('Escape cancels and a drag that crosses no head, or changes nothing, does not commit', async () => {
+      await open(seededClip());
+      act(() => tool('Pencil').click());
+      const before = desk.snippets[0];
+      const changes = historyChangeCount();
+      lanePress(0, 42);
+      laneMove(256, 42);
+      fireEvent.keyDown(track(), { key: 'Escape' });
+      laneRelease(256, 42);
+      laneSweep([60, 42], [90, 42]);
+      // Drawing the value the notes already have (100%) is no change.
+      laneSweep([0, 8], [256, 8]);
+      expect(desk.snippets[0]).toBe(before);
+      expect(historyChangeCount()).toBe(changes);
+    });
+  });
+
+  describe('Paint can', () => {
+    it('ramps the heads between press and release as one undo step and keeps a dashed secondary selection', async () => {
+      await open(seededClip());
+      act(() => tool('Paint').click());
+      const changes = historyChangeCount();
+      lanePress(0, 8);
+      laneMove(256, 76);
+      expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
+      expect(historyChangeCount()).toBe(changes);
+      laneRelease(256, 76);
+      expect([velocityOf('n1'), velocityOf('n2'), velocityOf('n3')]).toEqual([1, 0.5, 0]);
+      expect(historyChangeCount()).toBe(changes + 1);
+      expect(sessionVersions()).toBe(2);
+      expect(editSteps('n2')).toEqual(['modified']);
+      // Stays after release.
+      expect(screen.getByTestId('velocity-ramp')).toHaveAttribute('data-ids', 'n1,n2,n3');
+    });
+
+    it('Alt + right-button drag curves it as ONE more step re-applied from the original endpoints; undo returns to the straight ramp', async () => {
+      await open(seededClip());
+      act(() => tool('Paint').click());
+      laneSweep([0, 8], [256, 76]);
+      const changes = historyChangeCount();
+      const flags = { button: 2, altKey: true, pointerId: 2 };
+      laneSweep([100, 40], [100, 16], flags);
+      expect(fireEvent.contextMenu(track())).toBe(false);
+      expect(historyChangeCount()).toBe(changes + 1);
+      expect(velocityOf('n1')).toBe(1);
+      expect(velocityOf('n3')).toBe(0);
+      expect(velocityOf('n2')).toBeCloseTo(1 - Math.sqrt(0.5), 3);
+      expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
+      // Again, further: re-applied from the originals (curve 2), not from the values on screen.
+      laneSweep([100, 40], [100, 16], flags);
+      expect(velocityOf('n2')).toBeCloseTo(1 - 0.5 ** 0.25, 3);
+      expect(historyChangeCount()).toBe(changes + 2);
+      act(() => undo());
+      expect(velocityOf('n2')).toBeCloseTo(1 - Math.sqrt(0.5), 3);
+      act(() => undo());
+      expect(velocityOf('n2')).toBe(0.5);
+    });
+
+    it('the ramp ends on Escape and on a tool change', async () => {
+      const roll = await open(seededClip());
+      const make = () => {
+        act(() => tool('Paint').click());
+        laneSweep([0, 8], [256, 76]);
+        expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
+      };
+      make();
+      fireEvent.keyDown(roll, { key: 'Escape' });
+      expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+
+      act(() => tool('Pointer').click());
+      act(() => tool('Paint').click());
+      laneSweep([0, 8], [256, 8]);
+      // Changing the tool and coming back finds no ramp.
+      act(() => tool('Pencil').click());
+      act(() => tool('Paint').click());
+      expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+    });
+
+    it('another edit ends it (the notes are no longer the ones the ramp wrote)', async () => {
+      const roll = await open(seededClip());
+      act(() => tool('Paint').click());
+      laneSweep([0, 8], [256, 76]);
+      expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
+      act(() =>
+        desk.commitSnippetEditById(
+          desk.snippets[0].id,
+          { ...desk.snippets[0].packet, items: desk.snippets[0].packet.items.slice(0, 2) },
+          'outside-edit'
+        )
+      );
+      expect(screen.queryByTestId('velocity-ramp')).toBeNull();
+      expect(roll).toBeInTheDocument();
+    });
+
+    it('a ramp that changes nothing commits nothing, and Escape cancels a drag', async () => {
+      await open(seededClip());
+      act(() => tool('Paint').click());
+      const before = desk.snippets[0];
+      const changes = historyChangeCount();
+      laneSweep([0, 8], [256, 8]);
+      lanePress(0, 8);
+      laneMove(256, 76);
+      fireEvent.keyDown(track(), { key: 'Escape' });
+      laneRelease(256, 76);
+      expect(desk.snippets[0]).toBe(before);
+      expect(historyChangeCount()).toBe(changes);
+    });
+  });
+
+  describe('Eraser and Knife', () => {
+    it.each(['Eraser', 'Knife'])('%s does nothing in the lane', async (name) => {
+      const roll = await open(seededClip());
+      act(() => tool(name).click());
+      const before = desk.snippets[0];
+      laneSweep([0, 8], [256, 76]);
+      laneSweep([100, 0], [140, 83]);
+      expect(desk.snippets[0]).toBe(before);
+      expect(roll).toHaveAccessibleName(/0 selected/);
+    });
   });
 });

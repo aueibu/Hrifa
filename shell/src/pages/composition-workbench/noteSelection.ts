@@ -62,7 +62,7 @@ function contiguous(a: TimeRange, b: TimeRange): boolean {
  * span the user dragged, never widened to the notes it caught. A shift-additive drag adds to an
  * existing TIME selection only when the new span overlaps or touches it (the union is then one
  * span); a separate span replaces it rather than filling the gap between the two, since one range
- * cannot hold a gap. The events are the owner's to set (the notes that start inside).
+ * cannot hold a gap. The events are the owner's to set (the notes that overlap the span, an edge touch included).
  */
 export function selectTime(
   selection: NoteSelection,
