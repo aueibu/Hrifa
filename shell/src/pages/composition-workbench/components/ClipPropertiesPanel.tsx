@@ -130,12 +130,18 @@ export function ClipPropertiesPanel({ snippet }: { snippet: Snippet }) {
           return parsed.error;
         }
         if (key === 'loopStart') {
-          // Moving the loop's start keeps its length (the end moves with it), from the latest packet.
+          // Moving the loop's start keeps its length (the end moves with it), from the latest
+          // packet; where that would pass the clip's end the length is shortened to fit. A start at
+          // or after the end of the clip leaves no loop at all and is refused.
           const latest = latestProperties();
+          if (compareRational(parsed.value, latest.length) >= 0) {
+            return 'The loop start must be before the end of the clip.';
+          }
           const end = addRational(parsed.value, subtractRational(latest.loopEnd, latest.loopStart));
-          return compareRational(end, latest.length) > 0
-            ? 'The loop must stay within the total length.'
-            : apply({ loopStart: parsed.value, loopEnd: end });
+          return apply({
+            loopStart: parsed.value,
+            loopEnd: compareRational(end, latest.length) > 0 ? latest.length : end,
+          });
         }
         return apply({ [key]: parsed.value });
       }}
@@ -167,7 +173,8 @@ export function ClipPropertiesPanel({ snippet }: { snippet: Snippet }) {
           variant={properties.loopOn ? 'filled' : 'default'}
           aria-pressed={properties.loopOn}
           disabled={disabled}
-          onClick={() => setNotice(apply({ loopOn: !properties.loopOn }))}
+          // The latest packet, like the fields: a render that has not caught up cannot flip it back.
+          onClick={() => setNotice(apply({ loopOn: !latestProperties().loopOn }))}
         >
           Looping
         </Button>

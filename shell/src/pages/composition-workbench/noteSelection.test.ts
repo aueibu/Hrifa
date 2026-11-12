@@ -10,6 +10,7 @@ import {
   followEdit,
   itemsBand,
   pruneSelection,
+  pruneTimeRange,
   selectIds,
   selectTime,
 } from './noteSelection';
@@ -49,9 +50,10 @@ describe('note selection: events and the time they occupy', () => {
     expect(extendRange(picked, { start: 3, end: 3 })).toBe(picked);
   });
 
-  it('marks a time selection, and any other way of selecting clears the mark', () => {
+  it('marks a time selection whose range is exactly the dragged span, never widened to notes', () => {
+    // n2 spans 2..3 and n3 4..6: the span 2.5..5 catches both but the range stays 2.5..5.
     const timed = selectTime(selectIds(notes, ['b']), { start: 2.5, end: 5 });
-    expect(timed).toEqual({ ids: ['b'], range: { start: 2, end: 5 }, kind: 'time' });
+    expect(timed).toEqual({ ids: ['b'], range: { start: 2.5, end: 5 }, kind: 'time' });
     expect(selectTime(emptyNoteSelection, { start: 6, end: 8 })).toEqual({
       ids: [],
       range: { start: 6, end: 8 },
@@ -61,11 +63,52 @@ describe('note selection: events and the time they occupy', () => {
     expect(extendRange(selectIds(notes, ['b']), { start: 2.5, end: 5 }).kind).toBeUndefined();
   });
 
+  it('a shift-additive time drag unions only touching spans and never fills the gap between spans', () => {
+    const first = selectTime(emptyNoteSelection, { start: 0, end: 2 });
+    // Overlapping or touching: one span.
+    expect(selectTime(first, { start: 1, end: 3 }, true).range).toEqual({ start: 0, end: 3 });
+    expect(selectTime(first, { start: 2, end: 3 }, true).range).toEqual({ start: 0, end: 3 });
+    // A separate span: its own range, the gap 2..6 is not selected.
+    expect(selectTime(first, { start: 6, end: 8 }, true).range).toEqual({ start: 6, end: 8 });
+    // Not additive: always just the dragged span.
+    expect(selectTime(first, { start: 1, end: 3 }).range).toEqual({ start: 1, end: 3 });
+    // An additive drag over a note selection ignores the notes' span too.
+    expect(selectTime(selectIds(notes, ['a', 'c']), { start: 3, end: 4 }, true).range).toEqual({
+      start: 3,
+      end: 4,
+    });
+  });
+
   it('drops events that are gone and falls back to what is left', () => {
     const wide = extendRange(selectIds(notes, ['a', 'b']), { start: 0, end: 7 });
     const without = packet('events', 'note', [item('a', 0, 1)]);
     expect(pruneSelection(wide, without)).toEqual({ ids: ['a'], range: { start: 0, end: 1 } });
     expect(pruneSelection(wide, notes)).toBe(wide);
+  });
+
+  it('a time selection keeps its kind and range when notes go, held only to the clip', () => {
+    const time = { ...selectTime(selectIds(notes, ['a', 'b']), { start: 0, end: 4 }) };
+    const without = packet('events', 'note', [item('a', 0, 1)]);
+    // Deleted notes drop out of the ids; the span and the kind stay.
+    expect(pruneSelection(time, without)).toEqual({
+      ids: ['a'],
+      range: { start: 0, end: 4 },
+      kind: 'time',
+    });
+    expect(pruneSelection(time, notes)).toBe(time);
+    // Pruned to the clip: the start at 0 and the end at the limit.
+    expect(pruneSelection(time, notes, 3).range).toEqual({ start: 0, end: 3 });
+    expect(pruneTimeRange({ start: -2, end: 1 })).toEqual({ start: 0, end: 1 });
+    expect(pruneTimeRange({ start: 5, end: 8 }, 4)).toBeNull();
+    expect(pruneSelection(selectTime(emptyNoteSelection, { start: 5, end: 8 }), notes, 4)).toBe(
+      emptyNoteSelection
+    );
+  });
+
+  it('editing notes never moves or widens a time selection', () => {
+    const time = selectTime(selectIds(notes, ['b']), { start: 2, end: 4 });
+    const moved = moveNotes(notes, ['b'], { start: 1, pitchMidicents: 0 });
+    expect(followEdit(time, notes, moved)).toBe(time);
   });
 
   it('follows the events when an edit moves them, keeping the empty space it covered', () => {

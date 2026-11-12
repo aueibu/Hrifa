@@ -55,7 +55,13 @@ export function HorizontalScrollbar({ range, scrollLeft, onScrollLeft }: Horizon
       written.current = [];
     }
     // The browser clamps a bar whose spacer just shrank: that position is not the user's either.
-    if (lastRange.current !== null && nativeRange < lastRange.current) {
+    // Only a real clamp counts (the bar actually sits somewhere the roll is not), never an
+    // unclamped position; it is the last remembered value unless the write below replaces it.
+    if (
+      lastRange.current !== null &&
+      nativeRange < lastRange.current &&
+      isBarMove(strip.scrollLeft, nativeLeft)
+    ) {
       written.current = recordWritten(written.current, strip.scrollLeft);
     }
     lastRange.current = nativeRange;
@@ -63,7 +69,9 @@ export function HorizontalScrollbar({ range, scrollLeft, onScrollLeft }: Horizon
     emitted.current = result.emitted;
     if (result.write && isBarMove(strip.scrollLeft, nativeLeft)) {
       strip.scrollLeft = nativeLeft;
-      written.current = recordWritten(written.current, nativeLeft);
+      // Remember what the bar actually holds: the browser clamps a target past its maximum, and its
+      // echo reports that clamped position, not the one asked for.
+      written.current = recordWritten(written.current, strip.scrollLeft);
     }
   }, [nativeLeft, nativeRange, ratio]);
 

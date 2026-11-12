@@ -363,3 +363,292 @@ export function itemsSpan(
     end: Math.max(...spans.map((span) => span.end)),
   };
 }
+
+/**
+ * The ids of the notes that overlap the span, a note that only touches an edge included (its end is
+ * the span's start, or its start is the span's end): the notes a time selection holds.
+ */
+export function notesOverlapping(
+  packet: DataPacket,
+  range: { start: number; end: number }
+): string[] {
+  return packet.items
+    .filter(isNoteItem)
+    .filter((item) => {
+      const start = quarters(item.value.onset);
+      const end = start + quarters(item.value.duration);
+      return end >= range.start - 1e-9 && start <= range.end + 1e-9;
+    })
+    .map((item) => item.id);
+}
+
+/**
+ * The shift a time-selection move actually applies: `delta` rounded to the grid (when one is given)
+ * and held at the clip's start, so the moved span never begins before 0. Moving later is not limited.
+ */
+export function timeMoveDelta(
+  range: { start: number; end: number },
+  delta: number,
+  grid?: number
+): number {
+  if (!Number.isFinite(delta)) {
+    return 0;
+  }
+  const snapped = grid && grid > 0 ? Math.round(delta / grid) * grid : delta;
+  return Math.max(snapped, -range.start);
+}
+
+/** How a time-selection drag treats what it is dragged over, and whether it moves or copies. */
+export interface TimeMoveOptions {
+  /** Copy the content (the source stays untouched) instead of moving it. */
+  copy?: boolean;
+  /** Keep the notes already at the destination (merge) instead of overwriting them (the default). */
+  merge?: boolean;
+}
+
+export interface TimeMoveResult {
+  packet: DataPacket;
+  /** The ids of the pieces that were moved or copied, in packet order: what the band then holds. */
+  movedIds: string[];
+}
+
+/** One piece of `item` over [start, end): `offset` shifts it, `slot` overrides its own-length slot. */
+function notePart(
+  item: NoteItem,
+  start: Rational,
+  end: Rational,
+  id: string,
+  slot?: MusicalDuration,
+  offset?: Rational
+): NoteItem {
+  const length: MusicalDuration = { quarterNotes: subtractRational(end, start) };
+  const onset = { quarterNotes: offset ? addRational(start, offset) : start };
+  return {
+    ...item,
+    id,
+    value: { ...item.value, onset, duration: length, interOnset: slot ?? length },
+    label: noteLabel(item.value.pitches, onset),
+    provenance: [...item.provenance],
+  };
+}
+
+/**
+ * Moves (or copies) everything inside the time span `range` (quarter notes) later or earlier by
+ * `delta`, the time-selection drag. Time only: pitches never change. The span is cut at its left and
+ * right edges: a note that crosses an edge is split there and only the part inside moves.
+ *
+ * Source (move): the part that STAYS keeps the item's id; the part that MOVES gets a fresh id from
+ * `newId`, with the same pitches, velocity and inherited provenance. A note that crosses both edges
+ * becomes three: the left stay part keeps the id, the moved middle and the right stay part get fresh
+ * ids (in that order of `newId` calls). A note wholly inside simply moves and keeps its id. A copy
+ * leaves the source untouched and every copied piece gets a fresh id.
+ *
+ * Destination: by default the moved block OVERWRITES what it lands on: every note the destination
+ * span [start + shift, end + shift] covers is removed (a note straddling a destination edge is cut
+ * there, the left part keeping the id, a right part after a left one taking a fresh id; a note that
+ * only touches an edge is left alone, no slivers) and the moved pieces go in. With `merge` the
+ * destination notes are kept (overlap allowed). When source and destination overlap, the moved
+ * content replaces the overlap. `delta` is rounded to `grid` if given and clamped so the span stays
+ * at or after the clip start; nothing moves (the same packet) for no shift, an empty span or no note
+ * inside it (an empty block overwrites nothing).
+ */
+export function timeMoveResult(
+  packet: DataPacket,
+  range: { start: number; end: number },
+  delta: number,
+  newId: () => string,
+  grid?: number,
+  options: TimeMoveOptions = {}
+): TimeMoveResult {
+  const none: TimeMoveResult = { packet, movedIds: [] };
+  if (!Number.isFinite(range.start) || !Number.isFinite(range.end) || range.end <= range.start) {
+    return none;
+  }
+  const shiftBy = timeMoveDelta(range, delta, grid);
+  if (shiftBy === 0) {
+    return none;
+  }
+  const from = rationalFromNumber(range.start);
+  const to = rationalFromNumber(range.end);
+  const shift = rationalFromNumber(shiftBy);
+  interface Entry {
+    item: DataItem;
+    moved: boolean;
+  }
+  let changed = false;
+  const entries = packet.items.flatMap((item): Entry[] => {
+    if (!isNoteItem(item)) {
+      return [{ item, moved: false }];
+    }
+    const start = item.value.onset.quarterNotes;
+    const end = addRational(start, item.value.duration.quarterNotes);
+    const insideStart = compareRational(start, from) > 0 ? start : from;
+    const insideEnd = compareRational(end, to) < 0 ? end : to;
+    if (compareRational(insideStart, insideEnd) >= 0) {
+      return [{ item, moved: false }];
+    }
+    changed = true;
+    const slotMatched =
+      compareRational(item.value.interOnset.quarterNotes, item.value.duration.quarterNotes) === 0;
+    const leftStays = compareRational(start, insideStart) < 0;
+    const rightStays = compareRational(insideEnd, end) < 0;
+    const whole = !leftStays && !rightStays;
+    if (options.copy) {
+      const copy = notePart(
+        item,
+        insideStart,
+        insideEnd,
+        newId(),
+        whole ? item.value.interOnset : undefined,
+        shift
+      );
+      return [
+        { item, moved: false },
+        { item: copy, moved: true },
+      ];
+    }
+    if (whole) {
+      // Wholly inside: it moves as it is, keeping its id and its own slot.
+      return [
+        { item: notePart(item, start, end, item.id, item.value.interOnset, shift), moved: true },
+      ];
+    }
+    if (!leftStays) {
+      // Only the right edge cuts: the part that stays is the right one and keeps the id.
+      return [
+        { item: notePart(item, insideStart, insideEnd, newId(), undefined, shift), moved: true },
+        { item: notePart(item, insideEnd, end, item.id), moved: false },
+      ];
+    }
+    // The left part always stays and keeps the id (the knife's rule, including its slot).
+    const left = notePart(
+      item,
+      start,
+      insideStart,
+      item.id,
+      slotMatched ? undefined : item.value.interOnset
+    );
+    const middle = notePart(item, insideStart, insideEnd, newId(), undefined, shift);
+    return rightStays
+      ? [
+          { item: left, moved: false },
+          { item: middle, moved: true },
+          { item: notePart(item, insideEnd, end, newId()), moved: false },
+        ]
+      : [
+          { item: left, moved: false },
+          { item: middle, moved: true },
+        ];
+  });
+  if (!changed) {
+    return none;
+  }
+  let result = entries;
+  if (!options.merge) {
+    // Overwrite: clear the destination of everything that is not one of the moved pieces.
+    const destFrom = addRational(from, shift);
+    const destTo = addRational(to, shift);
+    result = entries.flatMap((entry): Entry[] => {
+      if (entry.moved || !isNoteItem(entry.item)) {
+        return [entry];
+      }
+      const item = entry.item;
+      const start = item.value.onset.quarterNotes;
+      const end = addRational(start, item.value.duration.quarterNotes);
+      const coverStart = compareRational(start, destFrom) > 0 ? start : destFrom;
+      const coverEnd = compareRational(end, destTo) < 0 ? end : destTo;
+      if (compareRational(coverStart, coverEnd) >= 0) {
+        return [entry];
+      }
+      const leftRemains = compareRational(start, destFrom) < 0;
+      const rightRemains = compareRational(destTo, end) < 0;
+      const slotMatched =
+        compareRational(item.value.interOnset.quarterNotes, item.value.duration.quarterNotes) === 0;
+      if (leftRemains) {
+        const left: Entry = {
+          item: notePart(
+            item,
+            start,
+            destFrom,
+            item.id,
+            slotMatched ? undefined : item.value.interOnset
+          ),
+          moved: false,
+        };
+        return rightRemains
+          ? [left, { item: notePart(item, destTo, end, newId()), moved: false }]
+          : [left];
+      }
+      return rightRemains ? [{ item: notePart(item, destTo, end, item.id), moved: false }] : [];
+    });
+  }
+  return {
+    packet: withItems(
+      packet,
+      result.map((entry) => entry.item)
+    ),
+    movedIds: result.filter((entry) => entry.moved).map((entry) => entry.item.id),
+  };
+}
+
+/** `timeMoveResult`'s packet alone. */
+export function moveTimeRange(
+  packet: DataPacket,
+  range: { start: number; end: number },
+  delta: number,
+  newId: () => string,
+  grid?: number,
+  options: TimeMoveOptions = {}
+): DataPacket {
+  return timeMoveResult(packet, range, delta, newId, grid, options).packet;
+}
+
+/**
+ * Copies these events, shifted by `delta` (time clamped at the clip start and pitch at the keyboard's
+ * ends, once for the group like `moveNotes`): the originals stay untouched, each copy is a fresh item
+ * (id from `newIds`, in order) with the same pitches, velocity and inherited provenance. The same
+ * packet when nothing is copied or the shift is zero.
+ */
+export function copyNotes(
+  packet: DataPacket,
+  ids: readonly string[],
+  delta: { start: number; pitchMidicents: number },
+  newIds: () => string
+): { packet: DataPacket; copyIds: string[] } {
+  const chosen = new Set(ids);
+  const copying = packet.items.filter(
+    (item): item is NoteItem => isNoteItem(item) && chosen.has(item.id)
+  );
+  if (!copying.length) {
+    return { packet, copyIds: [] };
+  }
+  let lowest = Number.NEGATIVE_INFINITY;
+  let lowestPitch = Number.NEGATIVE_INFINITY;
+  let highestPitch = Number.POSITIVE_INFINITY;
+  copying.forEach((item) => {
+    lowest = Math.max(lowest, -quarters(item.value.onset));
+    lowestPitch = Math.max(lowestPitch, -Math.min(...item.value.pitches));
+    highestPitch = Math.min(highestPitch, MAX_MIDICENTS - Math.max(...item.value.pitches));
+  });
+  const dStart = Math.max(delta.start, lowest);
+  const dPitch = Math.min(Math.max(Math.round(delta.pitchMidicents), lowestPitch), highestPitch);
+  if (dStart === 0 && dPitch === 0) {
+    return { packet, copyIds: [] };
+  }
+  const shift = rationalFromNumber(dStart);
+  const copyIds: string[] = [];
+  const copies = copying.map((item): NoteItem => {
+    const id = newIds();
+    copyIds.push(id);
+    const onset = { quarterNotes: addRational(item.value.onset.quarterNotes, shift) };
+    const pitches = item.value.pitches.map((pitch) => pitch + dPitch);
+    return {
+      ...item,
+      id,
+      value: { ...item.value, onset, pitches },
+      label: noteLabel(pitches, onset),
+      provenance: [...item.provenance],
+    };
+  });
+  return { packet: withItems(packet, [...packet.items, ...copies]), copyIds };
+}

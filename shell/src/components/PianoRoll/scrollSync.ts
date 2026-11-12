@@ -57,21 +57,23 @@ export function reconcileBar(
   return { write: true, emitted: [] };
 }
 
-/** The most programmatic writes remembered while their scroll events may still be on the way. */
-const MAX_WRITTEN = 16;
-
-/** Records a position this component wrote into a scroller, oldest dropped past a small cap. */
-export function recordWritten(written: readonly number[], value: number): number[] {
-  return [...written, value].slice(-MAX_WRITTEN);
+/**
+ * Records a position this component wrote into a scroller. Only the LAST write is remembered, never
+ * a history: a scroll event arrives a frame after the write that caused it, and by then only the
+ * newest write can still be pending, so an older value is just a position the user may legitimately
+ * scroll back to (a wheel or arrow step landing on an earlier written value is a real move).
+ */
+export function recordWritten(_written: readonly number[], value: number): number[] {
+  return [value];
 }
 
 /**
- * Whether a scroll event reports a position this component wrote itself. Browsers fire the event a
+ * Whether a scroll event reports the position this component last wrote. Browsers fire the event a
  * frame after the write, so it can arrive after a newer view was applied: it is then an echo, not a
  * user move, and must not be reported (it would revert the newer position).
  */
 export function isWrittenEcho(written: readonly number[], reported: number): boolean {
-  return written.some((value) => !isBarMove(value, reported));
+  return written.length > 0 && !isBarMove(written[written.length - 1], reported);
 }
 
 /** The most a native scrollbar is asked to scroll, in pixels (a clip can be far wider than a browser lays out). */

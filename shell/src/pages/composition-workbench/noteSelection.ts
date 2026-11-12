@@ -52,11 +52,30 @@ export function extendRange(selection: NoteSelection, range: TimeRange): NoteSel
     : selection;
 }
 
-/** A time selection: the events it caught and the span, drawn as a band. */
-export function selectTime(selection: NoteSelection, range: TimeRange): NoteSelection {
-  return range.end > range.start
-    ? { ids: selection.ids, range: unionRange(selection.range, range), kind: 'time' }
-    : selection;
+/** Whether two spans overlap or touch, so their union leaves no gap. */
+function contiguous(a: TimeRange, b: TimeRange): boolean {
+  return a.start <= b.end && b.start <= a.end;
+}
+
+/**
+ * A time selection: the events it caught and the span, drawn as a band. The range is exactly the
+ * span the user dragged, never widened to the notes it caught. A shift-additive drag adds to an
+ * existing TIME selection only when the new span overlaps or touches it (the union is then one
+ * span); a separate span replaces it rather than filling the gap between the two, since one range
+ * cannot hold a gap. The events are the owner's to set (the notes that start inside).
+ */
+export function selectTime(
+  selection: NoteSelection,
+  range: TimeRange,
+  additive = false
+): NoteSelection {
+  if (range.end <= range.start) {
+    return selection;
+  }
+  const previous = selection.kind === 'time' ? selection.range : null;
+  const next =
+    additive && previous && contiguous(previous, range) ? unionRange(previous, range)! : range;
+  return { ids: selection.ids, range: { ...next }, kind: 'time' };
 }
 
 /**
@@ -74,13 +93,44 @@ export function itemsBand(selection: NoteSelection): TimeRange | null {
 }
 
 /**
+ * A time selection's span held to the clip: from 0 to `limit` (the furthest the roll shows), or null
+ * when nothing of it is left.
+ */
+export function pruneTimeRange(
+  range: TimeRange,
+  limit = Number.POSITIVE_INFINITY
+): TimeRange | null {
+  const start = Math.max(0, range.start);
+  const end = Math.min(range.end, limit);
+  if (!(end > start)) {
+    return null;
+  }
+  return start === range.start && end === range.end ? range : { start, end };
+}
+
+/**
  * The selection once the packet changed under it. Events that are gone drop out; if any did, the
  * range falls back to what the rest occupy (a range reaching over empty space that no event backs
- * is kept only while every selected event is still there).
+ * is kept only while every selected event is still there). A TIME selection keeps its kind and its
+ * range whatever happens to the notes (deletes, undo, outside changes): only the dropped ids go, and
+ * the span is held to the clip (0 to `limit`).
  */
-export function pruneSelection(selection: NoteSelection, packet: DataPacket): NoteSelection {
+export function pruneSelection(
+  selection: NoteSelection,
+  packet: DataPacket,
+  limit?: number
+): NoteSelection {
   const known = new Set(packet.items.map((item) => item.id));
   const present = selection.ids.filter((id) => known.has(id));
+  if (selection.kind === 'time') {
+    const range = selection.range ? pruneTimeRange(selection.range, limit) : null;
+    if (!range) {
+      return emptyNoteSelection;
+    }
+    return present.length === selection.ids.length && range === selection.range
+      ? selection
+      : { ids: present, range, kind: 'time' };
+  }
   if (present.length === selection.ids.length) {
     return selection;
   }
@@ -96,6 +146,10 @@ export function followEdit(
   before: DataPacket,
   after: DataPacket
 ): NoteSelection {
+  // A time selection is a span, not a set of notes: editing notes never moves or widens it.
+  if (selection.kind === 'time') {
+    return selection;
+  }
   const was = itemsSpan(before, selection.ids);
   const now = itemsSpan(after, selection.ids);
   if (!selection.range || !was || !now) {
@@ -103,5 +157,5 @@ export function followEdit(
   }
   const shift = now.start - was.start;
   const shifted = { start: selection.range.start + shift, end: selection.range.end + shift };
-  return { ids: selection.ids, range: unionRange(shifted, now), kind: selection.kind };
+  return { ids: selection.ids, range: unionRange(shifted, now) };
 }

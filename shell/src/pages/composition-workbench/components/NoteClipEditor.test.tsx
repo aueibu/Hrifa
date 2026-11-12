@@ -4,7 +4,7 @@ import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import { auditionRefusal, makeSourceRefusal } from '../clipTypes';
 import { CompositionSettingsProvider } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
-import { canUndo, historyChangeCount, resetHistory, undo } from '../history';
+import { canUndo, historyChangeCount, redo, resetHistory, undo } from '../history';
 import type { NoteEventValue } from '../melodicization';
 import { packet, type DataItem } from '../model';
 import { defaultMusicalTimeline, musicalDuration, musicalPosition, rational } from '../musicalTime';
@@ -301,14 +301,16 @@ describe('the note clip editor', () => {
 
     // Marquee over empty space only: no events, a time selection with the cyan band only.
     drag(roll, { x: 300, y: 10 }, { x: 420, y: 30 });
-    expect(roll).toHaveAccessibleName(/0 selected/);
+    // (n3 runs 4 to 6 through the span 4.5 to 7, so a time selection holds it.)
+    expect(roll).toHaveAccessibleName(/1 selected/);
     const band = screen.getByTestId('roll-range');
     expect(band.style.left).toBe('288px');
     expect(band.style.width).toBe('160px');
     expect(screen.queryByTestId('roll-items-range')).toBeNull();
 
-    // A marquee that touches n3 selects it: the neutral band, never the cyan one.
-    drag(roll, { x: 300, y: rowY(67) - 8 }, { x: 600, y: rowY(67) + 8 });
+    // A marquee that touches n3 selects it: the neutral band, never the cyan one. (It starts left of
+    // the cyan band: a Pointer press inside the band would move its content instead.)
+    drag(roll, { x: 230, y: rowY(67) - 8 }, { x: 300, y: rowY(67) + 8 });
     expect(roll).toHaveAccessibleName(/1 selected/);
     expect(screen.queryByTestId('roll-range')).toBeNull();
     expect(screen.getByTestId('roll-items-range')).toBeInTheDocument();
@@ -448,7 +450,7 @@ describe('the note clip editor tools', () => {
     expect(itemIds()).toEqual(['n1', 'n2', 'n3']);
   });
 
-  it('time selection: selects the span and the notes starting inside it, without touching the clip', async () => {
+  it('time selection: selects the span and the notes overlapping it, without touching the clip', async () => {
     const roll = await open(seededClip());
     const before = desk.snippets[0];
     const changes = historyChangeCount();
@@ -457,9 +459,9 @@ describe('the note clip editor tools', () => {
     drag(roll, { x: 120, y: 5 }, { x: 300, y: 5 });
     expect(roll).toHaveAccessibleName(/2 selected/);
     const band = screen.getByTestId('roll-range');
-    // The range covers the dragged span, and n3 runs on to 6.
+    // The range is exactly the dragged span (1.5 to 5): n3 runs on to 6 but does not widen it.
     expect(band.style.left).toBe('96px');
-    expect(band.style.width).toBe(`${6 * 64 - 96}px`);
+    expect(band.style.width).toBe(`${5 * 64 - 96}px`);
     expect(desk.snippets[0]).toBe(before);
     expect(historyChangeCount()).toBe(changes);
     // The band belongs to the time selection, not the tool: it stays through a tool switch ...
@@ -1158,5 +1160,532 @@ describe('gridSourceFor', () => {
     expect(far.length).toBeLessThan(400);
     expect(far.every((line) => line.kind === 'bar')).toBe(true);
     expect(far[0]).toMatchObject({ at: 0, label: '1' });
+  });
+});
+
+describe('moving the content of a time selection', () => {
+  const tool = (name: string) => screen.getByRole('radio', { name });
+  const ids = () => desk.snippets[0].packet.items.map((entry) => entry.id);
+  const onsetOf = (id: string) => noteValue(id).onset.quarterNotes;
+  const lengthOf = (id: string) => noteValue(id).duration.quarterNotes;
+  const sessionVersions = () => desk.snippets[0].lineage?.versions.length;
+  const ghost = (id: string) =>
+    document.querySelector(`[data-ghost="${id}"]`) as HTMLElement | null;
+
+  /** A whole note C4 over 0 to 4 (w) and an E4 at 6 (z), in an 8-quarter clip. */
+  function wholeNoteClip(): Snippet {
+    const base = seededClip();
+    return {
+      ...base,
+      packet: { ...base.packet, items: [seedNote('w', 0, 4, 6000), seedNote('z', 6, 1, 6400)] },
+    };
+  }
+
+  /** Time tool: a drag over the span, in pixels (64 per quarter, grid of a half). */
+  function selectSpan(roll: Element, from: number, to: number) {
+    act(() => tool('Time').click());
+    drag(roll, { x: from, y: 5 }, { x: to, y: 5 });
+  }
+
+  it('moves only the part of a whole note inside the span: the last beat becomes a quarter note', async () => {
+    const roll = await open(wholeNoteClip());
+    // The last beat: 3 to 4 quarters.
+    selectSpan(roll, 192, 256);
+    expect(screen.getByTestId('roll-range').style.left).toBe('192px');
+    expect(screen.getByTestId('roll-range').style.width).toBe('64px');
+    const changes = historyChangeCount();
+
+    // Press inside the band (the keep-on-press decision), drag 4 quarters later (256 px).
+    fireEvent.pointerDown(roll, { clientX: 200, clientY: rowY(40), pointerId: 3 });
+    // Kept, not cleared: the move starts (its preview band replaces the drawn one) and the lane keeps its band.
+    expect(screen.getByTestId('roll-time-preview')).toBeInTheDocument();
+    expect(screen.getByTestId('velocity-range')).toBeInTheDocument();
+    fireEvent.pointerMove(roll, { clientX: 200 + 256, clientY: rowY(90), pointerId: 3 });
+    // The ghost is the part inside the span, moved (7 to 8), and nothing is committed yet.
+    expect(ghost('w')!.style.left).toBe(`${7 * 64}px`);
+    expect(ghost('w')!.style.width).toBe('64px');
+    expect(ids()).toEqual(['w', 'z']);
+    expect(historyChangeCount()).toBe(changes);
+    fireEvent.pointerUp(roll, { clientX: 200 + 256, clientY: rowY(90), pointerId: 3 });
+
+    // The first three beats stay (same id); the last beat is a new quarter note at 7.
+    expect(ids()).toHaveLength(3);
+    expect(ids()[0]).toBe('w');
+    expect(lengthOf('w')).toEqual({ numerator: 3, denominator: 1 });
+    expect(onsetOf('w')).toEqual({ numerator: 0, denominator: 1 });
+    const moved = ids()[1];
+    expect(moved).not.toBe('z');
+    expect(onsetOf(moved)).toEqual({ numerator: 7, denominator: 1 });
+    expect(lengthOf(moved)).toEqual({ numerator: 1, denominator: 1 });
+    expect(noteValue(moved).pitches).toEqual([6000]);
+    // The time only: the pitch was not touched by the vertical travel, and z is untouched.
+    expect(onsetOf('z')).toEqual({ numerator: 6, denominator: 1 });
+    // A hand edit, one undo step, one session version more.
+    expect(editSteps('w')).toEqual(['modified']);
+    expect(editSteps(moved)).toEqual(['added']);
+    expect(historyChangeCount()).toBe(changes + 1);
+    // The original plus one session version.
+    expect(sessionVersions()).toBe(2);
+    // The band moved with the content and holds exactly the moved piece (z, which only touches the
+    // destination at 7, is not selected: a move selects what it moved).
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${7 * 64}px`);
+    expect(screen.getByTestId('roll-range').style.width).toBe('64px');
+    expect(roll).toHaveAccessibleName(/1 selected/);
+
+    // One undo puts the clip back and the band back where it was before the move (3 to 4: w).
+    act(() => undo());
+    expect(ids()).toEqual(['w', 'z']);
+    expect(lengthOf('w')).toEqual({ numerator: 4, denominator: 1 });
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${3 * 64}px`);
+    expect(screen.getByTestId('roll-range').style.width).toBe('64px');
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    // Redo puts the band at the destination again, holding the moved piece as it did.
+    act(() => redo());
+    expect(ids()).toHaveLength(3);
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${7 * 64}px`);
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    // Undo again, then an unrelated edit: the old move record must not move the band afterwards.
+    act(() => undo());
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${3 * 64}px`);
+    fireEvent.keyDown(roll, { key: '[' });
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${3 * 64}px`);
+    act(() => undo()); // undoes the Softer edit, not the (now unreachable) move
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${3 * 64}px`);
+    act(() => redo());
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${3 * 64}px`);
+  });
+
+  it('a stale move record does not resurrect a band after unrelated edits', async () => {
+    const roll = await open(wholeNoteClip());
+    selectSpan(roll, 192, 256);
+    fireEvent.pointerDown(roll, { clientX: 200, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 456, clientY: 5, pointerId: 3 });
+    fireEvent.pointerUp(roll, { clientX: 456, clientY: 5, pointerId: 3 });
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${7 * 64}px`);
+    // Another tab replaces the notes outright: the band keeps its span, no record matches.
+    act(() => {
+      const latest = desk.snippets[0];
+      desk.commitSnippetEditById(
+        latest.id,
+        { ...latest.packet, items: [seedNote('q', 1, 1, 6000)] },
+        'outside-edit'
+      );
+    });
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${7 * 64}px`);
+    act(() => undo());
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${7 * 64}px`);
+  });
+
+  it('an off-grid span moves by exactly what the ghost showed (no second rounding)', async () => {
+    const user = userEvent.setup();
+    const roll = await open(wholeNoteClip());
+    // 0.5 to 3 on the auto grid, then a one-quarter grid: the span start is now off the grid.
+    selectSpan(roll, 32, 192);
+    await user.click(screen.getByRole('button', { name: /Grid: Auto/ }));
+    await user.click(await screen.findByRole('menuitem', { name: '1/4' }));
+    fireEvent.pointerDown(roll, { clientX: 100, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3 });
+    // Clamped at the clip start: the span moves back by 0.5, the middle piece to 0.
+    expect(ghost('w')!.style.left).toBe('0px');
+    expect(ghost('w')!.style.width).toBe(`${2.5 * 64}px`);
+    fireEvent.pointerUp(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3 });
+    const spans = desk.snippets[0].packet.items.map((entry) => {
+      const value = entry.value as NoteEventValue;
+      const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
+      const length =
+        value.duration.quarterNotes.numerator / value.duration.quarterNotes.denominator;
+      return [start, start + length];
+    });
+    // Overwrite: the moved block 0 to 2.5 replaces the stay part 0 to 0.5 that was under it.
+    expect(spans).toEqual([
+      [0, 2.5],
+      [3, 4],
+      [6, 7],
+    ]);
+    expect(screen.getByTestId('roll-range').style.left).toBe('0px');
+    expect(screen.getByTestId('roll-range').style.width).toBe(`${2.5 * 64}px`);
+  });
+
+  it('Escape cancels the drag: no edit, no history, the band stays', async () => {
+    const roll = await open(wholeNoteClip());
+    selectSpan(roll, 192, 256);
+    const before = desk.snippets[0];
+    const changes = historyChangeCount();
+    fireEvent.pointerDown(roll, { clientX: 200, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 456, clientY: 5, pointerId: 3 });
+    expect(ghost('w')).not.toBeNull();
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    expect(ghost('w')).toBeNull();
+    fireEvent.pointerUp(roll, { clientX: 456, clientY: 5, pointerId: 3 });
+    expect(desk.snippets[0]).toBe(before);
+    expect(historyChangeCount()).toBe(changes);
+    expect(screen.getByTestId('roll-range').style.left).toBe('192px');
+  });
+
+  it('a note crossing both edges becomes three; the span clamps at the clip start', async () => {
+    const roll = await open(wholeNoteClip());
+    // 1 to 3 inside the whole note 0 to 4: left 0-1 keeps the id, 1-3 moves, 3-4 stays.
+    selectSpan(roll, 64, 192);
+    // Drag far left with Alt (merge keeps the destination): the span clamps at 0, so it moves back
+    // by 1 quarter only.
+    fireEvent.pointerDown(roll, { clientX: 100, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3, altKey: true });
+    fireEvent.pointerUp(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3, altKey: true });
+    expect(ids()).toHaveLength(4);
+    const spans = desk.snippets[0].packet.items.map((entry) => {
+      const value = entry.value as NoteEventValue;
+      const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
+      return [start, start + value.duration.quarterNotes.numerator];
+    });
+    // [left stay, middle moved to 0, right stay, z]: the left piece keeps the id, 0 to 1.
+    expect(ids()[0]).toBe('w');
+    expect(spans).toEqual([
+      [0, 1],
+      [0, 2],
+      [3, 4],
+      [6, 7],
+    ]);
+    expect(screen.getByTestId('roll-range').style.left).toBe('0px');
+    expect(screen.getByTestId('roll-range').style.width).toBe('128px');
+  });
+
+  describe('overwrite, merge and copy', () => {
+    /** The span 1 to 3 of the whole note w (0 to 4), dragged 5 quarters (320 px) onto z (6 to 7). */
+    async function dragSpan(mods: { alt?: boolean; ctrl?: boolean } = {}, hold = false) {
+      const roll = await open(wholeNoteClip());
+      selectSpan(roll, 64, 192);
+      const flags = { altKey: mods.alt, ctrlKey: mods.ctrl };
+      fireEvent.pointerDown(roll, { clientX: 100, clientY: 5, pointerId: 3 });
+      fireEvent.pointerMove(roll, { clientX: 420, clientY: 5, pointerId: 3, ...flags });
+      if (!hold) {
+        fireEvent.pointerUp(roll, { clientX: 420, clientY: 5, pointerId: 3, ...flags });
+      }
+      return roll;
+    }
+    const readout = () => screen.queryByTestId('roll-velocity-readout')?.textContent;
+    const spanOf = (id: string) => {
+      const value = noteValue(id);
+      const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
+      return [start, start + value.duration.quarterNotes.numerator];
+    };
+
+    it('overwrites the destination by default: z is gone, the band holds only the moved piece', async () => {
+      const roll = await dragSpan();
+      // w keeps 0-1, the moved 1-3 lands on 6-8 (over z, deleted), the right part 3-4 stays.
+      expect(ids()).toHaveLength(3);
+      expect(ids()).not.toContain('z');
+      expect(ids()[0]).toBe('w');
+      expect(spanOf('w')).toEqual([0, 1]);
+      expect(ids().map((id) => spanOf(id))).toEqual([
+        [0, 1],
+        [6, 8],
+        [3, 4],
+      ]);
+      expect(screen.getByTestId('roll-range').style.left).toBe(`${6 * 64}px`);
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      expect(historyChangeCount()).toBeGreaterThan(0);
+      // One undo restores everything and the band returns to where it was.
+      act(() => undo());
+      expect(ids()).toEqual(['w', 'z']);
+      expect(screen.getByTestId('roll-range').style.left).toBe(`${1 * 64}px`);
+    });
+
+    it('Alt (merge) keeps the destination notes, and they stay unselected', async () => {
+      const roll = await dragSpan({ alt: true }, true);
+      expect(readout()).toBe('Merge');
+      fireEvent.pointerUp(roll, { clientX: 420, clientY: 5, pointerId: 3, altKey: true });
+      expect(ids()).toHaveLength(4);
+      expect(ids()).toContain('z');
+      expect(spanOf('z')).toEqual([6, 7]);
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      expect(readout()).toBeUndefined();
+    });
+
+    it('Ctrl copies: the source stays whole, the destination is overwritten, the copy is selected', async () => {
+      const roll = await open(wholeNoteClip());
+      selectSpan(roll, 64, 192);
+      fireEvent.pointerDown(roll, { clientX: 100, clientY: 5, pointerId: 3 });
+      fireEvent.pointerMove(roll, { clientX: 420, clientY: 5, pointerId: 3, ctrlKey: true });
+      expect(readout()).toBe('Copy');
+      expect(roll).toHaveAttribute('data-copying');
+      expect(ghost('w')).not.toBeNull();
+      fireEvent.pointerUp(roll, { clientX: 420, clientY: 5, pointerId: 3, ctrlKey: true });
+      expect(roll).not.toHaveAttribute('data-copying');
+      expect(ids()).toHaveLength(2);
+      expect(ids()[0]).toBe('w');
+      expect(spanOf('w')).toEqual([0, 4]);
+      expect(spanOf(ids()[1])).toEqual([6, 8]);
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      expect(screen.getByTestId('roll-range').style.left).toBe(`${6 * 64}px`);
+      act(() => undo());
+      expect(ids()).toEqual(['w', 'z']);
+      expect(screen.getByTestId('roll-range').style.left).toBe(`${1 * 64}px`);
+    });
+
+    it('Ctrl + Alt copies and merges: source and destination both stay', async () => {
+      const roll = await dragSpan({ ctrl: true, alt: true }, true);
+      expect(readout()).toBe('Copy + Merge');
+      fireEvent.pointerUp(roll, {
+        clientX: 420,
+        clientY: 5,
+        pointerId: 3,
+        ctrlKey: true,
+        altKey: true,
+      });
+      expect(ids()).toHaveLength(3);
+      expect([ids()[0], ids()[2]]).toEqual(['w', 'z']);
+      expect(spanOf('w')).toEqual([0, 4]);
+    });
+
+    it('the modifiers are read live: releasing Ctrl before the drop makes it a move', async () => {
+      await dragSpan({ ctrl: true }, true);
+      const roll = screen.getByRole('group', { name: /piano roll/ });
+      fireEvent.pointerUp(roll, { clientX: 420, clientY: 5, pointerId: 3 });
+      expect(spanOf('w')).toEqual([0, 1]);
+    });
+  });
+
+  describe('Ctrl-drag copies notes', () => {
+    const noteIds = () => desk.snippets[0].packet.items.map((entry) => entry.id);
+
+    it('a Ctrl press that becomes a drag copies the selection and selects the copies', async () => {
+      const roll = await open(seededClip());
+      const n1 = screen.getByTitle(/^C4 · 0\.000 qn/);
+      fireEvent.pointerDown(n1, { clientX: 20, clientY: rowY(60), pointerId: 1, ctrlKey: true });
+      fireEvent.pointerMove(roll, {
+        clientX: 20 + 128,
+        clientY: rowY(60),
+        pointerId: 1,
+        ctrlKey: true,
+      });
+      expect(roll).toHaveAttribute('data-copying');
+      expect(screen.getByTestId('roll-velocity-readout')).toHaveTextContent('Copy');
+      fireEvent.pointerUp(roll, {
+        clientX: 20 + 128,
+        clientY: rowY(60),
+        pointerId: 1,
+        ctrlKey: true,
+      });
+      expect(noteIds()).toHaveLength(4);
+      expect(noteIds().slice(0, 3)).toEqual(['n1', 'n2', 'n3']);
+      expect(noteValue('n1').onset.quarterNotes).toEqual({ numerator: 0, denominator: 1 });
+      const copy = noteIds()[3];
+      expect(noteValue(copy).onset.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
+      expect(noteValue(copy).pitches).toEqual([6000]);
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      act(() => undo());
+      expect(noteIds()).toEqual(['n1', 'n2', 'n3']);
+    });
+
+    it('a Ctrl press that is not a drag still toggles: adds an unselected note, removes a selected one', async () => {
+      const roll = await open(seededClip());
+      const n1 = screen.getByTitle(/^C4 · 0\.000 qn/);
+      const n2 = screen.getByTitle(/^E4 · 2\.000 qn/);
+      fireEvent.pointerDown(n1, { clientX: 20, clientY: rowY(60), pointerId: 1 });
+      fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60), pointerId: 1 });
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      // Ctrl-click an unselected note adds it.
+      fireEvent.pointerDown(n2, { clientX: 140, clientY: rowY(64), pointerId: 2, ctrlKey: true });
+      fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 2, ctrlKey: true });
+      expect(roll).toHaveAccessibleName(/2 selected/);
+      // Ctrl-click a selected note removes it (on release).
+      fireEvent.pointerDown(n2, { clientX: 140, clientY: rowY(64), pointerId: 3, ctrlKey: true });
+      expect(roll).toHaveAccessibleName(/2 selected/);
+      fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 3, ctrlKey: true });
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      expect(noteIds()).toHaveLength(3);
+    });
+
+    it('a Ctrl press on a selected note and a drag copies the whole selection and keeps it selected', async () => {
+      const roll = await open(seededClip());
+      const n1 = screen.getByTitle(/^C4 · 0\.000 qn/);
+      const n2 = screen.getByTitle(/^E4 · 2\.000 qn/);
+      fireEvent.pointerDown(n1, { clientX: 20, clientY: rowY(60), pointerId: 1 });
+      fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60), pointerId: 1 });
+      fireEvent.pointerDown(n2, { clientX: 140, clientY: rowY(64), pointerId: 2, ctrlKey: true });
+      fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 2, ctrlKey: true });
+      expect(roll).toHaveAccessibleName(/2 selected/);
+      fireEvent.pointerDown(n2, { clientX: 140, clientY: rowY(64), pointerId: 3, ctrlKey: true });
+      fireEvent.pointerMove(roll, {
+        clientX: 140 + 320,
+        clientY: rowY(64),
+        pointerId: 3,
+        ctrlKey: true,
+      });
+      fireEvent.pointerUp(roll, {
+        clientX: 140 + 320,
+        clientY: rowY(64),
+        pointerId: 3,
+        ctrlKey: true,
+      });
+      // n1 and n2 copied 5 quarters later; the originals stay; the two copies are selected.
+      expect(noteIds()).toHaveLength(5);
+      expect(roll).toHaveAccessibleName(/2 selected/);
+    });
+  });
+
+  it('an empty span just moves the band: no edit, no history', async () => {
+    const roll = await open(wholeNoteClip());
+    // 4.5 to 5.5 holds no note start and crosses none.
+    selectSpan(roll, 288, 352);
+    const before = desk.snippets[0];
+    const changes = historyChangeCount();
+    fireEvent.pointerDown(roll, { clientX: 300, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 300 - 64, clientY: 5, pointerId: 3 });
+    fireEvent.pointerUp(roll, { clientX: 300 - 64, clientY: 5, pointerId: 3 });
+    expect(desk.snippets[0]).toBe(before);
+    expect(historyChangeCount()).toBe(changes);
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${3.5 * 64}px`);
+  });
+
+  it('moving an empty span selects the notes now under the band, so Delete works on them', async () => {
+    const roll = await open(wholeNoteClip());
+    // 4.5 to 5.5 is empty; one quarter later it is 5.5 to 6.5, over z (6 to 7).
+    selectSpan(roll, 288, 352);
+    expect(roll).toHaveAccessibleName(/0 selected/);
+    fireEvent.pointerDown(roll, { clientX: 300, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 300 + 64, clientY: 5, pointerId: 3 });
+    fireEvent.pointerUp(roll, { clientX: 300 + 64, clientY: 5, pointerId: 3 });
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${5.5 * 64}px`);
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    fireEvent.keyDown(roll, { key: 'Delete' });
+    expect(ids()).toEqual(['w']);
+  });
+
+  it('a note that only touches the band is selected but stays put when the content moves', async () => {
+    const roll = await open(wholeNoteClip());
+    // 4 to 6: w ends at 4 and z starts at 6, both only touch the span.
+    selectSpan(roll, 256, 384);
+    expect(roll).toHaveAccessibleName(/2 selected/);
+    const before = desk.snippets[0];
+    fireEvent.pointerDown(roll, { clientX: 300, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 300 + 128, clientY: 5, pointerId: 3 });
+    fireEvent.pointerUp(roll, { clientX: 300 + 128, clientY: 5, pointerId: 3 });
+    // Nothing inside the span: no edit; the band moved and now overlaps z (6 to 7 vs 6 to 8).
+    expect(desk.snippets[0]).toBe(before);
+    expect(screen.getByTestId('roll-range').style.left).toBe(`${6 * 64}px`);
+    expect(roll).toHaveAccessibleName(/1 selected/);
+  });
+
+  it('the Pointer tool moves from empty space in the band too, and the move ghost wears the pitch color', async () => {
+    localStorage.setItem(
+      'hrifa.composition-workbench.settings.v1',
+      JSON.stringify({ colorByScaleDegree: true })
+    );
+    const roll = await open(wholeNoteClip());
+    selectSpan(roll, 192, 256);
+    act(() => tool('Pointer').click());
+    fireEvent.pointerDown(roll, { clientX: 200, clientY: 5, pointerId: 3 });
+    fireEvent.pointerMove(roll, { clientX: 264, clientY: 5, pointerId: 3 });
+    expect(ghost('w')!.style.getPropertyValue('--ghost-fill')).toContain('var(--mark-');
+    fireEvent.pointerUp(roll, { clientX: 264, clientY: 5, pointerId: 3 });
+    expect(ids()).toHaveLength(3);
+    expect(onsetOf(ids()[1])).toEqual({ numerator: 4, denominator: 1 });
+  });
+
+  describe('which presses keep or clear the band', () => {
+    async function withBand() {
+      const roll = await open(seededClip());
+      selectSpan(roll, 120, 300);
+      expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+      return roll;
+    }
+
+    it('the band survives the pointerdown itself when it lands inside, and is cleared outside it', async () => {
+      const roll = await withBand();
+      // Inside: capture does not clear, so the selection is intact while the press is held (the lane
+      // keeps its band) and cancelling the move leaves the band as it was.
+      fireEvent.pointerDown(roll, { clientX: 200, clientY: 5, pointerId: 4 });
+      expect(screen.getByTestId('velocity-range')).toBeInTheDocument();
+      fireEvent.pointerCancel(roll, { pointerId: 4 });
+      expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+      // Outside (right of 300 px): cleared before the new gesture.
+      fireEvent.pointerDown(roll, { clientX: 700, clientY: 5, pointerId: 5 });
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+    });
+
+    it('presses on the scrollbar and on the tool palette keep the band; roll, ruler and lane clear it', async () => {
+      await withBand();
+      fireEvent.pointerDown(screen.getByTestId('roll-hscroll'), { pointerId: 6 });
+      expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+      fireEvent.pointerDown(tool('Pencil'), { pointerId: 7 });
+      expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+      expect(screen.getByTestId('velocity-range')).toBeInTheDocument();
+      // The ruler clears it.
+      fireEvent.pointerDown(screen.getByTestId('roll-ruler'), { pointerId: 8 });
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+      expect(screen.queryByTestId('velocity-range')).toBeNull();
+    });
+
+    it('a press in the lane clears it', async () => {
+      await withBand();
+      fireEvent.pointerDown(document.querySelector('[data-testid="velocity-pin"]') as HTMLElement, {
+        clientX: 0,
+        clientY: 8,
+        pointerId: 9,
+      });
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+    });
+
+    it('a Pointer press on a note inside the band clears it (the note is selected instead)', async () => {
+      await withBand();
+      act(() => tool('Pointer').click());
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 140,
+        clientY: rowY(64),
+        pointerId: 10,
+      });
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+    });
+  });
+});
+
+describe('a time selection survives edits, undo and outside changes', () => {
+  const tool = (name: string) => screen.getByRole('radio', { name });
+
+  async function timeSelected() {
+    const roll = await open(seededClip());
+    act(() => tool('Time').click());
+    // 120 px to 300 px: quarters 1.5 to 5; n2 (2) and n3 (4) start inside.
+    drag(roll, { x: 120, y: 5 }, { x: 300, y: 5 });
+    expect(roll).toHaveAccessibleName(/2 selected/);
+    return roll;
+  }
+  const band = () => screen.getByTestId('roll-range');
+
+  it('Delete inside a time selection deletes its notes and keeps the band; undo rebuilds the notes it holds', async () => {
+    const roll = await timeSelected();
+    fireEvent.keyDown(roll, { key: 'Delete' });
+    expect(desk.snippets[0].packet.items.map((entry) => entry.id)).toEqual(['n1']);
+    expect(roll).toHaveAccessibleName(/0 selected/);
+    expect(band().style.left).toBe('96px');
+    expect(band().style.width).toBe(`${5 * 64 - 96}px`);
+    expect(screen.getByTestId('velocity-range')).toBeInTheDocument();
+    // Undo restores n2 and n3; the selection is rebuilt from the kept span (the K5 undo fix).
+    act(() => undo());
+    expect(desk.snippets[0].packet.items).toHaveLength(3);
+    expect(roll).toHaveAccessibleName(/2 selected/);
+    expect(band().style.left).toBe('96px');
+    expect(band().style.width).toBe(`${5 * 64 - 96}px`);
+  });
+
+  it('keeps the band when the packet changes from outside, pruned to the clip', async () => {
+    const roll = await timeSelected();
+    // An outside edit: a new note starting inside the span is picked up, the span itself is kept.
+    act(() => {
+      const latest = desk.snippets[0];
+      desk.commitSnippetEditById(
+        latest.id,
+        { ...latest.packet, items: [...latest.packet.items, seedNote('n4', 3, 1, 7200)] },
+        'outside-edit'
+      );
+    });
+    expect(roll).toHaveAccessibleName(/3 selected/);
+    expect(band().style.left).toBe('96px');
+    expect(band().style.width).toBe(`${5 * 64 - 96}px`);
+    // A hand edit of a selected note (Louder) leaves the band alone as well.
+    fireEvent.keyDown(roll, { key: ']' });
+    expect(band().style.left).toBe('96px');
+    expect(band().style.width).toBe(`${5 * 64 - 96}px`);
   });
 });

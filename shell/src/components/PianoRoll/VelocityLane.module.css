@@ -109,9 +109,10 @@
 .range {
   /*
    * Bitwig-style span: the theme's cyan mark and accent mixed with white (a light, cyan wash),
-   * strong at the left and right edges (24px stops) and low in the middle so the notes inside stay
-   * readable. The edge lines are a fixed light grey (white mixed with a little black) so they read
-   * in both schemes. Time selections only. Roll and lane share this recipe.
+   * strongest only at the very edge lines and easing out smoothly (an ease-out of several stops) over
+   * max(80px, 25% of the span) per side, low in the middle so the notes inside stay readable. The edge lines are a fixed light grey
+   * (white mixed with a little black) so they read in both schemes. Time selections only.
+   * Roll and lane share this recipe.
    */
   --band: color-mix(
     in srgb,
@@ -119,12 +120,24 @@
     white
   );
   --band-line: color-mix(in srgb, white 82%, black);
+  /* The fade distance per side: at least 80px, a quarter of the span, never past the middle. */
+  --band-fade: min(max(80px, 25%), 50%);
 
   background: linear-gradient(
     to right,
     color-mix(in srgb, var(--band) 46%, transparent),
-    color-mix(in srgb, var(--band) 8%, transparent) 24px,
-    color-mix(in srgb, var(--band) 8%, transparent) calc(100% - 24px),
+    color-mix(in srgb, var(--band) 38.8%, transparent) calc(var(--band-fade) * 0.1),
+    color-mix(in srgb, var(--band) 32.3%, transparent) calc(var(--band-fade) * 0.2),
+    color-mix(in srgb, var(--band) 24.1%, transparent) calc(var(--band-fade) * 0.35),
+    color-mix(in srgb, var(--band) 17.5%, transparent) calc(var(--band-fade) * 0.5),
+    color-mix(in srgb, var(--band) 10.4%, transparent) calc(var(--band-fade) * 0.75),
+    color-mix(in srgb, var(--band) 8%, transparent) calc(var(--band-fade) * 1),
+    color-mix(in srgb, var(--band) 8%, transparent) calc(100% - var(--band-fade) * 1),
+    color-mix(in srgb, var(--band) 10.4%, transparent) calc(100% - var(--band-fade) * 0.75),
+    color-mix(in srgb, var(--band) 17.5%, transparent) calc(100% - var(--band-fade) * 0.5),
+    color-mix(in srgb, var(--band) 24.1%, transparent) calc(100% - var(--band-fade) * 0.35),
+    color-mix(in srgb, var(--band) 32.3%, transparent) calc(100% - var(--band-fade) * 0.2),
+    color-mix(in srgb, var(--band) 38.8%, transparent) calc(100% - var(--band-fade) * 0.1),
     color-mix(in srgb, var(--band) 46%, transparent)
   );
   border-inline: 1px solid var(--band-line);

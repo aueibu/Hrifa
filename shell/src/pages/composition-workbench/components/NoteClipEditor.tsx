@@ -26,11 +26,16 @@ import {
   clipRollDuration,
   deleteNotes,
   moveNotes,
+  copyNotes,
   newNoteItemId,
   NOTE_EDIT_OPERATION,
+  notesOverlapping,
   packetRollNotes,
   resizeNotes,
   splitNote,
+  timeMoveDelta,
+  timeMoveResult,
+  type TimeMoveOptions,
 } from '../noteClipEdits';
 import { GRID_OPTIONS, useNoteEditorPreferences } from '../noteEditorPreferences';
 import {
@@ -43,6 +48,7 @@ import {
   selectIds,
   selectTime,
   type NoteSelection,
+  type TimeRange,
 } from '../noteSelection';
 import { scaleDegreeColor } from '../scaleDegreeColor';
 import { jsonEqual } from '../snippet';
@@ -104,22 +110,101 @@ function openingView(packet: DataPacket): PianoRollViewState {
   };
 }
 
+/**
+ * One committed time-selection move: the note lists either side of it and the band either side of it.
+ * Editor-side only (never in the packet or the history): an undo or redo that lands on one of these
+ * packets puts the band where it was then.
+ */
+interface BandMove {
+  beforeItems: DataPacket['items'];
+  afterItems: DataPacket['items'];
+  before: TimeRange;
+  after: TimeRange;
+}
+
+const MAX_BAND_MOVES = 50;
+
 interface SelectionState {
   selection: NoteSelection;
   /** The packet the selection's range was computed against. */
   basis: DataPacket;
+  /** Recent time-selection moves, newest last. */
+  moves: BandMove[];
 }
 
-/** The selection against the packet on screen: pruned, and re-ranged if the packet is not its basis. */
+function sameRange(a: TimeRange, b: TimeRange): boolean {
+  return Math.abs(a.start - b.start) < 1e-9 && Math.abs(a.end - b.end) < 1e-9;
+}
+
+/**
+ * Where the band belongs when the packet changed under it: an undo of a recorded move (the packet is
+ * the move's "before" while the band still sits at its "after") returns it to the move's start, a
+ * redo (the packet is the "after" while the band sits at the "before") to its destination. Both the
+ * notes and the band must match, so any other edit leaves a stale record unused.
+ */
+function bandAfterHistory(moves: BandMove[], packet: DataPacket, band: TimeRange): TimeRange {
+  for (let index = moves.length - 1; index >= 0; index -= 1) {
+    const move = moves[index];
+    if (sameRange(band, move.after) && jsonEqual(move.beforeItems, packet.items)) {
+      return move.before;
+    }
+    if (sameRange(band, move.before) && jsonEqual(move.afterItems, packet.items)) {
+      return move.after;
+    }
+  }
+  return band;
+}
+
+/** The furthest a time selection may reach: what the roll shows (the clip, any note past it, a bar). */
+function selectionLimit(packet: DataPacket): number {
+  const { numerator, denominator } = parseMeter(readClipProperties(packet).timeSignature);
+  return clipRollDuration(packet) + (numerator * 4) / denominator;
+}
+
+/**
+ * The selection against the packet on screen: pruned, and re-ranged if the packet is not its basis.
+ * A time selection keeps its kind and its span through any change (undo, redo, deletes, outside
+ * edits), held to the clip; when the notes changed, the notes it holds are the ones now overlapping
+ * the span, and an undo or redo of a band move puts the band back with it.
+ */
 function currentSelection(state: SelectionState, packet: DataPacket): NoteSelection {
-  const pruned = pruneSelection(state.selection, packet);
+  const pruned = pruneSelection(state.selection, packet, selectionLimit(packet));
   // A change that leaves the notes alone (the clip's length, loop, ...) keeps the range too.
   // Identity first: a packet that only changed its length or loop shares its item list.
-  return state.basis === packet ||
+  const sameNotes =
+    state.basis === packet ||
     state.basis.items === packet.items ||
-    jsonEqual(state.basis.items, packet.items)
-    ? pruned
-    : selectIds(packet, pruned.ids);
+    jsonEqual(state.basis.items, packet.items);
+  if (sameNotes) {
+    return pruned;
+  }
+  if (pruned.kind === 'time' && pruned.range) {
+    const range = bandAfterHistory(state.moves, packet, pruned.range);
+    return { ids: notesOverlapping(packet, range), range, kind: 'time' };
+  }
+  return selectIds(packet, pruned.ids);
+}
+
+/**
+ * Whether a press on `pressed` (the roll, ruler or lane element it landed in) starts moving the time
+ * band's content: it is on the roll, inside the drawn band, with the Time tool, or the Pointer tool
+ * on empty space (a note is its own press). Decided from the press x against the drawn band, so the
+ * window origin of a huge clip is already accounted for.
+ */
+function startsBandMove(pressed: Element, target: Element, clientX: number, tool: string): boolean {
+  if (!pressed.hasAttribute('data-tool') || (tool !== 'time' && tool !== 'pointer')) {
+    return false;
+  }
+  if (tool === 'pointer' && target.closest('[data-info]')) {
+    return false;
+  }
+  const band = pressed.querySelector<HTMLElement>('[data-testid="roll-range"]');
+  if (!band) {
+    return false;
+  }
+  const x = clientX - pressed.getBoundingClientRect().left;
+  const left = parseFloat(band.style.left);
+  return x >= left && x <= left + parseFloat(band.style.width);
 }
 
 function NoteClipEditorBody({ snippet }: ClipEditorProps) {
@@ -141,6 +226,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   const [selectionState, setSelectionState] = useState<SelectionState>(() => ({
     selection: emptyNoteSelection,
     basis: packet,
+    moves: [],
   }));
   const [notice, setNotice] = useState<string | null>(null);
   const selection = useMemo(
@@ -159,6 +245,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     setSelectionState((state) => ({
       selection: change(currentSelection(state, packet)),
       basis: packet,
+      moves: state.moves,
     }));
   }
 
@@ -204,10 +291,10 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   function commit(
     edit: (current: DataPacket) => DataPacket,
     after?: (next: DataPacket) => NoteSelection
-  ) {
+  ): { base: DataPacket; committed: DataPacket } | null {
     if (refusal) {
       setNotice(refusal);
-      return;
+      return null;
     }
     // The single choke point for note edits: an old clip with no stored properties gets its full
     // default set written as part of its FIRST edit (length from the content as it is now), in the
@@ -218,18 +305,20 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     const base = freezeClipProperties(current);
     const next = edit(base);
     if (next === base) {
-      return;
+      return null;
     }
     const result = commitSnippetEditById(snippet.id, next, NOTE_EDIT_OPERATION, { handEdit: true });
     if (!result.ok) {
       setNotice(result.error);
-      return;
+      return null;
     }
     setNotice(null);
-    setSelectionState({
+    setSelectionState((state) => ({
       selection: after ? after(next) : followEdit(selection, packet, next),
       basis: result.snippet.packet,
-    });
+      moves: state.moves,
+    }));
+    return { base, committed: result.snippet.packet };
   }
 
   function draw(note: PianoRollNewNote) {
@@ -251,6 +340,72 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   function split(id: string, at: number) {
     const right = newNoteItemId(snippet.id);
     commit((current) => splitNote(current, id, at, right));
+  }
+
+  /**
+   * Moves (or, with Ctrl/Cmd, copies) the content of the time selection by `delta` quarter notes: one
+   * hand edit, one undo step, notes cut at the span's edges and, unless Alt (merge) was held, the
+   * destination overwritten (noteClipEdits.timeMoveResult). The band moves with it and holds exactly
+   * the pieces that were moved or copied. An empty span just moves the band (nothing to edit, and
+   * the notes now under it are selected). `delta` is the roll's, already snapped to the grid and held
+   * at 0, so it is not rounded again here (the ghost and the commit must agree for an off-grid span).
+   */
+  function moveTime(
+    range: { start: number; end: number },
+    delta: number,
+    options: TimeMoveOptions = {}
+  ) {
+    const shift = timeMoveDelta(range, delta);
+    if (shift === 0) {
+      return;
+    }
+    const moved = { start: range.start + shift, end: range.end + shift };
+    const current = latestSnippetById(snippet.id)?.packet ?? packet;
+    if (timeMoveResult(current, range, delta, () => '', undefined, options).packet === current) {
+      setSelection(() => ({ ids: notesOverlapping(current, moved), range: moved, kind: 'time' }));
+      return;
+    }
+    let movedIds: string[] = [];
+    const done = commit(
+      (base) => {
+        const result = timeMoveResult(
+          base,
+          range,
+          delta,
+          () => newNoteItemId(snippet.id),
+          undefined,
+          options
+        );
+        movedIds = result.movedIds;
+        return result.packet;
+      },
+      () => ({ ids: movedIds, range: moved, kind: 'time' })
+    );
+    if (done) {
+      const record: BandMove = {
+        beforeItems: done.base.items,
+        afterItems: done.committed.items,
+        before: { ...range },
+        after: moved,
+      };
+      setSelectionState((state) => ({
+        ...state,
+        moves: [...state.moves, record].slice(-MAX_BAND_MOVES),
+      }));
+    }
+  }
+
+  /** Ctrl/Cmd-drag of notes: copies land at the destination, the originals stay, the copies are selected. */
+  function copySelection(ids: string[], delta: { start: number; pitchMidicents: number }) {
+    let copyIds: string[] = [];
+    commit(
+      (base) => {
+        const result = copyNotes(base, ids, delta, () => newNoteItemId(snippet.id));
+        copyIds = result.copyIds;
+        return result.packet;
+      },
+      (next) => selectIds(next, copyIds)
+    );
   }
 
   function remove(ids: string[]) {
@@ -348,13 +503,19 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       {/* One unified panel: the roll, the velocity lane and the single scrollbar, the palette beside all three. */}
       <div
         className={classes.rollArea}
-        onPointerDownCapture={() => {
-          // The next press anywhere in the panel (roll or lane) clears a time selection before the
-          // new gesture starts. K5c hook: a press inside the band (to move it) must keep it; decide
-          // here, from the press position, before clearing.
-          if (selection.kind === 'time') {
-            setSelection(clearTimeSelection);
+        onPointerDownCapture={(event) => {
+          // The next press on the roll, the ruler or the lane clears a time selection before the new
+          // gesture starts. Presses elsewhere (the scrollbar, the tool palette, the keys) leave it,
+          // and so does a press inside the band that starts moving its content.
+          if (selection.kind !== 'time') {
+            return;
           }
+          const target = event.target as Element;
+          const pressed = target.closest('[data-band-press]');
+          if (!pressed || startsBandMove(pressed, target, event.clientX, tool)) {
+            return;
+          }
+          setSelection(clearTimeSelection);
         }}
       >
         <PianoRoll
@@ -420,11 +581,19 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           onViewChange={setView}
           selectedIds={selection.ids}
           onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
-          onMarqueeRange={(range: PianoRollRange, timeOnly) =>
-            setSelection((current) =>
-              timeOnly ? selectTime(current, range) : extendRange(current, range)
-            )
+          onMarqueeRange={(range: PianoRollRange, timeOnly, additive) =>
+            setSelection((current) => {
+              if (!timeOnly) {
+                return extendRange(current, range);
+              }
+              // Every note overlapping the span (an edge touch included), whichever tool dragged it.
+              const next = selectTime(current, range, additive);
+              return next.range && next.kind === 'time'
+                ? { ...next, ids: notesOverlapping(packet, next.range) }
+                : next;
+            })
           }
+          onMoveTimeRange={moveTime}
           selectedRange={timeBand}
           selectedItemsRange={notesBand}
           tools={tools}
@@ -434,7 +603,11 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           onAddNote={draw}
           onPaintNotes={paint}
           onSplitNote={split}
-          onMoveNotes={(ids, delta) => commit((current) => moveNotes(current, ids, delta))}
+          onMoveNotes={(ids, delta, options) =>
+            options?.copy
+              ? copySelection(ids, delta)
+              : commit((current) => moveNotes(current, ids, delta))
+          }
           onResizeNotes={(ids, delta) => commit((current) => resizeNotes(current, ids, delta))}
           onDeleteNotes={remove}
           onVelocityChange={changeSelectionVelocity}

@@ -12,7 +12,12 @@ import {
   deleteNotes,
   itemsSpan,
   moveNotes,
+  moveTimeRange,
+  timeMoveResult,
+  copyNotes,
+  notesOverlapping,
   packetRollNotes,
+  timeMoveDelta,
   resizeNotes,
   splitNote,
 } from './noteClipEdits';
@@ -289,5 +294,347 @@ describe('note entry tools', () => {
     expect(splitNote(before, 'a', 1, 'r')).toBe(before);
     expect(splitNote(before, 'a', 2, 'r')).toBe(before);
     expect(splitNote(before, 'missing', 0.5, 'r')).toBe(before);
+  });
+});
+
+describe('moveTimeRange: the time-selection drag', () => {
+  let counter = 0;
+  const fresh = () => `new${(counter += 1)}`;
+  const span = (p: DataPacket, id: string) => {
+    const value = p.items.find((entry) => entry.id === id)!.value as NoteEventValue;
+    return [
+      rationalToNumber(value.onset.quarterNotes),
+      rationalToNumber(value.onset.quarterNotes) + rationalToNumber(value.duration.quarterNotes),
+    ];
+  };
+  const all = (p: DataPacket) =>
+    p.items.map((entry) => ({ id: entry.id, span: span(p, entry.id) }));
+
+  it('moves a note wholly inside the span and keeps its id, pitch and velocity', () => {
+    const before = clip([item('a', 1, 1, [6000], 0.5), item('z', 6, 1, [6400])]);
+    const after = moveTimeRange(before, { start: 0, end: 3 }, 2, fresh);
+    expect(all(after)).toEqual([
+      { id: 'a', span: [3, 4] },
+      { id: 'z', span: [6, 7] },
+    ]);
+    expect(after.items[0].value).toMatchObject({ pitches: [6000], velocity: 0.5 });
+    // Untouched notes are returned by reference.
+    expect(after.items[1]).toBe(before.items[1]);
+    expect(before.items[0].value).toMatchObject({ onset: musicalPosition(1) });
+  });
+
+  it('splits a whole note at the span edge: only the last beat moves, as a quarter note', () => {
+    const before = clip([item('w', 0, 4, [6000], 0.7)]);
+    const after = moveTimeRange(before, { start: 3, end: 4 }, 4, fresh);
+    const [stay, moved] = after.items;
+    // The part that stays keeps the id (the first three beats); the moved part is new.
+    expect(stay.id).toBe('w');
+    expect(span(after, 'w')).toEqual([0, 3]);
+    expect(moved.id).not.toBe('w');
+    expect(span(after, moved.id)).toEqual([7, 8]);
+    expect(moved.value).toMatchObject({ pitches: [6000], velocity: 0.7 });
+    expect((moved.value as NoteEventValue).duration).toEqual(musicalDuration(1));
+    expect(after.items).toHaveLength(2);
+  });
+
+  it('cuts the left edge too: the left part keeps the id and the inside part moves with a fresh id', () => {
+    const before = clip([item('w', 0, 4, [6000])]);
+    const after = moveTimeRange(before, { start: 1, end: 5 }, 1, fresh);
+    expect(after.items.map((entry) => entry.id)).toEqual(['w', after.items[1].id]);
+    expect(span(after, 'w')).toEqual([0, 1]);
+    expect(span(after, after.items[1].id)).toEqual([2, 5]);
+  });
+
+  it('a note crossing both edges becomes three: left keeps the id, middle moves, right stays', () => {
+    const before = clip([item('w', 0, 8, [6000, 6400], 0.9)]);
+    const after = moveTimeRange(before, { start: 2, end: 4 }, 8, fresh);
+    expect(after.items).toHaveLength(3);
+    const [left, middle, right] = after.items;
+    expect(left.id).toBe('w');
+    expect(new Set([left.id, middle.id, right.id]).size).toBe(3);
+    expect(span(after, left.id)).toEqual([0, 2]);
+    expect(span(after, middle.id)).toEqual([10, 12]);
+    expect(span(after, right.id)).toEqual([4, 8]);
+    // Chords and velocity are kept on every part.
+    after.items.forEach((entry) =>
+      expect(entry.value).toMatchObject({ pitches: [6000, 6400], velocity: 0.9 })
+    );
+  });
+
+  it('inherits provenance like the knife, on a copy', () => {
+    const source = item('w', 0, 4, [6000]);
+    source.provenance = [{ transformation: 'earlier' } as never];
+    const after = moveTimeRange(clip([source]), { start: 2, end: 4 }, 2, fresh);
+    expect(after.items[1].provenance).toEqual(source.provenance);
+    expect(after.items[1].provenance).not.toBe(source.provenance);
+  });
+
+  it('merge: moves several notes and chords together, leaves the source empty and keeps destination notes', () => {
+    const before = clip([
+      item('a', 0, 1, [6000]),
+      item('b', 1, 1, [6400, 6700]),
+      item('c', 1, 1, [7200]),
+      item('d', 4, 1, [6000]),
+    ]);
+    const after = moveTimeRange(before, { start: 0, end: 2 }, 4, fresh, undefined, {
+      merge: true,
+    });
+    expect(all(after)).toEqual([
+      { id: 'a', span: [4, 5] },
+      { id: 'b', span: [5, 6] },
+      { id: 'c', span: [5, 6] },
+      // The note already there stays (overlap allowed), nothing is deleted.
+      { id: 'd', span: [4, 5] },
+    ]);
+    // The source span is empty; a note whose start is the span's end only touches it, and counts.
+    expect(notesOverlapping(after, { start: 0, end: 3.5 })).toEqual([]);
+    expect(notesOverlapping(after, { start: 0, end: 4 }).sort()).toEqual(['a', 'd']);
+    // A note ending at the span's start touches it too.
+    expect(notesOverlapping(after, { start: 6, end: 8 }).sort()).toEqual(['b', 'c']);
+    expect(notesOverlapping(after, { start: 6.5, end: 8 })).toEqual([]);
+  });
+
+  it('a note that only touches the span stays put: no split, no sliver, no move', () => {
+    const before = clip([item('l', 0, 2, [6000]), item('r', 4, 2, [6400])]);
+    expect(moveTimeRange(before, { start: 2, end: 4 }, 3, fresh)).toBe(before);
+  });
+
+  it('clamps at the clip start and never moves the span before 0', () => {
+    expect(timeMoveDelta({ start: 2, end: 4 }, -5)).toBe(-2);
+    const after = moveTimeRange(clip([item('a', 3, 1, [6000])]), { start: 2, end: 4 }, -5, fresh);
+    expect(span(after, 'a')).toEqual([1, 2]);
+    expect(timeMoveDelta({ start: 2, end: 4 }, 100)).toBe(100);
+  });
+
+  it('rounds the shift to the grid', () => {
+    expect(timeMoveDelta({ start: 0, end: 1 }, 0.6, 0.5)).toBe(0.5);
+    expect(timeMoveDelta({ start: 0, end: 1 }, 0.76, 0.5)).toBe(1);
+    const after = moveTimeRange(
+      clip([item('a', 0, 1, [6000])]),
+      { start: 0, end: 1 },
+      1.3,
+      fresh,
+      0.5
+    );
+    expect(span(after, 'a')).toEqual([1.5, 2.5]);
+    expect(timeMoveDelta({ start: 0, end: 1 }, Number.NaN)).toBe(0);
+  });
+
+  it('returns the same packet for no shift, an empty span, a span with no notes or touching only', () => {
+    const before = clip([item('a', 2, 1, [6000])]);
+    expect(moveTimeRange(before, { start: 0, end: 4 }, 0, fresh)).toBe(before);
+    expect(moveTimeRange(before, { start: 3, end: 3 }, 2, fresh)).toBe(before);
+    expect(moveTimeRange(before, { start: 5, end: 7 }, 2, fresh)).toBe(before);
+    // A note that merely ends where the span starts, or starts where it ends, is not inside it.
+    expect(moveTimeRange(before, { start: 3, end: 5 }, 2, fresh)).toBe(before);
+    expect(moveTimeRange(before, { start: 0, end: 2 }, 2, fresh)).toBe(before);
+    expect(moveTimeRange(before, { start: 0, end: 1 }, -3, fresh)).toBe(before);
+  });
+
+  it('is exact for thirds: a triplet note moves without float drift', () => {
+    const triplet = item('t', 1 / 3, 1, [6000]);
+    const after = moveTimeRange(clip([triplet]), { start: 0, end: 4 }, 1, fresh);
+    expect((after.items[0].value as NoteEventValue).onset.quarterNotes).toEqual({
+      numerator: 4,
+      denominator: 3,
+    });
+  });
+
+  it('keeps the slot of a split note like the knife: left keeps a custom one, pieces take their length', () => {
+    const custom = item('a', 0, 4, [6000]);
+    (custom.value as NoteEventValue).interOnset = musicalDuration(6);
+    const after = moveTimeRange(clip([custom]), { start: 2, end: 4 }, 1, fresh);
+    expect((after.items[0].value as NoteEventValue).interOnset).toEqual(musicalDuration(6));
+    expect((after.items[1].value as NoteEventValue).interOnset).toEqual(musicalDuration(2));
+  });
+});
+
+describe('time-selection move and copy: overwrite (default) and merge', () => {
+  let counter = 0;
+  const fresh = () => `n${(counter += 1)}`;
+  const spans = (p: DataPacket) =>
+    p.items.map((entry) => {
+      const value = entry.value as NoteEventValue;
+      const start = rationalToNumber(value.onset.quarterNotes);
+      return { id: entry.id, span: [start, start + rationalToNumber(value.duration.quarterNotes)] };
+    });
+  const at = (p: DataPacket, id: string) => spans(p).find((entry) => entry.id === id)?.span;
+
+  it('overwrite: a note straddling the destination edge is cut there and the moved block lands', () => {
+    // a (0-2) moves to 2-4; b (3-6) starts inside the destination: its part outside (4-6) stays, keeping the id.
+    const before = clip([item('a', 0, 2, [6000]), item('b', 3, 3, [6400])]);
+    const result = timeMoveResult(before, { start: 0, end: 2 }, 2, fresh);
+    expect(spans(result.packet)).toEqual([
+      { id: 'a', span: [2, 4] },
+      { id: 'b', span: [4, 6] },
+    ]);
+    expect(result.movedIds).toEqual(['a']);
+  });
+
+  it('overwrite: a note wholly inside the destination is deleted; one touching its edge is untouched', () => {
+    const before = clip([
+      item('a', 0, 1, [6000]),
+      item('in', 2, 1, [6400]),
+      item('before', 1, 1, [6400]),
+      item('after', 3, 1, [6700]),
+    ]);
+    const result = timeMoveResult(before, { start: 0, end: 1 }, 2, fresh);
+    expect(spans(result.packet).map((entry) => entry.id)).toEqual(['a', 'before', 'after']);
+    // Touching the destination 2-3 exactly (1-2 ends at 2, 3-4 starts at 3): same items, no sliver.
+    expect(result.packet.items[1]).toBe(before.items[2]);
+    expect(result.packet.items[2]).toBe(before.items[3]);
+    expect(at(result.packet, 'a')).toEqual([2, 3]);
+  });
+
+  it('overwrite: a note crossing the whole destination is cut three ways: left keeps the id, right is new', () => {
+    const before = clip([item('a', 0, 1, [6000]), item('g', 3, 4, [6400], 0.4)]);
+    const result = timeMoveResult(before, { start: 0, end: 1 }, 4, fresh);
+    const [moved, left, right] = result.packet.items;
+    expect(moved.id).toBe('a');
+    expect(at(result.packet, 'a')).toEqual([4, 5]);
+    expect(left.id).toBe('g');
+    expect(at(result.packet, 'g')).toEqual([3, 4]);
+    expect(right.id).not.toBe('g');
+    expect(spans(result.packet)[2].span).toEqual([5, 7]);
+    expect(right.value).toMatchObject({ pitches: [6400], velocity: 0.4 });
+  });
+
+  it('overwrite: source and destination overlapping, the moved content replaces the overlap', () => {
+    // w (0-4), span 1-3 moved by 1: stay parts 0-1 and 3-4; the destination 2-4 clears the right stay part.
+    const before = clip([item('w', 0, 4, [6000])]);
+    const result = timeMoveResult(before, { start: 1, end: 3 }, 1, fresh);
+    expect(spans(result.packet).map((entry) => entry.span)).toEqual([
+      [0, 1],
+      [2, 4],
+    ]);
+    expect(result.packet.items[0].id).toBe('w');
+    expect(result.movedIds).toHaveLength(1);
+    expect(result.movedIds[0]).toBe(result.packet.items[1].id);
+  });
+
+  it('merge: the same move keeps the destination notes', () => {
+    const before = clip([item('w', 0, 4, [6000])]);
+    const result = timeMoveResult(before, { start: 1, end: 3 }, 1, fresh, undefined, {
+      merge: true,
+    });
+    expect(spans(result.packet).map((entry) => entry.span)).toEqual([
+      [0, 1],
+      [2, 4],
+      [3, 4],
+    ]);
+    expect(result.movedIds).toEqual([result.packet.items[1].id]);
+  });
+
+  it('chords keep all their pitches through a move and a copy', () => {
+    const before = clip([item('c', 0, 1, [6000, 6400, 6700])]);
+    const moved = timeMoveResult(before, { start: 0, end: 1 }, 3, fresh);
+    expect(moved.packet.items[0].value).toMatchObject({ pitches: [6000, 6400, 6700] });
+    const copied = timeMoveResult(before, { start: 0, end: 1 }, 3, fresh, undefined, {
+      copy: true,
+    });
+    expect(copied.packet.items).toHaveLength(2);
+    expect(copied.packet.items[0]).toBe(before.items[0]);
+    expect(copied.packet.items[1].value).toMatchObject({ pitches: [6000, 6400, 6700] });
+    expect(at(copied.packet, copied.movedIds[0])).toEqual([3, 4]);
+  });
+
+  it('copy (overwrite): the source stays untouched, copies get fresh ids, the destination is overwritten', () => {
+    const source = item('w', 0, 4, [6000], 0.6);
+    source.provenance = [{ transformation: 'earlier' } as never];
+    const before = clip([source, item('z', 6, 1, [6400])]);
+    // Copy the last two beats (2-4) by 4: they land on 6-8 and overwrite z.
+    const result = timeMoveResult(before, { start: 2, end: 4 }, 4, fresh, undefined, {
+      copy: true,
+    });
+    expect(result.packet.items[0]).toBe(before.items[0]);
+    expect(result.packet.items.map((entry) => entry.id)).not.toContain('z');
+    const [copyId] = result.movedIds;
+    expect(copyId).not.toBe('w');
+    expect(at(result.packet, copyId)).toEqual([6, 8]);
+    const copy = result.packet.items.find((entry) => entry.id === copyId)!;
+    expect(copy.value).toMatchObject({ pitches: [6000], velocity: 0.6 });
+    expect(copy.provenance).toEqual(source.provenance);
+    expect(copy.provenance).not.toBe(source.provenance);
+  });
+
+  it('copy + merge: the source and the destination notes both stay', () => {
+    const before = clip([item('w', 0, 2, [6000]), item('z', 4, 1, [6400])]);
+    const result = timeMoveResult(before, { start: 0, end: 2 }, 4, fresh, undefined, {
+      copy: true,
+      merge: true,
+    });
+    expect(result.packet.items[0]).toBe(before.items[0]);
+    expect(result.packet.items[2]).toBe(before.items[1]);
+    expect(result.packet.items).toHaveLength(3);
+    expect(at(result.packet, result.movedIds[0])).toEqual([4, 6]);
+    expect(result.movedIds).toHaveLength(1);
+  });
+
+  it('copy onto a span overlapping the source overwrites the source parts there', () => {
+    const before = clip([item('w', 0, 4, [6000])]);
+    const result = timeMoveResult(before, { start: 0, end: 2 }, 1, fresh, undefined, {
+      copy: true,
+    });
+    // The copy of 0-2 lands on 1-3: w is cut to 0-1 (id kept) and 3-4 (new id).
+    expect(spans(result.packet).map((entry) => entry.span)).toEqual([
+      [0, 1],
+      [3, 4],
+      [1, 3],
+    ]);
+    expect(result.packet.items[0].id).toBe('w');
+  });
+
+  it('an empty span (nothing inside it) changes nothing, whatever lies at the destination', () => {
+    const before = clip([item('z', 6, 1, [6400])]);
+    expect(timeMoveResult(before, { start: 0, end: 2 }, 6, fresh).packet).toBe(before);
+    expect(
+      timeMoveResult(before, { start: 0, end: 2 }, 6, fresh, undefined, { copy: true }).packet
+    ).toBe(before);
+  });
+});
+
+describe('copyNotes: the Ctrl-drag of notes', () => {
+  let counter = 0;
+  const fresh = () => `c${(counter += 1)}`;
+
+  it('copies the notes shifted, leaves the originals alone and keeps velocity, pitches and provenance', () => {
+    const source = item('a', 1, 1, [6000, 6400], 0.5);
+    source.provenance = [{ transformation: 'earlier' } as never];
+    const before = clip([source, item('b', 3, 1, [6700])]);
+    const { packet: after, copyIds } = copyNotes(
+      before,
+      ['a'],
+      { start: 2, pitchMidicents: 200 },
+      fresh
+    );
+    expect(after.items.slice(0, 2)).toEqual(before.items);
+    expect(after.items[0]).toBe(before.items[0]);
+    expect(copyIds).toHaveLength(1);
+    const copy = after.items[2];
+    expect(copy.id).toBe(copyIds[0]);
+    expect(copy.value).toMatchObject({
+      onset: musicalPosition(3),
+      pitches: [6200, 6600],
+      velocity: 0.5,
+    });
+    expect(copy.provenance).toEqual(source.provenance);
+    expect(copy.provenance).not.toBe(source.provenance);
+  });
+
+  it('clamps the group at the clip start, and a zero shift copies nothing', () => {
+    const before = clip([item('a', 1, 1, [6000]), item('b', 3, 1, [6000])]);
+    const { packet: after } = copyNotes(
+      before,
+      ['a', 'b'],
+      { start: -5, pitchMidicents: 0 },
+      fresh
+    );
+    expect(
+      after.items
+        .slice(2)
+        .map((entry) => rationalToNumber((entry.value as NoteEventValue).onset.quarterNotes))
+    ).toEqual([0, 2]);
+    expect(copyNotes(before, ['a'], { start: 0, pitchMidicents: 0 }, fresh).packet).toBe(before);
+    expect(copyNotes(before, ['x'], { start: 1, pitchMidicents: 0 }, fresh).packet).toBe(before);
   });
 });

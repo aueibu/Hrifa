@@ -104,7 +104,9 @@ export interface PianoRollProps {
    *   a double-click on empty space (the second press held). From the press point, a drag sideways
    *   sets the note's length and a drag up or down its velocity (shown as a percentage), both at
    *   once; each is remembered for the next note.
-   * - `onMoveNotes`: dragging a note moves the whole selection by the deltas.
+   * - `onMoveNotes`: dragging a note moves the whole selection by the deltas. A Ctrl/Cmd press on a
+   *   note that becomes a drag COPIES instead (a third argument `{ copy: true }`, ghosts and a copy
+   *   cursor shown); a Ctrl/Cmd press that is not dragged still toggles the note's selection.
    * - `onResizeNotes`: dragging a note's right edge changes the selection's durations by the delta.
    * - `onDeleteNotes`: with the tool `eraser` active, the notes swept over while the button was
    *   held, reported once on release (Escape cancels); with the tool `pointer`, a double-click on
@@ -115,7 +117,11 @@ export interface PianoRollProps {
    *   value plus the offset, clamped to 0 and 1 on its own.
    */
   onAddNote?(note: PianoRollNewNote): void;
-  onMoveNotes?(ids: string[], delta: { start: number; pitchMidicents: number }): void;
+  onMoveNotes?(
+    ids: string[],
+    delta: { start: number; pitchMidicents: number },
+    options?: { copy: boolean }
+  ): void;
   onResizeNotes?(ids: string[], deltaDuration: number): void;
   onDeleteNotes?(ids: string[]): void;
   onVelocityChange?(ids: string[], delta: number): void;
@@ -124,7 +130,22 @@ export interface PianoRollProps {
    * reach over empty space, so the owner may keep this range beside the selected ids. The time `timeOnly` is true for the Time tool (notes inside
    * or not) and for a Pointer marquee that caught no notes: the selection is then a time selection.
    */
-  onMarqueeRange?(range: PianoRollRange, timeOnly: boolean): void;
+  onMarqueeRange?(range: PianoRollRange, timeOnly: boolean, additive?: boolean): void;
+  /**
+   * Moving a time selection (needs `selectedRange`): pressing inside the band with the Time tool (or
+   * the Pointer tool, on empty space) and dragging moves the content of that span sideways in time.
+   * The roll previews the content as ghosts and the band at its new place, snapped to the grid and
+   * held at the start of time, and reports once on release (Escape cancels) the span and the
+   * shift in quarter notes. The owner makes the edit (splitting notes at the span's edges). The
+   * modifiers are read live (at each pointer move and at release): Ctrl/Cmd copies, Alt keeps the
+   * notes at the destination (merge instead of the default overwrite); a third argument
+   * `{ copy, merge }` is passed only when either is held, and a label names the mode while dragging.
+   */
+  onMoveTimeRange?(
+    range: PianoRollRange,
+    delta: number,
+    options?: { copy: boolean; merge: boolean }
+  ): void;
   /** A band drawn behind the notes over this span: the owner passes it only for a time selection. */
   selectedRange?: PianoRollRange | null;
   /**
@@ -229,6 +250,10 @@ type Gesture =
       collapseTo?: string;
       /** A velocity drag reads out the dragged note's value: its velocity when the press began. */
       base?: number;
+      /** A Ctrl/Cmd press that became a drag copies the notes instead of moving them. */
+      copy?: boolean;
+      /** A Ctrl/Cmd press on an already-selected note toggles it off on release, if it was not a drag. */
+      toggleOnRelease?: string;
     }
   | {
       kind: 'draw';
@@ -250,7 +275,17 @@ type Gesture =
       velocity: number;
     }
   | { kind: 'erase'; ids: Set<string>; x: number; y: number }
-  | { kind: 'time'; x: number; moved: boolean; additive: boolean };
+  | { kind: 'time'; x: number; moved: boolean; additive: boolean }
+  | {
+      kind: 'timeMove';
+      range: PianoRollRange;
+      x: number;
+      moved: boolean;
+      /** Ctrl/Cmd held (read live): copy the content instead of moving it. */
+      copy: boolean;
+      /** Alt held (read live): keep the notes at the destination (merge) instead of overwriting. */
+      merge: boolean;
+    };
 
 const MAX_MIDICENTS = 12700;
 
@@ -273,6 +308,10 @@ interface GesturePreview {
   /** Notes the eraser has swept over. */
   erasing?: ReadonlySet<string>;
   timeRange?: PianoRollRange;
+  /** A time-selection move: the span being moved (dStart is its shift). */
+  moveRange?: PianoRollRange;
+  /** The drag copies instead of moving (Ctrl/Cmd). */
+  copy?: boolean;
 }
 
 /** A drag shorter than this is a click. */
@@ -319,6 +358,7 @@ export function PianoRoll({
   onDeleteNotes,
   onVelocityChange,
   onMarqueeRange,
+  onMoveTimeRange,
   selectedRange,
   selectedItemsRange,
   ghostDrag = false,
@@ -521,6 +561,31 @@ export function PianoRoll({
     if (current.kind === 'time') {
       return { ...blank, timeRange: timeRangeOf(current.x, point.x) };
     }
+    if (current.kind === 'timeMove') {
+      // Time only, on the grid, and the span never starts before 0.
+      const dStart = Math.max(
+        snapped((point.x - current.x) / view.pixelsPerQuarter),
+        -current.range.start
+      );
+      return {
+        ...blank,
+        dStart,
+        moveRange: current.range,
+        timeRange: { start: current.range.start + dStart, end: current.range.end + dStart },
+        copy: current.copy,
+        // The mode in words, only when it is not the default (overwrite).
+        readout:
+          current.moved && (current.copy || current.merge)
+            ? {
+                text: [current.copy ? 'Copy' : null, current.merge ? 'Merge' : null]
+                  .filter(Boolean)
+                  .join(' + '),
+                x: point.x,
+                y: point.y,
+              }
+            : undefined,
+      };
+    }
     const dx = snapped((point.x - current.x) / view.pixelsPerQuarter);
     const dy = point.y - current.y;
     const ids = new Set(current.ids);
@@ -545,6 +610,7 @@ export function PianoRoll({
       dPitch,
       dDuration: current.kind === 'resize' ? dx : 0,
       dVelocity,
+      copy: current.kind === 'move' && current.copy ? true : undefined,
       readout:
         current.kind === 'velocity' && current.moved
           ? {
@@ -552,7 +618,9 @@ export function PianoRoll({
               x: point.x,
               y: point.y,
             }
-          : undefined,
+          : current.kind === 'move' && current.copy && current.moved
+            ? { text: 'Copy', x: point.x, y: point.y }
+            : undefined,
     };
   }
 
@@ -566,7 +634,11 @@ export function PianoRoll({
       advancePaint(current, point);
     } else if (current.kind === 'erase') {
       advanceErase(current, point);
-    } else if (current.kind === 'time') {
+    } else if (current.kind === 'time' || current.kind === 'timeMove') {
+      if (current.kind === 'timeMove') {
+        current.copy = event.ctrlKey || event.metaKey;
+        current.merge = event.altKey;
+      }
       if (!current.moved && Math.abs(point.x - current.x) < DRAG_PIXELS) {
         return;
       }
@@ -615,6 +687,27 @@ export function PianoRoll({
       }
       return;
     }
+    if (current.kind === 'timeMove') {
+      if (!current.moved) {
+        // A press in the band without a drag is a click: it clears, like a click on empty space.
+        onSelectionChange?.([]);
+        return;
+      }
+      current.copy = event.ctrlKey || event.metaKey;
+      current.merge = event.altKey;
+      const result = previewFor(current, point);
+      if (result.dStart !== 0) {
+        if (current.copy || current.merge) {
+          onMoveTimeRange?.(current.range, result.dStart, {
+            copy: current.copy,
+            merge: current.merge,
+          });
+        } else {
+          onMoveTimeRange?.(current.range, result.dStart);
+        }
+      }
+      return;
+    }
     if (current.kind === 'time') {
       if (!current.moved) {
         // A click without a drag clears, like a click on empty space with the pointer.
@@ -625,7 +718,11 @@ export function PianoRoll({
       }
       const range = timeRangeOf(current.x, point.x);
       const inside = notes
-        .filter((note) => note.start >= range.start - 1e-9 && note.start < range.end - 1e-9)
+        // Every note that overlaps the span, one that only touches an edge included.
+        .filter(
+          (note) =>
+            note.start + note.duration >= range.start - 1e-9 && note.start <= range.end + 1e-9
+        )
         .map(selectionId);
       onSelectionChange?.(
         marqueeSelection(
@@ -634,18 +731,30 @@ export function PianoRoll({
           current.additive
         )
       );
-      onMarqueeRange?.(range, true);
+      if (current.additive) {
+        onMarqueeRange?.(range, true, true);
+      } else {
+        onMarqueeRange?.(range, true);
+      }
       return;
     }
     if (!current.moved) {
       if (current.collapseTo !== undefined) {
         onSelectionChange?.([current.collapseTo]);
       }
+      if (current.toggleOnRelease !== undefined) {
+        onSelectionChange?.(clickSelection(selectedIds ?? [], current.toggleOnRelease, true));
+      }
       return;
     }
     const result = previewFor(current, point);
     if (current.kind === 'move' && (result.dStart !== 0 || result.dPitch !== 0)) {
-      onMoveNotes?.(current.ids, { start: result.dStart, pitchMidicents: result.dPitch });
+      const delta = { start: result.dStart, pitchMidicents: result.dPitch };
+      if (current.copy) {
+        onMoveNotes?.(current.ids, delta, { copy: true });
+      } else {
+        onMoveNotes?.(current.ids, delta);
+      }
     } else if (current.kind === 'resize' && result.dDuration !== 0) {
       onResizeNotes?.(current.ids, result.dDuration);
     } else if (current.kind === 'velocity' && Math.abs(result.dVelocity) >= 0.01) {
@@ -675,7 +784,10 @@ export function PianoRoll({
 
   /** A ghost drag leaves the real notes alone and draws ghosts instead. */
   const ghosting =
-    ghostDrag && preview !== null && (preview.kind === 'move' || preview.kind === 'resize');
+    preview !== null &&
+    (preview.kind === 'timeMove' ||
+      (ghostDrag && (preview.kind === 'move' || preview.kind === 'resize')) ||
+      (preview.kind === 'move' && preview.copy === true));
 
   /** What the roll draws: the notes, moved, resized or re-voiced by the gesture in progress. */
   const shownNotes = useMemo(() => {
@@ -722,6 +834,28 @@ export function PianoRoll({
   const ghostNotes = useMemo(() => {
     if (!preview || !ghosting) {
       return [];
+    }
+    if (preview.moveRange) {
+      // A time-selection move: the part of each note inside the span, shifted. Notes crossing the
+      // span's edges are cut there, so only the part that will move is drawn.
+      const { start: from, end: to } = preview.moveRange;
+      return notes.flatMap((note) => {
+        const start = Math.max(note.start, from);
+        const end = Math.min(note.start + note.duration, to);
+        if (end - start <= 1e-9) {
+          return [];
+        }
+        return [
+          {
+            ...note,
+            id: `ghost:${note.id}`,
+            sourceId: selectionId(note),
+            start: start + preview.dStart,
+            duration: end - start,
+            color: pitchColor?.(note.pitchMidicents) ?? note.color,
+          },
+        ];
+      });
     }
     return notes
       .filter((note) => preview.ids.has(selectionId(note)))
@@ -780,7 +914,38 @@ export function PianoRoll({
     startGesture(event, current);
   }
 
+  /** Whether a timeline x position (pixels) is inside the selected time band. */
+  function insideBand(x: number) {
+    return (
+      selectedRange !== null &&
+      selectedRange !== undefined &&
+      selectedRange.end > selectedRange.start &&
+      x >= selectedRange.start * view.pixelsPerQuarter &&
+      x <= selectedRange.end * view.pixelsPerQuarter
+    );
+  }
+
+  /** Starts moving the time selection when the press is inside its band; reports whether it did. */
+  function beginTimeMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const point = rollPoint(event);
+    if (!onMoveTimeRange || !selectedRange || !insideBand(point.x)) {
+      return false;
+    }
+    startGesture(event, {
+      kind: 'timeMove',
+      range: { ...selectedRange },
+      x: point.x,
+      moved: false,
+      copy: event.ctrlKey || event.metaKey,
+      merge: event.altKey,
+    });
+    return true;
+  }
+
   function beginTime(event: ReactPointerEvent<HTMLDivElement>) {
+    if (beginTimeMove(event)) {
+      return;
+    }
     startGesture(event, {
       kind: 'time',
       x: rollPoint(event).x,
@@ -804,38 +969,51 @@ export function PianoRoll({
       return;
     }
     const alreadySelected = selected.has(id);
+    // A Ctrl/Cmd press (not Shift) with editing on is a toggle that may become a COPY drag: a press on
+    // an unselected note adds it at once and a drag copies the whole selection; a press on a selected
+    // note keeps the selection while it is held and toggles that note off on release only if nothing
+    // was dragged.
+    const copyPress = editable && toggle && !event.shiftKey && Boolean(onMoveNotes);
     // With editing on, pressing a selected note keeps the whole selection so it can be dragged
     // together; it collapses to this note on release if nothing was dragged.
     const keepSelection = editable && alreadySelected && !toggle;
-    if (!keepSelection) {
+    if (!keepSelection && !(copyPress && alreadySelected)) {
       onSelectionChange?.(clickSelection(selectedIds ?? [], id, toggle));
     }
     event.currentTarget.parentElement?.focus();
-    if (!editable || toggle) {
+    if (!editable || (toggle && !copyPress)) {
       return;
     }
     const point = rollPointAt(event);
     const rect = noteRect(note, view);
     const kind = velocityDrag
       ? 'velocity'
-      : onResizeNotes &&
-          rect.width > 2 * RESIZE_HANDLE_PIXELS &&
-          point.x >= rect.left + rect.width - RESIZE_HANDLE_PIXELS
-        ? 'resize'
-        : onMoveNotes
-          ? 'move'
-          : null;
+      : copyPress
+        ? 'move'
+        : onResizeNotes &&
+            rect.width > 2 * RESIZE_HANDLE_PIXELS &&
+            point.x >= rect.left + rect.width - RESIZE_HANDLE_PIXELS
+          ? 'resize'
+          : onMoveNotes
+            ? 'move'
+            : null;
     if (!kind) {
       return;
     }
     gesture.current = {
       kind,
-      ids: alreadySelected ? [...(selectedIds ?? [])] : [id],
+      ids: alreadySelected
+        ? [...(selectedIds ?? [])]
+        : copyPress
+          ? [...(selectedIds ?? []), id]
+          : [id],
       x: point.x,
       y: point.y,
       moved: false,
       collapseTo: keepSelection && kind !== 'velocity' ? id : undefined,
       base: kind === 'velocity' ? velocityLevel(note.velocity) : undefined,
+      copy: copyPress && kind === 'move' ? true : undefined,
+      toggleOnRelease: copyPress && alreadySelected ? id : undefined,
     };
     rollRef.current?.setPointerCapture?.(event.pointerId);
   }
@@ -861,6 +1039,12 @@ export function PianoRoll({
       return;
     }
     if (activeTool === 'knife' && onSplitNote) {
+      return;
+    }
+    if (activeTool === 'pointer' && beginTimeMove(event)) {
+      // Empty space inside a time band: press and drag moves its content (a note is handled by its own press).
+      lastEmptyPress.current = null;
+      doubleDrewAt.current = null;
       return;
     }
     const point = rollPoint(event);
@@ -958,13 +1142,18 @@ export function PianoRoll({
     const box = rectFromCorners(start.x, start.y, point.x, point.y);
     const hit = notesInRect(notes, view, box);
     onSelectionChange(marqueeSelection(selectedIds ?? [], hit, start.additive));
-    onMarqueeRange?.(
-      {
-        start: Math.max(0, Math.floor(box.left / view.pixelsPerQuarter / snapUnit) * snapUnit),
-        end: Math.ceil((box.left + box.width) / view.pixelsPerQuarter / snapUnit) * snapUnit,
-      },
-      hit.length === 0
-    );
+    const boxRange = {
+      start: Math.max(0, Math.floor(box.left / view.pixelsPerQuarter / snapUnit) * snapUnit),
+      end: Math.ceil((box.left + box.width) / view.pixelsPerQuarter / snapUnit) * snapUnit,
+    };
+    // A shift/ctrl marquee that caught nothing while notes are selected adds nothing: it is not a
+    // time selection (that would turn the whole note selection into a band).
+    const timeOnly = hit.length === 0 && !(start.additive && (selectedIds?.length ?? 0) > 0);
+    if (start.additive) {
+      onMarqueeRange?.(boxRange, timeOnly, true);
+    } else {
+      onMarqueeRange?.(boxRange, timeOnly);
+    }
   }
   const scroller = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -1018,7 +1207,7 @@ export function PianoRoll({
   const loopSpan =
     loopBand && loopBand.end > loopBand.start ? quarters(loopBand.start, loopBand.end) : null;
   const rangeSpan =
-    selectedRange && selectedRange.end > selectedRange.start
+    selectedRange && selectedRange.end > selectedRange.start && preview?.kind !== 'timeMove'
       ? quarters(selectedRange.start, selectedRange.end)
       : null;
   const itemsRangeSpan =
@@ -1083,6 +1272,7 @@ export function PianoRoll({
   // Vertical positions this roll wrote into the scroller, so a late scroll event echoing one of them
   // is not taken for a user move. Cleared by a genuine user scroll.
   const writtenTops = useRef<number[]>([]);
+  const writtenZoom = useRef(view.pixelsPerSemitone);
 
   // The owner's view is the source of truth and is written one way, into the scroller. In the
   // unified panel the scroller's own horizontal position is never read back (see onScroll).
@@ -1097,6 +1287,11 @@ export function PianoRoll({
     const nativeLeft = view.scrollLeft - layout.origin;
     if (Math.abs(element.scrollLeft - nativeLeft) > 1) {
       element.scrollLeft = nativeLeft;
+    }
+    // A zoom changes what a remembered position means: forget it.
+    if (writtenZoom.current !== view.pixelsPerSemitone) {
+      writtenZoom.current = view.pixelsPerSemitone;
+      writtenTops.current = [];
     }
     if (Math.abs(element.scrollTop - view.scrollTop) > 1) {
       element.scrollTop = view.scrollTop;
@@ -1534,7 +1729,12 @@ export function PianoRoll({
                 }}
               >
                 {!detachedScroll && <div className={classes.corner} aria-hidden="true" />}
-                <div className={classes.ruler} data-testid="roll-ruler" aria-hidden="true">
+                <div
+                  className={classes.ruler}
+                  data-testid="roll-ruler"
+                  data-band-press
+                  aria-hidden="true"
+                >
                   {grid
                     .filter((line) => line.kind === 'bar' && line.label !== undefined)
                     .map((line) => (
@@ -1568,6 +1768,8 @@ export function PianoRoll({
                   aria-label={`${ariaLabel}; ${notes.length} notes${selectable ? `, ${selected.size} selected` : ''}`}
                   data-selectable={selectable || undefined}
                   data-tool={selectable ? activeTool : undefined}
+                  data-copying={preview?.copy ? '' : undefined}
+                  data-band-press
                   tabIndex={selectable ? 0 : undefined}
                   onKeyDown={detachedScroll ? undefined : panelKeyDown}
                   onPointerDown={beginMarquee}

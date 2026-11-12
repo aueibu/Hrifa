@@ -222,16 +222,17 @@ describe('the clip properties panel', () => {
     await enterLoop('Length', '0.0.0');
     expect(await screen.findByText(/loop length must be longer than zero/)).toBeVisible();
 
-    // A Start edit never says the length is zero: it keeps the length, or the loop would pass the end.
-    await enterLoop('Start', '1.2.0');
-    expect(await screen.findAllByText(/loop must stay within the total length/)).toHaveLength(1);
+    // A Start at or after the clip's end leaves no loop: refused. (A start that only makes the loop
+    // run past the end is not an error: it shortens the length, see the loop controls tests.)
+    await enterLoop('Start', '3.1.0');
+    expect(await screen.findByText(/loop start must be before the end of the clip/)).toBeVisible();
     expect(screen.queryAllByText(/loop length must be longer than zero/)).toHaveLength(1);
 
     await enter(/^Playback start/, '3.1.0');
     expect(await screen.findByText(/start must be inside the clip/)).toBeVisible();
 
     await enter(/^Length/, '1.0.0');
-    expect(await screen.findAllByText(/loop must stay within the total length/)).toHaveLength(2);
+    expect(await screen.findAllByText(/loop must stay within the total length/)).toHaveLength(1);
 
     await enter(/^Time signature/, '4/3');
     expect(await screen.findByText(/time signature must be like 4\/4/)).toBeVisible();
@@ -610,11 +611,18 @@ describe('the loop controls', () => {
     await enterLoop('Start', '1.3.0');
     expect(current()).toMatchObject({ loopStart: rational(2), loopEnd: rational(6) });
     expect(loopField('Length')).toHaveValue('1.0.0');
-    // Start plus length past the clip's end is refused (with the within-length message), kept as is.
+    // Start plus length past the clip's end shortens the length to fit (the end stops at the clip's
+    // end); it is not refused.
     await enterLoop('Start', '2.3.0');
-    expect(await screen.findByText(/loop must stay within the total length/)).toBeVisible();
-    expect(screen.queryByText(/must be longer than zero/)).toBeNull();
-    expect(current()).toMatchObject({ loopStart: rational(2), loopEnd: rational(6) });
+    expect(current()).toMatchObject({ loopStart: rational(6), loopEnd: rational(8) });
+    expect(loopField('Length')).toHaveValue('0.2.0');
+    expect(screen.queryByText(/loop must stay within the total length/)).toBeNull();
+    // A start at or after the end of the clip is still refused, and changes nothing.
+    await enterLoop('Start', '3.1.0');
+    expect(await screen.findByText(/loop start must be before the end of the clip/)).toBeVisible();
+    expect(current()).toMatchObject({ loopStart: rational(6), loopEnd: rational(8) });
+    await enterLoop('Start', '1.3.0');
+    expect(current()).toMatchObject({ loopStart: rational(2), loopEnd: rational(4) });
     await enterLoop('Length', '1.2.0');
     expect(current().loopEnd).toEqual(rational(8));
     await enterLoop('Length', '1.3.0');
@@ -644,6 +652,23 @@ describe('the loop controls', () => {
       fireEvent.keyDown(input, { key: 'Enter' });
     });
     expect(current()).toMatchObject({ loopStart: rational(4), loopEnd: rational(6) });
+  });
+
+  it('the Looping toggle flips the latest packet, not the render it was drawn from', async () => {
+    await open(legacyClip());
+    expect(current().loopOn).toBe(true);
+    act(() => {
+      const latest = desk.snippets[0];
+      const edit = editClipProperties(latest.packet, { loopOn: false });
+      if (!edit.ok) {
+        throw new Error(edit.error);
+      }
+      desk.commitSnippetEditById(latest.id, edit.packet, 'edit-clip-properties');
+      // Before React re-renders the panel: its render still shows Looping on.
+      fireEvent.click(looping());
+    });
+    // The desk had it off, so the click turns it back on (a stale read would have written "off").
+    expect(current().loopOn).toBe(true);
   });
 
   it('the two Length fields have different names', async () => {

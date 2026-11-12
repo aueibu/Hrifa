@@ -1,4 +1,12 @@
-import { clampScrollLeft, isBarMove, reconcileBar, recordEmitted, scrollRange } from './scrollSync';
+import {
+  clampScrollLeft,
+  isBarMove,
+  isWrittenEcho,
+  reconcileBar,
+  recordEmitted,
+  recordWritten,
+  scrollRange,
+} from './scrollSync';
 
 describe('scroll range and clamp', () => {
   it('the range is the timeline less the view, never negative', () => {
@@ -91,5 +99,25 @@ describe('bar and roll never fight over the position', () => {
     expect(bar).toBe(0);
     // The bar was only ever written for changes that did not come from it.
     expect(writes).toEqual([range, 0]);
+  });
+});
+
+describe('the echo guard remembers only the last write', () => {
+  it('a late echo of the last write is ignored', () => {
+    const written = recordWritten(recordWritten([], 100), 400);
+    expect(isWrittenEcho(written, 400)).toBe(true);
+    expect(isWrittenEcho(written, 400.4)).toBe(true);
+  });
+
+  it('a native wheel or arrow step that lands back on an earlier written value is honoured', () => {
+    // The bar wrote 100, then 400. The user then scrolls natively back to exactly 100.
+    const written = recordWritten(recordWritten([], 100), 400);
+    expect(isWrittenEcho(written, 100)).toBe(false);
+    expect(isWrittenEcho(written, 250)).toBe(false);
+  });
+
+  it('nothing written means nothing is an echo', () => {
+    expect(isWrittenEcho([], 0)).toBe(false);
+    expect(recordWritten([1, 2, 3], 9)).toEqual([9]);
   });
 });

@@ -470,23 +470,67 @@ describe('horizontal scrollbar: late scroll events', () => {
     return { strip, set, onScrollLeft };
   }
 
-  it('a late echo of an earlier write, after a newer view, is not a user move', () => {
+  it('a late echo of the LAST write is not a user move', () => {
     const { strip, set, onScrollLeft } = setup(RANGE, 0);
-    set(RANGE, 200); // write A
-    set(RANGE, 350); // a newer view B before A's scroll event arrives
+    set(RANGE, 200);
+    set(RANGE, 350); // the last write
     expect(strip.scrollLeft).toBe(350);
-    strip.scrollLeft = 200; // the late event reports A
+    strip.scrollLeft = 350; // its (late) scroll event
     fireEvent.scroll(strip);
     expect(onScrollLeft).not.toHaveBeenCalled();
   });
 
-  it('the position the browser clamps to when the spacer shrinks is not a user move', () => {
+  it('a native step that lands back on an EARLIER written value is a real move, not an echo', () => {
+    const { strip, set, onScrollLeft } = setup(RANGE, 0);
+    set(RANGE, 200); // written earlier
+    set(RANGE, 350); // the last write
+    strip.scrollLeft = 200; // the user's wheel or arrow key lands on the old value
+    fireEvent.scroll(strip);
+    expect(onScrollLeft).toHaveBeenLastCalledWith(200);
+  });
+
+  it('a write the browser clamps: the echo of the clamped position is not a user move', () => {
+    const onScrollLeft = vi.fn();
+    const view = render(
+      <HorizontalScrollbar range={RANGE} scrollLeft={0} onScrollLeft={onScrollLeft} />
+    );
+    const strip = screen.getByTestId('roll-hscroll');
+    // A bar whose maximum is 300: a write past it lands on 300.
+    let held = 0;
+    Object.defineProperty(strip, 'scrollLeft', {
+      get: () => held,
+      set: (value: number) => {
+        held = Math.min(value, 300);
+      },
+    });
+    view.rerender(
+      <HorizontalScrollbar range={RANGE} scrollLeft={500} onScrollLeft={onScrollLeft} />
+    );
+    expect(held).toBe(300);
+    fireEvent.scroll(strip); // the echo reports 300, not the 500 that was asked for
+    expect(onScrollLeft).not.toHaveBeenCalled();
+    // A genuine move elsewhere still reports.
+    strip.scrollLeft = 120;
+    fireEvent.scroll(strip);
+    expect(onScrollLeft).toHaveBeenLastCalledWith(120);
+  });
+
+  it('a zoom (new ratio) forgets the remembered write', () => {
+    const { strip, set, onScrollLeft } = setup(RANGE, 0);
+    set(RANGE, 200);
+    set(RANGE * 3, 200);
+    strip.scrollLeft = 200;
+    fireEvent.scroll(strip);
+    // The ratio changed nothing here (still native), so only a genuine move may report.
+    expect(onScrollLeft).not.toHaveBeenCalled();
+  });
+
+  it('when the spacer shrinks the roll writes the new position, and its echo is not a user move', () => {
     const { strip, set, onScrollLeft } = setup(RANGE, 700);
     strip.scrollLeft = 400; // zoom out: the browser clamped the bar before the new view was written
     set(300, 250);
     expect(strip.scrollLeft).toBe(250);
-    strip.scrollLeft = 400;
-    fireEvent.scroll(strip);
+    fireEvent.scroll(strip); // the event of that last write
     expect(onScrollLeft).not.toHaveBeenCalled();
   });
 
@@ -567,7 +611,7 @@ describe('unified panel: wheel zoom anchored at the pointer', () => {
     });
   });
 
-  it('a late scroll event echoing an earlier scrollTop write does not revert the view', () => {
+  it('a late scroll event echoing the last scrollTop write does not revert the view; an earlier value is a real scroll', () => {
     open({ start: { scrollTop: 600 } });
     place();
     const scroller = document.querySelector('[data-detached]') as HTMLElement;
@@ -579,11 +623,16 @@ describe('unified panel: wheel zoom anchored at the pointer', () => {
     fireEvent.wheel(roll, { deltaY: -100, ctrlKey: true, altKey: true, clientY: TOP + 150 });
     const second = readView();
     expect(Math.abs(second.scrollTop - first.scrollTop)).toBeGreaterThan(1);
-    scroller.scrollTop = first.scrollTop; // the late event reports A
+    // The late event of the LAST write (B) changes nothing.
+    scroller.scrollTop = second.scrollTop;
     fireEvent.scroll(scroller);
     expect(readView().scrollTop).toBe(second.scrollTop);
     expect(readView().pixelsPerSemitone).toBe(second.pixelsPerSemitone);
-    // A genuine user scroll is still taken.
+    // A scroll that lands back on the earlier written value A is genuine and is taken.
+    scroller.scrollTop = first.scrollTop;
+    fireEvent.scroll(scroller);
+    expect(readView().scrollTop).toBe(first.scrollTop);
+    // So is any other genuine user scroll.
     scroller.scrollTop = second.scrollTop + 80;
     fireEvent.scroll(scroller);
     expect(readView().scrollTop).toBe(second.scrollTop + 80);

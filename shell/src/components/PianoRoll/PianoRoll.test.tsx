@@ -520,7 +520,7 @@ describe('PianoRoll tools', () => {
     expect(handlers.onAddNote).not.toHaveBeenCalled();
   });
 
-  it('time selection: drag reports the range and every note starting inside it', () => {
+  it('time selection: drag reports the range and every note overlapping it, an edge touch included', () => {
     const { handlers, roll } = renderTool('time');
     fireEvent.pointerDown(roll, { clientX: 40, clientY: 5, pointerId: 1 });
     fireEvent.pointerMove(roll, { clientX: 100, clientY: 900, pointerId: 1 });
@@ -540,6 +540,134 @@ describe('PianoRoll tools', () => {
     fireEvent.pointerDown(roll, { clientX: 340, clientY: 5, pointerId: 2 });
     fireEvent.pointerUp(roll, { clientX: 340, clientY: 5, pointerId: 2 });
     expect(handlers.onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+
+  describe('moving a time selection', () => {
+    // The span 2..4 (128 to 256 px); c4 and e4 run 1 to 3, so they cross the span's left edge.
+    const band = { start: 2, end: 4 };
+    const ghost = (id: string) =>
+      document.querySelector(`[data-ghost="${id}"]`) as HTMLElement | null;
+
+    function setup(tool = 'time', props: Partial<React.ComponentProps<typeof PianoRoll>> = {}) {
+      const onMoveTimeRange = vi.fn();
+      const rendered = renderTool(tool, { selectedRange: band, onMoveTimeRange, ...props });
+      return { ...rendered, onMoveTimeRange };
+    }
+
+    it('pressing inside the band and dragging previews the content as ghosts and the band moved', () => {
+      const { roll, handlers, onMoveTimeRange } = setup();
+      fireEvent.pointerDown(roll, { clientX: 150, clientY: 5, pointerId: 1 });
+      fireEvent.pointerMove(roll, { clientX: 150 + 128, clientY: 5, pointerId: 1 });
+      // Only the part of each note inside 2..4 (2 to 3) moves, two quarters later: 4 to 5.
+      expect(ghost('c4')!.style.left).toBe('256px');
+      expect(ghost('c4')!.style.width).toBe('64px');
+      expect(ghost('e4')!.style.left).toBe('256px');
+      expect(ghost('g4')).toBeNull();
+      // The band is drawn at its new place, and the original is hidden while moving.
+      expect(screen.getByTestId('roll-time-preview').style.left).toBe('256px');
+      expect(screen.getByTestId('roll-time-preview').style.width).toBe('128px');
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+      expect(onMoveTimeRange).not.toHaveBeenCalled();
+      fireEvent.pointerUp(roll, { clientX: 150 + 128, clientY: 5, pointerId: 1 });
+      expect(onMoveTimeRange).toHaveBeenCalledOnce();
+      expect(onMoveTimeRange).toHaveBeenCalledWith(band, 2);
+      // It was a move, not a new selection.
+      expect(handlers.onMarqueeRange).not.toHaveBeenCalled();
+      expect(ghost('c4')).toBeNull();
+    });
+
+    it('snaps to the grid, ignores vertical travel and clamps at the clip start', () => {
+      const { roll, onMoveTimeRange } = setup();
+      fireEvent.pointerDown(roll, { clientX: 150, clientY: 5, pointerId: 1 });
+      // 40 px is 0.625 quarters: the grid (a half) rounds it to 0.5; the 600 px of height is ignored.
+      fireEvent.pointerMove(roll, { clientX: 190, clientY: 605, pointerId: 1 });
+      fireEvent.pointerUp(roll, { clientX: 190, clientY: 605, pointerId: 1 });
+      expect(onMoveTimeRange).toHaveBeenLastCalledWith(band, 0.5);
+      fireEvent.pointerDown(roll, { clientX: 150, clientY: 5, pointerId: 2 });
+      fireEvent.pointerMove(roll, { clientX: 150 - 600, clientY: 5, pointerId: 2 });
+      expect(screen.getByTestId('roll-time-preview').style.left).toBe('0px');
+      fireEvent.pointerUp(roll, { clientX: 150 - 600, clientY: 5, pointerId: 2 });
+      expect(onMoveTimeRange).toHaveBeenLastCalledWith(band, -2);
+    });
+
+    it('Escape cancels the move: nothing is reported and the band is back', () => {
+      const { roll, onMoveTimeRange } = setup();
+      fireEvent.pointerDown(roll, { clientX: 150, clientY: 5, pointerId: 1 });
+      fireEvent.pointerMove(roll, { clientX: 278, clientY: 5, pointerId: 1 });
+      expect(ghost('c4')).not.toBeNull();
+      fireEvent.keyDown(roll, { key: 'Escape' });
+      expect(ghost('c4')).toBeNull();
+      expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+      fireEvent.pointerUp(roll, { clientX: 278, clientY: 5, pointerId: 1 });
+      expect(onMoveTimeRange).not.toHaveBeenCalled();
+    });
+
+    it('a press inside the band without a drag is a click that clears; outside it starts a new selection', () => {
+      const { roll, handlers, onMoveTimeRange } = setup();
+      fireEvent.pointerDown(roll, { clientX: 150, clientY: 5, pointerId: 1 });
+      fireEvent.pointerUp(roll, { clientX: 150, clientY: 5, pointerId: 1 });
+      expect(handlers.onSelectionChange).toHaveBeenLastCalledWith([]);
+      expect(onMoveTimeRange).not.toHaveBeenCalled();
+      // Outside the band (past 256 px): a new time selection.
+      fireEvent.pointerDown(roll, { clientX: 340, clientY: 5, pointerId: 2 });
+      fireEvent.pointerMove(roll, { clientX: 380, clientY: 5, pointerId: 2 });
+      fireEvent.pointerUp(roll, { clientX: 380, clientY: 5, pointerId: 2 });
+      expect(handlers.onMarqueeRange).toHaveBeenCalledOnce();
+      expect(onMoveTimeRange).not.toHaveBeenCalled();
+    });
+
+    it('the Pointer tool moves from empty space inside the band, but a note press stays a note press', () => {
+      const { roll, handlers, onMoveTimeRange } = setup('pointer');
+      fireEvent.pointerDown(roll, { clientX: 150, clientY: 5, pointerId: 1 });
+      fireEvent.pointerMove(roll, { clientX: 214, clientY: 5, pointerId: 1 });
+      fireEvent.pointerUp(roll, { clientX: 214, clientY: 5, pointerId: 1 });
+      expect(onMoveTimeRange).toHaveBeenCalledWith(band, 1);
+      fireEvent.pointerDown(screen.getByTitle(/^C4/), {
+        clientX: 150,
+        clientY: rowY(60),
+        pointerId: 2,
+      });
+      expect(handlers.onSelectionChange).toHaveBeenLastCalledWith(['c4']);
+      fireEvent.pointerUp(roll, { clientX: 150, clientY: rowY(60), pointerId: 2 });
+      expect(onMoveTimeRange).toHaveBeenCalledOnce();
+    });
+
+    it('without a band, or with other tools, nothing moves', () => {
+      const none = setup('time', { selectedRange: null });
+      fireEvent.pointerDown(none.roll, { clientX: 150, clientY: 5, pointerId: 1 });
+      fireEvent.pointerMove(none.roll, { clientX: 278, clientY: 5, pointerId: 1 });
+      fireEvent.pointerUp(none.roll, { clientX: 278, clientY: 5, pointerId: 1 });
+      expect(none.onMoveTimeRange).not.toHaveBeenCalled();
+      expect(none.handlers.onMarqueeRange).toHaveBeenCalledOnce();
+      cleanup();
+      const pencil = setup('pencil');
+      fireEvent.pointerDown(pencil.roll, { clientX: 150, clientY: 5, pointerId: 2 });
+      fireEvent.pointerUp(pencil.roll, { clientX: 150, clientY: 5, pointerId: 2 });
+      expect(pencil.onMoveTimeRange).not.toHaveBeenCalled();
+      expect(pencil.handlers.onAddNote).toHaveBeenCalledOnce();
+    });
+  });
+
+  it('a shift-additive Pointer marquee that catches nothing while notes are selected is not time-only', () => {
+    const { handlers, roll } = renderTool('pointer', { selectedIds: ['g4'] });
+    fireEvent.pointerDown(roll, { clientX: 10, clientY: 5, shiftKey: true, pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 40, clientY: 15, shiftKey: true, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 40, clientY: 15, shiftKey: true, pointerId: 1 });
+    expect(handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 0, end: 1 }, false, true);
+  });
+
+  it('a Pointer marquee that catches nothing is time-only, also shift-additive with nothing selected', () => {
+    const plainRun = renderTool('pointer');
+    fireEvent.pointerDown(plainRun.roll, { clientX: 10, clientY: 5, pointerId: 1 });
+    fireEvent.pointerMove(plainRun.roll, { clientX: 40, clientY: 15, pointerId: 1 });
+    fireEvent.pointerUp(plainRun.roll, { clientX: 40, clientY: 15, pointerId: 1 });
+    expect(plainRun.handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 0, end: 1 }, true);
+    cleanup();
+    const { handlers, roll } = renderTool('pointer');
+    fireEvent.pointerDown(roll, { clientX: 10, clientY: 5, shiftKey: true, pointerId: 2 });
+    fireEvent.pointerMove(roll, { clientX: 40, clientY: 15, shiftKey: true, pointerId: 2 });
+    fireEvent.pointerUp(roll, { clientX: 40, clientY: 15, shiftKey: true, pointerId: 2 });
+    expect(handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 0, end: 1 }, true, true);
   });
 
   it('pencil: a click adds one note of the entry length; dragging up or down sets velocity with a readout', () => {

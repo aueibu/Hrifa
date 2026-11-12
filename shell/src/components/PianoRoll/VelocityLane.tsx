@@ -342,7 +342,7 @@ export function VelocityLane({
           onKeyDown={splitterKey}
         />
       )}
-      <div className={classes.lane} data-collapsed={collapsed || undefined}>
+      <div className={classes.lane} data-collapsed={collapsed || undefined} data-band-press>
         <div className={classes.header} style={{ width: PIANO_ROLL_KEYBOARD_WIDTH }}>
           <VelocityLaneToggle collapsed={collapsed} onCollapsedChange={onCollapsedChange} />
           {!collapsed && <span className={classes.label}>Velocity</span>}
