@@ -1,5 +1,12 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import 'fake-indexeddb/auto';
+import { beforeEach, vi } from 'vitest';
+
+// A fresh in-memory IndexedDB per test, so a desk saved by one test never loads in the next.
+beforeEach(() => {
+  globalThis.indexedDB = new IDBFactory();
+});
 
 const { getComputedStyle } = window;
 window.getComputedStyle = (elt) => getComputedStyle(elt);

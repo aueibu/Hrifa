@@ -7,6 +7,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { recordChange, registerHistoryApplier } from './history';
+import { isReloading } from './reloading';
 
 export const compositionStateKeys = {
   selectedConstructionModule: 'hrifa.composition-workbench.ui.selected-construction-module.v1',
@@ -223,6 +224,9 @@ export function usePersistentState<T>(
 
   // Mount and migration writes go through here and never record.
   useEffect(() => {
+    if (isReloading()) {
+      return;
+    }
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch {

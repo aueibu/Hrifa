@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { isReloading, setReloading } from './reloading';
 
 /**
  * Workbench-wide undo/redo. Every recorded write is `(key, previousRaw, nextRaw)` where raw is the
@@ -19,6 +20,15 @@ export interface HistoryChange {
   next: string | null;
   /** Not a storage key: undo and redo hand the value to the applier but never write storage. */
   virtual?: boolean;
+  /**
+   * For state too large to keep as raw strings per step (the desk): the values undo and redo hand
+   * to the applier, which may share references with the live state. `previous` and `next` are then
+   * only tokens that differ when the step changed something.
+   */
+  previousValue?: unknown;
+  nextValue?: unknown;
+  /** Folds a later write of the same key into `existing` (the values, since the tokens merge here). */
+  mergeValues?: (existing: HistoryChange, incoming: HistoryChange) => void;
 }
 
 interface HistoryEntry {
@@ -27,6 +37,7 @@ interface HistoryEntry {
   open: boolean;
   /** When the entry last received a write. */
   at: number;
+  coalesceKey?: string;
   /** The redo steps this entry discarded, restored if the entry nets to nothing. */
   discarded?: HistoryEntry[];
 }
@@ -34,10 +45,12 @@ interface HistoryEntry {
 export interface RecordOptions {
   /** False for discrete actions (add, remove, move): they never merge with neighbours. */
   coalesce?: boolean;
+  /** Writes merge only when their keys match (both unset counts as matching). */
+  coalesceKey?: string;
 }
 
-/** Applies a raw value to a mounted owner of the key. Returns false when it cannot. */
-type Applier = (raw: string) => boolean;
+/** Applies a raw value (and, for value changes, the value) to a mounted owner of the key. Returns false when it cannot. */
+type Applier = (raw: string, value?: unknown) => boolean;
 
 let past: HistoryEntry[] = [];
 let future: HistoryEntry[] = [];
@@ -49,6 +62,7 @@ let groupDepth = 0;
 let groupChanges: HistoryChange[] = [];
 let foldDepth = 0;
 let version = 0;
+let changeCount = 0;
 let listenersInstalled = false;
 const appliers = new Map<string, Set<Applier>>();
 const listeners = new Set<() => void>();
@@ -97,6 +111,11 @@ function mergeChange(changes: HistoryChange[], change: HistoryChange) {
   const existing = changes.find((candidate) => candidate.key === change.key);
   if (existing) {
     existing.next = change.next;
+    if (change.mergeValues) {
+      change.mergeValues(existing, change);
+    } else if (change.nextValue !== undefined) {
+      existing.nextValue = change.nextValue;
+    }
   } else {
     changes.push({ ...change });
   }
@@ -114,11 +133,19 @@ function pushEntry(entry: HistoryEntry) {
   lastTouchedAt = Date.now();
 }
 
+/**
+ * Counts every recorded change, including merged and folded ones, and every undo and redo. It only
+ * grows, so "has anything changed since X" is a comparison with the count taken at X (the saved
+ * project's unsaved-changes flag). Session-only.
+ */
+export const historyChangeCount = () => changeCount;
+
 /** Records one write. Cheap no-ops (same raw both sides) are ignored. */
 export function recordChange(change: HistoryChange, options: RecordOptions = {}) {
-  if (change.previous === change.next) {
+  if (isReloading() || change.previous === change.next) {
     return;
   }
+  changeCount += 1;
   if (foldDepth > 0) {
     foldChange(change);
     return;
@@ -134,7 +161,11 @@ export function recordChange(change: HistoryChange, options: RecordOptions = {})
   if (coalesce && entry?.open && past[past.length - 1] === entry) {
     const sameTick = tickOpen;
     const knowsKey = entry.changes.some((candidate) => candidate.key === change.key);
-    if (now - entry.at <= COALESCE_WINDOW_MS && (sameTick || knowsKey)) {
+    if (
+      now - entry.at <= COALESCE_WINDOW_MS &&
+      entry.coalesceKey === options.coalesceKey &&
+      (sameTick || knowsKey)
+    ) {
       mergeChange(entry.changes, change);
       entry.at = now;
       markTick();
@@ -149,7 +180,12 @@ export function recordChange(change: HistoryChange, options: RecordOptions = {})
       return;
     }
   }
-  const created: HistoryEntry = { changes: [{ ...change }], open: coalesce, at: now };
+  const created: HistoryEntry = {
+    changes: [{ ...change }],
+    open: coalesce,
+    at: now,
+    coalesceKey: options.coalesceKey,
+  };
   pushEntry(created);
   openEntry = coalesce ? created : null;
   markTick();
@@ -158,6 +194,9 @@ export function recordChange(change: HistoryChange, options: RecordOptions = {})
 
 /** Records every write made inside `fn` as one step. */
 export function recordGroup<T>(fn: () => T): T {
+  if (isReloading()) {
+    return fn();
+  }
   installListeners();
   groupDepth += 1;
   try {
@@ -168,6 +207,7 @@ export function recordGroup<T>(fn: () => T): T {
       const changes = groupChanges.filter((change) => change.previous !== change.next);
       groupChanges = [];
       if (changes.length) {
+        changeCount += 1;
         closeHistoryGroup();
         pushEntry({ changes, open: false, at: Date.now() });
         notify();
@@ -222,6 +262,9 @@ export function registerHistoryApplier(key: string, applier: Applier) {
 }
 
 function writeStorage(key: string, raw: string | null) {
+  if (isReloading()) {
+    return;
+  }
   try {
     if (raw === null) {
       localStorage.removeItem(key);
@@ -238,6 +281,7 @@ function applyEntry(entry: HistoryEntry, direction: 'undo' | 'redo') {
   const targets = ordered.map((change) => ({
     key: change.key,
     raw: direction === 'undo' ? change.previous : change.next,
+    value: direction === 'undo' ? change.previousValue : change.nextValue,
   }));
   // Storage first, for every key: a module that remounts as a result reads it in its initializer.
   ordered.forEach((change, index) => {
@@ -245,20 +289,21 @@ function applyEntry(entry: HistoryEntry, direction: 'undo' | 'redo') {
       writeStorage(targets[index].key, targets[index].raw);
     }
   });
-  targets.forEach(({ key, raw }) => {
+  targets.forEach(({ key, raw, value }) => {
     if (raw === null) {
       return;
     }
-    appliers.get(key)?.forEach((applier) => applier(raw));
+    appliers.get(key)?.forEach((applier) => applier(raw, value));
   });
 }
 
 export function undo() {
   const entry = past[past.length - 1];
-  if (!entry) {
+  if (!entry || isReloading()) {
     return;
   }
   closeHistoryGroup();
+  changeCount += 1;
   past = past.slice(0, -1);
   future = [...future, entry];
   // Resets that follow an undo or redo are not part of any step, so nothing may fold.
@@ -269,10 +314,11 @@ export function undo() {
 
 export function redo() {
   const entry = future[future.length - 1];
-  if (!entry) {
+  if (!entry || isReloading()) {
     return;
   }
   closeHistoryGroup();
+  changeCount += 1;
   future = future.slice(0, -1);
   past = [...past, entry];
   lastTouched = null;
@@ -292,7 +338,13 @@ export function resetHistory() {
   groupDepth = 0;
   groupChanges = [];
   foldDepth = 0;
+  setReloading(false);
   notify();
+}
+
+/** Re-renders when the change count moves; the count itself, for the unsaved-changes flag. */
+export function useHistoryChangeCount() {
+  return useSyncExternalStore(subscribe, historyChangeCount);
 }
 
 /** For the Undo and Redo controls. */

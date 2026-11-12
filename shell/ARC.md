@@ -63,13 +63,56 @@ Let a composer start from a blank clip and edit it directly, without a module fe
 - Stop and ask if full coverage needs refactoring modules beyond routing their state through the shared hook.
 
 ### K2: Edit contract
-- Scope: `commitSnippetEdit(snippet, newPacket, operation)` replaces the packet on the same id, adds an `edit-clip` (or named) provenance step to affected items, and goes through K1's history. Decide and document what a "version" is so the family tree can be added later without rework; do not build the tree viewer here.
+- Scope: `commitSnippetEdit(snippet, newPacket, operation)` replaces the packet on the same id, adds an `edit-clip` (or named) provenance step to affected (added/modified) items, and goes through K1's history. Do not build the tree viewer here (K7).
+- Version model (human decision, 2026-11-11): a clip keeps a stored derivation tree of snapshots, so any earlier state can be viewed, inspected and returned to at any time. Additive optional field on `Snippet` (no schema bump; v1 desks must still load): `lineage?: { head: string; versions: SnippetVersion[]; derivedFrom?: { snippetId; versionId; operation } }` where `SnippetVersion = { id; parentId: string | null; at: ISO string; operation: string; packet }` (design details are the builder's, but: a tree via `parentId`; the current packet is the head version; editing after returning to an earlier version creates a branch). Bounded per clip (count and/or size) with a pruning policy that keeps the tree connected and never drops the head. Never-edited clips store no lineage. Cross-clip derivation: Duplicate and Convert-to-pitch-classes record `derivedFrom` on the new clip. An edit may NOT change `kind`, `domain` or `encoding` (that is a new clip with `derivedFrom`, not an edit).
+- Data operations in K2 (no UI): `commitSnippetEdit`, `restoreSnippetVersion` (same id, head moves to that version, undoable), and `createClipFromVersion` (new clip with `derivedFrom`). All through `applyChange`.
 - Acceptance:
   - [ ] Test: an edit keeps the id, `createdAt` and name, changes the packet, and appends provenance
   - [ ] Test: a Make-source module for that snippet publishes the new packet after an edit
   - [ ] Test: the edit is undoable
   - [ ] Stored shape unchanged, or migrated per Parameters (stop-and-ask if a migration is needed)
 - Human checkpoint after: yes (confirm the version/lineage model before building on it)
+
+### K2b: Desk storage in IndexedDB
+- Why (human decision, 2026-11-11): the lineage tree is meant to work like Google Docs version history: persistent across reloads and browsable to any point. localStorage (~5 MB per origin, shared by every key, UTF-16) cannot hold full-snapshot versions; reviewer found 2 edited 200-note clips fill the origin and that save failures are silently swallowed (`usePersistentState.ts` save effect, `history.ts` `writeStorage`), so a reload restores a stale desk. Chosen: keep full snapshots (K2 data model unchanged) and move the desk, lineage included, to IndexedDB. Rejected: session-only lineage; diff-based versions in localStorage.
+- Scope:
+  - Desk snippets (with lineage) persist in IndexedDB, not `hrifa.composition-workbench.desk.snippets.v1`. Small hand-written wrapper (no runtime library). Stored record keeps the v1 snippet shape and still passes `acceptsSnippets` on load.
+  - One-time migration: on first load, if IndexedDB has no desk and the localStorage key holds a valid one, copy it in, then remove the localStorage key only after the IndexedDB write succeeds. Corrupt or newer data is left untouched, as today.
+  - Async load: the desk shows a brief loading state until the first read resolves; no write happens before load completes (must never overwrite a stored desk with the empty initial state).
+  - Writes are async, serialised (last write wins, no interleaving), and debounced lightly. A write failure is never silent: the desk context exposes a `persistError`, shown as a small warning on the desk ("Desk changes could not be saved." plus the reason; wording is a checkpoint item). Request `navigator.storage.persist()` once, best effort.
+  - Undo/redo: desk changes stay in the single workbench history (one Ctrl+Z binding). The history must not keep whole-desk raw strings per step for the desk; record snippet-level before/after values (shared frozen references are fine) so memory stays proportional to what changed.
+  - Snapshots (`snapshots.ts`): must not copy lineage into localStorage. Store desk heads only; restoring a snapshot must not destroy the lineage of clips that still exist (e.g. commit the snapshot's packet as a new version with operation `restore-snapshot`). Stop and ask if this gets messy.
+  - Caps: rename `MAX_LINEAGE_BYTES` to `MAX_LINEAGE_CHARS`; raise per-clip bounds for IndexedDB (builder proposes values, e.g. 500 versions / 20M chars, and counts the head packet in the budget). Pruning rules from K2 stay (connected tree, never drop head).
+  - Version coalescing: `commitSnippetEdit` accepts an optional coalesce key; a further edit with the same key within the same gesture or a short window replaces the head version instead of adding one (so one drag or typing burst is one version, as in Google Docs).
+  - Reviewer lows from K2: fix the `desk.tsx` doc comment (provenance only on added/modified items); drop the unused `rootId` generation.
+  - Test-only dev dependency `fake-indexeddb` is allowed (package.json / yarn.lock change, human-approved).
+- Acceptance:
+  - [ ] Test: desk round-trips through IndexedDB across a provider remount, lineage included
+  - [ ] Test: a v1 desk in localStorage migrates once; the key is removed only after a successful write; corrupt data is not migrated or deleted
+  - [ ] Test: nothing is written before the initial load resolves
+  - [ ] Test: a failed write sets `persistError` and the warning renders; a later successful write clears it
+  - [ ] Test: desk edits, restores and deletes remain undoable through the single history
+  - [ ] Test: a snapshot does not contain lineage; restoring one keeps existing clips' lineage
+  - [ ] Test: coalesced edits produce one version; non-coalesced produce one each
+  - [ ] A 4096-event clip can be edited and saved
+- Human checkpoint after: yes, combined with K2's (version model, warning wording, loading state)
+
+### K2c: Saved projects and coarse versions
+- Why (human decisions, 2026-11-11): (a) snapshots were always meant to be a "saved project", so opening one should replace the workbench like opening a file, not merge into the desk; (b) one version per drag was too fine. Version history should show how a clip got there (generate/capture, transform, edit session, restore), while undo keeps covering small steps within a session.
+- Scope:
+  - Rename snapshots to projects throughout the UI (proposed wording: "Save project", "Open project", "Delete project"; checkpoint item). Code names may follow (`projects.ts`), keeping a thin re-export only if needed.
+  - Projects live in IndexedDB (own object store; extend `deskStore.ts` or a sibling module) and store the whole workbench: every raw workbench key as today plus the full desk including lineage. No migration of existing localStorage snapshots (human, 2026-11-11: none worth keeping); the old store is left untouched.
+  - Opening a project replaces everything: workbench keys and the whole desk (with lineage) are written, then the page reloads. No merging with current clips: remove `restoreDeskHeads` / `restore-snapshot` merge logic. If the desk write fails or the desk is locked/loading, nothing changes (on screen or stored) and a clear message says so.
+  - Unsaved work: track the current project (name, shown in the menu) and a dirty flag (any recorded history change since the last save or open). Opening another project while dirty asks: Save first / Discard / Cancel (wording is a checkpoint item; Mantine Modal).
+  - Version rule: a new version is created only at meaningful moments: first capture or creation (lineage root when first needed), a transform or conversion applied, a restore, and the end of a hand-edit session. All `commitSnippetEdit` calls within one edit session amend the head version instead of adding one. A session ends on an explicit end (editor closed or another clip targeted; expose `endEditSession(snippetId)` for K3/K5 to call), on a different operation kind (e.g. a transform), or after an idle period (`EDIT_SESSION_IDLE_MS`, about 3 minutes). Undo granularity is unchanged and decoupled from versions: one undo step per gesture (existing 500 ms coalesce key), several undo steps can fall inside one version.
+  - Caps stay as backstops (500 versions / MAX_LINEAGE_CHARS 20M).
+- Acceptance:
+  - [ ] Test: saving and opening a project round-trips the workbench and the full desk including lineage, via IndexedDB
+  - [ ] Test: opening a project replaces the desk entirely (clips not in the project are gone, project clips keep their saved lineage)
+  - [ ] Test: opening while dirty prompts; Cancel changes nothing; Discard opens; Save first saves then opens
+  - [ ] Test: a failed or refused open changes nothing on screen or in storage
+  - [ ] Test: many edits in one session make one version but several undo steps; idle timeout, `endEditSession` and a transform each start a new version
+- Human checkpoint after: yes, combined with K2/K2b (wording, unsaved prompt, version granularity)
 
 ### K3: Generalise the bottom panel
 - Scope: replace "active module id" as the only thing the bottom panel shows with an editor target (module instance or clip). Modules stay mounted and hidden as today. Add an editor slot for clips. A desk card double-click sets the target to that clip and expands the panel. Until an editor exists for a clip type the slot shows a clear "no editor for this clip yet" state.
@@ -102,7 +145,7 @@ Let a composer start from a blank clip and edit it directly, without a module fe
 - Human checkpoint after: yes
 
 ### K7 (stretch): Lineage viewer
-- Scope: the family-tree view of how a clip was derived, with Restore here, Create from this, and Open for comparison. Depends on K2's version model.
+- Scope: a "History" button on a clip that opens a panel on the right showing the family tree of how the clip got there (K2's `lineage`: versions, branches and `derivedFrom` links), with preview/inspect of any version and Restore here, Create from this, and Open for comparison, using K2's data operations. Layout and wording are the human's call (checkpoint).
 - Human checkpoint after: yes
 
 ## Final step

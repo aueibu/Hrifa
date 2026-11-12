@@ -13,47 +13,44 @@ import {
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Surface } from '../components/Surface/Surface';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
+import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
 import { ArithmeticModule } from './composition-workbench/components/ArithmeticModule';
-import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
+import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
+import { DeskView } from './composition-workbench/components/DeskView';
+import { FractioningModule } from './composition-workbench/components/FractioningModule';
+import { HouseholderModule } from './composition-workbench/components/HouseholderModule';
+import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
+import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
+import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
+import { MixerModule } from './composition-workbench/components/MixerModule';
 import {
   ModuleActiveContext,
   ModuleInspectorSlotContext,
 } from './composition-workbench/components/ModuleHost';
-import { SplitStage, clampSplit } from './composition-workbench/components/SplitStage';
-import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
-import { FractioningModule } from './composition-workbench/components/FractioningModule';
-import { HouseholderModule } from './composition-workbench/components/HouseholderModule';
-import { InterferenceModule } from './composition-workbench/components/InterferenceModule';
-import { MelodicizationModule } from './composition-workbench/components/MelodicizationModule';
-import { MixerModule } from './composition-workbench/components/MixerModule';
-import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
-import {
-  WorkbenchStatusBar,
-  type WorkspaceView,
-} from './composition-workbench/components/WorkbenchStatusBar';
-import { DeskView } from './composition-workbench/components/DeskView';
-import { SnippetSourceModule } from './composition-workbench/components/SnippetSourceModule';
 import { PairCompositionModule } from './composition-workbench/components/PairCompositionModule';
 import { PitchListModule } from './composition-workbench/components/PitchListModule';
-import { SwirlingMistsModule } from './composition-workbench/components/SwirlingMistsModule';
+import { ProjectMenu } from './composition-workbench/components/ProjectMenu';
 import { RhythmEditModule } from './composition-workbench/components/RhythmEditModule';
 import { RhythmListModule } from './composition-workbench/components/RhythmListModule';
 import { ScaleConstructionModule } from './composition-workbench/components/ScaleConstructionModule';
 import { ScaleEvolutionModule } from './composition-workbench/components/ScaleEvolutionModule';
-import { SnapshotMenu } from './composition-workbench/components/SnapshotMenu';
+import { SnippetSourceModule } from './composition-workbench/components/SnippetSourceModule';
+import { SplitStage, clampSplit } from './composition-workbench/components/SplitStage';
+import { SwirlingMistsModule } from './composition-workbench/components/SwirlingMistsModule';
 import { TransportBar } from './composition-workbench/components/TransportBar';
-import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
+import {
+  WorkbenchStatusBar,
+  type WorkspaceView,
+} from './composition-workbench/components/WorkbenchStatusBar';
+import { nextFreePosition, type Position } from './composition-workbench/compositionLayout';
 import {
   outputRefKey,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from './composition-workbench/compositionRouting';
-import { nextFreePosition, type Position } from './composition-workbench/compositionLayout';
 import { CompositionSettingsProvider } from './composition-workbench/compositionSettings';
-import { DeskProvider } from './composition-workbench/desk';
-import { recordChange, recordGroup } from './composition-workbench/history';
 import {
   acceptsCompositionInspectorTarget,
   acceptsCompositionInstances,
@@ -69,11 +66,19 @@ import {
   type CompositionModuleInstance,
   type ModuleRouteStates,
 } from './composition-workbench/compositionWorkspace';
+import { DeskProvider } from './composition-workbench/desk';
 import { evaluatePatch } from './composition-workbench/evaluator';
 import { createDefaultPatch } from './composition-workbench/examples';
+import { recordChange, recordGroup } from './composition-workbench/history';
 import type { PatchDocument } from './composition-workbench/model';
 import { loadSavedPatch } from './composition-workbench/persistence';
-import { signalTypeFor, signalTypeRegistry, type SignalTypeId } from './composition-workbench/signalTypes';
+import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
+import { isReloading } from './composition-workbench/reloading';
+import {
+  signalTypeFor,
+  signalTypeRegistry,
+  type SignalTypeId,
+} from './composition-workbench/signalTypes';
 import {
   compositionInstanceStateKey,
   compositionStateKeys,
@@ -196,7 +201,9 @@ const instanceStateKeys: Record<CompositionModuleId, string[]> = {
 
 // The mixer's inlets are its channels, which the receiver's route state owns, so it declares none
 // here; an empty list still marks it as a routed module.
-const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signalType: SignalTypeId }[]>> = {
+const routedModulePorts: Partial<
+  Record<CompositionModuleId, { id: string; signalType: SignalTypeId }[]>
+> = {
   mixer: [],
   melodicization: [
     { id: 'rhythm', signalType: 'rhythm' },
@@ -220,6 +227,10 @@ const routedModulePorts: Partial<Record<CompositionModuleId, { id: string; signa
  * Call inside recordGroup so the removal is one step with the instance list change.
  */
 function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
+  // A project open has already written the opened project's keys; removing any now would delete them.
+  if (isReloading()) {
+    return;
+  }
   try {
     instanceStateKeys[instance.moduleId].forEach((base) => {
       const key = compositionInstanceStateKey(base, instance.id, instance.moduleId);
@@ -318,7 +329,9 @@ export function CompositionWorkbenchPage() {
   useEffect(() => {
     if (
       compositionInspectorTarget.kind !== 'canvas' &&
-      !compositionInstances.some((instance) => instance.id === compositionInspectorTarget.instanceId)
+      !compositionInstances.some(
+        (instance) => instance.id === compositionInspectorTarget.instanceId
+      )
     ) {
       setCompositionInspectorTarget({ kind: 'canvas' });
     }
@@ -368,7 +381,8 @@ export function CompositionWorkbenchPage() {
         const ports = routedModulePorts[moduleId] ?? [];
         const receiver = current[instanceId] ?? createDefaultModuleRouteState(ports);
         const existing = receiver[port];
-        const preferredSignalType = ports.find((candidate) => candidate.id === port)?.signalType ?? 'numeric';
+        const preferredSignalType =
+          ports.find((candidate) => candidate.id === port)?.signalType ?? 'numeric';
         const sourcePacket = source ? compositionOutputs[outputRefKey(source)]?.packet : undefined;
         // A port with its own declared preference (Melodicization's rhythm/pitch inlets) always
         // gets the Quick Adjust panel relevant to what IT expects, regardless of the connected
@@ -378,20 +392,29 @@ export function CompositionWorkbenchPage() {
         // Only a port with no strong preference (Arithmetic's generic `numeric` A/B inlets)
         // defers to whatever the connected source actually is.
         const sourceSignalType = source ? signalTypeFor(sourcePacket) : preferredSignalType;
-        const signalType = preferredSignalType === 'numeric' ? sourceSignalType : preferredSignalType;
+        const signalType =
+          preferredSignalType === 'numeric' ? sourceSignalType : preferredSignalType;
         const treatment =
           existing && existing.signalType === signalType
             ? existing.treatment
             : signalTypeRegistry[signalType].default;
         return {
           ...current,
-          [instanceId]: { ...receiver, [port]: { source: source ?? undefined, signalType, treatment } },
+          [instanceId]: {
+            ...receiver,
+            [port]: { source: source ?? undefined, signalType, treatment },
+          },
         };
       });
       setCompositionInspectorTarget({ kind: 'route', instanceId, port });
       setActiveCompositionInstanceId(instanceId);
     },
-    [compositionOutputs, setActiveCompositionInstanceId, setCompositionInspectorTarget, setModuleRouteStates]
+    [
+      compositionOutputs,
+      setActiveCompositionInstanceId,
+      setCompositionInspectorTarget,
+      setModuleRouteStates,
+    ]
   );
 
   const addMixerChannel = useCallback(
@@ -416,7 +439,9 @@ export function CompositionWorkbenchPage() {
         }
         return {
           ...current,
-          [instanceId]: Object.fromEntries(Object.entries(receiver).filter(([key]) => key !== port)),
+          [instanceId]: Object.fromEntries(
+            Object.entries(receiver).filter(([key]) => key !== port)
+          ),
         };
       });
       setCompositionInspectorTarget((target) =>
@@ -530,310 +555,362 @@ export function CompositionWorkbenchPage() {
 
   return (
     <CompositionSettingsProvider>
-    <DeskProvider>
-    <AudioEngineProvider>
-    <PreviewRegistryProvider>
-      <MantineThemeProvider theme={compactWorkbenchTheme}>
-      <InfoBarActiveContext.Provider value>
-      <AppShell
-        header={{ height: 56 }}
-        footer={{ height: 39 }}
-        padding="md"
-        className={classes.workbench}
-      >
-        <AppShell.Header>
-          <div className={classes.headerBar}>
-            <Group gap="xs" wrap="nowrap">
-              <Tooltip label="Back to Workbench">
-                <ActionIcon
-                  component={Link}
-                  to="/"
-                  variant="subtle"
-                  size="lg"
-                  aria-label="Back to Workbench"
+      <DeskProvider>
+        <AudioEngineProvider>
+          <PreviewRegistryProvider>
+            <MantineThemeProvider theme={compactWorkbenchTheme}>
+              <InfoBarActiveContext.Provider value>
+                <AppShell
+                  header={{ height: 56 }}
+                  footer={{ height: 39 }}
+                  padding="md"
+                  className={classes.workbench}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </ActionIcon>
-              </Tooltip>
-              <Title order={1} className={classes.visuallyHidden}>
-                Composition Workbench
-              </Title>
-            </Group>
-            <TransportBar selectedInstanceId={activeCompositionInstanceId} />
-            <Group gap="xs" wrap="nowrap" justify="flex-end">
-              <SnapshotMenu />
-              <ColorSchemeToggle />
-            </Group>
-          </div>
-        </AppShell.Header>
-        <AppShell.Main style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}>
-          <Stack gap="md">
-            {evaluation.errors.map((error) => (
-              <Surface key={error} p="sm">
-                <Text c="red">{error}</Text>
-              </Surface>
-            ))}
-
-            <>
-                <div
-                  className={classes.compositionWorkspace}
-                  data-inspector={inspectorOpen}
-                  data-settings={settingsOpened}
-                >
-                  {inspectorOpen && (
-                    <div className={classes.inspectorColumn}>
-                      <CompositionInspector
-                        selected={compositionInspectorTarget}
-                        activeInstanceId={activeCompositionInstanceId}
-                        outputs={publishedCompositionOutputs}
-                        instances={compositionInstances}
-                        routes={moduleRouteStates}
-                        onRemoveModule={removeCompositionModule}
-                        onModuleSlot={setModuleInspectorSlot}
-                        onRouteTreatment={updateRouteTreatment}
-                      />
+                  <AppShell.Header>
+                    <div className={classes.headerBar}>
+                      <Group gap="xs" wrap="nowrap">
+                        <Tooltip label="Back to Workbench">
+                          <ActionIcon
+                            component={Link}
+                            to="/"
+                            variant="subtle"
+                            size="lg"
+                            aria-label="Back to Workbench"
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              aria-hidden
+                            >
+                              <path d="M15 18l-6-6 6-6" />
+                            </svg>
+                          </ActionIcon>
+                        </Tooltip>
+                        <Title order={1} className={classes.visuallyHidden}>
+                          Composition Workbench
+                        </Title>
+                      </Group>
+                      <TransportBar selectedInstanceId={activeCompositionInstanceId} />
+                      <Group gap="xs" wrap="nowrap" justify="flex-end">
+                        <ProjectMenu />
+                        <ColorSchemeToggle />
+                      </Group>
                     </div>
-                  )}
-                  <SplitStage
-                    split={clampSplit(canvasSplit)}
-                    onSplit={setCanvasSplit}
-                    collapsed={detailCollapsed}
-                    onCollapsed={setDetailCollapsed}
-                    top={
-                      <div style={{ display: 'grid', flex: 1, minHeight: 0 }}>
-                      {/*
+                  </AppShell.Header>
+                  <AppShell.Main style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}>
+                    <Stack gap="md">
+                      {evaluation.errors.map((error) => (
+                        <Surface key={error} p="sm">
+                          <Text c="red">{error}</Text>
+                        </Surface>
+                      ))}
+
+                      <>
+                        <div
+                          className={classes.compositionWorkspace}
+                          data-inspector={inspectorOpen}
+                          data-settings={settingsOpened}
+                        >
+                          {inspectorOpen && (
+                            <div className={classes.inspectorColumn}>
+                              <CompositionInspector
+                                selected={compositionInspectorTarget}
+                                activeInstanceId={activeCompositionInstanceId}
+                                outputs={publishedCompositionOutputs}
+                                instances={compositionInstances}
+                                routes={moduleRouteStates}
+                                onRemoveModule={removeCompositionModule}
+                                onModuleSlot={setModuleInspectorSlot}
+                                onRouteTreatment={updateRouteTreatment}
+                              />
+                            </div>
+                          )}
+                          <SplitStage
+                            split={clampSplit(canvasSplit)}
+                            onSplit={setCanvasSplit}
+                            collapsed={detailCollapsed}
+                            onCollapsed={setDetailCollapsed}
+                            top={
+                              <div style={{ display: 'grid', flex: 1, minHeight: 0 }}>
+                                {/*
                         Both stay mounted and share one grid cell. The inactive one is only
                         visibility:hidden, never display:none, because the canvas measures its box:
                         collapsing it to zero made it refit to a tiny view when shown again.
                       */}
-                      <div
-                        // Height 0 with a full-height minimum: the desk fills the cell but never
-                        // makes the row taller, so it scrolls instead of resizing the canvas.
-                        style={{
-                          gridArea: '1 / 1',
-                          height: 0,
-                          minHeight: '100%',
-                          minWidth: 0,
-                          overflow: 'hidden',
-                          ...(workspaceView === 'desk' ? { zIndex: 1 } : inactiveViewStyle),
-                        }}
-                        inert={workspaceView !== 'desk'}
-                      >
-                        <DeskView
-                          onMakeSource={(snippet) => {
-                            addCompositionModule('snippet', undefined, snippet.id);
-                            setWorkspaceView('canvas');
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          // A flex column, as the stage's top pane was: the canvas fills it with flex: 1.
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gridArea: '1 / 1',
-                          minHeight: 0,
-                          minWidth: 0,
-                          ...(workspaceView === 'canvas' ? { zIndex: 1 } : inactiveViewStyle),
-                        }}
-                        inert={workspaceView !== 'canvas'}
-                      >
-                      <CompositionCanvas
-                        activeInstanceId={activeCompositionInstanceId}
-                        selected={compositionInspectorTarget}
-                        instances={compositionInstances}
-                        routes={moduleRouteStates}
-                        outputs={publishedCompositionOutputs}
-                        onSelectModule={selectCompositionModule}
-                        onSelectRoute={selectCompositionRoute}
-                        onSelectCanvas={() => setCompositionInspectorTarget({ kind: 'canvas' })}
-                        onMoveModules={placeCompositionModules}
-                        onTidy={placeCompositionModules}
-                        onAddModule={addCompositionModule}
-                      />
-                      </div>
-                      </div>
-                    }
-                    bottom={
-                      <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
-                      <div className={classes.detailBody}>
-                  {compositionInstances.map((instance) => {
-                    const instanceLabel = compositionInstanceLabel(instance, compositionInstances);
-                    const routeState =
-                      moduleRouteStates[instance.id] ??
-                      createDefaultModuleRouteState(routedModulePorts[instance.moduleId] ?? []);
-                    return (
-                      <div
-                        key={instance.id}
-                        className={classes.moduleHost}
-                        hidden={activeCompositionInstanceId !== instance.id}
-                      >
-                        <ModuleActiveContext.Provider
-                          value={activeCompositionInstanceId === instance.id}
-                        >
-                        {instance.moduleId === 'snippet' ? (
-                          <SnippetSourceModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            snippetId={instance.snippetId}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'interference' ? (
-                          <InterferenceModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'rhythm-list' ? (
-                          <RhythmListModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'pitch-list' ? (
-                          <PitchListModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'arithmetic' ? (
-                          <ArithmeticModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            outputs={publishedCompositionOutputs}
-                            routeState={routeState}
-                            onBind={(port, source) =>
-                              bindModulePort(instance.id, instance.moduleId, port, source)
+                                <div
+                                  // Height 0 with a full-height minimum: the desk fills the cell but never
+                                  // makes the row taller, so it scrolls instead of resizing the canvas.
+                                  style={{
+                                    gridArea: '1 / 1',
+                                    height: 0,
+                                    minHeight: '100%',
+                                    minWidth: 0,
+                                    overflow: 'hidden',
+                                    ...(workspaceView === 'desk'
+                                      ? { zIndex: 1 }
+                                      : inactiveViewStyle),
+                                  }}
+                                  inert={workspaceView !== 'desk'}
+                                >
+                                  <DeskView
+                                    onMakeSource={(snippet) => {
+                                      addCompositionModule('snippet', undefined, snippet.id);
+                                      setWorkspaceView('canvas');
+                                    }}
+                                  />
+                                </div>
+                                <div
+                                  style={{
+                                    // A flex column, as the stage's top pane was: the canvas fills it with flex: 1.
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gridArea: '1 / 1',
+                                    minHeight: 0,
+                                    minWidth: 0,
+                                    ...(workspaceView === 'canvas'
+                                      ? { zIndex: 1 }
+                                      : inactiveViewStyle),
+                                  }}
+                                  inert={workspaceView !== 'canvas'}
+                                >
+                                  <CompositionCanvas
+                                    activeInstanceId={activeCompositionInstanceId}
+                                    selected={compositionInspectorTarget}
+                                    instances={compositionInstances}
+                                    routes={moduleRouteStates}
+                                    outputs={publishedCompositionOutputs}
+                                    onSelectModule={selectCompositionModule}
+                                    onSelectRoute={selectCompositionRoute}
+                                    onSelectCanvas={() =>
+                                      setCompositionInspectorTarget({ kind: 'canvas' })
+                                    }
+                                    onMoveModules={placeCompositionModules}
+                                    onTidy={placeCompositionModules}
+                                    onAddModule={addCompositionModule}
+                                  />
+                                </div>
+                              </div>
                             }
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'mixer' ? (
-                          <MixerModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            outputs={publishedCompositionOutputs}
-                            routeState={routeState}
-                            onBind={(port, source) =>
-                              bindModulePort(instance.id, instance.moduleId, port, source)
+                            bottom={
+                              <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
+                                <div className={classes.detailBody}>
+                                  {compositionInstances.map((instance) => {
+                                    const instanceLabel = compositionInstanceLabel(
+                                      instance,
+                                      compositionInstances
+                                    );
+                                    const routeState =
+                                      moduleRouteStates[instance.id] ??
+                                      createDefaultModuleRouteState(
+                                        routedModulePorts[instance.moduleId] ?? []
+                                      );
+                                    return (
+                                      <div
+                                        key={instance.id}
+                                        className={classes.moduleHost}
+                                        hidden={activeCompositionInstanceId !== instance.id}
+                                      >
+                                        <ModuleActiveContext.Provider
+                                          value={activeCompositionInstanceId === instance.id}
+                                        >
+                                          {instance.moduleId === 'snippet' ? (
+                                            <SnippetSourceModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              snippetId={instance.snippetId}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'interference' ? (
+                                            <InterferenceModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'rhythm-list' ? (
+                                            <RhythmListModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'pitch-list' ? (
+                                            <PitchListModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'arithmetic' ? (
+                                            <ArithmeticModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              outputs={publishedCompositionOutputs}
+                                              routeState={routeState}
+                                              onBind={(port, source) =>
+                                                bindModulePort(
+                                                  instance.id,
+                                                  instance.moduleId,
+                                                  port,
+                                                  source
+                                                )
+                                              }
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'mixer' ? (
+                                            <MixerModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              outputs={publishedCompositionOutputs}
+                                              routeState={routeState}
+                                              onBind={(port, source) =>
+                                                bindModulePort(
+                                                  instance.id,
+                                                  instance.moduleId,
+                                                  port,
+                                                  source
+                                                )
+                                              }
+                                              onAddChannel={() => addMixerChannel(instance.id)}
+                                              onRemoveChannel={(port) =>
+                                                removeMixerChannel(instance.id, port)
+                                              }
+                                            />
+                                          ) : instance.moduleId === 'swirling-mists' ? (
+                                            <SwirlingMistsModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'fractioning' ? (
+                                            <FractioningModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'pair-composition' ? (
+                                            <PairCompositionModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'scale-construction' ? (
+                                            <ScaleConstructionModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'rhythm-edit' ? (
+                                            <RhythmEditModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              outputs={publishedCompositionOutputs}
+                                              routeState={routeState}
+                                              onBind={(port, source) =>
+                                                bindModulePort(
+                                                  instance.id,
+                                                  instance.moduleId,
+                                                  port,
+                                                  source
+                                                )
+                                              }
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'rhythm-householder' ? (
+                                            <HouseholderModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              outputs={publishedCompositionOutputs}
+                                              routeState={routeState}
+                                              onBind={(port, source) =>
+                                                bindModulePort(
+                                                  instance.id,
+                                                  instance.moduleId,
+                                                  port,
+                                                  source
+                                                )
+                                              }
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : instance.moduleId === 'scale-evolution' ? (
+                                            <ScaleEvolutionModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              outputs={publishedCompositionOutputs}
+                                              routeState={routeState}
+                                              onBind={(port, source) =>
+                                                bindModulePort(
+                                                  instance.id,
+                                                  instance.moduleId,
+                                                  port,
+                                                  source
+                                                )
+                                              }
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          ) : (
+                                            <MelodicizationModule
+                                              instanceId={instance.id}
+                                              instanceLabel={instanceLabel}
+                                              active={activeCompositionInstanceId === instance.id}
+                                              outputs={publishedCompositionOutputs}
+                                              routeState={routeState}
+                                              onBind={(port, source) =>
+                                                bindModulePort(
+                                                  instance.id,
+                                                  instance.moduleId,
+                                                  port,
+                                                  source
+                                                )
+                                              }
+                                              onOutputsChange={reconcileCompositionOutputs}
+                                            />
+                                          )}
+                                        </ModuleActiveContext.Provider>
+                                      </div>
+                                    );
+                                  })}
+                                  {compositionInstances.length === 0 && (
+                                    <Surface p="lg">
+                                      <Title order={2} size="h4">
+                                        No modules placed
+                                      </Title>
+                                      <Text c="dimmed" size="sm" mt="xs">
+                                        Use Add module on the canvas, or right-click it, to place
+                                        one.
+                                      </Text>
+                                    </Surface>
+                                  )}
+                                </div>
+                              </ModuleInspectorSlotContext.Provider>
                             }
-                            onAddChannel={() => addMixerChannel(instance.id)}
-                            onRemoveChannel={(port) => removeMixerChannel(instance.id, port)}
                           />
-                        ) : instance.moduleId === 'swirling-mists' ? (
-                          <SwirlingMistsModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'fractioning' ? (
-                          <FractioningModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'pair-composition' ? (
-                          <PairCompositionModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'scale-construction' ? (
-                          <ScaleConstructionModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'rhythm-edit' ? (
-                          <RhythmEditModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            outputs={publishedCompositionOutputs}
-                            routeState={routeState}
-                            onBind={(port, source) =>
-                              bindModulePort(instance.id, instance.moduleId, port, source)
-                            }
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'rhythm-householder' ? (
-                          <HouseholderModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            outputs={publishedCompositionOutputs}
-                            routeState={routeState}
-                            onBind={(port, source) =>
-                              bindModulePort(instance.id, instance.moduleId, port, source)
-                            }
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : instance.moduleId === 'scale-evolution' ? (
-                          <ScaleEvolutionModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            outputs={publishedCompositionOutputs}
-                            routeState={routeState}
-                            onBind={(port, source) =>
-                              bindModulePort(instance.id, instance.moduleId, port, source)
-                            }
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        ) : (
-                          <MelodicizationModule
-                            instanceId={instance.id}
-                            instanceLabel={instanceLabel}
-                            active={activeCompositionInstanceId === instance.id}
-                            outputs={publishedCompositionOutputs}
-                            routeState={routeState}
-                            onBind={(port, source) =>
-                              bindModulePort(instance.id, instance.moduleId, port, source)
-                            }
-                            onOutputsChange={reconcileCompositionOutputs}
-                          />
-                        )}
-                        </ModuleActiveContext.Provider>
-                      </div>
-                    );
-                  })}
-                  {compositionInstances.length === 0 && (
-                    <Surface p="lg">
-                      <Title order={2} size="h4">
-                        No modules placed
-                      </Title>
-                      <Text c="dimmed" size="sm" mt="xs">
-                        Use Add module on the canvas, or right-click it, to place one.
-                      </Text>
-                    </Surface>
-                  )}
-                      </div>
-                      </ModuleInspectorSlotContext.Provider>
-                    }
-                  />
-                  {settingsOpened && (
-                    <div className={classes.settingsColumn}>
-                      <CompositionSettingsPanel onClose={() => setSettingsOpened(false)} />
-                    </div>
-                  )}
-                </div>
-            </>
-          </Stack>
-        </AppShell.Main>
-        <AppShell.Footer>
-          <WorkbenchStatusBar
-            inspectorOpen={inspectorOpen}
-            onToggleInspector={() => setInspectorOpen((open) => !open)}
-            settingsOpen={settingsOpened}
-            onToggleSettings={() => setSettingsOpened((open) => !open)}
-            view={workspaceView}
-            onView={setWorkspaceView}
-          />
-        </AppShell.Footer>
-      </AppShell>
-      </InfoBarActiveContext.Provider>
-      </MantineThemeProvider>
-    </PreviewRegistryProvider>
-    </AudioEngineProvider>
-    </DeskProvider>
+                          {settingsOpened && (
+                            <div className={classes.settingsColumn}>
+                              <CompositionSettingsPanel onClose={() => setSettingsOpened(false)} />
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    </Stack>
+                  </AppShell.Main>
+                  <AppShell.Footer>
+                    <WorkbenchStatusBar
+                      inspectorOpen={inspectorOpen}
+                      onToggleInspector={() => setInspectorOpen((open) => !open)}
+                      settingsOpen={settingsOpened}
+                      onToggleSettings={() => setSettingsOpened((open) => !open)}
+                      view={workspaceView}
+                      onView={setWorkspaceView}
+                    />
+                  </AppShell.Footer>
+                </AppShell>
+              </InfoBarActiveContext.Provider>
+            </MantineThemeProvider>
+          </PreviewRegistryProvider>
+        </AudioEngineProvider>
+      </DeskProvider>
     </CompositionSettingsProvider>
   );
 }

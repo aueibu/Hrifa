@@ -1,8 +1,9 @@
-import { act, render, renderHook, screen, userEvent } from '@test-utils';
+import { act, render, screen, userEvent, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransportBar } from './components/TransportBar';
 import { CompositionSettingsProvider } from './compositionSettings';
 import { DeskProvider, useDesk } from './desk';
+import { renderDesk, storedDesk } from './deskTestUtils';
 import { canRedo, canUndo, HISTORY_DEPTH, redo, resetHistory, undo } from './history';
 import { melodicize } from './melodicization';
 import { packet } from './model';
@@ -54,14 +55,10 @@ function noteSnippet(id = 'snip-1', name = 'Gesture'): Snippet {
   return captured.snippet;
 }
 
-function setup() {
+async function setup() {
   localStorage.clear();
   resetHistory();
-  return renderHook(() => useDesk(), { wrapper: DeskProvider });
-}
-
-function stored(): unknown {
-  return JSON.parse(localStorage.getItem(compositionStateKeys.desk) ?? 'null');
+  return renderDesk();
 }
 
 /** Deep snapshot so a later mutation of shared objects could not hide a bad restore. */
@@ -73,8 +70,8 @@ describe('desk history', () => {
     resetHistory();
   });
 
-  it('starts empty: nothing to undo or redo, and both are no-ops', () => {
-    const { result } = setup();
+  it('starts empty: nothing to undo or redo, and both are no-ops', async () => {
+    const { result } = await setup();
     expect(canUndo()).toBe(false);
     expect(canRedo()).toBe(false);
     act(() => undo());
@@ -92,28 +89,31 @@ describe('desk history', () => {
     ['convert to pitch class', (desk) => void desk.convertToPitchClassById('snip-1', { edo: 12 })],
   ];
 
-  it.each(mutations)('undoes and redoes %s, restoring the exact snippets', (_name, mutate) => {
-    const { result } = setup();
-    act(() => result.current.addSnippet(noteSnippet()));
-    const before = snapshot(result.current.snippets);
-    act(() => mutate(result.current));
-    const after = snapshot(result.current.snippets);
-    expect(after).not.toEqual(before);
-    expect(canUndo()).toBe(true);
+  it.each(mutations)(
+    'undoes and redoes %s, restoring the exact snippets',
+    async (_name, mutate) => {
+      const { result } = await setup();
+      act(() => result.current.addSnippet(noteSnippet()));
+      const before = snapshot(result.current.snippets);
+      act(() => mutate(result.current));
+      const after = snapshot(result.current.snippets);
+      expect(after).not.toEqual(before);
+      expect(canUndo()).toBe(true);
 
-    act(() => undo());
-    expect(result.current.snippets).toEqual(before);
-    expect(stored()).toEqual(before);
-    expect(canRedo()).toBe(true);
+      act(() => undo());
+      expect(result.current.snippets).toEqual(before);
+      expect(await storedDesk(result.current)).toEqual(before);
+      expect(canRedo()).toBe(true);
 
-    act(() => redo());
-    expect(result.current.snippets).toEqual(after);
-    expect(stored()).toEqual(after);
-    expect(canRedo()).toBe(false);
-  });
+      act(() => redo());
+      expect(result.current.snippets).toEqual(after);
+      expect(await storedDesk(result.current)).toEqual(after);
+      expect(canRedo()).toBe(false);
+    }
+  );
 
-  it('steps back through several changes in order', () => {
-    const { result } = setup();
+  it('steps back through several changes in order', async () => {
+    const { result } = await setup();
     const states: Snippet[][] = [[]];
     const run = (mutate: (desk: Desk) => void) => {
       act(() => mutate(result.current));
@@ -129,8 +129,8 @@ describe('desk history', () => {
     expect(canUndo()).toBe(false);
   });
 
-  it('records changes made together in one event as separate entries', () => {
-    const { result } = setup();
+  it('records changes made together in one event as separate entries', async () => {
+    const { result } = await setup();
     act(() => {
       result.current.addSnippet(noteSnippet('a', 'A'));
       result.current.addSnippet(noteSnippet('b', 'B'));
@@ -139,8 +139,8 @@ describe('desk history', () => {
     expect(result.current.snippets.map((snippet) => snippet.id)).toEqual(['a']);
   });
 
-  it('clears redo when a new change follows an undo', () => {
-    const { result } = setup();
+  it('clears redo when a new change follows an undo', async () => {
+    const { result } = await setup();
     act(() => result.current.addSnippet(noteSnippet()));
     act(() => result.current.renameSnippet('snip-1', 'B'));
     act(() => undo());
@@ -151,8 +151,8 @@ describe('desk history', () => {
     expect(result.current.snippets[0].name).toBe('C');
   });
 
-  it('records nothing for changes that do nothing', () => {
-    const { result } = setup();
+  it('records nothing for changes that do nothing', async () => {
+    const { result } = await setup();
     act(() => result.current.addSnippet(noteSnippet()));
     act(() => undo());
     act(() => redo());
@@ -169,8 +169,8 @@ describe('desk history', () => {
     expect(result.current.snippets).toEqual([]);
   });
 
-  it('is bounded to the history depth', () => {
-    const { result } = setup();
+  it('is bounded to the history depth', async () => {
+    const { result } = await setup();
     for (let index = 0; index < HISTORY_DEPTH + 5; index += 1) {
       act(() => result.current.addSnippet(noteSnippet(`s-${index}`)));
     }
@@ -181,26 +181,25 @@ describe('desk history', () => {
     expect(result.current.snippets).toHaveLength(5);
   });
 
-  it('keeps the stored desk equal to the snippets, valid, and free of history', () => {
-    const { result } = setup();
+  it('keeps the stored desk equal to the snippets, valid, and free of history', async () => {
+    const { result } = await setup();
     act(() => result.current.addSnippet(noteSnippet()));
     act(() => result.current.renameSnippet('snip-1', 'B'));
     act(() => undo());
-    expect(stored()).toEqual(result.current.snippets);
-    expect(acceptsSnippets(stored())).toBe(true);
-    expect(Array.isArray(stored())).toBe(true);
-    expect(Object.keys(localStorage).filter((key) => key.includes('desk'))).toEqual([
-      compositionStateKeys.desk,
-    ]);
+    const saved = await storedDesk(result.current);
+    expect(saved).toEqual(result.current.snippets);
+    expect(acceptsSnippets(saved)).toBe(true);
+    // The desk lives in IndexedDB now: nothing is written to the old localStorage key.
+    expect(localStorage.getItem(compositionStateKeys.desk)).toBeNull();
   });
 
-  it('does not carry history across a reload', () => {
-    const first = setup();
+  it('does not carry history across a reload', async () => {
+    const first = await setup();
     act(() => first.result.current.addSnippet(noteSnippet()));
     const saved = snapshot(first.result.current.snippets);
     first.unmount();
     resetHistory(); // a reload starts a fresh session
-    const reloaded = renderHook(() => useDesk(), { wrapper: DeskProvider });
+    const reloaded = await renderDesk();
     expect(reloaded.result.current.snippets).toEqual(saved);
     expect(canUndo()).toBe(false);
   });
@@ -208,20 +207,20 @@ describe('desk history', () => {
 
 describe('Undo and Redo buttons', () => {
   function Seed() {
-    const { addSnippet, snippets } = useDesk();
+    const { addSnippet, snippets, loading } = useDesk();
     return (
       <>
-        <button type="button" onClick={() => addSnippet(noteSnippet())}>
+        <button type="button" disabled={loading} onClick={() => addSnippet(noteSnippet())}>
           seed
         </button>
         <div data-testid="count">{snippets.length}</div>
       </>
     );
   }
-  function renderBar() {
+  async function renderBar() {
     localStorage.clear();
     resetHistory();
-    return render(
+    const rendered = render(
       <CompositionSettingsProvider>
         <DeskProvider>
           <TransportBar selectedInstanceId={null} />
@@ -230,10 +229,12 @@ describe('Undo and Redo buttons', () => {
         </DeskProvider>
       </CompositionSettingsProvider>
     );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'seed' })).toBeEnabled());
+    return rendered;
   }
 
   it('are disabled when empty, focusable when enabled, and drive the desk', async () => {
-    renderBar();
+    await renderBar();
     const undo = screen.getByRole('button', { name: 'Undo' });
     const redo = screen.getByRole('button', { name: 'Redo' });
     expect((undo as HTMLButtonElement).disabled).toBe(true);
@@ -251,7 +252,7 @@ describe('Undo and Redo buttons', () => {
   });
 
   it('answers Ctrl+Z and Ctrl+Shift+Z from anywhere, including a focused field', async () => {
-    renderBar();
+    await renderBar();
     await userEvent.click(screen.getByRole('button', { name: 'seed' }));
     const field = screen.getByLabelText('field');
     await userEvent.click(field);

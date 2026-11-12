@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Group, Modal, Text, TextInput } from '@mantine/core';
+import { Alert, Button, Group, Modal, Text, TextInput } from '@mantine/core';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import { useCompositionSettings } from '../compositionSettings';
 import { useDesk } from '../desk';
@@ -34,6 +34,9 @@ function describe(snippet: Snippet) {
 export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): void }) {
   const {
     snippets,
+    loading,
+    locked,
+    persistError,
     removeSnippet,
     renameSnippet,
     setSnippetNote,
@@ -85,9 +88,35 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
     }
   }
 
+  if (loading) {
+    return (
+      <div className={classes.desk}>
+        <Text className={classes.empty} size="sm" role="status">
+          Loading the desk…
+        </Text>
+      </div>
+    );
+  }
+
+  // A failed save is never silent: the clips on screen may not be what a reload will bring back.
+  const saveWarning = persistError !== null && (
+    <Alert
+      color="yellow"
+      p="xs"
+      mb="xs"
+      role="alert"
+      icon={<span aria-hidden>⚠</span>}
+      title="Desk changes could not be saved."
+    >
+      <Text size="xs">{persistError}</Text>
+      {locked && <Text size="xs">Changes to the desk are turned off until it can be read.</Text>}
+    </Alert>
+  );
+
   if (snippets.length === 0) {
     return (
       <div className={classes.desk}>
+        {saveWarning}
         <Text className={classes.empty} size="sm">
           Nothing on the desk yet. Select notes in a piano roll and choose Send to desk (D).
         </Text>
@@ -97,6 +126,7 @@ export function DeskView({ onMakeSource }: { onMakeSource?(snippet: Snippet): vo
 
   return (
     <div className={classes.desk}>
+      {saveWarning}
       <div className={classes.grid}>
         {snippets.map((snippet) => (
           <div key={snippet.id} className={classes.card}>

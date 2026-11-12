@@ -47,12 +47,15 @@ function noteSnippet(text: string): Snippet {
 
 /** Puts a snippet on the desk and sets the project EDO once, then shows the desk. */
 function Harness({ snippet, edo }: { snippet: Snippet; edo: number }) {
-  const { addSnippet, snippets } = useDesk();
+  const { addSnippet, snippets, loading } = useDesk();
   const { updateSettings } = useCompositionSettings();
   useEffect(() => {
+    if (loading) {
+      return;
+    }
     updateSettings({ edo });
     addSnippet(snippet);
-  }, [addSnippet, updateSettings, snippet, edo]);
+  }, [addSnippet, updateSettings, snippet, edo, loading]);
   return (
     <>
       <div data-testid="count">{snippets.length}</div>

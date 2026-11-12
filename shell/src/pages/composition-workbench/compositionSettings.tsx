@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { recordChange, registerHistoryApplier } from './history';
+import { isReloading } from './reloading';
 import { defaultSoundSettings, sanitizeSoundSettings, type SoundSettings } from './sounds';
 import {
   defaultTransportSettings,
@@ -128,6 +129,9 @@ export function CompositionSettingsProvider({ children }: { children: ReactNode 
   const [settings, setSettings] = useState<CompositionSettings>(() => readStoredSettings());
 
   useEffect(() => {
+    if (isReloading()) {
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch {

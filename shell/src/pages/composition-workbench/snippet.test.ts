@@ -1,9 +1,9 @@
-import { createElement, type ReactNode } from 'react';
-import { act, render, renderHook } from '@testing-library/react';
+import { createElement } from 'react';
+import { act, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { operationsForPacket } from './compatibility';
 import { SnippetPreview } from './components/SnippetPreview';
-import { DeskProvider, useDesk } from './desk';
+import { renderDesk } from './deskTestUtils';
 import { melodicize, type NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, rationalToNumber } from './musicalTime';
@@ -311,18 +311,17 @@ describe('duplicateSnippet', () => {
     expect(JSON.stringify(original)).toBe(before);
   });
 
-  it('persists across reload through the desk provider', () => {
+  it('persists across reload through the desk provider', async () => {
     localStorage.clear();
     const original = snippetOf();
-    const wrapper = ({ children }: { children: ReactNode }) => DeskProvider({ children });
-    const first = renderHook(() => useDesk(), { wrapper });
+    const first = await renderDesk();
     act(() => first.result.current.addSnippet(original));
     act(() => first.result.current.duplicateSnippetById(original.id));
     const names = first.result.current.snippets.map((snippet) => snippet.name);
     expect(names).toEqual(['Gesture', 'Gesture (variation)']);
     first.unmount();
 
-    const reloaded = renderHook(() => useDesk(), { wrapper });
+    const reloaded = await renderDesk();
     expect(reloaded.result.current.snippets.map((snippet) => snippet.name)).toEqual(names);
     const [kept, variation] = reloaded.result.current.snippets;
     expect(kept).toEqual(original);
@@ -584,11 +583,10 @@ describe('convertSnippetToPitchClass', () => {
     unmount();
   });
 
-  it('persists across reload through the desk provider, and is accepted by acceptsSnippets', () => {
+  it('persists across reload through the desk provider, and is accepted by acceptsSnippets', async () => {
     localStorage.clear();
     const source = noteSnippet();
-    const wrapper = ({ children }: { children: ReactNode }) => DeskProvider({ children });
-    const first = renderHook(() => useDesk(), { wrapper });
+    const first = await renderDesk();
     act(() => first.result.current.addSnippet(source));
     let outcome: PitchClassConversionResult | undefined;
     act(() => {
@@ -607,7 +605,7 @@ describe('convertSnippetToPitchClass', () => {
     expect(first.result.current.snippets).toHaveLength(2);
     first.unmount();
 
-    const reloaded = renderHook(() => useDesk(), { wrapper });
+    const reloaded = await renderDesk();
     expect(reloaded.result.current.snippets).toEqual([original, result]);
     expect(acceptsSnippets(reloaded.result.current.snippets)).toBe(true);
     expect(acceptsSnippets(JSON.parse(JSON.stringify([result])))).toBe(true);

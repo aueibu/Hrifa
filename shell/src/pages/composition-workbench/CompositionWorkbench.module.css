@@ -7,8 +7,11 @@
 
 /* The workbench's corner radii, defined once. Everything here reads the variables below, and
    stylelint rejects a hard-coded border-radius in this folder, so tuning the look is this one
-   block. Mantine's own components follow through --mantine-radius-default. */
-.workbench {
+   block. Mantine's own components follow through --mantine-radius-default. Popovers, menus and
+   modals render in portals on <body>, outside .workbench, so they get the same radii while the
+   workbench is on the page. */
+.workbench,
+:global(body):has(.workbench) :global([data-portal]) {
   --workbench-radius: var(--mantine-radius-xs);
   --mantine-radius-default: var(--workbench-radius);
   --radius-control: var(--workbench-radius);

@@ -1,5 +1,6 @@
 import type { PatchDocument } from './model';
 import { getDefinition } from './registry';
+import { isReloading } from './reloading';
 
 export const compositionWorkbenchStorageKey = 'hrifa.composition-workbench.patch.v1';
 
@@ -53,6 +54,10 @@ export function loadSavedPatch(fallback: () => PatchDocument) {
 }
 
 export function savePatch(patch: PatchDocument) {
+  if (isReloading()) {
+    // The page is closing for a project open; the project's own patch must stay in storage.
+    return true;
+  }
   try {
     localStorage.setItem(compositionWorkbenchStorageKey, exportPatch(patch));
     return true;

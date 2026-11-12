@@ -49,6 +49,7 @@
     "@types/react-dom": "^19.2.1",
     "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "^6.0.0",
+    "fake-indexeddb": "^6.2.8",
     "identity-obj-proxy": "^3.0.0",
     "jsdom": "^30.0.0",
     "oxc-config-mantine": "^1.0.0",
