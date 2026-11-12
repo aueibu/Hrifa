@@ -236,6 +236,17 @@ export interface PianoRollProps {
   pitchColor?(pitchMidicents: number): string | undefined;
   /** Extra plain-key shortcuts handled while the panel has focus (same guards as tools and actions). */
   keyActions?: Array<{ shortcut: string; run(): void }>;
+  /**
+   * Pick-pitch mode (opt-in, with selection): the owner is waiting for the user to choose a pitch
+   * row. While set, the roll shows `hint` as a banner, highlights the row (and key) under the
+   * pointer with a crosshair cursor, and the next primary press on a pitch row in the roll (a note
+   * included) or on a key calls `onPick` with that row's midi number (0 to 127). That press is a
+   * pick only: it selects nothing, starts no draw, marquee or move, and never changes the selection.
+   * Escape and Enter are left to the owner (the roll's Escape does not clear the selection while
+   * this is set); the other roll shortcuts are off except the tool shortcuts. The owner clears the
+   * prop to leave the mode.
+   */
+  pickPitch?: { hint: string; onPick(midi: number): void } | null;
 }
 
 /** A gesture in progress, kept by reference so the pointer math never reads a stale render. */
@@ -380,6 +391,7 @@ export function PianoRoll({
   barGutter,
   pitchColor,
   keyActions,
+  pickPitch,
 }: PianoRollProps) {
   const infoBar = useInfoBarActive();
   const minTimeZoom = timeZoomRange?.min ?? DEFAULT_MIN_TIME_ZOOM;
@@ -390,6 +402,11 @@ export function PianoRoll({
   const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
 
   function openMenu(event: ReactMouseEvent<HTMLDivElement>) {
+    if (pickPitch) {
+      // A pick is waiting: the right button is not a pick and must not select or open a menu.
+      event.preventDefault();
+      return;
+    }
     if (!selectable || !actions?.length) {
       return;
     }
@@ -419,6 +436,8 @@ export function PianoRoll({
   }
 
   const rollRef = useRef<HTMLDivElement>(null);
+  // The pitch row under the pointer while a pick is waiting (roll or keys), for the highlight.
+  const [pickHover, setPickHover] = useState<number | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const [preview, setPreview] = useState<GesturePreview | null>(null);
   const editable = Boolean(onMoveNotes || onResizeNotes || onVelocityChange);
@@ -430,6 +449,13 @@ export function PianoRoll({
   // A press-and-hold double-click already entered its note, so the dblclick that follows must not
   // act on it (it would delete the note it just made).
   const doubleDrewAt = useRef<number | null>(null);
+  // When the last pick press happened: the second press of a double-click on the pick must be
+  // swallowed too (the pick is already over, so it would otherwise clear the selection).
+  const lastPickAt = useRef<number | null>(null);
+  const justPicked = (timeStamp: number) =>
+    lastPickAt.current !== null &&
+    timeStamp >= lastPickAt.current &&
+    timeStamp - lastPickAt.current <= DOUBLE_PRESS_MS;
 
   function snapped(quarters: number) {
     return Math.round(quarters / snapUnit) * snapUnit;
@@ -1018,10 +1044,29 @@ export function PianoRoll({
     rollRef.current?.setPointerCapture?.(event.pointerId);
   }
 
+  /** A pick press: reports the row and swallows the press (no gesture, no selection change). */
+  function pickRow(midi: number, timeStamp: number) {
+    lastEmptyPress.current = null;
+    // The dblclick of a quick second click must not draw or delete a note.
+    doubleDrewAt.current = timeStamp;
+    lastPickAt.current = timeStamp;
+    pickPitch?.onPick(midi);
+  }
+
   function beginMarquee(event: ReactPointerEvent<HTMLDivElement>) {
     if (!selectable || event.button !== 0) {
       return;
     }
+    if (pickPitch) {
+      pickRow(cellAt(rollPointAt(event)).midi, event.timeStamp);
+      return;
+    }
+    if (justPicked(event.timeStamp)) {
+      // The second press of a double-click on the pick: swallowed (only the one press).
+      lastPickAt.current = null;
+      return;
+    }
+    lastPickAt.current = null;
     if (activeTool === 'pencil' && onAddNote) {
       beginDraw(event);
       return;
@@ -1078,7 +1123,7 @@ export function PianoRoll({
 
   /** Pointer tool: a double-click on empty space adds a note, on a note deletes it. */
   function doubleClick(event: ReactMouseEvent<HTMLDivElement>) {
-    if (!selectable || activeTool !== 'pointer') {
+    if (!selectable || activeTool !== 'pointer' || pickPitch) {
       return;
     }
     const drewAt = doubleDrewAt.current;
@@ -1532,6 +1577,16 @@ export function PianoRoll({
     if (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
       return;
     }
+    if (pickPitch) {
+      // While a pick waits, Escape and Enter belong to the owner (cancel / default) and only the
+      // tool shortcuts (which also end the pick) are live: the selection is not touched.
+      const tool = shortcutMatch(tools ?? [], event);
+      if (tool) {
+        event.preventDefault();
+        onToolChange?.(tool.id);
+      }
+      return;
+    }
     if (event.key === 'Escape') {
       // Escape first cancels a drag in progress (nothing is committed); only an idle
       // roll clears the selection.
@@ -1562,7 +1617,7 @@ export function PianoRoll({
   }
 
   const keyboard = (
-    <div className={classes.keyboard} aria-hidden="true">
+    <div className={classes.keyboard} data-picking={pickPitch ? '' : undefined} aria-hidden="true">
       {Array.from({ length: 128 }, (_, index) => 127 - index).map((midi) => {
         const pitchClass = midi % 12;
         const black = [1, 3, 6, 8, 10].includes(pitchClass);
@@ -1570,8 +1625,23 @@ export function PianoRoll({
           <div
             key={`key:${midi}`}
             className={classes.key}
+            data-midi={midi}
             data-black={black || undefined}
             data-c={pitchClass === 0 || undefined}
+            data-pick-hover={(pickPitch && pickHover === midi) || undefined}
+            onPointerDown={
+              pickPitch
+                ? (event) => {
+                    if (event.button === 0) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      pickRow(midi, event.timeStamp);
+                    }
+                  }
+                : undefined
+            }
+            onPointerEnter={pickPitch ? () => setPickHover(midi) : undefined}
+            onPointerLeave={pickPitch ? () => setPickHover(null) : undefined}
             style={{
               height: view.pixelsPerSemitone,
               top: (127 - midi) * view.pixelsPerSemitone,
@@ -1591,6 +1661,11 @@ export function PianoRoll({
       aria-label={ariaLabel}
       data-fill={fill || undefined}
     >
+      {pickPitch && (
+        <div className={classes.pickBanner} role="status" data-testid="roll-pick-banner">
+          {pickPitch.hint}
+        </div>
+      )}
       {showToolbar && (
         <Group justify="space-between" gap="xs" className={classes.toolbar}>
           <Group gap={4} wrap="nowrap">
@@ -1769,11 +1844,16 @@ export function PianoRoll({
                   data-selectable={selectable || undefined}
                   data-tool={selectable ? activeTool : undefined}
                   data-copying={preview?.copy ? '' : undefined}
+                  data-picking={pickPitch ? '' : undefined}
                   data-band-press
                   tabIndex={selectable ? 0 : undefined}
                   onKeyDown={detachedScroll ? undefined : panelKeyDown}
                   onPointerDown={beginMarquee}
                   onPointerMove={(event) => {
+                    if (pickPitch) {
+                      setPickHover(cellAt(rollPointAt(event)).midi);
+                      return;
+                    }
                     if (gesture.current) {
                       moveGesture(event);
                     } else {
@@ -1798,9 +1878,21 @@ export function PianoRoll({
                     setMarquee(null);
                     setMarqueeIds(null);
                   }}
+                  onPointerLeave={pickPitch ? () => setPickHover(null) : undefined}
                   onContextMenu={openMenu}
                   onDoubleClick={doubleClick}
                 >
+                  {pickPitch && pickHover !== null && (
+                    <span
+                      className={classes.pickRow}
+                      data-testid="roll-pick-row"
+                      data-midi={pickHover}
+                      style={{
+                        top: (127 - pickHover) * view.pixelsPerSemitone,
+                        height: view.pixelsPerSemitone,
+                      }}
+                    />
+                  )}
                   {Array.from({ length: 129 }, (_, index) => (
                     <span
                       key={`pitch-line:${index}`}
@@ -1886,6 +1978,10 @@ export function PianoRoll({
                           selectable
                             ? (event) => {
                                 if (event.button !== 0) {
+                                  return;
+                                }
+                                // A pick is waiting: the press bubbles to the roll, which takes it as a pick.
+                                if (pickPitch || justPicked(event.timeStamp)) {
                                   return;
                                 }
                                 // These tools sweep across notes, so the roll takes the press.

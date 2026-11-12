@@ -1,12 +1,18 @@
 import { useEffect, useState, type MouseEvent } from 'react';
 import { Button, Group, SegmentedControl, Stack, Text, TextInput } from '@mantine/core';
-import { clipActionOperation, type ClipActionParams } from '../clipActions';
-import { freezeClipProperties } from '../clipProperties';
+import { runClipAction } from '../clipActionRunner';
+import type { ClipActionParams } from '../clipActions';
 import { clipActionById } from '../clipTypes';
 import { useDesk } from '../desk';
-import { newNoteItemId } from '../noteClipEdits';
+import { useNoteClipboard } from '../noteClipboard';
 import { readNoteEditor, useNoteEditorState } from '../noteEditorChannel';
 import type { Snippet } from '../snippet';
+
+/** The rotation amount field stepped by one (a field that is not a whole number steps from 0). */
+function stepRotation(text: string, delta: number): number {
+  const current = Number(text.trim());
+  return (Number.isSafeInteger(current) ? current : 0) + delta;
+}
 
 /**
  * The clip's actions (transforms) in the left inspector while it is open. The buttons call the
@@ -25,6 +31,9 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
   const [factor, setFactor] = useState('2');
   const [rotation, setRotation] = useState('1');
   const [semitones, setSemitones] = useState('1');
+  const [equalLength, setEqualLength] = useState('');
+  const [equalVelocity, setEqualVelocity] = useState('');
+  const clipboard = useNoteClipboard();
   const disabled = loading || locked;
 
   // A notice is about the selection it was made with: drop it when the editor's selection changes.
@@ -41,56 +50,56 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
     return action !== undefined && action.applies(snippet.packet);
   }
 
+  /** Runs an action through the shared runner and shows what happened. Never throws. */
   function run(id: string, params: ClipActionParams = {}) {
-    try {
-      runAction(id, params);
-    } catch {
-      setNotice({
-        text: 'That action could not be completed, so nothing was changed.',
-        refused: true,
-      });
+    // Any other action ends a pitch pick that is waiting (the selection stays as it is).
+    readNoteEditor(snippet.id)?.cancelPick?.();
+    const outcome = runClipAction({
+      snippetId: snippet.id,
+      fallback: snippet.packet,
+      actionId: id,
+      params,
+      desk: { commitSnippetEditById, latestSnippetById },
+    });
+    switch (outcome.status) {
+      case 'committed':
+        setNotice(outcome.message ? { text: outcome.message, refused: false } : null);
+        break;
+      case 'unchanged':
+        setNotice({ text: outcome.message, refused: false });
+        break;
+      default:
+        setNotice({ text: outcome.message, refused: true });
     }
   }
 
-  function runAction(id: string, params: ClipActionParams) {
-    // The desk's packet as it is now, and the editor's selection as it is now.
-    const live = latestSnippetById(snippet.id)?.packet ?? snippet.packet;
-    const action = clipActionById(live, id);
-    if (!action || !action.applies(live)) {
-      setNotice({ text: 'This clip does not support that action.', refused: true });
-      return;
-    }
+  /**
+   * The two-part gestures: pressing the button puts the editor into pick-pitch mode, and the editor
+   * calls back with the picked row (or Enter for the default). Without an open editor there is
+   * nothing to pick in: Invert applies its default axis, the others say so.
+   */
+  function pick(
+    id: string,
+    hint: string,
+    apply: (midi: number) => ClipActionParams,
+    withDefault: boolean
+  ) {
     const channel = readNoteEditor(snippet.id);
-    // An old clip freezes its properties with its first edit, in the same version (as every edit).
-    const base = freezeClipProperties(live);
-    const result = action.run(
-      base,
-      {
-        selection: channel?.selection ?? { ids: [], range: null },
-        gridUnit: channel?.snapUnit,
-        newId: () => newNoteItemId(snippet.id),
-      },
-      params
-    );
-    if (!result.ok) {
-      setNotice({ text: result.error, refused: true });
-      return;
-    }
-    if (result.packet === base) {
-      setNotice({ text: 'Nothing to change.', refused: false });
-      return;
-    }
-    const committed = commitSnippetEditById(
-      snippet.id,
-      result.packet,
-      clipActionOperation(action.id)
-    );
-    if (!committed.ok) {
-      setNotice({ text: committed.error, refused: true });
+    if (!channel?.beginPick) {
+      if (withDefault) {
+        run(id);
+      } else {
+        setNotice({ text: 'Open the clip in the editor to pick a pitch.', refused: true });
+      }
       return;
     }
     setNotice(null);
-    channel?.adopt(result, committed.snippet.packet);
+    channel.beginPick({
+      actionId: id,
+      hint,
+      onPick: (midi) => run(id, apply(midi)),
+      onDefault: withDefault ? () => run(id) : undefined,
+    });
   }
 
   // Keep focus where it is (and so the editor's selection and keyboard scope) when a button or the
@@ -179,19 +188,117 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
             disabled={disabled}
             onChange={(event) => setRotation(event.currentTarget.value)}
           />
+          <Button
+            size="compact-xs"
+            variant="default"
+            aria-label="Rotate one step back"
+            disabled={disabled || !available('rotate-values')}
+            onClick={() => setRotation(String(stepRotation(rotation, -1)))}
+          >
+            −1
+          </Button>
+          <Button
+            size="compact-xs"
+            variant="default"
+            aria-label="Rotate one step forward"
+            disabled={disabled || !available('rotate-values')}
+            onClick={() => setRotation(String(stepRotation(rotation, 1)))}
+          >
+            +1
+          </Button>
+        </Group>
+        <Group gap={4} wrap="wrap">
           {button('rotate-values', 'Values', 'Rotate values', () =>
             run('rotate-values', { amount: rotation })
+          )}
+          {button('rotate-durations', 'Durations', 'Rotate durations', () =>
+            run('rotate-durations', { amount: rotation })
           )}
           {button('rotate-time', 'Time', 'Rotate in time', () =>
             run('rotate-time', { amount: rotation })
           )}
         </Group>
       </Stack>
+      <Group gap={4} wrap="wrap" role="group" aria-label="Clipboard">
+        <Text size="xs">Clipboard</Text>
+        {button('copy', 'Copy', 'Copy notes', () => run('copy'))}
+        <Button
+          size="compact-xs"
+          variant="default"
+          aria-label="Paste notes"
+          disabled={disabled || !available('paste') || clipboard === null}
+          onClick={() => run('paste')}
+        >
+          Paste
+        </Button>
+      </Group>
       <Group gap={4} wrap="wrap">
         {button('legato', 'Legato', 'Legato', () => run('legato'))}
         {button('quantize', 'Quantize', 'Quantize', () => run('quantize'))}
         {button('duplicate', 'Duplicate', 'Duplicate selection', () => run('duplicate'))}
       </Group>
+      <Stack gap={4} role="group" aria-label="Invert">
+        <Group gap={4} wrap="wrap">
+          <Text size="xs">Invert</Text>
+          {button('invert', 'Invert', 'Invert', () =>
+            pick(
+              'invert',
+              'Click a pitch to mirror the notes around it, or press Enter to mirror around the middle of the notes. Escape cancels.',
+              (midi) => ({ axis: midi * 100 }),
+              true
+            )
+          )}
+        </Group>
+      </Stack>
+      <Stack gap={4} role="group" aria-label="Make equal">
+        <Text size="xs">Make all equal</Text>
+        <Group gap={4} wrap="nowrap">
+          <TextInput
+            size="xs"
+            aria-label="Equal duration"
+            placeholder="first note's: 1, 0.5 or 1/8"
+            value={equalLength}
+            disabled={disabled}
+            onChange={(event) => setEqualLength(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                run('equal-duration', { duration: equalLength });
+              }
+            }}
+          />
+          {button('equal-duration', 'Duration', 'Make all durations equal', () =>
+            run('equal-duration', { duration: equalLength })
+          )}
+        </Group>
+        <Group gap={4} wrap="nowrap">
+          <TextInput
+            size="xs"
+            aria-label="Equal velocity"
+            placeholder="first note's: 1 to 100 %"
+            value={equalVelocity}
+            disabled={disabled}
+            onChange={(event) => setEqualVelocity(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                run('equal-velocity', { velocity: equalVelocity });
+              }
+            }}
+          />
+          {button('equal-velocity', 'Velocity', 'Make all velocities equal', () =>
+            run('equal-velocity', { velocity: equalVelocity })
+          )}
+        </Group>
+        <Group gap={4} wrap="wrap">
+          {button('equal-pitch', 'Pitch', 'Make all pitches equal', () =>
+            pick(
+              'equal-pitch',
+              'Click a pitch to give every note that pitch (a chord becomes that single pitch). Escape cancels.',
+              (midi) => ({ pitch: midi * 100 }),
+              false
+            )
+          )}
+        </Group>
+      </Stack>
       <Stack gap={4} role="group" aria-label="Transpose">
         <Text size="xs">Transpose</Text>
         <Group gap={4} wrap="wrap">
@@ -214,6 +321,19 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
           {button('transpose', 'Octave +', 'Octave up', () => run('transpose', { semitones: 12 }))}
         </Group>
       </Stack>
+      {editor?.picking && (
+        <Group gap={4} wrap="nowrap" role="status">
+          <Text size="xs">Pick a pitch in the roll.</Text>
+          <Button
+            size="compact-xs"
+            variant="default"
+            aria-label="Cancel pick"
+            onClick={() => editor.cancelPick()}
+          >
+            Cancel
+          </Button>
+        </Group>
+      )}
       {notice && (
         <Text
           size="xs"

@@ -14,6 +14,7 @@ import {
   type PianoRollViewState,
   type VelocityRamp,
 } from '../../../components/PianoRoll';
+import { runClipAction } from '../clipActionRunner';
 import { freezeClipProperties, readClipProperties } from '../clipProperties';
 import { registerClipEditor, type ClipEditorProps } from '../clipTypes';
 import { useCompositionSettings } from '../compositionSettings';
@@ -40,7 +41,7 @@ import {
   timeMoveResult,
   type TimeMoveOptions,
 } from '../noteClipEdits';
-import { publishNoteEditor, withdrawNoteEditor } from '../noteEditorChannel';
+import { publishNoteEditor, withdrawNoteEditor, type PickPitchRequest } from '../noteEditorChannel';
 import { GRID_OPTIONS, useNoteEditorPreferences } from '../noteEditorPreferences';
 import {
   clearTimeSelection,
@@ -54,6 +55,7 @@ import {
   type NoteSelection,
   type TimeRange,
 } from '../noteSelection';
+import { selectionKeyOf, type RotationSessionCore } from '../rotationSession';
 import { scaleDegreeColor } from '../scaleDegreeColor';
 import { jsonEqual } from '../snippet';
 import { parseMeter } from '../transport';
@@ -231,6 +233,17 @@ function startsBandMove(pressed: Element, target: Element, clientX: number, tool
  * state only (never in the packet or the history). It is live while the packet still holds the notes
  * the ramp wrote (`items`), the Paint tool is active and the selection is the one it was made under.
  */
+/**
+ * The rotation session kept after a "rotate in time" press (rotationSession.ts). Editor-side
+ * transient state only. It is live while the packet still holds the items the press committed and
+ * the selection is the one it left.
+ */
+interface ActiveRotation {
+  core: RotationSessionCore;
+  items: DataPacket['items'];
+  selectionKey: string;
+}
+
 interface ActiveRamp {
   ramp: VelocityRamp;
   items: DataPacket['items'];
@@ -247,10 +260,15 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   // Pencil on an empty clip, Pointer otherwise.
   const [tool, setToolState] = useState(() => (packet.items.length > 0 ? 'pointer' : 'pencil'));
   const [rampState, setRampState] = useState<ActiveRamp | null>(null);
-  // Any tool change ends the ramp (it is a Paint-tool secondary selection).
+  // The pick-pitch mode the inspector's Invert / Make equal > Pitch put the editor in (the second part
+  // of a two-part action). Editor-side only, like the selection: never in the packet or the history.
+  const [pick, setPick] = useState<PickPitchRequest | null>(null);
+  const [rotationState, setRotationState] = useState<ActiveRotation | null>(null);
+  // Any tool change ends the ramp (it is a Paint-tool secondary selection) and a waiting pick.
   function setTool(next: string) {
     setToolState(next);
     setRampState(null);
+    setPick(null);
   }
   // Per-viewer: the remembered entry length and the grid. Neither is history or part of a project.
   const [preferences, updatePreferences] = useNoteEditorPreferences();
@@ -300,6 +318,51 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [rampActive]);
+
+  // The rotation session is live while the notes and the selection are exactly what the last press
+  // left; anything else (another edit, a selection change, an undo or redo) ends it for good.
+  const currentSelectionKey = selectionKeyOf(selection);
+  const rotation =
+    rotationState &&
+    rotationState.selectionKey === currentSelectionKey &&
+    (rotationState.items === packet.items || jsonEqual(rotationState.items, packet.items))
+      ? rotationState.core
+      : null;
+  const rotationEnded = rotationState !== null && rotation === null;
+  useEffect(() => {
+    if (rotationEnded) {
+      setRotationState(null);
+    }
+  }, [rotationEnded]);
+
+  // While a pick waits, Escape cancels it and Enter applies its default (inversion's middle axis),
+  // wherever the focus is (except a text field). The selection is never touched.
+  const picking = pick !== null;
+  useEffect(() => {
+    if (!picking) {
+      return undefined;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target &&
+        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+      if (typing || event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setPick(null);
+      } else if (event.key === 'Enter' && pick?.onDefault) {
+        event.preventDefault();
+        const apply = pick.onDefault;
+        setPick(null);
+        apply();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [picking, pick]);
 
   // One band at a time: the cyan time band for a time selection, otherwise the faint neutral band
   // over the span the selected notes occupy.
@@ -353,6 +416,10 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       selection,
       gridUnit,
       snapUnit,
+      rotation,
+      picking: pick?.actionId ?? null,
+      beginPick: setPick,
+      cancelPick: () => setPick(null),
       adopt: (result, committed) => {
         const wanted = result.selection;
         const next: NoteSelection = wanted
@@ -365,9 +432,18 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
               }
             : selectIds(committed, selection.ids);
         setSelectionState((state) => ({ selection: next, basis: committed, moves: state.moves }));
+        setRotationState(
+          result.rotation
+            ? {
+                core: result.rotation,
+                items: committed.items,
+                selectionKey: selectionKeyOf(next),
+              }
+            : null
+        );
       },
     });
-  }, [snippet.id, selection, gridUnit, snapUnit]);
+  }, [snippet.id, selection, gridUnit, snapUnit, pick?.actionId, rotation]);
   useEffect(() => () => withdrawNoteEditor(snippet.id), [snippet.id]);
   const refusal = loading
     ? 'The desk is still loading, so the clip cannot be edited yet.'
@@ -546,6 +622,17 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     commit((current) => changeVelocity(current, ids, delta));
   }
 
+  /** Copy / paste from the keyboard: the registry action through the same runner as the inspector. */
+  function runKeyAction(actionId: 'copy' | 'paste') {
+    const outcome = runClipAction({
+      snippetId: snippet.id,
+      fallback: packet,
+      actionId,
+      desk: { commitSnippetEditById, latestSnippetById },
+    });
+    setNotice(outcome.status === 'committed' ? (outcome.message ?? null) : outcome.message);
+  }
+
   const actions: EditorAction[] = [
     {
       id: 'delete',
@@ -629,7 +716,42 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       {/* One unified panel: the roll, the velocity lane and the single scrollbar, the palette beside all three. */}
       <div
         className={classes.rollArea}
+        role="presentation"
+        onKeyDown={(event) => {
+          // Ctrl/Cmd+C and V anywhere in the editor's focus scope (roll, lane, panel body), never
+          // while typing in a field and not while a pitch pick waits.
+          const target = event.target as HTMLElement;
+          if (
+            pick ||
+            target.isContentEditable ||
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+            !(event.ctrlKey || event.metaKey) ||
+            event.altKey ||
+            event.shiftKey
+          ) {
+            return;
+          }
+          const key = event.key.toLowerCase();
+          if (key === 'c' || key === 'v') {
+            event.preventDefault();
+            // Holding the keys must not repeat the action (a paste per auto-repeat tick).
+            if (event.repeat) {
+              return;
+            }
+            runKeyAction(key === 'c' ? 'copy' : 'paste');
+          }
+        }}
         onPointerDownCapture={(event) => {
+          if (pick) {
+            // A pick is waiting: the roll and the keys take the press as the pick itself, so the time
+            // band (and the selection) stay; presses on the lane and ruler are swallowed rather than
+            // drawing or selecting behind the pick. The palette and scrollbar work as usual.
+            const pressed = (event.target as Element).closest('[data-band-press]');
+            if (pressed && !pressed.hasAttribute('data-tool')) {
+              event.stopPropagation();
+            }
+            return;
+          }
           // The next press on the roll, the ruler or the lane clears a time selection before the new
           // gesture starts. Presses elsewhere (the scrollbar, the tool palette, the keys) leave it,
           // and so does a press inside the band that starts moving its content.
@@ -698,6 +820,17 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                 }
               />
             ) : null
+          }
+          pickPitch={
+            pick
+              ? {
+                  hint: pick.hint,
+                  onPick: (midi) => {
+                    setPick(null);
+                    pick.onPick(midi);
+                  },
+                }
+              : null
           }
           keyActions={[
             {

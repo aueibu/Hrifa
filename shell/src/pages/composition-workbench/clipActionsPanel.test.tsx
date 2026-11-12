@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { freezeClipProperties } from './clipProperties';
 import { ClipActionsPanel } from './components/ClipActionsPanel';
 import { CompositionInspector } from './components/CompositionInspector';
 import { NoteClipEditor } from './components/NoteClipEditor';
 import { CompositionSettingsProvider } from './compositionSettings';
 import { DeskProvider, useDesk } from './desk';
-import { historyChangeCount, resetHistory, undo } from './history';
+import { historyChangeCount, redo, resetHistory, undo } from './history';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem } from './model';
 import { musicalDuration, musicalPosition, rationalFromNumber } from './musicalTime';
+import { clearNoteClipboard } from './noteClipboard';
 import { readNoteEditor } from './noteEditorChannel';
 import type { Snippet } from './snippet';
 
@@ -70,8 +73,8 @@ function seedNote(
     id,
     value: {
       onset: { quarterNotes: rationalFromNumber(start) },
-      interOnset: musicalDuration(length),
-      duration: musicalDuration(length),
+      interOnset: { quarterNotes: rationalFromNumber(length) },
+      duration: { quarterNotes: rationalFromNumber(length) },
       pitches: [midicents],
       velocity,
     },
@@ -138,6 +141,7 @@ function selectNote(roll: HTMLElement, title: RegExp, x: number, midi: number) {
 beforeEach(() => {
   localStorage.clear();
   resetHistory();
+  clearNoteClipboard();
   failing.commits = false;
 });
 
@@ -503,3 +507,605 @@ function Standalone() {
   const clip = desk.snippets[0];
   return clip ? <ClipActionsPanel snippet={clip} /> : null;
 }
+
+describe('the selection after a transform is exactly the transformed notes (chord slots)', () => {
+  // Two chord slots of single-pitch notes: three at 0 (C4 E4 G4), two at 2 (D4 F4).
+  const chords = () => [
+    seedNote('p1', 0, 6000),
+    seedNote('p2', 0, 6400),
+    seedNote('p3', 0, 6700),
+    seedNote('r1', 2, 6200),
+    seedNote('r2', 2, 6500),
+  ];
+
+  /** Opens the chord clip with all five notes selected (click one, shift-click the rest). */
+  async function openSelected() {
+    const roll = await open(oldClip(chords()));
+    const picks: [RegExp, number, number][] = [
+      [/^C4 · 0\.000 qn/, 20, 60],
+      [/^E4 · 0\.000 qn/, 20, 64],
+      [/^G4 · 0\.000 qn/, 20, 67],
+      [/^D4 · 2\.000 qn/, 140, 62],
+      [/^F4 · 2\.000 qn/, 140, 65],
+    ];
+    picks.forEach(([title, x, midi], index) => {
+      fireEvent.pointerDown(screen.getByTitle(title), {
+        clientX: x,
+        clientY: rowY(midi),
+        pointerId: 1,
+        shiftKey: index > 0,
+      });
+      fireEvent.pointerUp(roll, { clientX: x, clientY: rowY(midi), pointerId: 1 });
+    });
+    expect(roll).toHaveAccessibleName(/, 5 selected/);
+    return roll;
+  }
+
+  const selectedIds = () => [...readNoteEditor('old')!.selection.ids].sort();
+  const allIds = () =>
+    items()
+      .map((item) => item.id)
+      .sort();
+
+  it.each([
+    'Reverse order',
+    'Rotate values',
+    'Rotate durations',
+    'Rotate in time',
+    'Legato',
+    'Quantize',
+    'Octave up',
+    'Scale by 2',
+    'Make all durations equal',
+    'Make all velocities equal',
+  ])('%s leaves every resulting note selected, none dropped', async (name) => {
+    const roll = await openSelected();
+    await userEvent.click(button(name));
+    // Every item in this clip was a target, so the selection is every item now there (kept ids, ids a
+    // rebuilt slot created, the wrapped pieces of a rotation), and the roll shows that many selected.
+    expect(selectedIds()).toEqual(allIds());
+    expect(roll).toHaveAccessibleName(new RegExp(`, ${items().length} selected`));
+    expect(items().length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('Make all pitches equal keeps the whole selection too', async () => {
+    const roll = await openSelected();
+    await userEvent.click(button('Make all pitches equal'));
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(70), pointerId: 1 });
+    expect(selectedIds()).toEqual(allIds());
+    expect(items().map((item) => pitchOf(item.id))).toEqual(Array(5).fill([7000]));
+  });
+
+  it('reverse order across unequal slots keeps every note: ids created are added, none lost', async () => {
+    await openSelected();
+    await userEvent.click(button('Reverse order'));
+    // Slots of 3 and 2 swapped: the 3-slot became 2 notes and the 2-slot 3 (one new id).
+    expect(items()).toHaveLength(5);
+    expect(
+      items().filter((item) => noteValue(item.id).onset.quarterNotes.numerator === 0)
+    ).toHaveLength(2);
+    expect(selectedIds()).toEqual(allIds());
+    expect(selectedIds()).not.toContain('p3');
+    // And no multi-pitch item was created.
+    items().forEach((item) => expect(pitchOf(item.id)).toHaveLength(1));
+  });
+
+  it('Duplicate selects exactly the copies', async () => {
+    await openSelected();
+    await userEvent.click(button('Duplicate selection'));
+    const originals = ['p1', 'p2', 'p3', 'r1', 'r2'];
+    expect(items()).toHaveLength(10);
+    expect(selectedIds()).toEqual(allIds().filter((id) => !originals.includes(id)));
+    expect(selectedIds()).toHaveLength(5);
+  });
+});
+
+describe('pick-pitch mode (Invert and Make all pitches equal)', () => {
+  const banner = () => screen.queryByTestId('roll-pick-banner');
+
+  /** Selects the E4 note only (the middle of the three). */
+  async function openWithE4() {
+    const roll = await open(oldClip());
+    selectNote(roll, /^E4 · 2\.000 qn/, 140, 64);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    return roll;
+  }
+
+  it('Invert enters the mode, a click on a pitch row sets the axis and applies, the selection is kept', async () => {
+    const roll = await openWithE4();
+    await userEvent.click(button('Invert'));
+    expect(banner()).toHaveTextContent(/Click a pitch/);
+    expect(roll).toHaveAttribute('data-picking');
+    expect(screen.getByText('Pick a pitch in the roll.')).toBeInTheDocument();
+    // Nothing is written until the pick.
+    expect(desk.snippets[0].lineage).toBeUndefined();
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    // The row under the pointer is highlighted.
+    fireEvent.pointerMove(roll, { clientX: 300, clientY: rowY(62), pointerId: 1 });
+    expect(screen.getByTestId('roll-pick-row')).toHaveAttribute('data-midi', '62');
+    // D4 (6200) is the axis: E4 (6400) mirrors to C4 (6000).
+    fireEvent.pointerDown(roll, { clientX: 300, clientY: rowY(62), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 300, clientY: rowY(62), pointerId: 1 });
+    expect(pitchOf('n2')).toEqual([6000]);
+    expect(pitchOf('n1')).toEqual([6000]);
+    expect(pitchOf('n3')).toEqual([6700]);
+    expect(items()).toHaveLength(3);
+    expect(banner()).toBeNull();
+    // The pick click did not change the selection (still the one note) and is one undo step.
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(versions().map((version) => version.operation)).toEqual([
+      'original',
+      'transform-invert',
+    ]);
+    act(() => undo());
+    expect(pitchOf('n2')).toEqual([6400]);
+  });
+
+  it('a press on a note or on a key is a pick too, not a selection or a draw', async () => {
+    const roll = await openWithE4();
+    await userEvent.click(button('Invert'));
+    // Press on the C4 note: the axis is C4 (6000), the selection stays on E4, nothing is added.
+    fireEvent.pointerDown(screen.getByTitle(/^C4 · 0\.000 qn/), {
+      clientX: 20,
+      clientY: rowY(60),
+      pointerId: 1,
+    });
+    expect(pitchOf('n2')).toEqual([5600]);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(items()).toHaveLength(3);
+    // The keys gutter: a second pick on key 62 (D4) as the axis; E4 is now 5600 -> 6800.
+    await userEvent.click(button('Invert'));
+    const key = document.querySelector('[data-midi="62"]') as HTMLElement;
+    fireEvent.pointerDown(key, { clientX: 5, clientY: 5, pointerId: 1 });
+    expect(pitchOf('n2')).toEqual([6800]);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+  });
+
+  it('presses on the velocity lane and the ruler while a pick waits are swallowed: selection and pick stay', async () => {
+    const roll = await openWithE4();
+    await userEvent.click(button('Invert'));
+    const lane = screen.getByRole('group', { name: 'Velocity lane' });
+    fireEvent.pointerDown(lane, { clientX: 400, clientY: 10, pointerId: 1 });
+    fireEvent.pointerUp(lane, { clientX: 400, clientY: 10, pointerId: 1 });
+    const ruler = screen.getByTestId('roll-ruler');
+    fireEvent.pointerDown(ruler, { clientX: 400, clientY: 5, pointerId: 1 });
+    fireEvent.pointerUp(ruler, { clientX: 400, clientY: 5, pointerId: 1 });
+    expect(banner()).toBeInTheDocument();
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(desk.snippets[0].lineage).toBeUndefined();
+    expect(pitchOf('n2')).toEqual([6400]);
+  });
+
+  it('Escape cancels with no edit, keeps the selection and the mode ends', async () => {
+    const roll = await openWithE4();
+    await userEvent.click(button('Invert'));
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    expect(banner()).toBeNull();
+    expect(roll).not.toHaveAttribute('data-picking');
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(desk.snippets[0].lineage).toBeUndefined();
+    // A later click on the roll is an ordinary click again (it clears the selection).
+    fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(80), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 400, clientY: rowY(80), pointerId: 1 });
+    expect(roll).toHaveAccessibleName(/, 0 selected/);
+  });
+
+  it('Enter applies the default axis (the middle of the notes)', async () => {
+    const roll = await open(oldClip());
+    await userEvent.click(button('Invert'));
+    fireEvent.keyDown(roll, { key: 'Enter' });
+    // C4 6000, E4 6400, G4 6700: the middle 6350 swaps C4 and G4 and sends E4 to 6300.
+    expect(['n1', 'n2', 'n3'].map(pitchOf)).toEqual([[6700], [6300], [6000]]);
+    expect(banner()).toBeNull();
+    expect(versions().map((version) => version.operation)).toEqual([
+      'original',
+      'transform-invert',
+    ]);
+  });
+
+  it('switching the tool cancels the pick without an edit', async () => {
+    const roll = await openWithE4();
+    await userEvent.click(button('Invert'));
+    await userEvent.click(screen.getByRole('button', { name: /^Tool:/ }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: /Time/ }));
+    expect(banner()).toBeNull();
+    expect(roll).not.toHaveAttribute('data-picking');
+    expect(desk.snippets[0].lineage).toBeUndefined();
+    expect(readNoteEditor('old')!.picking).toBeNull();
+  });
+
+  it('the panel Cancel button and another action both end a waiting pick', async () => {
+    await openWithE4();
+    await userEvent.click(button('Invert'));
+    await userEvent.click(button('Cancel pick'));
+    expect(banner()).toBeNull();
+    await userEvent.click(button('Invert'));
+    await userEvent.click(button('Octave up'));
+    expect(banner()).toBeNull();
+    expect(pitchOf('n2')).toEqual([7600]);
+  });
+
+  it('Make all pitches equal: pick a row; Escape cancels with no edit', async () => {
+    const roll = await openWithE4();
+    await userEvent.click(button('Make all pitches equal'));
+    expect(banner()).toHaveTextContent(/every note that pitch/);
+    // Enter has no default here: it changes nothing and the mode stays.
+    fireEvent.keyDown(roll, { key: 'Enter' });
+    expect(banner()).not.toBeNull();
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    expect(banner()).toBeNull();
+    expect(desk.snippets[0].lineage).toBeUndefined();
+    await userEvent.click(button('Make all pitches equal'));
+    fireEvent.pointerDown(roll, { clientX: 300, clientY: rowY(72), pointerId: 1 });
+    expect(pitchOf('n2')).toEqual([7200]);
+    expect(pitchOf('n1')).toEqual([6000]);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(versions().at(-1)?.operation).toBe('transform-equal-pitch');
+  });
+
+  it('the typed Make all equal controls apply duration and velocity as their own versions', async () => {
+    await open(oldClip([seedNote('n1', 0, 6000, 1, 0.4), seedNote('n2', 2, 6400, 2, 0.9)]));
+    const length = screen.getByRole('textbox', { name: 'Equal duration' });
+    await userEvent.type(length, '1/8');
+    await userEvent.click(button('Make all durations equal'));
+    expect(noteValue('n1').duration.quarterNotes).toEqual({ numerator: 1, denominator: 2 });
+    expect(noteValue('n2').duration.quarterNotes).toEqual({ numerator: 1, denominator: 2 });
+    expect(versions().at(-1)?.operation).toBe('transform-equal-duration');
+    const velocity = screen.getByRole('textbox', { name: 'Equal velocity' });
+    await userEvent.type(velocity, '60%');
+    await userEvent.click(button('Make all velocities equal'));
+    expect(noteValue('n1').velocity).toBe(0.6);
+    expect(noteValue('n2').velocity).toBe(0.6);
+    expect(versions().at(-1)?.operation).toBe('transform-equal-velocity');
+    // Blank means the first note's: a refusal message for nonsense, nothing written.
+    const count = versions().length;
+    await userEvent.type(length, 'abc');
+    await userEvent.click(button('Make all durations equal'));
+    expect(screen.getByRole('alert')).toHaveTextContent(/quarter notes/);
+    expect(versions()).toHaveLength(count);
+  });
+});
+
+describe('the end-to-end path of every existing action button (real editor, real panel)', () => {
+  it.each([
+    ['Scale by 2', 'transform-scale'],
+    ['Reverse in time', 'transform-reverse-time'],
+    ['Reverse order', 'transform-reverse-order'],
+    ['Rotate values', 'transform-rotate-values'],
+    ['Rotate durations', 'transform-rotate-durations'],
+    ['Rotate in time', 'transform-rotate-time'],
+    ['Legato', 'transform-legato'],
+    ['Octave up', 'transform-transpose'],
+    ['Quantize', 'transform-quantize'],
+    ['Duplicate selection', 'transform-duplicate'],
+    ['Invert', 'transform-invert'],
+  ])('%s changes the packet, is one version and one undo step', async (name, operation) => {
+    const roll = await open(
+      oldClip([
+        seedNote('n1', 0.1, 6000, 0.5),
+        seedNote('n2', 2.2, 6400),
+        seedNote('n3', 4.3, 6700, 2),
+      ])
+    );
+    selectNote(roll, /^E4 · 2\.200 qn/, 160, 64);
+    fireEvent.pointerDown(screen.getByTitle(/^C4 · 0\.100 qn/), {
+      clientX: 20,
+      clientY: rowY(60),
+      pointerId: 1,
+      shiftKey: true,
+    });
+    fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60), pointerId: 1 });
+    const before = desk.snippets[0].packet;
+    await userEvent.click(button(name));
+    if (name === 'Invert') {
+      fireEvent.keyDown(roll, { key: 'Enter' });
+    }
+    const after = desk.snippets[0].packet;
+    expect(after.items).not.toEqual(before.items);
+    expect(versions().map((version) => version.operation)).toEqual(['original', operation]);
+    act(() => undo());
+    expect(desk.snippets[0].packet).toEqual(before);
+  });
+});
+
+describe('the rotation session through the real editor and panel', () => {
+  const frozenAqhae = () => {
+    const seed = oldClip();
+    const held = freezeClipProperties(seed.packet);
+    return {
+      ...seed,
+      packet: {
+        ...held,
+        items: [seedNote('q', 0, 6900, 1), seedNote('h', 1, 6900, 2), seedNote('e', 3, 6900, 0.5)],
+      },
+    } as Snippet;
+  };
+  const sound = () =>
+    items().reduce((sum, item) => {
+      const duration = noteValue(item.id).duration.quarterNotes;
+      return sum + duration.numerator / duration.denominator;
+    }, 0);
+
+  async function openSelectedAqhae() {
+    const roll = await open(frozenAqhae());
+    const picks: [RegExp, number, number][] = [
+      [/^A4 · 0\.000 qn/, 20, 69],
+      [/^A4 · 1\.000 qn/, 80, 69],
+      [/^A4 · 3\.000 qn/, 210, 69],
+    ];
+    picks.forEach(([title, x, midi], index) => {
+      fireEvent.pointerDown(screen.getByTitle(title), {
+        clientX: x,
+        clientY: rowY(midi),
+        pointerId: 1,
+        shiftKey: index > 0,
+      });
+      fireEvent.pointerUp(roll, { clientX: x, clientY: rowY(midi), pointerId: 1 });
+    });
+    expect(roll).toHaveAccessibleName(/, 3 selected/);
+    const snap = readNoteEditor('old')!.snapUnit;
+    const amount = screen.getByRole('textbox', { name: 'Rotate amount' });
+    await userEvent.clear(amount);
+    // Half a quarter per press, whatever the grid is.
+    await userEvent.type(amount, String(Math.round(0.5 / snap)));
+    return roll;
+  }
+
+  it('splits and rejoins across presses and a full cycle restores the original notes', async () => {
+    const roll = await openSelectedAqhae();
+    const originals = items();
+    const counts: number[] = [];
+    for (let press = 0; press < 7; press += 1) {
+      await userEvent.click(button('Rotate in time'));
+      counts.push(items().length);
+      expect(sound()).toBe(3.5);
+      expect(selectedIdsOf()).toEqual(allIdsOf());
+    }
+    expect(counts).toEqual([3, 4, 4, 4, 3, 4, 3]);
+    expect(items().map((item) => item.id)).toEqual(['q', 'h', 'e']);
+    expect(roll).toHaveAccessibleName(/, 3 selected/);
+    // Same values as at the start (provenance is stamped by each commit).
+    expect(items().map((item) => item.value)).toEqual(originals.map((item) => item.value));
+    // Each press was its own version and its own undo step.
+    expect(
+      versions().filter((version) => version.operation === 'transform-rotate-time')
+    ).toHaveLength(7);
+  });
+
+  it('rotating back by the same total restores the notes, with the same ids', async () => {
+    await openSelectedAqhae();
+    const originals = items();
+    for (let press = 0; press < 3; press += 1) {
+      await userEvent.click(button('Rotate in time'));
+    }
+    expect(items()).toHaveLength(4);
+    const amount = screen.getByRole('textbox', { name: 'Rotate amount' });
+    await userEvent.clear(amount);
+    await userEvent.type(amount, String(-Math.round(0.5 / readNoteEditor('old')!.snapUnit)));
+    for (let press = 0; press < 3; press += 1) {
+      await userEvent.click(button('Rotate in time'));
+    }
+    expect(items().map((item) => item.id)).toEqual(['q', 'h', 'e']);
+    expect(items().map((item) => item.value)).toEqual(originals.map((item) => item.value));
+  });
+
+  it('another edit ends the session: the pieces stay separate notes', async () => {
+    await openSelectedAqhae();
+    for (let press = 0; press < 3; press += 1) {
+      await userEvent.click(button('Rotate in time'));
+    }
+    expect(items()).toHaveLength(4);
+    await userEvent.click(button('Octave up'));
+    for (let press = 0; press < 4; press += 1) {
+      await userEvent.click(button('Rotate in time'));
+    }
+    // With the session the 4th press after press 3 would have rejoined h; it never does now.
+    expect(items().length).toBeGreaterThanOrEqual(4);
+    expect(sound()).toBe(3.5);
+  });
+
+  it('undo then redo of a press ends the session (and an untouched run keeps it)', async () => {
+    await openSelectedAqhae();
+    for (let press = 0; press < 2; press += 1) {
+      await userEvent.click(button('Rotate in time'));
+    }
+    expect(items()).toHaveLength(4);
+    act(() => undo());
+    expect(items()).toHaveLength(3);
+    act(() => redo());
+    expect(items()).toHaveLength(4);
+    for (let press = 0; press < 3; press += 1) {
+      await userEvent.click(button('Rotate in time'));
+    }
+    // Five presses in all: an unbroken session would show the rejoined 3 notes here.
+    expect(items().length).toBeGreaterThanOrEqual(4);
+    expect(sound()).toBe(3.5);
+  });
+});
+
+const selectedIdsOf = () => [...readNoteEditor('old')!.selection.ids].sort();
+const allIdsOf = () =>
+  items()
+    .map((item) => item.id)
+    .sort();
+
+/** Two clips on the desk, one open at a time, to cross the clipboard and the pick between them. */
+function TwoClips() {
+  desk = useDesk();
+  const [active, setActive] = useState('old');
+  const clip = desk.snippets.find((entry) => entry.id === active);
+  return (
+    <>
+      <button type="button" onClick={() => setActive('two')}>
+        Show second
+      </button>
+      <button type="button" onClick={() => setActive('old')}>
+        Show first
+      </button>
+      {clip && <NoteClipEditor snippet={clip} />}
+      <CompositionInspector
+        selected={{ kind: 'canvas' }}
+        activeInstanceId={null}
+        clipId={clip?.id ?? null}
+        outputs={[]}
+        instances={[]}
+        routes={{}}
+        onRemoveModule={() => undefined}
+        onModuleSlot={() => undefined}
+        onRouteTreatment={() => undefined}
+      />
+    </>
+  );
+}
+
+describe('copy and paste across clips', () => {
+  const second = () =>
+    ({ ...oldClip([seedNote('m1', 1, 7200, 1, 0.3)]), id: 'two', name: 'two' }) as Snippet;
+  const clipOf = (id: string) => desk.snippets.find((entry) => entry.id === id)!;
+  const itemsOf = (id: string) => clipOf(id).packet.items;
+
+  async function openTwo() {
+    render(
+      <CompositionSettingsProvider>
+        <DeskProvider>
+          <TwoClips />
+        </DeskProvider>
+      </CompositionSettingsProvider>
+    );
+    await waitFor(() => expect(desk.loading).toBe(false));
+    act(() => {
+      desk.addSnippet(oldClip());
+      desk.addSnippet(second());
+    });
+    return screen.findByRole('group', { name: /Note clip piano roll/ });
+  }
+
+  it('Ctrl+C then Ctrl+V crosses clips: relative layout, fresh ids, selected, one version and undo step', async () => {
+    const roll = await openTwo();
+    // Select n1 (C4 at 0) and n2 (E4 at 2) and copy.
+    selectNote(roll, /^C4 · 0\.000 qn/, 20, 60);
+    fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+      clientX: 140,
+      clientY: rowY(64),
+      pointerId: 1,
+      shiftKey: true,
+    });
+    fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 1 });
+    expect(roll).toHaveAccessibleName(/, 2 selected/);
+    const copyVersions = versions().length;
+    fireEvent.keyDown(roll, { key: 'c', ctrlKey: true });
+    expect(screen.getByText('Copied 2 notes.')).toBeInTheDocument();
+    // Copy writes nothing.
+    expect(versions()).toHaveLength(copyVersions);
+    expect(clipOf('old').lineage).toBeUndefined();
+    // The second clip: select its one note (at 1) and paste: the copy lands at that note's start.
+    await userEvent.click(screen.getByRole('button', { name: 'Show second' }));
+    const roll2 = await screen.findByRole('group', { name: /Note clip piano roll/ });
+    selectNote(roll2, /^C5 · 1\.000 qn/, 80, 72);
+    fireEvent.keyDown(roll2, { key: 'v', ctrlKey: true });
+    const pasted = itemsOf('two').slice(1);
+    expect(itemsOf('two')).toHaveLength(3);
+    expect(pasted.map((entry) => entry.id)).not.toContain('n1');
+    expect(new Set(itemsOf('two').map((entry) => entry.id)).size).toBe(3);
+    const onsets = pasted.map((entry) => {
+      const q = (entry.value as NoteEventValue).onset.quarterNotes;
+      return q.numerator / q.denominator;
+    });
+    expect(onsets).toEqual([1, 3]);
+    expect(pasted.map((entry) => (entry.value as NoteEventValue).pitches)).toEqual([
+      [6000],
+      [6400],
+    ]);
+    // The pasted notes are the selection; the original note is not.
+    expect(roll2).toHaveAccessibleName(/, 2 selected/);
+    expect([...readNoteEditor('two')!.selection.ids].sort()).toEqual(
+      pasted.map((entry) => entry.id).sort()
+    );
+    const ops = clipOf('two').lineage!.versions.map((version) => version.operation);
+    expect(ops).toEqual(['original', 'transform-paste']);
+    act(() => undo());
+    expect(itemsOf('two')).toHaveLength(1);
+    // The first clip was never touched.
+    expect(itemsOf('old')).toHaveLength(3);
+  });
+
+  it('the Copy and Paste buttons do the same; Paste is disabled until something was copied', async () => {
+    const roll = await openTwo();
+    expect(button('Paste notes')).toBeDisabled();
+    // Nothing selected: Copy says so and writes nothing.
+    await userEvent.click(button('Copy notes'));
+    expect(screen.getByRole('alert')).toHaveTextContent('Select the notes to copy first.');
+    expect(button('Paste notes')).toBeDisabled();
+    selectNote(roll, /^G4 · 4\.000 qn/, 260, 67);
+    await userEvent.click(button('Copy notes'));
+    expect(screen.getByText('Copied 1 note.')).toBeInTheDocument();
+    expect(button('Paste notes')).toBeEnabled();
+    await userEvent.click(button('Paste notes'));
+    // Pasted at the selected note's start (4): a second note at the same place, now selected.
+    expect(itemsOf('old')).toHaveLength(4);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(clipOf('old').lineage!.versions.at(-1)?.operation).toBe('transform-paste');
+    // Cmd+V (metaKey) pastes too.
+    fireEvent.keyDown(roll, { key: 'v', metaKey: true });
+    expect(itemsOf('old')).toHaveLength(5);
+  });
+
+  it('is not taken while typing in a field, and plain or modified-by-shift keys are left alone', async () => {
+    const roll = await openTwo();
+    selectNote(roll, /^G4 · 4\.000 qn/, 260, 67);
+    const field = screen.getByRole('textbox', { name: 'Scale factor' });
+    fireEvent.keyDown(field, { key: 'c', ctrlKey: true });
+    expect(screen.queryByText('Copied 1 note.')).toBeNull();
+    fireEvent.keyDown(roll, { key: 'c' });
+    fireEvent.keyDown(roll, { key: 'c', ctrlKey: true, shiftKey: true });
+    expect(screen.queryByText('Copied 1 note.')).toBeNull();
+    fireEvent.keyDown(roll, { key: 'c', ctrlKey: true });
+    expect(screen.getByText('Copied 1 note.')).toBeInTheDocument();
+    fireEvent.keyDown(field, { key: 'v', ctrlKey: true });
+    expect(itemsOf('old')).toHaveLength(3);
+  });
+
+  it('a held Ctrl+V (auto-repeat) pastes once', async () => {
+    const roll = await openTwo();
+    selectNote(roll, /^G4 · 4\.000 qn/, 260, 67);
+    fireEvent.keyDown(roll, { key: 'c', ctrlKey: true });
+    fireEvent.keyDown(roll, { key: 'v', ctrlKey: true });
+    expect(itemsOf('old')).toHaveLength(4);
+    fireEvent.keyDown(roll, { key: 'v', ctrlKey: true, repeat: true });
+    fireEvent.keyDown(roll, { key: 'v', ctrlKey: true, repeat: true });
+    expect(itemsOf('old')).toHaveLength(4);
+    expect(
+      clipOf('old').lineage!.versions.filter((v) => v.operation === 'transform-paste')
+    ).toHaveLength(1);
+    fireEvent.keyDown(roll, { key: 'v', ctrlKey: true });
+    expect(itemsOf('old')).toHaveLength(5);
+  });
+
+  it('pasting into an empty selection lands at the clip start; the clip length never grows', async () => {
+    const roll = await openTwo();
+    selectNote(roll, /^G4 · 4\.000 qn/, 260, 67);
+    fireEvent.keyDown(roll, { key: 'c', ctrlKey: true });
+    await userEvent.click(screen.getByRole('button', { name: 'Show second' }));
+    const roll2 = await screen.findByRole('group', { name: /Note clip piano roll/ });
+    // A click on empty space clears the selection.
+    fireEvent.pointerDown(roll2, { clientX: 400, clientY: rowY(100), pointerId: 1 });
+    fireEvent.pointerUp(roll2, { clientX: 400, clientY: rowY(100), pointerId: 1 });
+    const before = clipOf('two').packet;
+    fireEvent.keyDown(roll2, { key: 'v', ctrlKey: true });
+    const added = itemsOf('two')[1].value as NoteEventValue;
+    expect(added.onset.quarterNotes).toEqual({ numerator: 0, denominator: 1 });
+    expect(clipOf('two').packet.frame).toEqual(before.frame);
+  });
+
+  it('switching clips cancels a waiting pick', async () => {
+    const roll = await openTwo();
+    selectNote(roll, /^E4 · 2\.000 qn/, 140, 64);
+    await userEvent.click(button('Invert'));
+    expect(screen.getByTestId('roll-pick-banner')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Show second' }));
+    await screen.findByRole('group', { name: /Note clip piano roll/ });
+    expect(screen.queryByTestId('roll-pick-banner')).toBeNull();
+    expect(readNoteEditor('two')!.picking).toBeNull();
+    expect(clipOf('old').lineage).toBeUndefined();
+  });
+});

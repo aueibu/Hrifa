@@ -1,4 +1,6 @@
 import type { DataPacket } from './model';
+import type { NoteClipboard } from './noteClipboard';
+import type { RotationSessionCore } from './rotationSession';
 
 /**
  * The shape of a clip-type action: something a clip's inspector (today) or a right-click menu
@@ -26,15 +28,35 @@ export interface ClipActionContext {
   gridUnit?: number;
   /** A fresh item id, for actions that add items. */
   newId(): string;
+  /**
+   * What the viewer last copied (noteClipboard.ts), for actions that paste. The caller reads it from
+   * the in-memory store; an action never reads that store itself, so it stays a pure function.
+   */
+  clipboard?: NoteClipboard | null;
+  /**
+   * The editor's live rotation session (rotationSession.ts), when its packet and selection are still
+   * the ones the last rotate left. Only "rotate in time" reads it.
+   */
+  rotation?: RotationSessionCore | null;
 }
 
 /** One parameter an action takes, described so a menu can build its input. */
 export interface ClipActionParam {
   id: string;
   label: string;
-  /** `number`/`integer` are typed values, `choice` picks one of `options`. */
-  type: 'number' | 'integer' | 'choice';
+  /**
+   * `number`/`integer` are typed values, `duration` is a typed note length (a plain number is quarter
+   * notes, `a/b` a note value: `1/8` is an eighth), `choice` picks one of `options`. `pick-pitch` is a pitch row
+   * the user clicks in the editor (a two-part gesture): the value passed to `run` is that pitch in
+   * midicents (a whole semitone, `midi * 100`).
+   */
+  type: 'number' | 'integer' | 'duration' | 'choice' | 'pick-pitch';
   default?: number | string;
+  /**
+   * The param may be left out: the action then uses its own default (inversion's axis is the middle
+   * of the notes). Without it a missing value is a refusal.
+   */
+  optional?: boolean;
   options?: readonly { value: string; label: string }[];
 }
 
@@ -57,6 +79,12 @@ export type ClipActionResult =
       /** The edited packet; the SAME packet (by reference) when the action changed nothing. */
       packet: DataPacket;
       selection?: ClipActionSelectionResult;
+      /** A copy action's result: the caller keeps it as the viewer's clipboard (the packet is unchanged). */
+      clipboard?: NoteClipboard;
+      /** "Rotate in time": the session the editor should keep for the next press. */
+      rotation?: RotationSessionCore;
+      /** Something to tell the user after a successful run (for example what was copied). */
+      message?: string;
     }
   /** A refusal: nothing was changed and `error` says why. Never a partial edit. */
   | { ok: false; error: string };

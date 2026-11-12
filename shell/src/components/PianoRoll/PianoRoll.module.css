@@ -3,6 +3,45 @@
   border-radius: var(--radius-control);
   min-width: 0;
   overflow: hidden;
+  position: relative;
+}
+
+/* Pick-pitch mode: a hint over the top of the roll that never takes a press. */
+.pickBanner {
+  background: var(--panel-raised);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-size: 0.75rem;
+  left: 50%;
+  max-width: calc(100% - 2rem);
+  padding: 0.25rem 0.6rem;
+  pointer-events: none;
+  position: absolute;
+  top: 0.5rem;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+/* The pitch row under the pointer while a pick waits. */
+.pickRow {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  border-block: 1px solid var(--accent);
+  box-sizing: border-box;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  z-index: 5;
+}
+
+.roll[data-picking],
+.roll[data-picking] .note {
+  cursor: crosshair;
+}
+
+.key[data-pick-hover] {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .toolbar {
@@ -257,11 +296,7 @@
    * max(80px, 25% of the span) per side, low in the middle so the notes inside stay readable. The edge lines are a fixed light grey
    * (white mixed with a little black) so they read in both schemes. Time selections only. Roll and lane share this recipe.
    */
-  --band: color-mix(
-    in srgb,
-    color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%,
-    white
-  );
+  --band: color-mix(in srgb, color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%, white);
   --band-line: color-mix(in srgb, white 82%, black);
   /* The fade distance per side: at least 80px, a quarter of the span, never past the middle. */
   --band-fade: min(max(80px, 25%), 50%);
@@ -551,4 +586,8 @@
 .barCell {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.keyboard[data-picking] .key {
+  cursor: crosshair;
 }

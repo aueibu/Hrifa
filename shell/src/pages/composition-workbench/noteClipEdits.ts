@@ -374,7 +374,7 @@ export function newNoteItemId(snippetId: string): string {
  * `newId` that never returns an id the packet already holds (or this call already handed out): a
  * repeated id from the source gets a numeric suffix until it is free.
  */
-function collisionSafe(packet: DataPacket, newId: () => string): () => string {
+export function collisionSafe(packet: DataPacket, newId: () => string): () => string {
   const taken = new Set(packet.items.map((item) => item.id));
   return () => {
     const base = newId();
