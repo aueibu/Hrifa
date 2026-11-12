@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import type { ClipAction } from './clipActions';
 import { withClipProperties, DEFAULT_TIME_SIGNATURE } from './clipProperties';
 import type { DataDomain, DataEncoding, DataKind, DataPacket } from './model';
 import {
@@ -8,6 +9,7 @@ import {
   rationalToNumber,
   type Rational,
 } from './musicalTime';
+import { noteClipActions } from './noteTransforms';
 import type { Snippet } from './snippet';
 import { parseMeter } from './transport';
 
@@ -48,6 +50,12 @@ export interface ClipType {
    * (`createNotePacketPerformancePlan`) applies to its packets, so only note-domain types set it.
    */
   playable: boolean;
+  /**
+   * The actions the clip inspector (and later a context menu) offers for this type: pure
+   * `(packet, context, params) -> packet | refusal` functions (clipActions.ts). Types without any
+   * implement none, and the inspector shows them disabled.
+   */
+  actions?: readonly ClipAction[];
   /** A new empty clip of this type. */
   createBlank(request: BlankClipRequest): Snippet;
 }
@@ -108,6 +116,16 @@ export function clipTypeOf(packet: Pick<DataPacket, 'kind' | 'domain' | 'encodin
       (type.encoding === undefined || type.encoding === packet.encoding)
   );
   return matches.find((type) => type.encoding !== undefined) ?? matches[0];
+}
+
+/** The actions of a clip's type (none for a type without any, or a packet with no type). */
+export function clipActionsOf(packet: DataPacket): readonly ClipAction[] {
+  return clipTypeOf(packet)?.actions ?? [];
+}
+
+/** One action of the clip's type by id, or undefined. */
+export function clipActionById(packet: DataPacket, id: string): ClipAction | undefined {
+  return clipActionsOf(packet).find((action) => action.id === id);
 }
 
 /** The editor for a clip, or undefined when its type has none yet (or it has no type). */
@@ -205,5 +223,6 @@ registerClipType({
   // Bound to the piano-roll editor by `registerClipEditor` (components/NoteClipEditor.tsx).
   editorId: 'note-roll',
   playable: true,
+  actions: noteClipActions,
   createBlank: (request) => blankSnippet(request, { kind: 'events', domain: 'note' }),
 });

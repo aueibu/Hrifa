@@ -385,6 +385,8 @@ export function VelocityLane({
 
   function beginTrack(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button === 2) {
+      // Every right press starts clean: only a curve gesture (below) suppresses the menu again.
+      suppressMenu.current = false;
       // Alt + right button on an active ramp curves it; any other right press is left alone.
       if (event.altKey && ramp && activeTool === 'paint' && onRamp) {
         event.preventDefault();
@@ -800,6 +802,8 @@ export function VelocityLane({
             onContextMenu={(event) => {
               if (suppressMenu.current) {
                 event.preventDefault();
+                // One swallowed menu per curve gesture: later right-clicks get the browser's menu.
+                suppressMenu.current = false;
               }
             }}
           >

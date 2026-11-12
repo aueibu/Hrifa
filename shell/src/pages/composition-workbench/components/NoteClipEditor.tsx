@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Menu, Text, Title } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
+  adaptiveSubdivision,
   defaultPianoRollView,
   gridDensity,
   PianoRoll,
@@ -39,6 +40,7 @@ import {
   timeMoveResult,
   type TimeMoveOptions,
 } from '../noteClipEdits';
+import { publishNoteEditor, withdrawNoteEditor } from '../noteEditorChannel';
 import { GRID_OPTIONS, useNoteEditorPreferences } from '../noteEditorPreferences';
 import {
   clearTimeSelection,
@@ -342,7 +344,31 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   // The roll shows the clip and any note past its end, plus a bar of room to draw into.
   const duration = useMemo(() => clipRollDuration(packet) + barLength, [packet, barLength]);
   const gridUnit = gridOption.quarters ?? undefined;
+  const snapUnit = gridUnit ?? adaptiveSubdivision(view.pixelsPerQuarter);
   const gridLines = useMemo(() => gridSourceFor(clipMeter, gridUnit), [clipMeter, gridUnit]);
+  // The inspector's actions panel reads the selection and grid from here when a button is pressed
+  // (noteEditorChannel.ts), and hands back the selection a transform leaves (`adopt`).
+  useEffect(() => {
+    publishNoteEditor(snippet.id, {
+      selection,
+      gridUnit,
+      snapUnit,
+      adopt: (result, committed) => {
+        const wanted = result.selection;
+        const next: NoteSelection = wanted
+          ? { ids: wanted.ids, range: wanted.range, ...(wanted.kind ? { kind: wanted.kind } : {}) }
+          : selection.kind === 'time' && selection.range
+            ? {
+                ids: notesOverlapping(committed, selection.range),
+                range: selection.range,
+                kind: 'time',
+              }
+            : selectIds(committed, selection.ids);
+        setSelectionState((state) => ({ selection: next, basis: committed, moves: state.moves }));
+      },
+    });
+  }, [snippet.id, selection, gridUnit, snapUnit]);
+  useEffect(() => () => withdrawNoteEditor(snippet.id), [snippet.id]);
   const refusal = loading
     ? 'The desk is still loading, so the clip cannot be edited yet.'
     : locked
@@ -491,15 +517,15 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
    * secondary selection on the notes it wrote.
    */
   function applyRamp(ramp: VelocityRamp, values: Record<string, number>) {
+    const latest = latestSnippetById(snippet.id)?.packet ?? packet;
+    // Painting values the notes already hold writes nothing but is still a ramp worth keeping.
+    const unchanged = setVelocities(latest, values) === latest;
     const done = commit((current) => setVelocities(current, values));
-    if (!done && refusal) {
+    if (!done && (!unchanged || refusal)) {
+      // A refused or failed commit wrote nothing, so there is no ramp to keep active.
       return;
     }
-    setRampState({
-      ramp,
-      items: done ? done.committed.items : (latestSnippetById(snippet.id)?.packet ?? packet).items,
-      selectionKey,
-    });
+    setRampState({ ramp, items: done ? done.committed.items : latest.items, selectionKey });
   }
 
   function marqueeRange(range: PianoRollRange, timeOnly: boolean, additive?: boolean) {

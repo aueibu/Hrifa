@@ -16,6 +16,7 @@ import {
 } from '../compositionWorkspace';
 import { useOptionalDesk } from '../desk';
 import { signalTypeRegistry } from '../signalTypes';
+import { ClipActionsPanel } from './ClipActionsPanel';
 import { ClipPropertiesPanel } from './ClipPropertiesPanel';
 import { NumericTreatmentEditor } from './NumericTreatmentEditor';
 import { PitchTreatmentEditor } from './PitchTreatmentEditor';
@@ -171,7 +172,7 @@ function ModulePart({
   const snippets = useOptionalDesk()?.snippets ?? [];
   const clip = clipId === null ? undefined : snippets.find((entry) => entry.id === clipId);
   if (clipId !== null) {
-    // The clip inspector: which clip is open, then its properties.
+    // The clip inspector: which clip is open, then its properties and actions.
     return clip ? (
       <Stack gap="xs">
         <Title order={3} size="h6">
@@ -181,6 +182,7 @@ function ModulePart({
           {clip.packet.kind} | {clip.packet.domain}
         </Text>
         {hasClipProperties(clip.packet) && <ClipPropertiesPanel key={clip.id} snippet={clip} />}
+        <ClipActionsPanel key={`actions:${clip.id}`} snippet={clip} />
       </Stack>
     ) : null;
   }

@@ -640,6 +640,15 @@ describe('VelocityLane tools', () => {
       fireEvent.pointerDown(track(), { button: 2, clientX: 100, clientY: 40, pointerId: 3 });
       fireEvent.pointerUp(track(), { button: 2, clientX: 100, clientY: 20, pointerId: 3 });
       expect(fireEvent.contextMenu(track())).toBe(true);
+      // After one curve the menu is suppressed once only: the next right-clicks open it again.
+      press(100, 40, flags);
+      release(100, 40, flags);
+      expect(fireEvent.contextMenu(track())).toBe(false);
+      expect(fireEvent.contextMenu(track())).toBe(true);
+      press(100, 40, flags);
+      release(100, 40, flags);
+      fireEvent.pointerDown(track(), { button: 2, clientX: 100, clientY: 40, pointerId: 4 });
+      expect(fireEvent.contextMenu(track())).toBe(true);
       // Neither an unmoved curve gesture nor a plain right press reports a ramp.
       expect(onRamp).not.toHaveBeenCalled();
     });

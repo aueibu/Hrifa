@@ -31,9 +31,9 @@ export const NOTE_EDIT_OPERATION = 'edit-notes';
 
 const MAX_MIDICENTS = 12700;
 
-type NoteItem = DataItem<NoteEventValue>;
+export type NoteItem = DataItem<NoteEventValue>;
 
-function isNoteItem(item: DataItem): item is NoteItem {
+export function isNoteItem(item: DataItem): item is NoteItem {
   const value = item.value as Partial<NoteEventValue> | null;
   return (
     typeof value === 'object' &&
@@ -85,7 +85,7 @@ export function packetRollNotes(packet: DataPacket): PianoRollNote[] {
   );
 }
 
-function noteLabel(pitches: number[], onset: { quarterNotes: Rational }) {
+export function noteLabel(pitches: number[], onset: { quarterNotes: Rational }) {
   const names = pitches.map((midicents) => pitchLabel(midicents));
   const pitch = names.length > 1 ? `[${names.join(' ')}]` : (names[0] ?? '');
   return `${pitch} @ ${onset.quarterNotes.numerator}/${onset.quarterNotes.denominator}`;
@@ -359,9 +359,32 @@ export function setVelocities(
   });
 }
 
-/** A fresh item id for a hand-drawn note. */
+let noteIdSequence = 0;
+
+/**
+ * A fresh item id for a hand-drawn note. The tail carries a per-process counter, so a bulk
+ * operation (all its ids made in one millisecond) can never repeat an id.
+ */
 export function newNoteItemId(snippetId: string): string {
-  return `${snippetId}:note:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  noteIdSequence += 1;
+  return `${snippetId}:note:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}${noteIdSequence.toString(36)}`;
+}
+
+/**
+ * `newId` that never returns an id the packet already holds (or this call already handed out): a
+ * repeated id from the source gets a numeric suffix until it is free.
+ */
+function collisionSafe(packet: DataPacket, newId: () => string): () => string {
+  const taken = new Set(packet.items.map((item) => item.id));
+  return () => {
+    const base = newId();
+    let id = base;
+    for (let suffix = 1; taken.has(id); suffix += 1) {
+      id = `${base}~${suffix}`;
+    }
+    taken.add(id);
+    return id;
+  };
 }
 
 /** The time span the events occupy, in quarter notes, or null when none of the ids is a note. */
@@ -478,10 +501,11 @@ export function timeMoveResult(
   packet: DataPacket,
   range: { start: number; end: number },
   delta: number,
-  newId: () => string,
+  makeId: () => string,
   grid?: number,
   options: TimeMoveOptions = {}
 ): TimeMoveResult {
+  const newId = collisionSafe(packet, makeId);
   const none: TimeMoveResult = { packet, movedIds: [] };
   if (!Number.isFinite(range.start) || !Number.isFinite(range.end) || range.end <= range.start) {
     return none;
@@ -642,8 +666,9 @@ export function copyNotes(
   packet: DataPacket,
   ids: readonly string[],
   delta: { start: number; pitchMidicents: number },
-  newIds: () => string
+  makeIds: () => string
 ): { packet: DataPacket; copyIds: string[] } {
+  const newIds = collisionSafe(packet, makeIds);
   const chosen = new Set(ids);
   const copying = packet.items.filter(
     (item): item is NoteItem => isNoteItem(item) && chosen.has(item.id)
