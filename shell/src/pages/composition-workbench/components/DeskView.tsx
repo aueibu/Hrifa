@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Button, Group, Modal, Text, TextInput } from '@mantine/core';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
+import { auditionRefusal, makeSourceRefusal } from '../clipTypes';
 import { useCompositionSettings } from '../compositionSettings';
 import { useDesk } from '../desk';
 import type { NoteEventValue } from '../melodicization';
@@ -8,13 +9,9 @@ import type { DataPacket } from '../model';
 import { pitchClassConversionRefusal, type Snippet } from '../snippet';
 import { transportTimeline } from '../transport';
 import { useModulePreview } from '../useModulePreview';
+import { NewClipPopover } from './NewClipPopover';
 import { SnippetPreview } from './SnippetPreview';
 import classes from './DeskView.module.css';
-
-/** The kind of snippet the desk can play today. Other kinds are stored and routed, not auditioned. */
-function isNoteSnippet(snippet: Snippet) {
-  return snippet.packet.kind === 'events' && snippet.packet.domain === 'note';
-}
 
 function describe(snippet: Snippet) {
   const { packet } = snippet;
@@ -54,6 +51,12 @@ export function DeskView({
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [snapPrompt, setSnapPrompt] = useState<{ id: string; message: string } | null>(null);
+  // The desk's own action row: New clip lives here so it is there when the desk is empty too.
+  const toolbar = (
+    <div className={classes.actions}>
+      <NewClipPopover onCreated={(snippet) => onOpenClip?.(snippet)} />
+    </div>
+  );
   const preview = useModulePreview({
     instanceId: 'desk',
     volume: 30,
@@ -98,6 +101,7 @@ export function DeskView({
   if (loading) {
     return (
       <div className={classes.desk}>
+        {toolbar}
         <Text className={classes.empty} size="sm" role="status">
           Loading the desk…
         </Text>
@@ -124,6 +128,7 @@ export function DeskView({
     return (
       <div className={classes.desk}>
         {saveWarning}
+        {toolbar}
         <Text className={classes.empty} size="sm">
           Nothing on the desk yet. Select notes in a piano roll and choose Send to desk (D).
         </Text>
@@ -134,6 +139,7 @@ export function DeskView({
   return (
     <div className={classes.desk}>
       {saveWarning}
+      {toolbar}
       <div className={classes.grid}>
         {snippets.map((snippet) => (
           <div
@@ -184,12 +190,8 @@ export function DeskView({
               <Button
                 size="compact-xs"
                 variant="default"
-                disabled={!isNoteSnippet(snippet)}
-                data-info={
-                  isNoteSnippet(snippet)
-                    ? 'Play this snippet.'
-                    : 'Only note snippets can be auditioned from the desk so far.'
-                }
+                disabled={auditionRefusal(snippet) !== null}
+                data-info={auditionRefusal(snippet) ?? 'Play this snippet.'}
                 onClick={() => audition(snippet)}
               >
                 {playingId === snippet.id ? '■ Stop' : '▶ Audition'}
@@ -197,8 +199,11 @@ export function DeskView({
               <Button
                 size="compact-xs"
                 variant="default"
-                disabled={!onMakeSource}
-                data-info="Place this snippet on the canvas as a source module that other modules can read."
+                disabled={!onMakeSource || makeSourceRefusal(snippet) !== null}
+                data-info={
+                  makeSourceRefusal(snippet) ??
+                  'Place this snippet on the canvas as a source module that other modules can read.'
+                }
                 onClick={() => onMakeSource?.(snippet)}
               >
                 Make source

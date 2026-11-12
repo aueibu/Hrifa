@@ -136,6 +136,12 @@ Let a composer start from a blank clip and edit it directly, without a module fe
   - [ ] Test: adding a type to the registry needs no desk or persistence change
 - Human checkpoint after: yes (type picker wording and placement)
 
+- Checkpoint decisions (human, 2026-11-11), applied as K4 attempt 2:
+  - Wording accepted as is (incl. the empty-desk text).
+  - One-click New clip: clicking "New clip" creates a clip immediately with the default type and length. A secondary menu next to it (split button / chevron) sets those defaults (type, length in bars). The default is a per-viewer preference, not recorded in history and not part of projects.
+  - Make source on empty clips: leave disabled for now (human undecided).
+  - Per-clip length and timing editing belongs to the clip inspector (K5b), not to New clip.
+
 ### K5: Note clip editor
 - Scope: extend `PianoRoll` with edit callbacks (add, move, resize, delete, velocity) so a clip editor can own no state beyond the packet; a `NoteClipEditor` that reads the clip's packet, applies edits via K2, and reuses `EditorPalette` tools and actions. Melodicization's roll must behave exactly as before.
 - Acceptance:
@@ -145,9 +151,17 @@ Let a composer start from a blank clip and edit it directly, without a module fe
   - [ ] A blank note clip can be filled from nothing and auditioned from the desk
 - Human checkpoint after: yes (does it feel like a clip editor?)
 
-### K5b: Clip inspector and transforms (proposed, human 2026-11-11)
-- Scope: while a clip is open, the left inspector is a per-clip inspector with a handful of quick transforms, like Ableton's MIDI clip panel: e.g. x2 and /2 (time stretch), reverse, legato, plus others to be agreed (transpose, quantize, invert?). Each transform applies through `commitSnippetEdit` as its own version (not a hand edit), and is undoable. Which transforms apply depends on clip type (K4 registry).
-- Acceptance: to be written with the human before building (transform list, layout).
+### K5b: Clip inspector: clip properties and transforms (human 2026-11-11; after K5)
+- Why after K5: selection transforms and paste-at-position need the note editor's selection and cursor.
+- Clip properties (Bitwig/Ableton-style, shown in the left inspector while a clip is open): total length in bars.beats.ticks format like other DAWs, playback start point, loop start/end (loop on/off), and an internal time signature. These are new clip fields: design them as optional additions (v1 desks still load; stop-and-ask if a schema bump is needed). Editing them is undoable and versioned like other edits.
+- Transforms (human's list), each through `commitSnippetEdit` as its own version (not a hand edit), undoable, applicable per clip type via the K4 registry:
+  - whole-clip scaling with quick x2 and /2;
+  - selection scaling;
+  - reverse (whole clip and selection);
+  - make all values equal (durations for rhythms; other value types to be agreed);
+  - duplicate (clip content / selection, Ableton-style, distinct from the desk card's Duplicate);
+  - copy and paste notes, pasting at the selected position in the editor.
+- Acceptance: to be written with the human before building (exact semantics per transform, layout).
 - Human checkpoint before and after: yes
 
 ### K6 (stretch): Rhythm and list clip editors

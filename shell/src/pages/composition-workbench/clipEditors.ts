@@ -1,16 +1,13 @@
 import type { ComponentType } from 'react';
+import { clipEditorOf, type ClipEditorProps } from './clipTypes';
 import type { Snippet } from './snippet';
 
-/** What the bottom panel gives a clip editor: the clip it edits (commits go through the desk). */
-export interface ClipEditorProps {
-  snippet: Snippet;
-}
+export type { ClipEditorProps };
 
 /**
- * The editor for a clip, by its packet's kind and domain, or undefined when there is none yet.
- * No clip type has an editor today; later milestones add them here.
+ * The editor for a clip, or undefined when there is none yet. The lookup lives in the clip-type
+ * registry (`clipTypes.ts`): a type names an `editorId`, and `registerClipEditor` binds it.
  */
 export function clipEditorFor(snippet: Snippet): ComponentType<ClipEditorProps> | undefined {
-  void snippet;
-  return undefined;
+  return clipEditorOf(snippet);
 }

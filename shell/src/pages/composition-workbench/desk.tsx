@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { clipTypeById, nextClipName } from './clipTypes';
 import {
   describeStorageError,
   enqueueDeskTask,
@@ -18,6 +19,7 @@ import {
 } from './deskStore';
 import { recordChange, registerHistoryApplier, type HistoryChange } from './history';
 import type { DataPacket } from './model';
+import type { Rational } from './musicalTime';
 import {
   commitSnippetEdit,
   createClipFromVersion,
@@ -78,6 +80,12 @@ interface DeskContextValue {
    */
   endEditSession(snippetId: string): void;
   addSnippet(snippet: Snippet): void;
+  /**
+   * Adds a new empty clip of a registered type (see clipTypes.ts) at the end of the desk, named
+   * "New clip", "New clip 2", and so on. One undo step. Returns the clip, or null when the desk
+   * refused it (loading or locked) or the type is unknown.
+   */
+  addBlankClip(typeId: string, length: Rational): Snippet | null;
   removeSnippet(id: string): void;
   renameSnippet(id: string, name: string): void;
   setSnippetNote(id: string, note: string): void;
@@ -315,16 +323,16 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     (
       updater: (current: Snippet[]) => Snippet[],
       options: { coalesce?: boolean; coalesceKey?: string } = {}
-    ) => {
+    ): boolean => {
       // A locked desk (unreadable saved desk) or one frozen for a project open never saves, so an
       // edit there would be lost on reload: refuse it.
       if (!loadedRef.current || !writableRef.current) {
-        return;
+        return false;
       }
       const current = snippetsRef.current;
       const next = updater(current);
       if (next === current) {
-        return;
+        return false;
       }
       snippetsRef.current = next;
       gestureRef.current = options.coalesce ?? false;
@@ -333,12 +341,31 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         coalesce: options.coalesce ?? false,
         coalesceKey: options.coalesceKey,
       });
+      return true;
     },
     []
   );
 
   const addSnippet = useCallback(
-    (snippet: Snippet) => applyChange((current) => [...current, snippet]),
+    (snippet: Snippet) => {
+      applyChange((current) => [...current, snippet]);
+    },
+    [applyChange]
+  );
+  const addBlankClip = useCallback(
+    (typeId: string, length: Rational): Snippet | null => {
+      const type = clipTypeById(typeId);
+      if (!type) {
+        return null;
+      }
+      const clip = type.createBlank({
+        id: newSnippetId(),
+        createdAt: new Date().toISOString(),
+        name: nextClipName(snippetsRef.current),
+        length,
+      });
+      return applyChange((current) => [...current, clip]) ? clip : null;
+    },
     [applyChange]
   );
   const removeSnippet = useCallback(
@@ -556,6 +583,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       replaceDesk,
       endEditSession,
       addSnippet,
+      addBlankClip,
       removeSnippet,
       renameSnippet,
       setSnippetNote,
@@ -574,6 +602,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       replaceDesk,
       endEditSession,
       addSnippet,
+      addBlankClip,
       removeSnippet,
       renameSnippet,
       setSnippetNote,

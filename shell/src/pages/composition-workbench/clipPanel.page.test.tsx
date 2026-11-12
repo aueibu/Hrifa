@@ -1,6 +1,7 @@
 import { render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
+import { CLIP_DEFAULTS_KEY } from './clipPreferences';
 import { canUndo, resetHistory } from './history';
 import { packet } from './model';
 import { captureSnippet } from './snippet';
@@ -221,4 +222,55 @@ describe('the bottom panel targets a module or a clip', () => {
     expect(canUndo()).toBe(false);
     expect(localStorage.getItem(compositionStateKeys.editorClipTarget)).toBe('"clip-a"');
   });
+});
+
+describe('New clip', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetHistory();
+  });
+
+  async function renderEmptyDesk() {
+    localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify('desk'));
+    localStorage.setItem(compositionStateKeys.detailCollapsed, JSON.stringify(true));
+    render(<CompositionWorkbenchPage />);
+    // Disabled until the desk has loaded, so enabled means ready.
+    // The loading view and the loaded view are different elements, so look the button up each time.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeEnabled(), {
+      timeout: 10_000,
+    });
+    return screen.getByRole('button', { name: 'New clip' });
+  }
+
+  it('one click adds an empty note clip to the desk and opens it in the bottom panel', async () => {
+    const user = userEvent.setup();
+    await user.click(await renderEmptyDesk());
+    expect(await screen.findByText('No editor for this clip yet.')).toBeVisible();
+    const input = await screen.findByDisplayValue('New clip');
+    expect(input).toBeVisible();
+    expect(canUndo()).toBe(true);
+    const scope = input.closest('div[class*="card"]') as HTMLElement;
+    expect(within(scope).getByRole('button', { name: /Audition/ })).toBeDisabled();
+    expect(within(scope).getByRole('button', { name: 'Make source' })).toBeDisabled();
+  }, 15_000);
+
+  it('undoing New clip while it is open leaves a blank panel and promotes no module', async () => {
+    const user = userEvent.setup();
+    await user.click(await renderEmptyDesk());
+    await screen.findByDisplayValue('New clip');
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(screen.queryByDisplayValue('New clip')).not.toBeInTheDocument());
+    expect(screen.queryByText('No editor for this clip yet.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('textbox', { name: /Pitch values|pattern/ })).toHaveLength(0);
+    expect(localStorage.getItem(compositionStateKeys.activeCompositionModule)).toBe('null');
+  }, 15_000);
+
+  it('uses the stored defaults for the one click', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(CLIP_DEFAULTS_KEY, JSON.stringify({ typeId: 'notes', bars: 2 }));
+    await user.click(await renderEmptyDesk());
+    await screen.findByDisplayValue('New clip');
+    expect(screen.getByText(/· 8 qn/)).toBeVisible();
+  }, 15_000);
 });
