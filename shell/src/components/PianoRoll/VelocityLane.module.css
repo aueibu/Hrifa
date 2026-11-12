@@ -268,3 +268,42 @@
   white-space: nowrap;
   z-index: 5;
 }
+
+/*
+ * The same cursor set as the roll (opt-in: the track sets data-cursors). Pins keep the vertical
+ * resize, the Pointer is the arrow, Pencil and Paint use the tools' own cursors, and a ramp-curve drag
+ * is the vertical resize.
+ */
+.track[data-cursors] {
+  cursor: default;
+}
+
+.track[data-cursors][data-tool='pencil'],
+.track[data-cursors][data-tool='pencil'] .pin {
+  cursor: var(--cursor-pencil, crosshair);
+}
+
+.track[data-cursors][data-tool='paint'],
+.track[data-cursors][data-tool='paint'] .pin {
+  cursor: var(--cursor-paint, crosshair);
+}
+
+.track[data-cursors][data-tool='time'],
+.track[data-cursors][data-tool='time'] .pin {
+  cursor: var(--cursor-time, text);
+}
+
+.track[data-cursors][data-gesture='curve'],
+.track[data-cursors][data-gesture='curve'] .pin {
+  cursor: ns-resize;
+}
+
+.track[data-cursors][data-gesture='timeMove'],
+.track[data-cursors][data-gesture='timeMove'] .pin {
+  cursor: grabbing;
+}
+
+.track[data-cursors][data-gesture='timeMove'][data-copying],
+.track[data-cursors][data-gesture='timeMove'][data-copying] .pin {
+  cursor: copy;
+}

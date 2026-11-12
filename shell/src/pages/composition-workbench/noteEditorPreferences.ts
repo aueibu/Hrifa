@@ -36,6 +36,10 @@ export const GRID_OPTIONS: GridOption[] = [
   })),
 ];
 
+/** The inspector Actions panel's collapsible sections, in display order. */
+export const ACTION_SECTION_IDS = ['time', 'pitch', 'values', 'clipboard'] as const;
+export type ActionSectionId = (typeof ACTION_SECTION_IDS)[number];
+
 export interface NoteEditorPreferences {
   /** Quarter notes; null until the viewer has set one (the grid unit is used). */
   entryLength: number | null;
@@ -47,6 +51,8 @@ export interface NoteEditorPreferences {
   velocityLaneCollapsed: boolean;
   /** The velocity lane's height in pixels; null until the viewer has dragged it (the default is used). */
   laneHeight: number | null;
+  /** The Actions panel sections that are open (several at once; all open until the viewer closes some). */
+  actionSections: ActionSectionId[];
 }
 
 const defaults: NoteEditorPreferences = {
@@ -55,6 +61,7 @@ const defaults: NoteEditorPreferences = {
   grid: 'auto',
   velocityLaneCollapsed: false,
   laneHeight: null,
+  actionSections: [...ACTION_SECTION_IDS],
 };
 
 const listeners = new Set<() => void>();
@@ -66,6 +73,14 @@ function readRaw(): string | null {
   } catch {
     return null;
   }
+}
+
+/** The known section ids of a stored value, in display order; anything else reads as all open. */
+function knownSections(value: unknown): ActionSectionId[] {
+  if (!Array.isArray(value)) {
+    return [...ACTION_SECTION_IDS];
+  }
+  return ACTION_SECTION_IDS.filter((id) => value.includes(id));
 }
 
 export function readNoteEditorPreferences(): NoteEditorPreferences {
@@ -104,6 +119,7 @@ export function readNoteEditorPreferences(): NoteEditorPreferences {
         parsed.laneHeight <= MAX_VELOCITY_LANE_HEIGHT
           ? parsed.laneHeight
           : null,
+      actionSections: knownSections(parsed.actionSections),
     };
   } catch {
     // A damaged value reads as the defaults.
@@ -130,6 +146,7 @@ export function writeNoteEditorPreferences(patch: Partial<NoteEditorPreferences>
       ? Math.min(MAX_VELOCITY_LANE_HEIGHT, Math.max(MIN_VELOCITY_LANE_HEIGHT, next.laneHeight))
       : null;
   }
+  next.actionSections = knownSections(next.actionSections);
   try {
     localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify(next));
   } catch {

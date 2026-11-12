@@ -28,6 +28,8 @@ import {
   clipExtent,
   clipRollDuration,
   deleteNotes,
+  mapMergedIds,
+  mergeDuplicateNotesDetailed,
   moveNotes,
   copyNotes,
   newNoteItemId,
@@ -35,6 +37,7 @@ import {
   notesOverlapping,
   packetRollNotes,
   resizeNotes,
+  resizeNotesStart,
   setVelocities,
   splitNote,
   timeMoveDelta,
@@ -136,6 +139,19 @@ interface SelectionState {
   basis: DataPacket;
   /** Recent time-selection moves, newest last. */
   moves: BandMove[];
+}
+
+/**
+ * The selection once duplicate notes were merged: dropped ids become their survivors (each once). A
+ * time selection keeps its span; a note selection's span is recomputed from the survivors.
+ */
+function mergedSelection(
+  selection: NoteSelection,
+  merged: DataPacket,
+  survivorOf: ReadonlyMap<string, string>
+): NoteSelection {
+  const ids = [...mapMergedIds(selection.ids, survivorOf)];
+  return selection.kind === 'time' ? { ...selection, ids } : selectIds(merged, ids);
 }
 
 function sameRange(a: TimeRange, b: TimeRange): boolean {
@@ -420,24 +436,35 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       picking: pick?.actionId ?? null,
       beginPick: setPick,
       cancelPick: () => setPick(null),
-      adopt: (result, committed) => {
+      adopt: (result, committed, survivorOf) => {
         const wanted = result.selection;
-        const next: NoteSelection = wanted
-          ? { ids: wanted.ids, range: wanted.range, ...(wanted.kind ? { kind: wanted.kind } : {}) }
+        // A note merged away as a duplicate hands its selection to the note that absorbed it.
+        const survivors = (ids: readonly string[]) =>
+          survivorOf?.size ? [...mapMergedIds(ids, survivorOf)] : [...ids];
+        const adopted: NoteSelection = wanted
+          ? {
+              ids: survivors(wanted.ids),
+              range: wanted.range,
+              ...(wanted.kind ? { kind: wanted.kind } : {}),
+            }
           : selection.kind === 'time' && selection.range
             ? {
                 ids: notesOverlapping(committed, selection.range),
                 range: selection.range,
                 kind: 'time',
               }
-            : selectIds(committed, selection.ids);
-        setSelectionState((state) => ({ selection: next, basis: committed, moves: state.moves }));
+            : selectIds(committed, survivors(selection.ids));
+        setSelectionState((state) => ({
+          selection: adopted,
+          basis: committed,
+          moves: state.moves,
+        }));
         setRotationState(
           result.rotation
             ? {
                 core: result.rotation,
                 items: committed.items,
-                selectionKey: selectionKeyOf(next),
+                selectionKey: selectionKeyOf(adopted),
               }
             : null
         );
@@ -458,7 +485,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   function commit(
     edit: (current: DataPacket) => DataPacket,
     after?: (next: DataPacket) => NoteSelection
-  ): { base: DataPacket; committed: DataPacket } | null {
+  ): { base: DataPacket; committed: DataPacket; selection: NoteSelection } | null {
     if (refusal) {
       setNotice(refusal);
       return null;
@@ -470,8 +497,15 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     // since, such as a property change from the inspector, is never reverted.
     const current = latestSnippetById(snippet.id)?.packet ?? packet;
     const base = freezeClipProperties(current);
-    const next = edit(base);
-    if (next === base) {
+    const edited = edit(base);
+    if (edited === base) {
+      return null;
+    }
+    // No duplicate notes: notes of one onset and pitch merge into one, inside this same version and
+    // undo step (and only when something merged). A merged-away note's selection goes to its survivor.
+    const { packet: next, survivorOf } = mergeDuplicateNotesDetailed(edited, base);
+    if (survivorOf.size > 0 && jsonEqual(next.items, base.items)) {
+      // Everything the edit added merged straight back into notes that were already there.
       return null;
     }
     const result = commitSnippetEditById(snippet.id, next, NOTE_EDIT_OPERATION, { handEdit: true });
@@ -480,12 +514,14 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       return null;
     }
     setNotice(null);
+    const wanted = after ? after(edited) : followEdit(selection, packet, edited);
+    const nextSelection = survivorOf.size ? mergedSelection(wanted, next, survivorOf) : wanted;
     setSelectionState((state) => ({
-      selection: after ? after(next) : followEdit(selection, packet, next),
+      selection: nextSelection,
       basis: result.snippet.packet,
       moves: state.moves,
     }));
-    return { base, committed: result.snippet.packet };
+    return { base, committed: result.snippet.packet, selection: nextSelection };
   }
 
   function draw(note: PianoRollNewNote) {
@@ -601,7 +637,13 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       // A refused or failed commit wrote nothing, so there is no ramp to keep active.
       return;
     }
-    setRampState({ ramp, items: done ? done.committed.items : latest.items, selectionKey });
+    // The key of the selection the edit LEFT (not the one it began with), so the ramp is still valid
+    // against the very next render.
+    setRampState({
+      ramp,
+      items: done ? done.committed.items : latest.items,
+      selectionKey: done ? done.selection.ids.join('\u0000') : selectionKey,
+    });
   }
 
   function marqueeRange(range: PianoRollRange, timeOnly: boolean, additive?: boolean) {
@@ -763,8 +805,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           if (!pressed || startsBandMove(pressed, target, event.clientX, tool)) {
             return;
           }
-          // Alt + right button on an active ramp curves it: the band is not part of that gesture.
-          if (event.button === 2 && event.altKey && activeRamp) {
+          // A right button on an active ramp curves it (Alt or plain): the band is not part of that gesture.
+          if (event.button === 2 && activeRamp) {
             return;
           }
           setSelection(clearTimeSelection);
@@ -774,6 +816,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           ariaLabel="Note clip piano roll"
           fill
           ghostDrag
+          toolCursors
           wheelZoom
           timeZoomRange={NOTE_EDITOR_TIME_ZOOM}
           gridUnit={gridUnit}
@@ -808,6 +851,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                 gridUnit={gridUnit}
                 viewWidth={metrics.viewWidth}
                 velocityFill
+                toolCursors
               />
             )
           }
@@ -868,6 +912,9 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
               : commit((current) => moveNotes(current, ids, delta))
           }
           onResizeNotes={(ids, delta) => commit((current) => resizeNotes(current, ids, delta))}
+          onResizeNotesStart={(ids, delta) =>
+            commit((current) => resizeNotesStart(current, ids, delta))
+          }
           onDeleteNotes={remove}
           onVelocityChange={changeSelectionVelocity}
         />

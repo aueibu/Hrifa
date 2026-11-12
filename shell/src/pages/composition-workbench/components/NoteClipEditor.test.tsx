@@ -1331,16 +1331,16 @@ describe('moving the content of a time selection', () => {
     fireEvent.pointerDown(roll, { clientX: 100, clientY: 5, pointerId: 3 });
     fireEvent.pointerMove(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3, altKey: true });
     fireEvent.pointerUp(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3, altKey: true });
-    expect(ids()).toHaveLength(4);
+    // The moved middle (0 to 2) lands on the left piece (0 to 1): same onset and pitch, so they are
+    // one note (the first, w, keeps its id and takes the longer duration), inside the same step.
+    expect(ids()).toHaveLength(3);
     const spans = desk.snippets[0].packet.items.map((entry) => {
       const value = entry.value as NoteEventValue;
       const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
       return [start, start + value.duration.quarterNotes.numerator];
     });
-    // [left stay, middle moved to 0, right stay, z]: the left piece keeps the id, 0 to 1.
     expect(ids()[0]).toBe('w');
     expect(spans).toEqual([
-      [0, 1],
       [0, 2],
       [3, 4],
       [6, 7],
@@ -1964,6 +1964,211 @@ describe('velocity lane tools in the editor', () => {
       laneSweep([100, 0], [140, 83]);
       expect(desk.snippets[0]).toBe(before);
       expect(roll).toHaveAccessibleName(/0 selected/);
+    });
+  });
+});
+
+describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no duplicate notes', () => {
+  const tool = (name: string) => screen.getByRole('radio', { name });
+  const track = () => screen.getByRole('group', { name: 'Velocity lane' });
+  const ids = () => desk.snippets[0].packet.items.map((entry) => entry.id);
+  const startOf = (id: string) => {
+    const onset = noteValue(id).onset.quarterNotes;
+    return onset.numerator / onset.denominator;
+  };
+  const lengthOf = (id: string) => {
+    const duration = noteValue(id).duration.quarterNotes;
+    return duration.numerator / duration.denominator;
+  };
+
+  it('opts the roll and the lane into the tool cursors', async () => {
+    const roll = await open(seededClip());
+    expect(roll).toHaveAttribute('data-cursors');
+    expect(track()).toHaveAttribute('data-cursors');
+    expect(roll.style.getPropertyValue('--cursor-pencil')).toContain('data:image/svg+xml');
+    expect(track().style.getPropertyValue('--cursor-paint')).toContain('data:image/svg+xml');
+  });
+
+  describe('resize from the left edge', () => {
+    it('changes the start and the length with the end fixed: a hand edit, one undo step', async () => {
+      const roll = await open(seededClip());
+      const changes = historyChangeCount();
+      // n2 spans x 128 to 192; its first 6 px is the left edge. One quarter to the left.
+      drag(
+        screen.getByTitle(/^E4 · 2\.000 qn/),
+        { x: 130, y: rowY(64) },
+        { x: 130 - 64, y: rowY(64) },
+        roll
+      );
+      expect(startOf('n2')).toBe(1);
+      expect(lengthOf('n2')).toBe(2);
+      expect(startOf('n2') + lengthOf('n2')).toBe(3);
+      expect(editSteps('n2')).toEqual(['modified']);
+      expect(editSteps('n1')).toEqual([]);
+      expect(historyChangeCount()).toBe(changes + 1);
+      act(() => undo());
+      expect(startOf('n2')).toBe(2);
+      expect(lengthOf('n2')).toBe(1);
+    });
+
+    it('applies to the whole selection by the same snapped delta, and a note at 0 cannot grow left', async () => {
+      const roll = await open(seededClip());
+      fireEvent.pointerDown(screen.getByTitle(/^C4 · 0\.000 qn/), {
+        clientX: 30,
+        clientY: rowY(60),
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(roll, { clientX: 30, clientY: rowY(60), pointerId: 1 });
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 150,
+        clientY: rowY(64),
+        pointerId: 1,
+        shiftKey: true,
+      });
+      fireEvent.pointerUp(roll, { clientX: 150, clientY: rowY(64), pointerId: 1 });
+      expect(roll).toHaveAccessibleName(/2 selected/);
+      const changes = historyChangeCount();
+      drag(
+        screen.getByTitle(/^E4 · 2\.000 qn/),
+        { x: 130, y: rowY(64) },
+        { x: 130 + 32, y: rowY(64) },
+        roll
+      );
+      expect(startOf('n1')).toBe(0.5);
+      expect(lengthOf('n1')).toBe(0.5);
+      expect(startOf('n2')).toBe(2.5);
+      expect(lengthOf('n2')).toBe(0.5);
+      expect(startOf('n3')).toBe(4);
+      expect(historyChangeCount()).toBe(changes + 1);
+      expect(roll).toHaveAccessibleName(/2 selected/);
+      act(() => undo());
+      fireEvent.keyDown(roll, { key: 'Escape' });
+      const before = desk.snippets[0];
+      drag(
+        screen.getByTitle(/^C4 · 0\.000 qn/),
+        { x: 2, y: rowY(60) },
+        { x: 2 - 64, y: rowY(60) },
+        roll
+      );
+      expect(desk.snippets[0]).toBe(before);
+    });
+
+    it('shows a ghost while dragging and Escape cancels it: no edit, no history', async () => {
+      const roll = await open(seededClip());
+      const before = desk.snippets[0];
+      const changes = historyChangeCount();
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 130,
+        clientY: rowY(64),
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(roll, { clientX: 130 - 64, clientY: rowY(64), pointerId: 1 });
+      const ghost = document.querySelector('[data-ghost="n2"]') as HTMLElement;
+      expect(ghost.style.left).toBe('64px');
+      expect(ghost.style.width).toBe('128px');
+      fireEvent.keyDown(roll, { key: 'Escape' });
+      expect(document.querySelector('[data-ghost]')).toBeNull();
+      fireEvent.pointerUp(roll, { clientX: 130 - 64, clientY: rowY(64), pointerId: 1 });
+      expect(desk.snippets[0]).toBe(before);
+      expect(historyChangeCount()).toBe(changes);
+    });
+  });
+
+  describe('no duplicate notes: merged inside the same version and undo step', () => {
+    it('moving a note onto another merges it into the first: the survivor is selected', async () => {
+      const roll = await open(seededClip());
+      const changes = historyChangeCount();
+      // n2 (E4 at 2) moved to n1 place (C4 at 0): two quarters back, four semitones down.
+      drag(
+        screen.getByTitle(/^E4 · 2\.000 qn/),
+        { x: 160, y: rowY(64) },
+        { x: 160 - 128, y: rowY(64) + 88 },
+        roll
+      );
+      expect(ids()).toEqual(['n1', 'n3']);
+      expect(historyChangeCount()).toBe(changes + 1);
+      expect(desk.snippets[0].lineage?.versions.length).toBe(2);
+      expect(roll).toHaveAccessibleName(/1 selected/);
+      act(() => undo());
+      expect(ids()).toEqual(['n1', 'n2', 'n3']);
+    });
+
+    it('the pencil on top of a note lengthens it instead of stacking a copy', async () => {
+      const roll = await open(seededClip());
+      act(() => tool('Pencil').click());
+      const changes = historyChangeCount();
+      drag(roll, { x: 10, y: rowY(60) }, { x: 10 + 128, y: rowY(60) });
+      expect(ids()).toHaveLength(3);
+      expect(lengthOf('n1')).toBe(2);
+      expect(historyChangeCount()).toBe(changes + 1);
+    });
+
+    it('a Ctrl-drag copy that lands exactly on an existing note writes nothing', async () => {
+      const roll = await open(seededClip());
+      const before = desk.snippets[0];
+      const changes = historyChangeCount();
+      const flags = { pointerId: 1, ctrlKey: true };
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 160,
+        clientY: rowY(64),
+        ...flags,
+      });
+      fireEvent.pointerMove(roll, { clientX: 160 - 128, clientY: rowY(64) + 88, ...flags });
+      fireEvent.pointerUp(roll, { clientX: 160 - 128, clientY: rowY(64) + 88, ...flags });
+      expect(ids()).toEqual(['n1', 'n2', 'n3']);
+      expect(desk.snippets[0].packet.items).toEqual(before.packet.items);
+      expect(historyChangeCount()).toBe(changes);
+    });
+  });
+
+  describe('the ramp curve gesture, in the real flow', () => {
+    const lanePress = (x: number, y: number, extra: object = {}) =>
+      fireEvent.pointerDown(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+    const laneMove = (x: number, y: number, extra: object = {}) =>
+      fireEvent.pointerMove(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+    const laneRelease = (x: number, y: number, extra: object = {}) =>
+      fireEvent.pointerUp(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
+
+    it('stays valid after the paint release with a selection, and a drag that leaves the lane still curves it and swallows the menu', async () => {
+      const roll = await open(seededClip());
+      // A selection first (n2), then the ramp.
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 150,
+        clientY: rowY(64),
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(roll, { clientX: 150, clientY: rowY(64), pointerId: 1 });
+      act(() => tool('Paint').click());
+      lanePress(0, 8);
+      laneMove(256, 76);
+      laneRelease(256, 76);
+      expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
+      const changes = historyChangeCount();
+      // The right button goes down in the lane (no Alt: the fallback), the drag runs up out of the
+      // lane over the roll, and the release and its contextmenu land on the roll.
+      lanePress(100, 40, { button: 2, pointerId: 2 });
+      fireEvent.pointerMove(roll, { clientX: 100, clientY: -60, pointerId: 2 });
+      fireEvent.pointerUp(roll, { button: 2, clientX: 100, clientY: -60, pointerId: 2 });
+      expect(fireEvent.contextMenu(roll)).toBe(false);
+      expect(screen.queryByRole('menu')).toBeNull();
+      expect(historyChangeCount()).toBe(changes + 1);
+      expect(screen.getByTestId('velocity-ramp')).toBeInTheDocument();
+      // Alt + right button works the same on the window, and the ramp is still active for it.
+      const alt = { button: 2, altKey: true, pointerId: 3 };
+      lanePress(100, 40, alt);
+      fireEvent.pointerMove(document.body, {
+        clientX: 100,
+        clientY: 200,
+        pointerId: 3,
+        altKey: true,
+      });
+      expect(fireEvent.keyDown(window, { key: 'Alt', altKey: true })).toBe(false);
+      fireEvent.pointerUp(window, { button: 2, clientX: 100, clientY: 200, pointerId: 3 });
+      expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(false);
+      expect(fireEvent.contextMenu(document.body)).toBe(false);
+      expect(historyChangeCount()).toBe(changes + 2);
+      // Everything was swallowed once: the browser menu is back for the next right-click.
+      expect(fireEvent.contextMenu(document.body)).toBe(true);
     });
   });
 });

@@ -626,31 +626,156 @@ describe('VelocityLane tools', () => {
       expect(values.b).toBeCloseTo(0.5, 6);
     });
 
-    it('suppresses the context menu for the curve gesture only, and ignores a plain right press', () => {
-      const { onRamp } = tools('paint', { ramp: kept });
+    describe('the right-button curve gesture and the browser menu', () => {
       const flags = { button: 2, altKey: true, pointerId: 2 };
-      press(100, 40, flags);
-      release(100, 40, flags);
-      expect(fireEvent.contextMenu(track())).toBe(false);
-      // A later left press ends the suppression.
-      press(100, 40);
-      release(100, 40);
-      expect(fireEvent.contextMenu(track())).toBe(true);
-      // A right press without Alt does nothing.
-      fireEvent.pointerDown(track(), { button: 2, clientX: 100, clientY: 40, pointerId: 3 });
-      fireEvent.pointerUp(track(), { button: 2, clientX: 100, clientY: 20, pointerId: 3 });
-      expect(fireEvent.contextMenu(track())).toBe(true);
-      // After one curve the menu is suppressed once only: the next right-clicks open it again.
-      press(100, 40, flags);
-      release(100, 40, flags);
-      expect(fireEvent.contextMenu(track())).toBe(false);
-      expect(fireEvent.contextMenu(track())).toBe(true);
-      press(100, 40, flags);
-      release(100, 40, flags);
-      fireEvent.pointerDown(track(), { button: 2, clientX: 100, clientY: 40, pointerId: 4 });
-      expect(fireEvent.contextMenu(track())).toBe(true);
-      // Neither an unmoved curve gesture nor a plain right press reports a ramp.
-      expect(onRamp).not.toHaveBeenCalled();
+      const plain = { button: 2, pointerId: 2 };
+
+      it('swallows the context menu of the gesture wherever it lands (window, other targets), once after release', () => {
+        const { onRamp } = tools('paint', { ramp: kept });
+        press(100, 40, flags);
+        // During the gesture any contextmenu, on any target, is cancelled and stays guarded.
+        expect(fireEvent.contextMenu(window)).toBe(false);
+        expect(fireEvent.contextMenu(document.body)).toBe(false);
+        move(100, 16, flags);
+        // The drag left the lane: the release and its menu land on something else.
+        fireEvent.pointerUp(document.body, {
+          button: 2,
+          clientX: 100,
+          clientY: -200,
+          pointerId: 2,
+        });
+        expect(onRamp).toHaveBeenCalledTimes(1);
+        expect(fireEvent.contextMenu(document.body)).toBe(false);
+        // Swallowed once: later right-clicks elsewhere get the browser's menu again.
+        expect(fireEvent.contextMenu(document.body)).toBe(true);
+      });
+
+      it('keeps the menu away for a gesture that never moved, and ends the guard on its own', () => {
+        vi.useFakeTimers();
+        try {
+          const { onRamp } = tools('paint', { ramp: kept });
+          press(100, 40, flags);
+          release(100, 40, flags);
+          expect(onRamp).not.toHaveBeenCalled();
+          vi.advanceTimersByTime(1500);
+          expect(fireEvent.contextMenu(document.body)).toBe(true);
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      describe('a cancelled curve gesture does not leave its guards behind', () => {
+        const cancels: [string, (view: ReturnType<typeof tools>) => void][] = [
+          ['Escape', () => fireEvent.keyDown(window, { key: 'Escape' })],
+          ['the window losing focus', () => fireEvent(window, new Event('blur'))],
+          [
+            'the ramp being disarmed',
+            (view) =>
+              view.rerender(
+                <VelocityLane
+                  notes={notes}
+                  pixelsPerQuarter={64}
+                  scrollLeft={0}
+                  duration={8}
+                  tool="pointer"
+                  gridUnit={0.5}
+                />
+              ),
+          ],
+        ];
+        it.each(cancels)(
+          '%s: the menu and Alt guards expire after their delay',
+          (_name, cancel) => {
+            vi.useFakeTimers();
+            try {
+              const { onRamp, ...view } = tools('paint', { ramp: kept });
+              press(100, 40, flags);
+              move(100, 16, flags);
+              cancel({ onRamp, ...view } as ReturnType<typeof tools>);
+              expect(onRamp).not.toHaveBeenCalled();
+              // Without the expiry the guards would stay armed until the next gesture or unmount.
+              vi.advanceTimersByTime(1500);
+              expect(fireEvent.contextMenu(document.body)).toBe(true);
+              vi.advanceTimersByTime(15000);
+              expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(true);
+            } finally {
+              vi.useRealTimers();
+            }
+          }
+        );
+      });
+
+      it('a plain right-button drag (no Alt) curves the active ramp as a fallback', () => {
+        const { onRamp } = tools('paint', { ramp: kept });
+        press(100, 40, plain);
+        move(100, 16, plain);
+        expect(screen.getByText('Curve 1.0')).toBeInTheDocument();
+        release(100, 16, plain);
+        expect(onRamp).toHaveBeenCalledTimes(1);
+        expect(onRamp.mock.calls[0][0]).toMatchObject({ curve: 1, start: 1, end: 0 });
+        expect(fireEvent.contextMenu(track())).toBe(false);
+      });
+
+      it('handles the press, the drag and the release on the window, whatever element they land on', () => {
+        const { onRamp } = tools('paint', { ramp: kept });
+        press(100, 40, flags);
+        fireEvent.pointerMove(document.body, {
+          clientX: 100,
+          clientY: 16,
+          pointerId: 2,
+          altKey: true,
+        });
+        expect(screen.getByText('Curve 1.0')).toBeInTheDocument();
+        fireEvent.pointerUp(window, { button: 2, clientX: 100, clientY: 16, pointerId: 2 });
+        expect(onRamp).toHaveBeenCalledTimes(1);
+      });
+
+      it('cancels the Alt key of the gesture so the browser menu bar is not activated', () => {
+        tools('paint', { ramp: kept });
+        press(100, 40, flags);
+        expect(fireEvent.keyDown(window, { key: 'Alt', altKey: true })).toBe(false);
+        release(100, 40, flags);
+        expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(false);
+        // The guard ended with that keyup; other keys were never touched.
+        expect(fireEvent.keyUp(window, { key: 'Alt' })).toBe(true);
+        expect(fireEvent.keyUp(window, { key: 'a' })).toBe(true);
+      });
+
+      it('leaves right presses alone when no ramp is active, and outside the lane', () => {
+        tools('paint');
+        press(100, 40, flags);
+        expect(fireEvent.contextMenu(track())).toBe(true);
+        cleanup();
+        const { onRamp } = tools('paint', { ramp: kept });
+        fireEvent.pointerDown(document.body, {
+          button: 2,
+          clientX: 100,
+          clientY: 40,
+          pointerId: 2,
+        });
+        fireEvent.pointerUp(document.body, { button: 2, clientX: 100, clientY: 16, pointerId: 2 });
+        expect(fireEvent.contextMenu(document.body)).toBe(true);
+        expect(onRamp).not.toHaveBeenCalled();
+      });
+
+      it('removes its window listeners with the lane (no leaks)', () => {
+        const add = vi.spyOn(window, 'addEventListener');
+        const remove = vi.spyOn(window, 'removeEventListener');
+        tools('paint', { ramp: kept });
+        press(100, 40, flags);
+        release(100, 40, flags);
+        cleanup();
+        const added = add.mock.calls.filter(([type]) =>
+          ['pointerdown', 'pointermove', 'pointerup', 'contextmenu', 'keydown', 'keyup'].includes(
+            String(type)
+          )
+        );
+        const removed = remove.mock.calls.map(([type]) => String(type));
+        added.forEach(([type]) => expect(removed).toContain(String(type)));
+        expect(fireEvent.contextMenu(document.body)).toBe(true);
+        add.mockRestore();
+        remove.mockRestore();
+      });
     });
   });
 
@@ -672,5 +797,59 @@ describe('VelocityLane tools', () => {
         expect(calls.onVelocityChange).toHaveBeenCalledWith(['b'], 0.5);
       }
     );
+  });
+});
+
+describe('VelocityLane tool cursors (opt-in)', () => {
+  const track = () => screen.getByRole('group', { name: 'Velocity lane' });
+  const kept = {
+    heads: [
+      { id: 'a', x: 0 },
+      { id: 'b', x: 2 },
+      { id: 'chord', x: 4 },
+    ],
+    start: 1,
+    end: 0,
+    curve: 0,
+  };
+
+  it('adds nothing without the opt-in, and the cursor art with it', () => {
+    lane({ tool: 'pencil' });
+    expect(track()).not.toHaveAttribute('data-cursors');
+    expect(track().style.getPropertyValue('--cursor-pencil')).toBe('');
+    cleanup();
+    lane({ tool: 'pencil', toolCursors: true });
+    expect(track()).toHaveAttribute('data-cursors');
+    expect(track()).toHaveAttribute('data-tool', 'pencil');
+    expect(track().style.getPropertyValue('--cursor-pencil')).toContain('data:image/svg+xml');
+    expect(track().style.height).toBe('84px');
+  });
+
+  it('a ramp-curve drag names itself for the vertical-resize cursor', () => {
+    lane({ tool: 'paint', toolCursors: true, ramp: kept, onRamp: vi.fn() });
+    fireEvent.pointerDown(track(), { button: 2, clientX: 100, clientY: 40, pointerId: 2 });
+    expect(track()).toHaveAttribute('data-gesture', 'curve');
+    fireEvent.pointerUp(track(), { button: 2, clientX: 100, clientY: 40, pointerId: 2 });
+    expect(track()).not.toHaveAttribute('data-gesture');
+  });
+
+  it('a time-band drag is grabbing, copy while Ctrl/Cmd is held, live on the key itself', () => {
+    lane({
+      tool: 'time',
+      toolCursors: true,
+      gridUnit: 0.5,
+      selectedRange: { start: 1.5, end: 5 },
+      onMoveTimeRange: vi.fn(),
+      onSelectionChange: vi.fn(),
+    });
+    fireEvent.pointerDown(track(), { clientX: 200, clientY: 30, pointerId: 1 });
+    fireEvent.pointerMove(track(), { clientX: 264, clientY: 30, pointerId: 1 });
+    expect(track()).toHaveAttribute('data-gesture', 'timeMove');
+    expect(track()).not.toHaveAttribute('data-copying');
+    fireEvent.keyDown(window, { key: 'Control', ctrlKey: true });
+    expect(track()).toHaveAttribute('data-copying');
+    fireEvent.keyUp(window, { key: 'Control' });
+    expect(track()).not.toHaveAttribute('data-copying');
+    fireEvent.pointerUp(track(), { clientX: 264, clientY: 30, pointerId: 1 });
   });
 });

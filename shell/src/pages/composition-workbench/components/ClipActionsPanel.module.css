@@ -1,0 +1,27 @@
+/*
+ * The Actions panel's sections: compact (a small bold title on a thin header, tight panel padding),
+ * no horizontal scroll (the panel is the inspector's width and its rows wrap). Only the neutral
+ * border role is used for the separators; the sizes follow Mantine's own scale.
+ */
+.item {
+  border-bottom: 1px solid var(--border);
+}
+
+.control {
+  padding: 0.2rem 0;
+}
+
+.label {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  padding: 0.1rem 0;
+}
+
+.chevron {
+  margin-inline-end: 0.35rem;
+}
+
+.content {
+  min-width: 0;
+  padding: 0.1rem 0 0.4rem;
+}

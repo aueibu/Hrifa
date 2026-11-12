@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
+import { act, cleanup, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { freezeClipProperties } from './clipProperties';
 import { ClipActionsPanel } from './components/ClipActionsPanel';
@@ -186,7 +186,11 @@ describe('the clip actions panel', () => {
       desk.addSnippet(other);
     });
     const group = await screen.findByRole('group', { name: 'Clip actions' });
+    // Every action button is disabled (the section headers are not actions and stay usable).
     for (const control of within(group).getAllByRole('button')) {
+      if (control.hasAttribute('aria-expanded')) {
+        continue;
+      }
       expect(control).toBeDisabled();
     }
     await userEvent.click(within(group).getByRole('button', { name: 'Legato' }));
@@ -211,7 +215,11 @@ describe('the clip actions panel', () => {
       desk.addSnippet(cyclic);
     });
     const group = await screen.findByRole('group', { name: 'Clip actions' });
+    // Every action button is disabled (the section headers are not actions and stay usable).
     for (const control of within(group).getAllByRole('button')) {
+      if (control.hasAttribute('aria-expanded')) {
+        continue;
+      }
       expect(control).toBeDisabled();
     }
     await userEvent.click(within(group).getByRole('button', { name: 'Legato' }));
@@ -572,8 +580,10 @@ describe('the selection after a transform is exactly the transformed notes (chor
     const roll = await openSelected();
     await userEvent.click(button('Make all pitches equal'));
     fireEvent.pointerDown(roll, { clientX: 400, clientY: rowY(70), pointerId: 1 });
+    // Notes of one onset that now share a pitch are one note (no duplicates): five became two, the
+    // selection is the survivors.
     expect(selectedIds()).toEqual(allIds());
-    expect(items().map((item) => pitchOf(item.id))).toEqual(Array(5).fill([7000]));
+    expect(items().map((item) => pitchOf(item.id))).toEqual(Array(2).fill([7000]));
   });
 
   it('reverse order across unequal slots keeps every note: ids created are added, none lost', async () => {
@@ -1041,13 +1051,17 @@ describe('copy and paste across clips', () => {
     expect(screen.getByText('Copied 1 note.')).toBeInTheDocument();
     expect(button('Paste notes')).toBeEnabled();
     await userEvent.click(button('Paste notes'));
-    // Pasted at the selected note's start (4): a second note at the same place, now selected.
-    expect(itemsOf('old')).toHaveLength(4);
+    // Pasted at the selected note's start (4) on the same pitch: that is the note already there, and
+    // two notes of one onset and pitch are one note, so nothing changes and no version is made.
+    expect(itemsOf('old')).toHaveLength(3);
+    expect(screen.getByText('Those notes are already in the clip.')).toBeInTheDocument();
     expect(roll).toHaveAccessibleName(/, 1 selected/);
-    expect(clipOf('old').lineage!.versions.at(-1)?.operation).toBe('transform-paste');
-    // Cmd+V (metaKey) pastes too.
+    expect(clipOf('old').lineage).toBeUndefined();
+    // Select nothing: the paste lands at the clip start, a new note there (Cmd+V works too).
+    fireEvent.keyDown(roll, { key: 'Escape' });
     fireEvent.keyDown(roll, { key: 'v', metaKey: true });
-    expect(itemsOf('old')).toHaveLength(5);
+    expect(itemsOf('old')).toHaveLength(4);
+    expect(clipOf('old').lineage!.versions.at(-1)?.operation).toBe('transform-paste');
   });
 
   it('is not taken while typing in a field, and plain or modified-by-shift keys are left alone', async () => {
@@ -1069,6 +1083,8 @@ describe('copy and paste across clips', () => {
     const roll = await openTwo();
     selectNote(roll, /^G4 · 4\.000 qn/, 260, 67);
     fireEvent.keyDown(roll, { key: 'c', ctrlKey: true });
+    // Nothing selected: the paste lands at the clip start (not on top of the copied note).
+    fireEvent.keyDown(roll, { key: 'Escape' });
     fireEvent.keyDown(roll, { key: 'v', ctrlKey: true });
     expect(itemsOf('old')).toHaveLength(4);
     fireEvent.keyDown(roll, { key: 'v', ctrlKey: true, repeat: true });
@@ -1077,8 +1093,9 @@ describe('copy and paste across clips', () => {
     expect(
       clipOf('old').lineage!.versions.filter((v) => v.operation === 'transform-paste')
     ).toHaveLength(1);
+    // A fresh press pastes onto the pasted note's own start and pitch: merged into it, nothing new.
     fireEvent.keyDown(roll, { key: 'v', ctrlKey: true });
-    expect(itemsOf('old')).toHaveLength(5);
+    expect(itemsOf('old')).toHaveLength(4);
   });
 
   it('pasting into an empty selection lands at the clip start; the clip length never grows', async () => {
@@ -1107,5 +1124,126 @@ describe('copy and paste across clips', () => {
     expect(screen.queryByTestId('roll-pick-banner')).toBeNull();
     expect(readNoteEditor('two')!.picking).toBeNull();
     expect(clipOf('old').lineage).toBeUndefined();
+  });
+});
+
+describe('the actions panel sections', () => {
+  const header = (name: string) => screen.getByRole('button', { name });
+
+  it('groups the controls into Time, Pitch, Values and Clipboard, all open at first', async () => {
+    await open(oldClip());
+    const group = screen.getByRole('group', { name: 'Clip actions' });
+    for (const name of ['Time', 'Pitch', 'Values', 'Clipboard']) {
+      expect(within(group).getByRole('button', { name })).toHaveAttribute('aria-expanded', 'true');
+    }
+    // Every action is reachable under its section.
+    const section = (id: string) => group.querySelector(`[data-section="${id}"]`) as HTMLElement;
+    for (const name of ['Scale by 2', 'Reverse in time', 'Rotate values', 'Legato', 'Quantize']) {
+      expect(within(section('time')).getByRole('button', { name })).toBeInTheDocument();
+    }
+    for (const name of ['Octave up', 'Invert', 'Make all pitches equal']) {
+      expect(within(section('pitch')).getByRole('button', { name })).toBeInTheDocument();
+    }
+    for (const name of ['Make all durations equal', 'Make all velocities equal']) {
+      expect(within(section('values')).getByRole('button', { name })).toBeInTheDocument();
+    }
+    for (const name of ['Duplicate selection', 'Copy notes', 'Paste notes']) {
+      expect(within(section('clipboard')).getByRole('button', { name })).toBeInTheDocument();
+    }
+  });
+
+  it('collapses sections independently (several open at once) and remembers it per viewer', async () => {
+    await open(oldClip());
+    await userEvent.click(header('Time'));
+    await userEvent.click(header('Values'));
+    expect(header('Time')).toHaveAttribute('aria-expanded', 'false');
+    expect(header('Pitch')).toHaveAttribute('aria-expanded', 'true');
+    expect(header('Clipboard')).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.queryByRole('button', { name: 'Legato' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Octave up' })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('hrifa.note-editor.v1') ?? '{}').actionSections).toEqual(
+      ['pitch', 'clipboard']
+    );
+    // Never part of the history or a project: nothing was committed, and the key is outside the
+    // workbench prefix.
+    expect(desk.snippets[0].lineage).toBeUndefined();
+    expect('hrifa.note-editor.v1'.startsWith('hrifa.composition-workbench.')).toBe(false);
+    // Remembered: a fresh mount finds the same sections closed.
+    cleanup();
+    await open(oldClip());
+    expect(header('Time')).toHaveAttribute('aria-expanded', 'false');
+    expect(header('Pitch')).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(header('Time'));
+    expect(await screen.findByRole('button', { name: 'Legato' })).toBeInTheDocument();
+  });
+
+  it('pressing a header moves no focus and keeps the selection; actions still work one version each', async () => {
+    const roll = await open(oldClip());
+    selectNote(roll, /^E4 · 2\.000 qn/, 140, 64);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(fireEvent.mouseDown(header('Pitch'))).toBe(false);
+    await userEvent.click(header('Pitch'));
+    await userEvent.click(header('Pitch'));
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    expect(desk.snippets[0].lineage).toBeUndefined();
+    await userEvent.click(button('Octave up'));
+    expect(versions().map((version) => version.operation)).toEqual([
+      'original',
+      'transform-transpose',
+    ]);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+  });
+});
+
+describe('no duplicate notes from the transforms', () => {
+  const ops = () => versions().map((version) => version.operation);
+  const lengthOf = (id: string) => {
+    const duration = noteValue(id).duration.quarterNotes;
+    return duration.numerator / duration.denominator;
+  };
+
+  it('transposing a note onto another note of the same onset merges it, in one version and one undo step', async () => {
+    const roll = await open(
+      oldClip([
+        seedNote('a', 0, 6000, 1, 0.4),
+        seedNote('b', 0, 6100, 2, 0.9),
+        seedNote('c', 4, 6700),
+      ])
+    );
+    // b is the two-quarter note at 0: select it.
+    fireEvent.pointerDown(screen.getByTitle(/ · 0\.000 qn · 2\.000 qn$/), {
+      clientX: 60,
+      clientY: rowY(61),
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(roll, { clientX: 60, clientY: rowY(61), pointerId: 1 });
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    const field = screen.getByRole('textbox', { name: 'Transpose semitones' });
+    await userEvent.clear(field);
+    await userEvent.type(field, '-1');
+    await userEvent.click(button('Transpose by semitones'));
+    // One note now: a (untouched) keeps its id, takes the edited note's velocity and the longer duration.
+    expect(items().map((item) => item.id)).toEqual(['a', 'c']);
+    expect(noteValue('a').velocity).toBe(0.9);
+    expect(lengthOf('a')).toBe(2);
+    expect(ops()).toEqual(['original', 'transform-transpose']);
+    // The merged-away note's selection went to its survivor.
+    expect([...readNoteEditor('old')!.selection.ids]).toEqual(['a']);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    act(() => undo());
+    expect(items().map((item) => item.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('Duplicate onto a note that is already there merges into it (the longest duration), one step', async () => {
+    const roll = await open(
+      oldClip([seedNote('a', 0, 6000, 1), seedNote('b', 1, 6000, 0.5), seedNote('c', 4, 6700)])
+    );
+    selectNote(roll, /^C4 · 0\.000 qn · 1\.000 qn$/, 30, 60);
+    expect(roll).toHaveAccessibleName(/, 1 selected/);
+    await userEvent.click(button('Duplicate selection'));
+    expect(items().map((item) => item.id)).toEqual(['a', 'b', 'c']);
+    expect(lengthOf('b')).toBe(1);
+    expect(ops()).toEqual(['original', 'transform-duplicate']);
+    expect([...readNoteEditor('old')!.selection.ids]).toEqual(['b']);
   });
 });

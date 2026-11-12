@@ -197,3 +197,44 @@ describe('runClipAction', () => {
     expect(commits).toEqual(['transform-transpose']);
   });
 });
+
+describe('a merge ends the rotation session', () => {
+  const long = (id: string, start: number, midicents: number): DataItem<NoteEventValue> => {
+    const base = note(id, start, midicents);
+    const value = base.value as NoteEventValue;
+    return {
+      ...base,
+      value: { ...value, duration: musicalDuration(2), interOnset: musicalDuration(2) },
+    };
+  };
+  const rotate = (items: DataItem<NoteEventValue>[]) => {
+    const adopt = vi.fn();
+    publish(adopt);
+    const { desk, packet: current } = fakeDesk(clip(items));
+    const outcome = runClipAction({
+      snippetId: 'c',
+      fallback: clip([]),
+      actionId: 'rotate-time',
+      params: { amount: '-1' },
+      desk,
+    });
+    return { adopt, outcome, current };
+  };
+
+  it('keeps the session when nothing merged', () => {
+    const { adopt, outcome } = rotate([long('x', 0, 6000), long('y', 1, 6400)]);
+    expect(outcome.status).toBe('committed');
+    expect(adopt.mock.calls[0][0].rotation).toBeTruthy();
+    expect(adopt.mock.calls[0][2]).toBeUndefined();
+  });
+
+  it('drops the session when the rotation itself lands two pieces on one note', () => {
+    // x wraps to (7, 1) and (0, 1); y lands on (0, 2): the same onset and pitch as x's first piece.
+    const { adopt, outcome, current } = rotate([long('x', 0, 6000), long('y', 1, 6000)]);
+    expect(outcome.status).toBe('committed');
+    expect(current().items).toHaveLength(2);
+    expect(adopt).toHaveBeenCalledTimes(1);
+    expect(adopt.mock.calls[0][0].rotation).toBeUndefined();
+    expect(adopt.mock.calls[0][2]).toBeInstanceOf(Map);
+  });
+});

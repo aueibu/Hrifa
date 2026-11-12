@@ -19,6 +19,7 @@ describe('note editor preferences', () => {
       grid: 'auto',
       velocityLaneCollapsed: false,
       laneHeight: null,
+      actionSections: ['time', 'pitch', 'values', 'clipboard'],
     });
   });
 
@@ -30,6 +31,7 @@ describe('note editor preferences', () => {
       grid: '1/8T',
       velocityLaneCollapsed: false,
       laneHeight: null,
+      actionSections: ['time', 'pitch', 'values', 'clipboard'],
     });
     expect(NOTE_EDITOR_PREFERENCES_KEY.startsWith('hrifa.composition-workbench.')).toBe(false);
     localStorage.setItem(
@@ -42,6 +44,7 @@ describe('note editor preferences', () => {
       grid: 'auto',
       velocityLaneCollapsed: false,
       laneHeight: null,
+      actionSections: ['time', 'pitch', 'values', 'clipboard'],
     });
     localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, '{nope');
     expect(readNoteEditorPreferences()).toEqual({
@@ -50,6 +53,7 @@ describe('note editor preferences', () => {
       grid: 'auto',
       velocityLaneCollapsed: false,
       laneHeight: null,
+      actionSections: ['time', 'pitch', 'values', 'clipboard'],
     });
   });
 
@@ -96,6 +100,30 @@ describe('note editor preferences', () => {
     expect(readNoteEditorPreferences().laneHeight).toBeNull();
     localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ laneHeight: 'tall' }));
     expect(readNoteEditorPreferences().laneHeight).toBeNull();
+  });
+
+  it('remembers which Actions sections are open (all by default), keeping only known ids in order', () => {
+    expect(readNoteEditorPreferences().actionSections).toEqual([
+      'time',
+      'pitch',
+      'values',
+      'clipboard',
+    ]);
+    writeNoteEditorPreferences({ actionSections: ['clipboard', 'time'] });
+    expect(readNoteEditorPreferences().actionSections).toEqual(['time', 'clipboard']);
+    writeNoteEditorPreferences({ actionSections: [] });
+    expect(readNoteEditorPreferences().actionSections).toEqual([]);
+    // Outside the workbench prefix, so a saved project never captures it.
+    expect(JSON.parse(localStorage.getItem(NOTE_EDITOR_PREFERENCES_KEY) ?? '{}')).toMatchObject({
+      actionSections: [],
+    });
+    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ actionSections: 'time' }));
+    expect(readNoteEditorPreferences().actionSections).toHaveLength(4);
+    localStorage.setItem(
+      NOTE_EDITOR_PREFERENCES_KEY,
+      JSON.stringify({ actionSections: ['pitch', 'bogus', 'pitch'] })
+    );
+    expect(readNoteEditorPreferences().actionSections).toEqual(['pitch']);
   });
 
   it('offers 1/1 to 1/32 and the triplets, in quarter notes', () => {

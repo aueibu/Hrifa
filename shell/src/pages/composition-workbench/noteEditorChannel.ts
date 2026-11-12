@@ -39,9 +39,14 @@ export interface NoteEditorChannelState {
   snapUnit: number;
   /**
    * Called after an action's packet was committed: the editor takes the selection the action asked
-   * for (or keeps its own) against the committed packet.
+   * for (or keeps its own) against the committed packet. `survivorOf` is given when duplicate notes
+   * were merged into the commit (dropped id to the id that absorbed it).
    */
-  adopt(result: Extract<ClipActionResult, { ok: true }>, committed: DataPacket): void;
+  adopt(
+    result: Extract<ClipActionResult, { ok: true }>,
+    committed: DataPacket,
+    survivorOf?: ReadonlyMap<string, string>
+  ): void;
   /** The live rotation session (rotationSession.ts), or null when there is none or it ended. */
   rotation?: RotationSessionCore | null;
   /** The action id of the pick the editor is waiting for, or null. */

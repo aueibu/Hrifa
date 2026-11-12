@@ -3,9 +3,9 @@ import { freezeClipProperties } from './clipProperties';
 import { clipActionById } from './clipTypes';
 import type { DataPacket } from './model';
 import { readNoteClipboard, writeNoteClipboard } from './noteClipboard';
-import { newNoteItemId } from './noteClipEdits';
+import { mergeDuplicateNotesDetailed, newNoteItemId } from './noteClipEdits';
 import { readNoteEditor } from './noteEditorChannel';
-import type { Snippet } from './snippet';
+import { jsonEqual, type Snippet } from './snippet';
 
 /**
  * Runs one registry action on a clip the way every caller does (the inspector's buttons, the
@@ -85,6 +85,16 @@ export function runClipAction(options: {
   if (result.packet === base) {
     return { status: 'unchanged', message: result.message ?? 'Nothing to change.' };
   }
+  // No duplicate notes: exact duplicates (same onset and pitch) merge inside this same version, and
+  // only when something merged. A merged rotation session no longer describes the notes, so it ends.
+  const { packet: merged, survivorOf } = mergeDuplicateNotesDetailed(result.packet, base);
+  if (survivorOf.size > 0) {
+    if (jsonEqual(merged.items, base.items)) {
+      // Everything the action added merged straight back into notes that were already there.
+      return { status: 'unchanged', message: 'Those notes are already in the clip.' };
+    }
+    result = { ...result, packet: merged, rotation: undefined };
+  }
   let committed: ReturnType<ClipActionDesk['commitSnippetEditById']>;
   try {
     committed = desk.commitSnippetEditById(
@@ -102,7 +112,7 @@ export function runClipAction(options: {
   }
   // The edit has landed from here on.
   try {
-    channel?.adopt(result, committed.snippet.packet);
+    channel?.adopt(result, committed.snippet.packet, survivorOf.size > 0 ? survivorOf : undefined);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(`The editor could not take the selection after "${actionId}".`, error);

@@ -17,6 +17,7 @@ import {
 } from './model';
 import { marqueeSelection, selectionId, type PixelRect } from './selection';
 import { layerSpan, timelineLayout } from './timelineLayout';
+import { toolCursorStyle } from './toolCursors';
 import { velocityFillColor, velocityLevel as level } from './velocityFill';
 import {
   curveFromDrag,
@@ -94,8 +95,9 @@ export interface VelocityLaneProps {
   /** The active velocity ramp (a secondary selection), drawn as a dashed line; the owner keeps it. */
   ramp?: VelocityRamp | null;
   /**
-   * Paint can: a ramp was made (on release) or re-curved (Alt + right-button drag, on release), with
-   * the absolute velocities it writes by note id. Each report is one edit.
+   * Paint can: a ramp was made (on release) or re-curved (right-button drag while the ramp is active,
+   * on release: Alt + right button, or the plain right button as a fallback), with the absolute
+   * velocities it writes by note id. Each report is one edit.
    */
   onRamp?(ramp: VelocityRamp, values: Record<string, number>): void;
   /** The track's height in pixels (default `VELOCITY_LANE_HEIGHT`). */
@@ -128,6 +130,12 @@ export interface VelocityLaneProps {
   gridLines?: PianoRollGridLine[] | PianoRollGridSource;
   gridUnit?: number;
   viewWidth?: number;
+  /**
+   * Tool cursors (opt-in), the same set as the roll's: Pointer is the arrow, Pencil, Paint and Time
+   * their own cursors, pins the vertical resize, a ramp-curve drag the vertical resize, a time-band
+   * move grabbing (copy with Ctrl/Cmd).
+   */
+  toolCursors?: boolean;
 }
 
 export interface VelocityLaneToggleProps {
@@ -180,6 +188,11 @@ type LaneGesture =
   | { kind: 'pencil'; last: LanePoint; values: Map<string, number> }
   | { kind: 'paint'; start: LanePoint; startPercent: number }
   | { kind: 'curve'; startY: number; startCurve: number; curve: number };
+
+/** How long after a right-button gesture the browser's context menu is still swallowed (it fires on release). */
+const MENU_GUARD_MS = 1000;
+/** And how long the Alt key's own release is still kept from reaching the browser's menu bar. */
+const ALT_GUARD_MS = 15000;
 
 /** What the lane draws while a tool gesture runs (empty while the press has not moved yet). */
 interface Live {
@@ -240,6 +253,7 @@ export function VelocityLane({
   gridUnit,
   viewWidth = 0,
   velocityFill = false,
+  toolCursors: withToolCursors = false,
 }: VelocityLaneProps) {
   const resize = useRef<Resize | null>(null);
   const [liveHeight, setLiveHeight] = useState<number | null>(null);
@@ -286,8 +300,11 @@ export function VelocityLane({
   const contentRef = useRef<HTMLDivElement>(null);
   const gesture = useRef<LaneGesture | null>(null);
   const [live, setLive] = useState<Live | null>(null);
-  // The browser's context menu is suppressed only for the Alt + right-button curve gesture.
-  const suppressMenu = useRef(false);
+  // The browser's context menu and the Alt key's menu-bar activation, held back around a ramp-curve
+  // gesture (guardMenu / guardAlt). Window listeners that remove themselves; none outlives the lane.
+  const menuGuard = useRef<{ stop(): void; timer?: number } | null>(null);
+  const altGuard = useRef<{ stop(): void; timer?: number } | null>(null);
+  const lastPoint = useRef<LanePoint | null>(null);
   const snapUnit = gridUnit ?? adaptiveSubdivision(pixelsPerQuarter);
   /** Every head (one per note id), in timeline pixels. */
   const heads = useMemo(() => laneHeads(notes, pixelsPerQuarter), [notes, pixelsPerQuarter]);
@@ -332,6 +349,13 @@ export function VelocityLane({
   function endGesture() {
     gesture.current = null;
     setLive(null);
+  }
+
+  /** Cancel or lost capture on the track. A curve gesture listens on the window, so it carries on. */
+  function endTrackGesture() {
+    if (gesture.current?.kind !== 'curve') {
+      endGesture();
+    }
   }
 
   function sample(current: Extract<LaneGesture, { kind: 'pencil' }>, point: LanePoint) {
@@ -384,31 +408,8 @@ export function VelocityLane({
   }
 
   function beginTrack(event: ReactPointerEvent<HTMLDivElement>) {
-    if (event.button === 2) {
-      // Every right press starts clean: only a curve gesture (below) suppresses the menu again.
-      suppressMenu.current = false;
-      // Alt + right button on an active ramp curves it; any other right press is left alone.
-      if (event.altKey && ramp && activeTool === 'paint' && onRamp) {
-        event.preventDefault();
-        event.stopPropagation();
-        suppressMenu.current = true;
-        gesture.current = {
-          kind: 'curve',
-          startY: event.clientY,
-          startCurve: ramp.curve,
-          curve: ramp.curve,
-        };
-        const point = laneAt(event);
-        setLive(
-          rampLive(rampPoints(ramp, ramp.curve), {
-            readouts: [{ x: point.x, y: point.y, text: `Curve ${ramp.curve.toFixed(1)}` }],
-          })
-        );
-        event.currentTarget.setPointerCapture?.(event.pointerId);
-      }
-      return;
-    }
-    suppressMenu.current = false;
+    // The right button belongs to the ramp-curve gesture, which is handled on the window while a ramp
+    // is active (see the effect below); anywhere else it is left to the browser.
     if (event.button !== 0) {
       return;
     }
@@ -454,10 +455,11 @@ export function VelocityLane({
 
   function moveTrack(event: ReactPointerEvent<HTMLDivElement>) {
     const current = gesture.current;
-    if (!current) {
+    if (!current || current.kind === 'curve') {
       return;
     }
     const point = laneAt(event);
+    lastPoint.current = point;
     if (current.kind === 'marquee') {
       if (
         !current.moved &&
@@ -488,36 +490,242 @@ export function VelocityLane({
         return;
       }
       current.moved = true;
-      const delta = moveDelta(current, point.x);
-      setLive({
-        moveRange: current.range,
-        timeRange: { start: current.range.start + delta, end: current.range.end + delta },
-        readouts:
-          current.copy || current.merge
-            ? [{ x: point.x, y: point.y, text: modeText(current) }]
-            : [],
-      });
+      previewTimeMove(current, point);
     } else if (current.kind === 'pencil') {
       sample(current, point);
       setLive({
         values: new Map(current.values),
         readouts: [{ x: point.x, y: point.y, text: percentText(percentAtY(point.y, trackHeight)) }],
       });
-    } else if (current.kind === 'paint') {
+    } else {
       setLive(rampLive(paintPoints(current, point)));
-    } else if (ramp) {
-      current.curve = curveFromDrag(current.startCurve, event.clientY - current.startY);
-      setLive(
-        rampLive(rampPoints(ramp, current.curve), {
-          readouts: [{ x: point.x, y: point.y, text: `Curve ${current.curve.toFixed(1)}` }],
-        })
+    }
+  }
+
+  /** The live picture of a time-band move: the band at its new place and the mode in words. */
+  function previewTimeMove(current: Extract<LaneGesture, { kind: 'timeMove' }>, point: LanePoint) {
+    const delta = moveDelta(current, point.x);
+    setLive({
+      moveRange: current.range,
+      timeRange: { start: current.range.start + delta, end: current.range.end + delta },
+      readouts:
+        current.copy || current.merge ? [{ x: point.x, y: point.y, text: modeText(current) }] : [],
+    });
+  }
+
+  function stopMenuGuard() {
+    const guard = menuGuard.current;
+    menuGuard.current = null;
+    if (guard) {
+      window.clearTimeout(guard.timer);
+      guard.stop();
+    }
+  }
+
+  function stopAltGuard() {
+    const guard = altGuard.current;
+    altGuard.current = null;
+    if (guard) {
+      window.clearTimeout(guard.timer);
+      guard.stop();
+    }
+  }
+
+  /**
+   * The browser shows its context menu when the right button is RELEASED, at whatever is then under the
+   * pointer (a curve drag runs up and down out of the lane, and capture is gone by then), so the menu
+   * is swallowed on the window, in the capture phase: for the whole gesture, and once after it.
+   */
+  function guardMenu() {
+    stopMenuGuard();
+    const onMenu = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (gesture.current?.kind !== 'curve') {
+        stopMenuGuard();
+      }
+    };
+    window.addEventListener('contextmenu', onMenu, true);
+    menuGuard.current = { stop: () => window.removeEventListener('contextmenu', onMenu, true) };
+  }
+
+  /**
+   * Alt pressed and released alone makes the browser focus its menu bar. The Alt of a curve gesture
+   * belongs to the gesture, so its keydown and keyup are cancelled (the keyup ends the guard).
+   */
+  function guardAlt() {
+    if (altGuard.current) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Alt') {
+        return;
+      }
+      event.preventDefault();
+      if (event.type === 'keyup') {
+        stopAltGuard();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('keyup', onKey, true);
+    altGuard.current = {
+      stop: () => {
+        window.removeEventListener('keydown', onKey, true);
+        window.removeEventListener('keyup', onKey, true);
+      },
+    };
+  }
+
+  /** The gesture is over: the guards stay just long enough for the release's menu and the Alt keyup. */
+  function expireGuards() {
+    if (menuGuard.current) {
+      window.clearTimeout(menuGuard.current.timer);
+      menuGuard.current.timer = window.setTimeout(stopMenuGuard, MENU_GUARD_MS);
+    }
+    if (altGuard.current) {
+      window.clearTimeout(altGuard.current.timer);
+      altGuard.current.timer = window.setTimeout(stopAltGuard, ALT_GUARD_MS);
+    }
+  }
+
+  /** The curve readout and dashed line for a curve value. */
+  function curveLive(
+    source: VelocityRamp,
+    curve: number,
+    event: { clientX: number; clientY: number }
+  ) {
+    const point = laneAt(event);
+    return rampLive(rampPoints(source, curve), {
+      readouts: [{ x: point.x, y: point.y, text: `Curve ${curve.toFixed(1)}` }],
+    });
+  }
+
+  /**
+   * A right press on the track while a ramp is active starts the curve gesture (Alt + right button,
+   * or the plain right button as a fallback). Called from the window's capture-phase pointerdown.
+   */
+  function beginCurve(event: PointerEvent) {
+    if (!ramp) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    gesture.current = {
+      kind: 'curve',
+      startY: event.clientY,
+      startCurve: ramp.curve,
+      curve: ramp.curve,
+    };
+    guardMenu();
+    if (event.altKey) {
+      guardAlt();
+    }
+    setLive(curveLive(ramp, ramp.curve, event));
+    try {
+      trackRef.current?.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Capture is a convenience: the gesture listens on the window either way.
+    }
+  }
+
+  function moveCurve(event: PointerEvent) {
+    const current = gesture.current;
+    if (current?.kind !== 'curve' || !ramp) {
+      return;
+    }
+    if (event.altKey) {
+      guardAlt();
+    }
+    current.curve = curveFromDrag(current.startCurve, event.clientY - current.startY);
+    setLive(curveLive(ramp, current.curve, event));
+  }
+
+  /** The right button was released (commit) or the pointer was cancelled (nothing is reported). */
+  function endCurve(event: PointerEvent, commit: boolean) {
+    const current = gesture.current;
+    if (current?.kind !== 'curve') {
+      return;
+    }
+    endGesture();
+    expireGuards();
+    try {
+      trackRef.current?.releasePointerCapture?.(event.pointerId);
+    } catch {
+      // Already released.
+    }
+    if (commit && ramp && current.curve !== ramp.curve) {
+      // Re-applied from the ramp's original endpoints and heads with the new curve, never stacked.
+      const curved = { ...ramp, curve: current.curve };
+      onRamp?.(
+        curved,
+        Object.fromEntries(rampPoints(curved, curved.curve).map((entry) => [entry.id, entry.value]))
       );
     }
   }
 
+  // While a ramp is active in the Paint tool its curve gesture is handled on the WINDOW, in the capture
+  // phase: pointer capture changes where events land (the menu's target in particular), and a drag
+  // that leaves the lane must still finish. The latest handlers are read through a ref, so the
+  // listeners are attached once per armed period and removed with it.
+  const rampArmed = activeTool === 'paint' && !!ramp && !!onRamp;
+  const curveApi = useRef({ beginCurve, moveCurve, endCurve });
+  curveApi.current = { beginCurve, moveCurve, endCurve };
+  useEffect(() => {
+    if (!rampArmed) {
+      return undefined;
+    }
+    const inTrack = (target: EventTarget | null) =>
+      target instanceof Node && !!trackRef.current?.contains(target);
+    const onDown = (event: PointerEvent) => {
+      if (event.button === 2 && inTrack(event.target)) {
+        curveApi.current.beginCurve(event);
+      }
+    };
+    const onMove = (event: PointerEvent) => curveApi.current.moveCurve(event);
+    const onUp = (event: PointerEvent) => {
+      if (event.button === 2) {
+        curveApi.current.endCurve(event, true);
+      }
+    };
+    const onCancel = (event: PointerEvent) => curveApi.current.endCurve(event, false);
+    // A right-click on the lane while the ramp is armed never opens the browser's menu either.
+    const onMenu = (event: MouseEvent) => {
+      if (inTrack(event.target)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    window.addEventListener('pointerdown', onDown, true);
+    window.addEventListener('pointermove', onMove, true);
+    window.addEventListener('pointerup', onUp, true);
+    window.addEventListener('pointercancel', onCancel, true);
+    window.addEventListener('contextmenu', onMenu, true);
+    return () => {
+      window.removeEventListener('pointerdown', onDown, true);
+      window.removeEventListener('pointermove', onMove, true);
+      window.removeEventListener('pointerup', onUp, true);
+      window.removeEventListener('pointercancel', onCancel, true);
+      window.removeEventListener('contextmenu', onMenu, true);
+      if (gesture.current?.kind === 'curve') {
+        // The ramp ended under a running curve gesture: drop it, nothing is reported.
+        gesture.current = null;
+        setLive(null);
+        expireGuards();
+      }
+    };
+  }, [rampArmed]);
+  // Nothing outlives the lane.
+  useEffect(
+    () => () => {
+      stopMenuGuard();
+      stopAltGuard();
+    },
+    []
+  );
+
   function finishTrack(event: ReactPointerEvent<HTMLDivElement>) {
     const current = gesture.current;
-    if (!current) {
+    if (!current || current.kind === 'curve') {
       return;
     }
     const point = laneAt(event);
@@ -567,7 +775,7 @@ export function VelocityLane({
       if (current.values.size) {
         onSetVelocities?.(Object.fromEntries(current.values));
       }
-    } else if (current.kind === 'paint') {
+    } else {
       const points = paintPoints(current, point);
       if (!points.length) {
         return;
@@ -579,13 +787,6 @@ export function VelocityLane({
         curve: 0,
       };
       onRamp?.(made, Object.fromEntries(points.map((entry) => [entry.id, entry.value])));
-    } else if (ramp && current.curve !== ramp.curve) {
-      // Re-applied from the ramp's original endpoints and heads with the new curve, never stacked.
-      const curved = { ...ramp, curve: current.curve };
-      onRamp?.(
-        curved,
-        Object.fromEntries(rampPoints(curved, curved.curve).map((entry) => [entry.id, entry.value]))
-      );
     }
   }
 
@@ -714,8 +915,13 @@ export function VelocityLane({
       return undefined;
     }
     const cancelGesture = () => {
+      const curving = gesture.current?.kind === 'curve';
       gesture.current = null;
       setLive(null);
+      if (curving) {
+        // A cancelled curve gesture's right-click guards expire like a finished one's.
+        expireGuards();
+      }
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -724,10 +930,23 @@ export function VelocityLane({
         cancelGesture();
       }
     };
+    // A time-band move reads Ctrl/Cmd (copy) and Alt (merge) live: on their keydown and keyup too.
+    const onModifier = (event: KeyboardEvent) => {
+      const current = gesture.current;
+      if (current?.kind === 'timeMove' && current.moved && lastPoint.current) {
+        current.copy = event.ctrlKey || event.metaKey;
+        current.merge = event.altKey;
+        previewTimeMove(current, lastPoint.current);
+      }
+    };
     window.addEventListener('keydown', onKey, true);
+    window.addEventListener('keydown', onModifier);
+    window.addEventListener('keyup', onModifier);
     window.addEventListener('blur', cancelGesture);
     return () => {
       window.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('keydown', onModifier);
+      window.removeEventListener('keyup', onModifier);
       window.removeEventListener('blur', cancelGesture);
     };
   }, [gesturing]);
@@ -793,19 +1012,26 @@ export function VelocityLane({
             role="group"
             aria-label="Velocity lane"
             data-tool={activeTool}
-            style={{ height: trackHeight }}
+            data-cursors={withToolCursors || undefined}
+            data-gesture={withToolCursors && live ? gesture.current?.kind : undefined}
+            data-copying={
+              withToolCursors &&
+              live &&
+              gesture.current?.kind === 'timeMove' &&
+              gesture.current.copy
+                ? ''
+                : undefined
+            }
+            style={
+              withToolCursors
+                ? { ...toolCursorStyle, height: trackHeight }
+                : { height: trackHeight }
+            }
             onPointerDown={beginTrack}
             onPointerMove={moveTrack}
             onPointerUp={finishTrack}
-            onPointerCancel={endGesture}
-            onLostPointerCapture={endGesture}
-            onContextMenu={(event) => {
-              if (suppressMenu.current) {
-                event.preventDefault();
-                // One swallowed menu per curve gesture: later right-clicks get the browser's menu.
-                suppressMenu.current = false;
-              }
-            }}
+            onPointerCancel={endTrackGesture}
+            onLostPointerCapture={endTrackGesture}
           >
             <div
               ref={contentRef}

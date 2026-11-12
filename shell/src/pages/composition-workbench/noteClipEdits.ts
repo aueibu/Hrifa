@@ -311,6 +311,195 @@ export function resizeNotes(packet: DataPacket, ids: readonly string[], delta: n
   });
 }
 
+/**
+ * Changes each event's START by `delta` quarter notes with its END fixed (the left-edge resize): a
+ * positive delta shortens the note from the left, a negative one lengthens it. Each event is held on
+ * its own to the clip's start (0) and to `MIN_NOTE_QUARTERS` of length, so the end never moves. An
+ * event whose slot (`interOnset`) matched its duration keeps matching. The same packet when nothing
+ * changes.
+ */
+export function resizeNotesStart(
+  packet: DataPacket,
+  ids: readonly string[],
+  delta: number
+): DataPacket {
+  const chosen = new Set(ids);
+  if (!Number.isFinite(delta) || delta === 0) {
+    return packet;
+  }
+  return replaceItems(packet, (item) => {
+    if (!chosen.has(item.id)) {
+      return item;
+    }
+    const start = quarters(item.value.onset);
+    const length = quarters(item.value.duration);
+    const shift = Math.min(Math.max(delta, -start), length - MIN_NOTE_QUARTERS);
+    const onsetQuarters = rationalFromNumber(start + shift);
+    if (compareRational(onsetQuarters, item.value.onset.quarterNotes) === 0) {
+      return item;
+    }
+    const end = addRational(item.value.onset.quarterNotes, item.value.duration.quarterNotes);
+    const onset = { quarterNotes: onsetQuarters };
+    const duration: MusicalDuration = { quarterNotes: subtractRational(end, onsetQuarters) };
+    const slotMatched =
+      compareRational(item.value.interOnset.quarterNotes, item.value.duration.quarterNotes) === 0;
+    return {
+      ...item,
+      value: {
+        ...item.value,
+        onset,
+        duration,
+        interOnset: slotMatched ? duration : item.value.interOnset,
+      },
+      label: noteLabel(item.value.pitches, onset),
+    };
+  });
+}
+
+/** The result of merging duplicates: the packet and which survivor each dropped id went into. */
+export interface MergeDuplicatesResult {
+  packet: DataPacket;
+  /** Dropped item id to the id of the note it was merged into (empty when nothing merged). */
+  survivorOf: ReadonlyMap<string, string>;
+}
+
+/**
+ * No duplicate notes (Bitwig: notes of one pitch and onset are one note). Two events are duplicates
+ * when they have the same onset AND the same pitch set (a chord is a duplicate only of an event with
+ * the same pitches, in any order). A single-pitch note never merges into a multi-pitch event and vice
+ * versa: partial duplicates are left whole, whatever the item order, so the result does not depend on
+ * which came first. Overlapping same-pitch notes with different onsets are left alone.
+ *
+ * With `base` (the packet before the edit) only what the edit touched is merged. A note is TOUCHED
+ * when it is new (its id is not in `base`) or its onset, pitches, duration or velocity differ from its
+ * `base` value. Pre-existing duplicates where neither was touched stay as they are. In a group of
+ * duplicates with a touched member, the survivor is the first untouched member (it keeps its id and
+ * takes the velocity of the last touched member and the longest duration of itself and the touched
+ * members), or, with no untouched member, the first touched one (keeping its own velocity); every other
+ * TOUCHED member merges away, untouched members stay. Without `base` every note counts as touched, so
+ * the first note keeps its id and velocity and takes the longest duration. The same packet, by
+ * reference, when nothing merged.
+ */
+export function mergeDuplicateNotesDetailed(
+  packet: DataPacket,
+  base?: DataPacket
+): MergeDuplicatesResult {
+  const baseValues = new Map<string, NoteItem>();
+  if (base) {
+    for (const item of base.items) {
+      if (isNoteItem(item)) {
+        baseValues.set(item.id, item);
+      }
+    }
+  }
+  const touched = (item: NoteItem): boolean => {
+    if (!base) {
+      return true;
+    }
+    const before = baseValues.get(item.id);
+    return (
+      !before ||
+      compareRational(before.value.onset.quarterNotes, item.value.onset.quarterNotes) !== 0 ||
+      compareRational(before.value.duration.quarterNotes, item.value.duration.quarterNotes) !== 0 ||
+      before.value.velocity !== item.value.velocity ||
+      before.value.pitches.length !== item.value.pitches.length ||
+      before.value.pitches.some((pitch, index) => pitch !== item.value.pitches[index])
+    );
+  };
+  const groups = new Map<string, NoteItem[]>();
+  for (const item of packet.items) {
+    if (!isNoteItem(item) || item.value.pitches.length === 0) {
+      continue;
+    }
+    const pitches = [...new Set(item.value.pitches)].sort((a, b) => a - b).join(',');
+    const key = `${Math.round(quarters(item.value.onset) * 1e9)}:${pitches}`;
+    const group = groups.get(key);
+    if (group) {
+      group.push(item);
+    } else {
+      groups.set(key, [item]);
+    }
+  }
+  const dropped = new Map<string, string>();
+  const wanted = new Map<string, { duration: number; velocity?: number }>();
+  for (const group of groups.values()) {
+    if (group.length < 2) {
+      continue;
+    }
+    const touchedMembers = group.filter(touched);
+    if (touchedMembers.length === 0) {
+      continue;
+    }
+    const survivor = group.find((member) => !touchedMembers.includes(member)) ?? touchedMembers[0];
+    const merging = touchedMembers.filter((member) => member !== survivor);
+    if (merging.length === 0) {
+      continue;
+    }
+    const untouchedSurvivor = !touchedMembers.includes(survivor);
+    wanted.set(survivor.id, {
+      duration: Math.max(
+        quarters(survivor.value.duration),
+        ...merging.map((member) => quarters(member.value.duration))
+      ),
+      velocity: untouchedSurvivor ? merging[merging.length - 1].value.velocity : undefined,
+    });
+    merging.forEach((member) => dropped.set(member.id, survivor.id));
+  }
+  if (dropped.size === 0) {
+    return { packet, survivorOf: dropped };
+  }
+  const items = packet.items.flatMap((item) => {
+    if (dropped.has(item.id)) {
+      return [];
+    }
+    const change = wanted.get(item.id);
+    if (!change || !isNoteItem(item)) {
+      return [item];
+    }
+    const velocity = change.velocity ?? item.value.velocity;
+    if (change.duration <= quarters(item.value.duration) && velocity === item.value.velocity) {
+      return [item];
+    }
+    const longer = change.duration > quarters(item.value.duration);
+    const duration: MusicalDuration = longer
+      ? { quarterNotes: rationalFromNumber(change.duration) }
+      : item.value.duration;
+    const slotMatched =
+      compareRational(item.value.interOnset.quarterNotes, item.value.duration.quarterNotes) === 0;
+    const merged: NoteItem = {
+      ...item,
+      value: {
+        ...item.value,
+        duration,
+        velocity,
+        interOnset: slotMatched ? duration : item.value.interOnset,
+      },
+    };
+    return [merged];
+  });
+  return { packet: withItems(packet, items), survivorOf: dropped };
+}
+
+/** `mergeDuplicateNotesDetailed`'s packet alone. */
+export function mergeDuplicateNotes(packet: DataPacket, base?: DataPacket): DataPacket {
+  return mergeDuplicateNotesDetailed(packet, base).packet;
+}
+
+/**
+ * A selection's ids after a merge: a dropped id becomes the note it was merged into, the rest stay,
+ * each once, in order. The same array when nothing was merged.
+ */
+export function mapMergedIds(
+  ids: readonly string[],
+  survivorOf: ReadonlyMap<string, string>
+): readonly string[] {
+  if (survivorOf.size === 0) {
+    return ids;
+  }
+  const mapped = ids.map((id) => survivorOf.get(id) ?? id);
+  return mapped.filter((id, index) => mapped.indexOf(id) === index);
+}
+
 /** Removes the events. */
 export function deleteNotes(packet: DataPacket, ids: readonly string[]): DataPacket {
   const chosen = new Set(ids);

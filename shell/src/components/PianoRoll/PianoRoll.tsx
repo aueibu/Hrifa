@@ -45,6 +45,7 @@ import {
   type PixelRect,
 } from './selection';
 import { layerSpan, timelineLayout } from './timelineLayout';
+import { toolCursorStyle, useModifierKeys } from './toolCursors';
 import { velocityFillColor, velocityLevel } from './velocityFill';
 import classes from './PianoRoll.module.css';
 
@@ -108,6 +109,10 @@ export interface PianoRollProps {
    *   note that becomes a drag COPIES instead (a third argument `{ copy: true }`, ghosts and a copy
    *   cursor shown); a Ctrl/Cmd press that is not dragged still toggles the note's selection.
    * - `onResizeNotes`: dragging a note's right edge changes the selection's durations by the delta.
+   * - `onResizeNotesStart`: dragging a note's LEFT edge changes the selection's starts by the same
+   *   snapped delta with each end fixed (each note held at 0 and at the minimum length). The edge
+   *   zones are min(6 px, a third of the note's width) on each side, so a short note keeps a middle
+   *   that moves it. Opt-in: without the callback the left edge is part of the note's body.
    * - `onDeleteNotes`: with the tool `eraser` active, the notes swept over while the button was
    *   held, reported once on release (Escape cancels); with the tool `pointer`, a double-click on
    *   a note.
@@ -123,6 +128,7 @@ export interface PianoRollProps {
     options?: { copy: boolean }
   ): void;
   onResizeNotes?(ids: string[], deltaDuration: number): void;
+  onResizeNotesStart?(ids: string[], deltaStart: number): void;
   onDeleteNotes?(ids: string[]): void;
   onVelocityChange?(ids: string[], delta: number): void;
   /**
@@ -247,12 +253,19 @@ export interface PianoRollProps {
    * prop to leave the mode.
    */
   pickPitch?: { hint: string; onPick(midi: number): void } | null;
+  /**
+   * Tool cursors (opt-in): the note body shows a move cursor, its edges a horizontal-resize cursor,
+   * Alt over a note the vertical-resize (velocity) cursor, Ctrl/Cmd the copy cursor, a drag the
+   * matching grabbing or resize cursor, and each tool its own (toolCursors.ts). They follow the
+   * modifier keys as they are pressed and released. Without it the roll keeps its plain cursors.
+   */
+  toolCursors?: boolean;
 }
 
 /** A gesture in progress, kept by reference so the pointer math never reads a stale render. */
 type Gesture =
   | {
-      kind: 'move' | 'resize' | 'velocity';
+      kind: 'move' | 'resize' | 'resizeStart' | 'velocity';
       ids: string[];
       x: number;
       y: number;
@@ -337,6 +350,17 @@ const VELOCITY_RANGE_PIXELS = 120;
 /** The quietest a drawn or remembered velocity can be, so a note is never silent. */
 const MIN_DRAWN_VELOCITY = 0.01;
 
+/**
+ * How far a left-edge resize moves THIS note's start: the gesture's snapped delta held on the note's
+ * own to the start of time and to the minimum length (so its end never moves). Null for any other
+ * gesture.
+ */
+function startEdgeShift(note: PianoRollNote, preview: { kind: string; dStart: number }) {
+  return preview.kind === 'resizeStart'
+    ? clamp(preview.dStart, -note.start, note.duration - MIN_NOTE_QUARTERS)
+    : null;
+}
+
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
@@ -366,6 +390,7 @@ export function PianoRoll({
   onAddNote,
   onMoveNotes,
   onResizeNotes,
+  onResizeNotesStart,
   onDeleteNotes,
   onVelocityChange,
   onMarqueeRange,
@@ -392,6 +417,7 @@ export function PianoRoll({
   pitchColor,
   keyActions,
   pickPitch,
+  toolCursors: withToolCursors = false,
 }: PianoRollProps) {
   const infoBar = useInfoBarActive();
   const minTimeZoom = timeZoomRange?.min ?? DEFAULT_MIN_TIME_ZOOM;
@@ -440,7 +466,23 @@ export function PianoRoll({
   const [pickHover, setPickHover] = useState<number | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const [preview, setPreview] = useState<GesturePreview | null>(null);
-  const editable = Boolean(onMoveNotes || onResizeNotes || onVelocityChange);
+  // Cursor state (opt-in): hover, and the modifier keys read live (on their keydown and keyup, not
+  // only at the next pointer move). The same keys also refresh a time-band drag, whose copy and merge
+  // modes are read live.
+  const [hovering, setHovering] = useState(false);
+  const lastPoint = useRef<{ x: number; y: number } | null>(null);
+  const [heldKeys, syncKeys] = useModifierKeys(
+    (withToolCursors && hovering) || preview?.kind === 'timeMove',
+    (event) => {
+      const current = gesture.current;
+      if (current?.kind === 'timeMove' && lastPoint.current) {
+        current.copy = event.ctrlKey || event.metaKey;
+        current.merge = event.altKey;
+        setPreview(previewFor(current, lastPoint.current));
+      }
+    }
+  );
+  const editable = Boolean(onMoveNotes || onResizeNotes || onResizeNotesStart || onVelocityChange);
   const snapUnit = gridUnit ?? adaptiveSubdivision(view.pixelsPerQuarter);
   const entryDefault = entryLength ?? snapUnit;
   const entryVelocityDefault = clamp(entryVelocity ?? DEFAULT_ENTRY_VELOCITY, 0, 1);
@@ -615,7 +657,7 @@ export function PianoRoll({
     const dx = snapped((point.x - current.x) / view.pixelsPerQuarter);
     const dy = point.y - current.y;
     const ids = new Set(current.ids);
-    let dStart = current.kind === 'move' ? dx : 0;
+    let dStart = current.kind === 'move' || current.kind === 'resizeStart' ? dx : 0;
     let dPitch =
       current.kind === 'move' ? (-Math.round(dy / view.pixelsPerSemitone) || 0) * 100 : 0;
     if (current.kind === 'move') {
@@ -656,6 +698,7 @@ export function PianoRoll({
       return;
     }
     const point = rollPointAt(event);
+    lastPoint.current = point;
     if (current.kind === 'paint') {
       advancePaint(current, point);
     } else if (current.kind === 'erase') {
@@ -783,6 +826,8 @@ export function PianoRoll({
       }
     } else if (current.kind === 'resize' && result.dDuration !== 0) {
       onResizeNotes?.(current.ids, result.dDuration);
+    } else if (current.kind === 'resizeStart' && result.dStart !== 0) {
+      onResizeNotesStart?.(current.ids, result.dStart);
     } else if (current.kind === 'velocity' && Math.abs(result.dVelocity) >= 0.01) {
       onVelocityChange?.(current.ids, result.dVelocity);
     }
@@ -812,7 +857,8 @@ export function PianoRoll({
   const ghosting =
     preview !== null &&
     (preview.kind === 'timeMove' ||
-      (ghostDrag && (preview.kind === 'move' || preview.kind === 'resize')) ||
+      (ghostDrag &&
+        (preview.kind === 'move' || preview.kind === 'resize' || preview.kind === 'resizeStart')) ||
       (preview.kind === 'move' && preview.copy === true));
 
   /** What the roll draws: the notes, moved, resized or re-voiced by the gesture in progress. */
@@ -825,12 +871,13 @@ export function PianoRoll({
         return note;
       }
       const pitchMidicents = clamp(note.pitchMidicents + preview.dPitch, 0, 12700);
+      const edge = startEdgeShift(note, preview);
       return {
         ...note,
         color: pitchColor?.(pitchMidicents) ?? note.color,
-        start: Math.max(0, note.start + preview.dStart),
+        start: Math.max(0, note.start + (edge ?? preview.dStart)),
         pitchMidicents,
-        duration: Math.max(MIN_NOTE_QUARTERS, note.duration + preview.dDuration),
+        duration: Math.max(MIN_NOTE_QUARTERS, note.duration + preview.dDuration - (edge ?? 0)),
         velocity: clamp((note.velocity ?? 1) + preview.dVelocity, 0, 1),
       };
     });
@@ -891,11 +938,14 @@ export function PianoRoll({
           ...note,
           id: `ghost:${note.id}`,
           sourceId: selectionId(note),
-          start: Math.max(0, note.start + preview.dStart),
+          start: Math.max(0, note.start + (startEdgeShift(note, preview) ?? preview.dStart)),
           pitchMidicents,
           // Recolored as the pitch under the pointer changes.
           color: pitchColor?.(pitchMidicents) ?? note.color,
-          duration: Math.max(MIN_NOTE_QUARTERS, note.duration + preview.dDuration),
+          duration: Math.max(
+            MIN_NOTE_QUARTERS,
+            note.duration + preview.dDuration - (startEdgeShift(note, preview) ?? 0)
+          ),
           label:
             preview.kind === 'move' ? midiPitchLabel(Math.round(pitchMidicents / 100)) : note.label,
         };
@@ -980,6 +1030,23 @@ export function PianoRoll({
     });
   }
 
+  /**
+   * Which part of a note a pointer x (timeline pixels) is over: an edge zone (when that edge's resize
+   * is wired) of min(6 px, a third of the width) at each side, otherwise the body. One rule for the
+   * press and the hover cursor.
+   */
+  function noteZone(note: PianoRollNote, x: number): 'left' | 'right' | 'body' {
+    const rect = noteRect(note, view);
+    const edge = Math.min(RESIZE_HANDLE_PIXELS, rect.width / 3);
+    if (onResizeNotesStart && x <= rect.left + edge) {
+      return 'left';
+    }
+    if (onResizeNotes && x >= rect.left + rect.width - edge) {
+      return 'right';
+    }
+    return 'body';
+  }
+
   function beginNoteGesture(note: PianoRollNote, event: ReactPointerEvent<HTMLElement>) {
     doubleDrewAt.current = null;
     lastEmptyPress.current = null;
@@ -1011,18 +1078,18 @@ export function PianoRoll({
       return;
     }
     const point = rollPointAt(event);
-    const rect = noteRect(note, view);
+    const zone = noteZone(note, point.x);
     const kind = velocityDrag
       ? 'velocity'
       : copyPress
         ? 'move'
-        : onResizeNotes &&
-            rect.width > 2 * RESIZE_HANDLE_PIXELS &&
-            point.x >= rect.left + rect.width - RESIZE_HANDLE_PIXELS
+        : zone === 'right'
           ? 'resize'
-          : onMoveNotes
-            ? 'move'
-            : null;
+          : zone === 'left'
+            ? 'resizeStart'
+            : onMoveNotes
+              ? 'move'
+              : null;
     if (!kind) {
       return;
     }
@@ -1844,12 +1911,27 @@ export function PianoRoll({
                   data-selectable={selectable || undefined}
                   data-tool={selectable ? activeTool : undefined}
                   data-copying={preview?.copy ? '' : undefined}
+                  data-cursors={withToolCursors || undefined}
+                  data-alt={withToolCursors && heldKeys.alt && onVelocityChange ? '' : undefined}
+                  data-copy-key={withToolCursors && heldKeys.copy && onMoveNotes ? '' : undefined}
+                  data-gesture={
+                    withToolCursors &&
+                    preview &&
+                    ['move', 'resize', 'resizeStart', 'velocity', 'timeMove'].includes(preview.kind)
+                      ? preview.kind
+                      : undefined
+                  }
+                  style={withToolCursors ? toolCursorStyle : undefined}
                   data-picking={pickPitch ? '' : undefined}
                   data-band-press
                   tabIndex={selectable ? 0 : undefined}
                   onKeyDown={detachedScroll ? undefined : panelKeyDown}
                   onPointerDown={beginMarquee}
+                  onPointerEnter={withToolCursors ? () => setHovering(true) : undefined}
                   onPointerMove={(event) => {
+                    if (withToolCursors) {
+                      syncKeys(event);
+                    }
                     if (pickPitch) {
                       setPickHover(cellAt(rollPointAt(event)).midi);
                       return;
@@ -1878,7 +1960,14 @@ export function PianoRoll({
                     setMarquee(null);
                     setMarqueeIds(null);
                   }}
-                  onPointerLeave={pickPitch ? () => setPickHover(null) : undefined}
+                  onPointerLeave={() => {
+                    if (pickPitch) {
+                      setPickHover(null);
+                    }
+                    if (withToolCursors) {
+                      setHovering(false);
+                    }
+                  }}
                   onContextMenu={openMenu}
                   onDoubleClick={doubleClick}
                 >
@@ -1973,6 +2062,17 @@ export function PianoRoll({
                           infoBar
                             ? undefined
                             : `${note.label} · ${note.start.toFixed(3)} qn · ${note.duration.toFixed(3)} qn`
+                        }
+                        onPointerMove={
+                          withToolCursors && selectable
+                            ? (event) => {
+                                // The edge zone under the pointer, for the cursor (the press uses the same rule).
+                                event.currentTarget.dataset.zone = noteZone(
+                                  note,
+                                  rollPointAt(event).x
+                                );
+                              }
+                            : undefined
                         }
                         onPointerDown={
                           selectable

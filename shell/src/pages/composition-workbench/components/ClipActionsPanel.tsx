@@ -1,12 +1,18 @@
-import { useEffect, useState, type MouseEvent } from 'react';
-import { Button, Group, SegmentedControl, Stack, Text, TextInput } from '@mantine/core';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
+import { Accordion, Button, Group, SegmentedControl, Stack, Text, TextInput } from '@mantine/core';
 import { runClipAction } from '../clipActionRunner';
 import type { ClipActionParams } from '../clipActions';
 import { clipActionById } from '../clipTypes';
 import { useDesk } from '../desk';
 import { useNoteClipboard } from '../noteClipboard';
 import { readNoteEditor, useNoteEditorState } from '../noteEditorChannel';
+import {
+  ACTION_SECTION_IDS,
+  useNoteEditorPreferences,
+  type ActionSectionId,
+} from '../noteEditorPreferences';
 import type { Snippet } from '../snippet';
+import classes from './ClipActionsPanel.module.css';
 
 /** The rotation amount field stepped by one (a field that is not a whole number steps from 0). */
 function stepRotation(text: string, delta: number): number {
@@ -21,7 +27,8 @@ function stepRotation(text: string, delta: number): number {
  * button is pressed; never a render's copy), otherwise on the whole clip, and lands as its own
  * version (`transform-<id>`, not a hand edit) and one undo step. A refusal is shown here and
  * changes nothing. Pressing a button never moves focus or touches the editor's selection: the
- * selection lives in the editor, the panel only reads it.
+ * selection lives in the editor, the panel only reads it. The controls sit in four collapsible
+ * sections (Time, Pitch, Values, Clipboard), several open at once.
  */
 export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
   const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
@@ -34,6 +41,8 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
   const [equalLength, setEqualLength] = useState('');
   const [equalVelocity, setEqualVelocity] = useState('');
   const clipboard = useNoteClipboard();
+  // Which sections are open is a per-viewer setting (outside history and projects).
+  const [preferences, updatePreferences] = useNoteEditorPreferences();
   const disabled = loading || locked;
 
   // A notice is about the selection it was made with: drop it when the editor's selection changes.
@@ -130,6 +139,15 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
         ? `${selection.ids.length} selected note${selection.ids.length === 1 ? '' : 's'}`
         : 'the whole clip';
 
+  const section = (id: ActionSectionId, title: string, children: ReactNode) => (
+    <Accordion.Item value={id} data-section={id}>
+      <Accordion.Control>{title}</Accordion.Control>
+      <Accordion.Panel>
+        <Stack gap="xs">{children}</Stack>
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+
   return (
     <Stack gap="xs" role="group" aria-label="Clip actions" onMouseDown={keepFocus}>
       <Text size="xs" fw={600}>
@@ -138,189 +156,234 @@ export function ClipActionsPanel({ snippet }: { snippet: Snippet }) {
       <Text size="xs" c="dimmed" aria-live="polite">
         Acts on {scope}.
       </Text>
-      <Stack gap={4} role="group" aria-label="Scale">
-        <Group gap={4} wrap="wrap">
-          <Text size="xs">Scale</Text>
-          {button('scale', '×2', 'Scale by 2', () => run('scale', { factor: 2, mode }))}
-          {button('scale', '÷2', 'Scale by one half', () => run('scale', { factor: 0.5, mode }))}
-        </Group>
-        <SegmentedControl
-          size="xs"
-          aria-label="Scale mode"
-          disabled={disabled}
-          value={mode}
-          onChange={(value) => setMode(value === 'individual' ? 'individual' : 'whole')}
-          data={[
-            { value: 'whole', label: 'Whole' },
-            { value: 'individual', label: 'Individually' },
-          ]}
-        />
-        <Group gap={4} wrap="nowrap">
-          <TextInput
-            size="xs"
-            aria-label="Scale factor"
-            placeholder="2, 0.5 or 3/2"
-            value={factor}
-            disabled={disabled}
-            onChange={(event) => setFactor(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                run('scale', { factor, mode });
-              }
-            }}
-          />
-          {button('scale', 'Apply', 'Apply scale', () => run('scale', { factor, mode }))}
-        </Group>
-      </Stack>
-      <Group gap={4} wrap="wrap" role="group" aria-label="Reverse">
-        <Text size="xs">Reverse</Text>
-        {button('reverse-time', 'In time', 'Reverse in time', () => run('reverse-time'))}
-        {button('reverse-order', 'Order', 'Reverse order', () => run('reverse-order'))}
-      </Group>
-      <Stack gap={4} role="group" aria-label="Rotate">
-        <Text size="xs">Rotate</Text>
-        <Group gap={4} wrap="wrap">
-          <TextInput
-            size="xs"
-            aria-label="Rotate amount"
-            placeholder="1 or -1"
-            value={rotation}
-            disabled={disabled}
-            onChange={(event) => setRotation(event.currentTarget.value)}
-          />
-          <Button
-            size="compact-xs"
-            variant="default"
-            aria-label="Rotate one step back"
-            disabled={disabled || !available('rotate-values')}
-            onClick={() => setRotation(String(stepRotation(rotation, -1)))}
-          >
-            −1
-          </Button>
-          <Button
-            size="compact-xs"
-            variant="default"
-            aria-label="Rotate one step forward"
-            disabled={disabled || !available('rotate-values')}
-            onClick={() => setRotation(String(stepRotation(rotation, 1)))}
-          >
-            +1
-          </Button>
-        </Group>
-        <Group gap={4} wrap="wrap">
-          {button('rotate-values', 'Values', 'Rotate values', () =>
-            run('rotate-values', { amount: rotation })
-          )}
-          {button('rotate-durations', 'Durations', 'Rotate durations', () =>
-            run('rotate-durations', { amount: rotation })
-          )}
-          {button('rotate-time', 'Time', 'Rotate in time', () =>
-            run('rotate-time', { amount: rotation })
-          )}
-        </Group>
-      </Stack>
-      <Group gap={4} wrap="wrap" role="group" aria-label="Clipboard">
-        <Text size="xs">Clipboard</Text>
-        {button('copy', 'Copy', 'Copy notes', () => run('copy'))}
-        <Button
-          size="compact-xs"
-          variant="default"
-          aria-label="Paste notes"
-          disabled={disabled || !available('paste') || clipboard === null}
-          onClick={() => run('paste')}
-        >
-          Paste
-        </Button>
-      </Group>
-      <Group gap={4} wrap="wrap">
-        {button('legato', 'Legato', 'Legato', () => run('legato'))}
-        {button('quantize', 'Quantize', 'Quantize', () => run('quantize'))}
-        {button('duplicate', 'Duplicate', 'Duplicate selection', () => run('duplicate'))}
-      </Group>
-      <Stack gap={4} role="group" aria-label="Invert">
-        <Group gap={4} wrap="wrap">
-          <Text size="xs">Invert</Text>
-          {button('invert', 'Invert', 'Invert', () =>
-            pick(
-              'invert',
-              'Click a pitch to mirror the notes around it, or press Enter to mirror around the middle of the notes. Escape cancels.',
-              (midi) => ({ axis: midi * 100 }),
-              true
-            )
-          )}
-        </Group>
-      </Stack>
-      <Stack gap={4} role="group" aria-label="Make equal">
-        <Text size="xs">Make all equal</Text>
-        <Group gap={4} wrap="nowrap">
-          <TextInput
-            size="xs"
-            aria-label="Equal duration"
-            placeholder="first note's: 1, 0.5 or 1/8"
-            value={equalLength}
-            disabled={disabled}
-            onChange={(event) => setEqualLength(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                run('equal-duration', { duration: equalLength });
-              }
-            }}
-          />
-          {button('equal-duration', 'Duration', 'Make all durations equal', () =>
-            run('equal-duration', { duration: equalLength })
-          )}
-        </Group>
-        <Group gap={4} wrap="nowrap">
-          <TextInput
-            size="xs"
-            aria-label="Equal velocity"
-            placeholder="first note's: 1 to 100 %"
-            value={equalVelocity}
-            disabled={disabled}
-            onChange={(event) => setEqualVelocity(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                run('equal-velocity', { velocity: equalVelocity });
-              }
-            }}
-          />
-          {button('equal-velocity', 'Velocity', 'Make all velocities equal', () =>
-            run('equal-velocity', { velocity: equalVelocity })
-          )}
-        </Group>
-        <Group gap={4} wrap="wrap">
-          {button('equal-pitch', 'Pitch', 'Make all pitches equal', () =>
-            pick(
-              'equal-pitch',
-              'Click a pitch to give every note that pitch (a chord becomes that single pitch). Escape cancels.',
-              (midi) => ({ pitch: midi * 100 }),
-              false
-            )
-          )}
-        </Group>
-      </Stack>
-      <Stack gap={4} role="group" aria-label="Transpose">
-        <Text size="xs">Transpose</Text>
-        <Group gap={4} wrap="wrap">
-          <TextInput
-            size="xs"
-            aria-label="Transpose semitones"
-            placeholder="semitones"
-            value={semitones}
-            disabled={disabled}
-            onChange={(event) => setSemitones(event.currentTarget.value)}
-          />
-          {button('transpose', 'Apply', 'Transpose by semitones', () =>
-            run('transpose', { semitones })
-          )}
-        </Group>
-        <Group gap={4} wrap="wrap">
-          {button('transpose', 'Octave −', 'Octave down', () =>
-            run('transpose', { semitones: -12 })
-          )}
-          {button('transpose', 'Octave +', 'Octave up', () => run('transpose', { semitones: 12 }))}
-        </Group>
-      </Stack>
+      {/* Labelled, collapsible sections; several can be open at once and the open ones are
+          remembered per viewer (noteEditorPreferences), never in the history or a project. */}
+      <Accordion
+        multiple
+        chevronSize={12}
+        chevronPosition="left"
+        classNames={{
+          item: classes.item,
+          control: classes.control,
+          label: classes.label,
+          content: classes.content,
+          chevron: classes.chevron,
+        }}
+        value={preferences.actionSections}
+        onChange={(open) =>
+          updatePreferences({
+            actionSections: ACTION_SECTION_IDS.filter((id) => open.includes(id)),
+          })
+        }
+      >
+        {section(
+          'time',
+          'Time',
+          <>
+            <Stack gap={4} role="group" aria-label="Scale">
+              <Group gap={4} wrap="wrap">
+                <Text size="xs">Scale</Text>
+                {button('scale', '×2', 'Scale by 2', () => run('scale', { factor: 2, mode }))}
+                {button('scale', '÷2', 'Scale by one half', () =>
+                  run('scale', { factor: 0.5, mode })
+                )}
+              </Group>
+              <SegmentedControl
+                size="xs"
+                aria-label="Scale mode"
+                disabled={disabled}
+                value={mode}
+                onChange={(value) => setMode(value === 'individual' ? 'individual' : 'whole')}
+                data={[
+                  { value: 'whole', label: 'Whole' },
+                  { value: 'individual', label: 'Individually' },
+                ]}
+              />
+              <Group gap={4} wrap="nowrap">
+                <TextInput
+                  size="xs"
+                  aria-label="Scale factor"
+                  placeholder="2, 0.5 or 3/2"
+                  value={factor}
+                  disabled={disabled}
+                  onChange={(event) => setFactor(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      run('scale', { factor, mode });
+                    }
+                  }}
+                />
+                {button('scale', 'Apply', 'Apply scale', () => run('scale', { factor, mode }))}
+              </Group>
+            </Stack>
+            <Group gap={4} wrap="wrap" role="group" aria-label="Reverse">
+              <Text size="xs">Reverse</Text>
+              {button('reverse-time', 'In time', 'Reverse in time', () => run('reverse-time'))}
+              {button('reverse-order', 'Order', 'Reverse order', () => run('reverse-order'))}
+            </Group>
+            <Stack gap={4} role="group" aria-label="Rotate">
+              <Text size="xs">Rotate</Text>
+              <Group gap={4} wrap="wrap">
+                <TextInput
+                  size="xs"
+                  aria-label="Rotate amount"
+                  placeholder="1 or -1"
+                  value={rotation}
+                  disabled={disabled}
+                  onChange={(event) => setRotation(event.currentTarget.value)}
+                />
+                <Button
+                  size="compact-xs"
+                  variant="default"
+                  aria-label="Rotate one step back"
+                  disabled={disabled || !available('rotate-values')}
+                  onClick={() => setRotation(String(stepRotation(rotation, -1)))}
+                >
+                  −1
+                </Button>
+                <Button
+                  size="compact-xs"
+                  variant="default"
+                  aria-label="Rotate one step forward"
+                  disabled={disabled || !available('rotate-values')}
+                  onClick={() => setRotation(String(stepRotation(rotation, 1)))}
+                >
+                  +1
+                </Button>
+              </Group>
+              <Group gap={4} wrap="wrap">
+                {button('rotate-values', 'Values', 'Rotate values', () =>
+                  run('rotate-values', { amount: rotation })
+                )}
+                {button('rotate-durations', 'Durations', 'Rotate durations', () =>
+                  run('rotate-durations', { amount: rotation })
+                )}
+                {button('rotate-time', 'Time', 'Rotate in time', () =>
+                  run('rotate-time', { amount: rotation })
+                )}
+              </Group>
+            </Stack>
+            <Group gap={4} wrap="wrap" role="group" aria-label="Shape">
+              {button('legato', 'Legato', 'Legato', () => run('legato'))}
+              {button('quantize', 'Quantize', 'Quantize', () => run('quantize'))}
+            </Group>
+          </>
+        )}
+        {section(
+          'pitch',
+          'Pitch',
+          <>
+            <Stack gap={4} role="group" aria-label="Transpose">
+              <Text size="xs">Transpose</Text>
+              <Group gap={4} wrap="wrap">
+                <TextInput
+                  size="xs"
+                  aria-label="Transpose semitones"
+                  placeholder="semitones"
+                  value={semitones}
+                  disabled={disabled}
+                  onChange={(event) => setSemitones(event.currentTarget.value)}
+                />
+                {button('transpose', 'Apply', 'Transpose by semitones', () =>
+                  run('transpose', { semitones })
+                )}
+              </Group>
+              <Group gap={4} wrap="wrap">
+                {button('transpose', 'Octave −', 'Octave down', () =>
+                  run('transpose', { semitones: -12 })
+                )}
+                {button('transpose', 'Octave +', 'Octave up', () =>
+                  run('transpose', { semitones: 12 })
+                )}
+              </Group>
+            </Stack>
+            <Stack gap={4} role="group" aria-label="Invert">
+              <Group gap={4} wrap="wrap">
+                <Text size="xs">Invert</Text>
+                {button('invert', 'Invert', 'Invert', () =>
+                  pick(
+                    'invert',
+                    'Click a pitch to mirror the notes around it, or press Enter to mirror around the middle of the notes. Escape cancels.',
+                    (midi) => ({ axis: midi * 100 }),
+                    true
+                  )
+                )}
+              </Group>
+            </Stack>
+            <Group gap={4} wrap="wrap" role="group" aria-label="Make equal pitch">
+              <Text size="xs">Make all equal</Text>
+              {button('equal-pitch', 'Pitch', 'Make all pitches equal', () =>
+                pick(
+                  'equal-pitch',
+                  'Click a pitch to give every note that pitch (a chord becomes that single pitch). Escape cancels.',
+                  (midi) => ({ pitch: midi * 100 }),
+                  false
+                )
+              )}
+            </Group>
+          </>
+        )}
+        {section(
+          'values',
+          'Values',
+          <Stack gap={4} role="group" aria-label="Make equal">
+            <Text size="xs">Make all equal</Text>
+            <Group gap={4} wrap="nowrap">
+              <TextInput
+                size="xs"
+                aria-label="Equal duration"
+                placeholder="first note's: 1, 0.5 or 1/8"
+                value={equalLength}
+                disabled={disabled}
+                onChange={(event) => setEqualLength(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    run('equal-duration', { duration: equalLength });
+                  }
+                }}
+              />
+              {button('equal-duration', 'Duration', 'Make all durations equal', () =>
+                run('equal-duration', { duration: equalLength })
+              )}
+            </Group>
+            <Group gap={4} wrap="nowrap">
+              <TextInput
+                size="xs"
+                aria-label="Equal velocity"
+                placeholder="first note's: 1 to 100 %"
+                value={equalVelocity}
+                disabled={disabled}
+                onChange={(event) => setEqualVelocity(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    run('equal-velocity', { velocity: equalVelocity });
+                  }
+                }}
+              />
+              {button('equal-velocity', 'Velocity', 'Make all velocities equal', () =>
+                run('equal-velocity', { velocity: equalVelocity })
+              )}
+            </Group>
+          </Stack>
+        )}
+        {section(
+          'clipboard',
+          'Clipboard',
+          <Group gap={4} wrap="wrap" role="group" aria-label="Clipboard">
+            {button('duplicate', 'Duplicate', 'Duplicate selection', () => run('duplicate'))}
+            {button('copy', 'Copy', 'Copy notes', () => run('copy'))}
+            <Button
+              size="compact-xs"
+              variant="default"
+              aria-label="Paste notes"
+              disabled={disabled || !available('paste') || clipboard === null}
+              onClick={() => run('paste')}
+            >
+              Paste
+            </Button>
+          </Group>
+        )}
+      </Accordion>
       {editor?.picking && (
         <Group gap={4} wrap="nowrap" role="status">
           <Text size="xs">Pick a pitch in the roll.</Text>

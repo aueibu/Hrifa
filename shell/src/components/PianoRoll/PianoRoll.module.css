@@ -591,3 +591,85 @@
 .keyboard[data-picking] .key {
   cursor: crosshair;
 }
+
+/*
+ * Tool cursors (opt-in: the roll sets data-cursors). The Pointer is the plain arrow, a note body moves,
+ * its edges resize sideways, Alt over a note is the vertical (velocity) resize, Ctrl/Cmd the copy
+ * cursor, and a drag shows what it is doing. The tool cursors are small SVGs (toolCursors.ts) with the
+ * stock cursors as fallbacks; every rule is scoped to data-cursors so the other rolls are unchanged.
+ */
+.roll[data-selectable][data-cursors] {
+  cursor: default;
+}
+
+.roll[data-selectable][data-cursors] .note {
+  cursor: move;
+}
+
+.roll[data-selectable][data-cursors] .note[data-zone='left'],
+.roll[data-selectable][data-cursors] .note[data-zone='right'] {
+  cursor: ew-resize;
+}
+
+.roll[data-selectable][data-cursors][data-copy-key] .note {
+  cursor: copy;
+}
+
+.roll[data-selectable][data-cursors][data-alt] .note {
+  cursor: ns-resize;
+}
+
+.roll[data-selectable][data-cursors][data-tool='pencil'],
+.roll[data-selectable][data-cursors][data-tool='pencil'] .note {
+  cursor: var(--cursor-pencil, cell);
+}
+
+.roll[data-selectable][data-cursors][data-tool='paint'],
+.roll[data-selectable][data-cursors][data-tool='paint'] .note {
+  cursor: var(--cursor-paint, cell);
+}
+
+.roll[data-selectable][data-cursors][data-tool='knife'],
+.roll[data-selectable][data-cursors][data-tool='knife'] .note {
+  cursor: var(--cursor-knife, col-resize);
+}
+
+.roll[data-selectable][data-cursors][data-tool='eraser'],
+.roll[data-selectable][data-cursors][data-tool='eraser'] .note {
+  cursor: var(--cursor-eraser, not-allowed);
+}
+
+.roll[data-selectable][data-cursors][data-tool='time'],
+.roll[data-selectable][data-cursors][data-tool='time'] .note {
+  cursor: var(--cursor-time, text);
+}
+
+.roll[data-selectable][data-cursors][data-picking],
+.roll[data-selectable][data-cursors][data-picking] .note {
+  cursor: crosshair;
+}
+
+/* While a drag runs the pointer is captured by the roll, so the roll itself carries the cursor. */
+.roll[data-selectable][data-cursors][data-gesture='move'],
+.roll[data-selectable][data-cursors][data-gesture='move'] .note,
+.roll[data-selectable][data-cursors][data-gesture='timeMove'],
+.roll[data-selectable][data-cursors][data-gesture='timeMove'] .note {
+  cursor: grabbing;
+}
+
+.roll[data-selectable][data-cursors][data-gesture='resize'],
+.roll[data-selectable][data-cursors][data-gesture='resize'] .note,
+.roll[data-selectable][data-cursors][data-gesture='resizeStart'],
+.roll[data-selectable][data-cursors][data-gesture='resizeStart'] .note {
+  cursor: ew-resize;
+}
+
+.roll[data-selectable][data-cursors][data-gesture='velocity'],
+.roll[data-selectable][data-cursors][data-gesture='velocity'] .note {
+  cursor: ns-resize;
+}
+
+.roll[data-selectable][data-cursors][data-copying],
+.roll[data-selectable][data-cursors][data-copying] .note {
+  cursor: copy;
+}
