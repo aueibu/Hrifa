@@ -2,7 +2,7 @@
 
 ## Status
 - Arc: ARC.md (Clips and the clip editor). The previous desk arc is archived in `ARC.desk.md` / `PROGRESS.desk.md` (committed at 39bb1af).
-- Current milestone: K5a-2 (unified roll + velocity panel), new 2-attempt budget authorised by the human 2026-11-12; K5t-2 committed 2a49a16
+- Current milestone: K5b (clip inspector: properties and transforms). K5a/K5a-2 committed 3efb314 (K5t-2 at 2a49a16)
 - State: K1 and K1b committed (415e5e3), K1b checkpoint accepted. K2 built, uncommitted, reviewed PASS-WITH-HUMAN-CHECK (gate green 54 / 626). Human decided the lineage tree should persist like Google Docs version history and chose full snapshots in IndexedDB over session-only or diff-based history; new milestone K2b added to ARC.md. K2 checkpoint is combined with K2b's.
 
 ## Log
@@ -87,4 +87,4 @@ Human authorised a new 2-attempt budget and redirected the design: roll + lane a
 Paint addendum done (2026-11-12): the paint gesture captures the entry velocity at press and gives every stroke note that velocity (preview + commit); paint never changes the remembered velocity. Gate green 64 / 784. Also: a blank test page was a stale Vite cache of HorizontalScrollbar.tsx (served empty while being rewritten); fixed by touching the file; not a code bug.
 
 ## Next action
-Human feel check of K5a / K5a-2 / paint (hard-refresh first): scroll at both ends incl. diagonal trackpad, V from inside the lane, splitter, ghost and paint colours by pitch, saturation-only velocity, palette, paint velocity. Everything since 2a49a16 is uncommitted. On the human's OK: commit, then K5b (human checkpoint before and after).
+K5b is at its 'human checkpoint before': acceptance must be written WITH the human before building (exact transform semantics, inspector layout, clip-properties data design). Orchestrator posted a proposal and questions; waiting for answers. Then write acceptance into ARC.md, builder, reviewer, one gate, human checkpoint after.
