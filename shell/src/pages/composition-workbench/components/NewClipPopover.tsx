@@ -30,7 +30,9 @@ export function NewClipPopover({ onCreated }: { onCreated?(snippet: Snippet): vo
       : null;
 
   function create() {
-    const clip = addBlankClip(typeId, barsLength(settings.transport.meter, defaults.bars));
+    const clip = addBlankClip(typeId, barsLength(settings.transport.meter, defaults.bars), {
+      timeSignature: settings.transport.meter,
+    });
     if (clip) {
       onCreated?.(clip);
     }

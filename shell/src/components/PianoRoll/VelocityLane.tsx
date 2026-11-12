@@ -1,14 +1,21 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import { rollGridLines } from './grid';
-import { PIANO_ROLL_KEYBOARD_WIDTH, type PianoRollGridLine, type PianoRollNote } from './model';
+import { gridWindow, rollGridLines } from './grid';
+import {
+  PIANO_ROLL_KEYBOARD_WIDTH,
+  type PianoRollGridLine,
+  type PianoRollGridSource,
+  type PianoRollNote,
+} from './model';
 import { selectionId } from './selection';
+import { layerSpan, timelineLayout } from './timelineLayout';
 import { velocityFillColor, velocityLevel as level } from './velocityFill';
 import classes from './VelocityLane.module.css';
 
@@ -31,6 +38,8 @@ export interface VelocityLaneProps {
   /** The timeline length in quarter notes (the lane clips to its own width). */
   duration: number;
   selectedIds?: string[];
+  /** The selected time span (quarter notes), drawn as a band over the lane like the roll's. Opt-in. */
+  selectedRange?: { start: number; end: number } | null;
   collapsed?: boolean;
   onCollapsedChange?(collapsed: boolean): void;
   /**
@@ -66,7 +75,7 @@ export interface VelocityLaneProps {
    * while a drag previews a new velocity.
    */
   velocityFill?: boolean;
-  gridLines?: PianoRollGridLine[];
+  gridLines?: PianoRollGridLine[] | PianoRollGridSource;
   gridUnit?: number;
   viewWidth?: number;
 }
@@ -126,6 +135,7 @@ export function VelocityLane({
   scrollLeft,
   duration,
   selectedIds = [],
+  selectedRange,
   collapsed = false,
   onCollapsedChange,
   onVelocityChange,
@@ -144,9 +154,29 @@ export function VelocityLane({
   const [liveHeight, setLiveHeight] = useState<number | null>(null);
   // The same timeline the roll draws: at least its duration and at least the visible width.
   const visibleQuarters = Math.max(Math.max(1, duration), viewWidth / pixelsPerQuarter);
-  const grid = gridLines
-    ? rollGridLines(gridLines, gridUnit, visibleQuarters, pixelsPerQuarter)
-    : [];
+  // A timeline too wide to lay out whole is windowed exactly as the roll above it (timelineLayout.ts).
+  const layout = timelineLayout(scrollLeft, viewWidth, visibleQuarters * pixelsPerQuarter);
+  const rangeSpan =
+    selectedRange && selectedRange.end > selectedRange.start
+      ? layerSpan(
+          layout,
+          selectedRange.start * pixelsPerQuarter,
+          (selectedRange.end - selectedRange.start) * pixelsPerQuarter
+        )
+      : null;
+  const grid = useMemo(
+    () =>
+      gridLines
+        ? rollGridLines(
+            gridLines,
+            gridUnit,
+            visibleQuarters,
+            pixelsPerQuarter,
+            gridWindow(scrollLeft, viewWidth, pixelsPerQuarter, visibleQuarters)
+          )
+        : [],
+    [gridLines, gridUnit, visibleQuarters, pixelsPerQuarter, scrollLeft, viewWidth]
+  );
   // The most the lane may take: a fraction of the panel, within the splitter's own bounds.
   const limit = Math.max(
     minHeight,
@@ -327,8 +357,10 @@ export function VelocityLane({
             <div
               className={classes.content}
               style={{
-                width: Math.max(1, visibleQuarters * pixelsPerQuarter),
-                transform: `translateX(${-scrollLeft}px)`,
+                width: layout.windowed
+                  ? layout.width
+                  : Math.max(1, visibleQuarters * pixelsPerQuarter),
+                transform: `translateX(${-(scrollLeft - layout.origin)}px)`,
               }}
             >
               {grid.map((line) => (
@@ -338,10 +370,21 @@ export function VelocityLane({
                   data-testid="velocity-grid-line"
                   data-kind={line.kind}
                   data-subdivision={line.subdivision || undefined}
-                  style={{ left: line.at * pixelsPerQuarter }}
+                  style={{ left: line.at * pixelsPerQuarter - layout.origin }}
                 />
               ))}
+              {rangeSpan && (
+                <span
+                  className={classes.range}
+                  data-testid="velocity-range"
+                  style={{ left: rangeSpan.left, width: rangeSpan.width }}
+                />
+              )}
               {notes.map((note) => {
+                const stemSpan = layerSpan(layout, note.start * pixelsPerQuarter);
+                if (!stemSpan) {
+                  return null;
+                }
                 const id = selectionId(note);
                 const shifted = preview?.ids.has(id) ? preview.delta : 0;
                 const velocity = Math.min(1, Math.max(0, level(note.velocity) + shifted));
@@ -355,7 +398,7 @@ export function VelocityLane({
                     data-note={note.id}
                     style={
                       {
-                        left: note.start * pixelsPerQuarter,
+                        left: stemSpan.left,
                         top,
                         height: trackHeight - top,
                         '--stem-color': baseColor,

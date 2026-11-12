@@ -56,3 +56,31 @@ export function reconcileBar(
   }
   return { write: true, emitted: [] };
 }
+
+/** The most programmatic writes remembered while their scroll events may still be on the way. */
+const MAX_WRITTEN = 16;
+
+/** Records a position this component wrote into a scroller, oldest dropped past a small cap. */
+export function recordWritten(written: readonly number[], value: number): number[] {
+  return [...written, value].slice(-MAX_WRITTEN);
+}
+
+/**
+ * Whether a scroll event reports a position this component wrote itself. Browsers fire the event a
+ * frame after the write, so it can arrive after a newer view was applied: it is then an echo, not a
+ * user move, and must not be reported (it would revert the newer position).
+ */
+export function isWrittenEcho(written: readonly number[], reported: number): boolean {
+  return written.some((value) => !isBarMove(value, reported));
+}
+
+/** The most a native scrollbar is asked to scroll, in pixels (a clip can be far wider than a browser lays out). */
+export const MAX_NATIVE_BAR_RANGE = 8_000_000;
+
+/**
+ * How many timeline pixels one native scrollbar pixel stands for: 1 up to `MAX_NATIVE_BAR_RANGE`,
+ * then the ratio that brings the native range back to it (logical scrollLeft = native * ratio).
+ */
+export function barRatio(range: number): number {
+  return Math.max(1, range / MAX_NATIVE_BAR_RANGE);
+}

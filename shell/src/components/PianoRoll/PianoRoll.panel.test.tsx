@@ -454,3 +454,168 @@ describe('horizontal scrollbar', () => {
     expect(onScrollLeft).toHaveBeenCalledWith(260);
   });
 });
+
+describe('horizontal scrollbar: late scroll events', () => {
+  function setup(range: number, scrollLeft: number) {
+    const onScrollLeft = vi.fn();
+    const view = render(
+      <HorizontalScrollbar range={range} scrollLeft={scrollLeft} onScrollLeft={onScrollLeft} />
+    );
+    const strip = screen.getByTestId('roll-hscroll');
+    Object.defineProperty(strip, 'scrollLeft', { value: scrollLeft, writable: true });
+    const set = (r: number, left: number) =>
+      view.rerender(
+        <HorizontalScrollbar range={r} scrollLeft={left} onScrollLeft={onScrollLeft} />
+      );
+    return { strip, set, onScrollLeft };
+  }
+
+  it('a late echo of an earlier write, after a newer view, is not a user move', () => {
+    const { strip, set, onScrollLeft } = setup(RANGE, 0);
+    set(RANGE, 200); // write A
+    set(RANGE, 350); // a newer view B before A's scroll event arrives
+    expect(strip.scrollLeft).toBe(350);
+    strip.scrollLeft = 200; // the late event reports A
+    fireEvent.scroll(strip);
+    expect(onScrollLeft).not.toHaveBeenCalled();
+  });
+
+  it('the position the browser clamps to when the spacer shrinks is not a user move', () => {
+    const { strip, set, onScrollLeft } = setup(RANGE, 700);
+    strip.scrollLeft = 400; // zoom out: the browser clamped the bar before the new view was written
+    set(300, 250);
+    expect(strip.scrollLeft).toBe(250);
+    strip.scrollLeft = 400;
+    fireEvent.scroll(strip);
+    expect(onScrollLeft).not.toHaveBeenCalled();
+  });
+
+  it('a genuine user scroll still reports, also back to an earlier written position', () => {
+    const { strip, set, onScrollLeft } = setup(RANGE, 0);
+    set(RANGE, 200);
+    strip.scrollLeft = 500;
+    fireEvent.scroll(strip);
+    expect(onScrollLeft).toHaveBeenLastCalledWith(500);
+    set(RANGE, 500); // the owner applies the reported position
+    strip.scrollLeft = 200;
+    fireEvent.scroll(strip);
+    expect(onScrollLeft).toHaveBeenLastCalledWith(200);
+  });
+});
+
+describe('unified panel: wheel zoom anchored at the pointer', () => {
+  // The roll's scroller starts right of the 72 px keys gutter and 40 px below the panel's top.
+  const LEFT = 72;
+  const TOP = 40;
+  function place() {
+    const scroller = document.querySelector('[data-detached]') as HTMLElement;
+    scroller.getBoundingClientRect = () =>
+      ({ left: LEFT, top: TOP, right: LEFT + VIEW_WIDTH, bottom: TOP + 300 }) as DOMRect;
+    Object.defineProperty(scroller, 'clientWidth', { value: VIEW_WIDTH, configurable: true });
+    Object.defineProperty(scroller, 'clientHeight', { value: 300, configurable: true });
+  }
+  const timeAt = (view: PianoRollViewState, x: number) =>
+    (view.scrollLeft + x) / view.pixelsPerQuarter;
+
+  it('anchors from the latest view, not the (stale) scroller, at the cursor x', () => {
+    [0, 120, 333, 499].forEach((x) => {
+      const { unmount } = open({ start: { scrollLeft: 300 } });
+      place();
+      const scroller = document.querySelector('[data-detached]') as HTMLElement;
+      // A hidden scroller that does not follow the view: reading it would anchor somewhere else.
+      Object.defineProperty(scroller, 'scrollLeft', { value: 90, writable: true });
+      const roll = screen.getByRole('group', { name: /Piano roll/ });
+      // One zoom-in step, expected from the formula written out independently.
+      const ppq = 64 * 1.15;
+      fireEvent.wheel(roll, { deltaY: -100, ctrlKey: true, clientX: LEFT + x });
+      const now = readView();
+      expect(now.pixelsPerQuarter).toBeCloseTo(ppq, 6);
+      expect(now.scrollLeft).toBeCloseTo(((300 + x) / 64) * ppq - x, 6);
+      unmount();
+    });
+  });
+
+  it('keeps the time under the pointer over the roll, the ruler and the lane, across steps', () => {
+    [0, 120, 333, 499].forEach((x) => {
+      const { unmount } = open({ start: { scrollLeft: 300 } });
+      place();
+      const targets = [
+        screen.getByRole('group', { name: /Piano roll/ }),
+        screen.getByTestId('roll-ruler'),
+        screen.getByTestId('lane-track'),
+      ];
+      targets.forEach((target) => {
+        const before = readView();
+        const time = timeAt(before, x);
+        // Zoom in only: the timeline stays far from its ends, so every step must hold the anchor.
+        [-100, -100, -100].forEach((deltaY) => {
+          fireEvent.wheel(target, { deltaY, ctrlKey: true, clientX: LEFT + x });
+        });
+        const now = readView();
+        expect(now.scrollLeft).toBeGreaterThan(0);
+        expect(now.scrollLeft).toBeLessThan(20 * now.pixelsPerQuarter - VIEW_WIDTH);
+        expect(Math.abs(timeAt(now, x) - time) * now.pixelsPerQuarter).toBeLessThan(1);
+        // And back out by the same steps.
+        [100, 100, 100].forEach((deltaY) => {
+          fireEvent.wheel(target, { deltaY, ctrlKey: true, clientX: LEFT + x });
+        });
+        const back = readView();
+        expect(back.scrollLeft).toBeGreaterThan(0);
+        expect(Math.abs(timeAt(back, x) - time) * back.pixelsPerQuarter).toBeLessThan(1);
+      });
+      unmount();
+    });
+  });
+
+  it('a late scroll event echoing an earlier scrollTop write does not revert the view', () => {
+    open({ start: { scrollTop: 600 } });
+    place();
+    const scroller = document.querySelector('[data-detached]') as HTMLElement;
+    Object.defineProperty(scroller, 'scrollTop', { value: 600, writable: true });
+    const roll = screen.getByRole('group', { name: /Piano roll/ });
+    fireEvent.wheel(roll, { deltaY: -100, ctrlKey: true, altKey: true, clientY: TOP + 150 });
+    const first = readView();
+    expect(scroller.scrollTop).toBeCloseTo(first.scrollTop, 6); // written A
+    fireEvent.wheel(roll, { deltaY: -100, ctrlKey: true, altKey: true, clientY: TOP + 150 });
+    const second = readView();
+    expect(Math.abs(second.scrollTop - first.scrollTop)).toBeGreaterThan(1);
+    scroller.scrollTop = first.scrollTop; // the late event reports A
+    fireEvent.scroll(scroller);
+    expect(readView().scrollTop).toBe(second.scrollTop);
+    expect(readView().pixelsPerSemitone).toBe(second.pixelsPerSemitone);
+    // A genuine user scroll is still taken.
+    scroller.scrollTop = second.scrollTop + 80;
+    fireEvent.scroll(scroller);
+    expect(readView().scrollTop).toBe(second.scrollTop + 80);
+  });
+
+  it('keeps the pitch under the pointer, also for a burst of events before a render', () => {
+    open({ start: { scrollTop: 600 } });
+    place();
+    const roll = screen.getByRole('group', { name: /Piano roll/ });
+    const pitchAt = (view: PianoRollViewState, y: number) =>
+      127 - (view.scrollTop + y - 32) / view.pixelsPerSemitone;
+    const before = readView();
+    const pitch = pitchAt(before, 150);
+    act(() => {
+      [-100, -100, -100].forEach((deltaY) =>
+        fireEvent.wheel(roll, { deltaY, ctrlKey: true, altKey: true, clientY: TOP + 150 })
+      );
+    });
+    const after = readView();
+    expect(after.pixelsPerSemitone).toBeGreaterThan(before.pixelsPerSemitone);
+    expect(Math.abs(pitchAt(after, 150) - pitch) * after.pixelsPerSemitone).toBeLessThan(1);
+  });
+
+  it('a pointer over the keys gutter or past the roll anchors at the nearest edge', () => {
+    open({ start: { scrollLeft: 300 } });
+    place();
+    const roll = screen.getByRole('group', { name: /Piano roll/ });
+    const before = readView();
+    fireEvent.wheel(roll, { deltaY: -100, ctrlKey: true, clientX: 10 });
+    expect(timeAt(readView(), 0)).toBeCloseTo(timeAt(before, 0), 5);
+    const mid = readView();
+    fireEvent.wheel(roll, { deltaY: -100, ctrlKey: true, clientX: LEFT + VIEW_WIDTH + 200 });
+    expect(timeAt(readView(), VIEW_WIDTH)).toBeCloseTo(timeAt(mid, VIEW_WIDTH), 5);
+  });
+});

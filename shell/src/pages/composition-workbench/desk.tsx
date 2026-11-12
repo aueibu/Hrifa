@@ -85,7 +85,11 @@ interface DeskContextValue {
    * "New clip", "New clip 2", and so on. One undo step. Returns the clip, or null when the desk
    * refused it (loading or locked) or the type is unknown.
    */
-  addBlankClip(typeId: string, length: Rational): Snippet | null;
+  addBlankClip(
+    typeId: string,
+    length: Rational,
+    options?: { timeSignature?: string }
+  ): Snippet | null;
   removeSnippet(id: string): void;
   renameSnippet(id: string, name: string): void;
   setSnippetNote(id: string, note: string): void;
@@ -113,6 +117,11 @@ interface DeskContextValue {
     operation: string,
     options?: { coalesceKey?: string; handEdit?: boolean }
   ): SnippetEditResult;
+  /**
+   * The clip as it is on the desk right now (not as last rendered), for an edit that must start
+   * from the latest packet at the moment it commits.
+   */
+  latestSnippetById(id: string): Snippet | undefined;
   /** Moves the clip back (or forward) to a kept version; same clip, one undo step. */
   restoreSnippetVersionById(id: string, versionId: string): SnippetEditResult;
   /** Adds a new clip made from a version, directly after the original. Returns it. */
@@ -364,7 +373,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     [applyChange]
   );
   const addBlankClip = useCallback(
-    (typeId: string, length: Rational): Snippet | null => {
+    (typeId: string, length: Rational, options?: { timeSignature?: string }): Snippet | null => {
       const type = clipTypeById(typeId);
       if (!type) {
         return null;
@@ -374,6 +383,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString(),
         name: nextClipName(snippetsRef.current),
         length,
+        timeSignature: options?.timeSignature,
       });
       return applyChange((current) => [...current, clip]) ? clip : null;
     },
@@ -452,6 +462,11 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     },
     [applyChange]
   );
+  const latestSnippetById = useCallback(
+    (id: string) => snippetsRef.current.find((snippet) => snippet.id === id),
+    []
+  );
+
   const commitSnippetEditById = useCallback(
     (
       id: string,
@@ -613,6 +628,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       duplicateSnippetById,
       convertToPitchClassById,
       commitSnippetEditById,
+      latestSnippetById,
       restoreSnippetVersionById,
       createClipFromVersionById,
     }),
@@ -632,6 +648,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       duplicateSnippetById,
       convertToPitchClassById,
       commitSnippetEditById,
+      latestSnippetById,
       restoreSnippetVersionById,
       createClipFromVersionById,
     ]

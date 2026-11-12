@@ -105,6 +105,36 @@
   position: relative;
 }
 
+/* The selected time span, the same band as the roll's (see PianoRoll.module.css .range). */
+.range {
+  /*
+   * Bitwig-style span: the theme's cyan mark and accent mixed with white (a light, cyan wash),
+   * strong at the left and right edges (24px stops) and low in the middle so the notes inside stay
+   * readable. The edge lines are a fixed light grey (white mixed with a little black) so they read
+   * in both schemes. Time selections only. Roll and lane share this recipe.
+   */
+  --band: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%,
+    white
+  );
+  --band-line: color-mix(in srgb, white 82%, black);
+
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--band) 46%, transparent),
+    color-mix(in srgb, var(--band) 8%, transparent) 24px,
+    color-mix(in srgb, var(--band) 8%, transparent) calc(100% - 24px),
+    color-mix(in srgb, var(--band) 46%, transparent)
+  );
+  border-inline: 1px solid var(--band-line);
+  box-sizing: border-box;
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
 /* A stem from the pin down to the floor, coloured like its note. */
 .stem {
   border-left: 2px solid var(--stem-fill, var(--stem-color));

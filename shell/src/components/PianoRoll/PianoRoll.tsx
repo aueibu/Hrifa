@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -19,19 +20,21 @@ import {
   type EditorTool,
 } from '../EditorPalette';
 import { useInfoBarActive } from '../InfoBar';
-import { adaptiveSubdivision, rollGridLines } from './grid';
+import { gridWindow, rollGridLines } from './grid';
+import { adaptiveSubdivision } from './gridDensity';
 import { HorizontalScrollbar } from './HorizontalScrollbar';
 import {
   DEFAULT_ENTRY_VELOCITY,
   MIN_NOTE_QUARTERS,
   PIANO_ROLL_KEYBOARD_WIDTH,
   type PianoRollGridLine,
+  type PianoRollGridSource,
   type PianoRollNewNote,
   type PianoRollNote,
   type PianoRollRange,
   type PianoRollViewState,
 } from './model';
-import { clampScrollLeft, scrollRange } from './scrollSync';
+import { clampScrollLeft, isWrittenEcho, recordWritten, scrollRange } from './scrollSync';
 import {
   clickSelection,
   marqueeSelection,
@@ -41,13 +44,14 @@ import {
   selectionId,
   type PixelRect,
 } from './selection';
+import { layerSpan, timelineLayout } from './timelineLayout';
 import { velocityFillColor, velocityLevel } from './velocityFill';
 import classes from './PianoRoll.module.css';
 
 const KEYBOARD_WIDTH = PIANO_ROLL_KEYBOARD_WIDTH;
 const RULER_HEIGHT = 2 * 16;
-const MIN_TIME_ZOOM = 16;
-const MAX_TIME_ZOOM = 192;
+const DEFAULT_MIN_TIME_ZOOM = 16;
+const DEFAULT_MAX_TIME_ZOOM = 192;
 const MIN_PITCH_ZOOM = 12;
 const MAX_PITCH_ZOOM = 36;
 
@@ -66,7 +70,8 @@ export interface PianoRollScrollMetrics {
 export interface PianoRollProps {
   notes: PianoRollNote[];
   duration: number;
-  gridLines: PianoRollGridLine[];
+  /** The owner's bar and beat lines: every line, or a source asked only for the range on screen. */
+  gridLines: PianoRollGridLine[] | PianoRollGridSource;
   view: PianoRollViewState;
   onViewChange(view: PianoRollViewState): void;
   playhead?: number;
@@ -116,11 +121,17 @@ export interface PianoRollProps {
   onVelocityChange?(ids: string[], delta: number): void;
   /**
    * Reported when a marquee ends: the time span it covered, snapped to the grid. A selection can
-   * reach over empty space, so the owner may keep this range beside the selected ids.
+   * reach over empty space, so the owner may keep this range beside the selected ids. The time `timeOnly` is true for the Time tool (notes inside
+   * or not) and for a Pointer marquee that caught no notes: the selection is then a time selection.
    */
-  onMarqueeRange?(range: PianoRollRange): void;
-  /** A band drawn behind the notes over this time span, for the owner's selected range. */
+  onMarqueeRange?(range: PianoRollRange, timeOnly: boolean): void;
+  /** A band drawn behind the notes over this span: the owner passes it only for a time selection. */
   selectedRange?: PianoRollRange | null;
+  /**
+   * A faint neutral band behind the notes over the time the selected notes occupy. The owner passes
+   * it for a note selection and never together with `selectedRange` (one band at a time).
+   */
+  selectedItemsRange?: PianoRollRange | null;
   /**
    * Ghost drag (opt-in): while a note is dragged to move or resize it, the real note stays where it
    * is and a ghost follows the pointer, labelled with the pitch under it. The edit commits on
@@ -134,6 +145,11 @@ export interface PianoRollProps {
    */
   endMarker?: number;
   /**
+   * A loop span, in quarter notes (opt-in): a band along the top of the ruler and a faint tint
+   * through the roll. Display only.
+   */
+  loopBand?: { start: number; end: number };
+  /**
    * Fill mode (opt-in): the roll takes the full width and height its parent gives it (the parent
    * must have a definite height) instead of a fixed `height`, so it resizes with its panel, and the
    * timeline is at least as wide as the view so the grid runs to the right edge.
@@ -145,6 +161,11 @@ export interface PianoRollProps {
    * down. Zoom and scroll are the owner's view state, never an edit.
    */
   wheelZoom?: boolean;
+  /**
+   * The zoom range in time, in pixels per quarter note (default 16 to 192). A long-clip editor
+   * passes a lower minimum so zooming out reaches hundreds of bars.
+   */
+  timeZoomRange?: { min: number; max: number };
   /**
    * The grid subdivision, in quarter notes (opt-in): drives snapping, the paint can, the knife and
    * the dotted grid lines. Without it the grid adapts to the zoom.
@@ -299,10 +320,13 @@ export function PianoRoll({
   onVelocityChange,
   onMarqueeRange,
   selectedRange,
+  selectedItemsRange,
   ghostDrag = false,
   endMarker,
+  loopBand,
   fill = false,
   wheelZoom = false,
+  timeZoomRange,
   gridUnit,
   entryLength,
   onEntryLengthChange,
@@ -318,6 +342,8 @@ export function PianoRoll({
   keyActions,
 }: PianoRollProps) {
   const infoBar = useInfoBarActive();
+  const minTimeZoom = timeZoomRange?.min ?? DEFAULT_MIN_TIME_ZOOM;
+  const maxTimeZoom = timeZoomRange?.max ?? DEFAULT_MAX_TIME_ZOOM;
   const selectable = onSelectionChange !== undefined;
   const selected = useMemo(() => new Set(selectedIds ?? []), [selectedIds]);
   const actionContext = useMemo(() => ({ selectedIds: selectedIds ?? [] }), [selectedIds]);
@@ -328,13 +354,8 @@ export function PianoRoll({
       return;
     }
     event.preventDefault();
-    const box = event.currentTarget.getBoundingClientRect();
-    const point = {
-      left: event.clientX - box.left,
-      top: event.clientY - box.top,
-      width: 1,
-      height: 1,
-    };
+    const at = rollPoint(event);
+    const point = { left: at.x, top: at.y, width: 1, height: 1 };
     const [hit] = notesInRect(notes, view, point);
     // Right-clicking a note outside the selection selects it first, as editors usually do.
     if (hit !== undefined && !selected.has(hit)) {
@@ -351,9 +372,10 @@ export function PianoRoll({
   );
   const drag = useRef<{ x: number; y: number; additive: boolean; moved: boolean } | null>(null);
 
-  function rollPoint(event: ReactPointerEvent<HTMLElement>) {
+  /** Pointer positions are in timeline pixels: the layer's own offset plus the window origin. */
+  function rollPoint(event: ReactPointerEvent<HTMLElement> | ReactMouseEvent<HTMLElement>) {
     const box = event.currentTarget.getBoundingClientRect();
-    return { x: event.clientX - box.left, y: event.clientY - box.top };
+    return { x: event.clientX - box.left + layout.origin, y: event.clientY - box.top };
   }
 
   const rollRef = useRef<HTMLDivElement>(null);
@@ -375,7 +397,10 @@ export function PianoRoll({
 
   function rollPointAt(event: { clientX: number; clientY: number }) {
     const box = rollRef.current?.getBoundingClientRect();
-    return { x: event.clientX - (box?.left ?? 0), y: event.clientY - (box?.top ?? 0) };
+    return {
+      x: event.clientX - (box?.left ?? 0) + layout.origin,
+      y: event.clientY - (box?.top ?? 0),
+    };
   }
 
   /** The grid step under an x position, and the keyboard row under a y position. */
@@ -609,7 +634,7 @@ export function PianoRoll({
           current.additive
         )
       );
-      onMarqueeRange?.(range);
+      onMarqueeRange?.(range, true);
       return;
     }
     if (!current.moved) {
@@ -877,8 +902,7 @@ export function PianoRoll({
     if (drewAt !== null && event.timeStamp - drewAt <= DOUBLE_PRESS_MS) {
       return;
     }
-    const box = event.currentTarget.getBoundingClientRect();
-    const point = { x: event.clientX - box.left, y: event.clientY - box.top };
+    const point = rollPoint(event);
     // Overlapping notes: a selected one is drawn on top (z-index), otherwise the one drawn last is.
     const hits = notesInRect(notes, view, { left: point.x, top: point.y, width: 1, height: 1 });
     const hit = hits.filter((id) => selected.has(id)).pop() ?? hits.pop();
@@ -934,10 +958,13 @@ export function PianoRoll({
     const box = rectFromCorners(start.x, start.y, point.x, point.y);
     const hit = notesInRect(notes, view, box);
     onSelectionChange(marqueeSelection(selectedIds ?? [], hit, start.additive));
-    onMarqueeRange?.({
-      start: Math.max(0, Math.floor(box.left / view.pixelsPerQuarter / snapUnit) * snapUnit),
-      end: Math.ceil((box.left + box.width) / view.pixelsPerQuarter / snapUnit) * snapUnit,
-    });
+    onMarqueeRange?.(
+      {
+        start: Math.max(0, Math.floor(box.left / view.pixelsPerQuarter / snapUnit) * snapUnit),
+        end: Math.ceil((box.left + box.width) / view.pixelsPerQuarter / snapUnit) * snapUnit,
+      },
+      hit.length === 0
+    );
   }
   const scroller = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -973,6 +1000,37 @@ export function PianoRoll({
       : Math.max(0, scrollLeft);
   }
   const barRange = scrollRange(timelineWidth, viewport.width);
+  // A timeline too wide to lay out whole is windowed around the view (timelineLayout.ts): the
+  // content layer starts at `layout.origin` and holds only `layout.from..to`.
+  const layout = timelineLayout(
+    detachedScroll ? view.scrollLeft : 0,
+    viewport.width,
+    detachedScroll ? timelineWidth : 0
+  );
+  /** Where a timeline x position is drawn inside the content layer. */
+  const contentWidth = layout.windowed ? layout.width : timelineWidth;
+  /** Where a timeline x position is drawn inside the content layer. */
+  const atX = (x: number) => x - layout.origin;
+  /** An element spanning `left` to `left + width` (timeline pixels) as drawn, or null when it is out of the window. */
+  const spanOf = (left: number, width = 0) => layerSpan(layout, left, width);
+  const quarters = (start: number, end: number) =>
+    spanOf(start * view.pixelsPerQuarter, (end - start) * view.pixelsPerQuarter);
+  const loopSpan =
+    loopBand && loopBand.end > loopBand.start ? quarters(loopBand.start, loopBand.end) : null;
+  const rangeSpan =
+    selectedRange && selectedRange.end > selectedRange.start
+      ? quarters(selectedRange.start, selectedRange.end)
+      : null;
+  const itemsRangeSpan =
+    !selectedRange && selectedItemsRange && selectedItemsRange.end > selectedItemsRange.start
+      ? quarters(selectedItemsRange.start, selectedItemsRange.end)
+      : null;
+  const endSpan =
+    endMarker !== undefined && endMarker > 0 ? spanOf(endMarker * view.pixelsPerQuarter) : null;
+  const timePreviewSpan = preview?.timeRange
+    ? quarters(preview.timeRange.start, preview.timeRange.end)
+    : null;
+  const marqueeSpan = marquee ? spanOf(marquee.left, marquee.width) : null;
   // The latest horizontal position asked for, so wheel events that arrive faster than renders add up.
   // The latest view, updated synchronously by changeView and on every render, so event handlers that
   // fire faster than React renders (scroll, wheel, pinch bursts) never compute from a stale view.
@@ -980,9 +1038,24 @@ export function PianoRoll({
   viewRef.current = view;
   const pitchHeight = 128 * view.pixelsPerSemitone;
   const playheadX = playhead === undefined ? undefined : playhead * view.pixelsPerQuarter;
+  const playheadSpan = playheadX !== undefined ? spanOf(playheadX) : null;
+  // A source is asked only for the time on screen (plus a margin) and decides its own density; an
+  // array is drawn whole (Mixer scrolls natively with a fixed view.scrollLeft, so it is never windowed).
+  const windowed = typeof gridLines === 'function';
+  const gridFrom = windowed ? view.scrollLeft : 0;
+  const gridWidth = windowed ? viewport.width : 0;
   const grid = useMemo(
-    () => rollGridLines(gridLines, gridUnit, visibleQuarters, view.pixelsPerQuarter),
-    [gridLines, gridUnit, visibleQuarters, view.pixelsPerQuarter]
+    () =>
+      rollGridLines(
+        gridLines,
+        gridUnit,
+        visibleQuarters,
+        view.pixelsPerQuarter,
+        windowed
+          ? gridWindow(gridFrom, gridWidth, view.pixelsPerQuarter, visibleQuarters)
+          : undefined
+      ),
+    [gridLines, gridUnit, visibleQuarters, view.pixelsPerQuarter, gridFrom, gridWidth, windowed]
   );
 
   useEffect(() => {
@@ -1007,20 +1080,36 @@ export function PianoRoll({
     return () => observer.disconnect();
   }, []);
 
+  // Vertical positions this roll wrote into the scroller, so a late scroll event echoing one of them
+  // is not taken for a user move. Cleared by a genuine user scroll.
+  const writtenTops = useRef<number[]>([]);
+
   // The owner's view is the source of truth and is written one way, into the scroller. In the
   // unified panel the scroller's own horizontal position is never read back (see onScroll).
-  useEffect(() => {
+  // A layout effect: crossing an origin boundary moves the layer and the scroller together, so no
+  // frame is painted with the layer at the new origin and the scroller at the old position.
+  useLayoutEffect(() => {
     const element = scroller.current;
     if (!element) {
       return;
     }
-    if (Math.abs(element.scrollLeft - view.scrollLeft) > 1) {
-      element.scrollLeft = view.scrollLeft;
+    // The scroller's own position is relative to the window origin (0 unless the timeline is huge).
+    const nativeLeft = view.scrollLeft - layout.origin;
+    if (Math.abs(element.scrollLeft - nativeLeft) > 1) {
+      element.scrollLeft = nativeLeft;
     }
     if (Math.abs(element.scrollTop - view.scrollTop) > 1) {
       element.scrollTop = view.scrollTop;
+      writtenTops.current = recordWritten(writtenTops.current, view.scrollTop);
     }
-  }, [view.scrollLeft, view.scrollTop, view.pixelsPerQuarter, view.pixelsPerSemitone]);
+  }, [
+    view.scrollLeft,
+    view.scrollTop,
+    view.pixelsPerQuarter,
+    view.pixelsPerSemitone,
+    layout.origin,
+    contentWidth,
+  ]);
 
   // A shrunken timeline or a wider view can leave the position past the new end: bring it back.
   useEffect(() => {
@@ -1053,6 +1142,7 @@ export function PianoRoll({
       const longest = Math.max(0, pitchHeight + RULER_HEIGHT - viewport.height);
       const next = clamp(element.scrollTop + vertical, 0, viewport.height ? longest : Infinity);
       element.scrollTop = next;
+      writtenTops.current = recordWritten(writtenTops.current, next);
       patch.scrollTop = next;
     }
     if (Object.keys(patch).length) {
@@ -1075,8 +1165,8 @@ export function PianoRoll({
     );
     const pixelsPerQuarter = clamp(
       (viewport.width - inset - 24) / safeDuration,
-      MIN_TIME_ZOOM,
-      MAX_TIME_ZOOM
+      minTimeZoom,
+      maxTimeZoom
     );
     const scrollTop = clamp(
       (127 - highest - 1.5) * pixelsPerSemitone,
@@ -1123,17 +1213,22 @@ export function PianoRoll({
     }
   }, [playheadX, timelineWidth, view.followPlayback]);
 
-  /** Zooms time. `anchor` is a pixel offset into the visible roll (default: its middle) that stays put. */
+  /**
+   * Zooms time. `anchor` is a pixel offset into the visible roll (default: its middle) that stays
+   * put; it is kept inside the visible roll, so a pointer over the keys, the palette or the lane's
+   * margin anchors at the nearest edge. In the unified panel the position comes from the latest
+   * view (the DOM may not have caught up with earlier wheel events of the same burst).
+   */
   function zoomTime(factor: number, anchor?: number) {
     const element = scroller.current;
-    const visibleWidth = Math.max(0, (element?.clientWidth ?? viewport.width) - inset);
-    const at = anchor ?? visibleWidth / 2;
+    const visibleWidth = Math.max(0, (element?.clientWidth || viewport.width) - inset);
+    const at = clamp(anchor ?? visibleWidth / 2, 0, visibleWidth);
     const latest = viewRef.current;
     const currentLeft = detachedScroll
       ? latest.scrollLeft
       : (element?.scrollLeft ?? latest.scrollLeft);
     const musicalAnchor = (currentLeft + at) / latest.pixelsPerQuarter;
-    const pixelsPerQuarter = clamp(latest.pixelsPerQuarter * factor, MIN_TIME_ZOOM, MAX_TIME_ZOOM);
+    const pixelsPerQuarter = clamp(latest.pixelsPerQuarter * factor, minTimeZoom, maxTimeZoom);
     changeView({
       pixelsPerQuarter,
       scrollLeft: clampLeft(musicalAnchor * pixelsPerQuarter - at, pixelsPerQuarter),
@@ -1141,22 +1236,29 @@ export function PianoRoll({
     });
   }
 
-  /** Zooms pitch. `anchor` is a pixel offset below the ruler (default: the middle) that stays put. */
+  /**
+   * Zooms pitch. `anchor` is a pixel offset below the ruler (default: the middle) that stays put,
+   * kept inside the visible keys. The scroll position is the latest view's (the DOM's lags within a
+   * wheel burst) and the result stays inside the taller or shorter pitch range.
+   */
   function zoomPitch(factor: number, anchor?: number) {
     const element = scroller.current;
-    const visibleHeight = Math.max(0, (element?.clientHeight ?? viewport.height) - RULER_HEIGHT);
-    const at = anchor ?? visibleHeight / 2;
+    const viewHeight = element?.clientHeight || viewport.height;
+    const visibleHeight = Math.max(0, viewHeight - RULER_HEIGHT);
+    const at = clamp(anchor ?? visibleHeight / 2, 0, visibleHeight);
     const latest = viewRef.current;
-    const pitchAtAnchor =
-      127 - ((element?.scrollTop ?? latest.scrollTop) + at) / latest.pixelsPerSemitone;
+    const pitchAtAnchor = 127 - (latest.scrollTop + at) / latest.pixelsPerSemitone;
     const pixelsPerSemitone = clamp(
       latest.pixelsPerSemitone * factor,
       MIN_PITCH_ZOOM,
       MAX_PITCH_ZOOM
     );
+    const longest = viewHeight
+      ? Math.max(0, 128 * pixelsPerSemitone + RULER_HEIGHT - viewHeight)
+      : Infinity;
     changeView({
       pixelsPerSemitone,
-      scrollTop: Math.max(0, (127 - pitchAtAnchor) * pixelsPerSemitone - at),
+      scrollTop: clamp((127 - pitchAtAnchor) * pixelsPerSemitone - at, 0, longest),
       framed: true,
     });
   }
@@ -1397,10 +1499,21 @@ export function PianoRoll({
                   // Horizontal position is the owner's view, never read back from here: if the browser
                   // moved this hidden scroller (focus scrolling into view), put it back. Only the
                   // vertical position is taken from the scroller.
-                  if (Math.abs(scrollLeft - latest.scrollLeft) > 1) {
-                    event.currentTarget.scrollLeft = latest.scrollLeft;
+                  const latestOrigin = timelineLayout(
+                    latest.scrollLeft,
+                    viewport.width,
+                    timelineWidthAt(latest.pixelsPerQuarter)
+                  ).origin;
+                  if (Math.abs(scrollLeft - (latest.scrollLeft - latestOrigin)) > 1) {
+                    event.currentTarget.scrollLeft = latest.scrollLeft - latestOrigin;
+                  }
+                  // A scroll event is the echo of a write when it reports a position this roll wrote
+                  // (the browser fires it a frame late, after a newer wheel event moved the view on).
+                  if (isWrittenEcho(writtenTops.current, scrollTop)) {
+                    return;
                   }
                   if (Math.abs(scrollTop - latest.scrollTop) > 1) {
+                    writtenTops.current = [];
                     changeView({ scrollTop, framed: true });
                   }
                   return;
@@ -1416,27 +1529,34 @@ export function PianoRoll({
               <div
                 className={classes.content}
                 style={{
-                  gridTemplateColumns: `${inset}px ${timelineWidth}px`,
+                  gridTemplateColumns: `${inset}px ${contentWidth}px`,
                   gridTemplateRows: `${RULER_HEIGHT}px ${pitchHeight}px`,
                 }}
               >
                 {!detachedScroll && <div className={classes.corner} aria-hidden="true" />}
-                <div className={classes.ruler} aria-hidden="true">
+                <div className={classes.ruler} data-testid="roll-ruler" aria-hidden="true">
                   {grid
-                    .filter((line) => line.kind === 'bar')
+                    .filter((line) => line.kind === 'bar' && line.label !== undefined)
                     .map((line) => (
                       <span
                         key={`ruler:${line.at}`}
-                        style={{ left: line.at * view.pixelsPerQuarter }}
+                        style={{ left: atX(line.at * view.pixelsPerQuarter) }}
                       >
                         {line.label}
                       </span>
                     ))}
-                  {endMarker !== undefined && endMarker > 0 && (
+                  {loopSpan && (
+                    <span
+                      className={classes.loopRuler}
+                      data-testid="roll-loop-band"
+                      style={{ left: loopSpan.left, width: loopSpan.width }}
+                    />
+                  )}
+                  {endSpan && (
                     <span
                       className={classes.endBracket}
                       data-testid="roll-end-bracket"
-                      style={{ left: endMarker * view.pixelsPerQuarter }}
+                      style={{ left: endSpan.left }}
                     />
                   )}
                 </div>
@@ -1493,35 +1613,47 @@ export function PianoRoll({
                       className={classes.timeLine}
                       data-kind={line.kind}
                       data-subdivision={line.subdivision || undefined}
-                      style={{ left: line.at * view.pixelsPerQuarter }}
+                      style={{ left: atX(line.at * view.pixelsPerQuarter) }}
                     />
                   ))}
-                  {endMarker !== undefined && endMarker > 0 && (
+                  {endSpan && (
                     <>
-                      <span
-                        className={classes.afterEnd}
-                        style={{ left: endMarker * view.pixelsPerQuarter }}
-                      />
+                      <span className={classes.afterEnd} style={{ left: endSpan.left }} />
                       <span
                         className={classes.endLine}
                         data-testid="roll-end-line"
-                        style={{ left: endMarker * view.pixelsPerQuarter }}
+                        style={{ left: endSpan.left }}
                       />
                     </>
                   )}
-                  {selectedRange && selectedRange.end > selectedRange.start && (
+                  {loopSpan && (
+                    <span
+                      className={classes.loopTint}
+                      data-testid="roll-loop-tint"
+                      style={{ left: loopSpan.left, width: loopSpan.width }}
+                    />
+                  )}
+                  {itemsRangeSpan && (
+                    <span
+                      className={classes.itemsRange}
+                      data-testid="roll-items-range"
+                      style={{ left: itemsRangeSpan.left, width: itemsRangeSpan.width }}
+                    />
+                  )}
+                  {rangeSpan && (
                     <span
                       className={classes.range}
                       data-testid="roll-range"
-                      style={{
-                        left: selectedRange.start * view.pixelsPerQuarter,
-                        width: (selectedRange.end - selectedRange.start) * view.pixelsPerQuarter,
-                      }}
+                      style={{ left: rangeSpan.left, width: rangeSpan.width }}
                     />
                   )}
                   {shownNotes.map((note) => {
                     const rect = noteRect(note, view);
-                    const noteWidth = rect.width;
+                    const noteSpan = spanOf(rect.left, rect.width);
+                    if (!noteSpan) {
+                      return null;
+                    }
+                    const noteWidth = noteSpan.width;
                     const fillColor = fillByVelocity
                       ? velocityFillColor(
                           note.color ?? 'var(--mantine-primary-color-filled)',
@@ -1570,7 +1702,7 @@ export function PianoRoll({
                         }
                         style={{
                           height: rect.height,
-                          left: rect.left,
+                          left: noteSpan.left,
                           // With the velocity fill the note stays opaque; velocity is saturation only.
                           opacity: fillByVelocity
                             ? undefined
@@ -1587,6 +1719,10 @@ export function PianoRoll({
                   })}
                   {ghostNotes.map((note) => {
                     const rect = noteRect(note, view);
+                    const ghostSpan = spanOf(rect.left, rect.width);
+                    if (!ghostSpan) {
+                      return null;
+                    }
                     // The note's color (the single note color when it has none) at its velocity's saturation.
                     const base = note.color ?? 'var(--mantine-primary-color-filled)';
                     const ghostFill = fillByVelocity
@@ -1601,26 +1737,22 @@ export function PianoRoll({
                         style={
                           {
                             height: rect.height,
-                            left: rect.left,
+                            left: ghostSpan.left,
                             top: rect.top,
-                            width: rect.width,
+                            width: ghostSpan.width,
                             '--ghost-fill': ghostFill,
                           } as CSSProperties
                         }
                       >
-                        {rect.width > 34 ? note.label : ''}
+                        {ghostSpan.width > 34 ? note.label : ''}
                       </span>
                     );
                   })}
-                  {preview?.timeRange && (
+                  {timePreviewSpan && (
                     <span
                       className={classes.range}
                       data-testid="roll-time-preview"
-                      style={{
-                        left: preview.timeRange.start * view.pixelsPerQuarter,
-                        width:
-                          (preview.timeRange.end - preview.timeRange.start) * view.pixelsPerQuarter,
-                      }}
+                      style={{ left: timePreviewSpan.left, width: timePreviewSpan.width }}
                     />
                   )}
                   {preview?.readout && (
@@ -1628,7 +1760,7 @@ export function PianoRoll({
                       className={classes.readout}
                       data-testid="roll-velocity-readout"
                       style={{
-                        left: preview.readout.x + 12,
+                        left: atX(preview.readout.x) + 12,
                         top: Math.max(0, preview.readout.y - 28),
                       }}
                     >
@@ -1639,15 +1771,15 @@ export function PianoRoll({
                     <span
                       className={classes.marquee}
                       style={{
-                        left: marquee.left,
+                        left: marqueeSpan?.left ?? 0,
                         top: marquee.top,
-                        width: marquee.width,
+                        width: marqueeSpan?.width ?? 0,
                         height: marquee.height,
                       }}
                     />
                   )}
-                  {playheadX !== undefined && (
-                    <span className={classes.playhead} style={{ left: playheadX }} />
+                  {playheadSpan && (
+                    <span className={classes.playhead} style={{ left: playheadSpan.left }} />
                   )}
                 </div>
               </div>

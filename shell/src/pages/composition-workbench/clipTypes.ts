@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { withClipProperties, DEFAULT_TIME_SIGNATURE } from './clipProperties';
 import type { DataDomain, DataEncoding, DataKind, DataPacket } from './model';
 import {
   musicalDuration,
@@ -22,6 +23,8 @@ export interface BlankClipRequest {
   name: string;
   /** The clip's length, in quarter notes (exact). */
   length: Rational;
+  /** The clip's time signature (the project's, for a new clip); 4/4 when omitted. */
+  timeSignature?: string;
 }
 
 /**
@@ -171,12 +174,26 @@ export function blankSnippet(
   request: BlankClipRequest,
   packet: Omit<DataPacket, 'items' | 'warnings' | 'frame'>
 ): Snippet {
+  const blank: DataPacket = {
+    ...packet,
+    items: [],
+    warnings: [],
+    frame: blankFrame(request.length),
+  };
   return {
     schemaVersion: 1,
     id: request.id,
     name: request.name,
     createdAt: request.createdAt,
-    packet: { ...packet, items: [], warnings: [], frame: blankFrame(request.length) },
+    // Every clip carries all its properties: play from the start, loop the whole length.
+    packet: withClipProperties(blank, {
+      length: request.length,
+      start: rational(0),
+      loopOn: true,
+      loopStart: rational(0),
+      loopEnd: request.length,
+      timeSignature: request.timeSignature ?? DEFAULT_TIME_SIGNATURE,
+    }),
   };
 }
 

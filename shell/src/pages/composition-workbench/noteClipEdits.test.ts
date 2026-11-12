@@ -123,7 +123,8 @@ describe('note clip edits', () => {
     expect(rationalToNumber((shorter.items[0].value as NoteEventValue).duration.quarterNotes)).toBe(
       3
     );
-    expect(clipRollDuration(before)).toBe(10);
+    // No stored clip properties: the note ends at 10, so the length reads as the next bar line (12).
+    expect(clipRollDuration(before)).toBe(12);
   });
 
   it('resizes with a floor, no ceiling at the clip end, and keeps a matching slot matching', () => {

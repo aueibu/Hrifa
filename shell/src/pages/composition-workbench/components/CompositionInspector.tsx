@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Badge, Button, Collapse, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import { hasClipProperties } from '../clipProperties';
 import {
   boundOutput,
   describeOutputRef,
@@ -15,6 +16,7 @@ import {
 } from '../compositionWorkspace';
 import { useOptionalDesk } from '../desk';
 import { signalTypeRegistry } from '../signalTypes';
+import { ClipPropertiesPanel } from './ClipPropertiesPanel';
 import { NumericTreatmentEditor } from './NumericTreatmentEditor';
 import { PitchTreatmentEditor } from './PitchTreatmentEditor';
 import { RhythmTreatmentEditor } from './RhythmTreatmentEditor';
@@ -169,7 +171,7 @@ function ModulePart({
   const snippets = useOptionalDesk()?.snippets ?? [];
   const clip = clipId === null ? undefined : snippets.find((entry) => entry.id === clipId);
   if (clipId !== null) {
-    // The seed of the clip inspector: just which clip is open.
+    // The clip inspector: which clip is open, then its properties.
     return clip ? (
       <Stack gap="xs">
         <Title order={3} size="h6">
@@ -178,6 +180,7 @@ function ModulePart({
         <Text size="xs">
           {clip.packet.kind} | {clip.packet.domain}
         </Text>
+        {hasClipProperties(clip.packet) && <ClipPropertiesPanel key={clip.id} snippet={clip} />}
       </Stack>
     ) : null;
   }

@@ -22,6 +22,11 @@ export interface NoteSelection {
   ids: string[];
   /** Null when nothing is selected. A pure time selection has a range and no ids. */
   range: TimeRange | null;
+  /**
+   * 'time' when the selection is a time selection (the Time tool, or a Pointer marquee that caught
+   * no notes): the roll and lane draw the band only then. Any other way of selecting leaves it unset.
+   */
+  kind?: 'time';
 }
 
 export const emptyNoteSelection: NoteSelection = { ids: [], range: null };
@@ -45,6 +50,27 @@ export function extendRange(selection: NoteSelection, range: TimeRange): NoteSel
   return range.end > range.start
     ? { ids: selection.ids, range: unionRange(selection.range, range) }
     : selection;
+}
+
+/** A time selection: the events it caught and the span, drawn as a band. */
+export function selectTime(selection: NoteSelection, range: TimeRange): NoteSelection {
+  return range.end > range.start
+    ? { ids: selection.ids, range: unionRange(selection.range, range), kind: 'time' }
+    : selection;
+}
+
+/**
+ * The selection after a press anywhere in the panel: a time selection (and the band it draws) is
+ * cleared before the new gesture starts, so two bands are never visible at once. Any other selection
+ * is untouched.
+ */
+export function clearTimeSelection(selection: NoteSelection): NoteSelection {
+  return selection.kind === 'time' ? emptyNoteSelection : selection;
+}
+
+/** The span the selected notes occupy, for the neutral band: only for a note selection, never a time one. */
+export function itemsBand(selection: NoteSelection): TimeRange | null {
+  return selection.kind !== 'time' && selection.ids.length > 0 ? selection.range : null;
 }
 
 /**
@@ -77,5 +103,5 @@ export function followEdit(
   }
   const shift = now.start - was.start;
   const shifted = { start: selection.range.start + shift, end: selection.range.end + shift };
-  return { ids: selection.ids, range: unionRange(shifted, now) };
+  return { ids: selection.ids, range: unionRange(shifted, now), kind: selection.kind };
 }

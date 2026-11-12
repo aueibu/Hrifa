@@ -249,8 +249,41 @@
   z-index: 4;
 }
 
-/* The owner's selected time range, which can reach over empty space: a faint band with edge lines. */
+/* The owner's selected time range (also the Time tool's live preview), which can reach over empty space. */
 .range {
+  /*
+   * Bitwig-style span: the theme's cyan mark and accent mixed with white (a light, cyan wash),
+   * strong at the left and right edges (24px stops) and low in the middle so the notes inside stay
+   * readable. The edge lines are a fixed light grey (white mixed with a little black) so they read
+   * in both schemes. Time selections only. Roll and lane share this recipe.
+   */
+  --band: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%,
+    white
+  );
+  --band-line: color-mix(in srgb, white 82%, black);
+
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--band) 46%, transparent),
+    color-mix(in srgb, var(--band) 8%, transparent) 24px,
+    color-mix(in srgb, var(--band) 8%, transparent) calc(100% - 24px),
+    color-mix(in srgb, var(--band) 46%, transparent)
+  );
+  border-inline: 1px solid var(--band-line);
+  box-sizing: border-box;
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+/*
+ * The span the selected notes occupy (the owner passes it for a note selection, never together with
+ * the time band): a faint neutral band with soft edge lines, distinct from the cyan time band.
+ */
+.itemsRange {
   background: color-mix(in srgb, var(--text) 6%, transparent);
   border-inline: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
   bottom: 0;
@@ -371,6 +404,25 @@
   pointer-events: none;
   position: absolute;
   right: 0;
+  top: 0;
+}
+
+/* The loop: a band along the top of the ruler and a faint tint through the roll. */
+.ruler .loopRuler {
+  background: var(--text-muted);
+  height: 4px;
+  opacity: 0.8;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.loopTint {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
   top: 0;
 }
 

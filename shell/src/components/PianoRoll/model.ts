@@ -42,7 +42,22 @@ export interface PianoRollGridLine {
   at: number;
   kind: 'bar' | 'beat';
   label?: string;
+  /** A dotted line finer than a beat (set by sources that decide their own density). */
+  subdivision?: boolean;
 }
+
+/**
+ * Grid lines generated on demand for the time range the roll is about to draw (quarter notes, with
+ * the zoom in pixels per quarter and the whole timeline's length), so a very long timeline never
+ * builds every line. A source decides its own density (see gridDensity.ts): the roll draws exactly
+ * what it returns, bar lines labelled only where a number is to be printed.
+ */
+export type PianoRollGridSource = (
+  from: number,
+  to: number,
+  pixelsPerQuarter: number,
+  extent: number
+) => PianoRollGridLine[];
 
 export interface PianoRollViewState {
   pixelsPerQuarter: number;

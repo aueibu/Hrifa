@@ -4,6 +4,7 @@ import {
   type PianoRollNewNote,
   type PianoRollNote,
 } from '../../components/PianoRoll';
+import { readClipProperties } from './clipProperties';
 import type { NoteEventValue } from './melodicization';
 import type { DataItem, DataPacket } from './model';
 import {
@@ -46,13 +47,12 @@ function isNoteItem(item: DataItem): item is NoteItem {
 
 const quarters = (value: { quarterNotes: Rational }) => rationalToNumber(value.quarterNotes);
 
-/** The clip's length in quarter notes, from its frame; 0 when the frame names none. */
+/**
+ * The clip's total length in quarter notes: its stored length, or the default for a clip made
+ * before clip properties existed (see `readClipProperties`). Always positive.
+ */
 export function clipExtent(packet: DataPacket): number {
-  const frame = packet.frame;
-  if (frame?.musicalExtent) {
-    return quarters(frame.musicalExtent);
-  }
-  return frame?.extent !== undefined && Number.isFinite(frame.extent) ? frame.extent : 0;
+  return rationalToNumber(readClipProperties(packet).length);
 }
 
 /** The end of the furthest note, in quarter notes. */

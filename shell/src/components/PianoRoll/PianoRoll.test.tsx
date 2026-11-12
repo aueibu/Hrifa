@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createEvent, fireEvent, render, screen, userEvent } from '@test-utils';
+import { cleanup, createEvent, fireEvent, render, screen, userEvent } from '@test-utils';
 import { defaultPianoRollView, type PianoRollViewState } from './model';
 import { PianoRoll } from './PianoRoll';
 
@@ -280,7 +280,16 @@ describe('PianoRoll editing', () => {
     fireEvent.pointerMove(roll, { clientX: 210, clientY: 30, pointerId: 1 });
     fireEvent.pointerUp(roll, { clientX: 210, clientY: 30, pointerId: 1 });
     expect(handlers.onSelectionChange).toHaveBeenCalledWith([]);
-    expect(handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 2, end: 3.5 });
+    expect(handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 2, end: 3.5 }, true);
+  });
+
+  it('a pointer marquee that catches notes is not a time-only selection', () => {
+    const { handlers, roll } = renderRoll();
+    fireEvent.pointerDown(roll, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(roll, { clientX: 600, clientY: 3000, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 600, clientY: 3000, pointerId: 1 });
+    expect(handlers.onSelectionChange).toHaveBeenCalledWith(expect.arrayContaining(['c4']));
+    expect(handlers.onMarqueeRange).toHaveBeenCalledWith(expect.anything(), false);
   });
 
   it('draws the selected range as a band', () => {
@@ -288,6 +297,29 @@ describe('PianoRoll editing', () => {
     const band = screen.getByTestId('roll-range');
     expect(band.style.left).toBe('64px');
     expect(band.style.width).toBe('96px');
+  });
+
+  it('draws the items range as a neutral band, and only when no time band is passed', () => {
+    renderRoll({ selectedItemsRange: { start: 1, end: 2.5 } });
+    const band = screen.getByTestId('roll-items-range');
+    expect(band.style.left).toBe('64px');
+    expect(band.style.width).toBe('96px');
+    expect(screen.queryByTestId('roll-range')).toBeNull();
+  });
+
+  it('never draws both bands, even if the owner passes both', () => {
+    renderRoll({
+      selectedRange: { start: 1, end: 2 },
+      selectedItemsRange: { start: 1, end: 2.5 },
+    });
+    expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+    expect(screen.queryByTestId('roll-items-range')).toBeNull();
+  });
+
+  it('draws no range band unless a range is passed (Melodicization and Mixer)', () => {
+    renderRoll();
+    expect(screen.queryByTestId('roll-range')).toBeNull();
+    expect(screen.queryByTestId('roll-time-preview')).toBeNull();
   });
 
   it('keeps the viewer behavior without edit callbacks: a click selects only that note at once', () => {
@@ -378,6 +410,17 @@ describe('PianoRoll editing', () => {
     renderRoll({ endMarker: 2 });
     expect(screen.getByTestId('roll-end-bracket').style.left).toBe('128px');
     expect(screen.getByTestId('roll-end-line').style.left).toBe('128px');
+  });
+
+  it('draws a loop band on the ruler and a tint in the roll only when asked', () => {
+    renderRoll({ loopBand: { start: 1, end: 3 } });
+    expect(screen.getByTestId('roll-loop-band').style.left).toBe('64px');
+    expect(screen.getByTestId('roll-loop-band').style.width).toBe('128px');
+    expect(screen.getByTestId('roll-loop-tint').style.width).toBe('128px');
+    cleanup();
+    renderRoll();
+    expect(screen.queryByTestId('roll-loop-band')).toBeNull();
+    expect(screen.queryByTestId('roll-loop-tint')).toBeNull();
   });
 
   it('draws no end marker unless asked', () => {
@@ -484,7 +527,7 @@ describe('PianoRoll tools', () => {
     expect(screen.getByTestId('roll-time-preview').style.left).toBe('32px');
     fireEvent.pointerUp(roll, { clientX: 100, clientY: 900, pointerId: 1 });
     // 40 px is 0.625 quarters and 100 px is 1.56: snapped outward to 0.5 and 2 on the 1/2 grid.
-    expect(handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 0.5, end: 2 });
+    expect(handlers.onMarqueeRange).toHaveBeenCalledWith({ start: 0.5, end: 2 }, true);
     expect(handlers.onSelectionChange).toHaveBeenCalledWith(['c4', 'e4']);
   });
 

@@ -77,6 +77,18 @@ describe('VelocityLane', () => {
     ).toBe(`${PIANO_ROLL_KEYBOARD_WIDTH}px`);
   });
 
+  it('draws the selected time span as a band at the same x as the roll, only when a range is passed', () => {
+    const { unmount } = lane();
+    expect(screen.queryByTestId('velocity-range')).toBeNull();
+    unmount();
+    lane({ selectedRange: { start: 1, end: 2.5 } });
+    const band = screen.getByTestId('velocity-range');
+    expect(band.style.left).toBe('64px');
+    expect(band.style.width).toBe('96px');
+    // Colour comes from the selection tint roles, never a hex value.
+    expect(band.style.background).toBe('');
+  });
+
   it('dragging a pin sets that note once, on release', () => {
     const { onVelocityChange } = lane();
     fireEvent.pointerDown(pin('b'), { clientY: 50, pointerId: 1 });

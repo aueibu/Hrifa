@@ -3,18 +3,21 @@ import { Badge, Button, Menu, Text, Title } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   defaultPianoRollView,
+  gridDensity,
   PianoRoll,
   VelocityLane,
   VelocityLaneToggle,
-  type PianoRollGridLine,
+  type PianoRollGridSource,
   type PianoRollNewNote,
   type PianoRollRange,
   type PianoRollViewState,
 } from '../../../components/PianoRoll';
+import { freezeClipProperties, readClipProperties } from '../clipProperties';
 import { registerClipEditor, type ClipEditorProps } from '../clipTypes';
 import { useCompositionSettings } from '../compositionSettings';
 import { useDesk } from '../desk';
 import type { DataPacket } from '../model';
+import { rationalToNumber } from '../musicalTime';
 import {
   addNote,
   addNotes,
@@ -31,14 +34,18 @@ import {
 } from '../noteClipEdits';
 import { GRID_OPTIONS, useNoteEditorPreferences } from '../noteEditorPreferences';
 import {
+  clearTimeSelection,
   emptyNoteSelection,
   extendRange,
   followEdit,
+  itemsBand,
   pruneSelection,
   selectIds,
+  selectTime,
   type NoteSelection,
 } from '../noteSelection';
 import { scaleDegreeColor } from '../scaleDegreeColor';
+import { jsonEqual } from '../snippet';
 import { parseMeter } from '../transport';
 import classes from './NoteClipEditor.module.css';
 
@@ -46,9 +53,6 @@ import classes from './NoteClipEditor.module.css';
 export const NOTE_EDITOR_ID = 'note-roll';
 
 const VELOCITY_STEP = 0.1;
-
-/** The grid is drawn this far (quarter notes) whatever the clip's length, so a wide view is covered. */
-const GRID_REACH = 256;
 
 /**
  * The tools, in Bitwig's order. The digit is the shortcut, matched only while the roll has focus
@@ -63,24 +67,29 @@ const tools: EditorTool[] = [
   { id: 'eraser', label: 'Eraser', shortcut: '6' },
 ];
 
-/** Bar and beat lines for a meter such as 4/4, out to `duration` quarter notes. */
-function gridLinesFor(meter: string, duration: number): PianoRollGridLine[] {
+/**
+ * The editor's time zoom, in pixels per quarter note. The roll's own range stops at 16, which is a
+ * few bars wide; a note clip can be 72000 bars, so this one zooms out to a quarter of a pixel per
+ * quarter note (a 1500 px view then shows 1500 bars, the far levels of the grid's bar thinning).
+ */
+export const NOTE_EDITOR_TIME_ZOOM = { min: 0.25, max: 192 };
+
+/**
+ * The grid of a meter and grid unit for the time range the roll asks for (quarter notes): every
+ * decision (which lines exist, which bar numbers print) is gridDensity.ts's, shared by the roll, the
+ * velocity lane and the ruler. The count is bounded by the width on screen, never by the length.
+ */
+export function gridSourceFor(meter: string, gridUnit?: number): PianoRollGridSource {
   const { numerator, denominator } = parseMeter(meter);
-  const beatLength = 4 / denominator;
-  const barLength = numerator * beatLength;
-  const lines: PianoRollGridLine[] = [];
-  let bar = 1;
-  for (let barStart = 0; barStart <= duration; barStart += barLength) {
-    lines.push({ at: barStart, kind: 'bar', label: String(bar) });
-    for (let beat = 1; beat < numerator; beat += 1) {
-      const at = barStart + beat * beatLength;
-      if (at <= duration) {
-        lines.push({ at, kind: 'beat' });
-      }
-    }
-    bar += 1;
-  }
-  return lines;
+  return (from, to, pixelsPerQuarter, extent) =>
+    gridDensity({
+      meter: { numerator, denominator },
+      gridUnit,
+      pixelsPerQuarter,
+      from,
+      to,
+      extent,
+    });
 }
 
 /** A blank clip opens centered on middle C; a clip with notes is fitted to them by the roll. */
@@ -104,11 +113,17 @@ interface SelectionState {
 /** The selection against the packet on screen: pruned, and re-ranged if the packet is not its basis. */
 function currentSelection(state: SelectionState, packet: DataPacket): NoteSelection {
   const pruned = pruneSelection(state.selection, packet);
-  return state.basis === packet ? pruned : selectIds(packet, pruned.ids);
+  // A change that leaves the notes alone (the clip's length, loop, ...) keeps the range too.
+  // Identity first: a packet that only changed its length or loop shares its item list.
+  return state.basis === packet ||
+    state.basis.items === packet.items ||
+    jsonEqual(state.basis.items, packet.items)
+    ? pruned
+    : selectIds(packet, pruned.ids);
 }
 
 function NoteClipEditorBody({ snippet }: ClipEditorProps) {
-  const { commitSnippetEditById, loading, locked } = useDesk();
+  const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
   const { packet } = snippet;
   // Transient view state: tool, selection (events and the time they occupy), zoom and scroll live in
@@ -133,6 +148,11 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
     [selectionState, packet]
   );
 
+  // One band at a time: the cyan time band for a time selection, otherwise the faint neutral band
+  // over the span the selected notes occupy.
+  const timeBand = selection.kind === 'time' ? selection.range : null;
+  const notesBand = itemsBand(selection);
+
   // Functional, because one roll event can change the selection twice (a marquee sets the ids, then
   // widens the range).
   function setSelection(change: (current: NoteSelection) => NoteSelection) {
@@ -156,15 +176,21 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       colorByScaleDegree ? scaleDegreeColor(pitchMidicents, edo) : undefined,
     [colorByScaleDegree, edo]
   );
+  const clipProperties = useMemo(() => readClipProperties(packet), [packet]);
   const extent = clipExtent(packet);
-  const { numerator, denominator } = parseMeter(settings.transport.meter);
+  const loopBand = clipProperties.loopOn
+    ? {
+        start: rationalToNumber(clipProperties.loopStart),
+        end: rationalToNumber(clipProperties.loopEnd),
+      }
+    : undefined;
+  const clipMeter = clipProperties.timeSignature;
+  const { numerator, denominator } = parseMeter(clipMeter);
   const barLength = (numerator * 4) / denominator;
   // The roll shows the clip and any note past its end, plus a bar of room to draw into.
   const duration = useMemo(() => clipRollDuration(packet) + barLength, [packet, barLength]);
-  const gridLines = useMemo(
-    () => gridLinesFor(settings.transport.meter, Math.max(duration, GRID_REACH)),
-    [settings.transport.meter, duration]
-  );
+  const gridUnit = gridOption.quarters ?? undefined;
+  const gridLines = useMemo(() => gridSourceFor(clipMeter, gridUnit), [clipMeter, gridUnit]);
   const refusal = loading
     ? 'The desk is still loading, so the clip cannot be edited yet.'
     : locked
@@ -183,8 +209,15 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
       setNotice(refusal);
       return;
     }
-    const next = edit(packet);
-    if (next === packet) {
+    // The single choke point for note edits: an old clip with no stored properties gets its full
+    // default set written as part of its FIRST edit (length from the content as it is now), in the
+    // same packet, so one version and one undo step, and its length never drifts as notes move.
+    // Built from the desk's packet as it is now (not the last render), so an edit that landed
+    // since, such as a property change from the inspector, is never reverted.
+    const current = latestSnippetById(snippet.id)?.packet ?? packet;
+    const base = freezeClipProperties(current);
+    const next = edit(base);
+    if (next === base) {
       return;
     }
     const result = commitSnippetEditById(snippet.id, next, NOTE_EDIT_OPERATION, { handEdit: true });
@@ -313,13 +346,24 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
         </div>
       </div>
       {/* One unified panel: the roll, the velocity lane and the single scrollbar, the palette beside all three. */}
-      <div className={classes.rollArea}>
+      <div
+        className={classes.rollArea}
+        onPointerDownCapture={() => {
+          // The next press anywhere in the panel (roll or lane) clears a time selection before the
+          // new gesture starts. K5c hook: a press inside the band (to move it) must keep it; decide
+          // here, from the press position, before clearing.
+          if (selection.kind === 'time') {
+            setSelection(clearTimeSelection);
+          }
+        }}
+      >
         <PianoRoll
           ariaLabel="Note clip piano roll"
           fill
           ghostDrag
           wheelZoom
-          gridUnit={gridOption.quarters ?? undefined}
+          timeZoomRange={NOTE_EDITOR_TIME_ZOOM}
+          gridUnit={gridUnit}
           entryLength={preferences.entryLength ?? undefined}
           velocityFill
           detachedScroll
@@ -332,6 +376,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                 scrollLeft={view.scrollLeft}
                 duration={duration}
                 selectedIds={selection.ids}
+                selectedRange={timeBand}
                 onCollapsedChange={(velocityLaneCollapsed) =>
                   updatePreferences({ velocityLaneCollapsed })
                 }
@@ -340,7 +385,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
                 onHeightChange={(laneHeight) => updatePreferences({ laneHeight })}
                 availableHeight={metrics.panelHeight}
                 gridLines={gridLines}
-                gridUnit={gridOption.quarters ?? undefined}
+                gridUnit={gridUnit}
                 viewWidth={metrics.viewWidth}
                 velocityFill
               />
@@ -367,6 +412,7 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           entryVelocity={preferences.entryVelocity ?? undefined}
           onEntryVelocityChange={(velocity) => updatePreferences({ entryVelocity: velocity })}
           endMarker={extent > 0 ? extent : undefined}
+          loopBand={loopBand}
           notes={notes}
           duration={duration}
           gridLines={gridLines}
@@ -374,10 +420,13 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
           onViewChange={setView}
           selectedIds={selection.ids}
           onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
-          onMarqueeRange={(range: PianoRollRange) =>
-            setSelection((current) => extendRange(current, range))
+          onMarqueeRange={(range: PianoRollRange, timeOnly) =>
+            setSelection((current) =>
+              timeOnly ? selectTime(current, range) : extendRange(current, range)
+            )
           }
-          selectedRange={selection.range}
+          selectedRange={timeBand}
+          selectedItemsRange={notesBand}
           tools={tools}
           activeTool={tool}
           onToolChange={setTool}

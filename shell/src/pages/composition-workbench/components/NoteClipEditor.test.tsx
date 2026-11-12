@@ -11,7 +11,7 @@ import { defaultMusicalTimeline, musicalDuration, musicalPosition, rational } fr
 import { NOTE_EDITOR_PREFERENCES_KEY, readNoteEditorPreferences } from '../noteEditorPreferences';
 import { acceptsSnippets, type Snippet } from '../snippet';
 import { DeskView } from './DeskView';
-import { NoteClipEditor } from './NoteClipEditor';
+import { gridSourceFor, NOTE_EDITOR_TIME_ZOOM, NoteClipEditor } from './NoteClipEditor';
 
 // Audition is only checked for being enabled here, so a silent stand-in engine is enough.
 vi.mock('../audio/AudioEngineProvider', () => ({
@@ -287,7 +287,7 @@ describe('the note clip editor', () => {
     const clipBefore = desk.snippets[0];
     const changes = historyChangeCount();
 
-    // Click n2 (2 to 3 quarters): its range is the band over its time.
+    // Click n2 (2 to 3 quarters): selected; the neutral items band (not the cyan time band) shows.
     fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
       clientX: 140,
       clientY: rowY(64),
@@ -295,23 +295,23 @@ describe('the note clip editor', () => {
     });
     fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 1 });
     expect(roll).toHaveAccessibleName(/1 selected/);
-    let band = screen.getByTestId('roll-range');
-    expect(band.style.left).toBe('128px');
-    expect(band.style.width).toBe('64px');
+    expect(screen.queryByTestId('roll-range')).toBeNull();
+    expect(screen.getByTestId('roll-items-range').style.left).toBe('128px');
+    expect(screen.getByTestId('roll-items-range').style.width).toBe('64px');
 
-    // Marquee over empty space only: no events, but a time range.
+    // Marquee over empty space only: no events, a time selection with the cyan band only.
     drag(roll, { x: 300, y: 10 }, { x: 420, y: 30 });
     expect(roll).toHaveAccessibleName(/0 selected/);
-    band = screen.getByTestId('roll-range');
+    const band = screen.getByTestId('roll-range');
     expect(band.style.left).toBe('288px');
     expect(band.style.width).toBe('160px');
+    expect(screen.queryByTestId('roll-items-range')).toBeNull();
 
-    // A marquee that touches n3 and runs on over empty space: the events plus the whole span.
+    // A marquee that touches n3 selects it: the neutral band, never the cyan one.
     drag(roll, { x: 300, y: rowY(67) - 8 }, { x: 600, y: rowY(67) + 8 });
     expect(roll).toHaveAccessibleName(/1 selected/);
-    band = screen.getByTestId('roll-range');
-    expect(band.style.left).toBe('256px');
-    expect(band.style.width).toBe('352px');
+    expect(screen.queryByTestId('roll-range')).toBeNull();
+    expect(screen.getByTestId('roll-items-range')).toBeInTheDocument();
 
     // Nothing above touched the clip or the history.
     expect(desk.snippets[0]).toBe(clipBefore);
@@ -385,11 +385,10 @@ describe('the note clip editor', () => {
     });
     fireEvent.pointerMove(roll, { clientX: 140 + 64, clientY: rowY(64), pointerId: 2 });
     fireEvent.pointerUp(roll, { clientX: 140 + 64, clientY: rowY(64), pointerId: 2 });
-    expect(screen.getByTestId('roll-range').style.left).toBe('192px');
+    expect(screen.queryByTestId('roll-range')).toBeNull();
     act(() => undo());
     expect(roll).toHaveAccessibleName(/1 selected/);
-    expect(screen.getByTestId('roll-range').style.left).toBe('128px');
-    expect(screen.getByTestId('roll-range').style.width).toBe('64px');
+    expect(screen.queryByTestId('roll-range')).toBeNull();
   });
 
   it('treats a refused edit as nothing happening: notes and selection stay, and the notice shows', async () => {
@@ -463,6 +462,87 @@ describe('the note clip editor tools', () => {
     expect(band.style.width).toBe(`${6 * 64 - 96}px`);
     expect(desk.snippets[0]).toBe(before);
     expect(historyChangeCount()).toBe(changes);
+    // The band belongs to the time selection, not the tool: it stays through a tool switch ...
+    act(() => tool('Pointer').click());
+    expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+    // ... and goes (for the neutral note band) as soon as a note is clicked.
+    fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+      clientX: 140,
+      clientY: rowY(64),
+      pointerId: 5,
+    });
+    fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 5 });
+    expect(roll).toHaveAccessibleName(/1 selected/);
+    expect(screen.queryByTestId('roll-range')).toBeNull();
+    expect(screen.getByTestId('roll-items-range')).toBeInTheDocument();
+    expect(screen.getByTestId('roll-items-range')).toBeInTheDocument();
+  });
+
+  describe('the time band is cleared by the next press, and never shares the panel with the items band', () => {
+    async function withTimeBand() {
+      const roll = await open(seededClip());
+      act(() => tool('Time').click());
+      drag(roll, { x: 120, y: 5 }, { x: 300, y: 5 });
+      expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+      expect(screen.queryByTestId('roll-items-range')).toBeNull();
+      return roll;
+    }
+    const bands = () => [
+      screen.queryByTestId('roll-range'),
+      screen.queryByTestId('roll-items-range'),
+    ];
+
+    it('a press on empty roll space clears it before the gesture (Pointer tool)', async () => {
+      const roll = await withTimeBand();
+      act(() => tool('Pointer').click());
+      expect(screen.getByTestId('roll-range')).toBeInTheDocument();
+      fireEvent.pointerDown(roll, { clientX: 700, clientY: 5, pointerId: 7 });
+      expect(bands()).toEqual([null, null]);
+      expect(roll).toHaveAccessibleName(/0 selected/);
+    });
+
+    it('a press on a note clears it and selects the note under the neutral band', async () => {
+      const roll = await withTimeBand();
+      act(() => tool('Pointer').click());
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 140,
+        clientY: rowY(64),
+        pointerId: 8,
+      });
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+      fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 8 });
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+      expect(screen.getByTestId('roll-items-range')).toBeInTheDocument();
+    });
+
+    it('a press in the velocity lane clears it', async () => {
+      await withTimeBand();
+      const pin = document.querySelector('[data-testid="velocity-pin"]') as HTMLElement;
+      fireEvent.pointerDown(pin, { clientX: 0, clientY: 8, pointerId: 9 });
+      expect(screen.queryByTestId('roll-range')).toBeNull();
+      expect(screen.queryByTestId('velocity-range')).toBeNull();
+    });
+
+    it('a new Time drag replaces the band: exactly one band, the new one', async () => {
+      const roll = await withTimeBand();
+      drag(roll, { x: 400, y: 5 }, { x: 460, y: 5 });
+      const band = screen.getByTestId('roll-range');
+      expect(band.style.left).toBe('384px');
+      expect(screen.getAllByTestId('roll-range')).toHaveLength(1);
+      expect(screen.queryByTestId('roll-items-range')).toBeNull();
+    });
+
+    it('the lane shows the cyan band only for a time selection, and never an items band', async () => {
+      const roll = await withTimeBand();
+      expect(screen.getByTestId('velocity-range')).toBeInTheDocument();
+      fireEvent.pointerDown(screen.getByTitle(/^E4 · 2\.000 qn/), {
+        clientX: 140,
+        clientY: rowY(64),
+        pointerId: 10,
+      });
+      fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 10 });
+      expect(screen.queryByTestId('velocity-range')).toBeNull();
+    });
   });
 
   it('pencil: a click adds a note at the remembered length; a drag sets length and velocity together, both remembered per viewer', async () => {
@@ -1005,5 +1085,78 @@ describe('the note editor as one panel', () => {
     expect(preview).not.toHaveAttribute('data-colored');
     expect(preview.style.getPropertyValue('--note-color')).toBe('');
     fireEvent.pointerCancel(roll, { pointerId: 1 });
+  });
+});
+
+describe('the note editor on a very long clip', () => {
+  const longClip = (): Snippet => {
+    const base = seededClip();
+    const extent = 4 * 72_000;
+    return {
+      ...base,
+      id: 'long',
+      packet: {
+        ...base.packet,
+        frame: {
+          ...base.packet.frame!,
+          extent,
+          musicalExtent: musicalDuration(extent),
+        },
+      },
+    };
+  };
+
+  it('draws a bounded number of grid lines, ruler labels and lane lines for 72000 bars', async () => {
+    const roll = await open(longClip());
+    const lines = () => roll.querySelectorAll('[data-kind]').length;
+    expect(lines()).toBeGreaterThan(0);
+    expect(lines()).toBeLessThan(600);
+    expect(screen.getAllByTestId('velocity-grid-line').length).toBeLessThan(600);
+    expect(screen.getByTestId('roll-ruler').querySelectorAll('span').length).toBeLessThan(100);
+  });
+
+  it('zooms out far enough to read bar numbers on every 2nd, 4th, 8th... bar, still bounded', async () => {
+    await open(longClip());
+    const out = screen.getByRole('button', { name: 'Zoom out in time' });
+    const rulerLabels = () =>
+      [...screen.getByTestId('roll-ruler').querySelectorAll('span')]
+        .map((element) => element.textContent ?? '')
+        .filter((text) => /^[0-9]+$/.test(text))
+        .map(Number);
+    const steps: number[] = [];
+    for (let click = 0; click < 40; click += 1) {
+      fireEvent.click(out);
+      const labels = rulerLabels();
+      expect(labels.length).toBeLessThan(200);
+      expect(document.querySelectorAll('[data-kind]').length).toBeLessThan(600);
+      if (labels.length > 1) {
+        const step = labels[1] - labels[0];
+        // Labels on bars 1 + k * step, the step a power of two.
+        expect(Math.log2(step) % 1).toBe(0);
+        labels.forEach((label) => expect((label - 1) % step).toBe(0));
+        steps.push(step);
+      }
+    }
+    // The step only ever grows as the zoom goes out, and gets well past one bar.
+    steps.forEach((step, index) => expect(step).toBeGreaterThanOrEqual(steps[index - 1] ?? 1));
+    expect(Math.max(...steps)).toBeGreaterThanOrEqual(16);
+    expect(NOTE_EDITOR_TIME_ZOOM.min).toBeLessThanOrEqual(0.25);
+  });
+});
+
+describe('gridSourceFor', () => {
+  it('is the shared density function for the clip meter and grid unit, bounded by the window', () => {
+    const source = gridSourceFor('3/4', 0.25);
+    const lines = source(0, 30, 64, 4 * 72_000);
+    // 64 px per quarter with a 1/16 grid: dotted subdivisions between beats and bars.
+    expect(lines.some((line) => line.subdivision)).toBe(true);
+    expect(
+      lines.filter((line) => line.kind === 'bar').every((line) => (line.at / 3) % 1 === 0)
+    ).toBe(true);
+    // Far out: bar lines only, thinned, numbers on bars 1 + k * step.
+    const far = source(0, 3 * 4000, 0.25, 4 * 72_000);
+    expect(far.length).toBeLessThan(400);
+    expect(far.every((line) => line.kind === 'bar')).toBe(true);
+    expect(far[0]).toMatchObject({ at: 0, label: '1' });
   });
 });

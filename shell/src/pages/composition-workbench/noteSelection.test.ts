@@ -4,11 +4,14 @@ import { packet, type DataItem } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
 import { moveNotes } from './noteClipEdits';
 import {
+  clearTimeSelection,
   emptyNoteSelection,
   extendRange,
   followEdit,
+  itemsBand,
   pruneSelection,
   selectIds,
+  selectTime,
 } from './noteSelection';
 
 function item(id: string, start: number, length: number): DataItem<NoteEventValue> {
@@ -46,6 +49,18 @@ describe('note selection: events and the time they occupy', () => {
     expect(extendRange(picked, { start: 3, end: 3 })).toBe(picked);
   });
 
+  it('marks a time selection, and any other way of selecting clears the mark', () => {
+    const timed = selectTime(selectIds(notes, ['b']), { start: 2.5, end: 5 });
+    expect(timed).toEqual({ ids: ['b'], range: { start: 2, end: 5 }, kind: 'time' });
+    expect(selectTime(emptyNoteSelection, { start: 6, end: 8 })).toEqual({
+      ids: [],
+      range: { start: 6, end: 8 },
+      kind: 'time',
+    });
+    expect(selectIds(notes, ['b']).kind).toBeUndefined();
+    expect(extendRange(selectIds(notes, ['b']), { start: 2.5, end: 5 }).kind).toBeUndefined();
+  });
+
   it('drops events that are gone and falls back to what is left', () => {
     const wide = extendRange(selectIds(notes, ['a', 'b']), { start: 0, end: 7 });
     const without = packet('events', 'note', [item('a', 0, 1)]);
@@ -57,5 +72,21 @@ describe('note selection: events and the time they occupy', () => {
     const wide = extendRange(selectIds(notes, ['b']), { start: 2, end: 4 });
     const moved = moveNotes(notes, ['b'], { start: 1, pitchMidicents: 0 });
     expect(followEdit(wide, notes, moved)).toEqual({ ids: ['b'], range: { start: 3, end: 5 } });
+  });
+});
+
+describe('one band at a time', () => {
+  it('a time selection is cleared by a press; a note selection is kept', () => {
+    const time = selectTime(emptyNoteSelection, { start: 1, end: 3 });
+    expect(clearTimeSelection(time)).toBe(emptyNoteSelection);
+    const picked = selectIds(notes, ['b']);
+    expect(clearTimeSelection(picked)).toBe(picked);
+  });
+
+  it('the items band is the notes span for a note selection, never for a time selection or no notes', () => {
+    expect(itemsBand(selectIds(notes, ['b']))).toEqual({ start: 2, end: 3 });
+    expect(itemsBand(selectTime(selectIds(notes, ['b']), { start: 1, end: 3 }))).toBeNull();
+    expect(itemsBand(emptyNoteSelection)).toBeNull();
+    expect(itemsBand(extendRange(emptyNoteSelection, { start: 1, end: 2 }))).toBeNull();
   });
 });
