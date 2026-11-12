@@ -6,6 +6,7 @@ import { CompositionSettingsProvider, useCompositionSettings } from './compositi
 import {
   canRedo,
   canUndo,
+  closeHistoryGroup,
   COALESCE_WINDOW_MS,
   foldIntoHistory,
   HISTORY_DEPTH,
@@ -283,25 +284,25 @@ describe('usePersistentState history', () => {
     expect(result.current[0]).toBe(6);
   });
 
-  it('records authored settings but not playback ones', () => {
+  it('records every setting, playback ones included, and undo restores them together', () => {
     const { result } = renderHook(() => useCompositionSettings(), {
       wrapper: CompositionSettingsProvider,
     });
+    const initial = result.current.settings;
     act(() => result.current.updateTransport({ metronome: true }));
-    act(() => result.current.updateTransport({ metronomeVolume: 10, countIn: false }));
-    act(() => result.current.updateSettings({ sounds: result.current.settings.sounds }));
-    expect(canUndo()).toBe(false);
-
-    const tempo = result.current.settings.transport.tempo;
+    expect(canUndo()).toBe(true);
+    closeHistoryGroup();
     act(() => result.current.updateTransport({ tempo: 90 }));
-    act(() => result.current.updateTransport({ metronome: false }));
     act(() => undo());
-    expect(result.current.settings.transport.tempo).toBe(tempo);
-    // Undo reverts tempo only; the metronome stays where it was last put.
-    expect(result.current.settings.transport.metronome).toBe(false);
+    expect(result.current.settings.transport.tempo).toBe(initial.transport.tempo);
+    expect(result.current.settings.transport.metronome).toBe(true);
+    act(() => undo());
+    expect(result.current.settings).toEqual(initial);
     expect(
-      JSON.parse(localStorage.getItem('hrifa.composition-workbench.settings.v1')!).transport.tempo
-    ).toBe(tempo);
+      JSON.parse(localStorage.getItem('hrifa.composition-workbench.settings.v1')!).transport
+    ).toEqual(initial.transport);
+    act(() => redo());
+    expect(result.current.settings.transport.metronome).toBe(true);
     expect(Object.keys(localStorage).filter((key) => key.includes('#'))).toEqual([]);
   });
 

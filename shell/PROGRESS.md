@@ -47,5 +47,12 @@ K2b reviewer FAIL (1 high: two tabs can leave the stored desk unloadable; 3 medi
 - K2c lows fixed by the orchestrator with approval: module removal skips while reloading; open() has a busy guard, a try/catch safety net that clears the reloading flag, reload before stopAll (wrapped), and a stall message after 4 s; edits during an in-flight open are accepted as is.
 - Gate green 56 / 670. Committed.
 
+## Follow-up before K3 (human, 2026-11-11)
+- Transport and sounds (metronome, count-in, voices and their volumes/sounds) are part of a project: always saved, restored on open by default.
+- The "Open transport and sounds too" switch moves out of the project menu into a new "Developer" menu button on the top bar (temporary; human may move or remove it later).
+- Changing any of those settings marks the project unsaved AND is undoable (reverses K1b's authored-only rule). Slider drags/typing coalesce into one step as elsewhere.
+
+- Done: every compositionSettings field is recorded via one virtual `#settings` history key (replaces `#authored`), so playback changes are undoable and mark the project unsaved; Developer button + popover on the top bar (DeveloperMenu.tsx, developerOptions.ts, key `hrifa.developer-options.v1`, outside projects and history). Gate green 57 / 678. Committed.
+
 ## Next action
 Start K3 (generalise the bottom panel) with a builder.

@@ -5,6 +5,7 @@ import {
   defaultCompositionSettings,
   useCompositionSettings,
 } from './compositionSettings';
+import { closeHistoryGroup, historyChangeCount, redo, resetHistory, undo } from './history';
 
 const STORAGE_KEY = 'hrifa.composition-workbench.settings.v1';
 const wrapper = ({ children }: { children: ReactNode }) =>
@@ -12,6 +13,7 @@ const wrapper = ({ children }: { children: ReactNode }) =>
 
 beforeEach(() => {
   localStorage.clear();
+  resetHistory();
 });
 
 describe('composition settings', () => {
@@ -46,5 +48,58 @@ describe('composition settings', () => {
     const { result } = renderHook(() => useCompositionSettings(), { wrapper });
     act(() => result.current.updateSettings({ edo: 0 }));
     expect(result.current.settings.edo).toBe(defaultCompositionSettings.edo);
+  });
+
+  it('undoes and redoes a playback setting exactly', () => {
+    const { result } = renderHook(() => useCompositionSettings(), { wrapper });
+    act(() => result.current.updateTransport({ metronome: true }));
+    closeHistoryGroup();
+    act(() => result.current.updateTransport({ countIn: true }));
+    closeHistoryGroup();
+    act(() =>
+      result.current.updateSettings({
+        sounds: {
+          ...result.current.settings.sounds,
+          metronome: { ...result.current.settings.sounds.metronome, baseMidicents: 7200 },
+        },
+      })
+    );
+    const after = result.current.settings;
+    act(() => undo());
+    expect(result.current.settings.sounds).toEqual(defaultCompositionSettings.sounds);
+    expect(result.current.settings.transport.countIn).toBe(true);
+    act(() => undo());
+    expect(result.current.settings.transport.countIn).toBe(false);
+    expect(result.current.settings.transport.metronome).toBe(true);
+    act(() => undo());
+    expect(result.current.settings).toEqual(defaultCompositionSettings);
+    act(() => {
+      redo();
+      redo();
+      redo();
+    });
+    expect(result.current.settings).toEqual(after);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual(after);
+  });
+
+  it('folds a volume drag into one undo step', () => {
+    const { result } = renderHook(() => useCompositionSettings(), { wrapper });
+    act(() => {
+      [20, 40, 60, 80].forEach((metronomeVolume) =>
+        result.current.updateTransport({ metronomeVolume })
+      );
+    });
+    closeHistoryGroup();
+    act(() => undo());
+    expect(result.current.settings.transport.metronomeVolume).toBe(
+      defaultCompositionSettings.transport.metronomeVolume
+    );
+  });
+
+  it('counts a playback change as a recorded change (the unsaved-changes flag follows it)', () => {
+    const { result } = renderHook(() => useCompositionSettings(), { wrapper });
+    const before = historyChangeCount();
+    act(() => result.current.updateTransport({ metronome: true }));
+    expect(historyChangeCount()).toBeGreaterThan(before);
   });
 });

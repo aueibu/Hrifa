@@ -1,7 +1,11 @@
 import { act, render, renderHook, screen, userEvent, waitFor, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectMenu } from './components/ProjectMenu';
-import { STORAGE_KEY as settingsKey } from './compositionSettings';
+import {
+  CompositionSettingsProvider,
+  STORAGE_KEY as settingsKey,
+  useCompositionSettings,
+} from './compositionSettings';
 import { DeskProvider, useDesk } from './desk';
 import {
   DESK_DB_NAME,
@@ -13,6 +17,7 @@ import {
   writeDeskNow,
 } from './deskStore';
 import { renderDesk, storedDesk } from './deskTestUtils';
+import { DEVELOPER_OPTIONS_KEY } from './developerOptions';
 import { historyChangeCount, recordChange, resetHistory } from './history';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
@@ -563,6 +568,53 @@ describe('ProjectMenu', () => {
     expect(screen.queryByRole('dialog', { name: 'Unsaved changes' })).toBeNull();
     expect(stopAll).toHaveBeenCalled();
     expect(localStorage.getItem(moduleKey)).toBe('5');
+  });
+
+  it.each([
+    [true, '{"edo":12}'],
+    [false, '{"edo":19}'],
+  ])('with the developer option %s, opening leaves settings as %s', async (include, expected) => {
+    const user = userEvent.setup();
+    const { desk, reload } = renderMenu();
+    await waitFor(() => expect(desk().loading).toBe(false));
+    act(() => desk().addSnippet(clip('a')));
+    localStorage.setItem(settingsKey, '{"edo":12}');
+    await user.click(screen.getByRole('button', { name: 'Projects' }));
+    await saveAs(user, 'S');
+    localStorage.setItem(settingsKey, '{"edo":19}');
+    localStorage.setItem(DEVELOPER_OPTIONS_KEY, JSON.stringify({ openIncludesSettings: include }));
+    await user.click(await screen.findByRole('button', { name: 'Open project S' }));
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    expect(localStorage.getItem(settingsKey)).toBe(expected);
+  });
+
+  it('a playback setting change marks the project unsaved', async () => {
+    const user = userEvent.setup();
+    let settings: ReturnType<typeof useCompositionSettings> | undefined;
+    function Probe() {
+      settings = useCompositionSettings();
+      return null;
+    }
+    render(
+      <CompositionSettingsProvider>
+        <DeskProvider>
+          <Probe />
+          <ProjectMenu reload={vi.fn()} />
+        </DeskProvider>
+      </CompositionSettingsProvider>
+    );
+    await user.click(screen.getByRole('button', { name: 'Projects' }));
+    await saveAs(user, 'P');
+    expect(screen.queryByText(/unsaved changes\)/)).toBeNull();
+    act(() => settings!.updateTransport({ metronome: true }));
+    await screen.findByText(/unsaved changes\)/);
+  });
+
+  it('never captures the developer option in a project', async () => {
+    localStorage.setItem(DEVELOPER_OPTIONS_KEY, '{"openIncludesSettings":false}');
+    localStorage.setItem(moduleKey, '1');
+    const captured = captureWorkbenchState();
+    expect(Object.keys(captured)).not.toContain(DEVELOPER_OPTIONS_KEY);
   });
 
   it('opening while dirty prompts: Cancel changes nothing, Discard opens', async () => {

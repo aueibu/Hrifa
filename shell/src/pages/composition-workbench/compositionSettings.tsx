@@ -92,19 +92,11 @@ function sanitizeTransport(raw: unknown): TransportSettings {
 export const STORAGE_KEY = 'hrifa.composition-workbench.settings.v1';
 
 /**
- * History key for the authored part of the settings (EDO, tempo, meter, pulse). Virtual: it is
- * never written to storage, which keeps holding the whole settings object.
+ * History key for the settings. Virtual: it is never written to storage, which keeps holding the
+ * whole settings object. Every persisted setting (EDO, tempo, meter, pulse, metronome, count-in,
+ * metronome volume, voices) is a user choice, so the step holds the whole object.
  */
-const AUTHORED_HISTORY_KEY = `${STORAGE_KEY}#authored`;
-
-function authoredRaw(settings: CompositionSettings) {
-  return JSON.stringify({
-    edo: settings.edo,
-    tempo: settings.transport.tempo,
-    meter: settings.transport.meter,
-    pulse: settings.transport.pulse,
-  });
-}
+const SETTINGS_HISTORY_KEY = `${STORAGE_KEY}#settings`;
 
 function readStoredSettings(): CompositionSettings {
   try {
@@ -148,11 +140,10 @@ export function CompositionSettingsProvider({ children }: { children: ReactNode 
     const next = compute(previous);
     settingsRef.current = next;
     setSettings(next);
-    // Only the authored settings are undoable; playback ones (metronome, count-in, voices) are not.
     recordChange({
-      key: AUTHORED_HISTORY_KEY,
-      previous: authoredRaw(previous),
-      next: authoredRaw(next),
+      key: SETTINGS_HISTORY_KEY,
+      previous: JSON.stringify(previous),
+      next: JSON.stringify(next),
       virtual: true,
     });
   }, []);
@@ -160,26 +151,9 @@ export function CompositionSettingsProvider({ children }: { children: ReactNode 
   // Undo and redo write their target back through here.
   useEffect(
     () =>
-      registerHistoryApplier(AUTHORED_HISTORY_KEY, (raw) => {
+      registerHistoryApplier(SETTINGS_HISTORY_KEY, (raw) => {
         try {
-          const authored = JSON.parse(raw) as {
-            edo: number;
-            tempo: number;
-            meter: string;
-            pulse: string;
-          };
-          const current = settingsRef.current;
-          // Playback settings stay as they are now; only the authored ones go back.
-          const restored = sanitizeCompositionSettings({
-            ...current,
-            edo: authored.edo,
-            transport: {
-              ...current.transport,
-              tempo: authored.tempo,
-              meter: authored.meter,
-              pulse: authored.pulse,
-            },
-          });
+          const restored = sanitizeCompositionSettings(JSON.parse(raw));
           settingsRef.current = restored;
           setSettings(restored);
           return true;

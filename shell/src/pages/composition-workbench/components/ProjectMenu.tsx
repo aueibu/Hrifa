@@ -8,7 +8,6 @@ import {
   Popover,
   ScrollArea,
   Stack,
-  Switch,
   Text,
   TextInput,
   Tooltip,
@@ -24,6 +23,7 @@ import {
   type ProjectRecord,
   type StoredProject,
 } from '../deskStore';
+import { readDeveloperOptions } from '../developerOptions';
 import { historyChangeCount, useHistoryChangeCount } from '../history';
 import {
   openProject,
@@ -88,7 +88,6 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
   );
   const currentRef = useRef(current);
   const [name, setName] = useState('');
-  const [includeSettings, setIncludeSettings] = useState(true);
   // Deleting can't be undone, so it asks once more on the same row.
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
@@ -193,7 +192,12 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
     try {
       let result: Awaited<ReturnType<typeof openProject>>;
       try {
-        result = await openProject({ id: project.id, desk, includeSettings });
+        result = await openProject({
+          id: project.id,
+          desk,
+          // Read when opening, so the Developer menu's current choice always applies.
+          includeSettings: readDeveloperOptions().openIncludesSettings,
+        });
       } catch (error) {
         // openProject reports failures as results; this is a safety net so the page never stays
         // frozen by a stray reloading flag.
@@ -361,13 +365,6 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
                 Save project
               </Button>
             </Group>
-            <Switch
-              size="xs"
-              label="Open transport and sounds too"
-              description="Off keeps your current tempo, metronome, and voices."
-              checked={includeSettings}
-              onChange={(event) => setIncludeSettings(event.currentTarget.checked)}
-            />
             {projects === null ? (
               <Text size="xs" c="dimmed">
                 Loading projects…

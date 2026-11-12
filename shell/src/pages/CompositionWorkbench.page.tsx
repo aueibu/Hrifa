@@ -19,6 +19,7 @@ import { CompositionCanvas } from './composition-workbench/components/Compositio
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
 import { DeskView } from './composition-workbench/components/DeskView';
+import { DeveloperMenu } from './composition-workbench/components/DeveloperMenu';
 import { FractioningModule } from './composition-workbench/components/FractioningModule';
 import { HouseholderModule } from './composition-workbench/components/HouseholderModule';
 import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
@@ -596,6 +597,7 @@ export function CompositionWorkbenchPage() {
                       </Group>
                       <TransportBar selectedInstanceId={activeCompositionInstanceId} />
                       <Group gap="xs" wrap="nowrap" justify="flex-end">
+                        <DeveloperMenu />
                         <ProjectMenu />
                         <ColorSchemeToggle />
                       </Group>
