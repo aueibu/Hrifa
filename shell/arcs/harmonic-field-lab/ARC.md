@@ -164,6 +164,7 @@ Proposal:
   - [ ] Persistence through the shell pattern (`loadSettings`/`saveSettings`/`sanitizeSettings`): `hrifa.harmonic-field-lab.settings.v1`, `…tabs.v1`, `…subsets.v1`, `…layout.v1` (from the mock's v3 shape); bad data falls back to defaults; nothing lost on reload.
   - [ ] Analysis panels may show live data where it is cheap; otherwise they keep their mock content until M6 (say which in the report).
   - [ ] Tests: lab state reducers, persistence round-trips and bad data, the voice engine against a fake AudioContext (voice start/stop/glide, panic), page tests for generation and selection; `check:hfl` green.
+- Checkpoint decisions (human, 2026-11-13): **APPROVED** ("I am happy with this"), including the builder's choices: click toggles + pins (no sound on ring click), a new method/preset selects all, EDO edits keep shared pitches, tab close without confirm, Alt+1..9, chord chip click = sticky highlight + sound, Sine / Harmonic (7 partials) timbres.
 - Human checkpoint after: **yes** (ears and feel)
 
 ### M6: Live analysis panels + parity

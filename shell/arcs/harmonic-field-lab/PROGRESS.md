@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M5
-- State: awaiting human (M5 checkpoint: ears and feel)
+- Current milestone: M6
+- State: not started (M5 approved)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -21,6 +21,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | M4 | Layout mock, many rounds with the human live: mock 1 (article scroll) rejected `5d4e729`; one-screen workspace `76c9121`; families + voicings + fifths ring + saved sparkline strips `cc23181`; reference lines and aligned rows `db2f785`; note marks as one SVG per note with tip-coloured, tapered error `aa24de3`..`ffece44`; selection under the ring `b24996c`; pinned panel columns `b703dea`; stacks + splitters `4595a9c`; Visualizer panels, 3D lattice, EDO fit, dissonance, iso keyboard, 3-stacks, stack-with menu, H-2 colours `ac7b371`. | `check:hfl` GREEN, 418 | Approved by the human 2026-11-13 ("let's rock and roll"); all decisions in ARC M4. M5/M6 re-cut. Selection-controls redesign parked in BACKLOG. |
 | M4 review | Reviewer PASS-WITH-HUMAN-CHECK over `efdaea6..ac7b371` (429 tests). Medium: per-render WebGL probe, `maxTotal` not a hard cap, renderer creation could crash, eager mock import. Low: tooltip facts, octave dip label, layout validation wiping everything, stale docs, `resolveColor`, selection look per view, NaN guards. | 429 | All fixed in M5. |
 | M5 | Live page at `/harmonic-field-lab`, commit `d81c938`: one lab state (`state/`), live generation/tabs/selection/saved subsets/.scl, live analysis panels and visualizers (Retuner and template editor still mock), lab voice engine (`audio/`: held voices, glide API, sine/harmonic, panic), persistence `settings.v1`, `layout.v1`, `tabs.v1`, `subsets.v1` (entry-by-entry sanitising, no write on mount, pending selection for broken tabs, cross-window subset sync). Mock route lazy. Locks on the entry file and Router released. 2 builder attempts. | `check:hfl` GREEN, 577 | Reviewer attempt 1 FAIL (data loss on mount for broken tabs, no debounce, panic click, CPS genKey dropping the mask, wrong Wave tooltip + lows); all fixed in attempt 2 with tests. Builder decisions for the human: click toggles + pins (no sound), new method selects all, EDO 12 to 7 keeps shared pitches, tab close without confirm, Alt+1..9, chord chip click = sticky highlight + sound. |
+| M5 checkpoint | Approved by the human 2026-11-13 ("I am happy with this"), builder decisions accepted. | `check:hfl` GREEN, 577 | Pushed to origin with the rest of `main`. |
 
 ## C0 scan (2026-11-12)
 - **Other arcs:** `workbench` has no active arc (clips and desk arcs archived); `structure` is done. No other active arc owns or locks anything. `arcs/LOCKS.md` was empty.
@@ -73,4 +74,4 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-Human checkpoint M5 (ears and feel, builder decisions). Then M6 (ARC): live chord template editor, parity checklist, glossary, .scl import, retire the mock route (Router lock).
+M6 (ARC): take the Router lock, brief a builder for the live chord template editor (`…chordfinder.v1`), glossary drawer, .scl import, feature-parity checklist against the frozen prototype, and retiring `/harmonic-field-lab/mock` (keep `mockRetuner.ts` until M7).
