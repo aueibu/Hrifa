@@ -101,7 +101,7 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
 - API (export all): `timbre({partials, rolloff})` and named presets matching the page's playback timbres; `interference(freqsHz, timbre, {model: 'hutchinson-knopoff' | 'sethares'})` → `{total, worst, dyads (matrix), perNote}`; `periodicity(freqsHz, {toleranceCents})` → `{value, ratios (e.g. [4,5,6])}`; `harmonicity(freqsHz, opts)` → `{value, virtualPitchHz}`; `scoreVoicing(voicing, opts)` → all of the above; `standardise(scores[])`, `combine(scores, weights)`, `paretoFront(points)`.
 - Acceptance:
   - [ ] Register: a M3 on C2 has more interference than on C4, and on C4 more than on C6.
-  - [ ] Octave placement: M10 has less interference and lower (simpler) periodicity than M3 on the same root; the same holds for m9 vs m2.
+  - [ ] Octave placement: M10 has less interference and lower (simpler) periodicity than M3 on the same root (5/2 vs 5/4); m9 has less interference than m2 and periodicity no higher (32/15 and 16/15 share denominator 15, so equal is correct). (Corrected by the orchestrator before M1, 2026-11-13: the first draft wrongly required m9 to be simpler.)
   - [ ] Harmonicity: JI 4:5:6 > 12-EDO major triad > `0 1 2` cluster, at 220 Hz; no 1/n floor (a regression test against the v2 bug).
   - [ ] Interference dyad curve (two harmonic tones, default timbre, fine sweep) has local minima at 1/1, 6/5, 5/4, 4/3, 3/2, 5/3, 2/1.
   - [ ] Decomposition: without masking, `total` equals the sum of `dyads` (≤ 1e-9 relative); `perNote` equals total minus total-without-note.
