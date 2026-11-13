@@ -57,6 +57,14 @@ function fieldOf(c: { gen: any; rep: string; primes?: number[] }) {
   const rep = P(c.rep);
   return { rep, field: H.buildField(rawNotes(c.gen, rep), rep, maskOf(c.primes)).notes };
 }
+function cardOf(c: { notes: string[]; rep?: string; base?: string }): H.RetunerCard {
+  return {
+    name: 'card',
+    notes: c.notes.map(P),
+    rep: P(c.rep ?? '2/1'),
+    base: P(c.base ?? '1/1'),
+  };
+}
 const eqList = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const near = (a: number, b: number) => Math.abs(a - b) < TOL;
 const selIdx = (c: Case, field: Note[]): number[] =>
@@ -774,6 +782,27 @@ function check(c: Case): string | null {
       }
       return null;
     }
+    case 'pivot': {
+      const held = c.held.map(([key, deg, oct, t]: number[]) => ({ key, deg, oct, t }));
+      const got = H.pickPivot(held, c.mode);
+      const want = e === null ? null : e;
+      return (got ? got.key : null) === want ? null : `pivot ${got ? got.key : null}`;
+    }
+    case 'degreeOf': {
+      const card = cardOf(c.card);
+      const got = H.degreeOf(card, c.cents, c.tol);
+      return eqList(got, e) ? null : `got ${JSON.stringify(got)}`;
+    }
+    case 'nearestDegree': {
+      const card = cardOf(c.card);
+      const got = H.nearestDegree(card, c.hz, { metric: c.metric, refHz: c.refHz });
+      return eqList(got, e) ? null : `got ${JSON.stringify(got)}`;
+    }
+    case 'reroot': {
+      const cards = c.cards.map(cardOf);
+      const got = H.rerootCards(cards, c.ref, c.deg).map((b) => (b ? H.fmtRatio(b as Note) : null));
+      return eqList(got, e.bases) ? null : `got ${JSON.stringify(got)}`;
+    }
     default:
       return `unknown op ${c.op}`;
   }
@@ -821,8 +850,8 @@ function presetCheck(p: Preset): string | null {
 }
 
 describe('harmonic-field vectors (vectors.json)', () => {
-  it('has the 168 vectors and 53 presets of the frozen prototype', () => {
-    expect(cases).toHaveLength(168);
+  it('has the 189 vectors (168 from the frozen prototype + 21 retuner) and 53 presets', () => {
+    expect(cases).toHaveLength(189);
     expect(PRESETS).toHaveLength(53);
   });
 

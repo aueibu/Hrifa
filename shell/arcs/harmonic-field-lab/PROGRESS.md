@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M2
-- State: not started
+- Current milestone: M3
+- State: building
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -32,7 +32,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - M1: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `src/pages/Home.page.test.tsx`, `ARCHITECTURE.md`: taken 2026-11-12, released 2026-11-12 after the M1 commit `3c50fce` (Home test lock released unused).
 
 ## Open questions for human
-- None now (per-milestone questions are in ARC.md).
+- Before M7: Manual pivot by degree (Infinitone parity, now the default via `manualDeg`) or by held key? Both work in the engine.
+- Per-milestone questions are in ARC.md.
 
 ## Next action
-M2: brief a `builder` for the retuner engine + Infinitone-parity scorer in `src/lib/harmonic-field/` (owned paths only, no locks needed), then reviewer, `check:hfl`, commit.
+M3: builder for the three more scorers (pitch-fair periodicity, lattice, Sethares roughness default) + `compareScorers` table, owned paths only; then reviewer, `check:hfl`, commit, paste the table here.

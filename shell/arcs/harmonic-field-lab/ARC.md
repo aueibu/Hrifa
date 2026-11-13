@@ -1,6 +1,6 @@
 # ARC: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI
 
-**Status: APPROVED (2026-11-12).** Moved into the shell's multi-arc layout the same day (from `C:\Users\apoor\Documents\Infinitone Tracing\ARC.md`, history in `PROGRESS.md`), and re-ordered so the retuner is written once, in TS, after the core port. Next: M2.
+**Status: APPROVED (2026-11-12).** Moved into the shell's multi-arc layout the same day (from `C:\Users\apoor\Documents\Infinitone Tracing\ARC.md`, history in `PROGRESS.md`), and re-ordered so the retuner is written once, in TS, after the core port. Next: M3.
 
 The source repo `C:\Users\apoor\Documents\Infinitone Tracing` (below: **the Infinitone repo**) keeps the frozen JS prototype (`prototype/`), its contracts (`ARCHITECTURE.md`, `prototype/CORE_SPEC.md`) and the RE notes (`notes/`). Read them by absolute path; never edit them (they are outside this arc's paths, except the one-time freeze note and pointer done at Setup).
 
@@ -99,6 +99,7 @@ Proposal:
   - [ ] Test (drift): a fixed chord sequence over 5-limit JI cards accumulates a known comma in Freestyle (hand-verified in the report, e.g. 81/80) and exactly 0 in Fixed.
   - [ ] Test: Fixed never chooses card 0; ties go to the lowest index.
   - [ ] Rules documented in the lib `README.md`; new cases in `vectors.json`; `check:hfl` green; path-scoped commit.
+- Checkpoint decisions (human, 2026-11-12): the criterion "4:5:6 at 55 Hz scores clearly worse than at 440 Hz" was wrong in theory (the reconstruction reproduces all 10 measured counts at 220 Hz exactly, yet gives 896 vs 889). Replaced by: 4:5:6 at 20 Hz < 60 % of 440 Hz; at 1760 Hz > 110 %; the 12-EDO-vs-JI gap at 55 Hz < 20 % of the gap at 440 Hz. The Infinitone repo's `notes/AUTORETUNER.md` caveats were corrected (`df6fd5f`). Orchestrator default (parity): Manual pivot takes `manualDeg` (need not be held, as Infinitone), `manualKey` kept as an alternative; drift = chosen card's base minus its `home` (M7 sets `home` when a card is added).
 - Human checkpoint after: no
 
 ### M3: Three more scorers (TS, shell lib)

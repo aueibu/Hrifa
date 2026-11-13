@@ -7,7 +7,7 @@ depending on a page.
 
 Ported behaviour-for-behaviour from the frozen JavaScript prototype (`hfl_core.js`, `hfl_presets.js`, in the Infinitone
 repo's `prototype/`). `vectors.json` (copied unchanged) is the contract: `harmonicField.test.ts` ports the prototype's
-`run_tests.js` op handlers and runs every vector (168) and every preset (53) as its own test. New core rules add cases
+`run_tests.js` op handlers and runs every vector (189) and every preset (53) as its own test. New core rules add cases
 to `vectors.json` (and a handler in the test file if the `op` is new) and a line in this README.
 
 Pitch representation: **monzo + cents** (decision H-1 in `shell/DECISIONS.md`). Midicents or Hz are derived from `c` only
@@ -31,6 +31,8 @@ Import from the barrel (`./index`, or `@/lib/harmonic-field`).
 | `deviation.ts` | `INTERVAL_NAMES`, `fmtSigned`, `nearestRatio`, `deviations`, `deviationsJI`, `semitoneTargets`, `edoTargets`, `scaleTargetsLabeled`, `vsJI` |
 | `scala.ts` | `parseScl`, `toScl` |
 | `presets.ts` | `PRESETS` (data only) and the `Preset` type |
+| `scorers.ts` | `scorePeriodicityInfinitone`, `ScoreResult` (more scorers come in M3) |
+| `retuner.ts` | `pickPivot`, `degreeOf`, `nearestDegree`, `rerootCards`, `retuneStep`, `REF_HZ`, `EMPTY_SCORE` and the `RetunerCard`, `HeldNote`, `Base`, `RetuneOpts`, `RetuneResult`, `RetuneWhy` types |
 
 ## Typical flow
 
@@ -139,3 +141,60 @@ const chords = findChords(rel, rep.c, DEFAULT_TEMPLATES, 18);      // tolerance 
 - Reference builders (all relative to the mode root): `edoTargets(m, repC)` = `k*repC/m` for k < m, labels `P1 m2 M2 m3 M3 P4 TT P5 m6 M6 m7 M7` for 12 steps of a 1200 c repeat, otherwise `k\m`. `scaleTargetsLabeled(sc, kind, stretchRepC?)` = `scaleTargets` with labels: the swara for a melakarta (`S R2 G3 ...`), else the JI ratio (`kind 'ji'`) or the 12-EDO interval name (`'edo12'`). The cents are exactly those of `scaleTargets`.
 - `fmtSigned(x, dp=1)`: rounds first, `+13.7`, `-2.0`, and `0.0` (never `-0.0` or `+0.0`). `vsJI(c, oddLim, repC)` = `ratio + ' ' + fmtSigned(err)`, e.g. `5/4 +13.7`, `3/2 0.0` (the field table column; measured from 1/1, unlike the strip which measures from the mode root).
 - `semitoneTargets(repC)`: `[{c: k*100, label}]` for every k with `k*100 < repC` (the 12-EDO reference of the strip, measured from the mode root; a 3/1 repeat gives 20 targets). Labels are the interval names `P1 … M7` for k < 12, then `"k st"`.
+
+## Retuner (M2)
+
+Behavioural parity with Infinitone 2's Auto Retuner (reverse-engineered notes: the Infinitone repo's `notes/AUTORETUNER.md`),
+not code parity. The engine is pure: the UI resolves held keys to degrees (`nearestDegree`), calls `retuneStep`, then
+applies `bases` and `chosen` and glides the sound.
+
+**Data.** A card is `{name, notes, rep, base, home?}`: `notes` are the degrees above the root (`notes[0]` = 1/1), `rep` the
+repeat, `base` the card's root as `{m, c}` (cents above `refHz`, default `REF_HZ` = middle C; `m` is the exact monzo when
+known, `null` for EDO notes). A held note is `{key, deg, oct, t}`: keyboard note number, degree and octave (repeats above the
+root) **in the active card**, and note-on time.
+
+**Pivot (`pickPivot(held, mode)`).** `lowest` / `highest` = smallest / largest `key`; `recent` = latest `t`; `longest` = earliest
+`t` (ties on `t` go to the lower key); `manual` returns `null` from `pickPivot` (the user names the degree). In `retuneStep`, Manual uses `opts.manualDeg`, a
+degree that need not be held (as in Infinitone); `opts.manualKey` (a held key whose degree is used) is accepted as an
+alternative, and `manualDeg` wins if both are given. `why.pivot` has no `key` for a `manualDeg` pivot. As in Infinitone, the caller decides *which* held set is considered: to keep the note that
+was already sounding, pass the set from before the new note-on.
+
+**Degree lookup.** `degreeOf(card, cents, tol = 0.02)` finds the degree at `cents` above the card's root (reduced into the
+repeat; the repeat itself is degree 0 of the next octave) or `null`. `nearestDegree(card, hz, {metric, refHz})` reduces `hz` into
+the repeat above the card's root and returns `{deg, oct}`: metric `ratio` (Infinitone, default) compares linear frequency
+ratios inside the repeat and never wraps (an assumption: it is unknown whether Infinitone cards include 2/1). Linear distance
+favours the LOWER of two neighbouring degrees (the linear midpoint lies above the geometric mean); `cents` compares cents and may wrap to degree 0
+of the next repeat. Ties: lowest degree.
+
+**Re-root (`rerootCards(cards, refIdx, D)`).** `base(C) = base(R) * ratio_R[D] / ratio_C[D]`, with R the reference card and D the
+pivot degree (the same index in every card). The pivot therefore keeps its absolute pitch in every card (within 1e-9 c). R keeps
+its base. The base is computed on monzos when all parts are exact (so the result is an exact ratio and `c` is recomputed from it,
+e.g. a 9/8 against a 10/9 gives exactly 81/80); otherwise on cents. A card with no degree D gets `null` (not a candidate).
+
+**Freestyle vs Fixed (`opts.anchor`).** Freestyle: R = the active card, so each modulation starts from where you are now and the
+bases random-walk (comma drift). Fixed: R = card 0, so every candidate is derived from the home scale, which never moves; card 0
+is never a candidate (its prediction is empty, its score `EMPTY_SCORE` = 999999). Fixed therefore needs a second card.
+
+**`retuneStep(state, opts)`.** `state = {cards, active, held}`; `opts = {pivotMode (default longest), manualDeg, manualKey, anchor (default
+freestyle), scorer (default: the parity scorer), refHz}`. Steps: pick the pivot; re-root; predict the chord in each candidate card
+as `refHz * 2^((base.c + notes[deg].c + oct * rep.c) / 1200)` for each held note; score each prediction (`scorer(freqs, cardIndex)`
+returns a number or `{score, detail}`; a non-finite score counts as `EMPTY_SCORE`, so a NaN cannot win); choose the lowest score, **ties to the lowest index**. A card that lacks a degree the chord
+uses is not a candidate. With no pivot (manual with neither `manualDeg` nor a held `manualKey`), nothing held, or no candidate, the active card is kept
+and `why.reason` says why (`bases` unchanged).
+Result: `{bases, predictions (Hz per card), scores, chosen, drift, why}`.
+- `drift = {m, c}`: new base of the chosen card minus its `home` (default: its base before the step), so a comma shows as a
+  monzo/ratio (81/80 = `{2:-4, 3:4, 5:-1}`) and `c` is its size in cents. Callers that keep cards between steps set `home` once.
+- `why = {pivot: {key, deg, mode} | null, reference, anchor, tieBreak, reason?, entries}`; each entry
+  `{card, name, eligible, base, predicted (Hz), score, detail, rank (1 = best, null if not eligible), chosen}`.
+
+**Parity scorer (`scorePeriodicityInfinitone(freqs, {dur = 0.1, sr = 44100, bins = 100})` -> `{score, detail}`).** Sum the chord as
+complex sines of amplitude 1/N (pure sines, no harmonics) for t = 0 ... dur at 1/sr steps (phase accumulated in float32), lay a
+bins x bins grid over [-1, 1]^2 and count the cells visited; `score` = that count (lower = more periodic = more consonant), `detail`
+= `{cells, samples, dur, sr, bins}`; empty chord = 999999. Reproduces the measured counts at 220 Hz exactly: single note 374, 3/2
+634, 12-EDO fifth 1390, 4:5:6 901, 12-EDO major 2805, 4:5:6:7 771, 12-EDO dom7 2623, 10:12:15 1996, 12-EDO minor 2850, 45/32 3275.
+**Pitch bias (kept on purpose):** the window is fixed, so the score depends on register. Below about 40 Hz a 4:5:6 chord's common
+period exceeds 0.1 s, the curve cannot close and the chord scores *better* (4:5:6 at 20 Hz: 478; at 55 Hz: 896; at 440 Hz: 889);
+12-EDO major is 1090 at 55 Hz against 2948 at 440 Hz, so tempered and just chords are hard to tell apart in the bass; above a few
+hundred Hz the curve is sampled sparsely and counts rise (880 Hz: 950, 1760 Hz: 1037). This is also why the default scorer of the
+lab will be the roughness scorer (M3).
+

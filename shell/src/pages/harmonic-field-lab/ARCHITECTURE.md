@@ -87,7 +87,7 @@ Notes on the plan, to be confirmed at the M4 mock:
 
 ## Tests
 
-- `src/lib/harmonic-field/harmonicField.test.ts` runs every case of `vectors.json` (168) and every preset (53) as its own
+- `src/lib/harmonic-field/harmonicField.test.ts` runs every case of `vectors.json` (189) and every preset (53) as its own
   test. `vectors.json` is the contract; never change an expected value silently.
 - `src/pages/harmonic-field-lab/HarmonicFieldLab.page.test.tsx` renders the page (header, back link, coming-soon panel).
 - Gate: `corepack yarn check:hfl` (typecheck, oxfmt, oxlint, stylelint, vitest scoped to the lib and this folder).

@@ -11,3 +11,5 @@ export * from './keys';
 export * from './deviation';
 export * from './scala';
 export * from './presets';
+export * from './scorers';
+export * from './retuner';
