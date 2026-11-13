@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
 - Current milestone: M4
-- State: not started
+- State: awaiting human (layout checkpoint)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -57,6 +57,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-12 (Setup, add `check:hfl`), released 2026-11-12 after the setup commit `d1c2abf`.
+- M4: `src/Router.tsx` (mock route): taken 2026-11-12, released 2026-11-12 after the M4 commit.
 - M1: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `src/pages/Home.page.test.tsx`, `ARCHITECTURE.md`: taken 2026-11-12, released 2026-11-12 after the M1 commit `3c50fce` (Home test lock released unused).
 
 ## Open questions for human
@@ -64,4 +65,4 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M4: builder for the encyclopaedia mock route (static numbers from the "Harmonics from 8" preset), screenshots at 1500/1100 px light/dark with headless Edge and a throwaway profile; needs lock rows for `src/Router.tsx` (mock route) unless the mock lives inside the page's own routing. Then reviewer, `check:hfl`, commit, then STOP for the human checkpoint.
+Human checkpoint M4: approve or change the mock layout (open `/harmonic-field-lab/mock` via `dev.bat` or `yarn dev`). Write the decisions under ARC M4 "Checkpoint decisions" (and a DECISIONS row if the colour mapping is confirmed), then M5.

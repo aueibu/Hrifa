@@ -1,0 +1,954 @@
+/* Harmonic Field Lab encyclopaedia mock: layout and states only. Colours are shell roles (--surface, --panel,
+   --panel-inset, --text*, --grid, --border) and category hues (--mark-<hue>, --tint-<hue>-*). No hex, no raw
+   palette shades, no decorative shadows (THEMING.md). */
+
+.root {
+  --hfl-head: 5.75rem;
+  --hfl-dock: 8.5rem;
+
+  background: var(--surface);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ------------------------------------------------------------------------------------------ top bars */
+.bar1,
+.bar2 {
+  align-items: center;
+  display: flex;
+  gap: var(--mantine-spacing-md);
+  justify-content: space-between;
+  padding: 0 var(--mantine-spacing-md);
+}
+
+.bar1 {
+  height: 3rem;
+}
+
+/* the second row is a tier step (inset), not a second line */
+.bar2 {
+  background: var(--panel-inset);
+  height: 2.75rem;
+  overflow: hidden;
+}
+
+.pageTitle {
+  white-space: nowrap;
+}
+
+.mockTag {
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  padding: 0 0.375rem;
+  white-space: nowrap;
+}
+
+.tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.transport {
+  min-width: 0;
+}
+
+.transport input[inputmode='decimal'] {
+  text-align: right;
+}
+
+/* view toggle: no fill; the label and icon turn accent while on */
+/* accent-tint-text is the accent role tuned to stay readable on both schemes */
+.viewToggle[data-on='true'] {
+  color: var(--accent-tint-text);
+}
+
+/* the dock is shorter when closed; the rail leaves room for it */
+.root[data-dock='closed'] {
+  --hfl-dock: 2.5rem;
+}
+
+/* ------------------------------------------------------------------------------------------------ layout */
+.layout {
+  align-items: start;
+  display: grid;
+  gap: var(--mantine-spacing-lg);
+  grid-template-columns: 14.5rem minmax(0, 1fr);
+  margin: 0 auto;
+  max-width: 96rem;
+  padding: var(--mantine-spacing-md) var(--mantine-spacing-lg) 12rem;
+}
+
+.main {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xl);
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+  scroll-margin-top: calc(var(--hfl-head) + 1rem);
+}
+
+.sectionHead {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem var(--mantine-spacing-md);
+}
+
+.grid {
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 46rem) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .articleWrap[data-span='2'] {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 62em) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    max-height: none;
+    position: static;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------- rail */
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: calc(100vh - var(--hfl-head) - 2rem - var(--hfl-dock));
+  overflow-y: auto;
+  position: sticky;
+  top: calc(var(--hfl-head) + 1rem);
+}
+
+.railGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.railSection {
+  background: none;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--mantine-font-family-headings);
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+}
+
+.railItem {
+  align-items: baseline;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  font-size: var(--mantine-font-size-sm);
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+}
+
+.railItem:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.railItem:focus-visible,
+.dockToggle:focus-visible,
+.tip:focus-visible,
+.key:focus-visible,
+.switchChip:focus-visible,
+.railSection:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* current block: filled panel tier + text (tab grammar) */
+.railItem[data-active='true'] {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.railTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railSummary {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  max-width: 6.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railItem[data-active='true'] .railSummary {
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------------------------------------- article */
+.articleWrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  scroll-margin-top: calc(var(--hfl-head) + 1rem);
+}
+
+.article {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.articleHead {
+  align-items: center;
+  display: flex;
+  gap: var(--mantine-spacing-xs);
+  justify-content: space-between;
+}
+
+.articleTitle {
+  margin: 0;
+}
+
+.articleActions {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.chevron[data-open='false'] svg {
+  transform: rotate(-90deg);
+}
+
+.dockToggle .chevron {
+  display: inline-flex;
+}
+
+/* the lede is the key fact: full text colour, one line */
+.lede {
+  color: var(--text);
+  font-size: var(--mantine-font-size-sm);
+}
+
+.articleBody {
+  flex: 1;
+  margin-top: 0.375rem;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------------------------------- primitives */
+.tip {
+  background: none;
+  border: 0;
+  border-bottom: 1px dotted var(--text-subtle);
+  color: inherit;
+  cursor: help;
+  font: inherit;
+  padding: 0;
+  text-align: inherit;
+}
+
+.tipControl[data-block='true'] {
+  display: block;
+}
+
+.tipControl {
+  display: inline-block;
+}
+
+.num {
+  font-size: 0.92em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+}
+
+.note {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem;
+}
+
+.cluster {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.625rem 0.75rem 0.75rem;
+}
+
+.clusterTitle {
+  color: var(--text);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.clusterBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.clusters {
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.methodGrid {
+  display: grid;
+  gap: var(--mantine-spacing-sm);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+/* name muted, value text */
+.kv {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.kvName {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-sm);
+}
+
+.kvValue {
+  font-size: var(--mantine-font-size-sm);
+  text-align: right;
+}
+
+.inlineControls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem var(--mantine-spacing-lg);
+}
+
+.inlineField {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+/* ------------------------------------------------------------------------------------- tables and numbers */
+.tableWrap {
+  min-width: 0;
+}
+
+.dt {
+  font-size: var(--mantine-font-size-sm);
+}
+
+.dt :is(th, td) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dt thead th {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+}
+
+.dt :is(th, td).l {
+  text-align: left;
+}
+
+.dt tr[data-off='true'] td {
+  color: var(--text-muted);
+}
+
+.dt tr[data-chosen='true'] td {
+  font-weight: 600;
+}
+
+.chosen {
+  border: 1px solid var(--text);
+  border-radius: var(--radius-control);
+  outline: 1px solid var(--text);
+  padding: 0 0.375rem;
+}
+
+/* ----------------------------------------------------------------------------------------- generator bits */
+.primes {
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+}
+
+/* switch class: independent on/off that changes the material; accent fill while on */
+.switchChip {
+  background: var(--panel-slot);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.25rem 0;
+}
+
+.switchChip[data-on='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--mantine-primary-color-contrast);
+}
+
+.axisRow {
+  align-items: center;
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 4rem 4rem;
+}
+
+.axisName {
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------------------------- svg views */
+.circleSvg {
+  align-self: center;
+  max-width: 20rem;
+  width: 100%;
+}
+
+.wideSvg {
+  align-self: center;
+  height: auto;
+  max-width: 72rem;
+  width: 100%;
+}
+
+.ringLine {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 2;
+}
+
+.chordFill {
+  fill: color-mix(in srgb, var(--mark-violet) 14%, transparent);
+  stroke: var(--mark-violet);
+  stroke-width: 1.5;
+}
+
+.dotOn {
+  fill: var(--text);
+  stroke: var(--panel);
+  stroke-width: 1.5;
+}
+
+.dotOff {
+  fill: var(--panel);
+  stroke: var(--text-subtle);
+  stroke-width: 2;
+}
+
+/* sounding: blue fill, larger; with a violet outline when it is also in the highlighted chord */
+.dotLit {
+  fill: var(--mark-blue);
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.dotLit[data-chord='true'] {
+  stroke: var(--mark-violet);
+  stroke-width: 3;
+}
+
+.svgLabel {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 12px;
+}
+
+.svgLabel[data-on='true'] {
+  fill: var(--text);
+}
+
+.svgNum {
+  fill: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 15px;
+}
+
+.svgAxis {
+  fill: var(--text-muted);
+  font-size: 14px;
+}
+
+.tickLine {
+  stroke: var(--text-subtle);
+  stroke-width: 1.5;
+}
+
+.zeroLine {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+
+.dashLine {
+  stroke: var(--grid);
+  stroke-dasharray: 4 4;
+  stroke-width: 1.5;
+}
+
+.barSharp {
+  fill: var(--mark-pink);
+}
+
+.barFlat {
+  fill: var(--mark-cyan);
+}
+
+.legend {
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--mantine-font-size-xs);
+  gap: 0.25rem var(--mantine-spacing-md);
+  justify-content: center;
+}
+
+.legendItem {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.375rem;
+}
+
+.swatchSharp,
+.swatchFlat {
+  border-radius: var(--radius-control);
+  display: inline-block;
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.swatchSharp {
+  background: var(--mark-pink);
+}
+
+.swatchFlat {
+  background: var(--mark-cyan);
+}
+
+.latticeWrap {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-md);
+}
+
+.latticeSvg {
+  flex: 3 1 24rem;
+  min-width: 0;
+}
+
+.latticeSide {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.edgeOff {
+  stroke: var(--grid);
+  stroke-width: 1.5;
+}
+
+.edgeOn {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+}
+
+.edgeChord {
+  stroke: var(--mark-violet);
+  stroke-width: 3;
+}
+
+.savedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.savedList li {
+  display: flex;
+  font-size: var(--mantine-font-size-sm);
+  justify-content: space-between;
+}
+
+/* ----------------------------------------------------------------------------------------------- analysis */
+.tiles {
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+}
+
+.tile,
+.readout {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.tileName {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.tileValue {
+  color: var(--text);
+  font-size: var(--mantine-font-size-md);
+}
+
+.readouts {
+  display: grid;
+  gap: var(--mantine-spacing-xs);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.readoutValue {
+  color: var(--text);
+  font-size: var(--mantine-font-size-xl);
+}
+
+.stepTable,
+.specTable {
+  border-collapse: collapse;
+  font-size: var(--mantine-font-size-sm);
+  width: 100%;
+}
+
+.stepTable :is(th, td),
+.specTable :is(th, td) {
+  padding: 0.1875rem 0.5rem;
+  text-align: right;
+}
+
+.stepTable thead th,
+.specTable thead th {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+}
+
+.stepTable :is(th, td).l,
+.specTable :is(th, td).l {
+  text-align: left;
+}
+
+.barCol {
+  width: 40%;
+}
+
+.sizeBar {
+  background: var(--text-muted);
+  border-radius: var(--radius-control);
+  display: block;
+  height: 0.5rem;
+}
+
+.specTable tbody td {
+  vertical-align: top;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.sizeChip {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  font-size: var(--mantine-font-size-xs);
+  padding: 0.0625rem 0.375rem;
+  white-space: nowrap;
+}
+
+.clash {
+  align-items: baseline;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 8rem minmax(0, 1fr);
+}
+
+.clashName {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-sm);
+}
+
+/* chord error: colour by size, never alone (the cents number is always printed) */
+.err[data-sev='0'] {
+  color: var(--mark-cyan);
+}
+
+.err[data-sev='1'] {
+  color: var(--mark-green);
+}
+
+.err[data-sev='2'] {
+  color: var(--mark-yellow);
+}
+
+.err[data-sev='3'] {
+  color: var(--mark-orange);
+}
+
+.err[data-sev='4'] {
+  color: var(--mark-red);
+}
+
+.miss {
+  align-items: baseline;
+  display: grid;
+  font-size: var(--mantine-font-size-sm);
+  gap: 0.25rem 1rem;
+  grid-template-columns: minmax(8rem, 1.2fr) minmax(5rem, 1fr) minmax(8rem, 1.4fr) auto;
+}
+
+.missErr {
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.keyStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.keyChip {
+  background: var(--panel-inset);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  display: inline-flex;
+  flex-direction: column;
+  font-size: var(--mantine-font-size-xs);
+  min-width: 4.5rem;
+  padding: 0.25rem 0.5rem;
+  text-align: center;
+}
+
+/* selection grammar: an outline in --text, no fill change */
+.keyChip[data-complete='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+  color: var(--text);
+}
+
+/* ----------------------------------------------------------------------------------------------- retuner */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cardRow {
+  align-items: center;
+  background: var(--panel-inset);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto auto;
+  padding: 0.375rem 0.5rem;
+}
+
+/* the active card carries the selection outline */
+.cardRow[data-active='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.cardName {
+  font-size: var(--mantine-font-size-sm);
+  min-width: 0;
+}
+
+.homeTag {
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  margin-left: 0.375rem;
+  padding: 0 0.375rem;
+}
+
+.cardBase {
+  font-size: var(--mantine-font-size-sm);
+  text-align: right;
+}
+
+.cardActions {
+  display: inline-flex;
+  gap: 0.125rem;
+}
+
+/* ------------------------------------------------------------------------------------------------ dock */
+.dock {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  z-index: 150;
+}
+
+.dockBar {
+  align-items: center;
+  display: flex;
+  gap: var(--mantine-spacing-md);
+  height: 2.25rem;
+  margin: 0 auto;
+  max-width: 96rem;
+  padding: 0 var(--mantine-spacing-lg);
+}
+
+.dockToggle {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 600;
+  gap: 0.375rem;
+  padding: 0.125rem 0.25rem;
+}
+
+.dockHint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dockStatus {
+  white-space: nowrap;
+}
+
+.keys {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 auto;
+  max-width: 96rem;
+  padding: 0 var(--mantine-spacing-lg) var(--mantine-spacing-sm);
+}
+
+.key {
+  align-items: center;
+  background: var(--panel-raised);
+  border: 1px solid var(--control-border);
+  border-bottom-width: 4px;
+  border-radius: 0 0 var(--radius-control) var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  font: inherit;
+  font-size: var(--mantine-font-size-sm);
+  gap: 0.125rem;
+  height: 5.25rem;
+  justify-content: flex-end;
+  min-width: 0;
+  padding: 0.25rem 0.125rem 0.375rem;
+  position: relative;
+}
+
+.keyHint {
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-xs);
+  position: absolute;
+  right: 0.375rem;
+  top: 0.25rem;
+}
+
+/* sounding: blue tint with a blue base bar; a chord member also gets the violet outline */
+.key[data-lit='true'] {
+  background: var(--tint-blue-bg);
+  border-bottom-color: var(--mark-blue);
+  color: var(--tint-blue-text);
+}
+
+.key[data-chord='true'] {
+  outline: 2px solid var(--mark-violet);
+  outline-offset: -3px;
+}
+
+/* -------------------------------------------------------------------------------------------- glossary */
+.glossary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+  margin: 0;
+}
+
+.glossEntry dt {
+  font-family: var(--mantine-font-family-headings);
+  font-weight: 600;
+}
+
+.glossEntry dd {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-sm);
+  margin: 0.125rem 0 0;
+}
+
+.see {
+  display: block;
+  margin-top: 0.25rem;
+}

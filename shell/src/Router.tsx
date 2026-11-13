@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { CompositionWorkbenchPage } from './pages/CompositionWorkbench.page';
 import { HarmonicFieldLabPage } from './pages/HarmonicFieldLab.page';
+import { HarmonicFieldLabMockPage } from './pages/harmonic-field-lab/mock/HarmonicFieldLabMock.page';
 import { HomePage } from './pages/Home.page';
 import { IntervalPlacementPage } from './pages/IntervalPlacement.page';
 import { NotFoundPage } from './pages/NotFound.page';
@@ -67,6 +68,11 @@ const router = createBrowserRouter(
     {
       path: '/harmonic-field-lab',
       element: <HarmonicFieldLabPage />,
+      errorElement: <NotFoundPage />,
+    },
+    {
+      path: '/harmonic-field-lab/mock',
+      element: <HarmonicFieldLabMockPage />,
       errorElement: <NotFoundPage />,
     },
     {
