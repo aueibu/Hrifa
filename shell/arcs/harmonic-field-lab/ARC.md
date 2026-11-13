@@ -141,6 +141,7 @@ Proposal:
   - **Tuner strip:** shorter (it was too tall), and its 12-EDO "piano key" spacing reference comes back.
   - **Saved subsets:** the freed space below the strip becomes a browsable list of the saved subsets of this pitch collection, one row each, drawn as a mini tuner strip like a sparkline. Selected pitches are lit, inactive ones dimmed, and the blue/pink deviation bars stay as the cue.
   - (human, 2026-11-13, mid-round) **Method parameters go in a column left of the ring** (room for Lattice generators and the Custom text field). **Ring view toggle Chromatic | Fifths**: Fifths places each note on a chain of generator steps (3/2, period = repeat, 12 steps from −5 to +6 = D♭…F♯ by default, length selectable) at the nearest step with its cents offset; in 12-EDO it is the circle of fifths. Pure geometry in the lib (`fifthsLayout`).
+- Round 3 feedback (human, 2026-11-13, mock at `cc23181`): the piano-band underlay is wrong. Instead: thin vertical reference lines (about 5 px) at each 100 c position, lighter grey where a white key would be and darker grey for black keys, as absolute pitch references. Saved-subset rows must line up EXACTLY with the current strip (same horizontal cents scale and left edge) for comparison. So the tuner strip + saved list become a narrower column, which leaves room to put some of the stats beside it.
 - Human checkpoint after: **yes** (approve or change the layout)
 
 ### M5: Live shell + Generator and Field & subset sections
