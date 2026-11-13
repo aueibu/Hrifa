@@ -371,7 +371,8 @@ export const VOICING_MAX_TOTAL = 2000;
  * and 5/3 for a major sixth). Per tone the candidates are the notes within tolerance (the root included, so a clash
  * with the root is rejected as in `findChords`), sorted by |error| then position, and cut to the nearest
  * `maxPerTone` (default 4). Combinations whose notes are not all different are dropped. At most `maxTotal`
- * (default 2000) voicings are produced in all; `truncated` reports a cut by either cap. With `maxPerTone = 1` the
+ * (default 2000) voicings are produced in all, a hard cap across every template (the search stops at the first voicing
+ * past it); `truncated` reports a cut by either cap, and a per-tone cut counts only when that root otherwise yields a chord. With `maxPerTone = 1` the
  * result equals `findChords` (plus `family`). Sorted by maxErr, then root position, then candidate order.
  */
 export function findChordVoicings(
@@ -387,11 +388,16 @@ export function findChordVoicings(
   const out: (Voicing & { _pos: number; _ord: number })[] = [];
   const seen = new Set<string>();
   let truncated = false;
+  /** Set once `maxTotal` voicings exist and another one was found: nothing more is searched, in any template. */
+  let stopped = false;
   const circ = (input: number): number => {
     const x = ((input % repC) + repC) % repC;
     return x > repC / 2 ? x - repC : x;
   };
   templates.forEach((tp, ti) => {
+    if (stopped) {
+      return;
+    }
     const src: ChordTemplate = typeof tp === 'string' ? { text: tp } : tp;
     const pt = parseTemplate(src.text);
     if (!pt.ok) {
@@ -403,9 +409,10 @@ export function findChordVoicings(
     }
     seen.add(tkey);
     const tc = reduceCents(pt, repC);
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < N && !stopped; i++) {
       const cands: { j: number; e: number }[][] = [];
       let possible = true;
+      let cutPerTone = false;
       for (let k = 1; k < tc.length && possible; k++) {
         const list: { j: number; e: number }[] = [];
         for (let j = 0; j < N; j++) {
@@ -419,7 +426,7 @@ export function findChordVoicings(
           possible = false;
         }
         if (list.length > maxPerTone) {
-          truncated = true;
+          cutPerTone = true;
           list.length = maxPerTone;
         }
         cands.push(list);
@@ -427,10 +434,19 @@ export function findChordVoicings(
       if (!possible) {
         continue;
       }
+      // a per-tone cut matters only when this root yields chords at all
+      if (cutPerTone) {
+        truncated = true;
+      }
       let ord = 0;
       const pick: { j: number; e: number }[] = [];
       const walk = (k: number): boolean => {
         if (k === cands.length) {
+          if (out.length >= maxTotal) {
+            stopped = true;
+            truncated = true;
+            return false;
+          }
           const mem = [rel[i].src, ...pick.map((p) => rel[p.j].src)];
           const errs = [0, ...pick.map((p) => p.e)];
           const maxErr = Math.max(0, ...errs.map(Math.abs));
@@ -449,7 +465,7 @@ export function findChordVoicings(
             _pos: i,
             _ord: ord++,
           });
-          return out.length < maxTotal;
+          return true;
         }
         for (const c of cands[k]) {
           if (c.j === i || pick.some((p) => p.j === c.j)) {
@@ -464,10 +480,7 @@ export function findChordVoicings(
         }
         return true;
       };
-      if (!walk(0)) {
-        truncated = true;
-        return;
-      }
+      walk(0);
     }
   });
   out.sort((a, b) => a.maxErr - b.maxErr || a._pos - b._pos || a._ord - b._ord);

@@ -262,7 +262,8 @@ export function edoFit(cents: readonly number[], repC: number, nMin = 5, nMax = 
 
 /**
  * The few n worth naming. Larger n always fit better in cents, so a plain "lowest error" would just say 72. Instead:
- * keep the n whose worst error beats every smaller n (the records: 12, 19, 22, 31, 41, 53 for 5-limit music), then
+ * keep the n whose worst error beats every smaller n (the "records"; which n are records depends on the notes: a
+ * subset of just 5-limit notes gets few, a subset that is already a 12-EDO scale gets 12), then
  * take the `k` of them with the smallest error relative to their own step size. Returned ascending by n.
  */
 export function bestEdos(rows: readonly EdoFitRow[], k = 4): number[] {
@@ -296,11 +297,17 @@ export interface DissonanceCurve {
  * contribute a constant). Defaults are the lab's timbre: 7 partials falling off by 0.88 per partial.
  */
 export function dissonanceCurve(
-  baseHz = 261.63,
-  repC = 1200,
-  stepC = 1,
+  baseHzIn = 261.63,
+  repCIn = 1200,
+  stepCIn = 1,
   opts: RoughnessOpts = {}
 ): DissonanceCurve {
+  // guards: anything that is not a finite number above 0 falls back to its default (a zero or NaN step would never end)
+  const ok = (x: number) => Number.isFinite(x) && x > 0;
+  const baseHz = ok(baseHzIn) ? baseHzIn : 261.63;
+  const repC = ok(repCIn) ? repCIn : 1200;
+  // at most 20000 points, however small the step
+  const stepC = Math.max(ok(stepCIn) ? stepCIn : 1, repC / 20000);
   const cents: number[] = [];
   const values: number[] = [];
   for (let c = 0; c <= repC + 1e-9; c += stepC) {

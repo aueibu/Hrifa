@@ -70,3 +70,36 @@ describe('findChordVoicings', () => {
     expect(DEFAULT_TEMPLATES.every((t) => t.family)).toBe(true);
   });
 });
+
+describe('findChordVoicings caps across templates', () => {
+  const r = rel(['1/1', '9/8', '10/9', '8/7', '7/6', '6/5', '5/4', '4/3', '3/2', '5/3', '7/4']);
+  const many = [{ text: '4:5:6' }, { text: '10:12:15' }, { text: '4:5:6:7' }, { text: '6:7:9' }];
+
+  it('maxTotal is a hard cap over all templates, and the search stops', () => {
+    const all = findChordVoicings(r, 1200, many, 400);
+    expect(all.chords.length).toBeGreaterThan(8);
+    for (const cap of [1, 3, 8]) {
+      const v = findChordVoicings(r, 1200, many, 400, { maxTotal: cap });
+      expect(v.chords).toHaveLength(cap);
+      expect(v.truncated).toBe(true);
+    }
+  });
+
+  it('is not truncated when the cap equals the number of voicings', () => {
+    const all = findChordVoicings(r, 1200, many, 400, { maxTotal: 5000, maxPerTone: 50 });
+    const v = findChordVoicings(r, 1200, many, 400, {
+      maxTotal: all.chords.length,
+      maxPerTone: 50,
+    });
+    expect(v.chords).toHaveLength(all.chords.length);
+    expect(v.truncated).toBe(false);
+  });
+
+  it('a per-tone cut on a root that yields no chord does not set truncated', () => {
+    // four notes near the fifth, but the major third is missing: the root is not otherwise possible
+    const q = rel(['1/1', '700c', '701c', '702c', '703c']);
+    const v = findChordVoicings(q, 1200, [{ text: '4:5:6' }], 10, { maxPerTone: 2 });
+    expect(v.chords).toHaveLength(0);
+    expect(v.truncated).toBe(false);
+  });
+});

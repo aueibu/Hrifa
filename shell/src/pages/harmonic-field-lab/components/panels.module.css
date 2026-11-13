@@ -1,0 +1,1072 @@
+/* Analysis panels of the layout mock (right pane). Same roles as mock.module.css: tiers instead of lines. */
+
+/* compact Mantine text inside the panels (the retuner uses Text size sm/xs) */
+.panelBody {
+  --mantine-font-size-sm: 0.75rem;
+  --mantine-font-size-xs: 0.6875rem;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  font-size: 0.8125rem;
+  gap: 0.625rem;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+/* blocks keep their natural height; the panel itself scrolls */
+.panelBody > * {
+  flex: none;
+}
+
+.verdicts {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  gap: 0.1875rem;
+}
+
+.foot {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.sub .sub {
+  background: none;
+  padding: 0;
+}
+
+.sub {
+  background: var(--panel-inset);
+  overflow-x: auto;
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem 0.5rem;
+}
+
+.familyHead {
+  align-items: baseline;
+  color: var(--text);
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.family {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* ------------------------------------------------------------------------------------------- chords */
+.tolRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.tolValue {
+  min-width: 2.75rem;
+  text-align: center;
+}
+
+.ladder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.rung {
+  background: var(--panel-slot);
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  font: inherit;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  min-width: 2.25rem;
+  padding: 0.125rem 0.375rem;
+  text-align: center;
+}
+
+.rung:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.rung[data-on='true'] {
+  color: var(--text);
+  outline: 1px solid var(--text);
+  outline-offset: 0;
+}
+
+/* one row per family: a small label, then chips flowing along the row */
+.famRow {
+  align-items: flex-start;
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+}
+
+.famLabel {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  padding-top: 0.3125rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.chip {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: 0.0625rem;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+}
+
+.chip:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.chip:focus-visible,
+.rung:focus-visible,
+.heatRow:focus-visible,
+.noteChip:focus-visible,
+.sortBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* a chord that does not fit yet: dashed, quiet; clicking raises the tolerance to admit it */
+.chip[data-found='false'] {
+  background: none;
+  border: 1px dashed var(--control-border);
+  color: var(--text-muted);
+}
+
+.chipTop,
+.chipBottom {
+  align-items: baseline;
+  display: flex;
+  gap: 0.375rem;
+  justify-content: space-between;
+}
+
+.chipTop {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.chipBottom {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+/* error: colour by size, never alone (the number is printed beside it) */
+.err[data-sev='0'] {
+  color: var(--mark-cyan);
+}
+
+.err[data-sev='1'] {
+  color: var(--mark-green);
+}
+
+.err[data-sev='2'] {
+  color: var(--mark-yellow);
+}
+
+.err[data-sev='3'] {
+  color: var(--mark-orange);
+}
+
+.err[data-sev='4'] {
+  color: var(--mark-red);
+}
+
+.need {
+  color: var(--text-muted);
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.editorRow {
+  align-items: center;
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.9fr) 1.75rem;
+}
+
+.editorFoot {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+/* ----------------------------------------------------------------------------------------------- spectrum */
+.spec {
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  width: 100%;
+}
+
+.spec th {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.125rem 0.375rem;
+  text-align: left;
+}
+
+.spec td {
+  padding: 0.1875rem 0.375rem;
+  vertical-align: top;
+}
+
+.spec tbody tr:nth-child(odd) {
+  background: var(--panel-inset);
+}
+
+.sizeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1875rem;
+}
+
+.sizeChip {
+  background: var(--panel-slot);
+  border-radius: var(--radius-control);
+  font-size: 0.6875rem;
+  padding: 0 0.3125rem;
+  white-space: nowrap;
+}
+
+.clash {
+  align-items: baseline;
+  display: grid;
+  font-size: 0.75rem;
+  gap: 0.375rem;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+}
+
+.clashName {
+  color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------------------------------- keys and modes */
+.legend {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 0.625rem;
+  gap: 0.375rem;
+}
+
+.legendItem {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.125rem;
+}
+
+.swatch {
+  border-radius: var(--radius-control);
+  display: inline-block;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.swatch[data-sev='0'],
+.heatCell[data-sev='0'] {
+  background: color-mix(in srgb, var(--mark-cyan) 40%, var(--panel));
+}
+
+.swatch[data-sev='1'],
+.heatCell[data-sev='1'] {
+  background: color-mix(in srgb, var(--mark-green) 40%, var(--panel));
+}
+
+.swatch[data-sev='2'],
+.heatCell[data-sev='2'] {
+  background: color-mix(in srgb, var(--mark-yellow) 45%, var(--panel));
+}
+
+.swatch[data-sev='3'],
+.heatCell[data-sev='3'] {
+  background: color-mix(in srgb, var(--mark-orange) 50%, var(--panel));
+}
+
+.swatch[data-sev='4'],
+.heatCell[data-sev='4'] {
+  background: color-mix(in srgb, var(--mark-red) 55%, var(--panel));
+}
+
+.heat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heatHead,
+.heatRow {
+  align-items: stretch;
+  display: grid;
+  gap: 2px;
+  grid-template-columns: 4.75rem repeat(7, minmax(0, 1fr)) 2rem;
+}
+
+.heatHead {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  text-align: center;
+}
+
+.heatRow {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 1px;
+  text-align: left;
+}
+
+.heatRow:hover {
+  background: var(--panel-slot);
+}
+
+/* selection grammar: 1px border plus 1px outline in --text, no fill change */
+.heatRow[aria-pressed='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.heatName {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+  padding-left: 0.25rem;
+}
+
+.heatCell {
+  align-items: center;
+  border-radius: var(--radius-control);
+  display: flex;
+  height: 1.5rem;
+  justify-content: center;
+}
+
+/* the number appears when the row is pointed at */
+.heatCell > * {
+  opacity: 0;
+}
+
+.heatRow:hover .heatCell > *,
+.heatRow:focus-visible .heatCell > *,
+.heatRow[aria-pressed='true'] .heatCell > * {
+  opacity: 1;
+}
+
+.heatTotal {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 0.25rem;
+}
+
+.keyRings {
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.keyRing {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.6875rem;
+  gap: 0.0625rem;
+  padding: 0.25rem 0.125rem;
+}
+
+.keyRing[data-complete='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.keySvg {
+  height: 3.25rem;
+  width: 3.25rem;
+}
+
+.keyCircle {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.keyField {
+  fill: var(--text-subtle);
+}
+
+.keyFound {
+  fill: var(--text);
+}
+
+.keyMiss {
+  fill: none;
+  stroke: var(--mark-red);
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+/* ----------------------------------------------------------------------------------------------- lattice */
+.latticeSvg {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: block;
+  width: 100%;
+}
+
+.edgeOff {
+  stroke: var(--grid);
+  stroke-width: 1.5;
+}
+
+.edgeOn {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+}
+
+.edgeChord {
+  stroke: var(--mark-blue);
+  stroke-width: 3;
+}
+
+.dotOn {
+  cursor: pointer;
+  fill: var(--text);
+  stroke: var(--panel-inset);
+  stroke-width: 1.5;
+}
+
+.dotOff {
+  cursor: pointer;
+  fill: var(--panel-inset);
+  stroke: var(--text-subtle);
+  stroke-width: 2;
+}
+
+.dotLit {
+  cursor: pointer;
+  fill: var(--mark-green);
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.dotOn[data-chord='true'],
+.dotOff[data-chord='true'],
+.dotLit[data-chord='true'] {
+  stroke: var(--mark-blue);
+  stroke-width: 3;
+}
+
+.selRing {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.svgLabel {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 12px;
+}
+
+.stem {
+  stroke-dasharray: 4 3;
+  stroke-width: 2;
+}
+
+.ghost {
+  fill: none;
+  stroke: var(--text-subtle);
+  stroke-width: 1.5;
+}
+
+.svgChip {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.offAxis {
+  margin-left: 0.5rem;
+}
+
+.lat3dGhost {
+  border: 1.5px solid var(--text-subtle);
+  border-radius: 50%;
+  height: 0.6875rem;
+  pointer-events: none;
+  width: 0.6875rem;
+}
+
+.lat3dChip {
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+.svgLabel[data-on='true'] {
+  fill: var(--text);
+}
+
+/* ------------------------------------------------------------------------------------------ field table */
+.noteChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.noteChip {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+}
+
+.noteChip[data-on='true'] {
+  color: var(--text);
+}
+
+.noteChip[aria-pressed='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.tableWrap {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.dt {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.75rem;
+  width: 100%;
+}
+
+.dt th {
+  background: var(--panel-header);
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  position: sticky;
+  text-align: right;
+  top: 0;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.dt td {
+  padding: 0.25rem 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dt .l {
+  text-align: left;
+}
+
+.dt tbody tr:nth-child(even) {
+  background: var(--panel-inset);
+}
+
+.dt tbody tr:hover {
+  background: var(--panel-slot);
+}
+
+.dt tbody tr[data-off='true'] {
+  color: var(--text-muted);
+}
+
+.dt tbody tr[data-pin='true'] {
+  outline: 1px solid var(--text);
+  outline-offset: -1px;
+}
+
+.sortBtn {
+  background: none;
+  border: 0;
+  color: var(--text-subtle);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.625rem;
+  margin-left: 0.25rem;
+  padding: 0 0.125rem;
+}
+
+.sortBtn:hover {
+  color: var(--text);
+}
+
+/* ----------------------------------------------------------------------------------------------- retuner */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cardRow {
+  align-items: center;
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: 1rem minmax(0, 1fr) auto auto;
+  padding: 0.1875rem 0.375rem;
+}
+
+/* the active card carries the selection outline */
+.cardRow[data-active='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.cardName {
+  font-size: 0.75rem;
+  min-width: 0;
+}
+
+.homeTag {
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  margin-left: 0.25rem;
+  padding: 0 0.25rem;
+}
+
+.cardBase {
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.cardActions {
+  display: inline-flex;
+  gap: 0.0625rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.clusters {
+  display: grid;
+  gap: 0.5rem 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inlineField,
+.inlineControls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.75rem;
+}
+
+.readouts {
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.readout {
+  background: var(--panel-slot);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0.375rem;
+}
+
+.tileName {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.readoutValue {
+  font-size: 0.9375rem;
+}
+
+.chosen {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------------------------------ visualizer views */
+.vizTools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.vizModal {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8125rem;
+  gap: 0.625rem;
+}
+
+/* 3D lattice: the canvas and its label layer fill the host; the labels are plain CSS, so they follow the theme */
+.lat3dHost {
+  aspect-ratio: 4 / 3;
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  min-height: 13rem;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.lat3dHost[data-big='true'] {
+  aspect-ratio: auto;
+  height: min(66vh, 44rem);
+}
+
+.lat3dCanvas {
+  display: block;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  touch-action: none;
+  width: 100%;
+}
+
+.lat3dOverlay {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+.lat3dLabel {
+  background: color-mix(in srgb, var(--panel-inset) 72%, transparent);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.6875rem;
+  line-height: 1;
+  padding: 0.0625rem 0.125rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.lat3dLabel[data-on='true'] {
+  color: var(--text);
+}
+
+.lat3dLabel[data-lit='true'] {
+  color: var(--mark-green);
+}
+
+.lat3dLabel[data-sel='true'] {
+  font-weight: 700;
+}
+
+.lat3dAxis {
+  color: var(--text-subtle);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.lat3dFallback {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0.75rem;
+}
+
+/* hand-drawn charts (EDO fit, dissonance curve) */
+.chartSvg {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: block;
+  width: 100%;
+}
+
+.chartGrid {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.chartTick {
+  fill: var(--text-subtle);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 9px;
+}
+
+.chartHit {
+  cursor: crosshair;
+  fill: transparent;
+}
+
+.edoBar {
+  fill: var(--text-subtle);
+}
+
+.edoBar[data-state='best'] {
+  fill: var(--mark-violet);
+}
+
+.edoBar[data-state='hover'] {
+  fill: var(--text-muted);
+}
+
+.edoBar[data-state='pick'] {
+  fill: var(--text);
+}
+
+.edoMean {
+  fill: var(--panel-inset);
+}
+
+.edoBestLabel {
+  fill: var(--mark-violet);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 9px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--panel-inset);
+  stroke-width: 3px;
+}
+
+.vizChips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+
+.vizChip {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.75rem;
+  padding: 0.0625rem 0.4375rem;
+}
+
+.vizChip[aria-pressed='true'] {
+  border-color: var(--text);
+}
+
+.vizChip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* dissonance curve */
+.dissLine {
+  fill: none;
+  stroke: var(--text);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.dissMark {
+  stroke: var(--text-subtle);
+  stroke-dasharray: 2 3;
+  stroke-width: 1;
+}
+
+.dissMark[data-state='on'] {
+  stroke: var(--text);
+  stroke-dasharray: none;
+  stroke-width: 1.5;
+}
+
+.dissMark[data-state='lit'] {
+  stroke: var(--mark-green);
+  stroke-dasharray: none;
+  stroke-width: 2.5;
+}
+
+.dissMark[data-sel='true'] {
+  stroke-width: 3;
+}
+
+.dissNote {
+  fill: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 8.5px;
+}
+
+.dissNote[data-state='lit'] {
+  fill: var(--mark-green);
+  font-weight: 700;
+}
+
+.dissDip {
+  fill: var(--text);
+  stroke: var(--panel-inset);
+  stroke-width: 1;
+}
+
+.dissDipLabel {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 8.5px;
+  paint-order: stroke;
+  stroke: var(--panel-inset);
+  stroke-width: 3px;
+}
+
+.dissHair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+
+.dissCursor {
+  fill: var(--panel-inset);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+/* isomorphic keyboard */
+.isoSvg {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: block;
+  width: 100%;
+}
+
+.isoHex {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.isoHex[data-state='off'] {
+  cursor: pointer;
+  stroke: var(--text-subtle);
+}
+
+.isoHex[data-state='on'] {
+  cursor: pointer;
+  fill: color-mix(in srgb, var(--text) 16%, transparent);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.isoHex[data-chord='true'] {
+  stroke: var(--mark-blue);
+  stroke-width: 3;
+}
+
+.isoHex[data-sel='true'] {
+  fill: color-mix(in srgb, var(--text) 30%, transparent);
+}
+
+.isoHex:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
+
+.isoLabel {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 9px;
+}
+
+.isoLabel[data-state='on'] {
+  fill: var(--text);
+  font-weight: 700;
+}
+
+.isoDot {
+  fill: var(--mark-green);
+  stroke: var(--text);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+/* the full field table's play button, and a sounding row */
+.playBtn {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 0.125rem;
+}
+
+.playBtn:hover {
+  color: var(--text);
+}
+
+.playBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
+
+.dt tbody tr[data-lit='true'] {
+  background: var(--tint-green-bg);
+  color: var(--tint-green-text);
+}
+
+.chip[data-picked='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}

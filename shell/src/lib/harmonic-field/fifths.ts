@@ -42,10 +42,15 @@ export interface FifthsLayout {
 
 export const FIFTH_CENTS = 1200 * Math.log2(1.5);
 
+/**
+ * Guards: a non-finite generator falls back to 3/2, a period that is not a finite number above 0 to 1200 c, and a
+ * non-finite chain length to 12 (so a half-typed value in the UI can never produce NaN positions).
+ */
 export function fifthsLayout(notes: { c: number }[], opts: FifthsOpts = {}): FifthsLayout {
-  const gen = opts.gen ?? FIFTH_CENTS;
-  const period = opts.period ?? 1200;
-  const n = Math.max(1, Math.floor(opts.steps ?? 12));
+  const gen = Number.isFinite(opts.gen) ? (opts.gen as number) : FIFTH_CENTS;
+  const period =
+    Number.isFinite(opts.period) && (opts.period as number) > 0 ? (opts.period as number) : 1200;
+  const n = Math.max(1, Math.floor(Number.isFinite(opts.steps) ? (opts.steps as number) : 12));
   const lo = -Math.floor((n - 1) / 2);
   const hi = lo + n - 1;
   const red = (x: number) => ((x % period) + period) % period;

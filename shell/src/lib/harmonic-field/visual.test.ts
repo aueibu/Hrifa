@@ -336,3 +336,28 @@ describe('isomorphic keyboard', () => {
     expect(count(20)).toBeLessThanOrEqual(count(35));
   });
 });
+
+describe('dissonanceCurve guards', () => {
+  it('falls back to defaults for NaN, zero or negative inputs, and never loops forever on a zero step', () => {
+    const ref = dissonanceCurve();
+    for (const args of [
+      [Number.NaN, 1200, 1],
+      [-5, 1200, 1],
+      [261.63, 0, 1],
+      [261.63, Number.NaN, 1],
+      [261.63, 1200, 0],
+      [261.63, 1200, Number.NaN],
+      [261.63, 1200, -1],
+    ] as [number, number, number][]) {
+      const c = dissonanceCurve(...args);
+      expect(c.cents).toHaveLength(ref.cents.length);
+      expect(c.values.every(Number.isFinite)).toBe(true);
+      expect(Number.isFinite(c.max)).toBe(true);
+    }
+  });
+
+  it('caps the point count for a tiny step', () => {
+    const c = dissonanceCurve(261.63, 1200, 1e-9);
+    expect(c.cents.length).toBeLessThanOrEqual(20002);
+  });
+});

@@ -1,7 +1,7 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { CompositionWorkbenchPage } from './pages/CompositionWorkbench.page';
 import { HarmonicFieldLabPage } from './pages/HarmonicFieldLab.page';
-import { HarmonicFieldLabMockPage } from './pages/harmonic-field-lab/mock/HarmonicFieldLabMock.page';
 import { HomePage } from './pages/Home.page';
 import { IntervalPlacementPage } from './pages/IntervalPlacement.page';
 import { NotFoundPage } from './pages/NotFound.page';
@@ -12,6 +12,13 @@ import { ScaleExplorerPage } from './pages/ScaleExplorer.page';
 import { SegmentTangentConstructionPage } from './pages/SegmentTangentConstruction.page';
 import { ThemeEditorPage } from './pages/ThemeEditor.page';
 import { UsernameSeedsPage } from './pages/UsernameSeeds.page';
+
+// the frozen layout mock is loaded only when its route is opened (retired in M6)
+const HarmonicFieldLabMockPage = lazy(() =>
+  import('./pages/harmonic-field-lab/mock/HarmonicFieldLabMock.page').then((m) => ({
+    default: m.HarmonicFieldLabMockPage,
+  }))
+);
 
 const router = createBrowserRouter(
   [
@@ -72,7 +79,11 @@ const router = createBrowserRouter(
     },
     {
       path: '/harmonic-field-lab/mock',
-      element: <HarmonicFieldLabMockPage />,
+      element: (
+        <Suspense fallback={null}>
+          <HarmonicFieldLabMockPage />
+        </Suspense>
+      ),
       errorElement: <NotFoundPage />,
     },
     {

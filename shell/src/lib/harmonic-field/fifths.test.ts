@@ -48,3 +48,25 @@ describe('fifthsLayout', () => {
     expect(L.hi).toBe(9);
   });
 });
+
+describe('fifthsLayout guards', () => {
+  it('falls back to defaults for a NaN, zero or negative period, a NaN generator or a NaN chain length', () => {
+    const base = fifthsLayout([{ c: c('5/4') }]);
+    for (const opts of [
+      { period: Number.NaN },
+      { period: 0 },
+      { period: -1200 },
+      { gen: Number.NaN },
+      { steps: Number.NaN },
+      { steps: Number.POSITIVE_INFINITY },
+    ]) {
+      const L = fifthsLayout([{ c: c('5/4') }], opts);
+      expect(L.positions).toHaveLength(12);
+      expect(Number.isFinite(L.notes[0].offset)).toBe(true);
+      expect(L.notes[0].step).toBe(base.notes[0].step);
+      expect(L.positions.every((p) => Number.isFinite(p.cents) && Number.isFinite(p.turn))).toBe(
+        true
+      );
+    }
+  });
+});
