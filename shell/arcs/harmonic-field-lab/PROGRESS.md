@@ -57,7 +57,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-12 (Setup, add `check:hfl`), released 2026-11-12 after the setup commit `d1c2abf`.
-- M4: `src/Router.tsx` (mock route): taken 2026-11-12, released 2026-11-12 after the M4 commit.
+- M4: `src/Router.tsx` (mock route): taken 2026-11-12, released 2026-11-12 after the M4 commit `5d4e729`.
 - M1: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `src/pages/Home.page.test.tsx`, `ARCHITECTURE.md`: taken 2026-11-12, released 2026-11-12 after the M1 commit `3c50fce` (Home test lock released unused).
 
 ## Open questions for human
