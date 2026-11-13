@@ -135,6 +135,11 @@ Proposal:
   - **Keys & Modes**: one rotation × degree heat grid (rows = modes, columns = degrees, cell = how close that degree lands to a field note, severity colour + number on hover) plus a ring of mini dots per key showing which transpositions fit completely; click a row to select or play that mode.
   - **Field table**: no standing table. Hover/click a note anywhere shows its row in a small inspector (ratio, cents, monzo, nearest 12-EDO, deviation); the full table opens in a reader/drawer (sticky headers, dense rows, sort/filter).
   - Retuner panel kept as in mock 1, not redesigned.
+- Round 2 feedback (human, 2026-11-13, mock at `76c9121`): "SO much better". Round 3 changes:
+  - **Chords:** keep the note-count sections (Triads / Tetrads / Larger); inside each, one row per **family** with a small label. Templates get an optional, user-editable `family` field. Defaults: Major 4:5:6, 8:10:12:15; Minor 10:12:15, 10:12:15:18; Septimal 4:5:6:7, 6:7:9, 14:18:21, 5:6:7, 3:5:7; Utonal 1/(4:5:6:7); Neutral 18:22:27; Suspended 6:8:9.
+  - **Every voicing gets its own chip:** when several field notes are within tolerance for the same chord tone, each combination is a separate chip. This is a new lib function beside `findChords`, which stays unchanged as the vector contract.
+  - **Tuner strip:** shorter (it was too tall), and its 12-EDO "piano key" spacing reference comes back.
+  - **Saved subsets:** the freed space below the strip becomes a browsable list of the saved subsets of this pitch collection, one row each, drawn as a mini tuner strip like a sparkline. Selected pitches are lit, inactive ones dimmed, and the blue/pink deviation bars stay as the cue.
 - Human checkpoint after: **yes** (approve or change the layout)
 
 ### M5: Live shell + Generator and Field & subset sections
