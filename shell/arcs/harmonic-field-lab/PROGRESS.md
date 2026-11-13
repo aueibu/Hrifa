@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
 - Current milestone: M5 (after the M4 review)
-- State: M4 approved; reviewer pass in progress
+- State: M5 building
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -56,6 +56,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives of New Music* 31/1 (1993), Examples 10–12.
 
 ## Shared touches (locks taken)
+- M5: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`: taken 2026-11-13.
 - `package.json`: taken 2026-11-12 (Setup, add `check:hfl`), released 2026-11-12 after the setup commit `d1c2abf`.
 - M4: `src/Router.tsx` (mock route): taken 2026-11-12, released 2026-11-12 after the M4 commit `5d4e729`.
 - M1: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `src/pages/Home.page.test.tsx`, `ARCHITECTURE.md`: taken 2026-11-12, released 2026-11-12 after the M1 commit `3c50fce` (Home test lock released unused).
@@ -68,4 +69,4 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-When the M4 reviewer reports: fix findings (builder), commit; then take the lock on `src/pages/HarmonicFieldLab.page.tsx` and brief a builder for M5 (ARC).
+M5 attempt 1: builder working. Then reviewer, `check:hfl`, commit, release locks, human checkpoint (ears and feel).
