@@ -3,17 +3,17 @@
  * Every note is a line of the same length. Its error is colour painted onto the line from the tip toward the
  * centre: sharp (pink) from the top down, flat (cyan) from the bottom up. The coloured length grows with the
  * error and covers the whole half-line at `full` cents (50 by default). It is widest at the tip: line width up
- * to 10 c, three times the line width at 50 c and beyond. A sounding note gets a blue dot at its middle.
+ * to 10 c, widening to 10 px at 50 c and beyond. A sounding note gets a blue dot at its middle.
  */
 import classes from './mock.module.css';
 
-/** SVG width: room for the widest taper (6 px) plus the sounding dot (10 px). */
+/** SVG width: room for the widest taper (10 px) and the sounding dot (10 px). */
 const W = 12;
 const CX = W / 2;
 const LINE = 2;
 
 /** Width of the coloured part at the tip for a deviation of `abs` cents. */
-export const taperWidth = (abs: number) => LINE + Math.min(4, Math.max(0, (abs - 10) * 0.1));
+export const taperWidth = (abs: number) => LINE + Math.min(8, Math.max(0, (abs - 10) * 0.2));
 
 /** Length of the coloured part in px: the share of the half-line the error covers (capped at `full` cents). */
 export const errorLength = (abs: number, half: number, full = 50) => Math.min(1, abs / full) * half;
