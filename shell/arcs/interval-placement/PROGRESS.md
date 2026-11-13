@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
 - Current milestone: M2b
-- State: building (proposal)
+- State: awaiting human (M2b checkpoint)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -18,6 +18,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | M1 attempt 2 | All review items fixed: fixed perceptual harmonicity template (11 harmonics, rho 0.75, sigma 6.83) independent of playback timbre with sine/triangle/piano/guitar regression tests; `inconComposite` (faithful raw Table 2 composite, culture omitted) + `EQUAL_WEIGHTS` for z-score ranking; periodicity dedupe; `pairwise` isolated dyads for the Relations view; RangeError validation; explicit H&K 6/5 test; JL12 floors. ARCHITECTURE entry (lock taken and released), DECISIONS I-2, I-3. | `check:ip` GREEN, 144 tests | Validation and comparison tables below. |
 | M2 attempt 1 | Builder: `src/lib/interval-placement/` (four engines ported in steps, `placeIntervals`, `placementChunks` iterator with cap, dedupe, constraints, measures, `transpositionScan`); golden test vs the old page engine (all modes, 12/19/31-EDO, several windows, non-default params). Quirks found (README "Quirks"): repulsion is a no-op at default params; odd bias positional in the old page; prefixSlack never reaches the window top; anchors vs endpoints flooring mismatch; every engine can leave the window; silent drops and collision merges; duplicate pitch sets. | `check:ip` GREEN, 293 | Builder decisions: odd bias belongs to the interval by default (`oddBiasSemantics: 'position'` reproduces the old page); window = bottom Hz + width with a step grid; exact handling of non-whole spans. Reviewer PASS-WITH-FIXES: golden drop parity never exercised; wrong docs on which engines leave the window; chunk timer charged consumer time; dedupe kept only the first ordering's essential labelling; ambiguous perms; fractional windows off-grid; inexact ordering totals; missing validation. Reviewer confirmed repulsion no-op: 0 of 864 orderings changed pitch (push distance <= 0.8 steps at kappa 0.4; first effect near kappa 20 for `11 7 16`). |
 | M2 attempt 2 | All review items fixed: real drop-parity cases; window containment documented and tested for every engine; chunk timer excludes consumer time; per-ordering records `{order, perm, essentialPairs, endpoints}` with `essentialVaries` (orchestrator decision, revisit at M2b); exact BigInt ordering totals; whole-step window snapping; RangeError validation. | `check:ip` GREEN, 315 | ARCHITECTURE row for `lib/interval-placement` deferred to the Final step (ARC schedules it there). No new DECISIONS row (no new shared contract). Inputs for M2b: the quirk list in `src/lib/interval-placement/README.md`. |
+| M2b | Proposal written: `arcs/interval-placement/placement-proposal.md`, numbers from `m2b/demo*.ts`. Findings: engine voicings rank anywhere from top 1 % to bottom 3 % of the 16,218 possible placements of `11 7 16`; window width doubles as spread; register moves only interference (0.536 at C1 to 0.134 at C5), so a free optimiser drifts up and thins out; pc harmonicity barely separates voicings of one set; Pareto front tiny (3) but 122 layers; full search ~4 ms/voicing (68 s for 16k), pc harmonicity cacheable per pc set. Recommendation: A (draggable register) + B (spread and lean replace the engines) as play mode, C (explore all placements, Pareto layers) as a panel, D (essential = contained intervals, optional note sharing) inside C. | — | Awaiting the human's choice (checkpoint). |
 
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-13, released 2026-11-13 after `86a859f` (Setup).
@@ -27,7 +28,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
-Orchestrator writes M2b `arcs/interval-placement/placement-proposal.md` (diagnosis from the M2 quirks, 2-4 grounded designs with numbers from the libs), then the human chooses (checkpoint).
+Human reads `placement-proposal.md` and answers its section 5; then record the choice under ARC M2b "Checkpoint decisions", update the ARC's Proposed UI and M3-M5 to match, and start M3 (mock).
 
 ## M1 tables (2026-11-13)
 
