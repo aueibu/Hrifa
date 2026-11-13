@@ -415,6 +415,8 @@
 .workspace {
   --pad: 0.5rem;
   --gutter: 8.5rem;
+  /* the tuner strip's zero line (0 c from the target) */
+  --zero: 4.875rem;
   --ref-white: color-mix(in srgb, var(--panel) 90%, transparent);
   --ref-black: color-mix(in srgb, var(--text) 12%, transparent);
 
@@ -739,7 +741,7 @@
 .gutterZero {
   left: 0;
   position: absolute;
-  top: 4rem;
+  top: var(--zero);
   transform: translateY(-50%);
 }
 
@@ -778,7 +780,7 @@
 }
 
 .stripPlot {
-  height: 6.25rem;
+  height: 7.375rem;
   position: relative;
 }
 
@@ -788,7 +790,7 @@
   left: 0;
   position: absolute;
   right: 0;
-  top: 4rem;
+  top: var(--zero);
 }
 
 .col {
@@ -819,30 +821,34 @@
 
 .colDot {
   background: var(--text);
-  border: 2px solid var(--panel-inset);
-  border-radius: 50%;
-  height: 0.5rem;
+  height: 20px;
   left: 50%;
   position: absolute;
-  top: 1.125rem;
+  top: 1.25rem;
   transform: translateX(-50%);
-  width: 0.5rem;
+  width: 2px;
 }
 
+/* sounding: the line grows a little and carries the blue dot */
 .colDot[data-lit='true'] {
+  height: 24px;
+}
+
+.colDot[data-lit='true']::before {
   background: var(--mark-blue);
-  border-color: var(--text);
-  height: 0.75rem;
-  top: 1rem;
-  width: 0.75rem;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  content: '';
+  height: 0.625rem;
+  left: 50%;
+  position: absolute;
+  top: -0.3125rem;
+  transform: translateX(-50%);
+  width: 0.625rem;
 }
 
-/* a field note that is not in the subset: hollow dot, dimmed bar and number */
-.col[data-on='false'] .colDot {
-  background: var(--panel);
-  border: 1px solid var(--text-subtle);
-}
-
+/* a field note that is not in the subset: dimmed line, bar and number */
+.col[data-on='false'] .colDot,
 .col[data-on='false'] .colBar,
 .col[data-on='false'] .colNum,
 .col[data-on='false'] .colRatio {
@@ -865,12 +871,12 @@
 
 .colBar[data-dir='sharp'] {
   background: var(--mark-pink);
-  top: calc(4rem - var(--d) * 0.5px);
+  top: calc(var(--zero) - var(--d) * 0.5px);
 }
 
 .colBar[data-dir='flat'] {
   background: var(--mark-cyan);
-  top: 4rem;
+  top: var(--zero);
 }
 
 .colNum {
@@ -884,11 +890,11 @@
 }
 
 .colNum[data-dir='sharp'] {
-  top: calc(4rem - var(--d) * 0.5px - 0.75rem);
+  top: calc(var(--zero) - var(--d) * 0.5px - 0.75rem);
 }
 
 .colNum[data-dir='flat'] {
-  top: calc(4rem + var(--d) * 0.5px + 0.125rem);
+  top: calc(var(--zero) + var(--d) * 0.5px + 0.125rem);
 }
 
 .stepRow {
@@ -988,18 +994,16 @@
 
 .sparkDot {
   background: var(--text);
-  border-radius: 50%;
-  height: 0.4375rem;
-  left: -0.2188rem;
+  height: 0.5rem;
+  left: -1px;
   position: absolute;
   top: 0.0625rem;
-  width: 0.4375rem;
+  width: 2px;
 }
 
-/* inactive field notes are dimmed; selected ones are lit */
+/* a field note that is not in this saved subset: dimmed line, no error bar */
 .sparkCol[data-on='false'] .sparkDot {
-  background: none;
-  border: 1px solid var(--text-subtle);
+  opacity: 0.35;
 }
 
 .sparkBar {
