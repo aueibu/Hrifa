@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M6c committed; M6d next (M6 committed 03be432)
-- State: building
+- Current milestone: M6d committed (e28a791); awaiting the human's hands-on check, then M6b
+- State: awaiting human (M6d, judged by hand)
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -32,7 +32,7 @@
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
-- `src/components/PianoRoll/`: re-taken 2026-11-13 for M6d (opt-in `revealPoint` so a moved or advanced anchor stays in view; the human wants the view to follow, not run off the edge), not yet released.
+- `src/components/PianoRoll/`: re-taken 2026-11-13 for M6d (opt-in `revealPoint` so a moved or advanced anchor stays in view; the human wants the view to follow, not run off the edge), released after commit e28a791.
 - `src/components/PianoRoll/`: re-taken 2026-11-13 for M5b (ghost `labelPlacement`), released after commit 083c04c (W-16).
 - `src/components/PianoRoll/`: taken and released 2026-11-13 (M5a, commit f29ad19, W-15). - `src/components/EditorPalette/`: taken and released 2026-11-13 (M5a, commit f29ad19; only a new test file changed).
 
@@ -42,4 +42,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-M6d (sticky mode, keyboard workflow, continuous insert): the human asked whether sticky click works yet; offered to split the sticky-mode change out first. Launch the M6d builder (or the sticky-only slice if the human says so).
+Human tries the keyboard flow (corepack yarn dev): sticky mode, arrows, Alt+arrows, Shift+arrows, I, Enter, continuous insert, view following the anchor. Then launch M6b (chord vocabulary, scale-degree roles, Simple | Extended, parity test), M7, M8.
