@@ -829,7 +829,7 @@
   width: 2px;
 }
 
-/* sounding: the line grows a little and carries the blue dot */
+/* sounding: the line grows a little and carries the blue dot at its middle */
 .colDot[data-lit='true'] {
   height: 24px;
 }
@@ -842,8 +842,8 @@
   height: 0.625rem;
   left: 50%;
   position: absolute;
-  top: -0.3125rem;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 0.625rem;
 }
 
