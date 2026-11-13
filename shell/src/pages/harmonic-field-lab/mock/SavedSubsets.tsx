@@ -1,11 +1,14 @@
 /** Saved subsets of this pitch collection: one mini tuner strip (a sparkline) per row. Hover previews, click loads. */
 import type { CSSProperties } from 'react';
 import { ActionIcon } from '@mantine/core';
+import { fmtRatio } from '../../../lib/harmonic-field';
 import { SaveIcon } from './icons';
 import { field, fieldDev12, savedSubsets } from './mockData';
-import { PianoBands, stripLeft } from './TunerStrip';
+import { RefLines, stripLeft } from './TunerStrip';
 import { Num, Strip, Tip, useLab } from './ui';
 import classes from './mock.module.css';
+
+const fieldRatio = field.map((n) => fmtRatio(n));
 
 export function SavedSubsets() {
   const lab = useLab();
@@ -44,12 +47,13 @@ export function SavedSubsets() {
                     </Num>
                   </span>
                   <span className={classes.spark} aria-hidden="true">
-                    <PianoBands />
+                    <RefLines thin />
                     {field.map((n, i) => (
                       <span
                         key={i}
                         className={classes.sparkCol}
                         data-on={on.has(i)}
+                        data-ratio={fieldRatio[i]}
                         data-dir={fieldDev12[i] >= 0 ? 'sharp' : 'flat'}
                         style={
                           { left: stripLeft(n.c), '--d': Math.abs(fieldDev12[i]) } as CSSProperties

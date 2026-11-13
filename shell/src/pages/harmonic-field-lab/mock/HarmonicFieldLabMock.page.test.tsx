@@ -1,7 +1,9 @@
 import { fireEvent, render, screen, within } from '@test-utils';
 import { HarmonicFieldLabMockPage } from './HarmonicFieldLabMock.page';
+import { field } from './mockData';
 import { PANELS } from './Rail';
 import { GLOSSARY, TIPS, tipKeys } from './texts';
+import { stripLeft } from './TunerStrip';
 
 const chordCount = () => {
   const rail = screen.getByRole('navigation', { name: 'Analysis panels' });
@@ -153,6 +155,27 @@ describe('HarmonicFieldLabMockPage', () => {
     fireEvent.click(tri);
     expect(tri).toHaveAttribute('aria-pressed', 'true');
     expect(ring).toHaveAccessibleName(/3 of 8/);
+  });
+
+  it('puts a note in the same column in the strip and in every saved row (one shared scale)', () => {
+    const { container } = render(<HarmonicFieldLabMockPage />);
+    const strip = container.querySelector(
+      '[data-testid="strip-plot"] [data-ratio="5/4"]'
+    ) as HTMLElement;
+    const rows = [
+      ...container.querySelectorAll('[class*="sparkCol"][data-ratio="5/4"]'),
+    ] as HTMLElement[];
+    expect(strip.style.left).toBe(stripLeft(field[2].c));
+    expect(rows.length).toBeGreaterThanOrEqual(4);
+    for (const r of rows) {
+      expect(r.style.left).toBe(strip.style.left);
+    }
+    // the 100 c reference lines use the same scale
+    const lines = container.querySelectorAll('[data-testid="strip-plot"] [data-black]');
+    expect(lines).toHaveLength(13);
+    expect((lines[4] as HTMLElement).style.left).toBe(stripLeft(400));
+    expect((lines[4] as HTMLElement).dataset.black).toBe('false');
+    expect((lines[1] as HTMLElement).dataset.black).toBe('true');
   });
 
   it('opens the glossary drawer and filters it', async () => {

@@ -410,48 +410,86 @@
 }
 
 /* ------------------------------------------------------------------------------- ring, stats, inspector */
-/* parameter column | ring | stats; when the centre is narrow the stats drop under the other two */
+/* parameter column | ring | stats, then tools, strip and saved list on the left with the shape stats and step bars
+   beside them. Narrow viewports regroup: stats and side stats share a row under the first two columns. */
 .workspace {
-  container-type: inline-size;
-}
+  --pad: 0.5rem;
+  --gutter: 8.5rem;
+  --ref-white: color-mix(in srgb, var(--text) 7%, transparent);
+  --ref-black: color-mix(in srgb, var(--text) 20%, transparent);
 
-.ringArea {
-  align-items: start;
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: 14rem clamp(14rem, 36%, 19.5rem) minmax(0, 1fr);
-  padding: 0.5rem 0.5rem 0;
+  gap: 0.5rem 0.75rem;
+  grid-template-areas:
+    'gen ring stats'
+    'tools tools side'
+    'strip strip side'
+    'saved saved side';
+  grid-template-columns: 14rem minmax(0, 1fr) 17rem;
+  grid-template-rows: auto auto auto minmax(7rem, 1fr);
+  padding: 0.5rem;
 }
 
-@container (max-width: 46rem) {
-  .ringArea {
+/* reference lines: lighter grey for a white key, darker for a black key, so in dark mode the order flips with the text */
+:global([data-mantine-color-scheme='dark']) .workspace {
+  --ref-white: color-mix(in srgb, var(--text) 22%, transparent);
+  --ref-black: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.areaGen {
+  grid-area: gen;
+  min-width: 0;
+}
+
+.areaRing {
+  grid-area: ring;
+  min-width: 0;
+}
+
+.areaStats {
+  grid-area: stats;
+  min-width: 0;
+}
+
+.areaTools {
+  grid-area: tools;
+  min-width: 0;
+}
+
+.areaStrip {
+  grid-area: strip;
+  min-width: 0;
+}
+
+.areaSaved {
+  display: flex;
+  flex-direction: column;
+  grid-area: saved;
+  min-height: 0;
+  min-width: 0;
+}
+
+.areaSide {
+  grid-area: side;
+  min-width: 0;
+}
+
+@media (max-width: 81em) {
+  .workspace {
+    grid-template-areas:
+      'gen ring'
+      'stats side'
+      'tools tools'
+      'strip strip'
+      'saved saved';
     grid-template-columns: 14rem minmax(0, 1fr);
-  }
-
-  .ringBox {
-    justify-self: center;
-    max-width: 14rem;
-    width: 100%;
-  }
-
-  .stats {
-    grid-column: 1 / -1;
-    padding-top: 0;
-  }
-
-  .statGrid {
-    display: grid;
-    gap: 0.25rem 1rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-width: none;
-  }
-
-  .inspector {
-    flex: 1 1 11rem;
+    grid-template-rows: auto auto auto auto minmax(5rem, 1fr);
   }
 }
 
 .ringBox {
+  margin: 0 auto;
+  max-width: 22rem;
   min-width: 0;
 }
 
@@ -473,27 +511,40 @@
 }
 
 .stats {
-  align-items: flex-start;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
+  flex-direction: column;
+  gap: 0.5rem;
   min-width: 0;
   padding-top: 0.25rem;
 }
 
 .statGrid {
   display: flex;
-  flex: 1 1 10rem;
   flex-direction: column;
   font-size: 0.75rem;
   gap: 0.25rem;
-  max-width: 15rem;
 }
 
-.statBars {
-  flex: 1 1 11rem;
-  max-width: 17rem;
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   min-width: 0;
+  padding-top: 0.25rem;
+}
+
+.sideBlock {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  gap: 0.25rem;
+}
+
+.sideHead {
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0;
 }
 
 .bars {
@@ -535,7 +586,6 @@
   background: var(--panel-inset);
   border-radius: var(--radius-control);
   display: flex;
-  flex: 1 1 100%;
   flex-direction: column;
   font-size: 0.75rem;
   gap: 0.1875rem;
@@ -657,32 +707,74 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  margin: 0 0.5rem;
 }
 
+/* the strip body and the saved rows share one gutter and one plot width (and a reserved scrollbar track) */
 .stripBody {
   background: var(--panel-inset);
   border-radius: 0 0 var(--radius-control) var(--radius-control);
-  padding: 0 0 0.125rem;
+  overflow-y: hidden;
+  padding: 0 var(--pad) 0.125rem;
+  scrollbar-gutter: stable;
+}
+
+.alignRow {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+}
+
+.gutter {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
   position: relative;
 }
 
-/* 12-EDO piano keys: a band every 100 c, 1/1 as C; white keys use the panel tier, black keys stay on the inset */
-.bands {
+.gutterTop {
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+
+.gutterZero {
+  left: 0;
+  position: absolute;
+  top: 4rem;
+  transform: translateY(-50%);
+}
+
+.gutterSteps {
+  left: 0;
+  position: absolute;
+  top: 6.3125rem;
+}
+
+.plotCol {
+  position: relative;
+}
+
+/* reference lines every 100 c, about 5 px wide: absolute 12-EDO pitch, quiet behind the notes */
+.refs {
   inset: 0;
   pointer-events: none;
   position: absolute;
 }
 
-.band {
-  background: var(--panel);
+.ref {
+  background: var(--ref-white);
   bottom: 0;
   position: absolute;
   top: 0;
+  transform: translateX(-50%);
+  width: 5px;
 }
 
-.band[data-black='true'] {
-  background: none;
+.ref[data-black='true'] {
+  background: var(--ref-black);
+}
+
+.ref[data-thin='true'] {
+  width: 3px;
 }
 
 .stripPlot {
@@ -788,7 +880,7 @@
 }
 
 .stepRow {
-  height: 1.625rem;
+  height: 1.75rem;
   position: relative;
 }
 
@@ -808,8 +900,7 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  margin: 0 0.5rem;
-  min-height: 7rem;
+  min-height: 0;
 }
 
 .savedList {
@@ -822,7 +913,8 @@
   list-style: none;
   margin: 0;
   overflow-y: auto;
-  padding: 0.125rem;
+  padding: 0;
+  scrollbar-gutter: stable;
 }
 
 .savedRow {
@@ -835,8 +927,8 @@
   display: grid;
   font: inherit;
   gap: 0.5rem;
-  grid-template-columns: 9.5rem minmax(0, 1fr);
-  padding: 0.125rem 0.25rem;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+  padding: 0.125rem calc(var(--pad) - 1px);
   text-align: left;
   width: 100%;
 }
@@ -1030,4 +1122,36 @@
 .see {
   display: block;
   margin-top: 0.25rem;
+}
+
+/* narrow: the ring shrinks, and the basics, shape verdicts and step bars each sit in two columns */
+@media (max-width: 81em) {
+  .ringBox {
+    justify-self: center;
+    max-width: 13.5rem;
+    width: 100%;
+  }
+
+  /* compact: the basics, the shape verdicts and the step bars each in two columns */
+  .statGrid,
+  .sideBlock {
+    display: grid;
+    gap: 0.25rem 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sideHead,
+  .bars {
+    grid-column: 1 / -1;
+  }
+
+  .bars {
+    display: grid;
+    gap: 0.125rem 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .barRow {
+    grid-template-columns: 0.75rem minmax(0, 1fr) 2.5rem 1.5rem;
+  }
 }

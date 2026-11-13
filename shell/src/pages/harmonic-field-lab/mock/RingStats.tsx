@@ -26,11 +26,11 @@ import {
 import { Num, Row, Tip, signed, useLab } from './ui';
 import classes from './mock.module.css';
 
-const SIZE = 240;
+const SIZE = 300;
 const C = SIZE / 2;
-const R = 80;
+const R = 104;
 /** Ring radius in the Fifths view (smaller: it carries step names, ratios and offsets outside). */
-const RF = 70;
+const RF = 92;
 const polar = (c: number, r = R) => {
   const a = (c / repC) * 2 * Math.PI - Math.PI / 2;
   return { x: C + r * Math.cos(a), y: C + r * Math.sin(a) };
@@ -264,6 +264,7 @@ function Inspector() {
   );
 }
 
+/** Glanceable basics beside the ring, and the note inspector. */
 export function Stats() {
   return (
     <div className={classes.stats}>
@@ -282,6 +283,20 @@ export function Stats() {
         <Row name={<Tip k="meanTenney">Mean Tenney</Tip>}>
           <Num>{analysis.meanTenney?.toFixed(2)}</Num>
         </Row>
+      </div>
+      <Inspector />
+    </div>
+  );
+}
+
+/** Beside the strip: the shape verdicts and the step-size bars (their letters are the ones under the strip). */
+export function ShapeStats() {
+  return (
+    <div className={classes.side}>
+      <section className={classes.sideBlock} aria-label="Shape">
+        <h3 className={classes.sideHead}>
+          <Tip k="shape">Shape</Tip>
+        </h3>
         <Row name={<Tip k="propriety">Propriety</Tip>}>{prop.verdict}</Row>
         <Row name={<Tip k="constantStructure">Const. structure</Tip>}>
           {cs.cs ? 'yes' : 'no'}
@@ -302,29 +317,29 @@ export function Stats() {
               ? 'equal'
               : 'not MOS'}
         </Row>
-      </div>
-      <div className={classes.statBars}>
-        <Tip k="stepBars" as="control" block>
-          <ul className={classes.bars} aria-label="Step sizes">
-            {analysis.groups.map((g) => (
-              <li key={g.letter} className={classes.barRow}>
-                <Num muted>{g.letter}</Num>
-                <span className={classes.barTrack}>
-                  <span
-                    className={classes.sizeBar}
-                    aria-hidden="true"
-                    style={{ width: `${(g.size / maxStep) * 100}%` }}
-                  />
-                </span>
-                <Num>{g.size.toFixed(1)}</Num>
-                <VisuallyHidden>cents, </VisuallyHidden>
-                <Num muted>&times;{g.count}</Num>
-              </li>
-            ))}
-          </ul>
-        </Tip>
-      </div>
-      <Inspector />
+      </section>
+      <section className={classes.sideBlock} aria-label="Step sizes">
+        <h3 className={classes.sideHead}>
+          <Tip k="stepBars">Step sizes (c)</Tip>
+        </h3>
+        <ul className={classes.bars} aria-label="Step sizes">
+          {analysis.groups.map((g) => (
+            <li key={g.letter} className={classes.barRow}>
+              <Num muted>{g.letter}</Num>
+              <span className={classes.barTrack}>
+                <span
+                  className={classes.sizeBar}
+                  aria-hidden="true"
+                  style={{ width: `${(g.size / maxStep) * 100}%` }}
+                />
+              </span>
+              <Num>{g.size.toFixed(1)}</Num>
+              <VisuallyHidden>cents, </VisuallyHidden>
+              <Num muted>&times;{g.count}</Num>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

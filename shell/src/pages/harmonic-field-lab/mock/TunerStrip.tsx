@@ -1,6 +1,7 @@
 /**
- * Tuner strip: a short screen with a faint 12-EDO piano-key backdrop (a band every 100 c from 1/1 as C), the field
- * notes above it and their sharp/flat bars, and the scale steps right under the notes they span.
+ * Tuner strip: the field notes by pitch with their sharp/flat bars and the scale steps right under them. Faint
+ * vertical reference lines mark every 100 c (1/1 as C): lighter for a white key, darker for a black key. The strip and
+ * the saved-subset rows share one gutter and one cents scale (`stripLeft`), so a note is in the same column everywhere.
  */
 import type { CSSProperties } from 'react';
 import { NativeSelect, NumberInput } from '@mantine/core';
@@ -9,23 +10,21 @@ import { Num, Strip, Tip, signed, useLab } from './ui';
 import classes from './mock.module.css';
 
 const PAD = 4;
-/** Horizontal position (percent) of a pitch in cents above 1/1. */
+/** Horizontal position (percent of the plot width) of a pitch in cents above 1/1: the one scale every strip uses. */
 export const stripLeft = (c: number) => `${PAD + (c / repC) * (100 - 2 * PAD)}%`;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 
-/** The piano backdrop: one band per semitone, centred on 100 c steps; white keys lighter than black. */
-export function PianoBands() {
+/** A quiet reference line at every 100 c: absolute 12-EDO pitch (1/1 = C), light for white keys, dark for black. */
+export function RefLines({ thin }: { thin?: boolean }) {
   return (
-    <div className={classes.bands} aria-hidden="true">
+    <div className={classes.refs} aria-hidden="true">
       {Array.from({ length: 13 }, (_, i) => (
         <span
           key={i}
-          className={classes.band}
+          className={classes.ref}
           data-black={BLACK.has(i % 12)}
-          style={{
-            left: stripLeft(Math.max(0, i * 100 - 50)),
-            width: `${((Math.min(repC, i * 100 + 50) - Math.max(0, i * 100 - 50)) / repC) * (100 - 2 * PAD)}%`,
-          }}
+          data-thin={thin ? 'true' : undefined}
+          style={{ left: stripLeft(i * 100) }}
         />
       ))}
     </div>
@@ -58,64 +57,74 @@ export function TunerStrip() {
         </Tip>
       </Strip>
       <div className={classes.stripBody}>
-        <PianoBands />
-        <div className={classes.stripPlot}>
-          <div className={classes.zero} aria-hidden="true" />
-          {devs.map((d, i) => {
-            const sharp = d.dev12 >= 0;
-            const lit = LIT.has(i);
-            const fi = rel[i].src;
-            return (
-              <div
-                key={i}
-                className={classes.col}
-                style={{ left: stripLeft(d.c), '--d': Math.abs(d.dev12) } as CSSProperties}
-                data-lit={lit}
-                data-pin={lab.pin === fi}
-                role="button"
-                tabIndex={0}
-                aria-label={`${d.ratio}, ${signed(d.dev12)} cents from ${d.label12}${lit ? ', sounding' : ''}`}
-                onMouseEnter={() => lab.setHover(fi)}
-                onMouseLeave={() => lab.setHover(null)}
-                onFocus={() => lab.setHover(fi)}
-                onBlur={() => lab.setHover(null)}
-                onClick={() => lab.setPin(lab.pin === fi ? null : fi)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    lab.setPin(lab.pin === fi ? null : fi);
-                  }
-                }}
-              >
-                <span className={classes.colRatio}>{d.ratio}</span>
-                <span className={classes.colDot} data-lit={lit} aria-hidden="true" />
-                <span
-                  className={classes.colBar}
-                  data-dir={sharp ? 'sharp' : 'flat'}
-                  aria-hidden="true"
-                />
-                <span className={classes.colNum} data-dir={sharp ? 'sharp' : 'flat'}>
-                  {signed(d.dev12)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        <div className={classes.stepRow} aria-label="Scale steps">
-          {rel.map((n, i) => {
-            const next = i < rel.length - 1 ? rel[i + 1].c : repC;
-            return (
-              <span
-                key={i}
-                className={classes.stepCell}
-                style={{ left: stripLeft((n.c + next) / 2) }}
-                title={`Step ${analysis.stepLetters[i]}: ${analysis.steps[i].toFixed(2)} c`}
-              >
-                <Num>{analysis.stepLetters[i]}</Num>
-                <Num muted>{analysis.steps[i].toFixed(1)}</Num>
-              </span>
-            );
-          })}
+        <div className={classes.alignRow}>
+          <div className={classes.gutter} aria-hidden="true">
+            <span className={classes.gutterTop}>note</span>
+            <span className={classes.gutterZero}>± 12-EDO (c)</span>
+            <span className={classes.gutterSteps}>step (c)</span>
+          </div>
+          <div className={classes.plotCol} data-testid="strip-plot">
+            <RefLines />
+            <div className={classes.stripPlot}>
+              <div className={classes.zero} aria-hidden="true" />
+              {devs.map((d, i) => {
+                const sharp = d.dev12 >= 0;
+                const lit = LIT.has(i);
+                const fi = rel[i].src;
+                return (
+                  <div
+                    key={i}
+                    className={classes.col}
+                    style={{ left: stripLeft(d.c), '--d': Math.abs(d.dev12) } as CSSProperties}
+                    data-ratio={d.ratio}
+                    data-lit={lit}
+                    data-pin={lab.pin === fi}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${d.ratio}, ${signed(d.dev12)} cents from ${d.label12}${lit ? ', sounding' : ''}`}
+                    onMouseEnter={() => lab.setHover(fi)}
+                    onMouseLeave={() => lab.setHover(null)}
+                    onFocus={() => lab.setHover(fi)}
+                    onBlur={() => lab.setHover(null)}
+                    onClick={() => lab.setPin(lab.pin === fi ? null : fi)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        lab.setPin(lab.pin === fi ? null : fi);
+                      }
+                    }}
+                  >
+                    <span className={classes.colRatio}>{d.ratio}</span>
+                    <span className={classes.colDot} data-lit={lit} aria-hidden="true" />
+                    <span
+                      className={classes.colBar}
+                      data-dir={sharp ? 'sharp' : 'flat'}
+                      aria-hidden="true"
+                    />
+                    <span className={classes.colNum} data-dir={sharp ? 'sharp' : 'flat'}>
+                      {signed(d.dev12)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className={classes.stepRow} aria-label="Scale steps">
+              {rel.map((n, i) => {
+                const next = i < rel.length - 1 ? rel[i + 1].c : repC;
+                return (
+                  <span
+                    key={i}
+                    className={classes.stepCell}
+                    style={{ left: stripLeft((n.c + next) / 2) }}
+                    title={`Step ${analysis.stepLetters[i]}: ${analysis.steps[i].toFixed(2)} c`}
+                  >
+                    <Num>{analysis.stepLetters[i]}</Num>
+                    <Num muted>{analysis.steps[i].toFixed(1)}</Num>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </section>

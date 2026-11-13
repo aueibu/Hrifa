@@ -194,7 +194,7 @@ const entries = {
   },
   tunerStrip: {
     term: 'Tuner strip',
-    text: 'Your scale laid out by pitch over a faint piano keyboard (white and black key bands every 100 c, with 1/1 as C). Each bar sits under its own dot: pink going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.',
+    text: 'Your scale laid out by pitch, with a faint reference line at every 100 c (1/1 as C): lighter where a piano white key would sit, darker for a black key. Saved subsets below use the same columns, so a note sits straight above and below itself. Each bar sits under its own dot: pink going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.',
     see: ['compareTo', 'cents'],
   },
   cents: {
