@@ -1,74 +1,67 @@
-/** Sticky contents rail: every section and block with a one-line summary; click to jump; simple scroll-spy. */
-import { useEffect, useState } from 'react';
-import { Text } from '@mantine/core';
-import { BLOCK_IDS, SECTIONS } from './sections';
+/** Wiki rail: picks the one analysis panel shown on the right; each entry carries a live count or verdict. */
+import { completeKeys, field, lattice, prop, retunerCards } from './mockData';
+import type { TipKey } from './texts';
+import { Tip } from './ui';
 import classes from './mock.module.css';
 
-export function Rail() {
-  const [active, setActive] = useState<string>(BLOCK_IDS[0]);
+export type PanelId = 'chords' | 'spectrum' | 'keys' | 'lattice' | 'field' | 'retuner';
 
-  useEffect(() => {
-    // The current block is the last one whose top is at or above the line just under the sticky header.
-    const line = 140;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      let current = BLOCK_IDS[0];
-      for (const id of BLOCK_IDS) {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= line) {
-          current = id;
-        }
-      }
-      setActive(current);
-    };
-    const onScroll = () => {
-      if (!frame) {
-        frame = requestAnimationFrame(update);
-      }
-    };
-    update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (frame) {
-        cancelAnimationFrame(frame);
-      }
-    };
-  }, []);
+export const PANELS: { id: PanelId; label: string; tip: TipKey }[] = [
+  { id: 'chords', label: 'Chords', tip: 'chords' },
+  { id: 'spectrum', label: 'Spectrum', tip: 'spectrum' },
+  { id: 'keys', label: 'Keys & Modes', tip: 'keysModes' },
+  { id: 'lattice', label: 'Lattice', tip: 'lattice' },
+  { id: 'field', label: 'Field table', tip: 'fieldTable' },
+  { id: 'retuner', label: 'Retuner', tip: 'retunerPanel' },
+];
 
-  const jump = (id: string) => {
-    setActive(id);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+export function summaryOf(id: PanelId, chordCount: number): string {
+  switch (id) {
+    case 'chords':
+      return String(chordCount);
+    case 'spectrum':
+      return prop.verdict;
+    case 'keys':
+      return `${completeKeys.length} of ${field.length}`;
+    case 'lattice':
+      return `${lattice.axes.length} primes`;
+    case 'field':
+      return String(field.length);
+    case 'retuner':
+      return `${retunerCards.length} cards`;
+  }
+}
 
+interface Props {
+  panel: PanelId;
+  onPick: (p: PanelId) => void;
+  chordCount: number;
+}
+
+export function Rail({ panel, onPick, chordCount }: Props) {
   return (
-    <nav className={classes.rail} aria-label="Contents">
-      {SECTIONS.map((s) => (
-        <div key={s.id} className={classes.railGroup}>
-          <button type="button" className={classes.railSection} onClick={() => jump(s.id)}>
-            {s.title}
-          </button>
-          {s.blocks.map((b) => (
+    <nav className={classes.rail} aria-label="Analysis panels">
+      <Tip k="analysisRail">
+        <span className={classes.railHead}>Analysis</span>
+      </Tip>
+      <div role="tablist" aria-orientation="vertical" className={classes.railList}>
+        {PANELS.map((p) => (
+          <Tip key={p.id} k={p.tip} as="control" block>
             <button
-              key={b.id}
               type="button"
+              role="tab"
+              id={`tab-${p.id}`}
+              aria-selected={panel === p.id}
+              aria-controls="analysis-panel"
               className={classes.railItem}
-              data-active={active === b.id}
-              aria-current={active === b.id ? 'location' : undefined}
-              title={`${b.title}: ${b.summary}`}
-              onClick={() => jump(b.id)}
+              onClick={() => onPick(p.id)}
             >
-              <span className={classes.railTitle}>{b.title}</span>
-              <Text span ff="monospace" className={classes.railSummary}>
-                {b.summary}
-              </Text>
+              <span className={classes.railLabel}>{p.label}</span>
+              <span className={classes.railCount}>{summaryOf(p.id, chordCount)}</span>
             </button>
-          ))}
-        </div>
-      ))}
+          </Tip>
+        ))}
+      </div>
     </nav>
   );
 }

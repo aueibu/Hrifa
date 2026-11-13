@@ -1,4 +1,4 @@
-/** Retuner section (placeholder): card list, controls, "why this card won" table, drift readout. Numbers from M2/M3. */
+/** Retuner panel (placeholder, as in mock 1 but compacted): card list, controls, "why this card won" table, drift readout. Numbers from M2/M3. */
 import {
   ActionIcon,
   Button,
@@ -10,7 +10,6 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
-import { Article } from './Article';
 import { ArrowDownIcon, ArrowUpIcon, HomeIcon, PlusIcon, TrashIcon } from './icons';
 import {
   SCORERS,
@@ -23,12 +22,21 @@ import {
   why,
   whyStepIndex,
 } from './mockData';
-import { Cluster, Num, Row, SectionHead, Tip, signed } from './ui';
-import classes from './mock.module.css';
+import { Num, Row, Strip, Tip, signed } from './ui';
+import classes from './panels.module.css';
+
+/** A titled sub-block of the panel (a tier fill, no extra box line). */
+function Cluster({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className={classes.sub}>
+      <h3 className={classes.familyHead}>{title}</h3>
+      {children}
+    </section>
+  );
+}
 
 const homeOf = (i: number) => (i === 0 ? 'home' : '');
 const winner = why.entries.find((e) => e.chosen);
-const runnerUp = why.entries.filter((e) => e.rank === 2)[0];
 
 function IconBtn({
   label,
@@ -391,65 +399,26 @@ function Drift() {
   );
 }
 
-export function RetunerSection() {
+export function RetunerPanel() {
   return (
-    <section id="sec-retuner" className={classes.section} aria-labelledby="sec-retuner-h">
-      <SectionHead
-        id="sec-retuner-h"
-        title="Retuner"
-        lede="Placeholder: re-roots a list of candidate scales around a held pivot and picks the card whose chord scores best."
-      />
-      <div className={classes.grid}>
-        <Article
-          id="blk-cards"
-          title="Cards"
-          tip="cards"
-          lede={
-            <>
-              <Num>{retunerCards.length}</Num> candidate scales; card 0 is home.
-            </>
-          }
-        >
+    <>
+      <Strip title={<Tip k="retunerPanel">Retuner</Tip>}>
+        <span className={classes.hint}>placeholder: not redesigned in this pass</span>
+      </Strip>
+      <div className={classes.panelBody}>
+        <Cluster title={<Tip k="cards">Cards</Tip>}>
           <Cards />
-        </Article>
-        <Article
-          id="blk-retcontrols"
-          title="Retuner controls"
-          tip="retunerOn"
-          lede="Roughness scorer, Freestyle anchor, Auto trigger, 120 ms glide."
-        >
+        </Cluster>
+        <Cluster title={<Tip k="retunerOn">Controls</Tip>}>
           <Controls />
-        </Article>
-        <Article
-          id="blk-why"
-          title="Why this card won"
-          tip="why"
-          span={2}
-          lede={
-            <>
-              {winner?.name} wins the ii chord: roughness <Num>{winner?.score.toFixed(2)}</Num>{' '}
-              against <Num>{runnerUp?.score.toFixed(2)}</Num>.
-            </>
-          }
-        >
+        </Cluster>
+        <Cluster title={<Tip k="why">Why this card won</Tip>}>
           <Why />
-        </Article>
-        <Article
-          id="blk-drift"
-          title="Drift"
-          tip="drift"
-          span={2}
-          lede={
-            <>
-              After I, vi, ii, V, I the tuning has drifted{' '}
-              <Num>{signed(finalDrift.driftCents, 2)} c</Num> (<Num>{finalDrift.driftRatio}</Num>)
-              in Freestyle, and <Num>{signed(fixedFinal.driftCents, 2)} c</Num> in Fixed.
-            </>
-          }
-        >
+        </Cluster>
+        <Cluster title={<Tip k="drift">Drift</Tip>}>
           <Drift />
-        </Article>
+        </Cluster>
       </div>
-    </section>
+    </>
   );
 }

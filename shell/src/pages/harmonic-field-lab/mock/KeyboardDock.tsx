@@ -1,46 +1,35 @@
-/** Collapsible keyboard dock: the subset as playable keys, docked at the bottom next to everything it lights. */
-import { Text } from '@mantine/core';
+/** Thin keyboard dock: one row of keys for the subset, collapsible to a bar. What sounds is lit here and everywhere. */
 import { fmtRatio } from '../../../lib/harmonic-field';
 import { ChevronDownIcon } from './icons';
-import { rel, repText } from './mockData';
-import { Tip, Num } from './ui';
+import { LIT, rel, repText } from './mockData';
+import { Num, Tip, useLab } from './ui';
 import classes from './mock.module.css';
 
 const COMPUTER_KEYS = ['z', 'x', 'c', 'v', 'b', 'n', 'm', ','];
-/** Sounding in the mock: 1/1, 5/4 and 3/2, which is also the highlighted chord (4:5:6). */
-export const LIT = new Set([0, 2, 3]);
 
-interface Props {
-  open: boolean;
-  onToggle: () => void;
-}
-
-export function KeyboardDock({ open, onToggle }: Props) {
-  const keys = [...rel.map((n) => ({ ratio: fmtRatio(n), c: n.c })), { ratio: repText, c: 1200 }];
+export function KeyboardDock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const lab = useLab();
+  const keys = [
+    ...rel.map((n) => ({ ratio: fmtRatio(n), c: n.c, src: n.src })),
+    { ratio: repText, c: 1200, src: -1 },
+  ];
   return (
     <section className={classes.dock} data-open={open} aria-label="Keyboard">
-      <div className={classes.dockBar}>
+      <Tip k="dockToggle" as="control">
         <button
           type="button"
           className={classes.dockToggle}
           aria-expanded={open}
+          aria-label="Keyboard"
           onClick={onToggle}
         >
           <span className={classes.chevron} data-open={open}>
             <ChevronDownIcon />
           </span>
-          <Tip k="keyboardDock" as="control">
-            <span>Keyboard</span>
-          </Tip>
+          <span>Keys</span>
         </button>
-        <Text size="xs" c="dimmed" className={classes.dockHint}>
-          {open ? 'Computer keys z x c v … walk up the subset; the mouse works too.' : 'Closed'}
-        </Text>
-        <Text size="xs" c="dimmed" className={classes.dockStatus}>
-          Sounding <Num>1/1 · 5/4 · 3/2</Num>
-        </Text>
-      </div>
-      {open && (
+      </Tip>
+      {open ? (
         <div className={classes.keys} role="group" aria-label="Subset keys">
           {keys.map((k, i) => (
             <button
@@ -51,13 +40,20 @@ export function KeyboardDock({ open, onToggle }: Props) {
               data-chord={LIT.has(i)}
               aria-pressed={LIT.has(i)}
               aria-label={`${k.ratio}, ${k.c.toFixed(1)} cents`}
+              onMouseEnter={() => k.src >= 0 && lab.setHover(k.src)}
+              onMouseLeave={() => lab.setHover(null)}
+              onFocus={() => k.src >= 0 && lab.setHover(k.src)}
+              onBlur={() => lab.setHover(null)}
             >
               <span className={classes.keyHint}>{COMPUTER_KEYS[i]}</span>
               <Num>{k.ratio}</Num>
-              <Num muted>{k.c.toFixed(1)} c</Num>
             </button>
           ))}
         </div>
+      ) : (
+        <span className={classes.dockStatus}>
+          sounding <Num>1/1 · 5/4 · 3/2</Num>
+        </span>
       )}
     </section>
   );

@@ -65,30 +65,99 @@ export const modes = modeMatrix(rel, repC, 32);
 
 const TOL = 18;
 export const chordTolerance = TOL;
-export const chords: FoundChord[] = findChords(rel, repC, DEFAULT_TEMPLATES, TOL);
 export const templateCount = DEFAULT_TEMPLATES.length;
-const foundKeys = new Set(chords.map((c) => c.template));
-/** Templates that did not make it at this tolerance, with the tolerance that would have admitted them. */
-export const misses = DEFAULT_TEMPLATES.map((t) => ({ t, r: closestChord(rel, repC, t) }))
-  .filter(({ r }) => r.chord && !foundKeys.has(r.chord.template))
-  .map(({ t, r }) => ({
-    name: t.name ?? t.text,
-    text: t.text,
-    needs: (r as { tol: number }).tol,
-    members: (r.chord as FoundChord).members.map((i) => fmtRatio(field[i])),
-  }))
-  .sort((a, b) => a.needs - b.needs);
-export const chordRows = chords.map((c) => ({
-  name: c.name || c.template,
+
+/** Template families: by how many notes the template has (triads, sevenths and other tetrads, bigger sets). */
+export const FAMILIES = ['Triads', 'Sevenths & tetrads', 'Clusters & larger'] as const;
+export type Family = (typeof FAMILIES)[number];
+const familyOf = (n: number): Family =>
+  n <= 3 ? FAMILIES[0] : n === 4 ? FAMILIES[1] : FAMILIES[2];
+
+export interface ChordChip {
+  name: string;
+  template: string;
+  family: Family;
+  root: string;
+  members: string[];
+  memberIdx: number[];
+  maxErr: number;
+  /** Tolerance (c) at which the chord appears; for a found chip, its own error. */
+  needs: number;
+  found: boolean;
+}
+const toChip = (c: FoundChord, name: string, needs: number, found: boolean): ChordChip => ({
+  name,
   template: c.template,
+  family: familyOf(c.members.length),
   root: fmtRatio(field[c.root]),
   members: c.members.map((i) => fmtRatio(field[i])),
+  memberIdx: c.members,
   maxErr: c.maxErr,
-  exact: c.exact,
-}));
+  needs,
+  found,
+});
+/** Every template's closest placement, with the tolerance that would admit it (used for the "not yet" chips). */
+const closest = DEFAULT_TEMPLATES.flatMap((t) => {
+  const r = closestChord(rel, repC, t);
+  return r.chord ? [toChip(r.chord, t.name ?? t.text, r.tol, false)] : [];
+});
+const chordCache = new Map<number, FoundChord[]>();
+/** Chords found at a tolerance (cached; the maths is the core's findChords). */
+export function chordsAt(tol: number): FoundChord[] {
+  if (!chordCache.has(tol)) {
+    chordCache.set(tol, findChords(rel, repC, DEFAULT_TEMPLATES, tol));
+  }
+  return chordCache.get(tol)!;
+}
+/** The chips at one tolerance: every found chord, plus the closest miss of each template that found none. */
+export function chipsAt(tol: number): ChordChip[] {
+  const found = chordsAt(tol);
+  const have = new Set(found.map((c) => c.template));
+  return [
+    ...found.map((c) => toChip(c, c.name || c.template, c.maxErr, true)),
+    ...closest.filter((c) => !have.has(c.template)),
+  ];
+}
+/** Whole-cent tolerances at which the chord count changes, ascending, with the count from there on. */
+export const ladder: { tol: number; count: number }[] = (() => {
+  const all = findChords(rel, repC, DEFAULT_TEMPLATES, repC / 2);
+  const rungs = [...new Set(all.map((c) => Math.ceil(c.maxErr - 1e-9)))].sort((a, b) => a - b);
+  return rungs.map((tol) => ({ tol, count: chordsAt(tol).length }));
+})();
+export const chords: FoundChord[] = chordsAt(TOL);
 
 export const keys = transpositions(field, subsetIdx, 0, rep, TOL);
 export const completeKeys = keys.filter((k) => k.complete);
+
+/** Sounding in the mock: rel degrees 0, 2, 3 = 1/1, 5/4, 3/2, which is also the highlighted chord 4:5:6. */
+export const LIT = new Set([0, 2, 3]);
+export const LIT_FIELD = new Set([...LIT].map((k) => subsetIdx[k]));
+export const selectedSet = subsetSet;
+
+/** Mode x degree fit: with mode i's root moved to 1/1, how many cents each degree lands from the nearest field note. */
+const circ = (d: number) => {
+  const x = ((Math.abs(d) % repC) + repC) % repC;
+  return x > repC / 2 ? repC - x : x;
+};
+export const modeFit: { mode: number; root: string; errs: number[]; ok: number }[] = rel.map(
+  (_, i) => {
+    const r = rotateSubset(field, subsetIdx, i, rep);
+    const errs = r.map((n) => Math.min(...field.map((f) => circ(f.c - n.c))));
+    return { mode: i, root: fmtRatio(rel[i]), errs, ok: errs.filter((e) => e <= TOL).length };
+  }
+);
+
+/** One mini ring per key: where each moved scale note lands, and whether the field has a note there. */
+export const keyRings = keys.map((k) => ({
+  root: fmtRatio(field[k.root]),
+  rootIdx: k.root,
+  complete: k.complete,
+  missing: k.missing,
+  moved: rel.map((n, d) => ({
+    c: (field[k.root].c + n.c) % repC,
+    found: k.idx[d] !== null,
+  })),
+}));
 
 const dev12 = deviations(rel, edoTargets(12, repC), repC);
 export const devJI = deviationsJI(rel, 15, repC);
@@ -102,6 +171,7 @@ export const widestMiss = devs.reduce((a, b) => (Math.abs(b.dev12) > Math.abs(a.
 
 export interface FieldRow {
   i: number;
+  monzo: string;
   on: boolean;
   ratio: string;
   cents: number;
@@ -111,8 +181,18 @@ export interface FieldRow {
   vs12: string;
   vsJI: string;
 }
+/** Monzo as prime powers, e.g. 3^2 5^-1 (the factor 2 is shown too: 2^-3 3^2). */
+export const fmtMonzo = (n: Note) =>
+  n.m
+    ? Object.entries(n.m)
+        .filter(([, e]) => e !== 0)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([p, e]) => (e === 1 ? p : `${p}^${e}`))
+        .join(' ') || '1'
+    : 'irrational';
 export const fieldRows: FieldRow[] = field.map((n, i) => ({
   i,
+  monzo: fmtMonzo(n),
   on: subsetSet.has(i),
   ratio: fmtRatio(n),
   cents: n.c,

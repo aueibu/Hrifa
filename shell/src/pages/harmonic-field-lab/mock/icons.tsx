@@ -84,3 +84,53 @@ export const HomeIcon = () => (
     <path d="M3 11l9-8 9 8M5 10v10h14V10" />
   </Icon>
 );
+
+export const PlayIcon = () => (
+  <Icon>
+    <path d="M7 4l13 8-13 8z" />
+  </Icon>
+);
+
+export const StopIcon = () => (
+  <Icon>
+    <rect x="5" y="5" width="14" height="14" rx="1" />
+  </Icon>
+);
+
+export const GearIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+  </Icon>
+);
+
+export const SaveIcon = () => (
+  <Icon>
+    <path d="M5 3h11l3 3v15H5zM8 3v6h7V3M8 21v-7h8v7" />
+  </Icon>
+);
+
+export const DownloadIcon = () => (
+  <Icon>
+    <path d="M12 3v12M7 10l5 5 5-5M4 20h16" />
+  </Icon>
+);
+
+export const MinusIcon = () => (
+  <Icon>
+    <path d="M5 12h14" />
+  </Icon>
+);
+
+export const SoundIcon = () => (
+  <Icon>
+    <path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" />
+  </Icon>
+);
+
+export const TableIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M3 10h18M3 15h18M9 4v16" />
+  </Icon>
+);

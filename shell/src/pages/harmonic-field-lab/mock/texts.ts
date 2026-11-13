@@ -329,9 +329,9 @@ const entries = {
     see: ['mode'],
   },
   modes: {
-    term: 'Modes',
-    text: "The scale restarted from each of its degrees: row = mode, column = degree of that mode, number = cents above that mode's root. The first column is always 0. Example: row 1, column 1 is the step from 9/8 to 5/4, 182 c.",
-    see: ['mode'],
+    term: 'Modes (heat grid)',
+    text: "One row per mode (the scale restarted from each degree), one column per degree of that mode. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors. Example: row 1 is the scale from 9/8; if its 5th degree misses by 21.5 c, that cell is orange.",
+    see: ['mode', 'chordError'],
   },
 
   /* ---- retuner ---- */
@@ -437,6 +437,86 @@ const entries = {
   comma: {
     term: 'Syntonic comma',
     text: 'The tiny interval 81/80 (21.5 cents): the gap between a stack of four fifths (81/64) and a pure major third (5/4). It is why just-intonation chord progressions drift unless the tuning is allowed to wander. Example: C-E-G, A-C-E, D-F-A, G-B-D: the D of ii (10/9) and the D of V (9/8) differ by 81/80.',
+  },
+  /* ---- workspace: rail, settings, inspector ---- */
+  analysisRail: {
+    term: 'Analysis panels',
+    text: 'The list on the left picks which analysis panel shows on the right; the figure beside each name is a live summary of your current subset. Everything on the left and in the middle (generator, circle, tuner strip) is always visible. Example: "Chords 10" means ten chords are found at the current tolerance; click it to see them.',
+  },
+  chords: {
+    term: 'Chords',
+    text: 'Chord shapes (templates such as 4:5:6) that your subset contains, grouped by kind. Each chip shows the chord name, its template, the root it sits on and its largest error in cents. Example: "4:5:6 @ 1/1" is a just major triad on the root; hovering a chip lights its notes on the circle.',
+    see: ['chordTolerance', 'templates', 'chordLadder'],
+  },
+  chordFamily: {
+    term: 'Chord families',
+    text: 'Templates are grouped by how many notes they have: triads (3), sevenths and other four-note chords, and larger clusters. Example: 4:5:6 is a triad; 4:5:6:7 is a harmonic seventh in the "Sevenths & tetrads" group.',
+    see: ['templates'],
+  },
+  chordLadder: {
+    term: 'Tolerance ladder',
+    text: 'The tolerances at which the number of chords changes. Dashed chips are chords that do not fit yet; clicking one (or a rung, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.',
+    see: ['chordTolerance'],
+  },
+  editTemplates: {
+    term: 'Edit templates',
+    text: 'Opens the list of chord shapes the finder uses, so you can add, rename or remove them. Write a:b:c for harmonics of one fundamental, or 1/(a:b:c) for undertones. Example: add 8:10:12:14 as "major 7th, septimal" to look for it in every scale you build.',
+    see: ['templates'],
+  },
+  keysModes: {
+    term: 'Keys and modes',
+    text: 'One panel for the two ways of "starting the scale somewhere else". Modes keep the same notes and change the starting degree; keys move the whole scale onto another field note. Example: the mode that starts on 9/8 still uses the same seven notes, but moving the whole scale up to start on 9/8 needs notes this field does not have.',
+    see: ['modes', 'keyRings'],
+  },
+  keyRings: {
+    term: 'Key rings',
+    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete: the whole scale fits there. Example: only the 1/1 ring has no crosses in this field.',
+    see: ['keysSummary'],
+  },
+  inspector: {
+    term: 'Note inspector',
+    text: 'Shows one row of the field table for the note you point at or click anywhere (circle, strip, keys, lattice): ratio, cents, monzo (prime exponents), nearest 12-EDO key and how far off it is. Example: pointing at 13/8 reads 840.53 c, monzo 2^-3 13, and about 40 c sharp of Ab.',
+    see: ['fieldTable'],
+  },
+  fieldSettings: {
+    term: 'Field settings',
+    text: 'Folds out the less-used generator settings: which primes are allowed, and the repeat interval. Example: switch 11 and 13 off to leave a 7-limit field; set the repeat to 3/1 for a tritave scale.',
+    see: ['primeFilter', 'repeat'],
+  },
+  soundMenu: {
+    term: 'Sound settings',
+    text: 'Wave shape, the pitch of 1/1 in hertz, volume and where a mode root lands. Example: set 1/1 to 261.63 Hz for middle C and pick Sine to hear beating most clearly.',
+    see: ['wave', 'baseHz', 'volume', 'modeAtBase'],
+  },
+  stepBars: {
+    term: 'Step-size bars',
+    text: 'One bar per distinct gap between neighbouring scale notes, as wide as the gap, with a letter and how often it occurs. Equal bars mean an even scale. Example: a = 203.9 c once, h = 111.7 c once: eight different sizes, so this is not a MOS scale.',
+    see: ['stepSizes'],
+  },
+  shape: {
+    term: 'Shape',
+    text: 'Three quick verdicts on how regular the scale is: propriety (does a larger interval ever come out smaller than a smaller one?), constant structure (does one size always mean one kind of interval?) and variety (how many sizes each interval takes). Example: "improper, not CS, variety 8" is an irregular scale.',
+    see: ['propriety', 'constantStructure', 'variety'],
+  },
+  openFullTable: {
+    term: 'Open full table',
+    text: 'Opens the complete field table in a large window with every column, sticky headers and sortable columns. Example: sort by "vs 12-EDO" to see which notes are furthest from the piano.',
+    see: ['fieldTable'],
+  },
+  retunerPanel: {
+    term: 'Retuner',
+    text: 'Re-roots a list of candidate scales around a held pivot note and picks the card whose predicted chord scores best. Placeholder in this layout mock. Example: hold C-E-G and the card with the purest 4:5:6 wins.',
+    see: ['cards', 'why'],
+  },
+  dockToggle: {
+    term: 'Keyboard dock',
+    text: 'Collapses the key row to a thin bar to give the workspace more room. The sounding notes stay listed. Example: collapse it while reading, open it to play along.',
+    see: ['keyboardDock'],
+  },
+  methodParams: {
+    term: 'Method options',
+    text: 'The numbers belonging to the chosen method, shown beside the method tabs. Example: Harmonic series shows its starting harmonic; Equal division shows the number of divisions.',
+    see: ['method'],
   },
 } satisfies Record<string, TextEntry>;
 
