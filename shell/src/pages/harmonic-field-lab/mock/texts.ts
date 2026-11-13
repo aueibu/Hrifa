@@ -545,7 +545,7 @@ const entries = {
   },
   movePin: {
     term: 'Move column',
-    text: 'Moves this pinned column one place left or right. Moving toward the generator past the innermost column crosses to the other side of it; moving outward past the screen edge does nothing (the button is dimmed). Example: on the left side, the right arrow on the innermost column sends it to the right of the generator.',
+    text: 'Moves this pinned panel one place left or right as its own column. Moving toward the generator past the innermost column crosses to the other side of it; moving outward past the screen edge does nothing (the button is dimmed). A panel in a stack first leaves the stack. Example: on the left side, the right arrow on the innermost column sends it to the right of the generator.',
     see: ['pinPanel'],
   },
   unpinColumn: {
@@ -557,6 +557,26 @@ const entries = {
     term: 'In subset',
     text: 'A filled dot means the note is in your subset; a hollow ring means it is in the field but left out. Example: 11/8 is hollow in the example subset.',
     see: ['fieldTable'],
+  },
+  stackPin: {
+    term: 'Stack columns',
+    text: 'Puts this panel on top of the pinned column next to it (toward the generator), so two panels share one column and the height is split evenly. Only available when both columns hold a single panel. Example: stack Keys & Modes onto the Chords column to see both without using a third column.',
+    see: ['pinPanel', 'unstackPin'],
+  },
+  unstackPin: {
+    term: 'Unstack',
+    text: 'Splits this panel out of its stack into a column of its own, next to the one it leaves, on the side nearer the screen edge. Example: unstack Lattice to give it the full height again; it uses one more column of width.',
+    see: ['stackPin'],
+  },
+  swapStack: {
+    term: 'Swap in stack',
+    text: 'Swaps the two stacked panels, so the top one goes to the bottom. Example: swap to put Chords above Keys & Modes when you want the chip list in the upper half.',
+    see: ['stackPin'],
+  },
+  splitter: {
+    term: 'Stack splitter',
+    text: 'Drag this bar to change how the stacked column is shared between its two panels, or focus it and press Up or Down to move it 5% (Home and End jump to the limits). Each half keeps at least 20% of the height or 6 rem, whichever is larger. Double-click to go back to 50/50. Example: drag it up to give Keys & Modes the lower two thirds while Chords stays a short strip above.',
+    see: ['stackPin'],
   },
 } satisfies Record<string, TextEntry>;
 

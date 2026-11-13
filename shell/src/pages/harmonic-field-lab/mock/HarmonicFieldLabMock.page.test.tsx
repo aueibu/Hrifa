@@ -208,11 +208,13 @@ describe('HarmonicFieldLabMockPage', () => {
   });
 });
 
-const KEY = 'hrifa.harmonic-field-lab.mock.layout.v1';
+const KEY = 'hrifa.harmonic-field-lab.mock.layout.v2';
+const KEY_V1 = 'hrifa.harmonic-field-lab.mock.layout.v1';
 const columns = () =>
   screen.queryAllByRole('region', { name: /, pinned column$/ }).map((r) => ({
     name: r.getAttribute('aria-label')!.replace(', pinned column', ''),
     side: r.getAttribute('data-side'),
+    stacked: r.closest('[data-stack]') !== null,
   }));
 
 describe('pinned panel columns', () => {
@@ -246,10 +248,10 @@ describe('pinned panel columns', () => {
     setWidth(3840);
     render(<HarmonicFieldLabMockPage />);
     expect(columns()).toEqual([
-      { name: 'Keys & Modes', side: 'left' },
-      { name: 'Chords', side: 'left' },
-      { name: 'Lattice', side: 'right' },
-      { name: 'Spectrum', side: 'right' },
+      { name: 'Keys & Modes', side: 'left', stacked: false },
+      { name: 'Chords', side: 'left', stacked: false },
+      { name: 'Lattice', side: 'right', stacked: false },
+      { name: 'Spectrum', side: 'right', stacked: false },
     ]);
     // the switcher shows the first panel that has no column: the retuner
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
@@ -266,8 +268,8 @@ describe('pinned panel columns', () => {
     setWidth(2560);
     render(<HarmonicFieldLabMockPage />);
     expect(columns()).toEqual([
-      { name: 'Chords', side: 'left' },
-      { name: 'Lattice', side: 'right' },
+      { name: 'Chords', side: 'left', stacked: false },
+      { name: 'Lattice', side: 'right', stacked: false },
     ]);
     const rail = screen.getByRole('navigation', { name: 'Analysis panels' });
     expect(
@@ -285,17 +287,17 @@ describe('pinned panel columns', () => {
     // now Keys is innermost: right crosses the generator to the inner right place
     fireEvent.click(screen.getByRole('button', { name: 'Move Keys & Modes right' }));
     expect(columns()).toEqual([
-      { name: 'Chords', side: 'left' },
-      { name: 'Keys & Modes', side: 'right' },
-      { name: 'Lattice', side: 'right' },
-      { name: 'Spectrum', side: 'right' },
+      { name: 'Chords', side: 'left', stacked: false },
+      { name: 'Keys & Modes', side: 'right', stacked: false },
+      { name: 'Lattice', side: 'right', stacked: false },
+      { name: 'Spectrum', side: 'right', stacked: false },
     ]);
     const spec = screen.getByRole('region', { name: 'Spectrum, pinned column' });
     fireEvent.click(within(spec).getByRole('button', { name: 'Unpin Spectrum' }));
     expect(columns().map((c) => c.name)).toEqual(['Chords', 'Keys & Modes', 'Lattice']);
     expect(JSON.parse(window.localStorage.getItem(KEY)!)).toEqual({
-      left: ['chords'],
-      right: ['keys', 'lattice'],
+      left: [['chords']],
+      right: [['keys'], ['lattice']],
     });
     unmount();
     render(<HarmonicFieldLabMockPage />);
@@ -304,9 +306,129 @@ describe('pinned panel columns', () => {
 
   it('falls back to the defaults when the stored layout is bad', () => {
     setWidth(3840);
-    window.localStorage.setItem(KEY, '{"left":["nope"],"right":"x"}');
+    window.localStorage.setItem(KEY, '{"left":[["nope"]],"right":"x"}');
     render(<HarmonicFieldLabMockPage />);
     expect(columns().map((c) => c.name)).toEqual(['Keys & Modes', 'Chords', 'Lattice', 'Spectrum']);
+  });
+
+  it('falls back to the defaults for a column with three panels', () => {
+    setWidth(3840);
+    window.localStorage.setItem(KEY, '{"left":[["keys","chords","lattice"]],"right":[]}');
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns().map((c) => c.name)).toEqual(['Keys & Modes', 'Chords', 'Lattice', 'Spectrum']);
+  });
+
+  it('migrates a stored v1 layout to one-panel columns', () => {
+    setWidth(3840);
+    window.localStorage.setItem(KEY_V1, '{"left":["lattice"],"right":["chords","keys"]}');
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns()).toEqual([
+      { name: 'Lattice', side: 'left', stacked: false },
+      { name: 'Chords', side: 'right', stacked: false },
+      { name: 'Keys & Modes', side: 'right', stacked: false },
+    ]);
+    expect(columns().every((c) => !c.stacked)).toBe(true);
+    expect(JSON.parse(window.localStorage.getItem(KEY)!)).toEqual({
+      left: [['lattice']],
+      right: [['chords'], ['keys']],
+    });
+  });
+
+  it('stacks two panels into one column, shows both, swaps, moves one out, unstacks and unpins', () => {
+    setWidth(3840);
+    render(<HarmonicFieldLabMockPage />);
+    const region = (name: string) => screen.getByRole('region', { name: `${name}, pinned column` });
+    const names = () => columns().map((c) => c.name);
+    // only a single panel next to a single panel toward the generator can stack: Chords is innermost, so it cannot
+    expect(within(region('Chords')).queryByRole('button', { name: /^Stack/ })).toBeNull();
+    fireEvent.click(within(region('Keys & Modes')).getByRole('button', { name: /^Stack Keys/ }));
+    expect(columns()).toEqual([
+      { name: 'Keys & Modes', side: 'left', stacked: true },
+      { name: 'Chords', side: 'left', stacked: true },
+      { name: 'Lattice', side: 'right', stacked: false },
+      { name: 'Spectrum', side: 'right', stacked: false },
+    ]);
+    // both panels render in the same column element, each with its own header
+    expect(region('Keys & Modes').closest('[data-stack="true"]')).toBe(
+      region('Chords').closest('[data-stack="true"]')
+    );
+    expect(
+      within(region('Keys & Modes')).getByRole('heading', { name: /Keys & Modes/ })
+    ).toBeInTheDocument();
+    expect(within(region('Chords')).getByRole('heading', { name: /Chords/ })).toBeInTheDocument();
+    // a stacked panel offers unstack and swap, not stack
+    expect(within(region('Chords')).queryByRole('button', { name: /^Stack/ })).toBeNull();
+    fireEvent.click(
+      within(region('Keys & Modes')).getByRole('button', { name: 'Swap Keys & Modes down' })
+    );
+    expect(names().slice(0, 2)).toEqual(['Chords', 'Keys & Modes']);
+    // moving the top panel right takes it out of the stack as the column on the inner side
+    fireEvent.click(within(region('Chords')).getByRole('button', { name: 'Move Chords right' }));
+    expect(columns().filter((c) => c.stacked)).toEqual([]);
+    expect(names()).toEqual(['Keys & Modes', 'Chords', 'Lattice', 'Spectrum']);
+    // stack again, unstack the other one
+    fireEvent.click(within(region('Keys & Modes')).getByRole('button', { name: /^Stack Keys/ }));
+    fireEvent.click(within(region('Chords')).getByRole('button', { name: 'Unstack Chords' }));
+    expect(names()).toEqual(['Chords', 'Keys & Modes', 'Lattice', 'Spectrum']);
+    // stack once more; unpinning one panel leaves the other alone in its column
+    fireEvent.click(within(region('Chords')).getByRole('button', { name: /^Stack Chords/ }));
+    fireEvent.click(
+      within(region('Keys & Modes')).getByRole('button', { name: 'Unpin Keys & Modes' })
+    );
+    expect(columns()).toEqual([
+      { name: 'Chords', side: 'left', stacked: false },
+      { name: 'Lattice', side: 'right', stacked: false },
+      { name: 'Spectrum', side: 'right', stacked: false },
+    ]);
+  });
+
+  it('has a keyboard-operable splitter between stacked panels, stored per column', () => {
+    setWidth(3840);
+    window.localStorage.setItem(
+      KEY,
+      '{"left":[["keys","chords"]],"right":[["lattice"],["spectrum"]]}'
+    );
+    render(<HarmonicFieldLabMockPage />);
+    const bar = screen.getByRole('separator', { name: 'Resize the stacked panels' });
+    expect(bar).toHaveAttribute('aria-orientation', 'horizontal');
+    expect(bar).toHaveAttribute('aria-valuenow', '50');
+    expect(bar).toHaveAttribute('tabindex', '0');
+    // one splitter only: the single columns have none
+    expect(screen.getAllByRole('separator')).toHaveLength(1);
+    fireEvent.keyDown(bar, { key: 'ArrowUp' });
+    expect(bar).toHaveAttribute('aria-valuenow', '45');
+    fireEvent.keyDown(bar, { key: 'ArrowDown' });
+    fireEvent.keyDown(bar, { key: 'ArrowDown' });
+    expect(bar).toHaveAttribute('aria-valuenow', '55');
+    fireEvent.keyDown(bar, { key: 'Home' });
+    expect(bar).toHaveAttribute('aria-valuenow', '20');
+    fireEvent.keyDown(bar, { key: 'End' });
+    expect(bar).toHaveAttribute('aria-valuenow', '80');
+    expect(JSON.parse(window.localStorage.getItem(KEY)!).splits).toEqual({ keys: 0.8 });
+    fireEvent.doubleClick(bar);
+    expect(bar).toHaveAttribute('aria-valuenow', '50');
+    expect(JSON.parse(window.localStorage.getItem(KEY)!).splits).toBeUndefined();
+  });
+
+  it('remembers a stored split across a reload', () => {
+    setWidth(3840);
+    window.localStorage.setItem(
+      KEY,
+      '{"left":[["keys","chords"]],"right":[],"splits":{"keys":0.3}}'
+    );
+    render(<HarmonicFieldLabMockPage />);
+    expect(screen.getByRole('separator')).toHaveAttribute('aria-valuenow', '30');
+  });
+
+  it('counts a stack as one column: two columns at 2560 px show all four panels when stacked', () => {
+    setWidth(2560);
+    window.localStorage.setItem(
+      KEY,
+      '{"left":[["keys","chords"]],"right":[["lattice","spectrum"]]}'
+    );
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns().map((c) => c.name)).toEqual(['Keys & Modes', 'Chords', 'Lattice', 'Spectrum']);
+    expect(columns().every((c) => c.stacked)).toBe(true);
   });
 });
 

@@ -158,3 +158,17 @@ export const CloseIcon = () => (
     <path d="M6 6l12 12M18 6L6 18" />
   </Icon>
 );
+
+export const StackIcon = () => (
+  <Icon>
+    <rect x="4" y="3" width="16" height="7" rx="1" />
+    <rect x="4" y="14" width="16" height="7" rx="1" />
+  </Icon>
+);
+
+export const UnstackIcon = () => (
+  <Icon>
+    <rect x="4" y="3" width="16" height="7" rx="1" />
+    <path d="M4 14h16M4 21h16" />
+  </Icon>
+);

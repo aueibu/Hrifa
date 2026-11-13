@@ -15,8 +15,13 @@ import {
   pin,
   pinnedIds,
   saveLayout,
+  setSplit,
+  stack,
+  swapInStack,
   unpin,
+  unstack,
   visiblePins,
+  type Column,
   type PanelId,
 } from './layout';
 import { LIT_FIELD, chordTolerance, chordsAt } from './mockData';
@@ -78,8 +83,10 @@ export function HarmonicFieldLabMockPage() {
   const count = fitColumns(widthRem);
   const shown = useMemo(() => visiblePins(layout, count), [layout, count]);
   const pinnedSet = useMemo(() => new Set(pinnedIds(layout)), [layout]);
-  const left = layout.left.filter((id) => shown.has(id));
-  const right = layout.right.filter((id) => shown.has(id));
+  // a stack shows both panels or neither
+  const visibleCols = (cols: Column[]) => cols.filter((c) => c.every((id) => shown.has(id)));
+  const left = visibleCols(layout.left);
+  const right = visibleCols(layout.right);
   // the switcher never repeats a panel that already has a column
   const effective: PanelId = !shown.has(panel)
     ? panel
@@ -95,17 +102,19 @@ export function HarmonicFieldLabMockPage() {
     left.length + right.length > 0 ? { gridTemplateColumns: columns } : undefined;
   const togglePin = (id: PanelId) =>
     setLayout((l) => (pinnedSet.has(id) ? unpin(l, id) : pin(l, id)));
-  const column = (id: PanelId, side: 'left' | 'right') => (
+  const column = (ids: Column) => (
     <PinnedColumn
-      key={id}
-      id={id}
-      side={side}
+      key={ids.join('+')}
+      ids={ids}
       layout={layout}
+      render={(id) => renderPanel(id, tol, setTol)}
       onMove={(i, dir) => setLayout((l) => move(l, i, dir))}
       onUnpin={(i) => setLayout((l) => unpin(l, i))}
-    >
-      {renderPanel(id, tol, setTol)}
-    </PinnedColumn>
+      onStack={(i) => setLayout((l) => stack(l, i))}
+      onUnstack={(i) => setLayout((l) => unstack(l, i))}
+      onSwap={(i) => setLayout((l) => swapInStack(l, i))}
+      onSplit={(i, v) => setLayout((l) => setSplit(l, i, v))}
+    />
   );
 
   return (
@@ -124,9 +133,9 @@ export function HarmonicFieldLabMockPage() {
               shown={shown}
               onTogglePin={togglePin}
             />
-            {left.map((id) => column(id, 'left'))}
+            {left.map(column)}
             <Workspace />
-            {right.map((id) => column(id, 'right'))}
+            {right.map(column)}
             <section
               className={classes.analysis}
               id="analysis-panel"

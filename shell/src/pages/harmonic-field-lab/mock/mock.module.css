@@ -1362,3 +1362,64 @@
     max-height: 5rem;
   }
 }
+
+/* a pinned column: one panel, or two stacked sharing the height evenly; each scrolls inside itself */
+.pinStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  grid-row: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.pinStack > .pinned {
+  flex: 1 1 0;
+}
+
+/* a stack is a grid: top panel | splitter | bottom panel, its rows set by the split (see Panels.tsx) */
+.pinStack[data-stack='true'] {
+  display: grid;
+  gap: 0;
+}
+
+.pinStack[data-stack='true'] > .pinned {
+  grid-row: auto;
+  min-height: 0;
+}
+
+/* the splitter: invisible on the surface gap until hovered or focused, then a tier fill with a grip (no extra lines) */
+.splitter {
+  align-items: center;
+  border-radius: var(--radius-control);
+  cursor: row-resize;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  touch-action: none;
+}
+
+.splitGrip {
+  background: var(--text-subtle);
+  border-radius: var(--radius-control);
+  height: 3px;
+  opacity: 0;
+  width: 2.5rem;
+}
+
+.splitter:hover,
+.splitter:focus-visible,
+.splitter[data-drag='true'] {
+  background: var(--panel-slot);
+}
+
+.splitter:hover .splitGrip,
+.splitter:focus-visible .splitGrip,
+.splitter[data-drag='true'] .splitGrip {
+  opacity: 1;
+}
+
+.splitter:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
