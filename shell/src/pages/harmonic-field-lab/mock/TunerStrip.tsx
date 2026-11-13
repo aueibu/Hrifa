@@ -71,7 +71,6 @@ export function TunerStrip() {
           <div className={classes.plotCol} data-testid="strip-plot">
             <RefLines />
             <div className={classes.stripPlot}>
-              <div className={classes.zero} aria-hidden="true" />
               {fieldDevs.map((d, fi) => {
                 const sharp = d.dev12 >= 0;
                 const active = on.has(fi);

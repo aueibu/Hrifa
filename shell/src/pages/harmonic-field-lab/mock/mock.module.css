@@ -415,8 +415,9 @@
 .workspace {
   --pad: 0.5rem;
   --gutter: 8.5rem;
-  /* the tuner strip's zero line (0 c from the target) */
-  --zero: 4.875rem;
+  /* tuner strip: the middle of each note line, and half the line length */
+  --mid: 3.75rem;
+  --half: 10px;
   --ref-white: color-mix(in srgb, var(--panel) 90%, transparent);
   --ref-black: color-mix(in srgb, var(--text) 12%, transparent);
 
@@ -741,14 +742,14 @@
 .gutterZero {
   left: 0;
   position: absolute;
-  top: var(--zero);
+  top: var(--mid);
   transform: translateY(-50%);
 }
 
 .gutterSteps {
   left: 0;
   position: absolute;
-  top: 6.3125rem;
+  top: 6.8125rem;
 }
 
 .plotCol {
@@ -780,18 +781,10 @@
 }
 
 .stripPlot {
-  height: 7.375rem;
+  height: 6.75rem;
   position: relative;
 }
 
-.zero {
-  background: var(--text-muted);
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: var(--zero);
-}
 
 .col {
   background: none;
@@ -819,19 +812,20 @@
   transform: translateX(-50%);
 }
 
+/* each note is one mark: a 2 px line (the note) whose error grows out of its ends */
 .colDot {
   background: var(--text);
-  height: 20px;
+  height: calc(var(--half) * 2);
   left: 50%;
   position: absolute;
-  top: 1.25rem;
+  top: calc(var(--mid) - var(--half));
   transform: translateX(-50%);
   width: 2px;
 }
 
 /* sounding: the line grows a little and carries the blue dot at its middle */
-.colDot[data-lit='true'] {
-  height: 24px;
+.col[data-lit='true'] {
+  --half: 12px;
 }
 
 .colDot[data-lit='true']::before {
@@ -861,22 +855,23 @@
 }
 
 /* --d is the deviation in cents; 1 c is 0.5 px */
+/* sharp grows up from the top of the line, flat down from its bottom (1 c = 0.5 px) */
 .colBar {
   height: max(1px, calc(var(--d) * 0.5px));
   left: 50%;
-  margin-left: -0.375rem;
   position: absolute;
-  width: 0.75rem;
+  transform: translateX(-50%);
+  width: 6px;
 }
 
 .colBar[data-dir='sharp'] {
   background: var(--mark-pink);
-  top: calc(var(--zero) - var(--d) * 0.5px);
+  top: calc(var(--mid) - var(--half) - var(--d) * 0.5px);
 }
 
 .colBar[data-dir='flat'] {
   background: var(--mark-cyan);
-  top: var(--zero);
+  top: calc(var(--mid) + var(--half));
 }
 
 .colNum {
@@ -890,11 +885,11 @@
 }
 
 .colNum[data-dir='sharp'] {
-  top: calc(var(--zero) - var(--d) * 0.5px - 0.75rem);
+  top: calc(var(--mid) - var(--half) - var(--d) * 0.5px - 0.75rem);
 }
 
 .colNum[data-dir='flat'] {
-  top: calc(var(--zero) + var(--d) * 0.5px + 0.125rem);
+  top: calc(var(--mid) + var(--half) + var(--d) * 0.5px + 0.125rem);
 }
 
 .stepRow {
@@ -992,12 +987,13 @@
   width: 0;
 }
 
+/* the same mark in miniature: an 8 px line with its error growing out of its ends (1 c = 0.2 px) */
 .sparkDot {
   background: var(--text);
-  height: 0.5rem;
+  height: 8px;
   left: -1px;
   position: absolute;
-  top: 0.0625rem;
+  top: calc(50% - 4px);
   width: 2px;
 }
 
@@ -1007,21 +1003,20 @@
 }
 
 .sparkBar {
-  left: -0.1875rem;
+  height: max(1px, calc(var(--d) * 0.2px));
+  left: -2px;
   position: absolute;
-  width: 0.375rem;
+  width: 4px;
 }
 
 .sparkCol[data-dir='sharp'] .sparkBar {
   background: var(--mark-pink);
-  bottom: calc(100% - 1.125rem);
-  height: max(1px, calc(var(--d) * 0.25px));
+  bottom: calc(50% + 4px);
 }
 
 .sparkCol[data-dir='flat'] .sparkBar {
   background: var(--mark-cyan);
-  height: max(1px, calc(var(--d) * 0.25px));
-  top: 1.125rem;
+  top: calc(50% + 4px);
 }
 
 .sparkCol[data-on='false'] .sparkBar {
