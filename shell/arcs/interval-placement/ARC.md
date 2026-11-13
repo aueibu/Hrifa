@@ -1,6 +1,6 @@
 # ARC: Interval Placement: rigorous, register-aware scoring + panel workspace
 
-**Status: APPROVED (2026-11-13).** Next: Setup (`check:ip` under a `package.json` lock), then C0, then M1.
+**Status: APPROVED (2026-11-13).** In progress: M1. Then M2 (port + verify), M2b (placement redesign proposal, human checkpoint), M3 mock.
 
 ## Goal
 Interval Placement keeps its idea and gets a sound scoring core and a better workspace:
@@ -24,6 +24,7 @@ Interval Placement keeps its idea and gets a sound scoring core and a better wor
   - Panel workspace: a generic copy in our page folder, written so that promoting it to a shared component later is a smooth port; the human sees the mode being reused by later apps.
   - The M1 builder may download the Bowling et al. (2018) ratings (check the licence). If the download fails, report the exact citation and DOI needed and the human will source the file.
   - The M3 mock questions (shared notes, window steps, default weights) wait until the human sees the mock and has them clarified.
+- **Placement controls get redesigned, not just carried over (human, 2026-11-13, during M1).** The golden test exists only to verify that the move into the lib is faithful; it is not a commitment to keep the old behaviour, and it may be retired once the redesign replaces the engines. The human wants to reimplement the placement controls "from a much more solidly grounded point", for example a window re-envisioned as something interactive (moving a structure up and down ad hoc and watching the scores change), and to be consulted at a checkpoint with usable ideas that improve on the old ones. Hence M2 ports and verifies only, and the new M2b proposes the redesign for the human to choose from before the mock.
 
 ## Diagnosis of the current page (2026-11-13, measured with a probe of the current code)
 - Scoring runs at a fixed 55 Hz (A1) for the window's bottom, whatever base note is chosen; playback uses the base note (default C4). Changing the base note never changes the ranking.
@@ -53,7 +54,7 @@ Key references (as verified by the M1 builder against the reference packages' bi
 ## Proposed UI (confirmed or changed at the M3 mock checkpoint)
 One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggio / chord / interval pairs, timbre), left rail picking panels with live one-line summaries, centre always visible, right side pinned columns with stacks and splitters, a thin keyboard/fretboard dock. DAW density, tooltips instead of paragraphs.
 
-- **Centre, always visible: the placement unit.** Interval chips (each with its value, odd-bias toggle, and essential marking), EDO, base pitch as an absolute note (e.g. C2), window width in steps (half-octave steps, with category names), distribution (uniform, prefix-slack, prefix-dominance, repulsion = today's engines) and a gravity control (low ↔ centred ↔ high). Below it, the existing spans plot for the selected voicing.
+- **Centre, always visible: the placement unit.** Interval chips (each with its value and essential marking), EDO, base pitch as an absolute note, and the placement controls **as chosen at the M2b checkpoint** (today's window width, engines, odd bias and the draft gravity idea are inputs to that redesign, not fixed). Below it, the spans plot for the selected voicing.
 - **Results panel:** ranked list (total, worst relation, note count, collisions flagged) with the weight slider and the interval constraints (must have / must not have chips), plus the **Pareto map** (any two axes, default interference × harmonicity; front highlighted; dominated points dimmed; hover cross-highlights the list; click selects).
 - **Relations panel:** the induced-interval triangle (every pair: interval, octave span, its roughness at its register, essential vs induced marked) and per-note contribution bars.
 - **Register panel:** the selected configuration slid through the register (scores vs bottom pitch), so the M3-low-vs-high idea is visible as a curve.
@@ -124,10 +125,9 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
 
 ### M2: Placement library (`src/lib/interval-placement/`)
 - Scope: owned `src/lib/interval-placement/` + tests + `README.md`. Moves the engine out of the page folder (the page keeps working on the old code until M4).
-- API: `placeIntervals(spec)` where `spec = {intervals: {cents, essential, oddBias}[], window: {bottom (absolute), widthSteps}, distribution: 'uniform' | 'prefixSlack' | 'prefixDominance' | 'repulsion', gravity (-1 low … 0 as engine … +1 high), constraints: {mustHave, mustNotHave} (interval cents, octave-equivalent flag, tolerance), engine params}` → voicings `{refHz, cents[], essentialPairs, inducedPairs, collisions, perm, placement meta}`; an iterator form for the worker with a cap; `transpositionScan(voicing, range)`; `dedupe(voicings)`.
+- API: `placeIntervals(spec)` where `spec = {intervals: {cents, essential, oddBias}[], window: {bottom (absolute), widthSteps}, distribution: 'uniform' | 'prefixSlack' | 'prefixDominance' | 'repulsion' (today's engines, ported as they are), constraints: {mustHave, mustNotHave} (interval cents, octave-equivalent flag, tolerance), engine params}` → voicings `{refHz, cents[], essentialPairs, inducedPairs, collisions, perm, placement meta}`; an iterator form for the worker with a cap; `transpositionScan(voicing, range)`; `dedupe(voicings)`.
 - Acceptance:
-  - [ ] Golden test: with gravity 0, each distribution reproduces the current page's four engines (`v1`, `v2`, `prefixDominance`, `repulse`) exactly on a fixed input set (pitches and endpoints), so today's creative behaviour survives the move.
-  - [ ] Gravity −1 / +1 moves every span's centre toward the window's bottom / top while keeping all spans inside the window; property test over random inputs.
+  - [ ] Golden test (verification of the port only): each distribution reproduces the current page's four engines (`v1`, `v2`, `prefixDominance`, `repulse`) exactly on a fixed input set (pitches and endpoints). It proves the move to the lib and to cents changed nothing by accident; it does not bind the redesign in M2b, and is retired or rewritten when the redesign replaces the engines (with a PROGRESS note).
   - [ ] Essential vs induced: each voicing lists which pairs are essential spans and which are induced; collisions are reported, never silently merged.
   - [ ] Dedupe: orderings that produce identical pitch sets yield one voicing, listing every ordering.
   - [ ] Cap: 8 intervals with the default cap returns the first 5,040 and reports the remainder; the iterator yields in chunks of ≤ 16 ms work (timed in a test with a generous margin).
@@ -136,6 +136,15 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
   - [ ] Descriptive measures (span, note count, centroid, lowest note, distinct induced intervals, collisions) computed per voicing.
   - [ ] `check:ip` green; path-scoped commit.
 - Human checkpoint after: no
+
+### M2b: Placement redesign proposal
+- Scope: a written proposal in `arcs/interval-placement/placement-proposal.md` (owned) plus, where it helps the human judge, small runnable demos or plots built on the M1/M2 libs (scratch or a test that prints tables; no page code). No new controls are built in this milestone.
+- Content: diagnose today's placement controls (window width also forcing the spread because anchors always span the whole window, the four engines' rules, odd-interval bias, the interaction with scoring), then propose 2–4 grounded designs the human can choose and combine, each stating its principle, its controls, what it makes possible, its cost, and how it uses the M1 scores. Candidates to evaluate (not a commitment): an interactive register view (drag or step the whole structure up and down, or one span at a time, with live scores and the M1 transposition scan as a curve); window as a register range and span as a separate width constraint; placement as a search over span positions with the scores (or a Pareto front) as the objective, with today's engines as named starting shapes; gravity or density as continuous controls; essential intervals optionally sharing notes. Ground each in the literature where it applies (e.g. register-dependent roughness, voicing-space ideas) and say plainly where a choice is taste rather than theory.
+- Acceptance:
+  - [ ] Proposal written, with a recommendation, the open choices listed as questions, and a sketch of what each option looks like in the M3 workspace.
+  - [ ] Any numbers in it come from the libs (reproducible command or test named).
+- Checkpoint decisions (human, …):
+- Human checkpoint after: **yes** (the human chooses the placement design; the M3 mock and M4/M5 follow that choice, and the ARC is updated before M3)
 
 ### M3: Workspace mock
 - Scope: a mock route `/interval-placement/mock` (locked `src/Router.tsx`), built from shell components and our generic `workspace/`, static real numbers from M1/M2 for the default `11 7 16` in 12-EDO on C2 (plus one 31-EDO example), no live maths.
