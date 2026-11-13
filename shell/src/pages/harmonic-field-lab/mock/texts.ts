@@ -212,7 +212,7 @@ const entries = {
   },
   fieldTable: {
     term: 'Field table',
-    text: 'One row for every field note, with the subset tick in the first column. Click a row to include it or play it. Example: the 13/8 row reads 840.53 cents, prime limit 13, "Ab +40.5" against 12-EDO.',
+    text: 'One line for every field note: ratio, cents and its distance from the nearest 12-EDO key, with a mark for whether it is in the subset. Point at a line to light the note everywhere and read it in the inspector; click to pin it. "Open full table" shows every column with sorting. Example: the 13/8 line reads 840.5 c, "Ab +40.5": a note 40.5 c sharp of the piano A-flat.',
   },
   colRatio: {
     term: 'Ratio',
@@ -537,6 +537,26 @@ const entries = {
     term: 'Saved subset',
     text: 'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small pink (sharp) and cyan (flat) bars for the distance from 12-EDO. Pointing at a row previews it on the ring; clicking loads it. Example: "Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.',
     see: ['savedSubsets'],
+  },
+  pinPanel: {
+    term: 'Pin as a column',
+    text: 'Gives this panel its own column beside the generator, so on a wide screen several analyses are visible at once. Pinned columns can be moved left or right and reordered; the arrangement is remembered. A dimmed pin means it is pinned but there is no room for its column at this window width; it stays reachable through the switcher. Example: pin Keys & Modes and Chords on an ultrawide to watch both while you edit the subset.',
+    see: ['movePin', 'analysisRail'],
+  },
+  movePin: {
+    term: 'Move column',
+    text: 'Moves this pinned column one place left or right. Moving toward the generator past the innermost column crosses to the other side of it; moving outward past the screen edge does nothing (the button is dimmed). Example: on the left side, the right arrow on the innermost column sends it to the right of the generator.',
+    see: ['pinPanel'],
+  },
+  unpinColumn: {
+    term: 'Unpin',
+    text: 'Closes this column. The panel is still in the rail and can be shown in the switcher column or pinned again. Example: unpin Spectrum when you need the room, then pin it back later; it returns to the outer end of the side with fewer columns.',
+    see: ['pinPanel'],
+  },
+  fieldIn: {
+    term: 'In subset',
+    text: 'A filled dot means the note is in your subset; a hollow ring means it is in the field but left out. Example: 11/8 is hollow in the example subset.',
+    see: ['fieldTable'],
   },
 } satisfies Record<string, TextEntry>;
 

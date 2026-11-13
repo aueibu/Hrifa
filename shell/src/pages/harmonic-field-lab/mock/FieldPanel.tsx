@@ -1,9 +1,10 @@
-/** Field table panel: a compact note list that feeds the inspector, and the full dense table in a large window. */
+/** The field table: a compact block for the side column, and the full dense table in a large window. */
 import { useMemo, useState } from 'react';
 import { Button, Checkbox, Modal } from '@mantine/core';
 import { TableIcon } from './icons';
-import { fieldRows, rel, type FieldRow } from './mockData';
-import { Num, Row, Strip, Tip, useLab } from './ui';
+import { fieldRows, type FieldRow } from './mockData';
+import { Num, Tip, useLab } from './ui';
+import mock from './mock.module.css';
 import classes from './panels.module.css';
 
 type SortKey = 'i' | 'ratio' | 'cents' | 'step' | 'prime' | 'odd' | 'vs12' | 'vsJI';
@@ -131,14 +132,16 @@ export function FieldTable() {
   );
 }
 
-export function FieldPanel() {
+/** A dense field table for the side column under Step sizes: one line per note, scrolling inside a fixed box. */
+export function FieldCompact() {
   const lab = useLab();
   const [open, setOpen] = useState(false);
-  const i = lab.hover ?? lab.pin ?? 0;
-  const r = fieldRows[i];
   return (
-    <>
-      <Strip title={<Tip k="fieldTable">Field table</Tip>}>
+    <section className={mock.fieldBlock} aria-label="Field table">
+      <div className={mock.fieldHead}>
+        <h3 className={mock.sideHead}>
+          <Tip k="fieldTable">Field table</Tip> <Num muted>{fieldRows.length}</Num>
+        </h3>
         <Tip k="openFullTable" as="control">
           <Button
             size="compact-xs"
@@ -149,61 +152,56 @@ export function FieldPanel() {
             Open full table
           </Button>
         </Tip>
-      </Strip>
-      <div className={classes.panelBody}>
-        <h3 className={classes.familyHead}>
-          <Tip k="inspector">Note</Tip>
-          <Num muted>{lab.hover !== null || lab.pin !== null ? 'pointed at' : 'first note'}</Num>
-        </h3>
-        <div className={classes.verdicts}>
-          <Row name="Ratio">
-            <Num>{r.ratio}</Num> {r.on ? '(in subset)' : '(out of subset)'}
-          </Row>
-          <Row name={<Tip k="colCents">Cents</Tip>}>
-            <Num>{r.cents.toFixed(2)} c</Num>
-          </Row>
-          <Row name="Monzo">
-            <Num>{r.monzo}</Num>
-          </Row>
-          <Row name={<Tip k="colStep">Step up</Tip>}>
-            <Num>{r.step.toFixed(2)} c</Num>
-          </Row>
-          <Row name={<Tip k="colPrimeLimit">Prime / odd limit</Tip>}>
-            <Num>
-              {r.prime} / {r.odd}
-            </Num>
-          </Row>
-          <Row name={<Tip k="colVs12">Nearest 12-EDO</Tip>}>
-            <Num>{r.vs12}</Num>
-          </Row>
-          <Row name={<Tip k="colVsJI">Nearest JI</Tip>}>
-            <Num>{r.vsJI}</Num>
-          </Row>
-        </div>
-        <h3 className={classes.familyHead}>
-          Notes
-          <Num muted>
-            {rel.length} of {fieldRows.length} in the subset
-          </Num>
-        </h3>
-        <div className={classes.noteChips} role="group" aria-label="Field notes">
-          {fieldRows.map((n) => (
-            <button
-              key={n.i}
-              type="button"
-              className={classes.noteChip}
-              data-on={n.on}
-              aria-pressed={lab.pin === n.i}
-              onMouseEnter={() => lab.setHover(n.i)}
-              onMouseLeave={() => lab.setHover(null)}
-              onFocus={() => lab.setHover(n.i)}
-              onBlur={() => lab.setHover(null)}
-              onClick={() => lab.setPin(lab.pin === n.i ? null : n.i)}
-            >
-              <Num>{n.ratio}</Num>
-            </button>
-          ))}
-        </div>
+      </div>
+      <div className={mock.fieldBox}>
+        <table className={mock.fieldDt} aria-label="Field notes">
+          <thead>
+            <tr>
+              <th>
+                <Tip k="fieldIn">In</Tip>
+              </th>
+              <th>
+                <Tip k="colRatio">Ratio</Tip>
+              </th>
+              <th>
+                <Tip k="colCents">Cents</Tip>
+              </th>
+              <th>
+                <Tip k="colVs12">±12-EDO</Tip>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {fieldRows.map((r) => (
+              <tr
+                key={r.i}
+                data-off={!r.on}
+                data-pin={lab.pin === r.i}
+                onMouseEnter={() => lab.setHover(r.i)}
+                onMouseLeave={() => lab.setHover(null)}
+                onClick={() => lab.setPin(lab.pin === r.i ? null : r.i)}
+              >
+                <td>
+                  <span
+                    className={mock.inMark}
+                    data-on={r.on}
+                    role="img"
+                    aria-label={r.on ? 'in subset' : 'not in subset'}
+                  />
+                </td>
+                <td>
+                  <Num>{r.ratio}</Num>
+                </td>
+                <td>
+                  <Num>{r.cents.toFixed(1)}</Num>
+                </td>
+                <td>
+                  <Num>{r.vs12}</Num>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       <Modal
         opened={open}
@@ -214,6 +212,6 @@ export function FieldPanel() {
       >
         <FieldTable />
       </Modal>
-    </>
+    </section>
   );
 }

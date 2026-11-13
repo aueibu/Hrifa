@@ -48,7 +48,8 @@ export function KeysModesPanel() {
   const lab = useLab();
   return (
     <>
-      <Strip title={<Tip k="keysModes">Keys &amp; Modes</Tip>}>
+      <Strip title={<Tip k="keysModes">Keys &amp; Modes</Tip>} />
+      <div className={classes.panelBody}>
         <span className={classes.legend} aria-label="Heat grid legend">
           {SEV_NAMES.map((n, i) => (
             <span key={n} className={classes.legendItem}>
@@ -57,8 +58,6 @@ export function KeysModesPanel() {
             </span>
           ))}
         </span>
-      </Strip>
-      <div className={classes.panelBody}>
         <h3 className={classes.familyHead}>
           <Tip k="modes">Modes</Tip>
           <Num muted>

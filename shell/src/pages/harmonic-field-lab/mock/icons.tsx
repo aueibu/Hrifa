@@ -134,3 +134,27 @@ export const TableIcon = () => (
     <path d="M3 10h18M3 15h18M9 4v16" />
   </Icon>
 );
+
+export const PinIcon = () => (
+  <Icon>
+    <path d="M9 3h6l-1 6 3 3v2H7v-2l3-3zM12 14v7" />
+  </Icon>
+);
+
+export const ArrowLeftIcon = () => (
+  <Icon>
+    <path d="M19 12H5M12 5l-7 7 7 7" />
+  </Icon>
+);
+
+export const ArrowRightIcon = () => (
+  <Icon>
+    <path d="M5 12h14M12 5l7 7-7 7" />
+  </Icon>
+);
+
+export const CloseIcon = () => (
+  <Icon>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </Icon>
+);

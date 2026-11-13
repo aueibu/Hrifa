@@ -8,6 +8,7 @@ import {
   TextInput,
   VisuallyHidden,
 } from '@mantine/core';
+import { FieldCompact } from './FieldPanel';
 import { GearIcon } from './icons';
 import {
   CHAIN12,
@@ -341,6 +342,7 @@ export function ShapeStats() {
           ))}
         </ul>
       </section>
+      <FieldCompact />
     </div>
   );
 }

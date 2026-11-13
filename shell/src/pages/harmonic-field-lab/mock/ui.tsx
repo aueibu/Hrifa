@@ -85,15 +85,22 @@ export function Strip({
   children?: ReactNode;
   id?: string;
 }) {
+  const pinActions = useContext(PinActionsContext);
   return (
     <div className={classes.strip}>
       <h2 className={classes.stripTitle} id={id}>
         {title}
       </h2>
-      <div className={classes.stripTools}>{children}</div>
+      <div className={classes.stripTools}>
+        {children}
+        {pinActions}
+      </div>
     </div>
   );
 }
+
+/** Inside a pinned column, the move and unpin buttons the panel's own header strip shows after its tools. */
+export const PinActionsContext = createContext<ReactNode>(null);
 
 /** Signed one-decimal cents with the sign always printed (the second channel next to a sharp/flat colour). */
 export const signed = (x: number, dp = 1) => {

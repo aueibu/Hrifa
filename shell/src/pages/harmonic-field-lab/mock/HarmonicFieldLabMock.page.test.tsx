@@ -99,7 +99,7 @@ describe('HarmonicFieldLabMockPage', () => {
     fireEvent.click(within(ring).getByRole('button', { name: /^13\/8/ }));
     expect(screen.getByText('pinned')).toBeInTheDocument();
     expect(screen.getAllByText(/2\^-3 13/).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('tab', { name: /Field table/ }));
+    expect(screen.queryByRole('tab', { name: /Field table/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open full table' }));
     const dialog = await screen.findByRole('dialog');
     const table = within(dialog).getByRole('table');
@@ -109,6 +109,19 @@ describe('HarmonicFieldLabMockPage', () => {
       'aria-sort',
       'ascending'
     );
+  });
+
+  it('lists the field in the side column under Step sizes, and a row feeds the inspector', () => {
+    render(<HarmonicFieldLabMockPage />);
+    const table = screen.getByRole('table', { name: 'Field notes' });
+    expect(within(table).getAllByRole('row')).toHaveLength(9);
+    expect(within(table).getAllByRole('img', { name: 'in subset' })).toHaveLength(7);
+    expect(within(table).getAllByRole('img', { name: 'not in subset' })).toHaveLength(1);
+    const row = within(table).getByText('13/8').closest('tr')!;
+    fireEvent.mouseEnter(row);
+    expect(screen.getAllByText(/2\^-3 13/).length).toBeGreaterThan(0);
+    fireEvent.click(row);
+    expect(screen.getByText('pinned')).toBeInTheDocument();
   });
 
   it('puts the method parameters in the column left of the ring', () => {
@@ -192,6 +205,108 @@ describe('HarmonicFieldLabMockPage', () => {
     render(<HarmonicFieldLabMockPage />);
     fireEvent.click(screen.getByRole('button', { name: /^Keyboard$/, expanded: true }));
     expect(screen.queryByRole('group', { name: 'Subset keys' })).toBeNull();
+  });
+});
+
+const KEY = 'hrifa.harmonic-field-lab.mock.layout.v1';
+const columns = () =>
+  screen.queryAllByRole('region', { name: /, pinned column$/ }).map((r) => ({
+    name: r.getAttribute('aria-label')!.replace(', pinned column', ''),
+    side: r.getAttribute('data-side'),
+  }));
+
+describe('pinned panel columns', () => {
+  const setWidth = (px: number) => {
+    window.innerWidth = px;
+  };
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+  afterEach(() => {
+    setWidth(1024);
+    window.localStorage.clear();
+  });
+
+  it('pins and unpins from the rail, with a dimmed pin when there is no room', () => {
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns()).toEqual([]);
+    const rail = screen.getByRole('navigation', { name: 'Analysis panels' });
+    fireEvent.click(within(rail).getByRole('button', { name: 'Pin Retuner as a column' }));
+    const pinBtn = within(rail).getByRole('button', { name: /^Unpin Retuner/ });
+    expect(pinBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(pinBtn).toHaveAccessibleName('Unpin Retuner (no room at this width)');
+    fireEvent.click(pinBtn);
+    expect(within(rail).getByRole('button', { name: 'Pin Retuner as a column' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+  });
+
+  it('shows the default four columns on an ultrawide and the switcher skips them', () => {
+    setWidth(3840);
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns()).toEqual([
+      { name: 'Keys & Modes', side: 'left' },
+      { name: 'Chords', side: 'left' },
+      { name: 'Lattice', side: 'right' },
+      { name: 'Spectrum', side: 'right' },
+    ]);
+    // the switcher shows the first panel that has no column: the retuner
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: /Why this card won/ })).toBeInTheDocument();
+    // each column has its own move and unpin buttons
+    const chords = screen.getByRole('region', { name: 'Chords, pinned column' });
+    expect(within(chords).getByRole('button', { name: 'Move Chords left' })).toBeEnabled();
+    expect(within(chords).getByRole('button', { name: 'Unpin Chords' })).toBeInTheDocument();
+    const keys = screen.getByRole('region', { name: 'Keys & Modes, pinned column' });
+    expect(within(keys).getByRole('button', { name: 'Move Keys & Modes left' })).toBeDisabled();
+  });
+
+  it('keeps only the inner pair at 2560 px and marks the others as having no room', () => {
+    setWidth(2560);
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns()).toEqual([
+      { name: 'Chords', side: 'left' },
+      { name: 'Lattice', side: 'right' },
+    ]);
+    const rail = screen.getByRole('navigation', { name: 'Analysis panels' });
+    expect(
+      within(rail).getByRole('button', { name: 'Unpin Keys & Modes (no room at this width)' })
+    ).toBeInTheDocument();
+    expect(within(rail).getByRole('button', { name: 'Unpin Chords' })).toBeInTheDocument();
+  });
+
+  it('moves columns: reorder on a side, cross to the other side, unpin; and remembers it', () => {
+    setWidth(3840);
+    const { unmount } = render(<HarmonicFieldLabMockPage />);
+    // Keys is outermost on the left: moving it inward swaps it with Chords
+    fireEvent.click(screen.getByRole('button', { name: 'Move Keys & Modes right' }));
+    expect(columns().map((c) => c.name)).toEqual(['Chords', 'Keys & Modes', 'Lattice', 'Spectrum']);
+    // now Keys is innermost: right crosses the generator to the inner right place
+    fireEvent.click(screen.getByRole('button', { name: 'Move Keys & Modes right' }));
+    expect(columns()).toEqual([
+      { name: 'Chords', side: 'left' },
+      { name: 'Keys & Modes', side: 'right' },
+      { name: 'Lattice', side: 'right' },
+      { name: 'Spectrum', side: 'right' },
+    ]);
+    const spec = screen.getByRole('region', { name: 'Spectrum, pinned column' });
+    fireEvent.click(within(spec).getByRole('button', { name: 'Unpin Spectrum' }));
+    expect(columns().map((c) => c.name)).toEqual(['Chords', 'Keys & Modes', 'Lattice']);
+    expect(JSON.parse(window.localStorage.getItem(KEY)!)).toEqual({
+      left: ['chords'],
+      right: ['keys', 'lattice'],
+    });
+    unmount();
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns().map((c) => c.name)).toEqual(['Chords', 'Keys & Modes', 'Lattice']);
+  });
+
+  it('falls back to the defaults when the stored layout is bad', () => {
+    setWidth(3840);
+    window.localStorage.setItem(KEY, '{"left":["nope"],"right":"x"}');
+    render(<HarmonicFieldLabMockPage />);
+    expect(columns().map((c) => c.name)).toEqual(['Keys & Modes', 'Chords', 'Lattice', 'Spectrum']);
   });
 });
 
