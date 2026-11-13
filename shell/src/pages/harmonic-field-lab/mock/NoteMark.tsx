@@ -12,8 +12,9 @@ const W = 12;
 const CX = W / 2;
 const LINE = 2;
 
-/** Width of the coloured part at the tip for a deviation of `abs` cents. */
-export const taperWidth = (abs: number) => LINE + Math.min(8, Math.max(0, (abs - 10) * 0.2));
+/** Width of the coloured part at the tip for a deviation of `abs` cents: line width up to 10 c, `max` px at 50 c. */
+export const taperWidth = (abs: number, max = 10) =>
+  LINE + Math.min(1, Math.max(0, (abs - 10) / 40)) * (max - LINE);
 
 /** Length of the coloured part in px: the share of the half-line the error covers (capped at `full` cents). */
 export const errorLength = (abs: number, half: number, full = 50) => Math.min(1, abs / full) * half;
@@ -28,6 +29,8 @@ export interface NoteMarkProps {
   half: number;
   /** Cents that colour the whole half-line. */
   full?: number;
+  /** Widest the coloured tip gets, in px (reached at 50 c). */
+  maxTaper?: number;
   /** Draw the error (off for a note that is not in a saved subset). */
   showError?: boolean;
   lit?: boolean;
@@ -42,6 +45,7 @@ export function NoteMark({
   mid,
   half,
   full = 50,
+  maxTaper = 10,
   showError = true,
   lit = false,
   pinned = false,
@@ -49,7 +53,7 @@ export function NoteMark({
 }: NoteMarkProps) {
   const abs = Math.abs(dev);
   const len = errorLength(abs, half, full);
-  const tipW = taperWidth(abs) / 2;
+  const tipW = taperWidth(abs, maxTaper) / 2;
   const near = LINE / 2;
   const sharp = dev >= 0;
   const tip = sharp ? mid - half : mid + half;

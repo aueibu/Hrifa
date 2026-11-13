@@ -62,6 +62,7 @@ export function SavedSubsets() {
                           height={30}
                           mid={15}
                           half={9}
+                          maxTaper={6}
                           showError={on.has(i)}
                         />
                       </span>
