@@ -3,7 +3,7 @@
  * vertical reference lines mark every 100 c (1/1 as C): lighter for a white key, darker for a black key. The strip and
  * the saved-subset rows share one gutter and one cents scale (`stripLeft`), so a note is in the same column everywhere.
  */
-import { useMemo, type CSSProperties } from 'react';
+import { useMemo } from 'react';
 import { NativeSelect, NumberInput } from '@mantine/core';
 import { LIT_FIELD, analysis, fieldDevs, rel, repC, savedSubsets } from './mockData';
 import { NoteMark } from './NoteMark';
@@ -15,8 +15,9 @@ const PAD = 4;
 export const stripLeft = (c: number) => `${PAD + (c / repC) * (100 - 2 * PAD)}%`;
 const BLACK = new Set([1, 3, 6, 8, 10]);
 /** Strip plot height and the middle of each note line, in px (match `--mid` and `.stripPlot` in the CSS). */
-const MARK_H = 108;
-const MARK_MID = 60;
+const MARK_H = 96;
+const MARK_MID = 54;
+const MARK_HALF = 24;
 
 /** A quiet reference line at every 100 c: absolute 12-EDO pitch (1/1 = C), light for white keys, dark for black. */
 export function RefLines({ thin }: { thin?: boolean }) {
@@ -83,7 +84,7 @@ export function TunerStrip() {
                   <div
                     key={fi}
                     className={classes.col}
-                    style={{ left: stripLeft(d.c), '--d': Math.abs(d.dev12) } as CSSProperties}
+                    style={{ left: stripLeft(d.c) }}
                     data-ratio={d.ratio}
                     data-lit={lit}
                     data-on={active}
@@ -108,8 +109,7 @@ export function TunerStrip() {
                       dev={d.dev12}
                       height={MARK_H}
                       mid={MARK_MID}
-                      half={lit ? 12 : 10}
-                      scale={0.5}
+                      half={MARK_HALF}
                       lit={lit}
                       pinned={lab.pin === fi}
                     />

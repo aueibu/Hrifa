@@ -1,8 +1,9 @@
 /**
- * One note as one mark, drawn in a single SVG so every part shares one centre line and one coordinate system:
- * a 2 px line (the note), its error growing straight out of the line's end (sharp up from the top, flat down
- * from the bottom), and, while it sounds, a blue dot at the line's middle. The error starts as wide as the line
- * and tapers out at its far end: line width up to 10 c, three times the line width at 50 c and beyond.
+ * One note as one mark, drawn in a single SVG so every part shares one centre line and one coordinate system.
+ * Every note is a line of the same length. Its error is colour painted onto the line from the tip toward the
+ * centre: sharp (pink) from the top down, flat (cyan) from the bottom up. The coloured length grows with the
+ * error and covers the whole half-line at `full` cents (50 by default). It is widest at the tip: line width up
+ * to 10 c, three times the line width at 50 c and beyond. A sounding note gets a blue dot at its middle.
  */
 import classes from './mock.module.css';
 
@@ -11,8 +12,11 @@ const W = 12;
 const CX = W / 2;
 const LINE = 2;
 
-/** Width of the error bar's far end for a deviation of `abs` cents. */
+/** Width of the coloured part at the tip for a deviation of `abs` cents. */
 export const taperWidth = (abs: number) => LINE + Math.min(4, Math.max(0, (abs - 10) * 0.1));
+
+/** Length of the coloured part in px: the share of the half-line the error covers (capped at `full` cents). */
+export const errorLength = (abs: number, half: number, full = 50) => Math.min(1, abs / full) * half;
 
 export interface NoteMarkProps {
   /** Signed deviation in cents (positive = sharp). */
@@ -22,8 +26,8 @@ export interface NoteMarkProps {
   mid: number;
   /** Half the line length in px. */
   half: number;
-  /** Pixels per cent for the error. */
-  scale: number;
+  /** Cents that colour the whole half-line. */
+  full?: number;
   /** Draw the error (off for a note that is not in a saved subset). */
   showError?: boolean;
   lit?: boolean;
@@ -37,21 +41,20 @@ export function NoteMark({
   height,
   mid,
   half,
-  scale,
+  full = 50,
   showError = true,
   lit = false,
   pinned = false,
   dotR = 5,
 }: NoteMarkProps) {
   const abs = Math.abs(dev);
-  const len = Math.max(1, abs * scale);
-  const far = taperWidth(abs) / 2;
+  const len = errorLength(abs, half, full);
+  const tipW = taperWidth(abs) / 2;
   const near = LINE / 2;
   const sharp = dev >= 0;
-  // the error starts 0.5 px inside the line so no seam can show where it grows out
-  const y0 = sharp ? mid - half + 0.5 : mid + half - 0.5;
-  const y1 = sharp ? mid - half - len : mid + half + len;
-  const bar = `${CX - near},${y0} ${CX + near},${y0} ${CX + far},${y1} ${CX - far},${y1}`;
+  const tip = sharp ? mid - half : mid + half;
+  const inner = sharp ? tip + len : tip - len;
+  const bar = `${CX - tipW},${tip} ${CX + tipW},${tip} ${CX + near},${inner} ${CX - near},${inner}`;
   return (
     <svg
       className={classes.mark}
@@ -61,13 +64,6 @@ export function NoteMark({
       aria-hidden="true"
       data-testid="note-mark"
     >
-      {showError && abs > 0.05 && (
-        <polygon
-          className={sharp ? classes.markSharp : classes.markFlat}
-          points={bar}
-          data-dir={sharp ? 'sharp' : 'flat'}
-        />
-      )}
       <rect
         className={classes.markLine}
         x={CX - near}
@@ -75,6 +71,13 @@ export function NoteMark({
         width={LINE}
         height={half * 2}
       />
+      {showError && len >= 0.5 && (
+        <polygon
+          className={sharp ? classes.markSharp : classes.markFlat}
+          points={bar}
+          data-dir={sharp ? 'sharp' : 'flat'}
+        />
+      )}
       {pinned && (
         <rect
           className={classes.markPin}

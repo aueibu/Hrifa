@@ -1,5 +1,4 @@
 /** Saved subsets of this pitch collection: one mini tuner strip (a sparkline) per row. Hover previews, click loads. */
-import type { CSSProperties } from 'react';
 import { ActionIcon } from '@mantine/core';
 import { fmtRatio } from '../../../lib/harmonic-field';
 import { SaveIcon } from './icons';
@@ -56,16 +55,13 @@ export function SavedSubsets() {
                         data-on={on.has(i)}
                         data-ratio={fieldRatio[i]}
                         data-dir={fieldDev12[i] >= 0 ? 'sharp' : 'flat'}
-                        style={
-                          { left: stripLeft(n.c), '--d': Math.abs(fieldDev12[i]) } as CSSProperties
-                        }
+                        style={{ left: stripLeft(n.c) }}
                       >
                         <NoteMark
                           dev={fieldDev12[i]}
                           height={30}
                           mid={15}
-                          half={4}
-                          scale={0.2}
+                          half={9}
                           showError={on.has(i)}
                         />
                       </span>

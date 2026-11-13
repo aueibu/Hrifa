@@ -415,9 +415,9 @@
 .workspace {
   --pad: 0.5rem;
   --gutter: 8.5rem;
-  /* tuner strip: the middle of each note line, and half the line length */
-  --mid: 3.75rem;
-  --half: 10px;
+  /* tuner strip: the middle of each note line, and half the line length (match NoteMark in TunerStrip) */
+  --mid: 54px;
+  --half: 24px;
   --ref-white: color-mix(in srgb, var(--panel) 90%, transparent);
   --ref-black: color-mix(in srgb, var(--text) 12%, transparent);
 
@@ -749,7 +749,7 @@
 .gutterSteps {
   left: 0;
   position: absolute;
-  top: 6.8125rem;
+  top: 6.0625rem;
 }
 
 .plotCol {
@@ -781,7 +781,7 @@
 }
 
 .stripPlot {
-  height: 6.75rem;
+  height: 6rem;
   position: relative;
 }
 
@@ -845,11 +845,6 @@
   stroke-width: 1;
 }
 
-/* sounding: the line grows a little (the numbers follow it) */
-.col[data-lit='true'] {
-  --half: 12px;
-}
-
 /* a field note that is not in the subset: dimmed line, bar and number */
 .col[data-on='false'] .mark,
 .col[data-on='false'] .colNum,
@@ -867,12 +862,13 @@
   transform: translateX(-50%);
 }
 
+/* the error number sits just beyond the tip its colour starts from */
 .colNum[data-dir='sharp'] {
-  top: calc(var(--mid) - var(--half) - var(--d) * 0.5px - 0.75rem);
+  top: calc(var(--mid) - var(--half) - 0.8125rem);
 }
 
 .colNum[data-dir='flat'] {
-  top: calc(var(--mid) + var(--half) + var(--d) * 0.5px + 0.125rem);
+  top: calc(var(--mid) + var(--half) + 0.1875rem);
 }
 
 .stepRow {
