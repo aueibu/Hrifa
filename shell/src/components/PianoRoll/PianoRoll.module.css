@@ -376,6 +376,21 @@
   z-index: 3;
 }
 
+.ghostOverlay[data-label-placement='side'] {
+  overflow: visible;
+}
+
+/* The beside-the-note label: just right of the ghost, never interactive. */
+.ghostSideLabel {
+  color: var(--text);
+  left: 100%;
+  margin-left: 4px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .ghostOverlay[data-ghost-overlay='pinned'] {
   background: color-mix(in srgb, var(--mark-blue) 22%, transparent);
   border-color: var(--mark-blue);

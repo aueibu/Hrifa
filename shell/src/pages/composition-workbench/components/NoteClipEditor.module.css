@@ -15,6 +15,15 @@
 .rollArea {
   flex: 1 1 0;
   min-height: 0;
+  min-width: 0;
+}
+
+/* The roll and, while the Chords tool is active, the chord dock beside it. */
+.work {
+  display: flex;
+  flex: 1 1 0;
+  gap: 0.5rem;
+  min-height: 0;
 }
 
 .header {

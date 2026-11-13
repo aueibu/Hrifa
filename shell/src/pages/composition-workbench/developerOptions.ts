@@ -10,9 +10,14 @@ export const DEVELOPER_OPTIONS_KEY = 'hrifa.developer-options.v1';
 export interface DeveloperOptions {
   /** Whether opening a project also replaces transport and sounds (tempo, metronome, voices). */
   openIncludesSettings: boolean;
+  /**
+   * Where the Chords tool shows the clicked note's name on the roll: on the anchor note itself
+   * (the default) or beside it, to the right.
+   */
+  chordAnchorLabel: 'on-note' | 'side';
 }
 
-const defaults: DeveloperOptions = { openIncludesSettings: true };
+const defaults: DeveloperOptions = { openIncludesSettings: true, chordAnchorLabel: 'on-note' };
 
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: DeveloperOptions } | null = null;
@@ -38,6 +43,7 @@ export function readDeveloperOptions(): DeveloperOptions {
         typeof parsed.openIncludesSettings === 'boolean'
           ? parsed.openIncludesSettings
           : defaults.openIncludesSettings,
+      chordAnchorLabel: parsed.chordAnchorLabel === 'side' ? 'side' : 'on-note',
     };
   } catch {
     // A damaged value reads as the defaults.

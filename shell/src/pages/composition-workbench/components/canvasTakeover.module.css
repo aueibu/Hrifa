@@ -1,0 +1,13 @@
+/* The takeover slot covers the canvas area exactly; it is hidden while nothing is in it. */
+.slot {
+  background: var(--panel);
+  color: var(--text);
+  inset: 0;
+  overflow: auto;
+  position: absolute;
+  z-index: 5;
+}
+
+.slot:empty {
+  display: none;
+}

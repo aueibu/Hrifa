@@ -1,5 +1,6 @@
 import { useRef, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { ActionIcon } from '@mantine/core';
+import { CanvasTakeoverProvider, CanvasTakeoverSlot } from './canvasTakeover';
 import classes from './SplitStage.module.css';
 
 export const MIN_SPLIT = 0.2;
@@ -59,49 +60,54 @@ export function SplitStage({
   };
 
   return (
-    <div
-      ref={stageRef}
-      className={classes.stage}
-      style={{ gridTemplateRows: collapsed ? '1fr auto' : `${split}fr auto ${1 - split}fr` }}
-    >
-      <div className={classes.top}>{top}</div>
-      <div className={classes.divider} data-collapsed={collapsed || undefined}>
-        <div
-          className={classes.grip}
-          role="separator"
-          aria-orientation="horizontal"
-          aria-label="Resize detail panel"
-          aria-valuemin={Math.round(MIN_SPLIT * 100)}
-          aria-valuemax={Math.round(MAX_SPLIT * 100)}
-          aria-valuenow={Math.round(split * 100)}
-          tabIndex={collapsed ? -1 : 0}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onKeyDown={onKeyDown}
-        />
-        <ActionIcon
-          variant="subtle"
-          size="sm"
-          aria-label={collapsed ? 'Show detail panel' : 'Hide detail panel'}
-          aria-expanded={!collapsed}
-          onClick={() => onCollapsed(!collapsed)}
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            aria-hidden
+    <CanvasTakeoverProvider available={!collapsed}>
+      <div
+        ref={stageRef}
+        className={classes.stage}
+        style={{ gridTemplateRows: collapsed ? '1fr auto' : `${split}fr auto ${1 - split}fr` }}
+      >
+        <div className={classes.top}>
+          {top}
+          <CanvasTakeoverSlot />
+        </div>
+        <div className={classes.divider} data-collapsed={collapsed || undefined}>
+          <div
+            className={classes.grip}
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize detail panel"
+            aria-valuemin={Math.round(MIN_SPLIT * 100)}
+            aria-valuemax={Math.round(MAX_SPLIT * 100)}
+            aria-valuenow={Math.round(split * 100)}
+            tabIndex={collapsed ? -1 : 0}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onKeyDown={onKeyDown}
+          />
+          <ActionIcon
+            variant="subtle"
+            size="sm"
+            aria-label={collapsed ? 'Show detail panel' : 'Hide detail panel'}
+            aria-expanded={!collapsed}
+            onClick={() => onCollapsed(!collapsed)}
           >
-            <path d={collapsed ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} />
-          </svg>
-        </ActionIcon>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              aria-hidden
+            >
+              <path d={collapsed ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} />
+            </svg>
+          </ActionIcon>
+        </div>
+        <div className={classes.bottom} hidden={collapsed}>
+          {bottom}
+        </div>
       </div>
-      <div className={classes.bottom} hidden={collapsed}>
-        {bottom}
-      </div>
-    </div>
+    </CanvasTakeoverProvider>
   );
 }

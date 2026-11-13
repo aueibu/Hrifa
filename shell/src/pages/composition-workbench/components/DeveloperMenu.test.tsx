@@ -24,7 +24,19 @@ describe('DeveloperMenu', () => {
     expect(readDeveloperOptions().openIncludesSettings).toBe(false);
     expect(JSON.parse(localStorage.getItem(DEVELOPER_OPTIONS_KEY)!)).toEqual({
       openIncludesSettings: false,
+      chordAnchorLabel: 'on-note',
     });
     expect(historyChangeCount()).toBe(before);
+  });
+
+  it('switches the chord anchor label between on the note and beside it', async () => {
+    const user = userEvent.setup();
+    render(<DeveloperMenu />);
+    await user.click(screen.getByRole('button', { name: 'Developer' }));
+    expect(readDeveloperOptions().chordAnchorLabel).toBe('on-note');
+    await user.click(await screen.findByLabelText('Beside it'));
+    expect(readDeveloperOptions().chordAnchorLabel).toBe('side');
+    await user.click(screen.getByLabelText('On the note'));
+    expect(readDeveloperOptions().chordAnchorLabel).toBe('on-note');
   });
 });

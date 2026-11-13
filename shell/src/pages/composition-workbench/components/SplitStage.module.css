@@ -14,6 +14,8 @@
 .top {
   display: flex;
   flex-direction: column;
+  /* The canvas takeover slot (canvasTakeover.tsx) covers this pane. */
+  position: relative;
 }
 
 /* The detail panel scrolls on its own so the canvas stays in view. */

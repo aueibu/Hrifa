@@ -1,0 +1,41 @@
+/* The frame around the picker body: the same header in both hosts; width is the host's. */
+.frame {
+  background: var(--panel);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.frame[data-chord-host='dock'] {
+  border-radius: var(--radius-panel);
+  flex: 0 0 15rem;
+  overflow: hidden;
+  width: 15rem;
+}
+
+.frame[data-chord-host='takeover'] {
+  height: 100%;
+}
+
+.header {
+  align-items: center;
+  background: var(--panel-header);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+}
+
+.buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.5rem;
+}

@@ -40,6 +40,10 @@ export const GRID_OPTIONS: GridOption[] = [
 export const ACTION_SECTION_IDS = ['time', 'pitch', 'values', 'clipboard'] as const;
 export type ActionSectionId = (typeof ACTION_SECTION_IDS)[number];
 
+/** The named slots the chord picker can occupy (chordInput/ChordPickerHost.tsx). */
+export const CHORD_HOSTS = ['dock', 'takeover'] as const;
+export type ChordHost = (typeof CHORD_HOSTS)[number];
+
 export interface NoteEditorPreferences {
   /** Quarter notes; null until the viewer has set one (the grid unit is used). */
   entryLength: number | null;
@@ -53,6 +57,8 @@ export interface NoteEditorPreferences {
   laneHeight: number | null;
   /** The Actions panel sections that are open (several at once; all open until the viewer closes some). */
   actionSections: ActionSectionId[];
+  /** Where the Chords tool's picker sits: the dock beside the roll, or the takeover of the canvas area. */
+  chordHost: ChordHost;
 }
 
 const defaults: NoteEditorPreferences = {
@@ -62,6 +68,7 @@ const defaults: NoteEditorPreferences = {
   velocityLaneCollapsed: false,
   laneHeight: null,
   actionSections: [...ACTION_SECTION_IDS],
+  chordHost: 'dock',
 };
 
 const listeners = new Set<() => void>();
@@ -120,6 +127,7 @@ export function readNoteEditorPreferences(): NoteEditorPreferences {
           ? parsed.laneHeight
           : null,
       actionSections: knownSections(parsed.actionSections),
+      chordHost: parsed.chordHost === 'takeover' ? 'takeover' : 'dock',
     };
   } catch {
     // A damaged value reads as the defaults.

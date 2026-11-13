@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { render, screen, userEvent } from '@test-utils';
+import { useCanvasTakeoverElement } from './canvasTakeover';
 import { clampSplit, MAX_SPLIT, MIN_SPLIT, SplitStage } from './SplitStage';
 
 function Harness({ initialCollapsed = false }: { initialCollapsed?: boolean }) {
@@ -25,7 +26,39 @@ describe('clampSplit', () => {
   });
 });
 
+function SlotProbe() {
+  return <span>{useCanvasTakeoverElement() ? 'slot' : 'no slot'}</span>;
+}
+
 describe('SplitStage', () => {
+  it('offers the takeover slot while the detail panel is shown', () => {
+    render(
+      <SplitStage
+        split={0.5}
+        onSplit={() => undefined}
+        collapsed={false}
+        onCollapsed={() => undefined}
+        top={<div>canvas</div>}
+        bottom={<SlotProbe />}
+      />
+    );
+    expect(screen.getByText('slot')).toBeInTheDocument();
+  });
+
+  it('withholds the takeover slot while the detail panel is collapsed', () => {
+    render(
+      <SplitStage
+        split={0.5}
+        onSplit={() => undefined}
+        collapsed
+        onCollapsed={() => undefined}
+        top={<div>canvas</div>}
+        bottom={<SlotProbe />}
+      />
+    );
+    expect(screen.getByText('no slot')).toBeInTheDocument();
+  });
+
   it('collapses the detail panel without unmounting its content', async () => {
     const user = userEvent.setup();
     render(<Harness />);

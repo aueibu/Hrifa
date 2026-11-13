@@ -1,0 +1,333 @@
+import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CompositionSettingsProvider, useCompositionSettings } from '../compositionSettings';
+import { DeskProvider, useDesk } from '../desk';
+import { DEVELOPER_OPTIONS_KEY } from '../developerOptions';
+import { canUndo, resetHistory, undo } from '../history';
+import type { NoteEventValue } from '../melodicization';
+import { packet, type DataItem } from '../model';
+import { musicalDuration, musicalPosition, rational } from '../musicalTime';
+import { NOTE_EDITOR_PREFERENCES_KEY } from '../noteEditorPreferences';
+import type { Snippet } from '../snippet';
+import { CanvasTakeoverProvider, CanvasTakeoverSlot } from './canvasTakeover';
+import { NoteClipEditor } from './NoteClipEditor';
+
+// The audition path: a stand-in audio engine that makes no sound and records what was played.
+const engine = vi.hoisted(() => ({
+  play: vi.fn(async () => ({ active: true, stop: () => undefined, setBusGain: () => undefined })),
+}));
+vi.mock('../audio/AudioEngineProvider', () => ({
+  useAudioEngine: () => ({ play: engine.play, subscribe: () => () => undefined }),
+}));
+
+let desk: ReturnType<typeof useDesk>;
+let settingsApi: ReturnType<typeof useCompositionSettings>;
+
+function Harness({ takeover = false }: { takeover?: boolean }) {
+  desk = useDesk();
+  settingsApi = useCompositionSettings();
+  const clip = desk.snippets[0];
+  const editor = clip && <NoteClipEditor snippet={clip} />;
+  return takeover ? (
+    <CanvasTakeoverProvider>
+      <div>
+        <CanvasTakeoverSlot />
+        {editor}
+      </div>
+    </CanvasTakeoverProvider>
+  ) : (
+    editor
+  );
+}
+
+function seedNote(
+  id: string,
+  start: number,
+  length: number,
+  midicents: number
+): DataItem<NoteEventValue> {
+  return {
+    id,
+    value: {
+      onset: musicalPosition(start),
+      interOnset: musicalDuration(length),
+      duration: musicalDuration(length),
+      pitches: [midicents],
+      velocity: 1,
+    },
+    label: id,
+    provenance: [],
+  };
+}
+
+/** One C4, a quarter long, at the start. */
+function seededClip(): Snippet {
+  return {
+    schemaVersion: 1,
+    id: 'seeded',
+    name: 'Seeded',
+    createdAt: '2026-11-11T00:00:00Z',
+    packet: {
+      ...packet('events', 'note', [seedNote('n1', 0, 1, 6000)]),
+      frame: {
+        topology: 'linear',
+        unit: 'quarterNote',
+        extent: 8,
+        origin: 0,
+        musicalExtent: musicalDuration(8),
+        musicalOrigin: musicalPosition(0),
+      },
+    },
+  };
+}
+
+async function open(options: { takeover?: boolean; seed?: Snippet } = {}) {
+  render(
+    <CompositionSettingsProvider>
+      <DeskProvider>
+        <Harness takeover={options.takeover} />
+      </DeskProvider>
+    </CompositionSettingsProvider>
+  );
+  await waitFor(() => expect(desk.loading).toBe(false));
+  act(() => {
+    if (options.seed) {
+      desk.addSnippet(options.seed);
+    } else {
+      desk.addBlankClip('notes', rational(4));
+    }
+  });
+  return screen.findByRole('group', { name: /Note clip piano roll/ });
+}
+
+// jsdom lays nothing out: the roll's origin is (0, 0), 64 px a quarter (half-quarter grid steps)
+// and 22 px a semitone.
+const rowY = (midi: number) => (127 - midi) * 22 + 11;
+
+/** Selects the Chords tool and clicks the roll at a pitch (midi) and an x. */
+function clickAnchor(roll: HTMLElement, midi: number, x = 70) {
+  roll.focus();
+  fireEvent.keyDown(roll, { key: '7' });
+  fireEvent.pointerDown(roll, { clientX: x, clientY: rowY(midi), pointerId: 1 });
+  fireEvent.pointerUp(roll, { clientX: x, clientY: rowY(midi), pointerId: 1 });
+}
+
+const pitches = () =>
+  desk.snippets[0].packet.items
+    .map((item) => item.value as NoteEventValue)
+    .flatMap((value) => value.pitches.map((pitch) => ({ pitch, onset: value.onset })))
+    .sort((a, b) => a.pitch - b.pitch);
+const noteCount = () => desk.snippets[0].packet.items.length;
+const ghosts = (variant: string) =>
+  document.querySelectorAll(`[data-ghost-overlay="${variant}"]`) as NodeListOf<HTMLElement>;
+const chord = (name: string) => screen.getByRole('button', { name });
+
+beforeEach(() => {
+  localStorage.clear();
+  resetHistory();
+  engine.play.mockClear();
+});
+
+describe('the Chords tool picker in the note clip editor', () => {
+  it('opens a dock beside the roll while the tool is active, and not otherwise', async () => {
+    const roll = await open();
+    expect(document.querySelector('[data-chord-host]')).toBeNull();
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '7' });
+    expect(document.querySelector('[data-chord-host="dock"]')).not.toBeNull();
+    expect(screen.getByText(/Click the roll where a chord should go/)).toBeInTheDocument();
+    fireEvent.keyDown(roll, { key: '1' });
+    expect(document.querySelector('[data-chord-host]')).toBeNull();
+  });
+
+  it('in C major, clicking A and double-clicking Am at first inversion places C4 E4 A4 at the click onset', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    expect(screen.getByText(/Chords on A \(A4\)/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '1st inv.' }));
+    expect(noteCount()).toBe(0);
+
+    await user.dblClick(chord('Am'));
+    expect(pitches()).toEqual([
+      { pitch: 6000, onset: musicalPosition(1) },
+      { pitch: 6400, onset: musicalPosition(1) },
+      { pitch: 6900, onset: musicalPosition(1) },
+    ]);
+    // The chord is one hand edit: a single undo takes all three notes away.
+    expect(canUndo()).toBe(true);
+    act(() => undo());
+    expect(noteCount()).toBe(0);
+  });
+
+  it('Enter on a focused chord inserts it', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 60);
+    chord('C').focus();
+    await user.keyboard('{Enter}');
+    expect(pitches().map((entry) => entry.pitch)).toEqual([6000, 6400, 6700]);
+  });
+
+  it('a single click auditions once through the audition path and creates no note, then pins the ghost', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    await user.click(chord('Am'));
+    await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
+    const request = engine.play.mock.calls[0] as unknown as [
+      { plan: { events: { pitchMidicents: number }[] } },
+    ];
+    expect(request[0].plan.events.map((event) => event.pitchMidicents)).toEqual([6900, 7200, 7600]);
+    expect(noteCount()).toBe(0);
+    expect(ghosts('pinned')).toHaveLength(3);
+  });
+
+  it('hover shows ghosts for the voiced chord and leaving clears them; no note and no sound', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    expect(ghosts('hover')).toHaveLength(0);
+    await user.hover(chord('Am'));
+    expect(ghosts('hover')).toHaveLength(3);
+    expect(ghosts('anchor')).toHaveLength(1);
+    await user.unhover(chord('Am'));
+    expect(ghosts('hover')).toHaveLength(0);
+    expect(noteCount()).toBe(0);
+    expect(engine.play).not.toHaveBeenCalled();
+  });
+
+  it('the ghosts follow the voicing and the anchor onset, with the grid step as the length', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 60);
+    await user.click(screen.getByRole('button', { name: '1st inv.' }));
+    await user.hover(chord('C'));
+    const hover = [...ghosts('hover')];
+    expect(hover).toHaveLength(3);
+    // E3, G3 and C4: the root exactly on the C4 row, the other two below it (greater y).
+    const tops = hover.map((el) => parseFloat(el.style.top)).sort((a, b) => a - b);
+    const c4Row = (127 - 60) * 22;
+    expect(tops[0]).toBeGreaterThanOrEqual(c4Row);
+    expect(tops[0]).toBeLessThan(c4Row + 22);
+    expect(tops[1]).toBeGreaterThanOrEqual(c4Row + 22);
+    expect(tops[2]).toBeGreaterThanOrEqual(c4Row + 22);
+    // Starts at the anchor onset (1 quarter = 64 px), one half-quarter grid step long.
+    expect(parseFloat(hover[0].style.left)).toBeCloseTo(64, 0);
+    expect(parseFloat(hover[0].style.width)).toBeCloseTo(32, 0);
+  });
+
+  it('Escape and Close clear the ghosts and the anchor; so does leaving the tool', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    await user.click(chord('Am'));
+    expect(ghosts('pinned')).toHaveLength(3);
+    fireEvent.keyDown(chord('Am'), { key: 'Escape' });
+    expect(document.querySelector('[data-ghost-overlay]')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Chord picker' })).toBeNull();
+
+    roll.focus();
+    fireEvent.pointerDown(roll, { clientX: 70, clientY: rowY(69), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 70, clientY: rowY(69), pointerId: 1 });
+    await user.hover(chord('Am'));
+    await user.click(screen.getByRole('button', { name: 'Close chord picker' }));
+    expect(document.querySelector('[data-ghost-overlay]')).toBeNull();
+
+    fireEvent.pointerDown(roll, { clientX: 70, clientY: rowY(69), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 70, clientY: rowY(69), pointerId: 1 });
+    await user.click(chord('Am'));
+    fireEvent.keyDown(roll, { key: '1' });
+    expect(document.querySelector('[data-ghost-overlay]')).toBeNull();
+    expect(noteCount()).toBe(0);
+  });
+
+  it('a chord tone that equals an existing note at the same onset and pitch is not duplicated; the others are added in one undo step', async () => {
+    const user = userEvent.setup();
+    const roll = await open({ seed: seededClip() });
+    clickAnchor(roll, 60, 10); // onset 0, on the existing C4
+    await user.dblClick(chord('C'));
+    expect(pitches().map((entry) => entry.pitch)).toEqual([6000, 6400, 6700]);
+    expect(noteCount()).toBe(3);
+    act(() => undo());
+    expect(pitches().map((entry) => entry.pitch)).toEqual([6000]);
+  });
+
+  it('the scale override changes the offer, outlives the click, and never changes the project pitch set', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    const projectBefore = JSON.stringify(settingsApi.settings.pitchSet);
+    clickAnchor(roll, 69);
+    expect(screen.queryByRole('button', { name: 'A' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: /Scale/ }));
+    await user.click(
+      within(screen.getByRole('group', { name: 'Pitches in the scale' })).getByText(/^C[♯#]$/)
+    );
+    expect(chord('A')).toBeInTheDocument();
+
+    // A new click elsewhere keeps the override: it belongs to the tool.
+    fireEvent.pointerDown(roll, { clientX: 200, clientY: rowY(69), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 200, clientY: rowY(69), pointerId: 1 });
+    expect(chord('A')).toBeInTheDocument();
+    expect(JSON.stringify(settingsApi.settings.pitchSet)).toBe(projectBefore);
+    expect(localStorage.getItem('hrifa.composition-workbench.settings.v1')).not.toContain(
+      '"pcs":[0,1,'
+    );
+  });
+
+  it('shows the empty state when the project pitch set is empty', async () => {
+    const roll = await open();
+    act(() =>
+      settingsApi.updateSettings({ pitchSet: { ...settingsApi.settings.pitchSet, pcs: [] } })
+    );
+    clickAnchor(roll, 69);
+    expect(screen.getByText(/No pitches in the scale/)).toBeInTheDocument();
+  });
+
+  it('labels the anchor on the note by default, beside it with the developer option, and nothing else is labelled', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    await user.hover(chord('Am'));
+    const anchor = ghosts('anchor')[0];
+    expect(anchor.dataset.labelPlacement).toBe('on-note');
+    expect(anchor.textContent).toContain('A4');
+    ghosts('hover').forEach((el) => expect(el.textContent).toBe(''));
+  });
+
+  it('the developer option moves the anchor label beside the note', async () => {
+    localStorage.setItem(DEVELOPER_OPTIONS_KEY, JSON.stringify({ chordAnchorLabel: 'side' }));
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    await user.hover(chord('Am'));
+    const anchor = ghosts('anchor')[0];
+    expect(anchor.dataset.labelPlacement).toBe('side');
+    expect(anchor.querySelector('[class*="ghostSideLabel"]')?.textContent).toBe('A4');
+    ghosts('hover').forEach((el) => expect(el.textContent).toBe(''));
+  });
+
+  it('shows the same picker in the takeover when that host is chosen, and the choice is remembered per viewer', async () => {
+    const user = userEvent.setup();
+    const roll = await open({ takeover: true });
+    clickAnchor(roll, 69);
+    const dock = document.querySelector('[data-chord-host="dock"]') as HTMLElement;
+    expect(dock).not.toBeNull();
+    expect(chord('Am')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Expand over canvas' }));
+    const slot = document.querySelector('[data-slot="canvas-takeover"]') as HTMLElement;
+    expect(slot.querySelector('[data-chord-host="takeover"]')).not.toBeNull();
+    expect(document.querySelector('[data-chord-host="dock"]')).toBeNull();
+    expect(JSON.parse(localStorage.getItem(NOTE_EDITOR_PREFERENCES_KEY)!).chordHost).toBe(
+      'takeover'
+    );
+    // Same body, same behaviour: hover previews and double-click places.
+    await user.hover(within(slot).getByRole('button', { name: 'Am' }));
+    expect(ghosts('hover')).toHaveLength(3);
+    await user.dblClick(within(slot).getByRole('button', { name: 'Am' }));
+    expect(pitches().map((entry) => entry.pitch)).toEqual([6900, 7200, 7600]);
+    // The roll stays where it is under the takeover.
+    expect(screen.getByRole('group', { name: /Note clip piano roll/ })).toBeInTheDocument();
+  });
+});

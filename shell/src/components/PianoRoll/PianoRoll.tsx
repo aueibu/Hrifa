@@ -286,8 +286,13 @@ export interface PianoRollGhostNote {
   start: number;
   duration: number;
   variant: 'hover' | 'pinned' | 'anchor';
-  /** Drawn on the note itself (when it is wide enough). */
+  /** Drawn on the note itself (when it is wide enough), or beside it per `labelPlacement`. */
   label?: string;
+  /**
+   * Where the label sits: `on-note` (default) inside the ghost, only when it is wide enough;
+   * `side` just right of the ghost, whatever its width. The label never takes pointer events.
+   */
+  labelPlacement?: 'on-note' | 'side';
 }
 
 /** A gesture in progress, kept by reference so the pointer math never reads a stale render. */
@@ -2253,6 +2258,7 @@ export function PianoRoll({
                         key={`${index}`}
                         className={classes.ghostOverlay}
                         data-ghost-overlay={ghost.variant}
+                        data-label-placement={ghost.labelPlacement ?? 'on-note'}
                         aria-hidden="true"
                         style={{
                           height: rect.height,
@@ -2261,7 +2267,15 @@ export function PianoRoll({
                           width: span.width,
                         }}
                       >
-                        {ghost.label && span.width > 14 ? ghost.label : ''}
+                        {ghost.labelPlacement === 'side' ? (
+                          ghost.label ? (
+                            <span className={classes.ghostSideLabel}>{ghost.label}</span>
+                          ) : null
+                        ) : ghost.label && span.width > 14 ? (
+                          ghost.label
+                        ) : (
+                          ''
+                        )}
                       </span>
                     );
                   })}

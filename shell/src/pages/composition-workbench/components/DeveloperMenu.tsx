@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Popover, Stack, Switch, Text } from '@mantine/core';
+import { Button, Popover, SegmentedControl, Stack, Switch, Text } from '@mantine/core';
 import { useDeveloperOptions } from '../developerOptions';
 
 /** Top-bar menu for options that are for working on the workbench, not for composing in it. */
@@ -32,6 +32,26 @@ export function DeveloperMenu() {
             checked={options.openIncludesSettings}
             onChange={(event) => update({ openIncludesSettings: event.currentTarget.checked })}
           />
+          <Stack gap={4}>
+            <Text size="xs" fw={500}>
+              Chord anchor note name
+            </Text>
+            <SegmentedControl
+              size="xs"
+              aria-label="Chord anchor note name placement"
+              data={[
+                { value: 'on-note', label: 'On the note' },
+                { value: 'side', label: 'Beside it' },
+              ]}
+              value={options.chordAnchorLabel}
+              onChange={(value) =>
+                update({ chordAnchorLabel: value === 'side' ? 'side' : 'on-note' })
+              }
+            />
+            <Text size="xs" c="dimmed">
+              Where the Chords tool writes the clicked note's name on the roll.
+            </Text>
+          </Stack>
         </Stack>
       </Popover.Dropdown>
     </Popover>

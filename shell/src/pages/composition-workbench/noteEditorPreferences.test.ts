@@ -20,6 +20,7 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
+      chordHost: 'dock',
     });
   });
 
@@ -32,6 +33,7 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
+      chordHost: 'dock',
     });
     expect(NOTE_EDITOR_PREFERENCES_KEY.startsWith('hrifa.composition-workbench.')).toBe(false);
     localStorage.setItem(
@@ -45,6 +47,7 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
+      chordHost: 'dock',
     });
     localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, '{nope');
     expect(readNoteEditorPreferences()).toEqual({
@@ -54,7 +57,15 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
+      chordHost: 'dock',
     });
+  });
+
+  it('remembers the chord picker host and reads anything but takeover as the dock', () => {
+    writeNoteEditorPreferences({ chordHost: 'takeover' });
+    expect(readNoteEditorPreferences().chordHost).toBe('takeover');
+    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ chordHost: 'window' }));
+    expect(readNoteEditorPreferences().chordHost).toBe('dock');
   });
 
   it('remembers a collapsed velocity lane and reads anything but true as expanded', () => {

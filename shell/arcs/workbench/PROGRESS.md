@@ -2,7 +2,7 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M5b (M1-M3, M5a committed; M4 decided 2026-11-13)
+- Current milestone: M5b (built; in review; M1-M3, M5a committed)
 - State: building
 
 ## Where to look
@@ -19,10 +19,13 @@
 | M3 | Built: `pitchSet` in `compositionSettings.tsx`, settings panel control, ARCHITECTURE paragraph; reviewer: pass | `check:workbench` green (builder run, 75 files / 1243 tests) | DECISIONS W-14. Fixes: Preset picker offers only chromatic at non-12 EDO (store chromatic when falling back); history-key comment. Backlogged: EDO field commits per keystroke. For M5: an empty pitch set (all chips off) needs an empty state in the picker. |
 | M4 | Mock built: `scratchpad/chord-picker-mock.html` (outside repo; 686 lines; six hosts, three widths, register toggle, ghost/pin/insert). Not yet viewed by eye by anyone. | n/a (no repo change) | Human decided: root stays at the click (voices below), dock beside the roll plus takeover, Root/Common-tone as small top buttons, single-column spread and inversion, scale override in a fold at tool level, note name on the note by default, with a dev toggle switching placement between on-note and beside-it (corrected). Written into ARC.md under M4. M5 split into M5a (plumbing) and M5b (picker). |
 | M5a | Built: PianoRoll `ghostNotes` + `onAnchorClick` (opt-in), 'chords' tool key 7, `ClipEditorProps.onChordAnchor`; 6 new tests | `check:workbench` green (builder run, 75 files / 1245 tests) plus Melodicization/Mixer/PianoRoll/EditorPalette tests unchanged (17 files, 327 tests) | DECISIONS W-15. Reviewer: pass with fixes (crosshair cursor specificity, rename `pitch` to `pitchMidicents` in `onChordAnchor`, a real ghost-ignores-pointer test); builder applying them. Look of hover/pinned/anchor ghosts to be judged at the M5b checkpoint. Fixes applied and committed. |
+| M5b | Built: `chordInput/ChordPicker`, `ChordPickerHost` (dock + canvas takeover), `placement.ts`, ghost `labelPlacement`, dev option `chordAnchorLabel`, `chordHost` preference, `canvasTakeover` slot via `SplitStage`; audition via `ChordAudition`; insert via one `commit(addNotes)` | `check:workbench` green (builder run, 78 files / 1278 tests) plus Melodicization/Mixer/PianoRoll/EditorPalette tests (25 files / 436) | DECISIONS W-16. Reviewer: pass with fixes (non-12-EDO anchor not snapped to the EDO grid; takeover over the canvas while the panel is collapsed; Esc in the Scale select closes the picker; audition packet cast). Builder applying them; polish items backlogged. Default length = last-used entry length else grid step; override/voicing are editor-body state, reset on reload/clip change; click rounded to EDO step, `addNotes` rounds midicents (exact at 12-EDO, <0.5c otherwise). Judged by eye at the human checkpoint. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
+- `src/components/PianoRoll/`: re-taken 2026-11-13 for M5b (ghost `labelPlacement`), not yet released.
 - `src/components/PianoRoll/`: taken and released 2026-11-13 (M5a, commit f29ad19, W-15). - `src/components/EditorPalette/`: taken and released 2026-11-13 (M5a, commit f29ad19; only a new test file changed).
+
 
 ## Open questions for human
 - RESOLVED 2026-11-13 (human): non-12 EDO presets stay chromatic for now; users build non-12 sets by hand. Follow-up (BACKLOG): link default non-12 pitch sets/chord vocabulary to the harmonic-field-lab engine.

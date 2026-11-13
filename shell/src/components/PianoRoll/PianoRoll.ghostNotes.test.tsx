@@ -73,6 +73,35 @@ describe('PianoRoll ghostNotes', () => {
     expect(found[0].getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('labelPlacement: on-note (default) draws inside, side draws beside even when narrow', () => {
+    render(
+      <Harness
+        spies={spies()}
+        ghosts={[
+          { pitchMidicents: 6000, start: 1, duration: 2, variant: 'anchor', label: 'C4' },
+          {
+            pitchMidicents: 6200,
+            start: 1,
+            duration: 0.01,
+            variant: 'anchor',
+            label: 'D4',
+            labelPlacement: 'side',
+          },
+          { pitchMidicents: 6400, start: 1, duration: 0.01, variant: 'anchor', label: 'E4' },
+        ]}
+      />
+    );
+    const found = [...overlays()] as HTMLElement[];
+    expect(found[0].dataset.labelPlacement).toBe('on-note');
+    expect(found[0].querySelector('[class*="ghostSideLabel"]')).toBeNull();
+    expect(found[0].textContent).toBe('C4');
+    expect(found[1].dataset.labelPlacement).toBe('side');
+    expect(found[1].querySelector('[class*="ghostSideLabel"]')?.textContent).toBe('D4');
+    // On-note labels are dropped when the ghost is too narrow; side labels are not.
+    expect(found[2].textContent).toBe('');
+    expect(found[1].getAttribute('aria-hidden')).toBe('true');
+  });
+
   it('never changes selection or edits: a press over a ghost reaches the note underneath', () => {
     const s = spies();
     render(

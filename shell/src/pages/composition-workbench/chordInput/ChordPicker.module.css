@@ -1,0 +1,143 @@
+/*
+ * The chord picker body. It sizes itself by its own container (container queries), never by the
+ * host it sits in. Text and fills by role (THEMING.md); radii from the workbench variables.
+ */
+.picker {
+  color: var(--text);
+  container-name: chord-picker;
+  container-type: inline-size;
+  min-width: 0;
+}
+
+/* A container cannot be styled by its own query, so the layout is its child. */
+.layout {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-areas:
+    'modes'
+    'anchor'
+    'chords'
+    'voicing'
+    'scale'
+    'hint';
+  min-width: 0;
+}
+
+.modes {
+  grid-area: modes;
+}
+
+.anchorLine {
+  grid-area: anchor;
+}
+
+.chordArea {
+  grid-area: chords;
+  min-width: 0;
+}
+
+.voicing {
+  display: grid;
+  gap: 0.5rem;
+  grid-area: voicing;
+  grid-template-columns: 1fr 1fr;
+}
+
+.scale {
+  grid-area: scale;
+  min-width: 0;
+}
+
+.hint {
+  color: var(--text-muted);
+  grid-area: hint;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.empty {
+  background: var(--panel-slot);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  padding: 0.5rem;
+}
+
+.chords {
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(auto-fill, minmax(3.6rem, 1fr));
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.chord,
+.option,
+.fold {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  text-align: left;
+}
+
+.chord:hover,
+.option:hover,
+.fold:hover {
+  background: var(--chrome);
+}
+
+.chord:focus-visible,
+.option:focus-visible,
+.fold:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.option[aria-pressed='true'] {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent-tint-text);
+}
+
+.fold {
+  background: transparent;
+  padding-inline: 0;
+}
+
+.foldBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+/* A wide host (the takeover): chords on the left, the parallel voicing columns and scale beside. */
+@container chord-picker (min-width: 520px) {
+  .layout {
+    grid-template-areas:
+      'modes modes'
+      'anchor anchor'
+      'chords voicing'
+      'chords scale'
+      'hint hint';
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr auto;
+  }
+
+  .chords {
+    max-height: none;
+  }
+}
