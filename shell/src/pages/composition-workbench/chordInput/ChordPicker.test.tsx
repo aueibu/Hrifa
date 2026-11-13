@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { render, screen, userEvent, within } from '@test-utils';
+import { cleanup, render, screen, userEvent, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CanvasTakeoverProvider, CanvasTakeoverSlot } from '../components/canvasTakeover';
 import { defaultProjectPitchSet, type ProjectPitchSet } from '../compositionSettings';
 import type { ChordHost } from '../noteEditorPreferences';
-import { ChordPicker } from './ChordPicker';
+import { ChordPicker, type ChordPickerMode } from './ChordPicker';
 import { ChordPickerHost } from './ChordPickerHost';
+import { chordsWithCommonTone } from './chords';
 import { DEFAULT_VOICING } from './placement';
 import type { VoicingSpec } from './voicing';
 
@@ -82,7 +83,7 @@ describe('ChordPicker', () => {
     expect(chords.parentElement).not.toBe(spread.parentElement);
   });
 
-  it('has Root active and Common tone present but disabled for now', () => {
+  it('has Root active and Common tone disabled while the owner offers no mode switch', () => {
     render(<Stateful callbacks={spies()} />);
     expect(screen.getByRole('button', { name: 'Root' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Common tone' })).toBeDisabled();
@@ -266,5 +267,143 @@ describe('ChordPicker hosts: one body, no host-specific props', () => {
     );
     expect(document.querySelector('[data-chord-host="dock"]')).not.toBeNull();
     expect(screen.getByRole('group', { name: 'Chord picker' })).toBeInTheDocument();
+  });
+});
+
+describe('ChordPicker common-tone mode', () => {
+  function Modal({
+    mode: first = 'common',
+    pitchSet = project,
+    callbacks,
+  }: {
+    mode?: ChordPickerMode;
+    pitchSet?: ProjectPitchSet;
+    callbacks: ReturnType<typeof spies>;
+  }) {
+    const [mode, setMode] = useState<ChordPickerMode>(first);
+    const [allPitches, setAllPitches] = useState(false);
+    const [voicing, setVoicing] = useState<VoicingSpec>(DEFAULT_VOICING);
+    return (
+      <ChordPicker
+        anchor={{ pitchMidicents: 6900 }}
+        pitchSet={pitchSet}
+        override={null}
+        onOverrideChange={() => undefined}
+        mode={mode}
+        onModeChange={setMode}
+        allPitches={allPitches}
+        onAllPitchesChange={setAllPitches}
+        voicing={voicing}
+        onVoicingChange={setVoicing}
+        {...callbacks}
+      />
+    );
+  }
+  const roleGroup = () => screen.queryByRole('group', { name: 'Role of the clicked pitch' });
+  const roleButtons = () =>
+    within(screen.getByRole('group', { name: 'Role of the clicked pitch' }))
+      .getAllByRole('button')
+      .map((button) => button.textContent);
+
+  it('offers the roles the engine finds for A (and only those), defaulting to the first', () => {
+    render(<Modal callbacks={spies()} />);
+    expect(roleButtons()).toEqual(chordsWithCommonTone(project, 9).map((column) => column.role));
+    cleanup();
+    // Only D, F and A: the one role left is the 5th.
+    render(<Modal callbacks={spies()} pitchSet={{ ...project, pcs: [2, 5, 9] }} />);
+    expect(roleButtons()).toEqual(['5th']);
+    expect(chordButtons()).toContain('Dm');
+    cleanup();
+    render(<Modal callbacks={spies()} />);
+    expect(screen.getByRole('button', { name: 'root' })).toHaveAttribute('aria-pressed', 'true');
+    expect(chordButtons()).toContain('Am');
+    expect(chordButtons()).not.toContain('Dm');
+  });
+
+  it('the 5th role lists Dm, Dm7 and Dm9', async () => {
+    const user = userEvent.setup();
+    render(<Modal callbacks={spies()} />);
+    await user.click(screen.getByRole('button', { name: '5th' }));
+    expect(chordButtons()).toEqual(expect.arrayContaining(['Dm', 'Dm7', 'Dm9']));
+    expect(chordButtons()).not.toContain('Am');
+  });
+
+  it('All pitches adds chords outside the scale (F#m has A as its 3rd)', async () => {
+    const user = userEvent.setup();
+    render(<Modal callbacks={spies()} />);
+    await user.click(screen.getByRole('button', { name: '3rd' }));
+    expect(chordButtons().some((name) => /^F[♯#]m$/.test(name!))).toBe(false);
+    await user.click(screen.getByRole('checkbox', { name: 'All pitches' }));
+    await user.click(screen.getByRole('button', { name: '3rd' }));
+    expect(chordButtons().some((name) => /^F[♯#]m$/.test(name!))).toBe(true);
+  });
+
+  it('with All pitches on, a Scale chip toggles one pitch of the scale, not of the chromatic set', async () => {
+    const user = userEvent.setup();
+    const seen: (ProjectPitchSet | null)[] = [];
+    function Common() {
+      const [override, setOverride] = useState<ProjectPitchSet | null>(null);
+      const [voicing, setVoicing] = useState<VoicingSpec>(DEFAULT_VOICING);
+      return (
+        <ChordPicker
+          anchor={{ pitchMidicents: 6900 }}
+          pitchSet={project}
+          override={override}
+          onOverrideChange={(next) => {
+            seen.push(next);
+            setOverride(next);
+          }}
+          mode="common"
+          allPitches
+          voicing={voicing}
+          onVoicingChange={setVoicing}
+          {...spies()}
+        />
+      );
+    }
+    render(<Common />);
+    await user.click(screen.getByRole('button', { name: /Scale/ }));
+    const group = screen.getByRole('group', { name: 'Pitches in the scale' });
+    await user.click(within(group).getByRole('checkbox', { name: 'D' }));
+    expect(seen).toHaveLength(1);
+    expect(seen[0]!.pcs).toEqual(project.pcs.filter((pc) => pc !== 2));
+    expect(project.pcs).toContain(2);
+  });
+
+  it('the mode buttons switch between root and common tone', async () => {
+    const user = userEvent.setup();
+    render(<Modal mode="root" callbacks={spies()} />);
+    expect(roleGroup()).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Common tone' }));
+    expect(roleGroup()).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Root' }));
+    expect(roleGroup()).toBeNull();
+  });
+
+  it('hover, click and Enter report the chord as in root mode', async () => {
+    const user = userEvent.setup();
+    const callbacks = spies();
+    render(<Modal callbacks={callbacks} />);
+    const am = screen.getByRole('button', { name: 'Am' });
+    await user.hover(am);
+    expect(callbacks.onHover).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Am' }));
+    await user.click(am);
+    expect(callbacks.onPin).toHaveBeenCalledTimes(1);
+    am.focus();
+    await user.keyboard('{Enter}');
+    expect(callbacks.onInsert).toHaveBeenCalledWith(expect.objectContaining({ name: 'Am' }));
+  });
+
+  it('shows the empty-set state and the no-chord state (with a hint to try All pitches)', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<Modal callbacks={spies()} pitchSet={{ ...project, pcs: [] }} />);
+    expect(screen.getByText(/No pitches in the scale/)).toBeInTheDocument();
+    unmount();
+    // A lone C offers no chord with A in it; All pitches does.
+    render(<Modal callbacks={spies()} pitchSet={{ ...project, pcs: [0] }} />);
+    expect(screen.getByText(/No chord contains A in this scale/)).toBeInTheDocument();
+    expect(roleGroup()).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: 'All pitches' }));
+    expect(chordButtons().length).toBeGreaterThan(0);
   });
 });

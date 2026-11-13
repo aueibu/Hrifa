@@ -135,13 +135,43 @@ Each milestone is small enough for one builder run and has criteria a command or
 - Human checkpoint after: yes (judged by eye), together with the M5c checks
 
 ### M6: Common-tone mode
-- Scope: tool + Ctrl opens the picker in common-tone mode: chords containing the clicked pitch in columns by role (root, 3rd, 5th, 7th, 9th, 4th, 6th, ...), empty columns hidden, a toggle for all pitches versus the pitch set. Same preview, voicing and placement path as M5. The clicked pitch is anchored: the placed chord's tone with that role sits at the clicked pitch.
+- Scope: the Common tone button in the picker is enabled, and Ctrl+click (Cmd on macOS) on the roll with the Chords tool opens the picker in common-tone mode (a plain click opens root mode; the Root | Common tone buttons switch afterwards). This needs an optional `ctrlKey` (or `modifiers`) field on `PianoRoll`'s `onAnchorClick` payload, opt-in and logged against W-15, under a re-taken `src/components/PianoRoll/` lock. In common-tone mode the user picks the scale degree the clicked pitch plays: a row of small role buttons (root, 2nd, 3rd, 4th, 5th, 6th, 7th, 9th; only roles that have chords; from `chordsWithCommonTone`), then the chord list for that role, laid out so horizontal space stays at a premium (a role selector plus one list; in a wide container the roles may show as columns). A per-tool toggle includes all pitches instead of only the pitch set. Hover, pin, audition gate, inversion, spread and insert behave as in root mode. Placement: the anchored tone (the chord tone with that role, found with `chordToneIndex`) sits exactly at the clicked pitch through the existing `{kind: 'tone', index, midicents}` anchor, with the other voices arranged by the chosen inversion and spread relative to it.
+- Acceptance:
+  - [ ] The arc's `Check command` passes, and the PianoRoll, EditorPalette, Melodicization and Mixer tests pass unchanged
+  - [ ] Ctrl+click on A in C major opens common-tone mode; the 5th role lists Dm, Dm7, Dm9; choosing Dm and inserting places notes with the A at the clicked A (test through the real edit path), and the other voices follow the inversion and spread
+  - [ ] Role lists come from `chordsWithCommonTone` (no second implementation); roles without chords are not offered
+  - [ ] The all-pitches toggle adds chords outside the set and never changes `settings.pitchSet`; it is tool state like the override
+  - [ ] The plain-click, Root-mode path is unchanged (existing tests); empty-set and no-chord states are handled in common-tone mode
+  - [ ] DECISIONS: the `onAnchorClick` modifier field (extends W-15), common-tone role selector layout
+- Human checkpoint after: yes (judged by eye)
+
+### M6c: Common-tone mode as stacked columns
+- Context (human, 2026-11-13, after M6): clicking through the scale degrees is a non-starter. All degrees must be visible at once: each scale degree is one column and its chords are stacked in that column, as in the human's original sheet. This replaces the role button row built in M6.
+- Scope (owned paths, `chordInput/ChordPicker.tsx` and css, `NoteClipEditor.tsx` wiring, tests): in common-tone mode the chord area is one set of columns, one per role that has chords (from `chordsWithCommonTone`, still the single engine, in `ROLE_ORDER`), a small header per column (the degree label, with the pitch name of the clicked note in the header line, e.g. "A is the ..." once, not per column), and the chords stacked below it as compact buttons, top aligned across columns so the sheet's rows line up. One shared vertical scroll for the column set (not one per column). A column has a minimum width that fits names like `Dm7`/`Dmaj7`; long names truncate with a tooltip; when the columns do not fit the container width the set scrolls horizontally rather than shrinking below the minimum. The role selection state (`pickedRole`, the role buttons, `onRoleChange`) is removed. Keyboard: Up and Down move within a column, Left and Right move to the neighbouring column (keeping the row where possible), Enter inserts, as before; hover, pin, audition gate, inversion, spread, All pitches and the Scale fold are unchanged. Root mode keeps its wrapping chord grid. Width: the dock default and splitter are unchanged; a hint in the dock suggests the takeover or a wider dock when the columns scroll.
 - Acceptance:
   - [ ] The arc's `Check command` passes
-  - [ ] Clicking A in C major with Ctrl shows Dm under "5th" and placing it puts the A at the clicked A (test through the edit path)
-  - [ ] Columns come from the same engine function as M1 (no second implementation)
-  - [ ] The all-pitches toggle adds chords outside the set and is per picker
-- Human checkpoint after: yes
+  - [ ] Common-tone A in C major shows the columns together: root (Am...), 3rd (F, Fmaj7...), 5th (Dm, Dm7, Dm9...), and so on, all visible at once with no role click; empty roles have no column
+  - [ ] Hover shows the chord's ghost, single click auditions (per the gate), double-click or Enter inserts with the A held at the click (existing tests adapted, behaviour unchanged)
+  - [ ] Keyboard: Up/Down within a column, Left/Right across columns; the role buttons and the picked-role state no longer exist
+  - [ ] Horizontal scroll appears when the columns exceed the container; the column headers stay readable (test the data attributes and the DOM order; layout judged by eye)
+  - [ ] DECISIONS: the common-tone columns layout (supersedes the role-selector layout in W-18)
+- Human checkpoint after: yes (judged by eye: does it fit the dock; is the takeover better for this mode)
+
+### M6b: Chord vocabulary from the human's sheet, Simple and Extended
+- Context (human, 2026-11-13): the common-tone idea comes from the human's own sheet, copied into the repo as `arcs/workbench/reference/any-chord-voice-relations.csv` (for the fixed note 3, each chord type, and for each role column Root, Third, Fifth, Seventh, Ninth, Eleventh, Thirteenth, the chord's pitch classes when the note is that tone, in stack order with gaps for absent tones). Decisions: use the CSV as a parity oracle and as the source for more chord types; add a Simple | Extended split; show roles as scale-degree numbers (2nd, 4th, 6th) and not as extension names (9th, 11th, 13th), because most people want to see the scale degree.
+- Scope (owned paths only, `chordInput/` and the picker):
+  - Roles become scale degrees 1 to 7 (root, 2nd, 3rd, 4th, 5th, 6th, 7th): `ROLE_ORDER` and the labels lose `9th`; the ninth tone of a 9th chord is reported as the 2nd (a chord name such as `Am9` or `Aadd9` already tells the user it is an extension). The sheet's Ninth, Eleventh and Thirteenth columns map to 2nd, 4th and 6th. A tooltip on a role button may add the extension name. Existing tests and the picker are updated accordingly (a shared-contract change: new DECISIONS row).
+  - More templates from the sheet that have a root tone (7♭5, aug dom (7♯5), maj7♭5, maj7♯5, 6/9, minor with ♭9, sus♭9, the altered 9ths, dom 13, add♯11, maj 11, maj7♯9♯11, 7♭9♯11, m7♭11, and so on), each tagged `tier: 'simple' | 'extended'`. Simple = triads (major, minor, dim, aug, sus2, sus4), 5, 6, m6, the seventh chords (maj7, m7, 7, m7♭5, dim7, mMaj7), add9, madd9, maj9, m9, 9. Extended = everything else. The engine takes an options argument for the tier; root mode, common-tone mode and the role buttons all follow it.
+  - A Simple | Extended toggle in the picker (default Simple), tool state like the override and All pitches, never written to settings.
+  - Parity test: parse the CSV and, for every chord type with a root tone and a matching template, check that the engine over the chromatic set (all pitches) gives the same pitch classes as the sheet for note 3 in each tone slot (compare by slot position among the chord's present columns, since the sheet's columns are functional: sus2's second tone sits in its Third column). Chord types in the sheet that do not match are listed in the test as known gaps with the reason.
+- Out of scope (to BACKLOG): the augmented sixths (French, Italian, German: no root tone), the pitch-class sets ([0 1 4 6], [0 1 4 7], whole tone), and "(I+♭VI) major ♭6 ♯9".
+- Acceptance:
+  - [ ] The arc's `Check command` passes
+  - [ ] Role names are scale degrees everywhere (engine, picker, tests); the roles of C major, common-tone A, are still correct (Dm family under 5th, Am under root, F and Fmaj7 under 3rd; a 9th chord such as Fmaj9 appears under 2nd)
+  - [ ] The parity test passes for every matched chord type and lists the unmatched ones with reasons
+  - [ ] Simple hides the extended chords everywhere; Extended shows them; chord lists stay readable (the Extended list is sorted by tier then library order)
+  - [ ] DECISIONS: roles are scale degrees (supersedes the 9th role in W-13), the tier option, the CSV as reference
+- Human checkpoint after: yes (judged by eye: do the lists stay manageable in Extended, are the names right)
 
 ### M7: Stack onto existing notes
 - Scope: with the tool active, clicking an existing note opens the same pickers anchored at that note's pitch and onset, so a user can add chords or stack polychords on it. Placing does not move or delete the clicked note (a placed tone that equals an existing same-onset pitch is not duplicated).

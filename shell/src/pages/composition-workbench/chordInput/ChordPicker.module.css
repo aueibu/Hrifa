@@ -73,6 +73,15 @@
   overflow-y: auto;
 }
 
+/* Common tone: the role selector, a wrapping row of small buttons above the one chord list. */
+.roles {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-block: 0.25rem;
+}
+
 .column {
   display: flex;
   flex-direction: column;

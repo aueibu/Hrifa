@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { chordsOnRoot, type Chord } from './chords';
-import { makePitchSet } from './pitchSet';
+import { chordsOnRoot, findChords, type Chord } from './chords';
+import { chromaticSet, makePitchSet } from './pitchSet';
 import { chordNotes, inversionCount, pitchClassOf, voiceAtAnchor, voicingFor } from './placement';
 
 const cMajor = makePitchSet(12, [0, 2, 4, 5, 7, 9, 11]);
@@ -75,5 +75,53 @@ describe('chord placement in a non-12 EDO', () => {
     expect(voiced[0]).toBeCloseTo(anchor, 6);
     // Every voice is an exact multiple of the 19-EDO step. (addNotes later rounds to whole midicents.)
     voiced.forEach((pitch) => expect(pitch / step).toBeCloseTo(Math.round(pitch / step), 6));
+  });
+});
+
+describe('chord placement (common-tone mode)', () => {
+  const pcOfA = 9;
+
+  it('holds the clicked A exactly at the click as the 5th of Dm (D4 F4 A4)', () => {
+    expect(voiceAtAnchor(chord(2, 'Dm'), 6900, close(0), pcOfA)).toEqual([6200, 6500, 6900]);
+  });
+
+  it('inversion rotates the chord and the anchored tone stays at the click', () => {
+    // First inversion of Dm is F A D: with A held at A4 the F sits below and D above.
+    expect(voiceAtAnchor(chord(2, 'Dm'), 6900, close(1), pcOfA)).toEqual([6500, 6900, 7400]);
+    // Second inversion A D F: A is the bass, still at the click.
+    expect(voiceAtAnchor(chord(2, 'Dm'), 6900, close(2), pcOfA)).toEqual([6900, 7400, 7700]);
+  });
+
+  it('with the root as the common tone it equals root mode', () => {
+    expect(voiceAtAnchor(chord(9, 'Am'), 6900, close(1), 9)).toEqual(
+      voiceAtAnchor(chord(9, 'Am'), 6900, close(1))
+    );
+  });
+
+  it('keeps the anchored tone at the click under every spread', () => {
+    (['close', 'open', 'drop2', 'drop3'] as const).forEach((spread) => {
+      const notes = chordNotes(
+        chord(2, 'Dm7'),
+        { pitchMidicents: 6900, start: 0 },
+        { inversion: 1, spread },
+        1,
+        pcOfA
+      );
+      expect(notes.map((note) => note.pitchMidicents)).toContain(6900);
+    });
+  });
+
+  it('works in 19-EDO: the common tone lands exactly on the clicked EDO step', () => {
+    const found = findChords(chromaticSet(19), { contains: 11 }).find(
+      (entry) => entry.pcs.length === 3
+    )!;
+    const step = 1200 / 19;
+    const click = 6000 + 11 * step;
+    const voiced = voiceAtAnchor(found, click, close(1), 11);
+    expect(voiced).toHaveLength(3);
+    expect(voiced.some((pitch) => Math.abs(pitch - click) < 1e-9)).toBe(true);
+    voiced.forEach((pitch) =>
+      expect(Math.abs(pitch / step - Math.round(pitch / step))).toBeLessThan(1e-9)
+    );
   });
 });

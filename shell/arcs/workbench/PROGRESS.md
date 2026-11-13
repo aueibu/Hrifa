@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M5d committed; awaiting the human's checkpoint (M5c + M5d together)
-- State: awaiting human (M5c + M5d, judged by eye)
+- Current milestone: M6 (M5c, M5d committed and accepted by the human 2026-11-13: 'works for me for now')
+- State: building
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -23,6 +23,9 @@
 | M5b checkpoint | Human tried it in the app 2026-11-13: dock width and takeover good, feels like snapping into a slot. Requested: ghosts look like normal notes slightly more transparent; dock default ~2x wide plus resize grabber; preview on inversion/spread click; hover ghost note before click with the Chords tool; developer option gating preview behind Ctrl+click or plain click | n/a | Written into ARC.md as M5b Checkpoint decisions and milestone M5c. |
 | M5c | Built: note-styled ghosts, `onAnchorHover`, dock splitter + `chordDockWidth` (default 30rem), audition on inversion/spread, `chordPreviewGate` dev option; wide-layout breakpoint 520 to 440px | `check:workbench` green (builder run, 79 files / 1301 tests) plus PianoRoll/EditorPalette/Melodicization/Mixer (20 files / 378) | DECISIONS W-17. Reviewer: pass with fixes (splitter persists once on release, stuck-drag guards, ResizeObserver for the max width, no double audition on inversion/spread double-click); committed 552bcff, `PianoRoll` lock released. |
 | M5d | Built: chord list full width, Inversion and Spread on a second row, wide layout only above ~720px; reviewer pass with two cosmetic fixes (comment, `data-layout-base`) | `check:workbench` green (79 files / 1307 tests) | Layout only, no shared paths, no DECISIONS row. |
+| M6 | Built: common-tone mode (Ctrl/Cmd+click, role buttons, All pitches toggle, tone-anchored placement), `ctrlKey` on `onAnchorClick`; 12 new tests | `check:workbench` green (builder run, 79 files / 1324 tests) plus PianoRoll/EditorPalette tests | DECISIONS W-18. Reviewer running. Roles-as-columns in wide containers not built (optional). |
+| Sheet | Human supplied the original sheet and asked to copy it over; chose Simple | Extended and scale-degree role names (2nd, 4th, 6th, not 9th, 11th, 13th). Copied to `reference/any-chord-voice-relations.csv`. | n/a | New milestone M6b (after M6, before M7) written into ARC.md. Out of scope: augmented sixths, pc-sets, (I+bVI) chord: BACKLOG at M8. |
+| M6 checkpoint | Human, 2026-11-13: clicking through scale degrees is a non-starter; show every degree as a column with chords stacked. | n/a | New milestone M6c (before M6b) written into ARC.md; it replaces the role buttons. M6 is committed first (reviewer fixes in progress); the role-carry-over question is moot, the mode-stickiness question is still open. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
@@ -35,4 +38,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-Human retries the picker in the app (`corepack yarn dev` from shell/): M5c checks (ghost look, hover ghost, splitter, preview gate) and the M5d layout (voicing on a second row). Then record decisions in ARC.md and launch M6 (common-tone mode). Backlog at M8: long chord names may overflow narrow buttons (check by eye); hover ghost while a chord is pinned; velocity fade on ghosts.
+Lock `src/components/PianoRoll/` (row in LOCKS.md), launch the M6 builder (common-tone mode).

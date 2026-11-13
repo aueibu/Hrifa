@@ -24,13 +24,14 @@ import {
   type VelocityRamp,
 } from '../../../components/PianoRoll';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
-import { ChordPicker } from '../chordInput/ChordPicker';
+import { ChordPicker, type ChordPickerMode } from '../chordInput/ChordPicker';
 import { ChordPickerHost } from '../chordInput/ChordPickerHost';
 import type { Chord } from '../chordInput/chords';
 import {
   chordNotes,
   snapToEdo,
   DEFAULT_VOICING,
+  pitchClassOf,
   voiceAtAnchor,
   type PlacedNote,
 } from '../chordInput/placement';
@@ -430,6 +431,9 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   // chords (cleared by a new anchor, a close, Esc or leaving the tool).
   const [chordOverride, setChordOverrideState] = useState<ProjectPitchSet | null>(null);
   const [chordVoicing, setChordVoicing] = useState<VoicingSpec>(DEFAULT_VOICING);
+  const [chordMode, setChordMode] = useState<ChordPickerMode>('root');
+  // Common-tone mode: offer chords over every pitch instead of the scale (tool state, like the override).
+  const [chordAllPitches, setChordAllPitches] = useState(false);
   const [hoverChord, setHoverChord] = useState<Chord | null>(null);
   const [pinnedChord, setPinnedChord] = useState<Chord | null>(null);
   // The grid cell under the pointer while the Chords tool is active (display only: a one-step ghost).
@@ -982,6 +986,11 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   // The length of a placed chord and of its ghosts: the length the viewer last entered a note with,
   // else one grid step at the anchor.
   const chordLength = preferences.entryLength ?? chordAnchor?.step ?? 1;
+  // Common-tone mode anchors the chord tone that has the clicked pitch class; root mode anchors the root.
+  const chordAnchorPc =
+    chordMode === 'common' && chordAnchor
+      ? pitchClassOf(chordAnchor.pitchMidicents, edo)
+      : undefined;
 
   const chordGhosts = useMemo(() => {
     if (!chordsActive) {
@@ -1025,8 +1034,14 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     ];
     shown.forEach(([chord, variant]) => {
       if (chord) {
-        voiceAtAnchor(chord, chordAnchor.pitchMidicents, chordVoicing).forEach((pitchMidicents) =>
-          ghosts.push({ pitchMidicents, start: chordAnchor.start, duration: chordLength, variant })
+        voiceAtAnchor(chord, chordAnchor.pitchMidicents, chordVoicing, chordAnchorPc).forEach(
+          (pitchMidicents) =>
+            ghosts.push({
+              pitchMidicents,
+              start: chordAnchor.start,
+              duration: chordLength,
+              variant,
+            })
         );
       }
     });
@@ -1039,6 +1054,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     hoverChord,
     chordVoicing,
     chordLength,
+    chordAnchorPc,
     developerOptions.chordAnchorLabel,
   ]);
 
@@ -1047,7 +1063,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     if (!chordAnchor) {
       return;
     }
-    const placed = chordNotes(chord, chordAnchor, chordVoicing, chordLength);
+    const placed = chordNotes(chord, chordAnchor, chordVoicing, chordLength, chordAnchorPc);
     if (placed.length === 0) {
       return;
     }
@@ -1067,7 +1083,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     setPinnedChord(chord);
     if (audition) {
       auditionRef.current?.(
-        chordNotes(chord, chordAnchor, chordVoicing, chordLength),
+        chordNotes(chord, chordAnchor, chordVoicing, chordLength, chordAnchorPc),
         preferences.entryVelocity ?? undefined
       );
     }
@@ -1090,7 +1106,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     setPinnedChord(chord);
     if (audition) {
       auditionRef.current?.(
-        chordNotes(chord, chordAnchor, next, chordLength),
+        chordNotes(chord, chordAnchor, next, chordLength, chordAnchorPc),
         preferences.entryVelocity ?? undefined
       );
     }
@@ -1353,6 +1369,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
               // Snapped to the project EDO grid before anything (picker, ghosts, voicing) sees it.
               const snapped = { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) };
               setChordAnchor(snapped);
+              // Ctrl (Cmd) opens common-tone mode, a plain click root mode.
+              setChordMode(anchor.ctrlKey ? 'common' : 'root');
               clearChordGhosts();
               onChordAnchor?.({ pitchMidicents: snapped.pitchMidicents, onset: snapped.start });
             }}
@@ -1416,6 +1434,17 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
                   setChordOverrideState(next);
                   clearChordGhosts();
                 }}
+                mode={chordMode}
+                onModeChange={(next) => {
+                  setChordMode(next);
+                  clearChordGhosts();
+                }}
+                allPitches={chordAllPitches}
+                onAllPitchesChange={(next) => {
+                  setChordAllPitches(next);
+                  clearChordGhosts();
+                }}
+                onRoleChange={clearChordGhosts}
                 voicing={chordVoicing}
                 onVoicingChange={changeVoicing}
                 previewGate={developerOptions.chordPreviewGate}
@@ -1426,7 +1455,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
               />
             ) : (
               <Text size="xs" c="dimmed">
-                Click the roll where a chord should go. Its pitch becomes the chord's root.
+                Click the roll where a chord should go. Its pitch becomes the chord's root;
+                Ctrl/Cmd+click picks the role it plays in a chord.
               </Text>
             )}
           </ChordPickerHost>

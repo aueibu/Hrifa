@@ -277,7 +277,13 @@ export interface PianoRollProps {
    * the grid cell under it (`step` is one grid step), pitch snapped to the row as the pencil does and onset to the grid. It
    * creates no note, makes no sound and leaves the selection alone.
    */
-  onAnchorClick?(anchor: { pitchMidicents: number; start: number; step: number }): void;
+  onAnchorClick?(anchor: {
+    pitchMidicents: number;
+    start: number;
+    step: number;
+    /** True when Ctrl (or Cmd) was held for the click. Opt-in extension of W-15. */
+    ctrlKey?: boolean;
+  }): void;
   /**
    * With the tool `chords` active (opt-in): the grid cell under the pointer, snapped exactly like
    * `onAnchorClick`, reported when it changes; `null` when the pointer leaves the roll or the tool
@@ -1194,7 +1200,12 @@ export function PianoRoll({
       const { index, midi } = cellAt(rollPoint(event));
       lastEmptyPress.current = null;
       doubleDrewAt.current = null;
-      onAnchorClick({ pitchMidicents: midi * 100, start: index * snapUnit, step: snapUnit });
+      onAnchorClick({
+        pitchMidicents: midi * 100,
+        start: index * snapUnit,
+        step: snapUnit,
+        ctrlKey: event.ctrlKey || event.metaKey,
+      });
       event.currentTarget.focus();
       return;
     }

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { chordsWithCommonTone } from '../chordInput/chords';
 import { CompositionSettingsProvider, useCompositionSettings } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
 import { DEVELOPER_OPTIONS_KEY } from '../developerOptions';
@@ -503,5 +504,143 @@ describe('the Chords tool picker in the note clip editor', () => {
       // Only the chord's three hover ghosts, not the cell as well.
       expect(ghosts('hover')).toHaveLength(3);
     });
+  });
+});
+
+describe('the Chords tool in common-tone mode', () => {
+  /** Ctrl+click on the roll with the Chords tool at a pitch (midi). */
+  function ctrlClickAnchor(roll: HTMLElement, midi: number, x = 70) {
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '7' });
+    const at = { clientX: x, clientY: rowY(midi), pointerId: 1, ctrlKey: true };
+    fireEvent.pointerDown(roll, at);
+    fireEvent.pointerUp(roll, at);
+  }
+  const roleGroup = () => screen.queryByRole('group', { name: 'Role of the clicked pitch' });
+
+  it('Ctrl+click on A in C major opens common-tone mode; a plain click opens root mode', async () => {
+    const roll = await open();
+    ctrlClickAnchor(roll, 69);
+    expect(screen.getByText(/Chords containing A \(A4\)/)).toBeInTheDocument();
+    expect(roleGroup()).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Common tone' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(noteCount()).toBe(0);
+
+    fireEvent.pointerDown(roll, { clientX: 70, clientY: rowY(69), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 70, clientY: rowY(69), pointerId: 1 });
+    expect(screen.getByText(/Chords on A \(A4\)/)).toBeInTheDocument();
+    expect(roleGroup()).toBeNull();
+  });
+
+  it('the 5th role lists Dm, Dm7, Dm9; inserting Dm puts the A exactly at the click, D and F below', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    ctrlClickAnchor(roll, 69);
+    await user.click(screen.getByRole('button', { name: '5th' }));
+    const names = within(screen.getByRole('group', { name: 'Chords' }))
+      .getAllByRole('button')
+      .map((button) => button.textContent);
+    expect(names).toEqual(expect.arrayContaining(['Dm', 'Dm7', 'Dm9']));
+    await user.dblClick(chord('Dm'));
+    expect(pitches()).toEqual([
+      { pitch: 6200, onset: musicalPosition(1) },
+      { pitch: 6500, onset: musicalPosition(1) },
+      { pitch: 6900, onset: musicalPosition(1) },
+    ]);
+    act(() => undo());
+    expect(noteCount()).toBe(0);
+  });
+
+  it('ghosts, audition and insert use the same notes, following the inversion', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    ctrlClickAnchor(roll, 69);
+    await user.click(screen.getByRole('button', { name: '5th' }));
+    await user.click(screen.getByRole('button', { name: '1st inv.' }));
+    await user.click(chord('Dm'));
+    await waitFor(() => expect(engine.play).toHaveBeenCalled());
+    const request = engine.play.mock.calls.at(-1) as unknown as [
+      { plan: { events: { pitchMidicents: number }[] } },
+    ];
+    const sounded = request[0].plan.events.map((event) => event.pitchMidicents);
+    expect(sounded).toEqual([6500, 6900, 7400]);
+    expect(ghosts('pinned')).toHaveLength(3);
+    await user.dblClick(chord('Dm'));
+    expect(pitches().map((entry) => entry.pitch)).toEqual(sounded);
+  });
+
+  it('picking a role clears the pinned ghost; the next inversion click uses the new first chord', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    ctrlClickAnchor(roll, 69);
+    await user.click(screen.getByRole('button', { name: '5th' }));
+    await user.click(chord('Dm'));
+    expect(ghosts('pinned')).toHaveLength(3);
+    await user.click(screen.getByRole('button', { name: 'root' }));
+    expect(ghosts('pinned')).toHaveLength(0);
+    const first = within(screen.getByRole('group', { name: 'Chords' })).getAllByRole('button')[0]!;
+    expect(first.textContent).toBe('Am');
+    engine.play.mockClear();
+    await user.click(screen.getByRole('button', { name: '1st inv.' }));
+    expect(ghosts('pinned')).toHaveLength(3);
+    await waitFor(() => expect(engine.play).toHaveBeenCalled());
+    const request = engine.play.mock.calls.at(-1) as unknown as [
+      { plan: { events: { pitchMidicents: number }[] } },
+    ];
+    // Not Dm's 1st inversion (D F A -> F A D).
+    expect(request[0].plan.events.map((event) => event.pitchMidicents)).not.toEqual([
+      6500, 6900, 7400,
+    ]);
+  });
+
+  it('offers the root role with Am first, and no role A does not play', async () => {
+    const roll = await open();
+    ctrlClickAnchor(roll, 69);
+    expect(chord('Am')).toBeInTheDocument();
+    const roles = within(screen.getByRole('group', { name: 'Role of the clicked pitch' }))
+      .getAllByRole('button')
+      .map((button) => button.textContent);
+    expect(roles[0]).toBe('root');
+    // Exactly the engine's roles, no second implementation.
+    expect(roles).toEqual(
+      chordsWithCommonTone(settingsApi.settings.pitchSet, 9).map((column) => column.role)
+    );
+  });
+
+  it('All pitches adds chords outside the set, and never changes the project pitch set', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    const projectBefore = JSON.stringify(settingsApi.settings.pitchSet);
+    ctrlClickAnchor(roll, 69);
+    await user.click(screen.getByRole('button', { name: '3rd' }));
+    const sharpMinor = () => screen.queryByRole('button', { name: /^F[♯#]m$/ });
+    expect(sharpMinor()).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: 'All pitches' }));
+    await user.click(screen.getByRole('button', { name: '3rd' }));
+    await user.dblClick(sharpMinor()!);
+    // F#4 A4 C#5 close: the A (the 3rd) held at the click.
+    expect(pitches().map((entry) => entry.pitch)).toEqual([6600, 6900, 7300]);
+    expect(JSON.stringify(settingsApi.settings.pitchSet)).toBe(projectBefore);
+    expect(localStorage.getItem('hrifa.composition-workbench.settings.v1')).not.toContain(
+      '"pcs":[0,1,'
+    );
+  });
+
+  it('the mode buttons switch after the click, and the empty set shows its state', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    await user.click(screen.getByRole('button', { name: 'Common tone' }));
+    expect(roleGroup()).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Root' }));
+    expect(roleGroup()).toBeNull();
+    act(() =>
+      settingsApi.updateSettings({ pitchSet: { ...settingsApi.settings.pitchSet, pcs: [] } })
+    );
+    await user.click(screen.getByRole('button', { name: 'Common tone' }));
+    expect(screen.getByText(/No pitches in the scale/)).toBeInTheDocument();
   });
 });

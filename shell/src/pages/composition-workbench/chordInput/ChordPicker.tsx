@@ -1,10 +1,11 @@
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Button, Chip, Group, Select, Text, Tooltip } from '@mantine/core';
+import { Button, Chip, Group, Select, Text } from '@mantine/core';
 import { projectPitchSetFromPreset, type ProjectPitchSet } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
 import { pitchLabel } from '../routeTreatments';
-import { chordsOnRoot, type Chord } from './chords';
-import { PITCH_SET_PRESETS, togglePitch, type PitchSetPreset } from './pitchSet';
+import { chordsOnRoot, chordsWithCommonTone, type Chord } from './chords';
+import type { ChordRole } from './chordTemplates';
+import { PITCH_SET_PRESETS, chromaticSet, togglePitch, type PitchSetPreset } from './pitchSet';
 import { inversionCount, pitchClassOf } from './placement';
 import type { SpreadStyle, VoicingSpec } from './voicing';
 import classes from './ChordPicker.module.css';
@@ -21,8 +22,26 @@ const INVERSION_LABELS = ['Root pos.', '1st inv.', '2nd inv.', '3rd inv.', '4th 
 const presetLabel = (preset: string) =>
   preset.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
 
+/** Root mode: chords built on the clicked pitch. Common-tone mode: chords that contain it. */
+export type ChordPickerMode = 'root' | 'common';
+
 export interface ChordPickerProps {
-  /** The clicked pitch (midicents on the roll's 12-row grid). It is the chord's root tone. */
+  /** Default `root`. State of the editor (Ctrl+click opens `common`), switched by the buttons at the top. */
+  mode?: ChordPickerMode;
+  /** Without it the Common tone button stays disabled. */
+  onModeChange?(next: ChordPickerMode): void;
+  /**
+   * Common-tone mode only: offer chords over every pitch of the EDO instead of the scale. Tool state
+   * like the override, never written to the project.
+   */
+  allPitches?: boolean;
+  onAllPitchesChange?(next: boolean): void;
+  /** Common-tone mode: a role was picked; the owner drops the ghosts of the old list. */
+  onRoleChange?(next: ChordRole): void;
+  /**
+   * The clicked pitch (midicents on the roll's 12-row grid). Root mode: the chord's root tone.
+   * Common-tone mode: a tone the chord contains, in the role picked.
+   */
   anchor: { pitchMidicents: number };
   /** The project's pitch set; used unless `override` is set. Never written by the picker. */
   pitchSet: ProjectPitchSet;
@@ -58,6 +77,11 @@ export function ChordPicker({
   pitchSet,
   override,
   onOverrideChange,
+  mode = 'root',
+  onModeChange,
+  allPitches = false,
+  onAllPitchesChange,
+  onRoleChange,
   voicing,
   onVoicingChange,
   onHover,
@@ -69,11 +93,28 @@ export function ChordPicker({
   const [scaleOpen, setScaleOpen] = useState(false);
   const { edo } = pitchSet;
   const overridden = override !== null && override.edo === edo;
-  const active = overridden ? override : pitchSet;
+  const common = mode === 'common';
+  const scale = overridden ? override : pitchSet;
+  // The set the chords come from: all pitches (common-tone toggle) or the override / project scale.
+  const chromatic = useMemo(() => chromaticSet(edo), [edo]);
+  const active = common && allPitches ? chromatic : scale;
   const rootPc = pitchClassOf(anchor.pitchMidicents, edo);
+  const [pickedRole, setPickedRole] = useState<ChordRole | null>(null);
+  // Common tone: the engine's columns (grouped by the role the clicked pitch plays); the list shown
+  // is the picked role's, or the first role with chords when nothing is picked or it has none.
+  const columns = useMemo(
+    () => (common && active.pcs.length > 0 ? chordsWithCommonTone(active, rootPc) : []),
+    [common, active, rootPc]
+  );
+  const role = columns.find((column) => column.role === pickedRole)?.role ?? columns[0]?.role;
   const chords = useMemo(
-    () => (active.pcs.length === 0 ? [] : chordsOnRoot(active, rootPc)),
-    [active, rootPc]
+    () =>
+      common
+        ? (columns.find((column) => column.role === role)?.chords ?? [])
+        : active.pcs.length === 0
+          ? []
+          : chordsOnRoot(active, rootPc),
+    [common, columns, role, active, rootPc]
   );
   const inversions = Math.min(INVERSION_LABELS.length, Math.max(1, inversionCount(chords)));
   const gated = (event: { ctrlKey: boolean; metaKey: boolean }) =>
@@ -114,30 +155,74 @@ export function ChordPicker({
       {/* data-layout-base: names the base (narrow default) layout, chords full width with voicing on a second row, not the live one; a wide container re-places the same children by CSS. */}
       <div className={classes.layout} data-layout-base="stacked">
         <Group gap={4} className={classes.modes} wrap="nowrap">
-          <Button size="compact-xs" variant="filled" aria-pressed>
+          <Button
+            size="compact-xs"
+            variant={common ? 'default' : 'filled'}
+            aria-pressed={!common}
+            onClick={() => onModeChange?.('root')}
+          >
             Root
           </Button>
-          <Tooltip label="Common-tone mode: coming in M6">
-            <span>
-              <Button size="compact-xs" variant="default" disabled aria-pressed={false}>
-                Common tone
-              </Button>
-            </span>
-          </Tooltip>
+          <Button
+            size="compact-xs"
+            variant={common ? 'filled' : 'default'}
+            aria-pressed={common}
+            disabled={!onModeChange}
+            onClick={() => onModeChange?.('common')}
+          >
+            Common tone
+          </Button>
         </Group>
 
         <Text size="xs" className={`${classes.anchorLine} ${classes.muted}`}>
-          Chords on {pitchClassName(rootPc, edo)} ({pitchLabel(anchor.pitchMidicents)})
+          {common
+            ? `Chords containing ${pitchClassName(rootPc, edo)} (${pitchLabel(anchor.pitchMidicents)})`
+            : `Chords on ${pitchClassName(rootPc, edo)} (${pitchLabel(anchor.pitchMidicents)})`}
         </Text>
 
-        <div className={classes.chordArea}>
+        <div className={classes.chordArea} data-chord-mode={mode}>
+          {common && (
+            <>
+              <Chip
+                size="xs"
+                variant="outline"
+                checked={allPitches}
+                onChange={(checked) => onAllPitchesChange?.(checked)}
+              >
+                All pitches
+              </Chip>
+              {columns.length > 0 && (
+                <div role="group" aria-label="Role of the clicked pitch" className={classes.roles}>
+                  <Text size="xs" className={classes.muted}>
+                    {pitchClassName(rootPc, edo)} is the
+                  </Text>
+                  {columns.map((column) => (
+                    <button
+                      key={column.role}
+                      type="button"
+                      className={classes.option}
+                      aria-pressed={column.role === role}
+                      onClick={() => {
+                        setPickedRole(column.role);
+                        onRoleChange?.(column.role);
+                      }}
+                    >
+                      {column.role}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
           {active.pcs.length === 0 ? (
             <Text size="xs" role="status" className={classes.empty}>
               No pitches in the scale, so there are no chords to offer. Turn some on under Scale.
             </Text>
           ) : chords.length === 0 ? (
             <Text size="xs" role="status" className={classes.empty}>
-              No chord on {pitchClassName(rootPc, edo)} fits this scale.
+              {common
+                ? `No chord contains ${pitchClassName(rootPc, edo)} in this scale. Try All pitches.`
+                : `No chord on ${pitchClassName(rootPc, edo)} fits this scale.`}
             </Text>
           ) : (
             // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
@@ -255,12 +340,12 @@ export function ChordPicker({
                     ? PITCH_SET_PRESETS
                     : PITCH_SET_PRESETS.filter((preset) => preset === 'chromatic')
                   ).map((value) => ({ value, label: presetLabel(value) }))}
-                  value={active.preset}
+                  value={scale.preset}
                   allowDeselect={false}
                   onChange={(value) =>
                     value &&
                     onOverrideChange(
-                      projectPitchSetFromPreset(value as PitchSetPreset, active.tonic, edo)
+                      projectPitchSetFromPreset(value as PitchSetPreset, scale.tonic, edo)
                     )
                   }
                 />
@@ -268,12 +353,12 @@ export function ChordPicker({
                   size="xs"
                   label="Tonic"
                   data={pcs.map((pc) => ({ value: String(pc), label: pitchClassName(pc, edo) }))}
-                  value={String(active.tonic)}
+                  value={String(scale.tonic)}
                   allowDeselect={false}
                   disabled={edo !== 12}
                   onChange={(value) =>
                     value !== null &&
-                    onOverrideChange(projectPitchSetFromPreset(active.preset, Number(value), edo))
+                    onOverrideChange(projectPitchSetFromPreset(scale.preset, Number(value), edo))
                   }
                 />
               </Group>
@@ -283,8 +368,8 @@ export function ChordPicker({
                     key={pc}
                     size="xs"
                     variant="outline"
-                    checked={active.pcs.includes(pc)}
-                    onChange={() => onOverrideChange({ ...active, ...togglePitch(active, pc) })}
+                    checked={scale.pcs.includes(pc)}
+                    onChange={() => onOverrideChange({ ...scale, ...togglePitch(scale, pc) })}
                   >
                     {pitchClassName(pc, edo)}
                   </Chip>

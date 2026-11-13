@@ -148,6 +148,21 @@ describe('PianoRoll ghostNotes', () => {
     expect(s.onSelectionChange).not.toHaveBeenCalled();
   });
 
+  it('chords tool: the press reports ctrlKey for Ctrl and for Cmd, false for a plain press', () => {
+    const s = spies();
+    render(<Harness spies={s} tool="chords" />);
+    const roll = screen.getByRole('group', { name: /Piano roll/ });
+    const at = { clientX: 70, clientY: (127 - 60) * 22 + 3, pointerId: 1 };
+    fireEvent.pointerDown(roll, at);
+    fireEvent.pointerUp(roll, at);
+    fireEvent.pointerDown(roll, { ...at, ctrlKey: true });
+    fireEvent.pointerUp(roll, { ...at, ctrlKey: true });
+    fireEvent.pointerDown(roll, { ...at, metaKey: true });
+    fireEvent.pointerUp(roll, { ...at, metaKey: true });
+    const flags = s.onAnchorClick.mock.calls.map(([anchor]) => anchor.ctrlKey);
+    expect(flags).toEqual([false, true, true]);
+  });
+
   it('wears the note class (same fill, outline and radius tokens) and stays see-through', () => {
     render(
       <Harness
