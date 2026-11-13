@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M5 (after the M4 review)
-- State: M5 building
+- Current milestone: M5
+- State: awaiting human (M5 checkpoint: ears and feel)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -15,8 +15,12 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | Re-plan | Hrifa move added 2026-11-12 | prototype GREEN, 221 | Move to the shell (core to TS, UI rebuilt in React, shell theme), prototype frozen. Ultimate goal: join the Composition Workbench piece by piece. The lab stays a standalone page; the Workbench reuses its core and sections. |
 | Setup | Moved into `arcs/harmonic-field-lab/` 2026-11-12 | prototype GREEN, 221; `check:hfl` GREEN (no code yet) | Human: start in Hrifa now; write the retuner once in TS after the core port (old M1 is now M2, old M2 is M1); prototype frozen now. Approved defaults: folder `harmonic-field-lab`, gate `check:hfl`, DECISIONS prefix H, lock on `src/pages/Home.page.test.tsx` for the applet count. Infinitone repo `ARC.md`/`PROGRESS.md` now point here. |
 | C0 | Context scan done 2026-11-12 | `check:hfl` GREEN; baseline below | See "C0 scan". |
-| M1 | Core ported to TS (`src/lib/harmonic-field/`, 12 modules + barrel + README), page `/harmonic-field-lab` registered (placeholder). 2 builder attempts. | `check:hfl` GREEN, 232 tests (168 vectors + 53 presets + count test + 9 EDO-parse regression + page test); `vite build` PASS | Reviewer attempt 1 FAIL: the EDO-step regex `7
-` lost a backslash (spaced forms stopped parsing); fixed, regression test added outside `vectors.json`; a differential harness (1,685 cases vs `hfl_core.js`) found no other difference. Applet status `experimental` (type has no `prototype`). Home test unchanged (counts `applets.length`). H-1 logged. Note: tool pipelines can halve backslashes; check backslash-heavy literals in reviews. |
+| M1 | Core ported to TS (`src/lib/harmonic-field/`, 12 modules + barrel + README), page `/harmonic-field-lab` registered (placeholder). 2 builder attempts. | `check:hfl` GREEN, 232 tests (168 vectors + 53 presets + count test + 9 EDO-parse regression + page test); `vite build` PASS | Reviewer attempt 1 FAIL: the EDO-step regex (as in "7 steps of 12-EDO") lost a backslash (spaced forms stopped parsing); fixed, regression test added outside `vectors.json`; a differential harness (1,685 cases vs `hfl_core.js`) found no other difference. Applet status `experimental` (type has no `prototype`). Home test unchanged (counts `applets.length`). H-1 logged. Note: tool pipelines can halve backslashes; check backslash-heavy literals in reviews. |
+| M2 | Retuner engine (`retuner.ts`) + Infinitone-parity scorer (`scorers.ts`), commit `176b220`. 2 builder attempts. | `check:hfl` GREEN, 276 (189 vectors = 168 + 21, 53 presets) | All 10 AUTORETUNER.md counts at 220 Hz reproduced exactly. Drift I-vi-ii-V-I: 80/81 (-21.506 c) Freestyle, exactly 0 Fixed. Human: pitch-bias criterion replaced (ARC M2); RE note corrected in the Infinitone repo (`df6fd5f`). Fixes: ratio metric favours the lower degree, `manualDeg`, non-finite score = EMPTY_SCORE. |
+| M3 | Pitch-fair, lattice (lowest-cost ratio), Sethares roughness (default), `compareScorers`; commit `efdaea6`. 2 builder attempts. | `check:hfl` GREEN, 298 | Human: lattice cost rule; WTP chords from Gann 1993. Sethares constants with factor 5, min(a1,a2), 7 partials x 0.88^(k-1). Table below. |
+| M4 | Layout mock, many rounds with the human live: mock 1 (article scroll) rejected `5d4e729`; one-screen workspace `76c9121`; families + voicings + fifths ring + saved sparkline strips `cc23181`; reference lines and aligned rows `db2f785`; note marks as one SVG per note with tip-coloured, tapered error `aa24de3`..`ffece44`; selection under the ring `b24996c`; pinned panel columns `b703dea`; stacks + splitters `4595a9c`; Visualizer panels, 3D lattice, EDO fit, dissonance, iso keyboard, 3-stacks, stack-with menu, H-2 colours `ac7b371`. | `check:hfl` GREEN, 418 | Approved by the human 2026-11-13 ("let's rock and roll"); all decisions in ARC M4. M5/M6 re-cut. Selection-controls redesign parked in BACKLOG. |
+| M4 review | Reviewer PASS-WITH-HUMAN-CHECK over `efdaea6..ac7b371` (429 tests). Medium: per-render WebGL probe, `maxTotal` not a hard cap, renderer creation could crash, eager mock import. Low: tooltip facts, octave dip label, layout validation wiping everything, stale docs, `resolveColor`, selection look per view, NaN guards. | 429 | All fixed in M5. |
+| M5 | Live page at `/harmonic-field-lab`, commit `d81c938`: one lab state (`state/`), live generation/tabs/selection/saved subsets/.scl, live analysis panels and visualizers (Retuner and template editor still mock), lab voice engine (`audio/`: held voices, glide API, sine/harmonic, panic), persistence `settings.v1`, `layout.v1`, `tabs.v1`, `subsets.v1` (entry-by-entry sanitising, no write on mount, pending selection for broken tabs, cross-window subset sync). Mock route lazy. Locks on the entry file and Router released. 2 builder attempts. | `check:hfl` GREEN, 577 | Reviewer attempt 1 FAIL (data loss on mount for broken tabs, no debounce, panic click, CPS genKey dropping the mask, wrong Wave tooltip + lows); all fixed in attempt 2 with tests. Builder decisions for the human: click toggles + pins (no sound), new method selects all, EDO 12 to 7 keeps shared pitches, tab close without confirm, Alt+1..9, chord chip click = sticky highlight + sound. |
 
 ## C0 scan (2026-11-12)
 - **Other arcs:** `workbench` has no active arc (clips and desk arcs archived); `structure` is done. No other active arc owns or locks anything. `arcs/LOCKS.md` was empty.
@@ -56,7 +60,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives of New Music* 31/1 (1993), Examples 10–12.
 
 ## Shared touches (locks taken)
-- M5: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`: taken 2026-11-13.
+- M5: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`: taken 2026-11-13, released after the M5 commit `d81c938` (rows were never committed).
 - `package.json`: taken 2026-11-12 (Setup, add `check:hfl`), released 2026-11-12 after the setup commit `d1c2abf`.
 - M4: `src/Router.tsx` (mock route): taken 2026-11-12, released 2026-11-12 after the M4 commit `5d4e729`.
 - M1: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `src/pages/Home.page.test.tsx`, `ARCHITECTURE.md`: taken 2026-11-12, released 2026-11-12 after the M1 commit `3c50fce` (Home test lock released unused).
@@ -69,4 +73,4 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M5 attempt 1: builder working. Then reviewer, `check:hfl`, commit, release locks, human checkpoint (ears and feel).
+Human checkpoint M5 (ears and feel, builder decisions). Then M6 (ARC): live chord template editor, parity checklist, glossary, .scl import, retire the mock route (Router lock).
