@@ -265,6 +265,29 @@ export interface PianoRollProps {
    * modifier keys as they are pressed and released. Without it the roll keeps its plain cursors.
    */
   toolCursors?: boolean;
+  /**
+   * Ghost notes (opt-in): faint dashed outlines the owner wants shown (a chord being previewed, an
+   * anchor). Display only: they take no pointer events and never touch selection, hit-testing,
+   * scroll extents or edits. Placed by the roll's midicent mapping, so a fractional or off-grid
+   * pitch sits between rows. Without it nothing is drawn.
+   */
+  ghostNotes?: PianoRollGhostNote[];
+  /**
+   * With the tool `chords` active (opt-in): a primary press on the roll (a note included) reports
+   * the grid cell under it (`step` is one grid step), pitch snapped to the row as the pencil does and onset to the grid. It
+   * creates no note, makes no sound and leaves the selection alone.
+   */
+  onAnchorClick?(anchor: { pitchMidicents: number; start: number; step: number }): void;
+}
+
+/** One ghost note: pitch in midicents, onset and duration in quarter notes. */
+export interface PianoRollGhostNote {
+  pitchMidicents: number;
+  start: number;
+  duration: number;
+  variant: 'hover' | 'pinned' | 'anchor';
+  /** Drawn on the note itself (when it is wide enough). */
+  label?: string;
 }
 
 /** A gesture in progress, kept by reference so the pointer math never reads a stale render. */
@@ -424,6 +447,8 @@ export function PianoRoll({
   reveal,
   pickPitch,
   toolCursors: withToolCursors = false,
+  ghostNotes: ghostOverlay,
+  onAnchorClick,
 }: PianoRollProps) {
   const infoBar = useInfoBarActive();
   const minTimeZoom = timeZoomRange?.min ?? DEFAULT_MIN_TIME_ZOOM;
@@ -1140,6 +1165,14 @@ export function PianoRoll({
       return;
     }
     lastPickAt.current = null;
+    if (activeTool === 'chords' && onAnchorClick) {
+      const { index, midi } = cellAt(rollPoint(event));
+      lastEmptyPress.current = null;
+      doubleDrewAt.current = null;
+      onAnchorClick({ pitchMidicents: midi * 100, start: index * snapUnit, step: snapUnit });
+      event.currentTarget.focus();
+      return;
+    }
     if (activeTool === 'pencil' && onAddNote) {
       beginDraw(event);
       return;
@@ -2140,7 +2173,8 @@ export function PianoRoll({
                                 if (
                                   activeTool === 'time' ||
                                   (activeTool === 'paint' && onPaintNotes) ||
-                                  (activeTool === 'eraser' && onDeleteNotes)
+                                  (activeTool === 'eraser' && onDeleteNotes) ||
+                                  (activeTool === 'chords' && onAnchorClick)
                                 ) {
                                   return;
                                 }
@@ -2195,6 +2229,39 @@ export function PianoRoll({
                         }
                       >
                         {ghostSpan.width > 34 ? note.label : ''}
+                      </span>
+                    );
+                  })}
+                  {ghostOverlay?.map((ghost, index) => {
+                    const rect = noteRect(
+                      {
+                        id: '',
+                        label: '',
+                        pitchMidicents: ghost.pitchMidicents,
+                        start: ghost.start,
+                        duration: ghost.duration,
+                      },
+                      view
+                    );
+                    const span = spanOf(rect.left, rect.width);
+                    if (!span) {
+                      return null;
+                    }
+                    return (
+                      <span
+                        // oxlint-disable-next-line react/no-array-index-key
+                        key={`${index}`}
+                        className={classes.ghostOverlay}
+                        data-ghost-overlay={ghost.variant}
+                        aria-hidden="true"
+                        style={{
+                          height: rect.height,
+                          left: span.left,
+                          top: rect.top,
+                          width: span.width,
+                        }}
+                      >
+                        {ghost.label && span.width > 14 ? ghost.label : ''}
                       </span>
                     );
                   })}

@@ -16,6 +16,11 @@ import { parseMeter } from './transport';
 /** What the bottom panel gives a clip editor: the clip it edits (commits go through the desk). */
 export interface ClipEditorProps {
   snippet: Snippet;
+  /**
+   * The note editor's Chords tool (opt-in): a click on the roll reports the anchor cell (pitchMidicents on the
+   * 12-row grid, onset in quarter notes). Creates no note and makes no sound.
+   */
+  onChordAnchor?(anchor: { pitchMidicents: number; onset: number }): void;
 }
 
 /** What a blank-clip factory is given. Id and time are caller-supplied so it stays pure. */

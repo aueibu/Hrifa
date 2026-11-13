@@ -349,6 +349,45 @@
   cursor: cell;
 }
 
+.roll[data-tool='chords'],
+.roll[data-tool='chords'] .note {
+  cursor: crosshair;
+}
+
+/*
+ * An owner-supplied ghost note (ghostNotes prop): a faint panel-tinted fill with a dashed outline,
+ * never interactive. Hover is muted, pinned takes a mark hue, the anchor is the accent.
+ */
+.ghostOverlay {
+  align-items: center;
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
+  border: 1px dashed var(--text-muted);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 10px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 2px;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+.ghostOverlay[data-ghost-overlay='pinned'] {
+  background: color-mix(in srgb, var(--mark-blue) 22%, transparent);
+  border-color: var(--mark-blue);
+  color: var(--text);
+}
+
+.ghostOverlay[data-ghost-overlay='anchor'] {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
 .roll[data-tool='eraser'] {
   cursor: not-allowed;
 }
@@ -646,6 +685,16 @@
 
 .roll[data-selectable][data-cursors][data-picking],
 .roll[data-selectable][data-cursors][data-picking] .note {
+  cursor: crosshair;
+}
+
+/* The Chords tool keeps its crosshair over notes, edge zones and the Alt/copy states. */
+.roll[data-selectable][data-cursors][data-tool='chords'],
+.roll[data-selectable][data-cursors][data-tool='chords'] .note,
+.roll[data-selectable][data-cursors][data-tool='chords'] .note[data-zone='left'],
+.roll[data-selectable][data-cursors][data-tool='chords'] .note[data-zone='right'],
+.roll[data-selectable][data-cursors][data-tool='chords'][data-copy-key] .note,
+.roll[data-selectable][data-cursors][data-tool='chords'][data-alt] .note {
   cursor: crosshair;
 }
 

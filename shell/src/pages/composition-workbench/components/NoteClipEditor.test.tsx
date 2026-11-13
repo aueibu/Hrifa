@@ -20,13 +20,14 @@ vi.mock('../audio/AudioEngineProvider', () => ({
 }));
 
 let desk: ReturnType<typeof useDesk>;
+const onChordAnchor = vi.fn();
 
 function Harness() {
   desk = useDesk();
   const clip = desk.snippets[0];
   return (
     <>
-      {clip && <NoteClipEditor snippet={clip} />}
+      {clip && <NoteClipEditor snippet={clip} onChordAnchor={onChordAnchor} />}
       {clip && <DeskView onMakeSource={() => undefined} />}
     </>
   );
@@ -723,6 +724,37 @@ describe('the note clip editor tools', () => {
     input.remove();
   });
 
+  it('chords tool: key 7 only with roll focus; a click reports the snapped anchor, creates no note and shows an anchor ghost', async () => {
+    onChordAnchor.mockClear();
+    const roll = await open(seededClip());
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    fireEvent.keyDown(input, { key: '7' });
+    expect(tool('Pointer')).toBeChecked();
+    input.remove();
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '7' });
+    expect(tool('Chords')).toBeChecked();
+
+    const before = plain(desk.snippets[0].packet);
+    const selectedBefore = document.querySelectorAll('[data-selected]').length;
+    expect(document.querySelector('[data-ghost-overlay]')).toBeNull();
+    // x 70 is in the grid step starting at 1 quarter (64 px a quarter, half-quarter steps); y is the C4 row, off-centre.
+    fireEvent.pointerDown(roll, { clientX: 70, clientY: rowY(60) + 5, pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 70, clientY: rowY(60) + 5, pointerId: 1 });
+    expect(onChordAnchor).toHaveBeenCalledTimes(1);
+    expect(onChordAnchor).toHaveBeenCalledWith({ pitchMidicents: 6000, onset: 1 });
+    expect(plain(desk.snippets[0].packet)).toEqual(before);
+    expect(document.querySelectorAll('[data-selected]').length).toBe(selectedBefore);
+    const ghost = document.querySelector('[data-ghost-overlay="anchor"]');
+    expect(ghost).not.toBeNull();
+
+    // Leaving the tool drops the anchor ghost.
+    fireEvent.keyDown(roll, { key: '1' });
+    expect(document.querySelector('[data-ghost-overlay]')).toBeNull();
+  });
+
   it('the tool menu lists the tools with their numbers and switches tool', async () => {
     const user = userEvent.setup();
     await open(seededClip());
@@ -735,6 +767,7 @@ describe('the note clip editor tools', () => {
       'Paint4',
       'Knife5',
       'Eraser6',
+      'Chords7',
     ]);
     await user.click(screen.getByRole('menuitem', { name: /Knife/ }));
     expect(tool('Knife')).toBeChecked();

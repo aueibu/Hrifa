@@ -18,7 +18,7 @@ Decisions already taken with the human (2026-11-13):
   2. Only one picker is open at a time; opening another tool's panel replaces the content of the slot.
   3. The only floating element allowed is a transient popover: anchored to the click, dismissed by Esc or an outside click, never movable, holding nothing the user must keep. Not planned for v1.
   4. A new tool must use an existing slot; a new kind of slot is a deliberate layout decision logged in `DECISIONS.md`.
-  The human's steer: the picker is conceptually a sub-module of the piano roll and belongs in the module parameter (inspector) slot, which the roll's own clip properties and actions already use, so how the two share that slot (section, tab, or the picker temporarily replacing it while the chord tool is active) is the main layout question for M4. The ghost preview needs the roll to stay visible, so a canvas-replacing takeover is a fallback only. The host choice is remembered per viewer (W-10 pattern) so a later host is an option, not a rewrite.
+  The human's steer (superseded for v1 by the M4 Checkpoint decisions: a dock beside the roll plus a takeover of the canvas area): the picker is conceptually a sub-module of the piano roll and belongs in the module parameter (inspector) slot, which the roll's own clip properties and actions already use, so how the two share that slot (section, tab, or the picker temporarily replacing it while the chord tool is active) is the main layout question for M4. The ghost preview needs the roll to stay visible, so a canvas-replacing takeover is a fallback only. The host choice is remembered per viewer (W-10 pattern) so a later host is an option, not a rewrite.
 - **Hover, audition, insert.** Hover shows ghost notes in the roll (silent). A single click on a chord button auditions it (sounds it through the existing audition path) and keeps its ghost pinned; double-click, or Enter on the focused chord, inserts it. Sound only ever plays from a click the user makes, never from hover. This is the working default; the exact gesture (single click audition plus double-click insert, or a modifier key) is confirmed at the M5 checkpoint.
 - **Voicing in v1:** inversion (root position, 1st, 2nd, ...), close, open and drop voicings (drop-2, drop-3). Orchestration-theory and harmonic-series voicing exploration on a selection is a later arc, but the voicing engine is a pure function (chord, voicing spec) to notes so that arc can reuse it.
 - **Placement uses the existing edit contract** (`noteClipEdits.ts`, "Edits from the editor" in the workbench `ARCHITECTURE.md`), so undo, history and versions behave as for any other edit. Pitches are midicents (shared contract). At a non-12 EDO the notes are on the EDO grid; the roll still draws 12 rows (the tuning-aware pitch axis is a separate backlog item and not part of this arc).
@@ -79,24 +79,39 @@ Each milestone is small enough for one builder run and has criteria a command or
 - Human checkpoint after: no
 
 ### M4: Layout mock (human decision)
-- Scope: a throwaway static mock (same method as harmonic-field-lab M4: not shipped, not wired to the router) of the picker in context: root mode and common-tone mode, voicing controls, override control, and the roll with ghost notes. Compare the hosts allowed by the rules above: the inspector slot shared with clip properties (as a section, as a tab, or replacing it while the tool is active) and a dock beside or below the roll; show the canvas takeover only as the fallback; show behaviour at a small window width.
+- Scope: a throwaway static HTML mock in the session scratchpad (not in the repo, no router route, no locks; harmonic-field-lab used a router route, which this arc avoids because it would need a `Router.tsx` lock for a file that is deleted anyway) of the picker in context: root mode and common-tone mode, voicing controls, override control, and the roll with ghost notes. Compare the hosts allowed by the rules above: the inspector slot shared with clip properties (as a section, as a tab, or replacing it while the tool is active) and a dock beside or below the roll; show the canvas takeover only as the fallback; show behaviour at a small window width.
 - Acceptance:
-  - [ ] The mock exists and is described in PROGRESS.md; the arc's `Check command` passes (mock lives outside Owned code paths or is excluded, and is deleted or archived at M5 start)
+  - [ ] The mock exists and is described in PROGRESS.md; the arc's `Check command` passes (the mock lives outside the repo)
   - [ ] The human's layout choice is written into this file as a "Checkpoint decisions" bullet before M5
 - Human checkpoint after: yes
+- Checkpoint decisions (human, 2026-11-13, after viewing the mock):
+  - Register under inversion: the chosen pitch is the root tone and stays at the click; inversion and spread put the other voices below it (option (a)). C major first inversion at middle C puts E and G below the C.
+  - Hosts: a dock beside the roll is the default, and an expanded takeover is the second host (same picker body). The inspector hosts and the dock below the roll are dropped for v1. The takeover covers the canvas (desk) area and leaves the roll visible so ghosts keep working (the orchestrator's reading of "dock beside and/or takeover"; the mock's takeover also hid the roll). Moving between the two should feel like snapping into a slot (as in REAPER), not like a free window: slots only, per the host rules.
+  - Panel layout: Root | Common tone are small buttons at the top of the panel (the start of the workflow); in common-tone mode the user then picks the scale degree the clicked pitch plays; spread and inversion are parallel controls, each a single column; the custom scale picker sits in a collapsed fold; the override is kept at the chord tool level, not per click.
+  - The note name: default is a label on the note itself; a developer toggle switches its placement between on the note and beside it (not an on/off switch; corrected by the human 2026-11-13).
 
-### M5: Chord tool, root mode, ghost preview, placement
-- Scope: the new editor tool and its shortcut (`EditorPalette`, lock), the opt-in ghost-preview overlay prop on `PianoRoll` (lock), the picker in the chosen layout, root mode listing from the project pitch set with the momentary override, inversion and voicing controls, hover shows ghost notes, single click auditions the chord and pins its ghost, double-click or Enter places the notes through the edit contract at the clicked onset with the default length (the grid step or the last-used length; decision recorded).
+### M5a: Shared plumbing (ghost overlay and tool slot)
+- Scope: under locks on `src/components/PianoRoll/` and `src/components/EditorPalette/`: an opt-in `ghostNotes` overlay prop on `PianoRoll` (faint dashed style; hovered and pinned variants; optional label drawn on the note itself; default nothing, per W-11), and a new tool entry (key 7, "Chords") in the editor palette. In `NoteClipEditor.tsx` (owned): the tool is selectable, and a click on the roll with it reports the anchor (pitch and onset) to a callback; nothing else yet.
 - Acceptance:
-  - [ ] The arc's `Check command` passes, and the consuming arcs' check (Melodicization and Mixer behave unchanged: their existing roll tests pass)
-  - [ ] Human decision recorded in this file: the register under inversion. With a root `tone` anchor at the clicked pitch, first inversion of Am at A4 gives C4 E4 A4 (root on top, tones below the click); the alternative is bass-at-or-near-the-click (C4 E4 A4 would instead start near A: A4 C5 E5 reading as 'inversion of the chord built up from the click'). Show both in the M4 mock or M5 and let the human pick
-  - [ ] The picker body renders in at least two hosts in tests with no host-specific props (proves it does not depend on its container)
-  - [ ] Clicking A with the tool in C major and double-clicking Am with first inversion places C, E, A (component test through the real edit path, not just the engine)
+  - [ ] The arc's `Check command` passes, and the consuming arcs' check (Melodicization and Mixer: their roll tests pass unchanged)
+  - [ ] Ghost notes render from the prop and never affect selection, hit-testing or the packet; with the prop absent behaviour is unchanged (existing tests)
+  - [ ] Selecting the tool and clicking the roll reports the pitch and onset, creates no note and plays no sound
+  - [ ] DECISIONS row: the `ghostNotes` prop and the tool key (shared contract)
+- Human checkpoint after: no
+
+### M5b: Chord picker, root mode, placement
+- Scope: the picker body (`chordInput/`) and its two hosts (see Checkpoint decisions under M4): a dock beside the roll (default) and an expanded takeover of the canvas area. Panel layout: small Root | Common tone buttons at the very top as the start of the workflow (common-tone mode is built in M6; the button may be disabled until then); then the chord list for the anchor; spread and inversion as single-column lists side by side (parallel controls); a collapsed "Scale" fold holding the override (preset and pitch chips). The override belongs to the chord tool (kept while the tool is in use, not per click, never written to the project). Hover shows ghost notes, a single click auditions and pins the ghost, double-click or Enter places the notes through the edit contract at the clicked onset with the default length (grid step or last-used length; decision recorded). The anchor note's name is shown on the note itself by default; a developer option (`developerOptions.ts`) switches its placement between on the note and beside it (to the side, as in the mock). This needs a `labelPlacement: 'on-note' | 'side'` field on the `PianoRoll` ghost (a small extension of W-15, so M5b re-takes the `PianoRoll` lock and logs it).
+- Acceptance:
+  - [ ] The arc's `Check command` passes
+  - [ ] Register: the clicked pitch is the chord's root tone and stays at the click; inversions put the other voices below it (Am first inversion at A4 gives C4 E4 A4; C major first inversion at C4 puts E and G below it)
+  - [ ] The picker body renders in both hosts in tests with no host-specific props
+  - [ ] Clicking A with the tool in C major and double-clicking Am with first inversion places C, E, A (component test through the real edit path)
   - [ ] Ghost notes appear on hover and are gone on leave or close; no note is created and no sound plays by hovering
-  - [ ] Single click auditions the chord (test with the audition path mocked) and creates no note; double-click or Enter inserts it
+  - [ ] Single click auditions the chord (audition path mocked) and creates no note; double-click or Enter inserts it
   - [ ] Placed chords are undoable as one step and show in history like other edits
-  - [ ] Override applies to the open picker only; the project pitch set is unchanged afterwards (test)
-  - [ ] Decisions recorded: tool shortcut, PianoRoll overlay prop (shared contract), default length
+  - [ ] The override changes what the picker offers while the tool is used and never changes the project pitch set (test); an empty set shows an empty state
+  - [ ] The developer toggle switches the anchor label between on-note and beside-the-note placement (test); the label is visible in neither case unless the ghost is the anchor
+  - [ ] Decisions recorded: default length, override lifetime (tool-level, resets on reload unless the human decides otherwise), the dock as a named slot
 - Human checkpoint after: yes (judged by eye)
 
 ### M6: Common-tone mode

@@ -98,6 +98,7 @@ const tools: EditorTool[] = [
   { id: 'paint', label: 'Paint', shortcut: '4' },
   { id: 'knife', label: 'Knife', shortcut: '5' },
   { id: 'eraser', label: 'Eraser', shortcut: '6' },
+  { id: 'chords', label: 'Chords', shortcut: '7' },
 ];
 
 /**
@@ -323,7 +324,7 @@ function describeNote(packet: DataPacket, id: string, meter: string): string {
   return `${name} at bar ${bar + 1} beat ${Number(beat.toFixed(2))}, selected, ${order.indexOf(id) + 1} of ${order.length}`;
 }
 
-function NoteClipEditorBody({ snippet }: ClipEditorProps) {
+function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
   const { packet } = snippet;
@@ -337,11 +338,18 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
   // of a two-part action). Editor-side only, like the selection: never in the packet or the history.
   const [pick, setPick] = useState<PickPitchRequest | null>(null);
   const [rotationState, setRotationState] = useState<ActiveRotation | null>(null);
+  // The Chords tool's current anchor (editor-side only, like the selection); leaving the tool clears it.
+  const [chordAnchor, setChordAnchor] = useState<{
+    pitchMidicents: number;
+    start: number;
+    step: number;
+  } | null>(null);
   // Any tool change ends the ramp (it is a Paint-tool secondary selection) and a waiting pick.
   function setTool(next: string) {
     setToolState(next);
     setRampState(null);
     setPick(null);
+    setChordAnchor(null);
   }
   // Per-viewer: the remembered entry length and the grid. Neither is history or part of a project.
   const [preferences, updatePreferences] = useNoteEditorPreferences();
@@ -1089,6 +1097,22 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
               : null
           }
           reveal={reveal}
+          ghostNotes={
+            tool === 'chords' && chordAnchor
+              ? [
+                  {
+                    pitchMidicents: chordAnchor.pitchMidicents,
+                    start: chordAnchor.start,
+                    duration: chordAnchor.step,
+                    variant: 'anchor',
+                  },
+                ]
+              : undefined
+          }
+          onAnchorClick={(anchor) => {
+            setChordAnchor(anchor);
+            onChordAnchor?.({ pitchMidicents: anchor.pitchMidicents, onset: anchor.start });
+          }}
           keyActions={[
             {
               shortcut: 'v',
@@ -1137,8 +1161,8 @@ function NoteClipEditorBody({ snippet }: ClipEditorProps) {
 }
 
 /** The piano-roll editor for note clips. Keyed by clip, so switching clips resets the view state. */
-export function NoteClipEditor({ snippet }: ClipEditorProps) {
-  return <NoteClipEditorBody key={snippet.id} snippet={snippet} />;
+export function NoteClipEditor({ snippet, onChordAnchor }: ClipEditorProps) {
+  return <NoteClipEditorBody key={snippet.id} snippet={snippet} onChordAnchor={onChordAnchor} />;
 }
 
 registerClipEditor(NOTE_EDITOR_ID, NoteClipEditor);
