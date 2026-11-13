@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M7 (M6b committed; the human is away, checkpoints for M6b and M7 are reviewed together)
-- State: building
+- Current milestone: M7 committed; awaiting the human's combined review (M6b, M7 and everything since M6d), then M8
+- State: awaiting human (combined review)
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -32,6 +32,7 @@
 | M6d hands-on | Human tried M6d: Alt+Left/Right works but should cycle; Alt+Up/Down did nothing; arrow-selected chord not indicated; Shift+arrow left a ghost at the original click. Fixed: spread and inversion cycle (inversion by the current chord's tone count), a current-chord marker (`data-current`, `aria-current`, scrolls into view), hover ghost cleared on keyboard anchor moves. | `check:workbench` green (82 files / 1369 tests) | The Alt+Up/Down failure could not be reproduced in tests; most likely cause was the inversion range being the longest chord's (5), so presses on a triad did nothing visible. Needs the human's recheck. |
 | Autonomy | Human, 2026-11-13 (going to bed): start M6b, defer its checkpoint until the end of M7, review it all at once. | n/a | Work M6b then M7 without stopping. Taste decisions the ARC leaves open get documented defaults and are listed for review (chord names for extended types, where the sheet disagrees with its own names). M8 close-out waits for the review. |
 | M6b | Built (parts A and B): scale-degree roles, tiers, 21 extended templates, CSV parity test with `KNOWN_GAPS`, Simple | Extended toggle in the picker. | Builder runs: vitest workbench 83 files / 1389 tests, PianoRoll/EditorPalette 319; project-wide `tsc` red only because of `src/pages/harmonic-field-lab/` files (rule 14: not ours; filtered tsc shows no errors in our paths). | DECISIONS W-21. Reviewer: pass with fixes (header wrap, inversion buttons up to 6th, role assertions in the parity test, cosmetics): applied. Committed with the project-wide `tsc` red ONLY in `src/pages/harmonic-field-lab/` (rule 14, 0 errors elsewhere); format of workbench ts/tsx, oxlint, stylelint and vitest (98 files / 1698 tests across workbench, PianoRoll, EditorPalette) were run by hand. Sheet discrepancies for the human: Sus4 row = Major row; Dominant 7 b5 #9 row = Dominant #9; Dominant 7 #5 #9 has a major 7th; 6/9 slot order differs. Header-row overflow in a 14rem dock to fix. |
+| M7 | Built: stack chords onto existing notes (note resolved in the editor, exact onset/pitch/length/velocity, never alters existing notes, one undo step); reviewer pass with fixes (stack protects notes at all onsets, tolerance and cents header, tie-break, stray hover ghost) | `check:workbench` green (final run: all steps, 1403 tests; harmonic-field-lab types were fixed by its arc); workbench + PianoRoll + EditorPalette 99 files / 1711 tests | DECISIONS W-22. Backlog: exact pointer position for the anchor. Open taste items: continuous insert after a stack; grid-cell capture at coarse grids. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
@@ -45,4 +46,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-Launch the M7 builder (stack onto existing notes), review, gate, commit; then stop and write the summary for the human. M8 after their review.
+Human reviews everything at once (see the summary in the conversation). Then M8: close-out (final ARCHITECTURE pass, BACKLOG items for deferred ideas: explicit link/group button, voicing exploration on a selection, Euclidean and rhythm transforms through the same picker, chord naming for non-12 EDOs, augmented sixths and pitch-class sets and (I+bVI) from the sheet, picker polish), final check, lock check.

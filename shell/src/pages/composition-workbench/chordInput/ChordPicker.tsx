@@ -89,6 +89,10 @@ export interface ChordPickerProps {
    * Common-tone mode: a tone the chord contains, in the role picked.
    */
   anchor: { pitchMidicents: number };
+  /** The anchor is an existing note the chord is stacked on (M7): the header says so. */
+  onNote?: boolean;
+  /** For a note anchor: the note's real pitch minus the snapped anchor, in midicents (shown above 1). */
+  noteOffsetCents?: number;
   /** The project's pitch set; used unless `override` is set. Never written by the picker. */
   pitchSet: ProjectPitchSet;
   /** The chord tool's own scale, or null to use the project's. State of the tool, kept by the owner. */
@@ -120,6 +124,8 @@ export interface ChordPickerProps {
  */
 export function ChordPicker({
   anchor,
+  onNote = false,
+  noteOffsetCents = 0,
   pitchSet,
   override,
   onOverrideChange,
@@ -385,9 +391,15 @@ export function ChordPicker({
         </Group>
 
         <Text size="xs" className={`${classes.anchorLine} ${classes.muted}`}>
-          {common
-            ? `Chords containing ${pitchClassName(rootPc, edo)} (${pitchLabel(anchor.pitchMidicents)})`
-            : `Chords on ${pitchClassName(rootPc, edo)} (${pitchLabel(anchor.pitchMidicents)})`}
+          {onNote
+            ? `On ${pitchLabel(anchor.pitchMidicents)}${
+                Math.abs(noteOffsetCents) > 1
+                  ? ` ${noteOffsetCents > 0 ? '+' : '-'}${Math.round(Math.abs(noteOffsetCents))}c`
+                  : ''
+              } (note): ${common ? 'chords containing' : 'chords on'} ${pitchClassName(rootPc, edo)}`
+            : common
+              ? `Chords containing ${pitchClassName(rootPc, edo)} (${pitchLabel(anchor.pitchMidicents)})`
+              : `Chords on ${pitchClassName(rootPc, edo)} (${pitchLabel(anchor.pitchMidicents)})`}
         </Text>
 
         <div className={classes.chordArea} data-chord-mode={mode}>

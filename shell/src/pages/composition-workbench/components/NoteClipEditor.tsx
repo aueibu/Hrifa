@@ -19,6 +19,7 @@ import {
   VelocityLaneToggle,
   type PianoRollGridSource,
   type PianoRollNewNote,
+  type PianoRollNote,
   type PianoRollProps,
   type PianoRollRange,
   type PianoRollViewState,
@@ -413,6 +414,32 @@ function describeNote(packet: DataPacket, id: string, meter: string): string {
   return `${name} at bar ${bar + 1} beat ${Number(beat.toFixed(2))}, selected, ${order.indexOf(id) + 1} of ${order.length}`;
 }
 
+/**
+ * The note a click on a grid cell means: among notes within 50 midicents of the cell's row whose
+ * span overlaps the cell, the one starting nearest the cell (the one with the smaller start on a
+ * tie, whatever the packet order).
+ */
+export function noteAtCell(
+  notes: readonly PianoRollNote[],
+  cell: { pitchMidicents: number; start: number; step: number }
+): PianoRollNote | undefined {
+  let best: PianoRollNote | undefined;
+  for (const note of notes) {
+    if (
+      Math.abs(note.pitchMidicents - cell.pitchMidicents) <= 50 &&
+      note.start < cell.start + cell.step - 1e-9 &&
+      note.start + note.duration > cell.start + 1e-9 &&
+      (!best ||
+        Math.abs(note.start - cell.start) < Math.abs(best.start - cell.start) - 1e-9 ||
+        (Math.abs(Math.abs(note.start - cell.start) - Math.abs(best.start - cell.start)) <= 1e-9 &&
+          note.start < best.start))
+    ) {
+      best = note;
+    }
+  }
+  return best;
+}
+
 function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
@@ -428,10 +455,13 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const [pick, setPick] = useState<PickPitchRequest | null>(null);
   const [rotationState, setRotationState] = useState<ActiveRotation | null>(null);
   // The Chords tool's current anchor (editor-side only, like the selection); leaving the tool clears it.
+  // `note` is set when the click landed on an existing note (stack-on-note context, M7): the chord
+  // then takes that note's length and velocity. Any keyed move of the anchor drops it.
   const [chordAnchor, setChordAnchor] = useState<{
     pitchMidicents: number;
     start: number;
     step: number;
+    note?: { duration: number; velocity?: number; pitchMidicents: number };
   } | null>(null);
   // The Chords tool's own state, kept while the editor lives: the scale override and the voicing
   // (tool-level, never written to the project; a reload resets them), and the previewed and pinned
@@ -1010,7 +1040,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const effectiveChordMode: ChordPickerMode = chordCtrlOpen ? 'common' : chordMode;
   // The length of a placed chord and of its ghosts: the length the viewer last entered a note with,
   // else one grid step at the anchor.
-  const chordLength = preferences.entryLength ?? chordAnchor?.step ?? 1;
+  const chordLength =
+    chordAnchor?.note?.duration ?? preferences.entryLength ?? chordAnchor?.step ?? 1;
   // Common-tone mode anchors the chord tone that has the clicked pitch class; root mode anchors the root.
   const chordAnchorPc =
     effectiveChordMode === 'common' && chordAnchor
@@ -1023,11 +1054,17 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     }
     // One grid step under the pointer, before any click. Not shown while a picker chord is hovered
     // (its own ghosts are), nor over the anchor cell (the anchor ghost is there).
+    // A note anchor covers its whole span and pitch row (also an off-grid or microtonal note's).
     const onAnchorCell =
       hoverCell !== null &&
       chordAnchor !== null &&
-      hoverCell.start === chordAnchor.start &&
-      hoverCell.pitchMidicents === chordAnchor.pitchMidicents;
+      (chordAnchor.note
+        ? (Math.abs(hoverCell.pitchMidicents - chordAnchor.pitchMidicents) <= 50 ||
+            Math.abs(hoverCell.pitchMidicents - chordAnchor.note.pitchMidicents) <= 50) &&
+          hoverCell.start < chordAnchor.start + chordAnchor.note.duration - 1e-9 &&
+          hoverCell.start + hoverCell.step > chordAnchor.start + 1e-9
+        : hoverCell.start === chordAnchor.start &&
+          hoverCell.pitchMidicents === chordAnchor.pitchMidicents);
     const cellGhost: NonNullable<ComponentProps<typeof PianoRoll>['ghostNotes']> =
       hoverCell && !hoverChord && !onAnchorCell
         ? [
@@ -1088,7 +1125,31 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     if (!chordAnchor) {
       return;
     }
-    const placed = chordNotes(chord, chordAnchor, chordVoicing, chordLength, chordAnchorPc);
+    let placed: PianoRollNewNote[] = chordNotes(
+      chord,
+      chordAnchor,
+      chordVoicing,
+      chordLength,
+      chordAnchorPc
+    );
+    if (chordAnchor.note) {
+      // Stacking on a note never alters an existing note: a tone that would overlap any existing note
+      // of the same pitch (same onset, an earlier longer note, a later one inside the span) is dropped,
+      // so nothing is split, trimmed or deleted. The new ones take the note's velocity.
+      const velocity = chordAnchor.note.velocity;
+      const tolerance = Math.min(50, 1200 / edo / 2);
+      placed = placed
+        .filter(
+          (tone) =>
+            !notes.some(
+              (note) =>
+                Math.abs(note.pitchMidicents - tone.pitchMidicents) <= tolerance + 1e-9 &&
+                note.start < tone.start + tone.duration - 1e-9 &&
+                note.start + note.duration > tone.start + 1e-9
+            )
+        )
+        .map((tone) => (velocity === undefined ? tone : { ...tone, velocity }));
+    }
     if (placed.length === 0) {
       return;
     }
@@ -1108,7 +1169,10 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   }
 
   /** Moves the anchor (keys, continuous insert) and tells the host, like a click on the roll. */
-  function setChordAnchorTo(next: { pitchMidicents: number; start: number; step: number }) {
+  function setChordAnchorTo(moved: { pitchMidicents: number; start: number; step: number }) {
+    // Keyed and continuous moves are ordinary empty-cell anchors: callers spread the old anchor, so
+    // the stack-on-note context is dropped here.
+    const next = { pitchMidicents: moved.pitchMidicents, start: moved.start, step: moved.step };
     const start = Number(next.start.toFixed(9));
     // A keyboard move leaves the pointer where it was: its cell ghost would sit at the old point.
     hoverBlocked.current = hoverCell ?? hoverBlocked.current;
@@ -1592,7 +1656,23 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
             }}
             onAnchorClick={(anchor) => {
               // Snapped to the project EDO grid before anything (picker, ghosts, voicing) sees it.
-              const snapped = { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) };
+              const snapped: NonNullable<typeof chordAnchor> = {
+                pitchMidicents: snapToEdo(anchor.pitchMidicents, edo),
+                start: anchor.start,
+                step: anchor.step,
+              };
+              const hit = noteAtCell(notes, anchor);
+              if (hit) {
+                // Stacking on an existing note: its exact pitch and actual onset, its own length
+                // and velocity.
+                snapped.pitchMidicents = snapToEdo(hit.pitchMidicents, edo);
+                snapped.start = hit.start;
+                snapped.note = {
+                  duration: hit.duration,
+                  velocity: hit.velocity,
+                  pitchMidicents: hit.pitchMidicents,
+                };
+              }
               setChordAnchor(snapped);
               // A plain click opens the stored mode; Ctrl (Cmd) opens common-tone mode for this
               // click only, leaving the stored mode as the buttons set it.
@@ -1654,6 +1734,12 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
             {chordAnchor ? (
               <ChordPicker
                 anchor={chordAnchor}
+                onNote={chordAnchor.note !== undefined}
+                noteOffsetCents={
+                  chordAnchor.note
+                    ? chordAnchor.note.pitchMidicents - chordAnchor.pitchMidicents
+                    : 0
+                }
                 pitchSet={settings.pitchSet}
                 override={chordOverride}
                 onOverrideChange={(next) => {
@@ -1692,7 +1778,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
             ) : (
               <Text size="xs" c="dimmed">
                 Click the roll where a chord should go. Its pitch becomes the chord's root;
-                Ctrl/Cmd+click picks the role it plays in a chord.
+                Ctrl/Cmd+click picks the role it plays in a chord. Click an existing note to stack a
+                chord on it.
               </Text>
             )}
           </ChordPickerHost>
