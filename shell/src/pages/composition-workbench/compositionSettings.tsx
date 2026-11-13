@@ -7,6 +7,13 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import {
+  makePitchSet,
+  PITCH_SET_PRESETS,
+  presetPitchSet,
+  type PitchSet,
+  type PitchSetPreset,
+} from './chordInput/pitchSet';
 import { recordChange, registerHistoryApplier } from './history';
 import { isReloading } from './reloading';
 import { defaultSoundSettings, sanitizeSoundSettings, type SoundSettings } from './sounds';
@@ -45,6 +52,61 @@ export interface CompositionSettings {
   // The note editor colours each note by its scale degree (from C, repeating every octave) instead
   // of one colour for all. Off by default. See scaleDegreeColor.ts.
   colorByScaleDegree: boolean;
+  // The project's pitch set ("key") that chord input offers chords from. Always for `edo`.
+  pitchSet: ProjectPitchSet;
+}
+
+/**
+ * The stored pitch set: the PitchSet (edo + absolute pcs) plus the preset and tonic that last
+ * filled it, so the settings control can show them. `pcs` is authoritative: toggling a pitch
+ * edits it and leaves preset and tonic as the last shortcut used.
+ */
+export interface ProjectPitchSet extends PitchSet {
+  preset: PitchSetPreset;
+  tonic: number;
+}
+
+/** Major (tonic C) at 12-EDO, chromatic at every other EDO (human decision 2026-11-13). */
+export function defaultProjectPitchSet(edo: number): ProjectPitchSet {
+  const preset: PitchSetPreset = edo === 12 ? 'major' : 'chromatic';
+  return { ...presetPitchSet(preset, 0, edo), preset, tonic: 0 };
+}
+
+/**
+ * Fill the set from a preset and tonic (the settings control's shortcut). Outside 12-EDO only
+ * chromatic is defined, so the stored preset and tonic say chromatic and 0 rather than the
+ * requested preset the pitches no longer follow.
+ */
+export function projectPitchSetFromPreset(
+  preset: PitchSetPreset,
+  tonic: number,
+  edo: number
+): ProjectPitchSet {
+  if (edo !== 12 && preset !== 'chromatic') {
+    return projectPitchSetFromPreset('chromatic', 0, edo);
+  }
+  return { ...presetPitchSet(preset, tonic, edo), preset, tonic };
+}
+
+function sanitizePitchSet(raw: unknown, edo: number): ProjectPitchSet {
+  const c = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : undefined;
+  const inRange = (n: unknown): n is number =>
+    typeof n === 'number' && Number.isInteger(n) && n >= 0 && n < edo;
+  if (
+    !c ||
+    c.edo !== edo ||
+    !Array.isArray(c.pcs) ||
+    !c.pcs.every(inRange) ||
+    !PITCH_SET_PRESETS.includes(c.preset as PitchSetPreset) ||
+    !inRange(c.tonic)
+  ) {
+    return defaultProjectPitchSet(edo);
+  }
+  return {
+    ...makePitchSet(edo, c.pcs as number[]),
+    preset: c.preset as PitchSetPreset,
+    tonic: c.tonic,
+  };
 }
 
 export const defaultCompositionSettings: CompositionSettings = {
@@ -52,6 +114,7 @@ export const defaultCompositionSettings: CompositionSettings = {
   transport: defaultTransportSettings,
   sounds: defaultSoundSettings,
   colorByScaleDegree: false,
+  pitchSet: defaultProjectPitchSet(12),
 };
 
 // Each field is read and validated independently, then merged over the defaults. A stored blob
@@ -68,6 +131,8 @@ function sanitizeCompositionSettings(raw: unknown): CompositionSettings {
     transport: sanitizeTransport(candidate.transport),
     sounds: sanitizeSoundSettings(candidate.sounds),
     colorByScaleDegree: candidate.colorByScaleDegree === true,
+    // An EDO change leaves the old set's edo mismatched, so it resets to the new EDO's default.
+    pitchSet: sanitizePitchSet(candidate.pitchSet, edo),
   };
 }
 
@@ -99,7 +164,7 @@ export const STORAGE_KEY = 'hrifa.composition-workbench.settings.v1';
 /**
  * History key for the settings. Virtual: it is never written to storage, which keeps holding the
  * whole settings object. Every persisted setting (EDO, tempo, meter, pulse, metronome, count-in,
- * metronome volume, voices) is a user choice, so the step holds the whole object.
+ * metronome volume, voices, pitch set) is a user choice, so the step holds the whole object.
  */
 const SETTINGS_HISTORY_KEY = `${STORAGE_KEY}#settings`;
 

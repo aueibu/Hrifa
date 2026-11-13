@@ -1,7 +1,87 @@
-import { CloseButton, Group, NumberInput, Stack, Switch, Text, Title } from '@mantine/core';
-import { useCompositionSettings } from '../compositionSettings';
+import {
+  Chip,
+  CloseButton,
+  Group,
+  NumberInput,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  Title,
+} from '@mantine/core';
+import { PITCH_SET_PRESETS, togglePitch, type PitchSetPreset } from '../chordInput/pitchSet';
+import { projectPitchSetFromPreset, useCompositionSettings } from '../compositionSettings';
+import { pitchClassName } from '../pitch';
 import { SoundSetEditor } from './SoundControls';
 import classes from './CompositionSettingsPanel.module.css';
+
+const presetLabel = (preset: string) =>
+  preset.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+
+/**
+ * The project pitch set: a preset and tonic fill it, then any pitch can be toggled. One chip per
+ * pitch class of the project EDO, so it works at any EDO. Changing the EDO resets the set.
+ */
+function PitchSetControl() {
+  const { settings, updateSettings } = useCompositionSettings();
+  const { pitchSet, edo } = settings;
+  const pcs = Array.from({ length: edo }, (_unused, pc) => pc);
+  return (
+    <Stack gap="xs">
+      <Group gap="xs" grow wrap="nowrap" align="flex-end">
+        <Select
+          label="Preset"
+          data={(edo === 12
+            ? PITCH_SET_PRESETS
+            : PITCH_SET_PRESETS.filter((p) => p === 'chromatic')
+          ).map((value) => ({ value, label: presetLabel(value) }))}
+          value={pitchSet.preset}
+          allowDeselect={false}
+          onChange={(value) =>
+            value &&
+            updateSettings({
+              pitchSet: projectPitchSetFromPreset(value as PitchSetPreset, pitchSet.tonic, edo),
+            })
+          }
+        />
+        <Select
+          label="Tonic"
+          data={pcs.map((pc) => ({ value: String(pc), label: pitchClassName(pc, edo) }))}
+          value={String(pitchSet.tonic)}
+          allowDeselect={false}
+          disabled={edo !== 12}
+          onChange={(value) =>
+            value !== null &&
+            updateSettings({
+              pitchSet: projectPitchSetFromPreset(pitchSet.preset, Number(value), edo),
+            })
+          }
+        />
+      </Group>
+      <Group gap={4} role="group" aria-label="Pitches in the set">
+        {pcs.map((pc) => (
+          <Chip
+            key={pc}
+            size="xs"
+            variant="outline"
+            checked={pitchSet.pcs.includes(pc)}
+            onChange={() =>
+              updateSettings({ pitchSet: { ...pitchSet, ...togglePitch(pitchSet, pc) } })
+            }
+          >
+            {pitchClassName(pc, edo)}
+          </Chip>
+        ))}
+      </Group>
+      <Text size="xs" c="dimmed">
+        Chord input offers chords whose notes all lie in this set. Presets fill it; toggle pitches
+        for anything else.
+        {edo !== 12 &&
+          ` At ${edo}-EDO only the chromatic preset is defined; build the set by hand.`}
+      </Text>
+    </Stack>
+  );
+}
 
 // New settings get their own <Title>-headed section below, in whatever grouping makes sense —
 // this file only needs a new control added to it; compositionSettings.tsx is where the actual
@@ -46,6 +126,12 @@ export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
               </Text>
             )}
           </Stack>
+        </div>
+        <div>
+          <Title order={4} size="h6" mb={4}>
+            Pitch set (key)
+          </Title>
+          <PitchSetControl />
         </div>
         <div>
           <Title order={4} size="h6" mb={4}>
