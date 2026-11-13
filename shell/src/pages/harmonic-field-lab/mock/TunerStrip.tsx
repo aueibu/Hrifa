@@ -6,6 +6,7 @@
 import { useMemo, type CSSProperties } from 'react';
 import { NativeSelect, NumberInput } from '@mantine/core';
 import { LIT_FIELD, analysis, fieldDevs, rel, repC, savedSubsets } from './mockData';
+import { NoteMark } from './NoteMark';
 import { Num, Strip, Tip, signed, useLab } from './ui';
 import classes from './mock.module.css';
 
@@ -13,6 +14,9 @@ const PAD = 4;
 /** Horizontal position (percent of the plot width) of a pitch in cents above 1/1: the one scale every strip uses. */
 export const stripLeft = (c: number) => `${PAD + (c / repC) * (100 - 2 * PAD)}%`;
 const BLACK = new Set([1, 3, 6, 8, 10]);
+/** Strip plot height and the middle of each note line, in px (match `--mid` and `.stripPlot` in the CSS). */
+const MARK_H = 108;
+const MARK_MID = 60;
 
 /** A quiet reference line at every 100 c: absolute 12-EDO pitch (1/1 = C), light for white keys, dark for black. */
 export function RefLines({ thin }: { thin?: boolean }) {
@@ -100,11 +104,14 @@ export function TunerStrip() {
                     }}
                   >
                     <span className={classes.colRatio}>{d.ratio}</span>
-                    <span className={classes.colDot} data-lit={lit} aria-hidden="true" />
-                    <span
-                      className={classes.colBar}
-                      data-dir={sharp ? 'sharp' : 'flat'}
-                      aria-hidden="true"
+                    <NoteMark
+                      dev={d.dev12}
+                      height={MARK_H}
+                      mid={MARK_MID}
+                      half={lit ? 12 : 10}
+                      scale={0.5}
+                      lit={lit}
+                      pinned={lab.pin === fi}
                     />
                     <span className={classes.colNum} data-dir={sharp ? 'sharp' : 'flat'}>
                       {signed(d.dev12)}

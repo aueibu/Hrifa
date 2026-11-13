@@ -785,7 +785,6 @@
   position: relative;
 }
 
-
 .col {
   background: none;
   border: 0;
@@ -812,71 +811,50 @@
   transform: translateX(-50%);
 }
 
-/* each note is one mark: a 2 px line (the note) whose error grows out of its ends */
-.colDot {
-  background: var(--text);
-  height: calc(var(--half) * 2);
+/* each note is one mark (NoteMark): one SVG holds the line, its error and the sounding dot, so all share
+   one centre and the error grows out of the line with no seam */
+.mark {
   left: 50%;
+  overflow: visible;
   position: absolute;
-  top: calc(var(--mid) - var(--half));
+  top: 0;
   transform: translateX(-50%);
-  width: 2px;
 }
 
-/* sounding: the line grows a little and carries the blue dot at its middle */
+.markLine {
+  fill: var(--text);
+}
+
+.markSharp {
+  fill: var(--mark-pink);
+}
+
+.markFlat {
+  fill: var(--mark-cyan);
+}
+
+.markDot {
+  fill: var(--mark-blue);
+  stroke: var(--text);
+  stroke-width: 1;
+}
+
+.markPin {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 1;
+}
+
+/* sounding: the line grows a little (the numbers follow it) */
 .col[data-lit='true'] {
   --half: 12px;
 }
 
-.colDot[data-lit='true']::before {
-  background: var(--mark-blue);
-  border: 1px solid var(--text);
-  border-radius: 50%;
-  content: '';
-  height: 0.625rem;
-  left: 50%;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 0.625rem;
-}
-
 /* a field note that is not in the subset: dimmed line, bar and number */
-.col[data-on='false'] .colDot,
-.col[data-on='false'] .colBar,
+.col[data-on='false'] .mark,
 .col[data-on='false'] .colNum,
 .col[data-on='false'] .colRatio {
   opacity: 0.35;
-}
-
-.col[data-pin='true'] .colDot {
-  outline: 1px solid var(--text);
-  outline-offset: 2px;
-}
-
-/* --d is the deviation in cents; 1 c is 0.5 px */
-/* sharp grows up from the top of the line, flat down from its bottom (1 c = 0.5 px) */
-/* sharp grows up from the top of the line, flat down from its bottom (1 c = 0.5 px). The bar starts as
-   wide as the line and tapers out at its far end: line width up to 10 c, three times it at 50 c. The width
-   is rounded to whole even pixels so the bar shares the line's centre exactly. */
-.colBar {
-  height: max(1px, calc(var(--d) * 0.5px));
-  left: 50%;
-  position: absolute;
-  transform: translateX(-50%);
-  width: round(nearest, calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px)), 2px);
-}
-
-.colBar[data-dir='sharp'] {
-  background: var(--mark-pink);
-  clip-path: polygon(0 0, 100% 0, calc(50% + 1px) 100%, calc(50% - 1px) 100%);
-  top: calc(var(--mid) - var(--half) - var(--d) * 0.5px);
-}
-
-.colBar[data-dir='flat'] {
-  background: var(--mark-cyan);
-  clip-path: polygon(calc(50% - 1px) 0, calc(50% + 1px) 0, 100% 100%, 0 100%);
-  top: calc(var(--mid) + var(--half));
 }
 
 .colNum {
@@ -992,44 +970,9 @@
   width: 0;
 }
 
-/* the same mark in miniature: an 8 px line with its error growing out of its ends (1 c = 0.2 px) */
-.sparkDot {
-  background: var(--text);
-  height: 8px;
-  left: -1px;
-  position: absolute;
-  top: calc(50% - 4px);
-  width: 2px;
-}
-
 /* a field note that is not in this saved subset: dimmed line, no error bar */
-.sparkCol[data-on='false'] .sparkDot {
+.sparkCol[data-on='false'] .mark {
   opacity: 0.35;
-}
-
-/* same taper as the strip: line width up to 10 c, three times it at 50 c */
-.sparkBar {
-  height: max(1px, calc(var(--d) * 0.2px));
-  left: 0;
-  position: absolute;
-  transform: translateX(-50%);
-  width: round(nearest, calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px)), 2px);
-}
-
-.sparkCol[data-dir='sharp'] .sparkBar {
-  background: var(--mark-pink);
-  bottom: calc(50% + 4px);
-  clip-path: polygon(0 0, 100% 0, calc(50% + 1px) 100%, calc(50% - 1px) 100%);
-}
-
-.sparkCol[data-dir='flat'] .sparkBar {
-  background: var(--mark-cyan);
-  clip-path: polygon(calc(50% - 1px) 0, calc(50% + 1px) 0, 100% 100%, 0 100%);
-  top: calc(50% + 4px);
-}
-
-.sparkCol[data-on='false'] .sparkBar {
-  display: none;
 }
 
 /* ------------------------------------------------------------------------------------------------ dock */
