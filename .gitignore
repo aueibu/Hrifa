@@ -26,8 +26,8 @@ node_modules/
 # Editor and operating-system clutter
 .vscode/
 .idea/
-.claude/
-/CLAUDE.md
+.claude/*
+!**/.claude/agents/
 .DS_Store
 Thumbs.db
 Desktop.ini
