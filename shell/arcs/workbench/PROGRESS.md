@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M5b (built; in review; M1-M3, M5a committed)
-- State: building
+- Current milestone: M5b committed (083c04c); awaiting the human's checkpoint
+- State: awaiting human (M5b checkpoint, judged by eye)
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -23,7 +23,7 @@
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
-- `src/components/PianoRoll/`: re-taken 2026-11-13 for M5b (ghost `labelPlacement`), not yet released.
+- `src/components/PianoRoll/`: re-taken 2026-11-13 for M5b (ghost `labelPlacement`), released after commit 083c04c (W-16).
 - `src/components/PianoRoll/`: taken and released 2026-11-13 (M5a, commit f29ad19, W-15). - `src/components/EditorPalette/`: taken and released 2026-11-13 (M5a, commit f29ad19; only a new test file changed).
 
 
@@ -32,4 +32,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-Launch the M5b builder (re-take the `src/components/PianoRoll/` lock first for the ghost `labelPlacement` field).
+Human tries M5b in the app (`corepack yarn dev` from shell/): Chords tool (key 7), click the roll, hover/click/double-click chords, dock vs takeover, Scale fold. Record decisions in ARC.md under M5b, then launch M6 (common-tone mode).
