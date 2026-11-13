@@ -31,7 +31,8 @@ Import from the barrel (`./index`, or `@/lib/harmonic-field`).
 | `deviation.ts` | `INTERVAL_NAMES`, `fmtSigned`, `nearestRatio`, `deviations`, `deviationsJI`, `semitoneTargets`, `edoTargets`, `scaleTargetsLabeled`, `vsJI` |
 | `scala.ts` | `parseScl`, `toScl` |
 | `presets.ts` | `PRESETS` (data only) and the `Preset` type |
-| `scorers.ts` | `scorePeriodicityInfinitone`, `ScoreResult` (more scorers come in M3) |
+| `scorers.ts` | `scorePeriodicityInfinitone`, `ScoreResult` |
+| `scorersMore.ts` | `scorePeriodicityFair`, `scoreLattice`, `scoreRoughness` (default), `pairRoughness`, `SETHARES`, `compareScorers` and their option and result types |
 | `retuner.ts` | `pickPivot`, `degreeOf`, `nearestDegree`, `rerootCards`, `retuneStep`, `REF_HZ`, `EMPTY_SCORE` and the `RetunerCard`, `HeldNote`, `Base`, `RetuneOpts`, `RetuneResult`, `RetuneWhy` types |
 
 ## Typical flow
@@ -198,3 +199,50 @@ period exceeds 0.1 s, the curve cannot close and the chord scores *better* (4:5:
 hundred Hz the curve is sampled sparsely and counts rise (880 Hz: 950, 1760 Hz: 1037). This is also why the default scorer of the
 lab will be the roughness scorer (M3).
 
+
+## Scorers
+
+Every scorer takes a chord and returns `{score, detail}`; **lower = more consonant**. An empty chord scores 999999 (`EMPTY_SCORE`);
+a single note is a real chord of one tone. Each scorer has its own scale, so compare ranks between scorers, never raw numbers, and
+compare chords with the same number of notes (roughness and the periodicity counts grow with note count; the retuner always
+compares predictions of the same held chord). The four scorers:
+
+1. **Parity (`scorePeriodicityInfinitone`)**: Infinitone's own method, kept for behavioural parity (see above). Its window is a fixed
+   0.1 s, so the verdict depends on register.
+2. **Pitch-fair periodicity (`scorePeriodicityFair(freqs, {periods = 44, samplesPerPeriod = 100, bins = 100})`)**: the same
+   "does the sum of the sines retrace itself?" idea, but the window and sampling step are measured in periods of the chord's
+   *lowest* note (44 periods, 100 samples per period: Infinitone's 0.1 s at about 440 Hz). Multiplying all frequencies by k leaves the
+   sampled phases unchanged, so the score is identical at every register by construction (4:5:6 gives the same count at 55, 220 and 880 Hz). Example: 4:5:6 = 362 cells against
+   12-EDO major = 2942, at any root. Choice: lowest note, not common period, because irrational (EDO) chords have no common period.
+3. **Lattice (`scoreLattice(notesOrHz, {oddLimit = 9, centsPenalty = 0.05})`)**: how far apart the chord's tones sit on the
+   just-intonation lattice. For every pair of tones take their interval (reduced into one octave, so open and close voicings match) and
+   its Tenney height log2(n*d) (the "size of the ratio": 3/2 = log2 6 = 2.58, 5/4 = log2 20 = 4.32, 6/5 = log2 30 = 4.91); the score is the
+   mean over all pairs. Example: 4:5:6 has pairs 5/4, 6/5, 3/2 so (4.32 + 4.91 + 2.58) / 3 = 3.94, and 10:12:15 has the same three
+   pairs (6/5, 3/2, 5/4) so it scores the same: major and minor triads are equally "far" on this measure. Notes with monzos give exact
+   ratios and pay no penalty. Notes without (EDO steps) and plain Hz are explained by the candidate ratio within `oddLimit` with the
+   **lowest cost = Tenney height + centsPenalty x |error in cents|** (default 0.05 bits per cent). This is a trade, not
+   nearest-then-penalty: 12-EDO's 300 c minor third is 15.6 c from 6/5 (cost 4.91 + 0.78) but 10.8 c from 13/11 (cost 7.16 + 0.54), so it
+   is explained as 6/5, and the score is continuous in the pitches (no jump when a pair drifts past a halfway point). With
+   `centsPenalty = 0` the nearest ratio by cents is used (otherwise every pair would be read as 1/1), so 12-EDO major then ties 4:5:6.
+   Hz input only sees ratios within `oddLimit`: 45/32 given as Hz is read as a cheaper neighbour near 7/5 (or the like), so give exact
+   notes for the true height. Hz values that are not positive finite numbers are ignored. `detail.pairs` lists each pair's ratio, height,
+   error and cost; `i` and `j` are the input indices of the pair's lower and upper tone.
+4. **Roughness (`scoreRoughness(freqs, {harmonics = 7, rolloff = 0.88, amp = 'min'})`, the lab's default)**: how much the partials
+   of the chord beat against each other. Each tone gets `harmonics` overtones at k*f with amplitude rolloff^(k-1) (Sethares' sample
+   spectrum), and the Plomp-Levelt roughness (the curve ear tests gave: two close partials beat harshly, identical or far apart ones
+   do not) is summed over every pair of partials of every tone, same-tone pairs included. The per-pair formula is Sethares': with
+   f1 <= f2, `d = 5 * min(a1, a2) * (exp(-b1*s*(f2-f1)) - exp(-b2*s*(f2-f1)))`, `s = d* / (s1*f1 + s2)`, with b1 = 3.51, b2 = 5.75,
+   s1 = 0.0207, s2 = 18.96, d* = 0.24, and the factor 5 (his C1 = 5, C2 = -5) (William A. Sethares, *Tuning, Timbre, Spectrum, Scale*, 2nd ed., 2005; his `dissmeasure.m`,
+   https://sethares.engr.wisc.edu/comprog.html). The amplitude rule is the minimum of the two amplitudes (2005 model);
+   `amp: 'product'` gives the older 1994 rule. With this timbre a sweep of two tones has minima at 1/1, 6/5, 5/4, 4/3, 3/2, 5/3 and 2/1
+   (and also 7/6, 7/5, 7/4, because the timbre has a 7th harmonic), within 1 cent. Example: 220 + 330 Hz (a fifth) = 1.16 (whole-chord score, own partials included); 220 + 233 Hz
+   (a semitone) is far rougher. `detail.pairs` and `detail.self` hold each tone-pair's and each tone's own contribution.
+
+`compareScorers(chords: {name, freqs, notes?}[], scorers: {name, score(freqs, notes?)}[])` returns `{scorers, rows: [{name, scores, ranks}]}` (rank 1 =
+lowest score in that column, ties share a rank): the table the "why" views and the tests use.
+
+The comparison tests include the La Monte Young *Well-Tuned Piano* chords as exact ratios, from Kyle Gann, "La Monte Young's The
+Well-Tuned Piano", *Perspectives of New Music* 31/1 (Winter 1993), pp. 134-162, Examples 10-12 (supplied by the human, not
+re-checked against the article): Opening Chord 4:6:7:8:9:12; Magic Chord 81:84:108:112:144:162:192:216; Romantic Chord
+48:54:56:64:72:81:84; Gamelan Chord 42:54:64:81; Tamiar Dream Chord 14:18:24:27; 189/98 Lost Ancestral Lake Region 12:14:18:21:24:27;
+The Brook 12:14:16:18:21; The Pool 128:144:147:192:224. Each is rooted so its lowest term is 220 Hz.

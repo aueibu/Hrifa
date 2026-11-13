@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M3
-- State: building
+- Current milestone: M4
+- State: not started
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -27,6 +27,34 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - **Theme:** `src/theme/THEMING.md` (roles, studio tiers, one accent / many categories via `--mark-<hue>`, divider budget, no decorative shadows, canvas via `markHue`). Applies from M4.
 - **Baseline `yarn test` (2026-11-12, run step by step):** typecheck PASS; `format:test` FAIL (19 files, e.g. `src/theme/semantic.ts`, not ours); `lint` FAIL (oxlint `curly` errors in `src/theme/contrast.ts` plus jest warnings in theme/workbench tests, not ours); vitest PASS 107 files / 1680 tests; build PASS. Not ours to fix.
 
+## M3 comparison table (220 Hz, lowest term at 220 Hz; score (rank in column), lower = better; compare ranks, not raw values; roughness and periodicity grow with note count)
+
+| chord | parity | fair | lattice | roughness |
+| --- | --- | --- | --- | --- |
+| JI fifth 2:3 | 634 (#1) | 206 (#1) | 2.58 (#1) | 1.16 (#1) |
+| JI major 4:5:6 | 901 (#3) | 362 (#4) | 3.94 (#3) | 5.66 (#5) |
+| 12-EDO major | 2805 (#18) | 2942 (#19) | 4.46 (#5) | 6.24 (#7) |
+| JI minor 10:12:15 | 1996 (#11) | 898 (#9) | 3.94 (#3) | 5.74 (#6) |
+| 12-EDO minor | 2850 (#19) | 2986 (#20) | 4.46 (#5) | 6.37 (#9) |
+| JI harmonic 7th 4:5:6:7 | 771 (#2) | 314 (#2) | 4.52 (#7) | 11.05 (#11) |
+| 12-EDO dom7 | 2623 (#16) | 2796 (#18) | 5.24 (#12) | 12.5 (#15) |
+| JI septimal minor 6:7:9 | 1360 (#5) | 545 (#5) | 4.65 (#8) | 6.36 (#8) |
+| JI tritone 45/32 | 3275 (#21) | 2737 (#16) | 10.49 (#21) | 2.41 (#2) |
+| 12-EDO tritone | 3225 (#20) | 3483 (#21) | 6 (#15) | 2.54 (#3) |
+| JI 5-limit 9:10:12 | 1489 (#6) | 814 (#7) | 4.99 (#10) | 8.13 (#10) |
+| 12-EDO semitone cluster | 2565 (#15) | 2743 (#17) | 5.46 (#13) | 12.48 (#14) |
+| JI whole-tone pair 8:9 | 1765 (#9) | 734 (#6) | 6.17 (#17) | 3.66 (#4) |
+| WTP Opening 4:6:7:8:9:12 | 907 (#4) | 350 (#3) | 3.88 (#2) | 17.76 (#16) |
+| WTP Magic 81:84:108:112:144:162:192:216 | 1918 (#10) | 2063 (#12) | 6.1 (#16) | 49.33 (#21) |
+| WTP Romantic 48:54:56:64:72:81:84 | 2032 (#12) | 2130 (#13) | 6.59 (#18) | 48.9 (#20) |
+| WTP Gamelan 42:54:64:81 | 2662 (#17) | 2670 (#15) | 8.1 (#20) | 11.91 (#13) |
+| WTP Tamiar Dream 14:18:24:27 | 2161 (#13) | 1170 (#11) | 5.55 (#14) | 11.54 (#12) |
+| WTP 189/98 Lost Ancestral Lake Region 12:14:18:21:24:27 | 1697 (#7) | 874 (#8) | 4.8 (#9) | 24.57 (#19) |
+| WTP The Brook 12:14:16:18:21 | 1709 (#8) | 925 (#10) | 5.07 (#11) | 20.54 (#17) |
+| WTP The Pool 128:144:147:192:224 | 2279 (#14) | 2511 (#14) | 7.59 (#19) | 22.9 (#18) |
+
+WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives of New Music* 31/1 (1993), Examples 10–12.
+
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-12 (Setup, add `check:hfl`), released 2026-11-12 after the setup commit `d1c2abf`.
 - M1: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `src/pages/Home.page.test.tsx`, `ARCHITECTURE.md`: taken 2026-11-12, released 2026-11-12 after the M1 commit `3c50fce` (Home test lock released unused).
@@ -36,4 +64,4 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M3: builder for the three more scorers (pitch-fair periodicity, lattice, Sethares roughness default) + `compareScorers` table, owned paths only; then reviewer, `check:hfl`, commit, paste the table here.
+M4: builder for the encyclopaedia mock route (static numbers from the "Harmonics from 8" preset), screenshots at 1500/1100 px light/dark with headless Edge and a throwaway profile; needs lock rows for `src/Router.tsx` (mock route) unless the mock lives inside the page's own routing. Then reviewer, `check:hfl`, commit, then STOP for the human checkpoint.

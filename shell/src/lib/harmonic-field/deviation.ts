@@ -25,7 +25,7 @@ export function fmtSigned(x: number, dp = 1): string {
   return z ? (0).toFixed(dp) : (x > 0 ? '+' : '') + t;
 }
 
-interface RatioCandidate {
+export interface RatioCandidate {
   c: number;
   ratio: string;
   /** Tenney height log2(a*b). */
@@ -47,7 +47,7 @@ function gcd(x: number, y: number): number {
   return a;
 }
 
-function ratioList(L: number, repC: number): RatioCandidate[] {
+export function ratioList(L: number, repC: number): RatioCandidate[] {
   const key = `${L}|${repC}`;
   let list = nrCache.get(key);
   if (list) {

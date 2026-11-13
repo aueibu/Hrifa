@@ -1,6 +1,6 @@
 # ARC: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI
 
-**Status: APPROVED (2026-11-12).** Moved into the shell's multi-arc layout the same day (from `C:\Users\apoor\Documents\Infinitone Tracing\ARC.md`, history in `PROGRESS.md`), and re-ordered so the retuner is written once, in TS, after the core port. Next: M3.
+**Status: APPROVED (2026-11-12).** Moved into the shell's multi-arc layout the same day (from `C:\Users\apoor\Documents\Infinitone Tracing\ARC.md`, history in `PROGRESS.md`), and re-ordered so the retuner is written once, in TS, after the core port. Next: M4 (mock, human checkpoint).
 
 The source repo `C:\Users\apoor\Documents\Infinitone Tracing` (below: **the Infinitone repo**) keeps the frozen JS prototype (`prototype/`), its contracts (`ARCHITECTURE.md`, `prototype/CORE_SPEC.md`) and the RE notes (`notes/`). Read them by absolute path; never edit them (they are outside this arc's paths, except the one-time freeze note and pointer done at Setup).
 
@@ -112,6 +112,7 @@ Proposal:
   - [ ] Test: all four scorers rank JI 4:5:6 above 12-EDO major at 220 Hz.
   - [ ] `compareScorers` table over ~12 standard chords (JI/12-EDO triads and tetrads, tritone, cluster, Young WTP 3–7 chords) pasted into PROGRESS for the human to read later.
 - Checkpoint decisions (human, 2026-11-12): default = Sethares roughness, no checkpoint.
+- Checkpoint decisions (human, 2026-11-12, at M3 review): lattice scorer picks the explaining ratio by lowest cost = Tenney height + centsPenalty × |error c| over all ratios in the odd limit (default 0.05 bits per cent, 0 = pure Tenney height; exact monzo pairs unpenalised), so a tempered triad scores worse than JI and 300 c reads as 6/5, not 13/11. Comparison table uses La Monte Young Well-Tuned Piano chords from Kyle Gann, "La Monte Young's The Well-Tuned Piano", *Perspectives of New Music* 31/1 (1993), pp. 134–162, Examples 10–12: Opening 4:6:7:8:9:12, Magic 81:84:108:112:144:162:192:216, Romantic 48:54:56:64:72:81:84, Gamelan 42:54:64:81, Tamiar Dream 14:18:24:27, 189/98 Lost Ancestral Lake Region 12:14:18:21:24:27, The Brook 12:14:16:18:21, The Pool 128:144:147:192:224. Orchestrator: roughness includes Sethares' factor 5 (`dissmeasure.m` C1=5, C2=−5).
 - Human checkpoint after: no
 
 ### M4: Encyclopaedia mock (in the shell theme)
