@@ -136,6 +136,7 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
   - [ ] Constraints: must-not-have removes every voicing containing the interval (exact and octave-equivalent modes); must-have keeps only voicings containing it; the number filtered out is reported; tests for both, including a constraint that removes everything (empty result, no error).
   - [ ] Descriptive measures (span, note count, centroid, lowest note, distinct induced intervals, collisions) computed per voicing.
   - [ ] `check:ip` green; path-scoped commit.
+- Result (2026-11-13): done (see PROGRESS M2 rows; quirk list in the lib README feeds M2b). Orchestrator decision for M2b to revisit: merged voicings keep every ordering's essential pairs and flag `essentialVaries`.
 - Human checkpoint after: no
 
 ### M2b: Placement redesign proposal

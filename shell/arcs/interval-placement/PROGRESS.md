@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
-- Current milestone: M2
-- State: not started
+- Current milestone: M2b
+- State: building (proposal)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -16,6 +16,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | C0 | Scan: workbench arc at M7 awaiting the human's combined review; harmonic-field-lab at M6 (Router lock next); `arcs/LOCKS.md` empty. Only `IntervalPlacement.page.tsx` imports the page folder (`src/theme/diagram.ts` mentions it in a comment). BACKLOG `[shared]` non-EDO pitch item fits I-2 (cents + ref Hz). `src/lib/harmonic-field/scorersMore.ts` has `scoreRoughness` (Sethares, `SETHARES` constants) for the M1 cross-check. Reference implementations and CC0 datasets found (see ARC M1 "References found at C0"). | — | Harmonicity in two forms (faithful pitch-class + pitch-space variant); composite weights as the proposed M3 default. Recorded under ARC M1 checkpoint decisions. |
 | M1 attempt 1 | Builder: `src/lib/consonance/` (interference H&K + Sethares, periodicity, harmonicity pc + pitch, scoreVoicing, ranking), ported from the MIT R packages with reference-value tests; 132 + 1 expected-fail. Raised: H&K has no 6/5 minimum at the default timbre (model behaviour, R values reproduce); ARC wrongly said Sethares uses ERB; "H&K found best" not in the packages. | `check:ip` GREEN | Reviewer PASS-WITH-FIXES: harmonicity template followed the playback timbre (sine collapsed it to note count, the v2 bug again); −1.62/+1.78 are unstandardised (paper Table 2), not z-score weights; periodicity kept duplicate pitches; dyad semantics under-documented; overstated invariance wording; no option validation; weak tests. Orchestrator read the preprint (DOI 10.1037/rev0000169): H&K is one of the three best-performing models and later interference models did worse. ARC corrected (`d1b4088`, then M1 commit). 6/5 criterion amended (orchestrator, for the human to veto). |
 | M1 attempt 2 | All review items fixed: fixed perceptual harmonicity template (11 harmonics, rho 0.75, sigma 6.83) independent of playback timbre with sine/triangle/piano/guitar regression tests; `inconComposite` (faithful raw Table 2 composite, culture omitted) + `EQUAL_WEIGHTS` for z-score ranking; periodicity dedupe; `pairwise` isolated dyads for the Relations view; RangeError validation; explicit H&K 6/5 test; JL12 floors. ARCHITECTURE entry (lock taken and released), DECISIONS I-2, I-3. | `check:ip` GREEN, 144 tests | Validation and comparison tables below. |
+| M2 attempt 1 | Builder: `src/lib/interval-placement/` (four engines ported in steps, `placeIntervals`, `placementChunks` iterator with cap, dedupe, constraints, measures, `transpositionScan`); golden test vs the old page engine (all modes, 12/19/31-EDO, several windows, non-default params). Quirks found (README "Quirks"): repulsion is a no-op at default params; odd bias positional in the old page; prefixSlack never reaches the window top; anchors vs endpoints flooring mismatch; every engine can leave the window; silent drops and collision merges; duplicate pitch sets. | `check:ip` GREEN, 293 | Builder decisions: odd bias belongs to the interval by default (`oddBiasSemantics: 'position'` reproduces the old page); window = bottom Hz + width with a step grid; exact handling of non-whole spans. Reviewer PASS-WITH-FIXES: golden drop parity never exercised; wrong docs on which engines leave the window; chunk timer charged consumer time; dedupe kept only the first ordering's essential labelling; ambiguous perms; fractional windows off-grid; inexact ordering totals; missing validation. Reviewer confirmed repulsion no-op: 0 of 864 orderings changed pitch (push distance <= 0.8 steps at kappa 0.4; first effect near kappa 20 for `11 7 16`). |
+| M2 attempt 2 | All review items fixed: real drop-parity cases; window containment documented and tested for every engine; chunk timer excludes consumer time; per-ordering records `{order, perm, essentialPairs, endpoints}` with `essentialVaries` (orchestrator decision, revisit at M2b); exact BigInt ordering totals; whole-step window snapping; RangeError validation. | `check:ip` GREEN, 315 | ARCHITECTURE row for `lib/interval-placement` deferred to the Final step (ARC schedules it there). No new DECISIONS row (no new shared contract). Inputs for M2b: the quirk list in `src/lib/interval-placement/README.md`. |
 
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-13, released 2026-11-13 after `86a859f` (Setup).
@@ -25,7 +27,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
-Brief a builder for M2 (placement library: port + golden verification, cents, constraints, collisions, dedupe, cap/iterator, descriptive measures, transposition scan; no gravity), then reviewer, `check:ip`, commit; then M2b (placement redesign proposal, human checkpoint).
+Orchestrator writes M2b `arcs/interval-placement/placement-proposal.md` (diagnosis from the M2 quirks, 2-4 grounded designs with numbers from the libs), then the human chooses (checkpoint).
 
 ## M1 tables (2026-11-13)
 
