@@ -193,29 +193,47 @@ export function ChordPicker({
     if (button && rootRef.current?.contains(document.activeElement)) {
       button.focus();
     }
-    button?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     onPin(chord, { audition: allowAudition && previewGate === 'click' });
   }
-  // The owner's handle, refreshed every render so it never reads a stale list.
+  // The owner's handle, refreshed every render so it never reads a stale list. It is not cleared
+  // between renders (a key landing in that gap would find nothing), only when the picker goes.
   useEffect(() => {
-    if (!controlRef) {
-      return undefined;
+    if (controlRef) {
+      controlRef.current = {
+        navigate: (dx, dy, fromKey, audition) =>
+          navigate(dx, dy, fromKey ?? null, audition ?? true),
+        current: () => (tabbableKey !== undefined ? (chordByKey.get(tabbableKey) ?? null) : null),
+        inversions: () => inversions,
+      };
     }
-    controlRef.current = {
-      navigate: (dx, dy, fromKey, audition) => navigate(dx, dy, fromKey ?? null, audition ?? true),
-      current: () => (tabbableKey !== undefined ? (chordByKey.get(tabbableKey) ?? null) : null),
-      inversions: () => inversions,
-    };
-    return () => {
-      controlRef.current = null;
-    };
   });
+  useEffect(
+    () => () => {
+      if (controlRef) {
+        controlRef.current = null;
+      }
+    },
+    [controlRef]
+  );
+  // The current chord stays in view however it was reached (keys from the roll, a click, a new
+  // list). Nearest edge only, and the sticky role header is cleared by the area's scroll-padding.
+  useEffect(() => {
+    if (tabbableKey === undefined) {
+      return;
+    }
+    [...(rootRef.current?.querySelectorAll<HTMLElement>('[data-chord-key]') ?? [])]
+      .find((candidate) => candidate.dataset.chordKey === tabbableKey)
+      ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [tabbableKey]);
 
   const chordButton = (chord: Chord, role?: string) => (
     <button
       key={chord.name}
       type="button"
       tabIndex={chordKey(chord, role) === tabbableKey ? 0 : -1}
+      // The current chord (the one Enter inserts and the ghost shows), whatever has DOM focus.
+      data-current={chordKey(chord, role) === tabbableKey ? '' : undefined}
+      aria-current={chordKey(chord, role) === tabbableKey ? 'true' : undefined}
       data-chord-button=""
       data-chord-key={chordKey(chord, role)}
       title={chord.name}

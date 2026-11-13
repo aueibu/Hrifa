@@ -32,7 +32,7 @@ import {
 } from '../chordInput/ChordPicker';
 import { ChordPickerHost } from '../chordInput/ChordPickerHost';
 import type { Chord } from '../chordInput/chords';
-import { stepSpread } from '../chordInput/navigation';
+import { cycle, stepSpread } from '../chordInput/navigation';
 import {
   chordNotes,
   snapToEdo,
@@ -458,6 +458,9 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     start: number;
     step: number;
   } | null>(null);
+  // The cell under a still pointer when the anchor was last moved by keys: its hover ghost stays
+  // hidden until the pointer reports another cell (or leaves the roll).
+  const hoverBlocked = useRef<{ pitchMidicents: number; start: number } | null>(null);
   const auditionRef = useRef<((notes: PlacedNote[], velocity?: number) => void) | null>(null);
   const [developerOptions] = useDeveloperOptions();
   function clearChordGhosts() {
@@ -1104,6 +1107,9 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   /** Moves the anchor (keys, continuous insert) and tells the host, like a click on the roll. */
   function setChordAnchorTo(next: { pitchMidicents: number; start: number; step: number }) {
     const start = Number(next.start.toFixed(9));
+    // A keyboard move leaves the pointer where it was: its cell ghost would sit at the old point.
+    hoverBlocked.current = hoverCell ?? hoverBlocked.current;
+    setHoverCell(null);
     setChordAnchor({ ...next, start });
     // The view follows the anchor: the minimum scroll that shows this chord, the next one when
     // inserting continuously, and some pitch room around it for the ghost.
@@ -1175,26 +1181,25 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     setChordAnchorTo({ ...chordAnchor, start, pitchMidicents });
   }
 
-  /** Alt+arrows: the same voicing change the Inversion and Spread buttons make, clamped at the ends. */
+  /**
+   * Alt+arrows: the same voicing change the Inversion and Spread buttons make, but cycling: after
+   * the last spread comes the first, and the inversion wraps within the current chord's own
+   * inversions (a triad has three), so every press moves the ghost.
+   */
   function stepChordVoicing(inversionDelta: number, spreadDelta: number, allowAudition = true) {
     const control = chordControl.current;
-    if (!control) {
-      return;
-    }
-    const last = Math.max(0, control.inversions() - 1);
-    const inversion = Math.max(
-      0,
-      Math.min(last, Math.min(chordVoicing.inversion, last) + inversionDelta)
-    );
+    const current = pinnedChord ?? hoverChord ?? control?.current() ?? null;
+    const count = Math.max(1, current?.steps.length ?? control?.inversions() ?? 1);
+    const inversion = cycle(Math.min(chordVoicing.inversion, count - 1) + inversionDelta, count);
     const spread = stepSpread(chordVoicing.spread, spreadDelta);
-    if (inversion === Math.min(chordVoicing.inversion, last) && spread === chordVoicing.spread) {
+    if (inversion === chordVoicing.inversion && spread === chordVoicing.spread) {
       return;
     }
     changeVoicing(
       { inversion, spread },
       {
         audition: allowAudition && developerOptions.chordPreviewGate === 'click',
-        fallback: control.current(),
+        fallback: control?.current() ?? null,
       }
     );
   }
@@ -1566,11 +1571,22 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
             }
             reveal={reveal}
             ghostNotes={chordGhosts}
-            onAnchorHover={(anchor) =>
-              setHoverCell(
-                anchor ? { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) } : null
-              )
-            }
+            onAnchorHover={(anchor) => {
+              const cell = anchor
+                ? { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) }
+                : null;
+              const blocked = hoverBlocked.current;
+              if (
+                cell &&
+                blocked &&
+                cell.start === blocked.start &&
+                cell.pitchMidicents === blocked.pitchMidicents
+              ) {
+                return;
+              }
+              hoverBlocked.current = null;
+              setHoverCell(cell);
+            }}
             onAnchorClick={(anchor) => {
               // Snapped to the project EDO grid before anything (picker, ghosts, voicing) sees it.
               const snapped = { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) };

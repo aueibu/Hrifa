@@ -194,7 +194,7 @@ describe('the Chords tool key map', () => {
     expect(noteCount()).toBe(0);
   });
 
-  it('Alt+Up/Down steps the inversion and Alt+Left/Right the spread, clamped, like the buttons', async () => {
+  it('Alt+Up/Down steps the inversion and Alt+Left/Right the spread, cycling, like the buttons', async () => {
     const roll = await open();
     clickAnchor(roll, 69);
     roll.focus();
@@ -203,32 +203,30 @@ describe('the Chords tool key map', () => {
     expect(pressed('1st inv.')).toBe(true);
     press(roll, 'ArrowUp', { altKey: true });
     expect(pressed('2nd inv.')).toBe(true);
-    for (let index = 0; index < 8; index += 1) {
-      press(roll, 'ArrowUp', { altKey: true });
-    }
-    const inversions = [...document.querySelectorAll('button')].filter((button) =>
-      /inv\.|Root pos\./.test(button.textContent ?? '')
-    );
-    expect(inversions[inversions.length - 1]).toHaveAttribute('aria-pressed', 'true');
-    for (let index = 0; index < 8; index += 1) {
-      press(roll, 'ArrowDown', { altKey: true });
-    }
+    // A triad has three inversions: past the last it wraps to root position, and back.
+    press(roll, 'ArrowUp', { altKey: true });
+    expect(pressed('Root pos.')).toBe(true);
+    press(roll, 'ArrowDown', { altKey: true });
+    expect(pressed('2nd inv.')).toBe(true);
+    press(roll, 'ArrowDown', { altKey: true });
+    press(roll, 'ArrowDown', { altKey: true });
     expect(pressed('Root pos.')).toBe(true);
     press(roll, 'ArrowRight', { altKey: true });
     expect(pressed('Open')).toBe(true);
     press(roll, 'ArrowRight', { altKey: true });
     expect(pressed('Drop 2')).toBe(true);
     press(roll, 'ArrowRight', { altKey: true });
-    press(roll, 'ArrowRight', { altKey: true });
     expect(pressed('Drop 3')).toBe(true);
+    press(roll, 'ArrowRight', { altKey: true });
+    expect(pressed('Close')).toBe(true);
     press(roll, 'ArrowLeft', { altKey: true });
-    expect(pressed('Drop 2')).toBe(true);
+    expect(pressed('Drop 3')).toBe(true);
     // From picker focus too, and the ghost follows.
     const first = chord(chordNames()[0]!);
     first.focus();
     press(first, 'ArrowLeft', { altKey: true });
     press(first, 'ArrowLeft', { altKey: true });
-    expect(pressed('Close')).toBe(true);
+    expect(pressed('Open')).toBe(true);
     expect(ghosts('pinned').length).toBeGreaterThan(0);
   });
 
@@ -492,4 +490,166 @@ describe('Shift+Up/Down moves one EDO step', () => {
       expect(at()).toBeCloseTo(start - 1200 / edo, 5);
     }
   );
+});
+
+describe('Alt+Up/Down inversion (hands-on report)', () => {
+  const inversionPressed = () =>
+    ['Root pos.', '1st inv.', '2nd inv.', '3rd inv.']
+      .filter((name) => screen.queryByRole('button', { name }))
+      .filter((name) => pressed(name));
+
+  /** Inserts a chord (its notes are then selected), then opens the picker again at a pitch. */
+  async function withSelectedNote(common: boolean) {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    press(roll, 'Enter');
+    expect(noteCount()).toBe(3);
+    if (common) {
+      await user.click(screen.getByRole('button', { name: 'Common tone' }));
+    }
+    reclick(roll, 72);
+    roll.focus();
+    return roll;
+  }
+
+  it.each([
+    ['root', false],
+    ['common-tone', true],
+  ])(
+    'changes the inversion in %s mode with a note selected, never transposing it',
+    async (_n, common) => {
+      const roll = await withSelectedNote(common);
+      const before = pitches();
+      const sources: [string, () => Element][] = [
+        ['roll', () => roll],
+        ['picker', () => document.querySelector('[data-chord-button]')!],
+        ['body', () => document.body],
+      ];
+      for (const [, source] of sources) {
+        const start = inversionPressed();
+        const target = source();
+        if (target instanceof HTMLElement) {
+          target.focus();
+        }
+        expect(fireEvent.keyDown(target, { key: 'ArrowUp', altKey: true })).toBe(false);
+        expect(inversionPressed()).not.toEqual(start);
+        expect(fireEvent.keyDown(target, { key: 'ArrowDown', altKey: true })).toBe(false);
+        expect(inversionPressed()).toEqual(start);
+      }
+      expect(pitches()).toEqual(before);
+    }
+  );
+
+  it('always consumes the key, even when the voicing cannot change', async () => {
+    const roll = await open();
+    clickAnchor(roll, 69);
+    roll.focus();
+    // A global capture listener stands in for anything else that would act on the key.
+    const seen = vi.fn();
+    window.addEventListener('keydown', seen);
+    expect(fireEvent.keyDown(roll, { key: 'ArrowUp', altKey: true })).toBe(false);
+    expect(seen).not.toHaveBeenCalled();
+    window.removeEventListener('keydown', seen);
+  });
+
+  it('every Alt+Up/Down press moves the ghost, even when the list holds longer chords', async () => {
+    const roll = await open();
+    clickAnchor(roll, 69);
+    roll.focus();
+    const shape = () => [...ghosts('pinned')].map((ghost) => ghost.getAttribute('style')).join('|');
+    press(roll, 'ArrowDown');
+    // The chord's own tone count is its number of inversions (the list's longest chord has more).
+    const tones = ghosts('pinned').length;
+    const seen = [shape()];
+    for (let index = 0; index < tones; index += 1) {
+      press(roll, 'ArrowUp', { altKey: true });
+      seen.push(shape());
+    }
+    expect(new Set(seen.slice(0, tones)).size).toBe(tones);
+    expect(seen[tones]).toBe(seen[0]);
+  });
+});
+
+describe('the current chord is marked (data-current)', () => {
+  const current = () =>
+    [...document.querySelectorAll<HTMLElement>('[data-chord-button][data-current]')].map(
+      (button) => button.dataset.chordKey
+    );
+
+  it('follows arrow navigation from the roll without DOM focus on the chord, in the root grid', async () => {
+    const roll = await open();
+    clickAnchor(roll, 69);
+    const names = chordNames();
+    expect(current()).toEqual([names[0]]);
+    roll.focus();
+    press(roll, 'ArrowDown');
+    expect(current()).toEqual([names[1]]);
+    expect(chord(names[1]!)).toHaveAttribute('aria-current', 'true');
+    expect(chord(names[1]!)).not.toHaveFocus();
+    press(roll, 'ArrowRight');
+    expect(current()).toEqual([names[2]]);
+  });
+
+  it('follows navigation in the common-tone columns and a click', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 69);
+    await user.click(screen.getByRole('button', { name: 'Common tone' }));
+    const columns = [...document.querySelectorAll<HTMLElement>('[data-role-column]')];
+    const inFirst = columns[0]!.querySelectorAll<HTMLElement>('[data-chord-button]');
+    expect(current()).toEqual([inFirst[0]!.dataset.chordKey]);
+    roll.focus();
+    press(roll, 'ArrowDown');
+    expect(current()).toEqual([inFirst[1]!.dataset.chordKey]);
+    press(roll, 'ArrowRight');
+    expect(current()).toHaveLength(1);
+    expect(columns[1]!.querySelector('[data-current]')).not.toBeNull();
+    const last = columns[0]!.querySelectorAll<HTMLElement>('[data-chord-button]')[2]!;
+    await user.click(last);
+    expect(current()).toEqual([last.dataset.chordKey]);
+  });
+
+  it('scrolls the current chord into view when navigation moves it', async () => {
+    const scroll = vi.fn();
+    const had = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView');
+    HTMLElement.prototype.scrollIntoView = scroll;
+    const roll = await open();
+    clickAnchor(roll, 69);
+    roll.focus();
+    scroll.mockClear();
+    press(roll, 'ArrowDown');
+    expect(scroll).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' });
+    expect(scroll.mock.contexts.at(-1)).toBe(chord(chordNames()[1]!));
+    if (had) {
+      Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', had);
+    } else {
+      // @ts-expect-error restoring jsdom's absence of the method
+      delete HTMLElement.prototype.scrollIntoView;
+    }
+  });
+});
+
+describe('the hover cell ghost after a keyboard anchor move', () => {
+  it('Shift+Right moves only the anchor ghost: one ghost at the new anchor, none at the old point', async () => {
+    const roll = await open();
+    const point = { clientX: 70, clientY: rowY(69), pointerId: 1 };
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '7' });
+    fireEvent.pointerMove(roll, point);
+    fireEvent.pointerDown(roll, point);
+    fireEvent.pointerUp(roll, point);
+    fireEvent.pointerMove(roll, point);
+    const before = [...ghosts('anchor')].map((ghost) => ghost.getAttribute('style'));
+    expect(before).toHaveLength(1);
+    press(roll, 'ArrowRight', { shiftKey: true });
+    expect(ghosts('hover')).toHaveLength(0);
+    expect(ghosts('anchor')).toHaveLength(1);
+    expect(ghosts('anchor')[0]!.getAttribute('style')).not.toBe(before[0]);
+    // The still pointer re-reporting the old cell shows nothing; another cell shows again.
+    fireEvent.pointerMove(roll, point);
+    expect(ghosts('hover')).toHaveLength(0);
+    fireEvent.pointerMove(roll, { ...point, clientY: rowY(72) });
+    expect(ghosts('hover')).toHaveLength(1);
+  });
 });

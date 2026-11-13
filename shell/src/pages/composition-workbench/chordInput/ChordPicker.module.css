@@ -150,7 +150,8 @@
   outline-offset: 1px;
 }
 
-.option[aria-pressed='true'] {
+.option[aria-pressed='true'],
+.chord[data-current] {
   background: var(--accent-tint);
   border-color: var(--accent);
   color: var(--accent-tint-text);

@@ -7,10 +7,15 @@ import type { SpreadStyle } from './voicing';
 /** The spread styles in the order Alt+Left (previous) and Alt+Right (next) step through. */
 export const SPREAD_ORDER: readonly SpreadStyle[] = ['close', 'open', 'drop2', 'drop3'];
 
-/** The next spread style, clamped at the ends. */
+/** The next spread style; it cycles (after the last comes the first, and the other way round). */
 export function stepSpread(current: SpreadStyle, delta: number): SpreadStyle {
   const at = Math.max(0, SPREAD_ORDER.indexOf(current));
-  return SPREAD_ORDER[Math.max(0, Math.min(SPREAD_ORDER.length - 1, at + delta))]!;
+  return SPREAD_ORDER[cycle(at + delta, SPREAD_ORDER.length)]!;
+}
+
+/** `value` wrapped into 0..size-1 (size at least 1). */
+export function cycle(value: number, size: number): number {
+  return ((value % size) + size) % size || 0;
 }
 
 /**

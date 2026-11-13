@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { stepChordKey, stepSpread } from './navigation';
+import { cycle, stepChordKey, stepSpread } from './navigation';
 
 describe('stepSpread', () => {
-  it('steps close, open, drop2, drop3 and clamps at the ends', () => {
+  it('steps close, open, drop2, drop3 and cycles at the ends', () => {
     expect(stepSpread('close', 1)).toBe('open');
     expect(stepSpread('open', 1)).toBe('drop2');
     expect(stepSpread('drop2', 1)).toBe('drop3');
-    expect(stepSpread('drop3', 1)).toBe('drop3');
-    expect(stepSpread('close', -1)).toBe('close');
+    expect(stepSpread('drop3', 1)).toBe('close');
+    expect(stepSpread('close', -1)).toBe('drop3');
     expect(stepSpread('drop3', -1)).toBe('drop2');
+  });
+});
+
+describe('cycle', () => {
+  it('wraps both ways', () => {
+    expect(cycle(3, 3)).toBe(0);
+    expect(cycle(-1, 3)).toBe(2);
+    expect(cycle(1, 1)).toBe(0);
+    expect(cycle(-1, 1)).toBe(0);
   });
 });
 
