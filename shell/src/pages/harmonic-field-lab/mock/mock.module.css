@@ -425,10 +425,11 @@
   gap: 0.5rem 0.75rem;
   grid-template-areas:
     'gen ring stats'
+    'gen tools tools'
     'strip strip side'
     'saved saved side';
   grid-template-columns: 14rem minmax(0, 1fr) 17rem;
-  grid-template-rows: auto auto minmax(7rem, 1fr);
+  grid-template-rows: auto auto auto minmax(7rem, 1fr);
   padding: 0.5rem;
 }
 
@@ -438,7 +439,7 @@
   --ref-black: color-mix(in srgb, var(--text) 7%, transparent);
 }
 
-/* the parameter column, with the subset tools as a group right under the method settings */
+/* the parameter column: the method settings only */
 .areaGen {
   display: flex;
   flex-direction: column;
@@ -447,51 +448,68 @@
   min-width: 0;
 }
 
-/* a sub-group on the slot tier (THEMING: sub-groups use a tier fill, not a box line) */
-.subsetBox {
-  background: var(--panel-slot);
-  border-radius: var(--radius-control);
+/* note selection: it shares the workspace columns (subgrid), so the select stack and the mode stepper sit under
+   the ring with the stepper centred on it, and nearest scale + odd limit sit under the stats */
+.selectBar {
+  align-items: center;
+  column-gap: 0.75rem;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.selectLeft {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.selectStack {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.375rem 0.5rem 0.5rem;
-}
-
-.subsetHead {
-  align-items: baseline;
-  display: flex;
-  font-size: 0.75rem;
-  justify-content: space-between;
-}
-
-.subsetTriple {
-  display: grid;
   gap: 0.25rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.subsetTriple > *,
-.subsetPair2 > * {
-  display: block;
+  justify-self: start;
+  width: 4rem;
 }
 
 .modeStep {
   align-items: center;
-  display: grid;
+  display: inline-grid;
   gap: 0.25rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto auto;
 }
 
-.subsetPair {
+.pickStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  justify-self: stretch;
+  min-width: 0;
+}
+
+.pickHead {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 0.6875rem;
+  justify-content: space-between;
+}
+
+.pickRow {
   display: grid;
   gap: 0.25rem;
   grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 0.25rem;
 }
 
-.subsetPair2 {
-  display: grid;
-  gap: 0.25rem;
-  grid-template-columns: 1fr 1fr;
+.pickRow:last-child {
+  margin-bottom: 0;
+}
+
+.tinySeg {
+  --sc-font-size: 0.625rem;
+  --sc-padding: 0 0.375rem;
 }
 
 .areaRing {
@@ -504,6 +522,14 @@
   min-width: 0;
 }
 
+
+.areaTools {
+  column-gap: 0.75rem;
+  display: grid;
+  grid-area: tools;
+  grid-template-columns: subgrid;
+  min-width: 0;
+}
 
 .areaStrip {
   grid-area: strip;
@@ -524,20 +550,26 @@
 }
 
 @media (max-width: 81em) {
+  .areaTools,
+  .selectBar {
+    grid-template-columns: minmax(0, 1fr) 15rem;
+  }
+
   .workspace {
     grid-template-areas:
       'gen ring'
+      'tools tools'
       'stats side'
       'strip strip'
       'saved saved';
     grid-template-columns: 14rem minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(5rem, 1fr);
+    grid-template-rows: auto auto auto auto minmax(5rem, 1fr);
   }
 }
 
 .ringBox {
   margin: 0 auto;
-  max-width: 22rem;
+  max-width: 19.5rem;
   min-width: 0;
 }
 
@@ -664,7 +696,7 @@
 
 .modeLabel {
   font-size: 0.75rem;
-  min-width: 6.5rem;
+  min-width: 4.5rem;
   text-align: center;
   white-space: nowrap;
 }

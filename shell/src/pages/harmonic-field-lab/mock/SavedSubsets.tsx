@@ -1,7 +1,7 @@
 /** Saved subsets of this pitch collection: one mini tuner strip (a sparkline) per row. Hover previews, click loads. */
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Button, Checkbox, Popover, TextInput } from '@mantine/core';
 import { fmtRatio } from '../../../lib/harmonic-field';
-import { SaveIcon } from './icons';
+import { DownloadIcon, SaveIcon } from './icons';
 import { field, fieldDev12, savedSubsets } from './mockData';
 import { NoteMark } from './NoteMark';
 import { RefLines, stripLeft } from './TunerStrip';
@@ -17,8 +17,28 @@ export function SavedSubsets() {
       <Strip title={<Tip k="savedSubsets">Saved subsets</Tip>}>
         <Num muted>{savedSubsets.length}</Num>
         <Tip k="saveSubset" as="control">
-          <ActionIcon variant="default" size="sm" aria-label="Save current subset">
-            <SaveIcon />
+          <Popover position="bottom-end" width={240} transitionProps={{ duration: 0 }}>
+            <Popover.Target>
+              <ActionIcon variant="default" size="sm" aria-label="Save current subset">
+                <SaveIcon />
+              </ActionIcon>
+            </Popover.Target>
+            <Popover.Dropdown>
+              <div className={classes.formStack}>
+                <span className={classes.inline}>
+                  <TextInput size="xs" aria-label="Subset name" placeholder="Name" flex={1} />
+                  <Button size="xs" variant="default">
+                    Save
+                  </Button>
+                </span>
+                <Checkbox size="xs" label="Include new notes when the field changes" />
+              </div>
+            </Popover.Dropdown>
+          </Popover>
+        </Tip>
+        <Tip k="exportScl" as="control">
+          <ActionIcon variant="default" size="sm" aria-label="Export .scl">
+            <DownloadIcon />
           </ActionIcon>
         </Tip>
       </Strip>
