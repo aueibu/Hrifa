@@ -1,6 +1,6 @@
 # ARC: Interval Placement: rigorous, register-aware scoring + panel workspace
 
-**Status: APPROVED (2026-11-13).** In progress: M1. Then M2 (port + verify), M2b (placement redesign proposal, human checkpoint), M3 mock.
+**Status: APPROVED (2026-11-13).** M1, M2 done; M2b decided by the human (see M2b checkpoint decisions). Next: fold those decisions into Proposed UI and M3–M5, then M3 mock. Paused 2026-11-13 at the human's request (usage limit).
 
 ## Goal
 Interval Placement keeps its idea and gets a sound scoring core and a better workspace:
@@ -145,7 +145,15 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
 - Acceptance:
   - [ ] Proposal written, with a recommendation, the open choices listed as questions, and a sketch of what each option looks like in the M3 workspace.
   - [ ] Any numbers in it come from the libs (reproducible command or test named).
-- Checkpoint decisions (human, …):
+- Checkpoint decisions (human, 2026-11-13, on `placement-proposal.md` section 5):
+  1. Tiered approach approved: **A + B as the play mode, C + D as the Explore panel.**
+  2. **Spread = a numeric range (octaves or cents) as the universal control.** Named steps only as optional presets over that range; the human wants name proposals. Orchestrator proposal (to confirm at M3): Close (≤ 1 oct), Open (1–2 oct), Wide (2–3 oct), Vast (≥ 3 oct), each just a preset of the range; alternative set borrowed from spacing terms: Clustered / Close / Open / Spread.
+  3. **Drag single spans as well as the whole structure.** Step = one tuning step; a modifier key gives fine drag in cents.
+  4. **Search scope = a neighbourhood around the current voicing by default**, with a settings mode to extend it (up to the whole register limits) that explains the resource cost (candidate count, estimated time) before running.
+  5. **Shared notes allowed by default**, but the UI must show when a duplicate (shared note) was created.
+  6. **No old engine is kept**; the rework replaces them. The human is interested in revisiting a **force-based spacing mode like a node-graph layout** (a working repulsion, scaled in cents/register, not the old no-op) as a later option: BACKLOG-worthy, or a B variant if cheap.
+  7. **Explore list ranking toggles** between Pareto layer and the weighted mix.
+- Next: update "Proposed UI" and M3–M5 to these decisions, then build the M3 mock.
 - Human checkpoint after: **yes** (the human chooses the placement design; the M3 mock and M4/M5 follow that choice, and the ARC is updated before M3)
 
 ### M3: Workspace mock

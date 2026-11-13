@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
 - Current milestone: M2b
-- State: awaiting human (M2b checkpoint)
+- State: M2b decided by the human; paused before M3 (usage limit)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -28,44 +28,11 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
-Human reads `placement-proposal.md` and answers its section 5; then record the choice under ARC M2b "Checkpoint decisions", update the ARC's Proposed UI and M3-M5 to match, and start M3 (mock).
+Resume here. M2b decisions are recorded in ARC.md (M2b "Checkpoint decisions"). Next: rewrite ARC "Proposed UI" and M3–M5 to match them (play mode A+B: draggable structure and spans, whole steps plus a cents fine-drag modifier, register limits, spread as a numeric range with optional named presets, lean, evenness; Explore panel C+D: neighbourhood search with an extend-scope setting that explains cost, shared notes allowed and shown, Pareto-layer vs weighted ranking toggle; old engines removed; force-based spacing to BACKLOG), get the human's OK on the edited ARC, then brief the M3 mock.
 
-## M1 tables (2026-11-13)
-
-Validation, Spearman rho (`npx vitest run src/lib/consonance --reporter=verbose`). Bowling = consonance ratings; JL12 = dissonance ratings (signs flip).
-
-```
-score                                         Bowling all (298)  dyads (12)  triads (66)  tetrads (220)  JL12 fig 2 (55)  JL12 fig 3 (48)
-interference H&K                                         -0.736      -0.928       -0.848         -0.797            0.724            0.378
-interference Sethares                                    -0.405      -0.588       -0.649         -0.547            0.433            0.049
-periodicity (Stolzenburg)                                -0.608      -0.910       -0.730         -0.645            0.828            0.714
-harmonicity pitch-class (har18)                           0.623       0.830        0.656          0.687           -0.603           -0.665
-harmonicity pitch (extension)                             0.558       0.634        0.562          0.609           -0.586           -0.752
-incon composite (raw H&K + pc harmonicity)                0.728       0.942        0.841          0.825           -0.741           -0.569
-```
-
-Comparison (default timbre 11 harmonics 1/n; H&K per unit energy; Sethares summed; periodicity log2, lower simpler; harmonicity KL bits, higher more harmonic; `11 7 16` rows are the current page's placements with the window bottom at C2):
-
-```
-chord                                notes      H&K    worst Sethares  period.   hrm pc hrm pitch  ratio chord
-M3 on C2                                 2    0.233    0.218    1.066    2.000    1.070     1.760  4:5
-M3 on C4                                 2    0.070    0.069    0.324    2.000    1.070     1.760  4:5
-M3 on C6                                 2    0.031    0.031    0.166    2.000    1.070     1.760  4:5
-P5 on C4                                 2    0.023    0.022    0.160    1.000    1.252     2.099  2:3
-m2 on C4                                 2    0.484    0.483    0.591    3.907    0.942     1.590  15:16
-M10 on C4 (compound)                     2    0.029    0.028    0.120    1.000    1.070     1.928  2:5
-major triad C4                           3    0.120    0.059    0.774    2.000    0.929     1.641  4:5:6
-minor triad C4                           3    0.130    0.074    0.792    3.322    0.929     1.635  10:12:15
-JI 4:5:6 on C4                           3    0.097    0.048    0.569    2.000    1.003     1.699  4:5:6
-major 7th C4 (0 4 7 11)                  4    0.238    0.112    1.353    3.000    0.815     1.557  8:10:12:15
-dominant 7th C4 (0 4 7 10)               4    0.221    0.051    1.478    4.430    0.729     1.434  20:25:30:36
-cluster 0 1 2 on C4                      3    0.812    0.322    1.587    6.964    0.743     1.302  120:128:135
-cluster 0 1 2 3 on C3                    4    1.211    0.245    3.734    7.530    0.605     1.126  120:128:135:144
-open C2 G2 E3 (0 7 16)                   3    0.221    0.085    1.583    1.000    0.929     1.793  2:3:5
-31-EDO 4:5:6:7 on C3 (0 10 18 25)        4    0.380    0.089    2.475    2.000    0.733     1.428  4:5:6:7
-11 7 16 v2 #1 (perm 11,16,7)             6    0.351    0.073    2.953    3.292    0.802     1.762  8:12:15:24:30:36
-11 7 16 v2 #2 (perm 16,7,11)             5    0.412    0.095    2.552    3.407    0.712     1.803  10:20:25:30:56
-11 7 16 prefixDominance #1               6    0.663    0.084    4.798    5.589    0.661     1.405  120:150:225:320:384:480
-```
-
-Notes for M3: H&K is normalised per unit energy, so like the old per-pair mean it can dilute a harsh pair (the faithful model; `worst` and `pairwise` cover it, Sethares is an unnormalised total). The pitch-space harmonicity is our extension and validates slightly below the faithful pc version on Bowling (0.56 vs 0.62) but better on JL12 fig 3 (register-varied four-note chords).
+## Handoff notes (for any other session or account)
+- Branch: `claude/interval-placement-app-0ejurh` on `aueibu/Hrifa` (not yet merged to `main`). Check it out, then read `shell/CLAUDE.md`, this folder's `ARC.md` and this file.
+- Gate: `corepack yarn check:ip` from `shell/`; if corepack is offline, `node .yarn/releases/yarn-4.18.0.cjs run check:ip` (install the same way).
+- Role agents live in `shell/.claude/agents/`; they load when a session starts in `shell/`. From the repo root, run a general agent with that role file as its instructions.
+- Reference R packages are not in the repo: re-clone as in ARC M1 "References found at C0". The listener datasets are in the repo (`src/lib/consonance/data/`).
+- M2b numbers: scripts in `m2b/` (see `placement-proposal.md` for the command).
