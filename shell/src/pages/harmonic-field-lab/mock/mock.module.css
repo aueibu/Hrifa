@@ -856,21 +856,25 @@
 
 /* --d is the deviation in cents; 1 c is 0.5 px */
 /* sharp grows up from the top of the line, flat down from its bottom (1 c = 0.5 px) */
+/* sharp grows up from the top of the line, flat down from its bottom (1 c = 0.5 px). The bar starts as
+   wide as the line and tapers out at its far end: line width up to 10 c, three times it at 50 c. */
 .colBar {
   height: max(1px, calc(var(--d) * 0.5px));
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
-  width: 6px;
+  width: calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px));
 }
 
 .colBar[data-dir='sharp'] {
   background: var(--mark-pink);
+  clip-path: polygon(0 0, 100% 0, calc(50% + 1px) 100%, calc(50% - 1px) 100%);
   top: calc(var(--mid) - var(--half) - var(--d) * 0.5px);
 }
 
 .colBar[data-dir='flat'] {
   background: var(--mark-cyan);
+  clip-path: polygon(calc(50% - 1px) 0, calc(50% + 1px) 0, 100% 100%, 0 100%);
   top: calc(var(--mid) + var(--half));
 }
 
@@ -1002,20 +1006,24 @@
   opacity: 0.35;
 }
 
+/* same taper as the strip: line width up to 10 c, three times it at 50 c */
 .sparkBar {
   height: max(1px, calc(var(--d) * 0.2px));
-  left: -2px;
+  left: 0;
   position: absolute;
-  width: 4px;
+  transform: translateX(-50%);
+  width: calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px));
 }
 
 .sparkCol[data-dir='sharp'] .sparkBar {
   background: var(--mark-pink);
   bottom: calc(50% + 4px);
+  clip-path: polygon(0 0, 100% 0, calc(50% + 1px) 100%, calc(50% - 1px) 100%);
 }
 
 .sparkCol[data-dir='flat'] .sparkBar {
   background: var(--mark-cyan);
+  clip-path: polygon(calc(50% - 1px) 0, calc(50% + 1px) 0, 100% 100%, 0 100%);
   top: calc(50% + 4px);
 }
 
