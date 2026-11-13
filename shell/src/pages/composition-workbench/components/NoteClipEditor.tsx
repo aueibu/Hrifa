@@ -1247,7 +1247,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
       if (event.altKey) {
         // Alt+Left/Right is also the browser's Back/Forward; its keyup must not open the menu bar.
         altArrowHandled.current = true;
-        stepChordVoicing(-dy, dx, !event.repeat);
+        stepChordVoicing(dy, dx, !event.repeat);
       } else if (event.shiftKey) {
         moveChordAnchor(dx, dy, !event.repeat);
       } else {

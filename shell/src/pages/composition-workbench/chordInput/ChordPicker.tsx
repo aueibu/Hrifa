@@ -42,7 +42,7 @@ export interface ChordPickerControl {
 export const CHORD_SHORTCUTS: readonly [string, string][] = [
   ['Arrow keys', 'browse the chords'],
   ['Enter', 'insert the chord'],
-  ['Alt+Up / Down', 'inversion up / down'],
+  ['Alt+Down / Up', 'inversion: next / previous'],
   ['Alt+Left / Right', 'spread: previous / next'],
   ['Shift+arrows', 'move the anchor on the roll'],
   ['I', 'continuous insert on / off'],

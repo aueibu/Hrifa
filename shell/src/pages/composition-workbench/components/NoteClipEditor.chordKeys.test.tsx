@@ -194,22 +194,22 @@ describe('the Chords tool key map', () => {
     expect(noteCount()).toBe(0);
   });
 
-  it('Alt+Up/Down steps the inversion and Alt+Left/Right the spread, cycling, like the buttons', async () => {
+  it('Alt+Down/Up steps the inversion and Alt+Left/Right the spread, cycling, like the buttons', async () => {
     const roll = await open();
     clickAnchor(roll, 69);
     roll.focus();
     expect(pressed('Root pos.')).toBe(true);
-    press(roll, 'ArrowUp', { altKey: true });
+    press(roll, 'ArrowDown', { altKey: true });
     expect(pressed('1st inv.')).toBe(true);
-    press(roll, 'ArrowUp', { altKey: true });
+    press(roll, 'ArrowDown', { altKey: true });
     expect(pressed('2nd inv.')).toBe(true);
     // A triad has three inversions: past the last it wraps to root position, and back.
-    press(roll, 'ArrowUp', { altKey: true });
+    press(roll, 'ArrowDown', { altKey: true });
     expect(pressed('Root pos.')).toBe(true);
-    press(roll, 'ArrowDown', { altKey: true });
+    press(roll, 'ArrowUp', { altKey: true });
     expect(pressed('2nd inv.')).toBe(true);
-    press(roll, 'ArrowDown', { altKey: true });
-    press(roll, 'ArrowDown', { altKey: true });
+    press(roll, 'ArrowUp', { altKey: true });
+    press(roll, 'ArrowUp', { altKey: true });
     expect(pressed('Root pos.')).toBe(true);
     press(roll, 'ArrowRight', { altKey: true });
     expect(pressed('Open')).toBe(true);

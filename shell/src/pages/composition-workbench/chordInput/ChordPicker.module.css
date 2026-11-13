@@ -3,6 +3,15 @@
  * host it sits in. Text and fills by role (THEMING.md); radii from the workbench variables.
  */
 .picker {
+  /* The one selection colour: the roll's time-selection wash (PianoRoll .range --band), with dark text since the wash is light in both schemes. */
+  --chord-selection: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%,
+    white
+  );
+  --chord-selection-edge: color-mix(in srgb, var(--mark-cyan) 70%, var(--accent));
+  --chord-selection-text: color-mix(in srgb, var(--mark-cyan) 15%, black);
+
   color: var(--text);
   container-name: chord-picker;
   container-type: inline-size;
@@ -152,9 +161,9 @@
 
 .option[aria-pressed='true'],
 .chord[data-current] {
-  background: var(--accent-tint);
-  border-color: var(--accent);
-  color: var(--accent-tint-text);
+  background: var(--chord-selection);
+  border-color: var(--chord-selection-edge);
+  color: var(--chord-selection-text);
 }
 
 .fold {
