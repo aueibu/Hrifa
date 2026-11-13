@@ -1,10 +1,9 @@
-import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useId, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Button, Chip, Group, Select, Text } from '@mantine/core';
 import { projectPitchSetFromPreset, type ProjectPitchSet } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
 import { pitchLabel } from '../routeTreatments';
 import { chordsOnRoot, chordsWithCommonTone, type Chord } from './chords';
-import type { ChordRole } from './chordTemplates';
 import { PITCH_SET_PRESETS, chromaticSet, togglePitch, type PitchSetPreset } from './pitchSet';
 import { inversionCount, pitchClassOf } from './placement';
 import type { SpreadStyle, VoicingSpec } from './voicing';
@@ -36,8 +35,6 @@ export interface ChordPickerProps {
    */
   allPitches?: boolean;
   onAllPitchesChange?(next: boolean): void;
-  /** Common-tone mode: a role was picked; the owner drops the ghosts of the old list. */
-  onRoleChange?(next: ChordRole): void;
   /**
    * The clicked pitch (midicents on the roll's 12-row grid). Root mode: the chord's root tone.
    * Common-tone mode: a tone the chord contains, in the role picked.
@@ -81,7 +78,6 @@ export function ChordPicker({
   onModeChange,
   allPitches = false,
   onAllPitchesChange,
-  onRoleChange,
   voicing,
   onVoicingChange,
   onHover,
@@ -90,7 +86,10 @@ export function ChordPicker({
   onInsert,
   onClose,
 }: ChordPickerProps) {
+  const headerPrefix = useId();
   const [scaleOpen, setScaleOpen] = useState(false);
+  // Roving tabindex: the chord button last focused (by key) is the only Tab stop of the chord area.
+  const [currentKey, setCurrentKey] = useState<string | null>(null);
   const { edo } = pitchSet;
   const overridden = override !== null && override.edo === edo;
   const common = mode === 'common';
@@ -99,22 +98,19 @@ export function ChordPicker({
   const chromatic = useMemo(() => chromaticSet(edo), [edo]);
   const active = common && allPitches ? chromatic : scale;
   const rootPc = pitchClassOf(anchor.pitchMidicents, edo);
-  const [pickedRole, setPickedRole] = useState<ChordRole | null>(null);
-  // Common tone: the engine's columns (grouped by the role the clicked pitch plays); the list shown
-  // is the picked role's, or the first role with chords when nothing is picked or it has none.
+  // Common tone: the engine's columns, one per role the clicked pitch can play, all shown at once.
   const columns = useMemo(
     () => (common && active.pcs.length > 0 ? chordsWithCommonTone(active, rootPc) : []),
     [common, active, rootPc]
   );
-  const role = columns.find((column) => column.role === pickedRole)?.role ?? columns[0]?.role;
   const chords = useMemo(
     () =>
       common
-        ? (columns.find((column) => column.role === role)?.chords ?? [])
+        ? columns.flatMap((column) => column.chords)
         : active.pcs.length === 0
           ? []
           : chordsOnRoot(active, rootPc),
-    [common, columns, role, active, rootPc]
+    [common, columns, active, rootPc]
   );
   const inversions = Math.min(INVERSION_LABELS.length, Math.max(1, inversionCount(chords)));
   const gated = (event: { ctrlKey: boolean; metaKey: boolean }) =>
@@ -128,6 +124,62 @@ export function ChordPicker({
     const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
     buttons[Math.max(0, Math.min(buttons.length - 1, at + delta))]?.focus();
   }
+
+  /** Common-tone columns: Up/Down within a column, Left/Right to the neighbour keeping the row. */
+  function moveInColumns(event: ReactKeyboardEvent<HTMLElement>, dx: number, dy: number) {
+    const cols = [...event.currentTarget.querySelectorAll<HTMLElement>('[data-role-column]')].map(
+      (col) => [...col.querySelectorAll<HTMLButtonElement>('[data-chord-button]')]
+    );
+    const colAt = cols.findIndex((buttons) =>
+      buttons.includes(document.activeElement as HTMLButtonElement)
+    );
+    if (colAt < 0) {
+      return;
+    }
+    const rowAt = cols[colAt]!.indexOf(document.activeElement as HTMLButtonElement);
+    const nextCol = Math.max(0, Math.min(cols.length - 1, colAt + dx));
+    const column = cols[nextCol]!;
+    column[Math.max(0, Math.min(column.length - 1, rowAt + dy))]?.focus();
+  }
+
+  const chordKey = (chord: Chord, role?: string) => (role ? `${role}:${chord.name}` : chord.name);
+  const allKeys = common
+    ? columns.flatMap((column) => column.chords.map((chord) => chordKey(chord, column.role)))
+    : chords.map((chord) => chordKey(chord));
+  // A key that is gone (the list changed) falls back to the first chord.
+  const tabbableKey = currentKey !== null && allKeys.includes(currentKey) ? currentKey : allKeys[0];
+
+  const chordButton = (chord: Chord, role?: string) => (
+    <button
+      key={chord.name}
+      type="button"
+      tabIndex={chordKey(chord, role) === tabbableKey ? 0 : -1}
+      data-chord-button=""
+      title={chord.name}
+      className={classes.chord}
+      onMouseEnter={() => onHover(chord)}
+      onFocus={() => {
+        setCurrentKey(chordKey(chord, role));
+        onHover(chord);
+      }}
+      onBlur={() => onHover(null)}
+      onClick={(event) => {
+        // The second click of a double-click belongs to the insert, not another audition.
+        if (event.detail < 2) {
+          onPin(chord, { audition: gated(event) });
+        }
+      }}
+      onDoubleClick={() => onInsert(chord)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          onInsert(chord);
+        }
+      }}
+    >
+      {chord.name}
+    </button>
+  );
 
   return (
     // The key handlers are for keys bubbling up from the buttons inside (Escape, arrows).
@@ -192,25 +244,9 @@ export function ChordPicker({
                 All pitches
               </Chip>
               {columns.length > 0 && (
-                <div role="group" aria-label="Role of the clicked pitch" className={classes.roles}>
-                  <Text size="xs" className={classes.muted}>
-                    {pitchClassName(rootPc, edo)} is the
-                  </Text>
-                  {columns.map((column) => (
-                    <button
-                      key={column.role}
-                      type="button"
-                      className={classes.option}
-                      aria-pressed={column.role === role}
-                      onClick={() => {
-                        setPickedRole(column.role);
-                        onRoleChange?.(column.role);
-                      }}
-                    >
-                      {column.role}
-                    </button>
-                  ))}
-                </div>
+                <Text size="xs" className={`${classes.muted} ${classes.roleLine}`}>
+                  {pitchClassName(rootPc, edo)} is the ...
+                </Text>
               )}
             </>
           )}
@@ -227,46 +263,46 @@ export function ChordPicker({
           ) : (
             // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
             <div
-              className={classes.chords}
+              className={common ? classes.columnsScroll : classes.chords}
               role="group"
               aria-label="Chords"
               onMouseLeave={() => onHover(null)}
               onKeyDown={(event) => {
-                if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-                  event.preventDefault();
-                  moveFocus(event, 1);
-                } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-                  event.preventDefault();
-                  moveFocus(event, -1);
+                const vertical = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+                const horizontal =
+                  event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+                if (!vertical && !horizontal) {
+                  return;
+                }
+                event.preventDefault();
+                if (common) {
+                  moveInColumns(event, horizontal, vertical);
+                } else {
+                  moveFocus(event, vertical || horizontal);
                 }
               }}
             >
-              {chords.map((chord) => (
-                <button
-                  key={chord.name}
-                  type="button"
-                  data-chord-button=""
-                  className={classes.chord}
-                  onMouseEnter={() => onHover(chord)}
-                  onFocus={() => onHover(chord)}
-                  onBlur={() => onHover(null)}
-                  onClick={(event) => {
-                    // The second click of a double-click belongs to the insert, not another audition.
-                    if (event.detail < 2) {
-                      onPin(chord, { audition: gated(event) });
-                    }
-                  }}
-                  onDoubleClick={() => onInsert(chord)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      onInsert(chord);
-                    }
-                  }}
-                >
-                  {chord.name}
-                </button>
-              ))}
+              {common ? (
+                <div className={classes.columns}>
+                  {columns.map((column) => (
+                    <div
+                      key={column.role}
+                      className={classes.roleColumn}
+                      role="group"
+                      aria-labelledby={`${headerPrefix}-${column.role}`}
+                      data-role-column=""
+                      data-role={column.role}
+                    >
+                      <div id={`${headerPrefix}-${column.role}`} className={classes.roleHeader}>
+                        {column.role}
+                      </div>
+                      {column.chords.map((chord) => chordButton(chord, column.role))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                chords.map((chord) => chordButton(chord))
+              )}
             </div>
           )}
         </div>
@@ -391,6 +427,9 @@ export function ChordPicker({
           {previewGate === 'click'
             ? 'Hover previews. Click auditions. Double-click or Enter inserts.'
             : 'Hover previews. Click pins, Ctrl+click auditions. Double-click or Enter inserts.'}
+          {common && columns.length > 0
+            ? ' Scroll the columns, or use the takeover for more room.'
+            : ''}
         </Text>
       </div>
     </div>

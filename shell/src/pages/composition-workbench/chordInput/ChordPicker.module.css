@@ -73,13 +73,47 @@
   overflow-y: auto;
 }
 
-/* Common tone: the role selector, a wrapping row of small buttons above the one chord list. */
-.roles {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
+/* Common tone: one column per role, one shared scroll (both axes) for the whole set. */
+.roleLine {
   margin-block: 0.25rem;
+}
+
+.columnsScroll {
+  max-height: 14rem;
+  overflow: auto;
+  scroll-padding-top: 1.6rem;
+}
+
+.columns {
+  align-items: stretch;
+  display: flex;
+  gap: 3px;
+  min-width: 100%;
+  width: max-content;
+}
+
+.roleColumn {
+  display: flex;
+  flex: 1 0 4.2rem;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 4.2rem;
+}
+
+.roleHeader {
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.roleColumn .chord {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .column {
@@ -147,7 +181,8 @@
     grid-template-rows: auto auto auto 1fr auto;
   }
 
-  .chords {
+  .chords,
+  .columnsScroll {
     max-height: none;
   }
 }

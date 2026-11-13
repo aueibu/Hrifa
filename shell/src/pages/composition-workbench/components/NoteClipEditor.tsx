@@ -1444,7 +1444,6 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
                   setChordAllPitches(next);
                   clearChordGhosts();
                 }}
-                onRoleChange={clearChordGhosts}
                 voicing={chordVoicing}
                 onVoicingChange={changeVoicing}
                 previewGate={developerOptions.chordPreviewGate}

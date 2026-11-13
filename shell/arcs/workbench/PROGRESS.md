@@ -2,7 +2,7 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M6c (M6 committed 03be432; M5c and M5d accepted by the human)
+- Current milestone: M6c committed; M6d next (M6 committed 03be432)
 - State: building
 
 ## Where to look
@@ -26,6 +26,8 @@
 | M6 | Built: common-tone mode (Ctrl/Cmd+click, role buttons, All pitches toggle, tone-anchored placement), `ctrlKey` on `onAnchorClick`; 12 new tests | `check:workbench` green (builder run, 79 files / 1324 tests) plus PianoRoll/EditorPalette tests | DECISIONS W-18. Reviewer: pass with fixes (Scale chip toggled the chromatic set, chromatic set not memoised, role switch left a pinned ghost, cosmetics): fixed; committed 03be432, `PianoRoll` lock released. Roles-as-columns in wide containers not built (optional). |
 | Sheet | Human supplied the original sheet and asked to copy it over; chose Simple | Extended and scale-degree role names (2nd, 4th, 6th, not 9th, 11th, 13th). Copied to `reference/any-chord-voice-relations.csv`. | n/a | New milestone M6b (after M6, before M7) written into ARC.md. Out of scope: augmented sixths, pc-sets, (I+bVI) chord: BACKLOG at M8. |
 | M6 checkpoint | Human, 2026-11-13: clicking through scale degrees is a non-starter; show every degree as a column with chords stacked. | n/a | New milestone M6c (before M6b) written into ARC.md; it replaces the role buttons. M6 is committed first (reviewer fixes in progress); the role-carry-over question is moot, the mode-stickiness question is still open. |
+| M6 checkpoint 2 | Human, 2026-11-13: Common tone button should stick; wants keyboard navigation of the chord array, modifiers for inversion and voicing, a continuous-insert mode that advances the roll, and a modifier to move the ghost. | n/a | New milestone M6d (after M6c, before M6b); key map is a proposal to veto: arrows navigate, Alt+arrows inversion/spread, Shift+arrows move the anchor, Enter inserts, `I` toggles continuous insert. Order: M6c, M6d, M6b, M7, M8. |
+| M6c | Built: common-tone mode as stacked columns (no role buttons), sticky headers, shared scroll, column keyboard nav; reviewer: pass with fixes (sticky headers of short columns, roving tabindex, scroll padding, aria-labelledby, stronger test) | `check:workbench` green (builder run, 1326 tests) | DECISIONS W-19 (supersedes W-18 layout). Fixes applied; one flaky `deskStorage.test.tsx` failure in the builder's run passed alone and on a second full gate run (79 files / 1328 tests); committed. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
@@ -38,4 +40,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-Launch the M6c builder (common-tone columns, replaces the role buttons; no shared locks needed), then M6b. Open question for the human: should the Common tone button make the mode stick on plain clicks.
+M6d (sticky mode, keyboard workflow, continuous insert): the human asked whether sticky click works yet; offered to split the sticky-mode change out first. Launch the M6d builder (or the sticky-only slice if the human says so).

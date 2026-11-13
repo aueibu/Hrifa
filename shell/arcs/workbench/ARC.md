@@ -157,6 +157,22 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] DECISIONS: the common-tone columns layout (supersedes the role-selector layout in W-18)
 - Human checkpoint after: yes (judged by eye: does it fit the dock; is the takeover better for this mode)
 
+### M6d: Keyboard workflow, sticky mode, continuous insert
+- Context (human, 2026-11-13): the Common tone button sticks (the mode set by the buttons persists across clicks; with stacked columns there is no separate role to stick, so the column selection question is moot). The human wants to drive the picker from the keyboard: arrow keys navigate the chord array; modifiers change inversion and voicing; a continuous-insert mode inserts a chord and moves the roll to the next step for the next chord; a modifier moves the ghost (the anchor) on the roll. The key map below is the orchestrator's proposal for the human to veto at the checkpoint.
+- Scope (owned paths: `chordInput/ChordPicker.tsx`, `components/NoteClipEditor.tsx`, tests, `ARCHITECTURE.md` section for chord input shortcuts):
+  - Sticky mode: the Root | Common tone buttons set the mode that every plain click on the roll uses; Ctrl/Cmd+click opens common-tone mode for that click only without changing the stored mode (and Alt-less plain clicks use the stored mode). The mode resets on reload like the other tool state.
+  - Key map while the Chords tool is active and an anchor exists, whether focus is in the picker or on the roll (not while typing in an input): Arrow keys navigate the chord array (Up/Down within a column, Left/Right across columns in common-tone mode; in root mode the wrapping grid); Enter inserts; Alt+Up/Down = inversion up/down; Alt+Left/Right = spread previous/next (close, open, drop 2, drop 3); Shift+arrows move the anchor on the roll (Left/Right by the grid step in time, Up/Down by a semitone or the EDO step in pitch), with the ghost following and the chord list recomputed for the new pitch; Esc closes. Each of these updates the pinned ghost; auditions follow the preview gate (a navigation key counts as a click for the gate: audition on navigation only in `click` mode).
+  - Continuous insert: a toggle in the picker header (button plus a key, e.g. `I`): while on, after an insert the anchor advances along the time axis by the inserted chord length (same pitch) and the picker stays on the same chord and voicing, so Enter inserts the next one; combined with Shift+arrows this lets the user step through a progression from the keyboard. Off by default; tool state, reset on reload. One undo step per inserted chord.
+  - Shortcut hints in the picker (a compact line or a tooltip on a '?' button) listing the map.
+- Acceptance:
+  - [ ] The arc's `Check command` passes
+  - [ ] Pressing Common tone then a plain click on the roll opens common-tone mode; Root then a plain click opens root mode; Ctrl+click opens common-tone mode without changing the stored mode (tests through the editor)
+  - [ ] Each key in the map does what is listed, from both picker focus and roll focus; nothing fires while typing in an input or when the Chords tool is not active (tests); Alt+arrows changes inversion and spread to the same state the buttons set; Shift+arrows move the anchor and the ghost
+  - [ ] Continuous insert: with it on, Enter inserts the chord and the anchor moves by the chord length; a second Enter inserts the next chord; each is one undo step; with it off the anchor stays
+  - [ ] No new shared paths; if the roll must report keys or expose a way to move the anchor, stop and report (a `src/components/PianoRoll/` lock would be needed)
+  - [ ] DECISIONS row: the key map and the continuous-insert behaviour
+- Human checkpoint after: yes (judged by hand: does the key map feel right)
+
 ### M6b: Chord vocabulary from the human's sheet, Simple and Extended
 - Context (human, 2026-11-13): the common-tone idea comes from the human's own sheet, copied into the repo as `arcs/workbench/reference/any-chord-voice-relations.csv` (for the fixed note 3, each chord type, and for each role column Root, Third, Fifth, Seventh, Ninth, Eleventh, Thirteenth, the chord's pitch classes when the note is that tone, in stack order with gaps for absent tones). Decisions: use the CSV as a parity oracle and as the source for more chord types; add a Simple | Extended split; show roles as scale-degree numbers (2nd, 4th, 6th) and not as extension names (9th, 11th, 13th), because most people want to see the scale degree.
 - Scope (owned paths only, `chordInput/` and the picker):

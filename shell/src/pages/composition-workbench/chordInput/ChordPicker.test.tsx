@@ -299,43 +299,121 @@ describe('ChordPicker common-tone mode', () => {
       />
     );
   }
-  const roleGroup = () => screen.queryByRole('group', { name: 'Role of the clicked pitch' });
-  const roleButtons = () =>
-    within(screen.getByRole('group', { name: 'Role of the clicked pitch' }))
-      .getAllByRole('button')
-      .map((button) => button.textContent);
+  const columnEls = () => [...document.querySelectorAll<HTMLElement>('[data-role-column]')];
+  const roleOrder = () => columnEls().map((col) => col.dataset.role);
+  const columnChords = (role: string) =>
+    [...document.querySelector(`[data-role="${role}"]`)!.querySelectorAll('button')].map(
+      (button) => button.textContent
+    );
+  const roleGroup = () => (columnEls().length > 0 ? columnEls() : null);
 
-  it('offers the roles the engine finds for A (and only those), defaulting to the first', () => {
+  it('shows every role the engine finds for A as columns at once, in order, no role buttons', () => {
     render(<Modal callbacks={spies()} />);
-    expect(roleButtons()).toEqual(chordsWithCommonTone(project, 9).map((column) => column.role));
+    expect(roleOrder()).toEqual(chordsWithCommonTone(project, 9).map((column) => column.role));
+    expect(roleOrder()).toEqual(expect.arrayContaining(['root', '3rd', '5th']));
+    expect(roleOrder().indexOf('root')).toBeLessThan(roleOrder().indexOf('3rd'));
+    expect(roleOrder().indexOf('3rd')).toBeLessThan(roleOrder().indexOf('5th'));
+    expect(screen.queryByRole('group', { name: 'Role of the clicked pitch' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '5th' })).toBeNull();
+    expect(screen.getByText('A is the ...')).toBeInTheDocument();
+    expect(columnChords('root')).toContain('Am');
     cleanup();
-    // Only D, F and A: the one role left is the 5th.
+    // Only D, F and A: the one role left is the 5th; roles without chords have no column.
     render(<Modal callbacks={spies()} pitchSet={{ ...project, pcs: [2, 5, 9] }} />);
-    expect(roleButtons()).toEqual(['5th']);
+    expect(roleOrder()).toEqual(['5th']);
     expect(chordButtons()).toContain('Dm');
-    cleanup();
-    render(<Modal callbacks={spies()} />);
-    expect(screen.getByRole('button', { name: 'root' })).toHaveAttribute('aria-pressed', 'true');
-    expect(chordButtons()).toContain('Am');
-    expect(chordButtons()).not.toContain('Dm');
   });
 
-  it('the 5th role lists Dm, Dm7 and Dm9', async () => {
-    const user = userEvent.setup();
+  it('the 5th column lists Dm, Dm7 and Dm9 in order', () => {
     render(<Modal callbacks={spies()} />);
-    await user.click(screen.getByRole('button', { name: '5th' }));
-    expect(chordButtons()).toEqual(expect.arrayContaining(['Dm', 'Dm7', 'Dm9']));
-    expect(chordButtons()).not.toContain('Am');
+    const names = columnChords('5th');
+    expect(names).toEqual(expect.arrayContaining(['Dm', 'Dm7', 'Dm9']));
+    expect(names.indexOf('Dm')).toBeLessThan(names.indexOf('Dm7'));
+    expect(names.indexOf('Dm7')).toBeLessThan(names.indexOf('Dm9'));
+    expect(names).not.toContain('Am');
   });
 
   it('All pitches adds chords outside the scale (F#m has A as its 3rd)', async () => {
     const user = userEvent.setup();
     render(<Modal callbacks={spies()} />);
-    await user.click(screen.getByRole('button', { name: '3rd' }));
-    expect(chordButtons().some((name) => /^F[♯#]m$/.test(name!))).toBe(false);
+    expect(columnChords('3rd').some((name) => /^F[♯#]m$/.test(name!))).toBe(false);
     await user.click(screen.getByRole('checkbox', { name: 'All pitches' }));
-    await user.click(screen.getByRole('button', { name: '3rd' }));
-    expect(chordButtons().some((name) => /^F[♯#]m$/.test(name!))).toBe(true);
+    expect(columnChords('3rd').some((name) => /^F[♯#]m$/.test(name!))).toBe(true);
+  });
+
+  it('arrow keys move within a column and across columns, keeping the row', async () => {
+    const user = userEvent.setup();
+    render(<Modal callbacks={spies()} />);
+    const root = within(document.querySelector<HTMLElement>('[data-role="root"]')!);
+    const fifth = within(document.querySelector<HTMLElement>('[data-role="5th"]')!);
+    const buttons = root.getAllByRole('button');
+    buttons[0]!.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(buttons[1]).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(buttons[0]).toHaveFocus();
+    const row = 0;
+    const hops = roleOrder().indexOf('5th');
+    await user.keyboard('{ArrowRight}'.repeat(hops));
+    expect(fifth.getAllByRole('button')[row]).toHaveFocus();
+    await user.keyboard('{ArrowLeft}'.repeat(hops));
+    expect(buttons[row]).toHaveFocus();
+    // Clamped to the last chord of a shorter column; Down stops at the end.
+    const last = buttons.length - 1;
+    buttons[last]!.focus();
+    await user.keyboard('{ArrowRight}');
+    const next = document.activeElement as HTMLElement;
+    expect(next.closest('[data-role-column]')).not.toBe(
+      root.getAllByRole('button')[0]!.closest('[data-role-column]')
+    );
+  });
+
+  it('ArrowRight clamps to the last chord of a shorter column and ArrowLeft keeps the row where it exists', async () => {
+    const user = userEvent.setup();
+    render(<Modal callbacks={spies()} />);
+    const cols = columnEls().map((col) => [...col.querySelectorAll<HTMLButtonElement>('button')]);
+    // A tall column followed by a strictly shorter one.
+    const at = cols.findIndex((col, i) => i < cols.length - 1 && col.length > cols[i + 1]!.length);
+    expect(at).toBeGreaterThanOrEqual(0);
+    const tall = cols[at]!;
+    const short = cols[at + 1]!;
+    expect(tall.length).toBeGreaterThan(2);
+    const row = tall.length - 1;
+    tall[row]!.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(short[Math.min(row, short.length - 1)]).toHaveFocus();
+    expect(short[short.length - 1]).toHaveFocus();
+    await user.keyboard('{ArrowLeft}');
+    expect(tall[short.length - 1]).toHaveFocus();
+  });
+
+  it('only the current chord is a Tab stop, in both modes', async () => {
+    const user = userEvent.setup();
+    render(<Modal callbacks={spies()} />);
+    const stops = () =>
+      [...document.querySelectorAll<HTMLButtonElement>('[data-chord-button]')].filter(
+        (button) => button.tabIndex === 0
+      );
+    expect(stops()).toHaveLength(1);
+    expect(stops()[0]).toBe(document.querySelector('[data-chord-button]'));
+    const all = [...document.querySelectorAll<HTMLButtonElement>('[data-chord-button]')];
+    all[2]!.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(stops()).toHaveLength(1);
+    expect(stops()[0]).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Root' }));
+    expect(stops()).toHaveLength(1);
+    const rootButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-chord-button]')];
+    rootButtons[1]!.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(stops()).toHaveLength(1);
+    expect(rootButtons[2]).toHaveFocus();
+    expect(stops()[0]).toBe(rootButtons[2]);
+    // Tab from the modes goes to the one chord stop.
+    screen.getByRole('button', { name: 'Root' }).focus();
+    await user.tab();
+    await user.tab();
+    expect(rootButtons[2]).toHaveFocus();
   });
 
   it('with All pitches on, a Scale chip toggles one pitch of the scale, not of the chromatic set', async () => {
@@ -375,7 +453,7 @@ describe('ChordPicker common-tone mode', () => {
     render(<Modal mode="root" callbacks={spies()} />);
     expect(roleGroup()).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Common tone' }));
-    expect(roleGroup()).toBeInTheDocument();
+    expect(roleGroup()).not.toBeNull();
     await user.click(screen.getByRole('button', { name: 'Root' }));
     expect(roleGroup()).toBeNull();
   });

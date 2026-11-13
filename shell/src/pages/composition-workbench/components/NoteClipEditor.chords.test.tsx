@@ -516,13 +516,14 @@ describe('the Chords tool in common-tone mode', () => {
     fireEvent.pointerDown(roll, at);
     fireEvent.pointerUp(roll, at);
   }
-  const roleGroup = () => screen.queryByRole('group', { name: 'Role of the clicked pitch' });
+  const columns = () => [...document.querySelectorAll<HTMLElement>('[data-role-column]')];
+  const roleGroup = () => (columns().length > 0 ? columns() : null);
 
   it('Ctrl+click on A in C major opens common-tone mode; a plain click opens root mode', async () => {
     const roll = await open();
     ctrlClickAnchor(roll, 69);
     expect(screen.getByText(/Chords containing A \(A4\)/)).toBeInTheDocument();
-    expect(roleGroup()).toBeInTheDocument();
+    expect(roleGroup()).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Common tone' })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -539,10 +540,9 @@ describe('the Chords tool in common-tone mode', () => {
     const user = userEvent.setup();
     const roll = await open();
     ctrlClickAnchor(roll, 69);
-    await user.click(screen.getByRole('button', { name: '5th' }));
-    const names = within(screen.getByRole('group', { name: 'Chords' }))
-      .getAllByRole('button')
-      .map((button) => button.textContent);
+    const names = [...document.querySelector('[data-role="5th"]')!.querySelectorAll('button')].map(
+      (button) => button.textContent
+    );
     expect(names).toEqual(expect.arrayContaining(['Dm', 'Dm7', 'Dm9']));
     await user.dblClick(chord('Dm'));
     expect(pitches()).toEqual([
@@ -558,7 +558,6 @@ describe('the Chords tool in common-tone mode', () => {
     const user = userEvent.setup();
     const roll = await open();
     ctrlClickAnchor(roll, 69);
-    await user.click(screen.getByRole('button', { name: '5th' }));
     await user.click(screen.getByRole('button', { name: '1st inv.' }));
     await user.click(chord('Dm'));
     await waitFor(() => expect(engine.play).toHaveBeenCalled());
@@ -572,37 +571,11 @@ describe('the Chords tool in common-tone mode', () => {
     expect(pitches().map((entry) => entry.pitch)).toEqual(sounded);
   });
 
-  it('picking a role clears the pinned ghost; the next inversion click uses the new first chord', async () => {
-    const user = userEvent.setup();
-    const roll = await open();
-    ctrlClickAnchor(roll, 69);
-    await user.click(screen.getByRole('button', { name: '5th' }));
-    await user.click(chord('Dm'));
-    expect(ghosts('pinned')).toHaveLength(3);
-    await user.click(screen.getByRole('button', { name: 'root' }));
-    expect(ghosts('pinned')).toHaveLength(0);
-    const first = within(screen.getByRole('group', { name: 'Chords' })).getAllByRole('button')[0]!;
-    expect(first.textContent).toBe('Am');
-    engine.play.mockClear();
-    await user.click(screen.getByRole('button', { name: '1st inv.' }));
-    expect(ghosts('pinned')).toHaveLength(3);
-    await waitFor(() => expect(engine.play).toHaveBeenCalled());
-    const request = engine.play.mock.calls.at(-1) as unknown as [
-      { plan: { events: { pitchMidicents: number }[] } },
-    ];
-    // Not Dm's 1st inversion (D F A -> F A D).
-    expect(request[0].plan.events.map((event) => event.pitchMidicents)).not.toEqual([
-      6500, 6900, 7400,
-    ]);
-  });
-
   it('offers the root role with Am first, and no role A does not play', async () => {
     const roll = await open();
     ctrlClickAnchor(roll, 69);
     expect(chord('Am')).toBeInTheDocument();
-    const roles = within(screen.getByRole('group', { name: 'Role of the clicked pitch' }))
-      .getAllByRole('button')
-      .map((button) => button.textContent);
+    const roles = columns().map((column) => column.dataset.role);
     expect(roles[0]).toBe('root');
     // Exactly the engine's roles, no second implementation.
     expect(roles).toEqual(
@@ -615,11 +588,9 @@ describe('the Chords tool in common-tone mode', () => {
     const roll = await open();
     const projectBefore = JSON.stringify(settingsApi.settings.pitchSet);
     ctrlClickAnchor(roll, 69);
-    await user.click(screen.getByRole('button', { name: '3rd' }));
     const sharpMinor = () => screen.queryByRole('button', { name: /^F[♯#]m$/ });
     expect(sharpMinor()).toBeNull();
     await user.click(screen.getByRole('checkbox', { name: 'All pitches' }));
-    await user.click(screen.getByRole('button', { name: '3rd' }));
     await user.dblClick(sharpMinor()!);
     // F#4 A4 C#5 close: the A (the 3rd) held at the click.
     expect(pitches().map((entry) => entry.pitch)).toEqual([6600, 6900, 7300]);
@@ -634,7 +605,7 @@ describe('the Chords tool in common-tone mode', () => {
     const roll = await open();
     clickAnchor(roll, 69);
     await user.click(screen.getByRole('button', { name: 'Common tone' }));
-    expect(roleGroup()).toBeInTheDocument();
+    expect(roleGroup()).not.toBeNull();
     await user.click(screen.getByRole('button', { name: 'Root' }));
     expect(roleGroup()).toBeNull();
     act(() =>
