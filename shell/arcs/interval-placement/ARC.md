@@ -109,6 +109,17 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
   - [ ] Cross-check: the Sethares option orders a fixed chord set the same way as `src/lib/harmonic-field`'s `scoreRoughness` (imported read-only in a test).
   - [ ] A comparison table (about 15 chords: dyads at three registers, triads, tetrads, clusters, compound voicings, the default `11 7 16` placements) with every score, pasted into PROGRESS for the human. If the Bowling et al. data is available (Open questions), also a Spearman correlation per score, reported, not gated.
   - [ ] Lib `README.md` documents each model with its citation and known simplifications; `ARCHITECTURE.md` lists the lib; `DECISIONS.md` I-2 (pitch representation) and I-3 (scoring model) appended. `check:ip` green; path-scoped commit.
+- References found at C0 (2026-11-13), read-only clones outside the repo (re-clone with `GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/pmcharrison/<name> /home/user/pmcharrison/<name>` if missing):
+  - `dycon` (MIT): `R/hutch.R` Hutchinson & Knopoff 1978 roughness, `R/sethares.R`, `R/vassilakis.R`.
+  - `stolz15` (MIT): `R/main.R` Stolzenburg 2015 relative periodicity (smoothed).
+  - `har18` (MIT): `R/pc-harmonicity.R`, `R/sweep-harmonic-template.R` Harrison & Pearce 2018 harmonicity (Milne-style template; **pitch-class space**, so octave-invariant).
+  - `incon` (MIT): `R/model-har-2019.R`, the composite model and its published coefficients (`hutch_78_roughness` −1.620, `har_18_harmonicity` +1.780, corpus −0.089; chord-size term disabled by default; default timbre 11 harmonics, roll-off 1).
+  - `inconData` (CC0): listener data `data-raw/bowl18/data/{dyads,triads,tetrads}.csv` (Bowling, Purves & Gill 2018: all 12-TET dyads, triads, tetrads with the exact Hz played and mean ratings), `data-raw/jl12/figure-{2,3}.csv` (Johnson-Laird et al. 2012: triads as MIDI voicings in different registers and inversions, with ratings), `data-raw/sch03/figure-6.txt` (Schwartz et al. 2003 dyad consonance ranking).
+- Checkpoint decisions (orchestrator, C0, 2026-11-13, for the human to veto at M3):
+  - Ports follow the reference implementations' behaviour (MIT; credited in the lib `README.md` with each package's copyright line), checked by tests that reproduce values computed by hand from the R code's formulas.
+  - Harmonicity ships in two forms: `har18` faithful (pitch-class, validated in the literature) and a **pitch-space variant** (same template method on absolute pitches so octave placement counts). The variant is this arc's extension, labelled as such in code, README and reader text, and reported against the data beside the faithful one.
+  - The datasets are copied into `src/lib/consonance/data/` (CC0, with a `SOURCE.md` naming the papers and the package) and used by a validation test that prints Spearman correlations for each score (not gated, except a sanity floor: interference and harmonicity each correlate with the Bowling ratings in the expected direction).
+  - Proposed default ranking weights for the M3 mock: the `incon` composite coefficients (interference −1.62, harmonicity +1.78, on standardised scores), shown as a preset beside "equal weights"; answers the M3 weights question with a published default, still the human's call.
 - Human checkpoint after: no (the table is read at the M3 mock)
 
 ### M2: Placement library (`src/lib/interval-placement/`)
