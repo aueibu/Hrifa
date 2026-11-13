@@ -6,12 +6,16 @@ import {
   DEFAULT_TEMPLATES,
   PRESETS,
   analyzeSubset,
+  bestEdos,
   buildField,
   closestChord,
   compareScorers,
   constantStructure,
+  curveMinima,
   deviations,
   deviationsJI,
+  dissonanceCurve,
+  edoFit,
   edoTargets,
   findChordVoicings,
   FIFTH_CENTS,
@@ -20,12 +24,15 @@ import {
   fmtSigned,
   genHarmonic,
   intervalSpectrum,
-  latticeCoords,
-  latticeEdges,
+  isoGrid,
+  fmtHidden,
+  latticeCoords2d,
+  latticeCoords3d,
   mFrac,
   modeMatrix,
   oddLimit,
   parseInterval,
+  primeSlot,
   primeLimit,
   propriety,
   retuneStep,
@@ -38,6 +45,8 @@ import {
   transpositions,
   vs12,
   vsJI,
+  type IsoCell,
+  type Lattice3d,
   type Voicing,
   type HeldNote,
   type FifthsLayout,
@@ -232,65 +241,83 @@ export const scaleRows: ScaleRow[] = rel.map((n, i) => ({
   letter: analysis.stepLetters[i],
 }));
 
-/** Prime-lattice geometry, projected to a 640x300 box (same projection idea as the prototype). */
-export interface LatticeView {
-  pts: { i: number; x: number; y: number; on: boolean; label: string }[];
+/** Colour of a hidden prime's stem and chip: a core hue per prime (blue, green, orange and cyan are kept for chord, sounding, sharp and flat). */
+const STEM_HUES = ['violet', 'pink', 'red', 'yellow'] as const;
+export const stemHue = (prime: number): (typeof STEM_HUES)[number] =>
+  STEM_HUES[primeSlot(prime) % STEM_HUES.length];
+
+/** The 2D lattice in a 640x300 box: notes on stems drawn at their tips, with a ring at the base and a segment per prime. */
+export interface Lattice2dView {
+  pts: {
+    i: number;
+    /** Tip: where the note's dot goes. */
+    x: number;
+    y: number;
+    /** Base: where the hollow ring goes (equal to the tip for a note on the axes). */
+    bx: number;
+    by: number;
+    stems: { prime: number; x1: number; y1: number; x2: number; y2: number }[];
+    hidden: { prime: number; exp: number }[];
+    chip: string;
+    on: boolean;
+    label: string;
+  }[];
   edges: [number, number][];
-  axes: string[];
-  info: string;
+  axes: number[];
+  available: number[];
 }
-function buildLattice(): LatticeView {
-  const L = latticeCoords(field, rep, 'prime');
-  if (!L || !L.pts.length) {
-    return { pts: [], edges: [], axes: [], info: '' };
+const l2Cache = new Map<string, Lattice2dView>();
+/** The 2D lattice for three prime axes (null: the default 3, 5, 7), cached per choice. */
+export function lattice2dFor(axes: readonly number[] | null): Lattice2dView {
+  const key = axes ? axes.join(',') : '';
+  const hit = l2Cache.get(key);
+  if (hit) {
+    return hit;
   }
-  const d = L.pts[0].x.length;
-  const dirs = Array.from({ length: d }, (_, i) => {
-    const a = d <= 3 ? (Math.PI * i) / Math.max(d, 2) : i * 2.39996;
-    const len = d <= 3 ? 1 - 0.1 * i : Math.max(0.6, 1 - 0.05 * i);
-    return [len * Math.cos(a), -len * Math.sin(a)];
-  });
-  const proj = (x: number[]): [number, number] => {
-    let u = 0;
-    let v = 0;
-    x.forEach((e, i) => {
-      u += e * dirs[i][0];
-      v += e * dirs[i][1];
-    });
-    return [u, v];
-  };
-  const P = new Map(L.pts.map((p) => [p.i, proj(p.x)]));
-  const us = [...P.values()].map((p) => p[0]);
-  const vs = [...P.values()].map((p) => p[1]);
+  const L = latticeCoords2d(field, rep, axes ?? undefined);
+  const xs = L.pts.flatMap((p) => [p.pos[0], p.base[0]]);
+  const ys = L.pts.flatMap((p) => [p.pos[1], p.base[1]]);
   const [minU, maxU, minV, maxV] = [
-    Math.min(...us),
-    Math.max(...us),
-    Math.min(...vs),
-    Math.max(...vs),
+    Math.min(...xs),
+    Math.max(...xs),
+    Math.min(...ys),
+    Math.max(...ys),
   ];
   const W = 640;
   const H = 300;
   const pad = 40;
   const k = Math.min(150, (W - 2 * pad) / (maxU - minU || 1), (H - 2 * pad) / (maxV - minV || 1));
   const ox = W / 2 - (k * (minU + maxU)) / 2;
-  const oy = H / 2 - (k * (minV + maxV)) / 2;
-  return {
-    pts: L.pts.map((p) => {
-      const [u, v] = P.get(p.i)!;
-      return {
-        i: p.i,
-        x: ox + k * u,
-        y: oy + k * v,
-        on: subsetSet.has(p.i),
-        label: fmtRatio(field[p.i]),
-      };
-    }),
-    edges: latticeEdges(L.pts, 'step').map(([a, b]) => [a, b]),
-    axes: (L.axes ?? []).map(String),
-    info: `${L.pts.length} notes, prime axes ${(L.axes ?? []).join(', ')}`,
+  const oy = H / 2 + (k * (minV + maxV)) / 2;
+  const sx = (u: number) => ox + k * u;
+  const sy = (v: number) => oy - k * v; // the lattice has y up
+  const view: Lattice2dView = {
+    pts: L.pts.map((p) => ({
+      i: p.i,
+      x: sx(p.pos[0]),
+      y: sy(p.pos[1]),
+      bx: sx(p.base[0]),
+      by: sy(p.base[1]),
+      stems: p.stems.map((s) => ({
+        prime: s.prime,
+        x1: sx(s.from[0]),
+        y1: sy(s.from[1]),
+        x2: sx(s.to[0]),
+        y2: sy(s.to[1]),
+      })),
+      hidden: p.hidden,
+      chip: p.hidden.map(fmtHidden).join(' '),
+      on: subsetSet.has(p.i),
+      label: fmtRatio(field[p.i]),
+    })),
+    edges: L.edges.map(([a, b]) => [a, b]),
+    axes: L.axes,
+    available: L.available,
   };
+  l2Cache.set(key, view);
+  return view;
 }
-export const lattice = buildLattice();
+export const lattice = lattice2dFor(null);
 
 /** Format a pitch ratio from a monzo-bearing note as "a/b", or the cents when it is irrational. */
 export const fmtBase = (n: { m: Note['m']; c: number }) =>
@@ -482,3 +509,37 @@ export function fifthsAt(steps: number): FifthsLayout {
 }
 /** Note names for the 12-step chain with 3/2, D-flat to F-sharp (steps -5 to +6); other lengths show the step number. */
 export const CHAIN12 = ['D♭', 'A♭', 'E♭', 'B♭', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F♯'];
+
+/* ------------------------------------------------------------------------------------------- visualizer views */
+/** Cents of the example subset above 1/1 (the notes the EDO fit and the dissonance marks look at). */
+export const subsetCents = rel.map((n) => n.c);
+export const fieldCents = field.map((n) => n.c);
+
+/** The 3D lattice for three prime axes (null: the default 3, 5, 7), cached per choice. */
+const l3Cache = new Map<string, Lattice3d>();
+export function lattice3dFor(axes: readonly number[] | null): Lattice3d {
+  const key = axes ? axes.join(',') : '';
+  if (!l3Cache.has(key)) {
+    l3Cache.set(key, latticeCoords3d(field, rep, axes ?? undefined));
+  }
+  return l3Cache.get(key)!;
+}
+
+/** EDO fit of the subset to every n-EDO from 5 to 72, and the few n worth naming. */
+export const edoRows = edoFit(subsetCents, repC);
+export const edoBest = bestEdos(edoRows, 4);
+
+/** Sethares roughness of two harmonic tones over one repeat (1 c steps) and its dips. */
+export const dissCurve = dissonanceCurve(261.63, repC, 1);
+export const dissDips = curveMinima(dissCurve);
+
+/** The isomorphic keyboard for generators given as ratio text, cached per setting. */
+const isoCache = new Map<string, IsoCell[]>();
+export function isoFor(g1: string, g2: string, tol: number): IsoCell[] {
+  const key = [g1, g2, tol].join('|');
+  if (!isoCache.has(key)) {
+    const c = (t: string) => (parseInterval(t) as Note).c;
+    isoCache.set(key, isoGrid(fieldCents, repC, { g1: c(g1), g2: c(g2), tol }));
+  }
+  return isoCache.get(key)!;
+}

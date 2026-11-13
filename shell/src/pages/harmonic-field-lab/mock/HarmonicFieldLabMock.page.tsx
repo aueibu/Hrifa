@@ -5,30 +5,37 @@
  * column; thin keyboard dock. Pinned columns appear only when the window is wide enough (layout.ts).
  */
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { AppShell } from '@mantine/core';
+import { ActionIcon, AppShell } from '@mantine/core';
 import { GlossaryDrawer } from './GlossaryDrawer';
+import { PinIcon } from './icons';
 import { KeyboardDock } from './KeyboardDock';
 import {
   fitColumns,
+  isViz,
   loadLayout,
   move,
   pin,
   pinnedIds,
   saveLayout,
   setSplit,
-  stack,
-  swapInStack,
+  setView,
+  stackWith,
+  moveInStack,
   unpin,
   unstack,
+  viewOf,
   visiblePins,
   type Column,
   type PanelId,
+  type VizId,
 } from './layout';
 import { LIT_FIELD, chordTolerance, chordsAt } from './mockData';
 import { PinnedColumn, renderPanel } from './Panels';
-import { PANELS, Rail } from './Rail';
+import { PinMenu } from './PinMenu';
+import { PANELS, Rail, panelLabel } from './Rail';
 import { TopBar } from './TopBar';
-import { LabContext, type Lab } from './ui';
+import { LabContext, PinActionsContext, Tip, type Lab } from './ui';
+import { VizContext, defaultSettings, type VizApi, type VizSettings } from './vizState';
 import { Workspace } from './Workspace';
 import classes from './mock.module.css';
 
@@ -60,6 +67,7 @@ export function HarmonicFieldLabMockPage() {
   const [loaded, setLoaded] = useState(0);
   const [layout, setLayout] = useState(loadLayout);
   useEffect(() => saveLayout(layout), [layout]);
+  const [vizSettings, setVizSettings] = useState(defaultSettings);
   const widthRem = useWidthRem();
 
   const lab = useMemo<Lab>(
@@ -78,6 +86,17 @@ export function HarmonicFieldLabMockPage() {
       setLoaded,
     }),
     [hover, pinned, chord, mode, preview, loaded]
+  );
+
+  const viz = useMemo<VizApi>(
+    () => ({
+      view: (id: VizId) => viewOf(layout, id),
+      setView: (id: VizId, v) => setLayout((l) => setView(l, id, v)),
+      settings: (id: VizId) => vizSettings[id],
+      patch: (id: VizId, p: Partial<VizSettings>) =>
+        setVizSettings((all) => ({ ...all, [id]: { ...all[id], ...p } })),
+    }),
+    [layout, vizSettings]
   );
 
   const count = fitColumns(widthRem);
@@ -100,6 +119,22 @@ export function HarmonicFieldLabMockPage() {
   ].join(' ');
   const gridStyle: CSSProperties | undefined =
     left.length + right.length > 0 ? { gridTemplateColumns: columns } : undefined;
+  // an unpinned visualizer shown in the switcher can be pinned from its own header
+  const switcherPin =
+    isViz(effective) && !pinnedSet.has(effective) ? (
+      <Tip k="pinHere" as="control">
+        <PinMenu onPin={(side) => setLayout((l) => pin(l, effective, side))}>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            aria-label={`Pin ${panelLabel(effective, viz.view)} left or right`}
+          >
+            <PinIcon />
+          </ActionIcon>
+        </PinMenu>
+      </Tip>
+    ) : null;
   const togglePin = (id: PanelId) =>
     setLayout((l) => (pinnedSet.has(id) ? unpin(l, id) : pin(l, id)));
   const column = (ids: Column) => (
@@ -110,45 +145,50 @@ export function HarmonicFieldLabMockPage() {
       render={(id) => renderPanel(id, tol, setTol)}
       onMove={(i, dir) => setLayout((l) => move(l, i, dir))}
       onUnpin={(i) => setLayout((l) => unpin(l, i))}
-      onStack={(i) => setLayout((l) => stack(l, i))}
+      onStackWith={(i, t) => setLayout((l) => stackWith(l, i, t))}
       onUnstack={(i) => setLayout((l) => unstack(l, i))}
-      onSwap={(i) => setLayout((l) => swapInStack(l, i))}
+      onMoveInStack={(i, d) => setLayout((l) => moveInStack(l, i, d))}
       onSplit={(i, v) => setLayout((l) => setSplit(l, i, v))}
     />
   );
 
   return (
     <LabContext.Provider value={lab}>
-      <AppShell header={{ height: 40 }} padding={0}>
-        <AppShell.Header>
-          <TopBar onGlossary={() => setGlossary(true)} />
-        </AppShell.Header>
-        <AppShell.Main className={classes.root} data-dock={dockOpen ? 'open' : 'closed'}>
-          <div className={classes.grid} style={gridStyle}>
-            <Rail
-              panel={effective}
-              onPick={setPanel}
-              chordCount={chordsAt(tol).length}
-              pinned={pinnedSet}
-              shown={shown}
-              onTogglePin={togglePin}
-            />
-            {left.map(column)}
-            <Workspace />
-            {right.map(column)}
-            <section
-              className={classes.analysis}
-              id="analysis-panel"
-              role="tabpanel"
-              aria-labelledby={`tab-${effective}`}
-            >
-              {renderPanel(effective, tol, setTol)}
-            </section>
-            <KeyboardDock open={dockOpen} onToggle={() => setDockOpen((o) => !o)} />
-          </div>
-        </AppShell.Main>
-        <GlossaryDrawer opened={glossary} onClose={() => setGlossary(false)} />
-      </AppShell>
+      <VizContext.Provider value={viz}>
+        <AppShell header={{ height: 40 }} padding={0}>
+          <AppShell.Header>
+            <TopBar onGlossary={() => setGlossary(true)} />
+          </AppShell.Header>
+          <AppShell.Main className={classes.root} data-dock={dockOpen ? 'open' : 'closed'}>
+            <div className={classes.grid} style={gridStyle}>
+              <Rail
+                panel={effective}
+                onPick={setPanel}
+                chordCount={chordsAt(tol).length}
+                pinned={pinnedSet}
+                shown={shown}
+                onTogglePin={togglePin}
+                onPin={(id, side) => setLayout((l) => pin(l, id, side))}
+              />
+              {left.map(column)}
+              <Workspace />
+              {right.map(column)}
+              <section
+                className={classes.analysis}
+                id="analysis-panel"
+                role="tabpanel"
+                aria-labelledby={`tab-${effective}`}
+              >
+                <PinActionsContext.Provider value={switcherPin}>
+                  {renderPanel(effective, tol, setTol)}
+                </PinActionsContext.Provider>
+              </section>
+              <KeyboardDock open={dockOpen} onToggle={() => setDockOpen((o) => !o)} />
+            </div>
+          </AppShell.Main>
+          <GlossaryDrawer opened={glossary} onClose={() => setGlossary(false)} />
+        </AppShell>
+      </VizContext.Provider>
     </LabContext.Provider>
   );
 }

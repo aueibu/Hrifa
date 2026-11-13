@@ -525,7 +525,6 @@
   min-width: 0;
 }
 
-
 .areaTools {
   column-gap: 0.75rem;
   display: grid;
@@ -701,7 +700,6 @@
   padding: 0 0.25rem;
 }
 
-
 .modeLabel {
   font-size: 0.75rem;
   min-width: 4.5rem;
@@ -717,8 +715,8 @@
 }
 
 .chordFill {
-  fill: color-mix(in srgb, var(--mark-violet) 14%, transparent);
-  stroke: var(--mark-violet);
+  fill: color-mix(in srgb, var(--mark-blue) 14%, transparent);
+  stroke: var(--mark-blue);
   stroke-width: 1.5;
 }
 
@@ -736,10 +734,10 @@
   stroke-width: 2;
 }
 
-/* sounding: blue fill, larger; with a violet outline when it is also in the highlighted chord */
+/* sounding: green fill, larger; with a blue outline when it is also in the highlighted chord */
 .dotLit {
   cursor: pointer;
-  fill: var(--mark-blue);
+  fill: var(--mark-green);
   stroke: var(--text);
   stroke-width: 2;
 }
@@ -747,7 +745,7 @@
 .dotOn[data-chord='true'],
 .dotOff[data-chord='true'],
 .dotLit[data-chord='true'] {
-  stroke: var(--mark-violet);
+  stroke: var(--mark-blue);
   stroke-width: 3;
 }
 
@@ -910,7 +908,7 @@
 }
 
 .markSharp {
-  fill: var(--mark-pink);
+  fill: var(--mark-orange);
 }
 
 .markFlat {
@@ -918,7 +916,7 @@
 }
 
 .markDot {
-  fill: var(--mark-blue);
+  fill: var(--mark-green);
   stroke: var(--text);
   stroke-width: 1;
 }
@@ -1131,15 +1129,15 @@
   font-size: 0.6875rem;
 }
 
-/* sounding: blue tint with a blue base bar; a chord member also gets the violet outline */
+/* sounding: green tint with a green base bar; a chord member also gets the blue outline */
 .key[data-lit='true'] {
-  background: var(--tint-blue-bg);
-  border-bottom-color: var(--mark-blue);
-  color: var(--tint-blue-text);
+  background: var(--tint-green-bg);
+  border-bottom-color: var(--mark-green);
+  color: var(--tint-green-text);
 }
 
 .key[data-chord='true'] {
-  outline: 2px solid var(--mark-violet);
+  outline: 2px solid var(--mark-blue);
   outline-offset: -2px;
 }
 
@@ -1422,4 +1420,51 @@
 .splitter:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -1px;
+}
+
+/* ---------------------------------------------------------------------------------------- visualizer title */
+.vizTitle {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.125rem;
+}
+
+.vizMenuBtn {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.25rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.25rem;
+}
+
+.vizMenuBtn:hover {
+  background: var(--mantine-color-default-hover);
+  color: var(--text);
+}
+
+.vizMenuBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.vizMenuBtn svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+/* a visualizer's name is long ("Visualizer 2 – Dissonance curve"): it gets the full row and the figure goes under it,
+   so the ellipsis cuts the view name and never the instance number */
+.railItem[data-wide='true'] {
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.railItem[data-wide='true'] .railLabel {
+  flex: 1 0 100%;
 }

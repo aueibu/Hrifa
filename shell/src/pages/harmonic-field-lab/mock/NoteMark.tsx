@@ -1,7 +1,7 @@
 /**
  * One note as one mark, drawn in a single SVG so every part shares one centre line and one coordinate system.
  * Every note is a line of the same length. Its error is colour painted onto the line from the tip toward the
- * centre: sharp (pink) from the top down, flat (cyan) from the bottom up. The coloured length grows with the
+ * centre: sharp (orange) from the top down, flat (cyan) from the bottom up. The coloured length grows with the
  * error and covers the whole half-line at `full` cents (50 by default). It is widest at the tip: line width up
  * to 10 c, widening to 10 px at 50 c and beyond. A sounding note gets a blue dot at its middle.
  */

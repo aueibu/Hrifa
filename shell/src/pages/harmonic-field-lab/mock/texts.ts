@@ -194,7 +194,7 @@ const entries = {
   },
   tunerStrip: {
     term: 'Tuner strip',
-    text: 'Your scale laid out by pitch, with a faint reference line at every 100 c (1/1 as C): lighter where a piano white key would sit, darker for a black key. Saved subsets below use the same columns, so a note sits straight above and below itself. Each bar sits under its own dot: pink going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.',
+    text: 'Your scale laid out by pitch, with a faint reference line at every 100 c (1/1 as C): lighter where a piano white key would sit, darker for a black key. Saved subsets below use the same columns, so a note sits straight above and below itself. Each bar sits under its own dot: orange going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.',
     see: ['compareTo', 'cents'],
   },
   cents: {
@@ -204,11 +204,17 @@ const entries = {
   lattice: {
     term: 'Lattice',
     text: 'Notes drawn as points on a grid whose directions are the primes (or generators): one step right is another factor of 3, one step up another 5, and so on. Notes that are close on the grid are closely related in ratio. Example: 3/2 and 9/8 are neighbours (one step of 3 apart).',
-    see: ['latticeAxes'],
+    see: ['latticeAxes', 'lattice3d'],
   },
   latticeAxes: {
-    term: 'Lattice axes',
-    text: 'What the grid directions mean: Auto picks sensibly, Generators uses your stacked intervals, Factors uses CPS factors, Primes uses each prime number. Example: Primes puts powers of 3 on one axis and powers of 5 on another.',
+    term: 'Lattice axes (primes)',
+    text: "Which three primes become the three directions of the lattice, in 2D and in 3D (default 3, 5, 7). A note's place along an axis is its exponent of that prime. Notes that use another prime are drawn on a stem instead (see Off-axis notes). Example: with 3, 5, 7 chosen, 15/8 sits one step along the 3 axis and one along the 5 axis; choose 3, 5, 11 and 11/8 moves onto the third axis while 7/4 goes on a stem.",
+    see: ['lattice', 'latticeStems'],
+  },
+  latticeStems: {
+    term: 'Off-axis notes (stems)',
+    text: "A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only. A dashed line in that prime's colour runs out from the ring, one lattice step long for each power of the prime, pointing the opposite way for a negative power. The note itself is the dot at the end, and its label carries a chip such as 11\u207a\u00b9 naming the hidden prime and its power. Example: with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11\u207a\u00b9; 8/11 points the other way (11\u207b\u00b9); 143/128 has two stems chained, 11\u207a\u00b9 13\u207a\u00b9.",
+    see: ['latticeAxes', 'lattice3d'],
   },
   fieldTable: {
     term: 'Field table',
@@ -535,12 +541,12 @@ const entries = {
   },
   savedRow: {
     term: 'Saved subset',
-    text: 'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small pink (sharp) and cyan (flat) bars for the distance from 12-EDO. Pointing at a row previews it on the ring; clicking loads it. Example: "Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.',
+    text: 'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small orange (sharp) and cyan (flat) bars for the distance from 12-EDO. Pointing at a row previews it on the ring; clicking loads it. Example: "Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.',
     see: ['savedSubsets'],
   },
   pinPanel: {
     term: 'Pin as a column',
-    text: 'Gives this panel its own column beside the generator, so on a wide screen several analyses are visible at once. Pinned columns can be moved left or right and reordered; the arrangement is remembered. A dimmed pin means it is pinned but there is no room for its column at this window width; it stays reachable through the switcher. Example: pin Keys & Modes and Chords on an ultrawide to watch both while you edit the subset.',
+    text: 'Gives this panel its own column beside the generator, so on a wide screen several analyses are visible at once. Click it and choose Pin left or Pin right: the column goes on that side, right next to the generator. Pinned columns can be moved left or right and reordered; the arrangement is remembered. A dimmed pin means it is pinned but there is no room for its column at this window width; it stays reachable through the switcher. Example: pin Keys & Modes and Chords on an ultrawide to watch both while you edit the subset.',
     see: ['movePin', 'analysisRail'],
   },
   movePin: {
@@ -558,9 +564,14 @@ const entries = {
     text: 'A filled dot means the note is in your subset; a hollow ring means it is in the field but left out. Example: 11/8 is hollow in the example subset.',
     see: ['fieldTable'],
   },
+  pinHere: {
+    term: 'Pin from here',
+    text: 'Pins the panel you are looking at in the switcher as its own column, on the left or the right of the generator, next to it. Example: you are reading Visualizer 3 - Dissonance curve in the switcher; choose Pin right and it moves to a column beside the generator.',
+    see: ['pinPanel'],
+  },
   stackPin: {
-    term: 'Stack columns',
-    text: 'Puts this panel on top of the pinned column next to it (toward the generator), so two panels share one column and the height is split evenly. Only available when both columns hold a single panel. Example: stack Keys & Modes onto the Chords column to see both without using a third column.',
+    term: 'Stack with',
+    text: 'Lists every other pinned panel whose column has room (a column holds up to three panels), with its side and how full it is, and moves this panel to the bottom of that column, so the panels share its height. It works across the generator and at any distance; a panel taken out of a stack leaves the others together. Disabled when every other column is full. Example: on Visualizer 3 - Dissonance curve choose "Visualizer 1 - Lattice (right, 1 of 3)" to see the lattice and the curve one above the other; then stack Visualizer 2 - EDO fit the same way to have all three in one column.',
     see: ['pinPanel', 'unstackPin'],
   },
   unstackPin: {
@@ -569,14 +580,129 @@ const entries = {
     see: ['stackPin'],
   },
   swapStack: {
-    term: 'Swap in stack',
-    text: 'Swaps the two stacked panels, so the top one goes to the bottom. Example: swap to put Chords above Keys & Modes when you want the chip list in the upper half.',
+    term: 'Move up or down in the stack',
+    text: 'Moves this panel one slot up or down inside its stack; in a stack of two that swaps the pair. The panel keeps its own share of the height. Example: move Chords up to put the chip list in the top slot above Keys & Modes.',
     see: ['stackPin'],
   },
   splitter: {
     term: 'Stack splitter',
-    text: 'Drag this bar to change how the stacked column is shared between its two panels, or focus it and press Up or Down to move it 5% (Home and End jump to the limits). Each half keeps at least 20% of the height or 6 rem, whichever is larger. Double-click to go back to 50/50. Example: drag it up to give Keys & Modes the lower two thirds while Chords stays a short strip above.',
+    text: 'Drag this bar to change how a stacked column is shared, or focus it and press Up or Down to move it 5% (Home and End jump to its limits). A stack of three has two bars; each one only trades space between the two panels beside it. Every panel keeps at least 20% of the height or 6 rem, whichever is larger. Double-click either bar to go back to even shares. Example: drag the upper bar down to give Visualizer 1 - Lattice more room while Visualizer 3 - Dissonance curve stays the same size.',
     see: ['stackPin'],
+  },
+  /* ---- visualizer panels ---- */
+  vizView: {
+    term: 'Visualizer view',
+    text: 'A visualizer panel can show any of four views of the same subset: Lattice, EDO fit, Dissonance curve or Isomorphic keyboard. The panel is named after the view it shows; pick another from this menu. There are three visualizer panels in the rail, so you can keep several views side by side. Example: leave the first visualizer on Lattice and switch the second to EDO fit to see the grid and the tuning fit together.',
+    see: ['lattice', 'edoFit', 'dissCurve', 'isoKeyboard'],
+  },
+  vizPopOut: {
+    term: 'Open in a large window',
+    text: 'Shows the same view full size in a window over the page, with its own controls. Closing it changes nothing. Example: pop out the 3D lattice to rotate a big field with room for every label.',
+    see: ['openFullTable'],
+  },
+  latticeDim: {
+    term: 'Lattice 2D | 3D',
+    text: 'Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction. Example: in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1, while 11/8 is drawn on a stem so it never overlaps a real note.',
+    see: ['lattice', 'lattice3d'],
+  },
+  lattice3d: {
+    term: '3D lattice',
+    text: 'The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart. Drag to rotate, scroll to zoom, right-drag (or two-finger drag) to pan. Example: 9/8 is two steps out along the 3 axis, 5/4 one step along the 5 axis.',
+    see: ['lattice', 'latticeAxes', 'latticeStems'],
+  },
+  lattice3dReset: {
+    term: 'Reset view',
+    text: 'Returns the 3D lattice camera to its starting angle and zoom, framing every note. Example: use it after rotating the lattice upside down.',
+  },
+  lattice3dView: {
+    term: '3D view',
+    text: 'The 3D lattice itself. Drag to rotate, scroll to zoom, right-drag to pan. Point at a sphere to read the note in the inspector; click to pin it. Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord. A hollow ring with a dashed coloured line is the base and stem of an off-axis note. Example: hover 3/2 and the inspector shows 701.96 c.',
+    see: ['lattice3d', 'inspector'],
+  },
+  edo: {
+    term: 'EDO (equal division)',
+    text: 'An equal division of the repeat into n equal steps, written n-EDO. 12-EDO is the piano: the octave in 12 steps of 100 cents. Every note you play in an EDO is a whole number of steps, so a just ratio can only be approximated. Example: 5/4 is 386.3 c, and 12-EDO only has 400 c, so it is 13.7 c sharp; 31-EDO has 387.1 c, only 0.8 c off.',
+    see: ['edoFit', 'cents'],
+  },
+  edoFit: {
+    term: 'EDO fit',
+    text: 'How well each equal division from 5 to 72 notes can play your subset: every note is moved to the nearest step of the division and the error is measured in cents. Bars show the worst error; a dot on each bar marks the mean. Lower is a closer fit. Example: for 1/1, 5/4, 3/2 the bar at 12 is 13.7 c tall (the major third), while 53 is only 1.4 c, which is why 53-EDO is famous for just major thirds.',
+    see: ['edo', 'edoChart', 'edoBestRow'],
+  },
+  edoChart: {
+    term: 'EDO fit chart',
+    text: 'The number of divisions n runs along the bottom (5 to 72) and the error in cents runs up the side. Each bar is the largest error of any subset note in that n-EDO; the dot is the average error. Taller than the top of the chart is clipped. The best few n are drawn in violet and named. Point at a bar to read it; click a bar to keep it highlighted. Example: a bar at n = 22 with a worst of 7.1 c means every note of the 1/1, 5/4, 3/2 triad is within 7.1 c of a 22-EDO step.',
+    see: ['edoFit', 'edoReadout'],
+  },
+  edoReadout: {
+    term: 'EDO readout',
+    text: 'The numbers behind the bar you point at or have clicked: n, the step size, the worst and the mean error in cents, and the worst error as a share of one step (0 % exact, 50 % is the worst possible). Example: for 1/1, 5/4, 3/2 at n = 31: step 38.7 c, worst 5.2 c, mean 2.0 c, 13 % of a step.',
+    see: ['edoChart', 'edoRelative'],
+  },
+  edoRelative: {
+    term: 'Error relative to the step',
+    text: 'The worst error divided by the size of one step of that division. Bigger divisions always shrink the error in cents, so this tells you whether a division fits better than its size alone would suggest. Example: 12-EDO misses 5/4 by 13.7 c of a 100 c step (14 %); 22-EDO misses by 7.1 c of a 54.5 c step (13 %), so they fit about equally well for their size.',
+    see: ['edoFit'],
+  },
+  edoBestRow: {
+    term: 'Best fits',
+    text: 'A short list of the divisions worth trying. It keeps each n that fits your subset better than every smaller n (a new record), then names the few of those with the smallest error relative to their step. The lowest error overall would always just be 72. Example: for 1/1, 5/4, 3/2, 7/4 the record-setters include 22 and 31, and 31 beats 12-EDO by a wide margin (5.2 c against 31.2 c).',
+    see: ['edoFit', 'edoRelative'],
+  },
+  dissCurve: {
+    term: 'Dissonance curve',
+    text: 'How rough two notes sound together, for every interval from a unison (0 c) up to the octave (1200 c). Both notes are given seven overtones, and the roughness (Sethares model, the same one the retuner uses) adds up the beating between every pair of overtones. Low is smooth. The dips are the intervals that sound consonant for this sound. Your subset notes are marked on top. Example: the curve dips at 386 c (5/4), 498 c (4/3) and 702 c (3/2), which are the just major third, fourth and fifth.',
+    see: ['roughness', 'dissMarks', 'dissDips'],
+  },
+  dissAxes: {
+    term: 'Dissonance axes',
+    text: "Across: the interval above the lower note, in cents (0 to 1200). Up: roughness, in the model's own units; only the relative height matters. The lower note is fixed at 261.63 Hz (middle C), because roughness also depends on how high the notes are. Example: a few tens of cents above the unison the two notes beat quickly against each other, and the curve is at its peak.",
+    see: ['dissCurve', 'cents'],
+  },
+  dissMarks: {
+    term: 'Scale marks on the curve',
+    text: 'A vertical line at the cents of every field note. Bright lines are notes in your subset; faint lines are field notes you left out; green means sounding now. Read where a line meets the curve: a line at the bottom of a dip means that interval, measured from 1/1, is smooth. Example: the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1; a line that lands on a peak is rougher against 1/1.',
+    see: ['dissCurve', 'dissDips'],
+  },
+  dissDips: {
+    term: 'Dips (smooth intervals)',
+    text: 'The labelled low points of the curve, named by the simplest ratio nearby. They show where two notes with this sound blend best, which is not exactly where the ratios are for a different timbre. Example: with seven overtones, the dip near 316 c is labelled 6/5 (315.6 c) and the one near 884 c is 5/3 (884.4 c).',
+    see: ['dissCurve'],
+  },
+  dissReadout: {
+    term: 'Dissonance readout',
+    text: 'Shows the interval in cents and the roughness at the point you hover on the curve. Example: hovering 702 c reads a roughness near the bottom of the curve, hovering 100 c reads a much higher one.',
+    see: ['dissCurve', 'dissAxes'],
+  },
+  isoKeyboard: {
+    term: 'Isomorphic keyboard',
+    text: 'A grid of hexagonal keys where an interval always has the same shape: one step right is the first generator (3/2 by default), one step up and to the right is the second (2/1 or 5/4). Each hexagon shows the field note nearest its pitch, if there is one within the tolerance; the rest stay blank. Example: with 3/2 and 2/1, a row of hexagons is a chain of fifths, so 1/1, 3/2, 9/8 run along it; with 5/4 as the second generator, up and right from 1/1 is the pure third 5/4.',
+    see: ['isoG1', 'isoG2', 'isoTol', 'isoHex'],
+  },
+  isoG1: {
+    term: 'Right step (generator 1)',
+    text: 'The interval for one hexagon to the right. Example: 3/2 makes the horizontal rows chains of pure fifths; 4/3 gives chains of fourths.',
+    see: ['isoKeyboard'],
+  },
+  isoG2: {
+    term: 'Up-right step (generator 2)',
+    text: 'The interval for one hexagon up and to the right. Example: 2/1 makes each row up an octave higher, like a normal keyboard; 5/4 makes it a pure third higher, which fills the grid with just major triads.',
+    see: ['isoKeyboard'],
+  },
+  isoTol: {
+    term: 'Match within',
+    text: 'How close, in cents, a hexagon pitch must be to a field note to show it. A tight limit leaves most of the grid blank; a loose one shows notes that are a little out of tune. Example: the fourth step of a chain of fifths is 81/64, which is 21.5 c above 5/4; at 20 c that hexagon stays blank, at 35 c it shows 5/4.',
+    see: ['isoKeyboard', 'cents'],
+  },
+  isoHex: {
+    term: 'Hexagon',
+    text: 'One key. Filled and bright: a note in your subset. Outlined: a field note that you left out. Blank: no field note near that pitch. A green dot means it is sounding now, and a blue outline marks a note of the highlighted chord. Point at a key to read it in the inspector; click to pin. Example: the 3/2 key lights when you play 3/2 anywhere, and on every hexagon that lands on it.',
+    see: ['isoKeyboard', 'inspector'],
+  },
+  isoReadout: {
+    term: 'Keyboard readout',
+    text: 'How many field notes appear on the grid, and how many hexagons are blank. Example: if it reads "7 of 8 notes, 31 blank", it means seven of the eight field notes are reachable within the tolerance and about half the grid has no match.',
+    see: ['isoKeyboard'],
   },
 } satisfies Record<string, TextEntry>;
 

@@ -3,10 +3,12 @@
  * screens. Each entry carries a live count or verdict.
  */
 import { PinIcon } from './icons';
-import type { PanelId } from './layout';
-import { completeKeys, field, lattice, prop, retunerCards } from './mockData';
+import { DEFAULT_VIEWS, isViz, vizName, type PanelId, type VizId, type VizView } from './layout';
+import { completeKeys, field, prop, retunerCards } from './mockData';
+import { PinMenu } from './PinMenu';
 import type { TipKey } from './texts';
 import { Tip } from './ui';
+import { VIEW_TIP, vizSummary, useViz, type VizApi } from './vizState';
 import classes from './mock.module.css';
 
 export type { PanelId } from './layout';
@@ -15,12 +17,18 @@ export const PANELS: { id: PanelId; label: string; tip: TipKey }[] = [
   { id: 'chords', label: 'Chords', tip: 'chords' },
   { id: 'spectrum', label: 'Spectrum', tip: 'spectrum' },
   { id: 'keys', label: 'Keys & Modes', tip: 'keysModes' },
-  { id: 'lattice', label: 'Lattice', tip: 'lattice' },
+  { id: 'viz1', label: vizName('viz1', DEFAULT_VIEWS.viz1), tip: 'lattice' },
+  { id: 'viz2', label: vizName('viz2', DEFAULT_VIEWS.viz2), tip: 'edoFit' },
+  { id: 'viz3', label: vizName('viz3', DEFAULT_VIEWS.viz3), tip: 'dissCurve' },
   { id: 'retuner', label: 'Retuner', tip: 'retunerPanel' },
 ];
-export const panelLabel = (id: PanelId) => PANELS.find((p) => p.id === id)?.label ?? id;
+/** A panel's name; a visualizer is named after the view it shows now (`view` says which). */
+export const panelLabel = (id: PanelId, view?: (id: VizId) => VizView) =>
+  isViz(id) && view ? vizName(id, view(id)) : (PANELS.find((p) => p.id === id)?.label ?? id);
+const panelTip = (id: PanelId, tip: TipKey, view: (id: VizId) => VizView): TipKey =>
+  isViz(id) ? VIEW_TIP[view(id)] : tip;
 
-export function summaryOf(id: PanelId, chordCount: number): string {
+export function summaryOf(id: PanelId, chordCount: number, viz: VizApi): string {
   switch (id) {
     case 'chords':
       return String(chordCount);
@@ -28,8 +36,10 @@ export function summaryOf(id: PanelId, chordCount: number): string {
       return prop.verdict;
     case 'keys':
       return `${completeKeys.length} of ${field.length}`;
-    case 'lattice':
-      return `${lattice.axes.length} primes`;
+    case 'viz1':
+    case 'viz2':
+    case 'viz3':
+      return vizSummary(viz.view(id), viz.settings(id));
     case 'retuner':
       return `${retunerCards.length} cards`;
   }
@@ -43,10 +53,14 @@ interface Props {
   /** Pinned panels, and those of them that currently have a column. */
   pinned: ReadonlySet<PanelId>;
   shown: ReadonlySet<PanelId>;
+  /** Unpin a pinned panel. */
   onTogglePin: (p: PanelId) => void;
+  /** Pin an unpinned panel on the inner end of a side. */
+  onPin: (p: PanelId, side: 'left' | 'right') => void;
 }
 
-export function Rail({ panel, onPick, chordCount, pinned, shown, onTogglePin }: Props) {
+export function Rail({ panel, onPick, chordCount, pinned, shown, onTogglePin, onPin }: Props) {
+  const viz = useViz();
   return (
     <nav className={classes.rail} aria-label="Analysis panels">
       <Tip k="analysisRail">
@@ -56,9 +70,15 @@ export function Rail({ panel, onPick, chordCount, pinned, shown, onTogglePin }: 
         {PANELS.map((p) => {
           const isPinned = pinned.has(p.id);
           const isShown = shown.has(p.id);
+          const label = panelLabel(p.id, viz.view);
           return (
             <div key={p.id} className={classes.railRow}>
-              <Tip k={p.tip} as="control" block>
+              <Tip
+                k={panelTip(p.id, p.tip, viz.view)}
+                as="control"
+                block
+                extra={isViz(p.id) ? label : undefined}
+              >
                 <button
                   type="button"
                   role="tab"
@@ -66,10 +86,11 @@ export function Rail({ panel, onPick, chordCount, pinned, shown, onTogglePin }: 
                   aria-selected={panel === p.id}
                   aria-controls="analysis-panel"
                   className={classes.railItem}
+                  data-wide={isViz(p.id) ? 'true' : undefined}
                   onClick={() => onPick(p.id)}
                 >
-                  <span className={classes.railLabel}>{p.label}</span>
-                  <span className={classes.railCount}>{summaryOf(p.id, chordCount)}</span>
+                  <span className={classes.railLabel}>{label}</span>
+                  <span className={classes.railCount}>{summaryOf(p.id, chordCount, viz)}</span>
                 </button>
               </Tip>
               <Tip
@@ -81,20 +102,30 @@ export function Rail({ panel, onPick, chordCount, pinned, shown, onTogglePin }: 
                     : undefined
                 }
               >
-                <button
-                  type="button"
-                  className={classes.pinBtn}
-                  aria-pressed={isPinned}
-                  aria-label={
-                    isPinned
-                      ? `Unpin ${p.label}${isShown ? '' : ' (no room at this width)'}`
-                      : `Pin ${p.label} as a column`
-                  }
-                  data-state={!isPinned ? 'off' : isShown ? 'shown' : 'hidden'}
-                  onClick={() => onTogglePin(p.id)}
-                >
-                  <PinIcon />
-                </button>
+                {isPinned ? (
+                  <button
+                    type="button"
+                    className={classes.pinBtn}
+                    aria-pressed
+                    aria-label={`Unpin ${label}${isShown ? '' : ' (no room at this width)'}`}
+                    data-state={isShown ? 'shown' : 'hidden'}
+                    onClick={() => onTogglePin(p.id)}
+                  >
+                    <PinIcon />
+                  </button>
+                ) : (
+                  <PinMenu onPin={(side) => onPin(p.id, side)}>
+                    <button
+                      type="button"
+                      className={classes.pinBtn}
+                      aria-pressed={false}
+                      aria-label={`Pin ${label} as a column`}
+                      data-state="off"
+                    >
+                      <PinIcon />
+                    </button>
+                  </PinMenu>
+                )}
               </Tip>
             </div>
           );

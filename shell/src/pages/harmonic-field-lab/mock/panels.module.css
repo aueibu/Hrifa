@@ -188,7 +188,6 @@
   font-size: 0.6875rem;
 }
 
-
 /* error: colour by size, never alone (the number is printed beside it) */
 .err[data-sev='0'] {
   color: var(--mark-cyan);
@@ -475,7 +474,7 @@
 }
 
 .edgeChord {
-  stroke: var(--mark-violet);
+  stroke: var(--mark-blue);
   stroke-width: 3;
 }
 
@@ -495,7 +494,7 @@
 
 .dotLit {
   cursor: pointer;
-  fill: var(--mark-blue);
+  fill: var(--mark-green);
   stroke: var(--text);
   stroke-width: 2;
 }
@@ -503,7 +502,7 @@
 .dotOn[data-chord='true'],
 .dotOff[data-chord='true'],
 .dotLit[data-chord='true'] {
-  stroke: var(--mark-violet);
+  stroke: var(--mark-blue);
   stroke-width: 3;
 }
 
@@ -517,6 +516,39 @@
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
   font-size: 12px;
+}
+
+.stem {
+  stroke-dasharray: 4 3;
+  stroke-width: 2;
+}
+
+.ghost {
+  fill: none;
+  stroke: var(--text-subtle);
+  stroke-width: 1.5;
+}
+
+.svgChip {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.offAxis {
+  margin-left: 0.5rem;
+}
+
+.lat3dGhost {
+  border: 1.5px solid var(--text-subtle);
+  border-radius: 50%;
+  height: 0.6875rem;
+  pointer-events: none;
+  width: 0.6875rem;
+}
+
+.lat3dChip {
+  font-weight: 700;
+  margin-left: 0.25rem;
 }
 
 .svgLabel[data-on='true'] {
@@ -714,4 +746,297 @@
 .chosen {
   color: var(--text);
   font-weight: 600;
+}
+
+/* ------------------------------------------------------------------------------------------ visualizer views */
+.vizTools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.vizModal {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8125rem;
+  gap: 0.625rem;
+}
+
+/* 3D lattice: the canvas and its label layer fill the host; the labels are plain CSS, so they follow the theme */
+.lat3dHost {
+  aspect-ratio: 4 / 3;
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  min-height: 13rem;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.lat3dHost[data-big='true'] {
+  aspect-ratio: auto;
+  height: min(66vh, 44rem);
+}
+
+.lat3dCanvas {
+  display: block;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  touch-action: none;
+  width: 100%;
+}
+
+.lat3dOverlay {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+.lat3dLabel {
+  background: color-mix(in srgb, var(--panel-inset) 72%, transparent);
+  border-radius: 0.125rem;
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.6875rem;
+  line-height: 1;
+  padding: 0.0625rem 0.125rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.lat3dLabel[data-on='true'] {
+  color: var(--text);
+}
+
+.lat3dLabel[data-lit='true'] {
+  color: var(--mark-green);
+}
+
+.lat3dLabel[data-sel='true'] {
+  font-weight: 700;
+}
+
+.lat3dAxis {
+  color: var(--text-subtle);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.lat3dFallback {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0.75rem;
+}
+
+/* hand-drawn charts (EDO fit, dissonance curve) */
+.chartSvg {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: block;
+  width: 100%;
+}
+
+.chartGrid {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.chartTick {
+  fill: var(--text-subtle);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 9px;
+}
+
+.chartHit {
+  cursor: crosshair;
+  fill: transparent;
+}
+
+.edoBar {
+  fill: var(--text-subtle);
+}
+
+.edoBar[data-state='best'] {
+  fill: var(--mark-violet);
+}
+
+.edoBar[data-state='hover'] {
+  fill: var(--text-muted);
+}
+
+.edoBar[data-state='pick'] {
+  fill: var(--text);
+}
+
+.edoMean {
+  fill: var(--panel-inset);
+}
+
+.edoBestLabel {
+  fill: var(--mark-violet);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 9px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--panel-inset);
+  stroke-width: 3px;
+}
+
+.vizChips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+
+.vizChip {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.75rem;
+  padding: 0.0625rem 0.4375rem;
+}
+
+.vizChip[aria-pressed='true'] {
+  border-color: var(--text);
+}
+
+.vizChip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* dissonance curve */
+.dissLine {
+  fill: none;
+  stroke: var(--text);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.dissMark {
+  stroke: var(--text-subtle);
+  stroke-dasharray: 2 3;
+  stroke-width: 1;
+}
+
+.dissMark[data-state='on'] {
+  stroke: var(--text);
+  stroke-dasharray: none;
+  stroke-width: 1.5;
+}
+
+.dissMark[data-state='lit'] {
+  stroke: var(--mark-green);
+  stroke-dasharray: none;
+  stroke-width: 2.5;
+}
+
+.dissMark[data-sel='true'] {
+  stroke-width: 3;
+}
+
+.dissNote {
+  fill: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 8.5px;
+}
+
+.dissNote[data-state='lit'] {
+  fill: var(--mark-green);
+  font-weight: 700;
+}
+
+.dissDip {
+  fill: var(--text);
+  stroke: var(--panel-inset);
+  stroke-width: 1;
+}
+
+.dissDipLabel {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 8.5px;
+  paint-order: stroke;
+  stroke: var(--panel-inset);
+  stroke-width: 3px;
+}
+
+.dissHair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+
+.dissCursor {
+  fill: var(--panel-inset);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+/* isomorphic keyboard */
+.isoSvg {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: block;
+  width: 100%;
+}
+
+.isoHex {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.isoHex[data-state='off'] {
+  cursor: pointer;
+  stroke: var(--text-subtle);
+}
+
+.isoHex[data-state='on'] {
+  cursor: pointer;
+  fill: color-mix(in srgb, var(--text) 16%, transparent);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.isoHex[data-chord='true'] {
+  stroke: var(--mark-blue);
+  stroke-width: 3;
+}
+
+.isoHex[data-sel='true'] {
+  fill: color-mix(in srgb, var(--text) 30%, transparent);
+}
+
+.isoHex:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
+
+.isoLabel {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 9px;
+}
+
+.isoLabel[data-state='on'] {
+  fill: var(--text);
+  font-weight: 700;
+}
+
+.isoDot {
+  fill: var(--mark-green);
+  stroke: var(--text);
+  stroke-width: 1;
+  pointer-events: none;
 }

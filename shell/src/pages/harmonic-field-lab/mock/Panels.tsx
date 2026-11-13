@@ -7,7 +7,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon, Menu } from '@mantine/core';
 import { ChordsPanel } from './ChordsPanel';
 import {
   ArrowDownIcon,
@@ -19,15 +19,17 @@ import {
   UnstackIcon,
 } from './icons';
 import { KeysModesPanel } from './KeysModesPanel';
-import { LatticePanel } from './LatticePanel';
 import {
-  SPLIT_DEFAULT,
+  MAX_STACK,
   canMove,
-  canStack,
-  clampSplit,
+  clampShares,
+  dragSplitter,
+  evenShares,
   locate,
-  nudgeSplit,
-  splitLimits,
+  nudgeSplitter,
+  splitterAt,
+  splitterRange,
+  stackTargets,
   splitOf,
   type Layout,
   type PanelId,
@@ -36,6 +38,8 @@ import { panelLabel } from './Rail';
 import { RetunerPanel } from './RetunerPanel';
 import { SpectrumPanel } from './SpectrumPanel';
 import { PinActionsContext, Tip } from './ui';
+import { VisualizerPanel } from './Visualizer';
+import { useViz } from './vizState';
 import classes from './mock.module.css';
 
 export function renderPanel(id: PanelId, tol: number, setTol: (t: number) => void) {
@@ -46,8 +50,10 @@ export function renderPanel(id: PanelId, tol: number, setTol: (t: number) => voi
       return <SpectrumPanel />;
     case 'keys':
       return <KeysModesPanel />;
-    case 'lattice':
-      return <LatticePanel />;
+    case 'viz1':
+    case 'viz2':
+    case 'viz3':
+      return <VisualizerPanel id={id} />;
     case 'retuner':
       return <RetunerPanel />;
   }
@@ -56,54 +62,59 @@ export function renderPanel(id: PanelId, tol: number, setTol: (t: number) => voi
 export interface PinHandlers {
   onMove: (id: PanelId, dir: 'left' | 'right') => void;
   onUnpin: (id: PanelId) => void;
-  onStack: (id: PanelId) => void;
+  /** Move a panel to the bottom of another pinned panel's column (a column holds up to three). */
+  onStackWith: (id: PanelId, targetId: PanelId) => void;
   onUnstack: (id: PanelId) => void;
-  onSwap: (id: PanelId) => void;
-  /** Store the top panel's share of the stacked column it tops. */
-  onSplit: (topId: PanelId, share: number) => void;
+  /** Move a panel one slot up or down inside its stack. */
+  onMoveInStack: (id: PanelId, dir: 'up' | 'down') => void;
+  /** Store the shares of the stacked column the panel tops. */
+  onSplit: (topId: PanelId, shares: number[]) => void;
 }
 
 interface ColumnProps extends PinHandlers {
-  /** One panel, or two stacked (top first). */
+  /** One panel, or two or three stacked (top first). */
   ids: PanelId[];
   layout: Layout;
   render: (id: PanelId) => ReactNode;
 }
 
 const remPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-/** Grid rows of a stack: each half keeps at least 6 rem or 20% (the CSS floor), the rest is shared by the split. */
-const stackRows = (top: number) =>
-  `minmax(max(6rem, 20%), ${top}fr) 0.5rem minmax(max(6rem, 20%), ${1 - top}fr)`;
+/** Grid rows of a stack: panels and 0.5 rem splitter tracks; each panel keeps at least 6 rem or 20% (the CSS floor). */
+const stackRows = (shares: readonly number[]) =>
+  shares.map((v) => `minmax(max(6rem, 20%), ${v}fr)`).join(' 0.5rem ');
 
 interface SplitterProps {
   topId: PanelId;
-  split: number;
+  /** Which splitter of the column: 0 is between the first and second panel. */
+  index: number;
+  shares: number[];
   column: RefObject<HTMLDivElement | null>;
-  onSplit: (topId: PanelId, share: number) => void;
+  onSplit: (topId: PanelId, shares: number[]) => void;
 }
 
 /**
- * The draggable bar between two stacked panels. Pointer capture drives the grid rows directly while dragging (no
- * re-render per move); the share is committed on release. Keyboard: Up and Down nudge 5%, Home and End jump to the
- * limits; double-click resets to 50/50.
+ * The draggable bar between two stacked panels (a three-panel stack has two). Pointer capture drives the grid rows
+ * directly while dragging (no re-render per move); the shares are committed on release. Dragging only trades space
+ * between the two panels beside the bar. Keyboard: Up and Down nudge 5%, Home and End jump to the limits; double-click
+ * resets the whole column to even shares.
  */
-function Splitter({ topId, split, column, onSplit }: SplitterProps) {
-  const drag = useRef<{ share: number } | null>(null);
+function Splitter({ topId, index, shares, column, onSplit }: SplitterProps) {
+  const drag = useRef<{ shares: number[] } | null>(null);
   const heightRem = () => {
     const h = column.current ? column.current.clientHeight / remPx() : 0;
     return h > 0 ? h : 40;
   };
-  const { min, max } = splitLimits(heightRem());
-  const now = clampSplit(split, heightRem());
+  const now = clampShares(shares, heightRem());
+  const { min, max } = splitterRange(now, index, heightRem());
+  const at = splitterAt(now, index);
   const move = (e: PointerEvent<HTMLDivElement>) => {
     const el = column.current;
     if (!drag.current || !el) {
       return;
     }
     const r = el.getBoundingClientRect();
-    const share = clampSplit((e.clientY - r.top) / r.height, heightRem());
-    drag.current.share = share;
-    el.style.gridTemplateRows = stackRows(share);
+    drag.current.shares = dragSplitter(now, index, (e.clientY - r.top) / r.height, heightRem());
+    el.style.gridTemplateRows = stackRows(drag.current.shares);
   };
   const end = (e: PointerEvent<HTMLDivElement>) => {
     if (!drag.current) {
@@ -115,13 +126,13 @@ function Splitter({ topId, split, column, onSplit }: SplitterProps) {
       // the pointer may already be released (cancelled, or synthetic events)
     }
     e.currentTarget.removeAttribute('data-drag');
-    onSplit(topId, drag.current.share);
+    onSplit(topId, drag.current.shares);
     drag.current = null;
   };
   const key = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Home' || e.key === 'End') {
       e.preventDefault();
-      onSplit(topId, nudgeSplit(now, e.key, heightRem()));
+      onSplit(topId, nudgeSplitter(now, index, e.key, heightRem()));
     }
   };
   return (
@@ -130,10 +141,10 @@ function Splitter({ topId, split, column, onSplit }: SplitterProps) {
         role="separator"
         aria-orientation="horizontal"
         aria-label="Resize the stacked panels"
-        aria-valuenow={Math.round(now * 100)}
+        aria-valuenow={Math.round(at * 100)}
         aria-valuemin={Math.round(min * 100)}
         aria-valuemax={Math.round(max * 100)}
-        aria-valuetext={`Top panel ${Math.round(now * 100)} percent`}
+        aria-valuetext={`${Math.round(at * 100)} percent of the column above this bar`}
         tabIndex={0}
         className={classes.splitter}
         onPointerDown={(e) => {
@@ -143,12 +154,12 @@ function Splitter({ topId, split, column, onSplit }: SplitterProps) {
             // synthetic pointers cannot be captured; dragging still works while over the bar
           }
           e.currentTarget.setAttribute('data-drag', 'true');
-          drag.current = { share: now };
+          drag.current = { shares: now };
         }}
         onPointerMove={move}
         onPointerUp={end}
         onPointerCancel={end}
-        onDoubleClick={() => onSplit(topId, SPLIT_DEFAULT)}
+        onDoubleClick={() => onSplit(topId, evenShares(now.length))}
         onKeyDown={key}
       >
         <span className={classes.splitGrip} aria-hidden="true" />
@@ -163,7 +174,8 @@ function Splitter({ topId, split, column, onSplit }: SplitterProps) {
  */
 export function PinnedColumn({ ids, layout, render, ...h }: ColumnProps) {
   const column = useRef<HTMLDivElement>(null);
-  const stackedColumn = ids.length === 2;
+  const stackedColumn = ids.length >= 2;
+  const viz = useViz();
   return (
     <div
       ref={column}
@@ -173,8 +185,9 @@ export function PinnedColumn({ ids, layout, render, ...h }: ColumnProps) {
     >
       {ids.map((id, i) => {
         const where = locate(layout, id);
-        const label = panelLabel(id);
-        const stacked = ids.length === 2;
+        const label = panelLabel(id, viz.view);
+        const stacked = ids.length >= 2;
+        const targets = stackTargets(layout, id);
         const actions = (
           <>
             <Tip k="movePin" as="control">
@@ -201,20 +214,33 @@ export function PinnedColumn({ ids, layout, render, ...h }: ColumnProps) {
                 <ArrowRightIcon />
               </ActionIcon>
             </Tip>
-            {stacked && (
+            {stacked && i > 0 && (
               <Tip k="swapStack" as="control">
                 <ActionIcon
                   variant="subtle"
                   color="gray"
                   size="sm"
-                  aria-label={i === 0 ? `Swap ${label} down` : `Swap ${label} up`}
-                  onClick={() => h.onSwap(id)}
+                  aria-label={`Move ${label} up in the stack`}
+                  onClick={() => h.onMoveInStack(id, 'up')}
                 >
-                  {i === 0 ? <ArrowDownIcon /> : <ArrowUpIcon />}
+                  <ArrowUpIcon />
                 </ActionIcon>
               </Tip>
             )}
-            {stacked ? (
+            {stacked && i < ids.length - 1 && (
+              <Tip k="swapStack" as="control">
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  aria-label={`Move ${label} down in the stack`}
+                  onClick={() => h.onMoveInStack(id, 'down')}
+                >
+                  <ArrowDownIcon />
+                </ActionIcon>
+              </Tip>
+            )}
+            {stacked && (
               <Tip k="unstackPin" as="control">
                 <ActionIcon
                   variant="subtle"
@@ -226,21 +252,36 @@ export function PinnedColumn({ ids, layout, render, ...h }: ColumnProps) {
                   <UnstackIcon />
                 </ActionIcon>
               </Tip>
-            ) : (
-              canStack(layout, id) && (
-                <Tip k="stackPin" as="control">
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="sm"
-                    aria-label={`Stack ${label} with the next column`}
-                    onClick={() => h.onStack(id)}
-                  >
-                    <StackIcon />
-                  </ActionIcon>
-                </Tip>
-              )
             )}
+            <Tip k="stackPin" as="control">
+              <span>
+                <Menu
+                  position="bottom-end"
+                  withinPortal
+                  shadow="none"
+                  disabled={targets.length === 0}
+                >
+                  <Menu.Target>
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      size="sm"
+                      aria-label={`Stack ${label} with another panel`}
+                      disabled={targets.length === 0}
+                    >
+                      <StackIcon />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    {targets.map((t) => (
+                      <Menu.Item key={t.id} onClick={() => h.onStackWith(id, t.id)}>
+                        {`${panelLabel(t.id, viz.view)} (${t.side}, ${t.count} of ${MAX_STACK})`}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Dropdown>
+                </Menu>
+              </span>
+            </Tip>
             <Tip k="unpinColumn" as="control">
               <ActionIcon
                 variant="subtle"
@@ -264,11 +305,12 @@ export function PinnedColumn({ ids, layout, render, ...h }: ColumnProps) {
             <PinActionsContext.Provider value={actions}>{render(id)}</PinActionsContext.Provider>
           </section>
         );
-        return i === 1 ? (
+        return i > 0 ? (
           <Fragment key={id}>
             <Splitter
               topId={ids[0]}
-              split={splitOf(layout, ids[0])}
+              index={i - 1}
+              shares={splitOf(layout, ids[0])}
               column={column}
               onSplit={h.onSplit}
             />

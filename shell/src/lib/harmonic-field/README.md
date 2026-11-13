@@ -35,6 +35,7 @@ Import from the barrel (`./index`, or `@/lib/harmonic-field`).
 | `scorers.ts` | `scorePeriodicityInfinitone`, `ScoreResult` |
 | `scorersMore.ts` | `scorePeriodicityFair`, `scoreLattice`, `scoreRoughness` (default), `pairRoughness`, `SETHARES`, `compareScorers` and their option and result types |
 | `retuner.ts` | `pickPivot`, `degreeOf`, `nearestDegree`, `rerootCards`, `retuneStep`, `REF_HZ`, `EMPTY_SCORE` and the `RetunerCard`, `HeldNote`, `Base`, `RetuneOpts`, `RetuneResult`, `RetuneWhy` types |
+| `visual.ts` | the visualizer views: `latticeCoords3d` / `latticeCoords2d` (notes on three prime axes; a note with other primes gets a `base` ring, `stems` per hidden prime and a `pos` tip), `defaultAxes3d`, `axisChoices3d`, `stemDir3d`, `stemAngle2d`, `fmtHidden`, `edoFit`, `edoErrors`, `bestEdos`, `dissonanceCurve`, `curveMinima`, `isoGrid`, `isoPitch`, `isoQ`, `nearestFieldNote` and their types |
 
 ## Typical flow
 
