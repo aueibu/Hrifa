@@ -1,9 +1,10 @@
-import { useId, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Button, Chip, Group, Select, Text } from '@mantine/core';
+import { useEffect, useId, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { Button, Chip, Group, Select, Text, Tooltip } from '@mantine/core';
 import { projectPitchSetFromPreset, type ProjectPitchSet } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
 import { pitchLabel } from '../routeTreatments';
 import { chordsOnRoot, chordsWithCommonTone, type Chord } from './chords';
+import { stepChordKey } from './navigation';
 import { PITCH_SET_PRESETS, chromaticSet, togglePitch, type PitchSetPreset } from './pitchSet';
 import { inversionCount, pitchClassOf } from './placement';
 import type { SpreadStyle, VoicingSpec } from './voicing';
@@ -24,7 +25,36 @@ const presetLabel = (preset: string) =>
 /** Root mode: chords built on the clicked pitch. Common-tone mode: chords that contain it. */
 export type ChordPickerMode = 'root' | 'common';
 
+/**
+ * What the picker lets its owner do with the keyboard while focus is elsewhere (the roll): the same
+ * navigation the picker's own arrow keys use, so there is one implementation.
+ */
+export interface ChordPickerControl {
+  /** Move the current chord, from `fromKey` (the focused button's `data-chord-key`) when given (Up/Down within a column, Left/Right across; the grid in root mode) and pin it. */
+  navigate(dx: number, dy: number, fromKey?: string | null, audition?: boolean): void;
+  /** The chord the picker is on (the last one reached or focused), else the first; null when none. */
+  current(): Chord | null;
+  /** How many inversions the buttons offer (at least 1). */
+  inversions(): number;
+}
+
+/** The shortcut map, shown in the '?' tooltip and kept in step with the editor's key handler. */
+export const CHORD_SHORTCUTS: readonly [string, string][] = [
+  ['Arrow keys', 'browse the chords'],
+  ['Enter', 'insert the chord'],
+  ['Alt+Up / Down', 'inversion up / down'],
+  ['Alt+Left / Right', 'spread: previous / next'],
+  ['Shift+arrows', 'move the anchor on the roll'],
+  ['I', 'continuous insert on / off'],
+  ['Esc', 'close the picker'],
+];
+
 export interface ChordPickerProps {
+  /** The owner's handle on the picker's keyboard navigation (see `ChordPickerControl`). */
+  controlRef?: MutableRefObject<ChordPickerControl | null>;
+  /** Continuous insert: after an insert the owner moves the anchor on, so Enter places the next chord. */
+  continuous?: boolean;
+  onContinuousChange?(next: boolean): void;
   /** Default `root`. State of the editor (Ctrl+click opens `common`), switched by the buttons at the top. */
   mode?: ChordPickerMode;
   /** Without it the Common tone button stays disabled. */
@@ -85,6 +115,9 @@ export function ChordPicker({
   previewGate = 'click',
   onInsert,
   onClose,
+  controlRef,
+  continuous = false,
+  onContinuousChange,
 }: ChordPickerProps) {
   const headerPrefix = useId();
   const [scaleOpen, setScaleOpen] = useState(false);
@@ -117,37 +150,66 @@ export function ChordPicker({
     previewGate === 'click' || event.ctrlKey || event.metaKey;
   const pcs = Array.from({ length: edo }, (_unused, pc) => pc);
 
-  function moveFocus(event: ReactKeyboardEvent<HTMLElement>, delta: number) {
-    const buttons = [
-      ...event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-chord-button]'),
-    ];
-    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    buttons[Math.max(0, Math.min(buttons.length - 1, at + delta))]?.focus();
-  }
-
-  /** Common-tone columns: Up/Down within a column, Left/Right to the neighbour keeping the row. */
-  function moveInColumns(event: ReactKeyboardEvent<HTMLElement>, dx: number, dy: number) {
-    const cols = [...event.currentTarget.querySelectorAll<HTMLElement>('[data-role-column]')].map(
-      (col) => [...col.querySelectorAll<HTMLButtonElement>('[data-chord-button]')]
-    );
-    const colAt = cols.findIndex((buttons) =>
-      buttons.includes(document.activeElement as HTMLButtonElement)
-    );
-    if (colAt < 0) {
-      return;
-    }
-    const rowAt = cols[colAt]!.indexOf(document.activeElement as HTMLButtonElement);
-    const nextCol = Math.max(0, Math.min(cols.length - 1, colAt + dx));
-    const column = cols[nextCol]!;
-    column[Math.max(0, Math.min(column.length - 1, rowAt + dy))]?.focus();
-  }
-
   const chordKey = (chord: Chord, role?: string) => (role ? `${role}:${chord.name}` : chord.name);
   const allKeys = common
     ? columns.flatMap((column) => column.chords.map((chord) => chordKey(chord, column.role)))
     : chords.map((chord) => chordKey(chord));
   // A key that is gone (the list changed) falls back to the first chord.
   const tabbableKey = currentKey !== null && allKeys.includes(currentKey) ? currentKey : allKeys[0];
+  const keyColumns = common
+    ? columns.map((column) => column.chords.map((chord) => chordKey(chord, column.role)))
+    : [allKeys];
+  const chordByKey = new Map<string, Chord>();
+  if (common) {
+    columns.forEach((column) =>
+      column.chords.forEach((chord) => chordByKey.set(chordKey(chord, column.role), chord))
+    );
+  } else {
+    chords.forEach((chord) => chordByKey.set(chordKey(chord), chord));
+  }
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * One implementation of arrow navigation: moves the current chord, follows it with DOM focus when
+   * focus is in the picker (and scrolls it into view), and pins it. A key press counts as a click
+   * for the preview gate, so it sounds only in `click` mode.
+   */
+  function navigate(dx: number, dy: number, fromKey: string | null = null, allowAudition = true) {
+    const next = stepChordKey(
+      keyColumns,
+      common ? 'common' : 'root',
+      fromKey ?? tabbableKey ?? null,
+      dx,
+      dy
+    );
+    const chord = next === null ? undefined : chordByKey.get(next);
+    if (next === null || !chord) {
+      return;
+    }
+    setCurrentKey(next);
+    const button = [
+      ...(rootRef.current?.querySelectorAll<HTMLElement>('[data-chord-key]') ?? []),
+    ].find((candidate) => candidate.dataset.chordKey === next);
+    if (button && rootRef.current?.contains(document.activeElement)) {
+      button.focus();
+    }
+    button?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    onPin(chord, { audition: allowAudition && previewGate === 'click' });
+  }
+  // The owner's handle, refreshed every render so it never reads a stale list.
+  useEffect(() => {
+    if (!controlRef) {
+      return undefined;
+    }
+    controlRef.current = {
+      navigate: (dx, dy, fromKey, audition) => navigate(dx, dy, fromKey ?? null, audition ?? true),
+      current: () => (tabbableKey !== undefined ? (chordByKey.get(tabbableKey) ?? null) : null),
+      inversions: () => inversions,
+    };
+    return () => {
+      controlRef.current = null;
+    };
+  });
 
   const chordButton = (chord: Chord, role?: string) => (
     <button
@@ -155,6 +217,7 @@ export function ChordPicker({
       type="button"
       tabIndex={chordKey(chord, role) === tabbableKey ? 0 : -1}
       data-chord-button=""
+      data-chord-key={chordKey(chord, role)}
       title={chord.name}
       className={classes.chord}
       onMouseEnter={() => onHover(chord)}
@@ -164,6 +227,7 @@ export function ChordPicker({
       }}
       onBlur={() => onHover(null)}
       onClick={(event) => {
+        setCurrentKey(chordKey(chord, role));
         // The second click of a double-click belongs to the insert, not another audition.
         if (event.detail < 2) {
           onPin(chord, { audition: gated(event) });
@@ -185,7 +249,9 @@ export function ChordPicker({
     // The key handlers are for keys bubbling up from the buttons inside (Escape, arrows).
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
+      ref={rootRef}
       className={classes.picker}
+      data-chord-picker=""
       role="group"
       aria-label="Chord picker"
       onKeyDown={(event) => {
@@ -224,6 +290,35 @@ export function ChordPicker({
           >
             Common tone
           </Button>
+          <Button
+            size="compact-xs"
+            variant={continuous ? 'filled' : 'default'}
+            aria-pressed={continuous}
+            disabled={!onContinuousChange}
+            title="Continuous insert (I): after an insert the anchor moves on by the chord length"
+            onClick={() => onContinuousChange?.(!continuous)}
+          >
+            Continuous
+          </Button>
+          <Tooltip
+            events={{ hover: true, focus: true, touch: true }}
+            multiline
+            w={260}
+            withArrow
+            label={
+              <>
+                {CHORD_SHORTCUTS.map(([keys, what]) => (
+                  <div key={keys}>
+                    {keys}: {what}
+                  </div>
+                ))}
+              </>
+            }
+          >
+            <Button size="compact-xs" variant="subtle" aria-label="Keyboard shortcuts">
+              ?
+            </Button>
+          </Tooltip>
         </Group>
 
         <Text size="xs" className={`${classes.anchorLine} ${classes.muted}`}>
@@ -271,15 +366,19 @@ export function ChordPicker({
                 const vertical = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
                 const horizontal =
                   event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-                if (!vertical && !horizontal) {
+                // Modified arrows belong to the editor's key map (voicing, moving the anchor).
+                if (
+                  (!vertical && !horizontal) ||
+                  event.altKey ||
+                  event.shiftKey ||
+                  event.ctrlKey ||
+                  event.metaKey
+                ) {
                   return;
                 }
                 event.preventDefault();
-                if (common) {
-                  moveInColumns(event, horizontal, vertical);
-                } else {
-                  moveFocus(event, vertical || horizontal);
-                }
+                const from = (event.target as HTMLElement).closest<HTMLElement>('[data-chord-key]');
+                navigate(horizontal, vertical, from?.dataset.chordKey ?? null);
               }}
             >
               {common ? (
@@ -423,14 +522,20 @@ export function ChordPicker({
           )}
         </div>
 
-        <Text size="xs" className={classes.hint}>
-          {previewGate === 'click'
-            ? 'Hover previews. Click auditions. Double-click or Enter inserts.'
-            : 'Hover previews. Click pins, Ctrl+click auditions. Double-click or Enter inserts.'}
-          {common && columns.length > 0
-            ? ' Scroll the columns, or use the takeover for more room.'
-            : ''}
-        </Text>
+        <div className={classes.hint}>
+          <Text size="xs">
+            {previewGate === 'click'
+              ? 'Hover previews. Click auditions. Double-click or Enter inserts.'
+              : 'Hover previews. Click pins, Ctrl+click auditions. Double-click or Enter inserts.'}
+            {common && columns.length > 0
+              ? ' Scroll the columns, or use the takeover for more room.'
+              : ''}
+          </Text>
+          <Text size="xs">
+            Keys: arrows browse, Enter inserts, Alt+arrows voicing, Shift+arrows move the anchor, I
+            continuous.
+          </Text>
+        </div>
       </div>
     </div>
   );

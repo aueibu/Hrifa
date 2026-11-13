@@ -409,10 +409,11 @@ describe('ChordPicker common-tone mode', () => {
     expect(stops()).toHaveLength(1);
     expect(rootButtons[2]).toHaveFocus();
     expect(stops()[0]).toBe(rootButtons[2]);
-    // Tab from the modes goes to the one chord stop.
+    // Tab from the modes (Root, Common tone, the '?' help; Continuous is disabled here) goes to the one chord stop.
     screen.getByRole('button', { name: 'Root' }).focus();
-    await user.tab();
-    await user.tab();
+    for (let index = 0; index < 3; index += 1) {
+      await user.tab();
+    }
     expect(rootButtons[2]).toHaveFocus();
   });
 

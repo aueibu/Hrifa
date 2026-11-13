@@ -668,3 +668,45 @@ describe('unified panel: wheel zoom anchored at the pointer', () => {
     expect(timeAt(readView(), VIEW_WIDTH)).toBeCloseTo(timeAt(mid, VIEW_WIDTH), 5);
   });
 });
+
+describe('reveal of a time and pitch span (opt-in)', () => {
+  it('scrolls sideways and up/down just far enough to show a span that is off-screen', () => {
+    open({
+      reveal: { start: 15, end: 16, pitchMidicents: 5400, pitchEndMidicents: 6600, token: 1 },
+    });
+    const view = readView();
+    // The right edge of the span plus the 8 px margin ends at the right edge of the view.
+    expect(view.scrollLeft).toBeCloseTo(16 * 64 + 8 - VIEW_WIDTH, 5);
+    expect(view.scrollTop).toBeGreaterThan(1000);
+  });
+
+  it('does nothing when the span is already visible', () => {
+    const start = { scrollLeft: 0, scrollTop: 0 };
+    open({
+      start,
+      reveal: { start: 1, end: 2, pitchMidicents: 12600, pitchEndMidicents: 12700, token: 1 },
+    });
+    expect(readView()).toMatchObject(start);
+    expect(readView().framed).toBe(true);
+  });
+
+  it('is unchanged without the prop', () => {
+    open({ start: { scrollLeft: 0, scrollTop: 0 } });
+    expect(readView()).toMatchObject({ scrollLeft: 0, scrollTop: 0 });
+  });
+
+  it('acts once per token', () => {
+    const { rerender } = open({
+      reveal: { start: 15, end: 16, pitchMidicents: 6000, token: 1 },
+    });
+    const first = readView().scrollLeft;
+    fireEvent.wheel(document.querySelector('[data-detached]') as HTMLElement, {
+      deltaY: -100,
+      shiftKey: true,
+    });
+    const moved = readView().scrollLeft;
+    expect(moved).not.toBe(first);
+    rerender(<Panel reveal={{ start: 15, end: 16, pitchMidicents: 6000, token: 1 }} />);
+    expect(readView().scrollLeft).toBe(moved);
+  });
+});

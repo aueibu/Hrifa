@@ -246,7 +246,17 @@ export interface PianoRollProps {
    * Scrolls the roll just far enough to bring a note (its sourceId, or id) fully into view, once
    * per new token (the owner bumps it after moving the selection by keyboard). Opt-in.
    */
-  reveal?: { id: string; token: number } | null;
+  reveal?:
+    | { id: string; token: number }
+    | {
+        /** A time and pitch span instead of a note: quarters, and midicents (low, optional high). */
+        start: number;
+        end: number;
+        pitchMidicents: number;
+        pitchEndMidicents?: number;
+        token: number;
+      }
+    | null;
   /**
    * Pick-pitch mode (opt-in, with selection): the owner is waiting for the user to choose a pitch
    * row. While set, the roll shows `hint` as a banner, highlights the row (and key) under the
@@ -1543,7 +1553,28 @@ export function PianoRoll({
       return;
     }
     revealedToken.current = reveal.token;
-    const rects = notes.filter((note) => (note.sourceId ?? note.id) === reveal.id);
+    const rects: Array<{
+      start: number;
+      duration: number;
+      pitchMidicents: number;
+      pitchEndMidicents?: number;
+    }> =
+      'id' in reveal
+        ? notes.filter((note) => (note.sourceId ?? note.id) === reveal.id)
+        : [
+            {
+              start: reveal.start,
+              duration: Math.max(0, reveal.end - reveal.start),
+              pitchMidicents: Math.min(
+                reveal.pitchMidicents,
+                reveal.pitchEndMidicents ?? reveal.pitchMidicents
+              ),
+              pitchEndMidicents: Math.max(
+                reveal.pitchMidicents,
+                reveal.pitchEndMidicents ?? reveal.pitchMidicents
+              ),
+            },
+          ];
     if (!rects.length) {
       return;
     }
@@ -1560,7 +1591,10 @@ export function PianoRoll({
         left - margin - view.scrollLeft
       );
     }
-    const rows = rects.map((note) => 127 - note.pitchMidicents / 100);
+    const rows = rects.flatMap((note) => [
+      127 - note.pitchMidicents / 100,
+      127 - (note.pitchEndMidicents ?? note.pitchMidicents) / 100,
+    ]);
     const top = Math.min(...rows) * view.pixelsPerSemitone;
     const bottom = (Math.max(...rows) + 1) * view.pixelsPerSemitone;
     const visibleHeight = viewport.height - RULER_HEIGHT;
