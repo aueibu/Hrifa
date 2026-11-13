@@ -3,9 +3,9 @@
  * vertical reference lines mark every 100 c (1/1 as C): lighter for a white key, darker for a black key. The strip and
  * the saved-subset rows share one gutter and one cents scale (`stripLeft`), so a note is in the same column everywhere.
  */
-import type { CSSProperties } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { NativeSelect, NumberInput } from '@mantine/core';
-import { LIT, analysis, devs, rel, repC } from './mockData';
+import { LIT_FIELD, analysis, fieldDevs, rel, repC, savedSubsets } from './mockData';
 import { Num, Strip, Tip, signed, useLab } from './ui';
 import classes from './mock.module.css';
 
@@ -33,6 +33,11 @@ export function RefLines({ thin }: { thin?: boolean }) {
 
 export function TunerStrip() {
   const lab = useLab();
+  // same selection as the ring: a hovered saved subset previews, otherwise the loaded one
+  const on = useMemo(
+    () => new Set(lab.preview ?? savedSubsets[lab.loaded].idx),
+    [lab.preview, lab.loaded]
+  );
   return (
     <section className={classes.tuner} aria-label="Tuner strip">
       <Strip title={<Tip k="tunerStrip">Tuner strip</Tip>}>
@@ -67,21 +72,22 @@ export function TunerStrip() {
             <RefLines />
             <div className={classes.stripPlot}>
               <div className={classes.zero} aria-hidden="true" />
-              {devs.map((d, i) => {
+              {fieldDevs.map((d, fi) => {
                 const sharp = d.dev12 >= 0;
-                const lit = LIT.has(i);
-                const fi = rel[i].src;
+                const active = on.has(fi);
+                const lit = active && LIT_FIELD.has(fi);
                 return (
                   <div
-                    key={i}
+                    key={fi}
                     className={classes.col}
                     style={{ left: stripLeft(d.c), '--d': Math.abs(d.dev12) } as CSSProperties}
                     data-ratio={d.ratio}
                     data-lit={lit}
+                    data-on={active}
                     data-pin={lab.pin === fi}
                     role="button"
                     tabIndex={0}
-                    aria-label={`${d.ratio}, ${signed(d.dev12)} cents from ${d.label12}${lit ? ', sounding' : ''}`}
+                    aria-label={`${d.ratio}, ${signed(d.dev12)} cents from ${d.label12}${active ? '' : ', not in the subset'}${lit ? ', sounding' : ''}`}
                     onMouseEnter={() => lab.setHover(fi)}
                     onMouseLeave={() => lab.setHover(null)}
                     onFocus={() => lab.setHover(fi)}

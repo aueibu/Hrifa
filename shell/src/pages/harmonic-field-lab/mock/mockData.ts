@@ -442,7 +442,15 @@ export { fmtSigned, templateLabel };
 
 /* ------------------------------------------------------------------------------------------ saved subsets */
 /** Deviation of every field note from 12-EDO, in cents (signed), for the saved-subset sparklines. */
-export const fieldDev12 = deviations(field, edoTargets(12, repC), repC).map((d) => d.dev);
+const fieldDev12Full = deviations(field, edoTargets(12, repC), repC);
+export const fieldDev12 = fieldDev12Full.map((d) => d.dev);
+/** Every field note for the tuner strip (active or not): ratio, cents and its offset from 12-EDO. */
+export const fieldDevs = field.map((n, i) => ({
+  ratio: fmtRatio(n),
+  c: n.c,
+  dev12: fieldDev12Full[i].dev,
+  label12: fieldDev12Full[i].label,
+}));
 const pick = (...ratios: string[]) =>
   ratios.map((r) => field.findIndex((n) => fmtRatio(n) === r)).filter((i) => i >= 0);
 export interface SavedSubset {

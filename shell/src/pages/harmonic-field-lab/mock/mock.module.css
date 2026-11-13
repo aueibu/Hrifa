@@ -837,6 +837,18 @@
   width: 0.75rem;
 }
 
+/* a field note that is not in the subset: hollow dot, dimmed bar and number */
+.col[data-on='false'] .colDot {
+  background: var(--panel);
+  border: 1px solid var(--text-subtle);
+}
+
+.col[data-on='false'] .colBar,
+.col[data-on='false'] .colNum,
+.col[data-on='false'] .colRatio {
+  opacity: 0.35;
+}
+
 .col[data-pin='true'] .colDot {
   outline: 1px solid var(--text);
   outline-offset: 2px;
@@ -1009,7 +1021,7 @@
 }
 
 .sparkCol[data-on='false'] .sparkBar {
-  opacity: 0.3;
+  display: none;
 }
 
 /* ------------------------------------------------------------------------------------------------ dock */
