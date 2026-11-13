@@ -176,7 +176,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
   );
 }
 
-/** The ring with its header: caption, view toggle (Chromatic | Fifths) and the Fifths menu. */
+/** The ring with its header: caption, the view toggle (Chromatic | Fifths) centred over the ring, and the ring menu. */
 export function RingPanel() {
   const [view, setView] = useState<RingView>('chromatic');
   const [steps, setSteps] = useState(12);
@@ -186,7 +186,6 @@ export function RingPanel() {
         <span className={classes.ringCap}>
           <Tip k="pitchCircle">Pitch circle</Tip>
         </span>
-        <span className={classes.grow} />
         <Tip k="ringView" as="control">
           <SegmentedControl
             size="xs"
@@ -199,33 +198,35 @@ export function RingPanel() {
             ]}
           />
         </Tip>
-        <Tip k="ringMenu" as="control">
-          <Popover position="bottom-end" width={220} transitionProps={{ duration: 0 }}>
-            <Popover.Target>
-              <ActionIcon variant="default" size="sm" aria-label="Ring menu">
-                <GearIcon />
-              </ActionIcon>
-            </Popover.Target>
-            <Popover.Dropdown>
-              <div className={classes.formStack}>
-                <TextInput
-                  size="xs"
-                  label="Generator (stacked)"
-                  defaultValue="3/2"
-                  description="Fixed at 3/2 in this mock"
-                  readOnly
-                />
-                <NativeSelect
-                  size="xs"
-                  label="Chain length"
-                  data={CHAINS}
-                  value={String(steps)}
-                  onChange={(e) => setSteps(Number(e.currentTarget.value))}
-                />
-              </div>
-            </Popover.Dropdown>
-          </Popover>
-        </Tip>
+        <span className={classes.ringHeadEnd}>
+          <Tip k="ringMenu" as="control">
+            <Popover position="bottom-end" width={220} transitionProps={{ duration: 0 }}>
+              <Popover.Target>
+                <ActionIcon variant="default" size="sm" aria-label="Ring menu">
+                  <GearIcon />
+                </ActionIcon>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <div className={classes.formStack}>
+                  <TextInput
+                    size="xs"
+                    label="Generator (stacked)"
+                    defaultValue="3/2"
+                    description="Fixed at 3/2 in this mock"
+                    readOnly
+                  />
+                  <NativeSelect
+                    size="xs"
+                    label="Chain length"
+                    data={CHAINS}
+                    value={String(steps)}
+                    onChange={(e) => setSteps(Number(e.currentTarget.value))}
+                  />
+                </div>
+              </Popover.Dropdown>
+            </Popover>
+          </Tip>
+        </span>
       </div>
       <PitchRing view={view} steps={steps} />
     </div>

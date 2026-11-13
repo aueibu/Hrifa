@@ -425,11 +425,10 @@
   gap: 0.5rem 0.75rem;
   grid-template-areas:
     'gen ring stats'
-    'tools tools side'
     'strip strip side'
     'saved saved side';
   grid-template-columns: 14rem minmax(0, 1fr) 17rem;
-  grid-template-rows: auto auto auto minmax(7rem, 1fr);
+  grid-template-rows: auto auto minmax(7rem, 1fr);
   padding: 0.5rem;
 }
 
@@ -439,9 +438,18 @@
   --ref-black: color-mix(in srgb, var(--text) 7%, transparent);
 }
 
+/* the parameter column, with the subset tools at its foot (level with the bottom of the ring) */
 .areaGen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   grid-area: gen;
   min-width: 0;
+}
+
+.areaGen .toolRow {
+  margin-top: auto;
+  padding: 0;
 }
 
 .areaRing {
@@ -454,10 +462,6 @@
   min-width: 0;
 }
 
-.areaTools {
-  grid-area: tools;
-  min-width: 0;
-}
 
 .areaStrip {
   grid-area: strip;
@@ -482,11 +486,10 @@
     grid-template-areas:
       'gen ring'
       'stats side'
-      'tools tools'
       'strip strip'
       'saved saved';
     grid-template-columns: 14rem minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto minmax(5rem, 1fr);
+    grid-template-rows: auto auto auto minmax(5rem, 1fr);
   }
 }
 
@@ -496,11 +499,17 @@
   min-width: 0;
 }
 
+/* caption | view toggle centred over the ring | ring menu */
 .ringHead {
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 0.25rem;
+  grid-template-columns: 1fr auto 1fr;
   min-height: 1.625rem;
+}
+
+.ringHeadEnd {
+  justify-self: end;
 }
 
 .ringCap {
