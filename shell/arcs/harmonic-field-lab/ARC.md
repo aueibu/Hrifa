@@ -120,7 +120,21 @@ Proposal:
 - Acceptance:
   - [ ] Contents rail with summaries, top transport bar, keyboard dock, every current block as an article (heading, lede, detail, Open in reader), glossary drawer, and a placeholder **Retuner** section (card list, pivot/anchor/trigger/scorer controls, "why this card won" table, drift readout).
   - [ ] Screenshots at 1500 px and 1100 px, light and dark (dev server + headless Edge, throwaway profile). A "what changed and why" list mapped to the diagnosis.
-- Checkpoint decisions (human, …):
+- Checkpoint decisions (human, 2026-11-12, mock 1 at `5d4e729` REJECTED as a direction): clearer, but a huge sprawling scroll ("like the Ian Ring scale page, a mile long, you get lost"); it drifted toward a "B2B marketing dashboard for music theory". Wanted: the Ableton/Bitwig clean, tidy, minimalist-but-useful approach. Specifics:
+  - Keep the wiki-style nav rail on the left; everything else is too big and spaced out.
+  - **One generation-and-selection unit**: presets, method options, pitch circle and the tuner strip together. Prime filter (and maybe repeat interval) go in a fold-away menu nearby.
+  - Everything else is analysis. The lattice is intermediate (a visual that shows layout; click-to-toggle exists but is not primary).
+  - Field table is useful but huge (n notes = n rows): needs a compact treatment.
+  - Stats belong to the right of the ring, glanceable (as in the prototype). Keep the new step-sizes layout.
+  - Scale block is unhelpful far down: roll it into the ribbon/tuner strip.
+  - Chords: keep and value it; keep click-to-raise/lower tolerance to make a chord appear; group by chord type (templates); templates user-editable behind an Edit button; chips layout preferred over the flat table, but organised.
+  - Keys and modes: related; flat tables are sleep-inducing; collate and visualise them.
+  - Retuner: leave alone for now (too new); no redesign in this pass.
+- Round 2 decisions (human, 2026-11-12, from sketches):
+  - **One-screen workspace**: no page scroll at 1500×900. Thin top bar (tabs + transport + Glossary). Left: the wiki rail picks ONE analysis panel (Chords, Spectrum, Keys & Modes, Lattice, Field table, Retuner) with live counts. Centre, always visible: the generation-and-selection unit (preset ▾, method tabs, a ⚙ fold-out for prime filter + repeat interval, pitch circle with glanceable stats + step-size bars to its right, subset tool row, tuner strip with the scale degrees rolled in). Right: the chosen analysis panel, scrolling inside itself. Thin keyboard dock at the bottom. DAW density: small type, compact controls, explanations in tooltips instead of paragraphs.
+  - **Keys & Modes**: one rotation × degree heat grid (rows = modes, columns = degrees, cell = how close that degree lands to a field note, severity colour + number on hover) plus a ring of mini dots per key showing which transpositions fit completely; click a row to select or play that mode.
+  - **Field table**: no standing table. Hover/click a note anywhere shows its row in a small inspector (ratio, cents, monzo, nearest 12-EDO, deviation); the full table opens in a reader/drawer (sticky headers, dense rows, sort/filter).
+  - Retuner panel kept as in mock 1, not redesigned.
 - Human checkpoint after: **yes** (approve or change the layout)
 
 ### M5: Live shell + Generator and Field & subset sections

@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
 - Current milestone: M4
-- State: awaiting human (layout checkpoint)
+- State: building (M4 round 2 mock)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -65,4 +65,4 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-Human checkpoint M4: approve or change the mock layout (open `/harmonic-field-lab/mock` via `dev.bat` or `yarn dev`). Write the decisions under ARC M4 "Checkpoint decisions" (and a DECISIONS row if the colour mapping is confirmed), then M5.
+M4 round 2: builder rebuilds `src/pages/harmonic-field-lab/mock/` (same route, no Router change) per ARC M4 round 2 decisions; reviewer; `check:hfl`; commit; human checkpoint.
