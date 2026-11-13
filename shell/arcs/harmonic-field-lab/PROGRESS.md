@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
 - Current milestone: M4
-- State: awaiting human (M4 round 4 checkpoint)
+- State: awaiting human (M4 layout checkpoint, after round 4 + tweaks)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
