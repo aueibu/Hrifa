@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { chordsWithCommonTone } from '../chordInput/chords';
+import { chordsOnRoot, chordsWithCommonTone } from '../chordInput/chords';
 import { CompositionSettingsProvider, useCompositionSettings } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
 import { DEVELOPER_OPTIONS_KEY } from '../developerOptions';
@@ -613,5 +613,115 @@ describe('the Chords tool in common-tone mode', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Common tone' }));
     expect(screen.getByText(/No pitches in the scale/)).toBeInTheDocument();
+  });
+});
+
+describe('the Chords tool: Simple and Extended', () => {
+  const chromaticProject = () =>
+    act(() =>
+      settingsApi.updateSettings({
+        pitchSet: {
+          ...settingsApi.settings.pitchSet,
+          pcs: Array.from({ length: 12 }, (_unused, pc) => pc),
+          preset: 'chromatic',
+        },
+      })
+    );
+  const tierButton = (name: 'Simple' | 'Extended') => screen.getByRole('button', { name });
+
+  it('Simple is the default, Extended adds chords, and the toggle is tool state that never touches settings', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    chromaticProject();
+    const before = JSON.stringify(settingsApi.settings);
+    clickAnchor(roll, 60);
+    expect(tierButton('Simple')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: 'C7b5' })).toBeNull();
+    await user.click(tierButton('Extended'));
+    expect(chord('C7b5')).toBeInTheDocument();
+    expect(chord('C13')).toBeInTheDocument();
+    // A new click keeps the tier.
+    fireEvent.pointerDown(roll, { clientX: 200, clientY: rowY(60), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 200, clientY: rowY(60), pointerId: 1 });
+    expect(tierButton('Extended')).toHaveAttribute('aria-pressed', 'true');
+    expect(chord('C13')).toBeInTheDocument();
+    // So does switching away from the tool and back.
+    fireEvent.keyDown(roll, { key: '1' });
+    fireEvent.keyDown(roll, { key: '7' });
+    fireEvent.pointerDown(roll, { clientX: 70, clientY: rowY(60), pointerId: 1 });
+    fireEvent.pointerUp(roll, { clientX: 70, clientY: rowY(60), pointerId: 1 });
+    expect(tierButton('Extended')).toHaveAttribute('aria-pressed', 'true');
+    expect(JSON.stringify(settingsApi.settings)).toBe(before);
+    expect(localStorage.getItem('hrifa.composition-workbench.settings.v1')).not.toContain(
+      'Extended'
+    );
+  });
+
+  it('switching to Simple clears the ghosts of a pinned chord that is no longer listed', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 60);
+    await user.click(tierButton('Extended'));
+    const extendedName = chordsOnRoot(settingsApi.settings.pitchSet, 0, { tier: 'extended' }).find(
+      (c) => c.tier === 'extended'
+    )!.name;
+    await user.click(chord(extendedName));
+    expect(ghosts('pinned').length).toBeGreaterThan(0);
+    await user.click(tierButton('Simple'));
+    expect(screen.queryByRole('button', { name: extendedName })).toBeNull();
+    expect(ghosts('pinned')).toHaveLength(0);
+    expect(ghosts('hover')).toHaveLength(0);
+  });
+
+  it('inserts an extended chord (C7b9 over the chromatic set) through the real edit path as one undo step', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    chromaticProject();
+    clickAnchor(roll, 60);
+    await user.click(tierButton('Extended'));
+    await user.dblClick(chord('C7b9'));
+    expect(pitches().map((entry) => entry.pitch)).toEqual([6000, 6400, 6700, 7000, 7300]);
+    act(() => undo());
+    expect(noteCount()).toBe(0);
+  });
+
+  it('common-tone columns say 2nd, and Extended with All pitches lists extended chords', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '7' });
+    const at = { clientX: 70, clientY: rowY(69), pointerId: 1, ctrlKey: true };
+    fireEvent.pointerDown(roll, at);
+    fireEvent.pointerUp(roll, at);
+    const headers = () =>
+      [...document.querySelectorAll('[data-role-column] > div')].map((el) => el.textContent);
+    expect(headers()).toContain('2nd');
+    expect(headers()).not.toContain('9th');
+    await user.click(screen.getByRole('checkbox', { name: 'All pitches' }));
+    await user.click(tierButton('Extended'));
+    expect(headers()).toEqual(expect.arrayContaining(['4th', '6th']));
+    expect(chord('A7b9')).toBeInTheDocument();
+  });
+
+  it('arrow keys and Enter use the listed (extended) chords: the last one reached inserts', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 60);
+    await user.click(tierButton('Extended'));
+    const listed = chordsOnRoot(settingsApi.settings.pitchSet, 0, { tier: 'extended' });
+    const last = listed.at(-1)!;
+    expect(last.tier).toBe('extended');
+    roll.focus();
+    for (let i = 0; i < listed.length + 2; i += 1) {
+      fireEvent.keyDown(roll, { key: 'ArrowDown' });
+    }
+    expect(ghosts('pinned')).toHaveLength(last.pcs.length);
+    fireEvent.keyDown(roll, { key: 'Enter' });
+    expect(
+      pitches()
+        .map((entry) => entry.pitch % 1200)
+        .sort((a, b) => a - b)
+    ).toEqual(last.steps.map((step) => ((step % 12) * 100) % 1200).sort((a, b) => a - b));
+    expect(noteCount()).toBe(last.pcs.length);
   });
 });

@@ -183,7 +183,7 @@ Each milestone is small enough for one builder run and has criteria a command or
 - Out of scope (to BACKLOG): the augmented sixths (French, Italian, German: no root tone), the pitch-class sets ([0 1 4 6], [0 1 4 7], whole tone), and "(I+♭VI) major ♭6 ♯9".
 - Acceptance:
   - [ ] The arc's `Check command` passes
-  - [ ] Role names are scale degrees everywhere (engine, picker, tests); the roles of C major, common-tone A, are still correct (Dm family under 5th, Am under root, F and Fmaj7 under 3rd; a 9th chord such as Fmaj9 appears under 2nd)
+  - [ ] Role names are scale degrees everywhere (engine, picker, tests); the roles of C major, common-tone A, are still correct (Dm family under 5th, Am under root, F and Fmaj7 under 3rd; a ninth chord such as G9 appears under 2nd when the clicked note is its ninth (A is G9's 9th; A is Fmaj9's 3rd, so Fmaj9 sits under 3rd; corrected 2026-11-13 after the M6b review))
   - [ ] The parity test passes for every matched chord type and lists the unmatched ones with reasons
   - [ ] Simple hides the extended chords everywhere; Extended shows them; chord lists stay readable (the Extended list is sorted by tier then library order)
   - [ ] DECISIONS: roles are scale degrees (supersedes the 9th role in W-13), the tier option, the CSV as reference

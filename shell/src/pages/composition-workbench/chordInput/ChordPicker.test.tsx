@@ -7,6 +7,8 @@ import type { ChordHost } from '../noteEditorPreferences';
 import { ChordPicker, type ChordPickerMode } from './ChordPicker';
 import { ChordPickerHost } from './ChordPickerHost';
 import { chordsWithCommonTone } from './chords';
+import type { ChordTier } from './chordTemplates';
+import { chromaticSet } from './pitchSet';
 import { DEFAULT_VOICING } from './placement';
 import type { VoicingSpec } from './voicing';
 
@@ -486,3 +488,136 @@ describe('ChordPicker common-tone mode', () => {
     expect(chordButtons().length).toBeGreaterThan(0);
   });
 });
+
+describe('ChordPicker tiers and scale-degree roles', () => {
+  /** The picker with its own tier state, as the editor keeps it. */
+  function Tiered({
+    anchorMidicents,
+    pitchSet = project,
+    common = false,
+    allPitches = false,
+  }: {
+    anchorMidicents: number;
+    pitchSet?: ProjectPitchSet;
+    common?: boolean;
+    allPitches?: boolean;
+  }) {
+    const [tier, setTier] = useState<ChordTier>('simple');
+    const [voicing, setVoicing] = useState<VoicingSpec>(DEFAULT_VOICING);
+    return (
+      <ChordPicker
+        anchor={{ pitchMidicents: anchorMidicents }}
+        pitchSet={pitchSet}
+        override={null}
+        onOverrideChange={() => undefined}
+        voicing={voicing}
+        onVoicingChange={setVoicing}
+        mode={common ? 'common' : 'root'}
+        allPitches={allPitches}
+        tier={tier}
+        onTierChange={setTier}
+        {...spies()}
+      />
+    );
+  }
+
+  it('Simple (the default) lists exactly the simple chords on A in C major', () => {
+    render(<Tiered anchorMidicents={6900} />);
+    expect(chordButtons()).toEqual(['Am', 'A5', 'Asus2', 'Asus4', 'Am7', 'Am9', 'Amadd9']);
+    expect(screen.getByRole('button', { name: 'Simple' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Extended' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+  });
+
+  it('Extended on the chromatic set adds C7b5 and C13 on C, which Simple does not offer', async () => {
+    const user = userEvent.setup();
+    render(<Tiered anchorMidicents={6000} pitchSet={{ ...chromaticPitchSet() }} />);
+    expect(chordButtons()).not.toContain('C7b5');
+    expect(chordButtons()).not.toContain('C13');
+    await user.click(screen.getByRole('button', { name: 'Extended' }));
+    expect(chordButtons()).toEqual(expect.arrayContaining(['C7b5', 'C13']));
+    // Simple chords stay first.
+    expect(chordButtons().indexOf('Cm')).toBeLessThan(chordButtons().indexOf('C7b5'));
+    await user.click(screen.getByRole('button', { name: 'Simple' }));
+    expect(chordButtons()).not.toContain('C13');
+  });
+
+  it('offers inversion buttons up to 6th inv. for a 7-note chord list and presses the right one', async () => {
+    const user = userEvent.setup();
+    const onVoicingChange = vi.fn();
+    render(
+      <ChordPicker
+        anchor={{ pitchMidicents: 6000 }}
+        pitchSet={{ ...chromaticPitchSet() }}
+        override={null}
+        onOverrideChange={() => undefined}
+        voicing={{ ...DEFAULT_VOICING, inversion: 6 }}
+        onVoicingChange={onVoicingChange}
+        tier="extended"
+        onTierChange={() => undefined}
+        {...spies()}
+      />
+    );
+    const inversion = screen.getByRole('group', { name: 'Inversion' });
+    const sixth = within(inversion).getByRole('button', { name: '6th inv.' });
+    expect(sixth).toHaveAttribute('aria-pressed', 'true');
+    expect(within(inversion).getByRole('button', { name: '5th inv.' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+    await user.click(within(inversion).getByRole('button', { name: '5th inv.' }));
+    expect(onVoicingChange).toHaveBeenCalledWith(
+      expect.objectContaining({ inversion: 5 }),
+      expect.anything()
+    );
+  });
+
+  it('Extended adds nothing the scale cannot spell: A in C major stays the same list or only grows by chords in the scale', async () => {
+    const user = userEvent.setup();
+    render(<Tiered anchorMidicents={6900} />);
+    const simple = chordButtons();
+    await user.click(screen.getByRole('button', { name: 'Extended' }));
+    expect(chordButtons().slice(0, simple.length)).toEqual(simple);
+    expect(chordButtons()).not.toContain('A13');
+  });
+
+  it('common-tone columns are headed 2nd, never 9th, with the extension named in a tooltip', () => {
+    render(<Tiered anchorMidicents={6900} common />);
+    const headers = [...document.querySelectorAll<HTMLElement>('[data-role-column] > div')].map(
+      (el) => el.textContent
+    );
+    expect(headers).toContain('2nd');
+    expect(headers).not.toContain('9th');
+    const second = document.querySelector<HTMLElement>('[data-role="2nd"] > div')!;
+    expect(second.title).toContain('9th');
+    // Ninth chords list under the role A plays: A is the 9th of G9.
+    const names = [...document.querySelectorAll('[data-role="2nd"] button')].map(
+      (b) => b.textContent
+    );
+    expect(names).toContain('G9');
+    expect(screen.getByText(/A is the \.\.\./)).toBeInTheDocument();
+  });
+
+  it('Extended in common-tone mode with All pitches on keeps one shared scroll area', async () => {
+    const user = userEvent.setup();
+    render(<Tiered anchorMidicents={6900} common allPitches />);
+    await user.click(screen.getByRole('button', { name: 'Extended' }));
+    const scroll = screen.getByRole('group', { name: 'Chords' });
+    expect(scroll.className).toContain('columnsScroll');
+    expect(scroll.querySelectorAll('[data-role-column]').length).toBeGreaterThan(3);
+    const labels = [...scroll.querySelectorAll('[data-role-column] > div')].map(
+      (el) => el.textContent
+    );
+    expect(labels).toEqual(expect.arrayContaining(['4th', '6th']));
+    expect((document.querySelector('[data-role="4th"] > div') as HTMLElement).title).toContain(
+      '11th'
+    );
+  });
+});
+
+function chromaticPitchSet(): ProjectPitchSet {
+  const set = chromaticSet(12);
+  return { ...project, pcs: [...set.pcs], preset: 'chromatic' };
+}

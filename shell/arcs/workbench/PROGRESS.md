@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M6d committed (e28a791); awaiting the human's hands-on check, then M6b
-- State: awaiting human (M6d, judged by hand)
+- Current milestone: M7 (M6b committed; the human is away, checkpoints for M6b and M7 are reviewed together)
+- State: building
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -30,6 +30,8 @@
 | M6c | Built: common-tone mode as stacked columns (no role buttons), sticky headers, shared scroll, column keyboard nav; reviewer: pass with fixes (sticky headers of short columns, roving tabindex, scroll padding, aria-labelledby, stronger test) | `check:workbench` green (builder run, 1326 tests) | DECISIONS W-19 (supersedes W-18 layout). Fixes applied; one flaky `deskStorage.test.tsx` failure in the builder's run passed alone and on a second full gate run (79 files / 1328 tests); committed. |
 | M6d | Built: sticky mode, keyboard workflow (one capture-phase listener), continuous insert, `navigation.ts`, `?` shortcut tooltip; 41 new tests | `check:workbench` green (builder run, 81 files / 1350 tests) plus PianoRoll/EditorPalette | DECISIONS W-20. Reviewer: pass with fixes (listener stole arrows from the dock/velocity splitters and accordions, Alt keyup not suppressed outside the roll, key repeat, Shift+arrow at non-12 EDO, docs, `?` tooltip keyboard focus). Builder applying fixes plus the roll reveal. Known gap (being closed): the roll cannot reveal a time or pitch, so an advanced anchor can leave the view; follow-up with an opt-in `PianoRoll` prop under a lock. |
 | M6d hands-on | Human tried M6d: Alt+Left/Right works but should cycle; Alt+Up/Down did nothing; arrow-selected chord not indicated; Shift+arrow left a ghost at the original click. Fixed: spread and inversion cycle (inversion by the current chord's tone count), a current-chord marker (`data-current`, `aria-current`, scrolls into view), hover ghost cleared on keyboard anchor moves. | `check:workbench` green (82 files / 1369 tests) | The Alt+Up/Down failure could not be reproduced in tests; most likely cause was the inversion range being the longest chord's (5), so presses on a triad did nothing visible. Needs the human's recheck. |
+| Autonomy | Human, 2026-11-13 (going to bed): start M6b, defer its checkpoint until the end of M7, review it all at once. | n/a | Work M6b then M7 without stopping. Taste decisions the ARC leaves open get documented defaults and are listed for review (chord names for extended types, where the sheet disagrees with its own names). M8 close-out waits for the review. |
+| M6b | Built (parts A and B): scale-degree roles, tiers, 21 extended templates, CSV parity test with `KNOWN_GAPS`, Simple | Extended toggle in the picker. | Builder runs: vitest workbench 83 files / 1389 tests, PianoRoll/EditorPalette 319; project-wide `tsc` red only because of `src/pages/harmonic-field-lab/` files (rule 14: not ours; filtered tsc shows no errors in our paths). | DECISIONS W-21. Reviewer: pass with fixes (header wrap, inversion buttons up to 6th, role assertions in the parity test, cosmetics): applied. Committed with the project-wide `tsc` red ONLY in `src/pages/harmonic-field-lab/` (rule 14, 0 errors elsewhere); format of workbench ts/tsx, oxlint, stylelint and vitest (98 files / 1698 tests across workbench, PianoRoll, EditorPalette) were run by hand. Sheet discrepancies for the human: Sus4 row = Major row; Dominant 7 b5 #9 row = Dominant #9; Dominant 7 #5 #9 has a major 7th; 6/9 slot order differs. Header-row overflow in a 14rem dock to fix. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
@@ -43,4 +45,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-Human tries the keyboard flow (corepack yarn dev): sticky mode, arrows, Alt+arrows, Shift+arrows, I, Enter, continuous insert, view following the anchor. Then launch M6b (chord vocabulary, scale-degree roles, Simple | Extended, parity test), M7, M8.
+Launch the M7 builder (stack onto existing notes), review, gate, commit; then stop and write the summary for the human. M8 after their review.

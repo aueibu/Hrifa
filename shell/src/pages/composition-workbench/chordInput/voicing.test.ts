@@ -10,6 +10,7 @@ function chord(edo: number, steps: number[]): Chord {
     rootPc: 0,
     steps,
     roles: [],
+    tier: 'simple',
     pcs: steps.map((s) => s % edo),
   };
 }

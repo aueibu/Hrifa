@@ -4,6 +4,7 @@ import { projectPitchSetFromPreset, type ProjectPitchSet } from '../compositionS
 import { pitchClassName } from '../pitch';
 import { pitchLabel } from '../routeTreatments';
 import { chordsOnRoot, chordsWithCommonTone, type Chord } from './chords';
+import type { ChordRole, ChordTier } from './chordTemplates';
 import { stepChordKey } from './navigation';
 import { PITCH_SET_PRESETS, chromaticSet, togglePitch, type PitchSetPreset } from './pitchSet';
 import { inversionCount, pitchClassOf } from './placement';
@@ -17,7 +18,22 @@ const SPREADS: { id: SpreadStyle; label: string }[] = [
   { id: 'drop3', label: 'Drop 3' },
 ];
 
-const INVERSION_LABELS = ['Root pos.', '1st inv.', '2nd inv.', '3rd inv.', '4th inv.'];
+const INVERSION_LABELS = [
+  'Root pos.',
+  '1st inv.',
+  '2nd inv.',
+  '3rd inv.',
+  '4th inv.',
+  '5th inv.',
+  '6th inv.',
+];
+
+/** Roles are scale degrees; the extension name of the degree is a tooltip on the column header. */
+const ROLE_TITLES: Partial<Record<ChordRole, string>> = {
+  '2nd': '2nd (also the 9th, b9 or #9 of a ninth chord)',
+  '4th': '4th (also the 11th, #11 or b11 of an eleventh chord)',
+  '6th': '6th (also the 13th of a thirteenth chord)',
+};
 
 const presetLabel = (preset: string) =>
   preset.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
@@ -59,6 +75,9 @@ export interface ChordPickerProps {
   mode?: ChordPickerMode;
   /** Without it the Common tone button stays disabled. */
   onModeChange?(next: ChordPickerMode): void;
+  /** Simple (default) lists simple chords only; Extended adds the extended ones. Tool state of the owner. */
+  tier?: ChordTier;
+  onTierChange?(next: ChordTier): void;
   /**
    * Common-tone mode only: offer chords over every pitch of the EDO instead of the scale. Tool state
    * like the override, never written to the project.
@@ -108,6 +127,8 @@ export function ChordPicker({
   onModeChange,
   allPitches = false,
   onAllPitchesChange,
+  tier = 'simple',
+  onTierChange,
   voicing,
   onVoicingChange,
   onHover,
@@ -133,8 +154,8 @@ export function ChordPicker({
   const rootPc = pitchClassOf(anchor.pitchMidicents, edo);
   // Common tone: the engine's columns, one per role the clicked pitch can play, all shown at once.
   const columns = useMemo(
-    () => (common && active.pcs.length > 0 ? chordsWithCommonTone(active, rootPc) : []),
-    [common, active, rootPc]
+    () => (common && active.pcs.length > 0 ? chordsWithCommonTone(active, rootPc, { tier }) : []),
+    [common, active, rootPc, tier]
   );
   const chords = useMemo(
     () =>
@@ -142,8 +163,8 @@ export function ChordPicker({
         ? columns.flatMap((column) => column.chords)
         : active.pcs.length === 0
           ? []
-          : chordsOnRoot(active, rootPc),
-    [common, columns, active, rootPc]
+          : chordsOnRoot(active, rootPc, { tier }),
+    [common, columns, active, rootPc, tier]
   );
   const inversions = Math.min(INVERSION_LABELS.length, Math.max(1, inversionCount(chords)));
   const gated = (event: { ctrlKey: boolean; metaKey: boolean }) =>
@@ -290,24 +311,48 @@ export function ChordPicker({
     >
       {/* data-layout-base: names the base (narrow default) layout, chords full width with voicing on a second row, not the live one; a wide container re-places the same children by CSS. */}
       <div className={classes.layout} data-layout-base="stacked">
-        <Group gap={4} className={classes.modes} wrap="nowrap">
-          <Button
-            size="compact-xs"
-            variant={common ? 'default' : 'filled'}
-            aria-pressed={!common}
-            onClick={() => onModeChange?.('root')}
-          >
-            Root
-          </Button>
-          <Button
-            size="compact-xs"
-            variant={common ? 'filled' : 'default'}
-            aria-pressed={common}
-            disabled={!onModeChange}
-            onClick={() => onModeChange?.('common')}
-          >
-            Common tone
-          </Button>
+        <Group gap={4} className={classes.modes} wrap="wrap">
+          <Button.Group>
+            <Button
+              size="compact-xs"
+              variant={common ? 'default' : 'filled'}
+              aria-pressed={!common}
+              onClick={() => onModeChange?.('root')}
+            >
+              Root
+            </Button>
+            <Button
+              size="compact-xs"
+              variant={common ? 'filled' : 'default'}
+              aria-pressed={common}
+              disabled={!onModeChange}
+              onClick={() => onModeChange?.('common')}
+            >
+              Common tone
+            </Button>
+          </Button.Group>
+          <Button.Group>
+            <Button
+              size="compact-xs"
+              variant={tier === 'simple' ? 'filled' : 'default'}
+              aria-pressed={tier === 'simple'}
+              disabled={!onTierChange}
+              title="Simple chords only"
+              onClick={() => onTierChange?.('simple')}
+            >
+              Simple
+            </Button>
+            <Button
+              size="compact-xs"
+              variant={tier === 'extended' ? 'filled' : 'default'}
+              aria-pressed={tier === 'extended'}
+              disabled={!onTierChange}
+              title="Simple and extended chords"
+              onClick={() => onTierChange?.('extended')}
+            >
+              Extended
+            </Button>
+          </Button.Group>
           <Button
             size="compact-xs"
             variant={continuous ? 'filled' : 'default'}
@@ -410,7 +455,11 @@ export function ChordPicker({
                       data-role-column=""
                       data-role={column.role}
                     >
-                      <div id={`${headerPrefix}-${column.role}`} className={classes.roleHeader}>
+                      <div
+                        id={`${headerPrefix}-${column.role}`}
+                        className={classes.roleHeader}
+                        title={ROLE_TITLES[column.role]}
+                      >
                         {column.role}
                       </div>
                       {column.chords.map((chord) => chordButton(chord, column.role))}

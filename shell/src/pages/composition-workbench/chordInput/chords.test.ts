@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pitchClassName } from '../pitch';
 import { chordsOnRoot, chordsWithCommonTone, findChords } from './chords';
-import { CHORD_LIBRARY_12 } from './chordTemplates';
+import { CHORD_LIBRARY_12, ROLE_ORDER } from './chordTemplates';
 import { addPitch, makePitchSet, presetPitchSet, togglePitch } from './pitchSet';
 
 const A = 9;
@@ -46,7 +46,7 @@ describe('chordsOnRoot', () => {
   it('returns copies: mutating a chord does not corrupt the library or later results', () => {
     const first = chordsOnRoot(cMajor, A)[0];
     first.steps.push(99);
-    first.roles.push('9th');
+    first.roles.push('2nd');
     first.pcs.push(99);
     const again = chordsOnRoot(cMajor, A)[0];
     expect(again.steps).toEqual([0, 3, 7]);
@@ -84,12 +84,16 @@ describe('chordsWithCommonTone', () => {
     expect(column(cols, 'root')).toContain('Am');
     expect(column(cols, '3rd')).toEqual(expect.arrayContaining(['F', 'Fmaj7']));
     expect(cols.map((col) => col.role)).toEqual(
-      [...cols.map((col) => col.role)].sort(
-        (a, b) =>
-          ['root', '2nd', '3rd', '4th', '5th', '6th', '7th', '9th'].indexOf(a) -
-          ['root', '2nd', '3rd', '4th', '5th', '6th', '7th', '9th'].indexOf(b)
-      )
+      [...cols.map((col) => col.role)].sort((a, b) => ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b))
     );
+    expect(cols.map((col) => col.role)).not.toContain('9th');
+  });
+
+  it('puts ninth tones under 2nd, next to sus2 (B is the 9th of Am9 and Amadd9)', () => {
+    const cols = chordsWithCommonTone(cMajor, 11);
+    // B is the 9th of Am9 and Amadd9, the 2nd of Asus2, the 7th of Gmaj7.
+    expect(column(cols, '2nd')).toEqual(expect.arrayContaining(['Asus2', 'Am9', 'Amadd9']));
+    expect(column(cols, '2nd').indexOf('Asus2')).toBeLessThan(column(cols, '2nd').indexOf('Am9'));
   });
 
   it('lists D and Dm under 5th for A when F# is added', () => {
@@ -121,7 +125,7 @@ describe('non-12 EDO degree stacking', () => {
     expect(chords[2].pcs).toEqual([0, 6, 11, 17, 3]);
     expect(chords[0].name).toBe(`${pitchClassName(0, 19)}[0-6-11]`);
     expect(chordsOnRoot(set19, 3)[0].name).toBe(`${pitchClassName(3, 19)}[0-5-11]`);
-    expect(chords[2].roles).toEqual(['root', '3rd', '5th', '7th', '9th']);
+    expect(chords[2].roles).toEqual(['root', '3rd', '5th', '7th', '2nd']);
   });
 
   it('does not throw at 31-EDO, in either mode, with small and chromatic sets', () => {
@@ -130,5 +134,51 @@ describe('non-12 EDO degree stacking', () => {
     expect(() => chordsWithCommonTone(presetPitchSet('chromatic', 0, 31), 4)).not.toThrow();
     expect(chordsOnRoot(makePitchSet(19, [0, 5]), 0)).toEqual([]);
     expect(chordsOnRoot(set19, 1)).toEqual([]);
+  });
+});
+
+describe('tier option', () => {
+  const chromatic = presetPitchSet('chromatic');
+
+  it('defaults to simple and hides every extended chord', () => {
+    const simple = chordsOnRoot(chromatic, 0);
+    expect(simple.every((chord) => chord.tier === 'simple')).toBe(true);
+    expect(names(simple)).toEqual(names(chordsOnRoot(chromatic, 0, { tier: 'simple' })));
+    expect(names(simple)).not.toContain('C7b9');
+    expect(simple).toHaveLength(CHORD_LIBRARY_12.filter((t) => t.tier === 'simple').length);
+  });
+
+  it('extended returns simple first then extended, each in library order', () => {
+    const all = chordsOnRoot(chromatic, 0, { tier: 'extended' });
+    expect(all).toHaveLength(CHORD_LIBRARY_12.length);
+    expect(all.map((chord) => chord.templateId)).toEqual(CHORD_LIBRARY_12.map((t) => t.id));
+    const firstExtended = all.findIndex((chord) => chord.tier === 'extended');
+    expect(all.slice(firstExtended).every((chord) => chord.tier === 'extended')).toBe(true);
+    expect(names(all)).toEqual(expect.arrayContaining(['C13', 'C7#9', 'C6/9', 'Cmaj7#9#11']));
+  });
+
+  it('orders simple before extended across roots too', () => {
+    const all = findChords(chromatic, {}, { tier: 'extended' });
+    const firstExtended = all.findIndex((chord) => chord.tier === 'extended');
+    expect(all.slice(0, firstExtended).every((chord) => chord.tier === 'simple')).toBe(true);
+    expect(all.slice(firstExtended).every((chord) => chord.tier === 'extended')).toBe(true);
+  });
+
+  it('applies to common-tone mode, with extended roles as scale degrees', () => {
+    const simple = chordsWithCommonTone(chromatic, 0);
+    const extended = chordsWithCommonTone(chromatic, 0, { tier: 'extended' });
+    const count = (cols: typeof simple) => cols.reduce((n, col) => n + col.chords.length, 0);
+    expect(count(extended)).toBeGreaterThan(count(simple));
+    const fourth = extended.find((col) => col.role === '4th');
+    expect(names(fourth?.chords ?? [])).toContain('F#add#11');
+    expect(extended.map((col) => col.role)).toEqual(
+      ROLE_ORDER.filter((role) => extended.some((col) => col.role === role))
+    );
+  });
+
+  it('keeps degree-stack chords simple', () => {
+    const set19 = makePitchSet(19, [0, 3, 6, 8, 11, 14, 17]);
+    expect(chordsOnRoot(set19, 0, { tier: 'extended' })).toHaveLength(3);
+    expect(chordsOnRoot(set19, 0).every((chord) => chord.tier === 'simple')).toBe(true);
   });
 });

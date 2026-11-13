@@ -32,6 +32,7 @@ import {
 } from '../chordInput/ChordPicker';
 import { ChordPickerHost } from '../chordInput/ChordPickerHost';
 import type { Chord } from '../chordInput/chords';
+import type { ChordTier } from '../chordInput/chordTemplates';
 import { cycle, stepSpread } from '../chordInput/navigation';
 import {
   chordNotes,
@@ -450,6 +451,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const chordReselectSounds = useRef(true);
   // Common-tone mode: offer chords over every pitch instead of the scale (tool state, like the override).
   const [chordAllPitches, setChordAllPitches] = useState(false);
+  // Simple or Extended chord list (tool state, never written to settings; the picker passes it to every engine call).
+  const [chordTier, setChordTier] = useState<ChordTier>('simple');
   const [hoverChord, setHoverChord] = useState<Chord | null>(null);
   const [pinnedChord, setPinnedChord] = useState<Chord | null>(null);
   // The grid cell under the pointer while the Chords tool is active (display only: a one-step ghost).
@@ -1665,6 +1668,12 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
                   // The buttons commit the stored mode and the open picker follows it.
                   setChordMode(next);
                   setChordCtrlOpen(false);
+                  clearChordGhosts();
+                }}
+                tier={chordTier}
+                onTierChange={(next) => {
+                  setChordTier(next);
+                  // A pinned or hovered chord may no longer be listed: fall back to the first.
                   clearChordGhosts();
                 }}
                 allPitches={chordAllPitches}

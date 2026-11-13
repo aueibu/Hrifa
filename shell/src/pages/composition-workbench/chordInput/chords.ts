@@ -17,6 +17,7 @@ import {
   degreeStackChords,
   type ChordRole,
   type ChordTemplate,
+  type ChordTier,
 } from './chordTemplates';
 import { normalizePc, type PitchSet } from './pitchSet';
 
@@ -29,8 +30,17 @@ export interface Chord {
   /** Offsets from the root in EDO steps, ascending. */
   steps: number[];
   roles: ChordRole[];
+  tier: ChordTier;
   /** Absolute pitch classes, one per tone, in stacking order. */
   pcs: number[];
+}
+
+export interface ChordOptions {
+  /**
+   * 'simple' returns simple chords only; 'extended' returns simple plus extended, simple
+   * first, each in library order. Default 'simple'. Degree-stack (non-12-EDO) chords are simple.
+   */
+  tier?: ChordTier;
 }
 
 export interface ChordColumn {
@@ -57,6 +67,7 @@ function buildChord(template: ChordTemplate, rootPc: number, edo: number): Chord
     rootPc,
     steps: [...template.steps],
     roles: [...template.roles],
+    tier: template.tier,
     pcs: template.steps.map((step) => (rootPc + step) % edo),
   };
 }
@@ -76,7 +87,12 @@ export interface ChordQuery {
  * The single engine function. Returns every chord (all roots in the set unless `root` is
  * given) whose tones all lie in the set and which satisfy the query.
  */
-export function findChords(set: PitchSet, query: ChordQuery = {}): Chord[] {
+export function findChords(
+  set: PitchSet,
+  query: ChordQuery = {},
+  options: ChordOptions = {}
+): Chord[] {
+  const extended = options.tier === 'extended';
   const { edo } = set;
   const inSet = new Set(set.pcs);
   const roots =
@@ -87,6 +103,9 @@ export function findChords(set: PitchSet, query: ChordQuery = {}): Chord[] {
   const out: Chord[] = [];
   for (const rootPc of roots) {
     for (const template of templatesFor(set, rootPc)) {
+      if (template.tier === 'extended' && !extended) {
+        continue;
+      }
       const chord = buildChord(template, rootPc, edo);
       if (
         chord.pcs.every((pc) => inSet.has(pc)) &&
@@ -96,22 +115,27 @@ export function findChords(set: PitchSet, query: ChordQuery = {}): Chord[] {
       }
     }
   }
-  return out;
+  // Simple chords first, extended after, each keeping root and library order.
+  return [...out.filter((c) => c.tier === 'simple'), ...out.filter((c) => c.tier === 'extended')];
 }
 
-/** Chords built on `rootPc` as root, in library order. */
-export function chordsOnRoot(set: PitchSet, rootPc: number): Chord[] {
-  return findChords(set, { root: rootPc });
+/** Chords built on `rootPc` as root, in library order (see ChordOptions for the tier). */
+export function chordsOnRoot(set: PitchSet, rootPc: number, options?: ChordOptions): Chord[] {
+  return findChords(set, { root: rootPc }, options);
 }
 
 /**
  * Chords containing `pc`, grouped into columns by the role `pc` plays, columns in
  * ROLE_ORDER, empty columns omitted.
  */
-export function chordsWithCommonTone(set: PitchSet, pc: number): ChordColumn[] {
+export function chordsWithCommonTone(
+  set: PitchSet,
+  pc: number,
+  options?: ChordOptions
+): ChordColumn[] {
   const target = normalizePc(pc, set.edo);
   const byRole = new Map<ChordRole, Chord[]>();
-  for (const chord of findChords(set, { contains: target })) {
+  for (const chord of findChords(set, { contains: target }, options)) {
     const role = chord.roles[chord.pcs.indexOf(target)];
     byRole.set(role, [...(byRole.get(role) ?? []), chord]);
   }
