@@ -149,24 +149,32 @@ Proposal:
 - Off-axis notes in the lattice (human, 2026-11-13): a note with exponents on primes that are not the chosen axes is drawn with a hollow ring at its folded position, a dashed stem per hidden prime (that prime's marker hue, length = exponent, direction flips for negative), the note itself at the stem tip, and a label chip naming the prime with its signed exponent (e.g. 11⁺¹, 11⁻¹, 11⁺¹ 13⁺¹). Same in 2D and 3D.
 - Stacking refined (human, 2026-11-13): up to **three** panels per pinned column (supersedes "up to two"), with a splitter between each pair. "Stack with ▾" menu (any panel whose column has room, either side, any distance) and Pin left / Pin right (also from the switcher header) replace the neighbour-only Stack button; the human likes these menus. Visualizers are named "Visualizer N – <view>" in the rail, headers and menus.
 - Approval path (human, 2026-11-13): after the 3-stack change the human is "ready to make this the actual page" (M4 approved on that change landing). **Audio (decided for M5): a lab-local Web Audio voice engine** in the lab's own folder (held voices, glide, any Hz, sine/harmonic timbres); no shared audio code touched; may be promoted to shared later. **Colour contract:** chord highlight (the chord's selected pitches) = `--mark-blue`; sounding = `--mark-green`; sharp / flat = amber / cyan, with amber = `--mark-orange` (the theme has no amber hue; a true amber would be a shared theme change); chord-error severities unchanged (cyan, green, yellow, orange, red, always with the cents number); selection = 1px border + 1px outline in `--text`. All via theme roles, no hex. Logged as DECISIONS H-2.
+- **APPROVED (human, 2026-11-13, mock at `ac7b371`): "looks awesome, let's rock and roll".** The human will revisit the note-selection controls (All / None / Invert and the others moved under the ring) later; they stay as they are for now (BACKLOG item).
+- M5/M6 re-cut (orchestrator, 2026-11-13, for the approved one-screen layout; the first draft's M5/M6 assumed the rejected article layout). Retuner stays M7.
 - Human checkpoint after: **yes** (approve or change the layout)
 
-### M5: Live shell + Generator and Field & subset sections
-- Scope: the page + section components.
+### M5: Live workspace + lab voice engine
+- Scope: owned `src/pages/harmonic-field-lab/` (promote the mock's components into live, state-driven components; the mock route keeps rendering them from frozen data until M6 retires it); locked `src/pages/HarmonicFieldLab.page.tsx` (the entry renders the live page instead of the placeholder).
 - Acceptance:
-  - [ ] Approved layout live: rail (scroll-spy, live summaries), collapsible articles (state persisted), reader modal, top bar, tabs (`…tabs.v1`), keyboard dock.
-  - [ ] Generator (methods, presets, prime filter) and Field & subset (circle, subset controls in labelled clusters, tuner strip, lattice, field table) rebuilt as components on the ported core, with tooltips and lights.
-  - [ ] Audio through the shell's shared engine (`AudioEngineProvider`) if it can play arbitrary Hz with held voices and glide. Otherwise stop and ask.
-  - [ ] Headless smoke script: load, switch presets and tabs, toggle notes, open every reader, zero console errors; `check:hfl` green.
-- Checkpoint decisions (human, …):
-- Human checkpoint after: **yes**
+  - [ ] `/harmonic-field-lab` shows the approved layout (rail, pinned columns with stacks and splitters, switcher, centre workspace, dock) driven by one lab state, not module-scope data.
+  - [ ] Generation is live: preset, method tabs and their parameters, prime filter and repeat interval (⚙) rebuild the field through the lib; tabs (several pitch collections) can be added, renamed, closed.
+  - [ ] Selection is live: click notes on the ring, strip, keys and field table; All / None / Invert; mode stepper; nearest scale and odd-limit Select; Chromatic | Fifths ring; the tuner strip's compare-to; inspector hover and pin; saved subsets save, load (hover preview), delete, rename; .scl export.
+  - [ ] Stats, shape, step sizes and the compact field table update live.
+  - [ ] Lab-local voice engine (`src/pages/harmonic-field-lab/audio/`, Web Audio, no shared audio code): held voices while a key is down (computer keys and mouse), any Hz from cents and 1/1 Hz, glide between pitches (API ready for M7), sine and a harmonic timbre, volume, Play scale, Play chord, Stop/panic; no stuck notes on blur or tab switch. Everything sounding lights green in every view (H-2).
+  - [ ] Persistence through the shell pattern (`loadSettings`/`saveSettings`/`sanitizeSettings`): `hrifa.harmonic-field-lab.settings.v1`, `…tabs.v1`, `…subsets.v1`, `…layout.v1` (from the mock's v3 shape); bad data falls back to defaults; nothing lost on reload.
+  - [ ] Analysis panels may show live data where it is cheap; otherwise they keep their mock content until M6 (say which in the report).
+  - [ ] Tests: lab state reducers, persistence round-trips and bad data, the voice engine against a fake AudioContext (voice start/stop/glide, panic), page tests for generation and selection; `check:hfl` green.
+- Human checkpoint after: **yes** (ears and feel)
 
-### M6: Analysis sections + glossary
-- Scope: page.
+### M6: Live analysis panels + parity
+- Scope: owned page folder; locked `src/Router.tsx` (retire `/harmonic-field-lab/mock` at the end).
 - Acceptance:
-  - [ ] Stats (incl. shape), scale, interval spectrum (no sideways scroll at default width; full view in the reader), chords (templates, tolerance, ladder, severities), pick nearest scale, compare-to, keys, modes, saved subsets (`…subsets.v1`), Scala export, all with ledes and tooltips.
-  - [ ] Glossary drawer from one `texts.ts` source, searchable, "see also" links.
-  - [ ] Feature parity checklist against the frozen prototype (every control and analysis accounted for, or dropped with the human's OK); screenshots light/dark; `check:hfl` green.
+  - [ ] Chords live: voicings per family row, tolerance −/+ and ladder, dashed "not yet" chips, hover lights, template editor with families persisted in `…chordfinder.v1`.
+  - [ ] Spectrum, Keys & Modes (heat grid, key rings, click a row/ring to select that mode/key) live.
+  - [ ] Visualizers live: Lattice 2D/3D with axes and off-axis stems, EDO fit, Dissonance curve, Isomorphic keyboard, pop-out; all lights and the inspector work.
+  - [ ] Glossary drawer from `texts.ts`, searchable, see-also links.
+  - [ ] Feature-parity checklist against the frozen prototype (every control and analysis accounted for, or dropped with the human's OK); .scl import.
+  - [ ] Mock route retired; `check:hfl` green.
 - Checkpoint decisions (human, …):
 - Human checkpoint after: **yes**
 

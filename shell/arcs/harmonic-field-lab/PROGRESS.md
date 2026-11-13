@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M4
-- State: M4 approval on the human's live check of this round; then reviewer pass, then M5
+- Current milestone: M5 (after the M4 review)
+- State: M4 approved; reviewer pass in progress
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -68,4 +68,4 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-Human checks the views/stacks/colours live. On their OK: mark M4 approved, run a reviewer over the mock + lib additions (`findChordVoicings`, `fifthsLayout`, `visual.ts`), then re-cut M5/M6 in ARC for the approved layout and start M5 (live page + lab-local voice engine).
+When the M4 reviewer reports: fix findings (builder), commit; then take the lock on `src/pages/HarmonicFieldLab.page.tsx` and brief a builder for M5 (ARC).
