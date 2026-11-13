@@ -857,13 +857,14 @@
 /* --d is the deviation in cents; 1 c is 0.5 px */
 /* sharp grows up from the top of the line, flat down from its bottom (1 c = 0.5 px) */
 /* sharp grows up from the top of the line, flat down from its bottom (1 c = 0.5 px). The bar starts as
-   wide as the line and tapers out at its far end: line width up to 10 c, three times it at 50 c. */
+   wide as the line and tapers out at its far end: line width up to 10 c, three times it at 50 c. The width
+   is rounded to whole even pixels so the bar shares the line's centre exactly. */
 .colBar {
   height: max(1px, calc(var(--d) * 0.5px));
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
-  width: calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px));
+  width: round(nearest, calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px)), 2px);
 }
 
 .colBar[data-dir='sharp'] {
@@ -1012,7 +1013,7 @@
   left: 0;
   position: absolute;
   transform: translateX(-50%);
-  width: calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px));
+  width: round(nearest, calc(2px + clamp(0px, (var(--d) - 10) * 0.1px, 4px)), 2px);
 }
 
 .sparkCol[data-dir='sharp'] .sparkBar {

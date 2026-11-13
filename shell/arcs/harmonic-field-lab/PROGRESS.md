@@ -60,6 +60,9 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - M4: `src/Router.tsx` (mock route): taken 2026-11-12, released 2026-11-12 after the M4 commit `5d4e729`.
 - M1: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `src/pages/Home.page.test.tsx`, `ARCHITECTURE.md`: taken 2026-11-12, released 2026-11-12 after the M1 commit `3c50fce` (Home test lock released unused).
 
+## Gate note (2026-11-13)
+- `check:hfl` is red only because of `src/pages/composition-workbench/components/NoteClipEditor.tsx(334)` (TS2322, `"note-events"` not a `DataEncoding`), uncommitted work of the active workbench arc. Not ours (shell rule 14). Our scoped steps (oxfmt, oxlint, stylelint, vitest 332) pass and `tsc` reports nothing in our paths. Mock tweaks `c527c7e` and the centring fix were committed on that basis.
+
 ## Open questions for human
 - Before M7: Manual pivot by degree (Infinitone parity, now the default via `manualDeg`) or by held key? Both work in the engine.
 - Per-milestone questions are in ARC.md.
