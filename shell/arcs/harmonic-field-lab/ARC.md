@@ -140,6 +140,7 @@ Proposal:
   - **Every voicing gets its own chip:** when several field notes are within tolerance for the same chord tone, each combination is a separate chip. This is a new lib function beside `findChords`, which stays unchanged as the vector contract.
   - **Tuner strip:** shorter (it was too tall), and its 12-EDO "piano key" spacing reference comes back.
   - **Saved subsets:** the freed space below the strip becomes a browsable list of the saved subsets of this pitch collection, one row each, drawn as a mini tuner strip like a sparkline. Selected pitches are lit, inactive ones dimmed, and the blue/pink deviation bars stay as the cue.
+  - (human, 2026-11-13, mid-round) **Method parameters go in a column left of the ring** (room for Lattice generators and the Custom text field). **Ring view toggle Chromatic | Fifths**: Fifths places each note on a chain of generator steps (3/2, period = repeat, 12 steps from −5 to +6 = D♭…F♯ by default, length selectable) at the nearest step with its cents offset; in 12-EDO it is the circle of fifths. Pure geometry in the lib (`fifthsLayout`).
 - Human checkpoint after: **yes** (approve or change the layout)
 
 ### M5: Live shell + Generator and Field & subset sections
