@@ -1,4 +1,5 @@
 # ARC: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI
+- Wide screens (human, 2026-11-13): **pin panels into columns.** Rail items get a pin; pinned panels open as extra columns as space allows (about 24rem each), on the **left or right** of the generator, in a user-chosen **order**; the user can move them between sides and reorder them, and the arrangement is remembered. Defaults: left = Keys & Modes, Chords; right = Lattice, Spectrum. At normal widths nothing changes (one panel via the rail); pins that do not fit fall back to the switcher. **Field table** moves into the right-hand stats column under Step sizes (compact, with Open full table), and leaves the rail. Later (M7+): the human gets a sidebar/minimap or similar only if needed.
 
 **Status: APPROVED (2026-11-12).** Moved into the shell's multi-arc layout the same day (from `C:\Users\apoor\Documents\Infinitone Tracing\ARC.md`, history in `PROGRESS.md`), and re-ordered so the retuner is written once, in TS, after the core port. Next: M4 (mock, human checkpoint).
 
