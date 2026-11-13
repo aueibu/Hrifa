@@ -79,7 +79,13 @@ function Chip({ d, total, edoSteps, isDark, hoverCounts, center }: ChipProps) {
  * flat-list fallback past some EDO cutoff — headers can't separate from
  * their data, since wrapping happens per-column, not per-cell.
  */
-export function IntervalClassGrid({ record, L, edoSteps, hoverCounts, isDark }: IntervalClassGridProps) {
+export function IntervalClassGrid({
+  record,
+  L,
+  edoSteps,
+  hoverCounts,
+  isDark,
+}: IntervalClassGridProps) {
   if (!Number.isFinite(L) || L <= 0 || !Number.isFinite(edoSteps) || edoSteps <= 0) {
     return null;
   }

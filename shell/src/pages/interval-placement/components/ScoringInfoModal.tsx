@@ -29,7 +29,7 @@ const V1_TERMS: Term[] = [
     equation:
       '\\text{rough} = \\sum_{i,j} \\frac{1}{i^p j^p}\\left[e^{-ax} - e^{-bx}\\right], \\quad x = \\frac{|f_i - f_j|}{1.72\\,\\bar f^{\\,0.65}}',
     literature:
-      'A Sethares (1993) dissonance-curve fit to Plomp & Levelt\'s (1965) critical-band beating data, summed over harmonic partials i,j (1..K) of the two notes, amplitude-weighted by 1/harmonic^p. The 1.72·f̄^0.65 term approximates critical bandwidth as a function of mean partial frequency f̄.',
+      "A Sethares (1993) dissonance-curve fit to Plomp & Levelt's (1965) critical-band beating data, summed over harmonic partials i,j (1..K) of the two notes, amplitude-weighted by 1/harmonic^p. The 1.72·f̄^0.65 term approximates critical bandwidth as a function of mean partial frequency f̄.",
     consequence:
       'Two notes whose overtones fall within the same critical band beat against each other and sound rough, regardless of whether their interval is a "simple" ratio — this is why a very close, low cluster can sound harsh even though the interval itself might be small.',
   },
@@ -45,7 +45,8 @@ const V1_TERMS: Term[] = [
   {
     name: 'Compound relief',
     equation: 'c = e^{-m \\lfloor d_{\\text{steps}} / N \\rfloor}',
-    literature: 'Reflects octave equivalence — well-established in pitch perception generally — via a hand-picked decay rate m (compoundReliefM), not fit to data.',
+    literature:
+      'Reflects octave equivalence — well-established in pitch perception generally — via a hand-picked decay rate m (compoundReliefM), not fit to data.',
     consequence:
       'An interval stretched across extra octaves (a 10th vs. a 3rd) gets progressively less penalty per additional octave, matching the intuition that octave-related intervals feel more "relieved" than their raw step-distance suggests.',
   },
@@ -53,7 +54,8 @@ const V1_TERMS: Term[] = [
     name: 'perPair (what Results sorts by)',
     equation:
       '\\text{perPair} = \\frac{\\sum_{\\text{pairs}} \\left[\\text{cost} + \\alpha_{\\text{rough}} \\cdot \\text{rough}\\right] \\cdot r \\cdot c}{\\binom{n}{2}}',
-    literature: 'A flat, unweighted mean over every dyad in the voicing — every pair counts equally regardless of register or spacing.',
+    literature:
+      'A flat, unweighted mean over every dyad in the voicing — every pair counts equally regardless of register or spacing.',
     consequence:
       'A close inner-voice dyad and a widely spaced outer dyad contribute identically to the score. This is a known weak spot of pairwise-sum chord-dissonance models generally — real chord dissonance judgments weight bass/close-position dyads more heavily (see Parncutt, v2 tab).',
   },
@@ -65,7 +67,7 @@ const V2_TERMS: Term[] = [
     equation:
       '\\begin{aligned} \\text{ERB}(f) &= 24.7\\left(4.37\\tfrac{f}{1000} + 1\\right)\\ \\text{Hz} \\\\ \\text{roughness} &= \\sum_{\\substack{\\text{cross-note} \\\\ \\text{partial pairs}}} a_i a_j \\left[e^{-ax} - e^{-bx}\\right] w_{\\text{mask}}, \\quad x = \\frac{|f_i - f_j|}{\\text{ERB}(\\bar f)} \\end{aligned}',
     literature:
-      'Same Sethares (1993/2005) dissonance curve as v1, but driven by ERB (Equivalent Rectangular Bandwidth) — a measure of the ear\'s critical-band filter width at a given frequency, from Glasberg & Moore (1990) — instead of the 1.72·f̄^0.65 approximation. ERB is the modern standard model of how critical bandwidth actually scales with frequency. Computed over the whole chord\'s combined partials (the overtones each note produces, per Fourier/harmonic-series decomposition — not just its fundamental) at once, with a lightweight masking term (a loud nearby partial damps a weaker one\'s contribution), loosely following Hutchinson & Knopoff (1978).',
+      "Same Sethares (1993/2005) dissonance curve as v1, but driven by ERB (Equivalent Rectangular Bandwidth) — a measure of the ear's critical-band filter width at a given frequency, from Glasberg & Moore (1990) — instead of the 1.72·f̄^0.65 approximation. ERB is the modern standard model of how critical bandwidth actually scales with frequency. Computed over the whole chord's combined partials (the overtones each note produces, per Fourier/harmonic-series decomposition — not just its fundamental) at once, with a lightweight masking term (a loud nearby partial damps a weaker one's contribution), loosely following Hutchinson & Knopoff (1978).",
     consequence:
       'Because ERB bandwidth is inherently frequency-dependent, the same step interval reads as rougher in a low register on its own — no separate register-damping multiplier needed. This is the direct fix for the v1 double-counting concern above.',
   },
@@ -74,7 +76,7 @@ const V2_TERMS: Term[] = [
     equation:
       'H = -\\sum_{r} p(r)\\log_2 p(r), \\quad p(r) \\propto \\exp\\!\\left(-\\tfrac12\\left(\\frac{\\text{cents}-\\text{target}(r)}{\\sigma}\\right)^{\\!2}\\right)',
     literature:
-      'Harmonic entropy (Erlich; formalized by Sethares & Milne) — the Shannon entropy of a listener\'s ratio hypotheses for a tempered interval, given realistic tuning-perception noise. Replaces v1\'s single-nearest-ratio-plus-Tenney-height search with a proper probabilistic model over the full ratio set (denominators up to 32, within one octave).',
+      "Harmonic entropy (Erlich; formalized by Sethares & Milne) — the Shannon entropy of a listener's ratio hypotheses for a tempered interval, given realistic tuning-perception noise. Replaces v1's single-nearest-ratio-plus-Tenney-height search with a proper probabilistic model over the full ratio set (denominators up to 32, within one octave).",
     consequence:
       'Low entropy = the interval unambiguously implies one simple ratio (a perfect fifth, barely detuned, still reads as "the fifth"). High entropy = many comparably plausible ratios — the interval sits in a perceptual no-man\'s-land between simple ratios, which is exactly what makes it feel unstable/ambiguous rather than just "dissonant." The equation above scores one dyad — see below for how a whole chord\'s A value is built from all of its dyads.',
   },
@@ -83,16 +85,16 @@ const V2_TERMS: Term[] = [
     equation:
       'w(\\text{dyad}) = \\frac{1}{1+\\text{gap}/12} \\times \\begin{cases} 1.5 & \\text{bass pair} \\\\ 1 & \\text{otherwise} \\end{cases}, \\qquad A = \\frac{\\sum_{\\text{dyads}} H \\cdot w}{\\sum_{\\text{dyads}} w}',
     literature:
-      'Follows Parncutt\'s general finding that bass and close-position dyads dominate perceived chord dissonance more than distant upper-structure dyads — the specific weighting curve here is a reasonable guess, not fit to data.',
+      "Follows Parncutt's general finding that bass and close-position dyads dominate perceived chord dissonance more than distant upper-structure dyads — the specific weighting curve here is a reasonable guess, not fit to data.",
     consequence:
-      'Not a separate score — this is how the A column above is built from a chord\'s several dyads: a weighted average of each dyad\'s harmonic entropy, not a plain mean. A close bass-relative dyad pulls the chord\'s A value toward its own harmonic entropy much more than a distant, widely-spaced upper dyad does — unlike v1\'s perPair, which treats every dyad identically. If you were expecting to see this as its own number in Results, that\'s the one place it isn\'t — it only ever shows up baked into A.',
+      "Not a separate score — this is how the A column above is built from a chord's several dyads: a weighted average of each dyad's harmonic entropy, not a plain mean. A close bass-relative dyad pulls the chord's A value toward its own harmonic entropy much more than a distant, widely-spaced upper dyad does — unlike v1's perPair, which treats every dyad identically. If you were expecting to see this as its own number in Results, that's the one place it isn't — it only ever shows up baked into A.",
   },
   {
     name: 'Harmonicity (virtual pitch) — the H column',
     equation:
       '\\begin{aligned} \\text{score}(f_0) &= \\sum_{f} \\max_{k=1..8} \\begin{cases} 1/k & |1200\\log_2(f/(f_0 k))| \\le \\text{tol} \\\\ 0 & \\text{otherwise} \\end{cases} \\\\ \\text{harmonicity} &= \\frac{\\max_{f_0} \\text{score}(f_0)}{n} \\end{aligned}',
     literature:
-      'A simplified Terhardt (1982) virtual-pitch model / Parncutt (1989) root-support score. Candidate fundamentals are each note\'s own frequency divided by small integers (its possible subharmonics); each candidate is scored by how many chord tones land near one of its low harmonics, weighted 1/harmonic-number.',
+      "A simplified Terhardt (1982) virtual-pitch model / Parncutt (1989) root-support score. Candidate fundamentals are each note's own frequency divided by small integers (its possible subharmonics); each candidate is scored by how many chord tones land near one of its low harmonics, weighted 1/harmonic-number.",
     consequence:
       'Entirely absent from v1. Chords that approximate a harmonic series (an "otonal" chord — one built from a shared fundamental\'s overtones, like a major triad in root position) score high here — read as more "fused"/consonant — independent of how rough or ratio-ambiguous their individual dyads are. This is the axis that explains why a root-position triad feels more settled than an inversion with the identical set of intervals. Unlike A, this is computed once for the whole chord — there\'s no per-dyad weighting step for it.',
   },
@@ -136,9 +138,9 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
       <Stack gap="lg">
         <Reading size="lg" c="dimmed">
           Every voicing gets scored twice: <strong>v1</strong>, the model this app shipped with
-          (still what Results is sorted by), and <strong>v2</strong>, a draft alternative built
-          from named psychoacoustic literature instead of one hand-tuned formula. v2 is shown
-          alongside v1 for comparison — it doesn&apos;t drive ranking.
+          (still what Results is sorted by), and <strong>v2</strong>, a draft alternative built from
+          named psychoacoustic literature instead of one hand-tuned formula. v2 is shown alongside
+          v1 for comparison — it doesn&apos;t drive ranking.
         </Reading>
 
         <div>
@@ -179,7 +181,8 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="xs" c="dimmed">
-                    Tonal Consonance and Critical Bandwidth — the original beating/roughness data both roughness models fit.
+                    Tonal Consonance and Critical Bandwidth — the original beating/roughness data
+                    both roughness models fit.
                   </Text>
                 </Table.Td>
               </Table.Tr>
@@ -189,7 +192,8 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="xs" c="dimmed">
-                    Tuning, Timbre, Spectrum, Scale — the dissonance-curve formula both v1 and v2&apos;s roughness terms use.
+                    Tuning, Timbre, Spectrum, Scale — the dissonance-curve formula both v1 and
+                    v2&apos;s roughness terms use.
                   </Text>
                 </Table.Td>
               </Table.Tr>
@@ -199,7 +203,8 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="xs" c="dimmed">
-                    Derivation of ERB (Equivalent Rectangular Bandwidth) values — v2&apos;s critical-bandwidth term.
+                    Derivation of ERB (Equivalent Rectangular Bandwidth) values — v2&apos;s
+                    critical-bandwidth term.
                   </Text>
                 </Table.Td>
               </Table.Tr>
@@ -208,7 +213,10 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                   <Text size="xs">Hutchinson, W. &amp; Knopoff, L. (1978)</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="xs" c="dimmed">The Acoustic Component of Western Consonance — full-spectrum roughness and partial-masking treatment.</Text>
+                  <Text size="xs" c="dimmed">
+                    The Acoustic Component of Western Consonance — full-spectrum roughness and
+                    partial-masking treatment.
+                  </Text>
                 </Table.Td>
               </Table.Tr>
               <Table.Tr>
@@ -216,7 +224,10 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                   <Text size="xs">Erlich, P.; Sethares &amp; Milne</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="xs" c="dimmed">Harmonic entropy — the probabilistic ratio-ambiguity model v2 uses in place of v1&apos;s nearest-ratio search.</Text>
+                  <Text size="xs" c="dimmed">
+                    Harmonic entropy — the probabilistic ratio-ambiguity model v2 uses in place of
+                    v1&apos;s nearest-ratio search.
+                  </Text>
                 </Table.Td>
               </Table.Tr>
               <Table.Tr>
@@ -224,7 +235,9 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                   <Text size="xs">Terhardt, E. (1982)</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="xs" c="dimmed">Virtual pitch / subharmonic template matching — v2&apos;s harmonicity score.</Text>
+                  <Text size="xs" c="dimmed">
+                    Virtual pitch / subharmonic template matching — v2&apos;s harmonicity score.
+                  </Text>
                 </Table.Td>
               </Table.Tr>
               <Table.Tr>
@@ -232,7 +245,10 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                   <Text size="xs">Parncutt, R. (1989)</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="xs" c="dimmed">Harmony: A Psychoacoustical Approach — root support and bass-weighted dyad salience.</Text>
+                  <Text size="xs" c="dimmed">
+                    Harmony: A Psychoacoustical Approach — root support and bass-weighted dyad
+                    salience.
+                  </Text>
                 </Table.Td>
               </Table.Tr>
               <Table.Tr>
@@ -240,7 +256,9 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                   <Text size="xs">Tenney, J. (1988)</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="xs" c="dimmed">Tenney height (log2(n·d)) — v1&apos;s ratio-complexity penalty.</Text>
+                  <Text size="xs" c="dimmed">
+                    Tenney height (log2(n·d)) — v1&apos;s ratio-complexity penalty.
+                  </Text>
                 </Table.Td>
               </Table.Tr>
               <Table.Tr>
@@ -249,16 +267,15 @@ export function ScoringInfoModal({ opened, onClose }: ScoringInfoModalProps) {
                 </Table.Td>
                 <Table.Td>
                   <Text size="xs" c="dimmed">
-                    Psychophysically dissociated roughness, harmonicity, and familiarity as independent
-                    predictors of chord preference — the basis for keeping v2&apos;s three sub-scores
-                    separate rather than pre-blended.
+                    Psychophysically dissociated roughness, harmonicity, and familiarity as
+                    independent predictors of chord preference — the basis for keeping v2&apos;s
+                    three sub-scores separate rather than pre-blended.
                   </Text>
                 </Table.Td>
               </Table.Tr>
             </Table.Tbody>
           </Table>
         </div>
-
       </Stack>
     </Modal>
   );

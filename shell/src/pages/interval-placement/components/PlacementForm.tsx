@@ -127,167 +127,167 @@ export function PlacementForm({ settings: s, set }: PlacementFormProps) {
           {controlsOpened && (
             <>
               {oddIndices.length > 0 && (
-            <Stack gap={4}>
-              <Text size="sm">Odd-interval bias</Text>
-              <Group gap="xs">
-                {oddIndices.map(({ d, idx }) => (
-                  <Select
-                    key={idx}
-                    w={90}
-                    size="xs"
-                    label={`d=${d} (#${idx + 1})`}
-                    value={s.oddBias[idx] || 'down'}
-                    data={[
-                      { value: 'down', label: 'down' },
-                      { value: 'up', label: 'up' },
-                    ]}
-                    onChange={(v) => {
-                      const next = s.oddBias.slice();
-                      next[idx] = (v as OddBiasDirection) || 'down';
-                      set('oddBias', next);
-                    }}
-                    allowDeselect={false}
-                  />
-                ))}
+                <Stack gap={4}>
+                  <Text size="sm">Odd-interval bias</Text>
+                  <Group gap="xs">
+                    {oddIndices.map(({ d, idx }) => (
+                      <Select
+                        key={idx}
+                        w={90}
+                        size="xs"
+                        label={`d=${d} (#${idx + 1})`}
+                        value={s.oddBias[idx] || 'down'}
+                        data={[
+                          { value: 'down', label: 'down' },
+                          { value: 'up', label: 'up' },
+                        ]}
+                        onChange={(v) => {
+                          const next = s.oddBias.slice();
+                          next[idx] = (v as OddBiasDirection) || 'down';
+                          set('oddBias', next);
+                        }}
+                        allowDeselect={false}
+                      />
+                    ))}
+                  </Group>
+                </Stack>
+              )}
+
+              <Group grow>
+                <NumberInput
+                  label="N-EDO"
+                  value={s.edoSteps}
+                  onChange={(v) => set('edoSteps', Number(v) || 12)}
+                  min={1}
+                />
+                <NumberInput
+                  label="Window (octaves)"
+                  value={s.windowOctaves}
+                  onChange={(v) => set('windowOctaves', Number(v) || 1)}
+                  min={1}
+                />
               </Group>
-            </Stack>
-          )}
 
-          <Group grow>
-            <NumberInput
-              label="N-EDO"
-              value={s.edoSteps}
-              onChange={(v) => set('edoSteps', Number(v) || 12)}
-              min={1}
-            />
-            <NumberInput
-              label="Window (octaves)"
-              value={s.windowOctaves}
-              onChange={(v) => set('windowOctaves', Number(v) || 1)}
-              min={1}
-            />
-          </Group>
+              <Group grow>
+                <Select
+                  label="Base note"
+                  data={NOTE_OPTIONS}
+                  value={String(s.baseNote)}
+                  onChange={(v) => set('baseNote', Number(v) || 0)}
+                  allowDeselect={false}
+                />
+                <NumberInput
+                  label="Base octave"
+                  value={s.baseOctave}
+                  onChange={(v) => set('baseOctave', Number(v) || 0)}
+                />
+              </Group>
 
-          <Group grow>
-            <Select
-              label="Base note"
-              data={NOTE_OPTIONS}
-              value={String(s.baseNote)}
-              onChange={(v) => set('baseNote', Number(v) || 0)}
-              allowDeselect={false}
-            />
-            <NumberInput
-              label="Base octave"
-              value={s.baseOctave}
-              onChange={(v) => set('baseOctave', Number(v) || 0)}
-            />
-          </Group>
+              <TextInput
+                label="Guitar tuning"
+                description="Low to high, e.g. EADGBE"
+                value={s.guitarTuning}
+                onChange={(e) => set('guitarTuning', e.currentTarget.value)}
+              />
 
-          <TextInput
-            label="Guitar tuning"
-            description="Low to high, e.g. EADGBE"
-            value={s.guitarTuning}
-            onChange={(e) => set('guitarTuning', e.currentTarget.value)}
-          />
+              <Switch
+                label="Register damping"
+                checked={s.useDamping}
+                onChange={(e) => set('useDamping', e.currentTarget.checked)}
+              />
 
-          <Switch
-            label="Register damping"
-            checked={s.useDamping}
-            onChange={(e) => set('useDamping', e.currentTarget.checked)}
-          />
+              <Title order={3} size="h5">
+                Placement
+              </Title>
+              <Select
+                label="Placement mode"
+                data={PLACEMENT_MODE_OPTIONS}
+                value={s.placementMode}
+                onChange={(v) => set('placementMode', (v as Settings['placementMode']) || 'v2')}
+                allowDeselect={false}
+              />
 
-          <Title order={3} size="h5">
-            Placement
-          </Title>
-          <Select
-            label="Placement mode"
-            data={PLACEMENT_MODE_OPTIONS}
-            value={s.placementMode}
-            onChange={(v) => set('placementMode', (v as Settings['placementMode']) || 'v2')}
-            allowDeselect={false}
-          />
+              {s.placementMode !== 'v1' && s.placementMode !== 'repulse' && (
+                <>
+                  <SliderField
+                    label="Anchor alpha"
+                    value={s.anchorAlpha}
+                    onChange={(v) => set('anchorAlpha', v)}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                  />
+                  <SliderField
+                    label="Anchor beta"
+                    value={s.anchorBeta}
+                    onChange={(v) => set('anchorBeta', v)}
+                    min={0}
+                    max={4}
+                    step={0.1}
+                  />
+                </>
+              )}
+              {s.placementMode !== 'v1' && (
+                <SliderField
+                  label="Anchor rho"
+                  value={s.anchorRho}
+                  onChange={(v) => set('anchorRho', v)}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                />
+              )}
 
-          {s.placementMode !== 'v1' && s.placementMode !== 'repulse' && (
-            <>
-              <SliderField
-                label="Anchor alpha"
-                value={s.anchorAlpha}
-                onChange={(v) => set('anchorAlpha', v)}
-                min={0}
-                max={1}
-                step={0.05}
-              />
-              <SliderField
-                label="Anchor beta"
-                value={s.anchorBeta}
-                onChange={(v) => set('anchorBeta', v)}
-                min={0}
-                max={4}
-                step={0.1}
-              />
-            </>
-          )}
-          {s.placementMode !== 'v1' && (
-            <SliderField
-              label="Anchor rho"
-              value={s.anchorRho}
-              onChange={(v) => set('anchorRho', v)}
-              min={0}
-              max={1}
-              step={0.05}
-            />
-          )}
-
-          {s.placementMode === 'repulse' && (
-            <>
-              <SliderField
-                label="Repulse gamma"
-                value={s.repulseGamma}
-                onChange={(v) => set('repulseGamma', v)}
-                min={0}
-                max={4}
-                step={0.1}
-              />
-              <SliderField
-                label="Repulse kappa"
-                value={s.repulseKappa}
-                onChange={(v) => set('repulseKappa', v)}
-                min={0}
-                max={2}
-                step={0.05}
-              />
-              <SliderField
-                label="Repulse lambda"
-                value={s.repulseLambda}
-                onChange={(v) => set('repulseLambda', v)}
-                min={0}
-                max={2}
-                step={0.05}
-              />
-              <SliderField
-                label="Repulse eta"
-                value={s.repulseEta}
-                onChange={(v) => set('repulseEta', v)}
-                min={0}
-                max={1}
-                step={0.01}
-              />
-              <SliderField
-                label="Repulse alpha"
-                value={s.repulseAlpha}
-                onChange={(v) => set('repulseAlpha', v)}
-                min={0}
-                max={1}
-                step={0.05}
-              />
-              <NumberInput
-                label="Repulse iterations"
-                value={s.repulseIterations}
-                onChange={(v) => set('repulseIterations', Number(v) || 1)}
-                min={1}
-              />
-            </>
-          )}
+              {s.placementMode === 'repulse' && (
+                <>
+                  <SliderField
+                    label="Repulse gamma"
+                    value={s.repulseGamma}
+                    onChange={(v) => set('repulseGamma', v)}
+                    min={0}
+                    max={4}
+                    step={0.1}
+                  />
+                  <SliderField
+                    label="Repulse kappa"
+                    value={s.repulseKappa}
+                    onChange={(v) => set('repulseKappa', v)}
+                    min={0}
+                    max={2}
+                    step={0.05}
+                  />
+                  <SliderField
+                    label="Repulse lambda"
+                    value={s.repulseLambda}
+                    onChange={(v) => set('repulseLambda', v)}
+                    min={0}
+                    max={2}
+                    step={0.05}
+                  />
+                  <SliderField
+                    label="Repulse eta"
+                    value={s.repulseEta}
+                    onChange={(v) => set('repulseEta', v)}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                  />
+                  <SliderField
+                    label="Repulse alpha"
+                    value={s.repulseAlpha}
+                    onChange={(v) => set('repulseAlpha', v)}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                  />
+                  <NumberInput
+                    label="Repulse iterations"
+                    value={s.repulseIterations}
+                    onChange={(v) => set('repulseIterations', Number(v) || 1)}
+                    min={1}
+                  />
+                </>
+              )}
             </>
           )}
         </Stack>

@@ -193,7 +193,12 @@ export function playArpeggio(
     scheduleNote(
       ctx,
       master,
-      { frequency: pitchToFrequency(p, baseMidi, edoSteps), startTime: t, duration: noteDuration, gain: 0.3 },
+      {
+        frequency: pitchToFrequency(p, baseMidi, edoSteps),
+        startTime: t,
+        duration: noteDuration,
+        gain: 0.3,
+      },
       timbre
     );
     t += gap;
@@ -227,14 +232,24 @@ export function playIntervalPairs(
     scheduleNote(
       ctx,
       master,
-      { frequency: pitchToFrequency(low, baseMidi, edoSteps), startTime: t, duration: noteDuration, gain: 0.3 },
+      {
+        frequency: pitchToFrequency(low, baseMidi, edoSteps),
+        startTime: t,
+        duration: noteDuration,
+        gain: 0.3,
+      },
       timbre
     );
     t += noteGap;
     scheduleNote(
       ctx,
       master,
-      { frequency: pitchToFrequency(high, baseMidi, edoSteps), startTime: t, duration: noteDuration, gain: 0.3 },
+      {
+        frequency: pitchToFrequency(high, baseMidi, edoSteps),
+        startTime: t,
+        duration: noteDuration,
+        gain: 0.3,
+      },
       timbre
     );
     t += noteGap + pairGap;
