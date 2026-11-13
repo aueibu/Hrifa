@@ -40,7 +40,8 @@
   display: grid;
   gap: 0.5rem;
   grid-area: voicing;
-  grid-template-columns: 1fr 1fr;
+  /* Side by side while two 6rem columns fit (down to the 14rem dock minimum), else stacked. */
+  grid-template-columns: repeat(auto-fit, minmax(min(6rem, 100%), 1fr));
 }
 
 .scale {
@@ -124,8 +125,8 @@
   padding-top: 0.25rem;
 }
 
-/* A wide host (the takeover, or the dock at its default 30rem, 464px inside its padding): chords on the left, the parallel voicing columns and scale beside. */
-@container chord-picker (min-width: 440px) {
+/* A much wider host (a wide takeover, or a dock dragged to about 736px or more): chords on the left, the voicing columns and scale beside. Below this the chord list takes the full width and wraps into columns. */
+@container chord-picker (min-width: 720px) {
   .layout {
     grid-template-areas:
       'modes modes'

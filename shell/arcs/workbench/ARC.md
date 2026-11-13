@@ -124,6 +124,15 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] Clicking an inversion or a spread triggers one audition (mocked) with the right voiced pitches; with the gate set to `'ctrl-click'` a plain click triggers none and Ctrl+click triggers one; hover never sounds
   - [ ] DECISIONS: `onAnchorHover` added to W-15's contract (new row), dock width preference and `chordPreviewGate` recorded
 - Human checkpoint after: yes (judged by eye)
+- Checkpoint decisions (human, 2026-11-13, M5c): in the dock, horizontal space is at a premium, so spread and inversion move to a second row below the chord list (the chord list keeps the full dock width).
+
+### M5d: Dock layout, voicing on a second row
+- Scope: `chordInput/ChordPicker.tsx` and `ChordPicker.module.css` (owned, no shared paths): the chord list takes the full width of the picker; below it a second row holds Inversion and Spread side by side (each still a single-column list), then the Scale fold. The two-column wide layout (chords left, voicing right) is kept only for a much wider container (container query at about 720px, e.g. a wide takeover or a dock dragged very wide); no host-specific props (host rules). Chord buttons wrap into as many columns as fit.
+- Acceptance:
+  - [ ] The arc's `Check command` passes
+  - [ ] At the default dock width (30rem) the voicing controls render after the chord list and not beside it (test the DOM order and a class or data attribute for the layout); the picker tests for both hosts still pass
+  - [ ] No behaviour change (hover, pin, audition gate, insert, keyboard)
+- Human checkpoint after: yes (judged by eye), together with the M5c checks
 
 ### M6: Common-tone mode
 - Scope: tool + Ctrl opens the picker in common-tone mode: chords containing the clicked pitch in columns by role (root, 3rd, 5th, 7th, 9th, 4th, 6th, ...), empty columns hidden, a toggle for all pitches versus the pitch set. Same preview, voicing and placement path as M5. The clicked pitch is anchored: the placed chord's tone with that role sits at the clicked pitch.

@@ -64,6 +64,24 @@ describe('ChordPicker', () => {
     expect(screen.getByText(/Chords on A \(A4\)/)).toBeInTheDocument();
   });
 
+  it('lays the voicing out after the chord list (second row) at the default width', () => {
+    render(<Stateful callbacks={spies()} />);
+    const layout = screen.getByRole('group', { name: 'Chord picker' }).firstElementChild!;
+    expect(layout).toHaveAttribute('data-layout-base', 'stacked');
+    const chords = screen.getByRole('group', { name: 'Chords' });
+    const spread = screen.getByRole('group', { name: 'Spread' });
+    const inversion = screen.getByRole('group', { name: 'Inversion' });
+    const scale = screen.getByRole('button', { name: /Scale/ });
+    const follows = (a: Node, b: Node) =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(follows(chords, spread)).toBe(true);
+    expect(follows(spread, inversion)).toBe(true);
+    expect(follows(inversion, scale)).toBe(true);
+    // Spread and Inversion share one row container, after the chord list's container.
+    expect(spread.parentElement).toBe(inversion.parentElement);
+    expect(chords.parentElement).not.toBe(spread.parentElement);
+  });
+
   it('has Root active and Common tone present but disabled for now', () => {
     render(<Stateful callbacks={spies()} />);
     expect(screen.getByRole('button', { name: 'Root' })).toBeEnabled();

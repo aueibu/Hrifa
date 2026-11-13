@@ -111,7 +111,8 @@ export function ChordPicker({
         }
       }}
     >
-      <div className={classes.layout}>
+      {/* data-layout-base: names the base (narrow default) layout, chords full width with voicing on a second row, not the live one; a wide container re-places the same children by CSS. */}
+      <div className={classes.layout} data-layout-base="stacked">
         <Group gap={4} className={classes.modes} wrap="nowrap">
           <Button size="compact-xs" variant="filled" aria-pressed>
             Root
