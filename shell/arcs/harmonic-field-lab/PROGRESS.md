@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
 - Current milestone: M4
-- State: building (M4 round 3)
+- State: awaiting human (M4 round 3 checkpoint)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -65,4 +65,4 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M4 round 3 (see ARC M4 "Round 2 feedback"): builder; then reviewer over the whole mock + the new lib voicing function; `check:hfl`; commit; human checkpoint.
+Human checkpoint M4 round 3; then reviewer over the approved mock + lib additions (`findChordVoicings`, `fifthsLayout`), then M5.

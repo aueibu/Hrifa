@@ -15,11 +15,6 @@ import { Num, Tip, useLab } from './ui';
 import classes from './mock.module.css';
 
 const SCALES = SCALE_LIBRARY.slice(0, 14).map((s) => s.name);
-const SAVED = [
-  ['No 11/8', 7],
-  ['Otonal 4:5:6:7', 4],
-  ['Odd 9', 5],
-] as const;
 
 export function SubsetRow() {
   const lab = useLab();
@@ -131,15 +126,6 @@ export function SubsetRow() {
                   Save
                 </Button>
               </span>
-              <Tip k="savedSubsets">Saved subsets</Tip>
-              <ul className={classes.savedList}>
-                {SAVED.map(([n, k]) => (
-                  <li key={n}>
-                    <span>{n}</span>
-                    <Num muted>{k} notes</Num>
-                  </li>
-                ))}
-              </ul>
               <Checkbox size="xs" label="Include new notes when the field changes" />
             </div>
           </Popover.Dropdown>

@@ -342,15 +342,41 @@
 }
 
 /* ------------------------------------------------------------------------------------ generator bar */
-.genBar {
-  padding: 0.5rem 0.5rem 0;
+.genCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
-.genRow {
+.genTop {
   align-items: center;
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.params {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.axes {
+  display: grid;
+  gap: 0.1875rem 0.25rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.axes > .paramNote {
+  display: none;
+}
+
+.axisRow {
+  align-items: center;
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: 0.75rem minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .paramNote {
@@ -383,41 +409,62 @@
   color: var(--mantine-primary-color-contrast);
 }
 
-.savedList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.savedList li {
-  display: flex;
-  font-size: 0.75rem;
-  justify-content: space-between;
-}
-
 /* ------------------------------------------------------------------------------- ring, stats, inspector */
+/* parameter column | ring | stats; when the centre is narrow the stats drop under the other two */
+.workspace {
+  container-type: inline-size;
+}
+
 .ringArea {
-  align-items: flex-start;
-  display: flex;
+  align-items: start;
+  display: grid;
   gap: 0.75rem;
-  padding: 0 0.5rem;
+  grid-template-columns: 14rem clamp(14rem, 36%, 19.5rem) minmax(0, 1fr);
+  padding: 0.5rem 0.5rem 0;
+}
+
+@container (max-width: 46rem) {
+  .ringArea {
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+
+  .ringBox {
+    justify-self: center;
+    max-width: 14rem;
+    width: 100%;
+  }
+
+  .stats {
+    grid-column: 1 / -1;
+    padding-top: 0;
+  }
+
+  .statGrid {
+    display: grid;
+    gap: 0.25rem 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: none;
+  }
+
+  .inspector {
+    flex: 1 1 11rem;
+  }
 }
 
 .ringBox {
-  flex: 0 0 clamp(14rem, 34%, 19.5rem);
-  position: relative;
+  min-width: 0;
+}
+
+.ringHead {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+  min-height: 1.625rem;
 }
 
 .ringCap {
   color: var(--text-muted);
   font-size: 0.6875rem;
-  left: 0;
-  position: absolute;
-  top: 0;
-  z-index: 1;
 }
 
 .ringSvg {
@@ -428,9 +475,8 @@
 .stats {
   align-items: flex-start;
   display: flex;
-  flex: 1 1 0;
   flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
+  gap: 0.5rem 1.25rem;
   min-width: 0;
   padding-top: 0.25rem;
 }
@@ -484,21 +530,21 @@
   height: 0.4375rem;
 }
 
+/* the note inspector: a small readout card under the stats */
 .inspector {
-  align-items: baseline;
   background: var(--panel-inset);
   border-radius: var(--radius-control);
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 100%;
+  flex-direction: column;
   font-size: 0.75rem;
-  gap: 0.125rem 1rem;
-  margin: 0 0.5rem;
-  min-height: 1.625rem;
-  padding: 0.3125rem 0.5rem;
+  gap: 0.1875rem;
+  padding: 0.375rem 0.5rem;
 }
 
-.inspName {
+.inspHead {
   font-weight: 600;
+  min-height: 1.125rem;
 }
 
 .pinned {
@@ -575,6 +621,27 @@
   stroke-width: 1.5;
 }
 
+.tickLine {
+  stroke: var(--text-subtle);
+  stroke-width: 1;
+}
+
+.chainLabel {
+  fill: var(--text-subtle);
+  font-size: 9px;
+}
+
+.offLabel {
+  fill: var(--text-muted);
+  font-size: 9px;
+}
+
+/* an off-chain note is a small dashed mark */
+.dotOff[data-off='true'],
+.dotOn[data-off='true'] {
+  stroke-dasharray: 2 1.5;
+}
+
 .svgLabel {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
@@ -588,26 +655,38 @@
 /* ------------------------------------------------------------------------------------------ tuner strip */
 .tuner {
   display: flex;
-  flex: 1 1 auto;
+  flex: none;
   flex-direction: column;
   margin: 0 0.5rem;
-  min-height: 0;
 }
 
 .stripBody {
   background: var(--panel-inset);
-  display: flex;
-  flex: 1;
-  flex-direction: column;
   border-radius: 0 0 var(--radius-control) var(--radius-control);
-  padding: 0.25rem 0.5rem 0.375rem;
+  padding: 0 0 0.125rem;
+  position: relative;
 }
 
-/* the plot is a size container so the bars scale with the height the panel has (cqh) */
+/* 12-EDO piano keys: a band every 100 c, 1/1 as C; white keys use the panel tier, black keys stay on the inset */
+.bands {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.band {
+  background: var(--panel);
+  bottom: 0;
+  position: absolute;
+  top: 0;
+}
+
+.band[data-black='true'] {
+  background: none;
+}
+
 .stripPlot {
-  container-type: size;
-  flex: 1;
-  min-height: 10.5rem;
+  height: 6.25rem;
   position: relative;
 }
 
@@ -617,7 +696,7 @@
   left: 0;
   position: absolute;
   right: 0;
-  top: 54cqh;
+  top: 4rem;
 }
 
 .col {
@@ -629,7 +708,7 @@
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  width: 3rem;
+  width: 2.75rem;
 }
 
 .col:hover {
@@ -650,20 +729,20 @@
   background: var(--text);
   border: 2px solid var(--panel-inset);
   border-radius: 50%;
-  height: 0.625rem;
+  height: 0.5rem;
   left: 50%;
   position: absolute;
-  top: 1.25rem;
+  top: 1.125rem;
   transform: translateX(-50%);
-  width: 0.625rem;
+  width: 0.5rem;
 }
 
 .colDot[data-lit='true'] {
   background: var(--mark-blue);
   border-color: var(--text);
-  height: 0.875rem;
-  top: 1.125rem;
-  width: 0.875rem;
+  height: 0.75rem;
+  top: 1rem;
+  width: 0.75rem;
 }
 
 .col[data-pin='true'] .colDot {
@@ -671,67 +750,174 @@
   outline-offset: 2px;
 }
 
-.colDash {
-  border-left: 1px dashed var(--grid);
-  height: calc(54cqh - 2.125rem);
-  left: 50%;
-  position: absolute;
-  top: 2.125rem;
-}
-
+/* --d is the deviation in cents; 1 c is 0.5 px */
 .colBar {
+  height: max(1px, calc(var(--d) * 0.5px));
   left: 50%;
-  margin-left: -0.4375rem;
+  margin-left: -0.375rem;
   position: absolute;
-  width: 0.875rem;
-}
-
-/* --d is the deviation in cents; 1 c is 0.65% of the plot height */
-.colBar {
-  height: max(1px, calc(var(--d) * 0.65cqh));
+  width: 0.75rem;
 }
 
 .colBar[data-dir='sharp'] {
   background: var(--mark-pink);
-  bottom: 46cqh;
+  top: calc(4rem - var(--d) * 0.5px);
 }
 
 .colBar[data-dir='flat'] {
   background: var(--mark-cyan);
-  top: 54cqh;
+  top: 4rem;
 }
 
 .colNum {
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   left: 50%;
+  line-height: 1;
   position: absolute;
   transform: translateX(-50%);
 }
 
 .colNum[data-dir='sharp'] {
-  bottom: calc(46cqh + var(--d) * 0.65cqh + 2px);
+  top: calc(4rem - var(--d) * 0.5px - 0.75rem);
 }
 
 .colNum[data-dir='flat'] {
-  top: calc(54cqh + var(--d) * 0.65cqh + 2px);
+  top: calc(4rem + var(--d) * 0.5px + 0.125rem);
 }
 
 .stepRow {
-  height: 1.75rem;
+  height: 1.625rem;
   position: relative;
 }
 
 .stepCell {
   display: flex;
   flex-direction: column;
-  font-size: 0.6875rem;
-  line-height: 1.15;
+  font-size: 0.625rem;
+  line-height: 1.1;
   position: absolute;
   text-align: center;
-  top: 0.125rem;
+  top: 0.0625rem;
   transform: translateX(-50%);
+}
+
+/* ------------------------------------------------------------------------------------------ saved subsets */
+.saved {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  margin: 0 0.5rem;
+  min-height: 7rem;
+}
+
+.savedList {
+  background: var(--panel-inset);
+  border-radius: 0 0 var(--radius-control) var(--radius-control);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  list-style: none;
+  margin: 0;
+  overflow-y: auto;
+  padding: 0.125rem;
+}
+
+.savedRow {
+  align-items: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 0.5rem;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  padding: 0.125rem 0.25rem;
+  text-align: left;
+  width: 100%;
+}
+
+.savedRow:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.savedRow:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* the loaded subset carries the selection outline: 1px border plus 1px outline in --text */
+.savedRow[aria-pressed='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.savedName {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.savedName > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spark {
+  height: 1.875rem;
+  position: relative;
+}
+
+.sparkCol {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  width: 0;
+}
+
+.sparkDot {
+  background: var(--text);
+  border-radius: 50%;
+  height: 0.4375rem;
+  left: -0.2188rem;
+  position: absolute;
+  top: 0.0625rem;
+  width: 0.4375rem;
+}
+
+/* inactive field notes are dimmed; selected ones are lit */
+.sparkCol[data-on='false'] .sparkDot {
+  background: none;
+  border: 1px solid var(--text-subtle);
+}
+
+.sparkBar {
+  left: -0.1875rem;
+  position: absolute;
+  width: 0.375rem;
+}
+
+.sparkCol[data-dir='sharp'] .sparkBar {
+  background: var(--mark-pink);
+  bottom: calc(100% - 1.125rem);
+  height: max(1px, calc(var(--d) * 0.25px));
+}
+
+.sparkCol[data-dir='flat'] .sparkBar {
+  background: var(--mark-cyan);
+  height: max(1px, calc(var(--d) * 0.25px));
+  top: 1.125rem;
+}
+
+.sparkCol[data-on='false'] .sparkBar {
+  opacity: 0.3;
 }
 
 /* ------------------------------------------------------------------------------------------------ dock */

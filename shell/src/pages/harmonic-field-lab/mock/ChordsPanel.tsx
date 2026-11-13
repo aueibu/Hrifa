@@ -1,13 +1,14 @@
-/** Chords panel: tolerance with a ladder, chips grouped by template family, and the template editor. */
+/** Chords panel: tolerance with a ladder; sections by note count, one row per family, one chip per voicing. */
 import { useState } from 'react';
 import { ActionIcon, Button, Modal, TextInput, Tooltip } from '@mantine/core';
 import { DEFAULT_TEMPLATES } from '../../../lib/harmonic-field';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import {
-  FAMILIES,
   LIT_FIELD,
+  SIZES,
   chipsAt,
   chordsAt,
+  familyOrder,
   ladder,
   templateCount,
   type ChordChip,
@@ -45,7 +46,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
           <Num muted>@ {chip.root}</Num>
         </span>
         <span className={classes.chipBottom}>
-          <span className={classes.chipName}>{chip.name}</span>
+          <Num muted>{chip.members.join(' ')}</Num>
           {chip.found ? (
             <span className={classes.err} data-sev={sev} title={`Error ${SEV_LABEL[sev]}`}>
               <Num>{sev === 0 ? 'exact' : chip.maxErr.toFixed(1)}</Num>
@@ -65,10 +66,22 @@ function TemplateEditor() {
   const [rows, setRows] = useState(() => DEFAULT_TEMPLATES.map((t) => ({ ...t })));
   return (
     <div className={classes.editor}>
+      <div className={classes.editorRow} aria-hidden="true">
+        <span className={classes.hint}>Name</span>
+        <span className={classes.hint}>Ratios</span>
+        <span className={classes.hint}>Family</span>
+        <span />
+      </div>
       {rows.map((t, i) => (
         <div key={i} className={classes.editorRow}>
           <TextInput size="xs" aria-label={`Template ${i + 1} name`} defaultValue={t.name} />
           <TextInput size="xs" aria-label={`Template ${i + 1} ratios`} defaultValue={t.text} />
+          <TextInput
+            size="xs"
+            aria-label={`Template ${i + 1} family`}
+            placeholder="Other"
+            defaultValue={t.family}
+          />
           <ActionIcon
             variant="subtle"
             color="gray"
@@ -108,6 +121,7 @@ export function ChordsPanel({ tol, setTol }: { tol: number; setTol: (t: number) 
   const down = [...ladder].reverse().find((r) => r.tol < tol && r.count < count);
   const current = [...ladder].reverse().find((r) => r.tol <= tol)?.tol;
   const chips = chipsAt(tol);
+  const families = familyOrder(chips.map((c) => c.family));
   /** A window of the ladder around the current rung: one below, six above. */
   const at = ladder.findIndex((r) => r.tol === current);
   const shown = ladder.slice(Math.max(0, at - 1), at + 7);
@@ -151,7 +165,7 @@ export function ChordsPanel({ tol, setTol }: { tol: number; setTol: (t: number) 
                   +<Num>{up.tol - tol}</Num> c &rarr; <Num>{up.count - count}</Num> more
                 </>
               ) : (
-                'all templates found'
+                'nothing more to find'
               )}
               {down && (
                 <>
@@ -178,22 +192,37 @@ export function ChordsPanel({ tol, setTol }: { tol: number; setTol: (t: number) 
             </button>
           ))}
         </div>
-        {FAMILIES.map((f) => {
-          const inF = chips.filter((c) => c.family === f);
-          if (!inF.length) {
+        {SIZES.map((size) => {
+          const inSize = chips.filter((c) => c.size === size);
+          if (!inSize.length) {
             return null;
           }
           return (
-            <section key={f} className={classes.family} aria-label={f}>
+            <section key={size} className={classes.family} aria-label={size}>
               <h3 className={classes.familyHead}>
-                <Tip k="chordFamily">{f}</Tip>
-                <Num muted>{inF.filter((c) => c.found).length}</Num>
+                <Tip k="chordFamily">{size}</Tip>
+                <Num muted>{inSize.filter((c) => c.found).length}</Num>
               </h3>
-              <div className={classes.chips}>
-                {inF.map((c, i) => (
-                  <Chip key={`${c.template}-${c.root}-${i}`} chip={c} onRaise={setTol} />
-                ))}
-              </div>
+              {families.map((f) => {
+                const row = inSize.filter((c) => c.family === f);
+                if (!row.length) {
+                  return null;
+                }
+                return (
+                  <div key={f} className={classes.famRow} role="group" aria-label={`${size}, ${f}`}>
+                    <span className={classes.famLabel}>{f}</span>
+                    <div className={classes.chips}>
+                      {row.map((c, i) => (
+                        <Chip
+                          key={`${c.template}-${c.members.join()}-${i}`}
+                          chip={c}
+                          onRaise={setTol}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </section>
           );
         })}

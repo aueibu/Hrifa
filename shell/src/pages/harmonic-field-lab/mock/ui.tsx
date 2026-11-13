@@ -115,6 +115,11 @@ export interface Lab {
   setChord: (s: ReadonlySet<number>) => void;
   mode: number;
   setMode: (m: number) => void;
+  /** Saved subset pointed at (preview on the ring) and the one loaded (index into savedSubsets). */
+  preview: readonly number[] | null;
+  setPreview: (s: readonly number[] | null) => void;
+  loaded: number;
+  setLoaded: (i: number) => void;
 }
 export const LabContext = createContext<Lab | null>(null);
 export function useLab(): Lab {

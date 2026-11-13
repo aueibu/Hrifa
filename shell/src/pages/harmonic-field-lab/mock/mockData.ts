@@ -13,7 +13,9 @@ import {
   deviations,
   deviationsJI,
   edoTargets,
-  findChords,
+  findChordVoicings,
+  FIFTH_CENTS,
+  fifthsLayout,
   fmtRatio,
   fmtSigned,
   genHarmonic,
@@ -36,8 +38,9 @@ import {
   transpositions,
   vs12,
   vsJI,
-  type FoundChord,
+  type Voicing,
   type HeldNote,
+  type FifthsLayout,
   type Note,
   type RetuneResult,
   type RetunerCard,
@@ -67,16 +70,26 @@ const TOL = 18;
 export const chordTolerance = TOL;
 export const templateCount = DEFAULT_TEMPLATES.length;
 
-/** Template families: by how many notes the template has (triads, sevenths and other tetrads, bigger sets). */
-export const FAMILIES = ['Triads', 'Sevenths & tetrads', 'Clusters & larger'] as const;
-export type Family = (typeof FAMILIES)[number];
-const familyOf = (n: number): Family =>
-  n <= 3 ? FAMILIES[0] : n === 4 ? FAMILIES[1] : FAMILIES[2];
+/** Sections by note count; inside each, one row per template family. */
+export const SIZES = ['Triads', 'Tetrads', 'Larger'] as const;
+export type Size = (typeof SIZES)[number];
+const sizeOf = (n: number): Size => (n <= 3 ? SIZES[0] : n === 4 ? SIZES[1] : SIZES[2]);
+export const OTHER_FAMILY = 'Other';
+/** Family rows in the order the defaults introduce them; user families follow, then Other. */
+export const familyOrder = (names: string[]): string[] => {
+  const seen = [...new Set(DEFAULT_TEMPLATES.map((t) => t.family ?? OTHER_FAMILY))];
+  const extra = [...new Set(names)].filter((n) => !seen.includes(n));
+  return [
+    ...seen.filter((n) => n !== OTHER_FAMILY),
+    ...extra.filter((n) => n !== OTHER_FAMILY),
+  ].concat(OTHER_FAMILY);
+};
 
 export interface ChordChip {
   name: string;
   template: string;
-  family: Family;
+  size: Size;
+  family: string;
   root: string;
   members: string[];
   memberIdx: number[];
@@ -85,10 +98,11 @@ export interface ChordChip {
   needs: number;
   found: boolean;
 }
-const toChip = (c: FoundChord, name: string, needs: number, found: boolean): ChordChip => ({
+const toChip = (c: Voicing, name: string, needs: number, found: boolean): ChordChip => ({
   name,
   template: c.template,
-  family: familyOf(c.members.length),
+  size: sizeOf(c.members.length),
+  family: c.family || OTHER_FAMILY,
   root: fmtRatio(field[c.root]),
   members: c.members.map((i) => fmtRatio(field[i])),
   memberIdx: c.members,
@@ -99,17 +113,17 @@ const toChip = (c: FoundChord, name: string, needs: number, found: boolean): Cho
 /** Every template's closest placement, with the tolerance that would admit it (used for the "not yet" chips). */
 const closest = DEFAULT_TEMPLATES.flatMap((t) => {
   const r = closestChord(rel, repC, t);
-  return r.chord ? [toChip(r.chord, t.name ?? t.text, r.tol, false)] : [];
+  return r.chord ? [toChip({ ...r.chord, family: t.family }, t.name ?? t.text, r.tol, false)] : [];
 });
-const chordCache = new Map<number, FoundChord[]>();
-/** Chords found at a tolerance (cached; the maths is the core's findChords). */
-export function chordsAt(tol: number): FoundChord[] {
+const chordCache = new Map<number, Voicing[]>();
+/** Every voicing found at a tolerance (cached; the maths is the core's findChordVoicings). */
+export function chordsAt(tol: number): Voicing[] {
   if (!chordCache.has(tol)) {
-    chordCache.set(tol, findChords(rel, repC, DEFAULT_TEMPLATES, tol));
+    chordCache.set(tol, findChordVoicings(rel, repC, DEFAULT_TEMPLATES, tol).chords);
   }
   return chordCache.get(tol)!;
 }
-/** The chips at one tolerance: every found chord, plus the closest miss of each template that found none. */
+/** The chips at one tolerance: every voicing, plus the closest miss of each template that found none. */
 export function chipsAt(tol: number): ChordChip[] {
   const found = chordsAt(tol);
   const have = new Set(found.map((c) => c.template));
@@ -118,13 +132,13 @@ export function chipsAt(tol: number): ChordChip[] {
     ...closest.filter((c) => !have.has(c.template)),
   ];
 }
-/** Whole-cent tolerances at which the chord count changes, ascending, with the count from there on. */
+/** Whole-cent tolerances (up to 60 c) at which the voicing count changes, ascending, with the count from there on. */
 export const ladder: { tol: number; count: number }[] = (() => {
-  const all = findChords(rel, repC, DEFAULT_TEMPLATES, repC / 2);
+  const all = findChordVoicings(rel, repC, DEFAULT_TEMPLATES, 60).chords;
   const rungs = [...new Set(all.map((c) => Math.ceil(c.maxErr - 1e-9)))].sort((a, b) => a - b);
   return rungs.map((tol) => ({ tol, count: chordsAt(tol).length }));
 })();
-export const chords: FoundChord[] = chordsAt(TOL);
+export const chords: Voicing[] = chordsAt(TOL);
 
 export const keys = transpositions(field, subsetIdx, 0, rep, TOL);
 export const completeKeys = keys.filter((k) => k.complete);
@@ -425,3 +439,38 @@ export const fmtFrac = (m: Note['m']) => {
   return `${a}/${b}`;
 };
 export { fmtSigned, templateLabel };
+
+/* ------------------------------------------------------------------------------------------ saved subsets */
+/** Deviation of every field note from 12-EDO, in cents (signed), for the saved-subset sparklines. */
+export const fieldDev12 = deviations(field, edoTargets(12, repC), repC).map((d) => d.dev);
+const pick = (...ratios: string[]) =>
+  ratios.map((r) => field.findIndex((n) => fmtRatio(n) === r)).filter((i) => i >= 0);
+export interface SavedSubset {
+  name: string;
+  idx: number[];
+  meanTenney: number | null;
+  primeLimit: number | null;
+}
+const savedDef: [string, number[]][] = [
+  ['M4 subset (no 11/8)', subsetIdx],
+  ['Full field', field.map((_, i) => i)],
+  ['Major pentatonic-like', pick('1/1', '9/8', '5/4', '3/2', '13/8')],
+  ['Septimal tetrad 4:5:6:7', pick('1/1', '5/4', '3/2', '7/4')],
+  ['11 and 13 heavy', pick('1/1', '11/8', '3/2', '13/8', '15/8')],
+  ['Otonal 4:5:6', pick('1/1', '5/4', '3/2')],
+];
+export const savedSubsets: SavedSubset[] = savedDef.map(([name, idx]) => {
+  const a = analyzeSubset(rotateSubset(field, idx, 0, rep), rep);
+  return { name, idx, meanTenney: a?.meanTenney ?? null, primeLimit: a?.primeLimit ?? null };
+});
+
+/** The Fifths ring view: each field note on a generator chain (3/2, period = the repeat), cached per chain length. */
+const fifthsCache = new Map<number, FifthsLayout>();
+export function fifthsAt(steps: number): FifthsLayout {
+  if (!fifthsCache.has(steps)) {
+    fifthsCache.set(steps, fifthsLayout(field, { gen: FIFTH_CENTS, period: repC, steps }));
+  }
+  return fifthsCache.get(steps)!;
+}
+/** Note names for the 12-step chain with 3/2, D-flat to F-sharp (steps -5 to +6); other lengths show the step number. */
+export const CHAIN12 = ['D♭', 'A♭', 'E♭', 'B♭', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F♯'];

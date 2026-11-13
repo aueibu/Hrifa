@@ -1,4 +1,7 @@
-/** Tuner strip with the scale degrees rolled in: ratio on top, deviation bar from the target, step letter below. */
+/**
+ * Tuner strip: a short screen with a faint 12-EDO piano-key backdrop (a band every 100 c from 1/1 as C), the field
+ * notes above it and their sharp/flat bars, and the scale steps right under the notes they span.
+ */
 import type { CSSProperties } from 'react';
 import { NativeSelect, NumberInput } from '@mantine/core';
 import { LIT, analysis, devs, rel, repC } from './mockData';
@@ -6,7 +9,28 @@ import { Num, Strip, Tip, signed, useLab } from './ui';
 import classes from './mock.module.css';
 
 const PAD = 4;
-const left = (c: number) => `${PAD + (c / repC) * (100 - 2 * PAD)}%`;
+/** Horizontal position (percent) of a pitch in cents above 1/1. */
+export const stripLeft = (c: number) => `${PAD + (c / repC) * (100 - 2 * PAD)}%`;
+const BLACK = new Set([1, 3, 6, 8, 10]);
+
+/** The piano backdrop: one band per semitone, centred on 100 c steps; white keys lighter than black. */
+export function PianoBands() {
+  return (
+    <div className={classes.bands} aria-hidden="true">
+      {Array.from({ length: 13 }, (_, i) => (
+        <span
+          key={i}
+          className={classes.band}
+          data-black={BLACK.has(i % 12)}
+          style={{
+            left: stripLeft(Math.max(0, i * 100 - 50)),
+            width: `${((Math.min(repC, i * 100 + 50) - Math.max(0, i * 100 - 50)) / repC) * (100 - 2 * PAD)}%`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function TunerStrip() {
   const lab = useLab();
@@ -34,6 +58,7 @@ export function TunerStrip() {
         </Tip>
       </Strip>
       <div className={classes.stripBody}>
+        <PianoBands />
         <div className={classes.stripPlot}>
           <div className={classes.zero} aria-hidden="true" />
           {devs.map((d, i) => {
@@ -44,7 +69,7 @@ export function TunerStrip() {
               <div
                 key={i}
                 className={classes.col}
-                style={{ left: left(d.c), '--d': Math.abs(d.dev12) } as CSSProperties}
+                style={{ left: stripLeft(d.c), '--d': Math.abs(d.dev12) } as CSSProperties}
                 data-lit={lit}
                 data-pin={lab.pin === fi}
                 role="button"
@@ -64,7 +89,6 @@ export function TunerStrip() {
               >
                 <span className={classes.colRatio}>{d.ratio}</span>
                 <span className={classes.colDot} data-lit={lit} aria-hidden="true" />
-                <span className={classes.colDash} aria-hidden="true" />
                 <span
                   className={classes.colBar}
                   data-dir={sharp ? 'sharp' : 'flat'}
@@ -80,12 +104,11 @@ export function TunerStrip() {
         <div className={classes.stepRow} aria-label="Scale steps">
           {rel.map((n, i) => {
             const next = i < rel.length - 1 ? rel[i + 1].c : repC;
-            const mid = (n.c + next) / 2;
             return (
               <span
                 key={i}
                 className={classes.stepCell}
-                style={{ left: left(mid) }}
+                style={{ left: stripLeft((n.c + next) / 2) }}
                 title={`Step ${analysis.stepLetters[i]}: ${analysis.steps[i].toFixed(2)} c`}
               >
                 <Num>{analysis.stepLetters[i]}</Num>

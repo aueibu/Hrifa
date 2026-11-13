@@ -6,6 +6,7 @@ export * from './field';
 export * from './subset';
 export * from './shape';
 export * from './chords';
+export * from './fifths';
 export * from './scales';
 export * from './keys';
 export * from './deviation';

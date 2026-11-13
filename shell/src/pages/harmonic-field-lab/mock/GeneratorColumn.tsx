@@ -1,4 +1,4 @@
-/** Generator row: preset, ⚙ fold-out (prime filter, repeat interval), method tabs with their numbers inline. */
+/** Generator column (left of the ring): preset, ⚙ fold-out (prime filter, repeat), method tabs, then that method's parameters. */
 import { useMemo, useState } from 'react';
 import {
   ActionIcon,
@@ -7,6 +7,7 @@ import {
   NumberInput,
   Popover,
   SegmentedControl,
+  Textarea,
   TextInput,
 } from '@mantine/core';
 import { PRESETS, PRIMES } from '../../../lib/harmonic-field';
@@ -17,12 +18,12 @@ import classes from './mock.module.css';
 
 const PRIME_LABELS = [...PRIMES.slice(0, 24).map(String), '97+'];
 const METHODS = [
-  { value: 'harmonic', label: 'Harmonic' },
+  { value: 'harmonic', label: 'Harm' },
   { value: 'sub', label: 'Sub' },
   { value: 'edo', label: 'EDO' },
-  { value: 'lattice', label: 'Lattice' },
+  { value: 'lattice', label: 'Latt' },
   { value: 'cps', label: 'CPS' },
-  { value: 'custom', label: 'Custom' },
+  { value: 'custom', label: 'Cust' },
 ];
 
 function presetOptions() {
@@ -92,99 +93,102 @@ function FieldSettings() {
   );
 }
 
-function MethodParams({ method }: { method: string }) {
+function Params({ method }: { method: string }) {
   switch (method) {
     case 'harmonic':
     case 'sub':
       return (
         <>
-          <Tip k="startHarmonic" as="control">
-            <NumberInput
-              size="xs"
-              aria-label="Starting harmonic"
-              prefix="from "
-              defaultValue={8}
-              min={1}
-              max={256}
-              w={84}
-            />
+          <Tip k="startHarmonic" as="control" block>
+            <NumberInput size="xs" label="Starting harmonic" defaultValue={8} min={1} max={256} />
           </Tip>
           <span className={classes.paramNote}>
-            <Num>8/8</Num> to <Num>15/8</Num>, <Num>{field.length}</Num> notes
+            <Num>8/8</Num> to <Num>15/8</Num> &middot; <Num>{field.length}</Num> notes
           </span>
         </>
       );
     case 'edo':
       return (
-        <Tip k="edoDivisions" as="control">
-          <NumberInput
-            size="xs"
-            aria-label="Divisions"
-            suffix=" divisions"
-            defaultValue={19}
-            w={112}
-          />
+        <Tip k="edoDivisions" as="control" block>
+          <NumberInput size="xs" label="Divisions" defaultValue={19} />
         </Tip>
       );
     case 'lattice':
       return (
         <>
-          <Tip k="latticeShape" as="control">
-            <NativeSelect size="xs" aria-label="Lattice shape" data={['Box', 'Diamond']} w={84} />
+          <Tip k="latticeShape" as="control" block>
+            <NativeSelect
+              size="xs"
+              label="Shape"
+              data={['Box (count × count × ...)', 'Diamond (within N steps)']}
+            />
           </Tip>
-          <Tip k="genAxis" as="control">
-            <span className={classes.inline}>
-              {[
-                ['3/2', 12],
-                ['5/4', 3],
-                ['7/4', 3],
-              ].map(([g, n], i) => (
-                <span key={g} className={classes.inline}>
-                  <TextInput
-                    size="xs"
-                    aria-label={`Axis ${i + 1} generator`}
-                    defaultValue={g as string}
-                    w={52}
-                  />
+          <Tip k="genAxis" as="control" block>
+            <div className={classes.axes}>
+              <span className={classes.paramNote}>Axis</span>
+              <span className={classes.paramNote}>Generator</span>
+              <span className={classes.paramNote}>Count</span>
+              <span className={classes.paramNote}>Centre</span>
+              {(
+                [
+                  ['3/2', 12, 0],
+                  ['5/4', 3, 1],
+                  ['7/4', 3, 1],
+                ] as const
+              ).map(([g, n, ctr], i) => (
+                <span key={g} className={classes.axisRow}>
+                  <Num muted>{i + 1}</Num>
+                  <TextInput size="xs" aria-label={`Axis ${i + 1} generator`} defaultValue={g} />
                   <NumberInput
                     size="xs"
                     aria-label={`Axis ${i + 1} count`}
-                    prefix="×"
-                    defaultValue={n as number}
+                    defaultValue={n}
+                    min={1}
                     hideControls
-                    w={44}
+                  />
+                  <NumberInput
+                    size="xs"
+                    aria-label={`Axis ${i + 1} centre`}
+                    defaultValue={ctr}
+                    min={0}
+                    hideControls
                   />
                 </span>
               ))}
-            </span>
+            </div>
           </Tip>
+          <span className={classes.paramNote}>
+            <Tip k="mos">MOS sizes</Tip> for 3/2: <Num>5</Num> <Num>7</Num> <Num>12</Num>
+          </span>
         </>
       );
     case 'cps':
       return (
         <>
-          <Tip k="cpsFactors" as="control">
-            <TextInput size="xs" aria-label="Factors" defaultValue="1 3 5 7" w={108} />
+          <Tip k="cpsFactors" as="control" block>
+            <TextInput size="xs" label="Factors" defaultValue="1 3 5 7" />
           </Tip>
-          <Tip k="cpsK" as="control">
-            <NumberInput size="xs" aria-label="Choose k" prefix="choose " defaultValue={2} w={92} />
+          <Tip k="cpsK" as="control" block>
+            <NumberInput size="xs" label="Choose k" defaultValue={2} />
           </Tip>
+          <span className={classes.paramNote}>1 3 5 7 choose 2 is the hexany.</span>
         </>
       );
     default:
       return (
         <>
-          <Tip k="customIntervals" as="control">
-            <TextInput
+          <Tip k="customIntervals" as="control" block>
+            <Textarea
               size="xs"
-              aria-label="Intervals"
-              defaultValue="9/8 5/4 4/3 3/2 5/3 15/8"
-              w={220}
+              label="Intervals (one per line)"
+              description="ratios, cents (701.96c) or 7&#92;12"
+              rows={6}
+              defaultValue={'9/8\n5/4\n4/3\n3/2\n5/3\n15/8'}
             />
           </Tip>
           <Tip k="loadScl" as="control">
             <Button size="compact-xs" variant="default">
-              Load .scl
+              Load .scl file
             </Button>
           </Tip>
         </>
@@ -192,19 +196,19 @@ function MethodParams({ method }: { method: string }) {
   }
 }
 
-export function GeneratorBar() {
+export function GeneratorColumn() {
   const data = useMemo(presetOptions, []);
   const [method, setMethod] = useState('harmonic');
   return (
-    <div className={classes.genBar}>
-      <div className={classes.genRow}>
+    <div className={classes.genCol}>
+      <div className={classes.genTop}>
         <Tip k="preset" as="control" extra={presetInfo.info}>
           <NativeSelect
             size="xs"
             aria-label="Preset"
             data={data}
             defaultValue={presetInfo.name}
-            w={176}
+            w="100%"
           />
         </Tip>
         <Tip k="fieldSettings" as="control">
@@ -219,25 +223,23 @@ export function GeneratorBar() {
             </Popover.Dropdown>
           </Popover>
         </Tip>
-        <Tip k="method" as="control">
-          <SegmentedControl
-            size="xs"
-            aria-label="Method"
-            value={method}
-            onChange={setMethod}
-            data={METHODS}
-          />
-        </Tip>
-        <Tip k="methodParams" as="control">
-          <span className={classes.inline} data-method={method}>
-            <MethodParams method={method} />
-          </span>
-        </Tip>
-        <span className={classes.grow} />
-        <span className={classes.paramNote}>
-          repeat <Num>{repText}</Num> <Num muted>{repC.toFixed(0)} c</Num>
-        </span>
       </div>
+      <Tip k="method" as="control" block>
+        <SegmentedControl
+          size="xs"
+          fullWidth
+          aria-label="Method"
+          value={method}
+          onChange={setMethod}
+          data={METHODS}
+        />
+      </Tip>
+      <div className={classes.params} data-method={method}>
+        <Params method={method} />
+      </div>
+      <span className={classes.paramNote}>
+        repeat <Num>{repText}</Num> <Num muted>{repC.toFixed(0)} c</Num>
+      </span>
     </div>
   );
 }

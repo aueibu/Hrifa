@@ -24,6 +24,8 @@ type OkTemplate = Extract<ParsedTemplate, { ok: true }>;
 export interface ChordTemplate {
   text: string;
   name?: string;
+  /** Optional, user-editable group label ("Major", "Septimal", ...). The finders ignore it; the UI groups by it. */
+  family?: string;
 }
 
 function gcdBig(x: bigint, y: bigint): bigint {
@@ -154,18 +156,18 @@ export function templateLabel(t: ChordTemplate): string {
 }
 
 export const DEFAULT_TEMPLATES: ChordTemplate[] = [
-  { name: 'major triad', text: '4:5:6' },
-  { name: 'minor triad', text: '10:12:15' },
-  { name: 'harmonic 7th chord', text: '4:5:6:7' },
-  { name: 'subminor triad', text: '6:7:9' },
-  { name: 'supermajor triad', text: '14:18:21' },
-  { name: 'neutral triad', text: '18:22:27' },
-  { name: 'septimal diminished triad', text: '5:6:7' },
-  { name: 'suspended 4th triad', text: '6:8:9' },
-  { name: 'major 7th chord', text: '8:10:12:15' },
-  { name: 'minor 7th chord', text: '10:12:15:18' },
-  { name: 'utonal tetrad', text: '1/(4:5:6:7)' },
-  { name: '3:5:7 triad', text: '3:5:7' },
+  { name: 'major triad', text: '4:5:6', family: 'Major' },
+  { name: 'minor triad', text: '10:12:15', family: 'Minor' },
+  { name: 'harmonic 7th chord', text: '4:5:6:7', family: 'Septimal' },
+  { name: 'subminor triad', text: '6:7:9', family: 'Septimal' },
+  { name: 'supermajor triad', text: '14:18:21', family: 'Septimal' },
+  { name: 'neutral triad', text: '18:22:27', family: 'Neutral' },
+  { name: 'septimal diminished triad', text: '5:6:7', family: 'Septimal' },
+  { name: 'suspended 4th triad', text: '6:8:9', family: 'Suspended' },
+  { name: 'major 7th chord', text: '8:10:12:15', family: 'Major' },
+  { name: 'minor 7th chord', text: '10:12:15:18', family: 'Minor' },
+  { name: 'utonal tetrad', text: '1/(4:5:6:7)', family: 'Utonal' },
+  { name: '3:5:7 triad', text: '3:5:7', family: 'Septimal' },
 ];
 
 export interface FoundChord {
@@ -348,4 +350,129 @@ export function chordLadder(
     }
   });
   return { rungs };
+}
+
+export interface Voicing extends FoundChord {
+  family?: string;
+}
+
+export interface VoicingResult {
+  chords: Voicing[];
+  /** True when a cap (per tone, or total per root and template) cut candidates; the list may be incomplete. */
+  truncated: boolean;
+}
+
+export const VOICING_MAX_PER_TONE = 4;
+export const VOICING_MAX_TOTAL = 2000;
+
+/**
+ * Every voicing of every chord: like `findChords` (same templates, roots, dedup, error sign, tolerance rule), but when
+ * several subset notes are within `tolC` of the same chord tone, EACH distinct combination is its own result (e.g. 13/8
+ * and 5/3 for a major sixth). Per tone the candidates are the notes within tolerance (the root included, so a clash
+ * with the root is rejected as in `findChords`), sorted by |error| then position, and cut to the nearest
+ * `maxPerTone` (default 4). Combinations whose notes are not all different are dropped. At most `maxTotal`
+ * (default 2000) voicings are produced in all; `truncated` reports a cut by either cap. With `maxPerTone = 1` the
+ * result equals `findChords` (plus `family`). Sorted by maxErr, then root position, then candidate order.
+ */
+export function findChordVoicings(
+  rel: RelNote[],
+  repC: number,
+  templates: (ChordTemplate | string)[],
+  tolC: number,
+  opts: { maxPerTone?: number; maxTotal?: number } = {}
+): VoicingResult {
+  const maxPerTone = Math.max(1, opts.maxPerTone ?? VOICING_MAX_PER_TONE);
+  const maxTotal = Math.max(1, opts.maxTotal ?? VOICING_MAX_TOTAL);
+  const N = rel.length;
+  const out: (Voicing & { _pos: number; _ord: number })[] = [];
+  const seen = new Set<string>();
+  let truncated = false;
+  const circ = (input: number): number => {
+    const x = ((input % repC) + repC) % repC;
+    return x > repC / 2 ? x - repC : x;
+  };
+  templates.forEach((tp, ti) => {
+    const src: ChordTemplate = typeof tp === 'string' ? { text: tp } : tp;
+    const pt = parseTemplate(src.text);
+    if (!pt.ok) {
+      return;
+    }
+    const tkey = templateKey(pt, repC);
+    if (seen.has(tkey) || templateFolds(pt, repC)) {
+      return;
+    }
+    seen.add(tkey);
+    const tc = reduceCents(pt, repC);
+    for (let i = 0; i < N; i++) {
+      const cands: { j: number; e: number }[][] = [];
+      let possible = true;
+      for (let k = 1; k < tc.length && possible; k++) {
+        const list: { j: number; e: number }[] = [];
+        for (let j = 0; j < N; j++) {
+          const e = circ(rel[j].c - rel[i].c - tc[k]);
+          if (Math.abs(e) <= tolC + 1e-9) {
+            list.push({ j, e });
+          }
+        }
+        list.sort((a, b) => Math.abs(a.e) - Math.abs(b.e) || a.j - b.j);
+        if (!list.length) {
+          possible = false;
+        }
+        if (list.length > maxPerTone) {
+          truncated = true;
+          list.length = maxPerTone;
+        }
+        cands.push(list);
+      }
+      if (!possible) {
+        continue;
+      }
+      let ord = 0;
+      const pick: { j: number; e: number }[] = [];
+      const walk = (k: number): boolean => {
+        if (k === cands.length) {
+          const mem = [rel[i].src, ...pick.map((p) => rel[p.j].src)];
+          const errs = [0, ...pick.map((p) => p.e)];
+          const maxErr = Math.max(0, ...errs.map(Math.abs));
+          const exact = !!rel[i].m && pick.every((p) => !!rel[p.j].m);
+          out.push({
+            t: ti,
+            tkey,
+            template: pt.text,
+            name: src.name || '',
+            family: src.family,
+            root: rel[i].src,
+            members: mem,
+            errors: errs,
+            maxErr,
+            exact: exact && maxErr < EPS,
+            _pos: i,
+            _ord: ord++,
+          });
+          return out.length < maxTotal;
+        }
+        for (const c of cands[k]) {
+          if (c.j === i || pick.some((p) => p.j === c.j)) {
+            continue;
+          }
+          pick.push(c);
+          const more = walk(k + 1);
+          pick.pop();
+          if (!more) {
+            return false;
+          }
+        }
+        return true;
+      };
+      if (!walk(0)) {
+        truncated = true;
+        return;
+      }
+    }
+  });
+  out.sort((a, b) => a.maxErr - b.maxErr || a._pos - b._pos || a._ord - b._ord);
+  return {
+    chords: out.map(({ _pos, _ord, ...v }) => v),
+    truncated,
+  };
 }

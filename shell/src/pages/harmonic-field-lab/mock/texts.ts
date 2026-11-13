@@ -194,7 +194,7 @@ const entries = {
   },
   tunerStrip: {
     term: 'Tuner strip',
-    text: 'Like a tuner display for your whole scale. Each bar sits under its own dot; a bar going up (pink) means that many cents sharp of its target, a bar going down (cyan) means flat, and the printed number says how many. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s m6.',
+    text: 'Your scale laid out by pitch over a faint piano keyboard (white and black key bands every 100 c, with 1/1 as C). Each bar sits under its own dot: pink going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.',
     see: ['compareTo', 'cents'],
   },
   cents: {
@@ -445,12 +445,12 @@ const entries = {
   },
   chords: {
     term: 'Chords',
-    text: 'Chord shapes (templates such as 4:5:6) that your subset contains, grouped by kind. Each chip shows the chord name, its template, the root it sits on and its largest error in cents. Example: "4:5:6 @ 1/1" is a just major triad on the root; hovering a chip lights its notes on the circle.',
+    text: 'Chord shapes (templates such as 4:5:6) that your subset contains. Sections are by number of notes; inside each, one row per family (Major, Septimal, ...). Every chip is one voicing: the template, its root, the field notes used and the largest error in cents. When two field notes are both close enough to a chord tone, each gets its own chip. Example: "4:5:6 @ 1/1, 1/1 5/4 3/2" is a just major triad on the root; hovering a chip lights its notes on the circle.',
     see: ['chordTolerance', 'templates', 'chordLadder'],
   },
   chordFamily: {
     term: 'Chord families',
-    text: 'Templates are grouped by how many notes they have: triads (3), sevenths and other four-note chords, and larger clusters. Example: 4:5:6 is a triad; 4:5:6:7 is a harmonic seventh in the "Sevenths & tetrads" group.',
+    text: 'Chords are grouped by how many notes they have (triads, tetrads, larger), then by family, a label you can edit on each template: Major, Minor, Septimal, Utonal and so on. Templates without a family go in an "Other" row. Example: 4:5:6 and 8:10:12:15 are both Major; 6:7:9 and 4:5:6:7 are Septimal.',
     see: ['templates'],
   },
   chordLadder: {
@@ -517,6 +517,26 @@ const entries = {
     term: 'Method options',
     text: 'The numbers belonging to the chosen method, shown beside the method tabs. Example: Harmonic series shows its starting harmonic; Equal division shows the number of divisions.',
     see: ['method'],
+  },
+  ringView: {
+    term: 'Ring view: Chromatic | Fifths',
+    text: 'Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart. Example: in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps; 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.',
+    see: ['ringMenu', 'offChain'],
+  },
+  ringMenu: {
+    term: 'Ring menu',
+    text: 'Settings for the Fifths view: the generator that is stacked to build the chain (3/2 here) and how many positions the chain has. 12 gives the familiar circle of fifths; 17, 19 or 31 suit other tunings. Example: with 19 positions and a generator of about 694.7 c, a 19-EDO scale draws as an even ring.',
+    see: ['ringView'],
+  },
+  offChain: {
+    term: 'Off-chain note',
+    text: 'In the Fifths view, a note more than half a chain step from every position, so no step describes it well. It is drawn as a small dashed mark inside the ring at its nearest step. Example: 11/8 is 53 c from F and 60 c from F-sharp, so it sits off the chain.',
+    see: ['ringView'],
+  },
+  savedRow: {
+    term: 'Saved subset',
+    text: 'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small pink (sharp) and cyan (flat) bars for the distance from 12-EDO. Pointing at a row previews it on the ring; clicking loads it. Example: "Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.',
+    see: ['savedSubsets'],
   },
 } satisfies Record<string, TextEntry>;
 

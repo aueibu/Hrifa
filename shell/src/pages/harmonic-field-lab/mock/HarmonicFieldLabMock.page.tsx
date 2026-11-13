@@ -29,9 +29,24 @@ export function HarmonicFieldLabMockPage() {
   const [pin, setPin] = useState<number | null>(null);
   const [chord, setChord] = useState<ReadonlySet<number>>(LIT_FIELD);
   const [mode, setMode] = useState(0);
+  const [preview, setPreview] = useState<readonly number[] | null>(null);
+  const [loaded, setLoaded] = useState(0);
   const lab = useMemo<Lab>(
-    () => ({ hover, pin, setHover, setPin, chord, setChord, mode, setMode }),
-    [hover, pin, chord, mode]
+    () => ({
+      hover,
+      pin,
+      setHover,
+      setPin,
+      chord,
+      setChord,
+      mode,
+      setMode,
+      preview,
+      setPreview,
+      loaded,
+      setLoaded,
+    }),
+    [hover, pin, chord, mode, preview, loaded]
   );
 
   return (

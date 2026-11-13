@@ -58,9 +58,13 @@ describe('HarmonicFieldLabMockPage', () => {
 
   it('groups chords by template family and lets the tolerance ladder bring a chord in', () => {
     render(<HarmonicFieldLabMockPage />);
-    for (const f of ['Triads', 'Sevenths & tetrads']) {
+    for (const f of ['Triads', 'Tetrads']) {
       expect(screen.getByRole('region', { name: f })).toBeInTheDocument();
     }
+    // inside a section, one row per family
+    expect(screen.getByRole('group', { name: 'Triads, Major' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Triads, Septimal' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Tetrads, Utonal' })).toBeInTheDocument();
     const before = chordCount();
     fireEvent.click(screen.getByRole('button', { name: 'Raise tolerance' }));
     expect(chordCount()).toBeGreaterThan(before);
@@ -103,6 +107,52 @@ describe('HarmonicFieldLabMockPage', () => {
       'aria-sort',
       'ascending'
     );
+  });
+
+  it('puts the method parameters in the column left of the ring', () => {
+    render(<HarmonicFieldLabMockPage />);
+    expect(screen.getByRole('textbox', { name: 'Starting harmonic' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'Latt' }));
+    expect(screen.getByRole('textbox', { name: 'Axis 3 generator' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'Cust' }));
+    expect(screen.getByRole('textbox', { name: /Intervals/ })).toHaveValue(
+      '9/8\n5/4\n4/3\n3/2\n5/3\n15/8'
+    );
+  });
+
+  it('switches the ring to the Fifths view: 5/4 at step +4, 21.5 cents flat; 11/8 off the chain', () => {
+    render(<HarmonicFieldLabMockPage />);
+    const ring = () => screen.getByRole('group', { name: /Pitch circle/ });
+    expect(ring()).toHaveAccessibleName(/chromatic view/);
+    fireEvent.click(screen.getByRole('radio', { name: 'Fifths' }));
+    expect(ring()).toHaveAccessibleName(/fifths view/);
+    expect(
+      within(ring()).getByRole('button', { name: /^5\/4.*step 4, -21\.5 cents/ })
+    ).toBeInTheDocument();
+    expect(
+      within(ring()).getByRole('button', { name: /^9\/8.*step 2, [+-]0\.0 cents/ })
+    ).toBeInTheDocument();
+    expect(
+      within(ring()).getByRole('button', { name: /^11\/8.*off the chain/ })
+    ).toBeInTheDocument();
+  });
+
+  it('lists saved subsets as sparklines, previews on hover and loads on click', () => {
+    render(<HarmonicFieldLabMockPage />);
+    const list = screen.getByRole('list', { name: 'Saved subsets list' });
+    const rows = within(list).getAllByRole('button');
+    expect(rows.length).toBeGreaterThanOrEqual(4);
+    expect(rows[0]).toHaveAttribute('aria-pressed', 'true');
+    const tri = rows.find((r) => /Otonal 4:5:6/.test(r.getAttribute('aria-label') ?? ''))!;
+    const ring = screen.getByRole('group', { name: /Pitch circle/ });
+    expect(ring).toHaveAccessibleName(/7 of 8/);
+    fireEvent.mouseEnter(tri);
+    expect(ring).toHaveAccessibleName(/3 of 8/);
+    fireEvent.mouseLeave(tri);
+    expect(ring).toHaveAccessibleName(/7 of 8/);
+    fireEvent.click(tri);
+    expect(tri).toHaveAttribute('aria-pressed', 'true');
+    expect(ring).toHaveAccessibleName(/3 of 8/);
   });
 
   it('opens the glossary drawer and filters it', async () => {
