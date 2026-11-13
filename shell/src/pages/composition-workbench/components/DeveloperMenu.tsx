@@ -52,6 +52,27 @@ export function DeveloperMenu() {
               Where the Chords tool writes the clicked note's name on the roll.
             </Text>
           </Stack>
+          <Stack gap={4}>
+            <Text size="xs" fw={500}>
+              Chord preview
+            </Text>
+            <SegmentedControl
+              size="xs"
+              aria-label="Preview: on click / Ctrl+click"
+              data={[
+                { value: 'click', label: 'On click' },
+                { value: 'ctrl-click', label: 'Ctrl+click' },
+              ]}
+              value={options.chordPreviewGate}
+              onChange={(value) =>
+                update({ chordPreviewGate: value === 'ctrl-click' ? 'ctrl-click' : 'click' })
+              }
+            />
+            <Text size="xs" c="dimmed">
+              Preview: on click / Ctrl+click. Whether a chord, inversion or spread click sounds
+              alone or needs Ctrl (Cmd on a Mac). Hover never sounds.
+            </Text>
+          </Stack>
         </Stack>
       </Popover.Dropdown>
     </Popover>

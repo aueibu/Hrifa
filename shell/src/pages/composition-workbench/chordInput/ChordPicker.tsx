@@ -30,11 +30,20 @@ export interface ChordPickerProps {
   override: ProjectPitchSet | null;
   onOverrideChange(next: ProjectPitchSet | null): void;
   voicing: VoicingSpec;
-  onVoicingChange(next: VoicingSpec): void;
+  /**
+   * A spread or inversion was chosen. `audition` is the gate's verdict for the click; `fallback` is
+   * the first chord offered, which the owner uses when no chord is pinned or hovered.
+   */
+  onVoicingChange(next: VoicingSpec, options: { audition: boolean; fallback: Chord | null }): void;
   /** The chord under the pointer or focus, or null when it left (preview only: silent). */
   onHover(chord: Chord | null): void;
-  /** A single click: audition and pin. */
-  onPin(chord: Chord): void;
+  /**
+   * A click on a chord: pin it (its ghost). `audition` says whether the click should also sound,
+   * decided by `previewGate`; the owner does the sounding.
+   */
+  onPin(chord: Chord, options: { audition: boolean }): void;
+  /** `click` (default): any click auditions. `ctrl-click`: only Ctrl/Cmd+click does. */
+  previewGate?: 'click' | 'ctrl-click';
   /** Double-click or Enter: place the chord. */
   onInsert(chord: Chord): void;
   onClose(): void;
@@ -53,6 +62,7 @@ export function ChordPicker({
   onVoicingChange,
   onHover,
   onPin,
+  previewGate = 'click',
   onInsert,
   onClose,
 }: ChordPickerProps) {
@@ -66,6 +76,8 @@ export function ChordPicker({
     [active, rootPc]
   );
   const inversions = Math.min(INVERSION_LABELS.length, Math.max(1, inversionCount(chords)));
+  const gated = (event: { ctrlKey: boolean; metaKey: boolean }) =>
+    previewGate === 'click' || event.ctrlKey || event.metaKey;
   const pcs = Array.from({ length: edo }, (_unused, pc) => pc);
 
   function moveFocus(event: ReactKeyboardEvent<HTMLElement>, delta: number) {
@@ -155,7 +167,7 @@ export function ChordPicker({
                   onClick={(event) => {
                     // The second click of a double-click belongs to the insert, not another audition.
                     if (event.detail < 2) {
-                      onPin(chord);
+                      onPin(chord, { audition: gated(event) });
                     }
                   }}
                   onDoubleClick={() => onInsert(chord)}
@@ -184,7 +196,14 @@ export function ChordPicker({
                 type="button"
                 className={classes.option}
                 aria-pressed={voicing.spread === spread.id}
-                onClick={() => onVoicingChange({ ...voicing, spread: spread.id })}
+                onClick={(event) => {
+                  if (event.detail < 2) {
+                    onVoicingChange(
+                      { ...voicing, spread: spread.id },
+                      { audition: gated(event), fallback: chords[0] ?? null }
+                    );
+                  }
+                }}
               >
                 {spread.label}
               </button>
@@ -200,7 +219,14 @@ export function ChordPicker({
                 type="button"
                 className={classes.option}
                 aria-pressed={Math.min(voicing.inversion, inversions - 1) === index}
-                onClick={() => onVoicingChange({ ...voicing, inversion: index })}
+                onClick={(event) => {
+                  if (event.detail < 2) {
+                    onVoicingChange(
+                      { ...voicing, inversion: index },
+                      { audition: gated(event), fallback: chords[0] ?? null }
+                    );
+                  }
+                }}
               >
                 {label}
               </button>
@@ -276,7 +302,9 @@ export function ChordPicker({
         </div>
 
         <Text size="xs" className={classes.hint}>
-          Hover previews. Click auditions. Double-click or Enter inserts.
+          {previewGate === 'click'
+            ? 'Hover previews. Click auditions. Double-click or Enter inserts.'
+            : 'Hover previews. Click pins, Ctrl+click auditions. Double-click or Enter inserts.'}
         </Text>
       </div>
     </div>

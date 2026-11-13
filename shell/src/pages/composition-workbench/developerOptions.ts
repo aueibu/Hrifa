@@ -15,9 +15,18 @@ export interface DeveloperOptions {
    * (the default) or beside it, to the right.
    */
   chordAnchorLabel: 'on-note' | 'side';
+  /**
+   * What sounds the Chords tool's audition: a plain click on a chord, inversion or spread (the
+   * default), or only Ctrl+click (Cmd+click on macOS). Hover never sounds in either mode.
+   */
+  chordPreviewGate: 'click' | 'ctrl-click';
 }
 
-const defaults: DeveloperOptions = { openIncludesSettings: true, chordAnchorLabel: 'on-note' };
+const defaults: DeveloperOptions = {
+  openIncludesSettings: true,
+  chordAnchorLabel: 'on-note',
+  chordPreviewGate: 'click',
+};
 
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: DeveloperOptions } | null = null;
@@ -44,6 +53,7 @@ export function readDeveloperOptions(): DeveloperOptions {
           ? parsed.openIncludesSettings
           : defaults.openIncludesSettings,
       chordAnchorLabel: parsed.chordAnchorLabel === 'side' ? 'side' : 'on-note',
+      chordPreviewGate: parsed.chordPreviewGate === 'ctrl-click' ? 'ctrl-click' : 'click',
     };
   } catch {
     // A damaged value reads as the defaults.

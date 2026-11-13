@@ -432,6 +432,12 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const [chordVoicing, setChordVoicing] = useState<VoicingSpec>(DEFAULT_VOICING);
   const [hoverChord, setHoverChord] = useState<Chord | null>(null);
   const [pinnedChord, setPinnedChord] = useState<Chord | null>(null);
+  // The grid cell under the pointer while the Chords tool is active (display only: a one-step ghost).
+  const [hoverCell, setHoverCell] = useState<{
+    pitchMidicents: number;
+    start: number;
+    step: number;
+  } | null>(null);
   const auditionRef = useRef<((notes: PlacedNote[], velocity?: number) => void) | null>(null);
   const [developerOptions] = useDeveloperOptions();
   function clearChordGhosts() {
@@ -447,6 +453,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     setToolState(next);
     setRampState(null);
     setPick(null);
+    setHoverCell(null);
     closeChordPicker();
   }
   // Per-viewer: the remembered entry length and the grid. Neither is history or part of a project.
@@ -977,10 +984,32 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const chordLength = preferences.entryLength ?? chordAnchor?.step ?? 1;
 
   const chordGhosts = useMemo(() => {
-    if (!chordsActive || !chordAnchor) {
+    if (!chordsActive) {
       return undefined;
     }
+    // One grid step under the pointer, before any click. Not shown while a picker chord is hovered
+    // (its own ghosts are), nor over the anchor cell (the anchor ghost is there).
+    const onAnchorCell =
+      hoverCell !== null &&
+      chordAnchor !== null &&
+      hoverCell.start === chordAnchor.start &&
+      hoverCell.pitchMidicents === chordAnchor.pitchMidicents;
+    const cellGhost: NonNullable<ComponentProps<typeof PianoRoll>['ghostNotes']> =
+      hoverCell && !hoverChord && !onAnchorCell
+        ? [
+            {
+              pitchMidicents: hoverCell.pitchMidicents,
+              start: hoverCell.start,
+              duration: hoverCell.step,
+              variant: 'hover',
+            },
+          ]
+        : [];
+    if (!chordAnchor) {
+      return cellGhost.length > 0 ? cellGhost : undefined;
+    }
     const ghosts: NonNullable<ComponentProps<typeof PianoRoll>['ghostNotes']> = [
+      ...cellGhost,
       {
         pitchMidicents: chordAnchor.pitchMidicents,
         start: chordAnchor.start,
@@ -1005,6 +1034,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   }, [
     chordsActive,
     chordAnchor,
+    hoverCell,
     pinnedChord,
     hoverChord,
     chordVoicing,
@@ -1029,15 +1059,41 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     clearChordGhosts();
   }
 
-  function pinChord(chord: Chord) {
+  /** Pins a chord's ghost; sounds it (through the mocked-in-tests audition path) only when asked. */
+  function pinChord(chord: Chord, { audition }: { audition: boolean }) {
     if (!chordAnchor) {
       return;
     }
     setPinnedChord(chord);
-    auditionRef.current?.(
-      chordNotes(chord, chordAnchor, chordVoicing, chordLength),
-      preferences.entryVelocity ?? undefined
-    );
+    if (audition) {
+      auditionRef.current?.(
+        chordNotes(chord, chordAnchor, chordVoicing, chordLength),
+        preferences.entryVelocity ?? undefined
+      );
+    }
+  }
+
+  /**
+   * A spread or inversion click: takes the new voicing and, on the current chord (the pinned one,
+   * else the hovered one, else the first offered), moves the pinned ghost to it and, when the gate
+   * allows, auditions it with that voicing. With no chord at all it only changes the voicing.
+   */
+  function changeVoicing(
+    next: VoicingSpec,
+    { audition, fallback }: { audition: boolean; fallback: Chord | null }
+  ) {
+    setChordVoicing(next);
+    const chord = pinnedChord ?? hoverChord ?? fallback;
+    if (!chord || !chordAnchor) {
+      return;
+    }
+    setPinnedChord(chord);
+    if (audition) {
+      auditionRef.current?.(
+        chordNotes(chord, chordAnchor, next, chordLength),
+        preferences.entryVelocity ?? undefined
+      );
+    }
   }
 
   // Escape closes the picker (clears its anchor and ghosts) from the editor or the page body, never
@@ -1288,6 +1344,11 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
             }
             reveal={reveal}
             ghostNotes={chordGhosts}
+            onAnchorHover={(anchor) =>
+              setHoverCell(
+                anchor ? { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) } : null
+              )
+            }
             onAnchorClick={(anchor) => {
               // Snapped to the project EDO grid before anything (picker, ghosts, voicing) sees it.
               const snapped = { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) };
@@ -1343,6 +1404,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
             host={preferences.chordHost}
             onHostChange={(chordHost) => updatePreferences({ chordHost })}
             onClose={chordAnchor ? closeChordPicker : undefined}
+            dockWidth={preferences.chordDockWidth}
+            onDockWidthChange={(chordDockWidth) => updatePreferences({ chordDockWidth })}
           >
             {chordAnchor ? (
               <ChordPicker
@@ -1354,7 +1417,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
                   clearChordGhosts();
                 }}
                 voicing={chordVoicing}
-                onVoicingChange={setChordVoicing}
+                onVoicingChange={changeVoicing}
+                previewGate={developerOptions.chordPreviewGate}
                 onHover={setHoverChord}
                 onPin={pinChord}
                 onInsert={insertChord}

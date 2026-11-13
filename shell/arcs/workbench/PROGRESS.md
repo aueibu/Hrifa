@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M5b committed (083c04c); awaiting the human's checkpoint
-- State: awaiting human (M5b checkpoint, judged by eye)
+- Current milestone: M5c (M5b committed 083c04c; checkpoint feedback received)
+- State: building
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -20,6 +20,8 @@
 | M4 | Mock built: `scratchpad/chord-picker-mock.html` (outside repo; 686 lines; six hosts, three widths, register toggle, ghost/pin/insert). Not yet viewed by eye by anyone. | n/a (no repo change) | Human decided: root stays at the click (voices below), dock beside the roll plus takeover, Root/Common-tone as small top buttons, single-column spread and inversion, scale override in a fold at tool level, note name on the note by default, with a dev toggle switching placement between on-note and beside-it (corrected). Written into ARC.md under M4. M5 split into M5a (plumbing) and M5b (picker). |
 | M5a | Built: PianoRoll `ghostNotes` + `onAnchorClick` (opt-in), 'chords' tool key 7, `ClipEditorProps.onChordAnchor`; 6 new tests | `check:workbench` green (builder run, 75 files / 1245 tests) plus Melodicization/Mixer/PianoRoll/EditorPalette tests unchanged (17 files, 327 tests) | DECISIONS W-15. Reviewer: pass with fixes (crosshair cursor specificity, rename `pitch` to `pitchMidicents` in `onChordAnchor`, a real ghost-ignores-pointer test); builder applying them. Look of hover/pinned/anchor ghosts to be judged at the M5b checkpoint. Fixes applied and committed. |
 | M5b | Built: `chordInput/ChordPicker`, `ChordPickerHost` (dock + canvas takeover), `placement.ts`, ghost `labelPlacement`, dev option `chordAnchorLabel`, `chordHost` preference, `canvasTakeover` slot via `SplitStage`; audition via `ChordAudition`; insert via one `commit(addNotes)` | `check:workbench` green (builder run, 78 files / 1278 tests) plus Melodicization/Mixer/PianoRoll/EditorPalette tests (25 files / 436) | DECISIONS W-16. Reviewer: pass with fixes (non-12-EDO anchor not snapped to the EDO grid; takeover over the canvas while the panel is collapsed; Esc in the Scale select closes the picker; audition packet cast). Builder applying them; polish items backlogged. Default length = last-used entry length else grid step; override/voicing are editor-body state, reset on reload/clip change; click rounded to EDO step, `addNotes` rounds midicents (exact at 12-EDO, <0.5c otherwise). Judged by eye at the human checkpoint. |
+| M5b checkpoint | Human tried it in the app 2026-11-13: dock width and takeover good, feels like snapping into a slot. Requested: ghosts look like normal notes slightly more transparent; dock default ~2x wide plus resize grabber; preview on inversion/spread click; hover ghost note before click with the Chords tool; developer option gating preview behind Ctrl+click or plain click | n/a | Written into ARC.md as M5b Checkpoint decisions and milestone M5c. |
+| M5c | Built: note-styled ghosts, `onAnchorHover`, dock splitter + `chordDockWidth` (default 30rem), audition on inversion/spread, `chordPreviewGate` dev option; wide-layout breakpoint 520 to 440px | `check:workbench` green (builder run, 79 files / 1301 tests) plus PianoRoll/EditorPalette/Melodicization/Mixer (20 files / 378) | DECISIONS W-17. Reviewer running. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 
 ## Shared touches (locks taken)
@@ -32,4 +34,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-Human tries M5b in the app (`corepack yarn dev` from shell/): Chords tool (key 7), click the roll, hover/click/double-click chords, dock vs takeover, Scale fold. Record decisions in ARC.md under M5b, then launch M6 (common-tone mode).
+Re-take the `src/components/PianoRoll/` lock (LOCKS.md row, re-read), launch the M5c builder.

@@ -201,9 +201,9 @@ describe('the Chords tool picker in the note clip editor', () => {
     const user = userEvent.setup();
     const roll = await open();
     clickAnchor(roll, 60);
+    // Choosing an inversion pins the first chord (C) at the new voicing.
     await user.click(screen.getByRole('button', { name: '1st inv.' }));
-    await user.hover(chord('C'));
-    const hover = [...ghosts('hover')];
+    const hover = [...ghosts('pinned')];
     expect(hover).toHaveLength(3);
     // E3, G3 and C4: the root exactly on the C4 row, the other two below it (greater y).
     const tops = hover.map((el) => parseFloat(el.style.top)).sort((a, b) => a - b);
@@ -329,5 +329,179 @@ describe('the Chords tool picker in the note clip editor', () => {
     expect(pitches().map((entry) => entry.pitch)).toEqual([6900, 7200, 7600]);
     // The roll stays where it is under the takeover.
     expect(screen.getByRole('group', { name: /Note clip piano roll/ })).toBeInTheDocument();
+  });
+
+  const played = () =>
+    engine.play.mock.calls.map((call) =>
+      (call as unknown as [{ plan: { events: { pitchMidicents: number }[] } }])[0].plan.events.map(
+        (event) => event.pitchMidicents
+      )
+    );
+
+  describe('inversion and spread audition', () => {
+    it('an inversion click auditions the first chord with the new voicing and pins its ghost', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 60);
+      await user.click(screen.getByRole('button', { name: '1st inv.' }));
+      await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
+      // C major, first inversion, root at the click: E3 G3 C4.
+      expect(played()[0]).toEqual([5200, 5500, 6000]);
+      expect(ghosts('pinned')).toHaveLength(3);
+      expect(noteCount()).toBe(0);
+    });
+
+    it('a double-click on an inversion button auditions once and inserts nothing', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 60);
+      await user.dblClick(screen.getByRole('button', { name: '1st inv.' }));
+      await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
+      expect(noteCount()).toBe(0);
+    });
+
+    it('a spread click auditions the pinned chord, not the first one', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 69);
+      await user.click(chord('Am'));
+      await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
+      await user.click(screen.getByRole('button', { name: 'Open' }));
+      await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(2));
+      const [, second] = played();
+      expect(second).toHaveLength(3);
+      expect(second.every((pitch) => pitch % 100 === 0)).toBe(true);
+      expect(ghosts('pinned')).toHaveLength(3);
+      // Am has A4 as the root: the open voicing keeps it on the click.
+      expect(second).toContain(6900);
+    });
+
+    it('hovering the voicing buttons is silent', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 60);
+      await user.hover(screen.getByRole('button', { name: '1st inv.' }));
+      await user.hover(screen.getByRole('button', { name: 'Drop 2' }));
+      expect(engine.play).not.toHaveBeenCalled();
+    });
+
+    it('with no chord offered at all, nothing sounds', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      act(() =>
+        settingsApi.updateSettings({ pitchSet: { ...settingsApi.settings.pitchSet, pcs: [] } })
+      );
+      clickAnchor(roll, 60);
+      await user.click(screen.getByRole('button', { name: 'Open' }));
+      expect(engine.play).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('the preview gate (developer option)', () => {
+    beforeEach(() => {
+      localStorage.setItem(
+        DEVELOPER_OPTIONS_KEY,
+        JSON.stringify({ chordPreviewGate: 'ctrl-click' })
+      );
+    });
+
+    it('a plain click on a chord pins the ghost without sound; Ctrl+click sounds once', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 69);
+      await user.click(chord('Am'));
+      expect(engine.play).not.toHaveBeenCalled();
+      expect(ghosts('pinned')).toHaveLength(3);
+      await user.keyboard('{Control>}');
+      await user.click(chord('Am'));
+      await user.keyboard('{/Control}');
+      await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
+    });
+
+    it('inversion and spread follow the same gate', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 60);
+      await user.click(screen.getByRole('button', { name: '1st inv.' }));
+      await user.click(screen.getByRole('button', { name: 'Open' }));
+      expect(engine.play).not.toHaveBeenCalled();
+      await user.keyboard('{Control>}');
+      await user.click(screen.getByRole('button', { name: '2nd inv.' }));
+      await user.keyboard('{/Control}');
+      await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
+    });
+
+    it('double-click still inserts and Enter still inserts, with no sound', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 60);
+      await user.dblClick(chord('C'));
+      expect(noteCount()).toBe(3);
+      expect(engine.play).not.toHaveBeenCalled();
+    });
+  });
+
+  it('the dock width is remembered per viewer through the splitter', async () => {
+    const roll = await open();
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '7' });
+    fireEvent.keyDown(screen.getByRole('separator', { name: /Resize chord dock/ }), {
+      key: 'ArrowLeft',
+    });
+    expect(JSON.parse(localStorage.getItem(NOTE_EDITOR_PREFERENCES_KEY)!).chordDockWidth).toBe(496);
+  });
+
+  it('double-click in click mode does not audition twice', async () => {
+    const user = userEvent.setup();
+    const roll = await open();
+    clickAnchor(roll, 60);
+    await user.dblClick(chord('C'));
+    await waitFor(() => expect(engine.play.mock.calls.length).toBeLessThanOrEqual(1));
+    expect(noteCount()).toBe(3);
+  });
+
+  describe('the hover ghost cell', () => {
+    const move = (roll: HTMLElement, midi: number, x = 70) =>
+      fireEvent.pointerMove(roll, { clientX: x, clientY: rowY(midi), pointerId: 1 });
+
+    it('shows one grid step under the pointer with the Chords tool, and clears on leave', async () => {
+      const roll = await open();
+      roll.focus();
+      move(roll, 60);
+      expect(ghosts('hover')).toHaveLength(0);
+      fireEvent.keyDown(roll, { key: '7' });
+      move(roll, 60);
+      const cell = ghosts('hover');
+      expect(cell).toHaveLength(1);
+      expect(parseFloat(cell[0].style.width)).toBeCloseTo(32, 0);
+      expect(parseFloat(cell[0].style.left)).toBeCloseTo(64, 0);
+      fireEvent.pointerLeave(roll);
+      expect(ghosts('hover')).toHaveLength(0);
+      expect(noteCount()).toBe(0);
+      expect(engine.play).not.toHaveBeenCalled();
+    });
+
+    it('clears when the tool changes', async () => {
+      const roll = await open();
+      roll.focus();
+      fireEvent.keyDown(roll, { key: '7' });
+      move(roll, 60);
+      expect(ghosts('hover')).toHaveLength(1);
+      fireEvent.keyDown(roll, { key: '1' });
+      expect(ghosts('hover')).toHaveLength(0);
+    });
+
+    it('is suppressed over the anchor cell and while a picker chord is hovered', async () => {
+      const user = userEvent.setup();
+      const roll = await open();
+      clickAnchor(roll, 60);
+      move(roll, 60);
+      expect(ghosts('hover')).toHaveLength(0);
+      move(roll, 64);
+      expect(ghosts('hover')).toHaveLength(1);
+      await user.hover(chord('C'));
+      // Only the chord's three hover ghosts, not the cell as well.
+      expect(ghosts('hover')).toHaveLength(3);
+    });
   });
 });

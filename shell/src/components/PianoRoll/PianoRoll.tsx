@@ -266,7 +266,7 @@ export interface PianoRollProps {
    */
   toolCursors?: boolean;
   /**
-   * Ghost notes (opt-in): faint dashed outlines the owner wants shown (a chord being previewed, an
+   * Ghost notes (opt-in): notes drawn like real ones at reduced opacity that the owner wants shown (a chord being previewed, an
    * anchor). Display only: they take no pointer events and never touch selection, hit-testing,
    * scroll extents or edits. Placed by the roll's midicent mapping, so a fractional or off-grid
    * pitch sits between rows. Without it nothing is drawn.
@@ -278,6 +278,12 @@ export interface PianoRollProps {
    * creates no note, makes no sound and leaves the selection alone.
    */
   onAnchorClick?(anchor: { pitchMidicents: number; start: number; step: number }): void;
+  /**
+   * With the tool `chords` active (opt-in): the grid cell under the pointer, snapped exactly like
+   * `onAnchorClick`, reported when it changes; `null` when the pointer leaves the roll or the tool
+   * changes. Display only: no note, no sound, no selection change.
+   */
+  onAnchorHover?(anchor: { pitchMidicents: number; start: number; step: number } | null): void;
 }
 
 /** One ghost note: pitch in midicents, onset and duration in quarter notes. */
@@ -454,6 +460,7 @@ export function PianoRoll({
   toolCursors: withToolCursors = false,
   ghostNotes: ghostOverlay,
   onAnchorClick,
+  onAnchorHover,
 }: PianoRollProps) {
   const infoBar = useInfoBarActive();
   const minTimeZoom = timeZoomRange?.min ?? DEFAULT_MIN_TIME_ZOOM;
@@ -498,6 +505,19 @@ export function PianoRoll({
   }
 
   const rollRef = useRef<HTMLDivElement>(null);
+  // The last cell reported through onAnchorHover (to report changes only), and the latest callback.
+  const anchorHoverCell = useRef<string | null>(null);
+  const onAnchorHoverRef = useRef(onAnchorHover);
+  onAnchorHoverRef.current = onAnchorHover;
+  useEffect(() => {
+    // The tool changed (or the roll went away): clear whatever hover was reported.
+    return () => {
+      if (anchorHoverCell.current !== null) {
+        anchorHoverCell.current = null;
+        onAnchorHoverRef.current?.(null);
+      }
+    };
+  }, [activeTool]);
   // The pitch row under the pointer while a pick is waiting (roll or keys), for the highlight.
   const [pickHover, setPickHover] = useState<number | null>(null);
   const gesture = useRef<Gesture | null>(null);
@@ -2026,6 +2046,18 @@ export function PianoRoll({
                       setPickHover(cellAt(rollPointAt(event)).midi);
                       return;
                     }
+                    if (activeTool === 'chords' && onAnchorHover) {
+                      const { index, midi } = cellAt(rollPoint(event));
+                      const key = `${index}:${midi}`;
+                      if (anchorHoverCell.current !== key) {
+                        anchorHoverCell.current = key;
+                        onAnchorHover({
+                          pitchMidicents: midi * 100,
+                          start: index * snapUnit,
+                          step: snapUnit,
+                        });
+                      }
+                    }
                     if (gesture.current) {
                       moveGesture(event);
                     } else {
@@ -2051,6 +2083,10 @@ export function PianoRoll({
                     setMarqueeIds(null);
                   }}
                   onPointerLeave={() => {
+                    if (anchorHoverCell.current !== null) {
+                      anchorHoverCell.current = null;
+                      onAnchorHover?.(null);
+                    }
                     if (pickPitch) {
                       setPickHover(null);
                     }
@@ -2252,11 +2288,13 @@ export function PianoRoll({
                     if (!span) {
                       return null;
                     }
+                    const ghostColor = pitchColor?.(ghost.pitchMidicents);
                     return (
                       <span
                         // oxlint-disable-next-line react/no-array-index-key
                         key={`${index}`}
-                        className={classes.ghostOverlay}
+                        className={`${classes.note} ${classes.ghostOverlay}`}
+                        data-colored={ghostColor ? true : undefined}
                         data-ghost-overlay={ghost.variant}
                         data-label-placement={ghost.labelPlacement ?? 'on-note'}
                         aria-hidden="true"
@@ -2265,6 +2303,7 @@ export function PianoRoll({
                           left: span.left,
                           top: rect.top,
                           width: span.width,
+                          ...(ghostColor ? ({ '--note-color': ghostColor } as CSSProperties) : {}),
                         }}
                       >
                         {ghost.labelPlacement === 'side' ? (

@@ -17,7 +17,12 @@ function Harness({
   ghosts?: PianoRollGhostNote[];
   tool?: string;
   selected?: string[];
-  spies: { onSelectionChange: () => void; onAddNote: () => void; onAnchorClick?: () => void };
+  spies: {
+    onSelectionChange: () => void;
+    onAddNote: () => void;
+    onAnchorClick?: () => void;
+    onAnchorHover?: (anchor: unknown) => void;
+  };
 }) {
   const [view, setView] = useState<PianoRollViewState>({ ...defaultPianoRollView, framed: true });
   return (
@@ -37,12 +42,18 @@ function Harness({
       activeTool={tool}
       onAddNote={spies.onAddNote}
       onAnchorClick={spies.onAnchorClick}
+      onAnchorHover={spies.onAnchorHover}
       ghostNotes={ghosts}
     />
   );
 }
 
-const spies = () => ({ onSelectionChange: vi.fn(), onAddNote: vi.fn(), onAnchorClick: vi.fn() });
+const spies = () => ({
+  onSelectionChange: vi.fn(),
+  onAddNote: vi.fn(),
+  onAnchorClick: vi.fn(),
+  onAnchorHover: vi.fn(),
+});
 const overlays = () => document.querySelectorAll('[data-ghost-overlay]');
 
 describe('PianoRoll ghostNotes', () => {
@@ -135,5 +146,61 @@ describe('PianoRoll ghostNotes', () => {
     );
     expect(s.onAddNote).not.toHaveBeenCalled();
     expect(s.onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it('wears the note class (same fill, outline and radius tokens) and stays see-through', () => {
+    render(
+      <Harness
+        spies={spies()}
+        ghosts={[{ pitchMidicents: 6000, start: 1, duration: 2, variant: 'hover' }]}
+      />
+    );
+    const ghost = overlays()[0] as HTMLElement;
+    expect(ghost.className).toMatch(/note/);
+    expect(ghost.className).toMatch(/ghostOverlay/);
+  });
+
+  describe('onAnchorHover', () => {
+    const at = { clientX: 70, clientY: (127 - 60) * 22 + 3, pointerId: 1 };
+
+    it('chords tool: reports the snapped cell once per cell, creates nothing', () => {
+      const s = spies();
+      render(<Harness spies={s} tool="chords" />);
+      const roll = screen.getByRole('group', { name: /Piano roll/ });
+      fireEvent.pointerMove(roll, at);
+      fireEvent.pointerMove(roll, { ...at, clientX: 71 });
+      expect(s.onAnchorHover).toHaveBeenCalledTimes(1);
+      expect(s.onAnchorHover).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pitchMidicents: 6000,
+          start: expect.any(Number),
+          step: expect.any(Number),
+        })
+      );
+      expect(s.onAddNote).not.toHaveBeenCalled();
+      expect(s.onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it('calls with null on pointer leave', () => {
+      const s = spies();
+      render(<Harness spies={s} tool="chords" />);
+      const roll = screen.getByRole('group', { name: /Piano roll/ });
+      fireEvent.pointerMove(roll, at);
+      fireEvent.pointerLeave(roll);
+      expect(s.onAnchorHover).toHaveBeenLastCalledWith(null);
+    });
+
+    it('is silent with another tool, and calls null when the tool changes away', () => {
+      const s = spies();
+      const { rerender } = render(<Harness spies={s} tool="pointer" />);
+      const roll = screen.getByRole('group', { name: /Piano roll/ });
+      fireEvent.pointerMove(roll, at);
+      expect(s.onAnchorHover).not.toHaveBeenCalled();
+      rerender(<Harness spies={s} tool="chords" />);
+      fireEvent.pointerMove(roll, at);
+      expect(s.onAnchorHover).toHaveBeenCalledTimes(1);
+      rerender(<Harness spies={s} tool="pointer" />);
+      expect(s.onAnchorHover).toHaveBeenLastCalledWith(null);
+    });
   });
 });

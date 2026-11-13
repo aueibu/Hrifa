@@ -10,9 +10,39 @@
 
 .frame[data-chord-host='dock'] {
   border-radius: var(--radius-panel);
-  flex: 0 0 15rem;
+  /* The width is set inline (the viewer's, else 30rem), so the splitter can resize it. */
+  flex: 0 0 30rem;
   overflow: hidden;
-  width: 15rem;
+  width: 30rem;
+}
+
+/* The drag handle between the roll and the dock. */
+.splitter {
+  background: transparent;
+  cursor: col-resize;
+  flex: 0 0 6px;
+  margin-inline: -3px;
+  position: relative;
+  touch-action: none;
+  z-index: 1;
+}
+
+.splitter::after {
+  background: var(--text-muted);
+  content: '';
+  inset: 0 2px;
+  opacity: 0.35;
+  position: absolute;
+}
+
+.splitter:hover::after,
+.splitter:focus-visible::after {
+  background: var(--accent);
+  opacity: 1;
+}
+
+.splitter:focus-visible {
+  outline: none;
 }
 
 .frame[data-chord-host='takeover'] {

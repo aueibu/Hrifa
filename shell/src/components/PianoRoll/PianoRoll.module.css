@@ -355,24 +355,15 @@
 }
 
 /*
- * An owner-supplied ghost note (ghostNotes prop): a faint panel-tinted fill with a dashed outline,
- * never interactive. Hover is muted, pinned takes a mark hue, the anchor is the accent.
+ * An owner-supplied ghost note (ghostNotes prop): it also carries `.note`, so it wears exactly a
+ * note's fill, outline, radius and type (and the pitch color when the roll has one), at reduced
+ * opacity and never interactive. The variants differ only by opacity and outline weight: hover is
+ * lightest, pinned a little stronger, the anchor strongest.
  */
 .ghostOverlay {
-  align-items: center;
-  background: color-mix(in srgb, var(--panel) 55%, transparent);
-  border: 1px dashed var(--text-muted);
-  border-radius: 2px;
-  box-sizing: border-box;
-  color: var(--text-muted);
-  display: flex;
-  font-size: 10px;
   justify-content: center;
-  overflow: hidden;
-  padding: 0 2px;
+  opacity: 0.45;
   pointer-events: none;
-  position: absolute;
-  white-space: nowrap;
   z-index: 3;
 }
 
@@ -392,15 +383,13 @@
 }
 
 .ghostOverlay[data-ghost-overlay='pinned'] {
-  background: color-mix(in srgb, var(--mark-blue) 22%, transparent);
-  border-color: var(--mark-blue);
-  color: var(--text);
+  opacity: 0.55;
+  outline: 1px solid color-mix(in srgb, var(--text) 60%, transparent);
 }
 
 .ghostOverlay[data-ghost-overlay='anchor'] {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-  border-color: var(--accent);
-  color: var(--text);
+  opacity: 0.7;
+  outline: 2px solid var(--text);
 }
 
 .roll[data-tool='eraser'] {

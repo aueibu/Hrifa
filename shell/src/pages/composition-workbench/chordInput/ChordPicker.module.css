@@ -124,8 +124,8 @@
   padding-top: 0.25rem;
 }
 
-/* A wide host (the takeover): chords on the left, the parallel voicing columns and scale beside. */
-@container chord-picker (min-width: 520px) {
+/* A wide host (the takeover, or the dock at its default 30rem, 464px inside its padding): chords on the left, the parallel voicing columns and scale beside. */
+@container chord-picker (min-width: 440px) {
   .layout {
     grid-template-areas:
       'modes modes'

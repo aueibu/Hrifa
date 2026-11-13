@@ -25,6 +25,7 @@ describe('DeveloperMenu', () => {
     expect(JSON.parse(localStorage.getItem(DEVELOPER_OPTIONS_KEY)!)).toEqual({
       openIncludesSettings: false,
       chordAnchorLabel: 'on-note',
+      chordPreviewGate: 'click',
     });
     expect(historyChangeCount()).toBe(before);
   });
@@ -38,5 +39,16 @@ describe('DeveloperMenu', () => {
     expect(readDeveloperOptions().chordAnchorLabel).toBe('side');
     await user.click(screen.getByLabelText('On the note'));
     expect(readDeveloperOptions().chordAnchorLabel).toBe('on-note');
+  });
+
+  it('switches the chord preview gate between click and Ctrl+click', async () => {
+    const user = userEvent.setup();
+    render(<DeveloperMenu />);
+    await user.click(screen.getByRole('button', { name: 'Developer' }));
+    expect(readDeveloperOptions().chordPreviewGate).toBe('click');
+    await user.click(await screen.findByLabelText('Ctrl+click'));
+    expect(readDeveloperOptions().chordPreviewGate).toBe('ctrl-click');
+    await user.click(screen.getByLabelText('On click'));
+    expect(readDeveloperOptions().chordPreviewGate).toBe('click');
   });
 });

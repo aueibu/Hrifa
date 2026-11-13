@@ -44,6 +44,11 @@ export type ActionSectionId = (typeof ACTION_SECTION_IDS)[number];
 export const CHORD_HOSTS = ['dock', 'takeover'] as const;
 export type ChordHost = (typeof CHORD_HOSTS)[number];
 
+/** The chord dock's width bounds and default, in pixels (14rem, 30rem, a generous ceiling). */
+export const MIN_CHORD_DOCK_WIDTH = 224;
+export const DEFAULT_CHORD_DOCK_WIDTH = 480;
+export const MAX_CHORD_DOCK_WIDTH = 1600;
+
 export interface NoteEditorPreferences {
   /** Quarter notes; null until the viewer has set one (the grid unit is used). */
   entryLength: number | null;
@@ -59,6 +64,8 @@ export interface NoteEditorPreferences {
   actionSections: ActionSectionId[];
   /** Where the Chords tool's picker sits: the dock beside the roll, or the takeover of the canvas area. */
   chordHost: ChordHost;
+  /** The chord dock's width in pixels; null until the viewer has dragged it (the default is used). */
+  chordDockWidth: number | null;
 }
 
 const defaults: NoteEditorPreferences = {
@@ -69,6 +76,7 @@ const defaults: NoteEditorPreferences = {
   laneHeight: null,
   actionSections: [...ACTION_SECTION_IDS],
   chordHost: 'dock',
+  chordDockWidth: null,
 };
 
 const listeners = new Set<() => void>();
@@ -128,6 +136,13 @@ export function readNoteEditorPreferences(): NoteEditorPreferences {
           : null,
       actionSections: knownSections(parsed.actionSections),
       chordHost: parsed.chordHost === 'takeover' ? 'takeover' : 'dock',
+      chordDockWidth:
+        typeof parsed.chordDockWidth === 'number' &&
+        Number.isFinite(parsed.chordDockWidth) &&
+        parsed.chordDockWidth >= MIN_CHORD_DOCK_WIDTH &&
+        parsed.chordDockWidth <= MAX_CHORD_DOCK_WIDTH
+          ? parsed.chordDockWidth
+          : null,
     };
   } catch {
     // A damaged value reads as the defaults.
@@ -152,6 +167,11 @@ export function writeNoteEditorPreferences(patch: Partial<NoteEditorPreferences>
   if (next.laneHeight !== null) {
     next.laneHeight = Number.isFinite(next.laneHeight)
       ? Math.min(MAX_VELOCITY_LANE_HEIGHT, Math.max(MIN_VELOCITY_LANE_HEIGHT, next.laneHeight))
+      : null;
+  }
+  if (next.chordDockWidth !== null) {
+    next.chordDockWidth = Number.isFinite(next.chordDockWidth)
+      ? Math.min(MAX_CHORD_DOCK_WIDTH, Math.max(MIN_CHORD_DOCK_WIDTH, next.chordDockWidth))
       : null;
   }
   next.actionSections = knownSections(next.actionSections);
