@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M2 committed; next M3
-- State: ready to build M3
+- Current milestone: M3 in progress (builder briefed 2026-11-14, not yet reported)
+- State: building (M3 builder running; locks held)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -16,10 +16,10 @@
 | M2 (2026-11-13) | Done, committed 2026-11-14 | own paths green: `tsc` clean for `src/lib/stage/`, `oxfmt` and `oxlint` clean, `vitest run src/lib/stage` 5 files 82 tests. `check:stage` RED only from `src/pages/harmonic-field-lab/state/m6.test.ts(76,12)(77,12)` TS2531 (lab arc mid-M6) | Builder (2 attempts) wrote `src/lib/stage/` (size, registry, splitters, layout, persist, README, 5 test files) and ARCHITECTURE.md section 9. Reviewer: pass; 6 corrections applied. The lab criterion "narrow screen keeps the inner pair" is replaced by the left-to-right prefix rule (no sides on the Stage). Decisions logged as `STAGE-5`. Held one day on shell rule 14 (lab arc m6.test.ts TS2531); the lab arc committed M6, no locks held, `check:stage` green on 2026-11-14 (5 files, 71 tests). |
 
 ## Shared touches (locks taken)
-`package.json`: taken and released 2026-11-13 (setup, commit `9484348`). Planned: `package.json` (setup, `check:stage`), then `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts` (M3), `shell/ARCHITECTURE.md` (M3, M6).
+`package.json`: taken and released 2026-11-13 (setup, commit `9484348`). M3 locks taken 2026-11-14 and STILL HELD (rows in `arcs/LOCKS.md`): `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`. Release only after the M3 commit. `shell/ARCHITECTURE.md` (lists the new folders) needs its own lock row when the orchestrator edits it at the end of M3. Planned later: `shell/ARCHITECTURE.md` (M3, M6), `src/components/` and `src/theme/` only at M6 if the human decides.
 
 ## Open questions for human
 - None open.
 
 ## Next action
-Start M3 (Stage, slots, both splitter kinds, spike page `/stage`): take locks on `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts` (no active locks now), brief a builder (builders run `corepack yarn test:related <files>` only, new shell rule), then a reviewer, then the human checkpoint. M3 notes from the M2 review: always show at least one column; call `clampColumnShares` after measuring; pass real default columns as the `parseLayout` fallback; look up column indexes at action time; Stage developer option for the tooltip delay (330 ms).
+M3 resume steps (a fresh session starts here): (1) `git status` in `src/pages/stage/` and the three locked files; if a builder report exists in the transcript or the files are present and complete, go to (3); if the builder never finished, re-brief it from the M3 section of ARC.md with the brief summarised below. (2) Builder brief summary: registry in the React layer, mounted-once via one persistent host element per module id and portals, slots with 1.875rem header strip and tools, ResizeObserver size with `data-slot-size`, minSize enforced in the Stage, stacks and column splitters (pointer and keyboard), at least one visible column, hidden-columns switcher, persistence under `hrifa.stage.layout.v1` with a real fallback layout, three stand-in modules (roll, picker with counter, notes), page `/stage` with Modules menu, Show sizes, Reset layout, route and applet registration, tests listed in ARC.md M3 plus minSize and storage cases, ARCHITECTURE.md section 10; builders run `corepack yarn test:related <files>` only. (3) Run a reviewer (read the diff, one targeted test if needed), apply corrections (builder attempt 2). (4) The orchestrator runs `corepack yarn check:stage` and one `vite build` once, records both here. (5) Add a lock row for `shell/ARCHITECTURE.md`, list the new folders (`src/lib/stage/`, `src/pages/stage/`) and the page in the map, commit path-scoped (`src/lib/stage/`, `src/pages/stage/`, `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `ARCHITECTURE.md`, `DECISIONS.md` if new rows, `arcs/stage/`), then remove the lock rows. (6) Stop at the M3 human checkpoint: tell the human to open `/stage` (dev server: `corepack yarn dev` in `shell/`), try dragging both splitter kinds, moving the picker stand-in between columns, stacking, shrinking the window (at least one column stays), Show sizes, Reset layout; judged by hand and eye. Record their answers in ARC.md (M3 Checkpoint decisions) before M4. Note: the tooltip-delay developer option (330 ms, STAGE-4) belongs to M4 (the kit), not M3.
