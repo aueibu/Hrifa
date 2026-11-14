@@ -86,11 +86,11 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 
 ## Open questions for human
 - Before M8: approve the draft M8 acceptance list (chord sketchpad with provenance and reload); how the shelf shares the M7 card-list model.
-- Before M7: Manual pivot by degree (Infinitone parity, now the default via `manualDeg`) or by held key? Both work in the engine.
+- Before M7 (open): does a card store a whole tab snapshot or only the subset's notes? While the retuner is on, do the main views follow the active card or stay on the tab?
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M7 (card list + retuner panel). Open question before M7: manual pivot by degree or by held key? (Optional first: split the big page-test files, see the Speed + workflow row.)
+M7 (card list + retuner panel). M7 brief. Manual pivot decided (by degree, 2026-11-14). Two open questions to the human first: card = whole tab snapshot or subset notes only; do the main views follow the active card or stay on the tab.
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.

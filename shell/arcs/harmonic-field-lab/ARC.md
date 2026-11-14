@@ -201,7 +201,7 @@ Proposal:
   - [ ] Playing ≥2 keys with Auto on runs `retuneStep`; the active card switches; held voices glide; everything sounding lights.
   - [ ] "Why this card won" table (each card's predicted chord, score, winner, sortable). Drift readout in cents and as a ratio when exact.
   - [ ] Headless behaviour test reproduces the M2 drift vector through the UI; the human checks audio.
-- Checkpoint decisions (human, …):
+- Checkpoint decisions (human, 2026-11-14): **Manual pivot = by degree** (`manualDeg`, Infinitone parity; the pivot need not be held). Pivot by held key (`manualKey`) is a later idea, in BACKLOG, not built in M7.
 - Human checkpoint after: **yes** (audio + feel)
 
 ### M8 (DRAFT, needs the human's approval of the acceptance list before building): Chord sketchpad
