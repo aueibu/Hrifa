@@ -114,6 +114,7 @@ Each milestone is small enough for one builder run and has criteria a command or
   - Density: keep only `compact`; drop `roomy` and the side-by-side density demo (less to manage).
   - Inspector: asked whether a note panel and a clip panel should be reserved or dynamic; orchestrator recommended dynamic (note panel with its clip's panel below, clip alone, or one hint); human agreed (2026-11-14) and chose top-down specificity: the clip's panel first, then the note's panel under it when a note is selected. Built in M5b.
   - Nothing felt bound or awkward.
+  - Follow-up (M5c, human 2026-11-14): link the canvas and the roll in the spike (clicking a canvas clip scrolls the roll to its notes; selecting a note highlights its clip on the canvas), using the PianoRoll's existing props only; the unified clips-on-one-roll idea goes to BACKLOG `[workbench]` and M6.
 
 ### M6: Promotion and adoption plan (decision milestone)
 - Scope: documents, plus `DECISIONS.md`/`BACKLOG.md` rows. Decide with the human: where the pure core and the kit live permanently (`src/lib/stage/` plus `src/components/` under a lock, or stay in a page folder), how the workbench centre and inspector would adopt it (which modules first, what happens to `SplitStage`, `ClipEditorSlot`, `canvasTakeover` and the chord-input slots W-16/W-17), how the lab would adopt or keep its own, and the order. Write the adoption plan as proposed follow-up arcs; do not start them. Confirm nothing else depends on the spike's throwaway parts.
