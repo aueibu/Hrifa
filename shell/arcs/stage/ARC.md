@@ -96,8 +96,8 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] Tests for the behaviours that are not just styling (the toggle's accessible role and keyboard, the row's alignment contract, the density setting changing sizes through one token set)
   - [ ] No hex values or raw palette shades in the kit's CSS (stylelint passes); sizes come from named tokens defined once
   - [ ] A one-page "how to add a panel" in the page `ARCHITECTURE.md`: which pieces to use, which sizes are fixed, where actions go
-- Human checkpoint after: **yes** (density and look judged by eye against the lab)
-- Checkpoint decisions: <written back by the orchestrator>
+- Human checkpoint after: **merged into M5's** (human decision 2026-11-14: M4 and M5 run back to back with one checkpoint after M5; density, look and the realistic-modules trial are judged together). M4 is still committed on its own at the end of its milestone.
+- Checkpoint decisions: none separate; see M5.
 
 ### M5: Spike with realistic modules
 - Scope: owned `src/pages/stage/` only. The spike page hosts: the shared `PianoRoll` (consumed with demo notes, opt-in props only) as a wide module; a canvas stand-in; a chord-picker stand-in that renders as a 2x1 beside the roll and as a 3x1 above it, from one component; an inspector region built entirely from the kit with panels for a selected note and a selected clip. Presets: two saved layouts switchable by keystroke or a small control, to try "sketch" and "audition" arrangements.
@@ -106,7 +106,7 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] The same chord-picker stand-in is tested in both sizes (one component, two renderings); moving it between the two positions loses no state
   - [ ] The consuming arc's check (`check:workbench`) is run once before commit if any `src/components/` file was touched (none planned; if one is needed, stop and ask)
   - [ ] PROGRESS.md records what felt bound or awkward, taken from the human's trial, to feed M6
-- Human checkpoint after: **yes** (this is the real test of whether the system removes the lock-in worry)
+- Human checkpoint after: **yes** (this is the real test of whether the system removes the lock-in worry; also covers M4's density and look)
 - Checkpoint decisions: <written back by the orchestrator>
 
 ### M6: Promotion and adoption plan (decision milestone)
