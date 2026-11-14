@@ -13,6 +13,7 @@
  * panel therefore cannot wipe a stored layout). Nothing here throws; storage may be blocked.
  */
 import { DEFAULT_TEMPLATES, PRESETS, type ChordTemplate } from '../../../lib/harmonic-field';
+import { MODE_PLAYBACKS } from '../audio/plan';
 import {
   DEFAULT_AXES,
   PRIME_SLOTS,
@@ -145,6 +146,7 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     volume: numIn(raw.volume, 0, 1, d.volume),
     modeAtBase: bool(raw.modeAtBase, d.modeAtBase),
     scalePreview: oneOf(raw.scalePreview, SCALE_DIRS, d.scalePreview),
+    modePlayback: oneOf(raw.modePlayback, MODE_PLAYBACKS, d.modePlayback),
     savedAll: bool(raw.savedAll, d.savedAll),
   };
 }

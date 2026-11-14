@@ -196,7 +196,7 @@ describe('hover + hold 1', () => {
     up('2');
   });
 
-  it('simultaneous held voices share the level: a pair at chordAmp(2), a triad at chordAmp(3)', () => {
+  it('simultaneous held voices share the level: an inexact pair at 0.5 each, a triad at chordAmp(3)', () => {
     vi.useFakeTimers();
     render(<HarmonicFieldLabPage />);
     // one note: the reference level
@@ -227,9 +227,19 @@ describe('hover + hold 1', () => {
     const pair = peaks().slice(before);
     expect(pair).toHaveLength(2);
     for (const v of pair) {
-      expect(v / one).toBeCloseTo(chordAmp(2), 6);
+      expect(v / one).toBeCloseTo(0.5, 6); // an inexact pair: half a single note each
     }
     up('3');
     fireEvent.mouseLeave(tile);
+    // an exact degree (the mode's root) in "both": one voice at single-note level
+    const exactTile = within(screen.getAllByTestId('mode-row')[1]).getAllByTestId('mode-tile')[0];
+    const beforeExact = peaks().length;
+    fireEvent.mouseEnter(exactTile);
+    down('3');
+    const single = peaks().slice(beforeExact);
+    expect(single).toHaveLength(1);
+    expect(single[0] / one).toBeCloseTo(1, 6);
+    up('3');
+    fireEvent.mouseLeave(exactTile);
   });
 });

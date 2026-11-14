@@ -158,6 +158,23 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
             chord
           </Button>
         </Tip>
+        <Tip k="modePlayback" as="control">
+          <SegmentedControl
+            size="xs"
+            aria-label="Mode playback"
+            value={ui.modePlayback}
+            onChange={(v) =>
+              dispatch({
+                type: 'ui',
+                patch: { modePlayback: v === 'relative' ? 'relative' : 'parallel' },
+              })
+            }
+            data={[
+              { label: 'Parallel', value: 'parallel' },
+              { label: 'Relative', value: 'relative' },
+            ]}
+          />
+        </Tip>
         <Tip k="stop" as="control">
           <ActionIcon variant="default" size="sm" aria-label="Stop" onClick={audio.stopAll}>
             <StopIcon />

@@ -186,23 +186,51 @@ describe('mode and strip previews', () => {
     expect(plan[4].src).toBe(0);
   });
 
-  it('both: pairs with the same start and length, every step held 1.5x', () => {
+  it('both: an inexact degree is a pair (same start and length, 0.5 each, held 1.5x); an exact one plays once at full level', () => {
     const plan = mode('both');
-    expect(plan).toHaveLength(10);
-    for (let i = 0; i < 5; i++) {
-      const [a, b] = [plan[2 * i], plan[2 * i + 1]];
+    // steps 0 and 4 are exact (1/1 and the repeat): one voice; steps 1-3 are pairs
+    expect(plan).toHaveLength(8);
+    const [s0, ...rest] = plan;
+    expect(s0.amp).toBe(1);
+    expect(plan[7].amp).toBe(1);
+    for (let k = 0; k < 3; k++) {
+      const [a, b] = [rest[2 * k], rest[2 * k + 1]];
       expect(a.delay).toBe(b.delay);
       expect(a.dur).toBe(b.dur);
-      expect(a.delay).toBeCloseTo(i * 0.28 * 1.5, 9);
+      expect(a.delay).toBeCloseTo((k + 1) * 0.28 * 1.5, 9);
       expect(a.dur).toBeCloseTo(0.26 * 1.5, 9);
+      expect(a.amp).toBe(0.5);
+      expect(b.amp).toBe(0.5);
     }
-    expect(plan[2].hz / plan[3].hz).toBeCloseTo(81 / 80, 3);
-    expect(plan[2].amp).toBeLessThan(1);
+    expect(rest[0].hz / rest[1].hz).toBeCloseTo(81 / 80, 3);
+  });
+
+  it('relative: every tone is the parallel tone moved up by the mode root; mode 1 is unchanged', () => {
+    const rootC = field[1].c;
+    for (const kind of ['listed', 'pure', 'both'] as const) {
+      const par = mode(kind);
+      const rel2 = modePreviewPlan(field, idx, 1, OCT, 1200, base, kind, 'up', undefined, true);
+      expect(rel2).toHaveLength(par.length);
+      rel2.forEach((n, i) => expect(n.hz).toBeCloseTo(par[i].hz * 2 ** (rootC / 1200), 6));
+      const r1 = modePreviewPlan(field, idx, 0, OCT, 1200, base, kind, 'up', undefined, true);
+      const p1 = modePreviewPlan(field, idx, 0, OCT, 1200, base, kind, 'up');
+      r1.forEach((n, i) => expect(n.hz).toBeCloseTo(p1[i].hz, 6));
+    }
+  });
+
+  it('relative: a tone lights a field note only where it coincides with one', () => {
+    // mode 2 pure, from 9/8: 9/8, then 9/8*10/9 = 5/4 (a field note), 9/8*4/3 = 3/2 (a field note), 9/8*16/9 = 2/1 (note 0), 9/8*2 = 9/4 (note 1)
+    const pure = modePreviewPlan(field, idx, 1, OCT, 1200, base, 'pure', 'up', undefined, true);
+    expect(pure.map((n) => n.src)).toEqual([1, 2, 3, 0, 1]);
+    // listed tones are field notes moved up by 9/8: 9/8 itself, then 9/8*9/8 (no field note)
+    const listed = modePreviewPlan(field, idx, 1, OCT, 1200, base, 'listed', 'up', undefined, true);
+    expect(listed[0].src).toBe(1);
+    expect(listed[1].src).toBe(-1);
   });
 
   it('Up-down comes back down; a single degree is one step', () => {
     expect(mode('listed', 'updown')).toHaveLength(9);
-    expect(mode('both', 'updown')).toHaveLength(18);
+    expect(mode('both', 'updown')).toHaveLength(15); // exact steps play once
     const one = mode('pure', 'updown', 1);
     expect(one).toHaveLength(1);
     expect(one[0].hz).toBeCloseTo(100 * (10 / 9), 3);
@@ -224,6 +252,12 @@ describe('mode and strip previews', () => {
     expect(both[0].delay).toBe(both[1].delay);
     expect(both[0].dur).toBe(both[1].dur);
     expect(both[0].dur).toBeCloseTo(0.9, 9);
+    expect(both[0].amp).toBe(0.5);
+    expect(both[1].amp).toBe(0.5);
+    // no error: one voice at single-note level
+    const exact = stripPreviewPlan(field, 1, 0.01, base, 'both');
+    expect(exact).toHaveLength(1);
+    expect(exact[0].amp).toBe(1);
     expect(stripPreviewPlan(field, 1, 0, base, 'pure')[0].markOnly).toBe(false);
     expect(stripPreviewPlan(field, 9, 1, base, 'both')).toEqual([]);
   });

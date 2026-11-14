@@ -21,7 +21,7 @@ import {
   type Note,
   type TargetPoint,
 } from '../../../lib/harmonic-field';
-import type { ScaleDir } from '../audio/plan';
+import type { ModePlayback, ScaleDir } from '../audio/plan';
 import {
   autoName,
   defaultGen,
@@ -94,7 +94,7 @@ export interface Saved {
 export type RingView = 'chromatic' | 'fifths';
 export type Wave = 'sine' | 'harmonic';
 /** How a scale preview runs: up to the repeat, or up and back down. */
-export type { ScaleDir };
+export type { ModePlayback, ScaleDir };
 export const SCALE_DIRS: readonly ScaleDir[] = ['up', 'updown'];
 export const WAVES: readonly Wave[] = ['sine', 'harmonic'];
 
@@ -117,6 +117,8 @@ export interface UiSettings {
   modeAtBase: boolean;
   /** Direction of every scale preview (Play scale, a key ring's preview). */
   scalePreview: ScaleDir;
+  /** Mode previews from 1/1 (Parallel) or from the mode's own root (Relative); key 5 toggles. */
+  modePlayback: ModePlayback;
   /** Saved list: show subsets of every collection, not only the current one. */
   savedAll: boolean;
 }
@@ -166,6 +168,7 @@ export function defaultUi(): UiSettings {
     volume: 0.5,
     modeAtBase: true,
     scalePreview: 'up',
+    modePlayback: 'parallel',
     savedAll: false,
   };
 }

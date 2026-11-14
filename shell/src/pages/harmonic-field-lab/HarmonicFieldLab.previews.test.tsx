@@ -58,14 +58,14 @@ describe('mode grid previews', () => {
     fireEvent.click(title, SHIFT); // pure
     expect(oscs()).toHaveLength(18);
     fireEvent.click(title, { metaKey: true, shiftKey: true }); // Cmd counts as Ctrl: both, a pair per step
-    expect(oscs()).toHaveLength(36);
+    expect(oscs()).toHaveLength(34); // exact steps (1/1 and the repeat) play once, not as a pair
     expect(count()).toBe(before);
     expect(rows()[0]).toHaveAttribute('aria-pressed', 'true');
     expect(rows()[1]).toHaveAttribute('aria-pressed', 'false');
     // a plain click still selects the mode
     fireEvent.click(title);
     expect(rows()[1]).toHaveAttribute('aria-pressed', 'true');
-    expect(oscs()).toHaveLength(36);
+    expect(oscs()).toHaveLength(34);
   });
 
   it('a single tile: listed is the nearest field note, pure the exact interval, both a beating pair', () => {

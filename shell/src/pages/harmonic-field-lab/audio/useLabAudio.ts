@@ -269,7 +269,8 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
               pitch(),
               kind,
               u.scalePreview,
-              t.kind === 'tile' ? t.degree : undefined
+              t.kind === 'tile' ? t.degree : undefined,
+              u.modePlayback === 'relative'
             );
       startHeld(id, plan, t.kind === 'mode', digit);
       return true;
@@ -365,7 +366,8 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
             pitch(),
             kind,
             u.scalePreview,
-            degree
+            degree,
+            u.modePlayback === 'relative'
           )
         );
       },
@@ -406,6 +408,17 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
         return;
       }
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) {
+        return;
+      }
+      if (e.key === '5' && !e.shiftKey) {
+        // plain 5 switches Parallel | Relative mode playback; it is no note key
+        e.preventDefault();
+        dispatch({
+          type: 'ui',
+          patch: {
+            modePlayback: latest.current.ui.modePlayback === 'relative' ? 'parallel' : 'relative',
+          },
+        });
         return;
       }
       if (HOLD_DIGITS[e.key] && api.holdPreview(keyId(e), e.key)) {

@@ -129,6 +129,13 @@ export function subsetChordPlan(rel: readonly RelNote[], p: PitchBase): Planned[
   return rel.map((n) => ({ hz: relHz(p, n.c), src: n.src, delay: 0, dur: 2.2, amp }));
 }
 
+/** Where a mode preview starts: from 1/1 (Parallel, as the grid measures) or from its own root (Relative). */
+export type ModePlayback = 'parallel' | 'relative';
+export const MODE_PLAYBACKS: readonly ModePlayback[] = ['parallel', 'relative'];
+
+/** A transposed tone lights a field note only when it lands this close (cents, around the repeat) to one. */
+export const LIGHT_TOL = 0.01;
+
 /** What a modifier click previews: the field's own (listed) pitch, the pure pitch, or both together. */
 export type PreviewKind = 'listed' | 'pure' | 'both';
 
@@ -175,6 +182,12 @@ export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {
 /** Both tones together: every step is held this much longer, so the beating can be heard. */
 export const PAIR_HOLD = 1.5;
 
+/** Each voice of a listed+pure pair: half a single note, so even a beat peak (both in phase) never exceeds one note. */
+export const PAIR_AMP = 0.5;
+
+/** A listed+pure pair closer than this (cents) is one tone: there is nothing to beat against, so it plays once. */
+export const PAIR_EXACT = 0.05;
+
 /** One sound inside a step: its Hz and what it lights (see `Planned`). */
 export interface Tone {
   hz: number;
@@ -192,9 +205,13 @@ export function stepsPlan(
   step = SCALE_STEP,
   dur = SCALE_DUR
 ): Planned[] {
-  const amp = steps.some((s) => s.length > 1) ? chordAmp(2) : 1;
   return steps.flatMap((tones, i) =>
-    tones.map((t) => ({ ...t, delay: i * step * hold, dur: dur * hold, amp }))
+    tones.map((t) => ({
+      ...t,
+      delay: i * step * hold,
+      dur: dur * hold,
+      amp: tones.length > 1 ? PAIR_AMP : 1,
+    }))
   );
 }
 
@@ -226,6 +243,8 @@ export function modeDegrees(
  * as for Play scale). Listed: the nearest field notes (errors included). Pure: the exact intervals; a pure tone lights
  * a field note only when it is exact. Both: each degree as a pair, held 1.5x. Up/Up-down like Play scale; with `only`
  * just that degree (a tile click). Up ends on the repeat, like Play scale.
+ * `relative`: the whole preview moved up by the mode root's cents above 1/1 (so mode 2 of C major starts on D, not C);
+ * a tone then lights a field note only if it lands within `LIGHT_TOL` of one (around the repeat), else nothing.
  */
 export function modePreviewPlan(
   field: readonly Note[],
@@ -236,20 +255,32 @@ export function modePreviewPlan(
   p: PitchBase,
   kind: PreviewKind,
   dir: ScaleDir = 'up',
-  only?: number
+  only?: number,
+  relative = false
 ): Planned[] {
   const m = idx.length;
   if (!m || mode < 0 || mode >= m || !(repC > 0)) {
     return [];
   }
-  const pj: PitchBase = { ...p, rootC: field[idx[mode]].c };
+  const rootC = field[idx[mode]].c;
+  const pj: PitchBase = { ...p, rootC };
   const degs = modeDegrees(field, idx, mode, rep, repC);
+  /** The field note a transposed tone (cents above 1/1) coincides with, or -1. */
+  const litAt = (c: number): number =>
+    field.findIndex((f) => {
+      const x = (((c - f.c) % repC) + repC) % repC;
+      return Math.min(x, repC - x) <= LIGHT_TOL;
+    });
+  const tone = (c: number, parallelSrc: number): Tone =>
+    relative
+      ? { hz: absHz(p, rootC + c), src: litAt(rootC + c) }
+      : { hz: relHz(pj, c), src: parallelSrc };
   const tones = (g: (typeof degs)[number], lift: number): Tone[] => {
-    const listed: Tone = { hz: relHz(pj, g.wanted + g.d + lift), src: g.near };
-    const pure: Tone = {
-      hz: relHz(pj, g.wanted + lift),
-      src: Math.abs(g.d) < 1e-6 ? g.near : -1,
-    };
+    const listed = tone(g.wanted + g.d + lift, g.near);
+    const pure = tone(g.wanted + lift, Math.abs(g.d) < 1e-6 ? g.near : -1);
+    if (kind === 'both' && Math.abs(g.d) < PAIR_EXACT) {
+      return [listed];
+    }
     return kind === 'listed' ? [listed] : kind === 'pure' ? [pure] : [listed, pure];
   };
   const hold = kind === 'both' ? PAIR_HOLD : 1;
@@ -278,7 +309,14 @@ export function stripPreviewPlan(
   }
   const listed: Tone = { hz: absHz(p, f.c), src: i };
   const target: Tone = { hz: absHz(p, f.c - dev), src: i, markOnly: Math.abs(dev) >= 1e-6 };
-  const tones = kind === 'listed' ? [listed] : kind === 'pure' ? [target] : [listed, target];
+  const tones =
+    kind === 'listed'
+      ? [listed]
+      : kind === 'pure'
+        ? [target]
+        : Math.abs(dev) < PAIR_EXACT
+          ? [listed]
+          : [listed, target];
   return stepsPlan([tones], kind === 'both' ? PAIR_HOLD : 1, 0, 0.6);
 }
 
