@@ -50,6 +50,21 @@ function localSoundfonts() {
   };
 }
 
+/** `.test.ts` files that need jsdom (window, document, localStorage, canvas, WebGL probes). */
+const DOM_TESTS = [
+  'src/pages/composition-workbench/compositionSettings.test.ts',
+  'src/pages/composition-workbench/noteEditorPreferences.test.ts',
+  'src/pages/composition-workbench/snippet.test.ts',
+  'src/pages/composition-workbench/transport.test.ts',
+  'src/pages/harmonic-field-lab/audio/plan.test.ts',
+  'src/pages/harmonic-field-lab/components/webgl.test.ts',
+  'src/pages/harmonic-field-lab/state/followups.test.ts',
+  'src/pages/harmonic-field-lab/state/keysModes.test.ts',
+  'src/pages/harmonic-field-lab/state/m6.test.ts',
+  'src/pages/harmonic-field-lab/state/persist.test.ts',
+  'src/pages/scale-explorer/useSoundfont.test.ts',
+];
+
 export default defineConfig({
   base: '/Hrifa/',
   plugins: [react(), localSoundfonts()],
@@ -57,10 +72,32 @@ export default defineConfig({
     globals: true,
     // Node 25+ ships an experimental global localStorage that shadows jsdom's.
     execArgv: ['--no-experimental-webstorage'],
-    environment: 'jsdom',
-    setupFiles: './vitest.setup.mjs',
-    // React Flow is inlined so the d3-drag stub in vitest.setup.mjs reaches it.
-    server: { deps: { inline: [/@xyflow/] } },
+    // Two projects: pure-logic `*.test.ts` run in plain Node (no jsdom, no setup file: about 3x faster),
+    // every `*.test.tsx` and the `.test.ts` files that touch the DOM keep jsdom + vitest.setup.mjs.
+    // A new `.test.ts` runs in Node by default; if it needs window/document/localStorage, add it to
+    // DOM_TESTS below (or write it as `.test.tsx`).
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+          exclude: DOM_TESTS,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          setupFiles: './vitest.setup.mjs',
+          include: ['src/**/*.test.tsx', ...DOM_TESTS],
+          // React Flow is inlined so the d3-drag stub in vitest.setup.mjs reaches it.
+          server: { deps: { inline: [/@xyflow/] } },
+        },
+      },
+    ],
   },
 
   resolve: {

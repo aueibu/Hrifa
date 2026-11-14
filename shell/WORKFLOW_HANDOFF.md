@@ -54,9 +54,9 @@ When a task is driven by an `ARC.md` (template: `ARC.template.md`):
 
 ## Test-run policy
 
-- Builders run only the test files they touched while iterating, then the gate once at the very end.
-- Reviewers read the diff and do not run the gate.
-- The orchestrator runs the gate once before a milestone advances.
+- Builders run only related tests (`corepack yarn test:related <changed files>`), never the gate or a whole test folder.
+- Reviewers read the diff and do not run the gate; at most one targeted test file or test when a claim needs proof.
+- The orchestrator runs the gate once per milestone, before the commit. Small changes between milestones: related tests only; the gate runs at the next commit.
 - Never run the whole suite after every edit.
 
 ## Checks
@@ -84,7 +84,7 @@ You implement one milestone at a time.
 1. Read that arc's `ARC.md` (your milestone, its acceptance criteria, its Owned paths, Shared paths and Check command) and `PROGRESS.md`. Also read `shell/ARCHITECTURE.md`, `shell/DECISIONS.md` and `shell/arcs/LOCKS.md`, and the page's own `ARCHITECTURE.md` (for the workbench, `src/pages/composition-workbench/ARCHITECTURE.md`) if you touch its data flow.
 2. Follow `shell/src/theme/THEMING.md` for any color work (use roles, not hex or palette shades).
 3. Write tests alongside logic modules, matching the existing colocated `*.test.ts` style.
-4. While iterating, run only the tests of the files you touched. Run the arc's `Check command` from `shell/` (workbench: `corepack yarn check:workbench`) once, at the end. Fix failures. Do not report done while it fails; report any failure plainly, with its output. If it is red only because of files outside your arc's Owned paths and locked shared paths (its typecheck is project-wide), do not fix those files, and do not rewrite your own files to fit another arc's unfinished change (this includes errors caused by another arc's change wherever `tsc` reports them): stop and report.
+4. Tests: run only the tests related to what you touched, with `corepack yarn test:related <changed source files>` from `shell/` (vitest `related`: runs the tests that import those files; whole-page jsdom tests take 3 to 9 s each, so never run a page's whole test folder). Typecheck (`corepack yarn typecheck`, about 4 s) and `oxfmt -c oxfmt.config.mjs` / `oxlint -c oxlint.config.mjs` on the files you touched are fine. Do NOT run the arc's `Check command` (the gate) or the repo-wide suite: the orchestrator runs the gate once per milestone, before the commit. Fix failures in the tests you ran; do not report done while they fail; report any failure plainly, with its output. If a failure comes from files outside your arc's Owned paths and locked shared paths (typecheck is project-wide), do not fix those files, and do not rewrite your own files to fit another arc's unfinished change (this includes errors caused by another arc's change wherever `tsc` reports them): stop and report.
 5. Stay inside the milestone's scope and the arc's Owned paths. Never edit another arc's owned paths. Before editing a shared path, check `arcs/LOCKS.md`: you never take or release a lock yourself. If your arc does not already hold a row for that path (or another arc holds it), stop and report. If something outside the scope needs changing, or a criterion can't be met, stop and report instead of improvising.
 6. A decision that touches shared code or a shared contract goes into `shell/DECISIONS.md` in the same milestone (arc-prefixed id), if the milestone allows editing it.
 7. Never edit the arc's `ARC.md` or `PROGRESS.md`, never write `arcs/LOCKS.md` rows (the orchestrator does), and never commit (the orchestrator commits with `git commit -- <paths>`).
@@ -106,7 +106,7 @@ You review; you do not edit.
 
 0. The arc folder (`arcs/<name>`) is given in the task prompt. If the named folder has no `ARC.md`, stop and report: do not fall back to another arc. Only if the prompt names no folder at all, default to `arcs/workbench` and say so in your report, and only when `arcs/workbench/ARC.md` exists (otherwise stop and report).
 1. Read the milestone's acceptance criteria in that arc's `ARC.md`, plus its `PROGRESS.md`, Owned paths, Shared paths and Check command. Also read `shell/ARCHITECTURE.md`, `shell/DECISIONS.md` and `shell/arcs/LOCKS.md`.
-2. Inspect the diff (`git diff`, `git status`, untracked files). Do NOT run the arc's `Check command` or the full suite (the orchestrator runs it once per milestone); you may run a single targeted test file if needed. Read the code, not just test names.
+2. Inspect the diff (`git diff`, `git status`, untracked files). Do NOT run the arc's `Check command` or the full suite (the orchestrator runs it once per milestone); you may run one targeted test file (or one test, `-t`) only when a specific claim needs proof; never a folder, never the gate. Read the code, not just test names.
 3. Check each criterion explicitly: met / not met / cannot verify by script (flag these for the human).
 4. Check data-contract compliance against the page's `ARCHITECTURE.md` (for the workbench, `src/pages/composition-workbench/ARCHITECTURE.md`: kind/domain/frame, provenance preserved) and `THEMING.md` for color.
 5. Look for correctness bugs and scope creep beyond the milestone, including edits outside the arc's Owned paths and Shared paths, and shared paths edited without a lock in `arcs/LOCKS.md`.

@@ -34,6 +34,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | M6 playback | Parallel / Relative mode playback (top-bar switch + key 5, `ui.modePlayback` in settings.v1, default Parallel; Relative transposes mode previews to the mode's own root); "both" pairs at 0.5 each and exact degrees as one full-level voice (fixes the double-loud zero-error pairs). 1 builder attempt. | `check:hfl` GREEN, 729 | With "Mode root at 1/1 Hz" off, Parallel and Relative sound the same (both already start on the root's pitch). |
 | M6 one switch | Parallel / Relative drives everything (previews, Play scale/chord, computer keys); "Mode root at 1/1 Hz" removed, stored off migrates to Relative (orchestrator). Key 5 and hold 3 "not working" was a stale dev-server module (the watcher missed the builder's later saves); touching the files refreshed it, verified in headless Edge (5 toggles, hold 3 starts 2 oscillators). | `check:hfl` GREEN, 729 | |
 | M6 checkpoint | Approved by the human 2026-11-14 ("im really happy thank you"). | `check:hfl` GREEN, 729 | |
+| Speed + workflow (H-5) | Shared job done 2026-11-14: two vitest projects (`.test.ts` in Node, `.test.tsx` + 11 listed DOM `.test.ts` in jsdom), `test:related` script, builder/reviewer/CLAUDE.md/WORKFLOW_HANDOFF rules (related tests only; reviewer no gate; gate once per milestone; delegation rule). Measured: 105 `.test.ts` files 51.5 s to 10.2 s (94 in Node); `tsc` is already about 4 s (TS 7), so no incremental build. The hfl gate itself stays about 58 s: it is bound by the biggest whole-page jsdom files (moderoot 50 s, live 46 s, keys 32 s, page 30 s, m6 27 s, followups 21 s, one worker each of 12). | `check:hfl` GREEN 729; `check:workbench` GREEN 1403 | Further win (not done, needs the human's OK): split the six big page-test files so they spread over the 12 workers (about 58 s to about 30 s); each page render costs 3 to 9 s in jsdom (cause not profiled). |
 
 ## C0 scan (2026-11-12)
 - **Other arcs:** `workbench` has no active arc (clips and desk arcs archived); `structure` is done. No other active arc owns or locks anything. `arcs/LOCKS.md` was empty.
@@ -73,6 +74,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives of New Music* 31/1 (1993), Examples 10–12.
 
 ## Shared touches (locks taken)
+- Speed + workflow (H-5): `vite.config.mjs`, `vitest.setup.mjs` (unused), `package.json`, `tsconfig.json` (unused), `CLAUDE.md`, `.claude/agents/`: taken 2026-11-14, released after the commit.
 - M6: `src/Router.tsx`: taken 2026-11-13, released after the M6 commit.
 - M5: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`: taken 2026-11-13, released after the M5 commit `d81c938` (rows were never committed).
 - `package.json`: taken 2026-11-12 (Setup, add `check:hfl`), released 2026-11-12 after the setup commit `d1c2abf`.
@@ -88,9 +90,9 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-The shared test-speed + workflow-rules job (see "Agreed workflow change"; locks on vite.config.mjs, vitest.setup.mjs, package.json, shell CLAUDE.md, .claude/agents/builder.md + reviewer.md; DECISIONS row; run check:workbench too). Then M7 (open question before M7: manual pivot by degree or by held key).
+M7 (card list + retuner panel). Open question before M7: manual pivot by degree or by held key? (Optional first: split the big page-test files, see the Speed + workflow row.)
 
-## Agreed workflow change (human, 2026-11-13; not yet applied)
+## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
 - Delegation: builder + reviewer for real milestones (features, persistence, audio, state); small/look-only changes and short well-specified review fixes done by the orchestrator directly; scout only when location is unknown.
 - Test speed (shared config, locks + DECISIONS row + `check:workbench` run): pure-logic tests in the Node environment, DOM tests keep jsdom; incremental `tsc`; before/after timings.
