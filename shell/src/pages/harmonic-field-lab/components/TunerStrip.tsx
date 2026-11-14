@@ -130,10 +130,22 @@ export function TunerStrip() {
                     tabIndex={0}
                     aria-label={`${d.ratio}, ${signed(d.dev)} cents from ${d.label}${active ? '' : ', not in the subset'}${lab.pin === fi ? ', pinned' : ''}${lit ? ', sounding' : ''}${rootLabel(modeRoot, fi)}`}
                     data-root={modeRoot === fi ? 'true' : undefined}
-                    onMouseEnter={() => lab.setHover(fi)}
-                    onMouseLeave={() => lab.setHover(null)}
-                    onFocus={() => lab.setHover(fi)}
-                    onBlur={() => lab.setHover(null)}
+                    onMouseEnter={() => {
+                      lab.setHover(fi);
+                      lab.audio.setPreviewTarget({ kind: 'strip', i: fi, dev: d.dev });
+                    }}
+                    onMouseLeave={() => {
+                      lab.setHover(null);
+                      lab.audio.clearPreviewTarget({ kind: 'strip', i: fi, dev: d.dev });
+                    }}
+                    onFocus={() => {
+                      lab.setHover(fi);
+                      lab.audio.setPreviewTarget({ kind: 'strip', i: fi, dev: d.dev });
+                    }}
+                    onBlur={() => {
+                      lab.setHover(null);
+                      lab.audio.clearPreviewTarget({ kind: 'strip', i: fi, dev: d.dev });
+                    }}
                     {...noteHandlers(lab, fi)}
                     onClick={(e) => {
                       const kind = previewKind(e);

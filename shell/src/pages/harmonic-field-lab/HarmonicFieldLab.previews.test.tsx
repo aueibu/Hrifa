@@ -169,3 +169,135 @@ describe('tuner strip previews', () => {
     expect(lit()).toBe(0);
   });
 });
+
+describe('hold 1 / 2 / 3 previews', () => {
+  const tileOf = (mode: number, degree: number) =>
+    within(rows()[mode]).getAllByTestId('mode-tile')[degree];
+  const down = (key: string, init: KeyboardEventInit = {}) =>
+    fireEvent.keyDown(window, { key, ...init });
+  const up = (key: string) => fireEvent.keyUp(window, { key });
+  const running = () => oscs().filter((o) => o.stopAt === null);
+
+  it('hovering a tile and holding 1 / 2 / 3 sounds listed / pure / both until the key goes up', () => {
+    render(<HarmonicFieldLabPage />);
+    openModes();
+    const tile = tileOf(1, 4);
+    fireEvent.click(tile, CTRL);
+    fireEvent.click(tile, SHIFT);
+    const [listed, pure] = hzs(); // the click previews, as the reference pitches
+    const base = oscs().length;
+    fireEvent.mouseEnter(tile);
+    down('1');
+    expect(oscs()).toHaveLength(base + 1);
+    expect(oscs()[base].frequency.events[0].v).toBeCloseTo(listed, 6);
+    expect(oscs()[base].stopAt).toBeNull();
+    down('1', { repeat: true }); // key repeat does nothing
+    expect(oscs()).toHaveLength(base + 1);
+    up('1');
+    expect(oscs()[base].stopAt).not.toBeNull();
+    down('2');
+    expect(oscs()[base + 1].frequency.events[0].v).toBeCloseTo(pure, 6);
+    expect(oscs()[base + 1].stopAt).toBeNull();
+    up('2');
+    expect(oscs()[base + 1].stopAt).not.toBeNull();
+    down('3');
+    expect(oscs()).toHaveLength(base + 4);
+    expect(running()).toHaveLength(2);
+    up('3');
+    expect(running()).toHaveLength(0);
+  });
+
+  it('does nothing without a target, when typing in a field, or with Alt', () => {
+    render(<HarmonicFieldLabPage />);
+    openModes();
+    down('1'); // no target
+    expect(oscs()).toHaveLength(0);
+    const tile = tileOf(0, 0);
+    fireEvent.mouseEnter(tile);
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    fireEvent.keyDown(input, { key: '1' });
+    input.remove();
+    down('1', { altKey: true }); // Alt+1 is the tab shortcut
+    expect(oscs()).toHaveLength(0);
+    fireEvent.mouseLeave(tile);
+    down('1'); // pointer left: no target again
+    expect(oscs()).toHaveLength(0);
+  });
+
+  it('moving the pointer away keeps a held note sounding; the next press uses the new target', () => {
+    render(<HarmonicFieldLabPage />);
+    openModes();
+    const a = tileOf(0, 1);
+    const b = tileOf(0, 3);
+    fireEvent.mouseEnter(a);
+    down('1');
+    fireEvent.mouseLeave(a);
+    fireEvent.mouseEnter(b);
+    expect(running()).toHaveLength(1);
+    const first = oscs()[0].frequency.events[0].v;
+    up('1');
+    down('1');
+    expect(oscs()[1].frequency.events[0].v).not.toBeCloseTo(first!, 3);
+    up('1');
+  });
+
+  it('a mode title steps through the mode while held and keyup stops it early', () => {
+    vi.useFakeTimers();
+    render(<HarmonicFieldLabPage />);
+    openModes();
+    fireEvent.mouseEnter(within(rows()[1]).getByTestId('mode-title'));
+    down('1');
+    expect(oscs()).toHaveLength(1);
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(oscs().length).toBeGreaterThanOrEqual(3);
+    expect(oscs().length).toBeLessThan(9);
+    expect(lit()).toBeGreaterThan(0);
+    up('1');
+    const n = oscs().length;
+    expect(running()).toHaveLength(0);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(oscs()).toHaveLength(n); // nothing more is started
+    expect(lit()).toBe(0);
+    // held to the end: all 8 notes and the repeat play, then it falls silent while the key is still down
+    down('1');
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(oscs()).toHaveLength(n + 9);
+    expect(running()).toHaveLength(0);
+    expect(lit()).toBe(0);
+    up('1');
+  });
+
+  it('a held strip note sounds, lights only itself when pure, and blur releases everything', () => {
+    vi.useFakeTimers();
+    render(<HarmonicFieldLabPage />);
+    const c = screen.getByTestId('strip-plot').querySelector<HTMLElement>('[data-ratio="9/8"]')!;
+    fireEvent.mouseEnter(c);
+    down('2');
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(running()).toHaveLength(1);
+    expect(c).toHaveAttribute('data-lit', 'true');
+    expect(document.querySelectorAll('[aria-label*="sounding"]')).toHaveLength(1);
+    up('2');
+    down('3');
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(running()).toHaveLength(2);
+    act(() => {
+      window.dispatchEvent(new Event('blur'));
+    });
+    expect(running()).toHaveLength(0);
+    expect(lit()).toBe(0);
+    expect(document.querySelectorAll('[aria-label*="sounding"]')).toHaveLength(0);
+    up('3');
+  });
+});

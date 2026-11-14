@@ -107,11 +107,15 @@ export function ModesPanel() {
                 aria-label={label}
                 title={label}
                 onClick={() => lab.setMode(m.mode)}
+                onFocus={() => lab.audio.setPreviewTarget({ kind: 'mode', mode: m.mode })}
+                onBlur={() => lab.audio.clearPreviewTarget({ kind: 'mode', mode: m.mode })}
               >
                 <span
                   className={`${classes.modeLabelCol} ${classes.heatName}`}
                   data-testid="mode-title"
                   onClick={(e) => preview(e, m.mode)}
+                  onMouseEnter={() => lab.audio.setPreviewTarget({ kind: 'mode', mode: m.mode })}
+                  onMouseLeave={() => lab.audio.clearPreviewTarget({ kind: 'mode', mode: m.mode })}
                 >
                   <Num muted>{m.mode + 1}</Num> <Num>{m.root}</Num>
                 </span>
@@ -132,6 +136,12 @@ export function ModesPanel() {
                         title={tip}
                         data-testid="mode-tile"
                         onClick={(e) => preview(e, m.mode, j)}
+                        onMouseEnter={() =>
+                          lab.audio.setPreviewTarget({ kind: 'tile', mode: m.mode, degree: j })
+                        }
+                        onMouseLeave={() =>
+                          lab.audio.clearPreviewTarget({ kind: 'tile', mode: m.mode, degree: j })
+                        }
                       >
                         <span className={classes.heatSign} aria-hidden="true">
                           {sign}

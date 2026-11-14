@@ -132,6 +132,26 @@ export function subsetChordPlan(rel: readonly RelNote[], p: PitchBase): Planned[
 /** What a modifier click previews: the field's own (listed) pitch, the pure pitch, or both together. */
 export type PreviewKind = 'listed' | 'pure' | 'both';
 
+/**
+ * What the pointer (or keyboard focus) is on, for the hold-1/2/3 previews: a whole mode (its title), one mode degree (a
+ * tile) or a tuner-strip note with its deviation from the compare-to reference.
+ */
+export type PreviewTarget =
+  | { kind: 'mode'; mode: number }
+  | { kind: 'tile'; mode: number; degree: number }
+  | { kind: 'strip'; i: number; dev: number };
+
+/** Stable identity of a target, so a pointer leaving one target does not clear a newer one. */
+export const previewTargetKey = (t: PreviewTarget): string =>
+  t.kind === 'mode' ? `m${t.mode}` : t.kind === 'tile' ? `t${t.mode}.${t.degree}` : `s${t.i}`;
+
+/** The held digit keys: 1 = listed, 2 = pure / target, 3 = both. */
+export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {
+  '1': 'listed',
+  '2': 'pure',
+  '3': 'both',
+};
+
 /** Both tones together: every step is held this much longer, so the beating can be heard. */
 export const PAIR_HOLD = 1.5;
 

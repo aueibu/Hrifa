@@ -3,7 +3,7 @@
  * (`LabContext`), with `useLab()` for everything and `useViz()` for the visualizer settings. No JSX.
  */
 import { createContext, useContext, type Dispatch } from 'react';
-import type { PreviewKind } from '../audio/plan';
+import type { PreviewKind, PreviewTarget } from '../audio/plan';
 import type { Base, ChordModel, KeysData, SpectrumData, StripDev, edoOf, dissOf } from './derive';
 import type { Action, LabState, Tab } from './labState';
 import type { VizId, VizView } from './layout';
@@ -31,6 +31,17 @@ export interface LabAudio {
   playModePreview: (mode: number, kind: PreviewKind, degree?: number) => void;
   /** Tuner strip preview: a note's listed pitch, its target (note minus `dev` cents), or both held 1.5x. */
   playStripPreview: (fieldIndex: number, dev: number, kind: PreviewKind) => void;
+  /**
+   * The mode, mode degree or strip note the pointer (or focus) is on, or null: holding 1 / 2 / 3 there plays its listed /
+   * pure / both tones for as long as the key is down.
+   */
+  setPreviewTarget: (target: PreviewTarget | null) => void;
+  /** The pointer left `target`: forgotten only when it is still the current target. */
+  clearPreviewTarget: (target: PreviewTarget) => void;
+  /** A digit key went down (`id` = its physical key): start its preview on the current target. False when there is none. */
+  holdPreview: (id: string, digit: string) => boolean;
+  /** That key went up: stop its preview. */
+  releasePreview: (id: string) => void;
   /** Panic: silence everything now. */
   stopAll: () => void;
   /** Hz a pitch of `cents` above 1/1 sounds at, with the current 1/1 Hz setting. */

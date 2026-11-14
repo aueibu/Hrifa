@@ -16,14 +16,30 @@ import {
   absHz,
   chordPlan,
   fieldScalePlan,
+  HOLD_DIGITS,
   modePreviewPlan,
+  previewTargetKey,
   stripPreviewPlan,
   scalePlan,
   slotPitch,
   subsetChordPlan,
   type PitchBase,
   type Planned,
+  type PreviewTarget,
 } from './plan';
+
+/** One note of a hold-1/2/3 preview: its voice, what it lights, and whether it is sounding now. */
+interface HeldNote {
+  vid: string;
+  src: number;
+  markOnly?: boolean;
+  on: boolean;
+}
+/** A running hold-1/2/3 preview: its notes and the timers that step through a whole mode. */
+interface HeldPreview {
+  notes: HeldNote[];
+  timers: number[];
+}
 
 interface Args {
   enabled: boolean;
@@ -45,6 +61,10 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
   const slotSrc = useRef(new Map<number, number>());
   /** Physical key (see `keyId`) to the slot it pressed, so a release finds it even when Shift changed `event.key`. */
   const held = useRef(new Map<string, number>());
+  /** What the pointer / focus is on, for the hold-1/2/3 previews. */
+  const target = useRef<PreviewTarget | null>(null);
+  /** Running hold previews by physical key (see `keyId`). */
+  const previews = useRef(new Map<string, HeldPreview>());
   const applied = useRef({ volume: NaN, wave: '' });
   const latest = useRef({ base, ui, chord, enabled });
   useEffect(() => {
@@ -120,6 +140,7 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       timers.current.clear();
       slotSrc.current.clear();
       held.current.clear();
+      previews.current.clear();
       const had = lights.current.lit().length > 0 || markLights.current.lit().length > 0;
       lights.current.clear();
       markLights.current.clear();
@@ -127,8 +148,111 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
         report();
       }
     };
+    /** Stop a hold preview: cancel its pending steps, release its voices, unlight them. */
+    const endHeld = (id: string) => {
+      const p = previews.current.get(id);
+      if (!p) {
+        return;
+      }
+      previews.current.delete(id);
+      p.timers.forEach((t) => {
+        window.clearTimeout(t);
+        timers.current.delete(t);
+      });
+      for (const n of p.notes) {
+        if (n.on) {
+          n.on = false;
+          engine.current?.stop(n.vid);
+          light(n.src, false, n.markOnly);
+        }
+      }
+    };
+    /**
+     * Hold a preview: every note of the plan is a held voice that starts at its delay. A single note (delay 0) sounds
+     * until `endHeld`; a whole mode also ends each step on its own timer, so the steps play in order and it stops at the end.
+     */
+    const startHeld = (id: string, plan: Planned[], stepped: boolean) => {
+      const eng = getEngine();
+      if (!eng || plan.length === 0) {
+        return;
+      }
+      endHeld(id);
+      const p: HeldPreview = { notes: [], timers: [] };
+      previews.current.set(id, p);
+      const after = (fn: () => void, ms: number) => {
+        const t = window.setTimeout(() => {
+          timers.current.delete(t);
+          fn();
+        }, ms);
+        timers.current.add(t);
+        p.timers.push(t);
+      };
+      plan.forEach((n, k) => {
+        const note: HeldNote = {
+          vid: `pv:${id}:${k}`,
+          src: n.src,
+          markOnly: n.markOnly,
+          on: false,
+        };
+        p.notes.push(note);
+        const begin = () => {
+          if (eng.start(note.vid, n.hz, n.amp)) {
+            note.on = true;
+            light(n.src, true, n.markOnly);
+          }
+        };
+        const end = () => {
+          if (note.on) {
+            note.on = false;
+            eng.stop(note.vid);
+            light(n.src, false, n.markOnly);
+          }
+        };
+        if (n.delay <= 0) {
+          begin();
+        } else {
+          after(begin, n.delay * 1000);
+        }
+        if (stepped) {
+          after(end, (n.delay + n.dur) * 1000);
+        }
+      });
+    };
     return {
       enabled,
+      setPreviewTarget: (t) => {
+        target.current = t;
+      },
+      clearPreviewTarget: (t) => {
+        if (target.current && previewTargetKey(target.current) === previewTargetKey(t)) {
+          target.current = null;
+        }
+      },
+      holdPreview: (id, digit) => {
+        const kind = HOLD_DIGITS[digit];
+        const t = target.current;
+        if (!kind || !t) {
+          return false;
+        }
+        const { base: b, ui: u } = latest.current;
+        const plan =
+          t.kind === 'strip'
+            ? stripPreviewPlan(b.field, t.i, t.dev, pitch(), kind)
+            : modePreviewPlan(
+                b.field,
+                b.idx,
+                t.mode,
+                b.rep,
+                b.repC,
+                pitch(),
+                kind,
+                u.scalePreview,
+                t.kind === 'tile' ? t.degree : undefined
+              );
+        startHeld(id, plan, t.kind === 'mode');
+        return true;
+      },
+      releasePreview: endHeld,
       press: (slot) => {
         const { base: b } = latest.current;
         const eng = getEngine();
@@ -202,6 +326,7 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       lights.current.lit().length ||
       markLights.current.lit().length ||
       slotSrc.current.size ||
+      previews.current.size ||
       timers.current.size
     ) {
       api.stopAll();
@@ -225,6 +350,10 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) {
         return;
       }
+      if (HOLD_DIGITS[e.key] && api.holdPreview(keyId(e), e.key)) {
+        e.preventDefault();
+        return;
+      }
       const slot = slotOfEvent(e);
       if (slot < 0) {
         return;
@@ -235,6 +364,7 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
     };
     const up = (e: KeyboardEvent) => {
       const id = keyId(e);
+      api.releasePreview(id);
       const slot = held.current.get(id);
       if (slot !== undefined) {
         held.current.delete(id);
