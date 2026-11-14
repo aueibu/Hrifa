@@ -24,6 +24,7 @@ class FakeResizeObserver {
     observers.delete(this);
   }
 }
+const rootBox = { w: 1600 }; // px: the Stage root's own width (height fixed at 800)
 const slot = { w: 640, h: 400 }; // px: 40 x 25 rem, so regular-short
 const rect = (w: number, h: number) =>
   ({ width: w, height: h, top: 0, left: 0, right: w, bottom: h, x: 0, y: 0 }) as DOMRect;
@@ -40,6 +41,7 @@ beforeEach(() => {
   observers.clear();
   slot.w = 640;
   slot.h = 400;
+  rootBox.w = 1600;
   pickerProbe.mounts = 0;
   (window as unknown as { ResizeObserver: unknown }).ResizeObserver = FakeResizeObserver;
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
@@ -47,7 +49,7 @@ beforeEach(() => {
       return rect(slot.w, slot.h);
     }
     if (this.hasAttribute('data-stage-root')) {
-      return rect(1600, 800); // 50 rem tall
+      return rect(rootBox.w, 800); // 50 rem tall
     }
     if (this.querySelector(':scope > [role="separator"][aria-orientation="horizontal"]')) {
       return rect(640, 800); // a stacked column, 50 rem tall
@@ -110,6 +112,47 @@ describe('slot size', () => {
     resize(300, 300); // 18.75 x 18.75 rem
     expect(slotBody().getAttribute('data-slot-size')).toBe('narrow-short');
     expect(within(section).getByText('12 notes, bars 1 to 4')).toBeInTheDocument();
+  });
+});
+
+describe('self-measuring width', () => {
+  // picker 24 rem + roll 36 rem + 0.5 splitter + 0.5 padding = 61 rem for both columns
+  const two = () => cols({ slots: ['picker'], width: 24 }, { slots: ['roll'], width: 36 });
+  const shownTitles = () =>
+    screen.queryAllByRole('region').map((r) => r.getAttribute('aria-label'));
+  function Own({ widthRem }: { widthRem?: number }) {
+    const [layout, setLayout] = useState(two());
+    return (
+      <Stage registry={STANDIN_REGISTRY} layout={layout} update={setLayout} widthRem={widthRem} />
+    );
+  }
+
+  it('shows the columns that fit its own container and follows a container resize', () => {
+    rootBox.w = 800; // 50 rem: only the picker column fits
+    render(<Own />);
+    expect(screen.queryByRole('region', { name: 'Picker stand-in' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Roll stand-in' })).not.toBeInTheDocument();
+    rootBox.w = 1040; // 65 rem: both fit
+    act(() => observers.forEach((o) => o.cb()));
+    expect(screen.queryByRole('region', { name: 'Roll stand-in' })).toBeInTheDocument();
+    rootBox.w = 800;
+    act(() => observers.forEach((o) => o.cb()));
+    expect(screen.queryByRole('region', { name: 'Roll stand-in' })).not.toBeInTheDocument();
+    expect(shownTitles().length).toBe(1);
+  });
+
+  it('ignores an unmeasured (zero) width and keeps the last one', () => {
+    rootBox.w = 1040;
+    render(<Own />);
+    rootBox.w = 0;
+    act(() => observers.forEach((o) => o.cb()));
+    expect(screen.queryByRole('region', { name: 'Roll stand-in' })).toBeInTheDocument();
+  });
+
+  it('uses a given widthRem instead of measuring (unchanged behaviour)', () => {
+    rootBox.w = 1040; // would fit both if it measured
+    render(<Own widthRem={50} />);
+    expect(screen.queryByRole('region', { name: 'Roll stand-in' })).not.toBeInTheDocument();
   });
 });
 

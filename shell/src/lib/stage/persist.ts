@@ -10,6 +10,16 @@ import type { ModuleId, ModuleRegistry } from './registry';
 import { clampColumnWidth, isEvenShares } from './splitters';
 
 export const LAYOUT_STORAGE_KEY = 'hrifa.stage.layout.v1';
+/** Every key a Stage layout (or a Stage helper) may be stored under starts with this. */
+export const STAGE_KEY_PREFIX = 'hrifa.stage.';
+
+/** The key to use: `key`, or the default layout key when absent. Throws unless it starts with `hrifa.stage.`. */
+export function stageStorageKey(key: string = LAYOUT_STORAGE_KEY): string {
+  if (typeof key !== 'string' || !key.startsWith(STAGE_KEY_PREFIX) || key === STAGE_KEY_PREFIX) {
+    throw new Error(`Stage storage key must start with "${STAGE_KEY_PREFIX}": ${String(key)}`);
+  }
+  return key;
+}
 
 const round4 = (x: number) => Math.round(x * 10000) / 10000;
 

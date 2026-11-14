@@ -301,13 +301,15 @@ A module's `minSize` is a size class read as a floor in rem (width: narrow 12, r
 - Splitters: `aria-orientation`, `aria-valuenow`, `aria-valuemin/max`; keyboard (column: Left/Right 1rem, Home/End; stack: Up/Down 5%, Home/End); pointer drag. The column index is looked up when the action runs (by module id), never cached. After the stage height is measured `clampColumnShares` repairs stored shares below the minimum.
 - Slot tools: move left, move right, (in a stack) move up and down, stack onto (a menu of `stackTargets`), unstack, close. All are buttons with accessible names.
 - Persistence: key `hrifa.stage.layout.v1` (`LAYOUT_STORAGE_KEY`), loaded with `parseLayout(raw, registry, fallback)` where the fallback is `DEFAULT_STAGE_LAYOUT` (a picker column and a roll-over-notes stack), saved on every change in try/catch. "Reset layout" restores the default. The only other key is `hrifa.stage.tipDelay.v1` (the developer option, section 11); no other key is read or written.
+- Self-measuring width (W-24, 2026-11-14): `widthRem` on `Stage` is optional. Absent, the Stage observes its own root element (the same `ResizeObserver` that reads its height), converts px to rem, ignores zero widths (keeps the last), and uses that width exactly where it would use `widthRem` (visible-column fit, last-column fill room, column splitter bounds); before the first measurement the width is 0, so one column shows. Given, behaviour is unchanged. The spike still passes `widthRem` (window width minus the 17rem inspector).
+- Storage key (W-24): `loadLayout(storage, registry, fallback, key?)` and `saveLayout(storage, layout, key?)` take an optional key, default `hrifa.stage.layout.v1`; a given key must start with `hrifa.stage.` (`stageStorageKey` in `src/lib/stage/persist.ts` throws otherwise). The Stage component owns no storage; the page that persists passes its key.
 - Column width comes from the layout (rem, default 36); the window width only decides how many columns are shown. The stage fills the height under the 40px top bar.
 
 ### How to add a module (recipe)
 
 1. Write the module as a component that takes `size: SlotSize` and nothing else. Keep state above the per-size branch (in the component), never in the branch.
 2. Add an entry to a registry list: `{ id, title, sizes, minSize, render: (size) => <MyModule size={size} /> }` (`standins/index.tsx` is the example). `id` is unique and stable (it is persisted). `sizes` lists the classes it has a rendering for (each at least `minSize`; `registryProblems` in the core checks this). Pick `minSize` as the smallest room it still works in.
-3. Build the registry once at module scope with `createStageRegistry` and pass it to `<Stage registry layout update widthRem />`. A module appears on the Stage when its id is in the layout: add it to a default layout or from a menu (`addWithMin`).
+3. Build the registry once at module scope with `createStageRegistry` and pass it to `<Stage registry layout update />` (add `widthRem` only when the page owns the width model; otherwise the Stage measures its own container). A module appears on the Stage when its id is in the layout: add it to a default layout or from a menu (`addWithMin`).
 4. Do not read the layout, query a parent or assume pixels (section 3). If it cannot work at its minimum size, raise `minSize`.
 
 ### Spike-only (throwaway)
@@ -384,7 +386,7 @@ Decided with the human. Nothing here is started; each step is a proposed follow-
 - A shared time-to-pixel mapping between a clip row and the roll.
 - Who owns selection and project state: the page, above the Stage and the inspector.
 - Where a module's own view state (pan, zoom, scroll) lives so it can be saved or restored.
-- The inspector is outside the Stage's width model (a hard-coded 17rem in the spike).
+- The inspector is outside the Stage's width model (a hard-coded 17rem in the spike). Since W-24 a page can mount the Stage in a container beside the inspector and let the Stage measure that container, which removes the subtraction.
 - Presets are implicit snapshots; `Alt+digit` is a window-level listener, not a command registry.
 
 ### Dependencies checked

@@ -7,7 +7,6 @@ Tags: every item starts with its workstream folder name under `arcs/` (e.g. `[wo
 Source arc: **Clips and the clip editor** (archived in `arcs/workbench/ARC.clips.md` / `arcs/workbench/PROGRESS.clips.md`, last commit `8ee3cc4`).
 
 ## Next arc candidates
-- [stage] **The Stage should measure its own width, not the window's,** before it is embedded in any page (visible-column count currently comes from `window.innerWidth` through `useWidthRem`). Found in the M3 review (2026-11-14).
 - [stage] **Debounce layout saves.** The layout is written to localStorage on every pointermove during a splitter drag; save about 200 ms after the last change or on drag end. Found in the M3 review (2026-11-14).
 - [stage] **Restore scroll position across a reparent.** Moving a module keeps its state but loses its scroll position, selection and media state; a module keeps its own scroll in state today. Consider capturing and restoring `scrollTop`/`scrollLeft` of the host in the Stage. M3 (2026-11-14).
 - [stage] **Where selection and project state live.** Spike modules and the inspector share a selection through a context above both, a side channel outside the module contract. Decide in M6. (M5, 2026-11-14)

@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M8 committed; M9a (Stage prerequisites) next, then M9b (Stage inside the clip editor), then the human checkpoint. The human chose to go straight to M8; the combined review of M6b, M7 and everything since M6d is still owed and happens at the M9 checkpoint
-- State: ready for M9a
+- Current milestone: M8 committed; M9a committed; M9b (Stage inside the clip editor) next, then the human checkpoint. The human chose to go straight to M8; the combined review of M6b, M7 and everything since M6d is still owed and happens at the M9 checkpoint
+- State: ready for M9b
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -35,6 +35,7 @@
 | M7 | Built: stack chords onto existing notes (note resolved in the editor, exact onset/pitch/length/velocity, never alters existing notes, one undo step); reviewer pass with fixes (stack protects notes at all onsets, tolerance and cents header, tie-break, stray hover ghost) | `check:workbench` green (final run: all steps, 1403 tests; harmonic-field-lab types were fixed by its arc); workbench + PianoRoll + EditorPalette 99 files / 1711 tests | DECISIONS W-22. Backlog: exact pointer position for the anchor. Open taste items: continuous insert after a stack; grid-cell capture at coarse grids. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
 | M8 | Done, committed (no separate reviewer run: pure `git mv` move, 22 renames at 100% or near, imports re-pointed) | `check:workbench` green (84 files, 1403 tests), `check:hfl` green (33 files, 771 tests), `check:stage` green (13 files, 153 tests, after widening its scope) | Stage and kit promoted to `src/components/Stage/` and `src/components/InspectorKit/` (W-23); spike stays in `src/pages/stage/` (StageApp, stand-ins, spike, presets, KitDemo). `check:stage` in `package.json` widened to the new folders (lock taken and released). No behaviour change. `Stage.test.tsx` stays in the spike because it tests the Stage through the spike; a spike-free Stage test in `components/Stage` is not written. |
+| M9a | Done, committed (builder only; reviewer skipped: small, diff read by the orchestrator) | `check:stage` green (13 files, 159 tests), `check:workbench` green (84 files, 1403 tests), `check:hfl` green (33 files, 771 tests) | The Stage measures its own container width when `widthRem` is absent; `loadLayout`/`saveLayout` take an optional `hrifa.stage.` key (W-24). Spike unchanged (still passes `widthRem`). BACKLOG item "Stage should measure its own width" removed. Presets and tipDelay helpers have no key parameter (not needed yet). |
 
 ## Shared touches (locks taken)
 - `src/components/PianoRoll/`: re-taken 2026-11-13 for M6d (opt-in `revealPoint` so a moved or advanced anchor stays in view; the human wants the view to follow, not run off the edge), released after commit e28a791.
@@ -47,4 +48,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-M9a: lock `src/components/Stage/`, `src/lib/stage/`, `src/pages/stage/`; builder (Stage measures its own width; optional layout storage key), reviewer, `check:stage` + `check:hfl` + `check:workbench`, commit, release locks. Then M9b (ARC.md). The M9 scout map (2026-11-14): roll and picker both live in `NoteClipEditor` (`.work` row, `ChordPickerHost` dock or takeover portal); chord session state is editor-owned; no test covers picker state surviving a host switch.
+M9b (ARC.md): builder (Stage inside `NoteClipEditor` `.work` hosting the roll and the chord picker as closure modules; its own layout key; migrate `chordDockWidth`/`chordHost`; takeover unchanged), reviewer, `check:workbench` (+ `check:stage` if the Stage changes), commit, then the human checkpoint (also the combined review owed since M6d).

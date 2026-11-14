@@ -51,8 +51,11 @@ export interface StageProps {
   layout: Layout;
   /** Apply a change to the latest layout (a React state updater). */
   update(fn: (l: Layout) => Layout): void;
-  /** The window width in rem; with the column widths it decides how many columns are shown. */
-  widthRem: number;
+  /**
+   * The width in rem; with the column widths it decides how many columns are shown. When absent the Stage measures its
+   * own container (ResizeObserver on its root); until the first measurement the width counts as 0 (one column).
+   */
+  widthRem?: number;
   /** Spike only: overlay each slot's measured size class. */
   showSizes?: boolean;
 }
@@ -60,7 +63,7 @@ export interface StageProps {
 const rootPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 const pct = (v: number) => Math.round(v * 100);
 
-export function Stage({ registry, layout, update, widthRem, showSizes }: StageProps) {
+export function Stage({ registry, layout, update, widthRem: widthProp, showSizes }: StageProps) {
   const hosts = useRef(new Map<string, HTMLDivElement>());
   const hostFor = (id: string) => {
     let host = hosts.current.get(id);
@@ -85,8 +88,11 @@ export function Stage({ registry, layout, update, widthRem, showSizes }: StagePr
   heightRef.current = heightRem;
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
+  const [ownWidthRem, setOwnWidthRem] = useState(0);
+  const widthRem = widthProp ?? ownWidthRem;
   const widthRef = useRef(widthRem);
   widthRef.current = widthRem;
+  const selfMeasure = widthProp === undefined;
 
   useLayoutEffect(() => {
     const el = root.current;
@@ -98,12 +104,15 @@ export function Stage({ registry, layout, update, widthRem, showSizes }: StagePr
       if (r.height > 0) {
         setHeightRem(pxToRem(r.height, rootPx()));
       }
+      if (selfMeasure && r.width > 0) {
+        setOwnWidthRem(pxToRem(r.width, rootPx()));
+      }
     };
     read();
     const observer = new ResizeObserver(read);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [selfMeasure]);
 
   // stored shares below the minimum are repaired once the column height is known
   useEffect(() => {

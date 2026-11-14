@@ -1,12 +1,12 @@
 /**
  * Layout storage for the Stage page. The pure core (src/lib/stage) never touches storage; this does, defensively:
  * storage can be missing or throw (private windows, quota), and neither case may break the page. Only the layout key
- * `hrifa.stage.layout.v1` is read or written; no other page's keys.
+ * (default `hrifa.stage.layout.v1`, or a given key that starts with `hrifa.stage.`) is read or written.
  */
 import {
-  LAYOUT_STORAGE_KEY,
   parseLayout,
   serializeLayout,
+  stageStorageKey,
   type Layout,
   type ModuleRegistry,
 } from '../../lib/stage';
@@ -25,28 +25,38 @@ export function browserStorage(): StageStorage | undefined {
   }
 }
 
-/** The stored layout (sanitised against the registry), or `fallback` when nothing usable is stored. */
+/**
+ * The stored layout (sanitised against the registry), or `fallback` when nothing usable is stored. `key` defaults to
+ * the Stage layout key; a given key must start with `hrifa.stage.` (otherwise this throws).
+ */
 export function loadLayout(
   storage: StageStorage | undefined,
   registry: ModuleRegistry,
-  fallback: Layout
+  fallback: Layout,
+  key?: string
 ): Layout {
+  const k = stageStorageKey(key);
   let raw: string | null = null;
   try {
-    raw = storage?.getItem(LAYOUT_STORAGE_KEY) ?? null;
+    raw = storage?.getItem(k) ?? null;
   } catch {
     raw = null;
   }
   return parseLayout(raw, registry, fallback);
 }
 
-/** Store a layout; false when storage is missing or threw. */
-export function saveLayout(storage: StageStorage | undefined, layout: Layout): boolean {
+/** Store a layout (under `key`, default the Stage layout key; throws for a key without `hrifa.stage.`); false when storage is missing or threw. */
+export function saveLayout(
+  storage: StageStorage | undefined,
+  layout: Layout,
+  key?: string
+): boolean {
+  const k = stageStorageKey(key);
   try {
     if (!storage) {
       return false;
     }
-    storage.setItem(LAYOUT_STORAGE_KEY, serializeLayout(layout));
+    storage.setItem(k, serializeLayout(layout));
     return true;
   } catch {
     return false;

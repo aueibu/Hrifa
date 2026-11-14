@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_LAYOUT, type Layout } from './layout';
-import { LAYOUT_STORAGE_KEY, parseLayout, serializeLayout } from './persist';
+import { LAYOUT_STORAGE_KEY, parseLayout, serializeLayout, stageStorageKey } from './persist';
 import { createRegistry } from './registry';
 
 const good: Layout = {
@@ -173,5 +173,14 @@ describe('review additions', () => {
       version: 1,
       columns: [],
     });
+  });
+});
+
+describe('stageStorageKey', () => {
+  it('defaults to the layout key, accepts hrifa.stage. keys and throws otherwise', () => {
+    expect(stageStorageKey()).toBe(LAYOUT_STORAGE_KEY);
+    expect(stageStorageKey('hrifa.stage.layout.x.v1')).toBe('hrifa.stage.layout.x.v1');
+    expect(() => stageStorageKey('hrifa.workbench.x')).toThrow(/hrifa\.stage\./);
+    expect(() => stageStorageKey('')).toThrow();
   });
 });

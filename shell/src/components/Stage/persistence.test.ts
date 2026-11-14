@@ -61,3 +61,28 @@ describe('layout persistence', () => {
     expect(saveLayout(undefined, fallback)).toBe(false);
   });
 });
+
+describe('layout storage key', () => {
+  const other: Layout = { version: 1, columns: [{ slots: ['b'] }] };
+
+  it('keeps two keys apart and leaves the default key alone', () => {
+    const s = fakeStorage();
+    saveLayout(s, fallback);
+    expect(saveLayout(s, other, 'hrifa.stage.layout.workbench.v1')).toBe(true);
+    expect([...s.data.keys()].sort()).toEqual([
+      'hrifa.stage.layout.v1',
+      'hrifa.stage.layout.workbench.v1',
+    ]);
+    expect(loadLayout(s, registry, { version: 1, columns: [] })).toEqual(fallback);
+    expect(loadLayout(s, registry, fallback, 'hrifa.stage.layout.workbench.v1')).toEqual(other);
+    expect(loadLayout(s, registry, fallback, 'hrifa.stage.layout.v1')).toEqual(fallback);
+  });
+
+  it('refuses a key without the hrifa.stage. prefix', () => {
+    const s = fakeStorage();
+    expect(() => saveLayout(s, fallback, 'layout')).toThrow(/hrifa\.stage\./);
+    expect(() => loadLayout(s, registry, fallback, 'hrifa.other.x')).toThrow(/hrifa\.stage\./);
+    expect(() => saveLayout(s, fallback, 'hrifa.stage.')).toThrow();
+    expect(s.data.size).toBe(0);
+  });
+});
