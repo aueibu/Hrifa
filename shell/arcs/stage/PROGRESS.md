@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M1 closed (checkpoint answered 2026-11-13); next M2
-- State: ready to build M2
+- Current milestone: M2 built and reviewed, NOT committed (gate red from another arc)
+- State: blocked on shared gate (shell rule 14): waiting for the harmonic-field-lab arc or the human
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -13,6 +13,7 @@
 | C0 (2026-11-13) | Done | none run | Other arcs: workbench (chord input, M7 committed, awaiting human review then M8) and harmonic-field-lab (M5 approved, M6 next) are both active; structure is finished. `arcs/LOCKS.md` has no rows. Nothing imports the lab's `state/layout.ts` or `components/ui.tsx`. Workbench `SplitStage`, `canvasTakeover`, `ClipEditorSlot`, `compactTheme` are used only inside `composition-workbench/` and `CompositionWorkbench.page.tsx`. Relevant decisions: W-11 (opt-in roll props), W-15 to W-17 (chord-input ghost notes, dock beside the roll and canvas takeover as named slots; per-viewer prefs `chordHost`, `chordDockWidth`), W-10 (per-viewer prefs outside the project prefix), H-1/H-2 (lab pitch and colour roles). Relevant backlog: "Bring Melodicization and Mixer onto the new roll/lane conventions", "Tuning-aware pitch axis" and the non-12-EDO umbrella (roll rows), chord picker polish and the chord label strip (need a roll header strip, shared `PianoRoll`). No conflicts with this arc's owned paths. |
 | M1 (2026-11-13) | Done, reviewed | `check:stage` green (no stage files to test) | Builder wrote `src/pages/stage/ARCHITECTURE.md` (vocabulary, size classes, module contract, worked examples, lab kit tokens, gap list, 12 open questions) and `DECISIONS.md` STAGE-1 to STAGE-3 (prefix registered). Reviewer: criteria met, 13 accuracy corrections (two substantive: the chord host does NOT meet the mounted-once rule and reaches into its parent); all fixed in attempt 2. Findings for the human: only the 24rem width and the 14rem and 6rem minimums come from code, 40rem, 12rem, 28rem and the 0.5rem hysteresis are proposals; the lab's switch-style toggle is a custom `switchChip` button, not a Mantine Switch; no module in the lab or workbench keeps state when moved today, so mounted-once is new code. |
 | M1 checkpoint (2026-11-13) | Closed | `check:stage` green | Human answered Q1 to Q12 and confirmed the size scale (U = 6rem, boundaries 30 and 42rem, minimum slot 12 x 6rem, 0.5rem hysteresis). Written to ARC.md (M1 Checkpoint decisions), DECISIONS `STAGE-4` (supersedes the thresholds in STAGE-2), and ARCHITECTURE.md sections 2, 5, 7. |
+| M2 (2026-11-13) | Built and reviewed, uncommitted | own paths green: `tsc` clean for `src/lib/stage/`, `oxfmt` and `oxlint` clean, `vitest run src/lib/stage` 5 files 82 tests. `check:stage` RED only from `src/pages/harmonic-field-lab/state/m6.test.ts(76,12)(77,12)` TS2531 (lab arc mid-M6) | Builder (2 attempts) wrote `src/lib/stage/` (size, registry, splitters, layout, persist, README, 5 test files) and ARCHITECTURE.md section 9. Reviewer: pass; 6 corrections applied. The lab criterion "narrow screen keeps the inner pair" is replaced by the left-to-right prefix rule (no sides on the Stage). Decisions logged as `STAGE-5`. Not committed because shell rule 14 says to wait for the other arc. |
 
 ## Shared touches (locks taken)
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). Planned: `package.json` (setup, `check:stage`), then `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts` (M3), `shell/ARCHITECTURE.md` (M3, M6).
@@ -21,4 +22,4 @@
 - None open.
 
 ## Next action
-Brief a builder for M2 (pure layout core in `src/lib/stage/`: open module ids, columns of one to three slots with column widths, stack shares, both splitter rules, `fitColumns`, size classes from the STAGE-4 scale as pure functions, versioned `parseLayout`), then a reviewer; run `check:stage` once at the end. (M1 was: a builder writes `src/pages/stage/ARCHITECTURE.md` (vocabulary, size set and thresholds, module contract, worked examples, kit tokens measured from the lab, gap list) and appends DECISIONS rows STAGE-1 to STAGE-3; a reviewer checks it; then stop at the M1 human checkpoint.)
+When `check:stage` is green (the lab arc fixes or commits `m6.test.ts`) or the human says to commit on own-path checks: commit M2 path-scoped (`src/lib/stage/`, `src/pages/stage/ARCHITECTURE.md`, `DECISIONS.md`, `arcs/stage/`), then start M3 (needs the `src/Router.tsx`, `src/data/applets.ts` and `src/pages/Stage.page.tsx` locks; the Router lock is currently held by harmonic-field-lab). M3 notes from the review: always show at least one column; call `clampColumnShares` after measuring; pass real default columns as the `parseLayout` fallback; look up column indexes at action time.
