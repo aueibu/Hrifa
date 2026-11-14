@@ -7,7 +7,7 @@ import type { StageStorage } from './persistence';
 import { Stage } from './Stage';
 import { StageApp } from './StageApp';
 import { addWithMin } from './stageOps';
-import { STANDIN_REGISTRY } from './standins';
+import { DEFAULT_STAGE_LAYOUT, STANDIN_REGISTRY } from './standins';
 import { pickerProbe } from './standins/PickerStandin';
 
 vi.setConfig({ testTimeout: 15_000 });
@@ -400,7 +400,15 @@ describe('StageApp', () => {
     const user = userEvent.setup();
     const { data, storage } = memory();
     window.innerWidth = 2400; // room for every column
-    const first = render(<StageApp storage={storage} />);
+    const first = render(
+      <StageApp
+        storage={storage}
+        registry={STANDIN_REGISTRY}
+        defaultLayout={DEFAULT_STAGE_LAYOUT}
+        presets={[]}
+        inspector={false}
+      />
+    );
     expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByText('Stage (spike)')).toBeInTheDocument();
     // the default: a picker column and a roll over notes stack
@@ -422,7 +430,15 @@ describe('StageApp', () => {
     await user.click(screen.getByRole('button', { name: 'Close Roll stand-in' }));
     first.unmount();
     // a new page load reads what the last one saved
-    render(<StageApp storage={storage} />);
+    render(
+      <StageApp
+        storage={storage}
+        registry={STANDIN_REGISTRY}
+        defaultLayout={DEFAULT_STAGE_LAYOUT}
+        presets={[]}
+        inspector={false}
+      />
+    );
     expect(screen.queryByRole('region', { name: 'Roll stand-in' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Reset layout' }));
@@ -443,7 +459,15 @@ describe('StageApp', () => {
       })
     );
     window.innerWidth = 2400;
-    render(<StageApp storage={storage} />);
+    render(
+      <StageApp
+        storage={storage}
+        registry={STANDIN_REGISTRY}
+        defaultLayout={DEFAULT_STAGE_LAYOUT}
+        presets={[]}
+        inspector={false}
+      />
+    );
     await user.click(screen.getByRole('button', { name: 'Picks' }));
     await user.click(screen.getByRole('button', { name: 'Picks' }));
     window.innerWidth = 480; // 30 rem: one column

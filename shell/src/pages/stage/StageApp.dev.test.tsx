@@ -13,7 +13,14 @@ describe('Developer option', () => {
       setItem: (k, v) => void data.set(k, v),
     };
     const user = userEvent.setup();
-    render(<StageApp storage={storage} defaultLayout={{ version: 1, columns: [] }} />);
+    render(
+      <StageApp
+        storage={storage}
+        defaultLayout={{ version: 1, columns: [] }}
+        presets={[]}
+        inspector={false}
+      />
+    );
     await user.click(screen.getByRole('button', { name: 'Developer' }));
     const field = await screen.findByLabelText('Tooltip delay (ms)');
     expect(field).toHaveValue('330');

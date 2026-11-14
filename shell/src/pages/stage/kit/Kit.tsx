@@ -5,7 +5,14 @@
  * Where things go (ARCHITECTURE.md "How to add a panel"): view tools in the strip, the panel's commands in `Actions` at
  * the end of the body, long explanations in a `Tip`, never in a label.
  */
-import { createContext, useContext, useId, type ReactNode } from 'react';
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  useId,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from 'react';
 import {
   ActionIcon,
   Button,
@@ -15,6 +22,7 @@ import {
   Text,
   TextInput,
   Tooltip,
+  type ActionIconProps,
   type ButtonProps,
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
@@ -29,13 +37,23 @@ export const useDensity = () => useContext(DensityContext);
 export function KitScope({
   density = DEFAULT_DENSITY,
   children,
+  className,
+  fill,
 }: {
   density?: Density;
   children: ReactNode;
+  className?: string;
+  /** The scope takes the height its parent gives (a column of panels in a fixed region). */
+  fill?: boolean;
 }) {
   return (
     <DensityContext.Provider value={density}>
-      <div className={classes.scope} data-kit-density={density} style={tokenStyle(density)}>
+      <div
+        className={className ? `${classes.scope} ${className}` : classes.scope}
+        data-kit-density={density}
+        data-fill={fill ? 'true' : undefined}
+        style={tokenStyle(density)}
+      >
         {children}
       </div>
     </DensityContext.Provider>
@@ -56,32 +74,29 @@ export function Strip({ title, tools, id }: { title: ReactNode; tools?: ReactNod
   );
 }
 
-/** A header-strip tool: a subtle gray `sm` ActionIcon. The label is required (it is the accessible name). */
-export function StripTool({
-  label,
-  onClick,
-  children,
-  disabled,
-}: {
-  label: string;
-  onClick?: () => void;
-  children: ReactNode;
-  disabled?: boolean;
-}) {
+/**
+ * A header-strip tool: a subtle gray `sm` ActionIcon. The label is required (it is the accessible name). Extra props
+ * and the ref go to the button, so a tool can be a Mantine `Menu.Target`.
+ */
+export const StripTool = forwardRef<
+  HTMLButtonElement,
+  { label: string } & Omit<ActionIconProps, 'size' | 'variant' | 'color'> &
+    Omit<ComponentPropsWithoutRef<'button'>, 'color'>
+>(function StripTool({ label, children, ...rest }, ref) {
   return (
     <ActionIcon
+      {...rest}
+      ref={ref}
       size="sm"
       variant="subtle"
       color="gray"
       aria-label={label}
       title={label}
-      onClick={onClick}
-      disabled={disabled}
     >
       {children}
     </ActionIcon>
   );
-}
+});
 
 /** A panel: strip over a scrolling body of sections, rows and a final `Actions`. */
 export function Panel({
@@ -298,6 +313,7 @@ export function SegmentedField({
   return (
     <SegmentedControl
       size="xs"
+      classNames={{ root: classes.segRoot, label: classes.segLabel }}
       fullWidth
       value={value}
       data={[...data]}

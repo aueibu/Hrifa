@@ -1,7 +1,9 @@
 /**
- * The Stage spike page: a top bar (Home link, title, Modules menu, hidden-columns switcher, "Show sizes", Reset layout,
- * colour scheme) over the Stage. The layout is state here, loaded from and saved to `hrifa.stage.layout.v1`.
- * Spike only: the stand-in modules, "Show sizes" and the page chrome are throwaway (ARCHITECTURE.md section 10).
+ * The Stage spike page: a top bar (Home link, title, preset switcher, Modules menu, hidden-columns switcher, "Show
+ * sizes", Reset layout, colour scheme) over an inspector region (left) and the Stage. The layout is state here, loaded
+ * from and saved to `hrifa.stage.layout.v1`; the presets (`presets.ts`) are saved layouts under
+ * `hrifa.stage.presets.v1`, switched with Alt+1, Alt+2 or the control. Spike only: the modules, the inspector, "Show
+ * sizes" and the page chrome are throwaway (ARCHITECTURE.md sections 10 to 12).
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -14,33 +16,62 @@ import {
   Menu,
   NumberInput,
   Popover,
+  SegmentedControl,
   Text,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
 import { moduleIds, type Layout } from '../../lib/stage';
 import { loadTipDelay, MAX_TIP_DELAY, parseTipDelay, saveTipDelay, TipDelayContext } from './kit';
 import { browserStorage, loadLayout, saveLayout, type StageStorage } from './persistence';
+import {
+  initialStore,
+  layoutOf,
+  loadPresets,
+  presetForKey,
+  savePresets,
+  switchPreset,
+  type PresetDef,
+  type PresetStore,
+} from './presets';
 import type { StageRegistry } from './registry';
+import { SPIKE_PRESETS, SPIKE_REGISTRY } from './spike';
+import { INSPECTOR_REM, SpikeInspector } from './spike/Inspector';
+import { SpikeProvider } from './spike/state';
 import { Stage } from './Stage';
 import { addWithMin, moveToFront, shownColumnCount } from './stageOps';
-import { DEFAULT_STAGE_LAYOUT, STANDIN_REGISTRY } from './standins';
 import { useWidthRem } from './useWidthRem';
+import classes from './spike/spike.module.css';
 
 export interface StageAppProps {
   registry?: StageRegistry;
+  /** The layout when there are no presets (with presets, each preset carries its own default). */
   defaultLayout?: Layout;
+  /** Saved layouts to switch between; none hides the control. */
+  /** Keep this array stable between renders (a module constant): the save effect and key listener depend on it. */
+  presets?: readonly PresetDef[];
+  /** Show the inspector region (and the demo state its panels read). */
+  inspector?: boolean;
   /** Where the layout is stored (tests pass a fake); defaults to localStorage. */
   storage?: StageStorage;
 }
 
 export function StageApp({
-  registry = STANDIN_REGISTRY,
-  defaultLayout = DEFAULT_STAGE_LAYOUT,
+  registry = SPIKE_REGISTRY,
+  defaultLayout = SPIKE_PRESETS[0].layout,
+  presets = SPIKE_PRESETS,
+  inspector = true,
   storage,
 }: StageAppProps) {
   const store = useMemo(() => storage ?? browserStorage(), [storage]);
+  const [presetStore, setPresetStore] = useState<PresetStore>(() =>
+    presets.length > 0 ? loadPresets(store, presets, registry.meta) : initialStore(presets)
+  );
   const [layout, setLayout] = useState<Layout>(() =>
-    loadLayout(store, registry.meta, defaultLayout)
+    loadLayout(
+      store,
+      registry.meta,
+      presets.length > 0 ? layoutOf(presetStore, presets, presetStore.active) : defaultLayout
+    )
   );
   const [showSizes, setShowSizes] = useState(false);
   const [tipDelay, setTipDelay] = useState(() => loadTipDelay(store));
@@ -51,6 +82,53 @@ export function StageApp({
     saveLayout(store, layout);
   }, [store, layout]);
 
+  // the active preset always holds the layout it is showing, so a reload or a switch loses nothing
+  useEffect(() => {
+    if (presets.length > 0) {
+      savePresets(store, {
+        ...presetStore,
+        layouts: { ...presetStore.layouts, [presetStore.active]: layout },
+      });
+    }
+  }, [store, presets, presetStore, layout]);
+
+  const choosePreset = useCallback(
+    (id: string) => {
+      if (id === presetStore.active) {
+        return;
+      }
+      const next = switchPreset(presetStore, presets, id, layout);
+      setPresetStore(next);
+      setLayout(layoutOf(next, presets, id));
+    },
+    [presetStore, presets, layout]
+  );
+
+  useEffect(() => {
+    if (presets.length === 0) {
+      return undefined;
+    }
+    const on = (e: KeyboardEvent) => {
+      const t = e.target;
+      if (
+        e.isComposing ||
+        e.repeat ||
+        e.defaultPrevented ||
+        (t instanceof HTMLElement &&
+          (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))
+      ) {
+        return;
+      }
+      const id = presetForKey(e, presets);
+      if (id) {
+        e.preventDefault();
+        choosePreset(id);
+      }
+    };
+    window.addEventListener('keydown', on);
+    return () => window.removeEventListener('keydown', on);
+  }, [presets, choosePreset]);
+
   useEffect(() => {
     saveTipDelay(store, tipDelay);
   }, [store, tipDelay]);
@@ -59,7 +137,8 @@ export function StageApp({
 
   const inLayout = new Set(moduleIds(layout));
   const available = [...registry.meta.values()].filter((m) => !inLayout.has(m.id));
-  const shown = shownColumnCount(layout, widthRem);
+  const stageRem = widthRem - (inspector ? INSPECTOR_REM : 0);
+  const shown = shownColumnCount(layout, stageRem);
   const hidden = layout.columns.slice(shown).flatMap((c) => c.slots);
 
   return (
@@ -75,6 +154,15 @@ export function StageApp({
             </Text>
           </Group>
           <Group gap="sm" wrap="nowrap">
+            {presets.length > 0 && (
+              <SegmentedControl
+                size="xs"
+                aria-label="Layout preset"
+                value={presetStore.active}
+                onChange={choosePreset}
+                data={presets.map((p, i) => ({ value: p.id, label: `${p.label} (Alt+${i + 1})` }))}
+              />
+            )}
             <Menu position="bottom-end" withinPortal>
               <Menu.Target>
                 <Button size="compact-xs" variant="default">
@@ -141,7 +229,17 @@ export function StageApp({
               checked={showSizes}
               onChange={(e) => setShowSizes(e.currentTarget.checked)}
             />
-            <Button size="compact-xs" variant="default" onClick={() => setLayout(defaultLayout)}>
+            <Button
+              size="compact-xs"
+              variant="default"
+              onClick={() =>
+                setLayout(
+                  presets.length > 0
+                    ? (presets.find((p) => p.id === presetStore.active)?.layout ?? defaultLayout)
+                    : defaultLayout
+                )
+              }
+            >
               Reset layout
             </Button>
             <ColorSchemeToggle />
@@ -149,15 +247,22 @@ export function StageApp({
         </Group>
       </AppShell.Header>
       <AppShell.Main>
-        <TipDelayContext.Provider value={tipDelay}>
-          <Stage
-            registry={registry}
-            layout={layout}
-            update={update}
-            widthRem={widthRem}
-            showSizes={showSizes}
-          />
-        </TipDelayContext.Provider>
+        <SpikeProvider>
+          <div className={classes.workArea}>
+            {inspector && <SpikeInspector />}
+            <div className={classes.stageBox}>
+              <TipDelayContext.Provider value={tipDelay}>
+                <Stage
+                  registry={registry}
+                  layout={layout}
+                  update={update}
+                  widthRem={stageRem}
+                  showSizes={showSizes}
+                />
+              </TipDelayContext.Provider>
+            </div>
+          </div>
+        </SpikeProvider>
       </AppShell.Main>
     </AppShell>
   );

@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M4 committed; M5 next (then one checkpoint)
-- State: in progress, M5
+- Current milestone: M5 committed; awaiting the merged M4+M5 human checkpoint
+- State: awaiting human (try /stage)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -18,6 +18,7 @@
 
 | M3 checkpoint (2026-11-14) | Closed | none run | Human tried /stage: everything approved (resize, hidden-columns mode, splitters, stacking, themes), no changes asked. |
 | M4 (2026-11-14) | Done, reviewed, committed | `check:stage` green (11 files, 129 tests) | Builder wrote `src/pages/stage/kit/` (tokens with two densities, Kit pieces, settings, KitDemo, tests), Developer popover for the tip delay in `StageApp`, kit demo module in the registry, ARCHITECTURE.md section 11 (how to add a panel). Reviewer: pass, no blockers; fixed: toggle padding, Developer field editing and keyboard focus, Section markup, token leftovers, extra tests. Decisions: STAGE-9, STAGE-10. Not fixed (carried to M5): reviewer finding 4 (rows really one height in a browser: needs a look), finding 9 / Q10 (kit `Strip` duplicates the Slot strip; merge in M5). Human checkpoint merged into M5. Not looked at in a browser. |
+| M5 (2026-11-14) | Done, reviewed, committed | `check:stage` green (13 files, 144 tests) | Builder wrote `src/pages/stage/spike/` (shared PianoRoll as a wide module, canvas stand-in, one chord picker rendering 2x1 narrow and 3x1 otherwise, inspector from the kit with note and clip panels, shared demo state), `presets.ts` (Sketch Alt+1, Audition Alt+2), merged the kit Strip into the Slot strip (Q10), row-height overrides. Reviewer: pass, no blockers; fixed: Alt+digit ignored while typing in a field (plus test), close glyph, note on `presets` prop stability. Decisions: STAGE-11 to STAGE-13. Backlog: six `[stage]` items from the build. Not looked at in a browser by anyone. For the human to judge: default preset widths (Sketch needs about 92rem, Audition about 100rem, so the roll or canvas hides on a 1440 or 1366 px window), whether rows really line up at one height, density `roomy` (a proposal), small deltas on the M3 strip (native `title` on slot tools, strip is a `div`). |
 
 ## Shared touches (locks taken)
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). M3: `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `ARCHITECTURE.md` taken 2026-11-14, released after the M3 commit (see git log). Planned later: `shell/ARCHITECTURE.md` (M6), `src/components/` and `src/theme/` only at M6 if the human decides.
@@ -26,4 +27,4 @@
 - None open.
 
 ## Next action
-M5 (spike with realistic modules: shared PianoRoll as wide module, canvas stand-in, chord-picker stand-in 2x1 beside / 3x1 above from one component, inspector from the kit with note and clip panels, two preset layouts). Also fold in: merge kit Strip with Slot strip (Q10), check rows are one height. Builder, reviewer, `check:stage`, commit, then the single human checkpoint (covers M4 and M5).
+Merged M4+M5 human checkpoint: open `/stage` (`corepack yarn dev` in `shell/`) and judge: the density and look of the kit against the lab (Kit demo module from the Modules menu, both densities, light and dark); rows lining up at one height; the Sketch and Audition presets (Alt+1, Alt+2: does the chord picker keep its state and change from 2x1 to 3x1; selecting a note and a clip fills the inspector); whether the default preset widths suit your screen; whether anything felt bound or awkward (record in PROGRESS for M6). Write the answers into ARC.md (M5 Checkpoint decisions). Then M6 (decision milestone, with the human).

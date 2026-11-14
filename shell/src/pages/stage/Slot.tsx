@@ -5,9 +5,10 @@
  * never unmounts it; ARCHITECTURE.md section 10).
  */
 import { useLayoutEffect, useRef } from 'react';
-import { ActionIcon, Menu } from '@mantine/core';
+import { Menu } from '@mantine/core';
 import { pxToRem, slotSizeAttr, type SlotSize } from '../../lib/stage';
 import { CloseIcon, DownIcon, LeftIcon, RightIcon, StackIcon, UnstackIcon, UpIcon } from './icons';
+import { DENSITY_TOKENS, KitScope, Strip, StripTool } from './kit';
 import classes from './stage.module.css';
 
 export interface SlotTools {
@@ -116,98 +117,79 @@ export function Slot({ id, title, host, size, onMeasure, tools, showSize }: Slot
 
   return (
     <section className={classes.slot} aria-label={title} data-slot-id={id} tabIndex={-1}>
-      <header className={classes.strip}>
-        <h2 className={classes.stripTitle}>{title}</h2>
-        <div className={classes.stripTools}>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            aria-label={TOOL_LABEL.left(title)}
-            disabled={!tools.canLeft}
-            onClick={tools.onLeft}
-          >
-            <LeftIcon />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            aria-label={TOOL_LABEL.right(title)}
-            disabled={!tools.canRight}
-            onClick={tools.onRight}
-          >
-            <RightIcon />
-          </ActionIcon>
-          {tools.stacked && (
+      <KitScope className={classes.stripScope}>
+        <Strip
+          title={title}
+          tools={
             <>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                aria-label={TOOL_LABEL.up(title)}
-                disabled={!tools.canUp}
-                onClick={tools.onUp}
+              <StripTool
+                label={TOOL_LABEL.left(title)}
+                disabled={!tools.canLeft}
+                onClick={tools.onLeft}
               >
-                <UpIcon />
-              </ActionIcon>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                aria-label={TOOL_LABEL.down(title)}
-                disabled={!tools.canDown}
-                onClick={tools.onDown}
+                <LeftIcon />
+              </StripTool>
+              <StripTool
+                label={TOOL_LABEL.right(title)}
+                disabled={!tools.canRight}
+                onClick={tools.onRight}
               >
-                <DownIcon />
-              </ActionIcon>
+                <RightIcon />
+              </StripTool>
+              {tools.stacked && (
+                <>
+                  <StripTool
+                    label={TOOL_LABEL.up(title)}
+                    disabled={!tools.canUp}
+                    onClick={tools.onUp}
+                  >
+                    <UpIcon />
+                  </StripTool>
+                  <StripTool
+                    label={TOOL_LABEL.down(title)}
+                    disabled={!tools.canDown}
+                    onClick={tools.onDown}
+                  >
+                    <DownIcon />
+                  </StripTool>
+                </>
+              )}
+              <Menu position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <StripTool
+                    label={TOOL_LABEL.stack(title)}
+                    disabled={tools.stackTargets.length === 0}
+                  >
+                    <StackIcon />
+                  </StripTool>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {tools.stackTargets.map((t) => (
+                    <Menu.Item key={t.id} disabled={!t.enabled} onClick={() => tools.onStack(t.id)}>
+                      {`Stack onto ${t.title}`}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
+              {tools.stacked && (
+                <StripTool label={TOOL_LABEL.unstack(title)} onClick={tools.onUnstack}>
+                  <UnstackIcon />
+                </StripTool>
+              )}
+              <StripTool label={TOOL_LABEL.close(title)} onClick={tools.onClose}>
+                <CloseIcon />
+              </StripTool>
             </>
-          )}
-          <Menu position="bottom-end" withinPortal>
-            <Menu.Target>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                aria-label={TOOL_LABEL.stack(title)}
-                disabled={tools.stackTargets.length === 0}
-              >
-                <StackIcon />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {tools.stackTargets.map((t) => (
-                <Menu.Item key={t.id} disabled={!t.enabled} onClick={() => tools.onStack(t.id)}>
-                  {`Stack onto ${t.title}`}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
-          {tools.stacked && (
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
-              aria-label={TOOL_LABEL.unstack(title)}
-              onClick={tools.onUnstack}
-            >
-              <UnstackIcon />
-            </ActionIcon>
-          )}
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            aria-label={TOOL_LABEL.close(title)}
-            onClick={tools.onClose}
-          >
-            <CloseIcon />
-          </ActionIcon>
-        </div>
-      </header>
+          }
+        />
+      </KitScope>
       <div ref={body} className={classes.slotBody} data-slot-size={attr} />
       {showSize && (
-        <span className={classes.sizeBadge} aria-hidden="true">
+        <span
+          className={classes.sizeBadge}
+          style={{ top: `calc(${DENSITY_TOKENS.compact.stripHeight} + 0.25rem)` }}
+          aria-hidden="true"
+        >
           {attr}
         </span>
       )}
