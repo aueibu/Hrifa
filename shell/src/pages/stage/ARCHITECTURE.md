@@ -352,3 +352,41 @@ Merged in M5: the slot strip is the kit `Strip` and `StripTool` inside a compact
 - Shared demo state (`spike/state.tsx`): notes, clips and selection in a context provided above the inspector and the Stage; modules read what is selected, never where they are.
 - Last column fills spare width (M5b, human decision): the last visible column is `flex: 1 0 auto` with its stored width as its nominal minimum, so modules and the `ResizeObserver` size classes see the real width. `shownColumnCount`/`fitColumns` still count stored widths, so the filling column's minimum is what decides how many columns show. A splitter whose right column is the last visible one (`fillRoomRem` in `stageOps.ts`) sets only the left width; the last column's stored width shrinks only when the pair would no longer fit, never below its module minimum or the column minimum. Other splitters keep the constant-total rule. The saved layout format is unchanged. Modules have no maximum width in the registry, so nothing caps the filling column. Known limit, accepted for the spike: which rule a splitter uses (fill or constant-total) is decided on each move, so it can switch mid-drag when a hidden column appears or disappears; the change is not reversible across that switch.
 - Presets (default widths fit a 1366 px window): "sketch" (picker 2x1 beside a wide roll) and "audition" (picker 3x1 above the roll, canvas right). Switch with Alt+1, Alt+2 or the control. Keys: `hrifa.stage.layout.v1` (current layout) and `hrifa.stage.presets.v1` (active preset and one layout per preset; the active one always mirrors the current layout). Switching saves the current layout into the preset it leaves; "Reset layout" returns the active preset to its default.
+
+## 13. Promotion and adoption plan (M6, decided 2026-11-14, STAGE-19)
+
+Decided with the human. Nothing here is started; each step is a proposed follow-up arc, tracked in `shell/BACKLOG.md`.
+
+### What the spike proved
+- A module that only receives a size class can be moved, stacked and resized and keeps its state (mounted-once, STAGE-7).
+- One chord picker renders as 2x1 and 3x1 and loses no state when it moves (STAGE-13).
+- The kit gives panels one look from one token table; the Slot strip and the inspector strip are one implementation (STAGE-9, STAGE-11, STAGE-16).
+- The last column fills spare width, so a honed layout has no dead space (STAGE-15).
+- Modules cooperate through shared state, not through each other (STAGE-12, STAGE-18).
+
+### Where things live
+| Piece | Now | After first adoption |
+| --- | --- | --- |
+| Pure core (size, layout, splitters, parse) | `src/lib/stage/` | stays |
+| Stage component, Slot, Splitter, stage ops, persistence | `src/pages/stage/` | `src/components/` (lock; run `check:workbench` and `check:hfl` first) |
+| Inspector kit | `src/pages/stage/kit/` | `src/components/` |
+| Spike modules, presets, inspector demo, `/stage` route | `src/pages/stage/` | removed once a real page uses the Stage |
+
+### Adoption order
+1. **Workbench, chord dock and canvas takeover** (W-16, W-17), after the chord-input arc. The chord picker is already size-aware. This also triggers the promotion above.
+2. **Workbench, `SplitStage`.**
+3. **Workbench, `ClipEditorSlot` and the inspector on the kit.**
+4. **Lab:** keeps its own layout; adopts only the kit once promoted. Moving the lab onto the Stage is decided after the lab arc finishes.
+
+### Open contract questions for the adopting arcs (from M3 to M5c)
+- A defined command channel to a module (the spike sends a one-shot `{ clipId, nonce }` through shared state).
+- One selection model with a parent chain.
+- A shared time-to-pixel mapping between a clip row and the roll.
+- Who owns selection and project state: the page, above the Stage and the inspector.
+- Where a module's own view state (pan, zoom, scroll) lives so it can be saved or restored.
+- The inspector is outside the Stage's width model (a hard-coded 17rem in the spike).
+- Presets are implicit snapshots; `Alt+digit` is a window-level listener, not a command registry.
+
+### Dependencies checked
+Only `src/pages/Stage.page.tsx` imports `src/pages/stage/`; `src/lib/stage/` has no importers outside the arc. Removing the spike's modules, presets and demo state later touches nothing else.
+
