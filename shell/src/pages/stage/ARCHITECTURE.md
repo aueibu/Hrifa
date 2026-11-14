@@ -249,4 +249,63 @@ The pure layout code lives in `src/lib/stage/` (README there has the full API). 
 - `parseLayout(raw, known)` never throws and drops unknown ids, repeats, empty columns and bad shares; the storage key is `hrifa.stage.layout.v1` (the page does the storage access).
 - `nearestSupportedSize` tie-break: "largest" means highest width index plus height index; ties go to the wider size.
 - `unstack` gives the new column the default width. `fitColumns` can return 0, so M3 must show at least one column. `parseLayout` renormalises stored shares within 0.02 of summing to 1 and drops the rest; it takes a `fallback` layout (M3 passes the real default columns).
-- `minSize` is not enforced by the M2 core; the Stage enforces it in M3.
+- `minSize` is not enforced by the M2 core; the Stage enforces it in M3 (section 10).
+
+## 10. Stage and slots (M3)
+
+The React layer over the pure core in section 9. Everything below is in `src/pages/stage/`; the spike page is `src/pages/Stage.page.tsx` (route `/stage`, applet "Stage (spike)", status `experimental`).
+
+### Component map
+
+| file | role |
+| --- | --- |
+| `registry.ts` | `StageModule = ModuleMeta & { render(size) }`; `createStageRegistry(modules)` returns `{ meta, modules }` (`meta` is the data-only registry the core reads). Built once at module scope. |
+| `Stage.tsx` | Renders `layout.columns` through the registry: columns, slots, both splitter kinds, the host elements and the portals. Takes `layout`, `update(fn)` (a state updater), `widthRem` and `showSizes`; it owns no layout state. |
+| `Slot.tsx` | One slot: header strip with the tools, body measured by a `ResizeObserver`, adopts the module's host element. |
+| `Splitter.tsx` | One `role="separator"` for both kinds (vertical bar between columns, horizontal bar between stacked slots); keyboard and pointer drag with pointer capture. |
+| `sizeState.ts` | `withMeasure(sizes, id, wRem, hRem)`: a measurement folded into the per-module size record with hysteresis (`sizeOf` from the core). |
+| `stageOps.ts` | Pure rules added over the core: `minSize` enforcement, `shownColumnCount`, `moveToFront`, column splitter bounds. |
+| `persistence.ts` | `loadLayout` / `saveLayout` over a `StageStorage` (try/catch around every access). |
+| `StageApp.tsx` | The spike page: top bar (Home, title, Modules menu, hidden-columns switcher, Show sizes, Reset layout, colour scheme) and the Stage. Owns the layout state. |
+| `stage.module.css` | All slot, strip and splitter measurements as custom properties on `.root` (defined once, from section 5), plus the styles. |
+| `standins/` | Throwaway modules (roll, picker, notes) and the default layout. |
+
+### How size flows
+
+`ResizeObserver` on the slot **body** (border-box, header excluded) -> `Slot` reads `getBoundingClientRect()` and converts px to rem with the document root font size -> `onMeasure(id, widthRem, heightRem)` -> `Stage` folds it into `sizes[id]` with `withMeasure` (`sizeOf` with the 0.5rem hysteresis against the previous class) -> `data-slot-size="<width>-<height>"` on the body gets the measured class, and the module's `render(size)` gets `nearestSupportedSize(measured, module.sizes)`. A slot that is not laid out (a zero rectangle, e.g. a hidden column) keeps its last size. Until the first measurement a module is rendered at `regular x regular`.
+
+### Mounted-once mechanism and its limits
+
+Each module in the layout is rendered **once**, at the Stage root, in a list keyed by module id: `createPortal(module.render(size), hostElement, id)`. `hostElement` is a persistent `div` the Stage creates per module id (kept in a ref, never re-created while the module is in the layout). A `Slot` adopts it in a layout effect (`body.appendChild(host)`) and releases it on unmount only if it is still the parent. So a move, stack, unstack, reorder or resize changes where the host hangs in the document and never the React element that owns the module's state; hidden columns stay mounted (their hosts are detached). Closing a module (removing it from the layout) unmounts it and drops its host.
+
+Known limits:
+- Reparenting a DOM node loses keyboard focus and the scroll position of scrollable descendants. Restored: (a) focus inside the module (the old slot records the focused element in a `WeakMap` keyed by the host before releasing it, the new slot refocuses it after adopting); (b) after a slot tool moved the slot (left, right, up, down, stack, unstack) focus goes to the same tool, found by its accessible name, in the module's new slot, or to the slot section when that tool is disabled or gone (the Stage does this in a layout effect after the layout update; the intent expires after 1 s so a refused action never steals focus later). NOT restored: scroll positions (a module that cares keeps its scroll in state, like the roll's `view`), text selections, playing media.
+- Anything a module renders into a portal of its own (Mantine menus, tooltips) is unaffected. React events from the module bubble through the React tree (the Stage), not the DOM position.
+- Hidden columns are mounted but have no measured size, and keep rendering at the last size.
+
+### minSize
+
+A module's `minSize` is a size class read as a floor in rem (width: narrow 12, regular 30, wide 42; height: short 6, regular 30, tall 42; the scale boundaries; height includes the header strip). Enforced in `stageOps.ts`:
+- **Refused**: a move, stack or unstack that would leave a slot below its module's minimum returns the layout unchanged (`guarded`; a slot that was already below before the change does not block it). The matching tool is shown disabled (a Stack menu item for a column too narrow, a greyed move button). Heights are only checked once the stage height is known.
+- **Clamped**: the column width splitter (drag, arrows, Home, End) stops at the minimum widths of the modules in its two columns, and a stack splitter stops where either slot would drop below its module's minimum height (header included; `stackSplitterBounds`). Both report the real limits in `aria-valuemin` and `aria-valuemax`. If the two minimums cannot both fit, the splitter does nothing.
+- **Widened**: a module added from the Modules menu or unstacked gets its new column widened to its minimum width.
+- A module can still end up below its minimum only when the window forces it (a first column wider than the window scrolls instead of shrinking).
+
+### Behaviour of the pieces
+
+- Visible columns: `shownColumnCount(layout, widthRem)` (in `stageOps.ts`, used by both `Stage` and `StageApp`) is the longest left-to-right prefix whose widths, 0.5rem per splitter between columns and the 0.5rem stage padding fit the window, at least one and at most the number of columns (it does not use the core's `fitColumns`, whose per-column gap is 0.25rem); the first column may overflow and the column strip scrolls sideways. Hidden columns stay in the layout and are listed in the top bar "Hidden columns" menu; choosing one moves its column to the front (`moveToFront`). A splitter sits only between two visible columns.
+- Splitters: `aria-orientation`, `aria-valuenow`, `aria-valuemin/max`; keyboard (column: Left/Right 1rem, Home/End; stack: Up/Down 5%, Home/End); pointer drag. The column index is looked up when the action runs (by module id), never cached. After the stage height is measured `clampColumnShares` repairs stored shares below the minimum.
+- Slot tools: move left, move right, (in a stack) move up and down, stack onto (a menu of `stackTargets`), unstack, close. All are buttons with accessible names.
+- Persistence: key `hrifa.stage.layout.v1` (`LAYOUT_STORAGE_KEY`), loaded with `parseLayout(raw, registry, fallback)` where the fallback is `DEFAULT_STAGE_LAYOUT` (a picker column and a roll-over-notes stack), saved on every change in try/catch. "Reset layout" restores the default. No other key is read or written.
+- Column width comes from the layout (rem, default 36); the window width only decides how many columns are shown. The stage fills the height under the 40px top bar.
+
+### How to add a module (recipe)
+
+1. Write the module as a component that takes `size: SlotSize` and nothing else. Keep state above the per-size branch (in the component), never in the branch.
+2. Add an entry to a registry list: `{ id, title, sizes, minSize, render: (size) => <MyModule size={size} /> }` (`standins/index.tsx` is the example). `id` is unique and stable (it is persisted). `sizes` lists the classes it has a rendering for (each at least `minSize`; `registryProblems` in the core checks this). Pick `minSize` as the smallest room it still works in.
+3. Build the registry once at module scope with `createStageRegistry` and pass it to `<Stage registry layout update widthRem />`. A module appears on the Stage when its id is in the layout: add it to a default layout or from a menu (`addWithMin`).
+4. Do not read the layout, query a parent or assume pixels (section 3). If it cannot work at its minimum size, raise `minSize`.
+
+### Spike-only (throwaway)
+
+The stand-in modules in `standins/` (and `pickerProbe`, the mount counter the tests read), `StageApp`'s page chrome, the "Show sizes" overlay and the default layout. The registry, `Stage`, `Slot`, `Splitter`, `sizeState`, `stageOps` and `persistence` are the system. Not built yet: the Stage developer option for the tooltip open delay (Q6, default 330 ms), which waits for the kit (M4).

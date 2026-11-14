@@ -221,4 +221,13 @@ export const applets: Applet[] = [
     description:
       'Build microtonal note fields from exact ratios and equal divisions, carve scales out of them, and compare chords and intervals against just intonation. Prototype: the page is a placeholder while its core library is ported.',
   },
+  {
+    title: 'Stage (spike)',
+    href: '/stage',
+    category: 'sound',
+    status: 'experimental',
+    runtime: 'React app',
+    description:
+      'A layout and module-size experiment: move, stack and resize slots, and watch stand-in modules render for the size of the room they get.',
+  },
 ];

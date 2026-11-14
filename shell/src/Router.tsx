@@ -9,6 +9,7 @@ import { RadialGrowthTreePage } from './pages/RadialGrowthTree.page';
 import { RagaExplorerPage } from './pages/RagaExplorer.page';
 import { ScaleExplorerPage } from './pages/ScaleExplorer.page';
 import { SegmentTangentConstructionPage } from './pages/SegmentTangentConstruction.page';
+import { StagePage } from './pages/Stage.page';
 import { ThemeEditorPage } from './pages/ThemeEditor.page';
 import { UsernameSeedsPage } from './pages/UsernameSeeds.page';
 
@@ -67,6 +68,11 @@ const router = createBrowserRouter(
     {
       path: '/harmonic-field-lab',
       element: <HarmonicFieldLabPage />,
+      errorElement: <NotFoundPage />,
+    },
+    {
+      path: '/stage',
+      element: <StagePage />,
       errorElement: <NotFoundPage />,
     },
     {

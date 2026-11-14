@@ -7,6 +7,9 @@ Tags: every item starts with its workstream folder name under `arcs/` (e.g. `[wo
 Source arc: **Clips and the clip editor** (archived in `arcs/workbench/ARC.clips.md` / `arcs/workbench/PROGRESS.clips.md`, last commit `8ee3cc4`).
 
 ## Next arc candidates
+- [stage] **The Stage should measure its own width, not the window's,** before it is embedded in any page (visible-column count currently comes from `window.innerWidth` through `useWidthRem`). Found in the M3 review (2026-11-14).
+- [stage] **Debounce layout saves.** The layout is written to localStorage on every pointermove during a splitter drag; save about 200 ms after the last change or on drag end. Found in the M3 review (2026-11-14).
+- [stage] **Restore scroll position across a reparent.** Moving a module keeps its state but loses its scroll position, selection and media state; a module keeps its own scroll in state today. Consider capturing and restoring `scrollTop`/`scrollLeft` of the host in the Stage. M3 (2026-11-14).
 - [harmonic-field-lab] **Retuner: "follow the active card" toggle** (2026-11-14): M7 keeps the main views on the tab while the retuner runs; add an option that makes the ring, strip and keys show the active card.
 - [harmonic-field-lab] **Manual pivot by held key** (2026-11-14): Manual pivot today is a chosen degree (Infinitone parity, `manualDeg`, need not be held). Idea for later: an option where the pivot is the key the player holds (`manualKey` already exists in the engine; several held keys need a rule). Not in M7.
 - [harmonic-field-lab] **Revisit the note-selection controls** (All / None / Invert, mode stepper, nearest scale, odd limit) that moved under the ring in the M4 mock; the human wants to redesign them later (2026-11-13). Not scheduled in the current arc.
