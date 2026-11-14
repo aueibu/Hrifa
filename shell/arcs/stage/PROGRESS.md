@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M6 committed; arc complete pending the human's review
-- State: awaiting human (closing review of M6)
+- Current milestone: none. Arc COMPLETE (M6 approved 2026-11-14)
+- State: finished
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -23,6 +23,7 @@
 | M5b (2026-11-14) | Done, reviewed, committed | `check:stage` green (13 files, 150 tests) | Checkpoint follow-ups: last column fills spare width (`fillRoomRem` in `stageOps.ts`, flex on the last visible column), narrower presets (Sketch 14+44, Audition 36+28), `roomy` density dropped, dynamic inspector (hint, clip, clip then note). Reviewer: pass, no blockers; fixed: three tests that no longer proved a clamp now do, labels on the parent-clip panel, dead export. Decisions STAGE-15 to STAGE-17. Notes for the human: Audition's roll column is now 36rem, which is the `regular` size, so the roll toolbar is hidden there; dragging in a narrow window permanently shrinks the last column's stored width. |
 | M5c (2026-11-14) | Done, committed (no separate review: spike-only, small) | `check:stage` green (13 files, 153 tests) | Canvas and roll linked in the spike: a canvas click selects the clip and pans the roll to its notes; a selected note marks its parent clip on the canvas; demo timeline re-laid out (Verse 0 to 16, Chorus 16 to 48, Bridge 48 to 56 quarters, eight notes). No `src/components/` change. Decision STAGE-18; three `[stage]` backlog items (command channel, selection model, time-to-pixel mapping) feed M6. |
 | M6 (2026-11-14) | Done, committed; awaiting the human's closing review | `check:stage` run once (docs only) | Decided with the human (four questions, all recommended options): core stays in `src/lib/stage/`; Stage component and kit move to `src/components/` under a lock when the first real page adopts them; workbench adopts first (chord dock and canvas takeover, then `SplitStage`, then `ClipEditorSlot` and inspector); the lab keeps its own layout and adopts only the kit; `/stage` stays as the demo until adoption. Wrote `STAGE-19`, `src/pages/stage/ARCHITECTURE.md` section 13, six BACKLOG items, and the Stage row in `shell/ARCHITECTURE.md` (lock taken and released). Nothing outside the arc imports the spike (only `Stage.page.tsx`). |
+| M6 checkpoint (2026-11-14) | Closed | none run | Human approved the plan (STAGE-19). The arc is complete. |
 
 ## Shared touches (locks taken)
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). M3: `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `ARCHITECTURE.md` taken 2026-11-14, released after the M3 commit (see git log). Planned later: `shell/ARCHITECTURE.md` (M6), `src/components/` and `src/theme/` only at M6 if the human decides.
@@ -31,4 +32,4 @@
 - None open.
 
 ## Next action
-Human reviews M6 (STAGE-19 and section 13). If accepted the arc is finished: archive it per shell/CLAUDE.md (rename ARC/PROGRESS to `ARC.stage.md`/`PROGRESS.stage.md` or leave in place) and start the adoption arcs only after the chord-input arc finishes.
+None. Adoption arcs are proposals in `shell/BACKLOG.md` (STAGE-19); they start only after the chord-input arc finishes and the human names the workstream. The `/stage` spike stays as the demo until a real page adopts the Stage.

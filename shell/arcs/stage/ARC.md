@@ -1,6 +1,6 @@
 # ARC: Stage (module slots, sizes and the inspector kit)
 
-**Status: APPROVED (2026-11-13), with three edits from the human: the word is "size" (not "shape"), the DECISIONS prefix is the word `STAGE`, and stand-in modules in the spike are fine.** Source of the ideas: `C:\Data Files\Projects\Hrifa\_Ideas\Workbench-UI-Musings.md` (a handoff from a design conversation; most of it is Claude-proposed, only the human's own statements there are decisions) and the conversation that followed (decisions below).
+**Status: COMPLETE (2026-11-14; M6 approved by the human). Originally APPROVED (2026-11-13), with three edits from the human: the word is "size" (not "shape"), the DECISIONS prefix is the word `STAGE`, and stand-in modules in the spike are fine.** Source of the ideas: `C:\Data Files\Projects\Hrifa\_Ideas\Workbench-UI-Musings.md` (a handoff from a design conversation; most of it is Claude-proposed, only the human's own statements there are decisions) and the conversation that followed (decisions below).
 
 ## Goal
 The workbench's centre (today: canvas, desk, piano roll and the chord picker, arranged by hardcoded special cases) gets a layout system that no module has to be designed around. When this arc is done there is a tried, documented way for a module to live in a **slot** on the **Stage**, to be moved or stacked by the user, and to render itself for the **size** of the slot it is given (wide, tall, compact, ...), the way a module already renders for light and dark. There is also an **inspector kit**: a small set of shared pieces and fixed sizes (header strip, name/value row, number cell, switch-style toggle, field sizes, spacing and density) so a new module's panel looks like its neighbours without anyone trimming it by hand.
@@ -123,6 +123,7 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] `shell/ARCHITECTURE.md` updated (layers, "Who consumes what") if anything was promoted
   - [ ] If `src/components/` or `src/theme/` is touched, the lock was taken first and `check:workbench` and `check:hfl` are run before the commit
 - Human checkpoint after: **yes**
+- Checkpoint decisions (human, 2026-11-14): all four plan choices accepted as recommended (STAGE-19) and the plan approved. Arc closed.
 
 ## Stop-and-ask conditions
 - A criterion can't be met after 2 builder attempts.
