@@ -1,6 +1,6 @@
 # Stage: architecture (M1, documents only)
 
-Status: **proposed**. Written at M1 of `arcs/stage` for the human checkpoint. The vocabulary, the size thresholds and the kit tokens below are proposals until the human confirms or changes them; the open questions are in section 7. Nothing in this folder is code yet. Colours follow `src/theme/THEMING.md` (roles such as `--panel`, `--text-muted`, `--mark-<hue>`; no hex, no palette shades).
+Status: **confirmed at the M1 checkpoint (2026-11-13)**; the decisions are `DECISIONS.md` STAGE-1 to STAGE-4. Kit tokens in section 5 are measurements of the lab; where a token is marked decided it supersedes the lab value. Section 7 lists the questions and the answers. Nothing in this folder is code yet. Colours follow `src/theme/THEMING.md` (roles such as `--panel`, `--text-muted`, `--mark-<hue>`; no hex, no palette shades).
 
 Every number in section 5 is quoted from code with a `file:line` source. Where a value is not set by the lab it says "not set; Mantine default" or "not measured". Paths are relative to `shell/src/` unless they start with `arcs/`.
 
@@ -22,33 +22,37 @@ Two independent axes. A module receives `{ width, height }`, for example `{ widt
 
 The size is measured on the **slot body**: the area below the slot's header strip, border-box (padding included), by a `ResizeObserver` on that element. The window is never consulted. The slot publishes the result as a hook value and as `data-slot-size="<width>-<height>"` on the slot body so CSS can switch on it. Thresholds are named tokens defined once (in `src/lib/stage/`, M2), in rem, compared against the measured width converted to rem.
 
-### Width
+### Scale (decided 2026-11-13, STAGE-4)
 
-| class | proposed range | token | reason |
+One scale on both axes, in multiples of a base unit. The unit applies to slot sizes only, not to control sizes (rows, paddings and splitters keep the lab's measurements, section 5).
+
+| token | value | reason |
+| --- | --- | --- |
+| `SIZE_UNIT_REM` | 6 | The base unit. It is also the smallest slot height, the lab's `SPLIT_MIN_REM = 6` (`harmonic-field-lab/state/layout.ts:327`). |
+| nominal sizes | 4U, 6U, 8U = 24, 36, 48rem | The size each class is designed around. 24rem is one lab pinned column (`lab.module.css:21`, `COLUMN_REM = 24.25` with its gap, `layout.ts:72`) and about half a column's height on a typical screen (an estimate, not measured). |
+| `SIZE_SMALL_MAX_REM` | 30 (5U) | Boundary between `narrow`/`short` and `regular`. Midway between the nominal 24 and 36. |
+| `SIZE_LARGE_MIN_REM` | 42 (7U) | Boundary between `regular` and `wide`/`tall`. Midway between the nominal 36 and 48. |
+
+| axis | small | middle | large |
 | --- | --- | --- | --- |
-| `narrow` | below 24rem | `SIZE_WIDTH_REGULAR_MIN_REM = 24` | 24rem is the width of one lab pinned column (`grid-template-columns: 9.5rem minmax(0, 1fr) 24rem`, `components/lab.module.css:21`; the column plus its 0.25rem gap is `COLUMN_REM = 24.25`, `harmonic-field-lab/state/layout.ts:72`). The lab panels are designed for that width, so it is the reference **regular**. Note that below 70em the lab's own media query shrinks that column to 20rem (`lab.module.css:64-66`), so under the proposed threshold those panels would already be `narrow` there (Q2). |
-| `regular` | 24rem up to 40rem | (between the two tokens) | Covers the lab column (24rem) and the chord dock's default width (30rem, `DEFAULT_CHORD_DOCK_WIDTH = 480` px, `composition-workbench/noteEditorPreferences.ts:49`, W-17). |
-| `wide` | 40rem and above | `SIZE_WIDTH_WIDE_MIN_REM = 40` | Room for about two lab columns side by side (2 x 24rem = 48rem less padding), or a chord grid with several columns of chord names without wrapping. 40rem is also what the ARC's starting proposal says. It is a proposal: no code fixes it (open question Q2). |
+| width | `narrow`: below 30rem | `regular`: 30 to under 42rem | `wide`: 42rem and above |
+| height | `short`: below 30rem | `regular`: 30 to under 42rem | `tall`: 42rem and above |
 
-The smallest width a slot may give is 14rem (`MIN_CHORD_DOCK_WIDTH = 224` px, `noteEditorPreferences.ts:48`: the narrowest the existing dock lets the user drag it). That is the proposed minimum for the width axis (`SIZE_WIDTH_MIN_REM = 14`). The dock's effective maximum is 60% of the width of the panel it sits in, or 960 px when that is unknown (`FALLBACK_MAX_WIDTH`, `ChordPickerHost.tsx:20,76-78`); `MAX_CHORD_DOCK_WIDTH = 1600` is only the clamp applied when the preference is stored (`noteEditorPreferences.ts:143,174`). Neither needs a size class of its own.
+Where today's code lands on the scale: the lab column (24rem) is `narrow`, and so is its 20rem form below 70em (`lab.module.css:64-66`); the chord dock's default width (30rem, `DEFAULT_CHORD_DOCK_WIDTH = 480` px, `composition-workbench/noteEditorPreferences.ts:49`, W-17) sits exactly on the boundary and counts as `regular`; a stacked lab panel at its minimum is 1U high. The 30 and 42rem boundaries are the human's choice, not anchored in code. Three tiers per axis is common practice (Mantine's `xs` and `sm` breakpoints are 36em and 48em; Material's window size classes use three tiers; both quoted from memory, not verified), and breakpoints are best set from what the content needs rather than from devices, which is why the thresholds are tokens.
 
-### Height
+The dock's effective maximum is 60% of the width of the panel it sits in, or 960 px when that is unknown (`FALLBACK_MAX_WIDTH`, `ChordPickerHost.tsx:20,76-78`); `MAX_CHORD_DOCK_WIDTH = 1600` is only the clamp applied when the preference is stored (`noteEditorPreferences.ts:143,174`). Neither needs a size class of its own.
 
-| class | proposed range | token | reason |
-| --- | --- | --- | --- |
-| `short` | below 12rem | `SIZE_HEIGHT_REGULAR_MIN_REM = 12` | A stacked lab panel may be squeezed to `max(6rem, 20%)` of its column (`SPLIT_MIN_REM = 6`, `SPLIT_MIN_SHARE = 0.2`, `state/layout.ts:325-327`; `stackRows`, `components/Panels.tsx:82-83`). With the 1.875rem header strip (`lab.module.css:316`) that leaves about 4.1rem of body at the minimum, one or two rows. Up to 12rem the body (about 10rem after the strip) holds roughly six 1.625rem inputs with their gaps, which is a short single-purpose strip, not a form. |
-| `regular` | 12rem up to 28rem | between the tokens | The ordinary panel: a few sections with headings. |
-| `tall` | 28rem and above | `SIZE_HEIGHT_TALL_MIN_REM = 28` | Room for a list that does not need to scroll (a chord grid with several rows, a full inspector panel). No code anchors 28rem; it is a proposal (open question Q3). |
+### Minimum slot
 
-The smallest slot height is 6rem **including its header strip** (`SPLIT_MIN_REM`, `state/layout.ts:327`), so the slot body, which is what the size is measured on, is at least about 4.1rem (6rem minus the 1.875rem strip). The workbench's own stage split uses a share (`MIN_SPLIT = 0.2`, `MAX_SPLIT = 0.8`, `composition-workbench/components/SplitStage.tsx:6-7`), not a rem figure; the Stage uses the lab's rem-and-share rule (the larger of the two).
+2U wide by 1U high, 12rem by 6rem (`SIZE_MIN_WIDTH_REM = 12`, `SIZE_MIN_HEIGHT_REM = 6`), the height **including the 1.875rem header strip** (`lab.module.css:316`), so the slot body, which is what the size is measured on, is at least about 4.1rem high. The chord dock's own minimum is 14rem (`MIN_CHORD_DOCK_WIDTH = 224` px, `noteEditorPreferences.ts:48`); the Stage minimum is a little narrower and replaces it when the dock moves onto the Stage. The workbench's stage split uses a share (`MIN_SPLIT = 0.2`, `MAX_SPLIT = 0.8`, `SplitStage.tsx:6-7`), not a rem figure; the Stage uses the lab's rule (the larger of 6rem and 20% of the column, `SPLIT_MIN_SHARE = 0.2`, `layout.ts:325-327`).
 
 ### Hysteresis
 
-A size class changes only when the measured value crosses a threshold by more than 0.5rem back the other way, so a splitter drag that hovers on a boundary does not make the module flicker between two renderings. (Proposal; the value is open question Q4.)
+A size class changes only when the measured value crosses a threshold by more than 0.5rem back the other way, so a splitter drag that hovers on a boundary does not make the module flicker between two renderings. (Decided 2026-11-13, Q4.)
 
 ### What a module does at its minimum size
 
-At `narrow`/`short` (about 14rem by 4rem of body) a module must still:
+At `narrow`/`short` (about 12rem by 4.1rem of body) a module must still:
 1. show its title or a one-line summary of its state (the header strip shows the title; the body may show a value);
 2. never overflow the slot: no horizontal page scroll, no clipped controls; extra content scrolls inside the module's own body (the lab does this: `.panelBody` has `overflow-y: auto; overflow-x: hidden`, `components/panels.module.css:4-18`);
 3. keep every control reachable (by scroll or by a menu), dropping labels and secondary readouts before dropping controls;
@@ -98,9 +102,9 @@ On the Stage, one chord picker module with these renderings:
 
 | slot size | where it typically sits | rendering |
 | --- | --- | --- |
-| `narrow` x `tall` (14 to 24rem wide) | a column beside the roll | one column of chord buttons, single role at a time (the role selector), the label strip collapsed to a one-line current-chord summary. |
-| `regular` x `tall` (24 to 40rem wide) | the default dock (30rem) | today's dock rendering: the common-tone columns with sideways scroll below a minimum column width (W-19). |
-| `wide` x `short` (40rem and up, under 12rem tall) | above the roll | a horizontal strip: roles as columns side by side, one row of chord buttons per role, scrolling sideways, no stacked rows. |
+| `narrow` x `tall` (12 to under 30rem wide) | a column beside the roll | one column of chord buttons, single role at a time (the role selector), the label strip collapsed to a one-line current-chord summary. |
+| `regular` x `tall` (30 to under 42rem wide) | the default dock (30rem) | today's dock rendering: the common-tone columns with sideways scroll below a minimum column width (W-19). |
+| `wide` x `short` (42rem and up, under 30rem tall) | above the roll | a horizontal strip: roles as columns side by side, one row of chord buttons per role, scrolling sideways, no stacked rows. |
 | `wide` x `tall` | the takeover, or a large slot | all roles as columns, every tier of chords visible (the takeover's rendering today). |
 
 All four are one component (`render(size)` branches on `size`), the filter, the anchor, the selected chord and the keyboard state are held outside the branch, and moving the module from beside the roll to above it changes only the `size` argument. The picker's keyboard flow (W-20) is attached to the module, not to a position.
@@ -162,7 +166,7 @@ The lab's panels are written with Mantine components at explicit sizes and local
 | `splitter-grip` | height 3px, width 2.5rem, `--text-subtle`, radius `--radius-control`, opacity 0 until hover, focus or drag | | `LAB lab.module.css:1411-1418` (`.splitGrip`) | hover and drag fill is `--panel-slot` (`:1420-1424`); focus ring 2px `--focus-ring`, offset -1px (`:1432`) |
 | `splitter-minimum` | each panel at least `max(6rem, 20%)` | rem and share | `Panels.tsx:83`; `SPLIT_MIN_REM = 6`, `SPLIT_MIN_SHARE = 0.2`, `state/layout.ts:325-327` | the lab clamps drags and keyboard nudges to this (`state/layout.ts:335-340`) |
 | `column-width` | 24 | rem | `LAB lab.module.css:21`; `COLUMN_REM = 24.25` with the 0.25 gap, `state/layout.ts:72` | pinned and switcher column width |
-| `tooltip` | Mantine `Tooltip`, `multiline`, `w` 300 (glossary tips, `ui.tsx:41`) / 260 (`ChordsPanel.tsx:23`) / 240 (`RetunerPanel.tsx:51`), `openDelay` 250 / 250 / 200, `position="top"` only on the glossary tips (`ui.tsx:43`; the `ChordsPanel` and `RetunerPanel` tooltips set no position); glossary tips open on hover, focus and touch (`ui.tsx:44`); term in weight 600 on its own line then the text (`ui.tsx:47-50`) | px, ms | as listed | the lab sets no tooltip colours or radius: the look is Mantine's default with the shell theme. The three widths differ; the kit should fix one (Q6) |
+| `tooltip` | Mantine `Tooltip`, `multiline`, `w` 300 (glossary tips, `ui.tsx:41`) / 260 (`ChordsPanel.tsx:23`) / 240 (`RetunerPanel.tsx:51`), `openDelay` 250 / 250 / 200, `position="top"` only on the glossary tips (`ui.tsx:43`; the `ChordsPanel` and `RetunerPanel` tooltips set no position); glossary tips open on hover, focus and touch (`ui.tsx:44`); term in weight 600 on its own line then the text (`ui.tsx:47-50`) | px, ms | as listed | the lab sets no tooltip colours or radius: the look is Mantine's default with the shell theme. The three widths differ; decided 2026-11-13 (Q6): one style, 300 wide, `position="top"`, open delay 330 ms as a Stage developer option (per viewer, default 330) |
 | `tip-label` (term with a glossary tip) | dotted 1px underline in `--text-subtle`, `cursor: help`, no background, inherit font | | `LAB lab.module.css:270-279` (`.tip`); `ui.tsx:60` | |
 | `focus-ring` | 2px solid `--focus-ring`, offset 1px | | `LAB lab.module.css:336-343` | for the lab's own buttons (`.tip`, `.switchChip` and others) |
 
@@ -170,8 +174,8 @@ The lab's panels are written with Mantine components at explicit sizes and local
 
 | control | props the lab uses | source | where the value comes from |
 | --- | --- | --- | --- |
-| Switch (Mantine) | `size="sm"`, `label`, default checked | `RetunerPanel.tsx:124` (`<Switch defaultChecked label="Retuner on" size="sm" />`) | size set at the call site; colours are the shell theme's. The only Mantine `Switch` in the lab, in the retuner mock panel |
-| Switch-style toggle (the "switch class" chip) | a plain `<button type="button">` with `aria-pressed` and `data-on`; CSS below | `GeneratorColumn.tsx:64-74` (prime filter chips); CSS `LAB lab.module.css:397-413` | not a Mantine component. Off: background `--panel-slot`, 1px border `--control-border`, text `--text-muted`, radius `--radius-control`, font 0.75rem, padding 0.1875rem 0. On (`[data-on='true']`): background and border `--accent`, text `--mantine-primary-color-contrast`. Grid of chips: `repeat(auto-fill, minmax(2.25rem, 1fr))`, gap 0.1875rem (`LAB lab.module.css:391-394`). Focus ring shared with the lab's other buttons (`:341`). The comment on the CSS says "switch class: independent on/off that changes the material; accent fill while on" |
+| Switch (Mantine) | `size="sm"`, `label`, default checked | `RetunerPanel.tsx:124` (`<Switch defaultChecked label="Retuner on" size="sm" />`) | size set at the call site; colours are the shell theme's. The only Mantine `Switch` in the lab, in the retuner mock panel. Decided (Q7): the kit does not wrap it |
+| Switch-style toggle (the "switch class" chip) | a plain `<button type="button">` with `aria-pressed` and `data-on`; CSS below | `GeneratorColumn.tsx:64-74` (prime filter chips); CSS `LAB lab.module.css:397-413` | not a Mantine component. Off: background `--panel-slot`, 1px border `--control-border`, text `--text-muted`, radius `--radius-control`, font 0.75rem, padding 0.1875rem 0. On (`[data-on='true']`): background and border `--accent`, text `--mantine-primary-color-contrast`. Grid of chips: `repeat(auto-fill, minmax(2.25rem, 1fr))`, gap 0.1875rem (`LAB lab.module.css:391-394`). Focus ring shared with the lab's other buttons (`:341`). The comment on the CSS says "switch class: independent on/off that changes the material; accent fill while on" Decided (Q7): this pressed-button look is the kit's only on/off control; its label is one or two words naming what it toggles ("Active", "Enable"), and any longer meaning goes in the tooltip, never in the label |
 | SegmentedControl | `size="xs"`; `fullWidth` for a whole-row method switch | `GeneratorColumn.tsx:364-371`, `RetunerPanel.tsx:131-136,165-170`, `RingStats.tsx:203-205` | height from `--input-height-xs` (26 px); radius and colours are the theme's. Not set; Mantine default for everything but the size |
 | NumberInput | `size="xs"`, `hideControls`, fixed `w` 64 (counts) or 72 (ms) | `RetunerPanel.tsx:188,194,204-209` | width fixed at the call site; the lab wraps editable ones in `CommitNumber` (`ui.tsx:182-210`, `allowDecimal={false}`, `clampBehavior="strict"`, commits after a 120 ms pause, `REGEN_DELAY_MS = 120`, `ui.tsx:135`) |
 | Select (NativeSelect) | `size="xs"`, `w` 110 or full width | `RetunerPanel.tsx:151-156,176-180` | |
@@ -186,7 +190,7 @@ Rule inferred from the lab (not written down anywhere): header strip tools are *
 `composition-workbench/compactTheme.ts:29-39` sets component defaults through `MantineThemeProvider` (an explicit `size` at a call site wins): Button `compact-xs`, ActionIcon `sm`, Badge `sm`, TextInput `xs`, Textarea `xs`, NumberInput `xs`, Select `xs`, MultiSelect `xs`, SegmentedControl `xs`, Checkbox `xs`, Switch `xs`. It sets no spacing, no font size and no row heights, and (per its own comment) no radius.
 
 Differences:
-- **Switch**: workbench default `xs`; lab call site `sm` (`RetunerPanel.tsx:124`). The lab's real binary-option control is the custom `switchChip` button, which the workbench has no equivalent for.
+- **Switch**: workbench default `xs`; lab call site `sm` (`RetunerPanel.tsx:124`). The lab's real binary-option control is the custom `switchChip` button, which the workbench has no equivalent for. Decided: the kit has no Switch.
 - **Button**: workbench default `compact-xs` everywhere; the lab mixes `xs` (body) and `compact-xs` (header).
 - **Inputs**: both use `xs`, but the lab also overrides the xs input height to 1.625rem (`LAB lab.module.css:7`); the workbench leaves Mantine's default (not measured).
 - **Spacing, header strip, kv rows, text sizes, splitters**: the lab sets them in its own CSS (table 5a); the workbench has no equivalent in `compactTheme.ts` and relies on per-panel CSS and inline sizes (the Inspector, `CompositionInspector.tsx`, not measured by this milestone).
@@ -200,10 +204,10 @@ Differences:
 - **Hardcoded `PanelId` union.** Panels, their labels (`panelLabel`), their render switch (`Panels.tsx:45`) and their default views are keyed to a closed union in `state/layout.ts`. The Stage needs an open registry of ids with a parser that drops unknown ids.
 - **Page-local.** `state/layout.ts`, `Panels.tsx` and `ui.tsx` live inside the lab and import its state context (`useLab`, `useViz`, `ui.tsx:132`) and glossary (`TIPS`). Nothing outside the lab can use them; the kit's `Strip`, `Row`, `Num` are generic but are wired to `PinActionsContext` and the lab's tip texts. The Stage's kit has to be page-independent.
 - **No shared components.** `Strip`, `Row`, `Num`, `Tip`, `CommitNumber`, `DebouncedText` are not in `src/components/`; the workbench re-implements the same ideas separately. Promotion is M6.
-- **Fixed column model.** Columns are 24rem wide, one to three panels each (`MAX_STACK = 3`, `state/layout.ts:86`); there are no variable widths and no per-column minimum other than the fit rule.
+- **Fixed column model.** Columns are 24rem wide, one to three panels each (`MAX_STACK = 3`, `state/layout.ts:86`); there are no variable widths and no per-column minimum other than the fit rule. Decided (Q12): the Stage makes column widths adjustable (stored in the layout).
 - **No size-driven restructuring inside a panel.** A panel with a two-column cluster grid (`.clusters`, `panels.module.css:709`) has no narrow rendering.
 - **No mounted-once guarantee for moves.** The lab remounts a panel when it changes column (its panels are re-rendered from the layout); the Stage needs the keyed, portal-based rule in section 3.
-- **Splitters are vertical only** (between stacked panels); the Stage's splitters are the same idea (small adjustments, pointer and keyboard), and column-width splitters are not in the lab at all. Whether the Stage needs a horizontal splitter is open (Q12).
+- **Splitters are vertical only** (between stacked panels); the Stage's splitters are the same idea (small adjustments, pointer and keyboard), and column-width splitters are not in the lab at all. Decided (Q12): the Stage has column-width splitters as well as the vertical stack splitters.
 
 ### What the workbench centre does today that the Stage would replace later (no migration plan here; that is M6)
 
@@ -212,25 +216,18 @@ Differences:
 - **`canvasTakeover`** (`components/canvasTakeover.tsx`): a named slot over the desk area that an editor fills by portal, (the fallback to its own dock when no slot exists is in `ChordPickerHost`, `:28-29,50`, not here); the Stage's slots make this a normal case (the picker is one module that can sit anywhere).
 - **Chord dock** (`ChordPickerHost.tsx`): a width-resizable dock beside the roll, per-viewer prefs `chordDockWidth` and `chordHost` (W-10, W-17). On the Stage the dock is a slot and its width a splitter share in the layout.
 
-## 7. Open questions for the human checkpoint
+## 7. Checkpoint questions and the human's answers (2026-11-13)
 
-Naming and vocabulary
-- **Q1.** Confirm the five words: region, module, slot, layout, size. Confirm the size classes are named `narrow`/`regular`/`wide` and `short`/`regular`/`tall` (and the data attribute `data-slot-size="<width>-<height>"`).
+All twelve questions were answered at the M1 checkpoint; the answers are in `arcs/stage/ARC.md` (M1 Checkpoint decisions) and `DECISIONS.md` STAGE-4. Summary:
 
-Thresholds (none is fixed by code except where cited)
-- **Q2.** Width: `narrow` below 24rem, `wide` from 40rem. The 24rem anchor is the lab column; the 40rem is a proposal (nothing in the code sets it). The 20rem media-query case above also bears on it. Keep, or move?
-- **Q3.** Height: `short` below 12rem, `tall` from 28rem. Both are proposals with no code anchor, only the 6rem minimum and the 1.875rem strip. Keep, or measure on real modules in M3/M5 and set then?
-- **Q4.** Hysteresis of 0.5rem before a class changes. Wanted, or simpler without it?
-- **Q5.** Measure the border-box of the slot body (padding included, header strip excluded), or the content box? Proposed border-box.
-
-Kit tokens
-- **Q6.** Tooltip: the lab uses three widths (300, 260, 240) and two open delays (250, 200). Fix one (proposed: 300 wide, 250 ms delay, `position="top"`).
-- **Q7.** Toggle: the lab has two binary controls, the custom `switchChip` button (accent fill while on) and one Mantine `Switch size="sm"`. The request names "switch-style toggle"; which is the one the kit wraps? Proposed: the `switchChip` look (a pressed button, `aria-pressed`) for a group of independent options (prime filter), and Mantine `Switch size="sm"` for a single labelled on/off setting.
-- **Q8.** Density: the lab's values are the only density measured. Should the kit have a second density (the workbench's) or exactly one? ARC M4 says "one named density setting"; confirm.
-- **Q9.** Row height: the lab has no row-height token (rows are the 1.3 line height, inputs are 1.625rem). Should the kit add one fixed row height (proposed 1.625rem to match `--input-height-xs`) so rows align across panels, or keep rows at line height?
-- **Q10.** Header strip: 1.875rem, 0.75rem title. Used as is. Do the Stage's slot strips and the Inspector's panel strips share it (proposed: yes, one strip)?
-- **Q11.** The workbench Inspector (`CompositionInspector.tsx`) was not measured in this milestone; the kit takes its numbers from the lab only. Confirm that is what is wanted, and whether the workbench's spacing should be compared at M4.
-- **Q12.** Horizontal splitters (column width) are not in the lab. Needed in M2/M3, or only the vertical stack splitter?
+- **Q1** Vocabulary (region, module, slot, layout, size), class names and `data-slot-size="<width>-<height>"`: confirmed.
+- **Q2, Q3** Thresholds: one scale on both axes in multiples of U = 6rem; boundaries 30rem and 42rem (section 2).
+- **Q4** Hysteresis: wanted, 0.5rem. **Q5** Measure the slot body border-box: as proposed.
+- **Q6** Tooltip: 300 wide, `position="top"`, open delay 330 ms as a Stage developer option.
+- **Q7** Toggle: the pressed-button look is the only on/off control; label of one or two words; no Mantine `Switch`.
+- **Q8** Density: the lab's, one density, to be honed later. **Q9** Fixed row height 1.625rem. **Q10** One header strip shared by Stage slots and Inspector panels.
+- **Q11** Kit numbers from the lab only; the workbench inspector is not compared for now.
+- **Q12** Column-width splitters as well as vertical stack splitters.
 
 ## 8. What could not be verified
 

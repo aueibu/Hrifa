@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M1 done, awaiting the human checkpoint; then M2
-- State: awaiting human (confirm the size scale; then write STAGE-4 and update ARCHITECTURE.md sections 2 and 5, then M2)
+- Current milestone: M1 closed (checkpoint answered 2026-11-13); next M2
+- State: ready to build M2
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -12,12 +12,13 @@
 | Setup (2026-11-13) | Done | `check:stage` green with no code | `check:stage` added under a `package.json` lock; ARC.md approved with three edits (word "size", prefix `STAGE`, stand-in spike modules OK). Commit `9484348`; lock released. |
 | C0 (2026-11-13) | Done | none run | Other arcs: workbench (chord input, M7 committed, awaiting human review then M8) and harmonic-field-lab (M5 approved, M6 next) are both active; structure is finished. `arcs/LOCKS.md` has no rows. Nothing imports the lab's `state/layout.ts` or `components/ui.tsx`. Workbench `SplitStage`, `canvasTakeover`, `ClipEditorSlot`, `compactTheme` are used only inside `composition-workbench/` and `CompositionWorkbench.page.tsx`. Relevant decisions: W-11 (opt-in roll props), W-15 to W-17 (chord-input ghost notes, dock beside the roll and canvas takeover as named slots; per-viewer prefs `chordHost`, `chordDockWidth`), W-10 (per-viewer prefs outside the project prefix), H-1/H-2 (lab pitch and colour roles). Relevant backlog: "Bring Melodicization and Mixer onto the new roll/lane conventions", "Tuning-aware pitch axis" and the non-12-EDO umbrella (roll rows), chord picker polish and the chord label strip (need a roll header strip, shared `PianoRoll`). No conflicts with this arc's owned paths. |
 | M1 (2026-11-13) | Done, reviewed | `check:stage` green (no stage files to test) | Builder wrote `src/pages/stage/ARCHITECTURE.md` (vocabulary, size classes, module contract, worked examples, lab kit tokens, gap list, 12 open questions) and `DECISIONS.md` STAGE-1 to STAGE-3 (prefix registered). Reviewer: criteria met, 13 accuracy corrections (two substantive: the chord host does NOT meet the mounted-once rule and reaches into its parent); all fixed in attempt 2. Findings for the human: only the 24rem width and the 14rem and 6rem minimums come from code, 40rem, 12rem, 28rem and the 0.5rem hysteresis are proposals; the lab's switch-style toggle is a custom `switchChip` button, not a Mantine Switch; no module in the lab or workbench keeps state when moved today, so mounted-once is new code. |
+| M1 checkpoint (2026-11-13) | Closed | `check:stage` green | Human answered Q1 to Q12 and confirmed the size scale (U = 6rem, boundaries 30 and 42rem, minimum slot 12 x 6rem, 0.5rem hysteresis). Written to ARC.md (M1 Checkpoint decisions), DECISIONS `STAGE-4` (supersedes the thresholds in STAGE-2), and ARCHITECTURE.md sections 2, 5, 7. |
 
 ## Shared touches (locks taken)
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). Planned: `package.json` (setup, `check:stage`), then `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts` (M3), `shell/ARCHITECTURE.md` (M3, M6).
 
 ## Open questions for human
-- Confirm the proposed size scale (U = 6rem; boundaries 30 and 42rem on both axes; minimum slot 12 x 6rem).
+- None open.
 
 ## Next action
-Answers to Q1 to Q12 are written into ARC.md (M1 Checkpoint decisions). On the human's confirm of the size scale: append `STAGE-4` to DECISIONS.md (thresholds, one toggle, 330 ms delay dev option, column splitters, kit density), update `src/pages/stage/ARCHITECTURE.md` sections 2 and 5 and the Q list to match, commit, then start M2. (M1 was: a builder writes `src/pages/stage/ARCHITECTURE.md` (vocabulary, size set and thresholds, module contract, worked examples, kit tokens measured from the lab, gap list) and appends DECISIONS rows STAGE-1 to STAGE-3; a reviewer checks it; then stop at the M1 human checkpoint.)
+Brief a builder for M2 (pure layout core in `src/lib/stage/`: open module ids, columns of one to three slots with column widths, stack shares, both splitter rules, `fitColumns`, size classes from the STAGE-4 scale as pure functions, versioned `parseLayout`), then a reviewer; run `check:stage` once at the end. (M1 was: a builder writes `src/pages/stage/ARCHITECTURE.md` (vocabulary, size set and thresholds, module contract, worked examples, kit tokens measured from the lab, gap list) and appends DECISIONS rows STAGE-1 to STAGE-3; a reviewer checks it; then stop at the M1 human checkpoint.)
