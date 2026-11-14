@@ -9,9 +9,11 @@ export const LAB_DEVELOPER_KEY = 'hrifa.harmonic-field-lab.developer.v1';
 export interface LabDeveloperOptions {
   /** Mode tiles always show a + or - sign (default); off shows it only on hover, with the number. */
   modeSignAlways: boolean;
+  /** Adding or removing a note keeps the same note as the mode root (default); off keeps the mode number instead. */
+  keepModeRoot: boolean;
 }
 
-const defaults: LabDeveloperOptions = { modeSignAlways: true };
+const defaults: LabDeveloperOptions = { modeSignAlways: true, keepModeRoot: true };
 
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: LabDeveloperOptions } | null = null;
@@ -32,6 +34,7 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
     return {
       modeSignAlways:
         typeof o.modeSignAlways === 'boolean' ? o.modeSignAlways : defaults.modeSignAlways,
+      keepModeRoot: typeof o.keepModeRoot === 'boolean' ? o.keepModeRoot : defaults.keepModeRoot,
     };
   } catch {
     return defaults;

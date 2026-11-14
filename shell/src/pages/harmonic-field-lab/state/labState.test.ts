@@ -49,6 +49,34 @@ describe('selection', () => {
     expect(run(s, { type: 'sel/toggle', i: -1 })).toBe(s);
   });
 
+  it('keepRoot keeps the same note as the mode root when a note is added or removed below it', () => {
+    const base = run(
+      initialState(),
+      { type: 'sel/none' },
+      { type: 'sel/toggle', i: 0 },
+      { type: 'sel/toggle', i: 3 },
+      { type: 'sel/toggle', i: 5 },
+      { type: 'mode/step', by: 1 }
+    );
+    expect(activeTab(base).sel).toEqual([0, 3, 5]);
+    expect(activeTab(base).mode).toBe(1); // root: field note 3
+    // add a note below the root: with keepRoot the root stays note 3, so the mode moves to 2
+    const kept = run(base, { type: 'sel/toggle', i: 1, keepRoot: true });
+    expect(activeTab(kept).sel).toEqual([0, 1, 3, 5]);
+    expect(activeTab(kept).sel[activeTab(kept).mode]).toBe(3);
+    // without it the mode number stays and now points at note 1
+    const plain = run(base, { type: 'sel/toggle', i: 1 });
+    expect(activeTab(plain).mode).toBe(1);
+    expect(activeTab(plain).sel[activeTab(plain).mode]).toBe(1);
+    // removing a note below the root keeps it too
+    const removed = run(kept, { type: 'sel/toggle', i: 0, keepRoot: true });
+    expect(activeTab(removed).sel[activeTab(removed).mode]).toBe(3);
+    // removing the root itself falls back to the old rule (the mode number, clamped)
+    const noRoot = run(base, { type: 'sel/toggle', i: 3, keepRoot: true });
+    expect(activeTab(noRoot).sel).toEqual([0, 5]);
+    expect(activeTab(noRoot).mode).toBe(1);
+  });
+
   it('All, None and Invert', () => {
     let s = run(initialState(), { type: 'sel/set', idx: [0, 2, 4] });
     s = run(s, { type: 'sel/invert' });

@@ -103,11 +103,13 @@ describe('lab Developer menu', () => {
     fireEvent.click(sw);
     expect(JSON.parse(window.localStorage.getItem(LAB_DEVELOPER_KEY)!)).toEqual({
       modeSignAlways: false,
+      keepModeRoot: true,
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
     fireEvent.click(screen.getByRole('switch', { name: /always show/ }));
     expect(JSON.parse(window.localStorage.getItem(LAB_DEVELOPER_KEY)!)).toEqual({
       modeSignAlways: true,
+      keepModeRoot: true,
     });
   });
 
@@ -118,10 +120,16 @@ describe('lab Developer menu', () => {
   });
 
   it('bad data reads as the defaults', () => {
-    expect(parseDeveloperOptions('{not json')).toEqual({ modeSignAlways: true });
-    expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({ modeSignAlways: true });
-    expect(parseDeveloperOptions('[1,2]')).toEqual({ modeSignAlways: true });
-    expect(parseDeveloperOptions('null')).toEqual({ modeSignAlways: true });
+    expect(parseDeveloperOptions('{not json')).toEqual({
+      modeSignAlways: true,
+      keepModeRoot: true,
+    });
+    expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
+      modeSignAlways: true,
+      keepModeRoot: true,
+    });
+    expect(parseDeveloperOptions('[1,2]')).toEqual({ modeSignAlways: true, keepModeRoot: true });
+    expect(parseDeveloperOptions('null')).toEqual({ modeSignAlways: true, keepModeRoot: true });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
     open();
     expect(grid()).toHaveAttribute('data-signs', 'always');

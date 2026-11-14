@@ -420,7 +420,7 @@ export type Action =
   | { type: 'gen/preset'; name: string }
   | { type: 'gen/method'; method: Method }
   | { type: 'gen/custom'; custom: string; rep?: string }
-  | { type: 'sel/toggle'; i: number }
+  | { type: 'sel/toggle'; i: number; keepRoot?: boolean }
   | { type: 'sel/all' }
   | { type: 'sel/none' }
   | { type: 'sel/invert' }
@@ -602,7 +602,10 @@ export function labReducer(s: LabState, a: Action): LabState {
         const sel = t.sel.includes(a.i)
           ? t.sel.filter((x) => x !== a.i)
           : uniqSorted([...t.sel, a.i]);
-        return { ...t, sel, mode: fixMode(t.mode, sel.length) };
+        // keep the same note as the mode root when it survives (its position shifts when a note is added or removed below it)
+        const root = t.sel[t.mode];
+        const kept = a.keepRoot && root !== undefined ? sel.indexOf(root) : -1;
+        return { ...t, sel, mode: kept >= 0 ? kept : fixMode(t.mode, sel.length) };
       });
     case 'sel/all':
       return withTab(s, (t) => ({ ...t, sel: t.field.map((_, i) => i), mode: 0 }));

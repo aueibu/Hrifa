@@ -586,6 +586,11 @@ const entries = {
     text: 'Small switches for how the lab shows things, kept per viewer in this browser (they are not part of a saved tuning). Example: "Mode tiles: always show ± sign" can be turned off if the signs make the heat grid look busy.',
     see: ['modeSignAlways', 'modes'],
   },
+  keepModeRoot: {
+    term: 'Keep the mode root when notes are added or removed',
+    text: 'On (the default): adding or removing a note keeps the same note as the mode root, so the mode number follows it. Off: the mode number stays and may now point at a different note. If the root itself is removed, the mode number stays either way. Example: with 1/1, 5/4, 3/2 and 15/8 selected on mode 2 (root 5/4), add 9/8. The set becomes 1/1, 9/8, 5/4, 3/2, 15/8: with this on, the root stays 5/4 and the mode becomes 3; with it off, the mode stays 2 and now starts on 9/8.',
+    see: ['mode', 'developerMenu'],
+  },
   modeSignAlways: {
     term: 'Mode tiles: always show ± sign',
     text: 'On (the default): every inexact tile in the Modes heat grid carries a + or −, so you can see the direction of each miss without pointing at it. Off: the sign appears only with the number when you point at the row. + means the nearest field note is sharp of the pitch the mode wants, − means flat. Example: a tile for a 5th that needs 81/64 where the field only has 5/4 shows − (21.5 c flat).',

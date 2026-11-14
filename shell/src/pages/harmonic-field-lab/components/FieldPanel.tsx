@@ -120,7 +120,7 @@ export function FieldTable() {
                   size="xs"
                   checked={r.on}
                   aria-label={`Include ${r.ratio}`}
-                  onChange={() => lab.dispatch({ type: 'sel/toggle', i: r.i })}
+                  onChange={() => lab.clickNote(r.i)}
                   onClick={(e) => e.stopPropagation()}
                 />
               </td>

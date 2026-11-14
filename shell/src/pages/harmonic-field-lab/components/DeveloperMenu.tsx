@@ -24,6 +24,14 @@ export function DeveloperMenu() {
                 onChange={(e) => update({ modeSignAlways: e.currentTarget.checked })}
               />
             </Tip>
+            <Tip k="keepModeRoot" as="control" block>
+              <Switch
+                size="xs"
+                label="Keep the mode root when notes are added or removed"
+                checked={options.keepModeRoot}
+                onChange={(e) => update({ keepModeRoot: e.currentTarget.checked })}
+              />
+            </Tip>
           </div>
         </Popover.Dropdown>
       </Popover>

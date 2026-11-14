@@ -15,6 +15,7 @@ import {
 import { useLabAudio } from '../audio/useLabAudio';
 import { LabContext, type Analyses, type Lab, type VizApi } from './context';
 import { chordModel, deriveBase, dissOf, edoOf, keysOf, spectrumOf, stripDevs } from './derive';
+import { readDeveloperOptions } from './developerOptions';
 import {
   activeTab,
   initialState,
@@ -177,7 +178,11 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
 
   const setHover = useCallback((i: number | null) => dispatch({ type: 'hover', i }), []);
   const setPin = useCallback((i: number | null) => dispatch({ type: 'pin', i }), []);
-  const clickNote = useCallback((i: number) => dispatch({ type: 'sel/toggle', i }), [dispatch]);
+  const clickNote = useCallback(
+    (i: number) =>
+      dispatch({ type: 'sel/toggle', i, keepRoot: readDeveloperOptions().keepModeRoot }),
+    [dispatch]
+  );
   const pinNote = useCallback((i: number) => dispatch({ type: 'pin/toggle', i }), [dispatch]);
 
   const viz = useMemo<VizApi>(
