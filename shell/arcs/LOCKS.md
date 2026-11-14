@@ -17,4 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| src/Router.tsx | harmonic-field-lab | 2026-11-13 | M6: retire the /harmonic-field-lab/mock route |
