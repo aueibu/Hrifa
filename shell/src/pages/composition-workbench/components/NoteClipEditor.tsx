@@ -2,11 +2,13 @@ import {
   Fragment,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ComponentProps,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from 'react';
 import { Badge, Button, Menu, Text, Title, VisuallyHidden } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
@@ -25,6 +27,21 @@ import {
   type PianoRollViewState,
   type VelocityRamp,
 } from '../../../components/PianoRoll';
+import {
+  browserStorage,
+  createStageRegistry,
+  loadLayout,
+  saveLayout,
+  Stage,
+} from '../../../components/Stage';
+import {
+  HEIGHT_CLASSES,
+  WIDTH_CLASSES,
+  locate,
+  pxToRem,
+  removeModule,
+  type Layout,
+} from '../../../lib/stage';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import {
   ChordPicker,
@@ -50,6 +67,15 @@ import { registerClipEditor, type ClipEditorProps } from '../clipTypes';
 import { useCompositionSettings, type ProjectPitchSet } from '../compositionSettings';
 import { useDesk } from '../desk';
 import { useDeveloperOptions } from '../developerOptions';
+import {
+  CHORDS_MODULE,
+  EDITOR_STAGE_KEY,
+  FALLBACK_STAGE_WIDTH_REM,
+  ROLL_MODULE,
+  defaultEditorLayout,
+  hasBothModules,
+  migratedPickerRem,
+} from '../editorStage';
 import type { NoteEventValue } from '../melodicization';
 import type { DataPacket } from '../model';
 import { musicalDuration, musicalPosition, rationalToNumber } from '../musicalTime';
@@ -105,6 +131,7 @@ import { scaleDegreeColor } from '../scaleDegreeColor';
 import { jsonEqual } from '../snippet';
 import { parseMeter, transportTimeline } from '../transport';
 import { useModulePreview } from '../useModulePreview';
+import { useCanvasTakeoverElement } from './canvasTakeover';
 import classes from './NoteClipEditor.module.css';
 
 /** The editor id the Notes clip type names (clipTypes.ts). */
@@ -440,6 +467,9 @@ export function noteAtCell(
   return best;
 }
 
+/** The "nothing stored" marker `loadLayout` hands back (compared by identity). */
+const NO_STORED_LAYOUT: Layout = { version: 1, columns: [] };
+
 function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
@@ -449,6 +479,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const [view, setView] = useState(() => openingView(packet));
   // Pencil on an empty clip, Pointer otherwise.
   const [tool, setToolState] = useState(() => (packet.items.length > 0 ? 'pointer' : 'pencil'));
+  // The tool to go back to when the picker's Stage strip closes it (that is leaving the Chords tool).
+  const toolBeforeChords = useRef('pointer');
   const [rampState, setRampState] = useState<ActiveRamp | null>(null);
   // The pick-pitch mode the inspector's Invert / Make equal > Pitch put the editor in (the second part
   // of a two-part action). Editor-side only, like the selection: never in the packet or the history.
@@ -506,6 +538,9 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   }
   // Any tool change ends the ramp (it is a Paint-tool secondary selection) and a waiting pick.
   function setTool(next: string) {
+    if (next === 'chords' && tool !== 'chords') {
+      toolBeforeChords.current = tool;
+    }
     setToolState(next);
     setRampState(null);
     setPick(null);
@@ -1401,7 +1436,13 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
       const typing =
         target &&
         (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-      if (event.key === 'Escape' && !typing && inEditorScope(target, true)) {
+      if (
+        event.key === 'Escape' &&
+        !typing &&
+        inEditorScope(target, true) &&
+        // An open menu or dialog owns Escape.
+        !document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')
+      ) {
         closeChordPicker();
       }
     };
@@ -1410,6 +1451,410 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     // closeChordPicker only calls state setters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickerOpen]);
+
+  // The Stage that hosts the roll and the chord picker (M9b). Both modules are closures over this component's
+  // state (the chord session, the roll's view, selection and audition stay here): their render functions are
+  // read through `stageNodes`, refreshed every render, so the registry is built once and never remounts a module.
+  // The picker is in the layout only while the Chords tool is active and its host is the dock; with the takeover as
+  // host (or another tool) the Stage shows the roll alone.
+  const takeoverSlot = useCanvasTakeoverElement();
+  const pickerInTakeover = chordsActive && preferences.chordHost === 'takeover' && !!takeoverSlot;
+  const pickerInStage = chordsActive && !pickerInTakeover;
+  const stageArea = useRef<HTMLDivElement | null>(null);
+  const [stageWidthRem, setStageWidthRem] = useState(0);
+  useLayoutEffect(() => {
+    const el = stageArea.current;
+    if (!el) {
+      return undefined;
+    }
+    const read = () => {
+      const width = el.getBoundingClientRect().width;
+      if (width > 0) {
+        const root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        setStageWidthRem(pxToRem(width, root));
+      }
+    };
+    read();
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(read);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const stageNodes = useRef<{ roll: ReactNode; chords: ReactNode }>({ roll: null, chords: null });
+  const [stageRegistry] = useState(() =>
+    createStageRegistry(
+      [
+        { id: ROLL_MODULE, title: 'Piano roll' },
+        { id: CHORDS_MODULE, title: 'Chords' },
+      ].map(({ id, title }) => ({
+        id,
+        title,
+        sizes: WIDTH_CLASSES.flatMap((width) =>
+          HEIGHT_CLASSES.map((height) => ({ width, height }))
+        ),
+        minSize: { width: 'narrow', height: 'short' } as const,
+        render: () => (id === ROLL_MODULE ? stageNodes.current.roll : stageNodes.current.chords),
+      }))
+    )
+  );
+  // The viewer's arrangement; null until they change it (the default is derived from the measured width, with the
+  // old `chordDockWidth` preference carried over as the picker's width).
+  const [arrangement, setArrangement] = useState<Layout | null>(() => {
+    const stored = loadLayout(
+      browserStorage(),
+      stageRegistry.meta,
+      NO_STORED_LAYOUT,
+      EDITOR_STAGE_KEY
+    );
+    return stored !== NO_STORED_LAYOUT && hasBothModules(stored) ? stored : null;
+  });
+  const fullStageLayout = useMemo(
+    () =>
+      arrangement ??
+      defaultEditorLayout(stageWidthRem, migratedPickerRem(preferences.chordDockWidth)),
+    [arrangement, stageWidthRem, preferences.chordDockWidth]
+  );
+  const stageLayout = useMemo(
+    () => (pickerInStage ? fullStageLayout : removeModule(fullStageLayout, CHORDS_MODULE)),
+    [pickerInStage, fullStageLayout]
+  );
+  const stageLayoutRef = useRef(stageLayout);
+  stageLayoutRef.current = stageLayout;
+  const stageEdit = useRef({ pickerInStage, leaveChords: () => {} });
+  stageEdit.current = {
+    pickerInStage,
+    leaveChords: () => setTool(toolBeforeChords.current),
+  };
+  const updateStageLayout = useCallback((fn: (l: Layout) => Layout) => {
+    // The roll alone has nothing to arrange; while the picker is hidden the layout is the viewer's, untouched.
+    if (!stageEdit.current.pickerInStage) {
+      return;
+    }
+    const base = stageLayoutRef.current;
+    const next = fn(base);
+    if (next === base || !locate(next, ROLL_MODULE)) {
+      return; // no change, or an attempt to close the roll (it is the editor)
+    }
+    if (!locate(next, CHORDS_MODULE)) {
+      // Closing the picker from its strip is the same as leaving the Chords tool; the arrangement keeps its place.
+      stageEdit.current.leaveChords();
+      return;
+    }
+    stageLayoutRef.current = next;
+    setArrangement(next);
+  }, []);
+  useEffect(() => {
+    if (arrangement) {
+      saveLayout(browserStorage(), arrangement, EDITOR_STAGE_KEY);
+      // The stored layout carries the width from now on: the old pixel preference is spent.
+      if (preferences.chordDockWidth !== null) {
+        updatePreferences({ chordDockWidth: null });
+      }
+    }
+  }, [arrangement, preferences.chordDockWidth, updatePreferences]);
+
+  // One unified panel: the roll, the velocity lane and the single scrollbar, the palette beside all three.
+  const rollNode = (
+    <div
+      className={classes.rollArea}
+      role="presentation"
+      onKeyUp={(event) => {
+        // The Alt of an Alt+arrow selection move must not go on to focus the browser's menu bar.
+        if (event.key === 'Alt' && altArrowHandled.current) {
+          altArrowHandled.current = false;
+          event.preventDefault();
+        }
+      }}
+      onKeyDown={(event) => {
+        // Arrow keys edit the selected notes (never in a text field, during a pitch pick, under a
+        // drag or lane gesture, or where a child already took the key, such as the lane splitter).
+        const arrowTarget = event.target as HTMLElement;
+        if (
+          !event.defaultPrevented &&
+          !arrowTarget.isContentEditable &&
+          !['INPUT', 'TEXTAREA', 'SELECT'].includes(arrowTarget.tagName)
+        ) {
+          if (pick || pointerHeld.current) {
+            // Ignored while a pick waits or a gesture runs, but Alt+Left/Right is still the
+            // browser's Back/Forward and must not navigate away mid-gesture.
+            if (
+              event.altKey &&
+              !event.ctrlKey &&
+              !event.metaKey &&
+              (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+            ) {
+              altArrowHandled.current = true;
+              event.preventDefault();
+            }
+          } else if (runArrowKey(event)) {
+            event.preventDefault();
+            return;
+          }
+        }
+        // Ctrl/Cmd+C and V anywhere in the editor's focus scope (roll, lane, panel body), never
+        // while typing in a field and not while a pitch pick waits.
+        const target = event.target as HTMLElement;
+        if (
+          pick ||
+          target.isContentEditable ||
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+          !(event.ctrlKey || event.metaKey) ||
+          event.altKey ||
+          event.shiftKey
+        ) {
+          return;
+        }
+        const key = event.key.toLowerCase();
+        if (key === 'c' || key === 'v') {
+          event.preventDefault();
+          // Holding the keys must not repeat the action (a paste per auto-repeat tick).
+          if (event.repeat) {
+            return;
+          }
+          runKeyAction(key === 'c' ? 'copy' : 'paste');
+        }
+      }}
+      onPointerDownCapture={(event) => {
+        if (pick) {
+          // A pick is waiting: the roll and the keys take the press as the pick itself, so the time
+          // band (and the selection) stay; presses on the lane and ruler are swallowed rather than
+          // drawing or selecting behind the pick. The palette and scrollbar work as usual.
+          const pressed = (event.target as Element).closest('[data-band-press]');
+          if (pressed && !pressed.hasAttribute('data-tool')) {
+            event.stopPropagation();
+          }
+          return;
+        }
+        // The next press on the roll, the ruler or the lane clears a time selection before the new
+        // gesture starts. Presses elsewhere (the scrollbar, the tool palette, the keys) leave it,
+        // and so does a press inside the band that starts moving its content.
+        if (selection.kind !== 'time') {
+          return;
+        }
+        const target = event.target as Element;
+        const pressed = target.closest('[data-band-press]');
+        if (!pressed || startsBandMove(pressed, target, event.clientX, tool)) {
+          return;
+        }
+        // A right button on an active ramp curves it (plain right drag): the band is not part of that gesture.
+        if (event.button === 2 && activeRamp) {
+          return;
+        }
+        setSelection(clearTimeSelection);
+      }}
+    >
+      <PianoRoll
+        ariaLabel="Note clip piano roll"
+        fill
+        ghostDrag
+        toolCursors
+        wheelZoom
+        timeZoomRange={NOTE_EDITOR_TIME_ZOOM}
+        gridUnit={gridUnit}
+        entryLength={preferences.entryLength ?? undefined}
+        velocityFill
+        detachedScroll
+        pitchColor={pitchColor}
+        lane={(metrics) =>
+          preferences.velocityLaneCollapsed ? null : (
+            <VelocityLane
+              notes={notes}
+              pixelsPerQuarter={view.pixelsPerQuarter}
+              scrollLeft={view.scrollLeft}
+              duration={duration}
+              selectedIds={selection.ids}
+              selectedRange={timeBand}
+              onCollapsedChange={(velocityLaneCollapsed) =>
+                updatePreferences({ velocityLaneCollapsed })
+              }
+              onVelocityChange={changeSelectionVelocity}
+              tool={tool}
+              onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
+              onMarqueeRange={marqueeRange}
+              onMoveTimeRange={moveTime}
+              onSetVelocities={drawVelocities}
+              ramp={activeRamp}
+              onRamp={applyRamp}
+              onRampStart={() => setRampState(null)}
+              height={preferences.laneHeight ?? undefined}
+              onHeightChange={(laneHeight) => updatePreferences({ laneHeight })}
+              availableHeight={metrics.panelHeight}
+              gridLines={gridLines}
+              gridUnit={gridUnit}
+              viewWidth={metrics.viewWidth}
+              velocityFill
+              toolCursors
+            />
+          )
+        }
+        barGutter={
+          preferences.velocityLaneCollapsed ? (
+            <VelocityLaneToggle
+              collapsed
+              onCollapsedChange={(velocityLaneCollapsed) =>
+                updatePreferences({ velocityLaneCollapsed })
+              }
+            />
+          ) : null
+        }
+        pickPitch={
+          pick
+            ? {
+                hint: pick.hint,
+                onPick: (midi) => {
+                  setPick(null);
+                  pick.onPick(midi);
+                },
+              }
+            : null
+        }
+        reveal={reveal}
+        ghostNotes={chordGhosts}
+        onAnchorHover={(anchor) => {
+          const cell = anchor
+            ? { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) }
+            : null;
+          const blocked = hoverBlocked.current;
+          if (
+            cell &&
+            blocked &&
+            cell.start === blocked.start &&
+            cell.pitchMidicents === blocked.pitchMidicents
+          ) {
+            return;
+          }
+          hoverBlocked.current = null;
+          setHoverCell(cell);
+        }}
+        onAnchorClick={(anchor) => {
+          // Snapped to the project EDO grid before anything (picker, ghosts, voicing) sees it.
+          const snapped: NonNullable<typeof chordAnchor> = {
+            pitchMidicents: snapToEdo(anchor.pitchMidicents, edo),
+            start: anchor.start,
+            step: anchor.step,
+          };
+          const hit = noteAtCell(notes, anchor);
+          if (hit) {
+            // Stacking on an existing note: its exact pitch and actual onset, its own length
+            // and velocity.
+            snapped.pitchMidicents = snapToEdo(hit.pitchMidicents, edo);
+            snapped.start = hit.start;
+            snapped.note = {
+              duration: hit.duration,
+              velocity: hit.velocity,
+              pitchMidicents: hit.pitchMidicents,
+            };
+          }
+          setChordAnchor(snapped);
+          // A plain click opens the stored mode; Ctrl (Cmd) opens common-tone mode for this
+          // click only, leaving the stored mode as the buttons set it.
+          setChordCtrlOpen(anchor.ctrlKey === true);
+          clearChordGhosts();
+          onChordAnchor?.({ pitchMidicents: snapped.pitchMidicents, onset: snapped.start });
+        }}
+        keyActions={[
+          {
+            shortcut: 'v',
+            run: () =>
+              updatePreferences({ velocityLaneCollapsed: !preferences.velocityLaneCollapsed }),
+          },
+        ]}
+        onEntryLengthChange={(length) => updatePreferences({ entryLength: length })}
+        entryVelocity={preferences.entryVelocity ?? undefined}
+        onEntryVelocityChange={(velocity) => updatePreferences({ entryVelocity: velocity })}
+        endMarker={extent > 0 ? extent : undefined}
+        loopBand={loopBand}
+        notes={notes}
+        duration={duration}
+        gridLines={gridLines}
+        view={view}
+        onViewChange={setView}
+        selectedIds={selection.ids}
+        onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
+        onMarqueeRange={marqueeRange}
+        onMoveTimeRange={moveTime}
+        selectedRange={timeBand}
+        selectedItemsRange={notesBand}
+        tools={tools}
+        activeTool={tool}
+        onToolChange={setTool}
+        actions={actions}
+        onAddNote={draw}
+        onPaintNotes={paint}
+        onSplitNote={split}
+        onMoveNotes={(ids, delta, options) =>
+          options?.copy
+            ? copySelection(ids, delta)
+            : commit((current) => moveNotes(current, ids, delta))
+        }
+        onResizeNotes={(ids, delta) => commit((current) => resizeNotes(current, ids, delta))}
+        onResizeNotesStart={(ids, delta) =>
+          commit((current) => resizeNotesStart(current, ids, delta))
+        }
+        onDeleteNotes={remove}
+        onVelocityChange={changeSelectionVelocity}
+      />
+    </div>
+  );
+  const pickerNode = (
+    <ChordPickerHost
+      host={preferences.chordHost}
+      onHostChange={(chordHost) => updatePreferences({ chordHost })}
+      onClose={chordAnchor ? closeChordPicker : undefined}
+    >
+      {chordAnchor ? (
+        <ChordPicker
+          anchor={chordAnchor}
+          onNote={chordAnchor.note !== undefined}
+          noteOffsetCents={
+            chordAnchor.note ? chordAnchor.note.pitchMidicents - chordAnchor.pitchMidicents : 0
+          }
+          pitchSet={settings.pitchSet}
+          override={chordOverride}
+          onOverrideChange={(next) => {
+            setChordOverrideState(next);
+            clearChordGhosts();
+          }}
+          controlRef={chordControl}
+          continuous={chordContinuous}
+          onContinuousChange={setChordContinuous}
+          mode={effectiveChordMode}
+          onModeChange={(next) => {
+            // The buttons commit the stored mode and the open picker follows it.
+            setChordMode(next);
+            setChordCtrlOpen(false);
+            clearChordGhosts();
+          }}
+          tier={chordTier}
+          onTierChange={(next) => {
+            setChordTier(next);
+            // A pinned or hovered chord may no longer be listed: fall back to the first.
+            clearChordGhosts();
+          }}
+          allPitches={chordAllPitches}
+          onAllPitchesChange={(next) => {
+            setChordAllPitches(next);
+            clearChordGhosts();
+          }}
+          voicing={chordVoicing}
+          onVoicingChange={changeVoicing}
+          previewGate={developerOptions.chordPreviewGate}
+          onHover={setHoverChord}
+          onPin={pinChord}
+          onInsert={insertChord}
+          onClose={closeChordPicker}
+        />
+      ) : (
+        <Text size="xs" c="dimmed">
+          Click the roll where a chord should go. Its pitch becomes the chord's root; Ctrl/Cmd+click
+          picks the role it plays in a chord. Click an existing note to stack a chord on it.
+        </Text>
+      )}
+    </ChordPickerHost>
+  );
+  stageNodes.current = { roll: rollNode, chords: pickerNode };
 
   return (
     <div
@@ -1481,313 +1926,18 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
           </Menu>
         </div>
       </div>
-      {/* One unified panel: the roll, the velocity lane and the single scrollbar, the palette beside all three. */}
-      <div className={classes.work}>
-        <div
-          className={classes.rollArea}
-          role="presentation"
-          onKeyUp={(event) => {
-            // The Alt of an Alt+arrow selection move must not go on to focus the browser's menu bar.
-            if (event.key === 'Alt' && altArrowHandled.current) {
-              altArrowHandled.current = false;
-              event.preventDefault();
-            }
-          }}
-          onKeyDown={(event) => {
-            // Arrow keys edit the selected notes (never in a text field, during a pitch pick, under a
-            // drag or lane gesture, or where a child already took the key, such as the lane splitter).
-            const arrowTarget = event.target as HTMLElement;
-            if (
-              !event.defaultPrevented &&
-              !arrowTarget.isContentEditable &&
-              !['INPUT', 'TEXTAREA', 'SELECT'].includes(arrowTarget.tagName)
-            ) {
-              if (pick || pointerHeld.current) {
-                // Ignored while a pick waits or a gesture runs, but Alt+Left/Right is still the
-                // browser's Back/Forward and must not navigate away mid-gesture.
-                if (
-                  event.altKey &&
-                  !event.ctrlKey &&
-                  !event.metaKey &&
-                  (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
-                ) {
-                  altArrowHandled.current = true;
-                  event.preventDefault();
-                }
-              } else if (runArrowKey(event)) {
-                event.preventDefault();
-                return;
-              }
-            }
-            // Ctrl/Cmd+C and V anywhere in the editor's focus scope (roll, lane, panel body), never
-            // while typing in a field and not while a pitch pick waits.
-            const target = event.target as HTMLElement;
-            if (
-              pick ||
-              target.isContentEditable ||
-              ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
-              !(event.ctrlKey || event.metaKey) ||
-              event.altKey ||
-              event.shiftKey
-            ) {
-              return;
-            }
-            const key = event.key.toLowerCase();
-            if (key === 'c' || key === 'v') {
-              event.preventDefault();
-              // Holding the keys must not repeat the action (a paste per auto-repeat tick).
-              if (event.repeat) {
-                return;
-              }
-              runKeyAction(key === 'c' ? 'copy' : 'paste');
-            }
-          }}
-          onPointerDownCapture={(event) => {
-            if (pick) {
-              // A pick is waiting: the roll and the keys take the press as the pick itself, so the time
-              // band (and the selection) stay; presses on the lane and ruler are swallowed rather than
-              // drawing or selecting behind the pick. The palette and scrollbar work as usual.
-              const pressed = (event.target as Element).closest('[data-band-press]');
-              if (pressed && !pressed.hasAttribute('data-tool')) {
-                event.stopPropagation();
-              }
-              return;
-            }
-            // The next press on the roll, the ruler or the lane clears a time selection before the new
-            // gesture starts. Presses elsewhere (the scrollbar, the tool palette, the keys) leave it,
-            // and so does a press inside the band that starts moving its content.
-            if (selection.kind !== 'time') {
-              return;
-            }
-            const target = event.target as Element;
-            const pressed = target.closest('[data-band-press]');
-            if (!pressed || startsBandMove(pressed, target, event.clientX, tool)) {
-              return;
-            }
-            // A right button on an active ramp curves it (plain right drag): the band is not part of that gesture.
-            if (event.button === 2 && activeRamp) {
-              return;
-            }
-            setSelection(clearTimeSelection);
-          }}
-        >
-          <PianoRoll
-            ariaLabel="Note clip piano roll"
-            fill
-            ghostDrag
-            toolCursors
-            wheelZoom
-            timeZoomRange={NOTE_EDITOR_TIME_ZOOM}
-            gridUnit={gridUnit}
-            entryLength={preferences.entryLength ?? undefined}
-            velocityFill
-            detachedScroll
-            pitchColor={pitchColor}
-            lane={(metrics) =>
-              preferences.velocityLaneCollapsed ? null : (
-                <VelocityLane
-                  notes={notes}
-                  pixelsPerQuarter={view.pixelsPerQuarter}
-                  scrollLeft={view.scrollLeft}
-                  duration={duration}
-                  selectedIds={selection.ids}
-                  selectedRange={timeBand}
-                  onCollapsedChange={(velocityLaneCollapsed) =>
-                    updatePreferences({ velocityLaneCollapsed })
-                  }
-                  onVelocityChange={changeSelectionVelocity}
-                  tool={tool}
-                  onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
-                  onMarqueeRange={marqueeRange}
-                  onMoveTimeRange={moveTime}
-                  onSetVelocities={drawVelocities}
-                  ramp={activeRamp}
-                  onRamp={applyRamp}
-                  onRampStart={() => setRampState(null)}
-                  height={preferences.laneHeight ?? undefined}
-                  onHeightChange={(laneHeight) => updatePreferences({ laneHeight })}
-                  availableHeight={metrics.panelHeight}
-                  gridLines={gridLines}
-                  gridUnit={gridUnit}
-                  viewWidth={metrics.viewWidth}
-                  velocityFill
-                  toolCursors
-                />
-              )
-            }
-            barGutter={
-              preferences.velocityLaneCollapsed ? (
-                <VelocityLaneToggle
-                  collapsed
-                  onCollapsedChange={(velocityLaneCollapsed) =>
-                    updatePreferences({ velocityLaneCollapsed })
-                  }
-                />
-              ) : null
-            }
-            pickPitch={
-              pick
-                ? {
-                    hint: pick.hint,
-                    onPick: (midi) => {
-                      setPick(null);
-                      pick.onPick(midi);
-                    },
-                  }
-                : null
-            }
-            reveal={reveal}
-            ghostNotes={chordGhosts}
-            onAnchorHover={(anchor) => {
-              const cell = anchor
-                ? { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) }
-                : null;
-              const blocked = hoverBlocked.current;
-              if (
-                cell &&
-                blocked &&
-                cell.start === blocked.start &&
-                cell.pitchMidicents === blocked.pitchMidicents
-              ) {
-                return;
-              }
-              hoverBlocked.current = null;
-              setHoverCell(cell);
-            }}
-            onAnchorClick={(anchor) => {
-              // Snapped to the project EDO grid before anything (picker, ghosts, voicing) sees it.
-              const snapped: NonNullable<typeof chordAnchor> = {
-                pitchMidicents: snapToEdo(anchor.pitchMidicents, edo),
-                start: anchor.start,
-                step: anchor.step,
-              };
-              const hit = noteAtCell(notes, anchor);
-              if (hit) {
-                // Stacking on an existing note: its exact pitch and actual onset, its own length
-                // and velocity.
-                snapped.pitchMidicents = snapToEdo(hit.pitchMidicents, edo);
-                snapped.start = hit.start;
-                snapped.note = {
-                  duration: hit.duration,
-                  velocity: hit.velocity,
-                  pitchMidicents: hit.pitchMidicents,
-                };
-              }
-              setChordAnchor(snapped);
-              // A plain click opens the stored mode; Ctrl (Cmd) opens common-tone mode for this
-              // click only, leaving the stored mode as the buttons set it.
-              setChordCtrlOpen(anchor.ctrlKey === true);
-              clearChordGhosts();
-              onChordAnchor?.({ pitchMidicents: snapped.pitchMidicents, onset: snapped.start });
-            }}
-            keyActions={[
-              {
-                shortcut: 'v',
-                run: () =>
-                  updatePreferences({ velocityLaneCollapsed: !preferences.velocityLaneCollapsed }),
-              },
-            ]}
-            onEntryLengthChange={(length) => updatePreferences({ entryLength: length })}
-            entryVelocity={preferences.entryVelocity ?? undefined}
-            onEntryVelocityChange={(velocity) => updatePreferences({ entryVelocity: velocity })}
-            endMarker={extent > 0 ? extent : undefined}
-            loopBand={loopBand}
-            notes={notes}
-            duration={duration}
-            gridLines={gridLines}
-            view={view}
-            onViewChange={setView}
-            selectedIds={selection.ids}
-            onSelectionChange={(ids) => setSelection(() => selectIds(packet, ids))}
-            onMarqueeRange={marqueeRange}
-            onMoveTimeRange={moveTime}
-            selectedRange={timeBand}
-            selectedItemsRange={notesBand}
-            tools={tools}
-            activeTool={tool}
-            onToolChange={setTool}
-            actions={actions}
-            onAddNote={draw}
-            onPaintNotes={paint}
-            onSplitNote={split}
-            onMoveNotes={(ids, delta, options) =>
-              options?.copy
-                ? copySelection(ids, delta)
-                : commit((current) => moveNotes(current, ids, delta))
-            }
-            onResizeNotes={(ids, delta) => commit((current) => resizeNotes(current, ids, delta))}
-            onResizeNotesStart={(ids, delta) =>
-              commit((current) => resizeNotesStart(current, ids, delta))
-            }
-            onDeleteNotes={remove}
-            onVelocityChange={changeSelectionVelocity}
-          />
-        </div>
-        {chordsActive && (
-          <ChordPickerHost
-            host={preferences.chordHost}
-            onHostChange={(chordHost) => updatePreferences({ chordHost })}
-            onClose={chordAnchor ? closeChordPicker : undefined}
-            dockWidth={preferences.chordDockWidth}
-            onDockWidthChange={(chordDockWidth) => updatePreferences({ chordDockWidth })}
-          >
-            {chordAnchor ? (
-              <ChordPicker
-                anchor={chordAnchor}
-                onNote={chordAnchor.note !== undefined}
-                noteOffsetCents={
-                  chordAnchor.note
-                    ? chordAnchor.note.pitchMidicents - chordAnchor.pitchMidicents
-                    : 0
-                }
-                pitchSet={settings.pitchSet}
-                override={chordOverride}
-                onOverrideChange={(next) => {
-                  setChordOverrideState(next);
-                  clearChordGhosts();
-                }}
-                controlRef={chordControl}
-                continuous={chordContinuous}
-                onContinuousChange={setChordContinuous}
-                mode={effectiveChordMode}
-                onModeChange={(next) => {
-                  // The buttons commit the stored mode and the open picker follows it.
-                  setChordMode(next);
-                  setChordCtrlOpen(false);
-                  clearChordGhosts();
-                }}
-                tier={chordTier}
-                onTierChange={(next) => {
-                  setChordTier(next);
-                  // A pinned or hovered chord may no longer be listed: fall back to the first.
-                  clearChordGhosts();
-                }}
-                allPitches={chordAllPitches}
-                onAllPitchesChange={(next) => {
-                  setChordAllPitches(next);
-                  clearChordGhosts();
-                }}
-                voicing={chordVoicing}
-                onVoicingChange={changeVoicing}
-                previewGate={developerOptions.chordPreviewGate}
-                onHover={setHoverChord}
-                onPin={pinChord}
-                onInsert={insertChord}
-                onClose={closeChordPicker}
-              />
-            ) : (
-              <Text size="xs" c="dimmed">
-                Click the roll where a chord should go. Its pitch becomes the chord's root;
-                Ctrl/Cmd+click picks the role it plays in a chord. Click an existing note to stack a
-                chord on it.
-              </Text>
-            )}
-          </ChordPickerHost>
-        )}
-        {chordsActive && (
-          <ChordAudition sourceId={`chords:${snippet.id}`} auditionRef={auditionRef} />
-        )}
+      <div className={classes.work} ref={stageArea}>
+        <Stage
+          registry={stageRegistry}
+          layout={stageLayout}
+          update={updateStageLayout}
+          widthRem={stageWidthRem > 0 ? stageWidthRem : FALLBACK_STAGE_WIDTH_REM}
+        />
       </div>
+      {pickerInTakeover && pickerNode}
+      {chordsActive && (
+        <ChordAudition sourceId={`chords:${snippet.id}`} auditionRef={auditionRef} />
+      )}
     </div>
   );
 }

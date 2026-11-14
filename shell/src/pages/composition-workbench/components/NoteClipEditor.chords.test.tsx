@@ -218,6 +218,23 @@ describe('the Chords tool picker in the note clip editor', () => {
     expect(parseFloat(hover[0].style.width)).toBeCloseTo(32, 0);
   });
 
+  it('Escape does not close the picker while a menu is open', async () => {
+    const roll = await open();
+    clickAnchor(roll, 69);
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    document.body.appendChild(menu);
+    try {
+      roll.focus();
+      fireEvent.keyDown(roll, { key: 'Escape' });
+      expect(ghosts('anchor').length).toBeGreaterThan(0);
+    } finally {
+      menu.remove();
+    }
+    fireEvent.keyDown(roll, { key: 'Escape' });
+    expect(ghosts('anchor')).toHaveLength(0);
+  });
+
   it('Escape and Close clear the ghosts and the anchor; so does leaving the tool', async () => {
     const user = userEvent.setup();
     const roll = await open();
@@ -440,16 +457,6 @@ describe('the Chords tool picker in the note clip editor', () => {
       expect(noteCount()).toBe(3);
       expect(engine.play).not.toHaveBeenCalled();
     });
-  });
-
-  it('the dock width is remembered per viewer through the splitter', async () => {
-    const roll = await open();
-    roll.focus();
-    fireEvent.keyDown(roll, { key: '7' });
-    fireEvent.keyDown(screen.getByRole('separator', { name: /Resize chord dock/ }), {
-      key: 'ArrowLeft',
-    });
-    expect(JSON.parse(localStorage.getItem(NOTE_EDITOR_PREFERENCES_KEY)!).chordDockWidth).toBe(496);
   });
 
   it('double-click in click mode does not audition twice', async () => {

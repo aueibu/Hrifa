@@ -18,12 +18,19 @@
   min-width: 0;
 }
 
-/* The roll and, while the Chords tool is active, the chord dock beside it. */
+/* The Stage that hosts the roll and, while the Chords tool is active, the chord picker (editorStage.ts). */
 .work {
   display: flex;
   flex: 1 1 0;
-  gap: 0.5rem;
+  flex-direction: column;
   min-height: 0;
+  min-width: 0;
+}
+
+/* The Stage fills its area rather than the window. */
+.work [data-stage-root] {
+  flex: 1 1 0;
+  height: auto;
 }
 
 .header {
