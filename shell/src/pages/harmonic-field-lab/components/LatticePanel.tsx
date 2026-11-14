@@ -23,6 +23,7 @@ import type { VizId } from '../state/layout';
 import type { LatMode } from '../state/vizState';
 import { TIPS } from '../texts';
 import type { SceneState } from './Lattice3D';
+import { ModeChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, useLab, useViz } from './ui';
 import { hasWebGL } from './webgl';
 import classes from './panels.module.css';
@@ -58,6 +59,7 @@ function Lattice2D({
   mode: LatMode;
 }) {
   const lab = useLab();
+  const modeRoot = useModeRoot();
   const at = new Map(L.pts.map((p) => [p.i, p]));
   // crop the view to the points (and the axis key) so the lattice fills the panel
   const key = L.key ?? [];
@@ -125,9 +127,10 @@ function Lattice2D({
         const lit = lab.sounding.has(p.i);
         const on = lab.selected.has(p.i);
         return (
-          <g key={p.i}>
+          <g key={p.i} data-root={modeRoot === p.i ? 'true' : undefined}>
             {lab.pin === p.i && <circle className={classes.pinRing} cx={p.x} cy={p.y} r={13} />}
             {lab.hover === p.i && <circle className={classes.selRing} cx={p.x} cy={p.y} r={13} />}
+            {modeRoot === p.i && <ModeChevron x={p.x} y={p.y - 10} deg={90} scale={0.9} />}
             <circle
               className={lit ? classes.dotLit : on ? classes.dotOn : classes.dotOff}
               data-chord={lab.chord.has(p.i) ? 'true' : undefined}
@@ -136,7 +139,7 @@ function Lattice2D({
               r={lit ? 9 : 6}
               tabIndex={0}
               role="button"
-              aria-label={`${p.label}${p.chip ? `, off-axis ${p.chip}` : ''}${on ? ', in subset' : ''}${lit ? ', sounding' : ''}`}
+              aria-label={`${p.label}${p.chip ? `, off-axis ${p.chip}` : ''}${on ? ', in subset' : ''}${lit ? ', sounding' : ''}${rootLabel(modeRoot, p.i)}`}
               onMouseEnter={() => lab.setHover(p.i)}
               onMouseLeave={() => lab.setHover(null)}
               onFocus={() => lab.setHover(p.i)}
@@ -192,6 +195,7 @@ function Lattice3DView({
 }) {
   const lab = useLab();
   const { field, rep, ratios } = lab.base;
+  const root = useModeRoot();
   const data = useMemo(() => lattice3dOf(field, rep, axes), [field, rep, axes]);
   const hover = lab.hover;
   const pin = lab.pin;
@@ -203,8 +207,9 @@ function Lattice3DView({
       lit: lab.sounding,
       on: lab.selected,
       labels,
+      root,
     }),
-    [hover, pin, lab.chord, lab.sounding, lab.selected, labels]
+    [hover, pin, lab.chord, lab.sounding, lab.selected, labels, root]
   );
   return (
     <Lattice3D

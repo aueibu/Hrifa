@@ -10,13 +10,17 @@ import {
 } from '@mantine/core';
 import { parseInterval, type FifthsLayout } from '../../../lib/harmonic-field';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
+import { chevronBox, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { RingView } from '../state/labState';
 import { FieldCompact } from './FieldPanel';
 import { GearIcon } from './icons';
+import { RING_GAP, RingChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, signed, useLab } from './ui';
 import classes from './lab.module.css';
 
 const SIZE = 300;
+/** Room round the ring for labels that move out to a second or third lane. */
+const PAD = 44;
 const C = SIZE / 2;
 const R = 104;
 /** Ring radius in the Fifths view (smaller: it carries step names, ratios and offsets outside). */
@@ -50,14 +54,14 @@ function marksFor(
     };
     return cents.map((c) => {
       const p = polar(c, R);
-      const l = polar(c, R + 20);
+      const l = polar(c, R + 30);
       return { x: p.x, y: p.y, lx: l.x, ly: l.y, turn: c / repC };
     });
   }
   return L.notes.map((p) => {
     const a = p.turn * 2 * Math.PI - Math.PI / 2;
     const r = p.offChain ? RF - 30 : RF - 20 * p.stack;
-    const rl = RF + 24;
+    const rl = RF + 32;
     return {
       x: C + r * Math.cos(a),
       y: C + r * Math.sin(a),
@@ -74,6 +78,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
   const lab = useLab();
   const { base, state, selected, sounding, chord } = lab;
   const { field, repC, ratios } = base;
+  const modeRoot = useModeRoot();
   const L = useMemo(
     () => (view === 'fifths' ? fifthsFor(field, repC, state.ui.ringGen, steps) : null),
     [view, field, repC, state.ui.ringGen, steps]
@@ -88,6 +93,45 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
       ),
     [view, field, repC, L]
   );
+  // label places: the root first (it must clear its chevron), then the rest; none overlap another or the chevron
+  const places = useMemo(() => {
+    const order = field
+      .map((_, i) => i)
+      .sort((a, b) => (a === modeRoot ? -1 : b === modeRoot ? 1 : a - b));
+    const obstacles: Box[] =
+      modeRoot !== null && marks[modeRoot]
+        ? [chevronBox(C, C, marks[modeRoot].x, marks[modeRoot].y, RING_GAP)]
+        : [];
+    const out = layoutLabels(
+      order.map((i) => ({
+        x: marks[i].lx,
+        y: marks[i].ly,
+        text: ratios[i],
+        sub:
+          marks[i].offset === undefined
+            ? undefined
+            : marks[i].offChain
+              ? 'off'
+              : signed(marks[i].offset as number),
+      })),
+      {
+        cx: C,
+        cy: C,
+        laneStep: 22,
+        lanes: 3,
+        advance: 6.6,
+        subAdvance: 5.4,
+        lineH: 12,
+        subH: 10,
+        subDy: 10,
+        pad: 5.5,
+        obstacles,
+        bounds: { x0: -PAD, y0: -PAD, x1: SIZE + PAD, y1: SIZE + PAD },
+      }
+    );
+    const byNote = new Map(order.map((i, k) => [i, out[k]]));
+    return field.map((_, i) => byNote.get(i)!);
+  }, [field, marks, ratios, modeRoot]);
   const chordPts = [...chord]
     .filter((i) => i < field.length)
     .sort((a, b) => a - b)
@@ -99,7 +143,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
   const lit = [...sounding].filter((i) => i < field.length).sort((a, b) => a - b);
   return (
     <svg
-      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      viewBox={`${-PAD} ${-PAD} ${SIZE + 2 * PAD} ${SIZE + 2 * PAD}`}
       className={classes.ringSvg}
       role="group"
       aria-label={`Pitch circle, ${view} view: ${selected.size} of ${field.length} notes selected${
@@ -151,10 +195,12 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
           m.offset !== undefined && L
             ? `, step ${L.notes[i].step}, ${m.offset >= 0 ? '+' : ''}${m.offset.toFixed(1)} cents${m.offChain ? ', off the chain' : ''}`
             : '';
+        const label = places[i];
         return (
-          <g key={i}>
+          <g key={i} data-root={modeRoot === i ? 'true' : undefined}>
             {lab.pin === i && <circle className={classes.pinRing} cx={m.x} cy={m.y} r={12} />}
             {lab.hover === i && <circle className={classes.selRing} cx={m.x} cy={m.y} r={12} />}
+            {modeRoot === i && <RingChevron cx={C} cy={C} x={m.x} y={m.y} />}
             <circle
               className={isLit ? classes.dotLit : on ? classes.dotOn : classes.dotOff}
               data-chord={inChord ? 'true' : undefined}
@@ -164,7 +210,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
               r={isLit ? 8 : m.offChain ? 4 : 5.5}
               tabIndex={0}
               role="button"
-              aria-label={`${ratios[i]}, ${n.c.toFixed(1)} cents${on ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}${isLit ? ', sounding' : ''}${extra}`}
+              aria-label={`${ratios[i]}, ${n.c.toFixed(1)} cents${on ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}${isLit ? ', sounding' : ''}${rootLabel(modeRoot, i)}${extra}`}
               aria-pressed={on}
               onMouseEnter={() => lab.setHover(i)}
               onMouseLeave={() => lab.setHover(null)}
@@ -172,9 +218,17 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
               onBlur={() => lab.setHover(null)}
               {...noteHandlers(lab, i)}
             />
+            {label.leader && (
+              <line
+                className={classes.labelLeader}
+                data-testid="label-leader"
+                {...leaderEnds(m.x, m.y, label.x, label.y)}
+              />
+            )}
             <text
-              x={m.lx}
-              y={m.ly}
+              x={label.x}
+              y={label.y}
+              style={label.scale < 1 ? { fontSize: 11 * label.scale } : undefined}
               className={classes.svgLabel}
               data-on={on}
               textAnchor="middle"
@@ -182,7 +236,12 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
             >
               {ratios[i]}
               {m.offset !== undefined && (
-                <tspan className={classes.offLabel} x={m.lx} dy="10">
+                <tspan
+                  className={classes.offLabel}
+                  style={label.scale < 1 ? { fontSize: 9 * label.scale } : undefined}
+                  x={label.x}
+                  dy={10 * label.scale}
+                >
                   {m.offChain ? 'off' : signed(m.offset)}
                 </tspan>
               )}

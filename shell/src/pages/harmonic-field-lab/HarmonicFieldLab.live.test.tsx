@@ -6,6 +6,9 @@ import { HarmonicFieldLabApp } from './HarmonicFieldLabApp';
 import { makeTab, presetGen } from './state/labState';
 import { KEY_SETTINGS, KEY_SUBSETS, KEY_TABS, saveSubsets } from './state/persist';
 
+// whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
+vi.setConfig({ testTimeout: 15_000 });
+
 const stored = (key: string) => JSON.parse(window.localStorage.getItem(key) ?? 'null') as unknown;
 const ring = () => screen.getByRole('group', { name: /^Pitch circle/ });
 const ringCount = () =>

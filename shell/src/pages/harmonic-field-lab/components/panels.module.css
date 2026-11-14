@@ -109,7 +109,7 @@
   background: var(--mantine-color-default-hover);
 }
 
-.rung[data-on='true'] {
+.rung[data-on="true"] {
   color: var(--text);
   outline: 1px solid var(--text);
   outline-offset: 0;
@@ -164,7 +164,7 @@
 }
 
 /* a chord that does not fit yet: dashed, quiet; clicking raises the tolerance to admit it */
-.chip[data-found='false'] {
+.chip[data-found="false"] {
   background: none;
   border: 1px dashed var(--control-border);
   color: var(--text-muted);
@@ -189,23 +189,23 @@
 }
 
 /* error: colour by size, never alone (the number is printed beside it) */
-.err[data-sev='0'] {
+.err[data-sev="0"] {
   color: var(--mark-cyan);
 }
 
-.err[data-sev='1'] {
+.err[data-sev="1"] {
   color: var(--mark-green);
 }
 
-.err[data-sev='2'] {
+.err[data-sev="2"] {
   color: var(--mark-yellow);
 }
 
-.err[data-sev='3'] {
+.err[data-sev="3"] {
   color: var(--mark-orange);
 }
 
-.err[data-sev='4'] {
+.err[data-sev="4"] {
   color: var(--mark-red);
 }
 
@@ -304,28 +304,28 @@
   width: 0.5rem;
 }
 
-.swatch[data-sev='0'],
-.heatCell[data-sev='0'] {
+.swatch[data-sev="0"],
+.heatCell[data-sev="0"] {
   background: color-mix(in srgb, var(--mark-cyan) 40%, var(--panel));
 }
 
-.swatch[data-sev='1'],
-.heatCell[data-sev='1'] {
+.swatch[data-sev="1"],
+.heatCell[data-sev="1"] {
   background: color-mix(in srgb, var(--mark-green) 40%, var(--panel));
 }
 
-.swatch[data-sev='2'],
-.heatCell[data-sev='2'] {
+.swatch[data-sev="2"],
+.heatCell[data-sev="2"] {
   background: color-mix(in srgb, var(--mark-yellow) 45%, var(--panel));
 }
 
-.swatch[data-sev='3'],
-.heatCell[data-sev='3'] {
+.swatch[data-sev="3"],
+.heatCell[data-sev="3"] {
   background: color-mix(in srgb, var(--mark-orange) 50%, var(--panel));
 }
 
-.swatch[data-sev='4'],
-.heatCell[data-sev='4'] {
+.swatch[data-sev="4"],
+.heatCell[data-sev="4"] {
   background: color-mix(in srgb, var(--mark-red) 55%, var(--panel));
 }
 
@@ -385,7 +385,7 @@
 }
 
 /* selection grammar: 1px border plus 1px outline in --text, no fill change */
-.heatRowBtn[aria-pressed='true'] {
+.heatRowBtn[aria-pressed="true"] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
@@ -413,7 +413,7 @@
 
 .heatRowBtn:hover .heatCell > *,
 .heatRowBtn:focus-visible .heatCell > *,
-.heatRowBtn[aria-pressed='true'] .heatCell > * {
+.heatRowBtn[aria-pressed="true"] .heatCell > * {
   opacity: 1;
 }
 
@@ -431,6 +431,20 @@
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+/* the Keys panel does not scroll as a whole: the big ring, its summary, legend and buttons stay put and only the key-ring
+   list scrolls (it keeps a small minimum; a panel too short even for that falls back to scrolling as a whole) */
+.keysBody {
+  overflow-y: auto;
+}
+
+.keyRingsScroll {
+  align-content: start;
+  flex: 1 1 8rem;
+  min-height: 4.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .keyRing {
@@ -454,11 +468,11 @@
   outline-offset: 1px;
 }
 
-.keyRing[data-viewed='true'] {
+.keyRing[data-viewed="true"] {
   background: var(--panel-slot);
 }
 
-.keyRing[data-complete='true'] {
+.keyRing[data-complete="true"] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
@@ -533,9 +547,9 @@
   stroke-width: 2;
 }
 
-.dotOn[data-chord='true'],
-.dotOff[data-chord='true'],
-.dotLit[data-chord='true'] {
+.dotOn[data-chord="true"],
+.dotOff[data-chord="true"],
+.dotLit[data-chord="true"] {
   stroke: var(--mark-blue);
   stroke-width: 3;
 }
@@ -602,7 +616,7 @@
   margin-left: 0.25rem;
 }
 
-.svgLabel[data-on='true'] {
+.svgLabel[data-on="true"] {
   fill: var(--text);
 }
 
@@ -624,11 +638,11 @@
   padding: 0.125rem 0.5rem;
 }
 
-.noteChip[data-on='true'] {
+.noteChip[data-on="true"] {
   color: var(--text);
 }
 
-.noteChip[aria-pressed='true'] {
+.noteChip[aria-pressed="true"] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
@@ -676,11 +690,11 @@
   background: var(--panel-slot);
 }
 
-.dt tbody tr[data-off='true'] {
+.dt tbody tr[data-off="true"] {
   color: var(--text-muted);
 }
 
-.dt tbody tr[data-pin='true'] {
+.dt tbody tr[data-pin="true"] {
   outline: 1px solid var(--mark-yellow);
   outline-offset: -1px;
 }
@@ -722,7 +736,7 @@
 }
 
 /* the active card carries the selection outline */
-.cardRow[data-active='true'] {
+.cardRow[data-active="true"] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
@@ -825,7 +839,7 @@
   width: 100%;
 }
 
-.lat3dHost[data-big='true'] {
+.lat3dHost[data-big="true"] {
   aspect-ratio: auto;
   height: min(66vh, 44rem);
 }
@@ -858,16 +872,34 @@
   white-space: nowrap;
 }
 
-.lat3dLabel[data-on='true'] {
+.lat3dLabel[data-on="true"] {
   color: var(--text);
 }
 
-.lat3dLabel[data-lit='true'] {
+.lat3dLabel[data-lit="true"] {
   color: var(--mark-green);
 }
 
-.lat3dLabel[data-sel='true'] {
+.lat3dLabel[data-sel="true"] {
   font-weight: 700;
+}
+
+.lat3dRoot {
+  pointer-events: none;
+}
+
+.lat3dRoot svg {
+  display: block;
+  fill: none;
+  stroke: var(--text);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+/* with labels on, the chevron rides above the label */
+.lat3dRoot[data-labels="true"] svg {
+  transform: translateY(-0.875rem);
 }
 
 .lat3dAxis {
@@ -914,15 +946,15 @@
   fill: var(--text-subtle);
 }
 
-.edoBar[data-state='best'] {
+.edoBar[data-state="best"] {
   fill: var(--mark-violet);
 }
 
-.edoBar[data-state='hover'] {
+.edoBar[data-state="hover"] {
   fill: var(--text-muted);
 }
 
-.edoBar[data-state='pick'] {
+.edoBar[data-state="pick"] {
   fill: var(--text);
 }
 
@@ -959,7 +991,7 @@
   padding: 0.0625rem 0.4375rem;
 }
 
-.vizChip[aria-pressed='true'] {
+.vizChip[aria-pressed="true"] {
   border-color: var(--text);
 }
 
@@ -982,19 +1014,19 @@
   stroke-width: 1;
 }
 
-.dissMark[data-state='on'] {
+.dissMark[data-state="on"] {
   stroke: var(--text);
   stroke-dasharray: none;
   stroke-width: 1.5;
 }
 
-.dissMark[data-state='lit'] {
+.dissMark[data-state="lit"] {
   stroke: var(--mark-green);
   stroke-dasharray: none;
   stroke-width: 2.5;
 }
 
-.dissMark[data-sel='true'] {
+.dissMark[data-sel="true"] {
   stroke-width: 3;
 }
 
@@ -1004,7 +1036,7 @@
   font-size: 8.5px;
 }
 
-.dissNote[data-state='lit'] {
+.dissNote[data-state="lit"] {
   fill: var(--mark-green);
   font-weight: 700;
 }
@@ -1049,24 +1081,24 @@
   stroke-width: 1;
 }
 
-.isoHex[data-state='off'] {
+.isoHex[data-state="off"] {
   cursor: pointer;
   stroke: var(--text-subtle);
 }
 
-.isoHex[data-state='on'] {
+.isoHex[data-state="on"] {
   cursor: pointer;
   fill: color-mix(in srgb, var(--text) 16%, transparent);
   stroke: var(--text);
   stroke-width: 1.5;
 }
 
-.isoHex[data-chord='true'] {
+.isoHex[data-chord="true"] {
   stroke: var(--mark-blue);
   stroke-width: 3;
 }
 
-.isoHex[data-sel='true'] {
+.isoHex[data-sel="true"] {
   fill: color-mix(in srgb, var(--text) 30%, transparent);
 }
 
@@ -1080,7 +1112,7 @@
   font-size: 9px;
 }
 
-.isoLabel[data-state='on'] {
+.isoLabel[data-state="on"] {
   fill: var(--text);
   font-weight: 700;
 }
@@ -1112,23 +1144,23 @@
   outline: 2px solid var(--focus-ring);
 }
 
-.dt tbody tr[data-lit='true'] {
+.dt tbody tr[data-lit="true"] {
   background: var(--tint-green-bg);
   color: var(--tint-green-text);
 }
 
-.chip[data-picked='true'] {
+.chip[data-picked="true"] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
 
 /* pinned note (Alt+click), H-3: yellow, after the other states so it stays visible */
-.isoHex[data-pin='true'] {
+.isoHex[data-pin="true"] {
   stroke: var(--mark-yellow);
   stroke-width: 3;
 }
 
-.dissMark[data-pin='true'] {
+.dissMark[data-pin="true"] {
   stroke: var(--mark-yellow);
   stroke-width: 3;
 }
@@ -1147,7 +1179,15 @@
   display: block;
   margin: 0 auto;
   max-width: 100%;
-  width: 16.25rem;
+  width: 22rem;
+}
+
+.bigKeyLeader {
+  pointer-events: none;
+  stroke: var(--text-subtle);
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+  stroke-width: 1;
 }
 
 .bigKeyCircle {
@@ -1170,13 +1210,13 @@
 /* would be added: hollow with a plus */
 .bigKeyAdded {
   fill: var(--panel-inset);
-  stroke: var(--text);
+  stroke: var(--mark-green);
   stroke-width: 2;
 }
 
 .bigKeyGlyph {
   fill: none;
-  stroke: var(--text);
+  stroke: var(--mark-green);
   stroke-linecap: round;
   stroke-width: 1.5;
 }
@@ -1184,13 +1224,13 @@
 /* would be dropped: hollow, muted, struck through */
 .bigKeyDropped {
   fill: var(--panel-inset);
-  stroke: var(--text-muted);
+  stroke: var(--mark-red);
   stroke-width: 1.5;
 }
 
 .bigKeyStrike {
   fill: none;
-  stroke: var(--text);
+  stroke: var(--mark-red);
   stroke-linecap: round;
   stroke-width: 2;
 }
@@ -1198,7 +1238,7 @@
 /* missing in the field: dashed, empty */
 .bigKeyMissing {
   fill: none;
-  stroke: var(--text-muted);
+  stroke: var(--mark-orange);
   stroke-dasharray: 3 2.5;
   stroke-width: 1.5;
 }

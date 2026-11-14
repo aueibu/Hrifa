@@ -16,12 +16,16 @@ import {
   type ClickedKey,
   type KeyDiff,
 } from '../state/keysModes';
+import { chevronBox, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
+import { RING_GAP, RingChevron } from './ModeRoot';
 import { Num, Strip, Tip, useLab } from './ui';
 import classes from './panels.module.css';
 
 const BIG = 260;
 const BC = BIG / 2;
 const BR = 92;
+/** Room round the ring for labels that move out to a further lane. */
+const BPAD = 50;
 
 /** The large comparison ring: four groups with four shapes (filled, plus, minus strike, dashed). */
 function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: string }) {
@@ -34,9 +38,34 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
   const common = new Set(diff.common);
   const added = new Set(diff.added);
   const dropped = new Set(diff.dropped);
+  // label places: the key root first (it must clear its chevron); none overlap another or the chevron
+  const order = field
+    .map((_, i) => i)
+    .sort((a, b) => (a === k.rootIdx ? -1 : b === k.rootIdx ? 1 : a - b));
+  const dots = field.map((n) => at(n.c));
+  const rootDot = dots[k.rootIdx];
+  const obstacles: Box[] = rootDot ? [chevronBox(BC, BC, rootDot.x, rootDot.y, RING_GAP)] : [];
+  const placed = layoutLabels(
+    order.map((i) => ({ ...at(field[i].c, BR + 30), text: ratios[i] })),
+    {
+      cx: BC,
+      cy: BC,
+      laneStep: 22,
+      lanes: 3,
+      advance: 6.6,
+      subAdvance: 5.4,
+      lineH: 12,
+      subH: 10,
+      subDy: 10,
+      pad: 5.5,
+      obstacles,
+      bounds: { x0: -BPAD, y0: -BPAD, x1: BIG + BPAD, y1: BIG + BPAD },
+    }
+  );
+  const places = new Map(order.map((i, j) => [i, placed[j]]));
   return (
     <svg
-      viewBox={`0 0 ${BIG} ${BIG}`}
+      viewBox={`${-BPAD} ${-BPAD} ${BIG + 2 * BPAD} ${BIG + 2 * BPAD}`}
       className={classes.bigKeySvg}
       role="group"
       aria-label={label}
@@ -45,7 +74,6 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
       <circle className={classes.bigKeyCircle} cx={BC} cy={BC} r={BR} />
       {field.map((n, i) => {
         const p = at(n.c);
-        const l = at(n.c, BR + 20);
         const kind = common.has(i)
           ? 'common'
           : added.has(i)
@@ -54,11 +82,17 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
               ? 'dropped'
               : 'plain';
         const sounding = lab.sounding.has(i);
+        // the key's root is the mode root this key would give
+        const isRoot = i === k.rootIdx;
+        const label = places.get(i)!;
         return (
           <g
             key={i}
             data-note={i}
             data-kind={kind}
+            data-root={isRoot ? 'true' : undefined}
+            role={isRoot ? 'group' : undefined}
+            aria-label={isRoot ? `${ratios[i]}, mode root` : undefined}
             data-sounding={sounding ? 'true' : undefined}
             onMouseEnter={() => lab.setHover(i)}
             onMouseLeave={() => lab.setHover(null)}
@@ -72,6 +106,7 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
             {lab.hover === i && <circle className={classes.selRing} cx={p.x} cy={p.y} r={14} />}
             {sounding && <circle className={classes.bigKeyLit} cx={p.x} cy={p.y} r={11} />}
             {lab.chord.has(i) && <circle className={classes.bigKeyChord} cx={p.x} cy={p.y} r={9} />}
+            {isRoot && <RingChevron cx={BC} cy={BC} x={p.x} y={p.y} />}
             {kind === 'plain' && <circle className={classes.bigKeyPlain} cx={p.x} cy={p.y} r={3} />}
             {kind === 'common' && (
               <circle className={classes.bigKeyCommon} cx={p.x} cy={p.y} r={6} />
@@ -91,11 +126,19 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
                 <path className={classes.bigKeyStrike} d={`M${p.x - 9} ${p.y}h18`} />
               </>
             )}
+            {label.leader && (
+              <line
+                className={classes.bigKeyLeader}
+                data-testid="label-leader"
+                {...leaderEnds(p.x, p.y, label.x, label.y)}
+              />
+            )}
             <text
               className={classes.svgLabel}
+              style={label.scale < 1 ? { fontSize: 11 * label.scale } : undefined}
               data-on={kind !== 'plain'}
-              x={l.x}
-              y={l.y}
+              x={label.x}
+              y={label.y}
               textAnchor="middle"
               dominantBaseline="middle"
             >
@@ -281,7 +324,7 @@ export function KeysPanel() {
   return (
     <>
       <Strip title={<Tip k="keysModes">Keys</Tip>} />
-      <div className={classes.panelBody}>
+      <div className={`${classes.panelBody} ${classes.keysBody}`} data-testid="keys-body">
         {k && diff && (
           <section className={classes.bigKey} aria-label="Key comparison">
             <h3 className={classes.familyHead}>
@@ -354,7 +397,11 @@ export function KeysPanel() {
             {completeKeys.length} of {field.length} complete
           </Num>
         </h3>
-        <ul className={classes.keyRings} aria-label="Keys">
+        <ul
+          className={`${classes.keyRings} ${classes.keyRingsScroll}`}
+          aria-label="Keys"
+          data-testid="key-rings-scroll"
+        >
           {keyRings.map((r) => (
             <KeyRing
               key={r.rootIdx}

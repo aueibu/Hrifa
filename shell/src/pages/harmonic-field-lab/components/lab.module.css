@@ -185,7 +185,7 @@
 }
 
 /* tab grammar: filled tier plus text */
-.tab[aria-selected='true'] {
+.tab[aria-selected="true"] {
   background: var(--panel-slot);
   color: var(--text);
 }
@@ -245,7 +245,7 @@
   background: var(--mantine-color-default-hover);
 }
 
-.railItem[aria-selected='true'] {
+.railItem[aria-selected="true"] {
   background: var(--panel-slot);
   color: var(--text);
 }
@@ -262,7 +262,7 @@
   white-space: nowrap;
 }
 
-.railItem[aria-selected='true'] .railCount {
+.railItem[aria-selected="true"] .railCount {
   color: var(--text);
 }
 
@@ -282,7 +282,7 @@
   display: inline-block;
 }
 
-.tipControl[data-block='true'] {
+.tipControl[data-block="true"] {
   display: block;
 }
 
@@ -406,7 +406,7 @@
   padding: 0.1875rem 0;
 }
 
-.switchChip[data-on='true'] {
+.switchChip[data-on="true"] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--mantine-primary-color-contrast);
@@ -427,17 +427,17 @@
   display: grid;
   gap: 0.5rem 0.75rem;
   grid-template-areas:
-    'gen ring stats'
-    'gen tools tools'
-    'strip strip side'
-    'saved saved side';
+    "gen ring stats"
+    "gen tools tools"
+    "strip strip side"
+    "saved saved side";
   grid-template-columns: 14rem minmax(0, 1fr) 17rem;
   grid-template-rows: auto auto auto minmax(7rem, 1fr);
   padding: 0.5rem;
 }
 
 /* reference lines: lighter grey for a white key, darker for a black key, so in dark mode the order flips with the text */
-:global([data-mantine-color-scheme='dark']) .workspace {
+:global([data-mantine-color-scheme="dark"]) .workspace {
   --ref-white: color-mix(in srgb, var(--text) 22%, transparent);
   --ref-black: color-mix(in srgb, var(--text) 7%, transparent);
 }
@@ -580,11 +580,11 @@
 
   .workspace {
     grid-template-areas:
-      'gen ring'
-      'tools tools'
-      'stats side'
-      'strip strip'
-      'saved saved';
+      "gen ring"
+      "tools tools"
+      "stats side"
+      "strip strip"
+      "saved saved";
     grid-template-columns: 14rem minmax(0, 1fr);
     grid-template-rows: auto auto auto auto minmax(5rem, 1fr);
   }
@@ -773,9 +773,9 @@
   stroke-width: 2;
 }
 
-.dotOn[data-chord='true'],
-.dotOff[data-chord='true'],
-.dotLit[data-chord='true'] {
+.dotOn[data-chord="true"],
+.dotOff[data-chord="true"],
+.dotLit[data-chord="true"] {
   stroke: var(--mark-blue);
   stroke-width: 3;
 }
@@ -818,9 +818,37 @@
 }
 
 /* an off-chain note is a small dashed mark */
-.dotOff[data-off='true'],
-.dotOn[data-off='true'] {
+.dotOff[data-off="true"],
+.dotOn[data-off="true"] {
   stroke-dasharray: 2 1.5;
+}
+
+/* the mode-root marker (H-4): one bold chevron in --text, no colour of its own, the same shape in every view */
+.modeChevron {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--text);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.modeGlyph {
+  fill: none;
+  flex: none;
+  margin-left: 0.25rem;
+  stroke: var(--text);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  vertical-align: -1px;
+}
+
+.labelLeader {
+  pointer-events: none;
+  stroke: var(--text-subtle);
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+  stroke-width: 1;
 }
 
 .svgLabel {
@@ -829,7 +857,7 @@
   font-size: 11px;
 }
 
-.svgLabel[data-on='true'] {
+.svgLabel[data-on="true"] {
   fill: var(--text);
 }
 
@@ -900,11 +928,11 @@
   width: 2px;
 }
 
-.ref[data-black='true'] {
+.ref[data-black="true"] {
   background: var(--ref-black);
 }
 
-.ref[data-thin='true'] {
+.ref[data-thin="true"] {
   width: 2px;
 }
 
@@ -974,9 +1002,9 @@
 }
 
 /* a field note that is not in the subset: dimmed line, bar and number */
-.col[data-on='false'] .mark,
-.col[data-on='false'] .colNum,
-.col[data-on='false'] .colRatio {
+.col[data-on="false"] .mark,
+.col[data-on="false"] .colNum,
+.col[data-on="false"] .colRatio {
   opacity: 0.35;
 }
 
@@ -991,11 +1019,11 @@
 }
 
 /* the error number sits just beyond the tip its colour starts from */
-.colNum[data-dir='sharp'] {
+.colNum[data-dir="sharp"] {
   top: calc(var(--mid) - var(--half) - 0.8125rem);
 }
 
-.colNum[data-dir='flat'] {
+.colNum[data-dir="flat"] {
   top: calc(var(--mid) + var(--half) + 0.1875rem);
 }
 
@@ -1063,7 +1091,7 @@
 }
 
 /* the loaded subset carries the selection outline: 1px border plus 1px outline in --text */
-.savedRow[aria-pressed='true'] {
+.savedRow[aria-pressed="true"] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
@@ -1095,7 +1123,7 @@
 }
 
 /* a field note that is not in this saved subset: dimmed line, no error bar */
-.sparkCol[data-on='false'] .mark {
+.sparkCol[data-on="false"] .mark {
   opacity: 0.35;
 }
 
@@ -1108,7 +1136,7 @@
   padding: 0 0.5rem;
 }
 
-.dock[data-open='false'] {
+.dock[data-open="false"] {
   height: 1.875rem;
 }
 
@@ -1130,7 +1158,7 @@
   display: inline-flex;
 }
 
-.chevron[data-open='false'] svg {
+.chevron[data-open="false"] svg {
   transform: rotate(-90deg);
 }
 
@@ -1176,13 +1204,13 @@
 }
 
 /* sounding: green tint with a green base bar; a chord member also gets the blue outline */
-.key[data-lit='true'] {
+.key[data-lit="true"] {
   background: var(--tint-green-bg);
   border-bottom-color: var(--mark-green);
   color: var(--tint-green-text);
 }
 
-.key[data-chord='true'] {
+.key[data-chord="true"] {
   outline: 2px solid var(--mark-blue);
   outline-offset: -2px;
 }
@@ -1281,11 +1309,11 @@
 }
 
 /* view toggle class: no fill, the icon turns accent while on; dimmed when pinned but without room */
-.pinBtn[data-state='shown'] {
+.pinBtn[data-state="shown"] {
   color: var(--accent-tint-text);
 }
 
-.pinBtn[data-state='hidden'] {
+.pinBtn[data-state="hidden"] {
   color: var(--text-muted);
   opacity: 0.55;
 }
@@ -1361,11 +1389,11 @@
   background: var(--panel-slot);
 }
 
-.fieldDt tbody tr[data-off='true'] {
+.fieldDt tbody tr[data-off="true"] {
   color: var(--text-muted);
 }
 
-.fieldDt tbody tr[data-pin='true'] {
+.fieldDt tbody tr[data-pin="true"] {
   outline: 1px solid var(--mark-yellow);
   outline-offset: -1px;
 }
@@ -1380,7 +1408,7 @@
   width: 0.5rem;
 }
 
-.inMark[data-on='false'] {
+.inMark[data-on="false"] {
   background: none;
   border-color: var(--text-subtle);
 }
@@ -1422,12 +1450,12 @@
 }
 
 /* a stack is a grid: top panel | splitter | bottom panel, its rows set by the split (see Panels.tsx) */
-.pinStack[data-stack='true'] {
+.pinStack[data-stack="true"] {
   display: grid;
   gap: 0;
 }
 
-.pinStack[data-stack='true'] > .pinned {
+.pinStack[data-stack="true"] > .pinned {
   grid-row: auto;
   min-height: 0;
 }
@@ -1453,13 +1481,13 @@
 
 .splitter:hover,
 .splitter:focus-visible,
-.splitter[data-drag='true'] {
+.splitter[data-drag="true"] {
   background: var(--panel-slot);
 }
 
 .splitter:hover .splitGrip,
 .splitter:focus-visible .splitGrip,
-.splitter[data-drag='true'] .splitGrip {
+.splitter[data-drag="true"] .splitGrip {
   opacity: 1;
 }
 
@@ -1506,12 +1534,12 @@
 
 /* a visualizer's name is long ("Visualizer 2 – Dissonance curve"): it gets the full row and the figure goes under it,
    so the ellipsis cuts the view name and never the instance number */
-.railItem[data-wide='true'] {
+.railItem[data-wide="true"] {
   flex-wrap: wrap;
   gap: 0;
 }
 
-.railItem[data-wide='true'] .railLabel {
+.railItem[data-wide="true"] .railLabel {
   flex: 1 0 100%;
 }
 
@@ -1525,11 +1553,11 @@
   overflow-wrap: anywhere;
 }
 
-.fieldMsg[data-kind='err'] {
+.fieldMsg[data-kind="err"] {
   color: var(--mark-red);
 }
 
-.fieldMsg[data-kind='warn'] {
+.fieldMsg[data-kind="warn"] {
   color: var(--mark-yellow);
 }
 
@@ -1622,7 +1650,7 @@
 }
 
 /* the compact field table lights a sounding note */
-.fieldDt tbody tr[data-lit='true'] {
+.fieldDt tbody tr[data-lit="true"] {
   background: var(--tint-green-bg);
   color: var(--tint-green-text);
 }

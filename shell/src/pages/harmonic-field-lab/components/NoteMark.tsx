@@ -5,6 +5,7 @@
  * error and covers the whole half-line at `full` cents (50 by default). It is widest at the tip: line width up
  * to 10 c, widening to 10 px at 50 c and beyond. A sounding note gets a green dot at its middle.
  */
+import { ModeChevron } from './ModeRoot';
 import classes from './lab.module.css';
 
 /** SVG width: room for the widest taper (10 px) and the sounding dot (10 px). */
@@ -37,6 +38,9 @@ export interface NoteMarkProps {
   pinned?: boolean;
   /** Radius of the sounding dot. */
   dotR?: number;
+  /** This note is the mode root: a small `>|<` pair of chevrons either side of the tick, at `rootScale` size. */
+  root?: boolean;
+  rootScale?: number;
 }
 
 export function NoteMark({
@@ -50,6 +54,8 @@ export function NoteMark({
   lit = false,
   pinned = false,
   dotR = 5,
+  root = false,
+  rootScale = 0.5,
 }: NoteMarkProps) {
   const abs = Math.abs(dev);
   const len = errorLength(abs, half, full);
@@ -62,6 +68,7 @@ export function NoteMark({
   return (
     <svg
       className={classes.mark}
+      style={root ? { overflow: 'visible' } : undefined}
       width={W}
       height={height}
       viewBox={`0 0 ${W} ${height}`}
@@ -92,6 +99,13 @@ export function NoteMark({
         />
       )}
       {lit && <circle className={classes.markDot} cx={CX} cy={mid} r={dotR} />}
+      {root && (
+        <g data-testid="mode-root-pair">
+          {/* centred on the tick's own middle (mid), either side of it; drawn last so it stays above the sounding dot */}
+          <ModeChevron x={CX - near - 2.5} y={mid} deg={0} scale={rootScale} />
+          <ModeChevron x={CX + near + 2.5} y={mid} deg={180} scale={rootScale} />
+        </g>
+      )}
     </svg>
   );
 }

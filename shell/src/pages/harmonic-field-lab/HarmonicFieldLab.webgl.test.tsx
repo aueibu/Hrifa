@@ -2,6 +2,9 @@ import { fireEvent, render, screen, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 
+// whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
+vi.setConfig({ testTimeout: 15_000 });
+
 // WebGL "exists" but the renderer cannot be created (a context limit, a blocked GPU)
 vi.mock('./components/webgl', () => ({ hasWebGL: () => true, resetWebGLProbe: () => undefined }));
 vi.mock('three', async (orig) => {

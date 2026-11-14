@@ -212,6 +212,11 @@ export function SavedSubsets() {
           const on = new Set(idx ?? []);
           const loaded =
             same && idx !== null && idx.length === current.size && idx.every((i) => current.has(i));
+          // the saved subset's own mode root (the same repair the loader applies to a stored mode)
+          const rootNote =
+            idx && idx.length
+              ? idx[Number.isInteger(s.mode) && s.mode >= 0 && s.mode < idx.length ? s.mode : 0]
+              : null;
           return (
             <li key={s.id} className={classes.savedItem}>
               <Tip k="savedRow" as="control" block>
@@ -242,6 +247,7 @@ export function SavedSubsets() {
                           className={classes.sparkCol}
                           data-on={on.has(i)}
                           data-ratio={base.ratios[i]}
+                          data-root={rootNote === i ? 'true' : undefined}
                           data-dir={strip.devs[i].dev >= 0 ? 'sharp' : 'flat'}
                           style={{ left: stripLeft(n.c, base.repC) }}
                         >
@@ -252,6 +258,8 @@ export function SavedSubsets() {
                             half={9}
                             maxTaper={6}
                             showError={on.has(i)}
+                            root={rootNote === i}
+                            rootScale={0.4}
                           />
                         </span>
                       ))}

@@ -154,7 +154,7 @@ const entries = {
   },
   pitchCircle: {
     term: 'Pitch circle',
-    text: 'Every field note placed round a circle by its pitch, the repeat being one full turn. Click a dot to include or exclude it; Alt+click pins it in the inspector (yellow ring) without changing the subset. Filled = in your subset, hollow = out; the pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord; larger ring = sounding right now. Example: 3/2 sits just past the bottom of the circle, 702 of 1200 cents round.',
+    text: 'Every field note placed round a circle by its pitch, the repeat being one full turn. Click a dot to include or exclude it; Alt+click pins it in the inspector (yellow ring) without changing the subset. Filled = in your subset, hollow = out; the pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord; larger ring = sounding right now; a bold chevron outside the ring pointing in marks the mode root. Example: 3/2 sits just past the bottom of the circle, 702 of 1200 cents round.',
   },
   selectAll: {
     term: 'All',
@@ -171,7 +171,12 @@ const entries = {
   mode: {
     term: 'Mode',
     text: "Which selected note is the scale's root. Moving it rotates the same notes into a new scale. Example: the white notes starting on C are major; starting on A they are natural minor.",
-    see: ['modeAtBase', 'keysSummary'],
+    see: ['modeRoot', 'modeAtBase', 'keysSummary'],
+  },
+  modeRoot: {
+    term: 'Mode root (chevron)',
+    text: "A bold chevron marks the note the current mode starts on, in every view that draws single notes: outside the pitch circle and the key circle pointing in at the note, beside the note's tick on the tuner strip (a small pair, like >|<), above a lattice node pointing down, in the row of the field table, on its isomorphic-keyboard key and its mark on the dissonance curve. It is drawn in the plain text colour so it never clashes with the hover, pin, sounding or chord colours. Example: in C major, mode 2 starts on D (D dorian): the chevron moves from C to D, while the same seven notes stay selected.",
+    see: ['mode', 'subset'],
   },
   pickNearest: {
     term: 'Pick nearest',
@@ -209,7 +214,7 @@ const entries = {
   },
   tunerStrip: {
     term: 'Tuner strip',
-    text: 'Your scale laid out by pitch, with a faint reference line at every 100 c (1/1 as C): lighter where a piano white key would sit, darker for a black key. Saved subsets below use the same columns, so a note sits straight above and below itself. Each bar sits under its own dot: orange going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.',
+    text: 'Your scale laid out by pitch, with a faint reference line at every 100 c (1/1 as C): lighter where a piano white key would sit, darker for a black key. Saved subsets below use the same columns, so a note sits straight above and below itself. Each bar sits under its own dot: orange going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. A small >|< pair of chevrons beside a note marks the mode root. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.',
     see: ['compareTo', 'cents'],
   },
   cents: {
@@ -218,7 +223,7 @@ const entries = {
   },
   lattice: {
     term: 'Lattice',
-    text: 'Notes drawn as points on a grid whose directions are the primes (or generators): one step right is another factor of 3, one step up another 5, and so on. Notes that are close on the grid are closely related in ratio. Example: 3/2 and 9/8 are neighbours (one step of 3 apart).',
+    text: 'Notes drawn as points on a grid whose directions are the primes (or generators): one step right is another factor of 3, one step up another 5, and so on. Notes that are close on the grid are closely related in ratio. A bold chevron above a node, pointing down, marks the mode root. Example: 3/2 and 9/8 are neighbours (one step of 3 apart).',
     see: ['latticeAxes', 'lattice3d'],
   },
   latticeAxes: {
@@ -238,7 +243,7 @@ const entries = {
   },
   fieldTable: {
     term: 'Field table',
-    text: 'One line for every field note: ratio, cents and its distance from the nearest 12-EDO key, with a mark for whether it is in the subset. Point at a line to light the note everywhere and read it in the inspector; click to include or exclude it, Alt+click to pin it in the inspector. "Open full table" shows every column with sorting. Example: the 13/8 line reads 840.5 c, "Ab +40.5": a note 40.5 c sharp of the piano A-flat.',
+    text: 'One line for every field note: ratio, cents and its distance from the nearest 12-EDO key, with a mark for whether it is in the subset and a chevron beside the mode root. Point at a line to light the note everywhere and read it in the inspector; click to include or exclude it, Alt+click to pin it in the inspector. "Open full table" shows every column with sorting. Example: the 13/8 line reads 840.5 c, "Ab +40.5": a note 40.5 c sharp of the piano A-flat.',
   },
   colRatio: {
     term: 'Ratio',
@@ -356,7 +361,7 @@ const entries = {
   },
   modes: {
     term: 'Modes (heat grid)',
-    text: "The panel for rotation: a mode keeps the same notes and starts the scale on another degree (a key, in the Keys panel, moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change). One row per mode (the scale restarted from each degree), one column per degree of that mode; narrow panels wrap the degrees onto more lines, always under the same column. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors; click a row to make that mode the current one. Example: row 1 is the scale from 9/8; if its 5th degree misses by 21.5 c, that cell is orange.",
+    text: "The panel for rotation: a mode keeps the same notes and starts the scale on another degree (a key, in the Keys panel, moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change). One row per mode (the scale restarted from each degree), one column per degree of that mode; narrow panels wrap the degrees onto more lines, always under the same column. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors; click a row to make that mode the current one. Example: row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree misses by 21.5 c, that cell is orange.",
     see: ['mode', 'chordError'],
   },
 
@@ -548,12 +553,12 @@ const entries = {
   },
   keyView: {
     term: 'Key comparison',
-    text: 'One large circle comparing your subset with a key. It shows the key you point at in the small rings, else the one you last clicked, else the current key (your subset itself, where everything is common). It goes back to the current key whenever the subset changes any other way (a new selection, preset, method, mode or tab). Everything sounding is lit green, and pointing at a note here lights it in every view. The line under it counts the four groups in words. Example: from C major to G major it reads "6 common · +1 added · −1 dropped · 0 missing": F# would be added and F dropped.',
+    text: 'One large circle comparing your subset with a key. It shows the key you point at in the small rings, else the one you last clicked, else the current key (your subset itself, where everything is common). It goes back to the current key whenever the subset changes any other way (a new selection, preset, method, mode or tab). Everything sounding is lit green, and pointing at a note here lights it in every view. The bold chevron outside the circle marks the root note of the shown key (the mode root you would get by switching to it). The line under it counts the four groups in words. Example: from C major to G major it reads "6 common · +1 added · −1 dropped · 0 missing": F# would be added and F dropped.',
     see: ['keyMarks', 'keySwitch', 'keyAdd', 'commonTones'],
   },
   keyMarks: {
     term: 'Key comparison marks',
-    text: 'Four kinds of mark, each with its own shape so colour is never the only clue. Filled dot: a common note, in both the subset and the key. Hollow dot with a plus: a note the key would add (in the key, not in your subset). Hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key). Dashed circle: a degree of the key the field has no note for, so it can never be added. Example: for C major against G major, F# is a plus, F is a minus, and the other six are filled.',
+    text: 'Four kinds of mark, each with its own shape and colour so neither is the only clue. Filled neutral dot: a common note, in both the subset and the key. Green hollow dot with a plus: a note the key would add (in the key, not in your subset). Red hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key). Orange dashed circle: a degree of the key the field has no note for, so it can never be added. Example: for C major against G major, F# is a plus, F is a minus, and the other six are filled.',
     see: ['keyView'],
   },
   keySwitch: {
@@ -663,7 +668,7 @@ const entries = {
   },
   savedRow: {
     term: 'Saved subset',
-    text: 'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small orange (sharp) and cyan (flat) bars for the distance from 12-EDO. Pointing at a row previews it on the ring; clicking loads it. Example: "Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.',
+    text: 'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small orange (sharp) and cyan (flat) bars for the distance from 12-EDO. A small chevron above a column marks the mode root of that subset. Pointing at a row previews it on the ring; clicking loads it. Example: "Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.',
     see: ['savedSubsets'],
   },
   pinPanel: {
@@ -739,8 +744,8 @@ const entries = {
   },
   lattice3d: {
     term: '3D lattice',
-    text: 'The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart. Drag to rotate, scroll to zoom, right-drag (or two-finger drag) to pan. Example: 9/8 is two steps out along the 3 axis, 5/4 one step along the 5 axis.',
-    see: ['lattice', 'latticeAxes', 'latticeStems'],
+    text: 'The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart. Drag to rotate, scroll to zoom, right-drag (or two-finger drag) to pan. Example: 9/8 is two steps out along the 3 axis, 5/4 one step along the 5 axis. A bold chevron floating above a sphere marks the mode root.',
+    see: ['lattice', 'latticeAxes', 'latticeStems', 'modeRoot'],
   },
   lattice3dReset: {
     term: 'Reset view',
@@ -793,7 +798,7 @@ const entries = {
   },
   dissMarks: {
     term: 'Scale marks on the curve',
-    text: 'A vertical line at the cents of every field note. Bright lines are notes in your subset; faint lines are field notes you left out; green means sounding now. Read where a line meets the curve: a line at the bottom of a dip means that interval, measured from 1/1, is smooth. Example: the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1; a line that lands on a peak is rougher against 1/1.',
+    text: 'A vertical line at the cents of every field note. Bright lines are notes in your subset; faint lines are field notes you left out; green means sounding now; a small bold chevron above a line marks the mode root. Read where a line meets the curve: a line at the bottom of a dip means that interval, measured from 1/1, is smooth. Example: the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1; a line that lands on a peak is rougher against 1/1.',
     see: ['dissCurve', 'dissDips'],
   },
   dissDips: {
@@ -828,7 +833,7 @@ const entries = {
   },
   isoHex: {
     term: 'Hexagon',
-    text: 'One key. Filled and bright: a note in your subset. Outlined: a field note that you left out. Blank: no field note near that pitch. A green dot means it is sounding now, and a blue outline marks a note of the highlighted chord. Point at a key to read it in the inspector; click to include or exclude the note, Alt+click to pin it (yellow outline). Example: the 3/2 key lights when you play 3/2 anywhere, and on every hexagon that lands on it.',
+    text: 'One key. Filled and bright: a note in your subset. Outlined: a field note that you left out. Blank: no field note near that pitch. A green dot means it is sounding now, a blue outline marks a note of the highlighted chord, and a small bold chevron at the top of the key marks the mode root. Point at a key to read it in the inspector; click to include or exclude the note, Alt+click to pin it (yellow outline). Example: the 3/2 key lights when you play 3/2 anywhere, and on every hexagon that lands on it.',
     see: ['isoKeyboard', 'inspector'],
   },
   isoReadout: {
@@ -839,6 +844,8 @@ const entries = {
 } satisfies Record<string, TextEntry>;
 
 export type TipKey = keyof typeof entries;
+/** The mode-root tooltip as one string, for native `title`s on the chevron glyphs that cannot host a tooltip. */
+export const MODE_ROOT_TIP = `${entries.modeRoot.term}: ${entries.modeRoot.text}`;
 export const TIPS: Record<TipKey, TextEntry> = entries;
 export const tipKeys = Object.keys(entries) as TipKey[];
 

@@ -40,9 +40,8 @@ import {
   PANEL_IDS,
   VIZ_IDS,
   migrateV1,
+  parseLayout,
   migrateV2,
-  loadStoredLayout,
-  splitKeysModes,
   type Layout,
 } from './layout';
 import {
@@ -209,19 +208,19 @@ function readRaw(key: string): string | null {
 export function loadLayout(): Layout {
   const own = readRaw(KEY_LAYOUT);
   if (own !== null) {
-    return loadStoredLayout(own);
+    return parseLayout(own);
   }
   const [v3, v2, v1] = MOCK_LAYOUT_KEYS.map(readRaw);
   if (v3 !== null) {
-    return loadStoredLayout(v3);
+    return parseLayout(v3);
   }
   if (v2 !== null) {
-    return splitKeysModes(migrateV2(v2));
+    return migrateV2(v2);
   }
-  return v1 !== null ? splitKeysModes(migrateV1(v1)) : DEFAULT_LAYOUT;
+  return v1 !== null ? migrateV1(v1) : DEFAULT_LAYOUT;
 }
 export function saveLayout(l: Layout): boolean {
-  return writeJson(KEY_LAYOUT, { ...l, keysModesSplit: true });
+  return writeJson(KEY_LAYOUT, l);
 }
 
 /* ------------------------------------------------------------------------------------------------ snapshots */

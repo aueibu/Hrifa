@@ -56,13 +56,34 @@ describe('fitColumns (width in rem to pinned columns)', () => {
   });
 });
 
+/** The arrangement the lab opened with before Modes became its own panel: single columns, no stacks. */
+const SINGLES: Layout = {
+  left: [['keys'], ['chords']],
+  right: [['viz1'], ['spectrum']],
+};
+
+describe('DEFAULT_LAYOUT', () => {
+  it('stacks Modes on top of Keys in the left outer column', () => {
+    expect(DEFAULT_LAYOUT).toEqual({
+      left: [['modes', 'keys'], ['chords']],
+      right: [['viz1'], ['spectrum']],
+    });
+    expect(pinnedIds(DEFAULT_LAYOUT)).toHaveLength(5);
+  });
+
+  it('a stack is one column: the stack shows with the third column', () => {
+    expect([...visiblePins(DEFAULT_LAYOUT, 3)]).toEqual(['chords', 'viz1', 'modes', 'keys']);
+    expect(visiblePins(DEFAULT_LAYOUT, 9).size).toBe(5);
+  });
+});
+
 describe('visiblePins (whole columns)', () => {
   it('shows the columns nearest the generator first, alternating sides', () => {
-    expect([...visiblePins(DEFAULT_LAYOUT, 0)]).toEqual([]);
-    expect([...visiblePins(DEFAULT_LAYOUT, 1)]).toEqual(['chords']);
-    expect([...visiblePins(DEFAULT_LAYOUT, 2)]).toEqual(['chords', 'viz1']);
-    expect([...visiblePins(DEFAULT_LAYOUT, 3)]).toEqual(['chords', 'viz1', 'keys']);
-    expect(visiblePins(DEFAULT_LAYOUT, 9).size).toBe(4);
+    expect([...visiblePins(SINGLES, 0)]).toEqual([]);
+    expect([...visiblePins(SINGLES, 1)]).toEqual(['chords']);
+    expect([...visiblePins(SINGLES, 2)]).toEqual(['chords', 'viz1']);
+    expect([...visiblePins(SINGLES, 3)]).toEqual(['chords', 'viz1', 'keys']);
+    expect(visiblePins(SINGLES, 9).size).toBe(4);
   });
 
   it('counts a stack as one column and shows both of its panels or neither', () => {
@@ -76,7 +97,7 @@ describe('visiblePins (whole columns)', () => {
 });
 
 describe('arrangement rules', () => {
-  const l: Layout = DEFAULT_LAYOUT;
+  const l: Layout = SINGLES;
 
   it('pins as a one-panel column on the outer end of the side with fewer columns (right on a tie)', () => {
     const a = pin(l, 'retuner');
@@ -126,14 +147,14 @@ describe('stacks', () => {
     const right: Layout = { left: [], right: [['viz1', 'spectrum']] };
     expect(unstack(right, 'viz1').right).toEqual([['spectrum'], ['viz1']]);
     expect(unstack(right, 'spectrum').right).toEqual([['viz1'], ['spectrum']]);
-    expect(unstack(DEFAULT_LAYOUT, 'keys')).toEqual(DEFAULT_LAYOUT);
+    expect(unstack(SINGLES, 'keys')).toEqual(SINGLES);
   });
 
   it('swaps the two panels of a stack with moveInStack', () => {
     const s: Layout = { left: [['keys', 'chords']], right: [] };
     expect(moveInStack(s, 'keys', 'down').left).toEqual([['chords', 'keys']]);
     expect(moveInStack(s, 'chords', 'up').left).toEqual([['chords', 'keys']]);
-    expect(moveInStack(DEFAULT_LAYOUT, 'keys', 'down')).toBe(DEFAULT_LAYOUT);
+    expect(moveInStack(SINGLES, 'keys', 'down')).toBe(SINGLES);
   });
 
   it('moving a panel out of a stack unstacks it first, to the side it was moved toward', () => {

@@ -5,6 +5,7 @@
  */
 import { NativeSelect } from '@mantine/core';
 import type { CmpRef } from '../state/labState';
+import { rootLabel, useModeRoot } from './ModeRoot';
 import { NoteMark } from './NoteMark';
 import { CommitNumber, Num, Strip, Tip, noteHandlers, signed, useLab } from './ui';
 import classes from './lab.module.css';
@@ -50,6 +51,7 @@ export function TunerStrip() {
   const { base, tab, strip, selected, sounding, dispatch } = lab;
   const { rel, repC, analysis } = base;
   const { cmp } = tab;
+  const modeRoot = useModeRoot();
   return (
     <section className={classes.tuner} aria-label="Tuner strip">
       <Strip title={<Tip k="tunerStrip">Tuner strip</Tip>}>
@@ -126,7 +128,8 @@ export function TunerStrip() {
                     data-pin={lab.pin === fi}
                     role="button"
                     tabIndex={0}
-                    aria-label={`${d.ratio}, ${signed(d.dev)} cents from ${d.label}${active ? '' : ', not in the subset'}${lab.pin === fi ? ', pinned' : ''}${lit ? ', sounding' : ''}`}
+                    aria-label={`${d.ratio}, ${signed(d.dev)} cents from ${d.label}${active ? '' : ', not in the subset'}${lab.pin === fi ? ', pinned' : ''}${lit ? ', sounding' : ''}${rootLabel(modeRoot, fi)}`}
+                    data-root={modeRoot === fi ? 'true' : undefined}
                     onMouseEnter={() => lab.setHover(fi)}
                     onMouseLeave={() => lab.setHover(null)}
                     onFocus={() => lab.setHover(fi)}
@@ -141,6 +144,7 @@ export function TunerStrip() {
                       half={MARK_HALF}
                       lit={lit}
                       pinned={lab.pin === fi}
+                      root={modeRoot === fi}
                     />
                     <span className={classes.colNum} data-dir={sharp ? 'sharp' : 'flat'}>
                       {signed(d.dev)}

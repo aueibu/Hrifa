@@ -5,6 +5,9 @@ import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { KEY_SETTINGS, KEY_TABS } from './state/persist';
 
+// whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
+vi.setConfig({ testTimeout: 15_000 });
+
 const stored = (key: string) => JSON.parse(window.localStorage.getItem(key) ?? 'null') as unknown;
 const rail = () => screen.getByRole('navigation', { name: 'Analysis panels' });
 const ring = () => screen.getByRole('group', { name: /^Pitch circle/ });

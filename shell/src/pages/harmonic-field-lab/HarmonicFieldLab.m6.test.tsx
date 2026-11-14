@@ -1,8 +1,11 @@
 /** M6: lattice axes picker, subset polygon, chord template editor, glossary search, .scl import, pin colour. */
 import { act, fireEvent, render, screen, waitFor, within } from '@test-utils';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { KEY_CHORDFINDER } from './state/persist';
+
+// whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
+vi.setConfig({ testTimeout: 15_000 });
 
 const rail = () => screen.getByRole('navigation', { name: 'Analysis panels' });
 const ring = () => screen.getByRole('group', { name: /^Pitch circle/ });

@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Button, Checkbox, Modal } from '@mantine/core';
 import { fieldRowsOf, type FieldRow } from '../state/derive';
 import { PlayIcon, TableIcon } from './icons';
+import { RootGlyph, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Tip, rowHandlers, useLab } from './ui';
 import mock from './lab.module.css';
 import classes from './panels.module.css';
@@ -57,6 +58,7 @@ function useRows(): Row[] {
 
 export function FieldTable() {
   const lab = useLab();
+  const modeRoot = useModeRoot();
   const all = useRows();
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'i', dir: 1 });
   const rows = useMemo(
@@ -110,7 +112,7 @@ export function FieldTable() {
               onMouseEnter={() => lab.setHover(r.i)}
               onMouseLeave={() => lab.setHover(null)}
               tabIndex={0}
-              aria-label={`${r.ratio}${r.on ? ', in subset' : ''}${lab.pin === r.i ? ', pinned' : ''}`}
+              aria-label={`${r.ratio}${r.on ? ', in subset' : ''}${lab.pin === r.i ? ', pinned' : ''}${rootLabel(modeRoot, r.i)}`}
               {...rowHandlers(lab, r.i)}
             >
               <td className={classes.l}>
@@ -142,6 +144,7 @@ export function FieldTable() {
               </td>
               <td className={classes.l}>
                 <Num>{r.ratio}</Num>
+                {modeRoot === r.i && <RootGlyph />}
               </td>
               <td>
                 <Num>{r.cents.toFixed(2)}</Num>
@@ -172,6 +175,7 @@ export function FieldTable() {
 /** A dense field table for the side column under Step sizes: one line per note, scrolling inside a fixed box. */
 export function FieldCompact() {
   const lab = useLab();
+  const modeRoot = useModeRoot();
   const fieldRows = useRows();
   const [open, setOpen] = useState(false);
   return (
@@ -219,7 +223,7 @@ export function FieldCompact() {
                 onMouseEnter={() => lab.setHover(r.i)}
                 onMouseLeave={() => lab.setHover(null)}
                 tabIndex={0}
-                aria-label={`${r.ratio}${r.on ? ', in subset' : ''}${lab.pin === r.i ? ', pinned' : ''}`}
+                aria-label={`${r.ratio}${r.on ? ', in subset' : ''}${lab.pin === r.i ? ', pinned' : ''}${rootLabel(modeRoot, r.i)}`}
                 {...rowHandlers(lab, r.i)}
               >
                 <td>
@@ -232,6 +236,7 @@ export function FieldCompact() {
                 </td>
                 <td>
                   <Num>{r.ratio}</Num>
+                  {modeRoot === r.i && <RootGlyph />}
                 </td>
                 <td>
                   <Num>{r.cents.toFixed(1)}</Num>

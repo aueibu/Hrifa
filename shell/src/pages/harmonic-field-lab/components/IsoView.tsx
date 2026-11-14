@@ -7,6 +7,7 @@ import { NativeSelect } from '@mantine/core';
 import { isoOf } from '../state/derive';
 import type { VizId } from '../state/layout';
 import { ISO_G1, ISO_G2, ISO_TOLS } from '../state/vizState';
+import { ModeChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, useLab, useViz } from './ui';
 import classes from './panels.module.css';
 
@@ -31,6 +32,7 @@ export function IsoBody({ id }: { id: VizId }) {
   const s = viz.settings(id);
   const { base } = lab;
   const { field, ratios } = base;
+  const modeRoot = useModeRoot();
   const cells = useMemo(
     () => isoOf(base, s.isoG1, s.isoG2, s.isoTol),
     [base, s.isoG1, s.isoG2, s.isoTol]
@@ -101,7 +103,7 @@ export function IsoBody({ id }: { id: VizId }) {
                   aria-label={
                     n === null
                       ? undefined
-                      : `${ratio}${on ? ', in subset' : ''}${n !== null && lab.pin === n ? ', pinned' : ''}${lit ? ', sounding' : ''}, ${sgn(c.err)} c from the pitch`
+                      : `${ratio}${on ? ', in subset' : ''}${n !== null && lab.pin === n ? ', pinned' : ''}${lit ? ', sounding' : ''}${rootLabel(modeRoot, n)}, ${sgn(c.err)} c from the pitch`
                   }
                   onMouseEnter={n === null ? undefined : () => lab.setHover(n)}
                   onMouseLeave={n === null ? undefined : () => lab.setHover(null)}
@@ -120,6 +122,9 @@ export function IsoBody({ id }: { id: VizId }) {
                   >
                     {ratio}
                   </text>
+                )}
+                {n !== null && n === modeRoot && (
+                  <ModeChevron x={cx} y={cy - 10} deg={90} scale={0.6} />
                 )}
                 {lit && <circle className={classes.isoDot} cx={cx} cy={cy - 5} r={3.6} />}
               </g>

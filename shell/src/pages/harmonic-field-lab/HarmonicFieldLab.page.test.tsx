@@ -1,10 +1,16 @@
 import { fireEvent, render, screen, waitFor, within } from '@test-utils';
+import { vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
+
+// whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
+vi.setConfig({ testTimeout: 15_000 });
 
 const KEY = 'hrifa.harmonic-field-lab.layout.v1';
 const KEY_MOCK_V3 = 'hrifa.harmonic-field-lab.mock.layout.v3';
 const KEY_V2 = 'hrifa.harmonic-field-lab.mock.layout.v2';
 const KEY_V1 = 'hrifa.harmonic-field-lab.mock.layout.v1';
+/** The arrangement before Modes became its own panel (single columns, no stack); older tests seed it explicitly. */
+const SINGLES = '{"left":[["keys"],["chords"]],"right":[["viz1"],["spectrum"]]}';
 const columns = () =>
   screen.queryAllByRole('region', { name: /, pinned column$/ }).map((r) => ({
     name: r.getAttribute('aria-label')!.replace(', pinned column', ''),
@@ -42,6 +48,7 @@ describe('pinned panel columns', () => {
 
   it('pins on the inner end of the chosen side', async () => {
     setWidth(3840);
+    window.localStorage.setItem(KEY, SINGLES);
     render(<HarmonicFieldLabPage />);
     const rail = screen.getByRole('navigation', { name: 'Analysis panels' });
     fireEvent.click(within(rail).getByRole('button', { name: /^Pin Visualizer 2 – EDO fit/ }));
@@ -55,24 +62,30 @@ describe('pinned panel columns', () => {
     ]);
   });
 
-  it('shows the default four columns on an ultrawide and the switcher skips them', () => {
+  it('shows the default columns on an ultrawide (Modes stacked on top of Keys) and the switcher skips them', () => {
     setWidth(3840);
     render(<HarmonicFieldLabPage />);
     expect(columns()).toEqual([
-      { name: 'Keys', side: 'left', stacked: false },
+      { name: 'Modes', side: 'left', stacked: true },
+      { name: 'Keys', side: 'left', stacked: true },
       { name: 'Chords', side: 'left', stacked: false },
       { name: 'Visualizer 1 – Lattice', side: 'right', stacked: false },
       { name: 'Spectrum', side: 'right', stacked: false },
     ]);
-    // the switcher shows the first panel that has no column: Modes (the default layout has no Modes column)
+    // Modes sits above Keys in the same column element
+    const modesCol = screen.getByRole('region', { name: 'Modes, pinned column' });
+    expect(modesCol.closest('[data-stack="true"]')).toBe(
+      screen.getByRole('region', { name: 'Keys, pinned column' }).closest('[data-stack="true"]')
+    );
+    // the switcher shows the first panel that has no column (Retuner)
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
-    expect(screen.getByRole('group', { name: 'Mode by degree heat grid' })).toBeInTheDocument();
     // each column has its own move and unpin buttons
     const chords = screen.getByRole('region', { name: 'Chords, pinned column' });
     expect(within(chords).getByRole('button', { name: 'Move Chords left' })).toBeEnabled();
     expect(within(chords).getByRole('button', { name: 'Unpin Chords' })).toBeInTheDocument();
     const keys = screen.getByRole('region', { name: 'Keys, pinned column' });
-    expect(within(keys).getByRole('button', { name: 'Move Keys left' })).toBeDisabled();
+    // Keys is in a stack, so moving it left takes it out of the stack
+    expect(within(keys).getByRole('button', { name: 'Move Keys left' })).toBeEnabled();
   });
 
   it('keeps only the inner pair at 2560 px and marks the others as having no room', () => {
@@ -91,6 +104,7 @@ describe('pinned panel columns', () => {
 
   it('moves columns: reorder on a side, cross to the other side, unpin; and remembers it', () => {
     setWidth(3840);
+    window.localStorage.setItem(KEY, SINGLES);
     const { unmount } = render(<HarmonicFieldLabPage />);
     // Keys is outermost on the left: moving it inward swaps it with Chords
     fireEvent.click(screen.getByRole('button', { name: 'Move Keys right' }));
@@ -114,7 +128,6 @@ describe('pinned panel columns', () => {
     expect(JSON.parse(window.localStorage.getItem(KEY)!)).toEqual({
       left: [['chords']],
       right: [['keys'], ['viz1']],
-      keysModesSplit: true,
     });
     unmount();
     render(<HarmonicFieldLabPage />);
@@ -126,6 +139,7 @@ describe('pinned panel columns', () => {
     window.localStorage.setItem(KEY, '{"left":[["nope"]],"right":"x"}');
     render(<HarmonicFieldLabPage />);
     expect(columns().map((c) => c.name)).toEqual([
+      'Modes',
       'Keys',
       'Chords',
       'Visualizer 1 – Lattice',
@@ -135,10 +149,7 @@ describe('pinned panel columns', () => {
 
   it('keeps the first three panels of a column with four, and drops only the extra one', () => {
     setWidth(3840);
-    window.localStorage.setItem(
-      KEY,
-      '{"left":[["keys","chords","viz1","viz2"]],"right":[],"keysModesSplit":true}'
-    );
+    window.localStorage.setItem(KEY, '{"left":[["keys","chords","viz1","viz2"]],"right":[]}');
     render(<HarmonicFieldLabPage />);
     expect(columns().map((c) => c.name)).toEqual(['Keys', 'Chords', 'Visualizer 1 – Lattice']);
   });
@@ -147,7 +158,7 @@ describe('pinned panel columns', () => {
     setWidth(3840);
     window.localStorage.setItem(
       KEY,
-      '{"left":[["keys"],["future-panel","chords"]],"right":[["viz1"]],"keysModesSplit":true}'
+      '{"left":[["keys"],["future-panel","chords"]],"right":[["viz1"]]}'
     );
     render(<HarmonicFieldLabPage />);
     expect(columns().map((c) => [c.name, c.side])).toEqual([
@@ -173,18 +184,18 @@ describe('pinned panel columns', () => {
     setWidth(3840);
     window.localStorage.setItem(KEY_V1, '{"left":["lattice"],"right":["chords","keys"]}');
     render(<HarmonicFieldLabPage />);
-    // the old combined Keys & Modes panel gets Modes below it in its column
+    // the old combined Keys & Modes panel is just Keys now; Modes is not pinned
     expect(columns()).toEqual([
       { name: 'Visualizer 1 – Lattice', side: 'left', stacked: false },
       { name: 'Chords', side: 'right', stacked: false },
-      { name: 'Keys', side: 'right', stacked: true },
-      { name: 'Modes', side: 'right', stacked: true },
+      { name: 'Keys', side: 'right', stacked: false },
     ]);
     expect(window.localStorage.getItem(KEY)).toBeNull();
   });
 
   it('stacks two panels into one column, shows both, swaps, moves one out, unstacks and unpins', async () => {
     setWidth(3840);
+    window.localStorage.setItem(KEY, SINGLES);
     render(<HarmonicFieldLabPage />);
     const region = (name: string) => screen.getByRole('region', { name: `${name}, pinned column` });
     const names = () => columns().map((c) => c.name);
@@ -246,6 +257,7 @@ describe('pinned panel columns', () => {
 
   it('pins Dissonance and stacks it with Lattice through the menu: both panels end up in one column', async () => {
     setWidth(3840);
+    window.localStorage.setItem(KEY, SINGLES);
     render(<HarmonicFieldLabPage />);
     const rail = screen.getByRole('navigation', { name: 'Analysis panels' });
     fireEvent.click(
@@ -276,6 +288,7 @@ describe('pinned panel columns', () => {
 
   it('pins an unpinned visualizer from the switcher header', async () => {
     setWidth(3840);
+    window.localStorage.setItem(KEY, SINGLES);
     render(<HarmonicFieldLabPage />);
     // the switcher shows Modes first; choose Visualizer 2 (it has no column either)
     fireEvent.click(
@@ -356,7 +369,7 @@ describe('pinned panel columns', () => {
     setWidth(3840);
     window.localStorage.setItem(
       KEY,
-      '{"left":[["keys","chords"]],"right":[["viz1"],["spectrum"]],"keysModesSplit":true}'
+      '{"left":[["keys","chords"]],"right":[["viz1"],["spectrum"]]}'
     );
     render(<HarmonicFieldLabPage />);
     const bar = screen.getByRole('separator', { name: 'Resize the stacked panels' });
@@ -384,7 +397,7 @@ describe('pinned panel columns', () => {
     setWidth(3840);
     window.localStorage.setItem(
       KEY,
-      '{"left":[["keys","chords"]],"right":[],"splits":{"keys":0.3},"keysModesSplit":true}'
+      '{"left":[["keys","chords"]],"right":[],"splits":{"keys":0.3}}'
     );
     render(<HarmonicFieldLabPage />);
     expect(screen.getByRole('separator')).toHaveAttribute('aria-valuenow', '30');
@@ -392,10 +405,7 @@ describe('pinned panel columns', () => {
 
   it('counts a stack as one column: two columns at 2560 px show all four panels when stacked', () => {
     setWidth(2560);
-    window.localStorage.setItem(
-      KEY,
-      '{"left":[["keys","chords"]],"right":[["viz1","spectrum"]],"keysModesSplit":true}'
-    );
+    window.localStorage.setItem(KEY, '{"left":[["keys","chords"]],"right":[["viz1","spectrum"]]}');
     render(<HarmonicFieldLabPage />);
     expect(columns().map((c) => c.name)).toEqual([
       'Keys',
@@ -487,7 +497,7 @@ describe('visualizer panels', () => {
     window.innerWidth = 3840;
     window.localStorage.setItem(
       KEY,
-      '{"left":[["keys"]],"right":[["viz3"],["viz2"]],"views":{"viz3":"iso"},"keysModesSplit":true}'
+      '{"left":[["keys"]],"right":[["viz3"],["viz2"]],"views":{"viz3":"iso"}}'
     );
     render(<HarmonicFieldLabPage />);
     const col = screen.getByRole('region', {
@@ -511,10 +521,9 @@ describe('visualizer panels', () => {
       '{"left":[["keys","chords"]],"right":[["lattice"],["spectrum"]]}'
     );
     render(<HarmonicFieldLabPage />);
-    // the mock's combined Keys & Modes panel gets Modes next to it in its stack
+    // the mock's combined Keys & Modes panel is just Keys; Modes stays unpinned
     expect(columns().map((c) => c.name)).toEqual([
       'Keys',
-      'Modes',
       'Chords',
       'Visualizer 1 – Lattice',
       'Spectrum',
@@ -526,7 +535,7 @@ describe('visualizer panels', () => {
     window.innerWidth = 3840;
     window.localStorage.setItem(
       KEY,
-      '{"left":[["keys"]],"right":[["viz1"]],"views":{"viz1":"nope"},"keysModesSplit":true}'
+      '{"left":[["keys"]],"right":[["viz1"]],"views":{"viz1":"nope"}}'
     );
     render(<HarmonicFieldLabPage />);
     expect(columns().map((c) => c.name)).toEqual(['Keys', 'Visualizer 1 – Lattice']);

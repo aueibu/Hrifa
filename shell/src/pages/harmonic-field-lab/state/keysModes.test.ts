@@ -11,14 +11,7 @@ import {
   viewedKey,
 } from './keysModes';
 import { activeTab, initialState, labReducer, type Action, type LabState } from './labState';
-import {
-  DEFAULT_LAYOUT,
-  PANEL_IDS,
-  loadStoredLayout,
-  parseLayout,
-  splitKeysModes,
-  type Layout,
-} from './layout';
+import { DEFAULT_LAYOUT, PANEL_IDS, parseLayout, type Layout } from './layout';
 import { KEY_LAYOUT, loadLayout, saveLayout } from './persist';
 
 const run = (s: LabState, ...a: Action[]) => a.reduce(labReducer, s);
@@ -134,76 +127,53 @@ describe('which key the big view shows', () => {
   });
 });
 
-describe('layout: Keys and Modes split', () => {
+describe('layout: Keys and Modes are separate panels', () => {
   it('has a Modes panel id', () => {
     expect(PANEL_IDS).toContain('modes');
   });
 
-  it('a combined panel alone in its column: Modes goes directly below Keys, in that column', () => {
-    const l: Layout = { left: [['keys'], ['chords']], right: [['viz1']] };
-    expect(splitKeysModes(l)).toEqual({ left: [['keys', 'modes'], ['chords']], right: [['viz1']] });
-  });
-
-  it('in a stack: Modes takes the next slot below Keys, others keep their order', () => {
-    expect(splitKeysModes({ left: [], right: [['viz1', 'keys']] }).right).toEqual([
-      ['viz1', 'keys', 'modes'],
-    ]);
-    expect(splitKeysModes({ left: [['keys', 'chords']], right: [] }).left).toEqual([
-      ['keys', 'modes', 'chords'],
-    ]);
-  });
-
-  it('a full column of three has no free slot: Modes is its own column just inside', () => {
-    const left = splitKeysModes({ left: [['keys', 'chords', 'viz1'], ['spectrum']], right: [] });
-    expect(left.left).toEqual([['keys', 'chords', 'viz1'], ['modes'], ['spectrum']]);
-    const right = splitKeysModes({ left: [], right: [['spectrum'], ['keys', 'chords', 'viz1']] });
-    expect(right.right).toEqual([['spectrum'], ['modes'], ['keys', 'chords', 'viz1']]);
-  });
-
-  it('absent combined panel, or Modes already pinned: unchanged (same object)', () => {
-    const none: Layout = { left: [['chords']], right: [['viz1']] };
-    expect(splitKeysModes(none)).toBe(none);
-    const both: Layout = { left: [['keys'], ['modes']], right: [] };
-    expect(splitKeysModes(both)).toBe(both);
-    expect(splitKeysModes(DEFAULT_LAYOUT)).toBe(DEFAULT_LAYOUT);
-  });
-
-  it('drops the stored shares of the column it changed', () => {
-    const l: Layout = { left: [['keys', 'chords']], right: [], splits: { keys: [0.3, 0.7] } };
-    expect(splitKeysModes(l).splits).toBeUndefined();
-  });
-
-  it('an old stored layout (no marker) is split on load; nothing else is lost', () => {
-    const raw = '{"left":[["keys"],["chords"]],"right":[["viz1"],["spectrum"]]}';
-    expect(loadStoredLayout(raw)).toEqual({
-      left: [['keys', 'modes'], ['chords']],
+  it('the default layout stacks Modes on top of Keys in the left outer column', () => {
+    expect(DEFAULT_LAYOUT.left[0]).toEqual(['modes', 'keys']);
+    expect(DEFAULT_LAYOUT).toEqual({
+      left: [['modes', 'keys'], ['chords']],
       right: [['viz1'], ['spectrum']],
     });
-    expect(parseLayout(raw).left).toEqual([['keys'], ['chords']]); // parsing alone does not migrate
   });
 
-  it('a marked layout is left alone, so unpinning Modes sticks', () => {
+  it('an old layout with the combined panel loads as Keys only; Modes stays unpinned', () => {
+    const raw = '{"left":[["keys"],["chords"]],"right":[["viz1"],["spectrum"]]}';
+    expect(parseLayout(raw)).toEqual({
+      left: [['keys'], ['chords']],
+      right: [['viz1'], ['spectrum']],
+    });
+  });
+
+  it('a stored keysModesSplit marker from the earlier build is ignored harmlessly', () => {
     const raw = '{"left":[["keys"]],"right":[],"keysModesSplit":true}';
-    expect(loadStoredLayout(raw)).toEqual({ left: [['keys']], right: [] });
+    const l = parseLayout(raw);
+    expect(l).toEqual({ left: [['keys']], right: [] });
+    expect('keysModesSplit' in l).toBe(false);
   });
 
   describe('storage', () => {
     beforeEach(() => window.localStorage.clear());
     afterEach(() => window.localStorage.clear());
 
-    it('loadLayout migrates an old layout without writing anything', () => {
+    it('loadLayout does not pin Modes for an old layout and writes nothing', () => {
       const raw = '{"left":[["keys"]],"right":[["viz1"]]}';
       window.localStorage.setItem(KEY_LAYOUT, raw);
-      expect(loadLayout()).toEqual({ left: [['keys', 'modes']], right: [['viz1']] });
+      expect(loadLayout()).toEqual({ left: [['keys']], right: [['viz1']] });
       expect(window.localStorage.getItem(KEY_LAYOUT)).toBe(raw);
     });
 
-    it('a saved layout is marked, round-trips, and keeps Modes unpinned', () => {
+    it('a fresh browser gets the default layout', () => {
+      expect(loadLayout()).toBe(DEFAULT_LAYOUT);
+    });
+
+    it('a saved layout round-trips with no marker field, Modes unpinned stays unpinned', () => {
       const l: Layout = { left: [['keys']], right: [['viz1']] };
       saveLayout(l);
-      expect(JSON.parse(window.localStorage.getItem(KEY_LAYOUT)!)).toMatchObject({
-        keysModesSplit: true,
-      });
+      expect(JSON.parse(window.localStorage.getItem(KEY_LAYOUT)!)).toEqual(l);
       expect(loadLayout()).toEqual(l);
     });
 

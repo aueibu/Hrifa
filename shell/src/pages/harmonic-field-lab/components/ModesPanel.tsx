@@ -62,7 +62,7 @@ export function ModesPanel() {
             <span className={classes.modeTiles} data-testid="mode-tiles">
               {(modeFit[0]?.errs ?? []).map((_, j) => (
                 <span key={j} className={classes.modeHeadCell}>
-                  <Num muted>{j}</Num>
+                  <Num muted>{j + 1}</Num>
                 </span>
               ))}
             </span>
@@ -70,7 +70,7 @@ export function ModesPanel() {
           </div>
           {modeFit.map((m) => {
             const worst = Math.max(...m.errs);
-            const label = `Mode ${m.mode}, root ${m.root}: ${m.ok} of ${N} degrees land within ${tol} c of a field note; worst ${worst.toFixed(1)} c`;
+            const label = `Mode ${m.mode + 1}, root ${m.root}: ${m.ok} of ${N} degrees land within ${tol} c of a field note; worst ${worst.toFixed(1)} c`;
             return (
               <button
                 key={m.mode}
@@ -83,7 +83,7 @@ export function ModesPanel() {
                 onClick={() => lab.setMode(m.mode)}
               >
                 <span className={`${classes.modeLabelCol} ${classes.heatName}`}>
-                  <Num muted>{m.mode}</Num> <Num>{m.root}</Num>
+                  <Num muted>{m.mode + 1}</Num> <Num>{m.root}</Num>
                 </span>
                 <span className={classes.modeTiles} data-testid="mode-tiles">
                   {m.errs.map((e, j) => (
@@ -91,7 +91,7 @@ export function ModesPanel() {
                       key={j}
                       className={classes.heatCell}
                       data-sev={severity(e)}
-                      title={`Degree ${j}: ${e < 1e-6 ? 'exact' : `${e.toFixed(1)} c`} from the nearest field note (${SEV_LABEL[severity(e)]})`}
+                      title={`Degree ${j + 1}: ${e < 1e-6 ? 'exact' : `${e.toFixed(1)} c`} from the nearest field note (${SEV_LABEL[severity(e)]})`}
                     >
                       <Num>{e < 1e-6 ? '0' : e.toFixed(0)}</Num>
                     </span>

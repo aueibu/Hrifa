@@ -77,6 +77,8 @@ export interface SceneState {
   lit: ReadonlySet<number>;
   on: ReadonlySet<number>;
   labels: boolean;
+  /** The mode root's field index (a chevron above its sphere), or null/absent. */
+  root?: number | null;
 }
 interface SceneCallbacks {
   onHover: (i: number | null) => void;
@@ -91,6 +93,8 @@ interface Node {
   selHalo: THREE.Mesh;
   pinHalo: THREE.Mesh;
   label: CSS2DObject;
+  /** The mode-root chevron: a screen-facing sprite above the sphere, shown only on the root. */
+  rootMark: CSS2DObject;
 }
 
 /** The whole scene behind one host element. Returns the handles the React component drives, and `dispose`. */
@@ -185,7 +189,8 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
     nodes.forEach((n) => {
       group.remove(n.mesh);
       n.label.element.remove();
-      n.mesh.remove(n.label);
+      n.rootMark.element.remove();
+      n.mesh.remove(n.label, n.rootMark);
     });
     nodes = [];
     edgeObjs.forEach((e) => {
@@ -243,6 +248,24 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
     return new CSS2DObject(el);
   };
 
+  /** A downward chevron as an inline SVG inside a div (a CSS2D sprite always faces the camera). */
+  const chevron = () => {
+    const ns = 'http://www.w3.org/2000/svg';
+    const el = document.createElement('div');
+    el.className = classes.lat3dRoot;
+    el.dataset.testid = 'mode-root-3d';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 12 12');
+    svg.setAttribute('width', '12');
+    svg.setAttribute('height', '12');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M1.5 2.5L6 8.5L10.5 2.5');
+    svg.append(path);
+    el.append(svg);
+    return new CSS2DObject(el);
+  };
+
   const setData = (l: Lattice3d) => {
     clearContent();
     data = l;
@@ -278,8 +301,20 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
       }
       lab.position.set(0, 2.7, 0); // above the sphere (in sphere radii, the mesh is scaled)
       mesh.add(lab);
+      const rootMark = chevron();
+      rootMark.visible = false;
+      mesh.add(rootMark);
       group.add(mesh);
-      nodes.push({ i: p.i, folded: p.folded, mesh, chordHalo, selHalo, pinHalo, label: lab });
+      nodes.push({
+        i: p.i,
+        folded: p.folded,
+        mesh,
+        chordHalo,
+        selHalo,
+        pinHalo,
+        label: lab,
+        rootMark,
+      });
     }
     // one dashed segment set per hidden prime
     const byPrime = new Map<number, THREE.Vector3[]>();
@@ -331,6 +366,10 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
       const k = (lit ? 1.45 : on ? 1 : 0.7) * R;
       n.mesh.scale.setScalar(k);
       n.label.position.set(0, 2.7, 0);
+      // above the label when labels show, else just above the sphere
+      n.rootMark.position.set(0, s.labels ? 2.7 : 2.1, 0);
+      n.rootMark.visible = s.root === n.i;
+      n.rootMark.element.dataset.labels = String(s.labels);
       n.chordHalo.visible = s.chord.has(n.i);
       n.selHalo.visible = s.hover === n.i;
       n.pinHalo.visible = s.pin === n.i;

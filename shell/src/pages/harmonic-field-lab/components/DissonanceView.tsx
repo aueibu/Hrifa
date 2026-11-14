@@ -3,6 +3,7 @@
  * the smooth intervals (dips) named. The curve is computed once per repeat (1 c steps) in the lab's analyses.
  */
 import { useMemo, useState, type PointerEvent } from 'react';
+import { ModeChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, useLab } from './ui';
 import classes from './panels.module.css';
 
@@ -17,6 +18,7 @@ const PH = H - MT - MB;
 
 export function DissonanceBody() {
   const lab = useLab();
+  const modeRoot = useModeRoot();
   const { field, repC, repText, ratios } = lab.base;
   const { curve: dissCurve, dips: dissDips } = lab.an.diss;
   const xOf = (c: number) => ML + (c / repC) * PW;
@@ -88,11 +90,12 @@ export function DissonanceBody() {
                   onMouseLeave={() => lab.setHover(null)}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${ratios[i]}${lab.selected.has(i) ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}`}
+                  aria-label={`${ratios[i]}${lab.selected.has(i) ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}${rootLabel(modeRoot, i)}`}
                   onFocus={() => lab.setHover(i)}
                   onBlur={() => lab.setHover(null)}
                   {...noteHandlers(lab, i)}
                 />
+                {modeRoot === i && <ModeChevron x={xOf(c)} y={MT - 1} deg={90} scale={0.7} />}
                 {state !== 'off' && (
                   <text
                     className={classes.dissNote}
