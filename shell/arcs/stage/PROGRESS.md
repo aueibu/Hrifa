@@ -3,7 +3,7 @@
 ## Status
 - Arc: stage (`arcs/stage`)
 - Current milestone: M1 done, awaiting the human checkpoint; then M2
-- State: awaiting human (M1 checkpoint)
+- State: awaiting human (confirm the size scale; then write STAGE-4 and update ARCHITECTURE.md sections 2 and 5, then M2)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -17,7 +17,7 @@
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). Planned: `package.json` (setup, `check:stage`), then `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts` (M3), `shell/ARCHITECTURE.md` (M3, M6).
 
 ## Open questions for human
-- None open. The M1 checkpoint will ask about the size thresholds and the kit tokens.
+- Confirm the proposed size scale (U = 6rem; boundaries 30 and 42rem on both axes; minimum slot 12 x 6rem).
 
 ## Next action
-Wait for the human's answers to Q1 to Q12 in `src/pages/stage/ARCHITECTURE.md` section 7, write them back into ARC.md (Checkpoint decisions under M1) and the STAGE rows (new rows supersede if changed), then start M2. (M1 was: a builder writes `src/pages/stage/ARCHITECTURE.md` (vocabulary, size set and thresholds, module contract, worked examples, kit tokens measured from the lab, gap list) and appends DECISIONS rows STAGE-1 to STAGE-3; a reviewer checks it; then stop at the M1 human checkpoint.)
+Answers to Q1 to Q12 are written into ARC.md (M1 Checkpoint decisions). On the human's confirm of the size scale: append `STAGE-4` to DECISIONS.md (thresholds, one toggle, 330 ms delay dev option, column splitters, kit density), update `src/pages/stage/ARCHITECTURE.md` sections 2 and 5 and the Q list to match, commit, then start M2. (M1 was: a builder writes `src/pages/stage/ARCHITECTURE.md` (vocabulary, size set and thresholds, module contract, worked examples, kit tokens measured from the lab, gap list) and appends DECISIONS rows STAGE-1 to STAGE-3; a reviewer checks it; then stop at the M1 human checkpoint.)

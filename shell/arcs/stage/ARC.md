@@ -62,7 +62,14 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] `DECISIONS.md` rows STAGE-1 to STAGE-3 appended, prefix registered
   - [ ] No code or config changed (git diff shows only `arcs/stage/`, `src/pages/stage/ARCHITECTURE.md`, `DECISIONS.md`)
 - Human checkpoint after: **yes** (vocabulary, size thresholds and the kit tokens are judged by the human)
-- Checkpoint decisions: <written back by the orchestrator>
+- Checkpoint decisions (human, 2026-11-13, answers to Q1 to Q12 in `src/pages/stage/ARCHITECTURE.md` section 7; written by the orchestrator):
+  - Q1: the vocabulary (region, module, slot, layout, size), the class names and `data-slot-size` are confirmed.
+  - Q2/Q3: size thresholds come from ONE scale on both axes, multiples of a base unit, three tiers like the width tiers; the human wanted the standard-practice rationale. Proposed (awaiting the human's confirm): base unit U = 6rem (the minimum slot height); nominal sizes 4U/6U/8U = 24/36/48rem; class boundaries at 5U (30rem) and 7U (42rem), same for width (`narrow`/`regular`/`wide`) and height (`short`/`regular`/`tall`); minimum slot 2U wide by 1U high (12 x 6rem). The unit is for slot sizes only, not control sizes.
+  - Q4: hysteresis wanted (0.5rem). Q5: measure the slot body border-box as proposed.
+  - Q6: one tooltip style as proposed (300 wide, `position="top"`) but the open delay is 330 ms and is a developer option (the Stage's own per-viewer dev option under the `hrifa.stage.` prefix, default 330).
+  - Q7: the kit has ONE toggle control, the pressed-button look (`aria-pressed`, accent fill when on) in place of Mantine `Switch`. Its label is one or two words naming what it toggles ("Active", "Enable"); longer meaning goes in the tooltip, never in the label.
+  - Q8: one density, the lab's, to be honed later. Q9: one fixed row height, 1.625rem. Q10: one header strip shared by Stage slots and Inspector panels. Q11: kit numbers from the lab only; no workbench inspector comparison for now.
+  - Q12: column-width splitters are wanted as well as the vertical stack splitters (for later adjustment and user preference); M2 layout data therefore holds column widths and M3 builds both kinds.
 
 ### M2: Layout core (pure TS)
 - Scope: owned `src/lib/stage/`. Generalise the lab's `state/layout.ts` rules: an open set of panel/module ids instead of the `PanelId` union; columns of one to three slots; pin, unpin, move, stack, unstack, reorder within a stack; splitter shares and clamping; how many columns fit a width; `parseLayout` with a version field and migration; size classes from a width/height in px or rem as a pure function over the threshold tokens. No React, no DOM, no storage.
