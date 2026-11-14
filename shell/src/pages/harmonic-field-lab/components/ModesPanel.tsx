@@ -4,15 +4,17 @@
  * as the line above (never under the label).
  */
 import { MAX_KEYS_NOTES, MAX_MODES } from '../state/derive';
-import { Num, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
+import { useLabDeveloperOptions } from '../state/developerOptions';
+import { Num, SEV_LABEL, Strip, Tip, signChar, signedCents, severity, useLab } from './ui';
 import classes from './panels.module.css';
 
-const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+ c'];
+const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+c'];
 
 export function ModesPanel() {
   const lab = useLab();
   const { an, base } = lab;
   const tol = lab.state.ui.tol;
+  const [dev] = useLabDeveloperOptions();
   if (!an.keys) {
     return (
       <>
@@ -52,7 +54,12 @@ export function ModesPanel() {
             The mode grid is shown for up to {MAX_MODES} notes.
           </span>
         )}
-        <div className={classes.heat} role="group" aria-label="Mode by degree heat grid">
+        <div
+          className={classes.heat}
+          role="group"
+          aria-label="Mode by degree heat grid"
+          data-signs={dev.modeSignAlways ? 'always' : 'hover'}
+        >
           <div
             className={`${classes.modeLine} ${classes.modeHead}`}
             aria-hidden="true"
@@ -86,16 +93,33 @@ export function ModesPanel() {
                   <Num muted>{m.mode + 1}</Num> <Num>{m.root}</Num>
                 </span>
                 <span className={classes.modeTiles} data-testid="mode-tiles">
-                  {m.errs.map((e, j) => (
-                    <span
-                      key={j}
-                      className={classes.heatCell}
-                      data-sev={severity(e)}
-                      title={`Degree ${j + 1}: ${e < 1e-6 ? 'exact' : `${e.toFixed(1)} c`} from the nearest field note (${SEV_LABEL[severity(e)]})`}
-                    >
-                      <Num>{e < 1e-6 ? '0' : e.toFixed(0)}</Num>
-                    </span>
-                  ))}
+                  {m.errs.map((e, j) => {
+                    const sg = m.signed[j];
+                    const sign = signChar(sg);
+                    const word = sign === '+' ? ' (sharp)' : sign ? ' (flat)' : '';
+                    const tip = `Degree ${j + 1}: ${sign ? `${signedCents(sg)}${word}` : 'exact'} from the nearest field note (${SEV_LABEL[severity(e)]})`;
+                    return (
+                      <span
+                        key={j}
+                        className={classes.heatCell}
+                        data-sev={severity(e)}
+                        data-sign={sign}
+                        role="img"
+                        aria-label={tip}
+                        title={tip}
+                      >
+                        <span className={classes.heatSign} aria-hidden="true">
+                          {sign}
+                        </span>
+                        <span className={classes.heatNum} aria-hidden="true">
+                          <Num>
+                            {sign}
+                            {e < 1e-6 ? '0' : e.toFixed(0)}
+                          </Num>
+                        </span>
+                      </span>
+                    );
+                  })}
                 </span>
                 <span className={`${classes.modeTotalCol} ${classes.heatTotal}`}>
                   <Num muted>

@@ -319,13 +319,17 @@ export interface KeyRingData {
 export interface ModeFit {
   mode: number;
   root: string;
+  /** Absolute distance (cents) from each degree to the nearest field note. */
   errs: number[];
+  /** The same distance with a sign: nearest field note minus the pitch the mode wants; + = the field's note is sharp, - = flat. */
+  signed: number[];
   ok: number;
 }
 
-const circ = (d: number, repC: number) => {
-  const x = ((Math.abs(d) % repC) + repC) % repC;
-  return x > repC / 2 ? repC - x : x;
+/** `d` cents wrapped into (-repC/2, repC/2]: the shortest signed distance round a repeat of `repC` cents. */
+export const wrapSigned = (d: number, repC: number) => {
+  const x = d - repC * Math.round(d / repC);
+  return x <= -repC / 2 ? x + repC : x;
 };
 
 export function keysOf(base: Base, tol: number) {
@@ -352,8 +356,24 @@ export function keysOf(base: Base, tol: number) {
       : idx.map((rootIdx, j) => {
           // row j is mode j of the subset (its j-th note as the root), whatever mode is current
           const r = rotateSubset(field, idx, j, rep);
-          const errs = r.map((note) => Math.min(...field.map((f) => circ(f.c - note.c, repC))));
-          return { mode: j, root: ratios[rootIdx], errs, ok: errs.filter((e) => e <= tol).length };
+          const signed = r.map((note) => {
+            let best = Infinity;
+            for (const f of field) {
+              const d = wrapSigned(f.c - note.c, repC);
+              if (Math.abs(d) < Math.abs(best)) {
+                best = d;
+              }
+            }
+            return best;
+          });
+          const errs = signed.map(Math.abs);
+          return {
+            mode: j,
+            root: ratios[rootIdx],
+            errs,
+            signed,
+            ok: errs.filter((e) => e <= tol).length,
+          };
         });
   return { keys, completeKeys: keys.filter((k) => k.complete), keyRings, modeFit };
 }

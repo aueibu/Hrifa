@@ -30,7 +30,7 @@ const entries = {
   },
   modeAtBase: {
     term: 'Mode root at 1/1 Hz',
-    text: 'When on, turning to another mode moves the new root onto the 1/1 Hz pitch, so the tonic stays put and the scale changes around it. When off, the notes keep their absolute pitch and only the starting note changes. Example: with a major scale on, mode 5 starts a minor scale on the same C.',
+    text: 'When on, turning to another mode moves the new root onto the 1/1 Hz pitch, so the tonic stays put and the scale changes around it. When off, the notes keep their absolute pitch and only the starting note changes. Example: with a major scale on, mode 6 starts a minor scale on the same C.',
     see: ['mode', 'baseHz'],
   },
   playScale: {
@@ -170,7 +170,7 @@ const entries = {
   },
   mode: {
     term: 'Mode',
-    text: "Which selected note is the scale's root. Moving it rotates the same notes into a new scale. Example: the white notes starting on C are major; starting on A they are natural minor.",
+    text: "Which selected note is the scale's root. Moving it rotates the same notes into a new scale. Modes are numbered from 1: mode 1 starts on the first (lowest) selected note, mode 2 on the next, and so on. Example: the white notes starting on C (mode 1) are major; mode 2 starts on D (dorian) and mode 6 on A (natural minor).",
     see: ['modeRoot', 'modeAtBase', 'keysSummary'],
   },
   modeRoot: {
@@ -361,7 +361,7 @@ const entries = {
   },
   modes: {
     term: 'Modes (heat grid)',
-    text: "The panel for rotation: a mode keeps the same notes and starts the scale on another degree (a key, in the Keys panel, moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change). One row per mode (the scale restarted from each degree), one column per degree of that mode; narrow panels wrap the degrees onto more lines, always under the same column. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors; click a row to make that mode the current one. Example: row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree misses by 21.5 c, that cell is orange.",
+    text: "The panel for rotation: a mode keeps the same notes and starts the scale on another degree (a key, in the Keys panel, moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change). One row per mode (the scale restarted from each degree), one column per degree of that mode; narrow panels wrap the degrees onto more lines, always under the same column. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Each cell shows a + or − when it is not exact: + means the field's nearest note is sharp of the pitch the mode wants, − means it is flat (the colour still tells how large the miss is). Point at a row to print the cents errors, with their signs; click a row to make that mode the current one. Modes are numbered from 1. Example: row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree wants 3/2 above 9/8 (81/64) but the field only has 5/4, the field's note is 21.5 c flat of it: that cell is orange, shows − and reads −21.5 c on hover.",
     see: ['mode', 'chordError'],
   },
 
@@ -580,6 +580,16 @@ const entries = {
     term: 'Field settings',
     text: 'Folds out the less-used generator settings: which primes are allowed, and the repeat interval. Example: switch 11 and 13 off to leave a 7-limit field; set the repeat to 3/1 for a tritave scale.',
     see: ['primeFilter', 'repeat'],
+  },
+  developerMenu: {
+    term: 'Developer menu',
+    text: 'Small switches for how the lab shows things, kept per viewer in this browser (they are not part of a saved tuning). Example: "Mode tiles: always show ± sign" can be turned off if the signs make the heat grid look busy.',
+    see: ['modeSignAlways', 'modes'],
+  },
+  modeSignAlways: {
+    term: 'Mode tiles: always show ± sign',
+    text: 'On (the default): every inexact tile in the Modes heat grid carries a + or −, so you can see the direction of each miss without pointing at it. Off: the sign appears only with the number when you point at the row. + means the nearest field note is sharp of the pitch the mode wants, − means flat. Example: a tile for a 5th that needs 81/64 where the field only has 5/4 shows − (21.5 c flat).',
+    see: ['modes', 'developerMenu'],
   },
   soundMenu: {
     term: 'Sound settings',

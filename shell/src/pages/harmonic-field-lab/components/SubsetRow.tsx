@@ -85,7 +85,7 @@ export function SubsetRow() {
               &lsaquo;
             </ActionIcon>
             <span className={classes.modeLabel}>
-              mode <Num>{tab.mode}</Num> <Num muted>· {root}</Num>
+              mode <Num>{tab.mode + 1}</Num> <Num muted>· {root}</Num>
             </span>
             <ActionIcon
               variant="default"

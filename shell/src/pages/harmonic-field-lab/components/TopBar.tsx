@@ -14,6 +14,7 @@ import {
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSchemeToggle';
 import { MAX_TABS, WAVES, tabName, type Wave } from '../state/labState';
+import { DeveloperMenu } from './DeveloperMenu';
 import { BookIcon, CopyIcon, HomeIcon, PlayIcon, PlusIcon, SoundIcon, StopIcon } from './icons';
 import { CommitNumber, Tip, useLab } from './ui';
 import classes from './lab.module.css';
@@ -242,6 +243,7 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
           </Popover.Dropdown>
         </Popover>
       </Tip>
+      <DeveloperMenu />
       <Tip k="glossary" as="control">
         <Button variant="default" size="compact-xs" leftSection={<BookIcon />} onClick={onGlossary}>
           Glossary

@@ -12,8 +12,10 @@ import {
   isoOf,
   keysOf,
   lattice2dOf,
+  noteLabel,
   spectrumOf,
   stripDevs,
+  wrapSigned,
 } from './derive';
 import { defaultGen, genFromPreset, presetByName } from './generate';
 import {
@@ -194,5 +196,88 @@ describe('field table, ring, visualizers', () => {
     const base = deriveBase(t);
     expect(base.repText).toBe('3/1');
     expect(fieldRowsOf(base.field, base.repC).at(-1)?.step).toBeGreaterThan(0);
+  });
+});
+
+describe('signed mode errors (+ = the field note is sharp of the pitch the mode wants, - = flat)', () => {
+  const jiBase = () => {
+    // field 1/1 9/8 5/4 729/512; the subset 1/1 9/8 729/512, mode 2 (index 1) rooted on 9/8
+    const s = run(initialState(), {
+      type: 'tab/add',
+      gen: {
+        ...defaultGen(),
+        method: 'custom',
+        custom: `1/1
+9/8
+5/4
+729/512`,
+      },
+    });
+    const ratios = first(s).base.ratios;
+    const at = (r: string) => ratios.indexOf(r);
+    return first(run(s, { type: 'sel/set', idx: [at('1/1'), at('9/8'), at('729/512')], mode: 1 }))
+      .base;
+  };
+
+  it('a mode needing 81/64 where the field has 5/4 is -21.5 c (flat); the absolute value is unchanged', () => {
+    const k = keysOf(jiBase(), 18)!;
+    const row = k.modeFit[1];
+    expect(row.root).toBe('9/8');
+    // degree 2 of that row wants 729/512 over 9/8 = 81/64
+    expect(row.signed[1]).toBeCloseTo(-21.51, 1);
+    expect(row.errs[1]).toBeCloseTo(21.51, 1);
+    expect(row.errs).toEqual(row.signed.map(Math.abs));
+    // the root degree is exact in every row
+    k.modeFit.forEach((m) => expect(m.signed[0]).toBeCloseTo(0, 6));
+  });
+
+  it('a field note above the wanted pitch is positive (+21.5 c)', () => {
+    // field 1/1 9/8 5/4, mode rooted on 9/8: 5/4 over 9/8 is 10/9 (182.4 c), the nearest field note 9/8 (203.9 c) is sharp
+    const s = run(initialState(), {
+      type: 'tab/add',
+      gen: {
+        ...defaultGen(),
+        method: 'custom',
+        custom: `1/1
+9/8
+5/4`,
+      },
+    });
+    const ratios = first(s).base.ratios;
+    const idx = ['1/1', '9/8', '5/4'].map((r) => ratios.indexOf(r));
+    const k = keysOf(first(run(s, { type: 'sel/set', idx, mode: 0 })).base, 18)!;
+    const row = k.modeFit.find((m) => m.root === '9/8')!;
+    expect(row.signed[1]).toBeCloseTo(21.51, 1);
+    expect(row.errs[1]).toBeCloseTo(21.51, 1);
+  });
+
+  it('an EDO field has exact degrees: every signed value is 0', () => {
+    const s = run(initialState(), {
+      type: 'tab/add',
+      gen: { ...defaultGen(), method: 'edo', edoN: 12 },
+    });
+    const k = keysOf(first(run(s, { type: 'sel/set', idx: [0, 2, 4, 5, 7, 9, 11] })).base, 18)!;
+    k.modeFit.forEach((m) => m.signed.forEach((v) => expect(Math.abs(v)).toBeLessThan(1e-6)));
+  });
+
+  it('wraps to the shortest signed distance round the repeat', () => {
+    expect(wrapSigned(10, 1200)).toBeCloseTo(10);
+    expect(wrapSigned(-10, 1200)).toBeCloseTo(-10);
+    expect(wrapSigned(1190, 1200)).toBeCloseTo(-10);
+    expect(wrapSigned(-1190, 1200)).toBeCloseTo(10);
+    expect(wrapSigned(600, 1200)).toBeCloseTo(600);
+    expect(wrapSigned(-600, 1200)).toBeCloseTo(600);
+  });
+});
+
+describe('units carry no space', () => {
+  it('a note without a ratio is labelled in cents like 386.3 c', () => {
+    const s = run(initialState(), {
+      type: 'tab/add',
+      gen: { ...defaultGen(), method: 'edo', edoN: 19 },
+    });
+    const { base } = first(s);
+    expect(base.ratios[1]).toBe('63.2 c');
+    expect(noteLabel(base.field[1])).toBe('63.2 c');
   });
 });

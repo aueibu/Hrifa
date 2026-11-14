@@ -154,7 +154,7 @@ describe('period text', () => {
   it('exact repeat: ratio and cents; irrational: cents only', () => {
     expect(periodText(N('2/1'))).toBe('2/1 (1200.00 c)');
     expect(periodText(N('3/1'))).toBe('3/1 (1901.96 c)');
-    expect(periodText(N('700c'))).toBe('700.00 c');
+    expect(periodText(N('700 c'))).toBe('700.00 c');
   });
   it('is what the stats show for the active tab', () => {
     const t = activeTab(initialState());
@@ -232,9 +232,9 @@ describe('lattice modes: availability and the generator / factor layouts', () =>
     const v = latticeAltOf(t.field, t.rep, 'gen', genAxisNames(t.gen));
     expect(v).not.toBeNull();
     expect(
-      v!.pts.every((p) => p.label !== '—' && (p.label.endsWith(' c') || p.label.includes('/')))
+      v!.pts.every((p) => p.label !== '—' && (p.label.endsWith('c') || p.label.includes('/')))
     ).toBe(true);
-    expect(v!.pts.some((p) => p.label.endsWith(' c'))).toBe(true);
+    expect(v!.pts.some((p) => p.label.endsWith('c'))).toBe(true);
   });
 
   it('notes without a ratio are labelled by their cents everywhere (EDO steps)', () => {
@@ -242,7 +242,7 @@ describe('lattice modes: availability and the generator / factor layouts', () =>
     // step 0 is the unison, a real ratio; the other steps have none
     expect(base.ratios[0]).toBe('1/1');
     expect(base.ratios[1]).toBe('63.2 c');
-    expect(base.ratios.slice(1).every((r) => r.endsWith(' c'))).toBe(true);
+    expect(base.ratios.slice(1).every((r) => r.endsWith('c'))).toBe(true);
     // a ratio field keeps its ratios
     expect(deriveBase(tabOf('Harmonics 8–15')).ratios[0]).toBe('1/1');
   });
