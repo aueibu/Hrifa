@@ -91,7 +91,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M7 human checkpoint (audio + feel): the human tries the Retuner live. Then M8 (draft acceptance list needs the human's approval first).
+M7 human checkpoint is still open. Human asked (2026-11-14) for: Fill cards (modes + keys, both by default; saved subsets as an option; preview before applying), recorded in ARC M7 decisions. Also to design with the human: separate creating subsets from saving them (Infinitone-style rows); proposal pending, needs approval before a milestone. Then M8 (draft list needs approval).
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
