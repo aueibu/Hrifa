@@ -68,10 +68,19 @@ describe('mode-root marker', () => {
     expect(noteDots()[2].closest('g')!.contains(rootsIn(ring())[0])).toBe(true);
   });
 
-  it('labels sit on distinct spots and the ring has margin for the outer lanes', () => {
+  it('labels sit on distinct spots, inside a view fitted to the ring and its labels', () => {
     openAll();
-    expect(ring().getAttribute('viewBox')).toMatch(/^-\d+ -\d+ /);
+    const [x0, y0, w, h] = (ring().getAttribute('viewBox') ?? '').split(' ').map(Number);
+    // a square view centred on the ring (300 units, centre 150), only as wide as the labels need
+    expect(w).toBeCloseTo(h);
+    expect(x0 + w / 2).toBeCloseTo(150);
+    expect(y0 + h / 2).toBeCloseTo(150);
     const texts = [...ring().querySelectorAll('text[class*="svgLabel"]')];
+    for (const t of texts) {
+      const x = Number(t.getAttribute('x'));
+      const y = Number(t.getAttribute('y'));
+      expect(x > x0 && x < x0 + w && y > y0 && y < y0 + h).toBe(true);
+    }
     const spots = new Set(texts.map((t) => `${t.getAttribute('x')},${t.getAttribute('y')}`));
     expect(spots.size).toBe(texts.length);
   });

@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import { parseInterval, type FifthsLayout } from '../../../lib/harmonic-field';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
-import { chevronBox, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
+import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { RingView } from '../state/labState';
 import { FieldCompact } from './FieldPanel';
 import { GearIcon } from './icons';
@@ -130,7 +130,10 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
       }
     );
     const byNote = new Map(order.map((i, k) => [i, out[k]]));
-    return field.map((_, i) => byNote.get(i)!);
+    const list = field.map((_, i) => byNote.get(i)!);
+    // fit the drawing to the ring, the chevron and the labels actually placed (no room kept for unused lanes)
+    const view = fitView(C, C, R + 10, [...obstacles, ...out.map((p) => p.box)]);
+    return { list, view };
   }, [field, marks, ratios, modeRoot]);
   const chordPts = [...chord]
     .filter((i) => i < field.length)
@@ -143,7 +146,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
   const lit = [...sounding].filter((i) => i < field.length).sort((a, b) => a - b);
   return (
     <svg
-      viewBox={`${-PAD} ${-PAD} ${SIZE + 2 * PAD} ${SIZE + 2 * PAD}`}
+      viewBox={places.view}
       className={classes.ringSvg}
       role="group"
       aria-label={`Pitch circle, ${view} view: ${selected.size} of ${field.length} notes selected${
@@ -195,7 +198,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
           m.offset !== undefined && L
             ? `, step ${L.notes[i].step}, ${m.offset >= 0 ? '+' : ''}${m.offset.toFixed(1)} cents${m.offChain ? ', off the chain' : ''}`
             : '';
-        const label = places[i];
+        const label = places.list[i];
         return (
           <g key={i} data-root={modeRoot === i ? 'true' : undefined}>
             {lab.pin === i && <circle className={classes.pinRing} cx={m.x} cy={m.y} r={12} />}

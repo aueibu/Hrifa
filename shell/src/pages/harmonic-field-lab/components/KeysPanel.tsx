@@ -16,7 +16,7 @@ import {
   type ClickedKey,
   type KeyDiff,
 } from '../state/keysModes';
-import { chevronBox, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
+import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import { RING_GAP, RingChevron } from './ModeRoot';
 import { Num, Strip, Tip, useLab } from './ui';
 import classes from './panels.module.css';
@@ -63,9 +63,11 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
     }
   );
   const places = new Map(order.map((i, j) => [i, placed[j]]));
+  // fit the drawing to the ring, the chevron and the labels actually placed (no room kept for unused lanes)
+  const view = fitView(BC, BC, BR + 14, [...obstacles, ...placed.map((p) => p.box)]);
   return (
     <svg
-      viewBox={`${-BPAD} ${-BPAD} ${BIG + 2 * BPAD} ${BIG + 2 * BPAD}`}
+      viewBox={view}
       className={classes.bigKeySvg}
       role="group"
       aria-label={label}

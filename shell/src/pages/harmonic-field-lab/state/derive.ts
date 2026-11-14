@@ -82,6 +82,9 @@ export interface Base {
   mode: number;
 }
 
+/** A note's label: its ratio, or its cents (one decimal, e.g. "386.3 c") when it has none (EDO steps, cents generators). */
+export const noteLabel = (n: Note): string => (n.m ? fmtRatio(n) : `${n.c.toFixed(1)} c`);
+
 export function deriveBase(tab: Tab): Base {
   const { field, rep, sel, mode } = tab;
   const rel = rotateSubset(field, sel, mode, rep);
@@ -90,8 +93,8 @@ export function deriveBase(tab: Tab): Base {
     field,
     rep,
     repC: rep.c,
-    repText: fmtRatio(rep),
-    ratios: field.map((n) => fmtRatio(n)),
+    repText: noteLabel(rep),
+    ratios: field.map(noteLabel),
     idx: sel,
     selected: new Set(sel),
     rel,
@@ -533,7 +536,7 @@ export function latticeAltOf(
       stems: [],
       hidden: [],
       chip: '',
-      label: field[p.i].m ? fmtRatio(field[p.i]) : `${field[p.i].c.toFixed(1)} c`,
+      label: noteLabel(field[p.i]),
     };
   });
   // the axis key sits left of the notes, bottom row

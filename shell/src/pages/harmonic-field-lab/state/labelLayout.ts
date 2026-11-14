@@ -139,6 +139,25 @@ export function layoutLabels(items: readonly LabelItem[], o: LabelOptions): Labe
 }
 
 /** A conservative box for the mode-root chevron outside a dot at (x, y) as seen from the centre (cx, cy). */
+/**
+ * A square viewBox centred on the ring that just holds the ring (radius `minHalf`) and every placed box, plus `margin`.
+ * Unused outer lanes cost no room, so the ring is drawn as large as the labels allow.
+ */
+export function fitView(
+  cx: number,
+  cy: number,
+  minHalf: number,
+  boxes: readonly Box[],
+  margin = 4
+): string {
+  let half = minHalf;
+  for (const b of boxes) {
+    half = Math.max(half, Math.abs(b.x - cx) + b.w / 2, Math.abs(b.y - cy) + b.h / 2);
+  }
+  half += margin;
+  return `${cx - half} ${cy - half} ${2 * half} ${2 * half}`;
+}
+
 export function chevronBox(cx: number, cy: number, x: number, y: number, gap: number): Box {
   const a = Math.atan2(y - cy, x - cx);
   const mid = gap + 3.5;

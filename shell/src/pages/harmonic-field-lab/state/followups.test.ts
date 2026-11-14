@@ -237,6 +237,16 @@ describe('lattice modes: availability and the generator / factor layouts', () =>
     expect(v!.pts.some((p) => p.label.endsWith(' c'))).toBe(true);
   });
 
+  it('notes without a ratio are labelled by their cents everywhere (EDO steps)', () => {
+    const base = deriveBase(tabOf('19-EDO'));
+    // step 0 is the unison, a real ratio; the other steps have none
+    expect(base.ratios[0]).toBe('1/1');
+    expect(base.ratios[1]).toBe('63.2 c');
+    expect(base.ratios.slice(1).every((r) => r.endsWith(' c'))).toBe(true);
+    // a ratio field keeps its ratios
+    expect(deriveBase(tabOf('Harmonics 8–15')).ratios[0]).toBe('1/1');
+  });
+
   it('no coordinates gives null', () => {
     const t = tabOf('Harmonics 8–15');
     expect(latticeAltOf(t.field, t.rep, 'gen', [])).toBeNull();
