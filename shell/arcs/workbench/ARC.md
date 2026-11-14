@@ -63,7 +63,26 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] Every `[stage]` and `[shared]` backlog item that this arc must resolve is mapped to a milestone or explicitly deferred
   - [ ] The three added ideas (remembered placement, tab groups, pop-out) each have a recommendation and an in-scope or deferred decision
 - Human checkpoint after: **yes** (vocabulary, area set, Send-to versus drag, instance model and the state boundary are the human's decisions)
-- Checkpoint decisions: <written back by the orchestrator>
+- Checkpoint decisions (human, 2026-11-14, answering the 24 questions in `DESIGN.one-stage.md` section 9; the design is being revised to match, so these are interim until the revised design is accepted):
+  - Q1 layout model: named areas, but the human wants far more arrangement freedom than top and bottom (see Q2, Q9): the areas are user-nameable **dockers** (REAPER's term) arranged by the user.
+  - Q2 area set: top versus bottom is too binary. Examples to support: (a) a top and a bottom with a right-hand docker holding 3 tabs; (b) left, centre and right dockers each with one tab; (c) a top docker over a bottom split into left and right. Research into how established systems do this was requested (a report is pending); this probably moves the layout model from a fixed area set to a split tree whose leaves are named dockers.
+  - Q3 Send-to versus drag: menu first is fine; drag docking is expected to remove the "clunk" and is wanted.
+  - Q4 "show this panel": a Stage function (not a general channel): accepted.
+  - Q5 state boundary: the chord picker's state moves to page level. The human's vision: a picker works on many targets, not only the piano roll (insert a chord as pitch classes in a bracket into an empty list in a module; insert a set of notes into a module for analysis). The same holds for all future data "drops" or bucket-style generators: a gesture picker that saves curves, dragged onto a velocity section or onto a rhythm list to scale durations; this ties into curves as automation lanes versus written or generated data. (Capture as backlog; the arc must not preclude it.)
+  - Q6 second chord picker host: option (a), the single picker panel follows the active chord target.
+  - Q7 workbench modules as one panel: accepted as a bound for writing new panels, BUT Q23 asks for multiple instances of some modules (see Q23): reconcile in the revised design.
+  - Q8 clip editor and modules in one tab group: ok.
+  - Q9 remembered placement and Send-to: dockers should be NAMED by the user so "send this to the visualizer docker" works instead of "top right"; a remembered place is a docker (by name) plus tab position.
+  - Q10 inactive tabs laid out but invisible: ok. Q11 vocabulary: ok unless REAPER's wording clarifies: what the design calls a panel the human calls a docker. Resolve in the revised design: **docker** = the container with tabs; **panel** = the content shown in a tab.
+  - Q12 picker follows the Stage size class: ok.
+  - Q13 and Q15 (fills, never hidden, closable fixed per panel): DISAGREE. Those are just one mode of working. Different sessions will be mostly harmonic lab modules, or drawing and realising gestures and fields, or arranging. So which docker flexes, what may be hidden and what can be closed must be user and workspace choices, not hardwired per panel; implies saved, named **workspaces**. The measuring problem for the canvas stays a technical robustness matter.
+  - Q14 home with no space: ok, alleviated by tabs (there is always space).
+  - Q16 command names: the human did not understand the question (explain plainly). Q17 selection model read-only chain: ok. Q18 new chrome: not seen by the human (explain plainly).
+  - Q19 takeover migration: ok. Q20 pop-out deferred: ok. Q21 picker's own close renamed: ok (the picker stays open for later use).
+  - Q22 tab activation: not automatic on arrow keys. Wants a better selection system first: select a docker by shortcut, then cycle its tabs once the docker is active.
+  - Q23 multiple instances: one chord picker or one piano roll is fine (state moves to page level). But some modules need several at once (a set browser, a voicing catalog; two modules showing different Carter hexachords, another combining subsets). Conflicts with Q7's single `module-detail` panel; the revised design must allow `multiple` instances for such panels and reconcile with Q7.
+  - Q24: yes, `src/components/Stage/stageOps.ts` and `registry.ts` join M2's lock.
+  - The human states the vision plainly: "I have this vision for the app. I feel like we can achieve it." Treat the design as a foundation for that vision, not only the current workbench.
 
 ### M2: Layout core: areas and migration (pure TS)
 - Scope: `src/lib/stage/` under a lock: the chosen layout model, operations (send a panel to an area or position, stack, resize across areas), tab groups (add a panel to a group, set the active tab, remove), the remembered-placement map (record a place when a panel closes, resolve it on reopen with the home fallback, reset), parsing with a version bump and migration of the current layout, tests. No React.
