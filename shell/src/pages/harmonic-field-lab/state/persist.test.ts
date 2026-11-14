@@ -133,7 +133,8 @@ describe('layout (layout.v1)', () => {
   it('migrates the mock v3, v2 and v1 keys in that order of preference', () => {
     expect(loadLayout()).toBe(DEFAULT_LAYOUT);
     window.localStorage.setItem(MOCK_LAYOUT_KEYS[2], '{"left":["lattice"],"right":["keys"]}');
-    expect(loadLayout()).toEqual({ left: [['viz1']], right: [['keys']] });
+    // the mock's combined Keys & Modes panel gets Modes below it
+    expect(loadLayout()).toEqual({ left: [['viz1']], right: [['keys', 'modes']] });
     window.localStorage.setItem(MOCK_LAYOUT_KEYS[1], '{"left":[["lattice","chords"]],"right":[]}');
     expect(loadLayout()).toEqual({ left: [['viz1', 'chords']], right: [] });
     window.localStorage.setItem(MOCK_LAYOUT_KEYS[0], '{"left":[],"right":[["spectrum"]]}');

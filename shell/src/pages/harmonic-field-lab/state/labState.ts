@@ -422,6 +422,7 @@ export type Action =
   | { type: 'sel/none' }
   | { type: 'sel/invert' }
   | { type: 'sel/set'; idx: readonly number[]; mode?: number }
+  | { type: 'sel/join'; idx: readonly number[] }
   | { type: 'mode/set'; mode: number }
   | { type: 'mode/step'; by: number }
   | { type: 'pick/set'; patch: Partial<Tab['pick']> }
@@ -611,6 +612,13 @@ export function labReducer(s: LabState, a: Action): LabState {
       return withTab(s, (t) => {
         const sel = fixSel(a.idx, t.field.length);
         return { ...t, sel, mode: fixMode(a.mode ?? 0, sel.length) };
+      });
+    case 'sel/join':
+      // Add key: the notes join the subset, the mode root stays the same note
+      return withTab(s, (t) => {
+        const root = t.sel.length ? t.sel[t.mode % t.sel.length] : null;
+        const sel = fixSel([...t.sel, ...a.idx], t.field.length);
+        return { ...t, sel, mode: root === null ? 0 : fixMode(sel.indexOf(root), sel.length) };
       });
     case 'mode/set':
       return withTab(s, (t) => ({ ...t, mode: fixMode(a.mode, t.sel.length) }));

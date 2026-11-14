@@ -400,7 +400,7 @@ describe('persistence through the page', () => {
     type(screen.getByRole('combobox', { name: 'Preset' }), '19-EDO');
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
     fireEvent.click(dot(/^1\/1/));
-    fireEvent.click(within(rail()).getByRole('tab', { name: /Keys & Modes/ }));
+    fireEvent.click(within(rail()).getByRole('tab', { name: /Keys/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Keyboard$/, expanded: true }));
     first.unmount();
     expect(stored(KEY_TABS)).toMatchObject({
@@ -411,7 +411,7 @@ describe('persistence through the page', () => {
     render(<HarmonicFieldLabPage />);
     expect(ringCount()).toEqual([1, 19]);
     expect(screen.getByRole('combobox', { name: 'Preset' })).toHaveValue('19-EDO');
-    expect(screen.getByRole('heading', { name: /Keys & Modes/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Keys/ })).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Subset keys' })).toBeNull();
   });
 

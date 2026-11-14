@@ -356,7 +356,7 @@ const entries = {
   },
   modes: {
     term: 'Modes (heat grid)',
-    text: "One row per mode (the scale restarted from each degree), one column per degree of that mode. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors; click a row to make that mode the current one. Example: row 1 is the scale from 9/8; if its 5th degree misses by 21.5 c, that cell is orange.",
+    text: "The panel for rotation: a mode keeps the same notes and starts the scale on another degree (a key, in the Keys panel, moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change). One row per mode (the scale restarted from each degree), one column per degree of that mode; narrow panels wrap the degrees onto more lines, always under the same column. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors; click a row to make that mode the current one. Example: row 1 is the scale from 9/8; if its 5th degree misses by 21.5 c, that cell is orange.",
     see: ['mode', 'chordError'],
   },
 
@@ -532,14 +532,39 @@ const entries = {
     see: ['templates'],
   },
   keysModes: {
-    term: 'Keys and modes',
-    text: 'One panel for the two ways of "starting the scale somewhere else". Modes keep the same notes and change the starting degree; keys move the whole scale onto another field note. Example: the mode that starts on 9/8 still uses the same seven notes, but moving the whole scale up to start on 9/8 needs notes this field does not have.',
-    see: ['modes', 'keyRings'],
+    term: 'Keys (transposition)',
+    text: 'The panel for moving your whole scale: transposition. A key is the same scale started on another field note, so every interval stays the same and only the starting pitch changes. This is different from a mode, which keeps the same notes and starts the scale on another degree (see Modes). Example: C major to G major is a key change (C D E F G A B becomes G A B C D E F#); C major to D dorian is a mode change (the same seven notes, now starting on D).',
+    see: ['modes', 'keyRings', 'keyView', 'commonTones'],
   },
   keyRings: {
     term: 'Key rings',
-    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete (its ring has a border): the whole scale fits there. Click a ring to make that key the subset, with its root as the mode root; on an incomplete ring this selects only the notes the field does have. Ctrl-click (Cmd on a Mac) plays the key as a scale instead, in the direction set by Scale preview. Example: only the 1/1 ring has no crosses in this field; clicking the 9/8 ring selects the few notes that do land.',
-    see: ['keysSummary', 'scalePreview'],
+    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete (its ring has a border): the whole scale fits there. Under each ring, the root and the common-tone count. Hover a ring to compare it in the big view; click it to Switch to that key (the subset becomes the key, with its root as the mode root; on an incomplete ring only the notes the field does have). Shift+click adds the key instead (see Add key). Alt+click pins the root note of that key, as in every other view. Ctrl-click (Cmd on a Mac) plays the key as a scale, in the direction set by Scale preview. Example: only the 1/1 ring has no crosses in this field; clicking the 9/8 ring selects the few notes that do land.',
+    see: ['keySwitch', 'keyAdd', 'commonTones', 'scalePreview'],
+  },
+  commonTones: {
+    term: 'Common tones (x|y)',
+    text: 'Under each key ring: x is how many notes the key shares with your current subset, y is how many notes the subset has. The bar is a separator, not a division. More shared notes means a closer key: a key with the same notes as the subset shows y|y. Example: for C major, the G major ring reads 6|7 (all but F, which becomes F#) and the F# major ring reads 2|7 (only B and F survive), so G major is a close key and F# major is a distant one.',
+    see: ['keyView', 'keyRings'],
+  },
+  keyView: {
+    term: 'Key comparison',
+    text: 'One large circle comparing your subset with a key. It shows the key you point at in the small rings, else the one you last clicked, else the current key (your subset itself, where everything is common). It goes back to the current key whenever the subset changes any other way (a new selection, preset, method, mode or tab). Everything sounding is lit green, and pointing at a note here lights it in every view. The line under it counts the four groups in words. Example: from C major to G major it reads "6 common · +1 added · −1 dropped · 0 missing": F# would be added and F dropped.',
+    see: ['keyMarks', 'keySwitch', 'keyAdd', 'commonTones'],
+  },
+  keyMarks: {
+    term: 'Key comparison marks',
+    text: 'Four kinds of mark, each with its own shape so colour is never the only clue. Filled dot: a common note, in both the subset and the key. Hollow dot with a plus: a note the key would add (in the key, not in your subset). Hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key). Dashed circle: a degree of the key the field has no note for, so it can never be added. Example: for C major against G major, F# is a plus, F is a minus, and the other six are filled.',
+    see: ['keyView'],
+  },
+  keySwitch: {
+    term: 'Switch to key',
+    text: 'Makes the shown key your subset: the notes of your subset move to that key, dropping the ones the key does not use. The key root becomes the mode root. Same as clicking its small ring. Notes the field does not have are left out. Example: with C major and the G major key shown, Switch gives G A B C D E F#; the F is gone.',
+    see: ['keyAdd', 'keyRings'],
+  },
+  keyAdd: {
+    term: 'Add key',
+    text: 'Adds the notes of the shown key to your subset and keeps everything you already have; the mode root stays where it is. Same as Shift+click on its small ring. Notes the field does not have cannot be added. Example: with C major and the G major key shown, Add gives the eight notes C D E F F# G A B (F stays, F# joins), still rooted on C.',
+    see: ['keySwitch', 'keyRings'],
   },
   inspector: {
     term: 'Note inspector',

@@ -308,7 +308,7 @@ describe('Keys & Modes: click to select', () => {
 
   it('clicking a heat-grid row makes that mode current', () => {
     render(<HarmonicFieldLabPage />);
-    fireEvent.click(within(rail()).getByRole('tab', { name: /Keys/ }));
+    fireEvent.click(within(rail()).getByRole('tab', { name: /^Modes/ }));
     const grid = screen.getByRole('group', { name: 'Mode by degree heat grid' });
     const rows = within(grid).getAllByRole('button');
     fireEvent.click(rows[2]);

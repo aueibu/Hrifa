@@ -27,7 +27,8 @@ export type { PanelId } from '../state/layout';
 export const PANELS: { id: PanelId; label: string; tip: TipKey }[] = [
   { id: 'chords', label: 'Chords', tip: 'chords' },
   { id: 'spectrum', label: 'Spectrum', tip: 'spectrum' },
-  { id: 'keys', label: 'Keys & Modes', tip: 'keysModes' },
+  { id: 'keys', label: 'Keys', tip: 'keysModes' },
+  { id: 'modes', label: 'Modes', tip: 'modes' },
   { id: 'viz1', label: vizName('viz1', DEFAULT_VIEWS.viz1), tip: 'lattice' },
   { id: 'viz2', label: vizName('viz2', DEFAULT_VIEWS.viz2), tip: 'edoFit' },
   { id: 'viz3', label: vizName('viz3', DEFAULT_VIEWS.viz3), tip: 'dissCurve' },
@@ -73,6 +74,8 @@ export function summaryOf(id: PanelId, lab: Lab, ranks: AxisRank[]): string {
       return lab.an.spectrum?.prop.verdict ?? '–';
     case 'keys':
       return lab.an.keys ? `${lab.an.keys.completeKeys.length} of ${lab.base.field.length}` : '–';
+    case 'modes':
+      return lab.an.keys ? `${lab.an.keys.modeFit.length} rows` : '–';
     case 'viz1':
     case 'viz2':
     case 'viz3':

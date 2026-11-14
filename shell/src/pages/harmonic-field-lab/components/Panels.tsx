@@ -33,7 +33,8 @@ import {
   StackIcon,
   UnstackIcon,
 } from './icons';
-import { KeysModesPanel } from './KeysModesPanel';
+import { KeysPanel } from './KeysPanel';
+import { ModesPanel } from './ModesPanel';
 import { panelLabel } from './Rail';
 import { RetunerPanel } from './RetunerPanel';
 import { SpectrumPanel } from './SpectrumPanel';
@@ -48,7 +49,9 @@ export function renderPanel(id: PanelId) {
     case 'spectrum':
       return <SpectrumPanel />;
     case 'keys':
-      return <KeysModesPanel />;
+      return <KeysPanel />;
+    case 'modes':
+      return <ModesPanel />;
     case 'viz1':
     case 'viz2':
     case 'viz3':

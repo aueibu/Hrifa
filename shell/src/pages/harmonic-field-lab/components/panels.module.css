@@ -156,7 +156,7 @@
 
 .chip:focus-visible,
 .rung:focus-visible,
-.heatRow:focus-visible,
+.heatRowBtn:focus-visible,
 .noteChip:focus-visible,
 .sortBtn:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -335,21 +335,39 @@
   gap: 2px;
 }
 
-.heatHead,
-.heatRow {
-  align-items: stretch;
+.modeLine {
+  align-items: start;
   display: grid;
   gap: 2px;
-  grid-template-columns: 4.75rem repeat(7, minmax(0, 1fr)) 2rem;
+  grid-template-columns: 4.75rem minmax(0, 1fr) 2rem;
 }
 
-.heatHead {
+/* the tile area: the degree numbers and each row's tiles share this grid, so a wrapped line starts at the same column */
+.modeTiles {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(auto-fill, minmax(2.125rem, 1fr));
+  min-width: 0;
+}
+
+/* the header gets the same 1px border and padding as a row button, so its tile area has the same width and start */
+.modeHead {
+  border: 1px solid transparent;
+  padding: 1px;
+}
+
+.modeHeadCell {
   color: var(--text-muted);
   font-size: 0.6875rem;
   text-align: center;
 }
 
-.heatRow {
+.modeLabelCol,
+.modeTotalCol {
+  min-width: 0;
+}
+
+.heatRowBtn {
   background: none;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
@@ -359,20 +377,22 @@
   font-size: 0.75rem;
   padding: 1px;
   text-align: left;
+  width: 100%;
 }
 
-.heatRow:hover {
+.heatRowBtn:hover {
   background: var(--panel-slot);
 }
 
 /* selection grammar: 1px border plus 1px outline in --text, no fill change */
-.heatRow[aria-pressed='true'] {
+.heatRowBtn[aria-pressed='true'] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
 
 .heatName {
   align-items: center;
+  min-height: 1.5rem;
   display: flex;
   gap: 0.375rem;
   padding-left: 0.25rem;
@@ -391,9 +411,9 @@
   opacity: 0;
 }
 
-.heatRow:hover .heatCell > *,
-.heatRow:focus-visible .heatCell > *,
-.heatRow[aria-pressed='true'] .heatCell > * {
+.heatRowBtn:hover .heatCell > *,
+.heatRowBtn:focus-visible .heatCell > *,
+.heatRowBtn[aria-pressed='true'] .heatCell > * {
   opacity: 1;
 }
 
@@ -432,6 +452,10 @@
 .keyRing:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
+}
+
+.keyRing[data-viewed='true'] {
+  background: var(--panel-slot);
 }
 
 .keyRing[data-complete='true'] {
@@ -1107,4 +1131,98 @@
 .dissMark[data-pin='true'] {
   stroke: var(--mark-yellow);
   stroke-width: 3;
+}
+
+/* ------------------------------------------------------------------------------------- big key comparison */
+.bigKey {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.bigKeySvg {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  width: 16.25rem;
+}
+
+.bigKeyCircle {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 2;
+}
+
+.bigKeyPlain {
+  fill: var(--text-subtle);
+}
+
+/* common: filled */
+.bigKeyCommon {
+  fill: var(--text);
+  stroke: var(--panel-inset);
+  stroke-width: 1.5;
+}
+
+/* would be added: hollow with a plus */
+.bigKeyAdded {
+  fill: var(--panel-inset);
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.bigKeyGlyph {
+  fill: none;
+  stroke: var(--text);
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+/* would be dropped: hollow, muted, struck through */
+.bigKeyDropped {
+  fill: var(--panel-inset);
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+
+.bigKeyStrike {
+  fill: none;
+  stroke: var(--text);
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+/* missing in the field: dashed, empty */
+.bigKeyMissing {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-dasharray: 3 2.5;
+  stroke-width: 1.5;
+}
+
+/* sounding: a green halo under the mark, so the mark stays readable */
+.bigKeyLit {
+  fill: var(--mark-green);
+}
+
+.bigKeyChord {
+  fill: none;
+  stroke: var(--mark-blue);
+  stroke-width: 2.5;
+}
+
+.bigKeySummary {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.75rem;
+  margin: 0;
+  text-align: center;
+}
+
+.keyActions {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: center;
 }

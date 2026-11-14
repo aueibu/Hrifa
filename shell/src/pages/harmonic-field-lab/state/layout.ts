@@ -7,9 +7,16 @@
  * the last column is next to the generator); `right` runs inner to outer (index 0 is next to the generator).
  */
 export type VizId = 'viz1' | 'viz2' | 'viz3';
-export type PanelId = 'chords' | 'spectrum' | 'keys' | 'retuner' | VizId;
+export type PanelId = 'chords' | 'spectrum' | 'keys' | 'modes' | 'retuner' | VizId;
 export const VIZ_IDS: readonly VizId[] = ['viz1', 'viz2', 'viz3'];
-export const PANEL_IDS: readonly PanelId[] = ['chords', 'spectrum', 'keys', 'retuner', ...VIZ_IDS];
+export const PANEL_IDS: readonly PanelId[] = [
+  'chords',
+  'spectrum',
+  'keys',
+  'modes',
+  'retuner',
+  ...VIZ_IDS,
+];
 export const isViz = (id: PanelId): id is VizId => (VIZ_IDS as readonly string[]).includes(id);
 
 /** What a visualizer panel shows. */
@@ -43,6 +50,11 @@ export interface Layout {
   splits?: Partial<Record<PanelId, number[]>>;
   /** Optional view of each visualizer panel; a missing entry means that panel's default (DEFAULT_VIEWS). */
   views?: Partial<Record<VizId, VizView>>;
+  /**
+   * Storage-only marker (written by saveLayout, never kept in memory): this layout was saved after Keys and Modes became
+   * two panels, so a missing Modes pin is the user's choice and not an old combined panel.
+   */
+  keysModesSplit?: true;
 }
 export const DEFAULT_LAYOUT: Layout = {
   left: [['keys'], ['chords']],
@@ -546,6 +558,44 @@ function validate(v: unknown): Layout {
     }
   }
   return out;
+}
+
+/**
+ * Old layouts had one combined Keys & Modes panel (id `keys`). Keys keeps its slot; Modes goes into the next free slot:
+ * directly below Keys in the same column when that column holds fewer than MAX_STACK panels (so no pin gets pushed off a
+ * narrow screen; the new column in the other case can), else as its own column just inside Keys' column. A layout without `keys`, or with `modes` already,
+ * is unchanged. Splits of a column that gained Modes are dropped (they no longer describe it).
+ */
+export function splitKeysModes(l: Layout): Layout {
+  const s = find(l, 'keys');
+  if (l === DEFAULT_LAYOUT || !s || find(l, 'modes')) {
+    return l;
+  }
+  const cols = [...l[s.side]];
+  const column = cols[s.ci];
+  if (column.length < MAX_STACK) {
+    cols[s.ci] = [...column.slice(0, s.pi + 1), 'modes', ...column.slice(s.pi + 1)];
+    return dropSplits(withSide(l, s.side, cols), ...column);
+  }
+  // left runs outer to inner and right inner to outer, so "inside" is the next index on the left, the previous on the right
+  cols.splice(s.side === 'left' ? s.ci + 1 : s.ci, 0, ['modes']);
+  return withSide(l, s.side, cols);
+}
+
+/** Read a stored layout string for use: parse it, then split an old combined Keys & Modes panel unless it is marked. */
+export function loadStoredLayout(raw: string | null | undefined, parse = parseLayout): Layout {
+  const l = parse(raw);
+  if (l === DEFAULT_LAYOUT) {
+    return l;
+  }
+  let marked = false;
+  try {
+    marked =
+      (JSON.parse(raw ?? 'null') as { keysModesSplit?: unknown } | null)?.keysModesSplit === true;
+  } catch {
+    // not JSON: parse already returned the defaults
+  }
+  return marked ? l : splitKeysModes(l);
 }
 
 /** Validate a stored layout. Bad entries are dropped, an unusable value is the defaults. Never throws. */
