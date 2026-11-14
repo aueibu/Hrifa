@@ -5,6 +5,7 @@ import {
   LightCounter,
   absHz,
   chordPlan,
+  fieldScalePlan,
   relHz,
   scalePlan,
   slotPitch,
@@ -126,5 +127,34 @@ describe('LightCounter', () => {
     expect(l.on(3)).toBe(true);
     l.clear();
     expect(l.lit()).toEqual([]);
+  });
+});
+
+describe('scale preview direction', () => {
+  const hz = (plan: { hz: number }[]) => plan.map((n) => Math.round(n.hz * 100) / 100);
+
+  it('Up: the subset from the root, then the repeat; Up-down comes back down to the root', () => {
+    const up = scalePlan(rel, 1200, base);
+    expect(up.map((n) => n.src)).toEqual([0, 1, 2, 3, 0]);
+    expect(up.map((n) => n.delay)).toEqual(
+      [0, 0.28, 0.56, 0.84, 1.12].map((d) => expect.closeTo(d, 9))
+    );
+    const ud = scalePlan(rel, 1200, base, 'updown');
+    expect(ud.map((n) => n.src)).toEqual([0, 1, 2, 3, 0, 3, 2, 1, 0]);
+    expect(hz(ud)).toEqual([100, 112.5, 125, 150, 200, 150, 125, 112.5, 100]);
+    // the default is Up
+    expect(hz(scalePlan(rel, 1200, base))).toEqual(hz(scalePlan(rel, 1200, base, 'up')));
+  });
+
+  it('a field scale climbs from its first note (lifting wrapped notes by the repeat) at their own pitch', () => {
+    // a key on 3/2: degrees 3/2, 27/16, 15/8, 9/4 (reduced: 9/8), in degree order
+    const f = ['1/1', '9/8', '5/4', '3/2', '27/16', '15/8'].map(N);
+    const key = fieldScalePlan(f, [3, 4, 5, 1], 1200, base);
+    expect(key.map((n) => n.src)).toEqual([3, 4, 5, 1, 3]);
+    expect(hz(key)).toEqual([150, 168.75, 187.5, 225, 300]);
+    const ud = fieldScalePlan(f, [3, 4, 5, 1], 1200, base, 'updown');
+    expect(ud.map((n) => n.src)).toEqual([3, 4, 5, 1, 3, 1, 5, 4, 3]);
+    expect(fieldScalePlan(f, [], 1200, base)).toEqual([]);
+    expect(fieldScalePlan(f, [99], 1200, base)).toEqual([]);
   });
 });

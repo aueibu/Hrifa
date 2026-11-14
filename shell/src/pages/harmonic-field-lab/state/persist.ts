@@ -23,6 +23,7 @@ import {
 } from './generate';
 import {
   CMP_REFS,
+  SCALE_DIRS,
   WAVES,
   defaultCmp,
   defaultUi,
@@ -46,6 +47,7 @@ import {
 import {
   DEFAULT_SETTINGS as DEFAULT_VIZ,
   ISO_G1,
+  LAT_MODES,
   ISO_G2,
   ISO_TOLS,
   type VizSettings,
@@ -113,6 +115,7 @@ function sanitizeViz(raw: unknown): VizSettings {
     dim: oneOf(raw.dim, ['2d', '3d'], d.dim),
     axes3,
     labels: bool(raw.labels, d.labels),
+    latMode: oneOf(raw.latMode, LAT_MODES, d.latMode),
     isoG1: oneOf(raw.isoG1, ISO_G1, d.isoG1),
     isoG2: oneOf(raw.isoG2, ISO_G2, d.isoG2),
     isoTol: (ISO_TOLS as readonly unknown[]).includes(raw.isoTol)
@@ -141,6 +144,7 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     baseHz: numIn(raw.baseHz, 20, 5000, d.baseHz),
     volume: numIn(raw.volume, 0, 1, d.volume),
     modeAtBase: bool(raw.modeAtBase, d.modeAtBase),
+    scalePreview: oneOf(raw.scalePreview, SCALE_DIRS, d.scalePreview),
     savedAll: bool(raw.savedAll, d.savedAll),
   };
 }

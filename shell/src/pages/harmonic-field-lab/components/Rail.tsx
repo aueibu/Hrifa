@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import { chooseAxes3d, rankAxes3d, type AxisRank } from '../../../lib/harmonic-field';
 import type { Lab } from '../state/context';
-import { isoOf } from '../state/derive';
+import { effectiveLatMode, isoOf, latAvail } from '../state/derive';
 import {
   DEFAULT_VIEWS,
   isViz,
@@ -43,7 +43,13 @@ const panelTip = (id: PanelId, tip: TipKey, view: (id: VizId) => VizView): TipKe
 function vizSummary(view: VizView, s: VizSettings, lab: Lab, ranks: AxisRank[]): string {
   switch (view) {
     case 'lattice':
-      return `${s.dim === '3d' ? '3D' : '2D'} ${(chooseAxes3d(ranks, s.axes3).axes ?? []).join('·')}`;
+      const mode = effectiveLatMode(
+        s.latMode,
+        latAvail(lab.base.field, lab.base.rep, lab.tab.gen.method)
+      );
+      return mode === 'prime'
+        ? `${s.dim === '3d' ? '3D' : '2D'} ${(chooseAxes3d(ranks, s.axes3).axes ?? []).join('·')}`
+        : `2D ${mode === 'gen' ? 'generators' : 'factors'}`;
     case 'edo':
       return `best ${lab.an.edo.best[0] ?? '-'}`;
     case 'dissonance':

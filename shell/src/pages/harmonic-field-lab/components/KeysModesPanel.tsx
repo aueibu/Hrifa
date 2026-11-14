@@ -25,12 +25,11 @@ function KeyRing({ k }: { k: KeyRingData }) {
         type="button"
         className={classes.keyRing}
         data-complete={k.complete}
-        title={`${label}. ${k.complete ? 'Click: make it the subset. Ctrl-click: hear it.' : 'Not available as a subset.'}`}
-        disabled={!k.complete}
+        title={`${label}. ${k.complete ? 'Click: make it the subset.' : 'Click: select the notes the field has of this key.'} Ctrl-click (Cmd on a Mac): hear it as a scale.`}
         onClick={(e) => {
           const notes = k.idx.filter((i): i is number => i !== null);
           if (e.ctrlKey || e.metaKey) {
-            lab.audio.playFieldChord(notes);
+            lab.audio.playFieldScale([...new Set(notes)]);
             return;
           }
           const sorted = [...new Set(notes)].sort((a, b) => a - b);

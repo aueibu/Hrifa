@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
 - Current milestone: M6
-- State: built and gated; awaiting human checkpoint
+- State: M6 + follow-ups built and gated; awaiting human checkpoint
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -24,6 +24,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | M5 checkpoint | Approved by the human 2026-11-13 ("I am happy with this"), builder decisions accepted. | `check:hfl` GREEN, 577 | Pushed to origin with the rest of `main`. |
 | M6 feedback | Human feedback from using M5 folded into M6 2026-11-13 | `check:hfl` GREEN, 577 | Lattice axes ranked by fit + Auto; prime-chip tooltip; All/None/Invert as one row, odd limit into the scale dropdown; subset polygon on the ring; pin = Alt+click, yellow (H-3). Chord-chip zoom question open with the human. |
 | M6 | Live chord template editor (`chordfinder.v1`), key rings clickable, axes ranked by fit + Auto (`rankAxes3d`, `chooseAxes3d`), prime-power tooltip, joined All/None/Invert, odd limit in the scale menu, subset polygon, pin = Alt+click / Alt+Enter in yellow (H-3), parity table in page ARCHITECTURE.md, mock route + folder retired (`mockRetuner.ts` moved to components). 2 builder attempts. | `check:hfl` GREEN, 601 | Reviewer PASS-WITH-HUMAN-CHECK; attempt 2 fixed: wrong `templateAdd` example, stale pin wording, keyboard pin in field table + dissonance, stale axes triple, empty odd-limit result, cleared template text, tidy. Chord chips: no unit inconsistency (all rem, identical to the mock); SVG labels are px in a viewBox and scale with their container, not with zoom; em breakpoints re-lay-out panels at 125%+. For the human: proposed parity drops (Duplicate tab, Generators/Factors lattice axes, CPS chord list, Period stat, Shift-click chord to subset, separate scale table); Ctrl-click key ring plays notes together; incomplete key rings disabled; does "keys" in the pin list mean the dock keys; Alt+click in Edge; yellow pin vs yellow severity; SVG label scaling. |
+| M6 follow-ups | Duplicate tab, CPS chord list (Chords panel, CPS only), Period stat, Shift-click chord/CPS chip → subset, incomplete key rings clickable, key preview as a scale + `scalePreview` Up/Up-down in settings.v1, lattice modes Primes/Generators/Factors (`latMode`, 2D only in the new modes). 1 builder attempt; reviewer FAIL (otonal tooltip said "consecutive"; Generators labels "—" for cents generators) fixed by the orchestrator directly (new rule), plus CPS chip names sorted by factor, utonal naming note, parity row, unused CSS. A webgl test's 1 s wait timed out under the full run; raised to 8 s. | `check:hfl` GREEN, 634 | For the human (live): 3D disabled in Generators/Factors; copy-tab icon; axis key bottom-left; Scale preview switch in the Sound menu; CPS section at the top of the Chords panel; Shift-click chord root = the chord's root (prototype); CPS Shift-click mode 0; Up-down by ear; a stored Generators/Factors mode the field can't use shows Primes and comes back when it can. |
 
 ## C0 scan (2026-11-12)
 - **Other arcs:** `workbench` has no active arc (clips and desk arcs archived); `structure` is done. No other active arc owns or locks anything. `arcs/LOCKS.md` was empty.
@@ -77,7 +78,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M6 human checkpoint (live in the dev server). Then: the shared test-speed + workflow-rules job agreed with the human 2026-11-13 (see "Agreed workflow change"), then M7.
+M6 human checkpoint (live in the dev server, including the follow-ups). Then: the shared test-speed + workflow-rules job (see "Agreed workflow change"), then M7.
 
 ## Agreed workflow change (human, 2026-11-13; not yet applied)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.

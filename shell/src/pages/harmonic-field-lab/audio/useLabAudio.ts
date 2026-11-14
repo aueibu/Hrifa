@@ -15,6 +15,7 @@ import {
   LightCounter,
   absHz,
   chordPlan,
+  fieldScalePlan,
   scalePlan,
   slotPitch,
   subsetChordPlan,
@@ -148,7 +149,11 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       },
       playScale: () => {
         const { base: b } = latest.current;
-        schedule(scalePlan(b.rel, b.repC, pitch()));
+        schedule(scalePlan(b.rel, b.repC, pitch(), latest.current.ui.scalePreview));
+      },
+      playFieldScale: (idx) => {
+        const { base: b, ui: u } = latest.current;
+        schedule(fieldScalePlan(b.field, idx, b.repC, pitch(), u.scalePreview));
       },
       playChord: () => {
         const { base: b, chord: c } = latest.current;

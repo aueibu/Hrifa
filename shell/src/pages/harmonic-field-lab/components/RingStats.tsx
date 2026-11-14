@@ -9,7 +9,7 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { parseInterval, type FifthsLayout } from '../../../lib/harmonic-field';
-import { fieldRowsOf, fifthsFor, spectrumOf } from '../state/derive';
+import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
 import type { RingView } from '../state/labState';
 import { FieldCompact } from './FieldPanel';
 import { GearIcon } from './icons';
@@ -314,6 +314,9 @@ export function Stats() {
           <Num>
             {base.idx.length}/{field.length}
           </Num>
+        </Row>
+        <Row name={<Tip k="period">Period</Tip>}>
+          <Num>{periodText(base.rep)}</Num>
         </Row>
         <Row name={<Tip k="stepPattern">Steps</Tip>}>
           <Num>{analysis ? analysis.N : '–'}</Num>

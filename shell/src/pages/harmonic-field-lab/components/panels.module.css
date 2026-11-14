@@ -429,10 +429,6 @@
   padding: 0.25rem 0.125rem;
 }
 
-.keyRing:disabled {
-  cursor: default;
-}
-
 .keyRing:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
@@ -536,6 +532,17 @@
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
   font-size: 12px;
+}
+
+.axisKey {
+  stroke: var(--text-subtle);
+  stroke-width: 1.5;
+}
+
+.axisKeyText {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 10px;
 }
 
 .stem {

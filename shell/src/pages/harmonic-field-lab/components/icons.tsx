@@ -172,3 +172,9 @@ export const UnstackIcon = () => (
     <path d="M4 14h16M4 21h16" />
   </Icon>
 );
+
+export const CopyIcon = () => (
+  <Icon>
+    <path d="M9 9h11v11H9zM5 15V4h11" />
+  </Icon>
+);

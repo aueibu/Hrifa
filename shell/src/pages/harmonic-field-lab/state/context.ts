@@ -17,6 +17,8 @@ export interface LabAudio {
   /** One short note at a field note's own pitch (the field table's play button). */
   playNote: (fieldIndex: number) => void;
   playScale: () => void;
+  /** These field notes one after another as a scale (a key's notes, root first), each at its own pitch, in the preview direction. */
+  playFieldScale: (fieldIndices: readonly number[]) => void;
   /** The highlighted chord, or the whole subset when none is highlighted. */
   playChord: () => void;
   /** These field notes together, as a chord at their own pitch above 1/1 (a clicked chord chip). */

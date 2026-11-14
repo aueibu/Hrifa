@@ -7,8 +7,20 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { ActionIcon, Checkbox, NativeSelect, SegmentedControl } from '@mantine/core';
 import { chooseAxes3d, fmtHidden, rankAxes3d, type HiddenPrime } from '../../../lib/harmonic-field';
-import { lattice2dOf, lattice3dOf, stemHue } from '../state/derive';
+import {
+  cpsFactorNames,
+  effectiveLatMode,
+  genAxisNames,
+  latAvail,
+  lattice2dOf,
+  lattice3dOf,
+  latticeAltOf,
+  stemHue,
+  type AltLattice2dView,
+  type Lattice2dView,
+} from '../state/derive';
 import type { VizId } from '../state/layout';
+import type { LatMode } from '../state/vizState';
 import { TIPS } from '../texts';
 import type { SceneState } from './Lattice3D';
 import { Num, Row, Tip, noteHandlers, useLab, useViz } from './ui';
@@ -30,14 +42,30 @@ function primePowerExample(h: HiddenPrime): string {
 const choiceValue = (axes: readonly number[]) => axes.join(',');
 const choiceLabel = (axes: readonly number[]) => axes.join('·');
 
-function Lattice2D({ axes, labels }: { axes: readonly number[] | null; labels: boolean }) {
+const PLACED_BY: Record<LatMode, string> = {
+  prime: 'prime exponents',
+  gen: 'generator steps',
+  cps: 'CPS factors',
+};
+
+function Lattice2D({
+  L,
+  labels,
+  mode,
+}: {
+  L: Lattice2dView & Partial<Pick<AltLattice2dView, 'key'>>;
+  labels: boolean;
+  mode: LatMode;
+}) {
   const lab = useLab();
-  const { field, rep } = lab.base;
-  const L = useMemo(() => lattice2dOf(field, rep, axes), [field, rep, axes]);
   const at = new Map(L.pts.map((p) => [p.i, p]));
-  // crop the view to the points so the lattice fills the panel
-  const xs = L.pts.flatMap((p) => [p.x, p.bx]);
-  const ys = L.pts.flatMap((p) => [p.y, p.by]);
+  // crop the view to the points (and the axis key) so the lattice fills the panel
+  const key = L.key ?? [];
+  const xs = [
+    ...L.pts.flatMap((p) => [p.x, p.bx]),
+    ...key.flatMap((k) => [k.x1, k.x2, k.tx - 14, k.tx + 14]),
+  ];
+  const ys = [...L.pts.flatMap((p) => [p.y, p.by]), ...key.flatMap((k) => [k.y1, k.y2, k.ty])];
   const x0 = Math.min(...xs) - 30;
   const y0 = Math.min(...ys) - 28;
   const box = `${x0} ${y0} ${Math.max(...xs) + 60 - x0} ${Math.max(...ys) + 34 - y0}`;
@@ -46,8 +74,16 @@ function Lattice2D({ axes, labels }: { axes: readonly number[] | null; labels: b
       viewBox={box}
       className={classes.latticeSvg}
       role="group"
-      aria-label="Lattice of the field, notes placed by prime exponents"
+      aria-label={`Lattice of the field, notes placed by ${PLACED_BY[mode]}`}
     >
+      {key.map((k, j) => (
+        <g key={`key${j}`} data-testid="axis-key">
+          <line className={classes.axisKey} x1={k.x1} y1={k.y1} x2={k.x2} y2={k.y2} />
+          <text className={classes.axisKeyText} x={k.tx} y={k.ty} textAnchor="middle">
+            {k.label}
+          </text>
+        </g>
+      ))}
       {L.edges.map(([a, b], j) => {
         const pa = at.get(a);
         const pb = at.get(b);
@@ -190,7 +226,14 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
   const { field, rep, repText } = lab.base;
   const s = viz.settings(id);
   const [resetKey, setResetKey] = useState(0);
-  const is3d = s.dim === '3d';
+  // generators and factors exist only for fields built that way; the stored mode falls back to primes otherwise
+  const avail = useMemo(
+    () => latAvail(field, rep, lab.tab.gen.method),
+    [field, rep, lab.tab.gen.method]
+  );
+  const mode = effectiveLatMode(s.latMode, avail);
+  const alt = mode !== 'prime';
+  const is3d = s.dim === '3d' && !alt;
   // WebGL can be present yet refuse a renderer (context limit); then the same note as for no WebGL is shown
   const [refused, setRefused] = useState(false);
   const webgl = hasWebGL() && !refused;
@@ -200,6 +243,25 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
   const { axes, picked } = chooseAxes3d(ranks, s.axes3);
   const l3 = useMemo(() => lattice3dOf(field, rep, axes), [field, rep, axes]);
   const l2 = useMemo(() => lattice2dOf(field, rep, axes), [field, rep, axes]);
+  const gen = lab.tab.gen;
+  const altView = useMemo(
+    () =>
+      alt
+        ? latticeAltOf(
+            field,
+            rep,
+            mode === 'gen' ? 'gen' : 'cps',
+            mode === 'gen' ? genAxisNames(gen) : cpsFactorNames(gen)
+          )
+        : null,
+    [alt, mode, field, rep, gen]
+  );
+  const modeNote = [
+    avail.gen ? '' : 'Generators is off: this field was not built from generator steps.',
+    avail.cps ? '' : 'Factors is off: this field is not a CPS (use the CPS method).',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const fit = (r: { onGrid: number; total: number }) => `${r.onGrid}/${r.total} on grid`;
   const options = [
     {
@@ -215,35 +277,56 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
   return (
     <>
       <div className={classes.vizTools}>
-        <Tip k="latticeDim" as="control">
+        <Tip k="latticeMode" as="control" extra={modeNote || undefined}>
           <SegmentedControl
             size="xs"
-            aria-label="Lattice dimensions"
-            value={s.dim}
-            onChange={(v) => viz.patch(id, { dim: v === '3d' ? '3d' : '2d' })}
+            aria-label="Lattice axis mode"
+            value={mode}
+            onChange={(v) =>
+              viz.patch(id, { latMode: v === 'gen' ? 'gen' : v === 'cps' ? 'cps' : 'prime' })
+            }
             data={[
-              { label: '2D', value: '2d' },
-              { label: '3D', value: '3d' },
+              { label: 'Primes', value: 'prime' },
+              { label: 'Generators', value: 'gen', disabled: !avail.gen },
+              { label: 'Factors', value: 'cps', disabled: !avail.cps },
             ]}
           />
         </Tip>
-        <Tip k="latticeAxes" as="control">
-          <NativeSelect
+        <Tip
+          k="latticeDim"
+          as="control"
+          extra={alt ? '3D is only for the prime lattice, so it is off in this mode.' : undefined}
+        >
+          <SegmentedControl
             size="xs"
-            aria-label="Lattice axes (primes)"
-            value={picked && axes ? choiceValue(axes) : AUTO}
-            onChange={(e) =>
-              viz.patch(id, {
-                axes3:
-                  e.currentTarget.value === AUTO
-                    ? null
-                    : e.currentTarget.value.split(',').map(Number),
-              })
-            }
-            data={options}
-            w={picked ? 150 : 190}
+            aria-label="Lattice dimensions"
+            value={is3d ? '3d' : '2d'}
+            onChange={(v) => viz.patch(id, { dim: v === '3d' ? '3d' : '2d' })}
+            data={[
+              { label: '2D', value: '2d' },
+              { label: '3D', value: '3d', disabled: alt },
+            ]}
           />
         </Tip>
+        {!alt && (
+          <Tip k="latticeAxes" as="control">
+            <NativeSelect
+              size="xs"
+              aria-label="Lattice axes (primes)"
+              value={picked && axes ? choiceValue(axes) : AUTO}
+              onChange={(e) =>
+                viz.patch(id, {
+                  axes3:
+                    e.currentTarget.value === AUTO
+                      ? null
+                      : e.currentTarget.value.split(',').map(Number),
+                })
+              }
+              data={options}
+              w={picked ? 150 : 190}
+            />
+          </Tip>
+        )}
         {is3d && (
           <Tip k="lattice3dReset" as="control">
             <ActionIcon
@@ -276,8 +359,12 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
           label="Ratios"
         />
       </div>
-      {!is3d ? (
-        <Lattice2D axes={axes} labels={s.labels} />
+      {alt ? (
+        altView ? (
+          <Lattice2D L={altView} labels={s.labels} mode={mode} />
+        ) : null
+      ) : !is3d ? (
+        <Lattice2D L={l2} labels={s.labels} mode="prime" />
       ) : webgl ? (
         <Tip k="lattice3dView" as="control" block>
           <Suspense
@@ -299,29 +386,47 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
         </div>
       )}
       <div className={classes.verdicts}>
-        <Row name="Axes">
-          primes <Num>{l3.axes.join(', ')}</Num> <Num muted>{picked ? '(picked)' : '(auto)'}</Num>
-        </Row>
-        <Row name={<Tip k="latticeStems">Off-axis</Tip>}>
-          {off.length === 0 ? (
-            <Num muted>none</Num>
-          ) : (
-            off.map((p) => (
-              <span key={p.i} className={classes.offAxis}>
-                <Num>{p.label}</Num>{' '}
-                {p.hidden.map((h) => (
-                  <Tip key={h.prime} k="primePower" as="control" extra={primePowerExample(h)}>
-                    <span style={{ color: `var(--mark-${stemHue(h.prime)})` }}>{fmtHidden(h)}</span>
-                  </Tip>
-                ))}
-              </span>
-            ))
-          )}
-        </Row>
-        <Row name="Notes">
-          <Num>{l3.pts.length}</Num> placed; each note is folded into the repeat{' '}
-          <Num>{repText}</Num>
-        </Row>
+        {alt && altView ? (
+          <>
+            <Row name={<Tip k="latticeAltAxes">Axes</Tip>}>
+              {mode === 'gen' ? 'generators' : 'factors'}{' '}
+              <Num>{altView.names.join(', ') || 'none'}</Num>
+            </Row>
+            <Row name="Notes">
+              <Num>{altView.pts.length}</Num> placed; each note is folded into the repeat{' '}
+              <Num>{repText}</Num>
+            </Row>
+          </>
+        ) : (
+          <>
+            <Row name="Axes">
+              primes <Num>{l3.axes.join(', ')}</Num>{' '}
+              <Num muted>{picked ? '(picked)' : '(auto)'}</Num>
+            </Row>
+            <Row name={<Tip k="latticeStems">Off-axis</Tip>}>
+              {off.length === 0 ? (
+                <Num muted>none</Num>
+              ) : (
+                off.map((p) => (
+                  <span key={p.i} className={classes.offAxis}>
+                    <Num>{p.label}</Num>{' '}
+                    {p.hidden.map((h) => (
+                      <Tip key={h.prime} k="primePower" as="control" extra={primePowerExample(h)}>
+                        <span style={{ color: `var(--mark-${stemHue(h.prime)})` }}>
+                          {fmtHidden(h)}
+                        </span>
+                      </Tip>
+                    ))}
+                  </span>
+                ))
+              )}
+            </Row>
+            <Row name="Notes">
+              <Num>{l3.pts.length}</Num> placed; each note is folded into the repeat{' '}
+              <Num>{repText}</Num>
+            </Row>
+          </>
+        )}
       </div>
     </>
   );

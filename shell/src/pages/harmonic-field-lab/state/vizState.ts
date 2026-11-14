@@ -6,12 +6,18 @@ import type { TipKey } from '../texts';
  */
 import { VIZ_IDS, VIZ_VIEW_LABEL, type VizId, type VizView } from './layout';
 
+/** How the lattice places notes: by prime exponents, by generator steps, or by CPS factor membership. */
+export type LatMode = 'prime' | 'gen' | 'cps';
+export const LAT_MODES: readonly LatMode[] = ['prime', 'gen', 'cps'];
+
 export interface VizSettings {
   dim: '2d' | '3d';
   /** The three prime axes of the 3D lattice; null is the default (3, 5, 7). */
   axes3: number[] | null;
   /** Show the ratio labels on the lattice (2D and 3D). */
   labels: boolean;
+  /** Lattice axis mode (a mode the field cannot use falls back to primes when drawn). */
+  latMode: LatMode;
   /** Generators of the isomorphic keyboard, as ratio text, and the match tolerance in cents. */
   isoG1: string;
   isoG2: string;
@@ -24,6 +30,7 @@ export const DEFAULT_SETTINGS: VizSettings = {
   dim: '2d',
   axes3: null,
   labels: true,
+  latMode: 'prime',
   isoG1: '3/2',
   isoG2: '2/1',
   isoTol: 20,

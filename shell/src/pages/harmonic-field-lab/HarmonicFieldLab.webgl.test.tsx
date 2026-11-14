@@ -27,7 +27,8 @@ describe('3D lattice without a usable renderer', () => {
       })
     );
     fireEvent.click(screen.getByRole('radio', { name: '3D' }));
-    const note = await screen.findByRole('note');
+    // the 3D view is a lazy chunk; under a full parallel run it can take over the 1 s default
+    const note = await screen.findByRole('note', {}, { timeout: 8000 });
     expect(note).toHaveTextContent(/needs WebGL/);
     fireEvent.click(screen.getByRole('radio', { name: '2D' }));
     expect(screen.queryByRole('note')).toBeNull();

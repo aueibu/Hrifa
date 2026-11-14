@@ -103,7 +103,7 @@ page's keys (W-10):
 
 | key | holds |
 | --- | --- |
-| `hrifa.harmonic-field-lab.settings.v1` | `UiSettings`: active panel, dock open, chord tolerance, ring view / chain / generator, the three visualizers' settings, wave, 1/1 Hz, volume, mode-at-base, saved-list "All". |
+| `hrifa.harmonic-field-lab.settings.v1` | `UiSettings`: active panel, dock open, chord tolerance, ring view / chain / generator, the three visualizers' settings, wave, 1/1 Hz, volume, mode-at-base, scale preview direction (`scalePreview`, Up | Up-down, default Up), saved-list "All". Each visualizer also stores `latMode` (`prime` | `gen` | `cps`, default `prime`); both fields are optional on load. |
 | `hrifa.harmonic-field-lab.layout.v1` | The pinned-panel `Layout` (the mock's model, moved here as its own key). Read once from the mock's `...mock.layout.v3` (else v2, else v1) when it is absent. |
 | `hrifa.harmonic-field-lab.tabs.v1` | `{ active, list: [{ id, name, snap }] }`. |
 | `hrifa.harmonic-field-lab.subsets.v1` | `[{ id, name, ...snap }]`. |
@@ -232,7 +232,7 @@ built (the human does not want it).
 | Header: Wave, 1/1 Hz, Vol, Mode root at 1/1 Hz | Top bar, Sound settings menu. Wave is Sine / Harmonic (7 partials) instead of Sine / Saw (decided in M5). |
 | Header: Play scale, Play chord, Stop | Top bar transport. |
 | Tabs: switch, rename, close, + New | Top bar tabs (Alt+1..9 switches). |
-| Tabs: Duplicate | Proposed drop (needs human OK): a new tab starts from a preset, and a saved subset covers "a variation of this subset". Cheap to add (`tab/add` with the tab's `gen`). |
+| Tabs: Duplicate | Built: the copy button beside the plus (`tab/duplicate`): a new tab "<name> copy" after the current one, active, with the same generation, selection, mode root and pick settings; stored in `tabs.v1` like any tab. |
 | Preset and its info text | Generator column, preset menu with its fact-checked description tooltip. |
 | Method, repeat interval | Generator column: method tabs; repeat in the gear fold-out. |
 | Starting harmonic, Divisions, Lattice shape (box or diamond, distance, both directions), axes (generator, count, centre), MOS chips, CPS factors and k, Custom list | Generator column, per-method parameters. |
@@ -247,16 +247,16 @@ built (the human does not want it).
 | Compare to (picked, 12-EDO, JI odd limit, m-EDO) | Tuner strip header. |
 | Ribbon (pitches with 12-EDO spacing) | Tuner strip (with 100 c reference lines and the scale steps row). |
 | Lattice: Axes = Primes, Ratio labels | Visualizer, Lattice view (2D or 3D, axes ranked by fit with Auto, Ratios checkbox, pop-out). |
-| Lattice: Axes = Generators, Axes = Factors (CPS) | Proposed drop (needs human OK): the live lattice places notes by prime exponents only. The CPS star layout and the generator-step layout are not rebuilt; `latticeCoords(field, rep, 'gen' or 'cps')` is still in the lib. |
-| CPS chord list (otonal and utonal chips under the lattice; click plays and highlights, Shift-click makes the subset) | Proposed drop (needs human OK): `cpsChords` is in the lib but has no panel. The Chords panel finds the same chords by template on any field. |
+| Lattice: Axes = Generators, Axes = Factors (CPS) | Built: an axis-mode switch on the Lattice view (Primes, Generators, Factors; stored per visualizer as `latMode`). Generators needs a field built by the Lattice method, Factors needs the CPS method; otherwise they are disabled with the reason in the tooltip, and a stored mode the field cannot use draws primes. Both are 2D only (the 3D scene is built from prime axes, so the 3D toggle is disabled in these modes); the axis key is drawn bottom left; lights, pin, hover and the inspector work as in the prime lattice. `latticeAltOf` (derive.ts) projects `latticeCoords(field, rep, 'gen' or 'cps')` the way the prototype did (CPS: first factor at the centre, the rest round a circle). |
+| CPS chord list (otonal and utonal chips under the lattice; click plays and highlights, Shift-click makes the subset) | Built as a section of the Chords panel shown only for the CPS method (the Chords panel is where chord chips live and the lattice has no room under it): otonal and utonal chips from `cpsChords`; click plays and keeps the highlight (lit in every view), Shift-click makes the notes the subset. |
 | Field table (check, #, ratio, cents, step, prime limit, odd limit, vs 12-EDO, vs JI, play) | Field table in the stats column (compact) and Open full table (all columns, sorting, play). |
 | Stats: Notes, Steps, Prime limit, Mean Tenney height, Structure, Step sizes | Beside the ring (Stats) and ShapeStats (Structure, step bars). |
-| Stats: Period | Proposed drop (needs human OK): the repeat is edited in the gear fold-out and is one turn of the ring. The unused `period` tooltip text is still in `texts.ts`. |
-| Scale table (degree, ratio, cents above the mode root, step, size) | Proposed drop of the separate table (decided in M4 to roll it into the strip): the strip shows ratio, deviation and step letters; cents above 1/1 are in the inspector and the field table. |
+| Stats: Period | Built: a Period row in Stats (`periodText`): the ratio when exact plus cents, e.g. `2/1 (1200.00 c)`, cents alone for an irrational repeat. |
+| Scale table (degree, ratio, cents above the mode root, step, size) | Dropped (human OK, 2026-11-13; decided in M4 to roll it into the strip): the strip shows ratio, deviation and step letters; cents above 1/1 are in the inspector and the field table. |
 | Interval spectrum table; Scale shape full detail pop-up (all clashes, constant-structure example) | Spectrum panel (sizes with counts, propriety clashes, constant structure with its example). |
 | Chords: tolerance, ladder (hover, Shift-click rungs), Reset list, templates text (one per line, # name), none-chips with the closest chord | Chords panel: tolerance with minus and plus and a rung ladder, dashed "not yet" chips that raise the tolerance, Edit templates (name, ratios, family, Add, Remove, Reset list; stored in chordfinder.v1). Show all chords is not needed: every voicing is listed. |
-| Chord click: play and highlight; Shift-click: make it the subset | Click a chip: sticky highlight and sound. Shift-click to make the chord the subset: proposed drop (needs human OK). |
-| Keys: summary, key chips (click makes the key the subset; Ctrl-click plays), Show all keys | Keys & Modes: key rings (click a complete ring to make it the subset; Ctrl-click plays its notes together, where the prototype played them one after another). |
+| Chord click: play and highlight; Shift-click: make it the subset | Click a chip: sticky highlight and sound. Shift-click a found chip: the chord's notes become the subset, with the chord's root as the mode root (as the prototype did); a dashed "not yet" chip still raises the tolerance. |
+| Keys: summary, key chips (click makes the key the subset; Ctrl-click plays), Show all keys | Keys & Modes: key rings (click a ring to select its key: a complete ring makes the whole key the subset, an incomplete one selects the notes the field has, with no change in how it is drawn; Ctrl-click plays the key as a scale, in the direction of the Scale preview setting, Up or Up-down, in the Sound settings menu, which every scale preview uses including Play scale). |
 | Modes table (cents above each degree) | Keys & Modes heat grid (click a row to make that mode current). |
 | Pop-up panels (full table, all chords, all keys) | Open full table; panels scroll; visualizers pop out. |
 | Tooltips on every label | `texts.ts` (hover) and the searchable Glossary drawer with see-also links. |

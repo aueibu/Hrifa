@@ -21,6 +21,7 @@ import {
   type Note,
   type TargetPoint,
 } from '../../../lib/harmonic-field';
+import type { ScaleDir } from '../audio/plan';
 import {
   autoName,
   defaultGen,
@@ -92,6 +93,9 @@ export interface Saved {
 
 export type RingView = 'chromatic' | 'fifths';
 export type Wave = 'sine' | 'harmonic';
+/** How a scale preview runs: up to the repeat, or up and back down. */
+export type { ScaleDir };
+export const SCALE_DIRS: readonly ScaleDir[] = ['up', 'updown'];
 export const WAVES: readonly Wave[] = ['sine', 'harmonic'];
 
 /** Per-viewer UI settings (persisted in `settings.v1`). */
@@ -111,6 +115,8 @@ export interface UiSettings {
   /** 0 to 1. */
   volume: number;
   modeAtBase: boolean;
+  /** Direction of every scale preview (Play scale, a key ring's preview). */
+  scalePreview: ScaleDir;
   /** Saved list: show subsets of every collection, not only the current one. */
   savedAll: boolean;
 }
@@ -157,6 +163,7 @@ export function defaultUi(): UiSettings {
     baseHz: DEFAULT_BASE_HZ,
     volume: 0.5,
     modeAtBase: true,
+    scalePreview: 'up',
     savedAll: false,
   };
 }
@@ -398,6 +405,7 @@ function applyNearest(t: Tab): Tab {
 export type Action =
   | { type: 'restore'; state: Partial<LabState> & Pick<LabState, 'tabs'> }
   | { type: 'tab/add'; gen?: GenSpec }
+  | { type: 'tab/duplicate'; index?: number }
   | { type: 'tab/close'; index: number }
   | { type: 'tab/switch'; index: number }
   | { type: 'tab/rename'; index: number; name: string }
@@ -486,6 +494,31 @@ export function labReducer(s: LabState, a: Action): LabState {
         active: s.tabs.length,
         nextTab: s.nextTab + 1,
       });
+    }
+    case 'tab/duplicate': {
+      const at = a.index ?? s.active;
+      const src = s.tabs[at];
+      if (!src || s.tabs.length >= MAX_TABS) {
+        return s;
+      }
+      // a fresh build of the same inputs, then the selection, mode and settings of the original
+      const gen: GenSpec = {
+        ...src.gen,
+        axes: src.gen.axes.map((x) => ({ ...x })),
+        mask: src.gen.mask.slice(),
+      };
+      const copy: Tab = {
+        ...makeTab(`t${s.nextTab}`, gen, cleanName(`${tabName(src)} copy`)),
+        sel: src.sel.slice(),
+        mode: src.mode,
+        cmp: { ...src.cmp },
+        pick: { ...src.pick },
+        ...(src.pending
+          ? { pending: { cents: src.pending.cents.slice(), mode: src.pending.mode } }
+          : {}),
+      };
+      const tabs = [...s.tabs.slice(0, at + 1), copy, ...s.tabs.slice(at + 1)];
+      return clearPointers({ ...s, tabs, active: at + 1, nextTab: s.nextTab + 1 });
     }
     case 'tab/close': {
       if (s.tabs.length < 2 || a.index < 0 || a.index >= s.tabs.length) {

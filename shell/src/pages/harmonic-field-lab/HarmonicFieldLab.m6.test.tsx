@@ -281,7 +281,7 @@ describe('.scl import', () => {
 });
 
 describe('Keys & Modes: click to select', () => {
-  it('a complete key ring makes that key the subset with its root as the mode root; an incomplete one is disabled', () => {
+  it('a complete key ring makes that key the subset with its root as the mode root; an incomplete one selects what the field has', () => {
     render(<HarmonicFieldLabPage />);
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
     fireEvent.click(dot(/^1\/1/));
@@ -293,7 +293,10 @@ describe('Keys & Modes: click to select', () => {
       name: /^Key on 3\/2: the whole scale fits/,
     });
     expect(onFifth).toBeEnabled();
-    expect(within(keys).getByRole('button', { name: /^Key on 9\/8: 1 scale note/ })).toBeDisabled();
+    const onSecond = within(keys).getByRole('button', { name: /^Key on 9\/8: 1 scale note/ });
+    expect(onSecond).toBeEnabled();
+    expect(onSecond).toHaveAttribute('data-complete', 'false');
+    expect(onFifth).toHaveAttribute('data-complete', 'true');
     fireEvent.click(onFifth);
     expect(ring().getAttribute('aria-label')).toMatch(/2 of 8 notes selected/);
     expect(dot(/^3\/2/)).toHaveAccessibleName(/in subset/);

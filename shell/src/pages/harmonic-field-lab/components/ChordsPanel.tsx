@@ -1,8 +1,14 @@
 /** Chords panel: tolerance with a ladder; sections by note count, one row per family, one chip per voicing. */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActionIcon, Button, Modal, Tooltip } from '@mantine/core';
-import { DEFAULT_TEMPLATES, parseTemplate, type ChordTemplate } from '../../../lib/harmonic-field';
-import { MAX_CHORDS, SIZES, familyOrder, type ChordChip } from '../state/derive';
+import {
+  DEFAULT_TEMPLATES,
+  cpsChords,
+  parseTemplate,
+  type ChordTemplate,
+  type CpsChord,
+} from '../../../lib/harmonic-field';
+import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
 import { MAX_TEMPLATES } from '../state/labState';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import { DebouncedText, Num, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
@@ -18,7 +24,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
   const label = chip.found
-    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}.`
+    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root.`
     : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   return (
     <Tooltip label={label} multiline w={260} openDelay={250}>
@@ -33,9 +39,19 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
         onMouseLeave={() => lab.setChord(null)}
         onFocus={() => lab.setChord(new Set(chip.memberIdx))}
         onBlur={() => lab.setChord(null)}
-        onClick={() => {
+        onClick={(e) => {
           if (!chip.found) {
             onRaise(need);
+          } else if (e.shiftKey) {
+            // the chord becomes the subset, rooted on the chord's own root (as the prototype did)
+            lab.pickChord(null);
+            lab.setChord(null);
+            const sorted = [...new Set(chip.memberIdx)].sort((a, b) => a - b);
+            lab.dispatch({
+              type: 'sel/set',
+              idx: sorted,
+              mode: Math.max(0, sorted.indexOf(chip.rootIdx)),
+            });
           } else if (picked) {
             lab.pickChord(null);
           } else {
@@ -62,6 +78,104 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
         </span>
       </button>
     </Tooltip>
+  );
+}
+
+/** A CPS chord's name: the factors that vary, as 4:5:6 (otonal) or 1/4:1/5:1/6 (utonal). */
+const cpsName = (g: CpsChord, labels: readonly string[]) =>
+  [...g.members]
+    .sort((a, b) => Number(labels[a.x] ?? a.x) - Number(labels[b.x] ?? b.x))
+    .map((m) => `${g.type === 'harmonic' ? '' : '1/'}${labels[m.x] ?? m.x}`)
+    .join(':');
+
+function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
+  const lab = useLab();
+  const idx = g.members.map((m) => m.i);
+  const picked =
+    lab.chordPicked !== null &&
+    lab.chordPicked.size === idx.length &&
+    idx.every((i) => lab.chordPicked?.has(i));
+  const common = g.common.map((x) => labels[x] ?? x).join('·');
+  const name = cpsName(g, labels);
+  const label = `${g.type === 'harmonic' ? 'Otonal' : 'Utonal'} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset.`;
+  return (
+    <Tooltip label={label} multiline w={260} openDelay={250}>
+      <button
+        type="button"
+        className={classes.chip}
+        data-found="true"
+        data-cps={g.type}
+        aria-label={label}
+        data-picked={picked}
+        aria-pressed={picked}
+        onMouseEnter={() => lab.setChord(new Set(idx))}
+        onMouseLeave={() => lab.setChord(null)}
+        onFocus={() => lab.setChord(new Set(idx))}
+        onBlur={() => lab.setChord(null)}
+        onClick={(e) => {
+          if (e.shiftKey) {
+            lab.pickChord(null);
+            lab.setChord(null);
+            lab.dispatch({
+              type: 'sel/set',
+              idx: [...new Set(idx)].sort((a, b) => a - b),
+              mode: 0,
+            });
+          } else if (picked) {
+            lab.pickChord(null);
+          } else {
+            lab.pickChord(new Set(idx));
+            lab.audio.playFieldChord(idx);
+          }
+        }}
+      >
+        <span className={classes.chipTop}>
+          <Num>{name}</Num>
+        </span>
+        <span className={classes.chipBottom}>
+          <Num muted>{g.type === 'harmonic' ? `share ${common}` : `inside ${common}`}</Num>
+        </span>
+      </button>
+    </Tooltip>
+  );
+}
+
+/** The chords that exist inside a CPS (a combination product set): otonal and utonal chips, shown for the CPS method only. */
+function CpsChords() {
+  const { base, tab } = useLab();
+  const labels = useMemo(() => cpsFactorNames(tab.gen), [tab.gen]);
+  const chords = useMemo(() => cpsChords(base.field), [base.field]);
+  const oto = chords.filter((g) => g.type === 'harmonic');
+  const uto = chords.filter((g) => g.type !== 'harmonic');
+  return (
+    <section className={classes.family} aria-label="Chords inside this CPS">
+      <h3 className={classes.familyHead}>
+        <Tip k="cpsChords">Chords inside this CPS</Tip>
+        <Num muted>{chords.length}</Num>
+      </h3>
+      {[
+        { key: 'otonal', rows: oto },
+        { key: 'utonal', rows: uto },
+      ].map(({ key, rows }) => (
+        <div key={key} className={classes.famRow} role="group" aria-label={`CPS ${key} chords`}>
+          <span className={classes.famLabel}>
+            <Tip k={key === 'otonal' ? 'otonal' : 'utonal'}>
+              {key === 'otonal' ? 'Otonal' : 'Utonal'}
+            </Tip>{' '}
+            <Num muted>{rows.length}</Num>
+          </span>
+          <div className={classes.chips}>
+            {rows.length ? (
+              rows.map((g) => (
+                <CpsChip key={`${g.type}:${g.common.join(',')}`} g={g} labels={labels} />
+              ))
+            ) : (
+              <span className={classes.hint}>none</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -147,7 +261,7 @@ function TemplateEditor() {
 }
 
 export function ChordsPanel() {
-  const { an, state, dispatch } = useLab();
+  const { an, state, dispatch, tab } = useLab();
   const [editing, setEditing] = useState(false);
   const model = an.chords;
   const tol = state.ui.tol;
@@ -237,6 +351,7 @@ export function ChordsPanel() {
             </button>
           ))}
         </div>
+        {tab.gen.method === 'cps' && <CpsChords />}
         {SIZES.map((size) => {
           const inSize = chips.filter((c) => c.size === size);
           if (!inSize.length) {

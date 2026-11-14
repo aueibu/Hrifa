@@ -35,7 +35,7 @@ const entries = {
   },
   playScale: {
     term: 'Play scale',
-    text: 'Plays the notes of the selected subset one after another, from the mode root up to the repeat. Each note lights up in every view while it sounds. Example: with 1/1, 9/8, 5/4 selected you hear those three notes in turn.',
+    text: 'Plays the notes of the selected subset one after another, from the mode root up to the repeat (and back down, if Scale preview is set to Up-down in the Sound settings). Each note lights up in every view while it sounds. Example: with 1/1, 9/8, 5/4 selected you hear those three notes in turn, then the repeat.',
   },
   playChord: {
     term: 'Play chord',
@@ -47,7 +47,17 @@ const entries = {
   },
   tabs: {
     term: 'Tunings (tabs)',
-    text: 'Each tab is a separate tuning with its own generator settings, field and subset, so you can compare ideas without losing one. Click a tab to switch (Alt+1 to Alt+9 also works), double-click its name to rename it (clear the name to get the automatic one back), click the cross to close it, and the plus to add a new one. Example: keep "Harmonics 8-15" in one tab and 19-EDO in another.',
+    text: 'Each tab is a separate tuning with its own generator settings, field and subset, so you can compare ideas without losing one. Click a tab to switch (Alt+1 to Alt+9 also works), double-click its name to rename it (clear the name to get the automatic one back), click the cross to close it, the copy button to duplicate it, and the plus to add a new one. Example: keep "Harmonics 8-15" in one tab and 19-EDO in another.',
+  },
+  duplicateTab: {
+    term: 'Duplicate tab',
+    text: 'Copies the current tuning into a new tab right after it, named "<name> copy": same generator settings, same selected notes, same mode root. Change the copy freely and the original stays as it was. Example: duplicate "Harmonics 8-15", then switch the copy to a different starting harmonic to compare the two.',
+    see: ['tabs'],
+  },
+  scalePreview: {
+    term: 'Scale preview',
+    text: 'How every scale preview runs, both Play scale and the preview of a key in Keys & Modes. Up plays the notes from the root up to the repeat. Up-down plays up and then comes back down to the root. Example: for 1/1, 9/8, 5/4 and a 2/1 repeat, Up plays 1/1 9/8 5/4 2/1; Up-down plays 1/1 9/8 5/4 2/1 5/4 9/8 1/1.',
+    see: ['playScale', 'keyRings'],
   },
   glossary: {
     term: 'Glossary',
@@ -464,6 +474,21 @@ const entries = {
     text: 'Chord shapes (templates such as 4:5:6) that your subset contains. Sections are by number of notes; inside each, one row per family (Major, Septimal, ...). Every chip is one voicing: the template, its root, the field notes used and the largest error in cents. When two field notes are both close enough to a chord tone, each gets its own chip. Example: "4:5:6 @ 1/1, 1/1 5/4 3/2" is a just major triad on the root; hovering a chip lights its notes on the circle.',
     see: ['chordTolerance', 'templates', 'chordLadder'],
   },
+  cpsChords: {
+    term: 'Chords inside this CPS',
+    text: 'A CPS (combination product set) is made by multiplying every k-sized group of a few chosen factors. With factors 1 3 5 7 and k = 2 you get the hexany: 1x3, 1x5, 1x7, 3x5, 3x7 and 5x7, each divided by the lowest so it starts at 1/1. The notes of such a set are related in a regular way, and the chords inside it are read straight from which factors the notes share, not by a template. Click a chip to hear it and keep it highlighted (click again to clear); Shift-click makes its notes the subset. Example: in that hexany the notes that all use the factor 1 are one otonal chord.',
+    see: ['otonal', 'utonal', 'latticeMode'],
+  },
+  otonal: {
+    term: 'Otonal (harmonic)',
+    text: 'A chord whose notes are all harmonics of one common fundamental (a slice of the overtone series, not necessarily neighbouring harmonics): it sounds as x1:x2:x3. In a CPS these are the notes that all share the same factors except one, and that one factor varies. Example: the notes 1x3, 1x5 and 1x7 all share the factor 1, and the varying factors give the chord 3:5:7.',
+    see: ['utonal', 'cpsChords'],
+  },
+  utonal: {
+    term: 'Utonal (subharmonic)',
+    text: 'The mirror image of otonal: the notes are a slice of the undertone series, so the chord sounds as 1/x1:1/x2:1/x3. In a CPS these are the notes that sit inside the same larger group of factors, each leaving one factor out. Example: the notes 1x3, 1x5 and 3x5 all sit inside the factors 1, 3 and 5; they leave out 5, 3 and 1 in turn, giving the chord 1/1:1/3:1/5 (named by the factor each note leaves out, not listed by pitch).',
+    see: ['otonal', 'cpsChords'],
+  },
   chordFamily: {
     term: 'Chord families',
     text: 'Chords are grouped by how many notes they have (triads, tetrads, larger), then by family, a label you can edit on each template: Major, Minor, Septimal, Utonal and so on. Templates without a family go in an "Other" row. Example: 4:5:6 and 8:10:12:15 are both Major; 6:7:9 and 4:5:6:7 are Septimal.',
@@ -513,8 +538,8 @@ const entries = {
   },
   keyRings: {
     term: 'Key rings',
-    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete: the whole scale fits there. Click a complete ring to make that key the subset, with its root as the mode root; Ctrl-click (Cmd on a Mac) plays it instead. Example: only the 1/1 ring has no crosses in this field.',
-    see: ['keysSummary'],
+    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete (its ring has a border): the whole scale fits there. Click a ring to make that key the subset, with its root as the mode root; on an incomplete ring this selects only the notes the field does have. Ctrl-click (Cmd on a Mac) plays the key as a scale instead, in the direction set by Scale preview. Example: only the 1/1 ring has no crosses in this field; clicking the 9/8 ring selects the few notes that do land.',
+    see: ['keysSummary', 'scalePreview'],
   },
   inspector: {
     term: 'Note inspector',
@@ -672,9 +697,19 @@ const entries = {
     text: 'Shows the same view full size in a window over the page, with its own controls. Closing it changes nothing. Example: pop out the 3D lattice to rotate a big field with room for every label.',
     see: ['openFullTable'],
   },
+  latticeMode: {
+    term: 'Lattice axis mode',
+    text: 'What the directions of the lattice mean. Primes (always available): one direction per prime, so a note sits at its prime exponents, as in 3/2 is one step of 3. Generators: one direction per generator of the Lattice method (for example 3/2 and 5/4), so a note sits at how many steps of each generator it took; a line is one step of one generator. Factors: for a CPS, one direction per factor, a note sits where its factors are (the first factor in the centre, the others around it, which makes the hexany a star); a line joins two notes that swap one factor. Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are greyed out. Example: with the Lattice method and generators 3/2 and 5/4, Generators shows the fifth-by-third grid you typed in.',
+    see: ['lattice', 'latticeAltAxes', 'cpsChords'],
+  },
+  latticeAltAxes: {
+    term: 'Axes (generators or factors)',
+    text: 'The directions used in this mode, in order, shown as a small key at the bottom left of the lattice. For Generators they are the generators as you typed them; for Factors they are the CPS factors. Example: "generators 3/2, 5/4" means one step along the first axis multiplies by 3/2 and one along the second by 5/4.',
+    see: ['latticeMode'],
+  },
   latticeDim: {
     term: 'Lattice 2D | 3D',
-    text: 'Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction. Example: in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1, while 11/8 is drawn on a stem so it never overlaps a real note.',
+    text: 'Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction (3D is only for the prime lattice; Generators and Factors are drawn flat). Example: in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1, while 11/8 is drawn on a stem so it never overlaps a real note.',
     see: ['lattice', 'lattice3d'],
   },
   lattice3d: {

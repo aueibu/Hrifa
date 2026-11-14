@@ -45,21 +45,68 @@ export function slotPitch(
   return { hz: relHz(p, rel[t.deg].c + t.oct * repC), src: rel[t.deg].src };
 }
 
-/** Play scale: every subset note from the root up, then the repeat; 0.28 s apart. */
-export function scalePlan(rel: readonly RelNote[], repC: number, p: PitchBase): Planned[] {
+/** Direction of a scale preview: up to the repeat, or up and then back down to the start. */
+export type ScaleDir = 'up' | 'updown';
+
+const SCALE_STEP = 0.28;
+const SCALE_DUR = 0.26;
+
+/** A run of notes one after another (`ascending` is every pitch up to and including the top); up-down walks back down. */
+function runPlan(ascending: readonly { hz: number; src: number }[], dir: ScaleDir): Planned[] {
+  const order =
+    dir === 'updown' ? [...ascending, ...ascending.slice(0, -1).reverse()] : [...ascending];
+  return order.map((n, i) => ({
+    hz: n.hz,
+    src: n.src,
+    delay: i * SCALE_STEP,
+    dur: SCALE_DUR,
+    amp: 1,
+  }));
+}
+
+/** Play scale: every subset note from the root up, then the repeat; 0.28 s apart. Up-down comes back down to the root. */
+export function scalePlan(
+  rel: readonly RelNote[],
+  repC: number,
+  p: PitchBase,
+  dir: ScaleDir = 'up'
+): Planned[] {
   const n = rel.length;
-  const out: Planned[] = [];
+  const up: { hz: number; src: number }[] = [];
   for (let i = 0; i <= n && n > 0; i++) {
     const deg = i % n;
-    out.push({
-      hz: relHz(p, rel[deg].c + Math.floor(i / n) * repC),
-      src: rel[deg].src,
-      delay: i * 0.28,
-      dur: 0.26,
-      amp: 1,
-    });
+    up.push({ hz: relHz(p, rel[deg].c + Math.floor(i / n) * repC), src: rel[deg].src });
   }
-  return out;
+  return runPlan(up, dir);
+}
+
+/**
+ * A scale made of field notes in degree order (a key ring's notes: root first), each at its own pitch above 1/1. Each note
+ * is lifted by the repeat until it is above the one before, so the run only climbs; then the root once more, a repeat up.
+ */
+export function fieldScalePlan(
+  field: readonly Note[],
+  order: readonly number[],
+  repC: number,
+  p: PitchBase,
+  dir: ScaleDir = 'up'
+): Planned[] {
+  const idx = order.filter((i) => i >= 0 && i < field.length);
+  if (!idx.length || !(repC > 0)) {
+    return [];
+  }
+  const up: { hz: number; src: number }[] = [];
+  let prev = -Infinity;
+  for (const i of idx) {
+    let c = field[i].c;
+    while (c < prev) {
+      c += repC;
+    }
+    prev = c;
+    up.push({ hz: absHz(p, c), src: i });
+  }
+  up.push({ hz: absHz(p, field[idx[0]].c + repC), src: idx[0] });
+  return runPlan(up, dir);
 }
 
 /** Play chord with a highlighted chord: its field notes together, at their own pitch above 1/1. */

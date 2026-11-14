@@ -7,13 +7,14 @@ import {
   Checkbox,
   NativeSelect,
   Popover,
+  SegmentedControl,
   Slider,
   Text,
   TextInput,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSchemeToggle';
 import { MAX_TABS, WAVES, tabName, type Wave } from '../state/labState';
-import { BookIcon, HomeIcon, PlayIcon, PlusIcon, SoundIcon, StopIcon } from './icons';
+import { BookIcon, CopyIcon, HomeIcon, PlayIcon, PlusIcon, SoundIcon, StopIcon } from './icons';
 import { CommitNumber, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
@@ -112,6 +113,17 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
           {state.tabs.map((t, i) => (
             <TabButton key={t.id} index={i} />
           ))}
+          <Tip k="duplicateTab" as="control">
+            <button
+              type="button"
+              className={classes.tab}
+              aria-label="Duplicate tab"
+              disabled={state.tabs.length >= MAX_TABS}
+              onClick={() => dispatch({ type: 'tab/duplicate' })}
+            >
+              <CopyIcon />
+            </button>
+          </Tip>
           <button
             type="button"
             className={classes.tab}
@@ -195,6 +207,25 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
                   onChange={(v) => dispatch({ type: 'ui', patch: { volume: v / 100 } })}
                   label={null}
                   aria-label="Volume"
+                />
+              </Tip>
+              <Tip k="scalePreview" as="control" block>
+                <Text size="xs">Scale preview</Text>
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  aria-label="Scale preview direction"
+                  value={ui.scalePreview}
+                  onChange={(v) =>
+                    dispatch({
+                      type: 'ui',
+                      patch: { scalePreview: v === 'updown' ? 'updown' : 'up' },
+                    })
+                  }
+                  data={[
+                    { label: 'Up', value: 'up' },
+                    { label: 'Up-down', value: 'updown' },
+                  ]}
                 />
               </Tip>
               <Tip k="modeAtBase" as="control" block>
