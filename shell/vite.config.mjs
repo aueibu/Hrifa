@@ -67,6 +67,8 @@ const DOM_TESTS = [
 
 export default defineConfig({
   base: '/Hrifa/',
+  // Dev server only: lets a Cloudflare quick tunnel (`cloudflared tunnel --url http://localhost:5173`) reach it.
+  server: { allowedHosts: ['.trycloudflare.com'] },
   plugins: [react(), localSoundfonts()],
   test: {
     globals: true,
