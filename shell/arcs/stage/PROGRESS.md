@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M3 committed, awaiting the human checkpoint; then M4
-- State: awaiting human (M3 checkpoint: try /stage by hand)
+- Current milestone: M3 checkpoint closed (approved 2026-11-14); M4 next
+- State: ready to start M4
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -16,6 +16,8 @@
 | M2 (2026-11-13) | Done, committed 2026-11-14 | own paths green: `tsc` clean for `src/lib/stage/`, `oxfmt` and `oxlint` clean, `vitest run src/lib/stage` 5 files 82 tests. `check:stage` RED only from `src/pages/harmonic-field-lab/state/m6.test.ts(76,12)(77,12)` TS2531 (lab arc mid-M6) | Builder (2 attempts) wrote `src/lib/stage/` (size, registry, splitters, layout, persist, README, 5 test files) and ARCHITECTURE.md section 9. Reviewer: pass; 6 corrections applied. The lab criterion "narrow screen keeps the inner pair" is replaced by the left-to-right prefix rule (no sides on the Stage). Decisions logged as `STAGE-5`. Held one day on shell rule 14 (lab arc m6.test.ts TS2531); the lab arc committed M6, no locks held, `check:stage` green on 2026-11-14 (5 files, 71 tests). |
 | M3 (2026-11-14) | Done, reviewed, committed | `check:stage` green (9 files, 118 tests); `vite build` green; related Home/applets test green | Builder (2 attempts) wrote `src/pages/stage/` (registry, Stage, Slot, Splitter, stageOps, sizeState, persistence, StageApp, three stand-ins, 4 test files), `Stage.page.tsx`, route `/stage`, applet entry (category `sound`). Reviewer: pass, no blocking bugs; corrections applied: focus restore (WeakMap plus tool refocus), stack splitter clamps to module minimum, lost-pointer-capture ends a drag, real column cost (`shownColumnCount`), more tests. Decisions logged: STAGE-6 (minSize floors and refuse/clamp policy), STAGE-7 (mounted-once mechanism and limits), STAGE-8 (visible columns, hidden columns, first measurement). BACKLOG `[stage]`: Stage measures its own width, debounce saves, restore scroll on reparent. Not looked at in a browser by anyone yet. |
 
+| M3 checkpoint (2026-11-14) | Closed | none run | Human tried /stage: everything approved (resize, hidden-columns mode, splitters, stacking, themes), no changes asked. |
+
 ## Shared touches (locks taken)
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). M3: `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `ARCHITECTURE.md` taken 2026-11-14, released after the M3 commit (see git log). Planned later: `shell/ARCHITECTURE.md` (M6), `src/components/` and `src/theme/` only at M6 if the human decides.
 
@@ -23,4 +25,4 @@
 - None open.
 
 ## Next action
-M3 human checkpoint: the human opens `/stage` (`corepack yarn dev` in `shell/`) and tries: dragging both splitter kinds (the Notes column should stop at 30rem), moving, stacking and unstacking the Picker stand-in after clicking Picks (the count stays, keyboard focus lands on the same tool), shrinking the window until columns hide (at least one stays, Hidden columns menu brings one back), Show sizes while dragging across 30 and 42rem (no flicker), light and dark, Reset layout, reload. Record the answers in ARC.md (M3 Checkpoint decisions). Then M4 (inspector kit: header strip, row, number cell, pressed-button toggle, fixed sizes, one density, the Stage developer option for the 330 ms tooltip delay, kit demo area on the spike page, how-to-add-a-panel page).
+M4 (inspector kit: header strip, row, number cell, pressed-button toggle, fixed sizes, one density, Stage developer option for the 330 ms tooltip delay, kit demo area on the spike page, how-to-add-a-panel page). Builder then reviewer, then `check:stage`.

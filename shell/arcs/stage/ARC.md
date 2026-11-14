@@ -87,7 +87,7 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] Route registered; applet entry added; one `vite build` run and recorded in PROGRESS (not part of the gate)
   - [ ] `src/pages/stage/ARCHITECTURE.md` documents the contract; `shell/ARCHITECTURE.md` lists the new folders
 - Human checkpoint after: **yes** (the human tries moving, stacking and resizing; feel is judged by eye and hand)
-- Checkpoint decisions: <written back by the orchestrator>
+- Checkpoint decisions (human, 2026-11-14): tried `/stage` by hand; splitters, move/stack/unstack, resize and hidden-columns mode, light and dark, reset and reload all approved with no changes asked. M4 may start.
 
 ### M4: Inspector kit
 - Scope: owned `src/pages/stage/kit/` (promoted later, see M6). The pieces named in M1(e), built to the measured tokens with theme roles only: header strip (title left, tools right), section with heading, name/value row, number cell, switch-style toggle (the lab's binary-option look), field sizes (text, number, select, segmented), a spacing/density scale with one named density setting, and a rule for where a panel's actions sit. A kit demo area on the spike page showing each piece at each density. Each piece is a thin wrapper over Mantine with the sizes fixed, not a new component library. Run each piece in light and dark.
