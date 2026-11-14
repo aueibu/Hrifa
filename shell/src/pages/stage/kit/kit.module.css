@@ -1,0 +1,198 @@
+/*
+ * The inspector kit. Every size is a `--kit-*` custom property written by KitScope from tokens.ts (defined once,
+ * changes with the density); every colour is a theme role. No hex, no palette shades, no decorative shadows.
+ */
+.scope {
+  --input-height-xs: var(--kit-row-height);
+  --mantine-font-size-sm: var(--kit-font-small);
+  --mantine-font-size-xs: var(--kit-font-tiny);
+
+  color: var(--text);
+  font-size: var(--kit-font-base);
+  line-height: var(--kit-line-height);
+  min-width: 0;
+}
+
+/* panel and strip */
+.panel {
+  background: var(--panel);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.strip {
+  align-items: center;
+  background: var(--panel-header);
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  display: flex;
+  flex: none;
+  gap: var(--kit-strip-gap);
+  height: var(--kit-strip-height);
+  justify-content: space-between;
+  padding: var(--kit-strip-padding);
+}
+
+.stripTitle {
+  font-family: inherit;
+  font-size: var(--kit-strip-title-size);
+  font-weight: var(--kit-strip-title-weight);
+  letter-spacing: var(--kit-strip-title-tracking);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stripTools {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: var(--kit-strip-tools-gap);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--kit-panel-gap);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--kit-panel-padding);
+}
+
+/* section */
+.section {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: var(--kit-section-gap);
+  padding: var(--kit-section-padding);
+}
+
+.sectionTitle {
+  font-size: inherit;
+  font-weight: inherit;
+  margin: 0;
+}
+
+.sectionHead {
+  align-items: center;
+  display: flex;
+  font-size: var(--kit-font-small);
+  font-weight: var(--kit-section-head-weight);
+  gap: var(--kit-row-gap);
+  justify-content: space-between;
+  margin: 0;
+}
+
+/* row: every row is exactly one row height, name left (muted), value right, vertically centred */
+.row {
+  align-items: center;
+  display: flex;
+  gap: var(--kit-row-gap);
+  justify-content: space-between;
+  min-height: var(--kit-row-height);
+}
+
+.rowName {
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+.rowValue {
+  align-items: center;
+  color: var(--text);
+  display: flex;
+  gap: var(--kit-actions-gap);
+  justify-content: flex-end;
+  min-width: 0;
+  text-align: right;
+}
+
+.rowValue[data-fill="true"] {
+  flex: 1;
+}
+
+.num {
+  font-size: var(--kit-num-scale);
+  font-variant-numeric: tabular-nums;
+}
+
+/* field widths */
+.fieldNumber {
+  width: var(--kit-number-width);
+}
+
+.fieldNumber[data-wide="true"] {
+  width: var(--kit-number-width-wide);
+}
+
+.fieldSelect {
+  width: var(--kit-select-width);
+}
+
+.fieldFill {
+  width: 100%;
+}
+
+/* toggle: the kit's only on/off control, a pressed button with an accent fill while on */
+.toggle {
+  background: var(--panel-slot);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--kit-font-small);
+  min-height: var(--kit-row-height);
+  padding: var(--kit-chip-padding) var(--kit-chip-padding-x);
+}
+
+.toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--mantine-primary-color-contrast);
+}
+
+.toggle:focus-visible,
+.tip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* actions: a panel's commands, right-aligned at the end of the body */
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kit-actions-gap);
+  justify-content: flex-end;
+}
+
+/* tips */
+.tip {
+  background: none;
+  border: 0;
+  border-bottom: 1px dotted var(--text-subtle);
+  color: inherit;
+  cursor: help;
+  font: inherit;
+  padding: 0;
+  text-align: inherit;
+}
+
+/* demo (spike only) */
+.demoGrid {
+  display: grid;
+  gap: var(--kit-panel-gap);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.demoLabel {
+  color: var(--text-muted);
+  font-size: var(--kit-font-tiny);
+  margin: 0 0 0.25rem;
+}

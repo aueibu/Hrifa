@@ -1,5 +1,6 @@
 /** The spike's registry of stand-in modules, built once at module scope, and the default layout over them. */
 import type { Layout, SlotSize } from '../../../lib/stage';
+import { KitDemo } from '../kit';
 import { createStageRegistry, type StageModule } from '../registry';
 import { NotesStandin } from './NotesStandin';
 import { PickerStandin } from './PickerStandin';
@@ -36,7 +37,15 @@ export const STANDIN_MODULES: readonly StageModule[] = [
   },
 ];
 
-export const STANDIN_REGISTRY = createStageRegistry(STANDIN_MODULES);
+export const KIT_MODULE: StageModule = {
+  id: 'kit',
+  title: 'Kit demo',
+  sizes: grid(['regular', 'wide']),
+  minSize: { width: 'regular', height: 'short' },
+  render: () => <KitDemo />,
+};
+
+export const STANDIN_REGISTRY = createStageRegistry([...STANDIN_MODULES, KIT_MODULE]);
 
 /** Picker beside a roll-over-notes stack (three modules, so one stack of two and one single). */
 export const DEFAULT_STAGE_LAYOUT: Layout = {

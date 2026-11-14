@@ -296,7 +296,7 @@ A module's `minSize` is a size class read as a floor in rem (width: narrow 12, r
 - Visible columns: `shownColumnCount(layout, widthRem)` (in `stageOps.ts`, used by both `Stage` and `StageApp`) is the longest left-to-right prefix whose widths, 0.5rem per splitter between columns and the 0.5rem stage padding fit the window, at least one and at most the number of columns (it does not use the core's `fitColumns`, whose per-column gap is 0.25rem); the first column may overflow and the column strip scrolls sideways. Hidden columns stay in the layout and are listed in the top bar "Hidden columns" menu; choosing one moves its column to the front (`moveToFront`). A splitter sits only between two visible columns.
 - Splitters: `aria-orientation`, `aria-valuenow`, `aria-valuemin/max`; keyboard (column: Left/Right 1rem, Home/End; stack: Up/Down 5%, Home/End); pointer drag. The column index is looked up when the action runs (by module id), never cached. After the stage height is measured `clampColumnShares` repairs stored shares below the minimum.
 - Slot tools: move left, move right, (in a stack) move up and down, stack onto (a menu of `stackTargets`), unstack, close. All are buttons with accessible names.
-- Persistence: key `hrifa.stage.layout.v1` (`LAYOUT_STORAGE_KEY`), loaded with `parseLayout(raw, registry, fallback)` where the fallback is `DEFAULT_STAGE_LAYOUT` (a picker column and a roll-over-notes stack), saved on every change in try/catch. "Reset layout" restores the default. No other key is read or written.
+- Persistence: key `hrifa.stage.layout.v1` (`LAYOUT_STORAGE_KEY`), loaded with `parseLayout(raw, registry, fallback)` where the fallback is `DEFAULT_STAGE_LAYOUT` (a picker column and a roll-over-notes stack), saved on every change in try/catch. "Reset layout" restores the default. The only other key is `hrifa.stage.tipDelay.v1` (the developer option, section 11); no other key is read or written.
 - Column width comes from the layout (rem, default 36); the window width only decides how many columns are shown. The stage fills the height under the 40px top bar.
 
 ### How to add a module (recipe)
@@ -308,4 +308,30 @@ A module's `minSize` is a size class read as a floor in rem (width: narrow 12, r
 
 ### Spike-only (throwaway)
 
-The stand-in modules in `standins/` (and `pickerProbe`, the mount counter the tests read), `StageApp`'s page chrome, the "Show sizes" overlay and the default layout. The registry, `Stage`, `Slot`, `Splitter`, `sizeState`, `stageOps` and `persistence` are the system. Not built yet: the Stage developer option for the tooltip open delay (Q6, default 330 ms), which waits for the kit (M4).
+The stand-in modules in `standins/` (and `pickerProbe`, the mount counter the tests read), `StageApp`'s page chrome, the "Show sizes" overlay and the default layout. The registry, `Stage`, `Slot`, `Splitter`, `sizeState`, `stageOps` and `persistence` are the system. The kit demo module (`KIT_MODULE`, `kit/KitDemo.tsx`) is spike-only as well.
+
+## 11. Inspector kit (M4)
+
+`kit/` holds thin Mantine wrappers with fixed sizes (`Kit.tsx`), the token table (`tokens.ts`), the developer option (`settings.ts`) and the demo (`KitDemo.tsx`, the "Kit demo" module in the Modules menu: one panel at each density). Import from `kit/index.ts`.
+
+### Density: one token set
+
+`tokens.ts` defines every kit size once. A density is a complete set (`DENSITY_TOKENS`); `KitScope density="compact"` writes it as `--kit-*` custom properties and every rule in `kit.module.css` reads them. Colours are theme roles only. `compact` is the lab's measurement (section 5a, Q8); `roomy` (about 1.15x) is a proposal so the setting can be seen working; both are to be honed at the M5 checkpoint. Sizes that do not change with density (field widths, tooltip width, strip title weight) are `FIXED_TOKENS`. Nest `KitScope` to show another density; there is no global density switch yet.
+
+### How to add a panel
+
+1. Wrap the inspector region once in `<KitScope density=...>`. A panel is `<Panel title tools>`: a header strip over a scrolling body.
+2. Body, top to bottom: `Section`s (inset group, heading, optional `aside`), each holding `Row`s; then at most one `Actions` row.
+3. A `Row` is `name` (muted, left) and a value (right). The value is a `Num` for a read-out, or exactly one field: `TextField`, `NumberField` (4 rem, `wide` 4.5 rem), `SelectField` (6.875 rem, or `fill`), `SegmentedField` (give the row `fill`). The name labels the field, so fields in rows need no label of their own; outside a row pass `aria-label`. Every row is one row height (`--kit-row-height`, 1.625 rem in compact), whatever it holds, so rows line up down the panel.
+4. On/off is `Toggle` only (a pressed button, accent fill while on). Its label is one or two words ("Active"); longer meaning goes in a `Tip` around it (`as="control"`), never in the label. There is no switch and no checkbox in the kit.
+5. Fixed (do not override at the call site): input height, font sizes, paddings, gaps, radius, strip height, field widths, tooltip (300 wide, on top, open delay from the developer option). If a panel needs a different size, change the token table, not the panel.
+6. Where actions go: view tools (pin, close, collapse, anything about the panel as a view) are `StripTool`s in the strip, right side, subtle gray icons with a required label. The panel's commands (Apply, Reset, Add) are `ActionButton`s inside one `Actions` row at the end of the body, right-aligned, the primary one last. A command that belongs to one section may sit in that section's `aside`. Never put a command in a `Row`.
+7. Terms that need explaining use `Tip term text`. Colour comes from roles in the kit's CSS; a panel adds no colour of its own.
+
+### Stage developer option
+
+The tooltip open delay (Q6) is a per-viewer option, default 330 ms, clamped to 0 to 2000, stored as `hrifa.stage.tipDelay.v1` (`kit/settings.ts`). `StageApp` has a "Developer" popover with the number field and provides the value through `TipDelayContext`; `Tip` reads it with `useTipDelay`.
+
+### Not done / open
+
+The Stage's own slot strip (`stage.module.css`, `Slot.tsx`) still carries its own copy of the strip tokens; Q10 says one strip shared by slots and panels, so merging them (Slot using `Strip` inside a `KitScope`) is left for M5 or M6. The kit is not yet used by the realistic modules (M5).

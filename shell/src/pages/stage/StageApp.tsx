@@ -5,9 +5,20 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Anchor, AppShell, Button, Checkbox, Group, Menu, Text } from '@mantine/core';
+import {
+  Anchor,
+  AppShell,
+  Button,
+  Checkbox,
+  Group,
+  Menu,
+  NumberInput,
+  Popover,
+  Text,
+} from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
 import { moduleIds, type Layout } from '../../lib/stage';
+import { loadTipDelay, MAX_TIP_DELAY, parseTipDelay, saveTipDelay, TipDelayContext } from './kit';
 import { browserStorage, loadLayout, saveLayout, type StageStorage } from './persistence';
 import type { StageRegistry } from './registry';
 import { Stage } from './Stage';
@@ -32,11 +43,17 @@ export function StageApp({
     loadLayout(store, registry.meta, defaultLayout)
   );
   const [showSizes, setShowSizes] = useState(false);
+  const [tipDelay, setTipDelay] = useState(() => loadTipDelay(store));
+  const [tipDelayText, setTipDelayText] = useState(() => String(tipDelay));
   const widthRem = useWidthRem();
 
   useEffect(() => {
     saveLayout(store, layout);
   }, [store, layout]);
+
+  useEffect(() => {
+    saveTipDelay(store, tipDelay);
+  }, [store, tipDelay]);
 
   const update = useCallback((fn: (l: Layout) => Layout) => setLayout(fn), []);
 
@@ -92,6 +109,32 @@ export function StageApp({
                 </Menu.Dropdown>
               </Menu>
             )}
+            <Popover position="bottom-end" withinPortal trapFocus returnFocus>
+              <Popover.Target>
+                <Button size="compact-xs" variant="default">
+                  Developer
+                </Button>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <NumberInput
+                  size="xs"
+                  label="Tooltip delay (ms)"
+                  description="Per viewer, default 330"
+                  hideControls
+                  min={0}
+                  max={MAX_TIP_DELAY}
+                  allowDecimal={false}
+                  data-autofocus
+                  value={tipDelayText}
+                  onChange={(v) => setTipDelayText(String(v))}
+                  onBlur={() => {
+                    const next = parseTipDelay(tipDelayText);
+                    setTipDelay(next);
+                    setTipDelayText(String(next));
+                  }}
+                />
+              </Popover.Dropdown>
+            </Popover>
             <Checkbox
               size="xs"
               label="Show sizes"
@@ -106,13 +149,15 @@ export function StageApp({
         </Group>
       </AppShell.Header>
       <AppShell.Main>
-        <Stage
-          registry={registry}
-          layout={layout}
-          update={update}
-          widthRem={widthRem}
-          showSizes={showSizes}
-        />
+        <TipDelayContext.Provider value={tipDelay}>
+          <Stage
+            registry={registry}
+            layout={layout}
+            update={update}
+            widthRem={widthRem}
+            showSizes={showSizes}
+          />
+        </TipDelayContext.Provider>
       </AppShell.Main>
     </AppShell>
   );

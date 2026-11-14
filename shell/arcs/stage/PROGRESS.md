@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M3 checkpoint closed (approved 2026-11-14); M4 next
-- State: ready to start M4
+- Current milestone: M4 committed; M5 next (then one checkpoint)
+- State: in progress, M5
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -17,6 +17,7 @@
 | M3 (2026-11-14) | Done, reviewed, committed | `check:stage` green (9 files, 118 tests); `vite build` green; related Home/applets test green | Builder (2 attempts) wrote `src/pages/stage/` (registry, Stage, Slot, Splitter, stageOps, sizeState, persistence, StageApp, three stand-ins, 4 test files), `Stage.page.tsx`, route `/stage`, applet entry (category `sound`). Reviewer: pass, no blocking bugs; corrections applied: focus restore (WeakMap plus tool refocus), stack splitter clamps to module minimum, lost-pointer-capture ends a drag, real column cost (`shownColumnCount`), more tests. Decisions logged: STAGE-6 (minSize floors and refuse/clamp policy), STAGE-7 (mounted-once mechanism and limits), STAGE-8 (visible columns, hidden columns, first measurement). BACKLOG `[stage]`: Stage measures its own width, debounce saves, restore scroll on reparent. Not looked at in a browser by anyone yet. |
 
 | M3 checkpoint (2026-11-14) | Closed | none run | Human tried /stage: everything approved (resize, hidden-columns mode, splitters, stacking, themes), no changes asked. |
+| M4 (2026-11-14) | Done, reviewed, committed | `check:stage` green (11 files, 129 tests) | Builder wrote `src/pages/stage/kit/` (tokens with two densities, Kit pieces, settings, KitDemo, tests), Developer popover for the tip delay in `StageApp`, kit demo module in the registry, ARCHITECTURE.md section 11 (how to add a panel). Reviewer: pass, no blockers; fixed: toggle padding, Developer field editing and keyboard focus, Section markup, token leftovers, extra tests. Decisions: STAGE-9, STAGE-10. Not fixed (carried to M5): reviewer finding 4 (rows really one height in a browser: needs a look), finding 9 / Q10 (kit `Strip` duplicates the Slot strip; merge in M5). Human checkpoint merged into M5. Not looked at in a browser. |
 
 ## Shared touches (locks taken)
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). M3: `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `ARCHITECTURE.md` taken 2026-11-14, released after the M3 commit (see git log). Planned later: `shell/ARCHITECTURE.md` (M6), `src/components/` and `src/theme/` only at M6 if the human decides.
@@ -25,4 +26,4 @@
 - None open.
 
 ## Next action
-M4 (inspector kit: header strip, row, number cell, pressed-button toggle, fixed sizes, one density, Stage developer option for the 330 ms tooltip delay, kit demo area on the spike page, how-to-add-a-panel page). Builder then reviewer, then `check:stage`.
+M5 (spike with realistic modules: shared PianoRoll as wide module, canvas stand-in, chord-picker stand-in 2x1 beside / 3x1 above from one component, inspector from the kit with note and clip panels, two preset layouts). Also fold in: merge kit Strip with Slot strip (Q10), check rows are one height. Builder, reviewer, `check:stage`, commit, then the single human checkpoint (covers M4 and M5).
