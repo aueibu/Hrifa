@@ -72,7 +72,7 @@ interface StageModule {
 }
 ```
 
-The registry is an **open set of ids**: `registerModule(module)` adds one, and a layout may name any registered id. There is no `PanelId` union (the lab has one, `harmonic-field-lab/state/layout.ts`; see section 6). A stored layout naming an id that is not registered loads without it and never throws.
+The registry is an **open set of ids**: `createRegistry(metas)` builds it from data-only `ModuleMeta` (`{ id, title, sizes, minSize }`; the React `render` function is attached in `src/pages/stage/`, M3), and a layout may name any registered id. There is no `PanelId` union (the lab has one, `harmonic-field-lab/state/layout.ts`; see section 6). A stored layout naming an id that is not registered loads without it and never throws.
 
 `sizes` is the set of classes the module has a deliberate rendering for. If the slot's measured size is not in the set, the slot passes the nearest supported size (the largest supported that fits, else the smallest supported) and the module is shown in that rendering with the leftover room as padding or scroll, never stretched in a way the module did not design for. `minSize` is the smallest `{ width, height }` the slot may be given; a move, stack or splitter drag that would go below it is refused or clamped.
 
@@ -236,3 +236,17 @@ All twelve questions were answered at the M1 checkpoint; the answers are in `arc
 - The workbench Inspector's own CSS and the chord picker's internal CSS were not measured.
 - The piano-roll rendering table (4b) and the chord picker rendering table (4a) are proposals for M5, not measurements of existing behaviour, except where a W-decision is cited.
 - No module in the lab or the workbench keeps its state when moved today: the lab remounts a panel when it changes column and when it moves to or from the top of a stack (`Panels.tsx:299`, `:308`), and the chord host remounts its body when switching between dock and takeover. The mounted-once rule is new code with no precedent.
+
+## 9. Layout core (M2)
+
+The pure layout code lives in `src/lib/stage/` (README there has the full API). Summary of the rules the React layer relies on:
+
+- `Layout = { version: 1, columns: Column[] }`; a `Column` is `{ slots: string[] (1 to 3, top first), width?: rem (default 36, clamped 12 to 96), shares?: number[] (sum 1, default even) }`. One ordered row of columns: the lab's left and right sides are dropped.
+- Size tokens and classification (`classifyWidth`, `sizeOf` with the 0.5rem hysteresis, `nearestSupportedSize`, `slotSizeAttr`) are in `size.ts`. Hysteresis: a class below a boundary B moves up only at B + 0.5, a class above B moves down only below B - 0.5.
+- Operations never mutate and return the same object when they do nothing; changing a column's slots drops its shares.
+- Two splitter kinds: vertical stack shares (each slot at least the larger of 6rem and 20%) and column-width splitters (the two neighbours trade width, total constant, both within 12 to 96rem).
+- `fitColumns` keeps whole columns left to right and stops at the first that does not fit; the rest are hidden but stay in the layout.
+- `parseLayout(raw, known)` never throws and drops unknown ids, repeats, empty columns and bad shares; the storage key is `hrifa.stage.layout.v1` (the page does the storage access).
+- `nearestSupportedSize` tie-break: "largest" means highest width index plus height index; ties go to the wider size.
+- `unstack` gives the new column the default width. `fitColumns` can return 0, so M3 must show at least one column. `parseLayout` renormalises stored shares within 0.02 of summing to 1 and drops the rest; it takes a `fallback` layout (M3 passes the real default columns).
+- `minSize` is not enforced by the M2 core; the Stage enforces it in M3.
