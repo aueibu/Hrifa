@@ -1,6 +1,6 @@
 # ARC: Chord input (harmonic note entry in the clip editor)
 
-Approved by the human 2026-11-13. **Amendment (approved by the human 2026-11-14): adds M8 (promote the Stage and kit), M9a (Stage prerequisites: own-width measurement and a layout key) and M9b (a Stage inside the clip editor for the roll and chord picker; the canvas takeover stays as-is, re-scoped by the human 2026-11-14 after the M9 map); the old M8 close-out is now M10.**
+**Status: CLOSED 2026-11-14 (M10 done; archived as `ARC.chord-input.md`).** Approved by the human 2026-11-13. **Amendment (approved by the human 2026-11-14): adds M8 (promote the Stage and kit), M9a (Stage prerequisites: own-width measurement and a layout key) and M9b (a Stage inside the clip editor for the roll and chord picker; the canvas takeover stays as-is, re-scoped by the human 2026-11-14 after the M9 map); the old M8 close-out is now M10.**
 
 ## Goal
 In the clip editor a user can enter harmony without placing notes one at a time. A new editor tool takes a click on a pitch (or on an existing note) and opens a chord picker with two modes. **Root mode**: chords built on the clicked pitch as root. **Common-tone mode** (tool + Ctrl): chords that contain the clicked pitch, sorted in columns by the role the pitch plays (root, 3rd, 5th, 7th, 9th, ...). The set of chords offered comes from the project's pitch set ("key"), which the user can override from the picker. Hovering a chord shows a ghost preview in the roll; clicking it places the notes. Inversion and voicing (open, closed, drop-2, drop-3) are controls in the picker. The chord vocabulary is defined as interval stacks over the project tuning, so it works in any EDO, not only 12.
@@ -223,6 +223,13 @@ Context: the M9 scout map (2026-11-14) found the roll and chord picker are tangl
   - [ ] Default look equals today's (picker beside the roll, similar width); moving, stacking and resizing work as in the spike
   - [ ] `src/pages/composition-workbench/ARCHITECTURE.md` and a `DECISIONS.md` row describe the slot, the layout key and the migration; BACKLOG items for what was deferred (canvas takeover and `SplitStage` as Stage slots, lifting the chord session out of the editor, the roll's own module, Stage roll scroll restore)
 - Human checkpoint after: yes (the human uses the workbench: chord input as before, plus rearranging; also covers the combined review owed since M6d)
+- Checkpoint decisions (human, 2026-11-14, tried it through a tunnel; "looking better overall"):
+  - Which column flexes: the piano roll should flex, but it does not matter pending the next arc (BACKLOG: choose which column fills).
+  - Hidden piano roll when the chord picker is moved left and the editor is narrow: fine for now.
+  - Two close buttons on the chord picker: fine for now.
+  - Stage chrome around the piano roll and the no-op close button: fine for now.
+  - Piano roll scroll lost on a move: not ideal, to the backlog (already there: Stage restore roll scroll).
+  - The human wants one Stage for the whole workbench (standard proportions that slot and nest, not fixed slots); the next arc is drafted separately. This arc closes out at M10.
 
 ### M10: Close-out
 - Scope: (renumbered from M8 on 2026-11-14 when the Stage adoption milestones were added before it) `ARCHITECTURE.md` (workbench and shell: pitch set, chord templates, voicing, tool and overlay contracts, the Stage adoption, who consumes what), BACKLOG items for what was deferred (explicit note link/group button, voicing exploration on selection, Euclidean insertion and rhythm transforms via the same picker, chord naming for non-12 EDOs, picker audition-on-hover if declined), final `check:workbench`, release all locks after their commits.
