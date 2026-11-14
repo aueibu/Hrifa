@@ -8,6 +8,7 @@ import { LAYOUT_STORAGE_KEY } from '../../../lib/stage';
 import type { StageStorage } from '../persistence';
 import { PRESETS_STORAGE_KEY } from '../presets';
 import { StageApp } from '../StageApp';
+import { CanvasStandin } from './CanvasStandin';
 import { ChordPicker, chordProbe } from './ChordPicker';
 import { SpikeInspector } from './Inspector';
 import { SpikeProvider } from './state';
@@ -158,6 +159,19 @@ describe('StageApp presets', () => {
     expect(within(inspector).getByLabelText('Name')).toHaveValue('Chorus');
   });
 
+  it('pans the roll to a clip when that clip is clicked on the canvas', async () => {
+    const user = userEvent.setup();
+    const { storage } = memory();
+    render(<StageApp storage={storage} />);
+    fireEvent.keyDown(window, { key: '2', code: 'Digit2', altKey: true });
+    const roll = document.querySelector('[data-standin="pianoroll"]')!;
+    expect(roll.getAttribute('data-scroll-left')).toBe('0');
+    await user.click(screen.getByRole('button', { name: /Chorus/ })); // Chorus starts at quarter 16
+    expect(roll.getAttribute('data-scroll-left')).toBe(String(16 * 64 - 16));
+    await user.click(screen.getByRole('button', { name: /Verse/ })); // first note at 0
+    expect(roll.getAttribute('data-scroll-left')).toBe('0');
+  });
+
   it('does not switch presets on Alt+digit typed in a text field', async () => {
     const user = userEvent.setup();
     const { storage } = memory();
@@ -262,5 +276,30 @@ describe('SpikeInspector (from the kit)', () => {
     expect(within(panel).getByRole('radio', { name: '1/16' })).toBeChecked();
     await user.click(within(panel).getByRole('button', { name: 'Duplicate' }));
     expect(panel.querySelectorAll('[data-kit="actions"]')).toHaveLength(1);
+  });
+});
+
+describe('canvas shows the clip of the selected note', () => {
+  const clipButton = (name: RegExp) => screen.getByRole('button', { name });
+
+  it('marks the parent clip as related, apart from the selected style', () => {
+    render(
+      <SpikeProvider initialSelection={{ kind: 'note', ids: ['n4'] }}>
+        <CanvasStandin size={{ width: 'regular', height: 'regular' }} />
+      </SpikeProvider>
+    );
+    expect(clipButton(/Chorus/)).toHaveAttribute('data-related', 'true');
+    expect(clipButton(/Chorus/)).toHaveAttribute('aria-pressed', 'false');
+    expect(clipButton(/Verse/)).toHaveAttribute('data-related', 'false');
+  });
+
+  it('marks nothing related when a clip or nothing is selected', () => {
+    render(
+      <SpikeProvider initialSelection={{ kind: 'clip', id: 'c1' }}>
+        <CanvasStandin size={{ width: 'regular', height: 'regular' }} />
+      </SpikeProvider>
+    );
+    expect(document.querySelectorAll('[data-related="true"]')).toHaveLength(0);
+    expect(clipButton(/Verse/)).toHaveAttribute('aria-pressed', 'true');
   });
 });

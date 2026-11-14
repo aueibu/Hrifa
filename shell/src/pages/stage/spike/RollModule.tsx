@@ -4,7 +4,7 @@
  * (ARCHITECTURE.md 4b): the toolbar only when the slot is wide and not short. Selecting notes writes the demo
  * selection the inspector reads.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   defaultPianoRollView,
   PianoRoll,
@@ -16,7 +16,9 @@ import type { SlotSize } from '../../../lib/stage';
 import { pitchName, useSpike } from './state';
 import classes from './spike.module.css';
 
-const DURATION = 16;
+/** Quarters: the demo timeline (state.tsx) runs to the end of the Bridge clip. */
+const DURATION = 56;
+const FOCUS_MARGIN_PX = 16;
 const GRID: PianoRollGridLine[] = Array.from({ length: DURATION + 1 }, (_, at) => ({
   at,
   kind: at % 4 === 0 ? 'bar' : 'beat',
@@ -24,7 +26,7 @@ const GRID: PianoRollGridLine[] = Array.from({ length: DURATION + 1 }, (_, at) =
 }));
 
 export function RollModule({ size }: { size: SlotSize }) {
-  const { notes, selection, select } = useSpike();
+  const { notes, selection, select, rollFocus } = useSpike();
   const [view, setView] = useState<PianoRollViewState>(defaultPianoRollView);
 
   const rollNotes = useMemo<PianoRollNote[]>(
@@ -39,10 +41,30 @@ export function RollModule({ size }: { size: SlotSize }) {
       })),
     [notes]
   );
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
+
+  // a clip clicked on the canvas (rollFocus, from the shared demo state) pans the roll to that clip's first note
+  useEffect(() => {
+    if (!rollFocus) {
+      return;
+    }
+    const starts = notesRef.current
+      .filter((n) => n.clipId === rollFocus.clipId)
+      .map((n) => n.start);
+    if (starts.length === 0) {
+      return;
+    }
+    setView((v) => ({
+      ...v,
+      scrollLeft: Math.max(0, Math.min(...starts) * v.pixelsPerQuarter - FOCUS_MARGIN_PX),
+    }));
+  }, [rollFocus]);
+
   const selectedIds = selection?.kind === 'note' ? selection.ids : [];
 
   return (
-    <div className={classes.roll} data-standin="pianoroll">
+    <div className={classes.roll} data-standin="pianoroll" data-scroll-left={view.scrollLeft}>
       <PianoRoll
         fill
         detachedScroll
