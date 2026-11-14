@@ -146,7 +146,12 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     volume: numIn(raw.volume, 0, 1, d.volume),
     modeAtBase: bool(raw.modeAtBase, d.modeAtBase),
     scalePreview: oneOf(raw.scalePreview, SCALE_DIRS, d.scalePreview),
-    modePlayback: oneOf(raw.modePlayback, MODE_PLAYBACKS, d.modePlayback),
+    // older settings had a separate "Mode root at 1/1 Hz" switch: off carries over as Relative
+    modePlayback: oneOf(
+      raw.modePlayback,
+      MODE_PLAYBACKS,
+      raw.modeAtBase === false ? 'relative' : d.modePlayback
+    ),
     savedAll: bool(raw.savedAll, d.savedAll),
   };
 }

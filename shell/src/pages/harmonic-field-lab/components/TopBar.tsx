@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import {
   ActionIcon,
   Button,
-  Checkbox,
   NativeSelect,
   Popover,
   SegmentedControl,
@@ -244,16 +243,6 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
                     { label: 'Up', value: 'up' },
                     { label: 'Up-down', value: 'updown' },
                   ]}
-                />
-              </Tip>
-              <Tip k="modeAtBase" as="control" block>
-                <Checkbox
-                  size="xs"
-                  checked={ui.modeAtBase}
-                  onChange={(e) =>
-                    dispatch({ type: 'ui', patch: { modeAtBase: e.currentTarget.checked } })
-                  }
-                  label="Mode root at 1/1 Hz"
                 />
               </Tip>
             </div>

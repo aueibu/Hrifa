@@ -22,16 +22,11 @@ const entries = {
   baseHz: {
     term: '1/1 Hz',
     text: 'The pitch, in hertz, that the root of the scale (1/1) sounds at. Every other note is this frequency times its ratio. Example: 261.63 Hz is middle C, so 3/2 sounds at 392.44 Hz.',
-    see: ['modeAtBase'],
+    see: ['modePlayback'],
   },
   volume: {
     term: 'Volume',
     text: 'Output level of everything the lab plays. Chords add up, so a four-note chord is louder than one note at the same setting. Example: at 50 a single sine is comfortable; four notes together may need 30.',
-  },
-  modeAtBase: {
-    term: 'Mode root at 1/1 Hz',
-    text: 'When on, turning to another mode moves the new root onto the 1/1 Hz pitch, so the tonic stays put and the scale changes around it. When off, the notes keep their absolute pitch and only the starting note changes. Example: with a major scale on, mode 6 starts a minor scale on the same C.',
-    see: ['mode', 'baseHz'],
   },
   playScale: {
     term: 'Play scale',
@@ -61,8 +56,8 @@ const entries = {
   },
   modePlayback: {
     term: 'Mode playback (Parallel | Relative)',
-    text: 'Where a mode preview starts. In C major, Mode 2 is Dorian. Parallel plays it from 1/1 (C Dorian), the way the grid measures it; Relative plays it from its own root 9/8 (D Dorian). The listed-vs-pure comparison is the same, only moved. Press 5 to switch. In Relative a sounding tone lights a field note only where it lands exactly on one.',
-    see: ['modes', 'holdToPlay'],
+    text: 'Where the current mode sounds: mode previews, Play scale, Play chord and the computer keys (z is the mode root). In C major, Mode 2 is Dorian. Parallel plays it from the 1/1 pitch (C Dorian), the way the grid measures it, so the tonic stays put and the scale changes around it; Relative plays it from its own root 9/8 (D Dorian), so every note keeps its own pitch. In mode previews the listed-vs-pure comparison is the same, only moved. Press 5 to switch. In Relative a sounding tone lights a field note only where it lands exactly on one.',
+    see: ['modes', 'holdToPlay', 'baseHz', 'mode'],
   },
   scalePreview: {
     term: 'Scale preview',
@@ -181,7 +176,7 @@ const entries = {
   mode: {
     term: 'Mode',
     text: "Which selected note is the scale's root. Moving it rotates the same notes into a new scale. Modes are numbered from 1: mode 1 starts on the first (lowest) selected note, mode 2 on the next, and so on. Example: the white notes starting on C (mode 1) are major; mode 2 starts on D (dorian) and mode 6 on A (natural minor).",
-    see: ['modeRoot', 'modeAtBase', 'keysSummary'],
+    see: ['modeRoot', 'modePlayback', 'keysSummary'],
   },
   modeRoot: {
     term: 'Mode root (chevron)',
@@ -609,7 +604,7 @@ const entries = {
   soundMenu: {
     term: 'Sound settings',
     text: 'Wave shape, the pitch of 1/1 in hertz, volume and where a mode root lands. Example: set 1/1 to 261.63 Hz for middle C and pick Sine to hear beating most clearly.',
-    see: ['wave', 'baseHz', 'volume', 'modeAtBase'],
+    see: ['wave', 'baseHz', 'volume', 'modePlayback'],
   },
   stepBars: {
     term: 'Step-size bars',

@@ -47,6 +47,12 @@ describe('settings', () => {
     expect(sanitizeSettings({ scalePreview: 'updown' }).modePlayback).toBe('parallel');
     expect(sanitizeSettings({ modePlayback: 'sideways' }).modePlayback).toBe('parallel');
     expect(sanitizeSettings({ modePlayback: 'relative' }).modePlayback).toBe('relative');
+    // the old separate 'Mode root at 1/1 Hz' switch: off carries over as Relative, on as Parallel; an explicit value wins
+    expect(sanitizeSettings({ modeAtBase: false }).modePlayback).toBe('relative');
+    expect(sanitizeSettings({ modeAtBase: true }).modePlayback).toBe('parallel');
+    expect(sanitizeSettings({ modeAtBase: false, modePlayback: 'parallel' }).modePlayback).toBe(
+      'parallel'
+    );
     window.localStorage.setItem(KEY_SETTINGS, JSON.stringify({ modePlayback: 'relative' }));
     expect(loadSettings().modePlayback).toBe('relative');
   });

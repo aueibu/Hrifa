@@ -88,7 +88,8 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
     const pitch = (): PitchBase => ({
       baseHz: latest.current.ui.baseHz,
       rootC: latest.current.base.rootC,
-      modeAtBase: latest.current.ui.modeAtBase,
+      // one switch for everything (human, 2026-11-14): Parallel starts the mode root on the 1/1 Hz pitch, Relative on its own pitch
+      modeAtBase: latest.current.ui.modePlayback !== 'relative',
     });
     const getEngine = (): VoiceEngine | null => {
       if (!latest.current.enabled) {
