@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M6
-- State: M6 + follow-ups built and gated; awaiting human checkpoint
+- Current milestone: M7
+- State: not started (M6 approved 2026-11-14)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -33,6 +33,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | M6 hold 1 | Hover + hold 1 plays anything playable: notes in every view (via `setHover`), chord and CPS chips, key rings and saved subsets (stepped scales); 2/3 there do nothing and never reach note keys; sweeping while holding switches the target (empty space keeps the last sound); simultaneous voices at `chordAmp(n)`; `holdToPlay` glossary entry. 1 builder attempt. | `check:hfl` GREEN, 723 | For the human (ears): restart when sweeping between stepped targets; held chord level vs a single note. Note: key-ring hold starts on the ring's root, Ctrl+click starts on the lowest note (click path unchanged). |
 | M6 playback | Parallel / Relative mode playback (top-bar switch + key 5, `ui.modePlayback` in settings.v1, default Parallel; Relative transposes mode previews to the mode's own root); "both" pairs at 0.5 each and exact degrees as one full-level voice (fixes the double-loud zero-error pairs). 1 builder attempt. | `check:hfl` GREEN, 729 | With "Mode root at 1/1 Hz" off, Parallel and Relative sound the same (both already start on the root's pitch). |
 | M6 one switch | Parallel / Relative drives everything (previews, Play scale/chord, computer keys); "Mode root at 1/1 Hz" removed, stored off migrates to Relative (orchestrator). Key 5 and hold 3 "not working" was a stale dev-server module (the watcher missed the builder's later saves); touching the files refreshed it, verified in headless Edge (5 toggles, hold 3 starts 2 oscillators). | `check:hfl` GREEN, 729 | |
+| M6 checkpoint | Approved by the human 2026-11-14 ("im really happy thank you"). | `check:hfl` GREEN, 729 | |
 
 ## C0 scan (2026-11-12)
 - **Other arcs:** `workbench` has no active arc (clips and desk arcs archived); `structure` is done. No other active arc owns or locks anything. `arcs/LOCKS.md` was empty.
@@ -87,7 +88,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M6 human checkpoint (live in the dev server, including the follow-ups). Then: the shared test-speed + workflow-rules job (see "Agreed workflow change"), then M7.
+The shared test-speed + workflow-rules job (see "Agreed workflow change"; locks on vite.config.mjs, vitest.setup.mjs, package.json, shell CLAUDE.md, .claude/agents/builder.md + reviewer.md; DECISIONS row; run check:workbench too). Then M7 (open question before M7: manual pivot by degree or by held key).
 
 ## Agreed workflow change (human, 2026-11-13; not yet applied)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
