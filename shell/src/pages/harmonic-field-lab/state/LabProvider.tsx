@@ -176,7 +176,22 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
 
   const audio = useLabAudio({ enabled: !frozen, base, ui: state.ui, chord, dispatch });
 
-  const setHover = useCallback((i: number | null) => dispatch({ type: 'hover', i }), []);
+  // every view that points at a note calls setHover, so it also sets the hold-1 note target
+  const lastHover = useRef<number | null>(null);
+  const setHover = useCallback(
+    (i: number | null) => {
+      if (i === null) {
+        if (lastHover.current !== null) {
+          audio.clearPreviewTarget({ kind: 'note', i: lastHover.current });
+        }
+      } else {
+        audio.setPreviewTarget({ kind: 'note', i });
+      }
+      lastHover.current = i;
+      dispatch({ type: 'hover', i });
+    },
+    [audio]
+  );
   const setPin = useCallback((i: number | null) => dispatch({ type: 'pin', i }), []);
   const clickNote = useCallback(
     (i: number) =>

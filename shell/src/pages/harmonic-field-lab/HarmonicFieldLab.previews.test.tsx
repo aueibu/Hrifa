@@ -225,20 +225,33 @@ describe('hold 1 / 2 / 3 previews', () => {
     expect(oscs()).toHaveLength(0);
   });
 
-  it('moving the pointer away keeps a held note sounding; the next press uses the new target', () => {
+  it('while held, pointing at another tile moves the sound there; pointing at nothing keeps it until keyup', () => {
     render(<HarmonicFieldLabPage />);
     openModes();
     const a = tileOf(0, 1);
     const b = tileOf(0, 3);
     fireEvent.mouseEnter(a);
     down('1');
-    fireEvent.mouseLeave(a);
-    fireEvent.mouseEnter(b);
+    const first = oscs()[0].frequency.events[0].v!;
     expect(running()).toHaveLength(1);
-    const first = oscs()[0].frequency.events[0].v;
+    // onto empty space: the last sound stays
+    fireEvent.mouseLeave(a);
+    expect(running()).toHaveLength(1);
+    // onto tile B: A stops, B sounds
+    fireEvent.mouseEnter(b);
+    expect(oscs()).toHaveLength(2);
+    expect(oscs()[0].stopAt).not.toBeNull();
+    expect(running()).toHaveLength(1);
+    expect(running()[0].frequency.events[0].v).not.toBeCloseTo(first, 3);
+    // off again: B keeps sounding
+    fireEvent.mouseLeave(b);
+    expect(running()).toHaveLength(1);
+    expect(oscs()).toHaveLength(2);
     up('1');
+    expect(running()).toHaveLength(0);
+    // the next press uses the target pointed at then
     down('1');
-    expect(oscs()[1].frequency.events[0].v).not.toBeCloseTo(first!, 3);
+    expect(oscs()).toHaveLength(2);
     up('1');
   });
 

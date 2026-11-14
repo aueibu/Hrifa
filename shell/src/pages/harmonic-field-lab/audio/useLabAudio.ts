@@ -37,6 +37,8 @@ interface HeldNote {
 }
 /** A running hold-1/2/3 preview: its notes and the timers that step through a whole mode. */
 interface HeldPreview {
+  /** The digit that started it, to restart on another target. */
+  digit: string;
   notes: HeldNote[];
   timers: number[];
 }
@@ -65,6 +67,8 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
   const target = useRef<PreviewTarget | null>(null);
   /** Running hold previews by physical key (see `keyId`). */
   const previews = useRef(new Map<string, HeldPreview>());
+  /** Digit keys currently down (by physical key), whether or not they sound anything on the current target. */
+  const heldDigits = useRef(new Map<string, string>());
   const applied = useRef({ volume: NaN, wave: '' });
   const latest = useRef({ base, ui, chord, enabled });
   useEffect(() => {
@@ -141,6 +145,7 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       slotSrc.current.clear();
       held.current.clear();
       previews.current.clear();
+      heldDigits.current.clear();
       const had = lights.current.lit().length > 0 || markLights.current.lit().length > 0;
       lights.current.clear();
       markLights.current.clear();
@@ -171,13 +176,13 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
      * Hold a preview: every note of the plan is a held voice that starts at its delay. A single note (delay 0) sounds
      * until `endHeld`; a whole mode also ends each step on its own timer, so the steps play in order and it stops at the end.
      */
-    const startHeld = (id: string, plan: Planned[], stepped: boolean) => {
+    const startHeld = (id: string, plan: Planned[], stepped: boolean, digit: string) => {
       const eng = getEngine();
       if (!eng || plan.length === 0) {
         return;
       }
       endHeld(id);
-      const p: HeldPreview = { notes: [], timers: [] };
+      const p: HeldPreview = { digit, notes: [], timers: [] };
       previews.current.set(id, p);
       const after = (fn: () => void, ms: number) => {
         const t = window.setTimeout(() => {
@@ -218,10 +223,76 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
         }
       });
     };
+    const playTarget = (id: string, digit: string, t: PreviewTarget): boolean => {
+      const kind = HOLD_DIGITS[digit];
+      if (!kind) {
+        return false;
+      }
+      endHeld(id);
+      const { base: b, ui: u } = latest.current;
+      if (t.kind === 'note' || t.kind === 'chord' || t.kind === 'scale') {
+        // these play on 1 only; 2 and 3 are swallowed (they are not note keys)
+        if (kind !== 'listed') {
+          return true;
+        }
+        if (t.kind === 'note') {
+          const f = b.field[t.i];
+          if (f) {
+            startHeld(
+              id,
+              [{ hz: absHz(pitch(), f.c), src: t.i, delay: 0, dur: 0.6, amp: 1 }],
+              false,
+              digit
+            );
+          }
+        } else if (t.kind === 'chord') {
+          startHeld(id, chordPlan(b.field, t.idx, pitch()), false, digit);
+        } else {
+          startHeld(
+            id,
+            fieldScalePlan(b.field, t.idx, b.repC, pitch(), u.scalePreview),
+            true,
+            digit
+          );
+        }
+        return true;
+      }
+      const plan =
+        t.kind === 'strip'
+          ? stripPreviewPlan(b.field, t.i, t.dev, pitch(), kind)
+          : modePreviewPlan(
+              b.field,
+              b.idx,
+              t.mode,
+              b.rep,
+              b.repC,
+              pitch(),
+              kind,
+              u.scalePreview,
+              t.kind === 'tile' ? t.degree : undefined
+            );
+      startHeld(id, plan, t.kind === 'mode', digit);
+      return true;
+    };
     return {
       enabled,
       setPreviewTarget: (t) => {
+        const cur = target.current;
+        // a note under a strip mark of the same note is the same pointer position: keep the strip target
+        if (t && t.kind === 'note' && cur && cur.kind === 'strip' && cur.i === t.i) {
+          return;
+        }
+        if (t && cur && previewTargetKey(t) === previewTargetKey(cur)) {
+          target.current = t;
+          return;
+        }
         target.current = t;
+        // while a digit is held, pointing at another target moves the sound there
+        if (t) {
+          for (const [id, digit] of heldDigits.current) {
+            playTarget(id, digit, t);
+          }
+        }
       },
       clearPreviewTarget: (t) => {
         if (target.current && previewTargetKey(target.current) === previewTargetKey(t)) {
@@ -229,30 +300,17 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
         }
       },
       holdPreview: (id, digit) => {
-        const kind = HOLD_DIGITS[digit];
         const t = target.current;
-        if (!kind || !t) {
+        if (!t || !HOLD_DIGITS[digit]) {
           return false;
         }
-        const { base: b, ui: u } = latest.current;
-        const plan =
-          t.kind === 'strip'
-            ? stripPreviewPlan(b.field, t.i, t.dev, pitch(), kind)
-            : modePreviewPlan(
-                b.field,
-                b.idx,
-                t.mode,
-                b.rep,
-                b.repC,
-                pitch(),
-                kind,
-                u.scalePreview,
-                t.kind === 'tile' ? t.degree : undefined
-              );
-        startHeld(id, plan, t.kind === 'mode');
-        return true;
+        heldDigits.current.set(id, digit);
+        return playTarget(id, digit, t);
       },
-      releasePreview: endHeld,
+      releasePreview: (id) => {
+        heldDigits.current.delete(id);
+        endHeld(id);
+      },
       press: (slot) => {
         const { base: b } = latest.current;
         const eng = getEngine();

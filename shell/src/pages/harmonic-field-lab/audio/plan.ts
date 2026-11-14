@@ -139,11 +139,31 @@ export type PreviewKind = 'listed' | 'pure' | 'both';
 export type PreviewTarget =
   | { kind: 'mode'; mode: number }
   | { kind: 'tile'; mode: number; degree: number }
-  | { kind: 'strip'; i: number; dev: number };
+  | { kind: 'strip'; i: number; dev: number }
+  /** Anywhere a single field note is drawn (a ring dot, a lattice point, a table row): hold 1 sounds it. */
+  | { kind: 'note'; i: number }
+  /** A chord chip: hold 1 sounds its field notes together. */
+  | { kind: 'chord'; idx: readonly number[] }
+  /** A key ring or a saved subset: its field notes in degree order (root first); hold 1 steps through them as a scale. */
+  | { kind: 'scale'; idx: readonly number[] };
 
 /** Stable identity of a target, so a pointer leaving one target does not clear a newer one. */
-export const previewTargetKey = (t: PreviewTarget): string =>
-  t.kind === 'mode' ? `m${t.mode}` : t.kind === 'tile' ? `t${t.mode}.${t.degree}` : `s${t.i}`;
+export const previewTargetKey = (t: PreviewTarget): string => {
+  switch (t.kind) {
+    case 'mode':
+      return `m${t.mode}`;
+    case 'tile':
+      return `t${t.mode}.${t.degree}`;
+    case 'strip':
+      return `s${t.i}`;
+    case 'note':
+      return `n${t.i}`;
+    case 'chord':
+      return `c${t.idx.join(',')}`;
+    case 'scale':
+      return `k${t.idx.join(',')}`;
+  }
+};
 
 /** The held digit keys: 1 = listed, 2 = pure / target, 3 = both. */
 export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {

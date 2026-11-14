@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { Button } from '@mantine/core';
+import type { PreviewTarget } from '../audio/plan';
 import { MAX_KEYS_NOTES, type KeyRingData } from '../state/derive';
 import {
   addTo,
@@ -201,6 +202,12 @@ function KeyRing({
     return { x: C + r * Math.cos(a), y: C + r * Math.sin(a) };
   };
   const x = commonTones(subset, k.idx);
+  // the key's own notes from its root up, for hold 1
+  const keyIdx = switchTo(k.idx, k.rootIdx);
+  const scaleTarget: PreviewTarget = {
+    kind: 'scale',
+    idx: [...keyIdx.idx.slice(keyIdx.mode), ...keyIdx.idx.slice(0, keyIdx.mode)],
+  };
   const label = k.complete
     ? `Key on ${k.root}: the whole scale fits`
     : `Key on ${k.root}: ${k.missing} scale note${k.missing === 1 ? '' : 's'} missing from the field`;
@@ -213,11 +220,23 @@ function KeyRing({
         data-viewed={viewed}
         data-current={current}
         aria-label={`${label}; ${x} of ${subset.length} notes in common with the subset`}
-        title={`${label}. ${x} of the subset's ${subset.length} notes are common to this key. Click: switch to this key. Shift+click: add its notes to the subset. Ctrl-click (Cmd on a Mac): hear it as a scale.`}
-        onMouseEnter={() => onHover(k.rootIdx)}
-        onMouseLeave={() => onHover(null)}
-        onFocus={() => onHover(k.rootIdx)}
-        onBlur={() => onHover(null)}
+        title={`${label}. ${x} of the subset's ${subset.length} notes are common to this key. Click: switch to this key. Shift+click: add its notes to the subset. Ctrl-click (Cmd on a Mac): hear it as a scale. Point and hold 1 to hear it as a scale for as long as you hold the key.`}
+        onMouseEnter={() => {
+          onHover(k.rootIdx);
+          lab.audio.setPreviewTarget(scaleTarget);
+        }}
+        onMouseLeave={() => {
+          onHover(null);
+          lab.audio.clearPreviewTarget(scaleTarget);
+        }}
+        onFocus={() => {
+          onHover(k.rootIdx);
+          lab.audio.setPreviewTarget(scaleTarget);
+        }}
+        onBlur={() => {
+          onHover(null);
+          lab.audio.clearPreviewTarget(scaleTarget);
+        }}
         onClick={(e) => onAct(k, e)}
       >
         <svg viewBox={`0 0 ${S} ${S}`} className={classes.keySvg} role="img" aria-label={label}>

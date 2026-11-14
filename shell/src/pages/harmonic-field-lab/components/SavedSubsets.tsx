@@ -6,6 +6,7 @@
 import { useMemo, useState } from 'react';
 import { ActionIcon, Button, Checkbox, Popover, TextInput } from '@mantine/core';
 import { analyzeSubset, rotateSubset, toScl } from '../../../lib/harmonic-field';
+import type { PreviewTarget } from '../audio/plan';
 import { autoName, genKey } from '../state/generate';
 import { matchCents, tabName, type Saved } from '../state/labState';
 import { CloseIcon, DownloadIcon, SaveIcon } from './icons';
@@ -15,6 +16,12 @@ import { Num, Strip, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
 /** Hand a text to the browser as a file download. Never throws (a test or locked-down browser may lack the API). */
+/** A saved subset's notes as a scale: in degree order from its own mode root (the same repair the loader applies to a stored mode). */
+function scaleOf(idx: readonly number[], mode: number): PreviewTarget {
+  const m = Number.isInteger(mode) && mode >= 0 && mode < idx.length ? mode : 0;
+  return { kind: 'scale', idx: [...idx.slice(m), ...idx.slice(0, m)] };
+}
+
 function download(name: string, text: string) {
   try {
     const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
@@ -86,7 +93,7 @@ function RenameButton({ saved }: { saved: Saved }) {
 }
 
 export function SavedSubsets() {
-  const { state, tab, base, strip, dispatch, setPreview, storeFailed } = useLab();
+  const { state, tab, base, strip, dispatch, setPreview, storeFailed, audio } = useLab();
   const { field, rep } = base;
   const [name, setName] = useState('');
   const [saveOpen, setSaveOpen] = useState(false);
@@ -225,10 +232,30 @@ export function SavedSubsets() {
                   className={classes.savedRow}
                   aria-pressed={loaded}
                   aria-label={`${s.name}: ${s.selCents.length} notes${same ? '' : ', another collection'}. Click to load.`}
-                  onMouseEnter={() => idx && setPreview(idx)}
-                  onMouseLeave={() => setPreview(null)}
-                  onFocus={() => idx && setPreview(idx)}
-                  onBlur={() => setPreview(null)}
+                  onMouseEnter={() => {
+                    if (idx) {
+                      setPreview(idx);
+                      audio.setPreviewTarget(scaleOf(idx, s.mode));
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setPreview(null);
+                    if (idx) {
+                      audio.clearPreviewTarget(scaleOf(idx, s.mode));
+                    }
+                  }}
+                  onFocus={() => {
+                    if (idx) {
+                      setPreview(idx);
+                      audio.setPreviewTarget(scaleOf(idx, s.mode));
+                    }
+                  }}
+                  onBlur={() => {
+                    setPreview(null);
+                    if (idx) {
+                      audio.clearPreviewTarget(scaleOf(idx, s.mode));
+                    }
+                  }}
                   onClick={() => dispatch({ type: 'saved/load', id: s.id })}
                 >
                   <span className={classes.savedName}>

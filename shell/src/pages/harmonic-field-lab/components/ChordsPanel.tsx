@@ -24,7 +24,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
   const label = chip.found
-    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root.`
+    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key.`
     : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   return (
     <Tooltip label={label} multiline w={260} openDelay={250}>
@@ -35,10 +35,26 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
         aria-label={label}
         data-picked={picked}
         aria-pressed={chip.found ? picked : undefined}
-        onMouseEnter={() => lab.setChord(new Set(chip.memberIdx))}
-        onMouseLeave={() => lab.setChord(null)}
-        onFocus={() => lab.setChord(new Set(chip.memberIdx))}
-        onBlur={() => lab.setChord(null)}
+        onMouseEnter={() => {
+          lab.setChord(new Set(chip.memberIdx));
+          if (chip.found) {
+            lab.audio.setPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
+          }
+        }}
+        onMouseLeave={() => {
+          lab.setChord(null);
+          lab.audio.clearPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
+        }}
+        onFocus={() => {
+          lab.setChord(new Set(chip.memberIdx));
+          if (chip.found) {
+            lab.audio.setPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
+          }
+        }}
+        onBlur={() => {
+          lab.setChord(null);
+          lab.audio.clearPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
+        }}
         onClick={(e) => {
           if (!chip.found) {
             onRaise(need);
@@ -97,7 +113,7 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
     idx.every((i) => lab.chordPicked?.has(i));
   const common = g.common.map((x) => labels[x] ?? x).join('·');
   const name = cpsName(g, labels);
-  const label = `${g.type === 'harmonic' ? 'Otonal' : 'Utonal'} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset.`;
+  const label = `${g.type === 'harmonic' ? 'Otonal' : 'Utonal'} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key.`;
   return (
     <Tooltip label={label} multiline w={260} openDelay={250}>
       <button
@@ -108,10 +124,22 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
         aria-label={label}
         data-picked={picked}
         aria-pressed={picked}
-        onMouseEnter={() => lab.setChord(new Set(idx))}
-        onMouseLeave={() => lab.setChord(null)}
-        onFocus={() => lab.setChord(new Set(idx))}
-        onBlur={() => lab.setChord(null)}
+        onMouseEnter={() => {
+          lab.setChord(new Set(idx));
+          lab.audio.setPreviewTarget({ kind: 'chord', idx });
+        }}
+        onMouseLeave={() => {
+          lab.setChord(null);
+          lab.audio.clearPreviewTarget({ kind: 'chord', idx });
+        }}
+        onFocus={() => {
+          lab.setChord(new Set(idx));
+          lab.audio.setPreviewTarget({ kind: 'chord', idx });
+        }}
+        onBlur={() => {
+          lab.setChord(null);
+          lab.audio.clearPreviewTarget({ kind: 'chord', idx });
+        }}
         onClick={(e) => {
           if (e.shiftKey) {
             lab.pickChord(null);
