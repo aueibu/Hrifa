@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, type Dispatch } from 'react';
 import type { LabAudio } from '../state/context';
 import type { Base } from '../state/derive';
 import type { Action, UiSettings } from '../state/labState';
+import { heldHz, litIndex, retunerLive, type RetState } from '../state/retuner';
 import { VoiceEngine } from './engine';
 import { isTyping, keyId, slotOfEvent } from './keymap';
 import {
@@ -49,13 +50,15 @@ interface Args {
   ui: UiSettings;
   /** The highlighted chord (field indices); empty when none. */
   chord: ReadonlySet<number>;
+  /** The retuner: while it is live the keys are its held notes and its voices glide (see `syncRetuner`). */
+  retuner: RetState;
   dispatch: Dispatch<Action>;
 }
 
 /** Delay (s) before a scheduled plan starts, so the first note is not clipped. */
 const LEAD = 0.05;
 
-export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAudio {
+export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Args): LabAudio {
   const engine = useRef<VoiceEngine | null>(null);
   const lights = useRef(new LightCounter());
   const markLights = useRef(new LightCounter());
@@ -70,9 +73,11 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
   /** Digit keys currently down (by physical key), whether or not they sound anything on the current target. */
   const heldDigits = useRef(new Map<string, string>());
   const applied = useRef({ volume: NaN, wave: '' });
-  const latest = useRef({ base, ui, chord, enabled });
+  /** The retuner's voices by slot: the pitch each sounds at and the field note it lights (-1 = none). */
+  const rtVoices = useRef(new Map<number, { hz: number; src: number }>());
+  const latest = useRef({ base, ui, chord, enabled, retuner });
   useEffect(() => {
-    latest.current = { base, ui, chord, enabled };
+    latest.current = { base, ui, chord, enabled, retuner };
     // only on a change: setVolume schedules a ramp on the master gain
     if (engine.current && applied.current.volume !== ui.volume) {
       engine.current.setVolume(ui.volume);
@@ -84,7 +89,7 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
     }
   });
 
-  const api = useMemo<LabAudio>(() => {
+  const api = useMemo<LabAudio & { syncRetuner: () => void }>(() => {
     const pitch = (): PitchBase => ({
       baseHz: latest.current.ui.baseHz,
       rootC: latest.current.base.rootC,
@@ -147,6 +152,13 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       held.current.clear();
       previews.current.clear();
       heldDigits.current.clear();
+      rtVoices.current.clear();
+      // the retuner's keys are released too (its voices are already faded by the panic above)
+      if (latest.current.retuner.held.length) {
+        dispatch({ type: 'ret/release' });
+        // the sync effect of this same flush must not restart them from the stale held set
+        latest.current.retuner = { ...latest.current.retuner, held: [] };
+      }
       const had = lights.current.lit().length > 0 || markLights.current.lit().length > 0;
       lights.current.clear();
       markLights.current.clear();
@@ -276,8 +288,57 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       startHeld(id, plan, t.kind === 'mode', digit);
       return true;
     };
+    /**
+     * Make the voices match the retuner's held keys: a new key starts a voice at the active card's pitch, a key that went
+     * up stops its voice, and a voice whose pitch moved (a retune) glides there over the glide setting. What sounds lights
+     * the tab's field note it coincides with (see `litIndex`), if any; the retuned pitch need not be a field note.
+     */
+    const syncRetuner = () => {
+      const { retuner: r, ui: u, base: b } = latest.current;
+      const want = new Map<number, number>();
+      if (retunerLive(r)) {
+        for (const h of r.held) {
+          const hz = heldHz(r, h, u.baseHz);
+          if (hz !== null) {
+            want.set(h.key, hz);
+          }
+        }
+      }
+      for (const [slot, v] of [...rtVoices.current]) {
+        if (!want.has(slot)) {
+          engine.current?.stop(`rt${slot}`);
+          rtVoices.current.delete(slot);
+          light(v.src, false);
+        }
+      }
+      for (const [slot, hz] of want) {
+        const cur = rtVoices.current.get(slot);
+        const src = litIndex(
+          b.field.map((n) => n.c),
+          b.repC,
+          // as the tab's own keys do (relHz): Parallel puts the tab's mode root on 1/1 Hz, so a pitch p above 1/1 is the
+          // field note at p + rootC; Relative keeps absolute pitch
+          1200 * Math.log2(hz / u.baseHz) + (u.modePlayback === 'relative' ? 0 : b.rootC)
+        );
+        if (!cur) {
+          const eng = getEngine();
+          if (eng?.start(`rt${slot}`, hz)) {
+            rtVoices.current.set(slot, { hz, src });
+            light(src, true);
+          }
+        } else if (Math.abs(cur.hz - hz) > 1e-9) {
+          engine.current?.glideTo(`rt${slot}`, hz, r.settings.glideMs);
+          if (cur.src !== src) {
+            light(cur.src, false);
+            light(src, true);
+          }
+          rtVoices.current.set(slot, { hz, src });
+        }
+      }
+    };
     return {
       enabled,
+      syncRetuner,
       setPreviewTarget: (t) => {
         const cur = target.current;
         // a note under a strip mark of the same note is the same pointer position: keep the strip target
@@ -314,6 +375,11 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
         endHeld(id);
       },
       press: (slot) => {
+        if (retunerLive(latest.current.retuner)) {
+          // the retuner owns the keys: the key goes into its held set, the effect below sounds it
+          dispatch({ type: 'ret/down', slot, t: performance.now() });
+          return;
+        }
         const { base: b } = latest.current;
         const eng = getEngine();
         const p = slotPitch(slot, b.rel, b.repC, pitch());
@@ -326,6 +392,8 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
         }
       },
       release: (slot) => {
+        // always sent: the reducer ignores a slot that is not held
+        dispatch({ type: 'ret/up', slot });
         const src = slotSrc.current.get(slot);
         if (src === undefined) {
           return;
@@ -387,12 +455,31 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       lights.current.lit().length ||
       markLights.current.lit().length ||
       slotSrc.current.size ||
+      rtVoices.current.size ||
       previews.current.size ||
       timers.current.size
     ) {
       api.stopAll();
     }
   }, [base.field, api]);
+
+  // the retuner's voices follow its held keys, roots and glide, and what the pitches and lights are computed from (the
+  // field, the 1/1 Hz setting). A field change panics first (above), which empties the held set this effect reads.
+  useEffect(() => {
+    api.syncRetuner();
+  }, [
+    api,
+    retuner.held,
+    retuner.active,
+    retuner.bases,
+    retuner.on,
+    retuner.cards,
+    base.field,
+    base.rel,
+    base.rootC,
+    ui.baseHz,
+    ui.modePlayback,
+  ]);
 
   // keyboard, and the safety nets: blur, hidden tab, unmount
   useEffect(() => {

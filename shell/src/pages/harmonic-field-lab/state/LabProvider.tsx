@@ -29,16 +29,20 @@ import { setView, viewOf, type VizId, type VizView } from './layout';
 import {
   loadLayout,
   loadSettings,
+  loadRetuner,
   loadSubsets,
   loadTemplates,
   loadTabs,
   KEY_SUBSETS,
   saveLayout,
+  saveRetuner,
   saveSettings,
   saveSubsets,
   saveTemplates,
   saveTabs,
 } from './persist';
+import { initialRetuner, storedCards, type DormantCard, type RetCard } from './retuner';
+import { cardFromSnapshot } from './retunerCards';
 import type { VizSettings } from './vizState';
 
 /** The state from storage; every part falls back to its default (see persist.ts), nothing throws. */
@@ -69,8 +73,21 @@ export function restoreState(): LabState {
     active = stored.active;
     nextTab = Math.max(...tabs.map((t) => Number(t.id.slice(1)))) + 1;
   }
+  const storedRet = loadRetuner();
+  // a card whose snapshot no longer builds or selects nothing cannot play: kept dormant, so a save never drops it
+  const retCards: RetCard[] = [];
+  const dormant: DormantCard[] = [];
+  storedRet.cards.forEach((c, at) => {
+    const card = cardFromSnapshot(c.name, c.snap);
+    if (card) {
+      retCards.push(card);
+    } else {
+      dormant.push({ at, spec: c });
+    }
+  });
   const saved = loadSubsets();
   const nextSaved = saved.length ? Math.max(...saved.map((s) => Number(s.id.slice(1)))) + 1 : 1;
+  const ui = loadSettings();
   return {
     ...base,
     tabs,
@@ -78,9 +95,10 @@ export function restoreState(): LabState {
     nextTab,
     saved,
     nextSaved,
-    ui: loadSettings(),
+    ui,
     layout: loadLayout(),
     templates: loadTemplates(),
+    retuner: initialRetuner(retCards, storedRet.settings, dormant, ui.modePlayback === 'relative'),
   };
 }
 
@@ -144,6 +162,17 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       wrote('templates', saveTemplates(state.templates));
     }
   }, [store, state.templates]);
+  // the cards and settings only: the run (active card, roots, held keys) is never stored
+  useEffect(() => {
+    if (
+      store &&
+      (state.retuner.cards !== restored.current.retuner.cards ||
+        state.retuner.dormant !== restored.current.retuner.dormant ||
+        state.retuner.settings !== restored.current.retuner.settings)
+    ) {
+      wrote('retuner', saveRetuner(storedCards(state.retuner), state.retuner.settings));
+    }
+  }, [store, state.retuner]); // the identity checks above decide whether anything is written
   useEffect(() => {
     if (store && state.saved !== restored.current.saved) {
       wrote('subsets', saveSubsets(state.saved));
@@ -174,7 +203,14 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     [state.preview, base.selected]
   );
 
-  const audio = useLabAudio({ enabled: !frozen, base, ui: state.ui, chord, dispatch });
+  const audio = useLabAudio({
+    enabled: !frozen,
+    base,
+    ui: state.ui,
+    chord,
+    retuner: state.retuner,
+    dispatch,
+  });
 
   // every view that points at a note calls setHover, so it also sets the hold-1 note target
   const lastHover = useRef<number | null>(null);

@@ -1,6 +1,6 @@
 # Harmonic Field Lab
 
-Status: M6 done (live analysis panels and parity). The approved one-screen layout runs on one lab state; the generator, selection, tabs, saved subsets, stats, strip, field table and the Chords (with the editable template list), Spectrum, Keys & Modes and visualizer panels are live. The Retuner panel is still the static placeholder (M7). Arc: `arcs/harmonic-field-lab`. Route `/harmonic-field-lab` (the frozen layout mock route was retired in M6).
+Status: M7 built (card list + live retuner panel), awaiting the human's audio check. The approved one-screen layout runs on one lab state; the generator, selection, tabs, saved subsets, stats, strip, field table and the Chords (with the editable template list), Spectrum, Keys & Modes, visualizer and Retuner panels are live. Arc: `arcs/harmonic-field-lab`. Route `/harmonic-field-lab` (the frozen layout mock route was retired in M6).
 
 The lab is a standalone Hrifa page (decided 2026-11-12): its own route, tabs and settings, permanently. A later
 Composition Workbench integration reuses the core (`src/lib/harmonic-field/`) and the lab's section components; it does
@@ -21,9 +21,10 @@ reference only.
 | `state/persist.ts` | Storage keys, `sanitize*`, `load*`, `save*`, the snapshot shape. |
 | `state/layout.ts`, `state/vizState.ts` | Pinned-column arrangement rules and its entry-wise sanitising; visualizer settings and their defaults. No React. |
 | `audio/engine.ts` | `VoiceEngine`: Web Audio voices (see "Audio engine"). `audio/plan.ts` (what to play, as data), `audio/keymap.ts` (computer keys), `audio/useLabAudio.ts` (hook), `audio/fakeContext.ts` (test double). |
-| `components/` | The section components (`Rail`, `Panels`, `GeneratorColumn`, `RingStats`, `TunerStrip`, `SavedSubsets`, `FieldPanel`, `ChordsPanel`, `SpectrumPanel`, `KeysModesPanel`, `Visualizer` with `LatticePanel` / `Lattice3D` / `EdoFitView` / `DissonanceView` / `IsoView`, `RetunerPanel` (placeholder), `KeyboardDock`, `TopBar`, `GlossaryDrawer`) and `lab.module.css` / `panels.module.css`. They read the lab through `useLab()` only. |
+| `components/` | The section components (`Rail`, `Panels`, `GeneratorColumn`, `RingStats`, `TunerStrip`, `SavedSubsets`, `FieldPanel`, `ChordsPanel`, `SpectrumPanel`, `KeysModesPanel`, `Visualizer` with `LatticePanel` / `Lattice3D` / `EdoFitView` / `DissonanceView` / `IsoView`, `RetunerPanel` (live, M7), `KeyboardDock`, `TopBar`, `GlossaryDrawer`) and `lab.module.css` / `panels.module.css`. They read the lab through `useLab()` only. |
 | `texts.ts` | The glossary's single source: every tooltip and glossary entry (`TIPS`, `GLOSSARY`, `tipKeys`). |
-| `components/mockRetuner.ts` | The placeholder retuner data used by the static Retuner panel and the rail count. Delete it when M7 replaces the panel. (The `mock/` folder and its route `/harmonic-field-lab/mock` were removed in M6.) |
+| `state/retuner.ts` | The retuner slice of the lab state (M7): `RetState`, `RetAction`, `retunerReduce`, `runStep` (calls the lib `retuneStep`), `heldHz`, `makeScorer`, settings defaults and clamping. Pure, no React, no storage. `state/retunerCards.ts`: `cardFromTab`, `cardFromSnapshot` (the notes the engine needs are derived from a tab or a stored snapshot). |
+| (removed in M7) | `components/mockRetuner.ts` (the placeholder data) is gone; the rail count and the panel read `state.retuner`. |
 | `src/lib/harmonic-field/` | The pure TS core. Owned by the same arc; no React, no DOM. |
 
 ## Contracts
@@ -63,6 +64,8 @@ LabState {
   sounding: Set<number>;                               // field indices that sound now (every view lights them)
   ui: UiSettings;                                      // panel, dock, tolerance, ring, visualizers, sound
   layout: Layout;                                      // pinned columns
+  templates: ChordTemplate[];                          // chord finder templates
+  retuner: RetState;                                   // cards, settings, the run (state/retuner.ts)
 }
 Tab { id, name | null, gen: GenSpec, field: Note[], rep: Note, err, sel: number[], mode,
       lastMethod, cmp: {ref, odd, m}, pick: {scale, kind, stretch, m, ref, msg, ok} }
@@ -108,7 +111,7 @@ page's keys (W-10):
 | `hrifa.harmonic-field-lab.tabs.v1` | `{ active, list: [{ id, name, snap }] }`. |
 | `hrifa.harmonic-field-lab.subsets.v1` | `[{ id, name, ...snap }]`. |
 | `hrifa.harmonic-field-lab.chordfinder.v1` | `{ templates: [{ text, name?, family? }] }`: the chord finder's templates (the editor behind Edit templates). Absent, unreadable or all-bad gives `DEFAULT_TEMPLATES`; a stored empty list stays empty; bad entries are dropped one by one, text cut to 80 characters, at most 64. |
-| `...retuner.v1` | Reserved for M7 (not written yet). |
+| `hrifa.harmonic-field-lab.retuner.v1` | `{ cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts: { harmonics, rolloff, oddLimit }, glideMs } }`. A card `snap` is the tab snapshot (below), cleaned to the plain stored shape. Cards and settings only: on/off, the active card, the card roots, the held keys and the history are never stored. Entry by entry: a card with no usable snapshot is dropped, settings fall back field by field, at most 24 cards; at restore a card whose inputs no longer build or select nothing is kept as a dormant spec (`RetState.dormant`, not shown, not playable) and written back at its stored position by every save, so a save never loses a stored card. Nothing is written on mount. |
 
 - A `snap` is the prototype's flat snapshot shape (`gen` as `harmonic | subharmonic | edo | additive | cps | custom`, `rep`, `h`,
   `edoN`, `axes`, `shape`, `dist`, `bidir`, `cpsF`, `cpsK`, `custom`, `mask`, `selCents`, `mode`, `preset` ...) plus optional extras
@@ -158,6 +161,38 @@ engine.dispose()
   unmount all call `stopAll` (a field change only when something sounds). Keys are matched by `event.code` (the physical
   key) and released by it, so Shift cannot leave a note stuck. A panic fades a voice that is already releasing from its decayed
   level, and `glideTo` anchors at the pitch an interrupted glide has reached. Typing in an input, textarea, select or contentEditable never plays. Alt+1 to Alt+9 switch tabs.
+
+### Retuner (M7)
+
+Engine: `src/lib/harmonic-field/retuner.ts` and the scorers (unchanged, `vectors.json` is the contract). The lab only feeds it.
+
+- A **card** is a whole tab snapshot (`snap`: generation inputs, subset, mode; the plain `toSnapshot` shape, so M8's shelf can
+  restore a source from it) plus `notes` / `rep` derived from it (`cardFromTab`: the subset read from its mode root, the same
+  `rotateSubset` the keyboard plays). Cards start where the one **Parallel | Relative** switch (`ui.modePlayback`, mirrored in `RetState.relative`) puts them, as `relHz` does for the keys and Play scale: Parallel, the root on 1/1 Hz (`HOME_BASE`); Relative, the root at its own mode root's pitch above 1/1 (`RetCard.root`, from the snapshot's subset and mode; `startBase`). `bases[i]` is where card i's root sits
+  now (exact monzo while JI); drift is the chosen card's base minus its start (so the I-vi-ii-V-I vector gives 80/81 in either mode). **Card 0 is home**; "Make home" moves a card to
+  the front. Adding, moving, making home or deleting a card, and switching Parallel | Relative, resets the run (every root back on its start: 1/1 Hz in Parallel, the card's own mode root in Relative; card 0 active, no history);
+  rename does not. **Reset roots** does the same without touching the list.
+- The retuner is on or off (transient). While it is on and has a card (`retunerLive`), a computer or dock key is a degree of the
+  **active card** (slot i = degree i mod N of that card, floor(i / N) repeats up), not of the tab. `ret/down` records the held
+  key (`{ key: slot, deg, oct, t }`), and with trigger **Auto** and two or more keys held it runs `runStep` (`retuneStep` with the
+  settings' pivot, anchor and scorer, `refHz` = the 1/1 Hz setting); **Manual** waits for `ret/retune` (the Retune now button).
+  Nothing runs on key-up. When the engine keeps the active card (no pivot, nothing held, no candidate) only `last.why.reason`
+  records why.
+- Pivot modes manual | lowest | highest | recent | longest; **Manual is by degree** (`manualDeg`, 0-based in the state, shown from 1
+  in the panel; the degree need not be held; decision 2026-11-14). Lowest/highest compare slot numbers, recent/longest compare
+  key-down time. Defaults: pivot Longest, anchor Freestyle, trigger Auto, scorer Roughness (Sethares, 7 partials, rolloff 0.88),
+  glide 120 ms.
+- **Voices** (`useLabAudio`): the retuner's held voices are reconciled with `state.retuner.held` after each change (`syncRetuner`):
+  a new key starts a voice (id `rt<slot>`) at the active card's pitch, a released key stops it, and a voice whose pitch moved after
+  a retune glides there over `glideMs` (`engine.glideTo`; a pivot that does not move does not glide). Window blur, a hidden tab, a
+  field change and the Stop button panic as usual and also release the retuner's keys.
+- **Lights** (H-2): a retuned pitch lights the tab's FIELD note it coincides with (within 0.5 c, reduced into the repeat; `litIndex`), selected or not, as the tab's own keys light: in Parallel the pitch above 1/1 Hz is read from the tab's mode root (pitch + its root cents), in Relative as absolute pitch. A pitch with no field note lights nothing. The sync effect also depends on the field and the 1/1 Hz
+  setting, so changing them while keys are held cannot leave stale pitches or lights. The main views stay on the tab; the retuner panel shows the active card. Known limit: a computer key and a dock mouse press on the same slot share one held entry, so releasing one releases both.
+- Panel: cards (rename in place, up/down, make home, delete, add the current tab), controls (on/off, trigger, Retune now, Reset
+  roots, pivot, manual degree, anchor, scorer and its options, glide), "Why this card won" for the last retune (each card's root,
+  predicted chord in Hz, score, rank, winner; sortable columns; the same chord under all four scorers) and the drift readout
+  (cents, as a ratio when exact) with the history of the last 24 retunes. Card numbers are shown from 0 (card 0 = home), degrees
+  from 1.
 
 ### Selection look per view
 
@@ -217,7 +252,7 @@ Notes on the mapping:
 - `HarmonicFieldLab.page.test.tsx` (layout, pinned columns, visualizer panels, stored layouts), `HarmonicFieldLab.live.test.tsx`
   (generation, tabs, selection, Alt+click pin, saved subsets, persistence, sound with a fake context, a frozen lab),
   `HarmonicFieldLab.m6.test.tsx` (axes picker, subset polygon, pin ring, template editor persistence, glossary search, .scl import,
-  key rings), `HarmonicFieldLab.webgl.test.tsx` (a refused WebGL renderer). `state/m6.test.ts` covers pin vs toggle, the odd-limit entry
+  key rings), `HarmonicFieldLab.webgl.test.tsx` (a refused WebGL renderer), `HarmonicFieldLab.retuner.test.tsx` (the Retuner panel on the page: stored cards, the progression as keys, why and drift, the card list). `state/retuner.test.ts` covers the retuner reducer, key rules, the M2 drift vector as key presses and `retuner.v1` sanitising; `state/retunerLive.test.tsx` the live provider path (real key events, the voice engine on a fake context, glide, lights, panic, storage round trip, bad data). `state/m6.test.ts` covers pin vs toggle, the odd-limit entry
   and `chordfinder.v1`; `src/lib/harmonic-field/rankAxes.test.ts` covers the axis ranking.
 - Gate: `corepack yarn check:hfl` (typecheck, oxfmt, oxlint, stylelint, vitest scoped to the lib and this folder).
 

@@ -203,6 +203,7 @@ Proposal:
   - [ ] Headless behaviour test reproduces the M2 drift vector through the UI; the human checks audio.
 - Checkpoint decisions (human, 2026-11-14): **Manual pivot = by degree** (`manualDeg`, Infinitone parity; the pivot need not be held). Pivot by held key (`manualKey`) is a later idea, in BACKLOG, not built in M7.
 - Checkpoint decisions (human, 2026-11-14): **A card stores a whole tab snapshot** (generation inputs, subset, mode; the notes the engine needs are derived from it), so M8's shelf can restore a source. **While the retuner is on, the main views stay on the tab** (default); the retuner panel shows the active card, and everything sounding still lights green in every view (H-2). A "follow the active card" toggle is a later idea (BACKLOG). Closes the two open questions below.
+- Checkpoint decisions (human, 2026-11-14, at M7 review): **the retuner honours the Parallel | Relative switch** (M6 "one switch"): Parallel = every card starts rooted on 1/1 Hz (as built); Relative = each card starts on its own mode root's pitch above 1/1 Hz, by the same rule as Play scale / the computer keys. Drift stays measured against the start. (Reviewer found the first build ignored the switch.)
 - Human checkpoint after: **yes** (audio + feel)
 
 ### M8 (DRAFT, needs the human's approval of the acceptance list before building): Chord sketchpad

@@ -33,6 +33,7 @@ import {
   type Method,
 } from './generate';
 import { DEFAULT_LAYOUT, type Layout, type PanelId, type VizId } from './layout';
+import { initialRetuner, retunerReduce, type RetAction, type RetState } from './retuner';
 import { defaultSettings as defaultVizSettings, type VizSettings } from './vizState';
 
 /* --------------------------------------------------------------------------------------------------- shapes */
@@ -145,6 +146,8 @@ export interface LabState {
   layout: Layout;
   /** The chord finder's templates (user-editable; stored in `...chordfinder.v1`). */
   templates: ChordTemplate[];
+  /** The retuner: card list, settings (stored in `...retuner.v1`) and the run (see retuner.ts). */
+  retuner: RetState;
 }
 
 /* ----------------------------------------------------------------------------------------------- defaults */
@@ -229,6 +232,7 @@ export function initialState(): LabState {
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+    retuner: initialRetuner(),
   };
 }
 
@@ -449,7 +453,8 @@ export type Action =
   | { type: 'sounding'; idx: readonly number[]; marks?: readonly number[] }
   | { type: 'ui'; patch: Partial<UiSettings> }
   | { type: 'viz'; id: VizId; patch: Partial<VizSettings> }
-  | { type: 'layout'; fn: (l: Layout) => Layout };
+  | { type: 'layout'; fn: (l: Layout) => Layout }
+  | RetAction;
 
 const withTab = (s: LabState, fn: (t: Tab) => Tab): LabState => {
   const t = activeTab(s);
@@ -714,8 +719,19 @@ export function labReducer(s: LabState, a: Action): LabState {
         chordPick: null,
         chordHover: null,
       };
-    case 'ui':
-      return { ...s, ui: { ...s.ui, ...a.patch } };
+    case 'ui': {
+      const ui = { ...s.ui, ...a.patch };
+      // the one Parallel | Relative switch also decides where the retuner's cards start (and resets its run)
+      const relative = ui.modePlayback === 'relative';
+      return {
+        ...s,
+        ui,
+        retuner:
+          relative === s.retuner.relative
+            ? s.retuner
+            : retunerReduce(s.retuner, { type: 'ret/relative', relative }, ui.baseHz),
+      };
+    }
     case 'viz':
       return {
         ...s,
@@ -724,6 +740,22 @@ export function labReducer(s: LabState, a: Action): LabState {
     case 'layout': {
       const layout = a.fn(s.layout);
       return layout === s.layout ? s : { ...s, layout };
+    }
+    case 'ret/add':
+    case 'ret/rename':
+    case 'ret/move':
+    case 'ret/delete':
+    case 'ret/home':
+    case 'ret/settings':
+    case 'ret/on':
+    case 'ret/reset':
+    case 'ret/relative':
+    case 'ret/down':
+    case 'ret/up':
+    case 'ret/release':
+    case 'ret/retune': {
+      const retuner = retunerReduce(s.retuner, a, s.ui.baseHz);
+      return retuner === s.retuner ? s : { ...s, retuner };
     }
   }
 }

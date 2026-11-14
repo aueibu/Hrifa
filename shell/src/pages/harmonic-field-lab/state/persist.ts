@@ -6,6 +6,7 @@
  *   hrifa.harmonic-field-lab.tabs.v1       { list: [{ id, name, snap }], active }
  *   hrifa.harmonic-field-lab.subsets.v1    [{ id, name, ...snap }]   (saved subsets)
  *   hrifa.harmonic-field-lab.chordfinder.v1  { templates: [{ text, name?, family? }] }   (the chord templates)
+ *   hrifa.harmonic-field-lab.retuner.v1    { cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts, glideMs } }
  *
  * A `snap` is the prototype's snapshot shape (flat generator inputs, `selCents`, `mode`, pick/compare settings), every
  * field optional with a default, so an older snapshot still loads and a newer one with extra fields is read as far as it
@@ -46,6 +47,17 @@ import {
   type Layout,
 } from './layout';
 import {
+  ANCHORS,
+  MAX_CARDS,
+  MAX_GLIDE_MS,
+  PIVOT_MODES,
+  SCORER_IDS,
+  TRIGGERS,
+  defaultRetSettings,
+  type RetCardSpec,
+  type RetSettings,
+} from './retuner';
+import {
   DEFAULT_SETTINGS as DEFAULT_VIZ,
   ISO_G1,
   LAT_MODES,
@@ -59,6 +71,7 @@ export const KEY_LAYOUT = 'hrifa.harmonic-field-lab.layout.v1';
 export const KEY_TABS = 'hrifa.harmonic-field-lab.tabs.v1';
 export const KEY_SUBSETS = 'hrifa.harmonic-field-lab.subsets.v1';
 export const KEY_CHORDFINDER = 'hrifa.harmonic-field-lab.chordfinder.v1';
+export const KEY_RETUNER = 'hrifa.harmonic-field-lab.retuner.v1';
 /** The mock's layout keys (read once, to migrate). */
 export const MOCK_LAYOUT_KEYS = [
   'hrifa.harmonic-field-lab.mock.layout.v3',
@@ -512,4 +525,77 @@ export function saveSubsets(saved: Saved[]): boolean {
     KEY_SUBSETS,
     saved.map((s) => ({ id: s.id, name: s.name, ...savedToSnapshot(s) }))
   );
+}
+
+/* ---------------------------------------------------------------------------------------------- retuner */
+/** A card's snapshot cleaned into the plain stored shape (every field defaulted); null when it is not a snapshot. */
+function cleanSnapshot(raw: unknown): Snapshot | null {
+  const p = sanitizeSnapshot(raw);
+  if (!p) {
+    return null;
+  }
+  return {
+    ...toSnapshot({ gen: p.gen, sel: [], field: [], mode: p.mode, cmp: p.cmp, pick: p.pick }),
+    selCents: p.selCents,
+  };
+}
+
+export interface StoredRetuner {
+  cards: RetCardSpec[];
+  settings: RetSettings;
+}
+
+/** Settings field by field (a bad field falls back to its default). */
+export function sanitizeRetSettings(raw: unknown): RetSettings {
+  const d = defaultRetSettings();
+  if (!isObj(raw)) {
+    return d;
+  }
+  const o = isObj(raw.scorerOpts) ? raw.scorerOpts : {};
+  return {
+    pivot: oneOf(raw.pivot, PIVOT_MODES, d.pivot),
+    manualDeg: intIn(raw.manualDeg, 0, 255, d.manualDeg),
+    anchor: oneOf(raw.anchor, ANCHORS, d.anchor),
+    trigger: oneOf(raw.trigger, TRIGGERS, d.trigger),
+    scorer: oneOf(raw.scorer, SCORER_IDS, d.scorer),
+    scorerOpts: {
+      harmonics: intIn(o.harmonics, 1, 16, d.scorerOpts.harmonics),
+      rolloff: numIn(o.rolloff, 0.01, 1, d.scorerOpts.rolloff),
+      oddLimit: intIn(o.oddLimit, 1, 255, d.scorerOpts.oddLimit),
+    },
+    glideMs: intIn(raw.glideMs, 0, MAX_GLIDE_MS, d.glideMs),
+  };
+}
+
+/**
+ * `{ cards: [{ name, snap }], settings }`. Entry by entry: a card without a usable snapshot is dropped (the rest is kept),
+ * names are cut to 60 characters and defaulted, at most 24 cards. Anything that is not that shape gives no cards and the
+ * default settings.
+ */
+export function sanitizeRetuner(raw: unknown): StoredRetuner {
+  if (!isObj(raw)) {
+    return { cards: [], settings: defaultRetSettings() };
+  }
+  const cards: RetCardSpec[] = [];
+  for (const e of Array.isArray(raw.cards) ? raw.cards.slice(0, MAX_CARDS * 2) : []) {
+    const snap = isObj(e) ? cleanSnapshot(e.snap) : null;
+    if (!isObj(e) || !snap || cards.length >= MAX_CARDS) {
+      continue;
+    }
+    const name =
+      typeof e.name === 'string' && e.name.trim()
+        ? e.name.trim().slice(0, 60)
+        : `Card ${cards.length + 1}`;
+    cards.push({ name, snap });
+  }
+  return { cards, settings: sanitizeRetSettings(raw.settings) };
+}
+export function loadRetuner(): StoredRetuner {
+  return sanitizeRetuner(readJson(KEY_RETUNER));
+}
+export function saveRetuner(cards: readonly RetCardSpec[], settings: RetSettings): boolean {
+  return writeJson(KEY_RETUNER, {
+    cards: cards.map((c) => ({ name: c.name, snap: c.snap })),
+    settings,
+  });
 }

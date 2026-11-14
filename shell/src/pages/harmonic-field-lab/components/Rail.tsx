@@ -17,7 +17,6 @@ import {
 import { VIEW_TIP, type VizSettings } from '../state/vizState';
 import type { TipKey } from '../texts';
 import { PinIcon } from './icons';
-import { retunerCards } from './mockRetuner';
 import { PinMenu } from './PinMenu';
 import { Tip, useLab } from './ui';
 import classes from './lab.module.css';
@@ -81,7 +80,7 @@ export function summaryOf(id: PanelId, lab: Lab, ranks: AxisRank[]): string {
     case 'viz3':
       return vizSummary(lab.viz.view(id), lab.viz.settings(id), lab, ranks);
     case 'retuner':
-      return `${retunerCards.length} cards`;
+      return `${lab.state.retuner.cards.length} cards`;
   }
 }
 

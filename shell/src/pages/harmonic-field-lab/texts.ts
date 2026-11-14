@@ -373,7 +373,7 @@ const entries = {
   /* ---- retuner ---- */
   retunerOn: {
     term: 'Retuner on/off',
-    text: 'When on, playing two or more keys makes the retuner pick the best card for that chord and retune everything around the pivot. Off leaves the tuning as it is. Example: switch it off while you edit cards so playing does not retune.',
+    text: 'When on, the keys play the active card instead of the tab (the first key is degree 1 of the card), and with the Auto trigger playing two or more keys makes the retuner pick the best card for that chord and retune everything around the pivot, gliding the held notes. Off leaves the tuning as it is and the keys play the tab again. Example: switch it off while you edit cards so playing does not retune.',
     see: ['cards'],
   },
   cards: {
@@ -383,7 +383,7 @@ const entries = {
   },
   cardAdd: {
     term: 'Add current tab as card',
-    text: 'Copies the scale you are looking at into the card list. Example: build a 10/9-second major scale in another tab, then add it here as a candidate.',
+    text: 'Copies the tab you are looking at into the card list as a snapshot: its generation, subset and mode. Later changes to the tab do not change the card. Example: build a 10/9-second major scale in another tab, then add it here as a candidate.',
   },
   cardOrder: {
     term: 'Move card',
@@ -399,11 +399,40 @@ const entries = {
   },
   cardActive: {
     term: 'Active card',
-    text: 'The card the retuner chose last; the main views and the keyboard follow it. Example: after the ii chord the 10/9-second card is active.',
+    text: 'The card the retuner chose last: the keys play it, and this panel shows it. The main views stay on your tab; everything that sounds still lights in every view when it coincides with a note of the tab. Example: after the ii chord the 10/9-second card is active.',
+  },
+  retHeld: {
+    term: 'Held',
+    text: 'The keys the last retune ran on, as degrees of the scale they were played in (1 is the root, a prime mark is one repeat higher). Example: 1 3 5 is root, third and fifth; 5 1 3 with a mark after the 1 and the 3 is the fifth, then the root and third an octave up.',
+  },
+  retTieBreak: {
+    term: 'Tie-break',
+    text: 'What decides between cards with the same score: the one earlier in the card list wins. Example: two cards that play a chord with the same notes both score 4.45, so the card nearer the top is chosen.',
+    see: ['cardOrder'],
+  },
+  retResult: {
+    term: 'Result',
+    text: 'Marks the card that won (chosen) and the cards that could not take part (not a candidate: in Fixed anchor card 0 never competes, and a card without a degree the chord needs cannot play it). Example: with Fixed anchor card 0 reads not a candidate.',
+    see: ['anchor'],
+  },
+  pivotDeg: {
+    term: 'Pivot degree',
+    text: 'Used by the Manual pivot: the degree of the scale that stays put while the cards switch. Degree 1 is the root; it does not have to be held. Example: 5 keeps the fifth degree fixed, so every card is moved until its fifth lands where the active card had it.',
+    see: ['pivot'],
+  },
+  retunerOdd: {
+    term: 'Odd limit (lattice scorer)',
+    text: 'How complex a ratio the lattice scorer may use to explain an interval that is not exact. Higher finds more exotic ratios. Example: 9 explains a slightly flat 3/2 as 3/2; 3 would only allow fifths and octaves.',
+    see: ['scorer'],
+  },
+  retuneReset: {
+    term: 'Reset roots',
+    text: 'Puts every card root back on its starting pitch (1/1 Hz in Parallel, the card mode root in Relative), makes card 0 active and clears the history and the drift. Example: use it after a long progression to start from home again.',
+    see: ['drift'],
   },
   rootNow: {
     term: 'Root now',
-    text: 'Where the 1/1 of the card sits right now compared with where it started. Example: after the progression I, vi, ii, V, I in Freestyle every card root reads 80/81, which is 21.5 cents below where it started; a root that has not moved reads 1/1.',
+    text: 'How far the root (1/1) of the card has moved from where it started (1/1 Hz in Parallel, the card mode root in Relative). Example: after the progression I, vi, ii, V, I in Freestyle every card root reads 80/81, which is 21.5 cents below where it started; a root that has not moved reads 1/1.',
     see: ['comma', 'drift'],
   },
   predicted: {
@@ -623,7 +652,7 @@ const entries = {
   },
   retunerPanel: {
     term: 'Retuner',
-    text: 'Re-roots a list of candidate scales around a held pivot note and picks the card whose predicted chord scores best. This panel is still a placeholder until the retuner milestone. Example: hold C-E-G and the card with the purest 4:5:6 wins.',
+    text: 'Re-roots a list of candidate scales around a held pivot note and picks the card whose predicted chord scores best. Example: hold C-E-G and the card with the purest 4:5:6 wins.',
     see: ['cards', 'why'],
   },
   dockToggle: {
