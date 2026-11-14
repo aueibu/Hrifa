@@ -6,7 +6,7 @@
 import { NativeSelect } from '@mantine/core';
 import type { CmpRef } from '../state/labState';
 import { NoteMark } from './NoteMark';
-import { CommitNumber, Num, Strip, Tip, signed, useLab } from './ui';
+import { CommitNumber, Num, Strip, Tip, noteHandlers, signed, useLab } from './ui';
 import classes from './lab.module.css';
 
 const PAD = 4;
@@ -126,18 +126,12 @@ export function TunerStrip() {
                     data-pin={lab.pin === fi}
                     role="button"
                     tabIndex={0}
-                    aria-label={`${d.ratio}, ${signed(d.dev)} cents from ${d.label}${active ? '' : ', not in the subset'}${lit ? ', sounding' : ''}`}
+                    aria-label={`${d.ratio}, ${signed(d.dev)} cents from ${d.label}${active ? '' : ', not in the subset'}${lab.pin === fi ? ', pinned' : ''}${lit ? ', sounding' : ''}`}
                     onMouseEnter={() => lab.setHover(fi)}
                     onMouseLeave={() => lab.setHover(null)}
                     onFocus={() => lab.setHover(fi)}
                     onBlur={() => lab.setHover(null)}
-                    onClick={() => lab.clickNote(fi)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        lab.clickNote(fi);
-                      }
-                    }}
+                    {...noteHandlers(lab, fi)}
                   >
                     <span className={classes.colRatio}>{d.ratio}</span>
                     <NoteMark

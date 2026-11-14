@@ -5,13 +5,14 @@
  *   hrifa.harmonic-field-lab.layout.v1     the pinned-panel layout (migrated from the mock's ...mock.layout.v3 / v2 / v1)
  *   hrifa.harmonic-field-lab.tabs.v1       { list: [{ id, name, snap }], active }
  *   hrifa.harmonic-field-lab.subsets.v1    [{ id, name, ...snap }]   (saved subsets)
+ *   hrifa.harmonic-field-lab.chordfinder.v1  { templates: [{ text, name?, family? }] }   (the chord templates)
  *
  * A `snap` is the prototype's snapshot shape (flat generator inputs, `selCents`, `mode`, pick/compare settings), every
  * field optional with a default, so an older snapshot still loads and a newer one with extra fields is read as far as it
  * goes. Sanitising is entry by entry: a bad entry is dropped or defaulted, never the whole list (a future new view or
  * panel therefore cannot wipe a stored layout). Nothing here throws; storage may be blocked.
  */
-import { PRESETS } from '../../../lib/harmonic-field';
+import { DEFAULT_TEMPLATES, PRESETS, type ChordTemplate } from '../../../lib/harmonic-field';
 import {
   DEFAULT_AXES,
   PRIME_SLOTS,
@@ -27,6 +28,7 @@ import {
   defaultUi,
   emptyPick,
   MAX_TABS,
+  MAX_TEMPLATES,
   type CmpRef,
   type Saved,
   type Tab,
@@ -53,6 +55,7 @@ export const KEY_SETTINGS = 'hrifa.harmonic-field-lab.settings.v1';
 export const KEY_LAYOUT = 'hrifa.harmonic-field-lab.layout.v1';
 export const KEY_TABS = 'hrifa.harmonic-field-lab.tabs.v1';
 export const KEY_SUBSETS = 'hrifa.harmonic-field-lab.subsets.v1';
+export const KEY_CHORDFINDER = 'hrifa.harmonic-field-lab.chordfinder.v1';
 /** The mock's layout keys (read once, to migrate). */
 export const MOCK_LAYOUT_KEYS = [
   'hrifa.harmonic-field-lab.mock.layout.v3',
@@ -149,6 +152,45 @@ export function saveSettings(s: UiSettings): boolean {
   return writeJson(KEY_SETTINGS, s);
 }
 
+/* ------------------------------------------------------------------------------------------ chord templates */
+/**
+ * `{ templates: [{ text, name?, family? }] }`. Entry by entry: an entry without a text is dropped, over-long strings are
+ * cut, at most 64 are kept. A text that is not a valid template is kept (the editor shows it and the finder skips it).
+ * Anything that is not that shape, or an array whose every entry is bad, gives the defaults; a stored empty list is the
+ * user's own choice and stays empty.
+ */
+export function sanitizeTemplates(raw: unknown): ChordTemplate[] {
+  const defaults = () => DEFAULT_TEMPLATES.map((t) => ({ ...t }));
+  const list = isObj(raw) ? raw.templates : undefined;
+  if (!Array.isArray(list)) {
+    return defaults();
+  }
+  const out: ChordTemplate[] = [];
+  for (const e of list.slice(0, 1000)) {
+    if (!isObj(e) || typeof e.text !== 'string' || !e.text.trim()) {
+      continue;
+    }
+    const t: ChordTemplate = { text: e.text.trim().slice(0, 80) };
+    if (typeof e.name === 'string' && e.name.trim()) {
+      t.name = e.name.trim().slice(0, 60);
+    }
+    if (typeof e.family === 'string' && e.family.trim()) {
+      t.family = e.family.trim().slice(0, 40);
+    }
+    out.push(t);
+    if (out.length >= MAX_TEMPLATES) {
+      break;
+    }
+  }
+  return out.length === 0 && list.length > 0 ? defaults() : out;
+}
+export function loadTemplates(): ChordTemplate[] {
+  return sanitizeTemplates(readJson(KEY_CHORDFINDER));
+}
+export function saveTemplates(templates: ChordTemplate[]): boolean {
+  return writeJson(KEY_CHORDFINDER, { templates });
+}
+
 /* ------------------------------------------------------------------------------------------------- layout */
 function readRaw(key: string): string | null {
   try {
@@ -212,6 +254,7 @@ export interface Snapshot {
   pickKind: string;
   pickStretch: boolean;
   pickM: number;
+  pickOdd: number;
   pickRef: unknown;
   cmpRef: string;
   cmpOdd: number;
@@ -253,6 +296,7 @@ export function toSnapshot(
     pickKind: t.pick.kind,
     pickStretch: t.pick.stretch,
     pickM: t.pick.m,
+    pickOdd: t.pick.odd,
     pickRef: t.pick.ref,
     cmpRef: t.cmp.ref,
     cmpOdd: t.cmp.odd,
@@ -361,6 +405,7 @@ export function sanitizeSnapshot(raw: unknown): TabParts | null {
       kind: raw.pickKind === 'ji' ? 'ji' : 'edo12',
       stretch: bool(raw.pickStretch, false),
       m: intIn(raw.pickM, 1, 1000, 12),
+      odd: intIn(raw.pickOdd, 1, 255, 15),
       ref: sanitizePickRef(raw.pickRef),
     },
   };

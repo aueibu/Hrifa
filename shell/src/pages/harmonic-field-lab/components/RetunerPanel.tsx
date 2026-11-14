@@ -10,6 +10,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
+import { ArrowDownIcon, ArrowUpIcon, HomeIcon, PlusIcon, TrashIcon } from './icons';
 import {
   SCORERS,
   driftSteps,
@@ -20,8 +21,7 @@ import {
   scorerTable,
   why,
   whyStepIndex,
-} from '../mock/mockRetuner';
-import { ArrowDownIcon, ArrowUpIcon, HomeIcon, PlusIcon, TrashIcon } from './icons';
+} from './mockRetuner';
 import { Num, Row, Strip, Tip, signed } from './ui';
 import classes from './panels.module.css';
 

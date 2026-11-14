@@ -183,7 +183,7 @@ Proposal:
   - [ ] Ring: the selected subset gets its own polygon (neutral, `--text`-based, light fill) joining its notes in ring order, drawn under the blue chord polygon so scale shape and chord shape read as two layers, in both Chromatic and Fifths views.
   - [ ] Pin: plain click only toggles a note in/out of the subset; **Alt+click** pins/unpins (every view: ring, strip, keys, field table, 2D and 3D lattice, iso keyboard); keyboard: Alt+Enter. The pinned note is marked in **yellow** (`--mark-yellow`, H-3) in every view instead of the `--text` outline, so it no longer looks like selection. Tooltips updated (`unpinNote` and every "click to pin" text).
   - [ ] Chord chips: compare the live chip sizing and wrapping against the M4 mock at 100% and 125%/150% browser zoom; report the difference (the chips are rem-based so they scale with browser zoom and Windows display scaling; the chip grid wraps by panel width). Do not change sizes without the human's OK.
-- Checkpoint decisions (human, 2026-11-13, before M6): the feedback above is folded into M6 (not a separate milestone). Pin kept because it shows the note in every panel; gesture Alt+click; pin colour yellow. Odd limit into the scale dropdown. Lattice axes: Auto until the human picks. Chord chip "doesn't react to zoom": open, the human is asked which zoom (browser Ctrl+zoom or panel enlarge/pop-out); layouts differed on the human's work computer.
+- Checkpoint decisions (human, 2026-11-13, before M6): the feedback above is folded into M6 (not a separate milestone). Pin kept because it shows the note in every panel; gesture Alt+click; pin colour yellow. Odd limit into the scale dropdown. Lattice axes: Auto until the human picks. Chord chips (human, 2026-11-13): a display discrepancy; under browser Ctrl+zoom the chip text seemed to scale at a different rate than the surrounding UI text. Find the cause; if it is a unit inconsistency, make chips scale like the rest of the panel text with no change at 100%. Prototype saved-data import: not wanted (open question closed).
 - Human checkpoint after: **yes**
 
 ### M7: Card list + retuner panel (live)
@@ -202,7 +202,6 @@ Page `ARCHITECTURE.md` + lib `README.md` complete (contracts, modules, colour-ro
 
 ## Open questions (answer at the milestone where they matter)
 - M5: While the retuner is on, do the main views follow the active card or stay on the tab? (Could move to M7.)
-- M6: Bring saved data over from the prototype? Option: a one-off "Export all (JSON)" button in the frozen prototype + "Import" in the shell page. This is the only allowed prototype change, and only if the human wants it.
 - M7: Does a card store a whole tab snapshot, or only the subset's notes?
 
 ## Stop-and-ask conditions

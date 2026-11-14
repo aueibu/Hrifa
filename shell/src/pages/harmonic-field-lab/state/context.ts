@@ -9,7 +9,7 @@ import type { VizId, VizView } from './layout';
 import type { VizSettings } from './vizState';
 
 export interface LabAudio {
-  /** False in the frozen mock: nothing sounds. */
+  /** False when frozen: nothing sounds. */
   enabled: boolean;
   /** A computer key or dock key goes down (slot = position on the dock) or up. */
   press: (slot: number) => void;
@@ -70,11 +70,13 @@ export interface Lab {
   selected: ReadonlySet<number>;
   /** Field indices that sound now. */
   sounding: ReadonlySet<number>;
-  /** Click on a note anywhere: toggle it in the subset and pin it in the inspector. */
+  /** Plain click on a note anywhere: toggle it in the subset (it does not pin). */
   clickNote: (i: number) => void;
+  /** Alt+click (Alt+Enter) on a note anywhere: pin it in the inspector, or unpin it if it is pinned (it does not toggle). */
+  pinNote: (i: number) => void;
   audio: LabAudio;
   viz: VizApi;
-  /** The frozen mock route: nothing is stored and nothing sounds. */
+  /** Frozen (tests, an embedding): nothing is stored and nothing sounds. */
   frozen: boolean;
   /** The last write to storage failed (full or blocked): what is on screen may not survive a reload. */
   storeFailed: boolean;

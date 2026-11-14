@@ -468,12 +468,31 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
-.selectStack {
+/* All / None / Invert: actions, so one joined button row (not a two-option switch) */
+.joinRow {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
   justify-self: start;
-  width: 4rem;
+}
+
+.joinRow > * {
+  display: flex;
+}
+
+.joinRow > :not(:first-child) button {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  margin-left: -1px;
+}
+
+.joinRow > :not(:last-child) button {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.joinRow button:hover,
+.joinRow button:focus-visible {
+  position: relative;
+  z-index: 1;
 }
 
 .modeStep {
@@ -761,11 +780,26 @@
   stroke-width: 3;
 }
 
-/* selection: an outline in --text, about two pixels in all, no fill */
+/* hover: an outline in --text, about two pixels in all, no fill */
 .selRing {
   fill: none;
   stroke: var(--text);
   stroke-width: 1.5;
+}
+
+/* pinned note (Alt+click), H-3: yellow in every view, so it does not read as selection */
+.pinRing {
+  fill: none;
+  stroke: var(--mark-yellow);
+  stroke-width: 2;
+}
+
+/* the selected subset's own shape on the ring: neutral, light fill, under the blue chord shape */
+.subsetFill {
+  fill: color-mix(in srgb, var(--text) 8%, transparent);
+  stroke: var(--text-muted);
+  stroke-linejoin: round;
+  stroke-width: 1;
 }
 
 .tickLine {
@@ -935,7 +969,7 @@
 
 .markPin {
   fill: none;
-  stroke: var(--text);
+  stroke: var(--mark-yellow);
   stroke-width: 1;
 }
 
@@ -1332,7 +1366,7 @@
 }
 
 .fieldDt tbody tr[data-pin='true'] {
-  outline: 1px solid var(--text);
+  outline: 1px solid var(--mark-yellow);
   outline-offset: -1px;
 }
 

@@ -144,7 +144,7 @@ const entries = {
   },
   pitchCircle: {
     term: 'Pitch circle',
-    text: 'Every field note placed round a circle by its pitch, the repeat being one full turn. Click a dot to include or exclude it. Filled with an outline = in your subset; hollow = out; larger ring = sounding right now. Example: 3/2 sits just past the bottom of the circle, 702 of 1200 cents round.',
+    text: 'Every field note placed round a circle by its pitch, the repeat being one full turn. Click a dot to include or exclude it; Alt+click pins it in the inspector (yellow ring) without changing the subset. Filled = in your subset, hollow = out; the pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord; larger ring = sounding right now. Example: 3/2 sits just past the bottom of the circle, 702 of 1200 cents round.',
   },
   selectAll: {
     term: 'All',
@@ -165,7 +165,7 @@ const entries = {
   },
   pickNearest: {
     term: 'Pick nearest',
-    text: 'Chooses the field notes closest to a known scale or to an equal division. Example: choosing "Major" with 12-EDO targets selects, for each degree of the major scale, the field note nearest to it.',
+    text: 'Chooses the field notes closest to a known scale or to an equal division. The menu also has "m-ED" (the nearest notes to an equal division) and "Odd limit..." (keep only the notes whose odd limit is at most the number you enter). Example: choosing "Major" with 12-EDO targets selects, for each degree of the major scale, the field note nearest to it; choosing "Odd limit..." with 15 keeps 15/8 but drops 17/16.',
   },
   nearTargets: {
     term: 'Targets',
@@ -213,17 +213,22 @@ const entries = {
   },
   latticeAxes: {
     term: 'Lattice axes (primes)',
-    text: "Which three primes become the three directions of the lattice, in 2D and in 3D (default 3, 5, 7). A note's place along an axis is its exponent of that prime. Notes that use another prime are drawn on a stem instead (see Off-axis notes). Example: with 3, 5, 7 chosen, 15/8 sits one step along the 3 axis and one along the 5 axis; choose 3, 5, 11 and 11/8 moves onto the third axis while 7/4 goes on a stem.",
-    see: ['lattice', 'latticeStems'],
+    text: "Which three primes become the three directions of the lattice, in 2D and in 3D. The list is ranked by fit: each choice shows how many of your selected notes sit on the grid with no stem (for example 3·5·7 — 7/7 on grid means all seven selected notes use only the primes 3, 5 and 7). The best fit is at the top; a tie goes to the choice whose notes are closer to 1/1. Auto, the default, always follows the best fit as you change the subset; pick a triple to keep it until you choose Auto again. Reading the primes: 3·5 is fifths and pure major thirds (classical just intonation), 3·7 is fifths plus harmonic sevenths. A note's place along an axis is its exponent of that prime; a note that uses another prime is drawn on a stem (see Off-axis notes). Example: with only 1/1, 3/2, 5/4 and 7/4 selected, 3·5·7 shows 4/4 on grid, while 3·5·11 shows 3/4 and puts 7/4 on a stem. Notes without a monzo (equal-division steps) cannot be placed and are left out of the count.",
+    see: ['lattice', 'latticeStems', 'primePower'],
   },
   latticeStems: {
     term: 'Off-axis notes (stems)',
-    text: "A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only. A dashed line in that prime's colour runs out from the ring, one lattice step long for each power of the prime, pointing the opposite way for a negative power. The note itself is the dot at the end, and its label carries a chip such as 11\u207a\u00b9 naming the hidden prime and its power. Example: with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11\u207a\u00b9; 8/11 points the other way (11\u207b\u00b9); 143/128 has two stems chained, 11\u207a\u00b9 13\u207a\u00b9.",
-    see: ['latticeAxes', 'lattice3d'],
+    text: "A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only. A dashed line in that prime's colour runs out from the ring, one lattice step long for each power of the prime, pointing the opposite way for a negative power. The note itself is the dot at the end, and its label carries a chip such as 11⁺¹ naming the hidden prime and its power (point at a chip to read what it means). Example: with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11⁺¹; 8/11 points the other way (11⁻¹); 143/128 has two stems chained, 11⁺¹ 13⁺¹.",
+    see: ['latticeAxes', 'lattice3d', 'primePower'],
+  },
+  primePower: {
+    term: 'Prime-power chip (e.g. 11⁺¹)',
+    text: 'Names a prime that the note uses but the three chosen axes do not, and its power. The power is how many stem steps the note sits from its ring: ⁺¹ is one factor of the prime on top, ⁻¹ puts it underneath, ⁺² is two factors, and so on. Example: 11⁺¹ on 11/8 means one factor of 11 on top (11/8); 11⁻¹ would be 16/11; 11⁺² is two factors of 11, as in 121/64.',
+    see: ['latticeStems', 'latticeAxes'],
   },
   fieldTable: {
     term: 'Field table',
-    text: 'One line for every field note: ratio, cents and its distance from the nearest 12-EDO key, with a mark for whether it is in the subset. Point at a line to light the note everywhere and read it in the inspector; click to pin it. "Open full table" shows every column with sorting. Example: the 13/8 line reads 840.5 c, "Ab +40.5": a note 40.5 c sharp of the piano A-flat.',
+    text: 'One line for every field note: ratio, cents and its distance from the nearest 12-EDO key, with a mark for whether it is in the subset. Point at a line to light the note everywhere and read it in the inspector; click to include or exclude it, Alt+click to pin it in the inspector. "Open full table" shows every column with sorting. Example: the 13/8 line reads 840.5 c, "Ab +40.5": a note 40.5 c sharp of the piano A-flat.',
   },
   colRatio: {
     term: 'Ratio',
@@ -323,7 +328,7 @@ const entries = {
   },
   templates: {
     term: 'Chord templates',
-    text: 'The chord shapes the finder looks for, written as ratios between notes. a:b:c means the notes are harmonics of one fundamental (4:5:6 is a major triad); 1/(a:b:c) means they are undertones. One per line, with an optional # name. Example: the line 4:5:6 # major triad finds every major triad in the subset.',
+    text: 'The chord shapes the finder looks for, written as ratios between notes. a:b:c means the notes are harmonics of one fundamental (4:5:6 is a major triad); 1/(a:b:c) means they are undertones. Edit them with the Edit templates button; the list is remembered between visits. Example: the template 4:5:6 finds every major triad in the subset.',
   },
   chordExact: {
     term: 'Chord: exact',
@@ -341,7 +346,7 @@ const entries = {
   },
   modes: {
     term: 'Modes (heat grid)',
-    text: "One row per mode (the scale restarted from each degree), one column per degree of that mode. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors. Example: row 1 is the scale from 9/8; if its 5th degree misses by 21.5 c, that cell is orange.",
+    text: "One row per mode (the scale restarted from each degree), one column per degree of that mode. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Hover a row to print the cents errors; click a row to make that mode the current one. Example: row 1 is the scale from 9/8; if its 5th degree misses by 21.5 c, that cell is orange.",
     see: ['mode', 'chordError'],
   },
 
@@ -464,6 +469,33 @@ const entries = {
     text: 'Chords are grouped by how many notes they have (triads, tetrads, larger), then by family, a label you can edit on each template: Major, Minor, Septimal, Utonal and so on. Templates without a family go in an "Other" row. Example: 4:5:6 and 8:10:12:15 are both Major; 6:7:9 and 4:5:6:7 are Septimal.',
     see: ['templates'],
   },
+  templateName: {
+    term: 'Template name',
+    text: 'A label for the chord shape, shown in the chip tooltips. It does not change what is found. Example: "major triad" for 4:5:6.',
+    see: ['templates'],
+  },
+  templateRatios: {
+    term: 'Template ratios',
+    text: 'The shape itself: whole numbers joined by colons, a:b:c, for harmonics of one fundamental, or 1/(a:b:c) for undertones. Example: 4:5:6 is a major triad (a root, a note 5/4 above it and one 3/2 above it); 1/(4:5:6:7) is the utonal tetrad. A line that cannot be read is flagged and skipped by the finder.',
+    see: ['templates'],
+  },
+  templateFamily: {
+    term: 'Template family',
+    text: 'The row the chord chips are grouped into inside Triads, Tetrads or Larger. Leave it empty to put the shape in Other. Example: give 4:5:6 and 8:10:12:15 the family Major so they sit on one row.',
+    see: ['chordFamily'],
+  },
+  templateAdd: {
+    term: 'Add template',
+    text: 'Adds a new row to the list with an editable shape. Example: add 4:5:6:7:9, name it "harmonic 9th chord" and give it the family Septimal.',
+  },
+  templateReset: {
+    term: 'Reset list',
+    text: 'Puts back the twelve standard shapes (major, minor, septimal and so on) and discards your edits. Example: use it after experimenting with a long list.',
+  },
+  templateRemove: {
+    term: 'Remove template',
+    text: 'Deletes this row from the list. Example: remove 3:5:7 if you never want it reported.',
+  },
   chordLadder: {
     term: 'Tolerance ladder',
     text: 'The tolerances at which the number of chords changes. Dashed chips are chords that do not fit yet; clicking one (or a rung, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.',
@@ -481,12 +513,12 @@ const entries = {
   },
   keyRings: {
     term: 'Key rings',
-    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete: the whole scale fits there. Example: only the 1/1 ring has no crosses in this field.',
+    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete: the whole scale fits there. Click a complete ring to make that key the subset, with its root as the mode root; Ctrl-click (Cmd on a Mac) plays it instead. Example: only the 1/1 ring has no crosses in this field.',
     see: ['keysSummary'],
   },
   inspector: {
     term: 'Note inspector',
-    text: 'Shows one row of the field table for the note you point at or click anywhere (circle, strip, keys, lattice): ratio, cents, monzo (prime exponents), nearest 12-EDO key and how far off it is. Example: pointing at 13/8 reads 840.53 c, monzo 2^-3 13, and about 40 c sharp of Ab.',
+    text: 'Shows one row of the field table for the note you point at, or pinned with Alt+click, anywhere (circle, strip, keys, lattice): ratio, cents, monzo (prime exponents), nearest 12-EDO key and how far off it is. Example: pointing at 13/8 reads 840.53 c, monzo 2^-3 13, and about 40 c sharp of Ab.',
     see: ['fieldTable'],
   },
   fieldSettings: {
@@ -576,7 +608,7 @@ const entries = {
   },
   unpinNote: {
     term: 'Unpin',
-    text: 'The inspector keeps showing the note you clicked until you unpin it (or press the pinned label). Example: click 5/4 on the ring, move the mouse over other notes to compare, then unpin to go back to following the mouse.',
+    text: 'The inspector keeps showing the note you pinned (Alt+click, or Alt+Enter on a focused note, in any view) until you unpin it: Alt+click it again or press the pinned label. A pinned note is marked in yellow in every view. A plain click only includes or excludes the note. Example: Alt+click 5/4 on the ring, move the mouse over other notes to compare, then unpin to go back to following the mouse.',
     see: ['inspector'],
   },
   savedRow: {
@@ -656,7 +688,7 @@ const entries = {
   },
   lattice3dView: {
     term: '3D view',
-    text: 'The 3D lattice itself. Drag to rotate, scroll to zoom, right-drag to pan. Point at a sphere to read the note in the inspector; click to pin it. Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord. A hollow ring with a dashed coloured line is the base and stem of an off-axis note. Example: hover 3/2 and the inspector shows 701.96 c.',
+    text: 'The 3D lattice itself. Drag to rotate, scroll to zoom, right-drag to pan. Point at a sphere to read the note in the inspector; click to include or exclude it, Alt+click to pin it (yellow halo). Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord. A hollow ring with a dashed coloured line is the base and stem of an off-axis note. Example: hover 3/2 and the inspector shows 701.96 c.',
     see: ['lattice3d', 'inspector'],
   },
   edo: {
@@ -736,7 +768,7 @@ const entries = {
   },
   isoHex: {
     term: 'Hexagon',
-    text: 'One key. Filled and bright: a note in your subset. Outlined: a field note that you left out. Blank: no field note near that pitch. A green dot means it is sounding now, and a blue outline marks a note of the highlighted chord. Point at a key to read it in the inspector; click to pin. Example: the 3/2 key lights when you play 3/2 anywhere, and on every hexagon that lands on it.',
+    text: 'One key. Filled and bright: a note in your subset. Outlined: a field note that you left out. Blank: no field note near that pitch. A green dot means it is sounding now, and a blue outline marks a note of the highlighted chord. Point at a key to read it in the inspector; click to include or exclude the note, Alt+click to pin it (yellow outline). Example: the 3/2 key lights when you play 3/2 anywhere, and on every hexagon that lands on it.',
     see: ['isoKeyboard', 'inspector'],
   },
   isoReadout: {

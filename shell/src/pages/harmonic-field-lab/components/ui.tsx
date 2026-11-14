@@ -119,6 +119,51 @@ export function Strip({
 /** Inside a pinned column, the move and unpin buttons the panel's own header strip shows after its tools. */
 export const PinActionsContext = createContext<ReactNode>(null);
 
+/**
+ * Click and keyboard handlers for a note in any view: a plain click or Enter/Space toggles it in the subset;
+ * Alt+click or Alt+Enter pins it (or unpins it) in the inspector, and does not toggle.
+ */
+/** Row handlers: like `noteHandlers`, but the keys only act when the row itself has focus (not a button or box inside it). */
+export function rowHandlers(
+  lab: { clickNote: (i: number) => void; pinNote: (i: number) => void },
+  i: number
+) {
+  const h = noteHandlers(lab, i);
+  return {
+    onClick: h.onClick,
+    onKeyDown: (e: {
+      key: string;
+      altKey: boolean;
+      preventDefault: () => void;
+      target: unknown;
+      currentTarget: unknown;
+    }) => {
+      if (e.target === e.currentTarget) {
+        h.onKeyDown(e);
+      }
+    },
+  };
+}
+
+export function noteHandlers(
+  lab: { clickNote: (i: number) => void; pinNote: (i: number) => void },
+  i: number
+) {
+  return {
+    onClick: (e: { altKey: boolean }) => (e.altKey ? lab.pinNote(i) : lab.clickNote(i)),
+    onKeyDown: (e: { key: string; altKey: boolean; preventDefault: () => void }) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (e.altKey) {
+          lab.pinNote(i);
+        } else {
+          lab.clickNote(i);
+        }
+      }
+    },
+  };
+}
+
 /** Signed one-decimal cents with the sign always printed (the second channel next to a sharp/flat colour). */
 export const signed = (x: number, dp = 1) => {
   const t = x.toFixed(dp);

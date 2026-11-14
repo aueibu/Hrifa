@@ -1,6 +1,6 @@
 # Harmonic Field Lab
 
-Status: M5 done (live workspace and voice engine). The approved one-screen layout runs on one lab state; the generator, selection, tabs, saved subsets, stats, strip, field table and the Chords, Spectrum, Keys & Modes and visualizer panels are live. The Retuner panel is still the static placeholder (M7). Arc: `arcs/harmonic-field-lab`. Route `/harmonic-field-lab` (the frozen layout mock stays at `/harmonic-field-lab/mock` until M6).
+Status: M6 done (live analysis panels and parity). The approved one-screen layout runs on one lab state; the generator, selection, tabs, saved subsets, stats, strip, field table and the Chords (with the editable template list), Spectrum, Keys & Modes and visualizer panels are live. The Retuner panel is still the static placeholder (M7). Arc: `arcs/harmonic-field-lab`. Route `/harmonic-field-lab` (the frozen layout mock route was retired in M6).
 
 The lab is a standalone Hrifa page (decided 2026-11-12): its own route, tabs and settings, permanently. A later
 Composition Workbench integration reuses the core (`src/lib/harmonic-field/`) and the lab's section components; it does
@@ -13,7 +13,7 @@ reference only.
 | path | role |
 | --- | --- |
 | `src/pages/HarmonicFieldLab.page.tsx` | Entry file (standing shared path): renders `HarmonicFieldLabApp`. |
-| `HarmonicFieldLabApp.tsx` | The workspace (top bar, rail, pinned columns, centre unit, switcher, dock) inside `LabProvider`. `initial` and `frozen` props feed the mock route. |
+| `HarmonicFieldLabApp.tsx` | The workspace (top bar, rail, pinned columns, centre unit, switcher, dock) inside `LabProvider`. `initial` and `frozen` props are for tests and embedding (nothing stored, nothing sounds). |
 | `state/generate.ts` | `GenSpec` (the generation inputs of a tab), `generateField` (inline errors, never throws), presets to specs, `genKey` (which pitch collection a spec builds), `autoName`, `mosFor`. |
 | `state/labState.ts` | `LabState`, `Tab`, `Saved`, `UiSettings`, every `Action` and the pure `labReducer`. |
 | `state/derive.ts` | Analysis of the active tab as pure functions (`deriveBase`, `stripDevs`, `spectrumOf`, `chordModel`, `keysOf`, `lattice2dOf/3dOf`, `edoOf`, `dissOf`, `isoOf`, `fieldRowsOf`, `fifthsFor`) with the prototype's size caps. |
@@ -23,7 +23,7 @@ reference only.
 | `audio/engine.ts` | `VoiceEngine`: Web Audio voices (see "Audio engine"). `audio/plan.ts` (what to play, as data), `audio/keymap.ts` (computer keys), `audio/useLabAudio.ts` (hook), `audio/fakeContext.ts` (test double). |
 | `components/` | The section components (`Rail`, `Panels`, `GeneratorColumn`, `RingStats`, `TunerStrip`, `SavedSubsets`, `FieldPanel`, `ChordsPanel`, `SpectrumPanel`, `KeysModesPanel`, `Visualizer` with `LatticePanel` / `Lattice3D` / `EdoFitView` / `DissonanceView` / `IsoView`, `RetunerPanel` (placeholder), `KeyboardDock`, `TopBar`, `GlossaryDrawer`) and `lab.module.css` / `panels.module.css`. They read the lab through `useLab()` only. |
 | `texts.ts` | The glossary's single source: every tooltip and glossary entry (`TIPS`, `GLOSSARY`, `tipKeys`). |
-| `mock/` | The frozen layout mock route: `mockState.ts` (the fixed state), `mockRetuner.ts` (the placeholder retuner data, imported by the live Retuner panel). The route is retired in M6, but **keep `mockRetuner.ts`** until M7 replaces the panel (move it out of `mock/` when the route goes). |
+| `components/mockRetuner.ts` | The placeholder retuner data used by the static Retuner panel and the rail count. Delete it when M7 replaces the panel. (The `mock/` folder and its route `/harmonic-field-lab/mock` were removed in M6.) |
 | `src/lib/harmonic-field/` | The pure TS core. Owned by the same arc; no React, no DOM. |
 
 ## Contracts
@@ -75,9 +75,24 @@ Saved { id, name, gen: GenSpec, selCents: number[], mode }
   sounding (they point into the old field). Switching tab does the same.
 - Everything derived (`deriveBase`, the strip, the analyses) is `useMemo` per active tab in `LabProvider`; there is no
   module-scope mutable state or cache tied to lab data (the one module-level value is the WebGL capability probe, `components/webgl.ts`).
-- Clicking a note anywhere (ring, strip, lattice, iso keyboard, dissonance marks, compact field table)
-  calls `clickNote`: it toggles the note in the subset and pins it in the inspector. The full field table's checkbox toggles
-  without pinning; its row click pins.
+- Clicking a note anywhere (ring, strip, 2D and 3D lattice, iso keyboard, dissonance marks, compact and full field table)
+  calls `clickNote`: it toggles the note in the subset and does not pin. **Alt+click** (Alt+Enter on a focused note) calls
+  `pinNote` (action `pin/toggle`): it pins or unpins the note in the inspector and does not toggle it. Views build their
+  handlers with `noteHandlers(lab, i)` in `components/ui.tsx` (the 3D lattice passes `altKey` through `onPick(i, alt)`).
+  A pinned note is `--mark-yellow` in every view (DECISIONS H-3): `pinRing` on the ring and 2D lattice, a yellow halo in 3D,
+  `markPin` on the strip, `data-pin` outlines on iso hexagons, dissonance marks and field-table rows. Hover keeps the `--text`
+  `selRing`. The full table's checkbox still toggles.
+- The ring draws the selected subset as its own polygon (`subsetFill`, `--text`-based, notes in ring order, in both Chromatic
+  and Fifths views) under the blue chord polygon.
+- Lattice axes: `rankAxes3d` (lib) scores every three-prime choice by how many selected notes sit on the grid with no stem.
+  The picker lists them best first with the count (`3·5·7 — 7/7 on grid`) under an **Auto** entry; `VizSettings.axes3 = null`
+  is Auto and follows the best fit as the subset changes, a picked triple stays until Auto is chosen again (a stored triple the
+  field no longer offers behaves as Auto). The rail summary shows the effective axes.
+- Nearest scale menu: next to `m-ED` it has an **Odd limit...** entry (`PICK_ODD`); `Tab.pick.odd` holds the number (stored as the
+  optional `pickOdd`, default 15, clamped 1..255), the one Select button applies it. All / None / Invert are one joined button
+  row (actions); SegmentedControl stays for two-state choices.
+- Key rings (Keys & Modes) are buttons: a complete ring makes that key the subset with its root as the mode root, Ctrl/Cmd-click
+  plays its notes together; heat-grid rows set the current mode.
 - "Saved subsets of this pitch collection": a saved subset belongs to the collection whose `genKey` equals its `gen`'s. The list
   shows those; "All" lists the rest (loading one switches the tab to that collection).
 
@@ -92,18 +107,19 @@ page's keys (W-10):
 | `hrifa.harmonic-field-lab.layout.v1` | The pinned-panel `Layout` (the mock's model, moved here as its own key). Read once from the mock's `...mock.layout.v3` (else v2, else v1) when it is absent. |
 | `hrifa.harmonic-field-lab.tabs.v1` | `{ active, list: [{ id, name, snap }] }`. |
 | `hrifa.harmonic-field-lab.subsets.v1` | `[{ id, name, ...snap }]`. |
-| `...chordfinder.v1`, `...retuner.v1` | Reserved for M6 / M7 (not written yet). |
+| `hrifa.harmonic-field-lab.chordfinder.v1` | `{ templates: [{ text, name?, family? }] }`: the chord finder's templates (the editor behind Edit templates). Absent, unreadable or all-bad gives `DEFAULT_TEMPLATES`; a stored empty list stays empty; bad entries are dropped one by one, text cut to 80 characters, at most 64. |
+| `...retuner.v1` | Reserved for M7 (not written yet). |
 
 - A `snap` is the prototype's flat snapshot shape (`gen` as `harmonic | subharmonic | edo | additive | cps | custom`, `rep`, `h`,
   `edoN`, `axes`, `shape`, `dist`, `bidir`, `cpsF`, `cpsK`, `custom`, `mask`, `selCents`, `mode`, `preset` ...) plus optional extras
-  (`keepNew`, `pickScale`, `pickKind`, `pickStretch`, `pickM`, `pickRef`, `cmpRef`, `cmpOdd`, `cmpM`). Every field is optional with a
+  (`keepNew`, `pickScale`, `pickKind`, `pickStretch`, `pickM`, `pickOdd`, `pickRef`, `cmpRef`, `cmpOdd`, `cmpM`). Every field is optional with a
   default, so an older snapshot still loads and unknown fields are ignored. A prototype `preset` index maps to the preset name.
   The selection is stored as cents, not indices, and re-matched (within 0.01 c) when the field is rebuilt.
 - Sanitising is entry by entry: a bad tab, subset, column, view or share is dropped (or defaulted) and the rest is kept, so
   a future new view or panel cannot wipe a stored layout. Only a value with no usable entry at all falls back to the defaults.
 - Restore runs synchronously in the reducer's initialiser, before the first render. Each save effect writes only once its
   part of the state differs from the restored object, so nothing at all is written on mount (a stored value the page could
-  not fully use is never overwritten by what it made of it). The frozen mock route (`frozen`) never reads or writes storage.
+  not fully use is never overwritten by what it made of it). A `frozen` provider never reads or writes storage.
 - A tab restored while its inputs do not build (a repeat saved mid-edit, e.g. `2/`) has an empty field; its stored selection
   and mode are kept as `Tab.pending`, written back by `toSnapshot` and re-matched by the first good build.
 - A failed write (storage full or blocked) is reported by the `save*` functions (`false`); the page shows "Not stored" in the
@@ -199,6 +215,48 @@ Notes on the mapping:
   entry-wise sanitising).
 - `audio/*.test.ts`: the voice engine against a fake `AudioContext` (start, stop, glide, panic, no stuck voices), key map and plans.
 - `HarmonicFieldLab.page.test.tsx` (layout, pinned columns, visualizer panels, stored layouts), `HarmonicFieldLab.live.test.tsx`
-  (generation, tabs, selection, saved subsets, persistence, sound with a fake context, the frozen mock),
-  `HarmonicFieldLab.webgl.test.tsx` (a refused WebGL renderer), `mock/HarmonicFieldLabMock.page.test.tsx` (the frozen mock).
+  (generation, tabs, selection, Alt+click pin, saved subsets, persistence, sound with a fake context, a frozen lab),
+  `HarmonicFieldLab.m6.test.tsx` (axes picker, subset polygon, pin ring, template editor persistence, glossary search, .scl import,
+  key rings), `HarmonicFieldLab.webgl.test.tsx` (a refused WebGL renderer). `state/m6.test.ts` covers pin vs toggle, the odd-limit entry
+  and `chordfinder.v1`; `src/lib/harmonic-field/rankAxes.test.ts` covers the axis ranking.
 - Gate: `corepack yarn check:hfl` (typecheck, oxfmt, oxlint, stylelint, vitest scoped to the lib and this folder).
+
+## Parity with the frozen prototype (M6)
+
+The prototype is `Infinitone Tracing/prototype/harmonic_field_lab.html` (read-only reference). Every control and analysis block of it,
+and where it lives now. "Proposed drop" rows need the human's OK; nothing was removed silently. Prototype saved-data import is not
+built (the human does not want it).
+
+| prototype control or analysis | live location |
+| --- | --- |
+| Header: Wave, 1/1 Hz, Vol, Mode root at 1/1 Hz | Top bar, Sound settings menu. Wave is Sine / Harmonic (7 partials) instead of Sine / Saw (decided in M5). |
+| Header: Play scale, Play chord, Stop | Top bar transport. |
+| Tabs: switch, rename, close, + New | Top bar tabs (Alt+1..9 switches). |
+| Tabs: Duplicate | Proposed drop (needs human OK): a new tab starts from a preset, and a saved subset covers "a variation of this subset". Cheap to add (`tab/add` with the tab's `gen`). |
+| Preset and its info text | Generator column, preset menu with its fact-checked description tooltip. |
+| Method, repeat interval | Generator column: method tabs; repeat in the gear fold-out. |
+| Starting harmonic, Divisions, Lattice shape (box or diamond, distance, both directions), axes (generator, count, centre), MOS chips, CPS factors and k, Custom list | Generator column, per-method parameters. |
+| Load .scl, Export .scl | Custom method (Load .scl file); Saved subsets header (Export .scl). |
+| Prime filter All / None / chips | Generator column prime filter fold-out. |
+| Ring: click to include or exclude | Pitch circle (click toggles; Alt+click pins). Chromatic and Fifths views are new. |
+| All / None / Invert, Mode stepper | Under the ring (joined button row; mode stepper). |
+| Pick nearest (scale, m-ED, Targets 12 / JI, Octave to repeat, result text) | Under the ring: Nearest scale menu with its Targets switch and message. |
+| Max odd limit and Select | Entry "Odd limit..." of the Nearest scale menu. |
+| Include new notes when the field changes | Saved subsets header checkbox. |
+| Save subset, saved list (load, delete) | Saved subsets list (load, preview on hover, rename, delete, All collections). |
+| Compare to (picked, 12-EDO, JI odd limit, m-EDO) | Tuner strip header. |
+| Ribbon (pitches with 12-EDO spacing) | Tuner strip (with 100 c reference lines and the scale steps row). |
+| Lattice: Axes = Primes, Ratio labels | Visualizer, Lattice view (2D or 3D, axes ranked by fit with Auto, Ratios checkbox, pop-out). |
+| Lattice: Axes = Generators, Axes = Factors (CPS) | Proposed drop (needs human OK): the live lattice places notes by prime exponents only. The CPS star layout and the generator-step layout are not rebuilt; `latticeCoords(field, rep, 'gen' or 'cps')` is still in the lib. |
+| CPS chord list (otonal and utonal chips under the lattice; click plays and highlights, Shift-click makes the subset) | Proposed drop (needs human OK): `cpsChords` is in the lib but has no panel. The Chords panel finds the same chords by template on any field. |
+| Field table (check, #, ratio, cents, step, prime limit, odd limit, vs 12-EDO, vs JI, play) | Field table in the stats column (compact) and Open full table (all columns, sorting, play). |
+| Stats: Notes, Steps, Prime limit, Mean Tenney height, Structure, Step sizes | Beside the ring (Stats) and ShapeStats (Structure, step bars). |
+| Stats: Period | Proposed drop (needs human OK): the repeat is edited in the gear fold-out and is one turn of the ring. The unused `period` tooltip text is still in `texts.ts`. |
+| Scale table (degree, ratio, cents above the mode root, step, size) | Proposed drop of the separate table (decided in M4 to roll it into the strip): the strip shows ratio, deviation and step letters; cents above 1/1 are in the inspector and the field table. |
+| Interval spectrum table; Scale shape full detail pop-up (all clashes, constant-structure example) | Spectrum panel (sizes with counts, propriety clashes, constant structure with its example). |
+| Chords: tolerance, ladder (hover, Shift-click rungs), Reset list, templates text (one per line, # name), none-chips with the closest chord | Chords panel: tolerance with minus and plus and a rung ladder, dashed "not yet" chips that raise the tolerance, Edit templates (name, ratios, family, Add, Remove, Reset list; stored in chordfinder.v1). Show all chords is not needed: every voicing is listed. |
+| Chord click: play and highlight; Shift-click: make it the subset | Click a chip: sticky highlight and sound. Shift-click to make the chord the subset: proposed drop (needs human OK). |
+| Keys: summary, key chips (click makes the key the subset; Ctrl-click plays), Show all keys | Keys & Modes: key rings (click a complete ring to make it the subset; Ctrl-click plays its notes together, where the prototype played them one after another). |
+| Modes table (cents above each degree) | Keys & Modes heat grid (click a row to make that mode current). |
+| Pop-up panels (full table, all chords, all keys) | Open full table; panels scroll; visualizers pop out. |
+| Tooltips on every label | `texts.ts` (hover) and the searchable Glossary drawer with see-also links. |

@@ -465,7 +465,7 @@ describe('visualizer panels', () => {
     fireEvent.click(screen.getByRole('radio', { name: '3D' }));
     expect(screen.queryByRole('group', { name: /^Lattice of the field/ })).toBeNull();
     expect(screen.getByRole('note')).toHaveTextContent(/needs WebGL/);
-    expect(screen.getByRole('combobox', { name: 'Lattice axes (primes)' })).toHaveValue('3,5,7');
+    expect(screen.getByRole('combobox', { name: 'Lattice axes (primes)' })).toHaveValue('auto');
     expect(within(rail()).getByRole('tab', { name: /Lattice/ })).toHaveTextContent('3D 3·5·7');
     fireEvent.click(screen.getByRole('radio', { name: '2D' }));
     expect(screen.getByRole('group', { name: /^Lattice of the field/ })).toBeInTheDocument();

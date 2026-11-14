@@ -3,6 +3,7 @@ import { SCALE_LIBRARY, fmtRatio } from '../../../lib/harmonic-field';
 import { defaultGen } from './generate';
 import {
   MAX_TABS,
+  PICK_ODD,
   activeTab,
   initialState,
   labReducer,
@@ -82,10 +83,15 @@ describe('selection', () => {
     expect(activeTab(s).mode).toBe(0);
   });
 
-  it('odd-limit select takes the notes within the limit (5: 1/1, 5/4, 3/2)', () => {
-    const s = run(initialState(), { type: 'odd/select', limit: 5 });
-    expect(selRatios(s)).toEqual(['1/1', '5/4', '3/2']);
-    expect(run(initialState(), { type: 'odd/select', limit: Number.NaN }).tabs[0].sel).toEqual([0]);
+  it('odd-limit pick (via the scale menu) takes the notes within the limit (5: 1/1, 5/4, 3/2)', () => {
+    const odd = (limit: number) =>
+      run(
+        initialState(),
+        { type: 'pick/set', patch: { scale: PICK_ODD, odd: limit } },
+        { type: 'pick/apply' }
+      );
+    expect(selRatios(odd(5))).toEqual(['1/1', '5/4', '3/2']);
+    expect(activeTab(odd(0)).sel).toEqual([0]);
   });
 });
 

@@ -87,6 +87,63 @@ export function axisChoices3d(available: readonly number[]): number[][] {
   return out;
 }
 
+/** One way to pick the three axes, scored against the selected notes. */
+export interface AxisRank {
+  axes: number[];
+  /** Selected notes (with a monzo) that sit on the grid with no stem: every prime they use is one of the axes. */
+  onGrid: number;
+  /** Selected notes with a monzo (the denominator of the fit). */
+  total: number;
+  /** Sum over those notes of the exponents' absolute values on the axis primes (how far from 1/1 on the grid). */
+  distance: number;
+}
+
+/**
+ * Every three-prime axes choice ranked by fit to the selected notes: most notes on the grid first; a tie goes to the
+ * smaller total exponent distance from 1/1, then to the order of `axisChoices3d` (the 3, 5, 7 default first). Only the
+ * selected notes count (`sel` = field indices); notes without a monzo are left out. With no selection every choice
+ * scores 0 and the order is `axisChoices3d`'s. The repeat's own prime is not an axis (as in `latticeCoords3d`).
+ */
+export function rankAxes3d(field: Note[], rep: Note, sel: readonly number[]): AxisRank[] {
+  const L = latticeCoords(field, rep, 'prime');
+  if (!L || !L.axes || L.axes.length === 0) {
+    return [];
+  }
+  const primes = L.axes;
+  const at = new Map(L.pts.map((p) => [p.i, p.x]));
+  const rows = sel.flatMap((i) => {
+    const x = at.get(i);
+    return x ? [x] : [];
+  });
+  return axisChoices3d(primes)
+    .map((axes, order) => {
+      const slot = axes.map((p) => primes.indexOf(p));
+      let onGrid = 0;
+      let distance = 0;
+      for (const x of rows) {
+        distance += slot.reduce((t, k) => t + Math.abs(x[k]), 0);
+        if (x.every((e, k) => e === 0 || slot.includes(k))) {
+          onGrid++;
+        }
+      }
+      return { axes, onGrid, total: rows.length, distance, order };
+    })
+    .sort((a, b) => b.onGrid - a.onGrid || a.distance - b.distance || a.order - b.order)
+    .map(({ axes, onGrid, total, distance }) => ({ axes, onGrid, total, distance }));
+}
+
+/**
+ * The axes a lattice view uses: the picked triple when `ranks` still offers it, otherwise the best-ranked one (Auto, or a
+ * stored pick the field no longer has). `picked` says which of the two it is.
+ */
+export function chooseAxes3d(
+  ranks: readonly AxisRank[],
+  pick: readonly number[] | null
+): { axes: number[] | null; picked: boolean } {
+  const hit = pick ? ranks.find((r) => r.axes.join() === pick.join()) : undefined;
+  return { axes: (hit ?? ranks[0])?.axes ?? null, picked: hit !== undefined };
+}
+
 /** Place of a prime in the table of primes: the key for its stem direction and its colour (stable per prime). */
 export function primeSlot(prime: number): number {
   const k = PRIMES.indexOf(prime);

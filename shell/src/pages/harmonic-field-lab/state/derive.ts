@@ -299,6 +299,8 @@ export interface KeyRingData {
   complete: boolean;
   missing: number;
   moved: { c: number; found: boolean }[];
+  /** Field indices the key's degrees land on (the whole scale when `complete`), in degree order; null where one is missing. */
+  idx: (number | null)[];
 }
 export interface ModeFit {
   mode: number;
@@ -324,6 +326,7 @@ export function keysOf(base: Base, tol: number) {
     rootIdx: k.root,
     complete: k.complete,
     missing: k.missing,
+    idx: k.idx,
     moved: rel.map((note, d) => ({
       c: (field[k.root].c + note.c) % repC,
       found: k.idx[d] !== null,

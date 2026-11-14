@@ -1,7 +1,7 @@
 /**
  * The one lab state for the page: a reducer (labState.ts), restored from storage before the first render, saved after
- * changes, with the analysis of the active tab derived by `useMemo` and the voice engine wired in. The frozen mock route
- * uses the same provider with `frozen` (a fixed initial state, nothing stored, nothing sounds).
+ * changes, with the analysis of the active tab derived by `useMemo` and the voice engine wired in. A frozen provider
+ * (tests, an embedding) is given `frozen` (a fixed initial state, nothing stored, nothing sounds).
  */
 import {
   useCallback,
@@ -29,11 +29,13 @@ import {
   loadLayout,
   loadSettings,
   loadSubsets,
+  loadTemplates,
   loadTabs,
   KEY_SUBSETS,
   saveLayout,
   saveSettings,
   saveSubsets,
+  saveTemplates,
   saveTabs,
 } from './persist';
 import type { VizSettings } from './vizState';
@@ -77,6 +79,7 @@ export function restoreState(): LabState {
     nextSaved,
     ui: loadSettings(),
     layout: loadLayout(),
+    templates: loadTemplates(),
   };
 }
 
@@ -99,7 +102,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
   const tol = state.ui.tol;
   // each analysis depends only on what it reads, so a change of tolerance recomputes only the keys
   const spectrum = useMemo(() => spectrumOf(base), [base]);
-  const chords = useMemo(() => chordModel(base), [base]);
+  const chords = useMemo(() => chordModel(base, state.templates), [base, state.templates]);
   const keys = useMemo(() => keysOf(base, tol), [base, tol]);
   const edo = useMemo(() => edoOf(base), [base]);
   const diss = useMemo(() => dissOf(base.repC), [base.repC]);
@@ -136,6 +139,11 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     }
   }, [store, state.tabs, state.active]);
   useEffect(() => {
+    if (store && state.templates !== restored.current.templates) {
+      wrote('templates', saveTemplates(state.templates));
+    }
+  }, [store, state.templates]);
+  useEffect(() => {
     if (store && state.saved !== restored.current.saved) {
       wrote('subsets', saveSubsets(state.saved));
     }
@@ -169,13 +177,8 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
 
   const setHover = useCallback((i: number | null) => dispatch({ type: 'hover', i }), []);
   const setPin = useCallback((i: number | null) => dispatch({ type: 'pin', i }), []);
-  const clickNote = useCallback(
-    (i: number) => {
-      dispatch({ type: 'sel/toggle', i });
-      dispatch({ type: 'pin', i });
-    },
-    [dispatch]
-  );
+  const clickNote = useCallback((i: number) => dispatch({ type: 'sel/toggle', i }), [dispatch]);
+  const pinNote = useCallback((i: number) => dispatch({ type: 'pin/toggle', i }), [dispatch]);
 
   const viz = useMemo<VizApi>(
     () => ({
@@ -211,6 +214,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       selected,
       sounding: state.sounding,
       clickNote,
+      pinNote,
       audio,
       viz,
       frozen,
@@ -229,6 +233,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       setHover,
       setPin,
       clickNote,
+      pinNote,
       frozen,
       storeFailed,
     ]

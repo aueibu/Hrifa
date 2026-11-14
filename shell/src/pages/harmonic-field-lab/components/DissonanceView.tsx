@@ -3,7 +3,7 @@
  * the smooth intervals (dips) named. The curve is computed once per repeat (1 c steps) in the lab's analyses.
  */
 import { useMemo, useState, type PointerEvent } from 'react';
-import { Num, Row, Tip, useLab } from './ui';
+import { Num, Row, Tip, noteHandlers, useLab } from './ui';
 import classes from './panels.module.css';
 
 const W = 360;
@@ -72,6 +72,7 @@ export function DissonanceBody() {
                   className={classes.dissMark}
                   data-state={state}
                   data-sel={selected === i ? 'true' : undefined}
+                  data-pin={lab.pin === i ? 'true' : undefined}
                   x1={xOf(c)}
                   x2={xOf(c)}
                   y1={MT}
@@ -85,7 +86,12 @@ export function DissonanceBody() {
                   height={PH}
                   onMouseEnter={() => lab.setHover(i)}
                   onMouseLeave={() => lab.setHover(null)}
-                  onClick={() => lab.clickNote(i)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${ratios[i]}${lab.selected.has(i) ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}`}
+                  onFocus={() => lab.setHover(i)}
+                  onBlur={() => lab.setHover(null)}
+                  {...noteHandlers(lab, i)}
                 />
                 {state !== 'off' && (
                   <text

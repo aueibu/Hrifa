@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Button, Checkbox, Modal } from '@mantine/core';
 import { fieldRowsOf, type FieldRow } from '../state/derive';
 import { PlayIcon, TableIcon } from './icons';
-import { Num, Tip, useLab } from './ui';
+import { Num, Tip, rowHandlers, useLab } from './ui';
 import mock from './lab.module.css';
 import classes from './panels.module.css';
 
@@ -109,7 +109,9 @@ export function FieldTable() {
               data-lit={lab.sounding.has(r.i)}
               onMouseEnter={() => lab.setHover(r.i)}
               onMouseLeave={() => lab.setHover(null)}
-              onClick={() => lab.setPin(lab.pin === r.i ? null : r.i)}
+              tabIndex={0}
+              aria-label={`${r.ratio}${r.on ? ', in subset' : ''}${lab.pin === r.i ? ', pinned' : ''}`}
+              {...rowHandlers(lab, r.i)}
             >
               <td className={classes.l}>
                 <Checkbox
@@ -216,7 +218,9 @@ export function FieldCompact() {
                 data-lit={lab.sounding.has(r.i)}
                 onMouseEnter={() => lab.setHover(r.i)}
                 onMouseLeave={() => lab.setHover(null)}
-                onClick={() => lab.clickNote(r.i)}
+                tabIndex={0}
+                aria-label={`${r.ratio}${r.on ? ', in subset' : ''}${lab.pin === r.i ? ', pinned' : ''}`}
+                {...rowHandlers(lab, r.i)}
               >
                 <td>
                   <span

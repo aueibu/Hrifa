@@ -13,7 +13,7 @@ import { fieldRowsOf, fifthsFor, spectrumOf } from '../state/derive';
 import type { RingView } from '../state/labState';
 import { FieldCompact } from './FieldPanel';
 import { GearIcon } from './icons';
-import { Num, Row, Tip, signed, useLab } from './ui';
+import { Num, Row, Tip, noteHandlers, signed, useLab } from './ui';
 import classes from './lab.module.css';
 
 const SIZE = 300;
@@ -31,6 +31,8 @@ interface Mark {
   y: number;
   lx: number;
   ly: number;
+  /** Position round the ring as a fraction of a turn (clockwise from the top), for the subset polygon's order. */
+  turn: number;
   offset?: number;
   offChain?: boolean;
 }
@@ -49,7 +51,7 @@ function marksFor(
     return cents.map((c) => {
       const p = polar(c, R);
       const l = polar(c, R + 20);
-      return { x: p.x, y: p.y, lx: l.x, ly: l.y };
+      return { x: p.x, y: p.y, lx: l.x, ly: l.y, turn: c / repC };
     });
   }
   return L.notes.map((p) => {
@@ -61,6 +63,7 @@ function marksFor(
       y: C + r * Math.sin(a),
       lx: C + rl * Math.cos(a),
       ly: C + rl * Math.sin(a),
+      turn: p.turn,
       offset: p.offset,
       offChain: p.offChain,
     };
@@ -89,7 +92,10 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
     .filter((i) => i < field.length)
     .sort((a, b) => a - b)
     .map((i) => marks[i]);
-  const shown = lab.hover ?? lab.pin;
+  const subsetPts = [...selected]
+    .filter((i) => i < field.length)
+    .sort((a, b) => marks[a].turn - marks[b].turn || a - b)
+    .map((i) => marks[i]);
   const lit = [...sounding].filter((i) => i < field.length).sort((a, b) => a - b);
   return (
     <svg
@@ -128,6 +134,11 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
         );
       })}
       <polygon
+        className={classes.subsetFill}
+        data-testid="subset-polygon"
+        points={subsetPts.map((p) => `${p.x},${p.y}`).join(' ')}
+      />
+      <polygon
         className={classes.chordFill}
         points={chordPts.map((p) => `${p.x},${p.y}`).join(' ')}
       />
@@ -142,7 +153,8 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
             : '';
         return (
           <g key={i}>
-            {shown === i && <circle className={classes.selRing} cx={m.x} cy={m.y} r={12} />}
+            {lab.pin === i && <circle className={classes.pinRing} cx={m.x} cy={m.y} r={12} />}
+            {lab.hover === i && <circle className={classes.selRing} cx={m.x} cy={m.y} r={12} />}
             <circle
               className={isLit ? classes.dotLit : on ? classes.dotOn : classes.dotOff}
               data-chord={inChord ? 'true' : undefined}
@@ -152,19 +164,13 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
               r={isLit ? 8 : m.offChain ? 4 : 5.5}
               tabIndex={0}
               role="button"
-              aria-label={`${ratios[i]}, ${n.c.toFixed(1)} cents${on ? ', in subset' : ''}${isLit ? ', sounding' : ''}${extra}`}
-              aria-pressed={lab.pin === i}
+              aria-label={`${ratios[i]}, ${n.c.toFixed(1)} cents${on ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}${isLit ? ', sounding' : ''}${extra}`}
+              aria-pressed={on}
               onMouseEnter={() => lab.setHover(i)}
               onMouseLeave={() => lab.setHover(null)}
               onFocus={() => lab.setHover(i)}
               onBlur={() => lab.setHover(null)}
-              onClick={() => lab.clickNote(i)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  lab.clickNote(i);
-                }
-              }}
+              {...noteHandlers(lab, i)}
             />
             <text
               x={m.lx}
@@ -256,7 +262,7 @@ export function RingPanel() {
 const ordinal = (n: number) =>
   n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 
-/** The row of the note pointed at (or clicked): a small readout card; dashes until something is pointed at. */
+/** The row of the note pointed at (or pinned with Alt+click): a small readout card; dashes until something is pointed at. */
 function Inspector() {
   const lab = useLab();
   const { field, repC } = lab.base;
@@ -285,7 +291,7 @@ function Inspector() {
               )}
             </>
           ) : (
-            <span className={classes.kvName}>Point at or click a note</span>
+            <span className={classes.kvName}>Point at a note (Alt+click pins it)</span>
           )}
         </div>
         <Row name="cents">{r ? <Num>{r.cents.toFixed(2)}</Num> : dash}</Row>

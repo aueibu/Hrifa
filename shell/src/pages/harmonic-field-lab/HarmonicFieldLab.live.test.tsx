@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { HarmonicFieldLabMockPage } from './mock/HarmonicFieldLabMock.page';
+import { HarmonicFieldLabApp } from './HarmonicFieldLabApp';
 import { makeTab, presetGen } from './state/labState';
 import { KEY_SETTINGS, KEY_SUBSETS, KEY_TABS, saveSubsets } from './state/persist';
 
@@ -143,17 +143,47 @@ describe('tabs', () => {
 });
 
 describe('live selection', () => {
-  it('a click on a ring note toggles it and pins it in the inspector; the pinned label unpins', () => {
+  it('a plain click on a ring note toggles it and does not pin', () => {
     render(<HarmonicFieldLabPage />);
     expect(dot(/^5\/4/)).toHaveAccessibleName(/in subset/);
     fireEvent.click(dot(/^5\/4/));
     expect(dot(/^5\/4/)).not.toHaveAccessibleName(/in subset/);
     expect(ringCount()).toEqual([7, 8]);
-    expect(screen.getByText('pinned')).toBeInTheDocument();
+    expect(screen.queryByText('pinned')).toBeNull();
     fireEvent.click(dot(/^5\/4/));
     expect(ringCount()).toEqual([8, 8]);
+  });
+
+  it('Alt+click (and Alt+Enter) pins a note without toggling it; the pinned label unpins', () => {
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(dot(/^5\/4/), { altKey: true });
+    expect(ringCount()).toEqual([8, 8]);
+    expect(screen.getByText('pinned')).toBeInTheDocument();
+    expect(dot(/^5\/4/)).toHaveAccessibleName(/pinned/);
+    // Alt+click again unpins
+    fireEvent.click(dot(/^5\/4/), { altKey: true });
+    expect(screen.queryByText('pinned')).toBeNull();
+    expect(ringCount()).toEqual([8, 8]);
+    // keyboard: Enter toggles, Alt+Enter pins
+    fireEvent.keyDown(dot(/^3\/2/), { key: 'Enter', altKey: true });
+    expect(ringCount()).toEqual([8, 8]);
+    expect(screen.getByText('pinned')).toBeInTheDocument();
+    fireEvent.keyDown(dot(/^3\/2/), { key: 'Enter' });
+    expect(ringCount()).toEqual([7, 8]);
     fireEvent.click(screen.getByRole('button', { name: 'Unpin this note' }));
     expect(screen.queryByText('pinned')).toBeNull();
+  });
+
+  it('Alt+click pins from the strip and the field table too, and never toggles', () => {
+    render(<HarmonicFieldLabPage />);
+    const strip = screen.getByRole('region', { name: 'Tuner strip' });
+    fireEvent.click(within(strip).getByRole('button', { name: /^3\/2/ }), { altKey: true });
+    expect(ringCount()).toEqual([8, 8]);
+    expect(screen.getByText('pinned')).toBeInTheDocument();
+    const table = screen.getByRole('table', { name: 'Field notes' });
+    fireEvent.click(within(table).getByText('7/4').closest('tr')!, { altKey: true });
+    expect(ringCount()).toEqual([8, 8]);
+    expect(within(table).getByText('7/4').closest('tr')).toHaveAttribute('data-pin', 'true');
   });
 
   it('strip and field table clicks toggle too; the full table checkbox does as well', async () => {
@@ -194,10 +224,15 @@ describe('live selection', () => {
   it('odd-limit Select and nearest-scale Select (m-ED and a library scale)', () => {
     render(<HarmonicFieldLabPage />);
     const bar = within(screen.getByRole('group', { name: 'Note selection' }));
+    // the odd limit is an entry of the scale menu; it shows its own number box and the one Select applies it
+    expect(bar.queryByRole('textbox', { name: 'Max odd limit' })).toBeNull();
+    type(bar.getByRole('combobox', { name: 'Scale to match' }), 'odd');
     type(bar.getByRole('textbox', { name: 'Max odd limit' }), '5');
-    fireEvent.click(bar.getAllByRole('button', { name: 'Select' })[1]);
+    fireEvent.click(bar.getByRole('button', { name: 'Select' }));
     expect(ringCount()).toEqual([3, 8]);
+    expect(screen.getByRole('status')).toHaveTextContent(/Picked 3 notes with odd limit 5/);
     // nearest 3 equal divisions of the octave
+    type(bar.getByRole('combobox', { name: 'Scale to match' }), 'ed');
     type(bar.getByRole('textbox', { name: 'Equal divisions' }), '4');
     fireEvent.click(bar.getAllByRole('button', { name: 'Select' })[0]);
     expect(ringCount()).toEqual([4, 8]);
@@ -743,7 +778,7 @@ describe('typing, storage and other windows', () => {
   });
 });
 
-describe('the frozen mock route', () => {
+describe('the frozen lab (embedding, tests)', () => {
   it('stores nothing and never creates an AudioContext', () => {
     let made = 0;
     class Spy extends FakeCtx {
@@ -755,14 +790,12 @@ describe('the frozen mock route', () => {
     (window as unknown as { AudioContext: unknown }).AudioContext = Spy;
     const setItem = vi.spyOn(Storage.prototype, 'setItem');
     try {
-      render(<HarmonicFieldLabMockPage />);
+      render(<HarmonicFieldLabApp frozen />);
       fireEvent.keyDown(document.body, { key: 'z' });
       fireEvent.click(screen.getByRole('button', { name: 'scale' }));
       fireEvent.click(dot(/^5\/4/));
       expect(made).toBe(0);
       expect(setItem.mock.calls.map((c) => c[0])).toEqual([]);
-      // the sounding chord of the mock stays lit
-      expect(dot(/^3\/2/)).toHaveAccessibleName(/sounding/);
     } finally {
       setItem.mockRestore();
       delete (window as unknown as { AudioContext?: unknown }).AudioContext;

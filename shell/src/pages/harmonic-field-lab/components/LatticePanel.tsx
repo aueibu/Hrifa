@@ -6,18 +6,29 @@
  */
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { ActionIcon, Checkbox, NativeSelect, SegmentedControl } from '@mantine/core';
-import { axisChoices3d, fmtHidden } from '../../../lib/harmonic-field';
+import { chooseAxes3d, fmtHidden, rankAxes3d, type HiddenPrime } from '../../../lib/harmonic-field';
 import { lattice2dOf, lattice3dOf, stemHue } from '../state/derive';
 import type { VizId } from '../state/layout';
+import { TIPS } from '../texts';
 import type { SceneState } from './Lattice3D';
-import { Num, Row, Tip, useLab, useViz } from './ui';
+import { Num, Row, Tip, noteHandlers, useLab, useViz } from './ui';
 import { hasWebGL } from './webgl';
 import classes from './panels.module.css';
 
 const Lattice3D = lazy(() => import('./Lattice3D'));
 
+const AUTO = 'auto';
+
+/** The chip's own example, worked out for this prime and power. */
+function primePowerExample(h: HiddenPrime): string {
+  const a = Math.abs(h.exp);
+  const power = a === 1 ? String(h.prime) : `${h.prime}^${a}`;
+  return h.exp > 0
+    ? `Here: ${fmtHidden(h)} means the note has ${a === 1 ? 'one factor' : `${a} factors`} of ${h.prime} on top (${power} in the numerator).`
+    : `Here: ${fmtHidden(h)} means the note has ${a === 1 ? 'one factor' : `${a} factors`} of ${h.prime} underneath (${power} in the denominator).`;
+}
 const choiceValue = (axes: readonly number[]) => axes.join(',');
-const choiceLabel = (axes: readonly number[]) => axes.join(' · ');
+const choiceLabel = (axes: readonly number[]) => axes.join('·');
 
 function Lattice2D({ axes, labels }: { axes: readonly number[] | null; labels: boolean }) {
   const lab = useLab();
@@ -77,10 +88,10 @@ function Lattice2D({ axes, labels }: { axes: readonly number[] | null; labels: b
       {L.pts.map((p) => {
         const lit = lab.sounding.has(p.i);
         const on = lab.selected.has(p.i);
-        const shown = lab.hover ?? lab.pin;
         return (
           <g key={p.i}>
-            {shown === p.i && <circle className={classes.selRing} cx={p.x} cy={p.y} r={13} />}
+            {lab.pin === p.i && <circle className={classes.pinRing} cx={p.x} cy={p.y} r={13} />}
+            {lab.hover === p.i && <circle className={classes.selRing} cx={p.x} cy={p.y} r={13} />}
             <circle
               className={lit ? classes.dotLit : on ? classes.dotOn : classes.dotOff}
               data-chord={lab.chord.has(p.i) ? 'true' : undefined}
@@ -94,13 +105,7 @@ function Lattice2D({ axes, labels }: { axes: readonly number[] | null; labels: b
               onMouseLeave={() => lab.setHover(null)}
               onFocus={() => lab.setHover(p.i)}
               onBlur={() => lab.setHover(null)}
-              onClick={() => lab.clickNote(p.i)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  lab.clickNote(p.i);
-                }
-              }}
+              {...noteHandlers(lab, p.i)}
             />
             {labels && (
               <text
@@ -109,6 +114,12 @@ function Lattice2D({ axes, labels }: { axes: readonly number[] | null; labels: b
                 x={p.x + 10}
                 y={on ? p.y - 10 : p.y + 20}
               >
+                {p.hidden.length > 0 && (
+                  <title>
+                    {TIPS.primePower.term}. {TIPS.primePower.text}{' '}
+                    {p.hidden.map(primePowerExample).join(' ')}
+                  </title>
+                )}
                 {p.label}
                 {p.hidden.map((h) => (
                   <tspan
@@ -165,7 +176,7 @@ function Lattice3DView({
       names={ratios}
       scene={scene}
       onHover={lab.setHover}
-      onPick={lab.clickNote}
+      onPick={(i, alt) => (alt ? lab.pinNote(i) : lab.clickNote(i))}
       onError={onError}
       resetKey={resetKey}
       big={big}
@@ -183,10 +194,23 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
   // WebGL can be present yet refuse a renderer (context limit); then the same note as for no WebGL is shown
   const [refused, setRefused] = useState(false);
   const webgl = hasWebGL() && !refused;
-  const l3 = useMemo(() => lattice3dOf(field, rep, s.axes3), [field, rep, s.axes3]);
-  const l2 = useMemo(() => lattice2dOf(field, rep, s.axes3), [field, rep, s.axes3]);
-  const available = useMemo(() => lattice3dOf(field, rep, null).available, [field, rep]);
-  const choices = axisChoices3d(available);
+  // axes ranked by how many of the selected notes sit on the grid; Auto (axes3 null) follows the best one
+  const idx = lab.base.idx;
+  const ranks = useMemo(() => rankAxes3d(field, rep, idx), [field, rep, idx]);
+  const { axes, picked } = chooseAxes3d(ranks, s.axes3);
+  const l3 = useMemo(() => lattice3dOf(field, rep, axes), [field, rep, axes]);
+  const l2 = useMemo(() => lattice2dOf(field, rep, axes), [field, rep, axes]);
+  const fit = (r: { onGrid: number; total: number }) => `${r.onGrid}/${r.total} on grid`;
+  const options = [
+    {
+      value: AUTO,
+      label: ranks[0] ? `Auto: ${choiceLabel(ranks[0].axes)} (${fit(ranks[0])})` : 'Auto',
+    },
+    ...ranks.map((r) => ({
+      value: choiceValue(r.axes),
+      label: `${choiceLabel(r.axes)} — ${fit(r)}`,
+    })),
+  ];
   const off = l2.pts.filter((p) => p.stems.length);
   return (
     <>
@@ -207,10 +231,17 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
           <NativeSelect
             size="xs"
             aria-label="Lattice axes (primes)"
-            value={choiceValue(s.axes3 ?? l3.axes)}
-            onChange={(e) => viz.patch(id, { axes3: e.currentTarget.value.split(',').map(Number) })}
-            data={choices.map((c) => ({ value: choiceValue(c), label: choiceLabel(c) }))}
-            w={104}
+            value={picked && axes ? choiceValue(axes) : AUTO}
+            onChange={(e) =>
+              viz.patch(id, {
+                axes3:
+                  e.currentTarget.value === AUTO
+                    ? null
+                    : e.currentTarget.value.split(',').map(Number),
+              })
+            }
+            data={options}
+            w={picked ? 150 : 190}
           />
         </Tip>
         {is3d && (
@@ -246,14 +277,14 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
         />
       </div>
       {!is3d ? (
-        <Lattice2D axes={s.axes3} labels={s.labels} />
+        <Lattice2D axes={axes} labels={s.labels} />
       ) : webgl ? (
         <Tip k="lattice3dView" as="control" block>
           <Suspense
             fallback={<div className={classes.lat3dHost} data-big={big ? 'true' : undefined} />}
           >
             <Lattice3DView
-              axes={s.axes3}
+              axes={axes}
               labels={s.labels}
               resetKey={resetKey}
               big={big}
@@ -269,7 +300,7 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
       )}
       <div className={classes.verdicts}>
         <Row name="Axes">
-          primes <Num>{l3.axes.join(', ')}</Num>
+          primes <Num>{l3.axes.join(', ')}</Num> <Num muted>{picked ? '(picked)' : '(auto)'}</Num>
         </Row>
         <Row name={<Tip k="latticeStems">Off-axis</Tip>}>
           {off.length === 0 ? (
@@ -279,9 +310,9 @@ export function LatticeBody({ id, big }: { id: VizId; big?: boolean }) {
               <span key={p.i} className={classes.offAxis}>
                 <Num>{p.label}</Num>{' '}
                 {p.hidden.map((h) => (
-                  <span key={h.prime} style={{ color: `var(--mark-${stemHue(h.prime)})` }}>
-                    {fmtHidden(h)}{' '}
-                  </span>
+                  <Tip key={h.prime} k="primePower" as="control" extra={primePowerExample(h)}>
+                    <span style={{ color: `var(--mark-${stemHue(h.prime)})` }}>{fmtHidden(h)}</span>
+                  </Tip>
                 ))}
               </span>
             ))

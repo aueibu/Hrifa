@@ -6,7 +6,8 @@ import classes from './panels.module.css';
 const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+ c'];
 
 function KeyRing({ k }: { k: KeyRingData }) {
-  const { base } = useLab();
+  const lab = useLab();
+  const { base } = lab;
   const { field, repC } = base;
   const S = 56;
   const C = S / 2;
@@ -19,28 +20,49 @@ function KeyRing({ k }: { k: KeyRingData }) {
     ? `Key on ${k.root}: the whole scale fits`
     : `Key on ${k.root}: ${k.missing} scale note${k.missing === 1 ? '' : 's'} missing from the field`;
   return (
-    <li className={classes.keyRing} data-complete={k.complete} title={label}>
-      <svg viewBox={`0 0 ${S} ${S}`} className={classes.keySvg} role="img" aria-label={label}>
-        <circle className={classes.keyCircle} cx={C} cy={C} r={R} />
-        {field.map((n, i) => {
-          const p = at(n.c);
-          return <circle key={i} className={classes.keyField} cx={p.x} cy={p.y} r={2} />;
-        })}
-        {k.moved.map((m, d) => {
-          const p = at(m.c, R + 0.5);
-          return m.found ? (
-            <circle key={d} className={classes.keyFound} cx={p.x} cy={p.y} r={3.2} />
-          ) : (
-            <path
-              key={d}
-              className={classes.keyMiss}
-              d={`M${p.x - 2.6} ${p.y - 2.6}l5.2 5.2M${p.x + 2.6} ${p.y - 2.6}l-5.2 5.2`}
-            />
-          );
-        })}
-      </svg>
-      <Num>{k.root}</Num>
-      <Num muted>{k.complete ? 'fits' : `−${k.missing}`}</Num>
+    <li>
+      <button
+        type="button"
+        className={classes.keyRing}
+        data-complete={k.complete}
+        title={`${label}. ${k.complete ? 'Click: make it the subset. Ctrl-click: hear it.' : 'Not available as a subset.'}`}
+        disabled={!k.complete}
+        onClick={(e) => {
+          const notes = k.idx.filter((i): i is number => i !== null);
+          if (e.ctrlKey || e.metaKey) {
+            lab.audio.playFieldChord(notes);
+            return;
+          }
+          const sorted = [...new Set(notes)].sort((a, b) => a - b);
+          lab.dispatch({
+            type: 'sel/set',
+            idx: sorted,
+            mode: Math.max(0, sorted.indexOf(k.rootIdx)),
+          });
+        }}
+      >
+        <svg viewBox={`0 0 ${S} ${S}`} className={classes.keySvg} role="img" aria-label={label}>
+          <circle className={classes.keyCircle} cx={C} cy={C} r={R} />
+          {field.map((n, i) => {
+            const p = at(n.c);
+            return <circle key={i} className={classes.keyField} cx={p.x} cy={p.y} r={2} />;
+          })}
+          {k.moved.map((m, d) => {
+            const p = at(m.c, R + 0.5);
+            return m.found ? (
+              <circle key={d} className={classes.keyFound} cx={p.x} cy={p.y} r={3.2} />
+            ) : (
+              <path
+                key={d}
+                className={classes.keyMiss}
+                d={`M${p.x - 2.6} ${p.y - 2.6}l5.2 5.2M${p.x + 2.6} ${p.y - 2.6}l-5.2 5.2`}
+              />
+            );
+          })}
+        </svg>
+        <Num>{k.root}</Num>
+        <Num muted>{k.complete ? 'fits' : `−${k.missing}`}</Num>
+      </button>
     </li>
   );
 }

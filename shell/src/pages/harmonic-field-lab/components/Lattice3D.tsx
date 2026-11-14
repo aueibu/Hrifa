@@ -23,6 +23,7 @@ interface Palette {
   grid: THREE.Color;
   lit: THREE.Color;
   chord: THREE.Color;
+  pin: THREE.Color;
 }
 const VARS: Record<keyof Palette, string> = {
   text: '--text',
@@ -31,6 +32,7 @@ const VARS: Record<keyof Palette, string> = {
   grid: '--grid',
   lit: '--mark-green',
   chord: '--mark-blue',
+  pin: '--mark-yellow',
 };
 
 /**
@@ -78,7 +80,8 @@ export interface SceneState {
 }
 interface SceneCallbacks {
   onHover: (i: number | null) => void;
-  onPick: (i: number) => void;
+  /** `alt`: Alt was held (pin instead of toggle). */
+  onPick: (i: number, alt: boolean) => void;
 }
 interface Node {
   i: number;
@@ -86,6 +89,7 @@ interface Node {
   mesh: THREE.Mesh;
   chordHalo: THREE.Mesh;
   selHalo: THREE.Mesh;
+  pinHalo: THREE.Mesh;
   label: CSS2DObject;
 }
 
@@ -114,6 +118,7 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
     lit: new THREE.MeshBasicMaterial(),
     chord: new THREE.MeshBasicMaterial({ side: THREE.BackSide }),
     sel: new THREE.MeshBasicMaterial({ side: THREE.BackSide }),
+    pin: new THREE.MeshBasicMaterial({ side: THREE.BackSide }),
     edgeOn: new THREE.LineBasicMaterial(),
     edgeOff: new THREE.LineBasicMaterial(),
     edgeChord: new THREE.LineBasicMaterial(),
@@ -140,6 +145,7 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
     mats.lit.color.copy(p.lit);
     mats.chord.color.copy(p.chord);
     mats.sel.color.copy(p.text);
+    mats.pin.color.copy(p.pin);
     mats.edgeOn.color.copy(p.muted);
     mats.edgeOff.color.copy(p.grid);
     mats.edgeChord.color.copy(p.chord);
@@ -246,11 +252,14 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
       mesh.userData.i = p.i;
       const chordHalo = new THREE.Mesh(sphere, mats.chord);
       const selHalo = new THREE.Mesh(sphere, mats.sel);
+      const pinHalo = new THREE.Mesh(sphere, mats.pin);
       chordHalo.scale.setScalar(1.55);
       selHalo.scale.setScalar(2.1);
+      pinHalo.scale.setScalar(2.5);
+      pinHalo.visible = false;
       chordHalo.visible = false;
       selHalo.visible = false;
-      mesh.add(chordHalo, selHalo);
+      mesh.add(chordHalo, selHalo, pinHalo);
       const lab = label(labelOf(p.i), classes.lat3dLabel);
       for (const h of p.hidden) {
         const chip = document.createElement('span');
@@ -270,7 +279,7 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
       lab.position.set(0, 2.7, 0); // above the sphere (in sphere radii, the mesh is scaled)
       mesh.add(lab);
       group.add(mesh);
-      nodes.push({ i: p.i, folded: p.folded, mesh, chordHalo, selHalo, label: lab });
+      nodes.push({ i: p.i, folded: p.folded, mesh, chordHalo, selHalo, pinHalo, label: lab });
     }
     // one dashed segment set per hidden prime
     const byPrime = new Map<number, THREE.Vector3[]>();
@@ -314,7 +323,7 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
 
   const setState = (s: SceneState) => {
     state = s;
-    const shown = s.hover ?? s.pin;
+    const shown = s.hover;
     for (const n of nodes) {
       const lit = s.lit.has(n.i);
       const on = s.on.has(n.i);
@@ -323,7 +332,8 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
       n.mesh.scale.setScalar(k);
       n.label.position.set(0, 2.7, 0);
       n.chordHalo.visible = s.chord.has(n.i);
-      n.selHalo.visible = shown === n.i;
+      n.selHalo.visible = s.hover === n.i;
+      n.pinHalo.visible = s.pin === n.i;
       n.label.visible = s.labels;
       n.label.element.dataset.on = String(on);
       n.label.element.dataset.lit = String(lit);
@@ -448,7 +458,7 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
     if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 5 && e.button === 0) {
       const i = hit(e);
       if (i !== null) {
-        cb.onPick(i);
+        cb.onPick(i, e.altKey);
       }
     }
     down = null;
@@ -494,7 +504,7 @@ interface Props {
   /** What is lit, selected, highlighted, pointed at and pinned, and whether to show the labels. */
   scene: SceneState;
   onHover: (i: number | null) => void;
-  onPick: (i: number) => void;
+  onPick: (i: number, alt: boolean) => void;
   /** Called once when the renderer cannot be created (WebGL refused after all); the parent shows the 2D note instead. */
   onError?: () => void;
   /** Bump to put the camera back at its starting view. */
@@ -533,7 +543,7 @@ export default function Lattice3D({
         el,
         {
           onHover: (i) => latest.current.onHover(i),
-          onPick: (i) => latest.current.onPick(i),
+          onPick: (i, alt) => latest.current.onPick(i, alt),
         },
         (i) => latest.current.names[i] ?? ''
       );

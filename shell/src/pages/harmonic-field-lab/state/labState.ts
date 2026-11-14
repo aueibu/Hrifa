@@ -6,6 +6,7 @@
  * is part of the state (built by `generateField`) so selection can be carried across a regeneration inside the reducer.
  */
 import {
+  DEFAULT_TEMPLATES,
   EPS,
   SCALE_LIBRARY,
   carrySelection,
@@ -16,6 +17,7 @@ import {
   oddLimitSubset,
   scaleTargets,
   scaleTargetsLabeled,
+  type ChordTemplate,
   type Note,
   type TargetPoint,
 } from '../../../lib/harmonic-field';
@@ -71,6 +73,8 @@ export interface Tab {
     kind: 'edo12' | 'ji';
     stretch: boolean;
     m: number;
+    /** The odd limit of the "Odd limit..." entry of the scale menu. */
+    odd: number;
     ref: PickRef | null;
     /** Message after the last pick (or '' ). */
     msg: string;
@@ -129,6 +133,8 @@ export interface LabState {
   sounding: ReadonlySet<number>;
   ui: UiSettings;
   layout: Layout;
+  /** The chord finder's templates (user-editable; stored in `...chordfinder.v1`). */
+  templates: ChordTemplate[];
 }
 
 /* ----------------------------------------------------------------------------------------------- defaults */
@@ -136,6 +142,7 @@ export const DEFAULT_PRESET = 'Harmonics 8–15';
 export const DEFAULT_BASE_HZ = 261.6256;
 export const DEFAULT_TOL = 18;
 export const MAX_TABS = 12;
+export const MAX_TEMPLATES = 64;
 
 export function defaultUi(): UiSettings {
   return {
@@ -161,6 +168,7 @@ export const emptyPick = (): Tab['pick'] => ({
   kind: 'edo12',
   stretch: false,
   m: 12,
+  odd: 15,
   ref: null,
   msg: '',
   ok: true,
@@ -207,6 +215,7 @@ export function initialState(): LabState {
     sounding: new Set(),
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
+    templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
   };
 }
 
@@ -266,6 +275,8 @@ export function regenTab(tab: Tab, gen: GenSpec, fresh = false): Tab {
 
 /* -------------------------------------------------------------------------------------------- nearest scale */
 export const PICK_ED = 'ed';
+/** The scale menu's "Odd limit..." entry: keep the notes whose odd limit is at most `pick.odd`. */
+export const PICK_ODD = 'odd';
 /** `w:<name>` (Western library) or `m<n>` (melakarta). */
 export function resolveScale(
   id: string
@@ -300,6 +311,35 @@ function applyNearest(t: Tab): Tab {
   const sc = resolveScale(scale);
   if (!t.field.length) {
     return { ...t, pick: { ...t.pick, ok: false, msg: 'There are no notes to pick from.' } };
+  }
+  if (scale === PICK_ODD) {
+    const limit = Math.min(
+      255,
+      Math.max(1, Math.trunc(Number.isFinite(t.pick.odd) ? t.pick.odd : 15))
+    );
+    const sel = uniqSorted(oddLimitSubset(t.field, limit));
+    if (sel.length === 0) {
+      return {
+        ...t,
+        pick: {
+          ...t.pick,
+          odd: limit,
+          ok: false,
+          msg: `No notes within odd limit ${limit} (notes without a ratio, such as EDO steps, have none). The subset was not changed.`,
+        },
+      };
+    }
+    return {
+      ...t,
+      sel,
+      mode: 0,
+      pick: {
+        ...t.pick,
+        odd: limit,
+        ok: true,
+        msg: `Picked ${sel.length} notes with odd limit ${limit} or less.`,
+      },
+    };
   }
   if (!sc) {
     const n = Math.min(1000, Math.max(1, Math.trunc(Number.isFinite(m) ? m : 12)));
@@ -378,15 +418,16 @@ export type Action =
   | { type: 'mode/step'; by: number }
   | { type: 'pick/set'; patch: Partial<Tab['pick']> }
   | { type: 'pick/apply' }
-  | { type: 'odd/select'; limit: number }
   | { type: 'cmp/set'; patch: Partial<Tab['cmp']> }
   | { type: 'saved/save'; name: string }
   | { type: 'saved/delete'; id: string }
   | { type: 'saved/rename'; id: string; name: string }
   | { type: 'saved/load'; id: string }
   | { type: 'saved/sync'; saved: Saved[] }
+  | { type: 'templates/set'; templates: ChordTemplate[] }
   | { type: 'hover'; i: number | null }
   | { type: 'pin'; i: number | null }
+  | { type: 'pin/toggle'; i: number }
   | { type: 'chord/hover'; set: ReadonlySet<number> | null }
   | { type: 'chord/pick'; set: ReadonlySet<number> | null }
   | { type: 'preview'; idx: readonly number[] | null }
@@ -549,11 +590,6 @@ export function labReducer(s: LabState, a: Action): LabState {
       return withTab(s, (t) => ({ ...t, pick: { ...t.pick, ...a.patch } }));
     case 'pick/apply':
       return withTab(s, applyNearest);
-    case 'odd/select':
-      return withTab(s, (t) => {
-        const limit = Math.max(1, Math.trunc(Number.isFinite(a.limit) ? a.limit : 1));
-        return { ...t, sel: uniqSorted(oddLimitSubset(t.field, limit)), mode: 0 };
-      });
     case 'cmp/set':
       return withTab(s, (t) => {
         const cmp = { ...t.cmp, ...a.patch };
@@ -602,6 +638,8 @@ export function labReducer(s: LabState, a: Action): LabState {
       return s.hover === a.i ? s : { ...s, hover: a.i };
     case 'pin':
       return s.pin === a.i ? s : { ...s, pin: a.i };
+    case 'pin/toggle':
+      return { ...s, pin: s.pin === a.i ? null : a.i };
     case 'chord/hover':
       return { ...s, chordHover: a.set };
     case 'chord/pick':
@@ -613,6 +651,13 @@ export function labReducer(s: LabState, a: Action): LabState {
       const same = next.size === s.sounding.size && [...next].every((i) => s.sounding.has(i));
       return same ? s : { ...s, sounding: next };
     }
+    case 'templates/set':
+      return {
+        ...s,
+        templates: a.templates.slice(0, MAX_TEMPLATES),
+        chordPick: null,
+        chordHover: null,
+      };
     case 'ui':
       return { ...s, ui: { ...s.ui, ...a.patch } };
     case 'viz':

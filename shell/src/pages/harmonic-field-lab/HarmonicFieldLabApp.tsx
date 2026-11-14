@@ -2,7 +2,7 @@
  * The lab's one-screen workspace in the Ableton/Bitwig manner, driven by the lab state (state/LabProvider).
  * Grid: top bar; rail | pinned columns (left) | generation-and-selection unit | pinned columns (right) | switcher
  * column; thin keyboard dock. Pinned columns appear only when the window is wide enough (state/layout.ts).
- * `HarmonicFieldLabApp` wraps it in the provider; the frozen mock route passes `initial` and `frozen`.
+ * `HarmonicFieldLabApp` wraps it in the provider; a frozen embedding (tests, a later Workbench host) passes `initial` and `frozen`.
  */
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { ActionIcon, AppShell } from '@mantine/core';
@@ -150,9 +150,9 @@ function Workbench() {
 }
 
 interface Props {
-  /** A fixed starting state (the mock route, tests); without it the state is restored from storage. */
+  /** A fixed starting state (tests, an embedding); without it the state is restored from storage. */
   initial?: LabState;
-  /** The frozen mock: nothing is stored and nothing sounds. */
+  /** Frozen: nothing is stored and nothing sounds. */
   frozen?: boolean;
 }
 

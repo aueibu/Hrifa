@@ -7,7 +7,7 @@ import { NativeSelect } from '@mantine/core';
 import { isoOf } from '../state/derive';
 import type { VizId } from '../state/layout';
 import { ISO_G1, ISO_G2, ISO_TOLS } from '../state/vizState';
-import { Num, Row, Tip, useLab, useViz } from './ui';
+import { Num, Row, Tip, noteHandlers, useLab, useViz } from './ui';
 import classes from './panels.module.css';
 
 const COLS = 10;
@@ -38,7 +38,6 @@ export function IsoBody({ id }: { id: VizId }) {
   const shown = lab.hover ?? lab.pin;
   const found = new Set(cells.filter((c) => c.note !== null).map((c) => c.note));
   const blank = cells.filter((c) => c.note === null).length;
-  const toggle = (n: number) => lab.clickNote(n);
   return (
     <>
       <div className={classes.vizTools}>
@@ -95,29 +94,20 @@ export function IsoBody({ id }: { id: VizId }) {
                   data-state={state}
                   data-chord={n !== null && lab.chord.has(n) ? 'true' : undefined}
                   data-sel={n !== null && shown === n ? 'true' : undefined}
+                  data-pin={n !== null && lab.pin === n ? 'true' : undefined}
                   points={hexPoints(cx, cy)}
                   role={n === null ? undefined : 'button'}
                   tabIndex={n === null ? undefined : 0}
                   aria-label={
                     n === null
                       ? undefined
-                      : `${ratio}${on ? ', in subset' : ''}${lit ? ', sounding' : ''}, ${sgn(c.err)} c from the pitch`
+                      : `${ratio}${on ? ', in subset' : ''}${n !== null && lab.pin === n ? ', pinned' : ''}${lit ? ', sounding' : ''}, ${sgn(c.err)} c from the pitch`
                   }
                   onMouseEnter={n === null ? undefined : () => lab.setHover(n)}
                   onMouseLeave={n === null ? undefined : () => lab.setHover(null)}
                   onFocus={n === null ? undefined : () => lab.setHover(n)}
                   onBlur={n === null ? undefined : () => lab.setHover(null)}
-                  onClick={n === null ? undefined : () => toggle(n)}
-                  onKeyDown={
-                    n === null
-                      ? undefined
-                      : (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggle(n);
-                          }
-                        }
-                  }
+                  {...(n === null ? {} : noteHandlers(lab, n))}
                 />
                 {n !== null && (
                   <text

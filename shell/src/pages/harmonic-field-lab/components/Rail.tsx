@@ -3,10 +3,9 @@
  * screens. Each entry carries a live count or verdict.
  */
 import { useMemo } from 'react';
-import { defaultAxes3d } from '../../../lib/harmonic-field';
-import { retunerCards } from '../mock/mockRetuner';
+import { chooseAxes3d, rankAxes3d, type AxisRank } from '../../../lib/harmonic-field';
 import type { Lab } from '../state/context';
-import { isoOf, lattice3dOf } from '../state/derive';
+import { isoOf } from '../state/derive';
 import {
   DEFAULT_VIEWS,
   isViz,
@@ -18,6 +17,7 @@ import {
 import { VIEW_TIP, type VizSettings } from '../state/vizState';
 import type { TipKey } from '../texts';
 import { PinIcon } from './icons';
+import { retunerCards } from './mockRetuner';
 import { PinMenu } from './PinMenu';
 import { Tip, useLab } from './ui';
 import classes from './lab.module.css';
@@ -40,10 +40,10 @@ const panelTip = (id: PanelId, tip: TipKey, view: (id: VizId) => VizView): TipKe
   isViz(id) ? VIEW_TIP[view(id)] : tip;
 
 /** Rail summary of a visualizer: a live figure for its view. */
-function vizSummary(view: VizView, s: VizSettings, lab: Lab, axes: number[]): string {
+function vizSummary(view: VizView, s: VizSettings, lab: Lab, ranks: AxisRank[]): string {
   switch (view) {
     case 'lattice':
-      return `${s.dim === '3d' ? '3D' : '2D'} ${(s.axes3 ?? axes).join('·')}`;
+      return `${s.dim === '3d' ? '3D' : '2D'} ${(chooseAxes3d(ranks, s.axes3).axes ?? []).join('·')}`;
     case 'edo':
       return `best ${lab.an.edo.best[0] ?? '-'}`;
     case 'dissonance':
@@ -59,7 +59,7 @@ function vizSummary(view: VizView, s: VizSettings, lab: Lab, axes: number[]): st
   }
 }
 
-export function summaryOf(id: PanelId, lab: Lab, axes: number[]): string {
+export function summaryOf(id: PanelId, lab: Lab, ranks: AxisRank[]): string {
   switch (id) {
     case 'chords':
       return lab.an.chords ? String(lab.an.chords.chordsAt(lab.state.ui.tol).length) : '–';
@@ -70,7 +70,7 @@ export function summaryOf(id: PanelId, lab: Lab, axes: number[]): string {
     case 'viz1':
     case 'viz2':
     case 'viz3':
-      return vizSummary(lab.viz.view(id), lab.viz.settings(id), lab, axes);
+      return vizSummary(lab.viz.view(id), lab.viz.settings(id), lab, ranks);
     case 'retuner':
       return `${retunerCards.length} cards`;
   }
@@ -92,8 +92,9 @@ interface Props {
 export function Rail({ panel, onPick, pinned, shown, onTogglePin, onPin }: Props) {
   const lab = useLab();
   const viz = lab.viz;
-  const { field, rep } = lab.base;
-  const axes = useMemo(() => defaultAxes3d(lattice3dOf(field, rep, null).available), [field, rep]);
+  const { field, rep, idx } = lab.base;
+  // Auto follows the best fit to the selected notes
+  const ranks = useMemo(() => rankAxes3d(field, rep, idx), [field, rep, idx]);
   return (
     <nav className={classes.rail} aria-label="Analysis panels">
       <Tip k="analysisRail">
@@ -123,7 +124,7 @@ export function Rail({ panel, onPick, pinned, shown, onTogglePin, onPin }: Props
                   onClick={() => onPick(p.id)}
                 >
                   <span className={classes.railLabel}>{label}</span>
-                  <span className={classes.railCount}>{summaryOf(p.id, lab, axes)}</span>
+                  <span className={classes.railCount}>{summaryOf(p.id, lab, ranks)}</span>
                 </button>
               </Tip>
               <Tip

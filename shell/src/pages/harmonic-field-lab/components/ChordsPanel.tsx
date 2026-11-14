@@ -1,10 +1,11 @@
 /** Chords panel: tolerance with a ladder; sections by note count, one row per family, one chip per voicing. */
 import { useState } from 'react';
-import { ActionIcon, Button, Modal, TextInput, Tooltip } from '@mantine/core';
-import { DEFAULT_TEMPLATES } from '../../../lib/harmonic-field';
+import { ActionIcon, Button, Modal, Tooltip } from '@mantine/core';
+import { DEFAULT_TEMPLATES, parseTemplate, type ChordTemplate } from '../../../lib/harmonic-field';
 import { MAX_CHORDS, SIZES, familyOrder, type ChordChip } from '../state/derive';
+import { MAX_TEMPLATES } from '../state/labState';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
-import { Num, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
+import { DebouncedText, Num, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
 import classes from './panels.module.css';
 
 function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => void }) {
@@ -65,52 +66,81 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
 }
 
 function TemplateEditor() {
-  const [rows, setRows] = useState(() => DEFAULT_TEMPLATES.map((t) => ({ ...t })));
+  const { state, dispatch } = useLab();
+  const rows = state.templates;
+  // bumped when a cleared ratios box is put back, so the box shows the kept text again
+  const [rev, setRev] = useState(0);
+  const set = (templates: ChordTemplate[]) => dispatch({ type: 'templates/set', templates });
+  const patch = (i: number, p: Partial<ChordTemplate>) =>
+    set(rows.map((t, j) => (j === i ? { ...t, ...p } : t)));
   return (
     <div className={classes.editor}>
-      <div className={classes.editorRow} aria-hidden="true">
-        <span className={classes.hint}>Name</span>
-        <span className={classes.hint}>Ratios</span>
-        <span className={classes.hint}>Family</span>
+      <div className={classes.editorRow}>
+        <Tip k="templateName">Name</Tip>
+        <Tip k="templateRatios">Ratios</Tip>
+        <Tip k="templateFamily">Family</Tip>
         <span />
       </div>
-      {rows.map((t, i) => (
-        <div key={i} className={classes.editorRow}>
-          <TextInput size="xs" aria-label={`Template ${i + 1} name`} defaultValue={t.name} />
-          <TextInput size="xs" aria-label={`Template ${i + 1} ratios`} defaultValue={t.text} />
-          <TextInput
-            size="xs"
-            aria-label={`Template ${i + 1} family`}
-            placeholder="Other"
-            defaultValue={t.family}
-          />
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            aria-label={`Remove ${t.name}`}
-            onClick={() => setRows(rows.filter((_, j) => j !== i))}
-          >
-            <TrashIcon />
-          </ActionIcon>
-        </div>
-      ))}
+      {rows.map((t, i) => {
+        const parsed = parseTemplate(t.text);
+        return (
+          <div key={i} className={classes.editorRow}>
+            <DebouncedText
+              size="xs"
+              aria-label={`Template ${i + 1} name`}
+              value={t.name ?? ''}
+              onCommit={(v) => patch(i, { name: v.trim() || undefined })}
+            />
+            <DebouncedText
+              key={`ratios-${rev}`}
+              size="xs"
+              aria-label={`Template ${i + 1} ratios`}
+              value={t.text}
+              error={parsed.ok ? undefined : parsed.error}
+              onCommit={(v) => (v.trim() ? patch(i, { text: v }) : setRev((n) => n + 1))}
+            />
+            <DebouncedText
+              size="xs"
+              aria-label={`Template ${i + 1} family`}
+              placeholder="Other"
+              value={t.family ?? ''}
+              onCommit={(v) => patch(i, { family: v.trim() || undefined })}
+            />
+            <Tip k="templateRemove" as="control">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                aria-label={`Remove ${t.name ?? t.text}`}
+                onClick={() => set(rows.filter((_, j) => j !== i))}
+              >
+                <TrashIcon />
+              </ActionIcon>
+            </Tip>
+          </div>
+        );
+      })}
       <div className={classes.editorFoot}>
-        <Button
-          size="xs"
-          variant="default"
-          leftSection={<PlusIcon />}
-          onClick={() => setRows([...rows, { name: 'new template', text: '4:5:6' }])}
-        >
-          Add template
-        </Button>
-        <Button
-          size="xs"
-          variant="default"
-          onClick={() => setRows(DEFAULT_TEMPLATES.map((t) => ({ ...t })))}
-        >
-          Reset list
-        </Button>
+        <Tip k="templateAdd" as="control">
+          <Button
+            size="xs"
+            variant="default"
+            leftSection={<PlusIcon />}
+            disabled={rows.length >= MAX_TEMPLATES}
+            onClick={() => set([...rows, { name: 'new template', text: '4:5:6' }])}
+          >
+            Add template
+          </Button>
+        </Tip>
+        <Tip k="templateReset" as="control">
+          <Button
+            size="xs"
+            variant="default"
+            onClick={() => set(DEFAULT_TEMPLATES.map((t) => ({ ...t })))}
+          >
+            Reset list
+          </Button>
+        </Tip>
       </div>
     </div>
   );
@@ -128,7 +158,10 @@ export function ChordsPanel() {
   const down = [...ladder].reverse().find((r) => r.tol < tol && r.count < count);
   const current = [...ladder].reverse().find((r) => r.tol <= tol)?.tol;
   const chips = model ? model.chipsAt(tol) : [];
-  const families = familyOrder(chips.map((c) => c.family));
+  const families = familyOrder(
+    chips.map((c) => c.family),
+    state.templates
+  );
   /** A window of the ladder around the current rung: one below, six above. */
   const at = ladder.findIndex((r) => r.tol === current);
   const shown = ladder.slice(Math.max(0, at - 1), at + 7);
@@ -240,7 +273,7 @@ export function ChordsPanel() {
         })}
         <span className={classes.foot}>
           <Tip k="templates">Templates</Tip>{' '}
-          <Num>{model?.templateCount ?? DEFAULT_TEMPLATES.length}</Num>
+          <Num>{model?.templateCount ?? state.templates.length}</Num>
         </span>
       </div>
       <Modal

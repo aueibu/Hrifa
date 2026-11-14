@@ -1,5 +1,5 @@
 /** Note selection, under the pitch ring: All/None/Invert stacked, the mode stepper centred, nearest scale and odd limit on the right. */
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ActionIcon,
   Button,
@@ -9,13 +9,14 @@ import {
   SegmentedControl,
 } from '@mantine/core';
 import { SCALE_LIBRARY, melakarta } from '../../../lib/harmonic-field';
-import { PICK_ED, resolveScale } from '../state/labState';
+import { PICK_ED, PICK_ODD, resolveScale } from '../state/labState';
 import { Num, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
 function scaleOptions() {
   return [
     { value: PICK_ED, label: 'm-ED (equal division)' },
+    { value: PICK_ODD, label: 'Odd limit…' },
     {
       group: 'Western',
       items: SCALE_LIBRARY.map((s) => ({ value: `w:${s.name}`, label: s.name })),
@@ -32,43 +33,40 @@ function scaleOptions() {
 
 export function SubsetRow() {
   const { tab, base, dispatch } = useLab();
-  const [odd, setOdd] = useState<string | number>(15);
   const options = useMemo(scaleOptions, []);
   const n = tab.sel.length;
   const root = n ? base.ratios[tab.sel[tab.mode]] : '–';
   const { pick } = tab;
   const isEd = pick.scale === PICK_ED;
+  const isOdd = pick.scale === PICK_ODD;
   const octave = Math.abs(tab.rep.c - 1200) < 0.01;
   const desc = resolveScale(pick.scale)?.desc;
   return (
     <div className={classes.selectBar} role="group" aria-label="Note selection">
       <div className={classes.selectLeft}>
-        <div className={classes.selectStack}>
-          <Tip k="selectAll" as="control" block>
+        <div className={classes.joinRow} role="group" aria-label="Selection actions">
+          <Tip k="selectAll" as="control">
             <Button
               size="compact-xs"
               variant="default"
-              fullWidth
               onClick={() => dispatch({ type: 'sel/all' })}
             >
               All
             </Button>
           </Tip>
-          <Tip k="selectNone" as="control" block>
+          <Tip k="selectNone" as="control">
             <Button
               size="compact-xs"
               variant="default"
-              fullWidth
               onClick={() => dispatch({ type: 'sel/none' })}
             >
               None
             </Button>
           </Tip>
-          <Tip k="selectInvert" as="control" block>
+          <Tip k="selectInvert" as="control">
             <Button
               size="compact-xs"
               variant="default"
-              fullWidth
               onClick={() => dispatch({ type: 'sel/invert' })}
             >
               Invert
@@ -144,11 +142,30 @@ export function SubsetRow() {
               }}
             />
           )}
+          {isOdd && (
+            <Tip k="oddLimitPick" as="control">
+              <NumberInput
+                size="xs"
+                aria-label="Max odd limit"
+                prefix="odd ≤ "
+                min={1}
+                max={255}
+                allowDecimal={false}
+                hideControls
+                value={pick.odd}
+                onChange={(v) => {
+                  if (typeof v === 'number') {
+                    dispatch({ type: 'pick/set', patch: { odd: v } });
+                  }
+                }}
+              />
+            </Tip>
+          )}
           <Button size="xs" variant="default" onClick={() => dispatch({ type: 'pick/apply' })}>
             Select
           </Button>
         </div>
-        {!isEd && !octave && (
+        {!isEd && !isOdd && !octave && (
           <Tip k="nearStretch" as="control">
             <Checkbox
               size="xs"
@@ -170,30 +187,6 @@ export function SubsetRow() {
             {pick.msg}
           </span>
         )}
-        <span className={classes.pickHead}>
-          <Tip k="oddLimitPick">Odd limit</Tip>
-        </span>
-        <div className={classes.pickRow}>
-          <NumberInput
-            size="xs"
-            aria-label="Max odd limit"
-            prefix="odd ≤ "
-            value={odd}
-            onChange={setOdd}
-            min={1}
-            allowDecimal={false}
-            hideControls
-          />
-          <Button
-            size="xs"
-            variant="default"
-            onClick={() =>
-              dispatch({ type: 'odd/select', limit: typeof odd === 'number' ? odd : 15 })
-            }
-          >
-            Select
-          </Button>
-        </div>
       </div>
     </div>
   );

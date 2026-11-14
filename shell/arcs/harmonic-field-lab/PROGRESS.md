@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
 - Current milestone: M6
-- State: in progress (builder attempt 1)
+- State: built and gated; awaiting human checkpoint
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -23,6 +23,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | M5 | Live page at `/harmonic-field-lab`, commit `d81c938`: one lab state (`state/`), live generation/tabs/selection/saved subsets/.scl, live analysis panels and visualizers (Retuner and template editor still mock), lab voice engine (`audio/`: held voices, glide API, sine/harmonic, panic), persistence `settings.v1`, `layout.v1`, `tabs.v1`, `subsets.v1` (entry-by-entry sanitising, no write on mount, pending selection for broken tabs, cross-window subset sync). Mock route lazy. Locks on the entry file and Router released. 2 builder attempts. | `check:hfl` GREEN, 577 | Reviewer attempt 1 FAIL (data loss on mount for broken tabs, no debounce, panic click, CPS genKey dropping the mask, wrong Wave tooltip + lows); all fixed in attempt 2 with tests. Builder decisions for the human: click toggles + pins (no sound), new method selects all, EDO 12 to 7 keeps shared pitches, tab close without confirm, Alt+1..9, chord chip click = sticky highlight + sound. |
 | M5 checkpoint | Approved by the human 2026-11-13 ("I am happy with this"), builder decisions accepted. | `check:hfl` GREEN, 577 | Pushed to origin with the rest of `main`. |
 | M6 feedback | Human feedback from using M5 folded into M6 2026-11-13 | `check:hfl` GREEN, 577 | Lattice axes ranked by fit + Auto; prime-chip tooltip; All/None/Invert as one row, odd limit into the scale dropdown; subset polygon on the ring; pin = Alt+click, yellow (H-3). Chord-chip zoom question open with the human. |
+| M6 | Live chord template editor (`chordfinder.v1`), key rings clickable, axes ranked by fit + Auto (`rankAxes3d`, `chooseAxes3d`), prime-power tooltip, joined All/None/Invert, odd limit in the scale menu, subset polygon, pin = Alt+click / Alt+Enter in yellow (H-3), parity table in page ARCHITECTURE.md, mock route + folder retired (`mockRetuner.ts` moved to components). 2 builder attempts. | `check:hfl` GREEN, 601 | Reviewer PASS-WITH-HUMAN-CHECK; attempt 2 fixed: wrong `templateAdd` example, stale pin wording, keyboard pin in field table + dissonance, stale axes triple, empty odd-limit result, cleared template text, tidy. Chord chips: no unit inconsistency (all rem, identical to the mock); SVG labels are px in a viewBox and scale with their container, not with zoom; em breakpoints re-lay-out panels at 125%+. For the human: proposed parity drops (Duplicate tab, Generators/Factors lattice axes, CPS chord list, Period stat, Shift-click chord to subset, separate scale table); Ctrl-click key ring plays notes together; incomplete key rings disabled; does "keys" in the pin list mean the dock keys; Alt+click in Edge; yellow pin vs yellow severity; SVG label scaling. |
 
 ## C0 scan (2026-11-12)
 - **Other arcs:** `workbench` has no active arc (clips and desk arcs archived); `structure` is done. No other active arc owns or locks anything. `arcs/LOCKS.md` was empty.
@@ -62,7 +63,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives of New Music* 31/1 (1993), Examples 10–12.
 
 ## Shared touches (locks taken)
-- M6: `src/Router.tsx`: taken 2026-11-13 (retire the mock route).
+- M6: `src/Router.tsx`: taken 2026-11-13, released after the M6 commit.
 - M5: `src/pages/HarmonicFieldLab.page.tsx`, `src/Router.tsx`: taken 2026-11-13, released after the M5 commit `d81c938` (rows were never committed).
 - `package.json`: taken 2026-11-12 (Setup, add `check:hfl`), released 2026-11-12 after the setup commit `d1c2abf`.
 - M4: `src/Router.tsx` (mock route): taken 2026-11-12, released 2026-11-12 after the M4 commit `5d4e729`.
@@ -76,4 +77,10 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M6 builder attempt 1 running (Router lock held). On return: reviewer, then gate `corepack yarn check:hfl`, commit path-scoped, release the lock, human checkpoint.
+M6 human checkpoint (live in the dev server). Then: the shared test-speed + workflow-rules job agreed with the human 2026-11-13 (see "Agreed workflow change"), then M7.
+
+## Agreed workflow change (human, 2026-11-13; not yet applied)
+- Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
+- Delegation: builder + reviewer for real milestones (features, persistence, audio, state); small/look-only changes and short well-specified review fixes done by the orchestrator directly; scout only when location is unknown.
+- Test speed (shared config, locks + DECISIONS row + `check:workbench` run): pure-logic tests in the Node environment, DOM tests keep jsdom; incremental `tsc`; before/after timings.
+- Files: shell `CLAUDE.md`, `shell/.claude/agents/builder.md` + `reviewer.md`, `vite.config.mjs`, `vitest.setup.mjs`, `package.json`, `DECISIONS.md`. One commit. The Infinitone repo rules stay as they are.
