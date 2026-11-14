@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M8 committed; M9 (adopt the Stage for the chord dock and canvas takeover) next, then the human checkpoint. The human chose to go straight to M8; the combined review of M6b, M7 and everything since M6d is still owed and happens at the M9 checkpoint
-- State: ready for M9
+- Current milestone: M8 committed; M9a (Stage prerequisites) next, then M9b (Stage inside the clip editor), then the human checkpoint. The human chose to go straight to M8; the combined review of M6b, M7 and everything since M6d is still owed and happens at the M9 checkpoint
+- State: ready for M9a
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -47,4 +47,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-M9: the workbench adopts the Stage for the chord dock and the canvas takeover (ARC.md M9). Before building, read the workbench's current chord dock and canvas takeover code (`ChordPickerHost`, `canvasTakeover`, `SplitStage`, `ClipEditorSlot`) to write the M9 builder brief; the combined review of M6b, M7 and everything since M6d is owed at the M9 checkpoint.
+M9a: lock `src/components/Stage/`, `src/lib/stage/`, `src/pages/stage/`; builder (Stage measures its own width; optional layout storage key), reviewer, `check:stage` + `check:hfl` + `check:workbench`, commit, release locks. Then M9b (ARC.md). The M9 scout map (2026-11-14): roll and picker both live in `NoteClipEditor` (`.work` row, `ChordPickerHost` dock or takeover portal); chord session state is editor-owned; no test covers picker state surviving a host switch.
