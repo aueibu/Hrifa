@@ -94,44 +94,29 @@ describe('Row alignment contract', () => {
 });
 
 describe('density', () => {
-  it('has the same token keys in every density, so a density swaps values and nothing else', () => {
-    const keys = (d: keyof typeof DENSITY_TOKENS) => Object.keys(DENSITY_TOKENS[d]).sort();
-    expect(keys('roomy')).toEqual(keys('compact'));
+  it('writes the one token set (and the fixed tokens) as custom properties', () => {
+    const style = tokenStyle('compact') as Record<string, string>;
+    expect(style['--kit-row-height']).toBe('1.625rem'); // Q9
+    expect(Object.keys(style)).toHaveLength(
+      Object.keys(DENSITY_TOKENS.compact).length + Object.keys(FIXED_TOKENS).length
+    );
   });
 
-  it('writes one custom-property set per density, differing only in the density values', () => {
-    const compact = tokenStyle('compact') as Record<string, string>;
-    const roomy = tokenStyle('roomy') as Record<string, string>;
-    expect(Object.keys(roomy).sort()).toEqual(Object.keys(compact).sort());
-    expect(compact['--kit-row-height']).toBe('1.625rem'); // Q9
-    expect(roomy['--kit-row-height']).not.toBe(compact['--kit-row-height']);
-    for (const k of Object.keys(FIXED_TOKENS)) {
-      const name = `--kit-${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
-      expect(roomy[name]).toBe(compact[name]);
-    }
-  });
-
-  it('KitScope applies the chosen set and nested scopes override it', () => {
+  it('KitScope applies the set through its table', () => {
     function Probe() {
       return <span data-testid="probe">{useDensity()}</span>;
     }
     render(
       <KitScope density="compact">
         <Probe />
-        <KitScope density="roomy">
-          <Probe />
-        </KitScope>
       </KitScope>
     );
     const scopes = document.querySelectorAll('[data-kit-density]');
-    expect(scopes).toHaveLength(2);
+    expect(scopes).toHaveLength(1);
     expect((scopes[0] as HTMLElement).style.getPropertyValue('--kit-row-height')).toBe(
       DENSITY_TOKENS.compact.rowHeight
     );
-    expect((scopes[1] as HTMLElement).style.getPropertyValue('--kit-row-height')).toBe(
-      DENSITY_TOKENS.roomy.rowHeight
-    );
-    expect(screen.getAllByTestId('probe').map((n) => n.textContent)).toEqual(['compact', 'roomy']);
+    expect(screen.getByTestId('probe')).toHaveTextContent('compact');
   });
 });
 

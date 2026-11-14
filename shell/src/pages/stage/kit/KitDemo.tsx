@@ -1,4 +1,4 @@
-/** Kit demo (spike only): the same inspector panel at each density, side by side, using every kit piece once. */
+/** Kit demo (spike only): one inspector panel using every kit piece once. */
 import { useState } from 'react';
 import {
   ActionButton,
@@ -16,7 +16,6 @@ import {
   Tip,
   Toggle,
 } from './Kit';
-import { DENSITY_NAMES, type Density } from './tokens';
 import classes from './kit.module.css';
 
 function DemoPanel() {
@@ -83,14 +82,9 @@ function DemoPanel() {
 export function KitDemo() {
   return (
     <div className={classes.demoGrid} data-standin="kit">
-      {DENSITY_NAMES.map((d: Density) => (
-        <div key={d}>
-          <p className={classes.demoLabel}>density: {d}</p>
-          <KitScope density={d}>
-            <DemoPanel />
-          </KitScope>
-        </div>
-      ))}
+      <KitScope>
+        <DemoPanel />
+      </KitScope>
     </div>
   );
 }

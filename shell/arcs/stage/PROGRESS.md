@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: stage (`arcs/stage`)
-- Current milestone: M5 committed; awaiting the merged M4+M5 human checkpoint
-- State: awaiting human (try /stage)
+- Current milestone: M5b committed; M4+M5 checkpoint answered; M6 next
+- State: ready for M6
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -19,6 +19,8 @@
 | M3 checkpoint (2026-11-14) | Closed | none run | Human tried /stage: everything approved (resize, hidden-columns mode, splitters, stacking, themes), no changes asked. |
 | M4 (2026-11-14) | Done, reviewed, committed | `check:stage` green (11 files, 129 tests) | Builder wrote `src/pages/stage/kit/` (tokens with two densities, Kit pieces, settings, KitDemo, tests), Developer popover for the tip delay in `StageApp`, kit demo module in the registry, ARCHITECTURE.md section 11 (how to add a panel). Reviewer: pass, no blockers; fixed: toggle padding, Developer field editing and keyboard focus, Section markup, token leftovers, extra tests. Decisions: STAGE-9, STAGE-10. Not fixed (carried to M5): reviewer finding 4 (rows really one height in a browser: needs a look), finding 9 / Q10 (kit `Strip` duplicates the Slot strip; merge in M5). Human checkpoint merged into M5. Not looked at in a browser. |
 | M5 (2026-11-14) | Done, reviewed, committed | `check:stage` green (13 files, 144 tests) | Builder wrote `src/pages/stage/spike/` (shared PianoRoll as a wide module, canvas stand-in, one chord picker rendering 2x1 narrow and 3x1 otherwise, inspector from the kit with note and clip panels, shared demo state), `presets.ts` (Sketch Alt+1, Audition Alt+2), merged the kit Strip into the Slot strip (Q10), row-height overrides. Reviewer: pass, no blockers; fixed: Alt+digit ignored while typing in a field (plus test), close glyph, note on `presets` prop stability. Decisions: STAGE-11 to STAGE-13. Backlog: six `[stage]` items from the build. Not looked at in a browser by anyone. For the human to judge: default preset widths (Sketch needs about 92rem, Audition about 100rem, so the roll or canvas hides on a 1440 or 1366 px window), whether rows really line up at one height, density `roomy` (a proposal), small deltas on the M3 strip (native `title` on slot tools, strip is a `div`). |
+| M4+M5 checkpoint (2026-11-14) | Answered | none run | Human tried `/stage` via a Cloudflare tunnel: approved. Follow-ups to build as M5b: last column fills spare width, narrower preset widths, drop `roomy` density. Dynamic inspector panels pending the human's yes. Decisions in ARC.md (M5 Checkpoint decisions). |
+| M5b (2026-11-14) | Done, reviewed, committed | `check:stage` green (13 files, 150 tests) | Checkpoint follow-ups: last column fills spare width (`fillRoomRem` in `stageOps.ts`, flex on the last visible column), narrower presets (Sketch 14+44, Audition 36+28), `roomy` density dropped, dynamic inspector (hint, clip, clip then note). Reviewer: pass, no blockers; fixed: three tests that no longer proved a clamp now do, labels on the parent-clip panel, dead export. Decisions STAGE-15 to STAGE-17. Notes for the human: Audition's roll column is now 36rem, which is the `regular` size, so the roll toolbar is hidden there; dragging in a narrow window permanently shrinks the last column's stored width. |
 
 ## Shared touches (locks taken)
 `package.json`: taken and released 2026-11-13 (setup, commit `9484348`). M3: `src/pages/Stage.page.tsx`, `src/Router.tsx`, `src/data/applets.ts`, `ARCHITECTURE.md` taken 2026-11-14, released after the M3 commit (see git log). Planned later: `shell/ARCHITECTURE.md` (M6), `src/components/` and `src/theme/` only at M6 if the human decides.
@@ -27,4 +29,4 @@
 - None open.
 
 ## Next action
-Merged M4+M5 human checkpoint: open `/stage` (`corepack yarn dev` in `shell/`) and judge: the density and look of the kit against the lab (Kit demo module from the Modules menu, both densities, light and dark); rows lining up at one height; the Sketch and Audition presets (Alt+1, Alt+2: does the chord picker keep its state and change from 2x1 to 3x1; selecting a note and a clip fills the inspector); whether the default preset widths suit your screen; whether anything felt bound or awkward (record in PROGRESS for M6). Write the answers into ARC.md (M5 Checkpoint decisions). Then M6 (decision milestone, with the human).
+M6 (promotion and adoption plan, a decision milestone, with the human): where the pure core and kit live permanently, how the workbench and lab would adopt it, in what order; write follow-up arcs as proposals, do not start them. Start by recording what felt bound or awkward (BACKLOG `[stage]` items from M3 and M5).

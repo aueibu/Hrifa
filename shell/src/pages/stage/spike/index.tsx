@@ -47,7 +47,7 @@ export const SPIKE_PRESETS: readonly PresetDef[] = [
       version: 1,
       columns: [
         { slots: ['chords'], width: 14 },
-        { slots: ['pianoroll'], width: 60 },
+        { slots: ['pianoroll'], width: 44 },
       ],
     },
   },
@@ -57,8 +57,8 @@ export const SPIKE_PRESETS: readonly PresetDef[] = [
     layout: {
       version: 1,
       columns: [
-        { slots: ['chords', 'pianoroll'], width: 48, shares: [0.22, 0.78] },
-        { slots: ['canvas'], width: 34 },
+        { slots: ['chords', 'pianoroll'], width: 36, shares: [0.22, 0.78] },
+        { slots: ['canvas'], width: 28 },
       ],
     },
   },

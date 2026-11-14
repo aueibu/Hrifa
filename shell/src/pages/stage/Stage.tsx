@@ -36,6 +36,7 @@ import {
   columnSplitterBounds,
   dragColumnSplitterMin,
   dragStackSplitterMin,
+  fillRoomRem,
   nudgeStackSplitterMin,
   stackSplitterBounds,
   guarded,
@@ -84,6 +85,8 @@ export function Stage({ registry, layout, update, widthRem, showSizes }: StagePr
   heightRef.current = heightRem;
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
+  const widthRef = useRef(widthRem);
+  widthRef.current = widthRem;
 
   useLayoutEffect(() => {
     const el = root.current;
@@ -203,7 +206,12 @@ export function Stage({ registry, layout, update, widthRem, showSizes }: StagePr
   const visible = layout.columns.slice(0, shown);
 
   const columnSplitter = (leftId: string, rightId: string, index: number) => {
-    const bounds = columnSplitterBounds(layout, registry.meta, index);
+    const bounds = columnSplitterBounds(
+      layout,
+      registry.meta,
+      index,
+      fillRoomRem(layout, index, widthRem)
+    );
     return (
       <Splitter
         orientation="vertical"
@@ -222,7 +230,8 @@ export function Stage({ registry, layout, update, widthRem, showSizes }: StagePr
                   l,
                   registry.meta,
                   at,
-                  key as 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
+                  key as 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End',
+                  fillRoomRem(l, at, widthRef.current)
                 );
           })
         }
@@ -237,7 +246,15 @@ export function Stage({ registry, layout, update, widthRem, showSizes }: StagePr
           return (dx) =>
             update((l2) => {
               const now = pairIndex(l2, leftId, rightId);
-              return now < 0 ? l2 : dragColumnSplitterMin(l2, registry.meta, now, start + dx / px);
+              return now < 0
+                ? l2
+                : dragColumnSplitterMin(
+                    l2,
+                    registry.meta,
+                    now,
+                    start + dx / px,
+                    fillRoomRem(l2, now, widthRef.current)
+                  );
             });
         }}
       />
@@ -316,6 +333,8 @@ export function Stage({ registry, layout, update, widthRem, showSizes }: StagePr
                 className={classes.column}
                 style={{
                   width: `${columnWidth(col)}rem`,
+                  // the last visible column fills the spare width; its stored width is its minimum
+                  ...(i === visible.length - 1 ? { flex: '1 0 auto' } : null),
                   gridTemplateRows: rows
                     .map((s) => `minmax(0, ${s}fr)`)
                     .join(' var(--splitter-thickness) '),

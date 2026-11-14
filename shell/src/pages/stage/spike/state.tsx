@@ -8,6 +8,8 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 
 export interface DemoNote {
   id: string;
+  /** The clip the note belongs to (shown above the note in the inspector). */
+  clipId: string;
   start: number;
   duration: number;
   /** MIDI note number (60 = middle C). */
@@ -32,12 +34,12 @@ export interface DemoClip {
 export type Selection = { kind: 'note'; ids: string[] } | { kind: 'clip'; id: string } | null;
 
 export const DEMO_NOTES: readonly DemoNote[] = [
-  { id: 'n1', start: 0, duration: 1, pitch: 60, velocity: 0.8, muted: false },
-  { id: 'n2', start: 1, duration: 1, pitch: 64, velocity: 0.7, muted: false },
-  { id: 'n3', start: 2, duration: 2, pitch: 67, velocity: 0.9, muted: false },
-  { id: 'n4', start: 4, duration: 1, pitch: 65, velocity: 0.6, muted: false },
-  { id: 'n5', start: 5, duration: 1, pitch: 62, velocity: 0.75, muted: false },
-  { id: 'n6', start: 6, duration: 2, pitch: 59, velocity: 0.85, muted: false },
+  { id: 'n1', clipId: 'c1', start: 0, duration: 1, pitch: 60, velocity: 0.8, muted: false },
+  { id: 'n2', clipId: 'c1', start: 1, duration: 1, pitch: 64, velocity: 0.7, muted: false },
+  { id: 'n3', clipId: 'c1', start: 2, duration: 2, pitch: 67, velocity: 0.9, muted: false },
+  { id: 'n4', clipId: 'c2', start: 4, duration: 1, pitch: 65, velocity: 0.6, muted: false },
+  { id: 'n5', clipId: 'c2', start: 5, duration: 1, pitch: 62, velocity: 0.75, muted: false },
+  { id: 'n6', clipId: 'c2', start: 6, duration: 2, pitch: 59, velocity: 0.85, muted: false },
 ];
 
 export const DEMO_CLIPS: readonly DemoClip[] = [

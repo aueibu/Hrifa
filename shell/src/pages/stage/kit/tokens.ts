@@ -1,14 +1,12 @@
 /**
- * Kit tokens, defined once. A density is one complete set of sizes; `KitScope` writes the chosen set as `--kit-*`
- * custom properties and every kit rule reads them, so changing the density changes sizes through this table only.
- * `compact` is the lab's measurement (ARCHITECTURE.md section 5a, decided Q8: the lab's density, to be honed later).
- * `roomy` is a proportional proposal (about 1.15x) so the demo can show the setting doing something. Colours are never
- * here: they are theme roles in kit.module.css.
+ * Kit tokens, defined once. There is one density, `compact` (the lab's measurement, ARCHITECTURE.md section 5a, decided
+ * Q8; the `roomy` proposal was dropped at the M5 checkpoint). `KitScope` writes the set as `--kit-*` custom properties and
+ * every kit rule reads them, so sizes change through this table only. Colours are never here: they are theme roles in
+ * kit.module.css.
  */
 import type { CSSProperties } from 'react';
 
-export type Density = 'compact' | 'roomy';
-export const DENSITY_NAMES: readonly Density[] = ['compact', 'roomy'];
+export type Density = 'compact';
 export const DEFAULT_DENSITY: Density = 'compact';
 
 export interface DensityTokens {
@@ -57,28 +55,6 @@ export const DENSITY_TOKENS: Record<Density, DensityTokens> = {
     actionsGap: '0.375rem',
     chipPadding: '0.1875rem',
     chipPaddingX: '0.5rem',
-    numScale: '0.92em',
-    sectionHeadWeight: '600',
-  },
-  roomy: {
-    fontBase: '0.9375rem',
-    fontSmall: '0.8125rem',
-    fontTiny: '0.75rem',
-    lineHeight: '1.4',
-    rowHeight: '1.875rem',
-    stripHeight: '2.125rem',
-    stripPadding: '0 0.625rem',
-    stripGap: '0.625rem',
-    stripToolsGap: '0.5rem',
-    stripTitleSize: '0.8125rem',
-    panelPadding: '0.625rem',
-    panelGap: '0.75rem',
-    sectionGap: '0.5rem',
-    sectionPadding: '0.5rem 0.625rem 0.625rem',
-    rowGap: '0.625rem',
-    actionsGap: '0.5rem',
-    chipPadding: '0.25rem',
-    chipPaddingX: '0.625rem',
     numScale: '0.92em',
     sectionHeadWeight: '600',
   },

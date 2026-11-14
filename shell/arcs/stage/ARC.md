@@ -107,7 +107,13 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] The consuming arc's check (`check:workbench`) is run once before commit if any `src/components/` file was touched (none planned; if one is needed, stop and ask)
   - [ ] PROGRESS.md records what felt bound or awkward, taken from the human's trial, to feed M6
 - Human checkpoint after: **yes** (this is the real test of whether the system removes the lock-in worry; also covers M4's density and look)
-- Checkpoint decisions: <written back by the orchestrator>
+- Checkpoint decisions (human, 2026-11-14, merged M4+M5 checkpoint; tried it through a tunnel):
+  - Overall: looks good; rows line up in both densities, the chord picker keeps its state across presets, the inspector is liked.
+  - Column widths: the last column fills the spare width (option 1); widths of the other columns stay fixed and splitters resize the column to their left. The human expects to hone a layout and then keep it.
+  - Presets: make the default widths narrower so both fit about a 1366 px window. (Sketch and Audition were explained as two saved arrangements of the same modules, there to exercise one chord picker in two sizes.)
+  - Density: keep only `compact`; drop `roomy` and the side-by-side density demo (less to manage).
+  - Inspector: asked whether a note panel and a clip panel should be reserved or dynamic; orchestrator recommended dynamic (note panel with its clip's panel below, clip alone, or one hint); human agreed (2026-11-14) and chose top-down specificity: the clip's panel first, then the note's panel under it when a note is selected. Built in M5b.
+  - Nothing felt bound or awkward.
 
 ### M6: Promotion and adoption plan (decision milestone)
 - Scope: documents, plus `DECISIONS.md`/`BACKLOG.md` rows. Decide with the human: where the pure core and the kit live permanently (`src/lib/stage/` plus `src/components/` under a lock, or stay in a page folder), how the workbench centre and inspector would adopt it (which modules first, what happens to `SplitStage`, `ClipEditorSlot`, `canvasTakeover` and the chord-input slots W-16/W-17), how the lab would adopt or keep its own, and the order. Write the adoption plan as proposed follow-up arcs; do not start them. Confirm nothing else depends on the spike's throwaway parts.

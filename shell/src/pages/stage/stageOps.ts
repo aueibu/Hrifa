@@ -11,6 +11,8 @@
  */
 import {
   HEIGHT_CLASSES,
+  MAX_COLUMN_REM,
+  MIN_COLUMN_REM,
   SIZE_LARGE_MIN_REM,
   SIZE_MIN_HEIGHT_REM,
   SIZE_MIN_WIDTH_REM,
@@ -145,16 +147,51 @@ export function shownColumnCount(
   return Math.min(l.columns.length, Math.max(1, n));
 }
 
-/** The left column's width, and the range it may take given both columns' limits and their modules' minimums. */
+/**
+ * The last visible column fills the spare width (flex grow in Stage.tsx); its stored width is its nominal minimum. The
+ * room, in rem, that the pair of columns `index` and `index + 1` shares when `index + 1` is the last visible column: the
+ * window minus the stage padding, the splitters between visible columns and the other visible columns. `undefined` when
+ * the pair is not the last two visible columns (then the splitter keeps the plain constant-total rule).
+ */
+export function fillRoomRem(
+  l: Layout,
+  index: number,
+  widthRem: number,
+  cost: { splitterRem: number; paddingRem: number } = STAGE_COLUMN_COST
+): number | undefined {
+  const shown = shownColumnCount(l, widthRem, cost);
+  if (index + 1 !== shown - 1 || !l.columns[index + 1]) {
+    return undefined;
+  }
+  const others = l.columns
+    .slice(0, shown)
+    .reduce((n, c, i) => (i === index || i === index + 1 ? n : n + columnWidth(c)), 0);
+  return widthRem - cost.paddingRem - cost.splitterRem * (shown - 1) - others;
+}
+
+/**
+ * The left column's width, and the range it may take given both columns' limits and their modules' minimums. With
+ * `fillRoom` (see fillRoomRem) the right column is the filling last one: the left column may grow until the right one is
+ * down to its minimum, and the right one's stored width is not the thing that is bounded.
+ */
 export function columnSplitterBounds(
   l: Layout,
   registry: ModuleRegistry,
-  index: number
+  index: number,
+  fillRoom?: number
 ): { now: number; min: number; max: number } | null {
   const a = l.columns[index];
   const b = l.columns[index + 1];
   if (!a || !b) {
     return null;
+  }
+  if (fillRoom !== undefined) {
+    const floorB = Math.max(MIN_COLUMN_REM, columnMinWidth(b, registry));
+    return {
+      now: columnWidth(a),
+      min: Math.max(MIN_COLUMN_REM, columnMinWidth(a, registry)),
+      max: Math.min(MAX_COLUMN_REM, Math.max(columnWidth(a), fillRoom - floorB)),
+    };
   }
   const range = columnSplitterRange(columnWidth(a), columnWidth(b));
   const total = columnWidth(a) + columnWidth(b);
@@ -165,18 +202,30 @@ export function columnSplitterBounds(
   };
 }
 
-/** Drag a column splitter, clamped so neither column goes below its modules' minimum width. */
+/**
+ * Drag a column splitter, clamped so neither column goes below its modules' minimum width. With `fillRoom` the right
+ * column is the filling last one: only the left width is set, and the right column's stored width (its minimum) shrinks
+ * only as far as needed for the pair to stay within the room, never below its module minimum.
+ */
 export function dragColumnSplitterMin(
   l: Layout,
   registry: ModuleRegistry,
   index: number,
-  leftRem: number
+  leftRem: number,
+  fillRoom?: number
 ): Layout {
-  const b = columnSplitterBounds(l, registry, index);
+  const b = columnSplitterBounds(l, registry, index, fillRoom);
   if (!b || b.min > b.max) {
     return l;
   }
-  return dragColumnSplitter(l, index, Math.min(b.max, Math.max(b.min, leftRem)));
+  const left = Math.min(b.max, Math.max(b.min, leftRem));
+  if (fillRoom === undefined) {
+    return dragColumnSplitter(l, index, left);
+  }
+  const right = l.columns[index + 1];
+  const floorB = Math.max(MIN_COLUMN_REM, columnMinWidth(right, registry));
+  const nextRight = Math.max(floorB, Math.min(columnWidth(right), fillRoom - left));
+  return setColumnWidth(setColumnWidth(l, index, left), index + 1, nextRight);
 }
 
 export const COLUMN_NUDGE_REM = 1;
@@ -186,9 +235,10 @@ export function nudgeColumnSplitterMin(
   l: Layout,
   registry: ModuleRegistry,
   index: number,
-  key: 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
+  key: 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End',
+  fillRoom?: number
 ): Layout {
-  const b = columnSplitterBounds(l, registry, index);
+  const b = columnSplitterBounds(l, registry, index, fillRoom);
   if (!b) {
     return l;
   }
@@ -200,7 +250,7 @@ export function nudgeColumnSplitterMin(
         : key === 'Home'
           ? b.min
           : b.max;
-  return dragColumnSplitterMin(l, registry, index, to);
+  return dragColumnSplitterMin(l, registry, index, to, fillRoom);
 }
 
 /**

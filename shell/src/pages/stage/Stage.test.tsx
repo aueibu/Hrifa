@@ -269,12 +269,12 @@ describe('splitters', () => {
     expect(sep).toHaveAttribute('aria-orientation', 'vertical');
     expect(sep).toHaveAttribute('aria-valuenow', '24');
     fireEvent.keyDown(sep, { key: 'ArrowRight' });
-    expect(widths()).toEqual([25, 35]);
+    expect(widths()).toEqual([25, 36]); // the last column fills: its stored width (minimum) stays
     expect(sep).toHaveAttribute('aria-valuenow', '25');
     fireEvent.keyDown(sep, { key: 'Home' });
-    expect(widths()).toEqual([12, 48]);
+    expect(widths()).toEqual([12, 36]);
     fireEvent.keyDown(sep, { key: 'ArrowLeft' });
-    expect(widths()).toEqual([12, 48]); // at the clamp
+    expect(widths()).toEqual([12, 36]); // at the clamp
   });
 
   it('changes column widths by a pointer drag, clamped', () => {
@@ -284,12 +284,30 @@ describe('splitters', () => {
     const sep = screen.getByRole('separator', { name: /Resize columns/ });
     fireEvent.pointerDown(sep, { clientX: 100, pointerId: 1 });
     fireEvent.pointerMove(sep, { clientX: 132, pointerId: 1, buttons: 1 }); // +2 rem at 16 px
-    expect(widths()).toEqual([26, 34]);
-    fireEvent.pointerMove(sep, { clientX: 1000, pointerId: 1, buttons: 1 });
-    expect(widths()).toEqual([48, 12]);
+    expect(widths()).toEqual([26, 36]);
+    fireEvent.pointerMove(sep, { clientX: 3000, pointerId: 1, buttons: 1 });
+    expect(widths()).toEqual([96, 36]); // clamped at the column maximum
     fireEvent.pointerUp(sep, { pointerId: 1 });
     fireEvent.pointerMove(sep, { clientX: 100, pointerId: 1, buttons: 1 }); // released: no change
-    expect(widths()).toEqual([48, 12]);
+    expect(widths()).toEqual([96, 36]);
+  });
+
+  it('shrinks the filling last column only as far as the window needs, and gives it the spare width', () => {
+    render(
+      <Harness
+        widthRem={62}
+        initial={cols({ slots: ['picker'], width: 24 }, { slots: ['roll'], width: 36 })}
+      />
+    );
+    const sep = screen.getByRole('separator', { name: /Resize columns/ });
+    expect(sep.closest('[data-stage-root]')!.querySelectorAll('section')).toHaveLength(2);
+    const lastColumn = screen.getByRole('region', { name: 'Roll stand-in' }).parentElement!;
+    expect(lastColumn.style.flex).toBe('1 0 auto');
+    const firstColumn = screen.getByRole('region', { name: 'Picker stand-in' }).parentElement!;
+    expect(firstColumn.style.flex).toBe('');
+    fireEvent.keyDown(sep, { key: 'End' });
+    // room 61: the roll column gives up its stored 36 down to its 12 rem minimum
+    expect(widths()).toEqual([49, 12]);
   });
 
   it('nudges stack shares by keyboard within the clamp', () => {
@@ -370,7 +388,10 @@ describe('minimum sizes', () => {
   it('refuses stacking a module onto a column narrower than its minimum, and clamps its splitter', async () => {
     const user = userEvent.setup();
     render(
-      <Harness initial={cols({ slots: ['picker'], width: 24 }, { slots: ['notes'], width: 36 })} />
+      <Harness
+        widthRem={61}
+        initial={cols({ slots: ['picker'], width: 24 }, { slots: ['notes'], width: 36 })}
+      />
     );
     // Notes asks for 30 rem; the Picker column is 24 rem wide
     await user.click(screen.getByRole('button', { name: 'Stack Notes stand-in onto' }));
@@ -379,7 +400,7 @@ describe('minimum sizes', () => {
     await user.click(item);
     expect(stored().columns.map((c) => c.slots.join('+'))).toEqual(['picker', 'notes']);
 
-    // the splitter will not take the Notes column below 30 rem
+    // window 61 rem (room 60): the last column's stored width shrinks but stops at the Notes 30 rem minimum
     const sep = screen.getByRole('separator', { name: /Resize columns/ });
     fireEvent.keyDown(sep, { key: 'End' });
     expect(widths()).toEqual([30, 30]);

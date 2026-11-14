@@ -11,6 +11,7 @@ import {
   addWithMin,
   columnSplitterBounds,
   dragColumnSplitterMin,
+  fillRoomRem,
   guarded,
   minHeightRem,
   minProblems,
@@ -210,5 +211,48 @@ describe('stack splitter (clamp to module minimums)', () => {
       meta('a', { width: 'narrow', height: 'regular' }),
     ]);
     expect(dragStackSplitterMin(l, two, 0, 0, 0.5, 50)).toBe(l);
+  });
+});
+
+describe('last column fills the spare width', () => {
+  const l = layout([
+    { slots: ['a'], width: 24 },
+    { slots: ['b'], width: 36 },
+  ]);
+
+  it('gives a room only to the pair that ends at the last visible column', () => {
+    // 80 - 0.5 padding - 0.5 splitter
+    expect(fillRoomRem(l, 0, 80)).toBe(79);
+    const three = layout([{ slots: ['a'], width: 14 }, ...l.columns]);
+    expect(fillRoomRem(three, 0, 80)).toBeUndefined();
+    expect(fillRoomRem(three, 1, 80)).toBe(80 - 0.5 - 1 - 14);
+    // the third column is hidden in a window that fits two: the second is then the last visible one
+    expect(fillRoomRem(three, 0, 14 + 24 + 1)).toBe(14 + 24 + 1 - 0.5 - 0.5);
+  });
+
+  it('a drag sets the left width and leaves the last stored width alone while there is room', () => {
+    const next = dragColumnSplitterMin(l, registry, 0, 30, fillRoomRem(l, 0, 80));
+    expect(next.columns.map(columnWidth)).toEqual([30, 36]);
+  });
+
+  it('the last column gives up its stored width only as far as the room needs, never below its module minimum', () => {
+    const room = fillRoomRem(l, 0, 61)!; // 60
+    expect(dragColumnSplitterMin(l, registry, 0, 40, room).columns.map(columnWidth)).toEqual([
+      30, 30,
+    ]);
+    const bounds = columnSplitterBounds(l, registry, 0, room)!;
+    expect(bounds).toEqual({ now: 24, min: 12, max: 30 });
+  });
+
+  it('can grow the left column well past the constant-total limit when the window is wide', () => {
+    const room = fillRoomRem(l, 0, 90)!; // 89
+    const bounds = columnSplitterBounds(l, registry, 0, room)!;
+    expect(bounds.max).toBe(59);
+    expect(nudgeColumnSplitterMin(l, registry, 0, 'End', room).columns.map(columnWidth)).toEqual([
+      59, 30,
+    ]);
+    expect(
+      nudgeColumnSplitterMin(l, registry, 0, 'ArrowRight', room).columns.map(columnWidth)
+    ).toEqual([25, 36]);
   });
 });

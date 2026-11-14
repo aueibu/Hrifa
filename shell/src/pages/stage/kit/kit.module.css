@@ -213,9 +213,3 @@
   gap: var(--kit-panel-gap);
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 }
-
-.demoLabel {
-  color: var(--text-muted);
-  font-size: var(--kit-font-tiny);
-  margin: 0 0 0.25rem;
-}

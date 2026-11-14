@@ -33,7 +33,7 @@ import classes from './kit.module.css';
 const DensityContext = createContext<Density>(DEFAULT_DENSITY);
 export const useDensity = () => useContext(DensityContext);
 
-/** Writes one density's token set as custom properties for everything inside. Nest to show another density. */
+/** Writes the density's token set (one density, `compact`) as custom properties for everything inside. */
 export function KitScope({
   density = DEFAULT_DENSITY,
   children,

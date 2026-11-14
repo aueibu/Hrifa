@@ -153,7 +153,7 @@ describe('StageApp presets', () => {
     render(<StageApp storage={storage} />);
     fireEvent.keyDown(window, { key: '2', code: 'Digit2', altKey: true });
     const inspector = screen.getByRole('complementary', { name: 'Inspector' });
-    expect(within(inspector).getByText('Click a clip on the canvas.')).toBeInTheDocument();
+    expect(within(inspector).getByText(HINT)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Chorus/ }));
     expect(within(inspector).getByLabelText('Name')).toHaveValue('Chorus');
   });
@@ -173,18 +173,46 @@ describe('StageApp presets', () => {
 
 /* ------------------------------------------------------------------------------ inspector */
 
+const HINT = 'Select a clip on the canvas or a note in the roll.';
+
 describe('SpikeInspector (from the kit)', () => {
-  it('has a note panel and a clip panel with hints when nothing is selected', () => {
+  it('shows one hint and no empty panels when nothing is selected', () => {
     render(
       <SpikeProvider>
         <SpikeInspector />
       </SpikeProvider>
     );
-    const panels = document.querySelectorAll('[data-kit="panel"]');
-    expect(panels).toHaveLength(2);
-    expect(screen.getByRole('region', { name: 'Selected note' })).toBeInTheDocument();
+    expect(document.querySelectorAll('[data-kit="panel"]')).toHaveLength(1);
+    expect(screen.getByText(HINT)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Selected note' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Selected clip' })).not.toBeInTheDocument();
+  });
+
+  it('shows the clip panel alone for a clip', () => {
+    render(
+      <SpikeProvider initialSelection={{ kind: 'clip', id: 'c2' }}>
+        <SpikeInspector />
+      </SpikeProvider>
+    );
+    expect(document.querySelectorAll('[data-kit="panel"]')).toHaveLength(1);
     expect(screen.getByRole('region', { name: 'Selected clip' })).toBeInTheDocument();
-    expect(screen.getByText('Click a note in the roll.')).toBeInTheDocument();
+    expect(screen.queryByText(HINT)).not.toBeInTheDocument();
+  });
+
+  it("shows the note's clip panel above the note panel for a note", () => {
+    render(
+      <SpikeProvider initialSelection={{ kind: 'note', ids: ['n4'] }}>
+        <SpikeInspector />
+      </SpikeProvider>
+    );
+    const panels = [...document.querySelectorAll('[data-kit="panel"]')];
+    expect(panels).toHaveLength(2);
+    const clip = screen.getByRole('region', { name: 'Clip' });
+    expect(screen.queryByRole('region', { name: 'Selected clip' })).not.toBeInTheDocument();
+    expect(within(clip).getByRole('button', { name: 'Clear selection' })).toBeInTheDocument();
+    const note = screen.getByRole('region', { name: 'Selected note' });
+    expect(clip.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(clip).getByLabelText('Name')).toHaveValue('Chorus'); // n4 belongs to c2
   });
 
   it('renders the selected note from kit rows, sections and actions, and edits it', async () => {
@@ -210,7 +238,8 @@ describe('SpikeInspector (from the kit)', () => {
       'true'
     );
     await user.click(within(panel).getByRole('button', { name: 'Delete' }));
-    expect(within(panel).getByText('Click a note in the roll.')).toBeInTheDocument();
+    expect(screen.getByText(HINT)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Selected note' })).not.toBeInTheDocument();
   });
 
   it('renders the selected clip from kit pieces (text, number, select, segmented, toggle)', async () => {
