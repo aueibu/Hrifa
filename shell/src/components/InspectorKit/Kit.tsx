@@ -25,7 +25,7 @@ import {
   type ActionIconProps,
   type ButtonProps,
 } from '@mantine/core';
-import { Data } from '../../../components/Data/Data';
+import { Data } from '../Data/Data';
 import { useTipDelay } from './settings';
 import { DEFAULT_DENSITY, TIP_WIDTH, tokenStyle, type Density } from './tokens';
 import classes from './kit.module.css';

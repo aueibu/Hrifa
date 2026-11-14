@@ -20,9 +20,24 @@ import {
   Text,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
+import {
+  loadTipDelay,
+  MAX_TIP_DELAY,
+  parseTipDelay,
+  saveTipDelay,
+  TipDelayContext,
+} from '../../components/InspectorKit';
+import { Stage } from '../../components/Stage';
+import {
+  browserStorage,
+  loadLayout,
+  saveLayout,
+  type StageStorage,
+} from '../../components/Stage/persistence';
+import type { StageRegistry } from '../../components/Stage/registry';
+import { addWithMin, moveToFront, shownColumnCount } from '../../components/Stage/stageOps';
+import { useWidthRem } from '../../components/Stage/useWidthRem';
 import { moduleIds, type Layout } from '../../lib/stage';
-import { loadTipDelay, MAX_TIP_DELAY, parseTipDelay, saveTipDelay, TipDelayContext } from './kit';
-import { browserStorage, loadLayout, saveLayout, type StageStorage } from './persistence';
 import {
   initialStore,
   layoutOf,
@@ -33,13 +48,9 @@ import {
   type PresetDef,
   type PresetStore,
 } from './presets';
-import type { StageRegistry } from './registry';
 import { SPIKE_PRESETS, SPIKE_REGISTRY } from './spike';
 import { INSPECTOR_REM, SpikeInspector } from './spike/Inspector';
 import { SpikeProvider } from './spike/state';
-import { Stage } from './Stage';
-import { addWithMin, moveToFront, shownColumnCount } from './stageOps';
-import { useWidthRem } from './useWidthRem';
 import classes from './spike/spike.module.css';
 
 export interface StageAppProps {

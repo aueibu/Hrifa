@@ -255,7 +255,7 @@ The pure layout code lives in `src/lib/stage/` (README there has the full API). 
 
 ## 10. Stage and slots (M3)
 
-The React layer over the pure core in section 9. Everything below is in `src/pages/stage/`; the spike page is `src/pages/Stage.page.tsx` (route `/stage`, applet "Stage (spike)", status `experimental`).
+The React layer over the pure core in section 9. Moved in W-M8 (2026-11-14): the Stage pieces below now live in `src/components/Stage/` (public surface `index.ts`), the spike page and its stand-ins stay in `src/pages/stage/`; the spike page is `src/pages/Stage.page.tsx` (route `/stage`, applet "Stage (spike)", status `experimental`).
 
 ### Component map
 
@@ -268,9 +268,9 @@ The React layer over the pure core in section 9. Everything below is in `src/pag
 | `sizeState.ts`     | `withMeasure(sizes, id, wRem, hRem)`: a measurement folded into the per-module size record with hysteresis (`sizeOf` from the core).                                                                                        |
 | `stageOps.ts`      | Pure rules added over the core: `minSize` enforcement, `shownColumnCount`, `moveToFront`, column splitter bounds.                                                                                                           |
 | `persistence.ts`   | `loadLayout` / `saveLayout` over a `StageStorage` (try/catch around every access).                                                                                                                                          |
-| `StageApp.tsx`     | The spike page: top bar (Home, title, Modules menu, hidden-columns switcher, Show sizes, Reset layout, colour scheme) and the Stage. Owns the layout state.                                                                 |
+| `StageApp.tsx`     | (stays in `src/pages/stage/`) The spike page: top bar (Home, title, Modules menu, hidden-columns switcher, Show sizes, Reset layout, colour scheme) and the Stage. Owns the layout state.                                                                 |
 | `stage.module.css` | All slot, strip and splitter measurements as custom properties on `.root` (defined once, from section 5), plus the styles.                                                                                                  |
-| `standins/`        | Throwaway modules (roll, picker, notes) and the default layout.                                                                                                                                                             |
+| `standins/`        | (stays in `src/pages/stage/`) Throwaway modules (roll, picker, notes) and the default layout.                                                                                                                                                             |
 
 ### How size flows
 
@@ -312,11 +312,11 @@ A module's `minSize` is a size class read as a floor in rem (width: narrow 12, r
 
 ### Spike-only (throwaway)
 
-The stand-in modules in `standins/` (and `pickerProbe`, the mount counter the tests read), `StageApp`'s page chrome, the "Show sizes" overlay and the default layout. The registry, `Stage`, `Slot`, `Splitter`, `sizeState`, `stageOps` and `persistence` are the system. The kit demo module (`KIT_MODULE`, `kit/KitDemo.tsx`) is spike-only as well.
+The stand-in modules in `standins/` (and `pickerProbe`, the mount counter the tests read), `StageApp`'s page chrome, the "Show sizes" overlay and the default layout. The registry, `Stage`, `Slot`, `Splitter`, `sizeState`, `stageOps` and `persistence` are the system. The kit demo module (`KIT_MODULE`, `src/pages/stage/KitDemo.tsx`, styles in `kitDemo.module.css`) is spike-only as well.
 
 ## 11. Inspector kit (M4)
 
-`kit/` holds thin Mantine wrappers with fixed sizes (`Kit.tsx`), the token table (`tokens.ts`), the developer option (`settings.ts`) and the demo (`KitDemo.tsx`, the "Kit demo" module in the Modules menu: one panel). Import from `kit/index.ts`.
+`src/components/InspectorKit/` (moved from `src/pages/stage/kit/` in W-M8) holds thin Mantine wrappers with fixed sizes (`Kit.tsx`), the token table (`tokens.ts`) and the developer option (`settings.ts`). Import from `index.ts`. The demo (`KitDemo.tsx`, the "Kit demo" module in the Modules menu: one panel) is spike-only and stays in `src/pages/stage/`. `settings.ts` imports the `StageStorage` type from `../Stage/persistence` (type only).
 
 ### Density: one token set
 
@@ -334,7 +334,7 @@ The stand-in modules in `standins/` (and `pickerProbe`, the mount counter the te
 
 ### Stage developer option
 
-The tooltip open delay (Q6) is a per-viewer option, default 330 ms, clamped to 0 to 2000, stored as `hrifa.stage.tipDelay.v1` (`kit/settings.ts`). `StageApp` has a "Developer" popover with the number field and provides the value through `TipDelayContext`; `Tip` reads it with `useTipDelay`.
+The tooltip open delay (Q6) is a per-viewer option, default 330 ms, clamped to 0 to 2000, stored as `hrifa.stage.tipDelay.v1` (`src/components/InspectorKit/settings.ts`). `StageApp` has a "Developer" popover with the number field and provides the value through `TipDelayContext`; `Tip` reads it with `useTipDelay`.
 
 ### Not done / open
 
@@ -368,9 +368,9 @@ Decided with the human. Nothing here is started; each step is a proposed follow-
 | Piece | Now | After first adoption |
 | --- | --- | --- |
 | Pure core (size, layout, splitters, parse) | `src/lib/stage/` | stays |
-| Stage component, Slot, Splitter, stage ops, persistence | `src/pages/stage/` | `src/components/` (lock; run `check:workbench` and `check:hfl` first) |
-| Inspector kit | `src/pages/stage/kit/` | `src/components/` |
-| Spike modules, presets, inspector demo, `/stage` route | `src/pages/stage/` | removed once a real page uses the Stage |
+| Stage component, Slot, Splitter, stage ops, size state, persistence, icons, registry, `useWidthRem`, `stage.module.css` | `src/components/Stage/` (moved in W-M8) | stays |
+| Inspector kit | `src/components/InspectorKit/` (moved in W-M8) | stays |
+| Spike modules, presets, inspector demo, kit demo, `StageApp`, `Stage.test.tsx`, `/stage` route | `src/pages/stage/` | removed once a real page uses the Stage |
 
 ### Adoption order
 1. **Workbench, chord dock and canvas takeover** (W-16, W-17), after the chord-input arc. The chord picker is already size-aware. This also triggers the promotion above.
@@ -388,5 +388,5 @@ Decided with the human. Nothing here is started; each step is a proposed follow-
 - Presets are implicit snapshots; `Alt+digit` is a window-level listener, not a command registry.
 
 ### Dependencies checked
-Only `src/pages/Stage.page.tsx` imports `src/pages/stage/`; `src/lib/stage/` has no importers outside the arc. Removing the spike's modules, presets and demo state later touches nothing else.
+Only `src/pages/Stage.page.tsx` imports `src/pages/stage/` (the spike imports `src/components/Stage/` and `src/components/InspectorKit/`); `src/lib/stage/` has no importers outside the arc. Removing the spike's modules, presets and demo state later touches nothing else.
 

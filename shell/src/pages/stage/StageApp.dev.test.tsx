@@ -1,8 +1,8 @@
 /** The Developer option in StageApp: typing keeps the raw text, blur clamps and saves. */
 import { fireEvent, render, screen, userEvent } from '@test-utils';
 import { describe, expect, it } from 'vitest';
-import { TIP_DELAY_KEY } from './kit';
-import type { StageStorage } from './persistence';
+import { TIP_DELAY_KEY } from '../../components/InspectorKit';
+import type { StageStorage } from '../../components/Stage/persistence';
 import { StageApp } from './StageApp';
 
 describe('Developer option', () => {

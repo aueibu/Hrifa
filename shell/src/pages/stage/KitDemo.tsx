@@ -15,8 +15,8 @@ import {
   TextField,
   Tip,
   Toggle,
-} from './Kit';
-import classes from './kit.module.css';
+} from '../../components/InspectorKit';
+import classes from './kitDemo.module.css';
 
 function DemoPanel() {
   const [title, setTitle] = useState('Sketch');

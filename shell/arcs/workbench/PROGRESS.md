@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M8 (promote Stage and kit; amendment approved 2026-11-14). The human chose to go straight to M8; the combined review of M6b, M7 and everything since M6d is still owed and happens at the M9 checkpoint
-- State: building M8
+- Current milestone: M8 committed; M9 (adopt the Stage for the chord dock and canvas takeover) next, then the human checkpoint. The human chose to go straight to M8; the combined review of M6b, M7 and everything since M6d is still owed and happens at the M9 checkpoint
+- State: ready for M9
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -34,6 +34,7 @@
 | M6b | Built (parts A and B): scale-degree roles, tiers, 21 extended templates, CSV parity test with `KNOWN_GAPS`, Simple | Extended toggle in the picker. | Builder runs: vitest workbench 83 files / 1389 tests, PianoRoll/EditorPalette 319; project-wide `tsc` red only because of `src/pages/harmonic-field-lab/` files (rule 14: not ours; filtered tsc shows no errors in our paths). | DECISIONS W-21. Reviewer: pass with fixes (header wrap, inversion buttons up to 6th, role assertions in the parity test, cosmetics): applied. Committed with the project-wide `tsc` red ONLY in `src/pages/harmonic-field-lab/` (rule 14, 0 errors elsewhere); format of workbench ts/tsx, oxlint, stylelint and vitest (98 files / 1698 tests across workbench, PianoRoll, EditorPalette) were run by hand. Sheet discrepancies for the human: Sus4 row = Major row; Dominant 7 b5 #9 row = Dominant #9; Dominant 7 #5 #9 has a major 7th; 6/9 slot order differs. Header-row overflow in a 14rem dock to fix. |
 | M7 | Built: stack chords onto existing notes (note resolved in the editor, exact onset/pitch/length/velocity, never alters existing notes, one undo step); reviewer pass with fixes (stack protects notes at all onsets, tolerance and cents header, tie-break, stray hover ghost) | `check:workbench` green (final run: all steps, 1403 tests; harmonic-field-lab types were fixed by its arc); workbench + PianoRoll + EditorPalette 99 files / 1711 tests | DECISIONS W-22. Backlog: exact pointer position for the anchor. Open taste items: continuous insert after a stack; grid-cell capture at coarse grids. |
 | Layout | ARC.md updated with picker body + host split and four host rules (human OK 2026-11-13) | n/a | Inspector slot is the preferred host; sharing it with clip properties decided at M4. |
+| M8 | Done, committed (no separate reviewer run: pure `git mv` move, 22 renames at 100% or near, imports re-pointed) | `check:workbench` green (84 files, 1403 tests), `check:hfl` green (33 files, 771 tests), `check:stage` green (13 files, 153 tests, after widening its scope) | Stage and kit promoted to `src/components/Stage/` and `src/components/InspectorKit/` (W-23); spike stays in `src/pages/stage/` (StageApp, stand-ins, spike, presets, KitDemo). `check:stage` in `package.json` widened to the new folders (lock taken and released). No behaviour change. `Stage.test.tsx` stays in the spike because it tests the Stage through the spike; a spike-free Stage test in `components/Stage` is not written. |
 
 ## Shared touches (locks taken)
 - `src/components/PianoRoll/`: re-taken 2026-11-13 for M6d (opt-in `revealPoint` so a moved or advanced anchor stays in view; the human wants the view to follow, not run off the edge), released after commit e28a791.
@@ -46,4 +47,4 @@
 - `addNote`/`addNotes` (`noteClipEdits.ts:131,171`) `Math.round` midicents, so a non-12 EDO step (e.g. 31-EDO 38.71c) is rounded to whole cents on placement (error under 0.5c). Acceptable, or should placement keep fractional midicents? Decide before M5; M1/M2 engines stay in exact steps.
 
 ## Next action
-Human reviews everything at once (see the summary in the conversation). Then M8: close-out (final ARCHITECTURE pass, BACKLOG items for deferred ideas: explicit link/group button, voicing exploration on a selection, Euclidean and rhythm transforms through the same picker, chord naming for non-12 EDOs, augmented sixths and pitch-class sets and (I+bVI) from the sheet, picker polish), final check, lock check.
+M9: the workbench adopts the Stage for the chord dock and the canvas takeover (ARC.md M9). Before building, read the workbench's current chord dock and canvas takeover code (`ChordPickerHost`, `canvasTakeover`, `SplitStage`, `ClipEditorSlot`) to write the M9 builder brief; the combined review of M6b, M7 and everything since M6d is owed at the M9 checkpoint.

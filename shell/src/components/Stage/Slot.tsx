@@ -7,8 +7,8 @@
 import { useLayoutEffect, useRef } from 'react';
 import { Menu } from '@mantine/core';
 import { pxToRem, slotSizeAttr, type SlotSize } from '../../lib/stage';
+import { DENSITY_TOKENS, KitScope, Strip, StripTool } from '../InspectorKit';
 import { CloseIcon, DownIcon, LeftIcon, RightIcon, StackIcon, UnstackIcon, UpIcon } from './icons';
-import { DENSITY_TOKENS, KitScope, Strip, StripTool } from './kit';
 import classes from './stage.module.css';
 
 export interface SlotTools {

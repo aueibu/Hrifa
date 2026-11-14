@@ -1,3 +1,4 @@
+import type { StageStorage } from '../../components/Stage/persistence';
 /**
  * Layout presets: named saved layouts the page switches between ("sketch", "audition"). Pure rules plus a defensive
  * store, like persistence.ts. Stored under `hrifa.stage.presets.v1` only (the Stage's own prefix). The store holds one
@@ -6,7 +7,6 @@
  * layout itself.
  */
 import { parseLayout, serializeLayout, type Layout, type ModuleRegistry } from '../../lib/stage';
-import type { StageStorage } from './persistence';
 
 export const PRESETS_STORAGE_KEY = 'hrifa.stage.presets.v1';
 

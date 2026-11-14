@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { act, fireEvent, render, screen, userEvent, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Stage } from '../../components/Stage';
+import type { StageStorage } from '../../components/Stage/persistence';
+import { addWithMin } from '../../components/Stage/stageOps';
 import { LAYOUT_STORAGE_KEY, moveColumn, type Layout } from '../../lib/stage';
-import type { StageStorage } from './persistence';
-import { Stage } from './Stage';
 import { StageApp } from './StageApp';
-import { addWithMin } from './stageOps';
 import { DEFAULT_STAGE_LAYOUT, STANDIN_REGISTRY } from './standins';
 import { pickerProbe } from './standins/PickerStandin';
 

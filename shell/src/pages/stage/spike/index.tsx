@@ -1,7 +1,7 @@
+import { createStageRegistry, type StageModule } from '../../../components/Stage/registry';
 /** The spike's realistic modules, their registry and the two preset layouts ("sketch" and "audition"). */
 import type { SlotSize } from '../../../lib/stage';
 import type { PresetDef } from '../presets';
-import { createStageRegistry, type StageModule } from '../registry';
 import { KIT_MODULE } from '../standins';
 import { CanvasStandin } from './CanvasStandin';
 import { ChordPicker } from './ChordPicker';

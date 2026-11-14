@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { act, fireEvent, render, screen, userEvent } from '@test-utils';
 import { describe, expect, it, vi } from 'vitest';
-import type { StageStorage } from '../persistence';
+import type { StageStorage } from '../Stage/persistence';
 import {
   DEFAULT_TIP_DELAY,
   DENSITY_TOKENS,

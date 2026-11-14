@@ -1,6 +1,6 @@
 /** Stage developer options kept per viewer under the `hrifa.stage.` prefix. Storage can be missing or throw: never fatal. */
 import { createContext, useContext } from 'react';
-import type { StageStorage } from '../persistence';
+import type { StageStorage } from '../Stage/persistence';
 
 export const TIP_DELAY_KEY = 'hrifa.stage.tipDelay.v1';
 /** Tooltip open delay in ms (decided 2026-11-13, Q6). */

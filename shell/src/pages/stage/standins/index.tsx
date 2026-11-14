@@ -1,7 +1,7 @@
+import { createStageRegistry, type StageModule } from '../../../components/Stage/registry';
 /** The spike's registry of stand-in modules, built once at module scope, and the default layout over them. */
 import type { Layout, SlotSize } from '../../../lib/stage';
-import { KitDemo } from '../kit';
-import { createStageRegistry, type StageModule } from '../registry';
+import { KitDemo } from '../KitDemo';
 import { NotesStandin } from './NotesStandin';
 import { PickerStandin } from './PickerStandin';
 import { RollStandin } from './RollStandin';

@@ -4,8 +4,8 @@
  */
 import { fireEvent, render, screen, userEvent, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { StageStorage } from '../../../components/Stage/persistence';
 import { LAYOUT_STORAGE_KEY } from '../../../lib/stage';
-import type { StageStorage } from '../persistence';
 import { PRESETS_STORAGE_KEY } from '../presets';
 import { StageApp } from '../StageApp';
 import { CanvasStandin } from './CanvasStandin';
