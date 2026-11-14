@@ -2,8 +2,8 @@
 
 ## Status
 - Arc: workbench (`arcs/workbench`), chord input arc (ARC.md approved by the human 2026-11-13)
-- Current milestone: M7 committed; awaiting the human's combined review (M6b, M7 and everything since M6d), then M8
-- State: awaiting human (combined review)
+- Current milestone: M8 (promote Stage and kit; amendment approved 2026-11-14). The human chose to go straight to M8; the combined review of M6b, M7 and everything since M6d is still owed and happens at the M9 checkpoint
+- State: building M8
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.

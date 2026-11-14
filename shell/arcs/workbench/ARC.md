@@ -1,6 +1,6 @@
 # ARC: Chord input (harmonic note entry in the clip editor)
 
-Approved by the human 2026-11-13.
+Approved by the human 2026-11-13. **Amendment (approved by the human 2026-11-14): adds M8 (promote the Stage and kit) and M9 (adopt the Stage for the chord dock and canvas takeover); the old M8 close-out is now M10.**
 
 ## Goal
 In the clip editor a user can enter harmony without placing notes one at a time. A new editor tool takes a click on a pitch (or on an existing note) and opens a chord picker with two modes. **Root mode**: chords built on the clicked pitch as root. **Common-tone mode** (tool + Ctrl): chords that contain the clicked pitch, sorted in columns by the role the pitch plays (root, 3rd, 5th, 7th, 9th, ...). The set of chords offered comes from the project's pitch set ("key"), which the user can override from the picker. Hovering a chord shows a ghost preview in the roll; clicking it places the notes. Inversion and voicing (open, closed, drop-2, drop-3) are controls in the picker. The chord vocabulary is defined as interval stacks over the project tuning, so it works in any EDO, not only 12.
@@ -24,7 +24,7 @@ Decisions already taken with the human (2026-11-13):
 - **Placement uses the existing edit contract** (`noteClipEdits.ts`, "Edits from the editor" in the workbench `ARCHITECTURE.md`), so undo, history and versions behave as for any other edit. Pitches are midicents (shared contract). At a non-12 EDO the notes are on the EDO grid; the roll still draws 12 rows (the tuning-aware pitch axis is a separate backlog item and not part of this arc).
 
 - Owned paths: `src/pages/composition-workbench/**` (no other arc is active on the workbench; the finished clips and desk arcs are archived), including its tests and its `ARCHITECTURE.md`; new files under `src/pages/composition-workbench/chordInput/` (pure engine, pitch set, picker components, tests); this arc's `arcs/workbench/` files.
-- Shared paths it may touch (each needs a row in `arcs/LOCKS.md`, written by the orchestrator): `src/components/PianoRoll/` (opt-in ghost-preview overlay prop; opt-in so Melodicization and Mixer are unchanged), `src/components/EditorPalette/` (a new tool and its shortcut), `src/pages/CompositionWorkbench.page.tsx` only if the entry file must change, `shell/ARCHITECTURE.md` (new shared contract: pitch set and chord templates), `shell/DECISIONS.md`/`BACKLOG.md` (no lock). `src/pages/harmonic-field-lab/` and `src/lib/harmonic-field/` belong to another arc and are not edited or imported by this arc without a decision.
+- Shared paths it may touch (each needs a row in `arcs/LOCKS.md`, written by the orchestrator): [amendment approved 2026-11-14, M8 and M9: `src/components/` (new folders `Stage/` and `InspectorKit/` only), `src/pages/stage/` (the finished stage arc's page folder, for moving code out and re-pointing imports), `src/lib/stage/` (read; consume only), `src/pages/Stage.page.tsx` if imports change,] `src/components/PianoRoll/` (opt-in ghost-preview overlay prop; opt-in so Melodicization and Mixer are unchanged), `src/components/EditorPalette/` (a new tool and its shortcut), `src/pages/CompositionWorkbench.page.tsx` only if the entry file must change, `shell/ARCHITECTURE.md` (new shared contract: pitch set and chord templates), `shell/DECISIONS.md`/`BACKLOG.md` (no lock). `src/pages/harmonic-field-lab/` and `src/lib/harmonic-field/` belong to another arc and are not edited or imported by this arc without a decision.
 - Check command: `corepack yarn check:workbench` (exists). If `corepack` is not on PATH: `node .yarn/releases/yarn-4.18.0.cjs run check:workbench` from `shell/`.
 - Concurrency: same checkout and branch as the other arcs; the orchestrator commits at the end of every milestone with path-scoped `git add <paths>` and `git commit -- <paths>` only (never `git add -A` or a bare `git commit`; on an `index.lock` error retry, never delete the lock) and removes lock rows only after that commit; after writing a lock row re-read `arcs/LOCKS.md`; before committing a PianoRoll or EditorPalette change also run the consuming arcs' check (`shell/ARCHITECTURE.md`, "Who consumes what": Melodicization and Mixer consume the roll). `DECISIONS.md` ids use the registered workbench prefix `W` (next free number).
 
@@ -197,8 +197,26 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] Stacking two chords at one onset leaves ordinary same-onset notes that existing selection and transforms treat as one slot
 - Human checkpoint after: yes
 
-### M8: Close-out
-- Scope: `ARCHITECTURE.md` (workbench and shell: pitch set, chord templates, voicing, tool and overlay contracts, who consumes what), BACKLOG items for what was deferred (explicit note link/group button, voicing exploration on selection, Euclidean insertion and rhythm transforms via the same picker, chord naming for non-12 EDOs, picker audition-on-hover if declined), final `check:workbench`, release all locks after their commits.
+### M8: Promote the Stage and the inspector kit (amendment, approved 2026-11-14)
+Context: the finished `stage` arc (STAGE-1 to STAGE-19, `src/pages/stage/ARCHITECTURE.md` section 13) decided that the Stage component and the kit move from `src/pages/stage/` to `src/components/` when the first real page adopts them. This arc is that first adopter.
+- Scope: under locks on `src/components/` (new folders `Stage/` and `InspectorKit/`) and on `src/pages/stage/` (a finished arc's page folder is a shared path: lock, `DECISIONS.md` row, and this approval counts as the human's OK), move the Stage component, Slot, Splitter, stage ops, persistence and the kit out of the spike page folder into `src/components/`; `src/lib/stage/` stays. The `/stage` spike page keeps working by importing from the new location (behaviour unchanged). No workbench change in this milestone.
+- Acceptance:
+  - [ ] The arc's `Check command` and `check:stage` and `check:hfl` pass (all three, once, before the commit)
+  - [ ] No behaviour change on `/stage` (its tests are moved with the code and pass)
+  - [ ] `shell/ARCHITECTURE.md` lists the new components and "Who consumes what" is updated; a `DECISIONS.md` row (W-prefixed, referencing STAGE-19) records the move; locks released after the commit
+- Human checkpoint after: no
+
+### M9: The workbench adopts the Stage for the chord dock and the canvas takeover (amendment, approved 2026-11-14)
+- Scope: owned `src/pages/composition-workbench/**`. Register the clip editor roll, the chord picker and the canvas as Stage modules (they receive only a size class; the picker already renders by size, STAGE-13); replace the hardcoded chord dock beside the roll and the canvas takeover (W-16, W-17) with Stage slots and a saved layout. The workbench's per-viewer prefs `chordHost` and `chordDockWidth` are migrated (read once, then superseded by the Stage layout) without losing a user's current choice. `SplitStage` and `ClipEditorSlot` stay as they are (later adoption steps). The chord-input behaviour (hover ghosts, audition, insert, keyboard workflow W-20) must be unchanged.
+- Acceptance:
+  - [ ] The arc's `Check command` passes (and `check:stage` if any promoted component changed)
+  - [ ] Existing chord-input tests pass unchanged, plus tests: the picker keeps its state and keyboard workflow when moved between the beside-the-roll and above-the-roll positions; a stored old layout and old prefs open without loss; the canvas takeover is reachable the same way as before
+  - [ ] Opens with a default layout equal to today's look (dock beside the roll); moving, stacking and resizing work as in the spike
+  - [ ] `src/pages/composition-workbench/ARCHITECTURE.md` and a `DECISIONS.md` row describe the slots and the migration
+- Human checkpoint after: yes (the human uses the workbench: chord input as before, plus rearranging; this also covers M8)
+
+### M10: Close-out
+- Scope: (renumbered from M8 on 2026-11-14 when the Stage adoption milestones were added before it) `ARCHITECTURE.md` (workbench and shell: pitch set, chord templates, voicing, tool and overlay contracts, the Stage adoption, who consumes what), BACKLOG items for what was deferred (explicit note link/group button, voicing exploration on selection, Euclidean insertion and rhythm transforms via the same picker, chord naming for non-12 EDOs, picker audition-on-hover if declined), final `check:workbench`, release all locks after their commits.
 - Acceptance:
   - [ ] The arc's `Check command` passes
   - [ ] Docs describe the final shape; no locks left in `arcs/LOCKS.md` for this arc
