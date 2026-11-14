@@ -6,6 +6,8 @@ import {
   absHz,
   chordPlan,
   fieldScalePlan,
+  modePreviewPlan,
+  stripPreviewPlan,
   relHz,
   scalePlan,
   slotPitch,
@@ -156,5 +158,73 @@ describe('scale preview direction', () => {
     expect(ud.map((n) => n.src)).toEqual([3, 4, 5, 1, 3, 1, 5, 4, 3]);
     expect(fieldScalePlan(f, [], 1200, base)).toEqual([]);
     expect(fieldScalePlan(f, [99], 1200, base)).toEqual([]);
+  });
+});
+
+describe('mode and strip previews', () => {
+  const idx = [0, 1, 2, 3];
+  // mode 2 (index 1) of 1/1 9/8 5/4 3/2 wants 1, 10/9, 4/3, 16/9 above its root 9/8
+  const mode = (kind: 'listed' | 'pure' | 'both', dir: 'up' | 'updown' = 'up', only?: number) =>
+    modePreviewPlan(field, idx, 1, OCT, 1200, base, kind, dir, only);
+
+  it('listed: the nearest field notes, with their errors, tagged for lighting', () => {
+    const plan = mode('listed');
+    expect(plan.map((n) => n.src)).toEqual([0, 1, 2, 0, 0]); // the field is measured with the mode root moved to 1/1: 4/3 is nearest 5/4, 16/9 nearest 2/1
+    // the mode root sounds at the 1/1 Hz setting; 10/9 is listed as 9/8 above it (the field's note, 21.5 c sharp)
+    expect(plan[0].hz).toBeCloseTo(100, 3);
+    expect(plan[1].hz).toBeCloseTo(112.5, 3);
+    expect(plan[2].hz).toBeCloseTo(125, 3);
+    expect(plan).toHaveLength(5);
+    plan.forEach((n, i) => expect(n.delay).toBeCloseTo(i * 0.28, 9));
+  });
+
+  it('pure: the exact intervals from the root; only an exact tone lights a field note', () => {
+    const plan = mode('pure');
+    [1, 10 / 9, 4 / 3, 16 / 9, 2].forEach((r, i) => expect(plan[i].hz).toBeCloseTo(100 * r, 3));
+    expect(plan[0].src).toBe(0);
+    expect(plan[1].src).toBe(-1);
+    expect(plan[4].src).toBe(0);
+  });
+
+  it('both: pairs with the same start and length, every step held 1.5x', () => {
+    const plan = mode('both');
+    expect(plan).toHaveLength(10);
+    for (let i = 0; i < 5; i++) {
+      const [a, b] = [plan[2 * i], plan[2 * i + 1]];
+      expect(a.delay).toBe(b.delay);
+      expect(a.dur).toBe(b.dur);
+      expect(a.delay).toBeCloseTo(i * 0.28 * 1.5, 9);
+      expect(a.dur).toBeCloseTo(0.26 * 1.5, 9);
+    }
+    expect(plan[2].hz / plan[3].hz).toBeCloseTo(81 / 80, 3);
+    expect(plan[2].amp).toBeLessThan(1);
+  });
+
+  it('Up-down comes back down; a single degree is one step', () => {
+    expect(mode('listed', 'updown')).toHaveLength(9);
+    expect(mode('both', 'updown')).toHaveLength(18);
+    const one = mode('pure', 'updown', 1);
+    expect(one).toHaveLength(1);
+    expect(one[0].hz).toBeCloseTo(100 * (10 / 9), 3);
+    expect(mode('listed', 'up', 9)).toEqual([]);
+    expect(modePreviewPlan(field, [], 0, OCT, 1200, base, 'both')).toEqual([]);
+  });
+
+  it('strip: listed is the note, pure the note minus its deviation (lighting only its mark), both held 1.5x', () => {
+    const dev = 3.9;
+    const listed = stripPreviewPlan(field, 1, dev, base, 'listed');
+    expect(listed).toHaveLength(1);
+    expect(listed[0].hz).toBeCloseTo(112.5, 3);
+    expect(listed[0].markOnly).toBeUndefined();
+    const target = stripPreviewPlan(field, 1, dev, base, 'pure');
+    expect(target[0].hz).toBeCloseTo(100 * 2 ** ((field[1].c - dev) / 1200), 6);
+    expect(target[0].markOnly).toBe(true);
+    const both = stripPreviewPlan(field, 1, dev, base, 'both');
+    expect(both).toHaveLength(2);
+    expect(both[0].delay).toBe(both[1].delay);
+    expect(both[0].dur).toBe(both[1].dur);
+    expect(both[0].dur).toBeCloseTo(0.9, 9);
+    expect(stripPreviewPlan(field, 1, 0, base, 'pure')[0].markOnly).toBe(false);
+    expect(stripPreviewPlan(field, 9, 1, base, 'both')).toEqual([]);
   });
 });

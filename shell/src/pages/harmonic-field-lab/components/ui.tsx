@@ -145,6 +145,23 @@ export function rowHandlers(
   };
 }
 
+/**
+ * The preview a modifier click asks for: Ctrl (Cmd on a Mac) = listed, Shift = pure, both = both together. Null for a
+ * plain click, and for Alt (Alt+click pins).
+ */
+export function previewKind(e: {
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+}): PreviewKind | null {
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (e.altKey || (!ctrl && !e.shiftKey)) {
+    return null;
+  }
+  return ctrl && e.shiftKey ? 'both' : ctrl ? 'listed' : 'pure';
+}
+
 export function noteHandlers(
   lab: { clickNote: (i: number) => void; pinNote: (i: number) => void },
   i: number
@@ -180,6 +197,7 @@ export const signedCents = (x: number, dp = 1) =>
 
 export const SEV_LABEL = ['exact', 'under 5 c', '5 to 15 c', '15 to 30 c', '30 c or more'];
 
+import type { PreviewKind } from '../audio/plan';
 export { useLab, useViz } from '../state/context';
 
 /** How long typing pauses before a text-driven field rebuild (the prototype's `regen()` delay). */

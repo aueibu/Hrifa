@@ -16,6 +16,8 @@ import {
   absHz,
   chordPlan,
   fieldScalePlan,
+  modePreviewPlan,
+  stripPreviewPlan,
   scalePlan,
   slotPitch,
   subsetChordPlan,
@@ -38,6 +40,7 @@ const LEAD = 0.05;
 export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAudio {
   const engine = useRef<VoiceEngine | null>(null);
   const lights = useRef(new LightCounter());
+  const markLights = useRef(new LightCounter());
   const timers = useRef(new Set<number>());
   const slotSrc = useRef(new Map<number, number>());
   /** Physical key (see `keyId`) to the slot it pressed, so a release finds it even when Shift changed `event.key`. */
@@ -75,9 +78,14 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       }
       return engine.current;
     };
-    const report = () => dispatch({ type: 'sounding', idx: lights.current.lit() });
-    const light = (i: number, on: boolean) => {
-      if (on ? lights.current.on(i) : lights.current.off(i)) {
+    const report = () =>
+      dispatch({ type: 'sounding', idx: lights.current.lit(), marks: markLights.current.lit() });
+    const light = (i: number, on: boolean, markOnly = false) => {
+      if (i < 0) {
+        return;
+      }
+      const c = markOnly ? markLights.current : lights.current;
+      if (on ? c.on(i) : c.off(i)) {
         report();
       }
     };
@@ -93,12 +101,12 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
         const start = (LEAD + n.delay) * 1000;
         const on = window.setTimeout(() => {
           timers.current.delete(on);
-          light(n.src, true);
+          light(n.src, true, n.markOnly);
         }, start);
         const off = window.setTimeout(
           () => {
             timers.current.delete(off);
-            light(n.src, false);
+            light(n.src, false, n.markOnly);
           },
           start + n.dur * 1000
         );
@@ -112,8 +120,9 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       timers.current.clear();
       slotSrc.current.clear();
       held.current.clear();
-      const had = lights.current.lit().length > 0;
+      const had = lights.current.lit().length > 0 || markLights.current.lit().length > 0;
       lights.current.clear();
+      markLights.current.clear();
       if (had) {
         report();
       }
@@ -162,6 +171,25 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
       playFieldChord: (idx) => {
         schedule(chordPlan(latest.current.base.field, idx, pitch()));
       },
+      playModePreview: (mode, kind, degree) => {
+        const { base: b, ui: u } = latest.current;
+        schedule(
+          modePreviewPlan(
+            b.field,
+            b.idx,
+            mode,
+            b.rep,
+            b.repC,
+            pitch(),
+            kind,
+            u.scalePreview,
+            degree
+          )
+        );
+      },
+      playStripPreview: (i, dev, kind) => {
+        schedule(stripPreviewPlan(latest.current.base.field, i, dev, pitch(), kind));
+      },
       stopAll,
       hzAt: (cents) => absHz(pitch(), cents),
     };
@@ -170,7 +198,12 @@ export function useLabAudio({ enabled, base, ui, chord, dispatch }: Args): LabAu
   // everything sounding is silenced when the field changes (another tab, a regeneration): its lights would be wrong
   // (only when something is sounding or scheduled: a silent change must not touch voices that are fading out)
   useEffect(() => {
-    if (lights.current.lit().length || slotSrc.current.size || timers.current.size) {
+    if (
+      lights.current.lit().length ||
+      markLights.current.lit().length ||
+      slotSrc.current.size ||
+      timers.current.size
+    ) {
       api.stopAll();
     }
   }, [base.field, api]);

@@ -13,7 +13,6 @@ import { TIPS } from './texts';
 vi.setConfig({ testTimeout: 15_000 });
 
 const rail = () => screen.getByRole('navigation', { name: 'Analysis panels' });
-const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
 const openModes = () => fireEvent.click(within(rail()).getByRole('tab', { name: /^Modes/ }));
 const MINUS = '\u2212';
 
@@ -133,4 +132,3 @@ describe('lab Developer menu', () => {
     expect(TIPS.modeSignAlways.text).toMatch(/Example:/);
   });
 });
-

@@ -3,9 +3,20 @@
  * numbers sit in a tile area of their own with the same grid, so every wrapped line of tiles starts at the same column
  * as the line above (never under the label).
  */
+import type { MouseEvent } from 'react';
 import { MAX_KEYS_NOTES, MAX_MODES } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
-import { Num, SEV_LABEL, Strip, Tip, signChar, signedCents, severity, useLab } from './ui';
+import {
+  Num,
+  SEV_LABEL,
+  Strip,
+  Tip,
+  previewKind,
+  signChar,
+  signedCents,
+  severity,
+  useLab,
+} from './ui';
 import classes from './panels.module.css';
 
 const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+c'];
@@ -31,6 +42,14 @@ export function ModesPanel() {
   }
   const { modeFit } = an.keys;
   const N = modeFit.length;
+  /** Ctrl/Cmd, Shift or both on a title or a tile: hear it, and leave the row's own click (select the mode) alone. */
+  const preview = (e: MouseEvent, mode: number, degree?: number) => {
+    const kind = previewKind(e);
+    if (kind) {
+      e.stopPropagation();
+      lab.audio.playModePreview(mode, kind, degree);
+    }
+  };
   return (
     <>
       <Strip title={<Tip k="modes">Modes</Tip>} />
@@ -89,7 +108,11 @@ export function ModesPanel() {
                 title={label}
                 onClick={() => lab.setMode(m.mode)}
               >
-                <span className={`${classes.modeLabelCol} ${classes.heatName}`}>
+                <span
+                  className={`${classes.modeLabelCol} ${classes.heatName}`}
+                  data-testid="mode-title"
+                  onClick={(e) => preview(e, m.mode)}
+                >
                   <Num muted>{m.mode + 1}</Num> <Num>{m.root}</Num>
                 </span>
                 <span className={classes.modeTiles} data-testid="mode-tiles">
@@ -107,6 +130,8 @@ export function ModesPanel() {
                         role="img"
                         aria-label={tip}
                         title={tip}
+                        data-testid="mode-tile"
+                        onClick={(e) => preview(e, m.mode, j)}
                       >
                         <span className={classes.heatSign} aria-hidden="true">
                           {sign}

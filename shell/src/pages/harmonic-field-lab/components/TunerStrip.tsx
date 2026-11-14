@@ -7,7 +7,7 @@ import { NativeSelect } from '@mantine/core';
 import type { CmpRef } from '../state/labState';
 import { rootLabel, useModeRoot } from './ModeRoot';
 import { NoteMark } from './NoteMark';
-import { CommitNumber, Num, Strip, Tip, noteHandlers, signed, useLab } from './ui';
+import { CommitNumber, Num, Strip, Tip, noteHandlers, previewKind, signed, useLab } from './ui';
 import classes from './lab.module.css';
 
 const PAD = 4;
@@ -48,7 +48,7 @@ export function RefLines({ thin }: { thin?: boolean }) {
 
 export function TunerStrip() {
   const lab = useLab();
-  const { base, tab, strip, selected, sounding, dispatch } = lab;
+  const { base, tab, strip, selected, sounding, soundingMarks, dispatch } = lab;
   const { rel, repC, analysis } = base;
   const { cmp } = tab;
   const modeRoot = useModeRoot();
@@ -116,7 +116,7 @@ export function TunerStrip() {
               {strip.devs.map((d, fi) => {
                 const sharp = d.dev >= 0;
                 const active = selected.has(fi);
-                const lit = sounding.has(fi);
+                const lit = sounding.has(fi) || soundingMarks.has(fi);
                 return (
                   <div
                     key={fi}
@@ -135,6 +135,14 @@ export function TunerStrip() {
                     onFocus={() => lab.setHover(fi)}
                     onBlur={() => lab.setHover(null)}
                     {...noteHandlers(lab, fi)}
+                    onClick={(e) => {
+                      const kind = previewKind(e);
+                      if (kind) {
+                        lab.audio.playStripPreview(fi, d.dev, kind);
+                      } else {
+                        noteHandlers(lab, fi).onClick(e);
+                      }
+                    }}
                   >
                     <span className={classes.colRatio}>{d.ratio}</span>
                     <NoteMark

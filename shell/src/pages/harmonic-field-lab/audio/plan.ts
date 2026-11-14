@@ -2,14 +2,17 @@
  * What to play, as plain data: the Hz and the field note each sound belongs to (so the page can light it). Pure; the
  * hook in `useLabAudio.ts` hands these plans to the voice engine.
  */
-import type { Note, RelNote } from '../../../lib/harmonic-field';
+import { rotateSubset, type Note, type RelNote } from '../../../lib/harmonic-field';
+import { wrapSigned } from '../state/derive';
 import { chordAmp, hzOf } from './engine';
 import { slotTarget } from './keymap';
 
 export interface Planned {
   hz: number;
-  /** Field index of the note (lights in every view while it sounds). */
+  /** Field index of the note (lights in every view while it sounds); -1 lights nothing (a pure tone off the field). */
   src: number;
+  /** Light only the tuner-strip mark of `src` (a pure target tone that is no field note), not the other views. */
+  markOnly?: boolean;
   /** Seconds after the start of the plan, and length in seconds. */
   delay: number;
   dur: number;
@@ -124,6 +127,119 @@ export function chordPlan(
 export function subsetChordPlan(rel: readonly RelNote[], p: PitchBase): Planned[] {
   const amp = chordAmp(rel.length);
   return rel.map((n) => ({ hz: relHz(p, n.c), src: n.src, delay: 0, dur: 2.2, amp }));
+}
+
+/** What a modifier click previews: the field's own (listed) pitch, the pure pitch, or both together. */
+export type PreviewKind = 'listed' | 'pure' | 'both';
+
+/** Both tones together: every step is held this much longer, so the beating can be heard. */
+export const PAIR_HOLD = 1.5;
+
+/** One sound inside a step: its Hz and what it lights (see `Planned`). */
+export interface Tone {
+  hz: number;
+  src: number;
+  markOnly?: boolean;
+}
+
+/**
+ * Steps one after another; a step's tones start together and last the same time (a pair for "both"). A step is
+ * `step` seconds apart and sounds for `dur`, both times `hold`.
+ */
+export function stepsPlan(
+  steps: readonly (readonly Tone[])[],
+  hold = 1,
+  step = SCALE_STEP,
+  dur = SCALE_DUR
+): Planned[] {
+  const amp = steps.some((s) => s.length > 1) ? chordAmp(2) : 1;
+  return steps.flatMap((tones, i) =>
+    tones.map((t) => ({ ...t, delay: i * step * hold, dur: dur * hold, amp }))
+  );
+}
+
+/** A mode's degrees: the pitch it wants (cents above its root), the field note nearest it and the signed distance. */
+export function modeDegrees(
+  field: readonly Note[],
+  idx: readonly number[],
+  mode: number,
+  rep: Note,
+  repC: number
+): { wanted: number; near: number; d: number }[] {
+  const r = rotateSubset(field as Note[], idx as number[], mode, rep);
+  return r.map((n) => {
+    let near = -1;
+    let d = Infinity;
+    field.forEach((f, i) => {
+      const x = wrapSigned(f.c - n.c, repC);
+      if (Math.abs(x) < Math.abs(d)) {
+        d = x;
+        near = i;
+      }
+    });
+    return { wanted: n.c, near, d: near < 0 ? 0 : d };
+  });
+}
+
+/**
+ * Preview of mode `mode` of the subset, from its root (the mode root sounds at the 1/1 Hz setting or at its own pitch,
+ * as for Play scale). Listed: the nearest field notes (errors included). Pure: the exact intervals; a pure tone lights
+ * a field note only when it is exact. Both: each degree as a pair, held 1.5x. Up/Up-down like Play scale; with `only`
+ * just that degree (a tile click). Up ends on the repeat, like Play scale.
+ */
+export function modePreviewPlan(
+  field: readonly Note[],
+  idx: readonly number[],
+  mode: number,
+  rep: Note,
+  repC: number,
+  p: PitchBase,
+  kind: PreviewKind,
+  dir: ScaleDir = 'up',
+  only?: number
+): Planned[] {
+  const m = idx.length;
+  if (!m || mode < 0 || mode >= m || !(repC > 0)) {
+    return [];
+  }
+  const pj: PitchBase = { ...p, rootC: field[idx[mode]].c };
+  const degs = modeDegrees(field, idx, mode, rep, repC);
+  const tones = (g: (typeof degs)[number], lift: number): Tone[] => {
+    const listed: Tone = { hz: relHz(pj, g.wanted + g.d + lift), src: g.near };
+    const pure: Tone = {
+      hz: relHz(pj, g.wanted + lift),
+      src: Math.abs(g.d) < 1e-6 ? g.near : -1,
+    };
+    return kind === 'listed' ? [listed] : kind === 'pure' ? [pure] : [listed, pure];
+  };
+  const hold = kind === 'both' ? PAIR_HOLD : 1;
+  if (only !== undefined) {
+    return degs[only] ? stepsPlan([tones(degs[only], 0)], hold) : [];
+  }
+  const up = [...degs.map((g) => tones(g, 0)), tones(degs[0], repC)];
+  const order = dir === 'updown' ? [...up, ...up.slice(0, -1).reverse()] : up;
+  return stepsPlan(order, hold);
+}
+
+/**
+ * A tuner-strip note: listed (its own pitch), pure (the target: the note minus its deviation from the compare-to
+ * reference) or both held 1.5x. The target lights only the note's strip mark; the listed tone lights it everywhere.
+ */
+export function stripPreviewPlan(
+  field: readonly Note[],
+  i: number,
+  dev: number,
+  p: PitchBase,
+  kind: PreviewKind
+): Planned[] {
+  const f = field[i];
+  if (!f) {
+    return [];
+  }
+  const listed: Tone = { hz: absHz(p, f.c), src: i };
+  const target: Tone = { hz: absHz(p, f.c - dev), src: i, markOnly: Math.abs(dev) >= 1e-6 };
+  const tones = kind === 'listed' ? [listed] : kind === 'pure' ? [target] : [listed, target];
+  return stepsPlan([tones], kind === 'both' ? PAIR_HOLD : 1, 0, 0.6);
 }
 
 /** Count of sounding voices per field index; `on`/`off` return true when the index's lit state changed. */

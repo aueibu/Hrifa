@@ -137,6 +137,8 @@ export interface LabState {
   preview: readonly number[] | null;
   /** Field indices that sound right now (every view lights them). */
   sounding: ReadonlySet<number>;
+  /** Field indices whose strip mark alone is lit: a pure target tone that is no field note (a Shift+click on a strip note). */
+  soundingMarks: ReadonlySet<number>;
   ui: UiSettings;
   layout: Layout;
   /** The chord finder's templates (user-editable; stored in `...chordfinder.v1`). */
@@ -220,6 +222,7 @@ export function initialState(): LabState {
     chordPick: null,
     preview: null,
     sounding: new Set(),
+    soundingMarks: new Set(),
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
@@ -440,7 +443,7 @@ export type Action =
   | { type: 'chord/hover'; set: ReadonlySet<number> | null }
   | { type: 'chord/pick'; set: ReadonlySet<number> | null }
   | { type: 'preview'; idx: readonly number[] | null }
-  | { type: 'sounding'; idx: readonly number[] }
+  | { type: 'sounding'; idx: readonly number[]; marks?: readonly number[] }
   | { type: 'ui'; patch: Partial<UiSettings> }
   | { type: 'viz'; id: VizId; patch: Partial<VizSettings> }
   | { type: 'layout'; fn: (l: Layout) => Layout };
@@ -460,6 +463,7 @@ const clearPointers = (s: LabState): LabState => ({
   chordPick: null,
   preview: null,
   sounding: new Set(),
+  soundingMarks: new Set(),
 });
 
 /** Apply a tab change; when the field changed, drop the pointers and lights that referred to the old one. */
@@ -483,6 +487,7 @@ export function labReducer(s: LabState, a: Action): LabState {
         chordPick: null,
         preview: null,
         sounding: new Set(),
+        soundingMarks: new Set(),
       };
     case 'tab/add': {
       if (s.tabs.length >= MAX_TABS) {
@@ -689,8 +694,12 @@ export function labReducer(s: LabState, a: Action): LabState {
       return { ...s, preview: a.idx };
     case 'sounding': {
       const next = new Set(a.idx);
-      const same = next.size === s.sounding.size && [...next].every((i) => s.sounding.has(i));
-      return same ? s : { ...s, sounding: next };
+      const marks = new Set(a.marks ?? []);
+      const same = (x: ReadonlySet<number>, y: ReadonlySet<number>) =>
+        x.size === y.size && [...x].every((i) => y.has(i));
+      return same(next, s.sounding) && same(marks, s.soundingMarks)
+        ? s
+        : { ...s, sounding: next, soundingMarks: marks };
     }
     case 'templates/set':
       return {

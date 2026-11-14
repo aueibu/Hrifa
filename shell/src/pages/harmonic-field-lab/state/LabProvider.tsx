@@ -213,6 +213,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       setPreview: (s) => dispatch({ type: 'preview', idx: s }),
       selected,
       sounding: state.sounding,
+      soundingMarks: state.soundingMarks,
       clickNote,
       pinNote,
       audio,

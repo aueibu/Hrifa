@@ -3,6 +3,7 @@
  * (`LabContext`), with `useLab()` for everything and `useViz()` for the visualizer settings. No JSX.
  */
 import { createContext, useContext, type Dispatch } from 'react';
+import type { PreviewKind } from '../audio/plan';
 import type { Base, ChordModel, KeysData, SpectrumData, StripDev, edoOf, dissOf } from './derive';
 import type { Action, LabState, Tab } from './labState';
 import type { VizId, VizView } from './layout';
@@ -23,6 +24,13 @@ export interface LabAudio {
   playChord: () => void;
   /** These field notes together, as a chord at their own pitch above 1/1 (a clicked chord chip). */
   playFieldChord: (fieldIndices: Iterable<number>) => void;
+  /**
+   * Mode grid preview (Ctrl/Cmd+click listed, Shift+click pure, both): mode `mode` of the subset, or just its degree
+   * `degree` when given. Listed = the nearest field notes, pure = the mode's exact intervals from 1/1.
+   */
+  playModePreview: (mode: number, kind: PreviewKind, degree?: number) => void;
+  /** Tuner strip preview: a note's listed pitch, its target (note minus `dev` cents), or both held 1.5x. */
+  playStripPreview: (fieldIndex: number, dev: number, kind: PreviewKind) => void;
   /** Panic: silence everything now. */
   stopAll: () => void;
   /** Hz a pitch of `cents` above 1/1 sounds at, with the current 1/1 Hz setting. */
@@ -72,6 +80,8 @@ export interface Lab {
   selected: ReadonlySet<number>;
   /** Field indices that sound now. */
   sounding: ReadonlySet<number>;
+  /** Strip marks lit alone (a pure target tone that is no field note); only the tuner strip shows them. */
+  soundingMarks: ReadonlySet<number>;
   /** Plain click on a note anywhere: toggle it in the subset (it does not pin). */
   clickNote: (i: number) => void;
   /** Alt+click (Alt+Enter) on a note anywhere: pin it in the inspector, or unpin it if it is pinned (it does not toggle). */
