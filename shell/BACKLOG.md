@@ -7,6 +7,7 @@ Tags: every item starts with its workstream folder name under `arcs/` (e.g. `[wo
 Source arc: **Clips and the clip editor** (archived in `arcs/workbench/ARC.clips.md` / `arcs/workbench/PROGRESS.clips.md`, last commit `8ee3cc4`).
 
 ## Next arc candidates
+- [harmonic-field-lab] **Retuner: "follow the active card" toggle** (2026-11-14): M7 keeps the main views on the tab while the retuner runs; add an option that makes the ring, strip and keys show the active card.
 - [harmonic-field-lab] **Manual pivot by held key** (2026-11-14): Manual pivot today is a chosen degree (Infinitone parity, `manualDeg`, need not be held). Idea for later: an option where the pivot is the key the player holds (`manualKey` already exists in the engine; several held keys need a rule). Not in M7.
 - [harmonic-field-lab] **Revisit the note-selection controls** (All / None / Invert, mode stepper, nearest scale, odd limit) that moved under the ring in the M4 mock; the human wants to redesign them later (2026-11-13). Not scheduled in the current arc.
 Source of the next block ("Bitwig study", 2026-11-12): a read-only comparison of this editor against Bitwig Studio's note editor (strings, theme file, class-level disassembly, and one screenshot). Bitwig claims marked (strings) or (screenshot) are partial; its microtonal drawing and default hotkeys were not traced. Tags are provisional: `PianoRoll`/`VelocityLane` live in shared `src/components/`, so items that change them need a lock.

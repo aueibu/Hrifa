@@ -202,6 +202,7 @@ Proposal:
   - [ ] "Why this card won" table (each card's predicted chord, score, winner, sortable). Drift readout in cents and as a ratio when exact.
   - [ ] Headless behaviour test reproduces the M2 drift vector through the UI; the human checks audio.
 - Checkpoint decisions (human, 2026-11-14): **Manual pivot = by degree** (`manualDeg`, Infinitone parity; the pivot need not be held). Pivot by held key (`manualKey`) is a later idea, in BACKLOG, not built in M7.
+- Checkpoint decisions (human, 2026-11-14): **A card stores a whole tab snapshot** (generation inputs, subset, mode; the notes the engine needs are derived from it), so M8's shelf can restore a source. **While the retuner is on, the main views stay on the tab** (default); the retuner panel shows the active card, and everything sounding still lights green in every view (H-2). A "follow the active card" toggle is a later idea (BACKLOG). Closes the two open questions below.
 - Human checkpoint after: **yes** (audio + feel)
 
 ### M8 (DRAFT, needs the human's approval of the acceptance list before building): Chord sketchpad
@@ -221,8 +222,7 @@ Proposal:
 Page `ARCHITECTURE.md` + lib `README.md` complete (contracts, modules, colour-role mapping, persistence keys, how a section could move into the Workbench). Reviewer over the full arc diff. Archive as `ARC.retuner-shell.md` / `PROGRESS.retuner-shell.md` in `arcs/harmonic-field-lab/`; add leftovers to `BACKLOG.md` tagged `[harmonic-field-lab]`, starting with: "Workbench integration plan: which section/packet moves first."
 
 ## Open questions (answer at the milestone where they matter)
-- M5: While the retuner is on, do the main views follow the active card or stay on the tab? (Could move to M7.)
-- M7: Does a card store a whole tab snapshot, or only the subset's notes?
+- (closed 2026-11-14, see M7 checkpoint decisions: card = whole tab snapshot; main views stay on the tab.)
 
 ## Stop-and-ask conditions
 - A criterion can't be met after 2 builder attempts.
