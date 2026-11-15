@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_LAYOUT,
+  PANEL_IDS,
   canMove,
   fitColumns,
   migrateV1,
@@ -646,5 +647,22 @@ describe('stackWith (stack across sides and at a distance)', () => {
     ]);
     expect(pin(base, 'viz1', 'left')).toBe(base); // already pinned
     expect(pin(base, 'retuner').right.length + pin(base, 'retuner').left.length).toBe(6);
+  });
+});
+
+describe('Shelf panel (M8a)', () => {
+  it('is a known panel; DEFAULT_LAYOUT does not pin it and a stored layout without it loads unchanged', () => {
+    expect(PANEL_IDS).toContain('shelf');
+    expect(pinnedIds(DEFAULT_LAYOUT)).not.toContain('shelf');
+    expect(parseLayout(JSON.stringify(DEFAULT_LAYOUT))).toEqual(DEFAULT_LAYOUT);
+    const stored: Layout = { left: [['keys', 'chords']], right: [['viz1']] };
+    expect(parseLayout(JSON.stringify(stored))).toEqual(stored);
+  });
+
+  it('pins and stacks like the others, and survives a round trip', () => {
+    const l: Layout = { left: [['chords']], right: [] };
+    const a = stackWith(pin(l, 'shelf', 'right'), 'shelf', 'chords');
+    expect(a.left).toEqual([['chords', 'shelf']]);
+    expect(parseLayout(JSON.stringify(a))).toEqual(a);
   });
 });

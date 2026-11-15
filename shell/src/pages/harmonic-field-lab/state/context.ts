@@ -24,6 +24,8 @@ export interface LabAudio {
   playChord: () => void;
   /** These field notes together, as a chord at their own pitch above 1/1 (a clicked chord chip). */
   playFieldChord: (fieldIndices: Iterable<number>) => void;
+  /** Exact pitches (cents above 1/1) together, as heard even when the field lacks them; lights the field notes they coincide with. */
+  playCents: (cents: readonly number[], light?: readonly number[]) => void;
   /**
    * Mode grid preview (Ctrl/Cmd+click listed, Shift+click pure, both): mode `mode` of the subset, or just its degree
    * `degree` when given. Listed = the nearest field notes, pure = the mode's exact intervals from 1/1.

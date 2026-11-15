@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { ActionIcon, Button, Modal, Tooltip } from '@mantine/core';
 import {
   DEFAULT_TEMPLATES,
+  type Note,
   cpsChords,
   parseTemplate,
   type ChordTemplate,
@@ -11,6 +12,7 @@ import {
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
 import { MAX_TEMPLATES } from '../state/labState';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
+import { SketchRow } from './SketchRow';
 import {
   DebouncedText,
   Num,
@@ -24,6 +26,18 @@ import {
 } from './ui';
 import classes from './panels.module.css';
 
+/** A found chip's notes as exact pitches for the shelf: the field's own pitches, root first, then upward from the root. */
+function chipPitches(chip: ChordChip, field: readonly Note[], repC: number): Note[] {
+  const rootC = field[chip.rootIdx]?.c ?? 0;
+  const up = (i: number) => (repC > 0 ? (((field[i].c - rootC) % repC) + repC) % repC : field[i].c);
+  const rest = [...new Set(chip.memberIdx)]
+    .filter((i) => i !== chip.rootIdx && field[i])
+    .sort((a, b) => up(a) - up(b));
+  return [chip.rootIdx, ...rest]
+    .filter((i) => field[i])
+    .map((i) => ({ m: field[i].m ? { ...field[i].m } : null, c: field[i].c }));
+}
+
 function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => void }) {
   const lab = useLab();
   const tipProps = useTooltipProps();
@@ -33,83 +47,120 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
     lab.chordPicked.size === chip.memberIdx.length &&
     chip.memberIdx.every((i) => lab.chordPicked?.has(i));
   const sev = severity(chip.maxErr);
+  const rootDeg = lab.base.rel.findIndex((r) => r.src === chip.rootIdx);
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
   const label = chip.found
-    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key.`
+    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key. Playing it also arms this template in the Sketch row.`
     : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   return (
-    <Tooltip label={label} multiline w={260} {...tipProps}>
-      <button
-        type="button"
-        className={classes.chip}
-        data-found={chip.found}
-        aria-label={label}
-        data-picked={picked}
-        aria-pressed={chip.found ? picked : undefined}
-        onMouseEnter={() => {
-          lab.setChord(new Set(chip.memberIdx));
-          if (chip.found) {
-            lab.audio.setPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
-          }
-        }}
-        onMouseLeave={() => {
-          lab.setChord(null);
-          lab.audio.clearPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
-        }}
-        onFocus={() => {
-          lab.setChord(new Set(chip.memberIdx));
-          if (chip.found) {
-            lab.audio.setPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
-          }
-        }}
-        onBlur={() => {
-          lab.setChord(null);
-          lab.audio.clearPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
-        }}
-        onClick={(e) => {
-          if (!chip.found) {
-            onRaise(need);
-          } else if (e.shiftKey) {
-            // the chord becomes the subset, rooted on the chord's own root (as the prototype did)
-            lab.pickChord(null);
+    <span className={classes.chipWrap}>
+      <Tooltip label={label} multiline w={260} {...tipProps}>
+        <button
+          type="button"
+          className={classes.chip}
+          data-found={chip.found}
+          aria-label={label}
+          data-picked={picked}
+          aria-pressed={chip.found ? picked : undefined}
+          onMouseEnter={() => {
+            lab.setChord(new Set(chip.memberIdx));
+            if (chip.found) {
+              lab.audio.setPreviewTarget({
+                kind: 'chord',
+                idx: chip.memberIdx,
+                template: chip.template,
+              });
+            }
+          }}
+          onMouseLeave={() => {
             lab.setChord(null);
-            const sorted = [...new Set(chip.memberIdx)].sort((a, b) => a - b);
+            lab.audio.clearPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
+          }}
+          onFocus={() => {
+            lab.setChord(new Set(chip.memberIdx));
+            if (chip.found) {
+              lab.audio.setPreviewTarget({
+                kind: 'chord',
+                idx: chip.memberIdx,
+                template: chip.template,
+              });
+            }
+          }}
+          onBlur={() => {
+            lab.setChord(null);
+            lab.audio.clearPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
+          }}
+          onClick={(e) => {
+            if (!chip.found) {
+              onRaise(need);
+            } else if (e.shiftKey) {
+              // the chord becomes the subset, rooted on the chord's own root (as the prototype did)
+              lab.pickChord(null);
+              lab.setChord(null);
+              const sorted = [...new Set(chip.memberIdx)].sort((a, b) => a - b);
+              lab.dispatch({
+                type: 'sel/set',
+                idx: sorted,
+                mode: Math.max(0, sorted.indexOf(chip.rootIdx)),
+              });
+            } else if (picked) {
+              lab.pickChord(null);
+            } else {
+              lab.pickChord(new Set(chip.memberIdx));
+              lab.audio.playFieldChord(chip.memberIdx);
+              lab.dispatch({
+                type: 'sketch/arm',
+                template: chip.template,
+                rootDeg: rootDeg >= 0 ? rootDeg : undefined,
+              });
+            }
+          }}
+        >
+          <span className={classes.chipTop}>
+            <Num>{chip.template}</Num>
+            <Num muted>@ {chip.root}</Num>
+          </span>
+          <span className={classes.chipBottom}>
+            <Num muted>{chip.members.join(' ')}</Num>
+            {chip.found ? (
+              <span
+                className={classes.err}
+                data-sev={sev}
+                title={nativeTitle(`Error ${SEV_LABEL[sev]}`)}
+              >
+                <Num>{sev === 0 ? 'exact' : chip.maxErr.toFixed(1)}</Num>
+              </span>
+            ) : (
+              <span className={classes.need}>
+                <Num>+{need} c</Num>
+              </span>
+            )}
+          </span>
+        </button>
+      </Tooltip>
+      {chip.found && (
+        <button
+          type="button"
+          className={classes.chipStash}
+          aria-label={`Stash ${chip.template} on ${chip.root} on the shelf`}
+          title={nativeTitle('Stash this chord on the shelf')}
+          onClick={() =>
             lab.dispatch({
-              type: 'sel/set',
-              idx: sorted,
-              mode: Math.max(0, sorted.indexOf(chip.rootIdx)),
-            });
-          } else if (picked) {
-            lab.pickChord(null);
-          } else {
-            lab.pickChord(new Set(chip.memberIdx));
-            lab.audio.playFieldChord(chip.memberIdx);
+              type: 'shelf/stash',
+              stash: {
+                pitches: chipPitches(chip, lab.base.field, lab.base.repC),
+                template: chip.template,
+                rootDeg: rootDeg >= 0 ? rootDeg : null,
+                date: new Date().toISOString(),
+              },
+            })
           }
-        }}
-      >
-        <span className={classes.chipTop}>
-          <Num>{chip.template}</Num>
-          <Num muted>@ {chip.root}</Num>
-        </span>
-        <span className={classes.chipBottom}>
-          <Num muted>{chip.members.join(' ')}</Num>
-          {chip.found ? (
-            <span
-              className={classes.err}
-              data-sev={sev}
-              title={nativeTitle(`Error ${SEV_LABEL[sev]}`)}
-            >
-              <Num>{sev === 0 ? 'exact' : chip.maxErr.toFixed(1)}</Num>
-            </span>
-          ) : (
-            <span className={classes.need}>
-              <Num>+{need} c</Num>
-            </span>
-          )}
-        </span>
-      </button>
-    </Tooltip>
+        >
+          <PlusIcon />
+        </button>
+      )}
+    </span>
   );
 }
 
@@ -334,6 +385,7 @@ export function ChordsPanel() {
         </Tip>
       </Strip>
       <div className={classes.panelBody}>
+        <SketchRow />
         {!model && (
           <span className={classes.hint} role="status">
             Chords are found for a subset of 2 to {MAX_CHORDS} notes. Select a few more notes.

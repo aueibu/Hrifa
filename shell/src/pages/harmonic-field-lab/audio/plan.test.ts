@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseInterval, rotateSubset, type Note } from '../../../lib/harmonic-field';
+import { chordAmp } from './engine';
 import { KEYS, dockKeyCount, isTyping, slotOfKey, slotTarget } from './keymap';
 import {
   LightCounter,
@@ -7,6 +8,7 @@ import {
   chordPlan,
   fieldScalePlan,
   modePreviewPlan,
+  pitchesPlan,
   stripPreviewPlan,
   relHz,
   scalePlan,
@@ -260,5 +262,22 @@ describe('mode and strip previews', () => {
     expect(exact[0].amp).toBe(1);
     expect(stripPreviewPlan(field, 1, 0, base, 'pure')[0].markOnly).toBe(false);
     expect(stripPreviewPlan(field, 9, 1, base, 'both')).toEqual([]);
+  });
+});
+
+describe('pitchesPlan (exact pitches together)', () => {
+  it('plays each pitch at its own Hz from 1/1, level chordAmp(n), lighting the field note it coincides with', () => {
+    const cents = [0, 1200 * Math.log2(5 / 4), 1200 * Math.log2(3 / 2) + 0.2];
+    const plan = pitchesPlan(field, OCT.c, cents, base);
+    expect(plan.map((n) => n.hz)).toEqual(cents.map((c) => absHz(base, c)));
+    expect(plan.map((n) => n.src)).toEqual([0, 2, 3]);
+    expect(plan.every((n) => n.delay === 0 && n.amp === chordAmp(3))).toBe(true);
+  });
+
+  it('a pitch the field lacks sounds and lights nothing; a pitch a repeat up lights its note', () => {
+    const plan = pitchesPlan(field, OCT.c, [1200 * Math.log2(7 / 4), 1200 + 0], base);
+    expect(plan[0].src).toBe(-1);
+    expect(plan[0].hz).toBeCloseTo(175, 3);
+    expect(plan[1].src).toBe(0);
   });
 });

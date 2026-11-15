@@ -6,6 +6,7 @@
  * unmounting all silence everything. The AudioContext is created by the engine on the first note, i.e. on a user gesture.
  */
 import { useEffect, useMemo, useRef, type Dispatch } from 'react';
+import { sketchPitches } from '../../../lib/harmonic-field';
 import type { LabAudio } from '../state/context';
 import type { Base } from '../state/derive';
 import type { Action, UiSettings } from '../state/labState';
@@ -18,7 +19,9 @@ import {
   chordPlan,
   fieldScalePlan,
   HOLD_DIGITS,
+  ARMED_DIGIT,
   modePreviewPlan,
+  pitchesPlan,
   previewTargetKey,
   stripPreviewPlan,
   scalePlan,
@@ -52,13 +55,23 @@ interface Args {
   chord: ReadonlySet<number>;
   /** The retuner: while it is live the keys are its held notes and its voices glide (see `syncRetuner`). */
   retuner: RetState;
+  /** The Sketch row's armed template (hold 4 plays it on the hovered note); null when none. */
+  sketchTemplate: string | null;
   dispatch: Dispatch<Action>;
 }
 
 /** Delay (s) before a scheduled plan starts, so the first note is not clipped. */
 const LEAD = 0.05;
 
-export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Args): LabAudio {
+export function useLabAudio({
+  enabled,
+  base,
+  ui,
+  chord,
+  retuner,
+  sketchTemplate,
+  dispatch,
+}: Args): LabAudio {
   const engine = useRef<VoiceEngine | null>(null);
   const lights = useRef(new LightCounter());
   const markLights = useRef(new LightCounter());
@@ -75,9 +88,9 @@ export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Arg
   const applied = useRef({ volume: NaN, wave: '' });
   /** The retuner's voices by slot: the pitch each sounds at and the field note it lights (-1 = none). */
   const rtVoices = useRef(new Map<number, { hz: number; src: number }>());
-  const latest = useRef({ base, ui, chord, enabled, retuner });
+  const latest = useRef({ base, ui, chord, enabled, retuner, sketchTemplate });
   useEffect(() => {
-    latest.current = { base, ui, chord, enabled, retuner };
+    latest.current = { base, ui, chord, enabled, retuner, sketchTemplate };
     // only on a change: setVolume schedules a ramp on the master gain
     if (engine.current && applied.current.volume !== ui.volume) {
       engine.current.setVolume(ui.volume);
@@ -238,12 +251,33 @@ export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Arg
     };
     const playTarget = (id: string, digit: string, t: PreviewTarget): boolean => {
       const kind = HOLD_DIGITS[digit];
-      if (!kind) {
+      if (!kind && digit !== ARMED_DIGIT) {
         return false;
       }
       endHeld(id);
       const { base: b, ui: u } = latest.current;
-      if (t.kind === 'note' || t.kind === 'chord' || t.kind === 'scale') {
+      if (digit === ARMED_DIGIT) {
+        // hold 4: the armed chord rooted on the pointed note (a strip mark is its note); nothing elsewhere
+        const i = t.kind === 'note' || t.kind === 'strip' ? t.i : -1;
+        const root = b.field[i];
+        const template = latest.current.sketchTemplate;
+        const pitches = root && template ? sketchPitches(root, template) : null;
+        if (pitches) {
+          startHeld(
+            id,
+            pitchesPlan(
+              b.field,
+              b.repC,
+              pitches.map((n) => n.c),
+              pitch()
+            ),
+            false,
+            digit
+          );
+        }
+        return true;
+      }
+      if (t.kind === 'note' || t.kind === 'chord' || t.kind === 'scale' || t.kind === 'pitches') {
         // these play on 1 only; 2 and 3 are swallowed (they are not note keys)
         if (kind !== 'listed') {
           return true;
@@ -259,7 +293,13 @@ export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Arg
             );
           }
         } else if (t.kind === 'chord') {
+          if (t.template) {
+            // playing a chord chip arms its template in the Sketch row
+            dispatch({ type: 'sketch/arm', template: t.template });
+          }
           startHeld(id, chordPlan(b.field, t.idx, pitch()), false, digit);
+        } else if (t.kind === 'pitches') {
+          startHeld(id, pitchesPlan(b.field, b.repC, t.cents, pitch(), 1.8, t.light), false, digit);
         } else {
           startHeld(
             id,
@@ -364,7 +404,7 @@ export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Arg
       },
       holdPreview: (id, digit) => {
         const t = target.current;
-        if (!t || !HOLD_DIGITS[digit]) {
+        if (!t || (!HOLD_DIGITS[digit] && digit !== ARMED_DIGIT)) {
           return false;
         }
         heldDigits.current.set(id, digit);
@@ -422,6 +462,10 @@ export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Arg
       },
       playFieldChord: (idx) => {
         schedule(chordPlan(latest.current.base.field, idx, pitch()));
+      },
+      playCents: (cents, light) => {
+        const { base: b } = latest.current;
+        schedule(pitchesPlan(b.field, b.repC, cents, pitch(), 1.8, light));
       },
       playModePreview: (mode, kind, degree) => {
         const { base: b, ui: u } = latest.current;
@@ -509,7 +553,7 @@ export function useLabAudio({ enabled, base, ui, chord, retuner, dispatch }: Arg
         });
         return;
       }
-      if (HOLD_DIGITS[e.key] && api.holdPreview(keyId(e), e.key)) {
+      if ((HOLD_DIGITS[e.key] || e.key === ARMED_DIGIT) && api.holdPreview(keyId(e), e.key)) {
         e.preventDefault();
         return;
       }

@@ -230,6 +230,8 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     ui: state.ui,
     chord,
     retuner: state.retuner,
+    // hold 4 plays the armed template; before one is picked it is the first template, as the Sketch row shows it
+    sketchTemplate: state.shelf.sketch.template ?? state.templates[0]?.text ?? null,
     dispatch,
   });
 

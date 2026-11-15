@@ -7,10 +7,11 @@
  * the last column is next to the generator); `right` runs inner to outer (index 0 is next to the generator).
  */
 export type VizId = 'viz1' | 'viz2' | 'viz3';
-export type PanelId = 'chords' | 'spectrum' | 'keys' | 'modes' | 'retuner' | VizId;
+export type PanelId = 'chords' | 'shelf' | 'spectrum' | 'keys' | 'modes' | 'retuner' | VizId;
 export const VIZ_IDS: readonly VizId[] = ['viz1', 'viz2', 'viz3'];
 export const PANEL_IDS: readonly PanelId[] = [
   'chords',
+  'shelf',
   'spectrum',
   'keys',
   'modes',

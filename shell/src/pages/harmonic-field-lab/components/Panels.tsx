@@ -37,6 +37,7 @@ import { KeysPanel } from './KeysPanel';
 import { ModesPanel } from './ModesPanel';
 import { panelLabel } from './Rail';
 import { RetunerPanel } from './RetunerPanel';
+import { ShelfPanel } from './ShelfPanel';
 import { SpectrumPanel } from './SpectrumPanel';
 import { PinActionsContext, Tip, useViz } from './ui';
 import { VisualizerPanel } from './Visualizer';
@@ -46,6 +47,8 @@ export function renderPanel(id: PanelId) {
   switch (id) {
     case 'chords':
       return <ChordsPanel />;
+    case 'shelf':
+      return <ShelfPanel />;
     case 'spectrum':
       return <SpectrumPanel />;
     case 'keys':

@@ -435,7 +435,7 @@ describe('visualizer panels', () => {
     expect(tab(/Visualizer 3 – Dissonance curve/)).toHaveTextContent(
       /^Visualizer 3 – Dissonance curve\d+ dips$/
     );
-    expect(within(rail()).getAllByRole('tab')).toHaveLength(8);
+    expect(within(rail()).getAllByRole('tab')).toHaveLength(9);
   });
 
   it('switches a visualizer view from its header menu; the panel, rail and stored layout follow', async () => {

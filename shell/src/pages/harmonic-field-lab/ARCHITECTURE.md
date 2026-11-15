@@ -25,7 +25,7 @@ reference only.
 | `state/persist.ts` | Storage keys, `sanitize*`, `load*`, `save*`, the snapshot shape. |
 | `state/layout.ts`, `state/vizState.ts` | Pinned-column arrangement rules and its entry-wise sanitising; visualizer settings and their defaults. No React. |
 | `audio/engine.ts` | `VoiceEngine`: Web Audio voices (see "Audio engine"). `audio/plan.ts` (what to play, as data), `audio/keymap.ts` (computer keys), `audio/useLabAudio.ts` (hook), `audio/fakeContext.ts` (test double). |
-| `components/` | The section components (`Rail`, `Panels`, `GeneratorColumn`, `RingStats`, `TunerStrip`, `SavedSubsets`, `FieldPanel`, `ChordsPanel`, `SpectrumPanel`, `KeysModesPanel`, `Visualizer` with `LatticePanel` / `Lattice3D` / `EdoFitView` / `DissonanceView` / `IsoView`, `RetunerPanel` (live, M7), `KeyboardDock`, `TopBar`, `GlossaryDrawer`) and `lab.module.css` / `panels.module.css`. They read the lab through `useLab()` only. |
+| `components/` | The section components (`Rail`, `Panels`, `GeneratorColumn`, `RingStats`, `TunerStrip`, `SavedSubsets`, `FieldPanel`, `ChordsPanel` (with `SketchRow`), `ShelfPanel`, `SpectrumPanel`, `KeysModesPanel`, `Visualizer` with `LatticePanel` / `Lattice3D` / `EdoFitView` / `DissonanceView` / `IsoView`, `RetunerPanel` (live, M7), `KeyboardDock`, `TopBar`, `GlossaryDrawer`) and `lab.module.css` / `panels.module.css`. They read the lab through `useLab()` only. |
 | `texts.ts` | The glossary's single source: every tooltip and glossary entry (`TIPS`, `GLOSSARY`, `tipKeys`). |
 | `state/retuner.ts` | The retuner slice of the lab state (M7): `RetState`, `RetAction`, `retunerReduce`, `runStep` (calls the lib `retuneStep`), `heldHz`, `makeScorer`, settings defaults and clamping. Pure, no React, no storage. `state/retunerCards.ts`: `cardFromTab`, `cardFromSnapshot` (the notes the engine needs are derived from a tab or a stored snapshot). |
 | (removed in M7) | `components/mockRetuner.ts` (the placeholder data) is gone; the rail count and the panel read `state.retuner`. |
@@ -163,7 +163,7 @@ come from each `selCents` looked up in the field the entry's generator builds (e
 that does not build gives cents-only pitches), the root is the pitch at the stored mode (the first when out of range). Every entry appears with its id
 and name. The first library change writes `generators.v1`, which is then authoritative.
 
-### Chord shelf (M8a, step 1: data layer, no UI yet)
+### Chord shelf (M8a: step 1 data layer, step 2 UI below)
 
 `LabState.shelf: ShelfState` holds the stashed chords, the selection, the sketch row and two runtime notes. Everything is plain data (a later Workbench
 hand-off can read `chordshelf.v1`; W-1: midicents only at the hand-off).
@@ -197,6 +197,19 @@ hand-off can read `chordshelf.v1`; W-1: midicents only at the hand-off).
   the key (or a clear) dispatches `shelf/sync`. Selection, sketch, `lastStashed`, `lastReload` and `refusal` are runtime only.
 - Pure helper for the sketch row (lib `sketch.ts`): `matchToField(field, rep, pitches, tol)` gives, per pitch, the field index it lands on (repeat-aware) or the
   signed distance in cents (field note minus pitch, so positive = the nearest field note is above) to the nearest field note, wrapping around the repeat.
+
+#### Shelf UI (M8a step 2)
+
+| piece | where | what it does |
+| --- | --- | --- |
+| Shelf panel | `components/ShelfPanel.tsx` | Panel id `shelf` (rail label "Shelf", summary "n chords"; pin, stack and splitters like the others; `PANEL_IDS` gained `shelf`, `DEFAULT_LAYOUT` does not pin it, stored layouts load unchanged because sanitising is entry by entry). Slots (`ul` "Chord shelf"): a small ring drawing of the chord (blue polygon, `--mark-blue`), the name (click to rename, Enter keeps, Escape cancels; "Chord N" is automatic, muted italic), "n notes . template", up / down, Reload, Delete (two clicks: bin, then "Delete?"). A checkbox per slot is the additive multi-select (`shelf/select { additive }`); the strip has **Play selected** and **Clear selection**. Click on the drawing plays the slot with the sticky chord highlight (as a chord chip); hover highlights its field notes; hover + hold 1 holds it, and on one of several selected slots holds all selected ones layered. Notes line under a slot: "parent removed" (dangling `parent`), "from <parent name>", and after Reload "Reloaded as a new tab: n of m source pitches are missing ..." (`shelf.lastReload`); `shelf.refusal` shows as a red line at the top; empty shelf shows a hint. |
+| Sketch row | `components/SketchRow.tsx`, top of `ChordsPanel` | Template dropdown (`NativeSelect`, family-grouped by `familyOrder`, value = template text; the first template is picked on mount when `sketch.template` is null), root degree stepper (`rootDeg % N`, shown 1-based, wraps), **Play sketch** and **Stash**. `sketchPitches(root, template)` gives the exact chord on the field note of that degree; `matchToField` marks found notes (blue border, "in field") and prints outsiders dashed with the signed cents to the nearest field note. Hover on the notes highlights the found field notes and sets a hold-1 target. |
+| Stash from a chip | `ChordsPanel.tsx` (`Chip`) | A found chip has a "+" corner button (shown on hover or focus, no size change at rest) that dispatches `shelf/stash` with the chip's field notes, root first then upward from the root, template and root degree. |
+| Armed chord | `ChordsPanel.tsx`, `useLabAudio.ts` | Clicking a chip that plays, or hold 1 on it, dispatches `sketch/arm` (click also sets the root degree of the chip). The row shows "Armed from a chord". |
+| Hold 4 | `useLabAudio.ts` (`playTarget`), `plan.ts` (`ARMED_DIGIT`, `pitchesPlan`) | Hover a note (or a strip mark: `note` / `strip` targets) and hold 4: `sketchPitches` of the hovered field note with the Sketch template (`LabProvider` passes `sketch.template ?? templates[0]`), played as held voices at `chordAmp(n)`; sweeping while held switches the target (the existing `heldDigits` loop); other targets and empty space mean nothing. Keys 1, 2, 3, 5 and Alt+1..9 are untouched; never while typing (same `isTyping` guard). |
+| Exact pitches | `PreviewTarget { kind: 'pitches', key, cents }`, `LabAudio.playCents` | Shelf slots, layered selections and the sketch play cents above 1/1 at their own pitch (like `playFieldChord`), each lighting the field note within 0.5 c (`litIndex`), else nothing (H-2). The cents of a stashed chord are `chordPitchesFor(chord, ui.modePlayback)`. Sketch and hold 4 play field-absolute pitches (like chord chips). |
+
+Tests: `HarmonicFieldLab.shelf.test.tsx` (sketch, stash from the row and a chip, shelf play, hold 1 layering, rename, reorder, reload, delete; hold 4 on notes, sweep, armed template, typing), `plan.test.ts` (`pitchesPlan`), `layout.test.ts` (the `shelf` panel id).
 
 ### Preset browser and subset rows (M7b, step 2: the UI)
 

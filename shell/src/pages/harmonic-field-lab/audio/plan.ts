@@ -4,6 +4,7 @@
  */
 import { rotateSubset, type Note, type RelNote } from '../../../lib/harmonic-field';
 import { wrapSigned } from '../state/derive';
+import { litIndex } from '../state/retuner';
 import { chordAmp, hzOf } from './engine';
 import { slotTarget } from './keymap';
 
@@ -123,6 +124,30 @@ export function chordPlan(
   return idx.map((i) => ({ hz: absHz(p, field[i].c), src: i, delay: 0, dur: 1.8, amp }));
 }
 
+/**
+ * Exact pitches together (cents above 1/1, at their own pitch like a chord chip): the chord as heard, whether or not the
+ * field has the notes. A pitch lights the field note it coincides with (within 0.5 c, around the repeat), else nothing.
+ */
+export function pitchesPlan(
+  field: readonly Note[],
+  repC: number,
+  cents: readonly number[],
+  p: PitchBase,
+  dur = 1.8,
+  /** What each pitch lights, when that differs from what it sounds (Parallel shelf chords sound from 1/1 but light the field-absolute note). */
+  light: readonly number[] = cents
+): Planned[] {
+  const amp = chordAmp(cents.length);
+  const noteCents = field.map((n) => n.c);
+  return cents.map((c, i) => ({
+    hz: absHz(p, c),
+    src: litIndex(noteCents, repC, light[i] ?? c),
+    delay: 0,
+    dur,
+    amp,
+  }));
+}
+
 /** Play chord with nothing highlighted: the whole subset sounding together, from the mode root. */
 export function subsetChordPlan(rel: readonly RelNote[], p: PitchBase): Planned[] {
   const amp = chordAmp(rel.length);
@@ -149,8 +174,10 @@ export type PreviewTarget =
   | { kind: 'strip'; i: number; dev: number }
   /** Anywhere a single field note is drawn (a ring dot, a lattice point, a table row): hold 1 sounds it. */
   | { kind: 'note'; i: number }
-  /** A chord chip: hold 1 sounds its field notes together. */
-  | { kind: 'chord'; idx: readonly number[] }
+  /** A chord chip: hold 1 sounds its field notes together. `template` arms the Sketch row when it plays. */
+  | { kind: 'chord'; idx: readonly number[]; template?: string }
+  /** Exact pitches (cents above 1/1, e.g. a shelf slot or a layered selection) sounded together; `key` is the identity. */
+  | { kind: 'pitches'; key: string; cents: readonly number[]; light?: readonly number[] }
   /** A key ring or a saved subset: its field notes in degree order (root first); hold 1 steps through them as a scale. */
   | { kind: 'scale'; idx: readonly number[] };
 
@@ -167,6 +194,8 @@ export const previewTargetKey = (t: PreviewTarget): string => {
       return `n${t.i}`;
     case 'chord':
       return `c${t.idx.join(',')}`;
+    case 'pitches':
+      return `p${t.key}`;
     case 'scale':
       return `k${t.idx.join(',')}`;
   }
@@ -178,6 +207,9 @@ export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {
   '2': 'pure',
   '3': 'both',
 };
+
+/** Hold 4: the armed chord (the Sketch row's template) rooted on the pointed note. Not a preview kind: no listed / pure. */
+export const ARMED_DIGIT = '4';
 
 /** Both tones together: every step is held this much longer, so the beating can be heard. */
 export const PAIR_HOLD = 1.5;
