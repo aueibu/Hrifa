@@ -21,7 +21,7 @@ import { autoName } from '../state/generate';
 import { sketchPositionalPitches } from '../state/sketchChord';
 import { PlayIcon } from './icons';
 import { tooFewHint } from './Positional';
-import { Num, Tip, severity, useLab } from './ui';
+import { Num, Tip, severity, useLab, useNativeTitle } from './ui';
 import classes from './panels.module.css';
 
 /** Template dropdown data: the templates grouped by family (the chord finder's family order), the text as the value. */
@@ -61,6 +61,7 @@ export function SketchRow() {
   const lab = useLab();
   const { state, tab, base, dispatch, audio } = lab;
   const sk = state.shelf.sketch;
+  const nativeTitle = useNativeTitle();
   const templates = state.templates;
   const n = base.rel.length;
   // the first template is picked when the row opens with none
@@ -268,11 +269,6 @@ export function SketchRow() {
           Select a note to put a chord on it.
         </span>
       )}
-      {sk.positional && (
-        <span className={classes.hint} role="status">
-          The As in field | Exact switch is off: a positional chord has no separate exact ratios.
-        </span>
-      )}
       {tooBig && (
         <span className={classes.hint} role="status">
           {tooBig}
@@ -331,20 +327,40 @@ export function SketchRow() {
           })}
         </div>
       )}
-      {naming ? (
-        <span className={classes.hint} data-testid="sketch-line">
-          {naming.label} &middot; {naming.tail}
-          {naming.ratio ? ` · ${naming.ratio}` : ''}
-          {sk.armed ? ' (armed from a chord)' : ''}. Point at any note and hold 4 or 5 to hear this
-          chord on it (both give the same notes).
-        </span>
-      ) : (
-        <span className={classes.hint}>
-          {sk.template ?? ''} &middot;{' '}
-          {sk.exact ? 'exact' : `as in ${tab.gen.preset || autoName(tab.gen)}`}
-          {sk.armed ? ' (armed from a chord)' : ''}. Point at any note and hold 4 to hear it as the
-          field has it, 5 for the exact ratios.
-        </span>
+      {pitches && pitches.length > 0 && (
+        <div
+          className={classes.sketchInfo}
+          data-testid="sketch-info"
+          title={nativeTitle(
+            'Point at any note and hold 4 to hear this chord on it as the field has it, 5 for the exact ratios (a positional chord gives the same notes for both).'
+          )}
+        >
+          {naming ? (
+            <span className={classes.hint} data-testid="sketch-line">
+              {naming.label}
+              {naming.ratio ? ` · ${naming.ratio}` : ''}
+            </span>
+          ) : (
+            <span className={classes.hint} data-testid="sketch-name">
+              {templates.find((t) => t.text === sk.template)?.name ?? sk.template ?? ''}
+            </span>
+          )}
+          <span data-testid="sketch-cents">
+            <Num muted>{pitches.map((p) => p.c.toFixed(1)).join(', ')} c</Num>
+          </span>
+          {pitches.length > 1 && (
+            <span data-testid="sketch-steps">
+              <Num muted>
+                steps{' '}
+                {pitches
+                  .slice(1)
+                  .map((p, i) => (p.c - pitches[i].c).toFixed(1))
+                  .join(' · ')}{' '}
+                c
+              </Num>
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

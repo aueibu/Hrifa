@@ -86,9 +86,10 @@ describe('Positional section (12-EDO C major, pattern 2-2)', () => {
     expect(row('2-2 on 2').getAttribute('aria-pressed')).toBe('true');
     expect(sketch().getAttribute('data-armed')).toBe('true');
     expect(template().value).toBe('pos:2-2');
-    expect(screen.getByTestId('sketch-line').textContent).toMatch(
-      /^2-2 on 2 · 7 of 12-EDO · 300-400 c/
-    );
+    expect(screen.getByTestId('sketch-line').textContent).toMatch(/^2-2 on 2/);
+    // pitches in cents and the step sizes, no generator name and no 'armed from a chord'
+    expect(screen.getByTestId('sketch-steps').textContent).toMatch(/steps 300.0 · 400.0 c/);
+    expect(screen.getByTestId('sketch-info').textContent).not.toMatch(/12-EDO|armed from/);
     // `2-2 on 1` in Parallel is C E G
     n = oscs().length;
     fireEvent.click(row('2-2 on 1'));

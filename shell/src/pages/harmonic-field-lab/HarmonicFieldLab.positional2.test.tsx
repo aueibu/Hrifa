@@ -64,11 +64,11 @@ describe('Sketch row, Positional group', () => {
     expect(groups).toContain('Positional');
     fireEvent.change(template(), { target: { value: 'pos:2-2' } });
     expect(template().value).toBe('pos:2-2');
-    expect(screen.getByTestId('sketch-line').textContent).toMatch(
-      /^2-2 on 1 · 7 of 12-EDO · 400-300 c/
-    );
+    expect(screen.getByTestId('sketch-line').textContent).toMatch(/^2-2 on 1/);
+    expect(screen.getByTestId('sketch-steps').textContent).toMatch(/steps 400.0 · 300.0 c/);
     expect(within(sketch()).getByRole('radio', { name: 'Exact' })).toBeDisabled();
-    expect(within(sketch()).getByText(/has no separate exact ratios/)).toBeTruthy();
+    // the switch's reason is its tooltip only: no sentence under the row
+    expect(within(sketch()).queryByText(/has no separate exact ratios/)).toBeNull();
     // Play sketch plays C E G (Parallel)
     const n = oscs().length;
     fireEvent.click(within(sketch()).getByRole('button', { name: 'Play sketch' }));
@@ -80,13 +80,14 @@ describe('Sketch row, Positional group', () => {
     expect(h.map((x) => Math.round(cents(x, h[0])))).toEqual([0, 400, 700]);
     // stepping the root moves the positional chord
     fireEvent.click(within(sketch()).getByRole('button', { name: 'Next root degree' }));
-    expect(screen.getByTestId('sketch-line').textContent).toMatch(
-      /^2-2 on 2 · 7 of 12-EDO · 300-400 c/
-    );
+    expect(screen.getByTestId('sketch-line').textContent).toMatch(/^2-2 on 2/);
     // the ratio template that is already the row's text (4:5:6) still takes the row out of positional mode
     fireEvent.change(template(), { target: { value: '4:5:6' } });
     expect(template().value).toBe('4:5:6');
     expect(screen.queryByTestId('sketch-line')).toBeNull();
+    // a ratio template shows its template name, the pitches and the step sizes
+    expect(screen.getByTestId('sketch-name')).toBeInTheDocument();
+    expect(screen.getByTestId('sketch-steps').textContent).toMatch(/^steps /);
     expect(within(sketch()).getByRole('radio', { name: 'Exact' })).toBeEnabled();
   });
 });

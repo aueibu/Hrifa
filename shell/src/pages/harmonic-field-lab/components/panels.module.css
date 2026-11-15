@@ -1500,6 +1500,13 @@
   gap: 0.25rem;
 }
 
+/* the Sketch chord's name, pitches and step sizes under the note tiles (no sentence; the hold 4 / 5 help is the tooltip) */
+.sketchInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
 .sketchNote {
   --sketch-tint: 14%; /* strength of the severity wash on the grey tile background: tune here */
 

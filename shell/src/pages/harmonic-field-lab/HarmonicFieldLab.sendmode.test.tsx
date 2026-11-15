@@ -268,7 +268,7 @@ describe('CPS chip roots follow the factor labels (root position)', () => {
     fireEvent.mouseLeave(oto);
     fireEvent.click(uto);
     expect(tpl().value).toBe('1/(3:5:7)');
-    expect(screen.getByText(/armed from a chord/)).toBeInTheDocument();
+    expect(screen.queryByText(/armed from a chord/)).toBeNull();
   });
 });
 
