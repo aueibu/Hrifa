@@ -1,68 +1,63 @@
-# ARC: One Stage for the workbench (panels with a home, reusable anywhere)
+# ARC: One Stage for the workbench (named dockers, screensets, panels reusable anywhere)
 
-**Status: APPROVED by the human 2026-11-14** (drafted the same day; remembered placement, tab groups and the pop-out stretch added before approval; the three M1 pre-decisions below confirmed). Drafted after the chord-input arc closed (`ARC.chord-input.md`) and the Stage was adopted inside the note clip editor (W-23 to W-25). Background reading: `arcs/workbench/STAGE-ADOPTION.md` (terms and the current nesting), `src/pages/stage/ARCHITECTURE.md` section 13, `shell/BACKLOG.md` items tagged `[stage]`, `[shared]` Stage items and the `[workbench]` Stage adoption items.
+**Status: approved by the human 2026-11-14; AMENDED the same day after the M1 checkpoint (named dockers on a split tree instead of fixed areas, screensets per project, drag docking and pinning in scope, a new milestone order). The amendment is awaiting the human's approval.** Drafted after the chord-input arc closed (`ARC.chord-input.md`) and the Stage was adopted inside the note clip editor (W-23 to W-25). Background reading: `arcs/workbench/DESIGN.one-stage.md` (the design: panel model, split tree, screensets, state boundary, migration, decisions D1 onward and open items), `arcs/workbench/RESEARCH.docking-layouts.md` (how other systems do it), `arcs/workbench/STAGE-ADOPTION.md` (terms and the current nesting), `src/pages/stage/ARCHITECTURE.md` section 13, `shell/BACKLOG.md` items tagged `[stage]`, `[shared]` Stage items and the `[workbench]` Stage adoption items.
 
 ## Goal
-The workbench centre is arranged by one Stage instead of hand-built special cases. The top and bottom split, the desk and canvas sharing the top pane, the clip editor area and the canvas takeover all become **panels** placed by the same layout rules, so the user can send a panel somewhere else (for example the desk to the top half) without a code change. Standard proportions (the size classes and the 6rem unit) let panels slot together and nest.
+The workbench centre is arranged by one Stage instead of hand-built special cases. The top and bottom split, the desk and canvas sharing the top pane, the clip editor area, the module detail area and the canvas takeover all become **panels** shown in **dockers** that the user can name, arrange and recall, so the user can send a panel somewhere else ("send this to the visualizer docker") or drag it there without a code change. Standard proportions (the size classes and the 6rem unit) let dockers slot together and nest.
 
-Two ideas from the human (2026-11-14) shape the design:
+Ideas from the human (2026-11-14) that shape the design:
 
-1. **Standard proportions that slot and nest, not fixed slots.** The arrangement is data the user can change.
-2. **Panels have a home, but are built to be reused.** A panel is written once, context-free, and declares where it normally lives (its **home**). It can also appear elsewhere. The chord picker is the example: today only inside the piano roll, but a future workbench module (a chord progression list constructor, say) should be able to use the same chord picker panel. So a panel must not depend on being inside the note clip editor.
+1. **Standard proportions that slot and nest, not fixed slots.** The arrangement is data the user changes: a split tree whose leaves are named dockers. Examples to support: (a) a top docker over a bottom area whose right-hand docker holds 3 tabs; (b) left, centre and right dockers each with one tab; (c) a top docker over a bottom split into left and right.
+2. **Panels are built to be reused.** A panel is written once, context-free, and declares its home (the docker it normally lives in). The chord picker is the example: it must work for the piano roll AND for other hosts (an empty list in a workbench module that receives a chord as pitch classes, a module that takes a note set for analysis). So its state and the clip editor's state move to page level, and the picker follows the active chord target.
+3. **A panel remembers its preferred docker.** Close the chord picker; invoke the Chords tool again and it reopens in the docker the user last had it in. Nothing to set in a menu.
+4. **Dockers, like REAPER's.** A docker holds any number of panels as tabs, has a user-chosen NAME, and persists when empty until the user removes it. A tool or workbench module can call a panel to the front. Send-to targets dockers by name; drag-to-dock follows the menu.
+5. **Screensets (saved named arrangements).** Different sessions want different arrangements (harmonic lab modules; drawing and realising gestures and fields; arranging). Each project stores its screensets (per project by default); the user can add their own; the app ships sensible default screensets. They appear as meta-tabs at the bottom that replace today's canvas and desk view tabs.
+6. **Pinning modules.** A workbench module instance can be pinned into its own docker so several can be seen at once (two Carter hexachord views, a subset combiner next to them).
+7. **Stretch, not required: pop-out** of a panel into a free-floating window.
 
-3. **A panel remembers its preferred place.** If the user puts the chord picker in the bottom right and closes it, it goes away (and the space is released if nothing else is there); invoking it again (for example turning the Chords tool back on) reopens it in that bottom-right spot. Nothing to set in a menu: placing it once is the preference. (Close to what the note clip editor's Stage already does: closing the chord picker leaves the Chords tool and the saved arrangement keeps its place, W-25.)
-4. **Tab groups, like Reaper's docker.** Any number of panels can share one slot as tabs (for example the file browser, a spectrograph and the connections panel in one slot), each reached by its tab. A tab can be brought to the front contextually when a tool or workbench module calls its panel up. This is different from today's stack, which splits a column vertically so panels are all visible at once.
-5. **Stretch goal, not required: pop-out.** The user can pop a tab or panel out to a free-floating window.
-
-That second point is what stops the piano roll, chord picker and canvas being independent today: the piano roll takes about 40 props closed over the note clip editor's state, and the chord session (anchor, ghost notes, voicing, mode, keyboard workflow W-20) lives in `NoteClipEditor`. This arc lifts that state out so a panel works wherever it is placed.
-
-## Working assumptions (to be confirmed or changed at the M1 checkpoint, not decided yet)
-- **Areas with homes, rather than free nesting.** The Stage gets a small fixed set of named areas (candidates: a top area, a main area, a bottom area; the inspector stays a region). Each area holds columns and stacks as the Stage does today. A panel declares a home area and can be sent to another. This is simpler than an arbitrary tree of rows and covers the top and bottom split. The alternative to weigh is rows of columns or a nested tree.
-- **"Send to" menu on each header strip** (top, bottom, left, right, new column) comes first; dragging a strip to drop zones is a later option. Both operate on the same layout data, so dragging can be added without changing it.
-- **Remembered placement is stored separately from the visible layout.** The visible layout lists only open panels; a small per-viewer map `panel id -> last place` (area, column, position, or the tab group it was in, plus width or share) is kept when a panel closes and used when it is reopened. If the remembered place no longer exists (the area is full, the column was removed), it falls back to the panel's home. A reset action clears the map. This keeps reopening smooth without a menu.
-- **A tab group is a slot holding several panels with one active.** Stacks (all visible, vertical) and tab groups (one visible at a time) are two ways to put panels in a column. Activating a panel (by clicking its tab, or when a module calls it up) switches the group's active tab. Panels in inactive tabs stay mounted (mounted-once, STAGE-7), so they keep their state.
-- **Calling a panel to the foreground needs the command channel** (`BACKLOG`: "Modules need a command channel"). M1 decides whether "show this panel" is one command of a general channel or a Stage API.
-- **Pop-out is a stretch and is a deliberate change of an earlier rule.** The chord-input arc and the stage arc both ruled out free-floating, free-positioned windows (the only floating element allowed was a transient anchored popover). If the human wants pop-out it is a new kind of slot: a `DECISIONS.md` row is required and it is built only after the core milestones, behind its own checkpoint.
-- **One layout format version bump**, with the existing parser migrating old layouts (the Stage and the clip editor's `hrifa.stage.layout.workbench-editor.v1` both load without loss).
-- **A panel instance is by id, with at most one instance per id per Stage** unless M1 decides multiple instances are needed (the chord picker used by two hosts at once would need it).
+## Decisions already taken (M1 checkpoint, 2026-11-14; full list under M1 below)
+- Build our own split tree with named leaf dockers on the existing Stage core; no docking library (dockview was considered and declined).
+- Vocabulary: docker = container with tabs and a name; panel = content in a tab; screenset = a saved named arrangement; slot, stack, column kept only for the old v1 Stage.
+- Send-to menu first, then drag-to-dock; both call one layout operation. A "show this panel" function on the Stage (not a general message channel).
+- Named dockers persist when empty. Which docker flexes and what can close are workspace choices, not per-panel flags. Keyboard: select a docker by shortcut, then cycle its tabs (manual activation).
+- Chord session and clip editor session at page level, no React key above the Stage, picker follows the active chord target. Single instances for the piano roll and chord picker; a `multiple` option for panels like browsers and catalogs; pinned module instances in this arc.
+- Layout per project; the old Stage (v1) and the editor's own Stage stay until M6 so the existing tests stay green.
+- A drops system (picker payloads dragged onto targets such as a velocity lane or a rhythm list) is a LATER arc; this arc must not preclude it.
 
 ## Parameters
 - Stack: React 19 + Vite + Mantine, TypeScript, shell theme roles only (`src/theme/THEMING.md`). The Stage contract stays: a panel receives only its size class; panels are mounted once and keep state when moved (STAGE-7).
-- Persistence: layout and per-viewer choices under `hrifa.stage.` keys only; existing keys and the saved `chordHost` / `chordDockWidth` migration keep working.
+- Persistence: layout and screensets live with the project by default. The screenset store is a project-state key `hrifa.composition-workbench.ui.screensets.v1` read and written by the page with `usePersistentState` (like today's `ui.canvas-split`, `ui.detail-collapsed`, `ui.workspace-view`, W-10; added to `unrecordedStateKeys` so changing it is never an undo step); this differs from the Stage's own `hrifa.stage.` loader, which stays for the spike and any per-viewer data (the spike keys, the editor key, `hrifa.note-editor.v1`, a possible template library). Existing keys and the saved `chordHost` / `chordDockWidth` migration keep working; old project state seeds the first screensets (nothing lost, no history entries).
 - Behaviour that must not change: chord input (hover ghosts, audition, insert, W-20 keyboard workflow, Esc), clip editing, undo and history, the desk, Scale Explorer and other pages.
-- Owned paths: `src/pages/composition-workbench/**` (the page folder and its tests, its `ARCHITECTURE.md`, new files such as `panels/` and a chord session module), `arcs/workbench/` files (`ARC.md`, `PROGRESS.md`, archives, `STAGE-ADOPTION.md`).
-- Shared paths it may touch (each needs a row in `arcs/LOCKS.md`, written by the orchestrator): `src/components/Stage/` and `src/lib/stage/` (layout format, areas, Send-to menu; the stage arc is finished, so these are shared paths: lock plus a `DECISIONS.md` row), `src/pages/stage/` (the `/stage` spike keeps working and is the test bed), `src/components/InspectorKit/` (only if a kit change is needed), `src/components/PianoRoll/` (opt-in props only, if the piano roll panel needs them: stop and ask first), `src/pages/CompositionWorkbench.page.tsx` (entry file: the page-level Stage), `shell/ARCHITECTURE.md`, `package.json` (only if a new check script is needed), `DECISIONS.md`/`BACKLOG.md` (no lock). `src/pages/harmonic-field-lab/` and `src/lib/harmonic-field/` belong to another arc and are not edited.
+- Owned paths: `src/pages/composition-workbench/**` (the page folder and its tests, its `ARCHITECTURE.md`, new files such as `panels/` and a sessions wrapper component), `arcs/workbench/` files (`ARC.md`, `PROGRESS.md`, `DESIGN.one-stage.md`, `RESEARCH.*`, archives, `STAGE-ADOPTION.md`).
+- Shared paths it may touch (each needs a row in `arcs/LOCKS.md`, written by the orchestrator, per milestone): `src/lib/stage/` (the layout core: tree, screensets, migration), `src/components/Stage/` (the old v1 Stage stays unchanged until M6; the new tree Stage is a new component beside it, in a new folder; `stageOps.ts` and `registry.ts` lock from M2 per the checkpoint), `src/pages/stage/` (the `/stage` spike is the test bed; its docs and tests), `src/components/InspectorKit/` (conditional: the docker strip with tabs), `src/pages/CompositionWorkbench.page.tsx` (entry file, M5 only), `shell/ARCHITECTURE.md` (M5 and M8 docs; needs a lock row), `src/components/PianoRoll/` (opt-in props only, if a panel needs them: stop and ask first), `package.json` (only if a new check script is needed), `DECISIONS.md`/`BACKLOG.md` (no lock). `src/pages/harmonic-field-lab/` and `src/lib/harmonic-field/` belong to another arc and are not edited.
 - Check command: `corepack yarn check:workbench` and `corepack yarn check:stage` (both exist; run both at each milestone, once, before the commit). Also `check:hfl` before committing a change to the Stage, kit or `src/components/` (the lab is a consumer of shared components).
-- Concurrency: same checkout and branch as the other arcs; the orchestrator commits at the end of every milestone with path-scoped `git add <paths>` and `git commit -- <paths>` only (never `git add -A` or a bare `git commit`; on an `index.lock` error retry, never delete the lock) and removes lock rows only after that commit; after writing a lock row re-read `arcs/LOCKS.md`; use the existing DECISIONS prefix `W-` (next free id).
+- Concurrency: same checkout and branch as the other arcs; the orchestrator commits at the end of every milestone with path-scoped `git add <paths>` and `git commit -- <paths>` only (never `git add -A` or a bare `git commit`; on an `index.lock` error retry, never delete the lock) and removes lock rows only after that commit; after writing a lock row re-read `arcs/LOCKS.md`; use the existing DECISIONS prefix `W-` (next free id). Every code milestone appends its DECISIONS rows in the same milestone.
 
 ## Preconditions
-- `check:workbench` and `check:stage` exist and are green before the first code milestone. If red only because of another arc's unfinished files, stop, report and wait (shell rule 14).
+- `check:workbench` and `check:stage` exist and are green before each code milestone. If red only because of another arc's unfinished files, stop, report and wait (shell rule 14).
 - Owned and locked paths are clean before each builder brief.
 
 ## Non-goals
 - No new chord or musical features; chord-input behaviour is preserved, not extended.
-- No rebuild of the workbench inspector on the kit (`BACKLOG`, later), and no change to the harmonic field lab.
-- No free-floating or free-positioned windows in the core milestones; the only floating element stays a transient anchored popover. Pop-out is the stretch milestone M8 and needs the human's explicit go-ahead and a `DECISIONS.md` row (it relaxes an earlier rule).
+- No rebuild of the workbench left inspector on the kit (`BACKLOG`, later), and no change to the harmonic field lab.
+- No free-floating windows in the core milestones; the only floating element stays a transient anchored popover. Pop-out is the stretch milestone M9 and needs the human's explicit go-ahead and a `DECISIONS.md` row (it relaxes an earlier rule).
+- No drops system (payload types and drop targets); a later arc.
 - No change to the pitch, time or edit contracts (`shell/ARCHITECTURE.md`, shared contracts).
 - The `/stage` spike page stays until the human decides to remove it.
 
 ## Milestones
 Each milestone is small enough for one builder run and has criteria a command or test can check.
 
-### C0: Context scan
-- Read `shell/ARCHITECTURE.md`, `DECISIONS.md`, `BACKLOG.md`, the Status of every other arc under `arcs/`, and `arcs/LOCKS.md`; note who imports the Stage, kit and `NoteClipEditor`; record in PROGRESS.md.
-- Acceptance:
-  - [ ] PROGRESS.md notes the scan result (other arcs, locks, relevant decisions and backlog)
-- Human checkpoint after: no
+### C0: Context scan. DONE (see PROGRESS.md).
 
-### M1: Design: panels with a home, areas, Send-to (a document and a mock, no production code)
-- Pre-decisions (human, 2026-11-14, at approval): a stack can contain a tab group (a tab group can be one member of a stack); when the last tab of a group closes the group and its space are released like any closed panel; one instance of each panel id per Stage by default, with multiple instances only if M1 finds a case that needs them. Everything else in "Working assumptions" is still to be confirmed at the M1 checkpoint.
+### M1: Design: dockers, screensets, panels reusable anywhere (a document, no production code). DONE; deliverables `DESIGN.one-stage.md` and `RESEARCH.docking-layouts.md`
+- Pre-decisions (human, 2026-11-14, at approval): a stack can contain a tab group (now: a docker, which is the tab group, can be a member of a vertical split); one instance of each panel id per Stage by default. SUPERSEDED at the M1 checkpoint: closing the last tab no longer releases the space; named dockers stay until the user removes them.
 - Scope: owned `arcs/workbench/` and `src/pages/composition-workbench/ARCHITECTURE.md` only. Write down the panel model (home, reuse, one or many instances, what a host must provide), the layout model options (areas with homes versus rows versus a tree), how the current workbench centre maps onto it (desk, canvas, clip editor area, workbench modules, canvas takeover, inspector as a region), the Send-to menu behaviour, and what must move out of `NoteClipEditor` (the chord session, the piano roll props, the reveal command, selection) with a proposed boundary (a session hook or store, a command channel, one selection model). Also design: the remembered-placement map (what is stored, fallback rules, reset), tab groups (how a panel joins or leaves a group, the active tab, calling a panel to the front, how this combines with stacks), and whether pop-out is wanted and what it would need (a floating slot, window bounds, persistence, what happens when the page is narrow). Optionally a throwaway HTML mock outside the repo. List the open questions with a recommendation each.
 - Acceptance:
   - [ ] A design section in the page `ARCHITECTURE.md` or `arcs/workbench/` with the models above and the questions
   - [ ] Every `[stage]` and `[shared]` backlog item that this arc must resolve is mapped to a milestone or explicitly deferred
   - [ ] The three added ideas (remembered placement, tab groups, pop-out) each have a recommendation and an in-scope or deferred decision
-- Human checkpoint after: **yes** (vocabulary, area set, Send-to versus drag, instance model and the state boundary are the human's decisions)
+- Human checkpoint after: **yes** (answered 2026-11-14; the revised design `DESIGN.one-stage.md` is accepted when the human approves this amended ARC.md)
 - Checkpoint decisions (human, 2026-11-14, answering the 24 questions in `DESIGN.one-stage.md` section 9; the design is being revised to match, so these are interim until the revised design is accepted):
   - Q1 layout model: named areas, but the human wants far more arrangement freedom than top and bottom (see Q2, Q9): the areas are user-nameable **dockers** (REAPER's term) arranged by the user.
   - Q2 area set: top versus bottom is too binary. Examples to support: (a) a top and a bottom with a right-hand docker holding 3 tabs; (b) left, centre and right dockers each with one tab; (c) a top docker over a bottom split into left and right. Research into how established systems do this was requested (a report is pending); this probably moves the layout model from a fixed area set to a split tree whose leaves are named dockers.
@@ -82,60 +77,78 @@ Each milestone is small enough for one builder run and has criteria a command or
   - Q22 tab activation: not automatic on arrow keys. Wants a better selection system first: select a docker by shortcut, then cycle its tabs once the docker is active.
   - Q23 multiple instances: one chord picker or one piano roll is fine (state moves to page level). But some modules need several at once (a set browser, a voicing catalog; two modules showing different Carter hexachords, another combining subsets). Conflicts with Q7's single `module-detail` panel; the revised design must allow `multiple` instances for such panels and reconcile with Q7.
   - Q24: yes, `src/components/Stage/stageOps.ts` and `registry.ts` join M2's lock.
+  - Follow-up answers (2026-11-14, after the research and the revised design): build our own split tree (no library); named dockers persist when emptied; milestone order approved (see M2 to M9); pinning a module into its own docker ships in this arc (M7); layout and screensets are stored PER PROJECT by default, with the option for the user to add their own screensets; screensets act as meta-tabs at the bottom that replace the old canvas and desk view tabs, so the user flips quickly between preferred custom views; the app ships with sensible default screensets.
   - The human states the vision plainly: "I have this vision for the app. I feel like we can achieve it." Treat the design as a foundation for that vision, not only the current workbench.
 
-### M2: Layout core: areas and migration (pure TS)
-- Scope: `src/lib/stage/` under a lock: the chosen layout model, operations (send a panel to an area or position, stack, resize across areas), tab groups (add a panel to a group, set the active tab, remove), the remembered-placement map (record a place when a panel closes, resolve it on reopen with the home fallback, reset), parsing with a version bump and migration of the current layout, tests. No React.
+### M2: Layout core: split tree, dockers, screensets, migration (pure TS)
+- Scope: `src/lib/stage/` plus `src/components/Stage/stageOps.ts` and `registry.ts` under locks (checkpoint answer Q24), and `src/pages/stage/ARCHITECTURE.md` section 10 only if the `src/pages/stage/` lock is taken: the split tree with named leaf dockers (`id` plus mutable `name`), panels outside the tree, the per-screenset `lastDocker` map, screenset data (`{ name, tree, lastDocker }` with a version field and validation), operations (send a panel to a docker or to a new docker with a direction, move, split, resize with minimums, set the active tab, close and reopen with the remembered docker, remove an empty docker), the solver (weights, rem sizes, per-docker minimums from the active panel, collapse), `PanelMeta` fields (`home`, `multiple`, `transient`, `keepMounted`), `layoutV1ToWorkspace` (named in the design) and the parse functions (version 2 accepted, version 1 migrated), the dynamic panel registry (ids exist before parse). No React.
+- Acceptance:
+  - [ ] `check:stage` passes (and `check:workbench`, a consumer of `src/lib/stage`)
+  - [ ] Tests: the three target arrangements (a), (b), (c) build, serialise and parse back; a v1 layout, including a column with no width, a stacked and a swapped editor layout, loads without loss; sending a panel between dockers keeps all panels; minimum sizes are respected; unknown panel ids are dropped; an emptied docker persists; closing and reopening a panel restores its docker (by id, then by name, then the home docker); a screenset's active tabs survive a round trip; a `transient` panel is never stored as open (its docker is remembered)
+  - [ ] `DECISIONS.md` rows: the version-2 screenset format (supersedes STAGE-5, STAGE-15 and part of STAGE-8), persistent dockers (replaces the earlier pre-decision), remembered docker
+- Human checkpoint after: no
+
+### M3: The tree Stage component beside the old one (dockers, tabs, Send-to, keyboard, parking)
+- Scope: a NEW Stage component in a new folder `src/components/Stage/dock/` (the old v1 `Stage`, `NoteClipEditor.stage.test.tsx` and the editor's Stage stay untouched and green): docker strips with tabs and the docker name, the Send-to menu (by docker name, "New docker..." with a direction), the Panels menu, manual-activation tab keyboard (select a docker by shortcut, then arrows within it), empty docker strips, parking of collapsed, narrow-hidden and inactive-tab panels (kept laid out and measured, hidden with opacity, `inert` and no `display: none`, no detaching), `useStageApi` (`open`, `show`, `close`, `sendTo`, `isOpen`), the screenset tab strip skeleton, hooks for the dynamic registry; the `/stage` spike shows the three arrangements, a docker with tabs and a close-and-reopen. `src/components/InspectorKit/` conditional lock for the docker strip.
+- Acceptance:
+  - [ ] `check:stage`, `check:hfl` and `check:workbench` pass
+  - [ ] Tests: a panel keeps its state when sent between dockers and when its tab is inactive; Send-to works by keyboard; selecting a docker by shortcut then arrows moves between tabs; an emptied docker shows as a strip and accepts a panel; a panel closed from a docker reopens there; `show` switches the active tab; a measured panel in a parked docker keeps its last size
+  - [ ] `DECISIONS.md` rows: dockers and parking (supersedes STAGE-7's "hidden detached" and STAGE-8's switcher for the new Stage), keyboard, `useStageApi`
+- Human checkpoint after: **yes** (the human tries it at `/stage`: moving a panel between dockers, naming a docker, sending by name, tabs, close and reopen, reload)
+
+### M3b: Drag-to-dock
+- Scope: the new Stage component (lock): a drop overlay on dockers with a centre zone (join as a tab) and four edge zones (split in that direction), a preview, a transparent shield over canvases while dragging, Escape cancels; every drop calls the same `sendTo` as the menu; a drop in the same docker does nothing.
 - Acceptance:
   - [ ] `check:stage` passes
-  - [ ] Tests: an old stored layout and the clip editor's saved layout load without loss; sending a panel between areas keeps all panels; minimum sizes are respected; unknown panel ids are dropped
-  - [ ] Tests: closing a panel and reopening it restores its previous place; a remembered place that no longer fits falls back to the home; closing the last panel in an area releases the area's space; a tab group's active tab survives reload
-  - [ ] `DECISIONS.md` row for the layout format
+  - [ ] Tests: centre joins as a tab, an edge splits, a same-docker drop does nothing, Escape cancels, the layout after a drop equals the layout after the equivalent menu choice
+- Human checkpoint after: **yes** (feel of dragging)
+
+### M4: Chord session and clip editor session at page level (no UI change)
+- Scope: owned workbench paths only: a sessions wrapper component (for example `composition-workbench/WorkbenchSessions.tsx`; the entry file is not edited until M5) holding a page-level `ClipEditorSession` store (per-clip state keyed internally, no React key above the Stage) and a separate page-level `ChordSession` store with claim and release (the last claim wins, an earlier held claim becomes active again when the latest releases) and a `ChordTarget`; the note clip editor uses them and keeps working as today; one owner for `hoverCell` and `hoverBlocked`; the pointer-inside and Escape and Enter listeners assigned per the design; the command channel decisions per the design.
+- Acceptance:
+  - [ ] `check:workbench` passes; every existing chord-input and `NoteClipEditor` test passes without weakened assertions
+  - [ ] A second consumer in a TEST (a minimal host that is not a clip, for example a chord progression list that claims the target) can open the chord picker panel with no clip open and receives the inserted chord
+  - [ ] `DECISIONS.md` rows: the session boundary, claim lifetime and the command channel
 - Human checkpoint after: no
 
-### M3: Stage component: areas, Send-to menu, spike updated
-- Scope: `src/components/Stage/` and `src/pages/stage/` under locks: render areas, the Send-to menu on each header strip (keyboard reachable), the hidden-panel switcher in the component, which column or panel fills the spare width (the human prefers the piano roll flexing), a non-closable flag, tab groups (tabs in the header strip, keyboard reachable, a panel can be moved into or out of a group with the Send-to menu), opening a closed panel in its remembered place, and the `/stage` spike showing a top and bottom arrangement, a tab group and a close-and-reopen. Panels stay mounted once across areas and across tabs.
-- Acceptance:
-  - [ ] `check:stage` and `check:hfl` pass (and `check:workbench`, a consumer)
-  - [ ] Tests: a panel keeps its state when sent between areas and when its tab is inactive; Send-to works by keyboard; the hidden-panel switcher brings a hidden panel back; a panel closed from the bottom right reopens there; calling an inactive tab's panel up (the command) switches the active tab
-- Human checkpoint after: **yes** (the human tries it at `/stage`: moving a panel between top and bottom, resizing, grouping panels into tabs, closing and reopening a panel in its spot, reload)
-
-### M4: Chord session out of the note clip editor (no UI change)
-- Scope: owned workbench paths: move the chord session (anchor, pinned and hover ghosts, voicing, mode, tier, continuous, override, keyboard workflow W-20, audition) out of `NoteClipEditor` into a session hook or store that any host can use; decide the reveal command channel and selection model per the M1 decisions. The note clip editor keeps working exactly as today by using it.
-- Acceptance:
-  - [ ] `check:workbench` passes; all existing chord-input and `NoteClipEditor` tests pass without weakened assertions
-  - [ ] A second consumer exists in a test or spike (for example a minimal chord progression list that uses the chord picker panel and the session without the piano roll)
-  - [ ] `DECISIONS.md` row for the session boundary and the command channel
-- Human checkpoint after: no
-
-### M5: Piano roll, chord picker and canvas as independent panels
-- Scope: owned workbench paths: the piano roll panel, the chord picker panel and the canvas panel each registered with a home area and a size contract; the chord picker no longer needs to be inside the piano roll; the note clip editor's own Stage (W-25) is replaced by the panels in the page Stage. Defaults reproduce today's arrangement.
-- Acceptance:
-  - [ ] `check:workbench` and `check:stage` pass
-  - [ ] Tests: the chord picker panel works with the piano roll in another area; picker state survives moving it; the takeover is replaced by sending the chord picker panel to the canvas area; old stored `chordHost` and `chordDockWidth` preferences open without loss
-- Human checkpoint after: no
-
-### M6: The workbench page on the Stage (replaces `SplitStage` and the takeover)
-- Scope: `src/pages/CompositionWorkbench.page.tsx` (lock) and owned workbench paths: desk, canvas, clip editor area and workbench modules become panels in areas; `SplitStage`, `ClipEditorSlot` and `canvasTakeover` are replaced; default layout equals today's look (desk or canvas on top, clip editor and modules below); the user can send any panel to another area. Tools reopen their panel in its remembered place (the Chords tool reopens the chord picker where the user last put it).
+### M5: The workbench page on the new Stage
+- Scope: `src/pages/CompositionWorkbench.page.tsx` (lock) and owned workbench paths, `shell/ARCHITECTURE.md` (lock): canvas, desk, a clip editor panel (which still contains its own v1 editor Stage with the piano roll and chord picker) and the module detail in dockers on the new Stage, REPLACING `SplitStage` and `ClipEditorSlot` (`SplitStage.test.tsx` is retired at M5 with the component; the orchestrator lists the retired tests and tells the human); the default screensets (derived from today's canvas and desk views and the current arrangement; Canvas, Desk and Edit; a Harmonic screenset waits for the lab panels; the design lists the contents) appear as meta-tabs at the bottom replacing the canvas and desk view tabs; seeding from old project state (`ui.canvas-split`, `ui.detail-collapsed`, `ui.workspace-view`) so existing projects open as before; the canvas takeover stays as it is in this milestone.
 - Acceptance:
   - [ ] `check:workbench`, `check:stage` and `check:hfl` pass (once, before the commit)
-  - [ ] Existing page, desk, history and clip tests pass; new tests: sending the desk to the bottom and the clip editor to the top, reload restores it; an old session opens with the default layout
-  - [ ] `shell/ARCHITECTURE.md` updated (layers, who consumes what); `STAGE-ADOPTION.md` updated
-- Human checkpoint after: **yes** (the human uses the whole workbench: same behaviour, new arrangement freedom; also judges look)
+  - [ ] Existing page, desk, history and clip tests pass; new tests: an old project opens in the screenset that reproduces today's look; flipping screensets keeps the desk, canvas and every module editor mounted (outputs still publish); reload restores the active screenset; sending the desk to the bottom docker survives reload
+  - [ ] `DECISIONS.md` rows: layout per project and the key move, supersedes the project-state layout keys
+  - [ ] `shell/ARCHITECTURE.md` updated (layers, who consumes what)
+- Human checkpoint after: **yes** (the human uses the whole workbench: same behaviour, new screenset tabs, rearranging; judges look)
 - Checkpoint decisions: <written back by the orchestrator>
 
-### M7: Close-out
-- Scope: docs, BACKLOG items for what was deferred (inspector on the kit, the lab and the Stage, roll scroll restore if still open, drag to drop zones), final checks, release all locks after their commits, archive the arc.
+### M6: The piano roll and chord picker as independent panels
+- Scope: owned workbench paths: the piano roll and the chord picker registered as panels with homes; the chord picker no longer lives inside the note clip editor; the editor's v1 Stage and the canvas takeover are removed (supersedes W-16 and W-25); `NoteClipEditor.stage.test.tsx`, `editorStage.test.ts` and the takeover cases in `ChordPickerHost.test.tsx`, `ChordPicker.test.tsx` and `NoteClipEditor.chords.test.tsx` are retired or rewritten (the design lists them; the orchestrator confirms the exact cases and tells the human); old stored `chordHost` and `chordDockWidth` seed the chord picker's docker; the Chords tool opens the picker in its remembered docker; the old v1 `Stage` is removed if nothing uses it.
+- Acceptance:
+  - [ ] `check:workbench`, `check:stage` and `check:hfl` pass
+  - [ ] Tests: the chord picker works with the piano roll in another docker; picker state survives moving it; the second consumer from M4 works on the page Stage; the Chords tool reopens the picker where the user last put it; old preferences open without loss
+  - [ ] `DECISIONS.md` rows superseding W-16 and W-25
+- Human checkpoint after: **yes** (chord input as before, plus rearranging; this also covers the combined review of M3b to M6)
+- Checkpoint decisions: <written back by the orchestrator>
+
+### M7: Pin modules, screenset UI polish and defaults
+- Scope: a workbench module instance can be pinned into its own docker as a panel with a generated id `module:<instanceId>` (the module detail panel stays as the follower of the selected module); modules stay mounted to publish outputs; a screenset names its pinned instances (per project); add, rename, duplicate and delete screensets; sensible default screensets; the user's template library if the design's open item says so.
+- Acceptance:
+  - [ ] `check:workbench` and `check:stage` pass
+  - [ ] Tests: two instances of the same module kind pinned side by side keep independent state and still publish; unpinning returns to the follower; screenset operations round-trip; deleting a project's screenset never removes a module
+- Human checkpoint after: **yes**
+
+### M8: Close-out
+- Scope: docs (workbench and shell `ARCHITECTURE.md`, `STAGE-ADOPTION.md`), BACKLOG items for what was deferred (the drops system, pop-out, the left inspector on the kit, the lab and the Stage, the roll scroll restore if still open, a template library if deferred), final checks, release all locks after their commits, archive the arc.
 - Acceptance:
   - [ ] The arc's `Check command` passes; no locks left for this arc
   - [ ] Docs describe the final shape
 - Human checkpoint after: no
 
-### M8 (stretch, only if the human asks after M6): Pop-out
-- Scope: a panel or tab can be popped out into a free-floating window inside the app (not a browser window unless M1 says so), movable and resizable, persisted per viewer, closable and re-dockable (it returns to its remembered place). It stays mounted once while it moves. `DECISIONS.md` row recording that this relaxes the earlier no-floating-windows rule and what limits it keeps (kept within the screen, never covers the header, one pop-out per panel).
+### M9 (stretch, only if the human asks after M8): Pop-out
+- Scope: a panel or tab can be popped out into a free-floating window inside the app, movable and resizable, persisted, closable and re-dockable (it returns to its remembered docker). It stays mounted once while it moves. `DECISIONS.md` row recording that this relaxes the earlier no-floating-windows rule and what limits it keeps (kept within the screen, never covers the header, one pop-out per panel).
 - Acceptance:
   - [ ] `check:workbench`, `check:stage` and `check:hfl` pass
-  - [ ] Tests: pop-out keeps panel state, re-dock returns to the remembered place, a stored pop-out outside the screen comes back inside it
+  - [ ] Tests: pop-out keeps panel state, re-dock returns to the remembered docker, a stored pop-out outside the screen comes back inside it
 - Human checkpoint after: **yes**
 
 ## Stop-and-ask conditions
@@ -143,8 +156,9 @@ Each milestone is small enough for one builder run and has criteria a command or
 - A change is needed outside a milestone's scope, outside Owned or Shared paths, or to the `PianoRoll` or other shared components beyond opt-in props (`src/components/PianoRoll/` needs a lock, a `DECISIONS.md` row and the human's OK).
 - A shared path needed is locked by another arc in `arcs/LOCKS.md`.
 - The gate is red from another arc's unfinished work (shell rule 14).
-- Any decision about look, density, the set of areas, instance model, tab behaviour, remembered-placement rules or feel not specified above (these go to the human at M1, M3 and M6).
-- Starting pop-out (M8) without the human's explicit go-ahead.
+- Any decision about look, density, the docker model and defaults, default screensets, tab behaviour, remembered-docker rules or feel not specified above (these go to the human at the M3, M3b, M5, M6 and M7 checkpoints).
+- Starting pop-out (M9) without the human's explicit go-ahead.
+- Retiring or rewriting an existing test (M6 lists which).
 - The state lift in M4 cannot keep every existing chord-input and `NoteClipEditor` test passing without weakening it.
 
 ## Budget
