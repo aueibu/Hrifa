@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useLabAudio } from '../audio/useLabAudio';
+import { loadComposites, saveComposites } from './compositeStore';
 import { LabContext, type Analyses, type Lab, type VizApi } from './context';
 import { chordModel, deriveBase, dissOf, edoOf, keysOf, spectrumOf, stripDevs } from './derive';
 import { readDeveloperOptions } from './developerOptions';
@@ -36,6 +37,7 @@ import {
   loadTabs,
   KEY_GENERATORS,
   KEY_CHORDSHELF,
+  KEY_COMPOSITES,
   saveLayout,
   saveRetuner,
   saveSettings,
@@ -102,6 +104,7 @@ export function restoreState(): LabState {
     layout: loadLayout(),
     templates: loadTemplates(),
     shelf: loadShelf(),
+    composites: loadComposites(),
     retuner: initialRetuner(retCards, storedRet.settings, dormant, ui.modePlayback === 'relative'),
   };
 }
@@ -196,6 +199,11 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       wrote('shelf', saveShelf(state.shelf));
     }
   }, [store, state.shelf.chords]);
+  useEffect(() => {
+    if (store && state.composites.list !== restored.current.composites.list) {
+      wrote('composites', saveComposites(state.composites));
+    }
+  }, [store, state.composites.list]);
   // another window saved the library: take it, so this window's next save cannot wipe it
   useEffect(() => {
     if (!store) {
@@ -207,6 +215,9 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       }
       if (e.key === KEY_CHORDSHELF || e.key === null) {
         dispatch({ type: 'shelf/sync', shelf: loadShelf() });
+      }
+      if (e.key === KEY_COMPOSITES || e.key === null) {
+        dispatch({ type: 'composite/sync', composites: loadComposites() });
       }
     };
     window.addEventListener('storage', on);

@@ -16,6 +16,7 @@ import { PresetBrowser, PresetCrumb } from './PresetBrowser';
 import { CommitNumber, DebouncedText, DebouncedTextarea, Num, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
+const COMPOSITE_METHOD = { value: 'composite' as Method, label: 'Comp' };
 const METHODS: { value: Method; label: string }[] = [
   { value: 'harmonic', label: 'Harm' },
   { value: 'sub', label: 'Sub' },
@@ -267,6 +268,14 @@ function Params({ gen }: { gen: GenSpec }) {
           </span>
         </>
       );
+    case 'composite':
+      return (
+        <span className={classes.paramNote}>
+          {gen.snap ? `${gen.snap.name}, ` : ''}
+          <Num>{tab.field.length}</Num> notes. A frozen snapshot of the composite when it was
+          opened: changing the composite later does not change this field.
+        </span>
+      );
     default:
       return (
         <>
@@ -353,7 +362,7 @@ export function GeneratorColumn() {
           aria-label="Method"
           value={gen.method}
           onChange={(m) => dispatch({ type: 'gen/method', method: m as Method })}
-          data={METHODS}
+          data={gen.snap ? [...METHODS, COMPOSITE_METHOD] : METHODS}
         />
       </Tip>
       <div className={classes.params} data-method={gen.method}>

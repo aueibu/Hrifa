@@ -18,3 +18,4 @@ export * from './retuner';
 export * from './visual';
 export * from './library';
 export * from './sketch';
+export * from './composite';

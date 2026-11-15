@@ -7,6 +7,7 @@
  *   hrifa.harmonic-field-lab.subsets.v1    [{ id, name, ...snap }]   (legacy flat saved subsets: read once to migrate, never written or deleted)
  *   hrifa.harmonic-field-lab.generators.v1 the generator library (user presets, Untitled generators, subsets as pitches, recents); see libraryStore.ts
  *   hrifa.harmonic-field-lab.chordfinder.v1  { templates: [{ text, name?, family? }] }   (the chord templates)
+ *   hrifa.harmonic-field-lab.composites.v1 the composite gamuts (up to 9, items as pitches); see compositeStore.ts
  *   hrifa.harmonic-field-lab.retuner.v1    { cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts, glideMs } }
  *
  * A `snap` is the prototype's snapshot shape (flat generator inputs, `selCents`, `mode`, pick/compare settings), every
@@ -14,14 +15,21 @@
  * goes. Sanitising is entry by entry: a bad entry is dropped or defaulted, never the whole list (a future new view or
  * panel therefore cannot wipe a stored layout). Nothing here throws; storage may be blocked.
  */
-import { DEFAULT_TEMPLATES, PRESETS, type ChordTemplate } from '../../../lib/harmonic-field';
+import {
+  DEFAULT_TEMPLATES,
+  PRESETS,
+  type ChordTemplate,
+  type Note,
+} from '../../../lib/harmonic-field';
 import { KEYBOARD_MODES, LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
 import { MODE_PLAYBACKS } from '../audio/plan';
+import { sanitizePitch } from './chordShelf';
 import {
   DEFAULT_AXES,
   PRIME_SLOTS,
   defaultGen,
   type AxisSpec,
+  type CompositeSnap,
   type GenSpec,
   type Method,
 } from './generate';
@@ -77,6 +85,7 @@ export const KEY_GENERATORS = 'hrifa.harmonic-field-lab.generators.v1';
 export const KEY_CHORDFINDER = 'hrifa.harmonic-field-lab.chordfinder.v1';
 export const KEY_RETUNER = 'hrifa.harmonic-field-lab.retuner.v1';
 export const KEY_CHORDSHELF = 'hrifa.harmonic-field-lab.chordshelf.v1';
+export const KEY_COMPOSITES = 'hrifa.harmonic-field-lab.composites.v1';
 /** The mock's layout keys (read once, to migrate). */
 export const MOCK_LAYOUT_KEYS = [
   'hrifa.harmonic-field-lab.mock.layout.v3',
@@ -92,6 +101,8 @@ const oneOf = <T extends string>(x: unknown, allowed: readonly T[], d: T): T =>
   allowed.includes(x as T) ? (x as T) : d;
 const numIn = (x: unknown, min: number, max: number, d: number) =>
   typeof x === 'number' && Number.isFinite(x) && x >= min && x <= max ? x : d;
+/** Notes of a stored composite snapshot (the field cap). */
+const MAX_SNAP_NOTES = 2048;
 const intIn = (x: unknown, min: number, max: number, d: number) => {
   const n = typeof x === 'string' && x.trim() !== '' ? Number(x) : x;
   return typeof n === 'number' && Number.isInteger(n) && n >= min && n <= max ? n : d;
@@ -262,6 +273,7 @@ const SNAP_GEN: Record<Method, string> = {
   lattice: 'additive',
   cps: 'cps',
   custom: 'custom',
+  composite: 'composite',
 };
 const GEN_SNAP: Record<string, Method> = Object.fromEntries(
   Object.entries(SNAP_GEN).map(([k, v]) => [v, k as Method])
@@ -294,6 +306,13 @@ export interface Snapshot {
   cmpRef: string;
   cmpOdd: number;
   cmpM: number;
+  /** Composite method only (M8c): the frozen snapshot, notes as `{ m, c }` (cents-only notes have `m: null`). */
+  snap?: {
+    id: number;
+    name: string;
+    rep: { m: unknown; c: number };
+    notes: { m: unknown; c: number }[];
+  };
 }
 
 export interface TabParts {
@@ -336,6 +355,16 @@ export function toSnapshot(
     cmpRef: t.cmp.ref,
     cmpOdd: t.cmp.odd,
     cmpM: t.cmp.m,
+    ...(g.snap
+      ? {
+          snap: {
+            id: g.snap.id,
+            name: g.snap.name,
+            rep: { m: g.snap.rep.m ? { ...g.snap.rep.m } : null, c: g.snap.rep.c },
+            notes: g.snap.notes.map((n) => ({ m: n.m ? { ...n.m } : null, c: n.c })),
+          },
+        }
+      : {}),
   };
 }
 export const savedToSnapshot = (s: Saved): Snapshot => ({
@@ -387,6 +416,29 @@ function sanitizePickRef(raw: unknown): Tab['pick']['ref'] {
   };
 }
 
+/** A composite's frozen snapshot, entry by entry: a note that is unusable is dropped, a plain cents-only note stays cents-only. */
+function sanitizeSnap(raw: unknown): { snap?: CompositeSnap } {
+  if (!isObj(raw) || !Array.isArray(raw.notes)) {
+    return {};
+  }
+  const rep = sanitizePitch(raw.rep);
+  const notes = raw.notes
+    .slice(0, MAX_SNAP_NOTES)
+    .map(sanitizePitch)
+    .filter((n): n is Note => n !== null);
+  if (!rep || !(rep.c > 0) || !notes.length) {
+    return {};
+  }
+  return {
+    snap: {
+      id: intIn(raw.id, 1, 9, 1),
+      name: text(raw.name, 'Composite', 60) || 'Composite',
+      rep,
+      notes,
+    },
+  };
+}
+
 /** One snapshot into its parts; null when it is not an object. Every field falls back to its default. */
 export function sanitizeSnapshot(raw: unknown): TabParts | null {
   if (!isObj(raw)) {
@@ -419,6 +471,7 @@ export function sanitizeSnapshot(raw: unknown): TabParts | null {
     custom: text(raw.custom, d.custom, 20000),
     mask,
     keepNew: bool(raw.keepNew, false),
+    ...sanitizeSnap(raw.snap),
   };
   const dc = defaultCmp();
   return {

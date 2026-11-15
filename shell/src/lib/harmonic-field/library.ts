@@ -9,7 +9,7 @@ import type { Monzo, Note } from './types';
 /* ------------------------------------------------------------------------------------------ identity */
 /** The inputs of a generator that the lab edits (structurally the page's `GenSpec`, minus the preset label and keepNew). */
 export interface GeneratorInputs {
-  method: 'harmonic' | 'sub' | 'edo' | 'lattice' | 'cps' | 'custom';
+  method: 'harmonic' | 'sub' | 'edo' | 'lattice' | 'cps' | 'custom' | 'composite';
   rep: string;
   h: number;
   edoN: number;
@@ -21,6 +21,8 @@ export interface GeneratorInputs {
   cpsK: number;
   custom: string;
   mask: boolean[];
+  /** Composite method (M8c): the frozen notes and repeat; identity is the pitches, not the name. */
+  snap?: { rep: Note; notes: readonly Note[] };
 }
 
 /**
@@ -55,6 +57,12 @@ export function generatorKey(g: GeneratorInputs): string {
           .split(/[\s,]+/)
           .map(iv),
         ck: g.cpsK,
+      });
+    case 'composite':
+      return JSON.stringify({
+        ...common,
+        sr: g.snap ? g.snap.rep.c.toFixed(6) : null,
+        sn: g.snap ? g.snap.notes.map((n) => n.c.toFixed(6)) : [],
       });
     default:
       return JSON.stringify({ ...common, t: g.custom.trim().split(/\s+/).map(iv) });

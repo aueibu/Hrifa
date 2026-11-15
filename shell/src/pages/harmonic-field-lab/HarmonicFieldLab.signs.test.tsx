@@ -107,6 +107,8 @@ describe('lab Developer menu', () => {
       tooltips: true,
       tooltipDelay: 250,
       linkedRootDefault: 'reroot',
+      mergeTolerance: 5,
+      mergeKeeps: 'first',
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
     fireEvent.click(screen.getByRole('switch', { name: /always show/ }));
@@ -116,6 +118,8 @@ describe('lab Developer menu', () => {
       tooltips: true,
       tooltipDelay: 250,
       linkedRootDefault: 'reroot',
+      mergeTolerance: 5,
+      mergeKeeps: 'first',
     });
   });
 
@@ -132,6 +136,8 @@ describe('lab Developer menu', () => {
       tooltips: true,
       tooltipDelay: 250,
       linkedRootDefault: 'reroot',
+      mergeTolerance: 5,
+      mergeKeeps: 'first',
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
       modeSignAlways: true,
@@ -139,6 +145,8 @@ describe('lab Developer menu', () => {
       tooltips: true,
       tooltipDelay: 250,
       linkedRootDefault: 'reroot',
+      mergeTolerance: 5,
+      mergeKeeps: 'first',
     });
     expect(parseDeveloperOptions('[1,2]')).toEqual({
       modeSignAlways: true,
@@ -146,6 +154,8 @@ describe('lab Developer menu', () => {
       tooltips: true,
       tooltipDelay: 250,
       linkedRootDefault: 'reroot',
+      mergeTolerance: 5,
+      mergeKeeps: 'first',
     });
     expect(parseDeveloperOptions('null')).toEqual({
       modeSignAlways: true,
@@ -153,13 +163,49 @@ describe('lab Developer menu', () => {
       tooltips: true,
       tooltipDelay: 250,
       linkedRootDefault: 'reroot',
+      mergeTolerance: 5,
+      mergeKeeps: 'first',
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
     open();
     expect(grid()).toHaveAttribute('data-signs', 'always');
   });
 
+  it('groups the controls into sections by what they affect', () => {
+    open();
+    const sections: Record<string, string[]> = {
+      Tooltips: ['Tooltips', 'Tooltip delay (ms)'],
+      'Mode display': [
+        'Mode tiles: always show ± sign',
+        'Keep the mode root when notes are added or removed',
+      ],
+      'Playback and keys': ['Linked melody root default'],
+      Composites: ['Merge tolerance (c)', 'Merged note keeps'],
+    };
+    for (const [title, names] of Object.entries(sections)) {
+      const group = screen.getByRole('group', { name: title });
+      for (const n of names) {
+        expect(within(group).getByLabelText(n)).toBeInTheDocument();
+      }
+    }
+  });
+
+  it('the merge options default to 5 c and first, and read stored values safely', () => {
+    expect(parseDeveloperOptions('{"mergeTolerance":12.5,"mergeKeeps":"recent"}')).toMatchObject({
+      mergeTolerance: 12.5,
+      mergeKeeps: 'recent',
+    });
+    expect(parseDeveloperOptions('{"mergeTolerance":99}').mergeTolerance).toBe(50);
+    expect(parseDeveloperOptions('{"mergeTolerance":-3}').mergeTolerance).toBe(0);
+    expect(parseDeveloperOptions('{"mergeTolerance":"x","mergeKeeps":"x"}')).toMatchObject({
+      mergeTolerance: 5,
+      mergeKeeps: 'first',
+    });
+  });
+
   it('the menu and its option have tooltips with examples', () => {
+    expect(TIPS.mergeTolerance.text).toMatch(/Example:/);
+    expect(TIPS.mergeKeeps.text).toMatch(/Example:/);
     expect(TIPS.developerMenu.text).toMatch(/Example:/);
     expect(TIPS.modeSignAlways.text).toMatch(/Example:/);
   });

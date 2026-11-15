@@ -13,7 +13,10 @@ import {
   type UpdateReport,
   SCALE_LIBRARY,
   carrySelection,
+  compositeNotes,
+  fmtRatio,
   melakarta,
+  mergeComposite,
   mod,
   nearestEdSubset,
   nearestScaleSubset,
@@ -35,12 +38,19 @@ import {
   type ShelfState,
 } from './chordShelf';
 import {
+  compositesReduce,
+  emptyComposites,
+  type CompositeAction,
+  type CompositesState,
+} from './composites';
+import {
   autoName,
   defaultGen,
   genFromPreset,
   genKey,
   generateField,
   presetByName,
+  type CompositeSnap,
   type GenSpec,
   type Method,
 } from './generate';
@@ -239,6 +249,8 @@ export interface LabState {
   retuner: RetState;
   /** The chord shelf: stashed chords, selection, sketch row (stored in `...chordshelf.v1`, see chordShelf.ts). */
   shelf: ShelfState;
+  /** The composite gamuts (M8c): up to nine, stored in `...composites.v1` (see composites.ts). */
+  composites: CompositesState;
   /** The computer keys' runtime state: melody shift, shelf page, linked chord (M8b). */
   keys: KeysRuntime;
 }
@@ -336,6 +348,7 @@ export function initialState(): LabState {
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
     retuner: initialRetuner(),
     shelf: emptyShelf(),
+    composites: emptyComposites(),
     keys: { shift: 0, page: 0, link: null },
   };
 }
@@ -582,6 +595,7 @@ export type Action =
   | { type: 'shelf/stash'; stash: StashRequest }
   | { type: 'shelf/reload'; id: string }
   | ShelfAction
+  | CompositeAction
   | RetAction;
 
 /** What the UI hands `shelf/stash`: the exact pitches heard; everything else is read from the active tab and the settings. */
@@ -695,6 +709,57 @@ function reloadChord(s: LabState, id: string): LabState {
       refusal: null,
       lastReload: { id: chord.id, found: r.found.length, missing: r.missing.length },
     },
+  });
+}
+
+/**
+ * Open a composite as a NEW tab at the end (current tabs untouched, the new one becomes active): a Composite generation method
+ * holding a FROZEN snapshot of the merged notes (repeat, notes, the composite's number and name). Later edits or deletion of
+ * the composite change nothing here; panels work on the tab like on any field. Nothing is written to the library. Refused
+ * (a reason on `composites.refusal`) at the tab cap, for an empty composite, or when the snapshot does not build.
+ */
+function openComposite(
+  s: LabState,
+  id: number,
+  merge?: { tol: number; keep: 'first' | 'recent' }
+): LabState {
+  const c = s.composites.list.find((x) => x.id === id);
+  if (!c) {
+    return s;
+  }
+  const refuse = (reason: string): LabState => ({
+    ...s,
+    composites: { ...s.composites, refusal: { reason } },
+  });
+  if (!c.items.length) {
+    return refuse(`${c.name} is empty: add something to it first.`);
+  }
+  if (s.tabs.length >= MAX_TABS) {
+    return refuse(`There are already ${MAX_TABS} tabs; close one first.`);
+  }
+  const merged = mergeComposite(c.items, activeTab(s).rep, merge);
+  const snap: CompositeSnap = {
+    id: c.id,
+    name: c.name,
+    rep: { m: merged.rep.m ? { ...merged.rep.m } : null, c: merged.rep.c },
+    notes: compositeNotes(merged),
+  };
+  const gen: GenSpec = {
+    ...defaultGen(),
+    method: 'composite',
+    rep: merged.rep.m ? fmtRatio(merged.rep) : `${merged.rep.c}c`,
+    snap,
+  };
+  const tab = makeTab(`t${s.nextTab}`, gen);
+  if (!tab.field.length) {
+    return refuse(`${c.name} does not build a field: ${tab.err || 'no notes'}.`);
+  }
+  return clearPointers({
+    ...s,
+    tabs: [...s.tabs, tab],
+    active: s.tabs.length,
+    nextTab: s.nextTab + 1,
+    composites: compositesReduce({ ...s.composites, refusal: null }, { type: 'composite/use', id }),
   });
 }
 
@@ -867,7 +932,7 @@ function reduce(s: LabState, a: Action): LabState {
       return openOwner(s, a.owner);
     case 'gen/method':
       return editTab(s, (t) =>
-        t.gen.method === a.method
+        t.gen.method === a.method || (a.method === 'composite' && !t.gen.snap)
           ? t
           : regenTab({ ...t, mode: 0 }, { ...t.gen, method: a.method, preset: '' }, true)
       );
@@ -1225,6 +1290,19 @@ function reduce(s: LabState, a: Action): LabState {
     case 'sketch/disarm': {
       const shelf = shelfReduce(s.shelf, a);
       return shelf === s.shelf ? s : { ...s, shelf };
+    }
+    case 'composite/openTab':
+      return openComposite(s, a.id, a.merge);
+    case 'composite/new':
+    case 'composite/rename':
+    case 'composite/delete':
+    case 'composite/clear':
+    case 'composite/addItem':
+    case 'composite/removeItem':
+    case 'composite/use':
+    case 'composite/sync': {
+      const composites = compositesReduce(s.composites, a);
+      return composites === s.composites ? s : { ...s, composites };
     }
     case 'ret/add':
     case 'ret/rename':

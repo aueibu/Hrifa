@@ -20,6 +20,7 @@ reference only.
 | `components/PresetBrowser.tsx`, `LibraryBar.tsx`, `SavedSubsets.tsx` | The generator-library UI (M7b step 2): preset browser, Update / Save as new, notice, subset rows (see "Preset browser and subset rows"). `state/presetTree.ts`, `builtinFolders.ts`, `noticeText.ts` are its pure helpers. |
 | `state/libraryStore.ts` | `generators.v1`: `sanitizeLibrary`, `libraryToStored`, `loadLibrary` (stored, else migrated, else empty), `saveLibrary`. |
 | `state/chordShelf.ts`, `state/shelfStore.ts` | The chord shelf (M8a step 1, data layer only): `ShelfState`, `stashChord`, `shelfReduce` (pure), and `chordshelf.v1` (`sanitizeShelf`, `shelfToStored`, `loadShelf`, `saveShelf`). `src/lib/harmonic-field/sketch.ts`: `sketchPitches`, `matchToField`. See "Chord shelf". |
+| `state/composites.ts`, `state/compositeStore.ts` | Composite gamuts (M8c step 1, data layer only): `CompositesState`, `addItem`, `compositesReduce` (pure) and `composites.v1` (`sanitizeComposites`, `compositesToStored`, `loadComposites`, `saveComposites`). `src/lib/harmonic-field/composite.ts`: `mergeComposite`, `previewAdd`, `samePitches`. See "Composite gamuts". |
 | `state/derive.ts` | Analysis of the active tab as pure functions (`deriveBase`, `stripDevs`, `spectrumOf`, `chordModel`, `keysOf`, `lattice2dOf/3dOf`, `edoOf`, `dissOf`, `isoOf`, `fieldRowsOf`, `fifthsFor`) with the prototype's size caps. |
 | `state/LabProvider.tsx` | The provider: reducer, restore, persistence effects, `useMemo` analyses, the voice engine hook. `state/context.ts` holds the `Lab` shape, `useLab()`, `useViz()`. |
 | `state/persist.ts` | Storage keys, `sanitize*`, `load*`, `save*`, the snapshot shape. |
@@ -231,6 +232,45 @@ Tests: `state/ghosts.test.ts`, `audio/plan.test.ts` (ghost on `pitchesPlan`), `H
 
 Tests: `HarmonicFieldLab.shelf.test.tsx` (sketch, stash from the row and a chip, shelf play, hold 1 layering, rename, reorder, reload, delete; hold 4 on notes, sweep, armed template, typing), `plan.test.ts` (`pitchesPlan`), `layout.test.ts` (the `shelf` panel id).
 
+### Composite gamuts (M8c step 1: data layer, merge lib and Developer options; the popup, rail panel and menus are step 2)
+
+Decision H-8. A composite combines chords, subsets and single notes from any generator into ONE gamut. Everything is plain data.
+
+- Merge rules (lib `composite.ts`, pure): the repeat is the FIRST item's source repeat (`item.rep`), else the current tab's repeat when the composite is
+  empty or the first item has none; every pitch of every item is reduced into `[0, repeat)` (a Bohlen-Pierce 3/1 chord in an octave composite lands in the
+  octave; the monzo survives when both pitch and repeat have one, else cents-only). Pitches are placed in item order: a pitch within the merge tolerance
+  (inclusive, linear distance inside the repeat, no wrap-around at the repeat) of a note already placed merges into the nearest one. `keep: 'first'` (default) keeps
+  the pitch placed first, `'recent'` the last; the same pitch (within 1e-6 c) with an exact monzo always beats a cents-only twin. Each merged note keeps its
+  `origins` (item ids). With tolerance 0 only identical pitches merge, so the pitch set is independent of the item order.
+- `previewAdd(items, candidate, fallbackRep, opts)` is what step 2's popup draws: `added` (new notes), `common` (merged into an existing note: the pitch and the note
+  as it was), `dropped` (vanish because, once reduced, they coincide with an earlier pitch of the same item: an octave doubling), `already` (an item with the same
+  pitches is in it, `samePitches`), plus `before` (the composite's notes) and `rep`.
+- State (`LabState.composites: CompositesState`): `list` of up to nine `Composite { id (1..9, its number), name ("Composite N", renamable), items, next, updated }`,
+  `recent` (most recently used ids first, runtime), `lastAdded` (runtime) and `refusal`. An id is the lowest free number: freed on delete, reused only after.
+  Actions: `composite/new`, `/rename`, `/delete`, `/clear`, `/addItem { to: number | 'new', item, date }`, `/removeItem`, `/use`, `/sync` (storage event), and
+  `/openTab { id, merge? }`. A duplicate item (same pitches in any order), a full composite (64 items), an item with no usable pitch or over 2048, a missing number,
+  nine composites and an empty or unbuildable `openTab` are refused WITH a reason in `composites.refusal` (never silent; cleared by the next success). Items are
+  made plain as a load does (`sanitizePitch`), so what a session holds is what a reload gives back.
+- Composite generation method: `Method` gained `'composite'` (not in the `METHODS` picker; only `composite/openTab` makes it, `gen/method` to it without a snapshot is
+  ignored) and `GenSpec.snap?: CompositeSnap { id, name, rep, notes }`. `generateField` builds the field from the snapshot (`buildField`, so the prime filter still
+  applies; the `rep` text is only a label). `openTab` builds a NEW tab at the end (current tabs and the library untouched, the new tab active, all notes selected):
+  a FROZEN snapshot of the merged notes at that moment; editing or deleting the composite later changes nothing. The tab "records fromComposite" as `gen.snap.id` and
+  `gen.snap.name` (no separate Tab field, so a chord stashed from it carries it in its `source.gen`). The generator header (step 2) reads `gen.snap`.
+- Storage: `tabs.v1` snapshots store `gen: 'composite'` and `snap` (entry by entry: an unusable note is dropped, a cents-only note loads cents-only, an unusable repeat or an
+  empty list loses the snapshot, the tab keeps method composite and shows the error with its stored selection held as `pending`). `genToStored` includes `snap`, so a shelf
+  chord stashed from a composite tab (and an Auto-saved generator made by `subset/add` on one) reloads through the stored snapshot: `shelf/reload` rebuilds the field from
+  `source.gen.snap`, no library write, no link. `genKey` of a composite is its pitches (`generatorKey` in lib `library.ts`), not its name. Old data is unchanged: no
+  `snap` key is written unless the generator has one.
+- `composites.v1` (`compositeStore.ts`, effect in `LabProvider`): written only when `composites.list` differs from the restored one; a storage event dispatches
+  `composite/sync`. An item with damaged pitches is dropped at load; an unusable `source` or `rep` only loses that; an invalid or repeated number takes the lowest free one;
+  beyond the caps the rest is not loaded.
+- Developer options (`developer.v1`): `mergeTolerance` (0 to 50 c, default 5) and `mergeKeeps` (`first` | `recent`, default first), passed to `composite/openTab` and
+  step 2's preview by the UI. RULE (human, 2026-11-15): the Developer menu is grouped into sections by what and where a control affects: Tooltips (tooltips, delay), Mode
+  display (sign always, keep the mode root), Playback and keys (linked melody root default), Composites (merge tolerance, merged note keeps). A new control goes into the
+  section it affects, or a new one. Storage keys and defaults of the old options are unchanged.
+- Tests: `src/lib/harmonic-field/composite.test.ts` (the confirmed scenarios), `state/composites.test.ts` (reducer, openTab, tabs.v1, shelf reconnect, storage round trip and
+  bad data), `state/compositeProvider.test.tsx` (no write on mount, save, storage event), `HarmonicFieldLab.signs.test.tsx` (Developer menu sections and options).
+
 ### Preset browser and subset rows (M7b, step 2: the UI)
 
 Everything below reads the library only through `useLab()` and the actions of "Generator library" above; no reducer semantics changed.
@@ -273,6 +313,7 @@ page's keys (W-10):
 | `hrifa.harmonic-field-lab.tabs.v1` | `{ active, list: [{ id, name, snap }] }`. |
 | `hrifa.harmonic-field-lab.subsets.v1` | LEGACY `[{ id, name, ...snap }]`: read only to migrate when `generators.v1` is absent; never written or deleted after M7b. |
 | `hrifa.harmonic-field-lab.generators.v1` | `{ version: 1, presets: [{ id, name, folder, gen }], untitled: [{ id, gen }], subsets: [{ id, owner, name, pitches: [{ m, c }], root }], recents: [OwnerKey], next: { preset, untitled, subset } }`; `gen` is the generation part of the tab snapshot. Entry by entry: a bad entry is dropped or repaired, a well-formed one that cannot be used now (owner gone, built-in renamed) is kept and written back; caps (also enforced in memory when adding): 2000 presets, 2000 Untitled, 20000 subsets, 4096 pitches per subset; no write on mount. `tabs.v1` entries may carry `link` (an `OwnerKey`; malformed values are dropped). |
+| `hrifa.harmonic-field-lab.composites.v1` | `{ version: 1, composites: [{ id: 1..9, name, next, updated, items: [{ id: 'i<N>', kind, label, pitches: [{ m, c }], rep: { m, c } \| null, source: { gen, tab, date } \| null }] }] }`. See "Composite gamuts". Entry by entry, no write on mount, caps 9 composites / 64 items / 2048 pitches per item (enforced in memory too). `tabs.v1` snapshots of a Composite tab carry `snap` (see there). |
 | `hrifa.harmonic-field-lab.chordshelf.v1` | `{ version: 1, chords: [{ id, name, pitches: [{ m, c }], template, rootDeg, tol, date, refHz, frame, parent, source: { gen, tab, subset: { pitches, root } } | null }], next }`. See "Chord shelf". Entry by entry, no write on mount, caps 2000 chords / 64 pitches per chord / 4096 per source subset (enforced in memory too). `tabs.v1` entries may also carry `from` (`c<N>`, the chord the tab was reloaded from). |
 | `hrifa.harmonic-field-lab.chordfinder.v1` | `{ templates: [{ text, name?, family? }] }`: the chord finder's templates (the editor behind Edit templates). Absent, unreadable or all-bad gives `DEFAULT_TEMPLATES`; a stored empty list stays empty; bad entries are dropped one by one, text cut to 80 characters, at most 64. |
 | `hrifa.harmonic-field-lab.retuner.v1` | `{ cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts: { harmonics, rolloff, oddLimit }, glideMs } }`. A card `snap` is the tab snapshot (below), cleaned to the plain stored shape. Cards and settings only: on/off, the active card, the card roots, the held keys and the history are never stored. Entry by entry: a card with no usable snapshot is dropped, settings fall back field by field, at most 24 cards; at restore a card whose inputs no longer build or select nothing is kept as a dormant spec (`RetState.dormant`, not shown, not playable) and written back at its stored position by every save, so a save never loses a stored card. Nothing is written on mount. |

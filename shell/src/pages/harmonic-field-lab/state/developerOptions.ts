@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { MERGE_TOL_DEFAULT, clampMergeTol, type MergeKeep } from '../../../lib/harmonic-field';
 import { LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
 
 /**
@@ -18,6 +19,10 @@ export interface LabDeveloperOptions {
   tooltipDelay: number;
   /** Linked melody root used while settings.v1 has no stored choice (default Re-root). */
   linkedRootDefault: LinkedRoot;
+  /** Composites (M8c): pitches this many cents apart or less merge into one note (0 to 50, default 5). */
+  mergeTolerance: number;
+  /** Composites: which pitch a merged note shows, the first added (default) or the most recent. */
+  mergeKeeps: MergeKeep;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -37,6 +42,8 @@ const defaults: LabDeveloperOptions = {
   tooltips: true,
   tooltipDelay: TOOLTIP_DELAY_DEFAULT,
   linkedRootDefault: 'reroot',
+  mergeTolerance: MERGE_TOL_DEFAULT,
+  mergeKeeps: 'first',
 };
 
 const listeners = new Set<() => void>();
@@ -64,6 +71,8 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       linkedRootDefault: LINKED_ROOTS.includes(o.linkedRootDefault as LinkedRoot)
         ? (o.linkedRootDefault as LinkedRoot)
         : defaults.linkedRootDefault,
+      mergeTolerance: clampMergeTol(o.mergeTolerance),
+      mergeKeeps: o.mergeKeeps === 'recent' ? 'recent' : 'first',
     };
   } catch {
     return defaults;
@@ -83,6 +92,7 @@ export function readDeveloperOptions(): LabDeveloperOptions {
 export function writeDeveloperOptions(patch: Partial<LabDeveloperOptions>) {
   const next = { ...readDeveloperOptions(), ...patch };
   next.tooltipDelay = sanitiseTooltipDelay(next.tooltipDelay);
+  next.mergeTolerance = clampMergeTol(next.mergeTolerance);
   try {
     localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify(next));
   } catch {

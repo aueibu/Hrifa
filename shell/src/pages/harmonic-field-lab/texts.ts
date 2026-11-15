@@ -696,8 +696,8 @@ const entries = {
   },
   developerMenu: {
     term: 'Developer menu',
-    text: 'Small switches for how the lab shows things, kept per viewer in this browser (they are not part of a saved tuning). Example: "Mode tiles: always show ± sign" can be turned off if the signs make the heat grid look busy.',
-    see: ['modeSignAlways', 'tooltips', 'modes'],
+    text: 'Small switches for how the lab shows things, kept per viewer in this browser (they are not part of a saved tuning). They are grouped by what they affect: Tooltips, Mode display, Playback and keys, Composites. Example: "Mode tiles: always show ± sign" can be turned off if the signs make the heat grid look busy.',
+    see: ['modeSignAlways', 'tooltips', 'modes', 'mergeTolerance'],
   },
   keepModeRoot: {
     term: 'Keep the mode root when notes are added or removed',
@@ -718,6 +718,16 @@ const entries = {
     term: 'Tooltip delay (ms)',
     text: "How long the pointer must rest on something before its tooltip appears, in milliseconds (0 to 5000; the default is 250). Example: 800 keeps tooltips out of the way while you move across the screen, and still shows one when you pause. Hover hints the browser draws itself (a few small labels on the mode tiles, key rings and strip steps) keep the browser's own timing, which cannot be changed.",
     see: ['tooltips', 'developerMenu'],
+  },
+  mergeTolerance: {
+    term: 'Merge tolerance (c)',
+    text: 'How close two pitches must be, in cents, to count as one note when a composite is merged (0 to 50; the default is 5). Pitches this close or closer become one note; 0 merges only identical pitches. Example: a 12-EDO major third (400 c) and a just one (386.3 c) are 13.7 c apart, so they stay two notes at 5 c and become one at 15 c, while a 700 c and a 702 c fifth merge at 5 c.',
+    see: ['mergeKeeps', 'developerMenu'],
+  },
+  mergeKeeps: {
+    term: 'Merged note keeps',
+    text: 'When pitches merge into one composite note, which pitch the note shows: the first one added (the default) or the most recent one. A pitch with an exact ratio is never replaced by a cents-only twin of the same size. Example: 700 c was added first and 702 c second; First keeps 700 c, Most recent keeps 702 c.',
+    see: ['mergeTolerance', 'developerMenu'],
   },
   soundMenu: {
     term: 'Sound settings',

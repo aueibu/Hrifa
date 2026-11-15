@@ -71,6 +71,7 @@ const GEN_FIELDS = [
   'mask',
   'preset',
   'keepNew',
+  'snap',
 ] as const;
 
 /** The generation part of a snapshot. */

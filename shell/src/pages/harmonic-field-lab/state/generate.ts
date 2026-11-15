@@ -27,8 +27,21 @@ import {
   type Preset,
 } from '../../../lib/harmonic-field';
 
-export type Method = 'harmonic' | 'sub' | 'edo' | 'lattice' | 'cps' | 'custom';
+export type Method = 'harmonic' | 'sub' | 'edo' | 'lattice' | 'cps' | 'custom' | 'composite';
+/** The methods a user picks. 'composite' is only ever made by "Open as tab" (a frozen snapshot), never picked. */
 export const METHODS: readonly Method[] = ['harmonic', 'sub', 'edo', 'lattice', 'cps', 'custom'];
+
+/**
+ * The frozen field of a Composite tab (M8c, H-8): where it came from and the merged notes at that moment. A snapshot, never
+ * linked: editing or deleting the composite later changes nothing here. Notes are plain `{ m, c }` (cents-only stays cents-only).
+ */
+export interface CompositeSnap {
+  /** The composite's number (1 to 9) and name when it was opened. */
+  id: number;
+  name: string;
+  rep: Note;
+  notes: Note[];
+}
 export const PRIME_SLOTS = 25;
 
 export interface AxisSpec {
@@ -62,6 +75,8 @@ export interface GenSpec {
   mask: boolean[];
   /** When the field changes, also select any newly appearing notes. */
   keepNew: boolean;
+  /** Composite method only: the frozen notes (see `CompositeSnap`). */
+  snap?: CompositeSnap;
 }
 
 export const DEFAULT_AXES: AxisSpec[] = [
@@ -156,6 +171,8 @@ export function autoName(g: GenSpec): string {
       return 'Lattice';
     case 'cps':
       return `CPS ${g.cpsF.trim().split(/\s+/).join(' ')} choose ${g.cpsK}`;
+    case 'composite':
+      return g.snap?.name || 'Composite';
     default:
       return 'Custom scale';
   }
@@ -207,6 +224,24 @@ function readAxes(g: GenSpec): { axes: AdditiveAxis[] } | { err: string } {
 
 /** Build the field for a spec. Never throws. */
 export function generateField(g: GenSpec): Generated {
+  if (g.method === 'composite') {
+    // a frozen snapshot: the stored repeat and notes (the rep text is only a label); the prime filter still applies
+    const sn = g.snap;
+    if (!sn || !sn.notes.length || !(sn.rep.c > EPS)) {
+      return { ok: false, err: 'This composite snapshot has no usable notes' };
+    }
+    const built = buildField(sn.notes, sn.rep, g.mask);
+    return {
+      ok: true,
+      field: built.notes,
+      rep: sn.rep,
+      warn: built.truncated
+        ? `Truncated to ${MAXN} notes`
+        : built.notes.length === 0
+          ? 'Prime filter removed every note'
+          : '',
+    };
+  }
   const r = parseRepeat(g.rep);
   if ('err' in r) {
     return { ok: false, err: r.err };
