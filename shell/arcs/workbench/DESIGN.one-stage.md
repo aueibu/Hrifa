@@ -444,7 +444,7 @@ The clip editor session slice, the chord session, the desk (`useDesk`), `Composi
 
 Existing tests (`NoteClipEditor.test.tsx`, `.chords`, `.chordKeys`, `.reveal`, `.stack`, `.stage`) are the guard; M4's acceptance already forbids weakening assertions.
 
-## 7.7 Placement modes: the Chords tool versus the chord panel alone (PROPOSED scaffold, for the human to confirm before M4a)
+## 7.7 Placement modes: the Chords tool versus the chord panel alone (CONFIRMED by the human 2026-11-14: anchor and selection modes in M6; cursor and drop later)
 
 The human's question (2026-11-14): with the chord picker as an ordinary panel, what is different in the piano roll when the Chords tool is selected versus using the chord panel while another tool (the pointer) is active? This is the scaffold for pickers and generators that come later (a gesture picker, a voicing catalog).
 

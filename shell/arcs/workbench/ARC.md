@@ -113,7 +113,7 @@ Each milestone is small enough for one builder run and has criteria a command or
 - Human checkpoint after: no
 
 ### M4a: The chord session at page level (no UI change)
-- Precondition: the human confirms the placement modes (design 7.7: how a position for a chord is chosen with the Chords tool versus with the chord panel alone) before M4a starts.
+- Placement modes CONFIRMED by the human (2026-11-14, design 7.7): anchor mode (the Chords tool, unchanged) and selection mode (pointer tool: the chord panel acts on the selected notes; nothing selected means audition only) ship in M6; cursor and drop modes are later. The panel shows which mode applies and what Insert will do; Insert is disabled with a reason, never guesses.
 - Scope: owned workbench paths only: a sessions wrapper component (`composition-workbench/WorkbenchSessions.tsx`; the entry file is not edited until M5) and a page-level `ChordSession` store with claim and release (the last claim wins, an earlier held claim becomes active again when the latest releases), a `ChordTarget` interface, ownership of `hoverCell`, `hoverBlocked`, audition and the W-20 keyboard handling. `NoteClipEditor` uses the session from `WorkbenchSessions` when one is above it and otherwise mounts a private one, so every existing test and the page run unchanged. Until M6 the picker still lives in the editor's v1 Stage: the `ChordSession` drives it through an injected open/close adapter (the editor's adapter maps "the claiming host wants the picker" to today's picker-in-Stage rule).
 - Acceptance:
   - [ ] `check:workbench` passes; every existing chord-input and `NoteClipEditor` test passes without weakened assertions
