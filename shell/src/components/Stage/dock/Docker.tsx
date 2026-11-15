@@ -4,7 +4,13 @@
  * strip. The component owns no layout data: every change goes out through `actions` (DockStage turns them into
  * screenset edits).
  */
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { Menu, TextInput } from '@mantine/core';
 import { pxToRem, type DockerId, type Edge, type PanelId } from '../../../lib/stage';
 import { StripTool } from '../../InspectorKit';
@@ -23,6 +29,8 @@ export interface DockerActions {
   closeTab(panel: PanelId): void;
   sendToDocker(panel: PanelId, docker: DockerId): void;
   sendToNew(panel: PanelId, beside: DockerId, edge: Edge): void;
+  /** A primary-button press on a tab: DockStage decides whether it becomes a drag (after a movement threshold). */
+  tabPointerDown(event: ReactPointerEvent<HTMLElement>, panel: PanelId): void;
 }
 
 export interface DockerProps {
@@ -41,6 +49,8 @@ export interface DockerProps {
   sizeAttr?: string;
   /** Spike only: overlay the size class. */
   showSize?: boolean;
+  /** The panel whose tab is being dragged (its tab shows a grabbing cursor). */
+  draggingPanel?: PanelId | null;
 }
 
 export const EDGES: readonly { edge: Edge; label: string }[] = [
@@ -165,7 +175,7 @@ export function Docker(props: DockerProps) {
       onPointerDownCapture={() => actions.select(docker.id)}
       onFocusCapture={() => actions.select(docker.id)}
     >
-      <div className={classes.header}>
+      <div className={classes.header} data-dock-header>
         {nameControl(classes.name)}
         <div role="tablist" aria-label={`${docker.name} tabs`} className={classes.tabs}>
           {docker.tabs.map((panel) => {
@@ -182,6 +192,8 @@ export function Docker(props: DockerProps) {
                   aria-controls={panelHostId(props.uid, panel)}
                   tabIndex={active ? 0 : -1}
                   data-tab-id={panel}
+                  data-dragging={props.draggingPanel === panel}
+                  onPointerDown={(e) => actions.tabPointerDown(e, panel)}
                   onClick={() => actions.activate(docker.id, panel)}
                 >
                   {title}

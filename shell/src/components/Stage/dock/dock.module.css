@@ -23,7 +23,9 @@
   width: 100%;
 }
 
+/* its own stacking context: panel content with a z-index of its own cannot draw over the drag shield or preview */
 .dockerPos {
+  isolation: isolate;
   position: absolute;
 }
 
@@ -132,6 +134,7 @@
   overflow: hidden;
   padding: 0 0.25rem 0 0.5rem;
   text-overflow: ellipsis;
+  touch-action: none;
   white-space: nowrap;
 }
 
@@ -278,4 +281,46 @@
 .notice:empty {
   background: transparent;
   padding: 0;
+}
+
+/*
+ * Drag-to-dock feedback (aria-hidden, pointer enhancement). The shield covers the whole Stage so canvases, iframes and
+ * panel content cannot swallow the pointer while a tab is dragged; the preview and the label never take pointer events.
+ */
+.shield {
+  background: transparent;
+  cursor: grabbing;
+  inset: 0;
+  position: absolute;
+  user-select: none;
+  z-index: 20;
+}
+
+.dropPreview {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: var(--radius-control);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 21;
+}
+
+.dragLabel {
+  background: var(--panel-raised);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-size: 0.75rem;
+  max-width: 12rem;
+  overflow: hidden;
+  padding: 0.125rem 0.5rem;
+  pointer-events: none;
+  position: absolute;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 22;
+}
+
+.tab[data-dragging='true'] {
+  cursor: grabbing;
 }

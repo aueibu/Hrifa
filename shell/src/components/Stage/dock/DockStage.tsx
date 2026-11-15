@@ -25,6 +25,8 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MutableRefObject,
+  type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -33,6 +35,7 @@ import {
   canRenameDocker,
   closePanel,
   dockerHolding,
+  findDocker,
   nearestSupportedSize,
   openPanel,
   openPanels,
@@ -50,7 +53,6 @@ import {
   type DockerId,
   type PanelId,
   type Screenset,
-  type Target,
 } from '../../../lib/stage';
 import { DEFAULT_DENSITY, tokenStyle } from '../../InspectorKit';
 import type { StageRegistry } from '../registry';
@@ -58,7 +60,15 @@ import { INITIAL_SIZE, withMeasure, type SlotSizes } from '../sizeState';
 import { Splitter } from '../Splitter';
 import { dockerMinOf, guardedTree } from '../stageOps';
 import { Docker, panelHostId, tabId, type DockerActions } from './Docker';
-import { layoutTree, type DockRect } from './dockLayout';
+import {
+  dropTarget,
+  layoutTree,
+  sendToRoot,
+  type DockRect,
+  type DropResult,
+  type DropTarget,
+  type TabStripGeometry,
+} from './dockLayout';
 import { adopt, createHost, hold, setParked } from './parking';
 import { StageApiContext, type StageApi } from './stageApi';
 import classes from './dock.module.css';
@@ -86,6 +96,10 @@ const createdDocker = (before: Screenset, after: Screenset): DockerId | undefine
 
 const rootPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 const NUDGE_REM = 1;
+/** A press must move this far (px) before it is a drag, so a plain click still selects the tab. */
+const DRAG_THRESHOLD_PX = 4;
+/** The click that ends a drag is eaten for at most this long (ms). */
+const CLICK_EAT_MS = 250;
 const STAGE_MIN = { w: SIZE_MIN_WIDTH_REM, h: SIZE_MIN_HEIGHT_REM };
 
 const rectStyle = (r: DockRect): CSSProperties => ({
@@ -94,6 +108,14 @@ const rectStyle = (r: DockRect): CSSProperties => ({
   width: `${r.width}rem`,
   height: `${r.height}rem`,
 });
+
+/** What the drag layer shows: the pointer (px from the root corner), the panel name and the zone under it. */
+interface DragView {
+  title: string;
+  x: number;
+  y: number;
+  result: DropResult | null;
+}
 
 interface ParkBox {
   key: string;
@@ -245,7 +267,7 @@ export function DockStage({
       fn: (s: Screenset) => Screenset,
       what?: string,
       select?: DockerId | ((before: Screenset, after: Screenset) => DockerId | undefined)
-    ) => {
+    ): boolean => {
       const cur = latest.current.screenset;
       const want = fn(cur);
       const sel = typeof select === 'function' ? select(cur, want) : select;
@@ -257,6 +279,7 @@ export function DockStage({
         setSelected(sel);
       }
       update((s) => guard(s, fn(s), sel));
+      return want !== cur && !refused;
     },
     [guard, update, setNotice]
   );
@@ -264,6 +287,36 @@ export function DockStage({
   const titleOf = useCallback((id: PanelId) => registry.meta.get(id)?.title ?? id, [registry]);
 
   const focusRequest = useRef<PanelId | null>(null);
+
+  /**
+   * THE send action: the Send-to menu, the API and a drop all come through here. Guarded (W-30) with the destination (or
+   * the newly created docker) counted as selected; a refused edit leaves the screenset unchanged and shows the status
+   * line; the selection moves only after an accepted edit. Returns whether the edit was accepted (a no-op, such as a
+   * same-docker drop that changes no index, is not).
+   */
+  const sendToTarget = useCallback(
+    (panel: PanelId, target: DropTarget): boolean => {
+      if (!registry.meta.has(panel)) {
+        return false;
+      }
+      if (
+        target.kind === 'root' &&
+        sendToRoot(latest.current.screenset, panel, target.edge) === latest.current.screenset
+      ) {
+        setNotice('No room for another split at the Stage edge.');
+        return false;
+      }
+      return applyGuarded(
+        (s) =>
+          target.kind === 'root' ? sendToRoot(s, panel, target.edge) : sendToOp(s, panel, target),
+        target.kind === 'docker'
+          ? `send ${titleOf(panel)} there`
+          : `send ${titleOf(panel)} to a new docker`,
+        target.kind === 'docker' ? target.docker : createdDocker
+      );
+    },
+    [registry, applyGuarded, titleOf, setNotice]
+  );
 
   const api = useMemo<StageApi>(() => {
     const homeOf = (id: PanelId) => registry.meta.get(id)?.home;
@@ -300,15 +353,8 @@ export function DockStage({
       close(id) {
         update((s) => closePanel(s, id));
       },
-      sendTo(id, target: Target) {
-        if (!registry.meta.has(id)) {
-          return;
-        }
-        applyGuarded(
-          (s) => sendToOp(s, id, target),
-          `send ${titleOf(id)} there`,
-          target.kind === 'docker' ? target.docker : createdDocker
-        );
+      sendTo(id, target) {
+        sendToTarget(id, target);
       },
       isOpen: (id) => dockerHolding(screenset.tree, id) !== null,
       isShown(id) {
@@ -316,7 +362,227 @@ export function DockStage({
         return !!p && p.docker.active === id && p.state === 'open';
       },
     };
-  }, [registry, screenset, geometry, update, applyGuarded, titleOf]);
+  }, [registry, screenset, geometry, update, sendToTarget]);
+
+  /* ------------------------------------------------------------------ drag-to-dock */
+  // A pointer enhancement over the Send-to menu (the keyboard route). State machine: idle -> pending (primary press on a
+  // tab) -> dragging (pointer moved DRAG_THRESHOLD_PX) -> idle (drop applies sendToTarget; Escape, pointercancel or a
+  // lost capture cancels). Below the threshold nothing happens, so a plain click still selects the tab. Per-move state
+  // lives in DragLayer (never re-renders the panels); this component only learns which tab is being dragged.
+  const [draggingPanel, setDraggingPanel] = useState<PanelId | null>(null);
+  const dragView = useRef<((v: DragView | null) => void) | null>(null);
+  const dragStop = useRef<(() => void) | null>(null);
+  const clickEater = useRef<(() => void) | null>(null);
+  useEffect(
+    () => () => {
+      dragStop.current?.();
+      clickEater.current?.();
+    },
+    []
+  );
+
+  const beginPress = useCallback(
+    (event: ReactPointerEvent<HTMLElement>, panel: PanelId) => {
+      if (event.button !== 0 || event.isPrimary === false) {
+        return;
+      }
+      dragStop.current?.();
+      clickEater.current?.();
+      clickEater.current = null;
+      const el = event.currentTarget;
+      const { clientX: x0, clientY: y0, pointerId } = event;
+      const title = titleOf(panel);
+      const px = rootPx();
+      let dragging = false;
+      let strips = new Map<string, TabStripGeometry>();
+
+      const rel = (r: DOMRect, o: DOMRect): DockRect => ({
+        x: pxToRem(r.left - o.left, px),
+        y: pxToRem(r.top - o.top, px),
+        width: pxToRem(r.width, px),
+        height: pxToRem(r.height, px),
+      });
+      const measureStrips = (rootEl: HTMLElement, o: DOMRect) => {
+        const out = new Map<string, TabStripGeometry>();
+        for (const sec of rootEl.querySelectorAll<HTMLElement>('section[data-docker-id]')) {
+          const header = sec.querySelector<HTMLElement>('[data-dock-header]');
+          const hr = header?.getBoundingClientRect();
+          if (!header || !hr || hr.width === 0 || hr.height === 0) {
+            continue;
+          }
+          const tabs = [...header.querySelectorAll<HTMLElement>('[data-tab-id]')].map((b) =>
+            rel((b.parentElement ?? b).getBoundingClientRect(), o)
+          );
+          out.set(sec.dataset.dockerId ?? '', { strip: rel(hr, o), tabs });
+        }
+        return out;
+      };
+      const read = (ev: { clientX: number; clientY: number }) => {
+        const o = root.current?.getBoundingClientRect();
+        if (!o) {
+          return { x: 0, y: 0, result: null };
+        }
+        const x = ev.clientX - o.left;
+        const y = ev.clientY - o.top;
+        const { geometry: g, widthRem: w, heightRem: h } = latest.current;
+        const result = dropTarget({
+          dockers: g.dockers,
+          stage: { width: w, height: h },
+          strips,
+          panel,
+          point: { x: pxToRem(x, px), y: pxToRem(y, px) },
+          minWidth: STAGE_MIN.w,
+          minHeight: STAGE_MIN.h,
+        });
+        return { x, y, result };
+      };
+      /**
+       * The click that ends a drag must not also activate the tab: it is eaten once, right after the drop, and the eater
+       * never outlives 250 ms or the next pointerdown, so it can never eat a later legitimate click.
+       */
+      const clearEater = () => {
+        clickEater.current?.();
+        clickEater.current = null;
+      };
+      const eatClick = () => {
+        const rootEl = root.current;
+        if (!rootEl) {
+          return;
+        }
+        clearEater();
+        const eat = (e: Event) => {
+          e.stopPropagation();
+          e.preventDefault();
+          clearEater();
+        };
+        const down = () => clearEater();
+        const timer = window.setTimeout(clearEater, CLICK_EAT_MS);
+        rootEl.addEventListener('click', eat, true);
+        document.addEventListener('pointerdown', down, true);
+        clickEater.current = () => {
+          rootEl.removeEventListener('click', eat, true);
+          document.removeEventListener('pointerdown', down, true);
+          window.clearTimeout(timer);
+        };
+      };
+      /** After an Escape the button is still down: the click that follows its release is eaten (if it is released here). */
+      const eatClickAfterRelease = () => {
+        clearEater();
+        const up = (e: PointerEvent) => {
+          if (e.pointerId === pointerId) {
+            clearEater();
+            eatClick();
+          }
+        };
+        const down = () => clearEater();
+        document.addEventListener('pointerup', up, true);
+        document.addEventListener('pointerdown', down, true);
+        clickEater.current = () => {
+          document.removeEventListener('pointerup', up, true);
+          document.removeEventListener('pointerdown', down, true);
+        };
+      };
+
+      const stop = () => {
+        document.removeEventListener('pointermove', onMove, true);
+        document.removeEventListener('pointerup', onUp, true);
+        document.removeEventListener('pointercancel', onCancel, true);
+        document.removeEventListener('keydown', onKey, true);
+        el.removeEventListener('lostpointercapture', onCancel);
+        if (dragging) {
+          try {
+            el.releasePointerCapture?.(pointerId);
+          } catch {
+            // already released
+          }
+          dragView.current?.(null);
+          setDraggingPanel(null);
+        }
+        dragStop.current = null;
+      };
+      function onMove(ev: PointerEvent) {
+        if (ev.pointerId !== pointerId) {
+          return;
+        }
+        if ((ev.buttons & 1) === 0) {
+          // released outside the window before or during the drag: nothing is left to drop
+          cancel(false);
+          return;
+        }
+        if (!dragging) {
+          if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < DRAG_THRESHOLD_PX) {
+            return;
+          }
+          dragging = true;
+          const o = root.current?.getBoundingClientRect();
+          if (root.current && o) {
+            strips = measureStrips(root.current, o);
+          }
+          try {
+            el.setPointerCapture?.(pointerId);
+          } catch {
+            // a synthetic pointer: the document listeners still receive its events
+          }
+          setDraggingPanel(panel);
+        }
+        ev.preventDefault();
+        dragView.current?.({ title, ...read(ev) });
+      }
+      function onUp(ev: PointerEvent) {
+        if (ev.pointerId !== pointerId) {
+          return;
+        }
+        if (!dragging) {
+          stop();
+          return;
+        }
+        const { result } = read(ev);
+        stop();
+        eatClick();
+        if (result && !result.noop && sendToTarget(panel, result.target)) {
+          const t = result.target;
+          const tree = latest.current.screenset.tree;
+          const dest = t.kind === 'docker' ? findDocker(tree, t.docker) : null;
+          const before = dockerHolding(tree, panel);
+          setNotice(
+            t.kind !== 'docker' || !dest
+              ? `Moved ${title} to a new docker`
+              : before?.id === dest.id
+                ? `Moved ${title} within ${dest.name}`
+                : `Moved ${title} to ${dest.name}`
+          );
+        }
+      }
+      /** A cancel (pointercancel, lost capture) is followed by no click; an Escape is, when the button is released. */
+      function cancel(afterEscape: boolean) {
+        const was = dragging;
+        stop();
+        if (was && afterEscape) {
+          eatClickAfterRelease();
+        }
+      }
+      function onCancel(ev: Event) {
+        if ('pointerId' in ev && (ev as PointerEvent).pointerId !== pointerId) {
+          return;
+        }
+        cancel(false);
+      }
+      function onKey(ev: KeyboardEvent) {
+        if (ev.key === 'Escape' && dragging) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          cancel(true);
+        }
+      }
+      document.addEventListener('pointermove', onMove, true);
+      document.addEventListener('pointerup', onUp, true);
+      document.addEventListener('pointercancel', onCancel, true);
+      document.addEventListener('keydown', onKey, true);
+      el.addEventListener('lostpointercapture', onCancel);
+      dragStop.current = stop;
+    },
+    [titleOf, sendToTarget, setNotice]
+  );
 
   const actions = useMemo<DockerActions>(
     () => ({
@@ -341,21 +607,11 @@ export function DockStage({
       remove: (docker) => update((s) => removeDocker(s, docker)),
       setCollapsed: (docker, collapsed) => update((s) => setCollapsed(s, docker, collapsed)),
       closeTab: (panel) => update((s) => closePanel(s, panel)),
-      sendToDocker: (panel, docker) => {
-        applyGuarded(
-          (s) => sendToOp(s, panel, { kind: 'docker', docker }),
-          `send ${titleOf(panel)} there`,
-          docker
-        );
-      },
-      sendToNew: (panel, beside, edge) =>
-        applyGuarded(
-          (s) => sendToOp(s, panel, { kind: 'split', beside, edge }),
-          `send ${titleOf(panel)} to a new docker`,
-          createdDocker
-        ),
+      sendToDocker: (panel, docker) => void sendToTarget(panel, { kind: 'docker', docker }),
+      sendToNew: (panel, beside, edge) => void sendToTarget(panel, { kind: 'split', beside, edge }),
+      tabPointerDown: (event, panel) => beginPress(event, panel),
     }),
-    [update, applyGuarded, titleOf]
+    [update, applyGuarded, sendToTarget, beginPress]
   );
 
   /* ------------------------------------------------------------------ what is rendered, and where it is held */
@@ -473,6 +729,7 @@ export function DockStage({
                 registerBody={registerBody}
                 sizeAttr={active ? slotSizeAttr(sizes[active] ?? INITIAL_SIZE) : undefined}
                 showSize={showSizes}
+                draggingPanel={draggingPanel}
               />
             </div>
           );
@@ -553,6 +810,7 @@ export function DockStage({
           const size = nearestSupportedSize(sizes[id] ?? INITIAL_SIZE, module.sizes);
           return createPortal(module.render(size), hostFor(id), id);
         })}
+        <DragLayer viewRef={dragView} />
         <p role="status" className={classes.notice}>
           {noticeText}
         </p>
@@ -606,4 +864,49 @@ function HostPlacer({
     }
   });
   return null;
+}
+
+/**
+ * The drag feedback, in its own component so a pointer move re-renders only this (never the panels): a transparent
+ * shield over the whole Stage (canvases, iframes and panel content cannot swallow the pointer), the translucent preview
+ * of the zone under the pointer, and the floating panel name. All aria-hidden: the Send-to menu is the keyboard route.
+ */
+function DragLayer({
+  viewRef,
+}: {
+  viewRef: MutableRefObject<((v: DragView | null) => void) | null>;
+}) {
+  const [view, setView] = useState<DragView | null>(null);
+  useLayoutEffect(() => {
+    viewRef.current = setView;
+    return () => {
+      viewRef.current = null;
+    };
+  }, [viewRef]);
+  if (!view) {
+    return null;
+  }
+  const r = view.result;
+  return (
+    <>
+      <div className={classes.shield} data-dock-shield aria-hidden="true" />
+      {r && !r.noop && (
+        <div
+          className={classes.dropPreview}
+          data-dock-preview
+          data-zone={r.zone}
+          aria-hidden="true"
+          style={rectStyle(r.preview)}
+        />
+      )}
+      <div
+        className={classes.dragLabel}
+        data-dock-drag-label
+        aria-hidden="true"
+        style={{ left: view.x + 12, top: view.y + 12 }}
+      >
+        {view.title}
+      </div>
+    </>
+  );
 }
