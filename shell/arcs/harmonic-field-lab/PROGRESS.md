@@ -91,7 +91,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M7 human checkpoint is still open. Human asked (2026-11-14) for: Fill cards (modes + keys, both by default; saved subsets as an option; preview before applying), recorded in ARC M7 decisions. Also to design with the human: separate creating subsets from saving them (Infinitone-style rows); proposal pending, needs approval before a milestone. Then M8 (draft list needs approval).
+M7 human checkpoint is still open (ears and feel). Drafted for the human's approval (2026-11-14, ARC.md): **M7b generator library + subset rows** (presets own subsets, Add row, fork on edit + Update, Save as new with Shift to copy, update report with Undo and Show removed) and **M7c Fill cards** (modes + keys + this generator's subsets). Order: M7 checkpoint, then M7b, M7c, M8. The human reads the acceptance lists first; nothing is built until approved.
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
