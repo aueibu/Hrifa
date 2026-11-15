@@ -4,7 +4,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M8 (draft: needs the human's approval of the acceptance list)
+- Current milestone: M8a (draft: needs the human's approval of the acceptance list)
 - State: M7, M7b, M7c approved; M8 not started
 
 ## Log
@@ -100,7 +100,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M8 chord sketchpad: the human reads and approves the draft acceptance list in ARC.md first (open design question: how the shelf shares the M7 card list model, now that cards are tab snapshots and subsets live under generators). Nothing is built until approved.
+M8a (chord shelf + sketch) and M8b (keyboard chord modes + linked melody) are drafted in ARC.md with the human's answers (separate list, panel, exact pitches, hold 4, interactive play, [ ] paging, audio-only linked melody, retuner precedence). The human reads and approves the lists; then M8a step 1 (data layer) via builder + reviewer.
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
