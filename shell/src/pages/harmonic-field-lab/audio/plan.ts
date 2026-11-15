@@ -113,7 +113,14 @@ export function fieldScalePlan(
   return runPlan(up, dir);
 }
 
-/** Play chord with a highlighted chord: its field notes together, at their own pitch above 1/1. */
+/**
+ * A field-absolute pitch (cents above 1/1) as the Parallel | Relative switch plays it, exactly as a mode preview or the
+ * computer keys do: Parallel puts the mode root on 1/1 (the pitch minus the root's cents), Relative keeps the real pitch.
+ * What it lights is the field note at the ABSOLUTE cents (the sounding pitch plus the root in Parallel, H-2).
+ */
+export const framedCents = (p: PitchBase, c: number): number => (p.modeAtBase ? c - p.rootC : c);
+
+/** Play chord with a highlighted chord: its field notes together, in the chosen frame (Parallel from the mode root on 1/1, Relative real pitch). */
 export function chordPlan(
   field: readonly Note[],
   members: Iterable<number>,
@@ -121,7 +128,13 @@ export function chordPlan(
 ): Planned[] {
   const idx = [...members].filter((i) => i >= 0 && i < field.length).sort((a, b) => a - b);
   const amp = chordAmp(idx.length);
-  return idx.map((i) => ({ hz: absHz(p, field[i].c), src: i, delay: 0, dur: 1.8, amp }));
+  return idx.map((i) => ({
+    hz: absHz(p, framedCents(p, field[i].c)),
+    src: i,
+    delay: 0,
+    dur: 1.8,
+    amp,
+  }));
 }
 
 /**

@@ -22,6 +22,7 @@ import {
   ARMED_DIGIT,
   modePreviewPlan,
   pitchesPlan,
+  framedCents,
   previewTargetKey,
   stripPreviewPlan,
   scalePlan,
@@ -268,8 +269,10 @@ export function useLabAudio({
             pitchesPlan(
               b.field,
               b.repC,
-              pitches.map((n) => n.c),
-              pitch()
+              pitches.map((n) => framedCents(pitch(), n.c)),
+              pitch(),
+              1.8,
+              pitches.map((n) => n.c)
             ),
             false,
             digit

@@ -196,7 +196,7 @@ describe('chord shelf UI', () => {
     fireEvent.mouseLeave(a);
   });
 
-  it('a stashed chord sounds as stored and lights its own field notes in Parallel and Relative', async () => {
+  it('a stashed chord lights its own field notes and follows Parallel | Relative like mode previews (12-EDO, mode root D)', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('12-EDO');
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
@@ -221,19 +221,91 @@ describe('chord shelf UI', () => {
       .map(hz)
       .sort((x, y) => x - y);
     expect(parallel).toHaveLength(3);
-    // the chord sounds as saved (D, F, A: 200, 500, 900 c, modal offset kept) and lights D, F, A
+    // Parallel puts the mode root D on 1/1 (0, 300, 700 c) but lights D, F, A, not C, Eb, G
     expect(soundingNames().sort()).toEqual(['200.0 c', '500.0 c', '900.0 c']);
     up('1');
-    // key 5 with the pointer resting on the slot: Relative sounds the very same pitches and lights
+    // key 5 with the pointer resting on the slot: Relative keeps the real pitches (a root up, 200 c), same lights
     down('5');
     up('5');
     down('1');
     const relative = running()
       .map(hz)
       .sort((x, y) => x - y);
-    expect(relative[0] / parallel[0]).toBeCloseTo(1, 3);
+    expect(relative[0] / parallel[0]).toBeCloseTo(2 ** (200 / 1200), 3);
     expect(soundingNames().sort()).toEqual(['200.0 c', '500.0 c', '900.0 c']);
     up('1');
     fireEvent.mouseLeave(slot);
+  });
+
+  it('chip, Play sketch and the stashed slot sound the same in Parallel and in Relative, and key 5 moves them together', () => {
+    vi.useFakeTimers();
+    render(<HarmonicFieldLabPage />);
+    // a mode root that is not 1/1
+    fireEvent.click(screen.getByRole('button', { name: 'Next mode' }));
+    const chipName = new RegExp('^major triad 4:5:6 on 1/1', 'i'); // a chord that does not wrap the repeat, so the chip and the stacked sketch are the same notes
+    const chip = () => screen.getAllByRole('button', { name: chipName })[0];
+    const ringLit = () =>
+      within(ring())
+        .getAllByRole('button')
+        .filter((b) => /sounding/.test(b.getAttribute('aria-label') ?? '')).length;
+    const held = (el: HTMLElement) => {
+      fireEvent.mouseEnter(el);
+      down('1');
+      const out = running()
+        .map(hz)
+        .sort((x, y) => x - y);
+      const l = ringLit();
+      up('1');
+      fireEvent.mouseLeave(el);
+      return { hz: out, lit: l };
+    };
+    const sketchPlay = () => {
+      const before = oscs().length;
+      fireEvent.click(within(sketch()).getByRole('button', { name: 'Play sketch' }));
+      advance(100);
+      const out = oscs()
+        .slice(before)
+        .map(hz)
+        .sort((x, y) => x - y);
+      const l = ringLit();
+      advance(3000);
+      return { hz: out, lit: l };
+    };
+    const same = (x: number[], y: number[]) =>
+      x.forEach((v, i) => expect(v / y[i]).toBeCloseTo(1, 4));
+    const parChip = held(chip());
+    expect(parChip.hz).toHaveLength(3);
+    expect(parChip.lit).toBe(3);
+    // playing the chip arms it and puts the Sketch row on the same chord
+    fireEvent.click(chip());
+    advance(3000);
+    fireEvent.click(chip()); // unpick
+    const parSketch = sketchPlay();
+    same(parSketch.hz, parChip.hz);
+    expect(parSketch.lit).toBe(3);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: new RegExp('^Stash 4:5:6 on 1/1', 'i') })[0]
+    );
+    down('5');
+    up('5');
+    const relChip = held(chip());
+    const relSketch = sketchPlay();
+    same(relSketch.hz, relChip.hz);
+    expect(relChip.lit).toBe(3);
+    expect(relSketch.lit).toBe(3);
+    // Relative is Parallel moved up by the mode root
+    expect(relChip.hz[0] / parChip.hz[0]).toBeGreaterThan(1.05);
+    fireEvent.click(within(rail()).getByRole('tab', { name: /^Shelf/ }));
+    const slot = within(screen.getByRole('list', { name: 'Chord shelf' })).getAllByRole(
+      'listitem'
+    )[0];
+    const relSlot = held(slot);
+    same(relSlot.hz, relChip.hz);
+    expect(relSlot.lit).toBe(3);
+    down('5');
+    up('5');
+    const parSlot = held(slot);
+    same(parSlot.hz, parChip.hz);
+    expect(parSlot.lit).toBe(3);
   });
 });

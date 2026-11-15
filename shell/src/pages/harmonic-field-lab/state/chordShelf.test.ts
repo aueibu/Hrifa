@@ -303,7 +303,7 @@ describe('reload', () => {
 });
 
 describe('chordPitchesFor (pitch frame rule)', () => {
-  it('plays the stored field-absolute pitches as stored in both frames (modal offset kept)', () => {
+  it('Relative plays the stored field-absolute pitches; Parallel divides by the source mode root', () => {
     let s = run(initialState(), { type: 'sel/set', idx: [3, 4, 0], mode: 0 });
     s = labReducer(s, {
       type: 'shelf/stash',
@@ -321,8 +321,8 @@ describe('chordPitchesFor (pitch frame rule)', () => {
       fmt([ratioNote(3, 2), ratioNote(15, 8), ratioNote(9, 4)])
     );
     const par = chordPitchesFor(fixed, 'parallel');
-    expect(fmt(par)).toEqual(fmt([ratioNote(3, 2), ratioNote(15, 8), ratioNote(9, 4)]));
-    expect(par[1].m).toEqual(ratioNote(15, 8).m);
+    expect(fmt(par)).toEqual(fmt([ratioNote(1, 1), ratioNote(5, 4), ratioNote(3, 2)]));
+    expect(par[1].m).toEqual(ratioNote(5, 4).m);
     // no source: as stored in both frames
     const bare = { ...c, source: null };
     expect(chordPitchesFor(bare, 'parallel')).toEqual(c.pitches);

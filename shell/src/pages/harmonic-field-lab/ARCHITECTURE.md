@@ -176,9 +176,12 @@ hand-off can read `chordshelf.v1`; W-1: midicents only at the hand-off).
   (`{ gen, tab, subset: { pitches, root } }`: the tab's generation inputs as in `generators.v1`, its name, and its subset as pitches; null when the
   tab had no selection or the stored source was unusable: the chord still plays but cannot be reloaded).
 - Pitch frame rule (human decision 2026-11-14): `pitches` are FIELD-ABSOLUTE, the field's own pitches above 1/1, identical whether stashed in Parallel
-  or Relative (`frame` only records the switch). A shelf chord ALWAYS plays exactly as stored in both modes (human decision 2026-11-15:
-  a saved chord keeps its modal offset and sounds like the chip/sketch it came from); `chordPitchesFor(chord)` returns the stored pitches.
-  Example, mode root 3/2: stored 3/2, 15/8, 9/4; both Parallel and Relative play those.
+  or Relative (`frame` only records the switch). The Parallel | Relative switch (key 5) works for chords exactly as for mode previews, Play scale and the
+  computer keys (human decision 2026-11-15, superseding "as stored"): `chordPitchesFor(chord, frame)`: Relative plays them as stored; Parallel divides each by
+  `source.subset.root` (no source or root: as stored). Example, mode root 3/2: stored 3/2, 15/8, 9/4; Relative plays those, Parallel plays 1/1, 5/4, 3/2.
+  Chord chips (`chordPlan`, `playFieldChord`), Play sketch and hold 4 use the same rule with the tab's active mode root (`framedCents(p, c)` in `plan.ts`:
+  `modeAtBase ? c - rootC : c`), so a chip, the sketch of the same chord and its stash sound identical in each mode and key 5 moves them together.
+  Lights always land on the field-absolute pitch (the sounding pitch plus the root in Parallel, H-2): `pitchesPlan(..., light)`.
 - Actions: `shelf/stash { stash: StashRequest }` (the UI supplies the pitches, template, rootDeg, optional name and the date; tolerance, 1/1 Hz, frame,
   generator, subset, tab name and parent are read from the active tab and `ui` by the reducer), `shelf/rename`, `shelf/move { id, to }` (clamped),
   `shelf/delete`, `shelf/select { id, additive? }` (plain: only this slot, again clears; additive: toggle), `shelf/selectAll`, `shelf/selectNone`,
@@ -208,7 +211,7 @@ hand-off can read `chordshelf.v1`; W-1: midicents only at the hand-off).
 | Stash from a chip | `ChordsPanel.tsx` (`Chip`) | A found chip has a "+" corner button (shown on hover or focus, no size change at rest) that dispatches `shelf/stash` with the chip's field notes, root first then upward from the root, template and root degree. |
 | Armed chord | `ChordsPanel.tsx`, `useLabAudio.ts` | Clicking a chip that plays, or hold 1 on it, dispatches `sketch/arm` (click also sets the root degree of the chip). The row shows "Armed from a chord". |
 | Hold 4 | `useLabAudio.ts` (`playTarget`), `plan.ts` (`ARMED_DIGIT`, `pitchesPlan`) | Hover a note (or a strip mark: `note` / `strip` targets) and hold 4: `sketchPitches` of the hovered field note with the Sketch template (`LabProvider` passes `sketch.template ?? templates[0]`), played as held voices at `chordAmp(n)`; sweeping while held switches the target (the existing `heldDigits` loop); other targets and empty space mean nothing. Keys 1, 2, 3, 5 and Alt+1..9 are untouched; never while typing (same `isTyping` guard). |
-| Exact pitches | `PreviewTarget { kind: 'pitches', key, cents }`, `LabAudio.playCents` | Shelf slots, layered selections and the sketch play cents above 1/1 at their own pitch (like `playFieldChord`), each lighting the field note within 0.5 c (`litIndex`), else nothing (H-2). The cents of a stashed chord are its stored pitches in both modes. Sketch and hold 4 play field-absolute pitches (like chord chips). |
+| Exact pitches | `PreviewTarget { kind: 'pitches', key, cents }`, `LabAudio.playCents` | Shelf slots, layered selections and the sketch play cents above 1/1 at their own pitch (like `playFieldChord`), each lighting the field note within 0.5 c (`litIndex`), else nothing (H-2). The cents of a stashed chord are `chordPitchesFor(chord, ui.modePlayback)`; the sketch and hold 4 pass `framedCents` of the exact pitches. Every one of them passes a `light` array (field-absolute cents) so lights stay on the notes that coincide in the chosen frame. |
 
 Tests: `HarmonicFieldLab.shelf.test.tsx` (sketch, stash from the row and a chip, shelf play, hold 1 layering, rename, reorder, reload, delete; hold 4 on notes, sweep, armed template, typing), `plan.test.ts` (`pitchesPlan`), `layout.test.ts` (the `shelf` panel id).
 

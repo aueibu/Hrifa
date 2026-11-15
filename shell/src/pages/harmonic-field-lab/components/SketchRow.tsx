@@ -60,14 +60,25 @@ export function SketchRow() {
     () => (pitches ? matchToField(tab.field, tab.rep, pitches) : []),
     [pitches, tab.field, tab.rep]
   );
-  const cents = useMemo(() => (pitches ?? []).map((p) => p.c), [pitches]);
+  // absolute pitches light the field; what sounds follows Parallel | Relative like the chord chips and mode previews
+  const abs = useMemo(() => (pitches ?? []).map((p) => p.c), [pitches]);
+  const parallel = state.ui.modePlayback !== 'relative';
+  const cents = useMemo(
+    () => abs.map((c) => (parallel ? c - base.rootC : c)),
+    [abs, parallel, base.rootC]
+  );
   const found = useMemo(
     () => new Set(match.flatMap((m) => (m.idx === null ? [] : [m.idx]))),
     [match]
   );
   const step = (by: number) =>
     dispatch({ type: 'sketch/set', patch: { rootDeg: (((deg + by) % n) + n) % n } });
-  const target = { kind: 'pitches', key: `sketch:${cents.join(',')}`, cents } as const;
+  const target = {
+    kind: 'pitches',
+    key: `sketch:${cents.join(',')}`,
+    cents,
+    light: abs,
+  } as const;
   // the chord changed under a resting pointer (root, template): hold 1 must play the new one
   const hovered = useRef(false);
   const keyNow = target.key;
@@ -126,7 +137,7 @@ export function SketchRow() {
           variant="default"
           leftSection={<PlayIcon />}
           disabled={!pitches}
-          onClick={() => audio.playCents(cents)}
+          onClick={() => audio.playCents(cents, abs)}
         >
           Play sketch
         </Button>
