@@ -1,0 +1,318 @@
+/** M7b step 2 through the page: preset browser, breadcrumb and modified dot, Update / Save as new, notice, subset rows, Unassigned. */
+import { act, fireEvent, render, screen, within } from '@test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
+import { KEY_GENERATORS } from './state/persist';
+import { openBrowser, pickPreset, presetButton, subsetList } from './testUtils';
+
+// whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
+vi.setConfig({ testTimeout: 15_000 });
+
+const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
+const settle = () =>
+  act(async () => {
+    await new Promise((r) => setTimeout(r, 170));
+  });
+const typeSlow = async (el: HTMLElement, value: string) => {
+  type(el, value);
+  await settle();
+};
+const key = (el: HTMLElement, k: string) => fireEvent.keyDown(el, { key: k });
+const stored = () =>
+  JSON.parse(window.localStorage.getItem(KEY_GENERATORS) ?? '{}') as {
+    presets?: { id: string; name: string; folder: string }[];
+    subsets?: { id: string; owner: string; name: string; pitches: unknown[] }[];
+  };
+const rowNames = () =>
+  within(subsetList())
+    .queryAllByRole('button', { name: /^Rename / })
+    .map((b) => b.getAttribute('aria-label')!.replace(/^Rename /, ''));
+/** Divisions box of the EDO method. */
+const divisions = () => screen.getByRole('textbox', { name: 'Divisions' });
+const addButton = () => screen.getByRole('button', { name: 'Add subset' });
+
+beforeEach(() => window.localStorage.clear());
+afterEach(() => window.localStorage.clear());
+
+describe('preset browser', () => {
+  it('opens with the four folders; search is flat with folder paths; arrows, Enter and Escape work', () => {
+    render(<HarmonicFieldLabPage />);
+    expect(presetButton()).toHaveTextContent('Harmonic series > Harmonics 8–15');
+    const box = openBrowser();
+    const tree = screen.getByRole('tree', { name: 'Presets' });
+    const names = within(tree)
+      .getAllByRole('treeitem')
+      .map((r) => r.getAttribute('aria-level'));
+    expect(names[0]).toBe('1');
+    for (const f of ['Built-in', 'My presets', 'Recent', 'Untitled']) {
+      expect(within(tree).getByRole('treeitem', { name: new RegExp(`^${f}`) })).toBeInTheDocument();
+    }
+    // the current generator's folder is open and its row is highlighted
+    expect(within(tree).getByRole('treeitem', { name: /Harmonics 8–15/ })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    // typing searches everything, flat, each result with its path
+    type(box, 'carlos');
+    const hits = within(
+      screen.getByRole('listbox', { name: 'Preset search results' })
+    ).getAllByRole('option');
+    expect(hits).toHaveLength(3);
+    expect(hits[0]).toHaveTextContent('Built-in > Equal divisions > Non-octave');
+    // arrows move, Enter picks
+    key(box, 'ArrowDown');
+    expect(hits[1]).toHaveAttribute('aria-selected', 'true');
+    key(box, 'Enter');
+    expect(screen.queryByRole('combobox', { name: 'Search presets' })).toBeNull();
+    expect(presetButton()).toHaveTextContent(
+      'Equal divisions > Non-octave > Carlos Beta (11 ED 3/2)'
+    );
+    // Escape closes without picking
+    const box2 = openBrowser();
+    key(box2, 'ArrowDown');
+    fireEvent.keyDown(box2, { key: 'Escape' });
+    expect(screen.queryByRole('combobox', { name: 'Search presets' })).toBeNull();
+    expect(presetButton()).toHaveTextContent('Carlos Beta');
+  });
+
+  it('Right and Left open and close a folder, and Left on a preset goes to its folder; the info line follows', () => {
+    render(<HarmonicFieldLabPage />);
+    const box = openBrowser();
+    const tree = () => screen.getByRole('tree', { name: 'Presets' });
+    // go to the Built-in row (the open folder's first row) and close, then open it with Right
+    const builtin = () => within(tree()).getByRole('treeitem', { name: /^Built-in/ });
+    for (let i = 0; i < 8 && builtin().getAttribute('aria-selected') !== 'true'; i++) {
+      key(box, 'ArrowUp');
+    }
+    expect(builtin()).toHaveAttribute('aria-expanded', 'true');
+    key(box, 'ArrowLeft');
+    expect(builtin()).toHaveAttribute('aria-expanded', 'false');
+    key(box, 'ArrowRight');
+    expect(builtin()).toHaveAttribute('aria-expanded', 'true');
+    key(box, 'ArrowRight'); // already open: onto its first child
+    expect(within(tree()).getByRole('treeitem', { name: /^Harmonic series/ })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    key(box, 'Enter'); // a folder row toggles
+    expect(within(tree()).getByRole('treeitem', { name: /^Harmonic series/ })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    // the info line shows the highlighted preset's description
+    key(box, 'ArrowRight');
+    key(box, 'ArrowDown');
+    expect(
+      screen.getByText(/overtone|harmonics/i, { selector: '[aria-live="polite"]' })
+    ).toBeInTheDocument();
+  });
+
+  it('shows the breadcrumb and a modified dot when the generator is edited', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    expect(presetButton()).toHaveTextContent('Equal divisions > Small (5 to 12) > 12-EDO');
+    expect(presetButton().querySelector('[data-modified]')).toBeNull();
+    await typeSlow(divisions(), '13'); // no 13-EDO preset
+    expect(presetButton()).toHaveTextContent('12-EDO');
+    expect(presetButton().querySelector('[data-modified]')).not.toBeNull();
+    expect(presetButton()).toHaveAccessibleName(/\(modified\)$/);
+  });
+});
+
+describe('Update preset and Save as new', () => {
+  it('Update is disabled for a built-in, with the reason as its tooltip', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    await typeSlow(divisions(), '13');
+    const update = screen.getByRole('button', { name: 'Update preset' });
+    expect(update).toBeDisabled();
+    fireEvent.mouseEnter(update.parentElement!);
+    expect(
+      await screen.findByText(
+        /Built-in presets cannot be changed. Save as new instead./,
+        {},
+        { timeout: 2000 }
+      )
+    ).toBeInTheDocument();
+  });
+
+  const openSave = (shift = false) =>
+    fireEvent.click(screen.getByRole('button', { name: 'Save as new' }), { shiftKey: shift });
+  const saveForm = (name: string, folder: string) => {
+    type(screen.getByRole('textbox', { name: 'New preset name' }), name);
+    type(screen.getByRole('combobox', { name: 'Folder' }), folder);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  };
+
+  it('plain Save as new starts with no subsets; Shift+click copies them', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    fireEvent.click(addButton());
+    expect(rowNames()).toEqual(['Subset 1']);
+    await typeSlow(divisions(), '24');
+    // plain: no subsets, a folder path creates folders
+    openSave();
+    expect(screen.getByText('Starts with no subsets.')).toBeInTheDocument();
+    saveForm('Mine', 'Pools/Seven');
+    expect(presetButton()).toHaveTextContent('My presets > Pools > Seven > Mine');
+    expect(rowNames()).toEqual([]);
+    expect(stored().presets?.[0]).toMatchObject({ name: 'Mine', folder: 'Pools/Seven' });
+    expect(screen.queryByText(/copied subset/)).toBeNull();
+    // Shift+click: the form says it copies, and the copy notice has no Undo
+    await pickPreset('12-EDO');
+    await typeSlow(divisions(), '24');
+    openSave(true);
+    expect(screen.getByText(/Copies 1 subset/)).toBeInTheDocument();
+    saveForm('Copy', 'Pools');
+    expect(rowNames()).toEqual(['Subset 1']);
+    expect(screen.getByText(/Saved 'Copy' with 1 copied subset/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    // the dropdown lists both ways
+    fireEvent.click(screen.getByRole('button', { name: 'More ways to save as new' }));
+    expect(screen.getByRole('menuitem', { name: /empty subset list/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitem', { name: /copy 1 subset .*Shift\+click/ })
+    ).toBeInTheDocument();
+  });
+
+  it('Update reports what changed; Show removed lists it read-only; Undo restores; a refusal line can be dismissed', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    openSave();
+    saveForm('Twelve', '');
+    fireEvent.click(addButton());
+    await typeSlow(divisions(), '7'); // shares only 1/1 with 12-EDO
+    const update = screen.getByRole('button', { name: 'Update preset' });
+    expect(update).toBeEnabled();
+    fireEvent.click(update);
+    const notice = screen.getByText(/^Updated 'Twelve'/).closest('[role="status"]') as HTMLElement;
+    expect(notice).toHaveTextContent(/One subset lost 11\.0 pitches on average \(most: 11\)\./);
+    expect(stored().subsets?.[0].pitches).toHaveLength(1);
+    // review list: the subset, read only
+    fireEvent.click(within(notice).getByRole('button', { name: 'Show removed' }));
+    const review = screen.getByRole('list', { name: 'Subsets that lost pitches' });
+    expect(
+      within(review).getByRole('img', {
+        name: /Subset 1: 1 pitches kept \(solid\), 11 removed \(dashed\)/,
+      })
+    ).toBeInTheDocument();
+    expect(within(review).queryByRole('textbox')).toBeNull();
+    expect(review.querySelectorAll('[data-kind="lost"]')).toHaveLength(11);
+    expect(review.querySelectorAll('[data-kind="kept"]')).toHaveLength(1);
+    // Undo: the exact previous subset is back and the notice is gone
+    fireEvent.click(within(notice).getByRole('button', { name: 'Undo' }));
+    expect(screen.queryByText(/^Updated 'Twelve'/)).toBeNull();
+    expect(stored().subsets?.[0].pitches).toHaveLength(12);
+    // Update again, then dismiss the notice
+    fireEvent.click(screen.getByRole('button', { name: 'Update preset' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss notice' }));
+    expect(screen.queryByText(/^Updated 'Twelve'/)).toBeNull();
+  });
+});
+
+describe('subset rows', () => {
+  it('Add makes the next row without a name, highlights it, a duplicate highlights the existing row, click the name to rename', () => {
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(addButton());
+    expect(rowNames()).toEqual(['Subset 1']);
+    const li = () => subsetList().querySelector('[data-subset]') as HTMLElement;
+    expect(li()).toHaveAttribute('data-flash', 'new');
+    // the same selection again: no second row, the existing one is highlighted
+    fireEvent.click(addButton());
+    expect(rowNames()).toEqual(['Subset 1']);
+    expect(li()).toHaveAttribute('data-flash', 'duplicate');
+    // a different selection makes Subset 2
+    fireEvent.click(
+      within(screen.getByRole('group', { name: /^Pitch circle/ })).getAllByRole('button')[1]
+    );
+    fireEvent.click(addButton());
+    expect(rowNames()).toEqual(['Subset 1', 'Subset 2']);
+    // rename in place: Enter keeps, Escape cancels
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Subset 2' }));
+    const box = screen.getByRole('textbox', { name: 'New name' });
+    type(box, 'Quiet');
+    key(box, 'Escape');
+    expect(rowNames()).toEqual(['Subset 1', 'Subset 2']);
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Subset 2' }));
+    const box2 = screen.getByRole('textbox', { name: 'New name' });
+    type(box2, 'Quiet');
+    key(box2, 'Enter');
+    expect(rowNames()).toEqual(['Subset 1', 'Quiet']);
+    expect(stored().subsets?.map((s) => s.name)).toEqual(['Subset 1', 'Quiet']);
+  });
+
+  it('subsets of a generator vanish when you switch generator and come back with it', async () => {
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(addButton());
+    await pickPreset('12-EDO');
+    expect(rowNames()).toEqual([]);
+    await pickPreset('Harmonics 8–15');
+    expect(rowNames()).toEqual(['Subset 1']);
+  });
+
+  it('shows orphaned subsets in a collapsed Unassigned group; loading one reports the pitches the field lacks', () => {
+    window.localStorage.setItem(
+      KEY_GENERATORS,
+      JSON.stringify({
+        version: 1,
+        presets: [],
+        untitled: [],
+        subsets: [
+          {
+            id: 's1',
+            owner: 'b:A preset from an older version',
+            name: 'Lost one',
+            pitches: [
+              { m: null, c: 0 },
+              { m: null, c: 123.4 },
+            ],
+            root: { m: null, c: 0 },
+          },
+        ],
+        recents: [],
+        next: { preset: 1, untitled: 1, subset: 2 },
+      })
+    );
+    render(<HarmonicFieldLabPage />);
+    const group = screen.getByRole('button', { name: /^Unassigned \(1\)/ });
+    expect(group).toHaveAttribute('aria-expanded', 'false');
+    expect(rowNames()).toEqual([]);
+    fireEvent.click(group);
+    expect(rowNames()).toEqual(['Lost one']);
+    fireEvent.click(within(subsetList()).getByRole('button', { name: /^Lost one: 2 notes/ }));
+    expect(
+      screen.getByText(/'Lost one' loaded: 1 of 2 pitches are not in this field\./)
+    ).toBeInTheDocument();
+    // the tab is still on its own generator
+    expect(presetButton()).toHaveTextContent('Harmonics 8–15');
+    // dismissable
+    fireEvent.click(screen.getAllByRole('button', { name: 'Dismiss message' })[0]);
+    expect(screen.queryByText(/pitches are not in this field/)).toBeNull();
+  });
+});
+
+describe('My presets rows', () => {
+  it('rename, move and delete from the row; delete keeps the subsets under Untitled', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    fireEvent.click(screen.getByRole('button', { name: 'Save as new' }));
+    type(screen.getByRole('textbox', { name: 'New preset name' }), 'Twelve');
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(addButton());
+    // rename + move
+    openBrowser();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit preset Twelve' }));
+    type(screen.getByRole('textbox', { name: 'Preset name' }), 'Dozen');
+    type(screen.getByRole('combobox', { name: 'Folder' }), 'A/B');
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(stored().presets?.[0]).toMatchObject({ name: 'Dozen', folder: 'A/B' });
+    expect(presetButton()).toHaveTextContent('My presets > A > B > Dozen');
+    // delete asks first, then keeps the subset under Untitled
+    fireEvent.click(screen.getByRole('button', { name: 'Delete preset Dozen' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/Subsets stay under Untitled/);
+    fireEvent.click(within(screen.getByRole('alert')).getByRole('button', { name: 'Delete' }));
+    expect(stored().presets).toEqual([]);
+    expect(stored().subsets?.[0].owner).toMatch(/^u:/);
+    expect(rowNames()).toEqual(['Subset 1']);
+  });
+});

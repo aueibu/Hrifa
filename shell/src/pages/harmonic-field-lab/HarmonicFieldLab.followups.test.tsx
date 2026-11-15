@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { KEY_SETTINGS, KEY_TABS } from './state/persist';
+import { pickPreset } from './testUtils';
 
 // whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
 vi.setConfig({ testTimeout: 15_000 });
@@ -14,8 +15,7 @@ const ring = () => screen.getByRole('group', { name: /^Pitch circle/ });
 const count = () =>
   /(\d+) of (\d+) notes selected/.exec(ring().getAttribute('aria-label')!)!.slice(1).map(Number);
 const dot = (name: RegExp) => within(ring()).getByRole('button', { name });
-const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
-const preset = (name: string) => type(screen.getByRole('combobox', { name: 'Preset' }), name);
+const preset = pickPreset;
 const HEXANY = 'Hexany (1 3 5 7, choose 2)';
 const modeText = () => screen.getByText(/mode/, { selector: 'span' });
 
@@ -107,18 +107,18 @@ describe('CPS chord list', () => {
   const otonal = () => within(section()).getByRole('group', { name: 'CPS otonal chords' });
   const utonal = () => within(section()).getByRole('group', { name: 'CPS utonal chords' });
 
-  it('is shown for the CPS method only', () => {
+  it('is shown for the CPS method only', async () => {
     render(<HarmonicFieldLabPage />);
     expect(screen.queryByRole('region', { name: 'Chords inside this CPS' })).toBeNull();
-    preset(HEXANY);
+    await preset(HEXANY);
     expect(section()).toBeInTheDocument();
-    preset('19-EDO');
+    await preset('19-EDO');
     expect(screen.queryByRole('region', { name: 'Chords inside this CPS' })).toBeNull();
   });
 
-  it('lists four otonal and four utonal chips named by their factors', () => {
+  it('lists four otonal and four utonal chips named by their factors', async () => {
     render(<HarmonicFieldLabPage />);
-    preset(HEXANY);
+    await preset(HEXANY);
     const chips = (g: HTMLElement) => within(g).getAllByRole('button', { name: /chord / });
     expect(chips(otonal())).toHaveLength(4);
     expect(chips(utonal())).toHaveLength(4);
@@ -132,10 +132,10 @@ describe('CPS chord list', () => {
     expect(document.querySelector('[data-tipk="utonal"]')).not.toBeNull();
   });
 
-  it('click plays and highlights (sticky, lit in the views); Shift-click makes it the subset', () => {
+  it('click plays and highlights (sticky, lit in the views); Shift-click makes it the subset', async () => {
     vi.useFakeTimers();
     render(<HarmonicFieldLabPage />);
-    preset(HEXANY);
+    await preset(HEXANY);
     const chip = within(otonal()).getByRole('button', { name: /chord 3:5:7:/ });
     fireEvent.click(chip);
     expect(chip).toHaveAttribute('aria-pressed', 'true');
@@ -234,9 +234,9 @@ describe('Lattice axis modes', () => {
     expect(document.querySelector('[data-tipk="latticeMode"]')).not.toBeNull();
   });
 
-  it('a CPS offers Factors (not Generators): the star with an axis key, flat only, persisted', () => {
+  it('a CPS offers Factors (not Generators): the star with an axis key, flat only, persisted', async () => {
     render(<HarmonicFieldLabPage />);
-    preset(HEXANY);
+    await preset(HEXANY);
     openLattice();
     expect(modeRadio('Generators')).toBeDisabled();
     expect(modeRadio('Factors')).toBeEnabled();
@@ -256,9 +256,9 @@ describe('Lattice axis modes', () => {
     expect(dimRadio('3D')).toBeEnabled();
   });
 
-  it('a lattice field offers Generators: the grid with one arrow per generator', () => {
+  it('a lattice field offers Generators: the grid with one arrow per generator', async () => {
     render(<HarmonicFieldLabPage />);
-    preset('7-limit 3×3×3 box');
+    await preset('7-limit 3×3×3 box');
     openLattice();
     expect(modeRadio('Factors')).toBeDisabled();
     fireEvent.click(modeRadio('Generators'));
@@ -266,24 +266,24 @@ describe('Lattice axis modes', () => {
     expect(within(lattice()).getAllByTestId('axis-key')).toHaveLength(3);
   });
 
-  it('a stored mode the field cannot use draws primes; the setting is kept for when it can', () => {
+  it('a stored mode the field cannot use draws primes; the setting is kept for when it can', async () => {
     render(<HarmonicFieldLabPage />);
-    preset(HEXANY);
+    await preset(HEXANY);
     openLattice();
     fireEvent.click(modeRadio('Factors'));
-    preset('19-EDO');
+    await preset('19-EDO');
     // 19-EDO has no monzos: nothing to place, but the mode is not Factors
     expect(modeRadio('Primes')).toBeChecked();
     expect((stored(KEY_SETTINGS) as { viz: { viz1: { latMode: string } } }).viz.viz1.latMode).toBe(
       'cps'
     );
-    preset(HEXANY);
+    await preset(HEXANY);
     expect(modeRadio('Factors')).toBeChecked();
   });
 
-  it('click toggles, Alt+click pins, hover rings, a sounding note lights, in the factor lattice', () => {
+  it('click toggles, Alt+click pins, hover rings, a sounding note lights, in the factor lattice', async () => {
     render(<HarmonicFieldLabPage />);
-    preset(HEXANY);
+    await preset(HEXANY);
     openLattice();
     fireEvent.click(modeRadio('Factors'));
     const node = (re: RegExp) => within(lattice()).getAllByRole('button', { name: re })[0];

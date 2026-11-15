@@ -5,6 +5,7 @@ import { fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
+import { pickPreset } from './testUtils';
 
 // whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
 vi.setConfig({ testTimeout: 15_000 });
@@ -14,7 +15,6 @@ const ring = () => screen.getByRole('group', { name: /^Pitch circle/ });
 const count = () =>
   /(\d+) of (\d+) notes selected/.exec(ring().getAttribute('aria-label')!)!.slice(1).map(Number);
 const noteDots = () => within(ring()).getAllByRole('button');
-const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
 const MAJOR = [0, 2, 4, 5, 7, 9, 11];
 // vitest runs from the shell root
 const panelsCss = readFileSync(
@@ -32,9 +32,9 @@ afterEach(() => {
 });
 
 /** 12-EDO with the C major scale selected (steps 0 2 4 5 7 9 11), the Keys panel open. */
-function openC12Keys() {
+async function openC12Keys() {
   render(<HarmonicFieldLabPage />);
-  type(screen.getByRole('combobox', { name: 'Preset' }), '12-EDO');
+  await pickPreset('12-EDO');
   fireEvent.click(screen.getByRole('button', { name: 'None' }));
   MAJOR.forEach((i) => fireEvent.click(noteDots()[i]));
   fireEvent.click(within(rail()).getByRole('tab', { name: /^Keys/ }));
@@ -83,8 +83,8 @@ describe('Modes panel: wrapped tiles keep their columns', () => {
 });
 
 describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
-  it('shows x|y under each ring: G major 6|7, F# major 2|7, C major 7|7', () => {
-    openC12Keys();
+  it('shows x|y under each ring: G major 6|7, F# major 2|7, C major 7|7', async () => {
+    await openC12Keys();
     expect(count()).toEqual([7, 12]);
     expect(within(rings()[7]).getByTestId('common-tones')).toHaveTextContent('6|7');
     expect(within(rings()[6]).getByTestId('common-tones')).toHaveTextContent('2|7');
@@ -92,8 +92,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(screen.getByTestId('key-summary').textContent).not.toMatch(/\d\/\d/);
   });
 
-  it('starts on the current key (everything common); hover shows another key and leaving goes back', () => {
-    openC12Keys();
+  it('starts on the current key (everything common); hover shows another key and leaving goes back', async () => {
+    await openC12Keys();
     expect(summary()).toBe(SAME);
     fireEvent.mouseEnter(ringBtn(7));
     expect(summary()).toBe(G);
@@ -127,8 +127,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(kinds('dropped')?.querySelector('path[class*="bigKeyStrike"]')).not.toBeNull();
   });
 
-  it('click = Switch: the key becomes the subset and stays shown', () => {
-    openC12Keys();
+  it('click = Switch: the key becomes the subset and stays shown', async () => {
+    await openC12Keys();
     fireEvent.click(ringBtn(7));
     expect(count()).toEqual([7, 12]);
     expect(noteDots()[6]).toHaveAccessibleName(/in subset/); // F# joined
@@ -138,8 +138,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(screen.getByText(/key on .* \(last clicked\)/)).toBeInTheDocument();
   });
 
-  it('Shift+click = Add: the key notes join the subset, the mode root is unchanged', () => {
-    openC12Keys();
+  it('Shift+click = Add: the key notes join the subset, the mode root is unchanged', async () => {
+    await openC12Keys();
     fireEvent.click(ringBtn(7), { shiftKey: true });
     expect(count()).toEqual([8, 12]);
     for (const i of [...MAJOR, 6]) {
@@ -147,8 +147,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     }
   });
 
-  it('Ctrl+click previews without changing the subset, and the big view keeps that key until the subset changes', () => {
-    openC12Keys();
+  it('Ctrl+click previews without changing the subset, and the big view keeps that key until the subset changes', async () => {
+    await openC12Keys();
     fireEvent.click(ringBtn(7), { ctrlKey: true });
     expect(count()).toEqual([7, 12]);
     fireEvent.mouseLeave(ringBtn(7));
@@ -158,8 +158,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(screen.getByText(/\(current key\)/)).toBeInTheDocument();
   });
 
-  it('a new preset, mode, tab or Select all also resets to the current key', () => {
-    openC12Keys();
+  it('a new preset, mode, tab or Select all also resets to the current key', async () => {
+    await openC12Keys();
     fireEvent.click(ringBtn(7), { ctrlKey: true });
     fireEvent.mouseLeave(ringBtn(7));
     expect(summary()).toBe(G);
@@ -167,8 +167,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(screen.getByText(/\(current key\)/)).toBeInTheDocument();
   });
 
-  it('the Switch and Add buttons act on the shown key and are off when they would change nothing', () => {
-    openC12Keys();
+  it('the Switch and Add buttons act on the shown key and are off when they would change nothing', async () => {
+    await openC12Keys();
     const sw = () => screen.getByRole('button', { name: 'Switch to key' });
     const add = () => screen.getByRole('button', { name: 'Add key' });
     expect(sw()).toBeDisabled();
@@ -183,8 +183,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(noteDots()[5]).toHaveAccessibleName(/in subset/);
   });
 
-  it('Switch to key from the button drops the notes the key does not use', () => {
-    openC12Keys();
+  it('Switch to key from the button drops the notes the key does not use', async () => {
+    await openC12Keys();
     fireEvent.click(ringBtn(7), { ctrlKey: true });
     fireEvent.mouseLeave(ringBtn(7));
     fireEvent.click(screen.getByRole('button', { name: 'Switch to key' }));
@@ -195,8 +195,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(summary()).toBe(SAME);
   });
 
-  it('hovering a note in the big view lights it in every view; sounding notes are lit there too', () => {
-    openC12Keys();
+  it('hovering a note in the big view lights it in every view; sounding notes are lit there too', async () => {
+    await openC12Keys();
     const big = screen.getByTestId('big-key-ring');
     fireEvent.mouseEnter(big.querySelector('[data-note="4"]')!);
     expect(ring().querySelectorAll('circle[class*="selRing"]')).toHaveLength(1);
@@ -208,8 +208,8 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(big.querySelectorAll('circle[class*="bigKeyLit"]').length).toBeGreaterThan(0);
   });
 
-  it('every new label and control has a tooltip target', () => {
-    openC12Keys();
+  it('every new label and control has a tooltip target', async () => {
+    await openC12Keys();
     const keysPanel = screen.getByRole('list', { name: 'Keys' }).closest('div')!;
     const tipks = [...keysPanel.querySelectorAll('[data-tipk]')].map((e) =>
       e.getAttribute('data-tipk')

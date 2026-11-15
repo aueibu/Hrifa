@@ -1,6 +1,6 @@
 # Harmonic Field Lab
 
-Status: M7 built (card list + live retuner panel), awaiting the human's audio check. The approved one-screen layout runs on one lab state; the generator, selection, tabs, saved subsets, stats, strip, field table and the Chords (with the editable template list), Spectrum, Keys & Modes, visualizer and Retuner panels are live. Arc: `arcs/harmonic-field-lab`. Route `/harmonic-field-lab` (the frozen layout mock route was retired in M6).
+Status: M7 approved; M7b built (generator library data layer and its UI: preset browser, Update / Save as new, notice, subset rows). The approved one-screen layout runs on one lab state; the generator, selection, tabs, saved subsets, stats, strip, field table and the Chords (with the editable template list), Spectrum, Keys & Modes, visualizer and Retuner panels are live. Arc: `arcs/harmonic-field-lab`. Route `/harmonic-field-lab` (the frozen layout mock route was retired in M6).
 
 The lab is a standalone Hrifa page (decided 2026-11-12): its own route, tabs and settings, permanently. A later
 Composition Workbench integration reuses the core (`src/lib/harmonic-field/`) and the lab's section components; it does
@@ -17,6 +17,7 @@ reference only.
 | `state/generate.ts` | `GenSpec` (the generation inputs of a tab), `generateField` (inline errors, never throws), presets to specs, `genKey` (which pitch collection a spec builds), `autoName`, `mosFor`. |
 | `state/labState.ts` | `LabState`, `Tab`, `Saved` (the legacy flat shape, used only to migrate), `UiSettings`, every `Action` and the pure `labReducer`. |
 | `state/generatorLibrary.ts` | The generator library (M7b), pure: `GenLibrary`, owners, subsets as pitches, add / rename / delete, user presets, Untitled generators, Update + Undo, copy, recents, `migrateSubsets`. |
+| `components/PresetBrowser.tsx`, `LibraryBar.tsx`, `SavedSubsets.tsx` | The generator-library UI (M7b step 2): preset browser, Update / Save as new, notice, subset rows (see "Preset browser and subset rows"). `state/presetTree.ts`, `builtinFolders.ts`, `noticeText.ts` are its pure helpers. |
 | `state/libraryStore.ts` | `generators.v1`: `sanitizeLibrary`, `libraryToStored`, `loadLibrary` (stored, else migrated, else empty), `saveLibrary`. |
 | `state/derive.ts` | Analysis of the active tab as pure functions (`deriveBase`, `stripDevs`, `spectrumOf`, `chordModel`, `keysOf`, `lattice2dOf/3dOf`, `edoOf`, `dissOf`, `isoOf`, `fieldRowsOf`, `fifthsFor`) with the prototype's size caps. |
 | `state/LabProvider.tsx` | The provider: reducer, restore, persistence effects, `useMemo` analyses, the voice engine hook. `state/context.ts` holds the `Lab` shape, `useLab()`, `useViz()`. |
@@ -160,6 +161,21 @@ built-in preset's inputs is owned by that preset (the one the entries name, else
 come from each `selCents` looked up in the field the entry's generator builds (exact monzo when a note is within 0.01 c, else cents only; a generator
 that does not build gives cents-only pitches), the root is the pitch at the stored mode (the first when out of range). Every entry appears with its id
 and name. The first library change writes `generators.v1`, which is then authoritative.
+
+### Preset browser and subset rows (M7b, step 2: the UI)
+
+Everything below reads the library only through `useLab()` and the actions of "Generator library" above; no reducer semantics changed.
+
+| piece | where | what it does |
+| --- | --- | --- |
+| Preset control + browser | `components/PresetBrowser.tsx` | A button showing the owner's path (`Equal divisions > Non-octave > Carlos Alpha (9 ED 3/2)`; user presets `My presets > Pools > Seven > Name`; Untitled `Untitled > <auto name>`; `(edited by hand)` with no owner) plus a dot (`data-modified`) when `Lab.modified`. It opens a popover: search box (focus stays there), a tree (`role="tree"`) or, while typing, a flat `listbox` of results each with its folder path, and a one-line info line for the highlighted row. Keys on the search box: Up/Down move, Right opens a folder (or steps into it), Left closes it (or goes to the parent), Enter picks or toggles, Escape closes; Left/Right only act on the tree while the box is empty. Choosing a preset dispatches `preset/open { owner }`. Rows of user presets show Edit (rename and folder path, then `preset/rename` and `preset/move`; the tree follows the preset to its new folder) and Delete (asks first: "Subsets stay under Untitled", then `preset/delete`). Counts: folder rows sum their subsets, preset rows show theirs (always for user presets, only when above 0 for the others). |
+| Tree data | `state/presetTree.ts` (pure) | `buildTree(lib)`: roots Built-in, My presets, Recent (`lib.recents`, last 8), Untitled (only generators that hold subsets). `visibleRows`, `searchPresets` (every word must be in the name or folder path; Recent is skipped, it repeats the others), `ownerPath`, `foldersAbove`. |
+| Built-in folder table | `state/builtinFolders.ts` (pure) | A presentation table keyed by preset name: `BUILTIN_SUBFOLDERS[group][subfolder] = names`. A preset not listed sits at the top of its group, so `presets.ts` and `vectors.json` are untouched. Split: Equal divisions: Small (5 to 12), Medium (19 to 31), Large (41 to 72), Non-octave (Bohlen-Pierce, Carlos Alpha, Beta, Gamma); Additive / lattice: Pythagorean, Meantone, Just lattices (Ellis's Duodene, the 3x3x3 box, three diamonds), Golden generator stays loose; Combination product sets: Tetrads, Hexany, Dekany, Pentadekany, Eikosany, Larger sets (the two 35-note CPS and the Hebdomekontany); Historic & custom: European (Ptolemy, Werckmeister III), the rest loose; Harmonic series is not split. `builtinFolders.test.ts` checks every table name is a real preset in its own group and listed once. |
+| Split button | `components/LibraryBar.tsx` (`LibraryActions`) | **Update preset** (`preset/update`; disabled when `!Lab.canUpdate`, the tooltip carries `Lab.updateBlocker`, so a built-in owner shows "Built-in presets cannot be changed"). **Save as new** opens a name + folder form (the folder box suggests existing folders through a datalist); a plain click saves with no subsets, Shift+click copies them (`preset/save { copySubsets }`), and the arrow beside the button lists both ways spelled out. |
+| Notice | `LibraryBar.tsx` (`LibraryNotice`) | From `state.notice`: the lib's `reportSentence` for an update (with Undo = `notice/undo`), `noticeText.copySentence` for a copy (no Undo), Show removed (`RemovedReview`: one strip per `report.detail` entry, kept pitches solid, removed ones dashed, read-only, runtime only), dismiss = `notice/dismiss`. `state.refusal` shows as a dismissable red line (dismissal is local to the component). |
+| Subset rows | `components/SavedSubsets.tsx` | The rows of `Lab.owner`, re-resolved against the tab's field (sparkline rows aligned to the strip, unchanged look). **Add** = `subset/add` (no name asked); the row `lastAdded` names flashes (`data-flash="new"` or `"duplicate"`, a CSS fade, 1.6 s) and is scrolled into view; click a row's name to rename in place (`subset/rename`: Enter or leaving keeps, Escape cancels); the strip loads (`subset/load`), the x deletes. "All" lists other generators' rows. **Unassigned (n)**: `orphanSubsets`, a collapsed group at the bottom; loading one applies its pitches to the current tab, and a line shows `lastLoad.missing` ("'X' loaded: 1 of 2 pitches are not in this field"). The "Include new notes when the field changes" checkbox moved from the old save popover into the generator's gear fold-out. |
+
+Tests: `HarmonicFieldLab.library.test.tsx` (the browser, breadcrumb and dot, Update disabled for a built-in, Save as new plain and Shift, notice with Undo and Show removed, Add / rename / duplicate, Unassigned, row edit and delete); `testUtils.tsx` holds the helpers (`pickPreset`, `addSubsetNamed`) the older page tests now use instead of the former native select and save popover.
 
 ### Persistence
 
@@ -331,7 +347,7 @@ built (the human does not want it).
 | Header: Play scale, Play chord, Stop | Top bar transport. |
 | Tabs: switch, rename, close, + New | Top bar tabs (Alt+1..9 switches). |
 | Tabs: Duplicate | Built: the copy button beside the plus (`tab/duplicate`): a new tab "<name> copy" after the current one, active, with the same generation, selection, mode root and pick settings; stored in `tabs.v1` like any tab. |
-| Preset and its info text | Generator column, preset menu with its fact-checked description tooltip. |
+| Preset and its info text | Generator column, the preset browser (search, folders, one-line info for the highlighted row; the control's tooltip carries the built-in's description). |
 | Method, repeat interval | Generator column: method tabs; repeat in the gear fold-out. |
 | Starting harmonic, Divisions, Lattice shape (box or diamond, distance, both directions), axes (generator, count, centre), MOS chips, CPS factors and k, Custom list | Generator column, per-method parameters. |
 | Load .scl, Export .scl | Custom method (Load .scl file); Saved subsets header (Export .scl). |
@@ -340,8 +356,8 @@ built (the human does not want it).
 | All / None / Invert, Mode stepper | Under the ring (joined button row; mode stepper). |
 | Pick nearest (scale, m-ED, Targets 12 / JI, Octave to repeat, result text) | Under the ring: Nearest scale menu with its Targets switch and message. |
 | Max odd limit and Select | Entry "Odd limit..." of the Nearest scale menu. |
-| Include new notes when the field changes | Saved subsets header checkbox. |
-| Save subset, saved list (load, delete) | Saved subsets list (load, preview on hover, rename, delete, All collections). |
+| Include new notes when the field changes | The generator gear fold-out (it was the saved-subsets header checkbox; M7b moved it). |
+| Save subset, saved list (load, delete) | Subset rows (Add, click the name to rename, load, preview on hover, delete, All generators, Unassigned group). |
 | Compare to (picked, 12-EDO, JI odd limit, m-EDO) | Tuner strip header. |
 | Ribbon (pitches with 12-EDO spacing) | Tuner strip (with 100 c reference lines and the scale steps row). |
 | Lattice: Axes = Primes, Ratio labels | Visualizer, Lattice view (2D or 3D, axes ranked by fit with Auto, Ratios checkbox, pop-out). |

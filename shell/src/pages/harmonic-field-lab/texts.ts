@@ -76,8 +76,38 @@ const entries = {
   /* ---- generator ---- */
   preset: {
     term: 'Preset',
-    text: 'A ready-made starting point that fills in the method and its numbers. Example: "Harmonics 8-15" is one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note.',
-    see: ['method'],
+    text: 'The generator this tab is on, shown as its folder path (for example Equal divisions > Non-octave > Carlos Alpha). Click to browse: type to search every preset at once, or open the folders (Built-in, My presets, Recent, Untitled). Choosing one fills in the method and its numbers. A dot after the name means you changed the generator since: the preset itself is untouched until you press Update preset, or you can keep the change with Save as new. Example: pick Harmonics 8-15 (one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note), raise the starting harmonic, and the dot appears.',
+    see: ['method', 'presetUpdate', 'presetSaveNew'],
+  },
+  presetUpdate: {
+    term: 'Update preset',
+    text: 'Writes the generator you have edited into the preset it came from. Every subset of that preset is matched against the new notes: pitches that no longer exist are dropped, and a subset left with none is removed. A line next to the preset says what changed, and Undo puts everything back exactly. Built-in presets cannot be changed (use Save as new), and the button is grayed out, with the reason on hover, when nothing has changed. Example: a preset of harmonics 8-15 with a subset on 11/8; change it to harmonics 16-31 and Update: 11/8 is still found as 22/16, so the subset keeps it.',
+    see: ['preset', 'presetSaveNew', 'presetUndo'],
+  },
+  presetSaveNew: {
+    term: 'Save as new',
+    text: "Saves the generator as a new preset of your own, with a name and an optional folder (type Pools/Seven to make or reuse nested folders; existing folders are suggested). A plain click starts it with no subsets. Shift+click (or the arrow beside the button) also copies the current preset's subsets, matched against this generator. The original preset is not changed. Example: edit Hexany to use 1 3 5 11, then Shift+click Save as new, name it Hexany 11 in the folder Hexanies: the subsets you had carry over where their pitches still exist.",
+    see: ['preset', 'presetUpdate'],
+  },
+  presetUndo: {
+    term: 'Undo update',
+    text: 'Puts the preset and its subsets back exactly as they were before the last Update. Only what the Update changed is touched, so subsets you added since stay. The line disappears as soon as you edit the generator again or open another one. Example: an Update removed two subsets; Undo brings them back at their old places.',
+    see: ['presetUpdate'],
+  },
+  presetShowRemoved: {
+    term: 'Show removed',
+    text: 'Lists the subsets the last Update (or copy) changed, drawn as small strips: pitches that survived are solid lines, pitches that no longer exist in the generator are dashed, and a subset that lost everything is all dashed. It is only a review: nothing here can be edited, and it is not stored. Example: a subset of 1/1, 5/4 and 11/8 on a generator that lost 11/8 shows two solid lines and one dashed.',
+    see: ['presetUpdate'],
+  },
+  presetEdit: {
+    term: 'Edit preset',
+    text: 'Renames one of your presets or moves it to another folder (a path such as Pools/Seven; empty puts it at the top of My presets). Its subsets and generator are unchanged. Example: move Hexany 11 from Hexanies to Pools/Seven.',
+    see: ['preset'],
+  },
+  presetDelete: {
+    term: 'Delete preset',
+    text: 'Removes one of your presets after you confirm. Its subsets are not lost: they stay under Untitled, with the generator the preset had. A preset with no subsets is gone for good. Example: delete Hexany 11 with three subsets, and the three rows stay available under Untitled.',
+    see: ['preset', 'unassigned'],
   },
   method: {
     term: 'Method',
@@ -200,9 +230,15 @@ const entries = {
     term: 'Include new notes when the field changes',
     text: 'When on, notes that appear after you change the generator are added to your subset instead of left out. Example: raise the starting harmonic and the new notes join automatically.',
   },
-  saveSubset: {
-    term: 'Save',
-    text: 'Stores the current subset under a name so you can come back to it. Saved subsets are listed below the name box. Example: name the seven-note scale No 11/8.',
+  addSubset: {
+    term: 'Add subset',
+    text: 'Puts the current selection into the next new row of this generator, no name asked: it is called Subset 1, Subset 2 and so on, and you click its name to rename it. If a row with exactly these notes and the same mode root exists, that row lights up instead of making a copy. Example: pick the seven notes you like, press Add, and a row "Subset 1" appears and flashes.',
+    see: ['savedSubsets', 'renameSaved'],
+  },
+  unassigned: {
+    term: 'Unassigned subsets',
+    text: 'Subsets whose generator is gone (for example a built-in preset that was renamed in a newer version). They are kept, never deleted for you. Open the group and click one to apply its pitches to the current generator; if some pitches do not exist in it, a line says how many were missing. Example: a subset of 6 pitches loaded on a field that has 5 of them reports "1 of 6 pitches are not in this field".',
+    see: ['savedSubsets'],
   },
   exportScl: {
     term: 'Export .scl',
@@ -210,7 +246,7 @@ const entries = {
   },
   savedSubsets: {
     term: 'Saved subsets',
-    text: 'Your named subsets for this tuning. Click a name to load it; point at one to preview it on the ring. Example: save the seven notes without 11/8 as "No 11/8", change the selection, then click it to get them back.',
+    text: 'The subsets of this generator (the preset shown above), one row each, drawn like the tuner strip. Press Add to put the current selection in a new row; click a name to rename it; click a strip to load it; point at a row to preview it on the ring. Switching preset swaps the list, because subsets belong to their generator. Example: add the seven notes without 11/8, rename the row "No 11/8", change the selection, then click its strip to get them back.',
   },
   compareTo: {
     term: 'Compare to',
@@ -681,13 +717,13 @@ const entries = {
     see: ['ringView'],
   },
   savedAll: {
-    term: 'All collections',
-    text: 'Saved subsets belong to the pitch collection they were saved on. By default the list shows only those of the collection in this tab; tick All to list every saved subset. Loading one from another collection switches this tab to that collection. Example: "Major 12-EDO" saved on 12-EDO is hidden while you work on Harmonics 8-15 until you tick All.',
+    term: 'All generators',
+    text: 'Subsets belong to the generator they were added on. By default the list shows only those of the generator in this tab; tick All to list every subset. Loading one from another generator switches this tab to that generator. Example: "Major" added on 12-EDO is hidden while you work on Harmonics 8-15 until you tick All.',
     see: ['savedSubsets'],
   },
   renameSaved: {
     term: 'Rename saved subset',
-    text: 'Gives a saved subset a new name; the notes stay the same. Example: rename "Subset 2" to "Dorian-ish".',
+    text: 'Click the name of a row to type a new one; Enter keeps it, Escape cancels. The notes stay the same. Example: rename "Subset 2" to "Dorian-ish".',
     see: ['savedSubsets'],
   },
   deleteSaved: {

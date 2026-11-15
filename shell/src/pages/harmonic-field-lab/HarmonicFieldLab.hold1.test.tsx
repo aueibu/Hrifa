@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { chordAmp } from './audio/engine';
 import { FakeCtx } from './audio/fakeContext';
+import { addSubsetNamed, pickPreset } from './testUtils';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -26,7 +27,6 @@ const advance = (ms: number) =>
   act(() => {
     vi.advanceTimersByTime(ms);
   });
-const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -113,10 +113,10 @@ describe('hover + hold 1', () => {
     fireEvent.mouseLeave(chip);
   });
 
-  it('a key ring steps through its scale while held and stops on keyup; 2 and 3 do nothing', () => {
+  it('a key ring steps through its scale while held and stops on keyup; 2 and 3 do nothing', async () => {
     vi.useFakeTimers();
     render(<HarmonicFieldLabPage />);
-    type(screen.getByRole('combobox', { name: 'Preset' }), '12-EDO');
+    await pickPreset('12-EDO');
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
     [0, 2, 4, 5, 7, 9, 11].forEach((i) =>
       fireEvent.click(within(ring()).getAllByRole('button')[i])
@@ -150,11 +150,7 @@ describe('hover + hold 1', () => {
 
   it('a saved subset steps through its scale while held; the scale ends by itself', async () => {
     render(<HarmonicFieldLabPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Save current subset' }));
-    fireEvent.change(await screen.findByRole('textbox', { name: 'Subset name' }), {
-      target: { value: 'All eight' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await addSubsetNamed('All eight');
     const row = within(screen.getByRole('list', { name: 'Saved subsets list' })).getByRole(
       'button',
       { name: /^All eight/ }

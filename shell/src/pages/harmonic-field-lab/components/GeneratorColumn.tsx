@@ -8,9 +8,11 @@ import {
   Popover,
   SegmentedControl,
 } from '@mantine/core';
-import { PRESETS, fmtRatio, parseScl } from '../../../lib/harmonic-field';
+import { fmtRatio, parseScl } from '../../../lib/harmonic-field';
 import { PRIME_LABELS, mosFor, rangeText, type GenSpec, type Method } from '../state/generate';
 import { GearIcon } from './icons';
+import { LibraryActions, LibraryNotice } from './LibraryBar';
+import { PresetBrowser } from './PresetBrowser';
 import { CommitNumber, DebouncedText, DebouncedTextarea, Num, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
@@ -22,17 +24,6 @@ const METHODS: { value: Method; label: string }[] = [
   { value: 'cps', label: 'CPS' },
   { value: 'custom', label: 'Cust' },
 ];
-
-function presetOptions() {
-  const groups = new Map<string, string[]>();
-  for (const p of PRESETS) {
-    groups.set(p.group, [...(groups.get(p.group) ?? []), p.name]);
-  }
-  return [
-    { value: '', label: '(edited by hand)' },
-    ...[...groups].map(([group, items]) => ({ group, items })),
-  ];
-}
 
 function FieldSettings({ gen }: { gen: GenSpec }) {
   const { dispatch } = useLab();
@@ -82,6 +73,14 @@ function FieldSettings({ gen }: { gen: GenSpec }) {
           value={gen.rep}
           onCommit={(rep) => dispatch({ type: 'gen/patch', patch: { rep } })}
           description="3/2, 3, 701.96c or 7&#92;12"
+        />
+      </Tip>
+      <Tip k="keepNew" as="control" block>
+        <Checkbox
+          size="xs"
+          label="Include new notes when the field changes"
+          checked={gen.keepNew}
+          onChange={(e) => dispatch({ type: 'gen/keepNew', on: e.currentTarget.checked })}
         />
       </Tip>
     </div>
@@ -326,27 +325,11 @@ function Params({ gen }: { gen: GenSpec }) {
 export function GeneratorColumn() {
   const { tab, dispatch } = useLab();
   const { gen } = tab;
-  const data = useMemo(presetOptions, []);
-  const info = PRESETS.find((p) => p.name === gen.preset)?.info;
   const failed = tab.err !== '' && !/^Truncated|^Prime filter/.test(tab.err);
   return (
     <div className={classes.genCol}>
       <div className={classes.genTop}>
-        <Tip k="preset" as="control" extra={info}>
-          <NativeSelect
-            size="xs"
-            aria-label="Preset"
-            data={data}
-            value={gen.preset}
-            onChange={(e) => {
-              const name = e.currentTarget.value;
-              if (name) {
-                dispatch({ type: 'gen/preset', name });
-              }
-            }}
-            w="100%"
-          />
-        </Tip>
+        <PresetBrowser />
         <Tip k="fieldSettings" as="control">
           <Popover position="bottom-start" width={296} transitionProps={{ duration: 0 }}>
             <Popover.Target>
@@ -360,6 +343,8 @@ export function GeneratorColumn() {
           </Popover>
         </Tip>
       </div>
+      <LibraryActions />
+      <LibraryNotice />
       <Tip k="method" as="control" block>
         <SegmentedControl
           size="xs"

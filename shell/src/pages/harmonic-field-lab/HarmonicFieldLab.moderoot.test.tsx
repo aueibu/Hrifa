@@ -8,6 +8,7 @@ import { fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
+import { addSubsetNamed, pickPreset } from './testUtils';
 import { MODE_ROOT_TIP, TIPS } from './texts';
 
 // whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
@@ -15,7 +16,6 @@ vi.setConfig({ testTimeout: 15_000 });
 
 const KEY = 'hrifa.harmonic-field-lab.layout.v1';
 const MAJOR = [0, 2, 4, 5, 7, 9, 11];
-const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
 const ring = () => screen.getByRole('group', { name: /^Pitch circle/ });
 const noteDots = () => within(ring()).getAllByRole('button');
 const css = (f: string) =>
@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 /** Everything pinned so every view is on screen: Keys, Chords and the three visualizers (lattice, iso, dissonance). */
-function openAll() {
+async function openAll() {
   window.localStorage.setItem(
     KEY,
     JSON.stringify({
@@ -47,7 +47,7 @@ function openAll() {
     })
   );
   render(<HarmonicFieldLabPage />);
-  type(screen.getByRole('combobox', { name: 'Preset' }), '12-EDO');
+  await pickPreset('12-EDO');
   fireEvent.click(screen.getByRole('button', { name: 'None' }));
   MAJOR.forEach((i) => fireEvent.click(noteDots()[i]));
 }
@@ -55,8 +55,8 @@ const nextMode = () => fireEvent.click(screen.getByRole('button', { name: 'Next 
 const rootsIn = (el: Element) => [...el.querySelectorAll('[data-testid="mode-root"]')];
 
 describe('mode-root marker', () => {
-  it('the pitch ring has one chevron, on the root, and the dot says so; Next mode moves it', () => {
-    openAll();
+  it('the pitch ring has one chevron, on the root, and the dot says so; Next mode moves it', async () => {
+    await openAll();
     expect(rootsIn(ring())).toHaveLength(1);
     expect(noteDots()[0]).toHaveAccessibleName(/, in subset, mode root/);
     expect(within(ring()).getAllByLabelText(/mode root/)).toHaveLength(1);
@@ -68,8 +68,8 @@ describe('mode-root marker', () => {
     expect(noteDots()[2].closest('g')!.contains(rootsIn(ring())[0])).toBe(true);
   });
 
-  it('labels sit on distinct spots, inside a view fitted to the ring and its labels', () => {
-    openAll();
+  it('labels sit on distinct spots, inside a view fitted to the ring and its labels', async () => {
+    await openAll();
     const [x0, y0, w, h] = (ring().getAttribute('viewBox') ?? '').split(' ').map(Number);
     // a square view centred on the ring (300 units, centre 150), only as wide as the labels need
     expect(w).toBeCloseTo(h);
@@ -85,21 +85,21 @@ describe('mode-root marker', () => {
     expect(spots.size).toBe(texts.length);
   });
 
-  it('no chevron when nothing is selected', () => {
-    openAll();
+  it('no chevron when nothing is selected', async () => {
+    await openAll();
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
     expect(rootsIn(document.body)).toHaveLength(0);
   });
 
-  it('works in the Fifths view too', () => {
-    openAll();
+  it('works in the Fifths view too', async () => {
+    await openAll();
     fireEvent.click(screen.getByRole('radio', { name: 'Fifths' }));
     expect(rootsIn(ring())).toHaveLength(1);
     expect(within(ring()).getAllByLabelText(/mode root/)).toHaveLength(1);
   });
 
-  it('the tuner strip marks the root tick with a pair of chevrons', () => {
-    openAll();
+  it('the tuner strip marks the root tick with a pair of chevrons', async () => {
+    await openAll();
     const strip = screen.getByRole('region', { name: 'Tuner strip' });
     expect(within(strip).getAllByTestId('mode-root-pair')).toHaveLength(1);
     expect(rootsIn(strip)).toHaveLength(2);
@@ -113,10 +113,8 @@ describe('mode-root marker', () => {
   });
 
   it('the >|< pair is centred vertically on the root tick, on the strip and in a saved row', async () => {
-    openAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Save current subset' }));
-    type(await screen.findByRole('textbox', { name: 'Subset name' }), 'major');
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await openAll();
+    await addSubsetNamed('major');
     const marks = [...document.querySelectorAll('[data-testid="mode-root-pair"]')].map((g) =>
       g.closest('svg')!
     );
@@ -136,8 +134,8 @@ describe('mode-root marker', () => {
     expect(heights.size).toBe(2); // two different strip heights, both centred
   });
 
-  it('the big key ring marks the shown key root; pointing at another key moves it', () => {
-    openAll();
+  it('the big key ring marks the shown key root; pointing at another key moves it', async () => {
+    await openAll();
     const big = screen.getByTestId('big-key-ring');
     expect(rootsIn(big)).toHaveLength(1);
     expect(big.querySelector('[data-root="true"]')).toHaveAccessibleName(/, mode root$/);
@@ -148,8 +146,8 @@ describe('mode-root marker', () => {
     expect(big.querySelector('[data-root="true"]')!.getAttribute('data-note')).not.toBe('0');
   });
 
-  it('the 2D lattice, the iso keyboard and the dissonance marks each carry the chevron', () => {
-    openAll();
+  it('the 2D lattice, the iso keyboard and the dissonance marks each carry the chevron', async () => {
+    await openAll();
     const lattice = screen.getByRole('group', { name: /^Lattice of the field/ });
     expect(rootsIn(lattice)).toHaveLength(1);
     expect(within(lattice).getAllByLabelText(/mode root/)).toHaveLength(1);
@@ -161,8 +159,8 @@ describe('mode-root marker', () => {
     expect(within(diss).getAllByLabelText(/mode root/)).toHaveLength(1);
   });
 
-  it('the field table rows (compact and full) carry a glyph in the root row only', () => {
-    openAll();
+  it('the field table rows (compact and full) carry a glyph in the root row only', async () => {
+    await openAll();
     const compact = screen.getByRole('table', { name: 'Field notes' });
     expect(rootsIn(compact)).toHaveLength(1);
     const row = within(compact)
@@ -175,11 +173,9 @@ describe('mode-root marker', () => {
   });
 
   it('a saved subset row marks its own mode root in its sparkline', async () => {
-    openAll();
+    await openAll();
     nextMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Save current subset' }));
-    type(await screen.findByRole('textbox', { name: 'Subset name' }), 'dorian');
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await addSubsetNamed('dorian');
     const list = screen.getByRole('list', { name: 'Saved subsets list' });
     const marked = [...list.querySelectorAll('[data-root="true"]')];
     expect(marked).toHaveLength(1);
@@ -217,8 +213,8 @@ describe('mode-root marker', () => {
 });
 
 describe('Keys panel scroll', () => {
-  it('only the key-ring list is the inner scroll container; the big ring, summary, legend and buttons are outside it', () => {
-    openAll();
+  it('only the key-ring list is the inner scroll container; the big ring, summary, legend and buttons are outside it', async () => {
+    await openAll();
     const list = screen.getByTestId('key-rings-scroll');
     const big = screen.getByRole('region', { name: 'Key comparison' });
     expect(list.contains(big)).toBe(false);
@@ -249,8 +245,8 @@ describe('big key view colours (H-4)', () => {
     expect(rule(panels, '.bigKeyMissing')).toMatch(/stroke-dasharray/);
   });
 
-  it('the legend uses the same classes, so it takes the same colours', () => {
-    openAll();
+  it('the legend uses the same classes, so it takes the same colours', async () => {
+    await openAll();
     const legend = screen.getByLabelText('Marks');
     for (const c of [
       'bigKeyCommon',

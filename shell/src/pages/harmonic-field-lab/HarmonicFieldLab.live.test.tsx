@@ -7,6 +7,7 @@ import { migrateSubsets } from './state/generatorLibrary';
 import { makeTab, presetGen } from './state/labState';
 import { saveLibrary } from './state/libraryStore';
 import { KEY_GENERATORS, KEY_SETTINGS, KEY_SUBSETS, KEY_TABS } from './state/persist';
+import { addSubsetNamed, pickPreset, presetButton } from './testUtils';
 
 const storedSubsets = () =>
   (
@@ -42,25 +43,31 @@ describe('live generation', () => {
   it('opens on Harmonics 8-15 with every note selected', () => {
     render(<HarmonicFieldLabPage />);
     expect(ringCount()).toEqual([8, 8]);
-    expect(screen.getByRole('combobox', { name: 'Preset' })).toHaveValue('Harmonics 8–15');
+    expect(presetButton()).toHaveTextContent('Harmonics 8–15');
     expect(screen.getByRole('tab', { name: 'Harmonics 8–15' })).toHaveAttribute(
       'aria-selected',
       'true'
     );
   });
 
-  it('a preset rebuilds the field and selects everything', () => {
+  it('a preset rebuilds the field and selects everything', async () => {
     render(<HarmonicFieldLabPage />);
-    type(screen.getByRole('combobox', { name: 'Preset' }), '19-EDO');
+    await pickPreset('19-EDO');
     expect(ringCount()).toEqual([19, 19]);
     expect(screen.getByRole('tab', { name: '19-EDO' })).toBeInTheDocument();
+  });
+
+  it('a generator that matches no preset has no owner: the control reads "(edited by hand)"', async () => {
+    render(<HarmonicFieldLabPage />);
+    await typeSlow(screen.getByRole('textbox', { name: 'Starting harmonic' }), '17');
+    expect(presetButton()).toHaveTextContent('(edited by hand)');
   });
 
   it('method tabs and their parameters rebuild the field: the starting harmonic, then EDO divisions', async () => {
     render(<HarmonicFieldLabPage />);
     await typeSlow(screen.getByRole('textbox', { name: 'Starting harmonic' }), '16');
     expect(ringCount()[1]).toBe(16);
-    expect(screen.getByRole('combobox', { name: 'Preset' })).toHaveValue(''); // edited by hand
+    expect(presetButton()).toHaveTextContent('Harmonics 16–31'); // the edit now equals another built-in
     fireEvent.click(screen.getByRole('radio', { name: 'EDO' }));
     expect(ringCount()).toEqual([12, 12]); // a new method selects everything
     await typeSlow(screen.getByRole('textbox', { name: 'Divisions' }), '7');
@@ -114,12 +121,12 @@ describe('live generation', () => {
 });
 
 describe('tabs', () => {
-  it('adds, renames, switches and closes tuning tabs', () => {
+  it('adds, renames, switches and closes tuning tabs', async () => {
     render(<HarmonicFieldLabPage />);
     fireEvent.click(screen.getByRole('button', { name: 'New tuning' }));
     expect(screen.getAllByRole('tab', { name: /Harmonics 8–15/ })).toHaveLength(2);
     // the new tab is active; change it so the two differ
-    type(screen.getByRole('combobox', { name: 'Preset' }), '19-EDO');
+    await pickPreset('19-EDO');
     const tabs = within(screen.getByRole('tablist', { name: 'Tunings' }));
     expect(tabs.getByRole('tab', { name: '19-EDO' })).toHaveAttribute('aria-selected', 'true');
     fireEvent.doubleClick(tabs.getByRole('tab', { name: '19-EDO' }));
@@ -143,10 +150,10 @@ describe('tabs', () => {
     expect(tabs.queryByRole('button', { name: /^Close/ })).toBeNull(); // the last tab has no close mark
   });
 
-  it('Alt+2 switches to the second tab', () => {
+  it('Alt+2 switches to the second tab', async () => {
     render(<HarmonicFieldLabPage />);
     fireEvent.click(screen.getByRole('button', { name: 'New tuning' }));
-    type(screen.getByRole('combobox', { name: 'Preset' }), '12-EDO');
+    await pickPreset('12-EDO');
     fireEvent.keyDown(document.body, { key: '1', altKey: true });
     expect(ringCount()).toEqual([8, 8]);
     fireEvent.keyDown(document.body, { key: '2', altKey: true });
@@ -315,16 +322,12 @@ describe('live selection', () => {
 });
 
 describe('saved subsets', () => {
-  const save = async (name: string) => {
-    fireEvent.click(screen.getByRole('button', { name: 'Save current subset' }));
-    type(await screen.findByRole('textbox', { name: 'Subset name' }), name);
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-  };
+  const save = (name: string) => addSubsetNamed(name);
   const list = () => screen.getByRole('list', { name: 'Saved subsets list' });
 
   it('saves with a name, previews on hover, loads on click, renames and deletes; the list is stored', async () => {
     render(<HarmonicFieldLabPage />);
-    expect(within(list()).getByText(/Nothing saved yet/)).toBeInTheDocument();
+    expect(within(list()).getByText(/No subsets yet/)).toBeInTheDocument();
     fireEvent.click(dot(/^11\/8/));
     fireEvent.click(dot(/^13\/8/));
     await save('No 11 or 13');
@@ -347,27 +350,27 @@ describe('saved subsets', () => {
     fireEvent.click(within(list()).getByRole('button', { name: 'Rename No 11 or 13' }));
     const nm = await screen.findByRole('textbox', { name: 'New name' });
     type(nm, 'Quiet');
-    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    fireEvent.keyDown(nm, { key: 'Enter' });
     expect(within(list()).getByRole('button', { name: /^Quiet: 6 notes/ })).toBeInTheDocument();
     expect(storedSubsets()?.[0].name).toBe('Quiet');
     // delete
     fireEvent.click(within(list()).getByRole('button', { name: 'Delete Quiet' }));
-    expect(within(list()).getByText(/Nothing saved yet/)).toBeInTheDocument();
+    expect(within(list()).getByText(/No subsets yet/)).toBeInTheDocument();
     expect(storedSubsets()).toEqual([]);
   });
 
   it('shows only the current collection by default; All lists the others, and loading one switches the tab to it', async () => {
     render(<HarmonicFieldLabPage />);
-    type(screen.getByRole('combobox', { name: 'Preset' }), '12-EDO');
+    await pickPreset('12-EDO');
     fireEvent.click(within(ring()).getAllByRole('button')[7]);
     await save('twelve');
-    type(screen.getByRole('combobox', { name: 'Preset' }), 'Harmonics 8–15');
-    expect(within(list()).getByText(/None for this collection/)).toBeInTheDocument();
+    await pickPreset('Harmonics 8–15');
+    expect(within(list()).getByText(/None for this generator/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox', { name: 'All' }));
-    const other = within(list()).getByRole('button', { name: /^twelve: .*another collection/ });
+    const other = within(list()).getByRole('button', { name: /^twelve: .*another generator/ });
     fireEvent.click(other);
     expect(ringCount()[1]).toBe(12);
-    expect(screen.getByRole('combobox', { name: 'Preset' })).toHaveValue('12-EDO');
+    expect(presetButton()).toHaveTextContent('12-EDO');
   });
 
   it('exports the current subset as a .scl download', () => {
@@ -409,9 +412,9 @@ describe('saved subsets', () => {
 });
 
 describe('persistence through the page', () => {
-  it('remembers tabs, the subset, tolerance, panel and dock across a reload', () => {
+  it('remembers tabs, the subset, tolerance, panel and dock across a reload', async () => {
     const first = render(<HarmonicFieldLabPage />);
-    type(screen.getByRole('combobox', { name: 'Preset' }), '19-EDO');
+    await pickPreset('19-EDO');
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
     fireEvent.click(dot(/^1\/1/));
     fireEvent.click(within(rail()).getByRole('tab', { name: /Keys/ }));
@@ -424,7 +427,7 @@ describe('persistence through the page', () => {
     expect((stored(KEY_SETTINGS) as { panel: string; dockOpen: boolean }).panel).toBe('keys');
     render(<HarmonicFieldLabPage />);
     expect(ringCount()).toEqual([1, 19]);
-    expect(screen.getByRole('combobox', { name: 'Preset' })).toHaveValue('19-EDO');
+    expect(presetButton()).toHaveTextContent('19-EDO');
     expect(screen.getByRole('heading', { name: /Keys/ })).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Subset keys' })).toBeNull();
   });
@@ -767,9 +770,7 @@ describe('typing, storage and other windows', () => {
       within(list).getByRole('button', { name: /^From the other window: 2 notes/ })
     ).toBeInTheDocument();
     // saving here adds to it instead of replacing it
-    fireEvent.click(screen.getByRole('button', { name: 'Save current subset' }));
-    type(await screen.findByRole('textbox', { name: 'Subset name' }), 'mine');
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await addSubsetNamed('mine');
     expect(storedSubsets()?.map((x) => [x.id, x.name])).toEqual([
       ['s1', 'From the other window'],
       ['s2', 'mine'],
@@ -781,9 +782,7 @@ describe('typing, storage and other windows', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Save current subset' }));
-    type(await screen.findByRole('textbox', { name: 'Subset name' }), 'x');
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await addSubsetNamed('x');
     const list = screen.getByRole('list', { name: 'Saved subsets list' });
     expect(within(list).getByRole('alert')).toHaveTextContent(/Not stored/);
     // the subset itself is still there for this session
