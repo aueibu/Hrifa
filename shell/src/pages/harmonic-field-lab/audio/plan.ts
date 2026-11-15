@@ -207,6 +207,8 @@ export type PreviewTarget =
       light?: readonly number[];
       /** The shelf chords these pitches are (their cards light while they sound). */
       chords?: readonly string[];
+      /** A positional chord (M9): holding 1 on it arms it in the Sketch row, as a chord chip's hold 1 arms its template. */
+      positional?: { pattern: string; rootDeg: number; shape: readonly Note[] };
     }
   /** A key ring or a saved subset: its field notes in degree order (root first); hold 1 steps through them as a scale. */
   | { kind: 'scale'; idx: readonly number[] };

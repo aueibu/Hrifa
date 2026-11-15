@@ -108,6 +108,11 @@ export interface ShelfChord {
   template: string | null;
   /** The root's degree in the source subset read from its mode root (0 = the mode root); null when unknown. */
   rootDeg: number | null;
+  /**
+   * M9: the positional step pattern ("2-2") the chord was made from, or null (a ratio template or a free selection, and every
+   * chord stored before M9). `template` is then the display text ("2-2 on 4"). Additive and optional in storage.
+   */
+  pattern: string | null;
   /** The chord finder's tolerance in cents when stashed. */
   tol: number;
   /** ISO date-time of the stash. */
@@ -191,6 +196,8 @@ export interface StashInput {
   pitches: Note[];
   template: string | null;
   rootDeg: number | null;
+  /** M9: the positional pattern (optional: absent = null). */
+  pattern?: string | null;
   tol: number;
   date: string;
   refHz: number;
@@ -275,6 +282,7 @@ export function stashChord(s: ShelfState, input: StashInput): ShelfState {
     pitches: pitches as Note[],
     template,
     rootDeg: input.rootDeg,
+    pattern: (input.pattern && canonicalPattern(input.pattern)) || null,
     tol: input.tol,
     date: input.date,
     refHz: input.refHz,

@@ -51,7 +51,8 @@ export function sketchPositionalPitches(
 ): Note[] | null {
   const n = subsetIdx.length;
   const pattern = sketch.positional ? parsePattern(sketch.positional.pattern) : null;
-  if (!n || !pattern) {
+  // too big for the subset (a step that is a whole turn comes back to the same note): no chord
+  if (!n || !pattern || pattern.some((s) => s % n === 0)) {
     return null;
   }
   return positionalChord(field, subsetIdx, pattern, sketch.rootDeg % n, mode, rep)?.pitches ?? null;

@@ -17,7 +17,7 @@ import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 /** The chord's notes on a small ring (the repeat is one turn, 1/1 at the top), as the pitch ring draws a chord. */
-function ChordDrawing({ cents, repC }: { cents: readonly number[]; repC: number }) {
+export function ChordDrawing({ cents, repC }: { cents: readonly number[]; repC: number }) {
   const R = repC > 0 ? repC : 1200;
   const pts = cents.map((c) => {
     const a = (2 * Math.PI * (((c % R) + R) % R)) / R;
@@ -187,21 +187,27 @@ function Slot({
             } else {
               lab.pickChord(lit);
               audio.playCents(cents, lights, [chord.id]);
-              if (chord.template && chord.pitches.length) {
-                // playing a slot arms its template and its stored realization in the Sketch row
+              if ((chord.template || chord.pattern) && chord.pitches.length) {
+                // playing a slot arms its template (or its positional pattern) and its stored realization in the Sketch row
                 const p0 = chord.pitches[0];
-                dispatch({
-                  type: 'sketch/arm',
-                  template: chord.template,
-                  // root position, like a chip's shape: a note below the first is lifted by the repeat
-                  shape: chord.pitches.map((p) => {
-                    let n = mulNotes(p, p0, -1);
-                    while (base.rep.c > 1e-9 && n.c < -1e-9) {
-                      n = mulNotes(n, base.rep, 1);
-                    }
-                    return n;
-                  }),
+                // root position, like a chip's shape: a note below the first is lifted by the repeat
+                const shape = chord.pitches.map((p) => {
+                  let n = mulNotes(p, p0, -1);
+                  while (base.rep.c > 1e-9 && n.c < -1e-9) {
+                    n = mulNotes(n, base.rep, 1);
+                  }
+                  return n;
                 });
+                dispatch(
+                  chord.pattern
+                    ? {
+                        type: 'sketch/armPositional',
+                        pattern: chord.pattern,
+                        rootDeg: chord.rootDeg ?? undefined,
+                        shape,
+                      }
+                    : { type: 'sketch/arm', template: chord.template as string, shape }
+                );
               }
             }
           }}
@@ -216,10 +222,16 @@ function Slot({
                 {keyBadge}
               </span>
             )}
-            <Num muted>
-              {chord.pitches.length} {chord.pitches.length === 1 ? 'note' : 'notes'}
-              {chord.template ? ` · ${chord.template}` : ''}
-            </Num>
+            <span
+              title={nativeTitle(
+                chord.pattern ? `Positional chord, pattern ${chord.pattern}` : undefined
+              )}
+            >
+              <Num muted>
+                {chord.pitches.length} {chord.pitches.length === 1 ? 'note' : 'notes'}
+                {chord.template ? ` · ${chord.template}` : ''}
+              </Num>
+            </span>
           </span>
         </span>
         <span className={classes.slotActions}>

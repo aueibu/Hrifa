@@ -12,6 +12,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { mulNotes } from '../../../lib/harmonic-field';
 import { useLabAudio } from '../audio/useLabAudio';
 import { loadComposites, saveComposites } from './compositeStore';
 import { LabContext, type Analyses, type Lab, type VizApi } from './context';
@@ -50,6 +51,7 @@ import { initialRetuner, storedCards, type DormantCard, type RetCard } from './r
 import { cardFromSnapshot } from './retunerCards';
 import { noteHovered } from './sendStore';
 import { loadShelf, saveShelf } from './shelfStore';
+import { sketchPositionalPitches } from './sketchChord';
 import type { VizSettings } from './vizState';
 
 /** The state from storage; every part falls back to its default (see persist.ts), nothing throws. */
@@ -247,6 +249,19 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     [state.preview, base.selected]
   );
 
+  // M9: the picked positional chord as a shape (its intervals above its own root), for hold 4 and hold 5
+  const skPositional = state.shelf.sketch.positional;
+  const skRootDeg = state.shelf.sketch.rootDeg;
+  const positionalShape = useMemo(() => {
+    const pitches = skPositional
+      ? sketchPositionalPitches(base.field, base.rep, base.idx, base.mode, {
+          positional: skPositional,
+          rootDeg: skRootDeg,
+        })
+      : null;
+    return pitches ? pitches.map((p) => mulNotes(p, pitches[0], -1)) : null;
+  }, [skPositional, skRootDeg, base.field, base.rep, base.idx, base.mode]);
+
   const audio = useLabAudio({
     enabled: !frozen,
     base,
@@ -259,6 +274,8 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       shape: state.shelf.sketch.shape,
       rootDeg: state.shelf.sketch.rootDeg,
       exact: state.shelf.sketch.exact,
+      positional: state.shelf.sketch.positional,
+      positionalShape,
     },
     shelf: state.shelf.chords,
     keys: state.keys,

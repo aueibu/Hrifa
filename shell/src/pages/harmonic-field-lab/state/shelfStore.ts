@@ -4,7 +4,8 @@
  * ```
  * { version: 1,
  *   chords: [{ id: 'c1', name, pitches: [{ m, c }],              // the exact pitches heard (monzo + cents, as H-6)
- *              template: '4:5:6' | null, rootDeg: 0 | null, tol: 18, date: ISO, refHz: 261.6256,
+ *              template: '4:5:6' | null, rootDeg: 0 | null, pattern?: '2-2',   // pattern: M9 positional chord, absent = none
+ *              tol: 18, date: ISO, refHz: 261.6256,
  *              frame: 'parallel' | 'relative', parent: 'c0' | null,
  *              source: { gen: <generation inputs>, tab: 'name',
  *                        subset: { pitches: [{ m, c }], root: { m, c } | null } } | null }],
@@ -34,6 +35,7 @@ import {
 } from './chordShelf';
 import { cleanName } from './generatorLibrary';
 import { genFromStored, genToStored } from './libraryStore';
+import { canonicalPattern } from './patterns';
 import { KEY_CHORDSHELF, readJson, writeJson } from './persist';
 
 const isObj = (x: unknown): x is Record<string, unknown> =>
@@ -96,6 +98,7 @@ export function sanitizeShelf(raw: unknown): ShelfState | null {
         e.rootDeg < 1e6
           ? e.rootDeg
           : null,
+      pattern: typeof e.pattern === 'string' ? canonicalPattern(e.pattern) : null,
       tol: num(e.tol, 18, 0, 1200),
       date: typeof e.date === 'string' ? e.date.slice(0, 40) : '',
       refHz: num(e.refHz, 261.6256, 1, 1e5),
@@ -134,6 +137,8 @@ export function shelfToStored(s: ShelfState): Record<string, unknown> {
       pitches: c.pitches.map(pitchOut),
       template: c.template,
       rootDeg: c.rootDeg,
+      // additive (M9): written only when set, so a shelf without positional chords is stored byte for byte as before
+      ...(c.pattern ? { pattern: c.pattern } : {}),
       tol: c.tol,
       date: c.date,
       refHz: c.refHz,

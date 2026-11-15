@@ -617,6 +617,8 @@ export interface StashRequest {
   template?: string | null;
   /** The chord root's degree in the active subset read from its mode root, when known. */
   rootDeg?: number | null;
+  /** M9: the positional pattern when the chord is a positional one (`template` is then its display text). */
+  pattern?: string | null;
   name?: string;
   /** ISO date-time (passed in so the reducer stays pure). */
   date: string;
@@ -1277,6 +1279,7 @@ function reduce(s: LabState, a: Action): LabState {
         pitches: st.pitches,
         template: st.template ?? null,
         rootDeg: st.rootDeg ?? null,
+        pattern: st.pattern ?? null,
         tol: s.ui.tol,
         date: st.date,
         refHz: s.ui.baseHz,

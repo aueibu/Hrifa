@@ -9,14 +9,18 @@ import { useEffect, useMemo, useRef } from 'react';
 import { ActionIcon, Button, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   matchToField,
+  parsePattern,
   placeShape,
+  positionalNaming,
   sketchShape,
   type ChordTemplate,
   type Note,
 } from '../../../lib/harmonic-field';
 import { OTHER_FAMILY, familyOrder, noteLabel } from '../state/derive';
 import { autoName } from '../state/generate';
+import { sketchPositionalPitches } from '../state/sketchChord';
 import { PlayIcon } from './icons';
+import { tooFewHint } from './Positional';
 import { Num, Tip, useLab } from './ui';
 import classes from './panels.module.css';
 
@@ -39,6 +43,20 @@ function templateOptions(templates: ChordTemplate[], current: string | null) {
   return groups;
 }
 
+/** The dropdown value of a positional pattern (a ratio template's value is its text, which never starts with this). */
+const POS_PREFIX = 'pos:';
+
+/** The "Positional" group: the user's patterns, plus the current one when it was edited away from the list. */
+function positionalGroup(list: readonly string[], current: string | null) {
+  const items = [...list];
+  if (current !== null && !items.includes(current)) {
+    items.unshift(current);
+  }
+  return items.length
+    ? [{ group: 'Positional', items: items.map((p) => ({ value: `${POS_PREFIX}${p}`, label: p })) }]
+    : [];
+}
+
 export function SketchRow() {
   const lab = useLab();
   const { state, tab, base, dispatch, audio } = lab;
@@ -51,13 +69,25 @@ export function SketchRow() {
       dispatch({ type: 'sketch/set', patch: { template: templates[0].text } });
     }
   }, [sk.template, templates, dispatch]);
-  const options = useMemo(() => templateOptions(templates, sk.template), [templates, sk.template]);
+  const positionalPattern = sk.positional?.pattern ?? null;
+  const patterns = state.patterns.list;
+  const options = useMemo(
+    () => [
+      ...templateOptions(templates, sk.template),
+      ...positionalGroup(patterns, positionalPattern),
+    ],
+    [templates, sk.template, patterns, positionalPattern]
+  );
   const deg = n ? sk.rootDeg % n : 0;
   const rootIdx = n ? base.rel[deg].src : -1;
   const root: Note | undefined = tab.field[rootIdx];
   // the chord as the field realizes it (the armed chord's shape, else the template found at the root), or its exact ratios
   const tol = state.ui.tol;
   const pitches = useMemo(() => {
+    if (sk.positional) {
+      // M9: the pattern at the sketch root degree of the active subset (root position)
+      return sketchPositionalPitches(tab.field, tab.rep, base.idx, base.mode, sk);
+    }
     const shape =
       root && sk.template
         ? sketchShape(
@@ -71,7 +101,33 @@ export function SketchRow() {
           )
         : null;
     return root && shape ? placeShape(root, shape) : null;
-  }, [root, sk.template, sk.shape, sk.exact, tab.field, tab.rep, tol]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    root,
+    sk.template,
+    sk.shape,
+    sk.exact,
+    sk.positional,
+    sk.rootDeg,
+    tab.field,
+    tab.rep,
+    tol,
+    base.idx,
+    base.mode,
+  ]);
+  // the positional chord's name: `2-2 on 4`, then `7 of 12-EDO · 400-300 c`
+  const genName = tab.gen.preset || autoName(tab.gen);
+  const naming = useMemo(() => {
+    const steps = sk.positional ? parsePattern(sk.positional.pattern) : null;
+    return steps && pitches
+      ? positionalNaming(
+          { pattern: steps, degree: n ? sk.rootDeg % n : 0, pitches },
+          n,
+          genName,
+          templates
+        )
+      : null;
+  }, [sk.positional, sk.rootDeg, pitches, n, genName, templates]);
   const match = useMemo(
     () => (pitches ? matchToField(tab.field, tab.rep, pitches) : []),
     [pitches, tab.field, tab.rep]
@@ -103,7 +159,8 @@ export function SketchRow() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyNow]);
-  const bad = sk.template !== null && !pitches && n > 0;
+  const tooBig = sk.positional && n > 0 ? tooFewHint(n, sk.positional.pattern) : null;
+  const bad = sk.positional === null && sk.template !== null && !pitches && n > 0;
   return (
     <div
       className={classes.sketch}
@@ -117,10 +174,19 @@ export function SketchRow() {
           size="xs"
           aria-label="Sketch template"
           data={options}
-          value={sk.template ?? ''}
-          onChange={(e) =>
-            dispatch({ type: 'sketch/set', patch: { template: e.currentTarget.value } })
+          value={
+            positionalPattern !== null ? `${POS_PREFIX}${positionalPattern}` : (sk.template ?? '')
           }
+          onChange={(e) => {
+            const v = e.currentTarget.value;
+            dispatch({
+              type: 'sketch/set',
+              // a ratio template always says positional: null, so picking one leaves positional mode even when its text is unchanged
+              patch: v.startsWith(POS_PREFIX)
+                ? { positional: { pattern: v.slice(POS_PREFIX.length) } }
+                : { template: v, positional: null },
+            });
+          }}
         />
         <span className={classes.sketchRoot}>
           <ActionIcon
@@ -146,9 +212,18 @@ export function SketchRow() {
             &rsaquo;
           </ActionIcon>
         </span>
-        <Tip k="sketchRealization" as="control">
+        <Tip
+          k="sketchRealization"
+          as="control"
+          extra={
+            sk.positional
+              ? 'Off while a positional chord is picked: its notes are always the field notes the pattern lands on, so there are no separate exact ratios.'
+              : undefined
+          }
+        >
           <SegmentedControl
             size="xs"
+            disabled={sk.positional !== null}
             aria-label="Sketch realization"
             data={['As in field', 'Exact']}
             value={sk.exact ? 'Exact' : 'As in field'}
@@ -175,7 +250,8 @@ export function SketchRow() {
                 type: 'shelf/stash',
                 stash: {
                   pitches: pitches ?? [],
-                  template: sk.template,
+                  template: naming ? naming.label : sk.template,
+                  pattern: naming && sk.positional ? sk.positional.pattern : null,
                   rootDeg: n ? deg : null,
                   date: new Date().toISOString(),
                 },
@@ -189,6 +265,16 @@ export function SketchRow() {
       {n === 0 && (
         <span className={classes.hint} role="status">
           Select a note to put a chord on it.
+        </span>
+      )}
+      {sk.positional && (
+        <span className={classes.hint} role="status">
+          The As in field | Exact switch is off: a positional chord has no separate exact ratios.
+        </span>
+      )}
+      {tooBig && (
+        <span className={classes.hint} role="status">
+          {tooBig}
         </span>
       )}
       {bad && (
@@ -243,12 +329,21 @@ export function SketchRow() {
           })}
         </div>
       )}
-      <span className={classes.hint}>
-        {sk.template ?? ''} &middot;{' '}
-        {sk.exact ? 'exact' : `as in ${tab.gen.preset || autoName(tab.gen)}`}
-        {sk.armed ? ' (armed from a chord)' : ''}. Point at any note and hold 4 to hear it as the
-        field has it, 5 for the exact ratios.
-      </span>
+      {naming ? (
+        <span className={classes.hint} data-testid="sketch-line">
+          {naming.label} &middot; {naming.tail}
+          {naming.ratio ? ` · ${naming.ratio}` : ''}
+          {sk.armed ? ' (armed from a chord)' : ''}. Point at any note and hold 4 or 5 to hear this
+          chord on it (both give the same notes).
+        </span>
+      ) : (
+        <span className={classes.hint}>
+          {sk.template ?? ''} &middot;{' '}
+          {sk.exact ? 'exact' : `as in ${tab.gen.preset || autoName(tab.gen)}`}
+          {sk.armed ? ' (armed from a chord)' : ''}. Point at any note and hold 4 to hear it as the
+          field has it, 5 for the exact ratios.
+        </span>
+      )}
     </div>
   );
 }

@@ -6,7 +6,14 @@
  * unmounting all silence everything. The AudioContext is created by the engine on the first note, i.e. on a user gesture.
  */
 import { useEffect, useMemo, useRef, type Dispatch } from 'react';
-import { chordShape, placeShape, sketchShape, type Note } from '../../../lib/harmonic-field';
+import {
+  chordShape,
+  parsePattern,
+  placeShape,
+  positionalLabel,
+  sketchShape,
+  type Note,
+} from '../../../lib/harmonic-field';
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import type { LabAudio } from '../state/context';
 import type { Base } from '../state/derive';
@@ -16,7 +23,7 @@ import type { Action, KeysRuntime, UiSettings } from '../state/labState';
 import { linkedPitch, linkedScaleOf, type LinkedScale } from '../state/linkedMelody';
 import { heldHz, litIndex, retunerLive, type RetState } from '../state/retuner';
 import { sendHasKey } from '../state/sendStore';
-import { sketchChord } from '../state/sketchChord';
+import { sketchChord, sketchPositionalPitches } from '../state/sketchChord';
 import { VoiceEngine } from './engine';
 import {
   CHORD_PAGE,
@@ -78,7 +85,16 @@ interface Args {
   /** The retuner: while it is live the keys are its held notes and its voices glide (see `syncRetuner`). */
   retuner: RetState;
   /** The Sketch row's armed template (hold 4 plays it on the hovered note); null when none. */
-  sketch: { template: string | null; shape: Note[] | null; rootDeg: number; exact: boolean };
+  sketch: {
+    template: string | null;
+    shape: Note[] | null;
+    rootDeg: number;
+    exact: boolean;
+    /** M9: a positional pattern is picked (the chord is the pattern at `rootDeg`, not the template). */
+    positional: { pattern: string } | null;
+    /** M9: that positional chord's shape (intervals above its own root, root first); hold 4 and hold 5 both place it. */
+    positionalShape: Note[] | null;
+  };
   /** The shelf, in order: what the chord keys play (Chords and Split modes). */
   shelf: readonly ShelfChord[];
   /** The computer keys' runtime state: melody shift, shelf page, the chord the linked melody follows. */
@@ -373,8 +389,11 @@ export function useLabAudio({
         const root = b.field[i];
         const sk = latest.current.sketch;
         const skRoot = b.rel.length ? b.field[b.rel[sk.rootDeg % b.rel.length].src] : undefined;
-        const shape =
-          root && sk.template
+        const shape = sk.positional
+          ? root
+            ? sk.positionalShape
+            : null
+          : root && sk.template
             ? sketchShape(b.field, b.rep, skRoot, sk.template, sk.shape, u.tol, ARMED_DIGITS[digit])
             : null;
         const pitches = root && shape ? placeShape(root, shape) : null;
@@ -421,6 +440,14 @@ export function useLabAudio({
           }
           startHeld(id, chordPlan(b.field, t.idx, pitch(), t.rootIdx), false, digit);
         } else if (t.kind === 'pitches') {
+          if (t.positional) {
+            dispatch({
+              type: 'sketch/armPositional',
+              pattern: t.positional.pattern,
+              rootDeg: t.positional.rootDeg,
+              shape: [...t.positional.shape],
+            });
+          }
           startHeld(
             id,
             pitchesPlan(b.field, b.repC, t.cents, pitch(), 1.8, t.light),
@@ -759,7 +786,7 @@ export function useLabAudio({
 
   useEffect(() => {
     api.refreshArmed();
-  }, [api, ui.modePlayback, sketch.shape, sketch.template, sketch.rootDeg]);
+  }, [api, ui.modePlayback, sketch.shape, sketch.template, sketch.rootDeg, sketch.positionalShape]);
 
   // keyboard, and the safety nets: blur, hidden tab, unmount
   useEffect(() => {
@@ -796,6 +823,28 @@ export function useLabAudio({
       if (e.code === 'Equal' || e.key === '=' || e.key === '+') {
         // = (or +, the same physical key) stashes the current Sketch, as the Stash button does
         const { base: b, ui: u, sketch: sk } = latest.current;
+        const posPitches = sk.positional
+          ? sketchPositionalPitches(b.field, b.rep, b.idx, b.mode, sk)
+          : null;
+        const posSteps = sk.positional ? parsePattern(sk.positional.pattern) : null;
+        if (sk.positional) {
+          // M9: a positional chord stashes its pattern (template = the display text, `2-2 on 4`)
+          if (posPitches && posSteps && b.rel.length) {
+            const deg = sk.rootDeg % b.rel.length;
+            e.preventDefault();
+            dispatch({
+              type: 'shelf/stash',
+              stash: {
+                pitches: posPitches,
+                template: positionalLabel(posSteps, deg),
+                pattern: sk.positional.pattern,
+                rootDeg: deg,
+                date: new Date().toISOString(),
+              },
+            });
+          }
+          return;
+        }
         const made = sketchChord(b.field, b.rep, b.rel, sk, u.tol);
         if (made) {
           e.preventDefault();

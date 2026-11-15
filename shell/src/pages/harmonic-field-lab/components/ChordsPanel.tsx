@@ -13,6 +13,7 @@ import {
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
 import { MAX_TEMPLATES } from '../state/labState';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
+import { PatternsEditor, PositionalSection } from './Positional';
 import { useSendHover } from './Send';
 import { SketchRow } from './SketchRow';
 import {
@@ -377,6 +378,7 @@ function TemplateEditor() {
           </Button>
         </Tip>
       </div>
+      <PatternsEditor />
     </div>
   );
 }
@@ -474,6 +476,7 @@ export function ChordsPanel() {
           ))}
         </div>
         {tab.gen.method === 'cps' && <CpsChords />}
+        <PositionalSection />
         {SIZES.map((size) => {
           const inSize = chips.filter((c) => c.size === size);
           if (!inSize.length) {

@@ -284,3 +284,70 @@ describe('ids and stash sanitising', () => {
     );
   });
 });
+
+describe('chordshelf.v1: the additive positional pattern (M9)', () => {
+  const oldChord = {
+    id: 'c1',
+    name: 'Old',
+    pitches: [
+      { m: null, c: 0 },
+      { m: null, c: 400 },
+    ],
+    template: '4:5:6',
+    rootDeg: 0,
+    tol: 18,
+    date: '2026-11-14T10:00:00.000Z',
+    refHz: 261.6256,
+    frame: 'parallel',
+    parent: null,
+    source: null,
+  };
+
+  it('old data without a pattern loads with null and is stored back unchanged (no pattern key)', () => {
+    const old = { version: 1, chords: [oldChord], next: 2 };
+    const back = sanitizeShelf(JSON.parse(JSON.stringify(old)))!;
+    expect(back.chords[0].pattern).toBeNull();
+    expect(shelfToStored(back)).toEqual(old);
+    expect('pattern' in (shelfToStored(back).chords as object[])[0]).toBe(false);
+  });
+
+  it('a stored pattern round-trips; a bad one loads as null', () => {
+    const raw = {
+      version: 1,
+      chords: [
+        { ...oldChord, id: 'c1', template: '2-2 on 4', pattern: '2-2' },
+        { ...oldChord, id: 'c2', pattern: 'abc' },
+        { ...oldChord, id: 'c3', pattern: 7 },
+      ],
+      next: 4,
+    };
+    const back = sanitizeShelf(JSON.parse(JSON.stringify(raw)))!;
+    expect(back.chords.map((c) => c.pattern)).toEqual(['2-2', null, null]);
+    const again = sanitizeShelf(JSON.parse(JSON.stringify(shelfToStored(back))))!;
+    expect(again.chords).toEqual(back.chords);
+    expect((shelfToStored(back).chords as { pattern?: string }[])[0].pattern).toBe('2-2');
+  });
+
+  it('a stash with a pattern keeps it (canonical text); an invalid one stashes without', () => {
+    let s = run(initialState(), {
+      type: 'shelf/stash',
+      stash: {
+        pitches: [
+          { m: null, c: 200 },
+          { m: null, c: 500 },
+        ],
+        template: '2-2 on 2',
+        pattern: ' 2-2 ',
+        date: '2026-11-15T10:00:00.000Z',
+      },
+    });
+    s = labReducer(s, {
+      type: 'shelf/stash',
+      stash: { pitches: [{ m: null, c: 0 }], pattern: 'x', date: '2026-11-15T10:00:00.000Z' },
+    });
+    expect(s.shelf.chords.map((c) => [c.template, c.pattern])).toEqual([
+      ['2-2 on 2', '2-2'],
+      [null, null],
+    ]);
+  });
+});
