@@ -281,6 +281,8 @@ export type ShelfAction =
   | { type: 'shelf/select'; id: string; additive?: boolean }
   | { type: 'shelf/selectAll' }
   | { type: 'shelf/selectNone' }
+  /** Delete every chord (selection cleared; `next` is kept so ids are never reused; lineage links dangle as designed). */
+  | { type: 'shelf/clear' }
   /** Another window saved the shelf: take its chords (selection and sketch are kept where they still apply). */
   | { type: 'shelf/sync'; shelf: ShelfState }
   | { type: 'sketch/set'; patch: Partial<Pick<Sketch, 'template' | 'rootDeg' | 'exact'>> }
@@ -351,6 +353,10 @@ export function shelfReduce(s: ShelfState, a: ShelfAction): ShelfState {
         : { ...s, selected: s.chords.map((c) => c.id) };
     case 'shelf/selectNone':
       return s.selected.length ? { ...s, selected: [] } : s;
+    case 'shelf/clear':
+      return s.chords.length
+        ? { ...s, chords: [], selected: [], lastStashed: null, lastReload: null, refusal: null }
+        : s;
     case 'shelf/sync': {
       const have = new Set(a.shelf.chords.map((c) => c.id));
       return {

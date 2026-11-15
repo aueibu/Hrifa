@@ -372,3 +372,20 @@ describe('chordPitchesFor (pitch frame rule)', () => {
     expect(chordPitchesFor(bare, 'parallel')).toEqual(c.pitches);
   });
 });
+
+describe('shelf/clear', () => {
+  it('removes every chord and the selection, keeps the id counter and a dangling parent, and is a no-op when empty', () => {
+    let s = run(initialState(), { type: 'sel/set', idx: [3, 4, 0], mode: 0 });
+    const stash = { pitches: triad(), date: '2026-11-14T00:00:00.000Z' };
+    s = run(s, { type: 'shelf/stash', stash }, { type: 'shelf/stash', stash });
+    s = labReducer(s, { type: 'shelf/select', id: 'c1', additive: true });
+    const next = s.shelf.next;
+    const cleared = labReducer(s, { type: 'shelf/clear' });
+    expect(cleared.shelf.chords).toEqual([]);
+    expect(cleared.shelf.selected).toEqual([]);
+    expect(cleared.shelf.next).toBe(next);
+    expect(labReducer(cleared, { type: 'shelf/clear' })).toBe(cleared);
+    const again = labReducer(cleared, { type: 'shelf/stash', stash });
+    expect(again.shelf.chords[0].id).toBe(`c${next}`);
+  });
+});

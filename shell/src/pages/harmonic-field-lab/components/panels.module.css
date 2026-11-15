@@ -1348,19 +1348,25 @@
   border-radius: var(--radius-control);
   color: var(--text-muted);
   cursor: pointer;
-  display: none;
+  display: flex;
   height: 1.125rem;
   justify-content: center;
   padding: 0;
   position: absolute;
-  right: 0.125rem;
-  top: 0.125rem;
+  right: 0.25rem;
+  top: 0.25rem;
+  visibility: hidden;
   width: 1.125rem;
+}
+
+/* the "+" has a slot of its own at the chip's right edge, always reserved, so nothing moves or is covered when it appears */
+.chipWrap[data-stash] .chip {
+  padding-right: 1.625rem;
 }
 
 .chipWrap:hover .chipStash,
 .chipWrap:focus-within .chipStash {
-  display: flex;
+  visibility: visible;
 }
 
 .chipStash:hover {

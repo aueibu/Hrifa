@@ -244,6 +244,8 @@ export interface Tone {
   hz: number;
   src: number;
   markOnly?: boolean;
+  /** Field-absolute cents of a tone that shows as a ghost mark (see `Planned.ghost`). */
+  ghost?: number;
 }
 
 /**
@@ -322,10 +324,16 @@ export function modePreviewPlan(
       const x = (((c - f.c) % repC) + repC) % repC;
       return Math.min(x, repC - x) <= LIGHT_TOL;
     });
-  const tone = (c: number, parallelSrc: number): Tone =>
-    relative
-      ? { hz: absHz(p, rootC + c), src: litAt(rootC + c) }
-      : { hz: relHz(pj, c), src: parallelSrc };
+  // a tone that lights no field note is a ghost at its field-absolute pitch (its sounding pitch above 1/1)
+  const tone = (c: number, parallelSrc: number): Tone => {
+    const src = relative ? litAt(rootC + c) : parallelSrc;
+    return {
+      hz: relative ? absHz(p, rootC + c) : relHz(pj, c),
+      src,
+      // where the tone sounds above 1/1: as lit by the previews (Parallel: c itself, Relative: moved up by the root)
+      ghost: src < 0 ? (relative ? rootC + c : c) : undefined,
+    };
+  };
   const tones = (g: (typeof degs)[number], lift: number): Tone[] => {
     const listed = tone(g.wanted + g.d + lift, g.near);
     const pure = tone(g.wanted + lift, Math.abs(g.d) < 1e-6 ? g.near : -1);
@@ -359,7 +367,14 @@ export function stripPreviewPlan(
     return [];
   }
   const listed: Tone = { hz: absHz(p, f.c), src: i };
-  const target: Tone = { hz: absHz(p, f.c - dev), src: i, markOnly: Math.abs(dev) >= 1e-6 };
+  const off = Math.abs(dev) >= 1e-6;
+  // a target that is no field note keeps lighting its strip mark and also shows as a ghost at its true pitch
+  const target: Tone = {
+    hz: absHz(p, f.c - dev),
+    src: i,
+    markOnly: off,
+    ghost: off ? f.c - dev : undefined,
+  };
   const tones =
     kind === 'listed'
       ? [listed]

@@ -431,4 +431,26 @@ describe('chord shelf UI', () => {
     fireEvent.keyDown(screen.getAllByRole('textbox')[0], { key: '=', code: 'Equal' });
     expect(within(rail()).getByRole('tab', { name: /^Shelf/ }).textContent).toMatch(/2 chords/);
   });
+
+  it('Delete all: disabled when empty, two clicks, mouse-away cancels, then the shelf is empty', () => {
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(within(rail()).getByRole('tab', { name: /^Shelf/ }));
+    const del = () => screen.getByRole('button', { name: /delete all/i });
+    expect(del().getAttribute('aria-disabled')).toBe('true');
+    fireEvent.keyDown(window, { key: '=', code: 'Equal' });
+    fireEvent.keyDown(window, { key: '=', code: 'Equal' });
+    expect(
+      within(screen.getByRole('list', { name: 'Chord shelf' })).getAllByRole('listitem')
+    ).toHaveLength(2);
+    expect(del().getAttribute('aria-disabled')).toBe('false');
+    fireEvent.click(del());
+    expect(del().textContent).toBe('Delete all 2?');
+    fireEvent.mouseLeave(del());
+    expect(del().textContent).toBe('Delete all');
+    fireEvent.click(del());
+    fireEvent.click(del());
+    expect(screen.queryByRole('list', { name: 'Chord shelf' })).toBeNull();
+    expect(screen.getByText(/The shelf is empty/)).toBeTruthy();
+    expect(del().getAttribute('aria-disabled')).toBe('true');
+  });
 });

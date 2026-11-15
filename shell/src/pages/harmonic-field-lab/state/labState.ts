@@ -1154,6 +1154,7 @@ function reduce(s: LabState, a: Action): LabState {
     case 'shelf/delete':
     case 'shelf/select':
     case 'shelf/selectAll':
+    case 'shelf/clear':
     case 'shelf/selectNone':
     case 'shelf/sync':
     case 'sketch/set':

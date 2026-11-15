@@ -55,7 +55,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
     ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key. Playing it also arms this template in the Sketch row.`
     : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   return (
-    <span className={classes.chipWrap}>
+    <span className={classes.chipWrap} data-stash={chip.found || undefined}>
       <Tooltip label={label} multiline w={260} {...tipProps}>
         <button
           type="button"

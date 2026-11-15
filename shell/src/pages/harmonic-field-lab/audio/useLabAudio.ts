@@ -138,18 +138,18 @@ export function useLabAudio({
           .map(ghostCents),
       });
     const light = (i: number, on: boolean, markOnly = false, ghost?: number) => {
-      if (i < 0) {
-        // a sound that is no field note: a ghost mark at its pitch, counted so two sounds of one pitch end together
-        if (ghost !== undefined && Number.isFinite(ghost)) {
-          const k = ghostKey(ghost);
-          if (on ? ghostLights.current.on(k) : ghostLights.current.off(k)) {
-            report();
-          }
-        }
-        return;
+      let changed = false;
+      if (i >= 0) {
+        const c = markOnly ? markLights.current : lights.current;
+        changed = on ? c.on(i) : c.off(i);
       }
-      const c = markOnly ? markLights.current : lights.current;
-      if (on ? c.on(i) : c.off(i)) {
+      // a sound with no field light, or a target-only tone: a ghost mark at its pitch, counted so two sounds of one pitch
+      // end together (the field light and the ghost are separate counters)
+      if (ghost !== undefined && Number.isFinite(ghost)) {
+        const k = ghostKey(ghost);
+        changed = (on ? ghostLights.current.on(k) : ghostLights.current.off(k)) || changed;
+      }
+      if (changed) {
         report();
       }
     };

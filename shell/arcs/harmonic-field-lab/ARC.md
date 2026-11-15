@@ -269,6 +269,16 @@ Proposal:
   - [ ] Tests (key handling per mode, paging, release safety, linked melody pitches in the right frame, retuner precedence) and one page test; `check:hfl` green.
 - Human checkpoint after: **yes** (ears and feel)
 
+### M9: Positional chords (DRAFT, human liked it 2026-11-15; after M8b; acceptance to be approved before building)
+- Why: ratio templates (4:5:6) need tolerances so large in alien generators that they lose their identity. Derive chord types by POSITION in the subset instead (Schillinger-style expansion): stack every k-th note, so the chord's identity is its step pattern, not its ratios. Works in any tuning and any subset; the ratios are the result and are shown, not required.
+- Idea (human + orchestrator, 2026-11-15):
+  - A chord type is a step pattern over the subset: all steps equal (2-2 = every other note, a tertian triad; 2-2-2 = tetrad; 1-1 clusters; 3-3 wider) or mixed (2-3, 3-2), starting on any degree, any note count.
+  - **Naming = pattern + tail.** The pattern ("2-2", "2-3-2") says how it is built; the tail says what it is in THIS tuning so a 3-3 in 12-EDO and a 3-3 in harmonics-from-16 are not confused: the subset size and generator (e.g. "7 of 12-EDO"), the resulting cents signature (e.g. 300-400), and the nearest simple ratio name only when one fits tightly (e.g. "~ 4:5:6"). Exact format to be designed with the human.
+  - List all degrees' chords for the chosen pattern(s) and RANK them with the existing scorers (Sethares roughness, lattice cost): no tolerance. A new second family in the Sketch row beside the ratio templates; hold 4 / hold 5 / Stash / realization work unchanged (a positional chord is a set of field notes; its shape is its real intervals). Stashing keeps the pattern in the provenance.
+- Open design points: how a pattern is chosen (picker, presets: 2-2, 2-2-2, 2-3, 3-2, 1-1...), how the ranked list is shown (Chords panel section vs Sketch dropdown), the naming format, whether steps are counted in the active subset or the whole field, rotation and mode handling, how it interacts with the Chords-panel tolerance chips.
+- Stop-and-ask: the naming format and the UI placement are human decisions at the start of M9.
+- Human checkpoint after: **yes** (naming and feel)
+
 ## Final step
 Page `ARCHITECTURE.md` + lib `README.md` complete (contracts, modules, colour-role mapping, persistence keys, how a section could move into the Workbench). Reviewer over the full arc diff. Archive as `ARC.retuner-shell.md` / `PROGRESS.retuner-shell.md` in `arcs/harmonic-field-lab/`; add leftovers to `BACKLOG.md` tagged `[harmonic-field-lab]`, starting with: "Workbench integration plan: which section/packet moves first."
 

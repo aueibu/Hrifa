@@ -287,6 +287,49 @@ function Slot({
   );
 }
 
+/** Delete all: two clicks (the second reads "Delete all N?"); leaving, blurring or Escape cancels. */
+function DeleteAll({ count }: { count: number }) {
+  const { dispatch } = useLab();
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => {
+    if (count === 0) {
+      setConfirming(false);
+    }
+  }, [count]);
+  return (
+    <Button
+      size="compact-xs"
+      variant="default"
+      color={confirming ? 'red' : undefined}
+      // aria-disabled, not `disabled`: a disabled button drops keyboard focus after the confirm
+      data-disabled={count === 0 ? true : undefined}
+      aria-disabled={count === 0}
+      aria-label={confirming ? `Confirm delete all ${count} chords` : 'Delete all chords'}
+      onClick={() => {
+        if (count === 0) {
+          return;
+        }
+        if (confirming) {
+          setConfirming(false);
+          dispatch({ type: 'shelf/clear' });
+        } else {
+          setConfirming(true);
+        }
+      }}
+      onBlur={() => setConfirming(false)}
+      onMouseLeave={() => setConfirming(false)}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          setConfirming(false);
+        }
+      }}
+    >
+      {confirming ? `Delete all ${count}?` : 'Delete all'}
+    </Button>
+  );
+}
+
 export function ShelfPanel() {
   const lab = useLab();
   const { state, dispatch, audio, base } = lab;
@@ -355,6 +398,7 @@ export function ShelfPanel() {
         >
           Clear selection
         </Button>
+        <DeleteAll count={shelf.chords.length} />
       </Strip>
       <div className={classes.panelBody}>
         {shelf.refusal && (

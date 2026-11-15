@@ -60,7 +60,7 @@ export function ghostsOf(field: readonly Note[], repC: number, cents: readonly n
       c,
       turn: c / repC,
       dist,
-      text: `${c.toFixed(1)} c, sounding outside the field${near}`,
+      text: `${c.toFixed(1)} c, playing outside the field${near}`,
     });
   }
   return out.sort((a, b) => a.c - b.c);

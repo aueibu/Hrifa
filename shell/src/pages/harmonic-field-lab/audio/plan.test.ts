@@ -296,3 +296,20 @@ describe('pitchesPlan ghosts', () => {
     expect(plan[0].ghost).toBeCloseTo(1200 * Math.log2(7 / 4), 6);
   });
 });
+
+describe('ghosts from previews', () => {
+  it('a pure mode tone that lights no field note is a ghost at its sounding pitch; an exact one is not', () => {
+    const plan = modePreviewPlan(field, [0, 1, 2, 3], 1, OCT, 1200, base, 'pure', 'up');
+    expect(plan[0].ghost).toBeUndefined();
+    expect(plan[1].src).toBe(-1);
+    expect(plan[1].ghost).toBeCloseTo(1200 * Math.log2(10 / 9), 4);
+  });
+
+  it('a strip target that is no field note keeps its strip mark and also carries a ghost at its true pitch', () => {
+    const target = stripPreviewPlan(field, 2, 14, base, 'pure');
+    expect(target[0].markOnly).toBe(true);
+    expect(target[0].ghost).toBeCloseTo(field[2].c - 14, 6);
+    expect(stripPreviewPlan(field, 2, 14, base, 'listed')[0].ghost).toBeUndefined();
+    expect(stripPreviewPlan(field, 2, 0, base, 'pure')[0].ghost).toBeUndefined();
+  });
+});
