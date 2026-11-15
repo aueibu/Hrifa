@@ -281,7 +281,9 @@ Today (verified): `tool === 'chords'` makes `chordsActive`; the picker is in the
 
 Proposed: the clip editor host's claim carries `wantsPicker = (tool === 'chords')`; the **ChordSession** turns a change into `open('chords')` or `close('chords')` (the only caller, 1.3). A close the user makes on the picker's tab reaches the session as `onPanelClosed`, which forwards it to the active claim's host: the clip editor leaves the Chords tool (`setTool(toolBefore)`, unchanged behaviour); a `close` the session made does not call back (no race). `toolBeforeChords` stays tool state in the clip editor session. The picker's place lives in `lastDocker`, so it works when a screenset never contained the picker.
 
-### 3.6 `transient`: openness is not persisted (a decision for the human, O3)
+### 3.6 `transient`: openness is not persisted (SUPERSEDED 2026-11-14: the human chose O3(b), see below)
+
+> **Decision (2026-11-14, human):** the chord picker is an ORDINARY panel. There is no `transient` flag; openness is saved like any other panel. The Chords tool (menu or hotkey 7) calls `show('chords')` so the panel is shown if it is not; closing the panel while the Chords tool is active leaves the tool (the `toolBeforeChords` rule); other tools leave the panel alone. The rest of this section is kept as the record of the option not chosen; where it conflicts, this note wins.
 
 Decision proposed (O3): `chords` is `transient`: it is open iff the active claim wants it, and **it is never saved as open** (the saver strips it from `tabs`; its place is already in `lastDocker`). Consequence: the user cannot keep the picker open while the Chords tool is off; a saved or switched-to screenset never reopens it by itself; closing its tab is leaving the tool. Reason: the tool (per-clip session state, `NoteClipEditor.tsx` line 481, reset on clip change because the body is keyed by clip id) stays the single source, so tool and layout cannot disagree.
 
@@ -442,6 +444,30 @@ The clip editor session slice, the chord session, the desk (`useDesk`), `Composi
 
 Existing tests (`NoteClipEditor.test.tsx`, `.chords`, `.chordKeys`, `.reveal`, `.stack`, `.stage`) are the guard; M4's acceptance already forbids weakening assertions.
 
+## 7.7 Placement modes: the Chords tool versus the chord panel alone (PROPOSED scaffold, for the human to confirm before M4a)
+
+The human's question (2026-11-14): with the chord picker as an ordinary panel, what is different in the piano roll when the Chords tool is selected versus using the chord panel while another tool (the pointer) is active? This is the scaffold for pickers and generators that come later (a gesture picker, a voicing catalog).
+
+**The idea.** Separate three things that are tangled today: the **source** (a panel that makes a payload, here a chord), the **target** (the host that can receive it, claimed through the active chord target) and the **way a position is chosen**. A chord needs a target and a position (a pitch anchor and an onset). The Chords tool is only one way to choose the position; the panel always works against the active target.
+
+| Position source (placement mode) | Chosen by | Roll behaviour | When |
+| --- | --- | --- | --- |
+| **Anchor mode** | clicking or arrowing in the roll | The Chords tool: hover ghost and anchor ghost drawn on the roll, click sets the anchor, keys move it (W-20), continuous insert advances it. | The Chords tool is active. Exactly today's behaviour. |
+| **Selection mode** | the roll's current selection | Pointer tool, no new gestures: the panel acts on the selected notes: a chord stacks onto the selected note (the M7 stack rule, anchor = the selected note's pitch and onset), several selected notes are each an anchor or the lowest one is, nothing selected means the panel only auditions. | A non-Chords tool and a target with a selection. |
+| **Cursor mode** (later) | the playhead or an explicit cursor | Insert at the playhead and the last used pitch. | Later, if wanted. |
+| **Drop mode** (later) | dragging the chord from the panel onto the roll | The roll is a drop target that accepts a chord payload; the drop position is the anchor. | The later drops system (the human's vision); it fits because the panel already produces a payload. |
+
+**Rules that keep it in step**
+- The panel always shows which mode applies ("Anchor: click in the roll", "Selection: 2 notes", "No target") and what Insert will do.
+- Selecting the Chords tool forces the panel into view (above); the panel is never required for the tool to work in the roll (it just is the usual place to pick a chord).
+- Audition always works (a target is not needed to hear a chord).
+- Insert is disabled with a one-line reason when no position can be derived. It never guesses.
+- The roll does not know about the panel: it publishes selection and hover through the chord target and consumes anchors and ghosts; the panel does not know about the roll: it talks to the active chord target.
+
+**Why this is better than "tool on or off".** A binary tool conflates source, target and position. With placement modes: the picker works for a list module (its target supplies the position by its own rule, for example "append"), the roll offers anchor mode (today) and selection mode (new, cheap), and drag-and-drop later is just a fourth way to choose a position. It also gives M7 stacking (stack onto a selected note) a natural home.
+
+**Open questions**: whether selection mode ships in M6 or later; whether Cursor mode is wanted; what the panel shows when no clip is open and no host claims. Recommendation: anchor mode (unchanged) and selection mode in M6; the rest later.
+
 ## 8. Mapping today's workbench centre onto the model
 
 ### 8.1 Default screensets (derived from today's canvas and desk views and default arrangement)
@@ -551,7 +577,7 @@ Today the bottom pane shows exactly one of: the open module, the open clip's edi
 | --- | --- | --- | --- | --- |
 | O1 | **A user template library across projects.** Screensets are per project; may the user keep a per-viewer list of screenset templates to reuse in other projects? | (a) none: copy only by duplicating within a project; (b) a per-viewer list (`hrifa.stage.screenset-templates.v1`, name plus tree, with `module:<id>` tabs and `lastDocker` stripped because they are project data), "Save as template" and "New from template"; (c) export and import a JSON file. | (b), after M7, small. | (a) means rebuilding a favourite arrangement in every project; (c) is explicit but clunkier. A per-viewer list is per viewer by W-10, since it is not project data. |
 | O2 | **Default screenset contents.** | The three in 8.1 (Canvas, Desk, Edit) now, with Harmonic later; or four now with a guessed Harmonic. | Ship Canvas, Desk, Edit; add Harmonic when the lab panels exist. | A guessed Harmonic bakes in an arrangement for panels that do not exist; the empty visible `Tools` strip in each is the price of persistent named dockers (D3). |
-| O3 | **`transient` panels** (the chord picker): openness is owned by its host claim and never saved (3.6). | (a) transient as proposed; (b) the picker is an ordinary panel the user opens and closes freely, with the tool following it. | (a): tool and layout cannot disagree. | (b) lets the picker stay open with the tool off, but then the picker would need an empty state and tool state must follow the layout; the Panels menu would list it. |
+| O3 (ANSWERED 2026-11-14: option (b), ordinary panel; the tool or hotkey forces it into view) | **`transient` panels** (the chord picker): openness is owned by its host claim and never saved (3.6). | (a) transient as proposed; (b) the picker is an ordinary panel the user opens and closes freely, with the tool following it. | (a): tool and layout cannot disagree. | (b) lets the picker stay open with the tool off, but then the picker would need an empty state and tool state must follow the layout; the Panels menu would list it. |
 | O4 | **Docker naming defaults and Remove docker.** | Names: the panel's title at migration, "Docker N" for new ones, rename from the menu. Remove: close its tabs (places kept) with a plain confirmation; or move tabs to the default docker; or an undo. | Panel title and "Docker N"; Remove closes the tabs after a confirmation. Layout changes are not in history today; an undo would be a new mechanism, not proposed. | Moving tabs hides the user's decision; an undo notice needs that new mechanism. |
 | O5 | **Narrow-window rule** (2.5). | Collapse far dockers to strips; show a single docker; or scroll (the old behaviour). | Collapse from the far end to strips, never the selected docker, with parking. | Scroll breaks the size classes; single-docker mode hides the arrangement. |
 | O6 | **Docker-selection shortcut keys** (4.4). | F6 and Shift+F6 (VS Code; the browser also uses F6 for its address bar: whether a page can take it is unverified); Ctrl+Alt+digit (AltGr conflict on some layouts); a "Go to docker" list; Alt+digit (taken by the spike's presets). | F6 cycling if the browser lets the page have it, with the "Go to docker" list as the always-available route; digits after testing. | A shortcut the browser steals is a dead feature; the list is slower but always works. |
