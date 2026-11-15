@@ -210,8 +210,8 @@ describe('Composites panel item (h) and remembered Positional order (i)', () => 
     const [dItem, gItem] = [...items.querySelectorAll('li')] as HTMLElement[];
     const lines = [...dItem.querySelectorAll('[data-detail]')].map((x) => x.textContent);
     expect(lines).toEqual([
-      '4:5:6 major triad on 200.0 c',
-      'chord · 3 notes · Major',
+      '4:5:6 · Major on 200.0 c',
+      'chord · 3 notes · major triad',
       '200.0, 600.0, 900.0 c',
       'Source: 12-EDO',
     ]);
@@ -259,7 +259,7 @@ describe('Composites panel item (h) and remembered Positional order (i)', () => 
       fireEvent.click(screen.getByRole('button', { name: 'Show the items of Composite 1' }));
     }
     const sentItems = screen.getByRole('list', { name: 'Items of Composite 1' });
-    expect(within(sentItems).getByText('chord · 3 notes · Septimal')).toBeInTheDocument();
+    expect(within(sentItems).getByText(/^3:5:7 · Septimal on [\d.]+ c$/)).toBeInTheDocument();
   });
 });
 

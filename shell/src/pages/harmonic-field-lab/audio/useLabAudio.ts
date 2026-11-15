@@ -375,6 +375,34 @@ export function useLabAudio({
         }
       });
     };
+    /**
+     * Playing a chord chip (ratio chip, CPS chip, positional row) arms its template or pattern and its shape in the Sketch row.
+     * Hold 1 (`withRoot`) also moves a positional row's root degree there; hold 4 / 5 arm the same chord type but never move
+     * the Sketch root (the chord sounds on the stepper root).
+     */
+    const armFrom = (t: PreviewTarget, withRoot: boolean) => {
+      const b = latest.current.base;
+      if (t.kind === 'chord' && t.template) {
+        dispatch({
+          type: 'sketch/arm',
+          template: t.template,
+          shape: t.rootIdx !== undefined ? chordShape(b.field, b.rep, t.rootIdx, t.idx) : null,
+        });
+      } else if (t.kind === 'pitches' && t.positional) {
+        dispatch({
+          type: 'sketch/armPositional',
+          pattern: t.positional.pattern,
+          ...(withRoot ? { rootDeg: t.positional.rootDeg } : {}),
+          shape: [...t.positional.shape],
+        });
+      }
+    };
+    const armedAt = { current: '' };
+    /** What a chord chip's held sound depends on besides the chip: the Sketch root, the playback frame, the subset and its mode. */
+    const soundKey = () => {
+      const { sketch: sk, ui: u, base: b } = latest.current;
+      return `${sk.rootDeg}:${u.modePlayback}:${b.rootC}:${b.idx.join(',')}:${b.mode}`;
+    };
     const playTarget = (id: string, digit: string, t: PreviewTarget): boolean => {
       const kind = HOLD_DIGITS[digit];
       if (!kind && !ARMED_DIGITS[digit]) {
@@ -383,6 +411,8 @@ export function useLabAudio({
       endHeld(id);
       const { base: b, ui: u } = latest.current;
       if (ARMED_DIGITS[digit]) {
+        armFrom(t, false);
+        armedAt.current = soundKey();
         // hold 4 (as in the field) / hold 5 (exact): the armed chord on the pointed note (a strip mark is its note);
         // nothing elsewhere
         const i = t.kind === 'note' || t.kind === 'strip' ? t.i : -1;
@@ -456,24 +486,10 @@ export function useLabAudio({
             );
           }
         } else if (t.kind === 'chord') {
-          if (t.template) {
-            // playing a chord chip arms its template and its realization in the Sketch row
-            dispatch({
-              type: 'sketch/arm',
-              template: t.template,
-              shape: t.rootIdx !== undefined ? chordShape(b.field, b.rep, t.rootIdx, t.idx) : null,
-            });
-          }
+          armFrom(t, true);
           startHeld(id, chordPlan(b.field, t.idx, pitch(), t.rootIdx), false, digit);
         } else if (t.kind === 'pitches') {
-          if (t.positional) {
-            dispatch({
-              type: 'sketch/armPositional',
-              pattern: t.positional.pattern,
-              rootDeg: t.positional.rootDeg,
-              shape: [...t.positional.shape],
-            });
-          }
+          armFrom(t, true);
           startHeld(
             id,
             pitchesPlan(b.field, b.repC, t.cents, pitch(), 1.8, t.light),
@@ -621,6 +637,13 @@ export function useLabAudio({
     const refreshArmed = () => {
       const t = target.current;
       if (!t) {
+        return;
+      }
+      // a chord chip's sound does not depend on the armed chord: arming it by this very hold must not restart the sound
+      const chip =
+        (t.kind === 'chord' && t.rootIdx !== undefined) || (t.kind === 'pitches' && t.positional);
+      const now = soundKey();
+      if (chip && armedAt.current === now) {
         return;
       }
       for (const [id, d] of heldDigits.current) {

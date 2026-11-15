@@ -73,10 +73,10 @@ const oneDecimal = (c: number) => c.toFixed(1);
 
 /**
  * The four lines of an item (M8e):
- *  1. `<template> <kind> on <root> c` (`4:5:6 major triad on 200.0 c`); a positional chord shows its label (`2-2 on 4`); a
- *     subset or note shows its label;
- *  2. `chord · n notes`, `subset · n notes`, `selection · n notes`, or `note`; a chord or selection with a template family adds
- *     it last (`chord · 3 notes · Septimal`, M8f);
+ *  1. `<ratios> · <family> on <root> c` (`4:5:6 · Major on 200.0 c`; no family: `4:5:6 on 200.0 c`); a positional chord shows
+ *     its label (`2-2 on 4`); a subset or note shows its label;
+ *  2. `chord · n notes · <template name>` (`chord · 3 notes · major triad`), `subset · n notes`, `selection · n notes`, or
+ *     `note` (M8g; a positional chord has no template name);
  *  3. the cents (chords and selections only), plus the positional tail on the same line;
  *  4. `Source: <generator or source name>`.
  * The cents come from `centsList(pitches)`; nothing here is stored.
@@ -87,9 +87,14 @@ export function itemLines(it: CompositeItem): { key: string; text: string }[] {
   const lines: { key: string; text: string }[] = [];
   const chordLike = it.kind === 'chord' || it.kind === 'selection';
   let what = it.label;
+  // the kind name ("major triad") is shown on line 2 beside the template, when the item has a template
+  let kindName: string | null = null;
   if (chordLike && !d?.pattern && n > 0) {
     const root = oneDecimal(centsList(it.pitches)[0]);
-    what = `${[d?.template, nameOfLabel(it.label)].filter(Boolean).join(' ')} on ${root} c`;
+    const name = nameOfLabel(it.label);
+    kindName = d?.template && name !== d.template ? name : null;
+    const head = [d?.template ?? name, d?.template ? d.family : null].filter(Boolean).join(' · ');
+    what = `${head} on ${root} c`;
   }
   lines.push({ key: 'what', text: what });
   lines.push({
@@ -97,9 +102,7 @@ export function itemLines(it: CompositeItem): { key: string; text: string }[] {
     text:
       it.kind === 'note'
         ? 'note'
-        : [`${it.kind} · ${n} ${n === 1 ? 'note' : 'notes'}`, chordLike ? d?.family : null]
-            .filter(Boolean)
-            .join(' · '),
+        : [`${it.kind} · ${n} ${n === 1 ? 'note' : 'notes'}`, kindName].filter(Boolean).join(' · '),
   });
   if (chordLike) {
     const cents = `${centsList(it.pitches).map(oneDecimal).join(', ')} c`;

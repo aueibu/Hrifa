@@ -5,14 +5,14 @@
  * and the count beside it (kept while folded).
  */
 import type { ReactNode } from 'react';
-import { MAX_FOLDS, MAX_FOLD_ID } from '../state/persist';
+import { foldId } from '../state/foldIds';
+import { MAX_FOLDS } from '../state/persist';
 import type { TipKey } from '../texts';
 import { ChevronDownIcon } from './icons';
 import { Num, Tip, useLab } from './ui';
 import classes from './panels.module.css';
 
-/** The storage id of a section: parts joined with `:`, cut to the stored length cap. */
-export const foldId = (...parts: string[]): string => parts.join(':').slice(0, MAX_FOLD_ID);
+export { foldId };
 
 /** Folded state of one section and the toggle. */
 export function useFold(id: string): { folded: boolean; toggle: () => void } {

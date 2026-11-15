@@ -111,7 +111,7 @@ function PositionalRow({ chord, showScore, pattern, naming, rowPicked, onPick }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target.key]);
   const text = [naming.label, naming.tail, naming.ratio].filter(Boolean).join(', ');
-  const label = `${text}. Click: hear it, keep it highlighted and arm it in the Sketch row. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this row, hold 4 or 5 plays it on the root of the Sketch row's stepper (both play its field notes: a positional chord has no separate exact form). Roughness score ${chord.score.toFixed(2)} (smoothest first, rank ${rank}).`;
+  const label = `${text}. Click: hear it, keep it highlighted and arm it in the Sketch row. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this row, hold 4 or 5 plays it on the root of the Sketch row's stepper (both play its field notes: a positional chord has no separate exact form). Holding 1, 4 or 5 on it also arms its pattern in the Sketch row (hold 4 and 5 leave the Sketch root alone). Roughness score ${chord.score.toFixed(2)} (smoothest first, rank ${rank}).`;
   return (
     <li className={classes.chipWrap} data-stash="true" data-testid="positional-row">
       <Tooltip label={label} multiline w={260} {...tipProps}>

@@ -15,7 +15,9 @@ import {
 import type { PreviewTarget } from '../audio/plan';
 import { cpsRootIdx } from '../state/cpsRoot';
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
+import { chordFoldIds, collapseAll } from '../state/foldIds';
 import { MAX_TEMPLATES } from '../state/labState';
+import { ladderWindow, nearestHidden } from '../state/ladderWindow';
 import { FoldHead, foldId, useFold } from './Fold';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import { PatternsEditor, PositionalSection } from './Positional';
@@ -97,7 +99,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
   const label = chip.found
-    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key; hold 4 plays it as in this field, and hold 5 its exact ratios, on the root of the Sketch row's stepper. Playing it also arms this template in the Sketch row.`
+    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key; hold 4 plays it as in this field, and hold 5 its exact ratios, on the root of the Sketch row's stepper. Playing it, or holding 1, 4 or 5 on it, also arms this template in the Sketch row (the Sketch root stays where it is).`
     : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   return (
     <span className={classes.chipWrap} data-stash={chip.found || undefined}>
@@ -275,7 +277,7 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
         }
       : null;
   });
-  const label = `${kind} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this chip, hold 4 plays it on the root of the Sketch row's stepper (the chord as in this field) and hold 5 does the same: a CPS chord has no separate exact form.`;
+  const label = `${kind} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this chip, hold 4 plays it on the root of the Sketch row's stepper (the chord as in this field) and hold 5 does the same: a CPS chord has no separate exact form. Holding 1, 4 or 5 on it also arms its chord in the Sketch row (the Sketch root stays).`;
   return (
     <span className={classes.chipWrap} data-stash="true">
       <Tooltip label={label} multiline w={260} {...tipProps}>
@@ -610,9 +612,18 @@ export function ChordsPanel() {
     chips.map((c) => c.family),
     state.templates
   );
-  /** A window of the ladder around the current rung: one below, six above. */
+  /** M8g: a window of 7 tiles around the current rung, with `+n` tiles for what is hidden at an edge. */
   const at = ladder.findIndex((r) => r.tol === current);
-  const shown = ladder.slice(Math.max(0, at - 1), at + 7);
+  const win = ladderWindow(ladder.length, at);
+  const shown = ladder.slice(win.start, win.end);
+  const pickIdx = (i: number) => ladder[i] && setTol(ladder[i].tol);
+  // Collapse all | Expand all: the ids of what the panel renders now
+  const foldIds = chordFoldIds({
+    cps: tab.gen.method === 'cps',
+    patterns: state.patterns.list,
+    chips,
+    sizes: SIZES,
+  });
   return (
     <>
       <Strip title={<Tip k="chords">Chords</Tip>}>
@@ -622,77 +633,125 @@ export function ChordsPanel() {
           </Button>
         </Tip>
       </Strip>
-      <div className={classes.panelBody}>
-        <SketchRow />
-        {!model && (
-          <span className={classes.hint} role="status">
-            Chords are found for a subset of 2 to {MAX_CHORDS} notes. Select a few more notes.
-          </span>
-        )}
-        <div className={classes.tolRow}>
-          <Tip k="chordTolerance">Tolerance</Tip>
-          <ActionIcon
-            variant="default"
-            size="sm"
-            aria-label="Lower tolerance"
-            disabled={!down}
-            onClick={() => down && setTol(down.tol)}
-          >
-            <MinusIcon />
-          </ActionIcon>
-          <span className={classes.tolValue}>
-            <Num>{tol} c</Num>
-          </span>
-          <ActionIcon
-            variant="default"
-            size="sm"
-            aria-label="Raise tolerance"
-            disabled={!up}
-            onClick={() => up && setTol(up.tol)}
-          >
-            <PlusIcon />
-          </ActionIcon>
-          <Tip k="chordLadder">
-            <span className={classes.hint} aria-live="polite">
-              {up ? (
-                <>
-                  +<Num>{up.tol - tol}</Num> c &rarr; <Num>{up.count - count}</Num> more
-                </>
-              ) : (
-                'nothing more to find'
-              )}
-              {down && (
-                <>
-                  {' '}
-                  &middot; &minus;<Num>{tol - down.tol}</Num> c &rarr;{' '}
-                  <Num>{count - down.count}</Num> fewer
-                </>
-              )}
+      <div className={`${classes.panelBody} ${classes.chordsBody}`}>
+        <div className={classes.chordsTop} data-testid="chords-top">
+          <div className={classes.chordsFolds}>
+            <Tip k="collapseAllChords" as="control">
+              <Button
+                size="compact-xs"
+                variant="default"
+                aria-label="Collapse all sections"
+                onClick={() => dispatch({ type: 'ui', patch: { folds: collapseAll(foldIds) } })}
+              >
+                Collapse all
+              </Button>
+            </Tip>
+            <Tip k="expandAllChords" as="control">
+              <Button
+                size="compact-xs"
+                variant="default"
+                aria-label="Expand all sections"
+                onClick={() => dispatch({ type: 'ui', patch: { folds: {} } })}
+              >
+                Expand all
+              </Button>
+            </Tip>
+          </div>
+          <SketchRow />
+          {!model && (
+            <span className={classes.hint} role="status">
+              Chords are found for a subset of 2 to {MAX_CHORDS} notes. Select a few more notes.
             </span>
-          </Tip>
-        </div>
-        <div className={classes.ladder} role="group" aria-label="Tolerance ladder">
-          {shown.map((r) => (
-            <button
-              key={r.tol}
-              type="button"
-              className={classes.rung}
-              data-on={r.tol === current}
-              aria-label={`Tolerance ${r.tol} c, ${r.count} chords`}
-              onClick={() => setTol(r.tol)}
+          )}
+          <div className={classes.tolRow}>
+            <Tip k="chordTolerance">Tolerance</Tip>
+            <ActionIcon
+              variant="default"
+              size="sm"
+              aria-label="Lower tolerance"
+              disabled={!down}
+              onClick={() => down && setTol(down.tol)}
             >
-              <Num>{r.tol}</Num>
-              <Num muted>{r.count}</Num>
-            </button>
-          ))}
+              <MinusIcon />
+            </ActionIcon>
+            <span className={classes.tolValue}>
+              <Num>{tol} c</Num>
+            </span>
+            <ActionIcon
+              variant="default"
+              size="sm"
+              aria-label="Raise tolerance"
+              disabled={!up}
+              onClick={() => up && setTol(up.tol)}
+            >
+              <PlusIcon />
+            </ActionIcon>
+            <Tip k="chordLadder">
+              <span className={classes.hint} aria-live="polite">
+                {up ? (
+                  <>
+                    +<Num>{up.tol - tol}</Num> c &rarr; <Num>{up.count - count}</Num> more
+                  </>
+                ) : (
+                  'nothing more to find'
+                )}
+                {down && (
+                  <>
+                    {' '}
+                    &middot; &minus;<Num>{tol - down.tol}</Num> c &rarr;{' '}
+                    <Num>{count - down.count}</Num> fewer
+                  </>
+                )}
+              </span>
+            </Tip>
+          </div>
+          <div className={classes.ladder} role="group" aria-label="Tolerance ladder">
+            {win.before > 0 && (
+              <button
+                type="button"
+                className={classes.rung}
+                data-more="before"
+                aria-label={`${win.before} more tolerances below; pick the nearest`}
+                onClick={() => pickIdx(nearestHidden(win, 'before'))}
+              >
+                <Num>+{win.before}</Num>
+              </button>
+            )}
+            {shown.map((r) => (
+              <button
+                key={r.tol}
+                type="button"
+                className={classes.rung}
+                data-on={r.tol === current}
+                aria-label={`Tolerance ${r.tol} c, ${r.count} chords`}
+                onClick={() => setTol(r.tol)}
+              >
+                <Num>{r.tol}</Num>
+                <Num muted>{r.count}</Num>
+              </button>
+            ))}
+            {win.after > 0 && (
+              <button
+                type="button"
+                className={classes.rung}
+                data-more="after"
+                aria-label={`${win.after} more tolerances above; pick the nearest`}
+                onClick={() => pickIdx(nearestHidden(win, 'after'))}
+              >
+                <Num>+{win.after}</Num>
+              </button>
+            )}
+          </div>
         </div>
-        {tab.gen.method === 'cps' && <CpsChords />}
-        <PositionalSection />
-        <FamiliesGroup chips={chips} families={families} onRaise={setTol} />
-        <span className={classes.foot}>
-          <Tip k="templates">Templates</Tip>{' '}
-          <Num>{model?.templateCount ?? state.templates.length}</Num>
-        </span>
+        <div className={classes.chordsList}>
+          {tab.gen.method === 'cps' && <CpsChords />}
+          <PositionalSection />
+          <FamiliesGroup chips={chips} families={families} onRaise={setTol} />
+          <span className={classes.foot}>
+            <Tip k="templates">Templates</Tip>{' '}
+            <Num>{model?.templateCount ?? state.templates.length}</Num>
+          </span>
+        </div>
       </div>
       <Modal
         opened={editing}

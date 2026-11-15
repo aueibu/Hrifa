@@ -516,6 +516,52 @@
   overflow-y: auto;
 }
 
+/* the Chords panel (M8g), like the Keys panel: it does not scroll as a whole. The top (Sketch row, tolerance and ladder, Collapse
+   all | Expand all) stays in view, capped at 45% of the viewport height and scrolling inside itself beyond that; only the chord
+   lists below scroll */
+.chordsBody {
+  overflow-y: auto; /* fallback: a panel too short for the top plus a little list scrolls as a whole, nothing is unreachable */
+}
+
+.chordsTop {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  max-height: 45vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.chordsTop > * {
+  flex: none;
+}
+
+.panelBody > .chordsTop {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.chordsFolds {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: flex-end;
+}
+
+.chordsList {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-height: 4.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.chordsList > * {
+  flex: none;
+}
+
 .keyRingsScroll {
   align-content: start;
   flex: 1 1 8rem;
@@ -1462,6 +1508,8 @@
 }
 
 .sketchNote {
+  --sketch-tint: 14%; /* strength of the severity wash on the grey tile background: tune here */
+
   background: var(--panel-slot);
   border: 1px solid transparent;
   border-radius: var(--radius-control);
@@ -1472,14 +1520,42 @@
   padding: 0.1875rem 0.4375rem;
 }
 
-/* a found note carries the chord highlight colour; an outsider is dashed and prints its distance in cents */
+/* a found note carries the chord highlight colour; an outsider is dashed and prints its distance in cents, in the colour of the
+   chord chips' error severity (outline) over the grey panel background mixed with it (M8g) */
 .sketchNote[data-found='true'] {
+  background: color-mix(in srgb, var(--mark-cyan) var(--sketch-tint), var(--panel-slot));
   border-color: var(--mark-blue);
 }
 
 .sketchNote[data-found='false'] {
-  background: none;
-  border: 1px dashed var(--control-border);
+  --sev: var(--control-border);
+
+  background: var(--panel-slot);
+  border: 1px dashed var(--sev);
+}
+
+.sketchNote[data-found='false'][data-sev='1'] {
+  --sev: var(--mark-green);
+
+  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
+}
+
+.sketchNote[data-found='false'][data-sev='2'] {
+  --sev: var(--mark-yellow);
+
+  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
+}
+
+.sketchNote[data-found='false'][data-sev='3'] {
+  --sev: var(--mark-orange);
+
+  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
+}
+
+.sketchNote[data-found='false'][data-sev='4'] {
+  --sev: var(--mark-red);
+
+  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
 }
 
 /* Shelf panel */

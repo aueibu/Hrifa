@@ -385,12 +385,12 @@ Proposal:
 - Checkpoint decision (human, 2026-11-15): all patterns stacked, each ranked among itself (scenario h/j below).
 - Human checkpoint after: **yes** (feel and look).
 
-### M8g: Chords panel round 3 (DRAFT 2026-11-15, awaiting answers to the open points; builds after M8f is committed)
+### M8g: Chords panel round 3 (APPROVED 2026-11-15)
 - Why: the human's M8f feedback (2026-11-15). Owned paths only; `ui` additions follow the `positionalOrder` / `folds` pattern (optional, sanitised, no write on mount).
 - Items:
   1. **Composite item lines, revised**: line 1 `<ratios> · <family> on <x.x> c` (e.g. `4:5:6 · Major on 200.0 c`, `3:5:7 · Septimal on 0.0 c`; no family: `<ratios> on <x.x> c`; positional keeps its label `2-2 on 4`); line 2 `chord · <n> notes · <template name>` (e.g. `chord · 3 notes · major triad`, `chord · 4 notes · harmonic 7th chord`); lines 3 and 4 unchanged (cents, `Source:`).
   2. **Hover 4/5 on a chord chip arms it** exactly like hover 1 does: the Sketch row takes the chip's chord type (template for ratio chips, pattern for positional rows, the CPS shape), regardless of 4 or 5; the Sketch root is NOT changed by arming, so the chord still sounds on the stepper root. The tooltip text already says it arms; the code must match.
-  3. **Fold memory on refresh**: the human reports folds are not remembered after a refresh. Reproduce first (which fold, which generator, what comes back) and fix; add a test that fails before the fix.
+  3. **Fold memory on refresh**: NOT a bug (human, 2026-11-15: he had not tested it; all is well). No work; the existing reload test in `HarmonicFieldLab.m8f.test.tsx` stays.
   4. **Persistent top of the Chords panel**: the Sketch row (stepper) and the tolerance ladder stay visible while the chord lists scroll (sticky, as the key rings do in the Keys panel; read how that is done and reuse it). Plus **Collapse all | Expand all** controls (applies to every section and sub-fold of this panel: CPS, Positional and each pattern group, ratio families, sizes, family rows), placed in the sticky top area.
   5. **Tolerance ladder window**: replace the free scroll with a window of 7 tiles: the selected tolerance centred with its outline and 3 on each side; where more tolerances exist beyond the window, a `+n` tile at that edge (n = how many are hidden); near either end of the ladder the window slides so it still shows 7 tiles (the selection is then off-centre). Clicking a tile selects it (and the window follows); clicking `+n` selects the nearest hidden tile in that direction.
   6. **Sketch preview tile colours**: tiles for notes that are in the field keep the solid blue; tiles for notes that are NOT in the field (offsets) use the same colour scheme as the chord chips' cents-error severity colours (`data-sev`), dashed outline kept but coloured, and the tile background tinted with that colour mixed into the grey panel background (light-grey/grey base + tint, not a tint from transparent); the exact tile (error 0) gets its severity tint too.
@@ -408,7 +408,7 @@ Proposal:
 | h | Selection on the highest tolerance | window still shows 7 tiles with the last one selected, `+n` only on the left |
 | i | Sketch preview: C major triad on 12-EDO with the field lacking one note | in-field tiles solid blue; the offset tile dashed in its severity colour with a tinted fill; the exact tile tinted too |
 
-- Open points for the human: (1) line 1 wording with the family: is `4:5:6 · Major on 200.0 c` what you meant? (2) Collapse all | Expand all: in the sticky top area at the right, OK? (3) The sticky area (Sketch row + ladder) may take a lot of height on a short screen: if it does, which part should shrink or scroll? (4) Fold bug: which section did you fold, on which generator, and what did you see after the refresh?
+- Checkpoint decisions (human, 2026-11-15): line 1 wording confirmed (`4:5:6 · Major on 200.0 c`); Collapse all | Expand all in the sticky area; the fold-memory report was not a bug; the human does not know how tall the sticky area may get on his screen, so the default is: the sticky area is capped at 45% of the viewport height and scrolls inside itself beyond that (the human will say at the checkpoint if it needs to shrink).
 - Human checkpoint after: **yes** (feel and look).
 
 ## Final step

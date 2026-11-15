@@ -639,9 +639,19 @@ const entries = {
     term: 'Remove template',
     text: 'Deletes this row from the list. Example: remove 3:5:7 if you never want it reported.',
   },
+  collapseAllChords: {
+    term: 'Collapse all',
+    text: 'Folds every section of the Chords panel at once: the CPS chords, Positional and each pattern group, the ratio chords with every size and family row. The counts stay beside the names. Example: with the panel long and busy, press Collapse all, then open only the Major triads. The choice is remembered, like folding one section.',
+    see: ['expandAllChords'],
+  },
+  expandAllChords: {
+    term: 'Expand all',
+    text: 'Opens every section of the Chords panel at once, undoing Collapse all and any section you folded by hand.',
+    see: ['collapseAllChords'],
+  },
   chordLadder: {
     term: 'Tolerance ladder',
-    text: 'The tolerances at which the number of chords changes. Dashed chips are chords that do not fit yet; clicking one (or a rung, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.',
+    text: 'The tolerances at which the number of chords changes. Seven tiles show at a time with the current one in the middle (near either end of the ladder it sits off-centre); a +n tile at an edge means n more tolerances are hidden on that side, and clicking it picks the nearest hidden one. Dashed chips are chords that do not fit yet; clicking one (or a tile, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.',
     see: ['chordTolerance'],
   },
   editTemplates: {

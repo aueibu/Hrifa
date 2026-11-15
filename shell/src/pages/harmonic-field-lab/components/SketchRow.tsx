@@ -21,7 +21,7 @@ import { autoName } from '../state/generate';
 import { sketchPositionalPitches } from '../state/sketchChord';
 import { PlayIcon } from './icons';
 import { tooFewHint } from './Positional';
-import { Num, Tip, useLab } from './ui';
+import { Num, Tip, severity, useLab } from './ui';
 import classes from './panels.module.css';
 
 /** Template dropdown data: the templates grouped by family (the chord finder's family order), the text as the value. */
@@ -309,6 +309,7 @@ export function SketchRow() {
                 role="listitem"
                 className={classes.sketchNote}
                 data-found={hit}
+                data-sev={hit ? 0 : off === null ? undefined : severity(Math.abs(off))}
                 aria-label={
                   hit
                     ? `${noteLabel(p)}: a field note`
