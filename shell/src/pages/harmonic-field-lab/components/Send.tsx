@@ -11,7 +11,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Menu } from '@mantine/core';
-import { previewAdd, samePitches, type Note } from '../../../lib/harmonic-field';
+import { exactShape, placeShape, samePitches, type Note } from '../../../lib/harmonic-field';
 import { isTyping } from '../audio/keymap';
 import type { ShelfChord } from '../state/chordShelf';
 import {
@@ -24,6 +24,7 @@ import { useLabDeveloperOptions } from '../state/developerOptions';
 import { generateField, type GenSpec } from '../state/generate';
 import { ownerGen, ownerLabel, type LibSubset } from '../state/generatorLibrary';
 import { tabName } from '../state/labState';
+import { previewSend, sendModeOf, sendPitches, type SendMode } from '../state/sendMode';
 import {
   closeSendMenu,
   closeSendPopup,
@@ -85,10 +86,19 @@ export function repOfGen(g: GenSpec): Note | null {
 
 /** A shelf chord as an item: its stored exact pitches, and the generator and tab it was stashed from (not the active tab's). */
 export function shelfChordItem(c: ShelfChord): SendItem {
+  const shape = !c.pattern && c.template && c.pitches[0] ? exactShape(c.template) : null;
   return {
     kind: 'chord',
     label: c.name,
     pitches: c.pitches.map(plainNote),
+    exact: shape && c.pitches[0] ? placeShape(c.pitches[0], shape) : null,
+    fixed: c.pattern ? true : undefined,
+    detail: {
+      template: c.pattern ? null : c.template,
+      root: c.rootDeg === null ? null : `degree ${c.rootDeg + 1}`,
+      pattern: c.pattern,
+      tail: c.tail,
+    },
     rep: c.source ? repOfGen(c.source.gen) : null,
     source: c.source ? { gen: c.source.gen, tab: c.source.tab, date: c.date } : null,
   };
@@ -114,6 +124,7 @@ export function compositeItemItem(it: CompositeItem): SendItem {
     pitches: it.pitches.map(plainNote),
     rep: it.rep,
     source: it.source,
+    detail: it.detail,
   };
 }
 
@@ -140,7 +151,8 @@ function noteItem(lab: ReturnType<typeof useLab>): SendItem | null {
 export function useSendTo() {
   const lab = useLab();
   return useCallback(
-    (items: SendItem | readonly SendItem[], to: number | 'new') => {
+    (items: SendItem | readonly SendItem[], to: number | 'new', mode?: SendMode) => {
+      const m = mode ?? sendModeOf(lab.state.shelf.sketch);
       const many = Array.isArray(items);
       let list = many ? (items as readonly SendItem[]) : [items as SendItem];
       const date = new Date().toISOString();
@@ -148,9 +160,10 @@ export function useSendTo() {
       const make = (it: SendItem): ItemInput => ({
         kind: it.kind,
         label: it.label,
-        pitches: it.pitches,
+        pitches: sendPitches(it, m),
         rep: it.rep ?? lab.base.rep,
         source: it.source === undefined ? active : it.source,
+        detail: it.detail,
       });
       let target = to;
       if (many && list.length > 1) {
@@ -159,8 +172,8 @@ export function useSendTo() {
         const kept: SendItem[] = [];
         for (const it of list) {
           const dup =
-            kept.some((k) => samePitches(k.pitches, it.pitches)) ||
-            (target0?.items.some((x) => samePitches(x.pitches, it.pitches)) ?? false);
+            kept.some((k) => samePitches(sendPitches(k, m), sendPitches(it, m))) ||
+            (target0?.items.some((x) => samePitches(x.pitches, sendPitches(it, m))) ?? false);
           if (!dup) {
             kept.push(it);
           }
@@ -202,26 +215,24 @@ function previewFor(
   item: SendItem,
   baseRep: Note,
   tol: number,
-  keep: 'first' | 'recent'
+  keep: 'first' | 'recent',
+  mode: SendMode
 ) {
-  return previewAdd(
-    c.items,
-    { pitches: item.pitches },
-    c.items.length ? baseRep : (item.rep ?? baseRep),
-    {
-      tol,
-      keep,
-    }
-  );
+  return previewSend(c.items, item, mode, c.items.length ? baseRep : (item.rep ?? baseRep), {
+    tol,
+    keep,
+  });
 }
 
 function PopupRow({ digit, c, item }: { digit: number; c: Composite; item: SendItem }) {
   const lab = useLab();
   const [dev] = useLabDeveloperOptions();
   const send = useSendTo();
+  // step 1: the shelf's switch; step 2 adds the popup's own slider here
+  const mode = sendModeOf(lab.state.shelf.sketch);
   const p = useMemo(
-    () => previewFor(c, item, lab.base.rep, dev.mergeTolerance, dev.mergeKeeps),
-    [c, item, lab.base.rep, dev.mergeTolerance, dev.mergeKeeps]
+    () => previewFor(c, item, lab.base.rep, dev.mergeTolerance, dev.mergeKeeps, mode),
+    [c, item, lab.base.rep, dev.mergeTolerance, dev.mergeKeeps, mode]
   );
   const effect = p.already
     ? `already in composite ${c.id}`
@@ -236,7 +247,7 @@ function PopupRow({ digit, c, item }: { digit: number; c: Composite; item: SendI
         aria-label={`${digit}: ${c.name}, ${plural(p.before.length, 'note')}, ${effect}`}
         onClick={() => {
           if (!p.already) {
-            send(item, c.id);
+            send(item, c.id, mode);
             closeSendPopup();
           }
         }}
@@ -324,7 +335,11 @@ function CompositeItems({
         if (!c) {
           return null;
         }
-        const has = item ? c.items.some((it) => samePitches(it.pitches, item.pitches)) : false;
+        const has = item
+          ? c.items.some((it) =>
+              samePitches(it.pitches, sendPitches(item, sendModeOf(state.shelf.sketch)))
+            )
+          : false;
         return (
           <Menu.Item key={id} disabled={has} onClick={() => onPick(id)}>
             {c.id} {c.name}

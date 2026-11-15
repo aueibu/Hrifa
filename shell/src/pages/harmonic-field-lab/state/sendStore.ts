@@ -8,7 +8,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import type { Note } from '../../../lib/harmonic-field';
-import type { ItemKind, ItemSource } from './composites';
+import type { ItemDetail, ItemKind, ItemSource } from './composites';
 
 /** What is sent: kind, a label that names it, its exact pitches (field-absolute) and the repeat of the field it came from. */
 export interface SendItem {
@@ -21,6 +21,15 @@ export interface SendItem {
    * `null` = unknown (kept unknown, never the active tab's).
    */
   source?: ItemSource | null;
+  /**
+   * M8d: the chord's own (true ratio) pitches placed on the same root, for the "Exact" send mode (`sendMode.ts`). Absent or
+   * empty = the item has no separate exact form (notes, subsets, selections, a free chord): the mode does not apply.
+   */
+  exact?: Note[] | null;
+  /** M8d: a positional chord: always its field notes, the send mode does not apply. */
+  fixed?: boolean;
+  /** M8d: extra detail the composite item keeps (template, root, positional pattern and tail); `cents` is filled on add. */
+  detail?: Partial<ItemDetail> | null;
 }
 
 export type SendGetter = () => SendItem | null;

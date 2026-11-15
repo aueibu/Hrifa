@@ -252,6 +252,7 @@ export function SketchRow() {
                   pitches: pitches ?? [],
                   template: naming ? naming.label : sk.template,
                   pattern: naming && sk.positional ? sk.positional.pattern : null,
+                  tail: naming && sk.positional ? naming.tail : null,
                   rootDeg: n ? deg : null,
                   date: new Date().toISOString(),
                 },

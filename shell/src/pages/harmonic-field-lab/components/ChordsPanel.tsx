@@ -4,6 +4,8 @@ import { ActionIcon, Button, Modal, Tooltip } from '@mantine/core';
 import {
   DEFAULT_TEMPLATES,
   chordShape,
+  exactShape,
+  placeShape,
   type Note,
   cpsChords,
   parseTemplate,
@@ -41,6 +43,12 @@ function chipPitches(chip: ChordChip, field: readonly Note[], repC: number): Not
     .map((i) => ({ m: field[i].m ? { ...field[i].m } : null, c: field[i].c }));
 }
 
+/** The template's true ratios placed on `root` (null when it does not parse): the chip's Exact send. */
+function exactOn(root: Note | undefined, template: string): Note[] | null {
+  const shape = root ? exactShape(template) : null;
+  return root && shape ? placeShape(root, shape) : null;
+}
+
 function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => void }) {
   const lab = useLab();
   const tipProps = useTooltipProps();
@@ -65,6 +73,9 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
           label: `${chip.name} on ${chip.root}`,
           pitches: notes.map((n) => ({ m: n.m ? { ...n.m } : null, c: n.c })),
           rep,
+          // Exact send: the template's true ratios on the same root
+          exact: exactOn(field[chip.rootIdx], chip.template),
+          detail: { template: chip.template, root: chip.root },
         }
       : null;
   });

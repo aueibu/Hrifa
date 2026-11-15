@@ -144,6 +144,27 @@ export function rankPositional(
     .sort((a, b) => (Math.abs(a.score - b.score) < 1e-9 ? a.degree - b.degree : a.score - b.score));
 }
 
+export type PositionalOrder = 'smoothest' | 'scale';
+
+export interface PositionalRow extends RankedPositional {
+  /** 1 = smoothest, over the WHOLE list whatever the display order (ties keep degree order, as `rankPositional`). */
+  rank: number;
+}
+
+/**
+ * The positional chords in display order (M8d): `smoothest` = best score first, `scale` = degree order 0..N-1 (shown 1..N). Every
+ * row keeps its score and its rank, the rank being computed over the full list so it does not change with the order.
+ */
+export function positionalList(
+  chords: readonly PositionalChord[],
+  order: PositionalOrder,
+  baseHz = POSITIONAL_BASE_HZ,
+  score?: (pitches: readonly Note[]) => number
+): PositionalRow[] {
+  const ranked = rankPositional(chords, baseHz, score).map((c, i) => ({ ...c, rank: i + 1 }));
+  return order === 'scale' ? ranked.sort((a, b) => a.degree - b.degree) : ranked;
+}
+
 /** The main label: pattern + 1-based start degree, "2-2 on 4". */
 export function positionalLabel(pattern: readonly number[], degree: number): string {
   return `${patternName(pattern)} on ${degree + 1}`;

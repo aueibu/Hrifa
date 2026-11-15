@@ -9,9 +9,10 @@
  * inputs, tab name, date), null when unknown. Nothing is ever dropped silently: a refused action leaves `refusal` with a reason.
  */
 import { samePitches, type Note } from '../../../lib/harmonic-field';
-import { sanitizePitch } from './chordShelf';
+import { MAX_TEMPLATE_CHARS, sanitizePitch } from './chordShelf';
 import type { GenSpec } from './generate';
 import { cleanName } from './generatorLibrary';
+import { canonicalPattern } from './patterns';
 
 /** In-memory caps, equal to the load caps in compositeStore (what a session accepts, a reload keeps). */
 export const MAX_COMPOSITES = 9;
@@ -29,6 +30,45 @@ export interface ItemSource {
   date: string;
 }
 
+/**
+ * M8d (H-10): extra detail an item carries, all optional text except `cents`. Additive in storage: an item stored before M8d has
+ * `detail: null`. Chords and selections always get one (their cents list at least); subsets and notes only when the sender gives it.
+ */
+export interface ItemDetail {
+  /** The ratio template text ("4:5:6") or null. */
+  template: string | null;
+  /** The chord root as the sender shows it ("3/2", "degree 4") or null. */
+  root: string | null;
+  /** The positional step pattern ("2-2") or null. */
+  pattern: string | null;
+  /** The positional tail line ("7 of 12-EDO · 400-300 c") or null. */
+  tail: string | null;
+  /** The pitches in cents above 1/1, in item order, two decimals. */
+  cents: number[];
+}
+
+const detailText = (v: unknown): string | null =>
+  typeof v === 'string' && v.trim() && v.length <= MAX_TEMPLATE_CHARS ? v.trim() : null;
+
+/** A detail made plain, entry by entry (load and add use the same rules). Null when `raw` is not a detail record. */
+export function sanitizeDetail(raw: unknown): ItemDetail | null {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const r = raw as Record<string, unknown>;
+  const cents = (Array.isArray(r.cents) ? r.cents : [])
+    .slice(0, MAX_ITEM_PITCHES)
+    .filter((c): c is number => typeof c === 'number' && Number.isFinite(c) && Math.abs(c) <= 1e7)
+    .map((c) => Math.round(c * 100) / 100);
+  return {
+    template: detailText(r.template),
+    root: detailText(r.root),
+    pattern: typeof r.pattern === 'string' ? canonicalPattern(r.pattern) : null,
+    tail: detailText(r.tail),
+    cents,
+  };
+}
+
 export interface CompositeItem {
   /** `i<N>`, unique inside its composite, never reused while the composite lives. */
   id: string;
@@ -39,6 +79,8 @@ export interface CompositeItem {
   /** The repeat of the field the item came from, or null when unknown. */
   rep: Note | null;
   source: ItemSource | null;
+  /** M8d: extra detail (see `ItemDetail`), or null (items stored before M8d, subsets and notes without one). */
+  detail: ItemDetail | null;
 }
 
 export interface Composite {
@@ -78,6 +120,8 @@ export interface ItemInput {
   pitches: Note[];
   rep?: Note | null;
   source?: ItemSource | null;
+  /** M8d: what the sender knows (template, root, pattern, tail); `cents` is filled from the pitches when absent. */
+  detail?: Partial<ItemDetail> | null;
 }
 
 const clonePitch = (p: Note): Note => ({ m: p.m ? { ...p.m } : null, c: p.c });
@@ -199,13 +243,22 @@ export function addItem(
     return refuse(s, `${c.name} is full (${MAX_COMPOSITE_ITEMS} items).`);
   }
   const rep = input.rep ? sanitizePitch(input.rep) : null;
+  const kind: ItemKind = ITEM_KINDS.includes(input.kind) ? input.kind : 'selection';
+  const detail =
+    input.detail != null || kind === 'chord' || kind === 'selection'
+      ? sanitizeDetail({
+          ...input.detail,
+          cents: input.detail?.cents?.length ? input.detail.cents : plain.map((p) => p.c),
+        })
+      : null;
   const item: CompositeItem = {
     id: `i${c.next}`,
-    kind: ITEM_KINDS.includes(input.kind) ? input.kind : 'selection',
+    kind,
     label: cleanName(input.label) || 'Item',
     pitches: plain,
     rep: rep && rep.c > 0 ? rep : null,
     source: input.source ? cloneSource(input.source) : null,
+    detail,
   };
   const next: Composite = { ...c, items: [...c.items, item], next: c.next + 1, updated: date };
   return {

@@ -302,6 +302,34 @@ Proposal:
 - Stop-and-ask: the naming format and the UI placement are human decisions at the start of M9.
 - Human checkpoint after: **yes** (naming and feel)
 
+### M8d: Checkpoint follow-ups for M8c + M9 (APPROVED 2026-11-15)
+- Checkpoint decisions (human, 2026-11-15): item 2 proposals accepted (`E` toggles Exact only while the popup is open; Shift+click in the right-click menu sends in the other mode; no new global keys). Item 3 detail list accepted for chord/selection items: template and root, positional pattern and tail, cents list, source (generator and tab); reduce later if too busy. Item 4: show both score and rank in Scale order; reduce later if too busy. Scenarios a to g confirmed as the tests.
+- Why: the human's M8c + M9 checkpoint feedback (2026-11-15). Look and feel of the shipped M8c/M9 was approved ("kick ass"); this round adds what the human missed or wanted next.
+- Scope: owned page folder and `src/lib/harmonic-field/` only; DECISIONS row if the composite item contract grows (H-10).
+- Items (human-confirmed unless marked):
+  1. **Bigger `-` popup**: each composite gets a larger ring plus a stats panel with the pitch values as text (cents, ratio/monzo when exact, count, merged-note count). Keeps the added/common/dropped marks.
+  2. **Exact vs as in field when sending a chord**: the `-` popup shows the same As in field | Exact slider as the shelf, set to the shelf's current choice; changing it affects the preview ring and the send. Positional chords are fixed: slider disabled with a reason. Proposed (not yet confirmed): key `E` toggles it only while the popup is open; Shift+click on a composite in the right-click menu sends in the other mode; no new global keys.
+  3. **More detail per composite item** (chord/selection items): TO DISCUSS with the human before building (what to show: template, root, pattern, tail, cents list, source).
+  4. **Positional list sort**: toggle Smoothest | Scale order. In scale order each row shows its smoothness score and its rank.
+  5. **Positional tail carried over**: the tail line (`7 of 12-EDO · 400-300 c`) is kept in the stash and in the composite item.
+  6. **CPS chips match ratio chips**: "Chords inside this CPS" chips get the stash `+`, `-` send, right-click menu, arming for hold 4, and the same styling (they use a separate `CpsChip` today).
+  7. **Docs only**: drop "frozen snapshot" from the UI wording; note it in the documentation.
+  8. **Right-click menu on chord chips** offers both "Stash on shelf" and "Send to composite ›". No new chip button (a "c" would clash with "chord").
+- Scenarios (to confirm; they become the tests, shell rule 7):
+
+| # | Case | Expected |
+|---|---|---|
+| a | Shelf switch = As in field; hover JI 4:5:6 chip (0, 386.3, 702 c), `-`, `1` | composite 1 gets the field's nearest notes (12-EDO C E G: 0, 400, 700 c) |
+| b | Same, popup slider flipped to Exact, `1` | composite gets 0, 386.3, 702 c exactly; preview ring shows them before the digit |
+| c | Same, but shelf switch = Exact | popup opens with the slider on Exact |
+| d | Hover a positional chord, `-` | slider disabled, reason shown; pitches are the fixed field notes |
+| e | Positional list, Scale order, 12-EDO C major 2-2 | rows in degree order 1..7 (C E G, D F A, ...), each with its score and rank (rank 1 = smoothest) |
+| f | Positional chord stashed or sent | the item keeps `7 of 12-EDO · 400-300 c` |
+| g | CPS tab, otonal chip | `+` stashes it, `-` and right-click send it, as for a ratio chip |
+
+- Gate: `check:hfl` green. Builder + reviewer on item 2 (data/contract); look-only items by the orchestrator.
+- Human checkpoint after: **yes** (items 1, 2, 4).
+
 ## Final step
 Page `ARCHITECTURE.md` + lib `README.md` complete (contracts, modules, colour-role mapping, persistence keys, how a section could move into the Workbench). Reviewer over the full arc diff. Archive as `ARC.retuner-shell.md` / `PROGRESS.retuner-shell.md` in `arcs/harmonic-field-lab/`; add leftovers to `BACKLOG.md` tagged `[harmonic-field-lab]`, starting with: "Workbench integration plan: which section/packet moves first."
 

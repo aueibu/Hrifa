@@ -113,6 +113,11 @@ export interface ShelfChord {
    * chord stored before M9). `template` is then the display text ("2-2 on 4"). Additive and optional in storage.
    */
   pattern: string | null;
+  /**
+   * M8d: the positional tail line ("7 of 12-EDO · 400-300 c") the chord was stashed with, or null (not positional, and every chord
+   * stored before M8d). Additive and optional in storage.
+   */
+  tail: string | null;
   /** The chord finder's tolerance in cents when stashed. */
   tol: number;
   /** ISO date-time of the stash. */
@@ -198,6 +203,8 @@ export interface StashInput {
   rootDeg: number | null;
   /** M9: the positional pattern (optional: absent = null). */
   pattern?: string | null;
+  /** M8d: the positional tail line (optional: absent = null). */
+  tail?: string | null;
   tol: number;
   date: string;
   refHz: number;
@@ -228,6 +235,10 @@ export function chordPitchesFor(chord: ShelfChord, frame: Frame): Note[] {
     frame === 'parallel' && root ? mulNotes(p, root, -1) : { m: p.m ? { ...p.m } : null, c: p.c }
   );
 }
+
+/** A positional tail line as stored: trimmed text of at most `MAX_TEMPLATE_CHARS` characters, else null. */
+export const cleanTail = (v: unknown): string | null =>
+  typeof v === 'string' && v.trim() && v.length <= MAX_TEMPLATE_CHARS ? v.trim() : null;
 
 /** The next free "Chord N" label. */
 export function autoChordName(chords: readonly ShelfChord[]): string {
@@ -283,6 +294,7 @@ export function stashChord(s: ShelfState, input: StashInput): ShelfState {
     template,
     rootDeg: input.rootDeg,
     pattern: (input.pattern && canonicalPattern(input.pattern)) || null,
+    tail: cleanTail(input.tail),
     tol: input.tol,
     date: input.date,
     refHz: input.refHz,

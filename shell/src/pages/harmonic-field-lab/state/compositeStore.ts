@@ -7,7 +7,8 @@
  *                  items: [{ id: 'i1', kind: 'chord' | 'subset' | 'note' | 'selection', label,
  *                            pitches: [{ m, c }],                 // field-absolute, monzo + cents (as H-7)
  *                            rep: { m, c } | null,                // the repeat of the field it came from
- *                            source: { gen: <generation inputs>, tab: 'name', date: ISO } | null }] }] }
+ *                            source: { gen: <generation inputs>, tab: 'name', date: ISO } | null,
+ *                            detail?: { template, root, pattern, tail: string | null, cents: number[] } }] }] }  // M8d, absent = null
  * ```
  * Plain JSON, self-contained. The recently-used order, the last add and refusals are runtime only.
  *
@@ -27,6 +28,7 @@ import {
   autoCompositeName,
   emptyComposites,
   nextItemId,
+  sanitizeDetail,
   type Composite,
   type CompositeItem,
   type CompositesState,
@@ -81,6 +83,7 @@ function sanitizeItems(raw: unknown): { items: CompositeItem[]; storedNext: numb
       pitches: pitches as Note[],
       rep: rep && rep.c > 0 ? rep : null,
       source: sanitizeSource(e.source),
+      detail: sanitizeDetail(e.detail),
     });
   }
   // ids: a well-formed, first-seen stored id is kept; every other item gets a fresh id past all ids in use
@@ -169,6 +172,8 @@ export function compositesToStored(s: CompositesState): Record<string, unknown> 
         source: it.source
           ? { gen: genToStored(it.source.gen), tab: it.source.tab, date: it.source.date }
           : null,
+        // additive (M8d): written only when set, so an item without a detail is stored byte for byte as before
+        ...(it.detail ? { detail: it.detail } : {}),
       })),
     })),
   };

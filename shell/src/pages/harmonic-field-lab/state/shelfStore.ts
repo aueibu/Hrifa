@@ -24,6 +24,7 @@ import {
   MAX_CHORDS,
   MAX_CHORD_PITCHES,
   MAX_TEMPLATE_CHARS,
+  cleanTail,
   normalizeSource,
   sanitizePitch,
   emptyShelf,
@@ -99,6 +100,7 @@ export function sanitizeShelf(raw: unknown): ShelfState | null {
           ? e.rootDeg
           : null,
       pattern: typeof e.pattern === 'string' ? canonicalPattern(e.pattern) : null,
+      tail: cleanTail(e.tail),
       tol: num(e.tol, 18, 0, 1200),
       date: typeof e.date === 'string' ? e.date.slice(0, 40) : '',
       refHz: num(e.refHz, 261.6256, 1, 1e5),
@@ -139,6 +141,7 @@ export function shelfToStored(s: ShelfState): Record<string, unknown> {
       rootDeg: c.rootDeg,
       // additive (M9): written only when set, so a shelf without positional chords is stored byte for byte as before
       ...(c.pattern ? { pattern: c.pattern } : {}),
+      ...(c.tail ? { tail: c.tail } : {}),
       tol: c.tol,
       date: c.date,
       refHz: c.refHz,

@@ -619,6 +619,8 @@ export interface StashRequest {
   rootDeg?: number | null;
   /** M9: the positional pattern when the chord is a positional one (`template` is then its display text). */
   pattern?: string | null;
+  /** M8d: the positional tail line ("7 of 12-EDO · 400-300 c") when the chord is a positional one. */
+  tail?: string | null;
   name?: string;
   /** ISO date-time (passed in so the reducer stays pure). */
   date: string;
@@ -1280,6 +1282,7 @@ function reduce(s: LabState, a: Action): LabState {
         template: st.template ?? null,
         rootDeg: st.rootDeg ?? null,
         pattern: st.pattern ?? null,
+        tail: st.tail ?? null,
         tol: s.ui.tol,
         date: st.date,
         refHz: s.ui.baseHz,

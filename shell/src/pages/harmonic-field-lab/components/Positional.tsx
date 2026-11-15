@@ -70,6 +70,12 @@ function PositionalRow({ chord, rank, pattern, naming, rowPicked, onPick }: RowP
     label: naming.label,
     pitches: chord.pitches.map(plain),
     rep: base.rep,
+    fixed: true,
+    detail: {
+      pattern,
+      tail: naming.tail,
+      root: `degree ${chord.degree + 1}`,
+    },
   }));
   const hovered = useRef(false);
   const enter = (e?: { currentTarget: EventTarget }) => {
