@@ -392,3 +392,42 @@ Decided with the human. Nothing here is started; each step is a proposed follow-
 ### Dependencies checked
 Only `src/pages/Stage.page.tsx` imports `src/pages/stage/` (the spike imports `src/components/Stage/` and `src/components/InspectorKit/`); `src/lib/stage/` has no importers outside the arc. Removing the spike's modules, presets and demo state later touches nothing else.
 
+
+## 14. The dock Stage (one-Stage arc, M3a, 2026-11-14)
+
+A second Stage component, `DockStage`, lives beside the old one in `src/components/Stage/dock/`. It renders a version 2 screenset (a split tree of named dockers holding tabbed panels; `src/lib/stage/`, design `arcs/workbench/DESIGN.one-stage.md`). The old column `Stage`, `Slot`, `Splitter` (reused, not copied), `NoteClipEditor`'s editor Stage and their tests are untouched and keep working; the old Stage is retired only at the arc's M8 decision.
+
+### Files
+| File | Role |
+| --- | --- |
+| `dock/DockStage.tsx` | The component: measures, solves, positions dockers and splitters, holds the portals, hosts and parking, provides the API. |
+| `dock/Docker.tsx` | One docker: region, strip (name, tablist, docker menu, tab menus), body; or a strip when collapsed, empty or narrow-hidden. |
+| `dock/dockLayout.ts` | Pure geometry: rectangle of every docker and splitter in rem (from `splitChildSizes`, `solveTree`). |
+| `dock/parking.ts` | Host elements, `adopt` (move with scroll restore), `setParked`. |
+| `dock/stageApi.ts` | `StageApi`, `StageApiContext`, `useStageApi()`. |
+| `dock/dock.module.css`, `dock/index.ts` | Styles (theme roles only) and exports. |
+| `DockSpikeApp.tsx`, `dockSpike/panels.tsx`, `StageEntry.tsx` | The spike: page, stand-in panels and the three arrangements, and an entry that picks the old or the dock spike by `?dock`. |
+
+### Contract
+`<DockStage registry screenset update(fn) widthRem? heightRem? showSizes? />`. The page owns the screenset; the component owns none and keeps no storage. `registry` is the existing `StageRegistry` (a module's `home`, `multiple`, `keepMounted` are read from its metadata). `widthRem` and `heightRem` self-measure the root when absent. A panel receives its size class only.
+
+`useStageApi()` (inside any panel or anything rendered under DockStage): `open(id, { home? })`, `show(id, { focus? })`, `close(id)`, `sendTo(id, target)`, `isOpen(id)`, `isShown(id)`. All edits go through `update`. Policy (W-30): `open`, `show` and `close` are never guarded; sends, new dockers and resizes go through `guardedTree(prev, next, registry, w, h, selected)`; a refusal leaves the screenset unchanged and shows a short status line. The selected docker (last pointer or focus, a send's destination, a `show`n docker) is what the narrow rule never collapses.
+
+### How it differs from the old Stage
+- The tree, not columns: dockers positioned absolutely from the solver, so a docker's element is keyed by id and never remounts when the tree changes shape.
+- A docker is a labelled region (`aria-label` = its name) with a name, a `tablist` of `tab`s (`aria-selected`, roving `tabindex`, click to activate, `tabpanel` on each host); the old slot's move, stack and unstack tools are replaced by the tab menu (Send to a docker by name, new docker left/right/above/below, Close) and the docker menu (Rename, new docker, Collapse or Expand, Remove docker when empty and not the last).
+- Parking replaces "hidden columns detach their host" (STAGE-7) and the hidden-columns switcher (STAGE-8): see below.
+- Named dockers persist when empty (a thin labelled strip), collapsed and narrow-hidden dockers are strips, `show` expands.
+
+### Mounted once, parked not detached
+Every panel that is open, and every `keepMounted` panel (open or not, in this screenset or not), is rendered once at the root with `createPortal(module.render(size), host, id)`. The host is a stable `div` per id that DockStage moves with `adopt`:
+- active tab of an open docker: the docker body; inactive tabs: the same body, same grid cell, parked in place;
+- a collapsed or narrow-hidden docker: a park box (`data-park="park:docker:<id>"`) laid out at the docker's LAST MEASURED size, else the size the solver would give it expanded, else its minimum;
+- a `keepMounted` panel in no docker: `park:panel:<id>` at its last measured size, else its last docker's, else the Stage minimum.
+A parked host gets `opacity: 0`, `pointer-events: none`, `visibility: hidden` and `inert`; never `display: none`, never detached. The root is `position: relative; overflow: hidden` so park boxes cannot show or scroll. Scroll is recorded as the host scrolls and written back after a move. A host is never detached, not even for a moment: container ref callbacks have stable identities, and when React is about to remove a container (a docker body or park box) its ref is detached first, which moves the hosts into the park layer; `HostPlacer` (rendered after the dockers and before the portals) then adopts every host into its container in the same commit, before a newly mounted panel's own layout effects, so a panel reading its box in `useLayoutEffect` on mount already sits in its docker body. A park box has the docker body's padding and border-box sizing, so a parked panel keeps exactly its shown content size. The size class is measured on the docker body (border-box) with a ResizeObserver, a measurement with a zero side is ignored, and it is shared by all tabs of the docker; hysteresis is the existing `sizeState`.
+
+### Deferred
+M3b: drag-to-dock (the drop calls the same `sendTo`). M3c: keyboard (select a docker, arrows between tabs), the real Panels menu, the dynamic registry (`multiple` instances, hosts surviving a registry rebuild), the screenset meta-tab strip. Not built: a name prompt on "New docker..." (the default "Docker N" is used, rename afterwards), pop-out.
+
+### The spike
+`StageEntry` renders `DockSpikeApp` when the URL has `?dock` (for example `/stage?dock`) and `StageApp` otherwise; `src/pages/Stage.page.tsx` imports `StageEntry` (edited by the orchestrator under a lock as an amendment to M3a), so `/stage?dock` shows the dock spike. The spike has an arrangement switcher (the three target arrangements are three screensets of one store, `hrifa.stage.dockspike.v1`), a Panels menu stub (Show, Close, Open in the remembered place), "Show sizes", "Saved JSON" and "Reset arrangement". Spike panels: stand-ins with a mount probe (`dockProbe`); the canvas is `keepMounted`.

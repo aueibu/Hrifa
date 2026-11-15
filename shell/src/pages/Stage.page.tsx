@@ -1,6 +1,9 @@
-import { StageApp } from './stage/StageApp';
+import { StageEntry } from './stage/StageEntry';
 
-/** The Stage spike: columns of slots whose modules render for the size of the room they get (arc stage, M3). */
+/**
+ * The Stage spike page. `/stage` shows the column Stage spike (arc stage); `/stage?dock` shows the dock Stage spike
+ * (named dockers on a split tree, arc workbench M3a).
+ */
 export function StagePage() {
-  return <StageApp />;
+  return <StageEntry />;
 }
