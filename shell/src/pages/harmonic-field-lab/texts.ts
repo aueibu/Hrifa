@@ -76,7 +76,7 @@ const entries = {
   /* ---- generator ---- */
   preset: {
     term: 'Preset',
-    text: 'The generator this tab is on, shown as its folder path (for example Equal divisions > Non-octave > Carlos Alpha). Click to browse: type to search every preset at once, or open the folders (Built-in, My presets, Recent, Untitled). Choosing one fills in the method and its numbers. A dot after the name means you changed the generator since: the preset itself is untouched until you press Update preset, or you can keep the change with Save as new. Example: pick Harmonics 8-15 (one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note), raise the starting harmonic, and the dot appears.',
+    text: 'The generator this tab is on, shown as its folder path (for example Equal divisions > Non-octave > Carlos Alpha). Click to browse: type to search every preset at once, or open the folders (Built-in, My presets, Recent, Untitled). Choosing one fills in the method and its numbers. A dot before the name means you changed the generator since: the preset itself is untouched until you press Update preset, or you can keep the change with Save as new. Example: pick Harmonics 8-15 (one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note), raise the starting harmonic, and the dot appears.',
     see: ['method', 'presetUpdate', 'presetSaveNew'],
   },
   presetUpdate: {

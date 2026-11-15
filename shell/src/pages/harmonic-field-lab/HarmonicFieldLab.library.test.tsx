@@ -82,7 +82,7 @@ describe('preset browser', () => {
     expect(presetButton()).toHaveTextContent('Carlos Beta');
   });
 
-  it('Right and Left open and close a folder, and Left on a preset goes to its folder; the description tooltip follows', () => {
+  it('Right and Left open and close a folder, and Left on a preset goes to its folder; the info line follows', () => {
     render(<HarmonicFieldLabPage />);
     const box = openBrowser();
     const tree = () => screen.getByRole('tree', { name: 'Presets' });
@@ -106,17 +106,13 @@ describe('preset browser', () => {
       'aria-expanded',
       'false'
     );
-    // the highlighted preset's description shows as a tooltip beside its row (keyboard highlight reveals it), a folder has none
-    const rowTip = () =>
-      screen.queryAllByRole('tooltip').filter((t) => !t.textContent?.startsWith('Preset'));
-    expect(rowTip()).toHaveLength(0);
+    // the info line (bottom edge of the picker) follows the highlighted preset row; it is content, so the off-switch keeps it
+    const infoLine = () => document.querySelector('[class*="pbInfo"]') as HTMLElement;
     key(box, 'ArrowRight');
     key(box, 'ArrowDown');
-    expect(rowTip()).toHaveLength(1);
-    expect(rowTip()[0]).toHaveTextContent(/overtone|harmonics/i);
-    // it is content, not a tooltip: the Developer off-switch does not hide it
+    expect(infoLine()).toHaveTextContent(/overtone|harmonics/i);
     act(() => writeDeveloperOptions({ tooltips: false }));
-    expect(rowTip()).toHaveLength(1);
+    expect(infoLine()).toHaveTextContent(/overtone|harmonics/i);
     act(() => writeDeveloperOptions({ tooltips: true }));
   });
 
@@ -129,6 +125,10 @@ describe('preset browser', () => {
     await typeSlow(divisions(), '13'); // no 13-EDO preset
     expect(presetButton()).toHaveTextContent('12-EDO');
     expect(presetButton().querySelector('[data-modified]')).not.toBeNull();
+    // the dot comes first, before the name
+    expect(presetButton().querySelector('[data-modified]')?.nextElementSibling).toHaveTextContent(
+      '12-EDO'
+    );
     expect(presetButton()).toHaveAccessibleName(/\(modified\)$/);
   });
 });
@@ -195,16 +195,16 @@ describe('Update preset and Save as new', () => {
     await typeSlow(divisions(), '13'); // edited
     fireEvent.click(addButton());
     const note = screen.getByText(
-      /^Saved to a new Untitled generator because this generator was edited\./
+      /^Saved to a new Untitled generator, because this generator was edited\. Use Save as new/
     );
     expect(note.closest('[role="status"]')).toHaveAttribute('data-kind', 'fork');
     expect(crumb()).toHaveTextContent(/^Untitled > /);
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss fork notice' }));
-    expect(screen.queryByText(/new Untitled generator because/)).toBeNull();
+    expect(screen.queryByText(/new Untitled generator, because/)).toBeNull();
     // an unedited generator adds quietly
     await pickPreset('12-EDO');
     fireEvent.click(addButton());
-    expect(screen.queryByText(/new Untitled generator because/)).toBeNull();
+    expect(screen.queryByText(/new Untitled generator, because/)).toBeNull();
   });
 
   it('Update reports what changed; Show removed lists it read-only; Undo restores; a refusal line can be dismissed', async () => {

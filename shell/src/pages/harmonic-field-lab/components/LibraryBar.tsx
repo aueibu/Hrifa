@@ -198,7 +198,7 @@ export function LibraryNotice() {
     <>
       {fork && fork !== goneFork && (
         <div className={classes.notice} role="status" data-kind="fork">
-          <span>{forkSentence()}</span>
+          <span>{forkSentence(fork.reason)}</span>
           <span className={classes.noticeActions}>
             <ActionIcon
               variant="subtle"

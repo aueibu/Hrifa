@@ -2,13 +2,13 @@
  * The Preset control (M7b step 2): a button showing the NAME of the generator this tab belongs to (with a dot when it is
  * modified; the full path sits in `PresetCrumb`, a small wrapping line under the control), opening a popover browser: a
  * search box on top (flat results, each with its folder path) and a collapsible folder tree below (Built-in, My presets,
- * Recent, Untitled). The highlighted row (mouse or keyboard) shows its description in a tooltip beside the list; that is
- * content, so it is a plain Mantine Tooltip, not the lab's `Tip`, and the Developer "Tooltips" switch does not hide it.
+ * Recent, Untitled). The highlighted row (mouse or keyboard) shows its description in a fixed info line at the bottom edge
+ * of the picker (content, not a tooltip: the Developer "Tooltips" switch does not hide it).
  * Keyboard (focus stays in the search box): Up/Down move, Right/Left open/close a folder, Enter picks, typing searches.
  * Choosing a preset is `preset/open`. User presets are renamed, moved and deleted from their row.
  */
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { ActionIcon, Button, Popover, TextInput, Tooltip, VisuallyHidden } from '@mantine/core';
+import { ActionIcon, Button, Popover, TextInput, VisuallyHidden } from '@mantine/core';
 import { PRESETS, listFolders, splitFolder } from '../../../lib/harmonic-field';
 import { parseOwner } from '../state/generatorLibrary';
 import {
@@ -294,10 +294,10 @@ export function PresetBrowser() {
             rightSection={<span aria-hidden="true">&#9662;</span>}
           >
             <span className={classes.pbLabelWrap}>
-              <span className={classes.pbLabel}>{name}</span>
               {modified && (
                 <span className={classes.pbDot} aria-hidden="true" data-modified="true" />
               )}
+              <span className={classes.pbLabel}>{name}</span>
             </span>
           </Button>
         </Popover.Target>
@@ -344,121 +344,111 @@ export function PresetBrowser() {
                 }
                 const count = n.count;
                 return (
-                  <Tooltip
-                    key={n.id}
-                    label={n.info}
-                    multiline
-                    w={280}
-                    position="right"
-                    withinPortal
-                    transitionProps={{ duration: 0 }}
-                    opened={isActive && n.kind === 'preset' && !!n.info}
+                  <div
+                    id={`${uid}-${i}`}
+                    role={searching ? 'option' : 'treeitem'}
+                    aria-selected={isActive}
+                    aria-level={searching ? undefined : r.depth + 1}
+                    aria-expanded={n.kind === 'folder' ? r.expanded : undefined}
+                    className={classes.pbRow}
+                    data-active={isActive}
+                    data-current={isOwn || undefined}
+                    data-kind={n.kind}
+                    style={{ paddingInlineStart: `calc(0.375rem + ${r.depth} * 0.875rem)` }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setActive(n.id)}
+                    onClick={() => {
+                      setActive(n.id);
+                      if (n.kind === 'folder') {
+                        toggle(n.id);
+                      } else {
+                        pick(n);
+                      }
+                    }}
                   >
-                    <div
-                      id={`${uid}-${i}`}
-                      role={searching ? 'option' : 'treeitem'}
-                      aria-selected={isActive}
-                      aria-level={searching ? undefined : r.depth + 1}
-                      aria-expanded={n.kind === 'folder' ? r.expanded : undefined}
-                      className={classes.pbRow}
-                      data-active={isActive}
-                      data-current={isOwn || undefined}
-                      data-kind={n.kind}
-                      style={{ paddingInlineStart: `calc(0.375rem + ${r.depth} * 0.875rem)` }}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onMouseEnter={() => setActive(n.id)}
-                      onClick={() => {
-                        setActive(n.id);
-                        if (n.kind === 'folder') {
-                          toggle(n.id);
-                        } else {
-                          pick(n);
-                        }
-                      }}
-                    >
-                      <span className={classes.pbChev} aria-hidden="true">
-                        {n.kind === 'folder' ? (r.expanded ? '▾' : '▸') : ''}
-                      </span>
-                      <span className={classes.pbName}>
-                        <span>{n.label}</span>
-                        {searching && n.kind === 'preset' && (
-                          <span className={classes.pbPath}>{n.path.join(' > ')}</span>
-                        )}
-                      </span>
-                      {(count > 0 || user) && (
-                        <span title={nativeTitle(`${count} subset${count === 1 ? '' : 's'}`)}>
-                          <Num muted>{count}</Num>
-                        </span>
+                    <span className={classes.pbChev} aria-hidden="true">
+                      {n.kind === 'folder' ? (r.expanded ? '▾' : '▸') : ''}
+                    </span>
+                    <span className={classes.pbName}>
+                      <span>{n.label}</span>
+                      {searching && n.kind === 'preset' && (
+                        <span className={classes.pbPath}>{n.path.join(' > ')}</span>
                       )}
-                      {n.kind === 'preset' && user && n.userId && (
-                        <span className={classes.pbActions}>
-                          <Tip k="presetEdit" as="control">
-                            <ActionIcon
-                              variant="subtle"
-                              color="gray"
-                              size="xs"
-                              aria-label={`Edit preset ${n.label}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConfirming(null);
-                                setEditing(n.id);
-                              }}
-                            >
-                              <span aria-hidden="true">&#9998;</span>
-                            </ActionIcon>
-                          </Tip>
-                          <Tip k="presetDelete" as="control">
-                            <ActionIcon
-                              variant="subtle"
-                              color="gray"
-                              size="xs"
-                              aria-label={`Delete preset ${n.label}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConfirming(n.id);
-                              }}
-                            >
-                              <CloseIcon />
-                            </ActionIcon>
-                          </Tip>
-                        </span>
-                      )}
-                      {n.kind === 'preset' && n.userId && confirming === n.id && (
-                        <span
-                          className={classes.pbConfirm}
-                          role="alert"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Delete? Subsets stay under Untitled.
-                          <Button
-                            size="compact-xs"
-                            variant="default"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              dispatch({ type: 'preset/delete', id: n.userId! });
-                              setConfirming(null);
-                            }}
-                          >
-                            Delete
-                          </Button>
-                          <Button
-                            size="compact-xs"
+                    </span>
+                    {(count > 0 || user) && (
+                      <span title={nativeTitle(`${count} subset${count === 1 ? '' : 's'}`)}>
+                        <Num muted>{count}</Num>
+                      </span>
+                    )}
+                    {n.kind === 'preset' && user && n.userId && (
+                      <span className={classes.pbActions}>
+                        <Tip k="presetEdit" as="control">
+                          <ActionIcon
                             variant="subtle"
                             color="gray"
+                            size="xs"
+                            aria-label={`Edit preset ${n.label}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               setConfirming(null);
+                              setEditing(n.id);
                             }}
                           >
-                            Keep
-                          </Button>
-                        </span>
-                      )}
-                    </div>
-                  </Tooltip>
+                            <span aria-hidden="true">&#9998;</span>
+                          </ActionIcon>
+                        </Tip>
+                        <Tip k="presetDelete" as="control">
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size="xs"
+                            aria-label={`Delete preset ${n.label}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirming(n.id);
+                            }}
+                          >
+                            <CloseIcon />
+                          </ActionIcon>
+                        </Tip>
+                      </span>
+                    )}
+                    {n.kind === 'preset' && n.userId && confirming === n.id && (
+                      <span
+                        className={classes.pbConfirm}
+                        role="alert"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Delete? Subsets stay under Untitled.
+                        <Button
+                          size="compact-xs"
+                          variant="default"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch({ type: 'preset/delete', id: n.userId! });
+                            setConfirming(null);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                        <Button
+                          size="compact-xs"
+                          variant="subtle"
+                          color="gray"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirming(null);
+                          }}
+                        >
+                          Keep
+                        </Button>
+                      </span>
+                    )}
+                  </div>
                 );
               })}
             </div>
+            <div className={classes.pbInfo}>{info}</div>
             <VisuallyHidden aria-live="polite">{info}</VisuallyHidden>
           </div>
         </Popover.Dropdown>

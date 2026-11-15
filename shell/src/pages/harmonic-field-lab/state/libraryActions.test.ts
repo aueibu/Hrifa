@@ -44,6 +44,28 @@ describe('fork on edit', () => {
   });
 });
 
+describe('fork note reason', () => {
+  it("'edited' when the tab is linked to a preset but modified; 'unsaved' when it matches no generator", () => {
+    const edited = run(
+      initialState(),
+      { type: 'gen/preset', name: 'Harmonics 8–15' },
+      { type: 'gen/patch', patch: { h: 12 } },
+      { type: 'sel/set', idx: [0, 2] },
+      { type: 'subset/add' }
+    );
+    expect(edited.forkNote).toMatchObject({ reason: 'edited' });
+    // no link and no matching generator
+    const unsavedStart = run(initialState(), { type: 'gen/patch', patch: { h: 17 } });
+    expect(owner(unsavedStart)).toBeNull();
+    const s = run(unsavedStart, { type: 'sel/set', idx: [0, 2] }, { type: 'subset/add' });
+    expect(s.forkNote).toMatchObject({ reason: 'unsaved' });
+    // an Add that does not fork leaves no note, and the next edit ends it
+    const plain = run(initialState(), { type: 'sel/set', idx: [0, 2] }, { type: 'subset/add' });
+    expect(plain.forkNote).toBeNull();
+    expect(run(edited, { type: 'gen/patch', patch: { h: 13 } }).forkNote).toBeNull();
+  });
+});
+
 describe('Add row', () => {
   it('adds the selection under the current generator with an auto label, no name needed', () => {
     const s = run(
@@ -256,5 +278,17 @@ describe('preset delete, rename, move', () => {
     s = run(s, { type: 'tab/link', owner: null });
     expect(tab(s).link).toBeUndefined();
     expect(run(s, { type: 'preset/open', owner: 'p:nope' })).toBe(s);
+  });
+});
+
+describe('fork sentence', () => {
+  it('says why for each reason', async () => {
+    const { forkSentence } = await import('./noticeText');
+    expect(forkSentence('unsaved')).toBe(
+      'Saved to a new Untitled generator, because these settings had no saved home yet. Use Save as new to name it.'
+    );
+    expect(forkSentence('edited')).toBe(
+      'Saved to a new Untitled generator, because this generator was edited. Use Save as new to name it.'
+    );
   });
 });

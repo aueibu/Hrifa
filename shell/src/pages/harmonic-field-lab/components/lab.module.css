@@ -1796,7 +1796,12 @@
   padding: 0.25rem;
 }
 
-.pbEmpty {
+.pbInfo {
+  min-height: 1.75rem;
+}
+
+.pbEmpty,
+.pbInfo {
   color: var(--text-muted);
   font-size: 0.6875rem;
   line-height: 1.3;

@@ -20,6 +20,8 @@ export function copySentence(name: string, r: UpdateReport): string {
 }
 
 /** After Add on an edited or unsaved generator: the subset went into a new Untitled generator. */
-export function forkSentence(): string {
-  return 'Saved to a new Untitled generator because this generator was edited. Use Save as new to name it.';
+export function forkSentence(reason: 'unsaved' | 'edited'): string {
+  return reason === 'unsaved'
+    ? 'Saved to a new Untitled generator, because these settings had no saved home yet. Use Save as new to name it.'
+    : 'Saved to a new Untitled generator, because this generator was edited. Use Save as new to name it.';
 }
