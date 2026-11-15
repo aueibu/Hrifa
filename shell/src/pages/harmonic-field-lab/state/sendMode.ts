@@ -7,6 +7,7 @@
  * preview ring shows is what is added.
  */
 import {
+  fmtRatio,
   previewAdd,
   type AddPreview,
   type MergeItem,
@@ -25,12 +26,12 @@ export const sendModeOf = (sketch: Pick<Sketch, 'exact'>): SendMode =>
 /** The other mode. */
 export const otherSendMode = (m: SendMode): SendMode => (m === 'exact' ? 'field' : 'exact');
 
-type Modal = Pick<SendItem, 'pitches' | 'exact' | 'fixed'>;
+type Modal = Pick<SendItem, 'pitches' | 'exact' | 'fixed' | 'fixedReason'>;
 
 /** Why the mode does not apply to the item (the popup shows it beside the disabled slider), or null when it does. */
 export function sendModeReason(item: Modal): string | null {
   if (item.fixed) {
-    return 'A positional chord is fixed: it always sends its field notes.';
+    return item.fixedReason ?? 'A positional chord is fixed: it always sends its field notes.';
   }
   if (!item.exact?.length) {
     return 'This item has no separate exact ratios: it always sends its own notes.';
@@ -58,3 +59,33 @@ export function previewSend(
 ): AddPreview {
   return previewAdd(items, { pitches: sendPitches(item, mode) }, fallbackRep, opts);
 }
+
+/** A note's monzo as text: its non-zero prime powers ("2^-2 3 7" = 21/4), "1" for the unison. */
+export function monzoText(n: Note): string | null {
+  if (!n.m) {
+    return null;
+  }
+  const parts = Object.keys(n.m)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .filter((p) => n.m?.[String(p)])
+    .map((p) => {
+      const e = n.m?.[String(p)] ?? 0;
+      return e === 1 ? `${p}` : `${p}^${e}`;
+    });
+  return parts.length ? parts.join(' ') : '1';
+}
+
+/** One line of the popup's stats panel: the pitch in cents, and its ratio and monzo when it has them and exact asks for them. */
+export interface PitchRow {
+  cents: string;
+  ratio: string | null;
+  monzo: string | null;
+}
+
+export const pitchRows = (pitches: readonly Note[], exact: boolean): PitchRow[] =>
+  pitches.map((p) => ({
+    cents: `${p.c.toFixed(1)} c`,
+    ratio: exact && p.m ? fmtRatio(p) : null,
+    monzo: exact ? monzoText(p) : null,
+  }));

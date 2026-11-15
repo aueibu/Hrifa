@@ -17,7 +17,7 @@ const header = () =>
   screen.getByText(
     (_, el) =>
       /paramNote/.test(el?.className ?? '') &&
-      /Triads: snapshot, 3 notes/.test(el?.textContent ?? '')
+      /Triads: composite, 3 notes/.test(el?.textContent ?? '')
   );
 const railTab = (name: RegExp) => within(rail()).getByRole('tab', { name });
 
@@ -52,6 +52,7 @@ describe('right-click menu', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: /^Send to composite/ }));
     const items = await screen.findAllByRole('menuitem');
     expect(items.map((i) => i.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      'Stash on shelf',
       'Send to composite›',
       '4 Composite 4',
       '3 Composite 3',
@@ -61,10 +62,10 @@ describe('right-click menu', () => {
     ]);
     const divider = document.querySelector('.mantine-Menu-divider');
     expect(divider).not.toBeNull();
-    expect(divider!.previousElementSibling).toBe(items[3]);
-    expect(divider!.nextElementSibling).toBe(items[4]);
+    expect(divider!.previousElementSibling).toBe(items[4]);
+    expect(divider!.nextElementSibling).toBe(items[5]);
     // New composite makes composite 5 and sends the chord to it
-    fireEvent.click(items[4]);
+    fireEvent.click(items[5]);
     fireEvent.mouseLeave(target);
     expect(railTab(/^Composites/)).toHaveTextContent('5 composites');
     expect(fireEvent.contextMenu(screen.getByRole('navigation', { name: 'Analysis panels' }))).toBe(

@@ -2,13 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { exactShape, placeShape, ratioNote, type Note } from '../../../lib/harmonic-field';
 import { emptySketch } from './chordShelf';
 import {
+  centsList,
   compositesReduce,
   emptyComposites,
   type CompositeItem,
   type CompositesState,
 } from './composites';
 import { sanitizeComposites, compositesToStored } from './compositeStore';
-import { sendModeOf, sendModeReason, sendPitches, previewSend } from './sendMode';
+import {
+  monzoText,
+  pitchRows,
+  previewSend,
+  sendModeOf,
+  sendModeReason,
+  sendPitches,
+} from './sendMode';
 import type { SendItem } from './sendStore';
 
 const D = '2026-11-15T10:00:00.000Z';
@@ -101,27 +109,33 @@ describe('send mode: as in field vs exact (scenarios a to d)', () => {
 });
 
 describe('composite item detail (scenario f, composite side)', () => {
-  it('f: a positional chord keeps its pattern and tail, plus the cents list', () => {
+  it('f: a positional chord keeps its pattern and tail; the cents list is derived, not stored', () => {
     const s = sendTo(emptyComposites(), positional, 'field');
     const d = s.list[0].items[0].detail!;
     expect(d.pattern).toBe('2-2');
     expect(d.tail).toBe('7 of 12-EDO · 400-300 c');
     expect(d.root).toBe('degree 1');
-    expect(d.cents).toEqual([0, 400, 700]);
+    expect('cents' in d).toBe(false);
+    expect(centsList(s.list[0].items[0].pitches)).toEqual([0, 400, 700]);
   });
 
-  it('a ratio chord keeps template and root; a selection without detail still gets its cents', () => {
+  it('a ratio chord keeps template and root; a selection without detail still gets a detail', () => {
     const s = sendTo(emptyComposites(), chip, 'exact');
     const d = s.list[0].items[0].detail!;
     expect(d).toMatchObject({ template: '4:5:6', root: 'C', pattern: null, tail: null });
-    expect(d.cents).toEqual([0, 386.31, 701.96]);
+    expect(centsList(s.list[0].items[0].pitches)).toEqual([0, 386.31, 701.96]);
     const bare = compositesReduce(emptyComposites(), {
       type: 'composite/addItem',
       to: 'new',
       item: { kind: 'selection', label: 's', pitches: [{ m: null, c: 5 }] },
       date: D,
     });
-    expect(bare.list[0].items[0].detail?.cents).toEqual([5]);
+    expect(bare.list[0].items[0].detail).toEqual({
+      template: null,
+      root: null,
+      pattern: null,
+      tail: null,
+    });
   });
 
   it('a note or subset without a detail has none', () => {
@@ -176,8 +190,69 @@ describe('composite item detail (scenario f, composite side)', () => {
       root: 'C',
       pattern: null,
       tail: null,
-      cents: [1, 2.56],
     });
     expect(items[2].detail).toBeNull();
+  });
+});
+
+describe('shelf chord fixed, legacy cents, stats text (M8d step 2)', () => {
+  it('a shelf chord item is fixed with its own reason and sends its stored pitches in both modes', () => {
+    const shelf: SendItem = {
+      kind: 'chord',
+      label: 'Chord 1',
+      pitches: [0, 400, 700].map((c) => ({ m: null, c })),
+      rep: oct,
+      fixed: true,
+      fixedReason: 'A stashed shelf chord always sends exactly the pitches it was stashed with.',
+    };
+    expect(sendModeReason(shelf)).toMatch(/stashed shelf chord/);
+    expect(round(sendPitches(shelf, 'exact'))).toEqual([0, 400, 700]);
+    expect(round(sendPitches(shelf, 'field'))).toEqual([0, 400, 700]);
+    expect(sendModeReason(positional)).toMatch(/positional chord is fixed/);
+  });
+
+  it('a legacy stored cents array is ignored on load and never written', () => {
+    const p = [{ m: null, c: 7 }];
+    const old = {
+      version: 1,
+      composites: [
+        {
+          id: 1,
+          name: 'C',
+          next: 2,
+          updated: D,
+          items: [
+            {
+              id: 'i1',
+              kind: 'chord',
+              label: 'x',
+              pitches: p,
+              detail: { root: 'C', cents: [1, 2] },
+            },
+          ],
+        },
+      ],
+    };
+    const s = sanitizeComposites(old)!;
+    expect(s.list[0].items[0].detail).toEqual({
+      template: null,
+      root: 'C',
+      pattern: null,
+      tail: null,
+    });
+    const out = JSON.stringify(compositesToStored(s));
+    expect(out).not.toContain('"cents":[1');
+    expect(out).not.toContain('"cents"');
+  });
+
+  it('monzo and ratio text only when exact; cents always', () => {
+    const fifth = ratioNote(3, 2);
+    expect(monzoText(fifth)).toBe('2^-1 3');
+    expect(monzoText({ m: null, c: 5 })).toBeNull();
+    expect(pitchRows([fifth], false)).toEqual([{ cents: '702.0 c', ratio: null, monzo: null }]);
+    expect(pitchRows([fifth, { m: null, c: 5 }], true)).toEqual([
+      { cents: '702.0 c', ratio: '3/2', monzo: '2^-1 3' },
+      { cents: '5.0 c', ratio: null, monzo: null },
+    ]);
   });
 });

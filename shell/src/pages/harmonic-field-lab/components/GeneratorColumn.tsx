@@ -271,9 +271,9 @@ function Params({ gen }: { gen: GenSpec }) {
     case 'composite':
       return (
         <span className={classes.paramNote}>
-          {gen.snap ? `${gen.snap.name}: ` : ''}snapshot, <Num>{tab.field.length}</Num> notes.
-          Frozen when the composite was opened as a tab: changing the composite later does not
-          change this field.
+          {gen.snap ? `${gen.snap.name}: ` : ''}composite, <Num>{tab.field.length}</Num> notes. Made
+          when the composite was opened as a tab: changing the composite later does not change this
+          field.
         </span>
       );
     default:

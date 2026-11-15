@@ -12,6 +12,8 @@ import {
   type ChordTemplate,
   type CpsChord,
 } from '../../../lib/harmonic-field';
+import type { PreviewTarget } from '../audio/plan';
+import { cpsRootIdx } from '../state/cpsRoot';
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
 import { MAX_TEMPLATES } from '../state/labState';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
@@ -32,7 +34,11 @@ import {
 import classes from './panels.module.css';
 
 /** A found chip's notes as exact pitches for the shelf: the field's own pitches, root first, then upward from the root. */
-function chipPitches(chip: ChordChip, field: readonly Note[], repC: number): Note[] {
+function chipPitches(
+  chip: Pick<ChordChip, 'rootIdx' | 'memberIdx'>,
+  field: readonly Note[],
+  repC: number
+): Note[] {
   const rootC = field[chip.rootIdx]?.c ?? 0;
   const up = (i: number) => (repC > 0 ? (((field[i].c - rootC) % repC) + repC) % repC : field[i].c);
   const rest = [...new Set(chip.memberIdx)]
@@ -58,28 +64,29 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
     lab.chordPicked.size === chip.memberIdx.length &&
     chip.memberIdx.every((i) => lab.chordPicked?.has(i));
   const sev = severity(chip.maxErr);
+  const rootDeg = lab.base.rel.findIndex((r) => r.src === chip.rootIdx);
   // the found chord as an item for the `-` popup and the right-click menu: its field notes, root first then upward
   const send = useSendHover(`chip:${chip.template}:${chip.rootIdx}`, () => {
     const { field, rep, repC } = lab.base;
-    const rootC = field[chip.rootIdx]?.c ?? 0;
-    const up = (c: number) => (repC > 0 ? (((c - rootC) % repC) + repC) % repC : c - rootC);
-    const notes = [...new Set(chip.memberIdx)]
-      .map((i) => field[i])
-      .filter((n) => n !== undefined)
-      .sort((a, b) => up(a.c) - up(b.c));
-    return chip.found && notes.length
+    const pitches = chipPitches(chip, field, repC);
+    return chip.found && pitches.length
       ? {
           kind: 'chord',
           label: `${chip.name} on ${chip.root}`,
-          pitches: notes.map((n) => ({ m: n.m ? { ...n.m } : null, c: n.c })),
+          pitches,
           rep,
           // Exact send: the template's true ratios on the same root
           exact: exactOn(field[chip.rootIdx], chip.template),
           detail: { template: chip.template, root: chip.root },
+          // the right-click menu's Stash on shelf (the same as the + button)
+          stash: {
+            pitches: chipPitches(chip, field, repC),
+            template: chip.template,
+            rootDeg: rootDeg >= 0 ? rootDeg : null,
+          },
         }
       : null;
   });
-  const rootDeg = lab.base.rel.findIndex((r) => r.src === chip.rootIdx);
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
   const label = chip.found
@@ -208,9 +215,21 @@ const cpsName = (g: CpsChord, labels: readonly string[]) =>
     .map((m) => `${g.type === 'harmonic' ? '' : '1/'}${labels[m.x] ?? m.x}`)
     .join(':');
 
+/** The CPS chord as a template text the Sketch row can arm (4:5:6, or 1/(4:5:6) for utonal), or null when its factor names are not whole numbers. */
+function cpsTemplate(g: CpsChord, labels: readonly string[]): string | null {
+  const parts = [...g.members]
+    .sort((a, b) => Number(labels[a.x] ?? a.x) - Number(labels[b.x] ?? b.x))
+    .map((m) => String(labels[m.x] ?? m.x));
+  const body = parts.join(':');
+  const text = g.type === 'harmonic' ? body : `1/(${body})`;
+  return parseTemplate(text).ok ? text : null;
+}
+
+/** A chip of the "Chords inside this CPS" rows: behaves like a ratio chip (stash +, `-` send, right-click, arming for hold 4). */
 function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
   const lab = useLab();
   const tipProps = useTooltipProps();
+  const nativeTitle = useNativeTitle();
   const idx = g.members.map((m) => m.i);
   const picked =
     lab.chordPicked !== null &&
@@ -218,58 +237,120 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
     idx.every((i) => lab.chordPicked?.has(i));
   const common = g.common.map((x) => labels[x] ?? x).join('·');
   const name = cpsName(g, labels);
-  const label = `${g.type === 'harmonic' ? 'Otonal' : 'Utonal'} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key.`;
+  const template = cpsTemplate(g, labels);
+  // the chord's root in ROOT POSITION, from its factor labels (not the lowest reduced pitch, which differs when the chord wraps the
+  // repeat): an otonal 3:5:7 sits on the 3 (smallest label), a utonal 1/(3:5:7) on 1/7 (largest label)
+  const rootIdx = cpsRootIdx(g, labels);
+  const rootDeg = lab.base.rel.findIndex((r) => r.src === rootIdx);
+  const kind = g.type === 'harmonic' ? 'Otonal' : 'Utonal';
+  const target = (): PreviewTarget => ({
+    kind: 'chord',
+    idx,
+    rootIdx,
+    ...(template ? { template } : {}),
+  });
+  const send = useSendHover(`cps:${g.type}:${g.common.join(',')}`, () => {
+    const { field, rep, repC, ratios } = lab.base;
+    const pitches = chipPitches({ rootIdx, memberIdx: idx }, field, repC);
+    return pitches.length
+      ? {
+          kind: 'chord',
+          label: `${kind} ${name}`,
+          pitches,
+          rep,
+          detail: { template, root: ratios[rootIdx] ?? null },
+          stash: {
+            pitches: chipPitches({ rootIdx, memberIdx: idx }, field, repC),
+            template,
+            rootDeg: rootDeg >= 0 ? rootDeg : null,
+          },
+        }
+      : null;
+  });
+  const label = `${kind} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key; hold 4 or 5 puts the same chord on the note you point at.`;
   return (
-    <Tooltip label={label} multiline w={260} {...tipProps}>
+    <span className={classes.chipWrap} data-stash="true">
+      <Tooltip label={label} multiline w={260} {...tipProps}>
+        <button
+          type="button"
+          className={classes.chip}
+          data-found="true"
+          data-cps={g.type}
+          aria-label={label}
+          data-picked={picked}
+          aria-pressed={picked}
+          onMouseEnter={(e) => {
+            send.enter(e);
+            lab.setChord(new Set(idx));
+            lab.audio.setPreviewTarget(target());
+          }}
+          onMouseLeave={() => {
+            send.leave();
+            lab.setChord(null);
+            lab.audio.clearPreviewTarget({ kind: 'chord', idx });
+          }}
+          onFocus={() => {
+            lab.setChord(new Set(idx));
+            lab.audio.setPreviewTarget(target());
+          }}
+          onBlur={() => {
+            lab.setChord(null);
+            lab.audio.clearPreviewTarget({ kind: 'chord', idx });
+          }}
+          onClick={(e) => {
+            if (e.shiftKey) {
+              lab.pickChord(null);
+              lab.setChord(null);
+              lab.dispatch({
+                type: 'sel/set',
+                idx: [...new Set(idx)].sort((a, b) => a - b),
+                mode: 0,
+              });
+            } else if (picked) {
+              lab.pickChord(null);
+            } else {
+              lab.pickChord(new Set(idx));
+              lab.audio.playFieldChord(idx, rootIdx);
+              if (template) {
+                // like a ratio chip: playing it arms its template and its shape in the Sketch row (hold 4 and 5 use it)
+                lab.dispatch({
+                  type: 'sketch/arm',
+                  template,
+                  rootDeg: rootDeg >= 0 ? rootDeg : undefined,
+                  shape: chordShape(lab.base.field, lab.base.rep, rootIdx, idx),
+                });
+              }
+            }
+          }}
+        >
+          <span className={classes.chipTop}>
+            <Num>{name}</Num>
+          </span>
+          <span className={classes.chipBottom}>
+            <Num muted>{g.type === 'harmonic' ? `share ${common}` : `inside ${common}`}</Num>
+          </span>
+        </button>
+      </Tooltip>
       <button
         type="button"
-        className={classes.chip}
-        data-found="true"
-        data-cps={g.type}
-        aria-label={label}
-        data-picked={picked}
-        aria-pressed={picked}
-        onMouseEnter={() => {
-          lab.setChord(new Set(idx));
-          lab.audio.setPreviewTarget({ kind: 'chord', idx });
-        }}
-        onMouseLeave={() => {
-          lab.setChord(null);
-          lab.audio.clearPreviewTarget({ kind: 'chord', idx });
-        }}
-        onFocus={() => {
-          lab.setChord(new Set(idx));
-          lab.audio.setPreviewTarget({ kind: 'chord', idx });
-        }}
-        onBlur={() => {
-          lab.setChord(null);
-          lab.audio.clearPreviewTarget({ kind: 'chord', idx });
-        }}
-        onClick={(e) => {
-          if (e.shiftKey) {
-            lab.pickChord(null);
-            lab.setChord(null);
-            lab.dispatch({
-              type: 'sel/set',
-              idx: [...new Set(idx)].sort((a, b) => a - b),
-              mode: 0,
-            });
-          } else if (picked) {
-            lab.pickChord(null);
-          } else {
-            lab.pickChord(new Set(idx));
-            lab.audio.playFieldChord(idx);
-          }
-        }}
+        className={classes.chipStash}
+        aria-label={`Stash ${kind.toLowerCase()} ${name} on the shelf`}
+        title={nativeTitle('Stash this chord on the shelf')}
+        onClick={() =>
+          lab.dispatch({
+            type: 'shelf/stash',
+            stash: {
+              pitches: chipPitches({ rootIdx, memberIdx: idx }, lab.base.field, lab.base.repC),
+              template,
+              rootDeg: rootDeg >= 0 ? rootDeg : null,
+              date: new Date().toISOString(),
+            },
+          })
+        }
       >
-        <span className={classes.chipTop}>
-          <Num>{name}</Num>
-        </span>
-        <span className={classes.chipBottom}>
-          <Num muted>{g.type === 'harmonic' ? `share ${common}` : `inside ${common}`}</Num>
-        </span>
+        <PlusIcon />
       </button>
-    </Tooltip>
+    </span>
   );
 }
 

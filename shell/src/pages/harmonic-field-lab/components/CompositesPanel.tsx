@@ -6,8 +6,9 @@
 import { useMemo, useState } from 'react';
 import { ActionIcon, Button, TextInput } from '@mantine/core';
 import { mergeComposite } from '../../../lib/harmonic-field';
-import type { Composite, CompositeItem } from '../state/composites';
+import { centsList, type Composite, type CompositeItem } from '../state/composites';
 import { useLabDeveloperOptions } from '../state/developerOptions';
+import { autoName } from '../state/generate';
 import { CompositeRing, centsOfNotes } from './CompositeRing';
 import { ChevronDownIcon, CloseIcon, PlusIcon } from './icons';
 import { compositeItemItem, useSendHover } from './Send';
@@ -65,10 +66,34 @@ function CompName({ c }: { c: Composite }) {
   );
 }
 
+/** The extra lines of a chord or selection item (M8d): template and root, positional pattern and tail, the cents list (derived from the pitches), and the source. */
+export function itemDetailLines(it: CompositeItem): { key: string; text: string }[] {
+  if (it.kind !== 'chord' && it.kind !== 'selection') {
+    return [];
+  }
+  const d = it.detail;
+  const lines: { key: string; text: string }[] = [];
+  const what = [d?.template, d?.root ? `on ${d.root}` : null].filter(Boolean).join(' ');
+  if (what) {
+    lines.push({ key: 'what', text: what });
+  }
+  const pos = [d?.pattern ? `pattern ${d.pattern}` : null, d?.tail].filter(Boolean).join(' · ');
+  if (pos) {
+    lines.push({ key: 'pos', text: pos });
+  }
+  lines.push({ key: 'cents', text: `${centsList(it.pitches).join(', ')} c` });
+  if (it.source) {
+    const gen = it.source.gen.preset || autoName(it.source.gen);
+    lines.push({ key: 'source', text: `Source: ${gen}, tab ${it.source.tab || 'unnamed'}` });
+  }
+  return lines;
+}
+
 function ItemRow({ c, it }: { c: Composite; it: CompositeItem }) {
   const { dispatch } = useLab();
   const hover = useSendHover(`ci:${c.id}:${it.id}`, () => compositeItemItem(it));
   const n = it.pitches.length;
+  const lines = itemDetailLines(it);
   return (
     <li className={classes.compItem} onMouseEnter={hover.enter} onMouseLeave={hover.leave}>
       <span className={classes.compItemText}>
@@ -77,6 +102,11 @@ function ItemRow({ c, it }: { c: Composite; it: CompositeItem }) {
           {it.kind}, {n} {n === 1 ? 'note' : 'notes'}
           {it.source ? ` · from ${it.source.tab || 'a tab'}` : ''}
         </span>
+        {lines.map((l) => (
+          <span key={l.key} className={classes.compDetail} data-detail={l.key}>
+            {l.text}
+          </span>
+        ))}
       </span>
       <ActionIcon
         variant="subtle"

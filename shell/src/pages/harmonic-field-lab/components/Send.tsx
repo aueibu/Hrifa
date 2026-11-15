@@ -10,8 +10,8 @@
  * blur, tab switch and an outside click; the pointer leaving the target does NOT close it (the item is captured at open).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Menu } from '@mantine/core';
-import { exactShape, placeShape, samePitches, type Note } from '../../../lib/harmonic-field';
+import { Button, Menu, SegmentedControl } from '@mantine/core';
+import { samePitches, type Note } from '../../../lib/harmonic-field';
 import { isTyping } from '../audio/keymap';
 import type { ShelfChord } from '../state/chordShelf';
 import {
@@ -24,7 +24,16 @@ import { useLabDeveloperOptions } from '../state/developerOptions';
 import { generateField, type GenSpec } from '../state/generate';
 import { ownerGen, ownerLabel, type LibSubset } from '../state/generatorLibrary';
 import { tabName } from '../state/labState';
-import { previewSend, sendModeOf, sendPitches, type SendMode } from '../state/sendMode';
+import {
+  effectiveSendMode,
+  otherSendMode,
+  pitchRows,
+  previewSend,
+  sendModeOf,
+  sendModeReason,
+  sendPitches,
+  type SendMode,
+} from '../state/sendMode';
 import {
   closeSendMenu,
   closeSendPopup,
@@ -38,6 +47,7 @@ import {
   leaveSend,
   markSendKey,
   noteIsMouse,
+  setPopupMode,
   setSendInput,
   openSendMenu,
   openSendPopup,
@@ -48,7 +58,8 @@ import {
   type SendItem,
 } from '../state/sendStore';
 import { CompositeRing, centsOfNotes } from './CompositeRing';
-import { useLab } from './ui';
+import { Num, useLab } from './ui';
+import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -84,15 +95,17 @@ export function repOfGen(g: GenSpec): Note | null {
   return r.ok ? plainNote(r.rep) : null;
 }
 
-/** A shelf chord as an item: its stored exact pitches, and the generator and tab it was stashed from (not the active tab's). */
+/**
+ * A shelf chord as an item: its stored exact pitches, and the generator and tab it was stashed from (not the active tab's). It is
+ * FIXED (M8d): it always sends exactly the pitches it stored, so the As in field | Exact mode does not apply to it.
+ */
 export function shelfChordItem(c: ShelfChord): SendItem {
-  const shape = !c.pattern && c.template && c.pitches[0] ? exactShape(c.template) : null;
   return {
     kind: 'chord',
     label: c.name,
     pitches: c.pitches.map(plainNote),
-    exact: shape && c.pitches[0] ? placeShape(c.pitches[0], shape) : null,
-    fixed: c.pattern ? true : undefined,
+    fixed: true,
+    fixedReason: 'A stashed shelf chord always sends exactly the pitches it was stashed with.',
     detail: {
       template: c.pattern ? null : c.template,
       root: c.rootDeg === null ? null : `degree ${c.rootDeg + 1}`,
@@ -224,12 +237,21 @@ function previewFor(
   });
 }
 
-function PopupRow({ digit, c, item }: { digit: number; c: Composite; item: SendItem }) {
+function PopupRow({
+  digit,
+  c,
+  item,
+  mode,
+}: {
+  digit: number;
+  c: Composite;
+  item: SendItem;
+  /** The popup's own As in field | Exact choice. */
+  mode: SendMode;
+}) {
   const lab = useLab();
   const [dev] = useLabDeveloperOptions();
   const send = useSendTo();
-  // step 1: the shelf's switch; step 2 adds the popup's own slider here
-  const mode = sendModeOf(lab.state.shelf.sketch);
   const p = useMemo(
     () => previewFor(c, item, lab.base.rep, dev.mergeTolerance, dev.mergeKeeps, mode),
     [c, item, lab.base.rep, dev.mergeTolerance, dev.mergeKeeps, mode]
@@ -254,6 +276,7 @@ function PopupRow({ digit, c, item }: { digit: number; c: Composite; item: SendI
       >
         <kbd className={classes.sendKey}>{digit}</kbd>
         <CompositeRing
+          big
           repC={p.rep.c}
           notes={centsOfNotes(p.before.map((n) => n.note))}
           added={centsOfNotes(p.added)}
@@ -264,18 +287,74 @@ function PopupRow({ digit, c, item }: { digit: number; c: Composite; item: SendI
         <span className={classes.sendText}>
           <span className={classes.sendName}>{c.name}</span>
           <span className={classes.sendEffect}>{effect}</span>
+          <span className={classes.sendEffect} data-testid="merged-count">
+            {plural(p.before.length, 'merged note')} now
+            {p.already ? '' : `, ${plural(p.before.length + p.added.length, 'merged note')} after`}
+          </span>
         </span>
       </button>
     </li>
   );
 }
 
-function SendPopup({ item, at }: { item: SendItem; at: { x: number; y: number } }) {
+/** The popup's own As in field | Exact slider: starts on the shelf's choice, disabled (with the reason) when the mode does not apply. */
+function ModeSwitch({ item, mode }: { item: SendItem; mode: SendMode }) {
+  const reason = sendModeReason(item);
+  const eff = effectiveSendMode(item, mode);
+  return (
+    <div className={classes.sendMode}>
+      <SegmentedControl
+        size="xs"
+        aria-label="Send mode"
+        disabled={reason !== null}
+        data={['As in field', 'Exact']}
+        value={eff === 'exact' ? 'Exact' : 'As in field'}
+        onChange={(v) => setPopupMode(v === 'Exact' ? 'exact' : 'field')}
+        className={labClasses.tinySeg}
+      />
+      <span className={classes.sendEffect} data-testid="send-mode-note">
+        {reason ?? 'Press E to flip it.'}
+      </span>
+    </div>
+  );
+}
+
+/** The stats panel: the pitches the item sends in the chosen mode as text (cents; ratio and monzo when exact), and the counts. */
+function PitchStats({ item, mode }: { item: SendItem; mode: SendMode }) {
+  const eff = effectiveSendMode(item, mode);
+  const rows = pitchRows(sendPitches(item, mode), eff === 'exact');
+  return (
+    <div className={classes.sendStats} role="group" aria-label="Pitch values">
+      <span className={classes.sendEffect}>
+        {plural(rows.length, 'note')}, {eff === 'exact' ? 'exact ratios' : 'as in the field'}
+      </span>
+      <ol className={classes.sendPitches}>
+        {rows.map((r, i) => (
+          <li key={i} className={classes.sendPitch}>
+            <Num>{r.cents}</Num>
+            {r.ratio && <Num muted>{r.ratio}</Num>}
+            {r.monzo && <Num muted>[{r.monzo}]</Num>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function SendPopup({
+  item,
+  at,
+  mode,
+}: {
+  item: SendItem;
+  at: { x: number; y: number };
+  mode: SendMode;
+}) {
   const lab = useLab();
   const send = useSendTo();
   const list = lab.state.composites.list;
-  const left = Math.max(8, Math.min(at.x + 14, window.innerWidth - 300));
-  const top = Math.max(8, Math.min(at.y + 14, window.innerHeight - 380));
+  const left = Math.max(8, Math.min(at.x + 14, window.innerWidth - 420));
+  const top = Math.max(8, Math.min(at.y + 14, window.innerHeight - 560));
   return (
     <div
       className={classes.sendPopup}
@@ -287,9 +366,11 @@ function SendPopup({ item, at }: { item: SendItem; at: { x: number; y: number } 
         Add <strong>{item.label}</strong>{' '}
         <span className={classes.sendKind}>({kindText(item)})</span>
       </div>
+      <ModeSwitch item={item} mode={mode} />
+      <PitchStats item={item} mode={mode} />
       <ul className={classes.sendList}>
         {list.map((c) => (
-          <PopupRow key={c.id} digit={c.id} c={c} item={item} />
+          <PopupRow key={c.id} digit={c.id} c={c} item={item} mode={mode} />
         ))}
         <li>
           <button
@@ -297,7 +378,7 @@ function SendPopup({ item, at }: { item: SendItem; at: { x: number; y: number } 
             className={classes.sendRow}
             aria-label="0: New composite"
             onClick={() => {
-              send(item, 'new');
+              send(item, 'new', mode);
               closeSendPopup();
             }}
           >
@@ -310,8 +391,9 @@ function SendPopup({ item, at }: { item: SendItem; at: { x: number; y: number } 
         </li>
       </ul>
       <div className={classes.sendFoot}>
-        1 to 9 send, 0 starts a new composite, Esc cancels. Notes: the small dots are already in it,
-        a plus is new, filled merges into a note, struck through is dropped.
+        1 to 9 send, 0 starts a new composite, E flips As in field | Exact, Esc cancels. Notes: the
+        small dots are already in it, a plus is new, filled merges into a note, struck through is
+        dropped.
       </div>
     </div>
   );
@@ -321,11 +403,14 @@ function SendPopup({ item, at }: { item: SendItem; at: { x: number; y: number } 
 function CompositeItems({
   ids,
   item,
+  mode,
   onPick,
 }: {
   ids: readonly number[];
   item?: SendItem;
-  onPick: (id: number) => void;
+  /** The mode the item will be sent in (the menu's chosen mode): the already-in-it check compares those pitches. */
+  mode?: SendMode;
+  onPick: (id: number, shift: boolean) => void;
 }) {
   const { state } = useLab();
   return (
@@ -335,19 +420,46 @@ function CompositeItems({
         if (!c) {
           return null;
         }
-        const has = item
-          ? c.items.some((it) =>
-              samePitches(it.pitches, sendPitches(item, sendModeOf(state.shelf.sketch)))
-            )
-          : false;
+        const m = mode ?? sendModeOf(state.shelf.sketch);
+        const inIt = (md: SendMode) =>
+          item ? c.items.some((it) => samePitches(it.pitches, sendPitches(item, md))) : false;
+        const has = inIt(m);
+        // Shift+click sends in the OTHER mode: the entry is only disabled when both modes are already in it; a plain click on
+        // an entry that is in it in the menu's mode is refused visibly by the add itself
+        const flips = item !== undefined && sendModeReason(item) === null;
+        const both = has && (!flips || inIt(otherSendMode(m)));
         return (
-          <Menu.Item key={id} disabled={has} onClick={() => onPick(id)}>
+          <Menu.Item key={id} disabled={both} onClick={(e) => onPick(id, e.shiftKey)}>
             {c.id} {c.name}
-            {has ? ' (already in it)' : ''}
+            {both
+              ? ' (already in it)'
+              : has
+                ? ' (already in it; Shift+click sends the other mode)'
+                : ''}
           </Menu.Item>
         );
       })}
     </>
+  );
+}
+
+/** "Stash on shelf": the chord chips' second menu entry (the same as their + button). */
+function StashEntry({ item }: { item: SendItem }) {
+  const { dispatch } = useLab();
+  return (
+    <Menu.Item
+      onClick={() => {
+        if (item.stash) {
+          dispatch({
+            type: 'shelf/stash',
+            stash: { ...item.stash, date: new Date().toISOString() },
+          });
+        }
+        closeSendMenu();
+      }}
+    >
+      Stash on shelf
+    </Menu.Item>
   );
 }
 
@@ -359,10 +471,13 @@ function SendMenuBody({ item }: { item: SendItem }) {
   const [all, setAll] = useState(false);
   const have = new Set(state.composites.list.map((c) => c.id));
   const recent = state.composites.recent.filter((id) => have.has(id)).slice(0, 3);
-  const pick = (to: number | 'new') => {
-    send(item, to);
+  // the menu's chosen mode is the shelf's switch; Shift+click sends in the OTHER mode (it only differs for items with an exact form)
+  const mode = sendModeOf(state.shelf.sketch);
+  const pick = (to: number | 'new', shift = false) => {
+    send(item, to, shift ? otherSendMode(mode) : mode);
     closeSendMenu();
   };
+  const canFlip = sendModeReason(item) === null;
   return (
     <Menu.Sub opened={open} onChange={setOpen} position="right-start">
       <Menu.Sub.Target>
@@ -371,9 +486,15 @@ function SendMenuBody({ item }: { item: SendItem }) {
         </Menu.Sub.Item>
       </Menu.Sub.Target>
       <Menu.Sub.Dropdown>
-        <CompositeItems ids={recent} item={item} onPick={pick} />
+        {canFlip && (
+          <Menu.Label>
+            {mode === 'exact' ? 'Exact' : 'As in field'}. Shift+click sends as{' '}
+            {otherSendMode(mode) === 'exact' ? 'Exact' : 'As in field'}.
+          </Menu.Label>
+        )}
+        <CompositeItems ids={recent} item={item} mode={mode} onPick={pick} />
         <Menu.Divider />
-        <Menu.Item onClick={() => pick('new')}>New composite</Menu.Item>
+        <Menu.Item onClick={(e) => pick('new', e.shiftKey)}>New composite</Menu.Item>
         <Menu.Sub opened={all} onChange={setAll} position="right-start">
           <Menu.Sub.Target>
             <Menu.Sub.Item
@@ -388,6 +509,7 @@ function SendMenuBody({ item }: { item: SendItem }) {
             <CompositeItems
               ids={state.composites.list.map((c) => c.id)}
               item={item}
+              mode={mode}
               onPick={pick}
             />
           </Menu.Sub.Dropdown>
@@ -447,21 +569,31 @@ export function SendLayer() {
           closeSendPopup();
           return;
         }
+        if ((e.key === 'e' || e.key === 'E') && !e.altKey && !e.shiftKey && !isTyping(e.target)) {
+          // E flips As in field | Exact, only while the popup is open (no global key): the keyboard notes stand aside too
+          markSendKey(e);
+          e.preventDefault();
+          const v = sendView();
+          if (v.popup && !e.repeat && sendModeReason(v.popup) === null) {
+            setPopupMode(otherSendMode(v.popupMode));
+          }
+          return;
+        }
         if (/^[0-9]$/.test(e.key)) {
           // the popup owns the digits: the hold previews, 0 (Parallel | Relative) and Alt+digit tabs stand aside
           markSendKey(e);
           e.preventDefault();
-          const item = sendView().popup;
+          const { popup: item, popupMode: mode } = sendView();
           if (!item || e.altKey || e.repeat) {
             return;
           }
           const n = Number(e.key);
           const { lab: l, send: s } = latest.current;
           if (n === 0) {
-            s(item, 'new');
+            s(item, 'new', mode);
             closeSendPopup();
           } else if (l.state.composites.list.some((c) => c.id === n)) {
-            s(item, n);
+            s(item, n, mode);
             closeSendPopup();
           }
         }
@@ -481,7 +613,11 @@ export function SendLayer() {
       const item = hoveredSend() ?? noteItem(latest.current.lab);
       if (item) {
         e.preventDefault();
-        openSendPopup(item, { ...pointer.current });
+        openSendPopup(
+          item,
+          { ...pointer.current },
+          sendModeOf(latest.current.lab.state.shelf.sketch)
+        );
       }
     };
     const menu = (e: MouseEvent) => {
@@ -575,7 +711,7 @@ export function SendLayer() {
 
   return (
     <>
-      {view.popup && <SendPopup item={view.popup} at={view.popupAt} />}
+      {view.popup && <SendPopup item={view.popup} at={view.popupAt} mode={view.popupMode} />}
       {view.menu && (
         <Menu
           opened
@@ -600,6 +736,7 @@ export function SendLayer() {
             />
           </Menu.Target>
           <Menu.Dropdown aria-label="Send menu">
+            {view.menu.item.stash && <StashEntry item={view.menu.item} />}
             <SendMenuBody item={view.menu.item} />
           </Menu.Dropdown>
         </Menu>

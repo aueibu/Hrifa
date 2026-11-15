@@ -8,7 +8,10 @@
  */
 import { useSyncExternalStore } from 'react';
 import type { Note } from '../../../lib/harmonic-field';
+import { isTyping } from '../audio/keymap';
 import type { ItemDetail, ItemKind, ItemSource } from './composites';
+import type { StashRequest } from './labState';
+import type { SendMode } from './sendMode';
 
 /** What is sent: kind, a label that names it, its exact pitches (field-absolute) and the repeat of the field it came from. */
 export interface SendItem {
@@ -28,14 +31,20 @@ export interface SendItem {
   exact?: Note[] | null;
   /** M8d: a positional chord: always its field notes, the send mode does not apply. */
   fixed?: boolean;
-  /** M8d: extra detail the composite item keeps (template, root, positional pattern and tail); `cents` is filled on add. */
+  /** M8d: why it is fixed, when not because it is positional (a stashed shelf chord sends exactly what it stored). */
+  fixedReason?: string;
+  /** M8d: extra detail the composite item keeps (template, root, positional pattern and tail). */
   detail?: Partial<ItemDetail> | null;
+  /** M8d: what Stash on shelf in the right-click menu stashes (chord chips and positional rows); absent = no such menu entry. */
+  stash?: Omit<StashRequest, 'date'>;
 }
 
 export type SendGetter = () => SendItem | null;
 
 export interface SendView {
   popup: SendItem | null;
+  /** M8d: the popup's own As in field | Exact choice (starts on the shelf's; E and the slider change it). */
+  popupMode: SendMode;
   /** Where the popup opened (fixed for as long as it is open). */
   popupAt: { x: number; y: number };
   /** A message for the confirmation line (set by multi-item sends). */
@@ -44,7 +53,13 @@ export interface SendView {
 }
 
 let hover: { id: string; get: SendGetter; el?: Element } | null = null;
-let view: SendView = { popup: null, popupAt: { x: 0, y: 0 }, note: null, menu: null };
+let view: SendView = {
+  popup: null,
+  popupMode: 'field',
+  popupAt: { x: 0, y: 0 },
+  note: null,
+  menu: null,
+};
 let pendingNote: string | null = null;
 const listeners = new Set<() => void>();
 const consumed = new WeakSet<Event>();
@@ -90,9 +105,21 @@ export const isSendOpen = () => view.popup !== null;
 /** The current popup / menu state (for the key handler, which must not wait for a render). */
 export const sendView = (): SendView => view;
 
-export function openSendPopup(item: SendItem, at: { x: number; y: number }) {
-  view = { ...view, popup: item, popupAt: at };
+export function openSendPopup(
+  item: SendItem,
+  at: { x: number; y: number },
+  mode: SendMode = 'field'
+) {
+  view = { ...view, popup: item, popupAt: at, popupMode: mode };
   emit();
+}
+
+/** The popup's own mode (the slider, the E key). */
+export function setPopupMode(mode: SendMode) {
+  if (view.popup && view.popupMode !== mode) {
+    view = { ...view, popupMode: mode };
+    emit();
+  }
 }
 
 export function closeSendPopup() {
@@ -147,7 +174,7 @@ export const noteIsMouse = () => noteBy === 'mouse';
 /** Forget everything (unmount, tests). */
 export function resetSend() {
   hover = null;
-  view = { popup: null, popupAt: { x: 0, y: 0 }, note: null, menu: null };
+  view = { popup: null, popupMode: 'field', popupAt: { x: 0, y: 0 }, note: null, menu: null };
   pendingNote = null;
   emit();
 }
@@ -158,11 +185,19 @@ export function markSendKey(e: Event) {
 }
 
 /**
- * True when the popup took this key event, or is open and the key is a digit (plain or with Alt): the other key handlers
+ * True when the popup took this key event, or is open and the key is a digit (plain or with Alt) or a plain E (flips the mode): the other key handlers
  * (hold previews, Parallel | Relative on 0, Alt+digit tabs) return first. Other keys keep working while it is open.
  */
 export const sendHasKey = (e: KeyboardEvent): boolean =>
-  consumed.has(e) || (view.popup !== null && /^[0-9]$/.test(e.key));
+  consumed.has(e) ||
+  (view.popup !== null &&
+    (/^[0-9]$/.test(e.key) ||
+      (e.key.toLowerCase() === 'e' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        !isTyping(e.target))));
 
 export const useSendView = (): SendView =>
   useSyncExternalStore(

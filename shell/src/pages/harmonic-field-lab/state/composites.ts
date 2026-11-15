@@ -31,8 +31,9 @@ export interface ItemSource {
 }
 
 /**
- * M8d (H-10): extra detail an item carries, all optional text except `cents`. Additive in storage: an item stored before M8d has
- * `detail: null`. Chords and selections always get one (their cents list at least); subsets and notes only when the sender gives it.
+ * M8d (H-10): extra detail an item carries, all optional text. Additive in storage: an item stored before M8d has
+ * `detail: null`. Chords and selections always get one; subsets and notes only when the sender gives it. The cents list is NOT
+ * stored: it is derived from the item's pitches wherever it is shown (`centsList`); a legacy stored `cents` array is ignored.
  */
 export interface ItemDetail {
   /** The ratio template text ("4:5:6") or null. */
@@ -43,8 +44,6 @@ export interface ItemDetail {
   pattern: string | null;
   /** The positional tail line ("7 of 12-EDO · 400-300 c") or null. */
   tail: string | null;
-  /** The pitches in cents above 1/1, in item order, two decimals. */
-  cents: number[];
 }
 
 const detailText = (v: unknown): string | null =>
@@ -56,18 +55,17 @@ export function sanitizeDetail(raw: unknown): ItemDetail | null {
     return null;
   }
   const r = raw as Record<string, unknown>;
-  const cents = (Array.isArray(r.cents) ? r.cents : [])
-    .slice(0, MAX_ITEM_PITCHES)
-    .filter((c): c is number => typeof c === 'number' && Number.isFinite(c) && Math.abs(c) <= 1e7)
-    .map((c) => Math.round(c * 100) / 100);
   return {
     template: detailText(r.template),
     root: detailText(r.root),
     pattern: typeof r.pattern === 'string' ? canonicalPattern(r.pattern) : null,
     tail: detailText(r.tail),
-    cents,
   };
 }
+
+/** The pitches in cents above 1/1, in item order, two decimals: derived for display, never stored. */
+export const centsList = (pitches: readonly Note[]): number[] =>
+  pitches.map((p) => Math.round(p.c * 100) / 100);
 
 export interface CompositeItem {
   /** `i<N>`, unique inside its composite, never reused while the composite lives. */
@@ -120,7 +118,7 @@ export interface ItemInput {
   pitches: Note[];
   rep?: Note | null;
   source?: ItemSource | null;
-  /** M8d: what the sender knows (template, root, pattern, tail); `cents` is filled from the pitches when absent. */
+  /** M8d: what the sender knows (template, root, pattern, tail). */
   detail?: Partial<ItemDetail> | null;
 }
 
@@ -246,10 +244,7 @@ export function addItem(
   const kind: ItemKind = ITEM_KINDS.includes(input.kind) ? input.kind : 'selection';
   const detail =
     input.detail != null || kind === 'chord' || kind === 'selection'
-      ? sanitizeDetail({
-          ...input.detail,
-          cents: input.detail?.cents?.length ? input.detail.cents : plain.map((p) => p.c),
-        })
+      ? sanitizeDetail({ ...input.detail })
       : null;
   const item: CompositeItem = {
     id: `i${c.next}`,

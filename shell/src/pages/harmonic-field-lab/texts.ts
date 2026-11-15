@@ -756,17 +756,17 @@ const entries = {
   },
   compositesPanel: {
     term: 'Composites',
-    text: 'Up to nine numbered collections. Each gathers chords, subsets and single notes (from any generator, any tab) and merges their pitches onto ONE ring, a new gamut you can work on like any other. Pitches closer than the merge tolerance (5 c by default, set in the Developer menu) become one note. A row shows its number, name (click to rename), the merged note count, a small ring, and the items it holds (open them to remove one). Open as tab makes a NEW tab with a frozen snapshot of the merged notes; later changes to the composite do not touch that tab. Delete takes two clicks. Example: send a 12-EDO major triad and a just 4:5:6 to one composite; at 5 c they merge into 4 notes (400 c and 386.3 c stay apart, 700 c and 702 c become one).',
+    text: 'Up to nine numbered collections. Each gathers chords, subsets and single notes (from any generator, any tab) and merges their pitches onto ONE ring, a new gamut you can work on like any other. Pitches closer than the merge tolerance (5 c by default, set in the Developer menu) become one note. A row shows its number, name (click to rename), the merged note count, a small ring, and the items it holds (open them to remove one). Open as tab makes a NEW tab with the merged notes as they are now; later changes to the composite do not touch that tab. Delete takes two clicks. Example: send a 12-EDO major triad and a just 4:5:6 to one composite; at 5 c they merge into 4 notes (400 c and 386.3 c stay apart, 700 c and 702 c become one).',
     see: ['sendToComposite', 'compositeOpen', 'shelfPanel'],
   },
   compositeOpen: {
     term: 'Open as tab',
-    text: 'Makes a new tab, at the end, whose generator is the Composite method: the merged notes of this composite at this moment, as a frozen snapshot. Your other tabs are not touched. Every panel works on it (ring, keys, lattice, Sketch, shelf, Retuner). Changing or deleting the composite later changes nothing in that tab. Example: collect three chords, press Open as tab, then look for chords inside the new gamut.',
+    text: 'Makes a new tab, at the end, whose generator is the Composite method: the merged notes of this composite as they are at this moment. Your other tabs are not touched. Every panel works on it (ring, keys, lattice, Sketch, shelf, Retuner). Changing or deleting the composite later changes nothing in that tab. Example: collect three chords, press Open as tab, then look for chords inside the new gamut.',
     see: ['compositesPanel'],
   },
   sendToComposite: {
     term: 'Send to a composite (- key, right-click)',
-    text: 'Point at a chord chip, a shelf chord, a saved subset, a key ring, a note anywhere or an item of a composite and press - (the minus key, plain). A small popup lists the composites by number: press 1 to 9 to send it there, 0 for a new composite, Esc to cancel. Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item. An item already in a composite is greyed out and says so. While the popup is open the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on 0). Right-click the same things for a menu: Send to composite offers the three most recently used composites, New composite and All composites. On the shelf, tick chords and use Add selected to composite. Example: point at the minor triad chip, press -, then 2.',
+    text: 'Point at a chord chip, a shelf chord, a saved subset, a key ring, a note anywhere or an item of a composite and press - (the minus key, plain). A small popup lists the composites by number: press 1 to 9 to send it there, 0 for a new composite, Esc to cancel. Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item. An item already in a composite is greyed out and says so. The popup also lists the pitch values as text (cents for every note; ratio and monzo when sending Exact) and the note counts. Its As in field | Exact slider starts on the choice made on the shelf and changes the preview and the send; it is disabled, with the reason, for a stashed shelf chord, a positional chord and anything without separate exact ratios. While the popup is open E flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on 0). Right-click the same things for a menu: a chord chip also offers Stash on shelf; Send to composite offers the three most recently used composites, New composite and All composites, and Shift+click on a composite sends in the other mode (As in field or Exact). On the shelf, tick chords and use Add selected to composite. Example: point at the minor triad chip, press -, then 2.',
     see: ['compositesPanel', 'holdToPlay'],
   },
   shelfPlaySelected: {
@@ -783,6 +783,11 @@ const entries = {
     term: 'Positional pattern',
     text: 'Which step pattern the Positional section lists chords for. The patterns are your own list: add, edit, reorder and restore them under Edit templates, Positional patterns. Example: pick 3-3 to see chords built from every third note, which are wider than triads.',
     see: ['positionalChords', 'positionalPatterns'],
+  },
+  positionalOrder: {
+    term: 'Positional order',
+    text: 'Smoothest lists the chords best score first (lowest roughness). Scale order lists them by the degree they start on, 1 to N, and each row then shows its roughness score and its rank (rank 1 = smoothest of all). Example: 12-EDO C major, 2-2: scale order gives C E G, D F A, E G B and so on, with the C, F and G chords ranked ahead of the diminished one.',
+    see: ['positionalChords', 'positionalPick'],
   },
   positionalPatterns: {
     term: 'Positional patterns (editor)',

@@ -4,15 +4,23 @@
  * chords come from the lib (`positionalChords`, `rankPositional`, `positionalNaming`); a row behaves like a chord chip.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Button, NativeSelect, TextInput, Tooltip } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  NativeSelect,
+  SegmentedControl,
+  TextInput,
+  Tooltip,
+} from '@mantine/core';
 import {
   mulNotes,
   parsePattern,
   positionalChords,
+  positionalList,
   positionalNaming,
-  rankPositional,
   type Note,
-  type RankedPositional,
+  type PositionalOrder,
+  type PositionalRow as RankedRow,
 } from '../../../lib/harmonic-field';
 import type { PreviewTarget } from '../audio/plan';
 import { autoName } from '../state/generate';
@@ -21,6 +29,7 @@ import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from './icons';
 import { useSendHover } from './Send';
 import { ChordDrawing } from './ShelfPanel';
 import { Num, Tip, useLab, useNativeTitle, useTooltipProps } from './ui';
+import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 /** At most this many rows are drawn (a huge subset has as many chords as notes); the smoothest come first. */
@@ -33,8 +42,9 @@ export const shapeOf = (pitches: readonly Note[]): Note[] =>
 const plain = (p: Note): Note => ({ m: p.m ? { ...p.m } : null, c: p.c });
 
 interface RowProps {
-  chord: RankedPositional;
-  rank: number;
+  chord: RankedRow;
+  /** Scale order: the row also shows its smoothness score next to its rank (Smoothest order shows the rank only, as before). */
+  showScore: boolean;
   pattern: string;
   naming: ReturnType<typeof positionalNaming>;
   /** True when THIS row (pattern + degree) is the one that was clicked and its notes are still the picked highlight. */
@@ -42,7 +52,8 @@ interface RowProps {
   onPick: (picked: boolean) => void;
 }
 
-function PositionalRow({ chord, rank, pattern, naming, rowPicked, onPick }: RowProps) {
+function PositionalRow({ chord, showScore, pattern, naming, rowPicked, onPick }: RowProps) {
+  const rank = chord.rank;
   const lab = useLab();
   const { state, dispatch, audio, base } = lab;
   const tipProps = useTooltipProps();
@@ -75,6 +86,14 @@ function PositionalRow({ chord, rank, pattern, naming, rowPicked, onPick }: RowP
       pattern,
       tail: naming.tail,
       root: `degree ${chord.degree + 1}`,
+    },
+    // the right-click menu's Stash on shelf (the same as the + button, tail included)
+    stash: {
+      pitches: chord.pitches.map(plain),
+      template: naming.label,
+      pattern,
+      tail: naming.tail,
+      rootDeg: chord.degree,
     },
   }));
   const hovered = useRef(false);
@@ -136,6 +155,11 @@ function PositionalRow({ chord, rank, pattern, naming, rowPicked, onPick }: RowP
               <span className={classes.chipTop}>
                 <Num>{naming.label}</Num>
                 <Num muted>#{rank}</Num>
+                {showScore && (
+                  <span data-testid="positional-score">
+                    <Num muted>score {chord.score.toFixed(2)}</Num>
+                  </span>
+                )}
               </span>
               <span className={classes.chipBottom}>
                 <Num muted>{naming.tail}</Num>
@@ -157,6 +181,7 @@ function PositionalRow({ chord, rank, pattern, naming, rowPicked, onPick }: RowP
               pitches: chord.pitches.map(plain),
               template: naming.label,
               pattern,
+              tail: naming.tail,
               rootDeg: chord.degree,
               date: new Date().toISOString(),
             },
@@ -190,15 +215,18 @@ export function PositionalSection() {
   const genName = tab.gen.preset || autoName(tab.gen);
   // a step that is a whole number of turns of the subset would come back to the same note
   const tooFew = n < 2 || (steps !== null && steps.some((s) => s % n === 0));
+  // Smoothest = best score first; Scale order = degree 1..N, each row with its score and its rank (rank 1 = smoothest)
+  const [order, setOrder] = useState<PositionalOrder>('smoothest');
   const ranked = useMemo(() => {
     if (!steps || tooFew) {
       return [];
     }
-    return rankPositional(
+    return positionalList(
       positionalChords(base.field, base.idx, steps, base.mode, base.rep),
+      order,
       state.ui.baseHz
     );
-  }, [steps, tooFew, base.field, base.idx, base.mode, base.rep, state.ui.baseHz]);
+  }, [steps, tooFew, order, base.field, base.idx, base.mode, base.rep, state.ui.baseHz]);
   // the names (a ratio-name search per row) are made once per chord set, not on every hover
   const named = useMemo(
     () =>
@@ -232,6 +260,16 @@ export function PositionalSection() {
               dispatch({ type: 'ui', patch: { positionalPattern: e.currentTarget.value } })
             }
           />
+          <Tip k="positionalOrder" as="control">
+            <SegmentedControl
+              size="xs"
+              aria-label="Positional order"
+              data={['Smoothest', 'Scale order']}
+              value={order === 'scale' ? 'Scale order' : 'Smoothest'}
+              onChange={(v) => setOrder(v === 'Scale order' ? 'scale' : 'smoothest')}
+              className={labClasses.tinySeg}
+            />
+          </Tip>
         </div>
       )}
       {chosen && tooFew && (
@@ -241,11 +279,11 @@ export function PositionalSection() {
       )}
       {chosen && !tooFew && (
         <ul className={classes.posList} aria-label="Positional chords">
-          {rows.map(({ c, naming }, i) => (
+          {rows.map(({ c, naming }) => (
             <PositionalRow
               key={`${chosen}:${c.degree}`}
               chord={c}
-              rank={i + 1}
+              showScore={order === 'scale'}
               pattern={chosen}
               naming={naming}
               rowPicked={clicked === `${chosen}:${c.degree}`}
@@ -256,7 +294,7 @@ export function PositionalSection() {
       )}
       {ranked.length > rows.length && (
         <span className={classes.hint}>
-          Showing the {rows.length} smoothest of {ranked.length}.
+          Showing the {rows.length} {order === 'scale' ? 'first' : 'smoothest'} of {ranked.length}.
         </span>
       )}
     </section>

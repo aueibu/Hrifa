@@ -22,6 +22,8 @@ export interface CompositeRingProps {
   common?: readonly number[];
   dropped?: readonly number[];
   label: string;
+  /** The larger drawing of the - popup. */
+  big?: boolean;
 }
 
 export function CompositeRing({
@@ -31,6 +33,7 @@ export function CompositeRing({
   common = [],
   dropped = [],
   label,
+  big = false,
 }: CompositeRingProps) {
   const turn = repC > 0 ? repC : 1200;
   const at = (c: number, r = R) => {
@@ -40,7 +43,7 @@ export function CompositeRing({
   const preview = added.length + common.length + dropped.length > 0;
   return (
     <svg
-      className={classes.compRing}
+      className={big ? classes.compRingBig : classes.compRing}
       viewBox={`0 0 ${S} ${S}`}
       role="img"
       aria-label={label}
