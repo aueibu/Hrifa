@@ -241,7 +241,7 @@ Proposal:
   - [ ] Tests for dedupe, option switching, cap, no change to existing cards; one page test.
 - Human checkpoint after: **yes** (does Fill cards give sensible results by ear)
 
-### M8a (DRAFT, needs the human's approval of the acceptance list before building): Chord shelf + sketch
+### M8a: Chord shelf + sketch (APPROVED 2026-11-14)
 - Why: move from analysis (chords the field contains) to exploration (any chord on any degree), and stash chords for progressions and harmonic collages. **Decided (human, 2026-11-14):** the shelf is its own list, separate from the retuner's card list (cards are tab snapshots, subsets live under generators since M7b); it is a **panel** in the rail (pin/stack like the others); a stashed chord stores the **exact pitches heard** plus provenance; playback is interactive (hover + hold key, click, and in M8b the keyboard modes); timed playback is parked in BACKLOG. Two builder steps like M7b: data layer + reviewer, then UI.
 - Scope: page + a new key `hrifa.harmonic-field-lab.chordshelf.v1` (name to confirm). Owned page folder only; a DECISIONS row (H-7) for the shelf data contract (the workbench may read it later).
 - Acceptance (draft):
@@ -253,9 +253,10 @@ Proposal:
   - [ ] **Reload**: reopening a stashed chord restores its source as a NEW tab (current tabs untouched), reconnecting to the matching preset / Auto-saved generator through the M7b owner lookup instead of duplicating it, so it can be modified and mined further; chords stashed from there record the parent chord.
   - [ ] Stored data stays plain and self-contained so a later Workbench hand-off can read it (W-1: midicents only at the hand-off; W-3: the roll is 12-EDO until a tunings decision).
   - [ ] Tests (reducer, persistence round-trip and bad data, reload, hold 4, one page test), page `ARCHITECTURE.md`, DECISIONS H-7; `check:hfl` green; reviewer on the data layer (step 1).
+- Checkpoint decisions (human, 2026-11-14): **M8a and M8b APPROVED** as drafted, including melody keys v2 (kept inside M8b, not built earlier); build order M8a (step 1 data layer + reviewer, step 2 UI), then M8b.
 - Human checkpoint after: **yes** (feel)
 
-### M8b (DRAFT, needs the human's approval): Melody keys v2 + keyboard chord modes + linked melody
+### M8b: Melody keys v2 + keyboard chord modes + linked melody (APPROVED 2026-11-14)
 - Why: play the shelf from the computer keyboard, and let the melody follow the chord's source (human, 2026-11-14).
 - Scope: page + the optional `ui.keyboardMode` field in `settings.v1`. After M8a.
 - Acceptance (draft):

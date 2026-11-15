@@ -4,8 +4,21 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M8a (draft: needs the human's approval of the acceptance list)
+- Current milestone: M8a (approved; step 1 data layer next)
 - State: M7, M7b, M7c approved; M8 not started
+
+## Resuming after a /clear (read this first)
+- **Read order:** `shell/CLAUDE.md` (and the repo-root one), this folder's `ARC.md` (milestones M8a and M8b are APPROVED, their acceptance lists are the spec), this file's Status and "Next action", the page `src/pages/harmonic-field-lab/ARCHITECTURE.md`, `DECISIONS.md` rows H-1 to H-6, `arcs/LOCKS.md`.
+- **State (2026-11-14):** M1 to M7c are done, approved and committed. M8a (chord shelf + sketch: data layer + reviewer, then UI) is next, then M8b (melody keys v2, keyboard chord modes, linked melody). No lock is held by this arc. Everything is committed; origin/main has our commits up to `70e4ae7`, later commits (M8 drafts and approvals) are local until pushed: push only when the human asks.
+- **How we work:** orchestrator = the main session (writes ARC/PROGRESS/LOCKS/DECISIONS/BACKLOG, runs the gate, commits path-scoped: `git add -- <paths>` then `git commit -- <paths>`, never a bare commit). Builder (Sonnet) for features, persistence, state, audio; reviewer (Opus) for those too, skipped for look-only rounds; the orchestrator does tiny fixes itself. Builders run only `corepack yarn test:related <files>`, never the gate. The gate is `corepack yarn check:hfl` (about 70 s, CPU-bound, about 930 tests). Max 2 builder attempts per step; a follow-up from a human decision is not an attempt.
+- **Quirks that bit us:**
+  - Builders run `oxfmt` without the shell config (quote churn, `--check` fails on many files): before every gate run `node node_modules/oxfmt/bin/oxfmt -c oxfmt.config.mjs --write "src/pages/harmonic-field-lab/**/*.{ts,tsx}"`. Builders also sometimes write CRLF into `ARCHITECTURE.md` / CSS: `sed -i 's/\r$//' <file>`.
+  - `corepack yarn vitest ...` resolves to the package script `vitest run` (an extra `run` becomes a file filter): call `node node_modules/vitest/vitest.mjs run <paths>` for direct runs.
+  - Tool pipelines halve backslashes (regexes in `node -e` or shell-quoted python break) and big heredocs with mixed quotes can fail to parse: write temp files with the Write tool and run python on them.
+  - Another arc (workbench) holds locks on `src/components/Stage/` and `src/pages/stage/`; its unfinished work can turn `tsc` red for a while: shell rule 14, not ours to fix, wait or ask.
+  - `BACKLOG.md` may hold another session's uncommitted rows; adding ours and committing path-scoped `BACKLOG.md` is accepted (rule 13).
+- **Dev server:** `node node_modules/vite/bin/vite.js --host 127.0.0.1` from `shell/` (port 5173 is often taken; Vite picks the next, e.g. 5174); open `/Hrifa/harmonic-field-lab`. Browser storage is per port. After a builder saves files, refresh the page (stale dev modules have fooled us).
+- **How the human likes to be told things:** plain words, exact button and label names, numbered reproduction steps, one clear recommendation; never vague "A / B / C" jargon questions. He tries each look round on the dev server and gives feedback; record every decision in `ARC.md` as a "Checkpoint decisions" bullet before building on it.
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -100,7 +113,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M8a (chord shelf + sketch) and M8b (keyboard chord modes + linked melody) are drafted in ARC.md with the human's answers (separate list, panel, exact pitches, hold 4, interactive play, [ ] paging, audio-only linked melody, retuner precedence). The human reads and approves the lists; then M8a step 1 (data layer) via builder + reviewer.
+M8a step 1 (data layer: `chordshelf.v1`, stash with provenance and reference frame, lineage, reload source, sketch/armed-chord state) via builder, then reviewer, gate, commit; then M8a step 2 (UI: Shelf panel, Sketch row, hold 4, play from the shelf); human checkpoint (feel); then M8b. Brief the builder from the M8a acceptance list in ARC.md and the M7b data-layer pattern (pure lib + page state + store, pitch-based, no write on mount, nothing dropped by a save).
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
