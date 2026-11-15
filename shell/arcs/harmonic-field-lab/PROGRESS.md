@@ -121,7 +121,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M8c step 1 (data layer `composites.v1` + `src/lib/harmonic-field/composite.ts` merge lib, tests from the confirmed scenarios, Developer option 'Merged note keeps' + merge tolerance + Developer menu sections by what/where it affects) via a fresh builder, then reviewer, gate, commit; step 2 UI (send popup with preview, right-click menu, Composites rail panel, Open as tab, Composite generation method); human checkpoint. Then M9 once the human answers its open design points.
+M8c step 1 builder running (data layer + merge lib + Developer options/sections), then reviewer, gate, commit; M8c step 2 (UI); then M9 (approved, design points answered in ARC) the same way. ONE human checkpoint for M8c + M9 after M9. No push. Stop only on a stop-and-ask condition; otherwise log open questions in the final report and BACKLOG.
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
