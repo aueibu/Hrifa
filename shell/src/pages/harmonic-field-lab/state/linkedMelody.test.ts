@@ -86,7 +86,7 @@ describe('linked melody scale', () => {
     expect(linkedPitch(sc, 2, 0, 'parallel', 100)!.hz).toBeCloseTo(100 * 2 ** (400 / 1200), 6);
     expect(linkedPitch(sc, 2, 0, 'relative', 100)!.hz).toBeCloseTo(100 * 2 ** (600 / 1200), 6);
     expect(linkedPitch(sc, 2, 0, 'parallel', 100)!.abs).toBeCloseTo(600, 6);
-    // on the source's own root it is the subset as stored; Transpose is the default
+    // on the source's own root it is the subset as stored
     expect(rounded(linkedScale(cMajorChordOn(0), 1200)!.rel)).toEqual(rounded(sc.rel));
     expect(linkedScale(cMajorChordOn(0), 1200)!.rootC).toBeCloseTo(0, 6);
   });

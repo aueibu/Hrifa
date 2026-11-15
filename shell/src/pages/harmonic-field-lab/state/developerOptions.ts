@@ -16,7 +16,7 @@ export interface LabDeveloperOptions {
   tooltips: boolean;
   /** Milliseconds the pointer must rest before a tooltip appears (0 to 5000, default 250). */
   tooltipDelay: number;
-  /** Linked melody root used while settings.v1 has no stored choice (default Transpose). */
+  /** Linked melody root used while settings.v1 has no stored choice (default Re-root). */
   linkedRootDefault: LinkedRoot;
 }
 
@@ -36,7 +36,7 @@ const defaults: LabDeveloperOptions = {
   keepModeRoot: true,
   tooltips: true,
   tooltipDelay: TOOLTIP_DELAY_DEFAULT,
-  linkedRootDefault: 'transpose',
+  linkedRootDefault: 'reroot',
 };
 
 const listeners = new Set<() => void>();
