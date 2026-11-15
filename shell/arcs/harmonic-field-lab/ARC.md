@@ -242,7 +242,7 @@ Proposal:
 - Human checkpoint after: **yes** (does Fill cards give sensible results by ear)
 
 ### M8 (DRAFT, needs the human's approval of the acceptance list before building): Chord sketchpad
-- Why: move from analysis (chords the field contains) to exploration (any chord on any degree), and stash chords for progressions and harmonic collages. After M7 so the shelf shares the M7 card-list model instead of a second list model.
+- Why: move from analysis (chords the field contains) to exploration (any chord on any degree), and stash chords for progressions and harmonic collages. **Decided (human, 2026-11-14): the shelf is its own list, separate from the retuner's card list** (cards are tab snapshots, subsets live under generators since M7b; the shelf stores chords with their provenance). They may exchange items later (e.g. a shelf chord's source as a card) but share no model.
 - Scope: page + a new `…chordshelf.v1` key (name to confirm).
 - Acceptance (draft):
   - [ ] Preview a chord template on any subset degree, even when the field lacks some of its notes: hear the exact chord; found notes marked, outsiders shown with their distance in cents to the nearest field note.
@@ -251,7 +251,7 @@ Proposal:
   - [ ] **Reload**: reopening a stashed chord restores its source (as a new tab, the current tabs untouched) so it can be modified and mined further; chords found or built there can be added to slots, recording the parent chord (a lineage).
   - [ ] Play the shelf in order (tempo) or layer chosen chords (collage); everything sounding lights in every view.
   - [ ] Stored data stays plain and self-contained so a later Workbench hand-off can read it (W-1: midicents only at the hand-off; W-3: the roll is 12-EDO until a tunings decision).
-- Open: how the shelf and the M7 card list share a model (one list with kinds, or cards made from shelf chords); progression timing detail.
+- Open: the questions put to the human on 2026-11-14 (where the shelf lives, how a chord is sketched on any degree, what a stashed chord stores, how the shelf plays); the progression timing detail.
 - Human checkpoint after: **yes**
 
 ## Final step
