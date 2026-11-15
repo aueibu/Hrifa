@@ -17,4 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| CLAUDE.md | harmonic-field-lab | 2026-11-15 | add behaviour-confirmation and builder-continuity workflow rules |
