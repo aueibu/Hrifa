@@ -355,13 +355,15 @@ Proposal:
 - Checkpoint decision (human, 2026-11-15): the stepper already follows the played key in Parallel and Relative, so the root is always the stepper; no separate held-key rule. Scenarios a to i confirmed.
 - Human checkpoint after: **yes** (feel).
 
-### M8f: Silent root keys in Chords mode, one-row positional list, foldable chord sections (DRAFT 2026-11-15, awaiting confirmation; builds after M8e)
+### M8f: Silent root keys in Chords mode, one-row positional list, foldable chord sections (APPROVED 2026-11-15)
 - Why: the human's M8e feedback (2026-11-15): set the root silently from the keyboard, then audition any chip at it with hold 4 or 5; read the positional list and sort easier; fold away what is not in use.
 - Scope: owned page folder only; the fold state is a per-viewer pref under `hrifa.harmonic-field-lab.*`.
 - Items:
   1. **Silent root keys in Chords mode**: in the keyboard Chords mode the melody-position keys (`z x c v b n m a s d f g h j k l`) move the Sketch root stepper to that slot's degree (octave repeats are the same degree) and make NO sound. `,` and `.` and the shelf chord keys `q..p` are unchanged. Notes and Split modes are unchanged (the keys play and move the stepper; in Split with the linked melody on a different subset they do not move it). In Chords mode the silent keys always use this tab's own degrees, linked melody or not. Never while typing; ignores key repeat; the retuner's live mode keeps its precedence.
-  2. **Positional list, one position per row**: each degree is one full-width row: label (`2-2 on 4`), the notes/cents, the tail (`7 of 12-EDO · 400-300 c`), the `~ 4:5:6` ratio name when it fits, and the rank (plus the score in Scale order) in its own column, so sorting is easy to scan. Click, hover, hold 1, `+`, send and the row cap behave as today.
-  3. **Foldable sections**: the three chord sections can each be folded away: "Chords inside this CPS" (only present for CPS), "Positional", and the ratio chord families. Header with a chevron, `aria-expanded`, keyboard operable; folded sections keep their count in the header. Fold state is remembered per viewer (entry-by-entry sanitising, default all open, no write on mount). Granularity of the families fold: see the open point.
+  2. **Positional list, one position per row, ALL patterns at once** (human, 2026-11-15): every pattern is its own foldable group (header `2-2` with its row count) stacked in the section, all open by default, each group ranked among itself only (a folded group is not ranked until opened, so large subsets stay fast); the Smoothest | Scale order toggle applies inside every group; the pattern picker is removed (the pattern editor stays). Each degree is one full-width row: label (`2-2 on 4`), the notes/cents, the tail (`7 of 12-EDO · 400-300 c`), the `~ 4:5:6` ratio name when it fits, and the rank (plus the score in Scale order) in its own column, so sorting is easy to scan. Click, hover, hold 1, `+`, send and the row cap behave as today.
+  3. **Foldable sections**: the three chord sections can each be folded away: "Chords inside this CPS" (only present for CPS), "Positional", and the ratio chord families. Header with a chevron, `aria-expanded`, keyboard operable; folded sections keep their count in the header. Fold state is remembered per viewer (entry-by-entry sanitising, default all open, no write on mount). Checkpoint decision (human, 2026-11-15): EACH family (Triads, Tetras, ...) folds on its own, and the three groups (CPS chords, Positional, ratio families) each fold as a whole group; fold state is remembered per viewer.
+  4. **Bigger ring in the Composites panel** (human, 2026-11-15; row height must not grow): each composite row becomes two columns: left a text stack (number and name, `x notes · y items`, then the Items / Open as tab / Delete buttons), right the ring, sized to fill the row's height and the remaining width (target about 4.5 rem against 2.75 rem today). **The ring stays on the LEFT, as in every other layout (human, firm):** order is number, ring, then a text column to its right with the name and `x notes · y items` ABOVE the Items / Open as tab / Delete buttons; the ring fills the height of that text column. The `-` popup rings are unchanged.
+  5. **Family label on composite items** (human, 2026-11-15: `3:5:7` should show Septimal): a chord or selection item shows its template family (Major, Minor, Septimal, ...) as the last part of line 2, `chord · 3 notes · Septimal`, stored as an additive optional `detail.family` set at send time (old items have none and show no family; H-10 amended). Line 1 keeps the template name (`4:5:6 major triad on 200.0 c`, `3:5:7 triad on 0.0 c`).
 - Scenarios (to confirm; they become the tests), 12-EDO major, Chords mode on, Sketch stepper on degree 1:
 
 | # | Case | Expected |
@@ -375,8 +377,38 @@ Proposal:
 | g | Typing in a text box, press `x` | nothing |
 | h | Positional 2-2, 7 rows | 7 full-width rows, each with label, notes, tail and rank; in Scale order the score as well |
 | i | Fold "Positional", reload | still folded; the header shows its count; the other sections are open |
+| j | 12-EDO major, Positional | one group per pattern (2-2, 2-2-2, 2-2-2-2, 2-3, 3-2, 1-1, 3-3), each with 7 rows ranked 1..7 inside its own group; fold 2-3 and only that group closes |
+| k | Fold "Triads", reload | Triads folded, Tetras open; folding the whole ratio-families group closes all families |
+| l | Send the 3:5:7 chip to a composite | item line 2 reads `chord · 3 notes · Septimal` |
+| m | Composites panel row | ring left, text column to its right with name and `x notes · y items` above the buttons, ring taller than 2.75 rem, row height not noticeably taller |
 
-- Open points for the human: (1) are "the ratio families" folded as ONE section (everything under the template families), or EACH family (e.g. each row of the family-grouped chips) separately? Recommendation: each family separately, plus the overall header folds them all. (2) Remember fold state across reloads (recommended)?
+- Checkpoint decision (human, 2026-11-15): all patterns stacked, each ranked among itself (scenario h/j below).
+- Human checkpoint after: **yes** (feel and look).
+
+### M8g: Chords panel round 3 (DRAFT 2026-11-15, awaiting answers to the open points; builds after M8f is committed)
+- Why: the human's M8f feedback (2026-11-15). Owned paths only; `ui` additions follow the `positionalOrder` / `folds` pattern (optional, sanitised, no write on mount).
+- Items:
+  1. **Composite item lines, revised**: line 1 `<ratios> · <family> on <x.x> c` (e.g. `4:5:6 · Major on 200.0 c`, `3:5:7 · Septimal on 0.0 c`; no family: `<ratios> on <x.x> c`; positional keeps its label `2-2 on 4`); line 2 `chord · <n> notes · <template name>` (e.g. `chord · 3 notes · major triad`, `chord · 4 notes · harmonic 7th chord`); lines 3 and 4 unchanged (cents, `Source:`).
+  2. **Hover 4/5 on a chord chip arms it** exactly like hover 1 does: the Sketch row takes the chip's chord type (template for ratio chips, pattern for positional rows, the CPS shape), regardless of 4 or 5; the Sketch root is NOT changed by arming, so the chord still sounds on the stepper root. The tooltip text already says it arms; the code must match.
+  3. **Fold memory on refresh**: the human reports folds are not remembered after a refresh. Reproduce first (which fold, which generator, what comes back) and fix; add a test that fails before the fix.
+  4. **Persistent top of the Chords panel**: the Sketch row (stepper) and the tolerance ladder stay visible while the chord lists scroll (sticky, as the key rings do in the Keys panel; read how that is done and reuse it). Plus **Collapse all | Expand all** controls (applies to every section and sub-fold of this panel: CPS, Positional and each pattern group, ratio families, sizes, family rows), placed in the sticky top area.
+  5. **Tolerance ladder window**: replace the free scroll with a window of 7 tiles: the selected tolerance centred with its outline and 3 on each side; where more tolerances exist beyond the window, a `+n` tile at that edge (n = how many are hidden); near either end of the ladder the window slides so it still shows 7 tiles (the selection is then off-centre). Clicking a tile selects it (and the window follows); clicking `+n` selects the nearest hidden tile in that direction.
+  6. **Sketch preview tile colours**: tiles for notes that are in the field keep the solid blue; tiles for notes that are NOT in the field (offsets) use the same colour scheme as the chord chips' cents-error severity colours (`data-sev`), dashed outline kept but coloured, and the tile background tinted with that colour mixed into the grey panel background (light-grey/grey base + tint, not a tint from transparent); the exact tile (error 0) gets its severity tint too.
+- Scenarios (to confirm; they become the tests):
+
+| # | Case | Expected |
+|---|---|---|
+| a | 4:5:6 chip sent to a composite (template "major triad", family Major), root 200 c | line 1 `4:5:6 · Major on 200.0 c`, line 2 `chord · 3 notes · major triad` |
+| b | 3:5:7 chip (family Septimal, name "3:5:7 triad") | line 1 `3:5:7 · Septimal on 0.0 c`, line 2 `chord · 3 notes · 3:5:7 triad` |
+| c | Sketch armed with minor triad; hover the 4:5:6 chip and hold 4 (or 5) | Sketch template becomes 4:5:6, root unchanged, chord sounds on the stepper root; same for a positional row (pattern armed) |
+| d | Fold Positional and the 2-3 group, refresh | both still folded (reproduce the reported failure first) |
+| e | Scroll a long chord list | the Sketch row and the tolerance ladder stay in view |
+| f | Collapse all, then Expand all | every section and sub-fold closes, then opens; the fold state is remembered |
+| g | Ladder with 14 tolerances, selection the 7th | 3 tiles each side, `+4` at the left edge and `+4` at the right edge (7th selected: 6 before, 7 after; check the real numbers) |
+| h | Selection on the highest tolerance | window still shows 7 tiles with the last one selected, `+n` only on the left |
+| i | Sketch preview: C major triad on 12-EDO with the field lacking one note | in-field tiles solid blue; the offset tile dashed in its severity colour with a tinted fill; the exact tile tinted too |
+
+- Open points for the human: (1) line 1 wording with the family: is `4:5:6 · Major on 200.0 c` what you meant? (2) Collapse all | Expand all: in the sticky top area at the right, OK? (3) The sticky area (Sketch row + ladder) may take a lot of height on a short screen: if it does, which part should shrink or scroll? (4) Fold bug: which section did you fold, on which generator, and what did you see after the refresh?
 - Human checkpoint after: **yes** (feel and look).
 
 ## Final step

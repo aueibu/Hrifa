@@ -44,7 +44,15 @@ export interface ItemDetail {
   pattern: string | null;
   /** The positional tail line ("7 of 12-EDO · 400-300 c") or null. */
   tail: string | null;
+  /**
+   * M8f: the template family of a ratio chord chip ("Septimal") or absent. Additive and optional: present only when set (a
+   * detail without it keeps its stored shape, old items load unchanged), shown as the last part of the item's second line.
+   */
+  family?: string;
 }
+
+/** Longest family label kept. */
+export const MAX_FAMILY_CHARS = 80;
 
 const detailText = (v: unknown): string | null =>
   typeof v === 'string' && v.trim() && v.length <= MAX_TEMPLATE_CHARS ? v.trim() : null;
@@ -55,11 +63,16 @@ export function sanitizeDetail(raw: unknown): ItemDetail | null {
     return null;
   }
   const r = raw as Record<string, unknown>;
+  const family =
+    typeof r.family === 'string' && r.family.trim()
+      ? r.family.trim().slice(0, MAX_FAMILY_CHARS)
+      : '';
   return {
     template: detailText(r.template),
     root: detailText(r.root),
     pattern: typeof r.pattern === 'string' ? canonicalPattern(r.pattern) : null,
     tail: detailText(r.tail),
+    ...(family ? { family } : {}),
   };
 }
 

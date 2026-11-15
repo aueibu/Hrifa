@@ -194,6 +194,8 @@ export interface UiSettings {
   positionalPattern: string | null;
   /** The Positional list order (M8e): Smoothest (default) or Scale order. Optional in storage. */
   positionalOrder: 'smoothest' | 'scale';
+  /** Folded sections of the Chords panel (M8f): ids to true when folded (see `foldId`; `Record<string, boolean>`, only true is stored); absent = open. Optional in storage. */
+  folds: Record<string, boolean>;
 }
 
 /**
@@ -295,6 +297,7 @@ export function defaultUi(): UiSettings {
     linkedRoot: null,
     positionalPattern: null,
     positionalOrder: 'smoothest',
+    folds: {},
   };
 }
 

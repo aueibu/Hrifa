@@ -16,6 +16,7 @@ import type { PreviewTarget } from '../audio/plan';
 import { cpsRootIdx } from '../state/cpsRoot';
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
 import { MAX_TEMPLATES } from '../state/labState';
+import { FoldHead, foldId, useFold } from './Fold';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import { PatternsEditor, PositionalSection } from './Positional';
 import { useSendHover } from './Send';
@@ -65,6 +66,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
     chip.memberIdx.every((i) => lab.chordPicked?.has(i));
   const sev = severity(chip.maxErr);
   const rootDeg = lab.base.rel.findIndex((r) => r.src === chip.rootIdx);
+  const templateFamily = lab.state.templates.find((t) => t.text === chip.template)?.family;
   // the found chord as an item for the `-` popup and the right-click menu: its field notes, root first then upward
   const send = useSendHover(`chip:${chip.template}:${chip.rootIdx}`, () => {
     const { field, rep, repC } = lab.base;
@@ -77,7 +79,12 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
           rep,
           // Exact send: the template's true ratios on the same root
           exact: exactOn(field[chip.rootIdx], chip.template),
-          detail: { template: chip.template, root: chip.root },
+          detail: {
+            template: chip.template,
+            root: chip.root,
+            // the template's own family (a template with none has none, not "Other")
+            ...(templateFamily ? { family: templateFamily } : {}),
+          },
           // the right-click menu's Stash on shelf (the same as the + button)
           stash: {
             pitches: chipPitches(chip, field, repC),
@@ -362,34 +369,35 @@ function CpsChords() {
   const chords = useMemo(() => cpsChords(base.field), [base.field]);
   const oto = chords.filter((g) => g.type === 'harmonic');
   const uto = chords.filter((g) => g.type !== 'harmonic');
+  const { folded } = useFold('cps');
   return (
     <section className={classes.family} aria-label="Chords inside this CPS">
       <h3 className={classes.familyHead}>
-        <Tip k="cpsChords">Chords inside this CPS</Tip>
-        <Num muted>{chords.length}</Num>
+        <FoldHead id="cps" tip="cpsChords" title="Chords inside this CPS" count={chords.length} />
       </h3>
-      {[
-        { key: 'otonal', rows: oto },
-        { key: 'utonal', rows: uto },
-      ].map(({ key, rows }) => (
-        <div key={key} className={classes.famRow} role="group" aria-label={`CPS ${key} chords`}>
-          <span className={classes.famLabel}>
-            <Tip k={key === 'otonal' ? 'otonal' : 'utonal'}>
-              {key === 'otonal' ? 'Otonal' : 'Utonal'}
-            </Tip>{' '}
-            <Num muted>{rows.length}</Num>
-          </span>
-          <div className={classes.chips}>
-            {rows.length ? (
-              rows.map((g) => (
-                <CpsChip key={`${g.type}:${g.common.join(',')}`} g={g} labels={labels} />
-              ))
-            ) : (
-              <span className={classes.hint}>none</span>
-            )}
+      {!folded &&
+        [
+          { key: 'otonal', rows: oto },
+          { key: 'utonal', rows: uto },
+        ].map(({ key, rows }) => (
+          <div key={key} className={classes.famRow} role="group" aria-label={`CPS ${key} chords`}>
+            <span className={classes.famLabel}>
+              <Tip k={key === 'otonal' ? 'otonal' : 'utonal'}>
+                {key === 'otonal' ? 'Otonal' : 'Utonal'}
+              </Tip>{' '}
+              <Num muted>{rows.length}</Num>
+            </span>
+            <div className={classes.chips}>
+              {rows.length ? (
+                rows.map((g) => (
+                  <CpsChip key={`${g.type}:${g.common.join(',')}`} g={g} labels={labels} />
+                ))
+              ) : (
+                <span className={classes.hint}>none</span>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
     </section>
   );
 }
@@ -473,6 +481,116 @@ function TemplateEditor() {
       </div>
       <PatternsEditor />
     </div>
+  );
+}
+
+/** One family row (Major, Septimal, ...) of a size section: its own fold, the count of found chips beside the label. */
+function FamilyRow({
+  size,
+  family,
+  row,
+  onRaise,
+}: {
+  size: string;
+  family: string;
+  row: ChordChip[];
+  onRaise: (tol: number) => void;
+}) {
+  const id = foldId('fam', size, family);
+  const { folded } = useFold(id);
+  return (
+    <div
+      className={`${classes.famRow} ${classes.famRowFold}`}
+      role="group"
+      aria-label={`${size}, ${family}`}
+    >
+      <span className={classes.famLabel}>
+        <FoldHead
+          id={id}
+          tip="chordFamily"
+          title={family}
+          count={row.filter((c) => c.found).length}
+          level="row"
+          label={`${family} (${size})`}
+        />
+      </span>
+      <div className={classes.chips}>
+        {!folded &&
+          row.map((c, i) => (
+            <Chip key={`${c.template}-${c.members.join()}-${i}`} chip={c} onRaise={onRaise} />
+          ))}
+      </div>
+    </div>
+  );
+}
+
+/** The ratio chord families: the whole group folds, each size section (Triads, Tetras, ...) folds, and each family row folds. */
+function FamiliesGroup({
+  chips,
+  families,
+  onRaise,
+}: {
+  chips: ChordChip[];
+  families: string[];
+  onRaise: (tol: number) => void;
+}) {
+  const { folded } = useFold('families');
+  const total = chips.filter((c) => c.found).length;
+  return (
+    <section className={classes.family} aria-label="Ratio chord families">
+      <h3 className={classes.familyHead}>
+        <FoldHead id="families" tip="chordFamily" title="Ratio chords" count={total} />
+      </h3>
+      {!folded &&
+        SIZES.map((size) => {
+          const inSize = chips.filter((c) => c.size === size);
+          if (!inSize.length) {
+            return null;
+          }
+          return (
+            <SizeSection
+              key={size}
+              size={size}
+              inSize={inSize}
+              families={families}
+              onRaise={onRaise}
+            />
+          );
+        })}
+    </section>
+  );
+}
+
+function SizeSection({
+  size,
+  inSize,
+  families,
+  onRaise,
+}: {
+  size: string;
+  inSize: ChordChip[];
+  families: string[];
+  onRaise: (tol: number) => void;
+}) {
+  const { folded } = useFold(foldId('size', size));
+  return (
+    <section className={classes.family} aria-label={size}>
+      <h3 className={classes.familyHead}>
+        <FoldHead
+          id={foldId('size', size)}
+          tip="chordFamily"
+          title={size}
+          count={inSize.filter((c) => c.found).length}
+        />
+      </h3>
+      {!folded &&
+        families.map((f) => {
+          const row = inSize.filter((c) => c.family === f);
+          return row.length ? (
+            <FamilyRow key={f} size={size} family={f} row={row} onRaise={onRaise} />
+          ) : null;
+        })}
+    </section>
   );
 }
 
@@ -570,40 +688,7 @@ export function ChordsPanel() {
         </div>
         {tab.gen.method === 'cps' && <CpsChords />}
         <PositionalSection />
-        {SIZES.map((size) => {
-          const inSize = chips.filter((c) => c.size === size);
-          if (!inSize.length) {
-            return null;
-          }
-          return (
-            <section key={size} className={classes.family} aria-label={size}>
-              <h3 className={classes.familyHead}>
-                <Tip k="chordFamily">{size}</Tip>
-                <Num muted>{inSize.filter((c) => c.found).length}</Num>
-              </h3>
-              {families.map((f) => {
-                const row = inSize.filter((c) => c.family === f);
-                if (!row.length) {
-                  return null;
-                }
-                return (
-                  <div key={f} className={classes.famRow} role="group" aria-label={`${size}, ${f}`}>
-                    <span className={classes.famLabel}>{f}</span>
-                    <div className={classes.chips}>
-                      {row.map((c, i) => (
-                        <Chip
-                          key={`${c.template}-${c.members.join()}-${i}`}
-                          chip={c}
-                          onRaise={setTol}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </section>
-          );
-        })}
+        <FamiliesGroup chips={chips} families={families} onRaise={setTol} />
         <span className={classes.foot}>
           <Tip k="templates">Templates</Tip>{' '}
           <Num>{model?.templateCount ?? state.templates.length}</Num>

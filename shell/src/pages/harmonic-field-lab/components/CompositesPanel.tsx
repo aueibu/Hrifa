@@ -75,7 +75,8 @@ const oneDecimal = (c: number) => c.toFixed(1);
  * The four lines of an item (M8e):
  *  1. `<template> <kind> on <root> c` (`4:5:6 major triad on 200.0 c`); a positional chord shows its label (`2-2 on 4`); a
  *     subset or note shows its label;
- *  2. `chord · n notes`, `subset · n notes`, `selection · n notes`, or `note`;
+ *  2. `chord · n notes`, `subset · n notes`, `selection · n notes`, or `note`; a chord or selection with a template family adds
+ *     it last (`chord · 3 notes · Septimal`, M8f);
  *  3. the cents (chords and selections only), plus the positional tail on the same line;
  *  4. `Source: <generator or source name>`.
  * The cents come from `centsList(pitches)`; nothing here is stored.
@@ -93,7 +94,12 @@ export function itemLines(it: CompositeItem): { key: string; text: string }[] {
   lines.push({ key: 'what', text: what });
   lines.push({
     key: 'kind',
-    text: it.kind === 'note' ? 'note' : `${it.kind} · ${n} ${n === 1 ? 'note' : 'notes'}`,
+    text:
+      it.kind === 'note'
+        ? 'note'
+        : [`${it.kind} · ${n} ${n === 1 ? 'note' : 'notes'}`, chordLike ? d?.family : null]
+            .filter(Boolean)
+            .join(' · '),
   });
   if (chordLike) {
     const cents = `${centsList(it.pitches).map(oneDecimal).join(', ')} c`;
@@ -193,69 +199,71 @@ function Row({ c }: { c: Composite }) {
           lit={lit}
           label={`${c.name}: ${notes} merged ${notes === 1 ? 'note' : 'notes'}`}
         />
-        <span className={classes.compText}>
-          <CompName c={c} />
-          <span className={classes.slotCount}>
-            <Num muted>
-              {notes} {notes === 1 ? 'note' : 'notes'}
-              {' · '}
-              {c.items.length} {c.items.length === 1 ? 'item' : 'items'}
-            </Num>
+        <div className={classes.compBody}>
+          <span className={classes.compText}>
+            <CompName c={c} />
+            <span className={classes.slotCount}>
+              <Num muted>
+                {notes} {notes === 1 ? 'note' : 'notes'}
+                {' · '}
+                {c.items.length} {c.items.length === 1 ? 'item' : 'items'}
+              </Num>
+            </span>
           </span>
-        </span>
-      </div>
-      <div className={classes.compActions}>
-        <Button
-          size="compact-xs"
-          variant="default"
-          aria-expanded={open}
-          aria-label={`${open ? 'Hide' : 'Show'} the items of ${c.name}`}
-          rightSection={<ChevronDownIcon />}
-          onClick={() => setOpen((o) => !o)}
-        >
-          Items
-        </Button>
-        <Tip k="compositeOpen" as="control">
-          <Button
-            size="compact-xs"
-            variant="default"
-            aria-label={`Open ${c.name} as a tab`}
-            disabled={c.items.length === 0}
-            onClick={() =>
-              dispatch({
-                type: 'composite/openTab',
-                id: c.id,
-                merge: { tol: dev.mergeTolerance, keep: dev.mergeKeeps },
-              })
-            }
-          >
-            Open as tab
-          </Button>
-        </Tip>
-        <Button
-          size="compact-xs"
-          variant="default"
-          color={confirming ? 'red' : undefined}
-          aria-label={confirming ? `Confirm delete ${c.name}` : `Delete ${c.name}`}
-          onClick={() => {
-            if (confirming) {
-              setConfirming(false);
-              dispatch({ type: 'composite/delete', id: c.id });
-            } else {
-              setConfirming(true);
-            }
-          }}
-          onBlur={() => setConfirming(false)}
-          onMouseLeave={() => setConfirming(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.stopPropagation();
-              setConfirming(false);
-            }
-          }}
-        >
-          {confirming ? 'Delete?' : 'Delete'}
-        </Button>
+          <div className={classes.compActions}>
+            <Button
+              size="compact-xs"
+              variant="default"
+              aria-expanded={open}
+              aria-label={`${open ? 'Hide' : 'Show'} the items of ${c.name}`}
+              rightSection={<ChevronDownIcon />}
+              onClick={() => setOpen((o) => !o)}
+            >
+              Items
+            </Button>
+            <Tip k="compositeOpen" as="control">
+              <Button
+                size="compact-xs"
+                variant="default"
+                aria-label={`Open ${c.name} as a tab`}
+                disabled={c.items.length === 0}
+                onClick={() =>
+                  dispatch({
+                    type: 'composite/openTab',
+                    id: c.id,
+                    merge: { tol: dev.mergeTolerance, keep: dev.mergeKeeps },
+                  })
+                }
+              >
+                Open as tab
+              </Button>
+            </Tip>
+            <Button
+              size="compact-xs"
+              variant="default"
+              color={confirming ? 'red' : undefined}
+              aria-label={confirming ? `Confirm delete ${c.name}` : `Delete ${c.name}`}
+              onClick={() => {
+                if (confirming) {
+                  setConfirming(false);
+                  dispatch({ type: 'composite/delete', id: c.id });
+                } else {
+                  setConfirming(true);
+                }
+              }}
+              onBlur={() => setConfirming(false)}
+              onMouseLeave={() => setConfirming(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.stopPropagation();
+                  setConfirming(false);
+                }
+              }}
+            >
+              {confirming ? 'Delete?' : 'Delete'}
+            </Button>
+          </div>
+        </div>
       </div>
       {open && (
         <ul className={classes.compItems} aria-label={`Items of ${c.name}`}>

@@ -18,9 +18,12 @@ const noteDots = () => within(ring()).getAllByRole('button');
 const sketch = () => screen.getByRole('group', { name: 'Sketch a chord' });
 const template = () =>
   within(sketch()).getByRole<HTMLSelectElement>('combobox', { name: 'Sketch template' });
-const rows = () => screen.getAllByTestId('positional-row');
+const rows = () =>
+  within(screen.getByRole('list', { name: 'Positional chords 2-2' })).getAllByTestId(
+    'positional-row'
+  );
 const row = (label: string) =>
-  within(screen.getByRole('list', { name: 'Positional chords' })).getByRole('button', {
+  within(screen.getByRole('list', { name: 'Positional chords 2-2' })).getByRole('button', {
     name: new RegExp(`^${label},`),
   });
 const advance = (ms: number) =>
@@ -147,7 +150,7 @@ describe('Positional section (12-EDO C major, pattern 2-2)', () => {
   it('a subset with too few notes shows a hint instead of rows', async () => {
     await openScale([0]);
     expect(screen.queryAllByTestId('positional-row')).toHaveLength(0);
-    expect(screen.getByText(/Select at least 2 notes/)).toBeTruthy();
+    expect(screen.getAllByText(/Select at least 2 notes/).length).toBeGreaterThan(0);
   });
 
   it('twin rows (same notes) are separate: each plays and arms; hold 1 on a row arms the Sketch', async () => {

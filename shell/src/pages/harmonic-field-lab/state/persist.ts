@@ -158,6 +158,27 @@ function sanitizeViz(raw: unknown): VizSettings {
   };
 }
 
+/** Most fold entries kept and longest id (a section id is `cps`, `positional`, `pos:2-2`, `families`, `size:Triads`, `fam:<size>:<family>`). */
+export const MAX_FOLDS = 256;
+export const MAX_FOLD_ID = 60;
+
+/** The fold record: only `true` entries with a short string id survive, at most MAX_FOLDS (256); anything else gives none (all open). */
+export function sanitizeFolds(raw: unknown): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  if (!isObj(raw)) {
+    return out;
+  }
+  for (const [id, v] of Object.entries(raw)) {
+    if (Object.keys(out).length >= MAX_FOLDS) {
+      break;
+    }
+    if (v === true && id.length > 0 && id.length <= MAX_FOLD_ID) {
+      out[id] = true;
+    }
+  }
+  return out;
+}
+
 /** Coerce whatever is in storage into valid UI settings, falling back per field. */
 export function sanitizeSettings(raw: unknown): UiSettings {
   const d = defaultUi();
@@ -198,6 +219,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
         : null,
     // optional (M8e): Smoothest or Scale order, anything else is Smoothest; no write on mount
     positionalOrder: oneOf(raw.positionalOrder, ['smoothest', 'scale'] as const, d.positionalOrder),
+    // optional (M8f): folded section ids (true = folded), entry by entry; absent or damaged = all open; no write on mount
+    folds: sanitizeFolds(raw.folds),
   };
 }
 

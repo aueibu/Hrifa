@@ -1,17 +1,10 @@
 /**
- * Positional chords (M9, H-9), the UI: the "Positional" section of the Chords panel (a pattern picker and the ranked chords of
- * ALL degrees of the active subset for that pattern) and the "Positional patterns" editor inside the template editor. The
+ * Positional chords (M9, H-9; M8f), the UI: the "Positional" section of the Chords panel (every pattern a foldable group, each
+ * ranked among itself, one position per full-width row) and the "Positional patterns" editor inside the template editor. The
  * chords come from the lib (`positionalChords`, `rankPositional`, `positionalNaming`); a row behaves like a chord chip.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActionIcon,
-  Button,
-  NativeSelect,
-  SegmentedControl,
-  TextInput,
-  Tooltip,
-} from '@mantine/core';
+import { ActionIcon, Button, SegmentedControl, TextInput, Tooltip } from '@mantine/core';
 import {
   mulNotes,
   parsePattern,
@@ -24,7 +17,8 @@ import {
 } from '../../../lib/harmonic-field';
 import type { PreviewTarget } from '../audio/plan';
 import { autoName } from '../state/generate';
-import { MAX_PATTERNS, canonicalPattern, chosenPattern } from '../state/patterns';
+import { MAX_PATTERNS, canonicalPattern } from '../state/patterns';
+import { FoldHead, foldId, useFold } from './Fold';
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from './icons';
 import { useSendHover } from './Send';
 import { ChordDrawing } from './ShelfPanel';
@@ -151,20 +145,25 @@ function PositionalRow({ chord, showScore, pattern, naming, rowPicked, onPick }:
         >
           <span className={classes.posRow}>
             <ChordDrawing cents={abs.map((c) => c - abs[0])} repC={base.repC} />
+            <span className={classes.posLabel}>
+              <Num>{naming.label}</Num>
+            </span>
             <span className={classes.posText}>
-              <span className={classes.chipTop}>
-                <Num>{naming.label}</Num>
-                <Num muted>#{rank}</Num>
-                {showScore && (
-                  <span data-testid="positional-score">
-                    <Num muted>score {chord.score.toFixed(2)}</Num>
-                  </span>
-                )}
+              <span data-testid="positional-cents">
+                <Num>{`${cents.map((c) => Math.round(c * 10) / 10).join(', ')} c`}</Num>
               </span>
-              <span className={classes.chipBottom}>
+              <span className={classes.posTail}>
                 <Num muted>{naming.tail}</Num>
                 {naming.ratio && <Num>{naming.ratio}</Num>}
               </span>
+            </span>
+            <span className={classes.posRank}>
+              <Num muted>#{rank}</Num>
+              {showScore && (
+                <span data-testid="positional-score">
+                  <Num muted>score {chord.score.toFixed(2)}</Num>
+                </span>
+              )}
             </span>
           </span>
         </button>
@@ -205,99 +204,163 @@ export function tooFewHint(n: number, pattern: string): string | null {
     : null;
 }
 
-/** The Positional section of the Chords panel. */
-export function PositionalSection() {
-  const { state, dispatch, base, tab } = useLab();
-  const list = state.patterns.list;
-  const chosen = chosenPattern(list, state.ui.positionalPattern);
-  const steps = useMemo(() => (chosen ? parsePattern(chosen) : null), [chosen]);
+/** Whether `pattern` fits a subset of `n` notes (a step that is a whole number of turns would return to the same note). */
+const fitsSubset = (n: number, pattern: string): boolean => {
+  const steps = parsePattern(pattern);
+  return n >= 2 && steps !== null && !steps.some((s) => s % n === 0);
+};
+
+/** The rows of ONE open pattern group: ranked among themselves only, computed when the group is open (a folded one never is). */
+function PositionalRows({
+  pattern,
+  order,
+  clicked,
+  setClicked,
+}: {
+  pattern: string;
+  order: PositionalOrder;
+  clicked: string | null;
+  setClicked: (id: string | null) => void;
+}) {
+  const { state, base, tab } = useLab();
   const n = base.idx.length;
   const genName = tab.gen.preset || autoName(tab.gen);
-  // a step that is a whole number of turns of the subset would come back to the same note
-  const tooFew = n < 2 || (steps !== null && steps.some((s) => s % n === 0));
-  // Smoothest = best score first; Scale order = degree 1..N, each row with its score and its rank (rank 1 = smoothest)
-  const order: PositionalOrder = state.ui.positionalOrder;
-  const setOrder = (o: PositionalOrder) => dispatch({ type: 'ui', patch: { positionalOrder: o } });
-  const ranked = useMemo(() => {
-    if (!steps || tooFew) {
-      return [];
-    }
-    return positionalList(
-      positionalChords(base.field, base.idx, steps, base.mode, base.rep),
-      order,
-      state.ui.baseHz
-    );
-  }, [steps, tooFew, order, base.field, base.idx, base.mode, base.rep, state.ui.baseHz]);
+  const steps = useMemo(() => parsePattern(pattern), [pattern]);
+  // Smoothest = best score first; Scale order = degree 1..N, each row with its score and its rank (rank 1 = smoothest of the group)
+  const ranked = useMemo(
+    () =>
+      steps
+        ? positionalList(
+            positionalChords(base.field, base.idx, steps, base.mode, base.rep),
+            order,
+            state.ui.baseHz
+          )
+        : [],
+    [steps, order, base.field, base.idx, base.mode, base.rep, state.ui.baseHz]
+  );
   // the names (a ratio-name search per row) are made once per chord set, not on every hover
-  const named = useMemo(
+  const rows = useMemo(
     () =>
       ranked
         .slice(0, MAX_POSITIONAL_ROWS)
         .map((c) => ({ c, naming: positionalNaming(c, n, genName, state.templates) })),
     [ranked, n, genName, state.templates]
   );
-  // the row that was clicked (pattern + degree): twins with the same notes are separate rows
-  const [clicked, setClicked] = useState<string | null>(null);
-  const rows = named;
   return (
-    <section className={classes.family} aria-label="Positional chords">
-      <h3 className={classes.familyHead}>
-        <Tip k="positionalChords">Positional</Tip>
-        <Num muted>{ranked.length}</Num>
-      </h3>
-      {list.length === 0 ? (
-        <span className={classes.hint} role="status">
-          No patterns. Add one under Edit templates, Positional patterns, or press Restore defaults.
-        </span>
-      ) : (
-        <div className={classes.posPick}>
-          <Tip k="positionalPick">Pattern</Tip>
-          <NativeSelect
-            size="xs"
-            aria-label="Positional pattern"
-            data={list}
-            value={chosen ?? ''}
-            onChange={(e) =>
-              dispatch({ type: 'ui', patch: { positionalPattern: e.currentTarget.value } })
-            }
+    <>
+      <ul className={classes.posList} aria-label={`Positional chords ${pattern}`}>
+        {rows.map(({ c, naming }) => (
+          <PositionalRow
+            key={`${pattern}:${c.degree}`}
+            chord={c}
+            showScore={order === 'scale'}
+            pattern={pattern}
+            naming={naming}
+            rowPicked={clicked === `${pattern}:${c.degree}`}
+            onPick={(p) => setClicked(p ? `${pattern}:${c.degree}` : null)}
           />
-          <Tip k="positionalOrder" as="control">
-            <SegmentedControl
-              size="xs"
-              aria-label="Positional order"
-              data={['Smoothest', 'Scale order']}
-              value={order === 'scale' ? 'Scale order' : 'Smoothest'}
-              onChange={(v) => setOrder(v === 'Scale order' ? 'scale' : 'smoothest')}
-              className={labClasses.tinySeg}
-            />
-          </Tip>
-        </div>
-      )}
-      {chosen && tooFew && (
-        <span className={classes.hint} role="status">
-          {tooFewHint(n, chosen)}
-        </span>
-      )}
-      {chosen && !tooFew && (
-        <ul className={classes.posList} aria-label="Positional chords">
-          {rows.map(({ c, naming }) => (
-            <PositionalRow
-              key={`${chosen}:${c.degree}`}
-              chord={c}
-              showScore={order === 'scale'}
-              pattern={chosen}
-              naming={naming}
-              rowPicked={clicked === `${chosen}:${c.degree}`}
-              onPick={(p) => setClicked(p ? `${chosen}:${c.degree}` : null)}
-            />
-          ))}
-        </ul>
-      )}
+        ))}
+      </ul>
       {ranked.length > rows.length && (
         <span className={classes.hint}>
           Showing the {rows.length} {order === 'scale' ? 'first' : 'smoothest'} of {ranked.length}.
         </span>
       )}
+    </>
+  );
+}
+
+/** One pattern group: a foldable header (the pattern and its row count), its rows when open. */
+function PositionalGroup({
+  pattern,
+  order,
+  clicked,
+  setClicked,
+}: {
+  pattern: string;
+  order: PositionalOrder;
+  clicked: string | null;
+  setClicked: (id: string | null) => void;
+}) {
+  const { base } = useLab();
+  const n = base.idx.length;
+  const id = foldId('pos', pattern);
+  const { folded } = useFold(id);
+  const fits = fitsSubset(n, pattern);
+  return (
+    <div className={classes.posGroup} role="group" aria-label={`Pattern ${pattern}`}>
+      <h4 className={classes.posGroupHead}>
+        <FoldHead
+          id={id}
+          tip="positionalPick"
+          title={pattern}
+          count={fits ? n : 0}
+          label={`Pattern ${pattern}`}
+        />
+      </h4>
+      {!folded &&
+        (fits ? (
+          <PositionalRows
+            pattern={pattern}
+            order={order}
+            clicked={clicked}
+            setClicked={setClicked}
+          />
+        ) : (
+          <span className={classes.hint}>{tooFewHint(n, pattern)}</span>
+        ))}
+    </div>
+  );
+}
+
+/** The Positional section of the Chords panel: every pattern is its own foldable group, ranked among itself only. */
+export function PositionalSection() {
+  const { state, dispatch, base } = useLab();
+  const list = state.patterns.list;
+  const n = base.idx.length;
+  const order: PositionalOrder = state.ui.positionalOrder;
+  const setOrder = (o: PositionalOrder) => dispatch({ type: 'ui', patch: { positionalOrder: o } });
+  const { folded } = useFold('positional');
+  // a position is a row of its group: the section counts the rows of every pattern that fits the subset (no ranking needed)
+  const total = list.reduce((a, p) => a + (fitsSubset(n, p) ? n : 0), 0);
+  // the row that was clicked (pattern + degree): twins with the same notes are separate rows
+  const [clicked, setClicked] = useState<string | null>(null);
+  return (
+    <section className={classes.family} aria-label="Positional chords">
+      <h3 className={classes.familyHead}>
+        <FoldHead id="positional" tip="positionalChords" title="Positional" count={total} />
+      </h3>
+      {!folded &&
+        (list.length === 0 ? (
+          <span className={classes.hint} role="status">
+            No patterns. Add one under Edit templates, Positional patterns, or press Restore
+            defaults.
+          </span>
+        ) : (
+          <>
+            <div className={classes.posPick}>
+              <Tip k="positionalOrder" as="control">
+                <SegmentedControl
+                  size="xs"
+                  aria-label="Positional order"
+                  data={['Smoothest', 'Scale order']}
+                  value={order === 'scale' ? 'Scale order' : 'Smoothest'}
+                  onChange={(v) => setOrder(v === 'Scale order' ? 'scale' : 'smoothest')}
+                  className={labClasses.tinySeg}
+                />
+              </Tip>
+            </div>
+            {list.map((p) => (
+              <PositionalGroup
+                key={p}
+                pattern={p}
+                order={order}
+                clicked={clicked}
+                setClicked={setClicked}
+              />
+            ))}
+          </>
+        ))}
     </section>
   );
 }

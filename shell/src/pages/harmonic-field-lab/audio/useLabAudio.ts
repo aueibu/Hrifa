@@ -917,6 +917,14 @@ export function useLabAudio({
         }
       }
       if (!playsMelody(mode)) {
+        // M8f: in Chords mode the melody keys are SILENT root keys: they move the Sketch root stepper to the key's degree of
+        // this tab (never the linked melody's) and make no sound, no voice and no `held` entry
+        const rs = slotOfEvent(e);
+        const rt = rs < 0 ? null : slotTarget(rs, latest.current.base.rel.length);
+        if (rt) {
+          e.preventDefault();
+          dispatch({ type: 'sketch/set', patch: { rootDeg: rt.deg } });
+        }
         return;
       }
       const slot = slotOfEvent(e);

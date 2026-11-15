@@ -594,7 +594,7 @@ const entries = {
   },
   cpsChords: {
     term: 'Chords inside this CPS',
-    text: 'A CPS (combination product set) is made by multiplying every k-sized group of a few chosen factors. With factors 1 3 5 7 and k = 2 you get the hexany: 1x3, 1x5, 1x7, 3x5, 3x7 and 5x7, each divided by the lowest so it starts at 1/1. The notes of such a set are related in a regular way, and the chords inside it are read straight from which factors the notes share, not by a template. Click a chip to hear it and keep it highlighted (click again to clear); Shift-click makes its notes the subset. Point at a chip and hold 1 to hear the chord for as long as you hold the key. Example: in that hexany the notes that all use the factor 1 are one otonal chord.',
+    text: 'A CPS (combination product set) is made by multiplying every k-sized group of a few chosen factors. With factors 1 3 5 7 and k = 2 you get the hexany: 1x3, 1x5, 1x7, 3x5, 3x7 and 5x7, each divided by the lowest so it starts at 1/1. The notes of such a set are related in a regular way, and the chords inside it are read straight from which factors the notes share, not by a template. Click a chip to hear it and keep it highlighted (click again to clear); Shift-click makes its notes the subset. Point at a chip and hold 1 to hear the chord for as long as you hold the key. Example: in that hexany the notes that all use the factor 1 are one otonal chord. Click the header to fold this section away (it is remembered).',
     see: ['otonal', 'utonal', 'latticeMode', 'holdToPlay'],
   },
   otonal: {
@@ -609,7 +609,7 @@ const entries = {
   },
   chordFamily: {
     term: 'Chord families',
-    text: 'Chords are grouped by how many notes they have (triads, tetrads, larger), then by family, a label you can edit on each template: Major, Minor, Septimal, Utonal and so on. Templates without a family go in an "Other" row. Example: 4:5:6 and 8:10:12:15 are both Major; 6:7:9 and 4:5:6:7 are Septimal.',
+    text: 'Chords are grouped by how many notes they have (triads, tetrads, larger), then by family, a label you can edit on each template: Major, Minor, Septimal, Utonal and so on. Templates without a family go in an "Other" row. Click the chevron header of the whole group, of a size (Triads, Tetrads, Larger) or of one family to fold it away; the count stays in the header and the choice is remembered. A chord sent to a composite carries its family (Septimal, ...). Example: 4:5:6 and 8:10:12:15 are both Major; 6:7:9 and 4:5:6:7 are Septimal.',
     see: ['templates'],
   },
   templateName: {
@@ -776,17 +776,17 @@ const entries = {
   },
   positionalChords: {
     term: 'Positional chords',
-    text: 'Chords made by POSITION in the subset, not by ratios. A pattern says how many subset notes to step over: 2-2 takes every other note (a triad in a 7-note scale), 2-2-2 a four-note chord, 1-1 three neighbours, 2-3 and 3-2 mixed. Every degree of the subset gets one chord, smoothest first (Sethares roughness of its shape; no tolerance, so it works in any tuning). A row is named `2-2 on 4` (pattern and start degree); the second line says what it is in THIS tuning: `7 of 12-EDO` (subset size and generator), then the cents of each step, like `400-300 c`, and `~ 4:5:6` only when every note is within 5 c of a simple ratio chord. Click a row to hear it, keep it highlighted and arm it in the Sketch row (hold 4 or 5 then puts the same chord on any note you point at; with the pointer on the row itself, 4 or 5 plays it on the Sketch row root); point and hold 1 to hear it while held; + stashes it with its pattern. Parallel puts the chord on its own root, Relative plays the real pitches. Example: in 12-EDO C major (7 notes), 2-2 on 1 is C E G (0, 400, 700 c) and 2-2 on 2 is D F A (200, 500, 900 c).',
+    text: 'Chords made by POSITION in the subset, not by ratios. A pattern says how many subset notes to step over: 2-2 takes every other note (a triad in a 7-note scale), 2-2-2 a four-note chord, 1-1 three neighbours, 2-3 and 3-2 mixed. Every degree of the subset gets one chord, smoothest first (Sethares roughness of its shape; no tolerance, so it works in any tuning). A row is named `2-2 on 4` (pattern and start degree); the second line says what it is in THIS tuning: `7 of 12-EDO` (subset size and generator), then the cents of each step, like `400-300 c`, and `~ 4:5:6` only when every note is within 5 c of a simple ratio chord. Every pattern is its own foldable group (click its header to fold it). Click a row to hear it, keep it highlighted and arm it in the Sketch row (hold 4 or 5 then puts the same chord on any note you point at; with the pointer on the row itself, 4 or 5 plays it on the Sketch row root); point and hold 1 to hear it while held; + stashes it with its pattern. Parallel puts the chord on its own root, Relative plays the real pitches. Example: in 12-EDO C major (7 notes), 2-2 on 1 is C E G (0, 400, 700 c) and 2-2 on 2 is D F A (200, 500, 900 c).',
     see: ['positionalPatterns', 'sketchRow', 'stashChord', 'modePlayback'],
   },
   positionalPick: {
-    term: 'Positional pattern',
-    text: 'Which step pattern the Positional section lists chords for. The patterns are your own list: add, edit, reorder and restore them under Edit templates, Positional patterns. Example: pick 3-3 to see chords built from every third note, which are wider than triads.',
+    term: 'Positional pattern group',
+    text: 'One step pattern of your own list, with one chord for every degree of the subset, ranked among the chords of this pattern only (rank 1 = smoothest of the group). Click the header to fold the group away; the row count stays in the header, and a folded group is not ranked until you open it. Add, edit, reorder and restore the patterns under Edit templates, Positional patterns. Example: 3-3 lists chords built from every third note, which are wider than triads, and 2-3 can be folded away while 2-2 stays open.',
     see: ['positionalChords', 'positionalPatterns'],
   },
   positionalOrder: {
     term: 'Positional order',
-    text: 'Smoothest lists the chords best score first (lowest roughness). Scale order lists them by the degree they start on, 1 to N, and each row then shows its roughness score and its rank (rank 1 = smoothest of all). Example: 12-EDO C major, 2-2: scale order gives C E G, D F A, E G B and so on, with the C, F and G chords ranked ahead of the diminished one.',
+    text: 'Applies in every pattern group. Smoothest lists the chords best score first (lowest roughness). Scale order lists them by the degree they start on, 1 to N, and each row then shows its roughness score and its rank (rank 1 = smoothest of its group). Example: 12-EDO C major, 2-2: scale order gives C E G, D F A, E G B and so on, with the C, F and G chords ranked ahead of the diminished one.',
     see: ['positionalChords', 'positionalPick'],
   },
   positionalPatterns: {

@@ -19,7 +19,7 @@ const sketch = () => screen.getByRole('group', { name: 'Sketch a chord' });
 const template = () =>
   within(sketch()).getByRole<HTMLSelectElement>('combobox', { name: 'Sketch template' });
 const rowBtn = (label: string) =>
-  within(screen.getByRole('list', { name: 'Positional chords' })).getByRole('button', {
+  within(screen.getByRole('list', { name: 'Positional chords 2-2' })).getByRole('button', {
     name: new RegExp(`^${label},`),
   });
 const advance = (ms: number) =>

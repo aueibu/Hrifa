@@ -22,6 +22,7 @@ const advance = (ms: number) =>
 const C4 = 261.6256;
 const cents = (a: number, b: number) => 1200 * Math.log2(a / b);
 const chip = (re: RegExp) => screen.getAllByRole('button', { name: re })[0];
+const SEPTIMAL = /^3:5:7 triad 3:5:7 on /;
 const EDO_MAJOR = /^major triad 4:5:6 on (1\/1|0\.0 c)/i;
 const rail = () => screen.getByRole('navigation', { name: 'Analysis panels' });
 const railTab = (re: RegExp) => within(rail()).getByRole('tab', { name: re });
@@ -110,9 +111,12 @@ describe('positional rows and CPS chips have no exact form (f, g)', () => {
     );
     [0, 2, 4, 5, 7, 9, 11].forEach((i) => fireEvent.click(dots[i]));
     vi.useFakeTimers();
-    const r = within(screen.getByRole('list', { name: 'Positional chords' })).getByRole('button', {
-      name: /^2-2 on 1,/,
-    });
+    const r = within(screen.getByRole('list', { name: 'Positional chords 2-2' })).getByRole(
+      'button',
+      {
+        name: /^2-2 on 1,/,
+      }
+    );
     expect(r.getAttribute('aria-label')).toMatch(/no separate exact form/);
     fireEvent.mouseEnter(r);
     let n = oscs().length;
@@ -207,7 +211,7 @@ describe('Composites panel item (h) and remembered Positional order (i)', () => 
     const lines = [...dItem.querySelectorAll('[data-detail]')].map((x) => x.textContent);
     expect(lines).toEqual([
       '4:5:6 major triad on 200.0 c',
-      'chord · 3 notes',
+      'chord · 3 notes · Major',
       '200.0, 600.0, 900.0 c',
       'Source: 12-EDO',
     ]);
@@ -241,6 +245,21 @@ describe('Composites panel item (h) and remembered Positional order (i)', () => 
     expect(within(order()).getByRole('radio', { name: 'Smoothest' })).toBeChecked();
     fireEvent.click(within(order()).getByRole('radio', { name: 'Scale order' }));
     expect(stored()).toBe('scale');
+    // M8f l: the 3:5:7 chip (raise the tolerance until 12-EDO finds it) sent to composite 1 shows its family on line 2
+    for (let i = 0; i < 15 && !screen.queryAllByRole('button', { name: SEPTIMAL }).length; i++) {
+      fireEvent.click(screen.getByRole('button', { name: 'Raise tolerance' }));
+    }
+    const sept = chip(SEPTIMAL);
+    fireEvent.mouseEnter(sept);
+    down('-');
+    down('1');
+    fireEvent.mouseLeave(sept);
+    fireEvent.click(railTab(/^Composites/));
+    if (!screen.queryByRole('list', { name: 'Items of Composite 1' })) {
+      fireEvent.click(screen.getByRole('button', { name: 'Show the items of Composite 1' }));
+    }
+    const sentItems = screen.getByRole('list', { name: 'Items of Composite 1' });
+    expect(within(sentItems).getByText('chord · 3 notes · Septimal')).toBeInTheDocument();
   });
 });
 

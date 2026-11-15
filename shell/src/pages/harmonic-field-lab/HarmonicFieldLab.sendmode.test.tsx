@@ -173,7 +173,7 @@ describe('positional chords: Scale order, score and rank, tail (d, e, f)', () =>
       'button'
     );
     [0, 2, 4, 5, 7, 9, 11].forEach((i) => fireEvent.click(ringBtns[i]));
-    const list = () => screen.getByRole('list', { name: 'Positional chords' });
+    const list = () => screen.getByRole('list', { name: 'Positional chords 2-2' });
     const labels = () =>
       within(list())
         .getAllByTestId('positional-row')
