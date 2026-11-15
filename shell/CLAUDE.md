@@ -62,3 +62,9 @@ The root `CLAUDE.md` and `.claude/agents/` (the `builder`, `reviewer` and `scout
 - If `corepack` is not on PATH, run `node .yarn/releases/yarn-4.18.0.cjs run check:workbench` from `shell/` (same pattern for another arc's `check:<arc>`).
 - Node 25+ breaks jsdom's `localStorage`; `vite.config.mjs` passes `--no-experimental-webstorage` to avoid this. Don't remove it.
 - Line endings are LF (`.editorconfig`, `.gitattributes`). Write LF.
+
+## Environment notes (Windows machine)
+
+- `.nvmrc` pins Node 24.18.1. The system Node is 26 (kept for Ghidra, do not replace it). A portable Node 24.18.1 lives at `C:\Users\apoor\tools\node-v24.18.1-win-x64`: before any `corepack yarn` or vitest run in PowerShell, `$env:PATH="$env:USERPROFILE\tools\node-v24.18.1-win-x64;$env:PATH"` and check `node -v`.
+- Gate runs: set `VITEST_MAX_WORKERS=4` (`$env:VITEST_MAX_WORKERS="4"`). With the default worker count on this 12-thread machine, 5 to 7 page tests time out at 15 s (different ones each run, all pass alone); with 4 workers `check:hfl` is green and faster (111 s against 130 to 140 s).
+- `vite.config.mjs` inlines `@testing-library/jest-dom` for the dom project. Without it the matchers (`toBeInTheDocument` ...) do not register and about 126 tests fail with `Invalid Chai property`. Do not remove it.
