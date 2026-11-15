@@ -5,21 +5,15 @@
  * are handled in labState.ts, which calls the helpers here.
  *
  * PITCH FRAME RULE (human decision): a chord's stored `pitches` are FIELD-ABSOLUTE, the field's own pitches above 1/1, identical
- * whether it was stashed in Parallel or Relative. Relative playback plays them as stored; Parallel playback divides them by the
- * source subset's mode root (`source.subset.root`), see `chordPitchesFor`. Example: mode root 3/2, stored 3/2, 15/8, 9/4 -> Relative
- * plays those, Parallel plays 1/1, 5/4, 3/2. `frame` records the switch at stash time only; it never changes the stored pitches.
+ * whether it was stashed in Parallel or Relative. A shelf chord ALWAYS plays exactly as stored, in both Parallel and
+ * Relative (human decision 2026-11-15: a saved chord keeps its modal offset, it sounds like the chip/sketch it came from). Example: mode root 3/2,
+ * stored 3/2, 15/8, 9/4 -> plays those in either mode. `frame` records the switch at stash time only; it never changes the stored pitches.
  *
  * A stashed chord is plain, self-contained data (a later Workbench hand-off can read it): `pitches` are monzo + cents
  * (H-1), `source` is the generator inputs, the subset as pitches and its tab name (null when the stored source was
  * unusable: the chord still plays, it just cannot be reloaded), the rest is scalar provenance.
  */
-import {
-  mulNotes,
-  samePitch,
-  type Monzo,
-  type Note,
-  type PitchSet,
-} from '../../../lib/harmonic-field';
+import { samePitch, type Monzo, type Note, type PitchSet } from '../../../lib/harmonic-field';
 import type { GenSpec } from './generate';
 import { cleanName } from './generatorLibrary';
 
@@ -180,14 +174,11 @@ export const cloneSource = (s: ShelfSource): ShelfSource => ({
 });
 
 /**
- * The pitches to play for a frame: Relative = as stored (field-absolute); Parallel = each divided by the source's mode root, so
- * the chord starts from the 1/1 the way a mode preview does. A chord with no source or no root is played as stored.
+ * The pitches to play: always as stored (field-absolute), whatever the Parallel / Relative switch says, so a saved chord keeps its
+ * modal offset and sounds like what was saved. `frame` is kept in the signature for callers; it no longer changes anything.
  */
-export function chordPitchesFor(chord: ShelfChord, frame: Frame): Note[] {
-  const root = chord.source?.subset.root;
-  return chord.pitches.map((p) =>
-    frame === 'parallel' && root ? mulNotes(p, root, -1) : { m: p.m ? { ...p.m } : null, c: p.c }
-  );
+export function chordPitchesFor(chord: ShelfChord, _frame?: Frame): Note[] {
+  return chord.pitches.map((p) => ({ m: p.m ? { ...p.m } : null, c: p.c }));
 }
 
 /** The next free "Chord N" label. */

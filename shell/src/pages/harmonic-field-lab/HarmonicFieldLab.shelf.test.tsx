@@ -196,7 +196,7 @@ describe('chord shelf UI', () => {
     fireEvent.mouseLeave(a);
   });
 
-  it('a stashed chord lights its own field notes in Parallel and Relative, and hold 1 follows key 5 without re-entering', async () => {
+  it('a stashed chord sounds as stored and lights its own field notes in Parallel and Relative', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('12-EDO');
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
@@ -221,17 +221,17 @@ describe('chord shelf UI', () => {
       .map(hz)
       .sort((x, y) => x - y);
     expect(parallel).toHaveLength(3);
-    // Parallel plays from 1/1 (0, 300, 700 c) but lights D, F, A, not C, Eb, G
+    // the chord sounds as saved (D, F, A: 200, 500, 900 c, modal offset kept) and lights D, F, A
     expect(soundingNames().sort()).toEqual(['200.0 c', '500.0 c', '900.0 c']);
     up('1');
-    // key 5 with the pointer resting on the slot: Relative plays as stored, a root up (200 c), same lights
+    // key 5 with the pointer resting on the slot: Relative sounds the very same pitches and lights
     down('5');
     up('5');
     down('1');
     const relative = running()
       .map(hz)
       .sort((x, y) => x - y);
-    expect(relative[0] / parallel[0]).toBeCloseTo(2 ** (200 / 1200), 3);
+    expect(relative[0] / parallel[0]).toBeCloseTo(1, 3);
     expect(soundingNames().sort()).toEqual(['200.0 c', '500.0 c', '900.0 c']);
     up('1');
     fireEvent.mouseLeave(slot);
