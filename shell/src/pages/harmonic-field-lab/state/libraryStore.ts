@@ -18,7 +18,8 @@
  * later save never drops it; nothing is written on mount (the caller compares identity); bad data falls back to the
  * legacy list or to empty. Once `generators.v1` exists it is authoritative; `subsets.v1` is never touched.
  */
-import { normalizeFolder, samePitch, type Monzo, type Note } from '../../../lib/harmonic-field';
+import { normalizeFolder, samePitch, type Note } from '../../../lib/harmonic-field';
+import { sanitizePitch } from './chordShelf';
 import type { GenSpec } from './generate';
 import {
   OWNER_KEY_RE,
@@ -52,42 +53,7 @@ const isObj = (x: unknown): x is Record<string, unknown> =>
   typeof x === 'object' && x !== null && !Array.isArray(x);
 
 /* ----------------------------------------------------------------------------------------------- pitches */
-function isPrime(n: number): boolean {
-  if (!Number.isSafeInteger(n) || n < 2) {
-    return false;
-  }
-  for (let d = 2; d * d <= n; d++) {
-    if (n % d === 0) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export function sanitizePitch(raw: unknown): Note | null {
-  if (
-    !isObj(raw) ||
-    typeof raw.c !== 'number' ||
-    !Number.isFinite(raw.c) ||
-    Math.abs(raw.c) > 1e7
-  ) {
-    return null;
-  }
-  let m: Monzo | null = null;
-  if (isObj(raw.m)) {
-    const keys = Object.keys(raw.m);
-    const ok =
-      keys.length <= 64 &&
-      keys.every((k) => /^\d+$/.test(k) && isPrime(Number(k))) &&
-      keys.every((k) => {
-        const v = (raw.m as Record<string, unknown>)[k];
-        return typeof v === 'number' && Number.isInteger(v) && v !== 0 && Math.abs(v) <= 10000;
-      });
-    // a monzo that is not plain is dropped: the pitch stays as cents
-    m = ok ? { ...(raw.m as Monzo) } : null;
-  }
-  return { m, c: raw.c };
-}
+export { sanitizePitch };
 
 /* --------------------------------------------------------------------------------------------- generators */
 const GEN_FIELDS = [

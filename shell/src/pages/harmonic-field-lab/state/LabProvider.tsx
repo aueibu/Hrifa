@@ -35,6 +35,7 @@ import {
   loadTemplates,
   loadTabs,
   KEY_GENERATORS,
+  KEY_CHORDSHELF,
   saveLayout,
   saveRetuner,
   saveSettings,
@@ -43,6 +44,7 @@ import {
 } from './persist';
 import { initialRetuner, storedCards, type DormantCard, type RetCard } from './retuner';
 import { cardFromSnapshot } from './retunerCards';
+import { loadShelf, saveShelf } from './shelfStore';
 import type { VizSettings } from './vizState';
 
 /** The state from storage; every part falls back to its default (see persist.ts), nothing throws. */
@@ -64,6 +66,7 @@ export function restoreState(): LabState {
       return {
         ...t,
         ...(s.link ? { link: s.link } : {}),
+        ...(s.from ? { fromChord: s.from } : {}),
         ...(pending ? { pending } : {}),
         sel,
         mode: sel.length && s.mode < sel.length ? s.mode : 0,
@@ -98,6 +101,7 @@ export function restoreState(): LabState {
     ui,
     layout: loadLayout(),
     templates: loadTemplates(),
+    shelf: loadShelf(),
     retuner: initialRetuner(retCards, storedRet.settings, dormant, ui.modePlayback === 'relative'),
   };
 }
@@ -187,6 +191,11 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       wrote('library', saveLibrary(state.library));
     }
   }, [store, state.library]);
+  useEffect(() => {
+    if (store && state.shelf.chords !== restored.current.shelf.chords) {
+      wrote('shelf', saveShelf(state.shelf));
+    }
+  }, [store, state.shelf.chords]);
   // another window saved the library: take it, so this window's next save cannot wipe it
   useEffect(() => {
     if (!store) {
@@ -195,6 +204,9 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     const on = (e: StorageEvent) => {
       if (e.key === KEY_GENERATORS || e.key === null) {
         dispatch({ type: 'lib/sync', library: loadLibrary().library });
+      }
+      if (e.key === KEY_CHORDSHELF || e.key === null) {
+        dispatch({ type: 'shelf/sync', shelf: loadShelf() });
       }
     };
     window.addEventListener('storage', on);

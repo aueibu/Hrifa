@@ -19,6 +19,7 @@ reference only.
 | `state/generatorLibrary.ts` | The generator library (M7b), pure: `GenLibrary`, owners, subsets as pitches, add / rename / delete, user presets, Untitled generators, Update + Undo, copy, recents, `migrateSubsets`. |
 | `components/PresetBrowser.tsx`, `LibraryBar.tsx`, `SavedSubsets.tsx` | The generator-library UI (M7b step 2): preset browser, Update / Save as new, notice, subset rows (see "Preset browser and subset rows"). `state/presetTree.ts`, `builtinFolders.ts`, `noticeText.ts` are its pure helpers. |
 | `state/libraryStore.ts` | `generators.v1`: `sanitizeLibrary`, `libraryToStored`, `loadLibrary` (stored, else migrated, else empty), `saveLibrary`. |
+| `state/chordShelf.ts`, `state/shelfStore.ts` | The chord shelf (M8a step 1, data layer only): `ShelfState`, `stashChord`, `shelfReduce` (pure), and `chordshelf.v1` (`sanitizeShelf`, `shelfToStored`, `loadShelf`, `saveShelf`). `src/lib/harmonic-field/sketch.ts`: `sketchPitches`, `matchToField`. See "Chord shelf". |
 | `state/derive.ts` | Analysis of the active tab as pure functions (`deriveBase`, `stripDevs`, `spectrumOf`, `chordModel`, `keysOf`, `lattice2dOf/3dOf`, `edoOf`, `dissOf`, `isoOf`, `fieldRowsOf`, `fifthsFor`) with the prototype's size caps. |
 | `state/LabProvider.tsx` | The provider: reducer, restore, persistence effects, `useMemo` analyses, the voice engine hook. `state/context.ts` holds the `Lab` shape, `useLab()`, `useViz()`. |
 | `state/persist.ts` | Storage keys, `sanitize*`, `load*`, `save*`, the snapshot shape. |
@@ -162,6 +163,41 @@ come from each `selCents` looked up in the field the entry's generator builds (e
 that does not build gives cents-only pitches), the root is the pitch at the stored mode (the first when out of range). Every entry appears with its id
 and name. The first library change writes `generators.v1`, which is then authoritative.
 
+### Chord shelf (M8a, step 1: data layer, no UI yet)
+
+`LabState.shelf: ShelfState` holds the stashed chords, the selection, the sketch row and two runtime notes. Everything is plain data (a later Workbench
+hand-off can read `chordshelf.v1`; W-1: midicents only at the hand-off).
+
+- A chord (`ShelfChord`): `id` (`c<N>`, never reused), `name`, `pitches` (the EXACT pitches heard, monzo + cents, root first, in the order played; for a
+  sketch chord `sketchPitches(root, template)` stacks the template's integer ratio on the root, not reduced into the repeat), and provenance:
+  `template` (text or null), `rootDeg` (the root's degree in the source subset read from its mode root, null when unknown), `tol` (the chord finder
+  tolerance), `date` (ISO, passed in by the caller), `refHz` and `frame` (`parallel` | `relative`: the reference frame at stash time), `parent` (the shelf
+  chord whose reloaded tab it was stashed from, lineage; a deleted parent leaves a dangling id on purpose, ids are never reused), and `source`
+  (`{ gen, tab, subset: { pitches, root } }`: the tab's generation inputs as in `generators.v1`, its name, and its subset as pitches; null when the
+  tab had no selection or the stored source was unusable: the chord still plays but cannot be reloaded).
+- Pitch frame rule (human decision 2026-11-14): `pitches` are FIELD-ABSOLUTE, the field's own pitches above 1/1, identical whether stashed in Parallel
+  or Relative (`frame` only records the switch). `chordPitchesFor(chord, frame)`: Relative plays them as stored; Parallel divides each by
+  `source.subset.root` (no source or root: as stored). Example, mode root 3/2: stored 3/2, 15/8, 9/4; Relative plays those, Parallel plays 1/1, 5/4, 3/2.
+- Actions: `shelf/stash { stash: StashRequest }` (the UI supplies the pitches, template, rootDeg, optional name and the date; tolerance, 1/1 Hz, frame,
+  generator, subset, tab name and parent are read from the active tab and `ui` by the reducer), `shelf/rename`, `shelf/move { id, to }` (clamped),
+  `shelf/delete`, `shelf/select { id, additive? }` (plain: only this slot, again clears; additive: toggle), `shelf/selectAll`, `shelf/selectNone`,
+  `shelf/sync` (another window saved), `shelf/reload { id }`, and the sketch: `sketch/set { patch: { template?, rootDeg? } }`,
+  `sketch/arm { template, rootDeg? }` (from a chord chip or a shelf chord), `sketch/disarm`. `Sketch = { template | null, rootDeg, armed }`; a hand-picked
+  template clears `armed`. Refusals (empty chord, the caps, a source that will not reload) set `shelf.refusal`; it is cleared by the next successful stash, rename, move, delete, sync or reload (not by select or sketch actions).
+- Reload (`shelf/reload`): a NEW tab at the end, which becomes active; every existing tab is untouched. The stored generator inputs are rebuilt, the stored
+  subset is re-resolved against that field (`resolveSubset`, exact monzo else 0.5 c; nothing found selects all), the mode is the stored root's. The tab links
+  to an owner by the M7b owner lookup (`ownerOfTab`) only when that owner's generator has the same `genKey` as the stored inputs (a stale preset label is
+  not trusted; the lookup is retried without the label and the tab then takes the inputs that matched, so a stale label is cleared; when two presets share a `genKey` the lookup's own order decides which one it links to); otherwise the tab is unlinked and `gen.preset` is cleared. Nothing is created in the library, no
+  Recent entry. The tab records `fromChord` (stored as `from` in `tabs.v1`, copied by Duplicate), so chords stashed from it get `parent`.
+  `shelf.lastReload = { id, found, missing }` says how many source pitches the rebuilt field had. Refused at 12 tabs, with no source, or when the
+  inputs do not build.
+- Persistence (`shelfStore.ts`, effect in `LabProvider`): written only when `shelf.chords` differs from the restored one (no write on mount); a chord whose
+  pitches are damaged (not 1 to 64 usable pitches) is dropped at load (a wrong chord is worse than none), an unusable `source` only loses the source, every
+  other field falls back to its default; unknown extra fields are not kept; a monzo that is not plain loses its monzo and keeps its cents. A storage event for
+  the key (or a clear) dispatches `shelf/sync`. Selection, sketch, `lastStashed`, `lastReload` and `refusal` are runtime only.
+- Pure helper for the sketch row (lib `sketch.ts`): `matchToField(field, rep, pitches, tol)` gives, per pitch, the field index it lands on (repeat-aware) or the
+  signed distance in cents (field note minus pitch, so positive = the nearest field note is above) to the nearest field note, wrapping around the repeat.
+
 ### Preset browser and subset rows (M7b, step 2: the UI)
 
 Everything below reads the library only through `useLab()` and the actions of "Generator library" above; no reducer semantics changed.
@@ -189,6 +225,7 @@ page's keys (W-10):
 | `hrifa.harmonic-field-lab.tabs.v1` | `{ active, list: [{ id, name, snap }] }`. |
 | `hrifa.harmonic-field-lab.subsets.v1` | LEGACY `[{ id, name, ...snap }]`: read only to migrate when `generators.v1` is absent; never written or deleted after M7b. |
 | `hrifa.harmonic-field-lab.generators.v1` | `{ version: 1, presets: [{ id, name, folder, gen }], untitled: [{ id, gen }], subsets: [{ id, owner, name, pitches: [{ m, c }], root }], recents: [OwnerKey], next: { preset, untitled, subset } }`; `gen` is the generation part of the tab snapshot. Entry by entry: a bad entry is dropped or repaired, a well-formed one that cannot be used now (owner gone, built-in renamed) is kept and written back; caps (also enforced in memory when adding): 2000 presets, 2000 Untitled, 20000 subsets, 4096 pitches per subset; no write on mount. `tabs.v1` entries may carry `link` (an `OwnerKey`; malformed values are dropped). |
+| `hrifa.harmonic-field-lab.chordshelf.v1` | `{ version: 1, chords: [{ id, name, pitches: [{ m, c }], template, rootDeg, tol, date, refHz, frame, parent, source: { gen, tab, subset: { pitches, root } } | null }], next }`. See "Chord shelf". Entry by entry, no write on mount, caps 2000 chords / 64 pitches per chord / 4096 per source subset (enforced in memory too). `tabs.v1` entries may also carry `from` (`c<N>`, the chord the tab was reloaded from). |
 | `hrifa.harmonic-field-lab.chordfinder.v1` | `{ templates: [{ text, name?, family? }] }`: the chord finder's templates (the editor behind Edit templates). Absent, unreadable or all-bad gives `DEFAULT_TEMPLATES`; a stored empty list stays empty; bad entries are dropped one by one, text cut to 80 characters, at most 64. |
 | `hrifa.harmonic-field-lab.retuner.v1` | `{ cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts: { harmonics, rolloff, oddLimit }, glideMs } }`. A card `snap` is the tab snapshot (below), cleaned to the plain stored shape. Cards and settings only: on/off, the active card, the card roots, the held keys and the history are never stored. Entry by entry: a card with no usable snapshot is dropped, settings fall back field by field, at most 24 cards; at restore a card whose inputs no longer build or select nothing is kept as a dormant spec (`RetState.dormant`, not shown, not playable) and written back at its stored position by every save, so a save never loses a stored card. Nothing is written on mount. |
 

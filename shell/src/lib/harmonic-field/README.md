@@ -270,3 +270,10 @@ Pure helpers for generators that own subsets (page contract: `src/pages/harmonic
   exact previous subsets. `reportSentence(name, report)` words the notice. The same function serves Save-as-new with copied subsets and a later Import.
 - Folders (plain `"A/B"` strings): `normalizeFolder` (trim, no empty segments, 40 characters, depth 6), `splitFolder`, `joinFolder`, `parentFolder`,
   `folderName`, `inFolder`, `listFolders` (with ancestors), `childFolders`.
+
+## Chord sketch (M8a, `sketch.ts`)
+
+- `sketchPitches(root, templateText)`: the template's notes on any root, root first then ascending, exact (monzo times the template's integer ratio; an
+  irrational root keeps cents only), not reduced into the repeat. Null when the template does not parse.
+- `matchToField(field, rep, pitches, tol = 0.5)`: per pitch `{ idx, dist }`: the field note it lands on after reduction into the repeat (exact monzo, else within
+  `tol` cents), or `idx: null` and `dist` = signed cents to the nearest field note, wrapping around the repeat (NaN for an empty field).

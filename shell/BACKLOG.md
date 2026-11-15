@@ -114,3 +114,4 @@ Source of the next block ("Bitwig study", 2026-11-12): a read-only comparison of
 - [workbench] Whole selected legato run + Ctrl+Right: each note grows one unit, later onsets overwrite earlier ones' overlap, so only the last note keeps the extra unit.
 - [workbench] A mid-air stale dev page (hot reload) can make module state look broken: hard-refresh or restart the dev server before reporting a dead control (two incidents this arc: an empty cached `HorizontalScrollbar.tsx`, and a stale editor publishing old channel state).
 - [shared] Workflow files: `WORKFLOW_HANDOFF.md` is committed (3041593); it is a portable workflow doc and also holds copies of the gitignored agent definitions.
+- [harmonic-field-lab] Chord shelf: two browser windows stashing at nearly the same moment both create the same chord id and the last writer drops one (same last-writer-wins race as the M7b library).

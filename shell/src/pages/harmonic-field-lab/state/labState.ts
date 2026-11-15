@@ -26,9 +26,18 @@ import {
 } from '../../../lib/harmonic-field';
 import type { ModePlayback, ScaleDir } from '../audio/plan';
 import {
+  cloneSource,
+  emptyShelf,
+  shelfReduce,
+  stashChord,
+  type ShelfAction,
+  type ShelfState,
+} from './chordShelf';
+import {
   autoName,
   defaultGen,
   genFromPreset,
+  genKey,
   generateField,
   presetByName,
   type GenSpec,
@@ -37,6 +46,7 @@ import {
 import {
   addSubset,
   cleanName,
+  cloneGen,
   copySubsetsTo,
   deletePreset,
   deleteSubset,
@@ -101,6 +111,8 @@ export interface Tab {
   lastMethod: Method | null;
   /** The generator (an `OwnerKey`) this tab is linked to; see `ownerOfTab` for how an unlinked tab finds its owner. */
   link?: OwnerKey;
+  /** The shelf chord this tab was reloaded from; chords stashed from the tab record it as their parent. */
+  fromChord?: string;
   cmp: { ref: CmpRef; odd: number; m: number };
   pick: {
     scale: string;
@@ -204,6 +216,8 @@ export interface LabState {
   templates: ChordTemplate[];
   /** The retuner: card list, settings (stored in `...retuner.v1`) and the run (see retuner.ts). */
   retuner: RetState;
+  /** The chord shelf: stashed chords, selection, sketch row (stored in `...chordshelf.v1`, see chordShelf.ts). */
+  shelf: ShelfState;
 }
 
 /* ----------------------------------------------------------------------------------------------- defaults */
@@ -293,6 +307,7 @@ export function initialState(): LabState {
     layout: DEFAULT_LAYOUT,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
     retuner: initialRetuner(),
+    shelf: emptyShelf(),
   };
 }
 
@@ -524,7 +539,21 @@ export type Action =
   | { type: 'ui'; patch: Partial<UiSettings> }
   | { type: 'viz'; id: VizId; patch: Partial<VizSettings> }
   | { type: 'layout'; fn: (l: Layout) => Layout }
+  | { type: 'shelf/stash'; stash: StashRequest }
+  | { type: 'shelf/reload'; id: string }
+  | ShelfAction
   | RetAction;
+
+/** What the UI hands `shelf/stash`: the exact pitches heard; everything else is read from the active tab and the settings. */
+export interface StashRequest {
+  pitches: Note[];
+  template?: string | null;
+  /** The chord root's degree in the active subset read from its mode root, when known. */
+  rootDeg?: number | null;
+  name?: string;
+  /** ISO date-time (passed in so the reducer stays pure). */
+  date: string;
+}
 
 const withTab = (s: LabState, fn: (t: Tab) => Tab): LabState => {
   const t = activeTab(s);
@@ -561,6 +590,68 @@ function openOwner(s: LabState, key: OwnerKey): LabState {
   }
   const out = editTab(s, (t) => withLink(regenTab({ ...t, mode: 0 }, g, true), key));
   return { ...out, library: pushRecent(out.library, key) };
+}
+
+/**
+ * Reload a shelf chord's source as a NEW tab at the end (current tabs untouched, the new one becomes active): the stored
+ * generator inputs are rebuilt, the stored subset is re-resolved against that field, and the tab links to the matching preset or
+ * Auto-saved generator by the owner lookup (no link when there is none; nothing is created). Chords stashed from it record
+ * the chord as their parent. Refused (a reason on the shelf) at the tab cap, without a stored source, or when the inputs do not build.
+ */
+function reloadChord(s: LabState, id: string): LabState {
+  const chord = s.shelf.chords.find((c) => c.id === id);
+  const refuse = (reason: string): LabState => ({
+    ...s,
+    shelf: { ...s.shelf, refusal: { reason } },
+  });
+  if (!chord) {
+    return s;
+  }
+  if (!chord.source) {
+    return refuse(`'${chord.name}' has no stored source to reload.`);
+  }
+  if (s.tabs.length >= MAX_TABS) {
+    return refuse(`There are already ${MAX_TABS} tabs; close one first.`);
+  }
+  const src = cloneSource(chord.source);
+  const base = makeTab(`t${s.nextTab}`, src.gen, src.tab ? cleanName(src.tab) || null : null);
+  if (!base.field.length) {
+    return refuse(`The source of '${chord.name}' does not build: ${base.err || 'no notes'}.`);
+  }
+  const r = resolveSubset(base.field, src.subset);
+  const sel = r.sel.length ? r.sel : base.field.map((_, i) => i);
+  // link only to an owner whose generator really builds this field (a stored preset label alone is not trusted)
+  const want = genKey(src.gen);
+  let owner: OwnerKey | null = null;
+  let gen: GenSpec = { ...src.gen, preset: '' };
+  for (const g of [src.gen, { ...src.gen, preset: '' }]) {
+    const key = ownerOfTab(s.library, { gen: g });
+    const ownerInputs = key ? ownerGen(s.library, key) : null;
+    if (key && ownerInputs && genKey(ownerInputs) === want) {
+      owner = key;
+      gen = g; // the inputs that matched: a stale preset label is cleared
+      break;
+    }
+  }
+  const tab: Tab = {
+    ...base,
+    gen,
+    sel,
+    mode: r.sel.length ? r.mode : 0,
+    fromChord: chord.id,
+    ...(owner ? { link: owner } : {}),
+  };
+  return clearPointers({
+    ...s,
+    tabs: [...s.tabs, tab],
+    active: s.tabs.length,
+    nextTab: s.nextTab + 1,
+    shelf: {
+      ...s.shelf,
+      refusal: null,
+      lastReload: { id: chord.id, found: r.found.length, missing: r.missing.length },
+    },
+  });
 }
 
 /** A tab linked to `to` (no link when null). */
@@ -657,6 +748,7 @@ function reduce(s: LabState, a: Action): LabState {
         cmp: { ...src.cmp },
         pick: { ...src.pick },
         ...(src.link ? { link: src.link } : {}),
+        ...(src.fromChord ? { fromChord: src.fromChord } : {}),
         ...(src.pending
           ? { pending: { cents: src.pending.cents.slice(), mode: src.pending.mode } }
           : {}),
@@ -1010,6 +1102,41 @@ function reduce(s: LabState, a: Action): LabState {
     case 'layout': {
       const layout = a.fn(s.layout);
       return layout === s.layout ? s : { ...s, layout };
+    }
+    case 'shelf/stash': {
+      const t = activeTab(s);
+      const st = a.stash;
+      const set = subsetFromSelection(t.field, t.sel, t.mode);
+      const shelf = stashChord(s.shelf, {
+        name: st.name,
+        pitches: st.pitches,
+        template: st.template ?? null,
+        rootDeg: st.rootDeg ?? null,
+        tol: s.ui.tol,
+        date: st.date,
+        refHz: s.ui.baseHz,
+        frame: s.ui.modePlayback,
+        parent: t.fromChord ?? null,
+        source: set.pitches.length
+          ? { gen: cloneGen(t.gen, t.gen.preset), subset: set, tab: tabName(t) }
+          : null,
+      });
+      return shelf === s.shelf ? s : { ...s, shelf };
+    }
+    case 'shelf/reload':
+      return reloadChord(s, a.id);
+    case 'shelf/rename':
+    case 'shelf/move':
+    case 'shelf/delete':
+    case 'shelf/select':
+    case 'shelf/selectAll':
+    case 'shelf/selectNone':
+    case 'shelf/sync':
+    case 'sketch/set':
+    case 'sketch/arm':
+    case 'sketch/disarm': {
+      const shelf = shelfReduce(s.shelf, a);
+      return shelf === s.shelf ? s : { ...s, shelf };
     }
     case 'ret/add':
     case 'ret/rename':

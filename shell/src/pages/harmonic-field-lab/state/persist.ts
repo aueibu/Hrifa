@@ -75,6 +75,7 @@ export const KEY_SUBSETS = 'hrifa.harmonic-field-lab.subsets.v1';
 export const KEY_GENERATORS = 'hrifa.harmonic-field-lab.generators.v1';
 export const KEY_CHORDFINDER = 'hrifa.harmonic-field-lab.chordfinder.v1';
 export const KEY_RETUNER = 'hrifa.harmonic-field-lab.retuner.v1';
+export const KEY_CHORDSHELF = 'hrifa.harmonic-field-lab.chordshelf.v1';
 /** The mock's layout keys (read once, to migrate). */
 export const MOCK_LAYOUT_KEYS = [
   'hrifa.harmonic-field-lab.mock.layout.v3',
@@ -444,6 +445,8 @@ export interface StoredTab extends TabParts {
   name: string | null;
   /** The generator the tab is linked to (an `OwnerKey`), when stored. */
   link?: string;
+  /** The shelf chord this tab was reloaded from (`c<N>`), when stored. */
+  from?: string;
 }
 export interface StoredTabs {
   tabs: StoredTab[];
@@ -477,7 +480,9 @@ export function sanitizeTabs(raw: unknown): StoredTabs | null {
       typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim().slice(0, 60) : null;
     const link =
       typeof entry.link === 'string' && OWNER_KEY_RE.test(entry.link) ? entry.link : undefined;
-    tabs.push({ ...parts, id, name, ...(link ? { link } : {}) });
+    const from =
+      typeof entry.from === 'string' && /^c\d{1,9}$/.test(entry.from) ? entry.from : undefined;
+    tabs.push({ ...parts, id, name, ...(link ? { link } : {}), ...(from ? { from } : {}) });
   }
   if (!tabs.length) {
     return null;
@@ -495,6 +500,7 @@ export function saveTabs(tabs: Tab[], active: number): boolean {
       id: t.id,
       name: t.name,
       ...(t.link ? { link: t.link } : {}),
+      ...(t.fromChord ? { from: t.fromChord } : {}),
       snap: toSnapshot(t),
     })),
   });

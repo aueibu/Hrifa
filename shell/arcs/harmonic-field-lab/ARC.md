@@ -254,6 +254,7 @@ Proposal:
   - [ ] Stored data stays plain and self-contained so a later Workbench hand-off can read it (W-1: midicents only at the hand-off; W-3: the roll is 12-EDO until a tunings decision).
   - [ ] Tests (reducer, persistence round-trip and bad data, reload, hold 4, one page test), page `ARCHITECTURE.md`, DECISIONS H-7; `check:hfl` green; reviewer on the data layer (step 1).
 - Checkpoint decisions (human, 2026-11-14): **M8a and M8b APPROVED** as drafted, including melody keys v2 (kept inside M8b, not built earlier); build order M8a (step 1 data layer + reviewer, step 2 UI), then M8b.
+- Checkpoint decisions (human, 2026-11-14, after the step 1 review): (1) **A stashed chord stores the field's own pitches** (field-absolute, identical whether stashed in Parallel or Relative), plus the mode root, 1/1 Hz and frame; Parallel playback divides by the mode root, Relative plays them as stored. (2) A damaged chord is dropped at load without notice (accepted; no dormant raw list).
 - Human checkpoint after: **yes** (feel)
 
 ### M8b: Melody keys v2 + keyboard chord modes + linked melody (APPROVED 2026-11-14)
