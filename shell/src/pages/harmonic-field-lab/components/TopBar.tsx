@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   ActionIcon,
   Button,
+  Checkbox,
   NativeSelect,
   Popover,
   SegmentedControl,
@@ -173,6 +174,34 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
               { label: 'Parallel', value: 'parallel' },
               { label: 'Relative', value: 'relative' },
             ]}
+          />
+        </Tip>
+        <Tip k="keyboardMode" as="control">
+          <SegmentedControl
+            size="xs"
+            aria-label="Keyboard mode"
+            value={ui.keyboardMode}
+            onChange={(v) =>
+              dispatch({
+                type: 'ui',
+                patch: { keyboardMode: v === 'chords' || v === 'split' ? v : 'notes' },
+              })
+            }
+            data={[
+              { label: 'Notes', value: 'notes' },
+              { label: 'Chords', value: 'chords' },
+              { label: 'Split', value: 'split' },
+            ]}
+          />
+        </Tip>
+        <Tip k="linkedMelody" as="control">
+          <Checkbox
+            size="xs"
+            label="Linked melody"
+            checked={ui.linkedMelody}
+            onChange={(e) =>
+              dispatch({ type: 'ui', patch: { linkedMelody: e.currentTarget.checked } })
+            }
           />
         </Tip>
         <Tip k="stop" as="control">

@@ -237,6 +237,8 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       rootDeg: state.shelf.sketch.rootDeg,
       exact: state.shelf.sketch.exact,
     },
+    shelf: state.shelf.chords,
+    keys: state.keys,
     dispatch,
   });
 

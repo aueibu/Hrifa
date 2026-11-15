@@ -1,19 +1,39 @@
 /** Thin keyboard dock: one row of keys for the subset, collapsible to a bar. What sounds is lit here and everywhere. */
-import { dockKeyCount, KEYS } from '../audio/keymap';
+import { useMemo } from 'react';
+import { CHORD_PAGE, dockKeyCount, KEYS, playsChords, playsMelody } from '../audio/keymap';
+import { linkedScaleOf } from '../state/linkedMelody';
+import { retunerLive } from '../state/retuner';
 import { ChevronDownIcon } from './icons';
 import { Num, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
 export function KeyboardDock({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  const { base, sounding, chord, setHover, audio } = useLab();
+  const { base, sounding, chord, setHover, audio, state } = useLab();
+  const { keyboardMode, linkedMelody } = state.ui;
+  const { shift, page, link } = state.keys;
+  const melody = playsMelody(keyboardMode);
   const { rel, repText, repC, ratios } = base;
   const n = rel.length;
-  const count = dockKeyCount(n);
-  const keys = Array.from({ length: count }, (_, i) =>
-    i < n
-      ? { ratio: ratios[rel[i].src], c: rel[i].c, src: rel[i].src }
-      : { ratio: repText, c: repC, src: rel[0]?.src ?? -1 }
-  );
+  const chords = state.shelf.chords;
+  const lastPage = Math.max(0, Math.ceil(chords.length / CHORD_PAGE) - 1);
+  const shown = Math.min(page, lastPage);
+  const linkedName = linkedMelody && link ? chords.find((c) => c.id === link) : undefined;
+  // while a chord is linked the keys play ITS source subset: label them with its pitches (cents in the live
+  // Parallel | Relative frame; the ratio text is not derivable cheaply), not with this tab's notes
+  const linkedChord = linkedName && !retunerLive(state.retuner) ? linkedName : undefined;
+  const sc = useMemo(() => linkedScaleOf(linkedChord), [linkedChord]);
+  const relative = state.ui.modePlayback === 'relative';
+  const nKeys = sc ? sc.rel.length : n;
+  const count = dockKeyCount(nKeys);
+  const keys = Array.from({ length: count }, (_, i) => {
+    if (sc) {
+      const base0 = (relative ? sc.rootC : 0) + sc.rel[i % nKeys] + Math.floor(i / nKeys) * sc.repC;
+      return { ratio: `${base0.toFixed(1)} c`, c: base0 + shift * sc.repC, src: -1 };
+    }
+    return i < n
+      ? { ratio: ratios[rel[i].src], c: rel[i].c + shift * repC, src: rel[i].src }
+      : { ratio: repText, c: repC + shift * repC, src: rel[0]?.src ?? -1 };
+  });
   const hold = (slot: number) => {
     audio.press(slot);
     const up = () => {
@@ -44,6 +64,20 @@ export function KeyboardDock({ open, onToggle }: { open: boolean; onToggle: () =
           <span>Keys</span>
         </button>
       </Tip>
+      <span className={classes.dockStatus} data-testid="kb-mode">
+        {{ notes: 'Notes', chords: 'Chords', split: 'Split' }[keyboardMode]}
+        {retunerLive(state.retuner) ? ' (retuner)' : ''}
+      </span>
+      <span className={classes.dockStatus} data-testid="oct-shift" aria-label="Octave shift">
+        Oct {shift > 0 ? `+${shift}` : shift}
+      </span>
+      {playsChords(keyboardMode) && (
+        <span className={classes.dockStatus} data-testid="shelf-page">
+          Shelf {chords.length === 0 ? 0 : shown * CHORD_PAGE + 1}-
+          {Math.min(chords.length, (shown + 1) * CHORD_PAGE)} of {chords.length}
+          {linkedName ? `, melody of ${linkedName.name}` : ''}
+        </span>
+      )}
       {open ? (
         <div className={classes.keys} role="group" aria-label="Subset keys">
           {n === 0 && <span className={classes.dockStatus}>Select notes to play them here</span>}
@@ -82,8 +116,13 @@ export function KeyboardDock({ open, onToggle }: { open: boolean; onToggle: () =
                   audio.release(i);
                 }}
               >
-                <span className={classes.keyHint}>{KEYS[i]}</span>
+                {melody && <span className={classes.keyHint}>{KEYS[i]}</span>}
                 <Num>{k.ratio}</Num>
+                {shift !== 0 && (
+                  <span className={classes.keyHint} data-testid="key-shift">
+                    {shift > 0 ? `+${shift}` : shift}
+                  </span>
+                )}
               </button>
             );
           })}

@@ -113,5 +113,6 @@ describe('Retuner panel (live)', () => {
       'Pythagorean-ish',
       '10/9 second',
     ]);
-  });
+    // one whole-page render plus a long walk: 5 s alone, but over 15 s under the parallel gate run
+  }, 45_000);
 });

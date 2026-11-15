@@ -7,14 +7,28 @@
  */
 import { useEffect, useMemo, useRef, type Dispatch } from 'react';
 import { chordShape, placeShape, sketchShape, type Note } from '../../../lib/harmonic-field';
+import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import type { LabAudio } from '../state/context';
 import type { Base } from '../state/derive';
 import { ghostCents, ghostKey } from '../state/ghosts';
-import type { Action, UiSettings } from '../state/labState';
+import type { Action, KeysRuntime, UiSettings } from '../state/labState';
+import { linkedPitch, linkedScaleOf, type LinkedScale } from '../state/linkedMelody';
 import { heldHz, litIndex, retunerLive, type RetState } from '../state/retuner';
 import { sketchChord } from '../state/sketchChord';
 import { VoiceEngine } from './engine';
-import { isTyping, keyId, slotOfEvent, slotTarget } from './keymap';
+import {
+  CHORD_PAGE,
+  chordSlotOfEvent,
+  clampShift,
+  isTyping,
+  keyId,
+  pageOfEvent,
+  playsChords,
+  playsMelody,
+  shiftOfEvent,
+  slotOfEvent,
+  slotTarget,
+} from './keymap';
 import {
   LightCounter,
   absHz,
@@ -61,6 +75,10 @@ interface Args {
   retuner: RetState;
   /** The Sketch row's armed template (hold 4 plays it on the hovered note); null when none. */
   sketch: { template: string | null; shape: Note[] | null; rootDeg: number; exact: boolean };
+  /** The shelf, in order: what the chord keys play (Chords and Split modes). */
+  shelf: readonly ShelfChord[];
+  /** The computer keys' runtime state: melody shift, shelf page, the chord the linked melody follows. */
+  keys: KeysRuntime;
   dispatch: Dispatch<Action>;
 }
 
@@ -74,6 +92,8 @@ export function useLabAudio({
   chord,
   retuner,
   sketch,
+  shelf,
+  keys,
   dispatch,
 }: Args): LabAudio {
   const engine = useRef<VoiceEngine | null>(null);
@@ -83,6 +103,8 @@ export function useLabAudio({
   const ghostLights = useRef(new LightCounter());
   const timers = useRef(new Set<number>());
   const slotSrc = useRef(new Map<number, number>());
+  /** The ghost a linked-melody key lights (its pitch matches no field note of the tab), to unlight it on release. */
+  const slotGhost = useRef(new Map<number, number | undefined>());
   /** Physical key (see `keyId`) to the slot it pressed, so a release finds it even when Shift changed `event.key`. */
   const held = useRef(new Map<string, number>());
   /** What the pointer / focus is on, for the hold-1/2/3 previews. */
@@ -94,9 +116,9 @@ export function useLabAudio({
   const applied = useRef({ volume: NaN, wave: '' });
   /** The retuner's voices by slot: the pitch each sounds at and the field note it lights (-1 = none). */
   const rtVoices = useRef(new Map<number, { hz: number; src: number; ghost?: number }>());
-  const latest = useRef({ base, ui, chord, enabled, retuner, sketch });
+  const latest = useRef({ base, ui, chord, enabled, retuner, sketch, shelf, keys });
   useEffect(() => {
-    latest.current = { base, ui, chord, enabled, retuner, sketch };
+    latest.current = { base, ui, chord, enabled, retuner, sketch, shelf, keys };
     // only on a change: setVolume schedules a ramp on the master gain
     if (engine.current && applied.current.volume !== ui.volume) {
       engine.current.setVolume(ui.volume);
@@ -108,7 +130,14 @@ export function useLabAudio({
     }
   });
 
-  const api = useMemo<LabAudio & { syncRetuner: () => void; refreshArmed: () => void }>(() => {
+  const api = useMemo<
+    LabAudio & {
+      syncRetuner: () => void;
+      refreshArmed: () => void;
+      pressChord: (id: string, index: number) => boolean;
+      linkedActive: () => boolean;
+    }
+  >(() => {
     const pitch = (): PitchBase => ({
       baseHz: latest.current.ui.baseHz,
       rootC: latest.current.base.rootC,
@@ -183,6 +212,7 @@ export function useLabAudio({
       timers.current.forEach((t) => window.clearTimeout(t));
       timers.current.clear();
       slotSrc.current.clear();
+      slotGhost.current.clear();
       held.current.clear();
       previews.current.clear();
       heldDigits.current.clear();
@@ -416,6 +446,52 @@ export function useLabAudio({
         }
       }
     };
+    /**
+     * The sound of melody key `slot` when the linked melody is on and a chord key has been pressed whose chord has a source
+     * subset (Hz in the frame the Parallel | Relative switch says, and its field-absolute pitch for the lights); else null,
+     * and the key plays the active subset.
+     */
+    const linkedSound = (slot: number): { hz: number; abs: number } | null => {
+      const { ui: u, keys: k, shelf: sh } = latest.current;
+      // the retuner owns the melody keys while it is live: the linked melody gives way to it
+      if (
+        !u.linkedMelody ||
+        !playsChords(u.keyboardMode) ||
+        k.link === null ||
+        retunerLive(latest.current.retuner)
+      ) {
+        return null;
+      }
+      const sc: LinkedScale | null = linkedScaleOf(sh.find((c) => c.id === k.link));
+      return sc ? linkedPitch(sc, slot, k.shift, u.modePlayback, u.baseHz) : null;
+    };
+    /** A chord key goes down: play shelf slot `index` of the current page as the shelf's own slot does, held until `endHeld(id)`. */
+    const pressChord = (id: string, index: number): boolean => {
+      const { base: b, ui: u, shelf: sh, keys: k } = latest.current;
+      const last = Math.max(0, Math.ceil(sh.length / CHORD_PAGE) - 1);
+      const chord = sh[Math.min(k.page, last) * CHORD_PAGE + index];
+      if (!chord || chord.pitches.length === 0) {
+        return false;
+      }
+      startHeld(
+        id,
+        pitchesPlan(
+          b.field,
+          b.repC,
+          chordPitchesFor(chord, u.modePlayback).map((p) => p.c),
+          pitch(),
+          1.8,
+          chord.pitches.map((p) => p.c)
+        ),
+        false,
+        'chord'
+      );
+      if (u.linkedMelody) {
+        dispatch({ type: 'keys/link', id: chord.id });
+        latest.current.keys = { ...latest.current.keys, link: chord.id };
+      }
+      return true;
+    };
     /** The frame, the armed shape or the template changed under a resting pointer: a held 4 / 5 plays the new chord. */
     const refreshArmed = () => {
       const t = target.current;
@@ -432,6 +508,8 @@ export function useLabAudio({
       enabled,
       syncRetuner,
       refreshArmed,
+      pressChord,
+      linkedActive: () => linkedSound(0) !== null,
       setPreviewTarget: (t) => {
         const cur = target.current;
         // a note under a strip mark of the same note is the same pointer position: keep the strip target
@@ -468,15 +546,34 @@ export function useLabAudio({
         endHeld(id);
       },
       press: (slot) => {
+        const { base: b, keys: k } = latest.current;
         if (retunerLive(latest.current.retuner)) {
-          // the retuner owns the keys: the key goes into its held set, the effect below sounds it
-          dispatch({ type: 'ret/down', slot, t: performance.now() });
+          // the retuner owns the keys: the key goes into its held set, the effect below sounds it (the melody shift applies)
+          dispatch({ type: 'ret/down', slot, t: performance.now(), shift: k.shift });
           return;
         }
-        const { base: b } = latest.current;
         const eng = getEngine();
-        const p = slotPitch(slot, b.rel, b.repC, pitch());
-        if (!eng || !p || slotSrc.current.has(slot)) {
+        if (!eng || slotSrc.current.has(slot)) {
+          return;
+        }
+        const linked = linkedSound(slot);
+        if (linked) {
+          // the linked chord's source subset: audio only, it lights where it coincides with a field note of this tab
+          const src = litIndex(
+            b.field.map((n) => n.c),
+            b.repC,
+            linked.abs
+          );
+          const ghost = src < 0 ? linked.abs : undefined;
+          if (eng.start(`k${slot}`, linked.hz)) {
+            slotSrc.current.set(slot, src);
+            slotGhost.current.set(slot, ghost);
+            light(src, true, false, ghost);
+          }
+          return;
+        }
+        const p = slotPitch(slot, b.rel, b.repC, pitch(), k.shift);
+        if (!p) {
           return;
         }
         if (eng.start(`k${slot}`, p.hz)) {
@@ -493,7 +590,9 @@ export function useLabAudio({
         }
         engine.current?.stop(`k${slot}`);
         slotSrc.current.delete(slot);
-        light(src, false);
+        const ghost = slotGhost.current.get(slot);
+        slotGhost.current.delete(slot);
+        light(src, false, false, ghost);
       },
       playNote: (i) => {
         const f = latest.current.base.field[i];
@@ -633,14 +732,44 @@ export function useLabAudio({
         e.preventDefault();
         return;
       }
+      const sh = shiftOfEvent(e);
+      if (sh !== 0) {
+        // , / . shift the melody by one repeat (every mode); held voices keep their pitch
+        e.preventDefault();
+        dispatch({ type: 'keys/shift', by: sh });
+        latest.current.keys = {
+          ...latest.current.keys,
+          shift: clampShift(latest.current.keys.shift + sh),
+        };
+        return;
+      }
+      const mode = latest.current.ui.keyboardMode;
+      if (playsChords(mode)) {
+        const pg = pageOfEvent(e);
+        if (pg !== 0) {
+          e.preventDefault();
+          dispatch({ type: 'keys/page', by: pg });
+          return;
+        }
+        const ck = chordSlotOfEvent(e);
+        if (ck >= 0) {
+          e.preventDefault();
+          api.pressChord(keyId(e), ck);
+          return;
+        }
+      }
+      if (!playsMelody(mode)) {
+        return;
+      }
       const slot = slotOfEvent(e);
       if (slot < 0) {
         return;
       }
       e.preventDefault();
       // a melody key also moves the Sketch row's root to that key's degree (octave repeats are the same degree)
+      // (not when the linked melody plays another subset: its degrees are not this tab's)
       const t = slotTarget(slot, latest.current.base.rel.length);
-      if (t) {
+      if (t && !api.linkedActive()) {
         dispatch({ type: 'sketch/set', patch: { rootDeg: t.deg } });
       }
       held.current.set(keyId(e), slot);

@@ -59,6 +59,21 @@ const entries = {
     text: 'Where the current mode sounds: mode previews, Play scale, Play chord and the computer keys (z is the mode root). In C major, Mode 2 is Dorian. Parallel plays it from the 1/1 pitch (C Dorian), the way the grid measures it, so the tonic stays put and the scale changes around it; Relative plays it from its own root 9/8 (D Dorian), so every note keeps its own pitch. In mode previews the listed-vs-pure comparison is the same, only moved. Press 0 to switch. In Relative a sounding tone lights a field note only where it lands exactly on one.',
     see: ['modes', 'holdToPlay', 'baseHz', 'mode'],
   },
+  keyboardMode: {
+    term: 'Keyboard mode (Notes | Chords | Split)',
+    text: 'What the computer keys play. Notes: z x c v b n m a s d f g h j k l are the melody keys (the subset, degree by degree). Chords: q w e r t y u i o p play the first ten shelf chords of the current page, in shelf order; [ and ] page the shelf by ten. Split: the melody keys play the subset and q to p play shelf chords at the same time. Keys sound while held. The modes also take over the keys while the retuner is live (the dock shows the mode). Example: Split, stash a few chords, then hold q for a chord and play a melody over it.',
+    see: ['linkedMelody', 'shelfPanel', 'octShift', 'keyboardDock'],
+  },
+  linkedMelody: {
+    term: 'Linked melody',
+    text: "Off by default. When on (Split mode), pressing a chord key makes the melody keys play that chord's source subset, the subset it was stashed from, placed where the chord was stored and following Parallel | Relative like the shelf does. A chord from 12-EDO Dorian brings its Dorian melody. Audio only: the views stay on the current tab and light only where a sounding pitch matches one of its notes (a ghost mark shows the rest). The last chord pressed stays linked until you press another chord key, change the mode or this option, or switch tab. A chord with no source leaves the melody on the active subset.",
+    see: ['keyboardMode', 'shelfPanel', 'modePlayback'],
+  },
+  octShift: {
+    term: 'Octave shift (, and .)',
+    text: "Press , to move the melody keys down and . to move them up by one repeat of the generator (an octave for 2/1, a tritave for Bohlen-Pierce 3/1), up to 4 either way. A key you are already holding keeps its pitch. It applies to the retuner's keys too and resets when the page reloads.",
+    see: ['keyboardMode', 'keyboardDock'],
+  },
   scalePreview: {
     term: 'Scale preview',
     text: 'How every scale preview runs, both Play scale and the preview of a key in Keys & Modes. Up plays the notes from the root up to the repeat. Up-down plays up and then comes back down to the root. Example: for 1/1, 9/8, 5/4 and a 2/1 repeat, Up plays 1/1 9/8 5/4 2/1; Up-down plays 1/1 9/8 5/4 2/1 5/4 9/8 1/1.',
@@ -70,7 +85,7 @@ const entries = {
   },
   keyboardDock: {
     term: 'Keyboard',
-    text: 'The notes of your subset as playable keys, one octave from the mode root. Click a key or press z, x, c and so on (then a, s, d, and q, w, e) to climb up the subset. The dock stays at the bottom so the keys are always next to the views they light. Example: collapse it when you only want to read; open it to play the scale while watching the circle.',
+    text: 'The notes of your subset as playable keys, one octave from the mode root. Click a key or press z, x, c, v, b, n, m and then a, s, d, f, g, h, j, k, l (16 keys) to climb up the subset; , and . shift the whole melody down or up by one repeat (Oct in the dock). The Keyboard mode switch can give the top row q to p to the shelf chords. The dock stays at the bottom so the keys are always next to the views they light. Example: collapse it when you only want to read; open it to play the scale while watching the circle.',
   },
 
   /* ---- generator ---- */

@@ -307,7 +307,12 @@ describe('live selection', () => {
 
   it('stats, shape, step sizes and the compact field table follow the selection', () => {
     render(<HarmonicFieldLabPage />);
-    const notes = () => screen.getByText('Notes').closest('div')!;
+    // (the Keyboard mode switch has a "Notes" label too)
+    const notes = () =>
+      screen
+        .getAllByText('Notes')
+        .find((el) => !el.closest('[role="radiogroup"]'))!
+        .closest('div')!;
     expect(notes()).toHaveTextContent('8/8');
     fireEvent.click(dot(/^11\/8/));
     expect(notes()).toHaveTextContent('7/8');
@@ -659,9 +664,9 @@ describe('sound', () => {
 
   it('a key released with Shift held (the key name changed) does not stick: keys are matched by their physical code', () => {
     render(<HarmonicFieldLabPage />);
-    fireEvent.keyDown(document.body, { key: ',', code: 'Comma' });
+    fireEvent.keyDown(document.body, { key: 'm', code: 'KeyM' });
     expect(live()).toHaveLength(1);
-    fireEvent.keyUp(document.body, { key: '<', code: 'Comma', shiftKey: true });
+    fireEvent.keyUp(document.body, { key: 'M', code: 'KeyM', shiftKey: true });
     expect(live()).toHaveLength(0);
     fireEvent.keyDown(document.body, { key: 'z', code: 'KeyZ' });
     fireEvent.keyUp(document.body, { key: 'Z', code: 'KeyZ', shiftKey: true });

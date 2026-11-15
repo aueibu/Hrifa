@@ -37,14 +37,18 @@ export const relHz = (p: PitchBase, cents: number): number =>
 /** Hz of a field note at its own pitch above 1/1. */
 export const absHz = (p: PitchBase, cents: number): number => hzOf(p.baseHz, cents);
 
-/** The pitch of a dock or computer key: slot i is degree i mod N, floor(i / N) repeats up. Null for no such key. */
+/**
+ * The pitch of a dock or computer key: slot i is degree i mod N, floor(i / N) repeats up, plus `shift` repeats (the melody
+ * shift, `,` / `.`). Null for no such key.
+ */
 export function slotPitch(
   slot: number,
   rel: readonly RelNote[],
   repC: number,
-  p: PitchBase
+  p: PitchBase,
+  shift = 0
 ): { hz: number; src: number } | null {
-  const t = slotTarget(slot, rel.length);
+  const t = slotTarget(slot, rel.length, shift);
   if (!t) {
     return null;
   }

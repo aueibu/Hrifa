@@ -324,7 +324,7 @@ export type RetAction =
   | { type: 'ret/on'; on: boolean }
   | { type: 'ret/reset' }
   | { type: 'ret/relative'; relative: boolean }
-  | { type: 'ret/down'; slot: number; t: number }
+  | { type: 'ret/down'; slot: number; t: number; shift?: number }
   | { type: 'ret/up'; slot: number }
   | { type: 'ret/release' }
   | { type: 'ret/retune' };
@@ -409,7 +409,7 @@ export function retunerReduce(r: RetState, a: RetAction, refHz: number = REF_HZ)
       if (!retunerLive(r) || !c || r.held.some((h) => h.key === a.slot)) {
         return r;
       }
-      const t = slotTarget(a.slot, c.notes.length);
+      const t = slotTarget(a.slot, c.notes.length, a.shift ?? 0);
       if (!t) {
         return r;
       }

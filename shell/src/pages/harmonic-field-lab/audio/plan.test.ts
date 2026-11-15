@@ -24,14 +24,31 @@ const rel = rotateSubset(field, [0, 1, 2, 3], 0, OCT);
 const base: PitchBase = { baseHz: 100, rootC: 0, modeAtBase: true };
 
 describe('keymap', () => {
-  it('maps the three rows left to right, case-insensitively', () => {
+  it('maps the bottom row then the home row (16 slots), case-insensitively', () => {
+    expect(KEYS).toBe('zxcvbnmasdfghjkl');
     expect(slotOfKey('z')).toBe(0);
     expect(slotOfKey('Z')).toBe(0);
-    expect(slotOfKey(',')).toBe(7);
-    expect(slotOfKey('a')).toBe(10);
-    expect(slotOfKey("'")).toBe(20);
-    expect(slotOfKey(']')).toBe(KEYS.length - 1);
-    for (const k of ['Enter', ' ', '1', 'Shift', '', 'ab']) {
+    expect(slotOfKey('m')).toBe(6);
+    expect(slotOfKey('a')).toBe(7);
+    expect(slotOfKey('l')).toBe(KEYS.length - 1);
+    // the shifts, the old long layout and the chord row are no melody keys
+    for (const k of [
+      ',',
+      '.',
+      '/',
+      ';',
+      "'",
+      'q',
+      'p',
+      '[',
+      ']',
+      'Enter',
+      ' ',
+      '1',
+      'Shift',
+      '',
+      'ab',
+    ]) {
       expect(slotOfKey(k)).toBe(-1);
     }
   });

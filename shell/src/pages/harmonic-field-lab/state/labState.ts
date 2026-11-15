@@ -24,6 +24,7 @@ import {
   type Note,
   type TargetPoint,
 } from '../../../lib/harmonic-field';
+import { CHORD_PAGE, clampShift, type KeyboardMode } from '../audio/keymap';
 import type { ModePlayback, ScaleDir } from '../audio/plan';
 import {
   cloneSource,
@@ -167,6 +168,20 @@ export interface UiSettings {
   modePlayback: ModePlayback;
   /** Saved list: show subsets of every collection, not only the current one. */
   savedAll: boolean;
+  /** What the computer keys play (M8b): melody notes, shelf chords, or both. Optional in storage (absent = Notes). */
+  keyboardMode: KeyboardMode;
+  /** Linked melody (M8b, default off): the melody keys play the last pressed chord key's source subset. Optional in storage. */
+  linkedMelody: boolean;
+}
+
+/**
+ * Runtime state of the computer keys (never stored, reset on reload): the melody shift in repeats (`,` / `.`), the shelf page
+ * (`[` / `]`, ten chords per page) and the chord the linked melody follows (a shelf chord id).
+ */
+export interface KeysRuntime {
+  shift: number;
+  page: number;
+  link: string | null;
 }
 
 export interface Notice {
@@ -220,6 +235,8 @@ export interface LabState {
   retuner: RetState;
   /** The chord shelf: stashed chords, selection, sketch row (stored in `...chordshelf.v1`, see chordShelf.ts). */
   shelf: ShelfState;
+  /** The computer keys' runtime state: melody shift, shelf page, linked chord (M8b). */
+  keys: KeysRuntime;
 }
 
 /* ----------------------------------------------------------------------------------------------- defaults */
@@ -245,6 +262,8 @@ export function defaultUi(): UiSettings {
     scalePreview: 'up',
     modePlayback: 'parallel',
     savedAll: false,
+    keyboardMode: 'notes',
+    linkedMelody: false,
   };
 }
 
@@ -311,6 +330,7 @@ export function initialState(): LabState {
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
     retuner: initialRetuner(),
     shelf: emptyShelf(),
+    keys: { shift: 0, page: 0, link: null },
   };
 }
 
@@ -496,6 +516,9 @@ export type Action =
   | { type: 'tab/duplicate'; index?: number }
   | { type: 'tab/close'; index: number }
   | { type: 'tab/switch'; index: number }
+  | { type: 'keys/shift'; by: number }
+  | { type: 'keys/page'; by: number }
+  | { type: 'keys/link'; id: string | null }
   | { type: 'tab/rename'; index: number; name: string }
   | { type: 'gen/patch'; patch: Partial<GenSpec> }
   | { type: 'gen/axis'; index: number; patch: Partial<GenSpec['axes'][number]> }
@@ -581,6 +604,8 @@ const clearPointers = (s: LabState): LabState => ({
   sounding: new Set(),
   soundingMarks: new Set(),
   soundingGhosts: [],
+  // the linked melody belongs to the tab it was pressed on
+  keys: s.keys.link === null ? s.keys : { ...s.keys, link: null },
 });
 
 /** Apply a tab change; when the field changed, drop the pointers and lights that referred to the old one. */
@@ -1105,13 +1130,31 @@ function reduce(s: LabState, a: Action): LabState {
         chordPick: null,
         chordHover: null,
       };
+    case 'keys/shift': {
+      const shift = clampShift(s.keys.shift + a.by);
+      return shift === s.keys.shift ? s : { ...s, keys: { ...s.keys, shift } };
+    }
+    case 'keys/page': {
+      const last = Math.max(0, Math.ceil(s.shelf.chords.length / CHORD_PAGE) - 1);
+      const page = Math.min(last, Math.max(0, Math.min(s.keys.page, last) + Math.sign(a.by)));
+      return page === s.keys.page ? s : { ...s, keys: { ...s.keys, page } };
+    }
+    case 'keys/link':
+      return a.id === s.keys.link ? s : { ...s, keys: { ...s.keys, link: a.id } };
     case 'ui': {
       const ui = { ...s.ui, ...a.patch };
+      // a change of keyboard mode or of the linked-melody option ends the link
+      const keys =
+        s.keys.link !== null &&
+        (ui.keyboardMode !== s.ui.keyboardMode || ui.linkedMelody !== s.ui.linkedMelody)
+          ? { ...s.keys, link: null }
+          : s.keys;
       // the one Parallel | Relative switch also decides where the retuner's cards start (and resets its run)
       const relative = ui.modePlayback === 'relative';
       return {
         ...s,
         ui,
+        keys,
         retuner:
           relative === s.retuner.relative
             ? s.retuner

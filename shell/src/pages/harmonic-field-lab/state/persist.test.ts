@@ -105,6 +105,23 @@ describe('settings (settings.v1)', () => {
     expect(Object.keys(s.viz)).toEqual(['viz1', 'viz2', 'viz3']);
   });
 
+  it('keyboardMode and linkedMelody are optional: old data loads unchanged, bad values fall back, loading writes nothing', () => {
+    const d = initialState().ui;
+    expect(sanitizeSettings({ volume: 0.2 }).keyboardMode).toBe('notes');
+    expect(sanitizeSettings({ volume: 0.2 }).linkedMelody).toBe(false);
+    expect(sanitizeSettings({ keyboardMode: 'chords', linkedMelody: true })).toMatchObject({
+      keyboardMode: 'chords',
+      linkedMelody: true,
+    });
+    expect(sanitizeSettings({ keyboardMode: 'bogus', linkedMelody: 'yes' })).toMatchObject({
+      keyboardMode: d.keyboardMode,
+      linkedMelody: d.linkedMelody,
+    });
+    window.localStorage.setItem(KEY_SETTINGS, JSON.stringify({ volume: 0.2 }));
+    expect(loadSettings().keyboardMode).toBe('notes');
+    expect(window.localStorage.getItem(KEY_SETTINGS)).toBe(JSON.stringify({ volume: 0.2 }));
+  });
+
   it('garbage in storage gives the defaults, and a throwing storage does not throw', () => {
     for (const raw of [null, undefined, 5, 'x', [], true]) {
       expect(sanitizeSettings(raw)).toEqual(initialState().ui);
