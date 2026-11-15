@@ -1085,13 +1085,23 @@
   background: var(--mantine-color-default-hover);
 }
 
-/* a subset that does not fully map onto the current field: dimmed, with a corner triangle (its tooltip says why) */
+/* a subset that does not fully map onto the current field: dimmed, with a bar at the left edge of the row (its tooltip
+   says why). Partial: a halftone (dot) bar; none: a solid grey bar. --match-bar is the bar's width. */
+.savedItem {
+  --match-bar: 12px;
+}
+
 .savedItem[data-match="partial"] {
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 .savedItem[data-match="none"] {
   opacity: 0.5;
+}
+
+/* the name and count move right by the bar's width, only on rows that show a bar (the strip does not move) */
+.savedItem[data-match] .savedNameBtn {
+  padding-inline-start: var(--match-bar);
 }
 
 .savedRow[aria-disabled="true"],
@@ -1100,26 +1110,33 @@
   cursor: default;
 }
 
-.matchCorner {
-  height: 0.625rem;
-  left: 0.125rem;
+.matchBar {
+  bottom: 1px;
+  left: 1px;
   position: absolute;
-  top: 0.125rem;
-  width: 0.625rem;
+  top: 1px;
+  width: var(--match-bar);
   z-index: 2;
 }
 
-.matchTri {
-  background: var(--text-subtle);
-  clip-path: polygon(0 0, 100% 0, 0 100%);
+.matchBar > [data-tipk] {
   display: block;
-  height: 0.625rem;
-  opacity: 0.6;
-  width: 0.625rem;
+  height: 100%;
 }
 
-.savedItem[data-match="none"] .matchTri {
-  opacity: 0.9;
+.matchFill {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.savedItem[data-match="partial"] .matchFill {
+  background-image: radial-gradient(circle, var(--text-subtle) 1.1px, transparent 1.4px);
+  background-size: 4px 4px;
+}
+
+.savedItem[data-match="none"] .matchFill {
+  background: var(--text-subtle);
 }
 
 .savedRow:focus-visible {

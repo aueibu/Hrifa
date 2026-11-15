@@ -291,7 +291,7 @@ describe('subset rows', () => {
     expect(screen.getByRole('textbox', { name: 'New name' })).toBeInTheDocument();
   });
 
-  it('rows that do not fully map are dimmed with a corner triangle whose tooltip says why; a no-match row does nothing; a full row is untouched', async () => {
+  it('rows that do not fully map are dimmed with a side bar whose tooltip says why; a no-match row does nothing; a full row is untouched', async () => {
     const pitch = (c: number) => ({ m: null, c });
     window.localStorage.setItem(
       KEY_GENERATORS,
@@ -330,13 +330,13 @@ describe('subset rows', () => {
     expect(item('Subset 1').querySelector('[role="img"]')).toBeNull();
     expect(item('Partial')).toHaveAttribute('data-match', 'partial');
     expect(item('Nothing')).toHaveAttribute('data-match', 'none');
-    const tri = (name: string) => item(name).querySelector('[role="img"]') as HTMLElement;
-    expect(tri('Partial')).toHaveAccessibleName(
+    const bar = (name: string) => item(name).querySelector('[role="img"]') as HTMLElement;
+    expect(bar('Partial')).toHaveAccessibleName(
       '1 of 2 notes in these settings. Missing: 123.4 c.'
     );
-    expect(tri('Nothing')).toHaveAccessibleName('No notes in common with these settings.');
+    expect(bar('Nothing')).toHaveAccessibleName('No notes in common with these settings.');
     // the tooltip carries the same sentence
-    fireEvent.mouseEnter(tri('Partial').parentElement!);
+    fireEvent.mouseEnter(bar('Partial').parentElement!);
     expect(
       await screen.findByText(
         /1 of 2 notes in these settings\. Missing: 123\.4 c\./,

@@ -1,4 +1,4 @@
-/** How a saved subset maps onto the current field: the classification behind a row's dimming and corner triangle. Pure. */
+/** How a saved subset maps onto the current field: the classification behind a row's dimming and side bar. Pure. */
 import { fmtRatio, type Note } from '../../../lib/harmonic-field';
 
 export type MatchLevel = 'full' | 'partial' | 'none';
@@ -15,7 +15,7 @@ export function matchLevel(found: number, total: number): MatchLevel {
 export const pitchText = (p: Note): string =>
   p.m ? fmtRatio(p) : `${(Number.isFinite(p.c) ? p.c : 0).toFixed(1)} c`;
 
-/** The triangle's tooltip sentence for a partial or no match (empty for a full match). */
+/** The bar's tooltip sentence for a partial or no match (empty for a full match). */
 export function matchSentence(found: number, missing: readonly Note[], max = 8): string {
   const total = found + missing.length;
   const level = matchLevel(found, total);

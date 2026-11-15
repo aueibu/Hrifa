@@ -135,7 +135,7 @@ export function SavedSubsets() {
       const r = same || orphan ? resolveSubsetIn(ix, s) : null;
       const idx = r ? r.sel : null;
       const a = idx ? analyzeSubset(rotateSubset(field, idx, 0, rep), rep) : null;
-      // how much of the stored subset the current field has: a row that does not fully map is dimmed with a corner triangle
+      // how much of the stored subset the current field has: a row that does not fully map is dimmed with a side bar
       const level = r ? matchLevel(r.found.length, s.pitches.length) : 'full';
       const missing = r ? r.missing.map((i) => s.pitches[i]) : [];
       const found = r ? r.found.length : 0;
@@ -227,14 +227,14 @@ export function SavedSubsets() {
         onBlur={unpreview}
       >
         {level !== 'full' && (
-          <span className={classes.matchCorner}>
+          <span className={classes.matchBar}>
             <Tip
               k={level === 'none' ? 'subsetNoMatch' : 'subsetPartialMatch'}
               as="control"
               extra={matchSentence(found, missing)}
             >
               <span
-                className={classes.matchTri}
+                className={classes.matchFill}
                 role="img"
                 aria-label={matchSentence(found, missing)}
               />
