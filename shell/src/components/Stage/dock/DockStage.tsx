@@ -22,6 +22,7 @@ import {
   useId,
   useLayoutEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type CSSProperties,
@@ -34,6 +35,7 @@ import {
   SIZE_MIN_WIDTH_REM,
   canRenameDocker,
   closePanel,
+  defaultDockerName,
   dockerHolding,
   findDocker,
   nearestSupportedSize,
@@ -42,15 +44,18 @@ import {
   pxToRem,
   removeDocker,
   renameDocker,
+  reorderTab,
   resizeSplit,
   sendTo as sendToOp,
   setActive,
   setCollapsed,
+  setDockerSizing,
   slotSizeAttr,
   solveTree,
   splitDocker,
   treeDockers,
   type DockerId,
+  type Edge,
   type PanelId,
   type Screenset,
 } from '../../../lib/stage';
@@ -69,6 +74,17 @@ import {
   type DropTarget,
   type TabStripGeometry,
 } from './dockLayout';
+import { dockerSizing, toggledSizing } from './dockSizing';
+import { resolveFocus, type FocusReq } from './focusRequest';
+import { GoToDocker } from './GoToDocker';
+import {
+  dockerNumber,
+  isTypingTarget,
+  matchCommand,
+  overlayOpen,
+  type DockCommand,
+} from './keyMap';
+import { NamePrompt } from './NamePrompt';
 import { adopt, createHost, hold, setParked } from './parking';
 import { StageApiContext, type StageApi } from './stageApi';
 import classes from './dock.module.css';
@@ -86,6 +102,12 @@ export interface DockStageProps {
   heightRem?: number;
   /** Spike only: overlay each docker body's size class. */
   showSizes?: boolean;
+  /**
+   * Hands the Stage API to code OUTSIDE the Stage (a Panels menu in the page header). Called with the API after mount
+   * (the object is stable: it reads the latest registry and screenset when called, so a registry rebuild does not
+   * change it) and with `null` on unmount. Inside the Stage use `useStageApi()`.
+   */
+  onApi?: (api: StageApi | null) => void;
 }
 
 /** The docker an edit created: the id present after and not before. */
@@ -126,12 +148,17 @@ interface ParkBox {
 export function DockStage({
   registry,
   screenset,
-  update,
+  update: updateProp,
   widthRem: widthProp,
   heightRem: heightProp,
   showSizes,
+  onApi,
 }: DockStageProps) {
   const uid = useId();
+  // `update` is read through a ref so an inline function from the host cannot change the API (and loop through `onApi`)
+  const updateRef = useRef(updateProp);
+  updateRef.current = updateProp;
+  const update = useCallback((fn: (s: Screenset) => Screenset) => updateRef.current(fn), []);
   const hosts = useRef(new Map<string, HTMLDivElement>());
   const hostFor = (id: string) => {
     let host = hosts.current.get(id);
@@ -249,13 +276,14 @@ export function DockStage({
     };
   }, [noticeReq]);
 
-  const guard = useCallback(
-    (s: Screenset, next: Screenset, select?: DockerId) => {
-      const { widthRem: w, heightRem: h, selected: sel } = latest.current;
-      return guardedTree(s, next, registry.meta, w, h, select ?? sel);
-    },
-    [registry]
-  );
+  // the API and the actions read the registry through a ref, so they stay stable when the host rebuilds the registry
+  // (instances come and go) and always judge against the latest one
+  const registryRef = useRef(registry);
+  registryRef.current = registry;
+  const guard = useCallback((s: Screenset, next: Screenset, select?: DockerId) => {
+    const { widthRem: w, heightRem: h, selected: sel } = latest.current;
+    return guardedTree(s, next, registryRef.current.meta, w, h, select ?? sel);
+  }, []);
   /**
    * A layout edit that must respect minimums (sends, new dockers, resizes). `what` names it in the refusal notice;
    * `select` is the docker the narrow rule must keep open while judging it and that becomes the selected docker once
@@ -284,9 +312,7 @@ export function DockStage({
     [guard, update, setNotice]
   );
 
-  const titleOf = useCallback((id: PanelId) => registry.meta.get(id)?.title ?? id, [registry]);
-
-  const focusRequest = useRef<PanelId | null>(null);
+  const titleOf = useCallback((id: PanelId) => registryRef.current.meta.get(id)?.title ?? id, []);
 
   /**
    * THE send action: the Send-to menu, the API and a drop all come through here. Guarded (W-30) with the destination (or
@@ -296,7 +322,7 @@ export function DockStage({
    */
   const sendToTarget = useCallback(
     (panel: PanelId, target: DropTarget): boolean => {
-      if (!registry.meta.has(panel)) {
+      if (!registryRef.current.meta.has(panel)) {
         return false;
       }
       if (
@@ -315,11 +341,139 @@ export function DockStage({
         target.kind === 'docker' ? target.docker : createdDocker
       );
     },
-    [registry, applyGuarded, titleOf, setNotice]
+    [applyGuarded, titleOf, setNotice]
   );
 
+  /* ------------------------------------------------------------------ focus, selection and shortcuts */
+  // A focus request is made by an action and resolved in a layout effect once the element exists (focusRequest.ts).
+  const focusReq = useRef<{ req: FocusReq; tries: number } | null>(null);
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  const requestFocus = useCallback((req: FocusReq) => {
+    focusReq.current = { req, tries: 0 };
+    bump();
+  }, []);
+
+  /** Select a docker (ring it, expand it if collapsed) and, by default, move focus to its active tab. */
+  const selectDockerNow = useCallback(
+    (id: DockerId, focus: boolean) => {
+      if (!findDocker(latest.current.screenset.tree, id)) {
+        return;
+      }
+      if ((latest.current.screenset.collapsed ?? []).includes(id)) {
+        update((s) => setCollapsed(s, id, false));
+      }
+      setSelected(id);
+      if (focus) {
+        requestFocus({ kind: 'docker', docker: id });
+      }
+    },
+    [update, requestFocus]
+  );
+  /** The docker that holds focus, else the selected one. */
+  const currentDocker = useCallback((): DockerId | undefined => {
+    const at = document.activeElement;
+    const sec =
+      at && root.current?.contains(at) ? at.closest<HTMLElement>('section[data-docker-id]') : null;
+    return sec?.dataset.dockerId ?? latest.current.selected;
+  }, []);
+  const cycleDocker = useCallback(
+    (delta: 1 | -1) => {
+      const order = treeDockers(latest.current.screenset.tree);
+      if (order.length === 0) {
+        return;
+      }
+      const at = order.findIndex((d) => d.id === currentDocker());
+      const to =
+        at < 0 ? (delta > 0 ? 0 : order.length - 1) : (at + delta + order.length) % order.length;
+      selectDockerNow(order[to].id, true);
+    },
+    [selectDockerNow, currentDocker]
+  );
+  const cycleSplitter = useCallback((delta: 1 | -1) => {
+    const bars = [...(root.current?.querySelectorAll<HTMLElement>('[role="separator"]') ?? [])];
+    if (bars.length === 0) {
+      return;
+    }
+    const at = bars.indexOf(document.activeElement as HTMLElement);
+    const to =
+      at < 0 ? (delta > 0 ? 0 : bars.length - 1) : (at + delta + bars.length) % bars.length;
+    bars[to].focus({ preventScroll: true });
+  }, []);
+  const [goTo, setGoTo] = useState(false);
+  const goToReturn = useRef<HTMLElement | null>(null);
+  const openGoTo = useCallback(() => {
+    goToReturn.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setGoTo(true);
+  }, []);
+
+  const runCommand = useCallback(
+    (cmd: DockCommand): boolean => {
+      const n = dockerNumber(cmd);
+      if (n !== null) {
+        const d = treeDockers(latest.current.screenset.tree)[n - 1];
+        if (!d) {
+          return false;
+        }
+        selectDockerNow(d.id, true);
+        return true;
+      }
+      switch (cmd) {
+        case 'nextDocker':
+          cycleDocker(1);
+          return true;
+        case 'prevDocker':
+          cycleDocker(-1);
+          return true;
+        case 'nextSplitter':
+          cycleSplitter(1);
+          return true;
+        case 'prevSplitter':
+          cycleSplitter(-1);
+          return true;
+        case 'goToDocker':
+          openGoTo();
+          return true;
+        default:
+          return false;
+      }
+    },
+    [selectDockerNow, cycleDocker, cycleSplitter, openGoTo]
+  );
+  const runRef = useRef(runCommand);
+  runRef.current = runCommand;
+  // ONE window listener (cleaned up on unmount). It acts only when the Stage contains focus or nothing has focus (the
+  // target is the body), never while typing in an input, textarea, select or contenteditable, never while a Mantine menu
+  // or a dialog is open, and never for a key a panel already handled (defaultPrevented). Strips are outside every panel's
+  // key scope, so panel key handling never sees these keys.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const cmd = e.defaultPrevented ? null : matchCommand(e);
+      const rootEl = root.current;
+      if (cmd === null || !rootEl) {
+        return;
+      }
+      const at = document.activeElement;
+      const inside = !!at && rootEl.contains(at);
+      const bodyTarget = e.target === document.body && (at === null || at === document.body);
+      if (
+        (!inside && !bodyTarget) ||
+        isTypingTarget(e.target as Element | null) ||
+        isTypingTarget(at) ||
+        overlayOpen()
+      ) {
+        return;
+      }
+      if (runRef.current(cmd)) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const api = useMemo<StageApi>(() => {
-    const homeOf = (id: PanelId) => registry.meta.get(id)?.home;
+    const homeOf = (id: PanelId) => registryRef.current.meta.get(id)?.home;
     const runShow = (s: Screenset, id: PanelId) => {
       let next = openPanel(s, id, { home: homeOf(id) });
       const d = dockerHolding(next.tree, id);
@@ -329,16 +483,17 @@ export function DockStage({
       }
       return { next, docker: d };
     };
-    const placement = (id: PanelId) => geometry.dockers.find((p) => p.docker.tabs.includes(id));
+    const placement = (id: PanelId) =>
+      latest.current.geometry.dockers.find((p) => p.docker.tabs.includes(id));
     return {
       open(id, opts) {
-        if (!registry.meta.has(id)) {
+        if (!registryRef.current.meta.has(id)) {
           return;
         }
         update((s) => openPanel(s, id, { home: opts?.home ?? homeOf(id) }));
       },
       show(id, opts) {
-        if (!registry.meta.has(id)) {
+        if (!registryRef.current.meta.has(id)) {
           return;
         }
         update((s) => runShow(s, id).next);
@@ -346,7 +501,7 @@ export function DockStage({
         if (d) {
           setSelected(d.id);
           if (opts?.focus) {
-            focusRequest.current = id;
+            requestFocus({ kind: 'tab', panel: id });
           }
         }
       },
@@ -356,13 +511,24 @@ export function DockStage({
       sendTo(id, target) {
         sendToTarget(id, target);
       },
-      isOpen: (id) => dockerHolding(screenset.tree, id) !== null,
+      isOpen: (id) => dockerHolding(latest.current.screenset.tree, id) !== null,
       isShown(id) {
         const p = placement(id);
         return !!p && p.docker.active === id && p.state === 'open';
       },
+      selectDocker: (id, opts) => selectDockerNow(id, opts?.focus !== false),
+      cycleDocker,
+      cycleSplitter,
+      goToDocker: openGoTo,
     };
-  }, [registry, screenset, geometry, update, sendToTarget]);
+  }, [update, sendToTarget, requestFocus, selectDockerNow, cycleDocker, cycleSplitter, openGoTo]);
+
+  const onApiRef = useRef(onApi);
+  onApiRef.current = onApi;
+  useEffect(() => {
+    onApiRef.current?.(api);
+  }, [api]);
+  useEffect(() => () => onApiRef.current?.(null), []);
 
   /* ------------------------------------------------------------------ drag-to-dock */
   // A pointer enhancement over the Send-to menu (the keyboard route). State machine: idle -> pending (primary press on a
@@ -584,6 +750,34 @@ export function DockStage({
     [titleOf, sendToTarget, setNotice]
   );
 
+  // "New docker..." asks for a name first (a drop does not: it takes the default name).
+  const [prompt, setPrompt] = useState<{ beside: DockerId; edge: Edge; panel?: PanelId } | null>(
+    null
+  );
+  const promptDone = (name: string | null) => {
+    const p = prompt;
+    setPrompt(null);
+    if (!p) {
+      return;
+    }
+    if (name !== null) {
+      if (p.panel !== undefined) {
+        sendToTarget(p.panel, { kind: 'split', beside: p.beside, edge: p.edge, name });
+      } else {
+        applyGuarded(
+          (s) => splitDocker(s, p.beside, p.edge, { name })?.screenset ?? s,
+          'add a docker there',
+          createdDocker
+        );
+      }
+    }
+    requestFocus(
+      p.panel !== undefined
+        ? { kind: 'tab', panel: p.panel }
+        : { kind: 'dockerMenu', docker: p.beside }
+    );
+  };
+
   const actions = useMemo<DockerActions>(
     () => ({
       select: setSelected,
@@ -598,20 +792,56 @@ export function DockStage({
         update((s) => renameDocker(s, docker, name));
         return true;
       },
-      newDocker: (beside, edge) =>
-        applyGuarded(
-          (s) => splitDocker(s, beside, edge)?.screenset ?? s,
-          'add a docker there',
-          createdDocker
-        ),
-      remove: (docker) => update((s) => removeDocker(s, docker)),
+      newDockerPrompt: (beside, edge) => setPrompt({ beside, edge }),
+      remove: (docker) => {
+        const order = treeDockers(latest.current.screenset.tree);
+        const at = order.findIndex((d) => d.id === docker);
+        const rest = order.filter((d) => d.id !== docker);
+        update((s) => removeDocker(s, docker));
+        const next = rest[Math.min(Math.max(at, 0), rest.length - 1)];
+        if (next && rest.length < order.length) {
+          setSelected(next.id);
+          requestFocus({ kind: 'docker', docker: next.id });
+        }
+      },
       setCollapsed: (docker, collapsed) => update((s) => setCollapsed(s, docker, collapsed)),
-      closeTab: (panel) => update((s) => closePanel(s, panel)),
-      sendToDocker: (panel, docker) => void sendToTarget(panel, { kind: 'docker', docker }),
-      sendToNew: (panel, beside, edge) => void sendToTarget(panel, { kind: 'split', beside, edge }),
+      closeTab: (panel) => {
+        const d = dockerHolding(latest.current.screenset.tree, panel);
+        update((s) => closePanel(s, panel));
+        if (d) {
+          requestFocus({ kind: 'docker', docker: d.id });
+        }
+      },
+      sendToDocker: (panel, docker) => {
+        sendToTarget(panel, { kind: 'docker', docker });
+        requestFocus({ kind: 'tab', panel });
+      },
+      sendToNewPrompt: (panel, beside, edge) => setPrompt({ beside, edge, panel }),
+      moveTab: (panel, delta) => {
+        // reorderTab also activates the moved tab; reordering is not activating (manual activation), so the
+        // previous active tab is put back
+        update((s) => {
+          const d = dockerHolding(s.tree, panel);
+          const to = d ? d.tabs.indexOf(panel) + delta : -1;
+          if (!d || to < 0 || to >= d.tabs.length) {
+            return s;
+          }
+          const moved = reorderTab(s, panel, to);
+          return d.active && d.active !== panel ? setActive(moved, d.id, d.active) : moved;
+        });
+        requestFocus({ kind: 'tab', panel });
+      },
+      toggleSizing: (docker) => {
+        const { screenset: cur, geometry: geo } = latest.current;
+        const to = toggledSizing(cur, geo, docker);
+        if (to) {
+          applyGuarded((s) => setDockerSizing(s, docker, to), 'change its size');
+        }
+      },
+      focus: requestFocus,
       tabPointerDown: (event, panel) => beginPress(event, panel),
     }),
-    [update, applyGuarded, sendToTarget, beginPress]
+    [update, applyGuarded, sendToTarget, beginPress, requestFocus]
   );
 
   /* ------------------------------------------------------------------ what is rendered, and where it is held */
@@ -680,7 +910,8 @@ export function DockStage({
     }
   }
 
-  // a panel that left the render set (closed and not keepMounted, or unregistered) is dropped with its host
+  // a panel that left the render set (closed and not keepMounted, or unregistered) is dropped with its host; one that
+  // left the REGISTRY (an instance deleted, the registry rebuilt) also loses its measurements and park-box refs
   useEffect(() => {
     const live = new Set(renderIds);
     for (const [id, host] of hosts.current) {
@@ -689,21 +920,39 @@ export function DockStage({
         hosts.current.delete(id);
       }
     }
+    for (const key of [...lastRem.current.keys()]) {
+      if (key.startsWith('p:') && !registry.meta.has(key.slice(2))) {
+        lastRem.current.delete(key);
+      }
+    }
+    for (const key of [...refCache.current.keys()]) {
+      if (key.startsWith('park:panel:') && !live.has(key.slice('park:panel:'.length))) {
+        refCache.current.delete(key);
+      }
+    }
+    setSizes((cur) => {
+      const gone = Object.keys(cur).filter((id) => !registry.meta.has(id));
+      if (gone.length === 0) {
+        return cur;
+      }
+      const next = { ...cur };
+      for (const id of gone) {
+        delete next[id];
+      }
+      return next;
+    });
   });
 
-  // show(id, { focus: true }): focus the tab once it exists
+  // resolve a focus request (show({ focus }), a shortcut, a menu action) once its element exists
   useLayoutEffect(() => {
-    const id = focusRequest.current;
-    if (id === null) {
+    const pending = focusReq.current;
+    if (pending === null || !root.current) {
       return;
     }
-    const tab = [...(root.current?.querySelectorAll<HTMLElement>('[data-tab-id]') ?? [])].find(
-      (el) => el.dataset.tabId === id
-    );
-    if (tab) {
-      focusRequest.current = null;
-      tab.focus({ preventScroll: true });
-    }
+    // a request lives for ONE commit (the one its own bump or batched edit causes): resolved now or dropped, so a later
+    // unrelated render can never steal focus
+    focusReq.current = null;
+    resolveFocus(root.current, pending.req)?.focus({ preventScroll: true });
   });
 
   /* ------------------------------------------------------------------ splitters */
@@ -724,6 +973,7 @@ export function DockStage({
                 uid={uid}
                 selected={selected === p.docker.id}
                 canRemove={geometry.dockers.length > 1}
+                sizing={dockerSizing(screenset.tree, p.docker.id)}
                 actions={actions}
                 onMeasure={measure}
                 registerBody={registerBody}
@@ -811,9 +1061,41 @@ export function DockStage({
           return createPortal(module.render(size), hostFor(id), id);
         })}
         <DragLayer viewRef={dragView} />
+        {goTo && (
+          <GoToDocker
+            dockers={dockerList}
+            selected={selected}
+            onPick={(id) => {
+              setGoTo(false);
+              selectDockerNow(id, true);
+            }}
+            onClose={(restore) => {
+              setGoTo(false);
+              if (restore) {
+                goToReturn.current?.focus();
+              }
+            }}
+          />
+        )}
         <p role="status" className={classes.notice}>
           {noticeText}
         </p>
+        {prompt && (
+          <NamePrompt
+            opened
+            title={
+              prompt.panel !== undefined
+                ? `Send ${titleOf(prompt.panel)} to a new docker`
+                : 'New docker'
+            }
+            label="Docker name"
+            initial={defaultDockerName(dockerList.map((d) => d.name))}
+            taken={dockerList.map((d) => d.name)}
+            confirmLabel="Create"
+            onConfirm={(name) => promptDone(name)}
+            onCancel={() => promptDone(null)}
+          />
+        )}
       </div>
     </StageApiContext.Provider>
   );
@@ -854,10 +1136,12 @@ function HostPlacer({
       setParked(host, where.parked);
       if (where.key.startsWith('body:') || where.key.startsWith('park:docker:')) {
         host.id = panelHostId(uid, id);
+        host.tabIndex = -1; // focusable by script only: Escape on a strip focuses the active panel
         host.setAttribute('role', 'tabpanel');
         host.setAttribute('aria-labelledby', tabId(uid, id));
       } else {
         host.removeAttribute('id');
+        host.removeAttribute('tabindex');
         host.removeAttribute('role');
         host.removeAttribute('aria-labelledby');
       }

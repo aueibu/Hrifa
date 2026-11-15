@@ -1,14 +1,19 @@
 /**
- * One docker: a labelled region. Open, it has a strip (the docker NAME, a tablist with one tab per panel, a docker
- * menu) over a body that holds the hosts of all its tabs. Collapsed, empty or narrow-hidden, it is a thin labelled
- * strip. The component owns no layout data: every change goes out through `actions` (DockStage turns them into
- * screenset edits).
+ * One docker: a labelled region. Open, it has a strip (the docker NAME, a tablist with one tab per panel, then the tab
+ * menu and the docker menu as ordinary buttons) over a body that holds the hosts of all its tabs. Collapsed, empty or
+ * narrow-hidden, it is a thin labelled strip. The component owns no layout data: every change goes out through
+ * `actions` (DockStage turns them into screenset edits).
+ *
+ * Keyboard (design 4.4): the tablist has one Tab stop (the active tab); arrows, Home and End move focus between tabs
+ * without activating; Enter or Space activates (a button click); Delete closes; Alt+Left and Alt+Right reorder; Escape
+ * anywhere on the strip returns focus to the active panel. The menu buttons are NOT in the tablist.
  */
 import {
   useCallback,
   useLayoutEffect,
   useRef,
   useState,
+  type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { Menu, TextInput } from '@mantine/core';
@@ -16,6 +21,8 @@ import { pxToRem, type DockerId, type Edge, type PanelId } from '../../../lib/st
 import { StripTool } from '../../InspectorKit';
 import { CloseIcon, DownIcon } from '../icons';
 import type { DockerPlacement } from './dockLayout';
+import type { FocusReq } from './focusRequest';
+import { isRoveKey, roveFocus } from './tabKeys';
 import classes from './dock.module.css';
 
 export interface DockerActions {
@@ -23,12 +30,21 @@ export interface DockerActions {
   activate(docker: DockerId, panel: PanelId): void;
   /** Rename; false when the name is not allowed (empty or taken). */
   rename(docker: DockerId, name: string): boolean;
-  newDocker(beside: DockerId, edge: Edge): void;
+  /** Ask for a name, then add an empty docker beside `beside` (DockStage shows the prompt). */
+  newDockerPrompt(beside: DockerId, edge: Edge): void;
   remove(docker: DockerId): void;
   setCollapsed(docker: DockerId, collapsed: boolean): void;
+  /** Close a tab; focus goes to the docker's next active tab. */
   closeTab(panel: PanelId): void;
   sendToDocker(panel: PanelId, docker: DockerId): void;
-  sendToNew(panel: PanelId, beside: DockerId, edge: Edge): void;
+  /** Ask for a name, then send the panel into a new docker beside `beside`. */
+  sendToNewPrompt(panel: PanelId, beside: DockerId, edge: Edge): void;
+  /** Reorder: one place left (-1) or right (1) within its docker. Focus stays on the tab. */
+  moveTab(panel: PanelId, delta: -1 | 1): void;
+  /** Flexible to fixed or back, keeping the docker's present size. */
+  toggleSizing(docker: DockerId): void;
+  /** Put keyboard focus somewhere once the next render has made the element. */
+  focus(req: FocusReq): void;
   /** A primary-button press on a tab: DockStage decides whether it becomes a drag (after a movement threshold). */
   tabPointerDown(event: ReactPointerEvent<HTMLElement>, panel: PanelId): void;
 }
@@ -41,6 +57,8 @@ export interface DockerProps {
   uid: string;
   selected: boolean;
   canRemove: boolean;
+  /** The kind of slot the docker sits in (`null`: the root docker, which has none). */
+  sizing: 'fixed' | 'flexible' | null;
   actions: DockerActions;
   /** The measured body size (rem) for these tabs. */
   onMeasure(docker: DockerId, tabs: readonly PanelId[], widthRem: number, heightRem: number): void;
@@ -69,6 +87,7 @@ export function Docker(props: DockerProps) {
   const { placement, actions, selected } = props;
   const { docker, state } = placement;
   const [renaming, setRenaming] = useState(false);
+  const focusMenu = () => actions.focus({ kind: 'dockerMenu', docker: docker.id });
 
   const nameControl = (cls: string) =>
     renaming ? (
@@ -76,20 +95,29 @@ export function Docker(props: DockerProps) {
         initial={docker.name}
         className={classes.renameInput}
         label={`Rename docker ${docker.name}`}
-        onCommit={(name) => {
+        onCommit={(name, byKey) => {
           const ok = name === docker.name || actions.rename(docker.id, name);
           if (ok) {
             setRenaming(false);
+            if (byKey) {
+              actions.focus({ kind: 'dockerName', docker: docker.id });
+            }
           }
           return ok;
         }}
-        onCancel={() => setRenaming(false)}
+        onCancel={(byKey) => {
+          setRenaming(false);
+          if (byKey) {
+            actions.focus({ kind: 'dockerName', docker: docker.id });
+          }
+        }}
       />
     ) : (
       <button
         type="button"
         className={cls}
         aria-label={`Docker ${docker.name}`}
+        data-docker-name={docker.id}
         title={
           state === 'collapsed'
             ? `Expand ${docker.name}`
@@ -111,10 +139,13 @@ export function Docker(props: DockerProps) {
       </button>
     );
 
+  // returnFocus is off: every item that is not Rename puts focus back on this docker's menu button itself (the button
+  // may be a different element after Collapse or Expand, so DockStage resolves it after the render); Rename moves focus
+  // to its input.
   const menu = (
     <Menu position="bottom-end" withinPortal returnFocus={false}>
       <Menu.Target>
-        <StripTool label={`Docker menu for ${docker.name}`}>
+        <StripTool label={`Docker menu for ${docker.name}`} data-docker-menu={docker.id}>
           <DownIcon />
         </StripTool>
       </Menu.Target>
@@ -122,17 +153,36 @@ export function Docker(props: DockerProps) {
         <Menu.Item onClick={() => setRenaming(true)}>Rename docker...</Menu.Item>
         <Menu.Label>New docker...</Menu.Label>
         {EDGES.map(({ edge, label }) => (
-          <Menu.Item key={edge} onClick={() => actions.newDocker(docker.id, edge)}>
+          <Menu.Item key={edge} onClick={() => actions.newDockerPrompt(docker.id, edge)}>
             {`New docker: ${label}`}
           </Menu.Item>
         ))}
         <Menu.Divider />
+        <Menu.Item
+          disabled={props.sizing === null || state !== 'open'}
+          onClick={() => {
+            actions.toggleSizing(docker.id);
+            focusMenu();
+          }}
+        >
+          {props.sizing === 'fixed' ? 'Make flexible' : 'Make fixed size'}
+        </Menu.Item>
         {state === 'collapsed' ? (
-          <Menu.Item onClick={() => actions.setCollapsed(docker.id, false)}>Expand</Menu.Item>
+          <Menu.Item
+            onClick={() => {
+              actions.setCollapsed(docker.id, false);
+              focusMenu();
+            }}
+          >
+            Expand
+          </Menu.Item>
         ) : (
           <Menu.Item
             disabled={docker.tabs.length === 0}
-            onClick={() => actions.setCollapsed(docker.id, true)}
+            onClick={() => {
+              actions.setCollapsed(docker.id, true);
+              focusMenu();
+            }}
           >
             Collapse
           </Menu.Item>
@@ -165,6 +215,48 @@ export function Docker(props: DockerProps) {
     );
   }
 
+  const onTabKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const el = e.target as HTMLElement;
+    const panel = el.getAttribute('role') === 'tab' ? el.dataset.tabId : undefined;
+    if (panel === undefined) {
+      return;
+    }
+    if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        actions.moveTab(panel, e.key === 'ArrowLeft' ? -1 : 1);
+      }
+      return;
+    }
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
+      return;
+    }
+    if (isRoveKey(e.key)) {
+      e.preventDefault();
+      roveFocus(e.currentTarget, el, e.key);
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      actions.closeTab(panel);
+    }
+  };
+  // Escape anywhere on the strip (tabs, name, menu buttons) returns focus to the active panel. A menu's own Escape
+  // bubbles here through the React tree (it renders in a portal) but its target is outside the strip: ignored. So is an
+  // Escape the rename input already handled.
+  const onHeaderKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const el = e.target as HTMLElement;
+    if (
+      e.key === 'Escape' &&
+      !e.defaultPrevented &&
+      e.currentTarget.contains(el) &&
+      el.tagName !== 'INPUT' &&
+      el.getAttribute('aria-expanded') !== 'true' && // an open menu's button: its Escape closes the menu
+      document.querySelector('[role="menu"]') === null // (without a portal the menu is inside the strip)
+    ) {
+      e.preventDefault();
+      actions.focus({ kind: 'body', docker: docker.id });
+    }
+  };
+
   return (
     <section
       aria-label={docker.name}
@@ -175,12 +267,20 @@ export function Docker(props: DockerProps) {
       onPointerDownCapture={() => actions.select(docker.id)}
       onFocusCapture={() => actions.select(docker.id)}
     >
-      <div className={classes.header} data-dock-header>
+      {/* the strip handles Escape for everything on it (keys bubble up from real buttons) */}
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      <div className={classes.header} data-dock-header onKeyDown={onHeaderKeyDown}>
         {nameControl(classes.name)}
-        <div role="tablist" aria-label={`${docker.name} tabs`} className={classes.tabs}>
+        {/* roving tabindex lives on the tabs, not the list */}
+        {/* oxlint-disable-next-line jsx-a11y/interactive-supports-focus */}
+        <div
+          role="tablist"
+          aria-label={`${docker.name} tabs`}
+          className={classes.tabs}
+          onKeyDown={onTabKeyDown}
+        >
           {docker.tabs.map((panel) => {
             const active = docker.active === panel;
-            const title = props.titleOf(panel);
             return (
               <div key={panel} role="presentation" className={classes.tabWrap} data-active={active}>
                 <button
@@ -196,60 +296,88 @@ export function Docker(props: DockerProps) {
                   onPointerDown={(e) => actions.tabPointerDown(e, panel)}
                   onClick={() => actions.activate(docker.id, panel)}
                 >
-                  {title}
+                  {props.titleOf(panel)}
                 </button>
-                <TabMenu
-                  panel={panel}
-                  title={title}
-                  docker={docker.id}
-                  dockers={props.dockers}
-                  actions={actions}
-                />
               </div>
             );
           })}
         </div>
-        <div className={classes.tools}>{menu}</div>
+        {/* the menu buttons are NOT in the tablist: ordinary buttons after the strip, reached by Tab */}
+        <div className={classes.tools}>
+          {docker.active !== null && (
+            <TabMenu
+              panel={docker.active}
+              title={props.titleOf(docker.active)}
+              docker={docker.id}
+              index={docker.tabs.indexOf(docker.active)}
+              count={docker.tabs.length}
+              dockers={props.dockers}
+              actions={actions}
+            />
+          )}
+          {menu}
+        </div>
       </div>
       <Body {...props} />
     </section>
   );
 }
 
+/**
+ * The menu of the ACTIVE tab (one button after the strip, not one per tab, so the tablist holds only tabs). Focus is
+ * put back by the action: a moved panel's tab, the docker's next tab after a close.
+ */
 function TabMenu({
   panel,
   title,
   docker,
+  index,
+  count,
   dockers,
   actions,
 }: {
   panel: PanelId;
   title: string;
   docker: DockerId;
+  index: number;
+  count: number;
   dockers: DockerProps['dockers'];
   actions: DockerActions;
 }) {
   const others = dockers.filter((d) => d.id !== docker);
   return (
-    <Menu position="bottom-end" withinPortal>
+    <Menu position="bottom-end" withinPortal returnFocus={false}>
       <Menu.Target>
-        <StripTool label={`Menu for ${title}`}>
+        <StripTool label={`Menu for ${title}`} data-tab-menu={docker}>
           <DownIcon />
         </StripTool>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Label>Send to</Menu.Label>
-        {others.map((d) => (
-          <Menu.Item key={d.id} onClick={() => actions.sendToDocker(panel, d.id)}>
-            {d.name}
-          </Menu.Item>
-        ))}
+        {others.length === 0 ? (
+          <Menu.Item disabled>Send to (no other docker)</Menu.Item>
+        ) : (
+          <>
+            <Menu.Label>Send to</Menu.Label>
+            {others.map((d) => (
+              <Menu.Item key={d.id} onClick={() => actions.sendToDocker(panel, d.id)}>
+                {d.name}
+              </Menu.Item>
+            ))}
+          </>
+        )}
         <Menu.Label>New docker...</Menu.Label>
         {EDGES.map(({ edge, label }) => (
-          <Menu.Item key={edge} onClick={() => actions.sendToNew(panel, docker, edge)}>
+          <Menu.Item key={edge} onClick={() => actions.sendToNewPrompt(panel, docker, edge)}>
             {`Send to new docker: ${label}`}
           </Menu.Item>
         ))}
+        <Menu.Divider />
+        <Menu.Item disabled={index <= 0} onClick={() => actions.moveTab(panel, -1)}>
+          Move tab left
+        </Menu.Item>
+        <Menu.Item disabled={index >= count - 1} onClick={() => actions.moveTab(panel, 1)}>
+          Move tab right
+        </Menu.Item>
         <Menu.Divider />
         <Menu.Item leftSection={<CloseIcon />} onClick={() => actions.closeTab(panel)}>
           {`Close ${title}`}
@@ -327,9 +455,10 @@ function RenameInput({
   initial: string;
   label: string;
   className?: string;
-  /** Return false to keep editing (the name was refused). */
-  onCommit(name: string): boolean;
-  onCancel(): void;
+  /** Return false to keep editing (the name was refused). `byKey`: Enter (not a blur). */
+  onCommit(name: string, byKey: boolean): boolean;
+  /** `byKey`: Escape (not a refused blur). */
+  onCancel(byKey: boolean): void;
 }) {
   const [value, setValue] = useState(initial);
   const [bad, setBad] = useState(false);
@@ -350,15 +479,15 @@ function RenameInput({
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          setBad(!onCommit(value));
+          setBad(!onCommit(value, true));
         } else if (e.key === 'Escape') {
           e.preventDefault();
-          onCancel();
+          onCancel(true);
         }
       }}
       onBlur={() => {
-        if (!onCommit(value)) {
-          onCancel();
+        if (!onCommit(value, false)) {
+          onCancel(false);
         }
       }}
     />

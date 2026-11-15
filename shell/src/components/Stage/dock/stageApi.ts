@@ -9,9 +9,17 @@
  * - `sendTo(id, target)`: move it to a docker (as a tab) or into a new docker beside another. Guarded: refused when it
  *   would leave an open docker below its panel's minimum (a narrow collapse alone is allowed).
  * - `isOpen(id)`: it is a tab of some docker. `isShown(id)`: open, the active tab of its docker, docker visible.
+ * - `selectDocker(id, { focus })`: ring a docker (expanding it if collapsed) and, unless `focus: false`, move focus to
+ *   its active tab (an empty or collapsed docker: its name button). The same action as Alt+digit and "Go to docker".
+ * - `cycleDocker(1 | -1)`: select the next or previous docker in tree order, wrapping (F6 and Shift+F6).
+ * - `cycleSplitter(1 | -1)`: focus the next or previous splitter, wrapping (Alt+F6 and Alt+Shift+F6).
+ * - `goToDocker()`: open the "Go to docker" list (Alt+G).
+ *
+ * The same object is handed to the page by `DockStage`'s `onApi` prop (for a Panels menu outside the Stage). It is stable
+ * (it reads the latest registry and screenset when called).
  */
 import { createContext, useContext } from 'react';
-import type { PanelId, Target } from '../../../lib/stage';
+import type { DockerId, PanelId, Target } from '../../../lib/stage';
 
 export interface StageApi {
   open(id: PanelId, opts?: { home?: string }): void;
@@ -20,6 +28,10 @@ export interface StageApi {
   sendTo(id: PanelId, target: Target): void;
   isOpen(id: PanelId): boolean;
   isShown(id: PanelId): boolean;
+  selectDocker(id: DockerId, opts?: { focus?: boolean }): void;
+  cycleDocker(delta: 1 | -1): void;
+  cycleSplitter(delta: 1 | -1): void;
+  goToDocker(): void;
 }
 
 const NOT_MOUNTED = (): never => {
@@ -33,6 +45,10 @@ export const StageApiContext = createContext<StageApi>({
   sendTo: NOT_MOUNTED,
   isOpen: NOT_MOUNTED,
   isShown: NOT_MOUNTED,
+  selectDocker: NOT_MOUNTED,
+  cycleDocker: NOT_MOUNTED,
+  cycleSplitter: NOT_MOUNTED,
+  goToDocker: NOT_MOUNTED,
 });
 
 export const useStageApi = (): StageApi => useContext(StageApiContext);

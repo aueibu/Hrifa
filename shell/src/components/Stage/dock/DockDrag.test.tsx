@@ -4,7 +4,7 @@
  * real browser can check hit-testing, the shield over canvases and the look of the preview.
  */
 import { useEffect, useState } from 'react';
-import { act, fireEvent, render, screen } from '@test-utils';
+import { act, fireEvent, render, screen, waitFor } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   SPLIT_MAX_DEPTH,
@@ -256,6 +256,8 @@ describe('drag-to-dock', () => {
     const viaMenu = render(<Harness initial={A()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu for Chords' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Send to new docker: Left' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Create' })); // the name prompt: the default name
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     const menuResult = raw();
     viaMenu.unmount();
 

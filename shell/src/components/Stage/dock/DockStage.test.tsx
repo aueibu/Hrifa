@@ -144,9 +144,18 @@ const notice = () => document.querySelector('p[role="status"]');
 const A = () => screenset(arrangementA);
 const C = () => screenset(arrangementC);
 
+/** The tab menu belongs to the ACTIVE tab (one button after the strip), so activate the tab first. */
 async function sendFromMenu(panelTitle: string, entry: string | RegExp) {
+  const tab = screen.getByRole('tab', { name: panelTitle });
+  if (tab.getAttribute('aria-selected') !== 'true') {
+    await userEvent.click(tab);
+  }
   await userEvent.click(screen.getByRole('button', { name: `Menu for ${panelTitle}` }));
   await userEvent.click(await screen.findByRole('menuitem', { name: entry }));
+  if (String(entry).includes('new docker')) {
+    // the name prompt: accept the default name
+    await userEvent.click(await screen.findByRole('button', { name: 'Create' }));
+  }
 }
 
 describe('mounted once', () => {

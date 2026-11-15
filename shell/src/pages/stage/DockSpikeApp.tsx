@@ -1,27 +1,33 @@
 /**
- * The dock Stage spike page (arc workbench, one-Stage M3a): a top bar (Home link, title, an arrangement switcher, a
- * Panels menu stub, "Show sizes", "Saved JSON", Reset arrangement, colour scheme) over the DockStage. The three target
- * arrangements are three screensets of one store, saved under `hrifa.stage.dockspike.v1`; switching arrangement is a
- * screenset change (the keepMounted canvas stays alive). Spike only: the panels and the page chrome are throwaway; the
- * real Panels menu and the meta-tab strip are M3c. The page owns the screenset state, DockStage owns none.
+ * The dock Stage spike page (arc workbench, one-Stage M3a and M3c): a top bar (Home link, title, the Panels menu, "Show
+ * sizes", "Saved JSON", Reset arrangement, colour scheme) over the DockStage, with the screenset meta-tab strip under it.
+ * The three target arrangements are three screensets of one store, saved under `hrifa.stage.dockspike.v1` (an older
+ * single-screenset value still loads, as a store of one); switching screenset is a store change (the keepMounted canvas
+ * stays alive). `note` panels are instances of a `multiple` kind: the instance list is persisted beside the store, read
+ * BEFORE the store is parsed so stored `note:<key>` tabs are known, and the registry is rebuilt as instances are added.
+ * Spike only: the panels and the page chrome are throwaway. The page owns the screenset store, DockStage owns none.
  */
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Anchor,
-  AppShell,
-  Button,
-  Checkbox,
-  Group,
-  Menu,
-  SegmentedControl,
-  Text,
-} from '@mantine/core';
+import { Anchor, AppShell, Button, Checkbox, Group, Text } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
-import { DockStage } from '../../components/Stage/dock';
+import {
+  addScreenset,
+  deleteScreenset,
+  DockStage,
+  duplicateScreenset,
+  instanceId,
+  knownPanelIds,
+  PanelsMenu,
+  renameScreenset,
+  ScreensetTabs,
+  setActiveScreenset,
+  useStageRegistry,
+  type PanelInstance,
+  type StageApi,
+} from '../../components/Stage/dock';
 import { browserStorage, type StageStorage } from '../../components/Stage/persistence';
 import {
-  openPanels,
   parseScreensetStore,
   serializeScreensetStore,
   stageStorageKey,
@@ -29,34 +35,62 @@ import {
   type ScreensetStore,
 } from '../../lib/stage';
 import {
-  bridge,
   DEFAULT_ARRANGEMENTS,
   defaultDockStore,
-  DOCK_REGISTRY,
-  MENU_PANELS,
+  DOCK_KINDS,
+  NEW_INSTANCE_KINDS,
 } from './dockSpike/panels';
 import classes from './dockSpike/dockSpike.module.css';
 
 export const DOCK_SPIKE_KEY = 'hrifa.stage.dockspike.v1';
+export const DOCK_SPIKE_INSTANCES_KEY = 'hrifa.stage.dockspike.instances.v1';
 
 export interface DockSpikeAppProps {
   /** Where the screensets are stored (tests pass a fake); defaults to localStorage. */
   storage?: StageStorage;
 }
 
-function load(storage: StageStorage | undefined): ScreensetStore {
-  let raw: string | null = null;
+function read(storage: StageStorage | undefined, key: string): string | null {
   try {
-    raw = storage?.getItem(stageStorageKey(DOCK_SPIKE_KEY)) ?? null;
+    return storage?.getItem(stageStorageKey(key)) ?? null;
   } catch {
-    raw = null;
+    return null;
   }
-  return parseScreensetStore(raw, DOCK_REGISTRY.meta, { fallback: defaultDockStore() });
+}
+
+/** The persisted `note` instance keys (a JSON array of strings); anything else reads as none. */
+function loadInstances(storage: StageStorage | undefined): PanelInstance[] {
+  try {
+    const raw: unknown = JSON.parse(read(storage, DOCK_SPIKE_INSTANCES_KEY) ?? '[]');
+    return Array.isArray(raw)
+      ? [...new Set(raw.filter((k): k is string => typeof k === 'string' && k !== ''))].map(
+          (key) => ({ kind: 'note', key })
+        )
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 export function DockSpikeApp({ storage }: DockSpikeAppProps) {
   const store = useMemo(() => storage ?? browserStorage(), [storage]);
-  const [saved, setSaved] = useState<ScreensetStore>(() => load(store));
+  // the instance list is read first: the ids it makes must exist before the stored screensets are parsed
+  const [initial] = useState(() => {
+    const instances = loadInstances(store);
+    return {
+      instances,
+      saved: parseScreensetStore(
+        read(store, DOCK_SPIKE_KEY),
+        knownPanelIds(DOCK_KINDS, instances),
+        { fallback: defaultDockStore() }
+      ),
+    };
+  });
+  const [saved, setSaved] = useState<ScreensetStore>(initial.saved);
+  const [instances, setInstances] = useState<PanelInstance[]>(initial.instances);
+  const registry = useStageRegistry(DOCK_KINDS, instances);
+  const [api, setApi] = useState<StageApi | null>(null);
+  const [pendingOpen, setPendingOpen] = useState<string | null>(null);
   const [showSizes, setShowSizes] = useState(false);
   const [showJson, setShowJson] = useState(false);
 
@@ -68,6 +102,16 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
       // storage can be missing or full; the spike keeps working
     }
   }, [store, json]);
+  useEffect(() => {
+    try {
+      store?.setItem(
+        stageStorageKey(DOCK_SPIKE_INSTANCES_KEY),
+        JSON.stringify(instances.map((i) => i.key))
+      );
+    } catch {
+      // as above
+    }
+  }, [store, instances]);
 
   const screenset: Screenset = saved.screensets[saved.active];
   const update = useCallback((fn: (s: Screenset) => Screenset) => {
@@ -78,8 +122,21 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
     });
   }, []);
 
-  const open = new Set(openPanels(screenset.tree));
-  const api = () => bridge.api;
+  // a new instance: the list changes, the registry is rebuilt, then the panel opens in its home or default docker
+  const addInstance = (kind: string) => {
+    let n = instances.length + 1;
+    while (instances.some((i) => i.key === String(n))) {
+      n++;
+    }
+    setInstances([...instances, { kind, key: String(n) }]);
+    setPendingOpen(instanceId(kind, String(n)));
+  };
+  useEffect(() => {
+    if (pendingOpen !== null && api && registry.meta.has(pendingOpen)) {
+      api.show(pendingOpen, { focus: true });
+      setPendingOpen(null);
+    }
+  }, [pendingOpen, api, registry]);
 
   return (
     <AppShell header={{ height: 40 }} padding={0}>
@@ -94,39 +151,13 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
             </Text>
           </Group>
           <Group gap="sm" wrap="nowrap">
-            <SegmentedControl
-              size="xs"
-              aria-label="Arrangement"
-              value={saved.active}
-              onChange={(id) => setSaved((st) => ({ ...st, active: id }))}
-              data={saved.order.map((id) => ({
-                value: id,
-                label: saved.screensets[id].name,
-              }))}
+            <PanelsMenu
+              registry={registry.meta}
+              screenset={screenset}
+              api={api}
+              kinds={NEW_INSTANCE_KINDS}
+              onNewInstance={addInstance}
             />
-            <Menu position="bottom-end" withinPortal returnFocus={false}>
-              <Menu.Target>
-                <Button size="compact-xs" variant="default">
-                  Panels
-                </Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                {MENU_PANELS.map((m) => (
-                  <Fragment key={m.id}>
-                    <Menu.Item onClick={() => api()?.show(m.id, { focus: true })}>
-                      {`Show ${m.title}`}
-                    </Menu.Item>
-                    {open.has(m.id) ? (
-                      <Menu.Item onClick={() => api()?.close(m.id)}>{`Close ${m.title}`}</Menu.Item>
-                    ) : (
-                      <Menu.Item onClick={() => api()?.open(m.id)}>
-                        {`Open ${m.title} (remembered place)`}
-                      </Menu.Item>
-                    )}
-                  </Fragment>
-                ))}
-              </Menu.Dropdown>
-            </Menu>
             <Checkbox
               size="xs"
               label="Show sizes"
@@ -156,12 +187,21 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
         <div className={classes.workArea}>
           <div className={classes.stageBox}>
             <DockStage
-              registry={DOCK_REGISTRY}
+              registry={registry}
               screenset={screenset}
               update={update}
               showSizes={showSizes}
+              onApi={setApi}
             />
           </div>
+          <ScreensetTabs
+            store={saved}
+            onActivate={(id) => setSaved((st) => setActiveScreenset(st, id))}
+            onAdd={() => setSaved((st) => addScreenset(st))}
+            onRename={(id, name) => setSaved((st) => renameScreenset(st, id, name))}
+            onDuplicate={(id) => setSaved((st) => duplicateScreenset(st, id))}
+            onDelete={(id) => setSaved((st) => deleteScreenset(st, id))}
+          />
           {showJson && (
             <pre className={classes.json} data-testid="dock-json">
               {JSON.stringify(JSON.parse(json), null, 1)}

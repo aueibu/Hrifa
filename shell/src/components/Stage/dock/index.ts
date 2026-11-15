@@ -12,3 +12,34 @@ export {
   type DockerPlacement,
   type SplitterPlacement,
 } from './dockLayout';
+export { PanelsMenu, type PanelsMenuProps } from './PanelsMenu';
+export { ScreensetTabs, type ScreensetTabsProps } from './ScreensetTabs';
+export {
+  addScreenset,
+  canNameScreenset,
+  deleteScreenset,
+  duplicateScreenset,
+  renameScreenset,
+  setActiveScreenset,
+  takenScreensetNames,
+} from './screensetStore';
+export {
+  buildStageRegistry,
+  instanceId,
+  isReservedPanelId,
+  knownPanelIds,
+  parseInstanceId,
+  useStageRegistry,
+  type PanelInstance,
+  type PanelKind,
+} from './instances';
+export {
+  DOCK_COMMAND_LABELS,
+  DOCK_KEYS,
+  keyLabel,
+  matchCommand,
+  type DockCommand,
+  type KeySpec,
+} from './keyMap';
+export { NamePrompt, type NamePromptProps } from './NamePrompt';
+export { validateName } from './dockerName';

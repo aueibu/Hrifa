@@ -1,16 +1,13 @@
 /**
  * The dock spike's panels, registry and the three target arrangements as screensets (throwaway, like the other spike
- * modules). `canvas` is `keepMounted` so switching arrangement keeps it alive. `__api` is an invisible bridge panel that
- * hands `useStageApi()` to the spike's own Panels menu (the menu lives outside the Stage).
+ * modules). `canvas` is `keepMounted` so switching screenset keeps it alive. `note` is a `multiple` kind: its instances
+ * (`note:<key>`) come from the page's persisted instance list (the dynamic registry, design 1.4). The Panels menu reaches
+ * the Stage API through `DockStage`'s `onApi` prop.
  */
 import { useEffect, useState } from 'react';
 import { Button } from '@mantine/core';
-import { useStageApi, type StageApi } from '../../../components/Stage/dock';
-import {
-  createStageRegistry,
-  type StageModule,
-  type StageRegistry,
-} from '../../../components/Stage/registry';
+import { buildStageRegistry, type PanelKind } from '../../../components/Stage/dock';
+import type { StageRegistry } from '../../../components/Stage/registry';
 import {
   makeDocker,
   makeScreenset,
@@ -32,14 +29,16 @@ const ALL: SlotSize[] = WIDTHS.flatMap((width) => HEIGHTS.map((height) => ({ wid
 /** Mount counts per panel id, so a person (and the tests) can see a panel is never remounted. */
 export const dockProbe: Record<string, number> = {};
 
-function Standin({ id, size }: { id: string; size: SlotSize }) {
+function Standin({ id, size, label }: { id: string; size: SlotSize; label?: string }) {
   const [n, setN] = useState(0);
   useEffect(() => {
     dockProbe[id] = (dockProbe[id] ?? 0) + 1;
   }, [id]);
   return (
     <div data-standin={id} className={classes.standin}>
-      <p className={classes.sizeText}>size {slotSizeAttr(size)}</p>
+      <p className={classes.sizeText}>
+        {label ? `${label}, ` : ''}size {slotSizeAttr(size)}
+      </p>
       <div className={classes.counter}>
         <Button size="compact-xs" variant="default" onClick={() => setN((x) => x + 1)}>
           {`Count ${id}`}
@@ -50,17 +49,7 @@ function Standin({ id, size }: { id: string; size: SlotSize }) {
   );
 }
 
-/** Where the bridge puts the Stage API (module level: one spike on screen). */
-export const bridge: { api: StageApi | null } = { api: null };
-function ApiBridge() {
-  const api = useStageApi();
-  useEffect(() => {
-    bridge.api = api;
-  });
-  return null;
-}
-
-const standin = (id: string, title: string, over: Partial<StageModule> = {}): StageModule => ({
+const standin = (id: string, title: string, over: Partial<PanelKind> = {}): PanelKind => ({
   id,
   title,
   sizes: ALL,
@@ -69,7 +58,7 @@ const standin = (id: string, title: string, over: Partial<StageModule> = {}): St
   ...over,
 });
 
-export const DOCK_MODULES: readonly StageModule[] = [
+export const DOCK_KINDS: readonly PanelKind[] = [
   standin('canvas', 'Canvas', { keepMounted: true, home: 'Canvas' }),
   standin('desk', 'Desk', { home: 'Canvas' }),
   standin('clip-editor', 'Clip editor', {
@@ -84,13 +73,22 @@ export const DOCK_MODULES: readonly StageModule[] = [
   }),
   standin('voicings', 'Voicings', { home: 'Tools' }),
   standin('visualizer', 'Visualizer'),
-  { ...standin('__api', 'Api bridge', { keepMounted: true }), render: () => <ApiBridge /> },
+  // several instances: `note:<key>`, the keys persisted by the page
+  standin('note', 'Note', {
+    multiple: true,
+    home: 'Tools',
+    render: (size, key) => <Standin id={`note:${key}`} size={size} label={`note ${key}`} />,
+  }),
 ];
 
-export const DOCK_REGISTRY: StageRegistry = createStageRegistry(DOCK_MODULES);
+/** The `multiple` kinds the Panels menu offers "New instance" for. */
+export const NEW_INSTANCE_KINDS = DOCK_KINDS.filter((k) => k.multiple).map(({ id, title }) => ({
+  id,
+  title,
+}));
 
-/** The panels the Panels menu lists (not the bridge). */
-export const MENU_PANELS = DOCK_MODULES.filter((m) => !m.id.startsWith('__'));
+/** The registry with no instances (what the stored screensets are checked against in tests). */
+export const DOCK_REGISTRY: StageRegistry = buildStageRegistry(DOCK_KINDS, []);
 
 const dock = makeDocker;
 
