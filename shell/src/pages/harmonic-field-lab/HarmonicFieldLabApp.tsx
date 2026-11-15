@@ -12,6 +12,7 @@ import { KeyboardDock } from './components/KeyboardDock';
 import { PinnedColumn, renderPanel } from './components/Panels';
 import { PinMenu } from './components/PinMenu';
 import { PANELS, Rail, panelLabel } from './components/Rail';
+import { SendLayer } from './components/Send';
 import { TopBar } from './components/TopBar';
 import { PinActionsContext, Tip, useLab } from './components/ui';
 import { Workspace } from './components/Workspace';
@@ -145,6 +146,7 @@ function Workbench() {
         </div>
       </AppShell.Main>
       <GlossaryDrawer opened={glossary} onClose={() => setGlossary(false)} />
+      <SendLayer />
     </AppShell>
   );
 }

@@ -61,8 +61,8 @@ const entries = {
   },
   keyboardMode: {
     term: 'Keyboard mode (Notes | Chords | Split)',
-    text: 'What the computer keys play. Notes: z x c v b n m a s d f g h j k l are the melody keys (the subset, degree by degree). Chords: q w e r t y u i o p play the first ten shelf chords of the current page, in shelf order; [ and ] page the shelf by ten. Split: the melody keys play the subset and q to p play shelf chords at the same time. Keys sound while held. The modes also take over the keys while the retuner is live (the dock shows the mode). Example: Split, stash a few chords, then hold q for a chord and play a melody over it.',
-    see: ['linkedMelody', 'shelfPanel', 'octShift', 'keyboardDock'],
+    text: 'What the computer keys play. Notes: z x c v b n m a s d f g h j k l are the melody keys (the subset, degree by degree). Chords: q w e r t y u i o p play the first ten shelf chords of the current page, in shelf order; [ and ] page the shelf by ten. Split: the melody keys play the subset and q to p play shelf chords at the same time. Keys sound while held. The modes also take over the keys while the retuner is live (the dock shows the mode). Example: Split, stash a few chords, then hold q for a chord and play a melody over it. Other keys: 0 switches Parallel | Relative, = stashes the Sketch, , and . shift the melody, Alt+1 to Alt+9 switch tabs, and - (while pointing at something) opens the composite popup, which takes the digits while it is open.',
+    see: ['linkedMelody', 'shelfPanel', 'octShift', 'keyboardDock', 'sendToComposite'],
   },
   linkedMelody: {
     term: 'Linked melody',
@@ -753,6 +753,21 @@ const entries = {
     term: 'Shelf',
     text: 'Chords you stashed, each with the exact pitches that were heard and where they came from. Click a slot to hear it and keep it highlighted; point at it and hold 1 to hold it (on one of several selected slots, hold 1 layers all the selected ones). Click the name to rename, use the arrows to reorder, the copy button to reload the source of the chord as a new tab, the bin to delete. Tick several slots and press Play selected to hear them together. In Parallel a chord sounds from the 1/1 pitch, in Relative at the pitches it was stashed at. Example: stash a major triad on degree 1 and another on degree 5, tick both and press Play selected.',
     see: ['sketchRow', 'stashChord', 'holdToPlay', 'modePlayback'],
+  },
+  compositesPanel: {
+    term: 'Composites',
+    text: 'Up to nine numbered collections. Each gathers chords, subsets and single notes (from any generator, any tab) and merges their pitches onto ONE ring, a new gamut you can work on like any other. Pitches closer than the merge tolerance (5 c by default, set in the Developer menu) become one note. A row shows its number, name (click to rename), the merged note count, a small ring, and the items it holds (open them to remove one). Open as tab makes a NEW tab with a frozen snapshot of the merged notes; later changes to the composite do not touch that tab. Delete takes two clicks. Example: send a 12-EDO major triad and a just 4:5:6 to one composite; at 5 c they merge into 4 notes (400 c and 386.3 c stay apart, 700 c and 702 c become one).',
+    see: ['sendToComposite', 'compositeOpen', 'shelfPanel'],
+  },
+  compositeOpen: {
+    term: 'Open as tab',
+    text: 'Makes a new tab, at the end, whose generator is the Composite method: the merged notes of this composite at this moment, as a frozen snapshot. Your other tabs are not touched. Every panel works on it (ring, keys, lattice, Sketch, shelf, Retuner). Changing or deleting the composite later changes nothing in that tab. Example: collect three chords, press Open as tab, then look for chords inside the new gamut.',
+    see: ['compositesPanel'],
+  },
+  sendToComposite: {
+    term: 'Send to a composite (- key, right-click)',
+    text: 'Point at a chord chip, a shelf chord, a saved subset, a key ring, a note anywhere or an item of a composite and press - (the minus key, plain). A small popup lists the composites by number: press 1 to 9 to send it there, 0 for a new composite, Esc to cancel. Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item. An item already in a composite is greyed out and says so. While the popup is open the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on 0). Right-click the same things for a menu: Send to composite offers the three most recently used composites, New composite and All composites. On the shelf, tick chords and use Add selected to composite. Example: point at the minor triad chip, press -, then 2.',
+    see: ['compositesPanel', 'holdToPlay'],
   },
   shelfPlaySelected: {
     term: 'Play selected',

@@ -24,6 +24,7 @@ import {
   type PanelId,
 } from '../state/layout';
 import { ChordsPanel } from './ChordsPanel';
+import { CompositesPanel } from './CompositesPanel';
 import {
   ArrowDownIcon,
   ArrowLeftIcon,
@@ -49,6 +50,8 @@ export function renderPanel(id: PanelId) {
       return <ChordsPanel />;
     case 'shelf':
       return <ShelfPanel />;
+    case 'composites':
+      return <CompositesPanel />;
     case 'spectrum':
       return <SpectrumPanel />;
     case 'keys':

@@ -17,9 +17,11 @@ import {
 import type { PreviewTarget } from '../audio/plan';
 import { orphanSubsets, ownerLabel, type LibSubset } from '../state/generatorLibrary';
 import { tabName } from '../state/labState';
+import { enterSend, leaveSend } from '../state/sendStore';
 import { matchLevel, matchSentence } from '../state/subsetMatch';
 import { CloseIcon, DownloadIcon, PlusIcon } from './icons';
 import { NoteMark } from './NoteMark';
+import { subsetItem } from './Send';
 import { RefLines, stripLeft } from './TunerStrip';
 import { Num, Strip, Tip, useLab } from './ui';
 import classes from './lab.module.css';
@@ -232,8 +234,14 @@ export function SavedSubsets() {
         data-subset={s.id}
         data-flash={flash === s.id ? (added?.duplicate ? 'duplicate' : 'new') : undefined}
         data-match={level === 'full' ? undefined : level}
-        onMouseEnter={preview}
-        onMouseLeave={unpreview}
+        onMouseEnter={(e) => {
+          preview();
+          enterSend(`subset:${s.id}`, () => subsetItem(s, lib), e.currentTarget);
+        }}
+        onMouseLeave={() => {
+          unpreview();
+          leaveSend(`subset:${s.id}`);
+        }}
         onFocus={preview}
         onBlur={unpreview}
       >

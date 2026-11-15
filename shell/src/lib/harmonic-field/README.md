@@ -24,6 +24,7 @@ Import from the barrel (`./index`, or `@/lib/harmonic-field`).
 | `generators.ts` | `genHarmonic`, `genEdo`, `genAdditive`, `genOrthoplex`, `genCps`, `parseCustom` (each returns unreduced notes) |
 | `field.ts` | `buildField`, `latticeCoords`, `latticeEdges`, `cpsChords` (+ `Lattice*`, `CpsChord` types) |
 | `subset.ts` | `carrySelection`, `rotateSubset`, `nearestEdSubset`, `oddLimitSubset` |
+| `composite.ts` | `mergeComposite`, `previewAdd`, `compositeRepeat`, `compositeNotes`, `reducePitch`, `samePitches`, `clampMergeTol`, `MERGE_TOL_DEFAULT`, `MERGE_TOL_MAX` (composite gamuts: merged pitches of several items in one repeat; the lab's Composites panel and `-` popup draw `previewAdd`) |
 | `shape.ts` | `groupSizes`, `mosSizes`, `analyzeSubset`, `modeMatrix`, `intervalSpectrum`, `propriety`, `constantStructure` |
 | `chords.ts` | `parseTemplate`, `templateKey`, `templateFolds`, `templateLabel`, `DEFAULT_TEMPLATES`, `findChords`, `findChordVoicings`, `closestChord`, `chordLadder` |
 | `scales.ts` | `MELA_NAMES`, `MELA_WESTERN`, `JI12`, `melakarta`, `melakartaDesc`, `SCALE_LIBRARY`, `scaleTargets`, `nearestScaleSubset` |

@@ -26,6 +26,7 @@ export type { PanelId } from '../state/layout';
 export const PANELS: { id: PanelId; label: string; tip: TipKey }[] = [
   { id: 'chords', label: 'Chords', tip: 'chords' },
   { id: 'shelf', label: 'Shelf', tip: 'shelfPanel' },
+  { id: 'composites', label: 'Composites', tip: 'compositesPanel' },
   { id: 'spectrum', label: 'Spectrum', tip: 'spectrum' },
   { id: 'keys', label: 'Keys', tip: 'keysModes' },
   { id: 'modes', label: 'Modes', tip: 'modes' },
@@ -73,6 +74,10 @@ export function summaryOf(id: PanelId, lab: Lab, ranks: AxisRank[]): string {
     case 'shelf': {
       const n = lab.state.shelf.chords.length;
       return n === 1 ? '1 chord' : `${n} chords`;
+    }
+    case 'composites': {
+      const n = lab.state.composites.list.length;
+      return n === 1 ? '1 composite' : `${n} composites`;
     }
     case 'spectrum':
       return lab.an.spectrum?.prop.verdict ?? '–';

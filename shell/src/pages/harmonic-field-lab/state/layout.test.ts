@@ -666,3 +666,20 @@ describe('Shelf panel (M8a)', () => {
     expect(parseLayout(JSON.stringify(a))).toEqual(a);
   });
 });
+
+describe('Composites panel (M8c)', () => {
+  it('is a known panel; DEFAULT_LAYOUT does not pin it, stored layouts load unchanged, it stacks and round-trips', () => {
+    expect(PANEL_IDS).toContain('composites');
+    expect(pinnedIds(DEFAULT_LAYOUT)).not.toContain('composites');
+    expect(parseLayout(JSON.stringify(DEFAULT_LAYOUT))).toEqual(DEFAULT_LAYOUT);
+    const l: Layout = { left: [['chords']], right: [] };
+    const a = stackWith(pin(l, 'composites', 'right'), 'composites', 'chords');
+    expect(a.left).toEqual([['chords', 'composites']]);
+    expect(parseLayout(JSON.stringify(a))).toEqual(a);
+    // an unknown entry is dropped entry by entry, the known ones stay
+    expect(parseLayout('{"left":[["composites","nope"]],"right":[]}')).toEqual({
+      left: [['composites']],
+      right: [],
+    });
+  });
+});

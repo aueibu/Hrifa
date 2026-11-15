@@ -19,6 +19,7 @@ import {
 } from '../state/keysModes';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import { RING_GAP, RingChevron } from './ModeRoot';
+import { useSendHover } from './Send';
 import { Num, Strip, Tip, useLab, useNativeTitle } from './ui';
 import classes from './panels.module.css';
 
@@ -212,6 +213,16 @@ function KeyRing({
   const label = k.complete
     ? `Key on ${k.root}: the whole scale fits`
     : `Key on ${k.root}: ${k.missing} scale note${k.missing === 1 ? '' : 's'} missing from the field`;
+  const send = useSendHover(`key:${k.rootIdx}`, () => ({
+    kind: 'subset',
+    label: `Key on ${k.root}`,
+    pitches: k.idx
+      .filter((i): i is number => i !== null)
+      .map((i) => field[i])
+      .filter((n) => n !== undefined)
+      .map((n) => ({ m: n.m ? { ...n.m } : null, c: n.c })),
+    rep: lab.base.rep,
+  }));
   return (
     <li>
       <button
@@ -224,11 +235,13 @@ function KeyRing({
         title={nativeTitle(
           `${label}. ${x} of the subset's ${subset.length} notes are common to this key. Click: switch to this key. Shift+click: add its notes to the subset. Ctrl-click (Cmd on a Mac): hear it as a scale. Point and hold 1 to hear it as a scale for as long as you hold the key.`
         )}
-        onMouseEnter={() => {
+        onMouseEnter={(e) => {
+          send.enter(e);
           onHover(k.rootIdx);
           lab.audio.setPreviewTarget(scaleTarget);
         }}
         onMouseLeave={() => {
+          send.leave();
           onHover(null);
           lab.audio.clearPreviewTarget(scaleTarget);
         }}

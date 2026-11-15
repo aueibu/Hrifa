@@ -46,6 +46,7 @@ import {
 } from './persist';
 import { initialRetuner, storedCards, type DormantCard, type RetCard } from './retuner';
 import { cardFromSnapshot } from './retunerCards';
+import { noteHovered } from './sendStore';
 import { loadShelf, saveShelf } from './shelfStore';
 import type { VizSettings } from './vizState';
 
@@ -262,6 +263,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
           audio.clearPreviewTarget({ kind: 'note', i: lastHover.current });
         }
       } else {
+        noteHovered();
         audio.setPreviewTarget({ kind: 'note', i });
       }
       lastHover.current = i;

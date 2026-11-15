@@ -13,6 +13,7 @@ import {
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
 import { MAX_TEMPLATES } from '../state/labState';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
+import { useSendHover } from './Send';
 import { SketchRow } from './SketchRow';
 import {
   DebouncedText,
@@ -48,6 +49,24 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
     lab.chordPicked.size === chip.memberIdx.length &&
     chip.memberIdx.every((i) => lab.chordPicked?.has(i));
   const sev = severity(chip.maxErr);
+  // the found chord as an item for the `-` popup and the right-click menu: its field notes, root first then upward
+  const send = useSendHover(`chip:${chip.template}:${chip.rootIdx}`, () => {
+    const { field, rep, repC } = lab.base;
+    const rootC = field[chip.rootIdx]?.c ?? 0;
+    const up = (c: number) => (repC > 0 ? (((c - rootC) % repC) + repC) % repC : c - rootC);
+    const notes = [...new Set(chip.memberIdx)]
+      .map((i) => field[i])
+      .filter((n) => n !== undefined)
+      .sort((a, b) => up(a.c) - up(b.c));
+    return chip.found && notes.length
+      ? {
+          kind: 'chord',
+          label: `${chip.name} on ${chip.root}`,
+          pitches: notes.map((n) => ({ m: n.m ? { ...n.m } : null, c: n.c })),
+          rep,
+        }
+      : null;
+  });
   const rootDeg = lab.base.rel.findIndex((r) => r.src === chip.rootIdx);
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
@@ -64,7 +83,8 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
           aria-label={label}
           data-picked={picked}
           aria-pressed={chip.found ? picked : undefined}
-          onMouseEnter={() => {
+          onMouseEnter={(e) => {
+            send.enter(e);
             lab.setChord(new Set(chip.memberIdx));
             if (chip.found) {
               lab.audio.setPreviewTarget({
@@ -76,6 +96,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
             }
           }}
           onMouseLeave={() => {
+            send.leave();
             lab.setChord(null);
             lab.audio.clearPreviewTarget({ kind: 'chord', idx: chip.memberIdx });
           }}

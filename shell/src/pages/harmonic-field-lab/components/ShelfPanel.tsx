@@ -3,7 +3,7 @@
  * additive multi-select, Play selected, click-to-play, hover + hold 1 (a selected slot layers every selected one) and Reload
  * (the chord's source as a new tab). Everything reads and writes the shelf through `useLab()`; nothing is stored here.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { ActionIcon, Button, Checkbox, TextInput } from '@mantine/core';
 import { mulNotes } from '../../../lib/harmonic-field';
 import { CHORD_KEYS, CHORD_PAGE, playsChords } from '../audio/keymap';
@@ -11,6 +11,7 @@ import type { PreviewTarget } from '../audio/plan';
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import { litIndex } from '../state/retuner';
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlayIcon, TrashIcon } from './icons';
+import { SendMany, shelfChordItem, useSendHover } from './Send';
 import { Num, Strip, Tip, useLab, useNativeTitle } from './ui';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
@@ -133,13 +134,16 @@ function Slot({
   // the target is read when the pointer arrives; leaving clears whichever target this slot made
   const hovered = useRef(false);
   const target = targetFor(chord);
-  const enter = () => {
+  const send = useSendHover(`slot:${chord.id}`, () => shelfChordItem(chord));
+  const enter = (e?: SyntheticEvent) => {
     hovered.current = true;
+    send.enter(e);
     lab.setChord(lit);
     audio.setPreviewTarget(target);
   };
   const leave = () => {
     hovered.current = false;
+    send.leave();
     lab.setChord(null);
     audio.clearPreviewTarget(target);
   };
@@ -406,6 +410,10 @@ export function ShelfPanel() {
             Play selected
           </Button>
         </Tip>
+        <SendMany
+          disabled={selectedChords.length === 0}
+          items={selectedChords.map(shelfChordItem)}
+        />
         <Button
           size="compact-xs"
           variant="default"

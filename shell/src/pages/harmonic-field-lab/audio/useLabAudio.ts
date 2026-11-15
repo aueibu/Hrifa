@@ -15,6 +15,7 @@ import { ghostCents, ghostKey } from '../state/ghosts';
 import type { Action, KeysRuntime, UiSettings } from '../state/labState';
 import { linkedPitch, linkedScaleOf, type LinkedScale } from '../state/linkedMelody';
 import { heldHz, litIndex, retunerLive, type RetState } from '../state/retuner';
+import { sendHasKey } from '../state/sendStore';
 import { sketchChord } from '../state/sketchChord';
 import { VoiceEngine } from './engine';
 import {
@@ -766,6 +767,10 @@ export function useLabAudio({
       return;
     }
     const down = (e: KeyboardEvent) => {
+      // the send popup (`-`) takes the digits first, and anything it already took
+      if (sendHasKey(e)) {
+        return;
+      }
       if (e.altKey && !e.ctrlKey && !e.metaKey && !isTyping(e.target)) {
         const d = parseInt(e.key, 10);
         if (d >= 1 && d <= 9) {
