@@ -6,7 +6,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentProps,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
@@ -42,31 +41,26 @@ import {
   removeModule,
   type Layout,
 } from '../../../lib/stage';
-import { createNotePacketPerformancePlan } from '../audio/performancePlans';
-import {
-  ChordPicker,
-  type ChordPickerControl,
-  type ChordPickerMode,
-} from '../chordInput/ChordPicker';
 import { ChordPickerHost } from '../chordInput/ChordPickerHost';
-import type { Chord } from '../chordInput/chords';
-import type { ChordTier } from '../chordInput/chordTemplates';
-import { cycle, stepSpread } from '../chordInput/navigation';
+import { ChordPickerPanel } from '../chordInput/ChordPickerPanel';
+import type {
+  ChordCell,
+  ChordClaim,
+  ChordInsertRequest,
+  ChordTarget,
+} from '../chordInput/chordSession';
 import {
-  chordNotes,
-  snapToEdo,
-  DEFAULT_VOICING,
-  pitchClassOf,
-  voiceAtAnchor,
-  type PlacedNote,
-} from '../chordInput/placement';
-import type { VoicingSpec } from '../chordInput/voicing';
+  ChordSessionProvider,
+  useChordSelector,
+  useChordSession,
+  useOptionalChordSession,
+} from '../chordInput/ChordSessionProvider';
+import { useChordGhosts } from '../chordInput/useChordGhosts';
 import { runClipAction } from '../clipActionRunner';
 import { freezeClipProperties, readClipProperties } from '../clipProperties';
 import { registerClipEditor, type ClipEditorProps } from '../clipTypes';
-import { useCompositionSettings, type ProjectPitchSet } from '../compositionSettings';
+import { useCompositionSettings } from '../compositionSettings';
 import { useDesk } from '../desk';
-import { useDeveloperOptions } from '../developerOptions';
 import {
   CHORDS_MODULE,
   EDITOR_STAGE_KEY,
@@ -76,9 +70,8 @@ import {
   hasBothModules,
   migratedPickerRem,
 } from '../editorStage';
-import type { NoteEventValue } from '../melodicization';
 import type { DataPacket } from '../model';
-import { musicalDuration, musicalPosition, rationalToNumber } from '../musicalTime';
+import { rationalToNumber } from '../musicalTime';
 import {
   addNote,
   addNotes,
@@ -129,8 +122,7 @@ import { selectionKeyOf, type RotationSessionCore } from '../rotationSession';
 import { pitchLabel } from '../routeTreatments';
 import { scaleDegreeColor } from '../scaleDegreeColor';
 import { jsonEqual } from '../snippet';
-import { parseMeter, transportTimeline } from '../transport';
-import { useModulePreview } from '../useModulePreview';
+import { parseMeter } from '../transport';
 import { useCanvasTakeoverElement } from './canvasTakeover';
 import classes from './NoteClipEditor.module.css';
 
@@ -339,71 +331,6 @@ interface ActiveRamp {
   selectionKey: string;
 }
 
-/**
- * The Chords tool's audition: sounds one chord through the same preview path the desk uses (an ad
- * hoc one-item note packet, `createNotePacketPerformancePlan`, `useModulePreview`). A component of
- * its own, mounted only while the tool is active, so the audio engine is needed only then; it hands
- * the editor a function through `auditionRef`. Sound only ever starts from a click, never a hover.
- */
-function ChordAudition({
-  sourceId,
-  auditionRef,
-}: {
-  sourceId: string;
-  auditionRef: { current: ((notes: PlacedNote[], velocity?: number) => void) | null };
-}) {
-  const { settings } = useCompositionSettings();
-  const preview = useModulePreview({
-    instanceId: sourceId,
-    volume: 30,
-    transportPlay: () => undefined,
-  });
-  auditionRef.current = (notes, velocity = 0.8) => {
-    if (notes.length === 0) {
-      return;
-    }
-    // At least a quarter note, so a short grid step is still heard.
-    const length = Math.max(1, notes[0].duration);
-    const chordPacket: DataPacket<NoteEventValue> = {
-      kind: 'events',
-      domain: 'note',
-      encoding: 'midicent',
-      items: [
-        {
-          id: 'chord',
-          value: {
-            onset: musicalPosition(0),
-            interOnset: musicalDuration(length),
-            duration: musicalDuration(length),
-            pitches: notes.map((note) => Math.round(note.pitchMidicents)),
-            velocity,
-          },
-          label: 'chord',
-          provenance: [],
-        },
-      ],
-      warnings: [],
-    };
-    try {
-      const plan = createNotePacketPerformancePlan({
-        sourceId,
-        packet: chordPacket,
-        timeline: transportTimeline(settings.transport),
-      });
-      void preview.play(plan, 'Auditioning chord.');
-    } catch {
-      // Nothing to hear is not an error worth showing.
-    }
-  };
-  useEffect(
-    () => () => {
-      auditionRef.current = null;
-    },
-    [auditionRef]
-  );
-  return null;
-}
-
 /** Marks the editor's root and the clip actions panel: the scope of the editor's window-level keys. */
 const EDITOR_SCOPE = '[data-note-editor-scope]';
 
@@ -486,56 +413,11 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   // of a two-part action). Editor-side only, like the selection: never in the packet or the history.
   const [pick, setPick] = useState<PickPitchRequest | null>(null);
   const [rotationState, setRotationState] = useState<ActiveRotation | null>(null);
-  // The Chords tool's current anchor (editor-side only, like the selection); leaving the tool clears it.
-  // `note` is set when the click landed on an existing note (stack-on-note context, M7): the chord
-  // then takes that note's length and velocity. Any keyed move of the anchor drops it.
-  const [chordAnchor, setChordAnchor] = useState<{
-    pitchMidicents: number;
-    start: number;
-    step: number;
-    note?: { duration: number; velocity?: number; pitchMidicents: number };
-  } | null>(null);
-  // The Chords tool's own state, kept while the editor lives: the scale override and the voicing
-  // (tool-level, never written to the project; a reload resets them), and the previewed and pinned
-  // chords (cleared by a new anchor, a close, Esc or leaving the tool).
-  const [chordOverride, setChordOverrideState] = useState<ProjectPitchSet | null>(null);
-  const [chordVoicing, setChordVoicing] = useState<VoicingSpec>(DEFAULT_VOICING);
-  // The stored mode: set only by the Root | Common tone buttons, used by every plain click.
-  // Ctrl/Cmd+click opens common-tone mode for that click only (`chordCtrlOpen`), leaving it alone.
-  const [chordMode, setChordMode] = useState<ChordPickerMode>('root');
-  const [chordCtrlOpen, setChordCtrlOpen] = useState(false);
-  // Continuous insert (tool state, off by default, reset on reload): an insert moves the anchor on.
-  const [chordContinuous, setChordContinuous] = useState(false);
-  const chordControl = useRef<ChordPickerControl | null>(null);
-  // Set by a Shift+arrow anchor move: once the picker has re-listed, the current chord is re-pinned.
-  const chordReselect = useRef(false);
-  // False while a Shift+arrow is auto-repeating: the anchor still moves, the chord does not sound.
-  const chordReselectSounds = useRef(true);
-  // Common-tone mode: offer chords over every pitch instead of the scale (tool state, like the override).
-  const [chordAllPitches, setChordAllPitches] = useState(false);
-  // Simple or Extended chord list (tool state, never written to settings; the picker passes it to every engine call).
-  const [chordTier, setChordTier] = useState<ChordTier>('simple');
-  const [hoverChord, setHoverChord] = useState<Chord | null>(null);
-  const [pinnedChord, setPinnedChord] = useState<Chord | null>(null);
-  // The grid cell under the pointer while the Chords tool is active (display only: a one-step ghost).
-  const [hoverCell, setHoverCell] = useState<{
-    pitchMidicents: number;
-    start: number;
-    step: number;
-  } | null>(null);
-  // The cell under a still pointer when the anchor was last moved by keys: its hover ghost stays
-  // hidden until the pointer reports another cell (or leaves the roll).
-  const hoverBlocked = useRef<{ pitchMidicents: number; start: number } | null>(null);
-  const auditionRef = useRef<((notes: PlacedNote[], velocity?: number) => void) | null>(null);
-  const [developerOptions] = useDeveloperOptions();
-  function clearChordGhosts() {
-    setHoverChord(null);
-    setPinnedChord(null);
-  }
-  function closeChordPicker() {
-    setChordAnchor(null);
-    clearChordGhosts();
-  }
+  const session = useChordSession();
+  // The chord session (page level, or private when no WorkbenchSessions is above): the anchor, the
+  // picker's values, the hover cell and the W-20 keys live there. This editor is a HOST of it: it
+  // claims it while this clip is open (below) and reads the anchor, hover cell and ghosts.
+  const chordAnchored = useChordSelector((state) => state.anchor !== null);
   // Any tool change ends the ramp (it is a Paint-tool secondary selection) and a waiting pick.
   function setTool(next: string) {
     if (next === 'chords' && tool !== 'chords') {
@@ -544,8 +426,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     setToolState(next);
     setRampState(null);
     setPick(null);
-    setHoverCell(null);
-    closeChordPicker();
+    session.leaveTool();
   }
   // Per-viewer: the remembered entry length and the grid. Neither is history or part of a project.
   const [preferences, updatePreferences] = useNoteEditorPreferences();
@@ -1071,107 +952,19 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   ];
 
   const chordsActive = tool === 'chords';
-  // The mode of the open picker: the stored one, or common-tone for a Ctrl/Cmd+click.
-  const effectiveChordMode: ChordPickerMode = chordCtrlOpen ? 'common' : chordMode;
-  // The length of a placed chord and of its ghosts: the length the viewer last entered a note with,
-  // else one grid step at the anchor.
-  const chordLength =
-    chordAnchor?.note?.duration ?? preferences.entryLength ?? chordAnchor?.step ?? 1;
-  // Common-tone mode anchors the chord tone that has the clicked pitch class; root mode anchors the root.
-  const chordAnchorPc =
-    effectiveChordMode === 'common' && chordAnchor
-      ? pitchClassOf(chordAnchor.pitchMidicents, edo)
-      : undefined;
+  const chordGhosts = useChordGhosts(chordsActive, edo, preferences.entryLength);
 
-  const chordGhosts = useMemo(() => {
-    if (!chordsActive) {
-      return undefined;
-    }
-    // One grid step under the pointer, before any click. Not shown while a picker chord is hovered
-    // (its own ghosts are), nor over the anchor cell (the anchor ghost is there).
-    // A note anchor covers its whole span and pitch row (also an off-grid or microtonal note's).
-    const onAnchorCell =
-      hoverCell !== null &&
-      chordAnchor !== null &&
-      (chordAnchor.note
-        ? (Math.abs(hoverCell.pitchMidicents - chordAnchor.pitchMidicents) <= 50 ||
-            Math.abs(hoverCell.pitchMidicents - chordAnchor.note.pitchMidicents) <= 50) &&
-          hoverCell.start < chordAnchor.start + chordAnchor.note.duration - 1e-9 &&
-          hoverCell.start + hoverCell.step > chordAnchor.start + 1e-9
-        : hoverCell.start === chordAnchor.start &&
-          hoverCell.pitchMidicents === chordAnchor.pitchMidicents);
-    const cellGhost: NonNullable<ComponentProps<typeof PianoRoll>['ghostNotes']> =
-      hoverCell && !hoverChord && !onAnchorCell
-        ? [
-            {
-              pitchMidicents: hoverCell.pitchMidicents,
-              start: hoverCell.start,
-              duration: hoverCell.step,
-              variant: 'hover',
-            },
-          ]
-        : [];
-    if (!chordAnchor) {
-      return cellGhost.length > 0 ? cellGhost : undefined;
-    }
-    const ghosts: NonNullable<ComponentProps<typeof PianoRoll>['ghostNotes']> = [
-      ...cellGhost,
-      {
-        pitchMidicents: chordAnchor.pitchMidicents,
-        start: chordAnchor.start,
-        duration: chordLength,
-        variant: 'anchor',
-        label: pitchLabel(chordAnchor.pitchMidicents),
-        labelPlacement: developerOptions.chordAnchorLabel,
-      },
-    ];
-    const shown: [Chord | null, 'pinned' | 'hover'][] = [
-      [pinnedChord, 'pinned'],
-      [hoverChord && hoverChord.name === pinnedChord?.name ? null : hoverChord, 'hover'],
-    ];
-    shown.forEach(([chord, variant]) => {
-      if (chord) {
-        voiceAtAnchor(chord, chordAnchor.pitchMidicents, chordVoicing, chordAnchorPc).forEach(
-          (pitchMidicents) =>
-            ghosts.push({
-              pitchMidicents,
-              start: chordAnchor.start,
-              duration: chordLength,
-              variant,
-            })
-        );
-      }
-    });
-    return ghosts;
-  }, [
-    chordsActive,
-    chordAnchor,
-    hoverCell,
-    pinnedChord,
-    hoverChord,
-    chordVoicing,
-    chordLength,
-    chordAnchorPc,
-    developerOptions.chordAnchorLabel,
-  ]);
-
-  /** Places a chord at the anchor: one note per voice in one commit, so one undo step and one history entry. */
-  function insertChord(chord: Chord) {
-    if (!chordAnchor) {
-      return;
-    }
-    let placed: PianoRollNewNote[] = chordNotes(
-      chord,
-      chordAnchor,
-      chordVoicing,
-      chordLength,
-      chordAnchorPc
-    );
-    if (chordAnchor.note) {
-      // Stacking on a note never alters an existing note: a tone that would overlap any existing note
-      // of the same pitch (same onset, an earlier longer note, a later one inside the span) is dropped,
-      // so nothing is split, trimmed or deleted. The new ones take the note's velocity.
-      const velocity = chordAnchor.note.velocity;
+  /**
+   * Places a chord (the session's default notes, one per voice) in one commit, so one undo step and one
+   * history entry. Stacking on a note never alters an existing note: a tone that would overlap any
+   * existing note of the same pitch (same onset, an earlier longer note, a later one inside the span)
+   * is dropped, so nothing is split, trimmed or deleted. The new ones take the note's velocity.
+   * Returns false when nothing was placed (the session then keeps its anchor and ghosts).
+   */
+  function insertChord({ anchor, notes: tones, entryVelocity }: ChordInsertRequest): boolean {
+    let placed: PianoRollNewNote[] = tones;
+    if (anchor.note) {
+      const velocity = anchor.note.velocity;
       const tolerance = Math.min(50, 1200 / edo / 2);
       placed = placed
         .filter(
@@ -1186,271 +979,76 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
         .map((tone) => (velocity === undefined ? tone : { ...tone, velocity }));
     }
     if (placed.length === 0) {
-      return;
+      return false;
     }
     const ids = placed.map(() => newNoteItemId(snippet.id));
     commit(
-      (current) => addNotes(current, placed, ids, preferences.entryVelocity ?? undefined),
+      (current) => addNotes(current, placed, ids, entryVelocity),
       (next) => selectIds(next, ids)
     );
-    if (chordContinuous) {
-      // The anchor moves on by the chord's length (same pitch); the chord and voicing stay pinned,
-      // so the next Enter places the next one there.
-      setChordAnchorTo({ ...chordAnchor, start: chordAnchor.start + chordLength });
-      setPinnedChord(chord);
-    } else {
-      clearChordGhosts();
-    }
+    return true;
   }
 
-  /** Moves the anchor (keys, continuous insert) and tells the host, like a click on the roll. */
-  function setChordAnchorTo(moved: { pitchMidicents: number; start: number; step: number }) {
-    // Keyed and continuous moves are ordinary empty-cell anchors: callers spread the old anchor, so
-    // the stack-on-note context is dropped here.
-    const next = { pitchMidicents: moved.pitchMidicents, start: moved.start, step: moved.step };
-    const start = Number(next.start.toFixed(9));
-    // A keyboard move leaves the pointer where it was: its cell ghost would sit at the old point.
-    hoverBlocked.current = hoverCell ?? hoverBlocked.current;
-    setHoverCell(null);
-    setChordAnchor({ ...next, start });
-    // The view follows the anchor: the minimum scroll that shows this chord, the next one when
-    // inserting continuously, and some pitch room around it for the ghost.
-    setReveal((current) => ({
-      start,
-      end: start + chordLength * (chordContinuous ? 2 : 1),
-      pitchMidicents: Math.max(0, next.pitchMidicents - 600),
-      pitchEndMidicents: Math.min(12700, next.pitchMidicents + 600),
-      token: (current?.token ?? 0) + 1,
-    }));
-    onChordAnchor?.({ pitchMidicents: next.pitchMidicents, onset: start });
-  }
-
-  /** Pins a chord's ghost; sounds it (through the mocked-in-tests audition path) only when asked. */
-  function pinChord(chord: Chord, { audition }: { audition: boolean }) {
-    if (!chordAnchor) {
-      return;
-    }
-    setPinnedChord(chord);
-    if (audition) {
-      auditionRef.current?.(
-        chordNotes(chord, chordAnchor, chordVoicing, chordLength, chordAnchorPc),
-        preferences.entryVelocity ?? undefined
-      );
-    }
-  }
-
-  /**
-   * A spread or inversion click: takes the new voicing and, on the current chord (the pinned one,
-   * else the hovered one, else the first offered), moves the pinned ghost to it and, when the gate
-   * allows, auditions it with that voicing. With no chord at all it only changes the voicing.
-   */
-  function changeVoicing(
-    next: VoicingSpec,
-    { audition, fallback }: { audition: boolean; fallback: Chord | null }
-  ) {
-    setChordVoicing(next);
-    const chord = pinnedChord ?? hoverChord ?? fallback;
-    if (!chord || !chordAnchor) {
-      return;
-    }
-    setPinnedChord(chord);
-    if (audition) {
-      auditionRef.current?.(
-        chordNotes(chord, chordAnchor, next, chordLength, chordAnchorPc),
-        preferences.entryVelocity ?? undefined
-      );
-    }
-  }
-
-  /** Shift+arrows: the anchor moves by the grid step in time (never before 0) or a semitone in pitch. */
-  function moveChordAnchor(dx: number, dy: number, allowAudition = true) {
-    if (!chordAnchor) {
-      return;
-    }
-    const start = Math.max(0, chordAnchor.start + dx * chordAnchor.step);
-    // One EDO step (100 cents at 12-EDO), from the snapped anchor, clamped to the roll's range.
-    const stepCents = 1200 / edo;
-    const pitchMidicents = Math.max(
-      0,
-      Math.min(12700, snapToEdo(chordAnchor.pitchMidicents, edo) - dy * stepCents)
-    );
-    if (start === chordAnchor.start && pitchMidicents === chordAnchor.pitchMidicents) {
-      return;
-    }
-    chordReselect.current = true;
-    chordReselectSounds.current = allowAudition;
-    setHoverChord(null);
-    setChordAnchorTo({ ...chordAnchor, start, pitchMidicents });
-  }
-
-  /**
-   * Alt+arrows: the same voicing change the Inversion and Spread buttons make, but cycling: after
-   * the last spread comes the first, and the inversion wraps within the current chord's own
-   * inversions (a triad has three), so every press moves the ghost.
-   */
-  function stepChordVoicing(inversionDelta: number, spreadDelta: number, allowAudition = true) {
-    const control = chordControl.current;
-    const current = pinnedChord ?? hoverChord ?? control?.current() ?? null;
-    const count = Math.max(1, current?.steps.length ?? control?.inversions() ?? 1);
-    const inversion = cycle(Math.min(chordVoicing.inversion, count - 1) + inversionDelta, count);
-    const spread = stepSpread(chordVoicing.spread, spreadDelta);
-    if (inversion === chordVoicing.inversion && spread === chordVoicing.spread) {
-      return;
-    }
-    changeVoicing(
-      { inversion, spread },
-      {
-        audition: allowAudition && developerOptions.chordPreviewGate === 'click',
-        fallback: control?.current() ?? null,
-      }
-    );
-  }
-
-  /**
-   * The Chords tool's key map, one handler for the whole editor (focus on the roll or in the picker,
-   * in the dock or the takeover). Not for text fields, comboboxes, open dialogs or menus; Ctrl/Cmd
-   * keys are never ours; a key is only consumed when it is handled.
-   */
-  function onChordKey(event: KeyboardEvent) {
-    if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey) {
-      return;
-    }
-    const target = event.target as HTMLElement | null;
-    const inScope =
-      !(target instanceof Element) ||
-      target === document.body ||
-      target === document.documentElement ||
-      !!editorRoot.current?.contains(target) ||
-      !!target.closest('[data-chord-picker]');
-    if (
-      !inScope ||
-      // Controls with their own arrow keys (splitters, sliders, tabs, menus, accordions).
-      target?.closest?.(
-        '[role="separator"], [role="slider"], [role="tablist"], [role="menu"], [role="menuitem"], [data-accordion-control], .mantine-Accordion-control'
-      ) ||
-      target?.isContentEditable ||
-      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '') ||
-      target?.closest?.('[role="combobox"], [role="listbox"], [role="option"]') ||
-      document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')
-    ) {
-      return;
-    }
-    const handled = () => {
-      event.preventDefault();
-      event.stopPropagation();
-    };
-    const dx = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-    const dy = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
-    if (dx || dy) {
-      if (event.altKey && event.shiftKey) {
-        return;
-      }
-      handled();
-      if (event.altKey) {
-        // Alt+Left/Right is also the browser's Back/Forward; its keyup must not open the menu bar.
-        altArrowHandled.current = true;
-        stepChordVoicing(dy, dx, !event.repeat);
-      } else if (event.shiftKey) {
-        moveChordAnchor(dx, dy, !event.repeat);
-      } else {
-        chordControl.current?.navigate(
-          dx,
-          dy,
-          target?.closest<HTMLElement>('[data-chord-key]')?.dataset.chordKey ?? null,
-          !event.repeat
-        );
-      }
-    } else if (event.key === 'Enter' && !event.altKey && !event.shiftKey) {
-      // Enter on a button (a chord inserts itself; Root, Spread ... activate) is the button's.
-      if (target?.closest?.('button, a, summary, [role="button"]')) {
-        return;
-      }
-      const chord = pinnedChord ?? hoverChord ?? chordControl.current?.current() ?? null;
-      if (chord) {
-        handled();
-        if (event.repeat) {
-          return;
-        }
-        insertChord(chord);
-      }
-    } else if (event.key.toLowerCase() === 'i' && !event.altKey && !event.shiftKey) {
-      handled();
-      if (event.repeat) {
-        return;
-      }
-      setChordContinuous((on) => !on);
-    }
-  }
-  const chordKeyHandler = useRef(onChordKey);
-  chordKeyHandler.current = onChordKey;
-
-  // Escape closes the picker (clears its anchor and ghosts) from the editor or the page body, never
-  // from a text field.
-  const pickerOpen = chordsActive && chordAnchor !== null;
+  // What this host gives the chord session (the ChordTarget below reads it through a ref, so the
+  // claim is one stable object for as long as the clip is open).
+  const chordHost = {
+    pitchSet: settings.pitchSet,
+    edo,
+    entryLength: preferences.entryLength,
+    entryVelocity: preferences.entryVelocity,
+    chordsActive,
+    noteAt: (cell: ChordCell) => noteAtCell(notes, cell),
+    insert: insertChord,
+    onAnchor: (anchor: { pitchMidicents: number; onset: number }) => onChordAnchor?.(anchor),
+    revealAnchor: (range: Parameters<NonNullable<ChordTarget['revealAnchor']>>[0]) =>
+      setReveal((current) => ({ ...range, token: (current?.token ?? 0) + 1 })),
+    openPicker: () => setTool('chords'),
+    onPickerClosed: () => setTool(toolBeforeChords.current),
+  };
+  const chordHostRef = useRef(chordHost);
+  chordHostRef.current = chordHost;
+  const [chordTarget] = useState<ChordTarget>(() => ({
+    id: snippet.id,
+    get pitchSet() {
+      return chordHostRef.current.pitchSet;
+    },
+    get edo() {
+      return chordHostRef.current.edo;
+    },
+    get entryLength() {
+      return chordHostRef.current.entryLength;
+    },
+    get entryVelocity() {
+      return chordHostRef.current.entryVelocity;
+    },
+    hint: "Click the roll where a chord should go. Its pitch becomes the chord's root; Ctrl/Cmd+click picks the role it plays in a chord. Click an existing note to stack a chord on it.",
+    noteAt: (cell) => chordHostRef.current.noteAt(cell),
+    insert: (request) => chordHostRef.current.insert(request),
+    onAnchor: (anchor) => chordHostRef.current.onAnchor(anchor),
+    revealAnchor: (range) => chordHostRef.current.revealAnchor(range),
+    // The pointer tracker and the scope helper are M4b: the session asks this editor for its root.
+    scope: () => editorRoot.current,
+    // The adapter until M6: the picker is wanted while the Chords tool is on; the v1 Stage's
+    // pickerInStage rule (below) decides where it is drawn.
+    wantsPicker: () => chordHostRef.current.chordsActive,
+    openPicker: () => chordHostRef.current.openPicker(),
+    onPickerClosed: () => chordHostRef.current.onPickerClosed(),
+  }));
+  // The claim lasts while this clip is the open item (this body is keyed by clip): it is taken on
+  // mount and released on unmount, so another host's claim in between wins and a release here
+  // hands the session back to it.
+  const chordClaim = useRef<ChordClaim | null>(null);
   useEffect(() => {
-    if (!pickerOpen) {
-      return undefined;
-    }
-    // Capture phase: the picker's keys must come before the roll's own arrow handling (which edits
-    // the selection) and the picker's buttons.
-    const onKey = (event: KeyboardEvent) => chordKeyHandler.current(event);
-    // The Alt of a handled Alt+arrow must not reach the browser menu bar wherever focus is.
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === 'Alt' && altArrowHandled.current) {
-        altArrowHandled.current = false;
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
-    window.addEventListener('keydown', onKey, true);
-    window.addEventListener('keyup', onKeyUp, true);
+    const claim = session.claimChordTarget(chordTarget);
+    chordClaim.current = claim;
     return () => {
-      window.removeEventListener('keydown', onKey, true);
-      window.removeEventListener('keyup', onKeyUp, true);
+      chordClaim.current = null;
+      claim();
     };
-  }, [pickerOpen]);
-  // After a Shift+arrow anchor move the picker has re-listed the chords for the new pitch: pin the
-  // chord it is on (the same one while it is still offered, else the first) and sound it per the gate.
-  useEffect(() => {
-    if (!chordReselect.current) {
-      return;
-    }
-    chordReselect.current = false;
-    const chord = chordControl.current?.current() ?? null;
-    if (chord) {
-      pinChord(chord, {
-        audition: chordReselectSounds.current && developerOptions.chordPreviewGate === 'click',
-      });
-    } else {
-      setPinnedChord(null);
-    }
-    // pinChord reads this render's anchor, which is the one that just changed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chordAnchor]);
-  useEffect(() => {
-    if (!pickerOpen) {
-      return undefined;
-    }
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const typing =
-        target &&
-        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-      if (
-        event.key === 'Escape' &&
-        !typing &&
-        inEditorScope(target, true) &&
-        // An open menu or dialog owns Escape.
-        !document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')
-      ) {
-        closeChordPicker();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // closeChordPicker only calls state setters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickerOpen]);
+  }, [session, chordTarget]);
+  useLayoutEffect(() => {
+    chordClaim.current?.changed();
+  }, [chordsActive, settings.pitchSet, edo, preferences.entryLength, preferences.entryVelocity]);
 
   // The Stage that hosts the roll and the chord picker (M9b). Both modules are closures over this component's
   // state (the chord session, the roll's view, selection and audition stay here): their render functions are
@@ -1525,6 +1123,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const stageEdit = useRef({ pickerInStage, leaveChords: () => {} });
   stageEdit.current = {
     pickerInStage,
+    // This editor's own tool restore, never routed through the session: another host may hold the claim.
     leaveChords: () => setTool(toolBeforeChords.current),
   };
   const updateStageLayout = useCallback((fn: (l: Layout) => Layout) => {
@@ -1712,47 +1311,10 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
         }
         reveal={reveal}
         ghostNotes={chordGhosts}
-        onAnchorHover={(anchor) => {
-          const cell = anchor
-            ? { ...anchor, pitchMidicents: snapToEdo(anchor.pitchMidicents, edo) }
-            : null;
-          const blocked = hoverBlocked.current;
-          if (
-            cell &&
-            blocked &&
-            cell.start === blocked.start &&
-            cell.pitchMidicents === blocked.pitchMidicents
-          ) {
-            return;
-          }
-          hoverBlocked.current = null;
-          setHoverCell(cell);
-        }}
+        onAnchorHover={session.hoverFromRoll}
         onAnchorClick={(anchor) => {
-          // Snapped to the project EDO grid before anything (picker, ghosts, voicing) sees it.
-          const snapped: NonNullable<typeof chordAnchor> = {
-            pitchMidicents: snapToEdo(anchor.pitchMidicents, edo),
-            start: anchor.start,
-            step: anchor.step,
-          };
-          const hit = noteAtCell(notes, anchor);
-          if (hit) {
-            // Stacking on an existing note: its exact pitch and actual onset, its own length
-            // and velocity.
-            snapped.pitchMidicents = snapToEdo(hit.pitchMidicents, edo);
-            snapped.start = hit.start;
-            snapped.note = {
-              duration: hit.duration,
-              velocity: hit.velocity,
-              pitchMidicents: hit.pitchMidicents,
-            };
-          }
-          setChordAnchor(snapped);
-          // A plain click opens the stored mode; Ctrl (Cmd) opens common-tone mode for this
-          // click only, leaving the stored mode as the buttons set it.
-          setChordCtrlOpen(anchor.ctrlKey === true);
-          clearChordGhosts();
-          onChordAnchor?.({ pitchMidicents: snapped.pitchMidicents, onset: snapped.start });
+          // A plain click opens the stored mode; Ctrl (Cmd) opens common-tone mode for this click only.
+          session.anchorFromRoll(anchor);
         }}
         keyActions={[
           {
@@ -1802,56 +1364,9 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     <ChordPickerHost
       host={preferences.chordHost}
       onHostChange={(chordHost) => updatePreferences({ chordHost })}
-      onClose={chordAnchor ? closeChordPicker : undefined}
+      onClose={chordAnchored ? session.closePicker : undefined}
     >
-      {chordAnchor ? (
-        <ChordPicker
-          anchor={chordAnchor}
-          onNote={chordAnchor.note !== undefined}
-          noteOffsetCents={
-            chordAnchor.note ? chordAnchor.note.pitchMidicents - chordAnchor.pitchMidicents : 0
-          }
-          pitchSet={settings.pitchSet}
-          override={chordOverride}
-          onOverrideChange={(next) => {
-            setChordOverrideState(next);
-            clearChordGhosts();
-          }}
-          controlRef={chordControl}
-          continuous={chordContinuous}
-          onContinuousChange={setChordContinuous}
-          mode={effectiveChordMode}
-          onModeChange={(next) => {
-            // The buttons commit the stored mode and the open picker follows it.
-            setChordMode(next);
-            setChordCtrlOpen(false);
-            clearChordGhosts();
-          }}
-          tier={chordTier}
-          onTierChange={(next) => {
-            setChordTier(next);
-            // A pinned or hovered chord may no longer be listed: fall back to the first.
-            clearChordGhosts();
-          }}
-          allPitches={chordAllPitches}
-          onAllPitchesChange={(next) => {
-            setChordAllPitches(next);
-            clearChordGhosts();
-          }}
-          voicing={chordVoicing}
-          onVoicingChange={changeVoicing}
-          previewGate={developerOptions.chordPreviewGate}
-          onHover={setHoverChord}
-          onPin={pinChord}
-          onInsert={insertChord}
-          onClose={closeChordPicker}
-        />
-      ) : (
-        <Text size="xs" c="dimmed">
-          Click the roll where a chord should go. Its pitch becomes the chord's root; Ctrl/Cmd+click
-          picks the role it plays in a chord. Click an existing note to stack a chord on it.
-        </Text>
-      )}
+      <ChordPickerPanel />
     </ChordPickerHost>
   );
   stageNodes.current = { roll: rollNode, chords: pickerNode };
@@ -1935,16 +1450,19 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
         />
       </div>
       {pickerInTakeover && pickerNode}
-      {chordsActive && (
-        <ChordAudition sourceId={`chords:${snippet.id}`} auditionRef={auditionRef} />
-      )}
     </div>
   );
 }
 
 /** The piano-roll editor for note clips. Keyed by clip, so switching clips resets the view state. */
 export function NoteClipEditor({ snippet, onChordAnchor }: ClipEditorProps) {
-  return <NoteClipEditorBody key={snippet.id} snippet={snippet} onChordAnchor={onChordAnchor} />;
+  // The chord session of WorkbenchSessions when one is above; otherwise a private one (today's page
+  // and every test), so the editor works either way.
+  const shared = useOptionalChordSession();
+  const body = (
+    <NoteClipEditorBody key={snippet.id} snippet={snippet} onChordAnchor={onChordAnchor} />
+  );
+  return shared ? body : <ChordSessionProvider>{body}</ChordSessionProvider>;
 }
 
 registerClipEditor(NOTE_EDITOR_ID, NoteClipEditor);

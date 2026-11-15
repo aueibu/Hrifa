@@ -94,6 +94,9 @@ export default defineConfig({
           name: 'dom',
           environment: 'jsdom',
           setupFiles: './vitest.setup.mjs',
+          // Some chord-input tests drive many keystrokes (about 2 s alone) and take over 5 s when the whole suite runs
+          // in parallel; the 5 s default made them fail in full runs only.
+          testTimeout: 20000,
           include: ['src/**/*.test.tsx', ...DOM_TESTS],
           // React Flow is inlined so the d3-drag stub in vitest.setup.mjs reaches it.
           server: { deps: { inline: [/@xyflow/] } },
