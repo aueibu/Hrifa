@@ -4,7 +4,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M8a (steps 1 and 2 done; human checkpoint, then M8b)
+- Current milestone: M8b (M8a approved 2026-11-15)
 - State: M7, M7b, M7c approved; M8 not started
 
 ## Resuming after a /clear (read this first)
@@ -119,7 +119,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M8a human checkpoint (feel: try the shelf on the dev server, answer the Parallel pitch question), then M8b (melody keys v2, keyboard chord modes, linked melody) via builder + reviewer, gate, commit.
+M8b via builder, then reviewer, gate, commit; human checkpoint (ears and feel). Then M9 (positional chords) is drafted in ARC.
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.

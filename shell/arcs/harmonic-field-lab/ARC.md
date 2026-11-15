@@ -241,7 +241,7 @@ Proposal:
   - [ ] Tests for dedupe, option switching, cap, no change to existing cards; one page test.
 - Human checkpoint after: **yes** (does Fill cards give sensible results by ear)
 
-### M8a: Chord shelf + sketch (APPROVED 2026-11-14)
+### M8a: Chord shelf + sketch (APPROVED 2026-11-14; checkpoint passed 2026-11-15)
 - Why: move from analysis (chords the field contains) to exploration (any chord on any degree), and stash chords for progressions and harmonic collages. **Decided (human, 2026-11-14):** the shelf is its own list, separate from the retuner's card list (cards are tab snapshots, subsets live under generators since M7b); it is a **panel** in the rail (pin/stack like the others); a stashed chord stores the **exact pitches heard** plus provenance; playback is interactive (hover + hold key, click, and in M8b the keyboard modes); timed playback is parked in BACKLOG. Two builder steps like M7b: data layer + reviewer, then UI.
 - Scope: page + a new key `hrifa.harmonic-field-lab.chordshelf.v1` (name to confirm). Owned page folder only; a DECISIONS row (H-7) for the shelf data contract (the workbench may read it later).
 - Acceptance (draft):
