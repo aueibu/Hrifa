@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: One Stage for the workbench (`arcs/workbench`), approved 2026-11-14
-- Current milestone: M3 complete (M3a, M3b, M3c, M3d); M4a (the chord session at page level) next
-- State: ready for M4a
+- Current milestone: M4a (the chord session at page level) in progress
+- State: building M4a
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.chord-input.md`, `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -32,4 +32,4 @@ None yet.
 - None open. M1 asks about the area set, Send-to versus drag, the state boundary and pop-out.
 
 ## Next action
-M4a: the chord session at page level (no UI change). Owned workbench paths only; locks none expected (the sessions wrapper `composition-workbench/WorkbenchSessions.tsx` is owned). Read DESIGN 7 (7.2 stores, 7.3 commands, 7.6 behaviour-preservation table, 7.7 placement modes), ARC M4a; the existing chord-input and NoteClipEditor tests must pass unchanged; the editor uses WorkbenchSessions when one is above it and otherwise mounts a private one; a second consumer proven in a test. Tell the human about the pending tab-menu decision (BACKLOG) before M5.
+M4a: builder (owned workbench paths, no locks), reviewer, gates (`check:workbench` mainly; `check:stage` and `check:hfl` not affected), commit. Then M4b (clip editor session, input scope, selection chain).
