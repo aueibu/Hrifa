@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: One Stage for the workbench (`arcs/workbench`), approved 2026-11-14
-- Current milestone: M3b committed; awaiting the human checkpoint (feel of dragging, the root-edge drop), then M3c (keyboard, Panels menu, dynamic registry, screenset tab strip)
-- State: awaiting human (M3b checkpoint)
+- Current milestone: M3c (keyboard, Panels menu, dynamic registry, screenset tab strip skeleton) in progress; M3b checkpoint passed
+- State: building M3c
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.chord-input.md`, `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -30,4 +30,4 @@ None yet.
 - None open. M1 asks about the area set, Send-to versus drag, the state boundary and pop-out.
 
 ## Next action
-Human tries dragging at `/stage?dock`: drag a tab onto another docker's centre (join as a tab) and edges (new docker), drop on a tab strip (reorder or insert), drag to the very edge of the Stage (new docker spanning the edge: confirm you want this), Escape to cancel, check the preview and label. Record answers in ARC.md (M3b Checkpoint decisions). Then M3c: lock `src/components/Stage/dock/` and `src/pages/stage/`, the keyboard model (docker selection shortcuts, then arrows; reach splitters), Panels menu, dynamic registry, screenset tab strip skeleton, the M3a review's deferred items in BACKLOG.
+M3c: builder, reviewer, headless Chrome check (Tab order, shortcuts, the Panels menu), `check:stage` + `check:workbench` + `check:hfl`, commit. No human checkpoint after M3c (the next one is M5).

@@ -104,6 +104,7 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] `check:stage` passes
   - [ ] Tests: centre joins as a tab, an edge splits, a same-docker drop does nothing, Escape cancels, the layout after a drop equals the layout after the equivalent menu choice
 - Human checkpoint after: **yes** (feel of dragging)
+- Checkpoint decisions (human, 2026-11-14): tried it: "this is great". The root-edge drop (a docker spanning a whole Stage edge, not in the original design) is kept as built (W-34); no changes asked.
 
 ### M3c: The tree Stage: keyboard, Panels menu, dynamic registry, screenset tab strip skeleton
 - Scope: the new Stage component (lock): docker selection by shortcut then arrows between tabs (manual activation), the Panels menu (transient panels excluded), the dynamic registry (rebuilt as instances change; ids exist before parse), the screenset meta-tab strip UI skeleton, extended in the spike.
