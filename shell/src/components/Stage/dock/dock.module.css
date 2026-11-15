@@ -27,10 +27,21 @@
   position: absolute;
 }
 
+/*
+ * A splitter sits in an absolutely positioned wrapper that already has the whole bar's rectangle. The old Splitter's own
+ * rules (../stage.module.css) set only the thickness (a flex row had stretched the other axis), so in this wrapper a
+ * horizontal bar collapsed to its grip's width and could not be hit: it must fill the wrapper in BOTH axes.
+ */
 .splitterPos {
-  align-items: stretch;
   display: flex;
   position: absolute;
+  z-index: 2;
+}
+
+.splitterPos > [role='separator'][data-orientation] {
+  box-sizing: border-box;
+  height: 100%;
+  width: 100%;
 }
 
 .docker {
@@ -261,7 +272,7 @@
   margin: 0;
   padding: 0.25rem 0.5rem;
   position: absolute;
-  z-index: 2;
+  z-index: 3;
 }
 
 .notice:empty {

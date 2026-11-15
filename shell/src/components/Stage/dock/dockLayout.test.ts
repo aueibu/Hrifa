@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { arrangementA, arrangementB, arrangementC, screenset } from '../../../lib/stage/fixtures';
-import { layoutTree } from './dockLayout';
+import { layoutTree, type DockRect } from './dockLayout';
 
 describe('layoutTree', () => {
   it('lays arrangement (b) out as three dockers and two splitters that tile the box', () => {
@@ -41,4 +41,39 @@ describe('layoutTree', () => {
     expect(d1.state).toBe('collapsed');
     expect(d1.height).toBe(1.5);
   });
+});
+
+const overlaps = (a: DockRect, b: DockRect) =>
+  a.x < b.x + b.width - 1e-6 &&
+  b.x < a.x + a.width - 1e-6 &&
+  a.y < b.y + b.height - 1e-6 &&
+  b.y < a.y + a.height - 1e-6;
+
+describe('layoutTree: nothing covers a splitter', () => {
+  const cases = [
+    ['a (column over a row)', arrangementA],
+    ['b (row of three)', arrangementB],
+    ['c (column over a row, one empty)', arrangementC],
+  ] as const;
+  for (const [name, tree] of cases) {
+    it(`no docker rectangle intersects a splitter, and every splitter has an area: ${name}`, () => {
+      for (const [w, h] of [
+        [100, 50],
+        [40, 20],
+        [20, 10],
+      ]) {
+        const g = layoutTree(screenset(tree), w, h);
+        expect(g.splitters.length).toBeGreaterThan(0);
+        for (const s of g.splitters) {
+          expect(s.width).toBeGreaterThan(0);
+          expect(s.height).toBeGreaterThan(0);
+          // a row split's bar is thin across the row and as tall as the split; a column split's is the reverse
+          expect(s.dir === 'row' ? s.width : s.height).toBe(0.5);
+          for (const d of g.dockers) {
+            expect(overlaps(d, s)).toBe(false);
+          }
+        }
+      }
+    });
+  }
 });

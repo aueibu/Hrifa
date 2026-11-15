@@ -140,3 +140,40 @@ describe('StageEntry', () => {
     expect(screen.getByRole('heading', { name: 'Stage (spike)' })).toBeInTheDocument();
   });
 });
+
+describe('dock spike separators', () => {
+  it.each([
+    ['a', '(a) Top over bottom, three tabs'],
+    ['b', '(b) Left, centre, right'],
+    ['c', '(c) Top over left and right'],
+  ])(
+    'arrangement %s: every separator has a box, is not hidden and is reachable by Tab',
+    async (_id, label) => {
+      render(<DockSpikeApp storage={fakeStorage()} />);
+      await userEvent.click(screen.getByText(label));
+      const bars = screen.getAllByRole('separator');
+      expect(bars).toHaveLength(2);
+      expect(new Set(bars.map((b) => b.getAttribute('aria-orientation'))).size).toBe(
+        _id === 'b' ? 1 : 2 // (b) is two row bars; (a) and (c) have a row bar and a column bar
+      );
+      for (const bar of bars) {
+        const wrapper = bar.parentElement!;
+        expect(parseFloat(wrapper.style.width)).toBeGreaterThan(0);
+        expect(parseFloat(wrapper.style.height)).toBeGreaterThan(0);
+        expect(bar.closest('[inert]')).toBeNull();
+        expect(bar.closest('[aria-hidden="true"]')).toBeNull();
+        expect(bar).toHaveAttribute('tabindex', '0');
+      }
+      const reached = new Set<string>();
+      document.body.focus();
+      for (let i = 0; i < 150 && reached.size < bars.length; i++) {
+        await userEvent.tab();
+        const at = document.activeElement;
+        if (at?.getAttribute('role') === 'separator') {
+          reached.add(at.getAttribute('aria-label') ?? '');
+        }
+      }
+      expect(reached.size).toBe(bars.length);
+    }
+  );
+});
