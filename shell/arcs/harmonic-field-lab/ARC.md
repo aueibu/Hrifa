@@ -408,7 +408,7 @@ Proposal:
 | h | Selection on the highest tolerance | window still shows 7 tiles with the last one selected, `+n` only on the left |
 | i | Sketch preview: C major triad on 12-EDO with the field lacking one note | in-field tiles solid blue; the offset tile dashed in its severity colour with a tinted fill; the exact tile tinted too |
 
-- Checkpoint decisions (human, 2026-11-15): line 1 wording confirmed (`4:5:6 · Major on 200.0 c`); Collapse all | Expand all in the sticky area; the fold-memory report was not a bug; the human does not know how tall the sticky area may get on his screen, so the default is: the sticky area is capped at 45% of the viewport height and scrolls inside itself beyond that (the human will say at the checkpoint if it needs to shrink).
+- Checkpoint decisions (human, 2026-11-15): line 1 wording confirmed (`4:5:6 · Major on 200.0 c`); Collapse all | Expand all in the sticky area; the fold-memory report was not a bug; the human does not know how tall the sticky area may get on his screen, so the default is: the sticky area was first capped at 45% of the viewport height; REVISED 2026-11-15 by the human: the top (stepper, ladder, tolerance, Collapse all | Expand all) must always be shown in full, never shrink and never scroll; only the chord lists scroll.
 - Human checkpoint after: **yes** (feel and look).
 
 ## Final step

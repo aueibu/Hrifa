@@ -517,8 +517,8 @@
 }
 
 /* the Chords panel (M8g), like the Keys panel: it does not scroll as a whole. The top (Sketch row, tolerance and ladder, Collapse
-   all | Expand all) stays in view, capped at 45% of the viewport height and scrolling inside itself beyond that; only the chord
-   lists below scroll */
+   all | Expand all) is always shown in full: it never shrinks and never scrolls (human, 2026-11-15); only the chord lists below
+   scroll, in whatever height is left */
 .chordsBody {
   overflow-y: auto; /* fallback: a panel too short for the top plus a little list scrolls as a whole, nothing is unreachable */
 }
@@ -527,19 +527,12 @@
   background: var(--panel);
   display: flex;
   flex-direction: column;
+  flex: none;
   gap: 0.625rem;
-  max-height: 45vh;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .chordsTop > * {
   flex: none;
-}
-
-.panelBody > .chordsTop {
-  flex: 0 1 auto;
-  min-height: 0;
 }
 
 .chordsFolds {

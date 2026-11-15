@@ -585,7 +585,7 @@ With the pointer on a chord chip (ratio chip, CPS chip, Positional row) hold 4 /
 
 ## Chords panel round 3 (M8g)
 
-- **Persistent top.** `ChordsPanel` does not scroll as a whole (like the Keys panel): `.chordsTop` (Collapse all | Expand all, the Sketch row, tolerance and ladder) stays in view, capped at 45vh and scrolling inside itself beyond that; only `.chordsList` (CPS, Positional, ratio chords) scrolls.
+- **Persistent top.** `ChordsPanel` does not scroll as a whole (like the Keys panel): `.chordsTop` (Collapse all | Expand all, the Sketch row, tolerance and ladder) is always shown in full (it never shrinks and never scrolls; human, 2026-11-15, replacing the earlier 45vh cap); only `.chordsList` (CPS, Positional, ratio chords) scrolls.
 - **Collapse all | Expand all.** `state/foldIds.ts` derives the ids the panel renders now (`chordFoldIds`: `cps` for the CPS method, `positional`, one `pos:<pattern>` per listed pattern, `families`, `size:<size>` and `fam:<size>:<family>` for the chips shown); Collapse all writes exactly those to `ui.folds` (cap 256), Expand all writes `{}`. `foldId` lives there and `Fold.tsx` re-exports it.
 - **Ladder window.** `state/ladderWindow.ts` (`ladderWindow`, `nearestHidden`): 7 tiles with the selection centred; near an end the window slides; a `+n` tile at an edge counts the hidden rungs (separate from the 7) and selects the nearest hidden one; 7 or fewer rungs show all.
 - **Hover arming.** Hold 4 or 5 on a ratio chip, CPS chip or positional row arms it in the Sketch row (`armFrom` in `audio/useLabAudio.ts`, shared with hold 1); the 4/5 path never sends a root degree, so `sketch.rootDeg` is unchanged and the chord sounds on the stepper root.
