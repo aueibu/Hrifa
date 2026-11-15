@@ -8,6 +8,7 @@ import { listFolders, reportSentence } from '../../../lib/harmonic-field';
 import { autoName } from '../state/generate';
 import { subsetsOf } from '../state/generatorLibrary';
 import { copySentence, forkSentence } from '../state/noticeText';
+import { ownerPath } from '../state/presetTree';
 import { CloseIcon } from './icons';
 import { FolderInput } from './PresetBrowser';
 import { RefLines, stripLeft } from './TunerStrip';
@@ -23,7 +24,7 @@ export function LibraryActions() {
   const [folder, setFolder] = useState('');
   const folders = useMemo(() => listFolders(lib.presets.map((p) => p.folder)), [lib.presets]);
   const mine = owner ? subsetsOf(lib, owner).length : 0;
-  // naming an unmodified Untitled generator promotes it: its subsets move with it (the reducer's rule)
+  // naming an unmodified Auto-saved generator promotes it: its subsets move with it (the reducer's rule)
   const promoting = !!owner && owner.startsWith('u:') && !modified;
   const start = (withCopy: boolean) => {
     setCopy(withCopy);
@@ -103,7 +104,7 @@ export function LibraryActions() {
             <FolderInput value={folder} onChange={setFolder} suggestions={folders} onEnter={save} />
             <span className={classes.paramNote} role="status">
               {promoting
-                ? `Names this Untitled generator; its ${mine} subset${mine === 1 ? '' : 's'} move with it.`
+                ? `Names this Auto-saved generator; its ${mine} subset${mine === 1 ? '' : 's'} move with it.`
                 : copy
                   ? `Copies ${mine} subset${mine === 1 ? '' : 's'}, matched to this generator.`
                   : 'Starts with no subsets.'}
@@ -198,7 +199,7 @@ export function LibraryNotice() {
     <>
       {fork && fork !== goneFork && (
         <div className={classes.notice} role="status" data-kind="fork">
-          <span>{forkSentence(fork.reason)}</span>
+          <span>{forkSentence(ownerPath(state.library, fork.owner).at(-1) ?? 'Auto-saved')}</span>
           <span className={classes.noticeActions}>
             <ActionIcon
               variant="subtle"

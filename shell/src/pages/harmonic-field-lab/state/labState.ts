@@ -803,7 +803,7 @@ function reduce(s: LabState, a: Action): LabState {
         const reason = key === null ? 'unsaved' : 'edited';
         const u = ensureUntitled(lib, t.gen);
         if (u.key === null) {
-          return refuse(s, u.refused ?? 'Too many Untitled generators.');
+          return refuse(s, u.refused ?? 'Too many Auto-saved generators.');
         }
         lib = u.lib;
         key = u.key;

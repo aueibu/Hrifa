@@ -53,7 +53,7 @@ describe('preset browser', () => {
       .getAllByRole('treeitem')
       .map((r) => r.getAttribute('aria-level'));
     expect(names[0]).toBe('1');
-    for (const f of ['Built-in', 'My presets', 'Recent', 'Untitled']) {
+    for (const f of ['Built-in', 'My presets', 'Recent', 'Auto-saved']) {
       expect(within(tree).getByRole('treeitem', { name: new RegExp(`^${f}`) })).toBeInTheDocument();
     }
     // the current generator's folder is open and its row is highlighted
@@ -189,22 +189,22 @@ describe('Update preset and Save as new', () => {
     ).toBeInTheDocument();
   });
 
-  it('Add on an edited generator says it went to a new Untitled generator; the line can be dismissed and ends on the next edit', async () => {
+  it('Add on an edited generator says it was kept under Auto-saved; the line can be dismissed and ends on the next edit', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('12-EDO');
     await typeSlow(divisions(), '13'); // edited
     fireEvent.click(addButton());
     const note = screen.getByText(
-      /^Saved to a new Untitled generator, because this generator was edited\. Use Save as new/
+      /^Kept automatically as '.+' under Auto-saved\. Use Save as new to name it and move it to My presets\./
     );
     expect(note.closest('[role="status"]')).toHaveAttribute('data-kind', 'fork');
-    expect(crumb()).toHaveTextContent(/^Untitled > /);
+    expect(crumb()).toHaveTextContent(/^Auto-saved > /);
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss fork notice' }));
-    expect(screen.queryByText(/new Untitled generator, because/)).toBeNull();
+    expect(screen.queryByText(/Kept automatically as/)).toBeNull();
     // an unedited generator adds quietly
     await pickPreset('12-EDO');
     fireEvent.click(addButton());
-    expect(screen.queryByText(/new Untitled generator, because/)).toBeNull();
+    expect(screen.queryByText(/Kept automatically as/)).toBeNull();
   });
 
   it('Update reports what changed; Show removed lists it read-only; Undo restores; a refusal line can be dismissed', async () => {
@@ -291,6 +291,69 @@ describe('subset rows', () => {
     expect(screen.getByRole('textbox', { name: 'New name' })).toBeInTheDocument();
   });
 
+  it('rows that do not fully map are dimmed with a corner triangle whose tooltip says why; a no-match row does nothing; a full row is untouched', async () => {
+    const pitch = (c: number) => ({ m: null, c });
+    window.localStorage.setItem(
+      KEY_GENERATORS,
+      JSON.stringify({
+        version: 1,
+        presets: [],
+        untitled: [],
+        subsets: [
+          {
+            id: 's1',
+            owner: 'b:gone',
+            name: 'Partial',
+            pitches: [pitch(0), pitch(123.4)],
+            root: pitch(0),
+          },
+          {
+            id: 's2',
+            owner: 'b:gone',
+            name: 'Nothing',
+            pitches: [pitch(77.7), pitch(123.4)],
+            root: pitch(77.7),
+          },
+        ],
+        recents: [],
+        next: { preset: 1, untitled: 1, subset: 3 },
+      })
+    );
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(addButton()); // a full row for the current generator
+    fireEvent.click(screen.getByRole('button', { name: /^Unassigned \(2\)/ }));
+    const item = (name: string) =>
+      within(subsetList())
+        .getByRole('button', { name: new RegExp(`^${name}: `) })
+        .closest('li')!;
+    expect(item('Subset 1')).not.toHaveAttribute('data-match');
+    expect(item('Subset 1').querySelector('[role="img"]')).toBeNull();
+    expect(item('Partial')).toHaveAttribute('data-match', 'partial');
+    expect(item('Nothing')).toHaveAttribute('data-match', 'none');
+    const tri = (name: string) => item(name).querySelector('[role="img"]') as HTMLElement;
+    expect(tri('Partial')).toHaveAccessibleName(
+      '1 of 2 notes in these settings. Missing: 123.4 c.'
+    );
+    expect(tri('Nothing')).toHaveAccessibleName('No notes in common with these settings.');
+    // the tooltip carries the same sentence
+    fireEvent.mouseEnter(tri('Partial').parentElement!);
+    expect(
+      await screen.findByText(
+        /1 of 2 notes in these settings\. Missing: 123\.4 c\./,
+        {},
+        { timeout: 2000 }
+      )
+    ).toBeInTheDocument();
+    // a no-match row does nothing when clicked; a partial one loads
+    const nothing = within(subsetList()).getByRole('button', { name: /^Nothing: / });
+    expect(nothing).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(nothing);
+    expect(screen.queryByText(/'Nothing' loaded/)).toBeNull();
+    expect(item('Nothing')).not.toHaveAttribute('data-flash');
+    fireEvent.click(within(subsetList()).getByRole('button', { name: /^Partial: / }));
+    expect(screen.getByText(/'Partial' loaded: 1 of 2 pitches/)).toBeInTheDocument();
+  });
+
   it('subsets of a generator vanish when you switch generator and come back with it', async () => {
     render(<HarmonicFieldLabPage />);
     fireEvent.click(addButton());
@@ -343,7 +406,7 @@ describe('subset rows', () => {
 });
 
 describe('My presets rows', () => {
-  it('rename, move and delete from the row; delete keeps the subsets under Untitled', async () => {
+  it('rename, move and delete from the row; delete keeps the subsets under Auto-saved', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('12-EDO');
     fireEvent.click(screen.getByRole('button', { name: 'Save as new' }));
@@ -358,9 +421,9 @@ describe('My presets rows', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(stored().presets?.[0]).toMatchObject({ name: 'Dozen', folder: 'A/B' });
     expect(crumb()).toHaveTextContent('My presets > A > B > Dozen');
-    // delete asks first, then keeps the subset under Untitled
+    // delete asks first, then keeps the subset under Auto-saved
     fireEvent.click(screen.getByRole('button', { name: 'Delete preset Dozen' }));
-    expect(screen.getByRole('alert')).toHaveTextContent(/Subsets stay under Untitled/);
+    expect(screen.getByRole('alert')).toHaveTextContent(/Subsets stay under Auto-saved/);
     fireEvent.click(within(screen.getByRole('alert')).getByRole('button', { name: 'Delete' }));
     expect(stored().presets).toEqual([]);
     expect(stored().subsets?.[0].owner).toMatch(/^u:/);

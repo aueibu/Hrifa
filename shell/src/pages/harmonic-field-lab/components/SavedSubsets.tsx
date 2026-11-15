@@ -7,10 +7,17 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionIcon, Button, Checkbox, TextInput } from '@mantine/core';
-import { analyzeSubset, resolveSubset, rotateSubset, toScl } from '../../../lib/harmonic-field';
+import {
+  analyzeSubset,
+  indexField,
+  resolveSubsetIn,
+  rotateSubset,
+  toScl,
+} from '../../../lib/harmonic-field';
 import type { PreviewTarget } from '../audio/plan';
 import { orphanSubsets, ownerLabel, type LibSubset } from '../state/generatorLibrary';
 import { tabName } from '../state/labState';
+import { matchLevel, matchSentence } from '../state/subsetMatch';
 import { CloseIcon, DownloadIcon, PlusIcon } from './icons';
 import { NoteMark } from './NoteMark';
 import { RefLines, stripLeft } from './TunerStrip';
@@ -87,7 +94,12 @@ function NameCell({ saved, limit }: { saved: LibSubset; limit: number | null }) 
             setEditing(true);
           }}
         >
-          {saved.name}
+          <span
+            className={classes.autoName}
+            data-auto={/^Subset \d+$/.test(saved.name) || undefined}
+          >
+            {saved.name}
+          </span>
         </button>
       </Tip>
       <span className={classes.savedCount}>
@@ -115,18 +127,31 @@ export function SavedSubsets() {
   const orphanIds = useMemo(() => new Set(orphanSubsets(lib).map((s) => s.id)), [lib]);
   // the current generator's subsets re-resolve against this tab's field (a modified tab shows what still matches);
   // an orphan (its generator is gone) resolves the same way, since loading it applies it to this tab
-  const rows = useMemo(
-    () =>
-      lib.subsets.map((s) => {
-        const orphan = orphanIds.has(s.id);
-        const same = s.owner === owner;
-        const r = same || orphan ? resolveSubset(field, s) : null;
-        const idx = r ? r.sel : null;
-        const a = idx ? analyzeSubset(rotateSubset(field, idx, 0, rep), rep) : null;
-        return { s, same, orphan, idx, mode: r ? r.mode : 0, limit: a?.primeLimit ?? null };
-      }),
-    [lib.subsets, orphanIds, owner, field, rep]
-  );
+  const rows = useMemo(() => {
+    const ix = indexField(field);
+    return lib.subsets.map((s) => {
+      const orphan = orphanIds.has(s.id);
+      const same = s.owner === owner;
+      const r = same || orphan ? resolveSubsetIn(ix, s) : null;
+      const idx = r ? r.sel : null;
+      const a = idx ? analyzeSubset(rotateSubset(field, idx, 0, rep), rep) : null;
+      // how much of the stored subset the current field has: a row that does not fully map is dimmed with a corner triangle
+      const level = r ? matchLevel(r.found.length, s.pitches.length) : 'full';
+      const missing = r ? r.missing.map((i) => s.pitches[i]) : [];
+      const found = r ? r.found.length : 0;
+      return {
+        s,
+        same,
+        orphan,
+        idx,
+        mode: r ? r.mode : 0,
+        limit: a?.primeLimit ?? null,
+        level,
+        missing,
+        found,
+      };
+    });
+  }, [lib.subsets, orphanIds, owner, field, rep]);
   const shown = rows.filter((r) => !r.orphan && (r.same || all));
   const unassigned = rows.filter((r) => r.orphan);
   const current = useMemo(() => new Set(tab.sel), [tab.sel]);
@@ -159,15 +184,26 @@ export function SavedSubsets() {
   const loadNote = state.lastLoad;
   const loaded = loadNote ? lib.subsets.find((s) => s.id === loadNote.id) : undefined;
 
-  const renderRow = ({ s, same, orphan, idx, mode, limit }: (typeof rows)[number]) => {
+  const renderRow = ({
+    s,
+    same,
+    orphan,
+    idx,
+    mode,
+    limit,
+    level,
+    missing,
+    found,
+  }: (typeof rows)[number]) => {
     const on = new Set(idx ?? []);
     const isLoaded =
       same && idx !== null && idx.length === current.size && idx.every((i) => current.has(i));
     // the saved subset's own mode root (the same repair the loader applies to a stored mode)
     const rootNote = idx && idx.length ? idx[mode] : null;
     const target = idx ? scaleOf(idx, mode) : null;
+    const dead = level === 'none';
     const preview = () => {
-      if (idx && target) {
+      if (idx && target && !dead) {
         setPreview(idx);
         audio.setPreviewTarget(target);
       }
@@ -184,18 +220,39 @@ export function SavedSubsets() {
         className={classes.savedItem}
         data-subset={s.id}
         data-flash={flash === s.id ? (added?.duplicate ? 'duplicate' : 'new') : undefined}
+        data-match={level === 'full' ? undefined : level}
         onMouseEnter={preview}
         onMouseLeave={unpreview}
         onFocus={preview}
         onBlur={unpreview}
       >
+        {level !== 'full' && (
+          <span className={classes.matchCorner}>
+            <Tip
+              k={level === 'none' ? 'subsetNoMatch' : 'subsetPartialMatch'}
+              as="control"
+              extra={matchSentence(found, missing)}
+            >
+              <span
+                className={classes.matchTri}
+                role="img"
+                aria-label={matchSentence(found, missing)}
+              />
+            </Tip>
+          </span>
+        )}
         <Tip k="savedRow" as="control" block>
           <button
             type="button"
             className={classes.savedRow}
+            aria-disabled={dead || undefined}
             aria-pressed={isLoaded}
-            aria-label={`${s.name}: ${s.pitches.length} notes${same ? '' : orphan ? ', no generator' : ', another generator'}. Click to load.`}
-            onClick={() => dispatch({ type: 'subset/load', id: s.id })}
+            aria-label={`${s.name}: ${s.pitches.length} notes${same ? '' : orphan ? ', no generator' : ', another generator'}.${dead ? '' : ' Click to load.'}`}
+            onClick={() => {
+              if (!dead) {
+                dispatch({ type: 'subset/load', id: s.id });
+              }
+            }}
           >
             <span aria-hidden="true" />
             {idx ? (

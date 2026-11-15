@@ -76,7 +76,7 @@ const entries = {
   /* ---- generator ---- */
   preset: {
     term: 'Preset',
-    text: 'The generator this tab is on, shown as its folder path (for example Equal divisions > Non-octave > Carlos Alpha). Click to browse: type to search every preset at once, or open the folders (Built-in, My presets, Recent, Untitled). Choosing one fills in the method and its numbers. A dot before the name means you changed the generator since: the preset itself is untouched until you press Update preset, or you can keep the change with Save as new. Example: pick Harmonics 8-15 (one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note), raise the starting harmonic, and the dot appears.',
+    text: 'The generator this tab is on, shown as its folder path (for example Equal divisions > Non-octave > Carlos Alpha). Click to browse: type to search every preset at once, or open the folders (Built-in, My presets, Recent, Auto-saved). Choosing one fills in the method and its numbers. An orange dot before the name means you changed the generator since: the preset itself is untouched until you press Update preset, or you can keep the change with Save as new. Example: pick Harmonics 8-15 (one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note), raise the starting harmonic, and the dot appears.',
     see: ['method', 'presetUpdate', 'presetSaveNew'],
   },
   presetUpdate: {
@@ -106,7 +106,7 @@ const entries = {
   },
   presetDelete: {
     term: 'Delete preset',
-    text: 'Removes one of your presets after you confirm. Its subsets are not lost: they stay under Untitled, with the generator the preset had. A preset with no subsets is gone for good. Example: delete Hexany 11 with three subsets, and the three rows stay available under Untitled.',
+    text: 'Removes one of your presets after you confirm. Its subsets are not lost: they stay under Auto-saved, with the generator the preset had. A preset with no subsets is gone for good. Example: delete Hexany 11 with three subsets, and the three rows stay available under Auto-saved.',
     see: ['preset', 'unassigned'],
   },
   method: {
@@ -730,6 +730,16 @@ const entries = {
     term: 'All generators',
     text: 'Subsets belong to the generator they were added on. By default the list shows only those of the generator in this tab; tick All to list every subset. Loading one from another generator switches this tab to that generator. Example: "Major" added on 12-EDO is hidden while you work on Harmonics 8-15 until you tick All.',
     see: ['savedSubsets'],
+  },
+  subsetPartialMatch: {
+    term: 'Subset only partly in these settings',
+    text: "A dimmed row with a small grey corner mark: some of the subset's pitches do not exist in the generator as it is now (for example after you edited it without pressing Update preset). Loading it still selects the pitches that do exist. The mark's hover says how many are found and which are missing. Example: a 7-note subset on a field that has 5 of its pitches shows: 5 of 7 notes in these settings. Missing: 7/4, 11/8.",
+    see: ['savedSubsets', 'subsetNoMatch'],
+  },
+  subsetNoMatch: {
+    term: 'Subset not in these settings',
+    text: "A strongly dimmed row with a small grey corner mark: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing (you can still rename or delete it). Change the settings back, or open the generator it belongs to, to use it again. Example: a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.",
+    see: ['savedSubsets', 'subsetPartialMatch'],
   },
   renameSaved: {
     term: 'Rename saved subset',

@@ -2,7 +2,7 @@
  * The Preset control (M7b step 2): a button showing the NAME of the generator this tab belongs to (with a dot when it is
  * modified; the full path sits in `PresetCrumb`, a small wrapping line under the control), opening a popover browser: a
  * search box on top (flat results, each with its folder path) and a collapsible folder tree below (Built-in, My presets,
- * Recent, Untitled). The highlighted row (mouse or keyboard) shows its description in a fixed info line at the bottom edge
+ * Recent, Auto-saved). The highlighted row (mouse or keyboard) shows its description in a fixed info line at the bottom edge
  * of the picker (content, not a tooltip: the Developer "Tooltips" switch does not hide it).
  * Keyboard (focus stays in the search box): Up/Down move, Right/Left open/close a folder, Enter picks, typing searches.
  * Choosing a preset is `preset/open`. User presets are renamed, moved and deleted from their row.
@@ -121,10 +121,24 @@ function EditRow({
 /** The full path of the tab's generator, as one muted line that wraps instead of cutting off. */
 export function PresetCrumb() {
   const { state, owner } = useLab();
-  const crumb = owner ? ownerPath(state.library, owner).join(' > ') : '';
+  const parts = owner ? ownerPath(state.library, owner) : [];
+  const auto = owner ? parseOwner(owner)?.kind === 'untitled' : false;
+  if (parts.length === 0) {
+    return (
+      <div className={classes.pbCrumb} data-testid="preset-path">
+        (edited by hand)
+      </div>
+    );
+  }
+  // an automatically given name (Auto-saved generators) is muted italic until the user names it
+  const last = parts[parts.length - 1];
+  const head = parts.slice(0, -1).map((p) => `${p} > `);
   return (
     <div className={classes.pbCrumb} data-testid="preset-path">
-      {crumb || '(edited by hand)'}
+      {head.join('')}
+      <span className={classes.autoName} data-auto={auto || undefined}>
+        {last}
+      </span>
     </div>
   );
 }
@@ -297,7 +311,12 @@ export function PresetBrowser() {
               {modified && (
                 <span className={classes.pbDot} aria-hidden="true" data-modified="true" />
               )}
-              <span className={classes.pbLabel}>{name}</span>
+              <span
+                className={`${classes.pbLabel} ${classes.autoName}`}
+                data-auto={ownerKind?.kind === 'untitled' || undefined}
+              >
+                {name}
+              </span>
             </span>
           </Button>
         </Popover.Target>
@@ -419,7 +438,7 @@ export function PresetBrowser() {
                         role="alert"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        Delete? Subsets stay under Untitled.
+                        Delete? Subsets stay under Auto-saved.
                         <Button
                           size="compact-xs"
                           variant="default"

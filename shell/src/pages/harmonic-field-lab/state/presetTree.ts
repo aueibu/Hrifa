@@ -7,6 +7,7 @@ import { PRESETS, splitFolder } from '../../../lib/harmonic-field';
 import { BUILTIN_SUBFOLDERS, builtinFolders } from './builtinFolders';
 import { autoName } from './generate';
 import {
+  AUTO_SAVED,
   builtinKey,
   ownerExists,
   parseOwner,
@@ -50,7 +51,7 @@ export type TreeNode = FolderNode | PresetNode;
 export const ROOT_BUILTIN = 'Built-in';
 export const ROOT_MINE = 'My presets';
 export const ROOT_RECENT = 'Recent';
-export const ROOT_UNTITLED = 'Untitled';
+export const ROOT_UNTITLED = AUTO_SAVED;
 
 const SEP = ' > ';
 export const nodeId = (kind: 'f' | 'p', path: string[], owner = '') =>

@@ -19,9 +19,10 @@ export function copySentence(name: string, r: UpdateReport): string {
   return parts.join(' ');
 }
 
-/** After Add on an edited or unsaved generator: the subset went into a new Untitled generator. */
-export function forkSentence(reason: 'unsaved' | 'edited'): string {
-  return reason === 'unsaved'
-    ? 'Saved to a new Untitled generator, because these settings had no saved home yet. Use Save as new to name it.'
-    : 'Saved to a new Untitled generator, because this generator was edited. Use Save as new to name it.';
+/**
+ * After the Add that created an Auto-saved generator (the tab was edited or had no saved home): reassurance, with the new
+ * generator's display name. The unsaved/edited reason stays in `LabState.forkNote` but is not worded: the reassurance is the same.
+ */
+export function forkSentence(name: string): string {
+  return `Kept automatically as '${name}' under Auto-saved. Use Save as new to name it and move it to My presets.`;
 }

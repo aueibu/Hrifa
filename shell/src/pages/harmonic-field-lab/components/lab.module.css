@@ -1085,6 +1085,43 @@
   background: var(--mantine-color-default-hover);
 }
 
+/* a subset that does not fully map onto the current field: dimmed, with a corner triangle (its tooltip says why) */
+.savedItem[data-match="partial"] {
+  opacity: 0.75;
+}
+
+.savedItem[data-match="none"] {
+  opacity: 0.5;
+}
+
+.savedRow[aria-disabled="true"],
+.savedRow[aria-disabled="true"]:hover {
+  background: none;
+  cursor: default;
+}
+
+.matchCorner {
+  height: 0.625rem;
+  left: 0.125rem;
+  position: absolute;
+  top: 0.125rem;
+  width: 0.625rem;
+  z-index: 2;
+}
+
+.matchTri {
+  background: var(--text-subtle);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  display: block;
+  height: 0.625rem;
+  opacity: 0.6;
+  width: 0.625rem;
+}
+
+.savedItem[data-match="none"] .matchTri {
+  opacity: 0.9;
+}
+
 .savedRow:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
@@ -1676,11 +1713,16 @@
 }
 
 .pbDot {
-  background: var(--text);
+  background: var(--mark-orange);
   border-radius: 50%;
   flex: none;
   height: 0.375rem;
   width: 0.375rem;
+}
+
+.autoName[data-auto] {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* the full path, under the Preset control: wraps instead of cutting off */

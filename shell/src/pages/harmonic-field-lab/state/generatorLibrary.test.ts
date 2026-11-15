@@ -77,8 +77,8 @@ describe('owners', () => {
     expect(ownerGen(lib, 'p:p77')).toBeNull();
     expect(genKey(ownerGen(lib, H8)!)).toBe(genKey(H));
     const u = ensureUntitled(lib, { ...H, h: 9, preset: '' });
-    expect(ownerLabel(lib, untitledKey('u9'))).toBe('Untitled');
-    expect(ownerLabel(u.lib, u.key!)).toBe('Untitled: Harmonics from 9');
+    expect(ownerLabel(lib, untitledKey('u9'))).toBe('Auto-saved');
+    expect(ownerLabel(u.lib, u.key!)).toBe('Auto-saved: Harmonics from 9');
   });
 });
 

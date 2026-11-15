@@ -282,13 +282,10 @@ describe('preset delete, rename, move', () => {
 });
 
 describe('fork sentence', () => {
-  it('says why for each reason', async () => {
+  it('reassures with the generator name', async () => {
     const { forkSentence } = await import('./noticeText');
-    expect(forkSentence('unsaved')).toBe(
-      'Saved to a new Untitled generator, because these settings had no saved home yet. Use Save as new to name it.'
-    );
-    expect(forkSentence('edited')).toBe(
-      'Saved to a new Untitled generator, because this generator was edited. Use Save as new to name it.'
+    expect(forkSentence('Harmonics from 9')).toBe(
+      "Kept automatically as 'Harmonics from 9' under Auto-saved. Use Save as new to name it and move it to My presets."
     );
   });
 });

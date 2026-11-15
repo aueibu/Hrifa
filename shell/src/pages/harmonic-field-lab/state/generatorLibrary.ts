@@ -140,7 +140,10 @@ export function ownerGen(lib: GenLibrary, key: OwnerKey): GenSpec | null {
   return g ? cloneGen(g) : null;
 }
 
-/** The name an owner shows (Untitled generators are named by their inputs). */
+/** What the user sees for the Untitled generators (the stored `u:` keys and `untitled` list keep their names). */
+export const AUTO_SAVED = 'Auto-saved';
+
+/** The name an owner shows (Auto-saved generators are named by their inputs). */
 export function ownerLabel(lib: GenLibrary, key: OwnerKey): string {
   const o = parseOwner(key);
   if (!o) {
@@ -153,10 +156,10 @@ export function ownerLabel(lib: GenLibrary, key: OwnerKey): string {
     return lib.presets.find((p) => p.id === o.ref)?.name ?? o.ref;
   }
   const u = lib.untitled.find((x) => x.id === o.ref);
-  return u ? `Untitled: ${autoName(u.gen)}` : 'Untitled';
+  return u ? `${AUTO_SAVED}: ${autoName(u.gen)}` : AUTO_SAVED;
 }
 
-/** Where an owner sits in the preset browser: `['Built-in', group]`, `['My presets', ...folder]`, `['Untitled']`. */
+/** Where an owner sits in the preset browser: `['Built-in', group]`, `['My presets', ...folder]`, `['Auto-saved']`. */
 export function ownerCrumbs(lib: GenLibrary, key: OwnerKey): string[] {
   const o = parseOwner(key);
   if (!o) {
@@ -170,7 +173,7 @@ export function ownerCrumbs(lib: GenLibrary, key: OwnerKey): string[] {
     const p = lib.presets.find((x) => x.id === o.ref);
     return ['My presets', ...(p && p.folder ? p.folder.split('/') : [])];
   }
-  return ['Untitled'];
+  return [AUTO_SAVED];
 }
 
 export const subsetsOf = (lib: GenLibrary, key: OwnerKey | null): LibSubset[] =>
@@ -324,7 +327,7 @@ export function ensureUntitled(
     return { lib, key: untitledKey(hit.id) };
   }
   if (lib.untitled.length >= MAX_UNTITLED) {
-    return { lib, key: null, refused: `Too many Untitled generators (${MAX_UNTITLED}).` };
+    return { lib, key: null, refused: `Too many Auto-saved generators (${MAX_UNTITLED}).` };
   }
   const [next, id] = bump(lib, 'untitled');
   return {
