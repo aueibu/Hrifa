@@ -303,7 +303,7 @@ export const activeTab = (s: LabState): Tab => s.tabs[s.active] ?? s.tabs[0];
 /** Selected indices that exist in a field of `n` notes. */
 export const fixSel = (sel: readonly number[], n: number): number[] =>
   uniqSorted(sel.filter((i) => Number.isInteger(i) && i >= 0 && i < n));
-const fixMode = (mode: number, count: number) =>
+export const fixMode = (mode: number, count: number) =>
   count > 0 && Number.isInteger(mode) && mode >= 0 && mode < count ? mode : 0;
 
 /** Indices of the field notes whose cents match (within 0.01 c) any of `cents`. */

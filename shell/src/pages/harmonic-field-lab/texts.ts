@@ -421,6 +421,24 @@ const entries = {
     term: 'Add current tab as card',
     text: 'Copies the tab you are looking at into the card list as a snapshot: its generation, subset and mode. Later changes to the tab do not change the card. Example: build a 10/9-second major scale in another tab, then add it here as a candidate.',
   },
+  fillCards: {
+    term: 'Fill cards',
+    text: 'Builds several candidate cards at once from the current tab, shows them in a list first, and adds the ones you keep. Your cards stay as they are and the new ones go at the end. Example: with a major scale as card 0, Fill cards with Modes adds Mode 2 to Mode 7, so the retuner can also choose a Dorian-like card.',
+    see: ['cards', 'fillSources'],
+  },
+  fillSources: {
+    term: 'Fill sources',
+    text: "Where the candidate cards come from; each source works alone and together they are merged, duplicates removed. Modes: the current subset started on each of its notes. Keys that fit: the subset moved to every field note where all its notes still exist (the Keys panel). This generator's subsets: the subsets saved under the tab's generator. Example: modes + keys on a 7-note major scale give its 7 modes plus the other keys it fits.",
+    see: ['fillTags'],
+  },
+  fillTags: {
+    term: 'Retuned notes | Different notes',
+    text: 'Compared with card 0 (home), degree by degree. Retuned notes: the same number of notes and every degree within 30 c of home\'s, a comma-sized change, so the card is the same scale tuned differently. Different notes: it substitutes notes, like a mode or a smaller subset. Example: a major scale with a 10/9 second is "retuned" (22 c off at one degree); Dorian is "different" (its second degree is 10/9 but its third is 32/27, 70 c from 5/4).',
+  },
+  fillApply: {
+    term: 'Apply (Fill cards)',
+    text: 'Adds the checked cards in list order. The list never goes beyond 24 cards, counting cards stored but not playable; what does not fit is left out and the footer says how many. Adding resets the run like any other card change. Example: with 20 cards, 7 checked rows add 4 and say "3 would exceed the 24-card limit".',
+  },
   cardOrder: {
     term: 'Move card',
     text: 'Changes the position of the card in the list. Order matters only for ties: when two cards score the same, the earlier one wins. Example: put your favourite card first so it wins ties.',

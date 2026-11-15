@@ -251,6 +251,20 @@ Engine: `src/lib/harmonic-field/retuner.ts` and the scorers (unchanged, `vectors
   now (exact monzo while JI); drift is the chosen card's base minus its start (so the I-vi-ii-V-I vector gives 80/81 in either mode). **Card 0 is home**; "Make home" moves a card to
   the front. Adding, moving, making home or deleting a card, and switching Parallel | Relative, resets the run (every root back on its start: 1/1 Hz in Parallel, the card's own mode root in Relative; card 0 active, no history);
   rename does not. **Reset roots** does the same without touching the list.
+- **Fill cards** (M7c; `state/fillCards.ts` pure, `components/FillCards.tsx` the modal, a button under the card list). A centered
+  modal with three sources, each on its own: **Modes** of the current subset (one card per subset note as the root, named "Mode 1"
+  ... as the Modes panel numbers them), **Keys that fit** (the Keys panel's complete transpositions, "Key on 9/8"; the key's found
+  notes, its root the mode root) and **This generator's subsets** (`subsetsOf` the tab's owner, each resolved against the tab's
+  field with `resolveSubset`; no match = skipped, a partial match keeps the notes found). Default Modes + Keys. Every candidate is a
+  whole tab snapshot built with `cardFromTab` (`{ ...tab, sel, mode }`). The preview drops duplicates (same notes in cents to 0.01 c
+  at the same root; across and within sources, the first source's name wins, order modes, keys, subsets) and anything equal to an
+  existing card, and suffixes a name already taken (" 2"). Each row is tagged against card 0 (the tab's own card when the list is
+  empty): **retuned notes** when it has the same number of notes and every degree is within 30 c of home's degree (circular), else
+  **different notes**. Rows are checked by default; the footer reads "n cards will be added; m would exceed the 24-card limit": the
+  cap counts stored dormant cards too (`planFill`), what fits is added in list order. **Apply** sends each checked card through the
+  unchanged `ret/add` (existing cards stay in place, new ones are appended, the run resets). Worked example (tests): 5-limit major,
+  held degrees 2, 4, 6, Manual pivot degree 4, Roughness, Freestyle: major alone scores 5.63 (9/8:4/3:5/3); with the Modes added the
+  engine picks the mode with 10/9:4/3:5/3 (4.45); the 16/15:4/3:8/5 mode scores 4.54; all modes are tagged "different notes".
 - The retuner is on or off (transient). While it is on and has a card (`retunerLive`), a computer or dock key is a degree of the
   **active card** (slot i = degree i mod N of that card, floor(i / N) repeats up), not of the tab. `ret/down` records the held
   key (`{ key: slot, deg, oct, t }`), and with trigger **Auto** and two or more keys held it runs `runStep` (`retuneStep` with the

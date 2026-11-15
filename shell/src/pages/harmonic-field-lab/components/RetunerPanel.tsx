@@ -32,6 +32,7 @@ import {
 } from '../state/retuner';
 import { cardFromTab } from '../state/retunerCards';
 import type { TipKey } from '../texts';
+import { FillCards } from './FillCards';
 import { ArrowDownIcon, ArrowUpIcon, HomeIcon, PlusIcon, TrashIcon } from './icons';
 import { CommitNumber, DebouncedText, Num, Row, Strip, Tip, signed, useLab } from './ui';
 import classes from './panels.module.css';
@@ -170,6 +171,7 @@ function Cards({ r }: { r: RetState }) {
           Add current tab as card
         </Button>
       </Tip>
+      <FillCards r={r} />
       <Text size="xs" c="dimmed">
         Column <Tip k="rootNow">Root now</Tip> is how far each card root has moved from where it
         started (1/1 Hz in Parallel, the card's own mode root in Relative). Adding, moving or
