@@ -7,7 +7,17 @@ import { NativeSelect } from '@mantine/core';
 import type { CmpRef } from '../state/labState';
 import { rootLabel, useModeRoot } from './ModeRoot';
 import { NoteMark } from './NoteMark';
-import { CommitNumber, Num, Strip, Tip, noteHandlers, previewKind, signed, useLab } from './ui';
+import {
+  CommitNumber,
+  Num,
+  Strip,
+  Tip,
+  noteHandlers,
+  previewKind,
+  signed,
+  useLab,
+  useNativeTitle,
+} from './ui';
 import classes from './lab.module.css';
 
 const PAD = 4;
@@ -48,6 +58,7 @@ export function RefLines({ thin }: { thin?: boolean }) {
 
 export function TunerStrip() {
   const lab = useLab();
+  const nativeTitle = useNativeTitle();
   const { base, tab, strip, selected, sounding, soundingMarks, dispatch } = lab;
   const { rel, repC, analysis } = base;
   const { cmp } = tab;
@@ -184,7 +195,9 @@ export function TunerStrip() {
                       key={i}
                       className={classes.stepCell}
                       style={{ left: stripLeft(at, repC) }}
-                      title={`Step ${analysis.stepLetters[i]}: ${analysis.steps[i].toFixed(2)} c`}
+                      title={nativeTitle(
+                        `Step ${analysis.stepLetters[i]}: ${analysis.steps[i].toFixed(2)} c`
+                      )}
                     >
                       <Num>{analysis.stepLetters[i]}</Num>
                       <Num muted>{analysis.steps[i].toFixed(1)}</Num>

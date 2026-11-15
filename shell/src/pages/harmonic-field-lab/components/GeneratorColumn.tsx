@@ -12,7 +12,7 @@ import { fmtRatio, parseScl } from '../../../lib/harmonic-field';
 import { PRIME_LABELS, mosFor, rangeText, type GenSpec, type Method } from '../state/generate';
 import { GearIcon } from './icons';
 import { LibraryActions, LibraryNotice } from './LibraryBar';
-import { PresetBrowser } from './PresetBrowser';
+import { PresetBrowser, PresetCrumb } from './PresetBrowser';
 import { CommitNumber, DebouncedText, DebouncedTextarea, Num, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
@@ -343,6 +343,7 @@ export function GeneratorColumn() {
           </Popover>
         </Tip>
       </div>
+      <PresetCrumb />
       <LibraryActions />
       <LibraryNotice />
       <Tip k="method" as="control" block>

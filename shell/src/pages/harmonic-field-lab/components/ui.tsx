@@ -19,6 +19,7 @@ import {
   type TextInputProps,
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
+import { useLabDeveloperOptions } from '../state/developerOptions';
 import { TIPS, type TipKey } from '../texts';
 import classes from './lab.module.css';
 
@@ -32,14 +33,30 @@ interface TipProps {
   extra?: string;
 }
 
+/** The Developer menu's tooltip options as Mantine Tooltip props: every tooltip of the lab takes these. */
+export function useTooltipProps() {
+  const [o] = useLabDeveloperOptions();
+  return { disabled: !o.tooltips, openDelay: o.tooltipDelay };
+}
+
+/**
+ * For a native `title` attribute (the browser shows it after its own fixed delay, which cannot be changed): the text while
+ * tooltips are on, nothing while they are off.
+ */
+export function useNativeTitle() {
+  const [o] = useLabDeveloperOptions();
+  return (text: string | undefined) => (o.tooltips ? text : undefined);
+}
+
 /** Hover/focus tooltip whose text is the glossary entry `k` (one source of truth). */
 export function Tip({ k, children, as = 'label', block, extra }: TipProps) {
   const entry = TIPS[k];
+  const tipProps = useTooltipProps();
   return (
     <Tooltip
       multiline
       w={300}
-      openDelay={250}
+      {...tipProps}
       position="top"
       events={{ hover: true, focus: true, touch: true }}
       label={

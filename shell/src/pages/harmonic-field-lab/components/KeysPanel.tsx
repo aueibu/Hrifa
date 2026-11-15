@@ -19,7 +19,7 @@ import {
 } from '../state/keysModes';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import { RING_GAP, RingChevron } from './ModeRoot';
-import { Num, Strip, Tip, useLab } from './ui';
+import { Num, Strip, Tip, useLab, useNativeTitle } from './ui';
 import classes from './panels.module.css';
 
 const BIG = 260;
@@ -193,6 +193,7 @@ function KeyRing({
   onAct: (k: KeyRingData, e: ActEvent) => void;
 }) {
   const lab = useLab();
+  const nativeTitle = useNativeTitle();
   const { field, repC } = lab.base;
   const S = 56;
   const C = S / 2;
@@ -220,7 +221,9 @@ function KeyRing({
         data-viewed={viewed}
         data-current={current}
         aria-label={`${label}; ${x} of ${subset.length} notes in common with the subset`}
-        title={`${label}. ${x} of the subset's ${subset.length} notes are common to this key. Click: switch to this key. Shift+click: add its notes to the subset. Ctrl-click (Cmd on a Mac): hear it as a scale. Point and hold 1 to hear it as a scale for as long as you hold the key.`}
+        title={nativeTitle(
+          `${label}. ${x} of the subset's ${subset.length} notes are common to this key. Click: switch to this key. Shift+click: add its notes to the subset. Ctrl-click (Cmd on a Mac): hear it as a scale. Point and hold 1 to hear it as a scale for as long as you hold the key.`
+        )}
         onMouseEnter={() => {
           onHover(k.rootIdx);
           lab.audio.setPreviewTarget(scaleTarget);

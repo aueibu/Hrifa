@@ -39,7 +39,7 @@ function download(name: string, text: string) {
 
 const fileName = (s: string) => s.replace(/[^\w\- ]/g, '').trim() || 'subset';
 
-/** The row's name and note count: click the name to rename it in place (Enter or leaving the box keeps it, Escape cancels). */
+/** The row's name and note count: click the name text itself to rename it in place (Enter or leaving the box keeps it, Escape cancels). */
 function NameCell({ saved, limit }: { saved: LibSubset; limit: number | null }) {
   const { dispatch } = useLab();
   const [editing, setEditing] = useState(false);
@@ -74,26 +74,29 @@ function NameCell({ saved, limit }: { saved: LibSubset; limit: number | null }) 
       </span>
     );
   }
+  // the box ignores the pointer except for the name text itself: that starts a rename, anything else loads the subset
   return (
-    <Tip k="renameSaved" as="control">
-      <button
-        type="button"
-        className={classes.savedNameBtn}
-        aria-label={`Rename ${saved.name}`}
-        onClick={() => {
-          setName(saved.name);
-          setEditing(true);
-        }}
-      >
-        <span className={classes.savedName}>
-          <span>{saved.name}</span>
-          <Num muted>
-            {saved.pitches.length} notes
-            {limit ? ` · ${limit}-limit` : ''}
-          </Num>
-        </span>
-      </button>
-    </Tip>
+    <span className={classes.savedNameBtn}>
+      <Tip k="renameSaved" as="control">
+        <button
+          type="button"
+          className={classes.savedNameText}
+          aria-label={`Rename ${saved.name}`}
+          onClick={() => {
+            setName(saved.name);
+            setEditing(true);
+          }}
+        >
+          {saved.name}
+        </button>
+      </Tip>
+      <span className={classes.savedCount}>
+        <Num muted>
+          {saved.pitches.length} notes
+          {limit ? ` · ${limit}-limit` : ''}
+        </Num>
+      </span>
+    </span>
   );
 }
 
@@ -292,7 +295,7 @@ export function SavedSubsets() {
         {loadNote && loadNote.missing > 0 && loaded && loadNote !== goneLoad && (
           <li className={classes.savedEmpty} role="status">
             <span className={classes.noticeLine}>
-              <span className={classes.fieldMsg} data-kind="warn">
+              <span className={classes.fieldMsg} data-kind="note">
                 {`'${loaded.name}' loaded: ${loadNote.missing} of ${loadNote.found + loadNote.missing} pitches are not in this field.`}
               </span>
               <ActionIcon

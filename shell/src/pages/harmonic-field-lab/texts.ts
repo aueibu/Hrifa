@@ -654,7 +654,7 @@ const entries = {
   developerMenu: {
     term: 'Developer menu',
     text: 'Small switches for how the lab shows things, kept per viewer in this browser (they are not part of a saved tuning). Example: "Mode tiles: always show ± sign" can be turned off if the signs make the heat grid look busy.',
-    see: ['modeSignAlways', 'modes'],
+    see: ['modeSignAlways', 'tooltips', 'modes'],
   },
   keepModeRoot: {
     term: 'Keep the mode root when notes are added or removed',
@@ -665,6 +665,16 @@ const entries = {
     term: 'Mode tiles: always show ± sign',
     text: 'On (the default): every inexact tile in the Modes heat grid carries a + or −, so you can see the direction of each miss without pointing at it. Off: the sign appears only with the number when you point at the row. + means the nearest field note is sharp of the pitch the mode wants, − means flat. Example: a tile for a 5th that needs 81/64 where the field only has 5/4 shows − (21.5 c flat).',
     see: ['modes', 'developerMenu'],
+  },
+  tooltips: {
+    term: 'Tooltips',
+    text: "On (the default): pointing at or focusing a control or a dotted term shows its explanation. Off: no tooltip appears anywhere in the lab (the Glossary still has every entry, and a preset's description still shows in the Preset browser). Example: turn Tooltips off while you play, and the explanations stop appearing over the keys and tiles. Native hover hints (such as the mode tiles' degree notes) are removed too.",
+    see: ['tooltipDelay', 'developerMenu'],
+  },
+  tooltipDelay: {
+    term: 'Tooltip delay (ms)',
+    text: "How long the pointer must rest on something before its tooltip appears, in milliseconds (0 to 5000; the default is 250). Example: 800 keeps tooltips out of the way while you move across the screen, and still shows one when you pause. Hover hints the browser draws itself (a few small labels on the mode tiles, key rings and strip steps) keep the browser's own timing, which cannot be changed.",
+    see: ['tooltips', 'developerMenu'],
   },
   soundMenu: {
     term: 'Sound settings',

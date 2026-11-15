@@ -11,9 +11,29 @@ export interface LabDeveloperOptions {
   modeSignAlways: boolean;
   /** Adding or removing a note keeps the same note as the mode root (default); off keeps the mode number instead. */
   keepModeRoot: boolean;
+  /** Hover tooltips appear (default); off shows none anywhere in the lab (preset descriptions are content, not tooltips). */
+  tooltips: boolean;
+  /** Milliseconds the pointer must rest before a tooltip appears (0 to 5000, default 250). */
+  tooltipDelay: number;
 }
 
-const defaults: LabDeveloperOptions = { modeSignAlways: true, keepModeRoot: true };
+export const TOOLTIP_DELAY_DEFAULT = 250;
+export const TOOLTIP_DELAY_MAX = 5000;
+
+/** A delay as a whole number of ms in 0..5000; anything that is not a finite number gives the default. */
+export function sanitiseTooltipDelay(v: unknown): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) {
+    return TOOLTIP_DELAY_DEFAULT;
+  }
+  return Math.min(TOOLTIP_DELAY_MAX, Math.max(0, Math.round(v)));
+}
+
+const defaults: LabDeveloperOptions = {
+  modeSignAlways: true,
+  keepModeRoot: true,
+  tooltips: true,
+  tooltipDelay: TOOLTIP_DELAY_DEFAULT,
+};
 
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: LabDeveloperOptions } | null = null;
@@ -35,6 +55,8 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       modeSignAlways:
         typeof o.modeSignAlways === 'boolean' ? o.modeSignAlways : defaults.modeSignAlways,
       keepModeRoot: typeof o.keepModeRoot === 'boolean' ? o.keepModeRoot : defaults.keepModeRoot,
+      tooltips: typeof o.tooltips === 'boolean' ? o.tooltips : defaults.tooltips,
+      tooltipDelay: sanitiseTooltipDelay(o.tooltipDelay),
     };
   } catch {
     return defaults;
@@ -53,6 +75,7 @@ export function readDeveloperOptions(): LabDeveloperOptions {
 
 export function writeDeveloperOptions(patch: Partial<LabDeveloperOptions>) {
   const next = { ...readDeveloperOptions(), ...patch };
+  next.tooltipDelay = sanitiseTooltipDelay(next.tooltipDelay);
   try {
     localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify(next));
   } catch {

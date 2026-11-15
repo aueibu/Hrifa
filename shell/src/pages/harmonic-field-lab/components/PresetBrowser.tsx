@@ -1,12 +1,14 @@
 /**
- * The Preset control (M7b step 2): a button showing the breadcrumb of the generator this tab belongs to (with a dot when it
- * is modified), opening a popover browser: a search box on top (flat results, each with its folder path), a collapsible
- * folder tree below (Built-in, My presets, Recent, Untitled), and a one-line info line for the highlighted row.
+ * The Preset control (M7b step 2): a button showing the NAME of the generator this tab belongs to (with a dot when it is
+ * modified; the full path sits in `PresetCrumb`, a small wrapping line under the control), opening a popover browser: a
+ * search box on top (flat results, each with its folder path) and a collapsible folder tree below (Built-in, My presets,
+ * Recent, Untitled). The highlighted row (mouse or keyboard) shows its description in a tooltip beside the list; that is
+ * content, so it is a plain Mantine Tooltip, not the lab's `Tip`, and the Developer "Tooltips" switch does not hide it.
  * Keyboard (focus stays in the search box): Up/Down move, Right/Left open/close a folder, Enter picks, typing searches.
  * Choosing a preset is `preset/open`. User presets are renamed, moved and deleted from their row.
  */
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { ActionIcon, Button, Popover, TextInput } from '@mantine/core';
+import { ActionIcon, Button, Popover, TextInput, Tooltip, VisuallyHidden } from '@mantine/core';
 import { PRESETS, listFolders, splitFolder } from '../../../lib/harmonic-field';
 import { parseOwner } from '../state/generatorLibrary';
 import {
@@ -21,7 +23,7 @@ import {
   type Row,
 } from '../state/presetTree';
 import { CloseIcon } from './icons';
-import { Num, Tip, useLab } from './ui';
+import { Num, Tip, useLab, useNativeTitle } from './ui';
 import classes from './lab.module.css';
 
 /** A folder path box with the existing folders suggested (a native datalist). */
@@ -116,8 +118,20 @@ function EditRow({
   );
 }
 
+/** The full path of the tab's generator, as one muted line that wraps instead of cutting off. */
+export function PresetCrumb() {
+  const { state, owner } = useLab();
+  const crumb = owner ? ownerPath(state.library, owner).join(' > ') : '';
+  return (
+    <div className={classes.pbCrumb} data-testid="preset-path">
+      {crumb || '(edited by hand)'}
+    </div>
+  );
+}
+
 export function PresetBrowser() {
   const { state, owner, modified, dispatch } = useLab();
+  const nativeTitle = useNativeTitle();
   const lib = state.library;
   const uid = useId();
   const [opened, setOpened] = useState(false);
@@ -253,6 +267,7 @@ export function PresetBrowser() {
 
   const crumb = owner ? ownerPath(lib, owner).join(' > ') : '';
   const label = crumb || '(edited by hand)';
+  const name = (owner ? ownerPath(lib, owner).at(-1) : '') || label;
   const info = activeRow?.node.info ?? '';
   const ownerKind = owner ? parseOwner(owner) : null;
   const infoPreset =
@@ -279,7 +294,7 @@ export function PresetBrowser() {
             rightSection={<span aria-hidden="true">&#9662;</span>}
           >
             <span className={classes.pbLabelWrap}>
-              <span className={classes.pbLabel}>{label}</span>
+              <span className={classes.pbLabel}>{name}</span>
               {modified && (
                 <span className={classes.pbDot} aria-hidden="true" data-modified="true" />
               )}
@@ -329,114 +344,122 @@ export function PresetBrowser() {
                 }
                 const count = n.count;
                 return (
-                  <div
+                  <Tooltip
                     key={n.id}
-                    id={`${uid}-${i}`}
-                    role={searching ? 'option' : 'treeitem'}
-                    aria-selected={isActive}
-                    aria-level={searching ? undefined : r.depth + 1}
-                    aria-expanded={n.kind === 'folder' ? r.expanded : undefined}
-                    className={classes.pbRow}
-                    data-active={isActive}
-                    data-current={isOwn || undefined}
-                    data-kind={n.kind}
-                    style={{ paddingInlineStart: `calc(0.375rem + ${r.depth} * 0.875rem)` }}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onMouseEnter={() => setActive(n.id)}
-                    onClick={() => {
-                      setActive(n.id);
-                      if (n.kind === 'folder') {
-                        toggle(n.id);
-                      } else {
-                        pick(n);
-                      }
-                    }}
+                    label={n.info}
+                    multiline
+                    w={280}
+                    position="right"
+                    withinPortal
+                    transitionProps={{ duration: 0 }}
+                    opened={isActive && n.kind === 'preset' && !!n.info}
                   >
-                    <span className={classes.pbChev} aria-hidden="true">
-                      {n.kind === 'folder' ? (r.expanded ? '▾' : '▸') : ''}
-                    </span>
-                    <span className={classes.pbName}>
-                      <span>{n.label}</span>
-                      {searching && n.kind === 'preset' && (
-                        <span className={classes.pbPath}>{n.path.join(' > ')}</span>
-                      )}
-                    </span>
-                    {(count > 0 || user) && (
-                      <span title={`${count} subset${count === 1 ? '' : 's'}`}>
-                        <Num muted>{count}</Num>
+                    <div
+                      id={`${uid}-${i}`}
+                      role={searching ? 'option' : 'treeitem'}
+                      aria-selected={isActive}
+                      aria-level={searching ? undefined : r.depth + 1}
+                      aria-expanded={n.kind === 'folder' ? r.expanded : undefined}
+                      className={classes.pbRow}
+                      data-active={isActive}
+                      data-current={isOwn || undefined}
+                      data-kind={n.kind}
+                      style={{ paddingInlineStart: `calc(0.375rem + ${r.depth} * 0.875rem)` }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setActive(n.id)}
+                      onClick={() => {
+                        setActive(n.id);
+                        if (n.kind === 'folder') {
+                          toggle(n.id);
+                        } else {
+                          pick(n);
+                        }
+                      }}
+                    >
+                      <span className={classes.pbChev} aria-hidden="true">
+                        {n.kind === 'folder' ? (r.expanded ? '▾' : '▸') : ''}
                       </span>
-                    )}
-                    {n.kind === 'preset' && user && n.userId && (
-                      <span className={classes.pbActions}>
-                        <Tip k="presetEdit" as="control">
-                          <ActionIcon
+                      <span className={classes.pbName}>
+                        <span>{n.label}</span>
+                        {searching && n.kind === 'preset' && (
+                          <span className={classes.pbPath}>{n.path.join(' > ')}</span>
+                        )}
+                      </span>
+                      {(count > 0 || user) && (
+                        <span title={nativeTitle(`${count} subset${count === 1 ? '' : 's'}`)}>
+                          <Num muted>{count}</Num>
+                        </span>
+                      )}
+                      {n.kind === 'preset' && user && n.userId && (
+                        <span className={classes.pbActions}>
+                          <Tip k="presetEdit" as="control">
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              size="xs"
+                              aria-label={`Edit preset ${n.label}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirming(null);
+                                setEditing(n.id);
+                              }}
+                            >
+                              <span aria-hidden="true">&#9998;</span>
+                            </ActionIcon>
+                          </Tip>
+                          <Tip k="presetDelete" as="control">
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              size="xs"
+                              aria-label={`Delete preset ${n.label}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirming(n.id);
+                              }}
+                            >
+                              <CloseIcon />
+                            </ActionIcon>
+                          </Tip>
+                        </span>
+                      )}
+                      {n.kind === 'preset' && n.userId && confirming === n.id && (
+                        <span
+                          className={classes.pbConfirm}
+                          role="alert"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Delete? Subsets stay under Untitled.
+                          <Button
+                            size="compact-xs"
+                            variant="default"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              dispatch({ type: 'preset/delete', id: n.userId! });
+                              setConfirming(null);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                          <Button
+                            size="compact-xs"
                             variant="subtle"
                             color="gray"
-                            size="xs"
-                            aria-label={`Edit preset ${n.label}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               setConfirming(null);
-                              setEditing(n.id);
                             }}
                           >
-                            <span aria-hidden="true">&#9998;</span>
-                          </ActionIcon>
-                        </Tip>
-                        <Tip k="presetDelete" as="control">
-                          <ActionIcon
-                            variant="subtle"
-                            color="gray"
-                            size="xs"
-                            aria-label={`Delete preset ${n.label}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConfirming(n.id);
-                            }}
-                          >
-                            <CloseIcon />
-                          </ActionIcon>
-                        </Tip>
-                      </span>
-                    )}
-                    {n.kind === 'preset' && n.userId && confirming === n.id && (
-                      <span
-                        className={classes.pbConfirm}
-                        role="alert"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Delete? Subsets stay under Untitled.
-                        <Button
-                          size="compact-xs"
-                          variant="default"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            dispatch({ type: 'preset/delete', id: n.userId! });
-                            setConfirming(null);
-                          }}
-                        >
-                          Delete
-                        </Button>
-                        <Button
-                          size="compact-xs"
-                          variant="subtle"
-                          color="gray"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirming(null);
-                          }}
-                        >
-                          Keep
-                        </Button>
-                      </span>
-                    )}
-                  </div>
+                            Keep
+                          </Button>
+                        </span>
+                      )}
+                    </div>
+                  </Tooltip>
                 );
               })}
             </div>
-            <div className={classes.pbInfo} aria-live="polite">
-              {info}
-            </div>
+            <VisuallyHidden aria-live="polite">{info}</VisuallyHidden>
           </div>
         </Popover.Dropdown>
       </Popover>

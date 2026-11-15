@@ -11,11 +11,23 @@ import {
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
 import { MAX_TEMPLATES } from '../state/labState';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
-import { DebouncedText, Num, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
+import {
+  DebouncedText,
+  Num,
+  SEV_LABEL,
+  Strip,
+  Tip,
+  severity,
+  useLab,
+  useNativeTitle,
+  useTooltipProps,
+} from './ui';
 import classes from './panels.module.css';
 
 function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => void }) {
   const lab = useLab();
+  const tipProps = useTooltipProps();
+  const nativeTitle = useNativeTitle();
   const picked =
     lab.chordPicked !== null &&
     lab.chordPicked.size === chip.memberIdx.length &&
@@ -27,7 +39,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
     ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key.`
     : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   return (
-    <Tooltip label={label} multiline w={260} openDelay={250}>
+    <Tooltip label={label} multiline w={260} {...tipProps}>
       <button
         type="button"
         className={classes.chip}
@@ -83,7 +95,11 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
         <span className={classes.chipBottom}>
           <Num muted>{chip.members.join(' ')}</Num>
           {chip.found ? (
-            <span className={classes.err} data-sev={sev} title={`Error ${SEV_LABEL[sev]}`}>
+            <span
+              className={classes.err}
+              data-sev={sev}
+              title={nativeTitle(`Error ${SEV_LABEL[sev]}`)}
+            >
               <Num>{sev === 0 ? 'exact' : chip.maxErr.toFixed(1)}</Num>
             </span>
           ) : (
@@ -106,6 +122,7 @@ const cpsName = (g: CpsChord, labels: readonly string[]) =>
 
 function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
   const lab = useLab();
+  const tipProps = useTooltipProps();
   const idx = g.members.map((m) => m.i);
   const picked =
     lab.chordPicked !== null &&
@@ -115,7 +132,7 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
   const name = cpsName(g, labels);
   const label = `${g.type === 'harmonic' ? 'Otonal' : 'Utonal'} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key.`;
   return (
-    <Tooltip label={label} multiline w={260} openDelay={250}>
+    <Tooltip label={label} multiline w={260} {...tipProps}>
       <button
         type="button"
         className={classes.chip}

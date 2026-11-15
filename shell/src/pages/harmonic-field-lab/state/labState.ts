@@ -181,6 +181,11 @@ export interface LabState {
   lastLoad: { id: string; found: number; missing: number } | null;
   /** The row the last Add produced or found (`duplicate`); runtime only. */
   lastAdded: { id: string; duplicate: boolean } | null;
+  /**
+   * Set when `subset/add` forked the tab into a new Untitled generator because it was edited or unsaved (the key of that
+   * generator); runtime only, ended like the notice (a generator edit, switch or library change). Additive: nothing else reads it.
+   */
+  forkNote: { owner: OwnerKey } | null;
   /** Field index pointed at, and the one pinned in the inspector. */
   hover: number | null;
   pin: number | null;
@@ -274,6 +279,7 @@ export function initialState(): LabState {
     library: emptyLibrary(),
     notice: null,
     lastAdded: null,
+    forkNote: null,
     refusal: null,
     lastLoad: null,
     hover: null,
@@ -597,6 +603,9 @@ export function labReducer(s: LabState, a: Action): LabState {
   if (next.notice && next.notice === s.notice && next !== s && endsNotice(a.type)) {
     next = { ...next, notice: null };
   }
+  if (next.forkNote && next.forkNote === s.forkNote && next !== s && endsNotice(a.type)) {
+    next = { ...next, forkNote: null };
+  }
   if (next.refusal && next.refusal === s.refusal && isLibraryAction(a.type)) {
     next = { ...next, refusal: null };
   }
@@ -788,6 +797,7 @@ function reduce(s: LabState, a: Action): LabState {
       const set = subsetFromSelection(t.field, t.sel, t.mode);
       let lib = s.library;
       let key = ownerOfTab(lib, t);
+      let forked = false;
       // an unsaved or edited generator forks into an Untitled generator, so the subset is never orphaned
       if (key === null || isModified(lib, t)) {
         const u = ensureUntitled(lib, t.gen);
@@ -796,6 +806,7 @@ function reduce(s: LabState, a: Action): LabState {
         }
         lib = u.lib;
         key = u.key;
+        forked = true;
       }
       const r = addSubset(lib, key, set, a.name);
       if (r.refused) {
@@ -805,6 +816,7 @@ function reduce(s: LabState, a: Action): LabState {
         ...setLink(s, key),
         library: pushRecent(r.lib, key),
         lastAdded: { id: r.id, duplicate: r.duplicate },
+        forkNote: forked ? { owner: key } : null,
       };
     }
     case 'subset/delete':

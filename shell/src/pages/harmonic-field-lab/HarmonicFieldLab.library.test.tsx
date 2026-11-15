@@ -2,6 +2,7 @@
 import { act, fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
+import { resetDeveloperOptionsCache, writeDeveloperOptions } from './state/developerOptions';
 import { KEY_GENERATORS } from './state/persist';
 import { openBrowser, pickPreset, presetButton, subsetList } from './testUtils';
 
@@ -30,14 +31,22 @@ const rowNames = () =>
 /** Divisions box of the EDO method. */
 const divisions = () => screen.getByRole('textbox', { name: 'Divisions' });
 const addButton = () => screen.getByRole('button', { name: 'Add subset' });
+/** The full path line under the Preset control (the control itself shows only the name). */
+const crumb = () => screen.getByTestId('preset-path');
 
-beforeEach(() => window.localStorage.clear());
+beforeEach(() => {
+  window.localStorage.clear();
+  resetDeveloperOptionsCache();
+});
 afterEach(() => window.localStorage.clear());
 
 describe('preset browser', () => {
   it('opens with the four folders; search is flat with folder paths; arrows, Enter and Escape work', () => {
     render(<HarmonicFieldLabPage />);
-    expect(presetButton()).toHaveTextContent('Harmonic series > Harmonics 8–15');
+    expect(crumb()).toHaveTextContent('Harmonic series > Harmonics 8–15');
+    expect(presetButton()).toHaveTextContent('Harmonics 8–15');
+    expect(presetButton()).not.toHaveTextContent('Harmonic series');
+    expect(presetButton()).toHaveAccessibleName('Preset: Harmonic series > Harmonics 8–15');
     const box = openBrowser();
     const tree = screen.getByRole('tree', { name: 'Presets' });
     const names = within(tree)
@@ -64,9 +73,7 @@ describe('preset browser', () => {
     expect(hits[1]).toHaveAttribute('aria-selected', 'true');
     key(box, 'Enter');
     expect(screen.queryByRole('combobox', { name: 'Search presets' })).toBeNull();
-    expect(presetButton()).toHaveTextContent(
-      'Equal divisions > Non-octave > Carlos Beta (11 ED 3/2)'
-    );
+    expect(crumb()).toHaveTextContent('Equal divisions > Non-octave > Carlos Beta (11 ED 3/2)');
     // Escape closes without picking
     const box2 = openBrowser();
     key(box2, 'ArrowDown');
@@ -75,7 +82,7 @@ describe('preset browser', () => {
     expect(presetButton()).toHaveTextContent('Carlos Beta');
   });
 
-  it('Right and Left open and close a folder, and Left on a preset goes to its folder; the info line follows', () => {
+  it('Right and Left open and close a folder, and Left on a preset goes to its folder; the description tooltip follows', () => {
     render(<HarmonicFieldLabPage />);
     const box = openBrowser();
     const tree = () => screen.getByRole('tree', { name: 'Presets' });
@@ -99,18 +106,25 @@ describe('preset browser', () => {
       'aria-expanded',
       'false'
     );
-    // the info line shows the highlighted preset's description
+    // the highlighted preset's description shows as a tooltip beside its row (keyboard highlight reveals it), a folder has none
+    const rowTip = () =>
+      screen.queryAllByRole('tooltip').filter((t) => !t.textContent?.startsWith('Preset'));
+    expect(rowTip()).toHaveLength(0);
     key(box, 'ArrowRight');
     key(box, 'ArrowDown');
-    expect(
-      screen.getByText(/overtone|harmonics/i, { selector: '[aria-live="polite"]' })
-    ).toBeInTheDocument();
+    expect(rowTip()).toHaveLength(1);
+    expect(rowTip()[0]).toHaveTextContent(/overtone|harmonics/i);
+    // it is content, not a tooltip: the Developer off-switch does not hide it
+    act(() => writeDeveloperOptions({ tooltips: false }));
+    expect(rowTip()).toHaveLength(1);
+    act(() => writeDeveloperOptions({ tooltips: true }));
   });
 
   it('shows the breadcrumb and a modified dot when the generator is edited', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('12-EDO');
-    expect(presetButton()).toHaveTextContent('Equal divisions > Small (5 to 12) > 12-EDO');
+    expect(crumb()).toHaveTextContent('Equal divisions > Small (5 to 12) > 12-EDO');
+    expect(presetButton()).toHaveTextContent('12-EDO');
     expect(presetButton().querySelector('[data-modified]')).toBeNull();
     await typeSlow(divisions(), '13'); // no 13-EDO preset
     expect(presetButton()).toHaveTextContent('12-EDO');
@@ -154,7 +168,7 @@ describe('Update preset and Save as new', () => {
     openSave();
     expect(screen.getByText('Starts with no subsets.')).toBeInTheDocument();
     saveForm('Mine', 'Pools/Seven');
-    expect(presetButton()).toHaveTextContent('My presets > Pools > Seven > Mine');
+    expect(crumb()).toHaveTextContent('My presets > Pools > Seven > Mine');
     expect(rowNames()).toEqual([]);
     expect(stored().presets?.[0]).toMatchObject({ name: 'Mine', folder: 'Pools/Seven' });
     expect(screen.queryByText(/copied subset/)).toBeNull();
@@ -173,6 +187,24 @@ describe('Update preset and Save as new', () => {
     expect(
       screen.getByRole('menuitem', { name: /copy 1 subset .*Shift\+click/ })
     ).toBeInTheDocument();
+  });
+
+  it('Add on an edited generator says it went to a new Untitled generator; the line can be dismissed and ends on the next edit', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    await typeSlow(divisions(), '13'); // edited
+    fireEvent.click(addButton());
+    const note = screen.getByText(
+      /^Saved to a new Untitled generator because this generator was edited\./
+    );
+    expect(note.closest('[role="status"]')).toHaveAttribute('data-kind', 'fork');
+    expect(crumb()).toHaveTextContent(/^Untitled > /);
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss fork notice' }));
+    expect(screen.queryByText(/new Untitled generator because/)).toBeNull();
+    // an unedited generator adds quietly
+    await pickPreset('12-EDO');
+    fireEvent.click(addButton());
+    expect(screen.queryByText(/new Untitled generator because/)).toBeNull();
   });
 
   it('Update reports what changed; Show removed lists it read-only; Undo restores; a refusal line can be dismissed', async () => {
@@ -199,6 +231,11 @@ describe('Update preset and Save as new', () => {
     expect(within(review).queryByRole('textbox')).toBeNull();
     expect(review.querySelectorAll('[data-kind="lost"]')).toHaveLength(11);
     expect(review.querySelectorAll('[data-kind="kept"]')).toHaveLength(1);
+    // it is a modal (like the field table): closed on purpose, here with its close button
+    const dialog = screen.getByRole('dialog', { name: 'Subsets that lost pitches' });
+    expect(dialog).toContainElement(review);
+    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     // Undo: the exact previous subset is back and the notice is gone
     fireEvent.click(within(notice).getByRole('button', { name: 'Undo' }));
     expect(screen.queryByText(/^Updated 'Twelve'/)).toBeNull();
@@ -241,6 +278,19 @@ describe('subset rows', () => {
     expect(stored().subsets?.map((s) => s.name)).toEqual(['Subset 1', 'Quiet']);
   });
 
+  it('only the name text renames: the count and the rest of the row load the subset', () => {
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(addButton());
+    const rename = screen.getByRole('button', { name: 'Rename Subset 1' });
+    expect(rename).toHaveTextContent(/^Subset 1$/);
+    // the count sits beside the rename button, not inside it
+    const count = within(subsetList()).getByText(/\d+ notes/);
+    expect(count.closest('button')).toBeNull();
+    expect(rename.contains(count)).toBe(false);
+    fireEvent.click(rename);
+    expect(screen.getByRole('textbox', { name: 'New name' })).toBeInTheDocument();
+  });
+
   it('subsets of a generator vanish when you switch generator and come back with it', async () => {
     render(<HarmonicFieldLabPage />);
     fireEvent.click(addButton());
@@ -280,9 +330,10 @@ describe('subset rows', () => {
     fireEvent.click(group);
     expect(rowNames()).toEqual(['Lost one']);
     fireEvent.click(within(subsetList()).getByRole('button', { name: /^Lost one: 2 notes/ }));
-    expect(
-      screen.getByText(/'Lost one' loaded: 1 of 2 pitches are not in this field\./)
-    ).toBeInTheDocument();
+    const line = screen.getByText(/'Lost one' loaded: 1 of 2 pitches are not in this field\./);
+    expect(line).toBeInTheDocument();
+    // neutral text: yellow means pinned, so this line is not a warning colour
+    expect(line).toHaveAttribute('data-kind', 'note');
     // the tab is still on its own generator
     expect(presetButton()).toHaveTextContent('Harmonics 8–15');
     // dismissable
@@ -306,7 +357,7 @@ describe('My presets rows', () => {
     type(screen.getByRole('combobox', { name: 'Folder' }), 'A/B');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(stored().presets?.[0]).toMatchObject({ name: 'Dozen', folder: 'A/B' });
-    expect(presetButton()).toHaveTextContent('My presets > A > B > Dozen');
+    expect(crumb()).toHaveTextContent('My presets > A > B > Dozen');
     // delete asks first, then keeps the subset under Untitled
     fireEvent.click(screen.getByRole('button', { name: 'Delete preset Dozen' }));
     expect(screen.getByRole('alert')).toHaveTextContent(/Subsets stay under Untitled/);

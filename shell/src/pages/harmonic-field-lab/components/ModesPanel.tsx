@@ -16,6 +16,7 @@ import {
   signedCents,
   severity,
   useLab,
+  useNativeTitle,
 } from './ui';
 import classes from './panels.module.css';
 
@@ -23,6 +24,7 @@ const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+c'];
 
 export function ModesPanel() {
   const lab = useLab();
+  const nativeTitle = useNativeTitle();
   const { an, base } = lab;
   const tol = lab.state.ui.tol;
   const [dev] = useLabDeveloperOptions();
@@ -105,7 +107,7 @@ export function ModesPanel() {
                 data-testid="mode-row"
                 aria-pressed={lab.mode === m.mode}
                 aria-label={label}
-                title={label}
+                title={nativeTitle(label)}
                 onClick={() => lab.setMode(m.mode)}
                 onFocus={() => lab.audio.setPreviewTarget({ kind: 'mode', mode: m.mode })}
                 onBlur={() => lab.audio.clearPreviewTarget({ kind: 'mode', mode: m.mode })}
@@ -133,7 +135,7 @@ export function ModesPanel() {
                         data-sign={sign}
                         role="img"
                         aria-label={tip}
-                        title={tip}
+                        title={nativeTitle(tip)}
                         data-testid="mode-tile"
                         onClick={(e) => preview(e, m.mode, j)}
                         onMouseEnter={() =>

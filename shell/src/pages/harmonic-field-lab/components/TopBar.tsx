@@ -15,7 +15,7 @@ import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSc
 import { MAX_TABS, WAVES, tabName, type Wave } from '../state/labState';
 import { DeveloperMenu } from './DeveloperMenu';
 import { BookIcon, CopyIcon, HomeIcon, PlayIcon, PlusIcon, SoundIcon, StopIcon } from './icons';
-import { CommitNumber, Tip, useLab } from './ui';
+import { CommitNumber, Tip, useLab, useNativeTitle } from './ui';
 import classes from './lab.module.css';
 
 const WAVE_LABEL: Record<Wave, string> = { sine: 'Sine', harmonic: 'Harmonic (7 partials)' };
@@ -23,6 +23,7 @@ const WAVE_LABEL: Record<Wave, string> = { sine: 'Sine', harmonic: 'Harmonic (7 
 /** One tab: a button that switches, double-click to rename (empty goes back to the automatic name), a close mark. */
 function TabButton({ index }: { index: number }) {
   const { state, dispatch } = useLab();
+  const nativeTitle = useNativeTitle();
   const t = state.tabs[index];
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -74,7 +75,7 @@ function TabButton({ index }: { index: number }) {
         role="tab"
         aria-selected={index === state.active}
         className={classes.tab}
-        title={`${index < 9 ? `Alt+${index + 1}: ` : ''}double-click to rename`}
+        title={nativeTitle(`${index < 9 ? `Alt+${index + 1}: ` : ''}double-click to rename`)}
         onClick={() => dispatch({ type: 'tab/switch', index })}
         onDoubleClick={() => {
           setDraft(name);

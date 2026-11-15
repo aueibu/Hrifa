@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import { SCALE_LIBRARY, melakarta } from '../../../lib/harmonic-field';
 import { PICK_ED, PICK_ODD, resolveScale } from '../state/labState';
-import { Num, Tip, useLab } from './ui';
+import { Num, Tip, useLab, useNativeTitle } from './ui';
 import classes from './lab.module.css';
 
 function scaleOptions() {
@@ -33,6 +33,7 @@ function scaleOptions() {
 
 export function SubsetRow() {
   const { tab, base, dispatch } = useLab();
+  const nativeTitle = useNativeTitle();
   const options = useMemo(scaleOptions, []);
   const n = tab.sel.length;
   const root = n ? base.ratios[tab.sel[tab.mode]] : '–';
@@ -182,7 +183,7 @@ export function SubsetRow() {
             className={classes.fieldMsg}
             data-kind={pick.ok ? 'note' : 'err'}
             role={pick.ok ? 'status' : 'alert'}
-            title={desc || undefined}
+            title={nativeTitle(desc || undefined)}
           >
             {pick.msg}
           </span>

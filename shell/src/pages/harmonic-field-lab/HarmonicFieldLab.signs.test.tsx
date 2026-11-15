@@ -104,12 +104,16 @@ describe('lab Developer menu', () => {
     expect(JSON.parse(window.localStorage.getItem(LAB_DEVELOPER_KEY)!)).toEqual({
       modeSignAlways: false,
       keepModeRoot: true,
+      tooltips: true,
+      tooltipDelay: 250,
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
     fireEvent.click(screen.getByRole('switch', { name: /always show/ }));
     expect(JSON.parse(window.localStorage.getItem(LAB_DEVELOPER_KEY)!)).toEqual({
       modeSignAlways: true,
       keepModeRoot: true,
+      tooltips: true,
+      tooltipDelay: 250,
     });
   });
 
@@ -123,13 +127,27 @@ describe('lab Developer menu', () => {
     expect(parseDeveloperOptions('{not json')).toEqual({
       modeSignAlways: true,
       keepModeRoot: true,
+      tooltips: true,
+      tooltipDelay: 250,
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
       modeSignAlways: true,
       keepModeRoot: true,
+      tooltips: true,
+      tooltipDelay: 250,
     });
-    expect(parseDeveloperOptions('[1,2]')).toEqual({ modeSignAlways: true, keepModeRoot: true });
-    expect(parseDeveloperOptions('null')).toEqual({ modeSignAlways: true, keepModeRoot: true });
+    expect(parseDeveloperOptions('[1,2]')).toEqual({
+      modeSignAlways: true,
+      keepModeRoot: true,
+      tooltips: true,
+      tooltipDelay: 250,
+    });
+    expect(parseDeveloperOptions('null')).toEqual({
+      modeSignAlways: true,
+      keepModeRoot: true,
+      tooltips: true,
+      tooltipDelay: 250,
+    });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
     open();
     expect(grid()).toHaveAttribute('data-signs', 'always');

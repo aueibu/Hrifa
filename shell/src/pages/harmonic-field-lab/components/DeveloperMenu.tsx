@@ -1,6 +1,6 @@
 /** Top-bar "Developer" popover: options for how the lab shows things, kept per viewer (state/developerOptions.ts). */
-import { Button, Popover, Switch } from '@mantine/core';
-import { useLabDeveloperOptions } from '../state/developerOptions';
+import { Button, NumberInput, Popover, Switch } from '@mantine/core';
+import { TOOLTIP_DELAY_MAX, useLabDeveloperOptions } from '../state/developerOptions';
 import { Tip } from './ui';
 import classes from './lab.module.css';
 
@@ -30,6 +30,29 @@ export function DeveloperMenu() {
                 label="Keep the mode root when notes are added or removed"
                 checked={options.keepModeRoot}
                 onChange={(e) => update({ keepModeRoot: e.currentTarget.checked })}
+              />
+            </Tip>
+            <Tip k="tooltips" as="control" block>
+              <Switch
+                size="xs"
+                label="Tooltips"
+                checked={options.tooltips}
+                onChange={(e) => update({ tooltips: e.currentTarget.checked })}
+              />
+            </Tip>
+            <Tip k="tooltipDelay" as="control" block>
+              <NumberInput
+                size="xs"
+                label="Tooltip delay (ms)"
+                min={0}
+                max={TOOLTIP_DELAY_MAX}
+                step={50}
+                allowDecimal={false}
+                allowNegative={false}
+                clampBehavior="strict"
+                disabled={!options.tooltips}
+                value={options.tooltipDelay}
+                onChange={(v) => update({ tooltipDelay: typeof v === 'number' ? v : 250 })}
               />
             </Tip>
           </div>

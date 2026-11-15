@@ -3,11 +3,11 @@
  * notice with Undo and Show removed, and the refusal line. Everything goes through the library actions of the lab state.
  */
 import { useMemo, useState } from 'react';
-import { ActionIcon, Button, Menu, Popover, TextInput } from '@mantine/core';
+import { ActionIcon, Button, Menu, Modal, Popover, TextInput } from '@mantine/core';
 import { listFolders, reportSentence } from '../../../lib/harmonic-field';
 import { autoName } from '../state/generate';
 import { subsetsOf } from '../state/generatorLibrary';
-import { copySentence } from '../state/noticeText';
+import { copySentence, forkSentence } from '../state/noticeText';
 import { CloseIcon } from './icons';
 import { FolderInput } from './PresetBrowser';
 import { RefLines, stripLeft } from './TunerStrip';
@@ -132,21 +132,21 @@ function RemovedReview() {
     return null;
   }
   return (
-    <Popover
-      opened={open}
-      onChange={setOpen}
-      position="bottom-start"
-      width={340}
-      transitionProps={{ duration: 0 }}
-    >
-      <Popover.Target>
-        <Tip k="presetShowRemoved" as="control">
-          <Button size="compact-xs" variant="default" onClick={() => setOpen((o) => !o)}>
-            Show removed
-          </Button>
-        </Tip>
-      </Popover.Target>
-      <Popover.Dropdown>
+    <>
+      <Tip k="presetShowRemoved" as="control">
+        <Button size="compact-xs" variant="default" onClick={() => setOpen(true)}>
+          Show removed
+        </Button>
+      </Tip>
+      <Modal
+        opened={open}
+        onClose={() => setOpen(false)}
+        title="Subsets that lost pitches"
+        size="min(40rem, 94vw)"
+        centered
+        closeButtonProps={{ 'aria-label': 'Close' }}
+        transitionProps={{ duration: 0 }}
+      >
         <ul className={classes.revList} aria-label="Subsets that lost pitches">
           {n.report.detail.map((d) => (
             <li key={d.id} className={classes.revItem}>
@@ -182,8 +182,8 @@ function RemovedReview() {
             </li>
           ))}
         </ul>
-      </Popover.Dropdown>
-    </Popover>
+      </Modal>
+    </>
   );
 }
 
@@ -191,9 +191,27 @@ export function LibraryNotice() {
   const { state, dispatch } = useLab();
   const n = state.notice;
   const [gone, setGone] = useState<object | null>(null);
+  const [goneFork, setGoneFork] = useState<object | null>(null);
   const refusal = state.refusal;
+  const fork = state.forkNote;
   return (
     <>
+      {fork && fork !== goneFork && (
+        <div className={classes.notice} role="status" data-kind="fork">
+          <span>{forkSentence()}</span>
+          <span className={classes.noticeActions}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="xs"
+              aria-label="Dismiss fork notice"
+              onClick={() => setGoneFork(fork)}
+            >
+              <CloseIcon />
+            </ActionIcon>
+          </span>
+        </div>
+      )}
       {refusal && refusal !== gone && (
         <span className={classes.noticeLine}>
           <span className={classes.fieldMsg} data-kind="err" role="alert">
