@@ -335,6 +335,10 @@ describe('subset rows', () => {
       '1 of 2 notes in these settings. Missing: 123.4 c.'
     );
     expect(bar('Nothing')).toHaveAccessibleName('No notes in common with these settings.');
+    // the count in the row reads found/total when the row does not fully map (0/n for no match), the plain count otherwise
+    expect(within(item('Partial')).getByText(/^1\/2 notes/)).toBeInTheDocument();
+    expect(within(item('Nothing')).getByText(/^0\/\d+ notes/)).toBeInTheDocument();
+    expect(within(item('Subset 1')).queryByText(/\d+\/\d+ notes/)).toBeNull();
     // the tooltip carries the same sentence
     fireEvent.mouseEnter(bar('Partial').parentElement!);
     expect(
@@ -392,7 +396,9 @@ describe('subset rows', () => {
     expect(rowNames()).toEqual([]);
     fireEvent.click(group);
     expect(rowNames()).toEqual(['Lost one']);
-    fireEvent.click(within(subsetList()).getByRole('button', { name: /^Lost one: 2 notes/ }));
+    fireEvent.click(
+      within(subsetList()).getByRole('button', { name: /^Lost one: (1 of )?2 notes/ })
+    );
     const line = screen.getByText(/'Lost one' loaded: 1 of 2 pitches are not in this field\./);
     expect(line).toBeInTheDocument();
     // neutral text: yellow means pinned, so this line is not a warning colour

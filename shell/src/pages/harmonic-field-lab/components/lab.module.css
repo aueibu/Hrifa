@@ -1960,11 +1960,13 @@
   line-height: 1.2;
   min-width: 0;
   overflow: hidden;
-  padding-inline-end: 0.25rem;
+  padding-inline-end: 0.125rem;
   pointer-events: none;
   position: absolute;
   top: 0;
-  width: var(--gutter);
+  /* the name/count box overhangs the gutter into the gap before the strip (the box is positioned over the grid, so the
+     strip alignment is untouched); --name-overhang is the one value to tune */
+  width: calc(var(--gutter) + var(--name-overhang, 0.75rem));
   z-index: 1;
 }
 

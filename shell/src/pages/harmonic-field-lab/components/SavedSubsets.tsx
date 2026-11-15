@@ -47,7 +47,16 @@ function download(name: string, text: string) {
 const fileName = (s: string) => s.replace(/[^\w\- ]/g, '').trim() || 'subset';
 
 /** The row's name and note count: click the name text itself to rename it in place (Enter or leaving the box keeps it, Escape cancels). */
-function NameCell({ saved, limit }: { saved: LibSubset; limit: number | null }) {
+function NameCell({
+  saved,
+  limit,
+  found,
+}: {
+  saved: LibSubset;
+  limit: number | null;
+  /** Pitches that resolve in the current field; shown as x/y when fewer than all. */
+  found: number;
+}) {
   const { dispatch } = useLab();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(saved.name);
@@ -104,7 +113,8 @@ function NameCell({ saved, limit }: { saved: LibSubset; limit: number | null }) 
       </Tip>
       <span className={classes.savedCount}>
         <Num muted>
-          {saved.pitches.length} notes
+          {found < saved.pitches.length ? `${found}/${saved.pitches.length}` : saved.pitches.length}{' '}
+          notes
           {limit ? ` · ${limit}-limit` : ''}
         </Num>
       </span>
@@ -138,7 +148,8 @@ export function SavedSubsets() {
       // how much of the stored subset the current field has: a row that does not fully map is dimmed with a side bar
       const level = r ? matchLevel(r.found.length, s.pitches.length) : 'full';
       const missing = r ? r.missing.map((i) => s.pitches[i]) : [];
-      const found = r ? r.found.length : 0;
+      // rows of another generator are not resolved against this field: they keep the plain count
+      const found = r ? r.found.length : s.pitches.length;
       return {
         s,
         same,
@@ -247,7 +258,7 @@ export function SavedSubsets() {
             className={classes.savedRow}
             aria-disabled={dead || undefined}
             aria-pressed={isLoaded}
-            aria-label={`${s.name}: ${s.pitches.length} notes${same ? '' : orphan ? ', no generator' : ', another generator'}.${dead ? '' : ' Click to load.'}`}
+            aria-label={`${s.name}: ${found < s.pitches.length ? `${found} of ${s.pitches.length}` : s.pitches.length} notes${same ? '' : orphan ? ', no generator' : ', another generator'}.${dead ? '' : ' Click to load.'}`}
             onClick={() => {
               if (!dead) {
                 dispatch({ type: 'subset/load', id: s.id });
@@ -286,7 +297,7 @@ export function SavedSubsets() {
             )}
           </button>
         </Tip>
-        <NameCell saved={s} limit={limit} />
+        <NameCell saved={s} limit={limit} found={found} />
         <span className={classes.savedActions}>
           <Tip k="deleteSaved" as="control">
             <ActionIcon
