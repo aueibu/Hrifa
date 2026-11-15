@@ -231,7 +231,12 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     chord,
     retuner: state.retuner,
     // hold 4 plays the armed template; before one is picked it is the first template, as the Sketch row shows it
-    sketchTemplate: state.shelf.sketch.template ?? state.templates[0]?.text ?? null,
+    sketch: {
+      template: state.shelf.sketch.template ?? state.templates[0]?.text ?? null,
+      shape: state.shelf.sketch.shape,
+      rootDeg: state.shelf.sketch.rootDeg,
+      exact: state.shelf.sketch.exact,
+    },
     dispatch,
   });
 
@@ -293,6 +298,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       selected,
       sounding: state.sounding,
       soundingMarks: state.soundingMarks,
+      soundingGhosts: state.soundingGhosts,
       clickNote,
       pinNote,
       audio,

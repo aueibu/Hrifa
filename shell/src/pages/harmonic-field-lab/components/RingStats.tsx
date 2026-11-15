@@ -13,6 +13,7 @@ import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive'
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { RingView } from '../state/labState';
 import { FieldCompact } from './FieldPanel';
+import { OutsideCount, useGhosts } from './GhostMarks';
 import { GearIcon } from './icons';
 import { RING_GAP, RingChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, signed, useLab } from './ui';
@@ -144,6 +145,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
     .sort((a, b) => marks[a].turn - marks[b].turn || a - b)
     .map((i) => marks[i]);
   const lit = [...sounding].filter((i) => i < field.length).sort((a, b) => a - b);
+  const ghosts = useGhosts();
   return (
     <svg
       viewBox={places.view}
@@ -180,6 +182,24 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
           </g>
         );
       })}
+      {view === 'chromatic' &&
+        ghosts.map((g) => {
+          const a = g.turn * 2 * Math.PI - Math.PI / 2;
+          return (
+            <circle
+              key={g.c}
+              className={classes.ringGhost}
+              data-testid="ring-ghost"
+              cx={C + R * Math.cos(a)}
+              cy={C + R * Math.sin(a)}
+              r={8}
+              role="img"
+              aria-label={`Ghost: ${g.text}`}
+            >
+              <title>{g.text}</title>
+            </circle>
+          );
+        })}
       <polygon
         className={classes.subsetFill}
         data-testid="subset-polygon"
@@ -266,6 +286,7 @@ export function RingPanel() {
       <div className={classes.ringHead}>
         <span className={classes.ringCap}>
           <Tip k="pitchCircle">Pitch circle</Tip>
+          <OutsideCount />
         </span>
         <Tip k="ringView" as="control">
           <SegmentedControl

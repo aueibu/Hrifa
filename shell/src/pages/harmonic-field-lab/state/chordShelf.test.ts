@@ -188,14 +188,58 @@ describe('rename, reorder, delete, selection', () => {
 describe('sketch and armed chord', () => {
   it('sets template and root degree, arming marks the chip source, a hand pick disarms', () => {
     let s = initialState();
-    expect(s.shelf.sketch).toEqual({ template: null, rootDeg: 0, armed: false });
+    expect(s.shelf.sketch).toEqual({
+      template: null,
+      rootDeg: 0,
+      armed: false,
+      shape: null,
+      exact: false,
+    });
     s = labReducer(s, { type: 'sketch/arm', template: '10:12:15' });
-    expect(s.shelf.sketch).toEqual({ template: '10:12:15', rootDeg: 0, armed: true });
+    expect(s.shelf.sketch).toEqual({
+      template: '10:12:15',
+      rootDeg: 0,
+      armed: true,
+      shape: null,
+      exact: false,
+    });
     s = labReducer(s, { type: 'sketch/set', patch: { rootDeg: 3 } });
-    expect(s.shelf.sketch).toEqual({ template: '10:12:15', rootDeg: 3, armed: true });
+    expect(s.shelf.sketch).toEqual({
+      template: '10:12:15',
+      rootDeg: 3,
+      armed: true,
+      shape: null,
+      exact: false,
+    });
     expect(labReducer(s, { type: 'sketch/arm', template: '10:12:15' })).toBe(s);
     s = labReducer(s, { type: 'sketch/set', patch: { template: '4:5:6' } });
-    expect(s.shelf.sketch).toEqual({ template: '4:5:6', rootDeg: 3, armed: false });
+    expect(s.shelf.sketch).toEqual({
+      template: '4:5:6',
+      rootDeg: 3,
+      armed: false,
+      shape: null,
+      exact: false,
+    });
+    // the realization shape travels with an arm and is dropped with a hand-picked template; Exact is its own switch
+    const shaped = labReducer(s, {
+      type: 'sketch/arm',
+      template: '4:5:6',
+      shape: [ratioNote(1, 1), ratioNote(5, 4)],
+    });
+    expect(shaped.shelf.sketch.shape).toHaveLength(2);
+    expect(
+      labReducer(shaped, {
+        type: 'sketch/arm',
+        template: '4:5:6',
+        shape: [ratioNote(1, 1), ratioNote(5, 4)],
+      })
+    ).toBe(shaped);
+    expect(
+      labReducer(shaped, { type: 'sketch/set', patch: { template: '6:7:9' } }).shelf.sketch.shape
+    ).toBeNull();
+    const ex = labReducer(shaped, { type: 'sketch/set', patch: { exact: true } });
+    expect(ex.shelf.sketch.exact).toBe(true);
+    expect(ex.shelf.sketch.shape).toHaveLength(2);
     expect(labReducer(s, { type: 'sketch/set', patch: { rootDeg: -1 } })).toBe(s);
     const re = labReducer(s, { type: 'sketch/arm', template: '6:7:9', rootDeg: 2 });
     expect(re.shelf.sketch.rootDeg).toBe(2);

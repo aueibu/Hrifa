@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { ActionIcon, Button, Modal, Tooltip } from '@mantine/core';
 import {
   DEFAULT_TEMPLATES,
+  chordShape,
   type Note,
   cpsChords,
   parseTemplate,
@@ -70,6 +71,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
                 kind: 'chord',
                 idx: chip.memberIdx,
                 template: chip.template,
+                rootIdx: chip.rootIdx,
               });
             }
           }}
@@ -84,6 +86,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
                 kind: 'chord',
                 idx: chip.memberIdx,
                 template: chip.template,
+                rootIdx: chip.rootIdx,
               });
             }
           }}
@@ -113,6 +116,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
                 type: 'sketch/arm',
                 template: chip.template,
                 rootDeg: rootDeg >= 0 ? rootDeg : undefined,
+                shape: chordShape(lab.base.field, lab.base.rep, chip.rootIdx, chip.memberIdx),
               });
             }
           }}

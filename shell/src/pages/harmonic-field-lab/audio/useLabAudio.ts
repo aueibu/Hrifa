@@ -6,20 +6,22 @@
  * unmounting all silence everything. The AudioContext is created by the engine on the first note, i.e. on a user gesture.
  */
 import { useEffect, useMemo, useRef, type Dispatch } from 'react';
-import { sketchPitches } from '../../../lib/harmonic-field';
+import { chordShape, placeShape, sketchShape, type Note } from '../../../lib/harmonic-field';
 import type { LabAudio } from '../state/context';
 import type { Base } from '../state/derive';
+import { ghostCents, ghostKey } from '../state/ghosts';
 import type { Action, UiSettings } from '../state/labState';
 import { heldHz, litIndex, retunerLive, type RetState } from '../state/retuner';
+import { sketchChord } from '../state/sketchChord';
 import { VoiceEngine } from './engine';
-import { isTyping, keyId, slotOfEvent } from './keymap';
+import { isTyping, keyId, slotOfEvent, slotTarget } from './keymap';
 import {
   LightCounter,
   absHz,
   chordPlan,
   fieldScalePlan,
   HOLD_DIGITS,
-  ARMED_DIGIT,
+  ARMED_DIGITS,
   modePreviewPlan,
   pitchesPlan,
   framedCents,
@@ -38,6 +40,7 @@ interface HeldNote {
   vid: string;
   src: number;
   markOnly?: boolean;
+  ghost?: number;
   on: boolean;
 }
 /** A running hold-1/2/3 preview: its notes and the timers that step through a whole mode. */
@@ -57,7 +60,7 @@ interface Args {
   /** The retuner: while it is live the keys are its held notes and its voices glide (see `syncRetuner`). */
   retuner: RetState;
   /** The Sketch row's armed template (hold 4 plays it on the hovered note); null when none. */
-  sketchTemplate: string | null;
+  sketch: { template: string | null; shape: Note[] | null; rootDeg: number; exact: boolean };
   dispatch: Dispatch<Action>;
 }
 
@@ -70,12 +73,14 @@ export function useLabAudio({
   ui,
   chord,
   retuner,
-  sketchTemplate,
+  sketch,
   dispatch,
 }: Args): LabAudio {
   const engine = useRef<VoiceEngine | null>(null);
   const lights = useRef(new LightCounter());
   const markLights = useRef(new LightCounter());
+  /** Sounding pitches that match no field note, reference counted by pitch (see `ghostKey`). */
+  const ghostLights = useRef(new LightCounter());
   const timers = useRef(new Set<number>());
   const slotSrc = useRef(new Map<number, number>());
   /** Physical key (see `keyId`) to the slot it pressed, so a release finds it even when Shift changed `event.key`. */
@@ -88,10 +93,10 @@ export function useLabAudio({
   const heldDigits = useRef(new Map<string, string>());
   const applied = useRef({ volume: NaN, wave: '' });
   /** The retuner's voices by slot: the pitch each sounds at and the field note it lights (-1 = none). */
-  const rtVoices = useRef(new Map<number, { hz: number; src: number }>());
-  const latest = useRef({ base, ui, chord, enabled, retuner, sketchTemplate });
+  const rtVoices = useRef(new Map<number, { hz: number; src: number; ghost?: number }>());
+  const latest = useRef({ base, ui, chord, enabled, retuner, sketch });
   useEffect(() => {
-    latest.current = { base, ui, chord, enabled, retuner, sketchTemplate };
+    latest.current = { base, ui, chord, enabled, retuner, sketch };
     // only on a change: setVolume schedules a ramp on the master gain
     if (engine.current && applied.current.volume !== ui.volume) {
       engine.current.setVolume(ui.volume);
@@ -103,7 +108,7 @@ export function useLabAudio({
     }
   });
 
-  const api = useMemo<LabAudio & { syncRetuner: () => void }>(() => {
+  const api = useMemo<LabAudio & { syncRetuner: () => void; refreshArmed: () => void }>(() => {
     const pitch = (): PitchBase => ({
       baseHz: latest.current.ui.baseHz,
       rootC: latest.current.base.rootC,
@@ -123,9 +128,24 @@ export function useLabAudio({
       return engine.current;
     };
     const report = () =>
-      dispatch({ type: 'sounding', idx: lights.current.lit(), marks: markLights.current.lit() });
-    const light = (i: number, on: boolean, markOnly = false) => {
+      dispatch({
+        type: 'sounding',
+        idx: lights.current.lit(),
+        marks: markLights.current.lit(),
+        ghosts: ghostLights.current
+          .lit()
+          .sort((a, b) => a - b)
+          .map(ghostCents),
+      });
+    const light = (i: number, on: boolean, markOnly = false, ghost?: number) => {
       if (i < 0) {
+        // a sound that is no field note: a ghost mark at its pitch, counted so two sounds of one pitch end together
+        if (ghost !== undefined && Number.isFinite(ghost)) {
+          const k = ghostKey(ghost);
+          if (on ? ghostLights.current.on(k) : ghostLights.current.off(k)) {
+            report();
+          }
+        }
         return;
       }
       const c = markOnly ? markLights.current : lights.current;
@@ -145,12 +165,12 @@ export function useLabAudio({
         const start = (LEAD + n.delay) * 1000;
         const on = window.setTimeout(() => {
           timers.current.delete(on);
-          light(n.src, true, n.markOnly);
+          light(n.src, true, n.markOnly, n.ghost);
         }, start);
         const off = window.setTimeout(
           () => {
             timers.current.delete(off);
-            light(n.src, false, n.markOnly);
+            light(n.src, false, n.markOnly, n.ghost);
           },
           start + n.dur * 1000
         );
@@ -173,9 +193,13 @@ export function useLabAudio({
         // the sync effect of this same flush must not restart them from the stale held set
         latest.current.retuner = { ...latest.current.retuner, held: [] };
       }
-      const had = lights.current.lit().length > 0 || markLights.current.lit().length > 0;
+      const had =
+        lights.current.lit().length > 0 ||
+        markLights.current.lit().length > 0 ||
+        ghostLights.current.lit().length > 0;
       lights.current.clear();
       markLights.current.clear();
+      ghostLights.current.clear();
       if (had) {
         report();
       }
@@ -195,7 +219,7 @@ export function useLabAudio({
         if (n.on) {
           n.on = false;
           engine.current?.stop(n.vid);
-          light(n.src, false, n.markOnly);
+          light(n.src, false, n.markOnly, n.ghost);
         }
       }
     };
@@ -224,20 +248,21 @@ export function useLabAudio({
           vid: `pv:${id}:${k}`,
           src: n.src,
           markOnly: n.markOnly,
+          ghost: n.ghost,
           on: false,
         };
         p.notes.push(note);
         const begin = () => {
           if (eng.start(note.vid, n.hz, n.amp)) {
             note.on = true;
-            light(n.src, true, n.markOnly);
+            light(n.src, true, n.markOnly, n.ghost);
           }
         };
         const end = () => {
           if (note.on) {
             note.on = false;
             eng.stop(note.vid);
-            light(n.src, false, n.markOnly);
+            light(n.src, false, n.markOnly, n.ghost);
           }
         };
         if (n.delay <= 0) {
@@ -252,17 +277,23 @@ export function useLabAudio({
     };
     const playTarget = (id: string, digit: string, t: PreviewTarget): boolean => {
       const kind = HOLD_DIGITS[digit];
-      if (!kind && digit !== ARMED_DIGIT) {
+      if (!kind && !ARMED_DIGITS[digit]) {
         return false;
       }
       endHeld(id);
       const { base: b, ui: u } = latest.current;
-      if (digit === ARMED_DIGIT) {
-        // hold 4: the armed chord rooted on the pointed note (a strip mark is its note); nothing elsewhere
+      if (ARMED_DIGITS[digit]) {
+        // hold 4 (as in the field) / hold 5 (exact): the armed chord on the pointed note (a strip mark is its note);
+        // nothing elsewhere
         const i = t.kind === 'note' || t.kind === 'strip' ? t.i : -1;
         const root = b.field[i];
-        const template = latest.current.sketchTemplate;
-        const pitches = root && template ? sketchPitches(root, template) : null;
+        const sk = latest.current.sketch;
+        const skRoot = b.rel.length ? b.field[b.rel[sk.rootDeg % b.rel.length].src] : undefined;
+        const shape =
+          root && sk.template
+            ? sketchShape(b.field, b.rep, skRoot, sk.template, sk.shape, u.tol, ARMED_DIGITS[digit])
+            : null;
+        const pitches = root && shape ? placeShape(root, shape) : null;
         if (pitches) {
           startHeld(
             id,
@@ -297,8 +328,12 @@ export function useLabAudio({
           }
         } else if (t.kind === 'chord') {
           if (t.template) {
-            // playing a chord chip arms its template in the Sketch row
-            dispatch({ type: 'sketch/arm', template: t.template });
+            // playing a chord chip arms its template and its realization in the Sketch row
+            dispatch({
+              type: 'sketch/arm',
+              template: t.template,
+              shape: t.rootIdx !== undefined ? chordShape(b.field, b.rep, t.rootIdx, t.idx) : null,
+            });
           }
           startHeld(id, chordPlan(b.field, t.idx, pitch()), false, digit);
         } else if (t.kind === 'pitches') {
@@ -351,37 +386,52 @@ export function useLabAudio({
         if (!want.has(slot)) {
           engine.current?.stop(`rt${slot}`);
           rtVoices.current.delete(slot);
-          light(v.src, false);
+          light(v.src, false, false, v.ghost);
         }
       }
       for (const [slot, hz] of want) {
         const cur = rtVoices.current.get(slot);
+        // as the tab's own keys do (relHz): Parallel puts the tab's mode root on 1/1 Hz, so a pitch p above 1/1 is the
+        // field note at p + rootC; Relative keeps absolute pitch
+        const at = 1200 * Math.log2(hz / u.baseHz) + (u.modePlayback === 'relative' ? 0 : b.rootC);
         const src = litIndex(
           b.field.map((n) => n.c),
           b.repC,
-          // as the tab's own keys do (relHz): Parallel puts the tab's mode root on 1/1 Hz, so a pitch p above 1/1 is the
-          // field note at p + rootC; Relative keeps absolute pitch
-          1200 * Math.log2(hz / u.baseHz) + (u.modePlayback === 'relative' ? 0 : b.rootC)
+          at
         );
+        const ghost = src < 0 ? at : undefined;
         if (!cur) {
           const eng = getEngine();
           if (eng?.start(`rt${slot}`, hz)) {
-            rtVoices.current.set(slot, { hz, src });
-            light(src, true);
+            rtVoices.current.set(slot, { hz, src, ghost });
+            light(src, true, false, ghost);
           }
         } else if (Math.abs(cur.hz - hz) > 1e-9) {
           engine.current?.glideTo(`rt${slot}`, hz, r.settings.glideMs);
-          if (cur.src !== src) {
-            light(cur.src, false);
-            light(src, true);
+          if (cur.src !== src || cur.ghost !== ghost) {
+            light(cur.src, false, false, cur.ghost);
+            light(src, true, false, ghost);
           }
-          rtVoices.current.set(slot, { hz, src });
+          rtVoices.current.set(slot, { hz, src, ghost });
+        }
+      }
+    };
+    /** The frame, the armed shape or the template changed under a resting pointer: a held 4 / 5 plays the new chord. */
+    const refreshArmed = () => {
+      const t = target.current;
+      if (!t) {
+        return;
+      }
+      for (const [id, d] of heldDigits.current) {
+        if (ARMED_DIGITS[d]) {
+          playTarget(id, d, t);
         }
       }
     };
     return {
       enabled,
       syncRetuner,
+      refreshArmed,
       setPreviewTarget: (t) => {
         const cur = target.current;
         // a note under a strip mark of the same note is the same pointer position: keep the strip target
@@ -407,7 +457,7 @@ export function useLabAudio({
       },
       holdPreview: (id, digit) => {
         const t = target.current;
-        if (!t || (!HOLD_DIGITS[digit] && digit !== ARMED_DIGIT)) {
+        if (!t || (!HOLD_DIGITS[digit] && !ARMED_DIGITS[digit])) {
           return false;
         }
         heldDigits.current.set(id, digit);
@@ -501,6 +551,7 @@ export function useLabAudio({
     if (
       lights.current.lit().length ||
       markLights.current.lit().length ||
+      ghostLights.current.lit().length ||
       slotSrc.current.size ||
       rtVoices.current.size ||
       previews.current.size ||
@@ -528,6 +579,10 @@ export function useLabAudio({
     ui.modePlayback,
   ]);
 
+  useEffect(() => {
+    api.refreshArmed();
+  }, [api, ui.modePlayback, sketch.shape, sketch.template, sketch.rootDeg]);
+
   // keyboard, and the safety nets: blur, hidden tab, unmount
   useEffect(() => {
     if (!enabled) {
@@ -545,8 +600,8 @@ export function useLabAudio({
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) {
         return;
       }
-      if (e.key === '5' && !e.shiftKey) {
-        // plain 5 switches Parallel | Relative mode playback; it is no note key
+      if (e.key === '0' && !e.shiftKey) {
+        // plain 0 switches Parallel | Relative mode playback; it is no note key (4 and 5 are the armed-chord holds)
         e.preventDefault();
         dispatch({
           type: 'ui',
@@ -556,7 +611,25 @@ export function useLabAudio({
         });
         return;
       }
-      if ((HOLD_DIGITS[e.key] || e.key === ARMED_DIGIT) && api.holdPreview(keyId(e), e.key)) {
+      if (e.code === 'Equal' || e.key === '=' || e.key === '+') {
+        // = (or +, the same physical key) stashes the current Sketch, as the Stash button does
+        const { base: b, ui: u, sketch: sk } = latest.current;
+        const made = sketchChord(b.field, b.rep, b.rel, sk, u.tol);
+        if (made) {
+          e.preventDefault();
+          dispatch({
+            type: 'shelf/stash',
+            stash: {
+              pitches: made.pitches,
+              template: sk.template,
+              rootDeg: made.deg,
+              date: new Date().toISOString(),
+            },
+          });
+        }
+        return;
+      }
+      if ((HOLD_DIGITS[e.key] || ARMED_DIGITS[e.key]) && api.holdPreview(keyId(e), e.key)) {
         e.preventDefault();
         return;
       }
@@ -565,6 +638,11 @@ export function useLabAudio({
         return;
       }
       e.preventDefault();
+      // a melody key also moves the Sketch row's root to that key's degree (octave repeats are the same degree)
+      const t = slotTarget(slot, latest.current.base.rel.length);
+      if (t) {
+        dispatch({ type: 'sketch/set', patch: { rootDeg: t.deg } });
+      }
       held.current.set(keyId(e), slot);
       api.press(slot);
     };

@@ -43,7 +43,13 @@ describe('chordshelf.v1 shape and round trip', () => {
     expect(back.next).toBe(sh.next);
     // runtime parts start fresh
     expect(back.selected).toEqual([]);
-    expect(back.sketch).toEqual({ template: null, rootDeg: 0, armed: false });
+    expect(back.sketch).toEqual({
+      template: null,
+      rootDeg: 0,
+      armed: false,
+      shape: null,
+      exact: false,
+    });
   });
 
   it('is self-contained: pitches, provenance, generator inputs; no field positions', () => {

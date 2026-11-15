@@ -5,6 +5,7 @@
  */
 import { NativeSelect } from '@mantine/core';
 import type { CmpRef } from '../state/labState';
+import { StripGhosts } from './GhostMarks';
 import { rootLabel, useModeRoot } from './ModeRoot';
 import { NoteMark } from './NoteMark';
 import {
@@ -124,6 +125,7 @@ export function TunerStrip() {
           <div className={classes.plotCol} data-testid="strip-plot" title={strip.caption}>
             <RefLines />
             <div className={classes.stripPlot}>
+              <StripGhosts />
               {strip.devs.map((d, fi) => {
                 const sharp = d.dev >= 0;
                 const active = selected.has(fi);

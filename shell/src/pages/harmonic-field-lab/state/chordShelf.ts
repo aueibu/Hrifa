@@ -125,6 +125,13 @@ export interface Sketch {
   rootDeg: number;
   /** True when the template was armed from a chord chip (or a shelf chord), not typed by hand. */
   armed: boolean;
+  /**
+   * The armed chord's REALIZATION as a shape: the intervals above its own root (root first, 1/1) as the field it came from gives
+   * them, errors included. Null for a hand-picked template (the field realizes it at the sketch root when asked). Runtime only.
+   */
+  shape: Note[] | null;
+  /** The Sketch row's "Exact" switch: Play sketch and Stash use the template's true ratios instead of the realization. */
+  exact: boolean;
 }
 
 export interface ShelfState {
@@ -142,7 +149,20 @@ export interface ShelfState {
   refusal: { reason: string } | null;
 }
 
-export const emptySketch = (): Sketch => ({ template: null, rootDeg: 0, armed: false });
+export const emptySketch = (): Sketch => ({
+  template: null,
+  rootDeg: 0,
+  armed: false,
+  shape: null,
+  exact: false,
+});
+
+const sameShape = (a: readonly Note[] | null, b: readonly Note[] | null): boolean =>
+  a === b ||
+  (a !== null &&
+    b !== null &&
+    a.length === b.length &&
+    a.every((n, i) => Math.abs(n.c - b[i].c) < 1e-9));
 
 export const emptyShelf = (): ShelfState => ({
   chords: [],
@@ -263,9 +283,9 @@ export type ShelfAction =
   | { type: 'shelf/selectNone' }
   /** Another window saved the shelf: take its chords (selection and sketch are kept where they still apply). */
   | { type: 'shelf/sync'; shelf: ShelfState }
-  | { type: 'sketch/set'; patch: Partial<Pick<Sketch, 'template' | 'rootDeg'>> }
-  /** Arm a template from a chord chip or a shelf chord; the root degree is left as it is unless given. */
-  | { type: 'sketch/arm'; template: string; rootDeg?: number }
+  | { type: 'sketch/set'; patch: Partial<Pick<Sketch, 'template' | 'rootDeg' | 'exact'>> }
+  /** Arm a template from a chord chip or a shelf chord with its shape; the root degree is left as it is unless given. */
+  | { type: 'sketch/arm'; template: string; rootDeg?: number; shape?: Note[] | null }
   | { type: 'sketch/disarm' };
 
 /** Actions of the pure slice (stash and reload need the tabs and library and are in labState.ts). */
@@ -353,11 +373,17 @@ export function shelfReduce(s: ShelfState, a: ShelfAction): ShelfState {
             ? a.patch.rootDeg
             : sk.rootDeg;
       // choosing a template by hand is no longer "armed from a chip"
-      const armed =
-        a.patch.template !== undefined && a.patch.template !== sk.template ? false : sk.armed;
-      return template === sk.template && rootDeg === sk.rootDeg && armed === sk.armed
+      const changed = a.patch.template !== undefined && a.patch.template !== sk.template;
+      const armed = changed ? false : sk.armed;
+      const shape = changed ? null : sk.shape;
+      const exact = a.patch.exact === undefined ? sk.exact : a.patch.exact;
+      return template === sk.template &&
+        rootDeg === sk.rootDeg &&
+        armed === sk.armed &&
+        exact === sk.exact &&
+        shape === sk.shape
         ? s
-        : { ...s, sketch: { template, rootDeg, armed } };
+        : { ...s, sketch: { template, rootDeg, armed, shape, exact } };
     }
     case 'sketch/arm': {
       const rootDeg =
@@ -365,11 +391,15 @@ export function shelfReduce(s: ShelfState, a: ShelfAction): ShelfState {
           ? a.rootDeg
           : s.sketch.rootDeg;
       const sk = s.sketch;
-      return sk.template === a.template && sk.rootDeg === rootDeg && sk.armed
+      const shape = a.shape ?? null;
+      return sk.template === a.template &&
+        sk.rootDeg === rootDeg &&
+        sk.armed &&
+        sameShape(sk.shape, shape)
         ? s
-        : { ...s, sketch: { template: a.template, rootDeg, armed: true } };
+        : { ...s, sketch: { ...sk, template: a.template, rootDeg, armed: true, shape } };
     }
     case 'sketch/disarm':
-      return s.sketch.armed ? { ...s, sketch: { ...s.sketch, armed: false } } : s;
+      return s.sketch.armed ? { ...s, sketch: { ...s.sketch, armed: false, shape: null } } : s;
   }
 }

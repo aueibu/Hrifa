@@ -95,6 +95,8 @@ export interface Lab {
   sounding: ReadonlySet<number>;
   /** Strip marks lit alone (a pure target tone that is no field note); only the tuner strip shows them. */
   soundingMarks: ReadonlySet<number>;
+  /** Sounding pitches (cents above 1/1) that match no field note: drawn as ghost marks. */
+  soundingGhosts: readonly number[];
   /** Plain click on a note anywhere: toggle it in the subset (it does not pin). */
   clickNote: (i: number) => void;
   /** Alt+click (Alt+Enter) on a note anywhere: pin it in the inspector, or unpin it if it is pinned (it does not toggle). */

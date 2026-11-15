@@ -5,6 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionIcon, Button, Checkbox, TextInput } from '@mantine/core';
+import { mulNotes } from '../../../lib/harmonic-field';
 import type { PreviewTarget } from '../audio/plan';
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import { litIndex } from '../state/retuner';
@@ -134,7 +135,7 @@ function Slot({
     lab.setChord(null);
     audio.clearPreviewTarget(target);
   };
-  // the playback mode (key 5) or the selection changed under a resting pointer: hold 1 must play the new thing
+  // the playback mode (key 0) or the selection changed under a resting pointer: hold 1 must play the new thing
   const targetKey = target.kind === 'pitches' ? target.key : '';
   useEffect(() => {
     if (hovered.current) {
@@ -173,6 +174,22 @@ function Slot({
             } else {
               lab.pickChord(lit);
               audio.playCents(cents, lights);
+              if (chord.template && chord.pitches.length) {
+                // playing a slot arms its template and its stored realization in the Sketch row
+                const p0 = chord.pitches[0];
+                dispatch({
+                  type: 'sketch/arm',
+                  template: chord.template,
+                  // root position, like a chip's shape: a note below the first is lifted by the repeat
+                  shape: chord.pitches.map((p) => {
+                    let n = mulNotes(p, p0, -1);
+                    while (base.rep.c > 1e-9 && n.c < -1e-9) {
+                      n = mulNotes(n, base.rep, 1);
+                    }
+                    return n;
+                  }),
+                });
+              }
             }
           }}
         >

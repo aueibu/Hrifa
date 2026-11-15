@@ -281,3 +281,18 @@ describe('pitchesPlan (exact pitches together)', () => {
     expect(plan[1].src).toBe(0);
   });
 });
+
+describe('pitchesPlan ghosts', () => {
+  it('a pitch that lights no field note carries its light cents as a ghost; a field note does not', () => {
+    const c7 = 1200 * Math.log2(7 / 4);
+    const plan = pitchesPlan(field, OCT.c, [0, c7], base);
+    expect(plan[0].ghost).toBeUndefined();
+    expect(plan[1].src).toBe(-1);
+    expect(plan[1].ghost).toBeCloseTo(c7, 6);
+  });
+
+  it('the ghost is the light pitch, not the sounding one (Parallel: sounding minus the root, ghost field-absolute)', () => {
+    const plan = pitchesPlan(field, OCT.c, [300], base, 1.8, [1200 * Math.log2(7 / 4)]);
+    expect(plan[0].ghost).toBeCloseTo(1200 * Math.log2(7 / 4), 6);
+  });
+});

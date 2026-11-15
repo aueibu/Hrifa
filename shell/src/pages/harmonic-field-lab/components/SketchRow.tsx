@@ -1,18 +1,21 @@
 /**
  * Sketch row (M8a), at the top of the Chords panel: any template on any root of the subset, even when the field lacks some of
- * its notes. Play sounds the exact chord; found notes are marked, outsiders show their distance in cents to the nearest field
- * note; Stash puts the exact pitches on the shelf. A chord chip that plays arms its template here (hold 4 on a note then plays
- * it rooted on that note).
+ * its notes. Play sketch sounds the chord as the "As in field | Exact" switch says (default: as the field gives it, the armed
+ * chord's shape or the template found at the root; Exact: the true ratios); found notes are marked, outsiders show their
+ * distance in cents to the nearest field note; Stash puts the pitches heard on the shelf. A chord chip or shelf slot that plays
+ * arms its template and shape here (hold 4 on a note moves that shape onto it, hold 5 plays the exact ratios there).
  */
 import { useEffect, useMemo, useRef } from 'react';
-import { ActionIcon, Button, NativeSelect } from '@mantine/core';
+import { ActionIcon, Button, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   matchToField,
-  sketchPitches,
+  placeShape,
+  sketchShape,
   type ChordTemplate,
   type Note,
 } from '../../../lib/harmonic-field';
 import { OTHER_FAMILY, familyOrder, noteLabel } from '../state/derive';
+import { autoName } from '../state/generate';
 import { PlayIcon } from './icons';
 import { Num, Tip, useLab } from './ui';
 import classes from './panels.module.css';
@@ -52,10 +55,23 @@ export function SketchRow() {
   const deg = n ? sk.rootDeg % n : 0;
   const rootIdx = n ? base.rel[deg].src : -1;
   const root: Note | undefined = tab.field[rootIdx];
-  const pitches = useMemo(
-    () => (root && sk.template ? sketchPitches(root, sk.template) : null),
-    [root, sk.template]
-  );
+  // the chord as the field realizes it (the armed chord's shape, else the template found at the root), or its exact ratios
+  const tol = state.ui.tol;
+  const pitches = useMemo(() => {
+    const shape =
+      root && sk.template
+        ? sketchShape(
+            tab.field,
+            tab.rep,
+            root,
+            sk.template,
+            sk.shape,
+            tol,
+            sk.exact ? 'exact' : 'field'
+          )
+        : null;
+    return root && shape ? placeShape(root, shape) : null;
+  }, [root, sk.template, sk.shape, sk.exact, tab.field, tab.rep, tol]);
   const match = useMemo(
     () => (pitches ? matchToField(tab.field, tab.rep, pitches) : []),
     [pitches, tab.field, tab.rep]
@@ -132,6 +148,16 @@ export function SketchRow() {
             &rsaquo;
           </ActionIcon>
         </span>
+        <Tip k="sketchRealization" as="control">
+          <SegmentedControl
+            size="xs"
+            aria-label="Sketch realization"
+            data={['As in field', 'Exact']}
+            value={sk.exact ? 'Exact' : 'As in field'}
+            onChange={(v) => dispatch({ type: 'sketch/set', patch: { exact: v === 'Exact' } })}
+            className={classes.tinySeg}
+          />
+        </Tip>
         <Button
           size="compact-xs"
           variant="default"
@@ -220,8 +246,10 @@ export function SketchRow() {
         </div>
       )}
       <span className={classes.hint}>
-        {sk.armed ? 'Armed from a chord. ' : ''}Point at any note and hold 4 to hear this chord on
-        it.
+        {sk.template ?? ''} &middot;{' '}
+        {sk.exact ? 'exact' : `as in ${tab.gen.preset || autoName(tab.gen)}`}
+        {sk.armed ? ' (armed from a chord)' : ''}. Point at any note and hold 4 to hear it as the
+        field has it, 5 for the exact ratios.
       </span>
     </div>
   );

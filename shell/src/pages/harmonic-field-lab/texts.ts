@@ -50,13 +50,13 @@ const entries = {
     see: ['tabs'],
   },
   holdToPlay: {
-    term: 'Hover and hold 1 (and 4)',
-    text: 'Hold 4 plays the armed chord on the note you point at: the template in the Sketch row (armed by playing a chord chip, or picked there) stacked on that note, for as long as you hold the key; sweep to another note while holding to move it there. Example: click the major triad 4:5:6 chip, then point at 9/8 on the ring and hold 4 to hear 9/8, 45/32, 27/16 (nothing needs to be in the field). Point at anything that can sound and hold 1 to hear it for as long as you hold the key: a note (on any ring, lattice, keyboard or table), a chord chip, a key ring (as a scale), a saved subset (as a scale). Sweep the pointer across tiles, notes or chips while holding to hear each one in turn (empty space keeps the last sound until you let go). A note and a chord sound until you let go; a scale steps through its notes while you hold the key (in the Scale preview direction) and stops when you let go or it ends. In the mode grid and on the tuner strip 2 and 3 also play the pure pitch and both together (an exact degree plays once, nothing to beat against). Key 5 switches mode previews between Parallel and Relative (see Mode playback). Everything sounding lights green in every view. Example: point at the G major key ring and hold 1 to hear its scale.',
+    term: 'Hover and hold 1 (and 4, 5)',
+    text: 'Hold 4 plays the armed chord AS IN THE FIELD on the note you point at: the real pitches of the chord (the notes a chord chip or shelf slot has, errors included) are taken as intervals above its own root and moved rigidly onto that note, for as long as you hold the key; sweep to another note while holding to move it there. Hold 5 plays the EXACT ratios of the template on the note instead. A template you only picked in the Sketch row is realized as the field has it at the Sketch root where it can (notes the field lacks stay exact). Example, in 12-EDO: click the major triad 4:5:6 chip (0, 400, 700 c), then point at a 200 c note: hold 4 plays 200, 600, 900 c, hold 5 plays 200, 586.3, 902 c. Nothing needs to be in the field. Point at anything that can sound and hold 1 to hear it for as long as you hold the key: a note (on any ring, lattice, keyboard or table), a chord chip, a key ring (as a scale), a saved subset (as a scale). Sweep the pointer across tiles, notes or chips while holding to hear each one in turn (empty space keeps the last sound until you let go). A note and a chord sound until you let go; a scale steps through its notes while you hold the key (in the Scale preview direction) and stops when you let go or it ends. In the mode grid and on the tuner strip 2 and 3 also play the pure pitch and both together (an exact degree plays once, nothing to beat against). Keys: pressing a melody key (z x c ...) also moves the root of the Sketch row to the degree of that key, and = (or +) stashes the current Sketch on the shelf. Key 0 switches mode previews between Parallel and Relative (see Mode playback). Everything sounding lights green in every view. Example: point at the G major key ring and hold 1 to hear its scale.',
     see: ['scalePreview', 'modes', 'tunerStrip', 'modePlayback', 'sketchRow'],
   },
   modePlayback: {
     term: 'Mode playback (Parallel | Relative)',
-    text: 'Where the current mode sounds: mode previews, Play scale, Play chord and the computer keys (z is the mode root). In C major, Mode 2 is Dorian. Parallel plays it from the 1/1 pitch (C Dorian), the way the grid measures it, so the tonic stays put and the scale changes around it; Relative plays it from its own root 9/8 (D Dorian), so every note keeps its own pitch. In mode previews the listed-vs-pure comparison is the same, only moved. Press 5 to switch. In Relative a sounding tone lights a field note only where it lands exactly on one.',
+    text: 'Where the current mode sounds: mode previews, Play scale, Play chord and the computer keys (z is the mode root). In C major, Mode 2 is Dorian. Parallel plays it from the 1/1 pitch (C Dorian), the way the grid measures it, so the tonic stays put and the scale changes around it; Relative plays it from its own root 9/8 (D Dorian), so every note keeps its own pitch. In mode previews the listed-vs-pure comparison is the same, only moved. Press 0 to switch. In Relative a sounding tone lights a field note only where it lands exactly on one.',
     see: ['modes', 'holdToPlay', 'baseHz', 'mode'],
   },
   scalePreview: {
@@ -724,9 +724,14 @@ const entries = {
     text: 'Plays every ticked slot of the shelf together. Example: tick two chords a fifth apart to hear them layered.',
     see: ['shelfPanel'],
   },
+  sketchRealization: {
+    term: 'As in field | Exact',
+    text: 'Which pitches Play sketch and Stash use. As in field: the chord as the field gives it (the shape of the chord you armed from a chip or shelf slot, else the template found at the Sketch root, errors included; a note the field lacks stays exact). Exact: the true ratios of the template. Example: in 12-EDO, 4:5:6 on the first note is 0, 400, 700 c as in field and 0, 386.3, 702 c exact. Holds 4 and 5 are the same two choices for any note you point at.',
+    see: ['sketchRow', 'holdToPlay'],
+  },
   sketchRow: {
     term: 'Sketch row',
-    text: 'Puts any chord template on any note of the subset, even when the field lacks some of its notes: Play sketch sounds the exact chord. A note the field has is marked with the chord colour; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above). The root stepper moves along the subset from the mode root (1 is the mode root). Example: 4:5:6:7 on a 12-EDO field shows the 7 as about -31 c, the nearest piano note being flatter than the true seventh harmonic.',
+    text: 'Puts any chord template on any note of the subset, even when the field lacks some of its notes: Play sketch sounds the chord as the As in field | Exact switch says (default As in field: the chord as the field gives it; Exact: the true ratios). A note the field has is marked with the chord colour; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above). The root stepper moves along the subset from the mode root (1 is the mode root). Example: 4:5:6:7 on a 12-EDO field shows the 7 as about -31 c, the nearest piano note being flatter than the true seventh harmonic.',
     see: ['stashChord', 'holdToPlay', 'chords'],
   },
   stashChord: {

@@ -2053,3 +2053,29 @@
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
 }
+
+/* ghost marks: a sounding pitch that is no field note, dashed and unfilled in the sounding colour (H-2) */
+.ringGhost {
+  fill: none;
+  pointer-events: all;
+  stroke: var(--mark-green);
+  stroke-dasharray: 3 2.5;
+  stroke-width: 2;
+}
+
+.stripGhost {
+  border: 2px dashed var(--mark-green);
+  border-radius: 50%;
+  height: 0.75rem;
+  pointer-events: auto;
+  position: absolute;
+  top: 3.375rem;
+  transform: translate(-50%, -50%);
+  width: 0.75rem;
+}
+
+.outsideCount {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  margin-inline-start: 0.375rem;
+}

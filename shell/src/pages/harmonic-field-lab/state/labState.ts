@@ -163,7 +163,7 @@ export interface UiSettings {
   modeAtBase: boolean;
   /** Direction of every scale preview (Play scale, a key ring's preview). */
   scalePreview: ScaleDir;
-  /** Mode previews from 1/1 (Parallel) or from the mode's own root (Relative); key 5 toggles. */
+  /** Mode previews from 1/1 (Parallel) or from the mode's own root (Relative); key 0 toggles. */
   modePlayback: ModePlayback;
   /** Saved list: show subsets of every collection, not only the current one. */
   savedAll: boolean;
@@ -210,6 +210,8 @@ export interface LabState {
   sounding: ReadonlySet<number>;
   /** Field indices whose strip mark alone is lit: a pure target tone that is no field note (a Shift+click on a strip note). */
   soundingMarks: ReadonlySet<number>;
+  /** Cents above 1/1 of sounding pitches that match no field note (drawn as ghost marks on the ring and strip). */
+  soundingGhosts: readonly number[];
   ui: UiSettings;
   layout: Layout;
   /** The chord finder's templates (user-editable; stored in `...chordfinder.v1`). */
@@ -303,6 +305,7 @@ export function initialState(): LabState {
     preview: null,
     sounding: new Set(),
     soundingMarks: new Set(),
+    soundingGhosts: [],
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
@@ -535,7 +538,13 @@ export type Action =
   | { type: 'chord/hover'; set: ReadonlySet<number> | null }
   | { type: 'chord/pick'; set: ReadonlySet<number> | null }
   | { type: 'preview'; idx: readonly number[] | null }
-  | { type: 'sounding'; idx: readonly number[]; marks?: readonly number[] }
+  | {
+      type: 'sounding';
+      idx: readonly number[];
+      marks?: readonly number[];
+      /** Sounding pitches (cents above 1/1) that match no field note. */
+      ghosts?: readonly number[];
+    }
   | { type: 'ui'; patch: Partial<UiSettings> }
   | { type: 'viz'; id: VizId; patch: Partial<VizSettings> }
   | { type: 'layout'; fn: (l: Layout) => Layout }
@@ -571,6 +580,7 @@ const clearPointers = (s: LabState): LabState => ({
   preview: null,
   sounding: new Set(),
   soundingMarks: new Set(),
+  soundingGhosts: [],
 });
 
 /** Apply a tab change; when the field changed, drop the pointers and lights that referred to the old one. */
@@ -700,6 +710,15 @@ export function labReducer(s: LabState, a: Action): LabState {
   if (next.refusal && next.refusal === s.refusal && isLibraryAction(a.type)) {
     next = { ...next, refusal: null };
   }
+  // an armed chord's shape belongs to the field it came from: another tab or a changed field disarms it (template stays)
+  const sk = next.shelf.sketch;
+  if (next !== s && (sk.armed || sk.shape)) {
+    const before = activeTab(s);
+    const after = activeTab(next);
+    if (after.id !== before.id || after.field !== before.field) {
+      next = { ...next, shelf: { ...next.shelf, sketch: { ...sk, armed: false, shape: null } } };
+    }
+  }
   return next;
 }
 
@@ -716,6 +735,7 @@ function reduce(s: LabState, a: Action): LabState {
         preview: null,
         sounding: new Set(),
         soundingMarks: new Set(),
+        soundingGhosts: [],
       };
     case 'tab/add': {
       if (s.tabs.length >= MAX_TABS) {
@@ -1070,9 +1090,13 @@ function reduce(s: LabState, a: Action): LabState {
       const marks = new Set(a.marks ?? []);
       const same = (x: ReadonlySet<number>, y: ReadonlySet<number>) =>
         x.size === y.size && [...x].every((i) => y.has(i));
-      return same(next, s.sounding) && same(marks, s.soundingMarks)
+      const ghosts = a.ghosts ?? [];
+      const sameGhosts =
+        ghosts.length === s.soundingGhosts.length &&
+        ghosts.every((g, i) => g === s.soundingGhosts[i]);
+      return same(next, s.sounding) && same(marks, s.soundingMarks) && sameGhosts
         ? s
-        : { ...s, sounding: next, soundingMarks: marks };
+        : { ...s, sounding: next, soundingMarks: marks, soundingGhosts: ghosts };
     }
     case 'templates/set':
       return {

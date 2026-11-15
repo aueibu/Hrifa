@@ -224,9 +224,9 @@ describe('chord shelf UI', () => {
     // Parallel puts the mode root D on 1/1 (0, 300, 700 c) but lights D, F, A, not C, Eb, G
     expect(soundingNames().sort()).toEqual(['200.0 c', '500.0 c', '900.0 c']);
     up('1');
-    // key 5 with the pointer resting on the slot: Relative keeps the real pitches (a root up, 200 c), same lights
-    down('5');
-    up('5');
+    // key 0 with the pointer resting on the slot: Relative keeps the real pitches (a root up, 200 c), same lights
+    down('0');
+    up('0');
     down('1');
     const relative = running()
       .map(hz)
@@ -237,7 +237,7 @@ describe('chord shelf UI', () => {
     fireEvent.mouseLeave(slot);
   });
 
-  it('chip, Play sketch and the stashed slot sound the same in Parallel and in Relative, and key 5 moves them together', () => {
+  it('chip, Play sketch and the stashed slot sound the same in Parallel and in Relative, and key 0 moves them together', () => {
     vi.useFakeTimers();
     render(<HarmonicFieldLabPage />);
     // a mode root that is not 1/1
@@ -286,8 +286,8 @@ describe('chord shelf UI', () => {
     fireEvent.click(
       screen.getAllByRole('button', { name: new RegExp('^Stash 4:5:6 on 1/1', 'i') })[0]
     );
-    down('5');
-    up('5');
+    down('0');
+    up('0');
     const relChip = held(chip());
     const relSketch = sketchPlay();
     same(relSketch.hz, relChip.hz);
@@ -302,10 +302,133 @@ describe('chord shelf UI', () => {
     const relSlot = held(slot);
     same(relSlot.hz, relChip.hz);
     expect(relSlot.lit).toBe(3);
-    down('5');
-    up('5');
+    down('0');
+    up('0');
     const parSlot = held(slot);
     same(parSlot.hz, parChip.hz);
     expect(parSlot.lit).toBe(3);
+  });
+
+  it('hold 4 moves the chord as the field has it, hold 5 plays the exact ratios; the Sketch row follows its switch (12-EDO)', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    vi.useFakeTimers();
+    const dotAt = (c: string) => dot(new RegExp(`^${c} c`));
+    const sorted = () =>
+      running()
+        .map(hz)
+        .sort((x, y) => x - y);
+    const ratioC = (a: number, b: number) => 1200 * Math.log2(b / a);
+    const target = dotAt('200\.0');
+    // a template only picked in the row is realized by the field at the sketch root: 4:5:6 = 0, 400, 700 c
+    fireEvent.mouseEnter(target);
+    down('4');
+    let h = sorted();
+    expect(h).toHaveLength(3);
+    expect(ratioC(h[0], h[1])).toBeCloseTo(400, 1);
+    expect(ratioC(h[0], h[2])).toBeCloseTo(700, 1);
+    up('4');
+    // hold 5 = the exact ratios on the same note
+    down('5');
+    h = sorted();
+    expect(h).toHaveLength(3);
+    expect(ratioC(h[0], h[1])).toBeCloseTo(386.31, 1);
+    expect(ratioC(h[0], h[2])).toBeCloseTo(701.96, 1);
+    // sweeping to another note while 5 is held moves the exact chord there
+    fireEvent.mouseLeave(target);
+    fireEvent.mouseEnter(dotAt('300\.0'));
+    h = sorted();
+    expect(h).toHaveLength(3);
+    up('5');
+    expect(running()).toHaveLength(0);
+    // the Sketch row's switch: As in field plays the field's shape, Exact the true ratios
+    const sk = screen.getByRole('group', { name: 'Sketch a chord' });
+    const played = () => {
+      const before = oscs().length;
+      fireEvent.click(within(sk).getByRole('button', { name: 'Play sketch' }));
+      advance(100);
+      return oscs()
+        .slice(before)
+        .map(hz)
+        .sort((x, y) => x - y);
+    };
+    let ps = played();
+    expect(ratioC(ps[0], ps[1])).toBeCloseTo(400, 1);
+    advance(3000);
+    fireEvent.click(within(sk).getByText('Exact'));
+    ps = played();
+    expect(ratioC(ps[0], ps[1])).toBeCloseTo(386.31, 1);
+    advance(3000);
+    // the pointer must be off any note: 4 and 5 play nothing there
+    fireEvent.mouseLeave(dotAt('300\.0'));
+    down('4');
+    expect(running()).toHaveLength(0);
+    up('4');
+  });
+
+  it('a chip arms its real shape: hold 4 keeps its errors, hold 5 is exact (12-EDO, minor triad 10:12:15 is 0, 300, 700 c)', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    vi.useFakeTimers();
+    fireEvent.click(
+      screen.getAllByRole('button', {
+        name: new RegExp('^minor triad 10:12:15 on (0\.0 c|1/1)'),
+      })[0]
+    );
+    advance(3000);
+    const sorted = () =>
+      running()
+        .map(hz)
+        .sort((x, y) => x - y);
+    const ratioC = (a: number, b: number) => 1200 * Math.log2(b / a);
+    const target = dot(new RegExp('^200\.0 c'));
+    fireEvent.mouseEnter(target);
+    down('4');
+    let h = sorted();
+    expect(ratioC(h[0], h[1])).toBeCloseTo(300, 1);
+    expect(ratioC(h[0], h[2])).toBeCloseTo(700, 1);
+    up('4');
+    down('5');
+    h = sorted();
+    expect(ratioC(h[0], h[1])).toBeCloseTo(315.64, 1);
+    expect(ratioC(h[0], h[2])).toBeCloseTo(701.96, 1);
+    up('5');
+    fireEvent.mouseLeave(target);
+  });
+
+  it('switching tab disarms the chord (its shape belongs to the field it came from) and keeps the template', () => {
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(screen.getAllByRole('button', { name: /^minor triad 10:12:15 on /i })[0]);
+    const sk = () => screen.getByRole('group', { name: 'Sketch a chord' });
+    expect(sk().getAttribute('data-armed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'New tuning' }));
+    expect(sk().getAttribute('data-armed')).toBeNull();
+    expect(
+      within(sk()).getByRole<HTMLSelectElement>('combobox', { name: 'Sketch template' }).value
+    ).toBe('10:12:15');
+  });
+
+  it('a melody key sets the Sketch root to its degree (no sound beyond the note, no stash); = stashes the Sketch, not while typing', () => {
+    vi.useFakeTimers();
+    render(<HarmonicFieldLabPage />);
+    const sk = () => screen.getByRole('group', { name: 'Sketch a chord' });
+    const rootText = () => within(sk()).getByText(/^root/).textContent;
+    expect(rootText()).toMatch(/^root 1/);
+    // x is slot 1 = degree 2 (1-based); the repeat keys map back to the same degree
+    fireEvent.keyDown(window, { key: 'x', code: 'KeyX' });
+    fireEvent.keyUp(window, { key: 'x', code: 'KeyX' });
+    expect(rootText()).toMatch(/^root 2/);
+    expect(within(rail()).getByRole('tab', { name: /^Shelf/ }).textContent).toMatch(/0 chords/);
+    // = stashes with the current root (Shift+= is the same key)
+    fireEvent.keyDown(window, { key: '=', code: 'Equal' });
+    expect(within(rail()).getByRole('tab', { name: /^Shelf/ }).textContent).toMatch(/1 chord/);
+    fireEvent.keyDown(window, { key: '+', code: 'Equal', shiftKey: true });
+    expect(within(rail()).getByRole('tab', { name: /^Shelf/ }).textContent).toMatch(/2 chords/);
+    // guards: repeat, Ctrl, Alt and typing do nothing
+    fireEvent.keyDown(window, { key: '=', code: 'Equal', repeat: true });
+    fireEvent.keyDown(window, { key: '=', code: 'Equal', ctrlKey: true });
+    fireEvent.keyDown(window, { key: '=', code: 'Equal', altKey: true });
+    fireEvent.keyDown(screen.getAllByRole('textbox')[0], { key: '=', code: 'Equal' });
+    expect(within(rail()).getByRole('tab', { name: /^Shelf/ }).textContent).toMatch(/2 chords/);
   });
 });

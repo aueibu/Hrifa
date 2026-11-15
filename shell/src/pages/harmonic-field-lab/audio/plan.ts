@@ -12,6 +12,8 @@ export interface Planned {
   hz: number;
   /** Field index of the note (lights in every view while it sounds); -1 lights nothing (a pure tone off the field). */
   src: number;
+  /** Cents above 1/1 of a sound that lights no field note (src -1) but shows as a ghost mark; unset when it does not apply. */
+  ghost?: number;
   /** Light only the tuner-strip mark of `src` (a pure target tone that is no field note), not the other views. */
   markOnly?: boolean;
   /** Seconds after the start of the plan, and length in seconds. */
@@ -152,13 +154,11 @@ export function pitchesPlan(
 ): Planned[] {
   const amp = chordAmp(cents.length);
   const noteCents = field.map((n) => n.c);
-  return cents.map((c, i) => ({
-    hz: absHz(p, c),
-    src: litIndex(noteCents, repC, light[i] ?? c),
-    delay: 0,
-    dur,
-    amp,
-  }));
+  return cents.map((c, i) => {
+    const at = light[i] ?? c;
+    const src = litIndex(noteCents, repC, at);
+    return { hz: absHz(p, c), src, ghost: src < 0 ? at : undefined, delay: 0, dur, amp };
+  });
 }
 
 /** Play chord with nothing highlighted: the whole subset sounding together, from the mode root. */
@@ -188,7 +188,7 @@ export type PreviewTarget =
   /** Anywhere a single field note is drawn (a ring dot, a lattice point, a table row): hold 1 sounds it. */
   | { kind: 'note'; i: number }
   /** A chord chip: hold 1 sounds its field notes together. `template` arms the Sketch row when it plays. */
-  | { kind: 'chord'; idx: readonly number[]; template?: string }
+  | { kind: 'chord'; idx: readonly number[]; template?: string; rootIdx?: number }
   /** Exact pitches (cents above 1/1, e.g. a shelf slot or a layered selection) sounded together; `key` is the identity. */
   | { kind: 'pitches'; key: string; cents: readonly number[]; light?: readonly number[] }
   /** A key ring or a saved subset: its field notes in degree order (root first); hold 1 steps through them as a scale. */
@@ -221,8 +221,14 @@ export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {
   '3': 'both',
 };
 
-/** Hold 4: the armed chord (the Sketch row's template) rooted on the pointed note. Not a preview kind: no listed / pure. */
-export const ARMED_DIGIT = '4';
+/**
+ * Hold 4 = the armed chord AS IN THE FIELD (its realization, rigid, errors included) placed on the pointed note; hold 5 = the
+ * template's EXACT ratios on it. Not preview kinds: no listed / pure.
+ */
+export const ARMED_DIGITS: Readonly<Record<string, 'field' | 'exact'>> = {
+  '4': 'field',
+  '5': 'exact',
+};
 
 /** Both tones together: every step is held this much longer, so the beating can be heard. */
 export const PAIR_HOLD = 1.5;

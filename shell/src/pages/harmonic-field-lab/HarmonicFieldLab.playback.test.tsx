@@ -59,34 +59,34 @@ describe('settings', () => {
 });
 
 describe('Parallel | Relative switch', () => {
-  it('shows the state, stores nothing on mount, and follows clicks and key 5', () => {
+  it('shows the state, stores nothing on mount, and follows clicks and key 0', () => {
     render(<HarmonicFieldLabPage />);
     expect(stored()).toBeNull();
     expect(radio('Parallel')).toBeChecked();
     fireEvent.click(radio('Relative'));
     expect(radio('Relative')).toBeChecked();
     expect(stored()?.modePlayback).toBe('relative');
-    key('5');
+    key('0');
     expect(radio('Parallel')).toBeChecked();
-    key('5');
+    key('0');
     expect(radio('Relative')).toBeChecked();
     expect(stored()?.modePlayback).toBe('relative');
   });
 
-  it('key 5 is ignored while typing, with Alt (tab shortcut) and on repeat, and plays no note', () => {
+  it('key 0 is ignored while typing, with Alt (tab shortcut) and on repeat, and plays no note', () => {
     render(<HarmonicFieldLabPage />);
     const input = document.createElement('input');
     input.type = 'text';
     document.body.appendChild(input);
-    key('5', {}, input);
+    key('0', {}, input);
     expect(radio('Parallel')).toBeChecked();
-    key('5', { altKey: true });
+    key('0', { altKey: true });
     expect(radio('Parallel')).toBeChecked();
-    key('5', { repeat: true });
+    key('0', { repeat: true });
     expect(radio('Parallel')).toBeChecked();
-    key('5', { ctrlKey: true });
+    key('0', { ctrlKey: true });
     expect(radio('Parallel')).toBeChecked();
-    key('5');
+    key('0');
     expect(radio('Relative')).toBeChecked();
     expect(oscs()).toHaveLength(0);
     input.remove();
@@ -100,7 +100,7 @@ describe('Relative sound', () => {
     fireEvent.click(tile(1, 0), { ctrlKey: true });
     expect(hzs()[0]).toBeCloseTo(261.6256, 2);
     contexts.forEach((c) => (c.oscs.length = 0));
-    key('5');
+    key('0');
     fireEvent.click(tile(1, 0), { ctrlKey: true });
     expect(hzs()[0]).toBeCloseTo(261.6256 * (9 / 8), 2);
   });
