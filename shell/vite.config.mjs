@@ -99,7 +99,7 @@ export default defineConfig({
           testTimeout: 20000,
           include: ['src/**/*.test.tsx', ...DOM_TESTS],
           // React Flow is inlined so the d3-drag stub in vitest.setup.mjs reaches it.
-          server: { deps: { inline: [/@xyflow/] } },
+          server: { deps: { inline: [/@xyflow/, /jest-dom/] } },
         },
       },
     ],
