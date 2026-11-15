@@ -244,13 +244,23 @@ describe('the tablist', () => {
     const dockerMenu = within(tools).getByRole('button', { name: 'Docker menu for Tools' });
     expect(list.contains(tabMenu)).toBe(false);
     expect(list.contains(dockerMenu)).toBe(false);
-    expect(list.compareDocumentPosition(tabMenu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // the buttons sit at the LEFT end: before the tablist in DOM order, docker menu first, then the tab menu
+    expect(list.compareDocumentPosition(tabMenu) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(
+      dockerMenu.compareDocumentPosition(tabMenu) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    const nameButton = within(tools).getByRole('button', { name: 'Docker Tools' });
+    expect(
+      tabMenu.compareDocumentPosition(nameButton) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
 
-    focus(tab('Chords'));
+    focus(dockerMenu);
     await userEvent.tab();
     expect(active()).toBe(tabMenu);
     await userEvent.tab();
-    expect(active()).toBe(dockerMenu);
+    expect(active()).toBe(nameButton);
+    await userEvent.tab();
+    expect(active()).toBe(tab('Chords')); // the strip's one tab stop
   });
 
   it('Escape on the strip returns focus to the active panel body (the tabpanel)', async () => {

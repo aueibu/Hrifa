@@ -60,6 +60,7 @@ import {
   type Screenset,
 } from '../../../lib/stage';
 import { DEFAULT_DENSITY, tokenStyle } from '../../InspectorKit';
+import { browserStorage, type StageStorage } from '../persistence';
 import type { StageRegistry } from '../registry';
 import { INITIAL_SIZE, withMeasure, type SlotSizes } from '../sizeState';
 import { Splitter } from '../Splitter';
@@ -87,6 +88,7 @@ import {
 import { NamePrompt } from './NamePrompt';
 import { adopt, createHost, hold, setParked } from './parking';
 import { StageApiContext, type StageApi } from './stageApi';
+import { readShowTabClose, writeShowTabClose } from './tabCloseSetting';
 import classes from './dock.module.css';
 
 export interface DockStageProps {
@@ -108,6 +110,14 @@ export interface DockStageProps {
    * change it) and with `null` on unmount. Inside the Stage use `useStageApi()`.
    */
   onApi?: (api: StageApi | null) => void;
+  /**
+   * The viewer setting "Show close button on tabs". Controlled when `showTabClose` is given (with `onShowTabClose`);
+   * otherwise the Stage keeps it itself, persisted under `hrifa.stage.showTabClose.v1`, default off.
+   */
+  showTabClose?: boolean;
+  onShowTabClose?: (next: boolean) => void;
+  /** Where the setting is stored (tests pass a fake); defaults to localStorage. */
+  storage?: StageStorage;
 }
 
 /** The docker an edit created: the id present after and not before. */
@@ -153,8 +163,23 @@ export function DockStage({
   heightRem: heightProp,
   showSizes,
   onApi,
+  showTabClose: showTabCloseProp,
+  onShowTabClose,
+  storage,
 }: DockStageProps) {
   const uid = useId();
+  const [ownTabClose, setOwnTabClose] = useState(() =>
+    readShowTabClose(storage ?? browserStorage())
+  );
+  const showTabClose = showTabCloseProp ?? ownTabClose;
+  const toggleTabClose = () => {
+    const next = !showTabClose;
+    if (showTabCloseProp === undefined) {
+      setOwnTabClose(next);
+      writeShowTabClose(storage ?? browserStorage(), next);
+    }
+    onShowTabClose?.(next);
+  };
   // `update` is read through a ref so an inline function from the host cannot change the API (and loop through `onApi`)
   const updateRef = useRef(updateProp);
   updateRef.current = updateProp;
@@ -974,6 +999,8 @@ export function DockStage({
                 selected={selected === p.docker.id}
                 canRemove={geometry.dockers.length > 1}
                 sizing={dockerSizing(screenset.tree, p.docker.id)}
+                showTabClose={showTabClose}
+                onToggleTabClose={toggleTabClose}
                 actions={actions}
                 onMeasure={measure}
                 registerBody={registerBody}

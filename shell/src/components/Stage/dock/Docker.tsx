@@ -59,6 +59,9 @@ export interface DockerProps {
   canRemove: boolean;
   /** The kind of slot the docker sits in (`null`: the root docker, which has none). */
   sizing: 'fixed' | 'flexible' | null;
+  /** The viewer setting: show a small close button on each tab. */
+  showTabClose: boolean;
+  onToggleTabClose(): void;
   actions: DockerActions;
   /** The measured body size (rem) for these tabs. */
   onMeasure(docker: DockerId, tabs: readonly PanelId[], widthRem: number, heightRem: number): void;
@@ -87,6 +90,17 @@ export function Docker(props: DockerProps) {
   const { placement, actions, selected } = props;
   const { docker, state } = placement;
   const [renaming, setRenaming] = useState(false);
+  // the tab context menu: anchored at the pointer (or at the tab for the keyboard); a plain role=tab stays a plain tab
+  const [ctx, setCtx] = useState<{ panel: PanelId; x: number; y: number } | null>(null);
+  const ctxActed = useRef(false);
+  const closeCtx = () => {
+    const was = ctx;
+    setCtx(null);
+    if (was && !ctxActed.current) {
+      actions.focus({ kind: 'tab', panel: was.panel });
+    }
+    ctxActed.current = false;
+  };
   const focusMenu = () => actions.focus({ kind: 'dockerMenu', docker: docker.id });
 
   const nameControl = (cls: string) =>
@@ -188,6 +202,17 @@ export function Docker(props: DockerProps) {
           </Menu.Item>
         )}
         <Menu.Item
+          data-checked={props.showTabClose}
+          leftSection={props.showTabClose ? <span aria-hidden="true">{'\u2713'}</span> : undefined}
+          onClick={() => {
+            props.onToggleTabClose();
+            focusMenu();
+          }}
+        >
+          {/* Mantine fixes the item role to menuitem, so the state is in the name, not aria-checked */}
+          {props.showTabClose ? 'Show close button on tabs (on)' : 'Show close button on tabs'}
+        </Menu.Item>
+        <Menu.Item
           color="red"
           disabled={docker.tabs.length > 0 || !props.canRemove}
           onClick={() => actions.remove(docker.id)}
@@ -209,8 +234,8 @@ export function Docker(props: DockerProps) {
         data-selected={selected}
         onPointerDownCapture={() => actions.select(docker.id)}
       >
-        {nameControl(classes.stripName)}
         {menu}
+        {nameControl(classes.stripName)}
       </section>
     );
   }
@@ -219,6 +244,12 @@ export function Docker(props: DockerProps) {
     const el = e.target as HTMLElement;
     const panel = el.getAttribute('role') === 'tab' ? el.dataset.tabId : undefined;
     if (panel === undefined) {
+      return;
+    }
+    if ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu') {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      setCtx({ panel, x: r.left, y: r.bottom });
       return;
     }
     if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
@@ -270,6 +301,21 @@ export function Docker(props: DockerProps) {
       {/* the strip handles Escape for everything on it (keys bubble up from real buttons) */}
       {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div className={classes.header} data-dock-header onKeyDown={onHeaderKeyDown}>
+        {/* the menu buttons sit at the LEFT end (docker menu, then the active tab's menu); they are NOT in the tablist */}
+        <div className={classes.tools}>
+          {menu}
+          {docker.active !== null && (
+            <TabMenu
+              panel={docker.active}
+              title={props.titleOf(docker.active)}
+              docker={docker.id}
+              index={docker.tabs.indexOf(docker.active)}
+              count={docker.tabs.length}
+              dockers={props.dockers}
+              actions={actions}
+            />
+          )}
+        </div>
         {nameControl(classes.name)}
         {/* roving tabindex lives on the tabs, not the list */}
         {/* oxlint-disable-next-line jsx-a11y/interactive-supports-focus */}
@@ -295,28 +341,79 @@ export function Docker(props: DockerProps) {
                   data-dragging={props.draggingPanel === panel}
                   onPointerDown={(e) => actions.tabPointerDown(e, panel)}
                   onClick={() => actions.activate(docker.id, panel)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setCtx({ panel, x: e.clientX, y: e.clientY });
+                  }}
                 >
                   {props.titleOf(panel)}
                 </button>
+                {props.showTabClose && (
+                  <button
+                    type="button"
+                    className={classes.tabClose}
+                    aria-label={`Close ${props.titleOf(panel)}`}
+                    title={`Close ${props.titleOf(panel)}`}
+                    tabIndex={-1}
+                    onClick={() => actions.closeTab(panel)}
+                  >
+                    <CloseIcon />
+                  </button>
+                )}
               </div>
             );
           })}
         </div>
-        {/* the menu buttons are NOT in the tablist: ordinary buttons after the strip, reached by Tab */}
-        <div className={classes.tools}>
-          {docker.active !== null && (
-            <TabMenu
-              panel={docker.active}
-              title={props.titleOf(docker.active)}
-              docker={docker.id}
-              index={docker.tabs.indexOf(docker.active)}
-              count={docker.tabs.length}
-              dockers={props.dockers}
-              actions={actions}
-            />
-          )}
-          {menu}
-        </div>
+        {ctx && docker.tabs.includes(ctx.panel) && (
+          <Menu
+            opened
+            onChange={(o) => {
+              if (!o) {
+                closeCtx();
+              }
+            }}
+            position="bottom-start"
+            withinPortal
+            returnFocus={false}
+          >
+            <Menu.Target>
+              <span
+                aria-hidden="true"
+                data-tab-context-anchor
+                style={{ position: 'fixed', left: ctx.x, top: ctx.y, width: 0, height: 0 }}
+              />
+            </Menu.Target>
+            <Menu.Dropdown aria-label={`Menu for ${props.titleOf(ctx.panel)}`}>
+              {tabMenuItems({
+                panel: ctx.panel,
+                title: props.titleOf(ctx.panel),
+                docker: docker.id,
+                index: docker.tabs.indexOf(ctx.panel),
+                count: docker.tabs.length,
+                dockers: props.dockers,
+                actions: {
+                  ...actions,
+                  sendToDocker: (p, d) => {
+                    ctxActed.current = true;
+                    actions.sendToDocker(p, d);
+                  },
+                  sendToNewPrompt: (p, b, e) => {
+                    ctxActed.current = true;
+                    actions.sendToNewPrompt(p, b, e);
+                  },
+                  moveTab: (p, d) => {
+                    ctxActed.current = true;
+                    actions.moveTab(p, d);
+                  },
+                  closeTab: (p) => {
+                    ctxActed.current = true;
+                    actions.closeTab(p);
+                  },
+                },
+              })}
+            </Menu.Dropdown>
+          </Menu>
+        )}
       </div>
       <Body {...props} />
     </section>
@@ -344,7 +441,6 @@ function TabMenu({
   dockers: DockerProps['dockers'];
   actions: DockerActions;
 }) {
-  const others = dockers.filter((d) => d.id !== docker);
   return (
     <Menu position="bottom-end" withinPortal returnFocus={false}>
       <Menu.Target>
@@ -353,37 +449,63 @@ function TabMenu({
         </StripTool>
       </Menu.Target>
       <Menu.Dropdown>
-        {others.length === 0 ? (
-          <Menu.Item disabled>Send to (no other docker)</Menu.Item>
-        ) : (
-          <>
-            <Menu.Label>Send to</Menu.Label>
-            {others.map((d) => (
-              <Menu.Item key={d.id} onClick={() => actions.sendToDocker(panel, d.id)}>
-                {d.name}
-              </Menu.Item>
-            ))}
-          </>
-        )}
-        <Menu.Label>New docker...</Menu.Label>
-        {EDGES.map(({ edge, label }) => (
-          <Menu.Item key={edge} onClick={() => actions.sendToNewPrompt(panel, docker, edge)}>
-            {`Send to new docker: ${label}`}
-          </Menu.Item>
-        ))}
-        <Menu.Divider />
-        <Menu.Item disabled={index <= 0} onClick={() => actions.moveTab(panel, -1)}>
-          Move tab left
-        </Menu.Item>
-        <Menu.Item disabled={index >= count - 1} onClick={() => actions.moveTab(panel, 1)}>
-          Move tab right
-        </Menu.Item>
-        <Menu.Divider />
-        <Menu.Item leftSection={<CloseIcon />} onClick={() => actions.closeTab(panel)}>
-          {`Close ${title}`}
-        </Menu.Item>
+        {tabMenuItems({ panel, title, docker, index, count, dockers, actions })}
       </Menu.Dropdown>
     </Menu>
+  );
+}
+
+/** The entries of a tab's menu: shared by the button menu (active tab) and the context menu (any tab). */
+function tabMenuItems({
+  panel,
+  title,
+  docker,
+  index,
+  count,
+  dockers,
+  actions,
+}: {
+  panel: PanelId;
+  title: string;
+  docker: DockerId;
+  index: number;
+  count: number;
+  dockers: DockerProps['dockers'];
+  actions: DockerActions;
+}) {
+  const others = dockers.filter((d) => d.id !== docker);
+  return (
+    <>
+      {others.length === 0 ? (
+        <Menu.Item disabled>Send to (no other docker)</Menu.Item>
+      ) : (
+        <>
+          <Menu.Label>Send to</Menu.Label>
+          {others.map((d) => (
+            <Menu.Item key={d.id} onClick={() => actions.sendToDocker(panel, d.id)}>
+              {d.name}
+            </Menu.Item>
+          ))}
+        </>
+      )}
+      <Menu.Label>New docker...</Menu.Label>
+      {EDGES.map(({ edge, label }) => (
+        <Menu.Item key={edge} onClick={() => actions.sendToNewPrompt(panel, docker, edge)}>
+          {`Send to new docker: ${label}`}
+        </Menu.Item>
+      ))}
+      <Menu.Divider />
+      <Menu.Item disabled={index <= 0} onClick={() => actions.moveTab(panel, -1)}>
+        Move tab left
+      </Menu.Item>
+      <Menu.Item disabled={index >= count - 1} onClick={() => actions.moveTab(panel, 1)}>
+        Move tab right
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item leftSection={<CloseIcon />} onClick={() => actions.closeTab(panel)}>
+        {`Close ${title}`}
+      </Menu.Item>
+    </>
   );
 }
 
