@@ -96,6 +96,7 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] Tests: a panel keeps its state when sent between dockers and when its tab is inactive; an emptied docker shows as a strip and accepts a panel; a panel closed from a docker reopens there; `show` switches the active tab; a measured panel in a parked docker keeps its last size; a `keepMounted` panel survives a screenset change
   - [ ] `DECISIONS.md` rows: dockers and parking (supersedes STAGE-7's "hidden detached" and STAGE-8's switcher for the new Stage), `useStageApi`, `keepMounted`
 - Human checkpoint after: **yes** (the human tries it at `/stage`: moving a panel between dockers, naming a docker, sending by name, tabs, close and reopen, reload)
+- Checkpoint decisions (human, 2026-11-14): tried at `/stage?dock`: "all works well". One bug found and fixed (the top/bottom splitter was an unreachable 2.5rem stub, commit `289842a`). The spike's own layout is not final; the human will make their own arrangements. Nothing else asked.
 
 ### M3b: Drag-to-dock
 - Scope: the new Stage component (lock; `check:stage`, `check:workbench` and `check:hfl` run once before the commit): a drop overlay on dockers with a centre zone (join as a tab) and four edge zones (split in that direction), a preview, a transparent shield over canvases while dragging, Escape cancels; every drop calls the same `sendTo` as the menu; a drop in the same docker does nothing.

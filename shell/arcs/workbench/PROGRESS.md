@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: One Stage for the workbench (`arcs/workbench`), approved 2026-11-14
-- Current milestone: M3a committed; awaiting the human checkpoint (try `/stage?dock`), then M3b (drag-to-dock)
-- State: awaiting human (M3a checkpoint)
+- Current milestone: M3b (drag-to-dock) in progress; M3a checkpoint passed
+- State: building M3b
 
 ## Where to look
 - `ARC.md` (this arc). Archives of earlier workbench arcs: `ARC.chord-input.md`, `ARC.desk.md`, `ARC.clips.md` and their `PROGRESS.*` files.
@@ -29,4 +29,4 @@ None yet.
 - None open. M1 asks about the area set, Send-to versus drag, the state boundary and pop-out.
 
 ## Next action
-Human tries `/stage?dock` (`corepack yarn dev`, or the tunnel): the three arrangements, naming a docker, Send-to by docker name, tabs, empty dockers, close and reopen in the remembered docker, reload, narrow the window. Record the answers in ARC.md (M3a Checkpoint decisions). Then M3b (drag-to-dock): lock `src/components/Stage/dock/` again, one `sendToTarget` action shared by menu and drop (review hint), shield layer, drop zones from `layoutTree`.
+M3b: builder (drag-to-dock on the dock Stage, one shared `sendToTarget`), reviewer, a headless Chrome check of a real drag (probe scripts pattern: CDP, buttons flag on mouse events), `check:stage` + `check:workbench` + `check:hfl` (hfl may be red from the lab arc's own work), commit; human checkpoint on the feel of dragging.
