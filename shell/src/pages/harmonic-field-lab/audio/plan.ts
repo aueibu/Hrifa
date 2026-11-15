@@ -126,16 +126,22 @@ export function fieldScalePlan(
  */
 export const framedCents = (p: PitchBase, c: number): number => (p.modeAtBase ? c - p.rootC : c);
 
-/** Play chord with a highlighted chord: its field notes together, in the chosen frame (Parallel from the mode root on 1/1, Relative real pitch). */
+/**
+ * A chord's field notes together, in the chosen frame: Parallel puts the chord's root (`rootIdx`, else the mode root) on 1/1,
+ * Relative plays the real pitch.
+ */
 export function chordPlan(
   field: readonly Note[],
   members: Iterable<number>,
-  p: PitchBase
+  p: PitchBase,
+  rootIdx?: number
 ): Planned[] {
   const idx = [...members].filter((i) => i >= 0 && i < field.length).sort((a, b) => a - b);
   const amp = chordAmp(idx.length);
+  // a chip knows its root: in Parallel the CHORD's root sits on 1/1 (parallel major / minor); without one the mode root does
+  const rootC = rootIdx !== undefined && field[rootIdx] ? field[rootIdx].c : p.rootC;
   return idx.map((i) => ({
-    hz: absHz(p, framedCents(p, field[i].c)),
+    hz: absHz(p, framedCents({ ...p, rootC }, field[i].c)),
     src: i,
     delay: 0,
     dur: 1.8,
@@ -194,7 +200,14 @@ export type PreviewTarget =
   /** A chord chip: hold 1 sounds its field notes together. `template` arms the Sketch row when it plays. */
   | { kind: 'chord'; idx: readonly number[]; template?: string; rootIdx?: number }
   /** Exact pitches (cents above 1/1, e.g. a shelf slot or a layered selection) sounded together; `key` is the identity. */
-  | { kind: 'pitches'; key: string; cents: readonly number[]; light?: readonly number[] }
+  | {
+      kind: 'pitches';
+      key: string;
+      cents: readonly number[];
+      light?: readonly number[];
+      /** The shelf chords these pitches are (their cards light while they sound). */
+      chords?: readonly string[];
+    }
   /** A key ring or a saved subset: its field notes in degree order (root first); hold 1 steps through them as a scale. */
   | { kind: 'scale'; idx: readonly number[] };
 

@@ -347,7 +347,7 @@ describe('reload', () => {
 });
 
 describe('chordPitchesFor (pitch frame rule)', () => {
-  it('Relative plays the stored field-absolute pitches; Parallel divides by the source mode root', () => {
+  it('Relative plays the stored field-absolute pitches; Parallel divides by the chord own root', () => {
     let s = run(initialState(), { type: 'sel/set', idx: [3, 4, 0], mode: 0 });
     s = labReducer(s, {
       type: 'shelf/stash',
@@ -367,9 +367,24 @@ describe('chordPitchesFor (pitch frame rule)', () => {
     const par = chordPitchesFor(fixed, 'parallel');
     expect(fmt(par)).toEqual(fmt([ratioNote(1, 1), ratioNote(5, 4), ratioNote(3, 2)]));
     expect(par[1].m).toEqual(ratioNote(5, 4).m);
-    // no source: as stored in both frames
+    // the source plays no part: a chord with none puts its own root on 1/1 just the same
     const bare = { ...c, source: null };
-    expect(chordPitchesFor(bare, 'parallel')).toEqual(c.pitches);
+    expect(fmt(chordPitchesFor(bare, 'parallel'))).toEqual(fmt(par));
+    expect(chordPitchesFor(bare, 'relative')).toEqual(c.pitches);
+  });
+
+  it('parallel major / minor: C major and E minor stashed from mode root C both start on 1/1 in Parallel', () => {
+    const mk = (cents: number[]) => ({
+      ...run(initialState(), {
+        type: 'shelf/stash',
+        stash: { pitches: cents.map((c) => ({ m: null, c })), date: '' },
+      }).shelf.chords[0],
+    });
+    const cents = (ps: Note[]) => ps.map((p) => Math.round(p.c));
+    expect(cents(chordPitchesFor(mk([0, 400, 700]), 'relative'))).toEqual([0, 400, 700]);
+    expect(cents(chordPitchesFor(mk([400, 700, 1100]), 'relative'))).toEqual([400, 700, 1100]);
+    expect(cents(chordPitchesFor(mk([0, 400, 700]), 'parallel'))).toEqual([0, 400, 700]);
+    expect(cents(chordPitchesFor(mk([400, 700, 1100]), 'parallel'))).toEqual([0, 300, 700]);
   });
 });
 

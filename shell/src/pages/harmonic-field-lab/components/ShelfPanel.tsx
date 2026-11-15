@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionIcon, Button, Checkbox, TextInput } from '@mantine/core';
 import { mulNotes } from '../../../lib/harmonic-field';
+import { CHORD_KEYS, CHORD_PAGE, playsChords } from '../audio/keymap';
 import type { PreviewTarget } from '../audio/plan';
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import { litIndex } from '../state/retuner';
@@ -110,6 +111,13 @@ function Slot({
   const { state, dispatch, audio, base } = lab;
   const { shelf } = state;
   const [confirming, setConfirming] = useState(false);
+  // Chords and Split: the first ten chords of the current page are on the keys Q to P
+  const lastPage = Math.max(0, Math.ceil(shelf.chords.length / CHORD_PAGE) - 1);
+  const pageStart = Math.min(state.keys.page, lastPage) * CHORD_PAGE;
+  const keyBadge =
+    playsChords(state.ui.keyboardMode) && index >= pageStart && index < pageStart + CHORD_PAGE
+      ? CHORD_KEYS[index - pageStart].toUpperCase()
+      : null;
   const cents = useMemo(() => centsOf(chord), [centsOf, chord]);
   const lights = useMemo(() => lightOf(chord), [lightOf, chord]);
   const lit = useMemo(() => litOf(lights), [litOf, lights]);
@@ -148,6 +156,7 @@ function Slot({
       className={classes.slot}
       data-selected={selected}
       data-picked={picked}
+      data-playing={lab.soundingChords.has(chord.id)}
       onMouseEnter={enter}
       onMouseLeave={leave}
       onFocus={enter}
@@ -173,7 +182,7 @@ function Slot({
               lab.pickChord(null);
             } else {
               lab.pickChord(lit);
-              audio.playCents(cents, lights);
+              audio.playCents(cents, lights, [chord.id]);
               if (chord.template && chord.pitches.length) {
                 // playing a slot arms its template and its stored realization in the Sketch row
                 const p0 = chord.pitches[0];
@@ -198,6 +207,11 @@ function Slot({
         <span className={classes.slotText}>
           <SlotName chord={chord} />
           <span className={classes.slotCount}>
+            {keyBadge && (
+              <span className={classes.slotKey} data-testid="slot-key" title="Computer key">
+                {keyBadge}
+              </span>
+            )}
             <Num muted>
               {chord.pitches.length} {chord.pitches.length === 1 ? 'note' : 'notes'}
               {chord.template ? ` · ${chord.template}` : ''}
@@ -359,12 +373,14 @@ export function ShelfPanel() {
               key: `sel:${shelf.selected.join('+')}:${frame}`,
               cents: selectedChords.flatMap(centsOf),
               light: selectedChords.flatMap(lightOf),
+              chords: selectedChords.map((c) => c.id),
             }
           : {
               kind: 'pitches',
               key: `slot:${chord.id}:${frame}`,
               cents: centsOf(chord),
               light: lightOf(chord),
+              chords: [chord.id],
             },
     [shelf.selected, selectedChords, centsOf, lightOf, frame]
   );
@@ -373,7 +389,7 @@ export function ShelfPanel() {
     if (cents.length) {
       const lights = selectedChords.flatMap(lightOf);
       lab.pickChord(litOf(lights));
-      audio.playCents(cents, lights);
+      audio.playCents(cents, lights, shelf.selected);
     }
   };
   return (

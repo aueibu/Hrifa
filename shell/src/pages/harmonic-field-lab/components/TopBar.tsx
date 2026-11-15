@@ -13,6 +13,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSchemeToggle';
+import { useLabDeveloperOptions } from '../state/developerOptions';
 import { MAX_TABS, WAVES, tabName, type Wave } from '../state/labState';
 import { DeveloperMenu } from './DeveloperMenu';
 import { BookIcon, CopyIcon, HomeIcon, PlayIcon, PlusIcon, SoundIcon, StopIcon } from './icons';
@@ -103,6 +104,7 @@ function TabButton({ index }: { index: number }) {
 export function TopBar({ onGlossary }: { onGlossary: () => void }) {
   const { state, dispatch, audio } = useLab();
   const { ui } = state;
+  const [dev] = useLabDeveloperOptions();
   return (
     <div className={classes.topbar}>
       <Link to="/" className={classes.homeLink} aria-label="Home">
@@ -204,6 +206,25 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
             }
           />
         </Tip>
+        {ui.linkedMelody && (
+          <Tip k="linkedRoot" as="control">
+            <SegmentedControl
+              size="xs"
+              aria-label="Melody root"
+              value={ui.linkedRoot ?? dev.linkedRootDefault}
+              onChange={(v) =>
+                dispatch({
+                  type: 'ui',
+                  patch: { linkedRoot: v === 'reroot' ? 'reroot' : 'transpose' },
+                })
+              }
+              data={[
+                { label: 'Transpose', value: 'transpose' },
+                { label: 'Re-root', value: 'reroot' },
+              ]}
+            />
+          </Tip>
+        )}
         <Tip k="stop" as="control">
           <ActionIcon variant="default" size="sm" aria-label="Stop" onClick={audio.stopAll}>
             <StopIcon />

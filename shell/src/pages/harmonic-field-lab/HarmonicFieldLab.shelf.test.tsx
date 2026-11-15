@@ -293,8 +293,9 @@ describe('chord shelf UI', () => {
     same(relSketch.hz, relChip.hz);
     expect(relChip.lit).toBe(3);
     expect(relSketch.lit).toBe(3);
-    // Relative is Parallel moved up by the mode root
-    expect(relChip.hz[0] / parChip.hz[0]).toBeGreaterThan(1.05);
+    // the chord sits on 1/1 itself, so Parallel (the chord's own root on 1/1) and Relative (as stored) coincide here;
+    // the frames part for a chord on another root (keyboardModes.test.tsx: C major and E minor)
+    same(relChip.hz, parChip.hz);
     fireEvent.click(within(rail()).getByRole('tab', { name: /^Shelf/ }));
     const slot = within(screen.getByRole('list', { name: 'Chord shelf' })).getAllByRole(
       'listitem'

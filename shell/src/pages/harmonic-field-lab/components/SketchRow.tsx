@@ -79,10 +79,8 @@ export function SketchRow() {
   // absolute pitches light the field; what sounds follows Parallel | Relative like the chord chips and mode previews
   const abs = useMemo(() => (pitches ?? []).map((p) => p.c), [pitches]);
   const parallel = state.ui.modePlayback !== 'relative';
-  const cents = useMemo(
-    () => abs.map((c) => (parallel ? c - base.rootC : c)),
-    [abs, parallel, base.rootC]
-  );
+  // Parallel puts the chord's own root (the first pitch) on 1/1, like the shelf slot of the same chord
+  const cents = useMemo(() => abs.map((c) => (parallel ? c - abs[0] : c)), [abs, parallel]);
   const found = useMemo(
     () => new Set(match.flatMap((m) => (m.idx === null ? [] : [m.idx]))),
     [match]

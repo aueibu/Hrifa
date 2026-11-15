@@ -65,4 +65,50 @@ describe('linked melody scale', () => {
     const a = linkedPitch(sc, 3, 0, 'parallel', 100)!.hz;
     expect(linkedPitch(sc, 3, 1, 'parallel', 100)!.hz / a).toBeCloseTo(3, 6);
   });
+
+  /** A shelf chord on `rootC` stashed from 12-EDO C major (mode root C = 0). */
+  function cMajorChordOn(rootC: number) {
+    let s = run(initialState(), { type: 'gen/preset', name: '12-EDO' });
+    s = run(s, { type: 'sel/set', idx: C_MAJOR, mode: 0 });
+    s = run(s, {
+      type: 'shelf/stash',
+      stash: { pitches: [{ m: null, c: rootC }], template: null, rootDeg: 0, date: '2026-11-15' },
+    });
+    return s.shelf.chords[0];
+  }
+  const rounded = (a: number[]) => a.map((c) => Math.round(c));
+
+  it('Transpose moves the source rigidly so its mode root lands on the chord root (C major over D = D major)', () => {
+    const sc = linkedScale(cMajorChordOn(200), 1200, 'transpose')!;
+    expect(sc.rootC).toBeCloseTo(200, 6);
+    expect(rounded(sc.rel)).toEqual([0, 200, 400, 500, 700, 900, 1100]);
+    // slot 2 is the major third of D: F# (600 c above 1/1), 400 c above the root in Parallel
+    expect(linkedPitch(sc, 2, 0, 'parallel', 100)!.hz).toBeCloseTo(100 * 2 ** (400 / 1200), 6);
+    expect(linkedPitch(sc, 2, 0, 'relative', 100)!.hz).toBeCloseTo(100 * 2 ** (600 / 1200), 6);
+    expect(linkedPitch(sc, 2, 0, 'parallel', 100)!.abs).toBeCloseTo(600, 6);
+    // on the source's own root it is the subset as stored; Transpose is the default
+    expect(rounded(linkedScale(cMajorChordOn(0), 1200)!.rel)).toEqual(rounded(sc.rel));
+    expect(linkedScale(cMajorChordOn(0), 1200)!.rootC).toBeCloseTo(0, 6);
+  });
+
+  it('Re-root keeps the source notes and starts them on the chord root (C major over D = D E F G A B C)', () => {
+    const sc = linkedScale(cMajorChordOn(200), 1200, 'reroot')!;
+    expect(sc.rootC).toBeCloseTo(200, 6);
+    expect(rounded(sc.rel)).toEqual([0, 200, 300, 500, 700, 900, 1000]);
+    // slot 2 = F, a note of the subset: 500 c above 1/1 (300 above the root in Parallel)
+    expect(linkedPitch(sc, 2, 0, 'parallel', 100)!.abs).toBeCloseTo(500, 6);
+    expect(linkedPitch(sc, 2, 0, 'parallel', 100)!.hz).toBeCloseTo(100 * 2 ** (300 / 1200), 6);
+    expect(linkedPitch(sc, 2, 0, 'relative', 100)!.hz).toBeCloseTo(100 * 2 ** (500 / 1200), 6);
+  });
+
+  it('Re-root falls back to Transpose for a chord root that is not in the source subset', () => {
+    const chord = cMajorChordOn(100);
+    const re = linkedScale(chord, 1200, 'reroot')!;
+    const tr = linkedScale(chord, 1200, 'transpose')!;
+    expect(re).toEqual(tr);
+    expect(re.rootC).toBeCloseTo(100, 6);
+    expect(rounded(re.rel)).toEqual([0, 200, 400, 500, 700, 900, 1100]);
+    // within the merge tolerance still counts as a member
+    expect(linkedScale(cMajorChordOn(203), 1200, 'reroot')!.rootC).toBeCloseTo(200, 6);
+  });
 });

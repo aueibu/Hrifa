@@ -22,10 +22,14 @@ export interface LabAudio {
   playFieldScale: (fieldIndices: readonly number[]) => void;
   /** The highlighted chord, or the whole subset when none is highlighted. */
   playChord: () => void;
-  /** These field notes together, as a chord at their own pitch above 1/1 (a clicked chord chip). */
-  playFieldChord: (fieldIndices: Iterable<number>) => void;
+  /** These field notes together, as a chord at their own pitch above 1/1 (a clicked chord chip); Parallel puts `rootIdx`'s note on 1/1. */
+  playFieldChord: (fieldIndices: Iterable<number>, rootIdx?: number) => void;
   /** Exact pitches (cents above 1/1) together, as heard even when the field lacks them; lights the field notes they coincide with. */
-  playCents: (cents: readonly number[], light?: readonly number[]) => void;
+  playCents: (
+    cents: readonly number[],
+    light?: readonly number[],
+    chords?: readonly string[]
+  ) => void;
   /**
    * Mode grid preview (Ctrl/Cmd+click listed, Shift+click pure, both): mode `mode` of the subset, or just its degree
    * `degree` when given. Listed = the nearest field notes, pure = the mode's exact intervals from 1/1.
@@ -97,6 +101,8 @@ export interface Lab {
   soundingMarks: ReadonlySet<number>;
   /** Sounding pitches (cents above 1/1) that match no field note: drawn as ghost marks. */
   soundingGhosts: readonly number[];
+  /** Shelf chord ids that sound now: their cards light. */
+  soundingChords: ReadonlySet<string>;
   /** Plain click on a note anywhere: toggle it in the subset (it does not pin). */
   clickNote: (i: number) => void;
   /** Alt+click (Alt+Enter) on a note anywhere: pin it in the inspector, or unpin it if it is pinned (it does not toggle). */

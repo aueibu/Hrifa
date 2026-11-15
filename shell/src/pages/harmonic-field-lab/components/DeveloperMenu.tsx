@@ -1,5 +1,5 @@
 /** Top-bar "Developer" popover: options for how the lab shows things, kept per viewer (state/developerOptions.ts). */
-import { Button, NumberInput, Popover, Switch } from '@mantine/core';
+import { Button, NumberInput, Popover, SegmentedControl, Switch, Text } from '@mantine/core';
 import { TOOLTIP_DELAY_MAX, useLabDeveloperOptions } from '../state/developerOptions';
 import { Tip } from './ui';
 import classes from './lab.module.css';
@@ -30,6 +30,22 @@ export function DeveloperMenu() {
                 label="Keep the mode root when notes are added or removed"
                 checked={options.keepModeRoot}
                 onChange={(e) => update({ keepModeRoot: e.currentTarget.checked })}
+              />
+            </Tip>
+            <Tip k="linkedRootDefault" as="control" block>
+              <Text size="xs">Linked melody root default</Text>
+              <SegmentedControl
+                size="xs"
+                fullWidth
+                aria-label="Linked melody root default"
+                value={options.linkedRootDefault}
+                onChange={(v) =>
+                  update({ linkedRootDefault: v === 'reroot' ? 'reroot' : 'transpose' })
+                }
+                data={[
+                  { label: 'Transpose', value: 'transpose' },
+                  { label: 'Re-root', value: 'reroot' },
+                ]}
               />
             </Tip>
             <Tip k="tooltips" as="control" block>

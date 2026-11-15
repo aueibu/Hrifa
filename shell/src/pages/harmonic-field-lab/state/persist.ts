@@ -15,7 +15,7 @@
  * panel therefore cannot wipe a stored layout). Nothing here throws; storage may be blocked.
  */
 import { DEFAULT_TEMPLATES, PRESETS, type ChordTemplate } from '../../../lib/harmonic-field';
-import { KEYBOARD_MODES } from '../audio/keymap';
+import { KEYBOARD_MODES, LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
 import { MODE_PLAYBACKS } from '../audio/plan';
 import {
   DEFAULT_AXES,
@@ -174,6 +174,9 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     // optional (M8b): absent or damaged falls back to Notes / off, and nothing is written for them until they change
     keyboardMode: oneOf(raw.keyboardMode, KEYBOARD_MODES, d.keyboardMode),
     linkedMelody: bool(raw.linkedMelody, d.linkedMelody),
+    linkedRoot: LINKED_ROOTS.includes(raw.linkedRoot as LinkedRoot)
+      ? (raw.linkedRoot as LinkedRoot)
+      : null,
   };
 }
 

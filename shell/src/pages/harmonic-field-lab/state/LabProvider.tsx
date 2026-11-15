@@ -277,6 +277,11 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     [state.layout, state.ui.viz]
   );
 
+  const soundingChords = useMemo<ReadonlySet<string>>(
+    () => new Set(state.soundingChords),
+    [state.soundingChords]
+  );
+
   const lab = useMemo<Lab>(
     () => ({
       state,
@@ -301,6 +306,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       sounding: state.sounding,
       soundingMarks: state.soundingMarks,
       soundingGhosts: state.soundingGhosts,
+      soundingChords,
       clickNote,
       pinNote,
       audio,

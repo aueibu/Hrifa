@@ -10,6 +10,7 @@ import { chordShape, placeShape, sketchShape, type Note } from '../../../lib/har
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import type { LabAudio } from '../state/context';
 import type { Base } from '../state/derive';
+import { readDeveloperOptions } from '../state/developerOptions';
 import { ghostCents, ghostKey } from '../state/ghosts';
 import type { Action, KeysRuntime, UiSettings } from '../state/labState';
 import { linkedPitch, linkedScaleOf, type LinkedScale } from '../state/linkedMelody';
@@ -63,6 +64,8 @@ interface HeldPreview {
   digit: string;
   notes: HeldNote[];
   timers: number[];
+  /** Shelf chords it plays (lit on their cards while it sounds). */
+  chords: readonly string[];
 }
 
 interface Args {
@@ -101,6 +104,8 @@ export function useLabAudio({
   const markLights = useRef(new LightCounter());
   /** Sounding pitches that match no field note, reference counted by pitch (see `ghostKey`). */
   const ghostLights = useRef(new LightCounter());
+  /** Shelf chords that sound, reference counted by id (a layered selection or a click over a hold counts twice). */
+  const chordLights = useRef(new Map<string, number>());
   const timers = useRef(new Set<number>());
   const slotSrc = useRef(new Map<number, number>());
   /** The ghost a linked-melody key lights (its pitch matches no field note of the tab), to unlight it on release. */
@@ -136,6 +141,7 @@ export function useLabAudio({
       refreshArmed: () => void;
       pressChord: (id: string, index: number) => boolean;
       linkedActive: () => boolean;
+      endChordKeys: () => void;
     }
   >(() => {
     const pitch = (): PitchBase => ({
@@ -165,6 +171,7 @@ export function useLabAudio({
           .lit()
           .sort((a, b) => a - b)
           .map(ghostCents),
+        chords: [...chordLights.current.keys()],
       });
     const light = (i: number, on: boolean, markOnly = false, ghost?: number) => {
       let changed = false;
@@ -182,7 +189,27 @@ export function useLabAudio({
         report();
       }
     };
-    const schedule = (plan: Planned[]) => {
+    /** A shelf chord starts or stops sounding: its card lights while the count is above zero. */
+    const chordOn = (ids: readonly string[] | undefined, on: boolean) => {
+      if (!ids?.length) {
+        return;
+      }
+      const m = chordLights.current;
+      let changed = false;
+      for (const id of ids) {
+        const n = (m.get(id) ?? 0) + (on ? 1 : -1);
+        if (n <= 0) {
+          changed = m.delete(id) || changed;
+        } else {
+          changed = !m.has(id) || changed;
+          m.set(id, n);
+        }
+      }
+      if (changed) {
+        report();
+      }
+    };
+    const schedule = (plan: Planned[], chords?: readonly string[]) => {
       const eng = getEngine();
       if (!eng) {
         return;
@@ -202,6 +229,22 @@ export function useLabAudio({
             light(n.src, false, n.markOnly, n.ghost);
           },
           start + n.dur * 1000
+        );
+        timers.current.add(on);
+        timers.current.add(off);
+      }
+      if (chords?.length && plan.length) {
+        const end = Math.max(...plan.map((n) => n.delay + n.dur));
+        const on = window.setTimeout(() => {
+          timers.current.delete(on);
+          chordOn(chords, true);
+        }, LEAD * 1000);
+        const off = window.setTimeout(
+          () => {
+            timers.current.delete(off);
+            chordOn(chords, false);
+          },
+          (LEAD + end) * 1000
         );
         timers.current.add(on);
         timers.current.add(off);
@@ -230,7 +273,9 @@ export function useLabAudio({
       lights.current.clear();
       markLights.current.clear();
       ghostLights.current.clear();
-      if (had) {
+      const hadChords = chordLights.current.size > 0;
+      chordLights.current.clear();
+      if (had || hadChords) {
         report();
       }
     };
@@ -241,6 +286,7 @@ export function useLabAudio({
         return;
       }
       previews.current.delete(id);
+      chordOn(p.chords, false);
       p.timers.forEach((t) => {
         window.clearTimeout(t);
         timers.current.delete(t);
@@ -257,14 +303,21 @@ export function useLabAudio({
      * Hold a preview: every note of the plan is a held voice that starts at its delay. A single note (delay 0) sounds
      * until `endHeld`; a whole mode also ends each step on its own timer, so the steps play in order and it stops at the end.
      */
-    const startHeld = (id: string, plan: Planned[], stepped: boolean, digit: string) => {
+    const startHeld = (
+      id: string,
+      plan: Planned[],
+      stepped: boolean,
+      digit: string,
+      chords: readonly string[] = []
+    ) => {
       const eng = getEngine();
       if (!eng || plan.length === 0) {
         return;
       }
       endHeld(id);
-      const p: HeldPreview = { digit, notes: [], timers: [] };
+      const p: HeldPreview = { digit, notes: [], timers: [], chords };
       previews.current.set(id, p);
+      chordOn(chords, true);
       const after = (fn: () => void, ms: number) => {
         const t = window.setTimeout(() => {
           timers.current.delete(t);
@@ -365,9 +418,15 @@ export function useLabAudio({
               shape: t.rootIdx !== undefined ? chordShape(b.field, b.rep, t.rootIdx, t.idx) : null,
             });
           }
-          startHeld(id, chordPlan(b.field, t.idx, pitch()), false, digit);
+          startHeld(id, chordPlan(b.field, t.idx, pitch(), t.rootIdx), false, digit);
         } else if (t.kind === 'pitches') {
-          startHeld(id, pitchesPlan(b.field, b.repC, t.cents, pitch(), 1.8, t.light), false, digit);
+          startHeld(
+            id,
+            pitchesPlan(b.field, b.repC, t.cents, pitch(), 1.8, t.light),
+            false,
+            digit,
+            t.chords
+          );
         } else {
           startHeld(
             id,
@@ -462,7 +521,10 @@ export function useLabAudio({
       ) {
         return null;
       }
-      const sc: LinkedScale | null = linkedScaleOf(sh.find((c) => c.id === k.link));
+      const sc: LinkedScale | null = linkedScaleOf(
+        sh.find((c) => c.id === k.link),
+        u.linkedRoot ?? readDeveloperOptions().linkedRootDefault
+      );
       return sc ? linkedPitch(sc, slot, k.shift, u.modePlayback, u.baseHz) : null;
     };
     /** A chord key goes down: play shelf slot `index` of the current page as the shelf's own slot does, held until `endHeld(id)`. */
@@ -484,13 +546,22 @@ export function useLabAudio({
           chord.pitches.map((p) => p.c)
         ),
         false,
-        'chord'
+        'chord',
+        [chord.id]
       );
       if (u.linkedMelody) {
         dispatch({ type: 'keys/link', id: chord.id });
         latest.current.keys = { ...latest.current.keys, link: chord.id };
       }
       return true;
+    };
+    /** End every held chord key (a page change or a shelf edit moves what the keys mean). */
+    const endChordKeys = () => {
+      for (const [id, p] of [...previews.current]) {
+        if (p.digit === 'chord') {
+          endHeld(id);
+        }
+      }
     };
     /** The frame, the armed shape or the template changed under a resting pointer: a held 4 / 5 plays the new chord. */
     const refreshArmed = () => {
@@ -509,6 +580,7 @@ export function useLabAudio({
       syncRetuner,
       refreshArmed,
       pressChord,
+      endChordKeys,
       linkedActive: () => linkedSound(0) !== null,
       setPreviewTarget: (t) => {
         const cur = target.current;
@@ -612,12 +684,12 @@ export function useLabAudio({
         const { base: b, chord: c } = latest.current;
         schedule(c.size > 0 ? chordPlan(b.field, c, pitch()) : subsetChordPlan(b.rel, pitch()));
       },
-      playFieldChord: (idx) => {
-        schedule(chordPlan(latest.current.base.field, idx, pitch()));
+      playFieldChord: (idx, rootIdx) => {
+        schedule(chordPlan(latest.current.base.field, idx, pitch(), rootIdx));
       },
-      playCents: (cents, light) => {
+      playCents: (cents, light, chords) => {
         const { base: b } = latest.current;
-        schedule(pitchesPlan(b.field, b.repC, cents, pitch(), 1.8, light));
+        schedule(pitchesPlan(b.field, b.repC, cents, pitch(), 1.8, light), chords);
       },
       playModePreview: (mode, kind, degree) => {
         const { base: b, ui: u } = latest.current;
@@ -651,6 +723,7 @@ export function useLabAudio({
       lights.current.lit().length ||
       markLights.current.lit().length ||
       ghostLights.current.lit().length ||
+      chordLights.current.size ||
       slotSrc.current.size ||
       rtVoices.current.size ||
       previews.current.size ||
@@ -677,6 +750,11 @@ export function useLabAudio({
     ui.baseHz,
     ui.modePlayback,
   ]);
+
+  // a page change or a shelf that changed size ends the chord keys that are held (their cards go dark with them)
+  useEffect(() => {
+    api.endChordKeys();
+  }, [api, keys.page, shelf.length]);
 
   useEffect(() => {
     api.refreshArmed();

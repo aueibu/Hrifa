@@ -24,7 +24,7 @@ import {
   type Note,
   type TargetPoint,
 } from '../../../lib/harmonic-field';
-import { CHORD_PAGE, clampShift, type KeyboardMode } from '../audio/keymap';
+import { CHORD_PAGE, clampShift, type KeyboardMode, type LinkedRoot } from '../audio/keymap';
 import type { ModePlayback, ScaleDir } from '../audio/plan';
 import {
   cloneSource,
@@ -172,6 +172,8 @@ export interface UiSettings {
   keyboardMode: KeyboardMode;
   /** Linked melody (M8b, default off): the melody keys play the last pressed chord key's source subset. Optional in storage. */
   linkedMelody: boolean;
+  /** Linked melody root (M8b, 2026-11-15): null = not chosen, the Developer menu default applies. Optional in storage. */
+  linkedRoot: LinkedRoot | null;
 }
 
 /**
@@ -227,6 +229,8 @@ export interface LabState {
   soundingMarks: ReadonlySet<number>;
   /** Cents above 1/1 of sounding pitches that match no field note (drawn as ghost marks on the ring and strip). */
   soundingGhosts: readonly number[];
+  /** Shelf chord ids that sound now (a chord key, hold 1, a click, Play selected): their Shelf cards light. Runtime only. */
+  soundingChords: readonly string[];
   ui: UiSettings;
   layout: Layout;
   /** The chord finder's templates (user-editable; stored in `...chordfinder.v1`). */
@@ -264,6 +268,7 @@ export function defaultUi(): UiSettings {
     savedAll: false,
     keyboardMode: 'notes',
     linkedMelody: false,
+    linkedRoot: null,
   };
 }
 
@@ -325,6 +330,7 @@ export function initialState(): LabState {
     sounding: new Set(),
     soundingMarks: new Set(),
     soundingGhosts: [],
+    soundingChords: [],
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
@@ -567,6 +573,8 @@ export type Action =
       marks?: readonly number[];
       /** Sounding pitches (cents above 1/1) that match no field note. */
       ghosts?: readonly number[];
+      /** Shelf chord ids that sound. */
+      chords?: readonly string[];
     }
   | { type: 'ui'; patch: Partial<UiSettings> }
   | { type: 'viz'; id: VizId; patch: Partial<VizSettings> }
@@ -604,6 +612,7 @@ const clearPointers = (s: LabState): LabState => ({
   sounding: new Set(),
   soundingMarks: new Set(),
   soundingGhosts: [],
+  soundingChords: [],
   // the linked melody belongs to the tab it was pressed on
   keys: s.keys.link === null ? s.keys : { ...s.keys, link: null },
 });
@@ -761,6 +770,7 @@ function reduce(s: LabState, a: Action): LabState {
         sounding: new Set(),
         soundingMarks: new Set(),
         soundingGhosts: [],
+        soundingChords: [],
       };
     case 'tab/add': {
       if (s.tabs.length >= MAX_TABS) {
@@ -1119,9 +1129,19 @@ function reduce(s: LabState, a: Action): LabState {
       const sameGhosts =
         ghosts.length === s.soundingGhosts.length &&
         ghosts.every((g, i) => g === s.soundingGhosts[i]);
-      return same(next, s.sounding) && same(marks, s.soundingMarks) && sameGhosts
+      const chords = a.chords ?? [];
+      const sameChords =
+        chords.length === s.soundingChords.length &&
+        chords.every((c, i) => c === s.soundingChords[i]);
+      return same(next, s.sounding) && same(marks, s.soundingMarks) && sameGhosts && sameChords
         ? s
-        : { ...s, sounding: next, soundingMarks: marks, soundingGhosts: ghosts };
+        : {
+            ...s,
+            sounding: next,
+            soundingMarks: marks,
+            soundingGhosts: ghosts,
+            soundingChords: chords,
+          };
     }
     case 'templates/set':
       return {

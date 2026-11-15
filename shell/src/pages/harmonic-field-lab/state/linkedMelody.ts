@@ -3,12 +3,14 @@
  *
  * The chord stores its source subset as field-absolute pitches plus the mode root (provenance, `source.subset`) and the source
  * generator's inputs (`source.gen`), whose repeat is the interval a melody key one octave up climbs by. The scale is the
- * subset read from its mode root: each pitch's cents above the root, reduced into [0, repeat), sorted, root first.
- * Frame rule = the shelf slot's (`chordPitchesFor`): Relative sounds the pitches where they were stored (the root at its
- * own pitch above 1/1), Parallel puts the mode root on 1/1. Lights always use the field-absolute pitch (H-2).
+ * subset read from its base (the mode root for Transpose, the chord's root note for Re-root, see `linkedScale`): each pitch's
+ * cents above it, reduced into [0, repeat), sorted, root first, sounding on the chord's root. Frame (the live Parallel | Relative
+ * switch): Relative sounds the root at its own pitch above 1/1, Parallel puts it on 1/1 (this melody's own rule, unchanged by the
+ * chord frame rule). Lights always use the field-absolute pitch (H-2).
  */
 import type { Note } from '../../../lib/harmonic-field';
 import { hzOf } from '../audio/engine';
+import type { LinkedRoot } from '../audio/keymap';
 import type { ShelfChord } from './chordShelf';
 import { generateField } from './generate';
 
@@ -23,11 +25,34 @@ export interface LinkedScale {
 
 const DEDUPE = 0.01;
 
+/** Re-root accepts the chord's root as a member of the source subset within this many cents (the merge tolerance). */
+export const REROOT_TOL = 5;
+
+/** Cents above `baseC` of every pitch, reduced into [0, repC), sorted, base (0) first, de-duplicated. */
+function relFrom(cents: readonly number[], baseC: number, repC: number): number[] {
+  return (
+    [0, ...cents.map((c) => (((c - baseC) % repC) + repC) % repC)]
+      .sort((a, b) => a - b)
+      .filter((c, i, all) => i === 0 || c - all[i - 1] > DEDUPE)
+      // a pitch just under the repeat is the root again one repeat up
+      .filter((c) => repC - c > DEDUPE)
+  );
+}
+
 /**
- * The source subset of `chord` as a scale, or null when the chord has none (no source, no pitches, unusable repeat): the
- * melody then stays on the active subset. `repC` is the repeat of `chord.source.gen` (the caller builds the field once).
+ * The source subset of `chord` as a scale ON THE CHORD'S ROOT (`chord.pitches[0]`, field-absolute), or null when the chord has
+ * no source (no source, no pitches, unusable repeat): the melody then stays on the active subset. `repC` is the repeat of
+ * `chord.source.gen` (the caller builds the field once).
+ * - `transpose`: the subset keeps its shape and moves rigidly so its mode root lands on the chord's root (C major over C, D
+ *   major over D); with the chord on the source's own mode root it is the subset as stored.
+ * - `reroot`: the same subset notes rotated to start on the chord's root (D E F G A B C over D), when that root is one of them
+ *   within `REROOT_TOL`; otherwise this chord falls back to `transpose`.
  */
-export function linkedScale(chord: ShelfChord | undefined, repC: number): LinkedScale | null {
+export function linkedScale(
+  chord: ShelfChord | undefined,
+  repC: number,
+  mode: LinkedRoot = 'transpose'
+): LinkedScale | null {
   const src = chord?.source;
   if (!src || !(repC > 0) || !Number.isFinite(repC) || src.subset.pitches.length === 0) {
     return null;
@@ -36,14 +61,21 @@ export function linkedScale(chord: ShelfChord | undefined, repC: number): Linked
   if (cents.length === 0) {
     return null;
   }
-  const rootC =
+  const modeRootC =
     src.subset.root && Number.isFinite(src.subset.root.c) ? src.subset.root.c : Math.min(...cents);
-  const rel = [0, ...cents.map((c) => (((c - rootC) % repC) + repC) % repC)]
-    .sort((a, b) => a - b)
-    .filter((c, i, all) => i === 0 || c - all[i - 1] > DEDUPE)
-    // a pitch just under the repeat is the root again one repeat up
-    .filter((c) => repC - c > DEDUPE);
-  return { rel, rootC, repC };
+  const chordRootC = chord && Number.isFinite(chord.pitches[0]?.c) ? chord.pitches[0].c : modeRootC;
+  if (mode === 'reroot') {
+    // the subset note the chord's root coincides with (mod the repeat)
+    const member = cents.find((c) => {
+      const d = (((c - chordRootC) % repC) + repC) % repC;
+      return Math.min(d, repC - d) < REROOT_TOL;
+    });
+    if (member !== undefined) {
+      return { rel: relFrom(cents, member, repC), rootC: member, repC };
+    }
+  }
+  // transpose: the shape from the source's mode root, sounding from the chord's root
+  return { rel: relFrom(cents, modeRootC, repC), rootC: chordRootC, repC };
 }
 
 /**
@@ -69,7 +101,10 @@ export function linkedPitch(
 const sourceReps = new WeakMap<object, number>();
 
 /** `linkedScale` for a shelf chord, building its source generator's repeat once (cached per source). Null as `linkedScale` is. */
-export function linkedScaleOf(chord: ShelfChord | undefined): LinkedScale | null {
+export function linkedScaleOf(
+  chord: ShelfChord | undefined,
+  mode: LinkedRoot = 'transpose'
+): LinkedScale | null {
   const src = chord?.source;
   if (!chord || !src) {
     return null;
@@ -80,5 +115,5 @@ export function linkedScaleOf(chord: ShelfChord | undefined): LinkedScale | null
     repC = g.ok ? g.rep.c : 0;
     sourceReps.set(src, repC);
   }
-  return linkedScale(chord, repC);
+  return linkedScale(chord, repC, mode);
 }

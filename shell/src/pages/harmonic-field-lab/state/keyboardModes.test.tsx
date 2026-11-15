@@ -5,6 +5,7 @@ import { act, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeCtx } from '../audio/fakeContext';
 import { KeyboardDock } from '../components/KeyboardDock';
+import { ShelfPanel } from '../components/ShelfPanel';
 import { useLab, type Lab } from './context';
 import { defaultGen } from './generate';
 import { LabProvider } from './LabProvider';
@@ -42,6 +43,7 @@ function mount(initial?: Partial<LabState>) {
     <LabProvider initial={{ ...initialState(), ...initial }}>
       <Probe />
       <KeyboardDock open onToggle={() => undefined} />
+      <ShelfPanel />
     </LabProvider>
   );
 }
@@ -184,7 +186,7 @@ describe('Chords and Split modes', () => {
   it('Chords: the top row plays shelf slots in order while held; melody keys are silent', () => {
     mount();
     stashMany(3);
-    dispatch({ type: 'ui', patch: { keyboardMode: 'chords' } });
+    dispatch({ type: 'ui', patch: { keyboardMode: 'chords', modePlayback: 'relative' } });
     down('z');
     expect(running()).toHaveLength(0);
     down('w');
@@ -206,7 +208,7 @@ describe('Chords and Split modes', () => {
   it('[ and ] page the shelf by ten (clamped), and the page decides which chord a key plays', () => {
     mount();
     stashMany(12);
-    dispatch({ type: 'ui', patch: { keyboardMode: 'chords' } });
+    dispatch({ type: 'ui', patch: { keyboardMode: 'chords', modePlayback: 'relative' } });
     tap(']');
     expect(lab().state.keys.page).toBe(1);
     tap(']');
@@ -294,7 +296,7 @@ describe('Chords and Split modes', () => {
 
   it('a Parallel | Relative switch changes what a chord key plays, as the shelf slot does', () => {
     mount();
-    // the chord is stashed from a tab whose mode root is 200 c: Relative as stored, Parallel moved down by the root
+    // Relative plays the stored pitch; Parallel puts the chord's own root (here its only note) on 1/1
     dispatch(
       { type: 'gen/preset', name: '12-EDO' },
       { type: 'sel/set', idx: [0, 2, 4, 5, 7, 9, 11], mode: 1 },
@@ -306,7 +308,7 @@ describe('Chords and Split modes', () => {
     up('q');
     dispatch({ type: 'ui', patch: { modePlayback: 'parallel' } });
     down('q');
-    expect(hz(running()[0])).toBeCloseTo(BASE * 2 ** (200 / 1200), 3);
+    expect(hz(running()[0])).toBeCloseTo(BASE, 3);
     up('q');
   });
 });
@@ -451,6 +453,144 @@ describe('Linked melody', () => {
     down('c');
     expect(hz(running()[0])).toBeCloseTo(BASE * 2 ** (lab().base.rel[2].c / 1200), 3);
     up('c');
+  });
+});
+
+describe("Parallel | Relative for chords: Parallel puts each chord's own root on 1/1", () => {
+  const stashChord = (cents: number[]): Action => ({
+    type: 'shelf/stash',
+    stash: {
+      pitches: cents.map((c) => ({ m: null, c })),
+      template: null,
+      rootDeg: 0,
+      date: '2026-11-15',
+    },
+  });
+  /** C major (0, 400, 700) and E minor (400, 700, 1100), both stashed with the mode root C, 12-EDO. */
+  function setup(frame: 'parallel' | 'relative') {
+    seen = 0;
+    mount();
+    dispatch(
+      { type: 'gen/preset', name: '12-EDO' },
+      { type: 'sel/set', idx: [0, 2, 4, 5, 7, 9, 11], mode: 0 },
+      stashChord([0, 400, 700]),
+      stashChord([400, 700, 1100]),
+      { type: 'ui', patch: { keyboardMode: 'chords', modePlayback: frame } }
+    );
+  }
+  let seen = 0;
+  const heardCents = () =>
+    made
+      .flatMap((c) => c.oscs)
+      .slice(seen)
+      .map((o) => Math.round(1200 * Math.log2(hz(o) / BASE)))
+      .sort((a, b) => a - b);
+
+  it.each([
+    ['relative', [0, 400, 700], [400, 700, 1100]],
+    ['parallel', [0, 400, 700], [0, 300, 700]],
+  ] as const)('%s: chord keys play %j and %j', (frame, major, minor) => {
+    setup(frame);
+    down('q');
+    expect(heardCents()).toEqual(major);
+    up('q');
+    seen = made.flatMap((c) => c.oscs).length;
+    down('w');
+    expect(heardCents()).toEqual(minor);
+    // the lights land on the real notes in both frames (12-EDO index = steps)
+    expect([...lab().state.sounding].sort((a, b) => a - b)).toEqual([4, 7, 11]);
+    up('w');
+  });
+
+  it.each([
+    ['relative', [400, 700, 1100]],
+    ['parallel', [0, 300, 700]],
+  ] as const)('%s: a shelf slot and a chord chip agree with the chord key', (frame, minor) => {
+    vi.useFakeTimers();
+    setup(frame);
+    act(() => {
+      screen.getByRole('button', { name: 'Play Chord 2' }).click();
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(heardCents()).toEqual(minor);
+    expect([...lab().state.sounding].sort((a, b) => a - b)).toEqual([4, 7, 11]);
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    seen = made.flatMap((c) => c.oscs).length;
+    // the chip of the same chord: E minor on field note 4
+    act(() => lab().audio.playFieldChord([4, 7, 11], 4));
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(heardCents()).toEqual(minor);
+    vi.useRealTimers();
+  });
+});
+
+describe('Shelf cards follow the keys', () => {
+  const cards = () =>
+    within(screen.getByRole('list', { name: 'Chord shelf' })).getAllByRole('listitem');
+  const playing = () => cards().map((c) => c.getAttribute('data-playing') === 'true');
+  const badges = () => cards().map((c) => within(c).queryByTestId('slot-key')?.textContent ?? '');
+
+  it('a held chord key lights its card and key-up, blur, a page change and Stop clear it', () => {
+    mount();
+    stashMany(12);
+    dispatch({ type: 'ui', patch: { keyboardMode: 'split' } });
+    expect(playing().some(Boolean)).toBe(false);
+    down('w');
+    expect(playing().indexOf(true)).toBe(1);
+    expect(playing().filter(Boolean)).toHaveLength(1);
+    up('w');
+    expect(playing().some(Boolean)).toBe(false);
+    down('e');
+    expect(playing()[2]).toBe(true);
+    act(() => {
+      window.dispatchEvent(new Event('blur'));
+    });
+    expect(playing().some(Boolean)).toBe(false);
+    down('q');
+    tap(']');
+    expect(playing().some(Boolean)).toBe(false);
+    expect(running()).toHaveLength(0);
+    tap('[');
+    down('q');
+    expect(playing()[0]).toBe(true);
+    act(() => lab().audio.stopAll());
+    expect(playing().some(Boolean)).toBe(false);
+  });
+
+  it('a click, hold 1 on a slot and Play selected light their cards the same way', () => {
+    vi.useFakeTimers();
+    mount();
+    stashMany(2);
+    act(() => lab().audio.playCents([0], [0], ['c2']));
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(playing()).toEqual([false, true]);
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(playing()).toEqual([false, false]);
+    vi.useRealTimers();
+  });
+
+  it('key badges Q to P mark the ten chords of the current page in Chords and Split, none in Notes', () => {
+    mount();
+    stashMany(12);
+    expect(badges().every((b) => b === '')).toBe(true);
+    dispatch({ type: 'ui', patch: { keyboardMode: 'chords' } });
+    expect(badges()).toEqual([...'QWERTYUIOP'.split(''), '', '']);
+    tap(']');
+    expect(badges()).toEqual([...Array(10).fill(''), 'Q', 'W']);
+    dispatch({ type: 'ui', patch: { keyboardMode: 'split' } });
+    expect(badges().slice(10)).toEqual(['Q', 'W']);
+    dispatch({ type: 'ui', patch: { keyboardMode: 'notes' } });
+    expect(badges().every((b) => b === '')).toBe(true);
   });
 });
 

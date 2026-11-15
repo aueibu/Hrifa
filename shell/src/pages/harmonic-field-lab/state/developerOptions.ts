@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
 
 /**
  * The lab's own per-viewer developer options (W-10: page-local; never reads another page's keys). Sanitised on load, so
@@ -15,6 +16,8 @@ export interface LabDeveloperOptions {
   tooltips: boolean;
   /** Milliseconds the pointer must rest before a tooltip appears (0 to 5000, default 250). */
   tooltipDelay: number;
+  /** Linked melody root used while settings.v1 has no stored choice (default Transpose). */
+  linkedRootDefault: LinkedRoot;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -33,6 +36,7 @@ const defaults: LabDeveloperOptions = {
   keepModeRoot: true,
   tooltips: true,
   tooltipDelay: TOOLTIP_DELAY_DEFAULT,
+  linkedRootDefault: 'transpose',
 };
 
 const listeners = new Set<() => void>();
@@ -57,6 +61,9 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       keepModeRoot: typeof o.keepModeRoot === 'boolean' ? o.keepModeRoot : defaults.keepModeRoot,
       tooltips: typeof o.tooltips === 'boolean' ? o.tooltips : defaults.tooltips,
       tooltipDelay: sanitiseTooltipDelay(o.tooltipDelay),
+      linkedRootDefault: LINKED_ROOTS.includes(o.linkedRootDefault as LinkedRoot)
+        ? (o.linkedRootDefault as LinkedRoot)
+        : defaults.linkedRootDefault,
     };
   } catch {
     return defaults;

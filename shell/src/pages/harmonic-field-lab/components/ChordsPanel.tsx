@@ -111,7 +111,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
               lab.pickChord(null);
             } else {
               lab.pickChord(new Set(chip.memberIdx));
-              lab.audio.playFieldChord(chip.memberIdx);
+              lab.audio.playFieldChord(chip.memberIdx, chip.rootIdx);
               lab.dispatch({
                 type: 'sketch/arm',
                 template: chip.template,

@@ -6,8 +6,9 @@
  *
  * PITCH FRAME RULE (human decision): a chord's stored `pitches` are FIELD-ABSOLUTE, the field's own pitches above 1/1, identical
  * whether it was stashed in Parallel or Relative. Relative playback plays them as stored; Parallel playback divides them by the
- * source subset's mode root (`source.subset.root`), see `chordPitchesFor`. Example: mode root 3/2, stored 3/2, 15/8, 9/4 -> Relative
- * plays those, Parallel plays 1/1, 5/4, 3/2. `frame` records the switch at stash time only; it never changes the stored pitches.
+ * chord's OWN root (`pitches[0]`, root first), so every chord starts on 1/1 (parallel major / minor), see `chordPitchesFor`.
+ * Example: C major (0, 400, 700 c) and E minor (400, 700, 1100 c) stashed with mode root C: Relative plays those, Parallel plays
+ * 0, 400, 700 and 0, 300, 700. `frame` records the switch at stash time only; it never changes the stored pitches.
  *
  * A stashed chord is plain, self-contained data (a later Workbench hand-off can read it): `pitches` are monzo + cents
  * (H-1), `source` is the generator inputs, the subset as pitches and its tab name (null when the stored source was
@@ -200,11 +201,12 @@ export const cloneSource = (s: ShelfSource): ShelfSource => ({
 });
 
 /**
- * The pitches to play for a frame: Relative = as stored (field-absolute); Parallel = each divided by the source's mode root, so
- * the chord starts from the 1/1 the way a mode preview does. A chord with no source or no root is played as stored.
+ * The pitches to play for a frame: Relative = as stored (field-absolute); Parallel = each divided by the chord's own root
+ * (`pitches[0]`, root first, H-7), so the chord's root sits on 1/1 Hz whatever mode it was stashed from. Exact monzos are kept
+ * (`mulNotes`); an irrational pitch keeps cents only.
  */
 export function chordPitchesFor(chord: ShelfChord, frame: Frame): Note[] {
-  const root = chord.source?.subset.root;
+  const root = chord.pitches[0];
   return chord.pitches.map((p) =>
     frame === 'parallel' && root ? mulNotes(p, root, -1) : { m: p.m ? { ...p.m } : null, c: p.c }
   );

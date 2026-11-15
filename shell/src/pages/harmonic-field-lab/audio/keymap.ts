@@ -15,6 +15,13 @@ export const CHORD_PAGE = CHORD_KEYS.length;
 export type KeyboardMode = 'notes' | 'chords' | 'split';
 export const KEYBOARD_MODES: readonly KeyboardMode[] = ['notes', 'chords', 'split'];
 
+/**
+ * Where the linked melody sits (human, 2026-11-15): TRANSPOSE moves the chord's source subset rigidly so its mode root lands on
+ * the chord's root; RE-ROOT rotates the same subset notes to start on the chord's root (when that root is one of them).
+ */
+export type LinkedRoot = 'transpose' | 'reroot';
+export const LINKED_ROOTS: readonly LinkedRoot[] = ['transpose', 'reroot'];
+
 /** The melody shift is clamped to this many repeats either way (the voice engine itself only needs a positive finite Hz). */
 export const MAX_SHIFT = 4;
 export const clampShift = (n: number): number =>

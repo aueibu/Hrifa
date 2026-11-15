@@ -66,8 +66,18 @@ const entries = {
   },
   linkedMelody: {
     term: 'Linked melody',
-    text: "Off by default. When on (Split mode), pressing a chord key makes the melody keys play that chord's source subset, the subset it was stashed from, placed where the chord was stored and following Parallel | Relative like the shelf does. A chord from 12-EDO Dorian brings its Dorian melody. Audio only: the views stay on the current tab and light only where a sounding pitch matches one of its notes (a ghost mark shows the rest). The last chord pressed stays linked until you press another chord key, change the mode or this option, or switch tab. A chord with no source leaves the melody on the active subset.",
-    see: ['keyboardMode', 'shelfPanel', 'modePlayback'],
+    text: "Off by default. When on (Split mode), pressing a chord key makes the melody keys play the scale the chord came from (its source subset), on the chord's own root, following Parallel | Relative like the shelf does. Melody root decides how: Transpose moves the source scale rigidly so its mode root lands on the chord's root (a C major scale over a C chord, a D major scale over a D chord); Re-root plays the same notes of the source scale starting from the chord's root (D E F G A B C over D) and falls back to Transpose when the root is not one of them. Audio only: the views stay on the current tab and light only where a sounding pitch matches one of its notes (a ghost mark shows the rest). The last chord pressed stays linked until you press another chord key, change the mode or this option, or switch tab. A chord with no source leaves the melody on the active subset.",
+    see: ['keyboardMode', 'linkedRoot', 'shelfPanel', 'modePlayback'],
+  },
+  linkedRoot: {
+    term: 'Melody root (Transpose | Re-root)',
+    text: "How the linked melody sits on the chord's root. Transpose: the source scale keeps its shape and moves so its mode root is the chord's root (C major over D becomes D major, so some notes may be off the current field and show as ghosts). Re-root: the scale keeps its own notes and is read from the chord's root (C major over D becomes D Dorian); if the root is not a note of the scale, Transpose is used for that chord. Shown while Linked melody is on. Until you choose, the Developer menu default applies.",
+    see: ['linkedMelody', 'linkedRootDefault'],
+  },
+  linkedRootDefault: {
+    term: 'Linked melody root default',
+    text: 'Which Melody root (Transpose or Re-root) the linked melody uses until you pick one in the top bar. Once you pick, your choice is stored and this default no longer matters. Changing it here changes the current default straight away if you have not picked.',
+    see: ['linkedRoot', 'linkedMelody', 'developerMenu'],
   },
   octShift: {
     term: 'Octave shift (, and .)',

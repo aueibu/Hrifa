@@ -106,6 +106,7 @@ describe('lab Developer menu', () => {
       keepModeRoot: true,
       tooltips: true,
       tooltipDelay: 250,
+      linkedRootDefault: 'transpose',
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
     fireEvent.click(screen.getByRole('switch', { name: /always show/ }));
@@ -114,6 +115,7 @@ describe('lab Developer menu', () => {
       keepModeRoot: true,
       tooltips: true,
       tooltipDelay: 250,
+      linkedRootDefault: 'transpose',
     });
   });
 
@@ -129,24 +131,28 @@ describe('lab Developer menu', () => {
       keepModeRoot: true,
       tooltips: true,
       tooltipDelay: 250,
+      linkedRootDefault: 'transpose',
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
       modeSignAlways: true,
       keepModeRoot: true,
       tooltips: true,
       tooltipDelay: 250,
+      linkedRootDefault: 'transpose',
     });
     expect(parseDeveloperOptions('[1,2]')).toEqual({
       modeSignAlways: true,
       keepModeRoot: true,
       tooltips: true,
       tooltipDelay: 250,
+      linkedRootDefault: 'transpose',
     });
     expect(parseDeveloperOptions('null')).toEqual({
       modeSignAlways: true,
       keepModeRoot: true,
       tooltips: true,
       tooltipDelay: 250,
+      linkedRootDefault: 'transpose',
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
     open();

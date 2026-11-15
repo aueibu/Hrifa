@@ -1,6 +1,7 @@
 /** Thin keyboard dock: one row of keys for the subset, collapsible to a bar. What sounds is lit here and everywhere. */
 import { useMemo } from 'react';
 import { CHORD_PAGE, dockKeyCount, KEYS, playsChords, playsMelody } from '../audio/keymap';
+import { useLabDeveloperOptions } from '../state/developerOptions';
 import { linkedScaleOf } from '../state/linkedMelody';
 import { retunerLive } from '../state/retuner';
 import { ChevronDownIcon } from './icons';
@@ -21,7 +22,9 @@ export function KeyboardDock({ open, onToggle }: { open: boolean; onToggle: () =
   // while a chord is linked the keys play ITS source subset: label them with its pitches (cents in the live
   // Parallel | Relative frame; the ratio text is not derivable cheaply), not with this tab's notes
   const linkedChord = linkedName && !retunerLive(state.retuner) ? linkedName : undefined;
-  const sc = useMemo(() => linkedScaleOf(linkedChord), [linkedChord]);
+  const [dev] = useLabDeveloperOptions();
+  const linkedRoot = state.ui.linkedRoot ?? dev.linkedRootDefault;
+  const sc = useMemo(() => linkedScaleOf(linkedChord, linkedRoot), [linkedChord, linkedRoot]);
   const relative = state.ui.modePlayback === 'relative';
   const nKeys = sc ? sc.rel.length : n;
   const count = dockKeyCount(nKeys);
