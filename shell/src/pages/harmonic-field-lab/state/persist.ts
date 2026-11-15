@@ -4,7 +4,8 @@
  *   hrifa.harmonic-field-lab.settings.v1   UiSettings (per-viewer UI: active panel, dock, tolerance, ring, sound ...)
  *   hrifa.harmonic-field-lab.layout.v1     the pinned-panel layout (migrated from the mock's ...mock.layout.v3 / v2 / v1)
  *   hrifa.harmonic-field-lab.tabs.v1       { list: [{ id, name, snap }], active }
- *   hrifa.harmonic-field-lab.subsets.v1    [{ id, name, ...snap }]   (saved subsets)
+ *   hrifa.harmonic-field-lab.subsets.v1    [{ id, name, ...snap }]   (legacy flat saved subsets: read once to migrate, never written or deleted)
+ *   hrifa.harmonic-field-lab.generators.v1 the generator library (user presets, Untitled generators, subsets as pitches, recents); see libraryStore.ts
  *   hrifa.harmonic-field-lab.chordfinder.v1  { templates: [{ text, name?, family? }] }   (the chord templates)
  *   hrifa.harmonic-field-lab.retuner.v1    { cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts, glideMs } }
  *
@@ -23,6 +24,7 @@ import {
   type GenSpec,
   type Method,
 } from './generate';
+import { OWNER_KEY_RE } from './generatorLibrary';
 import {
   CMP_REFS,
   SCALE_DIRS,
@@ -70,6 +72,7 @@ export const KEY_SETTINGS = 'hrifa.harmonic-field-lab.settings.v1';
 export const KEY_LAYOUT = 'hrifa.harmonic-field-lab.layout.v1';
 export const KEY_TABS = 'hrifa.harmonic-field-lab.tabs.v1';
 export const KEY_SUBSETS = 'hrifa.harmonic-field-lab.subsets.v1';
+export const KEY_GENERATORS = 'hrifa.harmonic-field-lab.generators.v1';
 export const KEY_CHORDFINDER = 'hrifa.harmonic-field-lab.chordfinder.v1';
 export const KEY_RETUNER = 'hrifa.harmonic-field-lab.retuner.v1';
 /** The mock's layout keys (read once, to migrate). */
@@ -93,7 +96,7 @@ const intIn = (x: unknown, min: number, max: number, d: number) => {
 };
 const text = (x: unknown, d: string, max = 4000) => (typeof x === 'string' ? x.slice(0, max) : d);
 
-function readJson(key: string): unknown {
+export function readJson(key: string): unknown {
   try {
     const raw = window.localStorage.getItem(key);
     return raw === null ? undefined : (JSON.parse(raw) as unknown);
@@ -102,7 +105,7 @@ function readJson(key: string): unknown {
   }
 }
 /** Store a value; false when storage is unavailable or full (the page says so where it matters). */
-function writeJson(key: string, value: unknown): boolean {
+export function writeJson(key: string, value: unknown): boolean {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
     return true;
@@ -439,6 +442,8 @@ export function sanitizeSnapshot(raw: unknown): TabParts | null {
 export interface StoredTab extends TabParts {
   id: string;
   name: string | null;
+  /** The generator the tab is linked to (an `OwnerKey`), when stored. */
+  link?: string;
 }
 export interface StoredTabs {
   tabs: StoredTab[];
@@ -470,7 +475,9 @@ export function sanitizeTabs(raw: unknown): StoredTabs | null {
     seen.add(id);
     const name =
       typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim().slice(0, 60) : null;
-    tabs.push({ ...parts, id, name });
+    const link =
+      typeof entry.link === 'string' && OWNER_KEY_RE.test(entry.link) ? entry.link : undefined;
+    tabs.push({ ...parts, id, name, ...(link ? { link } : {}) });
   }
   if (!tabs.length) {
     return null;
@@ -484,7 +491,12 @@ export function loadTabs(): StoredTabs | null {
 export function saveTabs(tabs: Tab[], active: number): boolean {
   return writeJson(KEY_TABS, {
     active,
-    list: tabs.map((t) => ({ id: t.id, name: t.name, snap: toSnapshot(t) })),
+    list: tabs.map((t) => ({
+      id: t.id,
+      name: t.name,
+      ...(t.link ? { link: t.link } : {}),
+      snap: toSnapshot(t),
+    })),
   });
 }
 

@@ -11,9 +11,12 @@ import {
   type LabState,
 } from './labState';
 import { DEFAULT_LAYOUT, type Layout } from './layout';
+import { loadLibrary, saveLibrary } from './libraryStore';
 import {
+  KEY_GENERATORS,
   KEY_LAYOUT,
   KEY_SETTINGS,
+  KEY_SUBSETS,
   KEY_TABS,
   MOCK_LAYOUT_KEYS,
   loadLayout,
@@ -376,18 +379,18 @@ it('keeps every saved subset on load, the same as save (no hidden cap)', () => {
   expect(sanitizeSubsets(many)).toHaveLength(650);
 });
 
-describe('subsets (subsets.v1)', () => {
+describe('subsets (subsets.v1, legacy)', () => {
   it('round-trips and keeps the ids unique', () => {
-    let s = run(
-      initialState(),
-      { type: 'sel/set', idx: [0, 4] },
-      { type: 'saved/save', name: 'A' },
-      { type: 'saved/save', name: 'B' }
+    const gen = makeTab('t1', defaultGen()).gen;
+    const list = [
+      { id: 's1', name: 'A', gen, selCents: [0, 386], mode: 0 },
+      { id: 's2', name: 'B', gen, selCents: [0, 702], mode: 1 },
+    ];
+    saveSubsets(list);
+    expect(loadSubsets().map((x) => [x.id, x.name, x.selCents, x.mode])).toEqual(
+      list.map((x) => [x.id, x.name, x.selCents, x.mode])
     );
-    saveSubsets(s.saved);
-    expect(loadSubsets()).toEqual(s.saved);
-    s = run(s, { type: 'saved/delete', id: 's1' });
-    saveSubsets(s.saved);
+    saveSubsets(list.slice(1));
     expect(loadSubsets().map((x) => x.id)).toEqual(['s2']);
   });
 
@@ -413,7 +416,7 @@ describe('restoreState (whole page)', () => {
     expect(s.tabs).toHaveLength(1);
     expect(s.ui).toEqual(initialState().ui);
     expect(s.layout).toEqual(DEFAULT_LAYOUT);
-    expect(s.saved).toEqual([]);
+    expect(s.library.subsets).toEqual([]);
   });
 
   it('rebuilds fields, selection and counters from storage', () => {
@@ -421,10 +424,10 @@ describe('restoreState (whole page)', () => {
     s = run(
       s,
       { type: 'tab/add', gen: { ...defaultGen(), method: 'edo', edoN: 12 } },
-      { type: 'saved/save', name: 'x' }
+      { type: 'subset/add', name: 'x' }
     );
     saveTabs(s.tabs, 0);
-    saveSubsets(s.saved);
+    saveLibrary(s.library);
     saveSettings({ ...s.ui, tol: 40 });
     const r = restoreState();
     expect(r.tabs).toHaveLength(2);
@@ -433,8 +436,8 @@ describe('restoreState (whole page)', () => {
     expect(r.tabs[0].mode).toBe(1);
     expect(r.tabs[1].field).toHaveLength(12);
     expect(r.nextTab).toBe(3);
-    expect(r.saved.map((x) => x.id)).toEqual(['s1']);
-    expect(r.nextSaved).toBe(2);
+    expect(r.library.subsets.map((x) => x.id)).toEqual(['s1']);
+    expect(r.library.next.subset).toBe(2);
     expect(r.ui.tol).toBe(40);
   });
 
@@ -471,5 +474,100 @@ describe('restoreState (whole page)', () => {
       )
     );
     expect(restoreState().ui.tol).toBe(33);
+  });
+});
+
+describe('generator library (generators.v1)', () => {
+  const gen = makeTab('t1', defaultGen()).gen;
+  const fieldCents = (idx: number[]) => idx.map((i) => makeTab('t1', gen).field[i].c);
+  const legacy = () => [
+    { id: 's1', name: 'Triad', gen, selCents: fieldCents([0, 2, 4]), mode: 1 },
+    { id: 's2', name: 'Pair', gen, selCents: fieldCents([0, 4]), mode: 0 },
+  ];
+
+  it('nothing stored gives the empty library and writes nothing', () => {
+    expect(loadLibrary()).toMatchObject({ origin: 'empty', library: { subsets: [] } });
+    expect(window.localStorage.getItem(KEY_GENERATORS)).toBeNull();
+    restoreState();
+    expect(window.localStorage.getItem(KEY_GENERATORS)).toBeNull();
+  });
+
+  it('migrates the legacy list at load: every subset present, idempotent, no write, subsets.v1 untouched', () => {
+    saveSubsets(legacy());
+    const raw = window.localStorage.getItem(KEY_SUBSETS);
+    const a = loadLibrary();
+    expect(a.origin).toBe('migrated');
+    expect(a.library.subsets.map((s) => [s.id, s.name, s.owner, s.pitches.length])).toEqual([
+      ['s1', 'Triad', 'b:Harmonics 8–15', 3],
+      ['s2', 'Pair', 'b:Harmonics 8–15', 2],
+    ]);
+    expect(loadLibrary().library).toEqual(a.library);
+    expect(restoreState().library).toEqual(a.library);
+    expect(window.localStorage.getItem(KEY_GENERATORS)).toBeNull();
+    expect(window.localStorage.getItem(KEY_SUBSETS)).toBe(raw);
+  });
+
+  it('after the first change generators.v1 is authoritative and subsets.v1 is left as a backup', () => {
+    saveSubsets(legacy());
+    const s = run(restoreState(), { type: 'subset/delete', id: 's2' });
+    expect(saveLibrary(s.library)).toBe(true);
+    const raw = window.localStorage.getItem(KEY_SUBSETS);
+    expect(loadLibrary().origin).toBe('stored');
+    expect(loadLibrary().library.subsets.map((x) => x.id)).toEqual(['s1']);
+    // the legacy list is not read again, and was not rewritten
+    saveSubsets([]);
+    expect(loadLibrary().library.subsets.map((x) => x.id)).toEqual(['s1']);
+    expect(raw).toContain('Pair');
+  });
+
+  it('a first save never drops stored entries it could not use (an owner that is gone)', () => {
+    window.localStorage.setItem(
+      KEY_GENERATORS,
+      JSON.stringify({
+        version: 1,
+        presets: [],
+        subsets: [
+          { id: 's1', owner: 'p:p42', name: 'orphan', pitches: [{ m: {}, c: 0 }], root: null },
+        ],
+        recents: [],
+      })
+    );
+    let s = restoreState();
+    s = run(s, { type: 'sel/set', idx: [0, 2] }, { type: 'subset/add', name: 'new' });
+    saveLibrary(s.library);
+    expect(
+      (stored(KEY_GENERATORS) as { subsets: { name: string }[] }).subsets.map((x) => x.name)
+    ).toEqual(['orphan', 'new']);
+  });
+
+  it('unreadable generators.v1 falls back to the legacy list', () => {
+    saveSubsets(legacy());
+    window.localStorage.setItem(KEY_GENERATORS, '{not json');
+    expect(loadLibrary().origin).toBe('migrated');
+    window.localStorage.setItem(KEY_GENERATORS, JSON.stringify([1, 2]));
+    expect(loadLibrary().origin).toBe('migrated');
+  });
+
+  it('a failed write is reported', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    expect(saveLibrary(restoreState().library)).toBe(false);
+  });
+
+  it('a tab keeps its link through tabs.v1; a malformed link is dropped', () => {
+    let s = run(initialState(), { type: 'preset/save', name: 'P', folder: '' });
+    saveTabs(s.tabs, 0);
+    expect(loadTabs()?.tabs[0].link).toBe('p:p1');
+    expect(restoreState().tabs[0].link).toBe('p:p1');
+    const raw = stored(KEY_TABS) as { list: { link?: string }[] };
+    raw.list[0].link = 'nonsense';
+    window.localStorage.setItem(KEY_TABS, JSON.stringify(raw));
+    expect(loadTabs()?.tabs[0].link).toBeUndefined();
+    s = run(s, { type: 'tab/link', owner: null });
+    saveTabs(s.tabs, 0);
+    expect((stored(KEY_TABS) as { list: Record<string, unknown>[] }).list[0]).not.toHaveProperty(
+      'link'
+    );
   });
 });

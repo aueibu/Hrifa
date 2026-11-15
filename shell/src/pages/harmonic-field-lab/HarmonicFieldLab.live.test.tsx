@@ -3,8 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { HarmonicFieldLabApp } from './HarmonicFieldLabApp';
+import { migrateSubsets } from './state/generatorLibrary';
 import { makeTab, presetGen } from './state/labState';
-import { KEY_SETTINGS, KEY_SUBSETS, KEY_TABS, saveSubsets } from './state/persist';
+import { saveLibrary } from './state/libraryStore';
+import { KEY_GENERATORS, KEY_SETTINGS, KEY_SUBSETS, KEY_TABS } from './state/persist';
+
+const storedSubsets = () =>
+  (
+    JSON.parse(window.localStorage.getItem(KEY_GENERATORS) ?? '{}') as {
+      subsets?: { name: string; id: string }[];
+    }
+  ).subsets;
 
 // whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
 vi.setConfig({ testTimeout: 15_000 });
@@ -321,7 +330,9 @@ describe('saved subsets', () => {
     await save('No 11 or 13');
     const row = within(list()).getByRole('button', { name: /^No 11 or 13: 6 notes/ });
     expect(row).toHaveAttribute('aria-pressed', 'true');
-    expect(stored(KEY_SUBSETS)).toHaveLength(1);
+    expect(storedSubsets()).toHaveLength(1);
+    // the legacy flat list is never written
+    expect(window.localStorage.getItem(KEY_SUBSETS)).toBeNull();
     // change the selection; the saved row is no longer the loaded one, hover previews it on the ring
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
     expect(row).toHaveAttribute('aria-pressed', 'false');
@@ -338,11 +349,11 @@ describe('saved subsets', () => {
     type(nm, 'Quiet');
     fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
     expect(within(list()).getByRole('button', { name: /^Quiet: 6 notes/ })).toBeInTheDocument();
-    expect((stored(KEY_SUBSETS) as { name: string }[])[0].name).toBe('Quiet');
+    expect(storedSubsets()?.[0].name).toBe('Quiet');
     // delete
     fireEvent.click(within(list()).getByRole('button', { name: 'Delete Quiet' }));
     expect(within(list()).getByText(/Nothing saved yet/)).toBeInTheDocument();
-    expect(stored(KEY_SUBSETS)).toEqual([]);
+    expect(storedSubsets()).toEqual([]);
   });
 
   it('shows only the current collection by default; All lists the others, and loading one switches the tab to it', async () => {
@@ -743,11 +754,13 @@ describe('typing, storage and other windows', () => {
   it('subsets saved in another window arrive through the storage event, so this window cannot wipe them', async () => {
     render(<HarmonicFieldLabPage />);
     const here = makeTab('t1', presetGen());
-    saveSubsets([
-      { id: 's1', name: 'From the other window', gen: here.gen, selCents: [0, 701.955], mode: 0 },
-    ]);
+    saveLibrary(
+      migrateSubsets([
+        { id: 's1', name: 'From the other window', gen: here.gen, selCents: [0, 701.955], mode: 0 },
+      ])
+    );
     act(() => {
-      window.dispatchEvent(new StorageEvent('storage', { key: KEY_SUBSETS }));
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY_GENERATORS }));
     });
     const list = screen.getByRole('list', { name: 'Saved subsets list' });
     expect(
@@ -757,9 +770,7 @@ describe('typing, storage and other windows', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save current subset' }));
     type(await screen.findByRole('textbox', { name: 'Subset name' }), 'mine');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(
-      (stored(KEY_SUBSETS) as { name: string; id: string }[]).map((x) => [x.id, x.name])
-    ).toEqual([
+    expect(storedSubsets()?.map((x) => [x.id, x.name])).toEqual([
       ['s1', 'From the other window'],
       ['s2', 'mine'],
     ]);

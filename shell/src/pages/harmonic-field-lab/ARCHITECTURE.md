@@ -15,7 +15,9 @@ reference only.
 | `src/pages/HarmonicFieldLab.page.tsx` | Entry file (standing shared path): renders `HarmonicFieldLabApp`. |
 | `HarmonicFieldLabApp.tsx` | The workspace (top bar, rail, pinned columns, centre unit, switcher, dock) inside `LabProvider`. `initial` and `frozen` props are for tests and embedding (nothing stored, nothing sounds). |
 | `state/generate.ts` | `GenSpec` (the generation inputs of a tab), `generateField` (inline errors, never throws), presets to specs, `genKey` (which pitch collection a spec builds), `autoName`, `mosFor`. |
-| `state/labState.ts` | `LabState`, `Tab`, `Saved`, `UiSettings`, every `Action` and the pure `labReducer`. |
+| `state/labState.ts` | `LabState`, `Tab`, `Saved` (the legacy flat shape, used only to migrate), `UiSettings`, every `Action` and the pure `labReducer`. |
+| `state/generatorLibrary.ts` | The generator library (M7b), pure: `GenLibrary`, owners, subsets as pitches, add / rename / delete, user presets, Untitled generators, Update + Undo, copy, recents, `migrateSubsets`. |
+| `state/libraryStore.ts` | `generators.v1`: `sanitizeLibrary`, `libraryToStored`, `loadLibrary` (stored, else migrated, else empty), `saveLibrary`. |
 | `state/derive.ts` | Analysis of the active tab as pure functions (`deriveBase`, `stripDevs`, `spectrumOf`, `chordModel`, `keysOf`, `lattice2dOf/3dOf`, `edoOf`, `dissOf`, `isoOf`, `fieldRowsOf`, `fifthsFor`) with the prototype's size caps. |
 | `state/LabProvider.tsx` | The provider: reducer, restore, persistence effects, `useMemo` analyses, the voice engine hook. `state/context.ts` holds the `Lab` shape, `useLab()`, `useViz()`. |
 | `state/persist.ts` | Storage keys, `sanitize*`, `load*`, `save*`, the snapshot shape. |
@@ -57,7 +59,9 @@ barrel `@/lib/harmonic-field`.
 ```ts
 LabState {
   tabs: Tab[]; active: number; nextTab: number;        // up to 12 tabs
-  saved: Saved[]; nextSaved: number;                   // saved subsets (all tabs)
+  library: GenLibrary;                                 // user presets, Untitled generators, subsets (as pitches), recents
+  notice: Notice | null;                               // after Update / Save-as-new copy: report + undo (runtime only)
+  lastAdded: { id, duplicate } | null;                 // the row Add made or found (runtime only)
   hover, pin: number | null;                           // field index pointed at / pinned (inspector)
   chordHover, chordPick: Set<number> | null;           // highlighted chord (a hovered chip, a clicked chip)
   preview: number[] | null;                            // saved subset pointed at (shown instead of the selection)
@@ -69,7 +73,8 @@ LabState {
 }
 Tab { id, name | null, gen: GenSpec, field: Note[], rep: Note, err, sel: number[], mode,
       lastMethod, cmp: {ref, odd, m}, pick: {scale, kind, stretch, m, ref, msg, ok} }
-Saved { id, name, gen: GenSpec, selCents: number[], mode }
+Tab also has `link?: OwnerKey` (the generator it is linked to, stored in tabs.v1 beside the snapshot).
+Saved { id, name, gen: GenSpec, selCents: number[], mode }   // legacy subsets.v1 entry only
 ```
 
 - `field`, `rep` and `err` are built by `generateField(gen)` inside the reducer (so the selection can be carried across a
@@ -96,8 +101,65 @@ Saved { id, name, gen: GenSpec, selCents: number[], mode }
   row (actions); SegmentedControl stays for two-state choices.
 - Key rings (Keys & Modes) are buttons: a complete ring makes that key the subset with its root as the mode root, Ctrl/Cmd-click
   plays its notes together; heat-grid rows set the current mode.
-- "Saved subsets of this pitch collection": a saved subset belongs to the collection whose `genKey` equals its `gen`'s. The list
-  shows those; "All" lists the rest (loading one switches the tab to that collection).
+- Subset rows of the current generator: the list shows the subsets owned by the tab's generator (`Lab.owner`), re-resolved against the
+  tab's field; "All" lists the rest (loading one switches the tab to its generator). See "Generator library" below.
+
+### Generator library (M7b, step 1: data layer)
+
+A generator is a named preset that OWNS its subsets. An owner is an `OwnerKey`: `b:<built-in preset name>` (the preset's data stays in the
+lib's `PRESETS`; only its subsets are stored), `p:<id>` (a user preset `{ id, name, folder, gen }`, folder a plain string `"A/B"`),
+`u:<id>` (an Untitled generator `{ id, gen }`: a generator that got a subset before it was named). All subsets live in one flat list
+`{ id, owner, name, pitches: Note[], root: Note | null }`: PITCHES (monzo + cents; the mode root as a pitch too), never field positions.
+
+- Identity: `genKey` = lib `generatorKey`: exactly the inputs that decide the field (method, repeat by pitch, prime mask, plus the method's own
+  inputs; not the preset label, `keepNew` or the inputs of other methods).
+- A tab's generator (`ownerOfTab`): its `link` when that still exists; else the built-in named by `gen.preset`; else a user preset, an Untitled
+  generator or a built-in with the same `genKey`; else none. `isModified` = linked but `genKey(tab.gen)` differs from the owner's (the dot).
+  Fork on edit: a `gen/*` edit never touches the library; the tab is just modified.
+- Resolution: `resolvePitches` (exact monzo, else the nearest note within 0.5 c); a subset re-resolves against the tab's field whenever a row is shown or loaded.
+- Add (`subset/add`): current selection to the owner's next row, label `Subset N` (first free), no name needed; an identical pitch set and mode
+  root returns the existing row (`lastAdded.duplicate`). No cap. An unsaved or modified tab first forks into an Untitled generator with the tab's
+  inputs (an existing one with the same inputs is reused) and links to it, so a subset is never orphaned and a preset is never changed.
+- Update preset (`preset/update`; user presets and Untitled only, never built-ins): the owner takes the tab's inputs, every subset re-resolves,
+  unmatched pitches and then-empty subsets are removed; `state.notice` carries the `UpdateReport` (`updatedSubsets`, `removedSubsets` + `removed`,
+  `affectedSubsets`, `affectedAverageLost`, `mostLost`, `pitchesFound/pitchesTotal`, `detail` per affected subset with kept and lost pitches for
+  Show removed) and the undo data. `notice/undo` is defensive: it touches only what the Update changed (the subsets it rewrote or removed, by
+  id, plus the generator): a rewritten subset comes back only if it still is what the Update left (one renamed, changed or deleted since is left
+  alone), a removed one comes back at its old position, the generator returns only if it still is what the Update set, and no other subset is ever
+  touched or removed. The notice also ends at the next generator edit, any tab action except `tab/link`, `subset/add|rename|delete`, `lib/sync`,
+  `preset/save|rename|move|delete`, or `notice/dismiss` (a copy notice made by `preset/save` itself stays).
+  `updateBlocker(lib, tab)` returns the reason Update would do nothing (no generator yet, built-in owner, nothing modified, unbuildable inputs,
+  no notes) or null; `Lab.updateBlocker` and `Lab.canUpdate` expose it so the button can be disabled with the reason. The reducer still no-ops safely.
+- Save as new (`preset/save {name, folder, copySubsets?}`): a new user preset from the tab's inputs, tab linked; plain = no subsets, `copySubsets` =
+  the owner's subsets re-resolved against the tab's field under new ids (notice kind `copy`, no undo). Naming an unmodified Untitled generator
+  promotes it instead (its subsets move). Also `preset/rename`, `preset/move`, `preset/delete` (subsets are KEPT under an Untitled generator with the
+  preset's inputs; tabs that linked to it relink), `preset/open {owner}` (builds the generator in the tab, links, Recent), `tab/link`, `recent/push`.
+  Recent = last 8 owners used (open, save, add, load).
+- Refusals: `addSubset`, `saveUserPreset`, `ensureUntitled` and `copySubsetsTo` refuse (no change, a `refused` reason) at the caps below; the
+  reducer then sets `state.refusal = { reason }` (cleared by the next `subset/*`, `preset/*` or `lib/sync` action). `preset/save` with
+  `copySubsets` builds `generateField(tab.gen)` itself (the tab's field is stale after a failed edit) and refuses when it does not build.
+  `preset/delete` is refused when its subsets would have nowhere to go (Untitled cap).
+- Orphaned subsets (owner gone, e.g. a built-in renamed in a later version) stay stored and are written back; `orphanSubsets(lib)` lists them and
+  `subset/load` applies one to the CURRENT tab from its own pitches (tab link unchanged); `state.lastLoad = { id, found, missing }` says how many
+  pitches the field lacked.
+- Caps (equal in memory and at load, so a reload never drops what a session accepted): 2000 presets, 2000 Untitled generators, 20000 subsets,
+  4096 pitches per subset.
+- Known data-loss rules for corrupt or future data (load drops them; the first save then writes the library without them): a subset whose owner
+  key is syntactically invalid (not `b:`/`p:`/`u:` plus text) is dropped; an entry that is not an object, a preset or Untitled entry without a
+  usable generator, and a pitch without finite cents are dropped; a monzo that is not plain (non-prime key, non-integer exponent) loses its
+  monzo and keeps its cents; a root that is not one of the subset's pitches is repaired to none. A stored preset or Untitled generator with an
+  unknown future method or preset name is changed to the defaults (not kept as stored); with duplicate preset or Untitled ids the second
+  entry gets a new id, so its subsets end up under the first. Well-formed entries that cannot be used now (owner gone) are kept.
+- Legacy `subsets.v1` entries written after `generators.v1` exists (for example by a tab still running an older build) are never migrated:
+  they stay on disk, untouched, and are not shown.
+- A later Import reuses `applyUpdate` / `copySubsetsTo` unchanged (they take any subsets and any field).
+
+Migration of the legacy `subsets.v1`: at load, when `generators.v1` is absent or unreadable, the flat list is converted in memory (`migrateSubsets`;
+nothing is written, so it is idempotent, and `subsets.v1` is never touched or deleted): entries are grouped by `genKey`; a group equal to a
+built-in preset's inputs is owned by that preset (the one the entries name, else the first), every other group becomes an Untitled generator; pitches
+come from each `selCents` looked up in the field the entry's generator builds (exact monzo when a note is within 0.01 c, else cents only; a generator
+that does not build gives cents-only pitches), the root is the pitch at the stored mode (the first when out of range). Every entry appears with its id
+and name. The first library change writes `generators.v1`, which is then authoritative.
 
 ### Persistence
 
@@ -109,7 +171,8 @@ page's keys (W-10):
 | `hrifa.harmonic-field-lab.settings.v1` | `UiSettings`: active panel, dock open, chord tolerance, ring view / chain / generator, the three visualizers' settings, wave, 1/1 Hz, volume, mode-at-base, scale preview direction (`scalePreview`, Up | Up-down, default Up), saved-list "All". Each visualizer also stores `latMode` (`prime` | `gen` | `cps`, default `prime`); both fields are optional on load. |
 | `hrifa.harmonic-field-lab.layout.v1` | The pinned-panel `Layout` (the mock's model, moved here as its own key). Read once from the mock's `...mock.layout.v3` (else v2, else v1) when it is absent. |
 | `hrifa.harmonic-field-lab.tabs.v1` | `{ active, list: [{ id, name, snap }] }`. |
-| `hrifa.harmonic-field-lab.subsets.v1` | `[{ id, name, ...snap }]`. |
+| `hrifa.harmonic-field-lab.subsets.v1` | LEGACY `[{ id, name, ...snap }]`: read only to migrate when `generators.v1` is absent; never written or deleted after M7b. |
+| `hrifa.harmonic-field-lab.generators.v1` | `{ version: 1, presets: [{ id, name, folder, gen }], untitled: [{ id, gen }], subsets: [{ id, owner, name, pitches: [{ m, c }], root }], recents: [OwnerKey], next: { preset, untitled, subset } }`; `gen` is the generation part of the tab snapshot. Entry by entry: a bad entry is dropped or repaired, a well-formed one that cannot be used now (owner gone, built-in renamed) is kept and written back; caps (also enforced in memory when adding): 2000 presets, 2000 Untitled, 20000 subsets, 4096 pitches per subset; no write on mount. `tabs.v1` entries may carry `link` (an `OwnerKey`; malformed values are dropped). |
 | `hrifa.harmonic-field-lab.chordfinder.v1` | `{ templates: [{ text, name?, family? }] }`: the chord finder's templates (the editor behind Edit templates). Absent, unreadable or all-bad gives `DEFAULT_TEMPLATES`; a stored empty list stays empty; bad entries are dropped one by one, text cut to 80 characters, at most 64. |
 | `hrifa.harmonic-field-lab.retuner.v1` | `{ cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts: { harmonics, rolloff, oddLimit }, glideMs } }`. A card `snap` is the tab snapshot (below), cleaned to the plain stored shape. Cards and settings only: on/off, the active card, the card roots, the held keys and the history are never stored. Entry by entry: a card with no usable snapshot is dropped, settings fall back field by field, at most 24 cards; at restore a card whose inputs no longer build or select nothing is kept as a dormant spec (`RetState.dormant`, not shown, not playable) and written back at its stored position by every save, so a save never loses a stored card. Nothing is written on mount. |
 
@@ -126,8 +189,8 @@ page's keys (W-10):
 - A tab restored while its inputs do not build (a repeat saved mid-edit, e.g. `2/`) has an empty field; its stored selection
   and mode are kept as `Tab.pending`, written back by `toSnapshot` and re-matched by the first good build.
 - A failed write (storage full or blocked) is reported by the `save*` functions (`false`); the page shows "Not stored" in the
-  saved-subsets list (`Lab.storeFailed`). Saved subsets are re-read on the `storage` event, so a second window cannot wipe the
-  subsets saved in the first (tabs and settings are last-writer-wins). There is no cap on the number of saved subsets.
+  saved-subsets list (`Lab.storeFailed`). The library is re-read on the `storage` event (`generators.v1`), so a second window cannot wipe the
+  subsets saved in the first (tabs and settings are last-writer-wins). There is no cap on the number of subsets beyond the load sanity caps.
 - Text and number inputs that rebuild the field (repeat, generators, CPS factors, custom list, counts) commit after typing
   pauses (120 ms, as the prototype's `regen()`), on Enter and on blur, so typing "3/2" never rebuilds for "3".
 - Prototype data lives on another origin (`file://`) and does not carry over automatically.

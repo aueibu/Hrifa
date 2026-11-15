@@ -11,6 +11,7 @@ import {
   PRIMES,
   buildField,
   fmtRatio,
+  generatorKey,
   genAdditive,
   genCps,
   genEdo,
@@ -162,41 +163,9 @@ export function autoName(g: GenSpec): string {
 
 /**
  * What the field depends on: two specs with the same key build the same field (the "pitch collection" a saved subset
- * belongs to). The preset name, the keepNew switch and unused inputs of other methods are left out.
+ * belongs to, and a generator's identity in the library). The rule lives in the lib (`generatorKey`).
  */
-export function genKey(g: GenSpec): string {
-  // an interval by its pitch, so "2" and "2/1" are the same repeat; unreadable text stays as typed
-  const iv = (t: string) => {
-    const n = parseInterval(t);
-    return n ? `${n.c.toFixed(6)}` : `?${t.trim()}`;
-  };
-  const common = { m: g.method, r: iv(g.rep), k: g.mask.map((b) => (b ? 1 : 0)).join('') };
-  switch (g.method) {
-    case 'harmonic':
-    case 'sub':
-      return JSON.stringify({ ...common, h: g.h });
-    case 'edo':
-      return JSON.stringify({ ...common, n: g.edoN });
-    case 'lattice': {
-      // a diamond uses only the generators of the axes that are on, a box also their counts and centres
-      const axes = g.axes.filter((a, i) => i === 0 || a.on);
-      return g.shape === 'diamond'
-        ? JSON.stringify({ ...common, s: 'd', a: axes.map((a) => iv(a.g)), d: g.dist, b: g.bidir })
-        : JSON.stringify({ ...common, s: 'b', a: axes.map((a) => [iv(a.g), a.n, a.ctr]) });
-    }
-    case 'cps':
-      return JSON.stringify({
-        ...common,
-        f: g.cpsF
-          .trim()
-          .split(/[\s,]+/)
-          .map(iv),
-        ck: g.cpsK,
-      });
-    default:
-      return JSON.stringify({ ...common, t: g.custom.trim().split(/\s+/).map(iv) });
-  }
-}
+export const genKey = (g: GenSpec): string => generatorKey(g);
 
 export type Generated =
   | { ok: true; field: Note[]; rep: Note; warn: string }

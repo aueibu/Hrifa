@@ -103,6 +103,13 @@ export interface Lab {
   frozen: boolean;
   /** The last write to storage failed (full or blocked): what is on screen may not survive a reload. */
   storeFailed: boolean;
+  /** The generator the active tab belongs to (an `OwnerKey`), null for an unsaved generator with no subsets. */
+  owner: string | null;
+  /** The tab's inputs differ from its generator's (the "modified" dot). */
+  modified: boolean;
+  /** Why Update preset would do nothing right now (shown as the disabled reason), or null when it can run. */
+  updateBlocker: string | null;
+  canUpdate: boolean;
 }
 
 export const LabContext = createContext<Lab | null>(null);

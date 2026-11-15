@@ -16,6 +16,7 @@ import { useLabAudio } from '../audio/useLabAudio';
 import { LabContext, type Analyses, type Lab, type VizApi } from './context';
 import { chordModel, deriveBase, dissOf, edoOf, keysOf, spectrumOf, stripDevs } from './derive';
 import { readDeveloperOptions } from './developerOptions';
+import { ownerOfTab, isModified, updateBlocker as blockerOf } from './generatorLibrary';
 import {
   activeTab,
   initialState,
@@ -26,18 +27,17 @@ import {
   type Tab,
 } from './labState';
 import { setView, viewOf, type VizId, type VizView } from './layout';
+import { loadLibrary, saveLibrary } from './libraryStore';
 import {
   loadLayout,
   loadSettings,
   loadRetuner,
-  loadSubsets,
   loadTemplates,
   loadTabs,
-  KEY_SUBSETS,
+  KEY_GENERATORS,
   saveLayout,
   saveRetuner,
   saveSettings,
-  saveSubsets,
   saveTemplates,
   saveTabs,
 } from './persist';
@@ -63,6 +63,7 @@ export function restoreState(): LabState {
           : undefined;
       return {
         ...t,
+        ...(s.link ? { link: s.link } : {}),
         ...(pending ? { pending } : {}),
         sel,
         mode: sel.length && s.mode < sel.length ? s.mode : 0,
@@ -85,16 +86,15 @@ export function restoreState(): LabState {
       dormant.push({ at, spec: c });
     }
   });
-  const saved = loadSubsets();
-  const nextSaved = saved.length ? Math.max(...saved.map((s) => Number(s.id.slice(1)))) + 1 : 1;
+  // stored generators.v1 wins; else the legacy subsets.v1 list is migrated in memory (nothing is written on mount)
+  const { library } = loadLibrary();
   const ui = loadSettings();
   return {
     ...base,
     tabs,
     active,
     nextTab,
-    saved,
-    nextSaved,
+    library,
     ui,
     layout: loadLayout(),
     templates: loadTemplates(),
@@ -116,6 +116,15 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
   );
   const tab = activeTab(state);
   const base = useMemo(() => deriveBase(tab), [tab.field, tab.rep, tab.sel, tab.mode]);
+  const owner = useMemo(() => ownerOfTab(state.library, tab), [state.library, tab.gen, tab.link]);
+  const modified = useMemo(
+    () => isModified(state.library, tab),
+    [state.library, tab.gen, tab.link]
+  );
+  const updateBlocker = useMemo(
+    () => blockerOf(state.library, tab),
+    [state.library, tab.gen, tab.link]
+  );
   const strip = useMemo(() => stripDevs(base, tab), [base, tab.cmp, tab.pick.ref]);
 
   const tol = state.ui.tol;
@@ -174,18 +183,18 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
     }
   }, [store, state.retuner]); // the identity checks above decide whether anything is written
   useEffect(() => {
-    if (store && state.saved !== restored.current.saved) {
-      wrote('subsets', saveSubsets(state.saved));
+    if (store && state.library !== restored.current.library) {
+      wrote('library', saveLibrary(state.library));
     }
-  }, [store, state.saved]);
-  // another window saved subsets: take its list, so this window's next save cannot wipe them
+  }, [store, state.library]);
+  // another window saved the library: take it, so this window's next save cannot wipe it
   useEffect(() => {
     if (!store) {
       return;
     }
     const on = (e: StorageEvent) => {
-      if (e.key === KEY_SUBSETS || e.key === null) {
-        dispatch({ type: 'saved/sync', saved: loadSubsets() });
+      if (e.key === KEY_GENERATORS || e.key === null) {
+        dispatch({ type: 'lib/sync', library: loadLibrary().library });
       }
     };
     window.addEventListener('storage', on);
@@ -276,6 +285,10 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       viz,
       frozen,
       storeFailed,
+      owner,
+      modified,
+      updateBlocker,
+      canUpdate: updateBlocker === null,
     }),
     [
       state,
@@ -293,6 +306,9 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       pinNote,
       frozen,
       storeFailed,
+      owner,
+      modified,
+      updateBlocker,
     ]
   );
 

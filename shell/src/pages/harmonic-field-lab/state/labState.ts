@@ -8,6 +8,9 @@
 import {
   DEFAULT_TEMPLATES,
   EPS,
+  resolveSubset,
+  subsetFromSelection,
+  type UpdateReport,
   SCALE_LIBRARY,
   carrySelection,
   melakarta,
@@ -26,12 +29,39 @@ import {
   autoName,
   defaultGen,
   genFromPreset,
-  genKey,
   generateField,
   presetByName,
   type GenSpec,
   type Method,
 } from './generate';
+import {
+  addSubset,
+  cleanName,
+  copySubsetsTo,
+  deletePreset,
+  deleteSubset,
+  emptyLibrary,
+  ensureUntitled,
+  isModified,
+  movePreset,
+  ownerGen,
+  ownerLabel,
+  ownerOfTab,
+  parseOwner,
+  promoteUntitled,
+  pushRecent,
+  renamePreset,
+  renameSubset,
+  saveUserPreset,
+  builtinKey,
+  undoUpdate,
+  updateBlocker,
+  updateOwner,
+  userKey,
+  type GenLibrary,
+  type OwnerKey,
+  type UpdateUndo,
+} from './generatorLibrary';
 import { DEFAULT_LAYOUT, type Layout, type PanelId, type VizId } from './layout';
 import { initialRetuner, retunerReduce, type RetAction, type RetState } from './retuner';
 import { defaultSettings as defaultVizSettings, type VizSettings } from './vizState';
@@ -69,6 +99,8 @@ export interface Tab {
   pending?: { cents: number[]; mode: number };
   /** Method of the last successful generation: a regeneration with the same method keeps the selection. */
   lastMethod: Method | null;
+  /** The generator (an `OwnerKey`) this tab is linked to; see `ownerOfTab` for how an unlinked tab finds its owner. */
+  link?: OwnerKey;
   cmp: { ref: CmpRef; odd: number; m: number };
   pick: {
     scale: string;
@@ -84,6 +116,7 @@ export interface Tab {
   };
 }
 
+/** The legacy flat saved subset (`subsets.v1`): read only to migrate into the generator library. */
 export interface Saved {
   id: string;
   name: string;
@@ -124,12 +157,30 @@ export interface UiSettings {
   savedAll: boolean;
 }
 
+export interface Notice {
+  kind: 'update' | 'copy';
+  owner: OwnerKey;
+  /** The generator's name when the notice was made. */
+  name: string;
+  report: UpdateReport;
+  /** Update only: restores the generator and its exact previous subsets. */
+  undo: UpdateUndo | null;
+}
+
 export interface LabState {
   tabs: Tab[];
   active: number;
   nextTab: number;
-  saved: Saved[];
-  nextSaved: number;
+  /** The generator library: user presets, Untitled generators, and every generator's subsets as pitches. */
+  library: GenLibrary;
+  /** The notice after an Update (with its undo) or a copy; runtime only, cleared by the next generator edit. */
+  notice: Notice | null;
+  /** Set when a library action was refused (a cap, an unbuildable generator); cleared by the next library action. */
+  refusal: { reason: string } | null;
+  /** The last `subset/load`: how many of the subset's pitches the field had; runtime only. */
+  lastLoad: { id: string; found: number; missing: number } | null;
+  /** The row the last Add produced or found (`duplicate`); runtime only. */
+  lastAdded: { id: string; duplicate: boolean } | null;
   /** Field index pointed at, and the one pinned in the inspector. */
   hover: number | null;
   pin: number | null;
@@ -220,8 +271,11 @@ export function initialState(): LabState {
     tabs: [makeTab('t1', presetGen())],
     active: 0,
     nextTab: 2,
-    saved: [],
-    nextSaved: 1,
+    library: emptyLibrary(),
+    notice: null,
+    lastAdded: null,
+    refusal: null,
+    lastLoad: null,
     hover: null,
     pin: null,
     chordHover: null,
@@ -438,11 +492,21 @@ export type Action =
   | { type: 'pick/set'; patch: Partial<Tab['pick']> }
   | { type: 'pick/apply' }
   | { type: 'cmp/set'; patch: Partial<Tab['cmp']> }
-  | { type: 'saved/save'; name: string }
-  | { type: 'saved/delete'; id: string }
-  | { type: 'saved/rename'; id: string; name: string }
-  | { type: 'saved/load'; id: string }
-  | { type: 'saved/sync'; saved: Saved[] }
+  | { type: 'subset/add'; name?: string }
+  | { type: 'subset/rename'; id: string; name: string }
+  | { type: 'subset/delete'; id: string }
+  | { type: 'subset/load'; id: string }
+  | { type: 'lib/sync'; library: GenLibrary }
+  | { type: 'preset/open'; owner: OwnerKey }
+  | { type: 'preset/save'; name: string; folder: string; copySubsets?: boolean }
+  | { type: 'preset/rename'; id: string; name: string }
+  | { type: 'preset/move'; id: string; folder: string }
+  | { type: 'preset/delete'; id: string }
+  | { type: 'preset/update' }
+  | { type: 'tab/link'; owner: OwnerKey | null }
+  | { type: 'notice/undo' }
+  | { type: 'notice/dismiss' }
+  | { type: 'recent/push'; owner: OwnerKey }
   | { type: 'templates/set'; templates: ChordTemplate[] }
   | { type: 'hover'; i: number | null }
   | { type: 'pin'; i: number | null }
@@ -481,9 +545,65 @@ function editTab(s: LabState, fn: (t: Tab) => Tab): LabState {
   return activeTab(next).field === before.field ? next : clearPointers(next);
 }
 
-export const cleanName = (name: string): string => name.replace(/\s+/g, ' ').trim().slice(0, 60);
+export { cleanName };
+
+/** Open an owner's generator in the active tab (a preset pick): fresh build, linked, pushed to Recent. */
+function openOwner(s: LabState, key: OwnerKey): LabState {
+  const g = ownerGen(s.library, key);
+  if (!g) {
+    return s;
+  }
+  const out = editTab(s, (t) => withLink(regenTab({ ...t, mode: 0 }, g, true), key));
+  return { ...out, library: pushRecent(out.library, key) };
+}
+
+/** A tab linked to `to` (no link when null). */
+function withLink(t: Tab, to: OwnerKey | null): Tab {
+  const { link, ...rest } = t;
+  return link === undefined && to === null ? t : to === null ? rest : { ...rest, link: to };
+}
+
+/** Link the active tab to an owner (null: unlink). */
+function setLink(s: LabState, key: OwnerKey | null): LabState {
+  const t = activeTab(s);
+  if ((t.link ?? null) === key) {
+    return s;
+  }
+  return { ...s, tabs: s.tabs.map((x) => (x === t ? withLink(x, key) : x)) };
+}
+
+/** A generator edit (or any switch of what the tab is) ends the Update notice. */
+const endsNotice = (type: Action['type']) =>
+  (type.startsWith('gen/') && type !== 'gen/keepNew') ||
+  type === 'preset/open' ||
+  type === 'lib/sync' ||
+  (type.startsWith('tab/') && type !== 'tab/link') ||
+  type === 'subset/add' ||
+  type === 'subset/delete' ||
+  type === 'subset/rename' ||
+  type === 'preset/save' ||
+  type === 'preset/delete' ||
+  type === 'preset/rename' ||
+  type === 'preset/move';
+
+const isLibraryAction = (type: Action['type']) =>
+  type.startsWith('subset/') || type.startsWith('preset/') || type === 'lib/sync';
+
+const refuse = (s: LabState, reason: string): LabState => ({ ...s, refusal: { reason } });
 
 export function labReducer(s: LabState, a: Action): LabState {
+  let next = reduce(s, a);
+  // a notice made by this very action (copy) stays; any other library or generator change ends the old one
+  if (next.notice && next.notice === s.notice && next !== s && endsNotice(a.type)) {
+    next = { ...next, notice: null };
+  }
+  if (next.refusal && next.refusal === s.refusal && isLibraryAction(a.type)) {
+    next = { ...next, refusal: null };
+  }
+  return next;
+}
+
+function reduce(s: LabState, a: Action): LabState {
   switch (a.type) {
     case 'restore':
       return {
@@ -527,6 +647,7 @@ export function labReducer(s: LabState, a: Action): LabState {
         mode: src.mode,
         cmp: { ...src.cmp },
         pick: { ...src.pick },
+        ...(src.link ? { link: src.link } : {}),
         ...(src.pending
           ? { pending: { cents: src.pending.cents.slice(), mode: src.pending.mode } }
           : {}),
@@ -584,8 +705,10 @@ export function labReducer(s: LabState, a: Action): LabState {
       );
     case 'gen/preset': {
       const p = presetByName(a.name);
-      return p ? editTab(s, (t) => regenTab({ ...t, mode: 0 }, genFromPreset(p), true)) : s;
+      return p ? openOwner(s, builtinKey(p.name)) : s;
     }
+    case 'preset/open':
+      return openOwner(s, a.owner);
     case 'gen/method':
       return editTab(s, (t) =>
         t.gen.method === a.method
@@ -657,40 +780,174 @@ export function labReducer(s: LabState, a: Action): LabState {
         }
         return { ...t, cmp };
       });
-    case 'saved/save': {
+    case 'subset/add': {
       const t = activeTab(s);
-      const name = cleanName(a.name) || `Subset ${s.saved.length + 1}`;
-      const saved: Saved = {
-        id: `s${s.nextSaved}`,
-        name,
-        gen: t.gen,
-        selCents: t.sel.map((i) => t.field[i].c),
-        mode: t.mode,
+      if (t.sel.length === 0 || t.field.length === 0) {
+        return s;
+      }
+      const set = subsetFromSelection(t.field, t.sel, t.mode);
+      let lib = s.library;
+      let key = ownerOfTab(lib, t);
+      // an unsaved or edited generator forks into an Untitled generator, so the subset is never orphaned
+      if (key === null || isModified(lib, t)) {
+        const u = ensureUntitled(lib, t.gen);
+        if (u.key === null) {
+          return refuse(s, u.refused ?? 'Too many Untitled generators.');
+        }
+        lib = u.lib;
+        key = u.key;
+      }
+      const r = addSubset(lib, key, set, a.name);
+      if (r.refused) {
+        return refuse(s, r.refused);
+      }
+      return {
+        ...setLink(s, key),
+        library: pushRecent(r.lib, key),
+        lastAdded: { id: r.id, duplicate: r.duplicate },
       };
-      return { ...s, saved: [...s.saved, saved], nextSaved: s.nextSaved + 1 };
     }
-    case 'saved/delete':
-      return { ...s, saved: s.saved.filter((x) => x.id !== a.id), preview: null };
-    case 'saved/rename': {
-      const name = cleanName(a.name);
-      return name ? { ...s, saved: s.saved.map((x) => (x.id === a.id ? { ...x, name } : x)) } : s;
+    case 'subset/delete':
+      return { ...s, library: deleteSubset(s.library, a.id), preview: null };
+    case 'subset/rename': {
+      const library = renameSubset(s.library, a.id, a.name);
+      return library === s.library ? s : { ...s, library };
     }
-    case 'saved/load': {
-      const sv = s.saved.find((x) => x.id === a.id);
+    case 'subset/load': {
+      const sv = s.library.subsets.find((x) => x.id === a.id);
       if (!sv) {
         return s;
       }
+      const same = ownerOfTab(s.library, activeTab(s)) === sv.owner;
+      const g = same ? null : ownerGen(s.library, sv.owner);
+      // an orphan (its owner is gone) is applied to the current tab from its own pitches, and the tab is not relinked
+      const orphan = !same && !g;
+      let load = { id: sv.id, found: 0, missing: 0 };
       const out = editTab(s, (t) => {
-        const base = genKey(t.gen) === genKey(sv.gen) ? t : regenTab(t, { ...sv.gen }, true);
-        const sel = matchCents(base.field, sv.selCents);
-        return { ...base, sel, mode: fixMode(sv.mode, sel.length) };
+        const base = g ? regenTab({ ...t, mode: 0 }, g, true) : t;
+        const r = resolveSubset(base.field, sv);
+        load = { id: sv.id, found: r.found.length, missing: r.missing.length };
+        const linked = orphan ? base : { ...base, link: sv.owner };
+        return { ...linked, sel: r.sel, mode: fixMode(r.mode, r.sel.length) };
       });
-      return { ...out, preview: null };
+      return {
+        ...out,
+        preview: null,
+        lastLoad: load,
+        library: orphan ? out.library : pushRecent(out.library, sv.owner),
+      };
     }
-    case 'saved/sync': {
-      const top = a.saved.reduce((m, x) => Math.max(m, Number(x.id.slice(1)) || 0), 0);
-      return { ...s, saved: a.saved, nextSaved: Math.max(s.nextSaved, top + 1), preview: null };
+    case 'lib/sync':
+      return { ...s, library: a.library, preview: null, lastAdded: null };
+    case 'tab/link':
+      return setLink(s, a.owner);
+    case 'recent/push':
+      return { ...s, library: pushRecent(s.library, a.owner) };
+    case 'preset/save': {
+      const t = activeTab(s);
+      const cur = ownerOfTab(s.library, t);
+      const o = cur ? parseOwner(cur) : null;
+      let key: OwnerKey;
+      let lib = s.library;
+      let notice: Notice | null = s.notice;
+      // copied subsets re-resolve against what the edited inputs build now (the tab's field can be stale after a failed edit)
+      const built = a.copySubsets ? generateField(t.gen) : null;
+      if (built && !built.ok) {
+        return refuse(
+          s,
+          `The generator does not build, so the subsets cannot be copied: ${built.err}`
+        );
+      }
+      if (o && o.kind === 'untitled' && !isModified(lib, t)) {
+        // naming an Untitled generator: it becomes the preset, its subsets move with it
+        const r = promoteUntitled(lib, o.ref, { name: a.name, folder: a.folder });
+        if (!r) {
+          return refuse(s, 'Too many presets: delete one before saving another.');
+        }
+        lib = r.lib;
+        key = r.key;
+      } else {
+        const r = saveUserPreset(lib, { name: a.name, folder: a.folder, gen: t.gen });
+        if (r.key === null) {
+          return refuse(s, r.refused ?? 'Too many presets.');
+        }
+        lib = r.lib;
+        key = r.key;
+        if (built && built.ok && cur && built.field.length > 0) {
+          const c = copySubsetsTo(lib, cur, key, built.field);
+          if (c.refused) {
+            return refuse(s, c.refused);
+          }
+          lib = c.lib;
+          notice = {
+            kind: 'copy',
+            owner: key,
+            name: ownerLabel(lib, key),
+            report: c.report,
+            undo: null,
+          };
+        }
+      }
+      return { ...setLink(s, key), library: pushRecent(lib, key), notice };
     }
+    case 'preset/rename': {
+      const library = renamePreset(s.library, a.id, a.name);
+      return library === s.library ? s : { ...s, library };
+    }
+    case 'preset/move': {
+      const library = movePreset(s.library, a.id, a.folder);
+      return library === s.library ? s : { ...s, library };
+    }
+    case 'preset/delete': {
+      const r = deletePreset(s.library, a.id);
+      if (r.refused) {
+        return refuse(s, r.refused);
+      }
+      if (r.lib === s.library) {
+        return s;
+      }
+      const from = userKey(a.id);
+      return {
+        ...s,
+        library: r.lib,
+        tabs: s.tabs.map((t) => (t.link === from ? withLink(t, r.moved) : t)),
+        notice: s.notice && s.notice.owner === from ? null : s.notice,
+        preview: null,
+      };
+    }
+    case 'preset/update': {
+      const t = activeTab(s);
+      const key = ownerOfTab(s.library, t);
+      const built = generateField(t.gen);
+      if (key === null || !built.ok || updateBlocker(s.library, t) !== null) {
+        return s;
+      }
+      const r = updateOwner(s.library, key, t.gen, built.field);
+      if (!r) {
+        return s;
+      }
+      return {
+        ...setLink(s, key),
+        library: pushRecent(r.lib, key),
+        notice: {
+          kind: 'update',
+          owner: key,
+          name: ownerLabel(r.lib, key),
+          report: r.report,
+          undo: r.undo,
+        },
+        preview: null,
+      };
+    }
+    case 'notice/undo': {
+      const n = s.notice;
+      if (!n || !n.undo) {
+        return s;
+      }
+      return { ...s, library: undoUpdate(s.library, n.undo), notice: null, preview: null };
+    }
+    case 'notice/dismiss':
+      return s.notice ? { ...s, notice: null } : s;
     case 'hover':
       return s.hover === a.i ? s : { ...s, hover: a.i };
     case 'pin':

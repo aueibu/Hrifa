@@ -16,3 +16,4 @@ export * from './scorers';
 export * from './scorersMore';
 export * from './retuner';
 export * from './visual';
+export * from './library';

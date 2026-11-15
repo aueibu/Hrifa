@@ -5,10 +5,10 @@
  */
 import { useMemo, useState } from 'react';
 import { ActionIcon, Button, Checkbox, Popover, TextInput } from '@mantine/core';
-import { analyzeSubset, rotateSubset, toScl } from '../../../lib/harmonic-field';
+import { analyzeSubset, resolveSubset, rotateSubset, toScl } from '../../../lib/harmonic-field';
 import type { PreviewTarget } from '../audio/plan';
-import { autoName, genKey } from '../state/generate';
-import { matchCents, tabName, type Saved } from '../state/labState';
+import { ownerLabel, type LibSubset } from '../state/generatorLibrary';
+import { tabName } from '../state/labState';
 import { CloseIcon, DownloadIcon, SaveIcon } from './icons';
 import { NoteMark } from './NoteMark';
 import { RefLines, stripLeft } from './TunerStrip';
@@ -37,12 +37,12 @@ function download(name: string, text: string) {
 
 const fileName = (s: string) => s.replace(/[^\w\- ]/g, '').trim() || 'subset';
 
-function RenameButton({ saved }: { saved: Saved }) {
+function RenameButton({ saved }: { saved: LibSubset }) {
   const { dispatch } = useLab();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(saved.name);
   const done = () => {
-    dispatch({ type: 'saved/rename', id: saved.id, name });
+    dispatch({ type: 'subset/rename', id: saved.id, name });
     setOpen(false);
   };
   return (
@@ -93,21 +93,24 @@ function RenameButton({ saved }: { saved: Saved }) {
 }
 
 export function SavedSubsets() {
-  const { state, tab, base, strip, dispatch, setPreview, storeFailed, audio } = useLab();
+  const lab = useLab();
+  const { state, tab, base, strip, dispatch, setPreview, storeFailed, audio } = lab;
   const { field, rep } = base;
   const [name, setName] = useState('');
   const [saveOpen, setSaveOpen] = useState(false);
-  const here = useMemo(() => genKey(tab.gen), [tab.gen]);
+  const { owner } = lab;
   const all = state.ui.savedAll;
+  // the current generator's subsets re-resolve against this tab's field (a modified tab shows what still matches)
   const rows = useMemo(
     () =>
-      state.saved.map((s) => {
-        const same = genKey(s.gen) === here;
-        const idx = same ? matchCents(field, s.selCents) : null;
+      state.library.subsets.map((s) => {
+        const same = s.owner === owner;
+        const r = same ? resolveSubset(field, s) : null;
+        const idx = r ? r.sel : null;
         const a = idx ? analyzeSubset(rotateSubset(field, idx, 0, rep), rep) : null;
-        return { s, same, idx, limit: a?.primeLimit ?? null };
+        return { s, same, idx, mode: r ? r.mode : 0, limit: a?.primeLimit ?? null };
       }),
-    [state.saved, here, field, rep]
+    [state.library.subsets, owner, field, rep]
   );
   const shown = rows.filter((r) => r.same || all);
   const current = useMemo(() => new Set(tab.sel), [tab.sel]);
@@ -116,7 +119,7 @@ export function SavedSubsets() {
     if (!base.rel.length) {
       return;
     }
-    const nm = fileName(name || tabName(tab) || autoName(tab.gen));
+    const nm = fileName(name || tabName(tab));
     download(`${nm}.scl`, toScl(base.rel, rep, nm));
   };
   return (
@@ -167,7 +170,7 @@ export function SavedSubsets() {
                     size="xs"
                     variant="default"
                     onClick={() => {
-                      dispatch({ type: 'saved/save', name });
+                      dispatch({ type: 'subset/add', name });
                       setName('');
                       setSaveOpen(false);
                     }}
@@ -215,15 +218,12 @@ export function SavedSubsets() {
               : 'None for this collection. Tick All to see the others.'}
           </li>
         )}
-        {shown.map(({ s, same, idx, limit }) => {
+        {shown.map(({ s, same, idx, mode, limit }) => {
           const on = new Set(idx ?? []);
           const loaded =
             same && idx !== null && idx.length === current.size && idx.every((i) => current.has(i));
           // the saved subset's own mode root (the same repair the loader applies to a stored mode)
-          const rootNote =
-            idx && idx.length
-              ? idx[Number.isInteger(s.mode) && s.mode >= 0 && s.mode < idx.length ? s.mode : 0]
-              : null;
+          const rootNote = idx && idx.length ? idx[mode] : null;
           return (
             <li key={s.id} className={classes.savedItem}>
               <Tip k="savedRow" as="control" block>
@@ -231,37 +231,37 @@ export function SavedSubsets() {
                   type="button"
                   className={classes.savedRow}
                   aria-pressed={loaded}
-                  aria-label={`${s.name}: ${s.selCents.length} notes${same ? '' : ', another collection'}. Click to load.`}
+                  aria-label={`${s.name}: ${s.pitches.length} notes${same ? '' : ', another collection'}. Click to load.`}
                   onMouseEnter={() => {
                     if (idx) {
                       setPreview(idx);
-                      audio.setPreviewTarget(scaleOf(idx, s.mode));
+                      audio.setPreviewTarget(scaleOf(idx, mode));
                     }
                   }}
                   onMouseLeave={() => {
                     setPreview(null);
                     if (idx) {
-                      audio.clearPreviewTarget(scaleOf(idx, s.mode));
+                      audio.clearPreviewTarget(scaleOf(idx, mode));
                     }
                   }}
                   onFocus={() => {
                     if (idx) {
                       setPreview(idx);
-                      audio.setPreviewTarget(scaleOf(idx, s.mode));
+                      audio.setPreviewTarget(scaleOf(idx, mode));
                     }
                   }}
                   onBlur={() => {
                     setPreview(null);
                     if (idx) {
-                      audio.clearPreviewTarget(scaleOf(idx, s.mode));
+                      audio.clearPreviewTarget(scaleOf(idx, mode));
                     }
                   }}
-                  onClick={() => dispatch({ type: 'saved/load', id: s.id })}
+                  onClick={() => dispatch({ type: 'subset/load', id: s.id })}
                 >
                   <span className={classes.savedName}>
                     <span>{s.name}</span>
                     <Num muted>
-                      {s.selCents.length} notes
+                      {s.pitches.length} notes
                       {limit ? ` · ${limit}-limit` : ''}
                     </Num>
                   </span>
@@ -292,7 +292,7 @@ export function SavedSubsets() {
                       ))}
                     </span>
                   ) : (
-                    <span className={classes.sparkOther}>{autoName(s.gen)}</span>
+                    <span className={classes.sparkOther}>{ownerLabel(state.library, s.owner)}</span>
                   )}
                 </button>
               </Tip>
@@ -304,7 +304,7 @@ export function SavedSubsets() {
                     color="gray"
                     size="xs"
                     aria-label={`Delete ${s.name}`}
-                    onClick={() => dispatch({ type: 'saved/delete', id: s.id })}
+                    onClick={() => dispatch({ type: 'subset/delete', id: s.id })}
                   >
                     <CloseIcon />
                   </ActionIcon>

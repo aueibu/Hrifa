@@ -251,3 +251,22 @@ Well-Tuned Piano", *Perspectives of New Music* 31/1 (Winter 1993), pp. 134-162, 
 re-checked against the article): Opening Chord 4:6:7:8:9:12; Magic Chord 81:84:108:112:144:162:192:216; Romantic Chord
 48:54:56:64:72:81:84; Gamelan Chord 42:54:64:81; Tamiar Dream Chord 14:18:24:27; 189/98 Lost Ancestral Lake Region 12:14:18:21:24:27;
 The Brook 12:14:16:18:21; The Pool 128:144:147:192:224. Each is rooted so its lowest term is 220 Hz.
+
+## Generator library (M7b, `library.ts`)
+
+Pure helpers for generators that own subsets (page contract: `src/pages/harmonic-field-lab/ARCHITECTURE.md`, "Generator library").
+
+- `generatorKey(inputs)`: a generator's identity, exactly the inputs that decide the field (method, repeat as a pitch, prime mask and the
+  method's own inputs; not the preset label, `keepNew` or other methods' inputs). Two generators with the same key build the same field.
+- Pitches: `PitchSet { pitches: Note[]; root: Note | null }` (monzo + cents, the mode root as a pitch). `subsetFromSelection(field, sel, mode)`.
+  `samePitch` (both monzos: exact equality; else within 0.01 c), `samePitchSet` (same pitches and same root), `findDuplicate`.
+- `resolvePitches(field, pitches, tol = 0.5)` gives `{ match, indices, found, missing }`: a pitch with a monzo matches the field note with exactly
+  that monzo, else (also for cents-only pitches and irrational notes) the nearest note within `tol` cents, inclusive. `resolveSubset` adds the
+  selection and the mode (0 when the root is not found). `indexField` + `resolvePitchesIn` / `resolveSubsetIn` reuse one index for many subsets.
+- `applyUpdate(subsets, field)` re-resolves every subset: unmatched pitches go, empty subsets go, pitches become the new field's notes, a lost root
+  becomes the lowest remaining pitch. Returns `{ subsets, report, undo }`; `report` has `subsetsTotal`, `updatedSubsets` (remaining),
+  `removedSubsets` + `removed`, `affectedSubsets` (remaining subsets that lost at least one pitch), `affectedAverageLost`, `mostLost`,
+  `pitchesFound` / `pitchesTotal` (over all subsets), and `detail` (kept and lost pitches per affected subset, removed ones flagged). `undo` is the
+  exact previous subsets. `reportSentence(name, report)` words the notice. The same function serves Save-as-new with copied subsets and a later Import.
+- Folders (plain `"A/B"` strings): `normalizeFolder` (trim, no empty segments, 40 characters, depth 6), `splitFolder`, `joinFolder`, `parentFolder`,
+  `folderName`, `inFolder`, `listFolders` (with ancestors), `childFolders`.

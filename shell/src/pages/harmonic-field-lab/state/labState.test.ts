@@ -329,44 +329,46 @@ describe('tabs', () => {
   });
 });
 
-describe('saved subsets', () => {
+describe('saved subsets (subset rows of the current generator)', () => {
   const base = () => run(initialState(), { type: 'sel/set', idx: [0, 2, 4] });
+  const rows = (s: ReturnType<typeof base>) => s.library.subsets;
 
-  it('saves by name (or "Subset n"), renames, deletes', () => {
+  it('adds by name (or "Subset n"), renames, deletes', () => {
     let s = run(
       base(),
-      { type: 'saved/save', name: ' Otonal  triad ' },
-      { type: 'saved/save', name: '' }
+      { type: 'subset/add', name: ' Otonal  triad ' },
+      { type: 'sel/set', idx: [0, 2] },
+      { type: 'subset/add', name: '' }
     );
-    expect(s.saved.map((x) => x.name)).toEqual(['Otonal triad', 'Subset 2']);
-    expect(s.saved[0].selCents.map((c) => Math.round(c))).toEqual([0, 386, 702]);
-    expect(s.saved[0].id).toBe('s1');
-    s = run(s, { type: 'saved/rename', id: 's1', name: 'Triad' });
-    expect(s.saved[0].name).toBe('Triad');
-    expect(run(s, { type: 'saved/rename', id: 's1', name: '  ' })).toBe(s);
-    s = run(s, { type: 'saved/delete', id: 's1' });
-    expect(s.saved.map((x) => x.id)).toEqual(['s2']);
-    s = run(s, { type: 'saved/save', name: 'again' });
-    expect(s.saved.map((x) => x.id)).toEqual(['s2', 's3']);
+    expect(rows(s).map((x) => x.name)).toEqual(['Otonal triad', 'Subset 2']);
+    expect(rows(s)[0].pitches.map((p) => Math.round(p.c))).toEqual([0, 386, 702]);
+    expect(rows(s)[0].id).toBe('s1');
+    expect(rows(s)[0].owner).toBe('b:Harmonics 8–15');
+    s = run(s, { type: 'subset/rename', id: 's1', name: 'Triad' });
+    expect(rows(s)[0].name).toBe('Triad');
+    expect(run(s, { type: 'subset/rename', id: 's1', name: '  ' })).toBe(s);
+    s = run(s, { type: 'subset/delete', id: 's1' });
+    expect(rows(s).map((x) => x.id)).toEqual(['s2']);
+    s = run(s, { type: 'sel/set', idx: [1, 3] }, { type: 'subset/add', name: 'again' });
+    expect(rows(s).map((x) => x.id)).toEqual(['s2', 's3']);
   });
 
-  it('loads one of this collection: the selection and mode come back', () => {
-    let s = run(base(), { type: 'mode/set', mode: 1 }, { type: 'saved/save', name: 'T' });
+  it('loads one of this generator: the selection and mode come back', () => {
+    let s = run(base(), { type: 'mode/set', mode: 1 }, { type: 'subset/add', name: 'T' });
     s = run(
       s,
       { type: 'sel/all' },
       { type: 'preview', idx: [1] },
-      { type: 'saved/load', id: 's1' }
+      { type: 'subset/load', id: 's1' }
     );
     expect(selRatios(s)).toEqual(['1/1', '5/4', '3/2']);
     expect(activeTab(s).mode).toBe(1);
     expect(s.preview).toBeNull();
-    // a stored mode past the end is repaired
-    s = run(s, { type: 'saved/load', id: 'nope' });
+    s = run(s, { type: 'subset/load', id: 'nope' });
     expect(selRatios(s)).toEqual(['1/1', '5/4', '3/2']);
   });
 
-  it('loading a subset of another collection switches this tab to that collection', () => {
+  it('loading a subset of another generator switches this tab to that generator', () => {
     let s = run(
       initialState(),
       { type: 'tab/add', gen: edo(12) },
@@ -374,19 +376,29 @@ describe('saved subsets', () => {
     );
     s = run(
       s,
-      { type: 'saved/save', name: 'major triad' },
+      { type: 'subset/add', name: 'major triad' },
       { type: 'gen/preset', name: 'Harmonics 8–15' }
     );
     expect(activeTab(s).field).toHaveLength(8);
-    s = run(s, { type: 'saved/load', id: 's1' });
+    s = run(s, { type: 'subset/load', id: 's1' });
     expect(activeTab(s).gen.method).toBe('edo');
     expect(activeTab(s).field).toHaveLength(12);
     expect(activeTab(s).sel).toEqual([0, 4, 7]);
   });
 
-  it('the keepNew choice is stored with the saved inputs', () => {
-    const s = run(base(), { type: 'gen/keepNew', on: true }, { type: 'saved/save', name: 'k' });
-    expect(s.saved[0].gen.keepNew).toBe(true);
+  it('an unsaved generator that gets a subset becomes an Untitled generator and the tab links to it', () => {
+    const s = run(
+      base(),
+      { type: 'gen/patch', patch: { h: 9 } },
+      { type: 'sel/set', idx: [0, 1] },
+      {
+        type: 'subset/add',
+      }
+    );
+    expect(s.library.untitled).toHaveLength(1);
+    expect(s.library.untitled[0].gen.h).toBe(9);
+    expect(activeTab(s).link).toBe('u:u1');
+    expect(s.library.subsets[0].owner).toBe('u:u1');
   });
 });
 
