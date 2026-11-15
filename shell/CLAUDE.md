@@ -23,6 +23,11 @@ Several arcs can run at the same time. When a task is driven by an arc (template
    - If the gate is red only because of files outside the arc's owned and locked paths, it is not yours to fix (rule 14 below).
 5. Stop and ask at every milestone marked "Human checkpoint" and on any "Stop-and-ask" condition. Otherwise keep going without asking.
 6. Checkpoint decisions: every human decision is written back into the arc's `ARC.md` by the orchestrator (a "Checkpoint decisions" bullet under the milestone) before building on it.
+7. Behaviour first, for any creation behaviour (a new feature, control, key, playback rule, data or save rule, display rule: anything the human could judge by using it):
+   - **Scenarios first.** Before building, write the human's concrete cases as a small table (their actual notes, steps or data; say which roots, references or modes a rule uses) and get it confirmed. The options in a choice must be shown with an example where they give DIFFERENT results. Tests come from the confirmed table, never from a case where the options coincide.
+   - **Thin slice first** for anything the spec cannot settle (feel, sound, look, key layout): build the smallest version the human can try, then polish, test and review after the behaviour is agreed.
+   - **Restate before reworking.** When the human says something is wrong, restate in one plain sentence what they expected and what they got, using their own example, and ask only if the repro is unclear. Never rework on a guess.
+8. Builder continuity: start a fresh builder for each milestone step with a precise brief. Resume the same builder only for short follow-ups inside the same step. Start a fresh one when its context has grown large (around 150k tokens) or when the follow-up changes the design and not just a detail.
 
 ## Several arcs at once
 
