@@ -14,7 +14,16 @@ export interface ModuleMeta {
   sizes: readonly SlotSize[];
   /** The smallest room the module accepts; the Stage enforces it in M3 (the M2 layout core does not). */
   minSize: SlotSize;
+  /** The NAME of the docker it normally lives in ("Detail", "Tools"); a hint for reopening (remembered placement). */
+  home?: string;
+  /** The kind may have several instances (ids `<kind>:<instanceKey>`). */
+  multiple?: boolean;
+  /** Stays mounted, parked, when closed, hidden or not in the active screenset. */
+  keepMounted?: boolean;
 }
+
+/** The design's name for module metadata. */
+export type PanelMeta = ModuleMeta;
 
 export type ModuleRegistry = ReadonlyMap<ModuleId, ModuleMeta>;
 

@@ -22,7 +22,15 @@ export interface StageRegistry {
 
 export function createStageRegistry(modules: readonly StageModule[]): StageRegistry {
   const meta = createRegistry(
-    modules.map(({ id, title, sizes, minSize }) => ({ id, title, sizes, minSize }))
+    modules.map(({ id, title, sizes, minSize, home, multiple, keepMounted }) => ({
+      id,
+      title,
+      sizes,
+      minSize,
+      ...(home !== undefined ? { home } : {}),
+      ...(multiple !== undefined ? { multiple } : {}),
+      ...(keepMounted !== undefined ? { keepMounted } : {}),
+    }))
   );
   return { meta, modules: new Map(modules.map((m) => [m.id, m])) };
 }

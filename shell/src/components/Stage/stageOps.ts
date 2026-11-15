@@ -28,12 +28,17 @@ import {
   minShare,
   moveColumn,
   setColumnWidth,
+  solveTree,
   splitterAt,
+  treeDockers,
   unstack,
   type Column,
+  type Docker,
+  type DockerMin,
   type Layout,
   type ModuleMeta,
   type ModuleRegistry,
+  type Screenset,
 } from '../../lib/stage';
 
 const WIDTH_FLOOR_REM = [SIZE_MIN_WIDTH_REM, SIZE_SMALL_MAX_REM, SIZE_LARGE_MIN_REM] as const;
@@ -324,4 +329,75 @@ export function nudgeStackSplitterMin(
           ? b.min
           : b.max;
   return dragStackSplitterMin(l, registry, column, index, to, heightRem);
+}
+
+/* ------------------------------------------------------------------------------------------------ split tree (v2) */
+/**
+ * Additive pure rules for the split tree (src/lib/stage tree.ts, solve.ts): a docker's minimum from its ACTIVE panel,
+ * and a guard that refuses a tree change that would leave an open docker below its minimum. The old column rules above
+ * are unchanged.
+ */
+
+/** The solver's `minOf` for a registry: the active panel's `minSize` as floors in rem (the Stage minimum when none). */
+export const dockerMinOf =
+  (registry: ModuleRegistry) =>
+  (d: Docker): DockerMin => {
+    const m = d.active !== null ? registry.get(d.active) : undefined;
+    return m
+      ? { width: minWidthRem(m), height: minHeightRem(m) }
+      : { width: SIZE_MIN_WIDTH_REM, height: SIZE_MIN_HEIGHT_REM };
+  };
+
+/**
+ * Problems of a tree at a measured size: open dockers whose solved room is below their active panel's minimum even
+ * after the narrow rule collapsed what it could (`w:<docker id>`, `h:<docker id>`). A docker the narrow rule collapses
+ * to a strip is not a problem: that is how a narrow window is handled.
+ */
+export function treeMinProblems(
+  s: Screenset,
+  registry: ModuleRegistry,
+  widthRem: number,
+  heightRem: number,
+  selected?: string
+): string[] {
+  const minOf = dockerMinOf(registry);
+  const boxes = solveTree(s.tree, widthRem, heightRem, { minOf, collapsed: s.collapsed, selected });
+  const out: string[] = [];
+  for (const d of treeDockers(s.tree)) {
+    const box = boxes.get(d.id);
+    if (!box || box.state !== 'open') {
+      continue;
+    }
+    const min = minOf(d);
+    if (box.width < min.width - EPS) {
+      out.push(`w:${d.id}`);
+    }
+    if (box.height < min.height - EPS) {
+      out.push(`h:${d.id}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * (Policy: only layout edits such as sends and moves are guarded; opening or showing a panel never is, so the Chords
+ * tool can always force its panel into view, narrow window included.)
+ * `next`, unless it leaves some open docker below its minimum that was not already below it in `prev`; then `prev`
+ * (refused). With no measured size (width or height not above 0) nothing can be judged and `next` is returned.
+ */
+export function guardedTree(
+  prev: Screenset,
+  next: Screenset,
+  registry: ModuleRegistry,
+  widthRem: number,
+  heightRem: number,
+  selected?: string
+): Screenset {
+  if (next === prev || !(widthRem > 0) || !(heightRem > 0)) {
+    return next;
+  }
+  const before = new Set(treeMinProblems(prev, registry, widthRem, heightRem, selected));
+  return treeMinProblems(next, registry, widthRem, heightRem, selected).every((p) => before.has(p))
+    ? next
+    : prev;
 }
