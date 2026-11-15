@@ -4,7 +4,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Dynamic retuner + move into the Hrifa shell + encyclopaedia UI (`arcs/harmonic-field-lab`)
-- Current milestone: M8b approved 2026-11-15; next M8c (draft) and M9 (draft), each needs the human's approval
+- Current milestone: M8c (approved 2026-11-15, step 1 data layer + merge lib next); then M9 (draft)
 - State: M7, M7b, M7c approved; M8 not started
 
 ## Resuming after a /clear (read this first)
@@ -121,7 +121,7 @@ WTP = La Monte Young, The Well-Tuned Piano, chords from Kyle Gann, *Perspectives
 - Per-milestone questions are in ARC.md.
 
 ## Next action
-M8a and M8b are approved. M8c (composite gamuts) and M9 (positional chords) are drafted in ARC.md: ask the human to approve (or edit) M8c, then build it with the shell rule 7 and 8 workflow (scenarios first, thin slice, fresh builder per step). Push only when the human asks.
+M8c step 1 (data layer `composites.v1` + `src/lib/harmonic-field/composite.ts` merge lib, tests from the confirmed scenarios, Developer option 'Merged note keeps' + merge tolerance + Developer menu sections by what/where it affects) via a fresh builder, then reviewer, gate, commit; step 2 UI (send popup with preview, right-click menu, Composites rail panel, Open as tab, Composite generation method); human checkpoint. Then M9 once the human answers its open design points.
 
 ## Agreed workflow change (human, 2026-11-13; applied 2026-11-14, H-5)
 - Builder: related tests only (`vitest related`), never the gate. Reviewer: no test runs (one targeted file if a claim needs proof). Orchestrator: gate once per milestone, before the commit. Small changes between milestones: related tests; the gate runs at the next commit.
