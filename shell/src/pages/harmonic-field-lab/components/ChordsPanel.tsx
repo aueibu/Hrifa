@@ -90,7 +90,7 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
   const label = chip.found
-    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key. Playing it also arms this template in the Sketch row.`
+    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key; hold 4 plays it as in this field, and hold 5 its exact ratios, on the root of the Sketch row's stepper. Playing it also arms this template in the Sketch row.`
     : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   return (
     <span className={classes.chipWrap} data-stash={chip.found || undefined}>
@@ -248,6 +248,7 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
     idx,
     rootIdx,
     ...(template ? { template } : {}),
+    noExact: true,
   });
   const send = useSendHover(`cps:${g.type}:${g.common.join(',')}`, () => {
     const { field, rep, repC, ratios } = lab.base;
@@ -267,7 +268,7 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
         }
       : null;
   });
-  const label = `${kind} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key; hold 4 or 5 puts the same chord on the note you point at.`;
+  const label = `${kind} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes). Click: hear it and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this chip, hold 4 plays it on the root of the Sketch row's stepper (the chord as in this field) and hold 5 does the same: a CPS chord has no separate exact form.`;
   return (
     <span className={classes.chipWrap} data-stash="true">
       <Tooltip label={label} multiline w={260} {...tipProps}>

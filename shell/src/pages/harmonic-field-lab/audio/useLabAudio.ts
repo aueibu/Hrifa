@@ -386,16 +386,42 @@ export function useLabAudio({
         // hold 4 (as in the field) / hold 5 (exact): the armed chord on the pointed note (a strip mark is its note);
         // nothing elsewhere
         const i = t.kind === 'note' || t.kind === 'strip' ? t.i : -1;
-        const root = b.field[i];
         const sk = latest.current.sketch;
         const skRoot = b.rel.length ? b.field[b.rel[sk.rootDeg % b.rel.length].src] : undefined;
-        const shape = sk.positional
-          ? root
-            ? sk.positionalShape
-            : null
-          : root && sk.template
-            ? sketchShape(b.field, b.rep, skRoot, sk.template, sk.shape, u.tol, ARMED_DIGITS[digit])
-            : null;
+        // M8e: on a chord chip (ratio chip, CPS chip, positional row) hold 4 / 5 plays that chip's chord on the Sketch row's
+        // root (the stepper degree, wrapped); the chip's own shape for 4 (and for a chip with no exact form), its exact ratios for 5
+        const chipShape =
+          t.kind === 'chord' && t.rootIdx !== undefined
+            ? sketchShape(
+                b.field,
+                b.rep,
+                skRoot,
+                t.template ?? '',
+                chordShape(b.field, b.rep, t.rootIdx, t.idx),
+                u.tol,
+                t.noExact || !t.template ? 'field' : ARMED_DIGITS[digit]
+              )
+            : t.kind === 'pitches' && t.positional
+              ? [...t.positional.shape]
+              : null;
+        const root = chipShape ? skRoot : b.field[i];
+        const shape = chipShape
+          ? chipShape
+          : sk.positional
+            ? root
+              ? sk.positionalShape
+              : null
+            : root && sk.template
+              ? sketchShape(
+                  b.field,
+                  b.rep,
+                  skRoot,
+                  sk.template,
+                  sk.shape,
+                  u.tol,
+                  ARMED_DIGITS[digit]
+                )
+              : null;
         const pitches = root && shape ? placeShape(root, shape) : null;
         if (pitches) {
           startHeld(

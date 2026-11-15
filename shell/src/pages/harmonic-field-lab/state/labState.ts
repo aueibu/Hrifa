@@ -192,6 +192,8 @@ export interface UiSettings {
   linkedRoot: LinkedRoot | null;
   /** The pattern the Positional section shows (M9): a pattern text; null or one not in the list = the first pattern. Optional in storage. */
   positionalPattern: string | null;
+  /** The Positional list order (M8e): Smoothest (default) or Scale order. Optional in storage. */
+  positionalOrder: 'smoothest' | 'scale';
 }
 
 /**
@@ -292,6 +294,7 @@ export function defaultUi(): UiSettings {
     linkedMelody: false,
     linkedRoot: null,
     positionalPattern: null,
+    positionalOrder: 'smoothest',
   };
 }
 

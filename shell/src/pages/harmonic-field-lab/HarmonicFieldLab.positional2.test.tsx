@@ -137,7 +137,8 @@ describe('stash provenance and send to composite', () => {
     fireEvent.click(railTab(/^Composites/));
     fireEvent.click(screen.getByRole('button', { name: 'Show the items of Composite 1' }));
     const items = screen.getByRole('list', { name: 'Items of Composite 1' });
-    expect(within(items).getByText(/chord, 3 notes · from /)).toBeTruthy();
+    expect(within(items).getByText(/^chord · 3 notes$/)).toBeTruthy();
+    expect(within(items).getByText('2-2 on 3')).toBeTruthy();
     expect(
       within(items).getByRole('button', { name: /^Remove 2-2 on 3 from Composite 1/ })
     ).toBeTruthy();

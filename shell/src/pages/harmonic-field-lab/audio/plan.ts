@@ -198,7 +198,14 @@ export type PreviewTarget =
   /** Anywhere a single field note is drawn (a ring dot, a lattice point, a table row): hold 1 sounds it. */
   | { kind: 'note'; i: number }
   /** A chord chip: hold 1 sounds its field notes together. `template` arms the Sketch row when it plays. */
-  | { kind: 'chord'; idx: readonly number[]; template?: string; rootIdx?: number }
+  | {
+      kind: 'chord';
+      idx: readonly number[];
+      template?: string;
+      rootIdx?: number;
+      /** M8e: no separate exact form (a CPS chip): hold 5 plays its field notes like hold 4. */
+      noExact?: boolean;
+    }
   /** Exact pitches (cents above 1/1, e.g. a shelf slot or a layered selection) sounded together; `key` is the identity. */
   | {
       kind: 'pitches';

@@ -214,9 +214,9 @@ describe('positional chords: Scale order, score and rank, tail (d, e, f)', () =>
     fireEvent.click(railTab(/^Composites/));
     fireEvent.click(screen.getByRole('button', { name: 'Show the items of Composite 1' }));
     const items = within(screen.getByRole('list', { name: 'Items of Composite 1' }));
-    expect(items.getByText(/^pattern 2-2 · 7 of 12-EDO · 400-300 c$/)).toBeInTheDocument();
-    expect(items.getByText('0, 400, 700 c')).toBeInTheDocument();
-    expect(items.getByText(/^Source: 12-EDO, tab /)).toBeInTheDocument();
+    expect(items.getByText('2-2 on 1')).toBeInTheDocument();
+    expect(items.getByText('0.0, 400.0, 700.0 c · 7 of 12-EDO · 400-300 c')).toBeInTheDocument();
+    expect(items.getByText('Source: 12-EDO')).toBeInTheDocument();
     // f: the stash keeps the tail too
     fireEvent.click(railTab(/^Chords/));
     fireEvent.click(screen.getByRole('button', { name: 'Stash 2-2 on 2 on the shelf' }));

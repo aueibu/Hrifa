@@ -117,7 +117,7 @@ function PositionalRow({ chord, showScore, pattern, naming, rowPicked, onPick }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target.key]);
   const text = [naming.label, naming.tail, naming.ratio].filter(Boolean).join(', ');
-  const label = `${text}. Click: hear it, keep it highlighted and arm it in the Sketch row. Point and hold 1 to hear it for as long as you hold the key; hold 4 or 5 puts the same chord on the note you point at. Roughness score ${chord.score.toFixed(2)} (smoothest first, rank ${rank}).`;
+  const label = `${text}. Click: hear it, keep it highlighted and arm it in the Sketch row. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this row, hold 4 or 5 plays it on the root of the Sketch row's stepper (both play its field notes: a positional chord has no separate exact form). Roughness score ${chord.score.toFixed(2)} (smoothest first, rank ${rank}).`;
   return (
     <li className={classes.chipWrap} data-stash="true" data-testid="positional-row">
       <Tooltip label={label} multiline w={260} {...tipProps}>
@@ -216,7 +216,8 @@ export function PositionalSection() {
   // a step that is a whole number of turns of the subset would come back to the same note
   const tooFew = n < 2 || (steps !== null && steps.some((s) => s % n === 0));
   // Smoothest = best score first; Scale order = degree 1..N, each row with its score and its rank (rank 1 = smoothest)
-  const [order, setOrder] = useState<PositionalOrder>('smoothest');
+  const order: PositionalOrder = state.ui.positionalOrder;
+  const setOrder = (o: PositionalOrder) => dispatch({ type: 'ui', patch: { positionalOrder: o } });
   const ranked = useMemo(() => {
     if (!steps || tooFew) {
       return [];

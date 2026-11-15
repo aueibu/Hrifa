@@ -66,44 +66,80 @@ function CompName({ c }: { c: Composite }) {
   );
 }
 
-/** The extra lines of a chord or selection item (M8d): template and root, positional pattern and tail, the cents list (derived from the pitches), and the source. */
-export function itemDetailLines(it: CompositeItem): { key: string; text: string }[] {
-  if (it.kind !== 'chord' && it.kind !== 'selection') {
-    return [];
-  }
+/** The kind name of a chord label: "major triad on 1/1" gives "major triad" (a label without " on " is used whole). */
+const nameOfLabel = (label: string): string => label.split(' on ')[0].trim() || label;
+
+const oneDecimal = (c: number) => c.toFixed(1);
+
+/**
+ * The four lines of an item (M8e):
+ *  1. `<template> <kind> on <root> c` (`4:5:6 major triad on 200.0 c`); a positional chord shows its label (`2-2 on 4`); a
+ *     subset or note shows its label;
+ *  2. `chord · n notes`, `subset · n notes`, `selection · n notes`, or `note`;
+ *  3. the cents (chords and selections only), plus the positional tail on the same line;
+ *  4. `Source: <generator or source name>`.
+ * The cents come from `centsList(pitches)`; nothing here is stored.
+ */
+export function itemLines(it: CompositeItem): { key: string; text: string }[] {
   const d = it.detail;
+  const n = it.pitches.length;
   const lines: { key: string; text: string }[] = [];
-  const what = [d?.template, d?.root ? `on ${d.root}` : null].filter(Boolean).join(' ');
-  if (what) {
-    lines.push({ key: 'what', text: what });
+  const chordLike = it.kind === 'chord' || it.kind === 'selection';
+  let what = it.label;
+  if (chordLike && !d?.pattern && n > 0) {
+    const root = oneDecimal(centsList(it.pitches)[0]);
+    what = `${[d?.template, nameOfLabel(it.label)].filter(Boolean).join(' ')} on ${root} c`;
   }
-  const pos = [d?.pattern ? `pattern ${d.pattern}` : null, d?.tail].filter(Boolean).join(' · ');
-  if (pos) {
-    lines.push({ key: 'pos', text: pos });
+  lines.push({ key: 'what', text: what });
+  lines.push({
+    key: 'kind',
+    text: it.kind === 'note' ? 'note' : `${it.kind} · ${n} ${n === 1 ? 'note' : 'notes'}`,
+  });
+  if (chordLike) {
+    const cents = `${centsList(it.pitches).map(oneDecimal).join(', ')} c`;
+    lines.push({ key: 'cents', text: d?.pattern && d.tail ? `${cents} · ${d.tail}` : cents });
   }
-  lines.push({ key: 'cents', text: `${centsList(it.pitches).join(', ')} c` });
   if (it.source) {
-    const gen = it.source.gen.preset || autoName(it.source.gen);
-    lines.push({ key: 'source', text: `Source: ${gen}, tab ${it.source.tab || 'unnamed'}` });
+    lines.push({
+      key: 'source',
+      text: `Source: ${it.source.gen.preset || autoName(it.source.gen)}`,
+    });
   }
   return lines;
 }
 
-function ItemRow({ c, it }: { c: Composite; it: CompositeItem }) {
+function ItemRow({
+  c,
+  it,
+  onLight,
+}: {
+  c: Composite;
+  it: CompositeItem;
+  onLight: (id: string | null) => void;
+}) {
   const { dispatch } = useLab();
   const hover = useSendHover(`ci:${c.id}:${it.id}`, () => compositeItemItem(it));
-  const n = it.pitches.length;
-  const lines = itemDetailLines(it);
+  const lines = itemLines(it);
   return (
-    <li className={classes.compItem} onMouseEnter={hover.enter} onMouseLeave={hover.leave}>
+    <li
+      className={classes.compItem}
+      data-item={it.id}
+      onMouseEnter={(e) => {
+        hover.enter(e);
+        onLight(it.id);
+      }}
+      onMouseLeave={() => {
+        hover.leave();
+        onLight(null);
+      }}
+    >
       <span className={classes.compItemText}>
-        <span className={classes.compItemLabel}>{it.label}</span>
-        <span className={classes.compOrigin}>
-          {it.kind}, {n} {n === 1 ? 'note' : 'notes'}
-          {it.source ? ` · from ${it.source.tab || 'a tab'}` : ''}
-        </span>
         {lines.map((l) => (
-          <span key={l.key} className={classes.compDetail} data-detail={l.key}>
+          <span
+            key={l.key}
+            className={l.key === 'what' ? classes.compItemLabel : classes.compDetail}
+            data-detail={l.key}
+          >
             {l.text}
           </span>
         ))}
@@ -113,14 +149,15 @@ function ItemRow({ c, it }: { c: Composite; it: CompositeItem }) {
         color="gray"
         size="sm"
         aria-label={`Remove ${it.label} from ${c.name}`}
-        onClick={() =>
+        onClick={() => {
+          onLight(null);
           dispatch({
             type: 'composite/removeItem',
             id: c.id,
             item: it.id,
             date: new Date().toISOString(),
-          })
-        }
+          });
+        }}
       >
         <CloseIcon />
       </ActionIcon>
@@ -134,11 +171,16 @@ function Row({ c }: { c: Composite }) {
   const [dev] = useLabDeveloperOptions();
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  /** The item under the pointer: the notes it gives the composite light in the ring. */
+  const [lightItem, setLightItem] = useState<string | null>(null);
   const merged = useMemo(
     () => mergeComposite(c.items, base.rep, { tol: dev.mergeTolerance, keep: dev.mergeKeeps }),
     [c.items, base.rep, dev.mergeTolerance, dev.mergeKeeps]
   );
   const notes = merged.notes.length;
+  const lit = lightItem
+    ? merged.notes.filter((x) => x.origins.includes(lightItem)).map((x) => x.note.c)
+    : [];
   return (
     <li className={classes.compRow} data-composite={c.id}>
       <div className={classes.compHead}>
@@ -148,6 +190,7 @@ function Row({ c }: { c: Composite }) {
         <CompositeRing
           repC={merged.rep.c}
           notes={centsOfNotes(merged.notes.map((x) => x.note))}
+          lit={lit}
           label={`${c.name}: ${notes} merged ${notes === 1 ? 'note' : 'notes'}`}
         />
         <span className={classes.compText}>
@@ -221,7 +264,7 @@ function Row({ c }: { c: Composite }) {
               Empty. Point at a chord, subset or note and press - to send it here.
             </li>
           ) : (
-            c.items.map((it) => <ItemRow key={it.id} c={c} it={it} />)
+            c.items.map((it) => <ItemRow key={it.id} c={c} it={it} onLight={setLightItem} />)
           )}
         </ul>
       )}

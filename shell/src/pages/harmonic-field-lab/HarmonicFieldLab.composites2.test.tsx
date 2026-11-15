@@ -137,7 +137,8 @@ describe('Composites panel', () => {
     // items: the origin label, then remove
     fireEvent.click(panel.getByRole('button', { name: 'Show the items of Composite 2' }));
     const list = screen.getByRole('list', { name: 'Items of Composite 2' });
-    expect(within(list).getByText(/chord, 3 notes · from /)).toBeInTheDocument();
+    expect(within(list).getByText(/^chord · 3 notes$/)).toBeInTheDocument();
+    expect(within(list).getByText(/^Source: /)).toBeInTheDocument();
     fireEvent.click(
       within(list).getByRole('button', { name: /^Remove major triad on .* from Composite 2/ })
     );

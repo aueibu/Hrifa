@@ -21,6 +21,8 @@ export interface CompositeRingProps {
   added?: readonly number[];
   common?: readonly number[];
   dropped?: readonly number[];
+  /** M8e: notes lit by the item the pointer is on in the panel (cents); drawn as the blue chord ring (same as the Keys and pitch ring highlight) over the plain dots. */
+  lit?: readonly number[];
   label: string;
   /** The larger drawing of the - popup. */
   big?: boolean;
@@ -32,6 +34,7 @@ export function CompositeRing({
   added = [],
   common = [],
   dropped = [],
+  lit = [],
   label,
   big = false,
 }: CompositeRingProps) {
@@ -60,6 +63,19 @@ export function CompositeRing({
             cy={p.y}
             r={preview ? 2 : 2.6}
             data-kind="note"
+          />
+        );
+      })}
+      {lit.map((c, i) => {
+        const p = at(c);
+        return (
+          <circle
+            key={`l${i}`}
+            className={classes.bigKeyChord}
+            cx={p.x}
+            cy={p.y}
+            r={5}
+            data-kind="lit"
           />
         );
       })}

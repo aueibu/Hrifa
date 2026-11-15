@@ -106,6 +106,15 @@ describe('ui.positionalPattern in settings.v1', () => {
   });
 });
 
+describe('ui.positionalOrder in settings.v1 (M8e scenario i)', () => {
+  it('Scale order is kept; anything else is Smoothest', () => {
+    expect(sanitizeSettings({}).positionalOrder).toBe('smoothest');
+    expect(sanitizeSettings({ positionalOrder: 'scale' }).positionalOrder).toBe('scale');
+    expect(sanitizeSettings({ positionalOrder: 'zigzag' }).positionalOrder).toBe('smoothest');
+    expect(sanitizeSettings({ positionalOrder: 7 }).positionalOrder).toBe('smoothest');
+  });
+});
+
 function Probe() {
   const { state, dispatch } = useLab();
   return (

@@ -196,6 +196,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
       typeof raw.positionalPattern === 'string' && raw.positionalPattern.length <= 40
         ? canonicalPattern(raw.positionalPattern)
         : null,
+    // optional (M8e): Smoothest or Scale order, anything else is Smoothest; no write on mount
+    positionalOrder: oneOf(raw.positionalOrder, ['smoothest', 'scale'] as const, d.positionalOrder),
   };
 }
 

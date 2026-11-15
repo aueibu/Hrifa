@@ -330,6 +330,55 @@ Proposal:
 - Gate: `check:hfl` green. Builder + reviewer on item 2 (data/contract); look-only items by the orchestrator.
 - Human checkpoint after: **yes** (items 1, 2, 4).
 
+### M8e: Composite item display, chip audition at a chosen root, remembered sort (APPROVED 2026-11-15)
+- Why: the human's M8d checkpoint feedback (2026-11-15). Popup size, ring size, the double source line choice and CPS Parallel root were accepted.
+- Scope: owned page folder and `src/lib/harmonic-field/` only; page prefs key under `hrifa.harmonic-field-lab.*`.
+- Items:
+  1. **Composite item display** (Composites panel, chord/selection/note items), one block per item: line 1 `<template> <kind> on <root> c` (e.g. `4:5:6 triad on 200.0 c`; positional chords show their label such as `2-2 on 4`); line 2 `chord · n notes` (or `note`, `subset · n notes`); line 3 the cents values (chords and selections only; for positional chords the tail `7 of 12-EDO · 400-300 c` goes here too); line 4 `Source: <generator or source name>`. The old origin line is removed.
+  2. **Hover highlight**: hovering an item in the Composites panel highlights, in that composite's ring (and key ring if shown), the notes that item contributes (a merged note shared by several items lights for each of them).
+  3. **Remembered sort**: the Positional list's Smoothest | Scale order is saved in the page's per-viewer prefs (entry-by-entry sanitising, default Smoothest, no write on mount).
+  4. **Audition a chip at a chosen root**: while pointing at a chord chip (ratio chip, CPS chip, positional row), hold `4` plays its chord AS IN FIELD and hold `5` plays its EXACT ratios, placed on the root of the Sketch row's root stepper degree. A melody key already moves the stepper to that key's degree on key-down (useLabAudio; octave repeats are the same degree), so playing a root on the keyboard and then holding 4 or 5 on a chip needs no extra rule; the stepper keeps the last key after release. Exceptions, by existing design: in a keyboard chord mode, or while the linked melody plays another subset, a key does not move the stepper. Hold `1` is unchanged (the chip's own root). Positional rows and CPS chips have no separate exact form: `5` plays the same as `4` for them (field notes), stated in the tooltip. Existing hold 4/5 on a pointed NOTE with an armed chord is unchanged.
+- Scenarios (to confirm; they become the tests, shell rule 7), 12-EDO major, Sketch root stepper on degree 1 (C = 0 c) unless stated:
+
+| # | Case | Expected |
+|---|---|---|
+| a | Hover the JI 4:5:6 chip, hold 4, nothing else held | plays 0, 400, 700 c (as in field) on the stepper root C |
+| b | Same, hold 5 | plays 0, 386.3, 702 c (exact) on C |
+| c | Stepper root = degree 2 (D, 200 c), hover the same chip, hold 4 | 200, 600, 900 c; hold 5: 200, 586.3, 902 c |
+| d | Press the keyboard key for E (the stepper moves to degree 3), release it, hover the chip, hold 4 | 400, 800, 1100 c; hold 5: 400, 786.3, 1102 c. Same result while the key is still held |
+| e | Hover the chip, hold 1 | unchanged: the chip's own root and pitches |
+| f | Hover a positional row 2-2 on 1, hold 4, then hold 5 | both play the positional chord's field notes on the chosen root (same shape), tooltip says so |
+| g | Hover a CPS chip (hexany), hold 4 | plays the chord's field shape on the chosen root |
+| h | Composites panel: chord item for 4:5:6 on D | block reads `4:5:6 triad on 200.0 c / chord · 3 notes / 200.0, 600.0, 900.0 c / Source: 12-EDO`; hovering it lights those 3 notes in the ring |
+| i | Switch the Positional list to Scale order, reload the page | it is still Scale order; damaged stored value falls back to Smoothest |
+
+- Checkpoint decision (human, 2026-11-15): the stepper already follows the played key in Parallel and Relative, so the root is always the stepper; no separate held-key rule. Scenarios a to i confirmed.
+- Human checkpoint after: **yes** (feel).
+
+### M8f: Silent root keys in Chords mode, one-row positional list, foldable chord sections (DRAFT 2026-11-15, awaiting confirmation; builds after M8e)
+- Why: the human's M8e feedback (2026-11-15): set the root silently from the keyboard, then audition any chip at it with hold 4 or 5; read the positional list and sort easier; fold away what is not in use.
+- Scope: owned page folder only; the fold state is a per-viewer pref under `hrifa.harmonic-field-lab.*`.
+- Items:
+  1. **Silent root keys in Chords mode**: in the keyboard Chords mode the melody-position keys (`z x c v b n m a s d f g h j k l`) move the Sketch root stepper to that slot's degree (octave repeats are the same degree) and make NO sound. `,` and `.` and the shelf chord keys `q..p` are unchanged. Notes and Split modes are unchanged (the keys play and move the stepper; in Split with the linked melody on a different subset they do not move it). In Chords mode the silent keys always use this tab's own degrees, linked melody or not. Never while typing; ignores key repeat; the retuner's live mode keeps its precedence.
+  2. **Positional list, one position per row**: each degree is one full-width row: label (`2-2 on 4`), the notes/cents, the tail (`7 of 12-EDO · 400-300 c`), the `~ 4:5:6` ratio name when it fits, and the rank (plus the score in Scale order) in its own column, so sorting is easy to scan. Click, hover, hold 1, `+`, send and the row cap behave as today.
+  3. **Foldable sections**: the three chord sections can each be folded away: "Chords inside this CPS" (only present for CPS), "Positional", and the ratio chord families. Header with a chevron, `aria-expanded`, keyboard operable; folded sections keep their count in the header. Fold state is remembered per viewer (entry-by-entry sanitising, default all open, no write on mount). Granularity of the families fold: see the open point.
+- Scenarios (to confirm; they become the tests), 12-EDO major, Chords mode on, Sketch stepper on degree 1:
+
+| # | Case | Expected |
+|---|---|---|
+| a | Press `x` | no sound; stepper moves to degree 2 (D); releasing leaves it on D |
+| b | Then hover the JI 4:5:6 chip, hold 4 | plays 200, 600, 900 c (from M8e) |
+| c | Press `z`, then `a` | stepper degree 1, then degree 8 wraps to degree 1 (an octave up is the same degree) |
+| d | Press `q` (shelf chord 1) | plays the chord as today; stepper unchanged |
+| e | Notes mode, press `x` | plays D and the stepper moves to D, as today |
+| f | Split mode, linked melody on another subset, press `x` | plays the linked melody note; stepper does not move |
+| g | Typing in a text box, press `x` | nothing |
+| h | Positional 2-2, 7 rows | 7 full-width rows, each with label, notes, tail and rank; in Scale order the score as well |
+| i | Fold "Positional", reload | still folded; the header shows its count; the other sections are open |
+
+- Open points for the human: (1) are "the ratio families" folded as ONE section (everything under the template families), or EACH family (e.g. each row of the family-grouped chips) separately? Recommendation: each family separately, plus the overall header folds them all. (2) Remember fold state across reloads (recommended)?
+- Human checkpoint after: **yes** (feel and look).
+
 ## Final step
 Page `ARCHITECTURE.md` + lib `README.md` complete (contracts, modules, colour-role mapping, persistence keys, how a section could move into the Workbench). Reviewer over the full arc diff. Archive as `ARC.retuner-shell.md` / `PROGRESS.retuner-shell.md` in `arcs/harmonic-field-lab/`; add leftovers to `BACKLOG.md` tagged `[harmonic-field-lab]`, starting with: "Workbench integration plan: which section/packet moves first."
 

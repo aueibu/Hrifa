@@ -1667,11 +1667,6 @@
   white-space: nowrap;
 }
 
-.compOrigin {
-  color: var(--text-muted);
-  font-size: 0.6875rem;
-}
-
 .compDetail {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
