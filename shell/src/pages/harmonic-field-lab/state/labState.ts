@@ -84,6 +84,12 @@ import {
   type UpdateUndo,
 } from './generatorLibrary';
 import { DEFAULT_LAYOUT, type Layout, type PanelId, type VizId } from './layout';
+import {
+  defaultPatterns,
+  patternsReduce,
+  type PatternAction,
+  type PatternsState,
+} from './patterns';
 import { initialRetuner, retunerReduce, type RetAction, type RetState } from './retuner';
 import { defaultSettings as defaultVizSettings, type VizSettings } from './vizState';
 
@@ -184,6 +190,8 @@ export interface UiSettings {
   linkedMelody: boolean;
   /** Linked melody root (M8b, 2026-11-15): null = not chosen, the Developer menu default applies. Optional in storage. */
   linkedRoot: LinkedRoot | null;
+  /** The pattern the Positional section shows (M9): a pattern text; null or one not in the list = the first pattern. Optional in storage. */
+  positionalPattern: string | null;
 }
 
 /**
@@ -245,6 +253,8 @@ export interface LabState {
   layout: Layout;
   /** The chord finder's templates (user-editable; stored in `...chordfinder.v1`). */
   templates: ChordTemplate[];
+  /** The positional chord patterns (M9): the user's list, stored in `...patterns.v1` (see patterns.ts). */
+  patterns: PatternsState;
   /** The retuner: card list, settings (stored in `...retuner.v1`) and the run (see retuner.ts). */
   retuner: RetState;
   /** The chord shelf: stashed chords, selection, sketch row (stored in `...chordshelf.v1`, see chordShelf.ts). */
@@ -281,6 +291,7 @@ export function defaultUi(): UiSettings {
     keyboardMode: 'notes',
     linkedMelody: false,
     linkedRoot: null,
+    positionalPattern: null,
   };
 }
 
@@ -346,6 +357,7 @@ export function initialState(): LabState {
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+    patterns: defaultPatterns(),
     retuner: initialRetuner(),
     shelf: emptyShelf(),
     composites: emptyComposites(),
@@ -596,6 +608,7 @@ export type Action =
   | { type: 'shelf/reload'; id: string }
   | ShelfAction
   | CompositeAction
+  | PatternAction
   | RetAction;
 
 /** What the UI hands `shelf/stash`: the exact pitches heard; everything else is read from the active tab and the settings. */
@@ -1287,12 +1300,22 @@ function reduce(s: LabState, a: Action): LabState {
     case 'shelf/sync':
     case 'sketch/set':
     case 'sketch/arm':
+    case 'sketch/armPositional':
     case 'sketch/disarm': {
       const shelf = shelfReduce(s.shelf, a);
       return shelf === s.shelf ? s : { ...s, shelf };
     }
     case 'composite/openTab':
       return openComposite(s, a.id, a.merge);
+    case 'patterns/add':
+    case 'patterns/edit':
+    case 'patterns/delete':
+    case 'patterns/move':
+    case 'patterns/restore':
+    case 'patterns/sync': {
+      const patterns = patternsReduce(s.patterns, a);
+      return patterns === s.patterns ? s : { ...s, patterns };
+    }
     case 'composite/new':
     case 'composite/rename':
     case 'composite/delete':

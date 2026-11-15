@@ -49,6 +49,7 @@ describe('chordshelf.v1 shape and round trip', () => {
       armed: false,
       shape: null,
       exact: false,
+      positional: null,
     });
   });
 

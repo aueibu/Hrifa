@@ -194,6 +194,7 @@ describe('sketch and armed chord', () => {
       armed: false,
       shape: null,
       exact: false,
+      positional: null,
     });
     s = labReducer(s, { type: 'sketch/arm', template: '10:12:15' });
     expect(s.shelf.sketch).toEqual({
@@ -202,6 +203,7 @@ describe('sketch and armed chord', () => {
       armed: true,
       shape: null,
       exact: false,
+      positional: null,
     });
     s = labReducer(s, { type: 'sketch/set', patch: { rootDeg: 3 } });
     expect(s.shelf.sketch).toEqual({
@@ -210,6 +212,7 @@ describe('sketch and armed chord', () => {
       armed: true,
       shape: null,
       exact: false,
+      positional: null,
     });
     expect(labReducer(s, { type: 'sketch/arm', template: '10:12:15' })).toBe(s);
     s = labReducer(s, { type: 'sketch/set', patch: { template: '4:5:6' } });
@@ -219,6 +222,7 @@ describe('sketch and armed chord', () => {
       armed: false,
       shape: null,
       exact: false,
+      positional: null,
     });
     // the realization shape travels with an arm and is dropped with a hand-picked template; Exact is its own switch
     const shaped = labReducer(s, {

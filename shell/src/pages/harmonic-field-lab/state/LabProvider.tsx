@@ -29,6 +29,7 @@ import {
 } from './labState';
 import { setView, viewOf, type VizId, type VizView } from './layout';
 import { loadLibrary, saveLibrary } from './libraryStore';
+import { loadPatterns, savePatterns } from './patternStore';
 import {
   loadLayout,
   loadSettings,
@@ -38,6 +39,7 @@ import {
   KEY_GENERATORS,
   KEY_CHORDSHELF,
   KEY_COMPOSITES,
+  KEY_PATTERNS,
   saveLayout,
   saveRetuner,
   saveSettings,
@@ -104,6 +106,7 @@ export function restoreState(): LabState {
     ui,
     layout: loadLayout(),
     templates: loadTemplates(),
+    patterns: loadPatterns(),
     shelf: loadShelf(),
     composites: loadComposites(),
     retuner: initialRetuner(retCards, storedRet.settings, dormant, ui.modePlayback === 'relative'),
@@ -179,6 +182,11 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       wrote('templates', saveTemplates(state.templates));
     }
   }, [store, state.templates]);
+  useEffect(() => {
+    if (store && state.patterns.list !== restored.current.patterns.list) {
+      wrote('patterns', savePatterns(state.patterns));
+    }
+  }, [store, state.patterns.list]);
   // the cards and settings only: the run (active card, roots, held keys) is never stored
   useEffect(() => {
     if (
@@ -216,6 +224,9 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
       }
       if (e.key === KEY_CHORDSHELF || e.key === null) {
         dispatch({ type: 'shelf/sync', shelf: loadShelf() });
+      }
+      if (e.key === KEY_PATTERNS || e.key === null) {
+        dispatch({ type: 'patterns/sync', patterns: loadPatterns() });
       }
       if (e.key === KEY_COMPOSITES || e.key === null) {
         dispatch({ type: 'composite/sync', composites: loadComposites() });

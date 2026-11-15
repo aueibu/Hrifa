@@ -23,6 +23,7 @@ import {
 } from '../../../lib/harmonic-field';
 import type { GenSpec } from './generate';
 import { cleanName } from './generatorLibrary';
+import { canonicalPattern } from './patterns';
 
 /** In-memory caps, equal to the load caps in shelfStore (what a session accepts, a reload keeps). */
 export const MAX_CHORDS = 2000;
@@ -133,6 +134,11 @@ export interface Sketch {
   shape: Note[] | null;
   /** The Sketch row's "Exact" switch: Play sketch and Stash use the template's true ratios instead of the realization. */
   exact: boolean;
+  /**
+   * M9: when set, the sketch chord is a POSITIONAL chord (pattern text, e.g. "2-2") at `rootDeg` of the active subset instead of
+   * the ratio `template` (which stays as it was). Null = the ratio template. Runtime only.
+   */
+  positional: { pattern: string } | null;
 }
 
 export interface ShelfState {
@@ -156,6 +162,7 @@ export const emptySketch = (): Sketch => ({
   armed: false,
   shape: null,
   exact: false,
+  positional: null,
 });
 
 const sameShape = (a: readonly Note[] | null, b: readonly Note[] | null): boolean =>
@@ -164,6 +171,9 @@ const sameShape = (a: readonly Note[] | null, b: readonly Note[] | null): boolea
     b !== null &&
     a.length === b.length &&
     a.every((n, i) => Math.abs(n.c - b[i].c) < 1e-9));
+
+const samePositional = (a: Sketch['positional'], b: Sketch['positional']): boolean =>
+  a === b || (a !== null && b !== null && a.pattern === b.pattern);
 
 export const emptyShelf = (): ShelfState => ({
   chords: [],
@@ -287,7 +297,12 @@ export type ShelfAction =
   | { type: 'shelf/clear' }
   /** Another window saved the shelf: take its chords (selection and sketch are kept where they still apply). */
   | { type: 'shelf/sync'; shelf: ShelfState }
-  | { type: 'sketch/set'; patch: Partial<Pick<Sketch, 'template' | 'rootDeg' | 'exact'>> }
+  | {
+      type: 'sketch/set';
+      patch: Partial<Pick<Sketch, 'template' | 'rootDeg' | 'exact' | 'positional'>>;
+    }
+  /** Arm a positional chord (M9): the sketch uses the pattern at the root degree; the ratio template is left as it is. */
+  | { type: 'sketch/armPositional'; pattern: string; rootDeg?: number; shape?: Note[] | null }
   /** Arm a template from a chord chip or a shelf chord with its shape; the root degree is left as it is unless given. */
   | { type: 'sketch/arm'; template: string; rootDeg?: number; shape?: Note[] | null }
   | { type: 'sketch/disarm' };
@@ -385,13 +400,26 @@ export function shelfReduce(s: ShelfState, a: ShelfAction): ShelfState {
       const armed = changed ? false : sk.armed;
       const shape = changed ? null : sk.shape;
       const exact = a.patch.exact === undefined ? sk.exact : a.patch.exact;
+      // choosing a ratio template by hand leaves positional mode; setting a pattern makes it positional (and not armed)
+      const positional =
+        a.patch.positional !== undefined
+          ? a.patch.positional && canonicalPattern(a.patch.positional.pattern)
+            ? { pattern: canonicalPattern(a.patch.positional.pattern) as string }
+            : null
+          : changed
+            ? null
+            : sk.positional;
+      const posChanged = !samePositional(positional, sk.positional);
+      const armed2 = posChanged ? false : armed;
+      const shape2 = posChanged ? null : shape;
       return template === sk.template &&
         rootDeg === sk.rootDeg &&
-        armed === sk.armed &&
+        armed2 === sk.armed &&
         exact === sk.exact &&
-        shape === sk.shape
+        shape2 === sk.shape &&
+        !posChanged
         ? s
-        : { ...s, sketch: { template, rootDeg, armed, shape, exact } };
+        : { ...s, sketch: { template, rootDeg, armed: armed2, shape: shape2, exact, positional } };
     }
     case 'sketch/arm': {
       const rootDeg =
@@ -400,12 +428,37 @@ export function shelfReduce(s: ShelfState, a: ShelfAction): ShelfState {
           : s.sketch.rootDeg;
       const sk = s.sketch;
       const shape = a.shape ?? null;
-      return sk.template === a.template &&
+      return sk.positional === null &&
+        sk.template === a.template &&
         sk.rootDeg === rootDeg &&
         sk.armed &&
         sameShape(sk.shape, shape)
         ? s
-        : { ...s, sketch: { ...sk, template: a.template, rootDeg, armed: true, shape } };
+        : {
+            ...s,
+            sketch: { ...sk, template: a.template, rootDeg, armed: true, shape, positional: null },
+          };
+    }
+    case 'sketch/armPositional': {
+      const pattern = canonicalPattern(a.pattern);
+      if (!pattern) {
+        return s;
+      }
+      const sk = s.sketch;
+      const rootDeg =
+        a.rootDeg !== undefined && Number.isInteger(a.rootDeg) && a.rootDeg >= 0
+          ? a.rootDeg
+          : sk.rootDeg;
+      const shape = a.shape ?? null;
+      return sk.positional?.pattern === pattern &&
+        sk.rootDeg === rootDeg &&
+        sk.armed &&
+        sameShape(sk.shape, shape)
+        ? s
+        : {
+            ...s,
+            sketch: { ...sk, rootDeg, armed: true, shape, positional: { pattern } },
+          };
     }
     case 'sketch/disarm':
       return s.sketch.armed ? { ...s, sketch: { ...s.sketch, armed: false, shape: null } } : s;

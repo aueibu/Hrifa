@@ -8,6 +8,7 @@
  *   hrifa.harmonic-field-lab.generators.v1 the generator library (user presets, Untitled generators, subsets as pitches, recents); see libraryStore.ts
  *   hrifa.harmonic-field-lab.chordfinder.v1  { templates: [{ text, name?, family? }] }   (the chord templates)
  *   hrifa.harmonic-field-lab.composites.v1 the composite gamuts (up to 9, items as pitches); see compositeStore.ts
+ *   hrifa.harmonic-field-lab.patterns.v1   the positional chord patterns ({ version: 1, patterns: [{ text }] }); see patternStore.ts
  *   hrifa.harmonic-field-lab.retuner.v1    { cards: [{ name, snap }], settings: { pivot, manualDeg, anchor, trigger, scorer, scorerOpts, glideMs } }
  *
  * A `snap` is the prototype's snapshot shape (flat generator inputs, `selCents`, `mode`, pick/compare settings), every
@@ -57,6 +58,7 @@ import {
   migrateV2,
   type Layout,
 } from './layout';
+import { canonicalPattern } from './patterns';
 import {
   ANCHORS,
   MAX_CARDS,
@@ -86,6 +88,7 @@ export const KEY_CHORDFINDER = 'hrifa.harmonic-field-lab.chordfinder.v1';
 export const KEY_RETUNER = 'hrifa.harmonic-field-lab.retuner.v1';
 export const KEY_CHORDSHELF = 'hrifa.harmonic-field-lab.chordshelf.v1';
 export const KEY_COMPOSITES = 'hrifa.harmonic-field-lab.composites.v1';
+export const KEY_PATTERNS = 'hrifa.harmonic-field-lab.patterns.v1';
 /** The mock's layout keys (read once, to migrate). */
 export const MOCK_LAYOUT_KEYS = [
   'hrifa.harmonic-field-lab.mock.layout.v3',
@@ -188,6 +191,11 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     linkedRoot: LINKED_ROOTS.includes(raw.linkedRoot as LinkedRoot)
       ? (raw.linkedRoot as LinkedRoot)
       : null,
+    // optional (M9): a valid pattern text, else null (the Positional section then shows the first pattern); no write on mount
+    positionalPattern:
+      typeof raw.positionalPattern === 'string' && raw.positionalPattern.length <= 40
+        ? canonicalPattern(raw.positionalPattern)
+        : null,
   };
 }
 

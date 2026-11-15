@@ -25,6 +25,7 @@ Import from the barrel (`./index`, or `@/lib/harmonic-field`).
 | `field.ts` | `buildField`, `latticeCoords`, `latticeEdges`, `cpsChords` (+ `Lattice*`, `CpsChord` types) |
 | `subset.ts` | `carrySelection`, `rotateSubset`, `nearestEdSubset`, `oddLimitSubset` |
 | `composite.ts` | `mergeComposite`, `previewAdd`, `compositeRepeat`, `compositeNotes`, `reducePitch`, `samePitches`, `clampMergeTol`, `MERGE_TOL_DEFAULT`, `MERGE_TOL_MAX` (composite gamuts: merged pitches of several items in one repeat; the lab's Composites panel and `-` popup draw `previewAdd`) |
+| `positional.ts` | `parsePattern`, `patternName`, `PRESET_PATTERNS`, `positionalChord`, `positionalChords`, `rankPositional`, `roughnessOf`, `positionalLabel`, `stepCents`, `ratioName`, `positionalNaming` (M9, H-9: chord types as STEP PATTERNS over the active subset, ranked by Sethares roughness; see "Positional chords") |
 | `shape.ts` | `groupSizes`, `mosSizes`, `analyzeSubset`, `modeMatrix`, `intervalSpectrum`, `propriety`, `constantStructure` |
 | `chords.ts` | `parseTemplate`, `templateKey`, `templateFolds`, `templateLabel`, `DEFAULT_TEMPLATES`, `findChords`, `findChordVoicings`, `closestChord`, `chordLadder` |
 | `scales.ts` | `MELA_NAMES`, `MELA_WESTERN`, `JI12`, `melakarta`, `melakartaDesc`, `SCALE_LIBRARY`, `scaleTargets`, `nearestScaleSubset` |
@@ -271,6 +272,15 @@ Pure helpers for generators that own subsets (page contract: `src/pages/harmonic
   exact previous subsets. `reportSentence(name, report)` words the notice. The same function serves Save-as-new with copied subsets and a later Import.
 - Folders (plain `"A/B"` strings): `normalizeFolder` (trim, no empty segments, 40 characters, depth 6), `splitFolder`, `joinFolder`, `parentFolder`,
   `folderName`, `inFolder`, `listFolders` (with ancestors), `childFolders`.
+
+## Positional chords (M9, `positional.ts`)
+
+A chord type is a STEP PATTERN counted in the ACTIVE SUBSET read from its mode root (as `rotateSubset`): `[2,2]` = every other note, `[2,2,2]`, `[1,1]`, `[3,3]`, `[2,3]`, custom `[2,3,2]`. Its identity is the pattern, not the ratios, so it exists in any tuning.
+
+- `parsePattern(text)`: `"2-3-2"` to `[2,3,2]` (digits 1 to 9 joined by single dashes, 1 to 8 steps, whitespace around ignored); anything else is null. `patternName(p)` is the inverse. `PRESET_PATTERNS` = 2-2, 2-2-2, 2-2-2-2, 2-3, 3-2, 1-1, 3-3.
+- `positionalChord(field, subsetIdx, pattern, degree, mode, rep)` (`mode` and `rep` required): the chord starting at subset degree `degree` (0-based, taken mod N; `subsetIdx` in field order, `mode` = mode root degree). Members are the subset notes the pattern lands on, wrapping around the subset; a member that wraps is stacked above the root by one repeat (root position, true to the ratios). Returns `{ pattern, degree, members (field indices, root first), pitches (field-absolute Notes, root first, ascending) }`, exact monzos kept, cents-only stays cents-only; null for an empty subset or pattern. `positionalChords(...)` = every degree. A step that is a multiple of the subset size lands on the same field index a repeat higher, so `members` can repeat a field index (consumers that dedupe by field index must expect it).
+- `rankPositional(chords, baseHz = 261.6256, score?)`: each chord with `score` (default `roughnessOf`: Sethares roughness of the chord's SHAPE, its intervals above its own root with the root put at `baseHz`, so the rank is register-independent: identical shapes tie, e.g. C, F and G major triads in 12-EDO C major; lower = smoother), smoothest first, ties (within 1e-9) in degree order.
+- Naming: `positionalLabel` = `2-2 on 4` (pattern + 1-based degree); `positionalNaming(chord, subsetSize, genName, templates?)` = `{ label, tail: "7 of 12-EDO · 400-300 c" (subset size, the generator display name passed in, whole cents of each step), ratio: "~ 4:5:6" | null }`. `ratioName` is non-null only when every note is within 5 c (`RATIO_NAME_TOL`) of one chord template (default `DEFAULT_TEMPLATES`, closest fit wins).
 
 ## Chord sketch (M8a, `sketch.ts`)
 
