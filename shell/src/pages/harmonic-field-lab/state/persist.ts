@@ -19,6 +19,7 @@
 import {
   DEFAULT_TEMPLATES,
   PRESETS,
+  sanitizeAdded,
   type ChordTemplate,
   type Note,
 } from '../../../lib/harmonic-field';
@@ -232,6 +233,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     groupShapes: bool(raw.groupShapes, d.groupShapes),
     // optional (Scala-tools M1): the Pairs panel Color control; absent or damaged = Off; no write on mount
     pairsColor: oneOf(raw.pairsColor, PAIRS_COLORS, d.pairsColor),
+    // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount
+    pairsAdded: sanitizeAdded(raw.pairsAdded),
   };
 }
 

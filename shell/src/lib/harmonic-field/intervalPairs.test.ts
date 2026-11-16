@@ -2,7 +2,12 @@
 // Degrees are numbered 1 to 7 in the table; the code is 0-based.
 import { describe, expect, it } from 'vitest';
 import {
+  H_FAINT,
+  H_STRONG,
   PAIRS_CAP,
+  REACH_MAX,
+  REACH_MIDDLE,
+  REACH_MIN,
   centsNote,
   pairCoverage,
   findChords,
@@ -10,7 +15,10 @@ import {
   TINT_MAX,
   TINT_MIDDLE,
   TINT_MIN,
+  tintReaches,
   tintStrengths,
+  tintStrengthsFor,
+  tintStrengthsRelative,
   wheelPositions,
   locateInterval,
   parseInterval,
@@ -194,10 +202,10 @@ describe('intervalPairs: 5-limit major scale', () => {
     }
   });
 
-  it('row 16b: strong = simplest ratio vivid, most complex faint; faint is the reverse', () => {
+  it('row 16b (relative scale, the old spread): strong = simplest ratio vivid, most complex faint; faint is the reverse', () => {
     const m = major();
-    const strong = tintStrengths(m, 'strong');
-    const faint = tintStrengths(m, 'faint');
+    const strong = tintStrengthsRelative(m, 'strong');
+    const faint = tintStrengthsRelative(m, 'faint');
     const id = (r: string) => m.groups.find((g) => g.ratio === r)!.id;
     expect(strong[id('3/2')]).toBeCloseTo(TINT_MAX, 6); // T 2.58, the lowest
     expect(strong[id('64/45')]).toBeCloseTo(TINT_MIN, 6); // T 11.49, the highest
@@ -211,7 +219,78 @@ describe('intervalPairs: 5-limit major scale', () => {
     const m = intervalPairs(rel(edo), rep, 9)!;
     expect(tintStrengths(m, 'strong').every((s) => s === TINT_MIDDLE)).toBe(true);
     expect(tintStrengths(m, 'faint').every((s) => s === TINT_MIDDLE)).toBe(true);
+    expect(tintStrengthsRelative(m, 'strong').every((s) => s === TINT_MIDDLE)).toBe(true);
     expect(wheelPositions(m, 1200, 'size')[0]).toBeCloseTo(100 / 1200, 6);
+  });
+});
+
+describe('tint: fixed strength and relative reach (H-22)', () => {
+  const sub = (...r: string[]) => intervalPairs(rel(r.map(P)), rep, 9) as IntervalPairs;
+  const idOf = (m: IntervalPairs, r: string) => m.groups.find((g) => g.ratio === r)!.id;
+  const strengthOf = (m: IntervalPairs, r: string, i: 'strong' | 'faint' = 'strong') =>
+    tintStrengths(m, i)[idOf(m, r)];
+  const reachOf = (m: IntervalPairs, r: string, i: 'strong' | 'faint' = 'strong') =>
+    tintReaches(m, i)[idOf(m, r)];
+
+  it('fixed strength: strongest at 3/2, 5/4 stronger than 9/8, 81/64 faint', () => {
+    const m = sub('1/1', '9/8', '5/4', '81/64', '3/2');
+    expect(H_STRONG).toBeCloseTo(2.585, 3);
+    expect(strengthOf(m, '3/2')).toBeCloseTo(TINT_MAX, 12);
+    expect(strengthOf(m, '5/4')).toBeGreaterThan(strengthOf(m, '9/8'));
+    expect(strengthOf(m, '81/64')).toBeLessThan(strengthOf(m, '9/8'));
+    expect(strengthOf(m, '81/64')).toBeLessThan((TINT_MIN + TINT_MAX) / 2); // height 12.3 of 14: the faint half
+  });
+  it('129/128 and 151/150 are equal and the faintest, in every subset', () => {
+    const both = sub('1/1', '129/128', '151/150');
+    const withSimple = sub('1/1', '3/2', '5/4', '129/128', '151/150');
+    for (const m of [both, withSimple]) {
+      expect(strengthOf(m, '129/128')).toBeCloseTo(TINT_MIN, 12);
+      expect(strengthOf(m, '151/150')).toBeCloseTo(TINT_MIN, 12);
+    }
+    expect(H_FAINT).toBe(14);
+  });
+  it('the same interval has the same strength in two different subsets, but a different reach', () => {
+    const a = sub('1/1', '3/2', '5/4');
+    const b = sub('1/1', '5/4', '45/32', '15/8');
+    expect(strengthOf(a, '5/4')).toBeCloseTo(strengthOf(b, '5/4'), 12);
+    expect(reachOf(a, '5/4')).not.toBeCloseTo(reachOf(b, '5/4'), 3);
+  });
+  it('faint reverses the strength; no ratio is the middle strength and reach', () => {
+    const m = sub('1/1', '9/8', '5/4', '3/2');
+    expect(strengthOf(m, '3/2', 'faint')).toBeCloseTo(TINT_MIN, 12);
+    expect(strengthOf(m, '3/2', 'faint')).toBeLessThan(strengthOf(m, '9/8', 'faint'));
+    const edo = intervalPairs(rel([0, 200, 400].map(centsNote)), rep, 9)!;
+    expect(tintStrengths(edo, 'strong').every((s) => s === TINT_MIDDLE)).toBe(true);
+    expect(tintReaches(edo, 'strong').every((r) => r === REACH_MIDDLE)).toBe(true);
+  });
+  it('reach: 129/128 and 151/150 differ in reach while their strength is equal', () => {
+    const m = sub('1/1', '129/128', '151/150');
+    expect(strengthOf(m, '129/128')).toBeCloseTo(strengthOf(m, '151/150'), 12);
+    expect(reachOf(m, '129/128')).toBeCloseTo(REACH_MAX, 12); // the lower height of the two
+    expect(reachOf(m, '151/150')).toBeLessThan(reachOf(m, '129/128'));
+  });
+  it('reach orders 3/2 > 5/4 > 9/8 > 45/32 in strong and the reverse in faint', () => {
+    const m = sub('1/1', '9/8', '5/4', '45/32', '3/2');
+    const order = ['3/2', '5/4', '9/8', '45/32'];
+    for (let i = 1; i < order.length; i++) {
+      expect(reachOf(m, order[i - 1])).toBeGreaterThan(reachOf(m, order[i]));
+      expect(reachOf(m, order[i - 1], 'faint')).toBeLessThan(reachOf(m, order[i], 'faint'));
+    }
+    expect(reachOf(m, '3/2')).toBeCloseTo(REACH_MAX, 12);
+    expect(reachOf(m, '45/32')).toBeGreaterThanOrEqual(REACH_MIN); // the subset's inversions are more complex still
+    expect(Math.min(...tintReaches(m, 'strong'))).toBeCloseTo(REACH_MIN, 12);
+    expect(REACH_MIN).toBe(35);
+  });
+  it('equal heights give the middle reach', () => {
+    const same = intervalPairs(rel(['1/1', '3/2'].map(P)), rep, 9)!;
+    const single = { ...same, groups: [same.groups[0]] } as IntervalPairs;
+    expect(tintReaches(single, 'strong')).toEqual([REACH_MIDDLE]);
+  });
+  it('tintStrengthsFor picks the scale: relative spreads over the subset, fixed does not', () => {
+    const m = sub('1/1', '129/128', '151/150');
+    expect(tintStrengthsFor(m, 'strong', 'fixed')).toEqual(tintStrengths(m, 'strong'));
+    expect(tintStrengthsFor(m, 'strong', 'relative')).toEqual(tintStrengthsRelative(m, 'strong'));
+    expect(Math.max(...tintStrengthsRelative(m, 'strong'))).toBeCloseTo(TINT_MAX, 12);
   });
 });
 

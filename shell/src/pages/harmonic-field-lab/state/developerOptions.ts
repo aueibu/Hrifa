@@ -1,13 +1,15 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import {
+  BEAT_PARTIAL_LIMIT_MAX,
   MERGE_TOL_DEFAULT,
   clampMergeTol,
   type MergeKeep,
   type TintIntensity,
+  type TintScale,
   type WheelReading,
 } from '../../../lib/harmonic-field';
 import { LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
-import { TILE_LOOKS, type TileLook } from './tileColors';
+import { TILE_LOOKS, type TileLook, type TintBand } from './tileColors';
 
 /**
  * The lab's own per-viewer developer options (W-10: page-local; never reads another page's keys). Sanitized on load, so
@@ -32,8 +34,17 @@ export interface LabDeveloperOptions {
   mergeKeeps: MergeKeep;
   /** Pairs panel, Color: Interval: hue from the interval's size around the repeat (default), or from its rank among the sizes. */
   intervalColor: WheelReading;
-  /** Pairs panel, Color: Interval: simpler ratios tint more strongly (default) or more faintly. */
+  /** Pairs panel, Color: Interval: more complex ratios tint more strongly and wider (default, H-23: `faint`), or simpler ones (`strong`). */
   intervalIntensity: TintIntensity;
+  /** Pairs panel, Color: Interval (H-22): strength on the fixed simplicity scale (default) or spread over this subset's range. */
+  tintScale: TintScale;
+  /** Pairs panel, Color: Interval (H-23): the tint band is centered in the cell (default) or starts at its left edge. */
+  tintBand: TintBand;
+  /**
+   * Pairs panel, Beats view (H-21): a whole number 1 to 64, or null for Off (the default; stored as null, an absent key
+   * reads as Off). With N set, a beat that needs a partial above N is dimmed and named so.
+   */
+  beatPartialLimit: number | null;
   /** How Modes and Pairs tiles look, in both schemes: `tinted` (default), `outlined` or `solid` (Radix Colors steps). */
   tileLook: TileLook;
   /** Stack an outline on Tinted and Solid tiles (always on in Outlined). */
@@ -49,6 +60,14 @@ export function sanitizeTooltipDelay(v: unknown): number {
     return TOOLTIP_DELAY_DEFAULT;
   }
   return Math.min(TOOLTIP_DELAY_MAX, Math.max(0, Math.round(v)));
+}
+
+/** A partial limit as a whole number in 1..64; absent, not a number or below 1 is Off (null). */
+export function sanitizeBeatPartialLimit(v: unknown): number | null {
+  if (typeof v !== 'number' || !Number.isFinite(v) || Math.round(v) < 1) {
+    return null;
+  }
+  return Math.min(BEAT_PARTIAL_LIMIT_MAX, Math.round(v));
 }
 
 /** A stored look; the old `jewel` reads as `tinted`, the old `bright` as `solid`, anything unknown as `tinted`. */
@@ -68,7 +87,10 @@ const defaults: LabDeveloperOptions = {
   mergeTolerance: MERGE_TOL_DEFAULT,
   mergeKeeps: 'first',
   intervalColor: 'size',
-  intervalIntensity: 'strong',
+  intervalIntensity: 'faint',
+  tintScale: 'fixed',
+  tintBand: 'center',
+  beatPartialLimit: null,
   tileLook: 'tinted',
   tileOutline: true,
 };
@@ -101,7 +123,10 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       mergeTolerance: clampMergeTol(o.mergeTolerance),
       mergeKeeps: o.mergeKeeps === 'recent' ? 'recent' : 'first',
       intervalColor: o.intervalColor === 'rank' ? 'rank' : 'size',
-      intervalIntensity: o.intervalIntensity === 'faint' ? 'faint' : 'strong',
+      intervalIntensity: o.intervalIntensity === 'strong' ? 'strong' : 'faint',
+      tintScale: o.tintScale === 'relative' ? 'relative' : 'fixed',
+      tintBand: o.tintBand === 'left' ? 'left' : 'center',
+      beatPartialLimit: sanitizeBeatPartialLimit(o.beatPartialLimit),
       tileLook: sanitizeTileLook(o.tileLook),
       tileOutline: typeof o.tileOutline === 'boolean' ? o.tileOutline : defaults.tileOutline,
     };
@@ -124,6 +149,7 @@ export function writeDeveloperOptions(patch: Partial<LabDeveloperOptions>) {
   const next = { ...readDeveloperOptions(), ...patch };
   next.tooltipDelay = sanitizeTooltipDelay(next.tooltipDelay);
   next.mergeTolerance = clampMergeTol(next.mergeTolerance);
+  next.beatPartialLimit = sanitizeBeatPartialLimit(next.beatPartialLimit);
   try {
     localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify(next));
   } catch {

@@ -117,26 +117,81 @@ export interface TileColors {
   dimFill: string;
   dimBorder: string;
   dimText: string;
+  /** Border of an added pitch's dashed outline (H-23): the tile's border color, never transparent (Tinted without outline uses its border step). */
+  addedBorder: string;
+  /**
+   * Set when the tile has a REACH (H-22, H-23; Tinted and Outlined only): the cell's whole `background` value, a
+   * hard-edged full-height band of the tint (see `reachBackground`). Absent: the plain `fill` is used.
+   */
+  bg?: string;
+  /** The same band in the receding (dim) color, for a non-matching cell under a search; set exactly when `bg` is. */
+  dimBg?: string;
 }
 
-/** The colors of one tile for a look, outline flag, level and hue. */
+/** Where the band sits in the cell: centered (default) or starting at the left edge (Developer option `tintBand`, H-23). */
+export type TintBand = 'center' | 'left';
+export const TINT_BANDS: readonly TintBand[] = ['center', 'left'];
+
+/** Outside a band the cell is transparent, so the panel behind the grid shows through (no grey box, either scheme). */
+const BAND_OUTSIDE = 'transparent';
+
+/** A percent with at most two decimals and no trailing zeros (16.25, 35, 0). */
+const pct = (n: number): string => `${Math.round(n * 100) / 100}%`;
+
+/**
+ * A full-height hard-edged band: `inner` over `reach` percent of the cell's width (center: centered; left: from the
+ * left edge), transparent elsewhere. Two-position color stops give crisp edges, no fade. Reach 100 is a full fill.
+ */
+export function reachBackground(inner: string, reach: number, band: TintBand = 'center'): string {
+  const w = Math.min(100, Math.max(0, reach));
+  if (band === 'left') {
+    return `linear-gradient(to right, ${inner} 0 ${pct(w)}, ${BAND_OUTSIDE} ${pct(w)} 100%)`;
+  }
+  const l = (100 - w) / 2;
+  const r = l + w;
+  return `linear-gradient(to right, ${BAND_OUTSIDE} 0 ${pct(l)}, ${inner} ${pct(l)} ${pct(r)}, ${BAND_OUTSIDE} ${pct(r)} 100%)`;
+}
+
+/**
+ * The colors of one tile for a look, outline flag, level and hue. `reach` (percent, optional) makes the Tinted fill
+ * a hard-edged band of that width (`band` picks center or left); Outlined gets the Tinted fill step of its level as
+ * the same band inside its whole border; Solid ignores it (a full fill). A dimmed Tinted or Outlined tile keeps the
+ * band, drawn in the Tinted dim fill step.
+ */
 export function tileColors(
   look: TileLook,
   outline: boolean,
   level: TileLevel,
   hue: TileHue,
-  scheme: TileScheme
+  scheme: TileScheme,
+  reach?: number,
+  band: TintBand = 'center'
 ): TileColors {
   const dim = {
     dimFill: look === 'outlined' ? 'var(--panel-slot)' : step(hue, TILE.dim.fill),
     dimBorder: look === 'outlined' || outline ? step(hue, TILE.dim.border) : 'transparent',
     dimText: step(hue, TILE.dim.text[scheme]),
+    addedBorder:
+      look === 'outlined'
+        ? step(hue, TILE.outlined.border[level])
+        : look === 'solid'
+          ? step(hue, TILE.solid.border)
+          : step(hue, TILE.tinted.border),
   };
+  const dimBg =
+    reach === undefined || look === 'solid'
+      ? undefined
+      : reachBackground(step(hue, TILE.dim.fill), reach, band);
   if (look === 'outlined') {
     return {
       fill: 'var(--panel-slot)',
       border: step(hue, TILE.outlined.border[level]),
       text: step(hue, TILE.outlined.text[scheme]),
+      bg:
+        reach === undefined
+          ? undefined
+          : reachBackground(step(hue, TILE.tinted.fill[level]), reach, band),
+      dimBg,
       ...dim,
     };
   }
@@ -153,6 +208,11 @@ export function tileColors(
     fill: step(hue, TILE.tinted.fill[level]),
     border: outline ? step(hue, TILE.tinted.border) : 'transparent',
     text: step(hue, TILE.tinted.text),
+    bg:
+      reach === undefined
+        ? undefined
+        : reachBackground(step(hue, TILE.tinted.fill[level]), reach, band),
+    dimBg,
     ...dim,
   };
 }
@@ -166,6 +226,9 @@ export function tileStyle(c: TileColors): CSSProperties {
     '--mx-dim-fill': c.dimFill,
     '--mx-dim-bd': c.dimBorder,
     '--mx-dim-fg': c.dimText,
+    '--mx-added-bd': c.addedBorder,
+    ...(c.bg ? { '--mx-bg': c.bg } : {}),
+    ...(c.dimBg ? { '--mx-dim-bg': c.dimBg } : {}),
   } as CSSProperties;
 }
 

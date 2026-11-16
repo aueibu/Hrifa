@@ -23,3 +23,5 @@ export * from './positional';
 export * from './liveRoughness';
 export * from './shapeGroups';
 export * from './intervalPairs';
+export * from './beats';
+export * from './addedPitches';

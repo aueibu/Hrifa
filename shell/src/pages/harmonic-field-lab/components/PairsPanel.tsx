@@ -16,25 +16,47 @@ import {
 } from 'react';
 import {
   ActionIcon,
+  Button,
   Modal,
   SegmentedControl,
   TextInput,
   useComputedColorScheme,
 } from '@mantine/core';
 import {
+  addedCellNote,
+  addedCells,
+  beatCell,
+  beatCellName,
+  beatSummary,
+  drawnAdded,
+  fmtRatio,
+  extraTints,
+  parseInterval,
+  parsePitchText,
+  reduceNote,
+  pitchPlace,
   pairCoverage,
-  tintStrengths,
+  tintReaches,
+  tintStrengthsFor,
   wheelPositions,
   locateInterval,
   mod,
+  nearestRatio,
   stepsTable,
+  type AddedCell,
+  type BeatCell,
+  type BeatTarget,
+  type ExtraInterval,
+  type Note,
   type PairCell,
+  type PitchRef,
 } from '../../../lib/harmonic-field';
-import { MAX_PAIRS } from '../state/derive';
+import { MAX_PAIRS, noteLabel } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
-import type { PairsColor } from '../state/labState';
+import { checkAddedPitch, type PairsColor } from '../state/labState';
 import { PAIRS_LABEL } from '../state/layout';
 import { parseFind } from '../state/pairsFind';
+import { colWidthCh } from '../state/pairsWidth';
 import { sevTileStyle, strengthLevel, tileColors, tileStyle, wheelHue } from '../state/tileColors';
 import { CloseIcon, ExpandIcon } from './icons';
 import { Num, Row, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
@@ -45,6 +67,22 @@ const COLOR_DATA = [
   { value: 'error', label: 'Error' },
   { value: 'interval', label: 'Interval' },
 ];
+
+const VIEW_DATA = [
+  { value: 'intervals', label: 'Intervals' },
+  { value: 'beats', label: 'Beats' },
+];
+
+/** A beat in Hz: signed, two decimals; a value that rounds to zero has no sign. */
+const fmtBeat = (hz: number): string => {
+  const t = Math.abs(hz).toFixed(2);
+  return Number(t) === 0 ? t : `${hz < 0 ? '-' : '+'}${t}`;
+};
+/** The accessible name of a beat; one above the Developer option's partial limit says which partials and the limit. */
+const beatName = (from: string, to: string, b: BeatCell, limit: number | null): string =>
+  b.theoretical && limit !== null
+    ? `${beatCellName(from, to, b.hz)}, partials ${b.partials[0]} and ${b.partials[1]}, above the limit of ${limit}`
+    : beatCellName(from, to, b.hz);
 
 const cellText = (c: PairCell): string => c.ratio ?? String(Math.round(c.c * 10) / 10);
 
@@ -61,6 +99,8 @@ interface CellProps {
   look: string;
   /** The Error tile's custom properties (from the severity). */
   sevStyle?: CSSProperties;
+  /** A beat above the Developer option's partial limit (dimmed). */
+  theory?: boolean;
   /** 0 = no search or pick active, 1 = this cell matches, 2 = it does not. */
   match: 0 | 1 | 2;
   lit: boolean;
@@ -88,6 +128,7 @@ const Cell = memo(function Cell(p: CellProps) {
       data-hot={p.hot}
       data-pin={p.pinned}
       data-wrap={p.wrap}
+      data-theory={p.theory || undefined}
       data-testid="matrix-cell"
       data-from={i + 1}
       data-to={j + 1}
@@ -111,6 +152,8 @@ const Cell = memo(function Cell(p: CellProps) {
 interface HeadProps {
   /** Position in the subset (0-based). */
   i: number;
+  /** The label when it is not the degree number (Beats view: the interval from 1/1). */
+  text?: string;
   axis: 'row' | 'col';
   hot: boolean;
   pinned: boolean;
@@ -139,7 +182,7 @@ const Head = memo(function Head(p: HeadProps) {
       onBlur={() => onLeave(i)}
       onClick={(e: MouseEvent) => onClick(i, e.altKey)}
     >
-      <Num>{i + 1}</Num>
+      <Num>{p.text ?? i + 1}</Num>
     </button>
   );
 });
@@ -153,17 +196,36 @@ function usePairsUi() {
   const [pick, setPick] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [tolText, setTolText] = useState<string | null>(null);
-  return { pick, setPick, query, setQuery, tolText, setTolText };
+  /** Intervals or Beats (runtime only, not stored). */
+  const [view, setView] = useState<'intervals' | 'beats'>('intervals');
+  const [addText, setAddText] = useState('');
+  const [addMsg, setAddMsg] = useState('');
+  return {
+    pick,
+    setPick,
+    query,
+    setQuery,
+    tolText,
+    setTolText,
+    view,
+    setView,
+    addText,
+    setAddText,
+    addMsg,
+    setAddMsg,
+  };
 }
 type PairsUi = ReturnType<typeof usePairsUi>;
 
-function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
+function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
   const lab = useLab();
   const { base, an } = lab;
   const m = an.pairs;
   const ctx = useRef({ lab, m });
   ctx.current = { lab, m };
   const { pick, setPick, query, setQuery, tolText, setTolText } = ui;
+  const { view, setView, addText, setAddText, addMsg, setAddMsg } = ui;
+  const beats = view === 'beats';
   const color = lab.state.ui.pairsColor;
   const setColor = (v: PairsColor) => lab.dispatch({ type: 'ui', patch: { pairsColor: v } });
   const findRef = useRef<HTMLInputElement>(null);
@@ -257,13 +319,32 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
       return [] as CSSProperties[];
     }
     const pos = wheelPositions(m, base.rep.c, dev.intervalColor);
-    const str = tintStrengths(m, dev.intervalIntensity);
+    const str = tintStrengthsFor(m, dev.intervalIntensity, dev.tintScale);
+    const reach = tintReaches(m, dev.intervalIntensity);
     return m.groups.map((g) =>
       tileStyle(
-        tileColors(look, dev.tileOutline, strengthLevel(str[g.id]), wheelHue(pos[g.id]), scheme)
+        tileColors(
+          look,
+          dev.tileOutline,
+          strengthLevel(str[g.id]),
+          wheelHue(pos[g.id]),
+          scheme,
+          reach[g.id],
+          dev.tintBand
+        )
       )
     );
-  }, [m, base.rep.c, dev.intervalColor, dev.intervalIntensity, dev.tileOutline, scheme, look]);
+  }, [
+    m,
+    base.rep.c,
+    dev.intervalColor,
+    dev.intervalIntensity,
+    dev.tintScale,
+    dev.tintBand,
+    dev.tileOutline,
+    scheme,
+    look,
+  ]);
   const sevStyles = useMemo(
     () => [0, 1, 2, 3, 4].map((s) => sevTileStyle(look, dev.tileOutline, s, scheme)),
     [look, dev.tileOutline, scheme]
@@ -348,8 +429,241 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
   const focusCell = focus ? m.cells[focus.i]?.[focus.j] : null;
   const rows = Array.from({ length: m.N }, (_, i) => i);
 
+  // Beats view (M3): the ratio picked in Find, the notes' places in the field, the added pitches
+  const baseHz = lab.state.ui.baseHz;
+  const pickedParsed = /[/:]/.test(query) ? parsePitchText(query) : null;
+  const pickedM =
+    pickedParsed && pickedParsed !== 'bad' ? /^(\d+)\/(\d+)$/.exec(pickedParsed.canon) : null;
+  const picked: BeatTarget | null = pickedM
+    ? { p: Number(pickedM[1]), q: Number(pickedM[2]) }
+    : null;
+  const beatOf = (loC: number, hiC: number): BeatCell | null =>
+    beatCell(loC, hiC, {
+      repC: rep.c,
+      baseHz,
+      tolC: tol,
+      picked,
+      partialLimit: dev.beatPartialLimit,
+    });
+  const labelOf = (i: number) => noteLabel(base.field[rel[i].src]);
+  const placeOf = (i: number) => base.field[rel[i].src].c;
+  const focusBeat =
+    beats && focus && m.cells[focus.i]?.[focus.j]
+      ? beatOf(placeOf(focus.i), placeOf(focus.i) + (m.cells[focus.i][focus.j] as PairCell).c)
+      : null;
+  /** The full wording of the pointed cell, with the beat's details added in Beats view. */
+  const readout = !focusCell
+    ? ''
+    : !beats
+      ? cellLabel(focusCell)
+      : `${cellLabel(focusCell)}. ${
+          focusBeat
+            ? `Beat ${fmtBeat(focusBeat.hz)} Hz vs ${focusBeat.target.p === 1 && focusBeat.target.q === 1 ? 'unison' : `${focusBeat.target.p}/${focusBeat.target.q}`}${focusBeat.source === 'picked' ? ' (picked)' : ''}.`
+            : 'No beat.'
+        }`;
+  const subsetPlaces = rel.map((r) => pitchPlace(base.field[r.src].c, rep.c));
+  const stored = lab.state.ui.pairsAdded;
+  const added = drawnAdded(stored, subsetPlaces, rep.c);
+  const addedList = addedCells(subsetPlaces, added, rep.c, tol);
+  const addedAt = (from: PitchRef, to: PitchRef): number =>
+    addedList.findIndex(
+      (c) =>
+        c.from.kind === from.kind && c.from.i === from.i && c.to.kind === to.kind && c.to.i === to.i
+    );
+  const refName = (r: PitchRef) => (r.kind === 'subset' ? labelOf(r.i) : added[r.i].text);
+  /** The pitch's ratio as a note, or null for a pitch with none (cents typed, or an irrational field note). */
+  const ratioOf = (r: PitchRef): Note | null => {
+    if (r.kind === 'subset') {
+      const n = base.field[rel[r.i].src];
+      return n.m ? n : null;
+    }
+    return /[/:]/.test(added[r.i].text) ? parseInterval(added[r.i].text) : null;
+  };
+  /**
+   * The Color setting for the added pitches (H-20 follow-up): every interval that is not a subset cell (the added cells,
+   * the added row and column headers and the chips) uses its OWN interval. The strength and the rank come from the
+   * exact ratio when both pitches have one (`extraTints`, lib intervalPairs.ts), else from the cents alone.
+   */
+  const extra: ExtraInterval[] = [];
+  /** The exact ratio of each added cell (null when either pitch has no ratio), in the order of `addedList`. */
+  const addedNotes = addedList.map((c) => {
+    const lo = ratioOf(c.from);
+    const hi = ratioOf(c.to);
+    return lo && hi ? addedCellNote(c, lo, hi, rep) : null;
+  });
+  addedList.forEach((c, k) => {
+    extra.push({ c: c.c, note: addedNotes[k] });
+  });
+  const headBase = extra.length;
+  added.forEach((a, k) => {
+    const n = ratioOf({ kind: 'added', i: k });
+    extra.push({ c: a.c, note: n ? reduceNote(n, a.c, rep) : null });
+  });
+  const chipBase = extra.length;
+  const chipPitch = stored.map((t) => {
+    const pt = parsePitchText(t);
+    return pt && pt !== 'bad' ? pt : null;
+  });
+  chipPitch.forEach((pt, k) => {
+    const place = pt ? pitchPlace(pt.c, rep.c) : 0;
+    const n = pt && /[/:]/.test(stored[k]) ? parseInterval(stored[k]) : null;
+    extra.push({ c: place, note: n ? reduceNote(n, place, rep) : null });
+  });
+  const extraTint =
+    color === 'interval'
+      ? extraTints(m, extra, rep.c, dev.intervalColor, dev.intervalIntensity, dev.tintScale)
+      : [];
+  const colorOf = (
+    idx: number,
+    withReach = false
+  ): { sev: number; style: CSSProperties | undefined } => {
+    if (color === 'error') {
+      const place = pitchPlace(extra[idx].c, rep.c);
+      const sev = severity(Math.abs(nearestRatio(place, m.oddLimit, rep.c).err));
+      return { sev, style: sevStyles[sev] };
+    }
+    if (color !== 'interval') {
+      return { sev: -1, style: undefined };
+    }
+    const t = extraTint[idx];
+    return {
+      sev: -1,
+      style: tileStyle(
+        tileColors(
+          look,
+          dev.tileOutline,
+          strengthLevel(t.strength),
+          wheelHue(t.pos),
+          scheme,
+          withReach ? t.reach : undefined,
+          dev.tintBand
+        )
+      ),
+    };
+  };
+  /** An added cell reads like a subset cell: its ratio when both pitches are exact, else its cents (Beats: the Hz). */
+  const addedRatio = (c: AddedCell): string | null => {
+    const n = addedNotes[addedList.indexOf(c)];
+    return n?.m ? fmtRatio(n) : null;
+  };
+  const addedText = (c: AddedCell): string => {
+    if (beats) {
+      const b = beatOf(c.loC, c.hiC);
+      return b ? fmtBeat(b.hz) : '';
+    }
+    return addedRatio(c) ?? String(Math.round(c.c * 10) / 10);
+  };
+  const addedCellView = (from: PitchRef, to: PitchRef, key: string) => {
+    const ci = addedAt(from, to);
+    if (ci < 0) {
+      return <span key={key} className={classes.mxDiag} aria-hidden="true" />;
+    }
+    const c = addedList[ci];
+    const b = beats ? beatOf(c.loC, c.hiC) : null;
+    const text = addedText(c);
+    const col = colorOf(ci, true);
+    const name = b
+      ? beatName(refName(from), refName(to), b, dev.beatPartialLimit)
+      : beats
+        ? `${refName(from)} to ${refName(to)}: no beat`
+        : `${refName(from)} to ${refName(to)}: ${text}${addedRatio(c) ? `, ${c.c.toFixed(1)} c` : ' c'}${c.wrap ? ', up to the next repeat' : ''}`;
+    return (
+      <span
+        key={key}
+        role="img"
+        className={`${classes.heatCell} ${classes.mxCell}`}
+        data-added="true"
+        data-sev={col.sev >= 0 ? col.sev : undefined}
+        data-tint={color === 'interval' ? 'wheel' : undefined}
+        data-tile={col.style ? look : undefined}
+        style={col.style}
+        data-theory={b?.theoretical || undefined}
+        data-testid="matrix-added-cell"
+        aria-label={name}
+      >
+        <Num>{text}</Num>
+        {c.wrap && (
+          <span className={classes.mxWrap} aria-hidden="true">
+            &uarr;
+          </span>
+        )}
+      </span>
+    );
+  };
+  const addedHead = (k: number, axis: 'row' | 'col') => {
+    const col = colorOf(headBase + k, true);
+    return (
+      <span
+        key={`a${axis}${k}`}
+        className={classes.mxHead}
+        data-added="true"
+        data-axis={axis}
+        data-sev={col.sev >= 0 ? col.sev : undefined}
+        data-tint={color === 'interval' ? 'wheel' : undefined}
+        data-tile={col.style ? look : undefined}
+        style={col.style}
+        data-testid={`matrix-added-${axis}-head`}
+        role="img"
+        aria-label={`Added pitch ${added[k].text}, ${axis}`}
+      >
+        <Num>{added[k].text}</Num>
+      </span>
+    );
+  };
+  const hasAdded = added.length > 0;
+  const widthTexts: string[] = [
+    ...rows.map((i) => (beats ? labelOf(i) : String(i + 1))),
+    ...added.map((a) => a.text),
+    ...addedList.map(addedText),
+  ];
+  for (let i = 0; i < m.N; i++) {
+    for (let j = 0; j < m.N; j++) {
+      const c = m.cells[i][j];
+      if (c) {
+        const b = beats ? beatOf(placeOf(i), placeOf(i) + c.c) : null;
+        widthTexts.push(beats ? (b ? fmtBeat(b.hz) : '') : cellText(c));
+      }
+    }
+  }
+  const colCh = colWidthCh(widthTexts);
+  const addedRefs = added.map((_, k) => ({ kind: 'added', i: k }) as PitchRef);
+  const submitAdd = () => {
+    const r = checkAddedPitch(lab.state, addText);
+    if (r.ok) {
+      lab.dispatch({ type: 'pairs/addPitch', text: addText });
+      setAddText('');
+      setAddMsg('');
+    } else if (r.kind === 'duplicate') {
+      setAddText('');
+      setAddMsg('');
+    } else if (r.kind !== 'empty') {
+      setAddMsg(r.message);
+    }
+  };
+  const locBeats = (() => {
+    if (!beats || !found) {
+      return null;
+    }
+    const list = found.cells.flatMap((c) => {
+      const lo = placeOf(c.from);
+      const b = beatOf(lo, lo + c.c);
+      return b ? [b] : [];
+    });
+    return beatSummary(list);
+  })();
+
   return (
     <>
+      <div className={classes.mxControls}>
+        <Tip k="matrixView">View</Tip>
+        <SegmentedControl
+          size="xs"
+          aria-label="View"
+          value={view}
+          onChange={(v) => setView(v as 'intervals' | 'beats')}
+          data={VIEW_DATA}
+        />
+      </div>
       <div className={classes.mxControls}>
         <Tip k="matrixColor">Color</Tip>
         <SegmentedControl
@@ -382,7 +696,7 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
         </span>
       )}
       <h3 className={classes.familyHead}>
-        Every pair of degrees
+        <Tip k="matrixGrid">Every pair of degrees</Tip>
         <Num muted>
           {m.N} degrees, {m.N * (m.N - 1)} intervals
         </Num>
@@ -393,8 +707,9 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
           role="group"
           aria-label="Interval matrix: row degree to column degree"
           style={{
-            gridTemplateColumns: `1.5rem repeat(${m.N}, minmax(${big ? 3.75 : 2.5}rem, max-content))`,
+            gridTemplateColumns: `repeat(${m.N + 1}, ${colCh}ch)${hasAdded ? ` 0.5rem repeat(${added.length}, ${colCh}ch)` : ''}`,
           }}
+          data-col-ch={colCh}
           data-testid="matrix-grid"
         >
           <span aria-hidden="true" />
@@ -409,8 +724,11 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
               onEnter={onHeadEnter}
               onLeave={onHeadLeave}
               onClick={onHeadClick}
+              text={beats ? labelOf(j) : undefined}
             />
           ))}
+          {hasAdded && <span aria-hidden="true" />}
+          {added.map((_, k) => addedHead(k, 'col'))}
           {rows.map((i) => [
             <Head
               key={`r${i}`}
@@ -422,19 +740,24 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
               onEnter={onHeadEnter}
               onLeave={onHeadLeave}
               onClick={onHeadClick}
+              text={beats ? labelOf(i) : undefined}
             />,
             ...rows.map((j) => {
               const c = m.cells[i][j];
               if (!c) {
                 return <span key={`${i}.${j}`} className={classes.mxDiag} aria-hidden="true" />;
               }
+              const b = beats ? beatOf(placeOf(i), placeOf(i) + c.c) : null;
               return (
                 <Cell
                   key={`${i}.${j}`}
                   i={i}
                   j={j}
-                  text={cellText(c)}
-                  label={cellLabel(c)}
+                  text={beats ? (b ? fmtBeat(b.hz) : '') : cellText(c)}
+                  label={
+                    b ? beatName(labelOf(i), labelOf(j), b, dev.beatPartialLimit) : cellLabel(c)
+                  }
+                  theory={b?.theoretical}
                   wrap={c.wrap}
                   sev={color === 'error' ? sevOfGroup(c.group) : -1}
                   tile={color === 'interval' ? tiles[c.group] : undefined}
@@ -451,14 +774,35 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
                 />
               );
             }),
+            ...(hasAdded
+              ? [
+                  <span key={`s${i}`} aria-hidden="true" />,
+                  ...added.map((_, k) =>
+                    addedCellView({ kind: 'subset', i }, addedRefs[k], `as${i}.${k}`)
+                  ),
+                ]
+              : []),
+          ])}
+          {hasAdded && (
+            <span
+              className={classes.mxSpacer}
+              style={{ gridColumn: '1 / -1' }}
+              aria-hidden="true"
+            />
+          )}
+          {added.map((_, k) => [
+            addedHead(k, 'row'),
+            ...rows.map((j) =>
+              addedCellView(addedRefs[k], { kind: 'subset', i: j }, `sa${k}.${j}`)
+            ),
+            <span key={`sp${k}`} aria-hidden="true" />,
+            ...added.map((_, l) => addedCellView(addedRefs[k], addedRefs[l], `aa${k}.${l}`)),
           ])}
         </div>
       </div>
-      <span className={classes.hint} data-testid="matrix-status">
-        {focusCell
-          ? cellLabel(focusCell)
-          : 'Point at a cell to read it; click it to hear it. An arrow marks an interval that wraps to the next repeat.'}
-      </span>
+      <div className={classes.mxReadout} data-testid="matrix-status">
+        {focusCell && focus ? readout : 'Point at a cell'}
+      </div>
       <section className={classes.mxSearch} aria-label="Find an interval">
         <Tip k="matrixSearch">Find</Tip>
         <TextInput
@@ -500,6 +844,57 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
         />
         <Num muted>c</Num>
       </section>
+      <section className={classes.mxAdd} aria-label="Add a pitch">
+        <Tip k="matrixAdd">Add pitch</Tip>
+        <TextInput
+          size="xs"
+          aria-label="Pitch to add"
+          placeholder="e.g. 3/2 or 702 c"
+          value={addText}
+          error={addMsg || undefined}
+          classNames={{ error: classes.inputError }}
+          onChange={(e) => {
+            setAddText(e.currentTarget.value);
+            setAddMsg('');
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              submitAdd();
+            }
+          }}
+        />
+        <Button size="xs" variant="default" onClick={submitAdd}>
+          Add
+        </Button>
+        {stored.length > 0 && (
+          <span className={classes.sizeChips}>
+            {stored.map((t, k) => {
+              const col = colorOf(chipBase + k, true);
+              return (
+                <span
+                  key={`${k}.${t}`}
+                  data-testid="matrix-added-chip"
+                  className={`${classes.sizeChip} ${classes.mxChip}`}
+                  data-tile={col.style ? look : undefined}
+                  style={col.style}
+                >
+                  <Num>{t}</Num>
+                  <ActionIcon
+                    className={classes.mxChipX}
+                    variant="subtle"
+                    color="gray"
+                    size={16}
+                    aria-label={`Remove added pitch ${t}`}
+                    onClick={() => lab.dispatch({ type: 'pairs/removePitch', index: k })}
+                  >
+                    <CloseIcon />
+                  </ActionIcon>
+                </span>
+              );
+            })}
+          </span>
+        )}
+      </section>
       {result && (
         <section className={classes.mxResult} aria-label="Locations" data-testid="matrix-result">
           <strong className={classes.mxResultHead}>{result.name}</strong>
@@ -518,6 +913,19 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
           <Row name="Highest coverage">
             <Num>{result.cov.highest}</Num>
           </Row>
+          {locBeats && (
+            <>
+              <Row name={<Tip k="matrixBeats">Beats total</Tip>}>
+                <Num>{`${locBeats.total.toFixed(2)} Hz`}</Num>
+              </Row>
+              <Row name={<Tip k="matrixBeats">Beats average</Tip>}>
+                <Num>{`${locBeats.average.toFixed(2)} Hz`}</Num>
+              </Row>
+              <Row name={<Tip k="matrixBeats">Beats highest</Tip>}>
+                <Num>{`${locBeats.highest.toFixed(2)} Hz`}</Num>
+              </Row>
+            </>
+          )}
           <span className={classes.sizeChips}>
             {result.cells.map((c) => (
               <span key={`${c.from}.${c.to}`} className={classes.sizeChip}>

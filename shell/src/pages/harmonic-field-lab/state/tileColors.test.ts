@@ -6,7 +6,9 @@ import {
   SEV_HUES,
   TILE,
   TILE_LOOKS,
+  reachBackground,
   tileColors,
+  tileStyle,
   wheelHue,
   type TileHue,
   type TileLevel,
@@ -172,5 +174,49 @@ describe('tile colors: borders', () => {
     for (const n of nums) {
       expect(Number.isInteger(n) && n >= 2 && n <= 12, String(n)).toBe(true);
     }
+  });
+});
+
+describe('tint band (H-23)', () => {
+  const tint = 'var(--rx-red-4)';
+  it('center mode: hard two-position stops around the centered band', () => {
+    expect(reachBackground(tint, 100)).toBe(
+      `linear-gradient(to right, transparent 0 0%, ${tint} 0% 100%, transparent 100% 100%)`
+    );
+    expect(reachBackground(tint, 67.5)).toBe(
+      `linear-gradient(to right, transparent 0 16.25%, ${tint} 16.25% 83.75%, transparent 83.75% 100%)`
+    );
+    expect(reachBackground(tint, 35)).toBe(
+      `linear-gradient(to right, transparent 0 32.5%, ${tint} 32.5% 67.5%, transparent 67.5% 100%)`
+    );
+  });
+  it('left mode: the band starts at the left edge', () => {
+    expect(reachBackground(tint, 67.5, 'left')).toBe(
+      `linear-gradient(to right, ${tint} 0 67.5%, transparent 67.5% 100%)`
+    );
+    expect(reachBackground(tint, 100, 'left')).toBe(
+      `linear-gradient(to right, ${tint} 0 100%, transparent 100% 100%)`
+    );
+  });
+  it('Tinted and Outlined carry the Tinted fill step in bg and the dim step in dimBg, same positions; Solid has none', () => {
+    const red = { a: 'red' as const };
+    for (const band of ['center', 'left'] as const) {
+      for (const look of ['tinted', 'outlined'] as const) {
+        const t = tileColors(look, true, 'normal', red, 'light', 67.5, band);
+        expect(t.bg).toBe(reachBackground('var(--rx-red-4)', 67.5, band));
+        expect(t.dimBg).toBe(reachBackground('var(--rx-red-2)', 67.5, band));
+        expect(t.bg).not.toContain('radial');
+      }
+      const solid = tileColors('solid', true, 'normal', red, 'light', 67.5, band);
+      expect(solid.bg).toBeUndefined();
+      expect(solid.dimBg).toBeUndefined();
+    }
+    expect(tileColors('tinted', true, 'normal', red, 'light').dimBg).toBeUndefined();
+    const style = tileStyle(tileColors('outlined', true, 'normal', red, 'light', 67.5));
+    expect(style).toHaveProperty('--mx-bg');
+    expect(style).toHaveProperty('--mx-dim-bg');
+    expect(tileStyle(tileColors('solid', true, 'normal', red, 'light', 67.5))).not.toHaveProperty(
+      '--mx-bg'
+    );
   });
 });

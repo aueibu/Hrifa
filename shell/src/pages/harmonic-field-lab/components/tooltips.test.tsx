@@ -7,6 +7,7 @@ import {
   parseDeveloperOptions,
   readDeveloperOptions,
   resetDeveloperOptionsCache,
+  sanitizeBeatPartialLimit,
   sanitizeTooltipDelay,
   writeDeveloperOptions,
 } from '../state/developerOptions';
@@ -19,6 +20,74 @@ beforeEach(() => {
 afterEach(() => {
   window.localStorage.clear();
   resetDeveloperOptionsCache();
+});
+
+describe('beat partial limit developer option (H-21)', () => {
+  it('is Off by default and when the key is absent; old data loads unchanged', () => {
+    expect(parseDeveloperOptions(null).beatPartialLimit).toBeNull();
+    expect(parseDeveloperOptions('{"tooltips":false}')).toMatchObject({
+      tooltips: false,
+      beatPartialLimit: null,
+    });
+  });
+  it('keeps a whole number 1 to 64 and reads anything else as Off', () => {
+    expect(sanitizeBeatPartialLimit(7)).toBe(7);
+    expect(sanitizeBeatPartialLimit(7.4)).toBe(7);
+    expect(sanitizeBeatPartialLimit(100)).toBe(64);
+    for (const v of [0, -3, 0.2, Number.NaN, 'x', null, undefined]) {
+      expect(sanitizeBeatPartialLimit(v)).toBeNull();
+    }
+    expect(parseDeveloperOptions('{"beatPartialLimit":7}').beatPartialLimit).toBe(7);
+    writeDeveloperOptions({ beatPartialLimit: 9 });
+    expect(readDeveloperOptions().beatPartialLimit).toBe(9);
+    writeDeveloperOptions({ beatPartialLimit: null });
+    expect(readDeveloperOptions().beatPartialLimit).toBeNull();
+  });
+});
+
+describe('tint band developer option (H-23)', () => {
+  it('is center by default and when the key is absent; old data loads unchanged', () => {
+    expect(parseDeveloperOptions(null).tintBand).toBe('center');
+    expect(parseDeveloperOptions('{"tintScale":"relative"}')).toMatchObject({
+      tintScale: 'relative',
+      tintBand: 'center',
+    });
+  });
+  it('round-trips left and reads anything else as center', () => {
+    expect(parseDeveloperOptions('{"tintBand":"left"}').tintBand).toBe('left');
+    expect(parseDeveloperOptions('{"tintBand":"x"}').tintBand).toBe('center');
+    expect(parseDeveloperOptions('{"tintBand":3}').tintBand).toBe('center');
+    writeDeveloperOptions({ tintBand: 'left' });
+    expect(readDeveloperOptions().tintBand).toBe('left');
+    writeDeveloperOptions({ tintBand: 'center' });
+    expect(readDeveloperOptions().tintBand).toBe('center');
+  });
+  it('the interval intensity default is faint (complex = wider); an explicit strong is kept; saving any option stores it', () => {
+    expect(parseDeveloperOptions(null).intervalIntensity).toBe('faint');
+    expect(parseDeveloperOptions('{"intervalIntensity":"x"}').intervalIntensity).toBe('faint');
+    expect(parseDeveloperOptions('{"intervalIntensity":"strong"}').intervalIntensity).toBe(
+      'strong'
+    );
+  });
+});
+
+describe('tint scale developer option (H-22)', () => {
+  it('is fixed by default and when the key is absent; old data loads unchanged', () => {
+    expect(parseDeveloperOptions(null).tintScale).toBe('fixed');
+    expect(parseDeveloperOptions('{"intervalIntensity":"faint"}')).toMatchObject({
+      intervalIntensity: 'faint',
+      tintScale: 'fixed',
+    });
+  });
+  it('round-trips relative and reads anything else as fixed', () => {
+    expect(parseDeveloperOptions('{"tintScale":"relative"}').tintScale).toBe('relative');
+    expect(parseDeveloperOptions('{"tintScale":"x"}').tintScale).toBe('fixed');
+    expect(parseDeveloperOptions('{"tintScale":3}').tintScale).toBe('fixed');
+    writeDeveloperOptions({ tintScale: 'relative' });
+    expect(readDeveloperOptions().tintScale).toBe('relative');
+    writeDeveloperOptions({ tintScale: 'fixed' });
+    expect(readDeveloperOptions().tintScale).toBe('fixed');
+  });
 });
 
 describe('tooltip developer options', () => {

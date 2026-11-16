@@ -8,6 +8,8 @@
 import {
   DEFAULT_TEMPLATES,
   EPS,
+  addedPitchError,
+  pitchPlace,
   resolveSubset,
   subsetFromSelection,
   type UpdateReport,
@@ -204,6 +206,8 @@ export interface UiSettings {
   groupShapes: boolean;
   /** The Pairs panel Color control (M1, Scala-tools arc): Off (default), Error or Interval. Optional in storage. */
   pairsColor: PairsColor;
+  /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
+  pairsAdded: string[];
 }
 
 /**
@@ -318,6 +322,7 @@ export function defaultUi(): UiSettings {
     folds: {},
     groupShapes: true,
     pairsColor: 'off',
+    pairsAdded: [],
   };
 }
 
@@ -396,6 +401,13 @@ export function initialState(): LabState {
 /** The name a tab shows. */
 export const tabName = (t: Tab): string => t.name ?? autoName(t.gen);
 export const activeTab = (s: LabState): Tab => s.tabs[s.active] ?? s.tabs[0];
+
+/** Add pitch checks (M3) against the active tab's subset: its notes' places above 1/1 and the stored added pitches. */
+export function checkAddedPitch(s: LabState, text: string) {
+  const t = activeTab(s);
+  const places = t.sel.map((i) => pitchPlace(t.field[i]?.c ?? 0, t.rep.c));
+  return addedPitchError(text, places, s.ui.pairsAdded, t.rep.c);
+}
 
 /** Selected indices that exist in a field of `n` notes. */
 export const fixSel = (sel: readonly number[], n: number): number[] =>
@@ -632,6 +644,10 @@ export type Action =
       chords?: readonly string[];
     }
   | { type: 'ui'; patch: Partial<UiSettings> }
+  /** Pairs panel Add pitch (M3, H-20): runs `addedPitchError` against the CURRENT subset; on any error or a duplicate the state is unchanged (the UI calls `checkAddedPitch` first to show the message). */
+  | { type: 'pairs/addPitch'; text: string }
+  /** Removes the added pitch at this index of `ui.pairsAdded`. */
+  | { type: 'pairs/removePitch'; index: number }
   | { type: 'viz'; id: VizId; patch: Partial<VizSettings> }
   | { type: 'layout'; fn: (l: Layout) => Layout }
   | { type: 'shelf/stash'; stash: StashRequest }
@@ -1309,6 +1325,14 @@ function reduce(s: LabState, a: Action): LabState {
             : retunerReduce(s.retuner, { type: 'ret/relative', relative }, ui.baseHz),
       };
     }
+    case 'pairs/addPitch': {
+      const r = checkAddedPitch(s, a.text);
+      return r.ok ? { ...s, ui: { ...s.ui, pairsAdded: [...s.ui.pairsAdded, r.canon] } } : s;
+    }
+    case 'pairs/removePitch':
+      return a.index >= 0 && a.index < s.ui.pairsAdded.length
+        ? { ...s, ui: { ...s.ui, pairsAdded: s.ui.pairsAdded.filter((_, i) => i !== a.index) } }
+        : s;
     case 'viz':
       return {
         ...s,

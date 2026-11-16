@@ -1117,6 +1117,60 @@ const entries = {
     ],
     see: ['matrix', 'matrixTable'],
   },
+  matrixGrid: {
+    term: 'The pair grid',
+    help: [
+      p(
+        'Row = the degree an interval starts on, column = where it ends. Click a cell to hear its two notes. An up arrow marks a pair that wraps to the next repeat.'
+      ),
+      example('in the 5-limit major scale, degree 4 to degree 1 reads 3/2 with an arrow.'),
+    ],
+    see: ['matrix', 'matrixView'],
+  },
+  matrixView: {
+    term: 'View: Intervals | Beats',
+    help: [
+      p(
+        "**Intervals** writes each cell as the interval between its two notes. **Beats** writes the beat rate in Hz of that pair against the simple ratio it is near (the tolerance sets how near). A cell near no simple ratio stays empty. The axes then read each degree's interval from 1/1."
+      ),
+      example(
+        'in the 5-limit major scale with a tolerance of 25 and 3/2 typed in Find, the 40/27 cell reads -10.90 and the five exact fifths read 0.00.'
+      ),
+    ],
+    teaching: [
+      p(
+        'A negative beat means the upper note is flat of the ratio. The Hz come from the 1/1 Hz setting. With the Developer option Beat partial limit set, beats that need a higher partial are dimmed.'
+      ),
+    ],
+    see: ['matrix', 'matrixSearch', 'matrixAdd'],
+  },
+  matrixAdd: {
+    term: 'Add pitch',
+    help: [
+      p(
+        'Type a ratio (with a slash or colon) or a size in cents and press Enter. It is not a subset note: it gets a dashed row and column after the subset, in both views, up to 4. Its x removes it. Added pitches are kept when you reload.'
+      ),
+      example(
+        'in a C E G triad, adding 3/2 shows how each note sits against a just fifth above 1/1.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Added cells do not count in the totals above, and do not light or play. A pitch already in the subset is refused.'
+      ),
+    ],
+    see: ['matrixView', 'matrix'],
+  },
+  matrixBeats: {
+    term: 'Beats total, average, highest',
+    help: [
+      p(
+        'Over the cells Find outlines, in Hz and without signs: the sum of the beat sizes, their mean, and the largest.'
+      ),
+      example('the 40/27 cell alone gives a total, average and highest of 10.90.'),
+    ],
+    see: ['matrixView', 'matrixSearch'],
+  },
   matrixFindClear: {
     term: 'Clear Find',
     help: [
@@ -1743,7 +1797,7 @@ const entries = {
   },
   developerMenu: {
     term: 'Developer menu',
-    text: 'Small switches for how the lab shows things, kept per viewer in this browser (they are not part of a saved tuning). They are grouped by what they affect: Tooltips, Mode display, Playback and keys, Composites. Example: "Mode tiles: always show ± sign" can be turned off if the signs make the heat grid look busy.',
+    text: 'Small switches for how the lab shows things, kept per viewer in this browser (they are not part of a saved tuning). They are grouped by what they affect: Tooltips, Mode display, Playback and keys, Pairs panel, Tiles, Composites. Example: "Mode tiles: always show ± sign" can be turned off if the signs make the heat grid look busy.',
     see: ['modeSignAlways', 'tooltips', 'modes', 'mergeTolerance'],
   },
   keepModeRoot: {
@@ -1785,16 +1839,67 @@ const entries = {
     term: 'Interval intensity',
     help: [
       p(
-        'How strong the Interval tint is. **Simple strong** (the default) makes simple ratios vivid and complex ones faint. **Simple faint** is the reverse.'
+        'How strong and how wide the Interval tint is. **Complex strong** (the default) makes complex ratios wide and vivid and simple ones narrow and faint. **Simple strong** is the reverse.'
       ),
-      example('simple strong: 3/2 is vivid and 64/45 is nearly plain.'),
+      example('complex strong: 64/45 is wide and vivid and 3/2 is narrow and faint.'),
     ],
     teaching: [
       p(
         'Simplicity is the Tenney height of the ratio. An interval with no ratio (an EDO step) always gets the middle strength.'
       ),
     ],
-    see: ['matrixColor', 'intervalColor', 'developerMenu'],
+    see: ['matrixColor', 'intervalColor', 'tintScale', 'tintBand', 'developerMenu'],
+  },
+  tintScale: {
+    term: 'Tint strength scale',
+    help: [
+      p(
+        'How the Interval tint measures "simple". **Fixed** (the default) judges each interval by its own Tenney height against set bounds, so 129/128 is faint in every subset. **Relative** spreads the strength over this subset\'s simplest and most complex interval. The width of the band is always relative to the subset.'
+      ),
+      example(
+        'a subset of just 129/128 and 151/150: fixed makes both faint; relative makes one strong and one faint.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Strength says how simple the interval is in absolute terms; the band width says how simple it is among these intervals. The Solid look is always a full fill, so it shows strength only.'
+      ),
+    ],
+    see: ['matrixColor', 'intervalIntensity', 'tintBand', 'developerMenu'],
+  },
+  tintBand: {
+    term: 'Tint band',
+    help: [
+      p(
+        "Where the Interval tint sits in a cell. **Center** (the default) draws a full-height band in the middle of the cell. **Left** starts the band at the cell's left edge. The band's width is relative simplicity; outside it the cell shows the panel color."
+      ),
+      example(
+        'a wide band almost fills the cell; a narrow one is a stripe, centered or at the left.'
+      ),
+    ],
+    teaching: [
+      p(
+        'The Solid look is always a full fill, so it has no band. While a search is active, cells that do not match keep their band in fainter colors.'
+      ),
+    ],
+    see: ['matrixColor', 'intervalIntensity', 'tintScale', 'developerMenu'],
+  },
+  beatPartialLimit: {
+    term: 'Beat partial limit',
+    help: [
+      p(
+        'Off (the default): the Beats view shows every beat the same. A whole number from 1 to 64 dims the cells whose ratio needs a partial above it, and their name says so. It does not change any number.'
+      ),
+      example(
+        'with 7, the 15/8 cells (partials 15 and 8) are dimmed and a 3/2 cell (partials 3 and 2) is not.'
+      ),
+    ],
+    teaching: [
+      p(
+        "A beat between the lower note's p-th and the upper note's q-th partial needs a sound that has both. The limit is for judging what a sound with that many harmonics would show; the lab itself plays 7."
+      ),
+    ],
+    see: ['matrixView', 'developerMenu'],
   },
   tileLook: {
     term: 'Tile look',

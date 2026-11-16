@@ -253,21 +253,167 @@ export function wheelPositions(m: IntervalPairs, repC: number, reading: WheelRea
   return pos;
 }
 
+/** Which strength scale the Interval tint uses: `fixed` (default, H-22) or `relative` (this subset's own range, the pre-M3 look). */
+export type TintScale = 'fixed' | 'relative';
+
 /**
- * Tint strength in [TINT_MIN, TINT_MAX] of every group (by group id), from the Tenney height of its ratio scaled over the
- * rational groups of this subset: 'strong' = lowest height strongest, 'faint' = the reverse. A group with no ratio gets
- * TINT_MIDDLE, as does every group when all heights are equal.
+ * Fixed strength bounds, in Tenney height (log2(p*q)): the strongest tint at 3/2's height and below, the faintest at
+ * H_FAINT and above, linear between. THE SAME IN EVERY SUBSET. Tuned by eye (H-22): change them here.
+ */
+export const H_STRONG = Math.log2(3 * 2);
+export const H_FAINT = 14;
+
+/**
+ * Reach: the width of the tint band as a percent of the cell's width (a hard-edged full-height band, H-23). The most
+ * complex interval of a subset gets REACH_MIN, the simplest REACH_MAX (reversed with 'faint'). Tuned by eye: change
+ * them here.
+ */
+export const REACH_MIN = 35;
+export const REACH_MAX = 100;
+export const REACH_MIDDLE = (REACH_MIN + REACH_MAX) / 2;
+
+/** `h` placed between `lo` (simplest) and `hi` (most complex), clamped, and mapped to [outMin, outMax] by `intensity`. */
+function spread(
+  h: number,
+  lo: number,
+  hi: number,
+  intensity: TintIntensity,
+  outMin: number,
+  outMax: number
+): number {
+  const t = Math.min(1, Math.max(0, (h - lo) / (hi - lo))); // 0 simplest .. 1 most complex
+  return outMin + (intensity === 'strong' ? 1 - t : t) * (outMax - outMin);
+}
+
+/** The lowest and highest Tenney height among the rational groups of a subset (lo > hi when there are none). */
+function heightRange(m: IntervalPairs): { lo: number; hi: number } {
+  const hs = m.groups.map((g) => g.h).filter((h): h is number => h !== null);
+  return { lo: Math.min(...hs), hi: Math.max(...hs) };
+}
+
+/** Strength of one interval by its own height on the FIXED bounds; no ratio gives TINT_MIDDLE. */
+export function fixedStrength(h: number | null, intensity: TintIntensity): number {
+  return h === null ? TINT_MIDDLE : spread(h, H_STRONG, H_FAINT, intensity, TINT_MIN, TINT_MAX);
+}
+
+/**
+ * Tint strength in [TINT_MIN, TINT_MAX] of every group (by group id), FIXED scale: the Tenney height of its own ratio
+ * against H_STRONG and H_FAINT, so one interval has one strength in every subset. 'strong' = lowest height strongest,
+ * 'faint' = the reverse. A group with no ratio gets TINT_MIDDLE.
  */
 export function tintStrengths(m: IntervalPairs, intensity: TintIntensity): number[] {
-  const hs = m.groups.map((g) => g.h).filter((h): h is number => h !== null);
-  const lo = Math.min(...hs);
-  const hi = Math.max(...hs);
-  return m.groups.map((g) => {
-    if (g.h === null || hi - lo < 1e-9) {
-      return TINT_MIDDLE;
+  return m.groups.map((g) => fixedStrength(g.h, intensity));
+}
+
+/**
+ * Tint strength of every group on the RELATIVE scale (Developer option `tintScale` = relative; the pre-M3 behavior): the
+ * Tenney height scaled over the rational groups of this subset. A group with no ratio gets TINT_MIDDLE, as does every
+ * group when all heights are equal.
+ */
+export function tintStrengthsRelative(m: IntervalPairs, intensity: TintIntensity): number[] {
+  const { lo, hi } = heightRange(m);
+  return m.groups.map((g) =>
+    g.h === null || hi - lo < 1e-9
+      ? TINT_MIDDLE
+      : spread(g.h, lo, hi, intensity, TINT_MIN, TINT_MAX)
+  );
+}
+
+/**
+ * Tint reach (percent, REACH_MIN to REACH_MAX) of every group: its Tenney height placed on THIS subset's range of
+ * heights. 'strong': the simplest widest; 'faint' reverses. No ratio, or all heights equal: REACH_MIDDLE.
+ */
+export function tintReaches(m: IntervalPairs, intensity: TintIntensity): number[] {
+  const { lo, hi } = heightRange(m);
+  return m.groups.map((g) =>
+    g.h === null || hi - lo < 1e-9
+      ? REACH_MIDDLE
+      : spread(g.h, lo, hi, intensity, REACH_MIN, REACH_MAX)
+  );
+}
+
+/** The strengths of the chosen scale. */
+export function tintStrengthsFor(
+  m: IntervalPairs,
+  intensity: TintIntensity,
+  scale: TintScale
+): number[] {
+  return scale === 'relative' ? tintStrengthsRelative(m, intensity) : tintStrengths(m, intensity);
+}
+
+/** An interval that is not a cell of the subset (an added pitch's cell, header or chip): its size and, when exact, its ratio. */
+export interface ExtraInterval {
+  /** Size in cents, reduced into the repeat (a near unison may be slightly negative). */
+  c: number;
+  /** The exact ratio (monzo) reduced into the repeat, or null when either pitch has no ratio. */
+  note: Note | null;
+}
+
+export interface ExtraTint {
+  /** Wheel position in [0, 1), as `wheelPositions` gives for a group. */
+  pos: number;
+  /** Tint strength in [TINT_MIN, TINT_MAX], as `tintStrengthsFor` gives for a group. */
+  strength: number;
+  /** Tint reach in percent (REACH_MIN to REACH_MAX), as `tintReaches` gives for a group. */
+  reach: number;
+}
+
+/**
+ * Wheel position and strength of intervals that are not subset cells, by the rules of the subset's own groups and without
+ * changing any of them (the subset's `wheelPositions` and `tintStrengths` are computed from the subset alone):
+ * - an interval within PAIRS_GROUP_TOL of a subset group takes that group's position and strength;
+ * - strength: fixed scale (default) = its own Tenney height on H_STRONG..H_FAINT; relative scale = its height scaled over
+ *   the subset's heights, clamped; no ratio (cents only) gives TINT_MIDDLE (so do equal subset heights, relative scale);
+ * - reach: its own height placed on the subset's range of heights (the range `tintReaches` uses), clamped; no ratio or
+ *   equal subset heights gives REACH_MIDDLE;
+ * - 'size': frac(c / repeat); 'rank': its rank among the sizes of the subset's groups plus the distinct new sizes of
+ *   `items`, at frac(rank * WHEEL_GOLDEN). The subset's own ranks stay as they are.
+ * Results are in the order of `items`.
+ */
+export function extraTints(
+  m: IntervalPairs,
+  items: readonly ExtraInterval[],
+  repC: number,
+  reading: WheelReading,
+  intensity: TintIntensity,
+  scale: TintScale = 'fixed'
+): ExtraTint[] {
+  const frac = (x: number) => x - Math.floor(x);
+  const basePos = wheelPositions(m, repC, reading);
+  const baseStr = tintStrengthsFor(m, intensity, scale);
+  const baseReach = tintReaches(m, intensity);
+  const { lo, hi } = heightRange(m);
+  const ranged = hi - lo >= 1e-9;
+  const groupOf = (c: number): number =>
+    m.groups.findIndex((g) => Math.abs(g.c - c) < PAIRS_GROUP_TOL);
+  // the new sizes (not a subset group, distinct from each other), for the rank
+  const fresh: number[] = [];
+  for (const it of items) {
+    if (groupOf(it.c) < 0 && !fresh.some((c) => Math.abs(c - it.c) < PAIRS_GROUP_TOL)) {
+      fresh.push(it.c);
     }
-    const t = (g.h - lo) / (hi - lo); // 0 simplest .. 1 most complex
-    const s = intensity === 'strong' ? 1 - t : t;
-    return TINT_MIN + s * (TINT_MAX - TINT_MIN);
+  }
+  const sizes = [...m.groups.map((g) => g.c), ...fresh].sort((a, b) => a - b);
+  return items.map((it) => {
+    const g = groupOf(it.c);
+    if (g >= 0) {
+      return { pos: basePos[g], strength: baseStr[g], reach: baseReach[g] };
+    }
+    const h = it.note ? tenneyHeight(it.note) : null;
+    let strength = fixedStrength(h, intensity);
+    let reach = REACH_MIDDLE;
+    if (h !== null && ranged) {
+      reach = spread(h, lo, hi, intensity, REACH_MIN, REACH_MAX);
+    }
+    if (scale === 'relative') {
+      strength =
+        h !== null && ranged ? spread(h, lo, hi, intensity, TINT_MIN, TINT_MAX) : TINT_MIDDLE;
+    }
+    const rank = sizes.findIndex((c) => Math.abs(c - it.c) < PAIRS_GROUP_TOL);
+    return {
+      pos: reading === 'size' ? frac(it.c / repC) : frac(rank * WHEEL_GOLDEN),
+      strength,
+      reach,
+    };
   });
 }

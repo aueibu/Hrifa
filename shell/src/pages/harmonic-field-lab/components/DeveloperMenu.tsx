@@ -5,7 +5,11 @@
  */
 import type { ReactNode } from 'react';
 import { Button, NumberInput, Popover, SegmentedControl, Switch, Text } from '@mantine/core';
-import { MERGE_TOL_DEFAULT, MERGE_TOL_MAX } from '../../../lib/harmonic-field';
+import {
+  BEAT_PARTIAL_LIMIT_MAX,
+  MERGE_TOL_DEFAULT,
+  MERGE_TOL_MAX,
+} from '../../../lib/harmonic-field';
 import {
   TOOLTIP_DELAY_MAX,
   sanitizeTileLook,
@@ -121,12 +125,55 @@ export function DeveloperMenu() {
                   aria-label="Interval intensity"
                   value={options.intervalIntensity}
                   onChange={(v) =>
-                    update({ intervalIntensity: v === 'faint' ? 'faint' : 'strong' })
+                    update({ intervalIntensity: v === 'strong' ? 'strong' : 'faint' })
                   }
                   data={[
+                    { label: 'Complex strong', value: 'faint' },
                     { label: 'Simple strong', value: 'strong' },
-                    { label: 'Simple faint', value: 'faint' },
                   ]}
+                />
+              </Tip>
+              <Tip k="tintScale" as="control" block>
+                <Text size="xs">Tint strength scale</Text>
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  aria-label="Tint strength scale"
+                  value={options.tintScale}
+                  onChange={(v) => update({ tintScale: v === 'relative' ? 'relative' : 'fixed' })}
+                  data={[
+                    { label: 'Fixed', value: 'fixed' },
+                    { label: 'Relative', value: 'relative' },
+                  ]}
+                />
+              </Tip>
+              <Tip k="tintBand" as="control" block>
+                <Text size="xs">Tint band</Text>
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  aria-label="Tint band"
+                  value={options.tintBand}
+                  onChange={(v) => update({ tintBand: v === 'left' ? 'left' : 'center' })}
+                  data={[
+                    { label: 'Center', value: 'center' },
+                    { label: 'Left', value: 'left' },
+                  ]}
+                />
+              </Tip>
+              <Tip k="beatPartialLimit" as="control" block>
+                <NumberInput
+                  size="xs"
+                  label="Beat partial limit"
+                  placeholder="Off"
+                  min={1}
+                  max={BEAT_PARTIAL_LIMIT_MAX}
+                  step={1}
+                  allowDecimal={false}
+                  allowNegative={false}
+                  clampBehavior="strict"
+                  value={options.beatPartialLimit ?? ''}
+                  onChange={(v) => update({ beatPartialLimit: typeof v === 'number' ? v : null })}
                 />
               </Tip>
             </Section>
