@@ -8,7 +8,7 @@
 //           --since <ref>    changed files since <ref> instead of HEAD
 //           --no-tests       skip vitest
 //           --tests-only     vitest related only (what `test:related` runs)
-//           --workers <n>    vitest workers (default 4, or VITEST_MAX_WORKERS)
+//           --workers <n>    vitest workers (default 6, or VITEST_MAX_WORKERS)
 //
 // Why a wrapper around `vitest related`: on Windows, vitest 4 compares the paths you give it to test module ids with `===`.
 // Module ids carry the on-disk letter case (C:/Data Files/Projects/...), your cwd may not (C:/data files/...), so plain
@@ -82,7 +82,7 @@ if (css.length && !flag('--tests-only'))
 if (code.length && !flag('--no-tests')) {
   // On-disk casing, forward slashes: the form vitest uses for module ids.
   const related = code.map((f) => realpathSync.native(resolve(f)).replace(/\\/g, '/'));
-  const workers = valueOf('--workers') ?? process.env.VITEST_MAX_WORKERS ?? '4';
+  const workers = valueOf('--workers') ?? process.env.VITEST_MAX_WORKERS ?? '6';
   step(
     'vitest related',
     () =>
