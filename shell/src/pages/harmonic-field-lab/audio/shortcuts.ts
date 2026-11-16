@@ -28,6 +28,8 @@ export const SHORTCUTS = {
   stash: '=',
   /** Opens the composite popup on what the pointer is on (`Send.tsx`); closes it again while open. */
   composite: '-',
+  /** In the composite popup: flips the slider; the handler accepts e or E. */
+  sendFlip: 'E',
 } as const;
 
 export type ShortcutName = keyof typeof SHORTCUTS;

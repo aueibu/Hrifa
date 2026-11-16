@@ -218,7 +218,7 @@ const entries = {
         'A note and a chord sound until you let go; a scale steps through its notes while you hold the key (in the Scale preview direction) and stops when you let go or it ends. In the mode grid and on the tuner strip {key:holdPure} and {key:holdBoth} also play the pure pitch and both together (an exact degree plays once, nothing to beat against).'
       ),
       p(
-        'Other keys: pressing a melody key (z x c ...) also moves the root of the Sketch row to the degree of that key, and = (or +) stashes the current Sketch on the shelf. Key {key:modePlayback} switches mode previews between Parallel and Relative (see Mode playback).'
+        'Other keys: pressing a melody key (z x c ...) also moves the root of the Sketch row to the degree of that key, and {key:stash} stashes the current Sketch on the shelf. Key {key:modePlayback} switches mode previews between Parallel and Relative (see Mode playback).'
       ),
       p('Everything sounding lights green in every view.'),
       example('point at the G major key ring and hold {key:holdOwn} to hear its scale.'),
@@ -1118,7 +1118,17 @@ const entries = {
   /* ---- retuner ---- */
   retunerOn: {
     term: 'Retuner on/off',
-    text: 'When on, the keys play the active card instead of the tab (the first key is degree 1 of the card), and with the Auto trigger playing two or more keys makes the retuner pick the best card for that chord and retune everything around the pivot, gliding the held notes. Off leaves the tuning as it is and the keys play the tab again. Example: switch it off while you edit cards so playing does not retune.',
+    help: [
+      p(
+        'The switch for the whole retuner. On: the keys play the active card instead of the tab (the first key is degree 1 of the card). Off: the tuning stays as it is and the keys play the tab again.'
+      ),
+      example('switch it off while you edit cards so playing does not retune.'),
+    ],
+    teaching: [
+      p(
+        'With the Auto trigger, playing two or more keys makes the retuner pick the best card for that chord and retune everything around the pivot, gliding the held notes.'
+      ),
+    ],
     see: ['cards'],
   },
   cards: {
@@ -1137,20 +1147,32 @@ const entries = {
   },
   fillSources: {
     term: 'Fill sources',
-    text: "Where the candidate cards come from; each source works alone and together they are merged, duplicates removed. Modes: the current subset started on each of its notes. Keys that fit: the subset moved to every field note where all its notes still exist (the Keys panel). This generator's subsets: the subsets saved under the tab's generator. Example: modes + keys on a 7-note major scale give its 7 modes plus the other keys it fits.",
+    help: [
+      p(
+        "Where the candidate cards come from. There are three sources: **Modes of the current subset**, **Keys that fit the field** and **This generator's subsets**. Each works alone and together they are merged, duplicates removed."
+      ),
+      example('modes + keys on a 7-note major scale give its 7 modes plus the other keys it fits.'),
+    ],
+    teaching: [
+      p('Modes: the current subset started on each of its notes.'),
+      p(
+        'Keys that fit: the subset moved to every field note where all its notes still exist (the Keys panel).'
+      ),
+      p("This generator's subsets: the subsets saved under the tab's generator."),
+    ],
     see: ['fillTags'],
   },
   fillTags: {
     term: 'Retuned notes | Different notes',
     help: [
       p(
-        "Compared with card 0 (home), degree by degree. Retuned notes: the same number of notes and every degree within 30 c of home's, a comma-sized change, so the card is the same scale tuned differently. Different notes: it substitutes notes, like a mode or a smaller subset."
+        "Compared with card 0 (home), degree by degree. *Retuned notes*: the same number of notes and every degree within 30 c of home's, a comma-sized change, so the card is the same scale tuned differently. *Different notes*: it substitutes notes, like a mode or a smaller subset."
       ),
-      example(
-        'a major scale with a 10/9 second is "retuned" (22 c off at one degree); Dorian is "different" (its second degree is 10/9 but its third is 32/27, 70 c from 5/4).'
-      ),
+      example('a major scale with a 10/9 second is "retuned" (22 c off at one degree).'),
     ],
-    teaching: [],
+    teaching: [
+      p('Dorian is "different": its second degree is 10/9 but its third is 32/27, 70 c from 5/4.'),
+    ],
   },
   fillApply: {
     term: 'Apply (Fill cards)',
@@ -1259,7 +1281,20 @@ const entries = {
   },
   scorer: {
     term: 'Scorer',
-    text: 'How "good" a predicted chord is; the lowest score wins. Roughness (Sethares) adds up the beating between every pair of overtones and is the default. Lattice distance only looks at how simple the intervals are. Pitch-fair periodicity counts how quickly the waveform repeats. Infinitone parity copies Infinitone 2\'s own count. Example: switch from Roughness to Lattice distance and see whether the same card still wins.',
+    help: [
+      p(
+        'How "good" a predicted chord is; the lowest score wins. There are four scorers: **Roughness (Sethares)**, the default, **Lattice distance**, **Pitch-fair periodicity** and **Infinitone parity**.'
+      ),
+      example(
+        'switch from Roughness to Lattice distance and see whether the same card still wins.'
+      ),
+    ],
+    teaching: [
+      p('Roughness (Sethares) adds up the beating between every pair of overtones.'),
+      p('Lattice distance only looks at how simple the intervals are.'),
+      p('Pitch-fair periodicity counts how quickly the waveform repeats.'),
+      p("Infinitone parity copies Infinitone 2's own count."),
+    ],
     see: ['roughness', 'why'],
   },
   roughness: {
@@ -1359,10 +1394,10 @@ const entries = {
         'The mirror image of otonal: the notes are a slice of the undertone series, so the chord sounds as 1/x1:1/x2:1/x3. In a CPS these are the notes that sit inside the same larger group of factors, each leaving one factor out.'
       ),
       example(
-        'the notes 1x3, 1x5 and 3x5 all sit inside the factors 1, 3 and 5; they leave out 5, 3 and 1 in turn, giving the chord 1/1:1/3:1/5 (named by the factor each note leaves out, not listed by pitch).'
+        'the notes 1x3, 1x5 and 3x5 all sit inside the factors 1, 3 and 5; they leave out 5, 3 and 1 in turn, giving the chord 1/1:1/3:1/5.'
       ),
     ],
-    teaching: [],
+    teaching: [p('The chord is named by the factor each note leaves out, not listed by pitch.')],
     see: ['otonal', 'cpsChords'],
   },
   chordFamily: {
@@ -1431,7 +1466,23 @@ const entries = {
   },
   chordLadder: {
     term: 'Tolerance ladder',
-    text: 'The tolerances at which the number of chords changes. Seven tiles show at a time with the current one in the middle (near either end of the ladder it sits off-centre); a +n tile at an edge means n more tolerances are hidden on that side, and clicking it picks the nearest hidden one. Dashed chips are chords that do not fit yet; clicking one (or a tile, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.',
+    help: [
+      p(
+        'The tolerances at which the number of chords changes. Seven tiles show at a time with the current one in the middle. Dashed chips are chords that do not fit yet.'
+      ),
+      keys([
+        { key: 'Click a tile', does: 'move the tolerance to it' },
+        { key: 'Click a +n tile', does: 'pick the nearest hidden tolerance on that side' },
+        { key: 'Click a dashed chip', does: 'move the tolerance to the value where it appears' },
+        { key: 'Click the + and - buttons', does: 'step to the next tolerance up or down' },
+      ]),
+      example('"+3 c → 2 more" means raising the tolerance by 3 c brings in two more chords.'),
+    ],
+    teaching: [
+      p('Near either end of the ladder the current tile sits off-centre.'),
+      p('A +n tile at an edge means n more tolerances are hidden on that side.'),
+      p('The line beside the buttons also says how many fewer chords a lower tolerance gives.'),
+    ],
     see: ['chordTolerance'],
   },
   editTemplates: {
@@ -1443,13 +1494,11 @@ const entries = {
     term: 'Keys (transposition)',
     help: [
       p(
-        'The panel for moving your whole scale: transposition. A key is the same scale started on another field note, so every interval stays the same and only the starting pitch changes. This is different from a mode, which keeps the same notes and starts the scale on another degree (see Modes).'
+        'The panel for moving your whole scale: transposition. A key is the same scale started on another field note, so every interval stays the same and only the starting pitch changes. A mode keeps the same notes and starts the scale on another degree instead (see Modes).'
       ),
-      example(
-        'C major to G major is a key change (C D E F G A B becomes G A B C D E F#); C major to D dorian is a mode change (the same seven notes, now starting on D).'
-      ),
+      example('C major to G major is a key change (C D E F G A B becomes G A B C D E F#).'),
     ],
-    teaching: [],
+    teaching: [p('C major to D dorian is a mode change: the same seven notes, now starting on D.')],
     see: ['modes', 'keyRings', 'keyView', 'commonTones'],
   },
   keyRings: {
@@ -1483,13 +1532,16 @@ const entries = {
     term: 'Common tones (x|y)',
     help: [
       p(
-        'Under each key ring: x is how many notes the key shares with your current subset, y is how many notes the subset has. The bar is a separator, not a division. More shared notes means a closer key: a key with the same notes as the subset shows y|y.'
+        'Under each key ring: x is how many notes the key shares with your current subset, y is how many notes the subset has. More shared notes means a closer key.'
       ),
       example(
         'for C major, the G major ring reads 6|7 (all but F, which becomes F#) and the F# major ring reads 2|7 (only B and F survive), so G major is a close key and F# major is a distant one.'
       ),
     ],
-    teaching: [],
+    teaching: [
+      p('The bar is a separator, not a division.'),
+      p('A key with the same notes as the subset shows y|y.'),
+    ],
     see: ['keyView', 'keyRings'],
   },
   keyView: {
@@ -1515,7 +1567,24 @@ const entries = {
   },
   keyMarks: {
     term: 'Key comparison marks',
-    text: 'Four kinds of mark, each with its own shape and colour so neither is the only clue. Filled neutral dot: a common note, in both the subset and the key. Green hollow dot with a plus: a note the key would add (in the key, not in your subset). Red hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key). Orange dashed circle: a degree of the key the field has no note for, so it can never be added. Example: for C major against G major, F# is a plus, F is a minus, and the other six are filled.',
+    help: [
+      p(
+        'Four kinds of mark, each with its own shape and colour so neither is the only clue: a filled neutral dot (**common**), a green hollow dot with a plus (**+added**), a red hollow dot struck through with a minus (**−dropped**) and an orange dashed circle (**missing**).'
+      ),
+      example(
+        'for C major against G major, F# is a plus, F is a minus, and the other six are filled.'
+      ),
+    ],
+    teaching: [
+      p('Filled neutral dot: a common note, in both the subset and the key.'),
+      p('Green hollow dot with a plus: a note the key would add (in the key, not in your subset).'),
+      p(
+        'Red hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key).'
+      ),
+      p(
+        'Orange dashed circle: a degree of the key the field has no note for, so it can never be added.'
+      ),
+    ],
     see: ['keyView'],
   },
   keySwitch: {
@@ -1566,13 +1635,13 @@ const entries = {
     term: 'Keep the mode root when notes are added or removed',
     help: [
       p(
-        'On (the default): adding or removing a note keeps the same note as the mode root, so the mode number follows it. Off: the mode number stays and may now point at a different note. If the root itself is removed, the mode number stays either way.'
+        'On (the default): adding or removing a note keeps the same note as the mode root, so the mode number follows it. Off: the mode number stays and may now point at a different note.'
       ),
       example(
         'with 1/1, 5/4, 3/2 and 15/8 selected on mode 2 (root 5/4), add 9/8. The set becomes 1/1, 9/8, 5/4, 3/2, 15/8: with this on, the root stays 5/4 and the mode becomes 3; with it off, the mode stays 2 and now starts on 9/8.'
       ),
     ],
-    teaching: [],
+    teaching: [p('If the root itself is removed, the mode number stays either way.')],
     see: ['mode', 'developerMenu'],
   },
   modeSignAlways: {
@@ -1582,7 +1651,20 @@ const entries = {
   },
   tooltips: {
     term: 'Tooltips',
-    text: "On (the default): pointing at or focusing a control or a dotted term shows its explanation. Off: no tooltip appears anywhere in the lab (the Glossary still has every entry, and a preset's description still shows in the Preset browser). Example: turn Tooltips off while you play, and the explanations stop appearing over the keys and tiles. Native hover hints (such as the mode tiles' degree notes) are removed too.",
+    help: [
+      p(
+        'On (the default): pointing at or focusing a control or a dotted term shows its explanation. Off: no tooltip appears anywhere in the lab.'
+      ),
+      example(
+        'turn **Tooltips** off while you play, and the explanations stop appearing over the keys and tiles.'
+      ),
+    ],
+    teaching: [
+      p(
+        "With Tooltips off the Glossary still has every entry, and a preset's description still shows in the Preset browser."
+      ),
+      p("Native hover hints (such as the mode tiles' degree notes) are removed too."),
+    ],
     see: ['tooltipDelay', 'developerMenu'],
   },
   tooltipDelay: {
@@ -1707,6 +1789,7 @@ const entries = {
         { key: '1 to 9', does: 'popup open: send it to that composite' },
         { key: '0', does: 'popup open: send it to a new composite' },
         { key: 'Esc', does: 'popup open: cancel' },
+        { key: '{key:sendFlip}', does: 'popup open: flip the Field | Exact slider' },
       ]),
       example('point at the minor triad chip, press {key:composite}, then 2.'),
     ],
@@ -1722,7 +1805,7 @@ const entries = {
         'Its Field | Exact slider starts on the choice made on the shelf and changes the preview and the send; it is disabled, with the reason, for a stashed shelf chord, a positional chord and anything without separate exact ratios.'
       ),
       p(
-        'While the popup is open the E key flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on {key:modePlayback}).'
+        'While the popup is open the {key:sendFlip} key flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on {key:modePlayback}).'
       ),
       p(
         'The right-click menu: a chord chip also offers **Stash on shelf**; **Send to composite** offers the three most recently used composites, **New composite** and **All composites**. Shift+click on a composite sends in the other mode (Field or Exact).'
@@ -1908,11 +1991,13 @@ const entries = {
       p(
         'Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart.'
       ),
-      example(
-        'in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps; 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.'
+      example('in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps.'),
+    ],
+    teaching: [
+      p(
+        '5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.'
       ),
     ],
-    teaching: [],
     see: ['ringMenu', 'offChain'],
   },
   ringMenu: {
@@ -1950,13 +2035,16 @@ const entries = {
     term: 'Subset not in these settings',
     help: [
       p(
-        "A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing (you can still rename or delete it). Change the settings back, or open the generator it belongs to, to use it again."
+        "A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing."
       ),
       example(
         'a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.'
       ),
     ],
-    teaching: [],
+    teaching: [
+      p('You can still rename or delete it.'),
+      p('Change the settings back, or open the generator it belongs to, to use it again.'),
+    ],
     see: ['savedSubsets', 'subsetPartialMatch'],
   },
   renameSaved: {
@@ -2082,16 +2170,15 @@ const entries = {
     term: 'Stack with',
     help: [
       p(
-        'Lists every other pinned panel whose column has room (a column holds up to three panels), with its side and how full it is, and moves this panel to the bottom of that column, so the panels share its height.'
+        'Lists every other pinned panel whose column has room (a column holds up to three panels), with its side and how full it is, and moves this panel to the bottom of that column, so the panels share its height. Disabled when every other column is full.'
       ),
       example(
         'on Visualizer 3 - Dissonance curve choose "Visualizer 1 - Lattice (right, 1 of 3)" to see the lattice and the curve one above the other; then stack Visualizer 2 - EDO fit the same way to have all three in one column.'
       ),
     ],
     teaching: [
-      p(
-        'It works across the generator and at any distance; a panel taken out of a stack leaves the others together. Disabled when every other column is full.'
-      ),
+      p('It works across the generator and at any distance.'),
+      p('A panel taken out of a stack leaves the others together.'),
     ],
     see: ['pinPanel', 'unstackPin'],
   },
@@ -2180,13 +2267,11 @@ const entries = {
     term: 'Lattice 2D | 3D',
     help: [
       p(
-        'Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction (3D is only for the prime lattice; Generators and Factors are drawn flat).'
+        'Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction. 3D is only for the prime lattice; Generators and Factors are drawn flat.'
       ),
-      example(
-        'in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1, while 11/8 is drawn on a stem so it never overlaps a real note.'
-      ),
+      example('in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1.'),
     ],
-    teaching: [],
+    teaching: [p('In 3D, 11/8 is drawn on a stem so it never overlaps a real note.')],
     see: ['lattice', 'lattice3d'],
   },
   lattice3d: {
@@ -2276,7 +2361,7 @@ const entries = {
         "12-EDO's worst miss is 13.7 c (the major third 5/4) of a 100 c step (14 %); 22-EDO's worst miss is 7.1 c (the fifth 3/2) of a 54.5 c step (13 %), so they fit about equally well for their size."
       ),
     ],
-    teaching: [],
+    teaching: [p('0 % would be exact and 50 % the worst possible (see EDO readout).')],
     see: ['edoFit'],
   },
   edoBestRow: {
@@ -2286,7 +2371,19 @@ const entries = {
   },
   dissCurve: {
     term: 'Dissonance curve',
-    text: 'How rough two notes sound together, for every interval from a unison (0 c) up to the octave (1200 c). Both notes are given seven partials (the note and six overtones), and the roughness (Sethares model, the same one the retuner uses) adds up the beating between every pair of overtones. Low is smooth. The dips are the intervals that sound consonant for this sound. Your subset notes are marked on top. Example: the curve dips at 386 c (5/4), 498 c (4/3) and 702 c (3/2), which are the just major third, fourth and fifth.',
+    help: [
+      p(
+        'How rough two notes sound together, for every interval from a unison (0 c) up to the octave (1200 c). Low is smooth. The dips are the intervals that sound consonant for this sound. Your subset notes are marked on top.'
+      ),
+      example(
+        'the curve dips at 386 c (5/4), 498 c (4/3) and 702 c (3/2), which are the just major third, fourth and fifth.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Both notes are given seven partials (the note and six overtones), and the roughness (Sethares model, the same one the retuner uses) adds up the beating between every pair of overtones.'
+      ),
+    ],
     see: ['roughness', 'dissMarks', 'dissDips'],
   },
   dissAxes: {
@@ -2300,14 +2397,13 @@ const entries = {
       p(
         'A vertical line at the cents of every field note. Bright lines are notes in your subset; faint lines are field notes you left out; green means sounding now; a small bold chevron above a line marks the mode root.'
       ),
-      example(
-        'the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1; a line that lands on a peak is rougher against 1/1.'
-      ),
+      example('the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1.'),
     ],
     teaching: [
       p(
         'Read where a line meets the curve: a line at the bottom of a dip means that interval, measured from 1/1, is smooth.'
       ),
+      p('A line that lands on a peak is rougher against 1/1.'),
     ],
     see: ['dissCurve', 'dissDips'],
   },
@@ -2351,7 +2447,16 @@ const entries = {
   },
   liveRoughCurve: {
     term: 'Next-note curve',
-    text: 'Across: the interval above the lowest sounding note, in cents, over one repeat. Up: the total roughness if one more note were added at that interval. The notes that sound now are marked on it; the dips, named by the nearest simple ratio, are the notes that blend best with what is playing. Point at the curve to read a value. Example: over C and G, the curve dips at E (about 386 c) and the octave, so those are the notes that sit best on top of the fifth.',
+    help: [
+      p(
+        'Across: the interval above the lowest sounding note, in cents, over one repeat. Up: the total roughness if one more note were added at that interval. The dips, named by the nearest simple ratio, are the notes that blend best with what is playing.'
+      ),
+      keys([{ key: 'Point at the curve', does: 'read a value' }]),
+      example(
+        'over C and G, the curve dips at E (about 386 c) and the octave, so those are the notes that sit best on top of the fifth.'
+      ),
+    ],
+    teaching: [p('The notes that sound now are marked on the curve.')],
     see: ['liveRoughness', 'dissCurve', 'dissDips'],
   },
   isoKeyboard: {
@@ -2361,10 +2466,10 @@ const entries = {
         'A grid of hexagonal keys where an interval always has the same shape: one step right is the first generator (3/2 by default), one step up and to the right is the second (2/1 or 5/4). Each hexagon shows the field note nearest its pitch, if there is one within the tolerance; the rest stay blank.'
       ),
       example(
-        'with 3/2 and 2/1, a row of hexagons is a chain of fifths, so 1/1, 3/2, 9/8 run along it; with 5/4 as the second generator, up and right from 1/1 is the pure third 5/4.'
+        'with 3/2 and 2/1, a row of hexagons is a chain of fifths, so 1/1, 3/2, 9/8 run along it.'
       ),
     ],
-    teaching: [],
+    teaching: [p('With 5/4 as the second generator, up and right from 1/1 is the pure third 5/4.')],
     see: ['isoG1', 'isoG2', 'isoTol', 'isoHex'],
   },
   isoG1: {

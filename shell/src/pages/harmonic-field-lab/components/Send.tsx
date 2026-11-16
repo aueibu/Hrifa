@@ -572,7 +572,12 @@ export function SendLayer() {
           closeSendPopup();
           return;
         }
-        if ((e.key === 'e' || e.key === 'E') && !e.altKey && !e.shiftKey && !isTyping(e.target)) {
+        if (
+          e.key.toLowerCase() === SHORTCUTS.sendFlip.toLowerCase() &&
+          !e.altKey &&
+          !e.shiftKey &&
+          !isTyping(e.target)
+        ) {
           // E flips Field | Exact, only while the popup is open (no global key): the keyboard notes stand aside too
           markSendKey(e);
           e.preventDefault();

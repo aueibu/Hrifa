@@ -1,38 +1,44 @@
-# M5 to M7 checkpoint: wording of 80 converted entries
+# M5 to M7 checkpoint: wording of 88 hand-converted entries (final)
 
-For your review (2026-11-16). Each entry shows the **before** text exactly as committed in `b43d915` and the **after** exactly as it is now. Keys are shown as `[0]`, `[1]` ... the way the renderer shows them from the shortcut table. The tooltip shows the "After, tooltip" part only; the glossary shows that part, a rule, then "glossary adds".
+For your review (2026-11-16). Each entry shows the **before** text exactly as it was originally (commit `b43d915`) and the **after** exactly as it is now. Keys are shown as `[0]`, `[1]` ... the way the renderer shows them from the shortcut table. The tooltip shows the "After, tooltip" part only; the glossary shows that part, a rule, then "glossary adds".
 
-The entry heading says how each was converted: **hand** (a builder rewrote it and checked its key and control claims against the code), **hand (generator batch)** (the first hand batch, 22 entries), or **mechanical split** (a script cut the old text at sentence ends, nothing reworded: about 200 characters of lead plus the Example in the tooltip, the rest in the glossary).
+The entry heading says which pass converted it: **hand, generator batch** (22), **hand** (46: the long ones and the ones that name keys or clicks) and **hand, second pass** (20: the entries a script had cut mechanically; you asked for them to be redone by hand). Every entry in this file was written by a builder and checked by a reviewer; no mechanical split remains.
 
-Two reviewers checked all 80: no fact is lost or altered in any of them, every claim the builders could not verify was checked in the code (all true), and the Group 2 cuts that read badly were put back to their old form (see below).
+Reviews so far (all with no fact lost or altered): two reviewers over the first 80 entries, one over the 20 second-pass entries and the `E` key change. Every claim a builder could not verify was then checked in the code (all true).
 
 ## Look at these first
 
-**Corrections where the old text was wrong about the code (the old wording was carried over before; now fixed):**
-- `preset`: said the control "shows its folder path". It shows only the name; the full path is the line under the control. Both places now say so.
+**Corrections where the old text was wrong about the code (carried over from before, now fixed):**
+- `preset`: said the control "shows its folder path". It shows only the name; the full path is the line under the control.
 - `method`: left out the **Sub** option (the subharmonic series). Added as the mirror image of the harmonic series.
-- `shelfPanel`: the bin asks for a second click ("Delete?"); the old text said only "the bin to delete". Added.
+- `shelfPanel`: the bin asks for a second click ("Delete?"). Added.
 - `renameSaved`: a rename also commits when you click away, not only on Enter. Added.
-- `savedRow`: the bars measure the distance from whatever **Compare to** is set to (12-EDO by default), not always 12-EDO.
+- `savedRow`: the bars measure the distance from whatever **Compare to** is set to (12-EDO by default).
 - `pitchCircle`: "a larger ring" is really a larger green dot.
 - `lattice3d`: the two-finger pan only works on touch screens ("two-finger touch drag").
-- `positionalChords`: the **+** in its Keys list is the on-screen + button on a row, not the + key (which stashes the Sketch). Now says "The + button on a row".
-- `sendToComposite`: the minus key works only plain (not with Ctrl, Alt, Cmd or Shift); Esc says "popup open".
+- `positionalChords`: the **+** in its Keys list is the on-screen + button on a row, not the + key.
+- `sendToComposite`: the minus key works only plain (not with Ctrl, Alt, Cmd or Shift); Esc and the new **E** row say "popup open".
+- `chordLadder` (second pass): the old example read "+3 c: 2 more chords"; the screen shows "+3 c → 2 more". Now matches the screen. Also added from the code: the line beside the buttons says how many fewer chords a lower tolerance gives.
+
+**Your decisions applied:**
+- The `E` key in the composite popup is now in the shortcut table (`sendFlip`, shown as **E**) and in the entry's Keys list; its handler reads the table (e and E both work, as before).
+- `holdToPlay` now lists only the `=` key through the table (`{key:stash}`). The handler also accepts `+`; the entry no longer says so, as you asked.
+
+**Added in the second pass, worth a look:**
+- `edoRelative`: teaching gained "0 % would be exact and 50 % the worst possible (see EDO readout)", copied from the `edoReadout` entry.
+- `retunerOn`: help now says what On and Off do ("the switch for the whole retuner"); the automatic-retune behaviour is in the glossary part.
+- `liveRoughCurve`: the curve also responds to the arrow keys, Home and End, but the old text did not say so, so it was left out. Say if you want a Keys row for it.
 
 **Text changes the guard test forced:** `>|<` in `modeRoot` and `tunerStrip` became "a pair of chevrons facing each other" (angle brackets are banned in entry text); backticks in `positionalChords` became double quotes.
 
-**Put back to their original old-form text (mechanical cut read worse than the original):** `keyMarks`, `tooltips`, `scorer`, `fillSources`, `retunerOn`, `chordLadder`, `dissCurve`, `liveRoughCurve`. They are not in this file because they were not converted. They still show their Example on its own line, sentences on separate lines and units glued, like every other short entry.
-
 **Style, please confirm:**
-- Bold only for names visible on screen (Generator, Count, Centre, Box, Diamond, Save as new, Undo, Update preset, Pin left and right, Retune now and the like).
-- The first hand batch's `tunerStrip` has its two old examples split: one in the tooltip, one in the glossary.
-- Not added: the `E` key in the composite popup stays plain text (its handler takes `e` and `E`, which does not fit one table entry; a `sendFlip` table entry is possible if you want it).
-- `holdToPlay` still writes "= (or +)" as plain text instead of the table name (an M4-era entry; cosmetic).
-- Left as old form on purpose: about 118 short entries with no key or click gestures. They are tooltip-sized already.
+- Bold only for names visible on screen (Generator, Count, Centre, Box, Diamond, Save as new, Undo, the four scorers, the four key marks, the three fill sources, Update preset, Pin left and right, Retune now and the like).
+- `tunerStrip` has its two old examples split: one in the tooltip, one in the glossary.
+- Left as old form on purpose: about 106 short entries with no key or click gestures. They are tooltip-sized already.
 
 ---
 
-## Preset  (`preset`, hand (generator batch))
+## Preset  (`preset`, hand, generator batch)
 
 **Before** (one string):
 
@@ -58,7 +64,7 @@ See also: method, presetUpdate, presetSaveNew
 
 ---
 
-## Update preset  (`presetUpdate`, hand (generator batch))
+## Update preset  (`presetUpdate`, hand, generator batch)
 
 **Before** (one string):
 
@@ -82,7 +88,7 @@ See also: preset, presetSaveNew, presetUndo
 
 ---
 
-## Save as new  (`presetSaveNew`, hand (generator batch))
+## Save as new  (`presetSaveNew`, hand, generator batch)
 
 **Before** (one string):
 
@@ -108,7 +114,7 @@ See also: preset, presetUpdate
 
 ---
 
-## Undo update  (`presetUndo`, hand (generator batch))
+## Undo update  (`presetUndo`, hand, generator batch)
 
 **Before** (one string):
 
@@ -130,7 +136,7 @@ See also: presetUpdate
 
 ---
 
-## Show removed  (`presetShowRemoved`, hand (generator batch))
+## Show removed  (`presetShowRemoved`, hand, generator batch)
 
 **Before** (one string):
 
@@ -152,7 +158,7 @@ See also: presetUpdate
 
 ---
 
-## Edit preset  (`presetEdit`, hand (generator batch))
+## Edit preset  (`presetEdit`, hand, generator batch)
 
 **Before** (one string):
 
@@ -174,7 +180,7 @@ See also: preset
 
 ---
 
-## Delete preset  (`presetDelete`, hand (generator batch))
+## Delete preset  (`presetDelete`, hand, generator batch)
 
 **Before** (one string):
 
@@ -196,7 +202,7 @@ See also: preset, unassigned
 
 ---
 
-## Method  (`method`, hand (generator batch))
+## Method  (`method`, hand, generator batch)
 
 **Before** (one string):
 
@@ -214,7 +220,7 @@ See also: repeat, field
 
 ---
 
-## Repeat interval  (`repeat`, hand (generator batch))
+## Repeat interval  (`repeat`, hand, generator batch)
 
 **Before** (one string):
 
@@ -236,7 +242,7 @@ See also: field
 
 ---
 
-## Starting harmonic  (`startHarmonic`, hand (generator batch))
+## Starting harmonic  (`startHarmonic`, hand, generator batch)
 
 **Before** (one string):
 
@@ -254,7 +260,7 @@ See also: (none)
 
 ---
 
-## Divisions  (`edoDivisions`, hand (generator batch))
+## Divisions  (`edoDivisions`, hand, generator batch)
 
 **Before** (one string):
 
@@ -272,7 +278,7 @@ See also: (none)
 
 ---
 
-## Lattice shape  (`latticeShape`, hand (generator batch))
+## Lattice shape  (`latticeShape`, hand, generator batch)
 
 **Before** (one string):
 
@@ -290,7 +296,7 @@ See also: (none)
 
 ---
 
-## Steps from the centre  (`diamondDistance`, hand (generator batch))
+## Steps from the centre  (`diamondDistance`, hand, generator batch)
 
 **Before** (one string):
 
@@ -308,7 +314,7 @@ See also: latticeShape
 
 ---
 
-## Generator, count, centre  (`genAxis`, hand (generator batch))
+## Generator, count, centre  (`genAxis`, hand, generator batch)
 
 **Before** (one string):
 
@@ -326,7 +332,7 @@ See also: mos
 
 ---
 
-## MOS sizes  (`mos`, hand (generator batch))
+## MOS sizes  (`mos`, hand, generator batch)
 
 **Before** (one string):
 
@@ -348,7 +354,7 @@ See also: structure
 
 ---
 
-## Factors  (`cpsFactors`, hand (generator batch))
+## Factors  (`cpsFactors`, hand, generator batch)
 
 **Before** (one string):
 
@@ -366,7 +372,7 @@ See also: (none)
 
 ---
 
-## Choose k  (`cpsK`, hand (generator batch))
+## Choose k  (`cpsK`, hand, generator batch)
 
 **Before** (one string):
 
@@ -384,7 +390,7 @@ See also: (none)
 
 ---
 
-## Custom intervals  (`customIntervals`, hand (generator batch))
+## Custom intervals  (`customIntervals`, hand, generator batch)
 
 **Before** (one string):
 
@@ -402,7 +408,7 @@ See also: (none)
 
 ---
 
-## Load .scl  (`loadScl`, hand (generator batch))
+## Load .scl  (`loadScl`, hand, generator batch)
 
 **Before** (one string):
 
@@ -420,7 +426,7 @@ See also: (none)
 
 ---
 
-## Prime filter  (`primeFilter`, hand (generator batch))
+## Prime filter  (`primeFilter`, hand, generator batch)
 
 **Before** (one string):
 
@@ -442,7 +448,7 @@ See also: primeLimit
 
 ---
 
-## All primes  (`primeAll`, hand (generator batch))
+## All primes  (`primeAll`, hand, generator batch)
 
 **Before** (one string):
 
@@ -460,7 +466,7 @@ See also: (none)
 
 ---
 
-## No primes  (`primeNone`, hand (generator batch))
+## No primes  (`primeNone`, hand, generator batch)
 
 **Before** (one string):
 
@@ -764,7 +770,55 @@ See also: (none)
 
 ---
 
-## Retuned notes | Different notes  (`fillTags`, mechanical split)
+## Retuner on/off  (`retunerOn`, hand, second pass)
+
+**Before** (one string):
+
+> When on, the keys play the active card instead of the tab (the first key is degree 1 of the card), and with the Auto trigger playing two or more keys makes the retuner pick the best card for that chord and retune everything around the pivot, gliding the held notes. Off leaves the tuning as it is and the keys play the tab again. Example: switch it off while you edit cards so playing does not retune.
+
+**After, tooltip:**
+
+> **Retuner on/off**
+>
+> The switch for the whole retuner. On: the keys play the active card instead of the tab (the first key is degree 1 of the card). Off: the tuning stays as it is and the keys play the tab again.
+>
+> *Example:* switch it off while you edit cards so playing does not retune.
+
+**After, glossary adds** (below a rule):
+
+> With the Auto trigger, playing two or more keys makes the retuner pick the best card for that chord and retune everything around the pivot, gliding the held notes.
+
+See also: cards
+
+---
+
+## Fill sources  (`fillSources`, hand, second pass)
+
+**Before** (one string):
+
+> Where the candidate cards come from; each source works alone and together they are merged, duplicates removed. Modes: the current subset started on each of its notes. Keys that fit: the subset moved to every field note where all its notes still exist (the Keys panel). This generator's subsets: the subsets saved under the tab's generator. Example: modes + keys on a 7-note major scale give its 7 modes plus the other keys it fits.
+
+**After, tooltip:**
+
+> **Fill sources**
+>
+> Where the candidate cards come from. There are three sources: **Modes of the current subset**, **Keys that fit the field** and **This generator's subsets**. Each works alone and together they are merged, duplicates removed.
+>
+> *Example:* modes + keys on a 7-note major scale give its 7 modes plus the other keys it fits.
+
+**After, glossary adds** (below a rule):
+
+> Modes: the current subset started on each of its notes.
+>
+> Keys that fit: the subset moved to every field note where all its notes still exist (the Keys panel).
+>
+> This generator's subsets: the subsets saved under the tab's generator.
+
+See also: fillTags
+
+---
+
+## Retuned notes | Different notes  (`fillTags`, hand, second pass)
 
 **Before** (one string):
 
@@ -774,9 +828,13 @@ See also: (none)
 
 > **Retuned notes | Different notes**
 >
-> Compared with card 0 (home), degree by degree. Retuned notes: the same number of notes and every degree within 30 c of home's, a comma-sized change, so the card is the same scale tuned differently. Different notes: it substitutes notes, like a mode or a smaller subset.
+> Compared with card 0 (home), degree by degree. *Retuned notes*: the same number of notes and every degree within 30 c of home's, a comma-sized change, so the card is the same scale tuned differently. *Different notes*: it substitutes notes, like a mode or a smaller subset.
 >
-> *Example:* a major scale with a 10/9 second is "retuned" (22 c off at one degree); Dorian is "different" (its second degree is 10/9 but its third is 32/27, 70 c from 5/4).
+> *Example:* a major scale with a 10/9 second is "retuned" (22 c off at one degree).
+
+**After, glossary adds** (below a rule):
+
+> Dorian is "different": its second degree is 10/9 but its third is 32/27, 70 c from 5/4.
 
 See also: (none)
 
@@ -815,6 +873,34 @@ See also: (none)
 > *Example:* hold A, C and E, then press it to retune around them.
 
 See also: (none)
+
+---
+
+## Scorer  (`scorer`, hand, second pass)
+
+**Before** (one string):
+
+> How "good" a predicted chord is; the lowest score wins. Roughness (Sethares) adds up the beating between every pair of overtones and is the default. Lattice distance only looks at how simple the intervals are. Pitch-fair periodicity counts how quickly the waveform repeats. Infinitone parity copies Infinitone 2's own count. Example: switch from Roughness to Lattice distance and see whether the same card still wins.
+
+**After, tooltip:**
+
+> **Scorer**
+>
+> How "good" a predicted chord is; the lowest score wins. There are four scorers: **Roughness (Sethares)**, the default, **Lattice distance**, **Pitch-fair periodicity** and **Infinitone parity**.
+>
+> *Example:* switch from Roughness to Lattice distance and see whether the same card still wins.
+
+**After, glossary adds** (below a rule):
+
+> Roughness (Sethares) adds up the beating between every pair of overtones.
+>
+> Lattice distance only looks at how simple the intervals are.
+>
+> Pitch-fair periodicity counts how quickly the waveform repeats.
+>
+> Infinitone parity copies Infinitone 2's own count.
+
+See also: roughness, why
 
 ---
 
@@ -893,7 +979,7 @@ See also: otonal, utonal, latticeMode, holdToPlay
 
 ---
 
-## Utonal (subharmonic)  (`utonal`, mechanical split)
+## Utonal (subharmonic)  (`utonal`, hand, second pass)
 
 **Before** (one string):
 
@@ -905,7 +991,11 @@ See also: otonal, utonal, latticeMode, holdToPlay
 >
 > The mirror image of otonal: the notes are a slice of the undertone series, so the chord sounds as 1/x1:1/x2:1/x3. In a CPS these are the notes that sit inside the same larger group of factors, each leaving one factor out.
 >
-> *Example:* the notes 1x3, 1x5 and 3x5 all sit inside the factors 1, 3 and 5; they leave out 5, 3 and 1 in turn, giving the chord 1/1:1/3:1/5 (named by the factor each note leaves out, not listed by pitch).
+> *Example:* the notes 1x3, 1x5 and 3x5 all sit inside the factors 1, 3 and 5; they leave out 5, 3 and 1 in turn, giving the chord 1/1:1/3:1/5.
+
+**After, glossary adds** (below a rule):
+
+> The chord is named by the factor each note leaves out, not listed by pitch.
 
 See also: otonal, cpsChords
 
@@ -958,7 +1048,39 @@ See also: expandAllChords
 
 ---
 
-## Keys (transposition)  (`keysModes`, mechanical split)
+## Tolerance ladder  (`chordLadder`, hand, second pass)
+
+**Before** (one string):
+
+> The tolerances at which the number of chords changes. Seven tiles show at a time with the current one in the middle (near either end of the ladder it sits off-centre); a +n tile at an edge means n more tolerances are hidden on that side, and clicking it picks the nearest hidden one. Dashed chips are chords that do not fit yet; clicking one (or a tile, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.
+
+**After, tooltip:**
+
+> **Tolerance ladder**
+>
+> The tolerances at which the number of chords changes. Seven tiles show at a time with the current one in the middle. Dashed chips are chords that do not fit yet.
+>
+> Keys:
+> - Click a tile: move the tolerance to it
+> - Click a +n tile: pick the nearest hidden tolerance on that side
+> - Click a dashed chip: move the tolerance to the value where it appears
+> - Click the + and - buttons: step to the next tolerance up or down
+>
+> *Example:* "+3 c → 2 more" means raising the tolerance by 3 c brings in two more chords.
+
+**After, glossary adds** (below a rule):
+
+> Near either end of the ladder the current tile sits off-centre.
+>
+> A +n tile at an edge means n more tolerances are hidden on that side.
+>
+> The line beside the buttons also says how many fewer chords a lower tolerance gives.
+
+See also: chordTolerance
+
+---
+
+## Keys (transposition)  (`keysModes`, hand, second pass)
 
 **Before** (one string):
 
@@ -968,15 +1090,19 @@ See also: expandAllChords
 
 > **Keys (transposition)**
 >
-> The panel for moving your whole scale: transposition. A key is the same scale started on another field note, so every interval stays the same and only the starting pitch changes. This is different from a mode, which keeps the same notes and starts the scale on another degree (see Modes).
+> The panel for moving your whole scale: transposition. A key is the same scale started on another field note, so every interval stays the same and only the starting pitch changes. A mode keeps the same notes and starts the scale on another degree instead (see Modes).
 >
-> *Example:* C major to G major is a key change (C D E F G A B becomes G A B C D E F#); C major to D dorian is a mode change (the same seven notes, now starting on D).
+> *Example:* C major to G major is a key change (C D E F G A B becomes G A B C D E F#).
+
+**After, glossary adds** (below a rule):
+
+> C major to D dorian is a mode change: the same seven notes, now starting on D.
 
 See also: modes, keyRings, keyView, commonTones
 
 ---
 
-## Common tones (x|y)  (`commonTones`, mechanical split)
+## Common tones (x|y)  (`commonTones`, hand, second pass)
 
 **Before** (one string):
 
@@ -986,9 +1112,15 @@ See also: modes, keyRings, keyView, commonTones
 
 > **Common tones (x|y)**
 >
-> Under each key ring: x is how many notes the key shares with your current subset, y is how many notes the subset has. The bar is a separator, not a division. More shared notes means a closer key: a key with the same notes as the subset shows y|y.
+> Under each key ring: x is how many notes the key shares with your current subset, y is how many notes the subset has. More shared notes means a closer key.
 >
 > *Example:* for C major, the G major ring reads 6|7 (all but F, which becomes F#) and the F# major ring reads 2|7 (only B and F survive), so G major is a close key and F# major is a distant one.
+
+**After, glossary adds** (below a rule):
+
+> The bar is a separator, not a division.
+>
+> A key with the same notes as the subset shows y|y.
 
 See also: keyView, keyRings
 
@@ -1017,6 +1149,34 @@ See also: keyView, keyRings
 > The bold chevron outside the circle marks the root note of the shown key (the mode root you would get by switching to it).
 
 See also: keyMarks, keySwitch, keyAdd, commonTones
+
+---
+
+## Key comparison marks  (`keyMarks`, hand, second pass)
+
+**Before** (one string):
+
+> Four kinds of mark, each with its own shape and colour so neither is the only clue. Filled neutral dot: a common note, in both the subset and the key. Green hollow dot with a plus: a note the key would add (in the key, not in your subset). Red hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key). Orange dashed circle: a degree of the key the field has no note for, so it can never be added. Example: for C major against G major, F# is a plus, F is a minus, and the other six are filled.
+
+**After, tooltip:**
+
+> **Key comparison marks**
+>
+> Four kinds of mark, each with its own shape and colour so neither is the only clue: a filled neutral dot (**common**), a green hollow dot with a plus (**+added**), a red hollow dot struck through with a minus (**−dropped**) and an orange dashed circle (**missing**).
+>
+> *Example:* for C major against G major, F# is a plus, F is a minus, and the other six are filled.
+
+**After, glossary adds** (below a rule):
+
+> Filled neutral dot: a common note, in both the subset and the key.
+>
+> Green hollow dot with a plus: a note the key would add (in the key, not in your subset).
+>
+> Red hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key).
+>
+> Orange dashed circle: a degree of the key the field has no note for, so it can never be added.
+
+See also: keyView
 
 ---
 
@@ -1063,7 +1223,7 @@ See also: fieldTable
 
 ---
 
-## Keep the mode root when notes are added or removed  (`keepModeRoot`, mechanical split)
+## Keep the mode root when notes are added or removed  (`keepModeRoot`, hand, second pass)
 
 **Before** (one string):
 
@@ -1073,11 +1233,39 @@ See also: fieldTable
 
 > **Keep the mode root when notes are added or removed**
 >
-> On (the default): adding or removing a note keeps the same note as the mode root, so the mode number follows it. Off: the mode number stays and may now point at a different note. If the root itself is removed, the mode number stays either way.
+> On (the default): adding or removing a note keeps the same note as the mode root, so the mode number follows it. Off: the mode number stays and may now point at a different note.
 >
 > *Example:* with 1/1, 5/4, 3/2 and 15/8 selected on mode 2 (root 5/4), add 9/8. The set becomes 1/1, 9/8, 5/4, 3/2, 15/8: with this on, the root stays 5/4 and the mode becomes 3; with it off, the mode stays 2 and now starts on 9/8.
 
+**After, glossary adds** (below a rule):
+
+> If the root itself is removed, the mode number stays either way.
+
 See also: mode, developerMenu
+
+---
+
+## Tooltips  (`tooltips`, hand, second pass)
+
+**Before** (one string):
+
+> On (the default): pointing at or focusing a control or a dotted term shows its explanation. Off: no tooltip appears anywhere in the lab (the Glossary still has every entry, and a preset's description still shows in the Preset browser). Example: turn Tooltips off while you play, and the explanations stop appearing over the keys and tiles. Native hover hints (such as the mode tiles' degree notes) are removed too.
+
+**After, tooltip:**
+
+> **Tooltips**
+>
+> On (the default): pointing at or focusing a control or a dotted term shows its explanation. Off: no tooltip appears anywhere in the lab.
+>
+> *Example:* turn **Tooltips** off while you play, and the explanations stop appearing over the keys and tiles.
+
+**After, glossary adds** (below a rule):
+
+> With Tooltips off the Glossary still has every entry, and a preset's description still shows in the Preset browser.
+>
+> Native hover hints (such as the mode tiles' degree notes) are removed too.
+
+See also: tooltipDelay, developerMenu
 
 ---
 
@@ -1184,6 +1372,7 @@ See also: compositesPanel
 > - 1 to 9: popup open: send it to that composite
 > - 0: popup open: send it to a new composite
 > - Esc: popup open: cancel
+> - [E]: popup open: flip the Field | Exact slider
 >
 > *Example:* point at the minor triad chip, press [-], then 2.
 
@@ -1197,7 +1386,7 @@ See also: compositesPanel
 >
 > Its Field | Exact slider starts on the choice made on the shelf and changes the preview and the send; it is disabled, with the reason, for a stashed shelf chord, a positional chord and anything without separate exact ratios.
 >
-> While the popup is open the E key flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on [0]).
+> While the popup is open the [E] key flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on [0]).
 >
 > The right-click menu: a chord chip also offers **Stash on shelf**; **Send to composite** offers the three most recently used composites, **New composite** and **All composites**. Shift+click on a composite sends in the other mode (Field or Exact).
 >
@@ -1373,7 +1562,7 @@ See also: cards, why
 
 ---
 
-## Ring view: Chromatic | Fifths  (`ringView`, mechanical split)
+## Ring view: Chromatic | Fifths  (`ringView`, hand, second pass)
 
 **Before** (one string):
 
@@ -1385,7 +1574,11 @@ See also: cards, why
 >
 > Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart.
 >
-> *Example:* in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps; 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.
+> *Example:* in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps.
+
+**After, glossary adds** (below a rule):
+
+> 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.
 
 See also: ringMenu, offChain
 
@@ -1412,7 +1605,7 @@ See also: savedSubsets, subsetNoMatch
 
 ---
 
-## Subset not in these settings  (`subsetNoMatch`, mechanical split)
+## Subset not in these settings  (`subsetNoMatch`, hand, second pass)
 
 **Before** (one string):
 
@@ -1422,9 +1615,15 @@ See also: savedSubsets, subsetNoMatch
 
 > **Subset not in these settings**
 >
-> A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing (you can still rename or delete it). Change the settings back, or open the generator it belongs to, to use it again.
+> A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing.
 >
 > *Example:* a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.
+
+**After, glossary adds** (below a rule):
+
+> You can still rename or delete it.
+>
+> Change the settings back, or open the generator it belongs to, to use it again.
 
 See also: savedSubsets, subsetPartialMatch
 
@@ -1541,7 +1740,7 @@ See also: movePin, analysisRail
 
 ---
 
-## Stack with  (`stackPin`, mechanical split)
+## Stack with  (`stackPin`, hand, second pass)
 
 **Before** (one string):
 
@@ -1551,13 +1750,15 @@ See also: movePin, analysisRail
 
 > **Stack with**
 >
-> Lists every other pinned panel whose column has room (a column holds up to three panels), with its side and how full it is, and moves this panel to the bottom of that column, so the panels share its height.
+> Lists every other pinned panel whose column has room (a column holds up to three panels), with its side and how full it is, and moves this panel to the bottom of that column, so the panels share its height. Disabled when every other column is full.
 >
 > *Example:* on Visualizer 3 - Dissonance curve choose "Visualizer 1 - Lattice (right, 1 of 3)" to see the lattice and the curve one above the other; then stack Visualizer 2 - EDO fit the same way to have all three in one column.
 
 **After, glossary adds** (below a rule):
 
-> It works across the generator and at any distance; a panel taken out of a stack leaves the others together. Disabled when every other column is full.
+> It works across the generator and at any distance.
+>
+> A panel taken out of a stack leaves the others together.
 
 See also: pinPanel, unstackPin
 
@@ -1641,7 +1842,7 @@ See also: lattice, latticeAltAxes, cpsChords
 
 ---
 
-## Lattice 2D | 3D  (`latticeDim`, mechanical split)
+## Lattice 2D | 3D  (`latticeDim`, hand, second pass)
 
 **Before** (one string):
 
@@ -1651,9 +1852,13 @@ See also: lattice, latticeAltAxes, cpsChords
 
 > **Lattice 2D | 3D**
 >
-> Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction (3D is only for the prime lattice; Generators and Factors are drawn flat).
+> Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction. 3D is only for the prime lattice; Generators and Factors are drawn flat.
 >
-> *Example:* in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1, while 11/8 is drawn on a stem so it never overlaps a real note.
+> *Example:* in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1.
+
+**After, glossary adds** (below a rule):
+
+> In 3D, 11/8 is drawn on a stem so it never overlaps a real note.
 
 See also: lattice, lattice3d
 
@@ -1746,7 +1951,7 @@ See also: edoFit, edoReadout
 
 ---
 
-## Error relative to the step  (`edoRelative`, mechanical split)
+## Error relative to the step  (`edoRelative`, hand, second pass)
 
 **Before** (one string):
 
@@ -1760,11 +1965,37 @@ See also: edoFit, edoReadout
 >
 > *Example:* 12-EDO's worst miss is 13.7 c (the major third 5/4) of a 100 c step (14 %); 22-EDO's worst miss is 7.1 c (the fifth 3/2) of a 54.5 c step (13 %), so they fit about equally well for their size.
 
+**After, glossary adds** (below a rule):
+
+> 0 % would be exact and 50 % the worst possible (see EDO readout).
+
 See also: edoFit
 
 ---
 
-## Scale marks on the curve  (`dissMarks`, mechanical split)
+## Dissonance curve  (`dissCurve`, hand, second pass)
+
+**Before** (one string):
+
+> How rough two notes sound together, for every interval from a unison (0 c) up to the octave (1200 c). Both notes are given seven partials (the note and six overtones), and the roughness (Sethares model, the same one the retuner uses) adds up the beating between every pair of overtones. Low is smooth. The dips are the intervals that sound consonant for this sound. Your subset notes are marked on top. Example: the curve dips at 386 c (5/4), 498 c (4/3) and 702 c (3/2), which are the just major third, fourth and fifth.
+
+**After, tooltip:**
+
+> **Dissonance curve**
+>
+> How rough two notes sound together, for every interval from a unison (0 c) up to the octave (1200 c). Low is smooth. The dips are the intervals that sound consonant for this sound. Your subset notes are marked on top.
+>
+> *Example:* the curve dips at 386 c (5/4), 498 c (4/3) and 702 c (3/2), which are the just major third, fourth and fifth.
+
+**After, glossary adds** (below a rule):
+
+> Both notes are given seven partials (the note and six overtones), and the roughness (Sethares model, the same one the retuner uses) adds up the beating between every pair of overtones.
+
+See also: roughness, dissMarks, dissDips
+
+---
+
+## Scale marks on the curve  (`dissMarks`, hand, second pass)
 
 **Before** (one string):
 
@@ -1776,11 +2007,13 @@ See also: edoFit
 >
 > A vertical line at the cents of every field note. Bright lines are notes in your subset; faint lines are field notes you left out; green means sounding now; a small bold chevron above a line marks the mode root.
 >
-> *Example:* the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1; a line that lands on a peak is rougher against 1/1.
+> *Example:* the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1.
 
 **After, glossary adds** (below a rule):
 
 > Read where a line meets the curve: a line at the bottom of a dip means that interval, measured from 1/1, is smooth.
+>
+> A line that lands on a peak is rougher against 1/1.
 
 See also: dissCurve, dissDips
 
@@ -1810,7 +2043,32 @@ See also: roughness, liveRoughTotal, liveRoughPairs, liveRoughCurve, dissCurve
 
 ---
 
-## Isomorphic keyboard  (`isoKeyboard`, mechanical split)
+## Next-note curve  (`liveRoughCurve`, hand, second pass)
+
+**Before** (one string):
+
+> Across: the interval above the lowest sounding note, in cents, over one repeat. Up: the total roughness if one more note were added at that interval. The notes that sound now are marked on it; the dips, named by the nearest simple ratio, are the notes that blend best with what is playing. Point at the curve to read a value. Example: over C and G, the curve dips at E (about 386 c) and the octave, so those are the notes that sit best on top of the fifth.
+
+**After, tooltip:**
+
+> **Next-note curve**
+>
+> Across: the interval above the lowest sounding note, in cents, over one repeat. Up: the total roughness if one more note were added at that interval. The dips, named by the nearest simple ratio, are the notes that blend best with what is playing.
+>
+> Keys:
+> - Point at the curve: read a value
+>
+> *Example:* over C and G, the curve dips at E (about 386 c) and the octave, so those are the notes that sit best on top of the fifth.
+
+**After, glossary adds** (below a rule):
+
+> The notes that sound now are marked on the curve.
+
+See also: liveRoughness, dissCurve, dissDips
+
+---
+
+## Isomorphic keyboard  (`isoKeyboard`, hand, second pass)
 
 **Before** (one string):
 
@@ -1822,7 +2080,11 @@ See also: roughness, liveRoughTotal, liveRoughPairs, liveRoughCurve, dissCurve
 >
 > A grid of hexagonal keys where an interval always has the same shape: one step right is the first generator (3/2 by default), one step up and to the right is the second (2/1 or 5/4). Each hexagon shows the field note nearest its pitch, if there is one within the tolerance; the rest stay blank.
 >
-> *Example:* with 3/2 and 2/1, a row of hexagons is a chain of fifths, so 1/1, 3/2, 9/8 run along it; with 5/4 as the second generator, up and right from 1/1 is the pure third 5/4.
+> *Example:* with 3/2 and 2/1, a row of hexagons is a chain of fifths, so 1/1, 3/2, 9/8 run along it.
+
+**After, glossary adds** (below a rule):
+
+> With 5/4 as the second generator, up and right from 1/1 is the pure third 5/4.
 
 See also: isoG1, isoG2, isoTol, isoHex
 
