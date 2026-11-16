@@ -1,5 +1,11 @@
 import { useCallback, useSyncExternalStore } from 'react';
-import { MERGE_TOL_DEFAULT, clampMergeTol, type MergeKeep } from '../../../lib/harmonic-field';
+import {
+  MERGE_TOL_DEFAULT,
+  clampMergeTol,
+  type MergeKeep,
+  type TintIntensity,
+  type WheelReading,
+} from '../../../lib/harmonic-field';
 import { LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
 
 /**
@@ -23,6 +29,10 @@ export interface LabDeveloperOptions {
   mergeTolerance: number;
   /** Composites: which pitch a merged note shows, the first added (default) or the most recent. */
   mergeKeeps: MergeKeep;
+  /** Pairs panel, Color: Interval: hue from the interval's size around the repeat (default), or from its rank among the sizes. */
+  intervalColor: WheelReading;
+  /** Pairs panel, Color: Interval: simpler ratios tint more strongly (default) or more faintly. */
+  intervalIntensity: TintIntensity;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -44,6 +54,8 @@ const defaults: LabDeveloperOptions = {
   linkedRootDefault: 'reroot',
   mergeTolerance: MERGE_TOL_DEFAULT,
   mergeKeeps: 'first',
+  intervalColor: 'size',
+  intervalIntensity: 'strong',
 };
 
 const listeners = new Set<() => void>();
@@ -73,6 +85,8 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
         : defaults.linkedRootDefault,
       mergeTolerance: clampMergeTol(o.mergeTolerance),
       mergeKeeps: o.mergeKeeps === 'recent' ? 'recent' : 'first',
+      intervalColor: o.intervalColor === 'rank' ? 'rank' : 'size',
+      intervalIntensity: o.intervalIntensity === 'faint' ? 'faint' : 'strong',
     };
   } catch {
     return defaults;

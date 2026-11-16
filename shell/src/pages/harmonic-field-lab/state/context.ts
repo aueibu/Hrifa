@@ -3,6 +3,7 @@
  * (`LabContext`), with `useLab()` for everything and `useViz()` for the visualizer settings. No JSX.
  */
 import { createContext, useContext, type Dispatch } from 'react';
+import type { IntervalPairs } from '../../../lib/harmonic-field';
 import type { PreviewKind, PreviewTarget } from '../audio/plan';
 import type { Base, ChordModel, KeysData, SpectrumData, StripDev, edoOf, dissOf } from './derive';
 import type { Action, LabState, SoundingPitch, Tab } from './labState';
@@ -64,6 +65,8 @@ export interface VizApi {
 /** Analyses of the active tab, computed once per change of field, subset or mode (null where a size cap applies). */
 export interface Analyses {
   spectrum: SpectrumData | null;
+  /** The interval pairs (matrix) of the subset (null for an empty subset or above the 32-note cap). */
+  pairs: IntervalPairs | null;
   chords: ChordModel | null;
   keys: KeysData | null;
   edo: ReturnType<typeof edoOf>;

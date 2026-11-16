@@ -16,6 +16,7 @@ import {
   evenShares,
   locate,
   nudgeSplitter,
+  PAIRS_ID,
   splitterAt,
   splitterRange,
   stackTargets,
@@ -36,6 +37,7 @@ import {
 } from './icons';
 import { KeysPanel } from './KeysPanel';
 import { ModesPanel } from './ModesPanel';
+import { PairsPanel } from './PairsPanel';
 import { panelLabel } from './Rail';
 import { RetunerPanel } from './RetunerPanel';
 import { ShelfPanel } from './ShelfPanel';
@@ -54,6 +56,8 @@ export function renderPanel(id: PanelId) {
       return <CompositesPanel />;
     case 'spectrum':
       return <SpectrumPanel />;
+    case PAIRS_ID:
+      return <PairsPanel />;
     case 'keys':
       return <KeysPanel />;
     case 'modes':

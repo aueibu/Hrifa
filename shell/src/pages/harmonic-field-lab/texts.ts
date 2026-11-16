@@ -1040,6 +1040,114 @@ const entries = {
     text: 'For each generic interval (1 step, 2 steps...), every size it takes across the scale, with how often. One row per interval, so you read across. Example: "3 steps: 4 sizes" means starting from different degrees, a 4th comes out in 4 different widths.',
     see: ['variety', 'propriety', 'constantStructure'],
   },
+  matrix: {
+    term: 'Pairs (interval matrix)',
+    help: [
+      p(
+        'Every pair of degrees of the subset. Row = the degree an interval starts on, column = the degree it ends on. A cell shows the interval (a ratio when both notes are exact, else cents). An up arrow marks a pair that wraps to the next repeat.'
+      ),
+      keys([
+        { key: 'Click a cell', does: 'hear the two notes, the upper one above the lower' },
+        { key: 'Click a number', does: 'remove that degree from the subset' },
+        { key: 'Alt+click a number', does: 'pin that degree' },
+      ]),
+      example(
+        'in the 5-limit major scale, the cell from degree 4 (4/3) to degree 1 reads 3/2 with an arrow: 4/3 up to the next 1/1 is a fifth.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Every pair appears twice, once each way, so 3/2 and its inversion 4/3 are separate entries (the mirror cells). A subset of N notes has N times N-1 cells.'
+      ),
+      p(
+        'Pointing at a degree lights its row and column. Pointing at a cell lights its two notes in the other views. A pair that sounds shows a green frame.'
+      ),
+      p(
+        'The matrix is drawn for up to 32 notes. This is a count of pairs, not of chords: the chord finder still answers which chords exist.'
+      ),
+    ],
+    see: ['matrixTable', 'matrixSearch', 'matrixColor', 'spectrum'],
+  },
+  matrixColor: {
+    term: 'Color: Off | Error | Interval',
+    help: [
+      p(
+        '**Error** colors each cell by how far its interval is from the nearest just ratio, on the same five steps as the Modes grid. **Interval** gives equal intervals the same tint, a continuous color wheel, not a few hues.'
+      ),
+      example(
+        'with Error at odd limit 9, a 27/20 cell is orange: it is 21.5 c from the nearest ratio, 4/3.'
+      ),
+    ],
+    teaching: [
+      p(
+        'The odd limit is the tuner strip\'s "vs JI" setting. The number is always written in the cell or the table, so color is never the only signal.'
+      ),
+      p(
+        'Interval colors each interval by its size around the repeat, so equal intervals share a color. Two Developer options change it: Interval color (size wheel or by rank) and Interval intensity (simple ratios strong or faint). The table rows are the legend. Sounding, pinned and pointed notes stay visible on top.'
+      ),
+    ],
+    see: ['modes', 'matrix', 'intervalColor', 'intervalIntensity'],
+  },
+  matrixSearch: {
+    term: 'Find an interval',
+    help: [
+      p(
+        'Type a ratio (it needs a slash or a colon, such as 3/2 or 3:2) or a size in cents (such as 700 c; the unit is optional), and a tolerance in cents. Every cell within the tolerance is outlined, with how many degrees have it.'
+      ),
+      example(
+        '700 c with a tolerance of 3 finds the five 3/2 cells of the major scale (2 c off); with 25 it adds the 40/27 cell (19.6 c off).'
+      ),
+    ],
+    teaching: [
+      p(
+        'The tolerance starts at the lab\'s tolerance setting. The figures: "k of N degrees have it above them" counts degrees that start a match; covered degrees are every degree in any match; used more than once and highest coverage count how often a degree is in a match.'
+      ),
+    ],
+    see: ['matrix', 'matrixTable'],
+  },
+  matrixFindClear: {
+    term: 'Clear Find',
+    help: [
+      p(
+        'Empties the **Find** box in one click, so its outlines and result block go away and the cells stop stepping back. The tolerance stays as it is, and the cursor returns to the box. The button is there only while the box has text.'
+      ),
+      example(
+        'after finding 700 c with a tolerance of 25, clear it and type 3/2: the 25 is still the tolerance.'
+      ),
+    ],
+    see: ['matrixSearch'],
+  },
+  matrixTable: {
+    term: 'Interval content',
+    help: [
+      p(
+        'Each distinct interval of the subset with its size and how many cells have it, simplest first. Intervals within 0.01 c count as the same one.'
+      ),
+      keys([
+        { key: 'Click a row', does: 'outline its cells and show its places' },
+        { key: 'Point at a row', does: 'outline its cells while you point' },
+      ]),
+      example('the 5-limit major scale has 18 distinct intervals; 3/2 and 4/3 each occur 5 times.'),
+    ],
+    teaching: [
+      p(
+        'Simplest means lowest Tenney height. An interval with no exact ratio (an EDO step) goes after the ratios and is ordered by size. A row lights green while a pair of that interval sounds.'
+      ),
+    ],
+    see: ['matrix', 'matrixSteps'],
+  },
+  matrixSteps: {
+    term: 'By steps',
+    help: [
+      p(
+        'The same intervals grouped by how many scale steps they span. One step is the step sizes of the scale.'
+      ),
+      example(
+        'in the 5-limit major scale, 1 step: 9/8 x3, 10/9 x2, 16/15 x2; 4 steps: 3/2 x5, 40/27, 64/45.'
+      ),
+    ],
+    see: ['matrixTable', 'spectrum'],
+  },
   chordTolerance: {
     term: 'Tolerance (c)',
     text: 'How far a note may be from a chord template and still count as that chord, in cents. Example: 18 c accepts 12-EDO major thirds (14 c wide of 5/4) as the 4:5:6 chord; 5 c would not.',
@@ -1642,6 +1750,38 @@ const entries = {
     text: 'On (the default): every inexact tile in the Modes heat grid carries a + or −, so you can see the direction of each miss without pointing at it. Off: the sign appears only with the number when you point at the row. + means the nearest field note is sharp of the pitch the mode wants, − means flat. Example: a tile for a 5th that needs 81/64 where the field only has 5/4 shows − (21.5 c flat).',
     see: ['modes', 'developerMenu'],
   },
+  intervalColor: {
+    term: 'Interval color',
+    help: [
+      p(
+        'How **Color: Interval** in the Pairs panel picks a hue. **Size wheel** (the default) puts each interval at its size around the repeat, so close sizes look alike. **By rank** spaces the sizes far apart on the wheel, so neighboring sizes contrast.'
+      ),
+      example(
+        'on the size wheel 9/8 (204 c) and 10/9 (182 c) are almost the same hue; by rank they differ clearly.'
+      ),
+    ],
+    teaching: [
+      p(
+        'On the size wheel an interval and its inversion sit on opposite sides of the wheel mirrored about the start: 4/3 and 3/2 add up to a full turn.'
+      ),
+    ],
+    see: ['matrixColor', 'intervalIntensity', 'developerMenu'],
+  },
+  intervalIntensity: {
+    term: 'Interval intensity',
+    help: [
+      p(
+        'How strong the Interval tint is. **Simple strong** (the default) makes simple ratios vivid and complex ones faint. **Simple faint** is the reverse.'
+      ),
+      example('simple strong: 3/2 is vivid and 64/45 is nearly plain.'),
+    ],
+    teaching: [
+      p(
+        'Simplicity is the Tenney height of the ratio. An interval with no ratio (an EDO step) always gets the middle strength.'
+      ),
+    ],
+    see: ['matrixColor', 'intervalColor', 'developerMenu'],
+  },
   tooltips: {
     term: 'Tooltips',
     help: [
@@ -2240,6 +2380,25 @@ const entries = {
     term: 'Open in a large window',
     text: 'Shows the same view full size in a window over the page, with its own controls. Closing it changes nothing. Example: pop out the 3D lattice to rotate a big field with room for every label.',
     see: ['openFullTable'],
+  },
+  pairsPopOut: {
+    term: 'Open Pairs in a large window',
+    help: [
+      p(
+        'Shows the same Pairs view full size over the page, with bigger cells and text. The color choice, the picked interval and the search stay as they are when you close it.'
+      ),
+      keys([
+        { key: 'Escape', does: 'close the window' },
+        { key: 'Click outside', does: 'close the window' },
+      ]),
+      example('open it on a 12-note subset to read every ratio in its cell without scrolling.'),
+    ],
+    teaching: [
+      p(
+        'Hovering, clicking and Alt+clicking inside the window do what they do in the panel: the ring, strip and lattice behind it light up as usual.'
+      ),
+    ],
+    see: ['matrix', 'vizPopOut'],
   },
   latticeMode: {
     term: 'Lattice axis mode',

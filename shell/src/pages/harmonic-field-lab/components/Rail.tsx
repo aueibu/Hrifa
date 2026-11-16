@@ -8,6 +8,8 @@ import type { Lab } from '../state/context';
 import { effectiveLatMode, isoOf, latAvail } from '../state/derive';
 import {
   DEFAULT_VIEWS,
+  PAIRS_ID,
+  PAIRS_LABEL,
   isViz,
   vizName,
   type PanelId,
@@ -28,6 +30,7 @@ export const PANELS: { id: PanelId; label: string; tip: TipKey }[] = [
   { id: 'shelf', label: 'Shelf', tip: 'shelfPanel' },
   { id: 'composites', label: 'Composites', tip: 'compositesPanel' },
   { id: 'spectrum', label: 'Spectrum', tip: 'spectrum' },
+  { id: PAIRS_ID, label: PAIRS_LABEL, tip: 'matrix' },
   { id: 'keys', label: 'Keys', tip: 'keysModes' },
   { id: 'modes', label: 'Modes', tip: 'modes' },
   { id: 'viz1', label: vizName('viz1', DEFAULT_VIEWS.viz1), tip: 'lattice' },
@@ -87,6 +90,8 @@ export function summaryOf(id: PanelId, lab: Lab, ranks: AxisRank[]): string {
     }
     case 'spectrum':
       return lab.an.spectrum?.prop.verdict ?? '–';
+    case PAIRS_ID:
+      return lab.an.pairs ? `${lab.an.pairs.N * (lab.an.pairs.N - 1)} intervals` : '–';
     case 'keys':
       return lab.an.keys ? `${lab.an.keys.completeKeys.length} of ${lab.base.field.length}` : '–';
     case 'modes':

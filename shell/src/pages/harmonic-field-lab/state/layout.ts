@@ -6,10 +6,15 @@
  * A column holds one to three panels, top to bottom (a stack). `left` runs outer to inner (index 0 is at the screen edge,
  * the last column is next to the generator); `right` runs inner to outer (index 0 is next to the generator).
  */
+/** The Pairs panel (interval matrix): its id and rail label, each in one place (the name may still change). */
+export const PAIRS_ID = 'pairs';
+export const PAIRS_LABEL = 'Pairs';
+
 export type VizId = 'viz1' | 'viz2' | 'viz3' | 'viz4' | 'viz5';
 export type PanelId =
   | 'chords'
   | 'shelf'
+  | typeof PAIRS_ID
   | 'composites'
   | 'spectrum'
   | 'keys'
@@ -22,6 +27,7 @@ export const PANEL_IDS: readonly PanelId[] = [
   'shelf',
   'composites',
   'spectrum',
+  PAIRS_ID,
   'keys',
   'modes',
   'retuner',

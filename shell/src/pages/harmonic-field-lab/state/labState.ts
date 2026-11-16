@@ -161,6 +161,10 @@ export type { ModePlayback, ScaleDir };
 export const SCALE_DIRS: readonly ScaleDir[] = ['up', 'updown'];
 export const WAVES: readonly Wave[] = ['sine', 'harmonic'];
 
+/** Pairs panel Color control: no color, the error severities, or the interval wheel. */
+export type PairsColor = 'off' | 'error' | 'interval';
+export const PAIRS_COLORS: readonly PairsColor[] = ['off', 'error', 'interval'];
+
 /** Per-viewer UI settings (persisted in `settings.v1`). */
 export interface UiSettings {
   /** The analysis panel the switcher column shows. */
@@ -198,6 +202,8 @@ export interface UiSettings {
   folds: Record<string, boolean>;
   /** M8i: merge chords with the same shape on different roots into one card (default true). Optional in storage. */
   groupShapes: boolean;
+  /** The Pairs panel Color control (M1, Scala-tools arc): Off (default), Error or Interval. Optional in storage. */
+  pairsColor: PairsColor;
 }
 
 /**
@@ -311,6 +317,7 @@ export function defaultUi(): UiSettings {
     positionalOrder: 'smoothest',
     folds: {},
     groupShapes: true,
+    pairsColor: 'off',
   };
 }
 

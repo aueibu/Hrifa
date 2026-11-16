@@ -16,7 +16,16 @@ import { mulNotes } from '../../../lib/harmonic-field';
 import { useLabAudio } from '../audio/useLabAudio';
 import { loadComposites, saveComposites } from './compositeStore';
 import { LabContext, type Analyses, type Lab, type VizApi } from './context';
-import { chordModel, deriveBase, dissOf, edoOf, keysOf, spectrumOf, stripDevs } from './derive';
+import {
+  chordModel,
+  deriveBase,
+  dissOf,
+  edoOf,
+  keysOf,
+  pairsOf,
+  spectrumOf,
+  stripDevs,
+} from './derive';
 import { readDeveloperOptions } from './developerOptions';
 import { ownerOfTab, isModified, updateBlocker as blockerOf } from './generatorLibrary';
 import {
@@ -143,13 +152,14 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
   const tol = state.ui.tol;
   // each analysis depends only on what it reads, so a change of tolerance recomputes only the keys
   const spectrum = useMemo(() => spectrumOf(base), [base]);
+  const pairs = useMemo(() => pairsOf(base, tab.cmp.odd), [base, tab.cmp.odd]);
   const chords = useMemo(() => chordModel(base, state.templates), [base, state.templates]);
   const keys = useMemo(() => keysOf(base, tol), [base, tol]);
   const edo = useMemo(() => edoOf(base), [base]);
   const diss = useMemo(() => dissOf(base.repC), [base.repC]);
   const an = useMemo<Analyses>(
-    () => ({ spectrum, chords, keys, edo, diss }),
-    [spectrum, chords, keys, edo, diss]
+    () => ({ spectrum, pairs, chords, keys, edo, diss }),
+    [spectrum, pairs, chords, keys, edo, diss]
   );
 
   /* ---- persistence ----

@@ -464,6 +464,7 @@ function TemplateEditor() {
               aria-label={`Template ${i + 1} ratios`}
               value={t.text}
               error={parsed.ok ? undefined : parsed.error}
+              classNames={{ error: classes.inputError }}
               onCommit={(v) => (v.trim() ? patch(i, { text: v }) : setRev((n) => n + 1))}
             />
             <DebouncedText

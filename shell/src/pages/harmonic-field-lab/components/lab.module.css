@@ -1612,6 +1612,11 @@
 
 /* ---- live page additions (M5) ---- */
 
+/* a Mantine input error in the lab reads in the red text role: Mantine's own error color is 1.21:1 on the dark panel */
+p.inputError {
+  color: var(--tint-red-text);
+}
+
 /* an inline message under the generator or the nearest-scale pick: an error, a warning or a note */
 .fieldMsg {
   color: var(--text-muted);
@@ -1621,7 +1626,7 @@
 }
 
 .fieldMsg[data-kind="err"] {
-  color: var(--mark-red);
+  color: var(--tint-red-text);
 }
 
 .fieldMsg[data-kind="warn"] {

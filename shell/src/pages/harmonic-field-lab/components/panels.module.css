@@ -236,7 +236,7 @@
 }
 
 .err[data-sev='4'] {
-  color: var(--mark-red);
+  color: var(--tint-red-text);
 }
 
 .need {
@@ -440,7 +440,7 @@
 
 /* the number (with its sign) appears when the row is pointed at; the sign alone is always there unless the Developer
    option turns that off. --text reads on every severity tint in both schemes (the tints are at most 55% of a mark
-   colour mixed into the panel). */
+   color mixed into the panel). */
 .heatNum {
   opacity: 0;
 }
@@ -1564,7 +1564,7 @@
 }
 
 .shelfRefusal {
-  color: var(--mark-red);
+  color: var(--tint-red-text);
   font-size: var(--lab-fs-small);
 }
 
@@ -1924,7 +1924,7 @@
 
 .sendNote[data-alert] {
   border-color: var(--mark-red);
-  color: var(--mark-red);
+  color: var(--tint-red-text);
 }
 
 /* ----------------------------------------------------------------------------------------------- positional chords (M9) */
@@ -2507,4 +2507,214 @@
 
 .hintLine > :first-child {
   flex: none;
+}
+
+/* -------------------------------------------------------------------------------- interval matrix (panel) */
+.mxControls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.mxScroll {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.mxGrid {
+  /* when a pick, a search or a table-row hover is active, the cells that do not match keep this share of their fill (the rest is the panel color): lower is fainter. Only the fill steps back; the text and the marks stay at full strength. */
+  --mx-dim: 0.55;
+
+  display: grid;
+  gap: 2px;
+  min-width: min-content;
+}
+
+.mxDiag {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  height: 1.5rem;
+}
+
+/* a cell's fill is the custom property --mx-fill: an error severity (data-sev, below) or an interval hue (data-tint, set inline); the marks below sit on top */
+.mxCell {
+  background: var(--mx-fill);
+  border: 0;
+  cursor: pointer;
+  font-size: var(--lab-fs-tiny);
+  gap: 0.0625rem;
+  padding: 0 0.25rem;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* a wrapped cell keeps a slot on its right for the arrow, so the arrow never overlaps the text */
+.mxCell[data-wrap='true'] {
+  padding-right: 0.75rem;
+}
+
+.mxCell:not([data-sev]):not([data-tint]) {
+  --mx-fill: var(--panel-slot);
+}
+
+/* the shared heat classes set a background of their own; the cell reads --mx-fill instead */
+.mxCell[data-sev],
+.mxCell[data-tint] {
+  background: var(--mx-fill);
+}
+
+.mxCell[data-sev='0'] {
+  --mx-fill: color-mix(in srgb, var(--mark-cyan) 40%, var(--panel));
+}
+
+.mxCell[data-sev='1'] {
+  --mx-fill: color-mix(in srgb, var(--mark-green) 40%, var(--panel));
+}
+
+.mxCell[data-sev='2'] {
+  --mx-fill: color-mix(in srgb, var(--mark-yellow) 45%, var(--panel));
+}
+
+.mxCell[data-sev='3'] {
+  --mx-fill: color-mix(in srgb, var(--mark-orange) 50%, var(--panel));
+}
+
+.mxCell[data-sev='4'] {
+  --mx-fill: color-mix(in srgb, var(--mark-red) 55%, var(--panel));
+}
+
+.mxSwatch {
+  border-radius: var(--radius-control);
+  display: inline-block;
+  height: 0.5rem;
+  margin-right: 0.25rem;
+  width: 0.5rem;
+}
+
+.mxWrap {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  right: 0.1875rem;
+  top: 0.125rem;
+}
+
+.mxHead {
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--lab-fs-tiny);
+  height: 1.5rem;
+  padding: 0;
+}
+
+/* marks, weakest first: a hovered degree (its row and column), a pinned note (H-3 yellow), a sounding pair (H-2 green) */
+.mxCell[data-hot='true'],
+.mxHead[data-hot='true'] {
+  box-shadow: inset 0 0 0 1px var(--text-muted);
+}
+
+.mxCell[data-pin='true'],
+.mxHead[data-pin='true'] {
+  box-shadow: inset 0 0 0 2px var(--mark-yellow);
+}
+
+.mxCell[data-lit='true'],
+.mxHead[data-lit='true'] {
+  box-shadow: inset 0 0 0 2px var(--mark-green);
+}
+
+.mxCell[data-lit='true'] {
+  font-weight: 700;
+}
+
+/* the chord under the pointer elsewhere (ring, chord chips, a pointed cell) */
+.mxCell[data-chord='true'] {
+  outline: 2px solid var(--mark-blue);
+  outline-offset: -2px;
+}
+
+/* cells of the picked or searched interval stand out; the others step back (fill only, so the text keeps full contrast; an uncolored cell's slot fill fades the same way) */
+.mxCell[data-match='yes'] {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+.mxCell[data-match='no'] {
+  background: color-mix(in srgb, var(--mx-fill) calc(var(--mx-dim) * 100%), var(--panel));
+}
+
+.mxCell:focus-visible,
+.mxHead:focus-visible,
+.mxRowBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
+
+.mxSearch {
+  align-items: center;
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: auto minmax(0, 1fr) 4rem auto;
+}
+
+/* a Mantine input error in the lab reads in the red text role: Mantine's own error color is 1.21:1 on the dark panel */
+p.inputError {
+  color: var(--tint-red-text);
+}
+
+.mxResult {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--lab-fs-small);
+  gap: 0.125rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.mxResultHead {
+  margin-bottom: 0.125rem;
+}
+
+.mxRowBtn {
+  background: none;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.mxRowBtn[aria-pressed='true'] {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.spec tbody tr[data-lit='true'] {
+  background: var(--tint-green-bg);
+  color: var(--tint-green-text);
+}
+
+.spec tbody tr[data-pick='true'] {
+  box-shadow: inset 2px 0 0 var(--text);
+}
+
+/* the large window: bigger cells and text, the same markup */
+.mxBig .mxCell {
+  font-size: var(--lab-fs-body);
+  height: 2.25rem;
+}
+
+.mxBig .mxHead,
+.mxBig .mxDiag {
+  font-size: var(--lab-fs-body);
+  height: 2.25rem;
+}
+
+.mxBig .spec {
+  font-size: var(--lab-fs-body);
 }

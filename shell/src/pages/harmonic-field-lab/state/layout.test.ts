@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_LAYOUT,
+  PAIRS_ID,
   PANEL_IDS,
   canMove,
   fitColumns,
@@ -691,6 +692,23 @@ describe('Shelf panel (M8a)', () => {
     const a = stackWith(pin(l, 'shelf', 'right'), 'shelf', 'chords');
     expect(a.left).toEqual([['chords', 'shelf']]);
     expect(parseLayout(JSON.stringify(a))).toEqual(a);
+  });
+});
+
+describe('Pairs panel (M1, Scala-tools arc)', () => {
+  it('is a known panel; DEFAULT_LAYOUT does not pin it, a stored layout without it loads unchanged, and it can be pinned and stacked', () => {
+    expect(PANEL_IDS).toContain(PAIRS_ID);
+    expect(pinnedIds(DEFAULT_LAYOUT)).not.toContain(PAIRS_ID);
+    expect(parseLayout(JSON.stringify(DEFAULT_LAYOUT))).toEqual(DEFAULT_LAYOUT);
+    const stored: Layout = { left: [['keys', 'chords']], right: [['viz1']] };
+    expect(parseLayout(JSON.stringify(stored))).toEqual(stored);
+    const l: Layout = { left: [['chords']], right: [] };
+    const pinned = pin(l, PAIRS_ID, 'right');
+    expect(pinnedIds(pinned)).toContain(PAIRS_ID);
+    const a = stackWith(pinned, PAIRS_ID, 'chords');
+    expect(a.left).toEqual([['chords', PAIRS_ID]]);
+    expect(parseLayout(JSON.stringify(a))).toEqual(a);
+    expect(PAIRS_ID).toBe('pairs');
   });
 });
 

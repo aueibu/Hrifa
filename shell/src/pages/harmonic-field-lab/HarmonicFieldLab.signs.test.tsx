@@ -127,6 +127,8 @@ describe('lab Developer menu', () => {
       linkedRootDefault: 'reroot',
       mergeTolerance: 5,
       mergeKeeps: 'first',
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
     fireEvent.click(screen.getByRole('switch', { name: /always show/ }));
@@ -138,6 +140,8 @@ describe('lab Developer menu', () => {
       linkedRootDefault: 'reroot',
       mergeTolerance: 5,
       mergeKeeps: 'first',
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
     });
   });
 
@@ -156,6 +160,8 @@ describe('lab Developer menu', () => {
       linkedRootDefault: 'reroot',
       mergeTolerance: 5,
       mergeKeeps: 'first',
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
       modeSignAlways: true,
@@ -165,6 +171,8 @@ describe('lab Developer menu', () => {
       linkedRootDefault: 'reroot',
       mergeTolerance: 5,
       mergeKeeps: 'first',
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
     });
     expect(parseDeveloperOptions('[1,2]')).toEqual({
       modeSignAlways: true,
@@ -174,6 +182,8 @@ describe('lab Developer menu', () => {
       linkedRootDefault: 'reroot',
       mergeTolerance: 5,
       mergeKeeps: 'first',
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
     });
     expect(parseDeveloperOptions('null')).toEqual({
       modeSignAlways: true,
@@ -183,6 +193,8 @@ describe('lab Developer menu', () => {
       linkedRootDefault: 'reroot',
       mergeTolerance: 5,
       mergeKeeps: 'first',
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
     open();
@@ -198,6 +210,7 @@ describe('lab Developer menu', () => {
         'Keep the mode root when notes are added or removed',
       ],
       'Playback and keys': ['Linked melody root default'],
+      'Pairs panel': ['Interval color', 'Interval intensity'],
       Composites: ['Merge tolerance (c)', 'Merged note keeps'],
     };
     for (const [title, names] of Object.entries(sections)) {
@@ -206,6 +219,27 @@ describe('lab Developer menu', () => {
         expect(within(group).getByLabelText(n)).toBeInTheDocument();
       }
     }
+  });
+
+  it('the interval color options default to size wheel and strong; they round-trip and read damaged data as the defaults', () => {
+    expect(parseDeveloperOptions(null)).toMatchObject({
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
+    });
+    expect(
+      parseDeveloperOptions('{"intervalColor":"rank","intervalIntensity":"faint"}')
+    ).toMatchObject({ intervalColor: 'rank', intervalIntensity: 'faint' });
+    expect(parseDeveloperOptions('{"intervalColor":3,"intervalIntensity":"x"}')).toMatchObject({
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
+    });
+    window.localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify({ intervalColor: 'rank' }));
+    open();
+    fireEvent.click(screen.getByRole('radio', { name: 'Simple faint' }));
+    expect(JSON.parse(window.localStorage.getItem(LAB_DEVELOPER_KEY)!)).toMatchObject({
+      intervalColor: 'rank',
+      intervalIntensity: 'faint',
+    });
   });
 
   it('the merge options default to 5 c and first, and read stored values safely', () => {
@@ -218,6 +252,8 @@ describe('lab Developer menu', () => {
     expect(parseDeveloperOptions('{"mergeTolerance":"x","mergeKeeps":"x"}')).toMatchObject({
       mergeTolerance: 5,
       mergeKeeps: 'first',
+      intervalColor: 'size',
+      intervalIntensity: 'strong',
     });
   });
 

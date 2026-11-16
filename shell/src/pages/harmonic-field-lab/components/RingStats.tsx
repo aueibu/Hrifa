@@ -318,6 +318,7 @@ export function RingPanel() {
                     label="Generator (stacked)"
                     value={ringGen}
                     error={genOk ? undefined : 'Cannot read this interval; using 3/2'}
+                    classNames={{ error: classes.inputError }}
                     description="3/2, 4/3, 701.96c or 7&#92;12"
                     onChange={(e) =>
                       dispatch({ type: 'ui', patch: { ringGen: e.currentTarget.value } })

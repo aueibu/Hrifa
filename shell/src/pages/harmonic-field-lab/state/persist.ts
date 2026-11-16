@@ -42,6 +42,7 @@ import {
   defaultCmp,
   defaultUi,
   emptyPick,
+  PAIRS_COLORS,
   MAX_TABS,
   MAX_TEMPLATES,
   type CmpRef,
@@ -229,6 +230,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     folds: sanitizeFolds(raw.folds),
     // optional (M8i): merge same-shape chords into one card; absent or damaged = on; no write on mount
     groupShapes: bool(raw.groupShapes, d.groupShapes),
+    // optional (Scala-tools M1): the Pairs panel Color control; absent or damaged = Off; no write on mount
+    pairsColor: oneOf(raw.pairsColor, PAIRS_COLORS, d.pairsColor),
   };
 }
 

@@ -94,6 +94,38 @@ export function DeveloperMenu() {
                 />
               </Tip>
             </Section>
+            <Section title="Pairs panel">
+              <Tip k="intervalColor" as="control" block>
+                <Text size="xs">Interval color</Text>
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  aria-label="Interval color"
+                  value={options.intervalColor}
+                  onChange={(v) => update({ intervalColor: v === 'rank' ? 'rank' : 'size' })}
+                  data={[
+                    { label: 'Size wheel', value: 'size' },
+                    { label: 'By rank', value: 'rank' },
+                  ]}
+                />
+              </Tip>
+              <Tip k="intervalIntensity" as="control" block>
+                <Text size="xs">Interval intensity</Text>
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  aria-label="Interval intensity"
+                  value={options.intervalIntensity}
+                  onChange={(v) =>
+                    update({ intervalIntensity: v === 'faint' ? 'faint' : 'strong' })
+                  }
+                  data={[
+                    { label: 'Simple strong', value: 'strong' },
+                    { label: 'Simple faint', value: 'faint' },
+                  ]}
+                />
+              </Tip>
+            </Section>
             <Section title="Composites">
               <Tip k="mergeTolerance" as="control" block>
                 <NumberInput

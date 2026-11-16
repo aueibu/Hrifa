@@ -441,7 +441,7 @@ describe('visualizer panels', () => {
     expect(tab(/Visualizer 5 – Isomorphic keyboard/)).toHaveTextContent(
       /^Visualizer 5 – Isomorphic keyboard\d+ of \d+$/
     );
-    expect(within(rail()).getAllByRole('tab')).toHaveLength(12);
+    expect(within(rail()).getAllByRole('tab')).toHaveLength(13); // 12 plus Pairs
   });
 
   it('switches a visualizer view from its header menu; the panel, rail and stored layout follow', async () => {

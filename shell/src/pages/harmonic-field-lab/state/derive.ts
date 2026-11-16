@@ -8,6 +8,7 @@
 import {
   DEFAULT_TEMPLATES,
   FIFTH_CENTS,
+  PAIRS_CAP,
   analyzeSubset,
   closestChord,
   constantStructure,
@@ -22,6 +23,7 @@ import {
   findChordVoicings,
   fmtHidden,
   fmtRatio,
+  intervalPairs,
   intervalSpectrum,
   isoGrid,
   latticeCoords,
@@ -41,6 +43,7 @@ import {
   vsJI,
   type ChordTemplate,
   type FifthsLayout,
+  type IntervalPairs,
   type IsoCell,
   type Lattice3d,
   type Note,
@@ -55,6 +58,7 @@ import type { LatMode } from './vizState';
 export const MAX_SPECTRUM = 64;
 export const MAX_CHORDS = 128;
 export const MAX_MODES = 32;
+export const MAX_PAIRS = PAIRS_CAP;
 export const MAX_KEYS_WORK = 400000;
 export const MAX_KEYS_NOTES = 256;
 
@@ -212,6 +216,12 @@ export function spectrumOf(base: Base) {
   return { spectrum, prop: propriety(spectrum), cs: constantStructure(rel, repC, 0.01, spectrum) };
 }
 export type SpectrumData = NonNullable<ReturnType<typeof spectrumOf>>;
+
+/* ------------------------------------------------------------------------------------------ interval pairs */
+/** The Pairs panel: every directed pair of the subset; `oddLimit` is the tab's "vs JI" limit (Error color). */
+export function pairsOf(base: Base, oddLimit: number): IntervalPairs | null {
+  return intervalPairs(base.rel, base.rep, oddLimit, MAX_PAIRS);
+}
 
 /* ------------------------------------------------------------------------------------------------ chords */
 export const SIZES = ['Triads', 'Tetrads', 'Larger'] as const;
