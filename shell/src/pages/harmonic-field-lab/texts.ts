@@ -3,8 +3,9 @@
  * same entries (searchable) with their `see` links, adding the teaching blocks after the help. Written plainly, each with a
  * worked example. The glossary's single source: every control, heading and analysis row of the lab has an entry here.
  *
- * Two forms are accepted so panels convert one at a time (format: `arcs/harmonic-field-lab/HELP-FORMAT.md`):
- * - old: `{ term, text }`, one string (it becomes one help paragraph);
+ * Two forms are accepted (rules: the page ARCHITECTURE.md, "Help text: tooltips and glossary"; design record: `arcs/harmonic-field-lab/HELP-FORMAT.md`):
+ * - old: `{ term, text }`, one string; the permanent form for short entries with no key or click gesture (it is cut at its
+ *   `Example:` into a paragraph and an example block);
  * - new: `{ term, help, teaching?, see? }`, arrays of blocks (`p`, `example`, `keys`). Block text is markup: `**bold**`,
  *   `*italic*`, `{key:name}` (a key from `audio/shortcuts.ts`).
  */
@@ -1034,10 +1035,6 @@ const entries = {
     term: 'Constant structure',
     text: 'Does every interval size belong to only one generic interval? Yes means a size always spans the same number of steps, so you can name an interval by its size. Example: here 315.64 c is both a 2nd (1 step) and a 3rd (2 steps), so no.',
   },
-  scaleTable: {
-    term: 'Scale',
-    text: "The subset read from its mode root: degree, ratio, cents above the root, step to the next degree, and the step's size letter. Example: degree 2 is 5/4 at 386.31 c.",
-  },
   spectrum: {
     term: 'Interval spectrum',
     text: 'For each generic interval (1 step, 2 steps...), every size it takes across the scale, with how often. One row per interval, so you read across. Example: "3 steps: 4 sizes" means starting from different degrees, a 4th comes out in 4 different widths.',
@@ -1052,13 +1049,9 @@ const entries = {
     term: 'Chord templates',
     text: 'The chord shapes the finder looks for, written as ratios between notes. a:b:c means the notes are harmonics of one fundamental (4:5:6 is a major triad); 1/(a:b:c) means they are undertones. Edit them with the Edit templates button; the list is remembered between visits. Example: the template 4:5:6 finds every major triad in the subset.',
   },
-  chordExact: {
-    term: 'Chord: exact',
-    text: "The matched notes make this chord with no error: every ratio is exactly the template's. Example: 1/1, 5/4, 3/2 is exactly 4:5:6.",
-  },
   chordError: {
     term: 'Chord: error (c)',
-    text: 'The worst-tuned note of the chord, in cents from the template; smaller is closer and 0 is exact. Colour (never alone, the number is always printed): cyan exact, green under 5 c, yellow 5-15 c, orange 15-30 c, red 30 c or more. Example: 13.7 means a note is 13.7 c from the template.',
+    text: 'The worst-tuned note of the chord, in cents from the template; smaller is closer and 0 is exact. Colour (never alone: the number is always printed, or the word exact): cyan exact, green under 5 c, yellow 5-15 c, orange 15-30 c, red 30 c or more. Example: 13.7 means a note is 13.7 c from the template.',
     see: ['chordTolerance'],
   },
   keysSummary: {
@@ -1138,7 +1131,7 @@ const entries = {
   },
   cardAdd: {
     term: 'Add current tab as card',
-    text: 'Copies the tab you are looking at into the card list as a snapshot: its generation, subset and mode. Later changes to the tab do not change the card. Example: build a 10/9-second major scale in another tab, then add it here as a candidate.',
+    text: 'Copies the tab you are looking at into the card list as a saved copy: its generation, subset and mode. Later changes to the tab do not change the card. Example: build a 10/9-second major scale in another tab, then add it here as a candidate.',
   },
   fillCards: {
     term: 'Fill cards',
@@ -1462,7 +1455,7 @@ const entries = {
   },
   groupShapes: {
     term: 'Group shapes',
-    text: 'Merge chords that have the same notes on different roots into one card. In 12-EDO with all 12 notes, the major triad is one card marked ×12 roots instead of twelve. The chevron on the card shows the per-root cards. Off: every chord on every root, as before.',
+    text: 'Merge chords that have the same notes on different roots into one card. In 12-EDO with all 12 notes, the major triad is one card marked 12 roots instead of twelve. The arrow on the card shows the per-root cards. Off: every chord on every root.',
   },
   chordLadder: {
     term: 'Tolerance ladder',
@@ -1623,7 +1616,7 @@ const entries = {
   },
   fieldSettings: {
     term: 'Field settings',
-    text: 'Folds out the less-used generator settings: which primes are allowed, and the repeat interval. Example: switch 11 and 13 off to leave a 7-limit field; set the repeat to 3/1 for a tritave scale.',
+    text: 'Opens a small popover with the less-used generator settings: which primes are allowed, the repeat interval, and whether newly appearing notes are selected when the field changes. Example: switch 11 and 13 off to leave a 7-limit field; set the repeat to 3/1 for a tritave scale.',
     see: ['primeFilter', 'repeat'],
   },
   developerMenu: {
@@ -1669,7 +1662,7 @@ const entries = {
   },
   tooltipDelay: {
     term: 'Tooltip delay (ms)',
-    text: "How long the pointer must rest on something before its tooltip appears, in milliseconds (0 to 5000; the default is 250). Example: 800 keeps tooltips out of the way while you move across the screen, and still shows one when you pause. Hover hints the browser draws itself (a few small labels on the mode tiles, key rings and strip steps) keep the browser's own timing, which cannot be changed.",
+    text: "How long the pointer must rest on something before its tooltip appears, in milliseconds (0 to 5000; the default is 250). Example: 800 keeps tooltips out of the way while you move across the screen, and still shows one when you pause. A few hover hints the browser draws itself (the mode-root chevron, ghost marks, the dissonance and roughness marks and lattice nodes) keep the browser's own timing, which cannot be changed.",
     see: ['tooltips', 'developerMenu'],
   },
   mergeTolerance: {
@@ -1961,7 +1954,25 @@ const entries = {
   },
   stashChord: {
     term: 'Stash',
-    text: 'Puts the chord on the shelf with the exact pitches it plays now, plus where it came from (generator, subset, template, root, tolerance, tab, date, 1/1 Hz and Parallel or Relative). Works from the Sketch row and from the + that appears on a found chord chip. Example: stash 4:5:6 on degree 3, then reload it later to get its source back as a new tab.',
+    help: [
+      p(
+        'Puts the chord on the shelf with the exact pitches it plays now, plus where it came from.'
+      ),
+      keys([
+        { key: 'The Stash button on the Sketch row', does: 'stash the current Sketch' },
+        { key: '{key:stash}', does: 'the same, from the keyboard' },
+        {
+          key: 'The + button on a chord chip',
+          does: 'stash that chord (a found chord, a positional row or a CPS chip)',
+        },
+      ]),
+      example('stash 4:5:6 on degree 3, then reload it later to get its source back as a new tab.'),
+    ],
+    teaching: [
+      p(
+        'What the shelf keeps about where it came from: generator, subset, template, root, tolerance, tab, date, 1/1 Hz and Parallel or Relative.'
+      ),
+    ],
     see: ['shelfPanel', 'sketchRow'],
   },
   retunerPanel: {
@@ -1979,11 +1990,6 @@ const entries = {
     term: 'Keyboard dock',
     text: 'Collapses the key row to a thin bar to give the workspace more room. The sounding notes stay listed. Example: collapse it while reading, open it to play along.',
     see: ['keyboardDock'],
-  },
-  methodParams: {
-    term: 'Method options',
-    text: 'The numbers belonging to the chosen method, shown beside the method tabs. Example: Harmonic series shows its starting harmonic; Equal division shows the number of divisions.',
-    see: ['method'],
   },
   ringView: {
     term: 'Ring view: Chromatic | Fifths',
@@ -2072,7 +2078,7 @@ const entries = {
     see: ['compareTo'],
   },
   nearStretch: {
-    term: 'Octave to repeat',
+    term: 'Octave → repeat',
     text: 'When the repeat is not an octave, stretch the chosen scale so its octave spans your repeat instead of using its cents unchanged. Example: with a 3/1 repeat, a major scale is multiplied by 1.585, so its top note lands on 3/1.',
     see: ['pickNearest'],
   },
@@ -2388,7 +2394,7 @@ const entries = {
   },
   dissAxes: {
     term: 'Dissonance axes',
-    text: "Across: the interval above the lower note, in cents (0 to 1200). Up: roughness, in the model's own units; only the relative height matters. The lower note is fixed at 261.63 Hz (middle C), because roughness also depends on how high the notes are. Example: a few tens of cents above the unison the two notes beat quickly against each other, and the curve is at its peak.",
+    text: "Across: the interval above the lower note, in cents (0 to the repeat: 1200 for an octave). Up: roughness, in the model's own units; only the relative height matters. The lower note is fixed at 261.63 Hz (middle C), because roughness also depends on how high the notes are. Example: a few tens of cents above the unison the two notes beat quickly against each other, and the curve is at its peak.",
     see: ['dissCurve', 'cents'],
   },
   dissMarks: {
@@ -2517,7 +2523,7 @@ const entries = {
   },
   isoReadout: {
     term: 'Keyboard readout',
-    text: 'How many field notes appear on the grid, and how many hexagons are blank. Example: if it reads "7 of 8 notes, 31 blank", it means seven of the eight field notes are reachable within the tolerance and about half the grid has no match.',
+    text: 'How many field notes appear on the grid, and how many hexagons are blank. Example: if it reads "7 of 8 · 31 blank", it means seven of the eight field notes are reachable within the tolerance and about half the grid has no match.',
     see: ['isoKeyboard'],
   },
 } satisfies Record<string, TextEntrySource>;

@@ -1,5 +1,7 @@
 # ARC: Lab help text: tooltips and glossary (help vs teaching)
 
+**COMPLETE 2026-11-16, archived as `ARC.help-text.md` / `PROGRESS.help-text.md`.** Final scope differs from the milestones below: M5 to M7 ran as one go with a revised scope (88 entries hand-converted, about 114 short entries stay in the old form PERMANENTLY, so M8 did not remove the legacy path). See Checkpoint decisions and `PROGRESS.help-text.md`.
+
 Approved by the human 2026-11-15 (shell rule 16), as drafted. Workstream folder `arcs/harmonic-field-lab` (previous arc archived as `ARC.retuner-shell.md`). Gate `check:hfl` and DECISIONS prefix `H` already exist, so there is no setup commit.
 
 ## Goal

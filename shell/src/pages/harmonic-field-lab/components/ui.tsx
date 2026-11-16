@@ -35,7 +35,7 @@ interface TipProps {
   /** `label` (default): a dotted-underline button. `control`: wraps a control, no underline. `block` only with control. */
   as?: 'label' | 'control';
   block?: boolean;
-  /** Extra sentence appended to the glossary text (e.g. the preset's own description). */
+  /** The dynamic line, shown first (directly under the term) in the tooltip, never in the glossary (e.g. the preset's own description). A plain string, not markup. */
   extra?: string;
 }
 
@@ -141,7 +141,6 @@ function TipBody({
     </Text>
   );
   // every entry, old form included: term, dynamic line, help paragraphs, keys, example last
-  const lead = Boolean(title) || Boolean(extra);
   return (
     <>
       {title && (
@@ -154,7 +153,7 @@ function TipBody({
         <BlockView key={`p${i}`} block={b} first={i === 0 && !extra} />
       ))}
       {rest.map((b, i) => (
-        <BlockView key={`r${i}`} block={b} first={paragraphs.length === 0 && !lead && i === 0} />
+        <BlockView key={`r${i}`} block={b} />
       ))}
     </>
   );
@@ -197,7 +196,7 @@ interface HintProps {
   k?: TipKey;
   /** A bold first line, when there is no `k`. */
   label?: string;
-  /** The dynamic block (same colour as the rest): after the help paragraphs, before the keys. */
+  /** The dynamic line (same colour as the rest): directly under the term, before the help paragraphs. Not markup: name keys with `SHORTCUTS`. */
   dynamic?: ReactNode;
   disabled?: boolean;
   position?: 'top' | 'bottom';

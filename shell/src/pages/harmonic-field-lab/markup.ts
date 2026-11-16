@@ -62,7 +62,7 @@ export const LINE_GROUP_MAX = 140;
  * A sentence ends at `.`, `!` or `?` followed by a space and a capital letter, a digit, a quote, a bracket or markup.
  */
 export function sentenceLines(source: string, max = LINE_GROUP_MAX): string[] {
-  const sentences = source.split(/(?<=[.!?])\s+(?=[A-Z0-9"“'({*{])/);
+  const sentences = source.split(/(?<=[.!?])\s+(?=[A-Z0-9"“'({*])/);
   const lines: string[] = [];
   for (const s of sentences) {
     const last = lines.length - 1;

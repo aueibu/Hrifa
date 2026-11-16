@@ -34,7 +34,7 @@ Reviews so far (all with no fact lost or altered): two reviewers over the first 
 **Style, please confirm:**
 - Bold only for names visible on screen (Generator, Count, Centre, Box, Diamond, Save as new, Undo, the four scorers, the four key marks, the three fill sources, Update preset, Pin left and right, Retune now and the like).
 - `tunerStrip` has its two old examples split: one in the tooltip, one in the glossary.
-- Left as old form on purpose: about 106 short entries with no key or click gestures. They are tooltip-sized already.
+- Left as old form on purpose: about 114 short entries with no key or click gestures. They are tooltip-sized already.
 
 ---
 

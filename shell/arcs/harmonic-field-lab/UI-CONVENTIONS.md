@@ -25,10 +25,13 @@ Where each thing lives: `src/pages/harmonic-field-lab/` (`components/`, `state/`
 - Collapse all and Expand all apply to every level including grouped roots; fold state is remembered per viewer.
 - The top of the Chords panel (Sketch row, tolerance row, ladder, Collapse/Expand all, `Group shapes`) is always shown in full: it never shrinks or scrolls; only the lists below scroll, with `scrollbar-gutter: stable` and right padding.
 
-## 4. Naming and tooltips (to be extended by the human)
+## 4. Naming and tooltips (settled 2026-11-16 in the help-text arc; the rules are in the page `ARCHITECTURE.md`, "Help text: tooltips and glossary")
 - Labels stay short; explanations live in tooltips: `Field | Exact` (the chord from the field's own notes vs its true ratios), `Shape | Pitch` (score the shape at middle C, as the cards do, vs each note where it sounds), `Smoothest | Scale order`, `Group shapes`.
-- The glossary is `texts.ts` (one entry per `TipKey`); native `title` text goes through `useNativeTitle` (it follows the Developer menu's tooltip option).
-- Open: a standard tooltip format (what first, then an example, then the key if there is one), and which controls get one.
+- The glossary is `texts.ts` (one entry per `TipKey`). Every entry has a short HELP part (the tooltip: what it is and does, about 300 to 500 characters) and, for the long ones, a TEACHING part that only the glossary shows. Short entries (about 400 characters or fewer, no key or click gesture) stay a single string (about 114 of 224 today).
+- Tooltip look, top to bottom: bold term, the dynamic line (live values; one colour for the whole tooltip, position marks it as dynamic), help paragraphs, a Keys list, the Example last (like flavour text on a card). Blank line between blocks; a paragraph breaks onto a new line after about three lines of text; a number and its unit (`c`, `Hz`) never split across lines.
+- Bold names you can see on screen; italic only the Example label and a term being defined. Key names in help come from one table (`audio/shortcuts.ts`), so a key is written once; the handlers read the same table (see ARCHITECTURE for the physical-key caveat).
+- When tooltips nest, the innermost one shows. Every dynamic tooltip (the old native `title`s) is a styled `Hint`; the Developer menu's tooltip on/off and delay apply to all.
+- Which controls get a tooltip is still decided case by case: the hold-to-play gesture has no control to hover (glossary only), and a few static `title=` strings remain (see BACKLOG).
 
 ## 5. Colour and marks
 - Roles, not hexes (`src/theme/THEMING.md`): sounding is `--mark-green`, the highlighted/hovered chord is `--mark-blue`, a hovered note is blue, a pinned note is muted, severity colours for cents error. Not-in-subset marks are dimmed SOLID lines (about 35 percent), not dashed; ghost marks (off-field sounding pitches) stay dashed.

@@ -1,7 +1,9 @@
 /**
- * The lab's keyboard shortcuts in one table. Handlers (`useLabAudio.ts`, `plan.ts`) and the help text (`{key:name}` in
- * `texts.ts` entries) both read it, and `texts.test.ts` fails when an entry names a key that is not here or says a key
- * that disagrees with it. Other handlers move over as their panels' entries are converted.
+ * The lab's keyboard shortcuts in one table: the single place a key is written for the help text (`{key:name}` in `texts.ts`
+ * entries, or `${SHORTCUTS.x}` in a dynamic tooltip string). The handlers (`useLabAudio.ts`, `plan.ts`, `keymap.ts`, `Send.tsx`)
+ * read it too, but `,` `.` `[` `]` `=` are matched by physical key (`e.code`) first and use the table value only as the
+ * fallback: changing one of those values also means changing its `e.code`. `texts.test.ts` fails when `{key:name}` names a key
+ * that is not here, and guards the Parallel | Relative key in plain text; other plain-text keys in entry terms are not checked.
  */
 export const SHORTCUTS = {
   /** Switches mode playback between Parallel and Relative. */

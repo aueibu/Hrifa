@@ -1,5 +1,7 @@
 # Lab help text format (M1 decisions, 2026-11-15)
 
+> **Status at close-out (2026-11-16):** this is the design record of the M1 decisions. The settled rules are in the page `ARCHITECTURE.md`, "Help text: tooltips and glossary"; where this file disagrees, ARCHITECTURE wins: the old `text` form is a permanent short-entry form (not every entry gets help + teaching); keys are written `{key:name}` and shown as a key cap (not bold); help markup has no number-font token (`Num` is not applied inside blocks); the shortcut table is the single place a key is written, but handlers match `,` `.` `[` `]` `=` by physical key first; the S5 wording shipped as "are common to this key"; later decisions not recorded below: the 140-character line rule, unit gluing, `{key:}` markup, innermost-wins nesting.
+
 Confirmed by the human while reviewing the `Play scale`, `Hover and hold 1, 4, 5` and `Modes (heat grid)` mockups. This is the spec M2 to M8 build to. It becomes a rules section of the page `ARCHITECTURE.md` at close-out.
 
 ## 1. Two layers per entry
