@@ -19,10 +19,25 @@ export function useGhosts(): Ghost[] {
 }
 
 /** "+N outside" for the ring caption; nothing when no ghost sounds. */
-export function OutsideCount() {
+export function OutsideCount({
+  testId = 'outside-count',
+  live = true,
+  corner = 'bottom',
+}: {
+  /** Which corner of its position: relative host the overlay sits in. */
+  corner?: 'top' | 'bottom';
+  testId?: string;
+  /** role="status" on the caption; off for a second copy on screen (no repeated live regions). */
+  live?: boolean;
+} = {}) {
   const n = useGhosts().length;
   return n ? (
-    <span className={classes.outsideCount} role="status" data-testid="outside-count">
+    <span
+      className={classes.outsideCount}
+      role={live ? 'status' : undefined}
+      data-corner={corner}
+      data-testid={testId}
+    >
       +{n} outside
     </span>
   ) : null;

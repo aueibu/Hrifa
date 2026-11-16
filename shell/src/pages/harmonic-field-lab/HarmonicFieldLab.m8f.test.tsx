@@ -171,7 +171,7 @@ describe('pattern groups, folds and the Composites row', () => {
       expect(
         rows.map((li) => Number(/#(\d)/.exec(li.textContent ?? '')?.[1])).sort((a, b) => a - b)
       ).toEqual([1, 2, 3, 4, 5, 6, 7]);
-      expect(rows[0].textContent).toMatch(/7 of 12-EDO/);
+      expect(rows[0].textContent).not.toMatch(/12-EDO/); // M8h: no generator name on the card
     }
     // fold 2-3 only: that group closes, the others stay open, and nothing was written before the fold
     expect(window.localStorage.getItem(KEY_SETTINGS)).toBeNull();

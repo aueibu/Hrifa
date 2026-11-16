@@ -178,8 +178,8 @@ describe('positional chords: Scale order, score and rank, tail (d, e, f)', () =>
       within(list())
         .getAllByTestId('positional-row')
         .map((li) => /^(\d-\d on \d)/.exec(li.textContent ?? '')?.[1]);
-    // Smoothest (as before): no score shown
-    expect(within(list()).queryAllByTestId('positional-score')).toHaveLength(0);
+    // M8h: rank and score are shown in both orders
+    expect(within(list()).queryAllByTestId('positional-score')).toHaveLength(7);
     // e: Scale order
     fireEvent.click(screen.getByRole('radio', { name: 'Scale order' }));
     expect(labels()).toEqual([1, 2, 3, 4, 5, 6, 7].map((d) => `2-2 on ${d}`));
@@ -187,9 +187,9 @@ describe('positional chords: Scale order, score and rank, tail (d, e, f)', () =>
     const ranks = rows.map((li) => Number(/#(\d)/.exec(li.textContent ?? '')?.[1]));
     expect([...ranks].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     rows.forEach((li) => {
-      expect(within(li).getByTestId('positional-score').textContent).toMatch(/score \d+\.\d\d/);
+      expect(within(li).getByTestId('positional-score').textContent).toMatch(/^#\d · \d+\.\d\d$/);
     });
-    // back to Smoothest: rank order, no score
+    // back to Smoothest: rank order
     fireEvent.click(screen.getByRole('radio', { name: 'Smoothest' }));
     expect(
       within(list())

@@ -8,6 +8,7 @@ import {
   bestEdos,
   curveMinima,
   defaultAxes3d,
+  dissonanceAt,
   dissonanceCurve,
   edoErrors,
   edoFit,
@@ -334,6 +335,19 @@ describe('isomorphic keyboard', () => {
       isoGrid(field, 1200, { g1, g2: N('5/4').c, tol }).filter((c) => c.note !== null).length;
     expect(count(5)).toBeLessThan(count(20));
     expect(count(20)).toBeLessThanOrEqual(count(35));
+  });
+});
+
+describe('dissonanceAt', () => {
+  it('equals the curve value at integer cents and lies between the neighbours at a fractional cent', () => {
+    const curve = dissonanceCurve();
+    for (const c of [0, 100, 386, 702, 1200]) {
+      expect(dissonanceAt(c)).toBe(curve.values[c]);
+    }
+    const mid = dissonanceAt(50.5);
+    const [a, b] = [curve.values[50], curve.values[51]];
+    expect(mid).toBeGreaterThanOrEqual(Math.min(a, b));
+    expect(mid).toBeLessThanOrEqual(Math.max(a, b));
   });
 });
 

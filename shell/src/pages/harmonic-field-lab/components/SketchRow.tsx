@@ -355,7 +355,7 @@ export function SketchRow() {
                 {pitches
                   .slice(1)
                   .map((p, i) => (p.c - pitches[i].c).toFixed(1))
-                  .join(' · ')}{' '}
+                  .join(', ')}{' '}
                 c
               </Num>
             </span>

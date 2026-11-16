@@ -65,7 +65,7 @@ describe('Sketch row, Positional group', () => {
     fireEvent.change(template(), { target: { value: 'pos:2-2' } });
     expect(template().value).toBe('pos:2-2');
     expect(screen.getByTestId('sketch-line').textContent).toMatch(/^2-2 on 1/);
-    expect(screen.getByTestId('sketch-steps').textContent).toMatch(/steps 400.0 · 300.0 c/);
+    expect(screen.getByTestId('sketch-steps').textContent).toMatch(/steps 400.0, 300.0 c/);
     expect(within(sketch()).getByRole('radio', { name: 'Exact' })).toBeDisabled();
     // the switch's reason is its tooltip only: no sentence under the row
     expect(within(sketch()).queryByText(/has no separate exact ratios/)).toBeNull();

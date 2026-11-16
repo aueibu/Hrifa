@@ -349,6 +349,18 @@ export interface DissonanceCurve {
 }
 
 /**
+ * Exact roughness between the base tone and a tone `cents` above it: the one calculation the curve is built from, so a
+ * pitch off the 1 c grid (a ghost) reads the same value the curve would have there.
+ */
+export function dissonanceAt(cents: number, baseHz = 261.63, opts: RoughnessOpts = {}): number {
+  const f = baseHz * 2 ** (cents / 1200);
+  const detail = scoreRoughness([baseHz, f], opts).detail as {
+    pairs: { roughness: number }[];
+  };
+  return detail.pairs[0].roughness;
+}
+
+/**
  * Sethares roughness of two harmonic tones, one fixed at `baseHz` and one swept from the unison up through the repeat
  * (default 1200 c in 1 c steps). Only the roughness BETWEEN the two tones is counted (each tone's own partials
  * contribute a constant). Defaults are the lab's timbre: 7 partials falling off by 0.88 per partial.
@@ -368,12 +380,8 @@ export function dissonanceCurve(
   const cents: number[] = [];
   const values: number[] = [];
   for (let c = 0; c <= repC + 1e-9; c += stepC) {
-    const f = baseHz * 2 ** (c / 1200);
-    const detail = scoreRoughness([baseHz, f], opts).detail as {
-      pairs: { roughness: number }[];
-    };
     cents.push(c);
-    values.push(detail.pairs[0].roughness);
+    values.push(dissonanceAt(c, baseHz, opts));
   }
   return { cents, values, max: Math.max(...values) };
 }

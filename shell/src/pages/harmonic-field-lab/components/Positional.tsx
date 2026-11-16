@@ -4,7 +4,7 @@
  * chords come from the lib (`positionalChords`, `rankPositional`, `positionalNaming`); a row behaves like a chord chip.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Button, SegmentedControl, TextInput, Tooltip } from '@mantine/core';
+import { ActionIcon, Button, SegmentedControl, TextInput } from '@mantine/core';
 import {
   mulNotes,
   parsePattern,
@@ -18,11 +18,11 @@ import {
 import type { PreviewTarget } from '../audio/plan';
 import { autoName } from '../state/generate';
 import { MAX_PATTERNS, canonicalPattern } from '../state/patterns';
+import { ChordCard, fmtCentsList, fmtSteps } from './ChordCard';
 import { FoldHead, foldId, useFold } from './Fold';
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from './icons';
 import { useSendHover } from './Send';
-import { ChordDrawing } from './ShelfPanel';
-import { Num, Tip, useLab, useNativeTitle, useTooltipProps } from './ui';
+import { Num, Tip, useLab } from './ui';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
@@ -37,8 +37,6 @@ const plain = (p: Note): Note => ({ m: p.m ? { ...p.m } : null, c: p.c });
 
 interface RowProps {
   chord: RankedRow;
-  /** Scale order: the row also shows its smoothness score next to its rank (Smoothest order shows the rank only, as before). */
-  showScore: boolean;
   pattern: string;
   naming: ReturnType<typeof positionalNaming>;
   /** True when THIS row (pattern + degree) is the one that was clicked and its notes are still the picked highlight. */
@@ -46,12 +44,10 @@ interface RowProps {
   onPick: (picked: boolean) => void;
 }
 
-function PositionalRow({ chord, showScore, pattern, naming, rowPicked, onPick }: RowProps) {
+function PositionalRow({ chord, pattern, naming, rowPicked, onPick }: RowProps) {
   const rank = chord.rank;
   const lab = useLab();
   const { state, dispatch, audio, base } = lab;
-  const tipProps = useTooltipProps();
-  const nativeTitle = useNativeTitle();
   const abs = useMemo(() => chord.pitches.map((p) => p.c), [chord]);
   const parallel = state.ui.modePlayback !== 'relative';
   // Parallel puts the chord's own root on 1/1, Relative keeps the real pitches (as chips and the shelf do)
@@ -113,67 +109,46 @@ function PositionalRow({ chord, showScore, pattern, naming, rowPicked, onPick }:
   const text = [naming.label, naming.tail, naming.ratio].filter(Boolean).join(', ');
   const label = `${text}. Click: hear it, keep it highlighted and arm it in the Sketch row. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this row, hold 4 or 5 plays it on the root of the Sketch row's stepper (both play its field notes: a positional chord has no separate exact form). Holding 1, 4 or 5 on it also arms its pattern in the Sketch row (hold 4 and 5 leave the Sketch root alone). Roughness score ${chord.score.toFixed(2)} (smoothest first, rank ${rank}).`;
   return (
-    <li className={classes.chipWrap} data-stash="true" data-testid="positional-row">
-      <Tooltip label={label} multiline w={260} {...tipProps}>
-        <button
-          type="button"
-          className={classes.chip}
-          data-found="true"
-          data-picked={picked}
-          aria-pressed={picked}
-          aria-label={label}
-          onMouseEnter={enter}
-          onMouseLeave={leave}
-          onFocus={enter}
-          onBlur={leave}
-          onClick={() => {
-            if (picked) {
-              lab.pickChord(null);
-              onPick(false);
-              return;
-            }
-            lab.pickChord(lit);
-            onPick(true);
-            audio.playCents(cents, abs);
-            dispatch({
-              type: 'sketch/armPositional',
-              pattern,
-              rootDeg: chord.degree,
-              shape: shapeOf(chord.pitches),
-            });
-          }}
-        >
-          <span className={classes.posRow}>
-            <ChordDrawing cents={abs.map((c) => c - abs[0])} repC={base.repC} />
-            <span className={classes.posLabel}>
-              <Num>{naming.label}</Num>
-            </span>
-            <span className={classes.posText}>
-              <span data-testid="positional-cents">
-                <Num>{`${cents.map((c) => Math.round(c * 10) / 10).join(', ')} c`}</Num>
-              </span>
-              <span className={classes.posTail}>
-                <Num muted>{naming.tail}</Num>
-                {naming.ratio && <Num>{naming.ratio}</Num>}
-              </span>
-            </span>
-            <span className={classes.posRank}>
-              <Num muted>#{rank}</Num>
-              {showScore && (
-                <span data-testid="positional-score">
-                  <Num muted>score {chord.score.toFixed(2)}</Num>
-                </span>
-              )}
-            </span>
-          </span>
-        </button>
-      </Tooltip>
-      <button
-        type="button"
-        className={classes.chipStash}
-        aria-label={`Stash ${naming.label} on the shelf`}
-        title={nativeTitle('Stash this chord on the shelf')}
-        onClick={() =>
+    <ChordCard
+      as="li"
+      testId="positional-row"
+      label={label}
+      title={naming.label}
+      titleExtra={naming.ratio}
+      subtitle=""
+      pitches={fmtCentsList(cents)}
+      steps={fmtSteps(cents)}
+      stat={
+        <span data-testid="positional-score">
+          <Num muted>{`#${rank} · ${chord.score.toFixed(2)}`}</Num>
+        </span>
+      }
+      ring={{ cents: abs.map((c) => c - abs[0]), repC: base.repC }}
+      found
+      picked={picked}
+      onEnter={enter}
+      onLeave={leave}
+      onFocus={enter}
+      onBlur={leave}
+      onClick={() => {
+        if (picked) {
+          lab.pickChord(null);
+          onPick(false);
+          return;
+        }
+        lab.pickChord(lit);
+        onPick(true);
+        audio.playCents(cents, abs);
+        dispatch({
+          type: 'sketch/armPositional',
+          pattern,
+          rootDeg: chord.degree,
+          shape: shapeOf(chord.pitches),
+        });
+      }}
+      stash={{
+        label: `Stash ${naming.label} on the shelf`,
+        onStash: () =>
           dispatch({
             type: 'shelf/stash',
             stash: {
@@ -184,12 +159,9 @@ function PositionalRow({ chord, showScore, pattern, naming, rowPicked, onPick }:
               rootDeg: chord.degree,
               date: new Date().toISOString(),
             },
-          })
-        }
-      >
-        <PlusIcon />
-      </button>
-    </li>
+          }),
+      }}
+    />
   );
 }
 
@@ -253,7 +225,6 @@ function PositionalRows({
           <PositionalRow
             key={`${pattern}:${c.degree}`}
             chord={c}
-            showScore={order === 'scale'}
             pattern={pattern}
             naming={naming}
             rowPicked={clicked === `${pattern}:${c.degree}`}
@@ -288,8 +259,12 @@ function PositionalGroup({
   const { folded } = useFold(id);
   const fits = fitsSubset(n, pattern);
   return (
-    <div className={classes.posGroup} role="group" aria-label={`Pattern ${pattern}`}>
-      <h4 className={classes.posGroupHead}>
+    <div
+      className={`${classes.posGroup} ${classes.nest}`}
+      role="group"
+      aria-label={`Pattern ${pattern}`}
+    >
+      <h4 className={classes.treeHead} data-level="2">
         <FoldHead
           id={id}
           tip="positionalPick"
@@ -327,7 +302,7 @@ export function PositionalSection() {
   const [clicked, setClicked] = useState<string | null>(null);
   return (
     <section className={classes.family} aria-label="Positional chords">
-      <h3 className={classes.familyHead}>
+      <h3 className={classes.treeHead} data-level="1">
         <FoldHead id="positional" tip="positionalChords" title="Positional" count={total} />
       </h3>
       {!folded &&

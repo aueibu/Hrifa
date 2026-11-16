@@ -3,6 +3,8 @@
  * the smooth intervals (dips) named. The curve is computed once per repeat (1 c steps) in the lab's analyses.
  */
 import { useMemo, useState, type PointerEvent } from 'react';
+import { dissonanceAt } from '../../../lib/harmonic-field';
+import { OutsideCount, useGhosts } from './GhostMarks';
 import { ModeChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, useLab } from './ui';
 import classes from './panels.module.css';
@@ -32,6 +34,16 @@ export function DissonanceBody() {
         .join(' '),
     [dissCurve, repC]
   );
+  const ghosts = useGhosts();
+  // each ghost at its exact roughness (the curve's own calculation, not the 1 c grid), clamped into the chart
+  const ghostPts = useMemo(
+    () =>
+      ghosts.map((g) => {
+        const d = Math.min(Math.max(dissonanceAt(g.c), 0), dissCurve.max || 1);
+        return { c: g.c, d, text: `${g.c.toFixed(1)} c, roughness ${d.toFixed(2)}` };
+      }),
+    [ghosts, dissCurve]
+  );
   const fieldCents = field.map((n) => n.c);
   // the dip at the far end is the repeat itself (an octave, a tritave ...), not a second unison: name it by the repeat's ratio
   const dipName = (d: { idx: number; ratio: string }) =>
@@ -46,116 +58,145 @@ export function DissonanceBody() {
   const selected = lab.hover ?? lab.pin;
   return (
     <>
-      <Tip k="dissAxes" as="control" block>
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className={classes.chartSvg}
-          role="group"
-          aria-label="Dissonance curve: roughness of two tones against the interval between them, 0 to 1200 cents"
-        >
-          <text className={classes.chartTick} x={ML} y={11}>
-            rougher
-          </text>
-          <line className={classes.chartGrid} x1={ML} x2={W - MR} y1={yOf(0)} y2={yOf(0)} />
-          <rect
-            className={classes.chartHit}
-            x={ML}
-            y={MT}
-            width={PW}
-            height={PH}
-            onPointerMove={move}
-            onPointerLeave={() => setAt(null)}
-          />
-          {fieldCents.map((c, i) => {
-            const state = lab.sounding.has(i) ? 'lit' : lab.selected.has(i) ? 'on' : 'off';
-            return (
-              <g key={i}>
+      <div className={classes.dissHost}>
+        <Tip k="dissAxes" as="control" block>
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            className={classes.chartSvg}
+            role="group"
+            aria-label="Dissonance curve: roughness of two tones against the interval between them, 0 to 1200 cents"
+          >
+            <text className={classes.chartTick} x={ML} y={11}>
+              rougher
+            </text>
+            <line className={classes.chartGrid} x1={ML} x2={W - MR} y1={yOf(0)} y2={yOf(0)} />
+            <rect
+              className={classes.chartHit}
+              x={ML}
+              y={MT}
+              width={PW}
+              height={PH}
+              onPointerMove={move}
+              onPointerLeave={() => setAt(null)}
+            />
+            {fieldCents.map((c, i) => {
+              const state = lab.sounding.has(i) ? 'lit' : lab.selected.has(i) ? 'on' : 'off';
+              return (
+                <g key={i}>
+                  <line
+                    className={classes.dissMark}
+                    data-state={state}
+                    data-sel={selected === i ? 'true' : undefined}
+                    data-pin={lab.pin === i ? 'true' : undefined}
+                    x1={xOf(c)}
+                    x2={xOf(c)}
+                    y1={MT}
+                    y2={yOf(0)}
+                  />
+                  <rect
+                    className={classes.chartHit}
+                    x={xOf(c) - 4}
+                    y={MT}
+                    width={8}
+                    height={PH}
+                    onMouseEnter={() => lab.setHover(i)}
+                    onMouseLeave={() => lab.setHover(null)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${ratios[i]}${lab.selected.has(i) ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}${rootLabel(modeRoot, i)}`}
+                    onFocus={() => lab.setHover(i)}
+                    onBlur={() => lab.setHover(null)}
+                    {...noteHandlers(lab, i)}
+                  />
+                  {modeRoot === i && <ModeChevron x={xOf(c)} y={MT - 1} deg={90} scale={0.7} />}
+                  {state !== 'off' && (
+                    <text
+                      className={classes.dissNote}
+                      data-state={state}
+                      x={xOf(c)}
+                      y={H - 16}
+                      textAnchor="middle"
+                    >
+                      {ratios[i]}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+            <path className={classes.dissLine} d={path} />
+            {ghostPts.map((g) => (
+              <g
+                key={g.c}
+                data-testid="diss-ghost"
+                role="img"
+                aria-label={`Ghost: ${g.text}`}
+                pointerEvents="none"
+              >
+                <title>{g.text}</title>
                 <line
-                  className={classes.dissMark}
-                  data-state={state}
-                  data-sel={selected === i ? 'true' : undefined}
-                  data-pin={lab.pin === i ? 'true' : undefined}
-                  x1={xOf(c)}
-                  x2={xOf(c)}
+                  className={classes.dissGhostLine}
+                  x1={xOf(g.c)}
+                  x2={xOf(g.c)}
                   y1={MT}
                   y2={yOf(0)}
                 />
-                <rect
-                  className={classes.chartHit}
-                  x={xOf(c) - 4}
-                  y={MT}
-                  width={8}
-                  height={PH}
-                  onMouseEnter={() => lab.setHover(i)}
-                  onMouseLeave={() => lab.setHover(null)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${ratios[i]}${lab.selected.has(i) ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}${rootLabel(modeRoot, i)}`}
-                  onFocus={() => lab.setHover(i)}
-                  onBlur={() => lab.setHover(null)}
-                  {...noteHandlers(lab, i)}
+                <circle
+                  className={classes.dissGhostDot}
+                  data-testid="diss-ghost-dot"
+                  cx={xOf(g.c)}
+                  cy={yOf(g.d)}
+                  r={4}
+                  pointerEvents="all"
                 />
-                {modeRoot === i && <ModeChevron x={xOf(c)} y={MT - 1} deg={90} scale={0.7} />}
-                {state !== 'off' && (
-                  <text
-                    className={classes.dissNote}
-                    data-state={state}
-                    x={xOf(c)}
-                    y={H - 16}
-                    textAnchor="middle"
-                  >
-                    {ratios[i]}
-                  </text>
-                )}
               </g>
-            );
-          })}
-          <path className={classes.dissLine} d={path} />
-          {dissDips.map((d) => (
-            <g key={d.idx}>
-              <circle className={classes.dissDip} cx={xOf(d.c)} cy={yOf(d.d)} r={2} />
+            ))}
+            {dissDips.map((d) => (
+              <g key={d.idx}>
+                <circle className={classes.dissDip} cx={xOf(d.c)} cy={yOf(d.d)} r={2} />
+                <text
+                  className={classes.dissDipLabel}
+                  x={xOf(d.c)}
+                  y={yOf(d.d) - 6}
+                  textAnchor={
+                    d.idx === 0 ? 'start' : d.idx === dissCurve.cents.length - 1 ? 'end' : 'middle'
+                  }
+                >
+                  {dipName(d)}
+                </text>
+              </g>
+            ))}
+            {shownIdx !== null && (
+              <g pointerEvents="none">
+                <line
+                  className={classes.dissHair}
+                  x1={xOf(shownIdx)}
+                  x2={xOf(shownIdx)}
+                  y1={MT}
+                  y2={yOf(0)}
+                />
+                <circle
+                  className={classes.dissCursor}
+                  cx={xOf(shownIdx)}
+                  cy={yOf(dissCurve.values[shownIdx])}
+                  r={3}
+                />
+              </g>
+            )}
+            {[0, repC / 4, repC / 2, (3 * repC) / 4, repC].map((c) => (
               <text
-                className={classes.dissDipLabel}
-                x={xOf(d.c)}
-                y={yOf(d.d) - 6}
-                textAnchor={
-                  d.idx === 0 ? 'start' : d.idx === dissCurve.cents.length - 1 ? 'end' : 'middle'
-                }
+                key={c}
+                className={classes.chartTick}
+                x={xOf(c)}
+                y={H - 3}
+                textAnchor={c === 0 ? 'start' : c === repC ? 'end' : 'middle'}
               >
-                {dipName(d)}
+                {Math.round(c)}
               </text>
-            </g>
-          ))}
-          {shownIdx !== null && (
-            <g pointerEvents="none">
-              <line
-                className={classes.dissHair}
-                x1={xOf(shownIdx)}
-                x2={xOf(shownIdx)}
-                y1={MT}
-                y2={yOf(0)}
-              />
-              <circle
-                className={classes.dissCursor}
-                cx={xOf(shownIdx)}
-                cy={yOf(dissCurve.values[shownIdx])}
-                r={3}
-              />
-            </g>
-          )}
-          {[0, repC / 4, repC / 2, (3 * repC) / 4, repC].map((c) => (
-            <text
-              key={c}
-              className={classes.chartTick}
-              x={xOf(c)}
-              y={H - 3}
-              textAnchor={c === 0 ? 'start' : c === repC ? 'end' : 'middle'}
-            >
-              {Math.round(c)}
-            </text>
-          ))}
-        </svg>
-      </Tip>
+            ))}
+          </svg>
+        </Tip>
+        <OutsideCount testId="diss-outside-count" live={false} corner="top" />
+      </div>
       <div className={classes.verdicts} aria-live="polite">
         <Row name={<Tip k="dissReadout">Interval</Tip>}>
           {shownIdx === null ? (

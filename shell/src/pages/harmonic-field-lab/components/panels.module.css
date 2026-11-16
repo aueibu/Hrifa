@@ -53,7 +53,8 @@
   padding: 0.375rem 0.5rem 0.5rem;
 }
 
-.familyHead {
+.familyHead,
+.treeHead {
   align-items: baseline;
   color: var(--text);
   display: flex;
@@ -62,6 +63,22 @@
   gap: 0.5rem;
   justify-content: space-between;
   margin: 0;
+}
+
+/* tree levels (M8h): 1 = section, 2 = size / pattern group, 3 = family / otonal / utonal; a nested block gets one indent and a guide */
+.treeHead[data-level='2'] {
+  font-weight: 500;
+}
+
+.treeHead[data-level='3'] {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.nest {
+  border-left: 1px solid var(--control-border);
+  margin-left: 0.375rem;
+  padding-left: 0.375rem;
 }
 
 .family {
@@ -78,12 +95,6 @@
   gap: 0.5rem;
   justify-content: space-between;
   min-width: 0;
-}
-
-.foldHead[data-level='row'] {
-  flex: none;
-  flex-direction: column;
-  gap: 0;
 }
 
 .foldBtn {
@@ -117,10 +128,6 @@
 .foldChevron svg {
   height: 100%;
   width: 100%;
-}
-
-.famRowFold {
-  grid-template-columns: 6.25rem minmax(0, 1fr);
 }
 
 /* ------------------------------------------------------------------------------------------- chords */
@@ -168,46 +175,19 @@
   outline-offset: 0;
 }
 
-/* one row per family: a small label, then chips flowing along the row */
+/* one block per family: its header on its own row, then one card per row */
 .famRow {
-  align-items: flex-start;
-  display: grid;
-  gap: 0.375rem;
-  grid-template-columns: 4.25rem minmax(0, 1fr);
-}
-
-.famLabel {
-  color: var(--text-muted);
-  font-size: 0.6875rem;
-  padding-top: 0.3125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.25rem;
 }
 
-.chip {
-  background: var(--panel-slot);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  font: inherit;
-  gap: 0.0625rem;
-  min-width: 0;
-  padding: 0.25rem 0.5rem;
-  text-align: left;
-}
-
-.chip:hover {
-  background: var(--mantine-color-default-hover);
-}
-
-.chip:focus-visible,
 .rung:focus-visible,
 .heatRowBtn:focus-visible,
 .noteChip:focus-visible,
@@ -215,31 +195,6 @@
 .foldBtn:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
-}
-
-/* a chord that does not fit yet: dashed, quiet; clicking raises the tolerance to admit it */
-.chip[data-found='false'] {
-  background: none;
-  border: 1px dashed var(--control-border);
-  color: var(--text-muted);
-}
-
-.chipTop,
-.chipBottom {
-  align-items: baseline;
-  display: flex;
-  gap: 0.375rem;
-  justify-content: space-between;
-}
-
-.chipTop {
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.chipBottom {
-  color: var(--text-muted);
-  font-size: 0.6875rem;
 }
 
 /* error: colour by size, never alone (the number is printed beside it) */
@@ -1265,11 +1220,6 @@
   color: var(--tint-green-text);
 }
 
-.chip[data-picked='true'] {
-  border-color: var(--text);
-  outline: 1px solid var(--text);
-}
-
 /* pinned note (Alt+click), H-3: yellow, after the other states so it stays visible */
 .isoHex[data-pin='true'] {
   stroke: var(--mark-yellow);
@@ -1447,16 +1397,12 @@
   padding: 0;
   position: absolute;
   right: 0.25rem;
-  top: 0.25rem;
+  top: calc(50% - 0.5625rem);
   visibility: hidden;
   width: 1.125rem;
 }
 
 /* the "+" has a slot of its own at the chip's right edge, always reserved, so nothing moves or is covered when it appears */
-.chipWrap[data-stash] .chip {
-  padding-right: 1.625rem;
-}
-
 .chipWrap:hover .chipStash,
 .chipWrap:focus-within .chipStash {
   visibility: visible;
@@ -1992,64 +1938,162 @@
   min-width: 0;
 }
 
-.posList .chip {
-  flex: 1;
-}
-
 .posGroup {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.posGroupHead {
-  color: var(--text-muted);
-  display: flex;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin: 0;
+/* ---------------------------------------------------------------------------------------- the chord card (M8h)
+   Two layouts chosen by a container query on the card's own wrapper (.chipWrap is the container).
+   NARROW (default): four lines (title + stat, subtitle, pitches, steps), ring on the left. Tune: --chord-card-h-narrow,
+   --chord-card-ring-narrow.
+   WIDE (from the threshold in the @container rule below, 30rem): ring | title block | pitches block | stat, two rows.
+   Tune: --chord-card-h, --chord-card-ring, --chord-card-title-w, --chord-card-stat-w (pitches take the rest). */
+.chipWrap {
+  --chord-card-h-narrow: 4.75rem;
+  --chord-card-ring-narrow: 3rem;
+  --chord-card-h: 2.75rem;
+  --chord-card-ring: 2rem;
+  --chord-card-title-w: 8.5rem;
+  --chord-card-stat-w: 4.5rem;
+
+  container-type: inline-size;
 }
 
-/* one position per row: drawing | label | notes and tail | rank (and score) */
-.posRow {
+.card {
+  align-content: center;
   align-items: center;
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  box-sizing: border-box;
+  color: var(--text);
+  column-gap: 0.5rem;
+  cursor: pointer;
   display: grid;
-  gap: 0.5rem;
-  grid-template-columns: auto minmax(5.5rem, max-content) minmax(0, 1fr) auto;
+  flex: 1;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  grid-template-areas:
+    'ring title stat'
+    'ring subtitle subtitle'
+    'ring pitches pitches'
+    'ring steps steps';
+  grid-template-columns: var(--chord-card-ring-narrow) minmax(0, 1fr) auto;
+  height: var(--chord-card-h-narrow);
   min-width: 0;
+  overflow: hidden;
+  padding: 0 1.625rem 0 0.375rem;
+  row-gap: 0;
+  text-align: left;
 }
 
-.posRow .drawing {
-  flex: none;
+.card:hover {
+  background: var(--mantine-color-default-hover);
 }
 
-.posLabel {
+.card:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.card[data-found='false'] {
+  background: none;
+  border: 1px dashed var(--control-border);
+  color: var(--text-muted);
+}
+
+.card[data-picked='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.cardRing {
+  display: flex;
+  grid-area: ring;
+  height: var(--chord-card-ring-narrow);
+  width: var(--chord-card-ring-narrow);
+}
+
+.cardRing .drawing {
+  height: 100%;
+  width: 100%;
+}
+
+.cardCol {
+  display: contents;
+}
+
+.cardLine1,
+.cardLine2 {
+  line-height: 1.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cardLine1 {
   font-size: 0.8125rem;
   font-weight: 600;
 }
 
-.posText {
-  display: flex;
-  flex-direction: column;
-  gap: 0.0625rem;
-  min-width: 0;
-}
-
-.posTail {
-  align-items: baseline;
+.cardLine2 {
   color: var(--text-muted);
-  display: flex;
-  flex-wrap: wrap;
   font-size: 0.6875rem;
-  gap: 0.125rem 0.5rem;
+  min-height: 0.8rem;
 }
 
-.posRank {
-  align-items: flex-end;
-  display: flex;
-  flex-direction: column;
+.cardCol[data-col='title'] .cardLine1 {
+  grid-area: title;
+}
+
+.cardCol[data-col='title'] .cardLine2 {
+  grid-area: subtitle;
+}
+
+.cardCol[data-col='pitches'] .cardLine1 {
+  grid-area: pitches;
+}
+
+.cardCol[data-col='pitches'] .cardLine2 {
+  grid-area: steps;
+}
+
+.cardStat {
   font-size: 0.75rem;
-  min-width: 3.5rem;
+  grid-area: stat;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* WIDE threshold: the one place (30rem of card width) */
+@container (min-width: 30rem) {
+  .card {
+    grid-template-areas:
+      'ring title pitches stat'
+      'ring subtitle steps stat';
+    grid-template-columns:
+      var(--chord-card-ring) var(--chord-card-title-w) minmax(0, 1fr)
+      var(--chord-card-stat-w);
+    height: var(--chord-card-h);
+    row-gap: 0.0625rem;
+  }
+
+  .cardRing {
+    height: var(--chord-card-ring);
+    width: var(--chord-card-ring);
+  }
+
+  .cardLine1,
+  .cardLine2 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cardStat {
+    align-self: center;
+  }
 }
 
 .patHead {
@@ -2073,4 +2117,24 @@
   color: var(--text);
   font-size: 0.75rem;
   padding-left: 0.375rem;
+}
+
+/* dissonance chart ghosts: a sounding pitch that is no field note (dashed line, hollow circle on the curve) */
+.dissGhostLine {
+  stroke: var(--mark-green);
+  stroke-dasharray: 3 2.5;
+  stroke-width: 1.5;
+}
+
+.dissGhostDot {
+  fill: none;
+  pointer-events: all;
+  stroke: var(--mark-green);
+  stroke-dasharray: 3 2.5;
+  stroke-width: 2;
+}
+
+/* host of the "+N outside" overlay on the dissonance chart (top-right corner: the curve's high end is at the left) */
+.dissHost {
+  position: relative;
 }

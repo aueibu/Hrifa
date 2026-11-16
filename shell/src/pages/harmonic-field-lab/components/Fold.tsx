@@ -37,16 +37,14 @@ interface FoldHeadProps {
   tip: TipKey;
   title: ReactNode;
   count: ReactNode;
-  /** `row` is the small label of a family row; `section` (default) is a section header. */
-  level?: 'section' | 'row';
   /** Extra text for the accessible name, e.g. the section it belongs to. */
   label?: string;
 }
 
-export function FoldHead({ id, tip, title, count, level = 'section', label }: FoldHeadProps) {
+export function FoldHead({ id, tip, title, count, label }: FoldHeadProps) {
   const { folded, toggle } = useFold(id);
   return (
-    <span className={classes.foldHead} data-level={level} data-fold={id}>
+    <span className={classes.foldHead} data-fold={id}>
       <Tip k={tip} as="control">
         <button
           type="button"
