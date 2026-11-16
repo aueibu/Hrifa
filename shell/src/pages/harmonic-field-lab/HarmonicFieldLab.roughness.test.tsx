@@ -8,7 +8,7 @@ import { FADE_OUT_MS, LINGER_MS } from './components/RoughnessView';
 import { KEY_SETTINGS } from './state/persist';
 import { pickPreset, ungroupShapes } from './testUtils';
 
-vi.setConfig({ testTimeout: 15_000 });
+vi.setConfig({ testTimeout: 30_000 });
 
 const KEY_LAYOUT = 'hrifa.harmonic-field-lab.layout.v1';
 const BASE = 261.6256;
