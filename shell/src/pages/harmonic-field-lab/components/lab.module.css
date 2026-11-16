@@ -1612,9 +1612,10 @@
 
 /* ---- live page additions (M5) ---- */
 
-/* a Mantine input error in the lab reads in the red text role: Mantine's own error color is 1.21:1 on the dark panel */
+/* the error message (colored by the theme's `--mantine-color-error` = `--text-danger`): the lab small size, not Mantine's "small minus 2px" */
 p.inputError {
-  color: var(--tint-red-text);
+  font-size: var(--lab-fs-small);
+  line-height: 1.3;
 }
 
 /* an inline message under the generator or the nearest-scale pick: an error, a warning or a note */
@@ -1626,7 +1627,7 @@ p.inputError {
 }
 
 .fieldMsg[data-kind="err"] {
-  color: var(--tint-red-text);
+  color: var(--text-danger);
 }
 
 .fieldMsg[data-kind="warn"] {

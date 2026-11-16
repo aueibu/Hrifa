@@ -32,6 +32,15 @@ subtler than control outlines; light-mode hover is `gray-1`).
 | Muted text (`--text-muted`) | `gray-6` | `dark-2` |
 | Text (`--text`) | `black` | `dark-0` |
 
+Danger text (`--text-danger`) is the red for error and caution text and borders. Use it for any red
+text on a panel or input, never `--mark-red` (marks, 3:1) or Mantine's red shades. Mantine's own
+`--mantine-color-error` is set to it in both schemes, so every error input (border, typed text,
+placeholder, icon, message) uses it. It differs per scheme because one value cannot do both jobs:
+dark is `--tint-red-text` (8.37:1 on `--panel`); light is `--mark-red` mixed 85% with `--text`
+(`#a73d3b`), which stays clearly red instead of near-black. Measured: light 5.92:1 on `--panel` and
+the input background, 5.09:1 on `--panel-slot`; dark 8.37:1 on `--panel`, 7.49 or better on the slot
+and input background.
+
 The dark ramp is a barely-warm gray with wide steps (levels sampled from Bitwig's dark UI, which is
 neutral; the warmth is a deliberate small red-to-blue lean) so saturated marks read cleanly on it.
 The light ramp is warmer.
