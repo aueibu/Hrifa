@@ -116,12 +116,21 @@ export function TunerStrip() {
       </Strip>
       <div className={classes.stripBody}>
         <div className={classes.alignRow}>
-          <div className={classes.gutter} aria-hidden="true">
-            <span className={classes.gutterTop}>note</span>
-            <span className={classes.gutterZero}>{GUTTER_ZERO[cmp.ref](cmp.m)}</span>
-            <span className={classes.gutterSteps}>step (c)</span>
-          </div>
-          <div className={classes.plotCol} data-testid="strip-plot" title={strip.caption}>
+          {/* the caption hangs on the axis labels, not on the plot: sweeping across the plot (hover and hold to play) must never open a bubble over the strip */}
+          <Hint dynamic={strip.caption}>
+            <div className={classes.gutter} aria-hidden="true" data-testid="strip-gutter">
+              <span className={classes.gutterTop}>note</span>
+              <span className={classes.gutterZero}>{GUTTER_ZERO[cmp.ref](cmp.m)}</span>
+              <span className={classes.gutterSteps}>step (c)</span>
+            </div>
+          </Hint>
+          {/* the caption is the plot's accessible name (the native title it replaces was its only description) */}
+          <div
+            className={classes.plotCol}
+            data-testid="strip-plot"
+            role="group"
+            aria-label={strip.caption}
+          >
             <RefLines />
             <div className={classes.stripPlot}>
               <StripGhosts />

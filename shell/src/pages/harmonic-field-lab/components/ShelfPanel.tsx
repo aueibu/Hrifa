@@ -258,9 +258,11 @@ function Slot({
         titleNode={<SlotName chord={chord} />}
         badge={
           keyBadge ? (
-            <span className={classes.slotKey} data-testid="slot-key" title="Computer key">
-              {keyBadge}
-            </span>
+            <Hint dynamic="Computer key">
+              <span className={classes.slotKey} data-testid="slot-key">
+                {keyBadge}
+              </span>
+            </Hint>
           ) : null
         }
         subtitle={subtitle}

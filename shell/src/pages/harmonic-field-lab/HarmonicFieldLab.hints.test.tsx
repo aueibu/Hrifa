@@ -126,3 +126,54 @@ describe('no native title helper left', () => {
     expect(hits.map((f) => f.replace(__dirname, ''))).toEqual([]);
   });
 });
+
+describe('no native title attribute on a DOM tag', () => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]
+    );
+  /** Lowercase JSX opening tags (`<span`, `<div`, `<g` ...) up to their closing `>` that carry ` title=`. `=>` and `>` inside `{...}` are skipped. */
+  const nativeTitleTags = (src: string): string[] => {
+    const hits: string[] = [];
+    const open = /<[a-z][A-Za-z0-9]*(?=[\s/>])/g;
+    for (let m = open.exec(src); m; m = open.exec(src)) {
+      let depth = 0;
+      let i = m.index + m[0].length;
+      for (; i < src.length; i++) {
+        const ch = src[i];
+        if (ch === '{') {
+          depth++;
+        } else if (ch === '}') {
+          depth--;
+        } else if ((ch === '"' || ch === "'") && depth === 0) {
+          // an attribute string: a `>` inside it does not end the tag
+          const close = src.indexOf(ch, i + 1);
+          i = close === -1 ? src.length : close;
+        } else if (ch === '>' && depth === 0 && src[i - 1] !== '=') {
+          break;
+        }
+      }
+      const tag = src.slice(m.index, i);
+      if (/\stitle=/.test(tag)) {
+        hits.push(tag.slice(0, 60));
+      }
+    }
+    return hits;
+  };
+  it('the scanner finds a reintroduced title and ignores component props', () => {
+    expect(nativeTitleTags('<span className="a" title="x">hi</span>')).toHaveLength(1);
+    expect(nativeTitleTags('<g\n  title={f(() => 1)}\n/>')).toHaveLength(1);
+    expect(nativeTitleTags('<Strip title="x"><title>t</title></Strip>')).toEqual([]);
+    // a `>` inside a quoted attribute must not end the tag early and hide the title after it
+    expect(nativeTitleTags('<span aria-label="a > b" title="x" />')).toHaveLength(1);
+  });
+  it('no components/*.tsx puts title= on a lowercase tag', () => {
+    const files = walk(join(__dirname, 'components')).filter(
+      (f) => /\.tsx$/.test(f) && !/\.test\.tsx$/.test(f)
+    );
+    const hits = files.flatMap((f) =>
+      nativeTitleTags(readFileSync(f, 'utf8')).map((t) => `${f.replace(__dirname, '')}: ${t}`)
+    );
+    expect(hits).toEqual([]);
+  });
+});

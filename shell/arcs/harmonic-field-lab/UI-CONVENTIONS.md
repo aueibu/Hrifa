@@ -31,7 +31,7 @@ Where each thing lives: `src/pages/harmonic-field-lab/` (`components/`, `state/`
 - Tooltip look, top to bottom: bold term, the dynamic line (live values; one colour for the whole tooltip, position marks it as dynamic), help paragraphs, a Keys list, the Example last (like flavour text on a card). Blank line between blocks; a paragraph breaks onto a new line after about three lines of text; a number and its unit (`c`, `Hz`) never split across lines.
 - Bold names you can see on screen; italic only the Example label and a term being defined. Key names in help come from one table (`audio/shortcuts.ts`), so a key is written once; the handlers read the same table (see ARCHITECTURE for the physical-key caveat).
 - When tooltips nest, the innermost one shows. Every dynamic tooltip (the old native `title`s) is a styled `Hint`; the Developer menu's tooltip on/off and delay apply to all.
-- Which controls get a tooltip is still decided case by case: the hold-to-play gesture has no control to hover (glossary only), and a few static `title=` strings remain (see BACKLOG).
+- Which controls get a tooltip is still decided case by case: the hold-to-play gesture has no control to hover (glossary only), and no element carries a native `title=` any more (the SVG `<title>`s on chart marks remain until the unified help panel idea in BACKLOG is decided).
 
 ## 5. Colour and marks
 - Roles, not hexes (`src/theme/THEMING.md`): sounding is `--mark-green`, the highlighted/hovered chord is `--mark-blue`, a hovered note is blue, a pinned note is muted, severity colours for cents error. Not-in-subset marks are dimmed SOLID lines (about 35 percent), not dashed; ghost marks (off-field sounding pitches) stay dashed.

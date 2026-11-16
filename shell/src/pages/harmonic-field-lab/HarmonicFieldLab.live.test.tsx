@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { HarmonicFieldLabApp } from './HarmonicFieldLabApp';
+import { LAB_DEVELOPER_KEY, resetDeveloperOptionsCache } from './state/developerOptions';
 import { migrateSubsets } from './state/generatorLibrary';
 import { makeTab, presetGen } from './state/labState';
 import { saveLibrary } from './state/libraryStore';
@@ -36,7 +37,10 @@ const typeSlow = async (el: HTMLElement, value: string) => {
   await settle();
 };
 
-beforeEach(() => window.localStorage.clear());
+beforeEach(() => {
+  window.localStorage.clear();
+  resetDeveloperOptionsCache();
+});
 afterEach(() => window.localStorage.clear());
 
 describe('live generation', () => {
@@ -277,7 +281,33 @@ describe('live selection', () => {
   });
 
   it('the strip compares to JI with an odd limit, to m-EDO, and to a picked scale once there is one', async () => {
+    window.localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify({ tooltipDelay: 0 }));
+    resetDeveloperOptionsCache();
     render(<HarmonicFieldLabPage />);
+    /** The strip caption is the styled tooltip of the axis labels (the gutter), read on hover; the plot itself has none. */
+    const plotTip = async () => {
+      const gutter = screen.getByTestId('strip-gutter');
+      const plot = screen.getByTestId('strip-plot');
+      const baseline = new Set(screen.queryAllByRole('tooltip'));
+      fireEvent.mouseEnter(plot);
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      // sweeping the plot opens nothing new (a tooltip a field opened on focus may already be showing)
+      expect(screen.queryAllByRole('tooltip')).toHaveLength(baseline.size);
+      fireEvent.mouseLeave(plot);
+      fireEvent.mouseEnter(gutter);
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      const tips = screen.getAllByRole('tooltip').filter((t) => !baseline.has(t));
+      expect(tips).toHaveLength(1);
+      const text = tips[0].textContent ?? '';
+      fireEvent.mouseLeave(gutter);
+      expect(plot).not.toHaveAttribute('title');
+      expect(plot).toHaveAttribute('aria-label', text.replaceAll(' ', ' '));
+      return text;
+    };
     const strip = screen.getByRole('region', { name: 'Tuner strip' });
     const compare = within(strip).getByRole('combobox', { name: 'Compare to' });
     expect(
@@ -290,19 +320,13 @@ describe('live selection', () => {
     ).toBeInTheDocument();
     type(compare, 'medo');
     await typeSlow(within(strip).getByRole('textbox', { name: 'Divisions of the repeat' }), '19');
-    expect(screen.getByTestId('strip-plot')).toHaveAttribute(
-      'title',
-      expect.stringContaining('19-EDO')
-    );
+    expect(await plotTip()).toContain('19-EDO');
     expect(within(compare).getByRole('option', { name: 'Picked scale' })).toBeDisabled();
     const bar = within(screen.getByRole('group', { name: 'Note selection' }));
     type(bar.getByRole('combobox', { name: 'Scale to match' }), 'w:Ionian (major)');
     fireEvent.click(bar.getAllByRole('button', { name: 'Select' })[0]);
     expect(compare).toHaveValue('picked');
-    expect(screen.getByTestId('strip-plot')).toHaveAttribute(
-      'title',
-      expect.stringContaining('Ionian')
-    );
+    expect(await plotTip()).toContain('Ionian');
   });
 
   it('stats, shape, step sizes and the compact field table follow the selection', () => {

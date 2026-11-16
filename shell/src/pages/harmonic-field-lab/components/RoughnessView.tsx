@@ -34,7 +34,7 @@ import { ghostKey } from '../state/ghosts';
 import type { VizId } from '../state/layout';
 import { SVG_FS_SMALL } from '../state/typeScale';
 import { ROUGH_REGISTERS, type RoughRegister } from '../state/vizState';
-import { Num, Row, Tip, useLab, useViz } from './ui';
+import { Hint, Num, Row, Tip, useLab, useViz } from './ui';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
@@ -102,12 +102,12 @@ function StatSlot({
   slot,
   children,
   testId,
-  title,
+  hint,
 }: {
   slot: '1' | '2' | '3';
   children: ReactNode;
   testId?: string;
-  title?: string;
+  hint?: string;
 }) {
   return (
     <span className={classes.liveSlot} data-slot={slot}>
@@ -118,9 +118,11 @@ function StatSlot({
       >
         <Num muted>{'\u00a0'}</Num>
       </span>
-      <span className={classes.liveData} data-layer="data" data-testid={testId} title={title}>
-        {children}
-      </span>
+      <Hint dynamic={hint} disabled={!hint}>
+        <span className={classes.liveData} data-layer="data" data-testid={testId}>
+          {children}
+        </span>
+      </Hint>
     </span>
   );
 }
@@ -404,33 +406,43 @@ export function RoughnessBody({ id }: { id: VizId }) {
               </span>
             </span>
           </Tip>
-          <span className={classes.liveRegister} title="Lower is smoother">
-            <SegmentedControl
-              size="xs"
-              className={labClasses.tinySeg}
-              aria-label="Roughness register"
-              value={register}
-              onChange={(v) =>
-                viz.patch(id, { register: ROUGH_REGISTERS.find((x) => x === v) ?? 'shape' })
-              }
-              data={[
-                {
-                  label: (
-                    <span title="Scored as if the lowest note were middle C, so the same shape always scores the same, like the chord cards.">
-                      Shape
-                    </span>
-                  ),
-                  value: 'shape',
-                },
-                {
-                  label: (
-                    <span title="Each note scored at the pitch it actually sounds.">Pitch</span>
-                  ),
-                  value: 'pitch',
-                },
-              ]}
-            />
-          </span>
+          <Hint dynamic="Lower is smoother">
+            <span className={classes.liveRegister}>
+              <SegmentedControl
+                size="xs"
+                className={labClasses.tinySeg}
+                aria-label="Roughness register"
+                value={register}
+                onChange={(v) =>
+                  viz.patch(id, { register: ROUGH_REGISTERS.find((x) => x === v) ?? 'shape' })
+                }
+                data={[
+                  {
+                    label: (
+                      <Hint
+                        label="Shape"
+                        dynamic="Scored as if the lowest note were middle C, so the same shape always scores the same, like the chord cards."
+                      >
+                        <span>Shape</span>
+                      </Hint>
+                    ),
+                    value: 'shape',
+                  },
+                  {
+                    label: (
+                      <Hint
+                        label="Pitch"
+                        dynamic="Each note scored at the pitch it actually sounds."
+                      >
+                        <span>Pitch</span>
+                      </Hint>
+                    ),
+                    value: 'pitch',
+                  },
+                ]}
+              />
+            </span>
+          </Hint>
         </div>
       </div>
       <div className={classes.liveChartHost}>
@@ -623,7 +635,7 @@ export function RoughnessBody({ id }: { id: VizId }) {
           </StatSlot>
         </Row>
         <Row name="Blends best">
-          <StatSlot slot="3" title={dips.map(dipName).join('  ')}>
+          <StatSlot slot="3" hint={dips.map(dipName).join('  ')}>
             {n === 0 ? null : <Num>{dips.map(dipName).join('  ') || '\u2013'}</Num>}
           </StatSlot>
         </Row>

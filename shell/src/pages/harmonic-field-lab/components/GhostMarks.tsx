@@ -6,7 +6,7 @@
 import { useMemo } from 'react';
 import { ghostsOf, type Ghost } from '../state/ghosts';
 import { stripLeft } from './TunerStrip';
-import { useLab } from './ui';
+import { Hint, useLab } from './ui';
 import classes from './lab.module.css';
 
 /** The ghosts of what sounds now, against the active tab's field. */
@@ -50,15 +50,15 @@ export function StripGhosts() {
   return (
     <>
       {ghosts.map((g) => (
-        <span
-          key={g.c}
-          className={classes.stripGhost}
-          style={{ left: stripLeft(g.c, base.repC) }}
-          role="img"
-          aria-label={`Ghost: ${g.text}`}
-          title={g.text}
-          data-testid="strip-ghost"
-        />
+        <Hint key={g.c} dynamic={g.text}>
+          <span
+            className={classes.stripGhost}
+            style={{ left: stripLeft(g.c, base.repC) }}
+            role="img"
+            aria-label={`Ghost: ${g.text}`}
+            data-testid="strip-ghost"
+          />
+        </Hint>
       ))}
     </>
   );
