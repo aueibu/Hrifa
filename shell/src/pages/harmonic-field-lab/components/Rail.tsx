@@ -33,6 +33,8 @@ export const PANELS: { id: PanelId; label: string; tip: TipKey }[] = [
   { id: 'viz1', label: vizName('viz1', DEFAULT_VIEWS.viz1), tip: 'lattice' },
   { id: 'viz2', label: vizName('viz2', DEFAULT_VIEWS.viz2), tip: 'edoFit' },
   { id: 'viz3', label: vizName('viz3', DEFAULT_VIEWS.viz3), tip: 'dissCurve' },
+  { id: 'viz4', label: vizName('viz4', DEFAULT_VIEWS.viz4), tip: 'liveRoughness' },
+  { id: 'viz5', label: vizName('viz5', DEFAULT_VIEWS.viz5), tip: 'isoKeyboard' },
   { id: 'retuner', label: 'Retuner', tip: 'retunerPanel' },
 ];
 /** A panel's name; a visualizer is named after the view it shows now (`view` says which). */
@@ -56,6 +58,10 @@ function vizSummary(view: VizView, s: VizSettings, lab: Lab, ranks: AxisRank[]):
       return `best ${lab.an.edo.best[0] ?? '-'}`;
     case 'dissonance':
       return `${lab.an.diss.dips.length} dips`;
+    case 'roughness':
+      return lab.sounding.size + lab.soundingMarks.size + lab.soundingGhosts.length > 0
+        ? 'sounding'
+        : 'silent';
     case 'iso':
       return `${
         new Set(
@@ -88,6 +94,8 @@ export function summaryOf(id: PanelId, lab: Lab, ranks: AxisRank[]): string {
     case 'viz1':
     case 'viz2':
     case 'viz3':
+    case 'viz4':
+    case 'viz5':
       return vizSummary(lab.viz.view(id), lab.viz.settings(id), lab, ranks);
     case 'retuner':
       return `${lab.state.retuner.cards.length} cards`;

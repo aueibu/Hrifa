@@ -19,6 +19,7 @@ import {
   VIZ_VIEWS,
   setView,
   viewOf,
+  vizName,
   clampShares,
   dragSplitter,
   evenShares,
@@ -483,11 +484,36 @@ describe('three-panel stacks', () => {
 });
 
 describe('visualizer views (v3)', () => {
-  it('defaults: viz1 pinned where Lattice was showing Lattice; viz2 and viz3 unpinned (EDO fit, Dissonance curve)', () => {
+  it('defaults: viz1 pinned where Lattice was showing Lattice; viz2 to viz5 unpinned (EDO fit, Dissonance curve, Live roughness, Isomorphic keyboard)', () => {
     expect(DEFAULT_LAYOUT.right[0]).toEqual(['viz1']);
     expect(pinnedIds(DEFAULT_LAYOUT)).not.toContain('viz2');
     expect(pinnedIds(DEFAULT_LAYOUT)).not.toContain('viz3');
-    expect(DEFAULT_VIEWS).toEqual({ viz1: 'lattice', viz2: 'edo', viz3: 'dissonance' });
+    expect(pinnedIds(DEFAULT_LAYOUT)).not.toContain('viz4');
+    expect(pinnedIds(DEFAULT_LAYOUT)).not.toContain('viz5');
+    expect(DEFAULT_VIEWS).toEqual({
+      viz1: 'lattice',
+      viz2: 'edo',
+      viz3: 'dissonance',
+      viz4: 'roughness',
+      viz5: 'iso',
+    });
+    expect(vizName('viz4', viewOf(DEFAULT_LAYOUT, 'viz4'))).toBe('Visualizer 4 – Live roughness');
+    // a stored three-visualizer layout loads unchanged: the new panels stay unpinned, on their default views
+    const old = '{"left":[["keys"]],"right":[["viz1"],["viz3"]],"views":{"viz3":"iso"}}';
+    const loaded = parseLayout(old);
+    expect(loaded).toEqual({
+      left: [['keys']],
+      right: [['viz1'], ['viz3']],
+      views: { viz3: 'iso' },
+    });
+    expect(viewOf(loaded, 'viz5')).toBe('iso');
+    expect(parseLayout('{"left":[],"right":[["viz4","viz5"]],"views":{"viz4":"lattice"}}')).toEqual(
+      {
+        left: [],
+        right: [['viz4', 'viz5']],
+        views: { viz4: 'lattice' },
+      }
+    );
     expect(viewOf(DEFAULT_LAYOUT, 'viz2')).toBe('edo');
   });
 
@@ -498,7 +524,8 @@ describe('visualizer views (v3)', () => {
     expect(viewOf(a, 'viz2')).toBe('edo');
     expect(setView(a, 'viz1', 'iso')).toBe(a);
     expect(setView(a, 'viz1', 'lattice')).toEqual(DEFAULT_LAYOUT);
-    expect(VIZ_VIEWS).toHaveLength(4);
+    expect(VIZ_VIEWS).toHaveLength(5);
+    expect(VIZ_VIEWS).toContain('roughness');
   });
 
   it('keeps views through unpin, move and stack, and round-trips through JSON', () => {

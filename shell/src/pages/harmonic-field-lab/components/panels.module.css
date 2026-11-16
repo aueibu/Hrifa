@@ -2138,3 +2138,248 @@
 .dissHost {
   position: relative;
 }
+
+/* live roughness view: total, bars per pair, next-note curve (sounding colour green, highlighted chord blue) */
+.liveRough {
+  --live-top-h: 2.25rem; /* the total line: fixed, so nothing below it moves */
+  --live-verdicts-h: 3.5rem; /* the three readout rows */
+  --live-pair-row-h: 1.25rem; /* one pair row, real or placeholder */
+  --live-pairs-h: 8.5rem; /* six pair rows, then the list scrolls inside the box */
+  --live-fade: 120ms; /* hint fade */
+  --live-total-w: 5.5ch; /* fits 99.99 at the total font size; a width never depends on the text */
+  --live-count-w: 9ch; /* fits "12 notes"; "note" and "notes" take the same room */
+  --live-fade-out: 300ms; /* full to dimmed after the release */
+  --live-fade-end: 500ms; /* dimmed to gone (FADE_OUT_MS in RoughnessView) */
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  gap: 0.5rem;
+}
+
+.liveTop {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  height: var(--live-top-h);
+  overflow: hidden;
+}
+
+.liveHead {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.liveTotal {
+  display: inline-block;
+  text-align: left;
+  width: var(--live-total-w);
+  color: var(--text);
+  transition: color var(--live-fade);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.liveHint {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.livePairs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  list-style: none;
+  margin: 0;
+  height: var(--live-pairs-h);
+  overflow-y: auto;
+  padding: 0;
+}
+
+.livePair {
+  flex-shrink: 0;
+  height: var(--live-pair-row-h);
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(5rem, 9rem) 1fr 2.5rem;
+}
+
+.livePairName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveBarTrack {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: block;
+  height: 0.5rem;
+}
+
+.liveBar {
+  background: var(--mark-green);
+  border-radius: var(--radius-control);
+  display: block;
+  height: 100%;
+}
+
+.liveMark {
+  stroke: var(--mark-green);
+  stroke-width: 2;
+}
+
+.liveMark[data-chord='true'] {
+  stroke: var(--mark-blue);
+}
+
+/* Live roughness: placeholders and hint overlay keep every block the same size from 0 to many notes */
+.liveTotal[data-muted='true'] {
+  color: var(--text-muted);
+}
+
+.liveChartHost {
+  position: relative;
+}
+
+.liveHintOverlay {
+  bottom: 2.5rem;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  left: 0.75rem;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0.75rem;
+  text-align: center;
+  transition: opacity var(--live-fade);
+}
+
+.liveHintOverlay[data-visible='true'] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveTotal,
+  .liveHintOverlay {
+    transition: none;
+  }
+}
+
+.liveVerdicts {
+  height: var(--live-verdicts-h);
+  overflow: hidden;
+}
+
+/* Live roughness sources: hover draws in the highlighted-chord colour, the lingering chord is dimmed then fades */
+.liveRough[data-source='hover'] .liveBar {
+  background: var(--mark-blue);
+}
+
+.liveRough[data-source='hover'] .liveMark {
+  stroke: var(--mark-blue);
+}
+
+/* One state attribute on the root (idle, sounding, hover, linger, fading) drives both layers, so they cannot disagree.
+   Data layer: full while sounding or hovered, dimmed while the last chord lingers, out while it fades. Placeholder
+   text: hidden whenever the data layer shows, back (crossfading) only while the data layer fades out or idle. */
+.liveData {
+  opacity: 1;
+}
+
+.liveRough[data-state='linger'] .liveData {
+  opacity: 0.55;
+  transition: opacity var(--live-fade-out);
+}
+
+.liveRough[data-state='fading'] .liveData,
+.liveRough[data-state='idle'] .liveData {
+  opacity: 0;
+}
+
+.liveRough[data-state='fading'] .liveData {
+  transition: opacity var(--live-fade-end);
+}
+
+.liveIdleText {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.liveRough[data-state='idle'] .liveIdleText,
+.liveRough[data-state='fading'] .liveIdleText {
+  opacity: 1;
+  visibility: visible;
+}
+
+.liveRough[data-state='fading'] .liveIdleText {
+  transition: opacity var(--live-fade-end);
+}
+
+.liveSlot {
+  display: inline-grid;
+  width: var(--live-slot-w);
+}
+
+.liveSlot[data-slot='1'] {
+  --live-slot-w: 18ch;
+}
+
+.liveSlot[data-slot='2'] {
+  --live-slot-w: 10ch;
+}
+
+.liveSlot[data-slot='3'] {
+  --live-slot-w: 14rem;
+}
+
+.liveSlot > * {
+  grid-area: 1 / 1;
+  justify-self: end;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveStack {
+  display: inline-grid;
+}
+
+.liveStack > * {
+  grid-area: 1 / 1;
+}
+
+.liveTag {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  pointer-events: none;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveRough[data-state] .liveData,
+  .liveRough[data-state] .liveIdleText {
+    transition: none;
+  }
+}
+
+.liveCount {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.5rem;
+  text-align: left;
+  width: var(--live-count-w);
+}
+
+.liveRough[data-state] .liveBlank {
+  visibility: hidden;
+}

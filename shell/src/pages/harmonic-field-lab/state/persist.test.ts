@@ -102,7 +102,10 @@ describe('settings (settings.v1)', () => {
     expect(s.modeAtBase).toBe(true);
     expect(s.savedAll).toBe(true);
     expect(s.viz.viz1).toEqual({ ...d.viz.viz1, labels: false });
-    expect(Object.keys(s.viz)).toEqual(['viz1', 'viz2', 'viz3']);
+    expect(Object.keys(s.viz)).toEqual(['viz1', 'viz2', 'viz3', 'viz4', 'viz5']);
+    // older settings that stored three visualizers: the two new ones are defaults
+    expect(s.viz.viz4).toEqual(d.viz.viz4);
+    expect(s.viz.viz5).toEqual(d.viz.viz5);
   });
 
   it('keyboardMode and linkedMelody are optional: old data loads unchanged, bad values fall back, loading writes nothing', () => {

@@ -6,7 +6,7 @@
  * A column holds one to three panels, top to bottom (a stack). `left` runs outer to inner (index 0 is at the screen edge,
  * the last column is next to the generator); `right` runs inner to outer (index 0 is next to the generator).
  */
-export type VizId = 'viz1' | 'viz2' | 'viz3';
+export type VizId = 'viz1' | 'viz2' | 'viz3' | 'viz4' | 'viz5';
 export type PanelId =
   | 'chords'
   | 'shelf'
@@ -16,7 +16,7 @@ export type PanelId =
   | 'modes'
   | 'retuner'
   | VizId;
-export const VIZ_IDS: readonly VizId[] = ['viz1', 'viz2', 'viz3'];
+export const VIZ_IDS: readonly VizId[] = ['viz1', 'viz2', 'viz3', 'viz4', 'viz5'];
 export const PANEL_IDS: readonly PanelId[] = [
   'chords',
   'shelf',
@@ -30,12 +30,13 @@ export const PANEL_IDS: readonly PanelId[] = [
 export const isViz = (id: PanelId): id is VizId => (VIZ_IDS as readonly string[]).includes(id);
 
 /** What a visualizer panel shows. */
-export type VizView = 'lattice' | 'edo' | 'dissonance' | 'iso';
-export const VIZ_VIEWS: readonly VizView[] = ['lattice', 'edo', 'dissonance', 'iso'];
+export type VizView = 'lattice' | 'edo' | 'dissonance' | 'roughness' | 'iso';
+export const VIZ_VIEWS: readonly VizView[] = ['lattice', 'edo', 'dissonance', 'roughness', 'iso'];
 export const VIZ_VIEW_LABEL: Record<VizView, string> = {
   lattice: 'Lattice',
   edo: 'EDO fit',
   dissonance: 'Dissonance curve',
+  roughness: 'Live roughness',
   iso: 'Isomorphic keyboard',
 };
 /** A visualizer's name: its number and its current view, e.g. "Visualizer 2 \u2013 EDO fit". */
@@ -45,6 +46,8 @@ export const DEFAULT_VIEWS: Record<VizId, VizView> = {
   viz1: 'lattice',
   viz2: 'edo',
   viz3: 'dissonance',
+  viz4: 'roughness',
+  viz5: 'iso',
 };
 
 /** One to three panels, top first (a stack). */

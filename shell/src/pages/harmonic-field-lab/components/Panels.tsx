@@ -61,6 +61,8 @@ export function renderPanel(id: PanelId) {
     case 'viz1':
     case 'viz2':
     case 'viz3':
+    case 'viz4':
+    case 'viz5':
       return <VisualizerPanel id={id} />;
     case 'retuner':
       return <RetunerPanel />;

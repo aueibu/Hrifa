@@ -427,7 +427,7 @@ describe('visualizer panels', () => {
     window.localStorage.clear();
   });
 
-  it('replaces the Lattice rail panel with three numbered visualizers named by their view, with live summaries', () => {
+  it('replaces the Lattice rail panel with five numbered visualizers named by their view, with live summaries', () => {
     render(<HarmonicFieldLabPage />);
     const tab = (re: RegExp) => within(rail()).getByRole('tab', { name: re });
     expect(tab(/Visualizer 1 – Lattice/)).toHaveTextContent(/^Visualizer 1 – Lattice2D 3·5·7$/);
@@ -435,7 +435,13 @@ describe('visualizer panels', () => {
     expect(tab(/Visualizer 3 – Dissonance curve/)).toHaveTextContent(
       /^Visualizer 3 – Dissonance curve\d+ dips$/
     );
-    expect(within(rail()).getAllByRole('tab')).toHaveLength(10);
+    expect(tab(/Visualizer 4 – Live roughness/)).toHaveTextContent(
+      /^Visualizer 4 – Live roughnesssilent$/
+    );
+    expect(tab(/Visualizer 5 – Isomorphic keyboard/)).toHaveTextContent(
+      /^Visualizer 5 – Isomorphic keyboard\d+ of \d+$/
+    );
+    expect(within(rail()).getAllByRole('tab')).toHaveLength(12);
   });
 
   it('switches a visualizer view from its header menu; the panel, rail and stored layout follow', async () => {
@@ -449,7 +455,9 @@ describe('visualizer panels', () => {
     expect(
       screen.getByRole('group', { name: /Isomorphic keyboard: hexagons/ })
     ).toBeInTheDocument();
-    expect(within(rail()).getByRole('tab', { name: /Isomorphic keyboard/ })).toBeInTheDocument();
+    expect(
+      within(rail()).getByRole('tab', { name: /^Visualizer 2 – Isomorphic keyboard/ })
+    ).toBeInTheDocument();
     expect(within(rail()).queryByRole('tab', { name: /EDO fit/ })).toBeNull();
     expect(JSON.parse(window.localStorage.getItem(KEY)!).views).toEqual({ viz2: 'iso' });
   });

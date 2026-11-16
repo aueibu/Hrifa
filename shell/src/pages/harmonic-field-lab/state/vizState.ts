@@ -51,6 +51,7 @@ export const VIEW_TIP: Record<VizView, TipKey> = {
   lattice: 'lattice',
   edo: 'edoFit',
   dissonance: 'dissCurve',
+  roughness: 'liveRoughness',
   iso: 'isoKeyboard',
 };
 

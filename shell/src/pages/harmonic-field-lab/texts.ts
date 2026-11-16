@@ -952,8 +952,8 @@ const entries = {
   /* ---- visualizer panels ---- */
   vizView: {
     term: 'Visualizer view',
-    text: 'A visualizer panel can show any of four views of the same subset: Lattice, EDO fit, Dissonance curve or Isomorphic keyboard. The panel is named after the view it shows; pick another from this menu. There are three visualizer panels in the rail, so you can keep several views side by side. Example: leave the first visualizer on Lattice and switch the second to EDO fit to see the grid and the tuning fit together.',
-    see: ['lattice', 'edoFit', 'dissCurve', 'isoKeyboard'],
+    text: 'A visualizer panel can show any of five views: Lattice, EDO fit, Dissonance curve, Live roughness or Isomorphic keyboard (Live roughness follows what sounds now, the others follow the subset). The panel is named after the view it shows; pick another from this menu. There are five visualizer panels in the rail, so you can keep several views side by side. Example: leave the first visualizer on Lattice and switch the second to EDO fit to see the grid and the tuning fit together.',
+    see: ['lattice', 'edoFit', 'dissCurve', 'liveRoughness', 'isoKeyboard'],
   },
   vizPopOut: {
     term: 'Open in a large window',
@@ -1043,6 +1043,26 @@ const entries = {
     term: 'Dissonance readout',
     text: 'Shows the interval in cents and the roughness at the point you hover on the curve. Example: hovering 702 c reads a roughness near the bottom of the curve, hovering 100 c reads a much higher one.',
     see: ['dissCurve', 'dissAxes'],
+  },
+  liveRoughness: {
+    term: 'Live roughness',
+    text: 'The Sethares roughness of the notes sounding right now (field notes, notes outside the field, held keys and held chord previews), using the same seven-partial sound as the dissonance curve, with the lowest sounding note at its own pitch above the 1/1 Hz setting. It shows the total, one bar per pair of notes, and a curve of what the total would be if one more note were added. It updates as notes start and stop. Example: hold C, G and B of 12-EDO and the total is 4.79; hold C, F-sharp and A-flat and it is 6.70, so the first chord is smoother.',
+    see: ['roughness', 'liveRoughTotal', 'liveRoughPairs', 'liveRoughCurve', 'dissCurve'],
+  },
+  liveRoughTotal: {
+    term: 'Total roughness (live)',
+    text: 'One number for everything sounding: the beating among all overtones of all the notes, each note against the others and against itself. Lower is smoother. No scale or threshold is claimed: compare one chord with another, in the same register. Example: 4.79 for C G B against 5.43 for C E G in 12-EDO means C G B beats less.',
+    see: ['liveRoughness', 'roughness'],
+  },
+  liveRoughPairs: {
+    term: 'Roughness by pair',
+    text: 'One bar per pair of sounding notes, the roughest first, with the bar length in proportion to the largest. It shows which two notes cause the beating. Example: in C F-sharp A-flat the F-sharp to A-flat bar (2.46) is the longest, so that minor second is the roughest pair.',
+    see: ['liveRoughness', 'liveRoughTotal'],
+  },
+  liveRoughCurve: {
+    term: 'Next-note curve',
+    text: 'Across: the interval above the lowest sounding note, in cents, over one repeat. Up: the total roughness if one more note were added at that interval. The notes that sound now are marked on it; the dips, named by the nearest simple ratio, are the notes that blend best with what is playing. Point at the curve to read a value. Example: over C and G, the curve dips at E (about 386 c) and the octave, so those are the notes that sit best on top of the fifth.',
+    see: ['liveRoughness', 'dissCurve', 'dissDips'],
   },
   isoKeyboard: {
     term: 'Isomorphic keyboard',
