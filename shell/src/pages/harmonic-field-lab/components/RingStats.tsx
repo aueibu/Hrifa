@@ -380,7 +380,25 @@ function Inspector() {
           )}
         </div>
         <Row name="cents">{r ? <Num>{r.cents.toFixed(2)}</Num> : dash}</Row>
-        <Row name="monzo">{r ? <Num>{r.monzo}</Num> : dash}</Row>
+        <Row name="monzo">
+          {r ? (
+            <span role="img" aria-label={r.monzoName ?? 'monzo: none, an irrational note'}>
+              <Num>{r.monzo}</Num>
+            </span>
+          ) : (
+            dash
+          )}
+        </Row>
+        <Row name="top / bottom">
+          {r ? (
+            <span role="img" aria-label={r.topBottomName ?? 'none, an irrational note'}>
+              <Num>{r.topBottom ?? '—'}</Num>
+            </span>
+          ) : (
+            dash
+          )}
+        </Row>
+        <Row name="Tenney">{r ? <Num>{r.tenney ?? '—'}</Num> : dash}</Row>
         <Row name="12-EDO">{r ? <Num>{r.vs12}</Num> : dash}</Row>
         <Row name="vs JI">{r ? <Num>{r.vsJI}</Num> : dash}</Row>
       </div>

@@ -153,7 +153,7 @@ describe('field table, ring, visualizers', () => {
     expect(rows).toHaveLength(8);
     expect(rows[0].step).toBeCloseTo(203.91, 1);
     expect(rows[7].step).toBeCloseTo(1200 - 1088.27, 1);
-    expect(rows[3].monzo).toBe('2^-3 11');
+    expect(rows[3].monzo).toBe('[-3 0 0 0 1⟩');
     expect(rows[2].prime).toBe(5);
     expect(rows[2].odd).toBe('5');
     expect(rows[2].vs12).toBe('E -13.7');

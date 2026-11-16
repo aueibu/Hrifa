@@ -20,7 +20,7 @@ Import from the barrel (`./index`, or `@/lib/harmonic-field`).
 | module | contains |
 | --- | --- |
 | `types.ts` | `Monzo`, `Note`, `RelNote`, `PrimeMask`, `FieldResult`, `AdditiveAxis`, `OrthoplexAxis`, `SizeGroup`, `LetteredGroup` |
-| `intervals.ts` | `PRIMES`, `EPS`, `MAXN`, `mod`, `mAdd`, `mCents`, `mFrac`, `factorInt`, `mkNote`, `ratioNote`, `centsNote`, `mulNotes`, `parseInterval`, `reduceInto`, `fmtRatio`, `primeLimit`, `oddLimit`, `tenneyHeight`, `slotOf`, `passesMask`, `dedupeSort`, `NAMES`, `vs12` |
+| `intervals.ts` | `PRIMES`, `EPS`, `MAXN`, `mod`, `mAdd`, `mCents`, `mFrac`, `factorInt`, `mkNote`, `ratioNote`, `centsNote`, `mulNotes`, `parseInterval`, `reduceInto`, `fmtRatio`, `primeLimit`, `oddLimit`, `tenneyHeight`, `fmtMonzoVector`, `fmtTopBottom`, `nameTopBottom`, `nameMonzoVector`, `fmtTenney`, `slotOf`, `passesMask`, `dedupeSort`, `NAMES`, `vs12` |
 | `generators.ts` | `genHarmonic`, `genEdo`, `genAdditive`, `genOrthoplex`, `genCps`, `parseCustom` (each returns unreduced notes) |
 | `field.ts` | `buildField`, `latticeCoords`, `latticeEdges`, `cpsChords` (+ `Lattice*`, `CpsChord` types) |
 | `subset.ts` | `carrySelection`, `rotateSubset`, `nearestEdSubset`, `oddLimitSubset` |

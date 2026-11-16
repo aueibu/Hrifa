@@ -215,3 +215,109 @@ export function vs12(c: number): string {
   const d = c - s * 100;
   return NAMES[mod(s, 12)] + (d >= 0 ? ' +' : ' ') + d.toFixed(1);
 }
+
+/* ---------------------------------------------------------------------------- prime factorization text */
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const sup = (e: number): string =>
+  e === 1
+    ? ''
+    : String(e)
+        .split('')
+        .map((d) => SUP[Number(d)])
+        .join('');
+
+/** Every prime from 2 up to `max` (the lib table first, trial division beyond it). */
+function primesUpTo(max: number): number[] {
+  const out: number[] = [];
+  for (let p = 2; p <= max; p++) {
+    if (out.every((q) => p % q !== 0)) {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+/** The nonzero exponents, ascending by prime. */
+function monzoTerms(n: Note): [number, number][] {
+  return Object.entries(n.m ?? {})
+    .map(([p, e]): [number, number] => [Number(p), e])
+    .filter(([, e]) => e !== 0)
+    .sort((a, b) => a[0] - b[0]);
+}
+
+/** Monzo vector text `[-3 1 1⟩`: exponents of every prime from 2 to the highest used, zeros included. 1/1 is `[ ⟩`; null without a monzo. */
+export function fmtMonzoVector(n: Note): string | null {
+  if (!n.m) {
+    return null;
+  }
+  const t = monzoTerms(n);
+  if (!t.length) {
+    return '[ ⟩';
+  }
+  const hi = t[t.length - 1][0];
+  const e = new Map(t);
+  return `[${primesUpTo(hi)
+    .map((p) => e.get(p) ?? 0)
+    .join(' ')}⟩`;
+}
+
+const side = (t: [number, number][]): string =>
+  t.length ? t.map(([p, e]) => `${p}${sup(e)}`).join('·') : '1';
+
+/** Top / bottom text `3·5 / 2³` (primes joined by `·`, superscript exponents); an empty side is `1`, 1/1 is `1`; null without a monzo. */
+export function fmtTopBottom(n: Note): string | null {
+  if (!n.m) {
+    return null;
+  }
+  const t = monzoTerms(n);
+  if (!t.length) {
+    return '1';
+  }
+  const top = t.filter(([, e]) => e > 0);
+  const bot = t.filter(([, e]) => e < 0).map(([p, e]): [number, number] => [p, -e]);
+  return `${side(top)} / ${side(bot)}`;
+}
+
+const sayList = (xs: string[]): string =>
+  xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+
+/** Words for the top / bottom text: "3 to the 2, over 2 to the 3". */
+export function nameTopBottom(n: Note): string | null {
+  if (!n.m) {
+    return null;
+  }
+  const t = monzoTerms(n);
+  if (!t.length) {
+    return '1';
+  }
+  const say = (s: [number, number][]): string =>
+    s.length ? s.map(([p, e]) => (e === 1 ? `${p}` : `${p} to the ${e}`)).join(' times ') : '1';
+  const top = t.filter(([, e]) => e > 0);
+  const bot = t.filter(([, e]) => e < 0).map(([p, e]): [number, number] => [p, -e]);
+  return `${say(top)}, over ${say(bot)}`;
+}
+
+/** Words for the monzo vector: "monzo: exponents of 2 and 3, minus 3 and 2". */
+export function nameMonzoVector(n: Note): string | null {
+  if (!n.m) {
+    return null;
+  }
+  const t = monzoTerms(n);
+  if (!t.length) {
+    return 'monzo: no exponents, the ratio is 1/1';
+  }
+  const hi = t[t.length - 1][0];
+  const e = new Map(t);
+  const ps = primesUpTo(hi);
+  const vals = ps.map((p) => {
+    const v = e.get(p) ?? 0;
+    return v < 0 ? `minus ${-v}` : String(v);
+  });
+  return `monzo: exponent${ps.length > 1 ? 's' : ''} of ${sayList(ps.map(String))}, ${sayList(vals)}`;
+}
+
+/** Tenney height with two decimals (the Stats panel's rounding); null without a monzo. */
+export function fmtTenney(n: Note): string | null {
+  const h = tenneyHeight(n);
+  return h === null ? null : h.toFixed(2);
+}

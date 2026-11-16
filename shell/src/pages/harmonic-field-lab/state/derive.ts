@@ -22,7 +22,12 @@ import {
   fifthsLayout,
   findChordVoicings,
   fmtHidden,
+  fmtMonzoVector,
   fmtRatio,
+  fmtTenney,
+  fmtTopBottom,
+  nameMonzoVector,
+  nameTopBottom,
   intervalPairs,
   intervalSpectrum,
   isoGrid,
@@ -109,19 +114,15 @@ export function deriveBase(tab: Tab): Base {
 }
 
 /* ------------------------------------------------------------------------------------------ field table */
-/** Monzo as prime powers, e.g. 3^2 5^-1 (the factor 2 is shown too: 2^-3 3^2). */
-export const fmtMonzo = (n: Note): string =>
-  n.m
-    ? Object.entries(n.m)
-        .filter(([, e]) => e !== 0)
-        .sort((a, b) => Number(a[0]) - Number(b[0]))
-        .map(([p, e]) => (e === 1 ? p : `${p}^${e}`))
-        .join(' ') || '1'
-    : 'irrational';
-
 export interface FieldRow {
   i: number;
+  /** The monzo vector `[-3 1 1⟩`, or the word `irrational` for a note with no monzo. */
   monzo: string;
+  /** Top / bottom text, Tenney text and the accessible names; null for a note with no monzo. */
+  topBottom: string | null;
+  topBottomName: string | null;
+  monzoName: string | null;
+  tenney: string | null;
   ratio: string;
   cents: number;
   step: number;
@@ -135,7 +136,11 @@ export interface FieldRow {
 export function fieldRowsOf(field: Note[], repC: number): FieldRow[] {
   return field.map((n, i) => ({
     i,
-    monzo: fmtMonzo(n),
+    monzo: fmtMonzoVector(n) ?? 'irrational',
+    topBottom: fmtTopBottom(n),
+    topBottomName: nameTopBottom(n),
+    monzoName: nameMonzoVector(n),
+    tenney: fmtTenney(n),
     ratio: fmtRatio(n),
     cents: n.c,
     step: (i < field.length - 1 ? field[i + 1].c : repC) - n.c,

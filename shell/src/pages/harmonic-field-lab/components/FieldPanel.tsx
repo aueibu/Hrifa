@@ -8,7 +8,18 @@ import { Num, Tip, rowHandlers, useLab } from './ui';
 import mock from './lab.module.css';
 import classes from './panels.module.css';
 
-type SortKey = 'i' | 'ratio' | 'cents' | 'step' | 'prime' | 'odd' | 'vs12' | 'vsJI';
+type SortKey =
+  | 'i'
+  | 'ratio'
+  | 'topBottom'
+  | 'monzo'
+  | 'tenney'
+  | 'cents'
+  | 'step'
+  | 'prime'
+  | 'odd'
+  | 'vs12'
+  | 'vsJI';
 const COLS: {
   key: SortKey;
   label: string;
@@ -17,6 +28,9 @@ const COLS: {
 }[] = [
   { key: 'i', label: '#', tip: null },
   { key: 'ratio', label: 'Ratio', tip: 'colRatio', left: true },
+  { key: 'topBottom', label: 'Top / bottom', tip: 'colTopBottom' },
+  { key: 'monzo', label: 'Monzo', tip: 'colMonzo' },
+  { key: 'tenney', label: 'Tenney', tip: 'colTenney' },
   { key: 'cents', label: 'Cents (c)', tip: 'colCents' },
   { key: 'step', label: 'Step (c)', tip: 'colStep' },
   { key: 'prime', label: 'Prime limit', tip: 'colPrimeLimit' },
@@ -31,6 +45,11 @@ const val = (r: Row, k: SortKey): number | string => {
       return r.i;
     case 'ratio':
       return r.cents;
+    case 'topBottom':
+    case 'monzo':
+      return r.cents;
+    case 'tenney':
+      return r.tenney === null ? -1 : Number(r.tenney);
     case 'cents':
       return r.cents;
     case 'step':
@@ -146,6 +165,15 @@ export function FieldTable() {
                 <Num>{r.ratio}</Num>
                 {modeRoot === r.i && <RootGlyph />}
               </td>
+              <td aria-label={r.topBottomName ?? 'none, an irrational note'}>
+                <Num>{r.topBottom ?? '—'}</Num>
+              </td>
+              <td aria-label={r.monzoName ?? 'monzo: none, an irrational note'}>
+                <Num>{r.monzo === 'irrational' ? '—' : r.monzo}</Num>
+              </td>
+              <td>
+                <Num>{r.tenney ?? '—'}</Num>
+              </td>
               <td>
                 <Num>{r.cents.toFixed(2)}</Num>
               </td>
@@ -206,6 +234,15 @@ export function FieldCompact() {
                 <Tip k="colRatio">Ratio</Tip>
               </th>
               <th>
+                <Tip k="colTopBottom">Top / bottom</Tip>
+              </th>
+              <th>
+                <Tip k="colMonzo">Monzo</Tip>
+              </th>
+              <th>
+                <Tip k="colTenney">Tenney</Tip>
+              </th>
+              <th>
                 <Tip k="colCents">Cents</Tip>
               </th>
               <th>
@@ -237,6 +274,15 @@ export function FieldCompact() {
                 <td>
                   <Num>{r.ratio}</Num>
                   {modeRoot === r.i && <RootGlyph />}
+                </td>
+                <td aria-label={r.topBottomName ?? 'none, an irrational note'}>
+                  <Num>{r.topBottom ?? '—'}</Num>
+                </td>
+                <td aria-label={r.monzoName ?? 'monzo: none, an irrational note'}>
+                  <Num>{r.monzo === 'irrational' ? '—' : r.monzo}</Num>
+                </td>
+                <td>
+                  <Num>{r.tenney ?? '—'}</Num>
                 </td>
                 <td>
                   <Num>{r.cents.toFixed(1)}</Num>

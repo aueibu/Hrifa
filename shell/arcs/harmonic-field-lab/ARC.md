@@ -53,6 +53,11 @@ The human's items (2026-11-16) and where each lands:
 - **Tile colors, M1b (human, 2026-11-16), FINAL:** after two thin slices (bright tiles with dark text: "awfully gaudy"; OKLCH jewel tones) the human chose Radix Colors 3.0.0 scales for the Modes and Pairs tiles in BOTH schemes (decision H-19: `src/theme/radix.ts`, `--rx-<hue>-<step>`, values copied, no dependency): Developer options `tileLook` (Tinted default, Outlined, Solid) and `tileOutline` (default on, "tinted outline on for now"). The Modes pop-out is part of M1b (scenarios rows 22 and 23). A theme-wide Radix arc is logged in BACKLOG (Mantine stays).
 - The "M1 shape" below is superseded by `SCENARIOS.M1.md` where they differ.
 
+### Checkpoint decisions at the M2 scenarios (human, 2026-11-16: "d1 looks good ... go ahead")
+- **Table confirmed (`SCENARIOS.M2.md`, rows 1 to 12, decisions D1 to D3).** D1: top / bottom for the readable form, the monzo vector for the exact form. D3: 1/1 shows `1`; a note with no exact monzo shows `—` (never `0`, never blank).
+- **D2 changed by the human:** the prime spot is the "Point at a note" card (`Inspector` in `RingStats.tsx`), not a hover hint. Its `monzo` row shows the monzo VECTOR (`[-3 2⟩`) instead of the product of powers; two rows are added to that card, `top / bottom` and `Tenney` (Tenney height added by the human); the Field table (compact and window) gets the same three as columns. No prime limit or odd limit rows or columns (the Stats panel already has them for the subset).
+- **Look-judged parts** (the card's spacing, the compact table's width): a thin slice, then STOP for the human before a reviewer, gate or commit.
+
 ### M1 shape (proposed; the scenarios table at M1 confirms or changes it)
 - One pure function over a subset (`rel` with each note's `src` field index): every pair of degrees, the interval between them (octave-reduced, repeat-aware, as `intervalSpectrum` does), grouped within a tolerance.
 - **Matrix view:** rows are from-degrees, columns are to-degrees; each cell shows the interval (ratio or cents). Picking an interval highlights every matching cell: that is `SHOW LOCATIONS` for a single interval, with its coverage figures (matches, share of all pairs, degrees covered, degrees used more than once, highest coverage, number of interval class patterns).

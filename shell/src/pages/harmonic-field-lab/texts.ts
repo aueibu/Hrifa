@@ -957,6 +957,18 @@ const entries = {
     term: 'Ratio',
     text: 'The note as a frequency ratio above 1/1. Example: 5/4 means 25 % higher in frequency.',
   },
+  colTopBottom: {
+    term: 'Top / bottom',
+    text: 'The ratio as prime factors, top over bottom. Example: 15/8 reads 3·5 / 2³; a side with nothing on it reads 1. Shows a dash for a note with no exact ratio.',
+  },
+  colMonzo: {
+    term: 'Monzo',
+    text: 'The prime exponents as a vector, starting at 2 and including zeros. Example: 15/8 is [-3 1 1⟩, that is 2^-3 x 3 x 5. Shows a dash for a note with no exact ratio.',
+  },
+  colTenney: {
+    term: 'Tenney',
+    text: 'Tenney height, log2 of top x bottom: lower means simpler. Example: 3/2 is 2.58 and 15/8 is 6.91. Shows a dash for a note with no exact ratio.',
+  },
   colCents: {
     term: 'Cents (c)',
     text: 'Height above 1/1 in cents. Example: 3/2 = 701.96 c.',
@@ -1711,13 +1723,15 @@ const entries = {
     term: 'Note inspector',
     help: [
       p(
-        'Shows one row of the field table for the note you point at, or pinned, anywhere (circle, strip, keys, lattice): ratio, cents, monzo (prime exponents), nearest 12-EDO key and how far off it is.'
+        'Shows one row of the field table for the note you point at, or pinned, anywhere (circle, strip, keys, lattice): ratio, cents, monzo (prime exponents as a vector), top / bottom prime factors, Tenney height, nearest 12-EDO key and how far off it is.'
       ),
       keys([
         { key: 'Point at a note', does: 'show it here' },
         { key: 'Alt+click a note', does: 'pin it' },
       ]),
-      example('pointing at 13/8 reads 840.53 c, monzo 2^-3 13, and about 40 c sharp of Ab.'),
+      example(
+        'pointing at 13/8 reads 840.53 c, monzo [-3 0 0 0 0 1⟩, top / bottom 13 / 2³, Tenney 6.70, and about 40 c sharp of Ab.'
+      ),
     ],
     teaching: [],
     see: ['fieldTable'],
