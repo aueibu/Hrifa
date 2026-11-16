@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { renderMarkup } from '../helpMarkup';
 import { resetDeveloperOptionsCache, writeDeveloperOptions } from '../state/developerOptions';
-import { TIPS } from '../texts';
+import { TIPS, type TipKey } from '../texts';
 import { GlossaryDrawer } from './GlossaryDrawer';
 import { Tip } from './ui';
 
@@ -74,18 +74,24 @@ describe('new-form entries', () => {
 
 describe('old-form entries', () => {
   it('go through the same blocks: the Example is its own block with a blank line above it', async () => {
-    render(<Tip k="preset">Preset</Tip>);
-    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Preset' }));
+    // any entry still in the old { term, text } form (each converted entry leaves the pool)
+    // (one that has an Example, so the shape below is stable: the old form is a permanent short-entry form)
+    const k = (Object.keys(TIPS) as TipKey[]).find(
+      (key) => TIPS[key].legacy && TIPS[key].text.includes('Example')
+    ) as TipKey;
+    expect(k).toBeDefined();
+    render(<Tip k={k}>{TIPS[k].term}</Tip>);
+    fireEvent.mouseEnter(screen.getByRole('button', { name: TIPS[k].term }));
     await wait(100);
     const tip = screen.getByRole('tooltip');
-    expect(tip).toHaveTextContent(TIPS.preset.term);
-    const firstParagraph = TIPS.preset.help[0];
+    expect(tip).toHaveTextContent(TIPS[k].term);
+    const firstParagraph = TIPS[k].help[0];
     expect(firstParagraph.kind).toBe('p');
     expect(tip.textContent?.replaceAll('\u00a0', ' ')).toContain(
       (firstParagraph.kind === 'p' ? firstParagraph.text : '').slice(0, 30)
     );
-    expect(TIPS.preset.legacy).toBe(true);
-    expect(TIPS.preset.help.map((b) => b.kind)).toEqual(['p', 'example']);
+    expect(TIPS[k].legacy).toBe(true);
+    expect(TIPS[k].help.map((b) => b.kind)).toEqual(['p', 'example']);
     const blocks = [...tip.querySelectorAll('div')].filter((d) =>
       d.textContent?.startsWith('Example:')
     );

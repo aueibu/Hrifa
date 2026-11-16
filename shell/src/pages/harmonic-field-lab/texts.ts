@@ -396,104 +396,278 @@ const entries = {
   /* ---- generator ---- */
   preset: {
     term: 'Preset',
-    text: 'The generator this tab is on, shown as its folder path (for example Equal divisions > Non-octave > Carlos Alpha). Click to browse: type to search every preset at once, or open the folders (Built-in, My presets, Recent, Auto-saved). Choosing one fills in the method and its numbers. An orange dot before the name means you changed the generator since: the preset itself is untouched until you press Update preset, or you can keep the change with Save as new. Example: pick Harmonics 8-15 (one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note), raise the starting harmonic, and the dot appears.',
+    help: [
+      p(
+        'The generator this tab is on, shown by its name (the full folder path is the line under the control). Click to browse: type to search every preset at once, or open the folders (Built-in, My presets, Recent, Auto-saved). Choosing one fills in the method and its numbers.'
+      ),
+      example(
+        'pick Harmonics 8-15, raise the starting harmonic, and an orange dot appears before the name.'
+      ),
+    ],
+    teaching: [
+      p(
+        'The full path, shown under the control, looks like Equal divisions > Non-octave > Carlos Alpha.'
+      ),
+      p(
+        'An orange dot before the name means you changed the generator since. The preset itself is untouched until you press **Update preset**, or you can keep the change with **Save as new**.'
+      ),
+      example(
+        'Harmonics 8-15 is one octave of the overtone series, whose 7th, 11th and 13th harmonics sit far from any 12-EDO note.'
+      ),
+    ],
     see: ['method', 'presetUpdate', 'presetSaveNew'],
   },
   presetUpdate: {
     term: 'Update preset',
-    text: 'Writes the generator you have edited into the preset it came from. Every subset of that preset is matched against the new notes: pitches that no longer exist are dropped, and a subset left with none is removed. A line next to the preset says what changed, and Undo puts everything back exactly. Built-in presets cannot be changed (use Save as new), and the button is grayed out, with the reason on hover, when nothing has changed. Example: a preset of harmonics 8-15 with a subset on 11/8; change it to harmonics 16-31 and Update: 11/8 is still found as 22/16, so the subset keeps it.',
+    help: [
+      p(
+        'Writes the generator you have edited into the preset it came from. Every subset of that preset is matched against the new notes: pitches that no longer exist are dropped, and a subset left with none is removed.'
+      ),
+      example(
+        'a preset of harmonics 8-15 with a subset on 11/8; change it to harmonics 16-31 and Update: 11/8 is still found as 22/16, so the subset keeps it.'
+      ),
+    ],
+    teaching: [
+      p('A line next to the preset says what changed, and Undo puts everything back exactly.'),
+      p(
+        'Built-in presets cannot be changed (use **Save as new**). The button is grayed out, with the reason on hover, when nothing has changed.'
+      ),
+    ],
     see: ['preset', 'presetSaveNew', 'presetUndo'],
   },
   presetSaveNew: {
     term: 'Save as new',
-    text: "Saves the generator as a new preset of your own, with a name and an optional folder (type Pools/Seven to make or reuse nested folders; existing folders are suggested). A plain click starts it with no subsets. Shift+click (or the arrow beside the button) also copies the current preset's subsets, matched against this generator. The original preset is not changed. Example: edit Hexany to use 1 3 5 11, then Shift+click Save as new, name it Hexany 11 in the folder Hexanies: the subsets you had carry over where their pitches still exist.",
+    help: [
+      p(
+        'Saves the generator as a new preset of your own, with a name and an optional folder. The original preset is not changed.'
+      ),
+      keys([
+        { key: 'Click', does: 'starts the new preset with no subsets' },
+        {
+          key: 'Shift+click (or the arrow beside the button)',
+          does: "also copies the current preset's subsets, matched against this generator",
+        },
+      ]),
+      example(
+        'edit Hexany to use 1 3 5 11, then Shift+click **Save as new**, name it Hexany 11 in the folder Hexanies: the subsets you had carry over where their pitches still exist.'
+      ),
+    ],
+    teaching: [
+      p(
+        'In the folder field, type Pools/Seven to make or reuse nested folders; existing folders are suggested.'
+      ),
+    ],
     see: ['preset', 'presetUpdate'],
   },
   presetUndo: {
     term: 'Undo update',
-    text: 'Puts the preset and its subsets back exactly as they were before the last Update. Only what the Update changed is touched, so subsets you added since stay. The line disappears as soon as you edit the generator again or open another one. Example: an Update removed two subsets; Undo brings them back at their old places.',
+    help: [
+      p(
+        'Puts the preset and its subsets back exactly as they were before the last Update. Only what the Update changed is touched, so subsets you added since stay.'
+      ),
+      example('an Update removed two subsets; **Undo** brings them back at their old places.'),
+    ],
+    teaching: [
+      p('The line disappears as soon as you edit the generator again or open another one.'),
+    ],
     see: ['presetUpdate'],
   },
   presetShowRemoved: {
     term: 'Show removed',
-    text: 'Lists the subsets the last Update (or copy) changed, drawn as small strips: pitches that survived are solid lines, pitches that no longer exist in the generator are dashed, and a subset that lost everything is all dashed. It is only a review: nothing here can be edited, and it is not stored. Example: a subset of 1/1, 5/4 and 11/8 on a generator that lost 11/8 shows two solid lines and one dashed.',
+    help: [
+      p(
+        'Lists the subsets the last Update (or copy) changed, drawn as small strips: pitches that survived are solid lines, pitches that no longer exist in the generator are dashed, and a subset that lost everything is all dashed.'
+      ),
+      example(
+        'a subset of 1/1, 5/4 and 11/8 on a generator that lost 11/8 shows two solid lines and one dashed.'
+      ),
+    ],
+    teaching: [p('It is only a review: nothing here can be edited, and it is not stored.')],
     see: ['presetUpdate'],
   },
   presetEdit: {
     term: 'Edit preset',
-    text: 'Renames one of your presets or moves it to another folder (a path such as Pools/Seven; empty puts it at the top of My presets). Its subsets and generator are unchanged. Example: move Hexany 11 from Hexanies to Pools/Seven.',
+    help: [
+      p(
+        'Renames one of your presets or moves it to another folder. Its subsets and generator are unchanged.'
+      ),
+      example('move Hexany 11 from Hexanies to Pools/Seven.'),
+    ],
+    teaching: [
+      p('The folder is a path such as Pools/Seven; empty puts it at the top of My presets.'),
+    ],
     see: ['preset'],
   },
   presetDelete: {
     term: 'Delete preset',
-    text: 'Removes one of your presets after you confirm. Its subsets are not lost: they stay under Auto-saved, with the generator the preset had. A preset with no subsets is gone for good. Example: delete Hexany 11 with three subsets, and the three rows stay available under Auto-saved.',
+    help: [
+      p(
+        'Removes one of your presets after you confirm. Its subsets are not lost: they stay under Auto-saved, with the generator the preset had.'
+      ),
+      example(
+        'delete Hexany 11 with three subsets, and the three rows stay available under Auto-saved.'
+      ),
+    ],
+    teaching: [p('A preset with no subsets is gone for good.')],
     see: ['preset', 'unassigned'],
   },
   method: {
     term: 'Method',
-    text: 'How the field of notes is built. Harmonic series takes consecutive overtones; Equal division splits the repeat into equal steps; Lattice stacks one or more generator intervals; Combination product set (CPS) multiplies chosen factors together; Custom takes ratios or a Scala file you type in. Example: Harmonic series starting at 8 gives 8/8, 9/8, 10/8, and so on up to 15/8.',
+    help: [
+      p(
+        'How the field of notes is built. *Harmonic series* takes consecutive overtones; *Subharmonic series* is its mirror image, consecutive undertones; *Equal division* splits the repeat into equal steps; *Lattice* stacks one or more generator intervals; *Combination product set (CPS)* multiplies chosen factors together; *Custom* takes ratios or a Scala file you type in.'
+      ),
+      example('Harmonic series starting at 8 gives 8/8, 9/8, 10/8, and so on up to 15/8.'),
+    ],
+    teaching: [],
     see: ['repeat', 'field'],
   },
   repeat: {
     term: 'Repeat interval',
-    text: 'The interval after which the scale starts over: its "octave". Most scales use 2/1, but 3/1 (a tritave) or 3/2 also work. Accepts ratios (3/2), whole numbers (3), cents (701.96 or 701.96c) and equal-division steps (7\\12). Example: 3/1 makes a scale that repeats every tritave.',
+    help: [
+      p(
+        'The interval after which the scale starts over: its "octave". Most scales use 2/1, but 3/1 (a tritave) or 3/2 also work.'
+      ),
+      example('3/1 makes a scale that repeats every tritave.'),
+    ],
+    teaching: [
+      p(
+        'Accepts ratios (3/2), whole numbers (3), cents (701.96 or 701.96c) and equal-division steps (7\\12).'
+      ),
+    ],
     see: ['field'],
   },
   startHarmonic: {
     term: 'Starting harmonic',
-    text: 'The first overtone in the segment; the field runs from it up to twice its number. Example: 8 gives 8:9:10:11:12:13:14:15, which is one octave of the series; 16 gives 16 notes packed into the same octave.',
+    help: [
+      p('The first overtone in the segment; the field runs from it up to twice its number.'),
+      example(
+        '8 gives 8:9:10:11:12:13:14:15, which is one octave of the series; 16 gives 16 notes packed into the same octave.'
+      ),
+    ],
+    teaching: [],
   },
   edoDivisions: {
     term: 'Divisions',
-    text: 'How many equal steps the repeat is cut into. Example: 12 steps of an octave is ordinary piano tuning; 19 gives smaller steps of 63.2 cents.',
+    help: [
+      p('How many equal steps the repeat is cut into.'),
+      example('12 steps of an octave is ordinary piano tuning; 19 gives smaller steps of 63.2 c.'),
+    ],
+    teaching: [],
   },
   latticeShape: {
     term: 'Lattice shape',
-    text: 'Box counts a fixed number of steps along each generator, like a grid. Diamond keeps everything within a total number of steps of 1/1. Example: generators 3/2 and 5/4, box 3 by 3, gives nine notes before reducing into the octave.',
+    help: [
+      p(
+        '**Box** counts a fixed number of steps along each generator, like a grid. **Diamond** keeps everything within a total number of steps of 1/1.'
+      ),
+      example(
+        'generators 3/2 and 5/4, box 3 by 3, gives nine notes before reducing into the octave.'
+      ),
+    ],
+    teaching: [],
   },
   diamondDistance: {
     term: 'Steps from the centre',
-    text: 'For the Diamond shape: how many generator steps in total a note may be from 1/1, counting every axis together. Example: with generators 3/2 and 5/4 and 2 steps, 9/8 (two steps of 3/2) and 15/8 (one of each) are in, but 27/16 (three steps) is not.',
+    help: [
+      p(
+        'For the Diamond shape: how many generator steps in total a note may be from 1/1, counting every axis together.'
+      ),
+      example(
+        'with generators 3/2 and 5/4 and 2 steps, 9/8 (two steps of 3/2) and 15/8 (one of each) are in, but 27/16 (three steps) is not.'
+      ),
+    ],
+    teaching: [],
     see: ['latticeShape'],
   },
   genAxis: {
     term: 'Generator, count, centre',
-    text: 'Generator is the interval stacked again and again (3/2 builds a chain of fifths). Count is how many to stack. Centre is how many steps go below 1/1. Example: 3/2, count 12, centre 0 builds the twelve notes up from the root; centre 6 spreads them both ways.',
+    help: [
+      p(
+        '**Generator** is the interval stacked again and again (3/2 builds a chain of fifths). **Count** is how many to stack. **Centre** is how many steps go below 1/1.'
+      ),
+      example(
+        '3/2, count 12, centre 0 builds the twelve notes up from the root; centre 6 spreads them both ways.'
+      ),
+    ],
+    teaching: [],
     see: ['mos'],
   },
   mos: {
     term: 'MOS sizes',
-    text: 'Moment of Symmetry: counts of generator steps where the chain folds into a scale with exactly two step sizes. For 3/2 inside an octave the sizes include 5 (pentatonic), 7 (diatonic) and 12. Click one to use it as the count. Example: 7 notes of a 3/2 chain give the diatonic 5L 2s pattern.',
+    help: [
+      p(
+        '*Moment of Symmetry*: counts of generator steps where the chain folds into a scale with exactly two step sizes. Click one to use it as the count.'
+      ),
+      example('7 notes of a 3/2 chain give the diatonic 5L 2s pattern.'),
+    ],
+    teaching: [
+      p('For 3/2 inside an octave the sizes include 5 (pentatonic), 7 (diatonic) and 12.'),
+    ],
     see: ['structure'],
   },
   cpsFactors: {
     term: 'Factors',
-    text: 'The numbers that get multiplied together in pairs, triples and so on. Example: factors 1 3 5 7, choose 2 gives the hexany: 1x3, 1x5, 1x7, 3x5, 3x7, 5x7, each brought into the octave.',
+    help: [
+      p('The numbers that get multiplied together in pairs, triples and so on.'),
+      example(
+        'factors 1 3 5 7, choose 2 gives the hexany: 1x3, 1x5, 1x7, 3x5, 3x7, 5x7, each brought into the octave.'
+      ),
+    ],
+    teaching: [],
   },
   cpsK: {
     term: 'Choose k',
-    text: 'How many factors go into each product. Example: 1 3 5 7 with k = 2 is a hexany; with k = 3 it is 4 notes, a subharmonic tetrad; 1 3 5 7 9 with k = 2 is a 10-note dekany.',
+    help: [
+      p('How many factors go into each product.'),
+      example(
+        '1 3 5 7 with k = 2 is a hexany; with k = 3 it is 4 notes, a subharmonic tetrad; 1 3 5 7 9 with k = 2 is a 10-note dekany.'
+      ),
+    ],
+    teaching: [],
   },
   customIntervals: {
     term: 'Custom intervals',
-    text: 'Your own list of ratios, cents or EDO steps, one per line or separated by spaces. Example: 9/8 5/4 4/3 3/2 5/3 15/8 is the just major scale above 1/1.',
+    help: [
+      p('Your own list of ratios, cents or EDO steps, one per line or separated by spaces.'),
+      example('9/8 5/4 4/3 3/2 5/3 15/8 is the just major scale above 1/1.'),
+    ],
+    teaching: [],
   },
   loadScl: {
     term: 'Load .scl',
-    text: 'Reads a Scala scale file (the standard text format for tunings) and replaces the custom list with its notes. Example: a file from the Scala archive named "pyth_12.scl".',
+    help: [
+      p(
+        'Reads a Scala scale file (the standard text format for tunings) and replaces the custom list with its notes.'
+      ),
+      example('a file from the Scala archive named "pyth_12.scl".'),
+    ],
+    teaching: [],
   },
   primeFilter: {
     term: 'Prime filter',
-    text: 'Switches off every note whose ratio uses a prime you have turned off. Example: with 11 and 13 off, Harmonics 8-15 loses 11/8 and 13/8, leaving a 7-limit field. Notes made only of cents (EDO steps) are not filtered.',
+    help: [
+      p('Switches off every note whose ratio uses a prime you have turned off.'),
+      example('with 11 and 13 off, Harmonics 8-15 loses 11/8 and 13/8, leaving a 7-limit field.'),
+    ],
+    teaching: [p('Notes made only of cents (EDO steps) are not filtered.')],
     see: ['primeLimit'],
   },
   primeAll: {
     term: 'All primes',
-    text: 'Turns every prime on, so no note is filtered out. Example: use it to undo an earlier filter.',
+    help: [
+      p('Turns every prime on, so no note is filtered out.'),
+      example('use it to undo an earlier filter.'),
+    ],
+    teaching: [],
   },
   primeNone: {
     term: 'No primes',
-    text: 'Turns every prime off. Then switch on just the ones you want. Example: none, then 3 and 5 gives a 5-limit field.',
+    help: [
+      p('Turns every prime off. Then switch on just the ones you want.'),
+      example('none, then 3 and 5 gives a 5-limit field.'),
+    ],
+    teaching: [],
   },
 
   /* ---- field & subset ---- */
@@ -509,7 +683,26 @@ const entries = {
   },
   pitchCircle: {
     term: 'Pitch circle',
-    text: 'Every field note placed round a circle by its pitch, the repeat being one full turn. Click a dot to include or exclude it; Alt+click pins it in the inspector (yellow ring) without changing the subset. Filled = in your subset, hollow = out; the pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord; larger ring = sounding right now; a bold chevron outside the ring pointing in marks the mode root. Example: 3/2 sits just past the bottom of the circle, 702 of 1200 cents round.',
+    help: [
+      p(
+        'Every field note placed round a circle by its pitch; the repeat is one full turn. A filled dot is in your subset, a hollow one is out.'
+      ),
+      keys([
+        { key: 'Click a dot', does: 'include or exclude it' },
+        {
+          key: 'Alt+click a dot',
+          does: 'pin it in the inspector (yellow ring) without changing the subset',
+        },
+      ]),
+      example('3/2 sits just past the bottom of the circle, 702 of 1200 c round.'),
+    ],
+    teaching: [
+      p(
+        'The pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord.'
+      ),
+      p('A larger green dot means the note is sounding right now.'),
+      p('A bold chevron outside the ring, pointing in, marks the mode root.'),
+    ],
   },
   selectAll: {
     term: 'All',
@@ -517,7 +710,11 @@ const entries = {
   },
   selectNone: {
     term: 'None',
-    text: 'Empties the subset. Example: clear everything, then click just the dots you want.',
+    help: [
+      p('Empties the subset.'),
+      example('clear everything, then click just the dots you want.'),
+    ],
+    teaching: [],
   },
   selectInvert: {
     term: 'Invert',
@@ -530,12 +727,36 @@ const entries = {
   },
   modeRoot: {
     term: 'Mode root (chevron)',
-    text: "A bold chevron marks the note the current mode starts on, in every view that draws single notes: outside the pitch circle and the key circle pointing in at the note, beside the note's tick on the tuner strip (a small pair, like >|<), above a lattice node pointing down, in the row of the field table, on its isomorphic-keyboard key and its mark on the dissonance curve. It is drawn in the plain text colour so it never clashes with the hover, pin, sounding or chord colours. Example: in C major, mode 2 starts on D (D dorian): the chevron moves from C to D, while the same seven notes stay selected.",
+    help: [
+      p(
+        'A bold chevron marks the note the current mode starts on, in every view that draws single notes.'
+      ),
+      example(
+        'in C major, mode 2 starts on D (D dorian): the chevron moves from C to D, while the same seven notes stay selected.'
+      ),
+    ],
+    teaching: [
+      p(
+        "It sits outside the pitch circle and the key circle pointing in at the note, beside the note's tick on the tuner strip (a small pair of chevrons facing each other), above a lattice node pointing down, in the row of the field table, on its isomorphic-keyboard key and on its mark on the dissonance curve."
+      ),
+      p(
+        'It is drawn in the plain text colour so it never clashes with the hover, pin, sounding or chord colours.'
+      ),
+    ],
     see: ['mode', 'subset'],
   },
   pickNearest: {
     term: 'Pick nearest',
-    text: 'Chooses the field notes closest to a known scale or to an equal division. The menu also has "m-ED" (the nearest notes to an equal division) and "Odd limit..." (keep only the notes whose odd limit is at most the number you enter). Example: choosing "Major" with 12-EDO targets selects, for each degree of the major scale, the field note nearest to it; choosing "Odd limit..." with 15 keeps 15/8 but drops 17/16.',
+    help: [
+      p('Chooses the field notes closest to a known scale or to an equal division.'),
+      p(
+        'The menu also has "m-ED" (the nearest notes to an equal division) and "Odd limit..." (keep only the notes whose odd limit is at most the number you enter).'
+      ),
+      example(
+        'choosing "Major" with 12-EDO targets selects, for each degree of the major scale, the field note nearest to it; choosing "Odd limit..." with 15 keeps 15/8 but drops 17/16.'
+      ),
+    ],
+    teaching: [],
   },
   nearTargets: {
     term: 'Targets',
@@ -552,12 +773,36 @@ const entries = {
   },
   addSubset: {
     term: 'Add subset',
-    text: 'Puts the current selection into the next new row of this generator, no name asked: it is called Subset 1, Subset 2 and so on, and you click its name to rename it. If a row with exactly these notes and the same mode root exists, that row lights up instead of making a copy. Example: pick the seven notes you like, press Add, and a row "Subset 1" appears and flashes.',
+    help: [
+      p(
+        'Puts the current selection into the next new row of this generator, no name asked: it is called Subset 1, Subset 2 and so on. If a row with exactly these notes and the same mode root exists, that row lights up instead of making a copy.'
+      ),
+      keys([{ key: 'Click a row name', does: 'rename it' }]),
+      example(
+        'pick the seven notes you like, press Add, and a row "Subset 1" appears and flashes.'
+      ),
+    ],
+    teaching: [],
     see: ['savedSubsets', 'renameSaved'],
   },
   unassigned: {
     term: 'Unassigned subsets',
-    text: 'Subsets whose generator is gone (for example a built-in preset that was renamed in a newer version). They are kept, never deleted for you. Open the group and click one to apply its pitches to the current generator; if some pitches do not exist in it, a line says how many were missing. Example: a subset of 6 pitches loaded on a field that has 5 of them reports "1 of 6 pitches are not in this field".',
+    help: [
+      p(
+        'Subsets whose generator is gone (for example a built-in preset that was renamed in a newer version). They are kept, never deleted for you.'
+      ),
+      keys([
+        { key: 'Open the group, click one', does: 'apply its pitches to the current generator' },
+      ]),
+      example(
+        'a subset of 6 pitches loaded on a field that has 5 of them reports "1 of 6 pitches are not in this field".'
+      ),
+    ],
+    teaching: [
+      p(
+        'If some pitches do not exist in the current generator, a line says how many were missing.'
+      ),
+    ],
     see: ['savedSubsets'],
   },
   exportScl: {
@@ -566,7 +811,21 @@ const entries = {
   },
   savedSubsets: {
     term: 'Saved subsets',
-    text: 'The subsets of this generator (the preset shown above), one row each, drawn like the tuner strip. Press Add to put the current selection in a new row; click a name to rename it; click a strip to load it; point at a row to preview it on the ring. Switching preset swaps the list, because subsets belong to their generator. Example: add the seven notes without 11/8, rename the row "No 11/8", change the selection, then click its strip to get them back.',
+    help: [
+      p(
+        'The subsets of this generator (the preset shown above), one row each, drawn like the tuner strip. Switching preset swaps the list, because subsets belong to their generator.'
+      ),
+      keys([
+        { key: 'Add', does: 'put the current selection in a new row' },
+        { key: 'Click a name', does: 'rename it' },
+        { key: 'Click a strip', does: 'load it' },
+        { key: 'Point at a row', does: 'preview it on the ring' },
+      ]),
+      example(
+        'add the seven notes without 11/8, rename the row "No 11/8", change the selection, then click its strip to get them back.'
+      ),
+    ],
+    teaching: [],
   },
   compareTo: {
     term: 'Compare to',
@@ -575,7 +834,42 @@ const entries = {
   },
   tunerStrip: {
     term: 'Tuner strip',
-    text: 'Your scale laid out by pitch, with a faint reference line at every 100 c (1/1 as C): lighter where a piano white key would sit, darker for a black key. Saved subsets below use the same columns, so a note sits straight above and below itself. Each bar sits under its own dot: orange going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many. The letters under the notes are the steps between them. A small >|< pair of chevrons beside a note marks the mode root. Example: "+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat. Hear a note against its target without changing anything: Ctrl+click (Cmd on a Mac) plays the note as listed, Shift+click plays its target (the note moved by its error, so +40.5 plays 40.5 c lower), and Ctrl+Shift+click plays both at once, held half as fast again, so a small difference is heard as a slow wobble (beating); a note with no error plays once, since there is nothing to beat against, and a pair shares the level so it is never louder than one note. The target tone lights only its own bar. Plain click still toggles the note and Alt+click still pins it. Or point at a note (or Tab to it) and hold a number key: 1 plays the note as listed, 2 its target, 3 both, and the sound lasts as long as you hold the key. Example: point at a note showing +40.5 and hold 3 to hear the beating for as long as you like; letting go stops it.',
+    help: [
+      p(
+        'Your scale laid out by pitch. Each bar sits under its own dot: orange going up means that many cents sharp of its target, cyan going down means flat, and the printed number says how many.'
+      ),
+      keys([
+        { key: 'Click, Alt+click', does: 'toggle the note, pin it' },
+        { key: 'Ctrl+click (Cmd on a Mac)', does: 'play the note as listed' },
+        { key: 'Shift+click', does: 'play its target' },
+        { key: 'Ctrl+Shift+click', does: 'play both at once' },
+        {
+          key: '{key:holdOwn}, {key:holdPure}, {key:holdBoth}',
+          does: 'point at a note and hold: listed, target, both',
+        },
+      ]),
+      example(
+        'point at a note showing +40.5 and hold {key:holdBoth} to hear the beating for as long as you like; letting go stops it.'
+      ),
+    ],
+    teaching: [
+      p(
+        'A faint reference line sits at every 100 c (1/1 as C): lighter where a piano white key would sit, darker for a black key. Saved subsets below use the same columns, so a note sits straight above and below itself.'
+      ),
+      p(
+        'The letters under the notes are the steps between them. A small pair of chevrons facing each other beside a note marks the mode root.'
+      ),
+      example('"+40.5" over 13/8 means a bit under half a semitone sharp of 12-EDO\'s A-flat.'),
+      p(
+        'The target is the note moved by its error, so +40.5 plays 40.5 c lower. Ctrl+Shift+click plays both at once, held half as fast again, so a small difference is heard as a slow wobble (beating).'
+      ),
+      p(
+        'A note with no error plays once, since there is nothing to beat against, and a pair shares the level so it is never louder than one note. The target tone lights only its own bar.'
+      ),
+      p(
+        'You can also Tab to a note instead of pointing at it. The sound lasts as long as you hold the key.'
+      ),
+    ],
     see: ['compareTo', 'cents'],
   },
   cents: {
@@ -589,12 +883,53 @@ const entries = {
   },
   latticeAxes: {
     term: 'Lattice axes (primes)',
-    text: "Which three primes become the three directions of the lattice, in 2D and in 3D. The list is ranked by fit: each choice shows how many of your selected notes sit on the grid with no stem (for example 3·5·7 — 7/7 on grid means all seven selected notes use only the primes 3, 5 and 7). The best fit is at the top; a tie goes to the choice whose notes are closer to 1/1. Auto, the default, always follows the best fit as you change the subset; pick a triple to keep it until you choose Auto again. Reading the primes: 3·5 is fifths and pure major thirds (classical just intonation), 3·7 is fifths plus harmonic sevenths. A note's place along an axis is its exponent of that prime; a note that uses another prime is drawn on a stem (see Off-axis notes). Example: with only 1/1, 3/2, 5/4 and 7/4 selected, 3·5·7 shows 4/4 on grid, while 3·5·11 shows 3/4 and puts 7/4 on a stem. Notes without a monzo (equal-division steps) cannot be placed and are left out of the count.",
+    help: [
+      p(
+        'Which three primes become the three directions of the lattice, in 2D and in 3D. The list is ranked by fit: each choice shows how many of your selected notes sit on the grid with no stem.'
+      ),
+      p(
+        'Auto, the default, always follows the best fit as you change the subset; pick a triple to keep it until you choose Auto again.'
+      ),
+      example(
+        'with only 1/1, 3/2, 5/4 and 7/4 selected, 3·5·7 shows 4/4 on grid, while 3·5·11 shows 3/4 and puts 7/4 on a stem.'
+      ),
+    ],
+    teaching: [
+      p(
+        'For example 3·5·7 — 7/7 on grid means all seven selected notes use only the primes 3, 5 and 7.'
+      ),
+      p('The best fit is at the top; a tie goes to the choice whose notes are closer to 1/1.'),
+      p(
+        'Reading the primes: 3·5 is fifths and pure major thirds (classical just intonation), 3·7 is fifths plus harmonic sevenths.'
+      ),
+      p(
+        "A note's place along an axis is its exponent of that prime; a note that uses another prime is drawn on a stem (see Off-axis notes)."
+      ),
+      p(
+        'Notes without a monzo (equal-division steps) cannot be placed and are left out of the count.'
+      ),
+    ],
     see: ['lattice', 'latticeStems', 'primePower'],
   },
   latticeStems: {
     term: 'Off-axis notes (stems)',
-    text: "A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only. A dashed line in that prime's colour runs out from the ring, one lattice step long for each power of the prime, pointing the opposite way for a negative power. The note itself is the dot at the end, and its label carries a chip such as 11⁺¹ naming the hidden prime and its power (point at a chip to read what it means). Example: with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11⁺¹; 8/11 points the other way (11⁻¹); 143/128 has two stems chained, 11⁺¹ 13⁺¹.",
+    help: [
+      p(
+        'A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only; the note itself is the dot at the end of a dashed line.'
+      ),
+      example(
+        'with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11⁺¹; 8/11 points the other way (11⁻¹).'
+      ),
+    ],
+    teaching: [
+      p(
+        "The dashed line is in that prime's colour, one lattice step long for each power of the prime, pointing the opposite way for a negative power."
+      ),
+      p(
+        "The note's label carries a chip such as 11⁺¹ naming the hidden prime and its power (point at a chip to read what it means)."
+      ),
+      example('143/128 has two stems chained, 11⁺¹ 13⁺¹.'),
+    ],
     see: ['latticeAxes', 'lattice3d', 'primePower'],
   },
   primePower: {
@@ -604,7 +939,18 @@ const entries = {
   },
   fieldTable: {
     term: 'Field table',
-    text: 'One line for every field note: ratio, cents and its distance from the nearest 12-EDO key, with a mark for whether it is in the subset and a chevron beside the mode root. Point at a line to light the note everywhere and read it in the inspector; click to include or exclude it, Alt+click to pin it in the inspector. "Open full table" shows every column with sorting. Example: the 13/8 line reads 840.5 c, "Ab +40.5": a note 40.5 c sharp of the piano A-flat.',
+    help: [
+      p(
+        'One line for every field note: ratio, cents and its distance from the nearest 12-EDO key, with a mark for whether it is in the subset and a chevron beside the mode root.'
+      ),
+      keys([
+        { key: 'Point at a line', does: 'light the note everywhere and read it in the inspector' },
+        { key: 'Click', does: 'include or exclude it' },
+        { key: 'Alt+click', does: 'pin it in the inspector' },
+      ]),
+      example('the 13/8 line reads 840.5 c, "Ab +40.5": a note 40.5 c sharp of the piano A-flat.'),
+    ],
+    teaching: [p('"Open full table" shows every column with sorting.')],
   },
   colRatio: {
     term: 'Ratio',
@@ -796,7 +1142,15 @@ const entries = {
   },
   fillTags: {
     term: 'Retuned notes | Different notes',
-    text: 'Compared with card 0 (home), degree by degree. Retuned notes: the same number of notes and every degree within 30 c of home\'s, a comma-sized change, so the card is the same scale tuned differently. Different notes: it substitutes notes, like a mode or a smaller subset. Example: a major scale with a 10/9 second is "retuned" (22 c off at one degree); Dorian is "different" (its second degree is 10/9 but its third is 32/27, 70 c from 5/4).',
+    help: [
+      p(
+        "Compared with card 0 (home), degree by degree. Retuned notes: the same number of notes and every degree within 30 c of home's, a comma-sized change, so the card is the same scale tuned differently. Different notes: it substitutes notes, like a mode or a smaller subset."
+      ),
+      example(
+        'a major scale with a 10/9 second is "retuned" (22 c off at one degree); Dorian is "different" (its second degree is 10/9 but its third is 32/27, 70 c from 5/4).'
+      ),
+    ],
+    teaching: [],
   },
   fillApply: {
     term: 'Apply (Fill cards)',
@@ -887,11 +1241,21 @@ const entries = {
   },
   trigger: {
     term: 'Trigger',
-    text: 'When the retuner decides. Auto runs every time a chord of two or more keys is held. Manual waits until you press Retune now. Example: choose Manual to set up a chord, then press Retune now once it is right.',
+    help: [
+      p(
+        'When the retuner decides. **Auto** runs every time a chord of two or more keys is held. **Manual** waits until you press **Retune now**.'
+      ),
+      example('choose Manual to set up a chord, then press Retune now once it is right.'),
+    ],
+    teaching: [],
   },
   retuneNow: {
     term: 'Retune now',
-    text: 'Runs one retune on the keys held right now (used with the Manual trigger). Example: hold A, C and E, then press it to retune around them.',
+    help: [
+      p('Runs one retune on the keys held right now (used with the Manual trigger).'),
+      example('hold A, C and E, then press it to retune around them.'),
+    ],
+    teaching: [],
   },
   scorer: {
     term: 'Scorer',
@@ -923,16 +1287,64 @@ const entries = {
   /* ---- workspace: rail, settings, inspector ---- */
   analysisRail: {
     term: 'Analysis panels',
-    text: 'The list on the left picks which analysis panel shows on the right; the figure beside each name is a live summary of your current subset. Everything on the left and in the middle (generator, circle, tuner strip) is always visible. Example: "Chords 10" means ten chords are found at the current tolerance; click it to see them.',
+    help: [
+      p(
+        'The list on the left picks which analysis panel shows on the right; the figure beside each name is a live summary of your current subset. Everything on the left and in the middle (generator, circle, tuner strip) is always visible.'
+      ),
+      example(
+        '"Chords 10" means ten chords are found at the current tolerance; click it to see them.'
+      ),
+    ],
+    teaching: [],
   },
   chords: {
     term: 'Chords',
-    text: 'Chord shapes (templates such as 4:5:6) that your subset contains. Sections are by number of notes; inside each, one row per family (Major, Septimal, ...). Every chip is one voicing: the template, its root, the field notes used and the largest error in cents. When two field notes are both close enough to a chord tone, each gets its own chip. Point at a chip and hold 1 to hear the chord for as long as you hold the key. Example: "4:5:6 @ 1/1, 1/1 5/4 3/2" is a just major triad on the root; hovering a chip lights its notes on the circle.',
+    help: [
+      p(
+        'Chord shapes (templates such as 4:5:6) that your subset contains. Sections are by number of notes; inside each, one row per family (Major, Septimal, ...). Every chip is one voicing: the template, its root, the field notes used and the largest error in cents.'
+      ),
+      keys([
+        {
+          key: '{key:holdOwn}',
+          does: 'point at a chip and hold: hear the chord for as long as you hold the key',
+        },
+      ]),
+      example(
+        '"4:5:6 @ 1/1, 1/1 5/4 3/2" is a just major triad on the root; hovering a chip lights its notes on the circle.'
+      ),
+    ],
+    teaching: [
+      p('When two field notes are both close enough to a chord tone, each gets its own chip.'),
+    ],
     see: ['chordTolerance', 'templates', 'chordLadder', 'holdToPlay'],
   },
   cpsChords: {
     term: 'Chords inside this CPS',
-    text: 'A CPS (combination product set) is made by multiplying every k-sized group of a few chosen factors. With factors 1 3 5 7 and k = 2 you get the hexany: 1x3, 1x5, 1x7, 3x5, 3x7 and 5x7, each divided by the lowest so it starts at 1/1. The notes of such a set are related in a regular way, and the chords inside it are read straight from which factors the notes share, not by a template. Click a chip to hear it and keep it highlighted (click again to clear); Shift-click makes its notes the subset. Point at a chip and hold 1 to hear the chord for as long as you hold the key. Example: in that hexany the notes that all use the factor 1 are one otonal chord. Click the header to fold this section away (it is remembered).',
+    help: [
+      p(
+        'The chords inside a CPS (combination product set), read straight from which factors the notes share, not by a template.'
+      ),
+      keys([
+        { key: 'Click a chip', does: 'hear it and keep it highlighted (click again to clear)' },
+        { key: 'Shift+click a chip', does: 'make its notes the subset' },
+        { key: '{key:holdOwn}', does: 'point at a chip and hold: hear the chord while you hold' },
+        { key: 'Click the header', does: 'fold this section away (it is remembered)' },
+      ]),
+      example(
+        'in the hexany from factors 1 3 5 7 with k = 2, the notes that all use the factor 1 are one otonal chord.'
+      ),
+    ],
+    teaching: [
+      p(
+        'A CPS (combination product set) is made by multiplying every k-sized group of a few chosen factors.'
+      ),
+      p(
+        'With factors 1 3 5 7 and k = 2 you get the hexany: 1x3, 1x5, 1x7, 3x5, 3x7 and 5x7, each divided by the lowest so it starts at 1/1.'
+      ),
+      p(
+        'The notes of such a set are related in a regular way, and the chords inside it are read straight from which factors the notes share, not by a template.'
+      ),
+    ],
     see: ['otonal', 'utonal', 'latticeMode', 'holdToPlay'],
   },
   otonal: {
@@ -942,12 +1354,32 @@ const entries = {
   },
   utonal: {
     term: 'Utonal (subharmonic)',
-    text: 'The mirror image of otonal: the notes are a slice of the undertone series, so the chord sounds as 1/x1:1/x2:1/x3. In a CPS these are the notes that sit inside the same larger group of factors, each leaving one factor out. Example: the notes 1x3, 1x5 and 3x5 all sit inside the factors 1, 3 and 5; they leave out 5, 3 and 1 in turn, giving the chord 1/1:1/3:1/5 (named by the factor each note leaves out, not listed by pitch).',
+    help: [
+      p(
+        'The mirror image of otonal: the notes are a slice of the undertone series, so the chord sounds as 1/x1:1/x2:1/x3. In a CPS these are the notes that sit inside the same larger group of factors, each leaving one factor out.'
+      ),
+      example(
+        'the notes 1x3, 1x5 and 3x5 all sit inside the factors 1, 3 and 5; they leave out 5, 3 and 1 in turn, giving the chord 1/1:1/3:1/5 (named by the factor each note leaves out, not listed by pitch).'
+      ),
+    ],
+    teaching: [],
     see: ['otonal', 'cpsChords'],
   },
   chordFamily: {
     term: 'Chord families',
-    text: 'Chords are grouped by how many notes they have (triads, tetrads, larger), then by family, a label you can edit on each template: Major, Minor, Septimal, Utonal and so on. Templates without a family go in an "Other" row. Click the chevron header of the whole group, of a size (Triads, Tetrads, Larger) or of one family to fold it away; the count stays in the header and the choice is remembered. A chord sent to a composite carries its family (Septimal, ...). Example: 4:5:6 and 8:10:12:15 are both Major; 6:7:9 and 4:5:6:7 are Septimal.',
+    help: [
+      p(
+        'Chords are grouped by how many notes they have (triads, tetrads, larger), then by family, a label you can edit on each template: Major, Minor, Septimal, Utonal and so on. Templates without a family go in an "Other" row.'
+      ),
+      keys([
+        {
+          key: 'Click a chevron header',
+          does: 'fold the whole group, a size (Triads, Tetrads, Larger) or one family; the count stays in the header and the choice is remembered',
+        },
+      ]),
+      example('4:5:6 and 8:10:12:15 are both Major; 6:7:9 and 4:5:6:7 are Septimal.'),
+    ],
+    teaching: [p('A chord sent to a composite carries its family (Septimal, ...).')],
     see: ['templates'],
   },
   templateName: {
@@ -979,7 +1411,13 @@ const entries = {
   },
   collapseAllChords: {
     term: 'Collapse all',
-    text: 'Folds every section of the Chords panel at once: the CPS chords, Positional and each pattern group, the ratio chords with every size and family row. The counts stay beside the names. Example: with the panel long and busy, press Collapse all, then open only the Major triads. The choice is remembered, like folding one section.',
+    help: [
+      p(
+        'Folds every section of the Chords panel at once: the CPS chords, Positional and each pattern group, the ratio chords with every size and family row. The counts stay beside the names.'
+      ),
+      example('with the panel long and busy, press Collapse all, then open only the Major triads.'),
+    ],
+    teaching: [p('The choice is remembered, like folding one section.')],
     see: ['expandAllChords'],
   },
   expandAllChords: {
@@ -1003,7 +1441,15 @@ const entries = {
   },
   keysModes: {
     term: 'Keys (transposition)',
-    text: 'The panel for moving your whole scale: transposition. A key is the same scale started on another field note, so every interval stays the same and only the starting pitch changes. This is different from a mode, which keeps the same notes and starts the scale on another degree (see Modes). Example: C major to G major is a key change (C D E F G A B becomes G A B C D E F#); C major to D dorian is a mode change (the same seven notes, now starting on D).',
+    help: [
+      p(
+        'The panel for moving your whole scale: transposition. A key is the same scale started on another field note, so every interval stays the same and only the starting pitch changes. This is different from a mode, which keeps the same notes and starts the scale on another degree (see Modes).'
+      ),
+      example(
+        'C major to G major is a key change (C D E F G A B becomes G A B C D E F#); C major to D dorian is a mode change (the same seven notes, now starting on D).'
+      ),
+    ],
+    teaching: [],
     see: ['modes', 'keyRings', 'keyView', 'commonTones'],
   },
   keyRings: {
@@ -1035,12 +1481,36 @@ const entries = {
   },
   commonTones: {
     term: 'Common tones (x|y)',
-    text: 'Under each key ring: x is how many notes the key shares with your current subset, y is how many notes the subset has. The bar is a separator, not a division. More shared notes means a closer key: a key with the same notes as the subset shows y|y. Example: for C major, the G major ring reads 6|7 (all but F, which becomes F#) and the F# major ring reads 2|7 (only B and F survive), so G major is a close key and F# major is a distant one.',
+    help: [
+      p(
+        'Under each key ring: x is how many notes the key shares with your current subset, y is how many notes the subset has. The bar is a separator, not a division. More shared notes means a closer key: a key with the same notes as the subset shows y|y.'
+      ),
+      example(
+        'for C major, the G major ring reads 6|7 (all but F, which becomes F#) and the F# major ring reads 2|7 (only B and F survive), so G major is a close key and F# major is a distant one.'
+      ),
+    ],
+    teaching: [],
     see: ['keyView', 'keyRings'],
   },
   keyView: {
     term: 'Key comparison',
-    text: 'One large circle comparing your subset with a key. It shows the key you point at in the small rings, else the one you last clicked, else the current key (your subset itself, where everything is common). It goes back to the current key whenever the subset changes any other way (a new selection, preset, method, mode or tab). Everything sounding is lit green, and pointing at a note here lights it in every view. The bold chevron outside the circle marks the root note of the shown key (the mode root you would get by switching to it). The line under it counts the four groups in words. Example: from C major to G major it reads "6 common · +1 added · −1 dropped · 0 missing": F# would be added and F dropped.',
+    help: [
+      p(
+        'One large circle comparing your subset with a key. It shows the key you point at in the small rings, else the one you last clicked, else the current key (your subset itself, where everything is common). The line under it counts the four groups in words.'
+      ),
+      example(
+        'from C major to G major it reads "6 common · +1 added · −1 dropped · 0 missing": F# would be added and F dropped.'
+      ),
+    ],
+    teaching: [
+      p(
+        'It goes back to the current key whenever the subset changes any other way (a new selection, preset, method, mode or tab).'
+      ),
+      p('Everything sounding is lit green, and pointing at a note here lights it in every view.'),
+      p(
+        'The bold chevron outside the circle marks the root note of the shown key (the mode root you would get by switching to it).'
+      ),
+    ],
     see: ['keyMarks', 'keySwitch', 'keyAdd', 'commonTones'],
   },
   keyMarks: {
@@ -1055,12 +1525,31 @@ const entries = {
   },
   keyAdd: {
     term: 'Add key',
-    text: 'Adds the notes of the shown key to your subset and keeps everything you already have; the mode root stays where it is. Same as Shift+click on its small ring. Notes the field does not have cannot be added. Example: with C major and the G major key shown, Add gives the eight notes C D E F F# G A B (F stays, F# joins), still rooted on C.',
+    help: [
+      p(
+        'Adds the notes of the shown key to your subset and keeps everything you already have; the mode root stays where it is. Notes the field does not have cannot be added.'
+      ),
+      keys([{ key: 'Shift+click a small ring', does: 'the same as Add key' }]),
+      example(
+        'with C major and the G major key shown, Add gives the eight notes C D E F F# G A B (F stays, F# joins), still rooted on C.'
+      ),
+    ],
+    teaching: [],
     see: ['keySwitch', 'keyRings'],
   },
   inspector: {
     term: 'Note inspector',
-    text: 'Shows one row of the field table for the note you point at, or pinned with Alt+click, anywhere (circle, strip, keys, lattice): ratio, cents, monzo (prime exponents), nearest 12-EDO key and how far off it is. Example: pointing at 13/8 reads 840.53 c, monzo 2^-3 13, and about 40 c sharp of Ab.',
+    help: [
+      p(
+        'Shows one row of the field table for the note you point at, or pinned, anywhere (circle, strip, keys, lattice): ratio, cents, monzo (prime exponents), nearest 12-EDO key and how far off it is.'
+      ),
+      keys([
+        { key: 'Point at a note', does: 'show it here' },
+        { key: 'Alt+click a note', does: 'pin it' },
+      ]),
+      example('pointing at 13/8 reads 840.53 c, monzo 2^-3 13, and about 40 c sharp of Ab.'),
+    ],
+    teaching: [],
     see: ['fieldTable'],
   },
   fieldSettings: {
@@ -1075,7 +1564,15 @@ const entries = {
   },
   keepModeRoot: {
     term: 'Keep the mode root when notes are added or removed',
-    text: 'On (the default): adding or removing a note keeps the same note as the mode root, so the mode number follows it. Off: the mode number stays and may now point at a different note. If the root itself is removed, the mode number stays either way. Example: with 1/1, 5/4, 3/2 and 15/8 selected on mode 2 (root 5/4), add 9/8. The set becomes 1/1, 9/8, 5/4, 3/2, 15/8: with this on, the root stays 5/4 and the mode becomes 3; with it off, the mode stays 2 and now starts on 9/8.',
+    help: [
+      p(
+        'On (the default): adding or removing a note keeps the same note as the mode root, so the mode number follows it. Off: the mode number stays and may now point at a different note. If the root itself is removed, the mode number stays either way.'
+      ),
+      example(
+        'with 1/1, 5/4, 3/2 and 15/8 selected on mode 2 (root 5/4), add 9/8. The set becomes 1/1, 9/8, 5/4, 3/2, 15/8: with this on, the root stays 5/4 and the mode becomes 3; with it off, the mode stays 2 and now starts on 9/8.'
+      ),
+    ],
+    teaching: [],
     see: ['mode', 'developerMenu'],
   },
   modeSignAlways: {
@@ -1130,22 +1627,108 @@ const entries = {
   },
   shelfPanel: {
     term: 'Shelf',
-    text: 'Chords you stashed, each with the exact pitches that were heard and where they came from. Click a slot to hear it and keep it highlighted; point at it and hold 1 to hold it (on one of several selected slots, hold 1 layers all the selected ones). Click the name to rename, use the arrows to reorder, the copy button to reload the source of the chord as a new tab, the bin to delete. Tick several slots and press Play selected to hear them together. In Parallel a chord sounds from the 1/1 pitch, in Relative at the pitches it was stashed at. Example: stash a major triad on degree 1 and another on degree 5, tick both and press Play selected.',
+    help: [
+      p(
+        'Chords you stashed, each with the exact pitches that were heard and where they came from. In Parallel a chord sounds from the 1/1 pitch, in Relative at the pitches it was stashed at.'
+      ),
+      keys([
+        { key: 'Click a slot', does: 'hear it and keep it highlighted' },
+        {
+          key: '{key:holdOwn}',
+          does: 'point at a slot and hold it (on one of several selected slots, all the selected ones layer)',
+        },
+        { key: 'Tick slots, Play selected', does: 'hear them together' },
+      ]),
+      example(
+        'stash a major triad on degree 1 and another on degree 5, tick both and press Play selected.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Click the name to rename, use the arrows to reorder, the copy button to reload the source of the chord as a new tab, the bin to delete.'
+      ),
+      p('The bin asks for a second click ("Delete?") before it deletes.'),
+    ],
     see: ['sketchRow', 'stashChord', 'holdToPlay', 'modePlayback'],
   },
   compositesPanel: {
     term: 'Composites',
-    text: 'Up to nine numbered collections. Each gathers chords, subsets and single notes (from any generator, any tab) and merges their pitches onto ONE ring, a new gamut you can work on like any other. Pitches closer than the merge tolerance (5 c by default, set in the Developer menu) become one note. A row shows its number, name (click to rename), the merged note count, a small ring, and the items it holds (open them to remove one). Each item shows four lines: its template, kind and root (such as 4:5:6 major triad on 200.0 c; a positional chord shows its name such as 2-2 on 4), what it is and how many notes, its cents (a positional chord adds its tail), and its source. Point at an item to light, on the ring of its row, the notes it gives the composite. Open as tab makes a NEW tab with the merged notes as they are now; later changes to the composite do not touch that tab. Delete takes two clicks. Example: send a 12-EDO major triad and a just 4:5:6 to one composite; at 5 c they merge into 4 notes (400 c and 386.3 c stay apart, 700 c and 702 c become one).',
+    help: [
+      p(
+        'Up to nine numbered collections of chords, subsets and single notes (from any generator, any tab), merged onto ONE ring: a new gamut you can work on like any other. Pitches closer than the merge tolerance (5 c by default, set in the Developer menu) become one note.'
+      ),
+      keys([{ key: 'Click a name', does: 'rename it' }]),
+      example(
+        'send a 12-EDO major triad and a just 4:5:6 to one composite; at 5 c they merge into 4 notes (400 c and 386.3 c stay apart, 700 c and 702 c become one).'
+      ),
+    ],
+    teaching: [
+      p(
+        'A row shows its number, name, the merged note count, a small ring, and the items it holds (open them to remove one).'
+      ),
+      p(
+        'Each item shows four lines: its template, kind and root (such as 4:5:6 major triad on 200.0 c; a positional chord shows its name such as 2-2 on 4), what it is and how many notes, its cents (a positional chord adds its tail), and its source.'
+      ),
+      p('Point at an item to light, on the ring of its row, the notes it gives the composite.'),
+      p(
+        'Open as tab makes a NEW tab with the merged notes as they are now; later changes to the composite do not touch that tab.'
+      ),
+      p('Delete takes two clicks.'),
+    ],
     see: ['sendToComposite', 'compositeOpen', 'shelfPanel'],
   },
   compositeOpen: {
     term: 'Open as tab',
-    text: 'Makes a new tab, at the end, whose generator is the Composite method: the merged notes of this composite as they are at this moment. Your other tabs are not touched. Every panel works on it (ring, keys, lattice, Sketch, shelf, Retuner). Changing or deleting the composite later changes nothing in that tab. Example: collect three chords, press Open as tab, then look for chords inside the new gamut.',
+    help: [
+      p(
+        'Makes a new tab, at the end, whose generator is the Composite method: the merged notes of this composite as they are at this moment. Your other tabs are not touched.'
+      ),
+      example(
+        'with three chords collected, press **Open as tab**, then look for chords inside the new gamut.'
+      ),
+    ],
+    teaching: [
+      p('Every panel works on it (ring, keys, lattice, Sketch, shelf, Retuner).'),
+      p('Changing or deleting the composite later changes nothing in that tab.'),
+    ],
     see: ['compositesPanel'],
   },
   sendToComposite: {
     term: 'Send to a composite (- key, right-click)',
-    text: 'Point at a chord chip, a shelf chord, a saved subset, a key ring, a note anywhere or an item of a composite and press - (the minus key, plain). A small popup lists the composites by number: press 1 to 9 to send it there, 0 for a new composite, Esc to cancel. Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item. An item already in a composite is greyed out and says so. The popup also lists the pitch values as text (cents for every note; ratio and monzo when sending Exact) and the note counts. Its Field | Exact slider starts on the choice made on the shelf and changes the preview and the send; it is disabled, with the reason, for a stashed shelf chord, a positional chord and anything without separate exact ratios. While the popup is open E flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on 0). Right-click the same things for a menu: a chord chip also offers Stash on shelf; Send to composite offers the three most recently used composites, New composite and All composites, and Shift+click on a composite sends in the other mode (Field or Exact). On the shelf, tick chords and use Add selected to composite. Example: point at the minor triad chip, press -, then 2.',
+    help: [
+      p(
+        'Sends what the pointer is on to a numbered composite: a chord chip, a shelf chord, a saved subset, a key ring, a note anywhere or an item of a composite. A small popup lists the composites; right-click the same things for a menu instead.'
+      ),
+      keys([
+        {
+          key: '{key:composite}',
+          does: 'open the popup on what the pointer is on (again to close it); the plain key only, not with Ctrl, Alt, Cmd or Shift',
+        },
+        { key: '1 to 9', does: 'popup open: send it to that composite' },
+        { key: '0', does: 'popup open: send it to a new composite' },
+        { key: 'Esc', does: 'popup open: cancel' },
+      ]),
+      example('point at the minor triad chip, press {key:composite}, then 2.'),
+    ],
+    teaching: [
+      p(
+        'Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item.'
+      ),
+      p('An item already in a composite is greyed out and says so.'),
+      p(
+        'The popup also lists the pitch values as text (cents for every note; ratio and monzo when sending Exact) and the note counts.'
+      ),
+      p(
+        'Its Field | Exact slider starts on the choice made on the shelf and changes the preview and the send; it is disabled, with the reason, for a stashed shelf chord, a positional chord and anything without separate exact ratios.'
+      ),
+      p(
+        'While the popup is open the E key flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on {key:modePlayback}).'
+      ),
+      p(
+        'The right-click menu: a chord chip also offers **Stash on shelf**; **Send to composite** offers the three most recently used composites, **New composite** and **All composites**. Shift+click on a composite sends in the other mode (Field or Exact).'
+      ),
+      p('On the shelf, tick chords and use **Add selected to composite**.'),
+    ],
     see: ['compositesPanel', 'holdToPlay'],
   },
   shelfPlaySelected: {
@@ -1155,12 +1738,55 @@ const entries = {
   },
   positionalChords: {
     term: 'Positional chords',
-    text: 'Chords made by POSITION in the subset, not by ratios. A pattern says how many subset notes to step over: 2-2 takes every other note (a triad in a 7-note scale), 2-2-2 a four-note chord, 1-1 three neighbours, 2-3 and 3-2 mixed. Every degree of the subset gets one chord, smoothest first (Sethares roughness of its shape; no tolerance, so it works in any tuning). A row is named `2-2 on 4` (pattern and start degree); the second line says what it is in THIS tuning: `7 of 12-EDO` (subset size and generator), then the cents of each step, like `400-300 c`, and `~ 4:5:6` only when every note is within 5 c of a simple ratio chord. Every pattern is its own foldable group (click its header to fold it). Click a row to hear it, keep it highlighted and arm it in the Sketch row (hold 4 or 5 then puts the same chord on any note you point at; with the pointer on the row itself, 4 or 5 plays it on the Sketch row root); point and hold 1 to hear it while held; + stashes it with its pattern. Parallel puts the chord on its own root, Relative plays the real pitches. Example: in 12-EDO C major (7 notes), 2-2 on 1 is C E G (0, 400, 700 c) and 2-2 on 2 is D F A (200, 500, 900 c).',
+    help: [
+      p(
+        'Chords made by POSITION in the subset, not by ratios. A pattern says how many subset notes to step over: 2-2 takes every other note (a triad in a 7-note scale). Every degree of the subset gets one chord, smoothest first.'
+      ),
+      keys([
+        { key: 'Click a row', does: 'hear it, keep it highlighted, arm it in the Sketch row' },
+        { key: '{key:holdOwn}', does: 'point at a row and hold it to hear it while held' },
+        {
+          key: '{key:holdField} or {key:holdExact}',
+          does: 'on any note you point at, the armed chord; on the row itself, it plays on the Sketch row root',
+        },
+        { key: 'The + button on a row', does: 'stash it with its pattern' },
+      ]),
+      example(
+        'in 12-EDO C major (7 notes), 2-2 on 1 is C E G (0, 400, 700 c) and 2-2 on 2 is D F A (200, 500, 900 c).'
+      ),
+    ],
+    teaching: [
+      p(
+        'Other patterns: 2-2-2 gives a four-note chord, 1-1 three neighbours, 2-3 and 3-2 mixed steps.'
+      ),
+      p(
+        'Smoothest means the lowest Sethares roughness of its shape; there is no tolerance, so it works in any tuning.'
+      ),
+      p(
+        'A row is named "2-2 on 4" (pattern and start degree). The second line says what it is in THIS tuning: "7 of 12-EDO" (subset size and generator), then the cents of each step, like "400-300 c", and "~ 4:5:6" only when every note is within 5 c of a simple ratio chord.'
+      ),
+      p('Every pattern is its own foldable group: click its header to fold it.'),
+      p('Parallel puts the chord on its own root, Relative plays the real pitches.'),
+    ],
     see: ['positionalPatterns', 'sketchRow', 'stashChord', 'modePlayback'],
   },
   positionalPick: {
     term: 'Positional pattern group',
-    text: 'One step pattern of your own list, with one chord for every degree of the subset, ranked among the chords of this pattern only (rank 1 = smoothest of the group). Click the header to fold the group away; the row count stays in the header, and a folded group is not ranked until you open it. Add, edit, reorder and restore the patterns under Edit templates, Positional patterns. Example: 3-3 lists chords built from every third note, which are wider than triads, and 2-3 can be folded away while 2-2 stays open.',
+    help: [
+      p(
+        'One step pattern of your own list, with one chord for every degree of the subset, ranked among the chords of this pattern only (rank 1 = smoothest of the group).'
+      ),
+      keys([{ key: 'Click the header', does: 'fold the group away, or open it again' }]),
+      example(
+        '3-3 lists chords built from every third note, which are wider than triads, and 2-3 can be folded away while 2-2 stays open.'
+      ),
+    ],
+    teaching: [
+      p('The row count stays in the header, and a folded group is not ranked until you open it.'),
+      p(
+        'Add, edit, reorder and restore the patterns under **Edit templates**, Positional patterns.'
+      ),
+    ],
     see: ['positionalChords', 'positionalPatterns'],
   },
   positionalOrder: {
@@ -1170,7 +1796,25 @@ const entries = {
   },
   positionalPatterns: {
     term: 'Positional patterns (editor)',
-    text: 'Your list of step patterns, kept apart from the ratio templates. A pattern is digits 1 to 9 joined by dashes, 1 to 8 steps: 2-2, 2-3-2, 1-1-1. Edit a pattern in place (Enter or leaving the box keeps it, Escape gives the old text back), use the arrows to reorder, the bin to delete, and Add pattern for a new one. A pattern that is not valid or is already in the list is refused and the reason is shown under the list. Example: type 2-3-2 and press Add pattern; it joins the Positional picker and the Sketch row.',
+    help: [
+      p(
+        'Your list of step patterns, kept apart from the ratio templates. A pattern is digits 1 to 9 joined by dashes, 1 to 8 steps: 2-2, 2-3-2, 1-1-1.'
+      ),
+      keys([
+        { key: 'Enter, or leave the box', does: 'keeps your edit of a pattern' },
+        { key: 'Escape', does: 'gives the old text back' },
+        { key: 'Arrows, bin', does: 'reorder, delete' },
+        { key: '**Add pattern**', does: 'adds a new one' },
+      ]),
+      example(
+        'type 2-3-2 and press **Add pattern**; it joins the Positional picker and the Sketch row.'
+      ),
+    ],
+    teaching: [
+      p(
+        'A pattern that is not valid or is already in the list is refused, and the reason is shown under the list.'
+      ),
+    ],
     see: ['positionalChords', 'positionalRestore'],
   },
   positionalRestore: {
@@ -1180,12 +1824,56 @@ const entries = {
   },
   sketchRealization: {
     term: 'Field | Exact',
-    text: 'Which pitches Play sketch and Stash use. Field: the chord as the field gives it (the shape of the chord you armed from a chip or shelf slot, else the template found at the Sketch root, errors included; a note the field lacks stays exact). Exact: the true ratios of the template. Example: in 12-EDO, 4:5:6 on the first note is 0, 400, 700 c in Field mode and 0, 386.3, 702 c exact. Holds 4 and 5 are the same two choices for any note you point at. The switch is off while a positional chord is picked in the Sketch row: it has no separate exact ratios, so Play sketch, Stash and holds 4 and 5 all use its field notes.',
+    help: [
+      p(
+        'Which pitches **Play sketch** and **Stash** use. Field: the chord as the field gives it (the shape of the chord you armed from a chip or shelf slot, else the template found at the Sketch root, errors included; a note the field lacks stays exact). Exact: the true ratios of the template.'
+      ),
+      keys([
+        {
+          key: '{key:holdField} and {key:holdExact}',
+          does: 'the same two choices for any note you point at',
+        },
+      ]),
+      example(
+        'in 12-EDO, 4:5:6 on the first note is 0, 400, 700 c in Field mode and 0, 386.3, 702 c exact.'
+      ),
+    ],
+    teaching: [
+      p(
+        'The switch is off while a positional chord is picked in the Sketch row: it has no separate exact ratios, so Play sketch, Stash and holds {key:holdField} and {key:holdExact} all use its field notes.'
+      ),
+    ],
     see: ['sketchRow', 'holdToPlay'],
   },
   sketchRow: {
     term: 'Sketch row',
-    text: 'Puts any chord template on any note of the subset, even when the field lacks some of its notes: Play sketch sounds the chord as the Field | Exact switch says (default Field: the chord as the field gives it; Exact: the true ratios). A note the field has is marked with the chord colour; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above). The root stepper moves along the subset from the mode root (1 is the mode root). Example: 4:5:6:7 on a 12-EDO field shows the 7 as about -31 c, the nearest piano note being flatter than the true seventh harmonic. The template list also has a Positional group (your step patterns, such as 2-2): picking one makes the row show that positional chord at the root degree (its name and tail replace the template line), and Play sketch, Stash, = and holds 4 and 5 use it; picking a ratio template goes back.',
+    help: [
+      p(
+        'Puts any chord template on any note of the subset, even when the field lacks some of its notes. **Play sketch** sounds the chord as the Field | Exact switch says (default Field: as the field gives it; Exact: the true ratios).'
+      ),
+      keys([
+        { key: '{key:stash}', does: 'stash the current sketch on the shelf' },
+        {
+          key: '{key:holdField} or {key:holdExact}',
+          does: 'point at any note and hold it to hear this chord there: as the field has it, or the exact ratios',
+        },
+      ]),
+      example(
+        '4:5:6:7 on a 12-EDO field shows the 7 as about -31 c, the nearest piano note being flatter than the true seventh harmonic.'
+      ),
+    ],
+    teaching: [
+      p(
+        'A note the field has is marked with the chord colour; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above).'
+      ),
+      p('The root stepper moves along the subset from the mode root (1 is the mode root).'),
+      p(
+        'The template list also has a Positional group (your step patterns, such as 2-2). Picking one makes the row show that positional chord at the root degree, its name and tail replacing the template line; picking a ratio template goes back.'
+      ),
+      p(
+        'Play sketch, Stash, {key:stash} and holds {key:holdField} and {key:holdExact} all use the positional chord while it is picked.'
+      ),
+    ],
     see: ['stashChord', 'holdToPlay', 'chords'],
   },
   stashChord: {
@@ -1195,7 +1883,13 @@ const entries = {
   },
   retunerPanel: {
     term: 'Retuner',
-    text: 'Re-roots a list of candidate scales around a held pivot note and picks the card whose predicted chord scores best. Example: hold C-E-G and the card with the purest 4:5:6 wins.',
+    help: [
+      p(
+        'Re-roots a list of candidate scales around a held pivot note and picks the card whose predicted chord scores best.'
+      ),
+      example('hold C-E-G and the card with the purest 4:5:6 wins.'),
+    ],
+    teaching: [],
     see: ['cards', 'why'],
   },
   dockToggle: {
@@ -1210,7 +1904,15 @@ const entries = {
   },
   ringView: {
     term: 'Ring view: Chromatic | Fifths',
-    text: 'Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart. Example: in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps; 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.',
+    help: [
+      p(
+        'Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart.'
+      ),
+      example(
+        'in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps; 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.'
+      ),
+    ],
+    teaching: [],
     see: ['ringMenu', 'offChain'],
   },
   ringMenu: {
@@ -1230,17 +1932,45 @@ const entries = {
   },
   subsetPartialMatch: {
     term: 'Subset only partly in these settings',
-    text: "A slightly dimmed row with a halftone (dotted) bar at its left edge: some of the subset's pitches do not exist in the generator as it is now (for example after you edited it without pressing Update preset). Loading it still selects the pitches that do exist. The bar's hover says how many are found and which are missing. Example: a 7-note subset on a field that has 5 of its pitches shows: 5 of 7 notes in these settings. Missing: 7/4, 11/8.",
+    help: [
+      p(
+        "A slightly dimmed row with a halftone (dotted) bar at its left edge: some of the subset's pitches do not exist in the generator as it is now (for example after you edited it without pressing **Update preset**). Loading it still selects the pitches that do exist."
+      ),
+      keys([
+        { key: 'Point at the bar', does: 'says how many pitches are found and which are missing' },
+      ]),
+      example(
+        'a 7-note subset on a field that has 5 of its pitches shows: 5 of 7 notes in these settings. Missing: 7/4, 11/8.'
+      ),
+    ],
+    teaching: [],
     see: ['savedSubsets', 'subsetNoMatch'],
   },
   subsetNoMatch: {
     term: 'Subset not in these settings',
-    text: "A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing (you can still rename or delete it). Change the settings back, or open the generator it belongs to, to use it again. Example: a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.",
+    help: [
+      p(
+        "A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing (you can still rename or delete it). Change the settings back, or open the generator it belongs to, to use it again."
+      ),
+      example(
+        'a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.'
+      ),
+    ],
+    teaching: [],
     see: ['savedSubsets', 'subsetPartialMatch'],
   },
   renameSaved: {
     term: 'Rename saved subset',
-    text: 'Click the name of a row to type a new one; Enter keeps it, Escape cancels. The notes stay the same. Example: rename "Subset 2" to "Dorian-ish".',
+    help: [
+      p('Type a new name for a saved subset. The notes stay the same.'),
+      keys([
+        { key: 'Click the name of a row', does: 'start typing a new one' },
+        { key: 'Enter, or leave the box', does: 'keeps it' },
+        { key: 'Escape', does: 'cancels' },
+      ]),
+      example('rename "Subset 2" to "Dorian-ish".'),
+    ],
+    teaching: [],
     see: ['savedSubsets'],
   },
   deleteSaved: {
@@ -1260,22 +1990,72 @@ const entries = {
   },
   auditionNote: {
     term: 'Play this note',
-    text: 'Sounds this one field note for a moment at its own pitch above the 1/1 Hz setting, and lights it in every view. Example: press it on 5/4 to hear the major third before deciding to keep it.',
+    help: [
+      p(
+        'Sounds this one field note for a moment at its own pitch above the 1/1 Hz setting, and lights it in every view.'
+      ),
+      example('press it on 5/4 to hear the major third before deciding to keep it.'),
+    ],
+    teaching: [],
     see: ['baseHz'],
   },
   unpinNote: {
     term: 'Unpin',
-    text: 'The inspector keeps showing the note you pinned (Alt+click, or Alt+Enter on a focused note, in any view) until you unpin it: Alt+click it again or press the pinned label. A pinned note is marked in yellow in every view. A plain click only includes or excludes the note. Example: Alt+click 5/4 on the ring, move the mouse over other notes to compare, then unpin to go back to following the mouse.',
+    help: [
+      p(
+        'The inspector keeps showing the note you pinned until you unpin it. A pinned note is marked in yellow in every view. A plain click only includes or excludes the note.'
+      ),
+      keys([
+        { key: 'Alt+click', does: 'pin a note in any view (Alt+Enter on a focused note)' },
+        { key: 'Alt+click it again, or press the pinned label', does: 'unpin' },
+      ]),
+      example(
+        'Alt+click 5/4 on the ring, move the mouse over other notes to compare, then unpin to go back to following the mouse.'
+      ),
+    ],
+    teaching: [],
     see: ['inspector'],
   },
   savedRow: {
     term: 'Saved subset',
-    text: 'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small orange (sharp) and cyan (flat) bars for the distance from 12-EDO. A small chevron above a column marks the mode root of that subset. Pointing at a row previews it on the ring; clicking loads it. Point at a row and hold 1 to hear the subset as a scale from its mode root, for as long as you hold the key. Example: "Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.',
+    help: [
+      p(
+        'One saved selection of this pitch collection, drawn as a miniature tuner strip: a dot for every field note, bright when it is in the subset and dim when it is out, with small orange (sharp) and cyan (flat) bars for the distance from the scale chosen in Compare to (12-EDO by default). A small chevron above a column marks the mode root of that subset.'
+      ),
+      keys([
+        { key: 'Point at a row', does: 'preview it on the ring' },
+        { key: 'Click', does: 'load it' },
+        {
+          key: '{key:holdOwn}',
+          does: 'point at a row and hold it to hear the subset as a scale from its mode root',
+        },
+      ]),
+      example('"Septimal tetrad 4:5:6:7" lights 1/1, 5/4, 3/2 and 7/4 and dims the rest.'),
+    ],
+    teaching: [],
     see: ['savedSubsets', 'holdToPlay'],
   },
   pinPanel: {
     term: 'Pin as a column',
-    text: 'Gives this panel its own column beside the generator, so on a wide screen several analyses are visible at once. Click it and choose Pin left or Pin right: the column goes on that side, right next to the generator. Pinned columns can be moved left or right and reordered; the arrangement is remembered. A dimmed pin means it is pinned but there is no room for its column at this window width; it stays reachable through the switcher. Example: pin Keys & Modes and Chords on an ultrawide to watch both while you edit the subset.',
+    help: [
+      p(
+        'Gives this panel its own column beside the generator, so on a wide screen several analyses are visible at once. Pinned columns can be moved left or right and reordered; the arrangement is remembered.'
+      ),
+      keys([
+        {
+          key: 'Click the pin',
+          does: 'choose **Pin left** or **Pin right**: the column goes on that side, right next to the generator',
+        },
+      ]),
+      example(
+        'pin Keys & Modes and Chords on an ultrawide to watch both while you edit the subset.'
+      ),
+    ],
+    teaching: [
+      p(
+        'A dimmed pin means it is pinned but there is no room for its column at this window width; it stays reachable through the switcher.'
+      ),
+    ],
     see: ['movePin', 'analysisRail'],
   },
   movePin: {
@@ -1300,7 +2080,19 @@ const entries = {
   },
   stackPin: {
     term: 'Stack with',
-    text: 'Lists every other pinned panel whose column has room (a column holds up to three panels), with its side and how full it is, and moves this panel to the bottom of that column, so the panels share its height. It works across the generator and at any distance; a panel taken out of a stack leaves the others together. Disabled when every other column is full. Example: on Visualizer 3 - Dissonance curve choose "Visualizer 1 - Lattice (right, 1 of 3)" to see the lattice and the curve one above the other; then stack Visualizer 2 - EDO fit the same way to have all three in one column.',
+    help: [
+      p(
+        'Lists every other pinned panel whose column has room (a column holds up to three panels), with its side and how full it is, and moves this panel to the bottom of that column, so the panels share its height.'
+      ),
+      example(
+        'on Visualizer 3 - Dissonance curve choose "Visualizer 1 - Lattice (right, 1 of 3)" to see the lattice and the curve one above the other; then stack Visualizer 2 - EDO fit the same way to have all three in one column.'
+      ),
+    ],
+    teaching: [
+      p(
+        'It works across the generator and at any distance; a panel taken out of a stack leaves the others together. Disabled when every other column is full.'
+      ),
+    ],
     see: ['pinPanel', 'unstackPin'],
   },
   unstackPin: {
@@ -1315,13 +2107,40 @@ const entries = {
   },
   splitter: {
     term: 'Stack splitter',
-    text: 'Drag this bar to change how a stacked column is shared, or focus it and press Up or Down to move it 5% (Home and End jump to its limits). A stack of three has two bars; each one only trades space between the two panels beside it. Every panel keeps at least 20% of the height or 6 rem, whichever is larger. Double-click either bar to go back to even shares. Example: drag the upper bar down to give Visualizer 1 - Lattice more room while Visualizer 3 - Dissonance curve stays the same size.',
+    help: [
+      p(
+        'The bar between two stacked panels, for changing how a stacked column is shared. A stack of three has two bars; each one only trades space between the two panels beside it.'
+      ),
+      keys([
+        { key: 'Drag', does: 'change the shares' },
+        { key: 'Up or Down (bar focused)', does: 'move it 5%' },
+        { key: 'Home or End', does: 'jump to its limits' },
+        { key: 'Double-click either bar', does: 'back to even shares' },
+      ]),
+      example(
+        'drag the upper bar down to give Visualizer 1 - Lattice more room while Visualizer 3 - Dissonance curve stays the same size.'
+      ),
+    ],
+    teaching: [p('Every panel keeps at least 20% of the height or 6 rem, whichever is larger.')],
     see: ['stackPin'],
   },
   /* ---- visualizer panels ---- */
   vizView: {
     term: 'Visualizer view',
-    text: 'A visualizer panel can show any of five views: Lattice, EDO fit, Dissonance curve, Live roughness or Isomorphic keyboard (Live roughness follows what sounds now, the others follow the subset). The panel is named after the view it shows; pick another from this menu. There are five visualizer panels in the rail, so you can keep several views side by side. Example: leave the first visualizer on Lattice and switch the second to EDO fit to see the grid and the tuning fit together.',
+    help: [
+      p(
+        'A visualizer panel can show any of five views: Lattice, EDO fit, Dissonance curve, Live roughness or Isomorphic keyboard. The panel is named after the view it shows; pick another from this menu.'
+      ),
+      example(
+        'leave the first visualizer on Lattice and switch the second to EDO fit to see the grid and the tuning fit together.'
+      ),
+    ],
+    teaching: [
+      p('Live roughness follows what sounds now, the others follow the subset.'),
+      p(
+        'There are five visualizer panels in the rail, so you can keep several views side by side.'
+      ),
+    ],
     see: ['lattice', 'edoFit', 'dissCurve', 'liveRoughness', 'isoKeyboard'],
   },
   vizPopOut: {
@@ -1331,7 +2150,25 @@ const entries = {
   },
   latticeMode: {
     term: 'Lattice axis mode',
-    text: 'What the directions of the lattice mean. Primes (always available): one direction per prime, so a note sits at its prime exponents, as in 3/2 is one step of 3. Generators: one direction per generator of the Lattice method (for example 3/2 and 5/4), so a note sits at how many steps of each generator it took; a line is one step of one generator. Factors: for a CPS, one direction per factor, a note sits where its factors are (the first factor in the centre, the others around it, which makes the hexany a star); a line joins two notes that swap one factor. Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are greyed out. Example: with the Lattice method and generators 3/2 and 5/4, Generators shows the fifth-by-third grid you typed in.',
+    help: [
+      p(
+        'What the directions of the lattice mean. **Primes** (always available): one direction per prime, so a note sits at its prime exponents; for example 3/2 is one step of 3.'
+      ),
+      p(
+        '**Generators**: one direction per generator of the Lattice method (for example 3/2 and 5/4), so a note sits at how many steps of each generator it took; a line is one step of one generator.'
+      ),
+      example(
+        'with the Lattice method and generators 3/2 and 5/4, Generators shows the fifth-by-third grid you typed in.'
+      ),
+    ],
+    teaching: [
+      p(
+        '**Factors**: for a CPS, one direction per factor. A note sits where its factors are (the first factor in the centre, the others around it, which makes the hexany a star); a line joins two notes that swap one factor.'
+      ),
+      p(
+        'Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are greyed out.'
+      ),
+    ],
     see: ['lattice', 'latticeAltAxes', 'cpsChords'],
   },
   latticeAltAxes: {
@@ -1341,12 +2178,31 @@ const entries = {
   },
   latticeDim: {
     term: 'Lattice 2D | 3D',
-    text: 'Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction (3D is only for the prime lattice; Generators and Factors are drawn flat). Example: in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1, while 11/8 is drawn on a stem so it never overlaps a real note.',
+    help: [
+      p(
+        'Switches the lattice between a flat picture and a rotatable 3D one. 2D squeezes every prime onto a plane, so two notes can look close when they are not. 3D gives three primes their own real direction (3D is only for the prime lattice; Generators and Factors are drawn flat).'
+      ),
+      example(
+        'in 3D, 15/8 sits one step along the 3 axis and one along the 5 axis from 1/1, while 11/8 is drawn on a stem so it never overlaps a real note.'
+      ),
+    ],
+    teaching: [],
     see: ['lattice', 'lattice3d'],
   },
   lattice3d: {
     term: '3D lattice',
-    text: 'The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart. Drag to rotate, scroll to zoom, right-drag (or two-finger drag) to pan. Example: 9/8 is two steps out along the 3 axis, 5/4 one step along the 5 axis. A bold chevron floating above a sphere marks the mode root.',
+    help: [
+      p(
+        'The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart.'
+      ),
+      keys([
+        { key: 'Drag', does: 'rotate' },
+        { key: 'Scroll', does: 'zoom' },
+        { key: 'Right-drag (or two-finger touch drag)', does: 'pan' },
+      ]),
+      example('9/8 is two steps out along the 3 axis, 5/4 one step along the 5 axis.'),
+    ],
+    teaching: [p('A bold chevron floating above a sphere marks the mode root.')],
     see: ['lattice', 'latticeAxes', 'latticeStems', 'modeRoot'],
   },
   lattice3dReset: {
@@ -1355,7 +2211,24 @@ const entries = {
   },
   lattice3dView: {
     term: '3D view',
-    text: 'The 3D lattice itself. Drag to rotate, scroll to zoom, right-drag to pan. Point at a sphere to read the note in the inspector; click to include or exclude it, Alt+click to pin it (yellow halo). Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord. A hollow ring with a dashed coloured line is the base and stem of an off-axis note. Example: hover 3/2 and the inspector shows 701.96 c.',
+    help: [
+      p('The 3D lattice itself.'),
+      keys([
+        { key: 'Drag', does: 'rotate' },
+        { key: 'Scroll', does: 'zoom' },
+        { key: 'Right-drag', does: 'pan' },
+        { key: 'Point at a sphere', does: 'read the note in the inspector' },
+        { key: 'Click', does: 'include or exclude the note' },
+        { key: 'Alt+click', does: 'pin it (yellow halo)' },
+      ]),
+      example('hover 3/2 and the inspector shows 701.96 c.'),
+    ],
+    teaching: [
+      p(
+        'Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord.'
+      ),
+      p('A hollow ring with a dashed coloured line is the base and stem of an off-axis note.'),
+    ],
     see: ['lattice3d', 'inspector'],
   },
   edo: {
@@ -1370,7 +2243,22 @@ const entries = {
   },
   edoChart: {
     term: 'EDO fit chart',
-    text: 'The number of divisions n runs along the bottom (5 to 72) and the error in cents runs up the side. Each bar is the largest error of any subset note in that n-EDO; the dot is the average error. Taller than the top of the chart is clipped. The best few n are drawn in violet and named. Point at a bar to read it; click a bar to keep it highlighted. Example: a bar at n = 22 with a worst of 7.1 c means every note of the 1/1, 5/4, 3/2 triad is within 7.1 c of a 22-EDO step.',
+    help: [
+      p(
+        'The number of divisions n runs along the bottom (5 to 72) and the error in cents runs up the side. Each bar is the largest error of any subset note in that n-EDO; the dot is the average error.'
+      ),
+      keys([
+        { key: 'Point at a bar', does: 'read it' },
+        { key: 'Click a bar', does: 'keep it highlighted' },
+      ]),
+      example(
+        'a bar at n = 22 with a worst of 7.1 c means every note of the 1/1, 5/4, 3/2 triad is within 7.1 c of a 22-EDO step.'
+      ),
+    ],
+    teaching: [
+      p('A bar taller than the top of the chart is clipped.'),
+      p('The best few n are drawn in violet and named.'),
+    ],
     see: ['edoFit', 'edoReadout'],
   },
   edoReadout: {
@@ -1380,7 +2268,15 @@ const entries = {
   },
   edoRelative: {
     term: 'Error relative to the step',
-    text: "The worst error divided by the size of one step of that division. Bigger divisions always shrink the error in cents, so this tells you whether a division fits better than its size alone would suggest. Example: 12-EDO's worst miss is 13.7 c (the major third 5/4) of a 100 c step (14 %); 22-EDO's worst miss is 7.1 c (the fifth 3/2) of a 54.5 c step (13 %), so they fit about equally well for their size.",
+    help: [
+      p(
+        'The worst error divided by the size of one step of that division. Bigger divisions always shrink the error in cents, so this tells you whether a division fits better than its size alone would suggest.'
+      ),
+      example(
+        "12-EDO's worst miss is 13.7 c (the major third 5/4) of a 100 c step (14 %); 22-EDO's worst miss is 7.1 c (the fifth 3/2) of a 54.5 c step (13 %), so they fit about equally well for their size."
+      ),
+    ],
+    teaching: [],
     see: ['edoFit'],
   },
   edoBestRow: {
@@ -1400,7 +2296,19 @@ const entries = {
   },
   dissMarks: {
     term: 'Scale marks on the curve',
-    text: 'A vertical line at the cents of every field note. Bright lines are notes in your subset; faint lines are field notes you left out; green means sounding now; a small bold chevron above a line marks the mode root. Read where a line meets the curve: a line at the bottom of a dip means that interval, measured from 1/1, is smooth. Example: the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1; a line that lands on a peak is rougher against 1/1.',
+    help: [
+      p(
+        'A vertical line at the cents of every field note. Bright lines are notes in your subset; faint lines are field notes you left out; green means sounding now; a small bold chevron above a line marks the mode root.'
+      ),
+      example(
+        'the 3/2 line sits in the deep dip at 702 c, so 3/2 is smooth against 1/1; a line that lands on a peak is rougher against 1/1.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Read where a line meets the curve: a line at the bottom of a dip means that interval, measured from 1/1, is smooth.'
+      ),
+    ],
     see: ['dissCurve', 'dissDips'],
   },
   dissDips: {
@@ -1415,7 +2323,20 @@ const entries = {
   },
   liveRoughness: {
     term: 'Live roughness',
-    text: 'The Sethares roughness of the notes sounding right now (field notes, notes outside the field, held keys and held chord previews), using the same seven-partial sound as the dissonance curve, with the lowest sounding note at its own pitch above the 1/1 Hz setting. It shows the total, one bar per pair of notes, and a curve of what the total would be if one more note were added. It updates as notes start and stop. Example: hold C, G and B of 12-EDO and the total is 4.79; hold C, F-sharp and A-flat and it is 6.70, so the first chord is smoother.',
+    help: [
+      p(
+        'The Sethares roughness of the notes sounding right now (field notes, notes outside the field, held keys and held chord previews). It shows the total, one bar per pair of notes, and a curve of what the total would be if one more note were added.'
+      ),
+      example(
+        'hold C, G and B of 12-EDO and the total is 4.79; hold C, F-sharp and A-flat and it is 6.70, so the first chord is smoother.'
+      ),
+    ],
+    teaching: [
+      p(
+        'It uses the same seven-partial sound as the dissonance curve, with the lowest sounding note at its own pitch above the 1/1 Hz setting.'
+      ),
+      p('It updates as notes start and stop.'),
+    ],
     see: ['roughness', 'liveRoughTotal', 'liveRoughPairs', 'liveRoughCurve', 'dissCurve'],
   },
   liveRoughTotal: {
@@ -1435,7 +2356,15 @@ const entries = {
   },
   isoKeyboard: {
     term: 'Isomorphic keyboard',
-    text: 'A grid of hexagonal keys where an interval always has the same shape: one step right is the first generator (3/2 by default), one step up and to the right is the second (2/1 or 5/4). Each hexagon shows the field note nearest its pitch, if there is one within the tolerance; the rest stay blank. Example: with 3/2 and 2/1, a row of hexagons is a chain of fifths, so 1/1, 3/2, 9/8 run along it; with 5/4 as the second generator, up and right from 1/1 is the pure third 5/4.',
+    help: [
+      p(
+        'A grid of hexagonal keys where an interval always has the same shape: one step right is the first generator (3/2 by default), one step up and to the right is the second (2/1 or 5/4). Each hexagon shows the field note nearest its pitch, if there is one within the tolerance; the rest stay blank.'
+      ),
+      example(
+        'with 3/2 and 2/1, a row of hexagons is a chain of fifths, so 1/1, 3/2, 9/8 run along it; with 5/4 as the second generator, up and right from 1/1 is the pure third 5/4.'
+      ),
+    ],
+    teaching: [],
     see: ['isoG1', 'isoG2', 'isoTol', 'isoHex'],
   },
   isoG1: {
@@ -1445,7 +2374,13 @@ const entries = {
   },
   isoG2: {
     term: 'Up-right step (generator 2)',
-    text: 'The interval for one hexagon up and to the right. Example: 2/1 makes each row up an octave higher, like a normal keyboard; 5/4 makes it a pure third higher, which fills the grid with just major triads.',
+    help: [
+      p('The interval for one hexagon up and to the right.'),
+      example(
+        '2/1 makes each row up an octave higher, like a normal keyboard; 5/4 makes it a pure third higher, which fills the grid with just major triads.'
+      ),
+    ],
+    teaching: [],
     see: ['isoKeyboard'],
   },
   isoTol: {
@@ -1455,7 +2390,24 @@ const entries = {
   },
   isoHex: {
     term: 'Hexagon',
-    text: 'One key. Filled and bright: a note in your subset. Outlined: a field note that you left out. Blank: no field note near that pitch. A green dot means it is sounding now, a blue outline marks a note of the highlighted chord, and a small bold chevron at the top of the key marks the mode root. Point at a key to read it in the inspector; click to include or exclude the note, Alt+click to pin it (yellow outline). Example: the 3/2 key lights when you play 3/2 anywhere, and on every hexagon that lands on it.',
+    help: [
+      p(
+        'One key. Filled and bright: a note in your subset. Outlined: a field note that you left out. Blank: no field note near that pitch.'
+      ),
+      keys([
+        { key: 'Point at a key', does: 'read it in the inspector' },
+        { key: 'Click', does: 'include or exclude the note' },
+        { key: 'Alt+click', does: 'pin it (yellow outline)' },
+      ]),
+      example(
+        'the 3/2 key lights when you play 3/2 anywhere, and on every hexagon that lands on it.'
+      ),
+    ],
+    teaching: [
+      p(
+        'A green dot means it is sounding now, a blue outline marks a note of the highlighted chord, and a small bold chevron at the top of the key marks the mode root.'
+      ),
+    ],
     see: ['isoKeyboard', 'inspector'],
   },
   isoReadout: {

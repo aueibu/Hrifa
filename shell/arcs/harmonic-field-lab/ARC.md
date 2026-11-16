@@ -27,6 +27,10 @@ Facts found at drafting time (2026-11-15), so decisions start from the code, not
 
 - **M3 look decisions (human, 2026-11-16):** the dynamic line goes FIRST, directly under the term (fixed position, not buried in variable-length help); the whole tooltip is ONE uniform colour (the dynamic line is not muted; supersedes S4 = A). Tooltip order: term, dynamic, help, keys, example last.
 
+- **M5 to M7 run as one go (human, 2026-11-16):** the per-milestone human checkpoints are waived; the orchestrator converts all 206 remaining old-form entries in 12 sequential batches (`BATCHES.M5-M7.md`; four per milestone), has each milestone reviewed, runs the gate ONCE at the end and commits once, then reports; the human reviews the wording afterwards in `CHECKPOINT.M5-M7.md` (before and after, like `CHECKPOINT.M4.md`). M4 approved by the human 2026-11-16 (`CHECKPOINT.M4.md`: "this looks good").
+
+- **Scope revised for M5 to M7 (human, 2026-11-16, "let's combine A and B"):** not all 206 old-form entries are rewritten by hand. M5.1 (22 generator entries) is hand-converted; 20 entries of 400 to 600 characters with an Example and no gestures are split mechanically (sentence cuts, no rewording); 46 entries (over 600 characters, or naming real keys or clicks) are hand-converted in two batches (H1, H2); about 118 short entries stay in the old form, which becomes a permanent short-entry form (M8 does not remove it; the old-form guard allowance stays). `BATCHES.M5-M7.md` has the lists.
+
 ## Preconditions
 - `check:hfl` is green before M1 (last arc closed green at 92 files, 1277 tests). If red, stop and report.
 
