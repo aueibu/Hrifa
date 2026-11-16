@@ -1,6 +1,7 @@
 /** Glossary drawer: every tooltip text from texts.ts, searchable, with "see also" links. */
 import { useMemo, useRef, useState } from 'react';
 import { Anchor, Drawer, Text, TextInput } from '@mantine/core';
+import { Blocks } from '../helpMarkup';
 import { GLOSSARY, TIPS, type TipKey } from '../texts';
 import { SearchIcon } from './icons';
 import { Num } from './ui';
@@ -56,7 +57,19 @@ export function GlossaryDrawer({ opened, onClose }: { opened: boolean; onClose: 
           >
             <dt>{entry.term}</dt>
             <dd>
-              {entry.text}
+              {entry.legacy ? (
+                entry.text
+              ) : (
+                <>
+                  <Blocks blocks={entry.help} />
+                  {entry.teaching.length > 0 && (
+                    <>
+                      <hr className={classes.glossRule} />
+                      <Blocks blocks={entry.teaching} />
+                    </>
+                  )}
+                </>
+              )}
               {entry.see && (
                 <span className={classes.see}>
                   See also:{' '}

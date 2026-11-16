@@ -2103,3 +2103,48 @@
 .outsideCount[data-corner='top'] {
   inset-block: 0.25rem auto;
 }
+
+/* -------------------------------------------------------------------------------------------- help blocks (tooltip + glossary) */
+.helpBlock {
+  display: block;
+}
+
+/* a blank line between blocks */
+.helpGap {
+  margin-top: 0.5em;
+}
+
+.helpDynamic {
+  color: var(--text-muted);
+}
+
+.helpKeys {
+  display: grid;
+  gap: 0.125rem;
+  margin-top: 0.125rem;
+}
+
+.helpKeyRow {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(3.5rem, max-content) 1fr;
+}
+
+.helpKeyName,
+.helpKey {
+  font-family: var(--mantine-font-family-monospace);
+  font-weight: 600;
+}
+
+.helpKey {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.2rem;
+  padding: 0 0.25em;
+}
+
+.glossRule {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 0.5rem 0;
+}

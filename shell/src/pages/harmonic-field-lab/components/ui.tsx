@@ -19,8 +19,9 @@ import {
   type TextInputProps,
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
+import { BlockView } from '../helpMarkup';
 import { useLabDeveloperOptions } from '../state/developerOptions';
-import { TIPS, type TipKey } from '../texts';
+import { TIPS, type TextEntry, type TipKey } from '../texts';
 import classes from './lab.module.css';
 
 interface TipProps {
@@ -48,6 +49,45 @@ export function useNativeTitle() {
   return (text: string | undefined) => (o.tooltips ? text : undefined);
 }
 
+/** The tooltip body for an entry: term, paragraphs, the dynamic text, then the example and the keys. Old-form entries as before. */
+function TipBody({ entry, extra }: { entry: TextEntry; extra?: string }) {
+  const paragraphs = entry.help.filter((b) => b.kind === 'p');
+  const rest = [
+    ...entry.help.filter((b) => b.kind === 'example'),
+    ...entry.help.filter((b) => b.kind === 'keys'),
+  ];
+  return (
+    <>
+      <Text span fw={600} display="block">
+        {entry.term}
+      </Text>
+      {entry.legacy ? (
+        entry.text
+      ) : (
+        <>
+          {paragraphs.map((b, i) => (
+            <BlockView key={`p${i}`} block={b} first={i === 0} />
+          ))}
+        </>
+      )}
+      {extra && (
+        <Text
+          span
+          display="block"
+          mt={entry.legacy ? 4 : '0.5em'}
+          className={entry.legacy ? undefined : classes.helpDynamic}
+        >
+          {extra}
+        </Text>
+      )}
+      {!entry.legacy &&
+        rest.map((b, i) => (
+          <BlockView key={`r${i}`} block={b} first={paragraphs.length === 0 && !extra && i === 0} />
+        ))}
+    </>
+  );
+}
+
 /** Hover/focus tooltip whose text is the glossary entry `k` (one source of truth). */
 export function Tip({ k, children, as = 'label', block, extra }: TipProps) {
   const entry = TIPS[k];
@@ -59,19 +99,7 @@ export function Tip({ k, children, as = 'label', block, extra }: TipProps) {
       {...tipProps}
       position="top"
       events={{ hover: true, focus: true, touch: true }}
-      label={
-        <>
-          <Text span fw={600} display="block">
-            {entry.term}
-          </Text>
-          {entry.text}
-          {extra && (
-            <Text span display="block" mt={4}>
-              {extra}
-            </Text>
-          )}
-        </>
-      }
+      label={<TipBody entry={entry} extra={extra} />}
     >
       {as === 'label' ? (
         <button type="button" className={classes.tip} data-tipk={k}>

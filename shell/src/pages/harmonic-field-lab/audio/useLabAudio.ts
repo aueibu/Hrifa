@@ -57,6 +57,7 @@ import {
   type Planned,
   type PreviewTarget,
 } from './plan';
+import { SHORTCUTS } from './shortcuts';
 
 /** One note of a hold-1/2/3 preview: its voice, what it lights, and whether it is sounding now. */
 interface HeldNote {
@@ -893,7 +894,7 @@ export function useLabAudio({
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) {
         return;
       }
-      if (e.key === '0' && !e.shiftKey) {
+      if (e.key === SHORTCUTS.modePlayback && !e.shiftKey) {
         // plain 0 switches Parallel | Relative mode playback; it is no note key (4 and 5 are the armed-chord holds)
         e.preventDefault();
         dispatch({

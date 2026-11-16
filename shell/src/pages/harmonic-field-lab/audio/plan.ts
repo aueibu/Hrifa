@@ -7,6 +7,7 @@ import { wrapSigned } from '../state/derive';
 import { litIndex } from '../state/retuner';
 import { chordAmp, hzOf } from './engine';
 import { slotTarget } from './keymap';
+import { SHORTCUTS } from './shortcuts';
 
 export interface Planned {
   hz: number;
@@ -242,9 +243,9 @@ export const previewTargetKey = (t: PreviewTarget): string => {
 
 /** The held digit keys: 1 = listed, 2 = pure / target, 3 = both. */
 export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {
-  '1': 'listed',
-  '2': 'pure',
-  '3': 'both',
+  [SHORTCUTS.holdOwn]: 'listed',
+  [SHORTCUTS.holdPure]: 'pure',
+  [SHORTCUTS.holdBoth]: 'both',
 };
 
 /**
@@ -252,8 +253,8 @@ export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {
  * template's EXACT ratios on it. Not preview kinds: no listed / pure.
  */
 export const ARMED_DIGITS: Readonly<Record<string, 'field' | 'exact'>> = {
-  '4': 'field',
-  '5': 'exact',
+  [SHORTCUTS.holdField]: 'field',
+  [SHORTCUTS.holdExact]: 'exact',
 };
 
 /** Both tones together: every step is held this much longer, so the beating can be heard. */

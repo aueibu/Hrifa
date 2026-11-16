@@ -1,17 +1,76 @@
 /**
- * One source of truth for every explanation in the lab. A hover tooltip shows `text`; the glossary drawer lists the same
- * entries (searchable) with their `see` links. Written plainly, each with a worked example. The glossary's single source:
- * every control, heading and analysis row of the lab has an entry here.
+ * One source of truth for every explanation in the lab. A hover tooltip shows an entry's help; the glossary drawer lists the
+ * same entries (searchable) with their `see` links, adding the teaching blocks after the help. Written plainly, each with a
+ * worked example. The glossary's single source: every control, heading and analysis row of the lab has an entry here.
+ *
+ * Two forms are accepted so panels convert one at a time (format: `arcs/harmonic-field-lab/HELP-FORMAT.md`):
+ * - old: `{ term, text }`, one string (it becomes one help paragraph);
+ * - new: `{ term, help, teaching?, see? }`, arrays of blocks (`p`, `example`, `keys`). Block text is markup: `**bold**`,
+ *   `*italic*`, `{key:name}` (a key from `audio/shortcuts.ts`).
  */
+import { plainText, type Block } from './markup';
+
+export type { Block } from './markup';
+
+/** An entry as written in this file. */
+export type TextEntrySource =
+  | { term: string; text: string; see?: readonly string[] }
+  | {
+      term: string;
+      /** Shown in the tooltip and the glossary. About 300 to 500 characters. */
+      help: readonly Block[];
+      /** Shown in the glossary only, after the help. */
+      teaching?: readonly Block[];
+      see?: readonly string[];
+    };
+
+/** An entry as read everywhere else: both forms normalised. */
 export interface TextEntry {
   /** Name shown as the glossary term. */
   term: string;
-  /** Plain explanation with an example. */
+  /** All text as one plain string (markup removed): search, native `title`s, old readers. */
   text: string;
+  /** The tooltip blocks (an old-form entry: its `text` as one paragraph). */
+  help: readonly Block[];
+  /** The glossary-only blocks (empty for an old-form entry). */
+  teaching: readonly Block[];
+  /** True for an old-form entry (rendered as one plain string). */
+  legacy: boolean;
   /** Other entries worth reading next. */
   see?: readonly string[];
 }
 
+const p = (text: string): Block => ({ kind: 'p', text });
+const example = (text: string): Block => ({ kind: 'example', text });
+const keys = (rows: readonly { key: string; does: string }[]): Block => ({ kind: 'keys', rows });
+
+function blockText(b: Block): string {
+  return b.kind === 'keys'
+    ? b.rows.map((r) => `${plainText(r.key)} ${plainText(r.does)}`).join(' ')
+    : `${b.kind === 'example' ? 'Example: ' : ''}${plainText(b.text)}`;
+}
+
+export function normalizeEntry(src: TextEntrySource): TextEntry {
+  if ('text' in src) {
+    return {
+      term: src.term,
+      text: src.text,
+      help: [p(src.text)],
+      teaching: [],
+      legacy: true,
+      see: src.see,
+    };
+  }
+  const teaching = src.teaching ?? [];
+  return {
+    term: src.term,
+    text: [...src.help, ...teaching].map(blockText).join(' '),
+    help: src.help,
+    teaching,
+    legacy: false,
+    see: src.see,
+  };
+}
 const entries = {
   /* ---- top bar ---- */
   wave: {
@@ -30,7 +89,16 @@ const entries = {
   },
   playScale: {
     term: 'Play scale',
-    text: 'Plays the notes of the selected subset one after another, from the mode root up to the repeat (and back down, if Scale preview is set to Up-down in the Sound settings). Each note lights up in every view while it sounds. Example: with 1/1, 9/8, 5/4 selected you hear those three notes in turn, then the repeat.',
+    help: [
+      p('Plays the selected notes one after another, from the mode root up to the repeat.'),
+      example('with 1/1, 9/8, 5/4 selected you hear those three notes in turn, then the repeat.'),
+    ],
+    teaching: [
+      p('Each note lights up in every view while it sounds.'),
+      p(
+        'If Scale preview is set to Up-down in the Sound settings, the scale also comes back down after the repeat.'
+      ),
+    ],
   },
   playChord: {
     term: 'Play chord',
@@ -51,7 +119,51 @@ const entries = {
   },
   holdToPlay: {
     term: 'Hover and hold 1 (and 4, 5)',
-    text: 'Hold 4 plays the armed chord in Field mode on the note you point at: the real pitches of the chord (the notes a chord chip or shelf slot has, errors included) are taken as intervals above its own root and moved rigidly onto that note, for as long as you hold the key; sweep to another note while holding to move it there. Hold 5 plays the EXACT ratios of the template on the note instead. A template you only picked in the Sketch row is realized as the field has it at the Sketch root where it can (notes the field lacks stay exact). Example, in 12-EDO: click the major triad 4:5:6 chip (0, 400, 700 c), then point at a 200 c note: hold 4 plays 200, 600, 900 c, hold 5 plays 200, 586.3, 902 c. For a positional chord (picked in the Sketch row or clicked in the Positional section) holds 4 and 5 give the same pitches: it has no separate exact ratios, so both place its real intervals on the note. Hold 4 and 5 also work with the pointer on a chord chip (ratio chip, CPS chip or Positional row): 4 plays that chord in Field mode and 5 its exact ratios, on the root of the Sketch row stepper (the degree the last melody key moved it to), so you can play a root key and then audition chips on it. A CPS chip and a Positional row have no separate exact form: 5 plays the same notes as 4. Example, 12-EDO, stepper on D: point at the 4:5:6 chip and hold 4 for 200, 600, 900 c, hold 5 for 200, 586.3, 902 c. Nothing needs to be in the field. Point at anything that can sound and hold 1 to hear it for as long as you hold the key: a note (on any ring, lattice, keyboard or table), a chord chip, a key ring (as a scale), a saved subset (as a scale). Sweep the pointer across tiles, notes or chips while holding to hear each one in turn (empty space keeps the last sound until you let go). A note and a chord sound until you let go; a scale steps through its notes while you hold the key (in the Scale preview direction) and stops when you let go or it ends. In the mode grid and on the tuner strip 2 and 3 also play the pure pitch and both together (an exact degree plays once, nothing to beat against). Keys: pressing a melody key (z x c ...) also moves the root of the Sketch row to the degree of that key, and = (or +) stashes the current Sketch on the shelf. Key 0 switches mode previews between Parallel and Relative (see Mode playback). Everything sounding lights green in every view. Example: point at the G major key ring and hold 1 to hear its scale.',
+    help: [
+      p('Point at anything that can sound and hold a key to hear it for as long as you hold it.'),
+      example(
+        'in 12-EDO, point at a 200 c note with the 4:5:6 chip armed: {key:holdField} plays 200, 600, 900 c and {key:holdExact} plays 200, 586.3, 902 c.'
+      ),
+      keys([
+        {
+          key: '{key:holdOwn}',
+          does: 'plays what you point at (note, chord chip, key ring, saved subset)',
+        },
+        { key: '{key:holdField}', does: 'plays the chord on that note, as the field has it' },
+        { key: '{key:holdExact}', does: "plays the chord's exact ratios" },
+      ]),
+    ],
+    teaching: [
+      p(
+        'Hold {key:holdField} plays the armed chord in Field mode on the note you point at: the real pitches of the chord (the notes a chord chip or shelf slot has, errors included) are taken as intervals above its own root and moved rigidly onto that note, for as long as you hold the key; sweep to another note while holding to move it there. Hold {key:holdExact} plays the EXACT ratios of the template on the note instead.'
+      ),
+      p(
+        'A template you only picked in the Sketch row is realized as the field has it at the Sketch root where it can (notes the field lacks stay exact).'
+      ),
+      p(
+        'For a positional chord (picked in the Sketch row or clicked in the Positional section) holds {key:holdField} and {key:holdExact} give the same pitches: it has no separate exact ratios, so both place its real intervals on the note.'
+      ),
+      p(
+        'Hold {key:holdField} and {key:holdExact} also work with the pointer on a chord chip (ratio chip, CPS chip or Positional row): {key:holdField} plays that chord in Field mode and {key:holdExact} its exact ratios, on the root of the Sketch row stepper (the degree the last melody key moved it to), so you can play a root key and then audition chips on it. A CPS chip and a Positional row have no separate exact form: {key:holdExact} plays the same notes as {key:holdField}.'
+      ),
+      example(
+        '12-EDO, stepper on D: point at the 4:5:6 chip and hold {key:holdField} for 200, 600, 900 c, hold {key:holdExact} for 200, 586.3, 902 c.'
+      ),
+      p(
+        'Nothing needs to be in the field. Point at anything that can sound and hold {key:holdOwn} to hear it for as long as you hold the key: a note (on any ring, lattice, keyboard or table), a chord chip, a key ring (as a scale), a saved subset (as a scale).'
+      ),
+      p(
+        'Sweep the pointer across tiles, notes or chips while holding to hear each one in turn (empty space keeps the last sound until you let go).'
+      ),
+      p(
+        'A note and a chord sound until you let go; a scale steps through its notes while you hold the key (in the Scale preview direction) and stops when you let go or it ends. In the mode grid and on the tuner strip {key:holdPure} and {key:holdBoth} also play the pure pitch and both together (an exact degree plays once, nothing to beat against).'
+      ),
+      p(
+        'Other keys: pressing a melody key (z x c ...) also moves the root of the Sketch row to the degree of that key, and = (or +) stashes the current Sketch on the shelf. Key {key:modePlayback} switches mode previews between Parallel and Relative (see Mode playback).'
+      ),
+      p('Everything sounding lights green in every view.'),
+      example('point at the G major key ring and hold {key:holdOwn} to hear its scale.'),
+    ],
     see: ['scalePreview', 'modes', 'tunerStrip', 'modePlayback', 'sketchRow'],
   },
   modePlayback: {
@@ -427,7 +539,50 @@ const entries = {
   },
   modes: {
     term: 'Modes (heat grid)',
-    text: "The panel for rotation: a mode keeps the same notes and starts the scale on another degree (a key, in the Keys panel, moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change). One row per mode (the scale restarted from each degree), one column per degree of that mode; narrow panels wrap the degrees onto more lines, always under the same column. Each cell is coloured by how close that degree lands to a field note when the mode's root is moved to 1/1: cool means a field note is right there, warm means the field has nothing close. Each cell shows a + or − when it is not exact: + means the field's nearest note is sharp of the pitch the mode wants, − means it is flat (the colour still tells how large the miss is). Point at a row to print the cents errors, with their signs; click a row to make that mode the current one. Modes are numbered from 1. Example: row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree wants 3/2 above 9/8 (81/64) but the field only has 5/4, the field's note is 21.5 c flat of it: that cell is orange, shows − and reads −21.5 c on hover. Hear a mode without selecting it or changing the subset: click the mode's number and root, Ctrl+click (Cmd on a Mac) plays it with the field's nearest notes as listed (errors included), Shift+click plays it pure (the mode's exact intervals from 1/1, so the cell errors vanish), and Ctrl+Shift+click plays each degree as a listed and a pure tone together, held half as fast again, so the error is heard as beating (a degree with no error plays once, nothing to beat against; a pair shares the level so it is never louder than one note). The same clicks on one cell play just that degree. Playback follows the Scale preview Up or Up-down setting. Example in a 5-limit field: Shift+click Mode 2 to hear D dorian with pure ratios; Ctrl+Shift+click a cell showing −21.5 c to hear its field note against the pure pitch: two tones 21.5 c apart near 440 Hz differ by about 5.5 Hz, so they beat about 5 times a second. Pure tones off the field light nothing; field notes light everywhere. You can also just point and hold a number key, with no clicking: point at a cell (one degree) or at a mode's number and root (the whole mode) and hold 1 for the listed notes, 2 for the pure ones, 3 for both. A cell keeps sounding for as long as you hold the key, so you can listen to the beating as long as you like; a whole mode steps through its degrees while the key is down (both is half as fast again) and stops when you let go or it reaches the end. While you hold the key, moving the pointer onto another tile or mode moves the sound there (a whole mode starts again from its first step); moving it onto empty space keeps the last sound until you let go, so small gaps between tiles do not cut it out. Example: point at a tile and hold 3 to hear the beating between its listed and pure notes. Alt+1 to Alt+9 still switch tabs. The top-bar switch Parallel | Relative (or the 5 key) chooses whether a mode is played from 1/1 or from its own root (see Mode playback). Point at a note anywhere else and 1 plays that note too (see Hover and hold 1).",
+    help: [
+      p(
+        'One row per mode (the same notes restarted on each degree), one column per degree. A cell is cool where a field note lands close and warm where the field has nothing close. + means the nearest field note is sharp, − that it is flat.'
+      ),
+      example(
+        "a cell reading −21.5 c on hover: the field's note is 21.5 c flat of what the mode wants."
+      ),
+      keys([
+        { key: 'Click', does: 'make this the current mode' },
+        { key: 'Ctrl+click', does: "hear it with the field's notes" },
+        { key: 'Shift+click', does: 'hear it pure' },
+        { key: 'Ctrl+Shift+click', does: 'both together (beating)' },
+      ]),
+    ],
+    teaching: [
+      p(
+        "This panel is for rotation: a mode keeps the same notes and starts the scale on another degree (one row per mode: the scale restarted from each degree). A cell's colour is measured with the mode's root moved to 1/1. A key (the Keys panel) moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change. Modes are numbered from 1."
+      ),
+      p(
+        'Narrow panels wrap the degrees onto more lines, always under the same column. Each cell shows a + or − when it is not exact (the colour still tells how large the miss is). Point at a row to print the cents errors, with their signs.'
+      ),
+      example(
+        "row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree wants 3/2 above 9/8 (81/64) but the field only has 5/4, the field's note is 21.5 c flat of it: that cell is orange, shows − and reads −21.5 c on hover."
+      ),
+      p(
+        "Hear a mode without selecting it or changing the subset: click the mode's number and root. Ctrl+click (Cmd on a Mac) plays it with the field's nearest notes as listed (errors included), Shift+click plays it pure (the mode's exact intervals from 1/1, so the cell errors vanish), and Ctrl+Shift+click plays each degree as a listed and a pure tone together, held half as fast again, so the error is heard as beating (a degree with no error plays once, nothing to beat against; a pair shares the level so it is never louder than one note). The same clicks on one cell play just that degree. Playback follows the Scale preview Up or Up-down setting."
+      ),
+      example(
+        'in a 5-limit field: Shift+click Mode 2 to hear D dorian with pure ratios; Ctrl+Shift+click a cell showing −21.5 c to hear its field note against the pure pitch: two tones 21.5 c apart near 440 Hz differ by about 5.5 Hz, so they beat about 5 times a second.'
+      ),
+      p('Pure tones off the field light nothing; field notes light everywhere.'),
+      p(
+        "You can also just point and hold a number key, with no clicking: point at a cell (one degree) or at a mode's number and root (the whole mode) and hold {key:holdOwn} for the listed notes, {key:holdPure} for the pure ones, {key:holdBoth} for both. A cell keeps sounding for as long as you hold the key, so you can listen to the beating as long as you like; a whole mode steps through its degrees while the key is down (both is half as fast again) and stops when you let go or it reaches the end."
+      ),
+      p(
+        'While you hold the key, moving the pointer onto another tile or mode moves the sound there (a whole mode starts again from its first step); moving it onto empty space keeps the last sound until you let go, so small gaps between tiles do not cut it out.'
+      ),
+      example(
+        'point at a tile and hold {key:holdBoth} to hear the beating between its listed and pure notes.'
+      ),
+      p(
+        'Alt+1 to Alt+9 still switch tabs. The top-bar switch Parallel | Relative (key {key:modePlayback}) chooses whether a mode is played from 1/1 or from its own root (see Mode playback). Point at a note anywhere else and {key:holdOwn} plays that note too (see Hover and hold 1).'
+      ),
+    ],
     see: ['mode', 'chordError', 'holdToPlay', 'modePlayback'],
   },
 
@@ -1098,12 +1253,14 @@ const entries = {
     text: 'How many field notes appear on the grid, and how many hexagons are blank. Example: if it reads "7 of 8 notes, 31 blank", it means seven of the eight field notes are reachable within the tolerance and about half the grid has no match.',
     see: ['isoKeyboard'],
   },
-} satisfies Record<string, TextEntry>;
+} satisfies Record<string, TextEntrySource>;
 
 export type TipKey = keyof typeof entries;
 /** The mode-root tooltip as one string, for native `title`s on the chevron glyphs that cannot host a tooltip. */
-export const MODE_ROOT_TIP = `${entries.modeRoot.term}: ${entries.modeRoot.text}`;
-export const TIPS: Record<TipKey, TextEntry> = entries;
+export const MODE_ROOT_TIP = `${entries.modeRoot.term}: ${normalizeEntry(entries.modeRoot).text}`;
+export const TIPS = Object.fromEntries(
+  Object.entries(entries).map(([k, v]) => [k, normalizeEntry(v as TextEntrySource)])
+) as Record<TipKey, TextEntry>;
 export const tipKeys = Object.keys(entries) as TipKey[];
 
 /** Entries sorted by term, for the glossary. */

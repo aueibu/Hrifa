@@ -1,4 +1,4 @@
-/** Parallel | Relative mode playback: the top-bar switch, the 5 key, persistence and the transposed sound. */
+/** Parallel | Relative mode playback: the top-bar switch, the 0 key, persistence and the transposed sound. */
 import { fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
