@@ -17,7 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| package.json | one-off (test-speed) | 2026-11-16 | add check:fast script |
-| CLAUDE.md | one-off (test-speed) | 2026-11-16 | document check:fast and the related casing fix |
-| .claude/agents/ | one-off (test-speed) | 2026-11-16 | builder.md points at check:fast |
-| WORKFLOW_HANDOFF.md | one-off (test-speed) | 2026-11-16 | keep section 5 copy in step with builder.md |
