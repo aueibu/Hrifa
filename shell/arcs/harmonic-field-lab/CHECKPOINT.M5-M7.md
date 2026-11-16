@@ -26,13 +26,13 @@ Reviews so far (all with no fact lost or altered): two reviewers over the first 
 
 **Added in the second pass, worth a look:**
 - `edoRelative`: teaching gained "0 % would be exact and 50 % the worst possible (see EDO readout)", copied from the `edoReadout` entry.
-- `retunerOn`: help now says what On and Off do ("the switch for the whole retuner"); the automatic-retune behaviour is in the glossary part.
+- `retunerOn`: help now says what On and Off do ("the switch for the whole retuner"); the automatic-retune behavior is in the glossary part.
 - `liveRoughCurve`: the curve also responds to the arrow keys, Home and End, but the old text did not say so, so it was left out. Say if you want a Keys row for it.
 
 **Text changes the guard test forced:** `>|<` in `modeRoot` and `tunerStrip` became "a pair of chevrons facing each other" (angle brackets are banned in entry text); backticks in `positionalChords` became double quotes.
 
 **Style, please confirm:**
-- Bold only for names visible on screen (Generator, Count, Centre, Box, Diamond, Save as new, Undo, the four scorers, the four key marks, the three fill sources, Update preset, Pin left and right, Retune now and the like).
+- Bold only for names visible on screen (Generator, Count, Center, Box, Diamond, Save as new, Undo, the four scorers, the four key marks, the three fill sources, Update preset, Pin left and right, Retune now and the like).
 - `tunerStrip` has its two old examples split: one in the tooltip, one in the glossary.
 - Left as old form on purpose: about 114 short entries with no key or click gestures. They are tooltip-sized already.
 
@@ -296,7 +296,7 @@ See also: (none)
 
 ---
 
-## Steps from the centre  (`diamondDistance`, hand, generator batch)
+## Steps from the center  (`diamondDistance`, hand, generator batch)
 
 **Before** (one string):
 
@@ -304,7 +304,7 @@ See also: (none)
 
 **After, tooltip:**
 
-> **Steps from the centre**
+> **Steps from the center**
 >
 > For the Diamond shape: how many generator steps in total a note may be from 1/1, counting every axis together.
 >
@@ -314,19 +314,19 @@ See also: latticeShape
 
 ---
 
-## Generator, count, centre  (`genAxis`, hand, generator batch)
+## Generator, count, center  (`genAxis`, hand, generator batch)
 
 **Before** (one string):
 
-> Generator is the interval stacked again and again (3/2 builds a chain of fifths). Count is how many to stack. Centre is how many steps go below 1/1. Example: 3/2, count 12, centre 0 builds the twelve notes up from the root; centre 6 spreads them both ways.
+> Generator is the interval stacked again and again (3/2 builds a chain of fifths). Count is how many to stack. Center is how many steps go below 1/1. Example: 3/2, count 12, center 0 builds the twelve notes up from the root; center 6 spreads them both ways.
 
 **After, tooltip:**
 
-> **Generator, count, centre**
+> **Generator, count, center**
 >
-> **Generator** is the interval stacked again and again (3/2 builds a chain of fifths). **Count** is how many to stack. **Centre** is how many steps go below 1/1.
+> **Generator** is the interval stacked again and again (3/2 builds a chain of fifths). **Count** is how many to stack. **Center** is how many steps go below 1/1.
 >
-> *Example:* 3/2, count 12, centre 0 builds the twelve notes up from the root; centre 6 spreads them both ways.
+> *Example:* 3/2, count 12, center 0 builds the twelve notes up from the root; center 6 spreads them both ways.
 
 See also: mos
 
@@ -488,7 +488,7 @@ See also: (none)
 
 **Before** (one string):
 
-> Every field note placed round a circle by its pitch, the repeat being one full turn. Click a dot to include or exclude it; Alt+click pins it in the inspector (yellow ring) without changing the subset. Filled = in your subset, hollow = out; the pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord; larger ring = sounding right now; a bold chevron outside the ring pointing in marks the mode root. Example: 3/2 sits just past the bottom of the circle, 702 of 1200 cents round.
+> Every field note placed round a circle by its pitch, the repeat being one full turn. Click a dot to include or exclude it; Alt+click pins it in the inspector (yellow ring) without changing the subset. Filled = in your subset, hollow = out; the pale gray shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord; larger ring = sounding right now; a bold chevron outside the ring pointing in marks the mode root. Example: 3/2 sits just past the bottom of the circle, 702 of 1200 cents round.
 
 **After, tooltip:**
 
@@ -504,7 +504,7 @@ See also: (none)
 
 **After, glossary adds** (below a rule):
 
-> The pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord.
+> The pale gray shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord.
 >
 > A larger green dot means the note is sounding right now.
 >
@@ -536,7 +536,7 @@ See also: (none)
 
 **Before** (one string):
 
-> A bold chevron marks the note the current mode starts on, in every view that draws single notes: outside the pitch circle and the key circle pointing in at the note, beside the note's tick on the tuner strip (a small pair, like >|<), above a lattice node pointing down, in the row of the field table, on its isomorphic-keyboard key and its mark on the dissonance curve. It is drawn in the plain text colour so it never clashes with the hover, pin, sounding or chord colours. Example: in C major, mode 2 starts on D (D dorian): the chevron moves from C to D, while the same seven notes stay selected.
+> A bold chevron marks the note the current mode starts on, in every view that draws single notes: outside the pitch circle and the key circle pointing in at the note, beside the note's tick on the tuner strip (a small pair, like >|<), above a lattice node pointing down, in the row of the field table, on its isomorphic-keyboard key and its mark on the dissonance curve. It is drawn in the plain text color so it never clashes with the hover, pin, sounding or chord colors. Example: in C major, mode 2 starts on D (D dorian): the chevron moves from C to D, while the same seven notes stay selected.
 
 **After, tooltip:**
 
@@ -550,7 +550,7 @@ See also: (none)
 
 > It sits outside the pitch circle and the key circle pointing in at the note, beside the note's tick on the tuner strip (a small pair of chevrons facing each other), above a lattice node pointing down, in the row of the field table, on its isomorphic-keyboard key and on its mark on the dissonance curve.
 >
-> It is drawn in the plain text colour so it never clashes with the hover, pin, sounding or chord colours.
+> It is drawn in the plain text color so it never clashes with the hover, pin, sounding or chord colors.
 
 See also: mode, subset
 
@@ -721,7 +721,7 @@ See also: lattice, latticeStems, primePower
 
 **Before** (one string):
 
-> A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only. A dashed line in that prime's colour runs out from the ring, one lattice step long for each power of the prime, pointing the opposite way for a negative power. The note itself is the dot at the end, and its label carries a chip such as 11⁺¹ naming the hidden prime and its power (point at a chip to read what it means). Example: with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11⁺¹; 8/11 points the other way (11⁻¹); 143/128 has two stems chained, 11⁺¹ 13⁺¹.
+> A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only. A dashed line in that prime's color runs out from the ring, one lattice step long for each power of the prime, pointing the opposite way for a negative power. The note itself is the dot at the end, and its label carries a chip such as 11⁺¹ naming the hidden prime and its power (point at a chip to read what it means). Example: with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 color, and the chip 11⁺¹; 8/11 points the other way (11⁻¹); 143/128 has two stems chained, 11⁺¹ 13⁺¹.
 
 **After, tooltip:**
 
@@ -729,11 +729,11 @@ See also: lattice, latticeStems, primePower
 >
 > A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only; the note itself is the dot at the end of a dashed line.
 >
-> *Example:* with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11⁺¹; 8/11 points the other way (11⁻¹).
+> *Example:* with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 color, and the chip 11⁺¹; 8/11 points the other way (11⁻¹).
 
 **After, glossary adds** (below a rule):
 
-> The dashed line is in that prime's colour, one lattice step long for each power of the prime, pointing the opposite way for a negative power.
+> The dashed line is in that prime's color, one lattice step long for each power of the prime, pointing the opposite way for a negative power.
 >
 > The note's label carries a chip such as 11⁺¹ naming the hidden prime and its power (point at a chip to read what it means).
 >
@@ -1052,7 +1052,7 @@ See also: expandAllChords
 
 **Before** (one string):
 
-> The tolerances at which the number of chords changes. Seven tiles show at a time with the current one in the middle (near either end of the ladder it sits off-centre); a +n tile at an edge means n more tolerances are hidden on that side, and clicking it picks the nearest hidden one. Dashed chips are chords that do not fit yet; clicking one (or a tile, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.
+> The tolerances at which the number of chords changes. Seven tiles show at a time with the current one in the middle (near either end of the ladder it sits off-center); a +n tile at an edge means n more tolerances are hidden on that side, and clicking it picks the nearest hidden one. Dashed chips are chords that do not fit yet; clicking one (or a tile, or the + and - buttons) moves the tolerance to the value where it appears. Example: "+3 c: 2 more chords" means raising tolerance by 3 cents brings in two more chords.
 
 **After, tooltip:**
 
@@ -1070,7 +1070,7 @@ See also: expandAllChords
 
 **After, glossary adds** (below a rule):
 
-> Near either end of the ladder the current tile sits off-centre.
+> Near either end of the ladder the current tile sits off-center.
 >
 > A +n tile at an edge means n more tolerances are hidden on that side.
 >
@@ -1156,13 +1156,13 @@ See also: keyMarks, keySwitch, keyAdd, commonTones
 
 **Before** (one string):
 
-> Four kinds of mark, each with its own shape and colour so neither is the only clue. Filled neutral dot: a common note, in both the subset and the key. Green hollow dot with a plus: a note the key would add (in the key, not in your subset). Red hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key). Orange dashed circle: a degree of the key the field has no note for, so it can never be added. Example: for C major against G major, F# is a plus, F is a minus, and the other six are filled.
+> Four kinds of mark, each with its own shape and color so neither is the only clue. Filled neutral dot: a common note, in both the subset and the key. Green hollow dot with a plus: a note the key would add (in the key, not in your subset). Red hollow dot struck through with a minus: a note the key would drop (in your subset, not in the key). Orange dashed circle: a degree of the key the field has no note for, so it can never be added. Example: for C major against G major, F# is a plus, F is a minus, and the other six are filled.
 
 **After, tooltip:**
 
 > **Key comparison marks**
 >
-> Four kinds of mark, each with its own shape and colour so neither is the only clue: a filled neutral dot (**common**), a green hollow dot with a plus (**+added**), a red hollow dot struck through with a minus (**−dropped**) and an orange dashed circle (**missing**).
+> Four kinds of mark, each with its own shape and color so neither is the only clue: a filled neutral dot (**common**), a green hollow dot with a plus (**+added**), a red hollow dot struck through with a minus (**−dropped**) and an orange dashed circle (**missing**).
 >
 > *Example:* for C major against G major, F# is a plus, F is a minus, and the other six are filled.
 
@@ -1359,7 +1359,7 @@ See also: compositesPanel
 
 **Before** (one string):
 
-> Point at a chord chip, a shelf chord, a saved subset, a key ring, a note anywhere or an item of a composite and press - (the minus key, plain). A small popup lists the composites by number: press 1 to 9 to send it there, 0 for a new composite, Esc to cancel. Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item. An item already in a composite is greyed out and says so. The popup also lists the pitch values as text (cents for every note; ratio and monzo when sending Exact) and the note counts. Its Field | Exact slider starts on the choice made on the shelf and changes the preview and the send; it is disabled, with the reason, for a stashed shelf chord, a positional chord and anything without separate exact ratios. While the popup is open E flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on 0). Right-click the same things for a menu: a chord chip also offers Stash on shelf; Send to composite offers the three most recently used composites, New composite and All composites, and Shift+click on a composite sends in the other mode (Field or Exact). On the shelf, tick chords and use Add selected to composite. Example: point at the minor triad chip, press -, then 2.
+> Point at a chord chip, a shelf chord, a saved subset, a key ring, a note anywhere or an item of a composite and press - (the minus key, plain). A small popup lists the composites by number: press 1 to 9 to send it there, 0 for a new composite, Esc to cancel. Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item. An item already in a composite is grayed out and says so. The popup also lists the pitch values as text (cents for every note; ratio and monzo when sending Exact) and the note counts. Its Field | Exact slider starts on the choice made on the shelf and changes the preview and the send; it is disabled, with the reason, for a stashed shelf chord, a positional chord and anything without separate exact ratios. While the popup is open E flips the slider and the digit keys belong to it (no hold previews, Alt+digit tabs or Parallel | Relative on 0). Right-click the same things for a menu: a chord chip also offers Stash on shelf; Send to composite offers the three most recently used composites, New composite and All composites, and Shift+click on a composite sends in the other mode (Field or Exact). On the shelf, tick chords and use Add selected to composite. Example: point at the minor triad chip, press -, then 2.
 
 **After, tooltip:**
 
@@ -1380,7 +1380,7 @@ See also: compositesPanel
 
 > Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item.
 >
-> An item already in a composite is greyed out and says so.
+> An item already in a composite is grayed out and says so.
 >
 > The popup also lists the pitch values as text (cents for every note; ratio and monzo when sending Exact) and the note counts.
 >
@@ -1400,7 +1400,7 @@ See also: compositesPanel, holdToPlay
 
 **Before** (one string):
 
-> Chords made by POSITION in the subset, not by ratios. A pattern says how many subset notes to step over: 2-2 takes every other note (a triad in a 7-note scale), 2-2-2 a four-note chord, 1-1 three neighbours, 2-3 and 3-2 mixed. Every degree of the subset gets one chord, smoothest first (Sethares roughness of its shape; no tolerance, so it works in any tuning). A row is named `2-2 on 4` (pattern and start degree); the second line says what it is in THIS tuning: `7 of 12-EDO` (subset size and generator), then the cents of each step, like `400-300 c`, and `~ 4:5:6` only when every note is within 5 c of a simple ratio chord. Every pattern is its own foldable group (click its header to fold it). Click a row to hear it, keep it highlighted and arm it in the Sketch row (hold 4 or 5 then puts the same chord on any note you point at; with the pointer on the row itself, 4 or 5 plays it on the Sketch row root); point and hold 1 to hear it while held; + stashes it with its pattern. Parallel puts the chord on its own root, Relative plays the real pitches. Example: in 12-EDO C major (7 notes), 2-2 on 1 is C E G (0, 400, 700 c) and 2-2 on 2 is D F A (200, 500, 900 c).
+> Chords made by POSITION in the subset, not by ratios. A pattern says how many subset notes to step over: 2-2 takes every other note (a triad in a 7-note scale), 2-2-2 a four-note chord, 1-1 three neighbors, 2-3 and 3-2 mixed. Every degree of the subset gets one chord, smoothest first (Sethares roughness of its shape; no tolerance, so it works in any tuning). A row is named `2-2 on 4` (pattern and start degree); the second line says what it is in THIS tuning: `7 of 12-EDO` (subset size and generator), then the cents of each step, like `400-300 c`, and `~ 4:5:6` only when every note is within 5 c of a simple ratio chord. Every pattern is its own foldable group (click its header to fold it). Click a row to hear it, keep it highlighted and arm it in the Sketch row (hold 4 or 5 then puts the same chord on any note you point at; with the pointer on the row itself, 4 or 5 plays it on the Sketch row root); point and hold 1 to hear it while held; + stashes it with its pattern. Parallel puts the chord on its own root, Relative plays the real pitches. Example: in 12-EDO C major (7 notes), 2-2 on 1 is C E G (0, 400, 700 c) and 2-2 on 2 is D F A (200, 500, 900 c).
 
 **After, tooltip:**
 
@@ -1418,7 +1418,7 @@ See also: compositesPanel, holdToPlay
 
 **After, glossary adds** (below a rule):
 
-> Other patterns: 2-2-2 gives a four-note chord, 1-1 three neighbours, 2-3 and 3-2 mixed steps.
+> Other patterns: 2-2-2 gives a four-note chord, 1-1 three neighbors, 2-3 and 3-2 mixed steps.
 >
 > Smoothest means the lowest Sethares roughness of its shape; there is no tolerance, so it works in any tuning.
 >
@@ -1516,7 +1516,7 @@ See also: sketchRow, holdToPlay
 
 **Before** (one string):
 
-> Puts any chord template on any note of the subset, even when the field lacks some of its notes: Play sketch sounds the chord as the Field | Exact switch says (default Field: the chord as the field gives it; Exact: the true ratios). A note the field has is marked with the chord colour; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above). The root stepper moves along the subset from the mode root (1 is the mode root). Example: 4:5:6:7 on a 12-EDO field shows the 7 as about -31 c, the nearest piano note being flatter than the true seventh harmonic. The template list also has a Positional group (your step patterns, such as 2-2): picking one makes the row show that positional chord at the root degree (its name and tail replace the template line), and Play sketch, Stash, = and holds 4 and 5 use it; picking a ratio template goes back.
+> Puts any chord template on any note of the subset, even when the field lacks some of its notes: Play sketch sounds the chord as the Field | Exact switch says (default Field: the chord as the field gives it; Exact: the true ratios). A note the field has is marked with the chord color; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above). The root stepper moves along the subset from the mode root (1 is the mode root). Example: 4:5:6:7 on a 12-EDO field shows the 7 as about -31 c, the nearest piano note being flatter than the true seventh harmonic. The template list also has a Positional group (your step patterns, such as 2-2): picking one makes the row show that positional chord at the root degree (its name and tail replace the template line), and Play sketch, Stash, = and holds 4 and 5 use it; picking a ratio template goes back.
 
 **After, tooltip:**
 
@@ -1532,7 +1532,7 @@ See also: sketchRow, holdToPlay
 
 **After, glossary adds** (below a rule):
 
-> A note the field has is marked with the chord colour; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above).
+> A note the field has is marked with the chord color; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above).
 >
 > The root stepper moves along the subset from the mode root (1 is the mode root).
 >
@@ -1566,13 +1566,13 @@ See also: cards, why
 
 **Before** (one string):
 
-> Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart. Example: in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps; 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.
+> Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbors on the ring are a fifth apart. Example: in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps; 5/4 sits at step +4 with a small offset because the pure third is 21.5 c flatter than four stacked fifths.
 
 **After, tooltip:**
 
 > **Ring view: Chromatic | Fifths**
 >
-> Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart.
+> Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbors on the ring are a fifth apart.
 >
 > *Example:* in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps.
 
@@ -1609,13 +1609,13 @@ See also: savedSubsets, subsetNoMatch
 
 **Before** (one string):
 
-> A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing (you can still rename or delete it). Change the settings back, or open the generator it belongs to, to use it again. Example: a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.
+> A strongly dimmed row with a solid gray bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing (you can still rename or delete it). Change the settings back, or open the generator it belongs to, to use it again. Example: a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.
 
 **After, tooltip:**
 
 > **Subset not in these settings**
 >
-> A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing.
+> A strongly dimmed row with a solid gray bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing.
 >
 > *Example:* a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.
 
@@ -1820,7 +1820,7 @@ See also: lattice, edoFit, dissCurve, liveRoughness, isoKeyboard
 
 **Before** (one string):
 
-> What the directions of the lattice mean. Primes (always available): one direction per prime, so a note sits at its prime exponents, as in 3/2 is one step of 3. Generators: one direction per generator of the Lattice method (for example 3/2 and 5/4), so a note sits at how many steps of each generator it took; a line is one step of one generator. Factors: for a CPS, one direction per factor, a note sits where its factors are (the first factor in the centre, the others around it, which makes the hexany a star); a line joins two notes that swap one factor. Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are greyed out. Example: with the Lattice method and generators 3/2 and 5/4, Generators shows the fifth-by-third grid you typed in.
+> What the directions of the lattice mean. Primes (always available): one direction per prime, so a note sits at its prime exponents, as in 3/2 is one step of 3. Generators: one direction per generator of the Lattice method (for example 3/2 and 5/4), so a note sits at how many steps of each generator it took; a line is one step of one generator. Factors: for a CPS, one direction per factor, a note sits where its factors are (the first factor in the center, the others around it, which makes the hexany a star); a line joins two notes that swap one factor. Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are grayed out. Example: with the Lattice method and generators 3/2 and 5/4, Generators shows the fifth-by-third grid you typed in.
 
 **After, tooltip:**
 
@@ -1834,9 +1834,9 @@ See also: lattice, edoFit, dissCurve, liveRoughness, isoKeyboard
 
 **After, glossary adds** (below a rule):
 
-> **Factors**: for a CPS, one direction per factor. A note sits where its factors are (the first factor in the centre, the others around it, which makes the hexany a star); a line joins two notes that swap one factor.
+> **Factors**: for a CPS, one direction per factor. A note sits where its factors are (the first factor in the center, the others around it, which makes the hexany a star); a line joins two notes that swap one factor.
 >
-> Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are greyed out.
+> Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are grayed out.
 
 See also: lattice, latticeAltAxes, cpsChords
 
@@ -1868,13 +1868,13 @@ See also: lattice, lattice3d
 
 **Before** (one string):
 
-> The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart. Drag to rotate, scroll to zoom, right-drag (or two-finger drag) to pan. Example: 9/8 is two steps out along the 3 axis, 5/4 one step along the 5 axis. A bold chevron floating above a sphere marks the mode root.
+> The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighboring spheres joined by a line are one prime step apart. Drag to rotate, scroll to zoom, right-drag (or two-finger drag) to pan. Example: 9/8 is two steps out along the 3 axis, 5/4 one step along the 5 axis. A bold chevron floating above a sphere marks the mode root.
 
 **After, tooltip:**
 
 > **3D lattice**
 >
-> The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart.
+> The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighboring spheres joined by a line are one prime step apart.
 >
 > Keys:
 > - Drag: rotate
@@ -1895,7 +1895,7 @@ See also: lattice, latticeAxes, latticeStems, modeRoot
 
 **Before** (one string):
 
-> The 3D lattice itself. Drag to rotate, scroll to zoom, right-drag to pan. Point at a sphere to read the note in the inspector; click to include or exclude it, Alt+click to pin it (yellow halo). Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord. A hollow ring with a dashed coloured line is the base and stem of an off-axis note. Example: hover 3/2 and the inspector shows 701.96 c.
+> The 3D lattice itself. Drag to rotate, scroll to zoom, right-drag to pan. Point at a sphere to read the note in the inspector; click to include or exclude it, Alt+click to pin it (yellow halo). Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord. A hollow ring with a dashed colored line is the base and stem of an off-axis note. Example: hover 3/2 and the inspector shows 701.96 c.
 
 **After, tooltip:**
 
@@ -1917,7 +1917,7 @@ See also: lattice, latticeAxes, latticeStems, modeRoot
 
 > Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord.
 >
-> A hollow ring with a dashed coloured line is the base and stem of an off-axis note.
+> A hollow ring with a dashed colored line is the base and stem of an off-axis note.
 
 See also: lattice3d, inspector
 

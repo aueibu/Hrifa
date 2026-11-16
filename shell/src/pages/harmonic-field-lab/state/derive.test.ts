@@ -271,7 +271,7 @@ describe('signed mode errors (+ = the field note is sharp of the pitch the mode 
 });
 
 describe('units carry no space', () => {
-  it('a note without a ratio is labelled in cents like 386.3 c', () => {
+  it('a note without a ratio is labeled in cents like 386.3 c', () => {
     const s = run(initialState(), {
       type: 'tab/add',
       gen: { ...defaultGen(), method: 'edo', edoN: 19 },

@@ -29,7 +29,7 @@ function TabButton({ index }: { index: number }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const input = useRef<HTMLInputElement>(null);
-  const cancelled = useRef(false);
+  const canceled = useRef(false);
   useEffect(() => {
     if (editing) {
       input.current?.select();
@@ -38,8 +38,8 @@ function TabButton({ index }: { index: number }) {
   const name = tabName(t);
   const commit = () => {
     setEditing(false);
-    if (cancelled.current) {
-      cancelled.current = false;
+    if (canceled.current) {
+      canceled.current = false;
       return;
     }
     if (draft.trim() !== name) {
@@ -61,7 +61,7 @@ function TabButton({ index }: { index: number }) {
             if (e.key === 'Enter') {
               commit();
             } else if (e.key === 'Escape') {
-              cancelled.current = true;
+              canceled.current = true;
               setEditing(false);
             }
           }}
@@ -80,7 +80,7 @@ function TabButton({ index }: { index: number }) {
           onClick={() => dispatch({ type: 'tab/switch', index })}
           onDoubleClick={() => {
             setDraft(name);
-            cancelled.current = false;
+            canceled.current = false;
             setEditing(true);
           }}
         >

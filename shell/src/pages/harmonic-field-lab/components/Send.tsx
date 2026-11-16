@@ -162,7 +162,7 @@ function noteItem(lab: ReturnType<typeof useLab>): SendItem | null {
 /**
  * Send item(s) to a composite (a number, or 'new'). Provenance and repeat come from the ITEM (`source`, `rep`) when it says
  * where it came from; the active tab is used only when the item leaves them undefined (chips, key rings, notes). Several items
- * at once: duplicates (already in the target, or repeated in the list) are skipped and summarised, never silently lost.
+ * at once: duplicates (already in the target, or repeated in the list) are skipped and summarized, never silently lost.
  */
 export function useSendTo() {
   const lab = useLab();

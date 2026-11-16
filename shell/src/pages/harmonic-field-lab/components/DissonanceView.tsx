@@ -21,7 +21,7 @@ const MT = 22;
 const MB = 54;
 const PW = W - ML - MR;
 const PH = H - MT - MB;
-/** Centre y of the first label lane, under the tick row. */
+/** Center y of the first label lane, under the tick row. */
 const BAND_Y = MT + PH + 22;
 
 export function DissonanceBody() {
@@ -52,17 +52,17 @@ export function DissonanceBody() {
   );
   const fieldCents = field.map((n) => n.c);
   // the notes whose ratio label is drawn: sounding or in the subset
-  const labelled = fieldCents.flatMap((_, i) =>
+  const labeled = fieldCents.flatMap((_, i) =>
     lab.sounding.has(i) || lab.selected.has(i) ? [i] : []
   );
-  const labelledNoteXs = labelled.map((i) => xOf(fieldCents[i]));
+  const labeledNoteXs = labeled.map((i) => xOf(fieldCents[i]));
   // the dip at the far end is the repeat itself (an octave, a tritave ...), not a second unison: name it by the repeat's ratio
   const dipName = (d: { idx: number; ratio: string }) =>
     d.idx === dissCurve.cents.length - 1 ? repText : d.ratio;
   // ONE layout for every name under the axis: the note ratios first (natural spot under their mark), then the dip names
   // (none within NEAR_X of a drawn note label), all assigned to lanes together
   const dipItems = dissDips.flatMap((d, k) =>
-    labelledNoteXs.some((nx) => Math.abs(nx - xOf(d.c)) <= NEAR_X)
+    labeledNoteXs.some((nx) => Math.abs(nx - xOf(d.c)) <= NEAR_X)
       ? []
       : [
           {
@@ -79,7 +79,7 @@ export function DissonanceBody() {
   );
   const places = layoutChartLabels(
     [
-      ...labelled.map((i) => ({
+      ...labeled.map((i) => ({
         x: xOf(fieldCents[i]),
         y: yOf(0),
         text: ratios[i],
@@ -91,8 +91,8 @@ export function DissonanceBody() {
     ],
     { bandY: BAND_Y, x0: ML, x1: W - MR }
   );
-  const notePlace = new Map(labelled.map((i, n) => [i, places[n]]));
-  const dipPlace = new Map(dipItems.map((d, n) => [d.k, places[labelled.length + n]]));
+  const notePlace = new Map(labeled.map((i, n) => [i, places[n]]));
+  const dipPlace = new Map(dipItems.map((d, n) => [d.k, places[labeled.length + n]]));
   const [at, setAt] = useState<number | null>(null);
   const shownIdx = at ?? null;
   const move = (e: PointerEvent<SVGRectElement>) => {

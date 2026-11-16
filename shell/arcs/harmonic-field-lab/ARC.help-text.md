@@ -27,7 +27,7 @@ Facts found at drafting time (2026-11-15), so decisions start from the code, not
 
 - **M2 checkpoint (human, 2026-11-16): approved.** Order is keys first, then the example last, in the tooltip and in the glossary help (HELP-FORMAT section 2 updated). `Hover and hold 1 (and 4, 5)` stays glossary-only for now (no hover target; revisit at the M4 to M7 panel reviews).
 
-- **M3 look decisions (human, 2026-11-16):** the dynamic line goes FIRST, directly under the term (fixed position, not buried in variable-length help); the whole tooltip is ONE uniform colour (the dynamic line is not muted; supersedes S4 = A). Tooltip order: term, dynamic, help, keys, example last.
+- **M3 look decisions (human, 2026-11-16):** the dynamic line goes FIRST, directly under the term (fixed position, not buried in variable-length help); the whole tooltip is ONE uniform color (the dynamic line is not muted; supersedes S4 = A). Tooltip order: term, dynamic, help, keys, example last.
 
 - **M5 to M7 run as one go (human, 2026-11-16):** the per-milestone human checkpoints are waived; the orchestrator converts all 206 remaining old-form entries in 12 sequential batches (`BATCHES.M5-M7.md`; four per milestone), has each milestone reviewed, runs the gate ONCE at the end and commits once, then reports; the human reviews the wording afterwards in `CHECKPOINT.M5-M7.md` (before and after, like `CHECKPOINT.M4.md`). M4 approved by the human 2026-11-16 (`CHECKPOINT.M4.md`: "this looks good").
 

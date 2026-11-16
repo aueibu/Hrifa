@@ -218,7 +218,7 @@
   outline-offset: 1px;
 }
 
-/* error: colour by size, never alone (the number is printed beside it) */
+/* error: color by size, never alone (the number is printed beside it) */
 .err[data-sev='0'] {
   color: var(--mark-cyan);
 }
@@ -1394,7 +1394,7 @@
   overflow-wrap: anywhere;
 }
 
-/* the tag is text: "retuned notes" in the text colour, "different notes" muted */
+/* the tag is text: "retuned notes" in the text color, "different notes" muted */
 .fillTag {
   color: var(--text);
   font-size: var(--lab-fs-small);
@@ -1526,7 +1526,7 @@
 }
 
 .sketchNote {
-  --sketch-tint: 14%; /* strength of the severity wash on the grey tile background: tune here */
+  --sketch-tint: 14%; /* strength of the severity wash on the gray tile background: tune here */
 
   background: var(--panel-slot);
   border: 1px solid transparent;
@@ -1538,8 +1538,8 @@
   padding: 0.1875rem 0.4375rem;
 }
 
-/* a found note carries the chord highlight colour; an outsider is dashed and prints its distance in cents, in the colour of the
-   chord chips' error severity (outline) over the grey panel background mixed with it (M8g) */
+/* a found note carries the chord highlight color; an outsider is dashed and prints its distance in cents, in the color of the
+   chord chips' error severity (outline) over the gray panel background mixed with it (M8g) */
 .sketchNote[data-found='true'] {
   background: color-mix(in srgb, var(--mark-cyan) var(--sketch-tint), var(--panel-slot));
   border-color: var(--mark-blue);
@@ -2240,7 +2240,7 @@
   position: relative;
 }
 
-/* live roughness view: total, bars per pair, next-note curve (sounding colour green, highlighted chord blue) */
+/* live roughness view: total, bars per pair, next-note curve (sounding color green, highlighted chord blue) */
 .liveRough {
   --live-top-h: 2.25rem; /* the total line: fixed, so nothing below it moves */
   --live-verdicts-h: 3.5rem; /* the three readout rows */
@@ -2349,7 +2349,7 @@
 }
 
 .liveHintOverlay {
-  /* centre of the empty plot (plot middle = (MT + PH / 2) / H of the svg), clear of marks, ticks and the label band */
+  /* center of the empty plot (plot middle = (MT + PH / 2) / H of the svg), clear of marks, ticks and the label band */
   top: 42.7%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -2380,7 +2380,7 @@
   overflow: hidden;
 }
 
-/* Live roughness sources: hover draws in the highlighted-chord colour, the lingering chord is dimmed then fades */
+/* Live roughness sources: hover draws in the highlighted-chord color, the lingering chord is dimmed then fades */
 .liveRough[data-source='hover'] .liveBar {
   background: var(--mark-blue);
 }
@@ -2390,7 +2390,7 @@
   stroke: var(--mark-blue);
 }
 
-/* a pinned note is a quiet source: neutral, not the hover colour */
+/* a pinned note is a quiet source: neutral, not the hover color */
 .liveRough[data-source='pinned'] .liveMark {
   stroke: var(--text-muted);
 }
@@ -2522,7 +2522,7 @@
   pointer-events: none;
 }
 
-/* A labelled value line inside a tooltip ("Pitches 0, 386.3, 702 c"): the label keeps its width, the values wrap beside it. */
+/* A labeled value line inside a tooltip ("Pitches 0, 386.3, 702 c"): the label keeps its width, the values wrap beside it. */
 .hintLine {
   display: flex;
   gap: 0.5ch;

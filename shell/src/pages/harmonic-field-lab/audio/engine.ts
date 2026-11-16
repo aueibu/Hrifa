@@ -5,7 +5,7 @@
  * - A voice is one oscillator through one gain into a master gain (volume) and a gentle limiter. Held voices live until
  *   `stop` (a key is down); timed voices (`blip`) release themselves. Any frequency in Hz is allowed.
  * - Timbres: `sine`, or `harmonic` = 7 partials falling off by 0.88 per partial (the Sethares default, so what you hear
- *   matches the roughness maths), built as one PeriodicWave so a glide is a single frequency ramp.
+ *   matches the roughness math), built as one PeriodicWave so a glide is a single frequency ramp.
  * - Envelopes are scheduled (`setValueAtTime`, `linearRampToValueAtTime`, `setTargetAtTime`) and never start from a read of
  *   `gain.value`, which is the level NOW (for a note scheduled in the future that is the default 1, which caused the
  *   end-of-note swell and click in the prototype).
@@ -71,7 +71,7 @@ const PANIC_TC = 0.02;
 /** Hz of a pitch `cents` above `baseHz`. */
 export const hzOf = (baseHz: number, cents: number): number => baseHz * 2 ** (cents / 1200);
 
-/** Loudest a single voice gets (chords pass a smaller `amp`): the harmonic timbre is normalised, so both are alike. */
+/** Loudest a single voice gets (chords pass a smaller `amp`): the harmonic timbre is normalized, so both are alike. */
 const PEAK: Record<Timbre, number> = { sine: 0.3, harmonic: 0.22 };
 
 /** One voice's amplitude share when `n` voices sound together (keeps big chords off the limiter). */

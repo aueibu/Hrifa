@@ -168,7 +168,7 @@ describe('Live roughness view', () => {
     act(() => {
       vi.advanceTimersByTime(40);
     });
-    // 7/4 is no 12-EDO note: four sounding notes, six pairs, one labelled by its cents
+    // 7/4 is no 12-EDO note: four sounding notes, six pairs, one labeled by its cents
     expect(pairs()).toHaveLength(6);
     expect(pairs().some((p) => /\d c/.test(p.textContent ?? ''))).toBe(true);
     expect(Number(total())).toBeGreaterThan(0);

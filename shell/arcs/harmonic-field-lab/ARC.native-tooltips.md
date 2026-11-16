@@ -52,7 +52,7 @@ Facts from the 2026-11-16 count (the lab's components, excluding `title` props t
 - Human checkpoint after: yes (hover each; wording)
 
 ### M2 (optional): Spike an HTML tooltip on an SVG element
-- Scope: one site only (`RingStats.tsx:200`, the ghost marks on the ring): wrap the SVG shape in `Hint`, keep its `aria-label`, measure the cost on the dense charts (`RoughnessView`, `DissonanceView`) with a throwaway count of tooltip instances, and report: does the anchor position correctly, do existing hover handlers still fire, what happens with many marks. Also describe the alternative (one shared tooltip per chart, nearest mark) with its change in hover behaviour.
+- Scope: one site only (`RingStats.tsx:200`, the ghost marks on the ring): wrap the SVG shape in `Hint`, keep its `aria-label`, measure the cost on the dense charts (`RoughnessView`, `DissonanceView`) with a throwaway count of tooltip instances, and report: does the anchor position correctly, do existing hover handlers still fire, what happens with many marks. Also describe the alternative (one shared tooltip per chart, nearest mark) with its change in hover behavior.
 - Acceptance:
   - [ ] The arc's `Check command` passes
   - [ ] A report with numbers and a recommendation; no other SVG site is converted

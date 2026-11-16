@@ -5,7 +5,7 @@
  * ```
  * { version: 1, patterns: [{ text: '2-2' }, { text: '2-3-2' }] }
  * ```
- * Rules: entry by entry (an entry that is not a valid pattern is dropped, a repeated one is kept once, text is canonicalised,
+ * Rules: entry by entry (an entry that is not a valid pattern is dropped, a repeated one is kept once, text is canonicalized,
  * at most 40 are kept); no write on mount (the caller compares identity); an absent or unreadable record, or one whose every
  * entry is bad, gives the defaults; a stored empty list stays empty (the user's choice). Every well-formed entry is written
  * back, so a later save never drops it.

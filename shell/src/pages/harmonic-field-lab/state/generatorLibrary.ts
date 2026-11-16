@@ -92,7 +92,7 @@ export function cloneGen(g: GenSpec, preset = ''): GenSpec {
 }
 
 const builtinKeys = new Map<string, string>();
-/** `genKey` of a built-in preset's generator (memoised: the presets are constants). */
+/** `genKey` of a built-in preset's generator (memoized: the presets are constants). */
 export function builtinGenKey(name: string): string | null {
   const hit = builtinKeys.get(name);
   if (hit !== undefined) {

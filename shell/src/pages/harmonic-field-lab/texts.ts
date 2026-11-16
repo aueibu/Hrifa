@@ -25,7 +25,7 @@ export type TextEntrySource =
       see?: readonly string[];
     };
 
-/** An entry as read everywhere else: both forms normalised. */
+/** An entry as read everywhere else: both forms normalized. */
 export interface TextEntry {
   /** Name shown as the glossary term. */
   term: string;
@@ -569,7 +569,7 @@ const entries = {
     teaching: [],
   },
   diamondDistance: {
-    term: 'Steps from the centre',
+    term: 'Steps from the center',
     help: [
       p(
         'For the Diamond shape: how many generator steps in total a note may be from 1/1, counting every axis together.'
@@ -582,13 +582,13 @@ const entries = {
     see: ['latticeShape'],
   },
   genAxis: {
-    term: 'Generator, count, centre',
+    term: 'Generator, count, center',
     help: [
       p(
-        '**Generator** is the interval stacked again and again (3/2 builds a chain of fifths). **Count** is how many to stack. **Centre** is how many steps go below 1/1.'
+        '**Generator** is the interval stacked again and again (3/2 builds a chain of fifths). **Count** is how many to stack. **Center** is how many steps go below 1/1.'
       ),
       example(
-        '3/2, count 12, centre 0 builds the twelve notes up from the root; centre 6 spreads them both ways.'
+        '3/2, count 12, center 0 builds the twelve notes up from the root; center 6 spreads them both ways.'
       ),
     ],
     teaching: [],
@@ -679,7 +679,7 @@ const entries = {
   },
   subset: {
     term: 'Subset',
-    text: 'The notes you have switched on: the scale you analyse and play. Example: switching off 11/8 leaves 7 of the 8 field notes.',
+    text: 'The notes you have switched on: the scale you analyze and play. Example: switching off 11/8 leaves 7 of the 8 field notes.',
     see: ['mode'],
   },
   pitchCircle: {
@@ -699,7 +699,7 @@ const entries = {
     ],
     teaching: [
       p(
-        'The pale grey shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord.'
+        'The pale gray shape joins the notes of the subset in circle order (the shape of the scale), under the blue shape of a highlighted chord.'
       ),
       p('A larger green dot means the note is sounding right now.'),
       p('A bold chevron outside the ring, pointing in, marks the mode root.'),
@@ -741,7 +741,7 @@ const entries = {
         "It sits outside the pitch circle and the key circle pointing in at the note, beside the note's tick on the tuner strip (a small pair of chevrons facing each other), above a lattice node pointing down, in the row of the field table, on its isomorphic-keyboard key and on its mark on the dissonance curve."
       ),
       p(
-        'It is drawn in the plain text colour so it never clashes with the hover, pin, sounding or chord colours.'
+        'It is drawn in the plain text color so it never clashes with the hover, pin, sounding or chord colors.'
       ),
     ],
     see: ['mode', 'subset'],
@@ -879,7 +879,7 @@ const entries = {
   },
   lattice: {
     term: 'Lattice',
-    text: 'Notes drawn as points on a grid whose directions are the primes (or generators): one step right is another factor of 3, one step up another 5, and so on. Notes that are close on the grid are closely related in ratio. A bold chevron above a node, pointing down, marks the mode root. Example: 3/2 and 9/8 are neighbours (one step of 3 apart).',
+    text: 'Notes drawn as points on a grid whose directions are the primes (or generators): one step right is another factor of 3, one step up another 5, and so on. Notes that are close on the grid are closely related in ratio. A bold chevron above a node, pointing down, marks the mode root. Example: 3/2 and 9/8 are neighbors (one step of 3 apart).',
     see: ['latticeAxes', 'lattice3d'],
   },
   latticeAxes: {
@@ -919,12 +919,12 @@ const entries = {
         'A note that uses a prime which is not one of the three chosen axes cannot sit on the grid, so it is drawn on a stem. A small hollow ring marks where it would be using the visible primes only; the note itself is the dot at the end of a dashed line.'
       ),
       example(
-        'with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 colour, and the chip 11⁺¹; 8/11 points the other way (11⁻¹).'
+        'with axes 3, 5, 7, 11/8 has its ring at 1/1, one stem step of the 11 color, and the chip 11⁺¹; 8/11 points the other way (11⁻¹).'
       ),
     ],
     teaching: [
       p(
-        "The dashed line is in that prime's colour, one lattice step long for each power of the prime, pointing the opposite way for a negative power."
+        "The dashed line is in that prime's color, one lattice step long for each power of the prime, pointing the opposite way for a negative power."
       ),
       p(
         "The note's label carries a chip such as 11⁺¹ naming the hidden prime and its power (point at a chip to read what it means)."
@@ -996,7 +996,7 @@ const entries = {
   },
   stepPattern: {
     term: 'Step pattern',
-    text: 'The gaps between neighbouring notes, read upward from the mode root, as letters. L = large, M = medium, s = small; with more than three sizes the letters are a, b, c... from largest down. Example: the diatonic major scale is LLsLLLs.',
+    text: 'The gaps between neighboring notes, read upward from the mode root, as letters. L = large, M = medium, s = small; with more than three sizes the letters are a, b, c... from largest down. Example: the diatonic major scale is LLsLLLs.',
     see: ['stepSizes'],
   },
   stepSizes: {
@@ -1011,7 +1011,7 @@ const entries = {
   },
   primeLimit: {
     term: 'Prime limit',
-    text: 'The largest prime used by any ratio in the subset. 3 = Pythagorean, 5 = classical just intonation, 7 and up = harmonic-series colours. "Irrational" if any note is cents-only. Example: 13 here, because of 13/8.',
+    text: 'The largest prime used by any ratio in the subset. 3 = Pythagorean, 5 = classical just intonation, 7 and up = harmonic-series colors. "Irrational" if any note is cents-only. Example: 13 here, because of 13/8.',
   },
   oddLimit: {
     term: 'Odd limit',
@@ -1159,7 +1159,7 @@ const entries = {
   },
   chordError: {
     term: 'Chord: error (c)',
-    text: 'The worst-tuned note of the chord, in cents from the template; smaller is closer and 0 is exact. Colour (never alone: the number is always printed, or the word exact): cyan exact, green under 5 c, yellow 5-15 c, orange 15-30 c, red 30 c or more. Example: 13.7 means a note is 13.7 c from the template.',
+    text: 'The worst-tuned note of the chord, in cents from the template; smaller is closer and 0 is exact. Color (never alone: the number is always printed, or the word exact): cyan exact, green under 5 c, yellow 5-15 c, orange 15-30 c, red 30 c or more. Example: 13.7 means a note is 13.7 c from the template.',
     see: ['chordTolerance'],
   },
   keysSummary: {
@@ -1185,10 +1185,10 @@ const entries = {
     ],
     teaching: [
       p(
-        "This panel is for rotation: a mode keeps the same notes and starts the scale on another degree (one row per mode: the scale restarted from each degree). A cell's colour is measured with the mode's root moved to 1/1. A key (the Keys panel) moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change. Modes are numbered from 1."
+        "This panel is for rotation: a mode keeps the same notes and starts the scale on another degree (one row per mode: the scale restarted from each degree). A cell's color is measured with the mode's root moved to 1/1. A key (the Keys panel) moves the whole scale instead; C major to D dorian is a mode change, C major to G major a key change. Modes are numbered from 1."
       ),
       p(
-        'Narrow panels wrap the degrees onto more lines, always under the same column. Each cell shows a + or − when it is not exact (the colour still tells how large the miss is). Point at a row to print the cents errors, with their signs.'
+        'Narrow panels wrap the degrees onto more lines, always under the same column. Each cell shows a + or − when it is not exact (the color still tells how large the miss is). Point at a row to print the cents errors, with their signs.'
       ),
       example(
         "row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree wants 3/2 above 9/8 (81/64) but the field only has 5/4, the field's note is 21.5 c flat of it: that cell is orange, shows − and reads −21.5 c on hover."
@@ -1485,7 +1485,7 @@ const entries = {
   },
   otonal: {
     term: 'Otonal (harmonic)',
-    text: 'A chord whose notes are all harmonics of one common fundamental (a slice of the overtone series, not necessarily neighbouring harmonics): it sounds as x1:x2:x3. In a CPS these are the notes that all share the same factors except one, and that one factor varies. Example: the notes 1x3, 1x5 and 1x7 all share the factor 1, and the varying factors give the chord 3:5:7.',
+    text: 'A chord whose notes are all harmonics of one common fundamental (a slice of the overtone series, not necessarily neighboring harmonics): it sounds as x1:x2:x3. In a CPS these are the notes that all share the same factors except one, and that one factor varies. Example: the notes 1x3, 1x5 and 1x7 all share the factor 1, and the varying factors give the chord 3:5:7.',
     see: ['utonal', 'cpsChords'],
   },
   utonal: {
@@ -1580,7 +1580,7 @@ const entries = {
       example('"+3 c → 2 more" means raising the tolerance by 3 c brings in two more chords.'),
     ],
     teaching: [
-      p('Near either end of the ladder the current tile sits off-centre.'),
+      p('Near either end of the ladder the current tile sits off-center.'),
       p('A +n tile at an edge means n more tolerances are hidden on that side.'),
       p('The line beside the buttons also says how many fewer chords a lower tolerance gives.'),
     ],
@@ -1670,7 +1670,7 @@ const entries = {
     term: 'Key comparison marks',
     help: [
       p(
-        'Four kinds of mark, each with its own shape and colour so neither is the only clue: a filled neutral dot (**common**), a green hollow dot with a plus (**+added**), a red hollow dot struck through with a minus (**−dropped**) and an orange dashed circle (**missing**).'
+        'Four kinds of mark, each with its own shape and color so neither is the only clue: a filled neutral dot (**common**), a green hollow dot with a plus (**+added**), a red hollow dot struck through with a minus (**−dropped**) and an orange dashed circle (**missing**).'
       ),
       example(
         'for C major against G major, F# is a plus, F is a minus, and the other six are filled.'
@@ -1849,7 +1849,7 @@ const entries = {
   },
   stepBars: {
     term: 'Step-size bars',
-    text: 'One bar per distinct gap between neighbouring scale notes, as wide as the gap, with a letter and how often it occurs. Equal bars mean an even scale. Example: a = 203.9 c once, h = 111.7 c once: eight different sizes, so this is not a MOS scale.',
+    text: 'One bar per distinct gap between neighboring scale notes, as wide as the gap, with a letter and how often it occurs. Equal bars mean an even scale. Example: a = 203.9 c once, h = 111.7 c once: eight different sizes, so this is not a MOS scale.',
     see: ['stepSizes'],
   },
   shape: {
@@ -1952,7 +1952,7 @@ const entries = {
       p(
         'Each composite is drawn as a small ring: small dots are notes it already has, a plus is a new note, a filled mark merges into a note it has (within the merge tolerance), a struck-through mark is dropped because it doubles another pitch of the same item.'
       ),
-      p('An item already in a composite is greyed out and says so.'),
+      p('An item already in a composite is grayed out and says so.'),
       p(
         'The popup also lists the pitch values as text (cents for every note; ratio and monzo when sending Exact) and the note counts.'
       ),
@@ -1995,7 +1995,7 @@ const entries = {
     ],
     teaching: [
       p(
-        'Other patterns: 2-2-2 gives a four-note chord, 1-1 three neighbours, 2-3 and 3-2 mixed steps.'
+        'Other patterns: 2-2-2 gives a four-note chord, 1-1 three neighbors, 2-3 and 3-2 mixed steps.'
       ),
       p(
         'Smoothest means the lowest Sethares roughness of its shape; there is no tolerance, so it works in any tuning.'
@@ -2102,7 +2102,7 @@ const entries = {
     ],
     teaching: [
       p(
-        'A note the field has is marked with the chord colour; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above).'
+        'A note the field has is marked with the chord color; one it lacks is dashed with its distance in cents to the nearest field note (+ means that note is above).'
       ),
       p('The root stepper moves along the subset from the mode root (1 is the mode root).'),
       p(
@@ -2157,7 +2157,7 @@ const entries = {
     term: 'Ring view: Chromatic | Fifths',
     help: [
       p(
-        'Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbours on the ring are a fifth apart.'
+        'Chromatic places each note by its pitch, so the angle is its cents within the repeat. Fifths places notes along a chain of generator steps (3/2 by default), the way the circle of fifths does: neighbors on the ring are a fifth apart.'
       ),
       example('in Fifths, 3/2 sits one step clockwise of 1/1 and 9/8 two steps.'),
     ],
@@ -2203,7 +2203,7 @@ const entries = {
     term: 'Subset not in these settings',
     help: [
       p(
-        "A strongly dimmed row with a solid grey bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing."
+        "A strongly dimmed row with a solid gray bar at its left edge: none of the subset's pitches exist in the generator as it is now, so clicking the row does nothing."
       ),
       example(
         'a subset of 12-EDO notes seen while the tab is on a 7-limit just field shows: No notes in common with these settings.'
@@ -2453,10 +2453,10 @@ const entries = {
     ],
     teaching: [
       p(
-        '**Factors**: for a CPS, one direction per factor. A note sits where its factors are (the first factor in the centre, the others around it, which makes the hexany a star); a line joins two notes that swap one factor.'
+        '**Factors**: for a CPS, one direction per factor. A note sits where its factors are (the first factor in the center, the others around it, which makes the hexany a star); a line joins two notes that swap one factor.'
       ),
       p(
-        'Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are greyed out.'
+        'Generators needs a field built by the Lattice method and Factors needs the CPS method; otherwise they are grayed out.'
       ),
     ],
     see: ['lattice', 'latticeAltAxes', 'cpsChords'],
@@ -2481,7 +2481,7 @@ const entries = {
     term: '3D lattice',
     help: [
       p(
-        'The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighbouring spheres joined by a line are one prime step apart.'
+        'The prime lattice in three dimensions. Each note is a small sphere placed by its prime exponents: how many steps of 3, of 5 and of 7 lie between it and 1/1. Neighboring spheres joined by a line are one prime step apart.'
       ),
       keys([
         { key: 'Drag', does: 'rotate' },
@@ -2515,7 +2515,7 @@ const entries = {
       p(
         'Bright spheres are in your subset, dim ones are in the field but left out, a green sphere is sounding, and a blue ring marks a note of the highlighted chord.'
       ),
-      p('A hollow ring with a dashed coloured line is the base and stem of an off-axis note.'),
+      p('A hollow ring with a dashed colored line is the base and stem of an off-axis note.'),
     ],
     see: ['lattice3d', 'inspector'],
   },
@@ -2612,7 +2612,7 @@ const entries = {
   },
   dissDips: {
     term: 'Dips (smooth intervals)',
-    text: 'The labelled low points of the curve, named by the simplest ratio nearby. They show where two notes with this sound blend best, which is not exactly where the ratios are for a different timbre. Example: with seven partials, the dip near 316 c is labelled 6/5 (315.6 c) and the one near 884 c is 5/3 (884.4 c).',
+    text: 'The labeled low points of the curve, named by the simplest ratio nearby. They show where two notes with this sound blend best, which is not exactly where the ratios are for a different timbre. Example: with seven partials, the dip near 316 c is labeled 6/5 (315.6 c) and the one near 884 c is 5/3 (884.4 c).',
     see: ['dissCurve'],
   },
   dissReadout: {

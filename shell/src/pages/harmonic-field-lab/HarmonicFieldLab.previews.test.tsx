@@ -159,7 +159,7 @@ describe('tuner strip previews', () => {
     expect(lit()).toBe(0);
     expect(document.querySelectorAll('[aria-label*="sounding"]')).toHaveLength(0);
     expect(oscs().filter((o) => o.stopAt === null)).toHaveLength(0);
-    // a mode preview still scheduled is cancelled too
+    // a mode preview still scheduled is canceled too
     openModes();
     fireEvent.click(within(rows()[1]).getByTestId('mode-title'), BOTH);
     act(() => {

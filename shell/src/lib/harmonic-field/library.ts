@@ -28,7 +28,7 @@ export interface GeneratorInputs {
 /**
  * The canonical identity of a generator: exactly the inputs that decide the field. Two generators with the same key
  * build the same field. Left out: the preset label, the keepNew switch, and the inputs of the other methods (a diamond
- * ignores the axis counts and centres; harmonic ignores the EDO count). Intervals are compared by pitch, so "2" and
+ * ignores the axis counts and centers; harmonic ignores the EDO count). Intervals are compared by pitch, so "2" and
  * "2/1" are one repeat. An unreadable interval stays as typed (prefixed `?`).
  */
 export function generatorKey(g: GeneratorInputs): string {

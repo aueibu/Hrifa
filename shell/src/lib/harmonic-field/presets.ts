@@ -367,7 +367,7 @@ export const PRESETS: Preset[] = [
     rep: '2/1',
     factors: '3 5 7 11',
     k: 2,
-    info: 'Leaving out 1 changes every interval: an 11-limit hexany with no pure 3/2 in it. Same shape, new colour.',
+    info: 'Leaving out 1 changes every interval: an 11-limit hexany with no pure 3/2 in it. Same shape, new color.',
   },
   {
     group: 'Combination product sets',
@@ -439,7 +439,7 @@ export const PRESETS: Preset[] = [
     rep: '2/1',
     factors: '1 3 5 7 11 13',
     k: 3,
-    info: 'The eikosany with 13 instead of 9: 1 plus five primes, 13-limit, a stranger and more exotic colour.',
+    info: 'The eikosany with 13 instead of 9: 1 plus five primes, 13-limit, a stranger and more exotic color.',
   },
   {
     group: 'Combination product sets',
@@ -484,7 +484,7 @@ export const PRESETS: Preset[] = [
     gen: 'custom',
     rep: '2/1',
     text: '90.225 192.180 294.135 390.225 498.045 588.270 696.090 792.180 888.270 996.090 1092.180',
-    info: 'A well temperament: every key playable, each with its own colour. Bach-era organs.',
+    info: 'A well temperament: every key playable, each with its own color. Bach-era organs.',
   },
   {
     group: 'Historic & custom',

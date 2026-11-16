@@ -1,5 +1,5 @@
 /**
- * Ghost marks (sounding pitches that match no field note): a dashed, unfilled circle in the sounding colour at the pitch's
+ * Ghost marks (sounding pitches that match no field note): a dashed, unfilled circle in the sounding color at the pitch's
  * true place on the pitch ring (Chromatic view) and on the tuner strip. They exist only while the sound does (the audio hook
  * counts them by pitch). The Fifths view has no place for an arbitrary pitch, so there only the "+N outside" count shows.
  */

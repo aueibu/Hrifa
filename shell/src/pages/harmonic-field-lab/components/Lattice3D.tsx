@@ -1,7 +1,7 @@
 /**
  * The 3D lattice (three.js): notes as spheres at their prime-exponent coordinates, lattice steps as lines, billboarded
- * ratio labels (CSS2DRenderer, so the label colours are plain CSS), orbit controls. Colours are read from the theme's
- * CSS custom properties at run time and re-read when the colour scheme changes. Loaded lazily (three.js is large) and
+ * ratio labels (CSS2DRenderer, so the label colors are plain CSS), orbit controls. Colors are read from the theme's
+ * CSS custom properties at run time and re-read when the color scheme changes. Loaded lazily (three.js is large) and
  * only where WebGL exists. Every renderer, geometry and material is disposed on unmount.
  */
 import { useEffect, useRef } from 'react';
@@ -36,9 +36,9 @@ const VARS: Record<keyof Palette, string> = {
 };
 
 /**
- * A theme colour as a three.js colour. Categorical hues (`--mark-<hue>`) come from `markHue` (a hex string, as the
+ * A theme color as a three.js color. Categorical hues (`--mark-<hue>`) come from `markHue` (a hex string, as the
  * theme contract says); neutral roles can be color-mix() expressions, so they are resolved through computed style and a
- * 1 px canvas, which turns any CSS colour into RGB.
+ * 1 px canvas, which turns any CSS color into RGB.
  */
 function resolveColor(host: HTMLElement, varName: string): THREE.Color {
   const hueName = /^--mark-(.+)$/.exec(varName)?.[1];

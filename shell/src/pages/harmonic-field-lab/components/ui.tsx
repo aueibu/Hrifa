@@ -196,7 +196,7 @@ interface HintProps {
   k?: TipKey;
   /** A bold first line, when there is no `k`. */
   label?: string;
-  /** The dynamic line (same colour as the rest): directly under the term, before the help paragraphs. Not markup: name keys with `SHORTCUTS`. */
+  /** The dynamic line (same color as the rest): directly under the term, before the help paragraphs. Not markup: name keys with `SHORTCUTS`. */
   dynamic?: ReactNode;
   disabled?: boolean;
   position?: 'top' | 'bottom';
@@ -333,7 +333,7 @@ export function noteHandlers(
   };
 }
 
-/** Signed one-decimal cents with the sign always printed (the second channel next to a sharp/flat colour). */
+/** Signed one-decimal cents with the sign always printed (the second channel next to a sharp/flat color). */
 export const signed = (x: number, dp = 1) => {
   const t = x.toFixed(dp);
   return Number(t) === 0 ? (0).toFixed(dp) : (x > 0 ? '+' : '') + t;

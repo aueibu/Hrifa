@@ -43,7 +43,7 @@ const sample = (): GenLibrary => {
 };
 
 describe('generators.v1 shape and round trip', () => {
-  it('serialises to plain JSON and reads back the same library', () => {
+  it('serializes to plain JSON and reads back the same library', () => {
     const lib = sample();
     const json = JSON.parse(JSON.stringify(libraryToStored(lib))) as unknown;
     expect(sanitizeLibrary(json)).toEqual(lib);
@@ -72,7 +72,7 @@ describe('generators.v1 shape and round trip', () => {
   });
 });
 
-describe('sanitising (entry by entry)', () => {
+describe('sanitizing (entry by entry)', () => {
   it('not a library gives null (the caller falls back to the legacy list or empty)', () => {
     for (const bad of [
       null,

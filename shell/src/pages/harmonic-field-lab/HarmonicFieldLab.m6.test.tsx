@@ -1,4 +1,4 @@
-/** M6: lattice axes picker, subset polygon, chord template editor, glossary search, .scl import, pin colour. */
+/** M6: lattice axes picker, subset polygon, chord template editor, glossary search, .scl import, pin color. */
 import { act, fireEvent, render, screen, waitFor, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
@@ -119,7 +119,7 @@ describe('subset polygon on the ring', () => {
   });
 });
 
-describe('pin colour', () => {
+describe('pin color', () => {
   it('a pinned note gets a pin ring (not the selection outline) on the ring and the 2D lattice', () => {
     render(<HarmonicFieldLabPage />);
     expect(ring().querySelector('circle[class*="pinRing"]')).toBeNull();

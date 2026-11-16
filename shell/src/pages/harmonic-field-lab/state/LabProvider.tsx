@@ -163,7 +163,7 @@ export function LabProvider({ children, initial, frozen = false }: Props) {
   );
 
   /* ---- persistence ----
-   * Restore already happened (synchronously, in the reducer initialiser). A part is written only once its state differs
+   * Restore already happened (synchronously, in the reducer initializer). A part is written only once its state differs
    * from the restored one, so nothing is written on mount (a stored value the page could not fully use is never
    * overwritten by what it made of it). A failed write is reported (`storeFailed`) where it matters. */
   const restored = useRef(state);

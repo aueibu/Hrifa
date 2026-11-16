@@ -175,7 +175,7 @@ export interface FoundChord {
   t: number;
   /** The duplicate key. */
   tkey: string;
-  /** Normalised template text. */
+  /** Normalized template text. */
   template: string;
   name: string;
   /** Field index of the root. */

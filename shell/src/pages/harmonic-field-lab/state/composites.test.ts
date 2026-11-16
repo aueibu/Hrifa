@@ -303,7 +303,7 @@ describe('the composite generation method and storage in tabs.v1', () => {
     expect(stored.tabs[0].selCents).toEqual(t.sel.map((i) => t.field[i].c));
   });
 
-  it('sanitises the snapshot entry by entry; a damaged snapshot builds nothing but keeps the method', () => {
+  it('sanitizes the snapshot entry by entry; a damaged snapshot builds nothing but keeps the method', () => {
     const t = activeTab(opened());
     const good = JSON.parse(JSON.stringify(toSnapshot(t))) as { snap: { notes: unknown[] } };
     const partly = sanitizeSnapshot({
@@ -400,7 +400,7 @@ describe('composites.v1 storage', () => {
     return s.composites;
   };
 
-  it('serialises to plain JSON with the documented key and reads back the same composites', () => {
+  it('serializes to plain JSON with the documented key and reads back the same composites', () => {
     const c = sample();
     expect(saveComposites(c)).toBe(true);
     expect(writes).toEqual(['hrifa.harmonic-field-lab.composites.v1']);

@@ -56,7 +56,7 @@ function sanitizeSource(raw: unknown): ShelfSource | null {
   const tab = typeof raw.tab === 'string' ? cleanName(raw.tab) : '';
   const pitches = sub.pitches.map(sanitizePitch).filter((p): p is Note => p !== null);
   const root = sanitizePitch(sub.root);
-  // the same normalising as a stash: capped, root repaired, null when no pitch is left
+  // the same normalizing as a stash: capped, root repaired, null when no pitch is left
   return normalizeSource({ gen, subset: { pitches, root }, tab });
 }
 

@@ -1,7 +1,7 @@
 /**
  * Live roughness: the Sethares roughness of the pitches sounding now, as one total, one number per pair of notes, and
  * the "next note" curve (what the total would be if one more tone were added at each interval above the lowest note).
- * Pure maths on top of `scoreRoughness` (no formulas copied): the page's Live roughness view draws it.
+ * Pure math on top of `scoreRoughness` (no formulas copied): the page's Live roughness view draws it.
  */
 import { scoreRoughness, type RoughnessOpts } from './scorersMore';
 import { dissonanceAt } from './visual';

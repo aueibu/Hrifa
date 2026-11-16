@@ -1,4 +1,4 @@
-/** Note selection, under the pitch ring: All/None/Invert stacked, the mode stepper centred, nearest scale and odd limit on the right. */
+/** Note selection, under the pitch ring: All/None/Invert stacked, the mode stepper centered, nearest scale and odd limit on the right. */
 import { useMemo } from 'react';
 import {
   ActionIcon,

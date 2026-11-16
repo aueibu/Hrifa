@@ -219,7 +219,7 @@ describe('applyUpdate (hand-checked)', () => {
 });
 
 describe('folder paths', () => {
-  it('normalises', () => {
+  it('normalizes', () => {
     expect(normalizeFolder(' A /  B//C ')).toBe('A/B/C');
     expect(normalizeFolder('/')).toBe('');
     expect(normalizeFolder('a/./../b')).toBe('a/b');

@@ -1,5 +1,5 @@
 /**
- * The mode-root marker: one bold chevron in `--text` (no colour of its own), the same shape in every view that shows
+ * The mode-root marker: one bold chevron in `--text` (no color of its own), the same shape in every view that shows
  * single notes. `ModeChevron` is the SVG form (tip at a point, pointing a given way), `RootGlyph` the small inline form
  * for table rows. The root is the subset's mode root (`base.idx[base.mode]`); with no notes selected there is none.
  */
@@ -50,8 +50,8 @@ export function ModeChevron({
 }
 
 /**
- * The marker for a note on a ring: a chevron outside the note's dot pointing in toward the ring centre `(cx, cy)`, its
- * tip `gap` from the dot centre. Labels avoid its box (`chevronBox` in state/labelLayout.ts).
+ * The marker for a note on a ring: a chevron outside the note's dot pointing in toward the ring center `(cx, cy)`, its
+ * tip `gap` from the dot center. Labels avoid its box (`chevronBox` in state/labelLayout.ts).
  */
 export const RING_GAP = 8;
 export function RingChevron({

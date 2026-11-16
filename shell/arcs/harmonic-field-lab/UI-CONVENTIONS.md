@@ -1,6 +1,6 @@
 # Harmonic field lab: UI conventions as settled in the arc (draft for the next design discussion)
 
-Written 2026-11-15 at the close of the arc from what the human decided while trying the working page. Everything here is observed behaviour, not yet a rule set: the next discussion (interactivity, styling standardisation, tooltip formats) should confirm, change or drop each item, then promote the survivors into a rules section of the page `ARCHITECTURE.md` or `src/theme/THEMING.md`.
+Written 2026-11-15 at the close of the arc from what the human decided while trying the working page. Everything here is observed behavior, not yet a rule set: the next discussion (interactivity, styling standardization, tooltip formats) should confirm, change or drop each item, then promote the survivors into a rules section of the page `ARCHITECTURE.md` or `src/theme/THEMING.md`.
 
 Where each thing lives: `src/pages/harmonic-field-lab/` (`components/`, `state/`, `texts.ts`, `ARCHITECTURE.md`), CSS in `components/lab.module.css` and `components/panels.module.css`.
 
@@ -15,7 +15,7 @@ Where each thing lives: `src/pages/harmonic-field-lab/` (`components/`, `state/`
 ## 2. Cards (chord chips, positional rows, CPS chords, shelf slots, grouped cards)
 - One card per row, every kind through one `ChordCard`; a ring on every card, with the root chevron (`ROOT_TIP`, `ROOT_ARM`, `ROOT_STROKE` in `ShelfPanel.tsx`).
 - Two layouts by container width (about 30 rem): NARROW four lines (title and right stat; subtitle; pitches; steps), WIDE two rows. Height is a minimum that grows when values wrap; tunables are `--chord-card-*` custom properties.
-- Title is the chord's name (the template name; renamable on a shelf slot); the subtitle is `<template> on <root> · N notes` (positional: `2-2 on 4`); pitches show as ratios when the field has them else cents with one decimal; steps read `steps a, b c`; the right stat is `exact` or the cents error in its severity colour, `#rank · score` for positional rows, `N notes` for CPS.
+- Title is the chord's name (the template name; renamable on a shelf slot); the subtitle is `<template> on <root> · N notes` (positional: `2-2 on 4`); pitches show as ratios when the field has them else cents with one decimal; steps read `steps a, b c`; the right stat is `exact` or the cents error in its severity color, `#rank · score` for positional rows, `N notes` for CPS.
 - Value lists wrap only between whole values with the unit glued to the last value, balanced (`ValueList`); never a lone `c`.
 - A group of identical shapes is one card with a left-aligned `N roots` button row (like the composite Items button); the roots expand one tree level deeper.
 
@@ -28,13 +28,13 @@ Where each thing lives: `src/pages/harmonic-field-lab/` (`components/`, `state/`
 ## 4. Naming and tooltips (settled 2026-11-16 in the help-text arc; the rules are in the page `ARCHITECTURE.md`, "Help text: tooltips and glossary")
 - Labels stay short; explanations live in tooltips: `Field | Exact` (the chord from the field's own notes vs its true ratios), `Shape | Pitch` (score the shape at middle C, as the cards do, vs each note where it sounds), `Smoothest | Scale order`, `Group shapes`.
 - The glossary is `texts.ts` (one entry per `TipKey`). Every entry has a short HELP part (the tooltip: what it is and does, about 300 to 500 characters) and, for the long ones, a TEACHING part that only the glossary shows. Short entries (about 400 characters or fewer, no key or click gesture) stay a single string (about 114 of 224 today).
-- Tooltip look, top to bottom: bold term, the dynamic line (live values; one colour for the whole tooltip, position marks it as dynamic), help paragraphs, a Keys list, the Example last (like flavour text on a card). Blank line between blocks; a paragraph breaks onto a new line after about three lines of text; a number and its unit (`c`, `Hz`) never split across lines.
+- Tooltip look, top to bottom: bold term, the dynamic line (live values; one color for the whole tooltip, position marks it as dynamic), help paragraphs, a Keys list, the Example last (like flavor text on a card). Blank line between blocks; a paragraph breaks onto a new line after about three lines of text; a number and its unit (`c`, `Hz`) never split across lines.
 - Bold names you can see on screen; italic only the Example label and a term being defined. Key names in help come from one table (`audio/shortcuts.ts`), so a key is written once; the handlers read the same table (see ARCHITECTURE for the physical-key caveat).
 - When tooltips nest, the innermost one shows. Every dynamic tooltip (the old native `title`s) is a styled `Hint`; the Developer menu's tooltip on/off and delay apply to all.
 - Which controls get a tooltip is still decided case by case: the hold-to-play gesture has no control to hover (glossary only), and no element carries a native `title=` any more (the SVG `<title>`s on chart marks remain until the unified help panel idea in BACKLOG is decided).
 
-## 5. Colour and marks
-- Roles, not hexes (`src/theme/THEMING.md`): sounding is `--mark-green`, the highlighted/hovered chord is `--mark-blue`, a hovered note is blue, a pinned note is muted, severity colours for cents error. Not-in-subset marks are dimmed SOLID lines (about 35 percent), not dashed; ghost marks (off-field sounding pitches) stay dashed.
+## 5. Color and marks
+- Roles, not hexes (`src/theme/THEMING.md`): sounding is `--mark-green`, the highlighted/hovered chord is `--mark-blue`, a hovered note is blue, a pinned note is muted, severity colors for cents error. Not-in-subset marks are dimmed SOLID lines (about 35 percent), not dashed; ghost marks (off-field sounding pitches) stay dashed.
 - The root of a chord or subset is marked with the mode-root chevron wherever a ring is drawn (main ring, chord rings, composite ring on item hover).
 - Selection/hover looks differ by medium on purpose (ring dot, strip line, dissonance mark); one shared look is not worth the lost legibility.
 

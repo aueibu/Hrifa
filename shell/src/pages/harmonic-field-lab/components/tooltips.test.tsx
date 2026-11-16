@@ -1,4 +1,4 @@
-/** The Developer menu's tooltip options: sanitising, storage round trip, and `Tip` honouring off and the delay. */
+/** The Developer menu's tooltip options: sanitizing, storage round trip, and `Tip` honoring off and the delay. */
 import { act, fireEvent, render, screen, userEvent } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -7,7 +7,7 @@ import {
   parseDeveloperOptions,
   readDeveloperOptions,
   resetDeveloperOptionsCache,
-  sanitiseTooltipDelay,
+  sanitizeTooltipDelay,
   writeDeveloperOptions,
 } from '../state/developerOptions';
 import { Hint, LabTooltip, Tip } from './ui';
@@ -22,18 +22,18 @@ afterEach(() => {
 });
 
 describe('tooltip developer options', () => {
-  it('default to today (on, 250 ms) and sanitise bad stored values', () => {
+  it('default to today (on, 250 ms) and sanitize bad stored values', () => {
     expect(parseDeveloperOptions(null)).toMatchObject({ tooltips: true, tooltipDelay: 250 });
     expect(parseDeveloperOptions('not json')).toMatchObject({ tooltips: true, tooltipDelay: 250 });
     expect(parseDeveloperOptions('{"tooltips":"no","tooltipDelay":"fast"}')).toMatchObject({
       tooltips: true,
       tooltipDelay: TOOLTIP_DELAY_DEFAULT,
     });
-    expect(sanitiseTooltipDelay(-5)).toBe(0);
-    expect(sanitiseTooltipDelay(99999)).toBe(5000);
-    expect(sanitiseTooltipDelay(120.6)).toBe(121);
-    expect(sanitiseTooltipDelay(Number.NaN)).toBe(250);
-    expect(sanitiseTooltipDelay(null)).toBe(250);
+    expect(sanitizeTooltipDelay(-5)).toBe(0);
+    expect(sanitizeTooltipDelay(99999)).toBe(5000);
+    expect(sanitizeTooltipDelay(120.6)).toBe(121);
+    expect(sanitizeTooltipDelay(Number.NaN)).toBe(250);
+    expect(sanitizeTooltipDelay(null)).toBe(250);
     // the older options are untouched by a stored file that predates these two
     expect(parseDeveloperOptions('{"modeSignAlways":false}')).toMatchObject({
       modeSignAlways: false,

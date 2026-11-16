@@ -390,7 +390,7 @@ export function keysOf(base: Base, tol: number) {
 export type KeysData = NonNullable<ReturnType<typeof keysOf>>;
 
 /* ------------------------------------------------------------------------------------------- visualizers */
-/** Colour of a hidden prime's stem and chip: a core hue per prime (blue, green, orange and cyan are kept for chord, sounding, sharp and flat). */
+/** Color of a hidden prime's stem and chip: a core hue per prime (blue, green, orange and cyan are kept for chord, sounding, sharp and flat). */
 const STEM_HUES = ['violet', 'pink', 'red', 'yellow'] as const;
 export const stemHue = (prime: number): (typeof STEM_HUES)[number] =>
   STEM_HUES[primeSlot(prime) % STEM_HUES.length];
@@ -500,7 +500,7 @@ export interface AltLattice2dView extends Lattice2dView {
 
 /**
  * The generator-step ('gen') or CPS-factor ('cps') lattice in a 640x300 box, as the prototype drew it. 'cps': the first
- * factor at the centre and the others evenly round a circle (for four factors, Wilson's star), a line joins two notes that
+ * factor at the center and the others evenly round a circle (for four factors, Wilson's star), a line joins two notes that
  * swap one factor; 'gen': one direction per generator (0, 90 degrees for two, 0, 60, 120 for three; a golden-angle spread
  * beyond that), a line is one step of one generator. Null when the field has no such coordinates.
  */

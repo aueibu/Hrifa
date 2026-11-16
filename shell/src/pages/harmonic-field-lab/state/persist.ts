@@ -13,7 +13,7 @@
  *
  * A `snap` is the prototype's snapshot shape (flat generator inputs, `selCents`, `mode`, pick/compare settings), every
  * field optional with a default, so an older snapshot still loads and a newer one with extra fields is read as far as it
- * goes. Sanitising is entry by entry: a bad entry is dropped or defaulted, never the whole list (a future new view or
+ * goes. Sanitizing is entry by entry: a bad entry is dropped or defaulted, never the whole list (a future new view or
  * panel therefore cannot wipe a stored layout). Nothing here throws; storage may be blocked.
  */
 import {

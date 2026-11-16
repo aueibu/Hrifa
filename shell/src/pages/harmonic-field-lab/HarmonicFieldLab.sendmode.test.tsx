@@ -237,7 +237,7 @@ describe('positional chords: Scale order, score and rank, tail (d, e, f)', () =>
 });
 
 describe('CPS chip roots follow the factor labels (root position)', () => {
-  it('otonal 3:5:7 sits on its 3, utonal 1/(3:5:7) on its 1/7 note (this field is normalised so the 3 is 1/1); the chip arms the Sketch with its template', async () => {
+  it('otonal 3:5:7 sits on its 3, utonal 1/(3:5:7) on its 1/7 note (this field is normalized so the 3 is 1/1); the chip arms the Sketch with its template', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('Hexany (1 3 5 7, choose 2)');
     const section = screen.getByRole('region', { name: 'Chords inside this CPS' });

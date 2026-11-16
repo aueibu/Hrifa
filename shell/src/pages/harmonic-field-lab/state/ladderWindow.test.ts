@@ -14,7 +14,7 @@ describe('ladderWindow (M8g g, h)', () => {
   it('the first selected: +n only on the right', () => {
     expect(ladderWindow(14, 0)).toEqual({ start: 0, end: 7, before: 0, after: 7 });
   });
-  it('near the start the window slides (selection off-centre)', () => {
+  it('near the start the window slides (selection off-center)', () => {
     expect(ladderWindow(14, 1)).toEqual({ start: 0, end: 7, before: 0, after: 7 });
   });
   it('7 or fewer rungs: all shown, no +n; none: empty', () => {

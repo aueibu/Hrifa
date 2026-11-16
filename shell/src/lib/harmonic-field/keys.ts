@@ -168,7 +168,7 @@ export function transpositions(
       const gc = k ? c0 - k * L : c0;
       let j = -1;
       if (r.m && tn.m && (k === 0 || rep.m)) {
-        // rational moved note: exact monzo match among cents neighbours, else irrational field notes within tolC
+        // rational moved note: exact monzo match among cents neighbors, else irrational field notes within tolC
         const n = all.n;
         const lo = lower(all, gc - WIN);
         let best = -1;

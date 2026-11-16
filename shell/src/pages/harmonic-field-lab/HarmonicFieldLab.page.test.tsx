@@ -321,7 +321,7 @@ describe('pinned panel columns', () => {
       );
     open(E);
     fireEvent.click(await screen.findByRole('menuitem', { name: `${L} (right, 1 of 3)` }));
-    // the second stacking sees the two-panel column, labelled with its size
+    // the second stacking sees the two-panel column, labeled with its size
     open(D);
     const items = (await screen.findAllByRole('menuitem')).map((m) => m.textContent);
     expect(items).toContain(`${L} (right, 2 of 3)`);
@@ -337,7 +337,7 @@ describe('pinned panel columns', () => {
       'viz2',
       'viz3',
     ]);
-    // two splitters, one per boundary; each moves only its own neighbours
+    // two splitters, one per boundary; each moves only its own neighbors
     const bars = screen.getAllByRole('separator', { name: 'Resize the stacked panels' });
     expect(bars).toHaveLength(2);
     expect(bars.map((b) => b.getAttribute('aria-valuenow'))).toEqual(['33', '67']);
@@ -462,7 +462,7 @@ describe('visualizer panels', () => {
     expect(JSON.parse(window.localStorage.getItem(KEY)!).views).toEqual({ viz2: 'iso' });
   });
 
-  it('shows the dissonance curve with its dips labelled', () => {
+  it('shows the dissonance curve with its dips labeled', () => {
     render(<HarmonicFieldLabPage />);
     fireEvent.click(within(rail()).getByRole('tab', { name: /Dissonance curve/ }));
     const chart = screen.getByRole('group', { name: /Dissonance curve: roughness/ });

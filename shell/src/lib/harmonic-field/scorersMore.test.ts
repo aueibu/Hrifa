@@ -71,13 +71,13 @@ describe('scoreLattice', () => {
       expect((r.detail as { pairs: { ratio: string }[] }).pairs[0].ratio).toBe('6/5');
     }
   });
-  it('the score is continuous: no jump between neighbouring cents', () => {
+  it('the score is continuous: no jump between neighboring cents', () => {
     for (const oddLimit of [9, 15]) {
       let prev = NaN;
       for (let c = 0; c <= 1200; c += 0.1) {
         const v = scoreLattice([220, 220 * 2 ** (c / 1200)], { oddLimit }).score;
         if (!Number.isNaN(prev)) {
-          // slope is at most centsPenalty (0.05 bit per cent) so 0.1 c moves the score by at most 0.005
+          // slope is at most centsPenalty (0.05 bit percent) so 0.1 c moves the score by at most 0.005
           expect(Math.abs(v - prev)).toBeLessThan(0.0051);
         }
         prev = v;

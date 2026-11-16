@@ -150,7 +150,7 @@ function Params({ gen }: { gen: GenSpec }) {
               <span className={classes.paramNote}>Axis</span>
               <span className={classes.paramNote}>Generator</span>
               <span className={classes.paramNote}>Count</span>
-              <span className={classes.paramNote}>Centre</span>
+              <span className={classes.paramNote}>Center</span>
               {gen.axes.map((a, i) => (
                 <span key={i} className={classes.axisRow}>
                   {i === 0 ? (
@@ -188,7 +188,7 @@ function Params({ gen }: { gen: GenSpec }) {
                   />
                   <CommitNumber
                     size="xs"
-                    aria-label={`Axis ${i + 1} centre`}
+                    aria-label={`Axis ${i + 1} center`}
                     value={a.ctr}
                     min={0}
                     max={2048}
@@ -205,7 +205,7 @@ function Params({ gen }: { gen: GenSpec }) {
               <Tip k="diamondDistance" as="control" block>
                 <CommitNumber
                   size="xs"
-                  label="Steps from the centre"
+                  label="Steps from the center"
                   value={gen.dist}
                   min={0}
                   max={64}

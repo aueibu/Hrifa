@@ -72,7 +72,7 @@ Explicitly NOT planned: the drops system (a later arc), pop-out (M9, needs OK), 
 - `projects.ts:21` captures only the workbench prefix, so lab libraries would not travel with projects. W-10 covers prefs and project state, not libraries.
 - `usePersistentState` records every change into undo unless the key is in `unrecordedStateKeys` (`usePersistentState.ts:118`), so a shelf stash would enter workbench undo unless exempted.
 
-**Theme.** The lab maps meanings page-locally (H-2 to H-4): yellow means pin and also chord-error severity, orange means sharp but is labelled amber (no amber hue in `src/theme/markers.ts`). Roles only, no hex. Not blocking.
+**Theme.** The lab maps meanings page-locally (H-2 to H-4): yellow means pin and also chord-error severity, orange means sharp but is labeled amber (no amber hue in `src/theme/markers.ts`). Roles only, no hex. Not blocking.
 
 **Emit.**
 - `ChordTarget.insert(ChordInsertRequest)` (`chordSession.ts:47-58`: chord, anchor, voicing, `notes: PlacedNote[]` midicents) is the one existing "host receives a chord" seam. It carries no cents or ratio.
@@ -113,6 +113,6 @@ The current workbench direction makes a lab port harder in: one-shot audio, wind
 ## What the lab side plans (from the discussion with the human, 2026-11-15)
 
 Not decided yet; for the end-of-arc review:
-- A short "seams" arc inside the lab after this arc's Final step: a coupling list for every panel (reads, emits, plays, shared signals), then three contracts (PitchContext, Preview, Emit) implemented by the lab's single provider with no visible change, and the cross-panel behaviours kept as a short list of signals (selection, armed chord, hover preview, stepper root).
+- A short "seams" arc inside the lab after this arc's Final step: a coupling list for every panel (reads, emits, plays, shared signals), then three contracts (PitchContext, Preview, Emit) implemented by the lab's single provider with no visible change, and the cross-panel behaviors kept as a short list of signals (selection, armed chord, hover preview, stepper root).
 - Voicing modes after that, as a pure function plus a small panel that only talks through Emit and Preview.
 - A throwaway port of the least-coupled piece (chord shelf or voicing panel) to learn what the contracts miss.

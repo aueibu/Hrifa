@@ -15,7 +15,7 @@ describe('fifthsLayout', () => {
       expect(p.offChain).toBe(false);
       expect(p.stack).toBe(0);
     });
-    // C at the top, G one slot clockwise, F one slot anticlockwise
+    // C at the top, G one slot clockwise, F one slot counterclockwise
     expect(L.notes[0].turn).toBe(0);
     expect(L.notes[7].turn).toBeCloseTo(1 / 12, 12);
     expect(L.notes[5].turn).toBeCloseTo(11 / 12, 12);

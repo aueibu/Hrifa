@@ -10,7 +10,7 @@ import { LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
 import { TILE_LOOKS, type TileLook } from './tileColors';
 
 /**
- * The lab's own per-viewer developer options (W-10: page-local; never reads another page's keys). Sanitised on load, so
+ * The lab's own per-viewer developer options (W-10: page-local; never reads another page's keys). Sanitized on load, so
  * damaged data reads as the defaults; nothing is written until an option is changed.
  */
 export const LAB_DEVELOPER_KEY = 'hrifa.harmonic-field-lab.developer.v1';
@@ -44,7 +44,7 @@ export const TOOLTIP_DELAY_DEFAULT = 250;
 export const TOOLTIP_DELAY_MAX = 5000;
 
 /** A delay as a whole number of ms in 0..5000; anything that is not a finite number gives the default. */
-export function sanitiseTooltipDelay(v: unknown): number {
+export function sanitizeTooltipDelay(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) {
     return TOOLTIP_DELAY_DEFAULT;
   }
@@ -84,7 +84,7 @@ function readRaw(): string | null {
   }
 }
 
-/** Sanitise a stored string: anything unreadable or of the wrong type falls back to the default for that option. */
+/** Sanitize a stored string: anything unreadable or of the wrong type falls back to the default for that option. */
 export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
   try {
     const parsed: unknown = raw ? JSON.parse(raw) : {};
@@ -94,7 +94,7 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
         typeof o.modeSignAlways === 'boolean' ? o.modeSignAlways : defaults.modeSignAlways,
       keepModeRoot: typeof o.keepModeRoot === 'boolean' ? o.keepModeRoot : defaults.keepModeRoot,
       tooltips: typeof o.tooltips === 'boolean' ? o.tooltips : defaults.tooltips,
-      tooltipDelay: sanitiseTooltipDelay(o.tooltipDelay),
+      tooltipDelay: sanitizeTooltipDelay(o.tooltipDelay),
       linkedRootDefault: LINKED_ROOTS.includes(o.linkedRootDefault as LinkedRoot)
         ? (o.linkedRootDefault as LinkedRoot)
         : defaults.linkedRootDefault,
@@ -122,7 +122,7 @@ export function readDeveloperOptions(): LabDeveloperOptions {
 
 export function writeDeveloperOptions(patch: Partial<LabDeveloperOptions>) {
   const next = { ...readDeveloperOptions(), ...patch };
-  next.tooltipDelay = sanitiseTooltipDelay(next.tooltipDelay);
+  next.tooltipDelay = sanitizeTooltipDelay(next.tooltipDelay);
   next.mergeTolerance = clampMergeTol(next.mergeTolerance);
   try {
     localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify(next));

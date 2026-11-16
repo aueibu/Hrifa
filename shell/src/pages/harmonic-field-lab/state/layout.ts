@@ -1,6 +1,6 @@
 /**
  * Pinned panel columns: the arrangement (which panels are pinned, on which side, in which order, and which share a
- * column), the pure rules that edit it, the width-to-columns rule, and the sanitising of a stored layout (the storage
+ * column), the pure rules that edit it, the width-to-columns rule, and the sanitizing of a stored layout (the storage
  * itself is persist.ts). No React and no storage here.
  *
  * A column holds one to three panels, top to bottom (a stack). `left` runs outer to inner (index 0 is at the screen edge,
@@ -305,7 +305,7 @@ export function moveInStack(l: Layout, id: PanelId, dir: 'up' | 'down'): Layout 
 
 /**
  * Move a pinned panel one place left or right on screen, as its own column. A panel in a stack first leaves the stack:
- * it becomes its own column on the side it was moved toward. A single column swaps with its neighbour; moving inward
+ * it becomes its own column on the side it was moved toward. A single column swaps with its neighbor; moving inward
  * past the innermost column crosses to the innermost place on the other side; moving outward past the screen edge does
  * nothing.
  */
@@ -391,7 +391,7 @@ export function clampShares(shares: readonly number[], heightRem: number): numbe
   return out;
 }
 
-/** The boundary positions a splitter may take: between its two neighbours, each keeping its minimum. */
+/** The boundary positions a splitter may take: between its two neighbors, each keeping its minimum. */
 export function splitterRange(
   shares: readonly number[],
   index: number,
@@ -484,7 +484,7 @@ export function setSplit(l: Layout, topId: PanelId, shares: readonly number[]): 
   return { ...l, splits: { ...l.splits, [topId]: value } };
 }
 
-/* ---------------------------------------------------------------------------------------------- sanitising */
+/* ---------------------------------------------------------------------------------------------- sanitizing */
 const isId = (x: unknown): x is PanelId =>
   typeof x === 'string' && (PANEL_IDS as readonly string[]).includes(x);
 const isView = (x: unknown): x is VizView =>

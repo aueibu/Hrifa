@@ -257,7 +257,7 @@ describe('dissonance curve', () => {
     expect(peak).toBeLessThan(150);
   });
 
-  it('has dips at the simple just intervals, labelled with their ratios', () => {
+  it('has dips at the simple just intervals, labeled with their ratios', () => {
     for (const [c, r] of [
       [315.64, '6/5'],
       [386.31, '5/4'],
@@ -297,7 +297,7 @@ describe('isomorphic keyboard', () => {
     expect([0, 1, 2, 3].map((r) => isoQ(5, r))).toEqual([5, 5, 4, 4]);
   });
 
-  it('builds 6 rows of 10 with 1/1 at column 3, row 1; its right-hand neighbour is g1 up', () => {
+  it('builds 6 rows of 10 with 1/1 at column 3, row 1; its right-hand neighbor is g1 up', () => {
     const g = isoGrid(field, 1200, { g1, g2: 1200 });
     expect(g).toHaveLength(60);
     const at = (col: number, row: number) => g.find((c) => c.col === col && c.row === row)!;
@@ -339,7 +339,7 @@ describe('isomorphic keyboard', () => {
 });
 
 describe('dissonanceAt', () => {
-  it('equals the curve value at integer cents and lies between the neighbours at a fractional cent', () => {
+  it('equals the curve value at integer cents and lies between the neighbors at a fractional cent', () => {
     const curve = dissonanceCurve();
     for (const c of [0, 100, 386, 702, 1200]) {
       expect(dissonanceAt(c)).toBe(curve.values[c]);

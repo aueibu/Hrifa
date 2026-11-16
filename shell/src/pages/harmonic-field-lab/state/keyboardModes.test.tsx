@@ -595,7 +595,7 @@ describe('Shelf cards follow the keys', () => {
 });
 
 describe('Linked melody on the dock and under the retuner', () => {
-  it('while a chord is linked the dock keys are labelled with its pitches (cents, shift tag), and a press plays them', () => {
+  it('while a chord is linked the dock keys are labeled with its pitches (cents, shift tag), and a press plays them', () => {
     mount();
     dispatch(
       { type: 'gen/preset', name: '12-EDO' },
@@ -609,7 +609,7 @@ describe('Linked melody on the dock and under the retuner', () => {
     // not linked yet: the 19-EDO subset (capped at the 16 keys)
     expect(keys()).toHaveLength(16);
     tap('q');
-    // linked: the 7 Dorian degrees plus the repeat, labelled in cents above the mode root (Parallel)
+    // linked: the 7 Dorian degrees plus the repeat, labeled in cents above the mode root (Parallel)
     expect(keys()).toHaveLength(8);
     expect(keys()[2].getAttribute('aria-label')).toBe('300.0 c, 300.0 cents');
     tap('.');

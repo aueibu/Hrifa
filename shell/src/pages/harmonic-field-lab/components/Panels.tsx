@@ -137,7 +137,7 @@ function Splitter({ topId, index, shares, column, onSplit }: SplitterProps) {
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
-      // the pointer may already be released (cancelled, or synthetic events)
+      // the pointer may already be released (canceled, or synthetic events)
     }
     e.currentTarget.removeAttribute('data-drag');
     onSplit(topId, drag.current.shares);

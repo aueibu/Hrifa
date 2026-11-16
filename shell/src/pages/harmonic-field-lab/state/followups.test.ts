@@ -237,7 +237,7 @@ describe('lattice modes: availability and the generator / factor layouts', () =>
     expect(v!.pts.some((p) => p.label.endsWith('c'))).toBe(true);
   });
 
-  it('notes without a ratio are labelled by their cents everywhere (EDO steps)', () => {
+  it('notes without a ratio are labeled by their cents everywhere (EDO steps)', () => {
     const base = deriveBase(tabOf('19-EDO'));
     // step 0 is the unison, a real ratio; the other steps have none
     expect(base.ratios[0]).toBe('1/1');

@@ -1,7 +1,7 @@
 /**
  * M8h: the ONE chord card shared by ratio chords, CPS chords and positional chords. One card per row, every card the same
  * width and the same height: ring | title (name, subtitle) | pitches (pitches, steps) | right stat, with the stash `+` at the far
- * right. The behaviours (hover, click, hold keys, send) stay with the caller: it passes the handlers and the texts.
+ * right. The behaviors (hover, click, hold keys, send) stay with the caller: it passes the handlers and the texts.
  */
 import type { ReactNode } from 'react';
 import { Button } from '@mantine/core';

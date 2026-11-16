@@ -19,7 +19,7 @@ export interface PeriodicityInfinitoneOpts {
 }
 
 /**
- * Infinitone 2 "acoustic score" (behavioural reconstruction, see notes/AUTORETUNER.md in the Infinitone repo).
+ * Infinitone 2 "acoustic score" (behavioral reconstruction, see notes/AUTORETUNER.md in the Infinitone repo).
  * Sum N pure sines of amplitude 1/N as a complex signal z(t) = sum (1/N) e^(i 2 pi f t) for t = 0 .. dur at 1/sr
  * steps (phase accumulated in float32, as Infinitone does), lay a bins x bins grid over [-1, 1]^2 and count the
  * cells z(t) lands in. Fewer cells = the curve retraces itself = more periodic = more consonant.

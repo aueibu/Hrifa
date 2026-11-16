@@ -1,5 +1,5 @@
 /**
- * Dip-name placement for the Live roughness chart: the chart analogue of the ring's `labelLayout`. Names live in a LABEL
+ * Dip-name placement for the Live roughness chart: the chart analog of the ring's `labelLayout`. Names live in a LABEL
  * BAND beneath the plot baseline (never inside the plot, so nothing there covers the curve or the note marks). A name's
  * natural spot is directly under its dot's x in lane 0 (just under the band's top); when that would overlap a name
  * already placed it moves to the next lane down (up to `lanes`, `laneStep` apart); when no lane is free it is shrunk a
@@ -23,7 +23,7 @@ export interface ChartDip {
 }
 
 export interface ChartLabelOptions {
-  /** Centre y of lane 0, and the distance between lanes. */
+  /** Center y of lane 0, and the distance between lanes. */
   bandY: number;
   laneStep?: number;
   lanes?: number;

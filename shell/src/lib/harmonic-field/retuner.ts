@@ -1,5 +1,5 @@
 /**
- * Dynamic retuner engine (behavioural parity with Infinitone 2's Auto Retuner, see README "Retuner").
+ * Dynamic retuner engine (behavioral parity with Infinitone 2's Auto Retuner, see README "Retuner").
  * Pure: no audio, no DOM. A "card" is a scale with a base pitch; the engine keeps a pivot note fixed, re-roots the
  * cards around it, predicts the held chord in each card, scores each prediction and picks the best card.
  */

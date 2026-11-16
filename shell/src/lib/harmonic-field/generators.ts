@@ -70,7 +70,7 @@ export function genOrthoplex(axes: OrthoplexAxis[], D: number, bidir: boolean): 
 }
 
 /**
- * Combination product set: all k-element products of the factors, normalised so the lowest product is 1/1.
+ * Combination product set: all k-element products of the factors, normalized so the lowest product is 1/1.
  * Each note records the factor indices it uses in `f` (sorted).
  */
 export function genCps(factors: Note[], k: number): Note[] {

@@ -1,5 +1,5 @@
 // Retuner engine + Infinitone-parity scorer. Data-like cases (pivot picks, degree lookup, re-root bases) live in
-// vectors.json; these are the behaviour tests (invariants, scorer ordering and bands, comma drift, Fixed rules).
+// vectors.json; these are the behavior tests (invariants, scorer ordering and bands, comma drift, Fixed rules).
 import { describe, expect, it } from 'vitest';
 import {
   parseInterval,

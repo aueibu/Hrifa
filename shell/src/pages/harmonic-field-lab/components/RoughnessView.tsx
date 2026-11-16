@@ -3,7 +3,7 @@
  * notes (roughest first) and the next-note curve (the total if one more tone were added at each interval above the lowest
  * sounding note, over one repeat). Runtime only: it reads `sounding`, `soundingMarks` and `soundingGhosts` from the lab
  * state (field lights, held keys, held chord and shelf previews, Sketch holds and off-field ghosts all flow through them)
- * and recomputes at most once per animation frame. The maths is `liveRoughness` in the lib.
+ * and recomputes at most once per animation frame. The math is `liveRoughness` in the lib.
  *
  * A hovered note (`lab.hover`) or a pinned note (`lab.pin`) counts as a one-note chord, silently. Faint marks on the
  * curve show every other field note at its interval above the lowest shown note, with its pair roughness.
@@ -47,7 +47,7 @@ const MT = 22;
 const MB = 54;
 const PW = W - ML - MR;
 const PH = H - MT - MB;
-/** Centre y of the first label lane, under the tick row. */
+/** Center y of the first label lane, under the tick row. */
 const BAND_Y = MT + PH + 22;
 /** The last sounding chord stays (dimmed) this long after its last note is released ... */
 export const LINGER_MS = 1500;

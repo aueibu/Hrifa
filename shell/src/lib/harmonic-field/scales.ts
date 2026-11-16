@@ -364,12 +364,12 @@ export type NearestScaleSubset =
 /**
  * Choose DISTINCT field notes for the scale. Field notes are ordered by their cents above the root (mod repC; the root
  * is first, at 0); the targets (cents above the root, wrapped into the repeat, sorted ascending) get strictly
- * increasing notes in that order (a monotone assignment). Among all such assignments it minimises the WORST |error|
+ * increasing notes in that order (a monotone assignment). Among all such assignments it minimizes the WORST |error|
  * first, then the MEAN |error| (error = note - target, in cents, not wrapped).
  *
  * Method: each target considers only its K nearest field notes (K starts at 8, doubles while that makes the
  * assignment impossible); the smallest worst-error M is found by binary search over the candidate errors with a
- * greedy feasibility test (O(N*K) each); then a DP over the candidates within M minimises the sum of |errors|.
+ * greedy feasibility test (O(N*K) each); then a DP over the candidates within M minimizes the sum of |errors|.
  * Ties in the mean keep the lower field notes. A target that is 0 maps to the root.
  */
 export function nearestScaleSubset(

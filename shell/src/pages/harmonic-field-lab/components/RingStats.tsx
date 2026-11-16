@@ -277,7 +277,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
   );
 }
 
-/** The ring with its header: caption, the view toggle (Chromatic | Fifths) centred over the ring, and the ring menu. */
+/** The ring with its header: caption, the view toggle (Chromatic | Fifths) centered over the ring, and the ring menu. */
 export function RingPanel() {
   const { state, dispatch } = useLab();
   const { ringView: view, ringSteps: steps, ringGen } = state.ui;

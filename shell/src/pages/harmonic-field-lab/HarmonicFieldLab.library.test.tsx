@@ -401,7 +401,7 @@ describe('subset rows', () => {
     );
     const line = screen.getByText(/'Lost one' loaded: 1 of 2 pitches are not in this field\./);
     expect(line).toBeInTheDocument();
-    // neutral text: yellow means pinned, so this line is not a warning colour
+    // neutral text: yellow means pinned, so this line is not a warning color
     expect(line).toHaveAttribute('data-kind', 'note');
     // the tab is still on its own generator
     expect(presetButton()).toHaveTextContent('Harmonics 8–15');

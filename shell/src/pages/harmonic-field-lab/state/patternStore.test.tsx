@@ -38,7 +38,7 @@ describe('patterns.v1 store', () => {
     expect(loadPatterns().list).toEqual(defaults);
   });
 
-  it('sanitises entry by entry: bad dropped, good kept, canonical, no duplicates, capped', () => {
+  it('sanitizes entry by entry: bad dropped, good kept, canonical, no duplicates, capped', () => {
     const raw = {
       patterns: [
         { text: ' 2-3 ' },

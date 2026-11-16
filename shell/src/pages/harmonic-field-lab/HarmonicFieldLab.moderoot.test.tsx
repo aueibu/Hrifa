@@ -1,6 +1,6 @@
 /**
  * The mode-root chevron in every view that draws single notes, the Keys panel's inner scroll, and the big key view's
- * colours. 12-EDO with C major selected: the first mode is rooted on step 0, the second on step 2 (D dorian).
+ * colors. 12-EDO with C major selected: the first mode is rooted on step 0, the second on step 2 (D dorian).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -71,7 +71,7 @@ describe('mode-root marker', () => {
   it('labels sit on distinct spots, inside a view fitted to the ring and its labels', async () => {
     await openAll();
     const [x0, y0, w, h] = (ring().getAttribute('viewBox') ?? '').split(' ').map(Number);
-    // a square view centred on the ring (300 units, centre 150), only as wide as the labels need
+    // a square view centered on the ring (300 units, center 150), only as wide as the labels need
     expect(w).toBeCloseTo(h);
     expect(x0 + w / 2).toBeCloseTo(150);
     expect(y0 + h / 2).toBeCloseTo(150);
@@ -112,7 +112,7 @@ describe('mode-root marker', () => {
     expect(cols[2]).toHaveAccessibleName(/mode root/);
   });
 
-  it('the >|< pair is centred vertically on the root tick, on the strip and in a saved row', async () => {
+  it('the >|< pair is centered vertically on the root tick, on the strip and in a saved row', async () => {
     await openAll();
     await addSubsetNamed('major');
     const marks = [...document.querySelectorAll('[data-testid="mode-root-pair"]')].map((g) =>
@@ -131,7 +131,7 @@ describe('mode-root marker', () => {
       ys.forEach((y) => expect(y).toBeCloseTo(tickMid, 6));
       heights.add(svg.getAttribute('height')!);
     }
-    expect(heights.size).toBe(2); // two different strip heights, both centred
+    expect(heights.size).toBe(2); // two different strip heights, both centered
   });
 
   it('the big key ring marks the shown key root; pointing at another key moves it', async () => {
@@ -233,7 +233,7 @@ describe('Keys panel scroll', () => {
   });
 });
 
-describe('big key view colours (H-4)', () => {
+describe('big key view colors (H-4)', () => {
   it('added is green, dropped red, missing orange, common neutral; the shapes are unchanged', () => {
     const panels = css('panels.module.css');
     expect(rule(panels, '.bigKeyAdded')).toMatch(/stroke:\s*var\(--mark-green\)/);
@@ -245,7 +245,7 @@ describe('big key view colours (H-4)', () => {
     expect(rule(panels, '.bigKeyMissing')).toMatch(/stroke-dasharray/);
   });
 
-  it('the legend uses the same classes, so it takes the same colours', async () => {
+  it('the legend uses the same classes, so it takes the same colors', async () => {
     await openAll();
     const legend = screen.getByLabelText('Marks');
     for (const c of [

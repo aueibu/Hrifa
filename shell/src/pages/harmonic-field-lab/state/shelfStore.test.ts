@@ -35,7 +35,7 @@ const sample = (): ShelfState => {
 };
 
 describe('chordshelf.v1 shape and round trip', () => {
-  it('serialises to plain JSON and reads back the same chords', () => {
+  it('serializes to plain JSON and reads back the same chords', () => {
     const sh = sample();
     const json = JSON.parse(JSON.stringify(shelfToStored(sh))) as unknown;
     const back = sanitizeShelf(json)!;
@@ -240,7 +240,7 @@ describe('tabs.v1 `from` (the chord a tab was reloaded from)', () => {
   });
 });
 
-describe('ids and stash sanitising', () => {
+describe('ids and stash sanitizing', () => {
   it('a repaired id never collides with a later valid id and is never reused', () => {
     const p = [{ m: null, c: 1 }];
     const sh = sanitizeShelf({
@@ -257,7 +257,7 @@ describe('ids and stash sanitising', () => {
     expect(sh.next).toBe(5);
   });
 
-  it('a stash is sanitised like a load: bad pitch refused, long template and all-bad source dropped', () => {
+  it('a stash is sanitized like a load: bad pitch refused, long template and all-bad source dropped', () => {
     const base = sample();
     const c = base.chords[0];
     const input = {

@@ -1,4 +1,4 @@
-/* Harmonic Field Lab layout mock, round 2: a one-screen instrument. Colours are shell roles (--surface, --panel,
+/* Harmonic Field Lab layout mock, round 2: a one-screen instrument. Colors are shell roles (--surface, --panel,
    --panel-inset, --panel-slot, --panel-header, --text*, --grid, --control-border) and category hues (--mark-<hue>,
    --tint-<hue>-*). Regions are separated by tier steps and gaps, not lines (THEMING.md divider budget). No hex, no raw
    palette shades, no decorative shadows. */
@@ -86,7 +86,7 @@
   }
 }
 
-/* narrow: the analysis panel goes under the centre and the page may scroll */
+/* narrow: the analysis panel goes under the center and the page may scroll */
 @media (max-width: 60em) {
   .root {
     height: auto;
@@ -448,7 +448,7 @@
   padding: 0.5rem;
 }
 
-/* reference lines: lighter grey for a white key, darker for a black key, so in dark mode the order flips with the text */
+/* reference lines: lighter gray for a white key, darker for a black key, so in dark mode the order flips with the text */
 :global([data-mantine-color-scheme="dark"]) .workspace {
   --ref-white: color-mix(in srgb, var(--text) 22%, transparent);
   --ref-black: color-mix(in srgb, var(--text) 7%, transparent);
@@ -464,7 +464,7 @@
 }
 
 /* note selection: it shares the workspace columns (subgrid), so the select stack and the mode stepper sit under
-   the ring with the stepper centred on it, and nearest scale + odd limit sit under the stats */
+   the ring with the stepper centered on it, and nearest scale + odd limit sit under the stats */
 .selectBar {
   align-items: center;
   column-gap: 0.75rem;
@@ -609,7 +609,7 @@
   position: relative; /* host of the "+N outside" overlay (bottom-right corner, clear of the circle) */
 }
 
-/* caption | view toggle centred over the ring | ring menu */
+/* caption | view toggle centered over the ring | ring menu */
 .ringHead {
   align-items: center;
   display: grid;
@@ -836,7 +836,7 @@
   stroke-dasharray: 2 1.5;
 }
 
-/* the mode-root marker (H-4): one bold chevron in --text, no colour of its own, the same shape in every view */
+/* the mode-root marker (H-4): one bold chevron in --text, no color of its own, the same shape in every view */
 .modeChevron {
   fill: none;
   pointer-events: none;
@@ -981,7 +981,7 @@
 }
 
 /* each note is one mark (NoteMark): one SVG holds the line, its error and the sounding dot, so all share
-   one centre and the error grows out of the line with no seam */
+   one center and the error grows out of the line with no seam */
 .mark {
   left: 50%;
   overflow: visible;
@@ -1031,7 +1031,7 @@
   transform: translateX(-50%);
 }
 
-/* the error number sits just beyond the tip its colour starts from */
+/* the error number sits just beyond the tip its color starts from */
 .colNum[data-dir="sharp"] {
   top: calc(var(--mid) - var(--half) - 0.8125rem);
 }
@@ -1099,7 +1099,7 @@
 }
 
 /* a subset that does not fully map onto the current field: dimmed, with a bar at the left edge of the row (its tooltip
-   says why). Partial: a halftone (dot) bar; none: a solid grey bar. --match-bar is the bar's width. */
+   says why). Partial: a halftone (dot) bar; none: a solid gray bar. --match-bar is the bar's width. */
 .savedItem {
   --match-bar: 12px;
 }
@@ -2073,7 +2073,7 @@ p.inputError {
   outline-offset: 1px;
 }
 
-/* ghost marks: a sounding pitch that is no field note, dashed and unfilled in the sounding colour (H-2) */
+/* ghost marks: a sounding pitch that is no field note, dashed and unfilled in the sounding color (H-2) */
 .ringGhost {
   fill: none;
   pointer-events: all;

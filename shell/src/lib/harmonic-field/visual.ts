@@ -1,6 +1,6 @@
 import { nearestRatio } from './deviation';
 /**
- * Pure geometry and fit maths behind the lab's visualizer views: the 3D lattice, EDO fit, the dissonance curve and the
+ * Pure geometry and fit math behind the lab's visualizer views: the 3D lattice, EDO fit, the dissonance curve and the
  * isomorphic keyboard. No React, no DOM, no three.js (the page turns these numbers into pictures).
  */
 import { latticeCoords, latticeEdges } from './field';
@@ -144,7 +144,7 @@ export function chooseAxes3d(
   return { axes: (hit ?? ranks[0])?.axes ?? null, picked: hit !== undefined };
 }
 
-/** Place of a prime in the table of primes: the key for its stem direction and its colour (stable per prime). */
+/** Place of a prime in the table of primes: the key for its stem direction and its color (stable per prime). */
 export function primeSlot(prime: number): number {
   const k = PRIMES.indexOf(prime);
   return k >= 0 ? k : prime;
@@ -165,7 +165,7 @@ export function stemDir3d(prime: number): Vec3 {
   return [r * Math.cos(a), y, r * Math.sin(a)];
 }
 
-/** Fixed screen angle in degrees (counter-clockwise from the right) of a prime's 2D stem, at least 10 degrees off the three axis lines. */
+/** Fixed screen angle in degrees (counterclockwise from the right) of a prime's 2D stem, at least 10 degrees off the three axis lines. */
 export function stemAngle2d(prime: number): number {
   const k = primeSlot(prime);
   let a = (20 + k * 137.5) % 360;
@@ -396,7 +396,7 @@ export interface CurveDip {
 }
 
 /**
- * Local minima of the curve that stand out: lower than both neighbours and with a rise of at least `prominence`
+ * Local minima of the curve that stand out: lower than both neighbors and with a rise of at least `prominence`
  * (a share of the curve's range, 2% by default) before the curve falls below them again on each side. The ends count
  * as minima when they are low (the unison and the octave).
  */

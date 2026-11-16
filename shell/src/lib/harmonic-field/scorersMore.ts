@@ -2,7 +2,7 @@
  * Three more chord scorers (lower = better, same `ScoreResult` shape as `scorers.ts`) and a comparison table.
  *   scorePeriodicityFair  - the Infinitone-style periodicity count with the window scaled to the chord's register.
  *   scoreLattice          - mean Tenney height over every pair of chord tones.
- *   scoreRoughness        - Plomp-Levelt roughness, Sethares' parameterisation, over all partial pairs (the lab default).
+ *   scoreRoughness        - Plomp-Levelt roughness, Sethares' parameterization, over all partial pairs (the lab default).
  * Conventions: an empty chord scores 999999 (EMPTY_SCORE) with `detail.empty = true`; a single note is a real chord of
  * one tone (lattice 0, roughness = its own partials, periodicity = a closed curve).
  */
@@ -74,7 +74,7 @@ export interface LatticeOpts {
   /** Odd limit of the candidate ratios used to explain a pair that has no exact monzo (default 9). */
   oddLimit?: number;
   /**
-   * Bits charged per cent of mistuning (default 0.05). The ratio that explains a pair is the candidate with the lowest
+   * Bits charged percent of mistuning (default 0.05). The ratio that explains a pair is the candidate with the lowest
    * cost = Tenney height + centsPenalty * |error in cents|. Exact pairs (monzos, or Hz on a ratio) pay nothing.
    * 0 = pure Tenney height; the explaining ratio is then the nearest by cents (otherwise it would always be 1/1).
    */
@@ -258,7 +258,7 @@ export function pairRoughness(
 /**
  * Sum of Plomp-Levelt roughness over every pair of partials of every tone (including partials of the same tone, as
  * Sethares sums over the whole spectrum). Each tone gets `harmonics` partials at k*f with amplitude rolloff^(k-1);
- * tones are not level-normalised. `detail.pairs` lists each pair of tones (input order, i < j) with its roughness;
+ * tones are not level-normalized. `detail.pairs` lists each pair of tones (input order, i < j) with its roughness;
  * `detail.self` lists each tone's own partial-partial roughness.
  */
 export function scoreRoughness(freqs: readonly number[], opts: RoughnessOpts = {}): ScoreResult {

@@ -122,7 +122,7 @@ describe('genKey and names', () => {
     expect(genKey({ ...a, cpsF: '1 3 5 7' })).toBe(genKey({ ...a, cpsF: ' 1  3 5 7 ' }));
   });
 
-  it('normalises the repeat and ignores inputs the shape does not use', () => {
+  it('normalizes the repeat and ignores inputs the shape does not use', () => {
     const a = defaultGen();
     expect(genKey({ ...a, rep: '2' })).toBe(genKey({ ...a, rep: '2/1' }));
     expect(genKey({ ...a, rep: '1200c' })).toBe(genKey({ ...a, rep: '2/1' }));
@@ -133,7 +133,7 @@ describe('genKey and names', () => {
     expect(
       genKey({ ...box, axes: box.axes.map((x, i) => (i === 0 ? { ...x, n: 5 } : x)) })
     ).not.toBe(genKey(box));
-    // a diamond ignores counts and centres, and axes that are off
+    // a diamond ignores counts and centers, and axes that are off
     const dia = { ...box, shape: 'diamond' as const };
     const other = {
       ...dia,

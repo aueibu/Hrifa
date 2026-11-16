@@ -5,7 +5,7 @@
  * overlap. Boxes are estimated from the character count and a fixed monospace advance.
  */
 export interface Box {
-  /** Centre. */
+  /** Center. */
   x: number;
   y: number;
   w: number;
@@ -22,7 +22,7 @@ export interface LabelItem {
 }
 
 export interface LabelOptions {
-  /** Ring centre: lanes run outward along the ray from here through the natural position. */
+  /** Ring center: lanes run outward along the ray from here through the natural position. */
   cx: number;
   cy: number;
   /** Radial distance between lanes, and how many lanes there are (lane 0 is the natural position). */
@@ -33,7 +33,7 @@ export interface LabelOptions {
   subAdvance: number;
   lineH: number;
   subH: number;
-  /** Where the sub line's centre sits below the main line's centre. */
+  /** Where the sub line's center sits below the main line's center. */
   subDy: number;
   /** Areas that no label may cover, and the drawing area every label must stay inside. */
   obstacles: readonly Box[];
@@ -45,7 +45,7 @@ export interface LabelOptions {
 }
 
 export interface LabelPlace {
-  /** Where to draw the text (its middle) and the first line's centre. */
+  /** Where to draw the text (its middle) and the first line's center. */
   x: number;
   y: number;
   lane: number;
@@ -138,9 +138,9 @@ export function layoutLabels(items: readonly LabelItem[], o: LabelOptions): Labe
   });
 }
 
-/** A conservative box for the mode-root chevron outside a dot at (x, y) as seen from the centre (cx, cy). */
+/** A conservative box for the mode-root chevron outside a dot at (x, y) as seen from the center (cx, cy). */
 /**
- * A square viewBox centred on the ring that just holds the ring (radius `minHalf`) and every placed box, plus `margin`.
+ * A square viewBox centered on the ring that just holds the ring (radius `minHalf`) and every placed box, plus `margin`.
  * Unused outer lanes cost no room, so the ring is drawn as large as the labels allow.
  */
 export function fitView(

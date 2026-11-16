@@ -272,13 +272,13 @@ describe('splitters (pure)', () => {
     expect(clampShares([Number.NaN, 0.5], 40)).toEqual([0.5, 0.5]);
   });
 
-  it('drags one splitter by trading space between its two neighbours only', () => {
+  it('drags one splitter by trading space between its two neighbors only', () => {
     const even3 = evenShares(3);
     expect(even3).toEqual([0.3333, 0.3333, 0.3333]);
     // the first splitter to 0.5: panel 1 grows, panel 2 shrinks, panel 3 is untouched
     const a = dragSplitter([0.3, 0.4, 0.3], 0, 0.5, 40);
     expect(a).toEqual([0.5, 0.2, 0.3]);
-    // dragging far past the neighbour stops at its minimum (20% of the column)
+    // dragging far past the neighbor stops at its minimum (20% of the column)
     expect(dragSplitter([0.3, 0.4, 0.3], 0, 0.95, 40)).toEqual([0.5, 0.2, 0.3]);
     expect(dragSplitter([0.3, 0.4, 0.3], 0, 0, 40)).toEqual([0.2, 0.5, 0.3]);
     // the second splitter works on panels 2 and 3 only

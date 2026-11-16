@@ -278,7 +278,7 @@ export function stashChord(s: ShelfState, input: StashInput): ShelfState {
   if (input.source && input.source.subset.pitches.length > MAX_SOURCE_PITCHES) {
     return refuse(s, `A source subset holds at most ${MAX_SOURCE_PITCHES} pitches.`);
   }
-  // the same sanitising as load, so what a session holds is what a reload gives back
+  // the same sanitizing as load, so what a session holds is what a reload gives back
   const pitches = input.pitches.map(sanitizePitch);
   if (pitches.some((p) => p === null)) {
     return refuse(s, 'A chord note is not a usable pitch.');

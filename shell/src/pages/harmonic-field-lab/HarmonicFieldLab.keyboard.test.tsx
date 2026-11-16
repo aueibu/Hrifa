@@ -46,7 +46,7 @@ describe('keyboard modes on the page', () => {
     expect(screen.getByTestId('kb-mode')).toHaveTextContent('Notes');
     expect(screen.getByTestId('oct-shift')).toHaveTextContent('Oct 0');
     expect(within(dock()).queryByTestId('shelf-page')).toBeNull();
-    // the dock keys are labelled with the melody keys z x c ...
+    // the dock keys are labeled with the melody keys z x c ...
     const first = within(dock()).getAllByRole('button')[1];
     expect(first).toHaveTextContent('z');
 

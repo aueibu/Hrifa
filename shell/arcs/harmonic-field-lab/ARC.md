@@ -5,7 +5,7 @@
 ## Goal
 The lab gains the analysis and generator capabilities the human collected from Scala and from tuning theory, each done the lab's own way (monzo + cents, the shared hover and sounding state, one tooltip system), not a copy of Scala's output. Done means:
 - an interval matrix of a subset that shows which intervals it contains and between which degrees, responding to hover and sound like every other panel;
-- the prime factorisation of a ratio, and beat rates for a chord or subset;
+- the prime factorization of a ratio, and beat rates for a chord or subset;
 - sorting for ratio and CPS chords, and editable descriptions for saved chords and folders;
 - a Euler-Fokker genus generator and an odd limit filter on generators;
 - a read-only library of about 370 named ratio chords (from Scala's `chordnam.par`) that the user's own templates are curated from, filterable by name, odd limit, prime limit and note count;
@@ -24,7 +24,7 @@ The human's items (2026-11-16) and where each lands:
 | 3 | Generator that adds pitches by ratios from other pitches ("from 1/1 with 3/2 above it, place 11/6 above and below 3/2; from that lower 11/6 place a 9/8 below"). Maybe later every mode converts to it | M8 | Thin slice first. Converting the existing modes is NOT in this arc unless the human decides so at the M8 checkpoint. |
 | 4 | Euler-Fokker genus | M6 | The lab has a box-lattice generator; C0 reports how a genus differs from it. |
 | 5 | Which pairs of degrees an interval lies between (Scala `SHOW LOCATIONS`), seen as a matrix; what interval content a subset has | M1 | See "M1 shape" below. |
-| 6 | Prime factorisation of a ratio (Scala `PRIMES`; not the prime limit) | M2 | The lab already stores the monzo (`Note.m`); a display question. |
+| 6 | Prime factorization of a ratio (Scala `PRIMES`; not the prime limit) | M2 | The lab already stores the monzo (`Note.m`); a display question. |
 | 7 | Beat frequencies: total, average, highest | M3 | Uses the lab's 1/1 Hz setting. Scala's `SHOW BEATS` is the model. |
 | 8 | Scala `EQUALTEMP/DATA` ("equal/data function"): a report on an n-EDO | M10 | Confirmed by the human as what was meant (2026-11-16). |
 | 9 | Scala `CHORDS/MATCH/CONSTRAINED`: named chord search with limits | M7 | Done as a chord library plus filters (below). |
@@ -140,7 +140,7 @@ The human added `reference/Scala help.html` (546 KB), the manual for the Scala p
 - **Outcome (human, 2026-11-16): T1 CLOSED.** T1a measured about 5% (kind 1 is not adopted, reverted); the click-through is only about 2 s of a 10 s test, the rest is later steps that re-render the full page. T1b (the split) and T1c (the audit) were NOT done: the split's ceiling is about 25% and it adds about 5 s of fixed import cost per new file. The human instead chose to raise the worker count from 4 to 6 (one per physical core; Ryzen 5 5600X) in `shell/CLAUDE.md`, `scripts/check-fast.mjs` and the Check command line above, verified by one `check:hfl` run. Ideas left for later are in `BACKLOG.md`.
 
 ### M2: Prime factorization per ratio
-- Scope: display of a ratio's prime factorisation (from the stored monzo; no new data), where it shows per the scenarios table, plus any other pitch attributes the human picks.
+- Scope: display of a ratio's prime factorization (from the stored monzo; no new data), where it shows per the scenarios table, plus any other pitch attributes the human picks.
 - Acceptance: scenarios-based tests; irrational notes show nothing, not zero; `Check command` passes.
 - Human checkpoint after: yes
 

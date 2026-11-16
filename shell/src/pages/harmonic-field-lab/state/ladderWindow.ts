@@ -1,6 +1,6 @@
 /** M8g: the window of the Chords panel's tolerance ladder. */
 
-/** Tiles shown at once (the selected one centred, 3 each side). */
+/** Tiles shown at once (the selected one centered, 3 each side). */
 export const LADDER_WINDOW = 7;
 
 export interface LadderWindow {
@@ -15,7 +15,7 @@ export interface LadderWindow {
 
 /**
  * The window of `total` ladder rungs around `selected` (an index; -1 or out of range counts as 0): 7 tiles with the
- * selection centred; near an end the window slides so it still shows 7 (the selection is then off-centre). With 7 or fewer
+ * selection centered; near an end the window slides so it still shows 7 (the selection is then off-center). With 7 or fewer
  * rungs all show and there is no `+n`.
  */
 export function ladderWindow(total: number, selected: number, size = LADDER_WINDOW): LadderWindow {
