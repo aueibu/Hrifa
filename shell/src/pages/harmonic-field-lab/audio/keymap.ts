@@ -4,6 +4,8 @@
  * bottom row `z x c v b n m`, then the home row `a s d f g h j k l`: 16 slots. `,` and `.` are the octave (repeat) shift, not
  * notes; the top row is the chord row (`CHORD_KEYS`).
  */
+import { SHORTCUTS } from './shortcuts';
+
 export const KEYS = 'zxcvbnmasdfghjkl';
 
 /** The chord keys: the first ten shelf slots of the current page, in shelf order (Chords and Split modes). */
@@ -91,10 +93,10 @@ export function chordSlotOfEvent(e: { code?: string; key: string }): number {
 
 /** -1 for `,` (shift down), +1 for `.` (shift up), 0 otherwise; by physical code, else by key. */
 export function shiftOfEvent(e: { code?: string; key: string }): number {
-  if (e.code === 'Comma' || (!e.code && e.key === ',')) {
+  if (e.code === 'Comma' || (!e.code && e.key === SHORTCUTS.shiftDown)) {
     return -1;
   }
-  if (e.code === 'Period' || (!e.code && e.key === '.')) {
+  if (e.code === 'Period' || (!e.code && e.key === SHORTCUTS.shiftUp)) {
     return 1;
   }
   return 0;
@@ -102,10 +104,10 @@ export function shiftOfEvent(e: { code?: string; key: string }): number {
 
 /** -1 for `[` (previous shelf page), +1 for `]` (next), 0 otherwise. */
 export function pageOfEvent(e: { code?: string; key: string }): number {
-  if (e.code === 'BracketLeft' || (!e.code && e.key === '[')) {
+  if (e.code === 'BracketLeft' || (!e.code && e.key === SHORTCUTS.pageBack)) {
     return -1;
   }
-  if (e.code === 'BracketRight' || (!e.code && e.key === ']')) {
+  if (e.code === 'BracketRight' || (!e.code && e.key === SHORTCUTS.pageNext)) {
     return 1;
   }
   return 0;

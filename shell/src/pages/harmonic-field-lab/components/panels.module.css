@@ -2498,3 +2498,13 @@
 .hintHost > :disabled {
   pointer-events: none;
 }
+
+/* A labelled value line inside a tooltip ("Pitches 0, 386.3, 702 c"): the label keeps its width, the values wrap beside it. */
+.hintLine {
+  display: flex;
+  gap: 0.5ch;
+}
+
+.hintLine > :first-child {
+  flex: none;
+}

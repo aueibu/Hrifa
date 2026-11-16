@@ -1,7 +1,7 @@
 /** Renders help markup (see `markup.ts`) as React nodes: no raw HTML, no dangerouslySetInnerHTML. */
 import type { ReactNode } from 'react';
 import { shortcutKey } from './audio/shortcuts';
-import { parseMarkup, type Block } from './markup';
+import { glueUnits, parseMarkup, sentenceLines, type Block } from './markup';
 import classes from './components/lab.module.css';
 
 export function renderMarkup(source: string): ReactNode[] {
@@ -22,9 +22,17 @@ export function renderMarkup(source: string): ReactNode[] {
         );
       }
       default:
-        return t.text;
+        return glueUnits(t.text);
     }
   });
+}
+
+/** A paragraph's text as lines of whole sentences with a line break (not a blank line) between them. */
+export function renderLines(source: string): ReactNode[] {
+  return sentenceLines(source).flatMap((line, i) => [
+    ...(i > 0 ? [<br key={`br${i}`} />] : []),
+    <span key={`l${i}`}>{renderMarkup(line)}</span>,
+  ]);
 }
 
 /** One block: paragraph, `Example:` (label in italics) or `Keys:` (a row per key). Every block after the first has a blank line before it. */
@@ -48,7 +56,7 @@ export function BlockView({ block, first }: { block: Block; first?: boolean }) {
   return (
     <div className={cls}>
       {block.kind === 'example' && <em>Example: </em>}
-      {renderMarkup(block.text)}
+      {renderLines(block.text)}
     </div>
   );
 }

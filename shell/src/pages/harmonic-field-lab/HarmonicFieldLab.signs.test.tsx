@@ -90,7 +90,10 @@ describe('signed mode tiles', () => {
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
     });
-    expect(screen.getByRole('tooltip').textContent).toBe(tile.getAttribute('aria-label'));
+    // a number and its unit are glued with a no-break space in the tooltip only
+    expect(screen.getByRole('tooltip').textContent?.replaceAll('\u00a0', ' ')).toBe(
+      tile.getAttribute('aria-label')
+    );
   });
 
   it('the heat grid tooltip explains the sign with an example', () => {

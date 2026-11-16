@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: harmonic-field-lab, help text arc (`arcs/harmonic-field-lab`)
-- Current milestone: M3 done, committed; human checkpoint pending
-- State: awaiting human (M3 look checks, see the Log row)
+- Current milestone: M4 done, committed; human checkpoint pending
+- State: awaiting human (wording of the 17 M4 entries; M3 look checks passed informally 2026-11-16)
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -16,6 +16,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 | M2 | Built (builder), reviewed (reviewer FAIL on wording drift, fixed by the orchestrator), gated | `check:hfl` green once: 94 files, 1294 tests | Review fixes: help wording of `playScale`, `holdToPlay`, `modes` restored to the confirmed text; lost `modes` fact ("one row per mode: the scale restarted from each degree") moved to teaching; "Keys:" label no longer italic; the guard now requires an Example in `help`; stale "5 key" comment fixed; `Object.hasOwn` lint fix. `H-16` appended. Open for the human: example-then-keys is the one order in both views (HELP-FORMAT section 2); the confirmed `holdToPlay` mockup showed keys first. Human checkpoint: look at the three entries in the running page (approved 2026-11-16, order changed to keys then example). |
 | M3 | Built (builder), reviewed (reviewer: PASS-WITH-HUMAN-CHECK), follow-up builder for nested tooltips and review fixes, gated | `check:hfl` green on the second run: 95 files, 1302 tests (first run red: a mojibake of `−` in `ui.tsx` caused by the orchestrator's mutation check, repaired; and `previews.test` read a removed `title`) | All 15 `nativeTitle` sites now use `Hint` (new, `components/ui.tsx`); `useNativeTitle` removed; `LabTooltip` makes the innermost tooltip win when tooltips nest (mutation-checked: the nesting test fails without it); `keyRings` converted (S5). Order: term, dynamic, help, keys, example last; uniform colour (human, 2026-11-16). `H-16` amended. Human checkpoint pending: hover a modes tile (one bubble), a key ring, the disabled Reload button, and the four new labels the builder wrote ("Play this chord", "Reload as a new tab", "Chords here", "Hear this chord on any note"). Left native on purpose (M4 to M7 reviews): static `title=` in `RoughnessView`, `GhostMarks`, `Visualizer`, `TunerStrip` caption, `ShelfPanel` "Computer key". |
+| M4 | Built (builder), reviewed (reviewer PASS-WITH-HUMAN-CHECK), review fixes by the orchestrator, gated | `check:hfl` green once: 95 files, 1323 tests | Converted 17 entries (16 top bar + `soundMenu`) to help + teaching; no fact lost (reviewer). Also in this commit: old-form entries now render through the same blocks (cut at `Example:`, sentences break after about 140 characters, `c`/`Hz` glued to their number: `legacyBlocks`, `sentenceLines`, `glueUnits` in `markup.ts`), chord-card tooltip fixed (`display: contents` host put it top-left; now on the two line boxes, labelled Pitches / Steps with `ValueList`), shortcut table grew (`,` `.` `[` `]` `=` `-`; Alt+1 to Alt+9 stays a literal). Text fixes where the old wording disagreed with the code: `soundMenu`, `glossary`. Examples the builder derived (human to approve): `linkedRootDefault`, `octShift`, and the linked-melody pair (now caveated "in Relative"). `H-16` amended. Human checkpoint: before and after wording of the 17 entries. |
 
 ## C0 findings
 - **Importers:** nothing outside `src/pages/harmonic-field-lab/` imports `texts.ts` or the lab's `components/ui.tsx`, so the entry type and `Tip` can change inside the lab with no cross-arc effect.
@@ -31,4 +32,4 @@ None yet.
 - M1 will ask: native `title` tooltips to styled tooltips or not; block and emphasis rules; help length target; which controls get a tooltip.
 
 ## Next action
-Human checkpoint for M3: the human hovers the sites listed in the M3 Log row and rewords the four new labels. Then M4 (top bar, tabs, Sound entries converted to help + teaching; wording batch shown before and after at the checkpoint; related tests while building, one gate at the end).
+Human checkpoint for M4: show before and after of the 17 entries; the human rewords what they want. Then M5 (field, subset, rings, key rings, modes entries; the `Hover and hold 1` entry still has no hover target, decide there).

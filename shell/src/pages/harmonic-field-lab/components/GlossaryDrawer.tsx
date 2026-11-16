@@ -57,17 +57,11 @@ export function GlossaryDrawer({ opened, onClose }: { opened: boolean; onClose: 
           >
             <dt>{entry.term}</dt>
             <dd>
-              {entry.legacy ? (
-                entry.text
-              ) : (
+              <Blocks blocks={entry.help} />
+              {entry.teaching.length > 0 && (
                 <>
-                  <Blocks blocks={entry.help} />
-                  {entry.teaching.length > 0 && (
-                    <>
-                      <hr className={classes.glossRule} />
-                      <Blocks blocks={entry.teaching} />
-                    </>
-                  )}
+                  <hr className={classes.glossRule} />
+                  <Blocks blocks={entry.teaching} />
                 </>
               )}
               {entry.see && (

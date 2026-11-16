@@ -87,30 +87,40 @@ export function ChordCard(p: ChordCardProps) {
       {p.titleExtra && <Num muted>{` · ${p.titleExtra}`}</Num>}
     </span>
   );
+  // `.cardCol` is `display: contents` (no box of its own), so the tooltip hangs on the two real line boxes inside it
+  const pitchDynamic = (
+    <>
+      <span className={classes.hintLine}>
+        <span>Pitches</span>
+        <Num>
+          <ValueList text={p.pitches} />
+        </Num>
+      </span>
+      <span className={classes.hintLine}>
+        <span>Steps</span>
+        <Num>
+          <ValueList text={p.steps} />
+        </Num>
+      </span>
+    </>
+  );
   const pitchCol = (
-    <Hint
-      position="bottom"
-      dynamic={
-        <>
-          <Num>{p.pitches}</Num>
-          <br />
-          <Num>{p.steps}</Num>
-        </>
-      }
-    >
-      <span className={classes.cardCol} data-col="pitches">
+    <span className={classes.cardCol} data-col="pitches">
+      <Hint position="bottom" dynamic={pitchDynamic}>
         <span className={classes.cardLine1} data-testid="card-pitches">
           <Num>
             <ValueList text={p.pitches} />
           </Num>
         </span>
+      </Hint>
+      <Hint position="bottom" dynamic={pitchDynamic}>
         <span className={classes.cardLine2} data-testid="card-steps">
           <Num muted>
             <ValueList text={p.steps} />
           </Num>
         </span>
-      </span>
-    </Hint>
+      </Hint>
+    </span>
   );
   const ring = (
     <button

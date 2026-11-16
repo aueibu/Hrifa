@@ -73,12 +73,23 @@ describe('new-form entries', () => {
 });
 
 describe('old-form entries', () => {
-  it('render as one plain string in the tooltip, as before', async () => {
-    render(<Tip k="wave">Wave</Tip>);
-    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Wave' }));
+  it('go through the same blocks: the Example is its own block with a blank line above it', async () => {
+    render(<Tip k="preset">Preset</Tip>);
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Preset' }));
     await wait(100);
-    expect(screen.getByRole('tooltip')).toHaveTextContent(TIPS.wave.term + TIPS.wave.text);
-    expect(TIPS.wave.legacy).toBe(true);
-    expect(TIPS.wave.help).toHaveLength(1);
+    const tip = screen.getByRole('tooltip');
+    expect(tip).toHaveTextContent(TIPS.preset.term);
+    const firstParagraph = TIPS.preset.help[0];
+    expect(firstParagraph.kind).toBe('p');
+    expect(tip.textContent?.replaceAll('\u00a0', ' ')).toContain(
+      (firstParagraph.kind === 'p' ? firstParagraph.text : '').slice(0, 30)
+    );
+    expect(TIPS.preset.legacy).toBe(true);
+    expect(TIPS.preset.help.map((b) => b.kind)).toEqual(['p', 'example']);
+    const blocks = [...tip.querySelectorAll('div')].filter((d) =>
+      d.textContent?.startsWith('Example:')
+    );
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].className).toContain('helpGap');
   });
 });

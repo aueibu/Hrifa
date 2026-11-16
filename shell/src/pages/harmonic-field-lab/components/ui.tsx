@@ -24,6 +24,7 @@ import {
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { BlockView } from '../helpMarkup';
+import { glueUnits } from '../markup';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { TIPS, type TextEntry, type TipKey } from '../texts';
 import classes from './lab.module.css';
@@ -126,7 +127,6 @@ function TipBody({
   extra?: ReactNode;
   label?: string;
 }) {
-  const legacy = entry?.legacy ?? false;
   const paragraphs = entry?.help.filter((b) => b.kind === 'p') ?? [];
   const rest = entry
     ? [
@@ -136,16 +136,11 @@ function TipBody({
     : [];
   const title = entry?.term ?? label;
   const dynamicBlock = extra && (
-    <Text
-      span
-      display="block"
-      mt={legacy ? 4 : title ? '0.5em' : 0}
-      className={legacy ? undefined : classes.helpDynamic}
-    >
-      {extra}
+    <Text span display="block" mt={title ? '0.5em' : 0} className={classes.helpDynamic}>
+      {typeof extra === 'string' ? glueUnits(extra) : extra}
     </Text>
   );
-  // new form: term, dynamic line, help paragraphs, keys, example; old form: term, text, then the extra line below
+  // every entry, old form included: term, dynamic line, help paragraphs, keys, example last
   const lead = Boolean(title) || Boolean(extra);
   return (
     <>
@@ -154,26 +149,13 @@ function TipBody({
           {title}
         </Text>
       )}
-      {!legacy && dynamicBlock}
-      {entry &&
-        (legacy ? (
-          entry.text
-        ) : (
-          <>
-            {paragraphs.map((b, i) => (
-              <BlockView key={`p${i}`} block={b} first={i === 0 && !extra} />
-            ))}
-          </>
-        ))}
-      {legacy && dynamicBlock}
-      {!legacy &&
-        rest.map((b, i) => (
-          <BlockView
-            key={`r${i}`}
-            block={b}
-            first={paragraphs.length === 0 && !extra && i === 0 && !lead}
-          />
-        ))}
+      {dynamicBlock}
+      {paragraphs.map((b, i) => (
+        <BlockView key={`p${i}`} block={b} first={i === 0 && !extra} />
+      ))}
+      {rest.map((b, i) => (
+        <BlockView key={`r${i}`} block={b} first={paragraphs.length === 0 && !lead && i === 0} />
+      ))}
     </>
   );
 }

@@ -905,7 +905,7 @@ export function useLabAudio({
         });
         return;
       }
-      if (e.code === 'Equal' || e.key === '=' || e.key === '+') {
+      if (e.code === 'Equal' || e.key === SHORTCUTS.stash || e.key === '+') {
         // = (or +, the same physical key) stashes the current Sketch, as the Stash button does
         const { base: b, ui: u, sketch: sk } = latest.current;
         const posPitches = sk.positional

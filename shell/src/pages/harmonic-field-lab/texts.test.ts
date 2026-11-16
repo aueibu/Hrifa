@@ -1,7 +1,15 @@
 /** Guards for the help entries (both forms) and the markup parser. */
 import { describe, expect, it } from 'vitest';
 import { SHORTCUTS, shortcutKey } from './audio/shortcuts';
-import { parseMarkup, plainText, type Block } from './markup';
+import {
+  LINE_GROUP_MAX,
+  glueUnits,
+  legacyBlocks,
+  parseMarkup,
+  plainText,
+  sentenceLines,
+  type Block,
+} from './markup';
 import { GLOSSARY, TIPS, tipKeys } from './texts';
 
 const blockStrings = (b: Block): string[] =>
@@ -97,5 +105,57 @@ describe('help entries', () => {
     expect(GLOSSARY).toHaveLength(tipKeys.length);
     expect(TIPS.playScale.text).toContain('comes back down');
     expect(TIPS.modes.text).toMatch(/\+ means/);
+  });
+});
+
+describe('layout rules for every entry (old and new form)', () => {
+  it('no paragraph has an Example running inline: an example is its own block', () => {
+    for (const k of tipKeys) {
+      const e = TIPS[k];
+      for (const b of [...e.help, ...e.teaching]) {
+        if (b.kind === 'p') {
+          expect(b.text, `${k}: an inline Example`).not.toMatch(/(^|\s)Example( [^:.]{1,40})?:\s/);
+        }
+      }
+    }
+  });
+
+  it('legacyBlocks cuts a text at its Example into a paragraph and an example block', () => {
+    expect(legacyBlocks('First. Second. Example: one. Two.')).toEqual([
+      { kind: 'p', text: 'First. Second.' },
+      { kind: 'example', text: 'one. Two.' },
+    ]);
+    expect(legacyBlocks('Plain text only.')).toEqual([{ kind: 'p', text: 'Plain text only.' }]);
+    expect(legacyBlocks('Rule. Example in a 5-limit field: do x.')).toEqual([
+      { kind: 'p', text: 'Rule.' },
+      { kind: 'example', text: 'in a 5-limit field: do x.' },
+    ]);
+  });
+
+  it('sentenceLines: no line of more than one sentence is longer than the limit', () => {
+    for (const k of tipKeys) {
+      for (const b of [...TIPS[k].help, ...TIPS[k].teaching]) {
+        if (b.kind === 'keys') {
+          continue;
+        }
+        for (const line of sentenceLines(b.text)) {
+          const sentences = line.split(/(?<=[.!?])\s+(?=[A-Z0-9"“'({*{])/);
+          if (sentences.length > 1) {
+            expect(plainText(line).length, `${k}: ${line.slice(0, 40)}`).toBeLessThanOrEqual(
+              LINE_GROUP_MAX
+            );
+          }
+        }
+      }
+    }
+    expect(sentenceLines('Aaa. Bbb. Ccc.', 10)).toEqual(['Aaa. Bbb.', 'Ccc.']);
+    expect(sentenceLines('A very long single sentence stays whole.', 5)).toHaveLength(1);
+  });
+});
+
+describe('units stay with their number', () => {
+  it('glueUnits joins a number and c or Hz with a no-break space, and nothing else', () => {
+    expect(glueUnits('21.5 c flat, 392.44 Hz')).toBe('21.5\u00a0c flat, 392.44\u00a0Hz');
+    expect(glueUnits('a 5 chord, 3 cents, 2 of 7')).toBe('a 5 chord, 3 cents, 2 of 7');
   });
 });

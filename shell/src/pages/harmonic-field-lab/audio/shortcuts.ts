@@ -16,6 +16,18 @@ export const SHORTCUTS = {
   holdField: '4',
   /** Hold: the armed chord with its exact ratios on the pointed note. */
   holdExact: '5',
+  /** Melody keys down by one repeat (`keymap.ts` `shiftOfEvent`, by physical key first). */
+  shiftDown: ',',
+  /** Melody keys up by one repeat. */
+  shiftUp: '.',
+  /** Shelf page back (`keymap.ts` `pageOfEvent`). */
+  pageBack: '[',
+  /** Shelf page forward. */
+  pageNext: ']',
+  /** Stashes the current Sketch on the shelf (`useLabAudio.ts`; `+`, the same physical key, does too). */
+  stash: '=',
+  /** Opens the composite popup on what the pointer is on (`Send.tsx`); closes it again while open. */
+  composite: '-',
 } as const;
 
 export type ShortcutName = keyof typeof SHORTCUTS;

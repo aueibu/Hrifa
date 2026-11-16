@@ -8,7 +8,7 @@
  * - new: `{ term, help, teaching?, see? }`, arrays of blocks (`p`, `example`, `keys`). Block text is markup: `**bold**`,
  *   `*italic*`, `{key:name}` (a key from `audio/shortcuts.ts`).
  */
-import { plainText, type Block } from './markup';
+import { legacyBlocks, plainText, type Block } from './markup';
 
 export type { Block } from './markup';
 
@@ -30,11 +30,11 @@ export interface TextEntry {
   term: string;
   /** All text as one plain string (markup removed): search, native `title`s, old readers. */
   text: string;
-  /** The tooltip blocks (an old-form entry: its `text` as one paragraph). */
+  /** The tooltip blocks (an old-form entry: its `text` cut into a paragraph and its `Example:` blocks). */
   help: readonly Block[];
   /** The glossary-only blocks (empty for an old-form entry). */
   teaching: readonly Block[];
-  /** True for an old-form entry (rendered as one plain string). */
+  /** True for an old-form entry (still a single string in `texts.ts`; rendered through the same blocks as the new form). */
   legacy: boolean;
   /** Other entries worth reading next. */
   see?: readonly string[];
@@ -55,7 +55,7 @@ export function normalizeEntry(src: TextEntrySource): TextEntry {
     return {
       term: src.term,
       text: src.text,
-      help: [p(src.text)],
+      help: legacyBlocks(src.text),
       teaching: [],
       legacy: true,
       see: src.see,
@@ -75,17 +75,39 @@ const entries = {
   /* ---- top bar ---- */
   wave: {
     term: 'Wave',
-    text: 'The timbre the keys and Play buttons make. Sine is a pure tone with no overtones, so the slow beating between close notes is easiest to hear. Harmonic (7 partials) adds six overtones to every note, each 0.88 times as loud as the one below, which is the same sound the roughness score and the dissonance curve assume, so what you hear matches what they measure. Example: play 5/4 with 1/1 on Sine, then on Harmonic: the harmonic version beats less where the overtones line up (4:5) and more where they nearly miss.',
+    help: [
+      p(
+        'The timbre the keys and Play buttons make. **Sine** is a pure tone with no overtones, so the slow beating between close notes is easiest to hear. **Harmonic (7 partials)** adds six overtones to every note, each 0.88 times as loud as the one below.'
+      ),
+      example(
+        'play 5/4 with 1/1 on **Sine**, then on **Harmonic (7 partials)**: the harmonic version beats less where the overtones line up (4:5) and more where they nearly miss.'
+      ),
+    ],
+    teaching: [
+      p(
+        'The harmonic wave is the same sound the roughness score and the dissonance curve assume, so what you hear matches what they measure.'
+      ),
+    ],
     see: ['roughness'],
   },
   baseHz: {
     term: '1/1 Hz',
-    text: 'The pitch, in hertz, that the root of the scale (1/1) sounds at. Every other note is this frequency times its ratio. Example: 261.63 Hz is middle C, so 3/2 sounds at 392.44 Hz.',
+    help: [
+      p(
+        'The pitch, in hertz, that the root of the scale (1/1) sounds at. Every other note is this frequency times its ratio.'
+      ),
+      example('with 1/1 at 261.63 Hz (middle C), 3/2 sounds at 392.44 Hz.'),
+    ],
     see: ['modePlayback'],
   },
   volume: {
     term: 'Volume',
-    text: 'Output level of everything the lab plays. Chords add up, so a four-note chord is louder than one note at the same setting. Example: at 50 a single sine is comfortable; four notes together may need 30.',
+    help: [
+      p(
+        'Output level of everything the lab plays. Chords add up, so a four-note chord is louder than one note at the same setting.'
+      ),
+      example('at 50 a single sine is comfortable; four notes together may need 30.'),
+    ],
   },
   playScale: {
     term: 'Play scale',
@@ -102,19 +124,56 @@ const entries = {
   },
   playChord: {
     term: 'Play chord',
-    text: "Plays a chord. If a chord is highlighted (point at a chord chip, or click one to keep it), it plays that chord at the chord's own pitches above the 1/1 Hz setting; otherwise it plays all selected notes together from the mode root. Example: with 1/1, 5/4 and 3/2 selected and nothing highlighted you hear a just major triad, 4:5:6; with the minor triad 10:12:15 on 5/4 highlighted you hear that triad instead.",
+    help: [
+      p(
+        "Plays a chord. If a chord is highlighted (point at a chord chip, or click one to keep it), it plays that chord at the chord's own pitches above the **1/1 Hz** setting. Otherwise it plays all selected notes together from the mode root."
+      ),
+      example(
+        'with 1/1, 5/4 and 3/2 selected and nothing highlighted you hear a just major triad, 4:5:6.'
+      ),
+    ],
+    teaching: [
+      example('with the minor triad 10:12:15 on 5/4 highlighted you hear that triad instead.'),
+    ],
   },
   stop: {
     term: 'Stop',
-    text: 'Silences everything that is sounding, including held keys. Example: press it if a note keeps sounding after you switch tabs.',
+    help: [
+      p('Silences everything that is sounding, including held keys.'),
+      example('press it if a note keeps sounding after you switch tabs.'),
+    ],
   },
   tabs: {
     term: 'Tunings (tabs)',
-    text: 'Each tab is a separate tuning with its own generator settings, field and subset, so you can compare ideas without losing one. Click a tab to switch (Alt+1 to Alt+9 also works), double-click its name to rename it (clear the name to get the automatic one back), click the cross to close it, the copy button to duplicate it, and the plus to add a new one. Example: keep "Harmonics 8-15" in one tab and 19-EDO in another.',
+    help: [
+      p(
+        'Each tab is a separate tuning with its own generator settings, field and subset, so you can compare ideas without losing one.'
+      ),
+      keys([
+        { key: 'Click a tab', does: 'switch to it' },
+        { key: 'Alt+1 to Alt+9', does: 'switch to that tab by number' },
+        { key: 'Double-click its name', does: 'rename it' },
+      ]),
+      example('keep "Harmonics 8-15" in one tab and 19-EDO in another.'),
+    ],
+    teaching: [
+      p('Clear the name when renaming to get the automatic one back.'),
+      p(
+        'The cross closes a tab, the copy button duplicates it (see Duplicate tab), and the plus adds a new one.'
+      ),
+    ],
+    see: ['duplicateTab'],
   },
   duplicateTab: {
     term: 'Duplicate tab',
-    text: 'Copies the current tuning into a new tab right after it, named "<name> copy": same generator settings, same selected notes, same mode root. Change the copy freely and the original stays as it was. Example: duplicate "Harmonics 8-15", then switch the copy to a different starting harmonic to compare the two.',
+    help: [
+      p(
+        'Copies the current tuning into a new tab right after it, named after the original with " copy" added: same generator settings, same selected notes, same mode root. Change the copy freely and the original stays as it was.'
+      ),
+      example(
+        'duplicate "Harmonics 8-15", then switch the copy to a different starting harmonic to compare the two.'
+      ),
+    ],
     see: ['tabs'],
   },
   holdToPlay: {
@@ -168,46 +227,170 @@ const entries = {
   },
   modePlayback: {
     term: 'Mode playback (Parallel | Relative)',
-    text: 'Where the current mode sounds: mode previews, Play scale, Play chord and the computer keys (z is the mode root). In C major, Mode 2 is Dorian. Parallel plays it from the 1/1 pitch (C Dorian), the way the grid measures it, so the tonic stays put and the scale changes around it; Relative plays it from its own root 9/8 (D Dorian), so every note keeps its own pitch. In mode previews the listed-vs-pure comparison is the same, only moved. Press 0 to switch. In Relative a sounding tone lights a field note only where it lands exactly on one.',
+    help: [
+      p(
+        'Where the current mode sounds: mode previews, **Play scale**, **Play chord** and the computer keys (z is the mode root). **Parallel** plays it from the 1/1 pitch, the way the grid measures it, so the tonic stays put and the scale changes around it. **Relative** plays it from its own root, so every note keeps its own pitch.'
+      ),
+      keys([{ key: '{key:modePlayback}', does: 'switch Parallel | Relative' }]),
+      example(
+        'in C major, Mode 2 is Dorian: Parallel plays C Dorian from the 1/1 pitch, Relative plays D Dorian from its own root 9/8.'
+      ),
+    ],
+    teaching: [
+      p('In mode previews the listed-vs-pure comparison is the same, only moved.'),
+      p('In Relative a sounding tone lights a field note only where it lands exactly on one.'),
+    ],
     see: ['modes', 'holdToPlay', 'baseHz', 'mode'],
   },
   keyboardMode: {
     term: 'Keyboard mode (Notes | Chords | Split)',
-    text: 'What the computer keys play. Notes: z x c v b n m a s d f g h j k l are the melody keys (the subset, degree by degree). Chords: q w e r t y u i o p play the first ten shelf chords of the current page, in shelf order; [ and ] page the shelf by ten. Split: the melody keys play the subset and q to p play shelf chords at the same time. Keys sound while held. The modes also take over the keys while the retuner is live (the dock shows the mode). Example: Split, stash a few chords, then hold q for a chord and play a melody over it. Other keys: 0 switches Parallel | Relative, = stashes the Sketch, , and . shift the melody, Alt+1 to Alt+9 switch tabs, and - (while pointing at something) opens the composite popup, which takes the digits while it is open.',
+    help: [
+      p(
+        'What the computer keys play. **Notes**: z x c v b n m a s d f g h j k l are the melody keys (the subset, degree by degree). **Chords**: q w e r t y u i o p play the first ten shelf chords of the current page, in shelf order. **Split**: both at once. Keys sound while held.'
+      ),
+      keys([
+        { key: '{key:pageBack}', does: 'previous page of the shelf (ten chords)' },
+        { key: '{key:pageNext}', does: 'next page of the shelf (ten chords)' },
+      ]),
+      example('Split, stash a few chords, then hold q for a chord and play a melody over it.'),
+    ],
+    teaching: [
+      p('The modes also take over the keys while the retuner is live (the dock shows the mode).'),
+      p('Other keys:'),
+      keys([
+        { key: '{key:modePlayback}', does: 'switches Parallel | Relative' },
+        { key: '{key:stash}', does: 'stashes the Sketch' },
+        { key: '{key:shiftDown} and {key:shiftUp}', does: 'shift the melody down or up' },
+        { key: 'Alt+1 to Alt+9', does: 'switch tabs' },
+        {
+          key: '{key:composite}',
+          does: 'while pointing at something, opens the composite popup, which takes the digits while it is open',
+        },
+      ]),
+    ],
     see: ['linkedMelody', 'shelfPanel', 'octShift', 'keyboardDock', 'sendToComposite'],
   },
   linkedMelody: {
     term: 'Linked melody',
-    text: "Off by default. When on (Split mode), pressing a chord key makes the melody keys play the scale the chord came from (its source subset), on the chord's own root, following Parallel | Relative like the shelf does. Melody root decides how: Transpose moves the source scale rigidly so its mode root lands on the chord's root (a C major scale over a C chord, a D major scale over a D chord); Re-root plays the same notes of the source scale starting from the chord's root (D E F G A B C over D) and falls back to Transpose when the root is not one of them. Audio only: the views stay on the current tab and light only where a sounding pitch matches one of its notes (a ghost mark shows the rest). The last chord pressed stays linked until you press another chord key, change the mode or this option, or switch tab. A chord with no source leaves the melody on the active subset.",
+    help: [
+      p(
+        "Off by default. When on (Split mode), pressing a chord key makes the melody keys play the scale the chord came from (its source subset), on the chord's own root, following Parallel | Relative like the shelf does. Melody root decides how."
+      ),
+      example(
+        'a chord whose source scale is C major, rooted on D, heard in Relative: with **Transpose** the melody keys play D major.'
+      ),
+    ],
+    teaching: [
+      p(
+        "**Transpose** moves the source scale rigidly so its mode root lands on the chord's root (a C major scale over a C chord, a D major scale over a D chord)."
+      ),
+      p(
+        "**Re-root** plays the same notes of the source scale starting from the chord's root, and falls back to Transpose when the root is not one of them."
+      ),
+      example('Re-root over a D chord, with C major as the source scale: D E F G A B C.'),
+      p(
+        'Audio only: the views stay on the current tab and light only where a sounding pitch matches one of its notes (a ghost mark shows the rest).'
+      ),
+      p(
+        'The last chord pressed stays linked until you press another chord key, change the mode or this option, or switch tab.'
+      ),
+      p('A chord with no source leaves the melody on the active subset.'),
+    ],
     see: ['keyboardMode', 'linkedRoot', 'shelfPanel', 'modePlayback'],
   },
   linkedRoot: {
     term: 'Melody root (Transpose | Re-root)',
-    text: "How the linked melody sits on the chord's root. Transpose: the source scale keeps its shape and moves so its mode root is the chord's root (C major over D becomes D major, so some notes may be off the current field and show as ghosts). Re-root: the scale keeps its own notes and is read from the chord's root (C major over D becomes D Dorian); if the root is not a note of the scale, Transpose is used for that chord. Shown while Linked melody is on. Until you choose, the Developer menu default applies.",
+    help: [
+      p(
+        "How the linked melody sits on the chord's root. **Transpose**: the source scale keeps its shape and moves so its mode root is the chord's root. **Re-root**: the scale keeps its own notes and is read from the chord's root."
+      ),
+      example('in Relative, C major over D: Transpose gives D major, Re-root gives D Dorian.'),
+    ],
+    teaching: [
+      p('With Transpose some notes may be off the current field and show as ghosts.'),
+      p('If the root is not a note of the scale, Transpose is used for that chord.'),
+      p('Shown while **Linked melody** is on.'),
+      p('Until you choose, the Developer menu default applies.'),
+    ],
     see: ['linkedMelody', 'linkedRootDefault'],
   },
   linkedRootDefault: {
     term: 'Linked melody root default',
-    text: 'Which Melody root (Transpose or Re-root) the linked melody uses until you pick one in the top bar. Once you pick, your choice is stored and this default no longer matters. Changing it here changes the current default straight away if you have not picked.',
+    help: [
+      p(
+        'Which Melody root (Transpose or Re-root) the linked melody uses until you pick one in the top bar. Once you pick, your choice is stored and this default no longer matters.'
+      ),
+      example(
+        'with this default on Re-root and nothing picked in the top bar, the linked melody re-roots; once you pick Transpose there, it transposes whatever the default says.'
+      ),
+    ],
+    teaching: [
+      p('Changing it here changes the current default straight away if you have not picked.'),
+    ],
     see: ['linkedRoot', 'linkedMelody', 'developerMenu'],
   },
   octShift: {
     term: 'Octave shift (, and .)',
-    text: "Press , to move the melody keys down and . to move them up by one repeat of the generator (an octave for 2/1, a tritave for Bohlen-Pierce 3/1), up to 4 either way. A key you are already holding keeps its pitch. It applies to the retuner's keys too and resets when the page reloads.",
+    help: [
+      p(
+        'Moves the melody keys down or up by one repeat of the generator (an octave for 2/1, a tritave for Bohlen-Pierce 3/1), up to 4 either way.'
+      ),
+      keys([
+        { key: '{key:shiftDown}', does: 'down one repeat' },
+        { key: '{key:shiftUp}', does: 'up one repeat' },
+      ]),
+      example(
+        'in a 2/1 scale, press {key:shiftUp} twice and the melody keys sound two octaves higher.'
+      ),
+    ],
+    teaching: [
+      p('A key you are already holding keeps its pitch.'),
+      p("It applies to the retuner's keys too and resets when the page reloads."),
+    ],
     see: ['keyboardMode', 'keyboardDock'],
   },
   scalePreview: {
     term: 'Scale preview',
-    text: 'How every scale preview runs, both Play scale and the preview of a key in Keys & Modes. Up plays the notes from the root up to the repeat. Up-down plays up and then comes back down to the root. Example: for 1/1, 9/8, 5/4 and a 2/1 repeat, Up plays 1/1 9/8 5/4 2/1; Up-down plays 1/1 9/8 5/4 2/1 5/4 9/8 1/1.',
+    help: [
+      p(
+        'How every scale preview runs, both **Play scale** and the preview of a key in **Keys & Modes**. **Up** plays the notes from the root up to the repeat. **Up-down** plays up and then comes back down to the root.'
+      ),
+      example(
+        'for 1/1, 9/8, 5/4 and a 2/1 repeat, Up plays 1/1 9/8 5/4 2/1; Up-down plays 1/1 9/8 5/4 2/1 5/4 9/8 1/1.'
+      ),
+    ],
     see: ['playScale', 'keyRings'],
   },
   glossary: {
     term: 'Glossary',
-    text: 'Every explanation in the lab in one searchable list. Hovering any label shows the same text. Example: search "comma" to find the syntonic comma and the drift readout.',
+    help: [
+      p(
+        'Every explanation in the lab in one searchable list. Hovering a label shows its short help; the glossary adds the longer teaching.'
+      ),
+      example('search "comma" to find the syntonic comma and the drift readout.'),
+    ],
   },
   keyboardDock: {
     term: 'Keyboard',
-    text: 'The notes of your subset as playable keys, one octave from the mode root. Click a key or press z, x, c, v, b, n, m and then a, s, d, f, g, h, j, k, l (16 keys) to climb up the subset; , and . shift the whole melody down or up by one repeat (Oct in the dock). The Keyboard mode switch can give the top row q to p to the shelf chords. The dock stays at the bottom so the keys are always next to the views they light. Example: collapse it when you only want to read; open it to play the scale while watching the circle.',
+    help: [
+      p(
+        'The notes of your subset as playable keys, one octave from the mode root. Click a key or press z, x, c, v, b, n, m and then a, s, d, f, g, h, j, k, l (16 keys) to climb up the subset.'
+      ),
+      keys([
+        {
+          key: '{key:shiftDown}',
+          does: 'shift the whole melody down by one repeat (Oct in the dock)',
+        },
+        { key: '{key:shiftUp}', does: 'shift the whole melody up by one repeat (Oct in the dock)' },
+      ]),
+      example(
+        'collapse it when you only want to read; open it to play the scale while watching the circle.'
+      ),
+    ],
+    teaching: [
+      p('The Keyboard mode switch can give the top row q to p to the shelf chords.'),
+      p('The dock stays at the bottom so the keys are always next to the views they light.'),
+    ],
   },
 
   /* ---- generator ---- */
@@ -922,7 +1105,12 @@ const entries = {
   },
   soundMenu: {
     term: 'Sound settings',
-    text: 'Wave shape, the pitch of 1/1 in hertz, volume and where a mode root lands. Example: set 1/1 to 261.63 Hz for middle C and pick Sine to hear beating most clearly.',
+    help: [
+      p('Wave shape, the pitch of 1/1 in hertz, volume and the direction of scale previews.'),
+      example(
+        'set **1/1 Hz** to 261.63 Hz for middle C and pick **Sine** to hear beating most clearly.'
+      ),
+    ],
     see: ['wave', 'baseHz', 'volume', 'modePlayback'],
   },
   stepBars: {

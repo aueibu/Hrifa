@@ -127,3 +127,33 @@ Source of the next block ("Bitwig study", 2026-11-12): a read-only comparison of
 - [harmonic-field-lab] Chord shelf: two browser windows stashing at nearly the same moment both create the same chord id and the last writer drops one (same last-writer-wins race as the M7b library).
 - [harmonic-field-lab] Composite gamuts follow-ups: live-linked composite tabs (the tab follows later edits), per-composite repeat chooser, colours per origin note (M8c parks these).
 - [harmonic-field-lab] Composite merge across the repeat boundary: merging is linear, so 1197 c and 0 c stay separate; wrap-merging (keeping the 1/1 note from being replaced) is a candidate follow-up.
+
+## Ideas (2026-11-16)
+- [harmonic-field-lab] **Sound world generator: describe a feeling, get a generator and subsets** (human idea 2026-11-16, from a conversation during the help-text arc). The human asked: given what is known about the app and the music theory behind it, could they describe an idea or feeling and get a proposed generator plus 3 to 5 subsets, and could that eventually be logic baked into the tool, a sound world generator of sorts, with tunable parameters giving results that fit, "almost like the pareto front from before where one of the solutions is among many good enough". The answer given in that conversation, verbatim:
+
+  > Yes, I can do part of this today. The rest would make a good arc of its own. One note first: I searched the lab for a Pareto front and found none (the only "pareto" matches are inside the word "compareTo"). So I'm taking your meaning conceptually: many solutions that are good enough, and you pick one.
+  >
+  > ## What I can do now
+  > Describe a feeling and I propose a generator plus 3 to 5 subsets, with the reasoning. For example, "dusk in late autumn, hollow, a little unsettled" might become an otonal harmonic segment as the generator, a sparse pentatonic subset with a 7-limit seventh, a utonal mirror, and one subset built around a nearly-in-tune interval, so you hear beating that doesn't resolve. That's a sketch, not a scored result.
+  >
+  > What I can add beyond guessing is checking. The library behind the lab (`src/lib/harmonic-field`) has the roughness and dissonance scorers. I can run candidates through them in a script and tell you the numbers before you ever press Play. What I can't do is hear. The mapping from a feeling to a measurable quantity is a judgement call, and you'd correct it by ear.
+  >
+  > ## Could it be built into the tool?
+  > Yes, and your Pareto instinct is the right shape. It would be a "sound world" finder:
+  > 1. **A few perceptual axes**, each tied to something the lab already measures:
+  >    - smooth ↔ rough, from the roughness score
+  >    - stable ↔ ambiguous, from how many notes sit near simple ratios, or from chord error
+  >    - sparse ↔ dense, from note count and step sizes
+  >    - bright ↔ dark, from where in the harmonic series the field lives
+  >    - familiar ↔ alien, from distance to 12-EDO
+  > 2. **A search** over the generator space. The lab already has six methods (harmonic, sub, edo, lattice, cps, custom), each with parameters, and a subset picker with "Smoothest" and "Scale order".
+  > 3. **A front, not a winner.** Keep the candidates nobody beats on every axis, then choose 3 to 5 that are far apart from each other, so the shortlist is a spread of options and not five near-duplicates. You hover them to hear them.
+  >
+  > `★ Insight ─────────────────────────────────────`
+  > - **With five axes, almost everything is "non-dominated."** A true Pareto front over that many objectives is huge, so it needs weights from your description, a quality cutoff, and an explicit diversity step (pick the candidates farthest apart). That diversity step is the part that makes the output feel like options and not noise.
+  > - **The feeling-to-axes step is the soft part, and it needn't be baked in.** It can stay a plain-language step where I translate your words into axis targets once. Everything after that, the search, the scoring and the choosing, is deterministic and runs in the tool without a model. That keeps the tool honest: same inputs, same results.
+  > - **Your ratings could tune it.** If you mark candidates good or bad, the axis weights can be adjusted so the tool learns what "hollow" means to you.
+  > `─────────────────────────────────────────────────`
+  >
+  > ## Where it would fit
+  > It would be a new arc, after the current help-text arc, with these parts: the axes and their measures, the search with the diversity pick, and a panel that plays the candidates. It builds on the generator and library work that's already finished. I can add it to `BACKLOG.md` as an item if you want it recorded, and the current arc is unaffected.

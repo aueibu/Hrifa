@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Menu, SegmentedControl } from '@mantine/core';
 import { samePitches, type Note } from '../../../lib/harmonic-field';
 import { isTyping } from '../audio/keymap';
+import { SHORTCUTS } from '../audio/shortcuts';
 import type { ShelfChord } from '../state/chordShelf';
 import {
   freeCompositeId,
@@ -565,7 +566,7 @@ export function SendLayer() {
         if (e.ctrlKey || e.metaKey) {
           return;
         }
-        if (e.key === 'Escape' || e.key === '-') {
+        if (e.key === 'Escape' || e.key === SHORTCUTS.composite) {
           markSendKey(e);
           e.preventDefault();
           closeSendPopup();
@@ -602,7 +603,7 @@ export function SendLayer() {
         return;
       }
       if (
-        e.key !== '-' ||
+        e.key !== SHORTCUTS.composite ||
         e.repeat ||
         e.ctrlKey ||
         e.altKey ||
