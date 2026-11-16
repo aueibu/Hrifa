@@ -2489,3 +2489,12 @@
 .liveRough[data-state] .liveBlank {
   visibility: hidden;
 }
+
+/* A disabled button fires no pointer events: this host takes them so its tooltip still shows. Same size and place as the button. */
+.hintHost {
+  display: inline-flex;
+}
+
+.hintHost > :disabled {
+  pointer-events: none;
+}

@@ -4,8 +4,11 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
+  cloneElement,
+  type ReactElement,
   type ReactNode,
 } from 'react';
 import {
@@ -15,6 +18,7 @@ import {
   TextInput,
   Tooltip,
   type NumberInputProps,
+  type TooltipProps,
   type TextareaProps,
   type TextInputProps,
 } from '@mantine/core';
@@ -40,49 +44,135 @@ export function useTooltipProps() {
   return { disabled: !o.tooltips, openDelay: o.tooltipDelay };
 }
 
+interface NestReporter {
+  enter: () => void;
+  leave: () => void;
+}
+const NestContext = createContext<NestReporter | null>(null);
+
 /**
- * For a native `title` attribute (the browser shows it after its own fixed delay, which cannot be changed): the text while
- * tooltips are on, nothing while they are off.
+ * Innermost tooltip wins (as a native `title` did). A tooltip whose reference contains another tooltip's reference would
+ * open both bubbles in a browser (the outer's `mouseenter` fires once and entering the child does not end it). Each lab
+ * tooltip reports to the nearest tooltip above it while its own reference is hovered or focused; that one is hidden
+ * (`disabled`) meanwhile. Its open state is untouched, so it shows again as soon as the pointer is back on its own area.
  */
-export function useNativeTitle() {
-  const [o] = useLabDeveloperOptions();
-  return (text: string | undefined) => (o.tooltips ? text : undefined);
+export function LabTooltip({
+  children,
+  disabled,
+  ...rest
+}: TooltipProps & { children: ReactElement }) {
+  const parent = useContext(NestContext);
+  const [inner, setInner] = useState(0);
+  const hovered = useRef(false);
+  const focused = useRef(false);
+  const reported = useRef(false);
+  const off = useRef(false);
+  off.current = Boolean(disabled);
+  const mine = useMemo<NestReporter>(
+    () => ({
+      enter: () => setInner((n) => n + 1),
+      leave: () => setInner((n) => Math.max(0, n - 1)),
+    }),
+    []
+  );
+  const sync = () => {
+    const active = (hovered.current || focused.current) && !off.current;
+    if (active === reported.current) {
+      return;
+    }
+    reported.current = active;
+    if (active) {
+      parent?.enter();
+    } else {
+      parent?.leave();
+    }
+  };
+  useEffect(
+    () => () => {
+      if (reported.current) {
+        parent?.leave();
+      }
+    },
+    [parent]
+  );
+  const props = children.props as Record<string, ((e: unknown) => void) | undefined>;
+  const wrap = (name: string, set: () => void) => (e: unknown) => {
+    set();
+    sync();
+    props[name]?.(e);
+  };
+  const child = cloneElement(children, {
+    onMouseEnter: wrap('onMouseEnter', () => (hovered.current = true)),
+    onMouseLeave: wrap('onMouseLeave', () => (hovered.current = false)),
+    onFocus: wrap('onFocus', () => (focused.current = true)),
+    onBlur: wrap('onBlur', () => (focused.current = false)),
+  } as object);
+  return (
+    <NestContext.Provider value={mine}>
+      <Tooltip {...rest} disabled={disabled || inner > 0}>
+        {child}
+      </Tooltip>
+    </NestContext.Provider>
+  );
 }
 
-/** The tooltip body for an entry: term, paragraphs, the dynamic text, then the example and the keys. Old-form entries as before. */
-function TipBody({ entry, extra }: { entry: TextEntry; extra?: string }) {
-  const paragraphs = entry.help.filter((b) => b.kind === 'p');
-  const rest = [
-    ...entry.help.filter((b) => b.kind === 'example'),
-    ...entry.help.filter((b) => b.kind === 'keys'),
-  ];
+/** The tooltip body: the entry's term, the dynamic text, paragraphs, then the keys and the example (or just a bold `label` and the dynamic text). */
+function TipBody({
+  entry,
+  extra,
+  label,
+}: {
+  entry?: TextEntry;
+  extra?: ReactNode;
+  label?: string;
+}) {
+  const legacy = entry?.legacy ?? false;
+  const paragraphs = entry?.help.filter((b) => b.kind === 'p') ?? [];
+  const rest = entry
+    ? [
+        ...entry.help.filter((b) => b.kind === 'keys'),
+        ...entry.help.filter((b) => b.kind === 'example'),
+      ]
+    : [];
+  const title = entry?.term ?? label;
+  const dynamicBlock = extra && (
+    <Text
+      span
+      display="block"
+      mt={legacy ? 4 : title ? '0.5em' : 0}
+      className={legacy ? undefined : classes.helpDynamic}
+    >
+      {extra}
+    </Text>
+  );
+  // new form: term, dynamic line, help paragraphs, keys, example; old form: term, text, then the extra line below
+  const lead = Boolean(title) || Boolean(extra);
   return (
     <>
-      <Text span fw={600} display="block">
-        {entry.term}
-      </Text>
-      {entry.legacy ? (
-        entry.text
-      ) : (
-        <>
-          {paragraphs.map((b, i) => (
-            <BlockView key={`p${i}`} block={b} first={i === 0} />
-          ))}
-        </>
-      )}
-      {extra && (
-        <Text
-          span
-          display="block"
-          mt={entry.legacy ? 4 : '0.5em'}
-          className={entry.legacy ? undefined : classes.helpDynamic}
-        >
-          {extra}
+      {title && (
+        <Text span fw={600} display="block">
+          {title}
         </Text>
       )}
-      {!entry.legacy &&
+      {!legacy && dynamicBlock}
+      {entry &&
+        (legacy ? (
+          entry.text
+        ) : (
+          <>
+            {paragraphs.map((b, i) => (
+              <BlockView key={`p${i}`} block={b} first={i === 0 && !extra} />
+            ))}
+          </>
+        ))}
+      {legacy && dynamicBlock}
+      {!legacy &&
         rest.map((b, i) => (
-          <BlockView key={`r${i}`} block={b} first={paragraphs.length === 0 && !extra && i === 0} />
+          <BlockView
+            key={`r${i}`}
+            block={b}
+            first={paragraphs.length === 0 && !extra && i === 0 && !lead}
+          />
         ))}
     </>
   );
@@ -93,7 +183,7 @@ export function Tip({ k, children, as = 'label', block, extra }: TipProps) {
   const entry = TIPS[k];
   const tipProps = useTooltipProps();
   return (
-    <Tooltip
+    <LabTooltip
       multiline
       w={300}
       {...tipProps}
@@ -114,7 +204,43 @@ export function Tip({ k, children, as = 'label', block, extra }: TipProps) {
           {children}
         </span>
       )}
-    </Tooltip>
+    </LabTooltip>
+  );
+}
+
+interface HintProps {
+  /** One element that can take a ref; the tooltip adds no wrapper of its own. */
+  children: ReactElement;
+  /** Fixed help from the glossary entry, shown as `Tip` shows it. */
+  k?: TipKey;
+  /** A bold first line, when there is no `k`. */
+  label?: string;
+  /** The dynamic block (same colour as the rest): after the help paragraphs, before the keys. */
+  dynamic?: ReactNode;
+  disabled?: boolean;
+  position?: 'top' | 'bottom';
+}
+
+/**
+ * A tooltip on an existing element, for text built from the current values (it replaces a native `title`). Same look, delay and
+ * on/off as `Tip` (Developer menu); the child keeps its own size and position.
+ */
+export function Hint({ children, k, label, dynamic, disabled, position = 'top' }: HintProps) {
+  const tipProps = useTooltipProps();
+  return (
+    <LabTooltip
+      multiline
+      w={300}
+      {...tipProps}
+      disabled={tipProps.disabled || disabled}
+      position={position}
+      events={{ hover: true, focus: true, touch: true }}
+      label={
+        <TipBody entry={k ? TIPS[k] : undefined} label={k ? undefined : label} extra={dynamic} />
+      }
+    >
+      {children}
+    </LabTooltip>
   );
 }
 

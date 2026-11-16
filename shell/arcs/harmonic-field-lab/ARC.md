@@ -23,6 +23,10 @@ Facts found at drafting time (2026-11-15), so decisions start from the code, not
 
 - **M1 decisions (human, 2026-11-15), full text in `HELP-FORMAT.md`:** help (tooltip, about 300 to 500 characters) vs teaching (glossary only); block kinds term, paragraph, `Example:`, `Keys:`, dynamic; bold for names you can find, italic only for the `Example:` label and terms being defined; dynamic block after a blank line, muted plain (S4 = A); S5 layout as mocked; dynamic native titles move to the styled tooltip (S6 = B); which controls get a tooltip is decided at the M4 to M7 reviews; the Parallel | Relative switch is key 0 (`modes` text said 5, to be fixed).
 
+- **M2 checkpoint (human, 2026-11-16): approved.** Order is keys first, then the example last, in the tooltip and in the glossary help (HELP-FORMAT section 2 updated). `Hover and hold 1 (and 4, 5)` stays glossary-only for now (no hover target; revisit at the M4 to M7 panel reviews).
+
+- **M3 look decisions (human, 2026-11-16):** the dynamic line goes FIRST, directly under the term (fixed position, not buried in variable-length help); the whole tooltip is ONE uniform colour (the dynamic line is not muted; supersedes S4 = A). Tooltip order: term, dynamic, help, keys, example last.
+
 ## Preconditions
 - `check:hfl` is green before M1 (last arc closed green at 92 files, 1277 tests). If red, stop and report.
 

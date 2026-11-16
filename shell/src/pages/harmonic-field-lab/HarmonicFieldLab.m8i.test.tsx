@@ -65,7 +65,7 @@ describe('M8i grouped chord cards (12-EDO, all 12 notes)', () => {
     // header counts: n (m): the chords and the unique shapes they make once grouped; the sentence is the title
     const head = (id: string) => document.querySelector(`[data-fold="${id}"]`) as HTMLElement;
     expect(head('families').textContent).toMatch(/Ratio chords\d+ \(\d+\)$/);
-    expect(head('families').querySelector('[title]')?.getAttribute('title')).toMatch(
+    expect(within(head('families')).getByRole('note').getAttribute('aria-label')).toMatch(
       /^\d+ total chords here \(\d+ unique chords once shapes are grouped\)$/
     );
     // the tree guide of the Triads block folds it like the header button (same id, so it is remembered)

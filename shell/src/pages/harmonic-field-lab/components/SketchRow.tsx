@@ -16,12 +16,13 @@ import {
   type ChordTemplate,
   type Note,
 } from '../../../lib/harmonic-field';
+import { SHORTCUTS } from '../audio/shortcuts';
 import { OTHER_FAMILY, familyOrder, noteLabel } from '../state/derive';
 import { autoName } from '../state/generate';
 import { sketchPositionalPitches } from '../state/sketchChord';
 import { PlayIcon } from './icons';
 import { tooFewHint } from './Positional';
-import { Num, Tip, severity, useLab, useNativeTitle } from './ui';
+import { Hint, Num, Tip, severity, useLab } from './ui';
 import { ValueList } from './ValueList';
 import classes from './panels.module.css';
 
@@ -62,7 +63,6 @@ export function SketchRow() {
   const lab = useLab();
   const { state, tab, base, dispatch, audio } = lab;
   const sk = state.shelf.sketch;
-  const nativeTitle = useNativeTitle();
   const templates = state.templates;
   const n = base.rel.length;
   // the first template is picked when the row opens with none
@@ -329,41 +329,40 @@ export function SketchRow() {
         </div>
       )}
       {pitches && pitches.length > 0 && (
-        <div
-          className={classes.sketchInfo}
-          data-testid="sketch-info"
-          title={nativeTitle(
-            'Point at any note and hold 4 to hear this chord on it as the field has it, 5 for the exact ratios (a positional chord gives the same notes for both).'
-          )}
+        <Hint
+          label="Hear this chord on any note"
+          dynamic={`Point at any note and hold ${SHORTCUTS.holdField} to hear this chord on it as the field has it, ${SHORTCUTS.holdExact} for the exact ratios (a positional chord gives the same notes for both).`}
         >
-          {naming ? (
-            <span className={classes.hint} data-testid="sketch-line">
-              {naming.label}
-              {naming.ratio ? ` · ${naming.ratio}` : ''}
-            </span>
-          ) : (
-            <span className={classes.hint} data-testid="sketch-name">
-              {templates.find((t) => t.text === sk.template)?.name ?? sk.template ?? ''}
-            </span>
-          )}
-          <span data-testid="sketch-cents">
-            <Num muted>
-              <ValueList text={`${pitches.map((p) => p.c.toFixed(1)).join(', ')} c`} />
-            </Num>
-          </span>
-          {pitches.length > 1 && (
-            <span data-testid="sketch-steps">
+          <div className={classes.sketchInfo} data-testid="sketch-info">
+            {naming ? (
+              <span className={classes.hint} data-testid="sketch-line">
+                {naming.label}
+                {naming.ratio ? ` · ${naming.ratio}` : ''}
+              </span>
+            ) : (
+              <span className={classes.hint} data-testid="sketch-name">
+                {templates.find((t) => t.text === sk.template)?.name ?? sk.template ?? ''}
+              </span>
+            )}
+            <span data-testid="sketch-cents">
               <Num muted>
-                <ValueList
-                  text={`steps ${pitches
-                    .slice(1)
-                    .map((p, i) => (p.c - pitches[i].c).toFixed(1))
-                    .join(', ')} c`}
-                />
+                <ValueList text={`${pitches.map((p) => p.c.toFixed(1)).join(', ')} c`} />
               </Num>
             </span>
-          )}
-        </div>
+            {pitches.length > 1 && (
+              <span data-testid="sketch-steps">
+                <Num muted>
+                  <ValueList
+                    text={`steps ${pitches
+                      .slice(1)
+                      .map((p, i) => (p.c - pitches[i].c).toFixed(1))
+                      .join(', ')} c`}
+                  />
+                </Num>
+              </span>
+            )}
+          </div>
+        </Hint>
       )}
     </div>
   );

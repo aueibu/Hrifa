@@ -83,7 +83,7 @@ describe('mode grid previews', () => {
       2 **
         (parseFloat(
           tile
-            .getAttribute('title')!
+            .getAttribute('aria-label')!
             .match(/[+−]\d+\.\d/)![0]
             .replace('−', '-')
         ) /

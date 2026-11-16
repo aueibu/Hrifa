@@ -23,7 +23,7 @@ import {
   type Row,
 } from '../state/presetTree';
 import { CloseIcon } from './icons';
-import { Num, Tip, useLab, useNativeTitle } from './ui';
+import { Hint, Num, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
 /** A folder path box with the existing folders suggested (a native datalist). */
@@ -145,7 +145,6 @@ export function PresetCrumb() {
 
 export function PresetBrowser() {
   const { state, owner, modified, dispatch } = useLab();
-  const nativeTitle = useNativeTitle();
   const lib = state.library;
   const uid = useId();
   const [opened, setOpened] = useState(false);
@@ -395,9 +394,11 @@ export function PresetBrowser() {
                       )}
                     </span>
                     {(count > 0 || user) && (
-                      <span title={nativeTitle(`${count} subset${count === 1 ? '' : 's'}`)}>
-                        <Num muted>{count}</Num>
-                      </span>
+                      <Hint label={`${count} subset${count === 1 ? '' : 's'}`}>
+                        <span>
+                          <Num muted>{count}</Num>
+                        </span>
+                      </Hint>
                     )}
                     {n.kind === 'preset' && user && n.userId && (
                       <span className={classes.pbActions}>

@@ -1,5 +1,5 @@
 /** Mode numbers from 1 in every display, signed mode-tile errors, the lab Developer menu. */
-import { fireEvent, render, screen, within } from '@test-utils';
+import { act, fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
@@ -73,9 +73,24 @@ describe('signed mode tiles', () => {
         expect(sign).toBe(MINUS);
         expect(aria).toMatch(/^Degree \d+: −\d+\.\d c \(flat\) from the nearest field note/);
       }
-      expect(t.getAttribute('title')).toBe(aria);
     }
     expect(sharp + flat).toBe(off.length);
+  });
+
+  it('hovering a tile shows the same sentence as a styled tooltip', async () => {
+    window.localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify({ tooltipDelay: 0 }));
+    resetDeveloperOptionsCache();
+    render(<HarmonicFieldLabPage />);
+    openModes();
+    const tile = screen
+      .getAllByRole('img')
+      .find((t) => /^Degree \d+: [+−]/.test(t.getAttribute('aria-label') ?? ''))!;
+    expect(tile.getAttribute('title')).toBeNull();
+    fireEvent.mouseEnter(tile);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(screen.getByRole('tooltip').textContent).toBe(tile.getAttribute('aria-label'));
   });
 
   it('the heat grid tooltip explains the sign with an example', () => {

@@ -4,10 +4,10 @@
  * right. The behaviours (hover, click, hold keys, send) stay with the caller: it passes the handlers and the texts.
  */
 import type { ReactNode } from 'react';
-import { Button, Tooltip } from '@mantine/core';
+import { Button } from '@mantine/core';
 import { ChevronDownIcon, PlusIcon } from './icons';
 import { ChordDrawing } from './ShelfPanel';
-import { Num, useNativeTitle, useTooltipProps } from './ui';
+import { Hint, LabTooltip, Num, useTooltipProps } from './ui';
 import { ValueList } from './ValueList';
 import classes from './panels.module.css';
 
@@ -50,7 +50,13 @@ export interface ChordCardProps {
   /** Trailing action buttons: the card is then a static box and only the ring is the play button (shelf cards). */
   actions?: ReactNode;
   /** Static cards: the ring button. */
-  ringButton?: { label: string; pressed: boolean; title?: string; onClick: () => void };
+  ringButton?: {
+    label: string;
+    pressed: boolean;
+    /** The styled tooltip: a bold first line and a sentence. */
+    hint?: { label: string; text?: string };
+    onClick: () => void;
+  };
   subtitle: string;
   pitches: string;
   steps: string;
@@ -73,7 +79,6 @@ export interface ChordCardProps {
 
 export function ChordCard(p: ChordCardProps) {
   const tipProps = useTooltipProps();
-  const nativeTitle = useNativeTitle();
   const Wrap = p.as ?? 'span';
   const titleLine = (
     <span className={classes.cardLine1} data-testid="card-title">
@@ -83,23 +88,40 @@ export function ChordCard(p: ChordCardProps) {
     </span>
   );
   const pitchCol = (
-    <span
-      className={classes.cardCol}
-      data-col="pitches"
-      title={nativeTitle(`${p.pitches}
-${p.steps}`)}
+    <Hint
+      position="bottom"
+      dynamic={
+        <>
+          <Num>{p.pitches}</Num>
+          <br />
+          <Num>{p.steps}</Num>
+        </>
+      }
     >
-      <span className={classes.cardLine1} data-testid="card-pitches">
-        <Num>
-          <ValueList text={p.pitches} />
-        </Num>
+      <span className={classes.cardCol} data-col="pitches">
+        <span className={classes.cardLine1} data-testid="card-pitches">
+          <Num>
+            <ValueList text={p.pitches} />
+          </Num>
+        </span>
+        <span className={classes.cardLine2} data-testid="card-steps">
+          <Num muted>
+            <ValueList text={p.steps} />
+          </Num>
+        </span>
       </span>
-      <span className={classes.cardLine2} data-testid="card-steps">
-        <Num muted>
-          <ValueList text={p.steps} />
-        </Num>
-      </span>
-    </span>
+    </Hint>
+  );
+  const ring = (
+    <button
+      type="button"
+      className={classes.cardRingBtn}
+      aria-label={p.ringButton?.label}
+      aria-pressed={p.ringButton?.pressed}
+      onClick={p.ringButton?.onClick}
+    >
+      <ChordDrawing cents={p.ring.cents} repC={p.ring.repC} rootCents={p.ring.cents[0]} />
+    </button>
   );
   if (p.actions) {
     return (
@@ -112,16 +134,13 @@ ${p.steps}`)}
           data-cps={p.cps}
         >
           <span className={classes.cardRing}>
-            <button
-              type="button"
-              className={classes.cardRingBtn}
-              aria-label={p.ringButton?.label}
-              aria-pressed={p.ringButton?.pressed}
-              title={p.ringButton?.title}
-              onClick={p.ringButton?.onClick}
-            >
-              <ChordDrawing cents={p.ring.cents} repC={p.ring.repC} rootCents={p.ring.cents[0]} />
-            </button>
+            {p.ringButton?.hint ? (
+              <Hint label={p.ringButton.hint.label} dynamic={p.ringButton.hint.text}>
+                {ring}
+              </Hint>
+            ) : (
+              ring
+            )}
           </span>
           <span className={classes.cardCol} data-col="title">
             {titleLine}
@@ -145,7 +164,7 @@ ${p.steps}`)}
       data-picked={p.group ? p.picked : undefined}
       data-testid={p.testId}
     >
-      <Tooltip label={p.label} multiline w={260} {...tipProps}>
+      <LabTooltip label={p.label} multiline w={260} {...tipProps}>
         <button
           type="button"
           className={classes.card}
@@ -174,7 +193,7 @@ ${p.steps}`)}
             {p.stat}
           </span>
         </button>
-      </Tooltip>
+      </LabTooltip>
       {p.group && (
         <span className={classes.groupRow}>
           <Button
@@ -190,15 +209,16 @@ ${p.steps}`)}
         </span>
       )}
       {p.stash && (
-        <button
-          type="button"
-          className={classes.chipStash}
-          aria-label={p.stash.label}
-          title={nativeTitle('Stash this chord on the shelf')}
-          onClick={p.stash.onStash}
-        >
-          <PlusIcon />
-        </button>
+        <Hint label="Stash this chord on the shelf">
+          <button
+            type="button"
+            className={classes.chipStash}
+            aria-label={p.stash.label}
+            onClick={p.stash.onStash}
+          >
+            <PlusIcon />
+          </button>
+        </Hint>
       )}
     </Wrap>
   );

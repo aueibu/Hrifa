@@ -2115,7 +2115,7 @@
 }
 
 .helpDynamic {
-  color: var(--text-muted);
+  color: inherit;
 }
 
 .helpKeys {

@@ -17,7 +17,7 @@ import {
   previewKind,
   signed,
   useLab,
-  useNativeTitle,
+  Hint,
 } from './ui';
 import classes from './lab.module.css';
 
@@ -59,7 +59,6 @@ export function RefLines({ thin }: { thin?: boolean }) {
 
 export function TunerStrip() {
   const lab = useLab();
-  const nativeTitle = useNativeTitle();
   const { base, tab, strip, selected, sounding, soundingMarks, dispatch } = lab;
   const { rel, repC, analysis } = base;
   const { cmp } = tab;
@@ -193,17 +192,16 @@ export function TunerStrip() {
                   // in a rotated mode the notes wrap round the repeat: place a step by its position above 1/1
                   const at = (base.rootC + (n.c + next) / 2) % repC;
                   return (
-                    <span
+                    <Hint
                       key={i}
-                      className={classes.stepCell}
-                      style={{ left: stripLeft(at, repC) }}
-                      title={nativeTitle(
-                        `Step ${analysis.stepLetters[i]}: ${analysis.steps[i].toFixed(2)} c`
-                      )}
+                      label={`Step ${analysis.stepLetters[i]}`}
+                      dynamic={<Num>{analysis.steps[i].toFixed(2)} c</Num>}
                     >
-                      <Num>{analysis.stepLetters[i]}</Num>
-                      <Num muted>{analysis.steps[i].toFixed(1)}</Num>
-                    </span>
+                      <span className={classes.stepCell} style={{ left: stripLeft(at, repC) }}>
+                        <Num>{analysis.stepLetters[i]}</Num>
+                        <Num muted>{analysis.steps[i].toFixed(1)}</Num>
+                      </span>
+                    </Hint>
                   );
                 })}
             </div>

@@ -8,6 +8,7 @@ import { ActionIcon, Button, Checkbox, TextInput } from '@mantine/core';
 import { mulNotes } from '../../../lib/harmonic-field';
 import { CHORD_KEYS, CHORD_PAGE, playsChords } from '../audio/keymap';
 import type { PreviewTarget } from '../audio/plan';
+import { SHORTCUTS } from '../audio/shortcuts';
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import { noteLabel } from '../state/derive';
 import { litIndex } from '../state/retuner';
@@ -15,7 +16,7 @@ import { ChordCard, notesText, pitchTexts, templateOn } from './ChordCard';
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlayIcon, TrashIcon } from './icons';
 import { ModeChevron } from './ModeRoot';
 import { SendMany, shelfChordItem, useSendHover } from './Send';
-import { Strip, Tip, useLab, useNativeTitle } from './ui';
+import { Hint, Strip, Tip, useLab } from './ui';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
@@ -143,7 +144,6 @@ function Slot({
   targetFor: (c: ShelfChord) => PreviewTarget;
 }) {
   const lab = useLab();
-  const nativeTitle = useNativeTitle();
   const { state, dispatch, audio, base } = lab;
   const { shelf } = state;
   const [confirming, setConfirming] = useState(false);
@@ -273,9 +273,10 @@ function Slot({
         ringButton={{
           label: `Play ${chord.name}`,
           pressed: picked,
-          title: nativeTitle(
-            'Click: hear it and keep it highlighted. Point and hold 1 to hear it for as long as you hold the key.'
-          ),
+          hint: {
+            label: 'Play this chord',
+            text: `Click: hear it and keep it highlighted. Point and hold ${SHORTCUTS.holdOwn} to hear it for as long as you hold the key.`,
+          },
           onClick: play,
         }}
         actions={
@@ -308,21 +309,27 @@ function Slot({
             >
               <ArrowDownIcon />
             </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
-              aria-label={`Reload ${chord.name} as a new tab`}
-              title={nativeTitle(
+            <Hint
+              label="Reload as a new tab"
+              dynamic={
                 chord.source
                   ? 'Open this chord’s source (generator and subset) as a new tab.'
                   : 'This chord has no stored source, so it cannot be reloaded.'
-              )}
-              disabled={!chord.source}
-              onClick={() => dispatch({ type: 'shelf/reload', id: chord.id })}
+              }
             >
-              <CopyIcon />
-            </ActionIcon>
+              <span className={classes.hintHost}>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  aria-label={`Reload ${chord.name} as a new tab`}
+                  disabled={!chord.source}
+                  onClick={() => dispatch({ type: 'shelf/reload', id: chord.id })}
+                >
+                  <CopyIcon />
+                </ActionIcon>
+              </span>
+            </Hint>
             {confirming ? (
               <Button
                 size="compact-xs"

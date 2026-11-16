@@ -33,7 +33,7 @@ describe('renderMarkup', () => {
 });
 
 describe('new-form entries', () => {
-  it('the tooltip shows the help (example, keys) and no teaching', async () => {
+  it('the tooltip shows the help (keys, then example) and no teaching', async () => {
     render(<Tip k="holdToPlay">Hold</Tip>);
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Hold' }));
     await wait(100);
@@ -45,7 +45,7 @@ describe('new-form entries', () => {
     expect(tip).not.toHaveTextContent('shelf slot');
   });
 
-  it('a dynamic extra sits between the paragraphs and the example', async () => {
+  it('a dynamic extra sits first, under the term, before the paragraphs; the example is last', async () => {
     render(
       <Tip k="playScale" extra="DYNAMIC LINE">
         Play
@@ -54,8 +54,9 @@ describe('new-form entries', () => {
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Play' }));
     await wait(100);
     const text = screen.getByRole('tooltip').textContent ?? '';
-    expect(text.indexOf('one after another')).toBeLessThan(text.indexOf('DYNAMIC LINE'));
-    expect(text.indexOf('DYNAMIC LINE')).toBeLessThan(text.indexOf('Example:'));
+    expect(text.indexOf('Play scale')).toBeLessThan(text.indexOf('DYNAMIC LINE'));
+    expect(text.indexOf('DYNAMIC LINE')).toBeLessThan(text.indexOf('one after another'));
+    expect(text.indexOf('one after another')).toBeLessThan(text.indexOf('Example:'));
     expect(text).not.toContain('comes back down');
   });
 

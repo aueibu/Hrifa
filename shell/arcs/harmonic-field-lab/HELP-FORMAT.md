@@ -14,9 +14,9 @@ Confirmed by the human while reviewing the `Play scale`, `Hover and hold 1, 4, 5
 | Paragraph | plain text | help or teaching |
 | `Example:` | blank line before; label in italics | help (one at most) or teaching |
 | `Keys:` | label, then one row per key: key name, then what it does | help |
-| Dynamic | blank line before; muted colour, plain (decision S4 = A) | help, never in the glossary |
+| Dynamic | directly under the term, blank line after; the same colour as the rest of the tooltip, plain (human, 2026-11-16: whole tooltip uniform; supersedes S4 = A muted) | help, never in the glossary |
 
-Order in a tooltip: term, help paragraphs, dynamic block (if any), example, keys. A tooltip never changes size or position for its content (UI-CONVENTIONS section 1).
+Order in a tooltip: term, the dynamic block (if any, always directly under the term so it is in a fixed place), help paragraphs, keys, then the example last. The glossary help has no dynamic block (human, 2026-11-16, revises the earlier order) (human, 2026-11-16: "like the flavor text on a card"). Source order in `texts.ts` follows it. The `Keys:` label is plain, not italic. A tooltip never changes size or position for its content (UI-CONVENTIONS section 1).
 
 ## 3. Emphasis
 - **Bold**: a name the reader can find on screen (a control, a key, a mode name as shown).
@@ -25,7 +25,7 @@ Order in a tooltip: term, help paragraphs, dynamic block (if any), example, keys
 - Written as `**bold**` and `*italic*` in the entry strings; one parser turns them into nodes; no raw HTML.
 
 ## 4. Dynamic text
-- Fixed help first, a blank line, then the dynamic block (S4 = A, S5 as mocked: the "3 of the subset's 7 notes are in this key" line, then `Keys:`).
+- The dynamic block first, directly under the term, a blank line, then the fixed help (S5: "3 of the subset's 7 notes are in this key", then the help paragraph, then `Keys:`). Position, not colour, marks it as dynamic.
 - Dynamic tooltips move from the native `title` attribute to the styled tooltip (S6 = B, leaning yes; the wrapper cost was discussed 2026-11-15). The Developer menu's tooltip on/off and delay apply to all of them.
 
 ## 5. Which controls get a tooltip

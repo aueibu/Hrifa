@@ -16,7 +16,7 @@ import {
   signedCents,
   severity,
   useLab,
-  useNativeTitle,
+  Hint,
 } from './ui';
 import classes from './panels.module.css';
 
@@ -24,7 +24,6 @@ const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+c'];
 
 export function ModesPanel() {
   const lab = useLab();
-  const nativeTitle = useNativeTitle();
   const { an, base } = lab;
   const tol = lab.state.ui.tol;
   const [dev] = useLabDeveloperOptions();
@@ -100,70 +99,76 @@ export function ModesPanel() {
             const worst = Math.max(...m.errs);
             const label = `Mode ${m.mode + 1}, root ${m.root}: ${m.ok} of ${N} degrees land within ${tol} c of a field note; worst ${worst.toFixed(1)} c`;
             return (
-              <button
-                key={m.mode}
-                type="button"
-                className={`${classes.modeLine} ${classes.heatRowBtn}`}
-                data-testid="mode-row"
-                aria-pressed={lab.mode === m.mode}
-                aria-label={label}
-                title={nativeTitle(label)}
-                onClick={() => lab.setMode(m.mode)}
-                onFocus={() => lab.audio.setPreviewTarget({ kind: 'mode', mode: m.mode })}
-                onBlur={() => lab.audio.clearPreviewTarget({ kind: 'mode', mode: m.mode })}
-              >
-                <span
-                  className={`${classes.modeLabelCol} ${classes.heatName}`}
-                  data-testid="mode-title"
-                  onClick={(e) => preview(e, m.mode)}
-                  onMouseEnter={() => lab.audio.setPreviewTarget({ kind: 'mode', mode: m.mode })}
-                  onMouseLeave={() => lab.audio.clearPreviewTarget({ kind: 'mode', mode: m.mode })}
+              <Hint key={m.mode} dynamic={label}>
+                <button
+                  type="button"
+                  className={`${classes.modeLine} ${classes.heatRowBtn}`}
+                  data-testid="mode-row"
+                  aria-pressed={lab.mode === m.mode}
+                  aria-label={label}
+                  onClick={() => lab.setMode(m.mode)}
+                  onFocus={() => lab.audio.setPreviewTarget({ kind: 'mode', mode: m.mode })}
+                  onBlur={() => lab.audio.clearPreviewTarget({ kind: 'mode', mode: m.mode })}
                 >
-                  <Num muted>{m.mode + 1}</Num> <Num>{m.root}</Num>
-                </span>
-                <span className={classes.modeTiles} data-testid="mode-tiles">
-                  {m.errs.map((e, j) => {
-                    const sg = m.signed[j];
-                    const sign = signChar(sg);
-                    const word = sign === '+' ? ' (sharp)' : sign ? ' (flat)' : '';
-                    const tip = `Degree ${j + 1}: ${sign ? `${signedCents(sg)}${word}` : 'exact'} from the nearest field note (${SEV_LABEL[severity(e)]})`;
-                    return (
-                      <span
-                        key={j}
-                        className={classes.heatCell}
-                        data-sev={severity(e)}
-                        data-sign={sign}
-                        role="img"
-                        aria-label={tip}
-                        title={nativeTitle(tip)}
-                        data-testid="mode-tile"
-                        onClick={(e) => preview(e, m.mode, j)}
-                        onMouseEnter={() =>
-                          lab.audio.setPreviewTarget({ kind: 'tile', mode: m.mode, degree: j })
-                        }
-                        onMouseLeave={() =>
-                          lab.audio.clearPreviewTarget({ kind: 'tile', mode: m.mode, degree: j })
-                        }
-                      >
-                        <span className={classes.heatSign} aria-hidden="true">
-                          {sign}
-                        </span>
-                        <span className={classes.heatNum} aria-hidden="true">
-                          <Num>
-                            {sign}
-                            {e < 1e-6 ? '0' : e.toFixed(0)}
-                          </Num>
-                        </span>
-                      </span>
-                    );
-                  })}
-                </span>
-                <span className={`${classes.modeTotalCol} ${classes.heatTotal}`}>
-                  <Num muted>
-                    {m.ok}/{N}
-                  </Num>
-                </span>
-              </button>
+                  <span
+                    className={`${classes.modeLabelCol} ${classes.heatName}`}
+                    data-testid="mode-title"
+                    onClick={(e) => preview(e, m.mode)}
+                    onMouseEnter={() => lab.audio.setPreviewTarget({ kind: 'mode', mode: m.mode })}
+                    onMouseLeave={() =>
+                      lab.audio.clearPreviewTarget({ kind: 'mode', mode: m.mode })
+                    }
+                  >
+                    <Num muted>{m.mode + 1}</Num> <Num>{m.root}</Num>
+                  </span>
+                  <span className={classes.modeTiles} data-testid="mode-tiles">
+                    {m.errs.map((e, j) => {
+                      const sg = m.signed[j];
+                      const sign = signChar(sg);
+                      const word = sign === '+' ? ' (sharp)' : sign ? ' (flat)' : '';
+                      const tip = `Degree ${j + 1}: ${sign ? `${signedCents(sg)}${word}` : 'exact'} from the nearest field note (${SEV_LABEL[severity(e)]})`;
+                      return (
+                        <Hint key={j} dynamic={tip}>
+                          <span
+                            className={classes.heatCell}
+                            data-sev={severity(e)}
+                            data-sign={sign}
+                            role="img"
+                            aria-label={tip}
+                            data-testid="mode-tile"
+                            onClick={(e) => preview(e, m.mode, j)}
+                            onMouseEnter={() =>
+                              lab.audio.setPreviewTarget({ kind: 'tile', mode: m.mode, degree: j })
+                            }
+                            onMouseLeave={() =>
+                              lab.audio.clearPreviewTarget({
+                                kind: 'tile',
+                                mode: m.mode,
+                                degree: j,
+                              })
+                            }
+                          >
+                            <span className={classes.heatSign} aria-hidden="true">
+                              {sign}
+                            </span>
+                            <span className={classes.heatNum} aria-hidden="true">
+                              <Num>
+                                {sign}
+                                {e < 1e-6 ? '0' : e.toFixed(0)}
+                              </Num>
+                            </span>
+                          </span>
+                        </Hint>
+                      );
+                    })}
+                  </span>
+                  <span className={`${classes.modeTotalCol} ${classes.heatTotal}`}>
+                    <Num muted>
+                      {m.ok}/{N}
+                    </Num>
+                  </span>
+                </button>
+              </Hint>
             );
           })}
         </div>

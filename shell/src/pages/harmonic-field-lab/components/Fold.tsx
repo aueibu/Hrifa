@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 import { addFold, foldId } from '../state/foldIds';
 import type { TipKey } from '../texts';
 import { ChevronDownIcon } from './icons';
-import { Num, Tip, useLab, useNativeTitle } from './ui';
+import { Hint, Num, Tip, useLab } from './ui';
 import classes from './panels.module.css';
 
 export { foldId };
@@ -93,20 +93,16 @@ export function useGroupExpanded(id: string): { expanded: boolean; toggle: () =>
  */
 export function GroupedCount({ n, m }: { n: number; m: number | null }) {
   const { state } = useLab();
-  const nativeTitle = useNativeTitle();
   if (!state.ui.groupShapes || m === null) {
     return <span className={classes.foldCount}>{n}</span>;
   }
   const sentence = `${n} total chords here (${m} unique chords once shapes are grouped)`;
   return (
-    <span
-      className={classes.foldCount}
-      role="note"
-      aria-label={sentence}
-      title={nativeTitle(sentence)}
-    >
-      {n} ({m})
-    </span>
+    <Hint label="Chords here" dynamic={sentence}>
+      <span className={classes.foldCount} role="note" aria-label={sentence}>
+        {n} ({m})
+      </span>
+    </Hint>
   );
 }
 
@@ -124,15 +120,15 @@ export function NestGuide({
   open: boolean;
   toggle: () => void;
 }) {
-  const nativeTitle = useNativeTitle();
   return (
-    <span
-      className={classes.nestGuide}
-      data-testid="nest-guide"
-      aria-hidden="true"
-      tabIndex={-1}
-      title={nativeTitle(`${open ? 'Collapse' : 'Expand'} ${name}`)}
-      onClick={toggle}
-    />
+    <Hint label={`${open ? 'Collapse' : 'Expand'} ${name}`}>
+      <span
+        className={classes.nestGuide}
+        data-testid="nest-guide"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={toggle}
+      />
+    </Hint>
   );
 }

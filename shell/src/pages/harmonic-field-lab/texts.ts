@@ -121,9 +121,6 @@ const entries = {
     term: 'Hover and hold 1 (and 4, 5)',
     help: [
       p('Point at anything that can sound and hold a key to hear it for as long as you hold it.'),
-      example(
-        'in 12-EDO, point at a 200 c note with the 4:5:6 chip armed: {key:holdField} plays 200, 600, 900 c and {key:holdExact} plays 200, 586.3, 902 c.'
-      ),
       keys([
         {
           key: '{key:holdOwn}',
@@ -132,6 +129,9 @@ const entries = {
         { key: '{key:holdField}', does: 'plays the chord on that note, as the field has it' },
         { key: '{key:holdExact}', does: "plays the chord's exact ratios" },
       ]),
+      example(
+        'in 12-EDO, point at a 200 c note with the 4:5:6 chip armed: {key:holdField} plays 200, 600, 900 c and {key:holdExact} plays 200, 586.3, 902 c.'
+      ),
     ],
     teaching: [
       p(
@@ -543,15 +543,15 @@ const entries = {
       p(
         'One row per mode (the same notes restarted on each degree), one column per degree. A cell is cool where a field note lands close and warm where the field has nothing close. + means the nearest field note is sharp, − that it is flat.'
       ),
-      example(
-        "a cell reading −21.5 c on hover: the field's note is 21.5 c flat of what the mode wants."
-      ),
       keys([
         { key: 'Click', does: 'make this the current mode' },
         { key: 'Ctrl+click', does: "hear it with the field's notes" },
         { key: 'Shift+click', does: 'hear it pure' },
         { key: 'Ctrl+Shift+click', does: 'both together (beating)' },
       ]),
+      example(
+        "a cell reading −21.5 c on hover: the field's note is 21.5 c flat of what the mode wants."
+      ),
     ],
     teaching: [
       p(
@@ -825,7 +825,29 @@ const entries = {
   },
   keyRings: {
     term: 'Key rings',
-    text: 'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete (its ring has a border): the whole scale fits there. Under each ring, the root and the common-tone count. Hover a ring to compare it in the big view; click it to Switch to that key (the subset becomes the key, with its root as the mode root; on an incomplete ring only the notes the field does have). Shift+click adds the key instead (see Add key). Alt+click pins the root note of that key, as in every other view. Ctrl-click (Cmd on a Mac) plays the key as a scale, in the direction set by Scale preview. Or just point at a ring and hold 1 to hear the scale as long as you hold the key. Example: only the 1/1 ring has no crosses in this field; clicking the 9/8 ring selects the few notes that do land.',
+    help: [
+      p('A scale from one root, drawn as a ring of its notes.'),
+      keys([
+        { key: 'Click', does: 'switch to this key' },
+        { key: 'Shift+click', does: 'add its notes to the subset' },
+        { key: 'Ctrl+click (Cmd on a Mac)', does: 'hear it as a scale' },
+        { key: '{key:holdOwn}', does: 'hold to hear it as a scale for as long as you hold it' },
+      ]),
+      example(
+        'only the 1/1 ring has no crosses in this field; clicking the 9/8 ring selects the few notes that do land.'
+      ),
+    ],
+    teaching: [
+      p(
+        'One small circle per possible key (each field note as the new root). Filled dots are scale notes that land on a field note; a cross marks a note the field does not have. A key with no crosses is complete (its ring has a border): the whole scale fits there. Under each ring, the root and the common-tone count.'
+      ),
+      p(
+        'Hover a ring to compare it in the big view. Click it to Switch to that key (the subset becomes the key, with its root as the mode root; on an incomplete ring only the notes the field does have). Shift+click adds the key instead (see Add key). Alt+click pins the root note of that key, as in every other view.'
+      ),
+      p(
+        'Ctrl+click (Cmd on a Mac) plays the key as a scale, in the direction set by Scale preview. Or just point at a ring and hold {key:holdOwn} to hear the scale as long as you hold the key.'
+      ),
+    ],
     see: ['keySwitch', 'keyAdd', 'commonTones', 'scalePreview', 'holdToPlay'],
   },
   commonTones: {

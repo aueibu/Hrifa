@@ -21,7 +21,7 @@ import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../stat
 import { SVG_FS_LABEL } from '../state/typeScale';
 import { RING_GAP, RingChevron } from './ModeRoot';
 import { useSendHover } from './Send';
-import { Num, Strip, Tip, useLab, useNativeTitle } from './ui';
+import { Hint, Num, Strip, Tip, useLab } from './ui';
 import classes from './panels.module.css';
 
 const BIG = 260;
@@ -195,7 +195,6 @@ function KeyRing({
   onAct: (k: KeyRingData, e: ActEvent) => void;
 }) {
   const lab = useLab();
-  const nativeTitle = useNativeTitle();
   const { field, repC } = lab.base;
   const S = 56;
   const C = S / 2;
@@ -229,63 +228,65 @@ function KeyRing({
   }));
   return (
     <li>
-      <button
-        type="button"
-        className={classes.keyRing}
-        data-complete={k.complete}
-        data-viewed={viewed}
-        data-current={current}
-        aria-label={`${label}; ${x} of ${subset.length} notes in common with the subset`}
-        title={nativeTitle(
-          `${label}. ${x} of the subset's ${subset.length} notes are common to this key. Click: switch to this key. Shift+click: add its notes to the subset. Ctrl-click (Cmd on a Mac): hear it as a scale. Point and hold 1 to hear it as a scale for as long as you hold the key.`
-        )}
-        onMouseEnter={(e) => {
-          send.enter(e);
-          onHover(k.rootIdx);
-          lab.audio.setPreviewTarget(scaleTarget);
-        }}
-        onMouseLeave={() => {
-          send.leave();
-          onHover(null);
-          lab.audio.clearPreviewTarget(scaleTarget);
-        }}
-        onFocus={() => {
-          onHover(k.rootIdx);
-          lab.audio.setPreviewTarget(scaleTarget);
-        }}
-        onBlur={() => {
-          onHover(null);
-          lab.audio.clearPreviewTarget(scaleTarget);
-        }}
-        onClick={(e) => onAct(k, e)}
+      <Hint
+        k="keyRings"
+        dynamic={`${label}. ${x} of the subset's ${subset.length} notes are common to this key.`}
       >
-        <svg viewBox={`0 0 ${S} ${S}`} className={classes.keySvg} role="img" aria-label={label}>
-          <circle className={classes.keyCircle} cx={C} cy={C} r={R} />
-          {field.map((n, i) => {
-            const p = at(n.c);
-            return <circle key={i} className={classes.keyField} cx={p.x} cy={p.y} r={2} />;
-          })}
-          {k.moved.map((m, d) => {
-            const p = at(m.c, R + 0.5);
-            return m.found ? (
-              <circle key={d} className={classes.keyFound} cx={p.x} cy={p.y} r={3.2} />
-            ) : (
-              <path
-                key={d}
-                className={classes.keyMiss}
-                d={`M${p.x - 2.6} ${p.y - 2.6}l5.2 5.2M${p.x + 2.6} ${p.y - 2.6}l-5.2 5.2`}
-              />
-            );
-          })}
-        </svg>
-        <Num>{k.root}</Num>
-        <Num muted>{k.complete ? 'fits' : `−${k.missing}`}</Num>
-        <Tip k="commonTones" as="control">
-          <span data-testid="common-tones">
-            <Num muted>{`${x}|${subset.length}`}</Num>
-          </span>
-        </Tip>
-      </button>
+        <button
+          type="button"
+          className={classes.keyRing}
+          data-complete={k.complete}
+          data-viewed={viewed}
+          data-current={current}
+          aria-label={`${label}; ${x} of ${subset.length} notes in common with the subset`}
+          onMouseEnter={(e) => {
+            send.enter(e);
+            onHover(k.rootIdx);
+            lab.audio.setPreviewTarget(scaleTarget);
+          }}
+          onMouseLeave={() => {
+            send.leave();
+            onHover(null);
+            lab.audio.clearPreviewTarget(scaleTarget);
+          }}
+          onFocus={() => {
+            onHover(k.rootIdx);
+            lab.audio.setPreviewTarget(scaleTarget);
+          }}
+          onBlur={() => {
+            onHover(null);
+            lab.audio.clearPreviewTarget(scaleTarget);
+          }}
+          onClick={(e) => onAct(k, e)}
+        >
+          <svg viewBox={`0 0 ${S} ${S}`} className={classes.keySvg} role="img" aria-label={label}>
+            <circle className={classes.keyCircle} cx={C} cy={C} r={R} />
+            {field.map((n, i) => {
+              const p = at(n.c);
+              return <circle key={i} className={classes.keyField} cx={p.x} cy={p.y} r={2} />;
+            })}
+            {k.moved.map((m, d) => {
+              const p = at(m.c, R + 0.5);
+              return m.found ? (
+                <circle key={d} className={classes.keyFound} cx={p.x} cy={p.y} r={3.2} />
+              ) : (
+                <path
+                  key={d}
+                  className={classes.keyMiss}
+                  d={`M${p.x - 2.6} ${p.y - 2.6}l5.2 5.2M${p.x + 2.6} ${p.y - 2.6}l-5.2 5.2`}
+                />
+              );
+            })}
+          </svg>
+          <Num>{k.root}</Num>
+          <Num muted>{k.complete ? 'fits' : `−${k.missing}`}</Num>
+          <Tip k="commonTones" as="control">
+            <span data-testid="common-tones">
+              <Num muted>{`${x}|${subset.length}`}</Num>
+            </span>
+          </Tip>
+        </button>
+      </Hint>
     </li>
   );
 }

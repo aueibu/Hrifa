@@ -1,5 +1,5 @@
 /** The Developer menu's tooltip options: sanitising, storage round trip, and `Tip` honouring off and the delay. */
-import { act, fireEvent, render, screen } from '@test-utils';
+import { act, fireEvent, render, screen, userEvent } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   LAB_DEVELOPER_KEY,
@@ -10,7 +10,7 @@ import {
   sanitiseTooltipDelay,
   writeDeveloperOptions,
 } from '../state/developerOptions';
-import { Tip } from './ui';
+import { Hint, LabTooltip, Tip } from './ui';
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -87,5 +87,80 @@ describe('Tip', () => {
     hover();
     await wait(400);
     expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});
+
+describe('nested tooltips: the innermost wins', () => {
+  const wait = (ms: number) =>
+    act(async () => {
+      await new Promise((r) => setTimeout(r, ms));
+    });
+  const visible = () => screen.queryAllByRole('tooltip').map((t) => t.textContent);
+
+  it('Hint in Hint, Tip in Hint and Hint in a plain tooltip show only the inner bubble while the child is hovered', async () => {
+    writeDeveloperOptions({ tooltipDelay: 0 });
+    const user = userEvent.setup();
+    render(
+      <>
+        <Hint dynamic="OUTER-A">
+          <div data-testid="a">
+            <span>area</span>
+            <Hint dynamic="INNER-A">
+              <button type="button">child</button>
+            </Hint>
+          </div>
+        </Hint>
+        <Hint dynamic="OUTER-B">
+          <div data-testid="b">
+            <Tip k="wave">Wave</Tip>
+          </div>
+        </Hint>
+        <LabTooltip label="OUTER-C">
+          <div data-testid="c">
+            <Hint dynamic="INNER-C">
+              <button type="button">cchild</button>
+            </Hint>
+          </div>
+        </LabTooltip>
+      </>
+    );
+    // A: outer area first, then the child (the user-event hover enters the ancestors first)
+    await user.hover(screen.getByText('area'));
+    await wait(50);
+    expect(visible()).toEqual(['OUTER-A']);
+    await user.hover(screen.getByRole('button', { name: 'child' }));
+    await wait(50);
+    expect(visible()).toHaveLength(1);
+    expect(visible()[0]).toContain('INNER-A');
+    await user.hover(screen.getByText('area'));
+    await wait(50);
+    expect(visible()).toEqual(['OUTER-A']);
+    await user.unhover(screen.getByText('area'));
+    await wait(50);
+    expect(visible()).toEqual([]);
+
+    // B: a Tip inside a Hint
+    await user.hover(screen.getByTestId('b'));
+    await wait(50);
+    expect(visible()).toHaveLength(1);
+    await user.hover(screen.getByRole('button', { name: 'Wave' }));
+    await wait(50);
+    expect(visible()).toHaveLength(1);
+    expect(visible()[0]).not.toContain('OUTER-B');
+    await user.unhover(screen.getByRole('button', { name: 'Wave' }));
+    await user.unhover(screen.getByTestId('b'));
+    await wait(50);
+
+    // C: the plain tooltip (the chord card) around a Hint
+    await user.hover(screen.getByTestId('c'));
+    await wait(50);
+    expect(visible()).toEqual(['OUTER-C']);
+    await user.hover(screen.getByRole('button', { name: 'cchild' }));
+    await wait(50);
+    expect(visible()).toHaveLength(1);
+    expect(visible()[0]).toContain('INNER-C');
+    await user.hover(screen.getByTestId('c'));
+    await wait(50);
+    expect(visible()).toEqual(['OUTER-C']);
   });
 });

@@ -32,7 +32,7 @@ import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import { PatternsEditor, PositionalSection, positionalGroupIds } from './Positional';
 import { useSendHover } from './Send';
 import { SketchRow } from './SketchRow';
-import { DebouncedText, Num, SEV_LABEL, Strip, Tip, severity, useLab, useNativeTitle } from './ui';
+import { DebouncedText, Num, SEV_LABEL, Strip, Hint, Tip, severity, useLab } from './ui';
 import classes from './panels.module.css';
 
 /** The card's texts and ring for a ratio or CPS chord: pitches as ratios when every note has one (else cents), steps in cents. */
@@ -89,7 +89,6 @@ function Chip({
   group?: ChipGroupProps;
 }) {
   const lab = useLab();
-  const nativeTitle = useNativeTitle();
   const isPicked = (c: ChordChip) =>
     lab.chordPicked !== null &&
     lab.chordPicked.size === c.memberIdx.length &&
@@ -157,13 +156,11 @@ function Chip({
       }
       stat={
         chip.found ? (
-          <span
-            className={classes.err}
-            data-sev={sevFirst}
-            title={nativeTitle(`Error ${SEV_LABEL[sevFirst]}`)}
-          >
-            <Num>{sevFirst === 0 ? 'exact' : `${first.maxErr.toFixed(1)} c`}</Num>
-          </span>
+          <Hint label={`Error ${SEV_LABEL[sevFirst]}`}>
+            <span className={classes.err} data-sev={sevFirst}>
+              <Num>{sevFirst === 0 ? 'exact' : `${first.maxErr.toFixed(1)} c`}</Num>
+            </span>
+          </Hint>
         ) : (
           <span className={classes.need}>
             <Num>+{need} c</Num>
