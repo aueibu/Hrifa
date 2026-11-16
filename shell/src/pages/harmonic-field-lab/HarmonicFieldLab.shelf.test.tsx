@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -27,6 +27,7 @@ const advance = (ms: number) =>
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   contexts = [];
   class TestCtx extends FakeCtx {
     constructor() {
@@ -81,6 +82,14 @@ describe('chord shelf UI', () => {
     expect(within(list()).getAllByRole('listitem')).toHaveLength(2);
     expect(within(list()).getByRole('button', { name: 'Rename Chord 1' })).toBeTruthy();
     expect(within(list()).getAllByText(/3 notes/).length).toBe(2);
+    // the shelf card reads like a chip: `<template> on <root> · N notes`, the pitches, the steps, and a select box
+    const card1 = within(list()).getAllByTestId('slot-card')[0];
+    expect(within(card1).getByTestId('card-subtitle').textContent).toMatch(
+      /^\S+ on \S+ · 3 notes$/
+    );
+    expect(within(card1).getByTestId('card-pitches').textContent).toMatch(/\d\/\d/);
+    expect(within(card1).getByTestId('card-steps').textContent).toMatch(/^steps [\d.]+, [\d.]+ c$/);
+    expect(within(card1).getByRole('checkbox', { name: 'Select Chord 1' })).toBeTruthy();
     const before = oscs().length;
     // click plays with a sticky highlight; clicking again clears it
     const play1 = within(list()).getByRole('button', { name: 'Play Chord 1' });
@@ -342,7 +351,7 @@ describe('chord shelf UI', () => {
     expect(h).toHaveLength(3);
     up('5');
     expect(running()).toHaveLength(0);
-    // the Sketch row's switch: As in field plays the field's shape, Exact the true ratios
+    // the Sketch row's switch: Field plays the field's shape, Exact the true ratios
     const sk = screen.getByRole('group', { name: 'Sketch a chord' });
     const played = () => {
       const before = oscs().length;

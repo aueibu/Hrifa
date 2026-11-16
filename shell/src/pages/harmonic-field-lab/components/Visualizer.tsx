@@ -26,7 +26,7 @@ export function VizContent({ id, view, big }: { id: VizId; view: VizView; big?: 
     case 'dissonance':
       return <DissonanceBody />;
     case 'roughness':
-      return <RoughnessBody />;
+      return <RoughnessBody id={id} />;
     case 'iso':
       return <IsoBody id={id} />;
   }

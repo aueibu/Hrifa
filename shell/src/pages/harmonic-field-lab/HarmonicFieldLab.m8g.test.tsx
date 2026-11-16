@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -16,6 +16,7 @@ const EDO_MAJOR = /^major triad 4:5:6 on (1\/1|0\.0 c)/i;
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   (window as unknown as { AudioContext: unknown }).AudioContext = FakeCtx;
 });
 afterEach(() => {

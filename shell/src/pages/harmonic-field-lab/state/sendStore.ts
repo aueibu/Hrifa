@@ -29,6 +29,8 @@ export interface SendItem {
    * empty = the item has no separate exact form (notes, subsets, selections, a free chord): the mode does not apply.
    */
   exact?: Note[] | null;
+  /** H-10 amendment: the mode root of a subset or selection item (a pitch, cents-only stays cents-only); chords and notes use `pitches[0]`. */
+  root?: Note | null;
   /** M8d: a positional chord: always its field notes, the send mode does not apply. */
   fixed?: boolean;
   /** M8d: why it is fixed, when not because it is positional (a stashed shelf chord sends exactly what it stored). */
@@ -43,7 +45,7 @@ export type SendGetter = () => SendItem | null;
 
 export interface SendView {
   popup: SendItem | null;
-  /** M8d: the popup's own As in field | Exact choice (starts on the shelf's; E and the slider change it). */
+  /** M8d: the popup's own Field | Exact choice (starts on the shelf's; E and the slider change it). */
   popupMode: SendMode;
   /** Where the popup opened (fixed for as long as it is open). */
   popupAt: { x: number; y: number };

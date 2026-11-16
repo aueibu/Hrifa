@@ -4,10 +4,11 @@
  * right. The behaviours (hover, click, hold keys, send) stay with the caller: it passes the handlers and the texts.
  */
 import type { ReactNode } from 'react';
-import { Tooltip } from '@mantine/core';
-import { PlusIcon } from './icons';
+import { Button, Tooltip } from '@mantine/core';
+import { ChevronDownIcon, PlusIcon } from './icons';
 import { ChordDrawing } from './ShelfPanel';
 import { Num, useNativeTitle, useTooltipProps } from './ui';
+import { ValueList } from './ValueList';
 import classes from './panels.module.css';
 
 /** Cents with one decimal (the Sketch row's number format). */
@@ -20,6 +21,21 @@ export const fmtCentsList = (cs: readonly number[]): string => `${cs.map(cents1)
 export const fmtSteps = (cs: readonly number[]): string =>
   cs.length > 1 ? `steps ${fmtCentsList(cs.slice(1).map((c, i) => c - cs[i]))}` : '';
 
+/** The two text lines under a card's pitches: `a  b  c` ratios when every note has one, else `a, b c` cents; and the steps (shared by the chips and the shelf cards). */
+export function pitchTexts(ups: readonly number[], ratios: readonly string[] | null) {
+  return {
+    pitches: ratios ? ratios.join('  ') : fmtCentsList(ups),
+    steps: fmtSteps(ups),
+  };
+}
+
+/** `4:5:6 on 3/2`: a card's subtitle for a template on a root (the root as `noteLabel` writes it). A missing template gives `on 3/2`. */
+export const templateOn = (template: string | null | undefined, root: string): string =>
+  template ? `${template} on ${root}` : `on ${root}`;
+
+/** `3 notes` / `1 note`. */
+export const notesText = (n: number): string => `${n} ${n === 1 ? 'note' : 'notes'}`;
+
 export interface ChordCardProps {
   as?: 'span' | 'li';
   testId?: string;
@@ -27,6 +43,14 @@ export interface ChordCardProps {
   title: string;
   /** Extra muted text after the title (a positional card's `~ 4:5:6`). */
   titleExtra?: string | null;
+  /** A node in place of the title text (the shelf card's renamable name). */
+  titleNode?: ReactNode;
+  /** Shown before the title (the shelf card's computer-key badge). */
+  badge?: ReactNode;
+  /** Trailing action buttons: the card is then a static box and only the ring is the play button (shelf cards). */
+  actions?: ReactNode;
+  /** Static cards: the ring button. */
+  ringButton?: { label: string; pressed: boolean; title?: string; onClick: () => void };
   subtitle: string;
   pitches: string;
   steps: string;
@@ -37,22 +61,88 @@ export interface ChordCardProps {
   /** `aria-pressed` is only set for cards that can be picked. */
   pressable?: boolean;
   cps?: string;
-  onEnter: (e: { currentTarget: EventTarget }) => void;
-  onLeave: () => void;
-  onFocus: () => void;
-  onBlur: () => void;
-  onClick: (e: { shiftKey: boolean }) => void;
+  onEnter?: (e: { currentTarget: EventTarget }) => void;
+  onLeave?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  onClick?: (e: { shiftKey: boolean }) => void;
   stash?: { label: string; onStash: () => void };
+  /** M8i: this card stands for `count` roots of one shape; a row at its bottom (`12 roots` + arrow) shows or hides the per-root cards below it. */
+  group?: { count: number; expanded: boolean; label: string; onToggle: () => void };
 }
 
 export function ChordCard(p: ChordCardProps) {
   const tipProps = useTooltipProps();
   const nativeTitle = useNativeTitle();
   const Wrap = p.as ?? 'span';
+  const titleLine = (
+    <span className={classes.cardLine1} data-testid="card-title">
+      {p.badge}
+      {p.titleNode ?? <Num>{p.title}</Num>}
+      {p.titleExtra && <Num muted>{` · ${p.titleExtra}`}</Num>}
+    </span>
+  );
+  const pitchCol = (
+    <span
+      className={classes.cardCol}
+      data-col="pitches"
+      title={nativeTitle(`${p.pitches}
+${p.steps}`)}
+    >
+      <span className={classes.cardLine1} data-testid="card-pitches">
+        <Num>
+          <ValueList text={p.pitches} />
+        </Num>
+      </span>
+      <span className={classes.cardLine2} data-testid="card-steps">
+        <Num muted>
+          <ValueList text={p.steps} />
+        </Num>
+      </span>
+    </span>
+  );
+  if (p.actions) {
+    return (
+      <Wrap className={classes.chipWrap} data-testid={p.testId}>
+        <div
+          className={classes.card}
+          data-static
+          data-found={p.found}
+          data-picked={p.picked}
+          data-cps={p.cps}
+        >
+          <span className={classes.cardRing}>
+            <button
+              type="button"
+              className={classes.cardRingBtn}
+              aria-label={p.ringButton?.label}
+              aria-pressed={p.ringButton?.pressed}
+              title={p.ringButton?.title}
+              onClick={p.ringButton?.onClick}
+            >
+              <ChordDrawing cents={p.ring.cents} repC={p.ring.repC} rootCents={p.ring.cents[0]} />
+            </button>
+          </span>
+          <span className={classes.cardCol} data-col="title">
+            {titleLine}
+            <span className={classes.cardLine2} data-testid="card-subtitle">
+              <Num muted>{p.subtitle}</Num>
+            </span>
+          </span>
+          {pitchCol}
+          <span className={classes.cardStat} data-actions data-testid="card-stat">
+            {p.actions}
+          </span>
+        </div>
+      </Wrap>
+    );
+  }
   return (
     <Wrap
       className={classes.chipWrap}
       data-stash={p.stash ? true : undefined}
+      data-grouped={p.group ? true : undefined}
+      data-picked={p.group ? p.picked : undefined}
       data-testid={p.testId}
     >
       <Tooltip label={p.label} multiline w={260} {...tipProps}>
@@ -71,35 +161,34 @@ export function ChordCard(p: ChordCardProps) {
           onClick={p.onClick}
         >
           <span className={classes.cardRing}>
-            <ChordDrawing cents={p.ring.cents} repC={p.ring.repC} />
+            <ChordDrawing cents={p.ring.cents} repC={p.ring.repC} rootCents={p.ring.cents[0]} />
           </span>
           <span className={classes.cardCol} data-col="title">
-            <span className={classes.cardLine1} data-testid="card-title">
-              <Num>{p.title}</Num>
-              {p.titleExtra && <Num muted>{` · ${p.titleExtra}`}</Num>}
-            </span>
+            {titleLine}
             <span className={classes.cardLine2} data-testid="card-subtitle">
               <Num muted>{p.subtitle}</Num>
             </span>
           </span>
-          <span
-            className={classes.cardCol}
-            data-col="pitches"
-            title={nativeTitle(`${p.pitches}
-${p.steps}`)}
-          >
-            <span className={classes.cardLine1} data-testid="card-pitches">
-              <Num>{p.pitches}</Num>
-            </span>
-            <span className={classes.cardLine2} data-testid="card-steps">
-              <Num muted>{p.steps}</Num>
-            </span>
-          </span>
+          {pitchCol}
           <span className={classes.cardStat} data-testid="card-stat">
             {p.stat}
           </span>
         </button>
       </Tooltip>
+      {p.group && (
+        <span className={classes.groupRow}>
+          <Button
+            size="compact-xs"
+            variant="default"
+            aria-expanded={p.group.expanded}
+            aria-label={p.group.label}
+            rightSection={<ChevronDownIcon />}
+            onClick={p.group.onToggle}
+          >
+            {p.group.count} roots
+          </Button>
+        </span>
+      )}
       {p.stash && (
         <button
           type="button"

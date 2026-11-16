@@ -18,6 +18,7 @@ import {
   type KeyDiff,
 } from '../state/keysModes';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
+import { SVG_FS_LABEL } from '../state/typeScale';
 import { RING_GAP, RingChevron } from './ModeRoot';
 import { useSendHover } from './Send';
 import { Num, Strip, Tip, useLab, useNativeTitle } from './ui';
@@ -139,7 +140,7 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
             )}
             <text
               className={classes.svgLabel}
-              style={label.scale < 1 ? { fontSize: 11 * label.scale } : undefined}
+              style={label.scale < 1 ? { fontSize: SVG_FS_LABEL * label.scale } : undefined}
               data-on={kind !== 'plain'}
               x={label.x}
               y={label.y}
@@ -222,6 +223,9 @@ function KeyRing({
       .filter((n) => n !== undefined)
       .map((n) => ({ m: n.m ? { ...n.m } : null, c: n.c })),
     rep: lab.base.rep,
+    root: field[k.rootIdx]
+      ? { m: field[k.rootIdx].m ? { ...field[k.rootIdx].m! } : null, c: field[k.rootIdx].c }
+      : null,
   }));
   return (
     <li>

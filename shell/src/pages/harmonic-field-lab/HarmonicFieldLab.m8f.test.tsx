@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { KEY_SETTINGS } from './state/persist';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -32,6 +32,7 @@ const folded = (name: string | RegExp) =>
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   contexts = [];
   class TestCtx extends FakeCtx {
     constructor() {
@@ -174,7 +175,8 @@ describe('pattern groups, folds and the Composites row', () => {
       expect(rows[0].textContent).not.toMatch(/12-EDO/); // M8h: no generator name on the card
     }
     // fold 2-3 only: that group closes, the others stay open, and nothing was written before the fold
-    expect(window.localStorage.getItem(KEY_SETTINGS)).toBeNull();
+    // nothing written beyond the fixture's own groupShapes: false
+    expect(window.localStorage.getItem(KEY_SETTINGS)).toBe('{"groupShapes":false}');
     fireEvent.click(screen.getByRole('button', { name: 'Pattern 2-3' }));
     expect(folded('Pattern 2-3')).toBe(true);
     expect(screen.queryByRole('list', { name: 'Positional chords 2-3' })).toBeNull();

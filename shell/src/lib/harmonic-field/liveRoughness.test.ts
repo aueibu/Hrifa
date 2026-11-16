@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { liveCurveStep, liveRoughness } from './liveRoughness';
+import { fieldMarks, liveCurveStep, liveRoughness } from './liveRoughness';
 import { scoreRoughness } from './scorersMore';
+import { dissonanceAt } from './visual';
 
 const C4 = 261.6256;
 const near = (a: number, b: number) => expect(Math.abs(a - b)).toBeLessThan(0.01);
@@ -65,5 +66,32 @@ describe('liveCurveStep', () => {
     const r = liveRoughness([0, 700, 1100, 400, 200, 900, 300, 100], C4);
     expect(r.curve.cents[1] - r.curve.cents[0]).toBe(6);
     expect(r.curve.cents[r.curve.cents.length - 1]).toBe(1200);
+  });
+});
+
+describe('fieldMarks (faint field notes on the live curve)', () => {
+  const edo12 = Array.from({ length: 12 }, (_, i) => i * 100);
+  it('lowest note at 400 c: the unison, the 300 c note lands 1100 c above, the 100 c note 900 c above, and none are drawn twice', () => {
+    const m = fieldMarks(edo12, [400], C4);
+    const at = (iv: number) => m.find((x) => Math.abs(x.interval - iv) < 1e-9);
+    expect(m).toHaveLength(11); // the shown note itself (the unison) is the chord's own mark
+    expect(at(0)).toBeUndefined();
+    expect(at(1100)?.idx).toBe(3);
+    expect(at(900)?.idx).toBe(1);
+    expect(at(100)?.idx).toBe(5);
+    expect(m.every((x) => x.interval >= 0 && x.interval < 1200)).toBe(true);
+  });
+  it('0 and a repeat are one unison mark: a field note an octave above the lowest note is the lowest note', () => {
+    const m = fieldMarks([50, 1250, 750], [50], C4);
+    expect(m.map((x) => x.interval)).toEqual([700]);
+  });
+  it('reduces into a custom repeat and carries the pair roughness', () => {
+    const m = fieldMarks([0, 1500], [300], C4, 1900);
+    expect(m.map((x) => x.interval)).toEqual([1600, 1200]);
+    expect(m[1].roughness).toBe(dissonanceAt(1200, C4 * 2 ** (300 / 1200)));
+  });
+  it('nothing shown: no marks; chord notes (even an octave up) are not repeated', () => {
+    expect(fieldMarks(edo12, [], C4)).toEqual([]);
+    expect(fieldMarks(edo12, [0, 1900], C4).map((x) => x.interval)).not.toContain(700);
   });
 });

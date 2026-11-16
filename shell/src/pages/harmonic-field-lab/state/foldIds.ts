@@ -43,3 +43,34 @@ export function chordFoldIds({ cps, patterns, chips, sizes }: ChordFoldInput): s
 export function collapseAll(ids: readonly string[]): Record<string, boolean> {
   return Object.fromEntries(ids.slice(0, MAX_FOLDS).map((id) => [id, true]));
 }
+
+/**
+ * Expand all (M8i): the sections open (no section id stored) and every shape group that exists now expanded (`grp:` ids, a stored
+ * id = expanded). Capped at MAX_FOLDS: sections hold no entries, so up to 256 groups open; groups beyond the cap stay collapsed.
+ */
+export function expandAll(groupIds: readonly string[]): Record<string, boolean> {
+  return Object.fromEntries([...new Set(groupIds)].slice(0, MAX_FOLDS).map((id) => [id, true]));
+}
+
+/**
+ * Add one id to the `ui.folds` record. When the record is full (MAX_FOLDS) the OLDEST `grp:` entries (insertion order) are dropped to
+ * make room; with no `grp:` entry left to drop the add is refused (null).
+ */
+export function addFold(
+  folds: Record<string, boolean>,
+  id: string
+): Record<string, boolean> | null {
+  const next = { ...folds };
+  const keys = Object.keys(next);
+  if (keys.length >= MAX_FOLDS) {
+    const old = keys.filter((k) => k.startsWith('grp:')).slice(0, keys.length - MAX_FOLDS + 1);
+    if (old.length < keys.length - MAX_FOLDS + 1) {
+      return null;
+    }
+    for (const k of old) {
+      delete next[k];
+    }
+  }
+  next[id] = true;
+  return next;
+}

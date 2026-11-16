@@ -4,6 +4,7 @@
  * Pure maths on top of `scoreRoughness` (no formulas copied): the page's Live roughness view draws it.
  */
 import { scoreRoughness, type RoughnessOpts } from './scorersMore';
+import { dissonanceAt } from './visual';
 
 export interface LiveRoughness {
   /** Total roughness of all the tones, each tone's own partial-partial term included (`scoreRoughness`'s score). */
@@ -83,4 +84,54 @@ export function liveRoughness(
     curve: { cents, values },
     hz,
   };
+}
+
+export interface FieldMark {
+  /** Index into the field list given. */
+  idx: number;
+  /** Cents above the lowest shown note, reduced into one repeat (0 for the unison; a repeat above reads as 0). */
+  interval: number;
+  /** Roughness of the pair (the lowest shown note, a tone at `interval` above it): `dissonanceAt`. */
+  roughness: number;
+}
+
+/**
+ * Where every field note falls on the curve's axis: its interval above the lowest shown note, reduced into one repeat
+ * (`(c - lowest) mod repC`; 0 and repC are the same unison mark). A field note that is one of the shown notes (or the
+ * same reduced interval as a shown note) is left out, since the chord's own marks already draw it; field notes at the
+ * same interval are listed once. Empty when nothing is shown. `baseHz` is the Hz of 1/1.
+ */
+export function fieldMarks(
+  fieldCents: readonly number[],
+  shownCents: readonly number[],
+  baseHz: number,
+  repC = 1200,
+  opts: RoughnessOpts = {}
+): FieldMark[] {
+  const shown = shownCents.filter(Number.isFinite);
+  if (!shown.length || !(repC > 0) || !(baseHz > 0)) {
+    return [];
+  }
+  const low = Math.min(...shown);
+  const lowHz = baseHz * 2 ** (low / 1200);
+  const reduce = (c: number) => {
+    const m = (((c - low) % repC) + repC) % repC;
+    return m > repC - 1e-6 ? 0 : m;
+  };
+  const key = (x: number) => Math.round(x * 100);
+  const taken = new Set(shown.map((c) => key(reduce(c))));
+  const out: FieldMark[] = [];
+  fieldCents.forEach((c, idx) => {
+    if (!Number.isFinite(c)) {
+      return;
+    }
+    const interval = reduce(c);
+    const k = key(interval);
+    if (taken.has(k)) {
+      return;
+    }
+    taken.add(k);
+    out.push({ idx, interval, roughness: dissonanceAt(interval, lowHz, opts) });
+  });
+  return out;
 }

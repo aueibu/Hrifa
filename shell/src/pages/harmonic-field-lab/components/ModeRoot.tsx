@@ -26,18 +26,23 @@ export function ModeChevron({
   y,
   deg,
   scale = 1,
+  strokeWidth,
+  testId = 'mode-root',
 }: {
   x: number;
   y: number;
   deg: number;
   scale?: number;
+  /** The drawn stroke width in the SVG's own units (default: about 2.6 px scaled, never under 1.5). */
+  strokeWidth?: number;
+  testId?: string;
 }) {
   return (
     <path
       className={classes.modeChevron}
-      data-testid="mode-root"
+      data-testid={testId}
       d="M-6 -5.5L0 0L-6 5.5"
-      strokeWidth={Math.max(1.5, 2.6 * scale) / scale}
+      strokeWidth={(strokeWidth ?? Math.max(1.5, 2.6 * scale)) / scale}
       transform={`translate(${x} ${y}) rotate(${deg}) scale(${scale})`}
       aria-hidden="true"
     />
@@ -55,12 +60,15 @@ export function RingChevron({
   x,
   y,
   gap = RING_GAP,
+  scale,
 }: {
   cx: number;
   cy: number;
   x: number;
   y: number;
   gap?: number;
+  /** Shrinks the chevron (small rings). */
+  scale?: number;
 }) {
   const a = Math.atan2(y - cy, x - cx);
   return (
@@ -68,6 +76,7 @@ export function RingChevron({
       x={x + gap * Math.cos(a)}
       y={y + gap * Math.sin(a)}
       deg={(a * 180) / Math.PI + 180}
+      scale={scale}
     />
   );
 }

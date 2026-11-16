@@ -8,7 +8,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   gap: 0.625rem;
   min-height: 0;
   overflow-x: hidden;
@@ -24,18 +24,18 @@
 .verdicts {
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.1875rem;
 }
 
 .foot {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 .hint {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 .sub .sub {
@@ -58,7 +58,7 @@
   align-items: baseline;
   color: var(--text);
   display: flex;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   font-weight: 600;
   gap: 0.5rem;
   justify-content: space-between;
@@ -75,10 +75,32 @@
   font-weight: 400;
 }
 
+/* the clickable guide (M8i): a transparent strip over the line inside the left padding; the line brightens while it is pointed at */
+.nest:has(> .nestGuide:hover) {
+  border-left-color: var(--text-muted);
+}
+
+.foldCount {
+  display: inline-block;
+  min-width: 8ch;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.nestGuide {
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 0.375rem;
+}
+
 .nest {
   border-left: 1px solid var(--control-border);
   margin-left: 0.375rem;
   padding-left: 0.375rem;
+  position: relative;
 }
 
 .family {
@@ -158,7 +180,7 @@
   display: inline-flex;
   flex-direction: column;
   font: inherit;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   line-height: 1.2;
   min-width: 2.25rem;
   padding: 0.125rem 0.375rem;
@@ -190,7 +212,6 @@
 
 .rung:focus-visible,
 .heatRowBtn:focus-visible,
-.noteChip:focus-visible,
 .sortBtn:focus-visible,
 .foldBtn:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -244,13 +265,13 @@
 /* ----------------------------------------------------------------------------------------------- spectrum */
 .spec {
   border-collapse: collapse;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   width: 100%;
 }
 
 .spec th {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   font-weight: 500;
   padding: 0.125rem 0.375rem;
   text-align: left;
@@ -274,7 +295,7 @@
 .sizeChip {
   background: var(--panel-slot);
   border-radius: var(--radius-control);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   padding: 0 0.3125rem;
   white-space: nowrap;
 }
@@ -282,7 +303,7 @@
 .clash {
   align-items: baseline;
   display: grid;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.375rem;
   grid-template-columns: 4.25rem minmax(0, 1fr);
 }
@@ -296,7 +317,7 @@
   align-items: center;
   color: var(--text-muted);
   display: flex;
-  font-size: 0.625rem;
+  font-size: var(--lab-fs-tiny);
   gap: 0.375rem;
 }
 
@@ -367,7 +388,7 @@
 
 .modeHeadCell {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   text-align: center;
 }
 
@@ -383,7 +404,7 @@
   color: var(--text);
   cursor: pointer;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   padding: 1px;
   text-align: left;
   width: 100%;
@@ -426,7 +447,7 @@
 
 .heatSign {
   font-family: var(--mantine-font-family-monospace);
-  font-size: 1rem;
+  font-size: var(--lab-fs-glyph);
   font-weight: 700;
   line-height: 1;
   opacity: 0;
@@ -491,9 +512,16 @@
 }
 
 .chordsFolds {
+  align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.375rem;
   justify-content: flex-end;
+}
+
+/* the Group shapes switch (M8i) sits at the left of the row, the two fold buttons at the right */
+.groupSwitch {
+  margin-right: auto;
 }
 
 .chordsList {
@@ -504,6 +532,8 @@
   min-height: 4.5rem;
   overflow-x: hidden;
   overflow-y: auto;
+  padding-right: 0.5rem;
+  scrollbar-gutter: stable;
 }
 
 .chordsList > * {
@@ -529,7 +559,7 @@
   border-radius: var(--radius-control);
   display: flex;
   flex-direction: column;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   gap: 0.0625rem;
   padding: 0.25rem 0.125rem;
 }
@@ -640,7 +670,7 @@
 .svgLabel {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 12px;
+  font-size: var(--lab-svg-fs-label);
 }
 
 .axisKey {
@@ -651,7 +681,7 @@
 .axisKeyText {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 10px;
+  font-size: var(--lab-svg-fs-small);
 }
 
 .stem {
@@ -666,7 +696,7 @@
 }
 
 .svgChip {
-  font-size: 10px;
+  font-size: var(--lab-svg-fs-small);
   font-weight: 700;
 }
 
@@ -692,32 +722,6 @@
 }
 
 /* ------------------------------------------------------------------------------------------ field table */
-.noteChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.noteChip {
-  background: var(--panel-slot);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-}
-
-.noteChip[data-on='true'] {
-  color: var(--text);
-}
-
-.noteChip[aria-pressed='true'] {
-  border-color: var(--text);
-  outline: 1px solid var(--text);
-}
-
 .tableWrap {
   max-height: 70vh;
   overflow: auto;
@@ -726,14 +730,14 @@
 .dt {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   width: 100%;
 }
 
 .dt th {
   background: var(--panel-header);
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   font-weight: 500;
   padding: 0.25rem 0.5rem;
   position: sticky;
@@ -776,7 +780,7 @@
   color: var(--text-subtle);
   cursor: pointer;
   font: inherit;
-  font-size: 0.625rem;
+  font-size: var(--lab-fs-tiny);
   margin-left: 0.25rem;
   padding: 0 0.125rem;
 }
@@ -813,7 +817,7 @@
 }
 
 .cardName {
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   min-width: 0;
 }
 
@@ -821,13 +825,13 @@
   border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
   color: var(--text-muted);
-  font-size: 0.625rem;
+  font-size: var(--lab-fs-tiny);
   margin-left: 0.25rem;
   padding: 0 0.25rem;
 }
 
 .cardBase {
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   text-align: right;
 }
 
@@ -872,11 +876,11 @@
 
 .tileName {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
 }
 
 .readoutValue {
-  font-size: 0.9375rem;
+  font-size: var(--lab-fs-title);
 }
 
 .chosen {
@@ -895,7 +899,7 @@
 .vizModal {
   display: flex;
   flex-direction: column;
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   gap: 0.625rem;
 }
 
@@ -936,7 +940,7 @@
   border-radius: var(--radius-control);
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   line-height: 1;
   padding: 0.0625rem 0.125rem;
   pointer-events: none;
@@ -976,7 +980,7 @@
 .lat3dAxis {
   color: var(--text-subtle);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   font-weight: 700;
   pointer-events: none;
 }
@@ -985,7 +989,7 @@
   background: var(--panel-inset);
   border-radius: var(--radius-control);
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   padding: 0.75rem;
 }
 
@@ -1005,7 +1009,7 @@
 .chartTick {
   fill: var(--text-subtle);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 9px;
+  font-size: var(--lab-svg-fs-small);
 }
 
 .chartHit {
@@ -1036,7 +1040,7 @@
 .edoBestLabel {
   fill: var(--mark-violet);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 9px;
+  font-size: var(--lab-svg-fs-small);
   font-weight: 700;
   paint-order: stroke;
   stroke: var(--panel-inset);
@@ -1058,7 +1062,7 @@
   cursor: pointer;
   font: inherit;
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   padding: 0.0625rem 0.4375rem;
 }
 
@@ -1081,19 +1085,25 @@
 
 .dissMark {
   stroke: var(--text-subtle);
-  stroke-dasharray: 2 3;
   stroke-width: 1;
+  /* a note left out of the subset: a solid line, dimmed (the states below bring it back to full) */
+  opacity: 0.35;
+}
+
+.dissMark[data-state='on'],
+.dissMark[data-state='lit'],
+.dissMark[data-sel='true'],
+.dissMark[data-pin='true'] {
+  opacity: 1;
 }
 
 .dissMark[data-state='on'] {
   stroke: var(--text);
-  stroke-dasharray: none;
   stroke-width: 1.5;
 }
 
 .dissMark[data-state='lit'] {
   stroke: var(--mark-green);
-  stroke-dasharray: none;
   stroke-width: 2.5;
 }
 
@@ -1104,7 +1114,7 @@
 .dissNote {
   fill: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 8.5px;
+  font-size: var(--lab-svg-fs-small);
 }
 
 .dissNote[data-state='lit'] {
@@ -1121,7 +1131,7 @@
 .dissDipLabel {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 8.5px;
+  font-size: var(--lab-svg-fs-small);
   paint-order: stroke;
   stroke: var(--panel-inset);
   stroke-width: 3px;
@@ -1180,7 +1190,7 @@
 .isoLabel {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 9px;
+  font-size: var(--lab-svg-fs-small);
 }
 
 .isoLabel[data-state='on'] {
@@ -1322,7 +1332,7 @@
 
 .bigKeySummary {
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   margin: 0;
   text-align: center;
 }
@@ -1356,7 +1366,7 @@
 }
 
 .fillName {
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -1364,7 +1374,7 @@
 /* the tag is text: "retuned notes" in the text colour, "different notes" muted */
 .fillTag {
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 .fillTag[data-tag='different'] {
@@ -1406,6 +1416,45 @@
 .chipWrap:hover .chipStash,
 .chipWrap:focus-within .chipStash {
   visibility: visible;
+}
+
+/* a grouped card (M8i): the wrapper is the visual box (card button on top, the roots row under it), the stash `+` sits at the top right */
+.chipWrap[data-grouped] {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  flex-direction: column;
+}
+
+.chipWrap[data-grouped]:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.chipWrap[data-grouped][data-picked='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.chipWrap[data-grouped] .card,
+.chipWrap[data-grouped] .card:hover {
+  background: none;
+  border-color: transparent;
+  outline: 0;
+}
+
+.chipWrap[data-grouped] .card:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.chipWrap[data-grouped] .chipStash {
+  top: 0.125rem;
+}
+
+.groupRow {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 0.375rem 0.25rem;
 }
 
 .chipStash:hover {
@@ -1461,7 +1510,7 @@
   border-radius: var(--radius-control);
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.0625rem;
   padding: 0.1875rem 0.4375rem;
 }
@@ -1516,33 +1565,21 @@
 
 .shelfRefusal {
   color: var(--mark-red);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 .slot {
-  background: var(--panel-slot);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  padding: 0.25rem 0.375rem;
 }
 
-.slot:hover {
-  background: var(--mantine-color-default-hover);
-}
-
-.slot[data-selected='true'] {
+.slot[data-selected='true'] .card {
   border-color: var(--text);
 }
 
-.slot[data-picked='true'] {
-  outline: 1px solid var(--text);
-}
-
 /* sounding now (a chord key, hold 1, a click, Play selected), H-2: green, with a thicker outline as the second channel */
-.slot[data-playing='true'] {
+.slot[data-playing='true'] .card {
   background: var(--tint-green-bg);
   outline: 2px solid var(--mark-green);
   outline-offset: -1px;
@@ -1554,37 +1591,14 @@
   border-radius: var(--radius-control);
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   font-weight: 600;
-  margin-right: 0.375rem;
   padding: 0 0.25rem;
 }
 
-.slotHead {
-  align-items: center;
-  display: grid;
-  gap: 0.375rem;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-}
-
-.slotPlay {
-  background: none;
-  border: 0;
-  cursor: pointer;
-  display: flex;
-  padding: 0;
-}
-
-.slotPlay:focus-visible,
 .slotName:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
-}
-
-.slotText {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
 }
 
 .slotName {
@@ -1593,7 +1607,7 @@
   color: inherit;
   cursor: text;
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   font-weight: 600;
   max-width: 100%;
   overflow: hidden;
@@ -1609,25 +1623,20 @@
 
 .slotCount {
   color: var(--text-muted);
-  font-size: 0.6875rem;
-}
-
-.slotActions {
-  align-items: center;
-  display: flex;
-  gap: 0.0625rem;
+  font-size: var(--lab-fs-tiny);
 }
 
 .slotNote {
   color: var(--text-muted);
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   gap: 0.25rem 0.75rem;
 }
 
 .drawing {
   height: 1.75rem;
+  overflow: visible; /* the root chevron sits just outside the viewBox */
   width: 1.75rem;
 }
 
@@ -1698,7 +1707,7 @@
 .compNum {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   min-width: 1ch;
 }
 
@@ -1747,7 +1756,7 @@
 }
 
 .compItemLabel {
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1756,13 +1765,13 @@
 .compDetail {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.625rem;
+  font-size: var(--lab-fs-tiny);
   overflow-wrap: anywhere;
 }
 
 .compNote {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 /* the `-` popup: a plain bordered panel next to the pointer */
@@ -1782,13 +1791,13 @@
 }
 
 .sendHead {
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   overflow-wrap: anywhere;
 }
 
 .sendKind {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 .sendList {
@@ -1837,7 +1846,7 @@
   border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   padding: 0 0.3125rem;
 }
 
@@ -1848,7 +1857,7 @@
 }
 
 .sendName {
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1857,7 +1866,7 @@
 
 .sendEffect {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
 }
 
 .sendMode {
@@ -1880,7 +1889,7 @@
 .sendPitches {
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   list-style: none;
   margin: 0;
   max-height: 6.5rem;
@@ -1895,7 +1904,7 @@
 
 .sendFoot {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
 }
 
 /* the brief confirmation (or refusal), bottom left, plain text on a bordered strip */
@@ -1905,7 +1914,7 @@
   border-radius: var(--radius-control);
   bottom: 0.75rem;
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   left: 0.75rem;
   max-width: 22rem;
   padding: 0.25rem 0.5rem;
@@ -1981,10 +1990,9 @@
     'ring pitches pitches'
     'ring steps steps';
   grid-template-columns: var(--chord-card-ring-narrow) minmax(0, 1fr) auto;
-  height: var(--chord-card-h-narrow);
+  min-height: var(--chord-card-h-narrow);
   min-width: 0;
-  overflow: hidden;
-  padding: 0 1.625rem 0 0.375rem;
+  padding: 0.125rem 1.625rem 0.125rem 0.375rem;
   row-gap: 0;
   text-align: left;
 }
@@ -2025,6 +2033,19 @@
   display: contents;
 }
 
+.valueList {
+  display: block;
+  overflow-wrap: anywhere; /* last resort: one value wider than the card */
+  text-wrap: pretty; /* fallback; a browser that knows balance uses the next line */
+  text-wrap: balance;
+}
+
+.valueItem {
+  display: inline-block;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
 .cardLine1,
 .cardLine2 {
   line-height: 1.2;
@@ -2033,13 +2054,13 @@
 }
 
 .cardLine1 {
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   font-weight: 600;
 }
 
 .cardLine2 {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   min-height: 0.8rem;
 }
 
@@ -2060,10 +2081,62 @@
 }
 
 .cardStat {
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   grid-area: stat;
   text-align: right;
   white-space: nowrap;
+}
+
+/* the shelf card (a static box: only the ring is the play button; the actions sit at the right, always visible) */
+.card[data-static] {
+  cursor: default;
+  padding-right: 0.25rem;
+}
+
+.cardRingBtn {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  height: 100%;
+  padding: 0;
+  width: 100%;
+}
+
+.cardRingBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.cardLine1:has(.slotName),
+.cardLine1:has(.slotKey) {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.cardLine1 .slotName {
+  min-width: 0;
+}
+
+.cardStat[data-actions] {
+  align-items: center;
+  display: flex;
+  gap: 0.0625rem;
+  justify-self: end;
+}
+
+/* the select box has its space reserved; it shows on hover or focus, and stays on a checked row */
+.cardCheck {
+  display: inline-flex;
+  margin-right: 0.25rem;
+  visibility: hidden;
+}
+
+.card:hover .cardCheck,
+.card:focus-within .cardCheck,
+.cardCheck[data-checked='true'] {
+  visibility: visible;
 }
 
 /* WIDE threshold: the one place (30rem of card width) */
@@ -2075,7 +2148,7 @@
     grid-template-columns:
       var(--chord-card-ring) var(--chord-card-title-w) minmax(0, 1fr)
       var(--chord-card-stat-w);
-    height: var(--chord-card-h);
+    min-height: var(--chord-card-h);
     row-gap: 0.0625rem;
   }
 
@@ -2084,8 +2157,9 @@
     width: var(--chord-card-ring);
   }
 
-  .cardLine1,
-  .cardLine2 {
+  /* the title block keeps the ellipsis (tooltip has the full text); the pitches and steps wrap and the card grows */
+  .cardCol[data-col='title'] .cardLine1,
+  .cardCol[data-col='title'] .cardLine2 {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2093,6 +2167,10 @@
 
   .cardStat {
     align-self: center;
+  }
+
+  .card[data-static] {
+    grid-template-columns: var(--chord-card-ring) var(--chord-card-title-w) minmax(0, 1fr) auto;
   }
 }
 
@@ -2115,7 +2193,7 @@
 .patError {
   border-left: 2px solid var(--mark-red);
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   padding-left: 0.375rem;
 }
 
@@ -2152,7 +2230,7 @@
   --live-fade-end: 500ms; /* dimmed to gone (FADE_OUT_MS in RoughnessView) */
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.5rem;
 }
 
@@ -2177,14 +2255,16 @@
   width: var(--live-total-w);
   color: var(--text);
   transition: color var(--live-fade);
-  font-size: 1.5rem;
+  font-size: var(--lab-fs-display);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
 
-.liveHint {
-  color: var(--text-muted);
-  margin: 0;
+.liveRegister {
+  display: inline-flex;
+  flex: none;
+  justify-content: flex-end;
+  width: 13rem;
 }
 
 .livePairs {
@@ -2246,9 +2326,11 @@
 }
 
 .liveHintOverlay {
-  bottom: 2.5rem;
+  /* centre of the empty plot (plot middle = (MT + PH / 2) / H of the svg), clear of marks, ticks and the label band */
+  top: 42.7%;
+  transform: translateY(-50%);
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   left: 0.75rem;
   margin: 0;
   opacity: 0;
@@ -2280,8 +2362,32 @@
   background: var(--mark-blue);
 }
 
-.liveRough[data-source='hover'] .liveMark {
+.liveRough[data-source='hover'] .liveMark,
+.liveRough[data-source='note'] .liveMark {
   stroke: var(--mark-blue);
+}
+
+/* a pinned note is a quiet source: neutral, not the hover colour */
+.liveRough[data-source='pinned'] .liveMark {
+  stroke: var(--text-muted);
+}
+
+/* the other field notes against the lowest shown note: shorter and thinner than the chord's own marks, subtle */
+.liveFieldMark {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  opacity: 0.8;
+}
+
+/* a field note outside the current subset: clearly dimmed */
+[data-subset='false'] .liveFieldMark {
+  opacity: 0.28;
+}
+
+.liveFieldHit {
+  pointer-events: stroke;
+  stroke: transparent;
+  stroke-width: 7;
 }
 
 /* One state attribute on the root (idle, sounding, hover, linger, fading) drives both layers, so they cannot disagree.
@@ -2358,7 +2464,7 @@
 
 .liveTag {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   pointer-events: none;
   position: absolute;
   right: 0.75rem;

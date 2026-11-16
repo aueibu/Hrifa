@@ -4,19 +4,25 @@
  */
 import { useMemo, useState, type PointerEvent } from 'react';
 import { dissonanceAt } from '../../../lib/harmonic-field';
+import { NEAR_X, layoutChartLabels } from '../state/chartLabelLayout';
+import { SVG_FS_SMALL } from '../state/typeScale';
 import { OutsideCount, useGhosts } from './GhostMarks';
 import { ModeChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, useLab } from './ui';
+import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 const W = 360;
-const H = 232;
+const H = 252;
 const ML = 8;
 const MR = 8;
 const MT = 22;
-const MB = 34;
+/** Bottom margin: the tick row under the baseline, then the label band (3 lanes) for note ratios and dip names. */
+const MB = 54;
 const PW = W - ML - MR;
 const PH = H - MT - MB;
+/** Centre y of the first label lane, under the tick row. */
+const BAND_Y = MT + PH + 22;
 
 export function DissonanceBody() {
   const lab = useLab();
@@ -45,9 +51,48 @@ export function DissonanceBody() {
     [ghosts, dissCurve]
   );
   const fieldCents = field.map((n) => n.c);
+  // the notes whose ratio label is drawn: sounding or in the subset
+  const labelled = fieldCents.flatMap((_, i) =>
+    lab.sounding.has(i) || lab.selected.has(i) ? [i] : []
+  );
+  const labelledNoteXs = labelled.map((i) => xOf(fieldCents[i]));
   // the dip at the far end is the repeat itself (an octave, a tritave ...), not a second unison: name it by the repeat's ratio
   const dipName = (d: { idx: number; ratio: string }) =>
     d.idx === dissCurve.cents.length - 1 ? repText : d.ratio;
+  // ONE layout for every name under the axis: the note ratios first (natural spot under their mark), then the dip names
+  // (none within NEAR_X of a drawn note label), all assigned to lanes together
+  const dipItems = dissDips.flatMap((d, k) =>
+    labelledNoteXs.some((nx) => Math.abs(nx - xOf(d.c)) <= NEAR_X)
+      ? []
+      : [
+          {
+            k,
+            item: {
+              x: xOf(d.c),
+              y: yOf(d.d),
+              text: dipName(d),
+              isFirst: d.idx === 0,
+              isLast: d.idx === dissCurve.cents.length - 1,
+            },
+          },
+        ]
+  );
+  const places = layoutChartLabels(
+    [
+      ...labelled.map((i) => ({
+        x: xOf(fieldCents[i]),
+        y: yOf(0),
+        text: ratios[i],
+        isFirst: false,
+        isLast: false,
+        first: true,
+      })),
+      ...dipItems.map((d) => d.item),
+    ],
+    { bandY: BAND_Y, x0: ML, x1: W - MR }
+  );
+  const notePlace = new Map(labelled.map((i, n) => [i, places[n]]));
+  const dipPlace = new Map(dipItems.map((d, n) => [d.k, places[labelled.length + n]]));
   const [at, setAt] = useState<number | null>(null);
   const shownIdx = at ?? null;
   const move = (e: PointerEvent<SVGRectElement>) => {
@@ -109,16 +154,34 @@ export function DissonanceBody() {
                     {...noteHandlers(lab, i)}
                   />
                   {modeRoot === i && <ModeChevron x={xOf(c)} y={MT - 1} deg={90} scale={0.7} />}
-                  {state !== 'off' && (
-                    <text
-                      className={classes.dissNote}
-                      data-state={state}
-                      x={xOf(c)}
-                      y={H - 16}
-                      textAnchor="middle"
-                    >
-                      {ratios[i]}
-                    </text>
+                  {state !== 'off' && notePlace.get(i) && (
+                    <>
+                      {(notePlace.get(i)!.lane > 0 ||
+                        Math.abs(notePlace.get(i)!.x - xOf(c)) > 1) && (
+                        <line
+                          className={labClasses.labelLeader}
+                          data-testid="diss-note-leader"
+                          x1={xOf(c)}
+                          x2={notePlace.get(i)!.leaderTo.x}
+                          y1={yOf(0) + 3}
+                          y2={notePlace.get(i)!.leaderTo.y}
+                        />
+                      )}
+                      <text
+                        className={classes.dissNote}
+                        data-state={state}
+                        x={notePlace.get(i)!.x}
+                        y={notePlace.get(i)!.y}
+                        textAnchor={notePlace.get(i)!.anchor}
+                        style={
+                          notePlace.get(i)!.scale < 1
+                            ? { fontSize: SVG_FS_SMALL * notePlace.get(i)!.scale }
+                            : undefined
+                        }
+                      >
+                        {ratios[i]}
+                      </text>
+                    </>
                   )}
                 </g>
               );
@@ -150,21 +213,41 @@ export function DissonanceBody() {
                 />
               </g>
             ))}
-            {dissDips.map((d) => (
-              <g key={d.idx}>
-                <circle className={classes.dissDip} cx={xOf(d.c)} cy={yOf(d.d)} r={2} />
-                <text
-                  className={classes.dissDipLabel}
-                  x={xOf(d.c)}
-                  y={yOf(d.d) - 6}
-                  textAnchor={
-                    d.idx === 0 ? 'start' : d.idx === dissCurve.cents.length - 1 ? 'end' : 'middle'
-                  }
-                >
-                  {dipName(d)}
-                </text>
-              </g>
-            ))}
+            {dissDips.map((d, k) => {
+              const place = dipPlace.get(k);
+              return (
+                <g key={d.idx}>
+                  <circle className={classes.dissDip} cx={xOf(d.c)} cy={yOf(d.d)} r={2}>
+                    <title>{dipName(d)}</title>
+                  </circle>
+                  {place && (
+                    <>
+                      {place.leader && (
+                        <line
+                          className={labClasses.labelLeader}
+                          data-testid="diss-dip-leader"
+                          x1={xOf(d.c)}
+                          x2={place.leaderTo.x}
+                          y1={yOf(d.d) + 3}
+                          y2={place.leaderTo.y}
+                        />
+                      )}
+                      <text
+                        className={classes.dissDipLabel}
+                        x={place.x}
+                        y={place.y}
+                        textAnchor={place.anchor}
+                        style={
+                          place.scale < 1 ? { fontSize: SVG_FS_SMALL * place.scale } : undefined
+                        }
+                      >
+                        {dipName(d)}
+                      </text>
+                    </>
+                  )}
+                </g>
+              );
+            })}
             {shownIdx !== null && (
               <g pointerEvents="none">
                 <line
@@ -187,7 +270,7 @@ export function DissonanceBody() {
                 key={c}
                 className={classes.chartTick}
                 x={xOf(c)}
-                y={H - 3}
+                y={MT + PH + 9}
                 textAnchor={c === 0 ? 'start' : c === repC ? 'end' : 'middle'}
               >
                 {Math.round(c)}

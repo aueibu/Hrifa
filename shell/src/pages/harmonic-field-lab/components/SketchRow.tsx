@@ -1,6 +1,6 @@
 /**
  * Sketch row (M8a), at the top of the Chords panel: any template on any root of the subset, even when the field lacks some of
- * its notes. Play sketch sounds the chord as the "As in field | Exact" switch says (default: as the field gives it, the armed
+ * its notes. Play sketch sounds the chord as the "Field | Exact" switch says (default: as the field gives it, the armed
  * chord's shape or the template found at the root; Exact: the true ratios); found notes are marked, outsiders show their
  * distance in cents to the nearest field note; Stash puts the pitches heard on the shelf. A chord chip or shelf slot that plays
  * arms its template and shape here (hold 4 on a note moves that shape onto it, hold 5 plays the exact ratios there).
@@ -22,6 +22,7 @@ import { sketchPositionalPitches } from '../state/sketchChord';
 import { PlayIcon } from './icons';
 import { tooFewHint } from './Positional';
 import { Num, Tip, severity, useLab, useNativeTitle } from './ui';
+import { ValueList } from './ValueList';
 import classes from './panels.module.css';
 
 /** Template dropdown data: the templates grouped by family (the chord finder's family order), the text as the value. */
@@ -156,7 +157,7 @@ export function SketchRow() {
   useEffect(() => {
     if (hovered.current && cents.length) {
       audio.setPreviewTarget(target);
-      lab.setChord(found);
+      lab.setChord(found, abs);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyNow]);
@@ -226,8 +227,8 @@ export function SketchRow() {
             size="xs"
             disabled={sk.positional !== null}
             aria-label="Sketch realization"
-            data={['As in field', 'Exact']}
-            value={sk.exact ? 'Exact' : 'As in field'}
+            data={['Field', 'Exact']}
+            value={sk.exact ? 'Exact' : 'Field'}
             onChange={(v) => dispatch({ type: 'sketch/set', patch: { exact: v === 'Exact' } })}
             className={classes.tinySeg}
           />
@@ -286,7 +287,7 @@ export function SketchRow() {
           aria-label="Sketch chord notes"
           onMouseEnter={() => {
             hovered.current = true;
-            lab.setChord(found);
+            lab.setChord(found, abs);
             audio.setPreviewTarget(target);
           }}
           onMouseLeave={() => {
@@ -346,17 +347,19 @@ export function SketchRow() {
             </span>
           )}
           <span data-testid="sketch-cents">
-            <Num muted>{pitches.map((p) => p.c.toFixed(1)).join(', ')} c</Num>
+            <Num muted>
+              <ValueList text={`${pitches.map((p) => p.c.toFixed(1)).join(', ')} c`} />
+            </Num>
           </span>
           {pitches.length > 1 && (
             <span data-testid="sketch-steps">
               <Num muted>
-                steps{' '}
-                {pitches
-                  .slice(1)
-                  .map((p, i) => (p.c - pitches[i].c).toFixed(1))
-                  .join(', ')}{' '}
-                c
+                <ValueList
+                  text={`steps ${pitches
+                    .slice(1)
+                    .map((p, i) => (p.c - pitches[i].c).toFixed(1))
+                    .join(', ')} c`}
+                />
               </Num>
             </span>
           )}

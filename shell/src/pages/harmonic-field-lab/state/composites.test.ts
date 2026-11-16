@@ -580,3 +580,37 @@ describe('composites.v1 storage', () => {
     expect(back.list[1].items[0].source?.gen.method).toBe('composite');
   });
 });
+
+describe('item mode root (H-10 amendment)', () => {
+  const add = (root?: Note | null) =>
+    compositesReduce(emptyComposites(), {
+      type: 'composite/addItem',
+      to: 'new',
+      date: '2026-11-15T00:00:00.000Z',
+      item: {
+        kind: 'subset',
+        label: 'dorian',
+        pitches: [
+          { m: null, c: 0 },
+          { m: null, c: 200 },
+        ],
+        root,
+      },
+    });
+  it('keeps a cents-only root cents-only and a monzo root with its monzo; round trips', () => {
+    const cents = add({ m: null, c: 200 });
+    expect(cents.list[0].items[0].root).toEqual({ m: null, c: 200 });
+    const stored = compositesToStored(cents) as { composites: { items: { root?: unknown }[] }[] };
+    expect(stored.composites[0].items[0].root).toEqual({ m: null, c: 200 });
+    expect(sanitizeComposites(stored)?.list[0].items[0].root).toEqual({ m: null, c: 200 });
+    const ji = add(ratioNote(9, 8));
+    const back = sanitizeComposites(compositesToStored(ji));
+    expect(back?.list[0].items[0].root).toEqual(ratioNote(9, 8));
+  });
+  it('an item without a root is stored byte for byte as before and loads without one', () => {
+    const none = add(null);
+    const stored = compositesToStored(none) as { composites: { items: object[] }[] };
+    expect('root' in stored.composites[0].items[0]).toBe(false);
+    expect(sanitizeComposites(stored)?.list[0].items[0].root).toBeUndefined();
+  });
+});

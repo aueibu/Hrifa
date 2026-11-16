@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { chordAmp } from './audio/engine';
 import { FakeCtx } from './audio/fakeContext';
-import { addSubsetNamed, pickPreset } from './testUtils';
+import { addSubsetNamed, pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -30,6 +30,7 @@ const advance = (ms: number) =>
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   contexts = [];
   class TestCtx extends FakeCtx {
     constructor() {

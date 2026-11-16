@@ -1,7 +1,7 @@
 /**
- * The send mode (M8d, H-10): which pitches a chord sends to a composite. `field` = As in field (the chord as the field gives it:
+ * The send mode (M8d, H-10): which pitches a chord sends to a composite. `field` = Field (the chord as the field gives it:
  * its nearest field notes), `exact` = the chord's own true ratios placed on the same root. It follows the shelf's
- * "As in field | Exact" switch (`state.shelf.sketch.exact`), and the `-` popup can flip it for one send. A positional chord is
+ * "Field | Exact" switch (`state.shelf.sketch.exact`), and the `-` popup can flip it for one send. A positional chord is
  * fixed (always its field notes) and an item without an exact form (a note, a subset, a selection) has no second mode: the mode
  * does not apply to either. Pure: no React, no storage. The popup preview and the send both call `sendPitches`, so what the
  * preview ring shows is what is added.

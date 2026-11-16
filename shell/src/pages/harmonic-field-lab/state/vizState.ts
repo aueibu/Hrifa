@@ -10,6 +10,10 @@ import { VIZ_IDS, VIZ_VIEW_LABEL, type VizId, type VizView } from './layout';
 export type LatMode = 'prime' | 'gen' | 'cps';
 export const LAT_MODES: readonly LatMode[] = ['prime', 'gen', 'cps'];
 
+/** Live roughness register: `shape` scores the shown notes with the lowest at the positional cards' 1/1 Hz (so the total equals a chord card's score); `pitch` at the pitch each really sounds. */
+export type RoughRegister = 'shape' | 'pitch';
+export const ROUGH_REGISTERS: readonly RoughRegister[] = ['shape', 'pitch'];
+
 export interface VizSettings {
   dim: '2d' | '3d';
   /** The three prime axes of the 3D lattice; null is the default (3, 5, 7). */
@@ -24,6 +28,8 @@ export interface VizSettings {
   isoTol: number;
   /** The n-EDO clicked in the EDO fit chart. */
   edoPick: number | null;
+  /** Live roughness register; unset means `shape`. */
+  register?: RoughRegister;
 }
 
 export const DEFAULT_SETTINGS: VizSettings = {

@@ -1,5 +1,5 @@
 /**
- * M8d step 2 through the page: the `-` popup's As in field | Exact slider and stats panel, `E`, the right-click menu (Stash on
+ * M8d step 2 through the page: the `-` popup's Field | Exact slider and stats panel, `E`, the right-click menu (Stash on
  * shelf, Shift+click = the other mode), the shelf chord that is always fixed, the positional Scale order, the composite item's
  * detail lines, and the CPS chips (scenarios a to g).
  */
@@ -7,7 +7,7 @@ import { fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 20_000 });
 
@@ -38,6 +38,7 @@ const centsOf = (it: StoredItem) => it.pitches.map((p) => Math.round(p.c * 10) /
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   (window as unknown as { AudioContext: unknown }).AudioContext = FakeCtx;
 });
 afterEach(() => {
@@ -51,16 +52,16 @@ describe('the - popup mode and the right-click menu (a, b, c, d)', () => {
     await pickPreset('12-EDO');
     const major = chip(EDO_MAJOR);
     fireEvent.mouseEnter(major);
-    // a: the shelf switch is on As in field, so the popup opens on it and shows the field's notes as text
+    // a: the shelf switch is on Field, so the popup opens on it and shows the field's notes as text
     down('-');
-    expect(slider('As in field')).toBeChecked();
-    expect(slider('As in field')).toBeEnabled();
+    expect(slider('Field')).toBeChecked();
+    expect(slider('Field')).toBeEnabled();
     expect(pitchText()).toMatch(/0\.0 c.*400\.0 c.*700\.0 c/);
     expect(pitchText()).not.toMatch(/5\/4/);
     down('0');
     expect(composites()).toHaveLength(1);
     expect(centsOf(composites()[0].items[0])).toEqual([0, 400, 700]);
-    // the popup of composite 1: the item is already there in As in field
+    // the popup of composite 1: the item is already there in Field
     down('-');
     const row1 = () => within(popup()!).getByRole('button', { name: /^1: Composite 1/ });
     expect(row1()).toHaveAccessibleName(/already in composite 1/);
@@ -77,7 +78,7 @@ describe('the - popup mode and the right-click menu (a, b, c, d)', () => {
       within(row1()).getByTestId('composite-ring').querySelectorAll('[data-kind="added"]')
     ).toHaveLength(1);
     // the slider does the same as E
-    fireEvent.click(slider('As in field'));
+    fireEvent.click(slider('Field'));
     expect(row1()).toHaveAccessibleName(/already in composite 1/);
     fireEvent.click(slider('Exact'));
     down('1');
@@ -87,9 +88,9 @@ describe('the - popup mode and the right-click menu (a, b, c, d)', () => {
     // E does nothing while the popup is closed (and flipping it in the popup never touched the shelf switch)
     down('e');
     expect(popup()).toBeNull();
-    expect(within(sketch()).getByRole('radio', { name: 'As in field' })).toBeChecked();
+    expect(within(sketch()).getByRole('radio', { name: 'Field' })).toBeChecked();
     down('-');
-    expect(slider('As in field')).toBeChecked();
+    expect(slider('Field')).toBeChecked();
     down('Escape');
     // c: the shelf switch on Exact: the popup opens on Exact
     fireEvent.click(within(sketch()).getByRole('radio', { name: 'Exact' }));
@@ -146,7 +147,7 @@ describe('the - popup mode and the right-click menu (a, b, c, d)', () => {
     fireEvent.mouseEnter(slot);
     down('-');
     expect(slider('Exact')).toBeDisabled();
-    expect(slider('As in field')).toBeDisabled();
+    expect(slider('Field')).toBeDisabled();
     expect(within(popup()!).getByTestId('send-mode-note')).toHaveTextContent(
       /stashed shelf chord always sends exactly the pitches it was stashed with/
     );
@@ -215,7 +216,15 @@ describe('positional chords: Scale order, score and rank, tail (d, e, f)', () =>
     fireEvent.click(screen.getByRole('button', { name: 'Show the items of Composite 1' }));
     const items = within(screen.getByRole('list', { name: 'Items of Composite 1' }));
     expect(items.getByText('2-2 on 1')).toBeInTheDocument();
-    expect(items.getByText('0.0, 400.0, 700.0 c · 7 of 12-EDO · 400-300 c')).toBeInTheDocument();
+    // the cents are ValueList spans now: match the one element whose whole text is the line
+    const centsLine = '0.0, 400.0, 700.0 c · 7 of 12-EDO · 400-300 c';
+    expect(
+      items.getByText(
+        (_content, el) =>
+          el?.textContent === centsLine &&
+          !Array.from(el.children).some((child) => child.textContent === centsLine)
+      )
+    ).toBeInTheDocument();
     expect(items.getByText('Source: 12-EDO')).toBeInTheDocument();
     // f: the stash keeps the tail too
     fireEvent.click(railTab(/^Chords/));

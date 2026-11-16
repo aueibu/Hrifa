@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -40,6 +40,7 @@ async function openC12() {
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   contexts = [];
   class TestCtx extends FakeCtx {
     constructor() {
@@ -115,8 +116,8 @@ describe('stash provenance and send to composite', () => {
     // the shelf slot line shows the pattern's display text
     fireEvent.click(railTab(/^Shelf/));
     const list = screen.getByRole('list', { name: 'Chord shelf' });
-    expect(within(list).getAllByText(/3 notes · 2-2 on 2/).length).toBe(1);
-    expect(within(list).getAllByText(/3 notes · 2-3 on 1/).length).toBe(2);
+    expect(within(list).getAllByText(/2-2 on 2 · 3 notes/).length).toBe(1);
+    expect(within(list).getAllByText(/2-3 on 1 · 3 notes/).length).toBe(2);
     // playing the slot arms its pattern in the Sketch row
     fireEvent.click(within(list).getByRole('button', { name: 'Play Chord 3' }));
     fireEvent.click(within(list).getByRole('button', { name: 'Play Chord 1' }));

@@ -64,6 +64,8 @@ interface HeldNote {
   src: number;
   markOnly?: boolean;
   ghost?: number;
+  /** The Hz it sounds at. */
+  hz: number;
   on: boolean;
 }
 /** A running hold-1/2/3 preview: its notes and the timers that step through a whole mode. */
@@ -105,6 +107,9 @@ interface Args {
 /** Delay (s) before a scheduled plan starts, so the first note is not clipped. */
 const LEAD = 0.05;
 
+/** A sounding pitch's counter key: its Hz in hundredths of a cent (independent of the 1/1 setting, which may change while it sounds). */
+const pitchKey = (hz: number): number => Math.round(1200 * Math.log2(hz) * 100);
+
 export function useLabAudio({
   enabled,
   base,
@@ -121,6 +126,11 @@ export function useLabAudio({
   const markLights = useRef(new LightCounter());
   /** Sounding pitches that match no field note, reference counted by pitch (see `ghostKey`). */
   const ghostLights = useRef(new LightCounter());
+  /** Every sounding pitch as played, reference counted by `pitchKey` of its Hz, and the field note it lights (-1 none). */
+  const pitchLights = useRef(new LightCounter());
+  const pitchSrc = useRef(new Map<number, number>());
+  /** The Hz of a held melody key, to unlight its pitch on release. */
+  const slotHz = useRef(new Map<number, number>());
   /** Shelf chords that sound, reference counted by id (a layered selection or a click over a hold counts twice). */
   const chordLights = useRef(new Map<string, number>());
   const timers = useRef(new Set<number>());
@@ -188,13 +198,30 @@ export function useLabAudio({
           .lit()
           .sort((a, b) => a - b)
           .map(ghostCents),
+        pitches: pitchLights.current
+          .lit()
+          .sort((a, b) => a - b)
+          .map((k) => ({
+            c: ghostCents(k) - 1200 * Math.log2(latest.current.ui.baseHz),
+            src: pitchSrc.current.get(k) ?? -1,
+          })),
         chords: [...chordLights.current.keys()],
       });
-    const light = (i: number, on: boolean, markOnly = false, ghost?: number) => {
+    const light = (i: number, on: boolean, markOnly = false, ghost?: number, hz?: number) => {
       let changed = false;
+      if (hz !== undefined && hz > 0) {
+        const k = pitchKey(hz);
+        if (on) {
+          pitchSrc.current.set(k, i);
+          changed = pitchLights.current.on(k) || changed;
+        } else if (pitchLights.current.off(k)) {
+          pitchSrc.current.delete(k);
+          changed = true;
+        }
+      }
       if (i >= 0) {
         const c = markOnly ? markLights.current : lights.current;
-        changed = on ? c.on(i) : c.off(i);
+        changed = (on ? c.on(i) : c.off(i)) || changed;
       }
       // a sound with no field light, or a target-only tone: a ghost mark at its pitch, counted so two sounds of one pitch
       // end together (the field light and the ghost are separate counters)
@@ -238,12 +265,12 @@ export function useLabAudio({
         const start = (LEAD + n.delay) * 1000;
         const on = window.setTimeout(() => {
           timers.current.delete(on);
-          light(n.src, true, n.markOnly, n.ghost);
+          light(n.src, true, n.markOnly, n.ghost, n.hz);
         }, start);
         const off = window.setTimeout(
           () => {
             timers.current.delete(off);
-            light(n.src, false, n.markOnly, n.ghost);
+            light(n.src, false, n.markOnly, n.ghost, n.hz);
           },
           start + n.dur * 1000
         );
@@ -273,6 +300,7 @@ export function useLabAudio({
       timers.current.clear();
       slotSrc.current.clear();
       slotGhost.current.clear();
+      slotHz.current.clear();
       held.current.clear();
       previews.current.clear();
       heldDigits.current.clear();
@@ -286,8 +314,11 @@ export function useLabAudio({
       const had =
         lights.current.lit().length > 0 ||
         markLights.current.lit().length > 0 ||
-        ghostLights.current.lit().length > 0;
+        ghostLights.current.lit().length > 0 ||
+        pitchLights.current.lit().length > 0;
       lights.current.clear();
+      pitchLights.current.clear();
+      pitchSrc.current.clear();
       markLights.current.clear();
       ghostLights.current.clear();
       const hadChords = chordLights.current.size > 0;
@@ -312,7 +343,7 @@ export function useLabAudio({
         if (n.on) {
           n.on = false;
           engine.current?.stop(n.vid);
-          light(n.src, false, n.markOnly, n.ghost);
+          light(n.src, false, n.markOnly, n.ghost, n.hz);
         }
       }
     };
@@ -349,20 +380,21 @@ export function useLabAudio({
           src: n.src,
           markOnly: n.markOnly,
           ghost: n.ghost,
+          hz: n.hz,
           on: false,
         };
         p.notes.push(note);
         const begin = () => {
           if (eng.start(note.vid, n.hz, n.amp)) {
             note.on = true;
-            light(n.src, true, n.markOnly, n.ghost);
+            light(n.src, true, n.markOnly, n.ghost, n.hz);
           }
         };
         const end = () => {
           if (note.on) {
             note.on = false;
             eng.stop(note.vid);
-            light(n.src, false, n.markOnly, n.ghost);
+            light(n.src, false, n.markOnly, n.ghost, n.hz);
           }
         };
         if (n.delay <= 0) {
@@ -545,7 +577,7 @@ export function useLabAudio({
         if (!want.has(slot)) {
           engine.current?.stop(`rt${slot}`);
           rtVoices.current.delete(slot);
-          light(v.src, false, false, v.ghost);
+          light(v.src, false, false, v.ghost, v.hz);
         }
       }
       for (const [slot, hz] of want) {
@@ -563,14 +595,13 @@ export function useLabAudio({
           const eng = getEngine();
           if (eng?.start(`rt${slot}`, hz)) {
             rtVoices.current.set(slot, { hz, src, ghost });
-            light(src, true, false, ghost);
+            light(src, true, false, ghost, hz);
           }
         } else if (Math.abs(cur.hz - hz) > 1e-9) {
           engine.current?.glideTo(`rt${slot}`, hz, r.settings.glideMs);
-          if (cur.src !== src || cur.ghost !== ghost) {
-            light(cur.src, false, false, cur.ghost);
-            light(src, true, false, ghost);
-          }
+          // the pitch moved (so the Live roughness view follows the glide's target), whether or not the lit note changed
+          light(cur.src, false, false, cur.ghost, cur.hz);
+          light(src, true, false, ghost, hz);
           rtVoices.current.set(slot, { hz, src, ghost });
         }
       }
@@ -717,7 +748,8 @@ export function useLabAudio({
           if (eng.start(`k${slot}`, linked.hz)) {
             slotSrc.current.set(slot, src);
             slotGhost.current.set(slot, ghost);
-            light(src, true, false, ghost);
+            slotHz.current.set(slot, linked.hz);
+            light(src, true, false, ghost, linked.hz);
           }
           return;
         }
@@ -727,7 +759,8 @@ export function useLabAudio({
         }
         if (eng.start(`k${slot}`, p.hz)) {
           slotSrc.current.set(slot, p.src);
-          light(p.src, true);
+          slotHz.current.set(slot, p.hz);
+          light(p.src, true, false, undefined, p.hz);
         }
       },
       release: (slot) => {
@@ -741,7 +774,9 @@ export function useLabAudio({
         slotSrc.current.delete(slot);
         const ghost = slotGhost.current.get(slot);
         slotGhost.current.delete(slot);
-        light(src, false, false, ghost);
+        const hz = slotHz.current.get(slot);
+        slotHz.current.delete(slot);
+        light(src, false, false, ghost, hz);
       },
       playNote: (i) => {
         const f = latest.current.base.field[i];

@@ -21,3 +21,4 @@ export * from './sketch';
 export * from './composite';
 export * from './positional';
 export * from './liveRoughness';
+export * from './shapeGroups';

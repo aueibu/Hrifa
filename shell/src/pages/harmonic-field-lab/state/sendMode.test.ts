@@ -66,7 +66,7 @@ const addNote = () =>
   });
 
 describe('send mode: as in field vs exact (scenarios a to d)', () => {
-  it('a: shelf on As in field: the composite gets the nearest field notes 0, 400, 700 c', () => {
+  it('a: shelf on Field: the composite gets the nearest field notes 0, 400, 700 c', () => {
     const mode = sendModeOf({ ...emptySketch(), exact: false });
     expect(mode).toBe('field');
     const s = sendTo(emptyComposites(), chip, mode);
@@ -83,7 +83,7 @@ describe('send mode: as in field vs exact (scenarios a to d)', () => {
     expect(round(sendPitches(chip, 'exact'))).toEqual(round(p.added));
   });
 
-  it('the preview of As in field differs from Exact', () => {
+  it('the preview of Field differs from Exact', () => {
     expect(round(previewSend([], chip, 'field', oct).added)).toEqual([0, 400, 700]);
   });
 

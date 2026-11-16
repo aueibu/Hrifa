@@ -248,7 +248,7 @@ export const HOLD_DIGITS: Readonly<Record<string, PreviewKind>> = {
 };
 
 /**
- * Hold 4 = the armed chord AS IN THE FIELD (its realization, rigid, errors included) placed on the pointed note; hold 5 = the
+ * Hold 4 = the armed chord in Field mode (its realization, rigid, errors included) placed on the pointed note; hold 5 = the
  * template's EXACT ratios on it. Not preview kinds: no listed / pure.
  */
 export const ARMED_DIGITS: Readonly<Record<string, 'field' | 'exact'>> = {

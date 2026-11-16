@@ -9,20 +9,45 @@ import { mulNotes } from '../../../lib/harmonic-field';
 import { CHORD_KEYS, CHORD_PAGE, playsChords } from '../audio/keymap';
 import type { PreviewTarget } from '../audio/plan';
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
+import { noteLabel } from '../state/derive';
 import { litIndex } from '../state/retuner';
+import { ChordCard, notesText, pitchTexts, templateOn } from './ChordCard';
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlayIcon, TrashIcon } from './icons';
+import { ModeChevron } from './ModeRoot';
 import { SendMany, shelfChordItem, useSendHover } from './Send';
-import { Num, Strip, Tip, useLab, useNativeTitle } from './ui';
+import { Strip, Tip, useLab, useNativeTitle } from './ui';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
+/**
+ * Root chevron on the small ring, in viewBox units (ring radius 0.8, dot edge 0.93; 1 unit is 24 px at the 3rem ring,
+ * 16 px at 2rem). Tune here: tip radius, arm length (the chevron path is 6 long, so the scale is length / 6) and stroke.
+ */
+const ROOT_TIP = 0.97;
+const ROOT_ARM = 0.17;
+const ROOT_STROKE = 0.055;
+const ROOT_SCALE = ROOT_ARM / 6;
+
 /** The chord's notes on a small ring (the repeat is one turn, 1/1 at the top), as the pitch ring draws a chord. */
-export function ChordDrawing({ cents, repC }: { cents: readonly number[]; repC: number }) {
+export function ChordDrawing({
+  cents,
+  repC,
+  rootCents,
+}: {
+  cents: readonly number[];
+  repC: number;
+  /** The chord's root (cents): marked with the mode-root chevron just outside its dot; none when omitted. */
+  rootCents?: number;
+}) {
   const R = repC > 0 ? repC : 1200;
   const pts = cents.map((c) => {
     const a = (2 * Math.PI * (((c % R) + R) % R)) / R;
     return { x: Math.sin(a) * 0.8, y: -Math.cos(a) * 0.8 };
   });
+  const rootAngle =
+    rootCents === undefined || !cents.length
+      ? null
+      : (2 * Math.PI * (((rootCents % R) + R) % R)) / R;
   const uniq = pts.filter((p, i) => pts.findIndex((q) => q.x === p.x && q.y === p.y) === i);
   return (
     <svg className={classes.drawing} viewBox="-1 -1 2 2" aria-hidden="true">
@@ -36,6 +61,16 @@ export function ChordDrawing({ cents, repC }: { cents: readonly number[]; repC: 
       {uniq.map((p, i) => (
         <circle key={i} className={classes.drawingDot} cx={p.x} cy={p.y} r={0.13} />
       ))}
+      {rootAngle !== null && (
+        <ModeChevron
+          x={Math.sin(rootAngle) * ROOT_TIP}
+          y={-Math.cos(rootAngle) * ROOT_TIP}
+          deg={(rootAngle * 180) / Math.PI - 90 + 180}
+          scale={ROOT_SCALE}
+          strokeWidth={ROOT_STROKE}
+          testId="chord-root"
+        />
+      )}
     </svg>
   );
 }
@@ -138,7 +173,7 @@ function Slot({
   const enter = (e?: SyntheticEvent) => {
     hovered.current = true;
     send.enter(e);
-    lab.setChord(lit);
+    lab.setChord(lit, lights);
     audio.setPreviewTarget(target);
   };
   const leave = () => {
@@ -155,6 +190,56 @@ function Slot({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetKey]);
+  const play = () => {
+    if (picked) {
+      lab.pickChord(null);
+    } else {
+      lab.pickChord(lit);
+      audio.playCents(cents, lights, [chord.id]);
+      if ((chord.template || chord.pattern) && chord.pitches.length) {
+        // playing a slot arms its template (or its positional pattern) and its stored realization in the Sketch row
+        const p0 = chord.pitches[0];
+        // root position, like a chip's shape: a note below the first is lifted by the repeat
+        const shape = chord.pitches.map((p) => {
+          let n = mulNotes(p, p0, -1);
+          while (base.rep.c > 1e-9 && n.c < -1e-9) {
+            n = mulNotes(n, base.rep, 1);
+          }
+          return n;
+        });
+        dispatch(
+          chord.pattern
+            ? {
+                type: 'sketch/armPositional',
+                pattern: chord.pattern,
+                rootDeg: chord.rootDeg ?? undefined,
+                shape,
+              }
+            : { type: 'sketch/arm', template: chord.template as string, shape }
+        );
+      }
+    }
+  };
+  // the card texts come from the same helpers as the chord chips: root as `noteLabel`, pitches as ratios (else cents), steps
+  const root = chord.pitches[0];
+  const count1 = notesText(chord.pitches.length);
+  const subtitle = [
+    chord.pattern
+      ? chord.template
+      : root
+        ? templateOn(chord.template, noteLabel(root))
+        : chord.template,
+    count1,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const ups = chord.pitches.map((p) => p.c - (root?.c ?? 0));
+  const texts = pitchTexts(
+    ups,
+    chord.pitches.length > 0 && chord.pitches.every((p) => p.m)
+      ? chord.pitches.map(noteLabel)
+      : null
+  );
   return (
     <li
       className={classes.slot}
@@ -166,139 +251,108 @@ function Slot({
       onFocus={enter}
       onBlur={leave}
     >
-      <div className={classes.slotHead}>
-        <Checkbox
-          size="xs"
-          aria-label={`Select ${chord.name}`}
-          checked={selected}
-          onChange={() => dispatch({ type: 'shelf/select', id: chord.id, additive: true })}
-        />
-        <button
-          type="button"
-          className={classes.slotPlay}
-          aria-label={`Play ${chord.name}`}
-          aria-pressed={picked}
-          title={nativeTitle(
-            'Click: hear it and keep it highlighted. Point and hold 1 to hear it for as long as you hold the key.'
-          )}
-          onClick={() => {
-            if (picked) {
-              lab.pickChord(null);
-            } else {
-              lab.pickChord(lit);
-              audio.playCents(cents, lights, [chord.id]);
-              if ((chord.template || chord.pattern) && chord.pitches.length) {
-                // playing a slot arms its template (or its positional pattern) and its stored realization in the Sketch row
-                const p0 = chord.pitches[0];
-                // root position, like a chip's shape: a note below the first is lifted by the repeat
-                const shape = chord.pitches.map((p) => {
-                  let n = mulNotes(p, p0, -1);
-                  while (base.rep.c > 1e-9 && n.c < -1e-9) {
-                    n = mulNotes(n, base.rep, 1);
-                  }
-                  return n;
-                });
-                dispatch(
-                  chord.pattern
-                    ? {
-                        type: 'sketch/armPositional',
-                        pattern: chord.pattern,
-                        rootDeg: chord.rootDeg ?? undefined,
-                        shape,
-                      }
-                    : { type: 'sketch/arm', template: chord.template as string, shape }
-                );
-              }
-            }
-          }}
-        >
-          <ChordDrawing cents={cents} repC={base.repC} />
-        </button>
-        <span className={classes.slotText}>
-          <SlotName chord={chord} />
-          <span className={classes.slotCount}>
-            {keyBadge && (
-              <span className={classes.slotKey} data-testid="slot-key" title="Computer key">
-                {keyBadge}
-              </span>
-            )}
-            <span
-              title={nativeTitle(
-                chord.pattern ? `Positional chord, pattern ${chord.pattern}` : undefined
-              )}
-            >
-              <Num muted>
-                {chord.pitches.length} {chord.pitches.length === 1 ? 'note' : 'notes'}
-                {chord.template ? ` · ${chord.template}` : ''}
-              </Num>
+      <ChordCard
+        testId="slot-card"
+        label={`Play ${chord.name}`}
+        title={chord.name}
+        titleNode={<SlotName chord={chord} />}
+        badge={
+          keyBadge ? (
+            <span className={classes.slotKey} data-testid="slot-key" title="Computer key">
+              {keyBadge}
             </span>
-          </span>
-        </span>
-        <span className={classes.slotActions}>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            aria-label={`Move ${chord.name} up`}
-            disabled={index === 0}
-            onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index - 1 })}
-          >
-            <ArrowUpIcon />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            aria-label={`Move ${chord.name} down`}
-            disabled={index === count - 1}
-            onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index + 1 })}
-          >
-            <ArrowDownIcon />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            aria-label={`Reload ${chord.name} as a new tab`}
-            title={nativeTitle(
-              chord.source
-                ? 'Open this chord’s source (generator and subset) as a new tab.'
-                : 'This chord has no stored source, so it cannot be reloaded.'
-            )}
-            disabled={!chord.source}
-            onClick={() => dispatch({ type: 'shelf/reload', id: chord.id })}
-          >
-            <CopyIcon />
-          </ActionIcon>
-          {confirming ? (
-            <Button
-              size="compact-xs"
-              variant="default"
-              color="red"
-              aria-label={`Confirm delete ${chord.name}`}
-              onClick={() => {
-                setConfirming(false);
-                dispatch({ type: 'shelf/delete', id: chord.id });
-              }}
-              onBlur={() => setConfirming(false)}
-              data-autofocus
-              autoFocus
-            >
-              Delete?
-            </Button>
-          ) : (
+          ) : null
+        }
+        subtitle={subtitle}
+        pitches={texts.pitches}
+        steps={texts.steps}
+        stat={null}
+        ring={{ cents, repC: base.repC }}
+        found
+        picked={picked}
+        ringButton={{
+          label: `Play ${chord.name}`,
+          pressed: picked,
+          title: nativeTitle(
+            'Click: hear it and keep it highlighted. Point and hold 1 to hear it for as long as you hold the key.'
+          ),
+          onClick: play,
+        }}
+        actions={
+          <>
+            <span className={classes.cardCheck} data-checked={selected || undefined}>
+              <Checkbox
+                size="xs"
+                aria-label={`Select ${chord.name}`}
+                checked={selected}
+                onChange={() => dispatch({ type: 'shelf/select', id: chord.id, additive: true })}
+              />
+            </span>
             <ActionIcon
               variant="subtle"
               color="gray"
               size="sm"
-              aria-label={`Delete ${chord.name}`}
-              onClick={() => setConfirming(true)}
+              aria-label={`Move ${chord.name} up`}
+              disabled={index === 0}
+              onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index - 1 })}
             >
-              <TrashIcon />
+              <ArrowUpIcon />
             </ActionIcon>
-          )}
-        </span>
-      </div>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              aria-label={`Move ${chord.name} down`}
+              disabled={index === count - 1}
+              onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index + 1 })}
+            >
+              <ArrowDownIcon />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              aria-label={`Reload ${chord.name} as a new tab`}
+              title={nativeTitle(
+                chord.source
+                  ? 'Open this chord’s source (generator and subset) as a new tab.'
+                  : 'This chord has no stored source, so it cannot be reloaded.'
+              )}
+              disabled={!chord.source}
+              onClick={() => dispatch({ type: 'shelf/reload', id: chord.id })}
+            >
+              <CopyIcon />
+            </ActionIcon>
+            {confirming ? (
+              <Button
+                size="compact-xs"
+                variant="default"
+                color="red"
+                aria-label={`Confirm delete ${chord.name}`}
+                onClick={() => {
+                  setConfirming(false);
+                  dispatch({ type: 'shelf/delete', id: chord.id });
+                }}
+                onBlur={() => setConfirming(false)}
+                data-autofocus
+                autoFocus
+              >
+                Delete?
+              </Button>
+            ) : (
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                aria-label={`Delete ${chord.name}`}
+                onClick={() => setConfirming(true)}
+              >
+                <TrashIcon />
+              </ActionIcon>
+            )}
+          </>
+        }
+      />
       {(parentGone || parent || reload) && (
         <div className={classes.slotNote} role="status">
           {parentGone && <span>parent removed</span>}

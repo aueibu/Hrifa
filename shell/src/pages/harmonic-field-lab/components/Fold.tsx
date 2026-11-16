@@ -5,11 +5,10 @@
  * and the count beside it (kept while folded).
  */
 import type { ReactNode } from 'react';
-import { foldId } from '../state/foldIds';
-import { MAX_FOLDS } from '../state/persist';
+import { addFold, foldId } from '../state/foldIds';
 import type { TipKey } from '../texts';
 import { ChevronDownIcon } from './icons';
-import { Num, Tip, useLab } from './ui';
+import { Num, Tip, useLab, useNativeTitle } from './ui';
 import classes from './panels.module.css';
 
 export { foldId };
@@ -24,8 +23,11 @@ export function useFold(id: string): { folded: boolean; toggle: () => void } {
       const next = { ...folds };
       delete next[id];
       dispatch({ type: 'ui', patch: { folds: next } });
-    } else if (Object.keys(folds).length < MAX_FOLDS) {
-      dispatch({ type: 'ui', patch: { folds: { ...folds, [id]: true } } });
+    } else {
+      const next = addFold(folds, id);
+      if (next) {
+        dispatch({ type: 'ui', patch: { folds: next } });
+      }
     }
   };
   return { folded, toggle };
@@ -61,5 +63,76 @@ export function FoldHead({ id, tip, title, count, label }: FoldHeadProps) {
       </Tip>
       <Num muted>{count}</Num>
     </span>
+  );
+}
+
+/** M8i: expanded state of one shape group, stored in the same `ui.folds` record but reversed: a stored `grp:` id = EXPANDED. */
+export function useGroupExpanded(id: string): { expanded: boolean; toggle: () => void } {
+  const { state, dispatch } = useLab();
+  const folds = state.ui.folds;
+  const expanded = folds[id] === true;
+  const toggle = () => {
+    if (expanded) {
+      const next = { ...folds };
+      delete next[id];
+      dispatch({ type: 'ui', patch: { folds: next } });
+    } else {
+      const next = addFold(folds, id);
+      if (next) {
+        dispatch({ type: 'ui', patch: { folds: next } });
+      }
+    }
+  };
+  return { expanded, toggle };
+}
+
+/**
+ * M8i: a header count. Grouping off: the bare number n of individual chords. Grouping on: `n (m)`, m = the unique shapes once grouped
+ * (groups of one included, even when m equals n); the full sentence is its title and accessible label. The slot has one fixed width in
+ * both states (`.foldCount`, fits `nnn (mm)`), right-aligned, so toggling the switch never shifts the header row.
+ */
+export function GroupedCount({ n, m }: { n: number; m: number | null }) {
+  const { state } = useLab();
+  const nativeTitle = useNativeTitle();
+  if (!state.ui.groupShapes || m === null) {
+    return <span className={classes.foldCount}>{n}</span>;
+  }
+  const sentence = `${n} total chords here (${m} unique chords once shapes are grouped)`;
+  return (
+    <span
+      className={classes.foldCount}
+      role="note"
+      aria-label={sentence}
+      title={nativeTitle(sentence)}
+    >
+      {n} ({m})
+    </span>
+  );
+}
+
+/**
+ * M8i: the clickable tree guide of a nested block. A transparent strip inside the block's left padding (over the 1px line, no layout
+ * change) folds or unfolds the folder just above the indent with the SAME state as its header button, so it is remembered and
+ * Collapse all | Expand all treat it alike. The header button stays the accessible control: this is aria-hidden and not focusable.
+ */
+export function NestGuide({
+  name,
+  open,
+  toggle,
+}: {
+  name: string;
+  open: boolean;
+  toggle: () => void;
+}) {
+  const nativeTitle = useNativeTitle();
+  return (
+    <span
+      className={classes.nestGuide}
+      data-testid="nest-guide"
+      aria-hidden="true"
+      tabIndex={-1}
+      title={nativeTitle(`${open ? 'Collapse' : 'Expand'} ${name}`)}
+      onClick={toggle}
+    />
   );
 }

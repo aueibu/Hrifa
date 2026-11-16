@@ -3,12 +3,24 @@
    --tint-<hue>-*). Regions are separated by tier steps and gaps, not lines (THEMING.md divider budget). No hex, no raw
    palette shades, no decorative shadows. */
 
+:root {
+  /* Type scale (M8k): the only font sizes the lab uses. On :root so portalled menus and popovers inherit them. */
+  --lab-fs-tiny: 0.6875rem;
+  --lab-fs-small: 0.75rem;
+  --lab-fs-body: 0.8125rem;
+  --lab-fs-title: 0.875rem;
+  --lab-fs-glyph: 1rem;
+  --lab-fs-display: 1.5rem;
+  --lab-svg-fs-small: 9px;
+  --lab-svg-fs-label: 11px;
+}
+
 .root {
   --input-height-xs: 1.625rem;
 
   background: var(--surface);
   color: var(--text);
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   height: 100dvh;
   line-height: 1.3;
   overflow: hidden;
@@ -120,7 +132,7 @@
 }
 
 .formStack {
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -148,12 +160,12 @@
 }
 
 .homeText {
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 .pageTitle {
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: var(--lab-fs-title);
   font-weight: 600;
   margin: 0;
   white-space: nowrap;
@@ -175,7 +187,7 @@
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   padding: 0.25rem 0.625rem;
   white-space: nowrap;
 }
@@ -212,7 +224,7 @@
 
 .railHead {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   font-weight: 600;
   letter-spacing: 0.04em;
   padding: 0 0.375rem;
@@ -258,7 +270,7 @@
 
 .railCount {
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   white-space: nowrap;
 }
 
@@ -321,7 +333,7 @@
 .stripTitle {
   font-family: inherit;
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   font-weight: 600;
   letter-spacing: 0.02em;
   margin: 0;
@@ -384,7 +396,7 @@
 
 .paramNote {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   white-space: nowrap;
 }
 
@@ -402,7 +414,7 @@
   color: var(--text-muted);
   cursor: pointer;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   padding: 0.1875rem 0;
 }
 
@@ -514,7 +526,7 @@
   align-items: center;
   color: var(--text-muted);
   display: flex;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   justify-content: space-between;
 }
 
@@ -530,7 +542,7 @@
 }
 
 .tinySeg {
-  --sc-font-size: 0.625rem;
+  --sc-font-size: var(--lab-fs-tiny);
   --sc-padding: 0 0.375rem;
 }
 
@@ -612,7 +624,7 @@
 
 .ringCap {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
 }
 
 .ringSvg {
@@ -631,7 +643,7 @@
 .statGrid {
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.25rem;
 }
 
@@ -649,13 +661,13 @@
 .sideBlock {
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.25rem;
 }
 
 .sideHead {
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   font-weight: 600;
   margin: 0;
 }
@@ -663,7 +675,7 @@
 .bars {
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.125rem;
   list-style: none;
   margin: 0;
@@ -700,7 +712,7 @@
   border-radius: var(--radius-control);
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.1875rem;
   padding: 0.375rem 0.5rem;
 }
@@ -717,7 +729,7 @@
   color: var(--text-muted);
   cursor: pointer;
   font: inherit;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   font-weight: 400;
   margin-left: 0.375rem;
   padding: 0 0.25rem;
@@ -733,7 +745,7 @@
 }
 
 .modeLabel {
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   min-width: 4.5rem;
   text-align: center;
   white-space: nowrap;
@@ -810,12 +822,12 @@
 
 .chainLabel {
   fill: var(--text-subtle);
-  font-size: 9px;
+  font-size: var(--lab-svg-fs-small);
 }
 
 .offLabel {
   fill: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--lab-svg-fs-small);
 }
 
 /* an off-chain note is a small dashed mark */
@@ -855,7 +867,7 @@
 .svgLabel {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 11px;
+  font-size: var(--lab-svg-fs-label);
 }
 
 .svgLabel[data-on="true"] {
@@ -886,7 +898,7 @@
 
 .gutter {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   position: relative;
 }
 
@@ -961,7 +973,7 @@
 .colRatio {
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   left: 50%;
   position: absolute;
   top: 0;
@@ -1012,7 +1024,7 @@
 .colNum {
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.625rem;
+  font-size: var(--lab-fs-tiny);
   left: 50%;
   line-height: 1;
   position: absolute;
@@ -1036,7 +1048,7 @@
 .stepCell {
   display: flex;
   flex-direction: column;
-  font-size: 0.625rem;
+  font-size: var(--lab-fs-tiny);
   line-height: 1.1;
   position: absolute;
   text-align: center;
@@ -1154,7 +1166,7 @@
 .savedName {
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   line-height: 1.2;
   min-width: 0;
 }
@@ -1203,7 +1215,7 @@
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   font-weight: 600;
   gap: 0.25rem;
   padding: 0.125rem 0.25rem;
@@ -1219,7 +1231,7 @@
 
 .dockStatus {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
 }
 
 .keys {
@@ -1240,7 +1252,7 @@
   display: flex;
   flex: 1 1 0;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.375rem;
   height: 1.75rem;
   justify-content: center;
@@ -1255,7 +1267,7 @@
 .keyHint {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
 }
 
 /* sounding: green tint with a green base bar; a chord member also gets the blue outline */
@@ -1285,7 +1297,7 @@
 
 .glossEntry dd {
   color: var(--text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--lab-fs-body);
   margin: 0.125rem 0 0;
 }
 
@@ -1404,7 +1416,7 @@
 .fieldDt {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   width: 100%;
 }
 
@@ -1603,7 +1615,7 @@
 /* an inline message under the generator or the nearest-scale pick: an error, a warning or a note */
 .fieldMsg {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
@@ -1624,7 +1636,7 @@
   cursor: pointer;
   font: inherit;
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   margin-inline-end: 0.125rem;
   padding: 0 0.25rem;
 }
@@ -1651,7 +1663,7 @@
   color: var(--text-subtle);
   cursor: pointer;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--lab-fs-title);
   line-height: 1;
   margin-left: -0.375rem;
   padding: 0 0.25rem;
@@ -1691,14 +1703,14 @@
 
 .savedEmpty {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   list-style: none;
   padding: 0.375rem var(--pad);
 }
 
 .sparkOther {
   color: var(--text-subtle);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1746,7 +1758,7 @@
 /* the full path, under the Preset control: wraps instead of cutting off */
 .pbCrumb {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   line-height: 1.3;
   margin-block: -0.25rem 0;
   overflow-wrap: anywhere;
@@ -1776,7 +1788,7 @@
   border-radius: var(--radius-control);
   cursor: pointer;
   display: flex;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   gap: 0.25rem;
   line-height: 1.3;
   min-height: 1.5rem;
@@ -1822,7 +1834,7 @@
 
 .pbPath {
   color: var(--text-subtle);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1843,7 +1855,7 @@
   background: var(--panel-inset);
   display: inline-flex;
   flex-wrap: wrap;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   gap: 0.25rem;
   inset-inline-end: 0;
   position: absolute;
@@ -1863,7 +1875,7 @@
 .pbEmpty,
 .pbInfo {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   line-height: 1.3;
   padding: 0.125rem 0.25rem;
 }
@@ -1898,7 +1910,7 @@
   color: var(--text-muted);
   display: flex;
   flex-direction: column;
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   gap: 0.25rem;
   line-height: 1.3;
   padding: 0.25rem 0.375rem;
@@ -1955,7 +1967,7 @@
   bottom: 0;
   display: flex;
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   justify-content: center;
   left: var(--pad);
   line-height: 1.2;
@@ -2045,7 +2057,7 @@
   color: var(--text-muted);
   cursor: pointer;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--lab-fs-small);
   font-weight: 600;
   padding: 0.125rem 0;
 }
@@ -2080,7 +2092,7 @@
   background: color-mix(in srgb, var(--panel) 80%, transparent);
   border-radius: var(--radius-control);
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--lab-fs-tiny);
   inset-block-end: 0.25rem;
   inset-inline-end: 0.25rem;
   padding: 0 0.25rem;

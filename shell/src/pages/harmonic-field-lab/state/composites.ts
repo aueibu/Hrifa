@@ -92,6 +92,8 @@ export interface CompositeItem {
   source: ItemSource | null;
   /** M8d: extra detail (see `ItemDetail`), or null (items stored before M8d, subsets and notes without one). */
   detail: ItemDetail | null;
+  /** H-10 amendment: the mode root of a subset or selection item (additive, absent = unknown); chords and notes use `pitches[0]`. */
+  root?: Note | null;
 }
 
 export interface Composite {
@@ -133,6 +135,7 @@ export interface ItemInput {
   source?: ItemSource | null;
   /** M8d: what the sender knows (template, root, pattern, tail). */
   detail?: Partial<ItemDetail> | null;
+  root?: Note | null;
 }
 
 const clonePitch = (p: Note): Note => ({ m: p.m ? { ...p.m } : null, c: p.c });
@@ -254,6 +257,7 @@ export function addItem(
     return refuse(s, `${c.name} is full (${MAX_COMPOSITE_ITEMS} items).`);
   }
   const rep = input.rep ? sanitizePitch(input.rep) : null;
+  const root = input.root ? sanitizePitch(input.root) : null;
   const kind: ItemKind = ITEM_KINDS.includes(input.kind) ? input.kind : 'selection';
   const detail =
     input.detail != null || kind === 'chord' || kind === 'selection'
@@ -267,6 +271,7 @@ export function addItem(
     rep: rep && rep.c > 0 ? rep : null,
     source: input.source ? cloneSource(input.source) : null,
     detail,
+    ...(root ? { root } : {}),
   };
   const next: Composite = { ...c, items: [...c.items, item], next: c.next + 1, updated: date };
   return {

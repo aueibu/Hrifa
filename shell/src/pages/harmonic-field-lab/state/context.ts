@@ -5,7 +5,7 @@
 import { createContext, useContext, type Dispatch } from 'react';
 import type { PreviewKind, PreviewTarget } from '../audio/plan';
 import type { Base, ChordModel, KeysData, SpectrumData, StripDev, edoOf, dissOf } from './derive';
-import type { Action, LabState, Tab } from './labState';
+import type { Action, LabState, SoundingPitch, Tab } from './labState';
 import type { VizId, VizView } from './layout';
 import type { VizSettings } from './vizState';
 
@@ -85,7 +85,10 @@ export interface Lab {
   setPin: (i: number | null) => void;
   /** Notes of the highlighted chord (a hovered chip, else a clicked one), and the setters of each. */
   chord: ReadonlySet<number>;
-  setChord: (s: ReadonlySet<number> | null) => void;
+  /** `pitches`: the card's real pitches (cents above 1/1, stacked octaves kept) for the Live roughness view; none = the field notes. */
+  setChord: (s: ReadonlySet<number> | null, pitches?: readonly number[]) => void;
+  /** The hovered chord's real pitches when its card gave them. */
+  chordHoverPitches: readonly number[] | null;
   pickChord: (s: ReadonlySet<number> | null) => void;
   chordPicked: ReadonlySet<number> | null;
   mode: number;
@@ -101,6 +104,8 @@ export interface Lab {
   soundingMarks: ReadonlySet<number>;
   /** Sounding pitches (cents above 1/1) that match no field note: drawn as ghost marks. */
   soundingGhosts: readonly number[];
+  /** Every sounding pitch as played (cents above 1/1, stacked octaves kept) with the field note it lights (-1 none). */
+  soundingPitches: readonly SoundingPitch[];
   /** Shelf chord ids that sound now: their cards light. */
   soundingChords: ReadonlySet<string>;
   /** Plain click on a note anywhere: toggle it in the subset (it does not pin). */

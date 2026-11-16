@@ -97,7 +97,7 @@ export function repOfGen(g: GenSpec): Note | null {
 
 /**
  * A shelf chord as an item: its stored exact pitches, and the generator and tab it was stashed from (not the active tab's). It is
- * FIXED (M8d): it always sends exactly the pitches it stored, so the As in field | Exact mode does not apply to it.
+ * FIXED (M8d): it always sends exactly the pitches it stored, so the Field | Exact mode does not apply to it.
  */
 export function shelfChordItem(c: ShelfChord): SendItem {
   return {
@@ -126,6 +126,7 @@ export function subsetItem(s: LibSubset, lib: Parameters<typeof ownerGen>[0]): S
     pitches: s.pitches.map(plainNote),
     rep: gen ? repOfGen(gen) : null,
     source: gen ? { gen, tab: ownerLabel(lib, s.owner), date: new Date().toISOString() } : null,
+    root: s.root ? plainNote(s.root) : null,
   };
 }
 
@@ -138,6 +139,7 @@ export function compositeItemItem(it: CompositeItem): SendItem {
     rep: it.rep,
     source: it.source,
     detail: it.detail,
+    root: it.root ?? null,
   };
 }
 
@@ -177,6 +179,7 @@ export function useSendTo() {
         rep: it.rep ?? lab.base.rep,
         source: it.source === undefined ? active : it.source,
         detail: it.detail,
+        root: it.root,
       });
       let target = to;
       if (many && list.length > 1) {
@@ -246,7 +249,7 @@ function PopupRow({
   digit: number;
   c: Composite;
   item: SendItem;
-  /** The popup's own As in field | Exact choice. */
+  /** The popup's own Field | Exact choice. */
   mode: SendMode;
 }) {
   const lab = useLab();
@@ -297,7 +300,7 @@ function PopupRow({
   );
 }
 
-/** The popup's own As in field | Exact slider: starts on the shelf's choice, disabled (with the reason) when the mode does not apply. */
+/** The popup's own Field | Exact slider: starts on the shelf's choice, disabled (with the reason) when the mode does not apply. */
 function ModeSwitch({ item, mode }: { item: SendItem; mode: SendMode }) {
   const reason = sendModeReason(item);
   const eff = effectiveSendMode(item, mode);
@@ -307,8 +310,8 @@ function ModeSwitch({ item, mode }: { item: SendItem; mode: SendMode }) {
         size="xs"
         aria-label="Send mode"
         disabled={reason !== null}
-        data={['As in field', 'Exact']}
-        value={eff === 'exact' ? 'Exact' : 'As in field'}
+        data={['Field', 'Exact']}
+        value={eff === 'exact' ? 'Exact' : 'Field'}
         onChange={(v) => setPopupMode(v === 'Exact' ? 'exact' : 'field')}
         className={labClasses.tinySeg}
       />
@@ -326,7 +329,7 @@ function PitchStats({ item, mode }: { item: SendItem; mode: SendMode }) {
   return (
     <div className={classes.sendStats} role="group" aria-label="Pitch values">
       <span className={classes.sendEffect}>
-        {plural(rows.length, 'note')}, {eff === 'exact' ? 'exact ratios' : 'as in the field'}
+        {plural(rows.length, 'note')}, {eff === 'exact' ? 'exact ratios' : 'field notes'}
       </span>
       <ol className={classes.sendPitches}>
         {rows.map((r, i) => (
@@ -391,9 +394,8 @@ function SendPopup({
         </li>
       </ul>
       <div className={classes.sendFoot}>
-        1 to 9 send, 0 starts a new composite, E flips As in field | Exact, Esc cancels. Notes: the
-        small dots are already in it, a plus is new, filled merges into a note, struck through is
-        dropped.
+        1 to 9 send, 0 starts a new composite, E flips Field | Exact, Esc cancels. Notes: the small
+        dots are already in it, a plus is new, filled merges into a note, struck through is dropped.
       </div>
     </div>
   );
@@ -488,8 +490,8 @@ function SendMenuBody({ item }: { item: SendItem }) {
       <Menu.Sub.Dropdown>
         {canFlip && (
           <Menu.Label>
-            {mode === 'exact' ? 'Exact' : 'As in field'}. Shift+click sends as{' '}
-            {otherSendMode(mode) === 'exact' ? 'Exact' : 'As in field'}.
+            {mode === 'exact' ? 'Exact' : 'Field'}. Shift+click sends as{' '}
+            {otherSendMode(mode) === 'exact' ? 'Exact' : 'Field'}.
           </Menu.Label>
         )}
         <CompositeItems ids={recent} item={item} mode={mode} onPick={pick} />
@@ -570,7 +572,7 @@ export function SendLayer() {
           return;
         }
         if ((e.key === 'e' || e.key === 'E') && !e.altKey && !e.shiftKey && !isTyping(e.target)) {
-          // E flips As in field | Exact, only while the popup is open (no global key): the keyboard notes stand aside too
+          // E flips Field | Exact, only while the popup is open (no global key): the keyboard notes stand aside too
           markSendKey(e);
           e.preventDefault();
           const v = sendView();

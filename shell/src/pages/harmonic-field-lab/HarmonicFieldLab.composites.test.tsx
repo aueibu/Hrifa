@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -18,6 +18,7 @@ const mode = () => screen.getByRole('radiogroup', { name: 'Mode playback' });
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   contexts = [];
   class TestCtx extends FakeCtx {
     constructor() {

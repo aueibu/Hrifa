@@ -76,6 +76,8 @@ import {
   LAT_MODES,
   ISO_G2,
   ISO_TOLS,
+  ROUGH_REGISTERS,
+  type RoughRegister,
   type VizSettings,
 } from './vizState';
 
@@ -155,10 +157,14 @@ function sanitizeViz(raw: unknown): VizSettings {
       ? (raw.isoTol as number)
       : d.isoTol,
     edoPick: ((n) => (n === -1 ? null : n))(intIn(raw.edoPick, 5, 72, -1)),
+    // optional: only kept when it is a known value (an old entry has none and reads as `shape`)
+    ...(ROUGH_REGISTERS.includes(raw.register as RoughRegister)
+      ? { register: raw.register as RoughRegister }
+      : {}),
   };
 }
 
-/** Most fold entries kept and longest id (a section id is `cps`, `positional`, `pos:2-2`, `families`, `size:Triads`, `fam:<size>:<family>`). */
+/** Most fold entries kept and longest id (a section id is `cps`, `positional`, `pos:2-2`, `families`, `size:Triads`, `fam:<size>:<family>`; M8i: `grp:<hash>` = an EXPANDED shape group). */
 export const MAX_FOLDS = 256;
 export const MAX_FOLD_ID = 60;
 
@@ -212,7 +218,7 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     linkedRoot: LINKED_ROOTS.includes(raw.linkedRoot as LinkedRoot)
       ? (raw.linkedRoot as LinkedRoot)
       : null,
-    // optional (M9): a valid pattern text, else null (the Positional section then shows the first pattern); no write on mount
+    // optional (M9, legacy since M8f): a valid pattern text, else null; still loaded and saved, no longer read by the UI; no write on mount
     positionalPattern:
       typeof raw.positionalPattern === 'string' && raw.positionalPattern.length <= 40
         ? canonicalPattern(raw.positionalPattern)
@@ -221,6 +227,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     positionalOrder: oneOf(raw.positionalOrder, ['smoothest', 'scale'] as const, d.positionalOrder),
     // optional (M8f): folded section ids (true = folded), entry by entry; absent or damaged = all open; no write on mount
     folds: sanitizeFolds(raw.folds),
+    // optional (M8i): merge same-shape chords into one card; absent or damaged = on; no write on mount
+    groupShapes: bool(raw.groupShapes, d.groupShapes),
   };
 }
 

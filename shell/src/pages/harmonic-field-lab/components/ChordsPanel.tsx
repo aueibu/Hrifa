@@ -1,6 +1,6 @@
 /** Chords panel: tolerance with a ladder; sections by note count, one row per family, one chip per voicing. */
 import { useMemo, useState } from 'react';
-import { ActionIcon, Button, Modal } from '@mantine/core';
+import { ActionIcon, Button, Modal, Switch } from '@mantine/core';
 import {
   DEFAULT_TEMPLATES,
   chordShape,
@@ -13,33 +13,27 @@ import {
   type CpsChord,
 } from '../../../lib/harmonic-field';
 import type { PreviewTarget } from '../audio/plan';
+import {
+  chipOrder,
+  groupChips,
+  groupFoldId,
+  shapeCounts,
+  ratioGroupIds,
+  representative,
+} from '../state/chordGroups';
 import { cpsRootIdx } from '../state/cpsRoot';
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
-import { chordFoldIds, collapseAll } from '../state/foldIds';
+import { chordFoldIds, collapseAll, expandAll } from '../state/foldIds';
 import { MAX_TEMPLATES } from '../state/labState';
 import { ladderWindow, nearestHidden } from '../state/ladderWindow';
-import { ChordCard, fmtCentsList, fmtSteps } from './ChordCard';
-import { FoldHead, foldId, useFold } from './Fold';
+import { ChordCard, fmtCentsList, pitchTexts, templateOn } from './ChordCard';
+import { FoldHead, GroupedCount, NestGuide, foldId, useFold, useGroupExpanded } from './Fold';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
-import { PatternsEditor, PositionalSection } from './Positional';
+import { PatternsEditor, PositionalSection, positionalGroupIds } from './Positional';
 import { useSendHover } from './Send';
 import { SketchRow } from './SketchRow';
 import { DebouncedText, Num, SEV_LABEL, Strip, Tip, severity, useLab, useNativeTitle } from './ui';
 import classes from './panels.module.css';
-
-/** The chord's field indices, root first, then upward from the root. */
-function chipOrder(
-  chip: Pick<ChordChip, 'rootIdx' | 'memberIdx'>,
-  field: readonly Note[],
-  repC: number
-): number[] {
-  const rootC = field[chip.rootIdx]?.c ?? 0;
-  const up = (i: number) => (repC > 0 ? (((field[i].c - rootC) % repC) + repC) % repC : field[i].c);
-  const rest = [...new Set(chip.memberIdx)]
-    .filter((i) => i !== chip.rootIdx && field[i])
-    .sort((a, b) => up(a) - up(b));
-  return [chip.rootIdx, ...rest].filter((i) => field[i]);
-}
 
 /** The card's texts and ring for a ratio or CPS chord: pitches as ratios when every note has one (else cents), steps in cents. */
 function cardParts(
@@ -56,8 +50,7 @@ function cardParts(
   const asRatios = order.length > 0 && order.every((i) => field[i].m);
   return {
     ups,
-    pitches: asRatios ? order.map((i) => ratios[i]).join('  ') : fmtCentsList(ups),
-    steps: fmtSteps(ups),
+    ...pitchTexts(ups, asRatios ? order.map((i) => ratios[i]) : null),
   };
 }
 
@@ -79,18 +72,34 @@ function exactOn(root: Note | undefined, template: string): Note[] | null {
   return root && shape ? placeShape(root, shape) : null;
 }
 
-function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => void }) {
+/** M8i: a grouped Chip stands for `members` (same shape, different roots); `chip` is the representative it plays for. */
+interface ChipGroupProps {
+  members: ChordChip[];
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function Chip({
+  chip,
+  onRaise,
+  group,
+}: {
+  chip: ChordChip;
+  onRaise: (tol: number) => void;
+  group?: ChipGroupProps;
+}) {
   const lab = useLab();
   const nativeTitle = useNativeTitle();
-  const picked =
+  const isPicked = (c: ChordChip) =>
     lab.chordPicked !== null &&
-    lab.chordPicked.size === chip.memberIdx.length &&
-    chip.memberIdx.every((i) => lab.chordPicked?.has(i));
-  const sev = severity(chip.maxErr);
+    lab.chordPicked.size === c.memberIdx.length &&
+    c.memberIdx.every((i) => lab.chordPicked?.has(i));
+  // a group is picked when ANY of its members is the picked chord
+  const picked = group ? group.members.some(isPicked) : isPicked(chip);
   const rootDeg = lab.base.rel.findIndex((r) => r.src === chip.rootIdx);
   const templateFamily = lab.state.templates.find((t) => t.text === chip.template)?.family;
   // the found chord as an item for the `-` popup and the right-click menu: its field notes, root first then upward
-  const send = useSendHover(`chip:${chip.template}:${chip.rootIdx}`, () => {
+  const send = useSendHover(`chip:${group ? 'g:' : ''}${chip.template}:${chip.rootIdx}`, () => {
     const { field, rep, repC } = lab.base;
     const pitches = chipPitches(chip, field, repC);
     return chip.found && pitches.length
@@ -118,25 +127,42 @@ function Chip({ chip, onRaise }: { chip: ChordChip; onRaise: (tol: number) => vo
   });
   const need = Math.ceil(chip.needs - 1e-9);
   const err = chip.maxErr < 1e-6 ? 'none (exact)' : `${chip.maxErr.toFixed(1)} c`;
-  const label = chip.found
-    ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key; hold 4 plays it as in this field, and hold 5 its exact ratios, on the root of the Sketch row's stepper. Playing it, or holding 1, 4 or 5 on it, also arms this template in the Sketch row (the Sketch root stays where it is).`
-    : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
+  const n = group?.members.length ?? 1;
+  const label = group
+    ? `${chip.name} ${chip.template}, the same shape on ${n} roots. Click: hear it on the root of the Sketch row's stepper and keep it highlighted. Shift-click: make these notes the subset. Point and hold 1, 4 or 5 to hear it on that root (hold 5 its exact ratios). Press the arrow to show the ${n} roots one by one.`
+    : chip.found
+      ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key; hold 4 plays it as in this field, and hold 5 its exact ratios, on the root of the Sketch row's stepper. Playing it, or holding 1, 4 or 5 on it, also arms this template in the Sketch row (the Sketch root stays where it is).`
+      : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   const parts = cardParts(chip, lab.base.field, lab.base.ratios, lab.base.repC);
+  // a grouped card shows the SHAPE of its first member (cents above the root), so it does not change when the Sketch stepper moves
+  const first = group?.members[0] ?? chip;
+  const shape = group ? cardParts(first, lab.base.field, lab.base.ratios, lab.base.repC) : parts;
+  const sevFirst = severity(first.maxErr);
   return (
     <ChordCard
       label={label}
       title={chip.name}
-      subtitle={`${chip.template} on ${chip.root}`}
-      pitches={parts.pitches}
-      steps={parts.steps}
+      subtitle={group ? chip.template : templateOn(chip.template, chip.root)}
+      pitches={group ? fmtCentsList(shape.ups) : parts.pitches}
+      steps={shape.steps}
+      group={
+        group
+          ? {
+              count: n,
+              expanded: group.expanded,
+              label: `${group.expanded ? 'Hide' : 'Show'} the ${n} roots of ${chip.name}`,
+              onToggle: group.onToggle,
+            }
+          : undefined
+      }
       stat={
         chip.found ? (
           <span
             className={classes.err}
-            data-sev={sev}
-            title={nativeTitle(`Error ${SEV_LABEL[sev]}`)}
+            data-sev={sevFirst}
+            title={nativeTitle(`Error ${SEV_LABEL[sevFirst]}`)}
           >
-            <Num>{sev === 0 ? 'exact' : `${chip.maxErr.toFixed(1)} c`}</Num>
+            <Num>{sevFirst === 0 ? 'exact' : `${first.maxErr.toFixed(1)} c`}</Num>
           </span>
         ) : (
           <span className={classes.need}>
@@ -491,6 +517,44 @@ function TemplateEditor() {
   );
 }
 
+/** M8i: a group of chips with the same shape on different roots: one card (playing for the root of the Sketch stepper), the per-root cards below it when expanded. */
+function ChipGroup({
+  members,
+  id,
+  onRaise,
+}: {
+  members: ChordChip[];
+  id: string;
+  onRaise: (tol: number) => void;
+}) {
+  const { base, state } = useLab();
+  const { expanded, toggle } = useGroupExpanded(id);
+  const n = base.rel.length;
+  const stepper = n ? state.shelf.sketch.rootDeg % n : 0;
+  const rep = representative(
+    members,
+    (c) => base.rel.findIndex((r) => r.src === c.rootIdx),
+    stepper
+  );
+  return (
+    <>
+      <Chip chip={rep} onRaise={onRaise} group={{ members, expanded, onToggle: toggle }} />
+      {expanded && (
+        <div
+          className={`${classes.chips} ${classes.nest}`}
+          role="group"
+          aria-label={`The ${members.length} roots of ${rep.name}`}
+        >
+          <NestGuide name={`the roots of ${rep.name}`} open toggle={toggle} />
+          {members.map((c) => (
+            <Chip key={c.rootIdx} chip={c} onRaise={onRaise} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 /** One family row (Major, Septimal, ...) of a size section: its own fold, the count of found chips beside the label. */
 function FamilyRow({
   size,
@@ -505,6 +569,18 @@ function FamilyRow({
 }) {
   const id = foldId('fam', size, family);
   const { folded } = useFold(id);
+  const { base, state } = useLab();
+  const counts = useMemo(
+    () => shapeCounts(row, base.field, base.repC),
+    [row, base.field, base.repC]
+  );
+  const groups = useMemo(
+    () =>
+      state.ui.groupShapes
+        ? groupChips(row, base.field, base.repC)
+        : row.map((c) => ({ key: null, members: [c] })),
+    [state.ui.groupShapes, row, base.field, base.repC]
+  );
   return (
     <div className={classes.famRow} role="group" aria-label={`${size}, ${family}`}>
       <h4 className={classes.treeHead} data-level="3">
@@ -512,15 +588,28 @@ function FamilyRow({
           id={id}
           tip="chordFamily"
           title={family}
-          count={row.filter((c) => c.found).length}
+          count={<GroupedCount n={counts.n} m={counts.m} />}
           label={`${family} (${size})`}
         />
       </h4>
       <div className={classes.chips}>
         {!folded &&
-          row.map((c, i) => (
-            <Chip key={`${c.template}-${c.members.join()}-${i}`} chip={c} onRaise={onRaise} />
-          ))}
+          groups.map((g, i) =>
+            g.members.length > 1 && g.key !== null ? (
+              <ChipGroup
+                key={g.key}
+                id={groupFoldId(g.key)}
+                members={g.members}
+                onRaise={onRaise}
+              />
+            ) : (
+              <Chip
+                key={`${g.members[0].template}-${g.members[0].members.join()}-${i}`}
+                chip={g.members[0]}
+                onRaise={onRaise}
+              />
+            )
+          )}
       </div>
     </div>
   );
@@ -537,11 +626,20 @@ function FamiliesGroup({
   onRaise: (tol: number) => void;
 }) {
   const { folded } = useFold('families');
-  const total = chips.filter((c) => c.found).length;
+  const { base } = useLab();
+  const total = useMemo(
+    () => shapeCounts(chips, base.field, base.repC),
+    [chips, base.field, base.repC]
+  );
   return (
     <section className={classes.family} aria-label="Ratio chord families">
       <h3 className={classes.treeHead} data-level="1">
-        <FoldHead id="families" tip="chordFamily" title="Ratio chords" count={total} />
+        <FoldHead
+          id="families"
+          tip="chordFamily"
+          title="Ratio chords"
+          count={<GroupedCount n={total.n} m={total.m} />}
+        />
       </h3>
       {!folded &&
         SIZES.map((size) => {
@@ -574,15 +672,21 @@ function SizeSection({
   families: string[];
   onRaise: (tol: number) => void;
 }) {
-  const { folded } = useFold(foldId('size', size));
+  const { folded, toggle } = useFold(foldId('size', size));
+  const { base } = useLab();
+  const counts = useMemo(
+    () => shapeCounts(inSize, base.field, base.repC),
+    [inSize, base.field, base.repC]
+  );
   return (
     <section className={`${classes.family} ${classes.nest}`} aria-label={size}>
+      <NestGuide name={size} open={!folded} toggle={toggle} />
       <h3 className={classes.treeHead} data-level="2">
         <FoldHead
           id={foldId('size', size)}
           tip="chordFamily"
           title={size}
-          count={inSize.filter((c) => c.found).length}
+          count={<GroupedCount n={counts.n} m={counts.m} />}
         />
       </h3>
       {!folded &&
@@ -597,7 +701,7 @@ function SizeSection({
 }
 
 export function ChordsPanel() {
-  const { an, state, dispatch, tab } = useLab();
+  const { an, state, dispatch, tab, base } = useLab();
   const [editing, setEditing] = useState(false);
   const model = an.chords;
   const tol = state.ui.tol;
@@ -636,6 +740,17 @@ export function ChordsPanel() {
       <div className={`${classes.panelBody} ${classes.chordsBody}`}>
         <div className={classes.chordsTop} data-testid="chords-top">
           <div className={classes.chordsFolds}>
+            <Tip k="groupShapes" as="control">
+              <Switch
+                size="xs"
+                className={classes.groupSwitch}
+                label="Group shapes"
+                checked={state.ui.groupShapes}
+                onChange={(e) =>
+                  dispatch({ type: 'ui', patch: { groupShapes: e.currentTarget.checked } })
+                }
+              />
+            </Tip>
             <Tip k="collapseAllChords" as="control">
               <Button
                 size="compact-xs"
@@ -651,7 +766,21 @@ export function ChordsPanel() {
                 size="compact-xs"
                 variant="default"
                 aria-label="Expand all sections"
-                onClick={() => dispatch({ type: 'ui', patch: { folds: {} } })}
+                onClick={() => {
+                  // everything opens, the roots of every shape group included (ids derived from what the panel renders)
+                  const groupIds = state.ui.groupShapes
+                    ? [
+                        ...positionalGroupIds(
+                          base,
+                          state.patterns.list,
+                          state.ui.positionalOrder,
+                          state.ui.baseHz
+                        ),
+                        ...ratioGroupIds(chips, base.field, base.repC),
+                      ]
+                    : [];
+                  dispatch({ type: 'ui', patch: { folds: expandAll(groupIds) } });
+                }}
               >
                 Expand all
               </Button>

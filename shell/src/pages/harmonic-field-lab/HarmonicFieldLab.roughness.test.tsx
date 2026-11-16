@@ -6,7 +6,7 @@ import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { FADE_OUT_MS, LINGER_MS } from './components/RoughnessView';
 import { KEY_SETTINGS } from './state/persist';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -19,6 +19,7 @@ const key = (k: string, type: 'keyDown' | 'keyUp' = 'keyDown') =>
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   window.innerWidth = 3840;
   (window as unknown as { AudioContext: unknown }).AudioContext = FakeCtx;
   window.localStorage.setItem(KEY_LAYOUT, JSON.stringify({ left: [['keys']], right: [['viz4']] }));
@@ -29,6 +30,16 @@ afterEach(() => {
   delete (window as unknown as { AudioContext?: unknown }).AudioContext;
   vi.useRealTimers();
 });
+
+/** With fake timers on: the frame that shows a release, then the linger and the fade-out. */
+const idleAfterLinger = async () => {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(40);
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(LINGER_MS + FADE_OUT_MS + 100);
+  });
+};
 
 describe('Live roughness view', () => {
   it('d: a held key sounds and the view shows its total; two keys give a pair bar; release shows the hint', async () => {
@@ -42,7 +53,8 @@ describe('Live roughness view', () => {
     expect(total()).toBe('0.00');
     key('z'); // 1/1
     await waitFor(() => expect(total()).toBe(liveRoughness([0], BASE).total.toFixed(2)));
-    expect(screen.getByTestId('live-hint').textContent).toMatch(/One note/);
+    // no help text for a one-note state
+    expect(screen.getByTestId('live-hint')).toHaveAttribute('data-visible', 'false');
     expect(pairs()).toHaveLength(0);
     expect(screen.getByTestId('live-curve')).toBeTruthy();
     key('c'); // 5/4
@@ -53,10 +65,71 @@ describe('Live roughness view', () => {
     key('c', 'keyUp');
     await waitFor(() => expect(pairs()).toHaveLength(0));
     expect(total()).toBe(liveRoughness([0], BASE).total.toFixed(2));
-    key('z', 'keyUp');
     // the last chord lingers for LINGER_MS, then the idle state
-    await waitFor(() => expect(total()).toBe('0.00'), { timeout: LINGER_MS + 1500 });
+    vi.useFakeTimers();
+    key('z', 'keyUp');
+    await idleAfterLinger();
+    expect(total()).toBe('0.00');
     expect(screen.getByTestId('live-hint').textContent).toMatch(/Nothing/);
+  });
+
+  it('two keys of the same degree an octave apart are two sounding pitches; each release drops one', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    const top = () => screen.getByTestId('live-top').textContent ?? '';
+    key('z'); // degree 0, repeat 0
+    key('h'); // slot 12: degree 0 again, one repeat (an octave) up
+    await waitFor(() => expect(top()).toContain('2 note'));
+    expect(pairs()).toHaveLength(1);
+    key('h', 'keyUp');
+    await waitFor(() => expect(top()).toContain('1 note'));
+    expect(pairs()).toHaveLength(0);
+    // the octave key is held again, then the lower one is released: the upper pitch stays
+    key('h');
+    await waitFor(() => expect(top()).toContain('2 note'));
+    key('z', 'keyUp');
+    await waitFor(() => expect(top()).toContain('1 note'));
+    vi.useFakeTimers();
+    key('h', 'keyUp');
+    await idleAfterLinger();
+    expect(total()).toBe('0.00');
+  });
+
+  it('a field change while idle does not restart a running fade', async () => {
+    window.localStorage.setItem(
+      KEY_LAYOUT,
+      JSON.stringify({ left: [['keys']], right: [['viz4']] })
+    );
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 60)); // real time on purpose: lets the frame the preset change scheduled run
+    });
+    vi.useFakeTimers();
+    const phase = () => screen.getByTestId('live-roughness').getAttribute('data-state');
+    key('z');
+    act(() => {
+      vi.advanceTimersByTime(40);
+    });
+    key('z', 'keyUp');
+    act(() => {
+      vi.advanceTimersByTime(40);
+    });
+    act(() => {
+      vi.advanceTimersByTime(LINGER_MS + FADE_OUT_MS / 2);
+    });
+    expect(phase()).toBe('fading');
+    // a subset change rebuilds the field and the labels (new identities) while nothing sounds
+    const ring = screen.getByRole('group', { name: /^Pitch circle/ });
+    fireEvent.click(within(ring).getAllByRole('button')[3]);
+    act(() => {
+      vi.advanceTimersByTime(40);
+    });
+    expect(phase()).toBe('fading');
+    act(() => {
+      vi.advanceTimersByTime(FADE_OUT_MS / 2);
+    });
+    expect(phase()).toBe('idle');
   });
 
   it('the curve reads a value on keyboard focus and arrow keys', async () => {
@@ -80,7 +153,7 @@ describe('Live roughness view', () => {
     await pickPreset('12-EDO');
     // let the frame the preset change scheduled run before the clock is faked
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 60)); // real time on purpose: lets the frame the preset change scheduled run before the clock is faked
     });
     vi.useFakeTimers();
     const sketch = screen.getByRole('group', { name: 'Sketch a chord' });
@@ -113,8 +186,10 @@ describe('Live roughness view', () => {
     fireEvent.keyDown(window, { key: '1' });
     await waitFor(() => expect(total()).not.toBe('0.00'));
     expect(screen.getByText('1 note')).toBeTruthy();
+    vi.useFakeTimers();
     fireEvent.keyUp(window, { key: '1' });
-    await waitFor(() => expect(total()).toBe('0.00'), { timeout: LINGER_MS + 1500 });
+    await idleAfterLinger();
+    expect(total()).toBe('0.00');
   });
   it('the chart never moves: only the fixed-height top sits above it for 2, 3 and 8 notes, and the pair list is below it', async () => {
     render(<HarmonicFieldLabPage />);
@@ -260,6 +335,58 @@ describe('Live roughness view', () => {
     });
     expect(source()).toBe('idle');
     expect(screen.queryByTestId('live-source')).toBeNull();
+  });
+});
+
+describe('Live roughness: a hovered or pinned note is a one-note source', () => {
+  it('note (hover) and pinned tags, faint field marks for every other field note, sounding beats both', async () => {
+    window.localStorage.setItem(
+      KEY_LAYOUT,
+      JSON.stringify({ left: [['keys']], right: [['viz3'], ['viz4']] })
+    );
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    const source = () => screen.getByTestId('live-roughness').getAttribute('data-source');
+    const marks = () => screen.queryAllByTestId('live-field-mark');
+    const diss = within(screen.getByRole('group', { name: /^Dissonance curve/ }));
+    const notes = diss.getAllByRole('button');
+    expect(notes).toHaveLength(12);
+    expect(marks()).toHaveLength(0); // idle: no lowest note, no marks
+    fireEvent.mouseEnter(notes[7]); // 700 c
+    expect(source()).toBe('note');
+    expect(screen.getByTestId('live-source').textContent).toBe('note');
+    // register Shape (default): the lowest note sits at middle C, so a lone note scores its self term there
+    expect(total()).toBe(liveRoughness([0], BASE).total.toFixed(2));
+    expect(pairs()).toHaveLength(0);
+    expect(marks()).toHaveLength(11);
+    expect(marks()[0].getAttribute('aria-label')).toMatch(/ against .+: roughness \d+\.\d\d$/);
+    // subset: the ticks of notes outside the subset are dimmed (data-subset) and say so; selection changes update live
+    const dim = () => marks().filter((m) => m.getAttribute('data-subset') === 'false');
+    const before = dim().length;
+    fireEvent.click(notes[3]);
+    expect(Math.abs(dim().length - before)).toBe(1);
+    expect(marks()).toHaveLength(11);
+    for (const m of dim()) {
+      expect(m.getAttribute('aria-label')).toMatch(/\(not in subset\)$/);
+    }
+    for (const m of marks().filter((x) => x.getAttribute('data-subset') === 'true')) {
+      expect(m.getAttribute('aria-label')).not.toMatch(/not in subset/);
+    }
+    fireEvent.click(notes[3]);
+    expect(dim()).toHaveLength(before);
+    // pin it, leave: the pinned note stays as its own source
+    fireEvent.click(notes[7], { altKey: true });
+    fireEvent.mouseLeave(notes[7]);
+    expect(source()).toBe('pinned');
+    expect(screen.getByTestId('live-source').textContent).toBe('pinned');
+    expect(marks()).toHaveLength(11);
+    // hovering another note beats the pinned one; sounding beats both
+    fireEvent.mouseEnter(notes[4]);
+    expect(source()).toBe('note');
+    key('z');
+    await waitFor(() => expect(source()).toBe('sounding'));
+    expect(total()).toBe(liveRoughness([0], BASE).total.toFixed(2));
+    key('z', 'keyUp');
   });
 });
 

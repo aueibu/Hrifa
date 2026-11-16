@@ -3,16 +3,18 @@
  * item list you can open, Open as tab, Delete). Reads and writes the composites through `useLab()`; nothing is stored here.
  * Items are hover sources for the `-` popup and the right-click menu, like chips and slots.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionIcon, Button, TextInput } from '@mantine/core';
 import { mergeComposite } from '../../../lib/harmonic-field';
 import { centsList, type Composite, type CompositeItem } from '../state/composites';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { autoName } from '../state/generate';
+import { litIndex } from '../state/retuner';
 import { CompositeRing, centsOfNotes } from './CompositeRing';
 import { ChevronDownIcon, CloseIcon, PlusIcon } from './icons';
 import { compositeItemItem, useSendHover } from './Send';
 import { Num, Strip, Tip, useLab } from './ui';
+import { ValueList } from './ValueList';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
@@ -64,6 +66,43 @@ function CompName({ c }: { c: Composite }) {
       </span>
     </button>
   );
+}
+
+/**
+ * Hovering (or focusing) a composite row or one of its items makes that gamut the lab's hovered chord, so the Live roughness view
+ * scores it: the field indices of the notes that exist in the tab's field, and the real pitches (cents) of every note, off-field
+ * ones included. Leaving, or the row going away under a resting pointer, clears it.
+ */
+function useChordHover() {
+  const lab = useLab();
+  const { base } = lab;
+  const setChord = useRef(lab.setChord);
+  setChord.current = lab.setChord;
+  const on = useRef(false);
+  useEffect(
+    () => () => {
+      if (on.current) {
+        on.current = false;
+        setChord.current(null);
+      }
+    },
+    []
+  );
+  const noteCents = useMemo(() => base.field.map((n) => n.c), [base.field]);
+  return {
+    show: (cents: readonly number[]) => {
+      on.current = true;
+      const idx = cents.map((c) => litIndex(noteCents, base.repC, c)).filter((i) => i >= 0);
+      // no field note matches: no set (so the picked chord stays shown) but the pitches still feed Live roughness
+      setChord.current(idx.length ? new Set(idx) : null, cents);
+    },
+    clear: () => {
+      if (on.current) {
+        on.current = false;
+        setChord.current(null);
+      }
+    },
+  };
 }
 
 /** The kind name of a chord label: "major triad on 1/1" gives "major triad" (a label without " on " is used whole). */
@@ -124,10 +163,15 @@ function ItemRow({
 }: {
   c: Composite;
   it: CompositeItem;
-  onLight: (id: string | null) => void;
+  onLight: (id: string | null, rootC?: number | null) => void;
 }) {
   const { dispatch } = useLab();
   const hover = useSendHover(`ci:${c.id}:${it.id}`, () => compositeItemItem(it));
+  const chord = useChordHover();
+  const itemCents = it.pitches.map((p) => p.c);
+  // chord and note items: the first pitch; subset and selection items: their stored mode root (none on old items)
+  const itemRoot =
+    it.kind === 'chord' || it.kind === 'note' ? (itemCents[0] ?? null) : (it.root?.c ?? null);
   const lines = itemLines(it);
   return (
     <li
@@ -135,12 +179,16 @@ function ItemRow({
       data-item={it.id}
       onMouseEnter={(e) => {
         hover.enter(e);
-        onLight(it.id);
+        onLight(it.id, itemRoot);
+        chord.show(itemCents);
       }}
       onMouseLeave={() => {
         hover.leave();
         onLight(null);
+        chord.clear();
       }}
+      onFocus={() => chord.show(itemCents)}
+      onBlur={chord.clear}
     >
       <span className={classes.compItemText}>
         {lines.map((l) => (
@@ -149,7 +197,7 @@ function ItemRow({
             className={l.key === 'what' ? classes.compItemLabel : classes.compDetail}
             data-detail={l.key}
           >
-            {l.text}
+            {l.key === 'cents' ? <ValueList text={l.text} /> : l.text}
           </span>
         ))}
       </span>
@@ -160,6 +208,7 @@ function ItemRow({
         aria-label={`Remove ${it.label} from ${c.name}`}
         onClick={() => {
           onLight(null);
+          chord.clear();
           dispatch({
             type: 'composite/removeItem',
             id: c.id,
@@ -182,17 +231,28 @@ function Row({ c }: { c: Composite }) {
   const [confirming, setConfirming] = useState(false);
   /** The item under the pointer: the notes it gives the composite light in the ring. */
   const [lightItem, setLightItem] = useState<string | null>(null);
+  const [lightRoot, setLightRoot] = useState<number | null>(null);
   const merged = useMemo(
     () => mergeComposite(c.items, base.rep, { tol: dev.mergeTolerance, keep: dev.mergeKeeps }),
     [c.items, base.rep, dev.mergeTolerance, dev.mergeKeeps]
   );
   const notes = merged.notes.length;
+  const chord = useChordHover();
+  const mergedCents = merged.notes.map((x) => x.note.c);
   const lit = lightItem
     ? merged.notes.filter((x) => x.origins.includes(lightItem)).map((x) => x.note.c)
     : [];
   return (
     <li className={classes.compRow} data-composite={c.id}>
-      <div className={classes.compHead}>
+      <div
+        role="group"
+        aria-label={`${c.name} summary`}
+        className={classes.compHead}
+        onMouseEnter={() => chord.show(mergedCents)}
+        onMouseLeave={chord.clear}
+        onFocus={() => chord.show(mergedCents)}
+        onBlur={chord.clear}
+      >
         <span className={classes.compNum} aria-hidden="true">
           {c.id}
         </span>
@@ -200,6 +260,7 @@ function Row({ c }: { c: Composite }) {
           repC={merged.rep.c}
           notes={centsOfNotes(merged.notes.map((x) => x.note))}
           lit={lit}
+          rootC={lightItem ? lightRoot : null}
           label={`${c.name}: ${notes} merged ${notes === 1 ? 'note' : 'notes'}`}
         />
         <div className={classes.compBody}>
@@ -275,7 +336,17 @@ function Row({ c }: { c: Composite }) {
               Empty. Point at a chord, subset or note and press - to send it here.
             </li>
           ) : (
-            c.items.map((it) => <ItemRow key={it.id} c={c} it={it} onLight={setLightItem} />)
+            c.items.map((it) => (
+              <ItemRow
+                key={it.id}
+                c={c}
+                it={it}
+                onLight={(id, root = null) => {
+                  setLightItem(id);
+                  setLightRoot(root);
+                }}
+              />
+            ))
           )}
         </ul>
       )}

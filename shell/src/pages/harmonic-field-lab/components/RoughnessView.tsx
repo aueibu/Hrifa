@@ -5,8 +5,13 @@
  * state (field lights, held keys, held chord and shelf previews, Sketch holds and off-field ghosts all flow through them)
  * and recomputes at most once per animation frame. The maths is `liveRoughness` in the lib.
  *
- * Register: a note sounding `c` cents above 1/1 is taken at `ui.baseHz * 2 ** (c / 1200)` (the engine's `absHz`, which the
- * chips, shelf, Sketch and key rings use); the lowest sounding note is the curve's reference.
+ * A hovered note (`lab.hover`) or a pinned note (`lab.pin`) counts as a one-note chord, silently. Faint marks on the
+ * curve show every other field note at its interval above the lowest shown note, with its pair roughness.
+ *
+ * Pitches: every sounding note as played (`soundingPitches`: cents above 1/1 from the engine's real Hz, stacked octaves
+ * kept); a hovered chord card gives its own pitch list. Register (viz setting): `Shape` puts the lowest shown note
+ * at POSITIONAL_BASE_HZ (the total equals the chord card's `roughnessOf`), `Pitch` uses `ui.baseHz * 2 ** (c / 1200)`.
+ * The lowest shown note is the curve's reference.
  */
 import {
   useEffect,
@@ -17,19 +22,33 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react';
-import { curveMinima, liveRoughness } from '../../../lib/harmonic-field';
+import { SegmentedControl } from '@mantine/core';
+import {
+  POSITIONAL_BASE_HZ,
+  curveMinima,
+  fieldMarks,
+  liveRoughness,
+} from '../../../lib/harmonic-field';
+import { layoutChartLabels } from '../state/chartLabelLayout';
 import { ghostKey } from '../state/ghosts';
-import { Num, Row, Tip, useLab } from './ui';
+import type { VizId } from '../state/layout';
+import { SVG_FS_SMALL } from '../state/typeScale';
+import { ROUGH_REGISTERS, type RoughRegister } from '../state/vizState';
+import { Num, Row, Tip, useLab, useViz } from './ui';
+import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 const W = 360;
-const H = 200;
+const H = 220;
 const ML = 8;
 const MR = 8;
 const MT = 22;
-const MB = 34;
+/** Bottom margin: tick row, then the label band (3 lanes) for the dip names. */
+const MB = 54;
 const PW = W - ML - MR;
 const PH = H - MT - MB;
+/** Centre y of the first label lane, under the tick row. */
+const BAND_Y = MT + PH + 22;
 /** The last sounding chord stays (dimmed) this long after its last note is released ... */
 export const LINGER_MS = 1500;
 /** ... then fades out completely over this long (CSS `--live-fade-end` is the same value). */
@@ -107,16 +126,40 @@ function StatSlot({
 }
 
 const EMPTY: Tone[] = [];
+const TAG = {
+  sounding: 'sounding',
+  hover: 'hover',
+  note: 'note',
+  last: 'last chord',
+  pinned: 'pinned',
+  idle: '',
+} as const;
 
-export function RoughnessBody() {
+export function RoughnessBody({ id }: { id: VizId }) {
   const lab = useLab();
+  const viz = useViz();
+  const register: RoughRegister = viz.settings(id).register ?? 'shape';
   const { field, ratios, repC, repText } = lab.base;
-  const { sounding, soundingMarks, soundingGhosts, chord } = lab;
+  const { sounding, soundingMarks, soundingGhosts, soundingPitches, chord } = lab;
   const baseHz = lab.state.ui.baseHz;
-  // every sounding pitch, one entry per pitch (a field light and a ghost at the same place count once)
-  const live = useMemo<Tone[]>(() => {
-    const seen = new Set<number>();
+  // every sounding pitch as played (the real Hz, stacked octaves kept), one entry per pitch; the field-index sets are only
+  // the fallback for a lit state that carries no pitches (they reduce a note into one repeat)
+  const liveRaw = useMemo<Tone[]>(() => {
     const out: Tone[] = [];
+    if (soundingPitches.length) {
+      for (const p of soundingPitches) {
+        const known = p.src >= 0 && p.src < field.length;
+        if (Number.isFinite(p.c)) {
+          out.push({
+            c: p.c,
+            label: known ? ratios[p.src] : `${p.c.toFixed(1)} c`,
+            idx: known ? p.src : -1,
+          });
+        }
+      }
+      return out.sort((a, b) => a.c - b.c);
+    }
+    const seen = new Set<number>();
     const add = (c: number, label: string, idx: number) => {
       const k = ghostKey(c);
       if (!seen.has(k) && Number.isFinite(c)) {
@@ -133,20 +176,42 @@ export function RoughnessBody() {
       add(c, `${c.toFixed(1)} c`, -1);
     }
     return out.sort((a, b) => a.c - b.c);
-  }, [sounding, soundingMarks, soundingGhosts, field, ratios]);
+  }, [soundingPitches, sounding, soundingMarks, soundingGhosts, field, ratios]);
+  // one shared empty array: an idle recompute must not look like a change (it would restart the linger timers)
+  const live = liveRaw.length ? liveRaw : EMPTY;
   const soundingTones = useFrameValue(live);
   // the hovered chord (the one source of truth is the lab's chord hover: chips, cards, rows, shelf slots, Sketch notes)
   const chordHover = lab.state.chordHover;
-  const hoverTones = useMemo<Tone[]>(
-    () =>
-      chordHover
-        ? [...chordHover]
-            .filter((i) => i >= 0 && i < field.length)
-            .map((i) => ({ c: field[i].c, label: ratios[i], idx: i }))
-            .sort((a, b) => a.c - b.c)
-        : [],
-    [chordHover, field, ratios]
-  );
+  const chordHoverPitches = lab.chordHoverPitches;
+  const hoverTones = useMemo<Tone[]>(() => {
+    if (chordHoverPitches?.length) {
+      // the card's own pitches (stacked octaves kept); a label is the field note at the same place in the repeat
+      return chordHoverPitches
+        .map((c) => {
+          const red = repC > 0 ? ((c % repC) + repC) % repC : c;
+          const i = field.findIndex((f) => {
+            const fr = repC > 0 ? ((f.c % repC) + repC) % repC : f.c;
+            return Math.abs(fr - red) < 0.5;
+          });
+          return { c, label: i >= 0 ? ratios[i] : `${c.toFixed(1)} c`, idx: i };
+        })
+        .sort((a, b) => a.c - b.c);
+    }
+    return chordHover
+      ? [...chordHover]
+          .filter((i) => i >= 0 && i < field.length)
+          .map((i) => ({ c: field[i].c, label: ratios[i], idx: i }))
+          .sort((a, b) => a.c - b.c)
+      : [];
+  }, [chordHover, chordHoverPitches, field, ratios, repC]);
+  // a hovered or pinned note is a one-note chord (silent)
+  const hoverNote =
+    lab.hover !== null && lab.hover >= 0 && lab.hover < field.length ? lab.hover : null;
+  const pinNote = lab.pin !== null && lab.pin >= 0 && lab.pin < field.length ? lab.pin : null;
+  const noteTone = (i: number | null): Tone[] =>
+    i === null ? EMPTY : [{ c: field[i].c, label: ratios[i], idx: i }];
+  const hoverNoteTones = useMemo(() => noteTone(hoverNote), [hoverNote, field, ratios]);
+  const pinNoteTones = useMemo(() => noteTone(pinNote), [pinNote, field, ratios]);
   // The last sounding chord lingers: dimmed and held until LINGER_MS, then its drawn items fade out over FADE_OUT_MS
   // (the placeholder layer under them never changes) and only then is the stored chord cleared. A new sounding note
   // cancels both timers at once; a hover shows at once and the timeline carries on underneath it.
@@ -179,34 +244,63 @@ export function RoughnessBody() {
   }, [soundingTones]);
   // read in the render that sees the release, so there is no idle flash between the two
   const linger = soundingTones.length ? null : lastSounding.current;
-  // priority: sounding now, then the hovered chord, then the lingering chord, then idle
-  const source: 'sounding' | 'hover' | 'last' | 'idle' = soundingTones.length
+  // priority: sounding now, the hovered chord, the hovered note, the lingering chord, the pinned note, idle
+  const source: 'sounding' | 'hover' | 'note' | 'last' | 'pinned' | 'idle' = soundingTones.length
     ? 'sounding'
     : hoverTones.length
       ? 'hover'
-      : linger?.length
-        ? 'last'
-        : 'idle';
+      : hoverNoteTones.length
+        ? 'note'
+        : linger?.length
+          ? 'last'
+          : pinNoteTones.length
+            ? 'pinned'
+            : 'idle';
   const tones =
     source === 'sounding'
       ? soundingTones
       : source === 'hover'
         ? hoverTones
-        : source === 'last'
-          ? linger!
-          : EMPTY;
+        : source === 'note'
+          ? hoverNoteTones
+          : source === 'last'
+            ? linger!
+            : source === 'pinned'
+              ? pinNoteTones
+              : EMPTY;
   // opacity phase of the drawn items: full while sounding or hovered, dimmed (then fading out) while lingering
   const state: 'idle' | 'sounding' | 'hover' | 'linger' | 'fading' =
-    source === 'last' ? (stage === 'out' ? 'fading' : 'linger') : source;
+    source === 'last'
+      ? stage === 'out'
+        ? 'fading'
+        : 'linger'
+      : source === 'note' || source === 'pinned'
+        ? 'hover'
+        : source;
   const phase = state === 'fading' ? 'out' : state;
+  // register: `shape` puts the lowest shown note at the positional cards' 1/1 Hz (the total then equals a chord card's
+  // score); `played` keeps the real register (`ui.baseHz * 2 ** (c / 1200)`)
+  const off = register === 'shape' && tones.length ? tones[0].c : 0;
+  const regHz = register === 'shape' ? POSITIONAL_BASE_HZ : baseHz;
   const r = useMemo(
     () =>
       liveRoughness(
-        tones.map((t) => t.c),
-        baseHz,
+        tones.map((t) => t.c - off),
+        regHz,
         { repC }
       ),
-    [tones, baseHz, repC]
+    [tones, off, regHz, repC]
+  );
+  // every field note against the lowest shown note (recomputed only when the shown notes or the field change)
+  const marks = useMemo(
+    () =>
+      fieldMarks(
+        field.map((f) => f.c - off),
+        tones.map((t) => t.c - off),
+        regHz,
+        repC
+      ),
+    [tones, field, off, regHz, repC]
   );
   const dips = useMemo(
     () =>
@@ -214,6 +308,7 @@ export function RoughnessBody() {
     [r]
   );
   const n = tones.length;
+  const selected = lab.selected;
   const lowC = n ? tones[0].c : 0;
   const lo = n ? Math.min(...r.curve.values) : 0;
   const hi = n ? Math.max(...r.curve.values) : 1;
@@ -256,16 +351,21 @@ export function RoughnessBody() {
   const biggest = pairs[0]?.roughness || 1;
   const dipName = (d: { idx: number; ratio: string }) =>
     d.idx === r.curve.cents.length - 1 ? repText : d.ratio;
-  // the hint text keeps its words while it fades (two or more notes, and while the last chord fades out)
-  const hintRef = useRef('');
-  if (n === 0 || phase === 'out') {
-    hintRef.current =
-      'Nothing is sounding. Hold a key, a chord chip or a shelf chord to see how rough it is.';
-  } else if (n === 1) {
-    hintRef.current = 'One note sounding. Play two or more to see which pair is roughest.';
-  }
-  const hintText = hintRef.current;
-  const hintVisible = n < 2 || phase === 'out';
+  // dip names live in the band under the plot (state/chartLabelLayout.ts)
+  const dipPlaces = layoutChartLabels(
+    dips.map((d) => ({
+      x: xOf(d.c),
+      y: yOf(d.d),
+      text: dipName(d),
+      isFirst: d.idx === 0,
+      isLast: d.idx === r.curve.cents.length - 1,
+    })),
+    { bandY: BAND_Y, x0: ML, x1: W - MR }
+  );
+  // the idle hint keeps its words while it fades; no hint for any one-note state
+  const hintText =
+    'Nothing is sounding. Hold a key, a chord chip or a shelf chord to see how rough it is.';
+  const hintVisible = n === 0 || phase === 'out';
   const valueText = (k: number) =>
     `${r.curve.cents[k].toFixed(0)} c above the lowest note: roughness ${r.curve.values[k].toFixed(2)}`;
   return (
@@ -304,7 +404,33 @@ export function RoughnessBody() {
               </span>
             </span>
           </Tip>
-          <span className={classes.liveHint}>lower is smoother</span>
+          <span className={classes.liveRegister} title="Lower is smoother">
+            <SegmentedControl
+              size="xs"
+              className={labClasses.tinySeg}
+              aria-label="Roughness register"
+              value={register}
+              onChange={(v) =>
+                viz.patch(id, { register: ROUGH_REGISTERS.find((x) => x === v) ?? 'shape' })
+              }
+              data={[
+                {
+                  label: (
+                    <span title="Scored as if the lowest note were middle C, so the same shape always scores the same, like the chord cards.">
+                      Shape
+                    </span>
+                  ),
+                  value: 'shape',
+                },
+                {
+                  label: (
+                    <span title="Each note scored at the pitch it actually sounds.">Pitch</span>
+                  ),
+                  value: 'pitch',
+                },
+              ]}
+            />
+          </span>
         </div>
       </div>
       <div className={classes.liveChartHost}>
@@ -326,7 +452,7 @@ export function RoughnessBody() {
                 key={c}
                 className={classes.chartTick}
                 x={xOf(c)}
-                y={H - 3}
+                y={MT + PH + 9}
                 textAnchor={c === 0 ? 'start' : c === repC ? 'end' : 'middle'}
               >
                 {Math.round(c)}
@@ -344,7 +470,9 @@ export function RoughnessBody() {
                     key={k}
                     className={classes.liveMark}
                     data-chord={
-                      source !== 'hover' && t.idx >= 0 && chord.has(t.idx) ? 'true' : undefined
+                      (source === 'sounding' || source === 'last') && t.idx >= 0 && chord.has(t.idx)
+                        ? 'true'
+                        : undefined
                     }
                     x1={xOf(x)}
                     x2={xOf(x)}
@@ -354,21 +482,41 @@ export function RoughnessBody() {
                 ) : null;
               })}
               {n > 0 && <path className={classes.dissLine} d={path} />}
-              {dips.map((d) => (
-                <g key={d.idx}>
-                  <circle className={classes.dissDip} cx={xOf(d.c)} cy={yOf(d.d)} r={2} />
-                  <text
-                    className={classes.dissDipLabel}
-                    x={xOf(d.c)}
-                    y={yOf(d.d) - 6}
-                    textAnchor={
-                      d.idx === 0 ? 'start' : d.idx === r.curve.cents.length - 1 ? 'end' : 'middle'
-                    }
-                  >
-                    {dipName(d)}
-                  </text>
-                </g>
-              ))}
+              {dips.map((d, k) => {
+                const place = dipPlaces[k];
+                return (
+                  <g key={d.idx}>
+                    <circle className={classes.dissDip} cx={xOf(d.c)} cy={yOf(d.d)} r={2}>
+                      <title>{dipName(d)}</title>
+                    </circle>
+                    {place && (
+                      <>
+                        {place.leader && (
+                          <line
+                            className={labClasses.labelLeader}
+                            data-testid="live-dip-leader"
+                            x1={xOf(d.c)}
+                            x2={place.leaderTo.x}
+                            y1={yOf(d.d) + 3}
+                            y2={place.leaderTo.y}
+                          />
+                        )}
+                        <text
+                          className={classes.dissDipLabel}
+                          x={place.x}
+                          y={place.y}
+                          textAnchor={place.anchor}
+                          style={
+                            place.scale < 1 ? { fontSize: SVG_FS_SMALL * place.scale } : undefined
+                          }
+                        >
+                          {dipName(d)}
+                        </text>
+                      </>
+                    )}
+                  </g>
+                );
+              })}
               {shown !== null && (
                 <g pointerEvents="none">
                   <line
@@ -387,6 +535,39 @@ export function RoughnessBody() {
                 </g>
               )}
             </g>
+            {/* faint field notes: part of the data layer, drawn above the hit area so each can carry its own title */}
+            <g className={classes.liveData} data-testid="live-field-marks">
+              {marks.map((m) => {
+                const inSubset = selected.has(m.idx);
+                const text = `${ratios[m.idx]} against ${tones[0].label}: roughness ${m.roughness.toFixed(2)}${inSubset ? '' : ' (not in subset)'}`;
+                const x = xOf(m.interval);
+                return (
+                  <g
+                    key={m.idx}
+                    role="img"
+                    aria-label={text}
+                    data-testid="live-field-mark"
+                    data-subset={inSubset ? 'true' : 'false'}
+                  >
+                    <title>{text}</title>
+                    <line
+                      className={classes.liveFieldMark}
+                      x1={x}
+                      x2={x}
+                      y1={yOf(lo) - 9}
+                      y2={yOf(lo)}
+                    />
+                    <line
+                      className={classes.liveFieldHit}
+                      x1={x}
+                      x2={x}
+                      y1={yOf(lo) - 9}
+                      y2={yOf(lo)}
+                    />
+                  </g>
+                );
+              })}
+            </g>
             <rect
               className={classes.chartHit}
               x={ML}
@@ -398,7 +579,7 @@ export function RoughnessBody() {
               aria-label="Next-note curve"
               aria-valuemin={0}
               aria-valuemax={repC}
-              aria-valuenow={shown === null ? undefined : r.curve.cents[shown]}
+              aria-valuenow={shown === null ? 0 : r.curve.cents[shown]}
               aria-valuetext={shown === null ? 'point at the curve' : valueText(shown)}
               onPointerMove={move}
               onPointerLeave={() => setAt(null)}
@@ -410,7 +591,7 @@ export function RoughnessBody() {
         </Tip>
         {source !== 'idle' && (
           <span className={`${classes.liveTag} ${classes.liveData}`} data-testid="live-source">
-            {source === 'sounding' ? 'sounding' : source === 'hover' ? 'hover' : 'last chord'}
+            {TAG[source]}
           </span>
         )}
         <p
@@ -451,7 +632,7 @@ export function RoughnessBody() {
         <ul
           className={`${classes.livePairs} ${classes.liveData}`}
           aria-label="Roughness by pair of sounding notes"
-          tabIndex={0}
+          tabIndex={pairs.length ? 0 : -1}
           data-testid="live-pairs"
         >
           {pairs.map((p) => (

@@ -8,7 +8,8 @@
  *                            pitches: [{ m, c }],                 // field-absolute, monzo + cents (as H-7)
  *                            rep: { m, c } | null,                // the repeat of the field it came from
  *                            source: { gen: <generation inputs>, tab: 'name', date: ISO } | null,
- *                            detail?: { template, root, pattern, tail: string | null, cents: number[] } }] }] }  // M8d, absent = null
+ *                            detail?: { template, root, pattern, tail: string | null, family?: string } | null,  // M8d/M8f, absent = null; cents are derived, not stored
+ *                            root?: { m, c } | null } }] }  // M8i: mode root of a subset or selection item, absent = none
  * ```
  * Plain JSON, self-contained. The recently-used order, the last add and refusals are runtime only.
  *
@@ -75,6 +76,7 @@ function sanitizeItems(raw: unknown): { items: CompositeItem[]; storedNext: numb
       continue;
     }
     const rep = sanitizePitch(e.rep);
+    const root = sanitizePitch(e.root);
     ids.push(e.id);
     items.push({
       id: '',
@@ -84,6 +86,7 @@ function sanitizeItems(raw: unknown): { items: CompositeItem[]; storedNext: numb
       rep: rep && rep.c > 0 ? rep : null,
       source: sanitizeSource(e.source),
       detail: sanitizeDetail(e.detail),
+      ...(root ? { root } : {}),
     });
   }
   // ids: a well-formed, first-seen stored id is kept; every other item gets a fresh id past all ids in use
@@ -174,6 +177,8 @@ export function compositesToStored(s: CompositesState): Record<string, unknown> 
           : null,
         // additive (M8d): written only when set, so an item without a detail is stored byte for byte as before
         ...(it.detail ? { detail: it.detail } : {}),
+        // additive (H-10 amendment): the mode root of a subset item, written only when set
+        ...(it.root ? { root: pitchOut(it.root) } : {}),
       })),
     })),
   };

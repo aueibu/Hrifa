@@ -1,9 +1,10 @@
 /** M8c step 2: the right-click menu, the Composites panel (rename, items, Open as tab, delete) and the shelf's Add selected. */
 import { act, fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { roughnessOf } from '../../lib/harmonic-field';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { pickPreset } from './testUtils';
+import { addSubsetNamed, pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 15_000 });
 
@@ -32,6 +33,7 @@ function sendNew(k: number) {
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   (window as unknown as { AudioContext: unknown }).AudioContext = FakeCtx;
 });
 afterEach(() => {
@@ -185,5 +187,90 @@ describe('Composites panel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add selected to composite' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /^1 Composite 1/ }));
     expect(screen.getByText(/Nothing added: all 2 are already in Composite 1/)).toBeInTheDocument();
+  });
+});
+
+describe('Composites panel: hover feeds the Live roughness view', () => {
+  it('a composite row scores its whole merged gamut, an item its own pitches, leaving is idle', async () => {
+    window.localStorage.setItem(
+      'hrifa.harmonic-field-lab.layout.v1',
+      JSON.stringify({ left: [['keys', 'chords', 'composites']], right: [['viz4']] })
+    );
+    window.innerWidth = 3840;
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    sendNew(0);
+    const second = chips()[1];
+    fireEvent.mouseEnter(second);
+    down('-');
+    down('1');
+    fireEvent.mouseLeave(second);
+    fireEvent.click(railTab(/^Composites/));
+    const row = screen.getByRole('list', { name: 'Composites' }).querySelector('[data-composite]')!;
+    const total = () => screen.getByTestId('live-total').textContent;
+    const source = () => screen.getByTestId('live-roughness').getAttribute('data-source');
+    const head = row.firstElementChild as HTMLElement;
+    fireEvent.click(within(row as HTMLElement).getByRole('button', { name: /^Show the items of/ }));
+    const items = [...row.querySelectorAll('[data-item]')] as HTMLElement[];
+    expect(items).toHaveLength(2);
+    const note = (c: number) => ({ m: null, c });
+    const centsOfItem = (el: HTMLElement) =>
+      (el.querySelector('[data-detail="cents"]')?.textContent ?? '')
+        .replace(/ c$/, '')
+        .split(',')
+        .map((x) => Number(x.trim()));
+    const first = centsOfItem(items[0]);
+    const secondCents = centsOfItem(items[1]);
+    const merged = [
+      ...new Set([...first, ...secondCents].map((c) => Math.round(c * 10) / 10)),
+    ].sort((a, b) => a - b);
+    expect(source()).not.toBe('hover');
+    const chevrons = () => within(head).queryAllByTestId('mode-root');
+    expect(chevrons()).toHaveLength(0);
+    fireEvent.mouseEnter(head);
+    expect(chevrons()).toHaveLength(0); // the composite has no root
+    expect(source()).toBe('hover');
+    expect(total()).toBe(roughnessOf(merged.map(note)).toFixed(2));
+    fireEvent.mouseLeave(head);
+    fireEvent.mouseEnter(items[0]);
+    expect(source()).toBe('hover');
+    expect(total()).toBe(roughnessOf(first.map(note)).toFixed(2));
+    expect(chevrons()).toHaveLength(1); // a chord item shows its root
+    fireEvent.mouseLeave(items[0]);
+    expect(chevrons()).toHaveLength(0);
+    expect(source()).not.toBe('hover');
+    window.innerWidth = 1024;
+  });
+});
+
+describe('Composites panel: subset item root chevron', () => {
+  it('a subset sent from a saved subset shows the chevron at its stored mode root', async () => {
+    render(<HarmonicFieldLabPage />);
+    await pickPreset('12-EDO');
+    fireEvent.click(screen.getByRole('button', { name: 'None' }));
+    const dots = within(screen.getByRole('group', { name: /^Pitch circle/ })).getAllByRole(
+      'button'
+    );
+    [0, 2, 4, 5, 7, 9, 11].forEach((i) => fireEvent.click(dots[i]));
+    fireEvent.click(screen.getByRole('button', { name: 'Next mode' }));
+    await addSubsetNamed('dorian');
+    const srow = within(screen.getByRole('list', { name: 'Saved subsets list' })).getByRole(
+      'button',
+      { name: /^dorian/ }
+    );
+    fireEvent.mouseEnter(srow);
+    down('-');
+    down('0');
+    fireEvent.mouseLeave(srow);
+    fireEvent.click(railTab(/^Composites/));
+    const row = screen.getByRole('list', { name: 'Composites' }).querySelector('[data-composite]')!;
+    fireEvent.click(within(row as HTMLElement).getByRole('button', { name: /^Show the items of/ }));
+    const item = row.querySelector('[data-item]') as HTMLElement;
+    const head = row.firstElementChild as HTMLElement;
+    fireEvent.mouseEnter(item);
+    const chev = within(head).getAllByTestId('mode-root');
+    expect(chev).toHaveLength(1);
+    fireEvent.mouseLeave(item);
+    expect(within(head).queryAllByTestId('mode-root')).toHaveLength(0);
   });
 });

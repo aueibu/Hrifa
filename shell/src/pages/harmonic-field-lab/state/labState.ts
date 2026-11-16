@@ -190,12 +190,14 @@ export interface UiSettings {
   linkedMelody: boolean;
   /** Linked melody root (M8b, 2026-11-15): null = not chosen, the Developer menu default applies. Optional in storage. */
   linkedRoot: LinkedRoot | null;
-  /** The pattern the Positional section shows (M9): a pattern text; null or one not in the list = the first pattern. Optional in storage. */
+  /** Legacy (M9): the pattern the Positional section used to show. Still loaded and saved so stored data survives, but since M8f every pattern is its own group and nothing reads it. Optional in storage. */
   positionalPattern: string | null;
   /** The Positional list order (M8e): Smoothest (default) or Scale order. Optional in storage. */
   positionalOrder: 'smoothest' | 'scale';
-  /** Folded sections of the Chords panel (M8f): ids to true when folded (see `foldId`; `Record<string, boolean>`, only true is stored); absent = open. Optional in storage. */
+  /** Folded sections of the Chords panel (M8f): ids to true when folded (see `foldId`; `Record<string, boolean>`, only true is stored); absent = open. Ids starting `grp:` mean the opposite: a stored `grp:` id is an EXPANDED shape group (M8i). Optional in storage. */
   folds: Record<string, boolean>;
+  /** M8i: merge chords with the same shape on different roots into one card (default true). Optional in storage. */
+  groupShapes: boolean;
 }
 
 /**
@@ -216,6 +218,12 @@ export interface Notice {
   report: UpdateReport;
   /** Update only: restores the generator and its exact previous subsets. */
   undo: UpdateUndo | null;
+}
+
+/** One sounding pitch: cents above 1/1 as played, and the field index it lights (-1 for none). */
+export interface SoundingPitch {
+  c: number;
+  src: number;
 }
 
 export interface LabState {
@@ -242,6 +250,8 @@ export interface LabState {
   pin: number | null;
   /** Chord notes of a hovered chip (temporary) and of a clicked chip (kept). */
   chordHover: ReadonlySet<number> | null;
+  /** The hovered chord's real pitches (cents above 1/1, stacked octaves kept) when its card carries them; else null. */
+  chordHoverPitches: readonly number[] | null;
   chordPick: ReadonlySet<number> | null;
   /** A saved subset pointed at: shown on the ring and strip instead of the selection. */
   preview: readonly number[] | null;
@@ -251,6 +261,8 @@ export interface LabState {
   soundingMarks: ReadonlySet<number>;
   /** Cents above 1/1 of sounding pitches that match no field note (drawn as ghost marks on the ring and strip). */
   soundingGhosts: readonly number[];
+  /** Every sounding pitch as played (cents above 1/1 from the real Hz, stacked octaves kept) and the field note it lights (-1 none). */
+  soundingPitches: readonly SoundingPitch[];
   /** Shelf chord ids that sound now (a chord key, hold 1, a click, Play selected): their Shelf cards light. Runtime only. */
   soundingChords: readonly string[];
   ui: UiSettings;
@@ -298,6 +310,7 @@ export function defaultUi(): UiSettings {
     positionalPattern: null,
     positionalOrder: 'smoothest',
     folds: {},
+    groupShapes: true,
   };
 }
 
@@ -354,11 +367,13 @@ export function initialState(): LabState {
     hover: null,
     pin: null,
     chordHover: null,
+    chordHoverPitches: null,
     chordPick: null,
     preview: null,
     sounding: new Set(),
     soundingMarks: new Set(),
     soundingGhosts: [],
+    soundingPitches: [],
     soundingChords: [],
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
@@ -595,7 +610,7 @@ export type Action =
   | { type: 'hover'; i: number | null }
   | { type: 'pin'; i: number | null }
   | { type: 'pin/toggle'; i: number }
-  | { type: 'chord/hover'; set: ReadonlySet<number> | null }
+  | { type: 'chord/hover'; set: ReadonlySet<number> | null; pitches?: readonly number[] }
   | { type: 'chord/pick'; set: ReadonlySet<number> | null }
   | { type: 'preview'; idx: readonly number[] | null }
   | {
@@ -604,6 +619,8 @@ export type Action =
       marks?: readonly number[];
       /** Sounding pitches (cents above 1/1) that match no field note. */
       ghosts?: readonly number[];
+      /** Every sounding pitch as played. */
+      pitches?: readonly SoundingPitch[];
       /** Shelf chord ids that sound. */
       chords?: readonly string[];
     }
@@ -644,11 +661,13 @@ const clearPointers = (s: LabState): LabState => ({
   hover: null,
   pin: null,
   chordHover: null,
+  chordHoverPitches: null,
   chordPick: null,
   preview: null,
   sounding: new Set(),
   soundingMarks: new Set(),
   soundingGhosts: [],
+  soundingPitches: [],
   soundingChords: [],
   // the linked melody belongs to the tab it was pressed on
   keys: s.keys.link === null ? s.keys : { ...s.keys, link: null },
@@ -853,11 +872,13 @@ function reduce(s: LabState, a: Action): LabState {
         hover: null,
         pin: null,
         chordHover: null,
+        chordHoverPitches: null,
         chordPick: null,
         preview: null,
         sounding: new Set(),
         soundingMarks: new Set(),
         soundingGhosts: [],
+        soundingPitches: [],
         soundingChords: [],
       };
     case 'tab/add': {
@@ -1203,7 +1224,7 @@ function reduce(s: LabState, a: Action): LabState {
     case 'pin/toggle':
       return { ...s, pin: s.pin === a.i ? null : a.i };
     case 'chord/hover':
-      return { ...s, chordHover: a.set };
+      return { ...s, chordHover: a.set, chordHoverPitches: a.pitches ?? null };
     case 'chord/pick':
       return { ...s, chordPick: a.set };
     case 'preview':
@@ -1221,13 +1242,24 @@ function reduce(s: LabState, a: Action): LabState {
       const sameChords =
         chords.length === s.soundingChords.length &&
         chords.every((c, i) => c === s.soundingChords[i]);
-      return same(next, s.sounding) && same(marks, s.soundingMarks) && sameGhosts && sameChords
+      const pitches = a.pitches ?? [];
+      const samePitches =
+        pitches.length === s.soundingPitches.length &&
+        pitches.every(
+          (p, i) => p.c === s.soundingPitches[i].c && p.src === s.soundingPitches[i].src
+        );
+      return same(next, s.sounding) &&
+        same(marks, s.soundingMarks) &&
+        sameGhosts &&
+        sameChords &&
+        samePitches
         ? s
         : {
             ...s,
             sounding: next,
             soundingMarks: marks,
             soundingGhosts: ghosts,
+            soundingPitches: pitches,
             soundingChords: chords,
           };
     }
@@ -1237,6 +1269,7 @@ function reduce(s: LabState, a: Action): LabState {
         templates: a.templates.slice(0, MAX_TEMPLATES),
         chordPick: null,
         chordHover: null,
+        chordHoverPitches: null,
       };
     case 'keys/shift': {
       const shift = clampShift(s.keys.shift + a.by);

@@ -12,6 +12,7 @@ import { parseInterval, type FifthsLayout } from '../../../lib/harmonic-field';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { RingView } from '../state/labState';
+import { SVG_FS_LABEL, SVG_FS_SMALL } from '../state/typeScale';
 import { FieldCompact } from './FieldPanel';
 import { OutsideCount, useGhosts } from './GhostMarks';
 import { GearIcon } from './icons';
@@ -251,7 +252,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
             <text
               x={label.x}
               y={label.y}
-              style={label.scale < 1 ? { fontSize: 11 * label.scale } : undefined}
+              style={label.scale < 1 ? { fontSize: SVG_FS_LABEL * label.scale } : undefined}
               className={classes.svgLabel}
               data-on={on}
               textAnchor="middle"
@@ -261,7 +262,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
               {m.offset !== undefined && (
                 <tspan
                   className={classes.offLabel}
-                  style={label.scale < 1 ? { fontSize: 9 * label.scale } : undefined}
+                  style={label.scale < 1 ? { fontSize: SVG_FS_SMALL * label.scale } : undefined}
                   x={label.x}
                   dy={10 * label.scale}
                 >

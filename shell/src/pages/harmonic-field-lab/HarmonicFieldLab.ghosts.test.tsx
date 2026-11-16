@@ -30,7 +30,7 @@ it('Play sketch of 4:5:6:7 on a 12-EDO field ghosts the notes the field lacks, c
   act(() => {
     vi.advanceTimersByTime(200);
   });
-  // As in field (the default): 5/4 and 3/2 land on 12-EDO notes, only 7/4 (31 c from the nearest) stays exact: one ghost
+  // Field (the default): 5/4 and 3/2 land on 12-EDO notes, only 7/4 (31 c from the nearest) stays exact: one ghost
   expect(screen.getAllByTestId('ring-ghost')).toHaveLength(1);
   expect(screen.getAllByTestId('strip-ghost')).toHaveLength(1);
   expect(screen.getByTestId('outside-count').textContent).toContain('+1 outside');

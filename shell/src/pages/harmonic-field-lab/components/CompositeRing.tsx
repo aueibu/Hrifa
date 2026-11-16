@@ -6,6 +6,7 @@
  * (the classes are the Keys panel's).
  */
 import type { Note } from '../../../lib/harmonic-field';
+import { RingChevron } from './ModeRoot';
 import classes from './panels.module.css';
 
 const S = 64;
@@ -23,6 +24,8 @@ export interface CompositeRingProps {
   dropped?: readonly number[];
   /** M8e: notes lit by the item the pointer is on in the panel (cents); drawn as the blue chord ring (same as the Keys and pitch ring highlight) over the plain dots. */
   lit?: readonly number[];
+  /** The root of the hovered item (cents above 1/1, reduced into the repeat here): a mode-root chevron just outside the ring. */
+  rootC?: number | null;
   label: string;
   /** The larger drawing of the - popup. */
   big?: boolean;
@@ -35,6 +38,7 @@ export function CompositeRing({
   common = [],
   dropped = [],
   lit = [],
+  rootC = null,
   label,
   big = false,
 }: CompositeRingProps) {
@@ -51,6 +55,7 @@ export function CompositeRing({
       role="img"
       aria-label={label}
       data-testid="composite-ring"
+      overflow={rootC === null ? undefined : 'visible'}
     >
       <circle className={classes.keyCircle} cx={C} cy={C} r={R} />
       {notes.map((c, i) => {
@@ -113,6 +118,16 @@ export function CompositeRing({
           </g>
         );
       })}
+      {rootC !== null && (
+        <RingChevron
+          cx={C}
+          cy={C}
+          x={at(((rootC % turn) + turn) % turn).x}
+          y={at(((rootC % turn) + turn) % turn).y}
+          gap={5}
+          scale={0.7}
+        />
+      )}
     </svg>
   );
 }

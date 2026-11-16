@@ -4,6 +4,7 @@
  * they are async only so a caller can `await` them like any other step.
  */
 import { fireEvent, screen, within } from '@test-utils';
+import { KEY_SETTINGS } from './state/persist';
 
 export const presetButton = () => screen.getByRole('button', { name: /^Preset:/ });
 
@@ -46,4 +47,9 @@ export function addSubsetNamedNow(name: string) {
 }
 export async function addSubsetNamed(name: string) {
   addSubsetNamedNow(name);
+}
+
+/** M8i: store `ui.groupShapes: false` before a render, so a 12-EDO test sees every per-root chord card as before grouping existed. */
+export function ungroupShapes() {
+  window.localStorage.setItem(KEY_SETTINGS, JSON.stringify({ groupShapes: false }));
 }

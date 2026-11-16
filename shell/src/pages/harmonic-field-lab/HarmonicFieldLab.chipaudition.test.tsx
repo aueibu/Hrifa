@@ -6,7 +6,7 @@ import { act, fireEvent, render, screen, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
-import { pickPreset } from './testUtils';
+import { pickPreset, ungroupShapes } from './testUtils';
 
 vi.setConfig({ testTimeout: 20_000 });
 
@@ -41,6 +41,7 @@ function heardSince(from: number) {
 
 beforeEach(() => {
   window.localStorage.clear();
+  ungroupShapes();
   contexts = [];
   class TestCtx extends FakeCtx {
     constructor() {
@@ -191,7 +192,10 @@ describe('Composites panel item (h) and remembered Positional order (i)', () => 
   it('h: four lines per item and the hover lights its notes in the ring; i: Scale order is stored', async () => {
     render(<HarmonicFieldLabPage />);
     // no write on mount
-    expect(window.localStorage.getItem('hrifa.harmonic-field-lab.settings.v1')).toBeNull();
+    // (the only stored setting is the test fixture's own groupShapes: false)
+    expect(window.localStorage.getItem('hrifa.harmonic-field-lab.settings.v1')).toBe(
+      '{"groupShapes":false}'
+    );
     await pickPreset('12-EDO');
     // D major (200, 600, 900 c) to a new composite 1, then G major (700, 1100, 200 c) to it: they share the 200 c note
     const dChip = chip(/^major triad 4:5:6 on 200\.0 c/i);
