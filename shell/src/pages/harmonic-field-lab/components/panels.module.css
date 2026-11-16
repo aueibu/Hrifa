@@ -334,29 +334,18 @@
   width: 0.5rem;
 }
 
-.swatch[data-sev='0'],
-.heatCell[data-sev='0'] {
-  background: color-mix(in srgb, var(--mark-cyan) 40%, var(--panel));
-}
-
-.swatch[data-sev='1'],
-.heatCell[data-sev='1'] {
-  background: color-mix(in srgb, var(--mark-green) 40%, var(--panel));
-}
-
-.swatch[data-sev='2'],
-.heatCell[data-sev='2'] {
-  background: color-mix(in srgb, var(--mark-yellow) 45%, var(--panel));
-}
-
-.swatch[data-sev='3'],
-.heatCell[data-sev='3'] {
-  background: color-mix(in srgb, var(--mark-orange) 50%, var(--panel));
-}
-
-.swatch[data-sev='4'],
-.heatCell[data-sev='4'] {
-  background: color-mix(in srgb, var(--mark-red) 55%, var(--panel));
+/* A colored tile (Modes tiles, both legends, Pairs cells, the table dots): its colors come from inline custom
+   properties set by state/tileColors.ts (Radix Colors steps, both schemes). The border is always 1px so the size never
+   changes; it is `transparent` when the look has none. The border is set as separate longhands, never a shorthand
+   with a var(): an unresolved var() in a shorthand drops the whole declaration (the old Outlined bug). */
+.swatch[data-tile],
+.heatCell[data-tile],
+.mxSwatch[data-tile] {
+  background: var(--mx-fill);
+  border-color: var(--mx-bd);
+  border-style: solid;
+  border-width: 1px;
+  color: var(--mx-fg);
 }
 
 .heat {
@@ -439,8 +428,7 @@
 }
 
 /* the number (with its sign) appears when the row is pointed at; the sign alone is always there unless the Developer
-   option turns that off. --text reads on every severity tint in both schemes (the tints are at most 55% of a mark
-   color mixed into the panel). */
+   option turns that off. The sign takes the tile's text color. */
 .heatNum {
   opacity: 0;
 }
@@ -468,6 +456,41 @@
 .heatRowBtn:focus-visible .heatCell .heatSign,
 .heatRowBtn[aria-pressed='true'] .heatCell .heatSign {
   opacity: 0;
+}
+
+.modesBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* the large window: the same grid with taller tiles and the lab's larger type */
+.modesBig {
+  font-size: var(--lab-fs-body);
+}
+
+.modesBig .modeLine {
+  grid-template-columns: 6.5rem minmax(0, 1fr) 3rem;
+}
+
+.modesBig .modeTiles {
+  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+}
+
+.modesBig .heatCell,
+.modesBig .heatName {
+  height: 2.5rem;
+  min-height: 2.5rem;
+}
+
+.modesBig .heatRowBtn,
+.modesBig .modeHeadCell,
+.modesBig .legend {
+  font-size: var(--lab-fs-title);
+}
+
+.modesBig .heatSign {
+  font-size: var(--lab-fs-display);
 }
 
 .heatTotal {
@@ -2537,10 +2560,10 @@
   height: 1.5rem;
 }
 
-/* a cell's fill is the custom property --mx-fill: an error severity (data-sev, below) or an interval hue (data-tint, set inline); the marks below sit on top */
+/* a cell's colors are the inline custom properties --mx-fill, --mx-bd, --mx-fg (an error severity or an interval hue, see the .heatCell[data-tile] rule); the marks below sit on top */
 .mxCell {
   background: var(--mx-fill);
-  border: 0;
+  border: 1px solid transparent;
   cursor: pointer;
   font-size: var(--lab-fs-tiny);
   gap: 0.0625rem;
@@ -2554,34 +2577,10 @@
   padding-right: 0.75rem;
 }
 
-.mxCell:not([data-sev]):not([data-tint]) {
+.mxCell:not([data-tile]) {
   --mx-fill: var(--panel-slot);
-}
 
-/* the shared heat classes set a background of their own; the cell reads --mx-fill instead */
-.mxCell[data-sev],
-.mxCell[data-tint] {
-  background: var(--mx-fill);
-}
-
-.mxCell[data-sev='0'] {
-  --mx-fill: color-mix(in srgb, var(--mark-cyan) 40%, var(--panel));
-}
-
-.mxCell[data-sev='1'] {
-  --mx-fill: color-mix(in srgb, var(--mark-green) 40%, var(--panel));
-}
-
-.mxCell[data-sev='2'] {
-  --mx-fill: color-mix(in srgb, var(--mark-yellow) 45%, var(--panel));
-}
-
-.mxCell[data-sev='3'] {
-  --mx-fill: color-mix(in srgb, var(--mark-orange) 50%, var(--panel));
-}
-
-.mxCell[data-sev='4'] {
-  --mx-fill: color-mix(in srgb, var(--mark-red) 55%, var(--panel));
+  color: var(--text);
 }
 
 .mxSwatch {
@@ -2593,7 +2592,7 @@
 }
 
 .mxWrap {
-  color: var(--text-muted);
+  color: currentcolor;
   font-size: var(--lab-fs-tiny);
   line-height: 1;
   pointer-events: none;
@@ -2645,8 +2644,15 @@
   outline-offset: -2px;
 }
 
-.mxCell[data-match='no'] {
+.mxCell[data-match='no']:not([data-tile]) {
   background: color-mix(in srgb, var(--mx-fill) calc(var(--mx-dim) * 100%), var(--panel));
+}
+
+/* a dimmed colored cell takes the tile's own receding colors (Radix step 2 fill, weakened border, step 11 text) */
+.mxCell[data-match='no'][data-tile] {
+  background: var(--mx-dim-fill);
+  border-color: var(--mx-dim-bd);
+  color: var(--mx-dim-fg);
 }
 
 .mxCell:focus-visible,

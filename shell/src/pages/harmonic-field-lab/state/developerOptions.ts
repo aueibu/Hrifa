@@ -7,6 +7,7 @@ import {
   type WheelReading,
 } from '../../../lib/harmonic-field';
 import { LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
+import { TILE_LOOKS, type TileLook } from './tileColors';
 
 /**
  * The lab's own per-viewer developer options (W-10: page-local; never reads another page's keys). Sanitised on load, so
@@ -33,6 +34,10 @@ export interface LabDeveloperOptions {
   intervalColor: WheelReading;
   /** Pairs panel, Color: Interval: simpler ratios tint more strongly (default) or more faintly. */
   intervalIntensity: TintIntensity;
+  /** How Modes and Pairs tiles look, in both schemes: `tinted` (default), `outlined` or `solid` (Radix Colors steps). */
+  tileLook: TileLook;
+  /** Stack an outline on Tinted and Solid tiles (always on in Outlined). */
+  tileOutline: boolean;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -46,6 +51,14 @@ export function sanitiseTooltipDelay(v: unknown): number {
   return Math.min(TOOLTIP_DELAY_MAX, Math.max(0, Math.round(v)));
 }
 
+/** A stored look; the old `jewel` reads as `tinted`, the old `bright` as `solid`, anything unknown as `tinted`. */
+export function sanitizeTileLook(v: unknown): TileLook {
+  if (v === 'bright') {
+    return 'solid';
+  }
+  return TILE_LOOKS.includes(v as TileLook) ? (v as TileLook) : 'tinted';
+}
+
 const defaults: LabDeveloperOptions = {
   modeSignAlways: true,
   keepModeRoot: true,
@@ -56,6 +69,8 @@ const defaults: LabDeveloperOptions = {
   mergeKeeps: 'first',
   intervalColor: 'size',
   intervalIntensity: 'strong',
+  tileLook: 'tinted',
+  tileOutline: true,
 };
 
 const listeners = new Set<() => void>();
@@ -87,6 +102,8 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       mergeKeeps: o.mergeKeeps === 'recent' ? 'recent' : 'first',
       intervalColor: o.intervalColor === 'rank' ? 'rank' : 'size',
       intervalIntensity: o.intervalIntensity === 'faint' ? 'faint' : 'strong',
+      tileLook: sanitizeTileLook(o.tileLook),
+      tileOutline: typeof o.tileOutline === 'boolean' ? o.tileOutline : defaults.tileOutline,
     };
   } catch {
     return defaults;

@@ -3,9 +3,12 @@
  * numbers sit in a tile area of their own with the same grid, so every wrapped line of tiles starts at the same column
  * as the line above (never under the label).
  */
-import type { MouseEvent } from 'react';
+import { useState, type MouseEvent } from 'react';
+import { ActionIcon, Modal } from '@mantine/core';
 import { MAX_KEYS_NOTES, MAX_MODES } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
+import { sevTileStyle } from '../state/tileColors';
+import { ExpandIcon } from './icons';
 import {
   Num,
   SEV_LABEL,
@@ -18,27 +21,25 @@ import {
   useLab,
   Hint,
 } from './ui';
+import { useTiles } from './useTiles';
 import classes from './panels.module.css';
 
 const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+c'];
 
-export function ModesPanel() {
+/** The heat grid, its legend and the empty-state messages: the same component in the panel and in the large window. */
+function ModesBody({ big }: { big?: boolean }) {
   const lab = useLab();
   const { an, base } = lab;
   const tol = lab.state.ui.tol;
   const [dev] = useLabDeveloperOptions();
+  const tiles = useTiles();
   if (!an.keys) {
     return (
-      <>
-        <Strip title={<Tip k="modes">Modes</Tip>} />
-        <div className={classes.panelBody}>
-          <span className={classes.hint} role="status">
-            {base.rel.length === 0
-              ? 'Select notes to see their modes.'
-              : `Modes are worked out for subsets of up to ${MAX_KEYS_NOTES} notes in a field this size. Select fewer notes.`}
-          </span>
-        </div>
-      </>
+      <span className={classes.hint} role="status">
+        {base.rel.length === 0
+          ? 'Select notes to see their modes.'
+          : `Modes are worked out for subsets of up to ${MAX_KEYS_NOTES} notes in a field this size. Select fewer notes.`}
+      </span>
     );
   }
   const { modeFit } = an.keys;
@@ -53,12 +54,17 @@ export function ModesPanel() {
   };
   return (
     <>
-      <Strip title={<Tip k="modes">Modes</Tip>} />
-      <div className={classes.panelBody}>
+      <div className={`${classes.modesBody} ${big ? classes.modesBig : ''}`}>
         <span className={classes.legend} aria-label="Heat grid legend">
           {SEV_NAMES.map((n, i) => (
             <span key={n} className={classes.legendItem}>
-              <span className={classes.swatch} data-sev={i} aria-hidden="true" />
+              <span
+                className={classes.swatch}
+                data-sev={i}
+                data-tile={tiles.look}
+                style={sevTileStyle(tiles.look, tiles.outline, i, tiles.scheme)}
+                aria-hidden="true"
+              />
               {n}
             </span>
           ))}
@@ -132,6 +138,13 @@ export function ModesPanel() {
                           <span
                             className={classes.heatCell}
                             data-sev={severity(e)}
+                            data-tile={tiles.look}
+                            style={sevTileStyle(
+                              tiles.look,
+                              tiles.outline,
+                              severity(e),
+                              tiles.scheme
+                            )}
                             data-sign={sign}
                             role="img"
                             aria-label={tip}
@@ -173,6 +186,42 @@ export function ModesPanel() {
           })}
         </div>
       </div>
+    </>
+  );
+}
+
+/** The Modes panel: the heat grid; a large window shows the same grid with bigger tiles and text. */
+export function ModesPanel() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Strip title={<Tip k="modes">Modes</Tip>}>
+        <Tip k="modesPopOut" as="control">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            aria-label="Open Modes in a large window"
+            onClick={() => setOpen(true)}
+          >
+            <ExpandIcon />
+          </ActionIcon>
+        </Tip>
+      </Strip>
+      <div className={classes.panelBody}>
+        <ModesBody />
+      </div>
+      <Modal
+        opened={open}
+        onClose={() => setOpen(false)}
+        title="Modes"
+        size="min(64rem, 94vw)"
+        transitionProps={{ duration: 0 }}
+      >
+        <div className={classes.vizModal}>
+          <ModesBody big />
+        </div>
+      </Modal>
     </>
   );
 }

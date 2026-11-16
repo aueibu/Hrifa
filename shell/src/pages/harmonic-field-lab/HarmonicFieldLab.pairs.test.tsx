@@ -372,7 +372,7 @@ describe('polish: dots, dimming and the Find clear button', () => {
       for (const c of mine) {
         const fill = c.style.getPropertyValue('--mx-fill');
         expect(fill).toContain('color-mix');
-        expect(swatch.getAttribute('style')).toBe(`background: ${fill};`);
+        expect(swatch.style.getPropertyValue('--mx-fill')).toBe(fill);
       }
       expect(swatch.dataset.match).toBeUndefined();
       fireEvent.mouseLeave(row);

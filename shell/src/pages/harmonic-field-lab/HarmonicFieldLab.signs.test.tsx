@@ -129,6 +129,8 @@ describe('lab Developer menu', () => {
       mergeKeeps: 'first',
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
     fireEvent.click(screen.getByRole('switch', { name: /always show/ }));
@@ -142,6 +144,8 @@ describe('lab Developer menu', () => {
       mergeKeeps: 'first',
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
   });
 
@@ -162,6 +166,8 @@ describe('lab Developer menu', () => {
       mergeKeeps: 'first',
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
       modeSignAlways: true,
@@ -173,6 +179,8 @@ describe('lab Developer menu', () => {
       mergeKeeps: 'first',
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
     expect(parseDeveloperOptions('[1,2]')).toEqual({
       modeSignAlways: true,
@@ -184,6 +192,8 @@ describe('lab Developer menu', () => {
       mergeKeeps: 'first',
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
     expect(parseDeveloperOptions('null')).toEqual({
       modeSignAlways: true,
@@ -195,6 +205,8 @@ describe('lab Developer menu', () => {
       mergeKeeps: 'first',
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
     open();
@@ -225,6 +237,8 @@ describe('lab Developer menu', () => {
     expect(parseDeveloperOptions(null)).toMatchObject({
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
     expect(
       parseDeveloperOptions('{"intervalColor":"rank","intervalIntensity":"faint"}')
@@ -232,6 +246,8 @@ describe('lab Developer menu', () => {
     expect(parseDeveloperOptions('{"intervalColor":3,"intervalIntensity":"x"}')).toMatchObject({
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify({ intervalColor: 'rank' }));
     open();
@@ -254,6 +270,8 @@ describe('lab Developer menu', () => {
       mergeKeeps: 'first',
       intervalColor: 'size',
       intervalIntensity: 'strong',
+      tileLook: 'tinted',
+      tileOutline: true,
     });
   });
 

@@ -1782,6 +1782,28 @@ const entries = {
     ],
     see: ['matrixColor', 'intervalColor', 'developerMenu'],
   },
+  tileLook: {
+    term: 'Tile look',
+    help: [
+      p(
+        'How the colored tiles in the Modes grid and the Pairs panel look, in both schemes. **Tinted** (the default) is a soft hue fill with strong text. **Outlined** is a plain tile with a hue border. **Solid** is a full hue fill with black or white text. The colors are Radix Colors steps.'
+      ),
+      example(
+        'Tinted turns a 5-cent error into a pale cyan tile; Solid turns it into a full cyan tile.'
+      ),
+    ],
+    see: ['modes', 'matrixColor', 'developerMenu', 'tileOutline'],
+  },
+  tileOutline: {
+    term: 'Tile outline',
+    help: [
+      p(
+        'Stacks a 1 px outline on Tinted and Solid tiles. On by default. It is always on in Outlined.'
+      ),
+      example('Tinted with the outline on: a pale tile with a thin hue edge.'),
+    ],
+    see: ['tileLook', 'developerMenu'],
+  },
   tooltips: {
     term: 'Tooltips',
     help: [
@@ -2399,6 +2421,22 @@ const entries = {
       ),
     ],
     see: ['matrix', 'vizPopOut'],
+  },
+  modesPopOut: {
+    term: 'Open Modes in a large window',
+    help: [
+      p(
+        'Shows the same Modes grid full size over the page, with taller tiles and bigger text. Closing it changes nothing.'
+      ),
+      keys([
+        { key: 'Click a row', does: 'make this the current mode' },
+        { key: 'Ctrl+click or Shift+click', does: 'hear a mode or one degree, as in the panel' },
+        { key: 'Escape', does: 'close the window' },
+        { key: 'Click outside', does: 'close the window' },
+      ]),
+      example('open it on a 12-note subset to read every cents error without squinting.'),
+    ],
+    see: ['modes', 'vizPopOut'],
   },
   latticeMode: {
     term: 'Lattice axis mode',

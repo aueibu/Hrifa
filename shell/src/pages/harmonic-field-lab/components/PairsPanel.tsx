@@ -14,7 +14,13 @@ import {
   type CSSProperties,
   type MouseEvent,
 } from 'react';
-import { ActionIcon, Modal, SegmentedControl, TextInput } from '@mantine/core';
+import {
+  ActionIcon,
+  Modal,
+  SegmentedControl,
+  TextInput,
+  useComputedColorScheme,
+} from '@mantine/core';
 import {
   pairCoverage,
   tintStrengths,
@@ -28,8 +34,8 @@ import { MAX_PAIRS } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import type { PairsColor } from '../state/labState';
 import { PAIRS_LABEL } from '../state/layout';
-import { wheelFill } from '../state/pairsColor';
 import { parseFind } from '../state/pairsFind';
+import { sevTileStyle, strengthLevel, tileColors, tileStyle, wheelHue } from '../state/tileColors';
 import { CloseIcon, ExpandIcon } from './icons';
 import { Num, Row, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
 import classes from './panels.module.css';
@@ -50,8 +56,11 @@ interface CellProps {
   wrap: boolean;
   /** Error severity 0 to 4, or -1 when the coloring is not Error. */
   sev: number;
-  /** Interval fill (a CSS color from the wheel, set as --mx-fill), or '' for none. */
-  fill: string;
+  /** The Interval tile's custom properties (fill, border, text and their dimmed versions), or undefined for none. */
+  tile: CSSProperties | undefined;
+  look: string;
+  /** The Error tile's custom properties (from the severity). */
+  sevStyle?: CSSProperties;
   /** 0 = no search or pick active, 1 = this cell matches, 2 = it does not. */
   match: 0 | 1 | 2;
   lit: boolean;
@@ -70,8 +79,9 @@ const Cell = memo(function Cell(p: CellProps) {
       type="button"
       className={`${classes.heatCell} ${classes.mxCell}`}
       data-sev={p.sev >= 0 ? p.sev : undefined}
-      data-tint={p.fill ? 'wheel' : undefined}
-      style={p.fill ? ({ '--mx-fill': p.fill } as CSSProperties) : undefined}
+      data-tint={p.tile ? 'wheel' : undefined}
+      data-tile={p.tile || p.sev >= 0 ? p.look : undefined}
+      style={p.tile ?? (p.sev >= 0 ? p.sevStyle : undefined)}
       data-match={p.match === 1 ? 'yes' : p.match === 2 ? 'no' : undefined}
       data-lit={p.lit}
       data-chord={p.chord}
@@ -238,15 +248,26 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
   }, []);
 
   const [dev] = useLabDeveloperOptions();
-  // one fill per interval group: the wheel position (size or rank) and the strength (simple strong or faint)
-  const fills = useMemo(() => {
+  const scheme = useComputedColorScheme('light');
+  const look = dev.tileLook;
+  // one tile per interval group: the wheel position (size or rank) picks the hue, the strength (simple strong or faint)
+  // the level; the look decides the Radix steps (state/tileColors.ts)
+  const tiles = useMemo(() => {
     if (!m) {
-      return [] as string[];
+      return [] as CSSProperties[];
     }
     const pos = wheelPositions(m, base.rep.c, dev.intervalColor);
     const str = tintStrengths(m, dev.intervalIntensity);
-    return m.groups.map((g) => wheelFill(pos[g.id], str[g.id]));
-  }, [m, base.rep.c, dev.intervalColor, dev.intervalIntensity]);
+    return m.groups.map((g) =>
+      tileStyle(
+        tileColors(look, dev.tileOutline, strengthLevel(str[g.id]), wheelHue(pos[g.id]), scheme)
+      )
+    );
+  }, [m, base.rep.c, dev.intervalColor, dev.intervalIntensity, dev.tileOutline, scheme, look]);
+  const sevStyles = useMemo(
+    () => [0, 1, 2, 3, 4].map((s) => sevTileStyle(look, dev.tileOutline, s, scheme)),
+    [look, dev.tileOutline, scheme]
+  );
   const steps = useMemo(() => (m ? stepsTable(m) : []), [m]);
 
   if (!m) {
@@ -342,7 +363,13 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
           <span className={classes.legend} aria-label="Error legend">
             {SEV_LABEL.map((n, i) => (
               <span key={n} className={classes.legendItem}>
-                <span className={classes.swatch} data-sev={i} aria-hidden="true" />
+                <span
+                  className={classes.swatch}
+                  data-sev={i}
+                  data-tile={look}
+                  style={sevStyles[i]}
+                  aria-hidden="true"
+                />
                 {n}
               </span>
             ))}
@@ -410,7 +437,9 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
                   label={cellLabel(c)}
                   wrap={c.wrap}
                   sev={color === 'error' ? sevOfGroup(c.group) : -1}
-                  fill={color === 'interval' ? fills[c.group] : ''}
+                  tile={color === 'interval' ? tiles[c.group] : undefined}
+                  sevStyle={sevStyles[sevOfGroup(c.group)]}
+                  look={look}
                   match={active ? (matchKeys.has(i * m.N + j) ? 1 : 2) : 0}
                   lit={litCell(i, j)}
                   chord={chordHas(i) && chordHas(j)}
@@ -530,7 +559,8 @@ function PairsBody({ ui, big }: { ui: PairsUi; big?: boolean }) {
                 {color === 'interval' && (
                   <span
                     className={classes.mxSwatch}
-                    style={{ background: fills[g.id] }}
+                    style={tiles[g.id]}
+                    data-tile={look}
                     data-testid="matrix-swatch"
                     aria-hidden="true"
                   />

@@ -76,3 +76,16 @@ Control: **Color: Off | Error | Interval**.
 - D9 **Find box:** local to the Pairs panel: a slash or colon means a ratio, anything else is cents. The lab-wide `parseInterval` rule (a bare integer is n/1) is NOT changed: stored custom generators rely on it (a bare "2" is the octave).
 - D10 **American spelling only**, everywhere (code, identifiers, texts, docs). Units always get a space ("700 c").
 
+## Tile colors (M1b, human 2026-11-16; FINAL after the thin slices: Radix Colors; look approved by the human)
+
+History: bright full-hue tiles with dark text (too gaudy), then OKLCH jewel tones, then Radix Colors 3.0.0 scales ("that coloration pretty much solves everything"). Default: Tinted with the outline on.
+
+| # | Where | Expected |
+| --- | --- | --- |
+| 30 | Modes heat grid and Pairs Error (both schemes) | Tiles use the Radix scales for cyan, green, yellow, orange, red in the chosen look (Developer option `tileLook`: Tinted default, Outlined, Solid; `tileOutline` default on); text at least 4.5:1 on every tile (tests: `state/tileColors.test.ts`). |
+| 31 | Pairs Interval (both schemes) | The eight-hue wheel blends the same Radix step of neighboring hues; intensity (simple strong or faint) picks the step; the table dots equal the tiles. |
+| 32 | Dimmed (non-matching) Pairs cells | The receding look (low fill step, readable text), never a dark mud tile. |
+| 33 | Outlined look on Pairs tiles | The border shows on the tiles, not only on the dots (the old bug: an undefined variable inside a `border` shorthand). |
+| 34 | Modes pop-out and Pairs pop-out | Same looks and behavior as the panels. |
+
+Known limits (measured): Tinted fills are close to the panel by design (1.02 to 1.18:1), so the stacked outline carries the edge; Solid strong red is the weakest text case (4.52:1). Radix is tuned with APCA, the tests use WCAG 4.5:1.

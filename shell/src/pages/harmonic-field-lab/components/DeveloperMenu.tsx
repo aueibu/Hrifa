@@ -6,7 +6,11 @@
 import type { ReactNode } from 'react';
 import { Button, NumberInput, Popover, SegmentedControl, Switch, Text } from '@mantine/core';
 import { MERGE_TOL_DEFAULT, MERGE_TOL_MAX } from '../../../lib/harmonic-field';
-import { TOOLTIP_DELAY_MAX, useLabDeveloperOptions } from '../state/developerOptions';
+import {
+  TOOLTIP_DELAY_MAX,
+  sanitizeTileLook,
+  useLabDeveloperOptions,
+} from '../state/developerOptions';
 import { Tip } from './ui';
 import classes from './lab.module.css';
 
@@ -123,6 +127,31 @@ export function DeveloperMenu() {
                     { label: 'Simple strong', value: 'strong' },
                     { label: 'Simple faint', value: 'faint' },
                   ]}
+                />
+              </Tip>
+            </Section>
+            <Section title="Tiles">
+              <Tip k="tileLook" as="control" block>
+                <Text size="xs">Tile look (Modes and Pairs)</Text>
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  aria-label="Tile look"
+                  value={options.tileLook}
+                  onChange={(v) => update({ tileLook: sanitizeTileLook(v) })}
+                  data={[
+                    { label: 'Tinted', value: 'tinted' },
+                    { label: 'Outlined', value: 'outlined' },
+                    { label: 'Solid', value: 'solid' },
+                  ]}
+                />
+              </Tip>
+              <Tip k="tileOutline" as="control" block>
+                <Switch
+                  size="xs"
+                  label="Stack an outline on Tinted and Solid tiles"
+                  checked={options.tileOutline}
+                  onChange={(e) => update({ tileOutline: e.currentTarget.checked })}
                 />
               </Tip>
             </Section>

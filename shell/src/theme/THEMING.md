@@ -41,6 +41,20 @@ dark is `--tint-red-text` (8.37:1 on `--panel`); light is `--mark-red` mixed 85%
 the input background, 5.09:1 on `--panel-slot`; dark 8.37:1 on `--panel`, 7.49 or better on the slot
 and input background.
 
+Radix Colors (tile scales). `src/theme/radix.ts` holds the Radix Colors 3.0.0 scales (MIT license, notice in the file header; values copied from
+the package, no dependency added) for the eight hues red, orange, yellow, green, cyan, blue, violet and pink, 12 steps each, light and dark.
+`createSemanticResolver` emits them as `--rx-<hue>-<step>` for steps 2 to 12 in both schemes. Radix gives each step a job: 1 to 2 subtle
+backgrounds, 3 to 5 component backgrounds, 6 to 8 borders, 9 to 10 solid fills, 11 to 12 text. Pages never use the steps directly: they use
+the lab's tile helper (`state/tileColors.ts`, one `TILE` constant holds every step number), which builds three looks, in both schemes:
+Tinted (fill step 3, 4 or 5 with step 12 text; the default), Outlined (neutral slot fill, border step 6, 7 or 8, text step 11 in dark and 12 in
+light) and Solid (fill step 7, 8 or 9, black or white text, whichever reads better, bumping a step when needed), each with an optional stacked
+outline (Tinted border step 8, Solid border step 11), and a receding look for dimmed cells (fill step 2, text step 11 or 12). A wheel position
+between two hues blends the same step of both hues (`color-mix` in oklch). Measured (WCAG, real neutrals): text at least 4.5:1 on every tile
+(worst: Solid strong red 4.52:1; Tinted text 8.2 light and 8.0 dark; Outlined text on the slot 8.98 light and 5.52 dark; dimmed text 10.62 and
+8.38); tile fills are close to the panel by design (Tinted fills 1.02 to 1.18:1, borders 2.0 to 2.25:1; only the Solid step 11 border clears 3:1,
+4.29 light and 6.22 dark), so the optional outline carries the edge. Radix tunes its scales with APCA, the tests here use WCAG 4.5:1.
+Tests: `src/theme/radix.test.ts`, `src/pages/harmonic-field-lab/state/tileColors.test.ts`. The Developer options are `tileLook` and `tileOutline`.
+
 The dark ramp is a barely-warm gray with wide steps (levels sampled from Bitwig's dark UI, which is
 neutral; the warmth is a deliberate small red-to-blue lean) so saturated marks read cleanly on it.
 The light ramp is warmer.

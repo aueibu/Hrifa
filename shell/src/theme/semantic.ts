@@ -1,5 +1,6 @@
 import type { CSSVariablesResolver } from '@mantine/core';
 import { markerColorNames, markHex, markTint, type MarkScheme } from './markers';
+import { RADIX_HUES, RADIX_STEPS_USED, radixHex, type RadixScheme } from './radix';
 import { defaultThemeTokens, type ThemeTokens } from './tokens';
 
 type Variables = Record<string, string>;
@@ -39,6 +40,20 @@ function markerVariables(tokens: ThemeTokens, scheme: MarkScheme): Variables {
   for (const suffix of ['light', 'light-hover', 'light-color']) {
     variables[`--mantine-primary-color-${suffix}`] = variables[`--mantine-color-blue-${suffix}`];
     variables[`--mantine-color-primary-${suffix}`] = variables[`--mantine-color-blue-${suffix}`];
+  }
+  return variables;
+}
+
+/**
+ * `--rx-<hue>-<step>`: the Radix Colors step for the scheme (see radix.ts), for the colored tiles of the Modes and
+ * Pairs panels. Only the steps the tiles use are emitted.
+ */
+function radixVariables(scheme: RadixScheme): Variables {
+  const variables: Variables = {};
+  for (const hue of RADIX_HUES) {
+    for (const step of RADIX_STEPS_USED) {
+      variables[`--rx-${hue}-${step}`] = radixHex(scheme, hue, step);
+    }
   }
   return variables;
 }
@@ -88,6 +103,7 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--mantine-color-error': 'var(--text-danger)',
       '--mantine-color-default-border': 'var(--mantine-color-gray-2)',
       '--mantine-color-default-hover': 'var(--mantine-color-gray-1)',
+      ...radixVariables('light'),
       ...markerVariables(tokens, 'light'),
     },
     dark: {
@@ -106,6 +122,7 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--text-danger': 'var(--tint-red-text)',
       '--mantine-color-error': 'var(--text-danger)',
       '--mantine-color-default-border': 'var(--mantine-color-dark-5)',
+      ...radixVariables('dark'),
       ...markerVariables(tokens, 'dark'),
     },
   });
