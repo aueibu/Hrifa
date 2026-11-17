@@ -46,6 +46,14 @@ import {
   type CompositesState,
 } from './composites';
 import {
+  createFolder,
+  deleteFolder,
+  deleteFolderTree,
+  describeFolder,
+  renameFolder,
+  type FolderResult,
+} from './folderRecords';
+import {
   autoName,
   defaultGen,
   genFromPreset,
@@ -63,6 +71,7 @@ import {
   copySubsetsTo,
   deletePreset,
   deleteSubset,
+  describePreset,
   emptyLibrary,
   ensureUntitled,
   isModified,
@@ -622,11 +631,30 @@ export type Action =
   | { type: 'subset/load'; id: string }
   | { type: 'lib/sync'; library: GenLibrary }
   | { type: 'preset/open'; owner: OwnerKey }
-  | { type: 'preset/save'; name: string; folder: string; copySubsets?: boolean }
+  | {
+      type: 'preset/save';
+      name: string;
+      folder: string;
+      copySubsets?: boolean;
+      /** M5: the new preset's description (optional; cleaned, empty = none). */
+      description?: string;
+    }
   | { type: 'preset/rename'; id: string; name: string }
+  /** M5: set a user preset's description; empty text removes it. */
+  | { type: 'preset/describe'; id: string; description: string }
   | { type: 'preset/move'; id: string; folder: string }
   | { type: 'preset/delete'; id: string }
   | { type: 'preset/update' }
+  /**
+   * M5 folder records (`folderRecords.ts`): `path` is a user folder path under My presets. A refusal leaves the state as it
+   * was except `refusal` (a plain sentence, cleared by the next library action, like the other library refusals). `rename`
+   * takes the NEW FULL PATH.
+   */
+  | { type: 'folder/create'; path: string }
+  | { type: 'folder/describe'; path: string; description: string }
+  | { type: 'folder/delete'; path: string }
+  | { type: 'folder/delete-tree'; path: string }
+  | { type: 'folder/rename'; from: string; to: string }
   | { type: 'tab/link'; owner: OwnerKey | null }
   | { type: 'notice/undo' }
   | { type: 'notice/dismiss' }
@@ -864,9 +892,20 @@ const endsNotice = (type: Action['type']) =>
   type === 'preset/move';
 
 const isLibraryAction = (type: Action['type']) =>
-  type.startsWith('subset/') || type.startsWith('preset/') || type === 'lib/sync';
+  type.startsWith('subset/') ||
+  type.startsWith('preset/') ||
+  type.startsWith('folder/') ||
+  type === 'lib/sync';
 
 const refuse = (s: LabState, reason: string): LabState => ({ ...s, refusal: { reason } });
+
+/** A folder action's outcome: refused gives the reason in `refusal`; no change gives the same state; else the new library. */
+const folderResult = (s: LabState, r: FolderResult): LabState =>
+  r.refused !== undefined
+    ? refuse(s, r.refused)
+    : r.lib === s.library
+      ? s
+      : { ...s, library: r.lib };
 
 export function labReducer(s: LabState, a: Action): LabState {
   let next = reduce(s, a);
@@ -1158,14 +1197,23 @@ function reduce(s: LabState, a: Action): LabState {
       }
       if (o && o.kind === 'untitled' && !isModified(lib, t)) {
         // naming an Untitled generator: it becomes the preset, its subsets move with it
-        const r = promoteUntitled(lib, o.ref, { name: a.name, folder: a.folder });
+        const r = promoteUntitled(lib, o.ref, {
+          name: a.name,
+          folder: a.folder,
+          description: a.description,
+        });
         if (!r) {
           return refuse(s, 'Too many presets: delete one before saving another.');
         }
         lib = r.lib;
         key = r.key;
       } else {
-        const r = saveUserPreset(lib, { name: a.name, folder: a.folder, gen: t.gen });
+        const r = saveUserPreset(lib, {
+          name: a.name,
+          folder: a.folder,
+          gen: t.gen,
+          description: a.description,
+        });
         if (r.key === null) {
           return refuse(s, r.refused ?? 'Too many presets.');
         }
@@ -1189,9 +1237,60 @@ function reduce(s: LabState, a: Action): LabState {
       return { ...setLink(s, key), library: pushRecent(lib, key), notice };
     }
     case 'preset/rename': {
+      const cur = s.library.presets.find((p) => p.id === a.id);
+      const nm = cleanName(a.name);
+      if (cur && !nm) {
+        return refuse(s, 'Give the preset a name.');
+      }
+      // a name another preset of the same folder already has is refused (the same preset keeping its name is no change)
+      if (
+        cur &&
+        nm.toLowerCase() !== cur.name.toLowerCase() &&
+        s.library.presets.some(
+          (p) =>
+            p.id !== cur.id && p.folder === cur.folder && p.name.toLowerCase() === nm.toLowerCase()
+        )
+      ) {
+        return refuse(
+          s,
+          `A preset named ${nm} already exists in ${cur.folder === '' ? 'My presets' : cur.folder}.`
+        );
+      }
       const library = renamePreset(s.library, a.id, a.name);
       return library === s.library ? s : { ...s, library };
     }
+    case 'preset/describe': {
+      const library = describePreset(s.library, a.id, a.description);
+      return library === s.library ? s : { ...s, library };
+    }
+    case 'folder/create':
+      return folderResult(s, createFolder(s.library, a.path));
+    case 'folder/describe':
+      return folderResult(s, describeFolder(s.library, a.path, a.description));
+    case 'folder/delete':
+      return folderResult(s, deleteFolder(s.library, a.path));
+    case 'folder/delete-tree': {
+      // the folder with everything inside: each preset goes as `preset/delete` does (subsets stay under Auto-saved)
+      const r = deleteFolderTree(s.library, a.path);
+      if (r.refused !== undefined) {
+        return refuse(s, r.refused);
+      }
+      if (r.lib === s.library) {
+        return s;
+      }
+      const to = new Map(r.moved.map((m) => [m.from, m.to]));
+      return {
+        ...s,
+        library: r.lib,
+        tabs: s.tabs.map((t) =>
+          t.link !== undefined && to.has(t.link) ? withLink(t, to.get(t.link) ?? null) : t
+        ),
+        notice: s.notice && to.has(s.notice.owner) ? null : s.notice,
+        preview: r.moved.length > 0 ? null : s.preview,
+      };
+    }
+    case 'folder/rename':
+      return folderResult(s, renameFolder(s.library, a.from, a.to));
     case 'preset/move': {
       const library = movePreset(s.library, a.id, a.folder);
       return library === s.library ? s : { ...s, library };
@@ -1373,6 +1472,7 @@ function reduce(s: LabState, a: Action): LabState {
     case 'shelf/reload':
       return reloadChord(s, a.id);
     case 'shelf/rename':
+    case 'shelf/describe':
     case 'shelf/move':
     case 'shelf/delete':
     case 'shelf/select':

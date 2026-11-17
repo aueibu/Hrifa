@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { PRESETS, subsetFromSelection } from '../../../lib/harmonic-field';
+import { createFolder, describeFolder } from './folderRecords';
 import { generateField } from './generate';
 import {
   addSubset,
   builtinKey,
   emptyLibrary,
   ensureUntitled,
+  describePreset,
   pushRecent,
   saveUserPreset,
   untitledKey,
@@ -23,6 +25,7 @@ import {
   nodeId,
   ownerPath,
   searchPresets,
+  searchTree,
   visibleRows,
   type FolderNode,
   type PresetNode,
@@ -203,5 +206,53 @@ describe('copySentence', () => {
     expect(
       copySentence('Mine', { ...base, updatedSubsets: 1, removedSubsets: 0, affectedSubsets: 0 })
     ).toBe("Saved 'Mine' with 1 copied subset.");
+  });
+});
+
+describe('M5 search matches descriptions', () => {
+  const lib = (): GenLibrary => {
+    let l = saveUserPreset(emptyLibrary(), {
+      name: 'Seven-limit pool',
+      folder: 'Pools/Seven',
+      gen: presetGen('Harmonics 8–15'),
+    }).lib;
+    l = describePreset(l, 'p1', 'ratios up to 7 over 1/1');
+    l = describeFolder(createFolder(l, 'Drones').lib, 'Drones', 'pedal tones').lib;
+    return describeFolder(l, 'Pools/Seven', 'sevens only').lib;
+  };
+
+  it('row 4: a preset is found by words in its description (and by name or folder words together)', () => {
+    const roots = buildTree(lib());
+    expect(searchPresets(roots, 'over 1/1').map((h) => h.label)).toEqual(['Seven-limit pool']);
+    expect(searchPresets(roots, 'pool ratios').map((h) => h.label)).toEqual(['Seven-limit pool']);
+    expect(searchPresets(roots, 'ratios zzzz')).toEqual([]);
+    expect(searchPresets(roots, 'OVER')[0].description).toBe('ratios up to 7 over 1/1');
+  });
+
+  it('a folder description does not make its presets match the preset-only search', () => {
+    const roots = buildTree(lib());
+    expect(searchPresets(roots, 'pedal')).toEqual([]);
+    expect(searchPresets(roots, 'sevens').map((h) => h.label)).toEqual([]);
+  });
+
+  it('row 6: searchTree finds a user folder by its description, folders before their presets', () => {
+    const roots = buildTree(lib());
+    const hits = searchTree(roots, 'pedal');
+    expect(hits.map((h) => `${h.kind}:${h.label}`)).toEqual(['folder:Drones']);
+    expect((hits[0] as FolderNode).description).toBe('pedal tones');
+    expect(searchTree(roots, 'seven').map((h) => `${h.kind}:${h.label}`)).toEqual([
+      'folder:Seven',
+      'preset:Seven-limit pool',
+    ]);
+    // a description on the preset also reaches the tree search
+    expect(searchTree(roots, 'over 1/1').map((h) => h.label)).toEqual(['Seven-limit pool']);
+  });
+
+  it('searchTree never returns built-in or root folders; a no-description folder matches by name', () => {
+    const roots = buildTree(lib());
+    expect(searchTree(roots, 'equal').every((h) => h.kind === 'preset')).toBe(true);
+    const bare = buildTree(createFolder(emptyLibrary(), 'Drones').lib);
+    expect(searchTree(bare, 'drones').map((h) => h.label)).toEqual(['Drones']);
+    expect(searchTree(bare, '  ')).toEqual([]);
   });
 });

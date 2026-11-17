@@ -4,7 +4,8 @@
  */
 import { useMemo, useState } from 'react';
 import { ActionIcon, Button, Menu, Modal, Popover, TextInput } from '@mantine/core';
-import { listFolders, reportSentence } from '../../../lib/harmonic-field';
+import { reportSentence } from '../../../lib/harmonic-field';
+import { folderList } from '../state/folderRecords';
 import { autoName } from '../state/generate';
 import { subsetsOf } from '../state/generatorLibrary';
 import { copySentence, forkSentence } from '../state/noticeText';
@@ -22,7 +23,8 @@ export function LibraryActions() {
   const [copy, setCopy] = useState(false);
   const [name, setName] = useState('');
   const [folder, setFolder] = useState('');
-  const folders = useMemo(() => listFolders(lib.presets.map((p) => p.folder)), [lib.presets]);
+  // M5: record-only folders (made with New folder, empty) are offered too
+  const folders = useMemo(() => folderList(lib), [lib]);
   const mine = owner ? subsetsOf(lib, owner).length : 0;
   // naming an unmodified Auto-saved generator promotes it: its subsets move with it (the reducer's rule)
   const promoting = !!owner && owner.startsWith('u:') && !modified;

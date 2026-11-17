@@ -22,7 +22,7 @@ import {
   type PitchSet,
 } from '../../../lib/harmonic-field';
 import type { GenSpec } from './generate';
-import { cleanName } from './generatorLibrary';
+import { cleanDescription, cleanName } from './generatorLibrary';
 import { canonicalPattern } from './patterns';
 
 /** In-memory caps, equal to the load caps in shelfStore (what a session accepts, a reload keeps). */
@@ -118,6 +118,11 @@ export interface ShelfChord {
    * stored before M8d). Additive and optional in storage.
    */
   tail: string | null;
+  /**
+   * M5: an optional plain-text note (`cleanDescription`: one paragraph, at most 300 characters). Absent = none; written to
+   * storage only when set.
+   */
+  description?: string;
   /** The chord finder's tolerance in cents when stashed. */
   tol: number;
   /** ISO date-time of the stash. */
@@ -205,6 +210,8 @@ export interface StashInput {
   pattern?: string | null;
   /** M8d: the positional tail line (optional: absent = null). */
   tail?: string | null;
+  /** M5: the description (optional; cleaned, empty = none). */
+  description?: string;
   tol: number;
   date: string;
   refHz: number;
@@ -287,6 +294,7 @@ export function stashChord(s: ShelfState, input: StashInput): ShelfState {
   const template =
     input.template !== null && input.template.length <= MAX_TEMPLATE_CHARS ? input.template : null;
   const id = `c${s.next}`;
+  const description = cleanDescription(input.description);
   const chord: ShelfChord = {
     id,
     name: (input.name && cleanName(input.name)) || autoChordName(s.chords),
@@ -295,6 +303,7 @@ export function stashChord(s: ShelfState, input: StashInput): ShelfState {
     rootDeg: input.rootDeg,
     pattern: (input.pattern && canonicalPattern(input.pattern)) || null,
     tail: cleanTail(input.tail),
+    ...(description ? { description } : {}),
     tol: input.tol,
     date: input.date,
     refHz: input.refHz,
@@ -307,6 +316,8 @@ export function stashChord(s: ShelfState, input: StashInput): ShelfState {
 
 export type ShelfAction =
   | { type: 'shelf/rename'; id: string; name: string }
+  /** M5: set a chord's description; empty text removes it. */
+  | { type: 'shelf/describe'; id: string; description: string }
   | { type: 'shelf/move'; id: string; to: number }
   | { type: 'shelf/delete'; id: string }
   /** Plain: select only this slot (the only selected one again clears). Additive: toggle it in the selection. */
@@ -340,6 +351,20 @@ export function shelfReduce(s: ShelfState, a: ShelfAction): ShelfState {
         chords: s.chords.map((c) => (c.id === a.id ? { ...c, name } : c)),
         refusal: null,
       };
+    }
+    case 'shelf/describe': {
+      const description = cleanDescription(a.description);
+      const cur = s.chords.find((c) => c.id === a.id);
+      if (!cur || cur.description === description) {
+        return s;
+      }
+      const next: ShelfChord = { ...cur };
+      if (description) {
+        next.description = description;
+      } else {
+        delete next.description;
+      }
+      return { ...s, chords: s.chords.map((c) => (c === cur ? next : c)), refusal: null };
     }
     case 'shelf/move': {
       const from = s.chords.findIndex((c) => c.id === a.id);

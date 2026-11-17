@@ -1,6 +1,11 @@
 /**
  * Stroke icons on the same 24-unit grid and 2-unit stroke as the shell's ColorSchemeToggle icons (the shell has no icon
  * library). One size per context: 16.
+ *
+ * Most shapes are Lucide icons (https://lucide.dev), ISC License, Copyright (c) Lucide Icons and Contributors: permission to
+ * use, copy, modify, and/or distribute them for any purpose with or without fee is granted provided this notice appears in
+ * all copies. They share this file's 24-unit grid and 2-unit round stroke, so each is a drop-in. The others (arrows, plus,
+ * minus, close, play, stop, chevron, stack and unstack) are hand-drawn.
  */
 import type { SVGProps } from 'react';
 
@@ -31,27 +36,38 @@ export const ChevronDownIcon = () => (
 
 export const ExpandIcon = () => (
   <Icon>
-    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+    <path d="M15 3h6v6" />
+    <path d="m21 3-7 7" />
+    <path d="m3 21 7-7" />
+    <path d="M9 21H3v-6" />
   </Icon>
 );
 
 export const BookIcon = () => (
   <Icon>
-    <path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h8" />
+    <path d="M12 5v16" />
+    <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" />
   </Icon>
 );
 
 export const SearchIcon = () => (
   <Icon>
-    <circle cx="11" cy="11" r="7" />
-    <path d="M21 21l-4.3-4.3" />
+    <path d="m21 21-4.34-4.34" />
+    <circle cx="11" cy="11" r="8" />
   </Icon>
 );
 
 export const KeyboardIcon = () => (
   <Icon>
-    <rect x="2" y="6" width="20" height="12" rx="2" />
-    <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
+    <path d="M10 8h.01" />
+    <path d="M12 12h.01" />
+    <path d="M14 8h.01" />
+    <path d="M16 12h.01" />
+    <path d="M18 8h.01" />
+    <path d="M6 8h.01" />
+    <path d="M7 16h10" />
+    <path d="M8 12h.01" />
+    <rect width="20" height="16" x="2" y="4" rx="2" />
   </Icon>
 );
 
@@ -75,13 +91,18 @@ export const ArrowDownIcon = () => (
 
 export const TrashIcon = () => (
   <Icon>
-    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+    <path d="M10 11v6" />
+    <path d="M14 11v6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M3 6h18" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
   </Icon>
 );
 
 export const HomeIcon = () => (
   <Icon>
-    <path d="M3 11l9-8 9 8M5 10v10h14V10" />
+    <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+    <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
   </Icon>
 );
 
@@ -99,20 +120,24 @@ export const StopIcon = () => (
 
 export const GearIcon = () => (
   <Icon>
+    <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
     <circle cx="12" cy="12" r="3" />
-    <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
   </Icon>
 );
 
 export const SaveIcon = () => (
   <Icon>
-    <path d="M5 3h11l3 3v15H5zM8 3v6h7V3M8 21v-7h8v7" />
+    <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+    <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+    <path d="M7 3v4a1 1 0 0 0 1 1h7" />
   </Icon>
 );
 
 export const DownloadIcon = () => (
   <Icon>
-    <path d="M12 3v12M7 10l5 5 5-5M4 20h16" />
+    <path d="M12 15V3" />
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="m7 10 5 5 5-5" />
   </Icon>
 );
 
@@ -124,20 +149,25 @@ export const MinusIcon = () => (
 
 export const SoundIcon = () => (
   <Icon>
-    <path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" />
+    <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" />
+    <path d="M16 9a5 5 0 0 1 0 6" />
+    <path d="M19.364 18.364a9 9 0 0 0 0-12.728" />
   </Icon>
 );
 
 export const TableIcon = () => (
   <Icon>
-    <rect x="3" y="4" width="18" height="16" rx="2" />
-    <path d="M3 10h18M3 15h18M9 4v16" />
+    <path d="M12 3v18" />
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <path d="M3 9h18" />
+    <path d="M3 15h18" />
   </Icon>
 );
 
 export const PinIcon = () => (
   <Icon>
-    <path d="M9 3h6l-1 6 3 3v2H7v-2l3-3zM12 14v7" />
+    <path d="M12 17v5" />
+    <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
   </Icon>
 );
 
@@ -173,8 +203,27 @@ export const UnstackIcon = () => (
   </Icon>
 );
 
+/** A notepad (a sheet with two binding marks and two lines of text); `filled` tints the sheet: the card has a description. */
+export const NotepadIcon = ({ filled }: { filled?: boolean }) => (
+  <Icon>
+    <path
+      fill={filled ? 'currentColor' : 'none'}
+      fillOpacity={filled ? 0.25 : undefined}
+      d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"
+    />
+    <path d="M2 6h4" />
+    <path d="M2 10h4" />
+    <path d="M2 14h4" />
+    <path d="M2 18h4" />
+    <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />
+  </Icon>
+);
+
 export const CopyIcon = () => (
   <Icon>
-    <path d="M9 9h11v11H9zM5 15V4h11" />
+    <line x1="15" x2="15" y1="12" y2="18" />
+    <line x1="12" x2="18" y1="15" y2="15" />
+    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
   </Icon>
 );

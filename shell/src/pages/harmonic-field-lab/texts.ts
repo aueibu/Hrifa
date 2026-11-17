@@ -490,7 +490,7 @@ const entries = {
     term: 'Edit preset',
     help: [
       p(
-        'Renames one of your presets or moves it to another folder. Its subsets and generator are unchanged.'
+        'Renames one of your presets, moves it to another folder or gives it a description. Its subsets and generator are unchanged.'
       ),
       example('move Hexany 11 from Hexanies to Pools/Seven.'),
     ],
@@ -511,6 +511,95 @@ const entries = {
     ],
     teaching: [p('A preset with no subsets is gone for good.')],
     see: ['preset', 'unassigned'],
+  },
+  presetDescription: {
+    term: 'Preset description',
+    help: [
+      p(
+        'A short note about one of your presets: what it is for. It shows under the preset name and at the bottom of the preset list when you point at the preset, and the list search finds it.'
+      ),
+      example('give Hexany 11 the note "hexany with 11 added, for the bright pad".'),
+    ],
+    teaching: [
+      p(
+        'Type it in the Description box when you edit the preset, or click the line under the name. Enter or leaving the box keeps it, Escape cancels, and clearing the text removes it. The most is 300 characters.'
+      ),
+      p('A built-in preset has its own fixed note, which you cannot change.'),
+    ],
+    see: ['preset', 'presetEdit'],
+  },
+  presetNewFolder: {
+    term: 'New folder',
+    help: [
+      p('Makes a folder of your own under My presets. It stays, even empty, until you delete it.'),
+      example('type Drones, or Pools/Seven to make a folder inside a folder, then press Enter.'),
+    ],
+    teaching: [
+      p('A name that is already taken, or a built-in folder name, is refused with a message.'),
+    ],
+    see: ['preset', 'folderRename', 'folderDelete'],
+  },
+  folderRename: {
+    term: 'Edit folder',
+    help: [
+      p(
+        'Renames one of your folders or gives it a description. The presets stay inside it and keep their own descriptions.'
+      ),
+      example('rename Drones to Pedal tones: every preset in it moves with the name.'),
+    ],
+    teaching: [
+      p(
+        'A name that is already used by another folder is refused. Built-in folders cannot be edited.'
+      ),
+    ],
+    see: ['presetNewFolder', 'folderDelete'],
+  },
+  folderDelete: {
+    term: 'Delete folder',
+    help: [
+      p(
+        'Deletes one of your folders after you confirm, together with the presets and folders inside it. The question names exactly what goes. The subsets of those presets are not lost: they stay under Auto-saved.'
+      ),
+      example(
+        'Pools/Seven holds 3 presets and 1 folder: the question reads "Delete Pools/Seven, its 3 presets and 1 folder?"; Delete removes them all, Keep changes nothing.'
+      ),
+    ],
+    teaching: [
+      p(
+        'To keep a preset, move it out first with the pencil on its row and a new Folder. Built-in folders have no delete button.'
+      ),
+    ],
+    see: ['presetNewFolder', 'folderRename', 'presetEdit'],
+  },
+  presetRename: {
+    term: 'Rename preset',
+    help: [
+      p(
+        'Click the preset name at the end of the path to rename the preset in place. Enter or leaving the box keeps the new name, Escape cancels.'
+      ),
+      example('click Hexany 11, type Hexany 11 bright, press Enter.'),
+    ],
+    teaching: [
+      p(
+        'An empty name, or a name another preset in the same folder already has, is refused with a message under the path. A built-in preset cannot be renamed.'
+      ),
+    ],
+    see: ['preset', 'presetEdit'],
+  },
+  shelfDescription: {
+    term: 'Chord description',
+    help: [
+      p(
+        'A short note about a chord on the shelf: what it is for or where it comes from. It is the second line of the card and the second line of the card tooltip.'
+      ),
+      example('type "bright cadence chord" on a major triad.'),
+    ],
+    teaching: [
+      p(
+        'Click the notepad, or the note itself, to type. Enter or leaving the box keeps it, Escape cancels, and clearing the text removes it. The most is 300 characters.'
+      ),
+    ],
+    see: ['shelfPanel'],
   },
   method: {
     term: 'Method',

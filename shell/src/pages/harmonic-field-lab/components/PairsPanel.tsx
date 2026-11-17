@@ -60,6 +60,7 @@ import { colWidthCh } from '../state/pairsWidth';
 import { sevTileStyle, strengthLevel, tileColors, tileStyle, wheelHue } from '../state/tileColors';
 import { CloseIcon, ExpandIcon } from './icons';
 import { Num, Row, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
+import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 const COLOR_DATA = [
@@ -880,7 +881,7 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
                 >
                   <Num>{t}</Num>
                   <ActionIcon
-                    className={classes.mxChipX}
+                    className={`${classes.mxChipX} ${labClasses.dangerHover}`}
                     variant="subtle"
                     color="gray"
                     size={16}

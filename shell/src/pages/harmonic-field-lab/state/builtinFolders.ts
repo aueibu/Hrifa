@@ -3,7 +3,7 @@
  * are not edited: this is a presentation table keyed by preset name. A built-in sits at `Built-in > <group> [> <subfolder>]`;
  * a preset that is not listed here sits at the top of its group. Pure data and two lookups, no React.
  */
-import { PRESETS } from '../../../lib/harmonic-field';
+import { PRESETS, splitFolder } from '../../../lib/harmonic-field';
 
 /** group -> subfolder -> preset names (exact names from `presets.ts`, in browser order). */
 export const BUILTIN_SUBFOLDERS: Record<string, Record<string, readonly string[]>> = {
@@ -78,4 +78,22 @@ export function builtinFolders(name: string): string[] {
   }
   const sub = subfolderOf.get(name);
   return sub ? [p.group, sub] : [p.group];
+}
+
+/** Each built-in group as folder segments (a group name may hold a slash: "Additive / lattice" is `Additive`, `lattice`). */
+const builtinGroupPaths: string[][] = [
+  ...new Set([...PRESETS.map((p) => p.group), ...Object.keys(BUILTIN_SUBFOLDERS)]),
+].map((g) => splitFolder(g).map((x) => x.toLowerCase()));
+
+/**
+ * M5: true when a user folder path is a built-in folder or sits under one (it starts with a built-in group's segments, compared
+ * without case; subfolders are always under their group). User folder records and the New / Rename folder actions refuse
+ * these paths, so a record can never shadow a built-in folder.
+ */
+export function isBuiltinFolderPath(path: string): boolean {
+  const segs = splitFolder(path).map((x) => x.toLowerCase());
+  return (
+    segs.length > 0 &&
+    builtinGroupPaths.some((g) => g.length <= segs.length && g.every((x, i) => x === segs[i]))
+  );
 }

@@ -205,6 +205,7 @@ function ItemRow({
         variant="subtle"
         color="gray"
         size="sm"
+        className={labClasses.dangerHover}
         aria-label={`Remove ${it.label} from ${c.name}`}
         onClick={() => {
           onLight(null);
@@ -306,6 +307,7 @@ function Row({ c }: { c: Composite }) {
               size="compact-xs"
               variant="default"
               color={confirming ? 'red' : undefined}
+              className={labClasses.dangerHover}
               aria-label={confirming ? `Confirm delete ${c.name}` : `Delete ${c.name}`}
               onClick={() => {
                 if (confirming) {

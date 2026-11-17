@@ -1956,6 +1956,7 @@
    NARROW (default): four lines (title + stat, subtitle, pitches, steps), ring on the left. Tune: --chord-card-h-narrow,
    --chord-card-ring-narrow.
    WIDE (from the threshold in the @container rule below, 30rem): ring | title block | pitches block | stat, two rows.
+   A SHELF card (data-static) never goes wide: name, description, subtitle, pitches, steps stay one per row at every width.
    Tune: --chord-card-h, --chord-card-ring, --chord-card-title-w, --chord-card-stat-w (pitches take the rest). */
 .chipWrap {
   --chord-card-h-narrow: 4.75rem;
@@ -2112,7 +2113,35 @@
 /* the shelf card (a static box: only the ring is the play button; the actions sit at the right, always visible) */
 .card[data-static] {
   cursor: default;
+  grid-template-areas:
+    'ring title stat'
+    'ring subtitle stat'
+    'ring pitches pitches'
+    'ring steps steps';
   padding-right: 0.25rem;
+}
+
+/* M5b: a described shelf card has the description as its second line, under the name; a card with none has no such row */
+.card[data-static][data-desc] {
+  grid-template-areas:
+    'ring title stat'
+    'ring desc stat'
+    'ring subtitle stat'
+    'ring pitches pitches'
+    'ring steps steps';
+  min-height: calc(var(--chord-card-h-narrow) + 0.9rem);
+}
+
+/* the description line: one line, an ellipsis when too long (a grid item that can shrink: min-width 0, clipped) */
+.cardDesc {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+  grid-area: desc;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cardRingBtn {
@@ -2141,11 +2170,24 @@
   min-width: 0;
 }
 
+/* the shelf card's buttons: two rows on the right (up, down / description, copy, trash) */
 .cardStat[data-actions] {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  justify-self: end;
+}
+
+.cardActionRow {
   align-items: center;
   display: flex;
   gap: 0.0625rem;
-  justify-self: end;
+}
+
+/* the description notepad: plain without a description, accent with one */
+.cardNote[data-has] {
+  color: var(--accent);
 }
 
 /* the select box has its space reserved; it shows on hover or focus, and stays on a checked row */
@@ -2163,7 +2205,8 @@
 
 /* WIDE threshold: the one place (30rem of card width) */
 @container (min-width: 30rem) {
-  .card {
+  /* a SHELF card (data-static) is excluded from every wide rule: it keeps the stacked narrow layout at any width */
+  .card:not([data-static]) {
     grid-template-areas:
       'ring title pitches stat'
       'ring subtitle steps stat';
@@ -2174,7 +2217,7 @@
     row-gap: 0.0625rem;
   }
 
-  .card[data-errors] {
+  .card[data-errors]:not([data-static]) {
     grid-template-areas:
       'ring title pitches stat'
       'ring subtitle steps stat'
@@ -2182,25 +2225,21 @@
     min-height: calc(var(--chord-card-h) + 0.9rem);
   }
 
-  .cardRing {
+  .card:not([data-static]) .cardRing {
     height: var(--chord-card-ring);
     width: var(--chord-card-ring);
   }
 
   /* the title block keeps the ellipsis (tooltip has the full text); the pitches and steps wrap and the card grows */
-  .cardCol[data-col='title'] .cardLine1,
-  .cardCol[data-col='title'] .cardLine2 {
+  .card:not([data-static]) .cardCol[data-col='title'] .cardLine1,
+  .card:not([data-static]) .cardCol[data-col='title'] .cardLine2 {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .cardStat {
+  .card:not([data-static]) .cardStat {
     align-self: center;
-  }
-
-  .card[data-static] {
-    grid-template-columns: var(--chord-card-ring) var(--chord-card-title-w) minmax(0, 1fr) auto;
   }
 }
 
@@ -2546,6 +2585,14 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* the shelf card tooltip's description: the one line that may wrap (the bubble's max width caps it) */
+.hintDesc {
+  display: block;
+  margin-bottom: 0.25em;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 /* the ring tooltip's own sentence (a dashed, CPS or Positional card) under the shared lines: a normal wrapping paragraph */

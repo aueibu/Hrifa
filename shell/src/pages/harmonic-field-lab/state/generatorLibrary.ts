@@ -44,6 +44,8 @@ export interface UserPreset {
   /** Plain folder path such as `Pools/Seven`; '' is the top of My presets. */
   folder: string;
   gen: GenSpec;
+  /** M5: an optional plain-text note (see `cleanDescription`); written to storage only when set. */
+  description?: string;
 }
 export interface UntitledGen {
   id: string;
@@ -53,8 +55,19 @@ export interface LibSubset extends NamedPitchSet {
   /** The generator that owns this subset. */
   owner: OwnerKey;
 }
+/**
+ * M5: a record of a user folder. A record lets a folder exist while it holds no preset and carry a description; a folder
+ * with no record exists only while a preset's `folder` names it (or sits above one). `path` is a normalized user folder
+ * path (`Pools/Seven`), never empty, never a built-in folder. See `folderRecords.ts`.
+ */
+export interface FolderRecord {
+  path: string;
+  description?: string;
+}
 export interface GenLibrary {
   presets: UserPreset[];
+  /** M5: user folder records (default none); stored in `generators.v1` as `folders` only when non-empty. */
+  folders: FolderRecord[];
   untitled: UntitledGen[];
   subsets: LibSubset[];
   /** Owner keys, most recent first, at most `MAX_RECENTS`. */
@@ -65,6 +78,7 @@ export interface GenLibrary {
 
 export const emptyLibrary = (): GenLibrary => ({
   presets: [],
+  folders: [],
   untitled: [],
   subsets: [],
   recents: [],
@@ -72,6 +86,21 @@ export const emptyLibrary = (): GenLibrary => ({
 });
 
 export const cleanName = (name: string): string => name.replace(/\s+/g, ' ').trim().slice(0, 60);
+
+/** M5: the longest description kept (a longer paste is cut here). */
+export const MAX_DESCRIPTION = 300;
+/**
+ * The one description cleaner (shelf chords, user presets, folder records): plain text, one paragraph. Line breaks and runs
+ * of whitespace become single spaces, the ends are trimmed, the text is cut at `MAX_DESCRIPTION` characters. Empty (or not a
+ * string) gives undefined, which means "no description" (the field is then absent, never stored as '').
+ */
+export function cleanDescription(v: unknown): string | undefined {
+  if (typeof v !== 'string') {
+    return undefined;
+  }
+  const t = v.replace(/\s+/g, ' ').trim().slice(0, MAX_DESCRIPTION).trim();
+  return t === '' ? undefined : t;
+}
 
 /* ------------------------------------------------------------------------------------------------- keys */
 export const builtinKey = (name: string): OwnerKey => `b:${name}`;
@@ -339,17 +368,19 @@ export function ensureUntitled(
 /** A new user preset (no subsets). The name defaults to the generator's automatic name. */
 export function saveUserPreset(
   lib: GenLibrary,
-  p: { name: string; folder: string; gen: GenSpec }
+  p: { name: string; folder: string; gen: GenSpec; description?: string }
 ): { lib: GenLibrary; key: OwnerKey | null; refused?: string } {
   if (lib.presets.length >= MAX_PRESETS) {
     return { lib, key: null, refused: `Too many presets (${MAX_PRESETS}).` };
   }
   const [next, id] = bump(lib, 'preset');
+  const description = cleanDescription(p.description);
   const preset: UserPreset = {
     id,
     name: cleanName(p.name) || cleanName(autoName(p.gen)) || 'Preset',
     folder: normalizeFolder(p.folder),
     gen: cloneGen(p.gen),
+    ...(description ? { description } : {}),
   };
   return { lib: { ...next, presets: [...next.presets, preset] }, key: userKey(id) };
 }
@@ -358,7 +389,7 @@ export function saveUserPreset(
 export function promoteUntitled(
   lib: GenLibrary,
   uid: string,
-  p: { name: string; folder: string }
+  p: { name: string; folder: string; description?: string }
 ): { lib: GenLibrary; key: OwnerKey } | null {
   const u = lib.untitled.find((x) => x.id === uid);
   if (!u) {
@@ -394,6 +425,21 @@ export function renamePreset(lib: GenLibrary, id: string, name: string): GenLibr
 }
 export const movePreset = (lib: GenLibrary, id: string, folder: string): GenLibrary =>
   patchPreset(lib, id, { folder: normalizeFolder(folder) });
+/** M5: set a user preset's description; empty text removes the field. Unknown id or no change returns `lib` itself. */
+export function describePreset(lib: GenLibrary, id: string, description: string): GenLibrary {
+  const cur = lib.presets.find((p) => p.id === id);
+  const d = cleanDescription(description);
+  if (!cur || cur.description === d) {
+    return lib;
+  }
+  const next: UserPreset = { ...cur };
+  if (d) {
+    next.description = d;
+  } else {
+    delete next.description;
+  }
+  return { ...lib, presets: lib.presets.map((p) => (p.id === id ? next : p)) };
+}
 
 /**
  * Delete a user preset. Its subsets are KEPT under an Untitled generator with the preset's inputs (an existing Untitled
@@ -657,6 +703,7 @@ export function migrateSubsets(legacy: readonly LegacySaved[]): GenLibrary {
   });
   const lib: GenLibrary = {
     presets: [],
+    folders: [],
     untitled,
     subsets,
     recents: [],

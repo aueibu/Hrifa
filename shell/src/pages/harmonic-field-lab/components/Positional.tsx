@@ -594,6 +594,7 @@ export function PatternsEditor() {
             variant="subtle"
             color="gray"
             size="sm"
+            className={labClasses.dangerHover}
             aria-label={`Delete pattern ${p}`}
             onClick={() => dispatch({ type: 'patterns/delete', at: i })}
           >

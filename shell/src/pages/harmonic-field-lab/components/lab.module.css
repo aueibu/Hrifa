@@ -197,7 +197,7 @@
 }
 
 /* tab grammar: filled tier plus text */
-.tab[aria-selected="true"] {
+.tab[aria-selected='true'] {
   background: var(--panel-slot);
   color: var(--text);
 }
@@ -257,7 +257,7 @@
   background: var(--mantine-color-default-hover);
 }
 
-.railItem[aria-selected="true"] {
+.railItem[aria-selected='true'] {
   background: var(--panel-slot);
   color: var(--text);
 }
@@ -274,7 +274,7 @@
   white-space: nowrap;
 }
 
-.railItem[aria-selected="true"] .railCount {
+.railItem[aria-selected='true'] .railCount {
   color: var(--text);
 }
 
@@ -294,7 +294,7 @@
   display: inline-block;
 }
 
-.tipControl[data-block="true"] {
+.tipControl[data-block='true'] {
   display: block;
 }
 
@@ -418,7 +418,7 @@
   padding: 0.1875rem 0;
 }
 
-.switchChip[data-on="true"] {
+.switchChip[data-on='true'] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--mantine-primary-color-contrast);
@@ -439,17 +439,17 @@
   display: grid;
   gap: 0.5rem 0.75rem;
   grid-template-areas:
-    "gen ring stats"
-    "gen tools tools"
-    "strip strip side"
-    "saved saved side";
+    'gen ring stats'
+    'gen tools tools'
+    'strip strip side'
+    'saved saved side';
   grid-template-columns: 14rem minmax(0, 1fr) 17rem;
   grid-template-rows: auto auto auto minmax(7rem, 1fr);
   padding: 0.5rem;
 }
 
 /* reference lines: lighter gray for a white key, darker for a black key, so in dark mode the order flips with the text */
-:global([data-mantine-color-scheme="dark"]) .workspace {
+:global([data-mantine-color-scheme='dark']) .workspace {
   --ref-white: color-mix(in srgb, var(--text) 22%, transparent);
   --ref-black: color-mix(in srgb, var(--text) 7%, transparent);
 }
@@ -592,11 +592,11 @@
 
   .workspace {
     grid-template-areas:
-      "gen ring"
-      "tools tools"
-      "stats side"
-      "strip strip"
-      "saved saved";
+      'gen ring'
+      'tools tools'
+      'stats side'
+      'strip strip'
+      'saved saved';
     grid-template-columns: 14rem minmax(0, 1fr);
     grid-template-rows: auto auto auto auto minmax(5rem, 1fr);
   }
@@ -786,9 +786,9 @@
   stroke-width: 2;
 }
 
-.dotOn[data-chord="true"],
-.dotOff[data-chord="true"],
-.dotLit[data-chord="true"] {
+.dotOn[data-chord='true'],
+.dotOff[data-chord='true'],
+.dotLit[data-chord='true'] {
   stroke: var(--mark-blue);
   stroke-width: 3;
 }
@@ -831,8 +831,8 @@
 }
 
 /* an off-chain note is a small dashed mark */
-.dotOff[data-off="true"],
-.dotOn[data-off="true"] {
+.dotOff[data-off='true'],
+.dotOn[data-off='true'] {
   stroke-dasharray: 2 1.5;
 }
 
@@ -870,7 +870,7 @@
   font-size: var(--lab-svg-fs-label);
 }
 
-.svgLabel[data-on="true"] {
+.svgLabel[data-on='true'] {
   fill: var(--text);
 }
 
@@ -941,11 +941,11 @@
   width: 2px;
 }
 
-.ref[data-black="true"] {
+.ref[data-black='true'] {
   background: var(--ref-black);
 }
 
-.ref[data-thin="true"] {
+.ref[data-thin='true'] {
   width: 2px;
 }
 
@@ -1015,9 +1015,9 @@
 }
 
 /* a field note that is not in the subset: dimmed line, bar and number */
-.col[data-on="false"] .mark,
-.col[data-on="false"] .colNum,
-.col[data-on="false"] .colRatio {
+.col[data-on='false'] .mark,
+.col[data-on='false'] .colNum,
+.col[data-on='false'] .colRatio {
   opacity: 0.35;
 }
 
@@ -1032,11 +1032,11 @@
 }
 
 /* the error number sits just beyond the tip its color starts from */
-.colNum[data-dir="sharp"] {
+.colNum[data-dir='sharp'] {
   top: calc(var(--mid) - var(--half) - 0.8125rem);
 }
 
-.colNum[data-dir="flat"] {
+.colNum[data-dir='flat'] {
   top: calc(var(--mid) + var(--half) + 0.1875rem);
 }
 
@@ -1104,11 +1104,11 @@
   --match-bar: 12px;
 }
 
-.savedItem[data-match="partial"] {
+.savedItem[data-match='partial'] {
   opacity: 0.8;
 }
 
-.savedItem[data-match="none"] {
+.savedItem[data-match='none'] {
   opacity: 0.5;
 }
 
@@ -1117,8 +1117,8 @@
   padding-inline-start: var(--match-bar);
 }
 
-.savedRow[aria-disabled="true"],
-.savedRow[aria-disabled="true"]:hover {
+.savedRow[aria-disabled='true'],
+.savedRow[aria-disabled='true']:hover {
   background: none;
   cursor: default;
 }
@@ -1143,12 +1143,12 @@
   width: 100%;
 }
 
-.savedItem[data-match="partial"] .matchFill {
+.savedItem[data-match='partial'] .matchFill {
   background-image: radial-gradient(circle, var(--text-subtle) 1.1px, transparent 1.4px);
   background-size: 4px 4px;
 }
 
-.savedItem[data-match="none"] .matchFill {
+.savedItem[data-match='none'] .matchFill {
   background: var(--text-subtle);
 }
 
@@ -1158,7 +1158,7 @@
 }
 
 /* the loaded subset carries the selection outline: 1px border plus 1px outline in --text */
-.savedRow[aria-pressed="true"] {
+.savedRow[aria-pressed='true'] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
@@ -1190,7 +1190,7 @@
 }
 
 /* a field note that is not in this saved subset: dimmed line, no error bar */
-.sparkCol[data-on="false"] .mark {
+.sparkCol[data-on='false'] .mark {
   opacity: 0.35;
 }
 
@@ -1203,7 +1203,7 @@
   padding: 0 0.5rem;
 }
 
-.dock[data-open="false"] {
+.dock[data-open='false'] {
   height: 1.875rem;
 }
 
@@ -1225,7 +1225,7 @@
   display: inline-flex;
 }
 
-.chevron[data-open="false"] svg {
+.chevron[data-open='false'] svg {
   transform: rotate(-90deg);
 }
 
@@ -1271,13 +1271,13 @@
 }
 
 /* sounding: green tint with a green base bar; a chord member also gets the blue outline */
-.key[data-lit="true"] {
+.key[data-lit='true'] {
   background: var(--tint-green-bg);
   border-bottom-color: var(--mark-green);
   color: var(--tint-green-text);
 }
 
-.key[data-chord="true"] {
+.key[data-chord='true'] {
   outline: 2px solid var(--mark-blue);
   outline-offset: -2px;
 }
@@ -1376,11 +1376,11 @@
 }
 
 /* view toggle class: no fill, the icon turns accent while on; dimmed when pinned but without room */
-.pinBtn[data-state="shown"] {
+.pinBtn[data-state='shown'] {
   color: var(--accent-tint-text);
 }
 
-.pinBtn[data-state="hidden"] {
+.pinBtn[data-state='hidden'] {
   color: var(--text-muted);
   opacity: 0.55;
 }
@@ -1456,11 +1456,11 @@
   background: var(--panel-slot);
 }
 
-.fieldDt tbody tr[data-off="true"] {
+.fieldDt tbody tr[data-off='true'] {
   color: var(--text-muted);
 }
 
-.fieldDt tbody tr[data-pin="true"] {
+.fieldDt tbody tr[data-pin='true'] {
   outline: 1px solid var(--mark-yellow);
   outline-offset: -1px;
 }
@@ -1475,7 +1475,7 @@
   width: 0.5rem;
 }
 
-.inMark[data-on="false"] {
+.inMark[data-on='false'] {
   background: none;
   border-color: var(--text-subtle);
 }
@@ -1517,12 +1517,12 @@
 }
 
 /* a stack is a grid: top panel | splitter | bottom panel, its rows set by the split (see Panels.tsx) */
-.pinStack[data-stack="true"] {
+.pinStack[data-stack='true'] {
   display: grid;
   gap: 0;
 }
 
-.pinStack[data-stack="true"] > .pinned {
+.pinStack[data-stack='true'] > .pinned {
   grid-row: auto;
   min-height: 0;
 }
@@ -1548,13 +1548,13 @@
 
 .splitter:hover,
 .splitter:focus-visible,
-.splitter[data-drag="true"] {
+.splitter[data-drag='true'] {
   background: var(--panel-slot);
 }
 
 .splitter:hover .splitGrip,
 .splitter:focus-visible .splitGrip,
-.splitter[data-drag="true"] .splitGrip {
+.splitter[data-drag='true'] .splitGrip {
   opacity: 1;
 }
 
@@ -1601,12 +1601,12 @@
 
 /* a visualizer's name is long ("Visualizer 2 – Dissonance curve"): it gets the full row and the figure goes under it,
    so the ellipsis cuts the view name and never the instance number */
-.railItem[data-wide="true"] {
+.railItem[data-wide='true'] {
   flex-wrap: wrap;
   gap: 0;
 }
 
-.railItem[data-wide="true"] .railLabel {
+.railItem[data-wide='true'] .railLabel {
   flex: 1 0 100%;
 }
 
@@ -1626,11 +1626,11 @@ p.inputError {
   overflow-wrap: anywhere;
 }
 
-.fieldMsg[data-kind="err"] {
+.fieldMsg[data-kind='err'] {
   color: var(--text-danger);
 }
 
-.fieldMsg[data-kind="warn"] {
+.fieldMsg[data-kind='warn'] {
   color: var(--mark-yellow);
 }
 
@@ -1723,7 +1723,7 @@ p.inputError {
 }
 
 /* the compact field table lights a sounding note */
-.fieldDt tbody tr[data-lit="true"] {
+.fieldDt tbody tr[data-lit='true'] {
   background: var(--tint-green-bg);
   color: var(--tint-green-text);
 }
@@ -1770,12 +1770,53 @@ p.inputError {
   overflow-wrap: anywhere;
 }
 
+/* M5: the loaded preset's description, one line under the full path (click to edit in place) */
+.pbDesc {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+  line-height: 1.3;
+  margin-block: -0.25rem 0;
+  min-width: 0;
+}
+
 /* the browser popover: search, tree, description */
 .pb {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.375rem;
+}
+
+/* the header: the search box (takes the room) and New folder */
+.pbHead {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pbHead > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+/* the New folder form under the header */
+.pbNew {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pbNew .inline > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+/* a refusal sentence under the row that caused it */
+.pbRefusal {
+  color: var(--text-danger);
+  font-size: var(--lab-fs-tiny);
+  line-height: 1.3;
+  padding: 0.125rem 0.25rem;
 }
 
 .pbList {
@@ -1803,17 +1844,17 @@ p.inputError {
   position: relative;
 }
 
-.pbRow[data-active="true"] {
+.pbRow[data-active='true'] {
   background: var(--mantine-color-default-hover);
 }
 
 /* the generator this tab is on: the selection outline, 1px border plus 1px outline in --text */
-.pbRow[data-current="true"] {
+.pbRow[data-current='true'] {
   border-color: var(--text);
   outline: 1px solid var(--text);
 }
 
-.pbRow[data-kind="folder"] {
+.pbRow[data-kind='folder'] {
   color: var(--text-muted);
   font-weight: 600;
 }
@@ -1852,7 +1893,7 @@ p.inputError {
 }
 
 .pbRow:hover .pbActions,
-.pbRow[data-active="true"] .pbActions {
+.pbRow[data-active='true'] .pbActions {
   display: inline-flex;
 }
 
@@ -1865,6 +1906,85 @@ p.inputError {
   gap: 0.25rem;
   inset-inline-end: 0;
   position: absolute;
+}
+
+/* the Folder box and its suggestion list (plain content under the box: the list is never filtered, only ordered) */
+.folderBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.folderList {
+  background: var(--panel-inset);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  max-height: 7rem;
+  overflow-y: auto;
+  padding: 0.125rem;
+}
+
+.folderOpt {
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font-size: var(--lab-fs-small);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  padding: 0.0625rem 0.25rem;
+}
+
+.folderOpt:hover,
+.folderOpt[data-active] {
+  background: var(--mantine-color-default-hover);
+}
+
+/* the folder delete question: a block under the row (it names what goes, so it can be long) */
+.pbConfirmBlock {
+  align-items: center;
+  background: var(--panel-inset);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--lab-fs-tiny);
+  gap: 0.25rem;
+  line-height: 1.3;
+  padding: 0.125rem 0.25rem;
+}
+
+/* the preset name at the end of the breadcrumb (a user preset): click to rename in place */
+.crumbName {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: text;
+  font: inherit;
+  font-style: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.crumbName:hover {
+  text-decoration: underline dotted;
+}
+
+.crumbName:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.crumbEdit {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  width: 12rem;
+}
+
+/* EVERY delete or remove control in the lab carries this one class: hover and keyboard focus turn it (and its icon, which
+   draws in currentColor) the danger color. A disabled one (aria-disabled, data-disabled or disabled) stays as it is. The
+   :not() chain also raises the specificity above the component library's own hover color. */
+.dangerHover:hover:not(:disabled):not([aria-disabled='true']):not([data-disabled]),
+.dangerHover:focus-visible:not(:disabled):not([aria-disabled='true']):not([data-disabled]) {
+  color: var(--text-danger);
 }
 
 .pbEdit {
@@ -1962,7 +2082,7 @@ p.inputError {
   width: 0;
 }
 
-.revMark[data-kind="lost"] {
+.revMark[data-kind='lost'] {
   border-inline-start: 2px dashed var(--mark-orange);
 }
 
@@ -2025,7 +2145,7 @@ p.inputError {
   white-space: nowrap;
 }
 
-.savedNameBtn[data-editing="true"] {
+.savedNameBtn[data-editing='true'] {
   align-items: center;
   flex-direction: row;
   pointer-events: auto;

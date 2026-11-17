@@ -312,6 +312,7 @@ export function SavedSubsets() {
               variant="subtle"
               color="gray"
               size="xs"
+              className={classes.dangerHover}
               aria-label={`Delete ${s.name}`}
               onClick={() => dispatch({ type: 'subset/delete', id: s.id })}
             >

@@ -5,6 +5,7 @@
  * { version: 1,
  *   chords: [{ id: 'c1', name, pitches: [{ m, c }],              // the exact pitches heard (monzo + cents, as H-6)
  *              template: '4:5:6' | null, rootDeg: 0 | null, pattern?: '2-2',   // pattern: M9 positional chord, absent = none
+ *              description?: 'text',                                          // M5, plain text up to 300 characters, absent = none
  *              tol: 18, date: ISO, refHz: 261.6256,
  *              frame: 'parallel' | 'relative', parent: 'c0' | null,
  *              source: { gen: <generation inputs>, tab: 'name',
@@ -34,7 +35,7 @@ import {
   type ShelfSource,
   type ShelfState,
 } from './chordShelf';
-import { cleanName } from './generatorLibrary';
+import { cleanDescription, cleanName } from './generatorLibrary';
 import { genFromStored, genToStored } from './libraryStore';
 import { canonicalPattern } from './patterns';
 import { KEY_CHORDSHELF, readJson, writeJson } from './persist';
@@ -84,6 +85,7 @@ export function sanitizeShelf(raw: unknown): ShelfState | null {
     const num = (v: unknown, d: number, lo: number, hi: number) =>
       typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : d;
     storedIds.push(e.id);
+    const description = cleanDescription(e.description);
     chords.push({
       id: '',
       name: (typeof e.name === 'string' && cleanName(e.name)) || `Chord ${chords.length + 1}`,
@@ -101,6 +103,7 @@ export function sanitizeShelf(raw: unknown): ShelfState | null {
           : null,
       pattern: typeof e.pattern === 'string' ? canonicalPattern(e.pattern) : null,
       tail: cleanTail(e.tail),
+      ...(description ? { description } : {}),
       tol: num(e.tol, 18, 0, 1200),
       date: typeof e.date === 'string' ? e.date.slice(0, 40) : '',
       refHz: num(e.refHz, 261.6256, 1, 1e5),
@@ -142,6 +145,8 @@ export function shelfToStored(s: ShelfState): Record<string, unknown> {
       // additive (M9): written only when set, so a shelf without positional chords is stored byte for byte as before
       ...(c.pattern ? { pattern: c.pattern } : {}),
       ...(c.tail ? { tail: c.tail } : {}),
+      // additive (M5): written only when set
+      ...(c.description ? { description: c.description } : {}),
       tol: c.tol,
       date: c.date,
       refHz: c.refHz,

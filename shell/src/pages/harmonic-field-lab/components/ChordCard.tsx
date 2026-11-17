@@ -152,6 +152,12 @@ export interface ChordCardProps {
     onClick: () => void;
   };
   subtitle: string;
+  /** M5b (shelf card): the stored description, for the tooltip's second line; absent or empty = none. */
+  description?: string;
+  /** M5b (shelf card): the description line, the card's second line under the name; absent = no extra row. */
+  descriptionNode?: ReactNode;
+  /** M5b: the description line is being edited (its own tooltip is off while the text box is open). */
+  descriptionEditing?: boolean;
   pitches: string;
   steps: string;
   /** M4: each note's signed error in cents, in the order of `pitches` (root `0`); null or absent for CPS, dashed, positional and shelf cards. */
@@ -219,10 +225,35 @@ export function ChordCard(p: ChordCardProps) {
       )}
     </>
   );
-  const regionTip = (el: ReactElement): ReactElement =>
-    p.actions || errors ? (
-      // a chip's body tooltip is rows of one line each: its bubble fits the longest one (a shelf card keeps the fixed width)
-      <Hint position="bottom" dynamic={bodyDynamic} fit={!p.actions}>
+  // the shelf card's tooltip (M5b), always in this order: Title (bold, the chord name), the description (only when set; the one
+  // line that may wrap, at the bubble's max width), `template on root · N notes`, then Pitches: and Steps: (one line each)
+  const shelfDynamic = (
+    <>
+      {p.description && (
+        <span className={classes.hintDesc} data-testid="hint-description">
+          {p.description}
+        </span>
+      )}
+      <span className={classes.hintNote} data-testid="hint-subtitle">
+        <Num>{p.subtitle}</Num>
+      </span>
+      {bodyDynamic}
+    </>
+  );
+  const regionTip = (el: ReactElement, off?: boolean): ReactElement =>
+    p.actions ? (
+      <Hint
+        position="bottom"
+        label={p.title}
+        dynamic={shelfDynamic}
+        fit={RING_TIP_MAX_WIDTH}
+        disabled={off}
+      >
+        {el}
+      </Hint>
+    ) : errors ? (
+      // a chip's body tooltip is rows of one line each: its bubble fits the longest one
+      <Hint position="bottom" dynamic={bodyDynamic} fit>
         {el}
       </Hint>
     ) : (
@@ -279,6 +310,7 @@ export function ChordCard(p: ChordCardProps) {
           data-found={p.found}
           data-picked={p.picked}
           data-cps={p.cps}
+          data-desc={p.descriptionNode ? true : undefined}
         >
           <span className={classes.cardRing}>
             {p.ringButton?.hint ? (
@@ -291,9 +323,18 @@ export function ChordCard(p: ChordCardProps) {
           </span>
           <span className={classes.cardCol} data-col="title">
             {titleLine}
-            <span className={classes.cardLine2} data-testid="card-subtitle">
-              <Num muted>{p.subtitle}</Num>
-            </span>
+            {p.descriptionNode &&
+              regionTip(
+                <span className={classes.cardDesc} data-testid="card-description">
+                  {p.descriptionNode}
+                </span>,
+                p.descriptionEditing
+              )}
+            {regionTip(
+              <span className={classes.cardLine2} data-testid="card-subtitle">
+                <Num muted>{p.subtitle}</Num>
+              </span>
+            )}
           </span>
           {pitchCol}
           <span className={classes.cardStat} data-actions data-testid="card-stat">

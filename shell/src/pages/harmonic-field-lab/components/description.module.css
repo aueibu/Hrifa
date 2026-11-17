@@ -1,0 +1,60 @@
+/* M5b: the one-line description that is edited in place (shelf card, loaded preset). A block that can shrink, cut with an ellipsis. */
+.line {
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  cursor: text;
+  display: block;
+  font: inherit;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* a line that may take several rows (the preset description under the breadcrumb): the button stops being nowrap, and the text
+   inside it is clamped to 4 lines with an ellipsis (a plain block button; the clamp lives on the span inside it) */
+.line[data-lines] {
+  overflow: visible;
+  white-space: normal;
+}
+
+.clamp {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  display: -webkit-box;
+  line-clamp: 4;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.line:hover {
+  text-decoration: underline dotted;
+}
+
+.line:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* the faint prompt of a line with no description yet */
+.prompt {
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
+/* a static line (a built-in preset's own description, under the breadcrumb): the same look and the same 4-line clamp, nothing to click */
+.static {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  color: var(--text-muted);
+  display: -webkit-box;
+  line-clamp: 4;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}

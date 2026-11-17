@@ -30,6 +30,8 @@ export interface FolderNode {
   info: string;
   /** A user folder path (`A/B`) when this folder sits under My presets (the root itself is ''), else null. */
   userPath: string | null;
+  /** M5: the folder's description (user folders with a record only). */
+  description?: string;
 }
 export interface PresetNode {
   kind: 'preset';
@@ -45,6 +47,8 @@ export interface PresetNode {
   userId: string | null;
   /** Its folder path under My presets (user presets only). */
   folder: string;
+  /** M5: the user preset's description (absent = none; built-ins keep their read-only `info`). */
+  description?: string;
 }
 export type TreeNode = FolderNode | PresetNode;
 
@@ -63,7 +67,8 @@ function folder(
   path: string[],
   children: TreeNode[],
   info: string,
-  userPath: string | null = null
+  userPath: string | null = null,
+  description?: string
 ): FolderNode {
   return {
     kind: 'folder',
@@ -74,6 +79,7 @@ function folder(
     count: children.reduce((n, c) => n + c.count, 0),
     info,
     userPath,
+    ...(description ? { description } : {}),
   };
 }
 
@@ -113,6 +119,7 @@ function leaf(lib: GenLibrary, key: OwnerKey, path: string[], idPrefix = ''): Pr
     info: builtin ? builtin.info : full.slice(0, -1).join(SEP) || label,
     userId: user ? user.id : null,
     folder: user ? user.folder : '',
+    ...(user?.description ? { description: user.description } : {}),
   };
 }
 
@@ -145,11 +152,12 @@ export function buildTree(lib: GenLibrary): FolderNode[] {
     return folder([ROOT_BUILTIN, g], [...subNodes, ...loose], `${g}.`);
   });
 
-  // My presets: nested user folders, folders before presets, both by name
+  // My presets: nested user folders, folders before presets, both by name. A folder record (M5) makes its folder exist
+  // while empty (count 0); a record's parents are implied folders, as a preset's folder parents are.
   const root: Dir = { folders: new Map(), presets: [] };
-  for (const p of lib.presets) {
+  const dirOf = (path: string): Dir => {
     let d = root;
-    for (const seg of splitFolder(p.folder)) {
+    for (const seg of splitFolder(path)) {
       let next = d.folders.get(seg);
       if (!next) {
         next = { folders: new Map(), presets: [] };
@@ -157,7 +165,17 @@ export function buildTree(lib: GenLibrary): FolderNode[] {
       }
       d = next;
     }
-    d.presets.push(p.id);
+    return d;
+  };
+  const described = new Map<string, string>();
+  for (const f of lib.folders) {
+    dirOf(f.path);
+    if (f.description) {
+      described.set(f.path, f.description);
+    }
+  }
+  for (const p of lib.presets) {
+    dirOf(p.folder).presets.push(p.id);
   }
   const mine = (d: Dir, path: string[], rel: string[]): TreeNode[] => [
     ...[...d.folders.keys()].sort(byName).map((seg) => {
@@ -166,7 +184,8 @@ export function buildTree(lib: GenLibrary): FolderNode[] {
         [...path, seg],
         mine(sub, [...path, seg], [...rel, seg]),
         `Your folder ${[...rel, seg].join('/')}.`,
-        [...rel, seg].join('/')
+        [...rel, seg].join('/'),
+        described.get([...rel, seg].join('/'))
       );
     }),
     ...d.presets
@@ -223,28 +242,48 @@ export function visibleRows(roots: readonly TreeNode[], open: ReadonlySet<string
   return out;
 }
 
-/** Flat search: every preset (Recent excluded, it repeats the others) whose name or folder path holds every word. */
-export function searchPresets(roots: readonly FolderNode[], query: string): PresetNode[] {
+function searchNodes(
+  roots: readonly FolderNode[],
+  query: string,
+  withFolders: boolean
+): TreeNode[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) {
     return [];
   }
-  const out: PresetNode[] = [];
+  const out: TreeNode[] = [];
   const walk = (nodes: readonly TreeNode[]) => {
     for (const n of nodes) {
-      if (n.kind === 'folder') {
-        walk(n.children);
-      } else {
-        const hay = `${n.label} ${n.path.join(' ')}`.toLowerCase();
+      const mine = n.kind === 'folder' && n.userPath !== null && n.userPath !== '';
+      if (n.kind === 'preset' || (withFolders && mine)) {
+        // M5: the description is searched too (a user preset's, a user folder's)
+        const hay = `${n.label} ${n.path.join(' ')} ${n.description ?? ''}`.toLowerCase();
         if (words.every((w) => hay.includes(w))) {
           out.push(n);
         }
+      }
+      if (n.kind === 'folder') {
+        walk(n.children);
       }
     }
   };
   walk(roots.filter((r) => r.path[0] !== ROOT_RECENT));
   return out;
 }
+
+/**
+ * Flat search: every preset (Recent excluded, it repeats the others) whose name, folder path or description (M5) holds every
+ * word.
+ */
+export const searchPresets = (roots: readonly FolderNode[], query: string): PresetNode[] =>
+  searchNodes(roots, query, false) as PresetNode[];
+
+/**
+ * M5: the same flat search, plus the user folders (under My presets, never built-in folders) whose name, path or description
+ * holds every word; a folder comes before the presets inside it. What the browser shows once it lists folders in a search.
+ */
+export const searchTree = (roots: readonly FolderNode[], query: string): TreeNode[] =>
+  searchNodes(roots, query, true);
 
 /** The ids of the folders to open so the owner's row shows (the Built-in root when there is no owner). */
 export function foldersAbove(lib: GenLibrary, key: OwnerKey | null): string[] {

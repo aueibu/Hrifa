@@ -35,6 +35,7 @@ import type { TipKey } from '../texts';
 import { FillCards } from './FillCards';
 import { ArrowDownIcon, ArrowUpIcon, HomeIcon, PlusIcon, TrashIcon } from './icons';
 import { CommitNumber, DebouncedText, Num, Row, Strip, Tip, signed, useLab } from './ui';
+import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 /** A titled sub-block of the panel (a tier fill, no extra box line). */
@@ -56,12 +57,15 @@ function IconBtn({
   k,
   onClick,
   disabled,
+  danger,
   children,
 }: {
   label: string;
   k: TipKey;
   onClick: () => void;
   disabled?: boolean;
+  /** A delete control: hover and focus turn it the danger color. */
+  danger?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -70,6 +74,7 @@ function IconBtn({
         variant="subtle"
         color="gray"
         size="sm"
+        className={danger ? labClasses.dangerHover : undefined}
         aria-label={label}
         disabled={disabled}
         onClick={onClick}
@@ -152,6 +157,7 @@ function Cards({ r }: { r: RetState }) {
               <IconBtn
                 label={`Delete ${c.name}`}
                 k="cardDelete"
+                danger
                 onClick={() => dispatch({ type: 'ret/delete', index: i })}
               >
                 <TrashIcon />

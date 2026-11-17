@@ -3,7 +3,8 @@
  *
  * ```
  * { version: 1,
- *   presets:  [{ id: 'p1', name, folder: 'A/B', gen: <generation inputs> }],
+ *   presets:  [{ id: 'p1', name, folder: 'A/B', description?: 'text', gen: <generation inputs> }],
+ *   folders?: [{ path: 'A/B', description?: 'text' }],   // M5 user folder records, written only when non-empty
  *   untitled: [{ id: 'u1', gen: <generation inputs> }],
  *   subsets:  [{ id: 's1', owner: 'b:<built-in name>' | 'p:<id>' | 'u:<id>', name,
  *                pitches: [{ m: { '3': 1, '2': -1 } | null, c: 701.955 }], root: { m, c } | null }],
@@ -20,9 +21,11 @@
  */
 import { normalizeFolder, samePitch, type Note } from '../../../lib/harmonic-field';
 import { sanitizePitch } from './chordShelf';
+import { sanitizeFolderRecords } from './folderRecords';
 import type { GenSpec } from './generate';
 import {
   OWNER_KEY_RE,
+  cleanDescription,
   cleanName,
   cloneGen,
   emptyLibrary,
@@ -124,11 +127,13 @@ export function sanitizeLibrary(raw: unknown): GenLibrary | null {
     if (!isObj(e) || !gen || presets.length >= MAX_PRESETS) {
       continue;
     }
+    const description = cleanDescription(e.description);
     presets.push({
       id: uniqueId(e.id, 'p', seenP, presets.length),
       name: (typeof e.name === 'string' && cleanName(e.name)) || `Preset ${presets.length + 1}`,
       folder: typeof e.folder === 'string' ? normalizeFolder(e.folder) : '',
       gen: cloneGen(gen),
+      ...(description ? { description } : {}),
     });
   }
   const untitled: UntitledGen[] = [];
@@ -171,11 +176,13 @@ export function sanitizeLibrary(raw: unknown): GenLibrary | null {
   }
   const base = { presets, untitled, subsets };
   const derived = nextCounters(base);
+  const folders = sanitizeFolderRecords(raw.folders);
   const n = isObj(raw.next) ? raw.next : {};
   const atLeast = (v: unknown, d: number) =>
     typeof v === 'number' && Number.isInteger(v) && v > d && v < 1e9 ? v : d;
   return {
     ...base,
+    folders,
     recents: recents.slice(0, MAX_RECENTS),
     next: {
       preset: atLeast(n.preset, derived.preset),
@@ -193,8 +200,18 @@ export function libraryToStored(lib: GenLibrary): Record<string, unknown> {
       id: p.id,
       name: p.name,
       folder: p.folder,
+      // additive (M5): written only when set, so a library without descriptions is stored as before
+      ...(p.description ? { description: p.description } : {}),
       gen: genToStored(p.gen),
     })),
+    ...(lib.folders.length
+      ? {
+          folders: lib.folders.map((f) => ({
+            path: f.path,
+            ...(f.description ? { description: f.description } : {}),
+          })),
+        }
+      : {}),
     untitled: lib.untitled.map((u) => ({ id: u.id, gen: genToStored(u.gen) })),
     subsets: lib.subsets.map((s) => ({
       id: s.id,

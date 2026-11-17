@@ -13,7 +13,8 @@ import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
 import { noteLabel } from '../state/derive';
 import { litIndex } from '../state/retuner';
 import { ChordCard, notesText, pitchTexts, templateOn } from './ChordCard';
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlayIcon, TrashIcon } from './icons';
+import { DescriptionLine } from './DescriptionLine';
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, NotepadIcon, PlayIcon, TrashIcon } from './icons';
 import { ModeChevron } from './ModeRoot';
 import { SendMany, shelfChordItem, useSendHover } from './Send';
 import { Hint, Strip, Tip, useLab } from './ui';
@@ -28,6 +29,9 @@ const ROOT_TIP = 0.97;
 const ROOT_ARM = 0.17;
 const ROOT_STROKE = 0.055;
 const ROOT_SCALE = ROOT_ARM / 6;
+
+/** The shelf card's icon buttons (px): two rows of them sit at the right, so they are a little smaller than `sm` (22) to keep the card as tall as before. */
+const ICON_BOX = 20;
 
 /** The chord's notes on a small ring (the repeat is one turn, 1/1 at the top), as the pitch ring draws a chord. */
 export function ChordDrawing({
@@ -147,6 +151,9 @@ function Slot({
   const { state, dispatch, audio, base } = lab;
   const { shelf } = state;
   const [confirming, setConfirming] = useState(false);
+  // M5b: the description line (the card's second line) is edited in place; the notepad icon opens the same box
+  const [describing, setDescribing] = useState(false);
+  const description = chord.description ?? '';
   // Chords and Split: the first ten chords of the current page are on the keys Q to P
   const lastPage = Math.max(0, Math.ceil(shelf.chords.length / CHORD_PAGE) - 1);
   const pageStart = Math.min(state.keys.page, lastPage) * CHORD_PAGE;
@@ -266,6 +273,21 @@ function Slot({
           ) : null
         }
         subtitle={subtitle}
+        description={description}
+        descriptionEditing={describing}
+        descriptionNode={
+          description || describing ? (
+            <DescriptionLine
+              value={description}
+              editing={describing}
+              onEditingChange={setDescribing}
+              onSave={(text) =>
+                dispatch({ type: 'shelf/describe', id: chord.id, description: text })
+              }
+              label={`Description of ${chord.name}`}
+            />
+          ) : null
+        }
         pitches={texts.pitches}
         steps={texts.steps}
         stat={null}
@@ -283,82 +305,110 @@ function Slot({
         }}
         actions={
           <>
-            <span className={classes.cardCheck} data-checked={selected || undefined}>
-              <Checkbox
-                size="xs"
-                aria-label={`Select ${chord.name}`}
-                checked={selected}
-                onChange={() => dispatch({ type: 'shelf/select', id: chord.id, additive: true })}
-              />
-            </span>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
-              aria-label={`Move ${chord.name} up`}
-              disabled={index === 0}
-              onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index - 1 })}
-            >
-              <ArrowUpIcon />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
-              aria-label={`Move ${chord.name} down`}
-              disabled={index === count - 1}
-              onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index + 1 })}
-            >
-              <ArrowDownIcon />
-            </ActionIcon>
-            <Hint
-              label="Reload as a new tab"
-              dynamic={
-                chord.source
-                  ? 'Open this chord’s source (generator and subset) as a new tab.'
-                  : 'This chord has no stored source, so it cannot be reloaded.'
-              }
-            >
-              <span className={classes.hintHost}>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  aria-label={`Reload ${chord.name} as a new tab`}
-                  disabled={!chord.source}
-                  onClick={() => dispatch({ type: 'shelf/reload', id: chord.id })}
-                >
-                  <CopyIcon />
-                </ActionIcon>
+            {/* row 1: the select box (its space is reserved; it shows on hover or when checked), up, down */}
+            <span className={classes.cardActionRow}>
+              <span className={classes.cardCheck} data-checked={selected || undefined}>
+                <Checkbox
+                  size="xs"
+                  aria-label={`Select ${chord.name}`}
+                  checked={selected}
+                  onChange={() => dispatch({ type: 'shelf/select', id: chord.id, additive: true })}
+                />
               </span>
-            </Hint>
-            {confirming ? (
-              <Button
-                size="compact-xs"
-                variant="default"
-                color="red"
-                aria-label={`Confirm delete ${chord.name}`}
-                onClick={() => {
-                  setConfirming(false);
-                  dispatch({ type: 'shelf/delete', id: chord.id });
-                }}
-                onBlur={() => setConfirming(false)}
-                data-autofocus
-                autoFocus
-              >
-                Delete?
-              </Button>
-            ) : (
               <ActionIcon
                 variant="subtle"
                 color="gray"
-                size="sm"
-                aria-label={`Delete ${chord.name}`}
-                onClick={() => setConfirming(true)}
+                size={ICON_BOX}
+                aria-label={`Move ${chord.name} up`}
+                disabled={index === 0}
+                onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index - 1 })}
               >
-                <TrashIcon />
+                <ArrowUpIcon />
               </ActionIcon>
-            )}
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size={ICON_BOX}
+                aria-label={`Move ${chord.name} down`}
+                disabled={index === count - 1}
+                onClick={() => dispatch({ type: 'shelf/move', id: chord.id, to: index + 1 })}
+              >
+                <ArrowDownIcon />
+              </ActionIcon>
+            </span>
+            {/* row 2: description (notepad), copy, trash */}
+            <span className={classes.cardActionRow}>
+              <Hint
+                k="shelfDescription"
+                dynamic={description ? 'Edit the description' : 'Add a description'}
+              >
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size={ICON_BOX}
+                  className={classes.cardNote}
+                  data-has={description ? true : undefined}
+                  aria-label={
+                    description
+                      ? `Edit the description of ${chord.name}`
+                      : `Add a description to ${chord.name}`
+                  }
+                  onClick={() => setDescribing(true)}
+                >
+                  <NotepadIcon filled={!!description} />
+                </ActionIcon>
+              </Hint>
+              <Hint
+                label="Reload as a new tab"
+                dynamic={
+                  chord.source
+                    ? 'Open this chord’s source (generator and subset) as a new tab.'
+                    : 'This chord has no stored source, so it cannot be reloaded.'
+                }
+              >
+                <span className={classes.hintHost}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size={ICON_BOX}
+                    aria-label={`Reload ${chord.name} as a new tab`}
+                    disabled={!chord.source}
+                    onClick={() => dispatch({ type: 'shelf/reload', id: chord.id })}
+                  >
+                    <CopyIcon />
+                  </ActionIcon>
+                </span>
+              </Hint>
+              {confirming ? (
+                <Button
+                  size="compact-xs"
+                  variant="default"
+                  color="red"
+                  className={labClasses.dangerHover}
+                  aria-label={`Confirm delete ${chord.name}`}
+                  onClick={() => {
+                    setConfirming(false);
+                    dispatch({ type: 'shelf/delete', id: chord.id });
+                  }}
+                  onBlur={() => setConfirming(false)}
+                  data-autofocus
+                  autoFocus
+                >
+                  Delete?
+                </Button>
+              ) : (
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size={ICON_BOX}
+                  className={labClasses.dangerHover}
+                  aria-label={`Delete ${chord.name}`}
+                  onClick={() => setConfirming(true)}
+                >
+                  <TrashIcon />
+                </ActionIcon>
+              )}
+            </span>
           </>
         }
       />
@@ -394,6 +444,7 @@ function DeleteAll({ count }: { count: number }) {
       size="compact-xs"
       variant="default"
       color={confirming ? 'red' : undefined}
+      className={labClasses.dangerHover}
       // aria-disabled, not `disabled`: a disabled button drops keyboard focus after the confirm
       data-disabled={count === 0 ? true : undefined}
       aria-disabled={count === 0}

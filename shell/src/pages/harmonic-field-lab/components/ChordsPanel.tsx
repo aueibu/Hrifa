@@ -45,6 +45,7 @@ import { PatternsEditor, PositionalSection, positionalGroupIds } from './Positio
 import { useSendHover } from './Send';
 import { SketchRow } from './SketchRow';
 import { DebouncedText, Num, Strip, Tip, severity, useLab } from './ui';
+import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 /** The card's texts and ring for a ratio or CPS chord: pitches as ratios when every note has one (else cents), steps in cents. */
@@ -527,6 +528,7 @@ function TemplateEditor() {
                 variant="subtle"
                 color="gray"
                 size="sm"
+                className={labClasses.dangerHover}
                 aria-label={`Remove ${t.name ?? t.text}`}
                 onClick={() => set(rows.filter((_, j) => j !== i))}
               >
