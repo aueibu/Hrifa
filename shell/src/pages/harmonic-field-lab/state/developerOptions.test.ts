@@ -23,3 +23,17 @@ describe('tile developer options defaults', () => {
     expect(parseDeveloperOptions('{"tileLook":"bright"}').tileLook).toBe('solid');
   });
 });
+
+describe('cardNoteErrors developer option (H-24)', () => {
+  it('is off by default, when absent, and when damaged; old data loads unchanged', () => {
+    for (const raw of [null, '', '{', '[]', '{"tooltips":false}', '{"cardNoteErrors":"yes"}']) {
+      expect(parseDeveloperOptions(raw).cardNoteErrors, String(raw)).toBe(false);
+    }
+    expect(parseDeveloperOptions('{"tooltips":false}').tooltips).toBe(false);
+  });
+
+  it('an explicit true stays on, an explicit false stays off', () => {
+    expect(parseDeveloperOptions('{"cardNoteErrors":true}').cardNoteErrors).toBe(true);
+    expect(parseDeveloperOptions('{"cardNoteErrors":false}').cardNoteErrors).toBe(false);
+  });
+});

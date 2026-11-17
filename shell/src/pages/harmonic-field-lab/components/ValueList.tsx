@@ -36,18 +36,43 @@ export function valueGroups(text: string): string[] {
   return groups;
 }
 
-export function ValueList({ text }: { text: string }) {
+/**
+ * `sevs` (M4, optional): the n-th value gets the error band `sevs[n]` (the card stat's `data-sev` colors); a value with no entry stays plain.
+ * The values of a pitches or error line are the groups `valueGroups` makes, one per note.
+ */
+export function ValueList({
+  text,
+  sevs,
+  inline,
+}: {
+  text: string;
+  sevs?: readonly number[] | null;
+  /** Flow inside a sentence (display: inline) instead of its own block. */
+  inline?: boolean;
+}) {
+  let n = 0;
   return (
-    <span className={classes.valueList}>
-      {valueGroups(text).map((g, i) =>
-        /^\s+$/.test(g) ? (
-          g
-        ) : (
-          <span key={i} className={classes.valueItem} data-value>
+    <span
+      className={inline ? `${classes.valueList} ${classes.valueListInline}` : classes.valueList}
+    >
+      {valueGroups(text).map((g, i) => {
+        if (/^\s+$/.test(g)) {
+          return g;
+        }
+        const sev = sevs?.[n++];
+        return (
+          <span
+            key={i}
+            className={
+              sev === undefined ? classes.valueItem : `${classes.valueItem} ${classes.err}`
+            }
+            data-sev={sev}
+            data-value
+          >
             {g}
           </span>
-        )
-      )}
+        );
+      })}
     </span>
   );
 }

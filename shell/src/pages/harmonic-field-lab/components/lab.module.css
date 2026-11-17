@@ -2136,10 +2136,11 @@ p.inputError {
   grid-template-columns: minmax(3.5rem, max-content) 1fr;
 }
 
+/* DM Mono is loaded at 400 and 500 only (index.html): a heavier weight is a synthesized bold that smears (the "glow") */
 .helpKeyName,
 .helpKey {
   font-family: var(--mantine-font-family-monospace);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .helpKey {

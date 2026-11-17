@@ -51,7 +51,7 @@ describe('red text role', () => {
       'utf8'
     );
     expect(lab).toMatch(/\.fieldMsg\[data-kind=["']err["']\]\s*\{\s*color:\s*var\(--text-danger\)/);
-    expect(panels).toMatch(/\.err\[data-sev=["']4["']\]\s*\{\s*color:\s*var\(--text-danger\)/);
+    expect(panels).toMatch(/\.err\[data-sev=["']4["']\]\s*\{\s*color:\s*var\(--rx-red-11\)/);
     expect(panels).toMatch(/\.shelfRefusal\s*\{\s*color:\s*var\(--text-danger\)/);
     expect(panels).toMatch(
       /\.sendNote\[data-alert\]\s*\{\s*border-color:\s*var\(--mark-red\);\s*color:\s*var\(--text-danger\)/

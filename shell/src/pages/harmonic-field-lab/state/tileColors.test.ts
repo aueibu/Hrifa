@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { hexToLinearRgb, linearContrast } from '../../../theme/markers';
 import { RADIX, RADIX_HUES, radixHex, type RadixHue } from '../../../theme/radix';
 import { defaultThemeTokens as T } from '../../../theme/tokens';
+import { severity } from '../components/ui';
 import {
+  RED_TINT_STEP,
+  SEV1_MIX,
   SEV_HUES,
+  sevTileColors,
   TILE,
   TILE_LOOKS,
   reachBackground,
@@ -56,7 +60,10 @@ function contrast(fg: string, bg: string, scheme: TileScheme): number {
 }
 
 const hues = (): { name: string; hue: TileHue }[] => [
-  ...SEV_HUES.map((h) => ({ name: `sev ${h}`, hue: { a: h } })),
+  ...SEV_HUES.filter((h): h is RadixHue => h !== null).map((h) => ({
+    name: `sev ${h}`,
+    hue: { a: h },
+  })),
   ...RADIX_HUES.map((h) => ({ name: `wheel ${h}`, hue: { a: h } })),
   // in-between wheel positions blend two hues
   ...[0.0625, 0.3, 0.5, 0.8125].map((p) => ({ name: `wheel @${p}`, hue: wheelHue(p) })),
@@ -177,6 +184,48 @@ describe('tile colors: borders', () => {
   });
 });
 
+describe('error band colors (M4c, H-25): one warm heat family', () => {
+  it('no band maps to cyan or green; band 0 is neutral; bands 2, 3, 4 are yellow, orange, red', () => {
+    expect(SEV_HUES).toEqual([null, 'yellow', 'yellow', 'orange', 'red']);
+    for (const look of TILE_LOOKS) {
+      for (const outline of [false, true]) {
+        for (const scheme of SCHEMES) {
+          for (let s = 0; s < 5; s++) {
+            const c = sevTileColors(look, outline, s, scheme);
+            const all = JSON.stringify(c);
+            expect(all, `${look} ${s}`).not.toMatch(/cyan|green|blue/);
+            if (s === 0) {
+              expect(all, `${look} neutral`).not.toMatch(/--rx-/);
+              expect(c.text).toBe('var(--text)');
+              // a fill a little lighter than the surface, so the tile does not blend into the screen
+              expect(c.fill).toMatch(/--text\) 14%|var\(--panel\)/);
+            } else {
+              const hue = ['', 'yellow', 'yellow', 'orange', 'red'][s];
+              expect(all, `${look} ${s}`).toContain(`--rx-${hue}-`);
+            }
+          }
+        }
+      }
+    }
+  });
+  it('band 1 is a faint yellow hint mixed into the text color and the surface', () => {
+    const c = sevTileColors('tinted', false, 1, 'light');
+    expect(c.text).toBe(`color-mix(in srgb, var(--rx-yellow-11) ${SEV1_MIX.text}%, var(--text))`);
+    expect(c.fill).toContain('var(--rx-yellow-4) 30%');
+  });
+  it('the thresholds are unchanged', () => {
+    expect(severity(0)).toBe(0);
+    expect(severity(0.0000005)).toBe(0);
+    expect(severity(1)).toBe(1);
+    expect(severity(4.99)).toBe(1);
+    expect(severity(5)).toBe(2);
+    expect(severity(14.99)).toBe(2);
+    expect(severity(15)).toBe(3);
+    expect(severity(29.99)).toBe(3);
+    expect(severity(30)).toBe(4);
+  });
+});
+
 describe('tint band (H-23)', () => {
   const tint = 'var(--rx-red-4)';
   it('center mode: hard two-position stops around the centered band', () => {
@@ -218,5 +267,21 @@ describe('tint band (H-23)', () => {
     expect(tileStyle(tileColors('solid', true, 'normal', red, 'light', 67.5))).not.toHaveProperty(
       '--mx-bg'
     );
+  });
+});
+
+describe('the worst band tile (red) is lifted in the Tinted look only', () => {
+  it('uses RED_TINT_STEP for the band 4 Tinted fill and leaves the other fills alone', () => {
+    for (const scheme of SCHEMES) {
+      expect(sevTileColors('tinted', false, 4, scheme).fill).toBe(`var(--rx-red-${RED_TINT_STEP})`);
+      expect(RED_TINT_STEP).toBeGreaterThan(TILE.tinted.fill.normal);
+      expect(sevTileColors('tinted', false, 3, scheme).fill).toBe(
+        `var(--rx-orange-${TILE.tinted.fill.normal})`
+      );
+      expect(sevTileColors('tinted', false, 2, scheme).fill).toBe(
+        `var(--rx-yellow-${TILE.tinted.fill.normal})`
+      );
+      expect(sevTileColors('solid', false, 4, scheme).fill).not.toContain(`red-${RED_TINT_STEP}`);
+    }
   });
 });

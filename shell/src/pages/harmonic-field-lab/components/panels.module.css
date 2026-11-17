@@ -220,23 +220,23 @@
 
 /* error: color by size, never alone (the number is printed beside it) */
 .err[data-sev='0'] {
-  color: var(--mark-cyan);
+  color: var(--text);
 }
 
 .err[data-sev='1'] {
-  color: var(--mark-green);
+  color: color-mix(in srgb, var(--rx-yellow-11) 35%, var(--text));
 }
 
 .err[data-sev='2'] {
-  color: var(--mark-yellow);
+  color: var(--rx-yellow-11);
 }
 
 .err[data-sev='3'] {
-  color: var(--mark-orange);
+  color: var(--rx-orange-11);
 }
 
 .err[data-sev='4'] {
-  color: var(--text-danger);
+  color: var(--rx-red-11);
 }
 
 .need {
@@ -436,7 +436,7 @@
 .heatSign {
   font-family: var(--mantine-font-family-monospace);
   font-size: var(--lab-fs-glyph);
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1;
   opacity: 0;
   position: absolute;
@@ -1526,8 +1526,6 @@
 }
 
 .sketchNote {
-  --sketch-tint: 14%; /* strength of the severity wash on the gray tile background: tune here */
-
   background: var(--panel-slot);
   border: 1px solid transparent;
   border-radius: var(--radius-control);
@@ -1538,42 +1536,19 @@
   padding: 0.1875rem 0.4375rem;
 }
 
-/* a found note carries the chord highlight color; an outsider is dashed and prints its distance in cents, in the color of the
-   chord chips' error severity (outline) over the gray panel background mixed with it (M8g) */
-.sketchNote[data-found='true'] {
-  background: color-mix(in srgb, var(--mark-cyan) var(--sketch-tint), var(--panel-slot));
-  border-color: var(--mark-blue);
+/* a Sketch note is a heat tile like the Modes grid's: a field note is the neutral band, an outsider takes the band of its distance
+   (colors come from sevTileStyle through the shared .heatCell[data-tile] rule; no blue outline, no dashed border) */
+.sketchNote[data-tile] {
+  background: var(--mx-fill);
+  border-color: var(--mx-bd);
+  border-style: solid;
+  border-width: 1px;
+  color: var(--mx-fg);
 }
 
-.sketchNote[data-found='false'] {
-  --sev: var(--control-border);
-
-  background: var(--panel-slot);
-  border: 1px dashed var(--sev);
-}
-
-.sketchNote[data-found='false'][data-sev='1'] {
-  --sev: var(--mark-green);
-
-  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
-}
-
-.sketchNote[data-found='false'][data-sev='2'] {
-  --sev: var(--mark-yellow);
-
-  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
-}
-
-.sketchNote[data-found='false'][data-sev='3'] {
-  --sev: var(--mark-orange);
-
-  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
-}
-
-.sketchNote[data-found='false'][data-sev='4'] {
-  --sev: var(--mark-red);
-
-  background: color-mix(in srgb, var(--sev) var(--sketch-tint), var(--panel-slot));
+/* a note that is not in the field keeps a dashed border (the heat colors stay the tile's) */
+.sketchNote[data-tile][data-found='false'] {
+  border-style: dashed;
 }
 
 /* Shelf panel */
@@ -2063,6 +2038,12 @@
   text-wrap: balance;
 }
 
+/* a value list inside a sentence (the chip tooltip's `13/11 is -26.4 c from 6/5`) flows with the words around it */
+.valueList.valueListInline {
+  display: inline;
+  text-wrap: wrap;
+}
+
 .valueItem {
   display: inline-block;
   overflow-wrap: normal;
@@ -2070,7 +2051,8 @@
 }
 
 .cardLine1,
-.cardLine2 {
+.cardLine2,
+.cardLine3 {
   line-height: 1.2;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -2085,6 +2067,23 @@
   color: var(--text-muted);
   font-size: var(--lab-fs-tiny);
   min-height: 0.8rem;
+}
+
+/* the Error line (Developer option cardNoteErrors): the third line under the pitches, after the steps */
+.cardLine3 {
+  font-size: var(--lab-fs-tiny);
+  grid-area: errors;
+  min-height: 0.8rem;
+}
+
+.card[data-errors] {
+  grid-template-areas:
+    'ring title stat'
+    'ring subtitle subtitle'
+    'ring pitches pitches'
+    'ring steps steps'
+    'ring errors errors';
+  min-height: calc(var(--chord-card-h-narrow) + 0.9rem);
 }
 
 .cardCol[data-col='title'] .cardLine1 {
@@ -2173,6 +2172,14 @@
       var(--chord-card-stat-w);
     min-height: var(--chord-card-h);
     row-gap: 0.0625rem;
+  }
+
+  .card[data-errors] {
+    grid-template-areas:
+      'ring title pitches stat'
+      'ring subtitle steps stat'
+      'ring . errors stat';
+    min-height: calc(var(--chord-card-h) + 0.9rem);
   }
 
   .cardRing {
@@ -2523,13 +2530,35 @@
 }
 
 /* A labeled value line inside a tooltip ("Pitches 0, 386.3, 702 c"): the label keeps its width, the values wrap beside it. */
+/* every line of the chord chip tooltip is ONE line: the bubble takes the width of its longest line (`Hint fit`) */
 .hintLine {
   display: flex;
   gap: 0.5ch;
+  white-space: nowrap;
 }
 
 .hintLine > :first-child {
   flex: none;
+}
+
+/* a steps line longer than the bubble's max width is cut, never wrapped */
+.hintLine > :last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* the ring tooltip's own sentence (a dashed, CPS or Positional card) under the shared lines: a normal wrapping paragraph */
+.hintSentence {
+  display: block;
+  margin-top: 0.5em;
+  white-space: normal;
+}
+
+/* M4: a sentence line of the chord chip tooltip (`13/11 is −26.4 c from 6/5`, `Appears at tolerance 27 c.`) */
+.hintNote {
+  display: block;
+  white-space: nowrap;
 }
 
 /* -------------------------------------------------------------------------------- interval matrix (panel) */

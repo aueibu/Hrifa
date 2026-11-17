@@ -257,6 +257,8 @@ export interface ChordChip {
   rootIdx: number;
   members: string[];
   memberIdx: number[];
+  /** Signed error in cents of each member against the template (root first, root 0), aligned with `memberIdx`; from the lib `Voicing.errors`. */
+  errors?: number[];
   maxErr: number;
   /** Tolerance (c) at which the chord appears; for a found chip, its own error. */
   needs: number;
@@ -288,6 +290,7 @@ export function chordModel(
     rootIdx: c.root,
     members: c.members.map((i) => ratios[i]),
     memberIdx: c.members,
+    errors: c.errors,
     maxErr: c.maxErr,
     needs,
     found,

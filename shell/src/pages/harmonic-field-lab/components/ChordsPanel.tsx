@@ -1,6 +1,6 @@
 /** Chords panel: tolerance with a ladder; sections by note count, one row per family, one chip per voicing. */
 import { useMemo, useState } from 'react';
-import { ActionIcon, Button, Modal, Switch } from '@mantine/core';
+import { ActionIcon, Button, Modal, SegmentedControl, Switch } from '@mantine/core';
 import {
   DEFAULT_TEMPLATES,
   chordShape,
@@ -21,8 +21,20 @@ import {
   ratioGroupIds,
   representative,
 } from '../state/chordGroups';
+import {
+  appearsAtTolerance,
+  chipErrors,
+  chipSortOptions,
+  errorStats,
+  noteErrorLines,
+  sortCards,
+  sortGroups,
+  templateHeight,
+  type ChordSort,
+} from '../state/chordSort';
 import { cpsRootIdx } from '../state/cpsRoot';
 import { MAX_CHORDS, SIZES, cpsFactorNames, familyOrder, type ChordChip } from '../state/derive';
+import { useLabDeveloperOptions } from '../state/developerOptions';
 import { chordFoldIds, collapseAll, expandAll } from '../state/foldIds';
 import { MAX_TEMPLATES } from '../state/labState';
 import { ladderWindow, nearestHidden } from '../state/ladderWindow';
@@ -32,7 +44,7 @@ import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import { PatternsEditor, PositionalSection, positionalGroupIds } from './Positional';
 import { useSendHover } from './Send';
 import { SketchRow } from './SketchRow';
-import { DebouncedText, Num, SEV_LABEL, Strip, Hint, Tip, severity, useLab } from './ui';
+import { DebouncedText, Num, Strip, Tip, severity, useLab } from './ui';
 import classes from './panels.module.css';
 
 /** The card's texts and ring for a ratio or CPS chord: pitches as ratios when every note has one (else cents), steps in cents. */
@@ -132,18 +144,35 @@ function Chip({
     : chip.found
       ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}. Largest error ${err}. Click: hear it and keep it highlighted. Shift-click: make these notes the subset, with ${chip.root} as the mode root. Point and hold 1 to hear it for as long as you hold the key; hold 4 plays it as in this field, and hold 5 its exact ratios, on the root of the Sketch row's stepper. Playing it, or holding 1, 4 or 5 on it, also arms this template in the Sketch row (the Sketch root stays where it is).`
       : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
+  // the ring's tooltip line (the plain label without the key help, which the `chordChip` glossary entry carries)
+  const ringTip = group
+    ? `${chip.name} ${chip.template}, the same shape on ${n} roots.`
+    : chip.found
+      ? `${chip.name} ${chip.template} on ${chip.root}: notes ${chip.members.join(' ')}.`
+      : `${chip.name} ${chip.template} would sit on ${chip.root} (notes ${chip.members.join(' ')}) but needs ${need} c of tolerance. Click to raise the tolerance to ${need} c.`;
   const parts = cardParts(chip, lab.base.field, lab.base.ratios, lab.base.repC);
   // a grouped card shows the SHAPE of its first member (cents above the root), so it does not change when the Sketch stepper moves
   const first = group?.members[0] ?? chip;
   const shape = group ? cardParts(first, lab.base.field, lab.base.ratios, lab.base.repC) : parts;
   const sevFirst = severity(first.maxErr);
+  // M4: per-note errors of the card's figures (a grouped card shows its first member's); a dashed card has none
+  const [dev] = useLabDeveloperOptions();
+  const noteErrors = chip.found ? chipErrors(first, lab.base.field, lab.base.repC) : null;
+  const avg = noteErrors ? errorStats(noteErrors).avg : null;
+  // the tooltip's sentences (finder order) and tolerance line need error data, like the card's own figures
+  const noteLines = noteErrors ? noteErrorLines(first, lab.base.field, lab.base.rep) : null;
   return (
     <ChordCard
       label={label}
+      ringTip={ringTip}
       title={chip.name}
       subtitle={group ? chip.template : templateOn(chip.template, chip.root)}
       pitches={group ? fmtCentsList(shape.ups) : parts.pitches}
       steps={shape.steps}
+      errors={noteErrors}
+      noteLines={noteLines}
+      appearsAt={noteErrors ? appearsAtTolerance(first.maxErr) : undefined}
+      showErrors={dev.cardNoteErrors}
       group={
         group
           ? {
@@ -156,11 +185,15 @@ function Chip({
       }
       stat={
         chip.found ? (
-          <Hint label={`Error ${SEV_LABEL[sevFirst]}`}>
-            <span className={classes.err} data-sev={sevFirst}>
-              <Num>{sevFirst === 0 ? 'exact' : `${first.maxErr.toFixed(1)} c`}</Num>
-            </span>
-          </Hint>
+          <span className={classes.err} data-sev={sevFirst}>
+            <Num>
+              {sevFirst === 0
+                ? 'exact'
+                : avg === null
+                  ? `${first.maxErr.toFixed(1)} c`
+                  : `${first.maxErr.toFixed(1)} (${avg.toFixed(1)}) c`}
+            </Num>
+          </span>
         ) : (
           <span className={classes.need}>
             <Num>+{need} c</Num>
@@ -315,9 +348,11 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
     lab.base.ratios,
     lab.base.repC
   );
+  const ringTip = `${kind} chord ${name}: ${g.type === 'harmonic' ? `the notes that share ${common}` : `the notes inside ${common}`} (${g.members.length} notes).`;
   return (
     <ChordCard
       label={label}
+      ringTip={ringTip}
       title={`${template ?? name} ${g.type === 'harmonic' ? 'otonal' : 'utonal'}`}
       subtitle={g.type === 'harmonic' ? `shares ${common}` : `inside ${common}`}
       pitches={parts.pitches}
@@ -389,11 +424,24 @@ function CpsChip({ g, labels }: { g: CpsChord; labels: readonly string[] }) {
 
 /** The chords that exist inside a CPS (a combination product set): otonal and utonal chips, shown for the CPS method only. */
 function CpsChords() {
-  const { base, tab } = useLab();
+  const { base, tab, state } = useLab();
+  const { chordSort, chordSortReverse } = state.ui;
   const labels = useMemo(() => cpsFactorNames(tab.gen), [tab.gen]);
   const chords = useMemo(() => cpsChords(base.field), [base.field]);
-  const oto = chords.filter((g) => g.type === 'harmonic');
-  const uto = chords.filter((g) => g.type !== 'harmonic');
+  // M4: the shared Sort control orders each row (Default = the lib's order); Otonal and Utonal stay two rows
+  const sorted = useMemo(
+    () =>
+      sortCards(chords, {
+        key: chordSort,
+        reverse: chordSortReverse,
+        found: () => true,
+        rootC: (g) => base.field[cpsRootIdx(g, labels)]?.c ?? 0,
+        height: (g) => templateHeight(cpsTemplate(g, labels)),
+      }),
+    [chords, chordSort, chordSortReverse, base.field, labels]
+  );
+  const oto = sorted.filter((g) => g.type === 'harmonic');
+  const uto = sorted.filter((g) => g.type !== 'harmonic');
   const { folded } = useFold('cps');
   return (
     <section className={classes.family} aria-label="Chords inside this CPS">
@@ -572,13 +620,16 @@ function FamilyRow({
     () => shapeCounts(row, base.field, base.repC),
     [row, base.field, base.repC]
   );
-  const groups = useMemo(
-    () =>
-      state.ui.groupShapes
-        ? groupChips(row, base.field, base.repC)
-        : row.map((c) => ({ key: null, members: [c] })),
-    [state.ui.groupShapes, row, base.field, base.repC]
-  );
+  const { chordSort, chordSortReverse } = state.ui;
+  const groups = useMemo(() => {
+    const grouped = state.ui.groupShapes
+      ? groupChips(row, base.field, base.repC)
+      : row.map((c) => ({ key: null, members: [c] }));
+    // M4: the Sort control orders the cards of this row and the roots inside each group; the row itself never moves
+    return chordSort === 'default' && !chordSortReverse
+      ? grouped
+      : sortGroups(grouped, chipSortOptions(chordSort, chordSortReverse, base.field));
+  }, [state.ui.groupShapes, row, base.field, base.repC, chordSort, chordSortReverse]);
   return (
     <div className={classes.famRow} role="group" aria-label={`${size}, ${family}`}>
       <h4 className={classes.treeHead} data-level="3">
@@ -746,6 +797,29 @@ export function ChordsPanel() {
                 checked={state.ui.groupShapes}
                 onChange={(e) =>
                   dispatch({ type: 'ui', patch: { groupShapes: e.currentTarget.checked } })
+                }
+              />
+            </Tip>
+            <Tip k="chordSort" as="control">
+              <SegmentedControl
+                size="xs"
+                aria-label="Sort chords"
+                value={state.ui.chordSort}
+                onChange={(v) => dispatch({ type: 'ui', patch: { chordSort: v as ChordSort } })}
+                data={[
+                  { label: 'Default', value: 'default' },
+                  { label: 'Root', value: 'root' },
+                  { label: 'Simplicity', value: 'simplicity' },
+                ]}
+              />
+            </Tip>
+            <Tip k="chordSort" as="control">
+              <Switch
+                size="xs"
+                label="Reverse"
+                checked={state.ui.chordSortReverse}
+                onChange={(e) =>
+                  dispatch({ type: 'ui', patch: { chordSortReverse: e.currentTarget.checked } })
                 }
               />
             </Tip>

@@ -133,11 +133,15 @@ function PositionalRow({ chord, pattern, naming, clicked, setClicked, group }: R
   const label = group
     ? `${pattern}, the same shape on ${n} roots. Click: hear it on the root of the Sketch row's stepper, keep it highlighted and arm it in the Sketch row. Point and hold 1, 4 or 5 to hear it on that root. Press the arrow to show the ${n} roots one by one. Roughness score ${best.c.score.toFixed(2)} (best rank ${best.c.rank}).`
     : `${text}. Click: hear it, keep it highlighted and arm it in the Sketch row. Point and hold 1 to hear it for as long as you hold the key; with the pointer on this row, hold 4 or 5 plays it on the root of the Sketch row's stepper (both play its field notes: a positional chord has no separate exact form). Holding 1, 4 or 5 on it also arms its pattern in the Sketch row (hold 4 and 5 leave the Sketch root alone). Roughness score ${chord.score.toFixed(2)} (smoothest first, rank ${rank}).`;
+  const ringTip = group
+    ? `${pattern}, the same shape on ${n} roots. Roughness score ${best.c.score.toFixed(2)} (best rank ${best.c.rank}).`
+    : `${text}. Roughness score ${chord.score.toFixed(2)} (smoothest first, rank ${rank}).`;
   return (
     <ChordCard
       as="li"
       testId="positional-row"
       label={label}
+      ringTip={ringTip}
       title={group ? pattern : naming.label}
       titleExtra={first.naming.ratio}
       subtitle={group ? pattern : ''}

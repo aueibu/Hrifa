@@ -52,6 +52,19 @@ interface NestReporter {
 const NestContext = createContext<NestReporter | null>(null);
 
 /**
+ * Lab tooltips use the theme's own surface and text (Mantine's default is the inverted scheme, which made the tinted error
+ * values unreadable: their colors are chosen for the normal surface). A border and shadow lift the bubble off the panel.
+ */
+const LAB_TOOLTIP_STYLES = {
+  tooltip: {
+    '--tooltip-bg': 'var(--panel-raised)',
+    '--tooltip-color': 'var(--text)',
+    border: '1px solid var(--control-border)',
+    boxShadow: 'var(--mantine-shadow-md)',
+  },
+} as TooltipProps['styles'];
+
+/**
  * Innermost tooltip wins (as a native `title` did). A tooltip whose reference contains another tooltip's reference would
  * open both bubbles in a browser (the outer's `mouseenter` fires once and entering the child does not end it). Each lab
  * tooltip reports to the nearest tooltip above it while its own reference is hovered or focused; that one is hidden
@@ -110,7 +123,7 @@ export function LabTooltip({
   } as object);
   return (
     <NestContext.Provider value={mine}>
-      <Tooltip {...rest} disabled={disabled || inner > 0}>
+      <Tooltip styles={LAB_TOOLTIP_STYLES} {...rest} disabled={disabled || inner > 0}>
         {child}
       </Tooltip>
     </NestContext.Provider>
@@ -200,18 +213,28 @@ interface HintProps {
   dynamic?: ReactNode;
   disabled?: boolean;
   position?: 'top' | 'bottom';
+  /** The bubble takes the width of its longest line (up to `HINT_FIT_MAX_WIDTH`) instead of the fixed 300: for tooltips of one-line rows. */
+  fit?: boolean | string;
 }
+
+/** The widest a `fit` tooltip grows; a longer line is cut by its own rule, not wrapped. */
+export const HINT_FIT_MAX_WIDTH = 'min(90vw, 40rem)';
+
+/** The widest the chord ring's tooltip grows: its help paragraphs and key rows wrap at this width, its one-line rows stay whole. */
+export const RING_TIP_MAX_WIDTH = 'min(90vw, 26rem)';
 
 /**
  * A tooltip on an existing element, for text built from the current values (it replaces a native `title`). Same look, delay and
  * on/off as `Tip` (Developer menu); the child keeps its own size and position.
  */
-export function Hint({ children, k, label, dynamic, disabled, position = 'top' }: HintProps) {
+export function Hint({ children, k, label, dynamic, disabled, position = 'top', fit }: HintProps) {
   const tipProps = useTooltipProps();
   return (
     <LabTooltip
       multiline
-      w={300}
+      {...(fit
+        ? { w: 'max-content', maw: typeof fit === 'string' ? fit : HINT_FIT_MAX_WIDTH }
+        : { w: 300 })}
       {...tipProps}
       disabled={tipProps.disabled || disabled}
       position={position}

@@ -204,6 +204,10 @@ export interface UiSettings {
   folds: Record<string, boolean>;
   /** M8i: merge chords with the same shape on different roots into one card (default true). Optional in storage. */
   groupShapes: boolean;
+  /** M4 (H-24): the order of the cards inside a Chords-panel row and of the roots inside a shape group: Default (today's order), Root or Simplicity. Optional in storage. */
+  chordSort: 'default' | 'root' | 'simplicity';
+  /** M4 (H-24): reverse the active chord sort (Default included; default false). Optional in storage. */
+  chordSortReverse: boolean;
   /** The Pairs panel Color control (M1, Scala-tools arc): Off (default), Error or Interval. Optional in storage. */
   pairsColor: PairsColor;
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
@@ -321,6 +325,8 @@ export function defaultUi(): UiSettings {
     positionalOrder: 'smoothest',
     folds: {},
     groupShapes: true,
+    chordSort: 'default',
+    chordSortReverse: false,
     pairsColor: 'off',
     pairsAdded: [],
   };

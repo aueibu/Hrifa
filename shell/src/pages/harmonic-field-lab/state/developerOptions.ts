@@ -49,6 +49,8 @@ export interface LabDeveloperOptions {
   tileLook: TileLook;
   /** Stack an outline on Tinted and Solid tiles (always on in Outlined). */
   tileOutline: boolean;
+  /** Chord cards (M4, H-24): add a third line, Error, with each note's signed error (default off). The hover tooltip always shows it. */
+  cardNoteErrors: boolean;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -93,6 +95,7 @@ const defaults: LabDeveloperOptions = {
   beatPartialLimit: null,
   tileLook: 'tinted',
   tileOutline: true,
+  cardNoteErrors: false,
 };
 
 const listeners = new Set<() => void>();
@@ -129,6 +132,8 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       beatPartialLimit: sanitizeBeatPartialLimit(o.beatPartialLimit),
       tileLook: sanitizeTileLook(o.tileLook),
       tileOutline: typeof o.tileOutline === 'boolean' ? o.tileOutline : defaults.tileOutline,
+      cardNoteErrors:
+        typeof o.cardNoteErrors === 'boolean' ? o.cardNoteErrors : defaults.cardNoteErrors,
     };
   } catch {
     return defaults;

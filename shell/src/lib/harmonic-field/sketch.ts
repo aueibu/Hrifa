@@ -29,6 +29,8 @@ export interface SketchMatch {
   idx: number | null;
   /** Cents of the nearest field note minus the pitch (positive: the note is above it), repeat-aware; 0 when found. */
   dist: number;
+  /** Field index of the nearest field note (the found note itself when found), else null for an empty field. */
+  near: number | null;
 }
 
 /**
@@ -56,22 +58,24 @@ export function matchToField(
   return reduced.map((p, i) => {
     const at = found[i];
     if (at !== null) {
-      return { idx: at, dist: 0 };
+      return { idx: at, dist: 0, near: at };
     }
     if (!field.length) {
-      return { idx: null, dist: NaN };
+      return { idx: null, dist: NaN, near: null };
     }
     const pc = repC > EPS ? mod(p.c, repC) : p.c;
     let best = Infinity;
-    for (const n of field) {
+    let near = 0;
+    field.forEach((n, k) => {
       const cands = repC > EPS ? [n.c - pc, n.c - pc + repC, n.c - pc - repC] : [n.c - pc];
       for (const d of cands) {
         if (Math.abs(d) < Math.abs(best)) {
           best = d;
+          near = k;
         }
       }
-    }
-    return { idx: null, dist: best };
+    });
+    return { idx: null, dist: best, near };
   });
 }
 

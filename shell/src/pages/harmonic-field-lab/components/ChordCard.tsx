@@ -3,11 +3,19 @@
  * width and the same height: ring | title (name, subtitle) | pitches (pitches, steps) | right stat, with the stash `+` at the far
  * right. The behaviors (hover, click, hold keys, send) stay with the caller: it passes the handlers and the texts.
  */
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Button } from '@mantine/core';
+import { glueUnits } from '../markup';
+import {
+  EXACT_NOTE_C,
+  NOTE_ERROR_WORD,
+  fmtErrors,
+  signedC1,
+  type NoteErrorLine,
+} from '../state/chordSort';
 import { ChevronDownIcon, PlusIcon } from './icons';
 import { ChordDrawing } from './ShelfPanel';
-import { Hint, LabTooltip, Num, useTooltipProps } from './ui';
+import { Hint, Num, RING_TIP_MAX_WIDTH, severity } from './ui';
 import { ValueList } from './ValueList';
 import classes from './panels.module.css';
 
@@ -36,6 +44,92 @@ export const templateOn = (template: string | null | undefined, root: string): s
 /** `3 notes` / `1 note`. */
 export const notesText = (n: number): string => `${n} ${n === 1 ? 'note' : 'notes'}`;
 
+/** The steps text without its leading word (`steps 1, 2 c` gives `1, 2 c`): the tooltip's label already says Steps. */
+export const stepsValue = (steps: string): string => steps.replace(/^steps\s+/, '');
+
+/** The error band (0 to 4, as the card stat's `severity`) of each note's signed error. */
+export const errorSevs = (errors: readonly number[] | null | undefined): number[] | null =>
+  errors ? errors.map((e) => severity(Math.abs(e))) : null;
+
+/**
+ * The chip's ONE hover tooltip body (every region of the card except the ring): Pitches, Steps, then one sentence per non-root
+ * note in the finder's template order (`13/11 is −26.4 c from 6/5`, or `3/2 is exact`), then `Appears at tolerance N c.` (an
+ * exact chord: `Appears at any tolerance.`). The sentence lines and the last line exist only when the card has them
+ * (`noteLines`, `appearsAt`); the Developer option `cardNoteErrors` does not change it. Each pitch, and each note's member and
+ * error value, is tinted by its own band.
+ */
+export function CardHintLines({
+  pitches,
+  steps,
+  errors,
+  noteLines,
+  appearsAt,
+}: {
+  pitches: string;
+  steps: string;
+  errors?: readonly number[] | null;
+  noteLines?: readonly NoteErrorLine[] | null;
+  /** The tolerance rung (whole cents) the chord appears at; 0 = any tolerance (exact). Absent: no line. */
+  appearsAt?: number;
+}) {
+  const sevs = errorSevs(errors);
+  const lineSevs = errorSevs(noteLines?.map((l) => l.error));
+  return (
+    <>
+      <span className={classes.hintLine}>
+        <span>Pitches:</span>
+        <Num>
+          <ValueList text={pitches} sevs={sevs} />
+        </Num>
+      </span>
+      <span className={classes.hintLine}>
+        <span>Steps:</span>
+        <Num>
+          <ValueList text={stepsValue(steps)} />
+        </Num>
+      </span>
+      {noteLines?.map((l, i) => {
+        const sev = lineSevs?.[i];
+        const exact = Math.abs(l.error) < EXACT_NOTE_C;
+        return (
+          <span key={i} className={classes.hintNote} data-testid="hint-note">
+            <Num>
+              <ValueList
+                inline
+                text={glueUnits(l.member)}
+                sevs={sev === undefined ? null : [sev]}
+              />
+            </Num>
+            {exact ? (
+              ' is exact'
+            ) : (
+              <>
+                {' is '}
+                <Num>
+                  <ValueList
+                    inline
+                    text={glueUnits(`${signedC1(l.error)} c`)}
+                    sevs={sev === undefined ? null : [sev]}
+                  />
+                </Num>
+                {` ${NOTE_ERROR_WORD} `}
+                <Num>{l.ideal}</Num>
+              </>
+            )}
+          </span>
+        );
+      })}
+      {appearsAt !== undefined && (
+        <span className={classes.hintNote} data-testid="hint-appears">
+          {appearsAt === 0
+            ? 'Appears at any tolerance.'
+            : glueUnits(`Appears at tolerance ${appearsAt} c.`)}
+        </span>
+      )}
+    </>
+  );
+}
+
 export interface ChordCardProps {
   as?: 'span' | 'li';
   testId?: string;
@@ -60,6 +154,19 @@ export interface ChordCardProps {
   subtitle: string;
   pitches: string;
   steps: string;
+  /** M4: each note's signed error in cents, in the order of `pitches` (root `0`); null or absent for CPS, dashed, positional and shelf cards. */
+  errors?: readonly number[] | null;
+  /** M4: the Developer option `cardNoteErrors`: also show the Error line on the card (the tooltip's sentence lines show regardless). */
+  showErrors?: boolean;
+  /** The tooltip's per-note sentences, in the finder's template order (`state/chordSort.noteErrorLines`); null or absent: no sentence lines. */
+  noteLines?: readonly NoteErrorLine[] | null;
+  /** The tolerance (whole cents) the chord appears at, 0 for an exact chord; absent: no `Appears at` line. */
+  appearsAt?: number;
+  /**
+   * The ring's tooltip (glossary entry `chordChip`): this dynamic line sits first under the term. A card with per-note errors
+   * shows the error tooltip on every other region; any other card (dashed, CPS, Positional) shows this one there too.
+   */
+  ringTip?: string;
   stat: ReactNode;
   ring: { cents: readonly number[]; repC: number };
   found: boolean;
@@ -78,7 +185,6 @@ export interface ChordCardProps {
 }
 
 export function ChordCard(p: ChordCardProps) {
-  const tipProps = useTooltipProps();
   const Wrap = p.as ?? 'span';
   const titleLine = (
     <span className={classes.cardLine1} data-testid="card-title">
@@ -88,40 +194,70 @@ export function ChordCard(p: ChordCardProps) {
     </span>
   );
   // `.cardCol` is `display: contents` (no box of its own), so the tooltip hangs on the two real line boxes inside it
-  const pitchDynamic = (
+  const errors = p.errors && p.errors.length ? p.errors : null;
+  const sevs = errorSevs(errors);
+  // ONE tooltip for every region of a chip except the ring: the error tooltip when the card has per-note errors, else the ring's
+  // own (so every region of every card has exactly one tooltip). A static card (shelf) keeps its Pitches and Steps tooltip.
+  const bodyDynamic = (
+    <CardHintLines
+      pitches={p.pitches}
+      steps={p.steps}
+      errors={errors}
+      noteLines={p.noteLines}
+      appearsAt={p.appearsAt}
+    />
+  );
+  // the ring's tooltip: the SAME lines as the chip's body tooltip first (decision H-16: the dynamic text sits first under the
+  // term), then the glossary's help, keys and example; a card without per-note errors adds its own sentence under the lines
+  const ringDynamic = (
     <>
-      <span className={classes.hintLine}>
-        <span>Pitches</span>
-        <Num>
-          <ValueList text={p.pitches} />
-        </Num>
-      </span>
-      <span className={classes.hintLine}>
-        <span>Steps</span>
-        <Num>
-          <ValueList text={p.steps} />
-        </Num>
-      </span>
+      {bodyDynamic}
+      {!errors && p.ringTip && (
+        <span className={classes.hintSentence} data-testid="ring-sentence">
+          {p.ringTip}
+        </span>
+      )}
     </>
   );
+  const regionTip = (el: ReactElement): ReactElement =>
+    p.actions || errors ? (
+      // a chip's body tooltip is rows of one line each: its bubble fits the longest one (a shelf card keeps the fixed width)
+      <Hint position="bottom" dynamic={bodyDynamic} fit={!p.actions}>
+        {el}
+      </Hint>
+    ) : (
+      <Hint position="bottom" k="chordChip" dynamic={ringDynamic} fit={RING_TIP_MAX_WIDTH}>
+        {el}
+      </Hint>
+    );
   const pitchCol = (
     <span className={classes.cardCol} data-col="pitches">
-      <Hint position="bottom" dynamic={pitchDynamic}>
+      {regionTip(
         <span className={classes.cardLine1} data-testid="card-pitches">
           <Num>
-            <ValueList text={p.pitches} />
+            <ValueList text={p.pitches} sevs={sevs} />
           </Num>
         </span>
-      </Hint>
-      <Hint position="bottom" dynamic={pitchDynamic}>
+      )}
+      {regionTip(
         <span className={classes.cardLine2} data-testid="card-steps">
           <Num muted>
             <ValueList text={p.steps} />
           </Num>
         </span>
-      </Hint>
+      )}
+      {p.showErrors &&
+        errors &&
+        regionTip(
+          <span className={classes.cardLine3} data-testid="card-errors">
+            <Num>
+              <ValueList text={fmtErrors(errors)} sevs={sevs} />
+            </Num>
+          </span>
+        )}
     </span>
   );
+  const errorsOnCard = p.showErrors && errors ? true : undefined;
   const ring = (
     <button
       type="button"
@@ -139,6 +275,7 @@ export function ChordCard(p: ChordCardProps) {
         <div
           className={classes.card}
           data-static
+          data-errors={errorsOnCard}
           data-found={p.found}
           data-picked={p.picked}
           data-cps={p.cps}
@@ -174,36 +311,41 @@ export function ChordCard(p: ChordCardProps) {
       data-picked={p.group ? p.picked : undefined}
       data-testid={p.testId}
     >
-      <LabTooltip label={p.label} multiline w={260} {...tipProps}>
-        <button
-          type="button"
-          className={classes.card}
-          data-found={p.found}
-          data-cps={p.cps}
-          data-picked={p.picked}
-          aria-pressed={p.pressable === false ? undefined : p.picked}
-          aria-label={p.label}
-          onMouseEnter={p.onEnter}
-          onMouseLeave={p.onLeave}
-          onFocus={p.onFocus}
-          onBlur={p.onBlur}
-          onClick={p.onClick}
-        >
+      <button
+        type="button"
+        className={classes.card}
+        data-errors={errorsOnCard}
+        data-found={p.found}
+        data-cps={p.cps}
+        data-picked={p.picked}
+        aria-pressed={p.pressable === false ? undefined : p.picked}
+        aria-label={p.label}
+        onMouseEnter={p.onEnter}
+        onMouseLeave={p.onLeave}
+        onFocus={p.onFocus}
+        onBlur={p.onBlur}
+        onClick={p.onClick}
+      >
+        <Hint position="bottom" k="chordChip" dynamic={ringDynamic} fit={RING_TIP_MAX_WIDTH}>
           <span className={classes.cardRing}>
             <ChordDrawing cents={p.ring.cents} repC={p.ring.repC} rootCents={p.ring.cents[0]} />
           </span>
-          <span className={classes.cardCol} data-col="title">
-            {titleLine}
+        </Hint>
+        <span className={classes.cardCol} data-col="title">
+          {regionTip(titleLine)}
+          {regionTip(
             <span className={classes.cardLine2} data-testid="card-subtitle">
               <Num muted>{p.subtitle}</Num>
             </span>
-          </span>
-          {pitchCol}
+          )}
+        </span>
+        {pitchCol}
+        {regionTip(
           <span className={classes.cardStat} data-testid="card-stat">
             {p.stat}
           </span>
-        </button>
-      </LabTooltip>
+        )}
+      </button>
       {p.group && (
         <span className={classes.groupRow}>
           <Button

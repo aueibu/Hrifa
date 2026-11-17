@@ -5,7 +5,7 @@
  * distance in cents to the nearest field note; Stash puts the pitches heard on the shelf. A chord chip or shelf slot that plays
  * arms its template and shape here (hold 4 on a note moves that shape onto it, hold 5 plays the exact ratios there).
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { ActionIcon, Button, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   matchToField,
@@ -20,9 +20,11 @@ import { SHORTCUTS } from '../audio/shortcuts';
 import { OTHER_FAMILY, familyOrder, noteLabel } from '../state/derive';
 import { autoName } from '../state/generate';
 import { sketchPositionalPitches } from '../state/sketchChord';
+import { sevTileStyle } from '../state/tileColors';
 import { PlayIcon } from './icons';
 import { tooFewHint } from './Positional';
 import { Hint, Num, Tip, severity, useLab } from './ui';
+import { useTiles } from './useTiles';
 import { ValueList } from './ValueList';
 import classes from './panels.module.css';
 
@@ -61,6 +63,7 @@ function positionalGroup(list: readonly string[], current: string | null) {
 
 export function SketchRow() {
   const lab = useLab();
+  const tiles = useTiles();
   const { state, tab, base, dispatch, audio } = lab;
   const sk = state.shelf.sketch;
   const templates = state.templates;
@@ -300,19 +303,29 @@ export function SketchRow() {
             const m = match[i];
             const hit = m?.idx !== null && m?.idx !== undefined;
             const off = !hit && m && Number.isFinite(m.dist) ? m.dist : null;
-            return (
+            // the same heat tile as the Modes grid: a field note is band 0 (neutral), an outsider takes the band of its distance
+            const sev = hit ? 0 : off === null ? undefined : severity(Math.abs(off));
+            // the note a missing pitch would land on: the nearest note of the WHOLE field (not only the subset)
+            const nearNote = m?.near !== null && m?.near !== undefined ? tab.field[m.near] : null;
+            const nearText = nearNote ? noteLabel(nearNote) : null;
+            const tile = (
               <span
-                key={i}
                 role="listitem"
                 className={classes.sketchNote}
                 data-found={hit}
-                data-sev={hit ? 0 : off === null ? undefined : severity(Math.abs(off))}
+                data-sev={sev}
+                data-tile={sev === undefined ? undefined : tiles.look}
+                style={
+                  sev === undefined
+                    ? undefined
+                    : sevTileStyle(tiles.look, tiles.outline, sev, tiles.scheme)
+                }
                 aria-label={
                   hit
                     ? `${noteLabel(p)}: a field note`
                     : off === null
                       ? `${noteLabel(p)}: no field note`
-                      : `${noteLabel(p)}: not in the field, nearest field note is ${Math.abs(off).toFixed(1)} c ${off >= 0 ? 'above' : 'below'}`
+                      : `${noteLabel(p)}: not in the field, nearest field note is ${nearText ?? 'unknown'}, ${Math.abs(off).toFixed(1)} c ${off >= 0 ? 'above' : 'below'}`
                 }
               >
                 <Num>{noteLabel(p)}</Num>
@@ -321,9 +334,22 @@ export function SketchRow() {
                     ? 'in field'
                     : off === null
                       ? '–'
-                      : `${off >= 0 ? '+' : '−'}${Math.abs(off).toFixed(1)} c`}
+                      : `${off >= 0 ? '+' : '−'}${Math.abs(off).toFixed(1)} c to`}
                 </Num>
+                {!hit && off !== null && nearText && <Num>{nearText}</Num>}
               </span>
+            );
+            // a missing note's tile is a distance guide, not a chord error: its tooltip always says so
+            return hit || off === null ? (
+              <Fragment key={i}>{tile}</Fragment>
+            ) : (
+              <Hint
+                key={i}
+                k="sketchNearest"
+                dynamic={`Nearest field note: ${nearText ?? 'unknown'}, ${Math.abs(off).toFixed(1)} c ${off >= 0 ? 'above' : 'below'} ${noteLabel(p)}.`}
+              >
+                {tile}
+              </Hint>
             );
           })}
         </div>

@@ -101,6 +101,30 @@ describe('help entries', () => {
     expect(TIPS.modes.text).not.toMatch(/the 5 key/);
   });
 
+  it('M4 chord chip entries: chordChip has the keys block, chordTolerance has both examples, the error entries describe the new tooltip', () => {
+    const chip = TIPS.chordChip;
+    expect(chip.legacy).toBe(false);
+    expect(chip.term).toBe('Chord chip');
+    const rows = chip.help.flatMap((b) => (b.kind === 'keys' ? b.rows.map((r) => r.key) : []));
+    expect(rows).toEqual([
+      'Click',
+      'Shift+click',
+      '{key:holdOwn}',
+      '{key:holdField}',
+      '{key:holdExact}',
+    ]);
+    expect(chip.see).toEqual(['holdToPlay', 'chordTolerance', 'chordError']);
+    const tol = TIPS.chordTolerance;
+    expect(tol.legacy).toBe(false);
+    expect(tol.help.filter((b) => b.kind === 'example')).toHaveLength(2);
+    expect(tol.text).toContain('13/11 is 26.4 c flat of 6/5');
+    expect(tol.text).toContain('27 c or more');
+    expect(tol.see).toEqual(expect.arrayContaining(['chordError', 'errorKinds']));
+    expect(TIPS.chordError.text).toContain('13/11 is −26.4 c from 6/5');
+    expect(TIPS.chordError.text).toContain('tolerance');
+    expect(TIPS.errorKinds.text).toContain('13/11 is −26.4 c from 6/5');
+  });
+
   it('the glossary lists every entry once, new form included', () => {
     expect(GLOSSARY).toHaveLength(tipKeys.length);
     expect(TIPS.playScale.text).toContain('comes back down');

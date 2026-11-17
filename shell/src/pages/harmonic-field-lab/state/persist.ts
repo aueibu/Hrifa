@@ -231,6 +231,9 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     folds: sanitizeFolds(raw.folds),
     // optional (M8i): merge same-shape chords into one card; absent or damaged = on; no write on mount
     groupShapes: bool(raw.groupShapes, d.groupShapes),
+    // optional (Scala-tools M4, H-24): the chord sort key and its Reverse toggle; absent or damaged = Default / off; no write on mount
+    chordSort: oneOf(raw.chordSort, ['default', 'root', 'simplicity'] as const, d.chordSort),
+    chordSortReverse: bool(raw.chordSortReverse, d.chordSortReverse),
     // optional (Scala-tools M1): the Pairs panel Color control; absent or damaged = Off; no write on mount
     pairsColor: oneOf(raw.pairsColor, PAIRS_COLORS, d.pairsColor),
     // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount

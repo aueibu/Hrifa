@@ -1216,8 +1216,47 @@ const entries = {
   },
   chordTolerance: {
     term: 'Tolerance (c)',
-    text: 'How far a note may be from a chord template and still count as that chord, in cents. Example: 18 c accepts 12-EDO major thirds (14 c wide of 5/4) as the 4:5:6 chord; 5 c would not.',
-    see: ['chordError'],
+    help: [
+      p(
+        'How far a note may be from a chord template and still count as that chord, in cents. A chord appears once the tolerance is at least its worst note error; hover a chord chip to see which tolerance that is.'
+      ),
+      example(
+        '18 c accepts 12-EDO major thirds (14 c wide of 5/4) as the 4:5:6 chord; 5 c would not.'
+      ),
+      example(
+        '13/11 is 26.4 c flat of 6/5, so a minor chord (10:12:15) that uses it appears at a tolerance of 27 c or more.'
+      ),
+    ],
+    see: ['chordError', 'errorKinds', 'chordChip'],
+  },
+  chordChip: {
+    term: 'Chord chip',
+    help: [
+      p('A chord the finder found in your subset. Point at it to light its notes in every view.'),
+      keys([
+        { key: 'Click', does: 'hear it and keep it highlighted' },
+        { key: 'Shift+click', does: 'make these notes the subset, the chip root as the mode root' },
+        { key: '{key:holdOwn}', does: 'hold to hear it for as long as you hold the key' },
+        {
+          key: '{key:holdField}',
+          does: 'hold to hear it on the root of the Sketch row stepper, as the field has it',
+        },
+        { key: '{key:holdExact}', does: 'hold to hear its exact ratios there' },
+      ]),
+      example('click the minor triad 10:12:15 on 5/4 to hear it and keep its notes lit.'),
+    ],
+    teaching: [
+      p(
+        'Playing a chip, or holding {key:holdOwn}, {key:holdField} or {key:holdExact} on it, also arms its template in the Sketch row (the Sketch root stays where it is).'
+      ),
+      p(
+        'A grouped chip stands for one shape on several roots: its arrow shows the roots one by one. A dashed chip is not found at this tolerance yet: click it to raise the tolerance to the one it needs.'
+      ),
+      p(
+        'A CPS chip and a Positional row have no separate exact form: {key:holdExact} plays the same notes as {key:holdField}.'
+      ),
+    ],
+    see: ['holdToPlay', 'chordTolerance', 'chordError'],
   },
   templates: {
     term: 'Chord templates',
@@ -1225,8 +1264,21 @@ const entries = {
   },
   chordError: {
     term: 'Chord: error (c)',
-    text: 'The worst-tuned note of the chord, in cents from the template; smaller is closer and 0 is exact. Color (never alone: the number is always printed, or the word exact): cyan exact, green under 5 c, yellow 5-15 c, orange 15-30 c, red 30 c or more. Example: 13.7 means a note is 13.7 c from the template.',
-    see: ['chordTolerance'],
+    help: [
+      p(
+        "The stat on a chord chip: the worst note's error in cents from the template's ideal ratio, then the average over the notes above the root in brackets. 0 is exact. The chord shows once the tolerance is at least the worst error."
+      ),
+      example('28.8 (17.6) c: the worst note is 28.8 c off its ideal, the average is 17.6 c.'),
+    ],
+    teaching: [
+      p(
+        'Hover the chip for each note on its own, such as "13/11 is −26.4 c from 6/5" or "3/2 is exact", and last the tolerance the chord appears at: the worst error rounded up to a whole cent. Minus means the note is flat of its ideal, plus sharp.'
+      ),
+      p(
+        'Color (never alone: the number is always printed, or the word exact): neutral exact, a hint of yellow under 5 c, yellow 5-15 c, orange 15-30 c, red 30 c or more. Each note takes the color of its own error.'
+      ),
+    ],
+    see: ['chordTolerance', 'errorKinds', 'chordChip'],
   },
   keysSummary: {
     term: 'Keys',
@@ -1631,6 +1683,89 @@ const entries = {
     term: 'Group shapes',
     text: 'Merge chords that have the same notes on different roots into one card. In 12-EDO with all 12 notes, the major triad is one card marked 12 roots instead of twelve. The arrow on the card shows the per-root cards. Off: every chord on every root.',
   },
+  chordSort: {
+    term: 'Sort chords',
+    help: [
+      p(
+        'Orders the cards inside each row and the roots inside a group. **Default** keeps the row order (ratio chords: smallest error first). **Root** goes from the lowest root up. **Simplicity** puts the smallest numbers first. **Reverse** flips the active order. Rows and folds stay put; dashed cards stay last.'
+      ),
+      example(
+        'in a 5-limit major scale, Root lists the minor chords D, E, A; Simplicity puts 4:5:6 before 10:12:15.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Simplicity is the Tenney height of the chord: the log2 of the product of its whole numbers in lowest terms. With Group shapes on, a group takes the place of its best member.'
+      ),
+    ],
+    see: ['groupShapes', 'chordFamily'],
+  },
+  cardNoteErrors: {
+    term: 'Note errors on chord cards',
+    help: [
+      p(
+        "A Developer option, off by default. On: a chord card gets an **Error** line with each note's own error in cents against its template (root first, the root is 0). Pitches and errors are tinted by the same bands as the stat. The hover tooltip always shows Pitches, Steps, each note's own error as a sentence, and the tolerance the chord appears at."
+      ),
+      example(
+        'a minor chord 0, 322, 673.2 c against 10:12:15 shows 0, +6.4, -28.8; the stat reads 28.8 (17.6) c: the worst error, and the average over the notes above the root.'
+      ),
+    ],
+    teaching: [
+      p(
+        'Two chords can both say 28.8 c while one is off in two notes and the other in one; the line shows where the error sits. Cards with no error data (CPS, dashed, Positional, shelf) have no Error line.'
+      ),
+    ],
+    see: ['errorKinds', 'chordTolerance', 'developerMenu'],
+  },
+  errorKinds: {
+    term: 'What each error measures',
+    help: [
+      p(
+        'Cents of error appear in several views, and they answer different questions. A chord chip compares a chord with its template. The Mode grid and the Sketch tiles compare a pitch with the nearest note of the field. The tuner strip and the Pairs grid compare with a tuning ruler.'
+      ),
+      example(
+        'a minor chord chip says 28.8 c: its notes are that far from 10:12:15. A Sketch tile says +73.6 c to 11/10: the field has no note there, and the nearest one is 11/10.'
+      ),
+    ],
+    teaching: [
+      p(
+        '**Chord chip and card.** Each note above the root: its interval from the root minus the template ideal (4:5:6 and so on). The notes come from the selected subset. The stat reads worst (average); the tooltip gives each note\'s own error ("13/11 is −26.4 c from 6/5") and the tolerance the chord appears at.'
+      ),
+      p(
+        '**Mode grid.** Each degree of a mode, placed from that mode root, minus the nearest note of the whole field. + means the field note is sharp of the pitch the mode wants.'
+      ),
+      p(
+        '**Sketch tiles.** Each pitch of the sketched chord minus the nearest note of the whole field, with that note named. A guide, not the chord error: moving the notes onto their nearest field notes would give a different chord.'
+      ),
+      p(
+        '**Tuner strip.** Each field note against the Compare to setting: 12-EDO, a picked scale, JI up to an odd limit, or m-EDO.'
+      ),
+      p(
+        '**Pairs, Error color.** Each pair interval (not each note) against the nearest ratio up to an odd limit. It takes only the odd-limit number from the tuner strip and is always JI, whatever Compare to says.'
+      ),
+      p(
+        'One color scale carries all of them: neutral for exact, a hint of yellow under 5 c, yellow to 15 c, orange to 30 c, red beyond. The scale is the same; the reference is not, so read the view first and then the color.'
+      ),
+    ],
+    see: ['chordTolerance', 'sketchNearest', 'cardNoteErrors', 'compareTo', 'modes'],
+  },
+  sketchNearest: {
+    term: 'Distance to the nearest field note',
+    help: [
+      p(
+        "A guide, not the chord's error. For a sketched note the field does not have, the tile shows how far the nearest note of the WHOLE field is (+ means that note is above), and names it. Moving the notes onto their nearest field notes would give a different chord."
+      ),
+      example(
+        '9/8 +73.6 c to 11/10: the field has no 9/8; its nearest note is 11/10, 73.6 c above.'
+      ),
+    ],
+    teaching: [
+      p(
+        "A chord card's error is a different measurement: how far the field's notes in a found chord are from the template's ideal intervals, among the selected notes. The tile compares an ideal pitch with the whole field, so it says what the field has near that pitch, not how well a chord is tuned."
+      ),
+    ],
+    see: ['errorKinds', 'chordTolerance'],
+  },
   chordLadder: {
     term: 'Tolerance ladder',
     help: [
@@ -1908,7 +2043,7 @@ const entries = {
         'How the colored tiles in the Modes grid and the Pairs panel look, in both schemes. **Tinted** (the default) is a soft hue fill with strong text. **Outlined** is a plain tile with a hue border. **Solid** is a full hue fill with black or white text. The colors are Radix Colors steps.'
       ),
       example(
-        'Tinted turns a 5-cent error into a pale cyan tile; Solid turns it into a full cyan tile.'
+        'Tinted turns a 20-cent error into a soft orange tile; Solid turns it into a full orange tile.'
       ),
     ],
     see: ['modes', 'matrixColor', 'developerMenu', 'tileOutline'],

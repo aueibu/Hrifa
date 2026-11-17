@@ -294,8 +294,8 @@ A chord type is a STEP PATTERN counted in the ACTIVE SUBSET read from its mode r
 
 - `sketchPitches(root, templateText)`: the template's notes on any root, root first then ascending, exact (monzo times the template's integer ratio; an
   irrational root keeps cents only), not reduced into the repeat. Null when the template does not parse.
-- `matchToField(field, rep, pitches, tol = 0.5)`: per pitch `{ idx, dist }`: the field note it lands on after reduction into the repeat (exact monzo, else within
-  `tol` cents), or `idx: null` and `dist` = signed cents to the nearest field note, wrapping around the repeat (NaN for an empty field).
+- `matchToField(field, rep, pitches, tol = 0.5)`: per pitch `{ idx, dist, near }`: the field note it lands on after reduction into the repeat (exact monzo, else within
+  `tol` cents), or `idx: null` and `dist` = signed cents to the nearest field note, wrapping around the repeat (NaN for an empty field); `near` is the field index of that nearest note (the found note itself when found, null for an empty field).
 - Shapes (M8a, hold 4 / 5): a chord is a template label plus a SHAPE, the intervals above its own root (root first, 1/1), so it can be placed on any note rigidly, errors included. `exactShape(templateText)` is the template's true ratios; `placeShape(root, shape)` multiplies each interval by the root; `chordShape(field, rep, rootIdx, memberIdx)` is a found chord in ROOT POSITION (a member below the root is lifted by the repeat; null when the root is not a field note); `realizeTemplate(field, rep, root, templateText, tol)` replaces each exact pitch by the nearest field note within `tol` cents (else it stays exact); `sketchShape(field, rep, sketchRoot, templateText, armed, tol, how)` gives `exactShape` for `how = 'exact'`, else the armed shape when there is one, else the template realized at the sketch root.
 
 ## Interval pairs (M1 of the Scala-tools arc, `intervalPairs.ts`)

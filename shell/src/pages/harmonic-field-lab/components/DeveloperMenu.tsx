@@ -202,6 +202,16 @@ export function DeveloperMenu() {
                 />
               </Tip>
             </Section>
+            <Section title="Chords panel">
+              <Tip k="cardNoteErrors" as="control" block>
+                <Switch
+                  size="xs"
+                  label="Show each note's error on chord cards"
+                  checked={options.cardNoteErrors}
+                  onChange={(e) => update({ cardNoteErrors: e.currentTarget.checked })}
+                />
+              </Tip>
+            </Section>
             <Section title="Composites">
               <Tip k="mergeTolerance" as="control" block>
                 <NumberInput

@@ -162,7 +162,8 @@ function ModesBody({ big }: { big?: boolean }) {
                             }
                           >
                             <span className={classes.heatSign} aria-hidden="true">
-                              {sign}
+                              {/* an exact note has no sign: a large open circle gives the neutral tile structure */}
+                              {sign || (severity(e) === 0 ? '○' : '')}
                             </span>
                             <span className={classes.heatNum} aria-hidden="true">
                               <Num>

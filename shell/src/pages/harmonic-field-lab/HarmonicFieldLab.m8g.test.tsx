@@ -60,7 +60,7 @@ describe('M8g Chords panel', () => {
     expect(template().value).toBe('pos:2-2');
     expect(rootText()).toBe(root);
     fireEvent.mouseLeave(row);
-    // the Sketch tiles: a field note is data-sev 0 (solid blue, cyan wash); an offset has its own severity
+    // the Sketch tiles: a field note is data-sev 0 (solid blue, neutral wash); an offset has its own severity
     const tiles = within(sketch()).getAllByRole('listitem');
     expect(tiles.length).toBeGreaterThan(1);
     tiles.forEach((t) => {
@@ -68,6 +68,9 @@ describe('M8g Chords panel', () => {
         expect(t.getAttribute('data-sev')).toBe('0');
       } else if (/nearest field note/.test(t.getAttribute('aria-label') ?? '')) {
         expect(Number(t.getAttribute('data-sev'))).toBeGreaterThan(0);
+        // the sign is written against its value, with no space: `+73.6 c to` / `−73.6 c to`
+        expect(t.textContent).toMatch(/[+−]\d+\.\d c to/);
+        expect(t.textContent).not.toMatch(/[+−] \d/);
       }
     });
     // hold 4 on a CPS chip arms its template and leaves the root

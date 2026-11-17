@@ -34,8 +34,18 @@ const SEV_LEVEL: Record<TileLook, TileLevel> = {
   solid: 'strong',
 };
 
-/** The Modes severities, mild to bad, as Radix hues. */
-export const SEV_HUES: readonly RadixHue[] = ['cyan', 'green', 'yellow', 'orange', 'red'];
+/**
+ * The error bands (M4c, H-25), exact to bad, as ONE warm heat family: band 0 (exact) is neutral (`null`: no hue, plain
+ * text, untinted tile), band 1 (under 5 c) is a faint yellow hint (`SEV1_MIX` percent), bands 2 to 4 are full yellow,
+ * orange and red. Never cyan or green.
+ */
+export const SEV_HUES: readonly (RadixHue | null)[] = [null, 'yellow', 'yellow', 'orange', 'red'];
+
+/** The Radix step of the worst band's (30 c or more, red) Tinted fill: lifted from the common step 4 so it reads hot, not deep. Tune by eye (6 or 7). */
+export const RED_TINT_STEP = 6;
+
+/** Band 1's yellow share (percent): text is `--text` mixed with yellow step 11, the tile the surface mixed with yellow step 4. */
+export const SEV1_MIX = { text: 35, fill: 30 } as const;
 
 /** The Pairs wheel: positions run through these hues and back to the first. */
 export const WHEEL_ORDER: readonly RadixHue[] = RADIX_HUES;
@@ -232,6 +242,67 @@ export function tileStyle(c: TileColors): CSSProperties {
   } as CSSProperties;
 }
 
+const NEUTRAL_BORDER = 'var(--control-border)';
+
+/** The neutral (exact) tile fill per scheme: slightly lighter than the screen it sits on; tune the dark percentage by eye. */
+const NEUTRAL_LIFT: Record<TileScheme, string> = {
+  dark: 'color-mix(in srgb, var(--text) 14%, transparent)',
+  light: 'var(--panel)',
+};
+
+/** The colors of an error-band tile (0 to 4; see `SEV_HUES`). */
+export function sevTileColors(
+  look: TileLook,
+  outline: boolean,
+  sev: number,
+  scheme: TileScheme
+): TileColors {
+  const i = Math.min(SEV_HUES.length - 1, Math.max(0, sev));
+  const h = SEV_HUES[i];
+  if (h) {
+    const c = tileColors(look, outline, SEV_LEVEL[look], { a: h }, scheme);
+    if (i === 4 && look === 'tinted') {
+      // the worst band's tinted fill is lifted from step 4 (a deep wine in dark mode) to `RED_TINT_STEP`
+      return { ...c, fill: step({ a: h }, RED_TINT_STEP) };
+    }
+    if (i !== 1) {
+      return c;
+    }
+    // band 1: a faint yellow hint over the surface (a transparent mix lets any surface show through)
+    const text = `color-mix(in srgb, var(--rx-yellow-11) ${SEV1_MIX.text}%, var(--text))`;
+    const fill = `color-mix(in srgb, var(--rx-yellow-4) ${SEV1_MIX.fill}%, transparent)`;
+    const bd = `color-mix(in srgb, var(--rx-yellow-8) ${SEV1_MIX.text}%, ${NEUTRAL_BORDER})`;
+    if (look === 'solid') {
+      return {
+        ...c,
+        fill: `color-mix(in srgb, var(--rx-yellow-4) ${SEV1_MIX.fill}%, var(--panel-slot))`,
+        border: outline ? bd : 'transparent',
+        text,
+      };
+    }
+    return {
+      ...c,
+      fill: look === 'outlined' ? 'var(--panel-slot)' : fill,
+      border: look === 'outlined' || outline ? bd : 'transparent',
+      text,
+      bg: undefined,
+      dimBg: undefined,
+    };
+  }
+  // band 0: the neutral tile (no hue): normal text and border; a fill a little LIGHTER than the surface under it, so the tile
+  // does not blend into the screen (dark: a few percent of the text color over any surface; light: the panel's own white)
+  const plain = NEUTRAL_LIFT[scheme];
+  return {
+    fill: plain,
+    border: look === 'outlined' || outline ? NEUTRAL_BORDER : 'transparent',
+    text: 'var(--text)',
+    dimFill: plain,
+    dimBorder: look === 'outlined' || outline ? NEUTRAL_BORDER : 'transparent',
+    dimText: 'var(--text-muted)',
+    addedBorder: NEUTRAL_BORDER,
+  };
+}
+
 /** A Modes severity tile (0 to 4). */
 export function sevTileStyle(
   look: TileLook,
@@ -239,6 +310,5 @@ export function sevTileStyle(
   sev: number,
   scheme: TileScheme
 ): CSSProperties {
-  const hue = { a: SEV_HUES[Math.min(SEV_HUES.length - 1, Math.max(0, sev))] };
-  return tileStyle(tileColors(look, outline, SEV_LEVEL[look], hue, scheme));
+  return tileStyle(sevTileColors(look, outline, sev, scheme));
 }

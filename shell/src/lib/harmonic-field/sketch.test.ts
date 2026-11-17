@@ -32,17 +32,20 @@ describe('matchToField', () => {
       ratioNote(9, 4),
       { m: null, c: 1200 - 10 },
     ]);
-    expect(m[0]).toEqual({ idx: 0, dist: 0 });
+    expect(m[0]).toEqual({ idx: 0, dist: 0, near: 0 });
     // 9/4 is not a field note: nearest is 5/4 reduced from 9/8 is 203.9 c; 9/8 wraps (not 5/4)
     expect(m[1].idx).toBeNull();
     expect(m[1].dist).toBeCloseTo(386.3137 - 203.91, 2);
+    expect(m[1].near).toBe(1); // 5/4
     // 1190 c is 10 c below the repeat: nearest field note is 1/1 at 1200 (wrapped), +10 c
     expect(m[2].idx).toBeNull();
     expect(m[2].dist).toBeCloseTo(10, 6);
+    expect(m[2].near).toBe(0); // 1/1, one repeat up
   });
   it('an empty field matches nothing', () => {
     const m = matchToField([], rep, [ratioNote(3, 2)]);
     expect(m[0].idx).toBeNull();
     expect(Number.isNaN(m[0].dist)).toBe(true);
+    expect(m[0].near).toBeNull();
   });
 });
