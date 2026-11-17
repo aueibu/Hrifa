@@ -2,12 +2,14 @@
  * A1 (H-31): the Sound settings popover's reverb controls, the impulse loader, the Developer toggle for the partials link, and
  * the engine wiring through the page. The numbers are the rows of `arcs/harmonic-field-lab/SCENARIOS.A1.md`. jsdom has no real audio: these
  * tests prove the wiring against the fake context; what the reverb and the partials SOUND like is judged by ear.
- * (Written in the A1 build without being run: the human asked for no test runs while the sound is being tuned.)
+ * The setup file gives every test a fresh fake IndexedDB, so a loaded impulse is really stored (and read back) here; the
+ * no-storage case sets `indexedDB` to undefined.
  */
-import { act, fireEvent, render, screen } from '@test-utils';
+import { act, fireEvent, render, screen, waitFor } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeBuffer, FakeCtx } from './audio/fakeContext';
+import { IMPULSE_KEY } from './audio/impulseStorage';
 import { resetImpulseStore } from './audio/impulseStore';
 import { useLab } from './components/ui';
 import type { Lab } from './state/context';
@@ -50,6 +52,25 @@ afterEach(() => {
   resetImpulseStore();
 });
 
+/**
+ * The record the lab keeps in the fake IndexedDB, read directly: `loadImpulse` cannot read it back here, because the fake's
+ * structured clone makes Float32Arrays of another realm than jsdom's, which fail its `instanceof` check (a real browser has one realm).
+ */
+const storedRecord = () =>
+  new Promise<{ name: string } | undefined>((resolve, reject) => {
+    const open = indexedDB.open('hrifa.harmonic-field-lab.audio', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('kv');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const get = db.transaction('kv').objectStore('kv').get(IMPULSE_KEY);
+      get.onerror = () => reject(get.error);
+      get.onsuccess = () => {
+        db.close();
+        resolve(get.result as { name: string } | undefined);
+      };
+    };
+  });
 const key = (k: string, type: 'keyDown' | 'keyUp' = 'keyDown') =>
   fireEvent[type](document.body, { key: k, code: `Key${k.toUpperCase()}` });
 const openSound = () => fireEvent.click(screen.getByRole('button', { name: 'Sound settings' }));
@@ -146,7 +167,8 @@ describe('loading an impulse', () => {
     render(<HarmonicFieldLabPage />);
     openSound();
     await pick(file('room.wav', 1000));
-    expect(preset().value).toBe('custom');
+    // the save goes through the (fake) IndexedDB, which finishes on later timers: the preset becomes Custom a moment after the pick
+    await waitFor(() => expect(preset().value).toBe('custom'));
     expect([...preset().options].find((o) => o.value === 'custom')!.textContent).toBe(
       'Custom: room.wav (2.4 s)'
     );
@@ -155,13 +177,23 @@ describe('loading an impulse', () => {
     const c = contexts.at(-1)!;
     expect((c.convolvers.at(-1)!.buffer as FakeBuffer).numberOfChannels).toBe(2);
     expect((c.convolvers.at(-1)!.buffer as FakeBuffer).length).toBe(Math.round(2.4 * 48000));
-    // jsdom has no IndexedDB, so the impulse works for this visit only and the popover says so
-    expect(screen.getByText(/Used for this visit only/)).toBeInTheDocument();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Remove custom impulse' }));
-    });
-    expect(preset().value).toBe('hall');
+    // the impulse is kept in IndexedDB (row 7), so no "this visit only" note
+    expect(screen.queryByText(/Used for this visit only/)).toBeNull();
+    expect((await storedRecord())?.name).toBe('room.wav');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove custom impulse' }));
+    await waitFor(() => expect(preset().value).toBe('hall'));
     expect((stored(KEY_SETTINGS) as { reverb: { preset: string } }).reverb.preset).toBe('hall');
+    await waitFor(async () => expect(await storedRecord()).toBeUndefined());
+  });
+
+  it('rows 5 and 8 without browser storage: the file still becomes Custom for this visit and the popover says so', async () => {
+    (globalThis as { indexedDB?: unknown }).indexedDB = undefined;
+    decoded = new FakeBuffer(2, Math.round(2.4 * 48000), 48000);
+    render(<HarmonicFieldLabPage />);
+    openSound();
+    await pick(file('room.wav', 1000));
+    await waitFor(() => expect(preset().value).toBe('custom'));
+    expect(screen.getByText(/Used for this visit only/)).toBeInTheDocument();
   });
 
   it('row 6: a file over 8 MB, a file over 12 s and a file that is not audio are each refused with one line, and the reverb stays', async () => {
@@ -169,11 +201,12 @@ describe('loading an impulse', () => {
     openSound();
     await pick(file('big.wav', 9 * 1024 * 1024));
     expect(screen.getByRole('alert')).toHaveTextContent('Larger than 8 MB');
+    // a file over 8 MB is refused before it is read, so no context exists yet; the next file's read makes it (with this buffer)
+    expect(contexts).toHaveLength(0);
     decoded = new FakeBuffer(1, 13 * 48000, 48000);
-    // the context is made when the file is read (the first load made it without a buffer): make a new one
-    contexts.at(-1)!.decoded = decoded;
     await pick(file('long.wav', 1000));
     expect(screen.getByRole('alert')).toHaveTextContent('Longer than 12 s');
+    // the same context decodes the next file: nothing it can decode
     contexts.at(-1)!.decoded = null;
     await pick(file('notes.txt', 100));
     expect(screen.getByRole('alert')).toHaveTextContent('Not an audio file');
@@ -187,13 +220,20 @@ describe('loading an impulse', () => {
       JSON.stringify({ reverb: { preset: 'custom', mix: 0.5 } })
     );
     render(<HarmonicFieldLabPage />);
-    await act(async () => {
-      await Promise.resolve();
-    });
     openSound();
+    // the (fake) IndexedDB holds no impulse, so the read finds nothing (after a few timers) and the note appears; the wait is
+    // longer than the 1 s default because the page's first render in a run is slow (the test passes alone, and after other tests only with the longer wait)
+    expect(
+      await screen.findByText(
+        'The saved impulse could not be read, so the reverb is Hall.',
+        {},
+        { timeout: 5000 }
+      )
+    ).toBeInTheDocument();
     expect(preset().value).toBe('hall');
-    expect(screen.getByText(/could not be read/)).toBeInTheDocument();
-    expect((stored(KEY_SETTINGS) as { reverb: { preset: string } }).reverb.preset).toBe('hall');
+    await waitFor(() =>
+      expect((stored(KEY_SETTINGS) as { reverb: { preset: string } }).reverb.preset).toBe('hall')
+    );
   });
 });
 

@@ -244,7 +244,7 @@ function EntryRow({ e, match, ctx }: { e: LibraryEntry; match: boolean; ctx: Ctx
   // a folding row cannot be checked (the finder skips it here) but it can be added, and it still draws and sounds
   const checkOff = e.folds ? FOLD_REASON : ctx.inRange ? undefined : RANGE_HINT;
   return (
-    <Fragment>
+    <>
       <tr
         className={classes.row}
         data-folds={e.folds}
@@ -316,7 +316,7 @@ function EntryRow({ e, match, ctx }: { e: LibraryEntry; match: boolean; ctx: Ctx
           </td>
         </tr>
       )}
-    </Fragment>
+    </>
   );
 }
 

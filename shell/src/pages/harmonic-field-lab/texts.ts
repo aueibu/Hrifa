@@ -2045,7 +2045,7 @@ const entries = {
     term: 'In your subset: found on N roots',
     help: [
       p(
-        "Every root where the chord is found in your subset at your tolerance, low to high, with the chord's Worst error (the largest) and Avg error (the mean over the notes except the root), in cents. The numbers are the same as on the chord cards: the finder's rule on your subset. Nothing is added or checked by looking."
+        "Every root where the chord is found in your subset at your tolerance, low to high, with the chord's Worst error (the largest) and Avg error (the mean over the notes except the root), in cents. The numbers are the same as on the chord cards: the finder's rule on your subset. Looking adds and checks nothing."
       ),
       keys([
         {

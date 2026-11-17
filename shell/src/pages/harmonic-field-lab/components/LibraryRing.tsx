@@ -19,7 +19,7 @@
  * absolute (a pitch is where it sits above 1/1), so the table names each chord note by its pitch ratio too; that is in
  * `readoutRows`, the one place to change it. The data comes from the lib's `libraryRing` (see `state/libraryPreview.ts`).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { SegmentedControl, VisuallyHidden } from '@mantine/core';
 import type { LibraryRing, RingDot as LibRingDot } from '../../../lib/harmonic-field';
 import { fitList } from '../state/fitList';

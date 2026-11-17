@@ -52,7 +52,7 @@ The sound is always the chord's EXACT ratios from that root's pitch (not the nea
 | 16 | 3 rows checked | Look at the buttons | `Clear checks (3)`. 0 checked: the button is not shown. |
 | 17 | 3 rows checked, search and filters set, some shapes open | Close the dialog, reopen it | Same checks, filters, search text and open shapes. Check results are recomputed from the subset as it is now. |
 | 18 | Same, reload the page | Reopen | The checks, filters, search and open shapes are still there (stored, see Storage). The dialog itself is closed. |
-| 19 | 3 rows checked | Turn on `Checked only` | Only the shapes holding a checked row are listed, each opened, with only the checked rows shown plus a heading count `· 1 checked`; the summary line reads `3 checked`. |
+| 19 | 3 rows checked | Turn on `Checked only` | Only the shapes holding a checked row are listed, each opened, with only the checked rows shown plus a heading count `· 1 checked` (a shape with ONE entry is a plain row at the base level, with no heading, since M7 close); the summary line reads `3 checked`. |
 | 20 | A checked row whose chord is no longer in the library (cannot happen today) | Reopen | Unknown keys are dropped silently. |
 | 21 | Add a row while it is checked | Look | Unchanged from M7 (row says `in your templates`, still checked). |
 

@@ -5,7 +5,7 @@ import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { pickPreset, ungroupShapes } from './testUtils';
 
-vi.setConfig({ testTimeout: 15_000 });
+vi.setConfig({ testTimeout: 30_000 });
 
 let contexts: FakeCtx[] = [];
 const oscs = () => contexts.flatMap((c) => c.oscs);

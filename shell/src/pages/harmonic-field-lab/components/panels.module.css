@@ -2658,7 +2658,7 @@
 /* the wrap arrow sits in the top right corner, small, above the line of the number (the column width keeps 0.75ch of room beside the text, state/pairsWidth.ts) */
 .mxWrap {
   color: currentcolor;
-  font-size: 0.65em;
+  font-size: var(--lab-fs-tiny);
   line-height: 1;
   pointer-events: none;
   position: absolute;

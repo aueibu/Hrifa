@@ -71,7 +71,7 @@ export function ReverbControls() {
           value={Math.round(reverb.mix * 100)}
           onChange={(v) => dispatch({ type: 'ui', patch: { reverb: { ...reverb, mix: v / 100 } } })}
           label={null}
-          aria-label="Reverb mix"
+          thumbLabel="Reverb mix"
           disabled={off || shown === 'dry'}
         />
       </Tip>

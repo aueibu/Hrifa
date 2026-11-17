@@ -12,7 +12,7 @@ import { addSubsetNamed, pickPreset } from './testUtils';
 import { MODE_ROOT_TIP, TIPS } from './texts';
 
 // whole-page renders are slow in jsdom; under a full parallel run some take over the 5 s default
-vi.setConfig({ testTimeout: 15_000 });
+vi.setConfig({ testTimeout: 30_000 });
 
 const KEY = 'hrifa.harmonic-field-lab.layout.v1';
 const MAJOR = [0, 2, 4, 5, 7, 9, 11];

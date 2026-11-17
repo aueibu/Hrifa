@@ -3,8 +3,10 @@
  * SCENARIOS.M7c.md (field = the 5-limit major scale, tolerance 0, unless a test says otherwise); each chord note is named by
  * its ABSOLUTE pitch in the readout. The ring is the main ring's own component (`PitchRing`) at radius 181: its dots, labels and
  * polygons are the main ring's marks (field dots carry `data-kind="field"` and `data-index` from the library's `dotProps`; the
- * lit ones have the `dotLit` class), and the chord's own marks (outline rings, ghosts, flags, inside labels) are the overlay's
- * (`ring-dot`, `ring-flag`, `ring-dot-label`). jsdom applies no CSS and does no layout, so what these tests cannot prove: the
+ * lit ones have the `dotLit` class; an exact chord note is its field dot with the blue chord ring, `data-chord`), and what the
+ * chord adds is the overlay's: for a note that is not exact a flag (pole `ring-flag-pole`, disc `ring-flag-corner`, arc
+ * `ring-flag`, pinhead `ring-flag-head`) and its label inside the ring (`ring-dot-label`); no dot and no dashed circle. The
+ * list is one table (a shape with one entry has no heading row). jsdom applies no CSS and does no layout, so what these tests cannot prove: the
  * ring's geometry (1/1 at the top, clockwise, the flag's drawn size, where a label ends up), the real colors, the panel beside
  * the list and the height the list gives up, how the muted note looks, and how hold 1 sounds. Those are checked by eye.
  */
@@ -20,12 +22,19 @@ import type { Action } from '../state/labState';
 import { compareNotes } from '../state/libraryPreview';
 import { ChordsPanel } from './ChordsPanel';
 import {
+  FLAG_W,
   LIBRARY_RING_R,
   LibraryRingPanel,
   MIN_FLAG_DEG,
+  POLE_FULL_C,
+  POLE_HEAD_R,
+  POLE_MAX,
+  POLE_MIN,
   READOUT_COLUMNS,
   RING_EMPTY_TEXT,
   flagDegrees,
+  poleLength,
+  polePoints,
   readoutRows,
 } from './LibraryRing';
 import { RING_DOT_R, RING_SOUND_R, markScaleFor } from './ringMarks';
@@ -96,14 +105,19 @@ async function open(setup: Action[] = major5()) {
   return screen.findByRole('dialog', { name: 'Chord library' });
 }
 
-/** Searches, opens every shape found, and returns the row of exactly this chord text (plain DOM queries: role queries are slow with 313 headings). */
+/**
+ * Searches, opens every shape found, and returns the row of exactly this chord text (plain DOM queries: role queries are slow with
+ * 313 shapes). The list is one table: a shape with several entries has a heading row (opened here), a shape with one entry is
+ * listed at the base level with no heading.
+ */
 function rowOf(dialog: HTMLElement, text: string, query = text): HTMLElement {
   search(dialog, query);
   for (const b of dialog.querySelectorAll('button[aria-expanded="false"]')) {
     fireEvent.click(b);
   }
+  // the first cell holds the ratio alone (the name is in the next cell: no space between them in the row's text)
   const row = [...dialog.querySelectorAll('tr[data-folds]')].find(
-    (r) => textOf(r).split(' ')[0] === text
+    (r) => textOf(r.querySelector('td')!) === text
   );
   if (!row) {
     throw new Error(`no row ${text}`);
@@ -130,13 +144,25 @@ const dots = (dialog: HTMLElement) => [
 const flags = (dialog: HTMLElement) => [
   ...panel(dialog).querySelectorAll<SVGElement>('[data-testid="ring-flag"]'),
 ];
-/** The chord's dots by direction: the exact ones (the field dots with the blue chord ring) first, then the overlay's ghosts. */
+/**
+ * The chord's notes by direction: the exact ones (the field dots with the main ring's blue chord ring) first, then the notes that
+ * are not exact, which have no dot of their own: each is a flag (an empty comparison set draws a plain dot instead).
+ */
 const dirs = (dialog: HTMLElement) => [
   ...[...panel(dialog).querySelectorAll('[data-kind="field"][data-chord="true"]')].map(
     () => 'exact'
   ),
+  ...flags(dialog).map((f) => f.getAttribute('data-direction')),
   ...dots(dialog).map((d) => d.getAttribute('data-direction')),
 ];
+/** The rows of the roots table, a row's cells joined with a space (`5/4 0.0 0.0`; the cells have no space between them in the text). */
+const rootRowsOf = (root: ParentNode) => [
+  ...root.querySelectorAll<HTMLElement>('[data-testid="roots-row"]'),
+];
+const rootCells = (r: HTMLElement) => [...r.querySelectorAll('td')].map(textOf).join(' ');
+/** The roots row of this root (its first cell), or undefined. */
+const rootRowFor = (root: ParentNode, ratio: string) =>
+  rootRowsOf(root).find((r) => textOf(r.querySelector('td')!) === ratio) as HTMLElement;
 const deg = (f: SVGElement) => Number(f.getAttribute('data-degrees'));
 
 describe('the flag and the readout (pure)', () => {
@@ -167,6 +193,11 @@ describe('the flag and the readout (pure)', () => {
       { chord: '1, 2', pitch: '1/1', near: '1/1', error: 'exact', direction: 'exact', band: 0 },
       { chord: '3', pitch: '3/2', near: '3/2', error: 'exact', direction: 'exact', band: 0 },
     ]);
+    // a merged octave label is a comma list; one that does not fit is cut to `1, 2 +3` and keeps the whole list for its tooltip
+    const many = libraryRing('1:2:4:8:16', field[0], rep, field)!;
+    const [merged] = readoutRows(many);
+    expect(merged.chord).toBe('1, 2 +3');
+    expect(merged.chordFull).toBe('1, 2, 4, 8, 16');
     // an empty comparison set: nothing to compare with
     const none = libraryRing('4:5:6', field[0], rep, [])!;
     expect(readoutRows(none).map((r) => [r.near, r.error, r.direction])).toEqual([
@@ -252,7 +283,7 @@ const isSolid = (d: Element) => (attr(d, 'class') ?? '').includes('dotOn');
 const isHollow = (d: Element) => (attr(d, 'class') ?? '').includes('dotOff');
 
 describe('the ring drawing (the main ring component at a larger radius)', () => {
-  it('the marks scale with the ring: field dots r 5.5 x k, the chord marks r 8 x k and the outline r 12 x k', () => {
+  it('the marks scale with the ring: field dots r 5.5 x k; a not exact note is a flag (pole, corner disc, arc, pinhead), no dot and no dashed circle', () => {
     expect(RING_DOT_R).toBe(5.5);
     expect(RING_SOUND_R).toBe(8);
     expect(K).toBeCloseTo(181 / 104, 10);
@@ -261,13 +292,52 @@ describe('the ring drawing (the main ring component at a larger radius)', () => 
       expect(attr(f, 'r')).toBe(String(RING_DOT_R * K));
     }
     // an exact note keeps the field note's own dot and gets the main ring's blue ring (`data-chord`, no extra outline mark); a
-    // note that is not exact is the r 8 x k dashed ghost
-    const chord = [...root.querySelectorAll('[data-testid="ring-dot"]')];
-    expect(chord.map((d) => attr(d, 'r'))).toEqual([String(RING_SOUND_R * K)]);
-    expect(chord.map((d) => attr(d, 'data-direction'))).toEqual(['above']);
-    expect(chord.map((d) => attr(d, 'data-look'))).toEqual(['ghost']);
-    expect(exactDots(root)).toHaveLength(3);
+    // note that is not exact (7/4) has no dot and no dashed circle of its own: its flag marks it
+    expect(root.querySelectorAll('[data-testid="ring-dot"]')).toHaveLength(0);
     expect(root.querySelector('circle[class*="selRing"]')).toBeNull();
+    expect(exactDots(root)).toHaveLength(3);
+    // 7/4 is +84.5 c above 5/3: one flag, orange (above), its four parts
+    const part = (id: string) => [...root.querySelectorAll<SVGElement>(`[data-testid="${id}"]`)];
+    for (const id of ['ring-flag', 'ring-flag-pole', 'ring-flag-corner', 'ring-flag-head']) {
+      expect(part(id).map((p) => attr(p, 'data-direction'))).toEqual(['above']);
+    }
+    // the flag's units are not scaled with the ring: the corner disc is half the flag's width, the pinhead 3 units
+    expect(attr(part('ring-flag-corner')[0], 'r')).toBe(String(FLAG_W / 2));
+    expect(attr(part('ring-flag-head')[0], 'r')).toBe(String(POLE_HEAD_R));
+    // the pole stands outward from the ring line: its pinhead's center is poleLength(84.5) = 25 units beyond the ring line
+    const svg = root.querySelector('svg[role="group"]')!;
+    const ringCircle = svg.querySelector('circle')!;
+    const cx = Number(attr(ringCircle, 'cx'));
+    const cy = Number(attr(ringCircle, 'cy'));
+    const head = part('ring-flag-head')[0];
+    expect(Math.hypot(Number(attr(head, 'cx')) - cx, Number(attr(head, 'cy')) - cy)).toBeCloseTo(
+      LIBRARY_RING_R + poleLength(84.5),
+      1
+    );
+    expect(poleLength(84.5)).toBe(POLE_MAX);
+  });
+
+  it('the flag pole is 9 to 25 units long: proportional to the error, 25 at 30 c, never under 9 or over 25', () => {
+    expect([POLE_MIN, POLE_MAX, POLE_FULL_C]).toEqual([9, 25, 30]);
+    expect(poleLength(2)).toBe(POLE_MIN);
+    expect(poleLength(-2)).toBe(POLE_MIN);
+    expect(poleLength(15)).toBeCloseTo(12.5, 10);
+    expect(poleLength(21.5)).toBeCloseTo(17.92, 2);
+    expect(poleLength(30)).toBe(POLE_MAX);
+    expect(poleLength(-84.5)).toBe(POLE_MAX);
+    // the pole is a polygon that ends at the pinhead's edge (the head's own radius short of poleLength) and starts on the ring line
+    const R = 181;
+    const C = 227;
+    const pts = polePoints(600, 15, 1200, C, R)
+      .split(' ')
+      .map((p) => p.split(',').map(Number));
+    expect(pts).toHaveLength(4);
+    const dist = pts.map(([x, y]) => Math.hypot(x - C, y - C));
+    // the two inner corners are at the ring line (a hair more: the pole is as wide as the flag there), the two outer ones at the head's edge
+    expect(dist[0]).toBeGreaterThanOrEqual(R);
+    expect(dist[3]).toBeGreaterThanOrEqual(R);
+    expect(dist[1]).toBeCloseTo(R + poleLength(15) - POLE_HEAD_R, 1);
+    expect(dist[2]).toBeCloseTo(R + poleLength(15) - POLE_HEAD_R, 1);
   });
 
   it('only radii scale: the strokes and dashes are the main ring values (no --ring-k, no calc)', () => {
@@ -278,9 +348,9 @@ describe('the ring drawing (the main ring component at a larger radius)', () => 
     expect(css).not.toContain('--ring-k');
     expect(css).toContain('stroke-width: 1.5;');
     expect(css).toContain('stroke-dasharray: 3 2.5;');
+    // the ring svg is sized by the panel's CSS (`.ring`, width 100%), not by an inline width or a custom property
     const { root } = drawn({});
-    expect(root.querySelector('svg[role="group"]')!.hasAttribute('style')).toBe(true);
-    expect(attr(root.querySelector('svg[role="group"]')!, 'style')).not.toContain('--ring-k');
+    expect(attr(root.querySelector('svg[role="group"]')!, 'style') ?? '').not.toContain('--ring-k');
   });
 
   it('the polygon outlines stop at the dot edges (trimmed edges), the main ring polygons are whole', () => {
@@ -379,8 +449,11 @@ describe('the ring drawing (the main ring component at a larger radius)', () => 
     const { root } = drawn({});
     const d = fieldDots(root)[5];
     const before = [...lab.selected];
+    expect(root.querySelector('circle[class*="selRing"]')).toBeNull();
     fireEvent.mouseEnter(d);
     fireEvent.focus(d);
+    // the dot's hover is the panel's own state (the `hover` prop): the main ring's outline is drawn, the lab's hover is untouched
+    expect(root.querySelectorAll('circle[class*="selRing"]')).toHaveLength(1);
     expect(lab.hover).toBeNull();
     fireEvent.click(d);
     fireEvent.keyDown(d, { key: 'Enter' });
@@ -568,6 +641,10 @@ describe('the ring panel in the dialog', () => {
     expect(exactDots(panel(dialog))).toHaveLength(2);
     expect(dots(dialog)).toHaveLength(0);
     expect(readout(dialog)).toEqual(['1, 2 | 1/1 | 1/1 | exact', '3 | 3/2 | 3/2 | exact']);
+    // the folding-chord note line is gone: no note under the row, none in the roots region
+    expect(dialog.querySelector('[data-testid="fold-note"]')).toBeNull();
+    expect(within(dialog).queryByText(/Octave notes merge in this repeat/)).toBeNull();
+    expect(within(dialog).queryByTestId('roots-message')).toBeNull();
   });
 });
 
@@ -575,14 +652,11 @@ describe('the ring panel in the dialog', () => {
 describe('the roots table (M7d)', () => {
   const tol = (n: number): Action[] => [...major5(), { type: 'ui', patch: { tol: n } }];
   const minor = (dialog: HTMLElement) => rowOf(dialog, '10:12:15', 'minor triad');
-  const rootRows = (dialog: HTMLElement) => [
-    ...panel(dialog).querySelectorAll<HTMLElement>('[data-testid="roots-row"]'),
-  ];
-  const rootTexts = (dialog: HTMLElement) => rootRows(dialog).map(textOf);
+  const rootRows = (dialog: HTMLElement) => rootRowsOf(panel(dialog));
+  const rootTexts = (dialog: HTMLElement) => rootRows(dialog).map(rootCells);
   const title = (dialog: HTMLElement) => within(dialog).getByTestId('roots-title');
   const rootOf = (dialog: HTMLElement) => within(dialog).getByTestId('ring-root');
-  const rowFor = (dialog: HTMLElement, root: string) =>
-    rootRows(dialog).find((r) => textOf(r).startsWith(`${root} `)) as HTMLElement;
+  const rowFor = (dialog: HTMLElement, root: string) => rootRowFor(panel(dialog), root);
 
   it('row 1: tolerance 0, Minor Triad: two roots, both 0.0, the ring from the lowest (5/4)', async () => {
     const dialog = await open();
@@ -733,13 +807,14 @@ describe('the roots table (M7d)', () => {
     expect(within(dialog).queryByRole('table', { name: 'Roots' })).toBeNull();
   });
 
-  it('row 10: a folding chord shows the folding note, no table', async () => {
+  it('row 10: a folding chord shows nothing in the roots region (the folding note was removed), no table; the ring still draws', async () => {
     const dialog = await open();
     fireEvent.mouseEnter(rowOf(dialog, '1:2:3', 'Triunisonus'));
-    expect(within(dialog).getByTestId('roots-message')).toHaveTextContent(
-      'Octave notes merge in this repeat; the finder skips it here.'
-    );
+    expect(within(dialog).queryByTestId('roots-message')).toBeNull();
+    expect(within(dialog).queryByText(/Octave notes merge in this repeat/)).toBeNull();
     expect(within(dialog).queryByRole('table', { name: 'Roots' })).toBeNull();
+    expect(within(dialog).queryByTestId('library-roots')).toBeNull();
+    expect(readout(dialog)).toHaveLength(2);
   });
 
   it('no chord shown: no roots table, the empty text stays', async () => {
@@ -845,10 +920,7 @@ describe('hold 1, 4 and 5 on a library chord (M7e)', () => {
   const low = (list: number[]) => Math.round(cents(list[0], C4));
   const tol = (n: number): Action[] => [...major5(), { type: 'ui', patch: { tol: n } }];
   const minor = (dialog: HTMLElement) => rowOf(dialog, '10:12:15', 'minor triad');
-  const rootRow = (dialog: HTMLElement, root: string) =>
-    [...panel(dialog).querySelectorAll<HTMLElement>('[data-testid="roots-row"]')].find((r) =>
-      textOf(r).startsWith(`${root} `)
-    ) as HTMLElement;
+  const rootRow = (dialog: HTMLElement, root: string) => rootRowFor(panel(dialog), root);
   /** Holds `key`, returns what sounds, and lets it go. */
   const hold = (el: Element, key: string): number[] => {
     fireEvent.keyDown(el, { key });
@@ -1009,8 +1081,10 @@ describe('hold 1, 4 and 5 on a library chord (M7e)', () => {
     expect(attr(mark, 'r')).toBe(String(RING_SOUND_R * K));
     const ghost = panel(dialog).querySelector('[data-testid="ring-ghost"]')!;
     expect(attr(ghost, 'r')).toBe(String(RING_SOUND_R * K));
-    // the chord's own marks stay (the three exact notes carry the blue chord ring), and the sounding ghost is drawn after the overlay (over it)
-    expect(exactDots(panel(dialog))).toHaveLength(3);
+    // the chord's own marks stay (the shown chord is 10:12:15 from 9/8: its root is the one exact note, the blue chord ring on 9/8's
+    // dot; 6/5 and 3/2 are 21.5 c off their nearest notes, so each is a flag), and the sounding ghost is drawn after the overlay (over it)
+    expect(exactDots(panel(dialog))).toHaveLength(1);
+    expect(flags(dialog)).toHaveLength(2);
     const all = [...panel(dialog).querySelectorAll('svg *')];
     expect(all.indexOf(ghost)).toBeGreaterThan(
       all.indexOf(panel(dialog).querySelector('[data-testid="ring-overlay"]')!)

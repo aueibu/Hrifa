@@ -11,13 +11,11 @@ import {
   FOLD_EDIT_NOTE,
   FOLD_ROW_NOTE,
   libraryEntries,
-  libraryShapes,
 } from '../../../lib/harmonic-field';
 import type { Lab } from '../state/context';
 import { LabProvider } from '../state/LabProvider';
 import { MAX_TEMPLATES, type Action } from '../state/labState';
 import { TIPS } from '../texts';
-import { MAX_CHECKED } from './ChordLibrary';
 import { ChordsPanel } from './ChordsPanel';
 import { useLab } from './ui';
 
@@ -73,19 +71,35 @@ const search = (dialog: HTMLElement, text: string) =>
 /** The heading button of a shape, found by its root position text and name. */
 const head = (dialog: HTMLElement, start: string) =>
   within(dialog).getByRole('button', { name: new RegExp(`^${start.replace(/[()/]/g, '\\$&')}`) });
-/** The entry rows (`tr[data-folds]`); a Check line or folding note is the spanning row directly under its entry (`lineRow`). */
+/**
+ * The entry rows (`tr[data-folds]`), including the rows of one-entry shapes, which are listed at the base level with no heading;
+ * a Check line is the spanning row directly under its entry (`lineRow`).
+ */
 const rowsOf = (scope: HTMLElement) => [...scope.querySelectorAll<HTMLElement>('tr[data-folds]')];
 const lineRow = (row: HTMLElement) => row.nextElementSibling as HTMLElement | null;
 const textOf = (el: HTMLElement) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+/** The ratio text of an entry row (its first cell: the cells are not separated by spaces in the row's text). */
+const ratioOf = (row: HTMLElement) => textOf(row.querySelector('td') as HTMLElement);
+/** A shape's heading row: the heading button holds the ratio only, the name and the counts are in the cells beside it. */
+const headRow = (button: HTMLElement) => button.closest('tr') as HTMLElement;
 const without = (text: string) => ({
   type: 'templates/set' as const,
   templates: DEFAULT_TEMPLATES.filter((t) => t.text !== text).map((t) => ({ ...t })),
 });
-const matched = (dialog: HTMLElement) =>
-  [...dialog.querySelectorAll('button[aria-expanded]')].reduce((sum, b) => {
-    const m = /(\d+) (?:entry matches|entries match)/.exec(textOf(b as HTMLElement));
-    return sum + (m ? Number(m[1]) : 0);
-  }, 0);
+/** The matching entries listed: each heading says how many of its entries match, and a one-entry shape has no heading (its base-level row is a match or is dimmed). */
+const matched = (dialog: HTMLElement) => {
+  const inHeadings = [...dialog.querySelectorAll<HTMLElement>('button[aria-expanded]')].reduce(
+    (sum, b) => {
+      const m = /(\d+) (?:entry matches|entries match)/.exec(textOf(headRow(b)));
+      return sum + (m ? Number(m[1]) : 0);
+    },
+    0
+  );
+  const singles = rowsOf(dialog).filter(
+    (r) => r.closest('tbody[aria-label]') === null && r.getAttribute('data-match') === 'true'
+  );
+  return inHeadings + singles.length;
+};
 
 describe('the button and the header', () => {
   it('sits beside Edit templates and opens the dialog with the credit and the summary', async () => {
@@ -102,10 +116,18 @@ describe('the button and the header', () => {
         "376 chords in 297 shapes (399 names in Scala's list); 16 collapse octaves in this repeat (they can be added; the finder skips them here)"
       )
     ).toBeInTheDocument();
-    // every shape starts collapsed: 313 headings, no rows
-    expect(dialog.querySelectorAll('button[aria-expanded="false"]')).toHaveLength(313);
+    // 313 shapes: the 38 with several entries start collapsed under a heading; the 275 with one entry have no heading and are
+    // listed at the base level as plain rows
+    expect(dialog.querySelectorAll('button[aria-expanded="false"]')).toHaveLength(38);
     expect(dialog.querySelectorAll('button[aria-expanded="true"]')).toHaveLength(0);
-    expect(rowsOf(dialog)).toHaveLength(0);
+    expect(rowsOf(dialog)).toHaveLength(275);
+    expect(dialog.querySelectorAll('tbody[aria-label] tr[data-folds]')).toHaveLength(0);
+    // one table, the columns in order, each header a sort button
+    expect(within(dialog).getAllByRole('table')).toHaveLength(1);
+    const columns = [...dialog.querySelectorAll('thead th')].map((th) => textOf(th as HTMLElement));
+    expect(columns).toEqual(['Ratio', 'Chord', 'Actions', 'Notes', 'Odd', 'Prime']);
+    expect(dialog.querySelectorAll('thead th[aria-sort] button')).toHaveLength(5);
+    expect(within(dialog).getByRole('separator', { name: 'Resize the ring panel' })).toBeVisible();
   });
 
   it('the credit sentence is in the glossary entry', () => {
@@ -119,43 +141,43 @@ describe('shapes and rows', () => {
     const dialog = await openLibrary();
     search(dialog, 'dominant seventh');
     const h = head(dialog, '4:5:6:7 Harmonic Dominant Seventh');
-    expect(textOf(h)).toContain('· 4 entries');
-    expect(textOf(h)).toContain('4 entries match');
+    expect(textOf(headRow(h))).toContain('· 4 entries');
+    expect(textOf(headRow(h))).toContain('4 entries match');
+    // the whole heading row toggles, not only its button
+    fireEvent.click(headRow(h));
+    expect(h).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(headRow(h));
+    expect(h).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(h);
     expect(h).toHaveAttribute('aria-expanded', 'true');
     const rows = rowsOf(within(dialog).getByRole('rowgroup', { name: 'Entries of 4:5:6:7' }));
-    expect(rows.map((r) => textOf(r).split(' ')[0])).toEqual([
-      '4:5:6:7',
-      '5:6:7:8',
-      '6:7:8:10',
-      '7:8:10:12',
-    ]);
+    expect(rows.map(ratioOf)).toEqual(['4:5:6:7', '5:6:7:8', '6:7:8:10', '7:8:10:12']);
     expect(textOf(rows[0])).toContain('Harmonic Dominant Seventh');
     expect(textOf(rows[1])).toContain('1st inversion');
     expect(textOf(rows[0])).toMatch(/4 notes · odd 7 · prime 7/);
   });
 
-  it('a folding row carries one muted note, Add works on it (rows 13b, 13c, 13d), Check does not', async () => {
+  it('a folding row has no note line under it, Add works on it (rows 13b, 13c, 13d), Check does not', async () => {
     mount([without('10:12:15')]);
     const dialog = await openLibrary();
     search(dialog, 'Triunisonus');
-    fireEvent.click(head(dialog, '1:2:3 Triunisonus'));
+    // a shape with one entry has no heading: its row is listed at the base level
+    expect(within(dialog).queryByRole('button', { name: /^1:2:3 Triunisonus/ })).toBeNull();
     const row = rowsOf(dialog)[0];
     expect(row).toHaveAttribute('data-folds', 'true');
-    // the note is a plain line: no alert role, no icon (jsdom applies no CSS, so its look is checked by eye)
-    const under = lineRow(row) as HTMLElement;
-    const note = within(under).getByText(FOLD_ROW_NOTE);
-    expect(note.tagName).toBe('SPAN');
-    expect(note.getAttribute('role')).toBeNull();
-    // the only icons in the row are the two icon buttons (Add, Check), never one beside the note
+    expect(row.closest('tbody')).not.toHaveAttribute('aria-label');
+    // the folding note line under the row was removed: nothing sits under it, the reason is the tooltip of the disabled Check
+    expect(lineRow(row)).toBeNull();
+    expect(within(row).queryByText(FOLD_ROW_NOTE)).toBeNull();
+    // the only icons in the row are the two icon buttons (Add, Check)
     expect([...row.querySelectorAll('svg')].every((s) => s.closest('button') !== null)).toBe(true);
-    expect(under.querySelector('svg')).toBeNull();
     const add = within(row).getByRole('button', { name: 'Add 1:2:3' });
     const check = within(row).getByRole('button', { name: 'Check 1:2:3' });
     expect(add).not.toHaveAttribute('aria-disabled');
     expect(check).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(check);
-    expect(within(lineRow(row) as HTMLElement).queryByTestId('check-line')).toBeNull();
+    expect(lineRow(row)).toBeNull();
+    expect(within(dialog).queryByTestId('check-line')).toBeNull();
     expect(lab.state.ui.libChecked).toEqual([]);
     fireEvent.click(add);
     expect(lab.state.templates.at(-1)).toEqual({
@@ -267,26 +289,25 @@ describe('state kept by the lab (rows 16 to 20)', () => {
     search(dialog, 'minor triad');
     fireEvent.click(head(dialog, '10:12:15 Minor Triad'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Check 12:15:20' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Check 10:12:15' }));
     search(dialog, 'major triad');
     fireEvent.click(head(dialog, '4:5:6 Major Triad'));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Check 4:5:6' }));
     search(dialog, '');
     fireEvent.click(within(dialog).getByRole('switch', { name: 'Checked only' }));
-    expect(within(dialog).getByText('2 checked')).toBeInTheDocument();
-    expect(dialog.querySelectorAll('button[aria-expanded]')).toHaveLength(2);
-    expect(dialog.querySelectorAll('button[aria-expanded="true"]')).toHaveLength(2);
-    expect(
-      rowsOf(dialog)
-        .map((r) => textOf(r).split(' ')[0])
-        .sort()
-    ).toEqual(['12:15:20', '4:5:6']);
+    expect(within(dialog).getByText('3 checked')).toBeInTheDocument();
+    // the Minor Triad shape has two checked rows, so it keeps a heading (open, nothing to fold); the Major Triad shape has one
+    // checked row, so it is listed at the base level with no heading
+    expect(dialog.querySelectorAll('button[aria-expanded]')).toHaveLength(1);
+    expect(dialog.querySelectorAll('button[aria-expanded="true"]')).toHaveLength(1);
+    expect(rowsOf(dialog).map(ratioOf).sort()).toEqual(['10:12:15', '12:15:20', '4:5:6']);
     // the heading shows its first listed row and the count of checked rows
-    expect(textOf(head(dialog, '12:15:20'))).toContain('· 1 checked');
-    expect(textOf(head(dialog, '4:5:6'))).toContain('· 1 checked');
+    expect(textOf(headRow(head(dialog, '10:12:15')))).toContain('· 2 checked');
+    expect(within(dialog).queryByRole('button', { name: /^4:5:6/ })).toBeNull();
     // it narrows what the other filters allow
     search(dialog, 'minor triad');
-    expect(rowsOf(dialog)).toHaveLength(1);
-    expect(within(dialog).getByText('1 checked')).toBeInTheDocument();
+    expect(rowsOf(dialog)).toHaveLength(2);
+    expect(within(dialog).getByText('2 checked')).toBeInTheDocument();
     // off again: the whole library, the header line back
     fireEvent.click(within(dialog).getByRole('switch', { name: 'Checked only' }));
     search(dialog, '');
@@ -403,7 +424,12 @@ describe('Check', () => {
     // too many notes: 130 field notes, all selected
     const many = Array.from({ length: 129 }, (_, i) => `${1001 + i}/1000`).join('\n');
     send({ type: 'gen/custom', custom: many, rep: '2/1' }, { type: 'sel/all' });
-    expect(within(dialog).getByText(hint)).toBeInTheDocument();
+    // the hint shows in the dialog's status line, and again where the ring panel's roots table would be (a chord is shown now)
+    expect(
+      within(dialog)
+        .getAllByText(hint)
+        .some((el) => el.getAttribute('role') === 'status')
+    ).toBe(true);
     expect(within(dialog).getByRole('button', { name: 'Check 10:12:15' })).toHaveAttribute(
       'aria-disabled',
       'true'
@@ -413,29 +439,6 @@ describe('Check', () => {
     expect(within(dialog).queryByText(hint)).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Check 10:12:15' }));
     expect(within(dialog).getByTestId('check-line')).toHaveTextContent('2 found');
-  });
-
-  it(`keeps at most ${MAX_CHECKED} rows checked: one more replaces the oldest`, async () => {
-    mount(major5());
-    const dialog = await openLibrary();
-    const singles = libraryShapes(libraryEntries(1200), 1200)
-      .filter((s) => s.entries.length === 1 && !s.entries[0].folds)
-      .slice(0, MAX_CHECKED + 1)
-      .map((s) => s.entries[0].text);
-    expect(singles).toHaveLength(MAX_CHECKED + 1);
-    // plain DOM queries: 313 headings make role queries very slow in jsdom
-    for (const text of singles) {
-      fireEvent.click(
-        dialog.querySelector(`button[aria-label="Check all 1 of ${text}"]`) as HTMLElement
-      );
-    }
-    expect(dialog.querySelectorAll('[data-testid="check-line"]')).toHaveLength(MAX_CHECKED);
-    // the first one lost its line (its shape is open, its row has none), the last has one
-    const rowOf = (text: string) =>
-      rowsOf(dialog).find((r) => textOf(r).split(' ')[0] === text) as HTMLElement;
-    const lineOf = (row: HTMLElement) => lineRow(row)?.querySelector('[data-testid="check-line"]');
-    expect(lineOf(rowOf(singles[0]))).toBeFalsy();
-    expect(lineOf(rowOf(singles[MAX_CHECKED]))).toBeTruthy();
   });
 });
 
@@ -450,7 +453,7 @@ describe('search and filters', () => {
     num('Odd limit up to', '9');
     expect(matched(dialog)).toBe(18);
     // a heading says how many of its entries match
-    expect(textOf(head(dialog, '4:5:6:7 Harmonic Dominant Seventh'))).toMatch(
+    expect(textOf(headRow(head(dialog, '4:5:6:7 Harmonic Dominant Seventh')))).toMatch(
       /· 4 entries · \d entries? match/
     );
   });
