@@ -1,5 +1,5 @@
 /** Pitch circle, glanceable stats and step-size bars to its right, and the note inspector under them. */
-import { useMemo } from 'react';
+import { useMemo, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
 import {
   ActionIcon,
   NativeSelect,
@@ -10,6 +10,7 @@ import {
 } from '@mantine/core';
 import { parseInterval, type FifthsLayout } from '../../../lib/harmonic-field';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
+import type { Ghost } from '../state/ghosts';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { RingView } from '../state/labState';
 import { SVG_FS_LABEL, SVG_FS_SMALL } from '../state/typeScale';
@@ -17,16 +18,28 @@ import { FieldCompact } from './FieldPanel';
 import { OutsideCount, useGhosts } from './GhostMarks';
 import { GearIcon } from './icons';
 import { RING_GAP, RingChevron, rootLabel, useModeRoot } from './ModeRoot';
+import {
+  RING_BOX_REM,
+  RING_OFF_CHAIN_R,
+  RING_PAD as PAD,
+  RING_R as R,
+  RING_SIZE as SIZE,
+  RingCircle,
+  RingDot,
+  RingLabel,
+  RingOutline,
+  haloRadius,
+  RingPolygon,
+  dotReach,
+  markScaleFor,
+} from './ringMarks';
 import { Num, Row, Tip, noteHandlers, signed, useLab } from './ui';
 import classes from './lab.module.css';
 
-const SIZE = 300;
-/** Room round the ring for labels that move out to a second or third lane. */
-const PAD = 44;
-const C = SIZE / 2;
-const R = 104;
-/** Ring radius in the Fifths view (smaller: it carries step names, ratios and offsets outside). */
+/** Ring radius in the Fifths view (smaller: it carries step names, ratios and offsets outside). Not scaled by `radius`. */
 const RF = 92;
+/** The yellow ring round a pinned note (at the main ring's scale). */
+const RING_PIN_R = 12;
 const CHAINS = ['12', '17', '19', '31'];
 /** Note names for the 12-step chain with 3/2, D-flat to F-sharp (steps -5 to +6); other lengths show the step number. */
 const CHAIN12 = ['D♭', 'A♭', 'E♭', 'B♭', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F♯'];
@@ -43,20 +56,43 @@ interface Mark {
   offChain?: boolean;
 }
 
+/** The drawing's geometry for a ring line of radius `R` (in the Chromatic view; the Fifths view keeps its own `RF`). */
+interface Geo {
+  /** The ring line's radius. */
+  R: number;
+  /** The drawing is a square of this many units, the ring in its middle at (C, C). */
+  size: number;
+  C: number;
+  /** The marks' scale (1 for the main ring). */
+  k: number;
+}
+
+/** The main ring has radius `RING_R` in a drawing of `RING_SIZE`: the room round the ring line (46 units) stays when the radius changes. */
+function geoFor(radius: number): Geo {
+  const size = SIZE + 2 * (radius - R);
+  return { R: radius, size, C: size / 2, k: markScaleFor(radius) };
+}
+
+/** A point at pitch `c` of a repeat `repC` on the circle of radius `r` round the ring's center. */
+function polarAt(g: Geo, c: number, repC: number, r: number) {
+  const a = (c / repC) * 2 * Math.PI - Math.PI / 2;
+  return { x: g.C + r * Math.cos(a), y: g.C + r * Math.sin(a) };
+}
+
+/** A pitch folded into [0, repeat). */
+const foldInto = (c: number, repC: number) => (repC > 0 ? ((c % repC) + repC) % repC : c);
+
 function marksFor(
   view: RingView,
   cents: readonly number[],
   repC: number,
-  L: FifthsLayout | null
+  L: FifthsLayout | null,
+  g: Geo
 ): Mark[] {
   if (view === 'chromatic' || !L) {
-    const polar = (c: number, r: number) => {
-      const a = (c / repC) * 2 * Math.PI - Math.PI / 2;
-      return { x: C + r * Math.cos(a), y: C + r * Math.sin(a) };
-    };
     return cents.map((c) => {
-      const p = polar(c, R);
-      const l = polar(c, R + 30);
+      const p = polarAt(g, c, repC, g.R);
+      const l = polarAt(g, c, repC, g.R + 30);
       return { x: p.x, y: p.y, lx: l.x, ly: l.y, turn: c / repC };
     });
   }
@@ -65,10 +101,10 @@ function marksFor(
     const r = p.offChain ? RF - 30 : RF - 20 * p.stack;
     const rl = RF + 32;
     return {
-      x: C + r * Math.cos(a),
-      y: C + r * Math.sin(a),
-      lx: C + rl * Math.cos(a),
-      ly: C + rl * Math.sin(a),
+      x: g.C + r * Math.cos(a),
+      y: g.C + r * Math.sin(a),
+      lx: g.C + rl * Math.cos(a),
+      ly: g.C + rl * Math.sin(a),
       turn: p.turn,
       offset: p.offset,
       offChain: p.offChain,
@@ -76,11 +112,87 @@ function marksFor(
   });
 }
 
-export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
+/** What the `overlay` render prop gets: where things are on this ring. */
+export interface RingOverlayArgs {
+  /** The point at pitch `c` (cents above 1/1, folded or not) on the circle of radius `r` (default: the ring line). */
+  at: (c: number, r?: number) => { x: number; y: number };
+  /** The ring's center (x and y). */
+  C: number;
+  /** The ring line's radius. */
+  R: number;
+  /** The repeat in cents: one full turn. */
+  turn: number;
+  /** The marks' scale (`radius / RING_R`): offsets of marks the overlay draws next to a dot should follow it. */
+  k: number;
+  /** Where the field dots are, by field index. */
+  dots: readonly { x: number; y: number }[];
+  /** The boxes of the field labels as placed (a label an overlay mark must not cover). */
+  labels: readonly Box[];
+}
+
+/** Props a host may give a field dot: the circle's own (not its place, size or class) and any `data-*`. */
+type CircleExtra = Omit<ComponentPropsWithoutRef<'circle'>, 'cx' | 'cy' | 'r' | 'className'>;
+export type RingDotExtra = CircleExtra & {
+  [attr: `data-${string}`]: string | number | boolean | undefined;
+};
+
+export interface PitchRingProps {
+  view: RingView;
+  steps: number;
+  /** The ring line's radius in units (default `RING_R`, 104). The drawing, the label bounds and the fitted view follow it, and the marks' RADII (dots, ghosts, the hover and pin rings, the chevron) are scaled by `radius / RING_R`; stroke widths, dashes, the label text size and the label lanes keep their size in units. */
+  radius?: number;
+  /** The outline of the subset and chord polygons is drawn as separate edges that stop at the edge of each corner's mark (its scaled radius plus half its stroke), the fill still running to the centers. Default: the polygons are drawn whole, as on the main ring. */
+  trimPolygons?: boolean;
+  /** Every field dot is drawn solid (default: only the subset's, the rest hollow). */
+  solidAll?: boolean;
+  /** The field indices shown as the chord (blue polygon and outlines); default: the lab's highlighted chord. */
+  chord?: ReadonlySet<number>;
+  /** With `chord`: the blue polygon goes through these exact pitches (cents, folded into the repeat), so a pitch that is no field note still has a corner. Chromatic view only. */
+  chordCents?: readonly number[];
+  /** The field notes that sound (lit green), in place of the lab's `sounding`: a host that gets the lights from its own channel (the chord library's ring) passes them. Default: the lab's. */
+  sounding?: ReadonlySet<number>;
+  /** The ghost marks (sounding pitches that match no field note), in place of `useGhosts()`. Default: the lab's. */
+  ghosts?: readonly Ghost[];
+  /** The note that wears the hover outline, in place of the lab's hover (null: none). A host that keeps its own hover (the chord library's ring) passes it, so a hover there does not re-draw the rest of the lab. Default: the lab's hover. */
+  hover?: number | null;
+  /** The props of field dot `i`, in place of the main ring's (hover sets the lab hover, a click toggles the subset). Handlers, `role`, `aria-*` and `data-*` here replace the dot's own. */
+  dotProps?: (i: number) => RingDotExtra;
+  /** Extra marks drawn after the dots (pointer-events none); the sounding ghosts then come after them. */
+  overlay?: (a: RingOverlayArgs) => ReactNode;
+  /** The drawing's on-screen pixels per unit; the svg gets that width (default: the svg fills its box). */
+  pxPerUnit?: number;
+  /** An extra class on the svg (after the ring's own). */
+  className?: string;
+  /** The svg's accessible name (default: the pitch circle's description). */
+  ariaLabel?: string;
+}
+
+export function PitchRing({
+  view,
+  steps,
+  radius = R,
+  trimPolygons = false,
+  solidAll = false,
+  chord: chordProp,
+  chordCents,
+  sounding: soundingProp,
+  ghosts: ghostsProp,
+  hover: hoverProp,
+  dotProps,
+  overlay,
+  pxPerUnit,
+  className,
+  ariaLabel,
+}: PitchRingProps) {
   const lab = useLab();
-  const { base, state, selected, sounding, chord } = lab;
+  const { base, state, selected } = lab;
+  const sounding = soundingProp ?? lab.sounding;
+  const chord = chordProp ?? lab.chord;
+  const hoverIdx = hoverProp !== undefined ? hoverProp : lab.hover;
   const { field, repC, ratios } = base;
   const modeRoot = useModeRoot();
+  const g = useMemo(() => geoFor(radius), [radius]);
+  const { C, k } = g;
   const L = useMemo(
     () => (view === 'fifths' ? fifthsFor(field, repC, state.ui.ringGen, steps) : null),
     [view, field, repC, state.ui.ringGen, steps]
@@ -91,9 +203,10 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
         view,
         field.map((n) => n.c),
         repC,
-        L
+        L,
+        g
       ),
-    [view, field, repC, L]
+    [view, field, repC, L, g]
   );
   // label places: the root first (it must clear its chevron), then the rest; none overlap another or the chevron
   const places = useMemo(() => {
@@ -102,7 +215,7 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
       .sort((a, b) => (a === modeRoot ? -1 : b === modeRoot ? 1 : a - b));
     const obstacles: Box[] =
       modeRoot !== null && marks[modeRoot]
-        ? [chevronBox(C, C, marks[modeRoot].x, marks[modeRoot].y, RING_GAP)]
+        ? [chevronBox(C, C, marks[modeRoot].x, marks[modeRoot].y, RING_GAP * k, k)]
         : [];
     const out = layoutLabels(
       order.map((i) => ({
@@ -128,35 +241,90 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
         subDy: 10,
         pad: 5.5,
         obstacles,
-        bounds: { x0: -PAD, y0: -PAD, x1: SIZE + PAD, y1: SIZE + PAD },
+        bounds: { x0: -PAD, y0: -PAD, x1: g.size + PAD, y1: g.size + PAD },
       }
     );
-    const byNote = new Map(order.map((i, k) => [i, out[k]]));
+    const byNote = new Map(order.map((i, n) => [i, out[n]]));
     const list = field.map((_, i) => byNote.get(i)!);
     // fit the drawing to the ring, the chevron and the labels actually placed (no room kept for unused lanes)
-    const view = fitView(C, C, R + 10, [...obstacles, ...out.map((p) => p.box)]);
+    const view = fitView(C, C, g.R + 10, [...obstacles, ...out.map((p) => p.box)]);
     return { list, view };
-  }, [field, marks, ratios, modeRoot]);
-  const chordPts = [...chord]
+  }, [field, marks, ratios, modeRoot, g, C, k]);
+  // how far field dot i's mark reaches from its center (its radius times the marks' scale plus half its stroke): where a trimmed polygon edge stops
+  const reachOf = (i: number) =>
+    dotReach(sounding.has(i) ? 'lit' : solidAll || selected.has(i) ? 'on' : 'off', {
+      chord: chord.has(i),
+      r: !sounding.has(i) && marks[i].offChain ? RING_OFF_CHAIN_R : undefined,
+      scale: k,
+    });
+  // the blue polygon: through the exact pitches when they are given (a pitch that is no field note has its corner), else through the chord's field notes
+  let chordPts: { x: number; y: number }[];
+  let chordReach: number[];
+  if (chordCents && view === 'chromatic') {
+    const corners = chordCents
+      .map((c) => foldInto(c, repC))
+      .sort((a, b) => a - b)
+      .map((c) => {
+        // a corner on a field dot of the chord is that dot's mark; any other pitch (it matches no field note) has no mark of its own, only the library's flag pole
+        const near = [...chord].find((i) => {
+          const d = Math.abs(foldInto(field[i]?.c ?? NaN, repC) - c);
+          return Math.min(d, repC - d) < 1;
+        });
+        return {
+          pt: polarAt(g, c, repC, g.R),
+          reach: near !== undefined ? reachOf(near) : 0,
+        };
+      });
+    chordPts = corners.map((c) => c.pt);
+    chordReach = corners.map((c) => c.reach);
+  } else {
+    const idx = [...chord].filter((i) => i < field.length).sort((a, b) => a - b);
+    chordPts = idx.map((i) => marks[i]);
+    chordReach = idx.map(reachOf);
+  }
+  const subsetIdx = [...selected]
     .filter((i) => i < field.length)
-    .sort((a, b) => a - b)
-    .map((i) => marks[i]);
-  const subsetPts = [...selected]
-    .filter((i) => i < field.length)
-    .sort((a, b) => marks[a].turn - marks[b].turn || a - b)
-    .map((i) => marks[i]);
+    .sort((a, b) => marks[a].turn - marks[b].turn || a - b);
+  const subsetPts = subsetIdx.map((i) => marks[i]);
   const lit = [...sounding].filter((i) => i < field.length).sort((a, b) => a - b);
-  const ghosts = useGhosts();
+  const labGhosts = useGhosts();
+  const ghosts = ghostsProp ?? labGhosts;
+  // the sounding pitches that are no field note: under the polygons and dots on the main ring; over an overlay's marks when there is one
+  const ghostMarks =
+    view === 'chromatic' &&
+    ghosts.map((gh) => {
+      const a = gh.turn * 2 * Math.PI - Math.PI / 2;
+      return (
+        <RingDot
+          key={gh.c}
+          kind="ghost"
+          scale={k}
+          data-testid="ring-ghost"
+          cx={C + g.R * Math.cos(a)}
+          cy={C + g.R * Math.sin(a)}
+          role="img"
+          aria-label={`Ghost: ${gh.text}`}
+        >
+          <title>{gh.text}</title>
+        </RingDot>
+      );
+    });
+  const svgStyle: CSSProperties | undefined =
+    pxPerUnit !== undefined ? { width: Number(places.view.split(' ')[2]) * pxPerUnit } : undefined;
   return (
     <svg
       viewBox={places.view}
-      className={classes.ringSvg}
+      className={className ? `${classes.ringSvg} ${className}` : classes.ringSvg}
+      style={svgStyle}
       role="group"
-      aria-label={`Pitch circle, ${view} view: ${selected.size} of ${field.length} notes selected${
-        lit.length ? `; ${lit.map((i) => ratios[i]).join(', ')} sounding` : ''
-      }`}
+      aria-label={
+        ariaLabel ??
+        `Pitch circle, ${view} view: ${selected.size} of ${field.length} notes selected${
+          lit.length ? `; ${lit.map((i) => ratios[i]).join(', ')} sounding` : ''
+        }`
+      }
     >
-      <circle className={classes.ringLine} cx={C} cy={C} r={view === 'fifths' ? RF : R} />
+      <RingCircle cx={C} cy={C} r={view === 'fifths' ? RF : g.R} />
       {L?.positions.map((p) => {
         const a = p.turn * 2 * Math.PI - Math.PI / 2;
         const name = steps === 12 ? CHAIN12[p.step - L.lo] : String(p.step);
@@ -183,37 +351,20 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
           </g>
         );
       })}
-      {view === 'chromatic' &&
-        ghosts.map((g) => {
-          const a = g.turn * 2 * Math.PI - Math.PI / 2;
-          return (
-            <circle
-              key={g.c}
-              className={classes.ringGhost}
-              data-testid="ring-ghost"
-              cx={C + R * Math.cos(a)}
-              cy={C + R * Math.sin(a)}
-              r={8}
-              role="img"
-              aria-label={`Ghost: ${g.text}`}
-            >
-              <title>{g.text}</title>
-            </circle>
-          );
-        })}
-      <polygon
-        className={classes.subsetFill}
+      {!overlay && ghostMarks}
+      <RingPolygon
+        kind="subset"
         data-testid="subset-polygon"
-        points={subsetPts.map((p) => `${p.x},${p.y}`).join(' ')}
+        points={subsetPts}
+        trim={trimPolygons ? subsetIdx.map(reachOf) : undefined}
       />
-      <polygon
-        className={classes.chordFill}
-        points={chordPts.map((p) => `${p.x},${p.y}`).join(' ')}
-      />
+      <RingPolygon kind="chord" points={chordPts} trim={trimPolygons ? chordReach : undefined} />
       {field.map((n, i) => {
         const m = marks[i];
         const isLit = sounding.has(i);
         const on = selected.has(i);
+        // the dot is solid when it is in the subset, or for every note when `solidAll`
+        const solid = solidAll || on;
         const inChord = chord.has(i);
         const extra =
           m.offset !== undefined && L
@@ -222,39 +373,47 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
         const label = places.list[i];
         return (
           <g key={i} data-root={modeRoot === i ? 'true' : undefined}>
-            {lab.pin === i && <circle className={classes.pinRing} cx={m.x} cy={m.y} r={12} />}
-            {lab.hover === i && <circle className={classes.selRing} cx={m.x} cy={m.y} r={12} />}
-            {modeRoot === i && <RingChevron cx={C} cy={C} x={m.x} y={m.y} />}
-            <circle
-              className={isLit ? classes.dotLit : on ? classes.dotOn : classes.dotOff}
+            {lab.pin === i && (
+              <circle className={classes.pinRing} cx={m.x} cy={m.y} r={haloRadius(RING_PIN_R, k)} />
+            )}
+            {hoverIdx === i && <RingOutline cx={m.x} cy={m.y} scale={k} />}
+            {modeRoot === i && (
+              <RingChevron cx={C} cy={C} x={m.x} y={m.y} gap={RING_GAP * k} scale={k} />
+            )}
+            <RingDot
+              kind={isLit ? 'lit' : solid ? 'on' : 'off'}
               data-chord={inChord ? 'true' : undefined}
               data-off={m.offChain ? 'true' : undefined}
               cx={m.x}
               cy={m.y}
-              r={isLit ? 8 : m.offChain ? 4 : 5.5}
+              r={!isLit && m.offChain ? RING_OFF_CHAIN_R : undefined}
               tabIndex={0}
               role="button"
               aria-label={`${ratios[i]}, ${n.c.toFixed(1)} cents${on ? ', in subset' : ''}${lab.pin === i ? ', pinned' : ''}${isLit ? ', sounding' : ''}${rootLabel(modeRoot, i)}${extra}`}
               aria-pressed={on}
-              onMouseEnter={() => lab.setHover(i)}
-              onMouseLeave={() => lab.setHover(null)}
-              onFocus={() => lab.setHover(i)}
-              onBlur={() => lab.setHover(null)}
-              {...noteHandlers(lab, i)}
+              {...(dotProps
+                ? (dotProps(i) as CircleExtra)
+                : {
+                    onMouseEnter: () => lab.setHover(i),
+                    onMouseLeave: () => lab.setHover(null),
+                    onFocus: () => lab.setHover(i),
+                    onBlur: () => lab.setHover(null),
+                    ...noteHandlers(lab, i),
+                  })}
+              scale={k}
             />
             {label.leader && (
               <line
                 className={classes.labelLeader}
                 data-testid="label-leader"
-                {...leaderEnds(m.x, m.y, label.x, label.y)}
+                {...leaderEnds(m.x, m.y, label.x, label.y, 7 * k)}
               />
             )}
-            <text
+            <RingLabel
               x={label.x}
               y={label.y}
               style={label.scale < 1 ? { fontSize: SVG_FS_LABEL * label.scale } : undefined}
-              className={classes.svgLabel}
-              data-on={on}
+              on={solid}
               textAnchor="middle"
               dominantBaseline="middle"
             >
@@ -269,10 +428,24 @@ export function PitchRing({ view, steps }: { view: RingView; steps: number }) {
                   {m.offChain ? 'off' : signed(m.offset)}
                 </tspan>
               )}
-            </text>
+            </RingLabel>
           </g>
         );
       })}
+      {overlay && (
+        <g data-pointer="none" data-testid="ring-overlay" style={{ pointerEvents: 'none' }}>
+          {overlay({
+            at: (c, r = g.R) => polarAt(g, c, repC, r),
+            C,
+            R: g.R,
+            turn: repC,
+            k,
+            dots: marks,
+            labels: places.list.map((p) => p.box),
+          })}
+        </g>
+      )}
+      {overlay && ghostMarks}
     </svg>
   );
 }
@@ -283,7 +456,10 @@ export function RingPanel() {
   const { ringView: view, ringSteps: steps, ringGen } = state.ui;
   const genOk = parseInterval(ringGen) !== null;
   return (
-    <div className={classes.ringBox}>
+    <div
+      className={classes.ringBox}
+      style={{ '--ring-box-w': `${RING_BOX_REM}rem` } as CSSProperties}
+    >
       <div className={classes.ringHead}>
         <span className={classes.ringCap}>
           <Tip k="pitchCircle">Pitch circle</Tip>

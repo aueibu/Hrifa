@@ -3,6 +3,7 @@
  * never touches `state.templates`.
  */
 import { findChordVoicings, type LibraryEntry } from '../../../lib/harmonic-field';
+import { errorStats } from './chordSort';
 import { MAX_CHORDS, type Base } from './derive';
 
 export interface CheckHit {
@@ -12,6 +13,12 @@ export interface CheckHit {
   root: string;
   /** The largest error, in cents, of the chord on that root. */
   maxErr: number;
+  /** M7d: the best voicing's signed error in cents per note (field note minus the template's ideal), the root first (0). */
+  errors: number[];
+  /** M7d: the largest absolute error of those notes (the card stat's worst); the same number as `maxErr`. */
+  worst: number;
+  /** M7d: the mean absolute error over the notes except the root (the card stat's avg, `errorStats`). */
+  avg: number;
 }
 
 export interface CheckResult {
@@ -58,15 +65,26 @@ export function checkEntry(
     return null;
   }
   const { chords: found, truncated } = findChordVoicings(rel, repC, [{ text: entry.text }], tol);
-  const best = new Map<number, number>();
+  const best = new Map<number, { maxErr: number; errors: number[] }>();
   for (const c of found) {
     const have = best.get(c.root);
-    if (have === undefined || c.maxErr < have) {
-      best.set(c.root, c.maxErr);
+    if (have === undefined || c.maxErr < have.maxErr) {
+      best.set(c.root, { maxErr: c.maxErr, errors: c.errors });
     }
   }
   const hits: CheckHit[] = rel
     .filter((n) => best.has(n.src))
-    .map((n) => ({ rootIdx: n.src, root: ratios[n.src], maxErr: best.get(n.src) as number }));
+    .map((n) => {
+      const b = best.get(n.src) as { maxErr: number; errors: number[] };
+      const { worst, avg } = errorStats(b.errors);
+      return {
+        rootIdx: n.src,
+        root: ratios[n.src],
+        maxErr: b.maxErr,
+        errors: b.errors,
+        worst,
+        avg,
+      };
+    });
   return { hits, count: hits.length, truncated };
 }

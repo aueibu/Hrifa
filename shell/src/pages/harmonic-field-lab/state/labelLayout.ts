@@ -42,6 +42,8 @@ export interface LabelOptions {
   pad?: number;
   /** Smallest font scale tried before overlapping is accepted. */
   minScale?: number;
+  /** Lanes step toward the center instead of away from it (labels inside a ring; the natural positions are then inside). Default: outward. */
+  inward?: boolean;
 }
 
 export interface LabelPlace {
@@ -99,10 +101,11 @@ export function layoutLabels(items: readonly LabelItem[], o: LabelOptions): Labe
     const dx = it.x - o.cx;
     const dy = it.y - o.cy;
     const len = Math.hypot(dx, dy) || 1;
-    // a lane is a distance along the ray; a shift slides the label sideways along the ring (the leader follows)
+    const dir = o.inward ? -1 : 1;
+    // a lane is a distance along the ray (away from the center, or toward it when `inward`); a shift slides the label sideways along the ring (the leader follows)
     const at = (lane: number, shift = 0) => ({
-      x: it.x + (dx / len) * lane * o.laneStep - (dy / len) * shift,
-      y: it.y + (dy / len) * lane * o.laneStep + (dx / len) * shift,
+      x: it.x + (dx / len) * dir * lane * o.laneStep - (dy / len) * shift,
+      y: it.y + (dy / len) * dir * lane * o.laneStep + (dx / len) * shift,
     });
     // prefer full size in a farther lane or slid aside over a smaller label in a nearer one
     for (const scale of scales) {
@@ -158,19 +161,26 @@ export function fitView(
   return `${cx - half} ${cy - half} ${2 * half} ${2 * half}`;
 }
 
-export function chevronBox(cx: number, cy: number, x: number, y: number, gap: number): Box {
+export function chevronBox(
+  cx: number,
+  cy: number,
+  x: number,
+  y: number,
+  gap: number,
+  scale = 1
+): Box {
   const a = Math.atan2(y - cy, x - cx);
-  const mid = gap + 3.5;
-  // the chevron is 6 long and 11 wide, tilted by the angle: its axis-aligned box
-  const w = Math.abs(Math.cos(a)) * 6 + Math.abs(Math.sin(a)) * 11 + 1;
-  const h = Math.abs(Math.sin(a)) * 6 + Math.abs(Math.cos(a)) * 11 + 1;
+  const mid = gap + 3.5 * scale;
+  // the chevron is 6 long and 11 wide (times `scale`), tilted by the angle: its axis-aligned box
+  const w = (Math.abs(Math.cos(a)) * 6 + Math.abs(Math.sin(a)) * 11) * scale + 1;
+  const h = (Math.abs(Math.sin(a)) * 6 + Math.abs(Math.cos(a)) * 11) * scale + 1;
   return { x: x + mid * Math.cos(a), y: y + mid * Math.sin(a), w, h };
 }
 
-/** A leader line from a dot to its displaced label: starts just off the dot, ends just short of the text. */
-export function leaderEnds(x: number, y: number, lx: number, ly: number) {
+/** A leader line from a dot to its displaced label: starts `startGap` off the dot (a larger dot: a larger gap), ends 7 short of the text. */
+export function leaderEnds(x: number, y: number, lx: number, ly: number, startGap = 7) {
   const d = Math.hypot(lx - x, ly - y) || 1;
   const ux = (lx - x) / d;
   const uy = (ly - y) / d;
-  return { x1: x + ux * 7, y1: y + uy * 7, x2: lx - ux * 7, y2: ly - uy * 7 };
+  return { x1: x + ux * startGap, y1: y + uy * startGap, x2: lx - ux * 7, y2: ly - uy * 7 };
 }

@@ -37,3 +37,28 @@ describe('cardNoteErrors developer option (H-24)', () => {
     expect(parseDeveloperOptions('{"cardNoteErrors":false}').cardNoteErrors).toBe(false);
   });
 });
+
+describe('soundFollowsRoughness developer option (A1, H-31)', () => {
+  it('is on by default, when absent, and when damaged; old data loads unchanged', () => {
+    for (const raw of [
+      null,
+      '',
+      '{',
+      '[]',
+      '{"tooltips":false}',
+      '{"soundFollowsRoughness":"yes"}',
+    ]) {
+      expect(parseDeveloperOptions(raw).soundFollowsRoughness, String(raw)).toBe(true);
+    }
+    expect(parseDeveloperOptions('{"tooltips":false}').tooltips).toBe(false);
+  });
+
+  it('an explicit false stays off, an explicit true stays on', () => {
+    expect(parseDeveloperOptions('{"soundFollowsRoughness":false}').soundFollowsRoughness).toBe(
+      false
+    );
+    expect(parseDeveloperOptions('{"soundFollowsRoughness":true}').soundFollowsRoughness).toBe(
+      true
+    );
+  });
+});

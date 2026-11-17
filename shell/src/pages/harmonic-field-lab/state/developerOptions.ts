@@ -51,6 +51,8 @@ export interface LabDeveloperOptions {
   tileOutline: boolean;
   /** Chord cards (M4, H-24): add a third line, Error, with each note's signed error (default off). The hover tooltip always shows it. */
   cardNoteErrors: boolean;
+  /** A1 (H-31): the harmonic sound uses the Roughness Partials and Rolloff (default); off keeps the sound at 7 partials and 0.88. */
+  soundFollowsRoughness: boolean;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -96,6 +98,7 @@ const defaults: LabDeveloperOptions = {
   tileLook: 'tinted',
   tileOutline: true,
   cardNoteErrors: false,
+  soundFollowsRoughness: true,
 };
 
 const listeners = new Set<() => void>();
@@ -134,6 +137,10 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       tileOutline: typeof o.tileOutline === 'boolean' ? o.tileOutline : defaults.tileOutline,
       cardNoteErrors:
         typeof o.cardNoteErrors === 'boolean' ? o.cardNoteErrors : defaults.cardNoteErrors,
+      soundFollowsRoughness:
+        typeof o.soundFollowsRoughness === 'boolean'
+          ? o.soundFollowsRoughness
+          : defaults.soundFollowsRoughness,
     };
   } catch {
     return defaults;

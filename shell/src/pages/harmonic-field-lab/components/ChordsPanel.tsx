@@ -1,8 +1,10 @@
 /** Chords panel: tolerance with a ladder; sections by note count, one row per family, one chip per voicing. */
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { ActionIcon, Button, Modal, SegmentedControl, Switch } from '@mantine/core';
 import {
   DEFAULT_TEMPLATES,
+  FOLD_EDIT_NOTE,
+  templateFolds,
   chordShape,
   exactShape,
   placeShape,
@@ -483,7 +485,7 @@ function CpsChords() {
 }
 
 function TemplateEditor() {
-  const { state, dispatch } = useLab();
+  const { state, dispatch, base } = useLab();
   const rows = state.templates;
   // bumped when a cleared ratios box is put back, so the box shows the kept text again
   const [rev, setRev] = useState(0);
@@ -500,43 +502,52 @@ function TemplateEditor() {
       </div>
       {rows.map((t, i) => {
         const parsed = parseTemplate(t.text);
+        // M7c: a template whose notes fold onto one pitch in the current repeat is skipped by the finder: one quiet line says so
+        const folds = parsed.ok && templateFolds(parsed, base.repC);
         return (
-          <div key={i} className={classes.editorRow}>
-            <DebouncedText
-              size="xs"
-              aria-label={`Template ${i + 1} name`}
-              value={t.name ?? ''}
-              onCommit={(v) => patch(i, { name: v.trim() || undefined })}
-            />
-            <DebouncedText
-              key={`ratios-${rev}`}
-              size="xs"
-              aria-label={`Template ${i + 1} ratios`}
-              value={t.text}
-              error={parsed.ok ? undefined : parsed.error}
-              classNames={{ error: classes.inputError }}
-              onCommit={(v) => (v.trim() ? patch(i, { text: v }) : setRev((n) => n + 1))}
-            />
-            <DebouncedText
-              size="xs"
-              aria-label={`Template ${i + 1} family`}
-              placeholder="Other"
-              value={t.family ?? ''}
-              onCommit={(v) => patch(i, { family: v.trim() || undefined })}
-            />
-            <Tip k="templateRemove" as="control">
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                className={labClasses.dangerHover}
-                aria-label={`Remove ${t.name ?? t.text}`}
-                onClick={() => set(rows.filter((_, j) => j !== i))}
-              >
-                <TrashIcon />
-              </ActionIcon>
-            </Tip>
-          </div>
+          <Fragment key={i}>
+            <div className={classes.editorRow}>
+              <DebouncedText
+                size="xs"
+                aria-label={`Template ${i + 1} name`}
+                value={t.name ?? ''}
+                onCommit={(v) => patch(i, { name: v.trim() || undefined })}
+              />
+              <DebouncedText
+                key={`ratios-${rev}`}
+                size="xs"
+                aria-label={`Template ${i + 1} ratios`}
+                value={t.text}
+                error={parsed.ok ? undefined : parsed.error}
+                classNames={{ error: classes.inputError }}
+                onCommit={(v) => (v.trim() ? patch(i, { text: v }) : setRev((n) => n + 1))}
+              />
+              <DebouncedText
+                size="xs"
+                aria-label={`Template ${i + 1} family`}
+                placeholder="Other"
+                value={t.family ?? ''}
+                onCommit={(v) => patch(i, { family: v.trim() || undefined })}
+              />
+              <Tip k="templateRemove" as="control">
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  className={labClasses.dangerHover}
+                  aria-label={`Remove ${t.name ?? t.text}`}
+                  onClick={() => set(rows.filter((_, j) => j !== i))}
+                >
+                  <TrashIcon />
+                </ActionIcon>
+              </Tip>
+            </div>
+            {folds && (
+              <span className={classes.editorNote} data-testid="fold-edit-note">
+                {FOLD_EDIT_NOTE}
+              </span>
+            )}
+          </Fragment>
         );
       })}
       <div className={classes.editorFoot}>
@@ -976,7 +987,7 @@ export function ChordsPanel() {
         opened={library}
         onClose={() => setLibrary(false)}
         title="Chord library"
-        size="lg"
+        size="min(88rem, 96vw)"
         transitionProps={{ duration: 0 }}
       >
         <ChordLibrary />

@@ -135,6 +135,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
     fireEvent.click(screen.getByRole('switch', { name: /always show/ }));
@@ -154,6 +155,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
   });
 
@@ -180,6 +182,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
       modeSignAlways: true,
@@ -197,6 +200,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('[1,2]')).toEqual({
       modeSignAlways: true,
@@ -214,6 +218,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('null')).toEqual({
       modeSignAlways: true,
@@ -231,6 +236,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
     open();
@@ -267,6 +273,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
     expect(
       parseDeveloperOptions('{"intervalColor":"rank","intervalIntensity":"faint"}')
@@ -284,6 +291,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify({ intervalColor: 'rank' }));
     open();
@@ -312,6 +320,7 @@ describe('lab Developer menu', () => {
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      soundFollowsRoughness: true,
     });
   });
 

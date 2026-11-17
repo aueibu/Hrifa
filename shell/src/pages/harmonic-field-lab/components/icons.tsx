@@ -28,6 +28,12 @@ function Icon({ children, ...props }: SVGProps<SVGSVGElement>) {
   );
 }
 
+export const CheckIcon = () => (
+  <Icon>
+    <path d="M20 6 9 17l-5-5" />
+  </Icon>
+);
+
 export const ChevronDownIcon = () => (
   <Icon>
     <path d="M6 9l6 6 6-6" />

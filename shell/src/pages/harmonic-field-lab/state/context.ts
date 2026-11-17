@@ -10,6 +10,12 @@ import type { Action, LabState, SoundingPitch, Tab } from './labState';
 import type { VizId, VizView } from './layout';
 import type { VizSettings } from './vizState';
 
+/** What sounds now, as the audio hook last reported it: the lit field notes and the ghost pitches (cents). */
+export interface SoundingSnap {
+  idx: ReadonlySet<number>;
+  ghosts: readonly number[];
+}
+
 export interface LabAudio {
   /** False when frozen: nothing sounds. */
   enabled: boolean;
@@ -53,6 +59,23 @@ export interface LabAudio {
   stopAll: () => void;
   /** Hz a pitch of `cents` above 1/1 sounds at, with the current 1/1 Hz setting. */
   hzAt: (cents: number) => number;
+  /** True when this browser has Web Audio and the lab is not frozen: the reverb and impulse controls are disabled otherwise. */
+  audioAvailable: boolean;
+  /**
+   * While on, the lab-wide `sounding` report is held back (every view listens to it, and a sweep with a key held starts a sound per note);
+   * `subscribeSounding` and `soundingSnapshot` still carry it, for the one view that wants the lights (the chord library's ring).
+   * Turning it off sends the current state to the lab. Optional: a test double need not have it.
+   */
+  setLightSuppressed?: (on: boolean) => void;
+  subscribeSounding?: (listener: () => void) => () => void;
+  soundingSnapshot?: () => SoundingSnap;
+  /**
+   * Reverb impulse (A1, H-31): decode and check a picked file; on success it becomes the Custom impulse (kept in IndexedDB, the
+   * preset switches to Custom) and the result is null, otherwise a one-line reason and nothing changes.
+   */
+  loadImpulse: (file: File) => Promise<string | null>;
+  /** Delete the stored impulse; a Custom preset goes back to Hall. */
+  removeImpulse: () => Promise<void>;
 }
 
 export interface VizApi {

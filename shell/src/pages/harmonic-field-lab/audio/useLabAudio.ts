@@ -15,16 +15,23 @@ import {
   type Note,
 } from '../../../lib/harmonic-field';
 import { chordPitchesFor, type ShelfChord } from '../state/chordShelf';
-import type { LabAudio } from '../state/context';
+import type { LabAudio, SoundingSnap } from '../state/context';
 import type { Base } from '../state/derive';
-import { readDeveloperOptions } from '../state/developerOptions';
+import { readDeveloperOptions, useLabDeveloperOptions } from '../state/developerOptions';
 import { ghostCents, ghostKey } from '../state/ghosts';
 import type { Action, KeysRuntime, UiSettings } from '../state/labState';
 import { linkedPitch, linkedScaleOf, type LinkedScale } from '../state/linkedMelody';
 import { heldHz, litIndex, retunerLive, type RetState } from '../state/retuner';
 import { sendHasKey } from '../state/sendStore';
 import { sketchChord, sketchPositionalPitches } from '../state/sketchChord';
-import { VoiceEngine } from './engine';
+import { VoiceEngine, hasWebAudio, soundPartials } from './engine';
+import { deleteImpulse, saveImpulse } from './impulseStorage';
+import {
+  ensureImpulseLoaded,
+  getImpulseState,
+  patchImpulse,
+  useImpulseState,
+} from './impulseStore';
 import {
   CHORD_PAGE,
   chordSlotOfEvent,
@@ -49,6 +56,7 @@ import {
   pitchesPlan,
   framedCents,
   previewTargetKey,
+  variantCents,
   stripPreviewPlan,
   scalePlan,
   slotPitch,
@@ -57,6 +65,12 @@ import {
   type Planned,
   type PreviewTarget,
 } from './plan';
+import {
+  DEFAULT_WET_MIX,
+  NOTE_IMPULSE_LOST,
+  NOTE_IMPULSE_NOT_KEPT,
+  loadImpulseFile,
+} from './reverb';
 import { SHORTCUTS } from './shortcuts';
 
 /** One note of a hold-1/2/3 preview: its voice, what it lights, and whether it is sounding now. */
@@ -146,12 +160,25 @@ export function useLabAudio({
   const previews = useRef(new Map<string, HeldPreview>());
   /** Digit keys currently down (by physical key), whether or not they sound anything on the current target. */
   const heldDigits = useRef(new Map<string, string>());
-  const applied = useRef({ volume: NaN, wave: '' });
+  /** The lab-wide sounding report is held back while a view that shows its own lights is open (see `LabAudio.setLightSuppressed`). */
+  const lightSuppressed = useRef(false);
+  const soundingSnap = useRef<SoundingSnap>({ idx: new Set(), ghosts: [] });
+  const soundingListeners = useRef(new Set<() => void>());
+  const applied = useRef({ volume: NaN, wave: '', reverb: '', partials: '' });
   /** The retuner's voices by slot: the pitch each sounds at and the field note it lights (-1 = none). */
   const rtVoices = useRef(new Map<number, { hz: number; src: number; ghost?: number }>());
-  const latest = useRef({ base, ui, chord, enabled, retuner, sketch, shelf, keys });
+  // A1 (H-31): the harmonic sound's partials follow the Roughness Partials and Rolloff (the retuner's scorer options, one set for the
+  // whole lab) while the Developer option is on; the engine clamps them (1 to 16 partials, rolloff 0.5 to 1)
+  const [dev] = useLabDeveloperOptions();
+  const sound = soundPartials(
+    dev.soundFollowsRoughness,
+    retuner.settings.scorerOpts.harmonics,
+    retuner.settings.scorerOpts.rolloff
+  );
+  const impulse = useImpulseState();
+  const latest = useRef({ base, ui, chord, enabled, retuner, sketch, shelf, keys, sound });
   useEffect(() => {
-    latest.current = { base, ui, chord, enabled, retuner, sketch, shelf, keys };
+    latest.current = { base, ui, chord, enabled, retuner, sketch, shelf, keys, sound };
     // only on a change: setVolume schedules a ramp on the master gain
     if (engine.current && applied.current.volume !== ui.volume) {
       engine.current.setVolume(ui.volume);
@@ -161,7 +188,42 @@ export function useLabAudio({
       engine.current.setTimbre(ui.wave);
       applied.current.wave = ui.wave;
     }
+    const reverbKey = `${ui.reverb.preset}:${ui.reverb.mix}`;
+    if (engine.current && applied.current.reverb !== reverbKey) {
+      engine.current.setReverb(ui.reverb.preset, ui.reverb.mix);
+      applied.current.reverb = reverbKey;
+    }
+    // notes already sounding keep their wave: the engine builds the new one for the next note
+    const partialsKey = `${sound.count}:${sound.rolloff}`;
+    if (engine.current && applied.current.partials !== partialsKey) {
+      engine.current.setPartials(sound.count, sound.rolloff);
+      applied.current.partials = partialsKey;
+    }
   });
+
+  // the loaded impulse (read from IndexedDB once, or just picked) goes to the engine
+  useEffect(() => {
+    engine.current?.setCustomImpulse(impulse.data);
+  }, [impulse.data]);
+
+  // the stored impulse is read on mount (so the first note after a reload already has it); a Custom preset whose impulse
+  // cannot be read falls back to Hall with a one-line note
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    let live = true;
+    void ensureImpulseLoaded().then(() => {
+      const r = latest.current.ui.reverb;
+      if (live && r.preset === 'custom' && !getImpulseState().data) {
+        patchImpulse({ note: NOTE_IMPULSE_LOST });
+        dispatch({ type: 'ui', patch: { reverb: { ...r, preset: 'hall' } } });
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [enabled, dispatch]);
 
   const api = useMemo<
     LabAudio & {
@@ -186,19 +248,39 @@ export function useLabAudio({
         engine.current = new VoiceEngine();
         engine.current.setVolume(latest.current.ui.volume);
         engine.current.setTimbre(latest.current.ui.wave);
-        applied.current = { volume: latest.current.ui.volume, wave: latest.current.ui.wave };
+        const r = latest.current.ui.reverb;
+        const sp = latest.current.sound;
+        engine.current.setPartials(sp.count, sp.rolloff);
+        engine.current.setCustomImpulse(getImpulseState().data);
+        engine.current.setReverb(r.preset, r.mix);
+        applied.current = {
+          volume: latest.current.ui.volume,
+          wave: latest.current.ui.wave,
+          reverb: `${r.preset}:${r.mix}`,
+          partials: `${sp.count}:${sp.rolloff}`,
+        };
       }
       return engine.current;
     };
-    const report = () =>
+    const report = () => {
+      const idx = lights.current.lit();
+      const ghosts = ghostLights.current
+        .lit()
+        .sort((a, b) => a - b)
+        .map(ghostCents);
+      // the local channel first: it is cheap, and the library's ring reads it
+      soundingSnap.current = { idx: new Set(idx), ghosts };
+      for (const fn of soundingListeners.current) {
+        fn();
+      }
+      if (lightSuppressed.current) {
+        return;
+      }
       dispatch({
         type: 'sounding',
-        idx: lights.current.lit(),
+        idx,
         marks: markLights.current.lit(),
-        ghosts: ghostLights.current
-          .lit()
-          .sort((a, b) => a - b)
-          .map(ghostCents),
+        ghosts,
         pitches: pitchLights.current
           .lit()
           .sort((a, b) => a - b)
@@ -208,6 +290,7 @@ export function useLabAudio({
           })),
         chords: [...chordLights.current.keys()],
       });
+    };
     const light = (i: number, on: boolean, markOnly = false, ghost?: number, hz?: number) => {
       let changed = false;
       if (hz !== undefined && hz > 0) {
@@ -443,6 +526,15 @@ export function useLabAudio({
       }
       endHeld(id);
       const { base: b, ui: u } = latest.current;
+      if (t.kind === 'pitches' && t.variants) {
+        // M7e, a library row: 1, 4 and 5 each play their own set (the mapping is `variantCents`; the roots are set in `state/libraryPreview.ts`); it
+        // arms nothing and does not read the Sketch row. 2 and 3 are swallowed, as on every pitches target.
+        const cents = variantCents(t.variants, digit);
+        if (cents) {
+          startHeld(id, pitchesPlan(b.field, b.repC, cents, pitch()), false, digit);
+        }
+        return true;
+      }
       if (ARMED_DIGITS[digit]) {
         armFrom(t, false);
         armedAt.current = soundKey();
@@ -668,7 +760,8 @@ export function useLabAudio({
     /** The frame, the armed shape or the template changed under a resting pointer: a held 4 / 5 plays the new chord. */
     const refreshArmed = () => {
       const t = target.current;
-      if (!t) {
+      // a library row's sound does not read the Sketch row (M7e): its own target key follows what it plays
+      if (!t || (t.kind === 'pitches' && t.variants)) {
         return;
       }
       // a chord chip's sound does not depend on the armed chord: arming it by this very hold must not restart the sound
@@ -686,6 +779,20 @@ export function useLabAudio({
     };
     return {
       enabled,
+      setLightSuppressed: (on: boolean) => {
+        lightSuppressed.current = on;
+        if (!on) {
+          // the lab missed what sounded meanwhile: send it the current state
+          report();
+        }
+      },
+      subscribeSounding: (fn: () => void) => {
+        soundingListeners.current.add(fn);
+        return () => {
+          soundingListeners.current.delete(fn);
+        };
+      },
+      soundingSnapshot: () => soundingSnap.current,
       syncRetuner,
       refreshArmed,
       pressChord,
@@ -826,6 +933,43 @@ export function useLabAudio({
       },
       stopAll,
       hzAt: (cents) => absHz(pitch(), cents),
+      audioAvailable: enabled && hasWebAudio(),
+      loadImpulse: async (file) => {
+        const eng = getEngine();
+        if (!eng || !hasWebAudio()) {
+          return 'Audio is not available in this browser';
+        }
+        patchImpulse({ busy: true });
+        try {
+          const r = await loadImpulseFile(file, (bytes) => eng.decodeImpulse(bytes));
+          if (!r.ok) {
+            return r.reason;
+          }
+          // the engine gets it through the store (the effect above); then the preset becomes Custom, and a mix of 0 would
+          // sound like nothing happened, so it starts at the default wet mix
+          const kept = await saveImpulse(r.impulse);
+          patchImpulse({ data: r.impulse, note: kept ? null : NOTE_IMPULSE_NOT_KEPT });
+          const cur = latest.current.ui.reverb;
+          dispatch({
+            type: 'ui',
+            patch: { reverb: { preset: 'custom', mix: cur.mix > 0 ? cur.mix : DEFAULT_WET_MIX } },
+          });
+          return null;
+        } finally {
+          patchImpulse({ busy: false });
+        }
+      },
+      removeImpulse: async () => {
+        const deleted = await deleteImpulse();
+        patchImpulse({
+          data: null,
+          note: deleted ? null : 'The saved impulse could not be deleted.',
+        });
+        const cur = latest.current.ui.reverb;
+        if (cur.preset === 'custom') {
+          dispatch({ type: 'ui', patch: { reverb: { ...cur, preset: 'hall' } } });
+        }
+      },
     };
   }, [dispatch, enabled]);
 

@@ -256,6 +256,13 @@
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.9fr) 1.75rem;
 }
 
+/* a quiet line under a template row the finder skips in this repeat (M7c) */
+.editorNote {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+  margin-top: -0.125rem;
+}
+
 .editorFoot {
   display: flex;
   gap: 0.375rem;
@@ -629,6 +636,9 @@
 
 /* ----------------------------------------------------------------------------------------------- lattice */
 .latticeSvg {
+  --ring-gap: var(
+    --panel-inset
+  ); /* the shared dots (ringMarks.module.css) outline themselves in this panel's background */
   background: var(--panel-inset);
   border-radius: var(--radius-control);
   display: block;
@@ -646,34 +656,6 @@
 }
 
 .edgeChord {
-  stroke: var(--mark-blue);
-  stroke-width: 3;
-}
-
-.dotOn {
-  cursor: pointer;
-  fill: var(--text);
-  stroke: var(--panel-inset);
-  stroke-width: 1.5;
-}
-
-.dotOff {
-  cursor: pointer;
-  fill: var(--panel-inset);
-  stroke: var(--text-subtle);
-  stroke-width: 2;
-}
-
-.dotLit {
-  cursor: pointer;
-  fill: var(--mark-green);
-  stroke: var(--text);
-  stroke-width: 2;
-}
-
-.dotOn[data-chord='true'],
-.dotOff[data-chord='true'],
-.dotLit[data-chord='true'] {
   stroke: var(--mark-blue);
   stroke-width: 3;
 }

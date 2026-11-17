@@ -27,6 +27,7 @@ import {
 } from '../../../lib/harmonic-field';
 import { KEYBOARD_MODES, LINKED_ROOTS, type LinkedRoot } from '../audio/keymap';
 import { MODE_PLAYBACKS } from '../audio/plan';
+import { sanitizeReverb } from '../audio/reverb';
 import { sanitizePitch } from './chordShelf';
 import {
   DEFAULT_AXES,
@@ -63,6 +64,14 @@ import {
   migrateV2,
   type Layout,
 } from './layout';
+import { sanitizeLibSort } from './librarySort';
+import {
+  LIB_CMPS,
+  MAX_LIB_CHECKED,
+  MAX_LIB_OPEN,
+  sanitizeKeyList,
+  sanitizeLibFilters,
+} from './libraryState';
 import { canonicalPattern } from './patterns';
 import {
   ANCHORS,
@@ -241,6 +250,17 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     pairsColor: oneOf(raw.pairsColor, PAIRS_COLORS, d.pairsColor),
     // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount
     pairsAdded: sanitizeAdded(raw.pairsAdded),
+    // optional (Scala-tools M7c, H-30): the chord library's filters, checked rows (at most 40), open shapes and comparison; each falls back to its default; no write on mount
+    libFilters: sanitizeLibFilters(raw.libFilters),
+    libChecked: sanitizeKeyList(raw.libChecked, MAX_LIB_CHECKED),
+    libOpen: sanitizeKeyList(raw.libOpen, MAX_LIB_OPEN),
+    libCmp: oneOf(raw.libCmp, LIB_CMPS, d.libCmp),
+    // optional: the width in rem of the library's ring panel (the dialog's splitter); out of range or damaged = 36; no write on mount
+    libSplit: numIn(raw.libSplit, 20, 64, d.libSplit),
+    // optional: the library table's sort; missing or damaged = the library's own order; no write on mount
+    libSort: sanitizeLibSort(raw.libSort),
+    // optional (A1, H-31): the reverb preset and mix; an unknown preset reads as Dry, a bad mix as 0; no write on mount
+    reverb: sanitizeReverb(raw.reverb),
   };
 }
 

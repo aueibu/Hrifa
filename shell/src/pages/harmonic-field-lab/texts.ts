@@ -78,18 +78,18 @@ const entries = {
     term: 'Wave',
     help: [
       p(
-        'The timbre the keys and Play buttons make. **Sine** is a pure tone with no overtones, so the slow beating between close notes is easiest to hear. **Harmonic (7 partials)** adds six overtones to every note, each 0.88 times as loud as the one below.'
+        'The timbre the keys and Play buttons make. **Sine** is a pure tone with no overtones, so the slow beating between close notes is easiest to hear. **Harmonic** adds overtones to every note, each a fixed fraction (the rolloff) as loud as the one below: 7 partials and 0.88 by default, or the Roughness Partials and Rolloff (see the Developer option).'
       ),
       example(
-        'play 5/4 with 1/1 on **Sine**, then on **Harmonic (7 partials)**: the harmonic version beats less where the overtones line up (4:5) and more where they nearly miss.'
+        'play 5/4 with 1/1 on **Sine**, then on **Harmonic**: the harmonic version beats less where the overtones line up (4:5) and more where they nearly miss.'
       ),
     ],
     teaching: [
       p(
-        'The harmonic wave is the same sound the roughness score and the dissonance curve assume, so what you hear matches what they measure.'
+        'The harmonic wave is the same sound the roughness score and the dissonance curve assume, so what you hear matches what they measure. With the Developer option on (the default) a change of the Roughness Partials or Rolloff is heard from the next note on; a note already sounding keeps its wave.'
       ),
     ],
-    see: ['roughness'],
+    see: ['roughness', 'soundFollowsRoughness', 'scorerOptions'],
   },
   baseHz: {
     term: '1/1 Hz',
@@ -109,6 +109,53 @@ const entries = {
       ),
       example('at 50 a single sine is comfortable; four notes together may need 30.'),
     ],
+  },
+  reverb: {
+    term: 'Reverb',
+    help: [
+      p(
+        'One reverb shared by every note: the sound of a space around the notes. **Dry** adds nothing (the default: exactly the sound without a reverb). **Room** has a short tail of about 0.9 s, **Hall** a long one of about 2.8 s, **Custom** uses an impulse you loaded. The Stop button cuts a ringing tail.'
+      ),
+      example('pick **Hall**, play a chord and let go: it keeps ringing for about 2.8 s.'),
+    ],
+    teaching: [
+      p(
+        'Room and Hall are made from decaying noise and are the same every time. A reverb smears the beating you hear between close notes, so judge beating on Dry.'
+      ),
+    ],
+    see: ['reverbMix', 'reverbImpulse', 'volume'],
+  },
+  reverbMix: {
+    term: 'Reverb mix',
+    help: [
+      p(
+        'How much of what you hear is the reverb, from 0 (none) to 100 (only the reverb). The two parts are balanced so the loudness stays about the same as you move it. It does nothing while the preset is Dry.'
+      ),
+      example('Hall at 30 puts the chord in a room; at 100 you hear only the tail.'),
+    ],
+    see: ['reverb'],
+  },
+  reverbImpulse: {
+    term: 'Load impulse',
+    help: [
+      p(
+        'Picks an audio file whose sound is a space recorded as one click (an impulse response); the reverb then sounds like that space. WAV, AIFF, MP3 or OGG as far as your browser reads them, mono or stereo, at most 12 s and 8 MB. It is kept in this browser across reloads. **Remove custom impulse** deletes it and goes back to Hall.'
+      ),
+      example('a 2.4 s recording of a stairwell makes every note ring like the stairwell.'),
+    ],
+    see: ['reverb'],
+  },
+  soundFollowsRoughness: {
+    term: 'Sound follows Roughness',
+    help: [
+      p(
+        'A Developer option, on by default. On: the harmonic sound uses the Partials and Rolloff of the Retuner roughness scorer (the sound stops at 16 partials and a rolloff between 0.5 and 1), so what you hear is what the roughness numbers assume. A note already sounding keeps its wave. Off: 7 partials and 0.88, as before. Sine has no partials.'
+      ),
+      example(
+        'Partials 3 and Rolloff 0.88: the next note has three partials at 1, 0.88 and 0.77; set Partials to 12 and the next note has twelve.'
+      ),
+    ],
+    see: ['wave', 'scorerOptions', 'developerMenu'],
   },
   playScale: {
     term: 'Play scale',
@@ -1928,16 +1975,21 @@ const entries = {
     term: 'Chord library',
     help: [
       p(
-        "Scala's list of named chords, written as ratios. Each heading is one shape (the same notes, whichever is the root) with its inversions inside; open it to see the rows. Add puts a chord in your templates. Check looks for it in your notes without adding it."
+        "Scala's list of named chords, written as ratios. Each heading is one shape (the same notes, whichever is the root) with its inversions inside; open it to see the rows. Add puts a chord in your templates. Check looks for it in your subset without adding it. The ring at the bottom draws the chord you point at."
       ),
       example('search "dominant seventh" to find 4:5:6:7 and its three inversions.'),
     ],
     teaching: [
       p('Chord list by Manuel Op de Coul, from Scala (chordnam.par).'),
       p(
-        'Only the chords written as ratios are here. A dimmed row has two notes on the same pitch in this repeat, so it cannot be found; it can still work in a different repeat.'
+        'Only the chords written as ratios are here. A row with two notes on the same pitch in this repeat (an octave folded in) can be added, but the chord finder skips it here and Check is off for it. It is found again in a repeat that keeps its notes apart.'
       ),
-      p('Nothing from the library is saved except the chords you add to your templates.'),
+      p(
+        'The dialog keeps your checks, filters, search and open shapes when you close it and when you reload the page. Nothing else from the library is saved except the chords you add to your templates.'
+      ),
+      p(
+        "Point at a row, a shape heading or a root row of the roots table and hold {key:holdOwn}, {key:holdField} or {key:holdExact} to hear the chord: {key:holdOwn} as a chord card plays it (the finder notes, from the root the ring shows), {key:holdField} rounded to the nearest notes and {key:holdExact} at its exact ratios, both from the Sketch stepper's root. A root row you point at or pin is used by all three."
+      ),
     ],
     see: [
       'chordTolerance',
@@ -1946,7 +1998,117 @@ const entries = {
       'libraryFilters',
       'libraryCheck',
       'libraryAdd',
+      'libraryRing',
     ],
+  },
+  libraryRing: {
+    term: 'Chord ring',
+    help: [
+      p(
+        'The chord you last pointed at or checked, on a one-repeat ring, 1/1 at the top. Grey dots are field notes; each chord note is a larger dot at its exact pitch. A bar runs to the nearest note: orange if the chord note is above, teal if below, none if exact.'
+      ),
+      keys([
+        { key: 'Point at a row', does: 'show it here' },
+        {
+          key: '{key:holdOwn}, {key:holdField}, {key:holdExact}',
+          does: "hold to hear it: finder notes on the shown root; rounded or exact on the Sketch stepper's root",
+        },
+        {
+          key: 'Point at a dot',
+          does: '{key:holdOwn} hear that note; {key:holdField} the chord on it, rounded; {key:holdExact} its exact ratios',
+        },
+        { key: 'Field | Subset', does: 'compare with the whole field or your subset' },
+      ]),
+      example('on a 5-limit major scale, 4:5:6:7 from 5/4 has 35/32 in teal, −48.8 c from 9/8.'),
+    ],
+    teaching: [
+      p(
+        'A bar is never shorter than 4 degrees of the ring, so a very small error is still visible. The readout gives the real number.'
+      ),
+      p(
+        "The chord stands on the root where Check finds it. Found on several roots, it uses your Sketch stepper's root when that is one of them, else the lowest. Not found, it uses the stepper's root, or 1/1 when there is none."
+      ),
+      p('Each chord note is named by its pitch above 1/1, as the ring draws it.'),
+      p(
+        "{key:holdOwn} follows the root the ring shows. {key:holdField} and {key:holdExact} follow the Sketch stepper's root, as the chord chips do; point at a root row to use that root for all three. {key:holdField} puts each chord note on its nearest note, in its own octave, as the bars and the readout do."
+      ),
+      p(
+        'Pointing at a field dot is choosing a root, as pointing at a root row is, and it beats the Sketch stepper: {key:holdOwn} plays that field note alone, {key:holdField} the shown chord on it with each note moved to the nearest note of the set the ring compares with (octave kept), {key:holdExact} its exact ratios on it. With no chord shown, only {key:holdOwn} sounds.'
+      ),
+      p(
+        "While a key sounds, the notes you hear are lit green over the chord's dots; a sound that matches no field note is a green dashed circle."
+      ),
+    ],
+    see: ['libraryCheck', 'chordLibrary', 'holdToPlay'],
+  },
+  libraryRoots: {
+    term: 'In your subset: found on N roots',
+    help: [
+      p(
+        "Every root where the chord is found in your subset at your tolerance, low to high, with the chord's Worst error (the largest) and Avg error (the mean over the notes except the root), in cents. The numbers are the same as on the chord cards: the finder's rule on your subset. Nothing is added or checked by looking."
+      ),
+      keys([
+        {
+          key: 'Point at a root',
+          does: 'preview the chord on it: the ring, the readout and the hold keys follow',
+        },
+        {
+          key: 'Click a root',
+          does: 'pin it, so it stays after the pointer leaves; click again to unpin',
+        },
+      ]),
+      example(
+        'on a 5-limit major scale at tolerance 90, 4:5:6:7 is found on 1/1, 5/4, 4/3, 3/2 and 5/3; on 3/2 it is Worst 27.3, Avg 9.1.'
+      ),
+    ],
+    teaching: [
+      p(
+        "Without a pin, the ring shows the chord from the root the ring rule picks (your Sketch stepper's root when it is one of these, else the lowest). A new chord clears the pin, and a pinned root that stops being found is dropped. Nothing here is saved."
+      ),
+      p(
+        'The numbers use the heat colors of the chord cards. The ring has its own colors: orange and teal show whether a chord note is above or below its nearest note.'
+      ),
+      p(
+        'Hold {key:holdOwn}, {key:holdField} or {key:holdExact} with the pointer on a root to hear the chord from that root: a root you point at here, or the pinned one, is used by all three keys. Without one, {key:holdOwn} follows the root the ring shows and the other two the Sketch stepper.'
+      ),
+    ],
+    see: ['libraryRing', 'libraryCheck', 'chordTolerance'],
+  },
+  libraryRow: {
+    term: 'Library chord',
+    help: [
+      p(
+        'One chord of the list. Pointing at it shows it on the ring below. Check looks for it in your subset; Add puts it in your templates.'
+      ),
+      keys([
+        { key: 'Point at it', does: 'show it on the ring' },
+        {
+          key: '{key:holdOwn}',
+          does: 'hold to hear it as your subset has it, on the root the ring shows',
+        },
+        {
+          key: '{key:holdField}',
+          does: "hold to hear it rounded to the nearest notes, on the Sketch stepper's root",
+        },
+        {
+          key: '{key:holdExact}',
+          does: "hold to hear the exact ratios, on the Sketch stepper's root",
+        },
+        { key: 'Point at a root row', does: 'all three keys then use that root' },
+      ]),
+      example(
+        'point at 4:5:6:7 and hold {key:holdExact}: you hear the dominant seventh in pure ratios.'
+      ),
+    ],
+    teaching: [
+      p(
+        "{key:holdOwn} follows the root the ring shows: the root you point at in the roots table, else the pinned root, else the ring's own rule. {key:holdField} and {key:holdExact} follow the root of the Sketch row stepper, like the chord chips, wherever the chord is found (1/1 when your subset is empty). A root you point at or pin is a choice you made, so all three keys use it. Move the stepper while a key is held and the sound moves with it."
+      ),
+      p(
+        "{key:holdOwn} is the chord as a chord card plays it: the finder's voicing on that root, in your own field notes. When the finder does not find the chord on that root at your tolerance (or the chord folds in this repeat), it plays like {key:holdField} rooted on the field's 1/1 note, or on the Sketch stepper's root when the field has no 1/1. {key:holdField} puts each chord note on the nearest note of the set the ring compares with (the Field | Subset switch), keeping the chord note's own octave, so it is what the ring's bars and readout say. Nothing is ever silent."
+      ),
+    ],
+    see: ['libraryRing', 'libraryCheck', 'libraryAdd'],
   },
   libraryFilters: {
     term: 'Chord library filters',
@@ -1960,14 +2122,27 @@ const entries = {
       p(
         'Family is the group a chord goes into when you add it. A shape stays in the list when any of its rows matches, and its heading says how many do.'
       ),
+      p(
+        'Checked only lists just the rows you checked, each shape open with only those rows. Clear checks (with the count) unchecks them all.'
+      ),
     ],
     see: ['chordLibrary'],
+  },
+  libraryExpandAll: {
+    term: 'Expand all',
+    text: 'Opens every shape in the list below, so all of its entries show. With a search or a filter on, it opens only the shapes that are listed. The choice is remembered.',
+    see: ['libraryCollapseAll'],
+  },
+  libraryCollapseAll: {
+    term: 'Collapse all',
+    text: 'Closes every shape in the library, leaving only the headings. The choice is remembered.',
+    see: ['libraryExpandAll'],
   },
   libraryCheck: {
     term: 'Check a library chord',
     help: [
       p(
-        'Runs this one chord on your current notes at your current tolerance and prints where it is found. It only looks: it never changes your templates. Every row you checked stays checked and updates when you change the notes, the mode or the tolerance.'
+        'Compares this chord to your current subset and shows where it is found. It uses your current tolerance and only looks: it never changes your templates. Every row you checked stays checked and updates when you change the subset, the mode or the tolerance.'
       ),
       example('Minor Triad on the 5-limit major scale at tolerance 0: found on 5/4 and 5/3.'),
     ],
@@ -2295,12 +2470,14 @@ const entries = {
   soundMenu: {
     term: 'Sound settings',
     help: [
-      p('Wave shape, the pitch of 1/1 in hertz, volume and the direction of scale previews.'),
+      p(
+        'Wave shape, the pitch of 1/1 in hertz, volume, the reverb (preset, mix and your own impulse) and the direction of scale previews.'
+      ),
       example(
         'set **1/1 Hz** to 261.63 Hz for middle C and pick **Sine** to hear beating most clearly.'
       ),
     ],
-    see: ['wave', 'baseHz', 'volume', 'modePlayback'],
+    see: ['wave', 'baseHz', 'volume', 'reverb', 'modePlayback'],
   },
   stepBars: {
     term: 'Step-size bars',

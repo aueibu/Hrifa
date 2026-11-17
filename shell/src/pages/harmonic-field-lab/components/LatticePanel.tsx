@@ -24,6 +24,7 @@ import type { LatMode } from '../state/vizState';
 import { TIPS } from '../texts';
 import type { SceneState } from './Lattice3D';
 import { ModeChevron, rootLabel, useModeRoot } from './ModeRoot';
+import { RingDot } from './ringMarks';
 import { Num, Row, Tip, noteHandlers, useLab, useViz } from './ui';
 import { hasWebGL } from './webgl';
 import classes from './panels.module.css';
@@ -131,8 +132,8 @@ function Lattice2D({
             {lab.pin === p.i && <circle className={classes.pinRing} cx={p.x} cy={p.y} r={13} />}
             {lab.hover === p.i && <circle className={classes.selRing} cx={p.x} cy={p.y} r={13} />}
             {modeRoot === p.i && <ModeChevron x={p.x} y={p.y - 10} deg={90} scale={0.9} />}
-            <circle
-              className={lit ? classes.dotLit : on ? classes.dotOn : classes.dotOff}
+            <RingDot
+              kind={lit ? 'lit' : on ? 'on' : 'off'}
               data-chord={lab.chord.has(p.i) ? 'true' : undefined}
               cx={p.x}
               cy={p.y}

@@ -217,9 +217,36 @@ export type PreviewTarget =
       chords?: readonly string[];
       /** A positional chord (M9): holding 1 on it arms it in the Sketch row, as a chord chip's hold 1 arms its template. */
       positional?: { pattern: string; rootDeg: number; shape: readonly Note[] };
+      /**
+       * M7e: a library row's three sounds. When set, holds 1, 4 and 5 play `variantCents(variants, digit)` (absolute pitch,
+       * hold 1 from the root the library ring shows, holds 4 and 5 from the Sketch stepper's root unless a root row is chosen)
+       * instead of `cents`; without it a pitches target answers hold 1 only.
+       */
+      variants?: PitchVariants;
     }
   /** A key ring or a saved subset: its field notes in degree order (root first); hold 1 steps through them as a scale. */
   | { kind: 'scale'; idx: readonly number[] };
+
+/** M7e: the sets of cents (above 1/1) a library row plays: hold 1 = own, hold 4 = rounded, hold 5 = exact. */
+export interface PitchVariants {
+  own: readonly number[];
+  rounded: readonly number[];
+  exact: readonly number[];
+}
+
+/** THE key-to-set mapping of a library row (M7e): which of its sets a held digit plays; null for any other digit. */
+export function variantCents(v: PitchVariants, digit: string): readonly number[] | null {
+  switch (digit) {
+    case SHORTCUTS.holdOwn:
+      return v.own;
+    case SHORTCUTS.holdField:
+      return v.rounded;
+    case SHORTCUTS.holdExact:
+      return v.exact;
+    default:
+      return null;
+  }
+}
 
 /** Stable identity of a target, so a pointer leaving one target does not clear a newer one. */
 export const previewTargetKey = (t: PreviewTarget): string => {

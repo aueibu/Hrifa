@@ -3,12 +3,13 @@
  * module, so what a test cannot prove here: that each sentence really stays on one line, how wide the rows and the filter row
  * are, what the dimmed rows and the tooltips look like, and how fast 313 headings feel in a browser. The CSS is checked by eye.
  */
-import { act, fireEvent, render, screen, within } from '@test-utils';
+import { act, fireEvent, render, screen, waitFor, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CHORD_LIBRARY_CREDIT,
   DEFAULT_TEMPLATES,
-  FOLD_REASON,
+  FOLD_EDIT_NOTE,
+  FOLD_ROW_NOTE,
   libraryEntries,
   libraryShapes,
 } from '../../../lib/harmonic-field';
@@ -46,7 +47,7 @@ const major5 = (): Action[] => [
 ];
 
 function mount(setup: Action[] = []) {
-  render(
+  const view = render(
     <LabProvider>
       <ChordsPanel />
       <Probe />
@@ -55,7 +56,12 @@ function mount(setup: Action[] = []) {
   if (setup.length) {
     send(...setup);
   }
+  return view;
 }
+const closeLibrary = async (dialog: HTMLElement) => {
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Chord library' })).toBeNull());
+};
 const openLibrary = async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Chord library' }));
   return screen.findByRole('dialog', { name: 'Chord library' });
@@ -67,10 +73,9 @@ const search = (dialog: HTMLElement, text: string) =>
 /** The heading button of a shape, found by its root position text and name. */
 const head = (dialog: HTMLElement, start: string) =>
   within(dialog).getByRole('button', { name: new RegExp(`^${start.replace(/[()/]/g, '\\$&')}`) });
-const rowsOf = (dialog: HTMLElement) =>
-  within(dialog)
-    .getAllByRole('listitem')
-    .filter((li) => li.className.includes('row'));
+/** The entry rows (`tr[data-folds]`); a Check line or folding note is the spanning row directly under its entry (`lineRow`). */
+const rowsOf = (scope: HTMLElement) => [...scope.querySelectorAll<HTMLElement>('tr[data-folds]')];
+const lineRow = (row: HTMLElement) => row.nextElementSibling as HTMLElement | null;
 const textOf = (el: HTMLElement) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
 const without = (text: string) => ({
   type: 'templates/set' as const,
@@ -94,7 +99,7 @@ describe('the button and the header', () => {
     expect(within(dialog).getByText(CHORD_LIBRARY_CREDIT)).toBeInTheDocument();
     expect(
       within(dialog).getByText(
-        "376 chords in 297 shapes (399 names in Scala's list); 16 cannot be found in this repeat"
+        "376 chords in 297 shapes (399 names in Scala's list); 16 collapse octaves in this repeat (they can be added; the finder skips them here)"
       )
     ).toBeInTheDocument();
     // every shape starts collapsed: 313 headings, no rows
@@ -118,9 +123,7 @@ describe('shapes and rows', () => {
     expect(textOf(h)).toContain('4 entries match');
     fireEvent.click(h);
     expect(h).toHaveAttribute('aria-expanded', 'true');
-    const rows = within(
-      within(dialog).getByRole('list', { name: 'Entries of 4:5:6:7' })
-    ).getAllByRole('listitem');
+    const rows = rowsOf(within(dialog).getByRole('rowgroup', { name: 'Entries of 4:5:6:7' }));
     expect(rows.map((r) => textOf(r).split(' ')[0])).toEqual([
       '4:5:6:7',
       '5:6:7:8',
@@ -132,23 +135,162 @@ describe('shapes and rows', () => {
     expect(textOf(rows[0])).toMatch(/4 notes · odd 7 · prime 7/);
   });
 
-  it('a folding entry is dimmed with the reason and its Add and Check do nothing', async () => {
+  it('a folding row carries one muted note, Add works on it (rows 13b, 13c, 13d), Check does not', async () => {
     mount([without('10:12:15')]);
     const dialog = await openLibrary();
     search(dialog, 'Triunisonus');
     fireEvent.click(head(dialog, '1:2:3 Triunisonus'));
     const row = rowsOf(dialog)[0];
     expect(row).toHaveAttribute('data-folds', 'true');
-    expect(within(row).getByText(FOLD_REASON)).toBeInTheDocument();
+    // the note is a plain line: no alert role, no icon (jsdom applies no CSS, so its look is checked by eye)
+    const under = lineRow(row) as HTMLElement;
+    const note = within(under).getByText(FOLD_ROW_NOTE);
+    expect(note.tagName).toBe('SPAN');
+    expect(note.getAttribute('role')).toBeNull();
+    // the only icons in the row are the two icon buttons (Add, Check), never one beside the note
+    expect([...row.querySelectorAll('svg')].every((s) => s.closest('button') !== null)).toBe(true);
+    expect(under.querySelector('svg')).toBeNull();
     const add = within(row).getByRole('button', { name: 'Add 1:2:3' });
     const check = within(row).getByRole('button', { name: 'Check 1:2:3' });
-    expect(add).toHaveAttribute('aria-disabled', 'true');
+    expect(add).not.toHaveAttribute('aria-disabled');
     expect(check).toHaveAttribute('aria-disabled', 'true');
-    const before = lab.state.templates;
-    fireEvent.click(add);
     fireEvent.click(check);
-    expect(lab.state.templates).toBe(before);
-    expect(within(row).queryByTestId('check-line')).toBeNull();
+    expect(within(lineRow(row) as HTMLElement).queryByTestId('check-line')).toBeNull();
+    expect(lab.state.ui.libChecked).toEqual([]);
+    fireEvent.click(add);
+    expect(lab.state.templates.at(-1)).toEqual({
+      text: '1:2:3',
+      name: 'Triunisonus',
+      family: expect.any(String),
+    });
+    // the Add message shows where the other Add messages show
+    expect(
+      within(dialog).getByText(
+        'Added 1:2:3 (not used by the finder in this repeat: octave notes merge).'
+      )
+    ).toHaveAttribute('data-kind', 'note');
+    expect(within(rowsOf(dialog)[0]).getByText('in your templates')).toBeInTheDocument();
+    // Edit templates: the row of 1:2:3 has the quiet note, the 4:5:6 row does not
+    await closeLibrary(dialog);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit templates' }));
+    const editor = await screen.findByRole('dialog', { name: 'Chord templates' });
+    const rowOfRatios = (text: string) =>
+      within(editor).getByDisplayValue(text).closest('[class*="editorRow"]') as HTMLElement;
+    expect(rowOfRatios('1:2:3').nextElementSibling).toHaveTextContent(FOLD_EDIT_NOTE);
+    expect(rowOfRatios('4:5:6').nextElementSibling?.textContent ?? '').not.toContain(
+      FOLD_EDIT_NOTE
+    );
+  });
+});
+
+describe('Expand all and Collapse all', () => {
+  it('opens every listed shape, then closes them all; both are kept by the lab', async () => {
+    mount(major5());
+    const dialog = await openLibrary();
+    search(dialog, 'minor triad');
+    const listed = within(dialog).getAllByRole('button', { expanded: false });
+    const shapes = listed.filter((b) => b.getAttribute('aria-expanded') === 'false').length;
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Expand all shapes' }));
+    expect(lab.state.ui.libOpen).toHaveLength(shapes);
+    expect(within(dialog).queryAllByRole('button', { expanded: false })).toHaveLength(0);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Collapse all shapes' }));
+    expect(lab.state.ui.libOpen).toHaveLength(0);
+    expect(within(dialog).queryAllByRole('button', { expanded: true })).toHaveLength(0);
+  });
+});
+
+describe('state kept by the lab (rows 16 to 20)', () => {
+  it('keeps the search, filters, checks and open shapes when the dialog is closed and reopened', async () => {
+    mount(major5());
+    let dialog = await openLibrary();
+    search(dialog, 'minor triad');
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Cardinality min' }), {
+      target: { value: '3' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Check all 3 of 10:12:15' }));
+    expect(within(dialog).getByRole('button', { name: 'Clear checks (3)' })).toBeInTheDocument();
+    await closeLibrary(dialog);
+    expect(lab.state.ui.libFilters).toMatchObject({ search: 'minor triad', notesMin: 3 });
+    expect(lab.state.ui.libChecked).toHaveLength(3);
+    expect(lab.state.ui.libOpen).toHaveLength(1);
+    dialog = await openLibrary();
+    expect(within(dialog).getByRole('textbox', { name: 'Search chords' })).toHaveValue(
+      'minor triad'
+    );
+    expect(within(dialog).getByRole('textbox', { name: 'Cardinality min' })).toHaveValue('3');
+    expect(head(dialog, '10:12:15 Minor Triad')).toHaveAttribute('aria-expanded', 'true');
+    // the results are recomputed from the subset as it is now
+    expect(within(dialog).getAllByTestId('check-line')[0]).toHaveTextContent('2 found');
+    send({ type: 'sel/toggle', i: 2 });
+    expect(within(dialog).getAllByTestId('check-line')[0]).not.toHaveTextContent('2 found');
+  });
+
+  it('is still there after a reload (stored), the dialog itself closed (row 18)', async () => {
+    const first = mount(major5());
+    const dialog = await openLibrary();
+    search(dialog, 'minor triad');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Check all 3 of 10:12:15' }));
+    fireEvent.click(within(dialog).getByRole('switch', { name: 'Checked only' }));
+    first.unmount();
+    mount();
+    expect(screen.queryByRole('dialog', { name: 'Chord library' })).toBeNull();
+    expect(lab.state.ui.libFilters).toMatchObject({ search: 'minor triad', checkedOnly: true });
+    expect(lab.state.ui.libChecked).toHaveLength(3);
+    const again = await openLibrary();
+    expect(within(again).getByRole('switch', { name: 'Checked only' })).toBeChecked();
+  });
+
+  it('drops a stored key the library no longer has, silently (row 20)', async () => {
+    mount(major5());
+    send({ type: 'lib/check', keys: ['no-such-key'] });
+    const dialog = await openLibrary();
+    expect(within(dialog).queryByRole('button', { name: /^Clear checks/ })).toBeNull();
+    expect(within(dialog).queryAllByTestId('check-line')).toHaveLength(0);
+  });
+
+  it('Clear checks shows the count and is hidden at 0 (row 16)', async () => {
+    mount(major5());
+    const dialog = await openLibrary();
+    expect(within(dialog).queryByRole('button', { name: /^Clear checks/ })).toBeNull();
+    search(dialog, 'minor triad');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Check all 3 of 10:12:15' }));
+    const clear = within(dialog).getByRole('button', { name: 'Clear checks (3)' });
+    expect(clear).toHaveTextContent('Clear checks (3)');
+    fireEvent.click(clear);
+    expect(within(dialog).queryByRole('button', { name: /^Clear checks/ })).toBeNull();
+    expect(lab.state.ui.libChecked).toEqual([]);
+  });
+
+  it('Checked only lists the shapes of checked rows, each open with only those rows (row 19)', async () => {
+    mount(major5());
+    const dialog = await openLibrary();
+    search(dialog, 'minor triad');
+    fireEvent.click(head(dialog, '10:12:15 Minor Triad'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Check 12:15:20' }));
+    search(dialog, 'major triad');
+    fireEvent.click(head(dialog, '4:5:6 Major Triad'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Check 4:5:6' }));
+    search(dialog, '');
+    fireEvent.click(within(dialog).getByRole('switch', { name: 'Checked only' }));
+    expect(within(dialog).getByText('2 checked')).toBeInTheDocument();
+    expect(dialog.querySelectorAll('button[aria-expanded]')).toHaveLength(2);
+    expect(dialog.querySelectorAll('button[aria-expanded="true"]')).toHaveLength(2);
+    expect(
+      rowsOf(dialog)
+        .map((r) => textOf(r).split(' ')[0])
+        .sort()
+    ).toEqual(['12:15:20', '4:5:6']);
+    // the heading shows its first listed row and the count of checked rows
+    expect(textOf(head(dialog, '12:15:20'))).toContain('· 1 checked');
+    expect(textOf(head(dialog, '4:5:6'))).toContain('· 1 checked');
+    // it narrows what the other filters allow
+    search(dialog, 'minor triad');
+    expect(rowsOf(dialog)).toHaveLength(1);
+    expect(within(dialog).getByText('1 checked')).toBeInTheDocument();
+    // off again: the whole library, the header line back
+    fireEvent.click(within(dialog).getByRole('switch', { name: 'Checked only' }));
+    search(dialog, '');
+    expect(within(dialog).getByText(/^376 chords in 297 shapes/)).toBeInTheDocument();
   });
 });
 
@@ -243,7 +385,7 @@ describe('Check', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Check all 3 of 10:12:15' }));
     expect(head(dialog, '10:12:15 Minor Triad')).toHaveAttribute('aria-expanded', 'true');
     expect(within(dialog).getAllByTestId('check-line')).toHaveLength(3);
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Clear checks' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Clear checks (3)' }));
     expect(within(dialog).queryAllByTestId('check-line')).toHaveLength(0);
   });
 
@@ -290,11 +432,10 @@ describe('Check', () => {
     expect(dialog.querySelectorAll('[data-testid="check-line"]')).toHaveLength(MAX_CHECKED);
     // the first one lost its line (its shape is open, its row has none), the last has one
     const rowOf = (text: string) =>
-      [...dialog.querySelectorAll('li[data-folds]')].find(
-        (r) => textOf(r as HTMLElement).split(' ')[0] === text
-      ) as HTMLElement;
-    expect(rowOf(singles[0]).querySelector('[data-testid="check-line"]')).toBeNull();
-    expect(rowOf(singles[MAX_CHECKED]).querySelector('[data-testid="check-line"]')).not.toBeNull();
+      rowsOf(dialog).find((r) => textOf(r).split(' ')[0] === text) as HTMLElement;
+    const lineOf = (row: HTMLElement) => lineRow(row)?.querySelector('[data-testid="check-line"]');
+    expect(lineOf(rowOf(singles[0]))).toBeFalsy();
+    expect(lineOf(rowOf(singles[MAX_CHECKED]))).toBeTruthy();
   });
 });
 

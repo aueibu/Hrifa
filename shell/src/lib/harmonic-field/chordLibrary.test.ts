@@ -3,16 +3,23 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   CHORD_LIBRARY_CREDIT,
+  FOLD_ADDED_NOTE,
+  FOLD_EDIT_NOTE,
   FOLD_REASON,
+  FOLD_ROW_NOTE,
   TEMPLATE_LIMIT,
   TEMPLATE_NAME_MAX,
   addLibraryEntries,
+  checkedShapes,
+  checkedSummary,
   entryInfo,
   filterLibrary,
   joinNames,
+  knownCheckedKeys,
   libraryEntries,
   libraryShapes,
   librarySummary,
+  librarySummaryText,
   type LibraryEntry,
 } from './chordLibrary';
 import { CHORD_LIBRARY_DATA } from './chordLibraryData';
@@ -372,20 +379,84 @@ describe('addLibraryEntries (rows 7, 8, 9, 11)', () => {
     expect(r.added).toEqual([]);
   });
 
-  it('refuses a folding entry with the reason (row 11)', () => {
-    const r = addLibraryEntries([], [byText('1:2:3')], 1200);
-    expect(r.refused).toBe(FOLD_REASON);
-    expect(addLibraryEntries([], [byText('1/(1:2:3:4:5:6:7:8)')], 1200).refused).toBe(FOLD_REASON);
+  it('adds a folding entry as written, in its Scala family, with the octave sentence (M7c rows 13b, 13c)', () => {
+    const e = byText('1:2:3');
+    const r = addLibraryEntries(noMinor, [e], 1200);
+    expect(r.refused).toBeUndefined();
+    expect(r.added).toEqual([{ text: '1:2:3', name: 'Triunisonus', family: e.family }]);
+    expect(r.templates).toEqual([...noMinor, ...r.added]);
+    expect(r.folding).toEqual(['1:2:3']);
+    expect(r.message).toBe(
+      'Added 1:2:3 (not used by the finder in this repeat: octave notes merge).'
+    );
+    expect(r.message).toBe(`Added 1:2:3 ${FOLD_ADDED_NOTE}`);
+    expect(FOLD_ROW_NOTE).toBe('Octave notes merge in this repeat; the finder skips it here.');
+    expect(FOLD_EDIT_NOTE).toBe('Skipped here: two notes share a pitch.');
+    // an undertone folding entry says its own text
+    expect(addLibraryEntries([], [byText('1/(1:2:3:4:5:6:7:8)')], 1200).message).toBe(
+      'Added 1/(1:2:3:4:5:6:7:8) (not used by the finder in this repeat: octave notes merge).'
+    );
+  });
+
+  it('a folding entry takes one of the places and keeps the duplicate and cap refusals', () => {
+    const e = byText('1:2:3');
+    const full = filler(TEMPLATE_LIMIT);
+    expect(addLibraryEntries(full, [e], 1200).refused).toBe('Needs 1 free place; you have 0.');
+    expect(addLibraryEntries(filler(TEMPLATE_LIMIT - 1), [e], 1200).templates).toHaveLength(
+      TEMPLATE_LIMIT
+    );
+    const once = addLibraryEntries([], [e], 1200).templates;
+    expect(addLibraryEntries(once, [e], 1200).refused).toBe(
+      'Same notes as 1:2:3 already in your templates.'
+    );
+    expect(addLibraryEntries([], [e, e], 1200).refused).toBe(
+      'Same notes as 1:2:3 already in your templates.'
+    );
+  });
+
+  it('a normal add says Added N template(s) and nothing about octaves', () => {
+    expect(addLibraryEntries(noMinor, [byText('10:12:15')], 1200).message).toBe(
+      'Added 1 template.'
+    );
+    const shape = shapeOf('10:12:15')!.entries;
+    const r = addLibraryEntries(noMinor, shape, 1200);
+    expect(r.message).toBe('Added 3 templates.');
+    expect(r.folding).toEqual([]);
+    expect(addLibraryEntries(noMinor, [], 1200).message).toBe('');
+  });
+
+  it('Add all follows the same rule: a mix names the folding ones', () => {
+    const r = addLibraryEntries([], [byText('10:12:15'), byText('1:2:3')], 1200);
+    expect(r.added.map((t) => t.text)).toEqual(['10:12:15', '1:2:3']);
+    expect(r.message).toBe(
+      'Added 2 templates, including 1:2:3 (not used by the finder in this repeat: octave notes merge).'
+    );
+    // two or more folding ones: joined with a comma and "and" before the last
+    const folding = entries.filter((x) => x.folds);
+    expect(folding.length).toBeGreaterThanOrEqual(3);
+    const three = addLibraryEntries([], folding.slice(0, 3), 1200);
+    const t = three.folding;
+    expect(three.message).toBe(
+      `Added 3 templates, including ${t[0]}, ${t[1]} and ${t[2]} (not used by the finder in this repeat: octave notes merge).`
+    );
   });
 
   it('judges the fold in the repeat it is given, not the one the entry was built for', () => {
-    // 1:3:5:15 does not fold in 2/1, but in a 3/1 repeat the 3 lands on the root
+    // 1:3:5:15 does not fold in 2/1, but in a 3/1 repeat the 3 lands on the root: it is ADDED and the sentence says so
     expect(byText('1:3:5:15').folds).toBe(false);
-    expect(addLibraryEntries([], [byText('1:3:5:15')], 1901.955).refused).toBe(FOLD_REASON);
+    const r3 = addLibraryEntries([], [byText('1:3:5:15')], 1901.955);
+    expect(r3.refused).toBeUndefined();
+    expect(r3.folding).toEqual(['1:3:5:15']);
     // and a stale `folds` flag is not trusted
-    expect(
-      addLibraryEntries([], [{ ...byText('4:5:6'), folds: true }], 1200).refused
-    ).toBeUndefined();
+    const stale = addLibraryEntries([], [{ ...byText('4:5:6'), folds: true }], 1200);
+    expect(stale.refused).toBeUndefined();
+    expect(stale.folding).toEqual([]);
+  });
+
+  it('an entry whose text does not parse is still refused', () => {
+    expect(addLibraryEntries([], [{ ...byText('4:5:6'), text: 'nonsense' }], 1200).refused).toBe(
+      'nonsense is not a chord the finder can read.'
+    );
   });
 
   it('the duplicate rule is the finder key: the same notes once folded into the repeat', () => {
@@ -408,5 +479,75 @@ describe('addLibraryEntries (rows 7, 8, 9, 11)', () => {
       expect(t.name).toBeTruthy();
       expect(parseTemplate(t.text).ok).toBe(true);
     }
+  });
+
+  it('every folding entry can be added on its own, stored as written', () => {
+    for (const e of entries.filter((x) => x.folds)) {
+      const r = addLibraryEntries([], [e], 1200);
+      expect(r.refused).toBeUndefined();
+      expect(r.added[0].text).toBe(e.text);
+      expect(r.added[0].family).toBe(e.family);
+      expect(r.message).toBe(`Added ${e.text} ${FOLD_ADDED_NOTE}`);
+    }
+  });
+});
+
+describe('librarySummaryText (M7c row 13g)', () => {
+  it('2/1: 16 collapse octaves, with the words of the scenario', () => {
+    expect(librarySummaryText(librarySummary(shapes))).toBe(
+      "376 chords in 297 shapes (399 names in Scala's list); 16 collapse octaves in this repeat (they can be added; the finder skips them here)"
+    );
+  });
+
+  it('the number follows the repeat; nothing folding leaves the last part out', () => {
+    const e3 = libraryEntries(1901.955);
+    const s3 = librarySummary(libraryShapes(e3, 1901.955));
+    expect(s3.folding).not.toBe(16);
+    expect(librarySummaryText(s3)).toContain(`; ${s3.folding} collapse octaves in this repeat`);
+    expect(librarySummaryText({ ...s3, folding: 0 })).toBe(
+      `${s3.entries} chords in ${s3.rooted} shapes (399 names in Scala's list)`
+    );
+  });
+});
+
+describe('Checked only (M7c rows 19 and 20)', () => {
+  const minor = byText('10:12:15');
+  const minor1 = byText('12:15:20');
+  const major = byText('4:5:6');
+  const keys = [minor.key, minor1.key, major.key];
+
+  it('lists the shapes holding a checked row, with only the checked rows and a count', () => {
+    const out = checkedShapes(shapes, keys, {});
+    expect(out).toHaveLength(2);
+    const m = out.find((s) => s.id === shapeOf('10:12:15')!.id)!;
+    expect(m.entries.map((e) => e.text)).toEqual(['10:12:15', '12:15:20']);
+    expect(m.checked).toBe(2);
+    expect(m.entries.every((e) => e.match)).toBe(true);
+    const j = out.find((s) => s.id === shapeOf('4:5:6')!.id)!;
+    expect(j.entries.map((e) => e.text)).toEqual(['4:5:6']);
+    expect(j.checked).toBe(1);
+    expect(checkedSummary(out)).toBe('3 checked');
+  });
+
+  it('nothing checked: no shapes and 0 checked', () => {
+    expect(checkedShapes(shapes, [], {})).toEqual([]);
+    expect(checkedSummary([])).toBe('0 checked');
+  });
+
+  it('narrows what the other filters allow: a checked row that fails them is not listed', () => {
+    const out = checkedShapes(shapes, keys, { search: '4:5:6' });
+    expect(out.map((s) => s.entries.map((e) => e.text))).toEqual([['4:5:6']]);
+    expect(checkedSummary(out)).toBe('1 checked');
+    expect(checkedShapes(shapes, keys, { search: 'no such chord' })).toEqual([]);
+  });
+
+  it('unknown keys and folding rows are ignored', () => {
+    expect(checkedShapes(shapes, ['nope', byText('1:2:3').key], {})).toEqual([]);
+    expect(knownCheckedKeys(entries, ['nope', major.key, major.key, byText('1:2:3').key])).toEqual([
+      major.key,
+    ]);
+    expect(knownCheckedKeys(entries, [])).toEqual([]);
+    // a key that no entry of this repeat has (here: a hand-made one, as a library change would leave) is dropped
+    expect(knownCheckedKeys(entries, ['0.00000,1.00000'])).toEqual([]);
   });
 });

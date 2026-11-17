@@ -21,9 +21,18 @@ export const CHORD_LIBRARY_CREDIT = 'Chord list by Manuel Op de Coul, from Scala
 /** The family of an entry that matches no rule (the same word the build script writes). */
 export const LIBRARY_FAMILY = 'Library';
 
-/** Why a folding entry cannot be added or checked. */
+/** Why a folding entry cannot be checked (Check stays off for it; it can be added since M7c, see `FOLD_ADDED_NOTE`). */
 export const FOLD_REASON =
   'Two notes land on the same pitch in this repeat, so it cannot be found.';
+
+/** M7c: the one short muted line under a folding library row (Add works on it; Check does not). */
+export const FOLD_ROW_NOTE = 'Octave notes merge in this repeat; the finder skips it here.';
+
+/** M7c: the end of the message after adding a folding entry (`Added 1:2:3 ` or `..., including 1:2:3 ` comes first). */
+export const FOLD_ADDED_NOTE = '(not used by the finder in this repeat: octave notes merge).';
+
+/** M7c: the line under a folding template in Edit templates. */
+export const FOLD_EDIT_NOTE = 'Skipped here: two notes share a pitch.';
 
 /** The most templates the chord finder keeps (the lab's `MAX_TEMPLATES`). */
 export const TEMPLATE_LIMIT = 64;
@@ -365,6 +374,81 @@ export function librarySummary(shapes: readonly LibraryShape[]): LibrarySummary 
   return { entries, lines, shapes: shapes.length, rooted, folding };
 }
 
+const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * The header line of the dialog (M7c, row 13g): `376 chords in 297 shapes (399 names in Scala's list); 16 collapse octaves
+ * in this repeat (they can be added; the finder skips them here)`. The last part is left out when nothing folds; the number
+ * follows the repeat the shapes were built for.
+ */
+export function librarySummaryText(s: LibrarySummary): string {
+  const head = `${plural(s.entries, 'chord', 'chords')} in ${plural(s.rooted, 'shape', 'shapes')}`;
+  const folding =
+    s.folding > 0
+      ? `; ${s.folding} collapse octaves in this repeat (they can be added; the finder skips them here)`
+      : '';
+  return `${head} (${plural(s.lines, 'name', 'names')} in Scala's list)${folding}`;
+}
+
+/* ---------------------------------------------------------------------------------------------- checked only */
+/** A shape in the Checked only list: only its checked rows, and how many that is. */
+export interface CheckedShape {
+  id: string;
+  /** The checked rows that also pass the other filters, in the shape's order (every one has `match` true). */
+  entries: FlaggedEntry[];
+  /** `entries.length`, for the heading count (`· 1 checked`). */
+  checked: number;
+}
+
+/**
+ * The checked keys that name a usable library row (M7c, row 20): a key no longer in `entries` (stored for another repeat,
+ * or from an older library) is dropped silently, and so is a folding row, which cannot be checked. Order and first
+ * occurrence kept.
+ */
+export function knownCheckedKeys(
+  entries: readonly LibraryEntry[],
+  checked: readonly string[]
+): string[] {
+  const usable = new Set(entries.filter((e) => !e.folds).map((e) => e.key));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const k of checked) {
+    if (usable.has(k) && !seen.has(k)) {
+      seen.add(k);
+      out.push(k);
+    }
+  }
+  return out;
+}
+
+/**
+ * The Checked only view (M7c, rows 19 and 20): the shapes that hold a checked row, each with only its checked rows and a
+ * `checked` count. Checked only NARROWS what the other filters already allow: a row is listed when it is checked AND passes
+ * `f` (the same `entryMatches` as `filterLibrary`), so a shape with no such row is left out. Unknown keys are ignored.
+ */
+export function checkedShapes(
+  shapes: readonly LibraryShape[],
+  checked: readonly string[],
+  f: LibraryFilter
+): CheckedShape[] {
+  const keys = new Set(checked);
+  const out: CheckedShape[] = [];
+  for (const s of shapes) {
+    const rows = s.entries
+      .filter((e) => !e.folds && keys.has(e.key) && entryMatches(e, f))
+      .map((e) => ({ ...e, match: true }));
+    if (rows.length) {
+      out.push({ id: s.id, entries: rows, checked: rows.length });
+    }
+  }
+  return out;
+}
+
+/** The summary line of the Checked only view: `3 checked` (the rows listed, over all shapes). */
+export function checkedSummary(list: readonly CheckedShape[]): string {
+  return `${list.reduce((n, s) => n + s.checked, 0)} checked`;
+}
+
 /* ---------------------------------------------------------------------------------------------------- adding */
 /** The names joined with " / " and kept within `TEMPLATE_NAME_MAX`: whole names, as many as fit (the first is cut with an ellipsis if it alone is too long). */
 export function joinNames(names: readonly string[], max = TEMPLATE_NAME_MAX): string {
@@ -386,15 +470,39 @@ export interface AddLibraryResult {
   added: ChordTemplate[];
   /** The sentence for the person when nothing was added. */
   refused?: string;
+  /** The texts of the added entries that fold in this repeat (the finder skips them here); empty when none do. */
+  folding: string[];
+  /**
+   * The sentence for the person after a successful add: `Added 1 template.` / `Added 3 templates.`; one added folding
+   * entry says `Added 1:2:3 (not used by the finder in this repeat: octave notes merge).`; a mixed or larger add says
+   * `Added 2 templates, including 1:2:3 and 1:3:4 (not used by the finder in this repeat: octave notes merge).`. Empty when
+   * refused or nothing was added.
+   */
+  message: string;
+}
+
+/** `a`, `a and b`, `a, b and c`. */
+const joinAnd = (list: readonly string[]): string =>
+  list.length < 2 ? list.join('') : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+
+/** The sentence after a successful add (see `AddLibraryResult.message`). */
+function addMessage(added: readonly ChordTemplate[], folding: readonly string[]): string {
+  const n = added.length;
+  if (n === 1 && folding.length === 1) {
+    return `Added ${added[0].text} ${FOLD_ADDED_NOTE}`;
+  }
+  const base = `Added ${n} template${n === 1 ? '' : 's'}`;
+  return folding.length ? `${base}, including ${joinAnd(folding)} ${FOLD_ADDED_NOTE}` : `${base}.`;
 }
 
 /**
- * Adds library entries to the finder's templates, all or nothing. Refused (first reason found, checked in this order for
- * each entry, then the cap): an entry that folds in this repeat (`FOLD_REASON`); an entry with the same `templateKey` as a
- * template already in the list or as an earlier entry of this add ("Same notes as 4:5:6 already in your templates.", with
- * that template's own text); more entries than free places ("Needs 3 free places; you have 1."). A new template is
- * `{ text, name: joinNames(names), family }`. The fold and key are recomputed here for `repC`, so an entry built for
- * another repeat is judged correctly.
+ * Adds library entries to the finder's templates, all or nothing. A folding entry (two notes on the same pitch in this
+ * repeat, like `1:2:3`) IS added since M7c, stored as written; the finder skips it here and it comes back in a repeat that
+ * separates its notes. Refused (first reason found, checked in this order for each entry, then the cap): an entry whose text
+ * does not parse; an entry with the same `templateKey` as a template already in the list or as an earlier entry of this add
+ * ("Same notes as 4:5:6 already in your templates.", with that template's own text); more entries than free places ("Needs
+ * 3 free places; you have 1."). A new template is `{ text, name: joinNames(names), family }`. The fold and key are
+ * recomputed here for `repC`, so an entry built for another repeat is judged correctly.
  */
 export function addLibraryEntries(
   templates: readonly ChordTemplate[],
@@ -406,6 +514,8 @@ export function addLibraryEntries(
     templates: templates as ChordTemplate[],
     added: [],
     refused,
+    folding: [],
+    message: '',
   });
   const known = new Map<string, string>();
   for (const t of templates) {
@@ -418,10 +528,11 @@ export function addLibraryEntries(
     }
   }
   const added: ChordTemplate[] = [];
+  const folding: string[] = [];
   for (const e of entries) {
     const pt = parseTemplate(e.text);
-    if (!pt.ok || templateFolds(pt, repC)) {
-      return refuse(FOLD_REASON);
+    if (!pt.ok) {
+      return refuse(`${e.text} is not a chord the finder can read.`);
     }
     const k = templateKey(pt, repC);
     const dup = known.get(k);
@@ -430,6 +541,9 @@ export function addLibraryEntries(
     }
     known.set(k, e.text);
     added.push({ text: e.text, name: joinNames(e.names), family: e.family });
+    if (templateFolds(pt, repC)) {
+      folding.push(e.text);
+    }
   }
   const free = Math.max(0, max - templates.length);
   if (added.length > free) {
@@ -437,5 +551,10 @@ export function addLibraryEntries(
       `Needs ${added.length} free ${added.length === 1 ? 'place' : 'places'}; you have ${free}.`
     );
   }
-  return { templates: [...templates, ...added], added };
+  return {
+    templates: [...templates, ...added],
+    added,
+    folding,
+    message: added.length ? addMessage(added, folding) : '',
+  };
 }

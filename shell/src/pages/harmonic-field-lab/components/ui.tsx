@@ -23,6 +23,7 @@ import {
   type TextInputProps,
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
+import { errorBand } from '../../../lib/harmonic-field';
 import { BlockView } from '../helpMarkup';
 import { glueUnits } from '../markup';
 import { useLabDeveloperOptions } from '../state/developerOptions';
@@ -363,7 +364,7 @@ export const signed = (x: number, dp = 1) => {
 };
 
 /** Error severity by absolute cents: 0 exact, 1 under 5, 2 under 15, 3 under 30, 4 beyond. */
-export const severity = (c: number) => (c < 1e-6 ? 0 : c < 5 ? 1 : c < 15 ? 2 : c < 30 ? 3 : 4);
+export const severity = errorBand;
 /** Sign of a cents error for display: "+", the minus sign U+2212, or "" when it is exact (under 0.05 c). */
 export const signChar = (x: number) => (Math.abs(x) < 0.05 ? '' : x > 0 ? '+' : '−');
 /** A signed cents value with its unit and no space, e.g. "+21.5 c" or "−21.5 c"; exact reads "0 c". */

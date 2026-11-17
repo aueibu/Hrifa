@@ -202,6 +202,16 @@ export function DeveloperMenu() {
                 />
               </Tip>
             </Section>
+            <Section title="Sound">
+              <Tip k="soundFollowsRoughness" as="control" block>
+                <Switch
+                  size="xs"
+                  label="Sound follows Roughness Partials and Rolloff"
+                  checked={options.soundFollowsRoughness}
+                  onChange={(e) => update({ soundFollowsRoughness: e.currentTarget.checked })}
+                />
+              </Tip>
+            </Section>
             <Section title="Chords panel">
               <Tip k="cardNoteErrors" as="control" block>
                 <Switch

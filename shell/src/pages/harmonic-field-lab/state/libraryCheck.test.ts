@@ -76,7 +76,14 @@ describe('checkEntry (row 10)', () => {
 });
 
 describe('checkSentence (the line under a checked row)', () => {
-  const hit = (root: string, maxErr = 0) => ({ rootIdx: 0, root, maxErr });
+  const hit = (root: string, maxErr = 0) => ({
+    rootIdx: 0,
+    root,
+    maxErr,
+    errors: [0, maxErr],
+    worst: maxErr,
+    avg: maxErr,
+  });
   it('names the roots, adds the worst error only when it is above 0', () => {
     expect(
       checkSentence({ hits: [hit('5/4'), hit('5/3', 1e-9)], count: 2, truncated: false })
@@ -147,12 +154,37 @@ describe('templates/addLibrary', () => {
     expect(s1.templateNote?.refused).toBe(true);
   });
 
-  it('a folding entry is refused with the reason', () => {
-    const s1 = run(initialState(), { type: 'templates/addLibrary', entries: [entry('1:2:3')] });
-    expect(s1.templateNote?.text).toBe(
-      'Two notes land on the same pitch in this repeat, so it cannot be found.'
-    );
-    expect(s1.templates).toEqual(DEFAULT_TEMPLATES);
+  it('a folding entry is ADDED as written, taking one place, with the octave sentence (rows 13b, 13c)', () => {
+    const s0 = initialState();
+    const s1 = run(s0, { type: 'templates/addLibrary', entries: [entry('1:2:3')] });
+    expect(s1.templateNote).toEqual({
+      text: 'Added 1:2:3 (not used by the finder in this repeat: octave notes merge).',
+      refused: false,
+    });
+    expect(s1.templates).toEqual([
+      ...DEFAULT_TEMPLATES,
+      { text: '1:2:3', name: 'Triunisonus', family: entry('1:2:3').family },
+    ]);
+    // the stored form keeps it unchanged
+    const stored = JSON.parse(JSON.stringify({ templates: s1.templates })) as unknown;
+    expect(sanitizeTemplates(stored)).toEqual(s1.templates);
+    // adding it again is the duplicate refusal
+    const s2 = run(s1, { type: 'templates/addLibrary', entries: [entry('1:2:3')] });
+    expect(s2.templates).toBe(s1.templates);
+    expect(s2.templateNote).toEqual({
+      text: 'Same notes as 1:2:3 already in your templates.',
+      refused: true,
+    });
+  });
+
+  it('a folding entry still counts against the 64 places', () => {
+    const fill = Array.from({ length: MAX_TEMPLATES }, (_, i) => ({
+      text: `${1000 + i}:${1001 + i}`,
+    }));
+    const s0 = run(initialState(), { type: 'templates/set', templates: fill });
+    const s1 = run(s0, { type: 'templates/addLibrary', entries: [entry('1:2:3')] });
+    expect(s1.templates).toBe(s0.templates);
+    expect(s1.templateNote?.text).toBe('Needs 1 free place; you have 0.');
   });
 
   it('the note ends with the next templates/set, and adding nothing changes nothing', () => {

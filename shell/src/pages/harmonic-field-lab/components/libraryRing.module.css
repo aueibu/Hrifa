@@ -1,0 +1,294 @@
+/* The ring panel of the chord library dialog (M7c-b): the left column of the dialog, the ring on top and the readout under it. It fills the column, so hovering never moves anything. The ring is the main ring's own component (PitchRing in RingStats.tsx) at a larger radius; its marks are the shared ones (ringMarks.tsx, ringMarks.module.css): the radii scale with the ring, the strokes and dashes do not. */
+.panel {
+  background: var(--panel-inset);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.75rem;
+}
+
+/* an extra class on the main ring's own svg (PitchRing, className): it fills the panel's width (the panel's padding is the soft margin round it), its height follows, capped so a short window keeps room for the tables. The marks are the shared ones (ringMarks.module.css, scaled by the ring's --ring-k); this panel's background is --panel-inset and its dots are not buttons. */
+.ring {
+  --ring-cursor: auto;
+  --ring-gap: var(--panel-inset);
+  display: block;
+  flex: none;
+  height: auto;
+  margin: 0 auto;
+  max-height: 46vh; /* a short window shrinks the ring (marks and all) so the tables under it keep their room */
+  max-width: 100%;
+  width: 100%;
+}
+
+/* the marks drawn over the field dots (the chord's dots and outlines, the lit dots, the ghosts, the flags and labels) take no pointer: a hover over a lit or outlined dot is a hover on the field dot under it (the ring's hold keys). `*` also beats the ghost mark's own `pointer-events: all`. */
+.ring [data-pointer='none'],
+.ring [data-pointer='none'] * {
+  pointer-events: none;
+}
+
+/* the sounding ghosts (the main ring's own marks) are drawn over the chord's marks here: they take no pointer either */
+.ring [data-testid='ring-ghost'] {
+  pointer-events: none;
+}
+
+.flag {
+  fill: none;
+  stroke-linecap: butt;
+  stroke-width: 4;
+}
+
+/* the flag's corner: a disc of half the flag's width where the pole meets the arc, so the outside of the corner is round, not square */
+.flagCorner {
+  stroke: none;
+}
+
+.flagCorner[data-direction='above'] {
+  fill: var(--mark-orange);
+}
+
+.flagCorner[data-direction='below'] {
+  fill: var(--mark-cyan);
+}
+
+/* the pole: a filled shape that narrows from the flag's width to the pinhead's stroke width, in the flag's color */
+.flagPole {
+  stroke: none;
+}
+
+.flagPole[data-direction='above'] {
+  fill: var(--mark-orange);
+}
+
+.flagPole[data-direction='below'] {
+  fill: var(--mark-cyan);
+}
+
+/* the pinhead at the end of the flag's pole: a small hollow circle, thin, in the flag's color */
+.flagHead {
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.flagHead[data-direction='above'] {
+  stroke: var(--mark-orange);
+}
+
+.flagHead[data-direction='below'] {
+  stroke: var(--mark-cyan);
+}
+
+.flag[data-direction='above'] {
+  stroke: var(--mark-orange);
+}
+
+.flag[data-direction='below'] {
+  stroke: var(--mark-cyan);
+}
+
+.side {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  font-size: var(--lab-fs-small);
+  gap: 0.1875rem;
+  min-height: 0;
+  min-width: 0;
+}
+
+.top {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+/* the title block is the chord card's: the name in its title type (panels `.cardLine1`), the ratio on the next row in the small type (`.cardLine2`, a step larger than the card's tiny one so it reads). The block reserves the height of a two-line name plus the ratio, so nothing below it jumps when the chord changes, but the ratio always sits directly under the name. It is also a hover target: hold 1, 4 or 5 on it plays the shown chord. */
+.titleBlock {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.125rem;
+  justify-content: flex-start;
+  min-height: calc(2 * 1.2 * var(--lab-fs-body) + 0.125rem + 1.2 * var(--lab-fs-small));
+}
+
+.titleName {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.titleBlock .titleRatio {
+  font-size: var(--lab-fs-small);
+  min-height: 0;
+}
+
+.from {
+  color: var(--text-muted);
+  flex: none;
+}
+
+/* the readout scrolls inside the panel when there are many rows; it keeps about three rows, so the roots table under it never pushes it away */
+/* the readout is as tall as its rows (the roots table follows right under it); on a short window it shrinks and scrolls before the roots table is cut off */
+.scroll {
+  flex: 0 1 auto;
+  min-height: 4.5rem;
+  overflow-y: auto;
+}
+
+/* M7d: the roots table directly under the readout; it fills the rest of the column down to the bottom and scrolls inside it (never below about 3 rows on a short window) */
+.roots {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 0.1875rem;
+  min-height: 0;
+}
+
+.rootsTitle {
+  flex: none;
+}
+
+.rootsScroll {
+  flex: 1 1 0;
+  min-height: calc(4 * (1.3em + 0.125rem));
+  overflow-y: auto;
+}
+
+.rootsMsg {
+  color: var(--text-muted);
+}
+
+/* the one quiet line under the table; its line is reserved even when empty */
+.rootsNote {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+  line-height: 1.3;
+  min-height: 1.3em;
+}
+
+.rootsTable td,
+.rootsTable th {
+  line-height: 1.3;
+}
+
+.table th.numCol,
+.table td.numCol {
+  text-align: right;
+}
+
+.rootRow {
+  cursor: pointer;
+}
+
+.rootRow:hover td {
+  background: var(--panel-slot);
+}
+
+.rootRow:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* the pinned root: a quiet accent bar at the row's left edge and the root in the accent (as an active toggle) */
+.rootRow[data-pinned='true'] td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+  color: var(--accent);
+}
+
+/* five columns, always all present, fixed widths: nothing shifts when the chord or the root changes */
+.table {
+  border-collapse: collapse;
+  font-family: var(--mantine-font-family-monospace);
+  max-width: 100%;
+  table-layout: auto;
+  width: max-content;
+}
+
+.colMark {
+  width: 1.5rem;
+}
+
+/* the tables are as wide as their data: columns size to their content, with a little air between them */
+.table th,
+.table td {
+  overflow: hidden;
+  padding: 0.0625rem 0.875rem 0.0625rem 0.25rem;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 0.25rem;
+}
+
+.table th {
+  background: var(--panel-inset);
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+  font-weight: 400;
+  position: sticky;
+  top: 0;
+}
+
+/* the error text is a heat map from neutral to colored: exact is plain text, then the orange (above) or teal (below) comes in with the error band (the lab's five bands: exact, under 5 c, under 15, under 30, 30 and over) */
+.err[data-direction='above'] {
+  --heat: var(--mark-orange);
+}
+
+.err[data-direction='below'] {
+  --heat: var(--mark-cyan);
+}
+
+.err[data-band='1'] {
+  color: color-mix(in srgb, var(--heat, var(--text)) 40%, var(--text));
+}
+
+.err[data-band='2'] {
+  color: color-mix(in srgb, var(--heat, var(--text)) 65%, var(--text));
+}
+
+.err[data-band='3'] {
+  color: color-mix(in srgb, var(--heat, var(--text)) 85%, var(--text));
+}
+
+.err[data-band='4'] {
+  color: var(--heat, var(--text));
+}
+
+.swatch {
+  display: block;
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.swatchDot {
+  fill: var(--text);
+  stroke: none;
+}
+
+/* the readout's mark for a note that is not exact: a small flag in the flag's color */
+.swatchFlag {
+  fill: none;
+  stroke-linecap: butt;
+  stroke-width: 2;
+}
+
+.swatchFlag[data-direction='above'] {
+  stroke: var(--mark-orange);
+}
+
+.swatchFlag[data-direction='below'] {
+  stroke: var(--mark-cyan);
+}
+
+.empty {
+  color: var(--text-muted);
+}

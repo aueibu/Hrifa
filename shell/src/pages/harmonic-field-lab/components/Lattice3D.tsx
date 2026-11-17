@@ -14,7 +14,7 @@ import { stemHue } from '../state/derive';
 import classes from './panels.module.css';
 
 /** Sphere radius in lattice units (one prime step is 1). */
-const R = 0.14;
+const R = 0.1;
 
 interface Palette {
   text: THREE.Color;
@@ -121,7 +121,13 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
     off: new THREE.MeshBasicMaterial(),
     lit: new THREE.MeshBasicMaterial(),
     chord: new THREE.MeshBasicMaterial({ side: THREE.BackSide }),
-    sel: new THREE.MeshBasicMaterial({ side: THREE.BackSide }),
+    // the hover outline is slightly see-through, so what is behind it stays readable; chord and pin are solid
+    sel: new THREE.MeshBasicMaterial({
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    }),
     pin: new THREE.MeshBasicMaterial({ side: THREE.BackSide }),
     edgeOn: new THREE.LineBasicMaterial(),
     edgeOff: new THREE.LineBasicMaterial(),
@@ -276,9 +282,9 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
       const chordHalo = new THREE.Mesh(sphere, mats.chord);
       const selHalo = new THREE.Mesh(sphere, mats.sel);
       const pinHalo = new THREE.Mesh(sphere, mats.pin);
-      chordHalo.scale.setScalar(1.55);
-      selHalo.scale.setScalar(2.1);
-      pinHalo.scale.setScalar(2.5);
+      chordHalo.scale.setScalar(1.3);
+      selHalo.scale.setScalar(1.5);
+      pinHalo.scale.setScalar(1.4);
       pinHalo.visible = false;
       chordHalo.visible = false;
       selHalo.visible = false;
@@ -363,7 +369,7 @@ function createScene(host: HTMLElement, cb: SceneCallbacks, labelOf: (i: number)
       const lit = s.lit.has(n.i);
       const on = s.on.has(n.i);
       n.mesh.material = lit ? mats.lit : on ? mats.on : mats.off;
-      const k = (lit ? 1.45 : on ? 1 : 0.7) * R;
+      const k = (lit ? 1.25 : on ? 1 : 0.7) * R;
       n.mesh.scale.setScalar(k);
       n.label.position.set(0, 2.7, 0);
       // above the label when labels show, else just above the sphere

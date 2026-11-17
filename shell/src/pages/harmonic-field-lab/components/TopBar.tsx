@@ -13,14 +13,18 @@ import {
   TextInput,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSchemeToggle';
+import { soundPartials } from '../audio/engine';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { MAX_TABS, WAVES, tabName, type Wave } from '../state/labState';
 import { DeveloperMenu } from './DeveloperMenu';
 import { BookIcon, CopyIcon, HomeIcon, PlayIcon, PlusIcon, SoundIcon, StopIcon } from './icons';
+import { ReverbControls } from './ReverbControls';
 import { CommitNumber, Hint, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
-const WAVE_LABEL: Record<Wave, string> = { sine: 'Sine', harmonic: 'Harmonic (7 partials)' };
+/** The Wave select's labels: Harmonic names the partials the sound really uses (7, or the Roughness Partials when the Developer option links them). */
+const waveLabel = (w: Wave, partials: number): string =>
+  w === 'harmonic' ? `Harmonic (${partials} ${partials === 1 ? 'partial' : 'partials'})` : 'Sine';
 
 /** One tab: a button that switches, double-click to rename (empty goes back to the automatic name), a close mark. */
 function TabButton({ index }: { index: number }) {
@@ -105,6 +109,11 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
   const { state, dispatch, audio } = useLab();
   const { ui } = state;
   const [dev] = useLabDeveloperOptions();
+  const partials = soundPartials(
+    dev.soundFollowsRoughness,
+    state.retuner.settings.scorerOpts.harmonics,
+    state.retuner.settings.scorerOpts.rolloff
+  ).count;
   return (
     <div className={classes.topbar}>
       <Link to="/" className={classes.homeLink} aria-label="Home">
@@ -232,7 +241,7 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
         </Tip>
       </div>
       <Tip k="soundMenu" as="control">
-        <Popover position="bottom-end" width={240} transitionProps={{ duration: 0 }}>
+        <Popover position="bottom-end" width={280} transitionProps={{ duration: 0 }}>
           <Popover.Target>
             <ActionIcon variant="default" size="sm" aria-label="Sound settings">
               <SoundIcon />
@@ -244,7 +253,7 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
                 <NativeSelect
                   size="xs"
                   label="Wave"
-                  data={WAVES.map((w) => ({ value: w, label: WAVE_LABEL[w] }))}
+                  data={WAVES.map((w) => ({ value: w, label: waveLabel(w, partials) }))}
                   value={ui.wave}
                   onChange={(e) =>
                     dispatch({
@@ -277,6 +286,7 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
                   aria-label="Volume"
                 />
               </Tip>
+              <ReverbControls />
               <Tip k="scalePreview" as="control" block>
                 <Text size="xs">Scale preview</Text>
                 <SegmentedControl

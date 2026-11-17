@@ -33,6 +33,7 @@ import {
 } from '../../../lib/harmonic-field';
 import { CHORD_PAGE, clampShift, type KeyboardMode, type LinkedRoot } from '../audio/keymap';
 import type { ModePlayback, ScaleDir } from '../audio/plan';
+import { defaultReverb, type ReverbSettings } from '../audio/reverb';
 import {
   cloneSource,
   emptyShelf,
@@ -98,6 +99,18 @@ import {
   type UpdateUndo,
 } from './generatorLibrary';
 import { DEFAULT_LAYOUT, type Layout, type PanelId, type VizId } from './layout';
+import type { LibSort } from './librarySort';
+import {
+  MAX_LIB_OPEN,
+  addChecked,
+  defaultLibFilters,
+  sameLibFilters,
+  sanitizeKeyList,
+  sanitizeLibFilters,
+  setOpen,
+  type LibCmp,
+  type LibFilters,
+} from './libraryState';
 import {
   defaultPatterns,
   patternsReduce,
@@ -224,6 +237,20 @@ export interface UiSettings {
   pairsColor: PairsColor;
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
   pairsAdded: string[];
+  /** The chord library dialog's search text and filters, Checked only included (M7c, H-30); kept when the dialog closes and across reloads. Optional in storage. */
+  libFilters: LibFilters;
+  /** The keys of the rows checked in the chord library, oldest first, at most 40 (M7c, H-30). Keys the library no longer has are dropped when it is read. Optional in storage. */
+  libChecked: string[];
+  /** The ids of the library shapes that are open (M7c, H-30). Optional in storage. */
+  libOpen: string[];
+  /** What the library ring compares a chord with: the whole field (default) or the subset (M7c, H-30). Optional in storage. */
+  libCmp: LibCmp;
+  /** The width of the chord library's ring panel in rem, set by dragging the splitter in the dialog (20 to 64; default 36). The ring scales with it. Optional in storage. */
+  libSplit: number;
+  /** The chord library table's sort (the column header last clicked and its direction), or null for the library's own order. Kept across reloads. Optional in storage. */
+  libSort: LibSort | null;
+  /** The shared reverb (A1, H-31): preset and mix; default Dry, mix 0 (the sound is unchanged). The impulse file is in IndexedDB, not here. Optional in storage. */
+  reverb: ReverbSettings;
 }
 
 /**
@@ -346,6 +373,13 @@ export function defaultUi(): UiSettings {
     chordSortReverse: false,
     pairsColor: 'off',
     pairsAdded: [],
+    libFilters: defaultLibFilters(),
+    libChecked: [],
+    libOpen: [],
+    libCmp: 'field',
+    libSplit: 36,
+    libSort: null,
+    reverb: defaultReverb(),
   };
 }
 
@@ -674,6 +708,8 @@ export type Action =
   /**
    * M7: add chord library entries to the templates, all or nothing (`addLibraryEntries`, in the active tab's repeat, up to
    * `MAX_TEMPLATES`). The outcome, added or refused with its sentence, is `templateNote`; a refusal changes nothing else.
+   * M7c: a folding entry (two notes on one pitch in this repeat) is added too, stored as written; its sentence says the
+   * finder skips it here.
    */
   | { type: 'templates/addLibrary'; entries: readonly LibraryEntry[] }
   | { type: 'hover'; i: number | null }
@@ -694,6 +730,18 @@ export type Action =
       chords?: readonly string[];
     }
   | { type: 'ui'; patch: Partial<UiSettings> }
+  /** M7c (H-30): merges a patch into the chord library's filters (cleaned like stored ones); the same state when nothing changes. */
+  | { type: 'lib/filters'; patch: Partial<LibFilters> }
+  /** M7c: checks these library rows (each moves to the end; past 40 the oldest go). */
+  | { type: 'lib/check'; keys: readonly string[] }
+  /** M7c: unchecks every row. */
+  | { type: 'lib/clearChecks' }
+  /** M7c: opens or closes a library shape (`open` omitted toggles). */
+  | { type: 'lib/open'; id: string; open?: boolean }
+  /** M7c: the library's opened shapes become exactly these ids (Expand all passes the listed ones, Collapse all passes none). */
+  | { type: 'lib/openSet'; ids: readonly string[] }
+  /** M7c: what the ring compares a chord with. */
+  | { type: 'lib/cmp'; cmp: LibCmp }
   /** Pairs panel Add pitch (M3, H-20): runs `addedPitchError` against the CURRENT subset; on any error or a duplicate the state is unchanged (the UI calls `checkAddedPitch` first to show the message). */
   | { type: 'pairs/addPitch'; text: string }
   /** Removes the added pitch at this index of `ui.pairsAdded`. */
@@ -1430,11 +1478,10 @@ function reduce(s: LabState, a: Action): LabState {
       if (!r.added.length) {
         return s;
       }
-      const n = r.added.length;
       return {
         ...s,
         templates: r.templates,
-        templateNote: { text: `Added ${n} template${n === 1 ? '' : 's'}.`, refused: false },
+        templateNote: { text: r.message, refused: false },
         chordPick: null,
         chordHover: null,
         chordHoverPitches: null,
@@ -1471,6 +1518,30 @@ function reduce(s: LabState, a: Action): LabState {
             : retunerReduce(s.retuner, { type: 'ret/relative', relative }, ui.baseHz),
       };
     }
+    case 'lib/filters': {
+      const next = sanitizeLibFilters({ ...s.ui.libFilters, ...a.patch });
+      return sameLibFilters(next, s.ui.libFilters)
+        ? s
+        : { ...s, ui: { ...s.ui, libFilters: next } };
+    }
+    case 'lib/check': {
+      const next = addChecked(s.ui.libChecked, a.keys);
+      return next === s.ui.libChecked ? s : { ...s, ui: { ...s.ui, libChecked: next as string[] } };
+    }
+    case 'lib/clearChecks':
+      return s.ui.libChecked.length ? { ...s, ui: { ...s.ui, libChecked: [] } } : s;
+    case 'lib/open': {
+      const next = setOpen(s.ui.libOpen, a.id, a.open);
+      return next === s.ui.libOpen ? s : { ...s, ui: { ...s.ui, libOpen: next as string[] } };
+    }
+    case 'lib/openSet': {
+      const next = sanitizeKeyList(a.ids, MAX_LIB_OPEN);
+      const same =
+        next.length === s.ui.libOpen.length && next.every((id, i) => id === s.ui.libOpen[i]);
+      return same ? s : { ...s, ui: { ...s.ui, libOpen: next } };
+    }
+    case 'lib/cmp':
+      return a.cmp === s.ui.libCmp ? s : { ...s, ui: { ...s.ui, libCmp: a.cmp } };
     case 'pairs/addPitch': {
       const r = checkAddedPitch(s, a.text);
       return r.ok ? { ...s, ui: { ...s.ui, pairsAdded: [...s.ui.pairsAdded, r.canon] } } : s;

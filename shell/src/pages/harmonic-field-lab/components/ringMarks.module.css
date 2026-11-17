@@ -1,0 +1,112 @@
+/* The marks of every pitch ring, defined once (ringMarks.tsx). A host sets --ring-gap to its own background (the dot outline and the hollow dot's fill; default --panel) and --ring-cursor to auto when its dots are not buttons (default pointer). Stroke widths and dashes are in SVG units and the same on every ring; a ring drawn larger than the main ring scales only the radii (in code, the `scale` prop). */
+.ringLine {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 2;
+}
+
+/* a field note in the subset (and a chord note that sits exactly on a field note) */
+.dotOn {
+  cursor: var(--ring-cursor, pointer);
+  fill: var(--text);
+  stroke: var(--ring-gap, var(--panel));
+  stroke-width: 1.5;
+}
+
+/* a field note outside the subset: hollow */
+.dotOff {
+  cursor: var(--ring-cursor, pointer);
+  fill: var(--ring-gap, var(--panel));
+  stroke: var(--text-subtle);
+  stroke-width: 2;
+}
+
+/* sounding: green fill, larger; with a blue outline when it is also in the highlighted chord */
+.dotLit {
+  cursor: var(--ring-cursor, pointer);
+  fill: var(--mark-green);
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.dotOn[data-chord='true'],
+.dotOff[data-chord='true'],
+.dotLit[data-chord='true'] {
+  stroke: var(--mark-blue);
+  stroke-width: 3;
+}
+
+/* an off-chain note is a small dashed mark */
+.dotOff[data-off='true'],
+.dotOn[data-off='true'] {
+  stroke-dasharray: 2 1.5;
+}
+
+/* ghost marks: a pitch that is no field note, dashed and unfilled in the sounding color (H-2); a tone recolors it */
+.ringGhost {
+  fill: none;
+  pointer-events: all;
+  stroke: var(--mark-green);
+  stroke-dasharray: 3 2.5;
+  stroke-width: 2;
+}
+
+.ringGhost[data-tone='above'] {
+  stroke: var(--mark-orange);
+}
+
+.ringGhost[data-tone='below'] {
+  stroke: var(--mark-cyan);
+}
+
+/* a note's label: --text-muted, --text for a note that is solid */
+.svgLabel {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-svg-fs-label);
+}
+
+.svgLabel[data-on='true'] {
+  fill: var(--text);
+}
+
+/* hover, or a chord note that sits exactly on a field note: an outline in --text, about two pixels in all, no fill */
+.selRing {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+/* the polygon through a set of notes: the selected subset's own shape (neutral, light fill) and the highlighted chord's (blue) */
+.subsetFill {
+  fill: color-mix(in srgb, var(--text) 8%, transparent);
+  stroke: var(--text-muted);
+  stroke-linejoin: round;
+  stroke-width: 1;
+}
+
+.chordFill {
+  fill: color-mix(in srgb, var(--mark-blue) 14%, transparent);
+  stroke: var(--mark-blue);
+  stroke-width: 1.5;
+}
+
+/* a polygon drawn with `trim` (RingPolygon): the fill alone (no outline) ... */
+.trimmed {
+  stroke: none;
+}
+
+/* ... and its outline as separate edges that stop at the edge of each corner's mark: the same stroke as the polygon's own */
+.subsetEdge {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-linecap: butt;
+  stroke-width: 1;
+}
+
+.chordEdge {
+  fill: none;
+  stroke: var(--mark-blue);
+  stroke-linecap: butt;
+  stroke-width: 1.5;
+}
