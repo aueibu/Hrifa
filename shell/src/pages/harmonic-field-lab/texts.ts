@@ -1922,7 +1922,76 @@ const entries = {
   editTemplates: {
     term: 'Edit templates',
     text: 'Opens the list of chord shapes the finder uses, so you can add, rename or remove them. Write a:b:c for harmonics of one fundamental, or 1/(a:b:c) for undertones. Example: add 8:10:12:14 as "major 7th, septimal" to look for it in every scale you build.',
-    see: ['templates'],
+    see: ['templates', 'chordLibrary'],
+  },
+  chordLibrary: {
+    term: 'Chord library',
+    help: [
+      p(
+        "Scala's list of named chords, written as ratios. Each heading is one shape (the same notes, whichever is the root) with its inversions inside; open it to see the rows. Add puts a chord in your templates. Check looks for it in your notes without adding it."
+      ),
+      example('search "dominant seventh" to find 4:5:6:7 and its three inversions.'),
+    ],
+    teaching: [
+      p('Chord list by Manuel Op de Coul, from Scala (chordnam.par).'),
+      p(
+        'Only the chords written as ratios are here. A dimmed row has two notes on the same pitch in this repeat, so it cannot be found; it can still work in a different repeat.'
+      ),
+      p('Nothing from the library is saved except the chords you add to your templates.'),
+    ],
+    see: [
+      'chordTolerance',
+      'templates',
+      'editTemplates',
+      'libraryFilters',
+      'libraryCheck',
+      'libraryAdd',
+    ],
+  },
+  libraryFilters: {
+    term: 'Chord library filters',
+    help: [
+      p(
+        'Search matches a name or a ratio. Cardinality is how many notes the chord has: type a min, a max or both. Odd limit up to keeps chords whose largest odd number (after removing factors of 2) is at most the box. Prime limit up to keeps chords whose largest prime factor is at most the box. Leave a box empty for no limit.'
+      ),
+      example('odd limit up to 9 with 4 notes keeps 4:5:6:7 (7) and 3:5:7:9 (9) but not 4:5:6:11.'),
+    ],
+    teaching: [
+      p(
+        'Family is the group a chord goes into when you add it. A shape stays in the list when any of its rows matches, and its heading says how many do.'
+      ),
+    ],
+    see: ['chordLibrary'],
+  },
+  libraryCheck: {
+    term: 'Check a library chord',
+    help: [
+      p(
+        'Runs this one chord on your current notes at your current tolerance and prints where it is found. It only looks: it never changes your templates. Every row you checked stays checked and updates when you change the notes, the mode or the tolerance.'
+      ),
+      example('Minor Triad on the 5-limit major scale at tolerance 0: found on 5/4 and 5/3.'),
+    ],
+    teaching: [
+      p(
+        'Checking is cheap because it runs one chord, not the whole library. It needs a subset of 2 to 128 notes, like the chord finder. After 40 checked rows, the next Check replaces the oldest.'
+      ),
+    ],
+    see: ['chordTolerance', 'templates', 'chordLibrary'],
+  },
+  libraryAdd: {
+    term: 'Add a library chord',
+    help: [
+      p(
+        'Puts the chord in your templates, with its name and in the family of its category. Add all adds every row of the shape. It is all or nothing: if your list would pass 64 templates, or a chord is already there, nothing is added and the reason is shown.'
+      ),
+      example('Add on 10:12:15 gives a template named Minor Triad in the family Minor.'),
+    ],
+    teaching: [
+      p(
+        'Once added, the chord is an ordinary template: edit or remove it with Edit templates. A row that is already in your templates says so.'
+      ),
+    ],
+    see: ['templates', 'editTemplates', 'chordLibrary'],
   },
   keysModes: {
     term: 'Keys (transposition)',

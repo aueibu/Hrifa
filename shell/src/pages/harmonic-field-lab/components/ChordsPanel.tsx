@@ -39,6 +39,7 @@ import { chordFoldIds, collapseAll, expandAll } from '../state/foldIds';
 import { MAX_TEMPLATES } from '../state/labState';
 import { ladderWindow, nearestHidden } from '../state/ladderWindow';
 import { ChordCard, fmtCentsList, pitchTexts, templateOn } from './ChordCard';
+import { ChordLibrary } from './ChordLibrary';
 import { FoldHead, GroupedCount, NestGuide, foldId, useFold, useGroupExpanded } from './Fold';
 import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import { PatternsEditor, PositionalSection, positionalGroupIds } from './Positional';
@@ -754,6 +755,7 @@ function SizeSection({
 export function ChordsPanel() {
   const { an, state, dispatch, tab, base } = useLab();
   const [editing, setEditing] = useState(false);
+  const [library, setLibrary] = useState(false);
   const model = an.chords;
   const tol = state.ui.tol;
   const setTol = (t: number) => dispatch({ type: 'ui', patch: { tol: t } });
@@ -785,6 +787,11 @@ export function ChordsPanel() {
         <Tip k="editTemplates" as="control">
           <Button size="compact-xs" variant="default" onClick={() => setEditing(true)}>
             Edit templates
+          </Button>
+        </Tip>
+        <Tip k="chordLibrary" as="control">
+          <Button size="compact-xs" variant="default" onClick={() => setLibrary(true)}>
+            Chord library
           </Button>
         </Tip>
       </Strip>
@@ -964,6 +971,15 @@ export function ChordsPanel() {
         transitionProps={{ duration: 0 }}
       >
         <TemplateEditor />
+      </Modal>
+      <Modal
+        opened={library}
+        onClose={() => setLibrary(false)}
+        title="Chord library"
+        size="lg"
+        transitionProps={{ duration: 0 }}
+      >
+        <ChordLibrary />
       </Modal>
     </>
   );

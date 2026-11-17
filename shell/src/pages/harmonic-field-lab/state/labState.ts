@@ -8,6 +8,7 @@
 import {
   DEFAULT_TEMPLATES,
   EPS,
+  addLibraryEntries,
   addedPitchError,
   pitchPlace,
   resolveSubset,
@@ -26,6 +27,7 @@ import {
   scaleTargets,
   scaleTargetsLabeled,
   type ChordTemplate,
+  type LibraryEntry,
   type Note,
   type TargetPoint,
 } from '../../../lib/harmonic-field';
@@ -293,6 +295,11 @@ export interface LabState {
   layout: Layout;
   /** The chord finder's templates (user-editable; stored in `...chordfinder.v1`). */
   templates: ChordTemplate[];
+  /**
+   * M7: the outcome of the last `templates/addLibrary` (a chord added from the library, or the sentence saying why nothing
+   * was): runtime only, never stored; ended by the next `templates/set` or `templates/addLibrary`.
+   */
+  templateNote: { text: string; refused: boolean } | null;
   /** The positional chord patterns (M9): the user's list, stored in `...patterns.v1` (see patterns.ts). */
   patterns: PatternsState;
   /** The retuner: card list, settings (stored in `...retuner.v1`) and the run (see retuner.ts). */
@@ -406,6 +413,7 @@ export function initialState(): LabState {
     ui: defaultUi(),
     layout: DEFAULT_LAYOUT,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+    templateNote: null,
     patterns: defaultPatterns(),
     retuner: initialRetuner(),
     shelf: emptyShelf(),
@@ -663,6 +671,11 @@ export type Action =
   | { type: 'notice/dismiss' }
   | { type: 'recent/push'; owner: OwnerKey }
   | { type: 'templates/set'; templates: ChordTemplate[] }
+  /**
+   * M7: add chord library entries to the templates, all or nothing (`addLibraryEntries`, in the active tab's repeat, up to
+   * `MAX_TEMPLATES`). The outcome, added or refused with its sentence, is `templateNote`; a refusal changes nothing else.
+   */
+  | { type: 'templates/addLibrary'; entries: readonly LibraryEntry[] }
   | { type: 'hover'; i: number | null }
   | { type: 'pin'; i: number | null }
   | { type: 'pin/toggle'; i: number }
@@ -1404,10 +1417,29 @@ function reduce(s: LabState, a: Action): LabState {
       return {
         ...s,
         templates: a.templates.slice(0, MAX_TEMPLATES),
+        templateNote: null,
         chordPick: null,
         chordHover: null,
         chordHoverPitches: null,
       };
+    case 'templates/addLibrary': {
+      const r = addLibraryEntries(s.templates, a.entries, activeTab(s).rep.c, MAX_TEMPLATES);
+      if (r.refused !== undefined) {
+        return { ...s, templateNote: { text: r.refused, refused: true } };
+      }
+      if (!r.added.length) {
+        return s;
+      }
+      const n = r.added.length;
+      return {
+        ...s,
+        templates: r.templates,
+        templateNote: { text: `Added ${n} template${n === 1 ? '' : 's'}.`, refused: false },
+        chordPick: null,
+        chordHover: null,
+        chordHoverPitches: null,
+      };
+    }
     case 'keys/shift': {
       const shift = clampShift(s.keys.shift + a.by);
       return shift === s.keys.shift ? s : { ...s, keys: { ...s.keys, shift } };

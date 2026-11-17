@@ -1,6 +1,11 @@
 /** M6 rules: pin versus selection, the odd limit in the scale menu, and the chord templates (reducer and storage). */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_TEMPLATES, fmtRatio } from '../../../lib/harmonic-field';
+import {
+  DEFAULT_TEMPLATES,
+  fmtRatio,
+  libraryEntries,
+  type LibraryEntry,
+} from '../../../lib/harmonic-field';
 import { restoreState } from './LabProvider';
 import {
   PICK_ODD,
@@ -156,6 +161,31 @@ describe('chord templates (chordfinder.v1)', () => {
     expect(saveTemplates([{ text: '4:5:6' }])).toBe(false);
     get.mockRestore();
     set.mockRestore();
+  });
+});
+
+describe('chord templates added from the library (M7a)', () => {
+  it('keep their name and family through the real save and load', () => {
+    const lib = libraryEntries(1200);
+    const pick = ['10:12:15', '1:3:5:15', '3:7:15:21', '6:7:9'].map(
+      (t) => lib.find((e) => e.text === t) as LibraryEntry
+    );
+    const s = run(
+      initialState(),
+      { type: 'templates/set', templates: [] },
+      { type: 'templates/addLibrary', entries: pick }
+    );
+    expect(s.templates.map((t) => t.text)).toEqual(['10:12:15', '1:3:5:15', '3:7:15:21', '6:7:9']);
+    expect(saveTemplates(s.templates)).toBe(true);
+    const loaded = loadTemplates();
+    expect(loaded).toEqual(s.templates);
+    expect(loaded[0]).toEqual({ text: '10:12:15', name: 'Minor Triad', family: 'Minor' });
+    expect(loaded[1]).toEqual({
+      text: '1:3:5:15',
+      name: 'Genus [35] / Major Seventh',
+      family: 'Genus and product sets',
+    });
+    expect(restoreState().templates).toEqual(s.templates);
   });
 });
 

@@ -26,3 +26,4 @@ export * from './intervalPairs';
 export * from './beats';
 export * from './addedPitches';
 export * from './genus';
+export * from './chordLibrary';
