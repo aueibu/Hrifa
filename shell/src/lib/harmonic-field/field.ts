@@ -1,10 +1,30 @@
 /** The field (reduced, filtered, sorted, de-duplicated notes), its lattice view and CPS chords. Pure. */
-import { MAXN, dedupeSort, passesMask, reduceInto } from './intervals';
+import {
+  MAXN,
+  cleanOddLimit,
+  dedupeSort,
+  passesMask,
+  passesOddLimit,
+  reduceInto,
+} from './intervals';
 import type { FieldResult, Note, PrimeMask } from './types';
 
-/** Reduce into the repeat, apply the prime filter, sort, de-duplicate, cap. */
-export function buildField(notes: Note[], rep: Note, mask: PrimeMask): FieldResult {
-  let out = dedupeSort(notes.map((n) => reduceInto(n, rep)).filter((n) => passesMask(n, mask)));
+/**
+ * Reduce into the repeat, apply the prime filter and the odd limit filter (M6; absent, null or not a whole number of at
+ * least 1 = no filter; both filters must pass), sort, de-duplicate, cap.
+ */
+export function buildField(
+  notes: Note[],
+  rep: Note,
+  mask: PrimeMask,
+  odd?: number | null
+): FieldResult {
+  const limit = cleanOddLimit(odd);
+  let out = dedupeSort(
+    notes
+      .map((n) => reduceInto(n, rep))
+      .filter((n) => passesMask(n, mask) && (limit === null || passesOddLimit(n, limit)))
+  );
   const truncated = out.length > MAXN;
   if (truncated) {
     out = out.slice(0, MAXN);

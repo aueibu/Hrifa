@@ -400,6 +400,20 @@
   white-space: nowrap;
 }
 
+/* a note that may be long (the genus factors): wraps instead of running out of the column */
+.paramNoteWrap {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* the Field settings gear while a filter is on (some primes off or an odd limit set): view-toggle grammar, the icon turns
+   accent; the border follows so the state is not carried by the icon color alone. Hover keeps it. */
+.gearBtn[data-filtering='true'],
+.gearBtn[data-filtering='true']:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .primes {
   display: grid;
   gap: 0.1875rem;

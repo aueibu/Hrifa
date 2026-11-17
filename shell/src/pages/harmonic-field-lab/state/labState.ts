@@ -55,6 +55,7 @@ import {
 } from './folderRecords';
 import {
   autoName,
+  capOddLimit,
   defaultGen,
   genFromPreset,
   genKey,
@@ -611,6 +612,8 @@ export type Action =
   | { type: 'gen/keepNew'; on: boolean }
   | { type: 'gen/prime'; slot: number }
   | { type: 'gen/primes'; on: boolean }
+  /** M6: the odd limit filter; null (or anything that is not a whole number of at least 1) clears it. */
+  | { type: 'gen/oddLimit'; limit: number | null }
   | { type: 'gen/preset'; name: string }
   | { type: 'gen/method'; method: Method }
   | { type: 'gen/custom'; custom: string; rep?: string }
@@ -1036,6 +1039,12 @@ function reduce(s: LabState, a: Action): LabState {
         // None keeps 2, so the octave-reduced 1/1 survives
         regenTab(t, { ...t.gen, preset: '', mask: t.gen.mask.map((_, i) => a.on || i === 0) })
       );
+    case 'gen/oddLimit':
+      return editTab(s, (t) => {
+        const limit = capOddLimit(a.limit);
+        const { oddLimit: _was, ...rest } = t.gen;
+        return regenTab(t, { ...rest, preset: '', ...(limit === null ? {} : { oddLimit: limit }) });
+      });
     case 'gen/preset': {
       const p = presetByName(a.name);
       return p ? openOwner(s, builtinKey(p.name)) : s;

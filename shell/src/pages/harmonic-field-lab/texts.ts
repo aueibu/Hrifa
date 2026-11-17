@@ -655,7 +655,12 @@ const entries = {
         'generators 3/2 and 5/4, box 3 by 3, gives nine notes before reducing into the octave.'
       ),
     ],
-    teaching: [],
+    teaching: [
+      p(
+        '**Genus (Euler-Fokker)** replaces the generators with one whole number: the field is every number that divides it, folded into the octave.'
+      ),
+    ],
+    see: ['genusShape'],
   },
   diamondDistance: {
     term: 'Steps from the center',
@@ -741,7 +746,7 @@ const entries = {
       example('with 11 and 13 off, Harmonics 8-15 loses 11/8 and 13/8, leaving a 7-limit field.'),
     ],
     teaching: [p('Notes made only of cents (EDO steps) are not filtered.')],
-    see: ['primeLimit'],
+    see: ['primeLimit', 'oddLimitFilter'],
   },
   primeAll: {
     term: 'All primes',
@@ -758,6 +763,44 @@ const entries = {
       example('none, then 3 and 5 gives a 5-limit field.'),
     ],
     teaching: [],
+  },
+  oddLimitFilter: {
+    term: 'Odd limit filter',
+    help: [
+      p(
+        'Keeps only the notes whose ratio has an odd limit of at most this number. To find the odd limit of a ratio, strip every factor of 2 from the top and the bottom and take the larger. 15/8 is 15, 9/8 is 9, 5/4 is 5.'
+      ),
+      example('harmonics 1 to 16 with the limit 9 keep 1/1, 9/8, 5/4, 3/2 and 7/4.'),
+    ],
+    teaching: [
+      p(
+        'Notes with no ratio (EDO notes) are kept. A note must pass this filter and the prime filter both. Leave the box empty for no filter.'
+      ),
+    ],
+    see: ['primeFilter', 'oddLimit'],
+  },
+  genusShape: {
+    term: 'Genus (Euler-Fokker)',
+    help: [
+      p(
+        'The notes of one whole number: every number that divides it evenly, each moved by octaves into one octave. The lab shows how the number factors and how many notes that makes.'
+      ),
+      p(
+        'Type it as 45, as a product like 3^2*5, or as factors separated by spaces, * or x: 3 3 5. Everything you type is multiplied together, so 65 67 means 65 x 67 = 4355, not two numbers.'
+      ),
+      example(
+        '45 divides by 1, 3, 5, 9, 15 and 45, which give 1/1, 9/8, 5/4, 45/32, 3/2 and 15/8.'
+      ),
+    ],
+    teaching: [
+      p(
+        '45, 3^2*5 and 3 3 5 are all the same number. Only digits, ^, *, x and spaces are read: there is no adding, dividing or brackets. A factor does not have to be prime (6 6 is 36).'
+      ),
+      p(
+        'Powers of 2 vanish in the octave, so 32 gives one note. Primes up to 89 are allowed, and a genus may have at most 2048 notes.'
+      ),
+    ],
+    see: ['latticeShape', 'oddLimitFilter'],
   },
 
   /* ---- field & subset ---- */
@@ -855,7 +898,7 @@ const entries = {
   oddLimitPick: {
     term: 'Max odd limit',
     text: 'Keeps only notes whose ratio is simple enough: the largest odd number in it (after removing factors of 2) is at most the limit. Example: 15 keeps 15/8 (odd part 15) but drops 17/16.',
-    see: ['oddLimit'],
+    see: ['oddLimit', 'oddLimitFilter'],
   },
   keepNew: {
     term: 'Include new notes when the field changes',
@@ -2016,8 +2059,8 @@ const entries = {
   },
   fieldSettings: {
     term: 'Field settings',
-    text: 'Opens a small popover with the less-used generator settings: which primes are allowed, the repeat interval, and whether newly appearing notes are selected when the field changes. Example: switch 11 and 13 off to leave a 7-limit field; set the repeat to 3/1 for a tritave scale.',
-    see: ['primeFilter', 'repeat'],
+    text: 'Opens a small popover with the less-used generator settings: which primes are allowed, an odd limit, the repeat interval, and whether newly appearing notes are selected when the field changes. The icon turns the accent color while a filter (primes or odd limit) is on. Example: switch 11 and 13 off to leave a 7-limit field; set the repeat to 3/1 for a tritave scale.',
+    see: ['primeFilter', 'oddLimitFilter', 'repeat'],
   },
   developerMenu: {
     term: 'Developer menu',

@@ -1,5 +1,5 @@
-/** Generator column (left of the ring): preset, ⚙ fold-out (prime filter, repeat), method tabs, then that method's parameters. */
-import { useMemo, useRef, useState } from 'react';
+/** Generator column (left of the ring): preset, ⚙ fold-out (prime filter, odd limit, repeat), method tabs, then that method's parameters. */
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Button,
@@ -8,12 +8,28 @@ import {
   Popover,
   SegmentedControl,
 } from '@mantine/core';
-import { fmtRatio, parseScl } from '../../../lib/harmonic-field';
-import { PRIME_LABELS, mosFor, rangeText, type GenSpec, type Method } from '../state/generate';
+import { fmtRatio, genusSummary, parseGenusN, parseScl } from '../../../lib/harmonic-field';
+import {
+  MAX_ODD_LIMIT,
+  PRIME_LABELS,
+  filterSummary,
+  mosFor,
+  rangeText,
+  type GenSpec,
+  type Method,
+} from '../state/generate';
 import { GearIcon } from './icons';
 import { LibraryActions, LibraryNotice } from './LibraryBar';
 import { PresetBrowser, PresetCrumb } from './PresetBrowser';
-import { CommitNumber, DebouncedText, DebouncedTextarea, Num, Tip, useLab } from './ui';
+import {
+  CommitNumber,
+  CommitOptionalNumber,
+  DebouncedText,
+  DebouncedTextarea,
+  Num,
+  Tip,
+  useLab,
+} from './ui';
 import classes from './lab.module.css';
 
 const COMPOSITE_METHOD = { value: 'composite' as Method, label: 'Comp' };
@@ -67,6 +83,19 @@ function FieldSettings({ gen }: { gen: GenSpec }) {
           </button>
         ))}
       </div>
+      <Tip k="oddLimitFilter" as="control" block>
+        <CommitOptionalNumber
+          size="xs"
+          label="Odd limit"
+          prefix="odd ≤ "
+          placeholder="no limit"
+          value={gen.oddLimit ?? null}
+          min={1}
+          max={MAX_ODD_LIMIT}
+          hideControls
+          onCommit={(limit) => dispatch({ type: 'gen/oddLimit', limit })}
+        />
+      </Tip>
       <Tip k="repeat" as="control" block>
         <DebouncedText
           size="xs"
@@ -85,6 +114,55 @@ function FieldSettings({ gen }: { gen: GenSpec }) {
         />
       </Tip>
     </div>
+  );
+}
+
+/** The number the stored genus has, as the box shows it (its digits); empty when there is none. */
+const genusText = (gen: GenSpec) => gen.genusN ?? '';
+
+/**
+ * The Genus shape of the Lattice method: one box for the number n replaces the axes. The text typed is UI state (`text`, what
+ * the box last committed); only the digits go into the generator, and only when `parseGenusN` accepts the text. A refused
+ * text shows its sentence under the box and the field stays as it was. When the tab or the stored number changes under the
+ * box (another tab, a preset), the text is rebuilt from the stored digits unless it already means that number.
+ */
+function GenusForm({ gen }: { gen: GenSpec }) {
+  const { tab, dispatch } = useLab();
+  const [text, setText] = useState(genusText(gen));
+  const stored = genusText(gen);
+  useEffect(() => {
+    setText((t) => {
+      const g = parseGenusN(t, tab.rep);
+      return 'error' in g || g.n.toString() !== stored ? stored : t;
+    });
+  }, [tab.id, stored, tab.rep]);
+  const parsed = parseGenusN(text, tab.rep);
+  const commit = (t: string) => {
+    setText(t);
+    const g = parseGenusN(t, tab.rep);
+    if ('error' in g || (gen.shape === 'genus' && g.n.toString() === stored)) {
+      return;
+    }
+    dispatch({ type: 'gen/patch', patch: { shape: 'genus', genusN: g.n.toString() } });
+  };
+  return (
+    <>
+      <Tip k="genusShape" as="control" block>
+        <DebouncedText size="xs" label="Number n" placeholder="45" value={text} onCommit={commit} />
+      </Tip>
+      {'error' in parsed ? (
+        <span className={classes.fieldMsg} data-kind="err" role="alert" data-testid="genus-refusal">
+          {parsed.error}
+        </span>
+      ) : (
+        <span
+          className={`${classes.paramNote} ${classes.paramNoteWrap}`}
+          data-testid="genus-summary"
+        >
+          <Num>{genusSummary(parsed)}</Num>
+        </span>
+      )}
+    </>
   );
 }
 
@@ -129,22 +207,40 @@ function Params({ gen }: { gen: GenSpec }) {
       );
     case 'lattice': {
       const diamond = gen.shape === 'diamond';
+      const shapeSelect = (
+        <Tip k="latticeShape" as="control" block>
+          <NativeSelect
+            size="xs"
+            label="Shape"
+            value={gen.shape}
+            onChange={(e) => {
+              const v = e.currentTarget.value;
+              if (v === 'genus') {
+                // the axes stay stored as they were; a number is needed, so a first visit starts from 45
+                patch({ shape: 'genus', genusN: gen.genusN ?? '45' });
+              } else {
+                patch({ shape: v === 'diamond' ? 'diamond' : 'box' });
+              }
+            }}
+            data={[
+              { value: 'box', label: 'Box (count × count × ...)' },
+              { value: 'diamond', label: 'Diamond (within N steps)' },
+              { value: 'genus', label: 'Genus (Euler-Fokker)' },
+            ]}
+          />
+        </Tip>
+      );
+      if (gen.shape === 'genus') {
+        return (
+          <>
+            {shapeSelect}
+            <GenusForm gen={gen} />
+          </>
+        );
+      }
       return (
         <>
-          <Tip k="latticeShape" as="control" block>
-            <NativeSelect
-              size="xs"
-              label="Shape"
-              value={gen.shape}
-              onChange={(e) =>
-                patch({ shape: e.currentTarget.value === 'diamond' ? 'diamond' : 'box' })
-              }
-              data={[
-                { value: 'box', label: 'Box (count × count × ...)' },
-                { value: 'diamond', label: 'Diamond (within N steps)' },
-              ]}
-            />
-          </Tip>
+          {shapeSelect}
           <Tip k="genAxis" as="control" block>
             <div className={classes.axes}>
               <span className={classes.paramNote}>Axis</span>
@@ -334,15 +430,23 @@ function Params({ gen }: { gen: GenSpec }) {
 export function GeneratorColumn() {
   const { tab, dispatch } = useLab();
   const { gen } = tab;
-  const failed = tab.err !== '' && !/^Truncated|^Prime filter/.test(tab.err);
+  const failed = tab.err !== '' && !/^Truncated|^Prime filter|^Odd limit/.test(tab.err);
+  const filtering = filterSummary(gen);
   return (
     <div className={classes.genCol}>
       <div className={classes.genTop}>
         <PresetBrowser />
-        <Tip k="fieldSettings" as="control">
+        <Tip k="fieldSettings" as="control" extra={filtering ?? undefined}>
           <Popover position="bottom-start" width={296} transitionProps={{ duration: 0 }}>
             <Popover.Target>
-              <ActionIcon variant="default" size="sm" aria-label="Field settings">
+              <ActionIcon
+                variant="default"
+                size="sm"
+                aria-label="Field settings"
+                aria-description={filtering ?? undefined}
+                className={classes.gearBtn}
+                data-filtering={filtering ? 'true' : undefined}
+              >
                 <GearIcon />
               </ActionIcon>
             </Popover.Target>

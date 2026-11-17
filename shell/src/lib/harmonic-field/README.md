@@ -20,9 +20,10 @@ Import from the barrel (`./index`, or `@/lib/harmonic-field`).
 | module | contains |
 | --- | --- |
 | `types.ts` | `Monzo`, `Note`, `RelNote`, `PrimeMask`, `FieldResult`, `AdditiveAxis`, `OrthoplexAxis`, `SizeGroup`, `LetteredGroup` |
-| `intervals.ts` | `PRIMES`, `EPS`, `MAXN`, `mod`, `mAdd`, `mCents`, `mFrac`, `factorInt`, `mkNote`, `ratioNote`, `centsNote`, `mulNotes`, `parseInterval`, `reduceInto`, `fmtRatio`, `primeLimit`, `oddLimit`, `tenneyHeight`, `fmtMonzoVector`, `fmtTopBottom`, `nameTopBottom`, `nameMonzoVector`, `fmtTenney`, `slotOf`, `passesMask`, `dedupeSort`, `NAMES`, `vs12` |
+| `intervals.ts` | `PRIMES`, `EPS`, `MAXN`, `mod`, `mAdd`, `mCents`, `mFrac`, `factorInt`, `mkNote`, `ratioNote`, `centsNote`, `mulNotes`, `parseInterval`, `reduceInto`, `fmtRatio`, `primeLimit`, `oddLimit`, `tenneyHeight`, `fmtMonzoVector`, `fmtTopBottom`, `nameTopBottom`, `nameMonzoVector`, `fmtTenney`, `slotOf`, `passesMask`, `cleanOddLimit`, `passesOddLimit` (M6), `dedupeSort`, `NAMES`, `vs12` |
+| `genus.ts` | M6: the Euler-Fokker genus of a typed number: `parseGenusN(text, rep?)` (`45`, `3^2*5`, `3 3 5`, `3^2 x 5`, `3^2 5` to `{ n, factors, notes }` or `{ error }`), `genusFromN(n, rep?)` (the same for a stored number), `cleanGenusN` (canonical digits or null), `genusCount`, `genusNotes(n, rep?)` (every divisor folded into the repeat, exact monzos, sorted; throws the refusal sentence), `fmtGenus`, `genusSummary`, `GENUS_HINT`, `GENUS_MAX_PRIME` (89), `GENUS_MAX_EXP` (4095), `GENUS_MAX_DIGITS`; see "Genus and odd limit" |
 | `generators.ts` | `genHarmonic`, `genEdo`, `genAdditive`, `genOrthoplex`, `genCps`, `parseCustom` (each returns unreduced notes) |
-| `field.ts` | `buildField`, `latticeCoords`, `latticeEdges`, `cpsChords` (+ `Lattice*`, `CpsChord` types) |
+| `field.ts` | `buildField(notes, rep, mask, odd?)` (M6: the optional odd limit filter beside the prime filter), `latticeCoords`, `latticeEdges`, `cpsChords` (+ `Lattice*`, `CpsChord` types) |
 | `subset.ts` | `carrySelection`, `rotateSubset`, `nearestEdSubset`, `oddLimitSubset` |
 | `composite.ts` | `mergeComposite`, `previewAdd`, `compositeRepeat`, `compositeNotes`, `reducePitch`, `samePitches`, `clampMergeTol`, `MERGE_TOL_DEFAULT`, `MERGE_TOL_MAX` (composite gamuts: merged pitches of several items in one repeat; the lab's Composites panel and `-` popup draw `previewAdd`) |
 | `library.ts` | the generator library core (M7b): `generatorKey`, `GeneratorInputs`, pitch sets (`PitchSet`, `subsetFromSelection`, `samePitch`, `samePitchSet`, `findDuplicate`), `resolvePitches` / `resolveSubset` and the `indexField` variants, `applyUpdate`, `reportSentence`, the folder helpers; see "Generator library" |
@@ -81,6 +82,7 @@ const chords = findChords(rel, rep.c, DEFAULT_TEMPLATES, 18);      // tolerance 
 - Interval text: `a/b`, `a:b`, integer `n` = n/1, `7\12` = 7 steps of 12-EDO of 2/1, `386c` = cents, **any number with a dot is cents** (Scala rule). Zero and junk → no value.
 - Reduce into repeat: k = floor(c / repeat_c + 1e-9); note · repeat^-k.
 - Prime filter (Infinitone rule): a rational note passes when every prime with non-zero net exponent is enabled. Primes 2…89 have their own switch; anything larger shares the "97+" switch. Irrational notes always pass.
+- Odd limit filter (M6, `passesOddLimit`): a note passes when its `oddLimit` (the larger of numerator and denominator after removing factors of 2) is at most the limit. A note with no ratio (EDO, cents) always passes, as in the prime filter. It runs in `buildField` beside the prime filter; both must pass. A setting that is not a whole number of at least 1 (`cleanOddLimit`) means no filter.
 - Harmonic segment from H: k/H for k = H, H+1, … while k/H < repeat. Subharmonic: H/k reduced into the repeat.
 - EDO: notes are irrational (`i · repeat / N` cents). Infinitone stores Stern–Brocot rational approximations instead; not reproduced.
 - Box lattice: axis i contributes g_i^(j − ctr_i), j = 0 … n_i − 1; total ≤ 2048.
@@ -267,6 +269,10 @@ Pure helpers for generators that own subsets (page contract: `src/pages/harmonic
 
 - `generatorKey(inputs)`: a generator's identity, exactly the inputs that decide the field (method, repeat as a pitch, prime mask and the
   method's own inputs; not the preset label, `keepNew` or other methods' inputs). Two generators with the same key build the same field.
+  M6: `GeneratorInputs.oddLimit?` adds the key part `"o":<n>` ONLY when it is a whole number of at least 1 (every earlier key is byte-identical);
+  `shape: 'genus'` with `genusN?` (canonical digits) keys the lattice as `"s":"g","n":"<digits>"` (the axes are ignored; the default branch is
+  never reached by a genus).
+
 - Pitches: `PitchSet { pitches: Note[]; root: Note | null }` (monzo + cents, the mode root as a pitch). `subsetFromSelection(field, sel, mode)`.
   `samePitch` (both monzos: exact equality; else within 0.01 c), `samePitchSet` (same pitches and same root), `findDuplicate`.
 - `resolvePitches(field, pitches, tol = 0.5)` gives `{ match, indices, found, missing }`: a pitch with a monzo matches the field note with exactly
@@ -279,6 +285,20 @@ Pure helpers for generators that own subsets (page contract: `src/pages/harmonic
   exact previous subsets. `reportSentence(name, report)` words the notice. The same function serves Save-as-new with copied subsets and a later Import.
 - Folders (plain `"A/B"` strings): `normalizeFolder` (trim, no empty segments, 40 characters, depth 6), `splitFolder`, `joinFolder`, `parentFolder`,
   `folderName`, `inFolder`, `listFolders` (with ancestors), `childFolders`.
+
+## Genus and odd limit (M6, `genus.ts`, `field.ts`)
+
+- **Genus** of n: every divisor of n as an exact ratio, each folded into the repeat by powers of the repeat (so it lies in [1, repeat)),
+  de-duplicated, ascending. 45 gives 1/1, 9/8, 5/4, 45/32, 3/2, 15/8. Powers of the repeat's prime (2 in the octave) vanish: 32 gives 1/1.
+  For a repeat that is not a single prime (4/1, 3/2, a cents repeat) no prime vanishes.
+- **The number is a string of digits** (`GenSpec.genusN`, `GeneratorInputs.genusN`), not a JS number: 3^12 x 5^12 x 7^12 is about 1.8e24, past 2^53.
+  `parseGenusN` works in BigInt; `genusNotes` accepts a bigint, digits or a safe integer.
+- **Limits, checked before anything is built:** the note count (`genusCount`, the product of (e + 1) over the primes that do not vanish, so
+  3^12 x 5^12 x 7^12 counts 2197) must be at most `MAXN` (2048), else `This genus has 2197 notes, the limit is 2048.`; every prime must be at most
+  `GENUS_MAX_PRIME` = 89 (the last prime of `PRIMES`, the lab's prime table: the prime filter has its own switch only up to 89 and 97 and larger share one; a
+  conservative limit, the monzo itself holds any prime and a ratio such as 97/64 still parses), else a sentence naming 89 and what is left after dividing out 2 to 89; an exponent above 4095 and a single typed factor of more than 1000
+  digits are refused. Text that is not a whole number of at least 1 gives `GENUS_HINT` ("Type a whole number such as 45 or 3^2*5.").
+- Nothing here stores or computes pitches for storage: the page keeps only the digits.
 
 ## Positional chords (M9, `positional.ts`)
 

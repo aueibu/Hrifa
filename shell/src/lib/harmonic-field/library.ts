@@ -3,7 +3,8 @@
  * set against any field, the Update / Save-as-new / Import report with its undo data, and folder-path helpers.
  * Pure: no React, no DOM, no storage. See README.md ("Generator library").
  */
-import { parseInterval } from './intervals';
+import { cleanGenusN } from './genus';
+import { cleanOddLimit, parseInterval } from './intervals';
 import type { Monzo, Note } from './types';
 
 /* ------------------------------------------------------------------------------------------ identity */
@@ -13,7 +14,9 @@ export interface GeneratorInputs {
   rep: string;
   h: number;
   edoN: number;
-  shape: 'box' | 'diamond';
+  shape: 'box' | 'diamond' | 'genus';
+  /** Lattice shape `genus` only (M6): the whole number n as canonical decimal digits (a string: it can exceed 2^53). */
+  genusN?: string | null;
   axes: { on: boolean; g: string; n: number; ctr: number }[];
   dist: number;
   bidir: boolean;
@@ -21,6 +24,8 @@ export interface GeneratorInputs {
   cpsK: number;
   custom: string;
   mask: boolean[];
+  /** Odd limit filter (M6): a whole number of at least 1; absent or null = no filter. Any method. */
+  oddLimit?: number | null;
   /** Composite method (M8c): the frozen notes and repeat; identity is the pitches, not the name. */
   snap?: { rep: Note; notes: readonly Note[] };
 }
@@ -36,7 +41,14 @@ export function generatorKey(g: GeneratorInputs): string {
     const n = parseInterval(t);
     return n ? `${n.c.toFixed(6)}` : `?${t.trim()}`;
   };
-  const common = { m: g.method, r: iv(g.rep), k: g.mask.map((b) => (b ? 1 : 0)).join('') };
+  // the odd limit is a key component only when set, so every key from before M6 is unchanged
+  const odd = cleanOddLimit(g.oddLimit);
+  const common = {
+    m: g.method,
+    r: iv(g.rep),
+    k: g.mask.map((b) => (b ? 1 : 0)).join(''),
+    ...(odd === null ? {} : { o: odd }),
+  };
   switch (g.method) {
     case 'harmonic':
     case 'sub':
@@ -44,6 +56,10 @@ export function generatorKey(g: GeneratorInputs): string {
     case 'edo':
       return JSON.stringify({ ...common, n: g.edoN });
     case 'lattice': {
+      if (g.shape === 'genus') {
+        // the axes are ignored: only the number decides (`n` is written for this shape only)
+        return JSON.stringify({ ...common, s: 'g', n: cleanGenusN(g.genusN) });
+      }
       const axes = g.axes.filter((a, i) => i === 0 || a.on);
       return g.shape === 'diamond'
         ? JSON.stringify({ ...common, s: 'd', a: axes.map((a) => iv(a.g)), d: g.dist, b: g.bidir })

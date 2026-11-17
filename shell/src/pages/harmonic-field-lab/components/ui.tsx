@@ -453,6 +453,42 @@ export function CommitNumber({
   );
 }
 
+/**
+ * `CommitNumber` that may also be empty: clearing the box commits `null` (once typing pauses, or on blur), a valid number
+ * commits as usual, and a number out of range is never accepted. For an optional setting such as the odd limit filter.
+ */
+export function CommitOptionalNumber({
+  value,
+  onCommit,
+  min,
+  max,
+  ...rest
+}: {
+  value: number | null;
+  onCommit: (n: number | null) => void;
+  min?: number;
+  max?: number;
+} & Omit<NumberInputProps, 'value' | 'onChange' | 'min' | 'max' | 'onBlur'>) {
+  const f = useDebouncedField<string | number>(value ?? '', (v) =>
+    onCommit(v === '' ? null : (v as number))
+  );
+  return (
+    <NumberInput
+      allowDecimal={false}
+      {...rest}
+      min={min}
+      max={max}
+      value={f.local}
+      clampBehavior="strict"
+      onChange={(v) => f.change(v, v === '' || (typeof v === 'number' && Number.isFinite(v)))}
+      onBlur={() => {
+        f.flush();
+        f.setLocal(value ?? '');
+      }}
+    />
+  );
+}
+
 /** A text field whose value is committed once typing pauses, on Enter and on blur. */
 export function DebouncedText({
   value,

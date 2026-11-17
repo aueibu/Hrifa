@@ -19,6 +19,8 @@
 import {
   DEFAULT_TEMPLATES,
   PRESETS,
+  cleanGenusN,
+  cleanOddLimit,
   sanitizeAdded,
   type ChordTemplate,
   type Note,
@@ -29,6 +31,7 @@ import { sanitizePitch } from './chordShelf';
 import {
   DEFAULT_AXES,
   PRIME_SLOTS,
+  capOddLimit,
   defaultGen,
   type AxisSpec,
   type CompositeSnap,
@@ -337,12 +340,16 @@ export interface Snapshot {
   edoN: number;
   axes: { on: boolean; g: string; n: number; ctr: number }[];
   shape: string;
+  /** M6, written only when the shape is `genus`: the number as canonical decimal digits (never anything computed). */
+  genusN?: string;
   dist: number;
   bidir: boolean;
   cpsF: string;
   cpsK: number;
   custom: string;
   mask: boolean[];
+  /** M6, written only when an odd limit filter is set. */
+  oddLimit?: number;
   selCents: number[];
   mode: number;
   preset: string;
@@ -379,19 +386,25 @@ export function toSnapshot(
   const g = t.gen;
   // a tab whose inputs did not build keeps the selection it was restored with
   const held = t.pending && t.field.length === 0 ? t.pending : null;
+  // additive (M6): written only when set, so a snapshot without them is stored as before
+  const genusN = g.shape === 'genus' ? cleanGenusN(g.genusN) : null;
+  const odd = cleanOddLimit(g.oddLimit);
   return {
     gen: SNAP_GEN[g.method],
     rep: g.rep,
     h: g.h,
     edoN: g.edoN,
     axes: g.axes.map((a) => ({ ...a })),
-    shape: g.shape,
+    // a genus shape without a readable number is stored as a box (the stored shape and number always agree)
+    shape: g.shape === 'genus' && genusN === null ? 'box' : g.shape,
+    ...(genusN === null ? {} : { genusN }),
     dist: g.dist,
     bidir: g.bidir,
     cpsF: g.cpsF,
     cpsK: g.cpsK,
     custom: g.custom,
     mask: g.mask.slice(),
+    ...(odd === null ? {} : { oddLimit: odd }),
     selCents: held ? held.cents.slice() : t.sel.map((i) => t.field[i].c),
     mode: held ? held.mode : t.mode,
     preset: g.preset,
@@ -506,13 +519,17 @@ export function sanitizeSnapshot(raw: unknown): TabParts | null {
     Array.isArray(raw.mask) && raw.mask.length === PRIME_SLOTS
       ? raw.mask.map((b) => b !== false)
       : d.mask;
+  // M6: the shape `genus` needs a readable number; otherwise (and for any unknown shape) it falls back to a box and drops it
+  const genusN = raw.shape === 'genus' ? cleanGenusN(raw.genusN) : null;
+  const odd = capOddLimit(raw.oddLimit);
   const gen: GenSpec = {
     preset,
     method: typeof raw.gen === 'string' && raw.gen in GEN_SNAP ? GEN_SNAP[raw.gen] : d.method,
     rep: text(raw.rep, d.rep, 60) || d.rep,
     h: intIn(raw.h, 1, 100000, d.h),
     edoN: intIn(raw.edoN, 1, 2048, d.edoN),
-    shape: raw.shape === 'diamond' ? 'diamond' : 'box',
+    shape: raw.shape === 'diamond' ? 'diamond' : genusN === null ? 'box' : 'genus',
+    ...(genusN === null ? {} : { genusN }),
     axes: sanitizeAxes(raw.axes),
     dist: intIn(raw.dist, 0, 64, d.dist),
     bidir: bool(raw.bidir, d.bidir),
@@ -520,6 +537,7 @@ export function sanitizeSnapshot(raw: unknown): TabParts | null {
     cpsK: intIn(raw.cpsK, 1, 64, d.cpsK),
     custom: text(raw.custom, d.custom, 20000),
     mask,
+    ...(odd === null ? {} : { oddLimit: odd }),
     keepNew: bool(raw.keepNew, false),
     ...sanitizeSnap(raw.snap),
   };

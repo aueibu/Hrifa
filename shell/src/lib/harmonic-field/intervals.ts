@@ -190,6 +190,20 @@ export function passesMask(n: Note, mask: PrimeMask): boolean {
   return true;
 }
 
+/** A usable odd limit setting: a whole number of at least 1, else null (no filter). */
+export function cleanOddLimit(x: unknown): number | null {
+  return typeof x === 'number' && Number.isInteger(x) && x >= 1 ? x : null;
+}
+
+/**
+ * The odd limit filter (M6): a note passes when its odd limit (`oddLimit`) is at most `limit`. A note with no exact ratio
+ * (EDO or cents) always passes, as in the prime filter (human decision D2).
+ */
+export function passesOddLimit(n: Note, limit: number): boolean {
+  const o = oddLimit(n);
+  return o === null || o <= BigInt(limit);
+}
+
 /** Sort by cents and drop notes within EPS of the previous one (a rational note wins over an irrational one). */
 export function dedupeSort(input: Note[]): Note[] {
   const ns = input.slice().sort((a, b) => a.c - b.c);

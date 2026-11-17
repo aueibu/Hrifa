@@ -12,7 +12,7 @@
  *   next:     { preset, untitled, subset } }
  * ```
  * `gen` is the generation part of the tab snapshot (gen, rep, h, edoN, axes, shape, dist, bidir, cpsF, cpsK, custom, mask,
- * preset, keepNew). Plain JSON, self-contained: a subset carries its pitches, never field positions.
+ * preset, keepNew; M6 adds `genusN` (only for the lattice shape `genus`) and `oddLimit` (only when set)). Plain JSON, self-contained: a subset carries its pitches, never field positions.
  *
  * Rules: entry by entry (a bad entry is dropped or repaired, the others are kept); an entry that is well formed but
  * unusable now (a subset whose owner is gone, a built-in name that no longer exists) is KEPT and written back, so a
@@ -66,12 +66,14 @@ const GEN_FIELDS = [
   'edoN',
   'axes',
   'shape',
+  'genusN',
   'dist',
   'bidir',
   'cpsF',
   'cpsK',
   'custom',
   'mask',
+  'oddLimit',
   'preset',
   'keepNew',
   'snap',

@@ -25,3 +25,4 @@ export * from './shapeGroups';
 export * from './intervalPairs';
 export * from './beats';
 export * from './addedPitches';
+export * from './genus';

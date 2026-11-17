@@ -10,6 +10,7 @@ import {
   PRESETS,
   PRIMES,
   buildField,
+  cleanOddLimit,
   fmtRatio,
   generatorKey,
   genAdditive,
@@ -17,6 +18,7 @@ import {
   genEdo,
   genHarmonic,
   genOrthoplex,
+  genusNotes,
   mosSizes,
   parseCustom,
   parseInterval,
@@ -43,6 +45,17 @@ export interface CompositeSnap {
   notes: Note[];
 }
 export const PRIME_SLOTS = 25;
+/** The largest odd limit a generator carries (M6): the form and storage cap it here. */
+export const MAX_ODD_LIMIT = 4095;
+/**
+ * An odd limit read from the form or from storage: a whole number (or its digits) of at least 1, capped at `MAX_ODD_LIMIT`;
+ * anything else (not whole, below 1, junk) means no filter (null).
+ */
+export function capOddLimit(x: unknown): number | null {
+  const v = typeof x === 'string' && x.trim() !== '' ? Number(x) : x;
+  const n = cleanOddLimit(v);
+  return n === null ? null : Math.min(n, MAX_ODD_LIMIT);
+}
 
 export interface AxisSpec {
   on: boolean;
@@ -61,8 +74,13 @@ export interface GenSpec {
   h: number;
   /** EDO: divisions. */
   edoN: number;
-  /** Lattice. */
-  shape: 'box' | 'diamond';
+  /** Lattice: a box, a diamond, or (M6) the Euler-Fokker genus of one number (the axes are then ignored). */
+  shape: 'box' | 'diamond' | 'genus';
+  /**
+   * Shape `genus` only (M6): the whole number n as canonical decimal digits, a string because it can exceed 2^53
+   * (3^12 x 5^12 x 7^12 is about 1.8e24). Written to storage only for that shape. The text the user typed is UI state.
+   */
+  genusN?: string;
   axes: AxisSpec[];
   dist: number;
   bidir: boolean;
@@ -73,6 +91,12 @@ export interface GenSpec {
   custom: string;
   /** Prime filter: 25 switches (2 .. 89, then the shared 97+ slot). */
   mask: boolean[];
+  /**
+   * Odd limit filter (M6), beside the prime filter, for every method: keep the notes whose ratio has an odd limit of at most
+   * this; a note with no ratio (EDO, cents) is kept. A whole number of at least 1; absent = no filter (never `null` or 0:
+   * the reducer deletes the key).
+   */
+  oddLimit?: number;
   /** When the field changes, also select any newly appearing notes. */
   keepNew: boolean;
   /** Composite method only: the frozen notes (see `CompositeSnap`). */
@@ -222,6 +246,30 @@ function readAxes(g: GenSpec): { axes: AdditiveAxis[] } | { err: string } {
   return { axes };
 }
 
+/**
+ * The note under a built field: the cap, or why nothing is left. With an odd limit set, an empty field is blamed on the
+ * odd limit when the prime filter alone would have left notes ("Odd limit 3 leaves no notes."), else on the prime filter.
+ * The page shows messages starting "Truncated", "Prime filter" and "Odd limit" as notes, not as failures.
+ */
+function fieldWarn(
+  built: { notes: Note[]; truncated: boolean },
+  raw: Note[],
+  rep: Note,
+  g: GenSpec
+): string {
+  if (built.truncated) {
+    return `Truncated to ${MAXN} notes`;
+  }
+  if (built.notes.length > 0) {
+    return '';
+  }
+  const odd = cleanOddLimit(g.oddLimit);
+  if (odd !== null && buildField(raw, rep, g.mask).notes.length > 0) {
+    return `Odd limit ${odd} leaves no notes.`;
+  }
+  return 'Prime filter removed every note';
+}
+
 /** Build the field for a spec. Never throws. */
 export function generateField(g: GenSpec): Generated {
   if (g.method === 'composite') {
@@ -230,16 +278,12 @@ export function generateField(g: GenSpec): Generated {
     if (!sn || !sn.notes.length || !(sn.rep.c > EPS)) {
       return { ok: false, err: 'This composite snapshot has no usable notes' };
     }
-    const built = buildField(sn.notes, sn.rep, g.mask);
+    const built = buildField(sn.notes, sn.rep, g.mask, g.oddLimit);
     return {
       ok: true,
       field: built.notes,
       rep: sn.rep,
-      warn: built.truncated
-        ? `Truncated to ${MAXN} notes`
-        : built.notes.length === 0
-          ? 'Prime filter removed every note'
-          : '',
+      warn: fieldWarn(built, sn.notes, sn.rep, g),
     };
   }
   const r = parseRepeat(g.rep);
@@ -258,6 +302,11 @@ export function generateField(g: GenSpec): Generated {
         notes = genEdo(posInt(g.edoN, 1, 1, MAXN), rep);
         break;
       case 'lattice': {
+        if (g.shape === 'genus') {
+          // every divisor of n, folded into the repeat; refuses (throws) with a sentence when n is unusable or over the cap
+          notes = genusNotes(g.genusN ?? '', rep);
+          break;
+        }
         const ax = readAxes(g);
         if ('err' in ax) {
           return { ok: false, err: ax.err };
@@ -288,13 +337,8 @@ export function generateField(g: GenSpec): Generated {
       default:
         notes = parseCustom(g.custom, rep);
     }
-    const built = buildField(notes, rep, g.mask);
-    const warn = built.truncated
-      ? `Truncated to ${MAXN} notes`
-      : built.notes.length === 0
-        ? 'Prime filter removed every note'
-        : '';
-    return { ok: true, field: built.notes, rep, warn };
+    const built = buildField(notes, rep, g.mask, g.oddLimit);
+    return { ok: true, field: built.notes, rep, warn: fieldWarn(built, notes, rep, g) };
   } catch (e) {
     return { ok: false, err: e instanceof Error ? e.message : 'Could not build the field' };
   }
@@ -312,6 +356,23 @@ export function mosFor(g: GenSpec): MosSize[] {
 }
 
 export const PRIME_LABELS = [...PRIMES.slice(0, 24).map(String), '97+'];
+
+/**
+ * What the generator filters, in words, for the gear icon (M6b): `Filtering: primes 2 3 5, odd limit 9`, or null when every
+ * prime is on and no odd limit is set (the gear then looks as it always did). Lists the primes that are ON.
+ */
+export function filterSummary(g: Pick<GenSpec, 'mask' | 'oddLimit'>): string | null {
+  const parts: string[] = [];
+  if (g.mask.some((on) => !on)) {
+    const on = PRIME_LABELS.filter((_, slot) => g.mask[slot]);
+    parts.push(`primes ${on.length ? on.join(' ') : 'none'}`);
+  }
+  const odd = capOddLimit(g.oddLimit);
+  if (odd !== null) {
+    parts.push(`odd limit ${odd}`);
+  }
+  return parts.length ? `Filtering: ${parts.join(', ')}` : null;
+}
 
 /** "1/1 to 15/8" style range text for the parameter note under the harmonic method. */
 export function rangeText(field: Note[]): string {
