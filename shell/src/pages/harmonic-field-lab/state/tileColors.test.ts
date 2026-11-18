@@ -4,10 +4,16 @@ import { RADIX, RADIX_HUES, radixHex, type RadixHue } from '../../../theme/radix
 import { defaultThemeTokens as T } from '../../../theme/tokens';
 import { severity } from '../components/ui';
 import {
-  RED_TINT_STEP,
-  SEV1_MIX,
-  SEV_HUES,
-  sevTileColors,
+  BAND4_LIFT,
+  BAND_TEXT_MIX,
+  FLAT_HUE,
+  SHARP_HUE,
+  SIGNED_BANDS,
+  signedBand,
+  signedBandTextColor,
+  signedErrorHue,
+  signedErrorTextColor,
+  signedErrorTile,
   TILE,
   TILE_LOOKS,
   reachBackground,
@@ -60,8 +66,8 @@ function contrast(fg: string, bg: string, scheme: TileScheme): number {
 }
 
 const hues = (): { name: string; hue: TileHue }[] => [
-  ...SEV_HUES.filter((h): h is RadixHue => h !== null).map((h) => ({
-    name: `sev ${h}`,
+  ...[SHARP_HUE, FLAT_HUE].map((h) => ({
+    name: `signed error ${h}`,
     hue: { a: h },
   })),
   ...RADIX_HUES.map((h) => ({ name: `wheel ${h}`, hue: { a: h } })),
@@ -184,34 +190,99 @@ describe('tile colors: borders', () => {
   });
 });
 
-describe('error band colors (M4c, H-25): one warm heat family', () => {
-  it('no band maps to cyan or green; band 0 is neutral; bands 2, 3, 4 are yellow, orange, red', () => {
-    expect(SEV_HUES).toEqual([null, 'yellow', 'yellow', 'orange', 'red']);
+describe('the signed error scale (H-38): orange sharp, cyan flat, strength by band, exact neutral', () => {
+  it('the hues are the tuner strip: sharp orange, flat cyan', () => {
+    expect(SHARP_HUE).toBe('orange');
+    expect(FLAT_HUE).toBe('cyan');
+  });
+  it('the four 12-EDO examples', () => {
+    // 3/2 is +2.0 c: band 1, sharp, orange
+    expect(signedBand(2.0)).toBe(1);
+    expect(signedErrorHue(2.0)).toBe('orange');
+    // 5/4 is -13.7 c: band 2, flat, cyan
+    expect(signedBand(-13.7)).toBe(-2);
+    expect(signedErrorHue(-13.7)).toBe('cyan');
+    // 7/4 is -31.2 c: band 4, flat, cyan
+    expect(signedBand(-31.2)).toBe(-4);
+    expect(signedErrorHue(-31.2)).toBe('cyan');
+    // 81/80 is +21.5 c: band 3, sharp, orange
+    expect(signedBand(21.5)).toBe(3);
+    expect(signedErrorHue(21.5)).toBe('orange');
+    for (const scheme of SCHEMES) {
+      expect(JSON.stringify(signedErrorTile(2.0, 'tinted', false, scheme))).toContain(
+        '--rx-orange-'
+      );
+      expect(signedErrorTile(-13.7, 'tinted', false, scheme).fill).toBe(
+        `var(--rx-cyan-${TILE.tinted.fill.normal})`
+      );
+      expect(signedErrorTile(-31.2, 'tinted', false, scheme).fill).toBe(
+        `var(--rx-cyan-${BAND4_LIFT.tinted})`
+      );
+      expect(signedErrorTile(21.5, 'tinted', false, scheme).fill).toBe(
+        `var(--rx-orange-${TILE.tinted.fill.strong})`
+      );
+      expect(signedErrorTile(2.0, 'tinted', false, scheme).fill).toBe(
+        `var(--rx-orange-${TILE.tinted.fill.faint})`
+      );
+    }
+  });
+  it('exact is neutral (no hue, plain text), also for a tiny error and -0', () => {
+    expect(signedBand(0)).toBe(0);
+    expect(signedBand(-0.0000001)).toBe(0);
+    expect(signedErrorHue(0)).toBeNull();
     for (const look of TILE_LOOKS) {
       for (const outline of [false, true]) {
         for (const scheme of SCHEMES) {
-          for (let s = 0; s < 5; s++) {
-            const c = sevTileColors(look, outline, s, scheme);
-            const all = JSON.stringify(c);
-            expect(all, `${look} ${s}`).not.toMatch(/cyan|green|blue/);
-            if (s === 0) {
-              expect(all, `${look} neutral`).not.toMatch(/--rx-/);
-              expect(c.text).toBe('var(--text)');
-              // a fill a little lighter than the surface, so the tile does not blend into the screen
-              expect(c.fill).toMatch(/--text\) 14%|var\(--panel\)/);
-            } else {
-              const hue = ['', 'yellow', 'yellow', 'orange', 'red'][s];
-              expect(all, `${look} ${s}`).toContain(`--rx-${hue}-`);
+          const c = signedErrorTile(0, look, outline, scheme);
+          expect(JSON.stringify(c), look).not.toMatch(/--rx-/);
+          expect(c.text).toBe('var(--text)');
+          // a fill a little lighter than the surface, so the tile does not blend into the screen
+          expect(c.fill).toMatch(/--text\) 14%|var\(--panel\)/);
+        }
+      }
+    }
+    expect(signedErrorTextColor(0)).toBe('var(--text)');
+  });
+  it('every inexact band uses only its own hue (never red, yellow, green) in every look, and the two signs are mirror images', () => {
+    for (const look of TILE_LOOKS) {
+      for (const outline of [false, true]) {
+        for (const scheme of SCHEMES) {
+          for (const band of SIGNED_BANDS) {
+            if (band === 0) {
+              continue;
             }
+            const all = JSON.stringify(signedErrorTile(band * 8, look, outline, scheme));
+            const hue = band > 0 ? 'orange' : 'cyan';
+            const other = band > 0 ? 'cyan' : 'orange';
+            expect(all, `${look} ${band}`).toContain(`--rx-${hue}-`);
+            expect(all, `${look} ${band}`).not.toMatch(new RegExp(`${other}|red|yellow|green`));
           }
         }
       }
     }
   });
-  it('band 1 is a faint yellow hint mixed into the text color and the surface', () => {
-    const c = sevTileColors('tinted', false, 1, 'light');
-    expect(c.text).toBe(`color-mix(in srgb, var(--rx-yellow-11) ${SEV1_MIX.text}%, var(--text))`);
-    expect(c.fill).toContain('var(--rx-yellow-4) 30%');
+  it('the fill gets stronger band by band in the Tinted look (3, 4, 5, then the lifted step)', () => {
+    const steps = [2, 7, 20, 40].map((e) => {
+      const m = signedErrorTile(e, 'tinted', false, 'light').fill.match(/-(\d+)\)$/);
+      return Number(m![1]);
+    });
+    expect(steps).toEqual([
+      TILE.tinted.fill.faint,
+      TILE.tinted.fill.normal,
+      TILE.tinted.fill.strong,
+      BAND4_LIFT.tinted,
+    ]);
+    expect(BAND4_LIFT.tinted).toBeGreaterThan(TILE.tinted.fill.strong);
+  });
+  it('text-only values: the hue text step mixed in by band, full at band 4', () => {
+    expect(signedErrorTextColor(2.0)).toBe(
+      `color-mix(in srgb, var(--rx-orange-11) ${BAND_TEXT_MIX[1]}%, var(--text))`
+    );
+    expect(signedErrorTextColor(-13.7)).toBe(
+      `color-mix(in srgb, var(--rx-cyan-11) ${BAND_TEXT_MIX[2]}%, var(--text))`
+    );
+    expect(signedErrorTextColor(-31.2)).toBe('var(--rx-cyan-11)');
+    expect(signedErrorTextColor(21.5)).toBe(signedBandTextColor(3));
   });
   it('the thresholds are unchanged', () => {
     expect(severity(0)).toBe(0);
@@ -267,21 +338,5 @@ describe('tint band (H-23)', () => {
     expect(tileStyle(tileColors('solid', true, 'normal', red, 'light', 67.5))).not.toHaveProperty(
       '--mx-bg'
     );
-  });
-});
-
-describe('the worst band tile (red) is lifted in the Tinted look only', () => {
-  it('uses RED_TINT_STEP for the band 4 Tinted fill and leaves the other fills alone', () => {
-    for (const scheme of SCHEMES) {
-      expect(sevTileColors('tinted', false, 4, scheme).fill).toBe(`var(--rx-red-${RED_TINT_STEP})`);
-      expect(RED_TINT_STEP).toBeGreaterThan(TILE.tinted.fill.normal);
-      expect(sevTileColors('tinted', false, 3, scheme).fill).toBe(
-        `var(--rx-orange-${TILE.tinted.fill.normal})`
-      );
-      expect(sevTileColors('tinted', false, 2, scheme).fill).toBe(
-        `var(--rx-yellow-${TILE.tinted.fill.normal})`
-      );
-      expect(sevTileColors('solid', false, 4, scheme).fill).not.toContain(`red-${RED_TINT_STEP}`);
-    }
   });
 });

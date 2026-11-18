@@ -5,6 +5,8 @@
  * string unchanged (the spaces between values are kept as text). Wrapping is balanced where the browser supports
  * `text-wrap: balance` (else `pretty`, else plain greedy wrapping: the unit still sticks to its value).
  */
+import { errorBand } from '../../../lib/harmonic-field';
+import { signedErrorTextColor } from '../state/tileColors';
 import classes from './panels.module.css';
 
 /** Group the words of `text` into never-breaking runs; exported for the test. */
@@ -37,16 +39,17 @@ export function valueGroups(text: string): string[] {
 }
 
 /**
- * `sevs` (M4, optional): the n-th value gets the error band `sevs[n]` (the card stat's `data-sev` colors); a value with no entry stays plain.
+ * `errors` (M4, H-38, optional): the n-th value is colored by the SIGNED error `errors[n]` in cents (orange sharp, cyan flat, stronger the
+ * further off, plain when exact; `data-sev` is the band of its size, `data-dir` its sign); a value with no entry stays plain.
  * The values of a pitches or error line are the groups `valueGroups` makes, one per note.
  */
 export function ValueList({
   text,
-  sevs,
+  errors,
   inline,
 }: {
   text: string;
-  sevs?: readonly number[] | null;
+  errors?: readonly number[] | null;
   /** Flow inside a sentence (display: inline) instead of its own block. */
   inline?: boolean;
 }) {
@@ -59,14 +62,22 @@ export function ValueList({
         if (/^\s+$/.test(g)) {
           return g;
         }
-        const sev = sevs?.[n++];
+        const err = errors?.[n++];
         return (
           <span
             key={i}
             className={
-              sev === undefined ? classes.valueItem : `${classes.valueItem} ${classes.err}`
+              err === undefined ? classes.valueItem : `${classes.valueItem} ${classes.err}`
             }
-            data-sev={sev}
+            style={err === undefined ? undefined : { color: signedErrorTextColor(err) }}
+            data-sev={err === undefined ? undefined : errorBand(Math.abs(err))}
+            data-dir={
+              err === undefined || errorBand(Math.abs(err)) === 0
+                ? undefined
+                : err > 0
+                  ? 'sharp'
+                  : 'flat'
+            }
             data-value
           >
             {g}

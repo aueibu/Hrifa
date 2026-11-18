@@ -328,7 +328,8 @@ describe('the sound follows the Roughness Partials and Rolloff (Developer option
 });
 
 describe('Partials and Rolloff boxes in the Sound settings popover (A1b)', () => {
-  const box = (name: 'Partials' | 'Rolloff') => screen.getByRole('textbox', { name }) as HTMLInputElement;
+  const box = (name: 'Partials' | 'Rolloff') =>
+    screen.getByRole('textbox', { name }) as HTMLInputElement;
   const type = (name: 'Partials' | 'Rolloff', v: string) => {
     fireEvent.change(box(name), { target: { value: v } });
     fireEvent.blur(box(name));

@@ -238,29 +238,9 @@
   top: 0;
 }
 
-/* the error text is a heat map from neutral to colored: exact is plain text, then the orange (above) or teal (below) comes in with the error band (the lab's five bands: exact, under 5 c, under 15, under 30, 30 and over) */
-.err[data-direction='above'] {
-  --heat: var(--mark-orange);
-}
-
-.err[data-direction='below'] {
-  --heat: var(--mark-cyan);
-}
-
-.err[data-band='1'] {
-  color: color-mix(in srgb, var(--heat, var(--text)) 40%, var(--text));
-}
-
-.err[data-band='2'] {
-  color: color-mix(in srgb, var(--heat, var(--text)) 65%, var(--text));
-}
-
-.err[data-band='3'] {
-  color: color-mix(in srgb, var(--heat, var(--text)) 85%, var(--text));
-}
-
-.err[data-band='4'] {
-  color: var(--heat, var(--text));
+/* the error text color is set inline from the shared signed error scale (state/tileColors.ts signedBandTextColor: orange above, cyan below, stronger with the error band), the same as every other error view */
+.err {
+  color: var(--text);
 }
 
 .swatch {

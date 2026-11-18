@@ -20,7 +20,7 @@ import { SHORTCUTS } from '../audio/shortcuts';
 import { OTHER_FAMILY, familyOrder, noteLabel } from '../state/derive';
 import { autoName } from '../state/generate';
 import { sketchPositionalPitches } from '../state/sketchChord';
-import { sevTileStyle } from '../state/tileColors';
+import { signedErrorTileStyle } from '../state/tileColors';
 import { PlayIcon } from './icons';
 import { tooFewHint } from './Positional';
 import { Hint, Num, Tip, severity, useLab } from './ui';
@@ -303,7 +303,7 @@ export function SketchRow() {
             const m = match[i];
             const hit = m?.idx !== null && m?.idx !== undefined;
             const off = !hit && m && Number.isFinite(m.dist) ? m.dist : null;
-            // the same heat tile as the Modes grid: a field note is band 0 (neutral), an outsider takes the band of its distance
+            // the same signed error tile as the Modes grid (H-38): a field note is band 0 (neutral), an outsider takes the sign (orange: the nearest field note is sharp of it, cyan: flat) and band of its distance
             const sev = hit ? 0 : off === null ? undefined : severity(Math.abs(off));
             // the note a missing pitch would land on: the nearest note of the WHOLE field (not only the subset)
             const nearNote = m?.near !== null && m?.near !== undefined ? tab.field[m.near] : null;
@@ -314,11 +314,17 @@ export function SketchRow() {
                 className={classes.sketchNote}
                 data-found={hit}
                 data-sev={sev}
+                data-dir={!hit && off !== null && sev ? (off > 0 ? 'sharp' : 'flat') : undefined}
                 data-tile={sev === undefined ? undefined : tiles.look}
                 style={
                   sev === undefined
                     ? undefined
-                    : sevTileStyle(tiles.look, tiles.outline, sev, tiles.scheme)
+                    : signedErrorTileStyle(
+                        hit ? 0 : (off ?? 0),
+                        tiles.look,
+                        tiles.outline,
+                        tiles.scheme
+                      )
                 }
                 aria-label={
                   hit

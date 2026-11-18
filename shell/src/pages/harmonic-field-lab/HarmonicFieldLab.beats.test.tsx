@@ -309,6 +309,8 @@ describe('Pairs panel: Beats and Add pitch', () => {
       10
     );
 
+    // H-37: the default is Simple strong; this case checks the Complex strong (faint) direction
+    writeDeveloperOptions({ intervalIntensity: 'faint' });
     render(<HarmonicFieldLabPage />);
     pickPresetNow("Ptolemy's intense diatonic");
     openPairs();

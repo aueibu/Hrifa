@@ -62,12 +62,10 @@ describe('tint band developer option (H-23)', () => {
     writeDeveloperOptions({ tintBand: 'center' });
     expect(readDeveloperOptions().tintBand).toBe('center');
   });
-  it('the interval intensity default is faint (complex = wider); an explicit strong is kept; saving any option stores it', () => {
-    expect(parseDeveloperOptions(null).intervalIntensity).toBe('faint');
-    expect(parseDeveloperOptions('{"intervalIntensity":"x"}').intervalIntensity).toBe('faint');
-    expect(parseDeveloperOptions('{"intervalIntensity":"strong"}').intervalIntensity).toBe(
-      'strong'
-    );
+  it('the interval intensity default is Simple strong; an explicit faint (Complex strong) is kept; saving any option stores it', () => {
+    expect(parseDeveloperOptions(null).intervalIntensity).toBe('strong');
+    expect(parseDeveloperOptions('{"intervalIntensity":"x"}').intervalIntensity).toBe('strong');
+    expect(parseDeveloperOptions('{"intervalIntensity":"faint"}').intervalIntensity).toBe('faint');
   });
 });
 

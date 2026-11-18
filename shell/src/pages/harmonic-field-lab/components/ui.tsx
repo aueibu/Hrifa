@@ -363,7 +363,7 @@ export const signed = (x: number, dp = 1) => {
   return Number(t) === 0 ? (0).toFixed(dp) : (x > 0 ? '+' : '') + t;
 };
 
-/** Error severity by absolute cents: 0 exact, 1 under 5, 2 under 15, 3 under 30, 4 beyond. */
+/** The error band of a SIZE in cents (pass `Math.abs(error)`): 0 exact, 1 under 5, 2 under 15, 3 under 30, 4 beyond. It names the strength only; the signed colors (orange sharp, cyan flat) come from `state/tileColors.ts` `signedErrorTile` and `signedErrorTextColor`. */
 export const severity = errorBand;
 /** Sign of a cents error for display: "+", the minus sign U+2212, or "" when it is exact (under 0.05 c). */
 export const signChar = (x: number) => (Math.abs(x) < 0.05 ? '' : x > 0 ? '+' : '−');
@@ -372,6 +372,19 @@ export const signedCents = (x: number, dp = 1) =>
   Math.abs(x) < 0.05 ? '0 c' : `${signChar(x)}${Math.abs(x).toFixed(dp)} c`;
 
 export const SEV_LABEL = ['exact', 'under 5 c', '5 to 15 c', '15 to 30 c', '30 c or more'];
+
+/** The legend labels of the signed bands -4 to 4 (index = band + 4): flat 30 c or more ... exact ... sharp 30 c or more. */
+export const SIGNED_BAND_LABELS = [
+  '−30 c or more',
+  '−15 to −30 c',
+  '−5 to −15 c',
+  'under −5 c',
+  'exact',
+  'under +5 c',
+  '+5 to +15 c',
+  '+15 to +30 c',
+  '+30 c or more',
+];
 
 import type { PreviewKind } from '../audio/plan';
 export { useLab, useViz } from '../state/context';

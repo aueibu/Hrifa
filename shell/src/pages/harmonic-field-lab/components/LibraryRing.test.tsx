@@ -670,7 +670,7 @@ describe('the roots table (M7d)', () => {
   it('row 2: tolerance 25: three roots with their numbers; Worst and Avg use the heat bands', async () => {
     const dialog = await open(tol(25));
     fireEvent.mouseEnter(minor(dialog));
-    expect(rootTexts(dialog)).toEqual(['9/8 21.5 21.5', '5/4 0.0 0.0', '5/3 0.0 0.0']);
+    expect(rootTexts(dialog)).toEqual(['9/8 -21.5 -21.5', '5/4 0.0 0.0', '5/3 0.0 0.0']);
     expect(rootOf(dialog)).toHaveTextContent('from 9/8');
     const stats = [...rowFor(dialog, '9/8').querySelectorAll('td[data-col="stat"] > span')];
     expect(stats.map((s) => s.getAttribute('data-sev'))).toEqual(['3', '3']);
@@ -771,11 +771,11 @@ describe('the roots table (M7d)', () => {
     const dialog = await open(tol(90));
     fireEvent.mouseEnter(rowOf(dialog, '4:5:6:7'));
     expect(rootTexts(dialog)).toEqual([
-      '1/1 84.5 28.2',
-      '5/4 70.7 39.8',
-      '4/3 63.0 21.0',
-      '3/2 27.3 9.1',
-      '5/3 70.7 39.8',
+      '1/1 -84.5 -28.2',
+      '5/4 -70.7 -7.3',
+      '4/3 -63.0 -21.0',
+      '3/2 +27.3 +9.1',
+      '5/3 -70.7 -7.3',
     ]);
     expect(rootOf(dialog)).toHaveTextContent('from 1/1');
   });
@@ -794,7 +794,7 @@ describe('the roots table (M7d)', () => {
     const dialog = await open(tol(30));
     fireEvent.mouseEnter(rowOf(dialog, '4:5:6:7'));
     expect(textOf(title(dialog))).toBe('In your subset: found on 1 root');
-    expect(rootTexts(dialog)).toEqual(['3/2 27.3 9.1']);
+    expect(rootTexts(dialog)).toEqual(['3/2 +27.3 +9.1']);
     expect(rootOf(dialog)).toHaveTextContent('from 3/2');
   });
 

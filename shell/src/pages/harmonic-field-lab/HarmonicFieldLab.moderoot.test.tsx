@@ -247,16 +247,13 @@ describe('big key view colors (H-4)', () => {
 
   it('the legend uses the same classes, so it takes the same colors', async () => {
     await openAll();
+    // M8m: added / dropped / missing are drawn as the same change ticks as the big ring (ChangeTicks), common as the plain dot
     const legend = screen.getByLabelText('Marks');
-    for (const c of [
-      'bigKeyCommon',
-      'bigKeyAdded',
-      'bigKeyGlyph',
-      'bigKeyDropped',
-      'bigKeyStrike',
-      'bigKeyMissing',
-    ]) {
-      expect(legend.querySelector(`[class*="${c}"]`)).not.toBeNull();
+    expect(legend.querySelector('[class*="bigKeyCommon"]')).not.toBeNull();
+    for (const kind of ['added', 'dropped', 'missing']) {
+      expect(
+        legend.querySelector(`[data-testid="change-tick"][data-kind="${kind}"]`)
+      ).not.toBeNull();
     }
   });
 });

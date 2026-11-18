@@ -40,6 +40,7 @@ import { useLabDeveloperOptions } from '../state/developerOptions';
 import { chordFoldIds, collapseAll, expandAll } from '../state/foldIds';
 import { MAX_TEMPLATES } from '../state/labState';
 import { ladderWindow, nearestHidden } from '../state/ladderWindow';
+import { signedErrorTextColor } from '../state/tileColors';
 import { ChordCard, fmtCentsList, pitchTexts, templateOn } from './ChordCard';
 import { ChordLibrary } from './ChordLibrary';
 import { FoldHead, GroupedCount, NestGuide, foldId, useFold, useGroupExpanded } from './Fold';
@@ -47,7 +48,7 @@ import { MinusIcon, PlusIcon, TrashIcon } from './icons';
 import { PatternsEditor, PositionalSection, positionalGroupIds } from './Positional';
 import { useSendHover } from './Send';
 import { SketchRow } from './SketchRow';
-import { DebouncedText, Num, Strip, Tip, severity, useLab } from './ui';
+import { DebouncedText, Num, Strip, Tip, severity, signed, useLab } from './ui';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
@@ -162,7 +163,8 @@ function Chip({
   // M4: per-note errors of the card's figures (a grouped card shows its first member's); a dashed card has none
   const [dev] = useLabDeveloperOptions();
   const noteErrors = chip.found ? chipErrors(first, lab.base.field, lab.base.repC) : null;
-  const avg = noteErrors ? errorStats(noteErrors).avg : null;
+  // H-38: the stat is the SIGNED worst (the note with the largest size) and the signed average, colored by the worst
+  const stats = noteErrors ? errorStats(noteErrors) : null;
   // the tooltip's sentences (finder order) and tolerance line need error data, like the card's own figures
   const noteLines = noteErrors ? noteErrorLines(first, lab.base.field, lab.base.rep) : null;
   return (
@@ -189,13 +191,18 @@ function Chip({
       }
       stat={
         chip.found ? (
-          <span className={classes.err} data-sev={sevFirst}>
+          <span
+            className={classes.err}
+            data-sev={sevFirst}
+            data-dir={stats && sevFirst > 0 ? (stats.worst > 0 ? 'sharp' : 'flat') : undefined}
+            style={stats ? { color: signedErrorTextColor(stats.worst) } : undefined}
+          >
             <Num>
               {sevFirst === 0
                 ? 'exact'
-                : avg === null
+                : stats === null
                   ? `${first.maxErr.toFixed(1)} c`
-                  : `${first.maxErr.toFixed(1)} (${avg.toFixed(1)}) c`}
+                  : `${signed(stats.worst)} (${signed(stats.avg)}) c`}
             </Num>
           </span>
         ) : (

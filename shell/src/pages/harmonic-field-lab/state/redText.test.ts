@@ -4,7 +4,7 @@ import { hexToLinearRgb, linearContrast, markHex, markTint } from '../../../them
 import { defaultThemeTokens as T } from '../../../theme/tokens';
 
 /**
- * The lab's red text (a can't-read message, a refusal, an alert note, the worst error size, an input error) uses the
+ * The lab's red text (a can't-read message, a refusal, an alert note, an input error) uses the
  * theme role `--text-danger`, not `--mark-red` and not Mantine's own red. The theme points `--mantine-color-error` at
  * it, so the lab only sizes the message (the role itself is tested in src/theme/danger.test.ts).
  */
@@ -51,7 +51,8 @@ describe('red text role', () => {
       'utf8'
     );
     expect(lab).toMatch(/\.fieldMsg\[data-kind=["']err["']\]\s*\{\s*color:\s*var\(--text-danger\)/);
-    expect(panels).toMatch(/\.err\[data-sev=["']4["']\]\s*\{\s*color:\s*var\(--rx-red-11\)/);
+    // the error text is no longer red (H-38: orange sharp, cyan flat, set inline); it must not use the danger role either
+    expect(panels).not.toMatch(/\.err\[data-sev/);
     expect(panels).toMatch(/\.shelfRefusal\s*\{\s*color:\s*var\(--text-danger\)/);
     expect(panels).toMatch(
       /\.sendNote\[data-alert\]\s*\{\s*border-color:\s*var\(--mark-red\);\s*color:\s*var\(--text-danger\)/

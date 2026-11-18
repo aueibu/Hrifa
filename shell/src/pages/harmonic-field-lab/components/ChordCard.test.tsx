@@ -5,14 +5,7 @@ import { act, fireEvent, render, screen } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NOTE_ERROR_WORD, type NoteErrorLine } from '../state/chordSort';
 import { LAB_DEVELOPER_KEY, resetDeveloperOptionsCache } from '../state/developerOptions';
-import {
-  CardHintLines,
-  ChordCard,
-  errorSevs,
-  fmtSteps,
-  stepsValue,
-  type ChordCardProps,
-} from './ChordCard';
+import { CardHintLines, ChordCard, fmtSteps, stepsValue, type ChordCardProps } from './ChordCard';
 import { ValueList } from './ValueList';
 
 const ups = [0, 315.6, 702];
@@ -302,14 +295,12 @@ describe('helpers', () => {
     expect(stepsValue('steps 315.6, 386.3 c')).toBe('315.6, 386.3 c');
     expect(stepsValue('')).toBe('');
   });
-  it('errorSevs uses the stat bands on absolute error', () => {
-    expect(errorSevs([0, -4.9, 5, -14.9, 15, 29.9, -30])).toEqual([0, 1, 2, 2, 3, 3, 4]);
-    expect(errorSevs(null)).toBeNull();
-  });
-  it('ValueList colors the n-th value; no sevs leaves it plain', () => {
-    const { container } = render(<ValueList text="1, 2, 3 c" sevs={[0, 4]} />);
-    expect(
-      [...container.querySelectorAll('[data-value]')].map((e) => e.getAttribute('data-sev'))
-    ).toEqual(['0', '4', null]);
+  it('ValueList colors the n-th value by its SIGNED error (H-38); no errors leaves it plain', () => {
+    const { container } = render(<ValueList text="1, 2, 3, 4 c" errors={[0, -30, 4.9, 15]} />);
+    const vals = [...container.querySelectorAll('[data-value]')];
+    expect(vals.map((e) => e.getAttribute('data-sev'))).toEqual(['0', '4', '1', '3']);
+    expect(vals.map((e) => e.getAttribute('data-dir'))).toEqual([null, 'flat', 'sharp', 'sharp']);
+    const plain = render(<ValueList text="1, 2 c" />);
+    expect(plain.container.querySelector('[data-sev]')).toBeNull();
   });
 });

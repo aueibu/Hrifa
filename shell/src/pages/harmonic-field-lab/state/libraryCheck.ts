@@ -15,9 +15,9 @@ export interface CheckHit {
   maxErr: number;
   /** M7d: the best voicing's signed error in cents per note (field note minus the template's ideal), the root first (0). */
   errors: number[];
-  /** M7d: the largest absolute error of those notes (the card stat's worst); the same number as `maxErr`. */
+  /** M7d, H-38: the SIGNED error of the note with the largest size (the card stat's worst); its size is `maxErr`. */
   worst: number;
-  /** M7d: the mean absolute error over the notes except the root (the card stat's avg, `errorStats`). */
+  /** M7d, H-38: the SIGNED mean error over the notes except the root (the card stat's avg, `errorStats`). */
   avg: number;
 }
 

@@ -112,11 +112,15 @@ export function chipErrors(
   return out.every((e) => typeof e === 'number') ? out : null;
 }
 
-/** Worst = the largest absolute error; avg = the mean absolute error over the NON-root notes (index 0 is the root, 0 by construction). */
+/**
+ * Signed (H-38). Worst = the signed error of the note with the largest size (the first one on a tie); avg = the SIGNED mean over the
+ * NON-root notes (index 0 is the root, 0 by construction), so +20 and -20 average to 0. Anything that sorts or filters by error
+ * takes the size (`Math.abs`) of these values.
+ */
 export function errorStats(errors: readonly number[]): { worst: number; avg: number } {
-  const worst = errors.reduce((m, e) => Math.max(m, Math.abs(e)), 0);
+  const worst = errors.reduce((w, e) => (Math.abs(e) > Math.abs(w) ? e : w), 0);
   const rest = errors.slice(1);
-  const avg = rest.length ? rest.reduce((a, e) => a + Math.abs(e), 0) / rest.length : 0;
+  const avg = rest.length ? rest.reduce((a, e) => a + e, 0) / rest.length : 0;
   return { worst, avg };
 }
 

@@ -128,8 +128,8 @@ export function DeveloperMenu() {
                     update({ intervalIntensity: v === 'strong' ? 'strong' : 'faint' })
                   }
                   data={[
-                    { label: 'Complex strong', value: 'faint' },
                     { label: 'Simple strong', value: 'strong' },
+                    { label: 'Complex strong', value: 'faint' },
                   ]}
                 />
               </Tip>

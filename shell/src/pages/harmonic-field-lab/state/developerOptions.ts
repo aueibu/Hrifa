@@ -36,7 +36,10 @@ export interface LabDeveloperOptions {
   mergeKeeps: MergeKeep;
   /** Pairs panel, Color: Interval: hue from the interval's size around the repeat (default), or from its rank among the sizes. */
   intervalColor: WheelReading;
-  /** Pairs panel, Color: Interval: more complex ratios tint more strongly and wider (default, H-23: `faint`), or simpler ones (`strong`). */
+  /**
+   * Interval intensity, ONE lab-wide setting (H-37): simpler ratios tint more strongly and wider (default, `strong` = "Simple strong"),
+   * or more complex ones (`faint` = "Complex strong"). Drives the Pairs Interval tint and the Relative picker's Color shading.
+   */
   intervalIntensity: TintIntensity;
   /** Pairs panel, Color: Interval (H-22): strength on the fixed simplicity scale (default) or spread over this subset's range. */
   tintScale: TintScale;
@@ -95,7 +98,7 @@ const defaults: LabDeveloperOptions = {
   mergeTolerance: MERGE_TOL_DEFAULT,
   mergeKeeps: 'first',
   intervalColor: 'size',
-  intervalIntensity: 'faint',
+  intervalIntensity: 'strong',
   tintScale: 'fixed',
   tintBand: 'center',
   beatPartialLimit: null,
@@ -134,7 +137,7 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
       mergeTolerance: clampMergeTol(o.mergeTolerance),
       mergeKeeps: o.mergeKeeps === 'recent' ? 'recent' : 'first',
       intervalColor: o.intervalColor === 'rank' ? 'rank' : 'size',
-      intervalIntensity: o.intervalIntensity === 'strong' ? 'strong' : 'faint',
+      intervalIntensity: o.intervalIntensity === 'faint' ? 'faint' : 'strong',
       tintScale: o.tintScale === 'relative' ? 'relative' : 'fixed',
       tintBand: o.tintBand === 'left' ? 'left' : 'center',
       beatPartialLimit: sanitizeBeatPartialLimit(o.beatPartialLimit),

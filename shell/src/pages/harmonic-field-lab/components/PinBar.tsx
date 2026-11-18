@@ -15,6 +15,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActionIcon, Button } from '@mantine/core';
 import { Sortable, SortableItem, type Move } from '../../../components/Sortable';
+import { tintVars, type IntervalTint } from '../state/intervalColor';
 import { PIN_COLS, braKet, movePin, removePin, swapPins, type PinKind } from '../state/pins';
 import { ChevronDownIcon, CloseIcon } from './icons';
 import { Hint } from './ui';
@@ -52,6 +53,8 @@ export interface PinBarProps {
   anchorRef: React.RefObject<HTMLElement | null>;
   /** A drag is in progress (the modal must not close on the Escape that cancels it). */
   onDragActive?: (active: boolean) => void;
+  /** M8o (H-37): the card's tint from the picker's Color menu (the same as the interval's ring cell), or null for the plain card. */
+  tintOf?: (text: string) => IntervalTint | null;
 }
 
 interface Space {
@@ -83,6 +86,7 @@ export function PinBar({
   message,
   anchorRef,
   onDragActive,
+  tintOf,
 }: PinBarProps) {
   const noun = kind === 'monzo' ? 'monzo' : 'ring';
   const [confirmAll, setConfirmAll] = useState(false);
@@ -296,6 +300,7 @@ export function PinBar({
       >
         {list.map((text) => {
           const shown = cardText(kind, text);
+          const tint = tintOf?.(text) ?? null;
           return (
             <SortableItem
               key={text}
@@ -317,6 +322,8 @@ export function PinBar({
                       type="button"
                       className={classes.card}
                       data-testid="pin-card"
+                      data-tinted={tint ? 'true' : undefined}
+                      style={tintVars(tint)}
                       aria-label={`Add ${shown} (hold Alt for below)`}
                       onFocus={() => onEnter(text, false)}
                       onBlur={onLeave}

@@ -218,25 +218,9 @@
   outline-offset: 1px;
 }
 
-/* error: color by size, never alone (the number is printed beside it) */
-.err[data-sev='0'] {
+/* error text (H-38): the color is set inline from the SIGNED error (state/tileColors.ts signedErrorTextColor: orange sharp, cyan flat, stronger the further off), never alone (the number is printed beside it) */
+.err {
   color: var(--text);
-}
-
-.err[data-sev='1'] {
-  color: color-mix(in srgb, var(--rx-yellow-11) 35%, var(--text));
-}
-
-.err[data-sev='2'] {
-  color: var(--rx-yellow-11);
-}
-
-.err[data-sev='3'] {
-  color: var(--rx-orange-11);
-}
-
-.err[data-sev='4'] {
-  color: var(--rx-red-11);
 }
 
 .need {
@@ -320,6 +304,82 @@
 }
 
 /* -------------------------------------------------------------------------------------- keys and modes */
+/* the signed error legend (H-38): one gradient strip, flat (cyan) .. exact .. sharp (orange), band edges as ticks */
+.errStrip {
+  color: var(--text-muted);
+  display: inline-flex;
+  flex-direction: column;
+  font-size: var(--lab-fs-tiny);
+  gap: 0.125rem;
+  min-width: 14rem;
+}
+
+.errStripEnds {
+  display: flex;
+  justify-content: space-between;
+}
+
+.errStripBar {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  display: block;
+  height: 0.625rem;
+  position: relative;
+}
+
+.errStripTicks {
+  display: block;
+  height: 1rem;
+  position: relative;
+}
+
+.errStripTick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.errStripTick::before {
+  background: var(--text-muted);
+  content: '';
+  height: 0.25rem;
+  left: 50%;
+  position: absolute;
+  top: -0.3rem;
+  width: 1px;
+}
+/* the hovered error on the strip (picker legend): a line across the bar; beyond an end it becomes a wedge pointing out */
+.errStripMark {
+  background: var(--text);
+  bottom: -3px;
+  margin-left: -1px;
+  pointer-events: none;
+  position: absolute;
+  top: -3px;
+  width: 2px;
+}
+
+.errStripMark[data-beyond] {
+  background: transparent;
+  border: 4px solid transparent;
+  height: 0;
+  margin-left: 0;
+  top: 2px;
+  width: 0;
+}
+
+.errStripMark[data-beyond='-1'] {
+  border-left-width: 0;
+  border-right-color: var(--text);
+  margin-left: -8px;
+}
+
+.errStripMark[data-beyond='1'] {
+  border-left-color: var(--text);
+  border-right-width: 0;
+}
+
 .legend {
   align-items: center;
   color: var(--text-muted);
@@ -1524,7 +1584,7 @@
 }
 
 /* a Sketch note is a heat tile like the Modes grid's: a field note is the neutral band, an outsider takes the band of its distance
-   (colors come from sevTileStyle through the shared .heatCell[data-tile] rule; no blue outline, no dashed border) */
+   (colors come from signedErrorTileStyle through the shared .heatCell[data-tile] rule; no blue outline, no dashed border) */
 .sketchNote[data-tile] {
   background: var(--mx-fill);
   border-color: var(--mx-bd);

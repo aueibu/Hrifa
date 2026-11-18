@@ -41,6 +41,7 @@ import {
   type Method,
 } from './generate';
 import { OWNER_KEY_RE } from './generatorLibrary';
+import { sanitizeRelColor } from './intervalColor';
 import {
   CMP_REFS,
   SCALE_DIRS,
@@ -254,6 +255,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     relBands: oneOf(raw.relBands, ['from', 'fixed'] as const, d.relBands),
     // optional (Scala-tools M8f, H-35): the interval pin bar's ring and monzo lists (exact ratio texts, at most 128 each); bad entries dropped; absent = empty; no write on mount
     pins: sanitizePins(raw.pins),
+    // optional (Scala-tools M8o, H-37): the Relative picker's Color menu; each field falls back to Prime / Fixed / Exact; no write on mount
+    relColor: sanitizeRelColor(raw.relColor),
     // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount
     pairsAdded: sanitizeAdded(raw.pairsAdded),
     // optional (Scala-tools M7c, H-30): the chord library's filters, checked rows (at most 40), open shapes and comparison; each falls back to its default; no write on mount

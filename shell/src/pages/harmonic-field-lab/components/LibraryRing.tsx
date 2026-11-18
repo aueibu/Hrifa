@@ -26,10 +26,11 @@ import { fitList } from '../state/fitList';
 import type { Ghost } from '../state/ghosts';
 import { layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { LibCmp } from '../state/libraryState';
+import { signedBandTextColor, signedErrorTextColor } from '../state/tileColors';
 import { SVG_FS_LABEL } from '../state/typeScale';
 import { RING_SOUND_R, RingDot, RingLabel, RingOutline } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
-import { Hint, Num, Tip, severity, useLab } from './ui';
+import { Hint, Num, Tip, severity, signed, useLab } from './ui';
 import labClasses from './lab.module.css';
 import classes from './libraryRing.module.css';
 import panelClasses from './panels.module.css';
@@ -344,9 +345,9 @@ export const RING_FIELD_NOTE = 'Ring compares with the whole field.';
 export interface RootsRow {
   idx: number;
   root: string;
-  /** The largest absolute error in cents (the chord card's worst). */
+  /** The signed error in cents of the note with the largest size (the chord card's worst). */
   worst: number;
-  /** The mean absolute error over the notes except the root (the chord card's avg). */
+  /** The signed mean error over the notes except the root (the chord card's avg). */
   avg: number;
 }
 
@@ -365,12 +366,16 @@ export interface LibraryRootsProps {
   onToggle: (idx: number) => void;
 }
 
-/** A Worst or Avg figure in cents, one decimal, tinted by the Chords panel's heat band (the chord cards' `severity` and `.err[data-sev]`). */
+/** A Worst or Avg figure in cents, signed (H-38), one decimal, colored by the shared signed error scale (orange sharp, cyan flat). */
 function ErrCell({ value }: { value: number }) {
   return (
     <td className={classes.numCol} data-col="stat">
-      <span className={panelClasses.err} data-sev={severity(value)}>
-        {value.toFixed(1)}
+      <span
+        className={panelClasses.err}
+        data-sev={severity(Math.abs(value))}
+        style={{ color: signedErrorTextColor(value) }}
+      >
+        {signed(value)}
       </span>
     </td>
   );
@@ -675,6 +680,17 @@ export function LibraryRingPanel({
                         data-col="error"
                         data-direction={r.direction}
                         data-band={r.band ?? undefined}
+                        style={{
+                          color: signedBandTextColor(
+                            r.band === null
+                              ? 0
+                              : r.direction === 'below'
+                                ? -r.band
+                                : r.direction === 'above'
+                                  ? r.band
+                                  : 0
+                          ),
+                        }}
                       >
                         {r.error}
                       </td>

@@ -40,12 +40,12 @@ const rows = (text: string, tol: number, base = major5) => {
 };
 
 describe('CheckHit carries the best voicing and its worst and avg', () => {
-  it('worst is maxErr, avg is errorStats over the non-root notes, errors start with the root (0)', () => {
+  it('worst is the signed error of size maxErr, avg is errorStats over the non-root notes, errors start with the root (0)', () => {
     const r = checkEntry(major5, entry('4:5:6:7'), 90)!;
     for (const h of r.hits) {
       expect(h.errors).toHaveLength(4);
       expect(h.errors[0]).toBe(0);
-      expect(h.worst).toBeCloseTo(h.maxErr, 9);
+      expect(Math.abs(h.worst)).toBeCloseTo(h.maxErr, 9);
       expect(h.avg).toBeCloseTo(errorStats(h.errors).avg, 9);
     }
   });
@@ -69,9 +69,9 @@ describe('shownRoots (rows 1, 2, 6, 7, 8)', () => {
     ]);
   });
 
-  it('row 2: tolerance 25: 9/8 joins at 21.5 / 21.5, subset order low to high', () => {
+  it('row 2: tolerance 25: 9/8 joins at -21.5 / -21.5 (signed, H-38), subset order low to high', () => {
     expect(rows('10:12:15', 25)).toEqual([
-      ['9/8', 21.5, 21.5],
+      ['9/8', -21.5, -21.5],
       ['5/4', 0, 0],
       ['5/3', 0, 0],
     ]);
@@ -79,11 +79,11 @@ describe('shownRoots (rows 1, 2, 6, 7, 8)', () => {
 
   it('row 6: tolerance 90: 4:5:6:7 on five roots', () => {
     expect(rows('4:5:6:7', 90)).toEqual([
-      ['1/1', 84.5, 28.2],
-      ['5/4', 70.7, 39.8],
-      ['4/3', 63, 21],
+      ['1/1', -84.5, -28.2],
+      ['5/4', -70.7, -7.3],
+      ['4/3', -63, -21],
       ['3/2', 27.3, 9.1],
-      ['5/3', 70.7, 39.8],
+      ['5/3', -70.7, -7.3],
     ]);
   });
 
@@ -91,7 +91,7 @@ describe('shownRoots (rows 1, 2, 6, 7, 8)', () => {
     expect(shownRoots(major5, entry('4:5:6:7'), 0)).toEqual({ kind: 'none', truncated: false });
   });
 
-  it('row 8: tolerance 30: one root, 3/2 at 27.3 / 9.1', () => {
+  it('row 8: tolerance 30: one root, 3/2 at +27.3 / +9.1', () => {
     expect(rows('4:5:6:7', 30)).toEqual([['3/2', 27.3, 9.1]]);
   });
 

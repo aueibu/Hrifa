@@ -57,9 +57,19 @@ import { checkAddedPitch, type PairsColor } from '../state/labState';
 import { PAIRS_LABEL } from '../state/layout';
 import { parseFind } from '../state/pairsFind';
 import { colWidthCh } from '../state/pairsWidth';
-import { sevTileStyle, strengthLevel, tileColors, tileStyle, wheelHue } from '../state/tileColors';
+import {
+  SIGNED_BANDS,
+  signedBand,
+  signedBandTileStyle,
+  signedErrorTextColor,
+  strengthLevel,
+  tileColors,
+  tileStyle,
+  wheelHue,
+} from '../state/tileColors';
 import { CloseIcon, ExpandIcon } from './icons';
-import { Num, Row, SEV_LABEL, Strip, Tip, severity, useLab } from './ui';
+import { SignedErrorLegend } from './SignedErrorLegend';
+import { Num, Row, Strip, Tip, signed, useLab } from './ui';
 import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
@@ -93,12 +103,12 @@ interface CellProps {
   text: string;
   label: string;
   wrap: boolean;
-  /** Error severity 0 to 4, or -1 when the coloring is not Error. */
-  sev: number;
+  /** The signed error band -4 (flat, 30 c or more) to 4 (sharp), 0 exact, or null when the coloring is not Error. */
+  sev: number | null;
   /** The Interval tile's custom properties (fill, border, text and their dimmed versions), or undefined for none. */
   tile: CSSProperties | undefined;
   look: string;
-  /** The Error tile's custom properties (from the severity). */
+  /** The Error tile's custom properties (from the signed band). */
   sevStyle?: CSSProperties;
   /** A beat above the Developer option's partial limit (dimmed). */
   theory?: boolean;
@@ -119,10 +129,11 @@ const Cell = memo(function Cell(p: CellProps) {
     <button
       type="button"
       className={`${classes.heatCell} ${classes.mxCell}`}
-      data-sev={p.sev >= 0 ? p.sev : undefined}
+      data-sev={p.sev === null ? undefined : Math.abs(p.sev)}
+      data-dir={p.sev ? (p.sev > 0 ? 'sharp' : 'flat') : undefined}
       data-tint={p.tile ? 'wheel' : undefined}
-      data-tile={p.tile || p.sev >= 0 ? p.look : undefined}
-      style={p.tile ?? (p.sev >= 0 ? p.sevStyle : undefined)}
+      data-tile={p.tile || p.sev !== null ? p.look : undefined}
+      style={p.tile ?? (p.sev !== null ? p.sevStyle : undefined)}
       data-match={p.match === 1 ? 'yes' : p.match === 2 ? 'no' : undefined}
       data-lit={p.lit}
       data-chord={p.chord}
@@ -347,7 +358,7 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
     look,
   ]);
   const sevStyles = useMemo(
-    () => [0, 1, 2, 3, 4].map((s) => sevTileStyle(look, dev.tileOutline, s, scheme)),
+    () => SIGNED_BANDS.map((b) => signedBandTileStyle(b, look, dev.tileOutline, scheme)),
     [look, dev.tileOutline, scheme]
   );
   const steps = useMemo(() => (m ? stepsTable(m) : []), [m]);
@@ -424,7 +435,7 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
   const chordHas = (i: number) => lab.chord.has(rel[i].src);
   const pinOf = (i: number) => lab.pin === rel[i].src;
 
-  const sevOfGroup = (g: number) => severity(Math.abs(m.groups[g].err));
+  const sevOfGroup = (g: number) => signedBand(m.groups[g].err);
   const cellLabel = (c: PairCell) =>
     `Degree ${c.from + 1} to degree ${c.to + 1}: ${cellText(c)}, ${c.c.toFixed(1)} c, ${c.k} ${c.k === 1 ? 'step' : 'steps'}${c.wrap ? ', up to the next repeat' : ''}`;
   const focusCell = focus ? m.cells[focus.i]?.[focus.j] : null;
@@ -517,18 +528,18 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
   const colorOf = (
     idx: number,
     withReach = false
-  ): { sev: number; style: CSSProperties | undefined } => {
+  ): { sev: number | null; style: CSSProperties | undefined } => {
     if (color === 'error') {
       const place = pitchPlace(extra[idx].c, rep.c);
-      const sev = severity(Math.abs(nearestRatio(place, m.oddLimit, rep.c).err));
-      return { sev, style: sevStyles[sev] };
+      const sev = signedBand(nearestRatio(place, m.oddLimit, rep.c).err);
+      return { sev, style: sevStyles[sev + 4] };
     }
     if (color !== 'interval') {
-      return { sev: -1, style: undefined };
+      return { sev: null, style: undefined };
     }
     const t = extraTint[idx];
     return {
-      sev: -1,
+      sev: null,
       style: tileStyle(
         tileColors(
           look,
@@ -574,7 +585,8 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
         role="img"
         className={`${classes.heatCell} ${classes.mxCell}`}
         data-added="true"
-        data-sev={col.sev >= 0 ? col.sev : undefined}
+        data-sev={col.sev === null ? undefined : Math.abs(col.sev)}
+        data-dir={col.sev ? (col.sev > 0 ? 'sharp' : 'flat') : undefined}
         data-tint={color === 'interval' ? 'wheel' : undefined}
         data-tile={col.style ? look : undefined}
         style={col.style}
@@ -599,7 +611,8 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
         className={classes.mxHead}
         data-added="true"
         data-axis={axis}
-        data-sev={col.sev >= 0 ? col.sev : undefined}
+        data-sev={col.sev === null ? undefined : Math.abs(col.sev)}
+        data-dir={col.sev ? (col.sev > 0 ? 'sharp' : 'flat') : undefined}
         data-tint={color === 'interval' ? 'wheel' : undefined}
         data-tile={col.style ? look : undefined}
         style={col.style}
@@ -675,20 +688,12 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
           data={COLOR_DATA}
         />
         {color === 'error' && (
-          <span className={classes.legend} aria-label="Error legend">
-            {SEV_LABEL.map((n, i) => (
-              <span key={n} className={classes.legendItem}>
-                <span
-                  className={classes.swatch}
-                  data-sev={i}
-                  data-tile={look}
-                  style={sevStyles[i]}
-                  aria-hidden="true"
-                />
-                {n}
-              </span>
-            ))}
-          </span>
+          <SignedErrorLegend
+            look={look}
+            outline={dev.tileOutline}
+            scheme={scheme}
+            label="Error legend"
+          />
         )}
       </div>
       {color === 'error' && (
@@ -760,9 +765,9 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
                   }
                   theory={b?.theoretical}
                   wrap={c.wrap}
-                  sev={color === 'error' ? sevOfGroup(c.group) : -1}
+                  sev={color === 'error' ? sevOfGroup(c.group) : null}
                   tile={color === 'interval' ? tiles[c.group] : undefined}
-                  sevStyle={sevStyles[sevOfGroup(c.group)]}
+                  sevStyle={sevStyles[sevOfGroup(c.group) + 4]}
                   look={look}
                   match={active ? (matchKeys.has(i * m.N + j) ? 1 : 2) : 0}
                   lit={litCell(i, j)}
@@ -990,8 +995,13 @@ function PairsBody({ ui }: { ui: PairsUi; big?: boolean }) {
                 <Num>{g.count}</Num>
               </td>
               {color === 'error' && (
-                <td className={classes.err} data-sev={sevOfGroup(g.id)}>
-                  <Num>{Math.abs(g.err) < 0.05 ? 'exact' : Math.abs(g.err).toFixed(1)}</Num>
+                <td
+                  className={classes.err}
+                  data-sev={Math.abs(sevOfGroup(g.id))}
+                  data-dir={sevOfGroup(g.id) ? (g.err > 0 ? 'sharp' : 'flat') : undefined}
+                  style={{ color: signedErrorTextColor(g.err) }}
+                >
+                  <Num>{Math.abs(g.err) < 0.05 ? 'exact' : signed(g.err)}</Num>
                 </td>
               )}
             </tr>

@@ -7,8 +7,9 @@ import { useState, type MouseEvent } from 'react';
 import { ActionIcon, Modal } from '@mantine/core';
 import { MAX_KEYS_NOTES, MAX_MODES } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
-import { sevTileStyle } from '../state/tileColors';
+import { signedErrorTileStyle } from '../state/tileColors';
 import { ExpandIcon } from './icons';
+import { SignedErrorLegend } from './SignedErrorLegend';
 import {
   Num,
   SEV_LABEL,
@@ -23,8 +24,6 @@ import {
 } from './ui';
 import { useTiles } from './useTiles';
 import classes from './panels.module.css';
-
-const SEV_NAMES = ['exact', '< 5 c', '5-15 c', '15-30 c', '30+c'];
 
 /** The heat grid, its legend and the empty-state messages: the same component in the panel and in the large window. */
 function ModesBody({ big }: { big?: boolean }) {
@@ -55,20 +54,12 @@ function ModesBody({ big }: { big?: boolean }) {
   return (
     <>
       <div className={`${classes.modesBody} ${big ? classes.modesBig : ''}`}>
-        <span className={classes.legend} aria-label="Heat grid legend">
-          {SEV_NAMES.map((n, i) => (
-            <span key={n} className={classes.legendItem}>
-              <span
-                className={classes.swatch}
-                data-sev={i}
-                data-tile={tiles.look}
-                style={sevTileStyle(tiles.look, tiles.outline, i, tiles.scheme)}
-                aria-hidden="true"
-              />
-              {n}
-            </span>
-          ))}
-        </span>
+        <SignedErrorLegend
+          look={tiles.look}
+          outline={tiles.outline}
+          scheme={tiles.scheme}
+          label="Heat grid legend"
+        />
         <h3 className={classes.familyHead}>
           <Tip k="modes">Mode grid</Tip>
           <Num muted>
@@ -139,10 +130,11 @@ function ModesBody({ big }: { big?: boolean }) {
                             className={classes.heatCell}
                             data-sev={severity(e)}
                             data-tile={tiles.look}
-                            style={sevTileStyle(
+                            data-dir={sign ? (sg > 0 ? 'sharp' : 'flat') : undefined}
+                            style={signedErrorTileStyle(
+                              sg,
                               tiles.look,
                               tiles.outline,
-                              severity(e),
                               tiles.scheme
                             )}
                             data-sign={sign}

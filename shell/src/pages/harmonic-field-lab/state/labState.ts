@@ -109,6 +109,7 @@ import {
   type OwnerKey,
   type UpdateUndo,
 } from './generatorLibrary';
+import { REL_COLOR_DEFAULT, type RelColor } from './intervalColor';
 import { DEFAULT_LAYOUT, type Layout, type PanelId, type VizId } from './layout';
 import type { LibSort } from './librarySort';
 import {
@@ -251,6 +252,8 @@ export interface UiSettings {
   relBands: 'from' | 'fixed';
   /** Relative picker (M8f, H-35): the interval pin bar's two ordered lists of exact ratio texts (ring pins for Rings and Near, monzo pins for Monzo), at most 128 each, no duplicates. Optional in storage. */
   pins: Pins;
+  /** Relative picker (M8o, H-37): the Color menu shared by Rings, Near and Monzo and the pin cards: metric (Off, Prime default, Tenney, Odd limit, Error, Interval, Roughness), range (Fixed default | Fit to view) and the Monzo octave (Exact default | Reduced). Optional in storage. */
+  relColor: RelColor;
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
   pairsAdded: string[];
   /** The chord library dialog's search text and filters, Checked only included (M7c, H-30); kept when the dialog closes and across reloads. Optional in storage. */
@@ -406,6 +409,7 @@ export function defaultUi(): UiSettings {
     pairsColor: 'off',
     relBands: 'from',
     pins: emptyPins(),
+    relColor: { ...REL_COLOR_DEFAULT },
     pairsAdded: [],
     libFilters: defaultLibFilters(),
     libChecked: [],

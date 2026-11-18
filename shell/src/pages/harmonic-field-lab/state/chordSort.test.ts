@@ -191,28 +191,38 @@ describe('rows 10 to 12: per-note errors and worst (avg)', () => {
     return { base, chip };
   };
 
-  it('row 10: 0, 322, 673.2 gives 0, +6.4, -28.8; worst 28.8, avg 17.6', () => {
+  it('row 10: 0, 322, 673.2 gives 0, +6.4, -28.8; worst -28.8, avg -11.2 (signed)', () => {
     const { base, chip } = chipFor(['322c', '673.2c']);
     const errs = chipErrors(chip, base.field, base.repC)!;
     expect(errs.map((e) => Math.round(e * 10) / 10)).toEqual([0, 6.4, -28.8]);
     expect(fmtErrors(errs)).toBe('0, +6.4, -28.8 c');
     const s = errorStats(errs);
-    expect(s.worst.toFixed(1)).toBe('28.8');
-    expect(s.avg.toFixed(1)).toBe('17.6');
+    expect(s.worst.toFixed(1)).toBe('-28.8');
+    expect(s.avg.toFixed(1)).toBe('-11.2');
     expect(chip.maxErr.toFixed(1)).toBe('28.8');
   });
 
-  it('row 11: 0, 292.7, 673.2 has the same worst but a larger average', () => {
+  it('row 11: 0, 292.7, 673.2 has the same worst (-28.8) but a larger average size', () => {
     const { base, chip } = chipFor(['292.7c', '673.2c']);
     const errs = chipErrors(chip, base.field, base.repC)!;
     expect(errs[0]).toBe(0);
     expect(errs[1]).toBeCloseTo(292.7 - 315.64, 1);
     const s = errorStats(errs);
-    expect(s.worst.toFixed(1)).toBe('28.8');
-    // (22.94 + 28.76) / 2 = 25.85: computed from the real voicing, not typed in
-    expect(s.avg).toBeCloseTo((Math.abs(errs[1]) + Math.abs(errs[2])) / 2, 9);
-    expect(s.avg).toBeGreaterThan(25.8);
-    expect(s.avg).toBeLessThan(25.9);
+    expect(s.worst.toFixed(1)).toBe('-28.8');
+    // (-22.94 - 28.76) / 2 = -25.85, signed: computed from the real voicing, not typed in
+    expect(s.avg).toBeCloseTo((errs[1] + errs[2]) / 2, 9);
+    expect(s.avg).toBeLessThan(-25.8);
+    expect(s.avg).toBeGreaterThan(-25.9);
+  });
+
+  it('errorStats is signed (H-38): worst is the signed error of the largest, avg the signed mean without the root', () => {
+    expect(errorStats([0, 20, -20])).toEqual({ worst: 20, avg: 0 });
+    expect(errorStats([0, 20, 20])).toEqual({ worst: 20, avg: 20 });
+    const s = errorStats([0, -13.7, -31.2]);
+    expect(s.worst).toBe(-31.2);
+    expect(s.avg).toBeCloseTo(-22.45, 9);
+    expect(errorStats([0, 5, -9]).worst).toBe(-9);
+    expect(errorStats([0])).toEqual({ worst: 0, avg: 0 });
   });
 
   it('row 12: an exact chord has errors 0, 0, 0', () => {
@@ -223,8 +233,8 @@ describe('rows 10 to 12: per-note errors and worst (avg)', () => {
     const errs = chipErrors(chip, base.field, base.repC)!;
     expect(errs.map((e) => Math.abs(e) < 1e-6)).toEqual([true, true, true]);
     expect(fmtErrors(errs)).toBe('0, 0, 0 c');
-    expect(errorStats(errs).worst).toBeLessThan(1e-6);
-    expect(errorStats(errs).avg).toBeLessThan(1e-6);
+    expect(Math.abs(errorStats(errs).worst)).toBeLessThan(1e-6);
+    expect(Math.abs(errorStats(errs).avg)).toBeLessThan(1e-6);
   });
 
   it("errors follow the card's note order (root first, then upward from the root), also on a non-first root", () => {
@@ -239,7 +249,7 @@ describe('rows 10 to 12: per-note errors and worst (avg)', () => {
     order.forEach((i, k) => {
       expect(errs[k]).toBe(chip.errors![chip.memberIdx.indexOf(i)]);
     });
-    expect(chip.maxErr).toBeCloseTo(errorStats(errs).worst, 9);
+    expect(chip.maxErr).toBeCloseTo(Math.abs(errorStats(errs).worst), 9);
   });
 
   it('a chip with no errors (or a mismatched list) gives none', () => {

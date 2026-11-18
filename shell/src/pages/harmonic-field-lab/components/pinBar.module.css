@@ -172,3 +172,15 @@
   outline: 2px solid var(--mark-green);
   outline-offset: -1px;
 }
+
+/* M8o: a card tinted like the interval's ring cell (the Color menu); the hover is a ring around it, as the fill is the message */
+.card[data-tinted='true'] {
+  background: var(--rc-fill);
+  box-shadow: inset 0 0 0 1px var(--rc-bd);
+  color: var(--rc-fg);
+}
+
+.card[data-tinted='true']:hover {
+  background: var(--rc-fill);
+  box-shadow: inset 0 0 0 1px var(--text);
+}

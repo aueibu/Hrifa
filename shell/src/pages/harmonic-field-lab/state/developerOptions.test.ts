@@ -62,3 +62,21 @@ describe('soundFollowsRoughness developer option (A1, H-31)', () => {
     );
   });
 });
+
+describe('intervalIntensity developer option (H-37, one setting for Pairs and the picker)', () => {
+  it('is strong (Simple strong) by default, when absent, and when damaged', () => {
+    for (const raw of [null, '', '{', '[]', '{"tooltips":false}', '{"intervalIntensity":"x"}']) {
+      expect(parseDeveloperOptions(raw).intervalIntensity, String(raw)).toBe('strong');
+    }
+  });
+
+  it('a stored faint (Complex strong) is kept', () => {
+    expect(parseDeveloperOptions('{"intervalIntensity":"faint"}').intervalIntensity).toBe('faint');
+  });
+
+  it('a stored shadeEmphasis is ignored', () => {
+    const o = parseDeveloperOptions('{"shadeEmphasis":"complex"}');
+    expect(o).not.toHaveProperty('shadeEmphasis');
+    expect(o.intervalIntensity).toBe('strong');
+  });
+});

@@ -128,13 +128,14 @@ describe('lab Developer menu', () => {
       mergeTolerance: 5,
       mergeKeeps: 'first',
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      relativeRingStep: 5,
       soundFollowsRoughness: true,
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
@@ -148,13 +149,14 @@ describe('lab Developer menu', () => {
       mergeTolerance: 5,
       mergeKeeps: 'first',
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      relativeRingStep: 5,
       soundFollowsRoughness: true,
     });
   });
@@ -175,13 +177,14 @@ describe('lab Developer menu', () => {
       mergeTolerance: 5,
       mergeKeeps: 'first',
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      relativeRingStep: 5,
       soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
@@ -193,13 +196,14 @@ describe('lab Developer menu', () => {
       mergeTolerance: 5,
       mergeKeeps: 'first',
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      relativeRingStep: 5,
       soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('[1,2]')).toEqual({
@@ -211,13 +215,14 @@ describe('lab Developer menu', () => {
       mergeTolerance: 5,
       mergeKeeps: 'first',
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      relativeRingStep: 5,
       soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('null')).toEqual({
@@ -229,13 +234,14 @@ describe('lab Developer menu', () => {
       mergeTolerance: 5,
       mergeKeeps: 'first',
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
       tileLook: 'tinted',
       tileOutline: true,
       cardNoteErrors: false,
+      relativeRingStep: 5,
       soundFollowsRoughness: true,
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');
@@ -263,10 +269,10 @@ describe('lab Developer menu', () => {
     }
   });
 
-  it('the interval color options default to size wheel and complex-strong (faint); they round-trip and read damaged data as the defaults', () => {
+  it('the interval color options default to size wheel and Simple strong; they round-trip and read damaged data as the defaults', () => {
     expect(parseDeveloperOptions(null)).toMatchObject({
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
@@ -278,13 +284,13 @@ describe('lab Developer menu', () => {
     expect(
       parseDeveloperOptions('{"intervalColor":"rank","intervalIntensity":"faint"}')
     ).toMatchObject({ intervalColor: 'rank', intervalIntensity: 'faint' });
-    // H-23: the default is now faint (complex = wider and stronger); an explicitly stored strong is still honored
+    // H-37: the default is Simple strong; an explicitly stored faint (Complex strong) is still honored
     expect(parseDeveloperOptions('{"intervalIntensity":"strong"}').intervalIntensity).toBe(
       'strong'
     );
     expect(parseDeveloperOptions('{"intervalColor":3,"intervalIntensity":"x"}')).toMatchObject({
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,
@@ -295,10 +301,10 @@ describe('lab Developer menu', () => {
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify({ intervalColor: 'rank' }));
     open();
-    fireEvent.click(screen.getByRole('radio', { name: 'Simple strong' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Complex strong' }));
     expect(JSON.parse(window.localStorage.getItem(LAB_DEVELOPER_KEY)!)).toMatchObject({
       intervalColor: 'rank',
-      intervalIntensity: 'strong',
+      intervalIntensity: 'faint',
     });
   });
 
@@ -313,7 +319,7 @@ describe('lab Developer menu', () => {
       mergeTolerance: 5,
       mergeKeeps: 'first',
       intervalColor: 'size',
-      intervalIntensity: 'faint',
+      intervalIntensity: 'strong',
       tintScale: 'fixed',
       tintBand: 'center',
       beatPartialLimit: null,

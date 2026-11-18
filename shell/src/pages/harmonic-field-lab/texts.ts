@@ -1263,10 +1263,10 @@ const entries = {
     term: 'Color: Off | Error | Interval',
     help: [
       p(
-        '**Error** colors each cell by how far its interval is from the nearest just ratio, on the same five steps as the Modes grid. **Interval** gives equal intervals the same tint, a continuous color wheel, not a few hues.'
+        '**Error** colors each cell by how far its interval is from the nearest just ratio, with the signed error scale of the lab, the same as the Modes grid: orange is sharp of the nearest ratio, cyan is flat, and the stronger the color the further off (five steps, exact is neutral). **Interval** gives equal intervals the same tint, a continuous color wheel, not a few hues.'
       ),
       example(
-        'with Error at odd limit 9, a 27/20 cell is orange: it is 21.5 c from the nearest ratio, 4/3.'
+        'with Error at odd limit 9, a 27/20 cell is orange: it is 21.5 c sharp of the nearest ratio, 4/3.'
       ),
     ],
     teaching: [
@@ -1445,16 +1445,18 @@ const entries = {
     term: 'Chord: error (c)',
     help: [
       p(
-        "The stat on a chord chip: the worst note's error in cents from the template's ideal ratio, then the average over the notes above the root in brackets. 0 is exact. The chord shows once the tolerance is at least the worst error."
+        "The stat on a chord chip: the SIGNED error in cents of the note that is furthest from the template's ideal ratio (plus sharp, minus flat), then the signed average over the notes above the root in brackets. A sharp and a flat note cancel in the average, so +20 and −20 average to 0. 0 is exact. The chord shows once the tolerance is at least the size of the worst error."
       ),
-      example('28.8 (17.6) c: the worst note is 28.8 c off its ideal, the average is 17.6 c.'),
+      example(
+        '-28.8 (-11.2) c: the worst note is 28.8 c flat of its ideal, the average is 11.2 c flat (the other note is 6.4 c sharp).'
+      ),
     ],
     teaching: [
       p(
         'Hover the chip for each note on its own, such as "13/11 is −26.4 c from 6/5" or "3/2 is exact", and last the tolerance the chord appears at: the worst error rounded up to a whole cent. Minus means the note is flat of its ideal, plus sharp.'
       ),
       p(
-        'Color (never alone: the number is always printed, or the word exact): neutral exact, a hint of yellow under 5 c, yellow 5-15 c, orange 15-30 c, red 30 c or more. Each note takes the color of its own error.'
+        'Color (never alone: the number is always printed, or the word exact): orange is sharp, cyan is flat, and the stronger the color the further off (neutral exact, then under 5 c, 5-15 c, 15-30 c, 30 c or more). Each note takes the color of its own signed error; the stat takes the color of the worst note.'
       ),
     ],
     see: ['chordTolerance', 'errorKinds', 'chordChip'],
@@ -1468,7 +1470,7 @@ const entries = {
     term: 'Modes (heat grid)',
     help: [
       p(
-        'One row per mode (the same notes restarted on each degree), one column per degree. A cell is cool where a field note lands close and warm where the field has nothing close. + means the nearest field note is sharp, − that it is flat.'
+        'One row per mode (the same notes restarted on each degree), one column per degree. A cell is neutral where a field note lands exactly. + means the nearest field note is sharp (orange), − that it is flat (cyan); the stronger the color the further off.'
       ),
       keys([
         { key: 'Click', does: 'make this the current mode' },
@@ -1488,7 +1490,7 @@ const entries = {
         'Narrow panels wrap the degrees onto more lines, always under the same column. Each cell shows a + or − when it is not exact (the color still tells how large the miss is). Point at a row to print the cents errors, with their signs.'
       ),
       example(
-        "row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree wants 3/2 above 9/8 (81/64) but the field only has 5/4, the field's note is 21.5 c flat of it: that cell is orange, shows − and reads −21.5 c on hover."
+        "row 1 is the scale from 1/1 and row 2 the scale from 9/8; if row 2's 5th degree wants 3/2 above 9/8 (81/64) but the field only has 5/4, the field's note is 21.5 c flat of it: that cell is cyan, shows − and reads −21.5 c on hover."
       ),
       p(
         "Hear a mode without selecting it or changing the subset: click the mode's number and root. Ctrl+click (Cmd on a Mac) plays it with the field's nearest notes as listed (errors included), Shift+click plays it pure (the mode's exact intervals from 1/1, so the cell errors vanish), and Ctrl+Shift+click plays each degree as a listed and a pure tone together, held half as fast again, so the error is heard as beating (a degree with no error plays once, nothing to beat against; a pair shares the level so it is never louder than one note). The same clicks on one cell play just that degree. Playback follows the Scale preview Up or Up-down setting."
@@ -1920,7 +1922,7 @@ const entries = {
         "A Developer option, off by default. On: a chord card gets an **Error** line with each note's own error in cents against its template (root first, the root is 0). Pitches and errors are tinted by the same bands as the stat. The hover tooltip always shows Pitches, Steps, each note's own error as a sentence, and the tolerance the chord appears at."
       ),
       example(
-        'a minor chord 0, 322, 673.2 c against 10:12:15 shows 0, +6.4, -28.8; the stat reads 28.8 (17.6) c: the worst error, and the average over the notes above the root.'
+        'a minor chord 0, 322, 673.2 c against 10:12:15 shows 0, +6.4, -28.8; the stat reads -28.8 (-11.2) c: the signed worst error, and the signed average over the notes above the root.'
       ),
     ],
     teaching: [
@@ -1942,7 +1944,7 @@ const entries = {
     ],
     teaching: [
       p(
-        '**Chord chip and card.** Each note above the root: its interval from the root minus the template ideal (4:5:6 and so on). The notes come from the selected subset. The stat reads worst (average); the tooltip gives each note\'s own error ("13/11 is −26.4 c from 6/5") and the tolerance the chord appears at.'
+        '**Chord chip and card.** Each note above the root: its interval from the root minus the template ideal (4:5:6 and so on). The notes come from the selected subset. The stat reads worst (average), both signed; the tooltip gives each note\'s own error ("13/11 is −26.4 c from 6/5") and the tolerance the chord appears at.'
       ),
       p(
         '**Mode grid.** Each degree of a mode, placed from that mode root, minus the nearest note of the whole field. + means the field note is sharp of the pitch the mode wants.'
@@ -1957,7 +1959,7 @@ const entries = {
         '**Pairs, Error color.** Each pair interval (not each note) against the nearest ratio up to an odd limit. It takes only the odd-limit number from the tuner strip and is always JI, whatever Compare to says.'
       ),
       p(
-        'One color scale carries all of them: neutral for exact, a hint of yellow under 5 c, yellow to 15 c, orange to 30 c, red beyond. The scale is the same; the reference is not, so read the view first and then the color.'
+        'One color scale carries all of them: orange is sharp, cyan is flat, and the stronger the color the further off (neutral for exact, then under 5 c, to 15 c, to 30 c, beyond). The scale is the same; the reference is not, so read the view first and then the color.'
       ),
     ],
     see: ['chordTolerance', 'sketchNearest', 'cardNoteErrors', 'compareTo', 'modes'],
@@ -2039,7 +2041,7 @@ const entries = {
     term: 'Chord ring',
     help: [
       p(
-        'The chord you last pointed at or checked, on a one-repeat ring, 1/1 at the top. Grey dots are field notes; each chord note is a larger dot at its exact pitch. A bar runs to the nearest note: orange if the chord note is above, teal if below, none if exact.'
+        'The chord you last pointed at or checked, on a one-repeat ring, 1/1 at the top. Grey dots are field notes; each chord note is a larger dot at its exact pitch. A bar runs to the nearest note: orange if the chord note is above, cyan if below, none if exact.'
       ),
       keys([
         { key: 'Point at a row', does: 'show it here' },
@@ -2053,7 +2055,7 @@ const entries = {
         },
         { key: 'Field | Subset', does: 'compare with the whole field or your subset' },
       ]),
-      example('on a 5-limit major scale, 4:5:6:7 from 5/4 has 35/32 in teal, −48.8 c from 9/8.'),
+      example('on a 5-limit major scale, 4:5:6:7 from 5/4 has 35/32 in cyan, −48.8 c from 9/8.'),
     ],
     teaching: [
       p(
@@ -2079,7 +2081,7 @@ const entries = {
     term: 'In your subset: found on N roots',
     help: [
       p(
-        "Every root where the chord is found in your subset at your tolerance, low to high, with the chord's Worst error (the largest) and Avg error (the mean over the notes except the root), in cents. The numbers are the same as on the chord cards: the finder's rule on your subset. Looking adds and checks nothing."
+        "Every root where the chord is found in your subset at your tolerance, low to high, with the chord's Worst error (signed, the note furthest off) and Avg error (signed mean, root excluded), in cents. The numbers match the chord cards. Looking adds and checks nothing."
       ),
       keys([
         {
@@ -2092,7 +2094,7 @@ const entries = {
         },
       ]),
       example(
-        'on a 5-limit major scale at tolerance 90, 4:5:6:7 is found on 1/1, 5/4, 4/3, 3/2 and 5/3; on 3/2 it is Worst 27.3, Avg 9.1.'
+        'on a 5-limit major scale at tolerance 90, 4:5:6:7 is found on 1/1, 5/4, 4/3, 3/2 and 5/3; on 3/2 it is Worst +27.3, Avg +9.1.'
       ),
     ],
     teaching: [
@@ -2100,7 +2102,7 @@ const entries = {
         "Without a pin, the ring shows the chord from the root the ring rule picks (your Sketch stepper's root when it is one of these, else the lowest). A new chord clears the pin, and a pinned root that stops being found is dropped. Nothing here is saved."
       ),
       p(
-        'The numbers use the heat colors of the chord cards. The ring has its own colors: orange and teal show whether a chord note is above or below its nearest note.'
+        'The numbers use the same colors as the ring and the chord cards: orange is sharp, cyan is flat, stronger the further off.'
       ),
       p(
         'Hold {key:holdOwn}, {key:holdField} or {key:holdExact} with the pointer on a root to hear the chord from that root: a root you point at here, or the pinned one, is used by all three keys. Without one, {key:holdOwn} follows the root the ring shows and the other two the Sketch stepper.'
@@ -2360,7 +2362,7 @@ const entries = {
   },
   modeSignAlways: {
     term: 'Mode tiles: always show ± sign',
-    text: 'On (the default): every inexact tile in the Modes heat grid carries a + or −, so you can see the direction of each miss without pointing at it. Off: the sign appears only with the number when you point at the row. + means the nearest field note is sharp of the pitch the mode wants, − means flat. Example: a tile for a 5th that needs 81/64 where the field only has 5/4 shows − (21.5 c flat).',
+    text: 'On (the default): every inexact tile in the Modes heat grid carries a + or −, so you can see the direction of each miss without pointing at it. Off: the sign appears only with the number when you point at the row. + means the nearest field note is sharp of the pitch the mode wants, − means flat. Example: a tile for a 5th that needs 81/64 where the field only has 5/4 shows − (21.5 c flat) and is cyan.',
     see: ['modes', 'developerMenu'],
   },
   intervalColor: {
@@ -2384,9 +2386,9 @@ const entries = {
     term: 'Interval intensity',
     help: [
       p(
-        'How strong and how wide the Interval tint is. **Complex strong** (the default) makes complex ratios wide and vivid and simple ones narrow and faint. **Simple strong** is the reverse.'
+        'Which end of the tint scale stands out. **Simple strong** (the default) makes simple ratios wide and vivid and complex ones narrow and faint. **Complex strong** is the reverse. One setting for the whole lab: it drives the Pairs Interval tint (strength and width) and the Color shading of the Relative picker (Tenney, Odd limit, Roughness and Interval class), here and in the Developer menu.'
       ),
-      example('complex strong: 64/45 is wide and vivid and 3/2 is narrow and faint.'),
+      example('simple strong: 3/2 is wide and vivid and 64/45 is narrow and faint.'),
     ],
     teaching: [
       p(
@@ -2453,7 +2455,7 @@ const entries = {
         'How the colored tiles in the Modes grid and the Pairs panel look, in both schemes. **Tinted** (the default) is a soft hue fill with strong text. **Outlined** is a plain tile with a hue border. **Solid** is a full hue fill with black or white text. The colors are Radix Colors steps.'
       ),
       example(
-        'Tinted turns a 20-cent error into a soft orange tile; Solid turns it into a full orange tile.'
+        'Tinted turns a 20-cent sharp error into a soft orange tile; Solid turns it into a full orange tile (a flat error is cyan).'
       ),
     ],
     see: ['modes', 'matrixColor', 'developerMenu', 'tileOutline'],
@@ -2873,6 +2875,33 @@ const entries = {
     term: 'Pinned intervals',
     text: 'Hover a ratio in the relative picker (a ring cell or a Near dot) and press = (or +) to pin it here; in Monzo, = pins the interval you painted, shown as its exponents [x x x>. Ring and monzo pins are two separate lists (128 each, saved across reloads). Click a card to add its interval above the source note, Alt+click below; hovering a card previews it like the ring does, and holding 1, 4 or 5 sounds it. x removes a card, drag a card onto another slot to reorder (pause on a card to swap), and the trash icon clears its row. Example: hover 81/80 and press =; with source 5/4, clicking the card adds 81/64.',
     see: ['relativeMenu'],
+  },
+  relColor: {
+    term: 'Color (relative picker)',
+    text: 'Colors every interval of the open relative picker view and the pinned cards. Each view (Rings, Near, Monzo) keeps its own choice: change it in Rings and Near and Monzo stay as they were. Ring pin cards follow the open view (Rings or Near); monzo pin cards follow Monzo. Off: plain. Prime: by the largest prime of the ratio (3, 5, 7 ... each its own hue). Tenney: by log2 of numerator times denominator. Odd limit: by the larger odd part. Error vs 12-EDO: by the cents to the nearest 12-EDO step (same hues as the Pairs panel Error). Interval class: by the size of the interval (the Pairs panel Interval wheel). Roughness: by the roughness of the two tones in the Roughness view. Tenney, Odd limit and Roughness shade one hue; which end is strong is the Interval intensity. In Monzo each cell shows the interval you would get if only that prime were set to the value in that cell. Saved across reloads, per view. Example: with Tenney in Rings and Prime in Near, a ring cell is shaded while the same interval in Near is its prime hue; with Tenney, 3/2 is strongly tinted and 81/80 faintly.',
+    see: [
+      'relativeMenu',
+      'relColorLegend',
+      'relColorRange',
+      'relColorOctave',
+      'intervalIntensity',
+      'pinBar',
+    ],
+  },
+  relColorRange: {
+    term: 'Color range',
+    text: 'Where the shading of Tenney, Odd limit and Roughness starts and ends, chosen per view (Error always uses the fixed bands of the Pairs panel). Fixed: set bounds, so one interval has one color in every view. Fit to view: the simplest cell on screen is the strongest end and the most complex the other, so a view of only simple ratios still uses the whole ramp. A pinned card uses the range of the open view. Example: Tenney, view up to 7/4 only: Fit makes 3/2 the strongest and 7/4 the faintest; Fixed shows all of them fairly strong.',
+    see: ['relColor', 'intervalIntensity'],
+  },
+  relColorLegend: {
+    term: 'Color scale',
+    text: 'What the colors mean. Prime: one chip per prime in the open view. Tenney, Odd limit, Roughness: a bar from the simplest end to the most complex end with the end values (fixed bounds, or the open view with Fit to view); the strong end is named, and follows Interval intensity. Error: the same strip as the Modes and Pairs panels, flat (cyan) through exact (neutral) to sharp (orange), with ticks at the band edges (-30 -15 -5 0 +5 +15 +30 c); it does not change with Fit to view. Interval class: the 12 interval sizes. Point at a ring cell, a Near dot, a Monzo cell or a pinned card to see its place: a tick on the bar or strip (an arrow at the end when it is beyond) or its chip outlined. Example: Odd limit, point at 81/80: the tick sits near the complex end of the bar.',
+    see: ['relColor', 'relColorRange', 'intervalIntensity'],
+  },
+  relColorOctave: {
+    term: 'Monzo octave',
+    text: 'How the Monzo matrix colors its cells (a Monzo-only choice). Exact: a cell keeps the power of 2 you have painted, so it is the exact interval. Reduced: the cell is folded into one octave first. Example: with 81/80 painted, the cell of prime 5 at 0 is 81/16 when Exact (Tenney 10.34) and 81/64 when Reduced (12.34). Saved across reloads.',
+    see: ['relColor'],
   },
   offChain: {
     term: 'Off-chain note',

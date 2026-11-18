@@ -44,8 +44,23 @@ import {
   type Note,
   type RingRatio,
 } from '../../../lib/harmonic-field';
+import { useLabDeveloperOptions } from '../state/developerOptions';
+import {
+  FIRST_DOZEN_PRIMES,
+  fitBounds,
+  foldOctave,
+  hasRange,
+  monzoCellNotes,
+  monzoCellTints,
+  monzoPaintedNote,
+  largestPrimeOf,
+  legendMarkOf,
+  primeColor,
+  tintOf,
+  type IntervalTint,
+  type TintContext,
+} from '../state/intervalColor';
 import { MAX_PINS, addPin, braKet, type PinKind } from '../state/pins';
-import { wheelHue } from '../state/tileColors';
 import {
   MONZO_CTL_H,
   MonzoPanel,
@@ -55,9 +70,12 @@ import {
 } from './MonzoPanel';
 import { PinBar } from './PinBar';
 import { PrimeFilterChips } from './PrimeFilterChips';
+import { RelativeColorLegend } from './RelativeColorLegend';
+import { RelativeColorControls, RelativeColorPanel } from './RelativeColorMenu';
 import { RING_PX_PER_UNIT, RING_R, RingDot } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
-import { noteHandlers, useLab } from './ui';
+import { Hint, noteHandlers, useLab } from './ui';
+import { useTiles } from './useTiles';
 import classes from './relativeMenu.module.css';
 
 /** The inner ring's circle as a multiple of the main ring's circle (the human's floor is 0.9). */
@@ -139,8 +157,6 @@ export interface MetaSettings {
   arc: number;
   /** How the dots are joined: not at all, in complexity order (one zigzag), or one thread per largest prime. */
   connect: MetaConnect;
-  /** Dot fill by the ratio's largest prime. */
-  colorByPrime: boolean;
   /** Faint circles at round complexity values. */
   rings: boolean;
   /** Radial spokes at round cent offsets. */
@@ -165,7 +181,6 @@ export const META_DEFAULTS: MetaSettings = {
   oddCap: 123,
   arc: 360,
   connect: 'off',
-  colorByPrime: true,
   rings: true,
   cents: true,
   zero: 'landing',
@@ -191,62 +206,6 @@ export const META_MAX_DOTS = 3500;
 /** The default arc (degrees); the rest of the circle (the seam, at 6 o'clock) stays empty. */
 export const META_SWEEP = 300;
 
-/**
- * Prime colors, a color wheel: the odd primes 3, 5, 7, ... (index i, 3 = 0) take wheel hue `(5 i) mod 12`, the 12 positions being the
- * Pairs wheel (`wheelHue`: the theme's 8 Radix hues in order, blended between neighbors) cut into twelfths. Every dozen of primes
- * (d = floor(i / 12)) is fainter: the fill steps are Pairs' Solid steps (strong 9, normal 8, faint 7) continued down (6, 5).
- * Prime 2 (no odd prime, as for 1/1) is neutral.
- */
-export const WHEEL_SLOTS = 12;
-/**
- * Consecutive primes step this many slots around the wheel (5 of 12 = 150 degrees, the widest fixed step), so 3, 5, 7 are far
- * apart; 5 and 12 share no factor, so the first dozen still uses every slot once before the cycle repeats at 43.
- */
-export const WHEEL_STRIDE = 5;
-/** The Radix fill step of dozen d (0 = strongest). */
-export const DOZEN_STEPS = [9, 8, 7, 6, 5] as const;
-/** The first dozen of odd primes (the legend). */
-export const FIRST_DOZEN_PRIMES = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41] as const;
-/** The index of an odd prime in 3, 5, 7, ... (-1 when `p` is not an odd prime). */
-export function oddPrimeIndex(p: number): number {
-  if (!Number.isInteger(p) || p < 3 || p % 2 === 0) {
-    return -1;
-  }
-  let idx = 0;
-  for (let q = 3; q < p; q += 2) {
-    let prime = true;
-    for (let f = 3; f * f <= q; f += 2) {
-      if (q % f === 0) {
-        prime = false;
-        break;
-      }
-    }
-    if (prime) {
-      idx++;
-    }
-  }
-  for (let f = 3; f * f <= p; f += 2) {
-    if (p % f === 0) {
-      return -1;
-    }
-  }
-  return idx;
-}
-/** The fill of wheel slot `slot` at dozen `d` (a Radix step, blended between two hues when the slot sits between them). */
-export function wheelFill(slot: number, d: number): string {
-  const n = DOZEN_STEPS[Math.min(d, DOZEN_STEPS.length - 1)];
-  const h = wheelHue(slot / WHEEL_SLOTS);
-  return h.b
-    ? `color-mix(in oklch, var(--rx-${h.a}-${n}) ${h.pctA}%, var(--rx-${h.b}-${n}))`
-    : `var(--rx-${h.a}-${n})`;
-}
-/** The color of a prime: its wheel hue and dozen (see above), or the neutral `--text-muted` for prime 2. */
-export const primeColor = (p: number): string => {
-  const i = oddPrimeIndex(p);
-  return i < 0
-    ? 'var(--text-muted)'
-    : wheelFill((i * WHEEL_STRIDE) % WHEEL_SLOTS, Math.floor(i / WHEEL_SLOTS));
-};
 /** The largest prime of numerator and denominator together (2 when there is none, as for 1/1). */
 export function largestPrime(text: string): number {
   const [n, d] = text.split('/').map(Number);
@@ -701,6 +660,8 @@ export interface MetaLayerProps {
   onSurfaceClick: (ctrlKey: boolean) => void;
   /** Connect: Parents only: the ratio text of the hovered dot (null: none, and always null in the other connect modes). */
   hoverText: string | null;
+  /** M8o: each dot's tint from the picker's Color menu (null: Color Off, the dots keep the plain look). */
+  dotTints: ReadonlyMap<RingRatio, IntervalTint> | null;
 }
 
 /**
@@ -725,6 +686,7 @@ const MetaLayer = memo(function MetaLayer({
   onDotKey,
   onSurfaceClick,
   hoverText,
+  dotTints,
 }: MetaLayerProps) {
   const arc = mSet.arc;
   const geo: MetaGeometry = {
@@ -850,8 +812,10 @@ const MetaLayer = memo(function MetaLayer({
     }
   }
   const centsText = (c: number) => `${c < 0 ? '−' : '+'}${Math.abs(c)} c`;
-  const dotFill = (d: { prime: number }) =>
-    mSet.colorByPrime ? { fill: primeColor(d.prime) } : undefined;
+  const dotFill = (d: { ratio: RingRatio }) => {
+    const t = dotTints?.get(d.ratio);
+    return t ? { fill: t.mark } : undefined;
+  };
   return (
     <g data-testid="relative-meta" className={classes.metaOverlay}>
       {/* catches the pointer over the bands (they are dimmed): a Ctrl+click on empty space closes the meta ring */}
@@ -1057,6 +1021,7 @@ const BandCells = memo(function BandCells({
   scale,
   repC,
   on,
+  tints,
 }: {
   rings: RingRatio[][];
   bands: [number, number][];
@@ -1065,6 +1030,7 @@ const BandCells = memo(function BandCells({
   scale: number;
   repC: number;
   on: CellHandlers;
+  tints: ReadonlyMap<RingRatio, IntervalTint> | null;
 }) {
   return (
     <>
@@ -1079,6 +1045,8 @@ const BandCells = memo(function BandCells({
           // horizontal text needs room along the arc: crowded bands write along the radius instead
           const radial = (2 * Math.PI * mid * scale) / band.length < RADIAL_BELOW_ARC_PX;
           const flip = ((ang % 360) + 360) % 360 > 180;
+          const tint = tints?.get(ratio);
+          const tintText = tint ? { fill: tint.text } : undefined;
           // the cell's whole annular sector is ONE button (the direction comes from Alt)
           const sector = sectorPath(
             C,
@@ -1098,6 +1066,7 @@ const BandCells = memo(function BandCells({
                 textAnchor="middle"
                 dominantBaseline="central"
                 transform={`translate(${p.x} ${p.y})${radial ? ` rotate(${flip ? ang + 90 : ang - 90})` : ''}`}
+                style={tintText}
               >
                 {ratio.text}
               </text>
@@ -1118,6 +1087,51 @@ const BandCells = memo(function BandCells({
                 onKeyDown={(e) => on.key(ratio, e)}
               />
             </g>
+          );
+        })
+      )}
+    </>
+  );
+});
+
+/** M8o: the tinted fill of every ring cell (its whole annular sector), under the dividers and labels; memoized like `BandCells`. */
+const CellTints = memo(function CellTints({
+  rings,
+  bands,
+  C,
+  rot,
+  tints,
+}: {
+  rings: RingRatio[][];
+  bands: [number, number][];
+  C: number;
+  rot: number;
+  tints: ReadonlyMap<RingRatio, IntervalTint>;
+}) {
+  return (
+    <>
+      {rings.map((band, b) =>
+        band.map((ratio, i) => {
+          const t = tints.get(ratio);
+          if (!t) {
+            return null;
+          }
+          const [ri, ro] = bands[b];
+          return (
+            <path
+              key={`t${b}-${ratio.text}`}
+              className={classes.cellTint}
+              d={sectorPath(
+                C,
+                ri,
+                ro,
+                (i / band.length) * 360 + rot,
+                ((i + 1) / band.length) * 360 + rot
+              )}
+              style={{ fill: t.fill, stroke: t.border }}
+              data-testid="relative-cell-tint"
+              data-ratio={ratio.text}
+            />
           );
         })
       )}
@@ -1393,28 +1407,6 @@ export function RelativeModal({
     () => (pinNote ? reduceInto(mulNotes(from, pinNote, alt ? -1 : 1), rep) : null),
     [pinNote, from, rep, alt]
   );
-  const overlay = useMemo(
-    () =>
-      function GhostOverlay(a: RingOverlayArgs) {
-        return (
-          <RelativeGhost
-            at={a.at}
-            k={a.k}
-            from={from}
-            rep={rep}
-            hover={hover}
-            landing={
-              isMonzo
-                ? pinLanding
-                  ? { note: pinLanding, dir: pinDir }
-                  : { note: mLanding, dir: mDir }
-                : undefined
-            }
-          />
-        );
-      },
-    [from, rep, hover, isMonzo, mLanding, mDir, pinLanding, pinDir]
-  );
   const [cell, setCell] = useState<RingRatio | null>(null);
   useEffect(() => {
     setCell(null);
@@ -1554,6 +1546,201 @@ export function RelativeModal({
   const dotByRatio = useMemo(() => new Map(dots.map((d) => [d.ratio, d])), [dots]);
   const hoverDot = metaOn && cell ? (dotByRatio.get(cell) ?? null) : null;
   const hoverOffset = hoverDot ? hoverDot.offsetC : null;
+  // M8o Color menu: the metric, range and octave (settings.v1), the lab-wide interval intensity (developer.v1) and the scheme. The tints
+  // are built per view (ring cells, Near dots, Monzo matrix cells) and handed down as one memoized map or grid, so a hover
+  // (which changes none of these inputs) never rebuilds them and the memoized band cells stay memoized.
+  // the OPEN view's choice (D24: Rings, Near and Monzo each keep their own; ring pin cards follow the open view)
+  const relColors = lab.state.ui.relColor;
+  const relColor = isMonzo ? relColors.monzo : metaOn ? relColors.near : relColors.rings;
+  const monzoOctave = isMonzo ? relColors.monzo.octave : 'exact';
+  const [dev] = useLabDeveloperOptions();
+  const { look, outline, scheme } = useTiles();
+  const colorOn = relColor.metric !== 'off';
+  const monzoCells = useMemo(
+    () => (isMonzo && colorOn ? monzoCellNotes(monzo, monzoOctave) : null),
+    [isMonzo, colorOn, monzo, monzoOctave]
+  );
+  // Fit to view: the min and max over the cells of the open view (ring cells, Near dots or Monzo matrix cells)
+  const viewNotes = useMemo(
+    () =>
+      relColor.range !== 'fit' || !hasRange(relColor.metric)
+        ? []
+        : isMonzo
+          ? (monzoCells?.flat() ?? [])
+          : metaOn
+            ? dots.map((d) => d.ratio.note)
+            : rings.flat().map((r) => r.note),
+    [relColor.range, relColor.metric, isMonzo, monzoCells, metaOn, dots, rings]
+  );
+  const tintCtx = useMemo<TintContext | null>(
+    () =>
+      colorOn
+        ? {
+            metric: relColor.metric as TintContext['metric'],
+            intensity: dev.intervalIntensity,
+            scheme,
+            look,
+            outline,
+            repC,
+            bounds:
+              relColor.range === 'fit' && hasRange(relColor.metric)
+                ? fitBounds(relColor.metric, viewNotes)
+                : null,
+          }
+        : null,
+    [
+      colorOn,
+      relColor.metric,
+      relColor.range,
+      dev.intervalIntensity,
+      scheme,
+      look,
+      outline,
+      repC,
+      viewNotes,
+    ]
+  );
+  // D23 legend: the primes present in the open view (Prime) and the hovered interval's place on the legend. `legendMark` is rebuilt
+  // only when the hovered interval (or the legend's own inputs) changes and the memoized legend alone redraws; the ring never does.
+  const legendPrimes = useMemo(() => {
+    if (relColor.metric !== 'prime') {
+      return [];
+    }
+    const notes = isMonzo
+      ? (monzoCells?.flat() ?? [])
+      : metaOn
+        ? dots.map((d) => d.ratio.note)
+        : rings.flat().map((r) => r.note);
+    const set = new Set<number>();
+    for (const n of notes) {
+      const p = largestPrimeOf(n);
+      if (p !== null) {
+        set.add(p);
+      }
+    }
+    return [...set].sort((a, b) => a - b);
+  }, [relColor.metric, isMonzo, monzoCells, metaOn, dots, rings]);
+  const ringTints = useMemo(
+    () =>
+      tintCtx && !isMonzo && !metaOn
+        ? new Map(
+            rings.flat().flatMap((r) => {
+              const t = tintOf(r.note, tintCtx);
+              return t ? [[r, t] as const] : [];
+            })
+          )
+        : null,
+    [tintCtx, isMonzo, metaOn, rings]
+  );
+  const dotTints = useMemo(
+    () =>
+      tintCtx && metaOn
+        ? new Map(
+            dots.flatMap((d) => {
+              const t = tintOf(d.ratio.note, tintCtx);
+              return t ? [[d.ratio, t] as const] : [];
+            })
+          )
+        : null,
+    [tintCtx, metaOn, dots]
+  );
+  const cellTints = useMemo(
+    () =>
+      tintCtx && monzoCells
+        ? monzoCellTints(monzoCells, {
+            metric: tintCtx.metric,
+            intensity: tintCtx.intensity,
+            scheme: tintCtx.scheme,
+            look: tintCtx.look,
+            outline: tintCtx.outline,
+            repC: tintCtx.repC,
+            range: relColor.range,
+          })
+        : null,
+    [tintCtx, monzoCells, relColor.range]
+  );
+  // the pin cards: the same tint as the interval's cell (a card's note is parsed once; Fit uses the open view's range)
+  const pinNotes = useRef(new Map<string, ReturnType<typeof parseInterval>>());
+  const pinTint = useCallback(
+    (text: string): IntervalTint | null => {
+      if (!tintCtx) {
+        return null;
+      }
+      let n = pinNotes.current.get(text);
+      if (n === undefined) {
+        n = parseInterval(text);
+        pinNotes.current.set(text, n);
+      }
+      if (!n) {
+        return null;
+      }
+      return tintOf(monzoOctave === 'reduced' ? foldOctave(n) : n, tintCtx);
+    },
+    [tintCtx, monzoOctave]
+  );
+  // the Monzo landing mark: the painted interval's tint (a hovered monzo card shows its own)
+  const landingTint =
+    isMonzo && tintCtx
+      ? pinNote
+        ? pinTint(pinHover ?? '')
+        : tintOf(monzoPaintedNote(monzo, monzoOctave), tintCtx)
+      : null;
+  // the hovered interval on the legend: a ring cell, a Near dot or a ring pin card (`cell`), a hovered Monzo card, or in Monzo the
+  // painted interval (hovering a matrix cell paints it, so the cell under the pointer IS the painted interval)
+  const monzoHoverNote = useMemo(
+    () =>
+      !isMonzo || !colorOn
+        ? null
+        : pinNote
+          ? monzoOctave === 'reduced'
+            ? foldOctave(pinNote)
+            : pinNote
+          : monzoPaintedNote(monzo, monzoOctave),
+    [isMonzo, colorOn, pinNote, monzo, monzoOctave]
+  );
+  const hoverNote = isMonzo ? monzoHoverNote : (cell?.note ?? null);
+  const legendBounds = tintCtx?.bounds ?? null;
+  const legendMark = useMemo(
+    () =>
+      hoverNote && colorOn ? legendMarkOf(relColor.metric, hoverNote, legendBounds, repC) : null,
+    // the note is read through its identity: a ring cell and a parsed card keep theirs, the painted note is rebuilt per monzo
+    [hoverNote, colorOn, relColor.metric, legendBounds, repC]
+  );
+  const legend = (
+    <RelativeColorLegend
+      metric={relColor.metric}
+      bounds={legendBounds}
+      intensity={dev.intervalIntensity}
+      look={look}
+      outline={outline}
+      scheme={scheme}
+      primes={legendPrimes}
+      mark={legendMark}
+    />
+  );
+  const overlay = useMemo(
+    () =>
+      function GhostOverlay(a: RingOverlayArgs) {
+        return (
+          <RelativeGhost
+            at={a.at}
+            k={a.k}
+            from={from}
+            rep={rep}
+            hover={hover}
+            landing={
+              isMonzo
+                ? pinLanding
+                  ? { note: pinLanding, dir: pinDir }
+                  : { note: mLanding, dir: mDir }
+                : undefined
+            }
+            tint={landingTint?.mark}
+          />
+        );
+      },
+    [from, rep, hover, isMonzo, mLanding, mDir, pinLanding, pinDir, landingTint?.mark]
+  );
   const readoutLine =
     metaOn && meta && hoverOffset !== null && line && !message
       ? `${line} · ${signedCents(hoverOffset, meta.note.m ? 1 : 2)} from ${meta.text}`
@@ -1697,7 +1884,7 @@ export function RelativeModal({
       setMeta(null);
     }
   }, []);
-  const showLegend = mSet.connect === 'prime' || mSet.colorByPrime;
+  const showLegend = mSet.connect === 'prime' && relColor.metric !== 'prime';
   return (
     <Modal
       opened={opened}
@@ -1752,6 +1939,7 @@ export function RelativeModal({
             width={size}
             rowH={mGeo.rowH}
             onOver={setMonzoOver}
+            cellTints={cellTints}
           />
         )}
         <svg
@@ -1776,6 +1964,8 @@ export function RelativeModal({
           {bands.map(([ri, ro], b) => (
             <path key={b} className={classes.band} d={annulus(C, ri, ro)} fillRule="evenodd" />
           ))}
+          {/* M8o: the Color menu's tinted fill of each ring cell, under the dividers and labels */}
+          {ringTints && <CellTints rings={rings} bands={bands} C={C} rot={rot} tints={ringTints} />}
           {/* a radial divider at each boundary between neighboring cells, so every ratio reads as its own cell */}
           {rings.map((band, b) =>
             band.map((ratio, i) => {
@@ -1823,6 +2013,7 @@ export function RelativeModal({
             scale={scale}
             repC={repC}
             on={cellOn}
+            tints={ringTints}
           />
           {/* the hovered (or key-stepped) cell's tint: one path on top, so a hover redraws only this */}
           {selCell && (
@@ -1859,6 +2050,7 @@ export function RelativeModal({
               onDotKey={onDotKey}
               onSurfaceClick={onSurfaceClick}
               hoverText={mSet.connect === 'parents' && cell ? cell.text : null}
+              dotTints={dotTints}
             />
           )}
           {/* the hovered dot's highlight: one circle above the memoized layer (the layer itself never re-renders on hover) */}
@@ -1894,6 +2086,7 @@ export function RelativeModal({
               );
             })()}
         </svg>
+        {!metaOn && <RelativeColorPanel monzo={isMonzo} legend={legend} />}
         {metaOn && meta && (
           <div className={classes.metaPanel} data-testid="relative-meta-panel">
             <Button
@@ -1994,30 +2187,27 @@ export function RelativeModal({
                 { value: 'parents', label: 'Parents' },
               ]}
             />
-            <label className={classes.metaCheck} title="Dot fill by the ratio's largest prime">
-              <input
-                type="checkbox"
-                checked={mSet.colorByPrime}
-                onChange={(e) => setMSet({ colorByPrime: e.currentTarget.checked })}
-              />
-              Color by prime
-            </label>
-            <label className={classes.metaCheck} title="Faint circles at round complexity values">
-              <input
-                type="checkbox"
-                checked={mSet.rings}
-                onChange={(e) => setMSet({ rings: e.currentTarget.checked })}
-              />
-              Complexity rings
-            </label>
-            <label className={classes.metaCheck} title="Spokes at round cent offsets">
-              <input
-                type="checkbox"
-                checked={mSet.cents}
-                onChange={(e) => setMSet({ cents: e.currentTarget.checked })}
-              />
-              Cents lines
-            </label>
+            <RelativeColorControls monzo={false} near legend={legend} />
+            <Hint label="Faint circles at round complexity values">
+              <label className={classes.metaCheck}>
+                <input
+                  type="checkbox"
+                  checked={mSet.rings}
+                  onChange={(e) => setMSet({ rings: e.currentTarget.checked })}
+                />
+                Complexity rings
+              </label>
+            </Hint>
+            <Hint label="Spokes at round cent offsets">
+              <label className={classes.metaCheck}>
+                <input
+                  type="checkbox"
+                  checked={mSet.cents}
+                  onChange={(e) => setMSet({ cents: e.currentTarget.checked })}
+                />
+                Cents lines
+              </label>
+            </Hint>
             {showLegend && (
               <div className={classes.metaLegend} data-testid="relative-meta-legend">
                 {FIRST_DOZEN_PRIMES.map((p) => (
@@ -2117,6 +2307,7 @@ export function RelativeModal({
         message={pinMsg}
         anchorRef={bodyRef}
         onDragActive={setPinDrag}
+        tintOf={pinTint}
       />
     </Modal>
   );
@@ -2131,10 +2322,12 @@ export interface RelativeGhostProps {
   hover: RelativeHover | null;
   /** Monzo mode: the landing note and tone to draw instead of the hovered half's. */
   landing?: { note: Note; dir: Direction };
+  /** M8o: the landing mark's fill (the Color menu's tint of the painted interval); absent: the plain dashed mark. */
+  tint?: string;
 }
 
 /** The ghost dot on the inner ring at the landing pitch of the hovered half (orange above, teal below). */
-export function RelativeGhost({ at, k, from, rep, hover, landing }: RelativeGhostProps) {
+export function RelativeGhost({ at, k, from, rep, hover, landing, tint }: RelativeGhostProps) {
   const ghost =
     landing ??
     (hover ? { note: landingPitch(from, hover.ratio.note, hover.dir, rep), dir: hover.dir } : null);
@@ -2151,6 +2344,7 @@ export function RelativeGhost({ at, k, from, rep, hover, landing }: RelativeGhos
       cy={p.y}
       data-testid="relative-ghost"
       pointerEvents="none"
+      style={landing && tint ? { fill: tint } : undefined}
     />
   );
 }

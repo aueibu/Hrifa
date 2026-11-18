@@ -573,3 +573,87 @@
   stroke-opacity: 0.6;
   stroke-width: 1;
 }
+
+/* M8o: a ring cell's tinted fill (the Color menu), drawn under the dividers and labels */
+.cellTint {
+  pointer-events: none;
+}
+
+/* M8o: a matrix cell tinted by the interval it stands for; the zero row and the painted cell keep their borders and marks */
+.stripCell[data-tinted='true']:not([data-x]) {
+  background: var(--rc-fill);
+  box-shadow: inset 0 0 0 1px var(--rc-bd);
+  color: var(--rc-fg);
+}
+
+/* M8o D23: the Color legend under the Color select (chips for Prime and Interval class, a bar with a hover tick for the ramps) */
+.colorLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.legendChip {
+  background: var(--rc-fill);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--rc-bd);
+  color: var(--rc-fg);
+  padding: 0 4px;
+}
+
+.legendChip[data-hover='true'] {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.legendBar {
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px var(--grid);
+  height: 12px;
+  position: relative;
+}
+
+/* the hovered interval's value: a line across the bar; beyond an end it flattens to a wedge pointing out of the bar */
+.legendTick {
+  background: var(--text);
+  bottom: -3px;
+  margin-left: -1px;
+  pointer-events: none;
+  position: absolute;
+  top: -3px;
+  width: 2px;
+}
+
+.legendTick[data-beyond] {
+  background: transparent;
+  border: 4px solid transparent;
+  height: 0;
+  margin-left: 0;
+  top: 2px;
+  width: 0;
+}
+
+.legendTick[data-beyond='-1'] {
+  border-left-width: 0;
+  border-right-color: var(--text);
+  margin-left: -8px;
+}
+
+.legendTick[data-beyond='1'] {
+  border-left-color: var(--text);
+  border-right-width: 0;
+}
+
+.legendEnds {
+  color: var(--text-muted);
+  display: flex;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  justify-content: space-between;
+}
+
+/* the Monzo typed box's error message: the lab's input error size (same rule as panels.module.css) */
+p.inputError {
+  font-size: var(--lab-fs-small);
+  line-height: 1.3;
+}

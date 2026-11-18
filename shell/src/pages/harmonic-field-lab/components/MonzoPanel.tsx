@@ -20,6 +20,8 @@ import {
   type MonzoPrime,
 } from '../../../lib/harmonic-field';
 import { isTyping } from '../audio/keymap';
+import { tintVars, type IntervalTint } from '../state/intervalColor';
+import { Hint } from './ui';
 import classes from './relativeMenu.module.css';
 
 export type MonzoView = 'strips' | 'rows';
@@ -63,6 +65,11 @@ export interface MonzoPanelProps {
   rowH: number;
   /** The pointer entered or left the matrix or the rows (the hold 1 / 4 / 5 previews follow the landing only while it is over). */
   onOver?: (over: boolean) => void;
+  /**
+   * M8o (H-37): each matrix cell's tint, `[column][row]` in the order of `MONZO_PRIMES` and `+12 .. -12`: the interval the painted
+   * monzo would become if only that prime's exponent were that cell's value. Null (Color Off): the plain cells.
+   */
+  cellTints?: readonly (readonly (IntervalTint | null)[])[] | null;
 }
 
 export function MonzoPanel({
@@ -77,6 +84,7 @@ export function MonzoPanel({
   width,
   rowH,
   onOver,
+  cellTints,
 }: MonzoPanelProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState('');
@@ -218,16 +226,16 @@ export function MonzoPanel({
               {MONZO_PRIMES.map((p) => {
                 const v = clampExp(monzo[p]);
                 return (
-                  <div
-                    key={p}
-                    className={classes.primeCell}
-                    data-testid="monzo-prime"
-                    data-prime={p}
-                    data-nonzero={v !== 0 ? 'true' : undefined}
-                    title={`${p}: ${expText(v)}`}
-                  >
-                    {p}
-                  </div>
+                  <Hint key={p} label={`${p}: ${expText(v)}`}>
+                    <div
+                      className={classes.primeCell}
+                      data-testid="monzo-prime"
+                      data-prime={p}
+                      data-nonzero={v !== 0 ? 'true' : undefined}
+                    >
+                      {p}
+                    </div>
+                  </Hint>
                 );
               })}
             </div>
@@ -273,7 +281,7 @@ export function MonzoPanel({
                 onAddMonzo();
               }}
             >
-              {MONZO_PRIMES.map((prime) => {
+              {MONZO_PRIMES.map((prime, j) => {
                 const now = clampExp(monzo[prime]);
                 return (
                   <div
@@ -282,19 +290,23 @@ export function MonzoPanel({
                     data-testid="monzo-strip"
                     data-prime={prime}
                   >
-                    {VALUES.map((v) => (
-                      <div
-                        key={v}
-                        className={classes.stripCell}
-                        data-testid="monzo-value"
-                        data-value={v}
-                        data-now={v === now ? 'true' : undefined}
-                        data-zero={v === 0 ? 'true' : undefined}
-                        style={{ height: rowH }}
-                      >
-                        {expText(v)}
-                      </div>
-                    ))}
+                    {VALUES.map((v, r) => {
+                      const tint = cellTints?.[j]?.[r];
+                      return (
+                        <div
+                          key={v}
+                          className={classes.stripCell}
+                          data-testid="monzo-value"
+                          data-value={v}
+                          data-now={v === now ? 'true' : undefined}
+                          data-zero={v === 0 ? 'true' : undefined}
+                          data-tinted={tint ? 'true' : undefined}
+                          style={{ height: rowH, ...tintVars(tint) }}
+                        >
+                          {expText(v)}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -400,6 +412,7 @@ export function MonzoPanel({
             data-testid="monzo-typed"
             style={{ flex: 1 }}
             error={error ? true : undefined}
+            classNames={{ error: classes.inputError }}
             onChange={(e) => {
               setText(e.currentTarget.value);
               setError(null);

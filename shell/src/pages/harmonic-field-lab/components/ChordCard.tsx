@@ -15,7 +15,7 @@ import {
 } from '../state/chordSort';
 import { ChevronDownIcon, PlusIcon } from './icons';
 import { ChordDrawing } from './ShelfPanel';
-import { Hint, Num, RING_TIP_MAX_WIDTH, severity } from './ui';
+import { Hint, Num, RING_TIP_MAX_WIDTH } from './ui';
 import { ValueList } from './ValueList';
 import classes from './panels.module.css';
 
@@ -47,10 +47,6 @@ export const notesText = (n: number): string => `${n} ${n === 1 ? 'note' : 'note
 /** The steps text without its leading word (`steps 1, 2 c` gives `1, 2 c`): the tooltip's label already says Steps. */
 export const stepsValue = (steps: string): string => steps.replace(/^steps\s+/, '');
 
-/** The error band (0 to 4, as the card stat's `severity`) of each note's signed error. */
-export const errorSevs = (errors: readonly number[] | null | undefined): number[] | null =>
-  errors ? errors.map((e) => severity(Math.abs(e))) : null;
-
 /**
  * The chip's ONE hover tooltip body (every region of the card except the ring): Pitches, Steps, then one sentence per non-root
  * note in the finder's template order (`13/11 is −26.4 c from 6/5`, or `3/2 is exact`), then `Appears at tolerance N c.` (an
@@ -72,14 +68,13 @@ export function CardHintLines({
   /** The tolerance rung (whole cents) the chord appears at; 0 = any tolerance (exact). Absent: no line. */
   appearsAt?: number;
 }) {
-  const sevs = errorSevs(errors);
-  const lineSevs = errorSevs(noteLines?.map((l) => l.error));
+  const lineErrors = noteLines?.map((l) => l.error);
   return (
     <>
       <span className={classes.hintLine}>
         <span>Pitches:</span>
         <Num>
-          <ValueList text={pitches} sevs={sevs} />
+          <ValueList text={pitches} errors={errors} />
         </Num>
       </span>
       <span className={classes.hintLine}>
@@ -89,7 +84,7 @@ export function CardHintLines({
         </Num>
       </span>
       {noteLines?.map((l, i) => {
-        const sev = lineSevs?.[i];
+        const err = lineErrors?.[i];
         const exact = Math.abs(l.error) < EXACT_NOTE_C;
         return (
           <span key={i} className={classes.hintNote} data-testid="hint-note">
@@ -97,7 +92,7 @@ export function CardHintLines({
               <ValueList
                 inline
                 text={glueUnits(l.member)}
-                sevs={sev === undefined ? null : [sev]}
+                errors={err === undefined ? null : [err]}
               />
             </Num>
             {exact ? (
@@ -109,7 +104,7 @@ export function CardHintLines({
                   <ValueList
                     inline
                     text={glueUnits(`${signedC1(l.error)} c`)}
-                    sevs={sev === undefined ? null : [sev]}
+                    errors={err === undefined ? null : [err]}
                   />
                 </Num>
                 {` ${NOTE_ERROR_WORD} `}
@@ -201,7 +196,6 @@ export function ChordCard(p: ChordCardProps) {
   );
   // `.cardCol` is `display: contents` (no box of its own), so the tooltip hangs on the two real line boxes inside it
   const errors = p.errors && p.errors.length ? p.errors : null;
-  const sevs = errorSevs(errors);
   // ONE tooltip for every region of a chip except the ring: the error tooltip when the card has per-note errors, else the ring's
   // own (so every region of every card has exactly one tooltip). A static card (shelf) keeps its Pitches and Steps tooltip.
   const bodyDynamic = (
@@ -266,7 +260,7 @@ export function ChordCard(p: ChordCardProps) {
       {regionTip(
         <span className={classes.cardLine1} data-testid="card-pitches">
           <Num>
-            <ValueList text={p.pitches} sevs={sevs} />
+            <ValueList text={p.pitches} errors={errors} />
           </Num>
         </span>
       )}
@@ -282,7 +276,7 @@ export function ChordCard(p: ChordCardProps) {
         regionTip(
           <span className={classes.cardLine3} data-testid="card-errors">
             <Num>
-              <ValueList text={fmtErrors(errors)} sevs={sevs} />
+              <ValueList text={fmtErrors(errors)} errors={errors} />
             </Num>
           </span>
         )}
