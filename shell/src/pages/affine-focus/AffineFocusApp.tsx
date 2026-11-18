@@ -10,6 +10,7 @@ import {
   getPresetGamut,
   parseCustomGamut,
   parseSeedInput,
+  traceTrajectoryVoices,
   truncateTrajectoryAt,
   type ClosureEdge,
   type ClosureNode,
@@ -43,6 +44,7 @@ export function AffineFocusApp() {
   const [inspectedEdgeResult, setInspectedEdgeResult] = useState<TransformResult | null>(null);
   const [selectedClosureNodeId, setSelectedClosureNodeId] = useState<string>('');
   const [soundingLabels, setSoundingLabels] = useState<Set<string>>(() => new Set());
+  const [playingStepIndex, setPlayingStepIndex] = useState<number | null>(null);
 
   useEffect(() => {
     savePersistedState(state);
@@ -50,8 +52,10 @@ export function AffineFocusApp() {
 
   useEffect(() => {
     affineAudio.setSoundingListener((labels) => setSoundingLabels(labels));
+    affineAudio.setPlayingStepListener((idx) => setPlayingStepIndex(idx));
     return () => {
       affineAudio.setSoundingListener(null);
+      affineAudio.setPlayingStepListener(null);
       affineAudio.stopAll();
     };
   }, []);
@@ -147,6 +151,26 @@ export function AffineFocusApp() {
 
   const currentSourcePitches = trajectory[activeTrajIdx]?.pitches ?? parsedSeed.pitches;
 
+  const trajectoryTrace = useMemo(
+    () =>
+      traceTrajectoryVoices(
+        trajectory,
+        gamut.repeatCents,
+        state.traceConnectMode,
+        state.traceRegisterMode,
+        state.identity,
+        state.folding
+      ),
+    [
+      trajectory,
+      gamut.repeatCents,
+      state.traceConnectMode,
+      state.traceRegisterMode,
+      state.identity,
+      state.folding,
+    ]
+  );
+
   const family = useMemo(
     () => computeImmediateFamily(currentSourcePitches, parsedSeed.pitches, config),
     [currentSourcePitches, parsedSeed.pitches, config]
@@ -200,11 +224,24 @@ export function AffineFocusApp() {
   const handleStepTrajectory = (op: TransformResult) => {
     const truncated = truncateTrajectoryAt(trajectory, activeTrajIdx);
     const next = appendTrajectoryStep(truncated, op);
+    const nextTrace = traceTrajectoryVoices(
+      next,
+      gamut.repeatCents,
+      state.traceConnectMode,
+      state.traceRegisterMode,
+      state.identity,
+      state.folding
+    );
+    const lastIdx = next.length - 1;
     setTrajectory(next);
-    setActiveTrajIdx(next.length - 1);
+    setActiveTrajIdx(lastIdx);
     setSelectedOpId(null);
     setInspectedEdgeResult(null);
-    affineAudio.playPitches(op.outputPitches, state.audio, state.folding === 'unfolded');
+    affineAudio.playCentsList(
+      nextTrace.stepCents[lastIdx] ?? op.outputPitches.map((p) => p.foldedCents),
+      op.outputPitches.map((p) => p.label),
+      state.audio
+    );
   };
 
   const handleJumpTrajectory = (idx: number) => {
@@ -219,10 +256,23 @@ export function AffineFocusApp() {
     for (const e of edges) {
       next = appendTrajectoryStep(next, e.result);
     }
+    const nextTrace = traceTrajectoryVoices(
+      next,
+      gamut.repeatCents,
+      state.traceConnectMode,
+      state.traceRegisterMode,
+      state.identity,
+      state.folding
+    );
     setTrajectory(next);
     setActiveTrajIdx(next.length - 1);
     handlePatch({ activeTab: 'family' });
-    affineAudio.playTrajectory(next, state.audio, state.folding === 'unfolded');
+    affineAudio.playTrajectory(
+      next,
+      state.audio,
+      state.folding === 'unfolded',
+      nextTrace.stepCents
+    );
   };
 
   const handlePlayPitches = (pitches: readonly GamutPitch[]) => {
@@ -234,7 +284,27 @@ export function AffineFocusApp() {
   };
 
   const handlePlayTrajectory = () => {
-    affineAudio.playTrajectory(trajectory, state.audio, state.folding === 'unfolded');
+    affineAudio.playTrajectory(
+      trajectory,
+      state.audio,
+      state.folding === 'unfolded',
+      trajectoryTrace.stepCents
+    );
+  };
+
+  const handlePlayTrajectoryStep = (idx: number) => {
+    const step = trajectory[idx];
+    if (!step) {
+      return;
+    }
+    const centsList =
+      trajectoryTrace.stepCents[idx] ??
+      step.pitches.map((p) => (state.folding === 'unfolded' ? p.unfoldedCents : p.foldedCents));
+    affineAudio.playCentsList(
+      centsList,
+      step.pitches.map((p) => p.label),
+      state.audio
+    );
   };
 
   const handleExport = (kind: 'json' | 'csv' | 'mermaid') => {
@@ -353,7 +423,13 @@ export function AffineFocusApp() {
                 family={family}
                 selectedOpId={selectedOp?.operationId ?? null}
                 trajectory={trajectory}
+                trace={trajectoryTrace}
+                traceConnectMode={state.traceConnectMode}
+                traceRegisterMode={state.traceRegisterMode}
                 activeTrajectoryIndex={activeTrajIdx}
+                playingStepIndex={playingStepIndex}
+                onChangeTraceConnectMode={(mode) => handlePatch({ traceConnectMode: mode })}
+                onChangeTraceRegisterMode={(mode) => handlePatch({ traceRegisterMode: mode })}
                 onHoverOp={setHoveredOp}
                 onSelectOp={(op) => {
                   setSelectedOpId(op.operationId);
@@ -364,6 +440,7 @@ export function AffineFocusApp() {
                 onPlayPitches={handlePlayPitches}
                 onPlayAlternation={handlePlayAlternation}
                 onPlayTrajectory={handlePlayTrajectory}
+                onPlayTrajectoryStep={handlePlayTrajectoryStep}
               />
             )}
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   appendTrajectoryStep,
+  applyFocusTransform,
   computeClosure,
   computeImmediateFamily,
   createInitialTrajectory,
@@ -8,6 +9,7 @@ import {
   getPresetGamut,
   parseSeedInput,
   searchDualFocusMaps,
+  traceTrajectoryVoices,
   truncateTrajectoryAt,
   type TransformConfig,
 } from './index';
@@ -131,5 +133,76 @@ describe('affine-focus M2: closure, SCC orbits, dual-focus solver & trajectory',
 
     traj = truncateTrajectoryAt(traj, 0);
     expect(traj).toHaveLength(1);
+  });
+
+  it('traces voices through a trajectory under Map vs Smoothest and Accumulate vs Fold', () => {
+    const edo12 = getPresetGamut('12-edo');
+    const seed = parseSeedInput('0, 4, 7', edo12).pitches;
+    const cfg = baseConfig({
+      gamut: edo12,
+      domain: 'gamut-steps',
+      rule: 'dual-focus',
+      dualConstraint: 'swap',
+      folding: 'folded',
+    });
+
+    // Step 1: Dual-Focus P on {0, 7} -> {0, 3, 7} (C->G, E->Eb, G->C)
+    const step1 = applyFocusTransform(seed, [seed[0], seed[2]], cfg);
+    // Step 2: Dual-Focus L on {0, 3} -> {0, 3, 8} (C->Eb, Eb->C, G->Ab)
+    const step2 = applyFocusTransform(
+      step1.outputPitches,
+      [step1.outputPitches[0], step1.outputPitches[1]],
+      cfg
+    );
+
+    let traj = createInitialTrajectory(seed, cfg);
+    traj = appendTrajectoryStep(traj, step1);
+    traj = appendTrajectoryStep(traj, step2);
+
+    // 1. Map + Fold: follows rule swaps inside [0, 1200)
+    const mapFold = traceTrajectoryVoices(traj, 1200, 'map', 'fold');
+    expect(mapFold.voices.map((v) => v.points.map((p) => p.cents))).toEqual([
+      [0, 700, 800],
+      [400, 300, 0],
+      [700, 0, 300],
+    ]);
+
+    // 2. Map + Accumulate: shortest-arc drift across octaves
+    const mapAcc = traceTrajectoryVoices(traj, 1200, 'map', 'accumulate');
+    expect(mapAcc.voices.map((v) => v.points.map((p) => p.cents))).toEqual([
+      [0, -500, -400],
+      [400, 300, 0],
+      [700, 1200, 1500],
+    ]);
+    expect(mapAcc.stepCents).toEqual([
+      [0, 400, 700],
+      [-500, 300, 1200],
+      [-400, 0, 1500],
+    ]);
+
+    // 3. Smoothest + Accumulate: holds common tones cleanly
+    const smoothAcc = traceTrajectoryVoices(traj, 1200, 'smoothest', 'accumulate');
+    expect(smoothAcc.voices.map((v) => v.points.map((p) => p.cents))).toEqual([
+      [0, 0, 0],
+      [400, 300, 300],
+      [700, 700, 800],
+    ]);
+
+    // Focus markers on S0 should mark {0, 7} (indices 0 and 2)
+    expect(smoothAcc.voices.map((v) => v.points[0].isFocusForNext)).toEqual([true, false, true]);
+  });
+
+  it('handles degenerate cardinality collapse cleanly in voice traces', () => {
+    const edo12 = getPresetGamut('12-edo');
+    const seed = parseSeedInput('0, 4, 7', edo12).pitches;
+    const cfg = baseConfig({ gamut: edo12, multiplier: 0 });
+    const collapse = applyFocusTransform(seed, [seed[1]], cfg); // collapses onto {4}
+
+    let traj = createInitialTrajectory(seed, cfg);
+    traj = appendTrajectoryStep(traj, collapse);
+
+    const trace = traceTrajectoryVoices(traj, 1200, 'smoothest', 'accumulate');
+    expect(trace.voices.map((v) => v.points[1].cents)).toEqual([400, 400, 400]);
+    expect(trace.stepCents[1]).toEqual([400]);
   });
 });

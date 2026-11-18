@@ -6,6 +6,8 @@ import type {
   OffsetMode,
   QuantizeMode,
   RuleFamily,
+  TraceConnectionMode,
+  TraceRegisterMode,
   TransformDomain,
 } from '../../lib/affine-focus';
 import { DEFAULT_AUDIO_SETTINGS, type AudioSettings } from './audio';
@@ -38,6 +40,8 @@ export interface AffineFocusPersistedState {
   customFociText: string;
   activeTab: WorkspaceTab;
   orbitGroupBy: OrbitGroupBy;
+  traceConnectMode: TraceConnectionMode;
+  traceRegisterMode: TraceRegisterMode;
   audio: AudioSettings;
 }
 
@@ -64,6 +68,8 @@ export const DEFAULT_PERSISTED_STATE: AffineFocusPersistedState = {
   customFociText: '0, 2, 4',
   activeTab: 'family',
   orbitGroupBy: 'scc',
+  traceConnectMode: 'map',
+  traceRegisterMode: 'accumulate',
   audio: DEFAULT_AUDIO_SETTINGS,
 };
 

@@ -32,13 +32,22 @@ class AffineAudioEngine {
   private activeNodes: { stop: () => void }[] = [];
   private timers: number[] = [];
   private onSoundingChange: ((labels: Set<string>) => void) | null = null;
+  private onPlayingStepChange: ((stepIndex: number | null) => void) | null = null;
 
   setSoundingListener(fn: ((labels: Set<string>) => void) | null) {
     this.onSoundingChange = fn;
   }
 
+  setPlayingStepListener(fn: ((stepIndex: number | null) => void) | null) {
+    this.onPlayingStepChange = fn;
+  }
+
   private emitSounding(labels: string[]) {
     this.onSoundingChange?.(new Set(labels));
+  }
+
+  private emitPlayingStep(stepIndex: number | null) {
+    this.onPlayingStepChange?.(stepIndex);
   }
 
   private ensureContext(): AudioContext | null {
@@ -74,6 +83,7 @@ class AffineAudioEngine {
     }
     this.activeNodes = [];
     this.emitSounding([]);
+    this.emitPlayingStep(null);
   }
 
   private scheduleTone(
@@ -195,7 +205,48 @@ class AffineAudioEngine {
     this.timers.push(clearId);
   }
 
-  playTrajectory(steps: readonly TrajectoryStep[], settings: AudioSettings, useUnfolded = false) {
+  playCentsList(centsList: readonly number[], labels: readonly string[], settings: AudioSettings) {
+    this.stopAll();
+    if (centsList.length === 0) {
+      return;
+    }
+    const ctx = this.ensureContext();
+    const ordered = [...centsList];
+    if (settings.arpeggio === 'ascending') {
+      ordered.sort((a, b) => a - b);
+    } else if (settings.arpeggio === 'descending') {
+      ordered.sort((a, b) => b - a);
+    }
+
+    const durSec = Math.max(0.15, settings.durationMs / 1000);
+    const stepDelay =
+      settings.arpeggio === 'simultaneous'
+        ? 0
+        : Math.min(0.22, durSec / Math.max(2, ordered.length));
+
+    this.emitSounding([...labels]);
+
+    if (ctx) {
+      const now = ctx.currentTime + 0.01;
+      ordered.forEach((c, idx) => {
+        const hz = settings.baseHz * 2 ** (c / 1200);
+        this.scheduleTone(ctx, hz, now + idx * stepDelay, durSec, settings, ordered.length);
+      });
+    }
+
+    const totalMs = (durSec + ordered.length * stepDelay) * 1000 + 80;
+    const endTimer = window.setTimeout(() => {
+      this.emitSounding([]);
+    }, totalMs);
+    this.timers.push(endTimer);
+  }
+
+  playTrajectory(
+    steps: readonly TrajectoryStep[],
+    settings: AudioSettings,
+    useUnfolded = false,
+    tracedStepCents?: readonly (readonly number[])[]
+  ) {
     this.stopAll();
     if (steps.length === 0) {
       return;
@@ -207,14 +258,18 @@ class AffineAudioEngine {
     steps.forEach((st, idx) => {
       const tId = window.setTimeout(() => {
         this.emitSounding(st.pitches.map((p) => p.label));
+        this.emitPlayingStep(idx);
       }, idx * stepMs);
       this.timers.push(tId);
 
       if (ctx) {
         const start = ctx.currentTime + 0.01 + (idx * stepMs) / 1000;
-        for (const p of st.pitches) {
-          const hz = pitchToHz(p, settings.baseHz, useUnfolded);
-          this.scheduleTone(ctx, hz, start, durSec, settings, st.pitches.length);
+        const centsValues =
+          tracedStepCents?.[idx] ??
+          st.pitches.map((p) => (useUnfolded ? p.unfoldedCents : p.foldedCents));
+        for (const c of centsValues) {
+          const hz = settings.baseHz * 2 ** (c / 1200);
+          this.scheduleTone(ctx, hz, start, durSec, settings, centsValues.length);
         }
       }
     });
@@ -222,6 +277,7 @@ class AffineAudioEngine {
     const clearId = window.setTimeout(
       () => {
         this.emitSounding([]);
+        this.emitPlayingStep(null);
       },
       steps.length * stepMs + 80
     );

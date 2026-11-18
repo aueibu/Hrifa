@@ -691,6 +691,38 @@
   font-size: var(--lab-fs-tiny);
 }
 
+.traceControlsRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.traceToggleGroup {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.3125rem;
+}
+
+.traceStripFrame {
+  background: var(--panel);
+  border-radius: var(--radius-control);
+  height: 9.25rem;
+  overflow: hidden;
+  padding: 0.125rem 0.25rem;
+}
+
+.traceSvg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.traceStepCol {
+  cursor: pointer;
+}
+
 /* ---------------------------------------------------------------------------------------------- Tree hierarchy (Fold pattern) */
 .treeSection {
   display: flex;

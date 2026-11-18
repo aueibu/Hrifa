@@ -195,3 +195,30 @@ export interface TrajectoryStep {
   multiplierUsed: number;
   fromStepResult: TransformResult | null;
 }
+
+export type TraceConnectionMode = 'map' | 'smoothest';
+export type TraceRegisterMode = 'accumulate' | 'fold';
+
+export interface TracedVoicePoint {
+  stepIndex: number;
+  pitch: GamutPitch;
+  /** Cents used for this point under the active register mode ('accumulate' or 'fold'). */
+  cents: number;
+  /** True when this voice was one of the focus anchors for the transition out of this step. */
+  isFocusForNext: boolean;
+}
+
+export interface TracedVoiceLine {
+  voiceId: number;
+  points: TracedVoicePoint[];
+}
+
+export interface TrajectoryVoiceTrace {
+  connectionMode: TraceConnectionMode;
+  registerMode: TraceRegisterMode;
+  voices: TracedVoiceLine[];
+  /** Per-step pitch heights in cents (for traced-register playback). */
+  stepCents: number[][];
+  minCents: number;
+  maxCents: number;
+}

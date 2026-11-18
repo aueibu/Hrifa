@@ -1,12 +1,16 @@
-import { Button } from '@mantine/core';
+import { Button, SegmentedControl } from '@mantine/core';
 import type {
   GamutPitch,
+  TraceConnectionMode,
+  TraceRegisterMode,
   TrajectoryStep,
+  TrajectoryVoiceTrace,
   TransformConfig,
   TransformResult,
 } from '../../../lib/affine-focus';
 import { formatSignedCents, signedErrorColorVar } from '../state';
 import { MiniRing } from './MiniRing';
+import { TrajectoryTraceStrip } from './TrajectoryTraceStrip';
 import classes from '../AffineFocus.module.css';
 
 function formatStepsLine(pitches: readonly GamutPitch[], repeatCents: number): string {
@@ -29,7 +33,13 @@ export function FamilyTrajectoryView({
   family,
   selectedOpId,
   trajectory,
+  trace,
+  traceConnectMode,
+  traceRegisterMode,
   activeTrajectoryIndex,
+  playingStepIndex,
+  onChangeTraceConnectMode,
+  onChangeTraceRegisterMode,
   onHoverOp,
   onSelectOp,
   onStepTrajectory,
@@ -37,12 +47,19 @@ export function FamilyTrajectoryView({
   onPlayPitches,
   onPlayAlternation,
   onPlayTrajectory,
+  onPlayTrajectoryStep,
 }: {
   config: TransformConfig;
   family: readonly TransformResult[];
   selectedOpId: string | null;
   trajectory: readonly TrajectoryStep[];
+  trace: TrajectoryVoiceTrace;
+  traceConnectMode: TraceConnectionMode;
+  traceRegisterMode: TraceRegisterMode;
   activeTrajectoryIndex: number;
+  playingStepIndex: number | null;
+  onChangeTraceConnectMode: (mode: TraceConnectionMode) => void;
+  onChangeTraceRegisterMode: (mode: TraceRegisterMode) => void;
   onHoverOp: (op: TransformResult | null) => void;
   onSelectOp: (op: TransformResult) => void;
   onStepTrajectory: (op: TransformResult) => void;
@@ -50,6 +67,7 @@ export function FamilyTrajectoryView({
   onPlayPitches: (pitches: readonly GamutPitch[]) => void;
   onPlayAlternation: (src: readonly GamutPitch[], tgt: readonly GamutPitch[]) => void;
   onPlayTrajectory: () => void;
+  onPlayTrajectoryStep: (index: number) => void;
 }) {
   const R = config.gamut.repeatCents;
 
@@ -85,7 +103,7 @@ export function FamilyTrajectoryView({
                 data-active={idx === activeTrajectoryIndex}
                 onClick={() => {
                   onJumpTrajectory(idx);
-                  onPlayPitches(step.pitches);
+                  onPlayTrajectoryStep(idx);
                 }}
               >
                 <strong>{`S${idx}`}</strong>
@@ -96,6 +114,48 @@ export function FamilyTrajectoryView({
             </span>
           ))}
         </div>
+
+        {/* Voice Trace Controls + Strip */}
+        <div className={classes.traceControlsRow}>
+          <div className={classes.traceToggleGroup}>
+            <span className={classes.mutedLabel}>Voices</span>
+            <SegmentedControl
+              size="xs"
+              aria-label="Voice connection mode"
+              value={traceConnectMode}
+              onChange={(v) => onChangeTraceConnectMode(v === 'smoothest' ? 'smoothest' : 'map')}
+              data={[
+                { label: 'Follow map', value: 'map' },
+                { label: 'Smoothest', value: 'smoothest' },
+              ]}
+            />
+          </div>
+          <div className={classes.traceToggleGroup}>
+            <span className={classes.mutedLabel}>Register</span>
+            <SegmentedControl
+              size="xs"
+              aria-label="Trace register mode"
+              value={traceRegisterMode}
+              onChange={(v) => onChangeTraceRegisterMode(v === 'fold' ? 'fold' : 'accumulate')}
+              data={[
+                { label: 'Accumulate', value: 'accumulate' },
+                { label: 'Fold [0, R)', value: 'fold' },
+              ]}
+            />
+          </div>
+        </div>
+
+        <TrajectoryTraceStrip
+          trajectory={trajectory}
+          trace={trace}
+          gamut={config.gamut}
+          activeTrajectoryIndex={activeTrajectoryIndex}
+          playingStepIndex={playingStepIndex}
+          onSelectStep={(idx) => {
+            onJumpTrajectory(idx);
+            onPlayTrajectoryStep(idx);
+          }}
+        />
       </div>
 
       {/* Immediate Family Cards (ChordCard pattern) */}

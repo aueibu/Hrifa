@@ -109,6 +109,11 @@ Port and re-envision the Affine Focus Transform Explorer into `shell/` at `/affi
   - [ ] Export (JSON state with provenance, CSV, Mermaid) and `hrifa.affine-focus.v1` localStorage persistence work with reset
   - [ ] `src/pages/affine-focus/ARCHITECTURE.md` and `shell/ARCHITECTURE.md` are updated
 - Human checkpoint after: yes
+- **Checkpoint decisions (2026-11-18):**
+  - Add a **Trajectory Voice Trace** register strip inside the Trajectory Chain box, directly under the step chips.
+  - Provide a **Voice Connection** toggle (`Map` — follow the transform's exact per-voice map, allowing crossings — vs. `Smoothest` — follow common tones / minimum voice-leading motion).
+  - Provide a **Trace Register** toggle (`Accumulate` — each step moves by its shortest arc so voices can drift across octaves — vs. `Fold` — wrap every step into `[0, R)`).
+  - **`Play chain`** uses the traced register (`stepCents` from the active voice trace), so `Accumulate` vs. `Fold` is directly audible as well as visible.
 
 ## Stop-and-ask conditions
 - A criterion can't be met after 2 builder attempts.

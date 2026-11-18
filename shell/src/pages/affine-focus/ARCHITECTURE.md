@@ -12,12 +12,12 @@ Standalone `shell/` instrument at `/affine-focus` (arc `arcs/affine-focus`). Rep
 | `src/lib/affine-focus/transform.ts` | Pure transform engine supporting 4 transform domains (`gamut-steps`, `log-pitch`, `linear-freq`, `subharmonic`), `folded` vs. `unfolded` register, `exact` vs. `snap-to-gamut` realization, 5 canonical rule families (`single-focus`, `dual-focus`, `perspective`, `bilateral`, `multi-multiplier`), and `unordered-set` vs. `ordered-tuple` voice tracking. |
 | `src/lib/affine-focus/closure.ts` | BFS finite closure graph builder, Tarjan Strongly Connected Component (SCC) orbit/attractor detector, and shortest transform path finder (`findShortestTransformPath`). |
 | `src/lib/affine-focus/dualFocus.ts` | Affine map solver over $\mathbb{Z}_N$ (`g(x) = ax + b mod N`) for `swap`, `fix-both`, and `preserve-axis` constraints on a focus pair $\{f_A, f_B\}$ with permutation cycle decomposition. |
-| `src/lib/affine-focus/trajectory.ts` | Step-by-step trajectory chain helpers (`createInitialTrajectory`, `appendTrajectoryStep`, `truncateTrajectoryAt`). |
+| `src/lib/affine-focus/trajectory.ts` | Step-by-step trajectory chain helpers (`createInitialTrajectory`, `appendTrajectoryStep`, `truncateTrajectoryAt`) and per-voice trajectory register tracer (`traceTrajectoryVoices` supporting `map` vs. `smoothest` voice connection and `accumulate` vs. `fold` register). |
 | `src/pages/affine-focus/AffineFocusApp.tsx` | Top-level workspace layout (top bar, left control rail, center focus stage + exploration tabs, right arithmetic & audio inspector). |
 | `src/pages/affine-focus/state.ts` | LocalStorage persistence (`hrifa.affine-focus.v1`), curated 1-click musical scenario presets (`SCENARIO_EXAMPLES`), and signed cyan/orange error coloring helpers. |
-| `src/pages/affine-focus/audio.ts` | Web Audio polyphonic synthesizer (harmonic 7-partial or pure sine, chord or arpeggiated delivery, source/target alternation, trajectory progression playback). |
+| `src/pages/affine-focus/audio.ts` | Web Audio polyphonic synthesizer (harmonic 7-partial or pure sine, chord or arpeggiated delivery, source/target alternation, trajectory progression playback using traced register cents). |
 | `src/pages/affine-focus/export.ts` | JSON state export (with provenance), Nodes CSV export, and Mermaid directed graph export. |
-| `src/pages/affine-focus/components/*` | `ControlRail.tsx`, `FocusStage.tsx`, `MiniRing.tsx`, `FamilyTrajectoryView.tsx`, `ClosureOrbitView.tsx`, `DualFocusMatrixView.tsx`, `InspectorRail.tsx`. |
+| `src/pages/affine-focus/components/*` | `ControlRail.tsx`, `FocusStage.tsx`, `MiniRing.tsx`, `FamilyTrajectoryView.tsx`, `TrajectoryTraceStrip.tsx`, `ClosureOrbitView.tsx`, `DualFocusMatrixView.tsx`, `InspectorRail.tsx`. |
 
 ## Mathematical & Acoustic Contracts
 

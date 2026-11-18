@@ -63,6 +63,20 @@ describe('AffineFocusPage', () => {
     expect(trajBox).toHaveTextContent('Walked Trajectory Chain (2 states)');
     expect(trajBox).toHaveTextContent('S1');
 
+    // Trajectory voice trace strip renders 3 voice lines and both trace toggles
+    const traceStrip = screen.getByTestId('trajectory-trace-strip');
+    expect(within(traceStrip).getByTestId('trace-voice-0')).toBeInTheDocument();
+    expect(within(traceStrip).getByTestId('trace-voice-1')).toBeInTheDocument();
+    expect(within(traceStrip).getByTestId('trace-voice-2')).toBeInTheDocument();
+
+    const smoothestRadio = within(trajBox).getByRole('radio', { name: 'Smoothest' });
+    fireEvent.click(smoothestRadio);
+    expect(smoothestRadio).toBeChecked();
+
+    const foldRadio = within(trajBox).getByRole('radio', { name: 'Fold [0, R)' });
+    fireEvent.click(foldRadio);
+    expect(foldRadio).toBeChecked();
+
     // Switch to Orbits & Closure tab
     const orbitsRadio = screen.getByRole('radio', { name: /Orbits & Closure/i });
     fireEvent.click(orbitsRadio);
