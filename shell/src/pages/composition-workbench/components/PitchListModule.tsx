@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Badge,
@@ -12,17 +12,13 @@ import {
   TextInput,
 } from '@mantine/core';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import { formatPitchClassGroup, type ForteSetSelection } from '../forteCatalog';
 import type { DataPacket } from '../model';
 import {
   formatMidicents,
   convertPitchText,
-  interpretPitchList,
   pitchClassGroupToArray,
   pitchClassName,
   pitchGroupToArray,
@@ -30,6 +26,7 @@ import {
   type PitchInputFormat,
   type PitchItemValue,
 } from '../pitch';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsFiniteNumber,
@@ -147,54 +144,13 @@ export function PitchListModule({
   );
   const [catalogOpened, setCatalogOpened] = useState(false);
 
-  const inlineProvenance = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(catalogOrigins).map(([index, origin]) => [
-          index,
-          [
-            {
-              sourceModuleInstance: instanceId,
-              sourceItemIds: [],
-              transformation: 'select-forte-set',
-              parameters: {
-                forteNumber: origin.forteNumber,
-                primeForm: origin.primeForm,
-                intervalClassVector: origin.intervalClassVector,
-                transposition: origin.transposition,
-                inverted: origin.inverted,
-                pitchClasses: origin.pitchClasses,
-              },
-            },
-          ],
-        ])
-      ),
-    [catalogOrigins, instanceId]
+  const { interpreted, outputs } = useModuleEvaluation(
+    'pitch-list',
+    { format, inlineValues, catalogOrigins },
+    { upstream },
+    { instanceId, instanceLabel, edo },
+    onOutputsChange
   );
-  const interpreted = useMemo(
-    () =>
-      interpretPitchList({
-        instanceId,
-        format,
-        inlineText: inlineValues,
-        inlineProvenance,
-        upstream,
-        edo,
-      }),
-    [format, inlineProvenance, inlineValues, instanceId, upstream, edo]
-  );
-  const publishedOutput = useMemo<PublishedCompositionOutput>(
-    () => ({
-      ref: { instanceId, port: 'pitches' },
-      label: `${instanceLabel} · Pitches`,
-      packet: interpreted.packet,
-    }),
-    [instanceId, instanceLabel, interpreted.packet]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, [publishedOutput]);
-  }, [instanceId, onOutputsChange, publishedOutput]);
   const inputDefinesFormat =
     upstream?.kind === 'list' && (upstream.domain === 'pitch' || upstream.domain === 'pitchClass');
   const displayedFormat = inputDefinesFormat
@@ -600,7 +556,7 @@ export function PitchListModule({
                   onChange={setVolume}
                 />
               </InspectorSection>
-              <ModuleOutputsSection instanceLabel={instanceLabel} outputs={[publishedOutput]} />
+              <ModuleOutputsSection instanceLabel={instanceLabel} outputs={outputs} />
             </ModuleInspectorContent>
           </>
         }

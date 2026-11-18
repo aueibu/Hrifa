@@ -9,11 +9,9 @@ import {
 } from '../../../components/PianoRoll';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import {
-  boundOutput,
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -21,7 +19,7 @@ import {
 import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import { newSnippetId, useDesk } from '../desk';
-import { melodicize, type PitchAllocation } from '../melodicization';
+import type { PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
 import {
   defaultMusicalTimeline,
@@ -32,7 +30,8 @@ import {
   type MusicalTimeline,
 } from '../musicalTime';
 import { pitchLabel, rhythmInterpretableDomains } from '../routeTreatments';
-import { signalTypeRegistry } from '../signalTypes';
+import { pickMelodicizationInputs } from '../runtime/evaluators/melodicization';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { captureSnippet } from '../snippet';
 import { countInSeconds, parseMeter, transportPulse } from '../transport';
 import { useModulePreview, type PreviewEnd } from '../useModulePreview';
@@ -165,65 +164,21 @@ export function MelodicizationModule({
   const [playheadQuarterNotes, setPlayheadQuarterNotes] = useState(0);
   const playheadFrame = useRef<number | null>(null);
 
-  const rhythmOutput = boundOutput(outputs, bindingRhythm?.source);
-  const pitchOutput = boundOutput(outputs, bindingPitches?.source);
-  const resolvedRhythm = useMemo(
-    () =>
-      resolvePacketFromOutput(
-        rhythmOutput,
-        bindingRhythm?.source?.index,
-        `route:${instanceId}:rhythm`
-      ),
-    [rhythmOutput, bindingRhythm?.source?.index, instanceId]
-  );
-  const resolvedPitches = useMemo(
-    () =>
-      resolvePacketFromOutput(
-        pitchOutput,
-        bindingPitches?.source?.index,
-        `route:${instanceId}:pitches`
-      ),
-    [pitchOutput, bindingPitches?.source?.index, instanceId]
-  );
-  const treatedRhythm = useMemo(
-    () =>
-      bindingRhythm
-        ? signalTypeRegistry[bindingRhythm.signalType].apply(
-            resolvedRhythm,
-            bindingRhythm.treatment,
-            `route:${instanceId}:rhythm`,
-            edo
-          )
-        : undefined,
-    [bindingRhythm, resolvedRhythm, instanceId, edo]
-  );
-  const treatedPitches = useMemo(
-    () =>
-      bindingPitches
-        ? signalTypeRegistry[bindingPitches.signalType].apply(
-            resolvedPitches,
-            bindingPitches.treatment,
-            `route:${instanceId}:pitches`,
-            edo
-          )
-        : undefined,
-    [bindingPitches, resolvedPitches, instanceId, edo]
-  );
   // Tempo, meter, and pulse value come from the header transport, shared by every module.
   const transport = settings.transport;
   const { tempo, meter } = transport;
   const pulseUnit = transportPulse(transport).duration;
-  const result = useMemo(
-    () =>
-      melodicize({
-        instanceId,
-        rhythm: treatedRhythm,
-        pitches: treatedPitches,
-        allocation,
-        pulseUnit,
-        articulationPercent,
-      }),
-    [allocation, articulationPercent, instanceId, pulseUnit, treatedPitches, treatedRhythm]
+  const melodicizationInputs = pickMelodicizationInputs(outputs, routeState, instanceId);
+  const { rhythmOutput, pitchOutput } = melodicizationInputs;
+  const {
+    result,
+    outputs: [publishedOutput],
+  } = useModuleEvaluation(
+    'melodicization',
+    { allocation, articulationPercent },
+    melodicizationInputs,
+    { instanceId, instanceLabel, edo, pulseUnit },
+    onOutputsChange
   );
   const { numerator: meterNumerator, denominator: meterDenominator } = parseMeter(meter);
   const timeline = useMemo<MusicalTimeline>(
@@ -234,14 +189,6 @@ export function MelodicizationModule({
       meterMap: [{ atBar: 1, numerator: meterNumerator, denominator: meterDenominator }],
     }),
     [meter, meterDenominator, meterNumerator, tempo]
-  );
-  const publishedOutput = useMemo<PublishedCompositionOutput>(
-    () => ({
-      ref: { instanceId, port: 'notes' },
-      label: `${instanceLabel} · Notes`,
-      packet: result.packet,
-    }),
-    [instanceId, instanceLabel, result.packet]
   );
   const pianoRollNotes = useMemo(
     () =>
@@ -286,10 +233,6 @@ export function MelodicizationModule({
     }
     return lines;
   }, [meterDenominator, meterNumerator, pianoRollDuration]);
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, [publishedOutput]);
-  }, [instanceId, onOutputsChange, publishedOutput]);
 
   useEffect(
     () => () => {

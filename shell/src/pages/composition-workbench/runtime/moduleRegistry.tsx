@@ -16,6 +16,7 @@ import { SwirlingMistsModule } from '../components/SwirlingMistsModule';
 import type { CompositionOutputRef, PublishedCompositionOutput } from '../compositionRouting';
 import type { CompositionModuleId, ModuleRouteState } from '../compositionWorkspace';
 import { compositionStateKeys } from '../usePersistentState';
+import { moduleEvaluators, type ModuleEvaluator } from './moduleEvaluators';
 import { modulePorts, type ModulePort } from './modulePorts';
 
 /** What a module's `render` gets. A module takes only the subset it declares today. */
@@ -42,6 +43,11 @@ export interface ModuleRegistryEntry {
   ports?: ModulePort[];
   /** True for a module that reads the published outputs (a routed module). Source modules do not. */
   takesOutputs: boolean;
+  /**
+   * The module's pure state-to-outputs function, when it has been ported (R2). The component runs it
+   * through `useModuleEvaluation`, which publishes the outputs; see `moduleEvaluators.ts`.
+   */
+  evaluate?: ModuleEvaluator;
   render(props: ModuleRenderProps): ReactElement;
 }
 
@@ -54,6 +60,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     // A snippet module keeps nothing of its own: the desk owns the material.
     stateKeys: [],
     takesOutputs: false,
+    evaluate: moduleEvaluators['snippet'].evaluate,
     render: ({ instanceId, instanceLabel, snippetId, onOutputsChange }) => (
       <SnippetSourceModule
         instanceId={instanceId}
@@ -73,6 +80,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
       compositionStateKeys.interferenceMetronomeVolume,
     ],
     takesOutputs: false,
+    evaluate: moduleEvaluators['interference'].evaluate,
     render: ({ instanceId, instanceLabel, onOutputsChange }) => (
       <InterferenceModule
         instanceId={instanceId}
@@ -98,6 +106,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     ports: modulePorts['rhythm-edit'],
     takesOutputs: true,
+    evaluate: moduleEvaluators['rhythm-edit'].evaluate,
     render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
       <RhythmEditModule
         instanceId={instanceId}
@@ -117,6 +126,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
       compositionStateKeys.rhythmListVolume,
     ],
     takesOutputs: false,
+    evaluate: moduleEvaluators['rhythm-list'].evaluate,
     render: ({ instanceId, instanceLabel, onOutputsChange }) => (
       <RhythmListModule
         instanceId={instanceId}
@@ -137,6 +147,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
       compositionStateKeys.pitchVolume,
     ],
     takesOutputs: false,
+    evaluate: moduleEvaluators['pitch-list'].evaluate,
     render: ({ instanceId, instanceLabel, onOutputsChange }) => (
       <PitchListModule
         instanceId={instanceId}
@@ -158,6 +169,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     ports: modulePorts.melodicization,
     takesOutputs: true,
+    evaluate: moduleEvaluators['melodicization'].evaluate,
     render: ({
       instanceId,
       instanceLabel,
@@ -188,6 +200,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     ports: modulePorts.arithmetic,
     takesOutputs: true,
+    evaluate: moduleEvaluators['arithmetic'].evaluate,
     render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
       <ArithmeticModule
         instanceId={instanceId}
@@ -209,6 +222,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
       compositionStateKeys.fractioningSound,
     ],
     takesOutputs: false,
+    evaluate: moduleEvaluators['fractioning'].evaluate,
     render: ({ instanceId, instanceLabel, onOutputsChange }) => (
       <FractioningModule
         instanceId={instanceId}
@@ -228,6 +242,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
       compositionStateKeys.pairCompositionSound,
     ],
     takesOutputs: false,
+    evaluate: moduleEvaluators['pair-composition'].evaluate,
     render: ({ instanceId, instanceLabel, onOutputsChange }) => (
       <PairCompositionModule
         instanceId={instanceId}
@@ -244,6 +259,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
       `${compositionStateKeys.scaleConstructionIntervals}.text`,
     ],
     takesOutputs: false,
+    evaluate: moduleEvaluators['scale-construction'].evaluate,
     render: ({ instanceId, instanceLabel, onOutputsChange }) => (
       <ScaleConstructionModule
         instanceId={instanceId}
@@ -259,6 +275,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     ports: modulePorts['scale-evolution'],
     takesOutputs: true,
+    evaluate: moduleEvaluators['scale-evolution'].evaluate,
     render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
       <ScaleEvolutionModule
         instanceId={instanceId}
@@ -280,6 +297,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     ports: modulePorts['rhythm-householder'],
     takesOutputs: true,
+    evaluate: moduleEvaluators['rhythm-householder'].evaluate,
     render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
       <HouseholderModule
         instanceId={instanceId}
@@ -301,6 +319,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
       compositionStateKeys.mistRunSpeed,
     ],
     takesOutputs: false,
+    evaluate: moduleEvaluators['swirling-mists'].evaluate,
     render: ({ instanceId, instanceLabel, onOutputsChange }) => (
       <SwirlingMistsModule
         instanceId={instanceId}

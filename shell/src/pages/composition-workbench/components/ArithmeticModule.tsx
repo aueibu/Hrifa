@@ -1,19 +1,15 @@
-import { useEffect, useMemo } from 'react';
 import { Alert, Badge, NumberInput, Select, Stack, Text } from '@mantine/core';
 import {
   arithmeticOperatorDefaults,
   arithmeticOperatorLabels,
-  computeArithmetic,
   formatNumericTree,
   rawNumericTree,
   type ArithmeticOperator,
 } from '../arithmetic';
 import {
-  boundOutput,
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -23,7 +19,8 @@ import type { ModuleRouteState } from '../compositionWorkspace';
 import type { PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
 import { defaultModuloTreatment, type ModuloTreatment } from '../moduloTreatment';
-import { signalTypeRegistry } from '../signalTypes';
+import { pickArithmeticInputs } from '../runtime/evaluators/arithmetic';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import {
   acceptsNumberOrString,
   compositionStateKeys,
@@ -154,81 +151,18 @@ export function ArithmeticModule({
   const isUnary = operator === 'exp';
   const bindingA = routeState.a;
   const bindingB = routeState.b;
-  // A binding pointing at this same instance (stale data, or otherwise) would feed the
-  // module's own output back into itself: a new packet object every render, which never
-  // reads as "unchanged" downstream and infinite-loops the composition view. Treat it as
-  // disconnected rather than crash.
-  const selfBoundA = bindingA?.source?.instanceId === instanceId;
-  const selfBoundB = bindingB?.source?.instanceId === instanceId;
-  const outputA = boundOutput(outputs, bindingA?.source);
-  const outputB = boundOutput(outputs, bindingB?.source);
-  const resolvedA = useMemo(
-    () =>
-      selfBoundA
-        ? undefined
-        : resolvePacketFromOutput(outputA, bindingA?.source?.index, `route:${instanceId}:a`),
-    [selfBoundA, outputA, bindingA?.source?.index, instanceId]
+  const {
+    treatedA,
+    treatedB,
+    result,
+    outputs: publishedOutputs,
+  } = useModuleEvaluation(
+    'arithmetic',
+    { operator, fallbackA, fallbackB, combineStrategy, modulo },
+    pickArithmeticInputs(outputs, routeState, instanceId),
+    { instanceId, instanceLabel, edo },
+    onOutputsChange
   );
-  const resolvedB = useMemo(
-    () =>
-      selfBoundB
-        ? undefined
-        : resolvePacketFromOutput(outputB, bindingB?.source?.index, `route:${instanceId}:b`),
-    [selfBoundB, outputB, bindingB?.source?.index, instanceId]
-  );
-  const treatedA = useMemo(
-    () =>
-      bindingA
-        ? signalTypeRegistry[bindingA.signalType].apply(
-            resolvedA,
-            bindingA.treatment,
-            `route:${instanceId}:a`,
-            edo
-          )
-        : undefined,
-    [bindingA, resolvedA, instanceId, edo]
-  );
-  const treatedB = useMemo(
-    () =>
-      bindingB
-        ? signalTypeRegistry[bindingB.signalType].apply(
-            resolvedB,
-            bindingB.treatment,
-            `route:${instanceId}:b`,
-            edo
-          )
-        : undefined,
-    [bindingB, resolvedB, instanceId, edo]
-  );
-
-  const result = useMemo(
-    () =>
-      computeArithmetic({
-        instanceId,
-        operator,
-        a: treatedA,
-        b: treatedB,
-        fallbackA: Number(fallbackA) || 0,
-        fallbackB: Number(fallbackB) || 0,
-        combineStrategy,
-        modulo,
-        edo,
-      }),
-    [instanceId, operator, treatedA, treatedB, fallbackA, fallbackB, combineStrategy, modulo, edo]
-  );
-
-  const publishedOutput = useMemo<PublishedCompositionOutput>(
-    () => ({
-      ref: { instanceId, port: 'result' },
-      label: `${instanceLabel} · Result`,
-      packet: result.packet,
-    }),
-    [instanceId, instanceLabel, result.packet]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, [publishedOutput]);
-  }, [instanceId, onOutputsChange, publishedOutput]);
 
   function changeOperator(value: string | null) {
     if (!value || !acceptsOperator(value)) {
@@ -370,7 +304,7 @@ export function ArithmeticModule({
                 </>
               )}
             </InspectorSection>
-            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={[publishedOutput]} />
+            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={publishedOutputs} />
           </ModuleInspectorContent>
         </>
       }

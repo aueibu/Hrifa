@@ -1,22 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Accordion, Alert, Badge, Select, Stack, Text, TextInput } from '@mantine/core';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
-import {
-  cycleLabel,
-  generateMelodicFamilies,
-  cycleFolders,
-  melodicFormsPacket,
-  type MelodicFamily,
-  realizeScale,
-  scalePitchClassPacket,
-  scaleSequence,
-  scaleSequencePacket,
-} from '../scaleConstruction';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { cycleLabel, cycleFolders, type MelodicFamily } from '../scaleConstruction';
 import {
   acceptsFiniteNumber,
   acceptsIntegerList,
@@ -168,66 +156,20 @@ export function ScaleConstructionModule({
     acceptsString
   );
 
-  const generated = useMemo(() => {
-    try {
-      return { result: scaleSequence(intervals) };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Could not construct a scale.' };
-    }
-  }, [intervals]);
-
-  const sequencePacket = useMemo(
-    () => (generated.result ? scaleSequencePacket(generated.result, instanceId) : undefined),
-    [generated.result, instanceId]
-  );
-  const melodicFormsOutput = useMemo(
-    () =>
-      generated.result ? melodicFormsPacket(intervals, permutationMode, instanceId) : undefined,
-    [generated.result, intervals, permutationMode, instanceId]
-  );
-  const families = useMemo(
-    () => (generated.result ? generateMelodicFamilies(intervals, permutationMode) : []),
-    [generated.result, intervals, permutationMode]
+  const {
+    generated,
+    families,
+    offsets,
+    melodicFormsOutput,
+    outputs: publishedOutputs,
+  } = useModuleEvaluation(
+    'scale-construction',
+    { intervals, root, permutationMode },
+    {},
+    { instanceId, instanceLabel, edo },
+    onOutputsChange
   );
   const folderTree = useMemo(() => buildFolderTree(families), [families]);
-  const pitchClassOutput = useMemo(
-    () =>
-      generated.result
-        ? scalePitchClassPacket(intervals, Number(root), instanceId, edo)
-        : undefined,
-    [generated.result, intervals, root, instanceId, edo]
-  );
-  const offsets = useMemo(() => realizeScale(intervals, Number(root)), [intervals, root]);
-
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(() => {
-    const outputs: PublishedCompositionOutput[] = [];
-    if (sequencePacket) {
-      outputs.push({
-        ref: { instanceId, port: 'sequence' },
-        label: `${instanceLabel} · Sequence`,
-        packet: sequencePacket,
-      });
-    }
-    if (melodicFormsOutput) {
-      outputs.push({
-        ref: { instanceId, port: 'melodicForms' },
-        label: `${instanceLabel} · Melodic Forms`,
-        packet: melodicFormsOutput,
-      });
-    }
-    if (pitchClassOutput) {
-      outputs.push({
-        ref: { instanceId, port: 'pitchClasses' },
-        label: `${instanceLabel} · Pitch Classes`,
-        packet: pitchClassOutput,
-      });
-    }
-    return outputs;
-  }, [instanceId, instanceLabel, sequencePacket, melodicFormsOutput, pitchClassOutput]);
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   function commitIntervalText(text: string) {
     setIntervalText(text);

@@ -1,16 +1,12 @@
-import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Button, Text } from '@mantine/core';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
-import { fractioningDurationPacket, generateFractioning } from '../fractioning';
 import {
   createRhythmPreviewPlan,
   musicalPlanSeconds,
   transportRhythmContext,
 } from '../rhythmRealization';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -71,41 +67,13 @@ export function FractioningModule({
   );
   const { settings } = useCompositionSettings();
 
-  const generated = useMemo(() => {
-    try {
-      return { result: generateFractioning(Number(a), Number(b)) };
-    } catch (error) {
-      return {
-        error:
-          error instanceof Error ? error.message : 'Could not generate a fractioning resultant.',
-      };
-    }
-  }, [a, b]);
-
-  const outputPacket = useMemo(
-    () =>
-      generated.result
-        ? fractioningDurationPacket(generated.result, Number(a), Number(b), instanceId)
-        : undefined,
-    [a, b, generated.result, instanceId]
+  const { generated, outputs: publishedOutputs } = useModuleEvaluation(
+    'fractioning',
+    { a, b },
+    {},
+    { instanceId, instanceLabel },
+    onOutputsChange
   );
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(
-    () =>
-      outputPacket
-        ? [
-            {
-              ref: { instanceId, port: 'resultant' },
-              label: `${instanceLabel} · Resultant`,
-              packet: outputPacket,
-            },
-          ]
-        : [],
-    [instanceId, instanceLabel, outputPacket]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   const preview = useModulePreview({
     instanceId,

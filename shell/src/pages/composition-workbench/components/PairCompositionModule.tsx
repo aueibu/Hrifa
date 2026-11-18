@@ -1,21 +1,13 @@
-import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Button, Select, Stack, Text } from '@mantine/core';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
-import {
-  generatePairComposition,
-  pairCompositionDurationPacket,
-  pairCompositionSegmentPackets,
-  type PairCompositionMode,
-} from '../pairComposition';
+import type { PairCompositionMode } from '../pairComposition';
 import {
   createRhythmPreviewPlan,
   musicalPlanSeconds,
   transportRhythmContext,
 } from '../rhythmRealization';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -92,46 +84,13 @@ export function PairCompositionModule({
   );
   const { settings } = useCompositionSettings();
 
-  const generated = useMemo(() => {
-    try {
-      return { result: generatePairComposition(Number(a), Number(b), mode) };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Could not compose this pair.' };
-    }
-  }, [a, b, mode]);
-
-  const outputPacket = useMemo(
-    () =>
-      generated.result ? pairCompositionDurationPacket(generated.result, instanceId) : undefined,
-    [generated.result, instanceId]
+  const { generated, outputs: publishedOutputs } = useModuleEvaluation(
+    'pair-composition',
+    { a, b, mode },
+    {},
+    { instanceId, instanceLabel },
+    onOutputsChange
   );
-  const segmentPackets = useMemo(
-    () => (generated.result ? pairCompositionSegmentPackets(generated.result, instanceId) : []),
-    [generated.result, instanceId]
-  );
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(
-    () => [
-      ...(outputPacket
-        ? [
-            {
-              ref: { instanceId, port: 'combined' },
-              label: `${instanceLabel} · Combined`,
-              packet: outputPacket,
-            },
-          ]
-        : []),
-      ...segmentPackets.map(({ port, label, packet }) => ({
-        ref: { instanceId, port },
-        label: `${instanceLabel} · ${label}`,
-        packet,
-      })),
-    ],
-    [instanceId, instanceLabel, outputPacket, segmentPackets]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   const preview = useModulePreview({
     instanceId,

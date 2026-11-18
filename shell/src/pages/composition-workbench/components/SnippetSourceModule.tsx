@@ -1,10 +1,7 @@
-import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Text } from '@mantine/core';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useDesk } from '../desk';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { ModuleDevice } from './ModuleDevice';
 import { ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { SnippetPreview } from './SnippetPreview';
@@ -30,23 +27,13 @@ export function SnippetSourceModule({
   const { snippets } = useDesk();
   const snippet = snippets.find((candidate) => candidate.id === snippetId);
 
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(
-    () =>
-      snippet
-        ? [
-            {
-              ref: { instanceId, port: 'snippet' },
-              label: `${instanceLabel} · ${snippet.name}`,
-              packet: snippet.packet,
-            },
-          ]
-        : [],
-    [instanceId, instanceLabel, snippet]
+  const { outputs: publishedOutputs } = useModuleEvaluation(
+    'snippet',
+    {},
+    { snippet },
+    { instanceId, instanceLabel },
+    onOutputsChange
   );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   return (
     <ModuleDevice

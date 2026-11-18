@@ -358,9 +358,39 @@ How the page hosts modules, since R1 (2026-11-18). Behavior is unchanged; the pl
 - `ModuleInstanceHost.tsx` is a `React.memo` host per placed module: the hidden-unless-shown div, the
   `ModuleActiveContext` provider and the registry's element. Only a module with `takesOutputs` subscribes
   to the store, so a publish re-renders the page and the routed modules (those that read outputs), not the source modules.
-- Modules still compute their outputs in their own effects and publish through `onOutputsChange`
-  (the store's `publish`), and still stay mounted while hidden. Moving the computation out of React
-  (R2) and per-instance state in a store so modules may unmount (R3) are the next steps (W-41).
+- **Evaluators (R2, done).** A ported module has a pure `evaluate(state, inputs, ctx)` in
+  `runtime/evaluators/<module>.ts` returning `{ outputs, ...whatever its display reads }` (no React,
+  storage or `window`). Ported so far: Pitch List, Rhythm List, Arithmetic, Fractioning, Pair
+  Composition, Scale Construction, Scale Evolution, Interference, Swirling Mists, Rhythm
+  Householder, Rhythm Edit, Melodicization, Snippet source (every module that publishes outputs;
+  the Mixer publishes none). `moduleEvaluators.ts` is the non-React table by module id;
+  `moduleRegistry.tsx` lists the same function as the entry's optional `evaluate`. The component
+  calls `useModuleEvaluation(moduleId, state, inputs, ctx, onOutputsChange)`
+  (`useModuleEvaluation.ts`), which compares state, inputs and ctx field by field, runs the
+  evaluator once per change and publishes in one effect; the component draws from the returned
+  evaluation and has no publish effect of its own. Each evaluator is split into `compute` (no
+  label; the packet and display values) and `outputs` (wraps the packets with `{ ref, label }`), so
+  a rename keeps every packet object and only the labels change. Components import the hook and
+  the evaluator file, never `moduleRegistry.tsx` (it imports the components). **Inputs must keep their
+  identity when unrelated outputs change**: a module that reads outputs passes only what it reads
+  (Arithmetic: `pickArithmeticInputs` returns the two bound outputs and bindings; Scale Evolution:
+  `pickScaleEvolutionInputs` returns the bound `sequence` output and binding; Householder:
+  `pickHouseholderInputs` the `rhythm` and `axis` outputs and bindings; Rhythm Edit:
+  `pickRhythmEditInputs` the `rhythm` output and binding; Melodicization:
+  `pickMelodicizationInputs` the `rhythm` and `pitches` outputs and bindings; Snippet source takes
+  the desk's own clip object, which keeps its identity until the clip is edited), otherwise its own
+  published output would re-trigger its evaluation forever. `compute` takes an optional per-instance
+  memo (`runtime/memo.ts`, `memo(key, deps, fn)`, one per hook instance) so a part of the output
+  rebuilds only when its own deps change, as before the port (a root change rebuilds the pitch
+  classes, not the sequence or stage packets); without one, a fresh memo gives the same result.
+- Every module still stays mounted while hidden, and publishes through `onOutputsChange` (the
+  store's `publish`) from its component's hook. Per-instance state in a store so modules may unmount
+  (R3) is next (W-41).
+- **Adding a module:** its id in `compositionWorkspace.ts`, one registry entry, and, for a module
+  that publishes outputs, an evaluator file, a line in `moduleEvaluators.ts`, `evaluate` on the
+  entry and a `.test.ts` that compares it with hand-computed expected outputs (default state, one
+  edited state, a rename keeping every packet, and for a routed module an unrelated-output identity
+  case).
 
 ## Adding a module with playback
 

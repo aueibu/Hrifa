@@ -1,11 +1,8 @@
-import { useEffect, useMemo } from 'react';
 import { Alert, Badge, Select, Text, TextInput } from '@mantine/core';
 import {
-  boundOutput,
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -14,13 +11,8 @@ import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { DataPacket } from '../model';
 import { pitchClassName } from '../pitch';
-import {
-  evolveScale,
-  finalPitchClassesPacket,
-  finalStagePacket,
-  scaleEvolutionStagesPacket,
-  stagePitchClassesPacket,
-} from '../scaleEvolution';
+import { pickScaleEvolutionInputs } from '../runtime/evaluators/scaleEvolution';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import {
   acceptsFiniteNumber,
   acceptsString,
@@ -32,14 +24,6 @@ import { DurationStrip } from './DurationStrip';
 import { ModuleDevice } from './ModuleDevice';
 import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { SourceMenu } from './SourceMenu';
-
-function parseIntervalText(value: string) {
-  return value
-    .split(/[\s,+]+/)
-    .filter(Boolean)
-    .map(Number)
-    .filter((n) => Number.isInteger(n) && n > 0);
-}
 
 function compatibleIntervalSource(packet: DataPacket) {
   return packet.kind === 'list' && packet.domain === 'interval';
@@ -83,105 +67,19 @@ export function ScaleEvolutionModule({
   );
 
   const binding = routeState.sequence;
-  const hasConnection = Boolean(binding?.source && binding.source.instanceId !== instanceId);
-  const sequenceOutput = boundOutput(outputs, binding?.source);
-  const resolvedSequence = useMemo(
-    () =>
-      hasConnection
-        ? resolvePacketFromOutput(
-            sequenceOutput,
-            binding?.source?.index,
-            `route:${instanceId}:sequence`
-          )
-        : undefined,
-    [hasConnection, sequenceOutput, binding?.source?.index, instanceId]
-  );
-
-  const fallbackIntervals = useMemo(() => parseIntervalText(intervalText), [intervalText]);
-  const sourceIntervals = useMemo(() => {
-    if (resolvedSequence) {
-      return resolvedSequence.items.map((item) => Number(item.value));
-    }
-    return fallbackIntervals;
-  }, [resolvedSequence, fallbackIntervals]);
-
-  const generated = useMemo(() => {
-    if (!sourceIntervals.length) {
-      return { error: 'Enter or connect one or more positive whole-number intervals.' };
-    }
-    try {
-      return { result: evolveScale(sourceIntervals) };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Could not evolve this scale.' };
-    }
-  }, [sourceIntervals]);
-
-  const stagesPacket = useMemo(
-    () => (generated.result ? scaleEvolutionStagesPacket(generated.result, instanceId) : undefined),
-    [generated.result, instanceId]
-  );
-  const finalPacket = useMemo(
-    () => (generated.result ? finalStagePacket(generated.result, instanceId) : undefined),
-    [generated.result, instanceId]
-  );
-  const stagePitchesPacket = useMemo(
-    () =>
-      generated.result
-        ? stagePitchClassesPacket(generated.result, Number(root), instanceId, edo)
-        : undefined,
-    [generated.result, root, instanceId, edo]
-  );
-  const finalPitchesPacket = useMemo(
-    () =>
-      generated.result
-        ? finalPitchClassesPacket(generated.result, Number(root), instanceId, edo)
-        : undefined,
-    [generated.result, root, instanceId, edo]
-  );
-
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(() => {
-    const list: PublishedCompositionOutput[] = [];
-    if (stagesPacket) {
-      list.push({
-        ref: { instanceId, port: 'stages' },
-        label: `${instanceLabel} · Stages`,
-        packet: stagesPacket,
-      });
-    }
-    if (finalPacket) {
-      list.push({
-        ref: { instanceId, port: 'final' },
-        label: `${instanceLabel} · Final`,
-        packet: finalPacket,
-      });
-    }
-    if (stagePitchesPacket) {
-      list.push({
-        ref: { instanceId, port: 'stagePitches' },
-        label: `${instanceLabel} · Stage Pitches`,
-        packet: stagePitchesPacket,
-      });
-    }
-    if (finalPitchesPacket) {
-      list.push({
-        ref: { instanceId, port: 'finalPitches' },
-        label: `${instanceLabel} · Final Pitches`,
-        packet: finalPitchesPacket,
-      });
-    }
-    return list;
-  }, [
-    instanceId,
-    instanceLabel,
-    stagesPacket,
-    finalPacket,
+  const {
+    resolvedSequence,
+    sourceIntervals,
+    generated,
     stagePitchesPacket,
-    finalPitchesPacket,
-  ]);
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
+    outputs: publishedOutputs,
+  } = useModuleEvaluation(
+    'scale-evolution',
+    { intervalText, root },
+    pickScaleEvolutionInputs(outputs, routeState, instanceId),
+    { instanceId, instanceLabel, edo },
+    onOutputsChange
+  );
 
   const sequenceOptions = compositionOutputOptions(outputs, instanceId, compatibleIntervalSource);
 

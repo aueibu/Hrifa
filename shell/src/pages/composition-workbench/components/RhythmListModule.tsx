@@ -1,18 +1,13 @@
-import { useEffect, useMemo } from 'react';
 import { Badge, Button, Switch, Text, TextInput } from '@mantine/core';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
-import { packet, type DataItem } from '../model';
-import { formatPulses, parseRhythmText } from '../rhythmNotation';
+import { formatPulses } from '../rhythmNotation';
 import {
   createRhythmPreviewPlan,
   musicalPlanSeconds,
-  rhythmAttacks,
   transportRhythmContext,
 } from '../rhythmRealization';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -80,64 +75,13 @@ export function RhythmListModule({
   );
   const { settings } = useCompositionSettings();
 
-  const parsed = useMemo(() => parseRhythmText(text), [text]);
-  const resolved = useMemo(
-    () => rhythmAttacks(parsed.steps, 0, { cyclic: loop }),
-    [parsed.steps, loop]
+  const { parsed, resolved, outputPacket, outputs } = useModuleEvaluation(
+    'rhythm-list',
+    { text, loop },
+    {},
+    { instanceId, instanceLabel },
+    onOutputsChange
   );
-  const outputPacket = useMemo(() => {
-    if (parsed.errors.length || !parsed.steps.length) {
-      return undefined;
-    }
-    const items: DataItem<number>[] = parsed.steps.map((step, index) => ({
-      id: `${instanceId}:rhythm:${index}`,
-      value: step.duration,
-      ...(step.tie ? { tie: true } : {}),
-      label: step.duration < 0 ? `r${-step.duration}` : `${step.duration}${step.tie ? '~' : ''}`,
-      provenance: [
-        {
-          sourceModuleInstance: instanceId,
-          sourceItemIds: [],
-          transformation: 'rhythm-list-read',
-          parameters: { text: step.duration < 0 ? `r${-step.duration}` : String(step.duration) },
-        },
-      ],
-    }));
-    return packet<number>(
-      'list',
-      'duration',
-      items,
-      resolved.warnings,
-      { source: 'inline' },
-      {
-        role: 'interOnset',
-        frame: {
-          topology: loop ? 'cyclic' : 'linear',
-          unit: 'pulse',
-          extent: resolved.spanPulses,
-          origin: 0,
-        },
-      }
-    );
-  }, [instanceId, loop, parsed.errors.length, parsed.steps, resolved]);
-
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(
-    () =>
-      outputPacket
-        ? [
-            {
-              ref: { instanceId, port: 'rhythm' },
-              label: `${instanceLabel} · Rhythm`,
-              packet: outputPacket,
-            },
-          ]
-        : [],
-    [instanceId, instanceLabel, outputPacket]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   const preview = useModulePreview({
     instanceId,
@@ -280,7 +224,7 @@ export function RhythmListModule({
                 onChange={setPreviewVolume}
               />
             </InspectorSection>
-            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={publishedOutputs} />
+            <ModuleOutputsSection instanceLabel={instanceLabel} outputs={outputs} />
           </ModuleInspectorContent>
         </>
       }

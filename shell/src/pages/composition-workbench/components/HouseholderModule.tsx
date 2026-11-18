@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Badge,
@@ -15,11 +15,9 @@ import {
   Tooltip,
 } from '@mantine/core';
 import {
-  boundOutput,
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -27,16 +25,10 @@ import {
 import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import {
-  householderCandidatesPacket,
-  householderSelectedPacket,
   metricAxisLabels,
   reflectAxisLabels,
-  reflectAxisPreset,
-  reflectRhythm,
-  searchMetric,
   type HouseholderCandidate,
   type HouseholderMode,
-  type HouseholderResult,
   type MetricAxisKey,
   type ReflectAxisPreset,
 } from '../householder';
@@ -48,8 +40,14 @@ import {
   transportRhythmContext,
   type RhythmPreviewLayer,
 } from '../rhythmRealization';
-import { isValidRhythmSource, rhythmInterpretableDomains } from '../routeTreatments';
-import { signalTypeRegistry } from '../signalTypes';
+import { rhythmInterpretableDomains } from '../routeTreatments';
+import {
+  defaultHouseholderSettings,
+  pickHouseholderInputs,
+  type HouseholderSettings,
+  type MetricAxisSettings,
+} from '../runtime/evaluators/householder';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -66,46 +64,6 @@ import { SoundOverrideControl } from './SoundControls';
 import { SourceMenu } from './SourceMenu';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
-
-interface MetricAxisSettings {
-  enabled: boolean;
-  coefficient: number;
-  weight: number;
-}
-
-export interface HouseholderSettings {
-  mode: HouseholderMode;
-  grid: number;
-  minUnits: number;
-  reflectPreset: ReflectAxisPreset;
-  customAxis: string;
-  reflectCoefficient: number;
-  reflectSteps: number;
-  accentPattern: string;
-  accent: MetricAxisSettings;
-  position: MetricAxisSettings;
-  closeness: number;
-  /** Added after the first release; older saved settings without it get the default. */
-  identity?: number;
-  /** Keep the first attack where the input's is. Free by default so rhythms can start off the beat. */
-  pinStart?: boolean;
-}
-
-export const defaultHouseholderSettings: HouseholderSettings = {
-  mode: 'reflect',
-  grid: 1,
-  minUnits: 1,
-  reflectPreset: 'swing',
-  customAxis: '1 0 -1',
-  reflectCoefficient: -1,
-  reflectSteps: 4,
-  accentPattern: '1 0 0 0',
-  accent: { enabled: true, coefficient: -1, weight: 1 },
-  position: { enabled: false, coefficient: -1, weight: 1 },
-  closeness: 0.1,
-  identity: 1,
-  pinStart: false,
-};
 
 function acceptsAxisSettings(value: unknown): value is MetricAxisSettings {
   const axis = value as MetricAxisSettings;
@@ -137,12 +95,6 @@ function acceptsHouseholderSettings(value: unknown): value is HouseholderSetting
     (settings.identity === undefined || Number.isFinite(settings.identity)) &&
     (settings.pinStart === undefined || typeof settings.pinStart === 'boolean')
   );
-}
-
-function parseNumberList(text: string): number[] | undefined {
-  const parts = text.split(/[\s,]+/).filter(Boolean);
-  const values = parts.map(Number);
-  return parts.length && values.every(Number.isFinite) ? values : undefined;
 }
 
 function compatibleRhythm(packet: DataPacket) {
@@ -285,230 +237,26 @@ export function HouseholderModule({
 
   const update = (patch: Partial<HouseholderSettings>) =>
     setSettings((current) => ({ ...current, ...patch }));
-  const identityWeight = settings.identity ?? defaultHouseholderSettings.identity!;
 
   // Inputs: the rhythm to alter, and an optional routed axis contour (Reflect mode).
   const bindingRhythm = routeState.rhythm;
   const bindingAxis = routeState.axis;
-  const selfBoundRhythm = bindingRhythm?.source?.instanceId === instanceId;
-  const selfBoundAxis = bindingAxis?.source?.instanceId === instanceId;
-  const rhythmOutput = boundOutput(outputs, bindingRhythm?.source);
-  const axisOutput = boundOutput(outputs, bindingAxis?.source);
-  const resolvedRhythm = useMemo(
-    () =>
-      selfBoundRhythm
-        ? undefined
-        : resolvePacketFromOutput(
-            rhythmOutput,
-            bindingRhythm?.source?.index,
-            `route:${instanceId}:rhythm`
-          ),
-    [selfBoundRhythm, rhythmOutput, bindingRhythm?.source?.index, instanceId]
-  );
-  const resolvedAxis = useMemo(
-    () =>
-      selfBoundAxis
-        ? undefined
-        : resolvePacketFromOutput(
-            axisOutput,
-            bindingAxis?.source?.index,
-            `route:${instanceId}:axis`
-          ),
-    [selfBoundAxis, axisOutput, bindingAxis?.source?.index, instanceId]
-  );
-  const treatedRhythm = useMemo(
-    () =>
-      bindingRhythm
-        ? signalTypeRegistry[bindingRhythm.signalType].apply(
-            resolvedRhythm,
-            bindingRhythm.treatment,
-            `route:${instanceId}:rhythm`,
-            edo
-          )
-        : undefined,
-    [bindingRhythm, resolvedRhythm, instanceId, edo]
-  );
-  const treatedAxis = useMemo(
-    () =>
-      bindingAxis
-        ? signalTypeRegistry[bindingAxis.signalType].apply(
-            resolvedAxis,
-            bindingAxis.treatment,
-            `route:${instanceId}:axis`,
-            edo
-          )
-        : undefined,
-    [bindingAxis, resolvedAxis, instanceId, edo]
-  );
-
-  const cyclic = treatedRhythm?.frame?.topology !== 'linear';
-  const rhythm = isValidRhythmSource(treatedRhythm)
-    ? (treatedRhythm as DataPacket<number>)
-    : undefined;
   const axisRouted = Boolean(bindingAxis?.source);
-
-  const computed = useMemo((): HouseholderResult & {
-    transformation: string;
-    parameters: Record<string, unknown>;
-  } => {
-    const base = {
-      transformation: `householder-${settings.mode}`,
-      parameters: {} as Record<string, unknown>,
-    };
-    if (!rhythm) {
-      return {
-        ...base,
-        candidates: [],
-        inputUnits: [],
-        warnings: [],
-        error: treatedRhythm
-          ? 'The connected source is not an inter-onset duration list yet. Turn on “Interpret as rhythm” on its route.'
-          : 'Connect a rhythm to alter.',
-      };
-    }
-    const durations = rhythm.items.map((item) => Number(item.value));
-    if (settings.mode === 'reflect') {
-      let axis: number[] | undefined;
-      let axisSource: string;
-      if (axisRouted) {
-        axisSource = 'routed';
-        const values = treatedAxis?.items.map((item) => item.value);
-        axis = values?.every((value) => typeof value === 'number' && Number.isFinite(value))
-          ? (values as number[])
-          : undefined;
-        if (!axis?.length) {
-          return {
-            ...base,
-            candidates: [],
-            inputUnits: [],
-            warnings: [],
-            error: 'The routed axis must be a list of plain numbers (no groups).',
-          };
-        }
-      } else if (settings.reflectPreset === 'custom') {
-        axisSource = 'custom';
-        axis = parseNumberList(settings.customAxis);
-        if (!axis) {
-          return {
-            ...base,
-            candidates: [],
-            inputUnits: [],
-            warnings: [],
-            error: 'Enter the custom axis as numbers.',
-          };
-        }
-      } else {
-        axisSource = settings.reflectPreset;
-        axis = reflectAxisPreset(settings.reflectPreset, durations.length);
-      }
-      const result = reflectRhythm({
-        durations,
-        axis,
-        coefficient: settings.reflectCoefficient,
-        grid: settings.grid,
-        minUnits: settings.minUnits,
-        steps: settings.reflectSteps,
-      });
-      return {
-        ...result,
-        transformation: 'householder-reflect',
-        parameters: {
-          axis: axisSource,
-          axisValues: axis,
-          coefficient: settings.reflectCoefficient,
-          grid: settings.grid,
-          minUnits: settings.minUnits,
-        },
-      };
-    }
-    const pattern = parseNumberList(settings.accentPattern);
-    const result = searchMetric({
-      durations,
-      grid: settings.grid,
-      minUnits: settings.minUnits,
-      axes: [
-        { key: 'accent', ...settings.accent, pattern: pattern ?? [] },
-        { key: 'position', ...settings.position },
-      ],
-      closeness: settings.closeness,
-      identity: identityWeight,
-      cyclic,
-      origin: rhythmOrigin(rhythm),
-      pinStart: settings.pinStart ?? false,
-      maxCandidates: 8,
-    });
-    return {
-      ...result,
-      transformation: 'householder-metric',
-      parameters: {
-        accentPattern: pattern,
-        accent: settings.accent,
-        position: settings.position,
-        closeness: settings.closeness,
-        identity: identityWeight,
-        pinStart: settings.pinStart ?? false,
-        grid: settings.grid,
-        minUnits: settings.minUnits,
-      },
-    };
-  }, [rhythm, treatedRhythm, treatedAxis, axisRouted, settings, identityWeight, cyclic]);
-
-  const clampedIndex = computed.candidates.length
-    ? Math.min(Math.max(0, Math.floor(selectedIndex)), computed.candidates.length - 1)
-    : 0;
-  const selected = computed.candidates[clampedIndex];
-
-  const selectedPacket = useMemo(
-    () =>
-      rhythm && selected
-        ? householderSelectedPacket(
-            selected,
-            rhythm,
-            computed.warnings,
-            instanceId,
-            computed.transformation,
-            { ...computed.parameters, candidate: clampedIndex }
-          )
-        : undefined,
-    [rhythm, selected, computed, instanceId, clampedIndex]
+  const identityWeight = settings.identity ?? defaultHouseholderSettings.identity!;
+  const {
+    rhythm,
+    cyclic,
+    computed,
+    clampedIndex,
+    selected,
+    outputs: publishedOutputs,
+  } = useModuleEvaluation(
+    'rhythm-householder',
+    { settings, selectedIndex },
+    pickHouseholderInputs(outputs, routeState, instanceId),
+    { instanceId, instanceLabel, edo },
+    onOutputsChange
   );
-  const candidatesPacket = useMemo(
-    () =>
-      rhythm && computed.candidates.length
-        ? householderCandidatesPacket(
-            computed.candidates,
-            rhythm,
-            computed.warnings,
-            instanceId,
-            computed.transformation,
-            computed.parameters
-          )
-        : undefined,
-    [rhythm, computed, instanceId]
-  );
-
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(
-    () =>
-      selectedPacket && candidatesPacket
-        ? [
-            {
-              ref: { instanceId, port: 'selected' },
-              label: `${instanceLabel} · Selected`,
-              packet: selectedPacket,
-            },
-            {
-              ref: { instanceId, port: 'candidates' },
-              label: `${instanceLabel} · Candidates`,
-              packet: candidatesPacket,
-            },
-          ]
-        : [],
-    [instanceId, instanceLabel, selectedPacket, candidatesPacket]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   const preview = useModulePreview({
     instanceId,

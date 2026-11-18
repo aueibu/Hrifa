@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import {
   ActionIcon,
   Alert,
@@ -12,24 +12,18 @@ import {
 } from '@mantine/core';
 import { volumePercentToGain } from '../audio';
 import { createInterferencePreviewPlan, GROUPING_BUS } from '../audio/performancePlans';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import { foldIntoHistory } from '../history';
 import {
-  generateInterference,
   generatorAttackCount,
   generatorAttackTimes,
   generatorPeriod,
-  groupingOptions,
-  interferenceDurationPacket,
-  interferenceGeneratorDurationPacket,
   MAX_PREVIEW_EVENTS,
-  parseGeneratorValues,
 } from '../interference';
 import { transportRhythmContext } from '../rhythmRealization';
+import type { GeneratorDraft } from '../runtime/evaluators/interference';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -48,19 +42,6 @@ import { Playhead } from './Playhead';
 import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
-
-interface GeneratorDraft {
-  id: string;
-  label: string;
-  valueText: string;
-  /**
-   * This generator's own sound; null or absent plays it on the rhythm voice matching its position
-   * (generator 1 → primary, 2 → secondary, …).
-   */
-  sound?: SoundOverride | null;
-  /** Saved before voices existed: the generator's tone pitch. Read once as a Tone override. */
-  midiNote?: number;
-}
 
 const initialGenerators: GeneratorDraft[] = [
   { id: 'generator-a', label: 'Generator 1', valueText: '2' },
@@ -137,63 +118,20 @@ export function InterferenceModule({
   const { settings } = useCompositionSettings();
   const groupingGain = groupingClick ? volumePercentToGain(settings.transport.metronomeVolume) : 0;
 
-  const authored = useMemo(
-    () =>
-      drafts.map((draft) => ({
-        draft,
-        parsed: parseGeneratorValues(draft.valueText),
-      })),
-    [drafts]
+  const {
+    authored,
+    patterns,
+    generated,
+    groupings,
+    grouping,
+    outputs: publishedOutputs,
+  } = useModuleEvaluation(
+    'interference',
+    { drafts, groupingId },
+    {},
+    { instanceId, instanceLabel },
+    onOutputsChange
   );
-  const patterns = useMemo(() => authored.map(({ parsed }) => parsed.values), [authored]);
-  const periods = useMemo(() => patterns.map(generatorPeriod), [patterns]);
-  const generated = useMemo(() => {
-    try {
-      const authoredPatterns = drafts.map((draft) => parseGeneratorValues(draft.valueText).values);
-      return { result: generateInterference(authoredPatterns) };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Could not generate interference.' };
-    }
-  }, [drafts]);
-  const groupings = useMemo(
-    () => (generated.result ? groupingOptions(periods, generated.result.recurrence) : []),
-    [generated.result, periods]
-  );
-  const grouping = groupings.find((option) => option.id === groupingId) ?? groupings[0];
-  const outputPacket = useMemo(
-    () =>
-      generated.result ? interferenceDurationPacket(generated.result, drafts, grouping) : undefined,
-    [drafts, generated.result, grouping]
-  );
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(
-    () => [
-      ...(outputPacket
-        ? [
-            {
-              ref: { instanceId, port: 'resultant' },
-              label: `${instanceLabel} · Resultant`,
-              packet: outputPacket,
-            },
-          ]
-        : []),
-      ...authored.flatMap(({ draft, parsed }, generatorIndex) =>
-        parsed.values.length
-          ? [
-              {
-                ref: { instanceId, port: `generator:${draft.id}` },
-                label: `${instanceLabel} · ${draft.label}`,
-                packet: interferenceGeneratorDurationPacket(parsed.values, draft, generatorIndex),
-              },
-            ]
-          : []
-      ),
-    ],
-    [authored, instanceId, instanceLabel, outputPacket]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   useEffect(() => {
     if (groupings.length && !groupings.some((option) => option.id === groupingId)) {

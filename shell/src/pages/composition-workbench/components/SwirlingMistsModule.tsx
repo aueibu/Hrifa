@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -13,13 +13,9 @@ import {
   TextInput,
 } from '@mantine/core';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
-import type {
-  CompositionModuleRoutingProps,
-  PublishedCompositionOutput,
-} from '../compositionRouting';
+import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import {
   acceptsMistSettings,
-  buildMistField,
   curveShape,
   defaultMistSettings,
   defaultStratum,
@@ -29,17 +25,15 @@ import {
   maxWalkPoints,
   migrateMistSettings,
   maxMistSteps,
-  mistChordsPacket,
   mistPresets,
-  mistVoicesPacket,
   passesPerRepeat,
   presetStrata,
-  sampleMist,
   type MistInterpolation,
   type MistPresetId,
   type MistSettings,
   type MistStratum,
 } from '../mist';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsFiniteNumber,
@@ -109,37 +103,13 @@ export function SwirlingMistsModule({
   // Which stratum's curve is open for drawing.
   const [editingCurve, setEditingCurve] = useState<number | null>(null);
 
-  const field = useMemo(() => buildMistField(settings), [settings]);
-  const sampling = useMemo(() => sampleMist(settings, field), [settings, field]);
-  const chords = useMemo(
-    () => mistChordsPacket(instanceId, settings, sampling),
-    [instanceId, settings, sampling]
+  const { field, sampling, chords, outputs } = useModuleEvaluation(
+    'swirling-mists',
+    { settings },
+    {},
+    { instanceId, instanceLabel },
+    onOutputsChange
   );
-  const voices = useMemo(
-    () => mistVoicesPacket(instanceId, settings, sampling),
-    [instanceId, settings, sampling]
-  );
-  const outputs = useMemo<PublishedCompositionOutput[]>(
-    () =>
-      sampling.strataIndices.length && sampling.positions.length
-        ? [
-            {
-              ref: { instanceId, port: 'chords' },
-              label: `${instanceLabel} · Chords`,
-              packet: chords,
-            },
-            {
-              ref: { instanceId, port: 'voices' },
-              label: `${instanceLabel} · Voices`,
-              packet: voices,
-            },
-          ]
-        : [],
-    [instanceId, instanceLabel, chords, voices, sampling]
-  );
-  useEffect(() => {
-    onOutputsChange?.(instanceId, outputs);
-  }, [instanceId, onOutputsChange, outputs]);
 
   const preview = useModulePreview({ instanceId, volume, transportPlay: playPreview });
 

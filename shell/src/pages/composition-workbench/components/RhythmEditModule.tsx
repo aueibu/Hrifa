@@ -14,11 +14,9 @@ import {
   TextInput,
 } from '@mantine/core';
 import {
-  boundOutput,
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  resolvePacketFromOutput,
   type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
@@ -26,12 +24,7 @@ import {
 import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { DataPacket } from '../model';
-import {
-  editRhythm,
-  scaleStepsToLength,
-  type GroupingPolicy,
-  type RhythmEditMode,
-} from '../rhythmEdit';
+import { scaleStepsToLength, type GroupingPolicy, type RhythmEditMode } from '../rhythmEdit';
 import { rhythmOrigin } from '../rhythmFrame';
 import {
   createRhythmPreviewPlan,
@@ -47,8 +40,9 @@ import {
   zoomedCellWidth,
   type Viewport,
 } from '../rhythmRollZoom';
-import { isValidRhythmSource, rhythmInterpretableDomains } from '../routeTreatments';
-import { signalTypeRegistry } from '../signalTypes';
+import { rhythmInterpretableDomains } from '../routeTreatments';
+import { pickRhythmEditInputs, type EditSettings } from '../runtime/evaluators/rhythmEdit';
+import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -100,16 +94,6 @@ const timingDetail = (phase: number, rate: number) =>
 
 const initialProgram = '[x,2][r,1]';
 const initialRules = 'every 3: r';
-
-interface EditSettings {
-  programPhase: number;
-  programRate: number;
-  lengthPhase: number;
-  lengthRate: number;
-  nStart: number;
-  nChange: number;
-  nEvery: number;
-}
 
 const defaultSettings: EditSettings = {
   programPhase: 0,
@@ -258,76 +242,23 @@ export function RhythmEditModule({
     Math.max(minimum, Math.floor(Number(value) || minimum));
 
   const bindingRhythm = routeState.rhythm;
-  const selfBound = bindingRhythm?.source?.instanceId === instanceId;
-  const rhythmOutput = boundOutput(outputs, bindingRhythm?.source);
-  const resolved = useMemo(
-    () =>
-      selfBound
-        ? undefined
-        : resolvePacketFromOutput(
-            rhythmOutput,
-            bindingRhythm?.source?.index,
-            `route:${instanceId}:rhythm`
-          ),
-    [selfBound, rhythmOutput, bindingRhythm?.source?.index, instanceId]
-  );
-  const treated = useMemo(
-    () =>
-      bindingRhythm
-        ? signalTypeRegistry[bindingRhythm.signalType].apply(
-            resolved,
-            bindingRhythm.treatment,
-            `route:${instanceId}:rhythm`,
-            edo
-          )
-        : undefined,
-    [bindingRhythm, resolved, instanceId, edo]
-  );
-  const input = isValidRhythmSource(treated) ? treated : undefined;
-
-  const edited = useMemo(
-    () =>
-      editRhythm({
-        instanceId,
-        source: input,
-        mode,
-        program,
-        programTiming: { phase: editSettings.programPhase, rate: editSettings.programRate },
-        rules,
-        lengths,
-        lengthTiming: { phase: editSettings.lengthPhase, rate: editSettings.lengthRate },
-        variable: {
-          start: editSettings.nStart,
-          change: editSettings.nChange,
-          every: editSettings.nEvery,
-        },
-        grouping,
-      }),
-    [instanceId, input, mode, program, rules, lengths, editSettings, grouping]
+  const {
+    treated,
+    input,
+    edited,
+    outputs: publishedOutputs,
+  } = useModuleEvaluation(
+    'rhythm-edit',
+    { mode, program, rules, lengths, grouping, editSettings },
+    pickRhythmEditInputs(outputs, routeState, instanceId),
+    { instanceId, instanceLabel, edo },
+    onOutputsChange
   );
   const error = input
     ? edited.errors.join('; ')
     : treated
       ? 'The connected source is not an inter-onset duration list yet. Turn on “Interpret as rhythm” on its route.'
       : 'Connect a rhythm to edit.';
-
-  const publishedOutputs = useMemo<PublishedCompositionOutput[]>(
-    () =>
-      edited.packet
-        ? [
-            {
-              ref: { instanceId, port: 'rhythm' },
-              label: `${instanceLabel} · Rhythm`,
-              packet: edited.packet,
-            },
-          ]
-        : [],
-    [instanceId, instanceLabel, edited.packet]
-  );
-
-  useEffect(() => {
-    onOutputsChange?.(instanceId, publishedOutputs);
-  }, [instanceId, onOutputsChange, publishedOutputs]);
 
   const preview = useModulePreview({
     instanceId,
