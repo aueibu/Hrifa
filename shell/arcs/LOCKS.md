@@ -17,3 +17,7 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| package.json | harmonic-field-lab | 2026-11-18 | add @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities (H-36) |
+| yarn.lock | harmonic-field-lab | 2026-11-18 | dnd-kit install (H-36) |
+| src/components/Sortable/ | harmonic-field-lab | 2026-11-18 | new shared drag layer on dnd-kit, insert/swap rule (H-36) |
+| ARCHITECTURE.md | harmonic-field-lab | 2026-11-18 | shared components table row for Sortable (H-36) |
