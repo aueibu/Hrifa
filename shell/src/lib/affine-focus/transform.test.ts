@@ -280,5 +280,38 @@ describe('affine-focus M1: pure mathematical engine', () => {
       // 3 current members * 2 multipliers = 6 operations
       expect(family).toHaveLength(6);
     });
+
+    it('distinguishes Positive [0, R) vs Signed [-R/2, R/2) offset modes for fractional multipliers in log-pitch', () => {
+      // Seed (0, 4, 7) in 12-EDO (0c, 400c, 700c), focus f = 4 (400c), fractional multiplier a = 0.5
+      // For pitch 0 (0c):
+      // - Positive offset mod 1200c: d = (0 - 400) mod 1200 = +800c -> 400 + 0.5*800 = 800c
+      // - Signed offset in [-600, 600): d = -400c -> 400 + 0.5*(-400) = 200c
+      const posRes = applyFocusTransform(
+        seed,
+        [seed[1]],
+        baseConfig({
+          gamut: edo12,
+          domain: 'log-pitch',
+          multiplier: 0.5,
+          offsetMode: 'positive',
+          folding: 'folded',
+          identity: 'ordered-tuple',
+        })
+      );
+      const signedRes = applyFocusTransform(
+        seed,
+        [seed[1]],
+        baseConfig({
+          gamut: edo12,
+          domain: 'log-pitch',
+          multiplier: 0.5,
+          offsetMode: 'signed',
+          folding: 'folded',
+          identity: 'ordered-tuple',
+        })
+      );
+      expect(posRes.outputPitches[0].foldedCents).toBeCloseTo(800, 1);
+      expect(signedRes.outputPitches[0].foldedCents).toBeCloseTo(200, 1);
+    });
   });
 });

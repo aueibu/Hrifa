@@ -303,8 +303,8 @@ function transformSingleVoice(
     } else {
       if (offsetMode === 'signed') {
         offsetCents = signedMod(cx - cf1, R);
-      } else if (offsetMode === 'positive') {
-        offsetCents = cx - cf1;
+      } else if (offsetMode === 'positive' && folding === 'folded') {
+        offsetCents = mod(cx - cf1, R);
       } else {
         offsetCents = cx - cf1;
       }
