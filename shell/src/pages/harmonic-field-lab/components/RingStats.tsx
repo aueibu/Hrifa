@@ -1,5 +1,6 @@
 /** Pitch circle, glanceable stats and step-size bars to its right, and the note inspector under them. */
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -11,7 +12,6 @@ import {
 } from 'react';
 import {
   ActionIcon,
-  Button,
   NativeSelect,
   Popover,
   SegmentedControl,
@@ -29,7 +29,7 @@ import {
 import type { PreviewTarget } from '../audio/plan';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
-import type { Ghost } from '../state/ghosts';
+import { ghostsOf, type Ghost } from '../state/ghosts';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { RingView } from '../state/labState';
 import { SVG_FS_LABEL, SVG_FS_SMALL } from '../state/typeScale';
@@ -338,6 +338,27 @@ export function PitchRing({
         </RingDot>
       );
     });
+  // M8g: the Product dialog's preview (products not yet in the field), on the main ring only (a host that passes its own ghosts gets none)
+  const productCents = ghostsProp === undefined ? lab.state.relative.productGhosts : null;
+  const productMarks =
+    view === 'chromatic' && productCents?.length
+      ? ghostsOf(field, repC, productCents).map((gh) => {
+          const a = gh.turn * 2 * Math.PI - Math.PI / 2;
+          return (
+            <RingDot
+              key={`product-${gh.c}`}
+              kind="ghost"
+              tone="above"
+              scale={k}
+              data-testid="ring-product-ghost"
+              cx={C + g.R * Math.cos(a)}
+              cy={C + g.R * Math.sin(a)}
+              role="img"
+              aria-label={`Product preview: ${gh.c.toFixed(1)} c`}
+            />
+          );
+        })
+      : null;
   const svgStyle: CSSProperties | undefined =
     pxPerUnit !== undefined ? { width: Number(places.view.split(' ')[2]) * pxPerUnit } : undefined;
   return (
@@ -475,9 +496,16 @@ export function PitchRing({
         </g>
       )}
       {overlay && ghostMarks}
+      {productMarks}
     </svg>
   );
 }
+
+/**
+ * The main ring, memoized: a hover inside the Relative picker changes only the ring panel's own state (its props here stay the
+ * same), so the ring behind the picker is not redrawn on every pointer move. A lab change still redraws it (it reads the lab).
+ */
+const MainPitchRing = memo(PitchRing);
 
 /** The ring with its header: caption, the view toggle (Chromatic | Fifths) centered over the ring, and the ring menu. */
 export function RingPanel() {
@@ -486,25 +514,40 @@ export function RingPanel() {
   const { ringView: view, ringSteps: steps, ringGen } = state.ui;
   const genOk = parseInterval(ringGen) !== null;
   const [devOptions] = useLabDeveloperOptions();
-  // Relative pitches (M8b): with this generator a small toggle turns the ring's note clicks into the modal. A click SELECTS the
-  // note (it becomes the source) and opens the modal; it no longer toggles the subset in this mode. The modal is kept by the
-  // source note's pitch (adding a note moves field indices); `hover` is the half the pointer is on.
+  // Relative pitches (M8b, M8e): with this generator (Chromatic view) Shift+click makes a ring note the source and opens the
+  // modal; a plain click toggles the subset, right-click or Delete removes the note. The modal is kept by the source note's pitch
+  // (adding a note moves field indices); `hover` is the half the pointer is on.
   const isRelative = tab.gen.method === 'relative' && view === 'chromatic';
-  const [relativeOn, setRelativeOn] = useState(true);
   const [menuC, setMenuC] = useState<number | null>(null);
   const [hover, setHover] = useState<RelativeHover | null>(null);
   // the main ring's pixels per unit, measured when the modal opens; how the bands are turned (runtime only)
   const boxRef = useRef<HTMLDivElement>(null);
   const [mainPpu, setMainPpu] = useState(() => mainPxPerUnit(null));
-  const [bandMode, setBandMode] = useState<BandMode>('from');
+  // From note | Fixed is kept in settings.v1 (H-34) so the picker reopens the way it was left
+  const bandMode: BandMode = state.ui.relBands;
+  const setBandMode = useCallback(
+    (m: BandMode) => dispatch({ type: 'ui', patch: { relBands: m } }),
+    [dispatch]
+  );
+  // the last source note (cents), so the header's open button reopens the picker where it was left
+  const lastSourceC = useRef(0);
+  // the header's Near button opens the picker straight on Near; a Shift+click opens it on the rings
+  const [startNear, setStartNear] = useState(false);
+  const openAt = useCallback((c: number | null) => {
+    // the main ring's svg is the box's direct child (the header has its own icons)
+    const svg = Array.from(boxRef.current?.children ?? []).find((el) => el.tagName === 'svg');
+    setMainPpu(mainPxPerUnit(svg ?? null));
+    if (c !== null) {
+      lastSourceC.current = c;
+    }
+    setMenuC(c);
+  }, []);
   const [ringStart, setRingStart] = useState(0);
   const [metaSets, setMetaSets] = useState<MetaSets>(META_SETS_DEFAULTS);
   const [relMode, setRelMode] = useState<RelativeMode>('rings');
   const [monzoView, setMonzoView] = useState<MonzoView>('strips');
   const menuIdx =
-    isRelative && relativeOn && menuC !== null
-      ? base.field.findIndex((n) => Math.abs(n.c - menuC) < 1e-6)
-      : -1;
+    isRelative && menuC !== null ? base.field.findIndex((n) => Math.abs(n.c - menuC) < 1e-6) : -1;
   const menuOpen = menuIdx >= 0;
   const closeMenu = useCallback(() => {
     setMenuC(null);
@@ -553,28 +596,68 @@ export function RingPanel() {
   const relativeDots = useCallback(
     (i: number): RingDotExtra => {
       const open = () => {
-        // the main ring's svg is the box's direct child (the header has its own icons)
-        const svg = Array.from(boxRef.current?.children ?? []).find((el) => el.tagName === 'svg');
-        setMainPpu(mainPxPerUnit(svg ?? null));
-        setMenuC(base.field[i]?.c ?? null);
+        setStartNear(false);
+        openAt(base.field[i]?.c ?? null);
       };
+      const isRef = Math.abs(base.field[i]?.c ?? 0) < 1e-6;
+      const remove = () => {
+        if (!isRef) {
+          dispatch({ type: 'relative/remove', index: i });
+        }
+      };
+      // the main ring's own handlers (plain click toggles the subset, Alt+click pins); Shift opens the popup, right-click removes
+      const own = noteHandlers(lab, i);
       return {
         onMouseEnter: () => lab.setHover(i),
         onMouseLeave: () => lab.setHover(null),
         onFocus: () => lab.setHover(i),
         onBlur: () => lab.setHover(null),
-        onClick: open,
-        onKeyDown: (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+        // Shift+mousedown would extend the page's text selection over the ratio labels
+        onMouseDown: (e) => {
+          if (e.shiftKey) {
             e.preventDefault();
-            open();
           }
         },
-        'aria-pressed': undefined,
+        onClick: (e) => (e.shiftKey ? open() : own.onClick(e)),
+        onContextMenu: (e) => {
+          e.preventDefault();
+          remove();
+        },
+        onKeyDown: (e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && e.shiftKey) {
+            e.preventDefault();
+            open();
+          } else if (e.key === 'Delete') {
+            e.preventDefault();
+            remove();
+          } else {
+            own.onKeyDown(e);
+          }
+        },
       };
     },
-    [lab, base.field]
+    [lab, base.field, dispatch, openAt]
   );
+  // the generator column's Rings | Near | Monzo buttons (`relative/open`): open the picker in that view (Near = the meta ring on
+  // 1/1, as the picker's own Near button) on the last source note if it is still in the field, else 1/1. The picker works in the
+  // Chromatic view only, so a request from the Fifths view switches the ring to Chromatic. A request made before this panel
+  // mounted is ignored (`seenOpen` starts at its count).
+  const openReq = state.relative.open ?? null;
+  const seenOpen = useRef(openReq?.n ?? 0);
+  useEffect(() => {
+    if (!openReq || openReq.n === seenOpen.current) {
+      return;
+    }
+    seenOpen.current = openReq.n;
+    if (view !== 'chromatic') {
+      dispatch({ type: 'ui', patch: { ringView: 'chromatic' } });
+    }
+    setRelMode(openReq.view === 'monzo' ? 'monzo' : 'rings');
+    setStartNear(openReq.view === 'near');
+    const c = lastSourceC.current;
+    openAt(base.field.some((n) => Math.abs(n.c - c) < 1e-6) ? c : 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- acts once per request (its count), with the field and view of that moment
+  }, [openReq?.n]);
   const landing = from && hover ? landingPitch(from, hover.ratio.note, hover.dir, base.rep) : null;
   const line =
     menuOpen && state.relative.message
@@ -608,18 +691,6 @@ export function RingPanel() {
           />
         </Tip>
         <span className={`${classes.ringHeadEnd} ${classes.inline}`}>
-          {tab.gen.method === 'relative' && (
-            <Tip k="relativeMenu" as="control">
-              <Button
-                size="compact-xs"
-                variant={relativeOn ? 'filled' : 'default'}
-                aria-pressed={relativeOn}
-                onClick={() => setRelativeOn((on) => !on)}
-              >
-                Relative
-              </Button>
-            </Tip>
-          )}
           <Tip k="ringMenu" as="control">
             <Popover position="bottom-end" width={220} transitionProps={{ duration: 0 }}>
               <Popover.Target>
@@ -655,11 +726,7 @@ export function RingPanel() {
           </Tip>
         </span>
       </div>
-      <PitchRing
-        view={view}
-        steps={steps}
-        dotProps={isRelative && relativeOn ? relativeDots : undefined}
-      />
+      <MainPitchRing view={view} steps={steps} dotProps={isRelative ? relativeDots : undefined} />
       {menuOpen && from && (
         <RelativeModal
           opened
@@ -682,6 +749,12 @@ export function RingPanel() {
           }}
           // the note goes and the modal closes on its own (its note is gone); 1/1 never reaches here (its modal has no Remove button, and the state refuses it with KEEP_UNISON)
           onRemove={() => dispatch({ type: 'relative/remove', index: menuIdx })}
+          startNear={startNear}
+          onSource={(i) => {
+            // the same as closing and Shift+clicking that note on the main ring
+            openAt(base.field[i]?.c ?? null);
+            setHover(null);
+          }}
           onClose={closeMenu}
           line={line}
           bandMode={bandMode}

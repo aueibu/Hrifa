@@ -99,15 +99,18 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     expect(summary()).toBe(G);
     const big = screen.getByTestId('big-key-ring');
     expect(big.querySelectorAll('[data-kind="common"]')).toHaveLength(6);
-    expect(big.querySelectorAll('[data-kind="added"]')).toHaveLength(1);
-    expect(big.querySelectorAll('[data-kind="dropped"]')).toHaveLength(1);
+    // M8m: added and dropped notes are change ticks (the note group also carries its kind)
+    expect(big.querySelectorAll('[data-testid="change-tick"][data-kind="added"]')).toHaveLength(1);
+    expect(big.querySelectorAll('[data-testid="change-tick"][data-kind="dropped"]')).toHaveLength(
+      1
+    );
     // common notes are plain filled dots: no glyph and no strike
     expect(big.querySelector('[data-kind="common"]')!.querySelector('path')).toBeNull();
     fireEvent.mouseLeave(ringBtn(7));
     expect(summary()).toBe(SAME);
   });
 
-  it('draws missing degrees as dashed circles and the four groups with different shapes', () => {
+  it('draws missing degrees as dashed ticks and the four groups with different shapes', () => {
     render(<HarmonicFieldLabPage />);
     // the example field: two notes selected, the 9/8 key has one note the field lacks
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
@@ -119,12 +122,15 @@ describe('Keys panel: common tones and the big view (12-EDO C major)', () => {
     });
     fireEvent.mouseEnter(r);
     const big = screen.getByTestId('big-key-ring');
-    expect(big.querySelectorAll('circle[data-kind="missing"]')).toHaveLength(1);
+    const tick = (k: string) =>
+      big.querySelectorAll(`[data-testid="change-tick"][data-kind="${k}"]`);
+    expect(tick('missing')).toHaveLength(1);
     expect(screen.getByTestId('key-summary')).toHaveTextContent(/0 common .* 1 missing/);
-    // shapes: a plus glyph is only on the added dot, a strike only on the dropped dot
-    const kinds = (k: string) => big.querySelector(`[data-kind="${k}"]`);
-    expect(kinds('added')?.querySelector('path[class*="bigKeyGlyph"]')).not.toBeNull();
-    expect(kinds('dropped')?.querySelector('path[class*="bigKeyStrike"]')).not.toBeNull();
+    // shapes (M8m): added = tick + cross bar (a plus), dropped = a single line, missing = line + an o
+    expect(tick('added')[0].querySelectorAll('line')).toHaveLength(2);
+    expect(tick('dropped')[0].querySelectorAll('line')).toHaveLength(1);
+    expect(tick('dropped')[0].querySelector('circle')).toBeNull();
+    expect(tick('missing')[0].querySelector('circle')).not.toBeNull();
   });
 
   it('click = Switch: the key becomes the subset and stays shown', async () => {

@@ -10,6 +10,7 @@ import {
 } from '@mantine/core';
 import { SCALE_LIBRARY, melakarta } from '../../../lib/harmonic-field';
 import { PICK_ED, PICK_ODD, resolveScale } from '../state/labState';
+import { ProductButton } from './ProductDialog';
 import { Hint, Num, Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
@@ -73,6 +74,7 @@ export function SubsetRow() {
             </Button>
           </Tip>
         </div>
+        <ProductButton />
         <Tip k="mode" as="control">
           <span className={classes.modeStep}>
             <ActionIcon

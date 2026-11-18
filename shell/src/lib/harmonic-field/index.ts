@@ -29,4 +29,6 @@ export * from './genus';
 export * from './chordLibrary';
 export * from './libraryRing';
 export * from './nearRatios';
+export * from './sternBrocot';
 export * from './relativePitches';
+export * from './subsetProduct';

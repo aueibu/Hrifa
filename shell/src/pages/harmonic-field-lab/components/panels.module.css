@@ -1288,6 +1288,11 @@
   stroke-width: 1.5;
 }
 
+/* an invisible hover / Alt+click target at the ring point of a note drawn as a pin */
+.bigKeyHit {
+  fill: transparent;
+}
+
 /* would be added: hollow with a plus */
 .bigKeyAdded {
   fill: var(--panel-inset);
@@ -1615,26 +1620,49 @@
 }
 
 .drawing {
-  height: 1.75rem;
+  height: 4.5rem;
   overflow: visible; /* the root chevron sits just outside the viewBox */
-  width: 1.75rem;
+  width: 4.5rem;
 }
 
+/* stroke widths are divided by --drawing-k (the drawing's size over the card ring's 4.5rem, the composite ring's size; the widths are the old 2rem card's line widths, 0.06 and 0.08 / 2.25): a ring drawn larger keeps the
+   card's line widths and only its geometry and dot radii grow, as on the main and library rings */
+/* the Composites panel card ring's outline: --grid, 1.125 px at 4.5rem (1 / 32 of a unit) */
 .drawingRing {
   fill: none;
-  stroke: var(--control-border);
-  stroke-width: 0.06;
+  stroke: var(--grid);
+  stroke-width: calc(1 / 32 / var(--drawing-k, 1));
 }
 
 .drawingShape {
   fill: var(--mark-blue);
   fill-opacity: 0.2;
   stroke: var(--mark-blue);
-  stroke-width: 0.08;
+  stroke-width: calc(0.0356 / var(--drawing-k, 1));
 }
 
 .drawingDot {
   fill: var(--mark-blue);
+}
+
+/* a source note left out of the product: dimmed solid (UI-CONVENTIONS 5) */
+.drawingDot[data-off] {
+  opacity: 0.35;
+}
+
+/* a toggling dot: a transparent stroke widens the hit area; no browser outline (it painted badly on SVG), focus is a ring */
+.drawingBtn {
+  cursor: pointer;
+  outline: none;
+  paint-order: stroke;
+  pointer-events: all;
+  stroke: transparent;
+  stroke-width: 0.12;
+}
+
+.drawingBtn:focus-visible {
+  stroke: var(--focus-ring);
+  stroke-width: calc(0.04 / var(--drawing-k, 1));
 }
 
 /* ----------------------------------------------------------------------------------------------- composites (M8c) */
@@ -1941,10 +1969,11 @@
    A SHELF card (data-static) never goes wide: name, description, subtitle, pitches, steps stay one per row at every width.
    Tune: --chord-card-h, --chord-card-ring, --chord-card-title-w, --chord-card-stat-w (pitches take the rest). */
 .chipWrap {
-  --chord-card-h-narrow: 4.75rem;
-  --chord-card-ring-narrow: 3rem;
-  --chord-card-h: 2.75rem;
-  --chord-card-ring: 2rem;
+  /* heights leave room for the root chevron, which sits just outside the 4.5rem ring (about 0.35rem) */
+  --chord-card-h-narrow: 5.25rem;
+  --chord-card-ring-narrow: 4.5rem;
+  --chord-card-h: 5.25rem;
+  --chord-card-ring: 4.5rem;
   --chord-card-title-w: 8.5rem;
   --chord-card-stat-w: 4.5rem;
 
@@ -1999,6 +2028,8 @@
 }
 
 .cardRing {
+  /* centered in the card's height, so the chevron has the same room above and below */
+  align-self: center;
   display: flex;
   grid-area: ring;
   height: var(--chord-card-ring-narrow);

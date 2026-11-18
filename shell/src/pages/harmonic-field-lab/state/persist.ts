@@ -249,6 +249,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     chordSortReverse: bool(raw.chordSortReverse, d.chordSortReverse),
     // optional (Scala-tools M1): the Pairs panel Color control; absent or damaged = Off; no write on mount
     pairsColor: oneOf(raw.pairsColor, PAIRS_COLORS, d.pairsColor),
+    // optional (Scala-tools M8e, H-34): the Relative picker's From note | Fixed bands; absent or damaged = From note; no write on mount
+    relBands: oneOf(raw.relBands, ['from', 'fixed'] as const, d.relBands),
     // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount
     pairsAdded: sanitizeAdded(raw.pairsAdded),
     // optional (Scala-tools M7c, H-30): the chord library's filters, checked rows (at most 40), open shapes and comparison; each falls back to its default; no write on mount

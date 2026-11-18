@@ -22,12 +22,22 @@ import labClasses from './lab.module.css';
 import classes from './panels.module.css';
 
 /**
- * Root chevron on the small ring, in viewBox units (ring radius 0.8, dot edge 0.93; 1 unit is 24 px at the 3rem ring,
- * 16 px at 2rem). Tune here: tip radius, arm length (the chevron path is 6 long, so the scale is length / 6) and stroke.
+ * The small ring's geometry (viewBox -1..1; 1 unit is 36 px at the 4.5rem card ring). The reference is the Composites panel's
+ * card ring (CompositeRing at 4.5rem, human 2026-11-18: "use that composite panel ring as basis for the other cards ... make
+ * that the component default"): ring radius 27 px = 0.75, plain dot radius 2.9 px (2.6 of its 64-unit box at 72 px) = 0.08125.
+ * The outline stroke (1.125 px) is in panels.module.css `.drawingRing`.
  */
-const ROOT_TIP = 0.97;
+export const DRAWING_R = 0.75;
+export const DRAWING_DOT_R = (2.6 * 72) / 64 / 36;
+
+/**
+ * Root chevron on the small ring, in viewBox units: the tip sits just outside the dot edge (DRAWING_R + DRAWING_DOT_R).
+ * Tune here: tip radius, arm length (the chevron path is 6 long, so the scale is length / 6) and stroke.
+ */
+const ROOT_TIP = DRAWING_R + DRAWING_DOT_R + 0.04;
 const ROOT_ARM = 0.17;
-const ROOT_STROKE = 0.055;
+// the card ring is 4.5rem (was 2rem): the chevron stroke keeps its old on-screen width (0.055 / 2.25)
+const ROOT_STROKE = 0.0244;
 const ROOT_SCALE = ROOT_ARM / 6;
 
 /** The shelf card's icon buttons (px): two rows of them sit at the right, so they are a little smaller than `sm` (22) to keep the card as tall as before. */
@@ -38,34 +48,79 @@ export function ChordDrawing({
   cents,
   repC,
   rootCents,
+  off,
+  onToggle,
+  className,
+  dotR = DRAWING_DOT_R,
 }: {
   cents: readonly number[];
   repC: number;
   /** The chord's root (cents): marked with the mode-root chevron just outside its dot; none when omitted. */
   rootCents?: number;
+  /** Indexes (into `cents`) drawn as left out: a dimmed solid dot, not in the shape (UI-CONVENTIONS 5). */
+  off?: ReadonlySet<number>;
+  /** When given, each dot is a button that calls this with its index (the product panel's Sources ring). */
+  onToggle?: (i: number) => void;
+  /** Replaces the card's tiny size (the product panel draws the same ring larger). */
+  className?: string;
+  /** The dot radius in drawing units (default DRAWING_DOT_R, the composite card ring's dot); a larger drawing passes its own. */
+  dotR?: number;
 }) {
   const R = repC > 0 ? repC : 1200;
-  const pts = cents.map((c) => {
+  const pts = cents.map((c, i) => {
     const a = (2 * Math.PI * (((c % R) + R) % R)) / R;
-    return { x: Math.sin(a) * 0.8, y: -Math.cos(a) * 0.8 };
+    return { i, x: Math.sin(a) * DRAWING_R, y: -Math.cos(a) * DRAWING_R };
   });
   const rootAngle =
     rootCents === undefined || !cents.length
       ? null
       : (2 * Math.PI * (((rootCents % R) + R) % R)) / R;
   const uniq = pts.filter((p, i) => pts.findIndex((q) => q.x === p.x && q.y === p.y) === i);
+  const lit = uniq.filter((p) => !off?.has(p.i));
   return (
-    <svg className={classes.drawing} viewBox="-1 -1 2 2" aria-hidden="true">
-      <circle className={classes.drawingRing} r={0.8} />
-      {uniq.length > 1 && (
+    <svg className={className ?? classes.drawing} viewBox="-1 -1 2 2" aria-hidden={!onToggle}>
+      <circle className={classes.drawingRing} r={DRAWING_R} />
+      {lit.length > 1 && (
         <polygon
           className={classes.drawingShape}
-          points={uniq.map((p) => `${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ')}
+          points={lit.map((p) => `${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ')}
         />
       )}
-      {uniq.map((p, i) => (
-        <circle key={i} className={classes.drawingDot} cx={p.x} cy={p.y} r={0.13} />
-      ))}
+      {uniq.map((p) => {
+        const isOff = off?.has(p.i) ?? false;
+        // a toggling dot is the button itself (no wrapper group, no extra hit circle); `.drawingBtn` widens its hit area with a
+        // transparent stroke and draws focus as a ring on the dot
+        return onToggle ? (
+          <circle
+            key={p.i}
+            className={`${classes.drawingDot} ${classes.drawingBtn}`}
+            data-off={isOff || undefined}
+            cx={p.x}
+            cy={p.y}
+            r={dotR}
+            role="button"
+            tabIndex={0}
+            aria-pressed={!isOff}
+            aria-label={`Source note ${p.i + 1}`}
+            onClick={() => onToggle(p.i)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onToggle(p.i);
+              }
+            }}
+          />
+        ) : (
+          <circle
+            key={p.i}
+            className={classes.drawingDot}
+            data-off={isOff || undefined}
+            cx={p.x}
+            cy={p.y}
+            r={dotR}
+          />
+        );
+      })}
       {rootAngle !== null && (
         <ModeChevron
           x={Math.sin(rootAngle) * ROOT_TIP}

@@ -1,0 +1,109 @@
+/* The Product module (M8g): its own workspace grid area, as wide as the tuner strip. A Strip header over an inset body, like the
+   Saved subsets module (.savedList: --panel-inset, square top, rounded bottom). */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.body {
+  align-items: start;
+  background: var(--panel-inset);
+  border-radius: 0 0 var(--radius-control) var(--radius-control);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem;
+}
+
+/* Sources and Shape: caption, picker, ring (and All | None | Invert under the Sources ring) */
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 13.5rem;
+}
+
+/* the chord-card ring (ChordDrawing) drawn 3x larger; strokes divided back to the card's width, dots set by PRODUCT_DOT_R */
+.ring {
+  /* 3x the card ring (human, M8g look 8: "3 times the size of the composite / shelf / chord card rings. stroke stays the same.
+     dots are scaled by 2"): 13.5rem / 4.5rem; the strokes are divided by this, so they keep the card's width. The dots get
+     PRODUCT_DOT_R in ProductDialog.tsx (1.5x the card dot on screen). */
+  --drawing-k: 3;
+
+  align-self: center;
+  height: 13.5rem;
+  margin: 0.25rem 0;
+  overflow: visible;
+  width: 13.5rem;
+}
+
+/* the x and = between the rings: the same caption / picker / ring stack as a column, the first two invisible, so the glyph sits
+   level with the ring centers */
+.op {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.opGhost {
+  visibility: hidden;
+}
+
+/* the picker row's height (a Mantine xs input) kept empty so the three rings line up */
+.opPicker {
+  height: 1.875rem;
+}
+
+.opRing {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: var(--lab-fs-display);
+  height: 13.5rem;
+  justify-content: center;
+  margin: 0.25rem 0;
+}
+
+/* Result ring: a pitch already in the field is a plain dot ON the ring line (px radius set in ProductDialog.tsx, px stroke kept by
+   non-scaling-stroke); new and merged ones are pins (pinMarks.module.css) */
+.resultOriginal {
+  fill: var(--text-subtle);
+  stroke: var(--panel-inset);
+  stroke-width: 1.6875px;
+  vector-effect: non-scaling-stroke;
+}
+
+.controls {
+  display: flex;
+  flex: 1 1 12rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 12rem;
+}
+
+.field {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.addRow {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* fixed slot: the count never moves what is beside it (UI-CONVENTIONS 1) */
+.line {
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.3em;
+}
+
+/* the refusal sits in a reserved two-line slot */
+.msg {
+  display: block;
+  min-height: 2.6em;
+}

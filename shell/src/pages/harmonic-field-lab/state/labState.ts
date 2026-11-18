@@ -10,8 +10,13 @@ import {
   EPS,
   addLibraryEntries,
   addedPitchError,
+  RELATIVE_MAX_NOTES,
+  addProductNotes,
   addRelativeNote,
   clampExp,
+  productTooMany,
+  readNoteText,
+  reduceInto,
   removeRelativePitch,
   zeroMonzo,
   type MonzoExps,
@@ -241,6 +246,8 @@ export interface UiSettings {
   chordSortReverse: boolean;
   /** The Pairs panel Color control (M1, Scala-tools arc): Off (default), Error or Interval. Optional in storage. */
   pairsColor: PairsColor;
+  /** Relative picker (M8e, H-34): how the bands are turned, From note (start at the source note's angle) or Fixed (unison at noon). Optional in storage. */
+  relBands: 'from' | 'fixed';
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
   pairsAdded: string[];
   /** The chord library dialog's search text and filters, Checked only included (M7c, H-30); kept when the dialog closes and across reloads. Optional in storage. */
@@ -276,7 +283,12 @@ export interface KeysRuntime {
 export interface RelativeRuntime {
   monzo: MonzoExps;
   message: string | null;
+  /** M8e: a request from the generator column's Rings | Near | Monzo buttons to open the picker in that view (the ring panel acts on it; `n` makes each press new). */
+  open?: { view: RelativeOpenView; n: number } | null;
+  /** M8g: the Product dialog's preview, the products not yet in the field (cents), drawn as ghost marks on the main ring while the dialog is open. */
+  productGhosts?: readonly number[] | null;
 }
+export type RelativeOpenView = 'rings' | 'near' | 'monzo';
 
 export interface Notice {
   kind: 'update' | 'copy';
@@ -389,6 +401,7 @@ export function defaultUi(): UiSettings {
     chordSort: 'default',
     chordSortReverse: false,
     pairsColor: 'off',
+    relBands: 'from',
     pairsAdded: [],
     libFilters: defaultLibFilters(),
     libChecked: [],
@@ -691,6 +704,17 @@ export type Action =
   | { type: 'relative/monzoReset' }
   /** Clear the quiet line. */
   | { type: 'relative/dismiss' }
+  | { type: 'relative/open'; view: RelativeOpenView }
+  /** M8g: the Product dialog's ghost preview (cents of the products not in the field; null clears it). Runtime only. */
+  | { type: 'product/preview'; cents: readonly number[] | null }
+  /**
+   * M8g: a subset product as a field. `pitches` are the distinct products as pitch text. `product/tab` opens a NEW Relative tab
+   * (1/1 and the products) from any method and activates it; `product/replace` makes the active tab's field 1/1 and the products (a
+   * non-Relative tab becomes Relative). Either way the subset becomes exactly the products. Over the 256-note limit, at the tab cap or
+   * with inputs that do not build: nothing changes (a line in `relative.message`).
+   */
+  | { type: 'product/tab'; pitches: readonly string[] }
+  | { type: 'product/replace'; pitches: readonly string[] }
   | { type: 'sel/toggle'; i: number; keepRoot?: boolean }
   | { type: 'sel/all' }
   | { type: 'sel/none' }
@@ -958,6 +982,64 @@ function openComposite(
   });
 }
 
+/** The tab with its subset set to the field notes at these pitch texts (mode 0); unchanged when none is found. */
+function selectPitchTexts(tab: Tab, pitches: readonly string[]): Tab {
+  const rep = tab.rep.c;
+  const places = pitches.flatMap((t) => {
+    const n = readNoteText(t);
+    return n ? [reduceInto(n, tab.rep).c] : [];
+  });
+  const near = (a: number, b: number) => {
+    const d = Math.abs(a - b) % rep;
+    return Math.min(d, rep - d) < 1e-4;
+  };
+  const sel = tab.field.flatMap((n, i) => (places.some((p) => near(n.c, p)) ? [i] : []));
+  return sel.length ? { ...tab, sel, mode: 0 } : tab;
+}
+
+/**
+ * M8g: a subset product as a field. `new` opens a new Relative tab (1/1 and the products) from any method, as the active tab;
+ * `replace` makes the active tab's field 1/1 and the products (a Relative tab keeps its method, any other becomes Relative; the
+ * saved generator it was linked to is untouched, the tab is just no longer exactly that preset). The subset becomes exactly the
+ * products. Over the limit, at the tab cap or with inputs that do not build: nothing changes and `relative.message` says why.
+ */
+function applyProduct(s: LabState, pitches: readonly string[], how: 'new' | 'replace'): LabState {
+  const t = activeTab(s);
+  const refuse = (message: string): LabState => ({ ...s, relative: { ...s.relative, message } });
+  const notes = addProductNotes(['1/1'], pitches, t.rep);
+  if (notes.length > RELATIVE_MAX_NOTES) {
+    return refuse(productTooMany(notes.length));
+  }
+  if (how === 'replace') {
+    const out = editTab(s, (x) =>
+      selectPitchTexts(
+        regenTab({ ...x, mode: 0 }, { ...x.gen, method: 'relative', preset: '', notes }, true),
+        pitches
+      )
+    );
+    const now = activeTab(out);
+    if (now.err && now.field === t.field) {
+      return refuse(`The product does not build a field: ${now.err}.`);
+    }
+    return { ...out, relative: { ...out.relative, message: null } };
+  }
+  if (s.tabs.length >= MAX_TABS) {
+    return refuse(`There are already ${MAX_TABS} tabs; close one first.`);
+  }
+  const gen: GenSpec = { ...defaultGen(), method: 'relative', rep: t.gen.rep, notes };
+  const made = makeTab(`t${s.nextTab}`, gen);
+  if (!made.field.length) {
+    return refuse(`The product does not build a field: ${made.err || 'no notes'}.`);
+  }
+  return clearPointers({
+    ...s,
+    tabs: [...s.tabs, selectPitchTexts(made, pitches)],
+    active: s.tabs.length,
+    nextTab: s.nextTab + 1,
+    relative: { ...s.relative, message: null },
+  });
+}
+
 /** A tab linked to `to` (no link when null). */
 function withLink(t: Tab, to: OwnerKey | null): Tab {
   const { link, ...rest } = t;
@@ -978,6 +1060,8 @@ const endsNotice = (type: Action['type']) =>
   (type.startsWith('gen/') && type !== 'gen/keepNew') ||
   type === 'relative/add' ||
   type === 'relative/remove' ||
+  type === 'product/tab' ||
+  type === 'product/replace' ||
   type === 'preset/open' ||
   type === 'lib/sync' ||
   (type.startsWith('tab/') && type !== 'tab/link') ||
@@ -1197,6 +1281,25 @@ function reduce(s: LabState, a: Action): LabState {
       return { ...s, relative: { ...s.relative, monzo: zeroMonzo() } };
     case 'relative/dismiss':
       return s.relative.message === null ? s : { ...s, relative: { ...s.relative, message: null } };
+    case 'relative/open':
+      return {
+        ...s,
+        relative: { ...s.relative, open: { view: a.view, n: (s.relative.open?.n ?? 0) + 1 } },
+      };
+    case 'product/preview': {
+      const cur = s.relative.productGhosts ?? null;
+      const same =
+        cur === a.cents ||
+        (cur !== null &&
+          a.cents !== null &&
+          cur.length === a.cents.length &&
+          cur.every((c, i) => c === a.cents![i]));
+      return same ? s : { ...s, relative: { ...s.relative, productGhosts: a.cents } };
+    }
+    case 'product/tab':
+      return applyProduct(s, a.pitches, 'new');
+    case 'product/replace':
+      return applyProduct(s, a.pitches, 'replace');
     case 'sel/toggle':
       return withTab(s, (t) => {
         if (a.i < 0 || a.i >= t.field.length) {

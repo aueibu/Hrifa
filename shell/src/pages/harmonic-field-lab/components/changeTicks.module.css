@@ -1,0 +1,36 @@
+/* Change ticks (ChangeTicks.tsx): the kind sets the color (theme marks, as the Keys marks). Strokes are fixed px (non-scaling). */
+.tick {
+  --pin: var(--mark-green);
+}
+
+.tick[data-kind='merged'] {
+  --pin: var(--mark-blue);
+}
+
+.tick[data-kind='dropped'] {
+  --pin: var(--mark-red);
+}
+
+.tick[data-kind='missing'] {
+  --pin: var(--mark-orange);
+}
+
+.line {
+  stroke: var(--pin);
+  stroke-linecap: butt;
+  stroke-width: 1.6875px;
+  vector-effect: non-scaling-stroke;
+}
+
+/* missing: a dashed inward tick */
+.tick[data-kind='missing'] .line {
+  stroke-dasharray: 3px 2px;
+}
+
+/* missing: the small open circle at the inner end (solid, not dashed) */
+.o {
+  fill: none;
+  stroke: var(--pin);
+  stroke-width: 1.6875px;
+  vector-effect: non-scaling-stroke;
+}

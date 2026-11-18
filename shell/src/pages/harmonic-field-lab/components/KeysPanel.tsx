@@ -19,11 +19,14 @@ import {
 } from '../state/keysModes';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import { SVG_FS_LABEL } from '../state/typeScale';
+import { ChangeTicks, type TickSpec } from './ChangeTicks';
 import { RING_GAP, RingChevron } from './ModeRoot';
 import { useSendHover } from './Send';
 import { Hint, Num, Strip, Tip, useLab } from './ui';
 import classes from './panels.module.css';
 
+/** The big ring's width on screen, px (22rem, `.bigKeySvg`), for the ticks' px-to-units factor. */
+const BIG_PX = 352;
 const BIG = 260;
 const BC = BIG / 2;
 const BR = 92;
@@ -67,16 +70,32 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
   );
   const places = new Map(order.map((i, j) => [i, placed[j]]));
   // fit the drawing to the ring, the chevron and the labels actually placed (no room kept for unused lanes)
-  const view = fitView(BC, BC, BR + 14, [...obstacles, ...placed.map((p) => p.box)]);
+  const baseBoxes = [...obstacles, ...placed.map((p) => p.box)];
+  const base = fitView(BC, BC, BR + 14, baseBoxes)
+    .split(' ')
+    .map(Number);
+  // change ticks (M8m): the field's added and dropped notes and the key's missing degrees. `pk` is units per px at the svg's width (22rem across the view)
+  const pk = base[2] / BIG_PX;
+  const tickList: TickSpec[] = [
+    ...field.flatMap((n, i): TickSpec[] =>
+      added.has(i) || dropped.has(i)
+        ? [{ angle: (n.c / repC) * 2 * Math.PI, kind: added.has(i) ? 'added' : 'dropped' }]
+        : []
+    ),
+    ...k.moved.flatMap((m): TickSpec[] =>
+      m.found ? [] : [{ angle: (m.c / repC) * 2 * Math.PI, kind: 'missing' }]
+    ),
+  ];
   return (
     <svg
-      viewBox={view}
+      viewBox={base.join(' ')}
       className={classes.bigKeySvg}
       role="group"
       aria-label={label}
       data-testid="big-key-ring"
     >
       <circle className={classes.bigKeyCircle} cx={BC} cy={BC} r={BR} />
+      <ChangeTicks ticks={tickList} R={BR} k={pk} center={{ x: BC, y: BC }} />
       {field.map((n, i) => {
         const p = at(n.c);
         const kind = common.has(i)
@@ -116,20 +135,9 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
             {kind === 'common' && (
               <circle className={classes.bigKeyCommon} cx={p.x} cy={p.y} r={6} />
             )}
-            {kind === 'added' && (
-              <>
-                <circle className={classes.bigKeyAdded} cx={p.x} cy={p.y} r={6.5} />
-                <path
-                  className={classes.bigKeyGlyph}
-                  d={`M${p.x - 3} ${p.y}h6M${p.x} ${p.y - 3}v6`}
-                />
-              </>
-            )}
-            {kind === 'dropped' && (
-              <>
-                <circle className={classes.bigKeyDropped} cx={p.x} cy={p.y} r={6.5} />
-                <path className={classes.bigKeyStrike} d={`M${p.x - 9} ${p.y}h18`} />
-              </>
+            {/* added / dropped notes are ticks (drawn above, before the labels); this invisible disc keeps the note's hover and Alt+click target on the ring */}
+            {(kind === 'added' || kind === 'dropped') && (
+              <circle className={classes.bigKeyHit} cx={p.x} cy={p.y} r={8} />
             )}
             {label.leader && (
               <line
@@ -150,22 +158,6 @@ function BigKeyRing({ k, diff, label }: { k: KeyRingData; diff: KeyDiff; label: 
               {ratios[i]}
             </text>
           </g>
-        );
-      })}
-      {k.moved.map((m, d) => {
-        if (m.found) {
-          return null;
-        }
-        const p = at(m.c);
-        return (
-          <circle
-            key={`miss${d}`}
-            className={classes.bigKeyMissing}
-            data-kind="missing"
-            cx={p.x}
-            cy={p.y}
-            r={6.5}
-          />
         );
       })}
     </svg>
@@ -389,21 +381,37 @@ export function KeysPanel() {
                 </span>{' '}
                 <span className={classes.legendItem}>
                   <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
-                    <circle className={classes.bigKeyAdded} cx="7" cy="7" r="5" />
-                    <path className={classes.bigKeyGlyph} d="M4 7h6M7 4v6" />
+                    <line className={classes.bigKeyCircle} x1="0" y1="7" x2="14" y2="7" />
+                    <ChangeTicks
+                      ticks={[{ angle: 0, kind: 'added' }]}
+                      R={0}
+                      k={1}
+                      center={{ x: 7, y: 7 }}
+                    />
                   </svg>
-                  +added
+                  added
                 </span>{' '}
                 <span className={classes.legendItem}>
                   <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
-                    <circle className={classes.bigKeyDropped} cx="7" cy="7" r="5" />
-                    <path className={classes.bigKeyStrike} d="M1 7h12" />
+                    <line className={classes.bigKeyCircle} x1="0" y1="7" x2="14" y2="7" />
+                    <ChangeTicks
+                      ticks={[{ angle: 0, kind: 'dropped' }]}
+                      R={0}
+                      k={1}
+                      center={{ x: 7, y: 7 }}
+                    />
                   </svg>
-                  &minus;dropped
+                  dropped
                 </span>{' '}
                 <span className={classes.legendItem}>
                   <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
-                    <circle className={classes.bigKeyMissing} cx="7" cy="7" r="5" />
+                    <line className={classes.bigKeyCircle} x1="0" y1="7" x2="14" y2="7" />
+                    <ChangeTicks
+                      ticks={[{ angle: 0, kind: 'missing' }]}
+                      R={0}
+                      k={1}
+                      center={{ x: 7, y: 7 }}
+                    />
                   </svg>
                   missing
                 </span>

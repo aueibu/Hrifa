@@ -6,9 +6,12 @@
  * (the classes are the Keys panel's).
  */
 import type { Note } from '../../../lib/harmonic-field';
+import { ChangeTicks, type TickSpec } from './ChangeTicks';
 import { RingChevron } from './ModeRoot';
 import classes from './panels.module.css';
 
+/** The big drawing's width on screen, px (5rem, `.compRingBig`). */
+const BIG_PX = 80;
 const S = 64;
 const C = S / 2;
 const R = 24;
@@ -48,6 +51,17 @@ export function CompositeRing({
     return { x: C + r * Math.cos(a), y: C + r * Math.sin(a) };
   };
   const preview = added.length + common.length + dropped.length > 0;
+  // the large drawing (the send popup): added and dropped marks are change ticks (M8m)
+  const pinned = big;
+  const tickList: TickSpec[] = pinned
+    ? [
+        ...added.map((c): TickSpec => ({ angle: (c / turn) * 2 * Math.PI, kind: 'added' })),
+        ...dropped.map((c): TickSpec => ({ angle: (c / turn) * 2 * Math.PI, kind: 'dropped' })),
+      ]
+    : [];
+  // `.compRingBig` is 5rem (80 px) across the 64-unit box; the svg is overflow: visible, so a tick past the box is not clipped
+  const pk = S / BIG_PX;
+  const centre = { x: C, y: C };
   return (
     <svg
       className={big ? classes.compRingBig : classes.compRing}
@@ -55,7 +69,7 @@ export function CompositeRing({
       role="img"
       aria-label={label}
       data-testid="composite-ring"
-      overflow={rootC === null ? undefined : 'visible'}
+      overflow={rootC === null && !pinned ? undefined : 'visible'}
     >
       <circle className={classes.keyCircle} cx={C} cy={C} r={R} />
       {notes.map((c, i) => {
@@ -97,27 +111,30 @@ export function CompositeRing({
           />
         );
       })}
-      {added.map((c, i) => {
-        const p = at(c);
-        return (
-          <g key={`a${i}`} data-kind="added">
-            <circle className={classes.bigKeyAdded} cx={p.x} cy={p.y} r={4.5} />
-            <path
-              className={classes.bigKeyGlyph}
-              d={`M${p.x - 2.2} ${p.y}h4.4M${p.x} ${p.y - 2.2}v4.4`}
-            />
-          </g>
-        );
-      })}
-      {dropped.map((c, i) => {
-        const p = at(c);
-        return (
-          <g key={`d${i}`} data-kind="dropped">
-            <circle className={classes.bigKeyDropped} cx={p.x} cy={p.y} r={4.5} />
-            <path className={classes.bigKeyStrike} d={`M${p.x - 6} ${p.y}h12`} />
-          </g>
-        );
-      })}
+      {pinned && <ChangeTicks ticks={tickList} R={R} k={pk} center={centre} />}
+      {!pinned &&
+        added.map((c, i) => {
+          const p = at(c);
+          return (
+            <g key={`a${i}`} data-kind="added">
+              <circle className={classes.bigKeyAdded} cx={p.x} cy={p.y} r={4.5} />
+              <path
+                className={classes.bigKeyGlyph}
+                d={`M${p.x - 2.2} ${p.y}h4.4M${p.x} ${p.y - 2.2}v4.4`}
+              />
+            </g>
+          );
+        })}
+      {!pinned &&
+        dropped.map((c, i) => {
+          const p = at(c);
+          return (
+            <g key={`d${i}`} data-kind="dropped">
+              <circle className={classes.bigKeyDropped} cx={p.x} cy={p.y} r={4.5} />
+              <path className={classes.bigKeyStrike} d={`M${p.x - 6} ${p.y}h12`} />
+            </g>
+          );
+        })}
       {rootC !== null && (
         <RingChevron
           cx={C}

@@ -26,6 +26,7 @@ import {
   nearComplexity,
   nearRatios,
   noteText,
+  sternBrocotBranches,
   parseTypedStep,
   primeRingIndex,
   relativeRingAt,
@@ -47,6 +48,7 @@ import {
 import { PrimeFilterChips } from './PrimeFilterChips';
 import { RING_PX_PER_UNIT, RING_R, RingDot } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
+import { noteHandlers, useLab } from './ui';
 import classes from './relativeMenu.module.css';
 
 /** The inner ring's circle as a multiple of the main ring's circle (the human's floor is 0.9). */
@@ -145,7 +147,7 @@ export interface MetaSettings {
   /** Prime filter (25 slots like the generator's, not linked to it): dots using a prime that is off are dropped. */
   mask: boolean[];
 }
-export type MetaConnect = 'off' | 'order' | 'prime';
+export type MetaConnect = 'off' | 'order' | 'prime' | 'parents';
 export type MetaZero = 'noon' | 'landing';
 export type MetaScale = 'linear' | 'log' | 'even';
 export const META_DEFAULTS: MetaSettings = {
@@ -410,6 +412,10 @@ export interface RelativeModalProps {
   /** A half was clicked (or Enter or Space on it). */
   onPick: (h: RelativeHover) => void;
   onRemove: () => void;
+  /** Shift+click (Shift+Enter) on a field dot of the inner ring: that field note becomes the source. */
+  onSource: (index: number) => void;
+  /** Open straight on Near (the meta ring on 1/1, the Near button's settings): the main ring header's Near button. Read on mount only. */
+  startNear?: boolean;
   onClose: () => void;
   /** The line under the picture: the hover readout, or the reason a click changed nothing. */
   line: string | null;
@@ -444,8 +450,6 @@ export interface RelativeModalProps {
 
 export type BandMode = 'from' | 'fixed';
 export type RelativeMode = 'rings' | 'monzo';
-
-const noDotProps = (): RingDotExtra => ({ 'aria-pressed': undefined, tabIndex: -1 });
 
 /** One meta dot: its ratio, offset from the center, complexity, largest prime, and whether it is the center itself. */
 export interface MetaDot {
@@ -510,8 +514,160 @@ export interface MetaGeometry {
 
 /** Where a dot sits: shared by the memoized layer and the hover highlight so they always agree. */
 export function metaDotPos(g: MetaGeometry, d: { v: number; offsetC: number }) {
-  const r = metaRadius(g, d.v);
+  const r = Math.max(0, metaRadius(g, d.v));
   return polar(g.C, r, g.zero + (g.sign * d.offsetC * g.arc) / g.spanC);
+}
+
+/** A ratio folded into [1, 2) in lowest terms. */
+function foldFrac(n: number, d: number): [number, number] {
+  let a = n;
+  let b = d;
+  while (a >= 2 * b) {
+    b *= 2;
+  }
+  while (a < b) {
+    a *= 2;
+  }
+  const gcd = (x: number, y: number): number => (y === 0 ? x : gcd(y, x % y));
+  const k = gcd(a, b);
+  return [a / k, b / k];
+}
+const oddPart = (v: number): number => {
+  let m = v;
+  while (m % 2 === 0) {
+    m /= 2;
+  }
+  return m;
+};
+const wrap1200 = (x: number): number => ((x % 1200) + 1200) % 1200;
+
+export interface MetaParentLinks {
+  segments: { key: string; x1: number; y1: number; x2: number; y2: number; dashed: boolean }[];
+  ghosts: { key: string; x: number; y: number }[];
+}
+
+/**
+ * Connect: Parents. Every Stern-Brocot edge on the ancestry of the dot `hoverText` (p/q), each end placed exactly as a dot of that
+ * ratio is (folded into one octave, offset from the center `centerC`, `metaDotPos`). An end is inside the window when its offset is
+ * within the span (so within the arc) and its radius within `rMax`. An edge with one end outside is cut where it leaves the arc or
+ * the outer ring; one with both ends outside is dropped. An inside end that is no drawn dot (prime off, over the ceiling, past the
+ * cap, or 1/1 when it is not the center) gets a ghost, and every edge to it is dashed.
+ */
+export function metaParentLinks(
+  g: MetaGeometry,
+  centerC: number,
+  dots: readonly MetaDot[],
+  hoverText: string
+): MetaParentLinks {
+  const [pn, pd] = hoverText.split('/').map(Number);
+  const edges = sternBrocotBranches(pn, pd);
+  const dotTexts = new Set(dots.map((d) => d.ratio.text));
+  const t = wrap1200(centerC);
+  const half = g.spanC / 2;
+  interface PNode {
+    x: number;
+    y: number;
+    inside: boolean;
+    isDot: boolean;
+    key: string;
+  }
+  const nodes = new Map<string, PNode>();
+  const nodeOf = (n: number, d: number): PNode => {
+    const [fn, fd] = foldFrac(n, d);
+    const key = `${fn}/${fd}`;
+    let node = nodes.get(key);
+    if (!node) {
+      const offsetC = wrap1200(1200 * Math.log2(n / d) - t + 600) - 600;
+      const v = nearComplexity(
+        { odd: Math.max(oddPart(fn), oddPart(fd)), tenney: Math.log2(fn * fd) },
+        g.measure
+      );
+      const p = metaDotPos(g, { v, offsetC });
+      const r = Math.hypot(p.x - g.C, p.y - g.C);
+      node = {
+        x: p.x,
+        y: p.y,
+        key,
+        inside: Math.abs(offsetC) <= half + 1e-9 && r <= g.rMax + 0.5,
+        isDot: dotTexts.has(key),
+      };
+      nodes.set(key, node);
+    }
+    return node;
+  };
+  const insideAt = (x: number, y: number): boolean => {
+    const dx = x - g.C;
+    const dy = y - g.C;
+    if (Math.hypot(dx, dy) > g.rMax + 0.5) {
+      return false;
+    }
+    if (g.arc >= 360) {
+      return true;
+    }
+    const ang = (Math.atan2(dx, -dy) * 180) / Math.PI;
+    const delta = ((((ang - g.zero + 180) % 360) + 360) % 360) - 180;
+    return Math.abs(delta) <= g.arc / 2 + 1e-6;
+  };
+  const segments: MetaParentLinks['segments'] = [];
+  const used = new Set<string>();
+  const seen = new Set<string>();
+  for (const e of edges) {
+    const a = nodeOf(e.from.n, e.from.d);
+    const b = nodeOf(e.to.n, e.to.d);
+    const pair = a.key < b.key ? `${a.key}-${b.key}` : `${b.key}-${a.key}`;
+    if (a.key === b.key || seen.has(pair) || (!a.inside && !b.inside)) {
+      continue;
+    }
+    seen.add(pair);
+    if (a.inside && b.inside) {
+      const dashed = !a.isDot || !b.isDot;
+      segments.push({ key: pair, x1: a.x, y1: a.y, x2: b.x, y2: b.y, dashed });
+      used.add(a.key);
+      used.add(b.key);
+      continue;
+    }
+    // one end inside: from it toward the other, stopping at the window's edge
+    const [i, o] = a.inside ? [a, b] : [b, a];
+    const STEPS = 48;
+    let lastIn = 0;
+    let firstOut = -1;
+    for (let k = 1; k <= STEPS; k++) {
+      const u = k / STEPS;
+      if (insideAt(i.x + (o.x - i.x) * u, i.y + (o.y - i.y) * u)) {
+        lastIn = u;
+      } else {
+        firstOut = u;
+        break;
+      }
+    }
+    if (firstOut >= 0) {
+      let u0 = lastIn;
+      let u1 = firstOut;
+      for (let k = 0; k < 16; k++) {
+        const mid = (u0 + u1) / 2;
+        if (insideAt(i.x + (o.x - i.x) * mid, i.y + (o.y - i.y) * mid)) {
+          u0 = mid;
+        } else {
+          u1 = mid;
+        }
+      }
+      lastIn = u0;
+    }
+    segments.push({
+      key: pair,
+      x1: i.x,
+      y1: i.y,
+      x2: i.x + (o.x - i.x) * lastIn,
+      y2: i.y + (o.y - i.y) * lastIn,
+      dashed: !i.isDot,
+    });
+    used.add(i.key);
+  }
+  const ghosts = [...used]
+    .map((k) => nodes.get(k))
+    .filter((n): n is PNode => !!n && !n.isDot)
+    .map((n) => ({ key: n.key, x: n.x, y: n.y }));
+  return { segments, ghosts };
 }
 
 export interface MetaLayerProps {
@@ -534,6 +690,8 @@ export interface MetaLayerProps {
     e: { key: string; altKey: boolean; preventDefault: () => void }
   ) => void;
   onSurfaceClick: (ctrlKey: boolean) => void;
+  /** Connect: Parents only: the ratio text of the hovered dot (null: none, and always null in the other connect modes). */
+  hoverText: string | null;
 }
 
 /**
@@ -557,6 +715,7 @@ const MetaLayer = memo(function MetaLayer({
   onDotClick,
   onDotKey,
   onSurfaceClick,
+  hoverText,
 }: MetaLayerProps) {
   const arc = mSet.arc;
   const geo: MetaGeometry = {
@@ -597,6 +756,31 @@ const MetaLayer = memo(function MetaLayer({
     }
     return [...byPrime.entries()].filter(([, g]) => g.length > 1).sort(([a], [b]) => a - b);
   }, [dots]);
+  // Connect: Parents: the hovered dot's whole Stern-Brocot ancestry (nothing is drawn without a hover)
+  const parentLinks = useMemo(
+    () =>
+      mSet.connect === 'parents' && hoverText
+        ? metaParentLinks(geo, meta.note.c, dots, hoverText)
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- geo is rebuilt each render; its fields are listed
+    [
+      mSet.connect,
+      hoverText,
+      dots,
+      C,
+      rMin,
+      rMax,
+      lo,
+      hi,
+      zero,
+      sign,
+      arc,
+      mSet.spanC,
+      mSet.measure,
+      mSet.scale,
+      meta.note.c,
+    ]
+  );
   const seamHalf = Number((mSet.spanC / 2).toFixed(2));
   const closed = arc >= 330;
   const seamGap = closed ? 0 : 14;
@@ -782,6 +966,25 @@ const MetaLayer = memo(function MetaLayer({
             points={pts(g)}
           />
         ))}
+      {parentLinks && (
+        <g data-testid="relative-meta-parents">
+          {parentLinks.segments.map((sg) => (
+            <line
+              key={sg.key}
+              className={
+                sg.dashed ? `${classes.metaParent} ${classes.metaParentDashed}` : classes.metaParent
+              }
+              x1={sg.x1}
+              y1={sg.y1}
+              x2={sg.x2}
+              y2={sg.y2}
+            />
+          ))}
+          {parentLinks.ghosts.map((gh) => (
+            <circle key={gh.key} className={classes.metaGhost} cx={gh.x} cy={gh.y} r={2.6} />
+          ))}
+        </g>
+      )}
       {dots.map((d) => {
         const p = metaPos(d);
         const ratio = d.ratio;
@@ -821,6 +1024,98 @@ const MetaLayer = memo(function MetaLayer({
   );
 });
 
+/** The band cells' event handlers, kept stable across hovers (they read the latest state through a ref). */
+interface CellHandlers {
+  enter: (ratio: RingRatio, altKey: boolean) => void;
+  leave: () => void;
+  focus: (ratio: RingRatio) => void;
+  click: (
+    ratio: RingRatio,
+    e: { altKey: boolean; ctrlKey: boolean; stopPropagation: () => void }
+  ) => void;
+  key: (ratio: RingRatio, e: { key: string; altKey: boolean; preventDefault: () => void }) => void;
+}
+
+/**
+ * Every ratio cell of the bands (tick, label, click target). Memoized: a hover changes none of these props, so the several hundred
+ * cells are not rebuilt on every pointer move (the hovered cell's tint is one separate path drawn by the modal on top).
+ */
+const BandCells = memo(function BandCells({
+  rings,
+  bands,
+  C,
+  rot,
+  scale,
+  repC,
+  on,
+}: {
+  rings: RingRatio[][];
+  bands: [number, number][];
+  C: number;
+  rot: number;
+  scale: number;
+  repC: number;
+  on: CellHandlers;
+}) {
+  return (
+    <>
+      {rings.map((band, b) =>
+        band.map((ratio, i) => {
+          const [ri, ro] = bands[b];
+          const mid = (ri + ro) / 2;
+          const ang = spreadAngle(i, band.length) + rot;
+          const p = polar(C, mid, ang);
+          const t0 = polar(C, ri + 1, trueAngle(ratio.note.c, repC) + rot);
+          const t1 = polar(C, ri + 5, trueAngle(ratio.note.c, repC) + rot);
+          // horizontal text needs room along the arc: crowded bands write along the radius instead
+          const radial = (2 * Math.PI * mid * scale) / band.length < RADIAL_BELOW_ARC_PX;
+          const flip = ((ang % 360) + 360) % 360 > 180;
+          // the cell's whole annular sector is ONE button (the direction comes from Alt)
+          const sector = sectorPath(
+            C,
+            ri,
+            ro,
+            (i / band.length) * 360 + rot,
+            ((i + 1) / band.length) * 360 + rot
+          );
+          return (
+            <g key={`${b}-${ratio.text}`} className={classes.btn} data-band={b + 1}>
+              <title>{ratio.text}</title>
+              <line className={classes.tick} x1={t0.x} y1={t0.y} x2={t1.x} y2={t1.y} />
+              <text
+                className={radial ? classes.labelSmall : classes.label}
+                x={0}
+                y={0}
+                textAnchor="middle"
+                dominantBaseline="central"
+                transform={`translate(${p.x} ${p.y})${radial ? ` rotate(${flip ? ang + 90 : ang - 90})` : ''}`}
+              >
+                {ratio.text}
+              </text>
+              <path
+                className={classes.half}
+                d={sector}
+                data-testid="relative-half"
+                data-ratio={ratio.text}
+                role="button"
+                tabIndex={0}
+                aria-label={`${ratio.text} from the source note (hold Alt for below)`}
+                onMouseEnter={(e) => on.enter(ratio, e.altKey)}
+                onMouseLeave={on.leave}
+                onFocus={() => on.focus(ratio)}
+                onBlur={on.leave}
+                // Alt+click adds below; the click stops here so nothing behind it (the page's Alt+click pin) sees it
+                onClick={(e) => on.click(ratio, e)}
+                onKeyDown={(e) => on.key(ratio, e)}
+              />
+            </g>
+          );
+        })
+      )}
+    </>
+  );
+});
+
 export function RelativeModal({
   opened,
   from,
@@ -833,6 +1128,8 @@ export function RelativeModal({
   onHover,
   onPick,
   onRemove,
+  onSource,
+  startNear,
   onClose,
   line,
   bandMode,
@@ -852,11 +1149,53 @@ export function RelativeModal({
   metaSets,
   onMetaSets,
 }: RelativeModalProps) {
+  const lab = useLab();
+  // the inner ring's field dots: click toggles the subset, Shift+click makes the note the source, right-click or Delete removes it
+  // (never 1/1). The ring's own hover stays the source (`hover={fromIdx}`), so no hover handlers here.
+  const innerDotProps = (i: number): RingDotExtra => {
+    const isRef = Math.abs(lab.base.field[i]?.c ?? 0) < 1e-6;
+    const own = noteHandlers(lab, i);
+    const remove = () => {
+      if (!isRef) {
+        lab.dispatch({ type: 'relative/remove', index: i });
+      }
+    };
+    return {
+      // Shift+mousedown would extend the page's text selection over the ratio labels
+      onMouseDown: (e) => {
+        if (e.shiftKey) {
+          e.preventDefault();
+        }
+      },
+      onClick: (e) => (e.shiftKey ? onSource(i) : own.onClick(e)),
+      onContextMenu: (e) => {
+        e.preventDefault();
+        remove();
+      },
+      onKeyDown: (e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.shiftKey) {
+          e.preventDefault();
+          onSource(i);
+        } else if (e.key === 'Delete') {
+          e.preventDefault();
+          remove();
+        } else {
+          own.onKeyDown(e);
+        }
+      },
+    };
+  };
   const isMonzo = mode === 'monzo';
   const modeRef = useRef(mode);
   modeRef.current = mode;
   // M8d meta ring: the center (a ratio or cents) it is open on, or null; the settings
-  const [meta, setMeta] = useState<MetaCenter | null>(null);
+  const [meta, setMeta] = useState<MetaCenter | null>(() => {
+    if (!startNear) {
+      return null;
+    }
+    const unison = parseTypedStep('1/1');
+    return unison.ok ? { note: unison.ratio, text: unison.label } : null;
+  });
   // which context opened it: the Near button (always 1/1) or a Ctrl+click / typed Near (that interval); each keeps its own settings
   const [metaCtx, setMetaCtx] = useState<MetaContext>('nearButton');
   const metaRef = useRef(meta);
@@ -877,7 +1216,8 @@ export function RelativeModal({
     () => Array.from({ length: MENU_PLACES }, (_, i) => relativeRingAt(step, start + i)),
     [step, start]
   );
-  const rings = places.map((g) => g.ratios);
+  // stable across hovers (the memoized band cells compare it by identity)
+  const rings = useMemo(() => places.map((g) => g.ratios), [places]);
   // direction: Alt NOT held = above, Alt held = below (tracked while the modal is open, reset when the window loses focus; a click reads its own altKey)
   const [alt, setAlt] = useState(false);
   const navRef = useRef({ start, step, set: onRingStart });
@@ -1039,6 +1379,20 @@ export function RelativeModal({
     return null;
   };
   const dir: Direction = alt ? 'below' : 'above';
+  // where the hovered ratio sits in the bands (for the one tint path drawn over the memoized cells)
+  const selCell = useMemo(() => {
+    const r = hover?.ratio;
+    if (!r) {
+      return null;
+    }
+    for (let b = 0; b < rings.length; b++) {
+      const i = rings[b].indexOf(r);
+      if (i >= 0) {
+        return { b, i };
+      }
+    }
+    return null;
+  }, [hover?.ratio, rings]);
   // M8c hover keys: the landing under the pointer (the ghost), reported up so holds 1 / 4 / 5 can sound it
   const [monzoOver, setMonzoOver] = useState(false);
   useEffect(() => {
@@ -1072,39 +1426,37 @@ export function RelativeModal({
   useEffect(() => {
     onHoverRef.current(cell ? { ratio: cell, dir } : null);
   }, [cell, dir]);
-  const cellProps = (ratio: RingRatio) => ({
-    'data-testid': 'relative-half',
-    'data-ratio': ratio.text,
-    'data-dir': cell === ratio ? dir : undefined,
-    role: 'button' as const,
-    tabIndex: 0,
-    'aria-label': `${ratio.text} from the source note (hold Alt for below)`,
-    onMouseEnter: (e: { altKey: boolean }) => {
-      setAlt(e.altKey);
-      setCell(ratio);
-    },
-    onMouseLeave: () => setCell(null),
-    onFocus: () => setCell(ratio),
-    onBlur: () => setCell(null),
-    // Alt+click adds below; the click stops here so nothing behind it (the page's Alt+click pin) sees it
-    onClick: (e: { altKey: boolean; ctrlKey: boolean; stopPropagation: () => void }) => {
-      e.stopPropagation();
-      setAlt(e.altKey);
-      // Ctrl+click opens the meta ring on this ratio (adds nothing)
-      if (e.ctrlKey) {
-        openMeta('nearClick', { note: ratio.note, text: ratio.text });
-        setCell(null);
-        return;
-      }
-      onPick({ ratio, dir: e.altKey ? 'below' : 'above' });
-    },
-    onKeyDown: (e: { key: string; altKey: boolean; preventDefault: () => void }) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        onPick({ ratio, dir: e.altKey ? 'below' : 'above' });
-      }
-    },
-  });
+  // the band cells' handlers: one stable object (so the memoized cells are not rebuilt on a hover), reading the latest callbacks
+  const cellLatest = useRef({ openMeta, onPick });
+  cellLatest.current = { openMeta, onPick };
+  const cellOn = useMemo<CellHandlers>(
+    () => ({
+      enter: (ratio, altKey) => {
+        setAlt(altKey);
+        setCell(ratio);
+      },
+      leave: () => setCell(null),
+      focus: (ratio) => setCell(ratio),
+      click: (ratio, e) => {
+        e.stopPropagation();
+        setAlt(e.altKey);
+        // Ctrl+click opens the meta ring on this ratio (adds nothing)
+        if (e.ctrlKey) {
+          cellLatest.current.openMeta('nearClick', { note: ratio.note, text: ratio.text });
+          setCell(null);
+          return;
+        }
+        cellLatest.current.onPick({ ratio, dir: e.altKey ? 'below' : 'above' });
+      },
+      key: (ratio, e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          cellLatest.current.onPick({ ratio, dir: e.altKey ? 'below' : 'above' });
+        }
+      },
+    }),
+    []
+  );
   // The typed box's Near (or Ctrl+Enter): open the meta ring on what is typed (a ratio or cents); returns the message when refused
   const onNear = (text: string): string | null => {
     const r = parseTypedStep(text);
@@ -1220,7 +1572,7 @@ export function RelativeModal({
             chord={EMPTY_SET}
             sounding={EMPTY_SET}
             ghosts={[]}
-            dotProps={noDotProps}
+            dotProps={innerDotProps}
             overlay={overlay}
             ariaLabel={`Copy of the pitch circle, ${fromText} at the top`}
           />
@@ -1301,48 +1653,30 @@ export function RelativeModal({
               </g>
             );
           })}
-          {rings.map((band, b) =>
-            band.map((ratio, i) => {
-              const [ri, ro] = bands[b];
-              const mid = (ri + ro) / 2;
-              const ang = spreadAngle(i, band.length) + rot;
-              const p = polar(C, mid, ang);
-              const t0 = polar(C, ri + 1, trueAngle(ratio.note.c, repC) + rot);
-              const t1 = polar(C, ri + 5, trueAngle(ratio.note.c, repC) + rot);
-              // horizontal text needs room along the arc: crowded bands write along the radius instead
-              const radial = (2 * Math.PI * mid * scale) / band.length < RADIAL_BELOW_ARC_PX;
-              const flip = ((ang % 360) + 360) % 360 > 180;
-              // the cell's whole annular sector is ONE button (the direction comes from Alt)
-              const sector = sectorPath(
+          <BandCells
+            rings={rings}
+            bands={bands}
+            C={C}
+            rot={rot}
+            scale={scale}
+            repC={repC}
+            on={cellOn}
+          />
+          {/* the hovered (or key-stepped) cell's tint: one path on top, so a hover redraws only this */}
+          {selCell && (
+            <path
+              className={classes.halfSel}
+              d={sectorPath(
                 C,
-                ri,
-                ro,
-                (i / band.length) * 360 + rot,
-                ((i + 1) / band.length) * 360 + rot
-              );
-              return (
-                <g key={`${b}-${ratio.text}`} className={classes.btn} data-band={b + 1}>
-                  <title>{ratio.text}</title>
-                  <line className={classes.tick} x1={t0.x} y1={t0.y} x2={t1.x} y2={t1.y} />
-                  <text
-                    className={radial ? classes.labelSmall : classes.label}
-                    x={0}
-                    y={0}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    transform={`translate(${p.x} ${p.y})${radial ? ` rotate(${flip ? ang + 90 : ang - 90})` : ''}`}
-                  >
-                    {ratio.text}
-                  </text>
-                  <path
-                    className={classes.half}
-                    d={sector}
-                    data-selected={hover?.ratio === ratio ? 'true' : undefined}
-                    {...cellProps(ratio)}
-                  />
-                </g>
-              );
-            })
+                bands[selCell.b][0],
+                bands[selCell.b][1],
+                (selCell.i / rings[selCell.b].length) * 360 + rot,
+                ((selCell.i + 1) / rings[selCell.b].length) * 360 + rot
+              )}
+              data-testid="relative-half-selected"
+              data-ratio={rings[selCell.b][selCell.i].text}
+              data-dir={dir}
+            />
           )}
           {metaOn && meta && (
             <MetaLayer
@@ -1362,6 +1696,7 @@ export function RelativeModal({
               onDotClick={onDotClick}
               onDotKey={onDotKey}
               onSurfaceClick={onSurfaceClick}
+              hoverText={mSet.connect === 'parents' && cell ? cell.text : null}
             />
           )}
           {/* the hovered dot's highlight: one circle above the memoized layer (the layer itself never re-renders on hover) */}
@@ -1476,15 +1811,25 @@ export function RelativeModal({
             <SegmentedControl
               size="xs"
               aria-label="Connect the dots"
-              title="Connect: Off, Order (one zigzag by complexity), By prime (one thread per largest prime)"
+              title="Connect: Off, Order (one zigzag by complexity), By prime (one thread per largest prime), Parents (hover a dot to see its whole Stern-Brocot ancestry: each step is joined to its two simpler parents; dashed to a ghost dot where a parent would be but is filtered out)"
               value={mSet.connect}
               onChange={(v) =>
-                setMSet({ connect: v === 'off' ? 'off' : v === 'prime' ? 'prime' : 'order' })
+                setMSet({
+                  connect:
+                    v === 'off'
+                      ? 'off'
+                      : v === 'prime'
+                        ? 'prime'
+                        : v === 'parents'
+                          ? 'parents'
+                          : 'order',
+                })
               }
               data={[
                 { value: 'off', label: 'Off' },
                 { value: 'order', label: 'Order' },
                 { value: 'prime', label: 'By prime' },
+                { value: 'parents', label: 'Parents' },
               ]}
             />
             <label className={classes.metaCheck} title="Dot fill by the ratio's largest prime">
@@ -1592,7 +1937,7 @@ export function RelativeModal({
             ? 'Move to paint · Ctrl line · Alt no paint · click to add · hold 1 / 4 / 5 to hear'
             : metaOn
               ? 'Esc: back to rings · click a dot to add (Alt: below) · hold 1/4/5 to hear'
-              : `Rings ${places.map((g) => g.label).join(' · ')} · 2/3 ring, Shift prime, Ctrl+Shift 5 · Ctrl+click: near ratios · hold 1/4/5 to hear`}
+              : `Rings ${places.map((g) => g.label).join(' · ')} · 2/3 ring, Shift prime, Ctrl+Shift 5 · Ctrl+click: near ratios · inner dot: click subset, Shift from it, right-click remove · hold 1/4/5 to hear`}
         </div>
         <div className={classes.line} data-testid="relative-line" aria-live="polite">
           {isMonzo ? monzoLine : readoutLine}

@@ -334,11 +334,28 @@ function Params({ gen }: { gen: GenSpec }) {
         </>
       );
     case 'relative':
-      // placeholder (no controls yet): the notes are placed from the ring's radial menu (RelativeMenu.tsx)
+      // the notes are placed from the full-screen picker (RelativeMenu.tsx); these buttons open it in a view (M8e)
       return (
-        <span className={classes.paramNote}>
-          Relative pitches, <Num>{tab.field.length}</Num> notes.
-        </span>
+        <>
+          <Tip k="relativeOpen" as="control">
+            <Button.Group aria-label="Open the relative picker full screen">
+              {(['rings', 'near', 'monzo'] as const).map((v) => (
+                <Button
+                  key={v}
+                  size="compact-xs"
+                  variant="default"
+                  data-testid={`relative-open-${v}`}
+                  onClick={() => dispatch({ type: 'relative/open', view: v })}
+                >
+                  {v === 'rings' ? 'Rings' : v === 'near' ? 'Near' : 'Monzo'}
+                </Button>
+              ))}
+            </Button.Group>
+          </Tip>
+          <span className={classes.paramNote}>
+            Relative pitches, <Num>{tab.field.length}</Num> notes.
+          </span>
+        </>
       );
     case 'composite':
       return (

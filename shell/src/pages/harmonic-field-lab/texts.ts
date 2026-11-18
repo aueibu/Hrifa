@@ -1538,6 +1538,40 @@ const entries = {
     term: 'Add current tab as card',
     text: 'Copies the tab you are looking at into the card list as a saved copy: its generation, subset and mode. Later changes to the tab do not change the card. Example: build a 10/9-second major scale in another tab, then add it here as a candidate.',
   },
+  subsetProduct: {
+    term: 'Product',
+    text: 'Places a shape on every source note, Up, Down or Both, Steps times. New pitches show as dashed marks on the ring; Add puts them in a Relative field (a new tab from any other method) and selects them. Merge within joins pitches that close in cents. Example: the major triad on itself gives 1/1, 9/8, 5/4, 3/2, 25/16, 15/8.',
+    see: ['mergeTolerance'],
+  },
+  productSources: {
+    term: 'Product sources',
+    text: 'The notes the shape is placed on: this subset or a saved one. Click a dot on the ring to leave that note out (it dims), or use All, None and Invert. Example: the major triad as sources with only 3/2 left lit puts the shape on 3/2 alone.',
+  },
+  productShape: {
+    term: 'Product shape',
+    text: 'The ratios placed on each source note: this subset or a saved one, drawn on the ring below. Example: with the major triad as the shape, every source gets a 1/1, a 5/4 and a 3/2 placed on it.',
+  },
+  productResult: {
+    term: 'Product result',
+    text: 'The pitches the product makes, on a ring like the other two. A grey dot is a pitch already in the field, a green plus is a new pitch, and a blue double bar is a pitch that merged into another one within the Merge tolerance. Example: the major triad on itself, with the triad as the field, shows 3 grey dots (1/1, 5/4, 3/2) and 3 green plus marks (9/8, 25/16, 15/8).',
+  },
+  productDirection: {
+    term: 'Direction',
+    text: 'Up multiplies each source by each shape ratio, Down divides each source by each shape ratio, Both gives the two sets together. Example, the major triad (1/1, 5/4, 3/2) as sources and shape: Up gives 1/1, 9/8, 5/4, 3/2, 25/16, 15/8; Down gives 1/1, 6/5, 5/4, 4/3, 3/2, 8/5, 5/3 (the tonality diamond).',
+  },
+  productSteps: {
+    term: 'Steps',
+    text: 'How many times the shape is applied in a row, 1 to 4. Steps 2 is Sources times Shape times Shape. Example: the major triad on itself with Steps 2 (Up) gives 27 products and 10 distinct pitches.',
+  },
+  productMerge: {
+    term: 'Merge within (c)',
+    text: 'Products this close, in cents, to a note already in the field or to an earlier product count as the same note and are not added twice. 0 keeps only exact equals. Example: 6561/4096 lands 1.95 c from 8/5, so it merges into 8/5 at 5 c and stays its own note at 0 c.',
+    see: ['mergeTolerance'],
+  },
+  productAdd: {
+    term: 'Add product',
+    text: 'Three choices for the products. Open in new tab: a new Relative tab holding 1/1 and the products. Create as composite: the send-to-composite popup, with the products as one item. Replace current field: this tab becomes a Relative field of 1/1 and the products. Example: the major triad on itself gives 1/1, 9/8, 5/4, 3/2, 25/16 and 15/8.',
+  },
   fillCards: {
     term: 'Fill cards',
     text: 'Builds several candidate cards at once from the current tab, shows them in a list first, and adds the ones you keep. Your cards stay as they are and the new ones go at the end. Example: with a major scale as card 0, Fill cards with Modes adds Mode 2 to Mode 7, so the retuner can also choose a Dorian-like card.',
@@ -2809,15 +2843,31 @@ const entries = {
     term: 'Relative menu',
     help: [
       p(
-        'Click a ring note to open the picker. Click a ratio to add it above that note, Alt+click to add it below; a ghost dot shows where it lands. Hold {key:holdOwn} to hear the new pitch, {key:holdField} with the picked note, {key:holdExact} with the whole field. 3 and 2 step through the rings; Shift jumps by prime, Ctrl+Shift by five primes. Ctrl+click a ratio to see every ratio within 50 c of it.'
+        'Shift+click a ring note to open the picker on it; a click toggles it in the subset, right-click or Delete removes it (not 1/1). In the picker, click a ratio to add it above that note, Alt+click below. Hold {key:holdOwn} to hear the new pitch, {key:holdField} with the picked note, {key:holdExact} with the whole field.'
+      ),
+      p('Monzo: move over the matrix to paint exponents, click to add.'),
+      example('Shift+click 3/2, then click 11/6: 11/8 is added (folded).'),
+    ],
+    teaching: [
+      p(
+        'Rings, Near and Monzo under the Method picker also open the picker. 3 and 2 step through the rings; Shift jumps by prime, Ctrl+Shift by five primes. Ctrl+click a ratio to see every ratio within 50 c of it. A ghost dot shows where a ratio lands.'
       ),
       p(
-        'Monzo: move over the prime matrix to paint exponents (Ctrl paints a straight line, Alt moves without painting); click to add. Rows gives −/+ buttons; the box takes a ratio or cents.'
+        'Monzo: Ctrl paints a straight line, Alt moves without painting. Rows gives −/+ buttons; the box takes a ratio or cents.'
       ),
-      example('click 3/2, then 11/6: 11/8 is added (folded).'),
+    ],
+    see: ['method', 'repeat'],
+  },
+  relativeOpen: {
+    term: 'Open the relative picker',
+    help: [
+      p(
+        'Rings, Near and Monzo open the full-screen picker in that view, on the note it was last open on (1/1 if that note is gone or it has not been opened yet), the same as Shift+clicking that note. The picker uses the Chromatic ring, so from the Fifths view the ring switches to Chromatic. Bands: From note or Fixed is remembered, also across reloads.'
+      ),
+      example('Shift+click 5/4 and close the picker; Near then opens the near ring on 5/4.'),
     ],
     teaching: [],
-    see: ['method', 'repeat'],
+    see: ['relativeMenu'],
   },
   offChain: {
     term: 'Off-chain note',

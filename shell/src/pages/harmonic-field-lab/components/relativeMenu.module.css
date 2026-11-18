@@ -129,10 +129,10 @@
   pointer-events: auto;
 }
 
-.half:hover,
-.half:focus-visible,
-.half[data-selected='true'] {
+/* the hovered or focused cell's tint: one path drawn over the cells (it follows the hover state, so it never doubles with :hover) */
+.halfSel {
   fill: color-mix(in srgb, var(--text) 16%, transparent);
+  pointer-events: none;
 }
 
 .btn:hover .label,
@@ -550,4 +550,26 @@
 .metaNote {
   color: var(--text-muted);
   font-size: var(--lab-fs-tiny);
+}
+
+.metaParent {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--text-muted);
+  stroke-linecap: round;
+  stroke-width: 1.2;
+}
+
+/* used together with .metaParent */
+.metaParentDashed {
+  stroke-dasharray: 3 3;
+}
+
+.metaGhost {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--text-muted);
+  stroke-dasharray: 2 2;
+  stroke-opacity: 0.6;
+  stroke-width: 1;
 }

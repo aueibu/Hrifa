@@ -595,6 +595,25 @@
   min-width: 0;
 }
 
+/* the product module (M8g): a row between tools and strip with the strip's columns; it exists only while open, so the
+   data-product templates add the row and the closed layout is unchanged. The right column (side: shape stats, field table)
+   starts beside the product row, so opening the module never moves it (human, M8g look 3: "that right column needs to remain
+   untouched. it is its own thing") */
+.areaProduct {
+  grid-area: product;
+  min-width: 0;
+}
+
+.workspace[data-product] {
+  grid-template-areas:
+    'gen ring stats'
+    'gen tools tools'
+    'product product side'
+    'strip strip side'
+    'saved saved side';
+  grid-template-rows: auto auto auto auto minmax(7rem, 1fr);
+}
+
 .areaSaved {
   display: flex;
   flex-direction: column;
@@ -625,6 +644,17 @@
       'saved saved';
     grid-template-columns: 14rem minmax(0, 1fr);
     grid-template-rows: auto auto auto auto minmax(5rem, 1fr);
+  }
+
+  .workspace[data-product] {
+    grid-template-areas:
+      'gen ring'
+      'tools tools'
+      'stats side'
+      'product product'
+      'strip strip'
+      'saved saved';
+    grid-template-rows: auto auto auto auto auto minmax(5rem, 1fr);
   }
 }
 

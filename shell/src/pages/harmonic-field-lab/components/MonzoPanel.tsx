@@ -94,6 +94,8 @@ export function MonzoPanel({
   const keys = useRef({ ctrl: false, alt: false });
   const inside = useRef(false);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
+  // the cell the last plain paint set: a fast sweep skips columns between two mouse events, so they are filled along the way
+  const prevCell = useRef<{ col: number; row: number } | null>(null);
   /** Ctrl line paint: the anchor cell, the values when Ctrl went down, and the columns the line covers now. */
   const line = useRef<{
     col: number;
@@ -119,6 +121,7 @@ export function MonzoPanel({
       line.current = null;
     }
     if (!box || alt) {
+      prevCell.current = null;
       return;
     }
     const col = Math.max(
@@ -127,9 +130,21 @@ export function MonzoPanel({
     );
     const row = Math.max(0, Math.min(STRIP_ROWS - 1, Math.floor((clientY - box.top) / rowH)));
     if (!ctrl) {
-      setCol(col, MONZO_RANGE - row);
+      // every column from the last painted cell to this one gets the row on the straight path between them
+      const p = prevCell.current;
+      if (p && p.col !== col) {
+        const step = col > p.col ? 1 : -1;
+        for (let j = p.col + step; j !== col + step; j += step) {
+          const r = Math.round(p.row + ((j - p.col) / (col - p.col)) * (row - p.row));
+          setCol(j, MONZO_RANGE - r);
+        }
+      } else {
+        setCol(col, MONZO_RANGE - row);
+      }
+      prevCell.current = { col, row };
       return;
     }
+    prevCell.current = null;
     const a = (line.current ??= { col, row, snap: [...cur.current], lo: col, hi: col });
     const lo = Math.min(a.col, col);
     const hi = Math.max(a.col, col);
@@ -238,10 +253,12 @@ export function MonzoPanel({
               data-testid="monzo-matrix"
               onMouseEnter={() => {
                 inside.current = true;
+                prevCell.current = null;
                 onOver?.(true);
               }}
               onMouseLeave={() => {
                 inside.current = false;
+                prevCell.current = null;
                 onOver?.(false);
               }}
               onMouseMove={(e) => {
