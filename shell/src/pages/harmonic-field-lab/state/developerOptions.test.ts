@@ -80,3 +80,25 @@ describe('intervalIntensity developer option (H-37, one setting for Pairs and th
     expect(o.intervalIntensity).toBe('strong');
   });
 });
+
+describe('heLimit developer option (H-39, harmonic entropy candidates)', () => {
+  it('is 30000 by default, when absent, and when damaged or not one of the five choices', () => {
+    for (const raw of [
+      null,
+      '',
+      '{',
+      '[]',
+      '{"tooltips":false}',
+      '{"heLimit":"x"}',
+      '{"heLimit":12345}',
+    ]) {
+      expect(parseDeveloperOptions(raw).heLimit, String(raw)).toBe(30000);
+    }
+  });
+
+  it('each of the five stored limits is kept', () => {
+    for (const n of [10000, 30000, 100000, 250000, 500000]) {
+      expect(parseDeveloperOptions(`{"heLimit":${n}}`).heLimit).toBe(n);
+    }
+  });
+});

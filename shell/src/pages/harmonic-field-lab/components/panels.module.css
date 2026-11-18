@@ -311,7 +311,10 @@
   flex-direction: column;
   font-size: var(--lab-fs-tiny);
   gap: 0.125rem;
-  min-width: 14rem;
+  /* fill the container (the picker's 190 px Color panel, the Modes and Pairs legend rows) and never push past it */
+  max-width: 100%;
+  min-width: min(14rem, 100%);
+  width: 100%;
 }
 
 .errStripEnds {
@@ -1146,6 +1149,59 @@
   stroke: var(--text);
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+/* M9 harmonic entropy: the curve behind the roughness curve (same width and joins, its own hue), its dots and its label */
+.heLine {
+  fill: none;
+  stroke: var(--mark-blue);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.heDot {
+  fill: var(--mark-blue);
+  stroke: var(--panel-inset);
+  stroke-width: 1;
+}
+
+.heLabel {
+  fill: var(--mark-blue);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-svg-fs-small);
+}
+
+.heBlur {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.heBlurLabel {
+  flex: none;
+  font-family: var(--mantine-font-family-monospace);
+  min-width: 4.5em;
+}
+
+.heBlurSlider {
+  flex: 1;
+}
+
+.heHeader {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.heHeader > :first-child {
+  flex: 1;
+}
+
+.heNote {
+  color: var(--text-muted);
+  flex: none;
+  font-size: var(--lab-fs-small);
 }
 
 .dissMark {

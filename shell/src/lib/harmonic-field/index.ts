@@ -32,3 +32,4 @@ export * from './nearRatios';
 export * from './sternBrocot';
 export * from './relativePitches';
 export * from './subsetProduct';
+export * from './harmonicEntropy';

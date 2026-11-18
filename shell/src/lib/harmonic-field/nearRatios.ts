@@ -40,10 +40,6 @@ export interface NearResult {
   total: number;
 }
 
-/** The complexity of a near ratio by a measure. */
-export const nearComplexity = (r: { odd: number; tenney: number }, order: NearOrder): number =>
-  order === 'odd' ? r.odd : r.tenney;
-
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
 /** `p/q` for odd p and q folded by powers of two into [1, 2). */

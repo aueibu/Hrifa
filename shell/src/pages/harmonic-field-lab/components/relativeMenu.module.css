@@ -442,6 +442,14 @@
   stroke-width: 1;
 }
 
+.metaHe {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--text-muted);
+  stroke-linejoin: round;
+  stroke-width: 1;
+}
+
 .metaSpoke {
   pointer-events: none;
   stroke: var(--text-subtle);

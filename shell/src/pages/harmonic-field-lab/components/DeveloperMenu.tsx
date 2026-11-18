@@ -4,17 +4,30 @@
  * Playback and keys, Composites); a new control goes into the section it affects, or a new section.
  */
 import type { ReactNode } from 'react';
-import { Button, NumberInput, Popover, SegmentedControl, Switch, Text } from '@mantine/core';
+import {
+  Button,
+  NativeSelect,
+  NumberInput,
+  Popover,
+  SegmentedControl,
+  Switch,
+  Text,
+} from '@mantine/core';
 import {
   BEAT_PARTIAL_LIMIT_MAX,
+  HE_LIMITS,
   MERGE_TOL_DEFAULT,
   MERGE_TOL_MAX,
+  estimateHeBuildMs,
+  formatBuildMs,
+  type HeLimit,
 } from '../../../lib/harmonic-field';
 import {
   TOOLTIP_DELAY_MAX,
   sanitizeTileLook,
   useLabDeveloperOptions,
 } from '../state/developerOptions';
+import { useHeStatus } from '../state/entropy';
 import { Tip } from './ui';
 import classes from './lab.module.css';
 
@@ -31,6 +44,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 export function DeveloperMenu() {
   const [options, update] = useLabDeveloperOptions();
+  const he = useHeStatus();
   return (
     <Tip k="developerMenu" as="control">
       <Popover position="bottom-end" width={280} transitionProps={{ duration: 0 }}>
@@ -211,6 +225,30 @@ export function DeveloperMenu() {
                   onChange={(e) => update({ soundFollowsRoughness: e.currentTarget.checked })}
                 />
               </Tip>
+            </Section>
+            <Section title="Harmonic entropy">
+              <Tip k="heLimit" as="control" block>
+                <NativeSelect
+                  size="xs"
+                  label="Harmonic entropy candidates (n·d <)"
+                  aria-label="Harmonic entropy candidates"
+                  data-testid="he-limit"
+                  value={String(options.heLimit)}
+                  onChange={(e) => {
+                    const v = Number(e.currentTarget.value);
+                    update({ heLimit: HE_LIMITS.find((n) => n === v) ?? options.heLimit });
+                  }}
+                  data={HE_LIMITS.map((n: HeLimit) => ({
+                    value: String(n),
+                    label: `${n / 1000}k (${formatBuildMs(estimateHeBuildMs(n, he.msPerRatio ?? undefined))})`,
+                  }))}
+                />
+              </Tip>
+              {he.building && (
+                <Text size="xs" c="dimmed" data-testid="he-dev-building">
+                  Building entropy…
+                </Text>
+              )}
             </Section>
             <Section title="Chords panel">
               <Tip k="cardNoteErrors" as="control" block>

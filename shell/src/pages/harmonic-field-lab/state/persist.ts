@@ -18,6 +18,8 @@
  */
 import {
   DEFAULT_TEMPLATES,
+  HE_BLUR_MAX,
+  HE_BLUR_MIN,
   PRESETS,
   cleanGenusN,
   cleanOddLimit,
@@ -255,6 +257,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     relBands: oneOf(raw.relBands, ['from', 'fixed'] as const, d.relBands),
     // optional (Scala-tools M8f, H-35): the interval pin bar's ring and monzo lists (exact ratio texts, at most 128 each); bad entries dropped; absent = empty; no write on mount
     pins: sanitizePins(raw.pins),
+    // optional (Scala-tools M9, H-39): the harmonic entropy blur s in cents (8 to 20, one value lab-wide); absent or damaged = 17; no write on mount
+    heBlur: intIn(raw.heBlur, HE_BLUR_MIN, HE_BLUR_MAX, d.heBlur),
     // optional (Scala-tools M8o, H-37): the Relative picker's Color menu; each field falls back to Prime / Fixed / Exact; no write on mount
     relColor: sanitizeRelColor(raw.relColor),
     // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount

@@ -62,6 +62,9 @@ const step = (h: TileHue, n: number): string =>
     ? `color-mix(in oklch, var(--rx-${h.a}-${n}) ${h.pctA}%, var(--rx-${h.b}-${n}))`
     : `var(--rx-${h.a}-${n})`;
 
+/** A Radix step of a tile hue as a CSS color (a blend of two hues when the hue has `b`). */
+export const hueStep = step;
+
 const hexAt = (scheme: TileScheme, h: TileHue, n: number): string => radixHex(scheme, h.a, n);
 
 function solidScore(

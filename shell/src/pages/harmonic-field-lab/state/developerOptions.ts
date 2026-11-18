@@ -1,6 +1,9 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import {
   BEAT_PARTIAL_LIMIT_MAX,
+  HE_LIMITS,
+  HE_LIMIT_DEFAULT,
+  type HeLimit,
   MERGE_TOL_DEFAULT,
   RELATIVE_RING_STEP,
   cleanRingStep,
@@ -60,6 +63,8 @@ export interface LabDeveloperOptions {
   soundFollowsRoughness: boolean;
   /** Relative pitches (M8, H-33): the odd-limit step between the radial menu's four rings (whole number 2 to 10, default 5). */
   relativeRingStep: number;
+  /** Harmonic entropy (M9, H-39): the candidate limit, every reduced n/d with n x d below it (10000, 30000 default, 100000, 250000 or 500000). */
+  heLimit: HeLimit;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -107,6 +112,7 @@ const defaults: LabDeveloperOptions = {
   cardNoteErrors: false,
   soundFollowsRoughness: true,
   relativeRingStep: RELATIVE_RING_STEP,
+  heLimit: HE_LIMIT_DEFAULT,
 };
 
 const listeners = new Set<() => void>();
@@ -150,6 +156,7 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
           ? o.soundFollowsRoughness
           : defaults.soundFollowsRoughness,
       relativeRingStep: cleanRingStep(o.relativeRingStep),
+      heLimit: HE_LIMITS.includes(o.heLimit as HeLimit) ? (o.heLimit as HeLimit) : HE_LIMIT_DEFAULT,
     };
   } catch {
     return defaults;

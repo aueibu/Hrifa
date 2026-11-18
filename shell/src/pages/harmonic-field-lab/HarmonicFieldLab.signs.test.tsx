@@ -136,6 +136,7 @@ describe('lab Developer menu', () => {
       tileOutline: true,
       cardNoteErrors: false,
       relativeRingStep: 5,
+      heLimit: 30000,
       soundFollowsRoughness: true,
     });
     expect(grid()).toHaveAttribute('data-signs', 'hover');
@@ -157,6 +158,7 @@ describe('lab Developer menu', () => {
       tileOutline: true,
       cardNoteErrors: false,
       relativeRingStep: 5,
+      heLimit: 30000,
       soundFollowsRoughness: true,
     });
   });
@@ -185,6 +187,7 @@ describe('lab Developer menu', () => {
       tileOutline: true,
       cardNoteErrors: false,
       relativeRingStep: 5,
+      heLimit: 30000,
       soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('{"modeSignAlways":"no"}')).toEqual({
@@ -204,6 +207,7 @@ describe('lab Developer menu', () => {
       tileOutline: true,
       cardNoteErrors: false,
       relativeRingStep: 5,
+      heLimit: 30000,
       soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('[1,2]')).toEqual({
@@ -223,6 +227,7 @@ describe('lab Developer menu', () => {
       tileOutline: true,
       cardNoteErrors: false,
       relativeRingStep: 5,
+      heLimit: 30000,
       soundFollowsRoughness: true,
     });
     expect(parseDeveloperOptions('null')).toEqual({
@@ -242,6 +247,7 @@ describe('lab Developer menu', () => {
       tileOutline: true,
       cardNoteErrors: false,
       relativeRingStep: 5,
+      heLimit: 30000,
       soundFollowsRoughness: true,
     });
     window.localStorage.setItem(LAB_DEVELOPER_KEY, '{oops');

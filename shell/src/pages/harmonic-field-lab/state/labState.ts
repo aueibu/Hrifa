@@ -7,6 +7,7 @@
  */
 import {
   DEFAULT_TEMPLATES,
+  HE_BLUR_DEFAULT,
   EPS,
   addLibraryEntries,
   addedPitchError,
@@ -254,6 +255,8 @@ export interface UiSettings {
   pins: Pins;
   /** Relative picker (M8o, H-37): the Color menu shared by Rings, Near and Monzo and the pin cards: metric (Off, Prime default, Tenney, Odd limit, Error, Interval, Roughness), range (Fixed default | Fit to view) and the Monzo octave (Exact default | Reduced). Optional in storage. */
   relColor: RelColor;
+  /** Harmonic entropy (M9, H-39): the blur s in cents, 8 to 20 (default 17), one value for the Dissonance view, the picker Color metric and the Near overlay. Optional in storage. */
+  heBlur: number;
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
   pairsAdded: string[];
   /** The chord library dialog's search text and filters, Checked only included (M7c, H-30); kept when the dialog closes and across reloads. Optional in storage. */
@@ -410,6 +413,7 @@ export function defaultUi(): UiSettings {
     relBands: 'from',
     pins: emptyPins(),
     relColor: { ...REL_COLOR_DEFAULT },
+    heBlur: HE_BLUR_DEFAULT,
     pairsAdded: [],
     libFilters: defaultLibFilters(),
     libChecked: [],

@@ -591,3 +591,18 @@ describe('generator library (generators.v1)', () => {
     );
   });
 });
+
+describe('heBlur (H-39, harmonic entropy blur s)', () => {
+  it('absent or damaged reads as 17; a stored 8 to 20 is kept; nothing is written by reading', () => {
+    for (const bad of [undefined, null, 'x', 7.9, 12.5, 20.1, NaN, {}]) {
+      expect(sanitizeSettings({ heBlur: bad }).heBlur, String(bad)).toBe(17);
+    }
+    expect(sanitizeSettings({}).heBlur).toBe(17);
+    for (const v of [8, 12, 17, 20]) {
+      expect(sanitizeSettings({ heBlur: v }).heBlur).toBe(v);
+    }
+    window.localStorage.clear();
+    loadSettings();
+    expect(window.localStorage.getItem(KEY_SETTINGS)).toBeNull();
+  });
+});

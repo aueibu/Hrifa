@@ -111,3 +111,51 @@ describe('M8b relative modal', () => {
     expect(screen.queryByTestId('relative-menu')).toBeNull();
   });
 });
+
+describe('M9c Color channels', () => {
+  const change = (testId: string, value: string) =>
+    fireEvent.change(screen.getByTestId(testId), { target: { value } });
+  const field = (testId: string) => screen.getByTestId(testId) as HTMLSelectElement;
+
+  it('Rings: Preset on top (Families by default), Hue and Brightness below; changing one channel reads as Custom, a preset sets both', () => {
+    openRel();
+    openOn(ringNotes()[0]);
+    expect(field('relative-color-preset').value).toBe('families');
+    expect(field('relative-hue').value).toBe('prime');
+    expect(field('relative-bright').value).toBe('off');
+    expect(screen.queryByTestId('relative-radius')).toBeNull();
+    expect(screen.queryByTestId('relative-color-emphasis')).toBeNull();
+    change('relative-bright', 'tenney');
+    expect(field('relative-color-preset').value).toBe('custom');
+    // a Brightness shows the bar and the Range, and the Interval intensity
+    expect(screen.getByTestId('relative-legend-bar')).toBeTruthy();
+    expect(screen.getByTestId('relative-color-range')).toBeTruthy();
+    expect(screen.getByTestId('relative-color-emphasis')).toBeTruthy();
+    change('relative-color-preset', 'tuningCheck');
+    expect(field('relative-hue').value).toBe('errorSign');
+    expect(field('relative-bright').value).toBe('errorSize');
+    // the error strip, no bar; |error| has no Range and no intensity
+    expect(screen.queryByTestId('relative-legend-bar')).toBeNull();
+    expect(screen.queryByTestId('relative-color-range')).toBeNull();
+    change('relative-color-preset', 'plain');
+    expect(screen.queryByTestId('relative-color-legend')).toBeNull();
+  });
+
+  it('Near: Radius replaces the Odd limit / Tenney toggle; the ring labels follow it (T, o, cents)', () => {
+    openRel();
+    openOn(ringNotes()[0]);
+    fireEvent.click(half('3/2'), { ctrlKey: true });
+    expect(screen.getByTestId('relative-meta-panel')).toBeTruthy();
+    expect(screen.queryByLabelText('Complexity measure')).toBeNull();
+    expect(field('relative-radius').value).toBe('tenney');
+    expect(screen.getAllByText(/^T\d+$/).length).toBeGreaterThan(0);
+    change('relative-radius', 'odd');
+    expect(screen.getAllByText(/^o\d+$/).length).toBeGreaterThan(0);
+    expect(field('relative-color-preset').value).toBe('custom');
+    change('relative-radius', 'errorSize');
+    expect(screen.getAllByText(/^\d+c$/).length).toBeGreaterThan(0);
+    // each view keeps its own channels: Rings still has the Families choice
+    change('relative-color-preset', 'consonance');
+    expect(field('relative-radius').value).toBe('entropy');
+  });
+});

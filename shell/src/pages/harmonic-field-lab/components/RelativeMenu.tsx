@@ -20,6 +20,8 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { Button, Modal, SegmentedControl } from '@mantine/core';
 import {
   fmtRatio,
+  heCurveAt,
+  heRange,
   isZeroMonzo,
   landingPitch,
   landingReadout,
@@ -28,9 +30,9 @@ import {
   mulNotes,
   oddLimit,
   parseInterval,
+  ratioNote,
   reduceInto,
   monzoStep,
-  nearComplexity,
   nearRatios,
   noteText,
   sternBrocotBranches,
@@ -39,27 +41,39 @@ import {
   relativeRingAt,
   type Direction,
   type MonzoExps,
-  type NearOrder,
   type Note,
   type RingRatio,
 } from '../../../lib/harmonic-field';
 import type { PreviewTarget } from '../audio/plan';
 import { useLabDeveloperOptions } from '../state/developerOptions';
+import { useHeCurve } from '../state/entropy';
 import {
   FIRST_DOZEN_PRIMES,
-  fitBounds,
+  channelBounds,
   foldOctave,
-  hasRange,
   monzoCellNotes,
   monzoCellTints,
   monzoPaintedNote,
   largestPrimeOf,
-  legendMarkOf,
+  legendMarksOf,
   primeColor,
   tintOf,
+  usesRange,
+  type EntropySource,
   type IntervalTint,
+  type RelRadius,
   type TintContext,
 } from '../state/intervalColor';
+import {
+  RADIUS_DIP_SHARE,
+  effectiveRadius,
+  radiusFloor,
+  radiusOrder,
+  radiusRingLabel,
+  radiusRingValues,
+  radiusScaleValue,
+  radiusValue,
+} from '../state/nearRadius';
 import { MAX_PINS, addPin, braKet, type PinKind } from '../state/pins';
 import {
   MONZO_CTL_H,
@@ -74,7 +88,7 @@ import { RelativeColorLegend } from './RelativeColorLegend';
 import { RelativeColorControls, RelativeColorPanel } from './RelativeColorMenu';
 import { RING_PX_PER_UNIT, RING_R, RingDot } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
-import { Hint, noteHandlers, useLab } from './ui';
+import { Hint, Tip, noteHandlers, useLab } from './ui';
 import { useLocalMonzo } from './useLocalMonzo';
 import { useTiles } from './useTiles';
 import classes from './relativeMenu.module.css';
@@ -150,7 +164,6 @@ const EMPTY_SET: ReadonlySet<number> = new Set<number>();
 
 /** M8d meta ring: the settings (runtime only, kept by the page), their defaults and ranges, and the most dots drawn. */
 export interface MetaSettings {
-  measure: NearOrder;
   /** The whole window in cents (+-half around the center). */
   spanC: number;
   oddCap: number;
@@ -162,6 +175,8 @@ export interface MetaSettings {
   rings: boolean;
   /** Radial spokes at round cent offsets. */
   cents: boolean;
+  /** M9: the harmonic entropy curve as a thin line in a band outside the ring, at each cent offset's angle (runtime only, like the others). */
+  entropy: boolean;
   /**
    * Where offset 0 sits: at noon, or at the true angle of the pitch the center interval would add (from the clicked note, in the
    * current direction) on the center ring (1/1 at noon). With Alt (below) the window mirrors, so with Span 1200 and Arc 360 every
@@ -177,13 +192,13 @@ export type MetaConnect = 'off' | 'order' | 'prime' | 'parents';
 export type MetaZero = 'noon' | 'landing';
 export type MetaScale = 'linear' | 'log' | 'even';
 export const META_DEFAULTS: MetaSettings = {
-  measure: 'tenney',
   spanC: 1200,
   oddCap: 123,
   arc: 360,
   connect: 'off',
   rings: true,
   cents: true,
+  entropy: false,
   zero: 'landing',
   scale: 'even',
   mask: Array.from({ length: 25 }, () => true),
@@ -225,10 +240,8 @@ const CENTS_STEPS = [1, 2, 5, 10, 20, 50, 100] as const;
 const CENTS_FINE: Record<number, number> = { 1: 0.5, 2: 0.5, 5: 1, 10: 2, 20: 5, 50: 10, 100: 20 };
 export const centsStep = (half: number): number =>
   CENTS_STEPS.find((s) => half / s <= 6) ?? CENTS_STEPS[CENTS_STEPS.length - 1];
-/** Odd limits the complexity rings can sit on. */
 /** The least gap (px) between two complexity rings. */
 const RING_GAP = 12;
-const ODD_RING_VALUES = [7, 15, 31, 63, 127, 255, 511];
 /** A cents offset as text with a real minus sign: `+9.9 c`, `−7.7 c`. */
 export const signedCents = (c: number, dp = 1): string =>
   `${c < 0 ? '−' : '+'}${Math.abs(c).toFixed(dp)} c`;
@@ -439,26 +452,30 @@ export function metaRange(dots: readonly MetaDot[]): { lo: number; hi: number } 
   return dots.length ? { lo, hi } : { lo: 0, hi: 0 };
 }
 
-/**
- * The radius transform, one function for the dots, the highlight and the complexity rings. Linear: v. Log: log(1 + v). Even: the
- * count-like size, which for Tenney (log2 of n x d) is 2^(v/2) = sqrt(n x d); odd-limit counts already grow about with the radius,
- * so for the odd limit Even is the same as Linear.
- */
-export function metaScaleValue(measure: NearOrder, scale: MetaScale, v: number): number {
-  if (scale === 'log') {
-    return Math.log(1 + Math.max(0, v));
-  }
-  if (scale === 'even' && measure === 'tenney') {
-    return 2 ** (v / 2);
-  }
-  return v;
-}
+/** The radius transform, one function for the dots, the highlight and the complexity rings (see `radiusScaleValue`). */
+export const metaScaleValue = radiusScaleValue;
 
 /** The radius of a complexity value between the transformed lo and hi. */
 export function metaRadius(
-  g: { rMin: number; rMax: number; lo: number; hi: number; measure: NearOrder; scale: MetaScale },
+  g: {
+    rMin: number;
+    rMax: number;
+    lo: number;
+    hi: number;
+    measure: RelRadius;
+    scale: MetaScale;
+    floor?: number;
+  },
   v: number
 ): number {
+  if (g.floor !== undefined && g.floor > g.lo && g.floor < g.hi) {
+    // F10: the Entropy dip (values below the Fixed bounds) takes the inner RADIUS_DIP_SHARE; the main scale starts at the floor
+    const f = (x: number) => metaScaleValue(g.measure, g.scale, x);
+    const rFloor = g.rMin + (g.rMax - g.rMin) * RADIUS_DIP_SHARE;
+    return v < g.floor
+      ? g.rMin + ((rFloor - g.rMin) * (f(v) - f(g.lo))) / (f(g.floor) - f(g.lo) || 1)
+      : rFloor + ((g.rMax - rFloor) * (f(v) - f(g.floor))) / (f(g.hi) - f(g.floor) || 1);
+  }
   const f0 = metaScaleValue(g.measure, g.scale, g.lo);
   const f1 = metaScaleValue(g.measure, g.scale, g.hi);
   return (
@@ -467,13 +484,18 @@ export function metaRadius(
 }
 
 export interface MetaGeometry {
-  measure: NearOrder;
+  /** The radius metric (the Near Radius channel; the name is kept from the old measure toggle). */
+  measure: RelRadius;
+  /** The entropy curve's exact values (Radius Entropy only). */
+  he?: EntropySource | null;
   scale: MetaScale;
   C: number;
   rMin: number;
   rMax: number;
   lo: number;
   hi: number;
+  /** Entropy radius: where the main scale starts (the dip below it takes the inner share, see `radiusFloor`). */
+  floor?: number;
   zero: number;
   sign: 1 | -1;
   arc: number;
@@ -546,9 +568,14 @@ export function metaParentLinks(
     let node = nodes.get(key);
     if (!node) {
       const offsetC = wrap1200(1200 * Math.log2(n / d) - t + 600) - 600;
-      const v = nearComplexity(
-        { odd: Math.max(oddPart(fn), oddPart(fd)), tenney: Math.log2(fn * fd) },
-        g.measure
+      const v = radiusValue(
+        g.measure,
+        {
+          note: ratioNote(fn, fd),
+          odd: Math.max(oddPart(fn), oddPart(fd)),
+          tenney: Math.log2(fn * fd),
+        },
+        g.he
       );
       const p = metaDotPos(g, { v, offsetC });
       const r = Math.hypot(p.x - g.C, p.y - g.C);
@@ -645,9 +672,14 @@ export interface MetaLayerProps {
   rMax: number;
   lo: number;
   hi: number;
+  /** Entropy radius: where the main scale starts (see `radiusFloor`). */
+  floor?: number;
   zero: number;
   sign: 1 | -1;
   mSet: MetaSettings;
+  /** The radius metric drawn (Near's Radius channel) and, for Entropy, its curve's exact values. */
+  radius: RelRadius;
+  he: EntropySource | null;
   meta: MetaCenter;
   dots: readonly MetaDot[];
   onDotEnter: (ratio: RingRatio, altKey?: boolean) => void;
@@ -662,7 +694,15 @@ export interface MetaLayerProps {
   hoverText: string | null;
   /** M8o: each dot's tint from the picker's Color menu (null: Color Off, the dots keep the plain look). */
   dotTints: ReadonlyMap<RingRatio, IntervalTint> | null;
+  /** M9: the harmonic entropy curve to draw around the ring (null: not drawn). */
+  heCurve: Float64Array | null;
 }
+
+/** The entropy curve's band outside the ring (SVG units): its gap from the outermost dot radius and its height (inside the bands' 16 px margin). */
+export const HE_BAND_GAP = 3;
+export const HE_BAND_H = 11;
+/** Points of the entropy polyline across the span. */
+const HE_POINTS = 240;
 
 /**
  * The meta ring's whole drawing (surface, guides, threads, dots with hit circles). Memoized with stable props and callbacks, so a
@@ -675,9 +715,12 @@ const MetaLayer = memo(function MetaLayer({
   rMax,
   lo,
   hi,
+  floor,
   zero,
   sign,
   mSet,
+  radius,
+  he,
   meta,
   dots,
   onDotEnter,
@@ -687,16 +730,19 @@ const MetaLayer = memo(function MetaLayer({
   onSurfaceClick,
   hoverText,
   dotTints,
+  heCurve,
 }: MetaLayerProps) {
   const arc = mSet.arc;
   const geo: MetaGeometry = {
-    measure: mSet.measure,
+    measure: radius,
+    he,
     scale: mSet.scale,
     C,
     rMin,
     rMax,
     lo,
     hi,
+    floor,
     zero,
     sign,
     arc,
@@ -712,8 +758,24 @@ const MetaLayer = memo(function MetaLayer({
       .join(' ');
   const metaLine = useMemo(
     () => pts(dots),
-    [dots, C, rMin, rMax, lo, hi, zero, sign, arc, mSet.spanC, mSet.measure, mSet.scale]
+    [dots, C, rMin, rMax, lo, hi, floor, zero, sign, arc, mSet.spanC, radius, mSet.scale]
   );
+  // M9: the entropy curve as a radial polyline: the pitch at offset o is the center interval plus o, drawn at the dots' own angle for
+  // o; low entropy (consonant) sits nearest the ring; with a smaller Span only that arc is drawn
+  const hePoints = useMemo(() => {
+    if (!heCurve) {
+      return null;
+    }
+    const { min, max } = heRange(heCurve);
+    const out: string[] = [];
+    for (let i = 0; i <= HE_POINTS; i++) {
+      const o = -mSet.spanC / 2 + (mSet.spanC * i) / HE_POINTS;
+      const t = max > min ? (heCurveAt(heCurve, meta.note.c + o) - min) / (max - min) : 0;
+      const p = polar(C, rMax + HE_BAND_GAP + HE_BAND_H * t, metaAngle(o));
+      out.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
+    }
+    return out.join(' ');
+  }, [heCurve, C, rMax, zero, sign, arc, mSet.spanC, meta.note.c]);
   // one thread per largest prime (groups of two or more, in complexity order)
   const threads = useMemo(() => {
     const byPrime = new Map<number, MetaDot[]>();
@@ -743,11 +805,13 @@ const MetaLayer = memo(function MetaLayer({
       rMax,
       lo,
       hi,
+      floor,
       zero,
       sign,
       arc,
       mSet.spanC,
-      mSet.measure,
+      radius,
+      he,
       mSet.scale,
       meta.note.c,
     ]
@@ -761,17 +825,8 @@ const MetaLayer = memo(function MetaLayer({
   // guides: complexity rings (round values inside the drawn range) and cents spokes
   const ringValues: number[] = [];
   if (mSet.rings && dots.length) {
-    const candidates: number[] = [];
-    if (mSet.measure === 'odd') {
-      candidates.push(...ODD_RING_VALUES.filter((v) => v >= lo && v <= hi));
-      if (!candidates.includes(hi)) {
-        candidates.push(hi);
-      }
-    } else {
-      for (let v = Math.ceil(lo); v <= Math.floor(hi); v++) {
-        candidates.push(v);
-      }
-    }
+    // the rings label the main scale only: the dip below `floor` is drawn without rings, inward of the innermost labeled one
+    const candidates = radiusRingValues(radius, floor ?? lo, hi);
     // thin by distance on the drawn radius (the transform crowds one end): from the outside in, keep a ring only when it
     // sits at least RING_GAP px inside the last kept one
     let lastR = Infinity;
@@ -784,7 +839,7 @@ const MetaLayer = memo(function MetaLayer({
     }
     ringValues.reverse();
   }
-  const ringLabel = (v: number) => (mSet.measure === 'odd' ? `o${v}` : `T${v}`);
+  const ringLabel = (v: number) => radiusRingLabel(radius, v);
   const arcPath = (r: number) => {
     const a0 = zero - arc / 2;
     const a1 = zero + arc / 2;
@@ -887,6 +942,14 @@ const MetaLayer = memo(function MetaLayer({
           </g>
         );
       })}
+      {hePoints && (
+        <polyline
+          className={classes.metaHe}
+          data-testid="relative-meta-entropy"
+          points={hePoints}
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
       {mSet.cents && (
         <text
           className={classes.metaGuideLabel}
@@ -1553,18 +1616,41 @@ export function RelativeModal({
     return null;
   };
   const metaOn = meta !== null && !isMonzo;
+  // M8o Color menu + M9c channels: Hue, Brightness, range and octave (settings.v1), the lab-wide interval intensity (developer.v1) and the
+  // scheme; in Near also the RADIUS of the dots. The tints are built per view (ring cells, Near dots, Monzo matrix cells) and handed
+  // down as one memoized map or grid, so a hover (which changes none of these inputs) never rebuilds them and the memoized band cells
+  // stay memoized.
+  // the OPEN view's choice (D24: Rings, Near and Monzo each keep their own; ring pin cards follow the open view)
+  const relColors = lab.state.ui.relColor;
+  const relColor = isMonzo ? relColors.monzo : metaOn ? relColors.near : relColors.rings;
+  const monzoOctave = isMonzo ? relColors.monzo.octave : 'exact';
+  const [dev] = useLabDeveloperOptions();
+  const { look, outline, scheme } = useTiles();
+  const colorOn = relColor.hue !== 'off' || relColor.bright !== 'off';
+  // M9: the entropy curve is asked for only while something here draws it (Entropy brightness or radius, or the Near overlay); the
+  // picker re-renders only when a build finishes. The tint maps depend on the curve's identity, never on a hover.
+  const entropyColor = relColor.bright === 'entropy' || relColor.hue === 'entropy';
+  const entropyRadius = metaOn && relColors.near.radius === 'entropy';
+  const he = useHeCurve(
+    lab.state.ui.heBlur,
+    dev.heLimit,
+    entropyColor || entropyRadius || (metaOn && mSet.entropy)
+  );
+  const heSource = entropyColor || entropyRadius ? he.source : null;
+  // M9c: the Near radius (Entropy waits for its curve: Tenney meanwhile, so the dots and the ring labels never mix two scales)
+  const radius = effectiveRadius(relColors.near.radius, heSource !== null);
   const near = useMemo(
     () =>
       metaOn && meta
         ? nearRatios(meta.note, {
             spanC: mSet.spanC,
             oddCap: mSet.oddCap,
-            order: mSet.measure,
+            order: radiusOrder(radius),
             max: META_MAX_DOTS,
             mask: mSet.mask,
           })
         : null,
-    [metaOn, meta, mSet.spanC, mSet.oddCap, mSet.measure, mSet.mask]
+    [metaOn, meta, mSet.spanC, mSet.oddCap, radius, mSet.mask]
   );
   // one RingRatio per dot (stable between renders, so hover can compare by identity)
   const dots = useMemo(
@@ -1572,25 +1658,15 @@ export function RelativeModal({
       (near?.items ?? []).map((it) => ({
         ratio: { note: it.note, text: it.text, odd: it.odd } as RingRatio,
         offsetC: it.offsetC,
-        v: nearComplexity(it, mSet.measure),
+        v: radiusValue(radius, it, heSource),
         prime: largestPrime(it.text),
         isCenter: meta !== null && it.text === meta.text && Math.abs(it.offsetC) < 1e-6,
       })),
-    [near, meta, mSet.measure]
+    [near, meta, radius, heSource]
   );
   const dotByRatio = useMemo(() => new Map(dots.map((d) => [d.ratio, d])), [dots]);
   const hoverDot = metaOn && cell ? (dotByRatio.get(cell) ?? null) : null;
   const hoverOffset = hoverDot ? hoverDot.offsetC : null;
-  // M8o Color menu: the metric, range and octave (settings.v1), the lab-wide interval intensity (developer.v1) and the scheme. The tints
-  // are built per view (ring cells, Near dots, Monzo matrix cells) and handed down as one memoized map or grid, so a hover
-  // (which changes none of these inputs) never rebuilds them and the memoized band cells stay memoized.
-  // the OPEN view's choice (D24: Rings, Near and Monzo each keep their own; ring pin cards follow the open view)
-  const relColors = lab.state.ui.relColor;
-  const relColor = isMonzo ? relColors.monzo : metaOn ? relColors.near : relColors.rings;
-  const monzoOctave = isMonzo ? relColors.monzo.octave : 'exact';
-  const [dev] = useLabDeveloperOptions();
-  const { look, outline, scheme } = useTiles();
-  const colorOn = relColor.metric !== 'off';
   const monzoCells = useMemo(
     () => (isMonzo && colorOn ? monzoCellNotes(monzo, monzoOctave) : null),
     [isMonzo, colorOn, monzo, monzoOctave]
@@ -1598,34 +1674,38 @@ export function RelativeModal({
   // Fit to view: the min and max over the cells of the open view (ring cells, Near dots or Monzo matrix cells)
   const viewNotes = useMemo(
     () =>
-      relColor.range !== 'fit' || !hasRange(relColor.metric)
+      relColor.range !== 'fit' || !usesRange(relColor)
         ? []
         : isMonzo
           ? (monzoCells?.flat() ?? [])
           : metaOn
             ? dots.map((d) => d.ratio.note)
             : rings.flat().map((r) => r.note),
-    [relColor.range, relColor.metric, isMonzo, monzoCells, metaOn, dots, rings]
+    [relColor.range, relColor.hue, relColor.bright, isMonzo, monzoCells, metaOn, dots, rings]
   );
   const tintCtx = useMemo<TintContext | null>(
     () =>
-      colorOn
+      colorOn && (!entropyColor || heSource)
         ? {
-            metric: relColor.metric as TintContext['metric'],
+            hue: relColor.hue,
+            bright: relColor.bright,
+            he: heSource,
             intensity: dev.intervalIntensity,
             scheme,
             look,
             outline,
             repC,
-            bounds:
-              relColor.range === 'fit' && hasRange(relColor.metric)
-                ? fitBounds(relColor.metric, viewNotes)
-                : null,
+            // each measure channel has its own bounds: Fit over the view, or Entropy's Fixed ones (F10)
+            bounds: channelBounds(relColor.bright, relColor.range, viewNotes, heSource),
+            hueBounds: channelBounds(relColor.hue, relColor.range, viewNotes, heSource),
           }
         : null,
     [
       colorOn,
-      relColor.metric,
+      entropyColor,
+      heSource,
+      relColor.hue,
+      relColor.bright,
       relColor.range,
       dev.intervalIntensity,
       scheme,
@@ -1638,7 +1718,7 @@ export function RelativeModal({
   // D23 legend: the primes present in the open view (Prime) and the hovered interval's place on the legend. `legendMark` is rebuilt
   // only when the hovered interval (or the legend's own inputs) changes and the memoized legend alone redraws; the ring never does.
   const legendPrimes = useMemo(() => {
-    if (relColor.metric !== 'prime') {
+    if (relColor.hue !== 'prime') {
       return [];
     }
     const notes = isMonzo
@@ -1654,7 +1734,7 @@ export function RelativeModal({
       }
     }
     return [...set].sort((a, b) => a - b);
-  }, [relColor.metric, isMonzo, monzoCells, metaOn, dots, rings]);
+  }, [relColor.hue, isMonzo, monzoCells, metaOn, dots, rings]);
   const ringTints = useMemo(
     () =>
       tintCtx && !isMonzo && !metaOn
@@ -1683,12 +1763,14 @@ export function RelativeModal({
     () =>
       tintCtx && monzoCells
         ? monzoCellTints(monzoCells, {
-            metric: tintCtx.metric,
+            hue: tintCtx.hue,
+            bright: tintCtx.bright,
             intensity: tintCtx.intensity,
             scheme: tintCtx.scheme,
             look: tintCtx.look,
             outline: tintCtx.outline,
             repC: tintCtx.repC,
+            he: tintCtx.he,
             range: relColor.range,
           })
         : null,
@@ -1735,22 +1817,45 @@ export function RelativeModal({
   );
   const hoverNote = isMonzo ? monzoHoverNote : (cell?.note ?? null);
   const legendBounds = tintCtx?.bounds ?? null;
+  const legendHueBounds = tintCtx?.hueBounds ?? null;
   const legendMark = useMemo(
     () =>
-      hoverNote && colorOn ? legendMarkOf(relColor.metric, hoverNote, legendBounds, repC) : null,
+      hoverNote && colorOn
+        ? legendMarksOf(
+            relColor.hue,
+            relColor.bright,
+            hoverNote,
+            legendBounds,
+            repC,
+            heSource,
+            legendHueBounds
+          )
+        : null,
     // the note is read through its identity: a ring cell and a parsed card keep theirs, the painted note is rebuilt per monzo
-    [hoverNote, colorOn, relColor.metric, legendBounds, repC]
+    [
+      hoverNote,
+      colorOn,
+      relColor.hue,
+      relColor.bright,
+      legendBounds,
+      legendHueBounds,
+      repC,
+      heSource,
+    ]
   );
   const legend = (
     <RelativeColorLegend
-      metric={relColor.metric}
+      hue={relColor.hue}
+      bright={relColor.bright}
       bounds={legendBounds}
+      hueBounds={legendHueBounds}
       intensity={dev.intervalIntensity}
       look={look}
       outline={outline}
       scheme={scheme}
       primes={legendPrimes}
       mark={legendMark}
+      building={(entropyColor || entropyRadius) && he.building}
     />
   );
   const overlay = useMemo(
@@ -1784,6 +1889,7 @@ export function RelativeModal({
   // the dots' outer radius leaves room outside it for the cents labels
   const rMax = bands[bands.length - 1][1] - 16;
   const { lo, hi } = useMemo(() => metaRange(dots), [dots]);
+  const floor = radiusFloor(radius, heSource, lo, hi);
   // offset 0 at noon, or at the true angle of the pitch the center interval adds (Alt = below mirrors the window)
   const atLanding = mSet.zero === 'landing' && meta !== null;
   const zero = atLanding ? trueAngle(landingPitch(from, meta.note, dir, rep).c, repC) : 0;
@@ -1917,7 +2023,7 @@ export function RelativeModal({
       setMeta(null);
     }
   }, []);
-  const showLegend = mSet.connect === 'prime' && relColor.metric !== 'prime';
+  const showLegend = mSet.connect === 'prime' && relColor.hue !== 'prime';
   return (
     <Modal
       opened={opened}
@@ -2073,9 +2179,12 @@ export function RelativeModal({
               rMax={rMax}
               lo={lo}
               hi={hi}
+              floor={floor}
               zero={zero}
               sign={sign}
               mSet={mSet}
+              radius={radius}
+              he={heSource}
               meta={meta}
               dots={dots}
               onDotEnter={onDotEnter}
@@ -2085,6 +2194,7 @@ export function RelativeModal({
               onSurfaceClick={onSurfaceClick}
               hoverText={mSet.connect === 'parents' && cell ? cell.text : null}
               dotTints={dotTints}
+              heCurve={metaOn && mSet.entropy ? he.curve : null}
             />
           )}
           {/* the hovered dot's highlight: one circle above the memoized layer (the layer itself never re-renders on hover) */}
@@ -2094,13 +2204,15 @@ export function RelativeModal({
             (() => {
               const p = metaDotPos(
                 {
-                  measure: mSet.measure,
+                  measure: radius,
+                  he: heSource,
                   scale: mSet.scale,
                   C,
                   rMin,
                   rMax,
                   lo,
                   hi,
+                  floor,
                   zero,
                   sign,
                   arc: mSet.arc,
@@ -2134,18 +2246,8 @@ export function RelativeModal({
             <div className={classes.metaTitle}>Near {meta.text}</div>
             <SegmentedControl
               size="xs"
-              aria-label="Complexity measure"
-              value={mSet.measure}
-              onChange={(v) => setMSet({ measure: v === 'tenney' ? 'tenney' : 'odd' })}
-              data={[
-                { value: 'odd', label: 'Odd limit' },
-                { value: 'tenney', label: 'Tenney' },
-              ]}
-            />
-            <SegmentedControl
-              size="xs"
               aria-label="Radius scale"
-              title="Scale: Linear (radius by the complexity), Log (by its log), Even (by the count-like size, square root of n x d for Tenney, so the dots spread evenly)"
+              title="Scale: Linear (radius by the Radius value), Log (by its log), Even (for Tenney by the count-like size, square root of n x d, so the dots spread evenly; the other Radius values have no count-like size, so Even is Linear)"
               value={mSet.scale}
               onChange={(v) =>
                 setMSet({ scale: v === 'linear' ? 'linear' : v === 'log' ? 'log' : 'even' })
@@ -2242,6 +2344,20 @@ export function RelativeModal({
                 Cents lines
               </label>
             </Hint>
+            <Tip k="heNear" as="control" block>
+              <label className={classes.metaCheck}>
+                <input
+                  type="checkbox"
+                  data-testid="relative-meta-entropy-check"
+                  checked={mSet.entropy}
+                  onChange={(e) => setMSet({ entropy: e.currentTarget.checked })}
+                />
+                Entropy curve
+              </label>
+            </Tip>
+            {mSet.entropy && he.building && (
+              <div className={classes.metaNote}>Building entropy…</div>
+            )}
             {showLegend && (
               <div className={classes.metaLegend} data-testid="relative-meta-legend">
                 {FIRST_DOZEN_PRIMES.map((p) => (

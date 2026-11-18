@@ -2878,8 +2878,12 @@ const entries = {
   },
   relColor: {
     term: 'Color (relative picker)',
-    text: 'Colors every interval of the open relative picker view and the pinned cards. Each view (Rings, Near, Monzo) keeps its own choice: change it in Rings and Near and Monzo stay as they were. Ring pin cards follow the open view (Rings or Near); monzo pin cards follow Monzo. Off: plain. Prime: by the largest prime of the ratio (3, 5, 7 ... each its own hue). Tenney: by log2 of numerator times denominator. Odd limit: by the larger odd part. Error vs 12-EDO: by the cents to the nearest 12-EDO step (same hues as the Pairs panel Error). Interval class: by the size of the interval (the Pairs panel Interval wheel). Roughness: by the roughness of the two tones in the Roughness view. Tenney, Odd limit and Roughness shade one hue; which end is strong is the Interval intensity. In Monzo each cell shows the interval you would get if only that prime were set to the value in that cell. Saved across reloads, per view. Example: with Tenney in Rings and Prime in Near, a ring cell is shaded while the same interval in Near is its prime hue; with Tenney, 3/2 is strongly tinted and 81/80 faintly.',
+    text: 'Colors every interval of the open relative picker view and the pinned cards with two channels: Hue says which family, Brightness says how much. Near adds Radius, how far from the ring a dot sits. Pick a Preset to set them in one click, or set each yourself. Each view (Rings, Near, Monzo) keeps its own choice: change it in Rings and Near and Monzo stay as they were. Ring pin cards follow the open view; monzo pin cards follow Monzo. In Monzo each cell shows the interval you would get if only that prime were set to the value in that cell. Saved across reloads, per view. Example: Hue Prime with Brightness Tenney, 3/2 is the hue of 3 and bright, 81/80 the hue of 5 and dim.',
     see: [
+      'relColorPreset',
+      'relColorRadius',
+      'relColorHue',
+      'relColorBright',
       'relativeMenu',
       'relColorLegend',
       'relColorRange',
@@ -2888,15 +2892,62 @@ const entries = {
       'pinBar',
     ],
   },
+  relColorPreset: {
+    term: 'Color preset',
+    text: 'One click sets Hue, Brightness and (in Near) Radius for a question. Families: which harmonic family, how simple (Radius Tenney, Hue Prime, Brightness Off). Ear vs paper: simple on paper vs recognizable to the ear (Tenney, Prime, Harmonic entropy). Tuning check: which notes are sharp or flat, how far (Tenney, Error sign, |error|). Consonance: the two consonance models against each other (Radius Harmonic entropy, Hue Off, Brightness Roughness). Interval classes: where each interval class sits, by complexity (Radius Odd limit, Interval class, Tenney). Plain: position only. The channels stay editable; after you change one so that it matches no preset the select shows Custom. Rings and Monzo have no Radius, so a preset sets only their Hue and Brightness. Example: pick Tuning check in Near and 5/4 (13.7 c flat) is cyan, band 2.',
+    see: ['relColor', 'relColorHue', 'relColorBright', 'relColorRadius'],
+  },
+  relColorRadius: {
+    term: 'Radius (Near)',
+    text: 'What decides how far from the ring a dot sits (Near only; the angle is still the pitch). Tenney: log2 of numerator times denominator (rings T2, T3, ...). Odd limit: the larger odd part (rings o7, o15, ...). Roughness: the lab dyad roughness (rings R0.50, ...). Harmonic entropy: low is a clear, simple ratio (rings H1.00, ...; Tenney until its curve is built). |error|: cents from the nearest 12-EDO step (rings 5c, 10c, ...). Scale and Ceiling work on every one: Scale Even only differs from Linear for Tenney, and the Ceiling (odd) still limits which ratios exist. Example: Radius |error| puts 3/2 (2 c) near the center and 7/4 (31 c) far out.',
+    see: ['relColor', 'relColorPreset', 'heCurve'],
+  },
+  relColorHue: {
+    term: 'Color hue',
+    text: 'Which family a cell, dot or card belongs to. Off: no hue (Brightness then draws a blue ramp). Prime: by the largest prime of the ratio (3, 5, 7 ... each its own hue, the wheel of the Near dots). Interval class: by the size of the interval (the Pairs panel Interval wheel). Error sign: orange sharp, cyan flat, neutral exact (the cents to the nearest 12-EDO step, the same hues as the tuner strip). A measure (Tenney, Odd limit, Roughness, Harmonic entropy, |error|): the hue runs along one ordered ramp, deep blue to cyan to green to yellow on the dark theme (yellow is the strong end), so neighbors that share a blue shade still differ. With Brightness off the ramp stands alone; with a Brightness it also moves each color lighter or darker. Example: Hue Tenney, Brightness Off: 3/2 and 5/4 get different colors, where Brightness Tenney alone can leave both in the same shade of blue.',
+    see: ['relColor', 'relColorBright', 'relColorLegend'],
+  },
+  relColorBright: {
+    term: 'Color brightness',
+    text: 'How much: bright is strong. Off: one fixed level per hue. Tenney: log2 of numerator times denominator. Odd limit: the larger odd part. Roughness: the roughness of the two tones in the Roughness view. Harmonic entropy: low is the simple end (octave-reduced first; the blur s slider shows here too). |error|: the error size in the five bands of the Pairs panel, strong when large. With Hue Off it is a blue ramp; with a Hue it moves along that hue. Which end of the complexity measures is strong is the Interval intensity. Example: Brightness Tenney, 3/2 is bright and 81/80 dim.',
+    see: ['relColor', 'relColorHue', 'relColorRange', 'intervalIntensity', 'heBlur'],
+  },
+  heCurve: {
+    term: 'Harmonic entropy',
+    text: "A second curve behind the roughness curve, on its own vertical scale: how uncertain the ear is about which simple ratio an interval is (Erlich's harmonic entropy). Low is a clear, simple ratio; the dips are the consonances. The dots are the field's notes at their exact value. Only the shape matters, not the height. It is built once and kept; the blur s and the candidate limit (Developer menu) change it. Example: at s 17 c, 3/2 (702 c), 4/3 and 5/4 are dips; 7/4 is a shallow one.",
+    see: ['heBlur', 'heLimit', 'dissCurve'],
+  },
+  heBlur: {
+    term: 'Harmonic entropy blur (s)',
+    text: 'How finely the ear resolves pitch, in cents: a lower s shows more dips. One value for the whole lab (the Dissonance view, the picker Color Harmonic entropy for Hue, Brightness or Radius, and the Near entropy curve); saved across reloads. The curve is rebuilt when you pause dragging, and a value you used before comes back instantly. Example: at s 17 c there is no dip at 11/8 (551 c) or 9/8 (204 c); at s 12 c both appear.',
+    see: ['heCurve', 'heLimit'],
+  },
+  heLimit: {
+    term: 'Harmonic entropy candidates',
+    text: 'A Developer option: harmonic entropy considers every reduced ratio n/d with n x d below this limit (10k, 30k default, 100k, 250k or 500k). More ratios is slower to build and truer; each choice shows an estimate of the build time from this machine. Large builds run in the background and the views keep the previous curve with a Building entropy note. Example: 10k shows a false dip near 1065 c that is gone at 30k.',
+    see: ['heCurve', 'heBlur', 'developerMenu'],
+  },
+  heNear: {
+    term: 'Entropy curve (Near)',
+    text: 'Draws the harmonic entropy curve as a thin line in a band just outside the Near ring, at the angle of each cent offset, so the curve dips toward the ring at consonances. With a smaller Span only that arc is drawn. Uses the same s and candidate limit as the Dissonance view. Example: Near 1/1, Span 1200: the line comes closest to the ring at 386, 498 and 702 c.',
+    see: ['heCurve', 'heBlur'],
+  },
   relColorRange: {
     term: 'Color range',
-    text: 'Where the shading of Tenney, Odd limit and Roughness starts and ends, chosen per view (Error always uses the fixed bands of the Pairs panel). Fixed: set bounds, so one interval has one color in every view. Fit to view: the simplest cell on screen is the strongest end and the most complex the other, so a view of only simple ratios still uses the whole ramp. A pinned card uses the range of the open view. Example: Tenney, view up to 7/4 only: Fit makes 3/2 the strongest and 7/4 the faintest; Fixed shows all of them fairly strong.',
-    see: ['relColor', 'intervalIntensity'],
+    text: 'Where a measure of Tenney, Odd limit, Roughness or Harmonic entropy starts and ends, on whichever channel holds it (Hue or Brightness), chosen per view (|error| always uses the fixed bands of the Pairs panel). Fixed: set bounds, so one interval has one color in every view; the Harmonic entropy bounds leave out 30 c around the unison and octave, which are still drawn, at the strong end. Fit to view: the simplest cell on screen is the strongest end and the most complex the other, so a view of only simple ratios still uses the whole ramp. A pinned card uses the range of the open view. Example: Brightness Tenney, view up to 7/4 only: Fit makes 3/2 the brightest and 7/4 the dimmest; Fixed shows all of them fairly bright.',
+    see: ['relColor', 'relColorBright', 'intervalIntensity'],
   },
   relColorLegend: {
     term: 'Color scale',
-    text: 'What the colors mean. Prime: one chip per prime in the open view. Tenney, Odd limit, Roughness: a bar from the simplest end to the most complex end with the end values (fixed bounds, or the open view with Fit to view); the strong end is named, and follows Interval intensity. Error: the same strip as the Modes and Pairs panels, flat (cyan) through exact (neutral) to sharp (orange), with ticks at the band edges (-30 -15 -5 0 +5 +15 +30 c); it does not change with Fit to view. Interval class: the 12 interval sizes. Point at a ring cell, a Near dot, a Monzo cell or a pinned card to see its place: a tick on the bar or strip (an arrow at the end when it is beyond) or its chip outlined. Example: Odd limit, point at 81/80: the tick sits near the complex end of the bar.',
-    see: ['relColor', 'relColorRange', 'intervalIntensity'],
+    text: 'What the colors mean, in two parts that show only while their channel is on (a measure on Hue and a measure on Brightness stack two bars). Hue: Prime, one chip per prime in the open view; Interval class, the 12 interval sizes; a measure, a ramp bar from deep blue through cyan and green to yellow with the end values; Error sign, the strip of the Modes and Pairs panels (flat cyan through exact neutral to sharp orange, ticks at -30 -15 -5 0 +5 +15 +30 c) when Brightness is |error|, else three chips. Brightness: a bar from the simplest end to the most complex end with the end values (fixed bounds, or the open view with Fit to view) and the strong end named, which follows Interval intensity; the |error| bar has one segment per band, exact to large. Point at a ring cell, a Near dot, a Monzo cell or a pinned card to see its place: a tick on the bar or strip (an arrow at the end when it is beyond) or its chip outlined. Example: Brightness Odd limit, point at 81/80: the tick sits near the complex end of the bar.',
+    see: [
+      'relColor',
+      'relColorHue',
+      'relColorBright',
+      'relColorRange',
+      'intervalIntensity',
+      'heBlur',
+    ],
   },
   relColorOctave: {
     term: 'Monzo octave',

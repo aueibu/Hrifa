@@ -3,10 +3,13 @@
  * the smooth intervals (dips) named. The curve is computed once per repeat (1 c steps) in the lab's analyses.
  */
 import { useMemo, useState, type PointerEvent } from 'react';
-import { dissonanceAt } from '../../../lib/harmonic-field';
+import { dissonanceAt, heCurveAt, heRange } from '../../../lib/harmonic-field';
 import { NEAR_X, layoutChartLabels } from '../state/chartLabelLayout';
+import { useLabDeveloperOptions } from '../state/developerOptions';
+import { useHeCurve } from '../state/entropy';
 import { SVG_FS_SMALL } from '../state/typeScale';
 import { OutsideCount, useGhosts } from './GhostMarks';
+import { HeBlurSlider } from './HeBlurSlider';
 import { ModeChevron, rootLabel, useModeRoot } from './ModeRoot';
 import { Num, Row, Tip, noteHandlers, useLab } from './ui';
 import labClasses from './lab.module.css';
@@ -40,6 +43,27 @@ export function DissonanceBody() {
         .join(' '),
     [dissCurve, repC]
   );
+  // M9: the harmonic entropy curve behind the roughness curve, on its own vertical scale (the curve's FULL min to max over 0..1200 c,
+  // so the unison and octave dips are plotted; `source.lo/hi` are the Fixed color bounds, which leave those dips out, M9c F10); the
+  // field's notes are dots at their exact value (the entropy store's single-value cache)
+  const [dev] = useLabDeveloperOptions();
+  const he = useHeCurve(lab.state.ui.heBlur, dev.heLimit);
+  const heFull = useMemo(() => (he.curve ? heRange(he.curve) : null), [he.curve]);
+  const heSpan = heFull ? Math.max(1e-9, heFull.max - heFull.min) : 1;
+  const yOfHe = (v: number) =>
+    MT + PH * (1 - Math.min(1, Math.max(0, (v - (heFull?.min ?? 0)) / heSpan)));
+  const hePath = useMemo(
+    () =>
+      he.curve
+        ? dissCurve.cents
+            .map(
+              (c, k) =>
+                `${k ? 'L' : 'M'}${xOf(c).toFixed(1)} ${yOfHe(heCurveAt(he.curve!, c)).toFixed(1)}`
+            )
+            .join(' ')
+        : null,
+    [he.curve, heFull, dissCurve, repC]
+  );
   const ghosts = useGhosts();
   // each ghost at its exact roughness (the curve's own calculation, not the 1 c grid), clamped into the chart
   const ghostPts = useMemo(
@@ -51,6 +75,10 @@ export function DissonanceBody() {
     [ghosts, dissCurve]
   );
   const fieldCents = field.map((n) => n.c);
+  const heDots = useMemo(
+    () => (he.source ? field.map((n) => ({ c: n.c, v: he.source!.at(n.c) })) : []),
+    [he.source, field]
+  );
   // the notes whose ratio label is drawn: sounding or in the subset
   const labeled = fieldCents.flatMap((_, i) =>
     lab.sounding.has(i) || lab.selected.has(i) ? [i] : []
@@ -103,6 +131,14 @@ export function DissonanceBody() {
   const selected = lab.hover ?? lab.pin;
   return (
     <>
+      <div className={classes.heHeader} data-testid="he-header">
+        <HeBlurSlider />
+        {he.building && (
+          <span className={classes.heNote} data-testid="he-building">
+            Building entropy…
+          </span>
+        )}
+      </div>
       <div className={classes.dissHost}>
         <Tip k="dissAxes" as="control" block>
           <svg
@@ -186,7 +222,26 @@ export function DissonanceBody() {
                 </g>
               );
             })}
+            {hePath && <path className={classes.heLine} d={hePath} data-testid="he-curve" />}
             <path className={classes.dissLine} d={path} />
+            {hePath && (
+              <text className={classes.heLabel} x={W / 2} y={11} textAnchor="middle">
+                Harmonic entropy
+              </text>
+            )}
+            {heDots.map((d, i) => (
+              <circle
+                key={i}
+                className={classes.heDot}
+                data-testid="he-dot"
+                cx={xOf(d.c)}
+                cy={yOfHe(d.v)}
+                r={2.5}
+                pointerEvents="none"
+              >
+                <title>{`${ratios[i]}: harmonic entropy ${d.v.toFixed(2)}`}</title>
+              </circle>
+            ))}
             {ghostPts.map((g) => (
               <g
                 key={g.c}
@@ -300,6 +355,17 @@ export function DissonanceBody() {
             </Num>
           )}
         </Row>
+        {he.curve && heFull && (
+          <Row name={<Tip k="heCurve">Harmonic entropy</Tip>}>
+            {shownIdx === null ? (
+              <Num muted>
+                {heFull.min.toFixed(2)} to {heFull.max.toFixed(2)}
+              </Num>
+            ) : (
+              <Num>{heCurveAt(he.curve, dissCurve.cents[shownIdx]).toFixed(2)}</Num>
+            )}
+          </Row>
+        )}
         <Row name={<Tip k="dissDips">Smooth intervals</Tip>}>
           <Num>{dissDips.map(dipName).join('  ')}</Num>
         </Row>
