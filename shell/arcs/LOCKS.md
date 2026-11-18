@@ -17,3 +17,7 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| src/pages/AffineFocus.page.tsx | affine-focus | 2026-11-18 | create entry page for /affine-focus |
+| src/Router.tsx | affine-focus | 2026-11-18 | register /affine-focus route |
+| src/data/applets.ts | affine-focus | 2026-11-18 | point Affine Focus applet entry to /affine-focus |
+| ARCHITECTURE.md | affine-focus | 2026-11-18 | document affine-focus in Who consumes what |

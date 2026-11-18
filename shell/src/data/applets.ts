@@ -69,11 +69,12 @@ export const applets: Applet[] = [
   },
   {
     title: 'Affine Focus',
-    href: 'affine-focus-transform-explorer/',
-    category: 'geometry',
+    href: '/affine-focus',
+    category: 'sound',
     status: 'experimental',
     runtime: 'Static browser app',
-    description: 'Explore affine focus transformations and their finite closure graph.',
+    description:
+      'Explore affine focus transformations across arbitrary tunings, gamut-step and raw acoustic domains (log-pitch, linear Hz, subharmonic), canonical reflection/dilation rules, trajectories, and finite orbit closures.',
   },
   {
     title: 'Irregular 3D',

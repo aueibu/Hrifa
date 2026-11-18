@@ -1,0 +1,813 @@
+/* Affine Focus Transform Explorer: adopts Harmonic Field Lab's one-screen instrument layout,
+   M8k type scale, tier separation (no decorative shadows or extra lines), and semantic marker roles. */
+
+:root {
+  --lab-fs-tiny: 0.6875rem;
+  --lab-fs-small: 0.75rem;
+  --lab-fs-body: 0.8125rem;
+  --lab-fs-title: 0.875rem;
+  --lab-fs-glyph: 1rem;
+  --lab-fs-display: 1.5rem;
+  --lab-svg-fs-small: 9px;
+  --lab-svg-fs-label: 11px;
+}
+
+.root {
+  --input-height-xs: 1.625rem;
+
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--lab-fs-body);
+  height: 100dvh;
+  line-height: 1.3;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------------------------- top bar */
+.topbar {
+  align-items: center;
+  background: var(--panel);
+  border-bottom: 1px solid var(--grid);
+  display: flex;
+  flex: none;
+  gap: 0.625rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.625rem;
+}
+
+.homeLink {
+  align-items: center;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  display: inline-flex;
+  font-size: var(--lab-fs-small);
+  gap: 0.25rem;
+  padding: 0.1875rem 0.375rem;
+  text-decoration: none;
+}
+
+.homeLink:hover {
+  background: var(--panel-slot);
+  color: var(--text);
+}
+
+.pageTitle {
+  font-size: var(--lab-fs-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.formulaBadge {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  padding: 0.1875rem 0.5rem;
+  white-space: nowrap;
+}
+
+.grow {
+  flex: 1 1 auto;
+}
+
+.topActions {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+/* ---------------------------------------------------------------------------------------------- 3-column grid */
+.grid {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 0.25rem;
+  grid-template-columns: 18.5rem minmax(0, 1fr) 23.5rem;
+  min-height: 0;
+  padding: 0.25rem;
+}
+
+.leftColumn,
+.centerColumn,
+.rightColumn {
+  background: var(--panel);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 72em) {
+  .root {
+    height: auto;
+    overflow: visible;
+  }
+
+  .grid {
+    grid-template-columns: 17rem minmax(0, 1fr);
+    height: auto;
+  }
+
+  .rightColumn {
+    grid-column: 1 / -1;
+    max-height: 34rem;
+  }
+}
+
+@media (max-width: 50em) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.columnHeader {
+  align-items: center;
+  background: var(--panel-header);
+  display: flex;
+  flex: none;
+  font-size: var(--lab-fs-small);
+  font-weight: 600;
+  justify-content: space-between;
+  min-height: 1.875rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.columnScroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.5rem;
+  scrollbar-gutter: stable;
+}
+
+.columnScroll > * {
+  flex: none;
+}
+
+.sectionBlock {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.5rem;
+}
+
+.sectionHead {
+  align-items: baseline;
+  color: var(--text);
+  display: flex;
+  font-size: var(--lab-fs-small);
+  font-weight: 600;
+  justify-content: space-between;
+}
+
+.mutedLabel {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+}
+
+.tabularNum {
+  font-family: var(--mantine-font-family-monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldRow {
+  align-items: flex-end;
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fieldRow3 {
+  align-items: flex-end;
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* ---------------------------------------------------------------------------------------------- pitch chips */
+.chipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.pitchChip {
+  align-items: center;
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  gap: 0.1875rem;
+  min-height: 1.5rem;
+  padding: 0.125rem 0.375rem;
+}
+
+.pitchChip:hover {
+  border-color: var(--control-border);
+  color: var(--text);
+}
+
+.pitchChip[data-active='true'] {
+  background: var(--panel);
+  border-color: var(--text);
+  color: var(--text);
+  font-weight: 600;
+  outline: 1px solid var(--text);
+}
+
+.pitchChip[data-focus='true'] {
+  border-color: var(--mark-yellow);
+  outline: 1px solid var(--mark-yellow);
+}
+
+.multiplierStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.multBtn {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.875rem;
+  padding: 0.125rem 0.3125rem;
+  text-align: center;
+}
+
+.multBtn:hover {
+  border-color: var(--control-border);
+  color: var(--text);
+}
+
+.multBtn[data-bijective='true'] {
+  color: var(--text);
+}
+
+.multBtn[data-active='true'] {
+  background: var(--panel);
+  border-color: var(--text);
+  color: var(--text);
+  font-weight: 600;
+  outline: 1px solid var(--text);
+}
+
+/* ---------------------------------------------------------------------------------------------- center focus stage */
+.stageBox {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: grid;
+  flex: none;
+  gap: 0.5rem;
+  grid-template-columns: 16.5rem minmax(0, 1fr);
+  margin: 0.375rem 0.5rem 0;
+  padding: 0.5rem;
+}
+
+@media (max-width: 58em) {
+  .stageBox {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ringPane {
+  align-items: center;
+  background: var(--panel-well, var(--panel-inset));
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.25rem;
+  position: relative;
+}
+
+.mainRingSvg {
+  display: block;
+  height: 15.25rem;
+  max-width: 100%;
+  user-select: none;
+  width: 15.25rem;
+}
+
+.ringTrack {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 1.5;
+}
+
+.sourcePolygon {
+  fill: color-mix(in srgb, var(--text) 9%, transparent);
+  stroke: var(--text);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.targetPolygon {
+  fill: color-mix(in srgb, var(--mark-blue) 14%, transparent);
+  stroke: var(--mark-blue);
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.dualAxisLine {
+  stroke: var(--mark-yellow);
+  stroke-dasharray: 4 3;
+  stroke-width: 1.5;
+}
+
+.voiceRay {
+  fill: none;
+  stroke: var(--mark-blue);
+  stroke-dasharray: 3 2;
+  stroke-width: 1.35;
+}
+
+.ringAmbientDot {
+  cursor: pointer;
+  fill: var(--text);
+  opacity: 0.35;
+}
+
+.ringAmbientDot:hover {
+  opacity: 0.75;
+}
+
+.ringSourceDot {
+  cursor: pointer;
+  fill: var(--text);
+  stroke: var(--panel);
+  stroke-width: 1.25;
+}
+
+.ringTargetDot {
+  fill: var(--mark-blue);
+  stroke: var(--panel);
+  stroke-width: 1.25;
+}
+
+.ringTargetGhostDot {
+  fill: none;
+  stroke: var(--mark-blue);
+  stroke-dasharray: 2.5 1.5;
+  stroke-width: 1.75;
+}
+
+.ringSoundingHalo {
+  fill: none;
+  stroke: var(--mark-green);
+  stroke-width: 2.25;
+}
+
+.ringFocusHalo {
+  fill: none;
+  stroke: var(--mark-yellow);
+  stroke-width: 1.75;
+}
+
+.modeChevron {
+  fill: none;
+  stroke: var(--text);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ringLabelText {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-svg-fs-label);
+  pointer-events: none;
+}
+
+.ringLabelText[data-active='true'] {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+.ringLabelText[data-target='true'] {
+  fill: var(--mark-blue);
+  font-weight: 600;
+}
+
+.stageRight {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.statsStrip {
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.statBox {
+  background: var(--panel);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.3125rem 0.4375rem;
+}
+
+.statLabel {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+}
+
+.statValue {
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-body);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 6ch;
+  white-space: nowrap;
+}
+
+.registerStripBox {
+  background: var(--panel);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.25rem;
+  justify-content: center;
+  padding: 0.375rem 0.5rem;
+}
+
+.registerSvg {
+  display: block;
+  height: 7.25rem;
+  width: 100%;
+}
+
+.legendRow {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--lab-fs-tiny);
+  gap: 0.75rem;
+}
+
+.legendItem {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.legendSwatch {
+  border-radius: 50%;
+  display: inline-block;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+/* ---------------------------------------------------------------------------------------------- center bottom tabs & list */
+.centerTabsBar {
+  align-items: center;
+  border-bottom: 1px solid var(--grid);
+  display: flex;
+  flex: none;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-top: 0.375rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.centerScroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.5rem;
+  scrollbar-gutter: stable;
+}
+
+.centerScroll > * {
+  flex: none;
+}
+
+/* ---------------------------------------------------------------------------------------------- ChordCard pattern & MiniRing */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.opCard {
+  align-items: center;
+  background: var(--panel-inset);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 3.75rem minmax(8rem, 1.1fr) minmax(9rem, 1.5fr) auto auto;
+  min-height: 4.125rem;
+  padding: 0.3125rem 0.5rem;
+}
+
+.opCard:hover {
+  background: var(--panel-slot);
+  border-color: var(--control-border);
+}
+
+.opCard[data-selected='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.opCard[data-sounding='true'] {
+  border-color: var(--mark-green);
+}
+
+.drawing {
+  display: block;
+  height: 3.5rem;
+  width: 3.5rem;
+}
+
+.drawingRing {
+  fill: none;
+  stroke: var(--grid);
+  stroke-width: 0.0313;
+}
+
+.drawingSourceShape {
+  fill: color-mix(in srgb, var(--text) 8%, transparent);
+  stroke: var(--text-muted);
+  stroke-dasharray: 0.08 0.05;
+  stroke-linejoin: round;
+  stroke-width: 0.025;
+}
+
+.drawingShape {
+  fill: color-mix(in srgb, var(--mark-blue) 16%, transparent);
+  stroke: var(--mark-blue);
+  stroke-linejoin: round;
+  stroke-width: 0.036;
+}
+
+.drawingDot {
+  fill: var(--mark-blue);
+}
+
+.drawingAmbientDot {
+  fill: var(--text);
+  opacity: 0.32;
+}
+
+.cardTitleCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.cardTitle {
+  color: var(--text);
+  font-size: var(--lab-fs-body);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardSubtitle {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardPitchesCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.cardPitches {
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.cardSteps {
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  font-variant-numeric: tabular-nums;
+}
+
+.cardStatCol {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  gap: 0.125rem;
+  min-width: 7ch;
+  text-align: right;
+}
+
+.cardActionsCol {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* ---------------------------------------------------------------------------------------------- Trajectory strip */
+.trajectoryBox {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.5rem;
+}
+
+.trajectoryRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3125rem;
+}
+
+.trajChip {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--lab-fs-small);
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.4375rem;
+}
+
+.trajChip[data-active='true'] {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+.trajArrow {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+}
+
+/* ---------------------------------------------------------------------------------------------- Tree hierarchy (Fold pattern) */
+.treeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.foldHead {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.foldBtn {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--lab-fs-small);
+  font-weight: 600;
+  gap: 0.25rem;
+  padding: 0.125rem 0;
+  text-align: left;
+}
+
+.foldBtn:hover {
+  text-decoration: underline;
+}
+
+.foldCount {
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  min-width: 8ch;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.nest {
+  border-left: 1px solid var(--control-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-left: 0.375rem;
+  padding-left: 0.5rem;
+  position: relative;
+}
+
+.nest:has(> .nestGuide:hover) {
+  border-left-color: var(--text);
+}
+
+.nestGuide {
+  bottom: 0;
+  cursor: pointer;
+  left: -2px;
+  position: absolute;
+  top: 0;
+  width: 0.5rem;
+}
+
+/* ---------------------------------------------------------------------------------------------- Tables (Inspector & Dual-Focus) */
+.dataTable {
+  border-collapse: collapse;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+}
+
+.dataTable th {
+  border-bottom: 1px solid var(--grid);
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+  font-weight: 500;
+  padding: 0.25rem 0.3125rem;
+  text-align: left;
+}
+
+.dataTable td {
+  border-bottom: 1px solid color-mix(in srgb, var(--grid) 55%, transparent);
+  padding: 0.25rem 0.3125rem;
+  vertical-align: middle;
+}
+
+.dataTable tr[data-clickable='true'] {
+  cursor: pointer;
+}
+
+.dataTable tr[data-clickable='true']:hover {
+  background: var(--panel-slot);
+}
+
+.dataTable tr[data-selected='true'] {
+  background: var(--panel-slot);
+  outline: 1px solid var(--text);
+}
+
+.kvList {
+  display: grid;
+  gap: 0.25rem 0.5rem;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.kvKey {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+}
+
+.kvVal {
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

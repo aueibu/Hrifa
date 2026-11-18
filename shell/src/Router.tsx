@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { AffineFocusPage } from './pages/AffineFocus.page';
 import { CompositionWorkbenchPage } from './pages/CompositionWorkbench.page';
 import { HarmonicFieldLabPage } from './pages/HarmonicFieldLab.page';
 import { HomePage } from './pages/Home.page';
@@ -68,6 +69,11 @@ const router = createBrowserRouter(
     {
       path: '/harmonic-field-lab',
       element: <HarmonicFieldLabPage />,
+      errorElement: <NotFoundPage />,
+    },
+    {
+      path: '/affine-focus',
+      element: <AffineFocusPage />,
       errorElement: <NotFoundPage />,
     },
     {
