@@ -377,6 +377,12 @@
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+/* the method picker: two segmented rows acting as one */
+.methodRows {
+  display: grid;
+  gap: 2px;
+}
+
 .params {
   display: flex;
   flex-direction: column;

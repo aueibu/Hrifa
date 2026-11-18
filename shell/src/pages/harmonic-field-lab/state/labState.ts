@@ -10,6 +10,12 @@ import {
   EPS,
   addLibraryEntries,
   addedPitchError,
+  addRelativeNote,
+  clampExp,
+  removeRelativePitch,
+  zeroMonzo,
+  type MonzoExps,
+  type MonzoPrime,
   pitchPlace,
   resolveSubset,
   subsetFromSelection,
@@ -263,6 +269,15 @@ export interface KeysRuntime {
   link: string | null;
 }
 
+/**
+ * Runtime state of the Relative pitches menu (M8, H-33; never stored, reset on reload): the Monzo exponents (kept between
+ * menu openings, zeroed by Reset) and the last quiet line (a duplicate, a refused delete, the cap).
+ */
+export interface RelativeRuntime {
+  monzo: MonzoExps;
+  message: string | null;
+}
+
 export interface Notice {
   kind: 'update' | 'copy';
   owner: OwnerKey;
@@ -337,6 +352,8 @@ export interface LabState {
   composites: CompositesState;
   /** The computer keys' runtime state: melody shift, shelf page, linked chord (M8b). */
   keys: KeysRuntime;
+  /** The Relative pitches menu's runtime state (M8, H-33). */
+  relative: RelativeRuntime;
 }
 
 /* ----------------------------------------------------------------------------------------------- defaults */
@@ -453,6 +470,7 @@ export function initialState(): LabState {
     shelf: emptyShelf(),
     composites: emptyComposites(),
     keys: { shift: 0, page: 0, link: null },
+    relative: { monzo: zeroMonzo(), message: null },
   };
 }
 
@@ -659,6 +677,20 @@ export type Action =
   | { type: 'gen/preset'; name: string }
   | { type: 'gen/method'; method: Method }
   | { type: 'gen/custom'; custom: string; rep?: string }
+  /**
+   * Relative pitches (M8, H-33), on the active tab when its method is `relative` (else no change): add a note as pitch text
+   * (a ratio `11/8` or cents `700 c`, folded into the repeat; a pitch already there, unreadable text or the 256 cap changes
+   * nothing and leaves a quiet line in `relative.message`).
+   */
+  | { type: 'relative/add'; text: string }
+  /** Remove the note at this FIELD index (every stored note that folds to that pitch); 1/1 is refused with a quiet line (it always stays). */
+  | { type: 'relative/remove'; index: number }
+  /** Set one Monzo exponent (clamped to -6..+6); runtime only. */
+  | { type: 'relative/monzo'; prime: MonzoPrime; value: number }
+  /** Zero every Monzo exponent (the Reset button). */
+  | { type: 'relative/monzoReset' }
+  /** Clear the quiet line. */
+  | { type: 'relative/dismiss' }
   | { type: 'sel/toggle'; i: number; keepRoot?: boolean }
   | { type: 'sel/all' }
   | { type: 'sel/none' }
@@ -944,6 +976,8 @@ function setLink(s: LabState, key: OwnerKey | null): LabState {
 /** A generator edit (or any switch of what the tab is) ends the Update notice. */
 const endsNotice = (type: Action['type']) =>
   (type.startsWith('gen/') && type !== 'gen/keepNew') ||
+  type === 'relative/add' ||
+  type === 'relative/remove' ||
   type === 'preset/open' ||
   type === 'lib/sync' ||
   (type.startsWith('tab/') && type !== 'tab/link') ||
@@ -1128,6 +1162,41 @@ function reduce(s: LabState, a: Action): LabState {
           rep: a.rep ?? t.gen.rep,
         })
       );
+    case 'relative/add':
+    case 'relative/remove': {
+      const t = activeTab(s);
+      if (t.gen.method !== 'relative') {
+        return s;
+      }
+      const notes = t.gen.notes ?? ['1/1'];
+      let edit;
+      if (a.type === 'relative/add') {
+        edit = addRelativeNote(notes, a.text, t.rep);
+      } else {
+        const note = t.field[a.index];
+        if (!note) {
+          return s;
+        }
+        edit = removeRelativePitch(notes, note.c, t.rep);
+      }
+      if (edit.notes === notes) {
+        return s.relative.message === edit.message
+          ? s
+          : { ...s, relative: { ...s.relative, message: edit.message } };
+      }
+      const out = editTab(s, (x) => regenTab(x, { ...x.gen, preset: '', notes: edit.notes }));
+      return { ...out, relative: { ...out.relative, message: null } };
+    }
+    case 'relative/monzo': {
+      const value = clampExp(a.value);
+      return s.relative.monzo[a.prime] === value
+        ? s
+        : { ...s, relative: { ...s.relative, monzo: { ...s.relative.monzo, [a.prime]: value } } };
+    }
+    case 'relative/monzoReset':
+      return { ...s, relative: { ...s.relative, monzo: zeroMonzo() } };
+    case 'relative/dismiss':
+      return s.relative.message === null ? s : { ...s, relative: { ...s.relative, message: null } };
     case 'sel/toggle':
       return withTab(s, (t) => {
         if (a.i < 0 || a.i >= t.field.length) {

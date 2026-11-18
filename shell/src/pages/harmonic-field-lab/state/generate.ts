@@ -22,6 +22,7 @@ import {
   mosSizes,
   parseCustom,
   parseInterval,
+  relativeNotes,
   slotOf,
   type AdditiveAxis,
   type MosSize,
@@ -29,9 +30,25 @@ import {
   type Preset,
 } from '../../../lib/harmonic-field';
 
-export type Method = 'harmonic' | 'sub' | 'edo' | 'lattice' | 'cps' | 'custom' | 'composite';
+export type Method =
+  | 'harmonic'
+  | 'sub'
+  | 'edo'
+  | 'lattice'
+  | 'cps'
+  | 'custom'
+  | 'composite'
+  | 'relative';
 /** The methods a user picks. 'composite' is only ever made by "Open as tab" (a frozen snapshot), never picked. */
-export const METHODS: readonly Method[] = ['harmonic', 'sub', 'edo', 'lattice', 'cps', 'custom'];
+export const METHODS: readonly Method[] = [
+  'harmonic',
+  'sub',
+  'edo',
+  'lattice',
+  'cps',
+  'custom',
+  'relative',
+];
 
 /**
  * The frozen field of a Composite tab (M8c, H-8): where it came from and the merged notes at that moment. A snapshot, never
@@ -97,6 +114,11 @@ export interface GenSpec {
    * the reducer deletes the key).
    */
   oddLimit?: number;
+  /**
+   * Method `relative` (M8, H-33): the placed notes as pitch text (`11/8`, `700 c`), 1 to 256, in the order placed. Always present
+   * in memory (default `['1/1']`); written to storage only for this method.
+   */
+  notes?: string[];
   /** When the field changes, also select any newly appearing notes. */
   keepNew: boolean;
   /** Composite method only: the frozen notes (see `CompositeSnap`). */
@@ -124,6 +146,7 @@ export function defaultGen(): GenSpec {
     cpsK: 2,
     custom: '9/8\n5/4\n4/3\n3/2\n5/3\n15/8',
     mask: Array<boolean>(PRIME_SLOTS).fill(true),
+    notes: ['1/1'],
     keepNew: false,
   };
 }
@@ -197,6 +220,8 @@ export function autoName(g: GenSpec): string {
       return `CPS ${g.cpsF.trim().split(/\s+/).join(' ')} choose ${g.cpsK}`;
     case 'composite':
       return g.snap?.name || 'Composite';
+    case 'relative':
+      return 'Relative pitches';
     default:
       return 'Custom scale';
   }
@@ -321,6 +346,10 @@ export function generateField(g: GenSpec): Generated {
             : genAdditive(ax.axes);
         break;
       }
+      case 'relative':
+        // exactly the placed notes (no 1/1 added); an unreadable entry throws a sentence
+        notes = relativeNotes(g.notes ?? ['1/1']);
+        break;
       case 'cps': {
         const toks = g.cpsF.split(/[\s,]+/).filter(Boolean);
         const f: Note[] = [];

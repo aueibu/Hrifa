@@ -4,13 +4,14 @@
  * Pure: no React, no DOM, no storage. See README.md ("Generator library").
  */
 import { cleanGenusN } from './genus';
-import { cleanOddLimit, parseInterval } from './intervals';
+import { cleanOddLimit, parseInterval, reduceInto } from './intervals';
+import { readNoteText } from './relativePitches';
 import type { Monzo, Note } from './types';
 
 /* ------------------------------------------------------------------------------------------ identity */
 /** The inputs of a generator that the lab edits (structurally the page's `GenSpec`, minus the preset label and keepNew). */
 export interface GeneratorInputs {
-  method: 'harmonic' | 'sub' | 'edo' | 'lattice' | 'cps' | 'custom' | 'composite';
+  method: 'harmonic' | 'sub' | 'edo' | 'lattice' | 'cps' | 'custom' | 'composite' | 'relative';
   rep: string;
   h: number;
   edoN: number;
@@ -26,6 +27,8 @@ export interface GeneratorInputs {
   mask: boolean[];
   /** Odd limit filter (M6): a whole number of at least 1; absent or null = no filter. Any method. */
   oddLimit?: number | null;
+  /** Relative pitches method (M8, H-33): the placed notes as pitch text (`11/8`, `700 c`); part of the identity for this method only. */
+  notes?: readonly string[];
   /** Composite method (M8c): the frozen notes and repeat; identity is the pitches, not the name. */
   snap?: { rep: Note; notes: readonly Note[] };
 }
@@ -74,6 +77,16 @@ export function generatorKey(g: GeneratorInputs): string {
           .map(iv),
         ck: g.cpsK,
       });
+    case 'relative': {
+      // M8 (H-33): the placed notes ARE the identity: folded into the repeat, sorted, equal pitches once (order is not identity)
+      const rep = parseInterval(g.rep);
+      const cs = new Set<string>();
+      for (const t of g.notes ?? ['1/1']) {
+        const n = readNoteText(t);
+        cs.add(n ? (rep ? reduceInto(n, rep) : n).c.toFixed(6) : `?${t.trim()}`);
+      }
+      return JSON.stringify({ ...common, rn: [...cs].sort() });
+    }
     case 'composite':
       return JSON.stringify({
         ...common,

@@ -1,15 +1,32 @@
 /** Pitch circle, glanceable stats and step-size bars to its right, and the note inspector under them. */
-import { useMemo, type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import {
   ActionIcon,
+  Button,
   NativeSelect,
   Popover,
   SegmentedControl,
   TextInput,
   VisuallyHidden,
 } from '@mantine/core';
-import { parseInterval, type FifthsLayout } from '../../../lib/harmonic-field';
+import {
+  landingPitch,
+  landingReadout,
+  noteText,
+  parseInterval,
+  type FifthsLayout,
+} from '../../../lib/harmonic-field';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
+import { useLabDeveloperOptions } from '../state/developerOptions';
 import type { Ghost } from '../state/ghosts';
 import { chevronBox, fitView, layoutLabels, leaderEnds, type Box } from '../state/labelLayout';
 import type { RingView } from '../state/labState';
@@ -18,6 +35,7 @@ import { FieldCompact } from './FieldPanel';
 import { OutsideCount, useGhosts } from './GhostMarks';
 import { GearIcon } from './icons';
 import { RING_GAP, RingChevron, rootLabel, useModeRoot } from './ModeRoot';
+import { RelativeModal, mainPxPerUnit, type BandMode, type RelativeHover } from './RelativeMenu';
 import {
   RING_BOX_REM,
   RING_OFF_CHAIN_R,
@@ -452,11 +470,76 @@ export function PitchRing({
 
 /** The ring with its header: caption, the view toggle (Chromatic | Fifths) centered over the ring, and the ring menu. */
 export function RingPanel() {
-  const { state, dispatch } = useLab();
+  const lab = useLab();
+  const { state, dispatch, tab, base } = lab;
   const { ringView: view, ringSteps: steps, ringGen } = state.ui;
   const genOk = parseInterval(ringGen) !== null;
+  const [devOptions] = useLabDeveloperOptions();
+  // Relative pitches (M8b): with this generator a small toggle turns the ring's note clicks into the modal. A click SELECTS the
+  // note (it becomes the source) and opens the modal; it no longer toggles the subset in this mode. The modal is kept by the
+  // source note's pitch (adding a note moves field indices); `hover` is the half the pointer is on.
+  const isRelative = tab.gen.method === 'relative' && view === 'chromatic';
+  const [relativeOn, setRelativeOn] = useState(true);
+  const [menuC, setMenuC] = useState<number | null>(null);
+  const [hover, setHover] = useState<RelativeHover | null>(null);
+  // the main ring's pixels per unit, measured when the modal opens; how the bands are turned (runtime only)
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [mainPpu, setMainPpu] = useState(() => mainPxPerUnit(null));
+  const [bandMode, setBandMode] = useState<BandMode>('from');
+  const [ringStart, setRingStart] = useState(0);
+  const menuIdx =
+    isRelative && relativeOn && menuC !== null
+      ? base.field.findIndex((n) => Math.abs(n.c - menuC) < 1e-6)
+      : -1;
+  const menuOpen = menuIdx >= 0;
+  const closeMenu = useCallback(() => {
+    setMenuC(null);
+    setHover(null);
+    dispatch({ type: 'relative/dismiss' });
+  }, [dispatch]);
+  // a note that is gone (or another method, or the toggle off) closes the modal
+  useEffect(() => {
+    if (menuC !== null && !menuOpen) {
+      setMenuC(null);
+      setHover(null);
+    }
+  }, [menuC, menuOpen]);
+  const from = menuOpen ? base.field[menuIdx] : null;
+  const relativeDots = useCallback(
+    (i: number): RingDotExtra => {
+      const open = () => {
+        // the main ring's svg is the box's direct child (the header has its own icons)
+        const svg = Array.from(boxRef.current?.children ?? []).find((el) => el.tagName === 'svg');
+        setMainPpu(mainPxPerUnit(svg ?? null));
+        setMenuC(base.field[i]?.c ?? null);
+      };
+      return {
+        onMouseEnter: () => lab.setHover(i),
+        onMouseLeave: () => lab.setHover(null),
+        onFocus: () => lab.setHover(i),
+        onBlur: () => lab.setHover(null),
+        onClick: open,
+        onKeyDown: (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            open();
+          }
+        },
+        'aria-pressed': undefined,
+      };
+    },
+    [lab, base.field]
+  );
+  const landing = from && hover ? landingPitch(from, hover.ratio.note, hover.dir, base.rep) : null;
+  const line =
+    menuOpen && state.relative.message
+      ? state.relative.message
+      : from && hover && landing
+        ? landingReadout(hover.ratio.text, hover.dir, from, landing)
+        : null;
   return (
     <div
+      ref={boxRef}
       className={classes.ringBox}
       style={{ '--ring-box-w': `${RING_BOX_REM}rem` } as CSSProperties}
     >
@@ -479,7 +562,19 @@ export function RingPanel() {
             ]}
           />
         </Tip>
-        <span className={classes.ringHeadEnd}>
+        <span className={`${classes.ringHeadEnd} ${classes.inline}`}>
+          {tab.gen.method === 'relative' && (
+            <Tip k="relativeMenu" as="control">
+              <Button
+                size="compact-xs"
+                variant={relativeOn ? 'filled' : 'default'}
+                aria-pressed={relativeOn}
+                onClick={() => setRelativeOn((on) => !on)}
+              >
+                Relative
+              </Button>
+            </Tip>
+          )}
           <Tip k="ringMenu" as="control">
             <Popover position="bottom-end" width={220} transitionProps={{ duration: 0 }}>
               <Popover.Target>
@@ -515,7 +610,41 @@ export function RingPanel() {
           </Tip>
         </span>
       </div>
-      <PitchRing view={view} steps={steps} />
+      <PitchRing
+        view={view}
+        steps={steps}
+        dotProps={isRelative && relativeOn ? relativeDots : undefined}
+      />
+      {menuOpen && from && (
+        <RelativeModal
+          opened
+          from={from}
+          fromIdx={menuIdx}
+          rep={base.rep}
+          repC={base.repC}
+          step={devOptions.relativeRingStep}
+          mainPpu={mainPpu}
+          hover={hover}
+          onHover={(h) => {
+            setHover(h);
+            if (h && state.relative.message) {
+              dispatch({ type: 'relative/dismiss' });
+            }
+          }}
+          onPick={(h) => {
+            const to = landingPitch(from, h.ratio.note, h.dir, base.rep);
+            dispatch({ type: 'relative/add', text: noteText(to) });
+          }}
+          // the note goes and the modal closes on its own (its note is gone); 1/1 never reaches here (its modal has no Remove button, and the state refuses it with KEEP_UNISON)
+          onRemove={() => dispatch({ type: 'relative/remove', index: menuIdx })}
+          onClose={closeMenu}
+          line={line}
+          bandMode={bandMode}
+          onBandMode={setBandMode}
+          ringStart={ringStart}
+          onRingStart={setRingStart}
+        />
+      )}
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
   cleanGenusN,
   cleanOddLimit,
   sanitizeAdded,
+  sanitizeRelativeNotes,
   type ChordTemplate,
   type Note,
 } from '../../../lib/harmonic-field';
@@ -347,6 +348,7 @@ const SNAP_GEN: Record<Method, string> = {
   cps: 'cps',
   custom: 'custom',
   composite: 'composite',
+  relative: 'relative',
 };
 const GEN_SNAP: Record<string, Method> = Object.fromEntries(
   Object.entries(SNAP_GEN).map(([k, v]) => [v, k as Method])
@@ -370,6 +372,8 @@ export interface Snapshot {
   mask: boolean[];
   /** M6, written only when an odd limit filter is set. */
   oddLimit?: number;
+  /** M8 (H-33), written only for the method `relative`: the placed notes as pitch text (`11/8`, `700 c`), 1 to 256. */
+  notes?: string[];
   selCents: number[];
   mode: number;
   preset: string;
@@ -425,6 +429,7 @@ export function toSnapshot(
     custom: g.custom,
     mask: g.mask.slice(),
     ...(odd === null ? {} : { oddLimit: odd }),
+    ...(g.method === 'relative' ? { notes: sanitizeRelativeNotes(g.notes) } : {}),
     selCents: held ? held.cents.slice() : t.sel.map((i) => t.field[i].c),
     mode: held ? held.mode : t.mode,
     preset: g.preset,
@@ -558,6 +563,7 @@ export function sanitizeSnapshot(raw: unknown): TabParts | null {
     custom: text(raw.custom, d.custom, 20000),
     mask,
     ...(odd === null ? {} : { oddLimit: odd }),
+    notes: sanitizeRelativeNotes(raw.notes),
     keepNew: bool(raw.keepNew, false),
     ...sanitizeSnap(raw.snap),
   };

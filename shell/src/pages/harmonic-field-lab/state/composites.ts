@@ -145,6 +145,7 @@ export const cloneSource = (s: ItemSource): ItemSource => ({
     ...s.gen,
     axes: s.gen.axes.map((a) => ({ ...a })),
     mask: s.gen.mask.slice(),
+    ...(s.gen.notes ? { notes: s.gen.notes.slice() } : {}),
     ...(s.gen.snap
       ? {
           snap: {

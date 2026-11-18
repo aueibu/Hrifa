@@ -28,3 +28,4 @@ export * from './addedPitches';
 export * from './genus';
 export * from './chordLibrary';
 export * from './libraryRing';
+export * from './relativePitches';

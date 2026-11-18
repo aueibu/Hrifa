@@ -117,7 +117,13 @@ export function parseOwner(key: OwnerKey): { kind: OwnerKind; ref: string } | nu
 export const OWNER_KEY_RE = /^[bpu]:.{1,120}$/s;
 
 export function cloneGen(g: GenSpec, preset = ''): GenSpec {
-  return { ...g, preset, axes: g.axes.map((a) => ({ ...a })), mask: g.mask.slice() };
+  return {
+    ...g,
+    preset,
+    axes: g.axes.map((a) => ({ ...a })),
+    mask: g.mask.slice(),
+    ...(g.notes ? { notes: g.notes.slice() } : {}),
+  };
 }
 
 const builtinKeys = new Map<string, string>();

@@ -223,7 +223,12 @@ export interface StashInput {
 const clonePitch = (p: Note): Note => ({ m: p.m ? { ...p.m } : null, c: p.c });
 
 export const cloneSource = (s: ShelfSource): ShelfSource => ({
-  gen: { ...s.gen, axes: s.gen.axes.map((a) => ({ ...a })), mask: s.gen.mask.slice() },
+  gen: {
+    ...s.gen,
+    axes: s.gen.axes.map((a) => ({ ...a })),
+    mask: s.gen.mask.slice(),
+    ...(s.gen.notes ? { notes: s.gen.notes.slice() } : {}),
+  },
   subset: {
     pitches: s.subset.pitches.map(clonePitch),
     root: s.subset.root ? clonePitch(s.subset.root) : null,

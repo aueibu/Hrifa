@@ -40,6 +40,7 @@ const METHODS: { value: Method; label: string }[] = [
   { value: 'lattice', label: 'Latt' },
   { value: 'cps', label: 'CPS' },
   { value: 'custom', label: 'Cust' },
+  { value: 'relative', label: 'Rel' },
 ];
 
 function FieldSettings({ gen }: { gen: GenSpec }) {
@@ -364,6 +365,13 @@ function Params({ gen }: { gen: GenSpec }) {
           </span>
         </>
       );
+    case 'relative':
+      // placeholder (no controls yet): the notes are placed from the ring's radial menu (RelativeMenu.tsx)
+      return (
+        <span className={classes.paramNote}>
+          Relative pitches, <Num>{tab.field.length}</Num> notes.
+        </span>
+      );
     case 'composite':
       return (
         <span className={classes.paramNote}>
@@ -460,14 +468,22 @@ export function GeneratorColumn() {
       <LibraryActions />
       <LibraryNotice />
       <Tip k="method" as="control" block>
-        <SegmentedControl
-          size="xs"
-          fullWidth
-          aria-label="Method"
-          value={gen.method}
-          onChange={(m) => dispatch({ type: 'gen/method', method: m as Method })}
-          data={gen.snap ? [...METHODS, COMPOSITE_METHOD] : METHODS}
-        />
+        {/* two rows acting as one picker (seven methods do not fit one row); a row whose methods are not chosen shows no selection */}
+        <div className={classes.methodRows} role="group" aria-label="Method">
+          {[
+            METHODS.slice(0, 4),
+            gen.snap ? [...METHODS.slice(4), COMPOSITE_METHOD] : METHODS.slice(4),
+          ].map((row) => (
+            <SegmentedControl
+              key={row[0].value}
+              size="xs"
+              fullWidth
+              value={row.some((x) => x.value === gen.method) ? gen.method : ''}
+              onChange={(m) => dispatch({ type: 'gen/method', method: m as Method })}
+              data={row}
+            />
+          ))}
+        </div>
       </Tip>
       <div className={classes.params} data-method={gen.method}>
         <Params gen={gen} />

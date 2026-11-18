@@ -74,6 +74,7 @@ const GEN_FIELDS = [
   'custom',
   'mask',
   'oddLimit',
+  'notes',
   'preset',
   'keepNew',
   'snap',

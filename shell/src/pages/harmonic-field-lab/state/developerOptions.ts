@@ -2,6 +2,8 @@ import { useCallback, useSyncExternalStore } from 'react';
 import {
   BEAT_PARTIAL_LIMIT_MAX,
   MERGE_TOL_DEFAULT,
+  RELATIVE_RING_STEP,
+  cleanRingStep,
   clampMergeTol,
   type MergeKeep,
   type TintIntensity,
@@ -53,6 +55,8 @@ export interface LabDeveloperOptions {
   cardNoteErrors: boolean;
   /** A1 (H-31): the harmonic sound uses the Roughness Partials and Rolloff (default); off keeps the sound at 7 partials and 0.88. */
   soundFollowsRoughness: boolean;
+  /** Relative pitches (M8, H-33): the odd-limit step between the radial menu's four rings (whole number 2 to 10, default 5). */
+  relativeRingStep: number;
 }
 
 export const TOOLTIP_DELAY_DEFAULT = 250;
@@ -99,6 +103,7 @@ const defaults: LabDeveloperOptions = {
   tileOutline: true,
   cardNoteErrors: false,
   soundFollowsRoughness: true,
+  relativeRingStep: RELATIVE_RING_STEP,
 };
 
 const listeners = new Set<() => void>();
@@ -141,6 +146,7 @@ export function parseDeveloperOptions(raw: string | null): LabDeveloperOptions {
         typeof o.soundFollowsRoughness === 'boolean'
           ? o.soundFollowsRoughness
           : defaults.soundFollowsRoughness,
+      relativeRingStep: cleanRingStep(o.relativeRingStep),
     };
   } catch {
     return defaults;
@@ -162,6 +168,7 @@ export function writeDeveloperOptions(patch: Partial<LabDeveloperOptions>) {
   next.tooltipDelay = sanitizeTooltipDelay(next.tooltipDelay);
   next.mergeTolerance = clampMergeTol(next.mergeTolerance);
   next.beatPartialLimit = sanitizeBeatPartialLimit(next.beatPartialLimit);
+  next.relativeRingStep = cleanRingStep(next.relativeRingStep);
   try {
     localStorage.setItem(LAB_DEVELOPER_KEY, JSON.stringify(next));
   } catch {

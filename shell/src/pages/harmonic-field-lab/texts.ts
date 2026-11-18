@@ -2805,6 +2805,17 @@ const entries = {
     text: 'Settings for the Fifths view: the generator that is stacked to build the chain (3/2 here) and how many positions the chain has. 12 gives the familiar circle of fifths; 17, 19 or 31 suit other tunings. Example: with 19 positions and a generator of about 694.7 c, a 19-EDO scale draws as an even ring.',
     see: ['ringView'],
   },
+  relativeMenu: {
+    term: 'Relative menu',
+    help: [
+      p(
+        'With the Relative pitches generator, click a note on the ring to pick it and open the picker: a copy of the ring in the middle, four bands of ratios of growing complexity around it. Click a ratio to add it above the picked note; hold Alt to add it below. Hover first: a ghost dot shows where it lands. Bands: From note starts them at the picked note, Fixed keeps the unison at the top. Press 3 for more complex rings, 2 to go back; Shift jumps by prime, Ctrl+Shift by five primes. The Relative button turns the picker off.'
+      ),
+      example('click 3/2, then 11/6: 11/8 is added (3/2 times 11/6, folded).'),
+    ],
+    teaching: [],
+    see: ['method', 'repeat'],
+  },
   offChain: {
     term: 'Off-chain note',
     text: 'In the Fifths view, a note more than half a chain step from every position, so no step describes it well. It is drawn as a small dashed mark inside the ring at its nearest step. Example: 11/8 is 53 c from F and 60 c from F-sharp, so it sits off the chain.',

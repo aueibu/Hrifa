@@ -1,0 +1,169 @@
+/* The Relative pitches modal (RelativeMenu.tsx), drawn in pixels: the ring copy in the middle, the bands round it. Colors are roles only. */
+.modalBody {
+  margin: 0 auto;
+  position: relative;
+}
+
+/* the ring copy, centered; it is not turned (1/1 at the top, like the main ring) */
+.ringWrap {
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* three rows of a fixed height (the width is set inline from the layout); text is cut with an ellipsis, never wrapped */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0.5rem auto 0;
+}
+
+.footRow {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  height: 26px;
+  justify-content: space-between;
+}
+
+.dirHint {
+  color: var(--text-muted);
+  flex: 1;
+  font-size: var(--lab-fs-small);
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.removeSlot {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  width: 130px;
+}
+
+.footLine {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+  height: 1.3em;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.svg {
+  display: block;
+  inset: 0;
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* each band is a ring-shaped panel; the gaps between bands and the center stay see-through */
+.band {
+  fill: var(--panel);
+  fill-opacity: 0.97;
+  pointer-events: auto;
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.label,
+.labelSmall {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  pointer-events: none;
+}
+
+.label {
+  font-size: var(--lab-fs-small);
+}
+
+.labelSmall {
+  font-size: var(--lab-fs-tiny);
+}
+
+/* the boundary between two neighboring cells of a band: clearly visible, so each ratio reads as its own cell */
+.cellEdge {
+  pointer-events: none;
+  stroke: var(--text-muted);
+  stroke-opacity: 0.7;
+  stroke-width: 1;
+}
+
+/* where a ring starts (its pitch rises clockwise from here): a heavier edge and a small tag with the ring's label */
+.startEdge {
+  pointer-events: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+}
+
+.tag {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  paint-order: stroke;
+  pointer-events: none;
+  stroke: var(--panel);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+}
+
+/* the true angle of a ratio, a small tick on the inner edge of its band */
+.tick {
+  pointer-events: none;
+  stroke: var(--text-subtle);
+  stroke-width: 1;
+}
+
+/* a cell's click target: invisible until the pointer is on it, then the whole cell is tinted */
+.half {
+  cursor: pointer;
+  fill: transparent;
+  outline: none;
+  pointer-events: auto;
+}
+
+.half:hover,
+.half:focus-visible,
+.half[data-selected='true'] {
+  fill: color-mix(in srgb, var(--text) 16%, transparent);
+}
+
+.btn:hover .label,
+.btn:hover .labelSmall {
+  fill: var(--text);
+}
+
+/* the hover readout, or the reason a click changed nothing, under the picture where the eye is */
+.line {
+  background: var(--panel);
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+  box-sizing: border-box;
+  height: 26px;
+  line-height: 20px;
+  overflow: hidden;
+  padding: 2px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* empty keeps its height (visibility, not display), so the readout never moves the picture */
+.line:empty {
+  visibility: hidden;
+}
+
+/* the current direction, next to the readout */
+.hint {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+  white-space: nowrap;
+}
