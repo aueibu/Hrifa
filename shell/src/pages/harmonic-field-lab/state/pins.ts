@@ -116,18 +116,6 @@ export function movePin(list: readonly string[], from: number, to: number): stri
   return out;
 }
 
-/**
- * Move the card at `from` into the gap before card `gap` (0 = first, `list.length` = last), the cards in between shift by one.
- * The gaps on either side of the card itself change nothing.
- */
-export function insertPin(list: readonly string[], from: number, gap: number): string[] {
-  if (from < 0 || from >= list.length || gap === from || gap === from + 1) {
-    return list as string[];
-  }
-  const g = Math.max(0, Math.min(list.length, gap));
-  return movePin(list, from, g > from ? g - 1 : g);
-}
-
 /** Trade the places of two cards; nothing else moves. */
 export function swapPins(list: readonly string[], a: number, b: number): string[] {
   if (a === b || a < 0 || b < 0 || a >= list.length || b >= list.length) {

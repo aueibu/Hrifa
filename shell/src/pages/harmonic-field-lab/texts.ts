@@ -2871,7 +2871,7 @@ const entries = {
   },
   pinBar: {
     term: 'Pinned intervals',
-    text: 'Hover a ratio in the relative picker (a ring cell or a Near dot) and press = (or +) to pin it here; in Monzo, = pins the interval you painted, shown as its exponents [x x x>. Ring and monzo pins are two separate lists (128 each, saved across reloads). Click a card to add its interval above the source note, Alt+click below; hovering a card previews it like the ring does, and holding 1, 4 or 5 sounds it. x removes a card, drag a card onto another slot to reorder, and the trash icon clears its row. Example: hover 81/80 and press =; with source 5/4, clicking the card adds 81/64.',
+    text: 'Hover a ratio in the relative picker (a ring cell or a Near dot) and press = (or +) to pin it here; in Monzo, = pins the interval you painted, shown as its exponents [x x x>. Ring and monzo pins are two separate lists (128 each, saved across reloads). Click a card to add its interval above the source note, Alt+click below; hovering a card previews it like the ring does, and holding 1, 4 or 5 sounds it. x removes a card, drag a card onto another slot to reorder (pause on a card to swap), and the trash icon clears its row. Example: hover 81/80 and press =; with source 5/4, clicking the card adds 81/64.',
     see: ['relativeMenu'],
   },
   offChain: {

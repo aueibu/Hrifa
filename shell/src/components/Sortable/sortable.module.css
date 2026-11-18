@@ -1,0 +1,36 @@
+/* The shared reorder look (Sortable.tsx). Colors are roles only. Pages restyle through the className props. */
+
+/* the slot is the grid cell; dnd-kit slides it (a transform) while another card is dragged */
+.slot {
+  min-width: 0;
+}
+
+/* the dragged card's own slot: an empty dimmed placeholder that travels to where the drop will land */
+.slot[data-dragging] {
+  opacity: 0.5;
+}
+
+.inner {
+  border-radius: var(--radius-control);
+  position: relative;
+}
+
+/* the copy that follows the pointer (DragOverlay): the same card, no extra decoration */
+.inner[data-overlay] {
+  cursor: grabbing;
+}
+
+/* SWAP (resting on a card): the target is outlined: a 1px edge inside plus a 1px outline 1px outside */
+.inner[data-over] {
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}
+
+.inner[data-over]::after {
+  border: 1px solid var(--text);
+  border-radius: inherit;
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}

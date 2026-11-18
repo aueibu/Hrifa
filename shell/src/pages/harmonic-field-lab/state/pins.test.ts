@@ -5,7 +5,6 @@ import {
   braKet,
   canonicalPin,
   clearRow,
-  insertPin,
   movePin,
   removePin,
   sanitizePins,
@@ -57,14 +56,8 @@ describe('pin list edits', () => {
     expect(movePin(['a', 'b', 'c', 'd'], 0, 2)).toEqual(['b', 'c', 'a', 'd']);
     expect(movePin(['a', 'b', 'c', 'd'], 3, 1)).toEqual(['a', 'd', 'b', 'c']);
   });
-  it('inserts into a gap (the human example) and swaps two cards', () => {
+  it('swaps two cards', () => {
     const l = ['19/14', '26/19', '19/13', '27/17', '44/27'];
-    expect(insertPin(l, 0, 4)).toEqual(['26/19', '19/13', '27/17', '19/14', '44/27']);
-    expect(insertPin(l, 4, 0)).toEqual(['44/27', '19/14', '26/19', '19/13', '27/17']);
-    expect(insertPin(l, 2, 5)).toEqual(['19/14', '26/19', '27/17', '44/27', '19/13']);
-    // the gaps beside the card itself change nothing
-    expect(insertPin(l, 2, 2)).toEqual(l);
-    expect(insertPin(l, 2, 3)).toEqual(l);
     expect(swapPins(l, 0, 4)).toEqual(['44/27', '26/19', '19/13', '27/17', '19/14']);
     expect(swapPins(l, 1, 1)).toEqual(l);
   });

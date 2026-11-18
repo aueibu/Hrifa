@@ -7,25 +7,22 @@
  * only. One list per kind: ring pins show ratios (`81/80`), monzo pins show their bra-ket (`[-4 4 -1>`). A click adds the interval
  * (the modal decides how; Alt = below), hovering previews it, x removes, Delete all (header) uses the two-click confirm.
  *
- * Drag (starts after a few pixels, so a plain click still adds; Escape cancels): the outer quarter of a card on either side is BETWEEN
- * (an insert line in that gap, the two neighbors slide apart, the drop inserts there), the middle half is ONTO (the card is outlined,
- * the drop swaps the two). The line is drawn at the edge of the card the pointer is on, even where a row end and the next row start
- * are the same insert position.
+ * Drag (the shared `components/Sortable` layer, H-36; starts after 4 px, so a plain click still adds; Escape cancels; Space and the arrow
+ * keys reorder from the keyboard): the other cards slide into the new order while a copy of the card follows the pointer, and the order
+ * on screen is what the drop produces (`movePin`: `to` is the final index). Resting on a card for `SWAP_DWELL_MS` (0.8 s) turns it into a swap
+ * target (outlined; the others snap back, the trade is shown; `swapPins`); moving on resumes the live order.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActionIcon, Button } from '@mantine/core';
-import { PIN_COLS, braKet, insertPin, removePin, swapPins, type PinKind } from '../state/pins';
+import { Sortable, SortableItem, type Move } from '../../../components/Sortable';
+import { PIN_COLS, braKet, movePin, removePin, swapPins, type PinKind } from '../state/pins';
 import { ChevronDownIcon, CloseIcon } from './icons';
 import { Hint } from './ui';
 import labClasses from './lab.module.css';
 import classes from './pinBar.module.css';
 
-/** A drag starts after the pointer moves this many pixels, so a plain click still adds. */
-const DRAG_START_PX = 4;
 const FLASH_MS = 700;
 const ICON_BOX = 20;
-/** The outer fraction of a card (each side) that means BETWEEN; the middle is ONTO. */
-const EDGE_ZONE = 0.25;
 /** A text longer than this does not fit one 5.25rem slot (tabular figures at the small lab size): its card spans 2 slots. */
 const LONG_TEXT = 8;
 // the bar's box in rem, kept in step with pinBar.module.css (.bar padding and border, .grid gap, .slot width)
@@ -55,15 +52,6 @@ export interface PinBarProps {
   anchorRef: React.RefObject<HTMLElement | null>;
   /** A drag is in progress (the modal must not close on the Escape that cancels it). */
   onDragActive?: (active: boolean) => void;
-}
-
-interface DragState {
-  from: number;
-  /** BETWEEN: insert before card `gap` (0 to length), the line on `side` of the card the pointer is on. */
-  gap: number | null;
-  side: 'before' | 'after';
-  /** ONTO: the card to swap with. */
-  onto: number | null;
 }
 
 interface Space {
@@ -99,7 +87,6 @@ export function PinBar({
   const noun = kind === 'monzo' ? 'monzo' : 'ring';
   const [confirmAll, setConfirmAll] = useState(false);
   const [flashText, setFlashText] = useState<string | null>(null);
-  const [drag, setDrag] = useState<DragState | null>(null);
   // runtime only: not part of settings.v1
   const [collapsed, setCollapsed] = useState(false);
   const [peek, setPeek] = useState(false);
@@ -109,7 +96,6 @@ export function PinBar({
   listRef.current = list;
   const onListRef = useRef(onList);
   onListRef.current = onList;
-  const suppressClick = useRef(false);
   const dragging = useRef(false);
 
   // the free width to the right of the picker and the free height under the modal header, measured, not guessed
@@ -173,87 +159,21 @@ export function PinBar({
   // the other kind's bar is a different list
   useEffect(() => {
     setConfirmAll(false);
-    setDrag(null);
   }, [kind]);
-  useEffect(() => {
-    onDragActive?.(drag !== null);
-  }, [drag !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const onPointerDown = (e: React.PointerEvent, from: number) => {
-    if (e.button !== 0 || (e.target as HTMLElement).closest('[data-pin-x]')) {
-      return;
+  // a drag started or ended (the modal must not close on the Escape that cancels it)
+  const onActiveChange = (active: boolean) => {
+    dragging.current = active;
+    onDragActive?.(active);
+    // a peek stays open only while the pointer is on the bar
+    if (!active && barRef.current && !barRef.current.matches(':hover')) {
+      setPeek(false);
     }
-    const start = { x: e.clientX, y: e.clientY };
-    let active = false;
-    let cancelled = false;
-    let state: DragState = { from, gap: null, side: 'before', onto: null };
-    const move = (ev: PointerEvent) => {
-      if (cancelled) {
-        return;
-      }
-      if (!active && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < DRAG_START_PX) {
-        return;
-      }
-      active = true;
-      dragging.current = true;
-      const slot = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-pin-slot]');
-      if (slot) {
-        // the slot itself never moves (only its inner box slides), so its rect is the stable hit area
-        const i = Number(slot.getAttribute('data-pin-slot'));
-        const r = slot.getBoundingClientRect();
-        const f = (ev.clientX - r.left) / Math.max(1, r.width);
-        if (i === from) {
-          state = { from, gap: null, side: 'before', onto: null };
-        } else if (f < EDGE_ZONE || f > 1 - EDGE_ZONE) {
-          const gap = f < EDGE_ZONE ? i : i + 1;
-          // the two gaps beside the dragged card change nothing
-          state =
-            gap === from || gap === from + 1
-              ? { from, gap: null, side: 'before', onto: null }
-              : { from, gap, side: f < EDGE_ZONE ? 'before' : 'after', onto: null };
-        } else {
-          state = { from, gap: null, side: 'before', onto: i };
-        }
-      }
-      setDrag(state);
-    };
-    const key = (ev: KeyboardEvent) => {
-      if (ev.key === 'Escape') {
-        ev.stopPropagation();
-        cancelled = true;
-        setDrag(null);
-      }
-    };
-    const end = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', end);
-      window.removeEventListener('pointercancel', end);
-      window.removeEventListener('keydown', key, true);
-      dragging.current = false;
-      if (active) {
-        // the click that follows the release must not add
-        suppressClick.current = true;
-        window.setTimeout(() => {
-          suppressClick.current = false;
-        }, 0);
-        if (!cancelled) {
-          if (state.gap !== null) {
-            onListRef.current(insertPin(listRef.current, from, state.gap));
-          } else if (state.onto !== null) {
-            onListRef.current(swapPins(listRef.current, from, state.onto));
-          }
-        }
-      }
-      setDrag(null);
-      // a peek stays open only while the pointer is on the bar
-      if (barRef.current && !barRef.current.matches(':hover')) {
-        setPeek(false);
-      }
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', end);
-    window.addEventListener('pointercancel', end);
-    window.addEventListener('keydown', key, true);
+  };
+  const onMove = ({ from, to, kind }: Move) => {
+    onListRef.current(
+      kind === 'insert' ? movePin(listRef.current, from, to) : swapPins(listRef.current, from, to)
+    );
   };
 
   const showFull = !collapsed || peek;
@@ -364,81 +284,72 @@ export function PinBar({
           </Hint>
         </span>
       </div>
-      <div
+      <Sortable
+        id={`pins-${kind}`}
+        items={list}
+        layout="grid"
+        onMove={onMove}
+        onActiveChange={onActiveChange}
         className={classes.grid}
         data-testid="pin-grid"
         style={{ gridTemplateColumns: `repeat(${cols}, ${SLOT_REM}rem)` }}
       >
-        {list.map((text, i) => {
+        {list.map((text) => {
           const shown = cardText(kind, text);
-          const gap = drag?.gap ?? null;
-          const scoot =
-            gap === null ? undefined : i === gap - 1 ? 'left' : i === gap ? 'right' : undefined;
-          const line =
-            gap === null
-              ? undefined
-              : drag?.side === 'before' && i === gap
-                ? 'before'
-                : drag?.side === 'after' && i === gap - 1
-                  ? 'after'
-                  : undefined;
           return (
-            <div
+            <SortableItem
               key={text}
+              id={text}
               className={classes.slot}
               style={cols >= 2 && shown.length > LONG_TEXT ? { gridColumn: 'span 2' } : undefined}
-              data-pin-slot={i}
               data-flash={flashText === text ? true : undefined}
-              data-dragging={drag && drag.from === i ? true : undefined}
-              data-over={drag && drag.onto === i ? true : undefined}
-              onPointerDown={(e) => onPointerDown(e, i)}
               onMouseEnter={(e) => onEnter(text, e.altKey)}
               onMouseLeave={onLeave}
             >
-              <div className={classes.inner} data-scoot={scoot} data-line={line}>
-                <Hint
-                  label={`${shown}: click to add it above the source note, Alt+click below. Drag to reorder.`}
-                  fit
-                >
-                  <button
-                    type="button"
-                    className={classes.card}
-                    data-testid="pin-card"
-                    aria-label={`Add ${shown} (hold Alt for below)`}
-                    onFocus={() => onEnter(text, false)}
-                    onBlur={onLeave}
-                    onClick={(e) => {
-                      // a click here is the card's own: nothing behind it (the page's Alt+click pin) sees it
-                      e.stopPropagation();
-                      if (suppressClick.current) {
-                        return;
-                      }
-                      onAdd(text, e.altKey);
-                    }}
+              {(handle) => (
+                <>
+                  <Hint
+                    label={`${shown}: click to add it above the source note, Alt+click below. Drag to reorder.`}
+                    fit
                   >
-                    {shown}
-                  </button>
-                </Hint>
-                <Hint label={`Remove ${shown} from the pins`}>
-                  <button
-                    type="button"
-                    className={classes.x}
-                    data-pin-x=""
-                    aria-label={`Remove ${shown}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLeave();
-                      onList(removePin(list, i));
-                    }}
-                  >
-                    <CloseIcon />
-                  </button>
-                </Hint>
-              </div>
-            </div>
+                    <button
+                      {...handle}
+                      type="button"
+                      className={classes.card}
+                      data-testid="pin-card"
+                      aria-label={`Add ${shown} (hold Alt for below)`}
+                      onFocus={() => onEnter(text, false)}
+                      onBlur={onLeave}
+                      onClick={(e) => {
+                        // a click here is the card's own: nothing behind it (the page's Alt+click pin) sees it
+                        e.stopPropagation();
+                        onAdd(text, e.altKey);
+                      }}
+                    >
+                      {shown}
+                    </button>
+                  </Hint>
+                  <Hint label={`Remove ${shown} from the pins`}>
+                    <button
+                      type="button"
+                      className={classes.x}
+                      data-no-drag=""
+                      aria-label={`Remove ${shown}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLeave();
+                        onList(removePin(list, list.indexOf(text)));
+                      }}
+                    >
+                      <CloseIcon />
+                    </button>
+                  </Hint>
+                </>
+              )}
+            </SortableItem>
           );
         })}
-      </div>
+      </Sortable>
     </div>
   );
 }

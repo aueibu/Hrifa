@@ -49,7 +49,7 @@
 .grid {
   display: grid;
   gap: 0.25rem;
-  /* room inside the clip for the slide, the insert line and the outline; the negative margin keeps the layout size */
+  /* room inside the clip for the swap outline; the negative margin keeps the layout size */
   margin: -2px -8px;
   min-height: 0;
   overflow-x: hidden;
@@ -57,41 +57,9 @@
   overflow-y: auto;
 }
 
-/* the slot is the stable hit area; only its inner box slides apart during a drag */
+/* the sliding slots, the dragged placeholder dimming, the overlay and the swap outline come from components/Sortable */
 .slot {
   min-width: 0;
-}
-
-.inner {
-  position: relative;
-  transition: transform 0.12s;
-}
-
-.inner[data-scoot='left'] {
-  transform: translateX(-4px);
-}
-
-.inner[data-scoot='right'] {
-  transform: translateX(4px);
-}
-
-/* the insert line sits in the middle of the widened gap (4px gap + 4px slide each side = 12px) */
-.inner[data-line]::before {
-  background: var(--text);
-  border-radius: 1px;
-  bottom: -2px;
-  content: '';
-  position: absolute;
-  top: -2px;
-  width: 2px;
-}
-
-.inner[data-line='before']::before {
-  left: -7px;
-}
-
-.inner[data-line='after']::before {
-  right: -7px;
 }
 
 /* the same look as a shelf card: the slot background, a transparent border, the control radius */
@@ -203,15 +171,4 @@
   background: var(--tint-green-bg);
   outline: 2px solid var(--mark-green);
   outline-offset: -1px;
-}
-
-.slot[data-dragging] {
-  opacity: 0.5;
-}
-
-/* ONTO: the target is outlined (no line, no sliding) */
-.slot[data-over] .card {
-  border-color: var(--text);
-  outline: 1px solid var(--text);
-  outline-offset: 1px;
 }
