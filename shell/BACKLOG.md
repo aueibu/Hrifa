@@ -106,6 +106,7 @@ Source of the next block ("Bitwig study", 2026-11-12): a read-only comparison of
 - [stage] The stage arc's `ARCHITECTURE.md` (lines 137-157) cites lab CSS line numbers and literal font sizes that the lab's M8k type scale changed; refresh them when that arc is next touched.
 
 ## Interaction ideas
+- [stage] **Drag a tab onto a splitter to make a new docker there** (human, workbench M5 checkpoint 2026-11-18). Today's drop targets are a docker's center (join as a tab), its edges (new docker beside it) and the Stage's root edges (W-34). A splitter between two dockers would become one more target: dropping the tab there inserts a new docker between them. Shared change in `src/components/Stage/dock/` (lock; run `check:stage`, `check:workbench`, `check:hfl`).
 - [workbench] **Alt+drag swaps Pencil and Paint temporarily** (Bitwig does this). Optional, only if cheap.
 - [workbench] **Click-and-vertical-drag on number fields** (bars.beats.ticks fields in the inspector): choose sensitivity by where the press landed (bars vs beats vs ticks), like Bitwig.
 - [workbench] Rotate-in-time notices: a note already crossing the span end before the first press is cut on that press (a full cycle then leaves two touching pieces).

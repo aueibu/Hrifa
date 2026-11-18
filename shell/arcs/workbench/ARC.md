@@ -171,7 +171,11 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] `DECISIONS.md` rows: layout per project and the key move, supersedes the project-state layout keys
   - [ ] `shell/ARCHITECTURE.md` updated (layers, who consumes what)
 - Human checkpoint after: **yes** (the human uses the whole workbench: same behaviour, new screenset tabs, rearranging; judges look)
-- Checkpoint decisions: <written back by the orchestrator>
+- Checkpoint decisions (the human, 2026-11-18):
+  - An existing project opens as before; flipping Canvas, Desk and Edit works; rearranging (drag, Send to, Panels menu) is "great"; reload restores the layout. M5 accepted.
+  - Defect to fix: in a narrow window the footer screenset tabs are cut off. Wanted: show the active screenset plus a selector menu holding the others. Added to M7 (screenset UI polish).
+  - New idea ("may be another goal"): dragging a tab onto a splitter creates a new docker there. BACKLOG `[stage]` (a shared `src/components/Stage/dock/` change); not in this arc unless the human adds it.
+  - The builder choices and the test rewrites listed in PROGRESS M5 were not objected to; taken as accepted.
 
 ### M6: The piano roll and chord picker as independent panels
 - Scope: owned workbench paths: the piano roll and the chord picker registered as panels with homes; the chord picker no longer lives inside the note clip editor; the editor's v1 Stage and the canvas takeover are removed (supersedes W-16 and W-25); `NoteClipEditor.stage.test.tsx`, `editorStage.test.ts` and the takeover cases in `ChordPickerHost.test.tsx`, `ChordPicker.test.tsx` and `NoteClipEditor.chords.test.tsx` are retired or rewritten (the design lists them; the orchestrator confirms the exact cases and tells the human); a one-time upgrade seeds the chord picker's docker for any screenset store that has no `chords` place (so a `chordHost` choice made between M5 and M6 is not lost); the Chords tool or hotkey shows the chord picker panel (open in its remembered docker) if it is not shown; closing the panel while the Chords tool is active leaves the tool (today's rule); with another tool the panel works in the placement mode from design 7.7; the old v1 `Stage` stays (the spike uses it); whether it and the old spike are removed is decided with the human at M8.
@@ -183,7 +187,7 @@ Each milestone is small enough for one builder run and has criteria a command or
 - Checkpoint decisions: <written back by the orchestrator>
 
 ### M7: Pin modules, screenset UI polish and defaults
-- Scope: a workbench module instance can be pinned into its own docker as a panel with a generated id `module:<instanceId>` (the module detail panel stays as the follower of the selected module); modules stay mounted to publish outputs; a screenset names its pinned instances (per project); add, rename, duplicate and delete screensets; sensible default screensets; the user's template library if the design's open item says so.
+- Scope: a workbench module instance can be pinned into its own docker as a panel with a generated id `module:<instanceId>` (the module detail panel stays as the follower of the selected module); modules stay mounted to publish outputs; a screenset names its pinned instances (per project); add, rename, duplicate and delete screensets; sensible default screensets; when the footer is too narrow for every screenset tab, show the active screenset plus a selector menu with the rest (human, M5 checkpoint); the user's template library if the design's open item says so.
 - Acceptance:
   - [ ] `check:workbench`, `check:stage` and `check:hfl` pass
   - [ ] Tests: two instances of the same module kind pinned side by side keep independent state and still publish; unpinning returns to the follower; screenset operations round-trip; deleting a project's screenset never removes a module
