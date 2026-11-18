@@ -40,6 +40,7 @@ export interface AffineFocusPersistedState {
   customFociText: string;
   activeTab: WorkspaceTab;
   orbitGroupBy: OrbitGroupBy;
+  maxClosureNodes: number;
   traceConnectMode: TraceConnectionMode;
   traceRegisterMode: TraceRegisterMode;
   audio: AudioSettings;
@@ -68,6 +69,7 @@ export const DEFAULT_PERSISTED_STATE: AffineFocusPersistedState = {
   customFociText: '0, 2, 4',
   activeTab: 'family',
   orbitGroupBy: 'scc',
+  maxClosureNodes: 256,
   traceConnectMode: 'map',
   traceRegisterMode: 'accumulate',
   audio: DEFAULT_AUDIO_SETTINGS,

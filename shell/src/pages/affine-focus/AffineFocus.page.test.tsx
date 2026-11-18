@@ -104,4 +104,33 @@ describe('AffineFocusPage', () => {
     expect(tags.some((el) => el.textContent?.includes('−1R'))).toBe(true);
     expect(tags.some((el) => el.textContent?.includes('+1R'))).toBe(true);
   });
+
+  it('commits seed text on Enter/blur and allows raising closure set limit with 256-card paging', () => {
+    renderPage();
+
+    const seedInput = screen.getByLabelText('Seed pitches (Enter or blur to apply)');
+    fireEvent.change(seedInput, { target: { value: '1/1, 9/8, 5/4, 3/2' } });
+    // Before Enter/blur, seed cardinality stays at 3
+    expect(screen.getByText('|S| = 3')).toBeInTheDocument();
+
+    fireEvent.keyDown(seedInput, { key: 'Enter' });
+    expect(screen.getByText('|S| = 4')).toBeInTheDocument();
+
+    // Switch to log-pitch on 4-note JI seed so Generation 4 exceeds 256 sets in one group
+    const domainSelect = screen.getByLabelText('Transform domain');
+    fireEvent.change(domainSelect, { target: { value: 'log-pitch' } });
+
+    const orbitsRadio = screen.getByRole('radio', { name: /Orbits & Closure/i });
+    fireEvent.click(orbitsRadio);
+
+    const capSelect = screen.getByLabelText('Closure set limit');
+    fireEvent.change(capSelect, { target: { value: '512' } });
+    expect(screen.getByTestId('closure-summary')).toHaveTextContent(/512 sets/i);
+
+    const byGenRadio = screen.getByRole('radio', { name: 'Group by Generation' });
+    fireEvent.click(byGenRadio);
+
+    // Paging button appears when a generation exceeds 256 cards
+    expect(screen.getByRole('button', { name: /Load \d+ more \(256 \//i })).toBeInTheDocument();
+  });
 });

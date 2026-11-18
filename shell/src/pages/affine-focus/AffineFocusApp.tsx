@@ -5,6 +5,7 @@ import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchem
 import {
   appendTrajectoryStep,
   applyFocusTransform,
+  closureLimitsForNodes,
   computeClosure,
   computeImmediateFamily,
   createInitialTrajectory,
@@ -193,8 +194,8 @@ export function AffineFocusApp() {
   );
 
   const closure = useMemo(
-    () => computeClosure(parsedSeed.pitches, config),
-    [parsedSeed.pitches, config]
+    () => computeClosure(parsedSeed.pitches, config, closureLimitsForNodes(state.maxClosureNodes)),
+    [parsedSeed.pitches, config, state.maxClosureNodes]
   );
 
   useEffect(() => {
@@ -471,8 +472,10 @@ export function AffineFocusApp() {
                 config={config}
                 closure={closure}
                 groupBy={state.orbitGroupBy}
+                maxClosureNodes={state.maxClosureNodes}
                 selectedNodeId={selectedClosureNodeId}
                 onChangeGroupBy={(g) => handlePatch({ orbitGroupBy: g })}
+                onChangeMaxClosureNodes={(n) => handlePatch({ maxClosureNodes: n })}
                 onSelectNode={(node: ClosureNode) => {
                   setSelectedClosureNodeId(node.id);
                   handlePlayPitches(node.pitches);

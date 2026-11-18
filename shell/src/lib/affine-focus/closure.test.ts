@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   appendTrajectoryStep,
   applyFocusTransform,
+  closureLimitsForNodes,
   computeClosure,
   computeImmediateFamily,
   createInitialTrajectory,
@@ -204,5 +205,27 @@ describe('affine-focus M2: closure, SCC orbits, dual-focus solver & trajectory',
     const trace = traceTrajectoryVoices(traj, 1200, 'smoothest', 'accumulate');
     expect(trace.voices.map((v) => v.points[1].cents)).toEqual([400, 400, 400]);
     expect(trace.stepCents[1]).toEqual([400]);
+  });
+
+  it('supports closure cap overrides up to 2056 sets with scaled edge limits', () => {
+    const edo31 = getPresetGamut('31-edo');
+    const seed = parseSeedInput('0, 1, 3, 7', edo31).pitches;
+    const cfg = baseConfig({
+      gamut: edo31,
+      rule: 'single-focus',
+      multiplier: 3,
+      focusPolicy: 'all-gamut',
+    });
+
+    const lim512 = closureLimitsForNodes(512);
+    expect(lim512.maxNodes).toBe(512);
+    expect(lim512.maxEdges).toBe(16384);
+
+    const limClamped = closureLimitsForNodes(9999);
+    expect(limClamped.maxNodes).toBe(2056);
+
+    const graph512 = computeClosure(seed, cfg, lim512);
+    expect(graph512.nodes.length).toBe(512);
+    expect(graph512.terminationReason).toBe('maxNodes');
   });
 });

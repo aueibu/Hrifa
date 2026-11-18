@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   findShortestTransformPath,
@@ -12,12 +12,16 @@ import type { OrbitGroupBy } from '../state';
 import { MiniRing } from './MiniRing';
 import classes from '../AffineFocus.module.css';
 
+const PAGE_SIZE = 256;
+
 export function ClosureOrbitView({
   config,
   closure,
   groupBy,
+  maxClosureNodes,
   selectedNodeId,
   onChangeGroupBy,
+  onChangeMaxClosureNodes,
   onSelectNode,
   onInspectEdge,
   onLoadPathToTrajectory,
@@ -26,47 +30,83 @@ export function ClosureOrbitView({
   config: TransformConfig;
   closure: ClosureGraph;
   groupBy: OrbitGroupBy;
+  maxClosureNodes: number;
   selectedNodeId: string;
   onChangeGroupBy: (g: OrbitGroupBy) => void;
+  onChangeMaxClosureNodes: (maxNodes: number) => void;
   onSelectNode: (node: ClosureNode) => void;
   onInspectEdge: (edge: ClosureEdge) => void;
   onLoadPathToTrajectory: (edges: ClosureEdge[]) => void;
   onPlayPitches: (pitches: readonly GamutPitch[]) => void;
 }) {
   const [foldedGroups, setFoldedGroups] = useState<Record<string, boolean>>({});
+  const [visibleLimitByGroup, setVisibleLimitByGroup] = useState<Record<string, number>>({});
   const [pathTargetId, setPathTargetId] = useState<string>(
     closure.nodes[closure.nodes.length - 1]?.id ?? closure.seedId
   );
+
+  useEffect(() => {
+    setVisibleLimitByGroup({});
+  }, [closure]);
 
   const toggleGroup = (gid: string) => {
     setFoldedGroups((prev) => ({ ...prev, [gid]: !prev[gid] }));
   };
 
-  const nodeMap = new Map(closure.nodes.map((n) => [n.id, n]));
+  const nodeMap = useMemo(() => new Map(closure.nodes.map((n) => [n.id, n])), [closure.nodes]);
+
+  const outEdgesByNode = useMemo(() => {
+    const map = new Map<string, ClosureEdge[]>();
+    for (const e of closure.edges) {
+      let arr = map.get(e.source);
+      if (!arr) {
+        arr = [];
+        map.set(e.source, arr);
+      }
+      arr.push(e);
+    }
+    return map;
+  }, [closure.edges]);
+
+  const nodeOptions = useMemo(
+    () =>
+      closure.nodes.map((n) => ({
+        value: n.id,
+        label: `{${n.pitches.map((p) => p.label).join(', ')}} (gen ${n.generation}, SCC #${n.sccId + 1})`,
+      })),
+    [closure.nodes]
+  );
+
   const R = config.gamut.repeatCents;
 
   const targetIdValid = nodeMap.has(pathTargetId)
     ? pathTargetId
     : (closure.nodes[closure.nodes.length - 1]?.id ?? closure.seedId);
 
-  const shortestPath = findShortestTransformPath(closure, closure.seedId, targetIdValid);
+  const shortestPath = useMemo(
+    () => findShortestTransformPath(closure, closure.seedId, targetIdValid),
+    [closure, targetIdValid]
+  );
 
-  const groups =
-    groupBy === 'scc'
-      ? closure.sccs.map((scc) => ({
-          id: `scc-${scc.id}`,
-          title: `Orbit / SCC #${scc.id + 1} ${scc.isAttractor ? '(Attractor Basin)' : '(Transient)'}`,
-          subtitle: `${scc.nodeIds.length} ${scc.nodeIds.length === 1 ? 'set' : 'sets'}${scc.hasCycle ? ' · reversible cycle' : ''}`,
-          nodes: scc.nodeIds.map((id) => nodeMap.get(id)!).filter(Boolean),
-        }))
-      : closure.generations.map((nIds, genIdx) => ({
-          id: `gen-${genIdx}`,
-          title: genIdx === 0 ? 'Generation 0 (Seed)' : `Generation ${genIdx}`,
-          subtitle: `${nIds.length} newly discovered ${nIds.length === 1 ? 'set' : 'sets'}`,
-          nodes: nIds.map((id) => nodeMap.get(id)!).filter(Boolean),
-        }));
+  const groups = useMemo(
+    () =>
+      groupBy === 'scc'
+        ? closure.sccs.map((scc) => ({
+            id: `scc-${scc.id}`,
+            title: `Orbit / SCC #${scc.id + 1} ${scc.isAttractor ? '(Attractor Basin)' : '(Transient)'}`,
+            subtitle: `${scc.nodeIds.length} ${scc.nodeIds.length === 1 ? 'set' : 'sets'}${scc.hasCycle ? ' · reversible cycle' : ''}`,
+            nodes: scc.nodeIds.map((id) => nodeMap.get(id)!).filter(Boolean),
+          }))
+        : closure.generations.map((nIds, genIdx) => ({
+            id: `gen-${genIdx}`,
+            title: genIdx === 0 ? 'Generation 0 (Seed)' : `Generation ${genIdx}`,
+            subtitle: `${nIds.length} newly discovered ${nIds.length === 1 ? 'set' : 'sets'}`,
+            nodes: nIds.map((id) => nodeMap.get(id)!).filter(Boolean),
+          })),
+    [groupBy, closure.sccs, closure.generations, nodeMap]
+  );
 
-  const selectedNodeEdges = closure.edges.filter((e) => e.source === selectedNodeId);
+  const selectedNodeEdges = outEdgesByNode.get(selectedNodeId) ?? [];
 
   return (
     <>
@@ -78,15 +118,29 @@ export function ClosureOrbitView({
               ? `Closure saturated at Generation ${closure.saturationGeneration ?? 0} (${closure.nodes.length} canonical sets · ${closure.edges.length} transforms · ${closure.sccs.length} orbits)`
               : `Exploration truncated at ${closure.terminationReason} (${closure.nodes.length} sets · closure not proven)`}
           </span>
-          <SegmentedControl
-            size="xs"
-            value={groupBy}
-            onChange={(v) => onChangeGroupBy(v === 'generation' ? 'generation' : 'scc')}
-            data={[
-              { label: 'Group by SCC Orbit', value: 'scc' },
-              { label: 'Group by Generation', value: 'generation' },
-            ]}
-          />
+          <div className={classes.cardActionsCol}>
+            <NativeSelect
+              size="xs"
+              aria-label="Closure set limit"
+              value={String(maxClosureNodes)}
+              onChange={(e) => onChangeMaxClosureNodes(Number(e.currentTarget.value))}
+              data={[
+                { value: '256', label: 'Cap: 256 sets' },
+                { value: '512', label: 'Cap: 512 sets' },
+                { value: '1024', label: 'Cap: 1024 sets' },
+                { value: '2056', label: 'Cap: 2056 sets' },
+              ]}
+            />
+            <SegmentedControl
+              size="xs"
+              value={groupBy}
+              onChange={(v) => onChangeGroupBy(v === 'generation' ? 'generation' : 'scc')}
+              data={[
+                { label: 'Group by SCC Orbit', value: 'scc' },
+                { label: 'Group by Generation', value: 'generation' },
+              ]}
+            />
+          </div>
         </div>
 
         {/* Shortest Transform Path Finder */}
@@ -96,10 +150,7 @@ export function ClosureOrbitView({
             label="Shortest transform path from Seed to target set"
             value={targetIdValid}
             onChange={(e) => setPathTargetId(e.currentTarget.value)}
-            data={closure.nodes.map((n) => ({
-              value: n.id,
-              label: `{${n.pitches.map((p) => p.label).join(', ')}} (gen ${n.generation}, SCC #${n.sccId + 1})`,
-            }))}
+            data={nodeOptions}
           />
           <div className={classes.cardActionsCol}>
             {shortestPath && shortestPath.length > 0 ? (
@@ -203,81 +254,106 @@ export function ClosureOrbitView({
                   onClick={() => toggleGroup(grp.id)}
                 />
                 <div className={classes.cardList}>
-                  {grp.nodes.map((node) => {
-                    const isSelected = node.id === selectedNodeId;
-                    const outEdges = closure.edges.filter((e) => e.source === node.id);
-                    const selfLoops = outEdges.filter((e) => e.isSelfLoop);
-
+                  {(() => {
+                    const visibleLimit = visibleLimitByGroup[grp.id] ?? PAGE_SIZE;
+                    const visibleNodes = grp.nodes.slice(0, visibleLimit);
+                    const remaining = grp.nodes.length - visibleNodes.length;
                     return (
-                      <div
-                        key={node.id}
-                        role="button"
-                        tabIndex={0}
-                        className={classes.opCard}
-                        data-selected={isSelected}
-                        onClick={() => onSelectNode(node)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onSelectNode(node);
-                          }
-                        }}
-                      >
-                        <MiniRing targetPitches={node.pitches} repeatCents={R} />
-                        <div className={classes.cardTitleCol}>
-                          <span className={classes.cardTitle}>
-                            {`{${node.pitches.map((p) => p.label).join(', ')}}`}
-                          </span>
-                          <span className={classes.cardSubtitle}>
-                            {`Gen ${node.generation} · SCC #${node.sccId + 1}${node.isSeed ? ' · Seed' : ''}`}
-                          </span>
-                        </div>
-                        <div className={classes.cardPitchesCol}>
-                          <span className={classes.cardPitches}>
-                            {`${node.pitches.map((p) => p.foldedCents.toFixed(1)).join(', ')} c`}
-                          </span>
-                          <span className={classes.cardSteps}>
-                            {node.isFixedUnderAnyFocus
-                              ? `Fixed under focus: ${node.fixedFocusLabels.join(', ')}`
-                              : `${outEdges.length} outgoing transforms`}
-                          </span>
-                        </div>
-                        <div className={classes.cardStatCol}>
-                          <span
-                            style={{
-                              color: node.isSeed
-                                ? 'var(--mark-blue)'
-                                : node.isFixedUnderAnyFocus
-                                  ? 'var(--mark-yellow)'
-                                  : 'var(--text-muted)',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {node.isSeed
-                              ? 'seed'
-                              : selfLoops.length > 0
-                                ? `${selfLoops.length} fixed`
-                                : `|S|=${node.pitches.length}`}
-                          </span>
-                          <span className={classes.mutedLabel}>
-                            {`${node.parents.length} in / ${outEdges.length} out`}
-                          </span>
-                        </div>
-                        <div className={classes.cardActionsCol}>
-                          <Button
-                            size="compact-xs"
-                            variant="default"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPlayPitches(node.pitches);
-                            }}
-                          >
-                            ▶
-                          </Button>
-                        </div>
-                      </div>
+                      <>
+                        {visibleNodes.map((node) => {
+                          const isSelected = node.id === selectedNodeId;
+                          const outEdges = outEdgesByNode.get(node.id) ?? [];
+                          const selfLoops = outEdges.filter((e) => e.isSelfLoop);
+
+                          return (
+                            <div
+                              key={node.id}
+                              role="button"
+                              tabIndex={0}
+                              className={classes.opCard}
+                              data-selected={isSelected}
+                              onClick={() => onSelectNode(node)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  onSelectNode(node);
+                                }
+                              }}
+                            >
+                              <MiniRing targetPitches={node.pitches} repeatCents={R} />
+                              <div className={classes.cardTitleCol}>
+                                <span className={classes.cardTitle}>
+                                  {`{${node.pitches.map((p) => p.label).join(', ')}}`}
+                                </span>
+                                <span className={classes.cardSubtitle}>
+                                  {`Gen ${node.generation} · SCC #${node.sccId + 1}${node.isSeed ? ' · Seed' : ''}`}
+                                </span>
+                              </div>
+                              <div className={classes.cardPitchesCol}>
+                                <span className={classes.cardPitches}>
+                                  {`${node.pitches.map((p) => p.foldedCents.toFixed(1)).join(', ')} c`}
+                                </span>
+                                <span className={classes.cardSteps}>
+                                  {node.isFixedUnderAnyFocus
+                                    ? `Fixed under focus: ${node.fixedFocusLabels.join(', ')}`
+                                    : `${outEdges.length} outgoing transforms`}
+                                </span>
+                              </div>
+                              <div className={classes.cardStatCol}>
+                                <span
+                                  style={{
+                                    color: node.isSeed
+                                      ? 'var(--mark-blue)'
+                                      : node.isFixedUnderAnyFocus
+                                        ? 'var(--mark-yellow)'
+                                        : 'var(--text-muted)',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {node.isSeed
+                                    ? 'seed'
+                                    : selfLoops.length > 0
+                                      ? `${selfLoops.length} fixed`
+                                      : `|S|=${node.pitches.length}`}
+                                </span>
+                                <span className={classes.mutedLabel}>
+                                  {`${node.parents.length} in / ${outEdges.length} out`}
+                                </span>
+                              </div>
+                              <div className={classes.cardActionsCol}>
+                                <Button
+                                  size="compact-xs"
+                                  variant="default"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onPlayPitches(node.pitches);
+                                  }}
+                                >
+                                  ▶
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {remaining > 0 && (
+                          <div className={classes.cardActionsCol} style={{ paddingTop: 4 }}>
+                            <Button
+                              size="compact-xs"
+                              variant="light"
+                              onClick={() =>
+                                setVisibleLimitByGroup((prev) => ({
+                                  ...prev,
+                                  [grp.id]: visibleLimit + PAGE_SIZE,
+                                }))
+                              }
+                            >
+                              {`Load ${Math.min(PAGE_SIZE, remaining)} more (${visibleNodes.length} / ${grp.nodes.length} shown)`}
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               </div>
             )}

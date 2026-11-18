@@ -1,4 +1,12 @@
-import { Button, NativeSelect, NumberInput, SegmentedControl, TextInput } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import {
+  Button,
+  NativeSelect,
+  NumberInput,
+  SegmentedControl,
+  TextInput,
+  type TextInputProps,
+} from '@mantine/core';
 import {
   isBijectiveMultiplier,
   TUNING_PRESETS,
@@ -14,6 +22,42 @@ import {
 } from '../../../lib/affine-focus';
 import { SCENARIO_EXAMPLES, type AffineFocusPersistedState, type ScenarioExample } from '../state';
 import classes from '../AffineFocus.module.css';
+
+function CommitTextInput({
+  value,
+  onCommit,
+  ...rest
+}: Omit<TextInputProps, 'value' | 'onChange'> & {
+  value: string;
+  onCommit: (next: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+  const commit = () => {
+    if (draft !== value) {
+      onCommit(draft);
+    }
+  };
+  return (
+    <TextInput
+      {...rest}
+      value={draft}
+      onChange={(e) => setDraft(e.currentTarget.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commit();
+        } else if (e.key === 'Escape') {
+          setDraft(value);
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
 
 export function ControlRail({
   state,
@@ -107,18 +151,18 @@ export function ControlRail({
 
           {state.presetId === 'custom' && (
             <>
-              <TextInput
+              <CommitTextInput
                 size="xs"
                 label="Custom pitches (ratios a/b or cents)"
                 value={state.customIntervalsText}
                 error={customError}
-                onChange={(e) => onPatch({ customIntervalsText: e.currentTarget.value })}
+                onCommit={(next) => onPatch({ customIntervalsText: next })}
               />
-              <TextInput
+              <CommitTextInput
                 size="xs"
                 label="Repeat period (e.g. 2/1, 3/1, 1200c)"
                 value={state.customRepeatText}
-                onChange={(e) => onPatch({ customRepeatText: e.currentTarget.value })}
+                onCommit={(next) => onPatch({ customRepeatText: next })}
               />
             </>
           )}
@@ -131,12 +175,12 @@ export function ControlRail({
             <span>02 · Seed Set / Voicing</span>
             <span className={classes.tabularNum}>{`|S| = ${seedPitches.length}`}</span>
           </div>
-          <TextInput
+          <CommitTextInput
             size="xs"
-            label="Seed pitches (indices, ratios, or note names)"
+            label="Seed pitches (Enter or blur to apply)"
             value={state.seedText}
             error={seedError}
-            onChange={(e) => onPatch({ seedText: e.currentTarget.value })}
+            onCommit={(next) => onPatch({ seedText: next })}
           />
 
           <div className={classes.chipGrid} role="group" aria-label="Gamut pitch toggles">
@@ -412,11 +456,11 @@ export function ControlRail({
           )}
 
           {state.rule === 'multi-multiplier' && (
-            <TextInput
+            <CommitTextInput
               size="xs"
-              label="Multipliers list (e.g. −1, 2, 5)"
+              label="Multipliers list (Enter or blur)"
               value={state.multipliersText}
-              onChange={(e) => onPatch({ multipliersText: e.currentTarget.value })}
+              onCommit={(next) => onPatch({ multipliersText: next })}
             />
           )}
 
@@ -434,11 +478,11 @@ export function ControlRail({
           />
 
           {state.focusPolicy === 'custom' && (
-            <TextInput
+            <CommitTextInput
               size="xs"
-              label="Custom focus step indices"
+              label="Custom focus step indices (Enter or blur)"
               value={state.customFociText}
-              onChange={(e) => onPatch({ customFociText: e.currentTarget.value })}
+              onCommit={(next) => onPatch({ customFociText: next })}
             />
           )}
         </div>

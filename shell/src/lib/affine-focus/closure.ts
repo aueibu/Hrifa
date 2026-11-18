@@ -16,6 +16,21 @@ export const DEFAULT_CLOSURE_LIMITS: ClosureLimits = {
   maxGeneration: 24,
 };
 
+export const CLOSURE_NODE_CAP_MIN = 32;
+export const CLOSURE_NODE_CAP_MAX = 2056;
+
+export function closureLimitsForNodes(maxNodes: number): ClosureLimits {
+  const clamped = Math.max(
+    CLOSURE_NODE_CAP_MIN,
+    Math.min(CLOSURE_NODE_CAP_MAX, Math.round(maxNodes) || DEFAULT_CLOSURE_LIMITS.maxNodes)
+  );
+  return {
+    maxNodes: clamped,
+    maxEdges: Math.max(DEFAULT_CLOSURE_LIMITS.maxEdges, clamped * 32),
+    maxGeneration: Math.max(DEFAULT_CLOSURE_LIMITS.maxGeneration, 48),
+  };
+}
+
 function canonicalizeSeed(pitches: readonly GamutPitch[], config: TransformConfig): GamutPitch[] {
   if (config.identity === 'ordered-tuple') {
     return [...pitches];
