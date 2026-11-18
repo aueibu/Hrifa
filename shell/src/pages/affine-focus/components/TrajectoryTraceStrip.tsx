@@ -72,6 +72,15 @@ export function TrajectoryTraceStrip({
         role="img"
         aria-label="Trajectory Voice Register Trace"
       >
+        {/* Subtle shading for the fundamental [0, R) home repeat band */}
+        <rect
+          x={PAD_L - 6}
+          y={yAtCents(R)}
+          width={W - PAD_L - PAD_R + 12}
+          height={Math.max(0, yAtCents(0) - yAtCents(R))}
+          fill="color-mix(in srgb, var(--text) 3.5%, transparent)"
+        />
+
         {/* Horizontal repeat boundary gridlines */}
         {repeatLines.map((k) => {
           const y = yAtCents(k * R);
@@ -183,6 +192,14 @@ export function TrajectoryTraceStrip({
                 const y = yAtCents(pt.cents);
                 const showPitchLabel =
                   stepCount <= 6 || pt.stepIndex === 0 || pt.stepIndex === stepCount - 1;
+                const wrapK = Math.floor((pt.cents + 1e-4) / R);
+                const hasExistingTag = /[+-]\d+R\)/.test(pt.pitch.label);
+                const octaveTag =
+                  wrapK === 0 || hasExistingTag
+                    ? ''
+                    : wrapK > 0
+                      ? ` (+${wrapK}R)`
+                      : ` (−${Math.abs(wrapK)}R)`;
                 return (
                   <g key={`v-${voice.voiceId}-s-${pt.stepIndex}`}>
                     {pt.isFocusForNext && (
@@ -212,7 +229,7 @@ export function TrajectoryTraceStrip({
                       stroke="var(--panel)"
                       strokeWidth="1.15"
                     >
-                      <title>{`v${voice.voiceId + 1} · S${pt.stepIndex}: ${pt.pitch.label} (${pt.cents.toFixed(1)} c)`}</title>
+                      <title>{`v${voice.voiceId + 1} · S${pt.stepIndex}: ${pt.pitch.label}${octaveTag} (${pt.cents.toFixed(1)} c)`}</title>
                     </circle>
                     {pt.stepIndex === 0 && (
                       <text
@@ -237,6 +254,11 @@ export function TrajectoryTraceStrip({
                         pointerEvents="none"
                       >
                         {pt.pitch.label}
+                        {octaveTag && (
+                          <tspan fill="var(--text-muted)" data-testid="trace-octave-tag">
+                            {octaveTag}
+                          </tspan>
+                        )}
                       </text>
                     )}
                   </g>
