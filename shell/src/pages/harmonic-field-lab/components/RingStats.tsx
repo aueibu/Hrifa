@@ -24,7 +24,9 @@ import {
   noteText,
   parseInterval,
   type FifthsLayout,
+  type Note,
 } from '../../../lib/harmonic-field';
+import type { PreviewTarget } from '../audio/plan';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import type { Ghost } from '../state/ghosts';
@@ -35,7 +37,14 @@ import { FieldCompact } from './FieldPanel';
 import { OutsideCount, useGhosts } from './GhostMarks';
 import { GearIcon } from './icons';
 import { RING_GAP, RingChevron, rootLabel, useModeRoot } from './ModeRoot';
-import { RelativeModal, mainPxPerUnit, type BandMode, type RelativeHover } from './RelativeMenu';
+import type { MonzoView } from './MonzoPanel';
+import {
+  RelativeModal,
+  mainPxPerUnit,
+  type BandMode,
+  type RelativeHover,
+  type RelativeMode,
+} from './RelativeMenu';
 import {
   RING_BOX_REM,
   RING_OFF_CHAIN_R,
@@ -487,6 +496,8 @@ export function RingPanel() {
   const [mainPpu, setMainPpu] = useState(() => mainPxPerUnit(null));
   const [bandMode, setBandMode] = useState<BandMode>('from');
   const [ringStart, setRingStart] = useState(0);
+  const [relMode, setRelMode] = useState<RelativeMode>('rings');
+  const [monzoView, setMonzoView] = useState<MonzoView>('strips');
   const menuIdx =
     isRelative && relativeOn && menuC !== null
       ? base.field.findIndex((n) => Math.abs(n.c - menuC) < 1e-6)
@@ -505,6 +516,37 @@ export function RingPanel() {
     }
   }, [menuC, menuOpen]);
   const from = menuOpen ? base.field[menuIdx] : null;
+  // M8c hover keys: the landing under the pointer in the modal; holds 1 / 4 / 5 sound it (1 = that pitch alone, 4 = the picked
+  // note and it, 5 = the whole field and it). The three sets are absolute pitches (field cents), like a library row's. The key
+  // carries the landing, the source and the field, so a held key follows a change under a resting pointer.
+  const [relLanding, setRelLanding] = useState<Note | null>(null);
+  const audio = lab.audio;
+  const lastRelTarget = useRef<PreviewTarget | null>(null);
+  const fieldCents = base.field.map((n) => n.c);
+  const fieldSig = fieldCents.join(',');
+  useEffect(() => {
+    const prev = lastRelTarget.current;
+    if (!relLanding || !from) {
+      if (prev) {
+        audio.clearPreviewTarget(prev);
+        lastRelTarget.current = null;
+      }
+      return;
+    }
+    const l = relLanding.c;
+    const exact = fieldCents.some((c) => Math.abs(c - l) < 1e-6)
+      ? [...fieldCents]
+      : [...fieldCents, l].sort((a, b) => a - b);
+    const next: PreviewTarget = {
+      kind: 'pitches',
+      key: `rel:${from.c}:${l}:${fieldSig}`,
+      cents: [l],
+      variants: { own: [l], rounded: [from.c, l], exact },
+    };
+    lastRelTarget.current = next;
+    audio.setPreviewTarget(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fieldCents is rebuilt each render; fieldSig stands for it
+  }, [relLanding, from?.c, fieldSig, audio]);
   const relativeDots = useCallback(
     (i: number): RingDotExtra => {
       const open = () => {
@@ -643,6 +685,21 @@ export function RingPanel() {
           onBandMode={setBandMode}
           ringStart={ringStart}
           onRingStart={setRingStart}
+          mode={relMode}
+          onMode={setRelMode}
+          monzoView={monzoView}
+          onMonzoView={setMonzoView}
+          monzo={state.relative.monzo}
+          onMonzo={(prime, value) => {
+            dispatch({ type: 'relative/monzo', prime, value });
+            if (state.relative.message) {
+              dispatch({ type: 'relative/dismiss' });
+            }
+          }}
+          onMonzoReset={() => dispatch({ type: 'relative/monzoReset' })}
+          onAdd={(text) => dispatch({ type: 'relative/add', text })}
+          message={state.relative.message}
+          onPreview={setRelLanding}
         />
       )}
     </div>

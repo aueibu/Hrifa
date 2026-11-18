@@ -28,8 +28,8 @@ describe('M8b relative modal', () => {
     expect(screen.getByText('From 1/1')).toBeTruthy();
     // the center is a copy of the ring (a second pitch circle), not 1/1 text
     expect(within(screen.getByTestId('relative-ring')).getByRole('group')).toBeTruthy();
-    // 6 + 12 + 30 + 34 ratios, each one cell
-    expect(screen.getAllByTestId('relative-half')).toHaveLength(82);
+    // the opening view: levels 1 to 3 (6 + 12 + 30) and the odd-limit 17 ring (16), each ratio one cell
+    expect(screen.getAllByTestId('relative-half')).toHaveLength(64);
     expect(screen.queryByTestId('relative-remove')).toBeNull();
   });
 

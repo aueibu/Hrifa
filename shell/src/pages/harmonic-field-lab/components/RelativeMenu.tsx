@@ -20,13 +20,26 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button, Modal, SegmentedControl } from '@mantine/core';
 import {
   landingPitch,
+  landingReadout,
+  monzoLanding,
+  monzoStep,
   noteText,
+  parseTypedStep,
   primeRingIndex,
   relativeRingAt,
   type Direction,
+  type MonzoExps,
+  type MonzoPrime,
   type Note,
   type RingRatio,
 } from '../../../lib/harmonic-field';
+import {
+  MONZO_CTL_H,
+  MonzoPanel,
+  STRIP_AREA_ROWS,
+  monzoSummary,
+  type MonzoView,
+} from './MonzoPanel';
 import { RING_PX_PER_UNIT, RING_R, RingDot } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
 import classes from './relativeMenu.module.css';
@@ -86,6 +99,12 @@ const CHROME_H = 150;
 const CHROME_W = 72;
 /** The label half-width used until the inner ring's own box is measured (SVG units). */
 const FALLBACK_VB_HALF = 160;
+
+/** Monzo mode: the strip rows are 12 to 18 px tall, the gap between the ring, strips and controls, and the smallest ring area. */
+const MONZO_ROW_MIN = 12;
+const MONZO_ROW_MAX = 18;
+const MONZO_GAP = 6;
+const MONZO_RING_MIN = 120;
 
 const EMPTY_SET: ReadonlySet<number> = new Set<number>();
 
@@ -193,9 +212,28 @@ export interface RelativeModalProps {
   /** Which group of the ring sequence is in place 1 (0 = 3-5, 7-9, 11-15, 17). Runtime only, kept by the page. */
   ringStart: number;
   onRingStart: (n: number) => void;
+  /** M8c: Rings (the bands) or Monzo (strips or rows plus the typed box); runtime only, kept by the page. */
+  mode: RelativeMode;
+  onMode: (m: RelativeMode) => void;
+  monzoView: MonzoView;
+  onMonzoView: (v: MonzoView) => void;
+  /** The kept exponents (lab state), and how they change. */
+  monzo: MonzoExps;
+  onMonzo: (prime: MonzoPrime, value: number) => void;
+  onMonzoReset: () => void;
+  /** Add a note by its text (the page dispatches `relative/add`). */
+  onAdd: (text: string) => void;
+  /** The state's quiet line (a refused or duplicate add), shown in the readout pill. */
+  message: string | null;
+  /**
+   * The landing note under the pointer (a ring cell with the current direction, or in Monzo mode the monzo landing while the pointer
+   * is over the matrix or the rows), or null: what holds 1 / 4 / 5 preview. The page owns the sound.
+   */
+  onPreview?: (landing: Note | null) => void;
 }
 
 export type BandMode = 'from' | 'fixed';
+export type RelativeMode = 'rings' | 'monzo';
 
 const noDotProps = (): RingDotExtra => ({ 'aria-pressed': undefined, tabIndex: -1 });
 
@@ -217,7 +255,20 @@ export function RelativeModal({
   onBandMode,
   ringStart,
   onRingStart,
+  mode,
+  onMode,
+  monzoView,
+  onMonzoView,
+  monzo,
+  onMonzo,
+  onMonzoReset,
+  onAdd,
+  message,
+  onPreview,
 }: RelativeModalProps) {
+  const isMonzo = mode === 'monzo';
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const start = clampRingStart(ringStart);
   // the four places: rings start .. start + 3 of the endless sequence (made on demand)
   const places = useMemo(
@@ -248,7 +299,7 @@ export function RelativeModal({
         return;
       }
       const mv = navMove(e);
-      if (!mv || isTypingTarget(e.target)) {
+      if (!mv || modeRef.current === 'monzo' || isTypingTarget(e.target)) {
         return;
       }
       e.preventDefault();
@@ -318,15 +369,87 @@ export function RelativeModal({
   const rot = bandRotationDeg;
   const fromText = noteText(from);
   const isUnison = Math.abs(from.c) < 1e-6;
+  // Monzo mode keeps the SAME body size: the ring copy shrinks into the top, the strip area (27 rows) and the controls fill the rest
+  const mGeo = useMemo(() => {
+    const gaps = 2 * MONZO_GAP;
+    const rowH = Math.max(
+      MONZO_ROW_MIN,
+      Math.min(
+        MONZO_ROW_MAX,
+        Math.floor((size - MONZO_CTL_H - gaps - MONZO_RING_MIN) / STRIP_AREA_ROWS)
+      )
+    );
+    const ringArea = Math.max(MONZO_RING_MIN, size - MONZO_CTL_H - gaps - STRIP_AREA_ROWS * rowH);
+    return { rowH, ringArea, ppu: Math.min(lay.ppu * scale, ringArea / (2 * vbHalf)) };
+  }, [size, lay.ppu, scale, vbHalf]);
+  // Monzo mode: the ghost follows the kept exponents (all 0 = on the source note itself)
+  const mStep = useMemo(() => monzoStep(monzo, rep), [monzo, rep]);
+  const mLanding = useMemo(() => monzoLanding(from, monzo, rep), [from, monzo, rep]);
+  const mDir: Direction = mStep?.dir ?? 'above';
   const overlay = useMemo(
     () =>
       function GhostOverlay(a: RingOverlayArgs) {
-        return <RelativeGhost at={a.at} k={a.k} from={from} rep={rep} hover={hover} />;
+        return (
+          <RelativeGhost
+            at={a.at}
+            k={a.k}
+            from={from}
+            rep={rep}
+            hover={hover}
+            landing={isMonzo ? { note: mLanding, dir: mDir } : undefined}
+          />
+        );
       },
-    [from, rep, hover]
+    [from, rep, hover, isMonzo, mLanding, mDir]
   );
   const [cell, setCell] = useState<RingRatio | null>(null);
+  useEffect(() => {
+    setCell(null);
+  }, [mode]);
+  // the readout pill in Monzo mode: the landing as for the rings, then the nonzero exponents
+  const monzoLine = message
+    ? message
+    : `${
+        mStep
+          ? landingReadout(noteText(mStep.ratio), mStep.dir, from, mLanding)
+          : `${noteText(from)} (all 0)`
+      } · ${monzoSummary(monzo)}`;
+  const onTyped = (text: string, d: Direction): string | null => {
+    const r = parseTypedStep(text);
+    if (!r.ok) {
+      return r.message;
+    }
+    onAdd(noteText(landingPitch(from, r.ratio, d, rep)));
+    return null;
+  };
   const dir: Direction = alt ? 'below' : 'above';
+  // M8c hover keys: the landing under the pointer (the ghost), reported up so holds 1 / 4 / 5 can sound it
+  const [monzoOver, setMonzoOver] = useState(false);
+  useEffect(() => {
+    setMonzoOver(false);
+  }, [mode, monzoView]);
+  const pointLanding = useMemo(
+    () =>
+      isMonzo
+        ? monzoOver
+          ? mLanding
+          : null
+        : cell
+          ? landingPitch(from, cell.note, dir, rep)
+          : null,
+    [isMonzo, monzoOver, mLanding, cell, from, dir, rep]
+  );
+  const onPreviewRef = useRef(onPreview);
+  onPreviewRef.current = onPreview;
+  useEffect(() => {
+    onPreviewRef.current?.(pointLanding);
+  }, [pointLanding]);
+  useEffect(
+    () => () => {
+      onPreviewRef.current?.(null);
+    },
+    []
+  );
   // the hovered cell and the direction together are the hover the ghost and the readout follow
   const onHoverRef = useRef(onHover);
   onHoverRef.current = onHover;
@@ -376,12 +499,17 @@ export function RelativeModal({
         data-testid="relative-menu"
         style={{ width: size, height: size }}
       >
-        <div ref={wrapRef} className={classes.ringWrap} data-testid="relative-ring">
+        <div
+          ref={wrapRef}
+          className={classes.ringWrap}
+          data-testid="relative-ring"
+          style={isMonzo ? { top: mGeo.ringArea / 2 } : undefined}
+        >
           <PitchRing
             view="chromatic"
             steps={12}
             radius={RING_R}
-            pxPerUnit={lay.ppu * scale}
+            pxPerUnit={isMonzo ? mGeo.ppu : lay.ppu * scale}
             hover={fromIdx}
             chord={EMPTY_SET}
             sounding={EMPTY_SET}
@@ -391,8 +519,23 @@ export function RelativeModal({
             ariaLabel={`Copy of the pitch circle, ${fromText} at the top`}
           />
         </div>
+        {isMonzo && (
+          <MonzoPanel
+            view={monzoView}
+            onView={onMonzoView}
+            monzo={monzo}
+            onMonzo={onMonzo}
+            onReset={onMonzoReset}
+            onAddMonzo={() => onAdd(noteText(mLanding))}
+            onTyped={onTyped}
+            width={size}
+            rowH={mGeo.rowH}
+            onOver={setMonzoOver}
+          />
+        )}
         <svg
           className={classes.svg}
+          style={isMonzo ? { display: 'none' } : undefined}
           width={size}
           height={size}
           viewBox={`0 0 ${2 * half} ${2 * half}`}
@@ -494,14 +637,25 @@ export function RelativeModal({
             size="xs"
             aria-label="Bands start at"
             value={bandMode}
+            disabled={isMonzo}
             onChange={(v) => onBandMode(v === 'fixed' ? 'fixed' : 'from')}
             data={[
               { value: 'from', label: 'Bands: From note' },
               { value: 'fixed', label: 'Fixed' },
             ]}
           />
+          <SegmentedControl
+            size="xs"
+            aria-label="Picker style"
+            value={mode}
+            onChange={(v) => onMode(v === 'monzo' ? 'monzo' : 'rings')}
+            data={[
+              { value: 'rings', label: 'Rings' },
+              { value: 'monzo', label: 'Monzo' },
+            ]}
+          />
           <div className={classes.dirHint} data-testid="relative-dir" data-dir={dir}>
-            {alt ? 'Below' : 'Above · hold Alt for below'}
+            {isMonzo ? 'Negative = below' : alt ? 'Below' : 'Above · hold Alt'}
           </div>
           {/* 1/1 always stays (the reference), so its modal has no Remove button; the slot keeps its space */}
           <div className={classes.removeSlot}>
@@ -519,10 +673,12 @@ export function RelativeModal({
           </div>
         </div>
         <div className={classes.footLine} data-testid="relative-rings">
-          {`Rings ${places.map((g) => g.label).join(' · ')} — 2/3 one ring, Shift by prime, Ctrl+Shift by 5 primes`}
+          {isMonzo
+            ? 'Move to paint · Ctrl line · Alt no paint · click to add · hold 1 / 4 / 5 to hear'
+            : `Rings ${places.map((g) => g.label).join(' · ')} · 2/3 ring, Shift prime, Ctrl+Shift 5 · hold 1/4/5 to hear`}
         </div>
         <div className={classes.line} data-testid="relative-line" aria-live="polite">
-          {line}
+          {isMonzo ? monzoLine : line}
         </div>
       </div>
     </Modal>
@@ -536,19 +692,23 @@ export interface RelativeGhostProps {
   from: Note;
   rep: Note;
   hover: RelativeHover | null;
+  /** Monzo mode: the landing note and tone to draw instead of the hovered half's. */
+  landing?: { note: Note; dir: Direction };
 }
 
 /** The ghost dot on the inner ring at the landing pitch of the hovered half (orange above, teal below). */
-export function RelativeGhost({ at, k, from, rep, hover }: RelativeGhostProps) {
-  const ghost = hover ? landingPitch(from, hover.ratio.note, hover.dir, rep) : null;
-  const p = ghost ? at(ghost.c) : null;
-  if (!p || !hover) {
+export function RelativeGhost({ at, k, from, rep, hover, landing }: RelativeGhostProps) {
+  const ghost =
+    landing ??
+    (hover ? { note: landingPitch(from, hover.ratio.note, hover.dir, rep), dir: hover.dir } : null);
+  const p = ghost ? at(ghost.note.c) : null;
+  if (!p || !ghost) {
     return null;
   }
   return (
     <RingDot
       kind="ghost"
-      tone={hover.dir}
+      tone={ghost.dir}
       scale={k}
       cx={p.x}
       cy={p.y}

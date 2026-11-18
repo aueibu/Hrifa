@@ -2809,9 +2809,12 @@ const entries = {
     term: 'Relative menu',
     help: [
       p(
-        'With the Relative pitches generator, click a note on the ring to pick it and open the picker: a copy of the ring in the middle, four bands of ratios of growing complexity around it. Click a ratio to add it above the picked note; hold Alt to add it below. Hover first: a ghost dot shows where it lands. Bands: From note starts them at the picked note, Fixed keeps the unison at the top. Press 3 for more complex rings, 2 to go back; Shift jumps by prime, Ctrl+Shift by five primes. The Relative button turns the picker off.'
+        'Click a ring note to open the picker. Click a ratio to add it above that note, Alt+click to add it below; a ghost dot shows where it lands. Hold {key:holdOwn} to hear the new pitch, {key:holdField} with the picked note, {key:holdExact} with the whole field. 3 and 2 step through the rings; Shift jumps by prime, Ctrl+Shift by five primes.'
       ),
-      example('click 3/2, then 11/6: 11/8 is added (3/2 times 11/6, folded).'),
+      p(
+        'Monzo: move over the prime matrix to paint exponents (Ctrl paints a straight line, Alt moves without painting); click to add. Rows gives −/+ buttons; the box takes a ratio or cents.'
+      ),
+      example('click 3/2, then 11/6: 11/8 is added (folded).'),
     ],
     teaching: [],
     see: ['method', 'repeat'],
