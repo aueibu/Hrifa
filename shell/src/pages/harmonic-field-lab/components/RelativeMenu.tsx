@@ -47,12 +47,17 @@ import classes from './relativeMenu.module.css';
 /** The inner ring's circle as a multiple of the main ring's circle (the human's floor is 0.9). */
 export const INNER_RATIO = 1.15;
 /** The bands' radial widths (pixels at scale 1) before the narrowing, and the gap between bands. */
-export const MENU_BAND_WIDTHS = [42, 46, 52, 60] as const;
+export const MENU_BAND_WIDTHS = [30, 32, 34, 36, 40, 44, 48, 54, 60] as const;
 export const MENU_GAP = 4;
 /** The narrowest the bands get (a factor on their widths) before the whole picture scales down instead. */
 export const MIN_BAND_FACTOR = 0.75;
-/** The four places always show this many consecutive groups of the ring sequence. */
-export const MENU_PLACES = 4;
+/** Full-screen experiment: the inner ring shrinks (never under this multiple of the main ring) so the bands keep this factor. */
+export const MIN_INNER_RATIO = 0.5;
+export const PREF_BAND_FACTOR = 0.85;
+/** The places always show this many consecutive groups of the ring sequence (one per entry of `MENU_BAND_WIDTHS`). */
+export const MENU_PLACES = MENU_BAND_WIDTHS.length;
+/** Experiment switch: the modal fills the window (set false, with 4 widths, to go back). */
+export const FULLSCREEN = true;
 /** A band writes its labels along the radius when one cell's arc at the band's middle is shorter than this many pixels. */
 export const RADIAL_BELOW_ARC_PX = 36;
 /** The sequence has no end, so `ringStart` has no upper limit; it never goes below 0. */
@@ -95,14 +100,14 @@ const MIN_BODY_W = 480;
 /** The modal's horizontal padding (both sides, pixels; Mantine `xs`) plus a little slack. */
 const MODAL_PAD_W = 24;
 /** Room used by the modal's own chrome (title, footer, padding, margins), pixels. */
-const CHROME_H = 150;
-const CHROME_W = 72;
+const CHROME_H = 175;
+const CHROME_W = 40;
 /** The label half-width used until the inner ring's own box is measured (SVG units). */
 const FALLBACK_VB_HALF = 160;
 
 /** Monzo mode: the strip rows are 12 to 18 px tall, the gap between the ring, strips and controls, and the smallest ring area. */
 const MONZO_ROW_MIN = 12;
-const MONZO_ROW_MAX = 18;
+const MONZO_ROW_MAX = 24;
 const MONZO_GAP = 6;
 const MONZO_RING_MIN = 120;
 
@@ -171,10 +176,13 @@ export interface MenuLayout {
  * svg's drawing (its labels). `availR` is the largest radius the window allows. Bands narrow to fit, then `scale` shrinks all.
  */
 export function layoutFor(mainPpu: number, vbHalf: number, availR: number): MenuLayout {
-  const ppu = mainPpu * INNER_RATIO;
-  const r0 = vbHalf * ppu * 1.08 + 2;
   const widthSum = MENU_BAND_WIDTHS.reduce((a, b) => a + b, 0);
-  const fixed = r0 + MENU_GAP * 4 + 2;
+  const gaps = MENU_GAP * MENU_BAND_WIDTHS.length;
+  // the inner ring shrinks (down to MIN_INNER_RATIO of the main ring) so the bands keep PREF_BAND_FACTOR of their widths
+  const ppuFit = (availR - gaps - 2 - widthSum * PREF_BAND_FACTOR - 2) / (vbHalf * 1.08);
+  const ppu = Math.max(mainPpu * MIN_INNER_RATIO, Math.min(mainPpu * INNER_RATIO, ppuFit));
+  const r0 = vbHalf * ppu * 1.08 + 2;
+  const fixed = r0 + gaps + 2;
   const f = Math.max(MIN_BAND_FACTOR, Math.min(1, (availR - fixed) / widthSum));
   const bands: [number, number][] = [];
   let ri = r0 + MENU_GAP;
@@ -487,6 +495,7 @@ export function RelativeModal({
     <Modal
       opened={opened}
       onClose={onClose}
+      fullScreen={FULLSCREEN}
       centered
       size={bodyW + MODAL_PAD_W}
       padding="xs"
