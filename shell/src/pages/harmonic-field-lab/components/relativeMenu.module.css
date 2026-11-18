@@ -356,3 +356,198 @@
 .sparkDot {
   fill: var(--accent);
 }
+
+/* the meta ring's own surface: solid, so the rings underneath do not show through (human, 2026-11-17) */
+.metaHit {
+  fill: var(--panel);
+  pointer-events: auto;
+}
+
+.metaGuide {
+  pointer-events: none;
+  stroke: var(--text-subtle);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.metaLine {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--accent);
+  stroke-linejoin: round;
+  stroke-opacity: 0.8;
+  stroke-width: 1;
+}
+
+.metaDot {
+  fill: var(--text);
+  pointer-events: none;
+}
+
+.metaCenter {
+  fill: var(--panel);
+  pointer-events: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.metaCenterTick {
+  pointer-events: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+/* an invisible, larger circle makes each dot easy to hit */
+.metaDotHit {
+  cursor: pointer;
+  fill: transparent;
+  outline: none;
+  pointer-events: auto;
+}
+
+.metaDotHit:hover,
+.metaDotHit:focus-visible {
+  fill: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* the hovered dot's highlight (one circle above the memoized meta layer) */
+.metaHighlight {
+  fill: color-mix(in srgb, var(--accent) 45%, transparent);
+  pointer-events: none;
+}
+
+.metaPanel {
+  background: var(--panel);
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  position: absolute;
+
+  /* outside the ring square, to its left (the full-screen popup has room there), so it never covers the ring */
+  right: calc(100% + 12px);
+  top: 0;
+  width: 190px;
+}
+
+/* guides: faint, under the threads and dots, never catch the pointer */
+.metaRing {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--text-subtle);
+  stroke-opacity: 0.3;
+  stroke-width: 1;
+}
+
+.metaSpoke {
+  pointer-events: none;
+  stroke: var(--text-subtle);
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+}
+
+.metaSpokeFine {
+  pointer-events: none;
+  stroke: var(--text-subtle);
+  stroke-opacity: 0.15;
+  stroke-width: 1;
+}
+
+.metaGuideLabel {
+  fill: var(--text-subtle);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  paint-order: stroke;
+  pointer-events: none;
+  stroke: var(--panel);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+}
+
+/* the shared prime filter inside the narrow panel: smaller chips, and the label in the accent while any prime is off */
+.metaPrimes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metaPrimes > div:first-child {
+  gap: 4px;
+}
+
+.metaPrimes > div:last-child {
+  grid-template-columns: repeat(auto-fill, minmax(1.75rem, 1fr));
+}
+
+.metaPrimes[data-active='true'] > div:first-child > :first-child {
+  color: var(--accent);
+}
+
+.metaCheck {
+  align-items: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--lab-fs-small);
+  gap: 6px;
+}
+
+.metaLegend {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  gap: 2px 6px;
+}
+
+.metaLegendNote {
+  flex-basis: 100%;
+  font-family: var(--mantine-font-family);
+}
+
+.metaSwatch {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  margin-right: 2px;
+  vertical-align: middle;
+  width: 8px;
+}
+
+.metaTitle {
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+}
+
+.metaField {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: var(--lab-fs-small);
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.metaInput {
+  background: transparent;
+  border: 1px solid var(--grid);
+  border-radius: 3px;
+  box-sizing: border-box;
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  padding: 1px 4px;
+  text-align: right;
+  width: 56px;
+}
+
+.metaNote {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-tiny);
+}

@@ -11,7 +11,6 @@ import {
 import { fmtRatio, genusSummary, parseGenusN, parseScl } from '../../../lib/harmonic-field';
 import {
   MAX_ODD_LIMIT,
-  PRIME_LABELS,
   filterSummary,
   mosFor,
   rangeText,
@@ -21,6 +20,7 @@ import {
 import { GearIcon } from './icons';
 import { LibraryActions, LibraryNotice } from './LibraryBar';
 import { PresetBrowser, PresetCrumb } from './PresetBrowser';
+import { PrimeFilterChips } from './PrimeFilterChips';
 import {
   CommitNumber,
   CommitOptionalNumber,
@@ -47,43 +47,11 @@ function FieldSettings({ gen }: { gen: GenSpec }) {
   const { dispatch } = useLab();
   return (
     <div className={classes.formStack}>
-      <div className={classes.rowBetween}>
-        <Tip k="primeFilter">Prime filter</Tip>
-        <span className={classes.inline}>
-          <Tip k="primeAll" as="control">
-            <Button
-              size="compact-xs"
-              variant="default"
-              onClick={() => dispatch({ type: 'gen/primes', on: true })}
-            >
-              All
-            </Button>
-          </Tip>
-          <Tip k="primeNone" as="control">
-            <Button
-              size="compact-xs"
-              variant="default"
-              onClick={() => dispatch({ type: 'gen/primes', on: false })}
-            >
-              None
-            </Button>
-          </Tip>
-        </span>
-      </div>
-      <div className={classes.primes} role="group" aria-label="Prime filter">
-        {PRIME_LABELS.map((p, slot) => (
-          <button
-            key={p}
-            type="button"
-            className={classes.switchChip}
-            data-on={gen.mask[slot]}
-            aria-pressed={gen.mask[slot]}
-            onClick={() => dispatch({ type: 'gen/prime', slot })}
-          >
-            <Num>{p}</Num>
-          </button>
-        ))}
-      </div>
+      <PrimeFilterChips
+        mask={gen.mask}
+        onToggle={(slot) => dispatch({ type: 'gen/prime', slot })}
+        onAll={(on) => dispatch({ type: 'gen/primes', on })}
+      />
       <Tip k="oddLimitFilter" as="control" block>
         <CommitOptionalNumber
           size="xs"

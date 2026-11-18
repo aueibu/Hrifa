@@ -39,9 +39,11 @@ import { GearIcon } from './icons';
 import { RING_GAP, RingChevron, rootLabel, useModeRoot } from './ModeRoot';
 import type { MonzoView } from './MonzoPanel';
 import {
+  META_SETS_DEFAULTS,
   RelativeModal,
   mainPxPerUnit,
   type BandMode,
+  type MetaSets,
   type RelativeHover,
   type RelativeMode,
 } from './RelativeMenu';
@@ -496,6 +498,7 @@ export function RingPanel() {
   const [mainPpu, setMainPpu] = useState(() => mainPxPerUnit(null));
   const [bandMode, setBandMode] = useState<BandMode>('from');
   const [ringStart, setRingStart] = useState(0);
+  const [metaSets, setMetaSets] = useState<MetaSets>(META_SETS_DEFAULTS);
   const [relMode, setRelMode] = useState<RelativeMode>('rings');
   const [monzoView, setMonzoView] = useState<MonzoView>('strips');
   const menuIdx =
@@ -683,6 +686,8 @@ export function RingPanel() {
           line={line}
           bandMode={bandMode}
           onBandMode={setBandMode}
+          metaSets={metaSets}
+          onMetaSets={setMetaSets}
           ringStart={ringStart}
           onRingStart={setRingStart}
           mode={relMode}

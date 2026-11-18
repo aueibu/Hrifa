@@ -2809,7 +2809,7 @@ const entries = {
     term: 'Relative menu',
     help: [
       p(
-        'Click a ring note to open the picker. Click a ratio to add it above that note, Alt+click to add it below; a ghost dot shows where it lands. Hold {key:holdOwn} to hear the new pitch, {key:holdField} with the picked note, {key:holdExact} with the whole field. 3 and 2 step through the rings; Shift jumps by prime, Ctrl+Shift by five primes.'
+        'Click a ring note to open the picker. Click a ratio to add it above that note, Alt+click to add it below; a ghost dot shows where it lands. Hold {key:holdOwn} to hear the new pitch, {key:holdField} with the picked note, {key:holdExact} with the whole field. 3 and 2 step through the rings; Shift jumps by prime, Ctrl+Shift by five primes. Ctrl+click a ratio to see every ratio within 50 c of it.'
       ),
       p(
         'Monzo: move over the prime matrix to paint exponents (Ctrl paints a straight line, Alt moves without painting); click to add. Rows gives −/+ buttons; the box takes a ratio or cents.'

@@ -19,6 +19,7 @@ import {
   type MonzoExps,
   type MonzoPrime,
 } from '../../../lib/harmonic-field';
+import { isTyping } from '../audio/keymap';
 import classes from './relativeMenu.module.css';
 
 export type MonzoView = 'strips' | 'rows';
@@ -55,6 +56,8 @@ export interface MonzoPanelProps {
   onAddMonzo: () => void;
   /** Add the typed step above or below; returns the message when the text is refused, else null. */
   onTyped: (text: string, dir: Direction) => string | null;
+  /** Open the meta ring (ratios near the typed ratio or cents); returns the message when the text is refused, else null. */
+  onNear?: (text: string) => string | null;
   /** The panel's width (pixels) and one matrix row's height (pixels). */
   width: number;
   rowH: number;
@@ -70,6 +73,7 @@ export function MonzoPanel({
   onReset,
   onAddMonzo,
   onTyped,
+  onNear,
   width,
   rowH,
   onOver,
@@ -84,19 +88,6 @@ export function MonzoPanel({
   const x0 = Math.max(0, Math.floor((width - MONZO_LABEL_W - gridW) / 2));
   const gridH = STRIP_ROWS * rowH;
 
-  /** The (prime, value) under the pointer, clamped to the matrix. */
-  const cellAt = (clientX: number, clientY: number) => {
-    const box = gridRef.current?.getBoundingClientRect();
-    if (!box) {
-      return null;
-    }
-    const col = Math.max(
-      0,
-      Math.min(MONZO_PRIMES.length - 1, Math.floor((clientX - box.left) / cellW))
-    );
-    const row = Math.max(0, Math.min(STRIP_ROWS - 1, Math.floor((clientY - box.top) / rowH)));
-    return { prime: MONZO_PRIMES[col], value: MONZO_RANGE - row };
-  };
   // The values as last known (re-read from the props every render, updated at once on a dispatch so one move never repeats a write).
   const cur = useRef<number[]>([]);
   cur.current = MONZO_PRIMES.map((p) => clampExp(monzo[p]));
@@ -190,7 +181,18 @@ export function MonzoPanel({
 
   return (
     <div className={classes.monzoPanel} style={{ width }} data-testid="monzo-panel">
-      <div className={classes.stripArea} style={{ height: areaH }} data-testid="monzo-area">
+      <div
+        className={classes.stripArea}
+        style={{ height: areaH }}
+        data-testid="monzo-area"
+        // a focused typed box would swallow the hold keys (typing): pointing at the matrix or rows takes the focus back
+        onPointerEnter={() => {
+          const el = document.activeElement;
+          if (el instanceof HTMLElement && isTyping(el)) {
+            el.blur();
+          }
+        }}
+      >
         {view === 'strips' ? (
           <>
             <div
@@ -325,7 +327,7 @@ export function MonzoPanel({
                     disabled={v <= -MONZO_RANGE}
                     onClick={() => onMonzo(p, v - 1)}
                   >
-                    {'−'}
+                    −
                   </Button>
                   <span className={classes.rowValue} data-nonzero={v !== 0 ? 'true' : undefined}>
                     {expText(v)}
@@ -389,7 +391,11 @@ export function MonzoPanel({
               e.stopPropagation();
               if (e.key === 'Enter') {
                 e.preventDefault();
-                submit('above');
+                if (e.ctrlKey && onNear) {
+                  setError(onNear(text));
+                } else {
+                  submit('above');
+                }
               }
             }}
           />
@@ -399,6 +405,11 @@ export function MonzoPanel({
           <Button size="compact-xs" variant="default" onClick={() => submit('below')}>
             Below
           </Button>
+          {onNear && (
+            <Button size="compact-xs" variant="default" onClick={() => setError(onNear(text))}>
+              Near
+            </Button>
+          )}
         </div>
         <div className={classes.typedError} data-testid="monzo-error" role="alert">
           {error}
