@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { act, render, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SnippetSourceModule } from './components/SnippetSourceModule';
@@ -9,6 +10,9 @@ import { melodicize, type NoteEventValue } from './melodicization';
 import { packet, type DataPacket } from './model';
 import { musicalDuration } from './musicalTime';
 import { interpretPitchList } from './pitch';
+import { createEvaluationStore, EvaluationStoreContext } from './runtime/evaluationStore';
+import { ModuleEvaluationRunner } from './runtime/ModuleEvaluationRunner';
+import { createOutputStore } from './runtime/outputStore';
 import {
   acceptsSnippets,
   captureSnippet,
@@ -31,6 +35,42 @@ vi.mock('./audio/AudioEngineProvider', () => ({
     stopAll: () => undefined,
   }),
 }));
+
+/**
+ * A snippet source module as the page places it: its runner (which evaluates and publishes) and its
+ * view (which draws the evaluation). `onPublish` sees every publish.
+ */
+function SourceWithRunner({
+  onPublish,
+}: {
+  onPublish: (id: string, outputs: PublishedCompositionOutput[]) => void;
+}) {
+  const [outputStore] = useState(() => {
+    const store = createOutputStore();
+    return {
+      ...store,
+      publish(id: string, outputs: PublishedCompositionOutput[]) {
+        onPublish(id, outputs);
+        store.publish(id, outputs);
+      },
+    };
+  });
+  const [evaluationStore] = useState(createEvaluationStore);
+  return (
+    <EvaluationStoreContext.Provider value={evaluationStore}>
+      <ModuleEvaluationRunner
+        outputStore={outputStore}
+        evaluationStore={evaluationStore}
+        instanceId="source-1"
+        moduleId="snippet"
+        instanceLabel="Source"
+        snippetId="snip-1"
+        routeState={undefined}
+      />
+      <SnippetSourceModule instanceId="source-1" instanceLabel="Source" snippetId="snip-1" />
+    </EvaluationStoreContext.Provider>
+  );
+}
 
 function noteSnippet(id = 'snip-1'): Snippet {
   const rhythm = packet(
@@ -242,12 +282,7 @@ describe('commitSnippetEditById', () => {
     render(
       <DeskProvider>
         <Probe />
-        <SnippetSourceModule
-          instanceId="source-1"
-          instanceLabel="Source"
-          snippetId="snip-1"
-          onOutputsChange={onOutputsChange}
-        />
+        <SourceWithRunner onPublish={onOutputsChange} />
       </DeskProvider>
     );
     await waitFor(() => expect(desk?.loading).toBe(false));
@@ -565,11 +600,8 @@ describe('lineage operations on the desk', () => {
     render(
       <DeskProvider>
         <Probe />
-        <SnippetSourceModule
-          instanceId="source-1"
-          instanceLabel="Source"
-          snippetId="snip-1"
-          onOutputsChange={(id, outputs) => {
+        <SourceWithRunner
+          onPublish={(id, outputs) => {
             published[id] = outputs;
           }}
         />

@@ -33,7 +33,6 @@ export interface ModuleRenderProps {
   onBind(port: string, source: CompositionOutputRef | null): void;
   onAddChannel(): void;
   onRemoveChannel(port: string): void;
-  onOutputsChange(instanceId: string, outputs: PublishedCompositionOutput[]): void;
 }
 
 export interface ModuleRegistryEntry {
@@ -44,8 +43,9 @@ export interface ModuleRegistryEntry {
   /** True for a module that reads the published outputs (a routed module). Source modules do not. */
   takesOutputs: boolean;
   /**
-   * The module's pure state-to-outputs function, when it has been ported (R2). The component runs it
-   * through `useModuleEvaluation`, which publishes the outputs; see `moduleEvaluators.ts`.
+   * The module's pure state-to-outputs function, when it has been ported (R2). Its headless runner
+   * (`ModuleEvaluationRunner`) runs it through `useModuleEvaluation`, which publishes the outputs, whether
+   * or not the view is mounted; the view reads the result (`useModuleEvaluationResult`).
    */
   evaluate?: ModuleEvaluator;
   render(props: ModuleRenderProps): ReactElement;
@@ -61,12 +61,11 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     stateKeys: [],
     takesOutputs: false,
     evaluate: moduleEvaluators['snippet'].evaluate,
-    render: ({ instanceId, instanceLabel, snippetId, onOutputsChange }) => (
+    render: ({ instanceId, instanceLabel, snippetId }) => (
       <SnippetSourceModule
         instanceId={instanceId}
         instanceLabel={instanceLabel}
         snippetId={snippetId}
-        onOutputsChange={onOutputsChange}
       />
     ),
   },
@@ -81,12 +80,8 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     takesOutputs: false,
     evaluate: moduleEvaluators['interference'].evaluate,
-    render: ({ instanceId, instanceLabel, onOutputsChange }) => (
-      <InterferenceModule
-        instanceId={instanceId}
-        instanceLabel={instanceLabel}
-        onOutputsChange={onOutputsChange}
-      />
+    render: ({ instanceId, instanceLabel }) => (
+      <InterferenceModule instanceId={instanceId} instanceLabel={instanceLabel} />
     ),
   },
   'rhythm-edit': {
@@ -107,14 +102,13 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ports: modulePorts['rhythm-edit'],
     takesOutputs: true,
     evaluate: moduleEvaluators['rhythm-edit'].evaluate,
-    render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
+    render: ({ instanceId, instanceLabel, outputs, routeState, onBind }) => (
       <RhythmEditModule
         instanceId={instanceId}
         instanceLabel={instanceLabel}
         outputs={outputs}
         routeState={routeState}
         onBind={onBind}
-        onOutputsChange={onOutputsChange}
       />
     ),
   },
@@ -127,12 +121,8 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     takesOutputs: false,
     evaluate: moduleEvaluators['rhythm-list'].evaluate,
-    render: ({ instanceId, instanceLabel, onOutputsChange }) => (
-      <RhythmListModule
-        instanceId={instanceId}
-        instanceLabel={instanceLabel}
-        onOutputsChange={onOutputsChange}
-      />
+    render: ({ instanceId, instanceLabel }) => (
+      <RhythmListModule instanceId={instanceId} instanceLabel={instanceLabel} />
     ),
   },
   'pitch-list': {
@@ -148,12 +138,8 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     takesOutputs: false,
     evaluate: moduleEvaluators['pitch-list'].evaluate,
-    render: ({ instanceId, instanceLabel, onOutputsChange }) => (
-      <PitchListModule
-        instanceId={instanceId}
-        instanceLabel={instanceLabel}
-        onOutputsChange={onOutputsChange}
-      />
+    render: ({ instanceId, instanceLabel }) => (
+      <PitchListModule instanceId={instanceId} instanceLabel={instanceLabel} />
     ),
   },
   melodicization: {
@@ -170,15 +156,7 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ports: modulePorts.melodicization,
     takesOutputs: true,
     evaluate: moduleEvaluators['melodicization'].evaluate,
-    render: ({
-      instanceId,
-      instanceLabel,
-      active,
-      outputs,
-      routeState,
-      onBind,
-      onOutputsChange,
-    }) => (
+    render: ({ instanceId, instanceLabel, active, outputs, routeState, onBind }) => (
       <MelodicizationModule
         instanceId={instanceId}
         instanceLabel={instanceLabel}
@@ -186,7 +164,6 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
         outputs={outputs}
         routeState={routeState}
         onBind={onBind}
-        onOutputsChange={onOutputsChange}
       />
     ),
   },
@@ -201,14 +178,13 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ports: modulePorts.arithmetic,
     takesOutputs: true,
     evaluate: moduleEvaluators['arithmetic'].evaluate,
-    render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
+    render: ({ instanceId, instanceLabel, outputs, routeState, onBind }) => (
       <ArithmeticModule
         instanceId={instanceId}
         instanceLabel={instanceLabel}
         outputs={outputs}
         routeState={routeState}
         onBind={onBind}
-        onOutputsChange={onOutputsChange}
       />
     ),
   },
@@ -223,12 +199,8 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     takesOutputs: false,
     evaluate: moduleEvaluators['fractioning'].evaluate,
-    render: ({ instanceId, instanceLabel, onOutputsChange }) => (
-      <FractioningModule
-        instanceId={instanceId}
-        instanceLabel={instanceLabel}
-        onOutputsChange={onOutputsChange}
-      />
+    render: ({ instanceId, instanceLabel }) => (
+      <FractioningModule instanceId={instanceId} instanceLabel={instanceLabel} />
     ),
   },
   'pair-composition': {
@@ -243,12 +215,8 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     takesOutputs: false,
     evaluate: moduleEvaluators['pair-composition'].evaluate,
-    render: ({ instanceId, instanceLabel, onOutputsChange }) => (
-      <PairCompositionModule
-        instanceId={instanceId}
-        instanceLabel={instanceLabel}
-        onOutputsChange={onOutputsChange}
-      />
+    render: ({ instanceId, instanceLabel }) => (
+      <PairCompositionModule instanceId={instanceId} instanceLabel={instanceLabel} />
     ),
   },
   'scale-construction': {
@@ -260,12 +228,8 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     takesOutputs: false,
     evaluate: moduleEvaluators['scale-construction'].evaluate,
-    render: ({ instanceId, instanceLabel, onOutputsChange }) => (
-      <ScaleConstructionModule
-        instanceId={instanceId}
-        instanceLabel={instanceLabel}
-        onOutputsChange={onOutputsChange}
-      />
+    render: ({ instanceId, instanceLabel }) => (
+      <ScaleConstructionModule instanceId={instanceId} instanceLabel={instanceLabel} />
     ),
   },
   'scale-evolution': {
@@ -276,14 +240,13 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ports: modulePorts['scale-evolution'],
     takesOutputs: true,
     evaluate: moduleEvaluators['scale-evolution'].evaluate,
-    render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
+    render: ({ instanceId, instanceLabel, outputs, routeState, onBind }) => (
       <ScaleEvolutionModule
         instanceId={instanceId}
         instanceLabel={instanceLabel}
         outputs={outputs}
         routeState={routeState}
         onBind={onBind}
-        onOutputsChange={onOutputsChange}
       />
     ),
   },
@@ -298,14 +261,13 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ports: modulePorts['rhythm-householder'],
     takesOutputs: true,
     evaluate: moduleEvaluators['rhythm-householder'].evaluate,
-    render: ({ instanceId, instanceLabel, outputs, routeState, onBind, onOutputsChange }) => (
+    render: ({ instanceId, instanceLabel, outputs, routeState, onBind }) => (
       <HouseholderModule
         instanceId={instanceId}
         instanceLabel={instanceLabel}
         outputs={outputs}
         routeState={routeState}
         onBind={onBind}
-        onOutputsChange={onOutputsChange}
       />
     ),
   },
@@ -320,12 +282,8 @@ export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = 
     ],
     takesOutputs: false,
     evaluate: moduleEvaluators['swirling-mists'].evaluate,
-    render: ({ instanceId, instanceLabel, onOutputsChange }) => (
-      <SwirlingMistsModule
-        instanceId={instanceId}
-        instanceLabel={instanceLabel}
-        onOutputsChange={onOutputsChange}
-      />
+    render: ({ instanceId, instanceLabel }) => (
+      <SwirlingMistsModule instanceId={instanceId} instanceLabel={instanceLabel} />
     ),
   },
   mixer: {

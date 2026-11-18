@@ -18,7 +18,6 @@ import {
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
@@ -41,13 +40,13 @@ import {
   type RhythmPreviewLayer,
 } from '../rhythmRealization';
 import { rhythmInterpretableDomains } from '../routeTreatments';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
 import {
   defaultHouseholderSettings,
-  pickHouseholderInputs,
   type HouseholderSettings,
-  type MetricAxisSettings,
 } from '../runtime/evaluators/householder';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleState } from '../runtime/moduleState';
+import { householderState } from '../runtime/moduleState/householder';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
@@ -64,38 +63,6 @@ import { SoundOverrideControl } from './SoundControls';
 import { SourceMenu } from './SourceMenu';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
-
-function acceptsAxisSettings(value: unknown): value is MetricAxisSettings {
-  const axis = value as MetricAxisSettings;
-  return (
-    Boolean(axis) &&
-    typeof axis === 'object' &&
-    typeof axis.enabled === 'boolean' &&
-    Number.isFinite(axis.coefficient) &&
-    Number.isFinite(axis.weight)
-  );
-}
-
-function acceptsHouseholderSettings(value: unknown): value is HouseholderSettings {
-  const settings = value as HouseholderSettings;
-  return (
-    Boolean(settings) &&
-    typeof settings === 'object' &&
-    (settings.mode === 'reflect' || settings.mode === 'metric') &&
-    Number.isInteger(settings.grid) &&
-    Number.isInteger(settings.minUnits) &&
-    settings.reflectPreset in reflectAxisLabels &&
-    typeof settings.customAxis === 'string' &&
-    Number.isFinite(settings.reflectCoefficient) &&
-    Number.isInteger(settings.reflectSteps) &&
-    typeof settings.accentPattern === 'string' &&
-    acceptsAxisSettings(settings.accent) &&
-    acceptsAxisSettings(settings.position) &&
-    Number.isFinite(settings.closeness) &&
-    (settings.identity === undefined || Number.isFinite(settings.identity)) &&
-    (settings.pinStart === undefined || typeof settings.pinStart === 'boolean')
-  );
-}
 
 function compatibleRhythm(packet: DataPacket) {
   return packet.kind === 'list' && rhythmInterpretableDomains.has(packet.domain);
@@ -181,7 +148,7 @@ function CoefficientSlider({
   );
 }
 
-export interface HouseholderModuleProps extends CompositionModuleRoutingProps {
+export interface HouseholderModuleProps {
   instanceId: string;
   instanceLabel: string;
   outputs: PublishedCompositionOutput[];
@@ -200,21 +167,13 @@ export function HouseholderModule({
   outputs,
   routeState,
   onBind,
-  onOutputsChange,
 }: HouseholderModuleProps) {
   const { settings: compositionSettings } = useCompositionSettings();
-  const edo = compositionSettings.edo;
   const stateKey = (key: string) =>
     compositionInstanceStateKey(key, instanceId, 'rhythm-householder');
-  const [settings, setSettings] = usePersistentState<HouseholderSettings>(
-    stateKey(compositionStateKeys.householderSettings),
-    defaultHouseholderSettings,
-    acceptsHouseholderSettings
-  );
-  const [selectedIndex, setSelectedIndex] = usePersistentState(
-    stateKey(compositionStateKeys.householderSelected),
-    0,
-    acceptsFiniteNumber
+  const [{ settings }, { settings: setSettings, selectedIndex: setSelectedIndex }] = useModuleState(
+    householderState,
+    instanceId
   );
   const [previewVolume, setPreviewVolume] = usePersistentState(
     stateKey(compositionStateKeys.householderVolume),
@@ -250,13 +209,7 @@ export function HouseholderModule({
     clampedIndex,
     selected,
     outputs: publishedOutputs,
-  } = useModuleEvaluation(
-    'rhythm-householder',
-    { settings, selectedIndex },
-    pickHouseholderInputs(outputs, routeState, instanceId),
-    { instanceId, instanceLabel, edo },
-    onOutputsChange
-  );
+  } = useModuleEvaluationResult('rhythm-householder', instanceId);
 
   const preview = useModulePreview({
     instanceId,

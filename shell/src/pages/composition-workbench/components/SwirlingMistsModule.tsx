@@ -13,9 +13,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import {
-  acceptsMistSettings,
   curveShape,
   defaultMistSettings,
   defaultStratum,
@@ -23,7 +21,6 @@ import {
   maxMistCycles,
   maxMistStrata,
   maxWalkPoints,
-  migrateMistSettings,
   maxMistSteps,
   mistPresets,
   passesPerRepeat,
@@ -33,7 +30,9 @@ import {
   type MistSettings,
   type MistStratum,
 } from '../mist';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
+import { swirlingMistsState } from '../runtime/moduleState/swirlingMists';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsFiniteNumber,
@@ -50,7 +49,7 @@ import { VolumeControl } from './VolumeControl';
 import workbench from '../CompositionWorkbench.module.css';
 import classes from './SwirlingMists.module.css';
 
-export interface SwirlingMistsModuleProps extends CompositionModuleRoutingProps {
+export interface SwirlingMistsModuleProps {
   instanceId: string;
   instanceLabel: string;
 }
@@ -60,18 +59,9 @@ function numberOr(value: number | string, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function SwirlingMistsModule({
-  instanceId,
-  instanceLabel,
-  onOutputsChange,
-}: SwirlingMistsModuleProps) {
+export function SwirlingMistsModule({ instanceId, instanceLabel }: SwirlingMistsModuleProps) {
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'swirling-mists');
-  const [settings, setSettings] = usePersistentState<MistSettings>(
-    stateKey(compositionStateKeys.mistSettings),
-    defaultMistSettings,
-    acceptsMistSettings,
-    migrateMistSettings
-  );
+  const [{ settings }, { settings: setSettings }] = useModuleState(swirlingMistsState, instanceId);
   const [stepMilliseconds, setStepMilliseconds] = usePersistentState(
     stateKey(compositionStateKeys.mistStep),
     250,
@@ -103,12 +93,9 @@ export function SwirlingMistsModule({
   // Which stratum's curve is open for drawing.
   const [editingCurve, setEditingCurve] = useState<number | null>(null);
 
-  const { field, sampling, chords, outputs } = useModuleEvaluation(
+  const { field, sampling, chords, outputs } = useModuleEvaluationResult(
     'swirling-mists',
-    { settings },
-    {},
-    { instanceId, instanceLabel },
-    onOutputsChange
+    instanceId
   );
 
   const preview = useModulePreview({ instanceId, volume, transportPlay: playPreview });

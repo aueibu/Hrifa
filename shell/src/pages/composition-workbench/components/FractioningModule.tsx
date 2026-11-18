@@ -1,18 +1,18 @@
 import { Alert, Badge, Button, Text } from '@mantine/core';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import {
   createRhythmPreviewPlan,
   musicalPlanSeconds,
   transportRhythmContext,
 } from '../rhythmRealization';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
+import { fractioningState } from '../runtime/moduleState/fractioning';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsFiniteNumber,
-  acceptsNumberOrString,
   compositionInstanceStateKey,
   compositionStateKeys,
   usePersistentState,
@@ -25,27 +25,14 @@ import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
-interface FractioningModuleProps extends CompositionModuleRoutingProps {
+interface FractioningModuleProps {
   instanceId: string;
   instanceLabel: string;
 }
 
-export function FractioningModule({
-  instanceId,
-  instanceLabel,
-  onOutputsChange,
-}: FractioningModuleProps) {
+export function FractioningModule({ instanceId, instanceLabel }: FractioningModuleProps) {
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'fractioning');
-  const [a, setA] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.fractioningA),
-    3,
-    acceptsNumberOrString
-  );
-  const [b, setB] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.fractioningB),
-    2,
-    acceptsNumberOrString
-  );
+  const [{ a, b }, { a: setA, b: setB }] = useModuleState(fractioningState, instanceId);
   const [midiNote, setMidiNote] = usePersistentState(
     stateKey(compositionStateKeys.fractioningMidiNote),
     48,
@@ -67,12 +54,9 @@ export function FractioningModule({
   );
   const { settings } = useCompositionSettings();
 
-  const { generated, outputs: publishedOutputs } = useModuleEvaluation(
+  const { generated, outputs: publishedOutputs } = useModuleEvaluationResult(
     'fractioning',
-    { a, b },
-    {},
-    { instanceId, instanceLabel },
-    onOutputsChange
+    instanceId
   );
 
   const preview = useModulePreview({

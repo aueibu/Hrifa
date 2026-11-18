@@ -22,10 +22,6 @@ export interface PublishedCompositionOutput {
   packet: DataPacket;
 }
 
-export interface CompositionModuleRoutingProps {
-  onOutputsChange?(instanceId: string, outputs: PublishedCompositionOutput[]): void;
-}
-
 export function outputRefKey(ref: CompositionOutputRef) {
   return ref.index === undefined
     ? `${ref.instanceId}|${ref.port}`
@@ -73,7 +69,7 @@ function clampedBankIndex(bank: DataPacket, index: number) {
  * fresh every render. Keying a memo on `outputs` directly defeats memoization entirely (it
  * "changes" every render regardless of content) and, since this function always allocates a
  * fresh packet for a bank selection, that recomputation feeds a new object into
- * onOutputsChange on every render — an infinite update loop, not just wasted work.
+ * the published outputs on every render — an infinite update loop, not just wasted work.
  */
 export function resolvePacketFromOutput(
   output: PublishedCompositionOutput | undefined,

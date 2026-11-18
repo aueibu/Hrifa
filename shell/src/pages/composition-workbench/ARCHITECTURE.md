@@ -210,7 +210,7 @@ The composition view is a Bitwig-style frame that fits the viewport: a collapsib
 
 **Screensets** (`layout/workbenchScreensets.ts`, `layout/workbenchPanels.tsx`; W-42). The center's layout is per project data: one `ScreensetStore` JSON value under `compositionStateKeys.screensets` (`hrifa.composition-workbench.ui.screensets.v1`), read and written by the page with `usePersistentState`, listed in `unrecordedStateKeys` so layout changes are never undo steps. The status bar shows the screensets as meta-tabs (`ScreensetTabs`: switch, add, rename, duplicate, delete) in place of the old Canvas and Desk toggle, and the Stage's Panels menu. A project with no store seeds the three defaults once (Canvas, Desk, Edit; Edit's top is shorter) from the old keys: `ui.canvas-split` becomes the top weight (0.2 to 0.8), `ui.detail-collapsed` collapses `Detail`, `ui.workspace-view` picks the active screenset, an open clip puts the clip editor tab in front, the per-viewer editor arrangement and `chordHost` and `chordDockWidth` (`hrifa.note-editor.v1`) place `Tools` and the remembered `chords` place (design 2.3; `chords` is not a panel until M6, only a place; for the takeover host it is remembered by the name `Chords` and no docker is added yet). The old keys stay in storage and are not read again.
 
-**Panels.** `canvas`, `desk` and `module-detail` are `keepMounted`; `clip-editor` is open in every default screenset. A panel is rendered once and parked (opacity 0, `visibility: hidden`, `inert`, never `display: none`) while another screenset, a collapsed docker or another tab hides it, so the canvas never refits and module editors keep publishing: **modules still stay mounted until R3**. The panels' content is built by the page and handed down through `WorkbenchPanelsContext`, so the registry is static. `selectCompositionModule` calls `show('module-detail')` and `openClipEditor` calls `show('clip-editor')` (both expand a collapsed docker and bring the tab forward); when the exclusive target flips between a clip and a module, the matching tab comes to the front in every screenset, and a click on the other tab changes nothing else (blank panels as before).
+**Panels.** `canvas`, `desk` and `module-detail` are `keepMounted`; `clip-editor` is open in every default screenset. A panel is rendered once and parked (opacity 0, `visibility: hidden`, `inert`, never `display: none`) while another screenset, a collapsed docker or another tab hides it, so the canvas never refits and module views keep their own state (selection, scroll, a playing preview); publishing does not depend on them (the runners, R3b). The panels' content is built by the page and handed down through `WorkbenchPanelsContext`, so the registry is static. `selectCompositionModule` calls `show('module-detail')` and `openClipEditor` calls `show('clip-editor')` (both expand a collapsed docker and bring the tab forward); when the exclusive target flips between a clip and a module, the matching tab comes to the front in every screenset, and a click on the other tab changes nothing else (blank panels as before).
 
 **Canvas takeover.** The chord picker's takeover slot (`CanvasTakeoverSlot`) is rendered inside the `canvas` panel and the provider wraps the Stage; `available` is true only while the canvas and the clip editor are both showing (open, front tab, docker not collapsed), so from the Desk screenset the picker uses its own dock. The editor's own v1 Stage inside the clip editor is unchanged until M6.
 
@@ -358,17 +358,29 @@ How the page hosts modules, since R1 (2026-11-18). Behavior is unchanged; the pl
 - `ModuleInstanceHost.tsx` is a `React.memo` host per placed module: the hidden-unless-shown div, the
   `ModuleActiveContext` provider and the registry's element. Only a module with `takesOutputs` subscribes
   to the store, so a publish re-renders the page and the routed modules (those that read outputs), not the source modules.
+- **State store (R3a, done).** `stateStore.ts` (pure TS) owns every `usePersistentState` value in one
+  keyed map: current value, last raw JSON, config (`fallback`, `accepts`, `migrate`), listeners and ONE
+  history applier registered by the store (`registerHistoryApplier`) when the key is first used.
+  `usePersistentState` keeps its signature and is a thin `useSyncExternalStore` hook over it (a stable
+  `set` per key; a mount effect persists the initial or migrated value). A key stays alive after its
+  last hook unmounts, so undo and redo reach a module whose view is not mounted, and two hooks on one
+  key share one value. Storage writes happen in `set` (skipped while `isReloading()`, as before).
+  Release: when the last hook of a key unmounts and its storage entry is gone (the page's delete
+  removes the module's stored keys and records them, so undo writes storage first and the remount
+  reads it), the store drops the key and its applier. A key with no hook is re-read from storage when
+  storage changed under it (tests, a stale entry); opening a project reloads the page, so the store
+  starts empty. `history.ts` is unchanged.
 - **Evaluators (R2, done).** A ported module has a pure `evaluate(state, inputs, ctx)` in
   `runtime/evaluators/<module>.ts` returning `{ outputs, ...whatever its display reads }` (no React,
   storage or `window`). Ported so far: Pitch List, Rhythm List, Arithmetic, Fractioning, Pair
   Composition, Scale Construction, Scale Evolution, Interference, Swirling Mists, Rhythm
   Householder, Rhythm Edit, Melodicization, Snippet source (every module that publishes outputs;
   the Mixer publishes none). `moduleEvaluators.ts` is the non-React table by module id;
-  `moduleRegistry.tsx` lists the same function as the entry's optional `evaluate`. The component
-  calls `useModuleEvaluation(moduleId, state, inputs, ctx, onOutputsChange)`
+  `moduleRegistry.tsx` lists the same function as the entry's optional `evaluate`. Since R3b the
+  module's runner (below) calls `useModuleEvaluation(moduleId, state, inputs, ctx, publish)`
   (`useModuleEvaluation.ts`), which compares state, inputs and ctx field by field, runs the
-  evaluator once per change and publishes in one effect; the component draws from the returned
-  evaluation and has no publish effect of its own. Each evaluator is split into `compute` (no
+  evaluator once per change and publishes in one effect; the module view never calls it and has no
+  publish effect of its own. Each evaluator is split into `compute` (no
   label; the packet and display values) and `outputs` (wraps the packets with `{ ref, label }`), so
   a rename keeps every packet object and only the labels change. Components import the hook and
   the evaluator file, never `moduleRegistry.tsx` (it imports the components). **Inputs must keep their
@@ -383,9 +395,59 @@ How the page hosts modules, since R1 (2026-11-18). Behavior is unchanged; the pl
   memo (`runtime/memo.ts`, `memo(key, deps, fn)`, one per hook instance) so a part of the output
   rebuilds only when its own deps change, as before the port (a root change rebuilds the pitch
   classes, not the sequence or stage packets); without one, a fresh memo gives the same result.
-- Every module still stays mounted while hidden, and publishes through `onOutputsChange` (the
-  store's `publish`) from its component's hook. Per-instance state in a store so modules may unmount
-  (R3) is next (W-41).
+- **What lasts and what is replaceable (W-45).** The runtime is not a commitment to today's modules,
+  packets or routing. Meant to last: the shape (a module is a pure function from persisted state,
+  picked inputs and context to published outputs, run outside its view) and the pieces that carry
+  it (output store, state store, runners, evaluation store, `memo.ts`, `useModuleEvaluation`). The
+  output store treats a packet as opaque (identity and label only). Replaceable at will: the
+  `DataPacket` shape, the port-based routing model and the `pickXInputs` helpers, every evaluator
+  in `runtime/evaluators/`, the state specs, and the R2 evaluator tests (they pin today's behavior
+  for a no-change refactor; they are not a spec, so rewrite them with a redesigned module).
+- **Hidden views stay mounted (human, R3, 2026-11-18).** Views still own live state (playing
+  previews, selection, scroll, open dialogs, playheads), so the `module-detail` panel keeps every
+  module host mounted and hidden. The goal is the DAW model (playback and live view state outside
+  the views, then unmount hidden views): BACKLOG `[workbench]` "DAW model for playback and view state".
+- **Runners, state specs and the evaluation store (R3b, done; supersedes "modules must stay mounted
+  to publish").** Every placed module that has an evaluator is evaluated and publishes whether or not
+  its view is mounted, by a headless runner:
+  - `ModuleEvaluationRunner.tsx` (`React.memo`, renders `null`) is rendered by the page, one per placed
+    instance, OUTSIDE the Stage panels and before them (inside the settings and desk providers, because
+    it reads `edo`, the transport pulse and the desk clip). Per instance it reads the persisted state
+    (`useModuleState`), the inputs, calls `useModuleEvaluation` once and publishes to the output
+    store, then puts the evaluation in the evaluation store. `runnerBindings` in that file is where
+    each module's inputs come from: routed modules take only the picked outputs (`pickXInputs`, from
+    `useOutputs` and the instance's route state), Snippet the desk clip (`useDesk`), Pitch List an
+    empty `upstream`, Melodicization `edo` and the transport pulse unit, and the others `edo` from the
+    settings. A source module's runner subscribes to no outputs (`useOutputs(store, false)`), so
+    another module's publish does not re-render it (R1's property). The Mixer has no evaluator and no
+    runner.
+  - `moduleState.ts` and `moduleState/<module>.ts`: the persisted fields an evaluator reads are
+    declared once as a `ModuleStateSpec` (per field: the base key from `compositionStateKeys`,
+    `fallback` (a function gets the fields declared before it: Pitch List's default text depends on
+    its format), `accepts`, `migrate`, `options`). `useModuleState(spec, instanceId)` returns
+    `[state, set]` (`state` keeps its identity until a field changes, `set.<field>` is stable) over
+    the same store keys `usePersistentState` uses (`compositionInstanceStateKey`), so the runner and
+    the view register the same config. A view reads its evaluated fields through the spec and keeps
+    plain `usePersistentState` for fields only it uses (volume, sounds, view toggles).
+  - `evaluationStore.ts`: the latest evaluation per instance outside React (`put`, `notify`, `get`,
+    `prune`, `subscribe(instanceId)`). The runner `put`s while rendering (no notify) so a view rendered
+    after it in the same pass already reads the new value, and notifies in an effect. A view calls
+    `useModuleEvaluationResult(moduleId, instanceId)` (a `useSyncExternalStore` reader, context
+    `EvaluationStoreContext` from the page); there is exactly one evaluation per instance and views no
+    longer take `onOutputsChange`. A view with no runner throws.
+  - **Delete and release.** The page's delete removes and records the instance's stored keys, then calls
+    `deleteState(key)` for each (`stateStore.ts`): the store drops the key and its applier and flags it
+    deleted. A write to a deleted key is ignored: a late `set` finds no key, and a render that
+    re-creates it (a hook not yet unmounted) holds a value in memory only (`detached`: no storage
+    write, no history record). The flag clears when storage holds the key again (an undo's storage
+    write) or when a hook mounts for it (`persistState`: a mounted hook means the instance is live).
+    Undo of a delete writes storage, the instance returns, its runner mounts and reads the state back.
+    The page also prunes the evaluation store on delete.
+  - **Views still mount hidden.** `ModuleInstanceHost` still renders every instance's view in
+    `module-detail` (hidden unless shown, the panel `keepMounted`). Publishing no longer depends on it;
+    unmounting hidden views was NOT done because it is user-visible: a playing preview stops, and a
+    note selection, roll tool, scroll position, open Forte catalog and curve being edited reset (the list
+    is in PROGRESS R3b). Removing the hosts is a separate decision.
 - **Adding a module:** its id in `compositionWorkspace.ts`, one registry entry, and, for a module
   that publishes outputs, an evaluator file, a line in `moduleEvaluators.ts`, `evaluate` on the
   entry and a `.test.ts` that compares it with hand-computed expected outputs (default state, one
@@ -525,7 +587,7 @@ Lineage can show every kept packet exactly, the branch structure, when and by wh
 
 ### History, storage and projects
 
-**Session history (`history.ts`).** One workbench-wide undo/redo, bounded (`HISTORY_DEPTH` 50) and session-only: nothing about it is stored. `usePersistentState` records each write as `(key, previousRaw, nextRaw)` and keeps a registry of setters so undo writes through the mounted hook; module add/remove, canvas moves and connections, the desk and the settings go through the same recorder. Writes within 500 ms with the same key or in the same tick coalesce (closed by pointerup, pointercancel, focusout). Transient keys (`unrecordedStateKeys`: playback, hover, selection, view, scroll) record nothing, and auto-resets fold into the step that triggered them. The shortcut (Ctrl/Cmd+Z, Shift+Z, Ctrl+Y) works everywhere, text boxes included, and the top bar has Undo and Redo buttons. Every persisted `compositionSettings` field is one virtual key `${STORAGE_KEY}#settings` (whole JSON), so settings undo exactly and mark the project unsaved. The desk records only the clips that changed (`previousValue`/`nextValue` on a virtual `HistoryChange`, sharing live clip objects) and the order, not whole-desk strings. `historyChangeCount()` counts every change (and undo/redo); the project menu compares it with the count at the last save or open to know the workbench is dirty.
+**Session history (`history.ts`).** One workbench-wide undo/redo, bounded (`HISTORY_DEPTH` 50) and session-only: nothing about it is stored. `usePersistentState` records each write as `(key, previousRaw, nextRaw)` and keeps a registry of appliers (registered by the state store per key, mounted or not) so undo writes through the store; module add/remove, canvas moves and connections, the desk and the settings go through the same recorder. Writes within 500 ms with the same key or in the same tick coalesce (closed by pointerup, pointercancel, focusout). Transient keys (`unrecordedStateKeys`: playback, hover, selection, view, scroll) record nothing, and auto-resets fold into the step that triggered them. The shortcut (Ctrl/Cmd+Z, Shift+Z, Ctrl+Y) works everywhere, text boxes included, and the top bar has Undo and Redo buttons. Every persisted `compositionSettings` field is one virtual key `${STORAGE_KEY}#settings` (whole JSON), so settings undo exactly and mark the project unsaved. The desk records only the clips that changed (`previousValue`/`nextValue` on a virtual `HistoryChange`, sharing live clip objects) and the order, not whole-desk strings. `historyChangeCount()` counts every change (and undo/redo); the project menu compares it with the count at the last save or open to know the workbench is dirty.
 
 **Desk storage (`deskStore.ts`).** The desk, lineage included, lives in IndexedDB (database `hrifa-composition-workbench`): one record per clip in `desk-clips` plus an `order` record and a `rev` counter in `desk-meta`, so a write touches only changed clips (by reference) and the order, in one transaction. Records are v1 `Snippet`s validated with `acceptsSnippets` on load. All reads and writes go through one queue (`enqueueDeskTask`). `DeskProvider` starts `loading`, loads once, refuses changes until then, and loading never writes. Writes are debounced (150 ms; 1000 ms while edits are coalescing), serialised and flushed on unmount and `pagehide`. **Two tabs:** each tab remembers the `rev` it last read or wrote; a write whose transaction finds a different `rev` aborts and sets `persistError` ("The desk changed in another tab. Reload to see the latest version."). Load is tolerant (an order id with no record is skipped, a record the order lacks is appended, with a warning); unreadable or newer data is left untouched and the desk reports `locked`: changes are refused and nothing is written over it. A failed write sets `persistError` (shown as a warning on the desk), cleared by the next success. `navigator.storage.persist()` is requested once, best effort. If IndexedDB has no desk and the old localStorage key (`hrifa.composition-workbench.desk.snippets.v1`) holds a valid one, it is copied in and the key removed after the first write that succeeds.
 
@@ -576,7 +638,7 @@ References:
 
 ### The editor slot
 
-The bottom panel of the workbench frame shows an **editor target**: a module instance or a clip, never both. Double-clicking a desk card (or creating a clip) targets that clip and expands a collapsed panel. `ClipEditorSlot` looks the editor up through the clip-type registry (`clipEditorFor`: type, `editorId`, `registerClipEditor`); a clip type with no editor shows a plain "No editor for this clip yet" state. While a clip is open no module counts as active (inspector setup controls, Play selected, canvas highlight), and the left inspector shows the clip's properties and actions instead of a module. What is open stays open: deleting another module or clicking empty canvas leaves the panel alone, and if the open clip vanishes (delete, undo, project open) or the open module is removed, the panel goes blank; nothing else is promoted into it. The slot ends the clip's hand-edit session whenever the target moves off the clip. Modules stay mounted and hidden when not shown (until R3), as in the frame section above. The target is shown by the `module-detail` and `clip-editor` panels of the `Detail` docker; clicking the other tab shows its blank state and does not change the target.
+The bottom panel of the workbench frame shows an **editor target**: a module instance or a clip, never both. Double-clicking a desk card (or creating a clip) targets that clip and expands a collapsed panel. `ClipEditorSlot` looks the editor up through the clip-type registry (`clipEditorFor`: type, `editorId`, `registerClipEditor`); a clip type with no editor shows a plain "No editor for this clip yet" state. While a clip is open no module counts as active (inspector setup controls, Play selected, canvas highlight), and the left inspector shows the clip's properties and actions instead of a module. What is open stays open: deleting another module or clicking empty canvas leaves the panel alone, and if the open clip vanishes (delete, undo, project open) or the open module is removed, the panel goes blank; nothing else is promoted into it. The slot ends the clip's hand-edit session whenever the target moves off the clip. Module views stay mounted and hidden when not shown (to keep their playing preview, selection and scroll; their evaluation and publishing belong to the runners), as in the frame section above. The target is shown by the `module-detail` and `clip-editor` panels of the `Detail` docker; clicking the other tab shows its blank state and does not change the target.
 
 `NoteClipEditor` (`components/NoteClipEditor.tsx`, editor `note-roll`) owns no clip state beyond the packet: it reads the clip, applies edits through the edit contract and reuses the `EditorPalette` chrome. Everything below is state that lives in the editor, never in the packet, history or a project.
 

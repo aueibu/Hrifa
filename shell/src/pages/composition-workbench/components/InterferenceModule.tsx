@@ -12,7 +12,6 @@ import {
 } from '@mantine/core';
 import { volumePercentToGain } from '../audio';
 import { createInterferencePreviewPlan, GROUPING_BUS } from '../audio/performancePlans';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import { foldIntoHistory } from '../history';
 import {
@@ -22,15 +21,19 @@ import {
   MAX_PREVIEW_EVENTS,
 } from '../interference';
 import { transportRhythmContext } from '../rhythmRealization';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
 import type { GeneratorDraft } from '../runtime/evaluators/interference';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
-import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
+import { useModuleState } from '../runtime/moduleState';
+import {
+  interferenceInitialGenerators,
+  interferenceState,
+} from '../runtime/moduleState/interference';
+import { layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsBoolean,
   acceptsFiniteNumber,
-  acceptsString,
   compositionStateKeys,
   compositionInstanceStateKey,
   usePersistentState,
@@ -42,12 +45,6 @@ import { Playhead } from './Playhead';
 import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
-
-const initialGenerators: GeneratorDraft[] = [
-  { id: 'generator-a', label: 'Generator 1', valueText: '2' },
-  { id: 'generator-b', label: 'Generator 2', valueText: '3' },
-  { id: 'generator-c', label: 'Generator 3', valueText: '5' },
-];
 
 // The pitches generators got automatically before voices existed. A saved pitch that differs was
 // chosen by hand, so it carries over as a Tone override; a default one gives way to the voices.
@@ -72,36 +69,16 @@ function formatGeneratorPattern(pattern: number[]) {
   return `⟨${pattern.join(' + ')}⟩`;
 }
 
-interface InterferenceModuleProps extends CompositionModuleRoutingProps {
+interface InterferenceModuleProps {
   instanceId: string;
   instanceLabel: string;
 }
 
-export function InterferenceModule({
-  instanceId,
-  instanceLabel,
-  onOutputsChange,
-}: InterferenceModuleProps) {
+export function InterferenceModule({ instanceId, instanceLabel }: InterferenceModuleProps) {
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'interference');
-  const [drafts, setDrafts] = usePersistentState(
-    stateKey(compositionStateKeys.interferenceDrafts),
-    initialGenerators,
-    (value): value is GeneratorDraft[] =>
-      Array.isArray(value) &&
-      value.every(
-        (draft) =>
-          draft &&
-          typeof draft.id === 'string' &&
-          typeof draft.label === 'string' &&
-          typeof draft.valueText === 'string' &&
-          (draft.midiNote === undefined || typeof draft.midiNote === 'number') &&
-          (draft.sound === undefined || draft.sound === null || isSoundOverride(draft.sound))
-      )
-  );
-  const [groupingId, setGroupingId] = usePersistentState(
-    stateKey(compositionStateKeys.interferenceGrouping),
-    'recurrence',
-    acceptsString
+  const [{ drafts, groupingId }, { drafts: setDrafts, groupingId: setGroupingId }] = useModuleState(
+    interferenceState,
+    instanceId
   );
   const [previewVolume, setPreviewVolume] = usePersistentState(
     stateKey(compositionStateKeys.interferenceVolume),
@@ -125,13 +102,7 @@ export function InterferenceModule({
     groupings,
     grouping,
     outputs: publishedOutputs,
-  } = useModuleEvaluation(
-    'interference',
-    { drafts, groupingId },
-    {},
-    { instanceId, instanceLabel },
-    onOutputsChange
-  );
+  } = useModuleEvaluationResult('interference', instanceId);
 
   useEffect(() => {
     if (groupings.length && !groupings.some((option) => option.id === groupingId)) {
@@ -205,7 +176,7 @@ export function InterferenceModule({
 
   function resetInterference() {
     preview.stop('');
-    setDrafts(initialGenerators);
+    setDrafts(interferenceInitialGenerators);
     setGroupingId('recurrence');
     setPreviewVolume(30);
     setGroupingClick(false);

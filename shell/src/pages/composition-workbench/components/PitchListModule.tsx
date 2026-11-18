@@ -12,7 +12,6 @@ import {
   TextInput,
 } from '@mantine/core';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import { formatPitchClassGroup, type ForteSetSelection } from '../forteCatalog';
 import type { DataPacket } from '../model';
@@ -26,13 +25,14 @@ import {
   type PitchInputFormat,
   type PitchItemValue,
 } from '../pitch';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
+import { pitchListInitialValues, pitchListState } from '../runtime/moduleState/pitchList';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsFiniteNumber,
   acceptsNumberOrString,
   acceptsBoolean,
-  acceptsString,
   compositionStateKeys,
   compositionInstanceStateKey,
   usePersistentState,
@@ -55,72 +55,28 @@ const formatOptions = [
   { value: 'pitch-class', label: 'Pitch classes', example: '0, D, F#' },
 ] satisfies { value: PitchInputFormat; label: string; example: string }[];
 
-const initialValues: Record<PitchInputFormat, string> = {
-  'midi-note': '60, 62, 64, 67, 66.5',
-  midicent: '6000, 6200, 6400, 6700, 6650',
-  'note-name': 'C4, D4, E4, G4, F#4',
-  'pitch-class': '0, 2, 4, 7, 6',
-};
-
-type CatalogOrigins = Record<string, ForteSetSelection>;
-
-function acceptsCatalogOrigins(value: unknown): value is CatalogOrigins {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return false;
-  }
-  return Object.values(value).every(
-    (origin) =>
-      Boolean(origin) &&
-      typeof origin === 'object' &&
-      typeof (origin as ForteSetSelection).forteNumber === 'string' &&
-      Array.isArray((origin as ForteSetSelection).primeForm) &&
-      Array.isArray((origin as ForteSetSelection).intervalClassVector) &&
-      typeof (origin as ForteSetSelection).transposition === 'number' &&
-      typeof (origin as ForteSetSelection).inverted === 'boolean' &&
-      Array.isArray((origin as ForteSetSelection).pitchClasses)
-  );
-}
-
-export interface PitchListModuleProps extends CompositionModuleRoutingProps {
+export interface PitchListModuleProps {
   instanceId: string;
   instanceLabel: string;
   upstream?: DataPacket;
 }
 
-export function PitchListModule({
-  instanceId,
-  instanceLabel,
-  upstream,
-  onOutputsChange,
-}: PitchListModuleProps) {
+export function PitchListModule({ instanceId, instanceLabel, upstream }: PitchListModuleProps) {
   const { settings } = useCompositionSettings();
   const edo = settings.edo;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'pitch-list');
-  const [format, setFormat] = usePersistentState<PitchInputFormat>(
-    stateKey(compositionStateKeys.pitchFormat),
-    'midi-note',
-    (value): value is PitchInputFormat =>
-      value === 'midi-note' ||
-      value === 'midicent' ||
-      value === 'note-name' ||
-      value === 'pitch-class'
-  );
+  const [{ format, inlineValues }, state] = useModuleState(pitchListState, instanceId);
+  const {
+    format: setFormat,
+    inlineValues: setInlineValues,
+    catalogOrigins: setCatalogOrigins,
+  } = state;
   // On: picking another "Read list as" rewrites the typed values to keep the same pitches. Off: the
   // text stays exactly as typed and is simply read differently.
   const [convertOnChange, setConvertOnChange] = usePersistentState(
     stateKey(compositionStateKeys.pitchConvertOnChange),
     true,
     acceptsBoolean
-  );
-  const [inlineValues, setInlineValues] = usePersistentState(
-    stateKey(compositionStateKeys.pitchValues),
-    () => initialValues[format],
-    acceptsString
-  );
-  const [catalogOrigins, setCatalogOrigins] = usePersistentState<CatalogOrigins>(
-    stateKey(compositionStateKeys.pitchCatalogOrigins),
-    {},
-    acceptsCatalogOrigins
   );
   const [stepMilliseconds, setStepMilliseconds] = usePersistentState<number | string>(
     stateKey(compositionStateKeys.pitchStep),
@@ -144,13 +100,7 @@ export function PitchListModule({
   );
   const [catalogOpened, setCatalogOpened] = useState(false);
 
-  const { interpreted, outputs } = useModuleEvaluation(
-    'pitch-list',
-    { format, inlineValues, catalogOrigins },
-    { upstream },
-    { instanceId, instanceLabel, edo },
-    onOutputsChange
-  );
+  const { interpreted, outputs } = useModuleEvaluationResult('pitch-list', instanceId);
   const inputDefinesFormat =
     upstream?.kind === 'list' && (upstream.domain === 'pitch' || upstream.domain === 'pitchClass');
   const displayedFormat = inputDefinesFormat
@@ -318,7 +268,7 @@ export function PitchListModule({
   function resetPitchList() {
     preview.stop('');
     setFormat('midi-note');
-    setInlineValues(initialValues['midi-note']);
+    setInlineValues(pitchListInitialValues['midi-note']);
     setCatalogOrigins({});
     setStepMilliseconds(300);
     setGatePercent(75);

@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
 import { Accordion, Alert, Badge, Select, Stack, Text, TextInput } from '@mantine/core';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
+import {
+  acceptsPermutationMode,
+  scaleConstructionState,
+} from '../runtime/moduleState/scaleConstruction';
 import { cycleLabel, cycleFolders, type MelodicFamily } from '../scaleConstruction';
 import {
-  acceptsFiniteNumber,
-  acceptsIntegerList,
   acceptsString,
   compositionInstanceStateKey,
   compositionStateKeys,
@@ -21,10 +23,6 @@ const permutationModeOptions = [
   { value: 'general', label: 'General (n!)' },
   { value: 'circular', label: 'Circular (n)' },
 ];
-
-function acceptsPermutationMode(value: unknown): value is 'general' | 'circular' {
-  return value === 'general' || value === 'circular';
-}
 
 function parseIntervalText(value: string) {
   return value
@@ -121,7 +119,7 @@ function FamilyAccordion({
   );
 }
 
-interface ScaleConstructionModuleProps extends CompositionModuleRoutingProps {
+interface ScaleConstructionModuleProps {
   instanceId: string;
   instanceLabel: string;
 }
@@ -129,27 +127,15 @@ interface ScaleConstructionModuleProps extends CompositionModuleRoutingProps {
 export function ScaleConstructionModule({
   instanceId,
   instanceLabel,
-  onOutputsChange,
 }: ScaleConstructionModuleProps) {
   const { settings } = useCompositionSettings();
   const edo = settings.edo;
   const stateKey = (key: string) =>
     compositionInstanceStateKey(key, instanceId, 'scale-construction');
-  const [intervals, setIntervals] = usePersistentState<number[]>(
-    stateKey(compositionStateKeys.scaleConstructionIntervals),
-    [2, 2, 1],
-    acceptsIntegerList
-  );
-  const [root, setRoot] = usePersistentState(
-    stateKey(compositionStateKeys.scaleConstructionRoot),
-    0,
-    acceptsFiniteNumber
-  );
-  const [permutationMode, setPermutationMode] = usePersistentState<'general' | 'circular'>(
-    stateKey(compositionStateKeys.scaleConstructionPermutationMode),
-    'general',
-    acceptsPermutationMode
-  );
+  const [
+    { intervals, root, permutationMode },
+    { intervals: setIntervals, root: setRoot, permutationMode: setPermutationMode },
+  ] = useModuleState(scaleConstructionState, instanceId);
   const [intervalText, setIntervalText] = usePersistentState(
     stateKey(`${compositionStateKeys.scaleConstructionIntervals}.text`),
     intervals.join(', '),
@@ -162,13 +148,7 @@ export function ScaleConstructionModule({
     offsets,
     melodicFormsOutput,
     outputs: publishedOutputs,
-  } = useModuleEvaluation(
-    'scale-construction',
-    { intervals, root, permutationMode },
-    {},
-    { instanceId, instanceLabel, edo },
-    onOutputsChange
-  );
+  } = useModuleEvaluationResult('scale-construction', instanceId);
   const folderTree = useMemo(() => buildFolderTree(families), [families]);
 
   function commitIntervalText(text: string) {

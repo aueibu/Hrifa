@@ -12,7 +12,6 @@ import {
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
@@ -30,8 +29,10 @@ import {
   type MusicalTimeline,
 } from '../musicalTime';
 import { pitchLabel, rhythmInterpretableDomains } from '../routeTreatments';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
 import { pickMelodicizationInputs } from '../runtime/evaluators/melodicization';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleState } from '../runtime/moduleState';
+import { melodicizationState } from '../runtime/moduleState/melodicization';
 import { captureSnippet } from '../snippet';
 import { countInSeconds, parseMeter, transportPulse } from '../transport';
 import { useModulePreview, type PreviewEnd } from '../useModulePreview';
@@ -49,7 +50,7 @@ import classes from '../CompositionWorkbench.module.css';
 
 type InputPort = 'rhythm' | 'pitches';
 
-export interface MelodicizationModuleProps extends CompositionModuleRoutingProps {
+export interface MelodicizationModuleProps {
   instanceId: string;
   instanceLabel: string;
   /** Shown in the workspace. Each time it becomes so, the piano roll refits to the notes. */
@@ -113,24 +114,15 @@ export function MelodicizationModule({
   outputs,
   routeState,
   onBind,
-  onOutputsChange,
 }: MelodicizationModuleProps) {
   const { settings } = useCompositionSettings();
-  const edo = settings.edo;
   const bindingRhythm = routeState.rhythm;
   const bindingPitches = routeState.pitches;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'melodicization');
-  const [allocation, setAllocation] = usePersistentState<PitchAllocation>(
-    stateKey(compositionStateKeys.melodicizationAllocation),
-    'cycle',
-    (value): value is PitchAllocation =>
-      value === 'cycle' || value === 'cycle-rhythm' || value === 'zip' || value === 'cartesian'
-  );
-  const [articulationPercent, setArticulationPercent] = usePersistentState(
-    stateKey(compositionStateKeys.melodicizationArticulation),
-    100,
-    acceptsFiniteNumber
-  );
+  const [
+    { allocation, articulationPercent },
+    { allocation: setAllocation, articulationPercent: setArticulationPercent },
+  ] = useModuleState(melodicizationState, instanceId);
   const [volume, setVolume] = usePersistentState(
     stateKey(compositionStateKeys.melodicizationVolume),
     30,
@@ -167,19 +159,12 @@ export function MelodicizationModule({
   // Tempo, meter, and pulse value come from the header transport, shared by every module.
   const transport = settings.transport;
   const { tempo, meter } = transport;
-  const pulseUnit = transportPulse(transport).duration;
-  const melodicizationInputs = pickMelodicizationInputs(outputs, routeState, instanceId);
-  const { rhythmOutput, pitchOutput } = melodicizationInputs;
+  // The bound outputs, looked up only to tell a missing source from an unwired port.
+  const { rhythmOutput, pitchOutput } = pickMelodicizationInputs(outputs, routeState, instanceId);
   const {
     result,
     outputs: [publishedOutput],
-  } = useModuleEvaluation(
-    'melodicization',
-    { allocation, articulationPercent },
-    melodicizationInputs,
-    { instanceId, instanceLabel, edo, pulseUnit },
-    onOutputsChange
-  );
+  } = useModuleEvaluationResult('melodicization', instanceId);
   const { numerator: meterNumerator, denominator: meterDenominator } = parseMeter(meter);
   const timeline = useMemo<MusicalTimeline>(
     () => ({

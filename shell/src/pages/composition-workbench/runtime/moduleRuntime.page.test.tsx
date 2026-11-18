@@ -19,6 +19,20 @@ vi.mock('../components/InterferenceModule', async (importOriginal) => {
   };
 });
 
+// Counts runner renders per module: the runner calls `useModuleEvaluation` once per render.
+const evaluations = vi.hoisted(() => ({ byModule: {} as Record<string, number> }));
+
+vi.mock('./useModuleEvaluation', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./useModuleEvaluation')>();
+  return {
+    ...original,
+    useModuleEvaluation: ((moduleId: string, ...rest: unknown[]) => {
+      evaluations.byModule[moduleId] = (evaluations.byModule[moduleId] ?? 0) + 1;
+      return (original.useModuleEvaluation as (...args: unknown[]) => unknown)(moduleId, ...rest);
+    }) as typeof original.useModuleEvaluation,
+  };
+});
+
 describe('module runtime', () => {
   it('a publish from one module does not re-render a source module, and a routed module still gets the output', async () => {
     const user = userEvent.setup();
@@ -54,5 +68,22 @@ describe('module runtime', () => {
     expect(
       screen.queryByText('22 notes', { selector: '.mantine-Badge-label' })
     ).not.toBeInTheDocument();
+  }, 30_000);
+
+  it('a source module runner is not re-rendered by another module publishing', async () => {
+    const user = userEvent.setup();
+    localStorage.removeItem(compositionWorkbenchStorageKey);
+    Object.values(compositionStateKeys).forEach((key) => localStorage.removeItem(key));
+    render(<CompositionWorkbenchPage />);
+    await user.click(screen.getByRole('button', { name: /^Pitch List/ }));
+    const interferenceBefore = evaluations.byModule['interference'];
+    const pitchBefore = evaluations.byModule['pitch-list'];
+    expect(interferenceBefore).toBeGreaterThan(0);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pitch values' }), {
+      target: { value: '60 64 67' },
+    });
+    // The edited module evaluated again; the unrelated source module did not.
+    expect(evaluations.byModule['pitch-list']).toBeGreaterThan(pitchBefore);
+    expect(evaluations.byModule['interference']).toBe(interferenceBefore);
   }, 30_000);
 });

@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
 import { ModuleActiveContext } from '../components/ModuleHost';
-import type { CompositionOutputRef, PublishedCompositionOutput } from '../compositionRouting';
+import type { CompositionOutputRef } from '../compositionRouting';
 import {
   createDefaultModuleRouteState,
   type CompositionModuleId,
@@ -29,7 +29,6 @@ export interface ModuleInstanceHostProps {
   ): void;
   onAddChannel(instanceId: string): void;
   onRemoveChannel(instanceId: string, port: string): void;
-  onOutputsChange(instanceId: string, outputs: PublishedCompositionOutput[]): void;
 }
 
 /**
@@ -49,7 +48,6 @@ export const ModuleInstanceHost = memo(function ModuleInstanceHost({
   onBind,
   onAddChannel,
   onRemoveChannel,
-  onOutputsChange,
 }: ModuleInstanceHostProps) {
   const entry = moduleRegistry[moduleId];
   const outputs = useOutputs(store, entry.takesOutputs);
@@ -80,7 +78,6 @@ export const ModuleInstanceHost = memo(function ModuleInstanceHost({
           onBind: bind,
           onAddChannel: addChannel,
           onRemoveChannel: removeChannel,
-          onOutputsChange,
         })}
       </ModuleActiveContext.Provider>
     </div>

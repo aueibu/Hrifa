@@ -88,10 +88,17 @@ import type { PatchDocument } from './composition-workbench/model';
 import { loadSavedPatch } from './composition-workbench/persistence';
 import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
 import { isReloading } from './composition-workbench/reloading';
+import {
+  createEvaluationStore,
+  EvaluationStoreContext,
+} from './composition-workbench/runtime/evaluationStore';
+import { ModuleEvaluationRunner } from './composition-workbench/runtime/ModuleEvaluationRunner';
+import { moduleEvaluators } from './composition-workbench/runtime/moduleEvaluators';
 import { ModuleInstanceHost } from './composition-workbench/runtime/ModuleInstanceHost';
 import { modulePorts } from './composition-workbench/runtime/modulePorts';
 import { moduleRegistry } from './composition-workbench/runtime/moduleRegistry';
 import { createOutputStore } from './composition-workbench/runtime/outputStore';
+import { deleteState } from './composition-workbench/runtime/stateStore';
 import { useOutputs } from './composition-workbench/runtime/useOutputs';
 import { signalTypeFor, signalTypeRegistry } from './composition-workbench/signalTypes';
 import {
@@ -115,9 +122,11 @@ function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
   if (isReloading()) {
     return;
   }
+  const keys = moduleRegistry[instance.moduleId].stateKeys.map((base) =>
+    compositionInstanceStateKey(base, instance.id, instance.moduleId)
+  );
   try {
-    moduleRegistry[instance.moduleId].stateKeys.forEach((base) => {
-      const key = compositionInstanceStateKey(base, instance.id, instance.moduleId);
+    keys.forEach((key) => {
       const previous = localStorage.getItem(key);
       localStorage.removeItem(key);
       if (previous !== null) {
@@ -127,6 +136,9 @@ function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
   } catch {
     // Removing the in-memory instance still succeeds when storage is unavailable.
   }
+  // The store drops the keys and refuses writes to them until an undo restores the stored values, so a
+  // late write from a view or runner that is still unmounting cannot bring the state back.
+  keys.forEach(deleteState);
 }
 
 /** The workbench's panels, registered once: the Stage parks what is not showing (never display: none). */
@@ -206,6 +218,8 @@ export function CompositionWorkbenchPage() {
   );
   // Published outputs live outside React: a publish reaches only the modules that read them.
   const [outputStore] = useState(createOutputStore);
+  // Each placed module's latest evaluation, written by its runner and read by its view.
+  const [evaluationStore] = useState(createEvaluationStore);
   const publishedCompositionOutputs = useOutputs(outputStore);
   const [moduleRouteStates, setModuleRouteStates] = usePersistentState<ModuleRouteStates>(
     compositionStateKeys.moduleRouteStates,
@@ -248,8 +262,10 @@ export function CompositionWorkbenchPage() {
 
   // Outputs published by a module that is gone (an undone add) must not linger as sources.
   useEffect(() => {
-    outputStore.prune(compositionInstances.map((instance) => instance.id));
-  }, [compositionInstances, outputStore]);
+    const live = compositionInstances.map((instance) => instance.id);
+    outputStore.prune(live);
+    evaluationStore.prune(live);
+  }, [compositionInstances, outputStore, evaluationStore]);
 
   // The front tab of the Detail docker follows the exclusive target (a clip, or a module): when the target flips, the
   // matching panel comes to the front in every screenset (expanding nothing). A click on the other tab does not change
@@ -442,6 +458,7 @@ export function CompositionWorkbenchPage() {
       removeCompositionInstanceStorage(removed);
       setCompositionInstances(remaining);
       outputStore.prune(remaining.map((candidate) => candidate.id));
+      evaluationStore.prune(remaining.map((candidate) => candidate.id));
       if (moduleRegistry[removed.moduleId].ports) {
         setModuleRouteStates((current) => {
           const next = { ...current };
@@ -522,7 +539,6 @@ export function CompositionWorkbenchPage() {
             onBind={bindModulePort}
             onAddChannel={addMixerChannel}
             onRemoveChannel={removeMixerChannel}
-            onOutputsChange={outputStore.publish}
           />
         ))}
         {compositionInstances.length === 0 && (
@@ -551,128 +567,150 @@ export function CompositionWorkbenchPage() {
           <PreviewRegistryProvider>
             <MantineThemeProvider theme={compactWorkbenchTheme}>
               <InfoBarActiveContext.Provider value>
-                <ClipTargetGuard snippetId={editorClipTarget} onMissing={clearClipTarget} />
-                <AppShell
-                  header={{ height: 56 }}
-                  footer={{ height: 39 }}
-                  padding="md"
-                  className={classes.workbench}
-                >
-                  <AppShell.Header>
-                    <div className={classes.headerBar}>
-                      <Group gap="xs" wrap="nowrap">
-                        <Tooltip label="Back to Workbench">
-                          <ActionIcon
-                            component={Link}
-                            to="/"
-                            variant="subtle"
-                            size="lg"
-                            aria-label="Back to Workbench"
-                          >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              aria-hidden
-                            >
-                              <path d="M15 18l-6-6 6-6" />
-                            </svg>
-                          </ActionIcon>
-                        </Tooltip>
-                        <Title order={1} className={classes.visuallyHidden}>
-                          Composition Workbench
-                        </Title>
-                      </Group>
-                      <TransportBar selectedInstanceId={shownInstanceId} />
-                      <Group gap="xs" wrap="nowrap" justify="flex-end">
-                        <DeveloperMenu />
-                        <ProjectMenu />
-                        <ColorSchemeToggle />
-                      </Group>
-                    </div>
-                  </AppShell.Header>
-                  <AppShell.Main style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}>
-                    <Stack gap="md">
-                      {evaluation.errors.map((error) => (
-                        <Surface key={error} p="sm">
-                          <Text c="red">{error}</Text>
-                        </Surface>
-                      ))}
-
-                      <>
-                        <div
-                          className={classes.compositionWorkspace}
-                          data-inspector={inspectorOpen}
-                          data-settings={settingsOpened}
-                        >
-                          {inspectorOpen && (
-                            <div className={classes.inspectorColumn}>
-                              <CompositionInspector
-                                selected={shownInspectorTarget}
-                                activeInstanceId={shownInstanceId}
-                                clipId={editorClipTarget}
-                                outputs={publishedCompositionOutputs}
-                                instances={compositionInstances}
-                                routes={moduleRouteStates}
-                                onRemoveModule={removeCompositionModule}
-                                onModuleSlot={setModuleInspectorSlot}
-                                onRouteTreatment={updateRouteTreatment}
-                              />
-                            </div>
-                          )}
-                          <div className={classes.stageColumn} ref={stageBox.ref}>
-                            <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
-                              <CanvasTakeoverProvider available={takeoverAvailable}>
-                                <WorkbenchPanelsContext.Provider value={panelNodes}>
-                                  <DockStage
-                                    registry={WORKBENCH_REGISTRY}
-                                    screenset={screenset}
-                                    update={updateScreenset}
-                                    widthRem={stageBox.widthRem}
-                                    heightRem={stageBox.heightRem}
-                                    onApi={onStageApi}
-                                  />
-                                </WorkbenchPanelsContext.Provider>
-                              </CanvasTakeoverProvider>
-                            </ModuleInspectorSlotContext.Provider>
-                          </div>
-                          {settingsOpened && (
-                            <div className={classes.settingsColumn}>
-                              <CompositionSettingsPanel onClose={() => setSettingsOpened(false)} />
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    </Stack>
-                  </AppShell.Main>
-                  <AppShell.Footer>
-                    <WorkbenchStatusBar
-                      inspectorOpen={inspectorOpen}
-                      onToggleInspector={() => setInspectorOpen((open) => !open)}
-                      settingsOpen={settingsOpened}
-                      onToggleSettings={() => setSettingsOpened((open) => !open)}
-                      screensets={{
-                        store: screensetStore,
-                        onActivate: (id) => setScreensetStore((st) => setActiveScreenset(st, id)),
-                        onAdd: () => setScreensetStore((st) => addScreenset(st)),
-                        onRename: (id, name) =>
-                          setScreensetStore((st) => renameScreenset(st, id, name)),
-                        onDuplicate: (id) => setScreensetStore((st) => duplicateScreenset(st, id)),
-                        onDelete: (id) => setScreensetStore((st) => deleteScreenset(st, id)),
-                      }}
-                      panelsMenu={
-                        <PanelsMenu
-                          registry={WORKBENCH_REGISTRY.meta}
-                          screenset={screenset}
-                          api={stageApi}
+                <EvaluationStoreContext.Provider value={evaluationStore}>
+                  <ClipTargetGuard snippetId={editorClipTarget} onMissing={clearClipTarget} />
+                  {/* Every placed module is evaluated and publishes here, whether or not its view is
+                    mounted. Before the panels, so a view reads its evaluation on its first render. */}
+                  {compositionInstances.map(
+                    (instance) =>
+                      instance.moduleId in moduleEvaluators && (
+                        <ModuleEvaluationRunner
+                          key={instance.id}
+                          outputStore={outputStore}
+                          evaluationStore={evaluationStore}
+                          instanceId={instance.id}
+                          moduleId={instance.moduleId as keyof typeof moduleEvaluators}
+                          instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
+                          snippetId={instance.snippetId}
+                          routeState={moduleRouteStates[instance.id]}
                         />
-                      }
-                    />
-                  </AppShell.Footer>
-                </AppShell>
+                      )
+                  )}
+                  <AppShell
+                    header={{ height: 56 }}
+                    footer={{ height: 39 }}
+                    padding="md"
+                    className={classes.workbench}
+                  >
+                    <AppShell.Header>
+                      <div className={classes.headerBar}>
+                        <Group gap="xs" wrap="nowrap">
+                          <Tooltip label="Back to Workbench">
+                            <ActionIcon
+                              component={Link}
+                              to="/"
+                              variant="subtle"
+                              size="lg"
+                              aria-label="Back to Workbench"
+                            >
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                aria-hidden
+                              >
+                                <path d="M15 18l-6-6 6-6" />
+                              </svg>
+                            </ActionIcon>
+                          </Tooltip>
+                          <Title order={1} className={classes.visuallyHidden}>
+                            Composition Workbench
+                          </Title>
+                        </Group>
+                        <TransportBar selectedInstanceId={shownInstanceId} />
+                        <Group gap="xs" wrap="nowrap" justify="flex-end">
+                          <DeveloperMenu />
+                          <ProjectMenu />
+                          <ColorSchemeToggle />
+                        </Group>
+                      </div>
+                    </AppShell.Header>
+                    <AppShell.Main style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}>
+                      <Stack gap="md">
+                        {evaluation.errors.map((error) => (
+                          <Surface key={error} p="sm">
+                            <Text c="red">{error}</Text>
+                          </Surface>
+                        ))}
+
+                        <>
+                          <div
+                            className={classes.compositionWorkspace}
+                            data-inspector={inspectorOpen}
+                            data-settings={settingsOpened}
+                          >
+                            {inspectorOpen && (
+                              <div className={classes.inspectorColumn}>
+                                <CompositionInspector
+                                  selected={shownInspectorTarget}
+                                  activeInstanceId={shownInstanceId}
+                                  clipId={editorClipTarget}
+                                  outputs={publishedCompositionOutputs}
+                                  instances={compositionInstances}
+                                  routes={moduleRouteStates}
+                                  onRemoveModule={removeCompositionModule}
+                                  onModuleSlot={setModuleInspectorSlot}
+                                  onRouteTreatment={updateRouteTreatment}
+                                />
+                              </div>
+                            )}
+                            <div className={classes.stageColumn} ref={stageBox.ref}>
+                              <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
+                                <CanvasTakeoverProvider available={takeoverAvailable}>
+                                  <WorkbenchPanelsContext.Provider value={panelNodes}>
+                                    <DockStage
+                                      registry={WORKBENCH_REGISTRY}
+                                      screenset={screenset}
+                                      update={updateScreenset}
+                                      widthRem={stageBox.widthRem}
+                                      heightRem={stageBox.heightRem}
+                                      onApi={onStageApi}
+                                    />
+                                  </WorkbenchPanelsContext.Provider>
+                                </CanvasTakeoverProvider>
+                              </ModuleInspectorSlotContext.Provider>
+                            </div>
+                            {settingsOpened && (
+                              <div className={classes.settingsColumn}>
+                                <CompositionSettingsPanel
+                                  onClose={() => setSettingsOpened(false)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      </Stack>
+                    </AppShell.Main>
+                    <AppShell.Footer>
+                      <WorkbenchStatusBar
+                        inspectorOpen={inspectorOpen}
+                        onToggleInspector={() => setInspectorOpen((open) => !open)}
+                        settingsOpen={settingsOpened}
+                        onToggleSettings={() => setSettingsOpened((open) => !open)}
+                        screensets={{
+                          store: screensetStore,
+                          onActivate: (id) => setScreensetStore((st) => setActiveScreenset(st, id)),
+                          onAdd: () => setScreensetStore((st) => addScreenset(st)),
+                          onRename: (id, name) =>
+                            setScreensetStore((st) => renameScreenset(st, id, name)),
+                          onDuplicate: (id) =>
+                            setScreensetStore((st) => duplicateScreenset(st, id)),
+                          onDelete: (id) => setScreensetStore((st) => deleteScreenset(st, id)),
+                        }}
+                        panelsMenu={
+                          <PanelsMenu
+                            registry={WORKBENCH_REGISTRY.meta}
+                            screenset={screenset}
+                            api={stageApi}
+                          />
+                        }
+                      />
+                    </AppShell.Footer>
+                  </AppShell>
+                </EvaluationStoreContext.Provider>
               </InfoBarActiveContext.Provider>
             </MantineThemeProvider>
           </PreviewRegistryProvider>

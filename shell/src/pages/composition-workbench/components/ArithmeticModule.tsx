@@ -10,23 +10,19 @@ import {
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
-import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
-import { defaultModuloTreatment, type ModuloTreatment } from '../moduloTreatment';
-import { pickArithmeticInputs } from '../runtime/evaluators/arithmetic';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
 import {
-  acceptsNumberOrString,
-  compositionStateKeys,
-  compositionInstanceStateKey,
-  usePersistentState,
-} from '../usePersistentState';
+  acceptsCombineStrategy,
+  acceptsOperator,
+  arithmeticState,
+} from '../runtime/moduleState/arithmetic';
 import { ModuleDevice } from './ModuleDevice';
 import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { ModuloControl } from './ModuloControl';
@@ -67,31 +63,6 @@ function rawOperandLine(source: DataPacket | undefined, fallback: number) {
   return source.items.map((item) => formatNumericTree(rawNumericTree(item.value))).join(', ');
 }
 
-function acceptsOperator(value: unknown): value is ArithmeticOperator {
-  return (
-    value === 'add' ||
-    value === 'subtract' ||
-    value === 'multiply' ||
-    value === 'divide' ||
-    value === 'floorDivide' ||
-    value === 'power' ||
-    value === 'exp'
-  );
-}
-
-function acceptsCombineStrategy(value: unknown): value is PitchAllocation {
-  return value === 'cycle' || value === 'cycle-rhythm' || value === 'zip' || value === 'cartesian';
-}
-
-function acceptsModuloTreatmentLocal(value: unknown): value is ModuloTreatment {
-  return (
-    Boolean(value) &&
-    typeof value === 'object' &&
-    typeof (value as ModuloTreatment).enabled === 'boolean' &&
-    Number.isFinite((value as ModuloTreatment).divisor)
-  );
-}
-
 const operatorOptions = (Object.keys(arithmeticOperatorLabels) as ArithmeticOperator[]).map(
   (operator) => ({ value: operator, label: `${arithmeticOperatorLabels[operator]} (${operator})` })
 );
@@ -103,7 +74,7 @@ const combineStrategyOptions: { value: PitchAllocation; label: string }[] = [
   { value: 'cartesian', label: 'Every combination' },
 ];
 
-export interface ArithmeticModuleProps extends CompositionModuleRoutingProps {
+export interface ArithmeticModuleProps {
   instanceId: string;
   instanceLabel: string;
   outputs: PublishedCompositionOutput[];
@@ -117,36 +88,17 @@ export function ArithmeticModule({
   outputs,
   routeState,
   onBind,
-  onOutputsChange,
 }: ArithmeticModuleProps) {
-  const { settings } = useCompositionSettings();
-  const edo = settings.edo;
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'arithmetic');
-  const [operator, setOperator] = usePersistentState<ArithmeticOperator>(
-    stateKey(compositionStateKeys.arithmeticOperator),
-    'add',
-    acceptsOperator
-  );
-  const [fallbackA, setFallbackA] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.arithmeticFallbackA),
-    arithmeticOperatorDefaults.add.a,
-    acceptsNumberOrString
-  );
-  const [fallbackB, setFallbackB] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.arithmeticFallbackB),
-    arithmeticOperatorDefaults.add.b,
-    acceptsNumberOrString
-  );
-  const [combineStrategy, setCombineStrategy] = usePersistentState<PitchAllocation>(
-    stateKey(compositionStateKeys.arithmeticCombineStrategy),
-    'zip',
-    acceptsCombineStrategy
-  );
-  const [modulo, setModulo] = usePersistentState<ModuloTreatment>(
-    stateKey(compositionStateKeys.arithmeticModulo),
-    defaultModuloTreatment,
-    acceptsModuloTreatmentLocal
-  );
+  const [
+    { operator, fallbackA, fallbackB, combineStrategy, modulo },
+    {
+      operator: setOperator,
+      fallbackA: setFallbackA,
+      fallbackB: setFallbackB,
+      combineStrategy: setCombineStrategy,
+      modulo: setModulo,
+    },
+  ] = useModuleState(arithmeticState, instanceId);
 
   const isUnary = operator === 'exp';
   const bindingA = routeState.a;
@@ -156,13 +108,7 @@ export function ArithmeticModule({
     treatedB,
     result,
     outputs: publishedOutputs,
-  } = useModuleEvaluation(
-    'arithmetic',
-    { operator, fallbackA, fallbackB, combineStrategy, modulo },
-    pickArithmeticInputs(outputs, routeState, instanceId),
-    { instanceId, instanceLabel, edo },
-    onOutputsChange
-  );
+  } = useModuleEvaluationResult('arithmetic', instanceId);
 
   function changeOperator(value: string | null) {
     if (!value || !acceptsOperator(value)) {

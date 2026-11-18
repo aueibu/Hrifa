@@ -17,7 +17,6 @@ import {
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
@@ -41,15 +40,21 @@ import {
   type Viewport,
 } from '../rhythmRollZoom';
 import { rhythmInterpretableDomains } from '../routeTreatments';
-import { pickRhythmEditInputs, type EditSettings } from '../runtime/evaluators/rhythmEdit';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import type { EditSettings } from '../runtime/evaluators/rhythmEdit';
+import { useModuleState } from '../runtime/moduleState';
+import {
+  rhythmEditDefaultSettings,
+  rhythmEditInitialProgram,
+  rhythmEditInitialRules,
+  rhythmEditState,
+} from '../runtime/moduleState/rhythmEdit';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsBoolean,
   acceptsFiniteNumber,
-  acceptsString,
   compositionInstanceStateKey,
   compositionStateKeys,
   usePersistentState,
@@ -92,34 +97,11 @@ const MAX_CANVAS_PX = 40000;
 const timingDetail = (phase: number, rate: number) =>
   phase === 0 && rate === 1 ? undefined : `phase ${phase}, rate ${rate}`;
 
-const initialProgram = '[x,2][r,1]';
-const initialRules = 'every 3: r';
-
-const defaultSettings: EditSettings = {
-  programPhase: 0,
-  programRate: 1,
-  lengthPhase: 0,
-  lengthRate: 1,
-  nStart: 1,
-  nChange: 1,
-  nEvery: 1,
-};
-
-function acceptsSettings(value: unknown): value is EditSettings {
-  return (
-    Boolean(value) &&
-    typeof value === 'object' &&
-    (Object.keys(defaultSettings) as (keyof EditSettings)[]).every(
-      (key) => typeof (value as EditSettings)[key] === 'number'
-    )
-  );
-}
-
 function compatibleRhythm(packet: DataPacket) {
   return packet.kind === 'list' && rhythmInterpretableDomains.has(packet.domain);
 }
 
-export interface RhythmEditModuleProps extends CompositionModuleRoutingProps {
+export interface RhythmEditModuleProps {
   instanceId: string;
   instanceLabel: string;
   outputs: PublishedCompositionOutput[];
@@ -148,41 +130,20 @@ export function RhythmEditModule({
   outputs,
   routeState,
   onBind,
-  onOutputsChange,
 }: RhythmEditModuleProps) {
   const { settings } = useCompositionSettings();
-  const edo = settings.edo;
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'rhythm-edit');
-  const [mode, setMode] = usePersistentState<RhythmEditMode>(
-    stateKey(compositionStateKeys.rhythmEditMode),
-    'program',
-    (value): value is RhythmEditMode => value === 'program' || value === 'rules'
-  );
-  const [program, setProgram] = usePersistentState(
-    stateKey(compositionStateKeys.rhythmEditPattern),
-    initialProgram,
-    acceptsString
-  );
-  const [rules, setRules] = usePersistentState(
-    stateKey(compositionStateKeys.rhythmEditRules),
-    initialRules,
-    acceptsString
-  );
-  const [lengths, setLengths] = usePersistentState(
-    stateKey(compositionStateKeys.rhythmEditLengths),
-    '',
-    acceptsString
-  );
-  const [grouping, setGrouping] = usePersistentState<GroupingPolicy>(
-    stateKey(compositionStateKeys.rhythmEditGrouping),
-    'drop',
-    (value): value is GroupingPolicy => value === 'drop' || value === 'keep' || value === 'follow'
-  );
-  const [editSettings, setEditSettings] = usePersistentState<EditSettings>(
-    stateKey(compositionStateKeys.rhythmEditSettings),
-    defaultSettings,
-    acceptsSettings
-  );
+  const [
+    { mode, program, rules, lengths, grouping, editSettings },
+    {
+      mode: setMode,
+      program: setProgram,
+      rules: setRules,
+      lengths: setLengths,
+      grouping: setGrouping,
+      editSettings: setEditSettings,
+    },
+  ] = useModuleState(rhythmEditState, instanceId);
   // Each layer plays on its own voice (primary, secondary, tertiary) unless set here.
   const [layerSounds, setLayerSounds] = usePersistentState<LayerSounds>(
     stateKey(compositionStateKeys.rhythmEditSound),
@@ -247,13 +208,7 @@ export function RhythmEditModule({
     input,
     edited,
     outputs: publishedOutputs,
-  } = useModuleEvaluation(
-    'rhythm-edit',
-    { mode, program, rules, lengths, grouping, editSettings },
-    pickRhythmEditInputs(outputs, routeState, instanceId),
-    { instanceId, instanceLabel, edo },
-    onOutputsChange
-  );
+  } = useModuleEvaluationResult('rhythm-edit', instanceId);
   const error = input
     ? edited.errors.join('; ')
     : treated
@@ -311,11 +266,11 @@ export function RhythmEditModule({
   function resetRhythmEdit() {
     preview.stop('');
     setMode('program');
-    setProgram(initialProgram);
-    setRules(initialRules);
+    setProgram(rhythmEditInitialProgram);
+    setRules(rhythmEditInitialRules);
     setLengths('');
     setGrouping('drop');
-    setEditSettings(defaultSettings);
+    setEditSettings(rhythmEditDefaultSettings);
     setLayerSounds(noLayerSounds);
     setAudition(['edited']);
     setPreviewVolume(30);

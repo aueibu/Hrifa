@@ -1,13 +1,12 @@
 import { Alert, Badge, Text } from '@mantine/core';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useDesk } from '../desk';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
 import { ModuleDevice } from './ModuleDevice';
 import { ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
 import { SnippetPreview } from './SnippetPreview';
 import classes from './DeskView.module.css';
 
-export interface SnippetSourceModuleProps extends CompositionModuleRoutingProps {
+export interface SnippetSourceModuleProps {
   instanceId: string;
   instanceLabel: string;
   snippetId: string | undefined;
@@ -22,18 +21,11 @@ export function SnippetSourceModule({
   instanceId,
   instanceLabel,
   snippetId,
-  onOutputsChange,
 }: SnippetSourceModuleProps) {
   const { snippets } = useDesk();
   const snippet = snippets.find((candidate) => candidate.id === snippetId);
 
-  const { outputs: publishedOutputs } = useModuleEvaluation(
-    'snippet',
-    {},
-    { snippet },
-    { instanceId, instanceLabel },
-    onOutputsChange
-  );
+  const { outputs: publishedOutputs } = useModuleEvaluationResult('snippet', instanceId);
 
   return (
     <ModuleDevice

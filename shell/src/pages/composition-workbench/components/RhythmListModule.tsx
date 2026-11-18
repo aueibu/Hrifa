@@ -1,5 +1,4 @@
 import { Badge, Button, Switch, Text, TextInput } from '@mantine/core';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import { formatPulses } from '../rhythmNotation';
 import {
@@ -7,14 +6,14 @@ import {
   musicalPlanSeconds,
   transportRhythmContext,
 } from '../rhythmRealization';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
+import { rhythmListInitialText, rhythmListState } from '../runtime/moduleState/rhythmList';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
 import {
-  acceptsBoolean,
   acceptsFiniteNumber,
-  acceptsString,
   compositionInstanceStateKey,
   compositionStateKeys,
   usePersistentState,
@@ -33,9 +32,7 @@ import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
-const initialText = '3 r1 2~ 2 1';
-
-export interface RhythmListModuleProps extends CompositionModuleRoutingProps {
+export interface RhythmListModuleProps {
   instanceId: string;
   instanceLabel: string;
 }
@@ -46,22 +43,11 @@ export interface RhythmListModuleProps extends CompositionModuleRoutingProps {
  * an ordinary `list | duration | inter-onset` packet whose rests are negative durations and whose
  * tie markers sit on the item that starts the tie (see ARCHITECTURE.md, "Rests and ties").
  */
-export function RhythmListModule({
-  instanceId,
-  instanceLabel,
-  onOutputsChange,
-}: RhythmListModuleProps) {
+export function RhythmListModule({ instanceId, instanceLabel }: RhythmListModuleProps) {
   const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'rhythm-list');
-  const [text, setText] = usePersistentState(
-    stateKey(compositionStateKeys.rhythmListText),
-    initialText,
-    acceptsString
-  );
-  // A loop wraps a tie off the end onto the first item; a one-shot ignores it with a warning.
-  const [loop, setLoop] = usePersistentState(
-    stateKey(compositionStateKeys.rhythmListLoop),
-    true,
-    acceptsBoolean
+  const [{ text, loop }, { text: setText, loop: setLoop }] = useModuleState(
+    rhythmListState,
+    instanceId
   );
   const [soundSetting, setSoundSetting] = usePersistentState<SoundOverride | null>(
     stateKey(compositionStateKeys.rhythmListSound),
@@ -75,12 +61,9 @@ export function RhythmListModule({
   );
   const { settings } = useCompositionSettings();
 
-  const { parsed, resolved, outputPacket, outputs } = useModuleEvaluation(
+  const { parsed, resolved, outputPacket, outputs } = useModuleEvaluationResult(
     'rhythm-list',
-    { text, loop },
-    {},
-    { instanceId, instanceLabel },
-    onOutputsChange
+    instanceId
   );
 
   const preview = useModulePreview({
@@ -115,7 +98,7 @@ export function RhythmListModule({
 
   function resetRhythmList() {
     preview.stop('');
-    setText(initialText);
+    setText(rhythmListInitialText);
     setLoop(true);
     setSoundSetting(null);
     setPreviewVolume(30);

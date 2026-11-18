@@ -1,5 +1,4 @@
 import { Alert, Badge, Button, Select, Stack, Text } from '@mantine/core';
-import type { CompositionModuleRoutingProps } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import type { PairCompositionMode } from '../pairComposition';
 import {
@@ -7,13 +6,17 @@ import {
   musicalPlanSeconds,
   transportRhythmContext,
 } from '../rhythmRealization';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
+import {
+  isPairCompositionMode,
+  pairCompositionState,
+} from '../runtime/moduleState/pairComposition';
 import { isSoundOverride, layerSound, type SoundOverride } from '../sounds';
 import { pulseSeconds } from '../transport';
 import { useModulePreview } from '../useModulePreview';
 import {
   acceptsFiniteNumber,
-  acceptsNumberOrString,
   compositionInstanceStateKey,
   compositionStateKeys,
   usePersistentState,
@@ -32,36 +35,17 @@ const modeOptions: { value: PairCompositionMode; label: string }[] = [
   { value: 'contracting', label: 'Contraction' },
 ];
 
-function isMode(value: string): value is PairCompositionMode {
-  return value === 'balancing' || value === 'expanding' || value === 'contracting';
-}
-
-interface PairCompositionModuleProps extends CompositionModuleRoutingProps {
+interface PairCompositionModuleProps {
   instanceId: string;
   instanceLabel: string;
 }
 
-export function PairCompositionModule({
-  instanceId,
-  instanceLabel,
-  onOutputsChange,
-}: PairCompositionModuleProps) {
+export function PairCompositionModule({ instanceId, instanceLabel }: PairCompositionModuleProps) {
   const stateKey = (key: string) =>
     compositionInstanceStateKey(key, instanceId, 'pair-composition');
-  const [a, setA] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.pairCompositionA),
-    3,
-    acceptsNumberOrString
-  );
-  const [b, setB] = usePersistentState<number | string>(
-    stateKey(compositionStateKeys.pairCompositionB),
-    2,
-    acceptsNumberOrString
-  );
-  const [mode, setMode] = usePersistentState<PairCompositionMode>(
-    stateKey(compositionStateKeys.pairCompositionMode),
-    'balancing',
-    (value): value is PairCompositionMode => typeof value === 'string' && isMode(value)
+  const [{ a, b, mode }, { a: setA, b: setB, mode: setMode }] = useModuleState(
+    pairCompositionState,
+    instanceId
   );
   const [midiNote, setMidiNote] = usePersistentState(
     stateKey(compositionStateKeys.pairCompositionMidiNote),
@@ -84,12 +68,9 @@ export function PairCompositionModule({
   );
   const { settings } = useCompositionSettings();
 
-  const { generated, outputs: publishedOutputs } = useModuleEvaluation(
+  const { generated, outputs: publishedOutputs } = useModuleEvaluationResult(
     'pair-composition',
-    { a, b, mode },
-    {},
-    { instanceId, instanceLabel },
-    onOutputsChange
+    instanceId
   );
 
   const preview = useModulePreview({
@@ -206,7 +187,7 @@ export function PairCompositionModule({
               value={mode}
               data={modeOptions}
               allowDeselect={false}
-              onChange={(value) => value && isMode(value) && setMode(value)}
+              onChange={(value) => value && isPairCompositionMode(value) && setMode(value)}
             />
           </InspectorSection>
 

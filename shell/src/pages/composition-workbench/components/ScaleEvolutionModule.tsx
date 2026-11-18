@@ -3,7 +3,6 @@ import {
   compositionOutputOptions,
   outputRefKey,
   parseOutputRef,
-  type CompositionModuleRoutingProps,
   type CompositionOutputRef,
   type PublishedCompositionOutput,
 } from '../compositionRouting';
@@ -11,15 +10,9 @@ import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
 import type { DataPacket } from '../model';
 import { pitchClassName } from '../pitch';
-import { pickScaleEvolutionInputs } from '../runtime/evaluators/scaleEvolution';
-import { useModuleEvaluation } from '../runtime/useModuleEvaluation';
-import {
-  acceptsFiniteNumber,
-  acceptsString,
-  compositionInstanceStateKey,
-  compositionStateKeys,
-  usePersistentState,
-} from '../usePersistentState';
+import { useModuleEvaluationResult } from '../runtime/evaluationStore';
+import { useModuleState } from '../runtime/moduleState';
+import { scaleEvolutionState } from '../runtime/moduleState/scaleEvolution';
 import { DurationStrip } from './DurationStrip';
 import { ModuleDevice } from './ModuleDevice';
 import { InspectorSection, ModuleInspectorContent, ModuleOutputsSection } from './ModuleHost';
@@ -36,7 +29,7 @@ function rawIntervalLine(source: DataPacket | undefined) {
   return source.items.map((item) => String(item.value)).join(', ');
 }
 
-export interface ScaleEvolutionModuleProps extends CompositionModuleRoutingProps {
+export interface ScaleEvolutionModuleProps {
   instanceId: string;
   instanceLabel: string;
   outputs: PublishedCompositionOutput[];
@@ -50,20 +43,12 @@ export function ScaleEvolutionModule({
   outputs,
   routeState,
   onBind,
-  onOutputsChange,
 }: ScaleEvolutionModuleProps) {
   const { settings } = useCompositionSettings();
   const edo = settings.edo;
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'scale-evolution');
-  const [intervalText, setIntervalText] = usePersistentState(
-    stateKey(compositionStateKeys.scaleEvolutionIntervals),
-    '3, 2',
-    acceptsString
-  );
-  const [root, setRoot] = usePersistentState(
-    stateKey(compositionStateKeys.scaleEvolutionRoot),
-    0,
-    acceptsFiniteNumber
+  const [{ intervalText, root }, { intervalText: setIntervalText, root: setRoot }] = useModuleState(
+    scaleEvolutionState,
+    instanceId
   );
 
   const binding = routeState.sequence;
@@ -73,13 +58,7 @@ export function ScaleEvolutionModule({
     generated,
     stagePitchesPacket,
     outputs: publishedOutputs,
-  } = useModuleEvaluation(
-    'scale-evolution',
-    { intervalText, root },
-    pickScaleEvolutionInputs(outputs, routeState, instanceId),
-    { instanceId, instanceLabel, edo },
-    onOutputsChange
-  );
+  } = useModuleEvaluationResult('scale-evolution', instanceId);
 
   const sequenceOptions = compositionOutputOptions(outputs, instanceId, compatibleIntervalSource);
 

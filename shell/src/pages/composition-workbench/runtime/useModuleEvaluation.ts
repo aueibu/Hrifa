@@ -22,8 +22,8 @@ function useShallowStable<T extends object>(value: T): T {
 
 /**
  * Runs a module's registered evaluator once per change of its state, inputs or context (compared
- * field by field) and publishes the outputs in one effect. Returns the whole evaluation, so the
- * component draws from the same result it published. The label is not part of the computation: a
+ * field by field) and publishes the outputs in one effect. Returns the whole evaluation. Only the
+ * module's runner calls it; the view draws from the same result through the evaluation store. The label is not part of the computation: a
  * rename rebuilds only the `{ ref, label, packet }` wrappers and keeps every packet as it was.
  */
 export function useModuleEvaluation<K extends EvaluatedModuleId>(
