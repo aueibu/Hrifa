@@ -58,7 +58,14 @@ async function setVolumeToThirty(user: ReturnType<typeof userEvent.setup>, acces
 describe('CompositionWorkbenchPage', () => {
   it('opens in the module-first composition view', () => {
     renderPage();
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    // Exactly these tabs and no other (a module must not get one): the Canvas, Modules and Clip editor docker
+    // tabs and the Canvas, Desk and Edit screenset tabs in the footer.
+    expect(
+      screen
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent)
+        .sort()
+    ).toEqual(['Canvas', 'Canvas', 'Clip editor', 'Desk', 'Edit', 'Modules']);
     expect(screen.getByRole('heading', { name: 'Interference' })).toBeInTheDocument();
   });
 
@@ -295,7 +302,9 @@ describe('CompositionWorkbenchPage', () => {
     await user.paste('60 [60 64 67] 62');
     expect(screen.getByText('3 groups', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
     expect(screen.getByText('5 pitches', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Pitch list C4 | [C4 E4 G4] | D4' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'Pitch list C4 | [C4 E4 G4] | D4' })
+    ).toBeInTheDocument();
     await setVolumeToThirty(user, 'Pitch preview volume');
   });
 

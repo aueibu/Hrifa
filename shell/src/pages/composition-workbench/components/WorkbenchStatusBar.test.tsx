@@ -1,15 +1,17 @@
 import { fireEvent, render, screen } from '@test-utils';
+import { seedWorkbenchScreensets } from '../layout/workbenchScreensets';
 import { InfoBarActiveContext, InfoTooltip } from './hoverInfo';
-import { WorkbenchStatusBar, type WorkspaceView } from './WorkbenchStatusBar';
+import { WorkbenchStatusBar } from './WorkbenchStatusBar';
 
 function Harness({
   onToggle = vi.fn(),
   onSettings = vi.fn(),
   open = false,
   settingsOpen = false,
-  view = 'canvas' as WorkspaceView,
-  onView = vi.fn(),
+  active = 'canvas',
+  onActivate = vi.fn(),
 }) {
+  const store = { ...seedWorkbenchScreensets(), active };
   return (
     <InfoBarActiveContext.Provider value>
       <div>
@@ -24,21 +26,29 @@ function Harness({
         onToggleInspector={onToggle}
         settingsOpen={settingsOpen}
         onToggleSettings={onSettings}
-        view={view}
-        onView={onView}
+        screensets={{
+          store,
+          onActivate,
+          onAdd: vi.fn(),
+          onRename: vi.fn(),
+          onDuplicate: vi.fn(),
+          onDelete: vi.fn(),
+        }}
       />
     </InfoBarActiveContext.Provider>
   );
 }
 
 describe('workbench status bar', () => {
-  it('switches the workspace view, marking the current one', () => {
-    const onView = vi.fn();
-    render(<Harness view="canvas" onView={onView} />);
-    expect(screen.getByRole('radio', { name: 'Canvas' }).getAttribute('aria-checked')).toBe('true');
-    expect(screen.getByRole('radio', { name: 'Desk' }).getAttribute('aria-checked')).toBe('false');
-    fireEvent.click(screen.getByRole('radio', { name: 'Desk' }));
-    expect(onView).toHaveBeenCalledWith('desk');
+  it('shows the screensets as meta-tabs and switches between them, marking the current one', () => {
+    const onActivate = vi.fn();
+    render(<Harness active="canvas" onActivate={onActivate} />);
+    const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent);
+    expect(tabs).toEqual(['Canvas', 'Desk', 'Edit']);
+    expect(screen.getByRole('tab', { name: 'Canvas' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'Desk' }).getAttribute('aria-selected')).toBe('false');
+    fireEvent.click(screen.getByRole('tab', { name: 'Desk' }));
+    expect(onActivate).toHaveBeenCalledWith('desk');
   });
 
   it('shows what the pointer is on, found from the nearest element with data-info', () => {

@@ -59,6 +59,28 @@
   overflow-y: auto;
 }
 
+/*
+ * A workbench panel's body inside its docker (workbenchPanels.tsx): fills the docker. The canvas and desk clip; the module
+ * and clip editor panels scroll on their own, as the old bottom pane did. `relative` is the canvas takeover slot's frame.
+ */
+.dockPanel,
+.dockPanelScroll {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.dockPanel {
+  overflow: hidden;
+}
+
+.dockPanelScroll {
+  overflow: auto;
+}
+
 /* The module panel meets the stage's edges, as the canvas above it does, and ends against the status bar. */
 .detailBody {
   height: 100%;
@@ -650,4 +672,10 @@
   min-height: 6rem;
   overflow: auto;
   padding: 0.4rem 0.5rem;
+}
+
+/* The Stage sits between the inspector and settings regions and fills the row. */
+.stageColumn {
+  min-height: 0;
+  min-width: 0;
 }

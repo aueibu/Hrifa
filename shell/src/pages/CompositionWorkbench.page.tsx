@@ -11,10 +11,30 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
+import {
+  addScreenset,
+  buildStageRegistry,
+  deleteScreenset,
+  DockStage,
+  duplicateScreenset,
+  PanelsMenu,
+  renameScreenset,
+  setActiveScreenset,
+  type StageApi,
+} from '../components/Stage/dock';
 import { Surface } from '../components/Surface/Surface';
+import type { Screenset } from '../lib/stage';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
-import { ClipEditorSlot } from './composition-workbench/components/ClipEditorSlot';
+import {
+  CanvasTakeoverProvider,
+  CanvasTakeoverSlot,
+} from './composition-workbench/components/canvasTakeover';
+import {
+  BlankFloor,
+  ClipEditorSlot,
+  ClipTargetGuard,
+} from './composition-workbench/components/ClipEditorSlot';
 import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
@@ -23,12 +43,8 @@ import { DeveloperMenu } from './composition-workbench/components/DeveloperMenu'
 import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
 import { ModuleInspectorSlotContext } from './composition-workbench/components/ModuleHost';
 import { ProjectMenu } from './composition-workbench/components/ProjectMenu';
-import { SplitStage, clampSplit } from './composition-workbench/components/SplitStage';
 import { TransportBar } from './composition-workbench/components/TransportBar';
-import {
-  WorkbenchStatusBar,
-  type WorkspaceView,
-} from './composition-workbench/components/WorkbenchStatusBar';
+import { WorkbenchStatusBar } from './composition-workbench/components/WorkbenchStatusBar';
 import { nextFreePosition, type Position } from './composition-workbench/compositionLayout';
 import type { CompositionOutputRef } from './composition-workbench/compositionRouting';
 import { CompositionSettingsProvider } from './composition-workbench/compositionSettings';
@@ -51,6 +67,23 @@ import { DeskProvider } from './composition-workbench/desk';
 import { evaluatePatch } from './composition-workbench/evaluator';
 import { createDefaultPatch } from './composition-workbench/examples';
 import { recordChange, recordGroup } from './composition-workbench/history';
+import { useStageBoxRem } from './composition-workbench/layout/useStageBoxRem';
+import {
+  WORKBENCH_KINDS,
+  WorkbenchPanelsContext,
+  type WorkbenchPanelNodes,
+} from './composition-workbench/layout/workbenchPanels';
+import {
+  acceptsScreensetStore,
+  bringPanelForward,
+  CLIP_EDITOR_PANEL,
+  isPanelShown,
+  MODULE_DETAIL_PANEL,
+  parseStoredScreensets,
+  screensetForCanvas,
+  seedStoreFromStorage,
+  CANVAS_PANEL,
+} from './composition-workbench/layout/workbenchScreensets';
 import type { PatchDocument } from './composition-workbench/model';
 import { loadSavedPatch } from './composition-workbench/persistence';
 import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
@@ -96,12 +129,8 @@ function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
   }
 }
 
-/**
- * The view that is not showing. visibility alone is not enough: the canvas's own elements set
- * `visibility: visible`, which wins over a hidden parent, so its nodes showed through the desk.
- * Opacity hides everything under it, and pointer-events keeps it from taking clicks.
- */
-const inactiveViewStyle = { opacity: 0, pointerEvents: 'none', visibility: 'hidden' } as const;
+/** The workbench's panels, registered once: the Stage parks what is not showing (never display: none). */
+const WORKBENCH_REGISTRY = buildStageRegistry(WORKBENCH_KINDS, []);
 
 export function CompositionWorkbenchPage() {
   const [patch] = useState<PatchDocument>(() => loadSavedPatch(createDefaultPatch));
@@ -136,21 +165,34 @@ export function CompositionWorkbenchPage() {
   );
   // The inspector element the active module's setup controls are portaled into.
   const [moduleInspectorSlot, setModuleInspectorSlot] = useState<HTMLElement | null>(null);
-  const [canvasSplit, setCanvasSplit] = usePersistentState<number>(
-    compositionStateKeys.canvasSplit,
-    0.6,
-    (value): value is number => typeof value === 'number' && Number.isFinite(value)
+  // The center's layout: this project's screensets (Canvas, Desk, Edit and the person's own). A project with none
+  // seeds them once from its old split, collapse and view keys; the key is never an undo step.
+  const [screensetStore, setScreensetStore] = usePersistentState(
+    compositionStateKeys.screensets,
+    seedStoreFromStorage,
+    acceptsScreensetStore,
+    parseStoredScreensets
   );
-  const [detailCollapsed, setDetailCollapsed] = usePersistentState<boolean>(
-    compositionStateKeys.detailCollapsed,
-    false,
-    (value): value is boolean => typeof value === 'boolean'
+  const screenset: Screenset = screensetStore.screensets[screensetStore.active];
+  const updateScreenset = useCallback(
+    (fn: (s: Screenset) => Screenset) =>
+      setScreensetStore((store) => {
+        const current = store.screensets[store.active];
+        const next = fn(current);
+        return next === current
+          ? store
+          : { ...store, screensets: { ...store.screensets, [store.active]: next } };
+      }),
+    [setScreensetStore]
   );
-  const [workspaceView, setWorkspaceView] = usePersistentState<WorkspaceView>(
-    compositionStateKeys.workspaceView,
-    'canvas',
-    (value): value is WorkspaceView => value === 'canvas' || value === 'desk'
-  );
+  // The Stage's functions, for the callbacks below (show a panel, which also expands its docker) and the Panels menu.
+  const stageBox = useStageBoxRem();
+  const stageApiRef = useRef<StageApi | null>(null);
+  const [stageApi, setStageApi] = useState<StageApi | null>(null);
+  const onStageApi = useCallback((api: StageApi | null) => {
+    stageApiRef.current = api;
+    setStageApi(api);
+  }, []);
   const [inspectorOpen, setInspectorOpen] = usePersistentState<boolean>(
     compositionStateKeys.inspectorOpen,
     true,
@@ -208,6 +250,21 @@ export function CompositionWorkbenchPage() {
   useEffect(() => {
     outputStore.prune(compositionInstances.map((instance) => instance.id));
   }, [compositionInstances, outputStore]);
+
+  // The front tab of the Detail docker follows the exclusive target (a clip, or a module): when the target flips, the
+  // matching panel comes to the front in every screenset (expanding nothing). A click on the other tab does not change
+  // the target, and stays until the target flips again.
+  const clipOpen = editorClipTarget !== null;
+  // Starts at the mount value, so a reload keeps the stored tab choice; the rule applies only when the target flips.
+  const lastClipOpen = useRef<boolean>(clipOpen);
+  useEffect(() => {
+    if (lastClipOpen.current === clipOpen) {
+      return;
+    }
+    lastClipOpen.current = clipOpen;
+    const panel = clipOpen ? CLIP_EDITOR_PANEL : MODULE_DETAIL_PANEL;
+    setScreensetStore((store) => bringPanelForward(store, panel));
+  }, [clipOpen, setScreensetStore]);
 
   // The latest clip target, read by the stable bindModulePort below.
   const editorClipTargetRef = useRef(editorClipTarget);
@@ -319,22 +376,17 @@ export function CompositionWorkbenchPage() {
       setActiveCompositionInstanceId(instanceId);
       setCompositionInspectorTarget({ kind: 'module', instanceId });
       setEditorClipTarget(null);
-      // Opening a module brings its editor back if the detail panel was collapsed.
-      setDetailCollapsed(false);
+      // Opening a module brings its panel forward and expands its docker if it was collapsed.
+      stageApiRef.current?.show(MODULE_DETAIL_PANEL);
     },
-    [
-      setActiveCompositionInstanceId,
-      setCompositionInspectorTarget,
-      setDetailCollapsed,
-      setEditorClipTarget,
-    ]
+    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorClipTarget]
   );
   const openClipEditor = useCallback(
     (snippetId: string) => {
       setEditorClipTarget(snippetId);
-      setDetailCollapsed(false);
+      stageApiRef.current?.show(CLIP_EDITOR_PANEL);
     },
-    [setEditorClipTarget, setDetailCollapsed]
+    [setEditorClipTarget]
   );
   // The open clip is gone: the panel goes blank (nothing open), not back to a module.
   const clearClipTarget = useCallback(() => {
@@ -412,6 +464,86 @@ export function CompositionWorkbenchPage() {
     );
   }
 
+  // The picker's takeover slot lives in the canvas panel and covers it, so it is offered only while the canvas and
+  // the clip editor (whose roll the picker sits beside) are both showing.
+  // The Stage's own check adds its narrow rule (a parked canvas); it lags one render behind, which is accepted.
+  const takeoverAvailable =
+    isPanelShown(screenset, CANVAS_PANEL) &&
+    isPanelShown(screenset, CLIP_EDITOR_PANEL) &&
+    stageApi?.isShown(CANVAS_PANEL) !== false;
+
+  // What each panel shows; the Stage places them (workbenchPanels.tsx). They read the page's state as the old
+  // split pane did, so a page render updates them.
+  const panelNodes: WorkbenchPanelNodes = {
+    canvas: (
+      <>
+        <CompositionCanvas
+          activeInstanceId={shownInstanceId}
+          selected={shownInspectorTarget}
+          instances={compositionInstances}
+          routes={moduleRouteStates}
+          outputs={publishedCompositionOutputs}
+          onSelectModule={selectCompositionModule}
+          onSelectRoute={selectCompositionRoute}
+          onSelectCanvas={() => setCompositionInspectorTarget({ kind: 'canvas' })}
+          onMoveModules={placeCompositionModules}
+          onTidy={placeCompositionModules}
+          onAddModule={addCompositionModule}
+        />
+        <CanvasTakeoverSlot />
+      </>
+    ),
+    desk: (
+      <DeskView
+        onOpenClip={(snippet) => openClipEditor(snippet.id)}
+        onMakeSource={(snippet) => {
+          addCompositionModule('snippet', undefined, snippet.id);
+          // Back to a screenset that shows the canvas, where the new source module appears.
+          const target = screensetForCanvas(screensetStore);
+          if (target !== null) {
+            setScreensetStore((store) => setActiveScreenset(store, target));
+          }
+        }}
+      />
+    ),
+    moduleDetail: (
+      <div className={classes.detailBody}>
+        {panelBlank && <BlankFloor />}
+        {compositionInstances.map((instance) => (
+          <ModuleInstanceHost
+            key={instance.id}
+            store={outputStore}
+            instanceId={instance.id}
+            moduleId={instance.moduleId}
+            instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
+            snippetId={instance.snippetId}
+            shown={shownInstanceId === instance.id}
+            routeState={moduleRouteStates[instance.id]}
+            onBind={bindModulePort}
+            onAddChannel={addMixerChannel}
+            onRemoveChannel={removeMixerChannel}
+            onOutputsChange={outputStore.publish}
+          />
+        ))}
+        {compositionInstances.length === 0 && (
+          <Surface p="lg">
+            <Title order={2} size="h4">
+              No modules placed
+            </Title>
+            <Text c="dimmed" size="sm" mt="xs">
+              Use Add module on the canvas, or right-click it, to place one.
+            </Text>
+          </Surface>
+        )}
+      </div>
+    ),
+    clipEditor: (
+      <div className={classes.moduleHost}>
+        <ClipEditorSlot snippetId={editorClipTarget} onMissing={clearClipTarget} />
+      </div>
+    ),
+  };
+
   return (
     <CompositionSettingsProvider>
       <DeskProvider>
@@ -419,6 +551,7 @@ export function CompositionWorkbenchPage() {
           <PreviewRegistryProvider>
             <MantineThemeProvider theme={compactWorkbenchTheme}>
               <InfoBarActiveContext.Provider value>
+                <ClipTargetGuard snippetId={editorClipTarget} onMissing={clearClipTarget} />
                 <AppShell
                   header={{ height: 56 }}
                   footer={{ height: 39 }}
@@ -490,119 +623,22 @@ export function CompositionWorkbenchPage() {
                               />
                             </div>
                           )}
-                          <SplitStage
-                            split={clampSplit(canvasSplit)}
-                            onSplit={setCanvasSplit}
-                            collapsed={detailCollapsed}
-                            onCollapsed={setDetailCollapsed}
-                            top={
-                              <div style={{ display: 'grid', flex: 1, minHeight: 0 }}>
-                                {/*
-                        Both stay mounted and share one grid cell. The inactive one is only
-                        visibility:hidden, never display:none, because the canvas measures its box:
-                        collapsing it to zero made it refit to a tiny view when shown again.
-                      */}
-                                <div
-                                  // Height 0 with a full-height minimum: the desk fills the cell but never
-                                  // makes the row taller, so it scrolls instead of resizing the canvas.
-                                  style={{
-                                    gridArea: '1 / 1',
-                                    height: 0,
-                                    minHeight: '100%',
-                                    minWidth: 0,
-                                    overflow: 'hidden',
-                                    ...(workspaceView === 'desk'
-                                      ? { zIndex: 1 }
-                                      : inactiveViewStyle),
-                                  }}
-                                  inert={workspaceView !== 'desk'}
-                                >
-                                  <DeskView
-                                    onOpenClip={(snippet) => openClipEditor(snippet.id)}
-                                    onMakeSource={(snippet) => {
-                                      addCompositionModule('snippet', undefined, snippet.id);
-                                      setWorkspaceView('canvas');
-                                    }}
+                          <div className={classes.stageColumn} ref={stageBox.ref}>
+                            <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
+                              <CanvasTakeoverProvider available={takeoverAvailable}>
+                                <WorkbenchPanelsContext.Provider value={panelNodes}>
+                                  <DockStage
+                                    registry={WORKBENCH_REGISTRY}
+                                    screenset={screenset}
+                                    update={updateScreenset}
+                                    widthRem={stageBox.widthRem}
+                                    heightRem={stageBox.heightRem}
+                                    onApi={onStageApi}
                                   />
-                                </div>
-                                <div
-                                  style={{
-                                    // A flex column, as the stage's top pane was: the canvas fills it with flex: 1.
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gridArea: '1 / 1',
-                                    minHeight: 0,
-                                    minWidth: 0,
-                                    ...(workspaceView === 'canvas'
-                                      ? { zIndex: 1 }
-                                      : inactiveViewStyle),
-                                  }}
-                                  inert={workspaceView !== 'canvas'}
-                                >
-                                  <CompositionCanvas
-                                    activeInstanceId={shownInstanceId}
-                                    selected={shownInspectorTarget}
-                                    instances={compositionInstances}
-                                    routes={moduleRouteStates}
-                                    outputs={publishedCompositionOutputs}
-                                    onSelectModule={selectCompositionModule}
-                                    onSelectRoute={selectCompositionRoute}
-                                    onSelectCanvas={() =>
-                                      setCompositionInspectorTarget({ kind: 'canvas' })
-                                    }
-                                    onMoveModules={placeCompositionModules}
-                                    onTidy={placeCompositionModules}
-                                    onAddModule={addCompositionModule}
-                                  />
-                                </div>
-                              </div>
-                            }
-                            bottom={
-                              <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
-                                <div className={classes.detailBody}>
-                                  <div
-                                    className={classes.moduleHost}
-                                    hidden={!panelBlank && editorClipTarget === null}
-                                  >
-                                    <ClipEditorSlot
-                                      snippetId={editorClipTarget}
-                                      onMissing={clearClipTarget}
-                                    />
-                                  </div>
-                                  {compositionInstances.map((instance) => (
-                                    <ModuleInstanceHost
-                                      key={instance.id}
-                                      store={outputStore}
-                                      instanceId={instance.id}
-                                      moduleId={instance.moduleId}
-                                      instanceLabel={compositionInstanceLabel(
-                                        instance,
-                                        compositionInstances
-                                      )}
-                                      snippetId={instance.snippetId}
-                                      shown={shownInstanceId === instance.id}
-                                      routeState={moduleRouteStates[instance.id]}
-                                      onBind={bindModulePort}
-                                      onAddChannel={addMixerChannel}
-                                      onRemoveChannel={removeMixerChannel}
-                                      onOutputsChange={outputStore.publish}
-                                    />
-                                  ))}
-                                  {compositionInstances.length === 0 && (
-                                    <Surface p="lg">
-                                      <Title order={2} size="h4">
-                                        No modules placed
-                                      </Title>
-                                      <Text c="dimmed" size="sm" mt="xs">
-                                        Use Add module on the canvas, or right-click it, to place
-                                        one.
-                                      </Text>
-                                    </Surface>
-                                  )}
-                                </div>
-                              </ModuleInspectorSlotContext.Provider>
-                            }
-                          />
+                                </WorkbenchPanelsContext.Provider>
+                              </CanvasTakeoverProvider>
+                            </ModuleInspectorSlotContext.Provider>
+                          </div>
                           {settingsOpened && (
                             <div className={classes.settingsColumn}>
                               <CompositionSettingsPanel onClose={() => setSettingsOpened(false)} />
@@ -618,8 +654,22 @@ export function CompositionWorkbenchPage() {
                       onToggleInspector={() => setInspectorOpen((open) => !open)}
                       settingsOpen={settingsOpened}
                       onToggleSettings={() => setSettingsOpened((open) => !open)}
-                      view={workspaceView}
-                      onView={setWorkspaceView}
+                      screensets={{
+                        store: screensetStore,
+                        onActivate: (id) => setScreensetStore((st) => setActiveScreenset(st, id)),
+                        onAdd: () => setScreensetStore((st) => addScreenset(st)),
+                        onRename: (id, name) =>
+                          setScreensetStore((st) => renameScreenset(st, id, name)),
+                        onDuplicate: (id) => setScreensetStore((st) => duplicateScreenset(st, id)),
+                        onDelete: (id) => setScreensetStore((st) => deleteScreenset(st, id)),
+                      }}
+                      panelsMenu={
+                        <PanelsMenu
+                          registry={WORKBENCH_REGISTRY.meta}
+                          screenset={screenset}
+                          api={stageApi}
+                        />
+                      }
                     />
                   </AppShell.Footer>
                 </AppShell>

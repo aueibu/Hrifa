@@ -12,7 +12,28 @@ interface ClipEditorSlotProps {
 }
 
 /**
- * The bottom panel's clip editor slot. It ends the clip's hand-edit session whenever the target
+ * Clears an open clip target whose clip is gone from the desk. The page renders it (always mounted), so this holds
+ * even when the clip editor panel is closed. Renders nothing.
+ */
+export function ClipTargetGuard({ snippetId, onMissing }: ClipEditorSlotProps) {
+  const { snippets, loading } = useDesk();
+  const missing =
+    snippetId !== null && !loading && !snippets.some((entry) => entry.id === snippetId);
+  useEffect(() => {
+    if (missing) {
+      onMissing();
+    }
+  }, [missing, onMissing]);
+  return null;
+}
+
+/** The plain floor of a panel with nothing open (no text), shared with the module panel's blank state. */
+export function BlankFloor() {
+  return <div className={classes.empty} />;
+}
+
+/**
+ * The clip editor panel's content. It ends the clip's hand-edit session whenever the target
  * moves off the clip (another clip, a module, or the clip's removal), and asks the page to drop a
  * target that no longer exists. A clip type without an editor shows an empty state.
  */
@@ -37,7 +58,7 @@ export function ClipEditorSlot({ snippetId, onMissing }: ClipEditorSlotProps) {
 
   if (!snippet) {
     // No clip: the panel is blank (a plain floor, no text) unless a module is shown instead.
-    return snippetId === null ? <div className={classes.empty} /> : null;
+    return snippetId === null ? <BlankFloor /> : null;
   }
   const Editor = clipEditorFor(snippet);
   if (Editor) {

@@ -23,7 +23,11 @@ export const compositionStateKeys = {
   detailCollapsed: 'hrifa.composition-workbench.ui.detail-collapsed.v1',
   inspectorOpen: 'hrifa.composition-workbench.ui.inspector-open.v1',
   desk: 'hrifa.composition-workbench.desk.snippets.v1',
+  // Retired (one-Stage M5): `workspaceView`, `canvasSplit` and `detailCollapsed` are no longer written; they seed the
+  // first `screensets` store of a project, once, and are never read again.
   workspaceView: 'hrifa.composition-workbench.ui.workspace-view.v1',
+  // The project's screensets (layout of the center, per project; one JSON value).
+  screensets: 'hrifa.composition-workbench.ui.screensets.v1',
   settingsOpen: 'hrifa.composition-workbench.ui.settings-open.v1',
   moduleRouteStates: 'hrifa.composition-workbench.routing.module-routes.v1',
   melodicizationBindings: 'hrifa.composition-workbench.routing.melodicization.v1',
@@ -127,6 +131,7 @@ export const unrecordedStateKeys: ReadonlySet<string> = new Set<string>([
   compositionStateKeys.detailCollapsed,
   compositionStateKeys.inspectorOpen,
   compositionStateKeys.workspaceView,
+  compositionStateKeys.screensets,
   compositionStateKeys.settingsOpen,
   compositionStateKeys.melodicizationPianoRollView,
   compositionStateKeys.melodicizationInspector,

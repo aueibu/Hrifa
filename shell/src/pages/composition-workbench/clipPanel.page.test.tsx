@@ -27,6 +27,13 @@ function clip(id: string, name: string) {
   return result.snippet;
 }
 
+// The dock keeps its own permanent role="status" notice, so the clip editor's status is found by its text.
+const clipStatus = () =>
+  screen.getByText('No editor for this clip yet.').closest('[role="status"]') as HTMLElement;
+// The screenset meta-tabs in the footer (the docker tabs have their own, same-named, tabs).
+const footerTab = (name: string) =>
+  within(screen.getByRole('contentinfo')).getByRole('tab', { name });
+
 function seed(options: { view?: 'canvas' | 'desk'; collapsed?: boolean } = {}) {
   localStorage.setItem(
     compositionStateKeys.desk,
@@ -60,19 +67,25 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('double-clicking a desk card targets that clip and expands a collapsed panel', async () => {
     const user = userEvent.setup();
-    seed({ collapsed: true });
+    seed();
     render(<CompositionWorkbenchPage />);
     const alpha = await card('Alpha');
-    expect(screen.getByRole('button', { name: 'Show detail panel' })).toBeInTheDocument();
+    // Collapse the Detail docker through its own menu first.
+    await user.click(screen.getByRole('button', { name: 'Docker menu for Detail' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Collapse' }));
+    expect(screen.getByTitle('Expand Detail')).toBeInTheDocument();
 
     await user.dblClick(within(alpha).getByText(/^list \| pitch/));
-    expect(screen.getByRole('button', { name: 'Hide detail panel' })).toBeInTheDocument();
-    const status = screen.getByRole('status');
+    expect(screen.queryByTitle('Expand Detail')).not.toBeInTheDocument();
+    const status = clipStatus();
     expect(status).toBeVisible();
     expect(status).toHaveTextContent('No editor for this clip yet.');
     expect(status).toHaveTextContent('Alpha');
     // The module editors stay mounted, only hidden.
-    const pattern = screen.getByRole('textbox', { name: 'Generator 1 pattern', hidden: true });
+    // Looked up by label, not by role and name: the module panel is parked (visibility hidden) while a clip is open,
+    // and a hidden element has an empty accessible name.
+    const pattern = document.querySelector<HTMLElement>('input[aria-label="Generator 1 pattern"]')!;
+    expect(pattern).not.toBeNull();
     expect(pattern).not.toBeVisible();
     expect(pattern.closest('[hidden]')).not.toBeNull();
   });
@@ -98,8 +111,8 @@ describe('the bottom panel targets a module or a clip', () => {
     expect(hiddenCanvasCell.style.opacity).toBe('0');
     expect(hiddenCanvasCell.style.pointerEvents).toBe('none');
 
-    await user.click(screen.getByRole('radio', { name: /canvas/i }));
-    expect(screen.getByRole('status')).toBeVisible();
+    await user.click(footerTab('Canvas'));
+    expect(clipStatus()).toBeVisible();
     // Selecting a module from the canvas returns the panel to its editor.
     await user.click(
       within(screen.getByLabelText('Composition canvas')).getByRole('button', {
@@ -119,18 +132,18 @@ describe('the bottom panel targets a module or a clip', () => {
 
     await user.dblClick(within(await card('Beta')).getByText(/^list \| pitch/));
     expect(snippetModule.endEditSession).toHaveBeenCalledWith('clip-a');
-    expect(screen.getByRole('status')).toHaveTextContent('Beta');
+    expect(clipStatus()).toHaveTextContent('Beta');
   });
 
   async function openAlpha(user: ReturnType<typeof userEvent.setup>) {
     const alpha = await card('Alpha');
     await user.dblClick(within(alpha).getByText(/^list \| pitch/));
-    expect(screen.getByRole('status')).toBeVisible();
+    expect(clipStatus()).toBeVisible();
     return alpha;
   }
 
   function nothingOpen() {
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByText('No editor for this clip yet.')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('textbox', { name: /Pitch values|pattern/ })).toHaveLength(0);
   }
 
@@ -142,7 +155,9 @@ describe('the bottom panel targets a module or a clip', () => {
 
     await user.click(within(alpha).getByRole('button', { name: 'Delete' }));
     await user.click(within(alpha).getByRole('button', { name: 'Confirm delete' }));
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText('No editor for this clip yet.')).not.toBeInTheDocument()
+    );
     expect(snippetModule.endEditSession).toHaveBeenCalledWith('clip-a');
     nothingOpen();
     expect(localStorage.getItem(compositionStateKeys.editorClipTarget)).toBe('null');
@@ -158,7 +173,7 @@ describe('the bottom panel targets a module or a clip', () => {
     expect(screen.getByRole('button', { name: 'Remove Pitch List' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Play selected module' })).toBeEnabled();
 
-    await user.click(screen.getByRole('radio', { name: /desk/i }));
+    await user.click(footerTab('Desk'));
     await openAlpha(user);
     expect(screen.getByRole('button', { name: 'Play selected module' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Remove Pitch List' })).not.toBeInTheDocument();
@@ -173,11 +188,11 @@ describe('the bottom panel targets a module or a clip', () => {
     render(<CompositionWorkbenchPage />);
     await user.click(screen.getByRole('button', { name: 'Add module' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Pitch List' }));
-    await user.click(screen.getByRole('radio', { name: /desk/i }));
+    await user.click(footerTab('Desk'));
     await openAlpha(user);
 
     await user.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(screen.getByRole('status')).toHaveTextContent('Alpha');
+    expect(clipStatus()).toHaveTextContent('Alpha');
     expect(screen.getByRole('heading', { name: 'Alpha' })).toBeInTheDocument();
   }, 15_000);
 
@@ -218,7 +233,7 @@ describe('the bottom panel targets a module or a clip', () => {
     seed();
     render(<CompositionWorkbenchPage />);
     await user.dblClick(within(await card('Alpha')).getByText(/^list \| pitch/));
-    expect(screen.getByRole('status')).toBeVisible();
+    expect(clipStatus()).toBeVisible();
     expect(canUndo()).toBe(false);
     expect(localStorage.getItem(compositionStateKeys.editorClipTarget)).toBe('"clip-a"');
   });
@@ -265,7 +280,6 @@ describe('New clip', () => {
     await user.click(screen.getByRole('button', { name: 'Undo' }));
     await waitFor(() => expect(screen.queryByDisplayValue('New clip')).not.toBeInTheDocument());
     expect(screen.queryByText('No editor for this clip yet.')).not.toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('textbox', { name: /Pitch values|pattern/ })).toHaveLength(0);
     expect(localStorage.getItem(compositionStateKeys.activeCompositionModule)).toBe('null');
   }, 15_000);

@@ -1,0 +1,162 @@
+import { fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { dockerHolding, parseScreensetStore, type ScreensetStore } from '../../../lib/stage';
+import { CompositionWorkbenchPage } from '../../CompositionWorkbench.page';
+import { canUndo, resetHistory } from '../history';
+import { compositionWorkbenchStorageKey } from '../persistence';
+import { compositionStateKeys } from '../usePersistentState';
+import { WORKBENCH_KNOWN_IDS } from './workbenchScreensets';
+
+const footerTab = (name: string) =>
+  within(screen.getByRole('contentinfo')).getByRole('tab', { name });
+
+function storedStore(): ScreensetStore {
+  const raw = localStorage.getItem(compositionStateKeys.screensets);
+  if (raw === null) {
+    throw new Error('no screenset store was stored');
+  }
+  return parseScreensetStore(raw, WORKBENCH_KNOWN_IDS, {
+    fallback: undefined as unknown as ScreensetStore,
+  });
+}
+
+function clearProject() {
+  localStorage.clear();
+  localStorage.removeItem(compositionWorkbenchStorageKey);
+  resetHistory();
+}
+
+describe('the workbench center on the dock Stage', () => {
+  beforeEach(clearProject);
+
+  it('opens an old project (only the three old keys) in the screenset that reproduces it', async () => {
+    localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify('desk'));
+    localStorage.setItem(compositionStateKeys.canvasSplit, JSON.stringify(0.7));
+    localStorage.setItem(compositionStateKeys.detailCollapsed, JSON.stringify(true));
+    render(<CompositionWorkbenchPage />);
+
+    expect(footerTab('Desk')).toHaveAttribute('aria-selected', 'true');
+    expect(footerTab('Canvas')).toHaveAttribute('aria-selected', 'false');
+    // the desk is in front (its toolbar button is on screen), the canvas is parked
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeVisible());
+    expect(screen.getByLabelText('Composition canvas').closest('[inert]')).not.toBeNull();
+
+    const store = storedStore();
+    expect(store.active).toBe('desk');
+    for (const id of store.order) {
+      const tree = store.screensets[id].tree;
+      if (tree.kind !== 'split') {
+        throw new Error('expected a split root');
+      }
+      expect(tree.children.map((c) => c.weight)).toEqual([0.7, 0.3]);
+      const detail = dockerHolding(tree, 'module-detail');
+      expect(store.screensets[id].collapsed).toEqual([detail?.id]);
+    }
+    // the old keys stay as they were, and seeding is not an undo step
+    expect(localStorage.getItem(compositionStateKeys.canvasSplit)).toBe('0.7');
+    expect(localStorage.getItem(compositionStateKeys.workspaceView)).toBe('"desk"');
+    expect(canUndo()).toBe(false);
+  }, 30_000);
+
+  it('keeps the canvas and every module editor mounted when screensets flip, and outputs still reach a routed module', async () => {
+    const user = userEvent.setup();
+    render(<CompositionWorkbenchPage />);
+    const canvas = screen.getByLabelText('Composition canvas');
+
+    // Route the rhythm from Interference into Melodicization (22 notes with the default resultant).
+    await user.click(within(canvas).getByRole('button', { name: /^Melodicization/ }));
+    await user.click(screen.getByRole('button', { name: 'Rhythm source' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Interference' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Resultant' }));
+    await user.click(screen.getByRole('button', { name: 'Pitch source' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Pitch List · Pitches' }));
+    expect(screen.getByText('22 notes', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
+    const editorBefore = document.querySelector('input[aria-label="Generator 1 pattern"]');
+    expect(editorBefore).not.toBeNull();
+
+    // Desk and Edit screensets: the canvas is the very same element afterwards, parked then back.
+    await user.click(footerTab('Desk'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeVisible());
+    expect(canvas.closest('[inert]')).not.toBeNull();
+    // Interference changes its resultant while the Desk screenset shows: Melodicization still gets it.
+    fireEvent.change(document.querySelector('input[aria-label="Generator 1 pattern"]')!, {
+      target: { value: '4' },
+    });
+    expect(
+      screen.queryByText('22 notes', { selector: '.mantine-Badge-label' })
+    ).not.toBeInTheDocument();
+    await user.click(footerTab('Edit'));
+    await user.click(footerTab('Canvas'));
+
+    expect(screen.getByLabelText('Composition canvas')).toBe(canvas);
+    expect(canvas.closest('[inert]')).toBeNull();
+    expect(document.querySelector('input[aria-label="Generator 1 pattern"]')).toBe(editorBefore);
+    // flipping screensets is layout, never an undo step
+    expect(canUndo()).toBe(true); // the routing above is
+    resetHistory();
+    await user.click(footerTab('Desk'));
+    await user.click(footerTab('Canvas'));
+    expect(canUndo()).toBe(false);
+  }, 40_000);
+
+  it('restores the active screenset and a docker sent elsewhere after a reload', async () => {
+    const user = userEvent.setup();
+    const first = render(<CompositionWorkbenchPage />);
+    await user.click(footerTab('Desk'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeVisible());
+
+    // Send the desk to the Tools docker from its tab's context menu.
+    const deskTab = within(screen.getByRole('region', { name: 'Desk' })).getByRole('tab', {
+      name: 'Desk',
+    });
+    fireEvent.contextMenu(deskTab);
+    await user.click(await screen.findByRole('menuitem', { name: 'Tools' }));
+    await waitFor(() =>
+      expect(dockerHolding(storedStore().screensets.desk.tree, 'desk')?.name).toBe('Tools')
+    );
+    expect(canUndo()).toBe(false);
+    first.unmount();
+
+    // A reload: the same project storage, a fresh page.
+    render(<CompositionWorkbenchPage />);
+    expect(footerTab('Desk')).toHaveAttribute('aria-selected', 'true');
+    expect(
+      within(screen.getByRole('region', { name: 'Tools' })).getByRole('tab', { name: 'Desk' })
+    ).toBeInTheDocument();
+    expect(storedStore().active).toBe('desk');
+  }, 40_000);
+
+  it('clears the open clip target when its clip is deleted while the clip editor tab is closed', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify('desk'));
+    render(<CompositionWorkbenchPage />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeEnabled(), {
+      timeout: 10_000,
+    });
+    await user.click(screen.getByRole('button', { name: 'New clip' }));
+    const input = await screen.findByDisplayValue('New clip');
+    expect(localStorage.getItem(compositionStateKeys.editorClipTarget)).not.toBe('null');
+
+    // Close the Clip editor tab, so nothing of the editor panel is mounted.
+    fireEvent.contextMenu(
+      within(screen.getByRole('region', { name: 'Detail' })).getByRole('tab', {
+        name: 'Clip editor',
+      })
+    );
+    await user.click(await screen.findByRole('menuitem', { name: 'Close Clip editor' }));
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole('region', { name: 'Detail' })).queryByRole('tab', {
+          name: 'Clip editor',
+        })
+      ).not.toBeInTheDocument()
+    );
+
+    const card = input.closest('div[class*="card"]') as HTMLElement;
+    await user.click(within(card).getByRole('button', { name: 'Delete' }));
+    await user.click(within(card).getByRole('button', { name: 'Confirm delete' }));
+    await waitFor(() =>
+      expect(localStorage.getItem(compositionStateKeys.editorClipTarget)).toBe('null')
+    );
+  }, 40_000);
+});

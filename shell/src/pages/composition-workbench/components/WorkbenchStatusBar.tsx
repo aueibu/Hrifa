@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react';
 import { ActionIcon, Text } from '@mantine/core';
+import { ScreensetTabs, type ScreensetTabsProps } from '../../../components/Stage/dock';
 import { useHoverInfo } from './hoverInfo';
 import classes from './WorkbenchStatusBar.module.css';
 
@@ -6,36 +8,28 @@ import classes from './WorkbenchStatusBar.module.css';
 const idleText = 'Hover over a control, a note or a line for details.';
 
 /**
- * The strip along the bottom of the workbench, after Bitwig's: panel toggles at the left, the
- * explanation of whatever the pointer is on in the middle, and more panel toggles at the right. The
- * middle is driven by `data-info` attributes (see `useHoverInfo`), so only this component updates as
- * the pointer moves.
+ * The strip along the bottom of the workbench, after Bitwig's: the inspector toggle and the screenset
+ * meta-tabs (Canvas, Desk, Edit and the person's own) at the left, the explanation of whatever the
+ * pointer is on in the middle, and the Panels menu and settings toggle at the right. The middle is
+ * driven by `data-info` attributes (see `useHoverInfo`), so only this component updates as the
+ * pointer moves.
  */
-export type WorkspaceView = 'canvas' | 'desk';
-
-const views: { id: WorkspaceView; label: string; info: string }[] = [
-  {
-    id: 'canvas',
-    label: 'Canvas',
-    info: 'Show the patch canvas: modules and the cables between them.',
-  },
-  { id: 'desk', label: 'Desk', info: 'Show the desk: snippets set aside for reuse.' },
-];
-
 export function WorkbenchStatusBar({
   inspectorOpen,
   onToggleInspector,
   settingsOpen,
   onToggleSettings,
-  view,
-  onView,
+  screensets,
+  panelsMenu,
 }: {
   inspectorOpen: boolean;
   onToggleInspector(): void;
   settingsOpen: boolean;
   onToggleSettings(): void;
-  view: WorkspaceView;
-  onView(view: WorkspaceView): void;
+  /** The screenset store and its operations (the Stage's `ScreensetTabs`). */
+  screensets: ScreensetTabsProps;
+  /** The Panels menu, placed before the settings toggle. */
+  panelsMenu?: ReactNode;
 }) {
   const info = useHoverInfo();
   return (
@@ -66,22 +60,11 @@ export function WorkbenchStatusBar({
             <path d="M9 4v16" />
           </svg>
         </ActionIcon>
-        {/* Mutually exclusive, so these follow the Tab class: the active view is filled, the rest muted. */}
-        <div className={classes.views} role="radiogroup" aria-label="Workspace view">
-          {views.map((entry) => (
-            <button
-              key={entry.id}
-              type="button"
-              role="radio"
-              aria-checked={view === entry.id}
-              className={classes.view}
-              data-active={view === entry.id || undefined}
-              data-info={entry.info}
-              onClick={() => onView(entry.id)}
-            >
-              {entry.label}
-            </button>
-          ))}
+        <div
+          className={classes.screensets}
+          data-info="Screensets: arrangements of the canvas, desk, modules and clip editor. Switch, add, rename or duplicate them."
+        >
+          <ScreensetTabs {...screensets} />
         </div>
       </div>
       <Text
@@ -94,6 +77,7 @@ export function WorkbenchStatusBar({
         {info || idleText}
       </Text>
       <div className={classes.side} data-end="true">
+        {panelsMenu}
         <ActionIcon
           variant={settingsOpen ? 'light' : 'subtle'}
           size={32}

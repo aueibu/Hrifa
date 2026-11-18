@@ -1,0 +1,85 @@
+/**
+ * The workbench's panel kinds for the dock Stage (one-Stage M5): `canvas`, `desk`, `module-detail` and `clip-editor`.
+ * The kinds are static (module-level), so the registry is built once. The page owns what each panel shows and hands the
+ * four elements down through `WorkbenchPanelsContext`: the Stage renders a panel through a portal at its own place in
+ * the tree, so context from above the Stage reaches the panels, and a page render updates them as it did before the Stage.
+ *
+ * `canvas`, `desk` and `module-detail` are `keepMounted`: the canvas measures its box, the desk keeps its scroll and
+ * edit sessions, and the module editors publish their outputs from effects (until R2 and R3 move that out), so none
+ * of them may unmount when its screenset does not show it or the person closes its tab.
+ */
+import { createContext, useContext, type ReactNode } from 'react';
+import type { PanelKind } from '../../../components/Stage/dock';
+import { HEIGHT_CLASSES, WIDTH_CLASSES, type SlotSize } from '../../../lib/stage';
+import {
+  CANVAS_PANEL,
+  CLIP_EDITOR_PANEL,
+  DESK_PANEL,
+  MODULE_DETAIL_PANEL,
+} from './workbenchScreensets';
+import classes from '../CompositionWorkbench.module.css';
+
+export interface WorkbenchPanelNodes {
+  canvas: ReactNode;
+  desk: ReactNode;
+  moduleDetail: ReactNode;
+  clipEditor: ReactNode;
+}
+
+export const WorkbenchPanelsContext = createContext<WorkbenchPanelNodes | null>(null);
+
+/** One panel's body: fills its docker and clips (the module and editor panels scroll their own contents). */
+function PanelSlot({ which, scroll }: { which: keyof WorkbenchPanelNodes; scroll?: boolean }) {
+  const nodes = useContext(WorkbenchPanelsContext);
+  return (
+    <div
+      className={scroll ? classes.dockPanelScroll : classes.dockPanel}
+      data-workbench-panel={which}
+    >
+      {nodes?.[which] ?? null}
+    </div>
+  );
+}
+
+const SIZES: readonly SlotSize[] = WIDTH_CLASSES.flatMap((width) =>
+  HEIGHT_CLASSES.map((height) => ({ width, height }))
+);
+const MIN_SIZE: SlotSize = { width: 'narrow', height: 'short' };
+
+export const WORKBENCH_KINDS: readonly PanelKind[] = [
+  {
+    id: CANVAS_PANEL,
+    title: 'Canvas',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    keepMounted: true,
+    home: 'Canvas',
+    render: () => <PanelSlot which="canvas" />,
+  },
+  {
+    id: DESK_PANEL,
+    title: 'Desk',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    keepMounted: true,
+    home: 'Desk',
+    render: () => <PanelSlot which="desk" />,
+  },
+  {
+    id: MODULE_DETAIL_PANEL,
+    title: 'Modules',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    keepMounted: true,
+    home: 'Detail',
+    render: () => <PanelSlot which="moduleDetail" scroll />,
+  },
+  {
+    id: CLIP_EDITOR_PANEL,
+    title: 'Clip editor',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    home: 'Detail',
+    render: () => <PanelSlot which="clipEditor" scroll />,
+  },
+];
