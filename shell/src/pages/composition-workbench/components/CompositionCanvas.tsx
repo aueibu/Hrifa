@@ -52,6 +52,7 @@ import {
   type CompositionModuleInstance,
   type ModuleRouteStates,
 } from '../compositionWorkspace';
+import { modulePorts } from '../runtime/modulePorts';
 import {
   categoryOfInlet,
   categoryOfModule,
@@ -96,21 +97,14 @@ interface PortLabel {
   shortLabel?: string;
 }
 
-const routedModulePorts: Partial<Record<CompositionModuleId, PortLabel[]>> = {
-  melodicization: [
-    { id: 'rhythm', label: 'Rhythm' },
-    { id: 'pitches', label: 'Pitch' },
-  ],
-  arithmetic: [
-    { id: 'a', label: 'A' },
-    { id: 'b', label: 'B' },
-  ],
-  'scale-evolution': [{ id: 'sequence', label: 'Sequence' }],
-  'rhythm-edit': [{ id: 'rhythm', label: 'Rhythm' }],
-  'rhythm-householder': [
-    { id: 'rhythm', label: 'Rhythm' },
-    { id: 'axis', label: 'Axis' },
-  ],
+// Labels by port id; which ports a module has comes from the module registry's port table.
+const portLabels: Record<string, Omit<PortLabel, 'id'>> = {
+  rhythm: { label: 'Rhythm' },
+  pitches: { label: 'Pitch' },
+  a: { label: 'A' },
+  b: { label: 'B' },
+  sequence: { label: 'Sequence' },
+  axis: { label: 'Axis' },
 };
 
 /** A module's inlets: fixed per module, except the mixer, whose channels live in its route state. */
@@ -118,7 +112,10 @@ function inletsFor(
   moduleId: CompositionModuleId,
   routeState: ModuleRouteStates[string] | undefined
 ) {
-  return moduleId === 'mixer' ? mixerPortLabels(routeState) : routedModulePorts[moduleId];
+  if (moduleId === 'mixer') {
+    return mixerPortLabels(routeState);
+  }
+  return modulePorts[moduleId]?.map((port) => ({ id: port.id, ...portLabels[port.id] }));
 }
 
 function outputFor(outputs: PublishedCompositionOutput[], ref: CompositionOutputRef | undefined) {

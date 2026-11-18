@@ -337,6 +337,25 @@ Rhythm Householder (`householder.ts`) alters a rhythm along a chosen bias axis w
 
 This replaces a C# prototype whose greedy search barely depended on the input rhythm, whose flips cancelled out in the scoring, and whose reflected onset field was dominated by the input's own spikes.
 
+## Module runtime (`runtime/`)
+
+How the page hosts modules, since R1 (2026-11-18). Behavior is unchanged; the plumbing moved out of
+`CompositionWorkbench.page.tsx`.
+
+- `outputStore.ts` is a pure external store of every module's published outputs (`publish`,
+  `prune`, `get(ref)`, a `list()` array whose identity changes only when an output really changes,
+  `subscribe`). The equality rule is the old one: same keys and the same `packet` and `label`
+  objects means no change. `useOutputs.ts` reads it with `useSyncExternalStore`.
+- `moduleRegistry.tsx` is the one table keyed by module id: `stateKeys`, `ports` (from
+  `modulePorts.ts`, plain data the canvas also reads; the mixer's empty list means routed), `takesOutputs`
+  and `render(props)`.
+- `ModuleInstanceHost.tsx` is a `React.memo` host per placed module: the hidden-unless-shown div, the
+  `ModuleActiveContext` provider and the registry's element. Only a module with `takesOutputs` subscribes
+  to the store, so a publish re-renders the page and the routed modules (those that read outputs), not the source modules.
+- Modules still compute their outputs in their own effects and publish through `onOutputsChange`
+  (the store's `publish`), and still stay mounted while hidden. Moving the computation out of React
+  (R2) and per-instance state in a store so modules may unmount (R3) are the next steps (W-41).
+
 ## Adding a module with playback
 
 The default for any new module that previews sound. Fractioning is the smallest complete example;
@@ -370,8 +389,11 @@ Rhythm Householder shows layered (A/B) playback. Two shared pieces do most of it
    `meter`, `count-in`, and `grouping` buses are reserved for clicks.
 7. **Use the module's instance id as the plan's `sourceId`.** The playhead, global Stop, and
    `stopSource` all find a preview by it.
-8. **Store new persistent keys** in `compositionStateKeys` and list them under the module's
-   `instanceStateKeys` in `CompositionWorkbench.page.tsx`, so deleting the module clears them.
+8. **Store new persistent keys** in `compositionStateKeys` and list them as the module's
+   `stateKeys` in its entry in `runtime/moduleRegistry.tsx`, so deleting the module clears them.
+9. **Register the module in one place**: add its id to `compositionWorkspace.ts`, then one entry in
+   `runtime/moduleRegistry.tsx` (`stateKeys`, `ports` if it takes routed inputs, `takesOutputs`,
+   `render`). The page and the canvas need no change.
 
 Global Stop (header button or space while playing) ends sessions without calling `onComplete`;
 `useModulePreview` notices and calls `onEnd('stopped')`, so don't play through `audioEngine.play`

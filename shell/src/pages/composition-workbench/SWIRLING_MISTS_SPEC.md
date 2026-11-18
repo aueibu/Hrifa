@@ -97,7 +97,7 @@ applies if the map is read as pitch classes later.
 - `mist.ts` (pure: waveform tables, PRNG, evaluate, periods, map, packets) and `mist.test.ts`.
 - `components/SwirlingMistsModule.tsx`.
 - `compositionWorkspace.ts`: add `'swirling-mists'` to the module id union, label map and validator.
-- `CompositionWorkbench.page.tsx`: render branch and `instanceStateKeys` entry.
+- `runtime/moduleRegistry.tsx`: one entry (`stateKeys`, `takesOutputs`, `render`).
 - `usePersistentState.ts`: new `compositionStateKeys`; only parameters persist, tables and samples are
   rebuilt.
 - `signalCategories.ts`: falls through to `numeric` with no change; revisit only if the module should

@@ -2,6 +2,8 @@
 
 **Status: approved by the human 2026-11-14; AMENDED the same day after the M1 checkpoint (named dockers on a split tree instead of fixed areas, screensets per project, drag docking and pinning in scope, a new milestone order). The amendment is awaiting the human's approval.** Drafted after the chord-input arc closed (`ARC.chord-input.md`) and the Stage was adopted inside the note clip editor (W-23 to W-25). Background reading: `arcs/workbench/DESIGN.one-stage.md` (the design: panel model, split tree, screensets, state boundary, migration, decisions D1 onward and open items), `arcs/workbench/RESEARCH.docking-layouts.md` (how other systems do it), `arcs/workbench/STAGE-ADOPTION.md` (terms and the current nesting), `src/pages/stage/ARCHITECTURE.md` section 13, `shell/BACKLOG.md` items tagged `[stage]`, `[shared]` Stage items and the `[workbench]` Stage adoption items.
 
+**AMENDED 2026-11-18 (approved by the human: "okay we can start on phase zero and move into phase 1 ... handle it all", after reviewing the plan `C:\Users\apoor\.claude\plans\d-downloads-workbench-pathway-integratio-ancient-blum.md`):** new milestones R1 to R3 (the module runtime) and a new order: **R1, M5, R2, R3, M4b, M6, M7, M8**. Why: an audit found that every workbench module computes and publishes its outputs inside its own mounted React component (`useEffect(() => onOutputsChange(...))`), outputs live in a page `useState` (every publish re-renders the page and every module), and the page lists modules in a hand-written if/else chain plus two side tables. That forces every module to stay mounted forever, makes pinning (M7) lose unsaved state on remount (DESIGN 8.3), and makes hosting many panels (and later the harmonic lab's panels, a planned Harmonic screenset) expensive. R1 goes before M5 because both rewrite the page's module block; M5 does not depend on M4b. The wider plan (lab seams arc, the lab as a screenset, pitch seam, timeline and context lanes) is in the plan file; only R1 to R3 and the new order belong to this arc.
+
 ## Goal
 The workbench centre is arranged by one Stage instead of hand-built special cases. The top and bottom split, the desk and canvas sharing the top pane, the clip editor area, the module detail area and the canvas takeover all become **panels** shown in **dockers** that the user can name, arrange and recall, so the user can send a panel somewhere else ("send this to the visualizer docker") or drag it there without a code change. Standard proportions (the size classes and the 6rem unit) let dockers slot together and nest.
 
@@ -129,6 +131,30 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [ ] `check:workbench` passes; every existing test passes without weakened assertions
   - [ ] Tests: the session resets per clip without remounting siblings; `reveal` and `focus` reach the roll; the selection chain resolves note to clip to project
   - [ ] `DECISIONS.md` row: the command channel and the selection chain
+- Human checkpoint after: no
+
+### R1: Module runtime, step 1: output store and module registry (no UI change) (added 2026-11-18; runs before M5)
+- Scope: owned workbench paths plus `src/pages/CompositionWorkbench.page.tsx` (lock). (1) A new `src/pages/composition-workbench/runtime/` folder: `outputStore.ts`, a pure external store for published outputs (`publish(instanceId, outputs)` with today's equality rule from `reconcileCompositionOutputs`, `prune(liveInstanceIds)`, `get(ref)`, a stable `list()` snapshot that changes identity only when an output changes, `subscribe`), and a `useOutputs` hook over it via `useSyncExternalStore`. (2) `runtime/moduleRegistry.tsx`: ONE table `moduleId -> { stateKeys, ports?, render(props) }` replacing the page's `instanceStateKeys`, `routedModulePorts` and the if/else render chain (page lines about 95-224 and 754-926); the canvas's own port table (`CompositionCanvas.tsx:99`) reads its port ids from the registry if the shapes allow without behaviour change (labels may stay in the canvas). (3) A memoised per-instance host component with stable callbacks, so a publish no longer re-renders every module: source modules (no `outputs` prop) do not re-render when another module publishes. (4) The page uses the store; `bindModulePort` reads the store instead of closing over the outputs state (stable callback). No module file changes its logic in R1 (only imports if unavoidable). Modules still publish from their effects (R2 moves that).
+- Acceptance:
+  - [ ] `check:workbench` passes; every existing test passes unweakened; `src/pages/CompositionWorkbench.page.test.tsx` and `clipPanel.page.test.tsx` run explicitly and pass
+  - [ ] New tests: `outputStore.test.ts` (publish, same-content publish keeps identity, prune, subscribe notifications); a page-level test that a publish from one source module does not re-render another source module and that a routed module receives the new output
+  - [ ] Adding a module type needs one registry entry (plus its component); the workbench `ARCHITECTURE.md` "adding a module" note (about line 374) and `SWIRLING_MISTS_SPEC.md` pointer updated
+  - [ ] `DECISIONS.md` row W-41: the module runtime direction (registry, external output store; R2 evaluators, R3 state and undo in the store; headless publishing as the target)
+- Human checkpoint after: no
+
+### R2: Module runtime, step 2: pure evaluators (no UI change) (added 2026-11-18; after M5)
+- Scope: owned workbench paths. Each source module's state-to-outputs glue (input resolution, signal treatment, result, packet assembly) moves out of the component into a pure `evaluate(state, inputs, ctx) -> PublishedCompositionOutput[]` registered in the module registry; the runtime (not the component) calls it and publishes. Two or three modules per builder run, simplest first (PitchList, RhythmList, Arithmetic; then Fractioning, PairComposition, ScaleConstruction, ScaleEvolution; then Interference, SwirlingMists, Householder, RhythmEdit; then Melodicization, Snippet). The duplicated publish `useEffect` is removed from each ported module.
+- Acceptance:
+  - [ ] `check:workbench` passes; existing module tests unweakened
+  - [ ] Each ported module has an evaluator unit test (`.test.ts`, node env) comparing against today's output for its default and one edited state
+- Human checkpoint after: no
+
+### R3: Module runtime, step 3: state and undo in the store; modules may unmount (added 2026-11-18)
+- Scope: owned workbench paths. Per-instance module state lives in the runtime store (read once from the same storage keys, written back, history appliers registered by the store per instance key through the existing `registerHistoryApplier`, so `history.ts` does not change); module components read and write through a hook; the runtime evaluates every instance whether or not its view is mounted. `module-detail` and the module list no longer need `keepMounted` or `hidden` hosts.
+- Acceptance:
+  - [ ] `check:workbench` passes; undo, redo, project open and delete-module tests unweakened
+  - [ ] New tests: an unmounted module's output still reaches a downstream module; editing a mounted module and undoing works after the view unmounts and remounts; delete then undo restores the state
+  - [ ] `DECISIONS.md` row: supersedes the "modules must stay mounted to publish" rule in the workbench `ARCHITECTURE.md`
 - Human checkpoint after: no
 
 ### M5: The workbench page on the new Stage
