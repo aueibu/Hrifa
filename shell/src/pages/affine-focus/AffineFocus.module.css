@@ -708,7 +708,9 @@
 .traceStripFrame {
   background: var(--panel);
   border-radius: var(--radius-control);
-  height: 9.25rem;
+  display: flex;
+  height: 11.5rem;
+  justify-content: center;
   overflow: hidden;
   padding: 0.125rem 0.25rem;
 }
@@ -716,6 +718,7 @@
 .traceSvg {
   display: block;
   height: 100%;
+  max-width: 45rem;
   width: 100%;
 }
 
