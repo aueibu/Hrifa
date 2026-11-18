@@ -1,7 +1,8 @@
 /**
  * M8c (thin slice): the Monzo mode of the Relative pitches modal. One kept set of 13 exponents (primes 2 to 41, each -12 to +12)
  * is edited two ways: an always-visible MATRIX or exact -/+ ROWS; a typed box (ratio or cents, Above / Below) sits under both.
- * The values live in the lab state (`state.relative.monzo`, runtime only); this file only draws and reports.
+ * The values live in the picker while it is open (`useLocalMonzo`, M8p) and in the lab state (`state.relative.monzo`, runtime
+ * only) between openings; this file only draws and reports.
  *
  * Matrix (human, 2026-11-17): 13 prime columns by 25 exponent rows (+12 at the top to -12 at the bottom), the 0 row the same row
  * in every column and marked across the whole matrix, a prime header on top and an exponent label column on the left. Hovering a
@@ -52,7 +53,8 @@ export interface MonzoPanelProps {
   view: MonzoView;
   onView: (v: MonzoView) => void;
   monzo: MonzoExps;
-  onMonzo: (prime: MonzoPrime, value: number) => void;
+  /** Set one exponent; `now` draws it at once (a button), otherwise the picker draws it with the next animation frame (painting). */
+  onMonzo: (prime: MonzoPrime, value: number, now?: boolean) => void;
   onReset: () => void;
   /** Add the dialed monzo's landing note. */
   onAddMonzo: () => void;
@@ -96,9 +98,14 @@ export function MonzoPanel({
   const x0 = Math.max(0, Math.floor((width - MONZO_LABEL_W - gridW) / 2));
   const gridH = STRIP_ROWS * rowH;
 
-  // The values as last known (re-read from the props every render, updated at once on a dispatch so one move never repeats a write).
+  // The values as last known: re-read from the props when they change (the picker draws one frame behind the pointer, so an
+  // unrelated render in between must not bring a stale value back), updated at once on a write so one move never repeats it.
   const cur = useRef<number[]>([]);
-  cur.current = MONZO_PRIMES.map((p) => clampExp(monzo[p]));
+  const seen = useRef<MonzoExps | null>(null);
+  if (seen.current !== monzo) {
+    seen.current = monzo;
+    cur.current = MONZO_PRIMES.map((p) => clampExp(monzo[p]));
+  }
   const keys = useRef({ ctrl: false, alt: false });
   const inside = useRef(false);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
@@ -354,7 +361,7 @@ export function MonzoPanel({
                     variant="default"
                     aria-label={`Lower the exponent of ${p}`}
                     disabled={v <= -MONZO_RANGE}
-                    onClick={() => onMonzo(p, v - 1)}
+                    onClick={() => onMonzo(p, clampExp(cur.current[j]) - 1, true)}
                   >
                     −
                   </Button>
@@ -366,7 +373,7 @@ export function MonzoPanel({
                     variant="default"
                     aria-label={`Raise the exponent of ${p}`}
                     disabled={v >= MONZO_RANGE}
-                    onClick={() => onMonzo(p, v + 1)}
+                    onClick={() => onMonzo(p, clampExp(cur.current[j]) + 1, true)}
                   >
                     +
                   </Button>

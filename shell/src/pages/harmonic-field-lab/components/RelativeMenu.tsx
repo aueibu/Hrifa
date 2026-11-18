@@ -39,11 +39,11 @@ import {
   relativeRingAt,
   type Direction,
   type MonzoExps,
-  type MonzoPrime,
   type NearOrder,
   type Note,
   type RingRatio,
 } from '../../../lib/harmonic-field';
+import type { PreviewTarget } from '../audio/plan';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import {
   FIRST_DOZEN_PRIMES,
@@ -75,6 +75,7 @@ import { RelativeColorControls, RelativeColorPanel } from './RelativeColorMenu';
 import { RING_PX_PER_UNIT, RING_R, RingDot } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
 import { Hint, noteHandlers, useLab } from './ui';
+import { useLocalMonzo } from './useLocalMonzo';
 import { useTiles } from './useTiles';
 import classes from './relativeMenu.module.css';
 
@@ -398,19 +399,18 @@ export interface RelativeModalProps {
   onMode: (m: RelativeMode) => void;
   monzoView: MonzoView;
   onMonzoView: (v: MonzoView) => void;
-  /** The kept exponents (lab state), and how they change. */
+  /**
+   * M8p: the kept exponents (lab state) the picker opens with. The painted monzo then lives in the picker (`useLocalMonzo`) and is
+   * handed back once, with `onMonzoCommit`, when the picker closes.
+   */
   monzo: MonzoExps;
-  onMonzo: (prime: MonzoPrime, value: number) => void;
-  onMonzoReset: () => void;
+  onMonzoCommit: (monzo: MonzoExps) => void;
+  /** The painted monzo changed (the page clears its stale message). */
+  onMonzoTouch: () => void;
   /** Add a note by its text (the page dispatches `relative/add`). */
   onAdd: (text: string) => void;
   /** The state's quiet line (a refused or duplicate add), shown in the readout pill. */
   message: string | null;
-  /**
-   * The landing note under the pointer (a ring cell with the current direction, or in Monzo mode the monzo landing while the pointer
-   * is over the matrix or the rows), or null: what holds 1 / 4 / 5 preview. The page owns the sound.
-   */
-  onPreview?: (landing: Note | null) => void;
   /** M8d: the meta ring's two settings sets, kept by the page (runtime only). Without them the modal keeps its own. */
   metaSets?: MetaSets;
   onMetaSets?: (s: MetaSets) => void;
@@ -1163,16 +1163,22 @@ export function RelativeModal({
   onMode,
   monzoView,
   onMonzoView,
-  monzo,
-  onMonzo,
-  onMonzoReset,
+  monzo: initialMonzo,
+  onMonzoCommit,
+  onMonzoTouch,
   onAdd,
   message,
-  onPreview,
   metaSets,
   onMetaSets,
 }: RelativeModalProps) {
   const lab = useLab();
+  // M8p: the painted monzo is local to the picker (one drawn update per animation frame); the lab state gets it when this closes
+  const {
+    monzo,
+    latest: monzoNow,
+    set: setMonzoExp,
+    reset: resetMonzo,
+  } = useLocalMonzo(initialMonzo, onMonzoCommit, onMonzoTouch);
   // the inner ring's field dots: click toggles the subset, Shift+click makes the note the source, right-click or Delete removes it
   // (never 1/1). The ring's own hover stays the source (`hover={fromIdx}`), so no hover handlers here.
   const innerDotProps = (i: number): RingDotExtra => {
@@ -1459,16 +1465,45 @@ export function RelativeModal({
           : null,
     [isMonzo, monzoOver, mLanding, pinLanding, cell, from, dir, rep]
   );
-  const onPreviewRef = useRef(onPreview);
-  onPreviewRef.current = onPreview;
+  // The landing under the pointer is what holds 1 / 4 / 5 sound (1 = that pitch alone, 4 = the picked note and it, 5 = the whole
+  // field and it; absolute pitches, like a library row's). The key carries the landing, the source and the field, so a held key
+  // follows a change under a resting pointer. Owned here (not by the page) so a painted frame re-renders only the picker, and
+  // read from the same value the matrix draws, so sound and picture change together.
+  const audio = lab.audio;
+  const lastTarget = useRef<PreviewTarget | null>(null);
+  const fieldCents = lab.base.field.map((n) => n.c);
+  const fieldSig = fieldCents.join(',');
   useEffect(() => {
-    onPreviewRef.current?.(pointLanding);
-  }, [pointLanding]);
+    const prev = lastTarget.current;
+    if (!pointLanding) {
+      if (prev) {
+        audio.clearPreviewTarget(prev);
+        lastTarget.current = null;
+      }
+      return;
+    }
+    const l = pointLanding.c;
+    const exact = fieldCents.some((c) => Math.abs(c - l) < 1e-6)
+      ? [...fieldCents]
+      : [...fieldCents, l].sort((a, b) => a - b);
+    const next: PreviewTarget = {
+      kind: 'pitches',
+      key: `rel:${from.c}:${l}:${fieldSig}`,
+      cents: [l],
+      variants: { own: [l], rounded: [from.c, l], exact },
+    };
+    lastTarget.current = next;
+    audio.setPreviewTarget(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fieldCents is rebuilt each render; fieldSig stands for it
+  }, [pointLanding, from.c, fieldSig, audio]);
   useEffect(
     () => () => {
-      onPreviewRef.current?.(null);
+      if (lastTarget.current) {
+        audio.clearPreviewTarget(lastTarget.current);
+        lastTarget.current = null;
+      }
     },
-    []
+    [audio]
   );
   // the hovered cell and the direction together are the hover the ghost and the readout follow
   const onHoverRef = useRef(onHover);
@@ -1759,8 +1794,6 @@ export function RelativeModal({
   // M8f pin bar: pin the hovered interval (the key), and what a card does on hover, leave and click
   const cellRef = useRef(cell);
   cellRef.current = cell;
-  const monzoRef = useRef(monzo);
-  monzoRef.current = monzo;
   const pinHoverRef = useRef(pinHover);
   pinHoverRef.current = pinHover;
   const labRef = useRef(lab);
@@ -1790,7 +1823,7 @@ export function RelativeModal({
     if (kind === 'monzo') {
       text =
         pinHoverRef.current ??
-        (isZeroMonzo(monzoRef.current) ? null : fmtRatio(monzoNote(monzoRef.current)));
+        (isZeroMonzo(monzoNow.current) ? null : fmtRatio(monzoNote(monzoNow.current)));
       if (!text) {
         setPinMsg('Paint an interval first: every exponent is 0.');
         return;
@@ -1931,9 +1964,10 @@ export function RelativeModal({
             view={monzoView}
             onView={onMonzoView}
             monzo={monzo}
-            onMonzo={onMonzo}
-            onReset={onMonzoReset}
-            onAddMonzo={() => onAdd(noteText(mLanding))}
+            onMonzo={setMonzoExp}
+            onReset={resetMonzo}
+            // a click adds what the pointer has painted NOW, which can be a frame ahead of the drawn landing
+            onAddMonzo={() => onAdd(noteText(monzoLanding(from, monzoNow.current, rep)))}
             onTyped={onTyped}
             onNear={onNear}
             width={size}

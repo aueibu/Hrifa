@@ -14,13 +14,13 @@ import {
   addProductNotes,
   addRelativeNote,
   clampExp,
+  MONZO_PRIMES,
   productTooMany,
   readNoteText,
   reduceInto,
   removeRelativePitch,
   zeroMonzo,
   type MonzoExps,
-  type MonzoPrime,
   pitchPlace,
   resolveSubset,
   subsetFromSelection,
@@ -706,10 +706,11 @@ export type Action =
   | { type: 'relative/add'; text: string }
   /** Remove the note at this FIELD index (every stored note that folds to that pitch); 1/1 is refused with a quiet line (it always stays). */
   | { type: 'relative/remove'; index: number }
-  /** Set one Monzo exponent (clamped to -6..+6); runtime only. */
-  | { type: 'relative/monzo'; prime: MonzoPrime; value: number }
-  /** Zero every Monzo exponent (the Reset button). */
-  | { type: 'relative/monzoReset' }
+  /**
+   * M8p: the picker hands back its painted Monzo once, when it closes (clamped to -12..+12; runtime only). Painting itself is local
+   * to the picker (`useLocalMonzo`): do not add a per-cell dispatch here, it re-renders the whole page on every cell.
+   */
+  | { type: 'relative/monzoSet'; monzo: MonzoExps }
   /** Clear the quiet line. */
   | { type: 'relative/dismiss' }
   | { type: 'relative/open'; view: RelativeOpenView }
@@ -1279,14 +1280,16 @@ function reduce(s: LabState, a: Action): LabState {
       const out = editTab(s, (x) => regenTab(x, { ...x.gen, preset: '', notes: edit.notes }));
       return { ...out, relative: { ...out.relative, message: null } };
     }
-    case 'relative/monzo': {
-      const value = clampExp(a.value);
-      return s.relative.monzo[a.prime] === value
+    case 'relative/monzoSet': {
+      // M8p: the picker hands back its painted monzo once, when it closes
+      const next = zeroMonzo();
+      for (const p of MONZO_PRIMES) {
+        next[p] = clampExp(a.monzo[p]);
+      }
+      return MONZO_PRIMES.every((p) => s.relative.monzo[p] === next[p])
         ? s
-        : { ...s, relative: { ...s.relative, monzo: { ...s.relative.monzo, [a.prime]: value } } };
+        : { ...s, relative: { ...s.relative, monzo: next } };
     }
-    case 'relative/monzoReset':
-      return { ...s, relative: { ...s.relative, monzo: zeroMonzo() } };
     case 'relative/dismiss':
       return s.relative.message === null ? s : { ...s, relative: { ...s.relative, message: null } };
     case 'relative/open':

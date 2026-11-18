@@ -199,22 +199,20 @@ describe('actions', () => {
     const s = run(initialState(), { type: 'gen/method', method: 'relative' });
     expect(tabRatios(s)).toEqual(['1/1']);
   });
-  it('rows 21 and 22: monzo values are kept, clamped, and Reset zeroes them', () => {
+  it('rows 21 and 22: the picker hands its monzo back once (M8p), clamped, kept across adds; zero resets it', () => {
     let s = initialState();
     expect(s.relative.monzo).toEqual(zeroMonzo());
-    s = run(
-      s,
-      { type: 'relative/monzo', prime: 7, value: 1 },
-      { type: 'relative/monzo', prime: 3, value: 99 }
-    );
+    s = run(s, { type: 'relative/monzoSet', monzo: { ...zeroMonzo(), 7: 1, 3: 99, 41: -50 } });
     expect(s.relative.monzo[7]).toBe(1);
     expect(s.relative.monzo[3]).toBe(12);
-    s = run(s, { type: 'relative/monzo', prime: 41, value: -50 });
     expect(s.relative.monzo[41]).toBe(-12);
-    // adding a note or switching tabs does not touch them
+    // adding a note or switching tabs does not touch it
     s = run(s, { type: 'gen/method', method: 'relative' }, { type: 'relative/add', text: '3/2' });
     expect(s.relative.monzo[7]).toBe(1);
-    s = run(s, { type: 'relative/monzoReset' });
+    // an equal monzo is the same state (no write)
+    expect(run(s, { type: 'relative/monzoSet', monzo: s.relative.monzo })).toBe(s);
+    // the picker's Reset is local; handing back all zeros resets the stored one
+    s = run(s, { type: 'relative/monzoSet', monzo: zeroMonzo() });
     expect(s.relative.monzo).toEqual(zeroMonzo());
     expect(Object.keys(s.relative.monzo)).toHaveLength(13);
   });
