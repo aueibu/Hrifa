@@ -17,3 +17,4 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| package.json | affine-focus | 2026-11-18 | add check:affine-focus script at new-arc setup |
