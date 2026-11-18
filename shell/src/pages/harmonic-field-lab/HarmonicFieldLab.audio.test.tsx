@@ -326,3 +326,60 @@ describe('the sound follows the Roughness Partials and Rolloff (Developer option
     ).toEqual(['Sine', 'Harmonic (7 partials)']);
   });
 });
+
+describe('Partials and Rolloff boxes in the Sound settings popover (A1b)', () => {
+  const box = (name: 'Partials' | 'Rolloff') => screen.getByRole('textbox', { name }) as HTMLInputElement;
+  const type = (name: 'Partials' | 'Rolloff', v: string) => {
+    fireEvent.change(box(name), { target: { value: v } });
+    fireEvent.blur(box(name));
+  };
+  const waveLabels = () =>
+    [...(screen.getByRole('combobox', { name: 'Wave' }) as HTMLSelectElement).options].map(
+      (o) => o.textContent
+    );
+  const openHarmonic = () => {
+    window.localStorage.setItem(KEY_SETTINGS, JSON.stringify({ wave: 'harmonic' }));
+    render(<HarmonicFieldLabPage />);
+    openSound();
+  };
+
+  it('rows 1 and 2: the boxes show 7 and 0.88; typing Partials 3 changes the sound the Wave select names', () => {
+    openHarmonic();
+    expect(box('Partials').value).toBe('7');
+    expect(box('Rolloff').value).toBe('0.88');
+    expect(box('Partials')).toBeEnabled();
+    type('Partials', '3');
+    expect(waveLabels()).toEqual(['Sine', 'Harmonic (3 partials)']);
+    expect(box('Partials').value).toBe('3');
+  });
+
+  it('row 5: a Partials value above 16 is not accepted', () => {
+    openHarmonic();
+    type('Partials', '20');
+    expect(waveLabels()).toEqual(['Sine', 'Harmonic (7 partials)']);
+  });
+
+  it('D2: with the Sine wave the boxes are shown but disabled', () => {
+    render(<HarmonicFieldLabPage />);
+    openSound();
+    expect(box('Partials')).toBeDisabled();
+    expect(box('Rolloff')).toBeDisabled();
+  });
+
+  it('D1: with the link off the boxes are disabled at 7 and 0.88 and a note says so', () => {
+    writeDeveloperOptions({ soundFollowsRoughness: false });
+    openHarmonic();
+    expect(box('Partials')).toBeDisabled();
+    expect(box('Partials').value).toBe('7');
+    expect(box('Rolloff').value).toBe('0.88');
+    expect(screen.getByText(/Linked off in Developer: the sound uses 7 and 0\.88\./)).toBeTruthy();
+  });
+
+  it('D3: a Rolloff under 0.5 is kept in the box and a note says the sound uses 0.5', () => {
+    openHarmonic();
+    expect(screen.queryByText('The sound uses 0.5.')).toBeNull();
+    type('Rolloff', '0.3');
+    expect(box('Rolloff').value).toBe('0.3');
+    expect(screen.getByText('The sound uses 0.5.')).toBeTruthy();
+  });
+});
