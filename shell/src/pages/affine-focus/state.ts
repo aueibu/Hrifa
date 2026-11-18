@@ -78,9 +78,36 @@ export interface ScenarioExample {
   label: string;
   subtitle: string;
   patch: Partial<AffineFocusPersistedState>;
+  /** Optional sequence of gamut focus-index groups to pre-walk as a multi-step trajectory. */
+  chainFoci?: number[][];
 }
 
 export const SCENARIO_EXAMPLES: ScenarioExample[] = [
+  {
+    id: 'voice-trace-drift',
+    label: 'Voice-Trace Drift Demo (4-Step P→L→P→L)',
+    subtitle: '12-EDO · C→Cm→A♭→Fm→D♭ · shows (±kR) octave drift vs. Smoothest',
+    patch: {
+      presetId: '12-edo',
+      seedText: '0, 4, 7',
+      domain: 'gamut-steps',
+      rule: 'dual-focus',
+      dualConstraint: 'swap',
+      folding: 'folded',
+      quantize: 'exact',
+      identity: 'unordered-set',
+      focusPolicy: 'current-members',
+      activeTab: 'family',
+      traceConnectMode: 'map',
+      traceRegisterMode: 'accumulate',
+    },
+    chainFoci: [
+      [0, 7],
+      [0, 3],
+      [0, 8],
+      [5, 8],
+    ],
+  },
   {
     id: 'ji-gamut-dilation',
     label: 'JI Scale-Step Dilation (a = 2)',

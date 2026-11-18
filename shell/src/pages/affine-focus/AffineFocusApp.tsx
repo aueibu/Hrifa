@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, SegmentedControl } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
   appendTrajectoryStep,
+  applyFocusTransform,
   computeClosure,
   computeImmediateFamily,
   createInitialTrajectory,
@@ -33,6 +34,7 @@ import {
   loadPersistedState,
   savePersistedState,
   type AffineFocusPersistedState,
+  type ScenarioExample,
   type WorkspaceTab,
 } from './state';
 import classes from './AffineFocus.module.css';
@@ -140,14 +142,28 @@ export function AffineFocusApp() {
     createInitialTrajectory(parsedSeed.pitches, config)
   );
   const [activeTrajIdx, setActiveTrajIdx] = useState(0);
+  const [presetApplyTick, setPresetApplyTick] = useState(0);
+  const pendingChainRef = useRef<number[][] | null>(null);
 
-  // Reset trajectory when seed, gamut, domain, or rule changes
+  // Reset trajectory when seed, gamut, domain, or rule changes (or apply preset chainFoci)
   useEffect(() => {
-    const init = createInitialTrajectory(parsedSeed.pitches, config);
-    setTrajectory(init);
-    setActiveTrajIdx(0);
+    let next = createInitialTrajectory(parsedSeed.pitches, config);
+    const pendingChain = pendingChainRef.current;
+    pendingChainRef.current = null;
+    if (pendingChain && pendingChain.length > 0) {
+      for (const focusIdxList of pendingChain) {
+        const focusPitches = focusIdxList.map((idx) => config.gamut.pitches[idx]).filter(Boolean);
+        if (focusPitches.length > 0) {
+          const currentPitches = next[next.length - 1].pitches;
+          const res = applyFocusTransform(currentPitches, focusPitches, config);
+          next = appendTrajectoryStep(next, res);
+        }
+      }
+    }
+    setTrajectory(next);
+    setActiveTrajIdx(next.length - 1);
     setInspectedEdgeResult(null);
-  }, [parsedSeed.pitches, config]);
+  }, [parsedSeed.pitches, config, presetApplyTick]);
 
   const currentSourcePitches = trajectory[activeTrajIdx]?.pitches ?? parsedSeed.pitches;
 
@@ -191,6 +207,12 @@ export function AffineFocusApp() {
 
   const handlePatch = (patch: Partial<AffineFocusPersistedState>) => {
     setState((prev) => ({ ...prev, ...patch }));
+  };
+
+  const handleApplyExample = (example: ScenarioExample) => {
+    pendingChainRef.current = example.chainFoci ?? null;
+    setPresetApplyTick((t) => t + 1);
+    setState((prev) => ({ ...prev, ...example.patch }));
   };
 
   const handlePatchAudio = (patch: Partial<AudioSettings>) => {
@@ -375,7 +397,7 @@ export function AffineFocusApp() {
           customError={customParsed?.error}
           onPatch={handlePatch}
           onToggleGamutIndex={handleToggleGamutIndex}
-          onApplyExample={handlePatch}
+          onApplyExample={handleApplyExample}
         />
 
         {/* Center Column: Top Focus Geometry Stage + Bottom Exploration Tabs */}

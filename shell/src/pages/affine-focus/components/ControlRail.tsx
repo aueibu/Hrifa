@@ -12,7 +12,7 @@ import {
   type TransformDomain,
   type TuningGamut,
 } from '../../../lib/affine-focus';
-import { SCENARIO_EXAMPLES, type AffineFocusPersistedState } from '../state';
+import { SCENARIO_EXAMPLES, type AffineFocusPersistedState, type ScenarioExample } from '../state';
 import classes from '../AffineFocus.module.css';
 
 export function ControlRail({
@@ -32,7 +32,7 @@ export function ControlRail({
   customError?: string;
   onPatch: (patch: Partial<AffineFocusPersistedState>) => void;
   onToggleGamutIndex: (index: number) => void;
-  onApplyExample: (patch: Partial<AffineFocusPersistedState>) => void;
+  onApplyExample: (example: ScenarioExample) => void;
 }) {
   const N = gamut.pitches.length;
   const activeIndices = new Set(seedPitches.map((p) => p.index).filter((i) => i >= 0));
@@ -62,7 +62,7 @@ export function ControlRail({
             onChange={(e) => {
               const ex = SCENARIO_EXAMPLES.find((x) => x.id === e.currentTarget.value);
               if (ex) {
-                onApplyExample(ex.patch);
+                onApplyExample(ex);
               }
             }}
             data={[

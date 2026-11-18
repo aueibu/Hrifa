@@ -87,4 +87,21 @@ describe('AffineFocusPage', () => {
     fireEvent.click(dualRadio);
     expect(screen.getByTestId('dual-focus-controls')).toBeInTheDocument();
   });
+
+  it('loads the Voice-Trace Drift Demo preset with pre-walked S0..S4 chain and (±kR) octave tags', () => {
+    renderPage();
+
+    const presetSelect = screen.getByLabelText('Scenario preset');
+    fireEvent.change(presetSelect, { target: { value: 'voice-trace-drift' } });
+
+    const trajBox = screen.getByTestId('trajectory-chain');
+    expect(trajBox).toHaveTextContent('Walked Trajectory Chain (5 states)');
+    expect(trajBox).toHaveTextContent('S4');
+
+    const traceStrip = screen.getByTestId('trajectory-trace-strip');
+    const tags = within(traceStrip).getAllByTestId('trace-octave-tag');
+    expect(tags.length).toBeGreaterThan(0);
+    expect(tags.some((el) => el.textContent?.includes('−1R'))).toBe(true);
+    expect(tags.some((el) => el.textContent?.includes('+1R'))).toBe(true);
+  });
 });
