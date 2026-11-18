@@ -17,5 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| src/pages/CompositionWorkbench.page.tsx | workbench | 2026-11-18 | R1 module registry and output store, then M5 dock Stage |
-| ARCHITECTURE.md | workbench | 2026-11-18 | M5: the workbench page consumes the dock Stage; who consumes what |
