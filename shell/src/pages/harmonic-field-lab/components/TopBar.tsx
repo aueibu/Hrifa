@@ -13,7 +13,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSchemeToggle';
-import { soundPartials } from '../audio/engine';
+import { PARTIALS, ROLLOFF, SOUND_ROLLOFF_MIN, soundPartials } from '../audio/engine';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { MAX_TABS, WAVES, tabName, type Wave } from '../state/labState';
 import { DeveloperMenu } from './DeveloperMenu';
@@ -109,11 +109,14 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
   const { state, dispatch, audio } = useLab();
   const { ui } = state;
   const [dev] = useLabDeveloperOptions();
+  const { scorerOpts } = state.retuner.settings;
   const partials = soundPartials(
     dev.soundFollowsRoughness,
-    state.retuner.settings.scorerOpts.harmonics,
-    state.retuner.settings.scorerOpts.rolloff
+    scorerOpts.harmonics,
+    scorerOpts.rolloff
   ).count;
+  // the boxes are the Roughness values; they are disabled when the sound does not use them (Sine, or the link off)
+  const partialsDisabled = ui.wave !== 'harmonic' || !dev.soundFollowsRoughness;
   return (
     <div className={classes.topbar}>
       <Link to="/" className={classes.homeLink} aria-label="Home">
@@ -263,6 +266,50 @@ export function TopBar({ onGlossary }: { onGlossary: () => void }) {
                   }
                 />
               </Tip>
+              <div>
+                <div className={classes.rowBetween}>
+                  <Tip k="scorerOptions" as="control">
+                    <CommitNumber
+                      size="xs"
+                      label="Partials"
+                      w={88}
+                      min={1}
+                      max={16}
+                      hideControls
+                      disabled={partialsDisabled}
+                      value={dev.soundFollowsRoughness ? scorerOpts.harmonics : PARTIALS}
+                      onCommit={(n) =>
+                        dispatch({ type: 'ret/settings', patch: { scorerOpts: { harmonics: n } } })
+                      }
+                    />
+                  </Tip>
+                  <Tip k="scorerOptions" as="control">
+                    <CommitNumber
+                      size="xs"
+                      label="Rolloff"
+                      w={88}
+                      min={0.01}
+                      max={1}
+                      allowDecimal
+                      decimalScale={2}
+                      hideControls
+                      disabled={partialsDisabled}
+                      value={dev.soundFollowsRoughness ? scorerOpts.rolloff : ROLLOFF}
+                      onCommit={(n) =>
+                        dispatch({ type: 'ret/settings', patch: { scorerOpts: { rolloff: n } } })
+                      }
+                    />
+                  </Tip>
+                </div>
+                {!dev.soundFollowsRoughness && (
+                  <div className={classes.soundNote}>
+                    Linked off in Developer: the sound uses {PARTIALS} and {ROLLOFF}.
+                  </div>
+                )}
+                {dev.soundFollowsRoughness && scorerOpts.rolloff < SOUND_ROLLOFF_MIN && (
+                  <div className={classes.soundNote}>The sound uses {SOUND_ROLLOFF_MIN}.</div>
+                )}
+              </div>
               <Tip k="baseHz" as="control" block>
                 <CommitNumber
                   size="xs"

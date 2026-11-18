@@ -138,6 +138,12 @@
   gap: 0.5rem;
 }
 
+/* a short muted line under a control (the Sound popover's partials notes) */
+.soundNote {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+}
+
 /* ---------------------------------------------------------------------------------------------- top bar */
 .topbar {
   align-items: center;
