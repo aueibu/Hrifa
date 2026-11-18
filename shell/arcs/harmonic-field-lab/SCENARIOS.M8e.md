@@ -14,11 +14,11 @@ A8 CONFIRMED 2026-11-18: Relative ON = Shift+click opens the popup and right-cli
 | C2 | Paint 3^4 5^-1 2^-4 in Monzo, press `=` | A card `[-4 4 -1>` joins the monzo list. |
 | C3 | Click the 81/80 card with source 5/4 | Adds 81/64 (Alt+click: 100/81). |
 | C4 | Hover the card | Same preview as hovering the ring dot (readout, landing mark); hold 1/4/5 sounds it. |
-| C5 | Pin 81/80 again | No duplicate; the existing card flashes. |
-| C6 | 33rd pin of a type | Refused with a short message (no oldest dropped). |
-| C7 | x on a card; drag a card | Removes it; reorders. |
+| C5 | Pin 81/80 again | No duplicate; the existing card flashes. CONFIRMED 2026-11-18. |
+| C6 | 129th pin of a type (was 33rd; limit raised to 128) | Refused with a short message (no oldest dropped). |
+| C7 | x on a card; drag a card | Removes it; drag onto another slot reorders (cards between shift; drag starts after a few px so a click still adds). CONFIRMED 2026-11-18. |
 | C8 | Reload | Both lists come back (stored in `settings.v1`, not per tab). |
-| C9 | Clear all | One button per list; asks no confirm? (open) |
+| C9 | Clear | Superseded by ARC.md "Pin bar sizing": row trash per row + one Delete all per list, both with the shelf's two-click confirm. |
 
 
 ## A. Main ring clicks (Relative method, Chromatic view)

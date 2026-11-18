@@ -128,6 +128,7 @@ import {
   type PatternAction,
   type PatternsState,
 } from './patterns';
+import { emptyPins, type Pins } from './pins';
 import { initialRetuner, retunerReduce, type RetAction, type RetState } from './retuner';
 import { defaultSettings as defaultVizSettings, type VizSettings } from './vizState';
 
@@ -248,6 +249,8 @@ export interface UiSettings {
   pairsColor: PairsColor;
   /** Relative picker (M8e, H-34): how the bands are turned, From note (start at the source note's angle) or Fixed (unison at noon). Optional in storage. */
   relBands: 'from' | 'fixed';
+  /** Relative picker (M8f, H-35): the interval pin bar's two ordered lists of exact ratio texts (ring pins for Rings and Near, monzo pins for Monzo), at most 128 each, no duplicates. Optional in storage. */
+  pins: Pins;
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
   pairsAdded: string[];
   /** The chord library dialog's search text and filters, Checked only included (M7c, H-30); kept when the dialog closes and across reloads. Optional in storage. */
@@ -402,6 +405,7 @@ export function defaultUi(): UiSettings {
     chordSortReverse: false,
     pairsColor: 'off',
     relBands: 'from',
+    pins: emptyPins(),
     pairsAdded: [],
     libFilters: defaultLibFilters(),
     libChecked: [],

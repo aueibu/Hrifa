@@ -1,0 +1,217 @@
+/* The Relative picker's interval pin bar (PinBar.tsx): a grid anchored at the bottom right of the window that grows upward, then scrolls. Colors are roles only. */
+.bar {
+  align-items: flex-end;
+  background: var(--panel);
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  bottom: 0.75rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.375rem;
+  position: fixed;
+  right: 0.75rem;
+  z-index: 10;
+}
+
+/* peeking open from the collapsed tab: it floats over the picker, so it gets a shadow-free but clearly stronger edge */
+.bar[data-peek] {
+  border-color: var(--text-muted);
+  z-index: 11;
+}
+
+.head {
+  align-items: center;
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  justify-content: space-between;
+}
+
+.headBtns {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.caption {
+  color: var(--text-muted);
+  font-size: var(--lab-fs-small);
+}
+
+.caption[data-warn] {
+  color: var(--text-danger);
+}
+
+.grid {
+  display: grid;
+  gap: 0.25rem;
+  /* room inside the clip for the slide, the insert line and the outline; the negative margin keeps the layout size */
+  margin: -2px -8px;
+  min-height: 0;
+  overflow-x: hidden;
+  padding: 2px 8px;
+  overflow-y: auto;
+}
+
+/* the slot is the stable hit area; only its inner box slides apart during a drag */
+.slot {
+  min-width: 0;
+}
+
+.inner {
+  position: relative;
+  transition: transform 0.12s;
+}
+
+.inner[data-scoot='left'] {
+  transform: translateX(-4px);
+}
+
+.inner[data-scoot='right'] {
+  transform: translateX(4px);
+}
+
+/* the insert line sits in the middle of the widened gap (4px gap + 4px slide each side = 12px) */
+.inner[data-line]::before {
+  background: var(--text);
+  border-radius: 1px;
+  bottom: -2px;
+  content: '';
+  position: absolute;
+  top: -2px;
+  width: 2px;
+}
+
+.inner[data-line='before']::before {
+  left: -7px;
+}
+
+.inner[data-line='after']::before {
+  right: -7px;
+}
+
+/* the same look as a shelf card: the slot background, a transparent border, the control radius */
+.card {
+  background: var(--panel-slot);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  box-sizing: border-box;
+  color: var(--text);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  font-size: var(--lab-fs-small);
+  font-variant-numeric: tabular-nums;
+  height: 1.625rem;
+  overflow: hidden;
+  padding: 0 1.25rem 0 0.375rem;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.card:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.card:focus-visible,
+.x:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.x {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  height: 1.25rem;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 0.125rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+}
+
+.x:hover {
+  color: var(--text-danger);
+}
+
+.x svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+/* the collapse chevron: down = fold into the corner; turned up when the bar is only peeking */
+.chev {
+  display: inline-flex;
+  height: 0.875rem;
+  transition: transform 0.12s;
+  width: 0.875rem;
+}
+
+.chev[data-collapsed] {
+  transform: rotate(180deg);
+}
+
+.chev svg {
+  height: 100%;
+  width: 100%;
+}
+
+/* the collapsed bar: a small "Pins N" tab in the bottom-right corner */
+.tab {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  bottom: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: var(--lab-fs-small);
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  position: fixed;
+  right: 0.75rem;
+  z-index: 10;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab svg {
+  height: 0.875rem;
+  transform: rotate(180deg);
+  width: 0.875rem;
+}
+
+/* an interval pinned again: the existing card flashes (a thicker outline as the second channel) */
+.slot[data-flash] .card {
+  background: var(--tint-green-bg);
+  outline: 2px solid var(--mark-green);
+  outline-offset: -1px;
+}
+
+.slot[data-dragging] {
+  opacity: 0.5;
+}
+
+/* ONTO: the target is outlined (no line, no sliding) */
+.slot[data-over] .card {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}

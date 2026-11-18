@@ -19,9 +19,16 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button, Modal, SegmentedControl } from '@mantine/core';
 import {
+  fmtRatio,
+  isZeroMonzo,
   landingPitch,
   landingReadout,
   monzoLanding,
+  monzoNote,
+  mulNotes,
+  oddLimit,
+  parseInterval,
+  reduceInto,
   monzoStep,
   nearComplexity,
   nearRatios,
@@ -37,6 +44,7 @@ import {
   type Note,
   type RingRatio,
 } from '../../../lib/harmonic-field';
+import { MAX_PINS, addPin, braKet, type PinKind } from '../state/pins';
 import { wheelHue } from '../state/tileColors';
 import {
   MONZO_CTL_H,
@@ -45,6 +53,7 @@ import {
   monzoSummary,
   type MonzoView,
 } from './MonzoPanel';
+import { PinBar } from './PinBar';
 import { PrimeFilterChips } from './PrimeFilterChips';
 import { RING_PX_PER_UNIT, RING_R, RingDot } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
@@ -1188,6 +1197,23 @@ export function RelativeModal({
   const isMonzo = mode === 'monzo';
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  // M8f pin bar: the ring list (Rings and Near) or the monzo list (Monzo); the card under the pointer in Monzo; the flash and message
+  const pinKind: PinKind = mode === 'monzo' ? 'monzo' : 'ring';
+  const pinList = lab.state.ui.pins[pinKind];
+  const pinRef = useRef<() => void>(() => undefined);
+  const [pinHover, setPinHover] = useState<string | null>(null);
+  const [pinFlash, setPinFlash] = useState<{ text: string; n: number } | null>(null);
+  const [pinMsg, setPinMsg] = useState<string | null>(null);
+  // a pin-bar drag in progress: Esc cancels the drag, it must not close the modal
+  const [pinDrag, setPinDrag] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!pinMsg) {
+      return undefined;
+    }
+    const t = window.setTimeout(() => setPinMsg(null), 3000);
+    return () => window.clearTimeout(t);
+  }, [pinMsg]);
   // M8d meta ring: the center (a ratio or cents) it is open on, or null; the settings
   const [meta, setMeta] = useState<MetaCenter | null>(() => {
     if (!startNear) {
@@ -1238,6 +1264,21 @@ export function RelativeModal({
       if (e.altKey && /^(Digit|Numpad)[1-9]$/.test(e.code)) {
         e.preventDefault();
         e.stopPropagation();
+        return;
+      }
+      // M8f: = (or +, the same physical key) pins the hovered interval; it must not reach the page's Sketch stash
+      if (
+        (e.code === 'Equal' || e.code === 'NumpadAdd' || e.key === '=' || e.key === '+') &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !isTypingTarget(e.target)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.repeat) {
+          pinRef.current();
+        }
         return;
       }
       // the meta ring: Esc closes it (not the whole modal); the ring-step keys do nothing while it is open
@@ -1342,6 +1383,16 @@ export function RelativeModal({
   const mStep = useMemo(() => monzoStep(monzo, rep), [monzo, rep]);
   const mLanding = useMemo(() => monzoLanding(from, monzo, rep), [from, monzo, rep]);
   const mDir: Direction = mStep?.dir ?? 'above';
+  // a hovered monzo card previews like the painted interval: from the source note times its exponents (Alt = divided, below)
+  const pinNote = useMemo(
+    () => (isMonzo && pinHover ? parseInterval(pinHover) : null),
+    [isMonzo, pinHover]
+  );
+  const pinDir: Direction = alt ? 'below' : 'above';
+  const pinLanding = useMemo(
+    () => (pinNote ? reduceInto(mulNotes(from, pinNote, alt ? -1 : 1), rep) : null),
+    [pinNote, from, rep, alt]
+  );
   const overlay = useMemo(
     () =>
       function GhostOverlay(a: RingOverlayArgs) {
@@ -1352,24 +1403,33 @@ export function RelativeModal({
             from={from}
             rep={rep}
             hover={hover}
-            landing={isMonzo ? { note: mLanding, dir: mDir } : undefined}
+            landing={
+              isMonzo
+                ? pinLanding
+                  ? { note: pinLanding, dir: pinDir }
+                  : { note: mLanding, dir: mDir }
+                : undefined
+            }
           />
         );
       },
-    [from, rep, hover, isMonzo, mLanding, mDir]
+    [from, rep, hover, isMonzo, mLanding, mDir, pinLanding, pinDir]
   );
   const [cell, setCell] = useState<RingRatio | null>(null);
   useEffect(() => {
     setCell(null);
+    setPinHover(null);
   }, [mode]);
   // the readout pill in Monzo mode: the landing as for the rings, then the nonzero exponents
   const monzoLine = message
     ? message
-    : `${
-        mStep
-          ? landingReadout(noteText(mStep.ratio), mStep.dir, from, mLanding)
-          : `${noteText(from)} (all 0)`
-      } · ${monzoSummary(monzo)}`;
+    : pinHover && pinLanding
+      ? landingReadout(braKet(pinHover) ?? pinHover, pinDir, from, pinLanding)
+      : `${
+          mStep
+            ? landingReadout(noteText(mStep.ratio), mStep.dir, from, mLanding)
+            : `${noteText(from)} (all 0)`
+        } · ${monzoSummary(monzo)}`;
   const onTyped = (text: string, d: Direction): string | null => {
     const r = parseTypedStep(text);
     if (!r.ok) {
@@ -1401,13 +1461,11 @@ export function RelativeModal({
   const pointLanding = useMemo(
     () =>
       isMonzo
-        ? monzoOver
-          ? mLanding
-          : null
+        ? (pinLanding ?? (monzoOver ? mLanding : null))
         : cell
           ? landingPitch(from, cell.note, dir, rep)
           : null,
-    [isMonzo, monzoOver, mLanding, cell, from, dir, rep]
+    [isMonzo, monzoOver, mLanding, pinLanding, cell, from, dir, rep]
   );
   const onPreviewRef = useRef(onPreview);
   onPreviewRef.current = onPreview;
@@ -1511,6 +1569,109 @@ export function RelativeModal({
   // stable callbacks for the memoized meta layer (the latest pick handler is read through a ref)
   const onPickRef = useRef(onPick);
   onPickRef.current = onPick;
+  // M8f pin bar: pin the hovered interval (the key), and what a card does on hover, leave and click
+  const cellRef = useRef(cell);
+  cellRef.current = cell;
+  const monzoRef = useRef(monzo);
+  monzoRef.current = monzo;
+  const pinHoverRef = useRef(pinHover);
+  pinHoverRef.current = pinHover;
+  const labRef = useRef(lab);
+  labRef.current = lab;
+  // one RingRatio per pinned text (kept, so the hover compares by identity as for the band cells)
+  const pinRatios = useRef(new Map<string, RingRatio>());
+  const ringOfPin = (text: string): RingRatio | null => {
+    const kept = pinRatios.current.get(text);
+    if (kept) {
+      return kept;
+    }
+    const note = parseInterval(text);
+    if (!note || !note.m) {
+      return null;
+    }
+    const r: RingRatio = { note, text, odd: Number(oddLimit(note) ?? 1n) };
+    pinRatios.current.set(text, r);
+    return r;
+  };
+  const setPins = (kind: PinKind, next: string[]) => {
+    const l = labRef.current;
+    l.dispatch({ type: 'ui', patch: { pins: { ...l.state.ui.pins, [kind]: next } } });
+  };
+  pinRef.current = () => {
+    const kind: PinKind = modeRef.current === 'monzo' ? 'monzo' : 'ring';
+    let text: string | null = null;
+    if (kind === 'monzo') {
+      text =
+        pinHoverRef.current ??
+        (isZeroMonzo(monzoRef.current) ? null : fmtRatio(monzoNote(monzoRef.current)));
+      if (!text) {
+        setPinMsg('Paint an interval first: every exponent is 0.');
+        return;
+      }
+    } else {
+      const c = cellRef.current;
+      if (!c) {
+        setPinMsg('Point at an interval first, then press =.');
+        return;
+      }
+      if (!c.note.m) {
+        setPinMsg('Only exact ratios can be pinned.');
+        return;
+      }
+      text = fmtRatio(c.note);
+    }
+    const r = addPin(labRef.current.state.ui.pins[kind], text);
+    if (r.result === 'added') {
+      setPins(kind, r.list);
+      setPinMsg(null);
+    } else if (r.result === 'duplicate') {
+      const t = text;
+      setPinFlash((f) => ({ text: t, n: (f?.n ?? 0) + 1 }));
+      setPinMsg(null);
+    } else {
+      setPinMsg(`The ${kind} pin list is full (${MAX_PINS}). Remove one to pin another.`);
+    }
+  };
+  const onPinEnter = (text: string, altKey: boolean) => {
+    setAlt(altKey);
+    if (modeRef.current === 'monzo') {
+      setPinHover(text);
+    } else {
+      const r = ringOfPin(text);
+      if (r) {
+        setCell(r);
+      }
+    }
+  };
+  const onPinLeave = () => {
+    if (modeRef.current === 'monzo') {
+      setPinHover(null);
+    } else {
+      setCell(null);
+    }
+  };
+  const onPinAdd = (text: string, altKey: boolean) => {
+    setAlt(altKey);
+    if (modeRef.current === 'monzo') {
+      const n = parseInterval(text);
+      if (n) {
+        onAdd(noteText(reduceInto(mulNotes(from, n, altKey ? -1 : 1), rep)));
+      }
+    } else {
+      const r = ringOfPin(text);
+      if (r) {
+        onPickRef.current({ ratio: r, dir: altKey ? 'below' : 'above' });
+      }
+    }
+  };
+  // a card that is gone (removed, row or list cleared) must not leave its preview behind
+  useEffect(() => {
+    setPinHover(null);
+    const c = cellRef.current;
+    if (c && pinRatios.current.get(c.text) === c) {
+      setCell(null);
+    }
+  }, [pinList.length]);
   const onDotEnter = useCallback((ratio: RingRatio, altKey?: boolean) => {
     if (altKey !== undefined) {
       setAlt(altKey);
@@ -1543,7 +1704,7 @@ export function RelativeModal({
       onClose={onClose}
       // Mantine's own Esc listener is a window capture listener registered before ours, so stopping the event cannot reach it:
       // while the meta ring is open, Esc belongs to the meta ring (back to the rings) and the Modal must not close on it
-      closeOnEscape={!metaOn}
+      closeOnEscape={!metaOn && !pinDrag}
       fullScreen={FULLSCREEN}
       centered
       size={bodyW + MODAL_PAD_W}
@@ -1552,6 +1713,7 @@ export function RelativeModal({
       transitionProps={{ duration: 0 }}
     >
       <div
+        ref={bodyRef}
         className={classes.modalBody}
         data-relative-menu=""
         data-testid="relative-menu"
@@ -1943,6 +2105,19 @@ export function RelativeModal({
           {isMonzo ? monzoLine : readoutLine}
         </div>
       </div>
+      <PinBar
+        kind={pinKind}
+        list={pinList}
+        max={MAX_PINS}
+        onList={(next) => setPins(pinKind, next)}
+        onEnter={onPinEnter}
+        onLeave={onPinLeave}
+        onAdd={onPinAdd}
+        flash={pinFlash}
+        message={pinMsg}
+        anchorRef={bodyRef}
+        onDragActive={setPinDrag}
+      />
     </Modal>
   );
 }

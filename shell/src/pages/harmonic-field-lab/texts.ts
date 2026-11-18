@@ -2869,6 +2869,11 @@ const entries = {
     teaching: [],
     see: ['relativeMenu'],
   },
+  pinBar: {
+    term: 'Pinned intervals',
+    text: 'Hover a ratio in the relative picker (a ring cell or a Near dot) and press = (or +) to pin it here; in Monzo, = pins the interval you painted, shown as its exponents [x x x>. Ring and monzo pins are two separate lists (128 each, saved across reloads). Click a card to add its interval above the source note, Alt+click below; hovering a card previews it like the ring does, and holding 1, 4 or 5 sounds it. x removes a card, drag a card onto another slot to reorder, and the trash icon clears its row. Example: hover 81/80 and press =; with source 5/4, clicking the card adds 81/64.',
+    see: ['relativeMenu'],
+  },
   offChain: {
     term: 'Off-chain note',
     text: 'In the Fifths view, a note more than half a chain step from every position, so no step describes it well. It is drawn as a small dashed mark inside the ring at its nearest step. Example: 11/8 is 53 c from F and 60 c from F-sharp, so it sits off the chain.',

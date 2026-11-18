@@ -74,6 +74,7 @@ import {
   sanitizeLibFilters,
 } from './libraryState';
 import { canonicalPattern } from './patterns';
+import { sanitizePins } from './pins';
 import {
   ANCHORS,
   MAX_CARDS,
@@ -251,6 +252,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     pairsColor: oneOf(raw.pairsColor, PAIRS_COLORS, d.pairsColor),
     // optional (Scala-tools M8e, H-34): the Relative picker's From note | Fixed bands; absent or damaged = From note; no write on mount
     relBands: oneOf(raw.relBands, ['from', 'fixed'] as const, d.relBands),
+    // optional (Scala-tools M8f, H-35): the interval pin bar's ring and monzo lists (exact ratio texts, at most 128 each); bad entries dropped; absent = empty; no write on mount
+    pins: sanitizePins(raw.pins),
     // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount
     pairsAdded: sanitizeAdded(raw.pairsAdded),
     // optional (Scala-tools M7c, H-30): the chord library's filters, checked rows (at most 40), open shapes and comparison; each falls back to its default; no write on mount
