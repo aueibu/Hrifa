@@ -846,3 +846,199 @@
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
+
+/* ---------------------------------------------------------------------------------------------- Universe Graph & Mermaid */
+.universeGraphWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4375rem;
+}
+
+.graphToolbar {
+  align-items: center;
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.graphZoomGroup {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.1875rem;
+}
+
+.graphCanvas {
+  align-items: center;
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  cursor: grab;
+  display: flex;
+  height: 31rem;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+.graphCanvas:active {
+  cursor: grabbing;
+}
+
+.graphSvg {
+  display: block;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  transform-origin: center center;
+  width: 100%;
+}
+
+.graphGuideLine {
+  fill: none;
+  stroke: var(--grid);
+  stroke-dasharray: 3 4;
+  stroke-width: 1;
+}
+
+.graphGuideText {
+  fill: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-svg-fs-small);
+  pointer-events: none;
+}
+
+.graphEdgePath {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  transition: stroke-opacity 120ms ease;
+}
+
+.graphEdgeTraj {
+  fill: none;
+  stroke: var(--mark-blue);
+  stroke-width: 2.25;
+}
+
+.graphEdgeHover {
+  fill: none;
+  stroke: var(--mark-green);
+  stroke-width: 1.75;
+}
+
+.graphNodeGroup {
+  cursor: pointer;
+}
+
+.graphNodeCircle {
+  fill: var(--panel-slot);
+  stroke: var(--control-border);
+  stroke-width: 1.1;
+  transition: opacity 120ms ease;
+}
+
+.graphNodeCircle[data-fixed='true'] {
+  stroke: var(--mark-cyan);
+}
+
+.graphNodeCircle[data-trajectory='true'] {
+  fill: var(--mark-blue);
+  stroke: var(--panel);
+  stroke-width: 1.4;
+}
+
+.graphNodeCircle[data-seed='true'] {
+  fill: var(--mark-yellow);
+  stroke: var(--panel);
+  stroke-width: 1.8;
+}
+
+.graphNodeCircle[data-selected='true'] {
+  stroke: var(--mark-green);
+  stroke-width: 2.25;
+}
+
+.graphNodeCircle[data-dimmed='true'] {
+  opacity: 0.22;
+}
+
+.graphNodeLabel {
+  fill: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-svg-fs-small);
+  pointer-events: none;
+}
+
+.graphNodeLabel[data-seed='true'] {
+  fill: var(--mark-yellow);
+  font-weight: 700;
+}
+
+.graphNodeLabel[data-trajectory='true'] {
+  fill: var(--mark-blue);
+  font-weight: 600;
+}
+
+.graphFooter {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.graphSelectionBar {
+  align-items: center;
+  border-top: 1px solid var(--grid);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  padding-top: 0.3125rem;
+}
+
+.mermaidPane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.mermaidMetaRow {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.125rem;
+}
+
+.mermaidWarningBox {
+  background: var(--panel-inset);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4375rem;
+  padding: 0.75rem;
+}
+
+.mermaidHost {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  transform-origin: center center;
+}
+
+.mermaidSourceBox {
+  background: var(--panel-inset);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.5rem;
+}

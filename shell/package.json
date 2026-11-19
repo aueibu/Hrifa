@@ -34,6 +34,7 @@
     "@xyflow/react": "^12.12.1",
     "apca-w3": "0.1.9",
     "katex": "^0.18.4",
+    "mermaid": "^12.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.4",

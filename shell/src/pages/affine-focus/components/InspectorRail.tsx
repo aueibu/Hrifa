@@ -28,7 +28,7 @@ export function InspectorRail({
   onPlayPitches: (pitches: readonly GamutPitch[]) => void;
   onPlayAlternation: (src: readonly GamutPitch[], tgt: readonly GamutPitch[]) => void;
   onStopAudio: () => void;
-  onExport: (kind: 'json' | 'csv' | 'mermaid') => void;
+  onExport: (kind: 'json' | 'csv' | 'mermaid' | 'svg') => void;
 }) {
   return (
     <aside className={classes.rightColumn} aria-label="Arithmetic and Audio Inspector">
@@ -272,6 +272,9 @@ export function InspectorRail({
             </Button>
             <Button size="compact-xs" variant="default" onClick={() => onExport('mermaid')}>
               Mermaid Graph
+            </Button>
+            <Button size="compact-xs" variant="default" onClick={() => onExport('svg')}>
+              Full SVG Map
             </Button>
           </div>
         </div>

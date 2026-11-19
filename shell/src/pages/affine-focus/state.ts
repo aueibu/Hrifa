@@ -14,8 +14,10 @@ import { DEFAULT_AUDIO_SETTINGS, type AudioSettings } from './audio';
 
 export const STORAGE_KEY = 'hrifa.affine-focus.v1';
 
-export type WorkspaceTab = 'family' | 'orbits' | 'dual';
+export type WorkspaceTab = 'family' | 'orbits' | 'graph' | 'dual';
 export type OrbitGroupBy = 'scc' | 'generation';
+export type GraphViewMode = 'svg-map' | 'mermaid';
+export type GraphMapLayout = 'radial' | 'columns';
 
 export interface AffineFocusPersistedState {
   version: 1;
@@ -40,6 +42,8 @@ export interface AffineFocusPersistedState {
   customFociText: string;
   activeTab: WorkspaceTab;
   orbitGroupBy: OrbitGroupBy;
+  graphViewMode: GraphViewMode;
+  graphLayout: GraphMapLayout;
   maxClosureNodes: number;
   traceConnectMode: TraceConnectionMode;
   traceRegisterMode: TraceRegisterMode;
@@ -69,6 +73,8 @@ export const DEFAULT_PERSISTED_STATE: AffineFocusPersistedState = {
   customFociText: '0, 2, 4',
   activeTab: 'family',
   orbitGroupBy: 'scc',
+  graphViewMode: 'svg-map',
+  graphLayout: 'radial',
   maxClosureNodes: 256,
   traceConnectMode: 'map',
   traceRegisterMode: 'accumulate',

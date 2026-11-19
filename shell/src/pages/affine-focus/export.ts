@@ -95,23 +95,105 @@ function safeMermaidId(id: string, index: number): string {
   return `N${index}_${id.replace(/[^a-zA-Z0-9]/g, '_')}`;
 }
 
-export function buildExportMermaid(closure: ClosureGraph): string {
+function escapeMermaidLabel(value: string): string {
+  return value.replaceAll('"', "'");
+}
+
+export type MermaidSliceMode = 'full' | 'max-gen' | 'orbit' | 'trajectory';
+
+export interface MermaidDiagramOptions {
+  direction?: 'TD' | 'LR';
+  slice?: MermaidSliceMode;
+  maxGeneration?: number;
+  sccId?: number;
+  trajectory?: readonly TrajectoryStep[];
+}
+
+export interface MermaidDiagramResult {
+  code: string;
+  nodeCount: number;
+  edgeCount: number;
+}
+
+export function buildMermaidDiagram(
+  closure: ClosureGraph,
+  options: MermaidDiagramOptions = {}
+): MermaidDiagramResult {
+  const direction = options.direction ?? 'TD';
+  const slice = options.slice ?? 'full';
+  const trajectory = options.trajectory ?? [];
+  const trajIds = new Set(trajectory.map((t) => t.canonicalKey));
+
+  let allowedIds: Set<string>;
+  if (slice === 'max-gen') {
+    const cap = options.maxGeneration ?? 3;
+    allowedIds = new Set(closure.nodes.filter((n) => n.generation <= cap).map((n) => n.id));
+  } else if (slice === 'orbit') {
+    const targetScc = options.sccId ?? 0;
+    allowedIds = new Set(closure.nodes.filter((n) => n.sccId === targetScc).map((n) => n.id));
+  } else if (slice === 'trajectory') {
+    allowedIds = new Set<string>(trajIds);
+    for (const e of closure.edges) {
+      if (trajIds.has(e.source)) {
+        allowedIds.add(e.target);
+      }
+    }
+    if (allowedIds.size === 0 && closure.seedId) {
+      allowedIds.add(closure.seedId);
+    }
+  } else {
+    allowedIds = new Set(closure.nodes.map((n) => n.id));
+  }
+
+  const visibleNodes = closure.nodes.filter((n) => allowedIds.has(n.id));
+  const visibleEdges = closure.edges.filter(
+    (e) => allowedIds.has(e.source) && allowedIds.has(e.target)
+  );
+
   const idMap = new Map<string, string>();
-  const lines: string[] = ['graph TD'];
-  closure.nodes.forEach((n, idx) => {
+  const lines: string[] = [`graph ${direction}`];
+  const seedMermaidIds: string[] = [];
+  const trajMermaidIds: string[] = [];
+
+  visibleNodes.forEach((n, idx) => {
     const mId = safeMermaidId(n.id, idx);
     idMap.set(n.id, mId);
-    const label = n.pitches.map((p) => p.label).join(' · ');
-    lines.push(`  ${mId}["{${label}} (gen ${n.generation})"]`);
+    const label = escapeMermaidLabel(n.pitches.map((p) => p.label).join(' · '));
+    const tag = n.isSeed ? 'SEED · ' : '';
+    lines.push(`  ${mId}["${tag}{${label}} (g${n.generation})"]`);
+    if (n.isSeed) {
+      seedMermaidIds.push(mId);
+    } else if (trajIds.has(n.id)) {
+      trajMermaidIds.push(mId);
+    }
   });
-  for (const e of closure.edges) {
+
+  for (const e of visibleEdges) {
     const s = idMap.get(e.source);
     const t = idMap.get(e.target);
     if (s && t) {
-      lines.push(`  ${s} -->|"${e.operationLabel}"| ${t}`);
+      lines.push(`  ${s} -->|"${escapeMermaidLabel(e.operationLabel)}"| ${t}`);
     }
   }
-  return lines.join('\n');
+
+  if (seedMermaidIds.length > 0) {
+    lines.push('  classDef seedNode stroke:#eab308,stroke-width:2.5px;');
+    lines.push(`  class ${seedMermaidIds.join(',')} seedNode;`);
+  }
+  if (trajMermaidIds.length > 0) {
+    lines.push('  classDef trajNode stroke:#4c9aff,stroke-width:2px;');
+    lines.push(`  class ${trajMermaidIds.join(',')} trajNode;`);
+  }
+
+  return {
+    code: lines.join('\n'),
+    nodeCount: visibleNodes.length,
+    edgeCount: visibleEdges.length,
+  };
+}
+
+export function buildExportMermaid(closure: ClosureGraph): string {
+  return buildMermaidDiagram(closure, { slice: 'full' }).code;
 }
 
 export function triggerFileDownload(filename: string, content: string, mime = 'text/plain') {

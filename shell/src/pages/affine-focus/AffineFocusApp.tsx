@@ -28,7 +28,9 @@ import { DualFocusMatrixView } from './components/DualFocusMatrixView';
 import { FamilyTrajectoryView } from './components/FamilyTrajectoryView';
 import { FocusStage } from './components/FocusStage';
 import { InspectorRail } from './components/InspectorRail';
+import { UniverseGraphView } from './components/UniverseGraphView';
 import { buildExportCsv, buildExportJson, buildExportMermaid, triggerFileDownload } from './export';
+import { buildFullEdgeMapSvg, computeUniverseGraphLayout } from './graphMap';
 import {
   clearPersistedState,
   DEFAULT_PERSISTED_STATE,
@@ -330,7 +332,7 @@ export function AffineFocusApp() {
     );
   };
 
-  const handleExport = (kind: 'json' | 'csv' | 'mermaid') => {
+  const handleExport = (kind: 'json' | 'csv' | 'mermaid' | 'svg') => {
     if (kind === 'json') {
       triggerFileDownload(
         'affine-focus-state.json',
@@ -339,6 +341,13 @@ export function AffineFocusApp() {
       );
     } else if (kind === 'csv') {
       triggerFileDownload('affine-focus-nodes.csv', buildExportCsv(closure), 'text/csv');
+    } else if (kind === 'svg') {
+      const layout = computeUniverseGraphLayout(closure, trajectory, state.graphLayout);
+      const svg = buildFullEdgeMapSvg(layout, {
+        selectedNodeId: selectedClosureNodeId,
+        title: `${config.gamut.name} · ${closure.nodes.length} sets · ${closure.edges.length} edges`,
+      });
+      triggerFileDownload('affine-focus-edge-map.svg', svg, 'image/svg+xml');
     } else {
       triggerFileDownload('affine-focus-graph.mmd', buildExportMermaid(closure), 'text/plain');
     }
@@ -427,6 +436,10 @@ export function AffineFocusApp() {
                   value: 'orbits',
                 },
                 {
+                  label: `Universe Graph (${closure.edges.length} edges)`,
+                  value: 'graph',
+                },
+                {
                   label: 'Dual-Focus Solver (ax + b)',
                   value: 'dual',
                 },
@@ -484,6 +497,25 @@ export function AffineFocusApp() {
                   setInspectedEdgeResult(edge.result);
                   setSelectedClosureNodeId(edge.source);
                   handlePlayPitches(edge.result.outputPitches);
+                }}
+                onLoadPathToTrajectory={handleLoadPathToTrajectory}
+                onPlayPitches={handlePlayPitches}
+              />
+            )}
+
+            {state.activeTab === 'graph' && (
+              <UniverseGraphView
+                config={config}
+                closure={closure}
+                trajectory={trajectory}
+                viewMode={state.graphViewMode}
+                layoutMode={state.graphLayout}
+                selectedNodeId={selectedClosureNodeId}
+                onChangeViewMode={(m) => handlePatch({ graphViewMode: m })}
+                onChangeLayoutMode={(l) => handlePatch({ graphLayout: l })}
+                onSelectNode={(node: ClosureNode) => {
+                  setSelectedClosureNodeId(node.id);
+                  handlePlayPitches(node.pitches);
                 }}
                 onLoadPathToTrajectory={handleLoadPathToTrajectory}
                 onPlayPitches={handlePlayPitches}

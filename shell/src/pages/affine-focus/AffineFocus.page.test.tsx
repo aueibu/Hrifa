@@ -86,6 +86,24 @@ describe('AffineFocusPage', () => {
     const dualRadio = screen.getByRole('radio', { name: /Dual-Focus Solver/i });
     fireEvent.click(dualRadio);
     expect(screen.getByTestId('dual-focus-controls')).toBeInTheDocument();
+
+    // Switch to Universe Graph tab (defaults to Full Edge Map SVG in Radial Rings)
+    const graphRadio = screen.getByRole('radio', { name: /Universe Graph/i });
+    fireEvent.click(graphRadio);
+    expect(screen.getByTestId('universe-graph-view')).toBeInTheDocument();
+    expect(screen.getByTestId('full-edge-map-svg')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Radial Rings' })).toBeChecked();
+
+    // Toggle to Gen Columns layout
+    const colRadio = screen.getByRole('radio', { name: 'Gen Columns' });
+    fireEvent.click(colRadio);
+    expect(colRadio).toBeChecked();
+
+    // Toggle to Mermaid Flowchart and open generated .mmd source
+    const mermaidRadio = screen.getByRole('radio', { name: 'Mermaid Flowchart' });
+    fireEvent.click(mermaidRadio);
+    fireEvent.click(screen.getByRole('button', { name: 'Source' }));
+    expect(screen.getByTestId('mermaid-source-preview')).toHaveTextContent('graph TD');
   });
 
   it('loads the Voice-Trace Drift Demo preset with pre-walked S0..S4 chain and (±kR) octave tags', () => {

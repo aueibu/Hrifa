@@ -1,0 +1,45 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "shell-dev-node",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": [
+        "/d",
+        "/c",
+        "set HRIFA_SOUNDFONT_DIR=D:\\Data Files\\Composition and Production\\Samples\\Instruments\\Soundfonts&&set HRIFA_SOUNDFONT=Timbres Of Heaven GM_GS_XG_SFX V 3.4 Final.sf2&&node node_modules\\vite\\bin\\vite.js --port 5175 --strictPort"
+      ],
+      "port": 5175,
+      "autoPort": false,
+      "url": "http://localhost:5175"
+    },
+    {
+      "name": "shell-dev",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["yarn", "dev", "--port", "5175", "--strictPort"],
+      "port": 5175,
+      "autoPort": false,
+      "url": "http://localhost:5175"
+    },
+    {
+      "name": "shell-dev-alt",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["yarn", "dev", "--port", "5177", "--strictPort"],
+      "port": 5177,
+      "autoPort": false,
+      "url": "http://localhost:5177"
+    },
+    {
+      "name": "shell-dev-sf2",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": [
+        "/d",
+        "/c",
+        "set HRIFA_SOUNDFONT_DIR=D:\\Data Files\\Composition and Production\\Samples\\Instruments\\Soundfonts&&set HRIFA_SOUNDFONT=Timbres Of Heaven GM_GS_XG_SFX V 3.4 Final.sf2&&corepack yarn dev --port 5176 --strictPort"
+      ],
+      "port": 5176,
+      "autoPort": false,
+      "url": "http://localhost:5176"
+    }
+  ]
+}
