@@ -22,6 +22,7 @@ import {
   REL_MEASURES,
   fillStepOf,
   measuredNote,
+  measuredCents,
   ERROR_BAR_BANDS,
   FIXED_BOUNDS,
   INTERVAL_CLASSES,
@@ -1261,6 +1262,25 @@ describe('Colors follow Alt (G15): the below direction', () => {
     expect(signedEdoError(up.c)).toBeCloseTo(15.6, 1);
     expect(signedEdoError(down.c)).toBeCloseTo(-15.6, 1);
     expect(metricValue('tenney', down)).toBeCloseTo(metricValue('tenney', up) ?? 0, 9);
+  });
+  it('the Near entropy curve cents equal the measured note in all four cases (Step or Landing, Alt off or on)', () => {
+    const mod = (c: number) => ((c % 1200) + 1200) % 1200;
+    for (const step of ['6/5', '3/2', '81/80']) {
+      for (const landing of [false, true]) {
+        for (const below of [false, true]) {
+          const note = measuredNote(
+            n(step),
+            landing ? 'landing' : 'step',
+            src,
+            'reduced',
+            below ? 'below' : 'above'
+          );
+          expect(mod(measuredCents(n(step).c, src.c, landing, below))).toBeCloseTo(mod(note.c), 6);
+        }
+      }
+    }
+    // Landing + Alt, source 5/4, step 6/5: 5/4 divided by 6/5 = 25/24, not 5/4 times 6/5 = 3/2
+    expect(measuredCents(n('6/5').c, src.c, true, true)).toBeCloseTo(n('25/24').c, 6);
   });
   it('the default direction is above (followAlt off reads the same whatever Alt does)', () => {
     for (const m of ['step', 'landing'] as const) {

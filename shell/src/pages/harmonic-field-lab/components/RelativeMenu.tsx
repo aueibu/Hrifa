@@ -45,7 +45,8 @@ import {
   type RingRatio,
 } from '../../../lib/harmonic-field';
 import { keyId } from '../audio/keymap';
-import { ARMED_DIGITS, HOLD_DIGITS, type PreviewTarget } from '../audio/plan';
+import { ARMED_DIGITS, type PreviewTarget } from '../audio/plan';
+import { SHORTCUTS } from '../audio/shortcuts';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { useHeCurve } from '../state/entropy';
 import {
@@ -57,6 +58,7 @@ import {
   monzoPaintedNote,
   largestPrimeOf,
   legendMarksOf,
+  measuredCents,
   measuredNote,
   metricValue,
   primeColor,
@@ -704,10 +706,12 @@ export interface MetaLayerProps {
   dotTints: ReadonlyMap<RingRatio, IntervalTint> | null;
   /** M9: the harmonic entropy curve to draw around the ring (null: not drawn). */
   heCurve: Float64Array | null;
-  /** M9d: Landing measure: a step's landing (null: Step). The curve is then drawn at the landing's cents, source plus step. */
+  /** M9d: what the dots' measures read (null: the plain step above). */
   measureOf: ((n: Note) => Note) | null;
-  /** M9d: the source note's cents when Landing, else 0 (added to the center interval for the curve). */
-  curveBaseC: number;
+  /** The entropy curve is drawn at the cents the dots measure (`measuredCents`): Landing, Alt below (Colors follow Alt), source cents. */
+  curveLanding: boolean;
+  curveBelow: boolean;
+  fromC: number;
 }
 
 /** The entropy curve's band outside the ring (SVG units): its gap from the outermost dot radius and its height (inside the bands' 16 px margin). */
@@ -744,7 +748,9 @@ const MetaLayer = memo(function MetaLayer({
   dotTints,
   heCurve,
   measureOf,
-  curveBaseC,
+  curveLanding,
+  curveBelow,
+  fromC,
 }: MetaLayerProps) {
   const arc = mSet.arc;
   const geo: MetaGeometry = {
@@ -786,12 +792,16 @@ const MetaLayer = memo(function MetaLayer({
     for (let i = 0; i <= HE_POINTS; i++) {
       const o = -mSet.spanC / 2 + (mSet.spanC * i) / HE_POINTS;
       const t =
-        max > min ? (heCurveAt(heCurve, curveBaseC + meta.note.c + o) - min) / (max - min) : 0;
+        max > min
+          ? (heCurveAt(heCurve, measuredCents(meta.note.c + o, fromC, curveLanding, curveBelow)) -
+              min) /
+            (max - min)
+          : 0;
       const p = polar(C, rMax + HE_BAND_GAP + HE_BAND_H * t, metaAngle(o));
       out.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
     }
     return out.join(' ');
-  }, [heCurve, C, rMax, zero, sign, arc, mSet.spanC, meta.note.c, curveBaseC]);
+  }, [heCurve, C, rMax, zero, sign, arc, mSet.spanC, meta.note.c, curveLanding, curveBelow, fromC]);
   // one thread per largest prime (groups of two or more, in complexity order)
   const threads = useMemo(() => {
     const byPrime = new Map<number, MetaDot[]>();
@@ -1400,7 +1410,14 @@ export function RelativeModal({
         // Alt is "below" here, not "switch tab": the page's hold handler ignores Alt+digit (it means tab there), so a hold key
         // pressed while Alt is already down starts its preview from here (release needs nothing: the page releases by key code)
         const digit = e.code.slice(-1);
-        if (!e.repeat && !e.ctrlKey && !e.metaKey && (HOLD_DIGITS[digit] || ARMED_DIGITS[digit])) {
+        // only 1, 4 and 5 sound in the picker (a plain 2 or 3 plays nothing on a picker target either)
+        if (
+          !e.repeat &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          !isTypingTarget(e.target) &&
+          (digit === SHORTCUTS.holdOwn || ARMED_DIGITS[digit])
+        ) {
           audioRef.current.holdPreview(keyId(e), digit);
         }
         return;
@@ -2330,7 +2347,9 @@ export function RelativeModal({
               dotTints={dotTints}
               heCurve={metaOn && mSet.entropy ? he.curve : null}
               measureOf={measureOf}
-              curveBaseC={measureOf ? from.c : 0}
+              curveLanding={landingOn}
+              curveBelow={belowOn}
+              fromC={from.c}
             />
           )}
           {/* the hovered dot's highlight: one circle above the memoized layer (the layer itself never re-renders on hover) */}
@@ -2572,7 +2591,7 @@ export function RelativeModal({
         </div>
         <div className={classes.footLine} data-testid="relative-rings">
           {isMonzo
-            ? 'Move to paint · Ctrl line · hold Alt for the inverse · click to add · hold 1 / 4 / 5 to hear'
+            ? 'Hover to preview · click or drag to paint · Ctrl line · double-click or Enter to add · hold Alt for the inverse · hold 1 / 4 / 5 to hear'
             : metaOn
               ? 'Esc: back to rings · click a dot to add (Alt: below) · hold 1/4/5 to hear'
               : `Rings ${places.map((g) => g.label).join(' · ')} · 2/3 ring, Shift prime, Ctrl+Shift 5 · Ctrl+click: near ratios · inner dot: click subset, Shift from it, right-click remove · hold 1/4/5 to hear`}

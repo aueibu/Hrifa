@@ -276,9 +276,16 @@ export function MonzoPanel({
     const onBlur = () => {
       keys.current = { ctrl: false };
       line.current = null;
+      // the window lost focus mid-stroke: the release may never arrive, so the stroke ends here, as a release would
+      strokeApi.current.end();
     };
     const onMove = (e: MouseEvent) => {
       if (stroke.current) {
+        // the button is already up (released outside the window): end the stroke instead of painting on
+        if ((e.buttons & 1) === 0) {
+          strokeApi.current.end();
+          return;
+        }
         lastPos.current = { x: e.clientX, y: e.clientY };
         paintRef.current(e.clientX, e.clientY, e.ctrlKey);
       }

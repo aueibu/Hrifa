@@ -71,21 +71,81 @@ describe('M9e monzo paints on press', () => {
     expect(painted()).toEqual([0, 1, ...zeros.slice(2)]);
     expect(ringCount()).toBe(before);
 
-    // K3 and K5: a drag paints columns 3 and 4; Esc puts back the monzo before the press and the picker stays open
-    fireEvent.mouseDown(matrix, at(3, 2));
-    fireEvent.mouseMove(matrix, at(4, -2));
+    // K3 and K5: a drag from column 2 to column 5 paints both ends and fills the columns the pointer skipped (3 and 4) on the
+    // straight path; Esc puts back the monzo before the press and the picker stays open
+    fireEvent.mouseDown(matrix, at(2, 2));
+    fireEvent.mouseMove(matrix, { ...at(5, -2), buttons: 1 });
     frame();
-    expect(painted()).toEqual([0, 1, 0, 2, -2, ...zeros.slice(5)]);
+    expect(painted()).toEqual([0, 1, 2, 1, -1, -2, ...zeros.slice(6)]);
     fireEvent.keyDown(window, { key: 'Escape' });
     frame();
     expect(painted()).toEqual([0, 1, ...zeros.slice(2)]);
     fireEvent.mouseUp(matrix);
     expect(screen.getByTestId('monzo-matrix')).toBeInTheDocument();
 
+    // a stroke ends when the button is already up on a move (released outside the window), and on window blur
+    fireEvent.mouseDown(matrix, at(5, 2));
+    fireEvent.mouseMove(matrix, { ...at(6, 3), buttons: 0 });
+    fireEvent.mouseMove(matrix, { ...at(7, 3), buttons: 1 });
+    frame();
+    expect(painted()).toEqual([0, 1, 0, 0, 0, 2, ...zeros.slice(6)]);
+    fireEvent.mouseDown(matrix, at(5, 2));
+    act(() => {
+      window.dispatchEvent(new Event('blur'));
+    });
+    fireEvent.mouseMove(matrix, { ...at(6, 3), buttons: 1 });
+    frame();
+    expect(painted()).toEqual([0, 1, 0, 0, 0, 2, ...zeros.slice(6)]);
+    fireEvent.mouseDown(matrix, at(5, 0));
+    fireEvent.mouseUp(matrix);
+    frame();
+    expect(painted()).toEqual([0, 1, ...zeros.slice(2)]);
+
     // K6: Enter adds the painted monzo
     fireEvent.keyDown(document.body, { key: 'Enter' });
     frame();
     expect(ringCount()).toBe(before + 1);
+
+    // K4: Ctrl paints a straight line from the press cell; columns the line stops covering return to their snapshot; release commits
+    fireEvent.click(screen.getByTestId('monzo-reset'));
+    frame();
+    fireEvent.mouseDown(matrix, { ...at(1, 2), ctrlKey: true });
+    fireEvent.mouseMove(matrix, { ...at(4, -2), ctrlKey: true, buttons: 1 });
+    frame();
+    expect(painted()).toEqual([0, 2, 1, -1, -2, ...zeros.slice(5)]);
+    fireEvent.mouseMove(matrix, { ...at(2, -2), ctrlKey: true, buttons: 1 });
+    frame();
+    expect(painted()).toEqual([0, 2, -2, ...zeros.slice(3)]);
+    fireEvent.mouseUp(matrix);
+    frame();
+    expect(painted()).toEqual([0, 2, -2, ...zeros.slice(3)]);
+
+    // K8: = pins the previewed interval while a cell is hovered, else the painted one
+    fireEvent.click(screen.getByTestId('monzo-reset'));
+    frame();
+    for (const [col, value] of [
+      [0, -4],
+      [1, 4],
+      [2, -1],
+    ]) {
+      fireEvent.mouseDown(matrix, at(col, value));
+      fireEvent.mouseUp(matrix);
+    }
+    frame();
+    fireEvent.mouseMove(matrix, at(3, 1));
+    frame();
+    fireEvent.keyDown(window, { key: '=', code: 'Equal' });
+    frame();
+    const pins = () =>
+      screen.getAllByTestId('pin-card').map((c) => c.getAttribute('aria-label') ?? '');
+    expect(pins()).toHaveLength(1);
+    expect(pins()[0]).toContain('[-4 4 -1 1>');
+    fireEvent.mouseLeave(matrix);
+    frame();
+    fireEvent.keyDown(window, { key: '=', code: 'Equal' });
+    frame();
+    expect(pins()).toHaveLength(2);
+    expect(pins()[1]).toContain('[-4 4 -1>');
 
     // K13 / K14: Alt shows the inverse; painting in the shown view stores the negative; Alt + double-click adds the SHOWN value
     fireEvent.click(screen.getByTestId('monzo-reset'));

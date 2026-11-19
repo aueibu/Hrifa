@@ -266,6 +266,20 @@ export function measuredNote(
   return octave === 'exact' ? n : octave === 'reduced' ? foldOctave(n) : reduceInto(n, octave);
 }
 
+/**
+ * The cents `measuredNote` reads for a step of `stepC` cents (octave folding aside): the Near entropy curve is drawn at these cents
+ * so each dot's radius and the curve under it agree. Step: the step, or its inverse below; Landing: source plus the step, or source
+ * minus it below.
+ */
+export function measuredCents(
+  stepC: number,
+  fromC: number,
+  landing: boolean,
+  below: boolean
+): number {
+  return (landing ? fromC : 0) + (below ? -stepC : stepC);
+}
+
 /** The measures (of Brightness or Hue) the Range switch applies to (the error size is always the fixed bands, D25). */
 export const hasRange = (b: RelBright | RelHue): boolean =>
   b === 'tenney' || b === 'odd' || b === 'roughness' || b === 'entropy';

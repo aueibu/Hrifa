@@ -21,9 +21,23 @@ describe('the Pairs Color setting (settings.v1)', () => {
 describe('relColor settings (M8o H-37, M9c H-40: Hue, Brightness, Radius per view)', () => {
   it('absent or damaged reads as the Families preset, Fixed, Exact', () => {
     const d = {
-      rings: { hue: 'prime', bright: 'off', range: 'fixed' },
-      near: { hue: 'prime', bright: 'off', range: 'fixed', radius: 'tenney' },
-      monzo: { hue: 'prime', bright: 'off', range: 'fixed', octave: 'exact' },
+      rings: { hue: 'prime', bright: 'off', range: 'fixed', measure: 'step', followAlt: false },
+      near: {
+        hue: 'prime',
+        bright: 'off',
+        range: 'fixed',
+        radius: 'tenney',
+        measure: 'step',
+        followAlt: false,
+      },
+      monzo: {
+        hue: 'prime',
+        bright: 'off',
+        range: 'fixed',
+        octave: 'exact',
+        measure: 'step',
+        followAlt: false,
+      },
     };
     expect(defaultUi().relColor).toEqual(d);
     expect(sanitizeSettings(null).relColor).toEqual(d);
@@ -44,9 +58,23 @@ describe('relColor settings (M8o H-37, M9c H-40: Hue, Brightness, Radius per vie
         },
       }).relColor
     ).toEqual({
-      rings: { hue: 'prime', bright: 'off', range: 'fixed' },
-      near: { hue: 'errorSign', bright: 'errorSize', range: 'fit', radius: 'roughness' },
-      monzo: { hue: 'prime', bright: 'off', range: 'fixed', octave: 'reduced' },
+      rings: { hue: 'prime', bright: 'off', range: 'fixed', measure: 'step', followAlt: false },
+      near: {
+        hue: 'errorSign',
+        bright: 'errorSize',
+        range: 'fit',
+        radius: 'roughness',
+        measure: 'step',
+        followAlt: false,
+      },
+      monzo: {
+        hue: 'prime',
+        bright: 'off',
+        range: 'fixed',
+        octave: 'reduced',
+        measure: 'step',
+        followAlt: false,
+      },
     });
   });
 
@@ -60,9 +88,23 @@ describe('relColor settings (M8o H-37, M9c H-40: Hue, Brightness, Radius per vie
         },
       }).relColor
     ).toEqual({
-      rings: { hue: 'interval', bright: 'off', range: 'fit' },
-      near: { hue: 'off', bright: 'tenney', range: 'fit', radius: 'tenney' },
-      monzo: { hue: 'errorSign', bright: 'errorSize', range: 'fixed', octave: 'reduced' },
+      rings: { hue: 'interval', bright: 'off', range: 'fit', measure: 'step', followAlt: false },
+      near: {
+        hue: 'off',
+        bright: 'tenney',
+        range: 'fit',
+        radius: 'tenney',
+        measure: 'step',
+        followAlt: false,
+      },
+      monzo: {
+        hue: 'errorSign',
+        bright: 'errorSize',
+        range: 'fixed',
+        octave: 'reduced',
+        measure: 'step',
+        followAlt: false,
+      },
     });
   });
 
@@ -70,9 +112,23 @@ describe('relColor settings (M8o H-37, M9c H-40: Hue, Brightness, Radius per vie
     expect(
       sanitizeSettings({ relColor: { metric: 'tenney', range: 'fit', octave: 'reduced' } }).relColor
     ).toEqual({
-      rings: { hue: 'off', bright: 'tenney', range: 'fit' },
-      near: { hue: 'off', bright: 'tenney', range: 'fit', radius: 'tenney' },
-      monzo: { hue: 'off', bright: 'tenney', range: 'fit', octave: 'reduced' },
+      rings: { hue: 'off', bright: 'tenney', range: 'fit', measure: 'step', followAlt: false },
+      near: {
+        hue: 'off',
+        bright: 'tenney',
+        range: 'fit',
+        radius: 'tenney',
+        measure: 'step',
+        followAlt: false,
+      },
+      monzo: {
+        hue: 'off',
+        bright: 'tenney',
+        range: 'fit',
+        octave: 'reduced',
+        measure: 'step',
+        followAlt: false,
+      },
     });
   });
 });

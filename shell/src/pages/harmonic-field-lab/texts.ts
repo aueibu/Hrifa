@@ -9,6 +9,7 @@
  * - new: `{ term, help, teaching?, see? }`, arrays of blocks (`p`, `example`, `keys`). Block text is markup: `**bold**`,
  *   `*italic*`, `{key:name}` (a key from `audio/shortcuts.ts`).
  */
+import { SHORTCUTS } from './audio/shortcuts';
 import { legacyBlocks, plainText, type Block } from './markup';
 
 export type { Block } from './markup';
@@ -2908,13 +2909,14 @@ const entries = {
     see: ['relColor', 'relColorHue', 'relColorBright', 'relColorRadius'],
   },
   relColorMeasure: {
-    term: 'Color measure (Step or Landing; hold ` to flip)',
+    // a term is plain text (no {key:} markup), so the key comes from the table here
+    term: `Color measure (Step or Landing; hold ${SHORTCUTS.measureFlip} to flip)`,
     text: 'What the colors and the Near radius measure. Step (the default): the interval the cell shows, the step from the source note. Landing: the pitch that step lands on, measured from 1/1 (source note times step). With source 1/1 they are the same. Chosen per view with the other Color settings and kept with them; it is not part of a Preset, so changing it never turns a preset into Custom. In Monzo the Octave setting applies to the landing. The legends, the Fit range, the hover tick, the pinned cards and the Near entropy curve follow it. Example: source 5/4, cell 6/5: Step measures 6/5 (Tenney 4.91); Landing measures 5/4 x 6/5 = 3/2 (Tenney 2.58).',
     see: ['relColor', 'relColorPreset', 'relColorRange'],
   },
   relColorFollowAlt: {
     term: 'Colors follow Alt (Rings and Near)',
-    text: 'Off (the default): the colors, the Near radius, the pinned cards and the legend tick always measure the interval ABOVE the source note, whatever Alt does. On: while you hold Alt they measure the BELOW one, the same interval Alt+click adds. Landing: source note divided by the step, folded into the repeat; Step: the step down, so only measures that depend on direction (such as the signed 12-EDO error) change. Holding Alt recolors the view once, not per hover. Chosen per view and kept with the other Color settings; not part of a Preset; Monzo painting ignores Alt. Example: Measure Landing, source 5/4, cell 5/4: the color of 25/16 normally, the color of 1/1 while Alt is held.',
+    text: 'Off (the default): the colors, the Near radius, the pinned cards and the legend tick always measure the interval ABOVE the source note, whatever Alt does. On: while you hold Alt they measure the BELOW one, the same interval Alt+click adds. Landing: source note divided by the step, folded into the repeat; Step: the step down, so only measures that depend on direction (such as the signed 12-EDO error) change. Holding Alt recolors the view once, not per hover. Chosen per view and kept with the other Color settings; not part of a Preset. Monzo has no such option: there holding Alt shows and uses the inverse interval. Example: Measure Landing, source 5/4, cell 5/4: the color of 25/16 normally, the color of 1/1 while Alt is held.',
     see: ['relColor', 'relColorMeasure'],
   },
   relColorRadius: {

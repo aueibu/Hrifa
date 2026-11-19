@@ -32,6 +32,11 @@ export const SHORTCUTS = {
   composite: '-',
   /** In the composite popup: flips the slider; the handler accepts e or E. */
   sendFlip: 'E',
+  /**
+   * In the relative picker: hold to flip the open view's Color measure (Step <-> Landing). Matched by physical key (`e.code ===
+   * 'Backquote'`, a dead key on some layouts), so changing this value also means changing that code in `RelativeMenu.tsx`.
+   */
+  measureFlip: '`',
 } as const;
 
 export type ShortcutName = keyof typeof SHORTCUTS;
