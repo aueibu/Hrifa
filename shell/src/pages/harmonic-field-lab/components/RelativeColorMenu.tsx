@@ -2,7 +2,7 @@
  * M8o (H-37) + M9c (H-40): the Color controls of the Relative picker, one set per view (Rings, Near, Monzo: `ui.relColor.<view>` in
  * `settings.v1`); the panel shows and edits the OPEN view's choice.
  * Built like the Near panel (`metaPanel`: xs controls stacked in a 190 px column), top to bottom: a Preset select (one click sets the
- * channels; Custom when they match no preset), Radius (Near only), Hue, Brightness, the legend, then Range (when Brightness has one),
+ * channels; Custom when they match no preset), Measure (Step | Landing, M9d; not part of a preset), "Colors follow Alt" (G15, Rings and Near), Radius (Near only), Hue, Brightness, the legend, then Range (when Brightness has one),
  * the entropy blur s (when a channel uses entropy), Octave (Monzo only) and Interval intensity (the same `developer.v1`
  * `intervalIntensity` as the Developer menu entry and Pairs; when Brightness reads it). The Near panel embeds
  * `RelativeColorControls`; the other views wrap it in `RelativeColorPanel`, the same panel box.
@@ -111,6 +111,33 @@ export function RelativeColorControls({
           ]}
         />
       </Tip>
+      <Tip k="relColorMeasure" as="control" block>
+        <SegmentedControl
+          size="xs"
+          fullWidth
+          aria-label="Color measure"
+          data-testid="relative-color-measure"
+          value={value.measure}
+          onChange={(v) => set({ measure: v === 'landing' ? 'landing' : 'step' })}
+          data={[
+            { value: 'step', label: 'Step' },
+            { value: 'landing', label: 'Landing' },
+          ]}
+        />
+      </Tip>
+      {!monzo && (
+        <Tip k="relColorFollowAlt" as="control" block>
+          <label className={classes.metaCheck}>
+            <input
+              type="checkbox"
+              data-testid="relative-color-follow-alt"
+              checked={value.followAlt}
+              onChange={(e) => set({ followAlt: e.currentTarget.checked })}
+            />
+            Colors follow Alt
+          </label>
+        </Tip>
+      )}
       {near && (
         <Tip k="relColorRadius" as="control" block>
           <div className={classes.metaTitle}>Radius</div>

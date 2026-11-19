@@ -230,8 +230,13 @@
   border-left: 1px solid var(--grid);
 }
 
+/* M9e: a prime the painted monzo uses is bold in its own prime-wheel color (set inline: the same hues as the Prime coloring and the
+   Near dots); an unused prime is muted. No accent: the accent means "interactive" elsewhere. */
+.primeCell:not([data-nonzero='true']) {
+  color: var(--text-muted);
+}
+
 .primeCell[data-nonzero='true'] {
-  color: var(--accent);
   font-weight: 600;
 }
 
@@ -264,8 +269,9 @@
   width: 2.5em;
 }
 
+/* M9e: a used exponent is bold in its prime's wheel color (inline), like the matrix header */
 .rowValue[data-nonzero='true'] {
-  color: var(--accent);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -345,16 +351,36 @@
   top: 0;
 }
 
+/* the painted line: a light line with a panel-colored halo, so it reads over any cell tint in both schemes (human, 2026-11-18) */
+.sparkHalo {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--panel);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4.5;
+}
+
 .sparkLine {
   fill: none;
-  stroke: var(--accent);
+  pointer-events: none;
+  stroke: var(--text);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
 }
 
 .sparkDot {
-  fill: var(--accent);
+  fill: var(--text);
+  pointer-events: none;
+  stroke: var(--panel);
+  stroke-width: 1.5;
+}
+
+/* M9e: the cell under the pointer (a preview, not painted): an outline, which the tint paths never use */
+.stripCell[data-hover='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 /* the meta ring's own surface: solid, so the rings underneath do not show through (human, 2026-11-17) */

@@ -6,6 +6,7 @@ import {
   heCurve,
   heFixedRange,
   heRange,
+  noteText,
   parseInterval,
   zeroMonzo,
   type MonzoExps,
@@ -18,6 +19,9 @@ import {
   BRIGHT_FILL_STEPS,
   BRIGHT_MARK_STEPS,
   BRIGHT_PLAIN_TEXT_FROM,
+  REL_MEASURES,
+  fillStepOf,
+  measuredNote,
   ERROR_BAR_BANDS,
   FIXED_BOUNDS,
   INTERVAL_CLASSES,
@@ -116,9 +120,23 @@ describe('settings (H-40)', () => {
       expect(sanitizeRelColor(raw)).toEqual(REL_COLOR_DEFAULT);
     }
     expect(REL_COLOR_DEFAULT).toEqual({
-      rings: { hue: 'prime', bright: 'off', range: 'fixed' },
-      near: { hue: 'prime', bright: 'off', range: 'fixed', radius: 'tenney' },
-      monzo: { hue: 'prime', bright: 'off', range: 'fixed', octave: 'exact' },
+      rings: { hue: 'prime', bright: 'off', range: 'fixed', measure: 'step', followAlt: false },
+      near: {
+        hue: 'prime',
+        bright: 'off',
+        range: 'fixed',
+        measure: 'step',
+        followAlt: false,
+        radius: 'tenney',
+      },
+      monzo: {
+        hue: 'prime',
+        bright: 'off',
+        range: 'fixed',
+        measure: 'step',
+        followAlt: false,
+        octave: 'exact',
+      },
     });
     expect(presetOf({ ...REL_COLOR_DEFAULT.near })).toBe('families');
   });
@@ -130,22 +148,78 @@ describe('settings (H-40)', () => {
         monzo: { bright: 'tenney', octave: 'reduced' },
       })
     ).toEqual({
-      rings: { hue: 'errorSign', bright: 'roughness', range: 'fit' },
-      near: { hue: 'off', bright: 'off', range: 'fixed', radius: 'entropy' },
-      monzo: { hue: 'prime', bright: 'tenney', range: 'fixed', octave: 'reduced' },
+      rings: {
+        hue: 'errorSign',
+        bright: 'roughness',
+        range: 'fit',
+        measure: 'step',
+        followAlt: false,
+      },
+      near: {
+        hue: 'off',
+        bright: 'off',
+        range: 'fixed',
+        measure: 'step',
+        followAlt: false,
+        radius: 'entropy',
+      },
+      monzo: {
+        hue: 'prime',
+        bright: 'tenney',
+        range: 'fixed',
+        measure: 'step',
+        followAlt: false,
+        octave: 'reduced',
+      },
     });
     expect(sanitizeRelColor({ near: { radius: 'nope' } }).near.radius).toBe('tenney');
   });
   it('the old { metric } shape migrates: prime/interval -> hue, measures -> brightness (hue off), error -> sign + size, off -> both off', () => {
     const view = (metric: string) => sanitizeRelColor({ rings: { metric, range: 'fit' } }).rings;
-    expect(view('prime')).toEqual({ hue: 'prime', bright: 'off', range: 'fit' });
-    expect(view('interval')).toEqual({ hue: 'interval', bright: 'off', range: 'fit' });
+    expect(view('prime')).toEqual({
+      hue: 'prime',
+      bright: 'off',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+    });
+    expect(view('interval')).toEqual({
+      hue: 'interval',
+      bright: 'off',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+    });
     for (const m of ['tenney', 'odd', 'roughness', 'entropy'] as const) {
-      expect(view(m)).toEqual({ hue: 'off', bright: m, range: 'fit' });
+      expect(view(m)).toEqual({
+        hue: 'off',
+        bright: m,
+        range: 'fit',
+        measure: 'step',
+        followAlt: false,
+      });
     }
-    expect(view('error')).toEqual({ hue: 'errorSign', bright: 'errorSize', range: 'fit' });
-    expect(view('off')).toEqual({ hue: 'off', bright: 'off', range: 'fit' });
-    expect(view('nope')).toEqual({ hue: 'prime', bright: 'off', range: 'fit' });
+    expect(view('error')).toEqual({
+      hue: 'errorSign',
+      bright: 'errorSize',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+    });
+    expect(view('off')).toEqual({
+      hue: 'off',
+      bright: 'off',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+    });
+    expect(view('nope')).toEqual({
+      hue: 'prime',
+      bright: 'off',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+    });
   });
   it('the old per-view shape keeps Near on the Tenney radius and the Monzo octave', () => {
     const v = sanitizeRelColor({
@@ -157,16 +231,51 @@ describe('settings (H-40)', () => {
       hue: 'errorSign',
       bright: 'errorSize',
       range: 'fit',
+      measure: 'step',
+      followAlt: false,
       radius: 'tenney',
     });
-    expect(v.rings).toEqual({ hue: 'off', bright: 'odd', range: 'fixed' });
-    expect(v.monzo).toEqual({ hue: 'off', bright: 'tenney', range: 'fixed', octave: 'reduced' });
+    expect(v.rings).toEqual({
+      hue: 'off',
+      bright: 'odd',
+      range: 'fixed',
+      measure: 'step',
+      followAlt: false,
+    });
+    expect(v.monzo).toEqual({
+      hue: 'off',
+      bright: 'tenney',
+      range: 'fixed',
+      measure: 'step',
+      followAlt: false,
+      octave: 'reduced',
+    });
   });
   it('the older flat shape is read into all three views the same way', () => {
     const v = sanitizeRelColor({ metric: 'odd', range: 'fit', octave: 'reduced' });
-    expect(v.rings).toEqual({ hue: 'off', bright: 'odd', range: 'fit' });
-    expect(v.near).toEqual({ hue: 'off', bright: 'odd', range: 'fit', radius: 'tenney' });
-    expect(v.monzo).toEqual({ hue: 'off', bright: 'odd', range: 'fit', octave: 'reduced' });
+    expect(v.rings).toEqual({
+      hue: 'off',
+      bright: 'odd',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+    });
+    expect(v.near).toEqual({
+      hue: 'off',
+      bright: 'odd',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+      radius: 'tenney',
+    });
+    expect(v.monzo).toEqual({
+      hue: 'off',
+      bright: 'odd',
+      range: 'fit',
+      measure: 'step',
+      followAlt: false,
+      octave: 'reduced',
+    });
   });
   it('the channel lists are the Hue and Brightness choices of the scenarios', () => {
     expect(REL_HUES).toEqual([
@@ -298,7 +407,8 @@ describe('contrast floor (F1): measured from the Radix values, not the browser',
     const low: string[] = [];
     for (const scheme of ['dark', 'light'] as const) {
       for (const hue of RADIX_HUES) {
-        for (const s of BRIGHT_FILL_STEPS[scheme]) {
+        for (const ramp of BRIGHT_FILL_STEPS[scheme]) {
+          const s = fillStepOf(scheme, hue, ramp);
           const text =
             s >= BRIGHT_PLAIN_TEXT_FROM[scheme] ? TEXT[scheme] : radixHex(scheme, hue, 12);
           const c = contrast(text, radixHex(scheme, hue, s));
@@ -308,13 +418,29 @@ describe('contrast floor (F1): measured from the Radix values, not the browser',
         }
       }
     }
-    // Known shortfalls (reported, not fixed here): the plain text is already the better of the two on these fills, so moving the
-    // switch step does not help; only a weaker fill step for that hue would. Any NEW failure fails the test.
-    expect(low).toEqual([
-      'dark cyan step 8: 4.35',
-      'light violet step 9: 3.28',
-      'light pink step 9: 4.29',
-    ]);
+    // no exceptions (M9d G8 to G10: the strongest fill of dark cyan, light violet and light pink is one step weaker)
+    expect(low).toEqual([]);
+  });
+  it('M9d: the three capped fills are the one step weaker, and the tint uses it', () => {
+    expect(fillStepOf('light', 'violet', 9)).toBe(8);
+    expect(fillStepOf('light', 'pink', 9)).toBe(8);
+    expect(fillStepOf('dark', 'cyan', 8)).toBe(7);
+    expect(fillStepOf('dark', 'violet', 8)).toBe(8);
+    expect(fillStepOf('light', 'cyan', 9)).toBe(9);
+    for (const [scheme, hue, from, to] of [
+      ['light', 'violet', 9, 8],
+      ['light', 'pink', 9, 8],
+      ['dark', 'cyan', 8, 7],
+    ] as const) {
+      const c = (st: number) =>
+        contrast(
+          st >= BRIGHT_PLAIN_TEXT_FROM[scheme] ? TEXT[scheme] : radixHex(scheme, hue, 12),
+          radixHex(scheme, hue, st)
+        );
+      // report: was, now
+      expect(c(from)).toBeLessThan(4.5);
+      expect(c(to)).toBeGreaterThanOrEqual(4.5);
+    }
   });
   it('the tint uses exactly those steps (the blue ramp, Hue off), and the plain text on the strongest fills', () => {
     for (const scheme of ['dark', 'light'] as const) {
@@ -1023,5 +1149,124 @@ describe('Entropy Fixed bounds exclude the unison window (M9c F10)', () => {
     expect(stepOf(tintOf(n('1/1'), brightCtx))).toBe(
       BRIGHT_FILL_STEPS.dark[BRIGHT_FILL_STEPS.dark.length - 1]
     );
+  });
+});
+
+describe('Measure: Step | Landing (M9d, H-41, G1 to G7)', () => {
+  const src = n('5/4');
+  const at = (step: string, measure: 'step' | 'landing', octave: 'exact' | 'reduced' = 'reduced') =>
+    measuredNote(n(step), measure, src, octave);
+  it('the choices and the default', () => {
+    expect(REL_MEASURES).toEqual(['step', 'landing']);
+    expect(REL_COLOR_DEFAULT.rings.measure).toBe('step');
+    expect(REL_COLOR_DEFAULT.near.measure).toBe('step');
+    expect(REL_COLOR_DEFAULT.monzo.measure).toBe('step');
+  });
+  it('storage: kept per view; absent, damaged or the old shape reads as step', () => {
+    const v = sanitizeRelColor({
+      rings: { measure: 'landing' },
+      near: { measure: 'sideways' },
+      monzo: { measure: 'landing', octave: 'reduced' },
+    });
+    expect(v.rings.measure).toBe('landing');
+    expect(v.near.measure).toBe('step');
+    expect(v.monzo.measure).toBe('landing');
+    expect(sanitizeRelColor({ rings: { measure: 7 } }).rings.measure).toBe('step');
+    expect(sanitizeRelColor({ metric: 'odd', range: 'fit' }).rings.measure).toBe('step');
+    expect(sanitizeRelColor(undefined).monzo.measure).toBe('step');
+  });
+  it('a preset ignores the measure (Custom detection does not see it)', () => {
+    expect(presetOf({ hue: 'prime', bright: 'off', radius: 'tenney' })).toBe('families');
+    for (const p of REL_PRESETS) {
+      expect(presetOf({ hue: p.hue, bright: p.bright, radius: p.radius })).toBe(p.id);
+    }
+  });
+  it('G1: under source 5/4 the 6/5 step measures Tenney 4.91 and error +15.6 c, its landing 3/2 measures Tenney 2.58 and error +2.0 c', () => {
+    const step = at('6/5', 'step');
+    const landing = at('6/5', 'landing');
+    expect(noteText(landing)).toBe('3/2');
+    expect(metricValue('tenney', step)).toBeCloseTo(4.91, 2);
+    expect(metricValue('tenney', landing)).toBeCloseTo(2.58, 2);
+    expect(signedEdoError(step.c)).toBeCloseTo(15.6, 1);
+    expect(signedEdoError(landing.c)).toBeCloseTo(1.96, 1);
+    expect(largestPrimeOf(step)).toBe(5);
+    expect(largestPrimeOf(landing)).toBe(3);
+    // and the tint follows: the landing is 3/2's color
+    const c = ctx('prime', 'tenney');
+    expect(tintOf(landing, c)).toEqual(tintOf(n('3/2'), c));
+    expect(tintOf(step, c)).not.toEqual(tintOf(landing, c));
+  });
+  it('G2: a Near dot 81/64 lands on 5/4 x 81/64 = 405/256', () => {
+    expect(noteText(at('81/64', 'landing'))).toBe('405/256');
+  });
+  it('G6: source 1/1 gives the same in both', () => {
+    const one = n('1/1');
+    for (const t of ['6/5', '3/2', '81/64', '7/4']) {
+      const s = measuredNote(n(t), 'step', one, 'reduced');
+      const l = measuredNote(n(t), 'landing', one, 'reduced');
+      expect(l.c).toBeCloseTo(s.c, 9);
+      expect(metricValue('tenney', l)).toBe(metricValue('tenney', s));
+    }
+  });
+  it('G4: the landing honors Octave Exact or Reduced', () => {
+    // source 3/2 + step 3/2 = 9/4: Exact keeps it (Tenney 5.17), Reduced folds it to 9/8 (Tenney 6.17)
+    const exact = measuredNote(n('3/2'), 'landing', n('3/2'), 'exact');
+    const reduced = measuredNote(n('3/2'), 'landing', n('3/2'), 'reduced');
+    expect(noteText(exact)).toBe('9/4');
+    expect(noteText(reduced)).toBe('9/8');
+    expect(metricValue('tenney', exact)).toBeCloseTo(5.17, 2);
+    expect(metricValue('tenney', reduced)).toBeCloseTo(6.17, 2);
+    // the step measure is untouched by the octave
+    expect(measuredNote(n('3/2'), 'step', n('3/2'), 'reduced')).toEqual(n('3/2'));
+  });
+  it('G4: a repeat note reduces the landing into that repeat like a click', () => {
+    const rep = n('3/1');
+    // 3/2 x 3/2 = 9/4 is already under the repeat 3/1
+    expect(noteText(measuredNote(n('3/2'), 'landing', n('3/2'), rep))).toBe('9/4');
+    // 5/2 x 3/2 = 15/4 folds into [1, 3) as 5/4
+    expect(noteText(measuredNote(n('5/2'), 'landing', n('3/2'), rep))).toBe('5/4');
+  });
+});
+
+describe('Colors follow Alt (G15): the below direction', () => {
+  const src = n('5/4');
+  it('storage: per view, default off, damaged reads off, Monzo has none', () => {
+    expect(REL_COLOR_DEFAULT.rings.followAlt).toBe(false);
+    expect(REL_COLOR_DEFAULT.near.followAlt).toBe(false);
+    const v = sanitizeRelColor({
+      rings: { followAlt: true },
+      near: { followAlt: 'yes' },
+      monzo: { followAlt: true },
+    });
+    expect(v.rings.followAlt).toBe(true);
+    expect(v.near.followAlt).toBe(false);
+    expect(v.monzo.followAlt).toBe(false);
+    expect(sanitizeRelColor({ metric: 'odd' }).rings.followAlt).toBe(false);
+  });
+  it('Landing below: source 5/4, cell 5/4 lands on 1/1 (above: 25/16)', () => {
+    expect(noteText(measuredNote(n('5/4'), 'landing', src, 'reduced', 'below'))).toBe('1/1');
+    expect(noteText(measuredNote(n('5/4'), 'landing', src, 'reduced', 'above'))).toBe('25/16');
+    const c = ctx('prime', 'tenney');
+    expect(tintOf(measuredNote(n('5/4'), 'landing', src, 'reduced', 'below'), c)).toEqual(
+      tintOf(n('1/1'), c)
+    );
+  });
+  it('Landing below equals the picker landing: source 3/2 minus 5/4, reduced into the octave', () => {
+    expect(noteText(measuredNote(n('5/4'), 'landing', n('3/2'), n('2/1'), 'below'))).toBe('6/5');
+  });
+  it('Step below: the inverse step; the 12-EDO error sign flips for 6/5', () => {
+    const up = measuredNote(n('6/5'), 'step', src, 'reduced', 'above');
+    const down = measuredNote(n('6/5'), 'step', src, 'reduced', 'below');
+    expect(noteText(down)).toBe('5/6');
+    expect(signedEdoError(up.c)).toBeCloseTo(15.6, 1);
+    expect(signedEdoError(down.c)).toBeCloseTo(-15.6, 1);
+    expect(metricValue('tenney', down)).toBeCloseTo(metricValue('tenney', up) ?? 0, 9);
+  });
+  it('the default direction is above (followAlt off reads the same whatever Alt does)', () => {
+    for (const m of ['step', 'landing'] as const) {
+      expect(measuredNote(n('6/5'), m, src, 'reduced')).toEqual(
+        measuredNote(n('6/5'), m, src, 'reduced', 'above')
+      );
+    }
   });
 });

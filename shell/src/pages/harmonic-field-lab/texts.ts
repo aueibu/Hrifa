@@ -2847,7 +2847,9 @@ const entries = {
       p(
         'Shift+click a ring note to open the picker on it; a click toggles it in the subset, right-click or Delete removes it (not 1/1). In the picker, click a ratio to add it above that note, Alt+click below. Hold {key:holdOwn} to hear the new pitch, {key:holdField} with the picked note, {key:holdExact} with the whole field.'
       ),
-      p('Monzo: move over the matrix to paint exponents, click to add.'),
+      p(
+        'Monzo: click or drag on the matrix to paint; moving only previews. Add, Enter or a double-click adds. Hold Alt to see and use the inverse (the interval below).'
+      ),
       example('Shift+click 3/2, then click 11/6: 11/8 is added (folded).'),
     ],
     teaching: [
@@ -2855,7 +2857,13 @@ const entries = {
         'Rings, Near and Monzo under the Method picker also open the picker. 3 and 2 step through the rings; Shift jumps by prime, Ctrl+Shift by five primes. Ctrl+click a ratio to see every ratio within 50 c of it. A ghost dot shows where a ratio lands.'
       ),
       p(
-        'Monzo: Ctrl paints a straight line, Alt moves without painting. Rows gives −/+ buttons; the box takes a ratio or cents.'
+        'Monzo: Ctrl+drag paints a straight line, Esc during a drag cancels the stroke. Rows gives −/+ buttons; the box takes a ratio or cents.'
+      ),
+      example(
+        'Monzo, 81/80 painted: moving the pointer from 5 at −1 to 7 at +1 previews [−4 4 −1 1> and leaves 81/80 painted; a click on that cell sets 7 to +1.'
+      ),
+      example(
+        'Monzo, 81/80 painted [−4 4 −1>: hold Alt and the matrix shows [4 −4 1>, which is 80/81; a double-click then adds 80/81, and releasing Alt brings 81/80 back.'
       ),
     ],
     see: ['method', 'repeat'],
@@ -2873,7 +2881,7 @@ const entries = {
   },
   pinBar: {
     term: 'Pinned intervals',
-    text: 'Hover a ratio in the relative picker (a ring cell or a Near dot) and press = (or +) to pin it here; in Monzo, = pins the interval you painted, shown as its exponents [x x x>. Ring and monzo pins are two separate lists (128 each, saved across reloads). Click a card to add its interval above the source note, Alt+click below; hovering a card previews it like the ring does, and holding 1, 4 or 5 sounds it. x removes a card, drag a card onto another slot to reorder (pause on a card to swap), and the trash icon clears its row. Example: hover 81/80 and press =; with source 5/4, clicking the card adds 81/64.',
+    text: 'Hover a ratio in the relative picker (a ring cell or a Near dot) and press = (or +) to pin it here; in Monzo, = pins the interval under the pointer, or the painted one when no cell is hovered, shown as its exponents [x x x>. Ring and monzo pins are two separate lists (128 each, saved across reloads). Click a card to add its interval above the source note, Alt+click below; hovering a card previews it like the ring does, and holding 1, 4 or 5 sounds it. x removes a card, drag a card onto another slot to reorder (pause on a card to swap). Example: hover 81/80 and press =; with source 5/4, clicking the card adds 81/64.',
     see: ['relativeMenu'],
   },
   relColor: {
@@ -2881,6 +2889,8 @@ const entries = {
     text: 'Colors every interval of the open relative picker view and the pinned cards with two channels: Hue says which family, Brightness says how much. Near adds Radius, how far from the ring a dot sits. Pick a Preset to set them in one click, or set each yourself. Each view (Rings, Near, Monzo) keeps its own choice: change it in Rings and Near and Monzo stay as they were. Ring pin cards follow the open view; monzo pin cards follow Monzo. In Monzo each cell shows the interval you would get if only that prime were set to the value in that cell. Saved across reloads, per view. Example: Hue Prime with Brightness Tenney, 3/2 is the hue of 3 and bright, 81/80 the hue of 5 and dim.',
     see: [
       'relColorPreset',
+      'relColorMeasure',
+      'relColorFollowAlt',
       'relColorRadius',
       'relColorHue',
       'relColorBright',
@@ -2896,6 +2906,16 @@ const entries = {
     term: 'Color preset',
     text: 'One click sets Hue, Brightness and (in Near) Radius for a question. Families: which harmonic family, how simple (Radius Tenney, Hue Prime, Brightness Off). Ear vs paper: simple on paper vs recognizable to the ear (Tenney, Prime, Harmonic entropy). Tuning check: which notes are sharp or flat, how far (Tenney, Error sign, |error|). Consonance: the two consonance models against each other (Radius Harmonic entropy, Hue Off, Brightness Roughness). Interval classes: where each interval class sits, by complexity (Radius Odd limit, Interval class, Tenney). Plain: position only. The channels stay editable; after you change one so that it matches no preset the select shows Custom. Rings and Monzo have no Radius, so a preset sets only their Hue and Brightness. Example: pick Tuning check in Near and 5/4 (13.7 c flat) is cyan, band 2.',
     see: ['relColor', 'relColorHue', 'relColorBright', 'relColorRadius'],
+  },
+  relColorMeasure: {
+    term: 'Color measure (Step or Landing; hold ` to flip)',
+    text: 'What the colors and the Near radius measure. Step (the default): the interval the cell shows, the step from the source note. Landing: the pitch that step lands on, measured from 1/1 (source note times step). With source 1/1 they are the same. Chosen per view with the other Color settings and kept with them; it is not part of a Preset, so changing it never turns a preset into Custom. In Monzo the Octave setting applies to the landing. The legends, the Fit range, the hover tick, the pinned cards and the Near entropy curve follow it. Example: source 5/4, cell 6/5: Step measures 6/5 (Tenney 4.91); Landing measures 5/4 x 6/5 = 3/2 (Tenney 2.58).',
+    see: ['relColor', 'relColorPreset', 'relColorRange'],
+  },
+  relColorFollowAlt: {
+    term: 'Colors follow Alt (Rings and Near)',
+    text: 'Off (the default): the colors, the Near radius, the pinned cards and the legend tick always measure the interval ABOVE the source note, whatever Alt does. On: while you hold Alt they measure the BELOW one, the same interval Alt+click adds. Landing: source note divided by the step, folded into the repeat; Step: the step down, so only measures that depend on direction (such as the signed 12-EDO error) change. Holding Alt recolors the view once, not per hover. Chosen per view and kept with the other Color settings; not part of a Preset; Monzo painting ignores Alt. Example: Measure Landing, source 5/4, cell 5/4: the color of 25/16 normally, the color of 1/1 while Alt is held.',
+    see: ['relColor', 'relColorMeasure'],
   },
   relColorRadius: {
     term: 'Radius (Near)',

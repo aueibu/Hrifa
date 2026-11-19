@@ -24,6 +24,7 @@ import {
   dissonanceAt,
   mkNote,
   monzoNote,
+  mulNotes,
   oddLimit,
   reduceInto,
   tenneyHeight,
@@ -63,11 +64,20 @@ export const REL_RADII = REL_METRICS;
 export type RelRadius = RelMetric;
 export type RelColorRange = 'fixed' | 'fit';
 export type RelColorOctave = 'exact' | 'reduced';
+/**
+ * M9d (H-41): what the measures read. Step: the interval the cell shows (6/5 from the source note). Landing: the pitch it lands on
+ * from 1/1 (source 5/4 + step 6/5 = 3/2). Not part of a preset. With source 1/1 both are the same.
+ */
+export const REL_MEASURES = ['step', 'landing'] as const;
+export type RelMeasure = (typeof REL_MEASURES)[number];
 /** One view's Color choice (Rings; Near adds the radius, Monzo the octave). */
 export interface RelViewColor {
   hue: RelHue;
   bright: RelBright;
   range: RelColorRange;
+  measure: RelMeasure;
+  /** G15 (H-41 amended): Rings and Near only. On, holding Alt makes the measures read the BELOW direction. Monzo ignores it. */
+  followAlt: boolean;
 }
 export interface RelNearColor extends RelViewColor {
   radius: RelRadius;
@@ -83,7 +93,13 @@ export interface RelColor {
 }
 export type RelColorView = keyof RelColor;
 /** The Families preset: the default of every view. */
-export const REL_VIEW_DEFAULT: RelViewColor = { hue: 'prime', bright: 'off', range: 'fixed' };
+export const REL_VIEW_DEFAULT: RelViewColor = {
+  hue: 'prime',
+  bright: 'off',
+  range: 'fixed',
+  measure: 'step',
+  followAlt: false,
+};
 export const REL_NEAR_DEFAULT: RelNearColor = { ...REL_VIEW_DEFAULT, radius: 'tenney' };
 export const REL_MONZO_DEFAULT: RelMonzoColor = { ...REL_VIEW_DEFAULT, octave: 'exact' };
 export const REL_COLOR_DEFAULT: RelColor = {
@@ -199,6 +215,8 @@ function sanitizeView(o: Record<string, unknown>): RelViewColor {
     hue: hue ?? legacy?.hue ?? REL_VIEW_DEFAULT.hue,
     bright: bright ?? legacy?.bright ?? REL_VIEW_DEFAULT.bright,
     range: o.range === 'fit' ? 'fit' : 'fixed',
+    measure: o.measure === 'landing' ? 'landing' : 'step',
+    followAlt: o.followAlt === true,
   };
 }
 
@@ -219,8 +237,33 @@ export function sanitizeRelColor(raw: unknown): RelColor {
       ...sanitizeView(near),
       radius: REL_RADII.find((r) => r === near.radius) ?? REL_NEAR_DEFAULT.radius,
     },
-    monzo: { ...sanitizeView(monzo), octave: monzo.octave === 'reduced' ? 'reduced' : 'exact' },
+    monzo: {
+      ...sanitizeView(monzo),
+      followAlt: false,
+      octave: monzo.octave === 'reduced' ? 'reduced' : 'exact',
+    },
   };
+}
+
+/**
+ * The note the measures read for a cell whose step from the source is `step`: the step itself, or (Landing) the pitch it lands on,
+ * `from` x `step`. `octave` says how the landing's octave is treated: 'exact' keeps it, 'reduced' folds it into one octave, or a
+ * repeat note reduces it into that repeat (the picker's own landing, `landingPitch`). An irrational note keeps cents only.
+ * G15: `dir` 'below' (Colors follow Alt, Alt held) reads the step down: Landing = `from` / step, Step = the inverse step.
+ */
+export function measuredNote(
+  step: Note,
+  measure: RelMeasure,
+  from: Note,
+  octave: RelColorOctave | Note,
+  dir: 'above' | 'below' = 'above'
+): Note {
+  if (measure === 'step') {
+    // below: the step down is the inverse (only direction-dependent measures, such as the signed error, change)
+    return dir === 'above' ? step : mulNotes(step, step, -2);
+  }
+  const n = mulNotes(from, step, dir === 'above' ? 1 : -1);
+  return octave === 'exact' ? n : octave === 'reduced' ? foldOctave(n) : reduceInto(n, octave);
 }
 
 /** The measures (of Brightness or Hue) the Range switch applies to (the error size is always the fixed bands, D25). */
@@ -290,6 +333,17 @@ export const primeColor = (p: number): string => {
     : wheelFill((i * WHEEL_STRIDE) % WHEEL_SLOTS, Math.floor(i / WHEEL_SLOTS));
 };
 
+/**
+ * A prime's color as TEXT on the panel: its wheel hue at Radix step 11 (the scale's readable text step; the solid wheel fills reach
+ * only about 2.6 : 1 on the dark panel). Prime 2 has no wheel hue: plain text. Used by the Monzo prime header (M9e).
+ */
+export const primeTextColor = (p: number): string => {
+  const i = oddPrimeIndex(p);
+  return i < 0
+    ? 'var(--text)'
+    : hueStep(wheelHue(((i * WHEEL_STRIDE) % WHEEL_SLOTS) / WHEEL_SLOTS), 11);
+};
+
 /* ------------------------------------------------------------------------------------------------ tint */
 /**
  * What a cell, card or mark is painted with, in the lab's tile look (D22, `developer.v1` tileLook and tileOutline, as the Pairs
@@ -345,6 +399,19 @@ export const BRIGHT_FILL_STEPS: Record<TileScheme, readonly number[]> = {
  */
 export const BRIGHT_PLAIN_TEXT_FROM: Record<TileScheme, number> = { dark: 8, light: 9 };
 const BRIGHT_TEXT_STEP = 12;
+/**
+ * M9d (G8 to G10): the strongest fill of three hues is one Radix step weaker, because the text on it would not reach 4.5 : 1 (plain
+ * text on dark cyan step 8 4.35, hue step 12 on light violet step 9 3.28, light pink step 9 4.29). The cap is the highest fill step
+ * the hue may use in that scheme; every other hue keeps `BRIGHT_FILL_STEPS`.
+ */
+export const BRIGHT_FILL_CAP: Record<TileScheme, Partial<Record<RadixHue, number>>> = {
+  dark: { cyan: 7 },
+  light: { violet: 8, pink: 8 },
+};
+/** The fill step a hue uses for the ramp step `n` (capped where the strongest would not read). */
+export function fillStepOf(scheme: TileScheme, hue: RadixHue, n: number): number {
+  return Math.min(n, BRIGHT_FILL_CAP[scheme][hue] ?? n);
+}
 /** The blue ramp as a tile hue. */
 const BLUE: TileHue = { a: BRIGHT_HUE };
 
@@ -570,7 +637,13 @@ function hueTint(hue: TileHue, strength: number, ctx: LookCtx): IntervalTint {
   if (ctx.look !== 'tinted') {
     return tintOfTile(tile, mark);
   }
-  const n = pick(BRIGHT_FILL_STEPS[ctx.scheme], strength);
+  // a blend of two hues takes the weaker cap of the two
+  const n = Math.min(
+    fillStepOf(ctx.scheme, hue.a, pick(BRIGHT_FILL_STEPS[ctx.scheme], strength)),
+    hue.b && (hue.pctA ?? 100) < 100
+      ? fillStepOf(ctx.scheme, hue.b, pick(BRIGHT_FILL_STEPS[ctx.scheme], strength))
+      : Infinity
+  );
   return {
     fill: hueStep(hue, n),
     border: tile.border,

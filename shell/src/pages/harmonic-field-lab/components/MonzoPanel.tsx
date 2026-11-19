@@ -5,9 +5,9 @@
  * only) between openings; this file only draws and reports.
  *
  * Matrix (human, 2026-11-17): 13 prime columns by 25 exponent rows (+12 at the top to -12 at the bottom), the 0 row the same row
- * in every column and marked across the whole matrix, a prime header on top and an exponent label column on the left. Hovering a
- * cell sets that column's prime to the row's value at once (so sweeping the pointer paints values); a click adds the note;
- * leaving keeps the values. Each column's current cell is filled, and a sparkline runs through the centers of the 13 current
+ * in every column and marked across the whole matrix, a prime header on top and an exponent label column on the left. M9e: hovering
+ * only previews; a press sets that column's prime to the row's value and a drag paints a stroke (Ctrl: a line, Esc: cancel); Add
+ * (button, Enter or a double-click) adds the note. Each column's current cell is filled, and a sparkline runs through the centers of the 13 current
  * cells. The panel is `STRIP_AREA_ROWS` rows tall (the header plus 25 value rows) with the controls under it.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -21,8 +21,9 @@ import {
   type MonzoPrime,
 } from '../../../lib/harmonic-field';
 import { isTyping } from '../audio/keymap';
-import { tintVars, type IntervalTint } from '../state/intervalColor';
+import { primeTextColor, tintVars, type IntervalTint } from '../state/intervalColor';
 import { Hint } from './ui';
+import type { HoverCell } from './useLocalMonzo';
 import classes from './relativeMenu.module.css';
 
 export type MonzoView = 'strips' | 'rows';
@@ -52,12 +53,15 @@ export function monzoSummary(e: MonzoExps): string {
 export interface MonzoPanelProps {
   view: MonzoView;
   onView: (v: MonzoView) => void;
+  /** The monzo as SHOWN (the painted one, or its inverse while `inverted`); the whole panel works in shown space. */
   monzo: MonzoExps;
-  /** Set one exponent; `now` draws it at once (a button), otherwise the picker draws it with the next animation frame (painting). */
+  /** K13: Alt is held, `monzo` is the inverse of the stored one: every value written out is negated (the one store boundary, `write`). */
+  inverted?: boolean;
+  /** Set one STORED exponent; `now` draws it at once (a button), otherwise the picker draws it with the next animation frame (painting). */
   onMonzo: (prime: MonzoPrime, value: number, now?: boolean) => void;
   onReset: () => void;
-  /** Add the dialed monzo's landing note. */
-  onAddMonzo: () => void;
+  /** Add the dialed monzo's landing note; `altKey` is the Alt state of the event (the shown value is added). */
+  onAddMonzo: (altKey?: boolean) => void;
   /** Add the typed step above or below; returns the message when the text is refused, else null. */
   onTyped: (text: string, dir: Direction) => string | null;
   /** Open the meta ring (ratios near the typed ratio or cents); returns the message when the text is refused, else null. */
@@ -72,12 +76,18 @@ export interface MonzoPanelProps {
    * monzo would become if only that prime's exponent were that cell's value. Null (Color Off): the plain cells.
    */
   cellTints?: readonly (readonly (IntervalTint | null)[])[] | null;
+  /** M9e: the cell under the pointer (a preview: the picker shows its interval; never painted) and its setter. */
+  hover?: HoverCell | null;
+  onHover?: (cell: HoverCell | null) => void;
+  /** M9e: a paint stroke (button down) began or ended (the picker keeps Esc from closing the modal meanwhile). */
+  onStroke?: (on: boolean) => void;
 }
 
 export function MonzoPanel({
   view,
   onView,
   monzo,
+  inverted = false,
   onMonzo,
   onReset,
   onAddMonzo,
@@ -87,6 +97,9 @@ export function MonzoPanel({
   rowH,
   onOver,
   cellTints,
+  hover,
+  onHover,
+  onStroke,
 }: MonzoPanelProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState('');
@@ -106,8 +119,9 @@ export function MonzoPanel({
     seen.current = monzo;
     cur.current = MONZO_PRIMES.map((p) => clampExp(monzo[p]));
   }
-  const keys = useRef({ ctrl: false, alt: false });
-  const inside = useRef(false);
+  const keys = useRef({ ctrl: false });
+  /** M9e: a paint stroke (primary button down): the monzo before the press, for Esc. */
+  const stroke = useRef<{ snap: number[] } | null>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   // the cell the last plain paint set: a fast sweep skips columns between two mouse events, so they are filled along the way
   const prevCell = useRef<{ col: number; row: number } | null>(null);
@@ -119,23 +133,37 @@ export function MonzoPanel({
     lo: number;
     hi: number;
   } | null>(null);
+  // K13: everything above (cur, the snapshots, the gap fill, the line) is in SHOWN space. `write` is the only place a value leaves
+  // for the store, and it negates there while Alt is held. When Alt flips in the middle of a stroke the snapshots change space with
+  // it (negated), and the path memory (previous cell, line) starts over.
+  const inv = useRef(inverted);
+  if (inv.current !== inverted) {
+    inv.current = inverted;
+    if (stroke.current) {
+      stroke.current.snap = stroke.current.snap.map((v) => 0 - v);
+    }
+    prevCell.current = null;
+    line.current = null;
+  }
+  const write = (j: number, v: number, now?: boolean) =>
+    onMonzo(MONZO_PRIMES[j], inv.current ? 0 - v : v, now);
   const setCol = (j: number, v: number) => {
     if (cur.current[j] !== v) {
       cur.current[j] = v;
-      onMonzo(MONZO_PRIMES[j], v);
+      write(j, v);
     }
   };
   /**
-   * Paint for a pointer position. Alt: nothing. Ctrl: a straight line from the anchor cell to the pointer's cell (columns the line no
-   * longer covers return to their snapshot). Otherwise the cell under the pointer is set.
+   * Paint for a pointer position (only while the button is down, M9e). Ctrl: a straight line from the anchor cell to the pointer's
+   * cell (columns the line no longer covers return to their snapshot). Otherwise the cell under the pointer is set.
    */
-  const paint = (clientX: number, clientY: number, ctrl: boolean, alt: boolean) => {
-    keys.current = { ctrl, alt };
+  const paint = (clientX: number, clientY: number, ctrl: boolean) => {
+    keys.current = { ctrl };
     const box = gridRef.current?.getBoundingClientRect();
     if (!ctrl) {
       line.current = null;
     }
-    if (!box || alt) {
+    if (!box) {
       prevCell.current = null;
       return;
     }
@@ -178,29 +206,96 @@ export function MonzoPanel({
   };
   const paintRef = useRef(paint);
   paintRef.current = paint;
-  // Ctrl and Alt are tracked on the window (reset on blur); pointer events also carry their own flags so a missed key never sticks
+  const cellAt = (clientX: number, clientY: number): HoverCell | null => {
+    const box = gridRef.current?.getBoundingClientRect();
+    if (!box) {
+      return null;
+    }
+    const col = Math.max(
+      0,
+      Math.min(MONZO_PRIMES.length - 1, Math.floor((clientX - box.left) / cellW))
+    );
+    const row = Math.max(0, Math.min(STRIP_ROWS - 1, Math.floor((clientY - box.top) / rowH)));
+    return { prime: MONZO_PRIMES[col], value: MONZO_RANGE - row };
+  };
+  const endStroke = () => {
+    if (stroke.current) {
+      stroke.current = null;
+      prevCell.current = null;
+      line.current = null;
+      onStroke?.(false);
+    }
+  };
+  const cancelStroke = () => {
+    const s = stroke.current;
+    if (s) {
+      s.snap.forEach((v, j) => setCol(j, v));
+      endStroke();
+    }
+  };
+  const addRef = useRef(onAddMonzo);
+  addRef.current = onAddMonzo;
+  const strokeApi = useRef({ end: endStroke, cancel: cancelStroke });
+  strokeApi.current = { end: endStroke, cancel: cancelStroke };
+  // Ctrl is tracked on the window (reset on blur); mouse events also carry their own flag so a missed key never sticks. A stroke
+  // follows the pointer on the window (it keeps working outside the matrix) and ends on the button's release anywhere; Esc during
+  // a stroke restores the monzo before the press; Enter adds the painted monzo (not while typing or on a focused button).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.type === 'keydown' && e.key === 'Escape' && stroke.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        strokeApi.current.cancel();
+        return;
+      }
+      if (
+        e.type === 'keydown' &&
+        e.key === 'Enter' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        !isTyping(e.target) &&
+        !(e.target instanceof HTMLButtonElement) &&
+        !(e.target instanceof HTMLInputElement)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        // K14: Alt + Enter adds the SHOWN (inverted) value
+        addRef.current(e.altKey);
+        return;
+      }
       const was = keys.current.ctrl;
-      keys.current = { ctrl: e.ctrlKey, alt: e.altKey };
+      keys.current = { ctrl: e.ctrlKey };
       const p = lastPos.current;
-      if (e.ctrlKey && !was && inside.current && p) {
-        paintRef.current(p.x, p.y, e.ctrlKey, e.altKey);
+      if (e.ctrlKey && !was && stroke.current && p) {
+        paintRef.current(p.x, p.y, e.ctrlKey);
       } else if (!e.ctrlKey) {
         line.current = null;
       }
     };
     const onBlur = () => {
-      keys.current = { ctrl: false, alt: false };
+      keys.current = { ctrl: false };
       line.current = null;
     };
+    const onMove = (e: MouseEvent) => {
+      if (stroke.current) {
+        lastPos.current = { x: e.clientX, y: e.clientY };
+        paintRef.current(e.clientX, e.clientY, e.ctrlKey);
+      }
+    };
+    const onUp = () => strokeApi.current.end();
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('blur', onBlur);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
     return () => {
+      strokeApi.current.end();
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onKey, true);
       window.removeEventListener('blur', onBlur);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
     };
   }, []);
   const sy = (p: MonzoPrime) => (MONZO_RANGE - clampExp(monzo[p]) + 0.5) * rowH;
@@ -239,6 +334,7 @@ export function MonzoPanel({
                       data-testid="monzo-prime"
                       data-prime={p}
                       data-nonzero={v !== 0 ? 'true' : undefined}
+                      style={v !== 0 ? { color: primeTextColor(p) } : undefined}
                     >
                       {p}
                     </div>
@@ -266,26 +362,38 @@ export function MonzoPanel({
               className={classes.matrix}
               style={{ left: x0 + MONZO_LABEL_W, top: rowH, width: gridW, height: gridH }}
               data-testid="monzo-matrix"
-              onMouseEnter={() => {
-                inside.current = true;
-                prevCell.current = null;
-                onOver?.(true);
-              }}
+              onMouseEnter={() => onOver?.(true)}
               onMouseLeave={() => {
-                inside.current = false;
-                prevCell.current = null;
+                onHover?.(null);
                 onOver?.(false);
               }}
+              // hovering only previews (M9e): the hovered cell goes up to the picker, nothing is painted
               onMouseMove={(e) => {
-                inside.current = true;
                 lastPos.current = { x: e.clientX, y: e.clientY };
-                paint(e.clientX, e.clientY, e.ctrlKey, e.altKey);
+                onHover?.(cellAt(e.clientX, e.clientY));
               }}
-              onMouseDown={(e) => paint(e.clientX, e.clientY, e.ctrlKey, e.altKey)}
-              onClick={(e) => {
+              // a press paints its cell and starts a stroke; the window follows the drag and ends it on release
+              onMouseDown={(e) => {
+                if (e.button !== 0) {
+                  return;
+                }
+                e.preventDefault();
+                lastPos.current = { x: e.clientX, y: e.clientY };
+                stroke.current = { snap: [...cur.current] };
+                prevCell.current = null;
+                line.current = null;
+                paint(e.clientX, e.clientY, e.ctrlKey);
+                onStroke?.(true);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => {
                 e.stopPropagation();
-                paint(e.clientX, e.clientY, e.ctrlKey, e.altKey);
-                onAddMonzo();
+                const c = cellAt(e.clientX, e.clientY);
+                if (c) {
+                  setCol(MONZO_PRIMES.indexOf(c.prime), c.value);
+                }
+                // K14: with Alt held the cell was set in the shown view and the shown (inverted) value is added
+                onAddMonzo(e.altKey);
               }}
             >
               {MONZO_PRIMES.map((prime, j) => {
@@ -307,6 +415,9 @@ export function MonzoPanel({
                           data-value={v}
                           data-now={v === now ? 'true' : undefined}
                           data-zero={v === 0 ? 'true' : undefined}
+                          data-hover={
+                            hover?.prime === prime && hover.value === v ? 'true' : undefined
+                          }
                           data-tinted={tint ? 'true' : undefined}
                           style={{ height: rowH, ...tintVars(tint) }}
                         >
@@ -325,6 +436,7 @@ export function MonzoPanel({
                 data-testid="monzo-spark"
                 aria-hidden="true"
               >
+                <polyline className={classes.sparkHalo} points={points} />
                 <polyline className={classes.sparkLine} points={points} />
                 {MONZO_PRIMES.map((p, j) => (
                   <circle
@@ -361,11 +473,15 @@ export function MonzoPanel({
                     variant="default"
                     aria-label={`Lower the exponent of ${p}`}
                     disabled={v <= -MONZO_RANGE}
-                    onClick={() => onMonzo(p, clampExp(cur.current[j]) - 1, true)}
+                    onClick={() => write(j, clampExp(cur.current[j]) - 1, true)}
                   >
                     −
                   </Button>
-                  <span className={classes.rowValue} data-nonzero={v !== 0 ? 'true' : undefined}>
+                  <span
+                    className={classes.rowValue}
+                    data-nonzero={v !== 0 ? 'true' : undefined}
+                    style={v !== 0 ? { color: primeTextColor(p) } : undefined}
+                  >
                     {expText(v)}
                   </span>
                   <Button
@@ -373,7 +489,7 @@ export function MonzoPanel({
                     variant="default"
                     aria-label={`Raise the exponent of ${p}`}
                     disabled={v >= MONZO_RANGE}
-                    onClick={() => onMonzo(p, clampExp(cur.current[j]) + 1, true)}
+                    onClick={() => write(j, clampExp(cur.current[j]) + 1, true)}
                   >
                     +
                   </Button>
@@ -405,7 +521,7 @@ export function MonzoPanel({
             Reset
           </Button>
           {view === 'rows' && (
-            <Button size="compact-xs" data-testid="monzo-add" onClick={onAddMonzo}>
+            <Button size="compact-xs" data-testid="monzo-add" onClick={(e) => onAddMonzo(e.altKey)}>
               Add
             </Button>
           )}

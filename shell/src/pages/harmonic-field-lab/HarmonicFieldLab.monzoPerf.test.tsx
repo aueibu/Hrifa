@@ -99,13 +99,18 @@ describe('M8p monzo paint performance', () => {
         });
       }
     };
+    // M9e: painting needs the button down (press-drag)
     fireEvent.mouseEnter(matrix);
+    fireEvent.mouseDown(matrix, { clientX: 0.5 * cellW, clientY: 0.5 * rowH });
     stroke(1, 10);
     const base = { ...counts };
     // 10 mouse events in one frame, then 4 frames of 3 events: 5 frames, 22 events
     stroke(1, 10);
     stroke(4, 3);
-    const d = (id: string) => (counts[id] ?? 0) - (base[id] ?? 0);
+    // the release itself is one more picker render (the stroke flag), counted apart from the frames
+    const end = { ...counts };
+    fireEvent.mouseUp(matrix);
+    const d = (id: string) => (end[id] ?? 0) - (base[id] ?? 0);
     const outside = OUTSIDE.reduce((n, id) => n + d(id), 0);
     // every column shows its value, and the last frame was drawn
     expect(matrix.querySelectorAll('[data-now="true"]')).toHaveLength(13);

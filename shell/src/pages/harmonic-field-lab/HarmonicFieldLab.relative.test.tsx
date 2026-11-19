@@ -53,7 +53,9 @@ describe('M8b relative modal', () => {
     openOn(ringNotes()[0]);
     expect(screen.queryByTestId('relative-ghost')).toBeNull();
     fireEvent.mouseEnter(half('3/2'));
-    expect(screen.getByTestId('relative-line').textContent).toBe('3/2 above 1/1 = 3/2 (702.0 c)');
+    expect(screen.getByTestId('relative-line').textContent).toBe(
+      '3/2 above 1/1 = 3/2 (702.0 c) · 3/2 step'
+    );
     const ghost = screen.getByTestId('relative-ghost');
     expect(screen.getByTestId('relative-ring').contains(ghost)).toBe(true);
     expect(ghost.getAttribute('data-tone')).toBe('above');

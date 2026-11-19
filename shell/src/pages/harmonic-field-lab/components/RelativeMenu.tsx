@@ -44,7 +44,8 @@ import {
   type Note,
   type RingRatio,
 } from '../../../lib/harmonic-field';
-import type { PreviewTarget } from '../audio/plan';
+import { keyId } from '../audio/keymap';
+import { ARMED_DIGITS, HOLD_DIGITS, type PreviewTarget } from '../audio/plan';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { useHeCurve } from '../state/entropy';
 import {
@@ -56,6 +57,8 @@ import {
   monzoPaintedNote,
   largestPrimeOf,
   legendMarksOf,
+  measuredNote,
+  metricValue,
   primeColor,
   tintOf,
   usesRange,
@@ -89,7 +92,7 @@ import { RelativeColorControls, RelativeColorPanel } from './RelativeColorMenu';
 import { RING_PX_PER_UNIT, RING_R, RingDot } from './ringMarks';
 import { PitchRing, type RingDotExtra, type RingOverlayArgs } from './RingStats';
 import { Hint, Tip, noteHandlers, useLab } from './ui';
-import { useLocalMonzo } from './useLocalMonzo';
+import { previewMonzo, shownMonzoOf, useLocalMonzo } from './useLocalMonzo';
 import { useTiles } from './useTiles';
 import classes from './relativeMenu.module.css';
 
@@ -488,6 +491,8 @@ export interface MetaGeometry {
   measure: RelRadius;
   /** The entropy curve's exact values (Radius Entropy only). */
   he?: EntropySource | null;
+  /** M9d: Landing measure: a step's landing from 1/1 (null or absent: the radius measures the step itself). */
+  measureOf?: ((n: Note) => Note) | null;
   scale: MetaScale;
   C: number;
   rMin: number;
@@ -568,15 +573,18 @@ export function metaParentLinks(
     let node = nodes.get(key);
     if (!node) {
       const offsetC = wrap1200(1200 * Math.log2(n / d) - t + 600) - 600;
-      const v = radiusValue(
-        g.measure,
-        {
-          note: ratioNote(fn, fd),
-          odd: Math.max(oddPart(fn), oddPart(fd)),
-          tenney: Math.log2(fn * fd),
-        },
-        g.he
-      );
+      const step = ratioNote(fn, fd);
+      const v = g.measureOf
+        ? (metricValue(g.measure, g.measureOf(step), g.he) ?? 0)
+        : radiusValue(
+            g.measure,
+            {
+              note: step,
+              odd: Math.max(oddPart(fn), oddPart(fd)),
+              tenney: Math.log2(fn * fd),
+            },
+            g.he
+          );
       const p = metaDotPos(g, { v, offsetC });
       const r = Math.hypot(p.x - g.C, p.y - g.C);
       node = {
@@ -696,6 +704,10 @@ export interface MetaLayerProps {
   dotTints: ReadonlyMap<RingRatio, IntervalTint> | null;
   /** M9: the harmonic entropy curve to draw around the ring (null: not drawn). */
   heCurve: Float64Array | null;
+  /** M9d: Landing measure: a step's landing (null: Step). The curve is then drawn at the landing's cents, source plus step. */
+  measureOf: ((n: Note) => Note) | null;
+  /** M9d: the source note's cents when Landing, else 0 (added to the center interval for the curve). */
+  curveBaseC: number;
 }
 
 /** The entropy curve's band outside the ring (SVG units): its gap from the outermost dot radius and its height (inside the bands' 16 px margin). */
@@ -731,11 +743,14 @@ const MetaLayer = memo(function MetaLayer({
   hoverText,
   dotTints,
   heCurve,
+  measureOf,
+  curveBaseC,
 }: MetaLayerProps) {
   const arc = mSet.arc;
   const geo: MetaGeometry = {
     measure: radius,
     he,
+    measureOf,
     scale: mSet.scale,
     C,
     rMin,
@@ -770,12 +785,13 @@ const MetaLayer = memo(function MetaLayer({
     const out: string[] = [];
     for (let i = 0; i <= HE_POINTS; i++) {
       const o = -mSet.spanC / 2 + (mSet.spanC * i) / HE_POINTS;
-      const t = max > min ? (heCurveAt(heCurve, meta.note.c + o) - min) / (max - min) : 0;
+      const t =
+        max > min ? (heCurveAt(heCurve, curveBaseC + meta.note.c + o) - min) / (max - min) : 0;
       const p = polar(C, rMax + HE_BAND_GAP + HE_BAND_H * t, metaAngle(o));
       out.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
     }
     return out.join(' ');
-  }, [heCurve, C, rMax, zero, sign, arc, mSet.spanC, meta.note.c]);
+  }, [heCurve, C, rMax, zero, sign, arc, mSet.spanC, meta.note.c, curveBaseC]);
   // one thread per largest prime (groups of two or more, in complexity order)
   const threads = useMemo(() => {
     const byPrime = new Map<number, MetaDot[]>();
@@ -814,6 +830,7 @@ const MetaLayer = memo(function MetaLayer({
       he,
       mSet.scale,
       meta.note.c,
+      measureOf,
     ]
   );
   const seamHalf = Number((mSet.spanC / 2).toFixed(2));
@@ -1241,7 +1258,28 @@ export function RelativeModal({
     latest: monzoNow,
     set: setMonzoExp,
     reset: resetMonzo,
+    hover: monzoHoverCell,
+    setHover: setMonzoHover,
+    stroke: monzoStroke,
+    setStroke: setMonzoStroke,
   } = useLocalMonzo(initialMonzo, onMonzoCommit, onMonzoTouch);
+  // M9e: the matrix cell under the pointer is a PREVIEW. K13: while Alt is held in Monzo the matrix SHOWS the inverse of the painted
+  // monzo (`shownBase`: every exponent negated; the same object as `monzo` otherwise, so memos below depend on Alt only in Monzo).
+  // `shownMonzo` (the preview built on `shownBase`, else `shownBase`) drives the landing ghost, the readout, the legend tick, holds
+  // 1 / 4 / 5 and the pin; the matrix, its sparkline, header, Rows and cell tints read `shownBase`; Add reads the shown value at
+  // the event. Only the store keeps the PAINTED `monzo` (the panel negates at its write boundary).
+  const [alt, setAlt] = useState(false);
+  const altRef = useRef(alt);
+  altRef.current = alt;
+  const invertMonzo = mode === 'monzo' && alt;
+  const shownBase = useMemo(() => shownMonzoOf(monzo, invertMonzo), [monzo, invertMonzo]);
+  const monzoPreview = useMemo(
+    () => previewMonzo(shownBase, monzoHoverCell),
+    [shownBase, monzoHoverCell]
+  );
+  const shownMonzo = monzoPreview ?? shownBase;
+  const hoverCellRef = useRef(monzoHoverCell);
+  hoverCellRef.current = monzoHoverCell;
   // the inner ring's field dots: click toggles the subset, Shift+click makes the note the source, right-click or Delete removes it
   // (never 1/1). The ring's own hover stays the source (`hover={fromIdx}`), so no hover handlers here.
   const innerDotProps = (i: number): RingDotExtra => {
@@ -1328,7 +1366,12 @@ export function RelativeModal({
   // stable across hovers (the memoized band cells compare it by identity)
   const rings = useMemo(() => places.map((g) => g.ratios), [places]);
   // direction: Alt NOT held = above, Alt held = below (tracked while the modal is open, reset when the window loses focus; a click reads its own altKey)
-  const [alt, setAlt] = useState(false);
+  // (`alt` itself is declared above, with the monzo)
+  // M9d: holding ` (Backquote, by physical key) shows the opposite Measure (Step <-> Landing) while held; release or blur goes back
+  const [measureFlip, setMeasureFlip] = useState(false);
+  // the key handler below is set up once per opening: it reads the audio API through a ref, never a stale copy
+  const audioRef = useRef(lab.audio);
+  audioRef.current = lab.audio;
   const navRef = useRef({ start, step, set: onRingStart });
   navRef.current = { start, step, set: onRingStart };
   // Keys while the modal is open, in the CAPTURE phase so the page's own handlers (Alt+digit tabs, digit holds) never see them:
@@ -1344,9 +1387,22 @@ export function RelativeModal({
         e.preventDefault();
         return;
       }
+      // M9d: momentary Step <-> Landing flip (a dead key on some layouts: the physical code still arrives)
+      if (e.code === 'Backquote' && !e.ctrlKey && !e.metaKey && !isTypingTarget(e.target)) {
+        e.preventDefault();
+        e.stopPropagation();
+        setMeasureFlip(true);
+        return;
+      }
       if (e.altKey && /^(Digit|Numpad)[1-9]$/.test(e.code)) {
         e.preventDefault();
         e.stopPropagation();
+        // Alt is "below" here, not "switch tab": the page's hold handler ignores Alt+digit (it means tab there), so a hold key
+        // pressed while Alt is already down starts its preview from here (release needs nothing: the page releases by key code)
+        const digit = e.code.slice(-1);
+        if (!e.repeat && !e.ctrlKey && !e.metaKey && (HOLD_DIGITS[digit] || ARMED_DIGITS[digit])) {
+          audioRef.current.holdPreview(keyId(e), digit);
+        }
         return;
       }
       // M8f: = (or +, the same physical key) pins the hovered interval; it must not reach the page's Sketch stash
@@ -1354,7 +1410,8 @@ export function RelativeModal({
         (e.code === 'Equal' || e.code === 'NumpadAdd' || e.key === '=' || e.key === '+') &&
         !e.ctrlKey &&
         !e.metaKey &&
-        !e.altKey &&
+        // M9e K13: in Monzo, Alt+= pins the shown inverse; elsewhere Alt+= does nothing
+        (!e.altKey || modeRef.current === 'monzo') &&
         !isTypingTarget(e.target)
       ) {
         e.preventDefault();
@@ -1395,8 +1452,14 @@ export function RelativeModal({
       if (e.key === 'Alt') {
         e.preventDefault();
       }
+      if (e.code === 'Backquote') {
+        setMeasureFlip(false);
+      }
     };
-    const onBlur = () => setAlt(false);
+    const onBlur = () => {
+      setAlt(false);
+      setMeasureFlip(false);
+    };
     window.addEventListener('keydown', onDown, true);
     window.addEventListener('keyup', onUp, true);
     window.addEventListener('blur', onBlur);
@@ -1463,8 +1526,8 @@ export function RelativeModal({
     return { rowH, ringArea, ppu: Math.min(lay.ppu * scale, ringArea / (2 * vbHalf)) };
   }, [size, lay.ppu, scale, vbHalf]);
   // Monzo mode: the ghost follows the kept exponents (all 0 = on the source note itself)
-  const mStep = useMemo(() => monzoStep(monzo, rep), [monzo, rep]);
-  const mLanding = useMemo(() => monzoLanding(from, monzo, rep), [from, monzo, rep]);
+  const mStep = useMemo(() => monzoStep(shownMonzo, rep), [shownMonzo, rep]);
+  const mLanding = useMemo(() => monzoLanding(from, shownMonzo, rep), [from, shownMonzo, rep]);
   const mDir: Direction = mStep?.dir ?? 'above';
   // a hovered monzo card previews like the painted interval: from the source note times its exponents (Alt = divided, below)
   const pinNote = useMemo(
@@ -1490,7 +1553,7 @@ export function RelativeModal({
           mStep
             ? landingReadout(noteText(mStep.ratio), mStep.dir, from, mLanding)
             : `${noteText(from)} (all 0)`
-        } · ${monzoSummary(monzo)}`;
+        } · ${monzoSummary(shownMonzo)}`;
   const onTyped = (text: string, d: Direction): string | null => {
     const r = parseTypedStep(text);
     if (!r.ok) {
@@ -1518,7 +1581,8 @@ export function RelativeModal({
   const [monzoOver, setMonzoOver] = useState(false);
   useEffect(() => {
     setMonzoOver(false);
-  }, [mode, monzoView]);
+    setMonzoHover(null);
+  }, [mode, monzoView, setMonzoHover]);
   const pointLanding = useMemo(
     () =>
       isMonzo
@@ -1536,6 +1600,16 @@ export function RelativeModal({
   const lastTarget = useRef<PreviewTarget | null>(null);
   const fieldCents = lab.base.field.map((n) => n.c);
   const fieldSig = fieldCents.join(',');
+  // M9d: hold 4 plays the interval the colors measure: Step = the source note and the landing; Landing (or ` held) = 1/1 and the
+  // landing. The open view's Measure, flipped while ` is held (the same rule as `landingOn` below).
+  const viewMeasure = (
+    isMonzo
+      ? lab.state.ui.relColor.monzo
+      : meta !== null
+        ? lab.state.ui.relColor.near
+        : lab.state.ui.relColor.rings
+  ).measure;
+  const pairRefC = (viewMeasure === 'landing') !== measureFlip ? 0 : from.c;
   useEffect(() => {
     const prev = lastTarget.current;
     if (!pointLanding) {
@@ -1551,14 +1625,14 @@ export function RelativeModal({
       : [...fieldCents, l].sort((a, b) => a - b);
     const next: PreviewTarget = {
       kind: 'pitches',
-      key: `rel:${from.c}:${l}:${fieldSig}`,
+      key: `rel:${from.c}:${pairRefC}:${l}:${fieldSig}`,
       cents: [l],
-      variants: { own: [l], rounded: [from.c, l], exact },
+      variants: { own: [l], rounded: [pairRefC, l], exact },
     };
     lastTarget.current = next;
     audio.setPreviewTarget(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fieldCents is rebuilt each render; fieldSig stands for it
-  }, [pointLanding, from.c, fieldSig, audio]);
+  }, [pointLanding, from.c, pairRefC, fieldSig, audio]);
   useEffect(
     () => () => {
       if (lastTarget.current) {
@@ -1624,6 +1698,28 @@ export function RelativeModal({
   const relColors = lab.state.ui.relColor;
   const relColor = isMonzo ? relColors.monzo : metaOn ? relColors.near : relColors.rings;
   const monzoOctave = isMonzo ? relColors.monzo.octave : 'exact';
+  // M9d (H-41): what the measures read. Step: the cell's own interval. Landing: where it lands from 1/1 (`from` x step; Monzo honors its
+  // Octave, the other views reduce into the repeat like a click). Null for Step, so the memos below change only with a real Landing.
+  // The maps never depend on the hovered cell, only on the source, the repeat and the Octave.
+  // holding ` flips it for as long as it is held (the saved setting is unchanged)
+  const landingOn = (relColor.measure === 'landing') !== measureFlip;
+  // G15: "Colors follow Alt" (Rings and Near; Monzo has none): while Alt is held the measures read the BELOW direction (Landing: source
+  // / step; Step: the inverse step). `belowOn` is false whenever the setting is off, so with it off no memo below depends on Alt.
+  const belowOn = !isMonzo && relColor.followAlt && alt;
+  const measureOf = useMemo<((n: Note) => Note) | null>(
+    () =>
+      landingOn || belowOn
+        ? (n) =>
+            measuredNote(
+              n,
+              landingOn ? 'landing' : 'step',
+              from,
+              isMonzo ? monzoOctave : rep,
+              belowOn ? 'below' : 'above'
+            )
+        : null,
+    [landingOn, belowOn, from, rep, isMonzo, monzoOctave]
+  );
   const [dev] = useLabDeveloperOptions();
   const { look, outline, scheme } = useTiles();
   const colorOn = relColor.hue !== 'off' || relColor.bright !== 'off';
@@ -1658,30 +1754,39 @@ export function RelativeModal({
       (near?.items ?? []).map((it) => ({
         ratio: { note: it.note, text: it.text, odd: it.odd } as RingRatio,
         offsetC: it.offsetC,
-        v: radiusValue(radius, it, heSource),
+        v: measureOf
+          ? (metricValue(radius, measureOf(it.note), heSource) ?? 0)
+          : radiusValue(radius, it, heSource),
         prime: largestPrime(it.text),
         isCenter: meta !== null && it.text === meta.text && Math.abs(it.offsetC) < 1e-6,
       })),
-    [near, meta, radius, heSource]
+    [near, meta, radius, heSource, measureOf]
   );
   const dotByRatio = useMemo(() => new Map(dots.map((d) => [d.ratio, d])), [dots]);
   const hoverDot = metaOn && cell ? (dotByRatio.get(cell) ?? null) : null;
   const hoverOffset = hoverDot ? hoverDot.offsetC : null;
   const monzoCells = useMemo(
-    () => (isMonzo && colorOn ? monzoCellNotes(monzo, monzoOctave) : null),
-    [isMonzo, colorOn, monzo, monzoOctave]
+    () => (isMonzo && colorOn ? monzoCellNotes(shownBase, monzoOctave) : null),
+    [isMonzo, colorOn, shownBase, monzoOctave]
+  );
+  // the cells' notes as the measures read them (the landings when Landing), per view
+  const measuredCells = useMemo(
+    () => (monzoCells && measureOf ? monzoCells.map((col) => col.map(measureOf)) : monzoCells),
+    [monzoCells, measureOf]
+  );
+  const measuredView = useMemo(
+    () =>
+      isMonzo
+        ? (measuredCells?.flat() ?? [])
+        : (metaOn ? dots.map((d) => d.ratio.note) : rings.flat().map((r) => r.note)).map((n) =>
+            measureOf ? measureOf(n) : n
+          ),
+    [isMonzo, measuredCells, metaOn, dots, rings, measureOf]
   );
   // Fit to view: the min and max over the cells of the open view (ring cells, Near dots or Monzo matrix cells)
   const viewNotes = useMemo(
-    () =>
-      relColor.range !== 'fit' || !usesRange(relColor)
-        ? []
-        : isMonzo
-          ? (monzoCells?.flat() ?? [])
-          : metaOn
-            ? dots.map((d) => d.ratio.note)
-            : rings.flat().map((r) => r.note),
-    [relColor.range, relColor.hue, relColor.bright, isMonzo, monzoCells, metaOn, dots, rings]
+    () => (relColor.range !== 'fit' || !usesRange(relColor) ? [] : measuredView),
+    [relColor.range, relColor.hue, relColor.bright, measuredView]
   );
   const tintCtx = useMemo<TintContext | null>(
     () =>
@@ -1721,48 +1826,43 @@ export function RelativeModal({
     if (relColor.hue !== 'prime') {
       return [];
     }
-    const notes = isMonzo
-      ? (monzoCells?.flat() ?? [])
-      : metaOn
-        ? dots.map((d) => d.ratio.note)
-        : rings.flat().map((r) => r.note);
     const set = new Set<number>();
-    for (const n of notes) {
+    for (const n of measuredView) {
       const p = largestPrimeOf(n);
       if (p !== null) {
         set.add(p);
       }
     }
     return [...set].sort((a, b) => a - b);
-  }, [relColor.hue, isMonzo, monzoCells, metaOn, dots, rings]);
+  }, [relColor.hue, measuredView]);
   const ringTints = useMemo(
     () =>
       tintCtx && !isMonzo && !metaOn
         ? new Map(
             rings.flat().flatMap((r) => {
-              const t = tintOf(r.note, tintCtx);
+              const t = tintOf(measureOf ? measureOf(r.note) : r.note, tintCtx);
               return t ? [[r, t] as const] : [];
             })
           )
         : null,
-    [tintCtx, isMonzo, metaOn, rings]
+    [tintCtx, isMonzo, metaOn, rings, measureOf]
   );
   const dotTints = useMemo(
     () =>
       tintCtx && metaOn
         ? new Map(
             dots.flatMap((d) => {
-              const t = tintOf(d.ratio.note, tintCtx);
+              const t = tintOf(measureOf ? measureOf(d.ratio.note) : d.ratio.note, tintCtx);
               return t ? [[d.ratio, t] as const] : [];
             })
           )
         : null,
-    [tintCtx, metaOn, dots]
+    [tintCtx, metaOn, dots, measureOf]
   );
   const cellTints = useMemo(
     () =>
-      tintCtx && monzoCells
-        ? monzoCellTints(monzoCells, {
+      tintCtx && measuredCells
+        ? monzoCellTints(measuredCells, {
             hue: tintCtx.hue,
             bright: tintCtx.bright,
             intensity: tintCtx.intensity,
@@ -1774,7 +1874,7 @@ export function RelativeModal({
             range: relColor.range,
           })
         : null,
-    [tintCtx, monzoCells, relColor.range]
+    [tintCtx, measuredCells, relColor.range]
   );
   // the pin cards: the same tint as the interval's cell (a card's note is parsed once; Fit uses the open view's range)
   const pinNotes = useRef(new Map<string, ReturnType<typeof parseInterval>>());
@@ -1791,16 +1891,22 @@ export function RelativeModal({
       if (!n) {
         return null;
       }
-      return tintOf(monzoOctave === 'reduced' ? foldOctave(n) : n, tintCtx);
+      const step = monzoOctave === 'reduced' ? foldOctave(n) : n;
+      return tintOf(measureOf ? measureOf(step) : step, tintCtx);
     },
-    [tintCtx, monzoOctave]
+    [tintCtx, monzoOctave, measureOf]
   );
   // the Monzo landing mark: the painted interval's tint (a hovered monzo card shows its own)
   const landingTint =
     isMonzo && tintCtx
       ? pinNote
         ? pinTint(pinHover ?? '')
-        : tintOf(monzoPaintedNote(monzo, monzoOctave), tintCtx)
+        : tintOf(
+            measureOf
+              ? measureOf(monzoPaintedNote(shownMonzo, monzoOctave))
+              : monzoPaintedNote(shownMonzo, monzoOctave),
+            tintCtx
+          )
       : null;
   // the hovered interval on the legend: a ring cell, a Near dot or a ring pin card (`cell`), a hovered Monzo card, or in Monzo the
   // painted interval (hovering a matrix cell paints it, so the cell under the pointer IS the painted interval)
@@ -1812,10 +1918,15 @@ export function RelativeModal({
           ? monzoOctave === 'reduced'
             ? foldOctave(pinNote)
             : pinNote
-          : monzoPaintedNote(monzo, monzoOctave),
-    [isMonzo, colorOn, pinNote, monzo, monzoOctave]
+          : monzoPaintedNote(shownMonzo, monzoOctave),
+    [isMonzo, colorOn, pinNote, shownMonzo, monzoOctave]
   );
-  const hoverNote = isMonzo ? monzoHoverNote : (cell?.note ?? null);
+  const hoverStep = isMonzo ? monzoHoverNote : (cell?.note ?? null);
+  // the landing is rebuilt only when the hovered note (or the source) changes, so the legend mark below stays memoized
+  const hoverNote = useMemo(
+    () => (hoverStep && measureOf ? measureOf(hoverStep) : hoverStep),
+    [hoverStep, measureOf]
+  );
   const legendBounds = tintCtx?.bounds ?? null;
   const legendHueBounds = tintCtx?.hueBounds ?? null;
   const legendMark = useMemo(
@@ -1881,10 +1992,21 @@ export function RelativeModal({
       },
     [from, rep, hover, isMonzo, mLanding, mDir, pinLanding, pinDir, landingTint?.mark]
   );
-  const readoutLine =
+  const baseLine =
     metaOn && meta && hoverOffset !== null && line && !message
       ? `${line} · ${signedCents(hoverOffset, meta.note.m ? 1 : 2)} from ${meta.text}`
       : line;
+  // M9d: which interval is measured, "6/5 step" or "3/2 from 1/1" (only while a color channel is on). It follows the direction
+  // (Alt = below) like the sound does: Landing reads the same landing hold 4 plays (source 5/4, cell 5/4: 25/16 above, 1/1 below).
+  const landingText = pointLanding ? noteText(pointLanding) : null;
+  const readoutLine =
+    baseLine && cell && colorOn && !message
+      ? `${baseLine} · ${
+          measureOf && landingOn
+            ? `${landingText ?? noteText(measureOf(cell.note))} from 1/1`
+            : `${cell.text} step${dir === 'below' ? ' down' : ''}`
+        }`
+      : baseLine;
   const rMin = bands[0][0] + 4;
   // the dots' outer radius leaves room outside it for the cents labels
   const rMax = bands[bands.length - 1][1] - 16;
@@ -1927,9 +2049,10 @@ export function RelativeModal({
     const kind: PinKind = modeRef.current === 'monzo' ? 'monzo' : 'ring';
     let text: string | null = null;
     if (kind === 'monzo') {
-      text =
-        pinHoverRef.current ??
-        (isZeroMonzo(monzoNow.current) ? null : fmtRatio(monzoNote(monzoNow.current)));
+      // M9e: the previewed interval when a matrix cell is hovered, else the painted one
+      const base = shownMonzoOf(monzoNow.current, altRef.current);
+      const m = previewMonzo(base, hoverCellRef.current) ?? base;
+      text = pinHoverRef.current ?? (isZeroMonzo(m) ? null : fmtRatio(monzoNote(m)));
       if (!text) {
         setPinMsg('Paint an interval first: every exponent is 0.');
         return;
@@ -2030,7 +2153,7 @@ export function RelativeModal({
       onClose={onClose}
       // Mantine's own Esc listener is a window capture listener registered before ours, so stopping the event cannot reach it:
       // while the meta ring is open, Esc belongs to the meta ring (back to the rings) and the Modal must not close on it
-      closeOnEscape={!metaOn && !pinDrag}
+      closeOnEscape={!metaOn && !pinDrag && !monzoStroke}
       fullScreen={FULLSCREEN}
       centered
       size={bodyW + MODAL_PAD_W}
@@ -2069,11 +2192,22 @@ export function RelativeModal({
           <MonzoPanel
             view={monzoView}
             onView={onMonzoView}
-            monzo={monzo}
+            monzo={shownBase}
+            inverted={invertMonzo}
             onMonzo={setMonzoExp}
             onReset={resetMonzo}
-            // a click adds what the pointer has painted NOW, which can be a frame ahead of the drawn landing
-            onAddMonzo={() => onAdd(noteText(monzoLanding(from, monzoNow.current, rep)))}
+            hover={monzoHoverCell}
+            onHover={setMonzoHover}
+            onStroke={setMonzoStroke}
+            // Add (button, Enter, double-click) adds what has been painted NOW (a frame ahead of the drawn landing), as SHOWN: the
+            // inverse when Alt is held (K14; the event's own Alt flag, else the tracked one)
+            onAddMonzo={(altKey) =>
+              onAdd(
+                noteText(
+                  monzoLanding(from, shownMonzoOf(monzoNow.current, altKey ?? altRef.current), rep)
+                )
+              )
+            }
             onTyped={onTyped}
             onNear={onNear}
             width={size}
@@ -2195,6 +2329,8 @@ export function RelativeModal({
               hoverText={mSet.connect === 'parents' && cell ? cell.text : null}
               dotTints={dotTints}
               heCurve={metaOn && mSet.entropy ? he.curve : null}
+              measureOf={measureOf}
+              curveBaseC={measureOf ? from.c : 0}
             />
           )}
           {/* the hovered dot's highlight: one circle above the memoized layer (the layer itself never re-renders on hover) */}
@@ -2436,7 +2572,7 @@ export function RelativeModal({
         </div>
         <div className={classes.footLine} data-testid="relative-rings">
           {isMonzo
-            ? 'Move to paint · Ctrl line · Alt no paint · click to add · hold 1 / 4 / 5 to hear'
+            ? 'Move to paint · Ctrl line · hold Alt for the inverse · click to add · hold 1 / 4 / 5 to hear'
             : metaOn
               ? 'Esc: back to rings · click a dot to add (Alt: below) · hold 1/4/5 to hear'
               : `Rings ${places.map((g) => g.label).join(' · ')} · 2/3 ring, Shift prime, Ctrl+Shift 5 · Ctrl+click: near ratios · inner dot: click subset, Shift from it, right-click remove · hold 1/4/5 to hear`}
