@@ -240,11 +240,13 @@
   font-weight: 600;
 }
 
+/* F17: one column of 13 rows (22 px each = 286 px, inside the strip area, whose height does not change with the view) */
 .rowsGrid {
   display: grid;
   grid-auto-rows: 22px;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 16px;
+  grid-template-columns: 1fr;
+  margin: 0 auto;
+  width: max-content;
 }
 
 .monzoRow {
@@ -280,15 +282,82 @@
   position: absolute;
 }
 
+/* F19: a label is a button (click sets all 13 primes to its value) */
 .expLabel {
   align-items: center;
+  appearance: none;
+  background: none;
+  border: 0;
   box-sizing: border-box;
   color: var(--text-muted);
+  cursor: pointer;
   display: flex;
   font-family: var(--mantine-font-family-monospace);
   font-size: calc(var(--lab-fs-small) * 0.85);
   justify-content: flex-end;
-  padding-right: 4px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  width: 100%;
+}
+
+.expLabel:hover {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  color: var(--text);
+}
+
+.expLabel:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* F20: the shift buttons sit in a narrow gutter left of the labels: + on the +1 row, - on the -1 row */
+.shiftGutter {
+  position: absolute;
+}
+
+.shiftSlot {
+  left: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.shiftWrap {
+  display: block;
+  height: 100%;
+}
+
+.shiftBtn {
+  align-items: center;
+  appearance: none;
+  background: var(--panel);
+  border: 1px solid var(--control-border);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-small);
+  height: 100%;
+  justify-content: center;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.shiftBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 10%, var(--panel));
+}
+
+.shiftBtn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.shiftBtn:disabled {
+  cursor: default;
+  opacity: 0.4;
 }
 
 .expLabel[data-zero='true'] {
@@ -690,4 +759,105 @@
 p.inputError {
   font-size: var(--lab-fs-small);
   line-height: 1.3;
+}
+
+/* M9f (H-42): the per-prime complexity band above the prime header. A fixed box (3 rows, set inline), always reserved: the percent
+   line on top, the bars below, bottom-aligned on the header line and growing upward. Nothing in it changes the layout around it. */
+.splitBand {
+  display: flex;
+  pointer-events: auto;
+  position: absolute;
+  top: 0;
+}
+
+.splitSlot {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.splitPct {
+  align-items: flex-end;
+  color: var(--text-muted);
+  display: flex;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  font-variant-numeric: tabular-nums;
+  justify-content: center;
+  line-height: 1;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.splitBarZone {
+  align-items: flex-end;
+  display: flex;
+  justify-content: center;
+}
+
+.splitBar {
+  border-radius: 1px 1px 0 0;
+  flex: none;
+}
+
+/* F16: with Count octaves off, prime 2 is drawn as a dashed outline at the height it would have, no fill and no number */
+.splitGhost {
+  border: 1px dashed var(--text-muted);
+  border-bottom-width: 0;
+  box-sizing: border-box;
+  flex: none;
+}
+
+/* the total, in the corner above the exponent labels (right-aligned on the header line) */
+.splitCorner {
+  align-items: flex-end;
+  box-sizing: border-box;
+  color: var(--text-muted);
+  display: flex;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  font-variant-numeric: tabular-nums;
+  justify-content: flex-end;
+  line-height: 1;
+  overflow: visible;
+  padding-bottom: 2px;
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+
+/* Rows view (F18): the number and the bar sit right beside the + button, a small gap; a zero row draws neither */
+.rowSplit {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+
+.rowPct {
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--lab-fs-tiny);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  width: 3ch;
+}
+
+.rowTrack {
+  display: block;
+  flex: none;
+  height: 8px;
+  width: 140px;
+}
+
+.rowBar {
+  display: block;
+  height: 100%;
+}
+
+.rowGhost {
+  border: 1px dashed var(--text-muted);
+  box-sizing: border-box;
+  display: block;
+  height: 100%;
 }

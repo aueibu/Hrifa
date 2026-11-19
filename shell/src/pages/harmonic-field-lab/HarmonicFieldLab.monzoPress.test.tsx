@@ -192,4 +192,301 @@ describe('M9e monzo paints on press', () => {
     frame();
     expect(painted()).toEqual(m8180);
   });
+
+  it('M9f: the header band splits the painted 81/80 (32 / 50 / 18, L2: 26 / 65 / 9)', () => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] });
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Rel' }));
+    const ringNote = Array.from(
+      screen
+        .getByRole('group', { name: /^Pitch circle/ })
+        .querySelectorAll<HTMLElement>('[role="button"]')
+    ).find((b) => /^\S+, -?\d+\.\d cents/.test(b.getAttribute('aria-label') ?? ''))!;
+    fireEvent.click(ringNote, { shiftKey: true });
+    fireEvent.click(screen.getByRole('radio', { name: 'Monzo' }));
+    const frame = () =>
+      act(() => {
+        vi.advanceTimersByTime(40);
+      });
+    frame();
+    const matrix = screen.getByTestId('monzo-matrix');
+    const rowH = parseFloat(
+      (screen.getAllByTestId('monzo-value')[0] as HTMLElement).style.height || '12'
+    );
+    const cellW = parseFloat(matrix.style.width) / 13;
+    matrix.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, right: 1000, bottom: 1000, width: 1000, height: 1000 }) as DOMRect;
+    const pcts = () =>
+      Array.from(screen.getAllByTestId('monzo-split-pct')).map((e) => e.textContent ?? '');
+    const bandTop = () => screen.getByTestId('monzo-split').style.height;
+    const matrixTop = () => matrix.style.top;
+    // nothing painted: every percent blank, the band is there
+    expect(pcts().every((t) => t === '')).toBe(true);
+    const band0 = bandTop();
+    const top0 = matrixTop();
+    for (const [col, value] of [
+      [0, -4],
+      [1, 4],
+      [2, -1],
+    ]) {
+      fireEvent.mouseDown(matrix, {
+        clientX: (col + 0.5) * cellW,
+        clientY: (12 - value + 0.5) * rowH,
+      });
+      fireEvent.mouseUp(matrix);
+    }
+    frame();
+    expect(pcts().slice(0, 4)).toEqual(['32', '50', '18', '']);
+    expect(screen.getByTestId('monzo-split-total').textContent).toBe('12.66');
+    // the band and the matrix do not move
+    expect(bandTop()).toBe(band0);
+    expect(matrixTop()).toBe(top0);
+    fireEvent.click(screen.getByRole('radio', { name: 'L2' }));
+    frame();
+    expect(pcts().slice(0, 4)).toEqual(['26', '65', '9', '']);
+    expect(screen.getByTestId('monzo-split-total').textContent).toBe('7.85');
+    fireEvent.click(screen.getByRole('radio', { name: 'L-inf' }));
+    frame();
+    expect(pcts().slice(0, 4)).toEqual(['', 'max', '', '']);
+    fireEvent.click(screen.getByRole('radio', { name: 'L1' }));
+    fireEvent.click(screen.getByTestId('monzo-octaves'));
+    frame();
+    expect(pcts().slice(0, 4)).toEqual(['', '73', '27', '']);
+    expect(matrixTop()).toBe(top0);
+  });
+});
+
+describe('M9f look 1: Fit bars, label click, shift buttons, Rows', () => {
+  function setup() {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] });
+    render(<HarmonicFieldLabPage />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Rel' }));
+    const ringNote = Array.from(
+      screen
+        .getByRole('group', { name: /^Pitch circle/ })
+        .querySelectorAll<HTMLElement>('[role="button"]')
+    ).find((b) => /^\S+, -?\d+\.\d cents/.test(b.getAttribute('aria-label') ?? ''))!;
+    fireEvent.click(ringNote, { shiftKey: true });
+    fireEvent.click(screen.getByRole('radio', { name: 'Monzo' }));
+    const frame = () =>
+      act(() => {
+        vi.advanceTimersByTime(40);
+      });
+    frame();
+    const matrix = screen.getByTestId('monzo-matrix');
+    const rowH = parseFloat(
+      (screen.getAllByTestId('monzo-value')[0] as HTMLElement).style.height || '12'
+    );
+    const cellW = parseFloat(matrix.style.width) / 13;
+    matrix.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, right: 1000, bottom: 1000, width: 1000, height: 1000 }) as DOMRect;
+    const paint = (col: number, value: number) => {
+      fireEvent.mouseDown(matrix, {
+        clientX: (col + 0.5) * cellW,
+        clientY: (12 - value + 0.5) * rowH,
+      });
+      fireEvent.mouseUp(matrix);
+    };
+    const painted = () =>
+      Array.from(matrix.querySelectorAll('[data-testid="monzo-strip"]')).map((c) =>
+        Number(c.querySelector('[data-now="true"]')?.getAttribute('data-value'))
+      );
+    const comma = () => {
+      paint(0, -4);
+      paint(1, 4);
+      paint(2, -1);
+      frame();
+    };
+    const click = (el: HTMLElement) => {
+      fireEvent.click(el);
+      frame();
+    };
+    const up = () => screen.getByTestId('monzo-shift-up') as HTMLButtonElement;
+    const down = () => screen.getByTestId('monzo-shift-down') as HTMLButtonElement;
+    return { frame, matrix, paint, painted, comma, click, up, down };
+  }
+  const z = (n: number) => Array.from({ length: n }, () => 0);
+  const row = (...v: number[]) => [...v, ...z(13 - v.length)];
+  const pctOf = (els: HTMLElement[]) => els.map((b) => Math.round(Number(b.dataset.bar) * 100));
+
+  it('F15 / F16: Fit changes the bars, not the numbers; octaves off draws the ghost', () => {
+    const { frame, comma } = setup();
+    comma();
+    const bars = () => pctOf(screen.getAllByTestId('monzo-split-bar'));
+    const pcts = () =>
+      screen
+        .getAllByTestId('monzo-split-pct')
+        .map((e) => e.textContent ?? '')
+        .slice(0, 3);
+    expect(bars()).toEqual([32, 50, 18]);
+    fireEvent.click(screen.getByTestId('monzo-fit'));
+    frame();
+    expect(bars()).toEqual([63, 100, 37]);
+    expect(pcts()).toEqual(['32', '50', '18']);
+    fireEvent.click(screen.getByRole('radio', { name: 'L2' }));
+    frame();
+    expect(bars()).toEqual([40, 100, 13]);
+    expect(pcts()).toEqual(['26', '65', '9']);
+    fireEvent.click(screen.getByRole('radio', { name: 'L1' }));
+    fireEvent.click(screen.getByTestId('monzo-octaves'));
+    frame();
+    expect(pctOf([screen.getByTestId('monzo-split-ghost')])).toEqual([63]);
+    expect(pcts()[0]).toBe('');
+    fireEvent.click(screen.getByTestId('monzo-fit'));
+    frame();
+    expect(pctOf([screen.getByTestId('monzo-split-ghost')])).toEqual([46]);
+    expect(screen.queryAllByTestId('monzo-split-bar')).toHaveLength(2);
+  });
+
+  it('F17 / F18: Rows is one column of 13, a bar and number only on used primes, same area height', () => {
+    const { frame, comma } = setup();
+    comma();
+    const area = screen.getByTestId('monzo-area').style.height;
+    fireEvent.click(screen.getByRole('radio', { name: 'Rows' }));
+    frame();
+    expect(screen.getByTestId('monzo-area').style.height).toBe(area);
+    const rows = screen.getAllByTestId('monzo-row');
+    expect(rows.map((r) => r.dataset.prime)).toEqual([
+      '2',
+      '3',
+      '5',
+      '7',
+      '11',
+      '13',
+      '17',
+      '19',
+      '23',
+      '29',
+      '31',
+      '37',
+      '41',
+    ]);
+    // every row keeps its split slot (so the centered grid never jumps sideways); only used primes draw a bar and number
+    expect(screen.getAllByTestId('monzo-row-split')).toHaveLength(13);
+    expect(rows[3].querySelector('[data-testid="monzo-row-split"]')).not.toBeNull();
+    expect(rows[3].querySelector('[data-testid="monzo-row-bar"]')).toBeNull();
+    expect(pctOf(screen.getAllByTestId('monzo-row-bar'))).toEqual([32, 50, 18]);
+    fireEvent.click(screen.getByTestId('monzo-fit'));
+    frame();
+    expect(pctOf(screen.getAllByTestId('monzo-row-bar'))).toEqual([63, 100, 37]);
+    fireEvent.click(screen.getByTestId('monzo-octaves'));
+    frame();
+    expect(screen.getAllByTestId('monzo-row-ghost')).toHaveLength(1);
+    expect(screen.getAllByTestId('monzo-row-bar')).toHaveLength(2);
+  });
+
+  it('F17: the split slot is on every row at 1/1 and after a + click', () => {
+    const { frame } = setup();
+    fireEvent.click(screen.getByRole('radio', { name: 'Rows' }));
+    frame();
+    expect(screen.getAllByTestId('monzo-row-split')).toHaveLength(13);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Raise the exponent of 3' })[0]);
+    frame();
+    expect(screen.getAllByTestId('monzo-row-split')).toHaveLength(13);
+    expect(screen.getAllByTestId('monzo-row-bar')).toHaveLength(1);
+  });
+
+  it('Enter after a shift or label click adds (ring grows) and does not re-fire the button', () => {
+    const { frame, painted, comma, click, up } = setup();
+    comma();
+    const rings = () =>
+      document.querySelectorAll('[aria-label^="Pitch circle"] [role="button"]').length;
+    // the mouse press must not move focus onto the button
+    expect(fireEvent.mouseDown(up())).toBe(false);
+    click(up());
+    expect(painted()).toEqual(row(-3, 5, 0));
+    const before = rings();
+    fireEvent.keyDown(document.body, { key: 'Enter' });
+    frame();
+    expect(painted()).toEqual(row(-3, 5, 0));
+    expect(rings()).toBe(before + 1);
+    const label = screen.getAllByTestId('monzo-label')[0];
+    expect(fireEvent.mouseDown(label)).toBe(false);
+  });
+
+  it('F21: a label click and Reset forget the frozen shift set', () => {
+    const { painted, click, comma, up, down } = setup();
+    comma();
+    click(up());
+    expect(painted()).toEqual(row(-3, 5, 0));
+    click(screen.getAllByTestId('monzo-label').find((l) => l.dataset.value === '1')!);
+    expect(painted()).toEqual(Array.from({ length: 13 }, () => 1));
+    click(up());
+    expect(painted()).toEqual(Array.from({ length: 13 }, () => 2));
+    comma();
+    click(up());
+    click(screen.getByRole('button', { name: 'Reset' }));
+    expect(painted()).toEqual(z(13));
+    expect(up().disabled).toBe(true);
+    expect(down().disabled).toBe(true);
+  });
+
+  it('F19: a label sets all 13 primes (0 clears); with Alt it sets the shown value', () => {
+    const { frame, painted, click, comma } = setup();
+    const label = (v: number) =>
+      screen.getAllByTestId('monzo-label').find((l) => l.dataset.value === String(v))!;
+    click(label(1));
+    expect(painted()).toEqual(Array.from({ length: 13 }, () => 1));
+    click(label(0));
+    expect(painted()).toEqual(z(13));
+    comma();
+    fireEvent.keyDown(window, { key: 'Alt', altKey: true });
+    frame();
+    click(label(2));
+    expect(painted()).toEqual(Array.from({ length: 13 }, () => 2));
+    fireEvent.keyUp(window, { key: 'Alt', altKey: false });
+    frame();
+    expect(painted()).toEqual(Array.from({ length: 13 }, () => -2));
+  });
+
+  it('F20 / F21: shifts round-trip 81/80 and a paint starts a new frozen set', () => {
+    const { frame, painted, click, comma, paint, up, down } = setup();
+    comma();
+    click(up());
+    expect(painted()).toEqual(row(-3, 5, 0));
+    click(up());
+    expect(painted()).toEqual(row(-2, 6, 1));
+    click(down());
+    expect(painted()).toEqual(row(-3, 5, 0));
+    click(down());
+    expect(painted()).toEqual(row(-4, 4, -1));
+    // 5 passed through 0 above and came back (the set was kept); a paint then starts a new set
+    click(up());
+    paint(3, 1);
+    frame();
+    expect(painted()).toEqual(row(-3, 5, 0, 1));
+    click(up());
+    expect(painted()).toEqual(row(-2, 6, 0, 2));
+    // a label click clears the set: everything is 0, so both buttons are disabled
+    fireEvent.click(screen.getAllByTestId('monzo-label').find((l) => l.dataset.value === '0')!);
+    frame();
+    expect(up().disabled).toBe(true);
+    expect(down().disabled).toBe(true);
+  });
+
+  it('F22: past +/-12 is refused and 1/1 disables both', () => {
+    const { frame, painted, click, up, down, paint } = setup();
+    expect(up().disabled).toBe(true);
+    expect(down().disabled).toBe(true);
+    paint(1, 12);
+    paint(0, -3);
+    frame();
+    expect(up().disabled).toBe(true);
+    expect(down().disabled).toBe(false);
+    click(down());
+    expect(painted()).toEqual(row(-4, 11));
+    expect(up().disabled).toBe(false);
+  });
+
+  it('F23: with Alt held a shift moves the shown view (stores the negative)', () => {
+    const { frame, painted, click, comma, up } = setup();
+    comma();
+    fireEvent.keyDown(window, { key: 'Alt', altKey: true });
+    frame();
+    click(up());
+    expect(painted()).toEqual(row(5, -3, 2));
+    fireEvent.keyUp(window, { key: 'Alt', altKey: false });
+    frame();
+    expect(painted()).toEqual(row(-5, 3, -2));
+  });
 });

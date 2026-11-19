@@ -131,6 +131,7 @@ import {
   type PatternsState,
 } from './patterns';
 import { emptyPins, type Pins } from './pins';
+import { MONZO_SPLIT_DEFAULT, type MonzoSplit } from './primeSplit';
 import { initialRetuner, retunerReduce, type RetAction, type RetState } from './retuner';
 import { defaultSettings as defaultVizSettings, type VizSettings } from './vizState';
 
@@ -255,6 +256,8 @@ export interface UiSettings {
   pins: Pins;
   /** Relative picker (M8o, H-37): the Color menu shared by Rings, Near and Monzo and the pin cards: metric (Off, Prime default, Tenney, Odd limit, Error, Interval, Roughness), range (Fixed default | Fit to view) and the Monzo octave (Exact default | Reduced). Optional in storage. */
   relColor: RelColor;
+  /** Relative picker (M9f, H-42): the Monzo header's per-prime complexity split: Norm (L1 default, L2, L-inf), Count octaves (default on) and Fit (default off). Optional in storage. */
+  monzoSplit: MonzoSplit;
   /** Harmonic entropy (M9, H-39): the blur s in cents, 8 to 20 (default 17), one value for the Dissonance view, the picker Color metric and the Near overlay. Optional in storage. */
   heBlur: number;
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
@@ -413,6 +416,7 @@ export function defaultUi(): UiSettings {
     relBands: 'from',
     pins: emptyPins(),
     relColor: { ...REL_COLOR_DEFAULT },
+    monzoSplit: { ...MONZO_SPLIT_DEFAULT },
     heBlur: HE_BLUR_DEFAULT,
     pairsAdded: [],
     libFilters: defaultLibFilters(),

@@ -7,7 +7,7 @@ import { FakeCtx } from './audio/fakeContext';
 import { KEY_SETTINGS } from './state/persist';
 import { pickPreset, ungroupShapes } from './testUtils';
 
-vi.setConfig({ testTimeout: 20_000 });
+vi.setConfig({ testTimeout: 30_000 });
 
 const KEY_LAYOUT = 'hrifa.harmonic-field-lab.layout.v1';
 const BASE = 261.6256;

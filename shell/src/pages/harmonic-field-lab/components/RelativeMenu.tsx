@@ -80,10 +80,11 @@ import {
   radiusValue,
 } from '../state/nearRadius';
 import { MAX_PINS, addPin, braKet, type PinKind } from '../state/pins';
+import type { MonzoSplit } from '../state/primeSplit';
 import {
   MONZO_CTL_H,
   MonzoPanel,
-  STRIP_AREA_ROWS,
+  MONZO_AREA_ROWS,
   monzoSummary,
   type MonzoView,
 } from './MonzoPanel';
@@ -1256,12 +1257,21 @@ export function RelativeModal({
   monzo: initialMonzo,
   onMonzoCommit,
   onMonzoTouch,
-  onAdd,
+  onAdd: onAddProp,
   message,
   metaSets,
   onMetaSets,
 }: RelativeModalProps) {
   const lab = useLab();
+  // F21: every added note (Add, a typed step, a pin card) bumps this, so the Monzo shift buttons forget their frozen set
+  const addEpoch = useRef(0);
+  const onAdd = useCallback(
+    (text: string) => {
+      addEpoch.current += 1;
+      onAddProp(text);
+    },
+    [onAddProp]
+  );
   // M8p: the painted monzo is local to the picker (one drawn update per animation frame); the lab state gets it when this closes
   const {
     monzo,
@@ -1529,17 +1539,17 @@ export function RelativeModal({
   const rot = bandRotationDeg;
   const fromText = noteText(from);
   const isUnison = Math.abs(from.c) < 1e-6;
-  // Monzo mode keeps the SAME body size: the ring copy shrinks into the top, the strip area (27 rows) and the controls fill the rest
+  // Monzo mode keeps the SAME body size: the ring copy shrinks into the top, the strip area (28 rows with the M9f split band) and the controls fill the rest
   const mGeo = useMemo(() => {
     const gaps = 2 * MONZO_GAP;
     const rowH = Math.max(
       MONZO_ROW_MIN,
       Math.min(
         MONZO_ROW_MAX,
-        Math.floor((size - MONZO_CTL_H - gaps - MONZO_RING_MIN) / STRIP_AREA_ROWS)
+        Math.floor((size - MONZO_CTL_H - gaps - MONZO_RING_MIN) / MONZO_AREA_ROWS)
       )
     );
-    const ringArea = Math.max(MONZO_RING_MIN, size - MONZO_CTL_H - gaps - STRIP_AREA_ROWS * rowH);
+    const ringArea = Math.max(MONZO_RING_MIN, size - MONZO_CTL_H - gaps - MONZO_AREA_ROWS * rowH);
     return { rowH, ringArea, ppu: Math.min(lay.ppu * scale, ringArea / (2 * vbHalf)) };
   }, [size, lay.ppu, scale, vbHalf]);
   // Monzo mode: the ghost follows the kept exponents (all 0 = on the source note itself)
@@ -1595,19 +1605,18 @@ export function RelativeModal({
     return null;
   }, [hover?.ratio, rings]);
   // M8c hover keys: the landing under the pointer (the ghost), reported up so holds 1 / 4 / 5 can sound it
-  const [monzoOver, setMonzoOver] = useState(false);
   useEffect(() => {
-    setMonzoOver(false);
     setMonzoHover(null);
   }, [mode, monzoView, setMonzoHover]);
   const pointLanding = useMemo(
     () =>
       isMonzo
-        ? (pinLanding ?? (monzoOver ? mLanding : null))
+        ? // M9f look 2 (human): off the matrix and the rows, holds 1 / 4 / 5 still sound the ghost (the painted, or Alt-shown, landing)
+          (pinLanding ?? mLanding)
         : cell
           ? landingPitch(from, cell.note, dir, rep)
           : null,
-    [isMonzo, monzoOver, mLanding, pinLanding, cell, from, dir, rep]
+    [isMonzo, mLanding, pinLanding, cell, from, dir, rep]
   );
   // The landing under the pointer is what holds 1 / 4 / 5 sound (1 = that pitch alone, 4 = the picked note and it, 5 = the whole
   // field and it; absolute pitches, like a library row's). The key carries the landing, the source and the field, so a held key
@@ -1938,6 +1947,25 @@ export function RelativeModal({
           : monzoPaintedNote(shownMonzo, monzoOctave),
     [isMonzo, colorOn, pinNote, shownMonzo, monzoOctave]
   );
+  // M9f (H-42): the interval the Monzo header splits is the one the colors measure now: the painted step (or the hover preview, or the
+  // Alt inverse: all in `shownMonzo`), or its landing when Measure is Landing (or ` is held). Not tied to Color being on.
+  const splitMonzo = useMemo(() => {
+    if (!isMonzo) {
+      return null;
+    }
+    const step = pinNote
+      ? monzoOctave === 'reduced'
+        ? foldOctave(pinNote)
+        : pinNote
+      : monzoPaintedNote(shownMonzo, monzoOctave);
+    return (measureOf ? measureOf(step) : step).m;
+  }, [isMonzo, pinNote, shownMonzo, monzoOctave, measureOf]);
+  const monzoSplit = lab.state.ui.monzoSplit;
+  const onSplitSetting = useCallback(
+    (patch: Partial<MonzoSplit>) =>
+      lab.dispatch({ type: 'ui', patch: { monzoSplit: { ...monzoSplit, ...patch } } }),
+    [lab, monzoSplit]
+  );
   const hoverStep = isMonzo ? monzoHoverNote : (cell?.note ?? null);
   // the landing is rebuilt only when the hovered note (or the source) changes, so the legend mark below stays memoized
   const hoverNote = useMemo(
@@ -2229,8 +2257,12 @@ export function RelativeModal({
             onNear={onNear}
             width={size}
             rowH={mGeo.rowH}
-            onOver={setMonzoOver}
             cellTints={cellTints}
+            splitMonzo={splitMonzo}
+            splitSetting={monzoSplit}
+            splitLanding={measureOf != null}
+            onSplitSetting={onSplitSetting}
+            freezeEpoch={addEpoch}
           />
         )}
         <svg

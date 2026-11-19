@@ -29,3 +29,22 @@ Contribution of prime p: a_p = |e_p| x log2 p. Example 81/80 = [-4 4 -1>: a_2 = 
 | F12 | Hovering a prime's header or bar shows a tooltip with the exact numbers: "3: 6.34 of 12.66 (50 %), L1, octaves counted". |
 | F13 | Rows view: the same bar + percent at the right end of each prime's row, in a fixed-width slot (proposal). |
 | F14 | Controls: "Norm L1 \| L2 \| L-inf" and a "Count octaves" checkbox in the Monzo controls next to Matrix \| Rows; saved in `settings.v1` (new decision H-42); absent or damaged = L1 / on; no write on mount. |
+
+## M9f look 1 (human, 2026-11-18): "all works as described", plus changes
+| # | Case | Result |
+| - | ---- | ------ |
+| F15 | Fit bars (new checkbox next to Count octaves, saved as `monzoSplit.fit`, default OFF, H-42 amended) | On: the tallest counted bar fills the bar zone, the others in proportion (81/80 L1: bars 63 / 100 / 37, numbers stay 32 / 50 / 18; L2: bars 40 / 100 / 13, numbers 26 / 65 / 9). Off: bar = share (today). L-inf is unchanged (already against the largest). |
+| F16 | Count octaves off: prime 2's slot | A dashed outline GHOST bar at the height prime 2 would have on the same scale (81/80 L1: 4.00 / 8.66 = 46 % of the zone; with Fit on 4.00 / 6.34 = 63 %), no number; tooltip says "not counted". Zero exponent on 2: nothing. |
+| F17 | Rows view: ONE column of primes (human: "we have the space") | 13 rows, 2 to 41, top to bottom (no second column). |
+| F18 | Rows view: bar placement | Each row: prime, [-], value, [+], then its bar and number right beside the + button. A zero row shows no track and no number. Same Fit / Count octaves / ghost rules as the band. |
+| F19 | Click an exponent label (e.g. +1) | Sets ALL 13 primes to that value: [1 1 1 1 1 1 1 1 1 1 1 1 1> (step about +134.7 c reduced). Click 0 = clear all (as Reset). With Alt held (inverse shown) it sets the shown value (stores the negation), as K14. Not an Add. |
+| F20 | Shift buttons | A gutter LEFT of the exponent labels: [+] on the +1 row, [-] on the -1 row. [+] adds 1 to every prime of the frozen set, [-] subtracts 1. |
+| F21 | Frozen set | The primes nonzero when shifting started. Kept across consecutive shifts (a prime may pass through 0 and come back); a paint, Add, Reset, label click, typed entry or pin-card load starts a new set. From 81/80: + -> [-3 5 0> = 243/128; + -> [-2 6 1>; - -> [-3 5 0>; - -> [-4 4 -1> = 81/80 (round trip). |
+| F22 | Edges and empty | A shift that would take any frozen prime past +12 / -12 is refused (button disabled, tooltip says which prime); 1/1 (empty set) disables both buttons. |
+| F23 | Alt held during a shift | Shifts the shown (inverse) view: [+] raises the SHOWN values (stores -1 on each), consistent with K14. |
+| F24 | Runtime only | The frozen set is not saved; closing the picker forgets it. |
+
+## M9f look 2 (human, 2026-11-18): "looks good", one change
+| # | Case | Result |
+| - | ---- | ------ |
+| F25 | Monzo open, pointer not on the matrix, the rows or a pin card; hold 1 / 4 / 5 | They sound the ghost (the painted landing, or the Alt-shown inverse; Step/Landing as usual): 1 = the ghost alone, 4 = source + ghost (or 1/1 + ghost under Landing), 5 = field + ghost. Over the matrix or rows the hovered preview still wins; a hovered pin card still wins over both. Before: silent off the matrix. |

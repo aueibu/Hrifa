@@ -2,10 +2,11 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { SVG_FS_LABEL, SVG_FS_SMALL } from './state/typeScale';
 
-const FILES = ['components/lab.module.css', 'components/panels.module.css'].map((f) => [
-  f,
-  readFileSync(new URL(f, import.meta.url), 'utf8'),
-]);
+const FILES = [
+  'components/lab.module.css',
+  'components/panels.module.css',
+  'components/relativeMenu.module.css',
+].map((f) => [f, readFileSync(new URL(f, import.meta.url), 'utf8')]);
 
 describe('type scale (M8k)', () => {
   it('uses only the --lab-* tokens (or inherit, 1em, 0.92em) for font-size', () => {
@@ -13,7 +14,9 @@ describe('type scale (M8k)', () => {
     for (const [f, css] of FILES) {
       for (const m of css.matchAll(/(?:^|[\s;{])(--sc-)?font-size\s*:\s*([^;}]+)/g)) {
         const v = m[2].trim();
-        if (!/^(inherit|0\.92em|1em|var\(--lab-[a-z-]+\))$/.test(v)) {
+        // the Monzo matrix's compact digits (relativeMenu.module.css) are 0.85 x the small step: no exact --lab-fs-* match
+        const ok = /^(inherit|0\.92em|1em|var\(--lab-[a-z-]+\))$/.test(v);
+        if (!ok && v !== 'calc(var(--lab-fs-small) * 0.85)') {
           bad.push(`${f}: font-size: ${v}`);
         }
       }

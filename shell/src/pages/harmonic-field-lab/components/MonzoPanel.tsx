@@ -8,9 +8,9 @@
  * in every column and marked across the whole matrix, a prime header on top and an exponent label column on the left. M9e: hovering
  * only previews; a press sets that column's prime to the row's value and a drag paints a stroke (Ctrl: a line, Esc: cancel); Add
  * (button, Enter or a double-click) adds the note. Each column's current cell is filled, and a sparkline runs through the centers of the 13 current
- * cells. The panel is `STRIP_AREA_ROWS` rows tall (the header plus 25 value rows) with the controls under it.
+ * cells. The panel is `MONZO_AREA_ROWS` rows tall (M9f: the per-prime split band, the header and 25 value rows) with the controls under it.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, SegmentedControl, TextInput } from '@mantine/core';
 import {
   MONZO_PRIMES,
@@ -22,7 +22,16 @@ import {
 } from '../../../lib/harmonic-field';
 import { isTyping } from '../audio/keymap';
 import { primeTextColor, tintVars, type IntervalTint } from '../state/intervalColor';
-import { Hint } from './ui';
+import {
+  NORM_LABEL,
+  partText,
+  percentText,
+  primeSplit,
+  type MonzoSplit,
+  type PrimeSplit,
+  type SplitNorm,
+} from '../state/primeSplit';
+import { Hint, Tip } from './ui';
 import type { HoverCell } from './useLocalMonzo';
 import classes from './relativeMenu.module.css';
 
@@ -30,9 +39,19 @@ export type MonzoView = 'strips' | 'rows';
 
 /** The width of the left column of exponent labels (pixels). */
 export const MONZO_LABEL_W = 30;
+/** F20: the narrow gutter left of the exponent labels that holds the shift buttons (pixels). */
+export const MONZO_GUTTER_W = 18;
 
 /** The matrix area: one header row plus the 25 exponent rows (+12 .. -12). */
 export const STRIP_AREA_ROWS = 2 * MONZO_RANGE + 2;
+/**
+ * M9f: the fixed band above the prime header (percent line, then the bars): 3 rows tall, always reserved (also when every share is
+ * zero), so nothing in the matrix moves when the values change. The area is `MONZO_AREA_ROWS` rows (the band, the header, 25 rows).
+ */
+export const MONZO_BAND_ROWS = 3;
+export const MONZO_AREA_ROWS = STRIP_AREA_ROWS + MONZO_BAND_ROWS;
+/** The bar zone of the band is its bottom two rows (the top row is the percent line). */
+const BAND_BAR_ROWS = MONZO_BAND_ROWS - 1;
 /** The exponent rows (+12 .. -12). */
 const STRIP_ROWS = 2 * MONZO_RANGE + 1;
 /** The controls under the matrix (switch row, typed row, error line), pixels. */
@@ -69,8 +88,6 @@ export interface MonzoPanelProps {
   /** The panel's width (pixels) and one matrix row's height (pixels). */
   width: number;
   rowH: number;
-  /** The pointer entered or left the matrix or the rows (the hold 1 / 4 / 5 previews follow the landing only while it is over). */
-  onOver?: (over: boolean) => void;
   /**
    * M8o (H-37): each matrix cell's tint, `[column][row]` in the order of `MONZO_PRIMES` and `+12 .. -12`: the interval the painted
    * monzo would become if only that prime's exponent were that cell's value. Null (Color Off): the plain cells.
@@ -81,6 +98,69 @@ export interface MonzoPanelProps {
   onHover?: (cell: HoverCell | null) => void;
   /** M9e: a paint stroke (button down) began or ended (the picker keeps Esc from closing the modal meanwhile). */
   onStroke?: (on: boolean) => void;
+  /** M9f (H-42): the interval the colors measure now (its monzo; null: nothing to split), the saved Norm / Count octaves and their setter. */
+  splitMonzo?: Readonly<Record<string, number>> | null;
+  splitSetting?: MonzoSplit;
+  /** True when the split's interval is the Landing measure (the prime header tooltip says "landing" rather than "step"). */
+  splitLanding?: boolean;
+  onSplitSetting?: (patch: Partial<MonzoSplit>) => void;
+  /**
+   * F21: a counter the picker bumps whenever a note is added (Add, a typed step, a pin card): the frozen shift set is forgotten
+   * when it moves. Read at the click, never rendered.
+   */
+  freezeEpoch?: { readonly current: number };
+}
+
+const SPLIT_DEFAULT: MonzoSplit = { norm: 'l1', octaves: true, fit: false };
+
+/**
+ * M9f (look 1, F18): one prime's bar and percent, directly beside the + button of its Rows-view row. A zero row shows nothing (no
+ * track, no number); an uncounted prime 2 shows the dashed ghost outline and no number.
+ */
+function RowSplit({
+  part,
+  norm,
+  split,
+  octaves,
+}: {
+  part: PrimeSplit['parts'][number];
+  norm: SplitNorm;
+  split: PrimeSplit;
+  octaves: boolean;
+}) {
+  if (part.bar <= 0 && part.ghost <= 0) {
+    // keep the fixed-width slot so the centered grid never shifts sideways when a value becomes nonzero
+    return (
+      <span className={classes.rowSplit} data-testid="monzo-row-split">
+        <span className={classes.rowPct} />
+        <span className={classes.rowTrack} />
+      </span>
+    );
+  }
+  return (
+    <Hint label={partText(part, split.total, norm, octaves)}>
+      <span className={classes.rowSplit} data-testid="monzo-row-split">
+        <span className={classes.rowPct}>{percentText(part, norm)}</span>
+        <span className={classes.rowTrack}>
+          {part.bar > 0 ? (
+            <span
+              className={classes.rowBar}
+              data-testid="monzo-row-bar"
+              data-bar={part.bar.toFixed(3)}
+              style={{ width: `${part.bar * 100}%`, background: primeTextColor(part.prime) }}
+            />
+          ) : (
+            <span
+              className={classes.rowGhost}
+              data-testid="monzo-row-ghost"
+              data-bar={part.ghost.toFixed(3)}
+              style={{ width: `${part.ghost * 100}%` }}
+            />
+          )}
+        </span>
+      </span>
+    </Hint>
+  );
 }
 
 export function MonzoPanel({
@@ -95,20 +175,29 @@ export function MonzoPanel({
   onNear,
   width,
   rowH,
-  onOver,
   cellTints,
   hover,
   onHover,
   onStroke,
+  splitMonzo = null,
+  splitLanding = false,
+  splitSetting = SPLIT_DEFAULT,
+  onSplitSetting,
+  freezeEpoch,
 }: MonzoPanelProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const areaH = STRIP_AREA_ROWS * rowH;
+  const areaH = MONZO_AREA_ROWS * rowH;
+  const bandH = MONZO_BAND_ROWS * rowH;
+  const barZoneH = BAND_BAR_ROWS * rowH;
   // nearly square cells (1.25 x the row height), the label column plus matrix centered in the area
   const cellW = Math.round(rowH * 1.25);
   const gridW = cellW * MONZO_PRIMES.length;
-  const x0 = Math.max(0, Math.floor((width - MONZO_LABEL_W - gridW) / 2));
+  const x0 = Math.max(0, Math.floor((width - MONZO_GUTTER_W - MONZO_LABEL_W - gridW) / 2));
+  // the left of the labels, and the left of the matrix (gutter, then labels, then the grid)
+  const xl = x0 + MONZO_GUTTER_W;
+  const xg = xl + MONZO_LABEL_W;
   const gridH = STRIP_ROWS * rowH;
 
   // The values as last known: re-read from the props when they change (the picker draws one frame behind the pointer, so an
@@ -305,11 +394,69 @@ export function MonzoPanel({
       window.removeEventListener('mouseup', onUp);
     };
   }, []);
+  // M9f: computed in this render (13 primes), never in the lab state: a hover only changes the props of the picker
+  const split = useMemo(
+    () => primeSplit(splitMonzo, splitSetting.norm, splitSetting.octaves, splitSetting.fit),
+    [splitMonzo, splitSetting.norm, splitSetting.octaves, splitSetting.fit]
+  );
   const sy = (p: MonzoPrime) => (MONZO_RANGE - clampExp(monzo[p]) + 0.5) * rowH;
   const points = MONZO_PRIMES.map((p, j) => `${(j + 0.5) * cellW},${sy(p)}`).join(' ');
 
-  const submit = (dir: Direction) => setError(onTyped(text, dir));
-  const half = Math.ceil(MONZO_PRIMES.length / 2);
+  // F21: the frozen shift set (indices of the primes nonzero when shifting started), runtime only. It is valid only while the stored
+  // values are exactly what the last shift wrote (a paint, label, Reset or typed entry changes them) and no note was added since.
+  const freeze = useRef<{ set: number[]; expect: number[]; epoch: number } | null>(null);
+  const frozenSet = (shown: readonly number[], invFlag: boolean): number[] => {
+    const f = freeze.current;
+    const stored = shown.map((v) => (invFlag ? 0 - v : v));
+    if (f && f.epoch === (freezeEpoch?.current ?? 0) && f.expect.every((v, i) => v === stored[i])) {
+      return f.set;
+    }
+    return shown.flatMap((v, i) => (v !== 0 ? [i] : []));
+  };
+  const shownNow = MONZO_PRIMES.map((p) => clampExp(monzo[p]));
+  const shiftSet = frozenSet(shownNow, inverted);
+  const shiftBlock = (d: 1 | -1): number | undefined =>
+    shiftSet.find((j) => Math.abs(shownNow[j] + d) > MONZO_RANGE);
+  /** One commit: every frozen prime moves by d in the SHOWN view (write() negates for the store while Alt is held). */
+  const shift = (d: 1 | -1) => {
+    const set = frozenSet(cur.current, inv.current);
+    if (set.length === 0 || set.some((j) => Math.abs(cur.current[j] + d) > MONZO_RANGE)) {
+      return;
+    }
+    for (const j of set) {
+      const v = cur.current[j] + d;
+      cur.current[j] = v;
+      write(j, v, true);
+    }
+    freeze.current = {
+      set,
+      expect: cur.current.map((v) => (inv.current ? 0 - v : v)),
+      epoch: freezeEpoch?.current ?? 0,
+    };
+  };
+  /** F19: set all 13 primes to a shown value (0 clears all, as Reset). Not an Add. */
+  const setAll = (v: number) => {
+    freeze.current = null;
+    for (let j = 0; j < MONZO_PRIMES.length; j++) {
+      cur.current[j] = v;
+      write(j, v, true);
+    }
+  };
+  const shiftHint = (d: 1 | -1): string => {
+    if (shiftSet.length === 0) {
+      return 'Nothing to shift: every exponent is 0';
+    }
+    const j = shiftBlock(d);
+    if (j !== undefined) {
+      return `Cannot shift ${d > 0 ? 'up' : 'down'}: ${MONZO_PRIMES[j]} is already at ${expText(shownNow[j])}`;
+    }
+    return d > 0 ? 'Add 1 to every used prime' : 'Subtract 1 from every used prime';
+  };
+
+  const submit = (dir: Direction) => {
+    freeze.current = null;
+    setError(onTyped(text, dir));
+  };
 
   return (
     <div className={classes.monzoPanel} style={{ width }} data-testid="monzo-panel">
@@ -329,13 +476,38 @@ export function MonzoPanel({
           <>
             <div
               className={classes.primeRow}
-              style={{ left: x0 + MONZO_LABEL_W, width: gridW, height: rowH }}
+              style={{ left: xg, top: bandH, width: gridW, height: rowH }}
               data-testid="monzo-primes"
             >
-              {MONZO_PRIMES.map((p) => {
+              {MONZO_PRIMES.map((p, j) => {
                 const v = clampExp(monzo[p]);
+                const part = split.parts[j];
+                const e = Math.round(splitMonzo?.[p] ?? 0);
+                const headerText = (
+                  pr: number,
+                  painted: number,
+                  det: string,
+                  pt: PrimeSplit['parts'][number]
+                ): string => {
+                  const bits: string[] = [];
+                  if (painted !== 0) {
+                    bits.push(`painted ${expText(painted)}`);
+                  }
+                  if (pt.counted && pt.a > 0) {
+                    bits.push(
+                      `${splitLanding ? 'landing' : 'step'} exponent ${expText(e)}, ${det.slice(String(pr).length + 2)}`
+                    );
+                  }
+                  return bits.length ? `${pr}: ${bits.join('; ')}` : `${pr}: 0`;
+                };
+                const detail = partText(
+                  split.parts[j],
+                  split.total,
+                  splitSetting.norm,
+                  splitSetting.octaves
+                );
                 return (
-                  <Hint key={p} label={`${p}: ${expText(v)}`}>
+                  <Hint key={p} label={headerText(p, v, detail, part)}>
                     <div
                       className={classes.primeCell}
                       data-testid="monzo-prime"
@@ -349,30 +521,138 @@ export function MonzoPanel({
                 );
               })}
             </div>
+            <Hint
+              k="monzoSplit"
+              dynamic={`Total (${NORM_LABEL[splitSetting.norm]}, ${splitSetting.octaves ? 'octaves counted' : 'octaves not counted'}): ${split.total.toFixed(2)}`}
+            >
+              <div
+                className={classes.splitCorner}
+                style={{ left: xl, width: MONZO_LABEL_W, height: bandH }}
+                data-testid="monzo-split-total"
+              >
+                {split.total > 0 ? split.total.toFixed(2) : ''}
+              </div>
+            </Hint>
+            <div
+              className={classes.splitBand}
+              style={{ left: xg, width: gridW, height: bandH }}
+              data-testid="monzo-split"
+              data-norm={splitSetting.norm}
+            >
+              {split.parts.map((part) => (
+                <Hint
+                  key={part.prime}
+                  label={partText(part, split.total, splitSetting.norm, splitSetting.octaves)}
+                >
+                  <div
+                    className={classes.splitSlot}
+                    style={{ width: cellW }}
+                    data-testid="monzo-split-slot"
+                    data-prime={part.prime}
+                    data-off={!part.counted ? 'true' : undefined}
+                    data-max={part.isMax ? 'true' : undefined}
+                  >
+                    <div
+                      className={classes.splitPct}
+                      style={{ height: rowH }}
+                      data-testid="monzo-split-pct"
+                    >
+                      {percentText(part, splitSetting.norm)}
+                    </div>
+                    <div className={classes.splitBarZone} style={{ height: barZoneH }}>
+                      {part.bar > 0 && (
+                        <div
+                          className={classes.splitBar}
+                          data-testid="monzo-split-bar"
+                          data-bar={part.bar.toFixed(3)}
+                          style={{
+                            width: Math.max(4, Math.round(cellW * 0.55)),
+                            height: Math.max(2, Math.round(part.bar * barZoneH)),
+                            background: primeTextColor(part.prime),
+                          }}
+                        />
+                      )}
+                      {part.ghost > 0 && (
+                        <div
+                          className={classes.splitGhost}
+                          data-testid="monzo-split-ghost"
+                          data-bar={part.ghost.toFixed(3)}
+                          style={{
+                            width: Math.max(4, Math.round(cellW * 0.55)),
+                            height: Math.max(2, Math.round(part.ghost * barZoneH)),
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </Hint>
+              ))}
+            </div>
+            <div
+              className={classes.shiftGutter}
+              style={{ left: x0, top: bandH + rowH, width: MONZO_GUTTER_W }}
+              data-testid="monzo-shift"
+            >
+              {([1, -1] as const).map((d) => {
+                const off = shiftSet.length === 0 || shiftBlock(d) !== undefined;
+                return (
+                  <div
+                    key={d}
+                    className={classes.shiftSlot}
+                    style={{ top: (MONZO_RANGE - d) * rowH, height: rowH }}
+                  >
+                    <Hint k="monzoShift" dynamic={shiftHint(d)}>
+                      <span className={classes.shiftWrap}>
+                        <button
+                          type="button"
+                          className={classes.shiftBtn}
+                          data-testid={d > 0 ? 'monzo-shift-up' : 'monzo-shift-down'}
+                          aria-label={
+                            d > 0
+                              ? 'Shift all used primes up by 1'
+                              : 'Shift all used primes down by 1'
+                          }
+                          disabled={off}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => shift(d)}
+                        >
+                          {d > 0 ? '+' : '−'}
+                        </button>
+                      </span>
+                    </Hint>
+                  </div>
+                );
+              })}
+            </div>
             <div
               className={classes.expLabels}
-              style={{ left: x0, top: rowH, width: MONZO_LABEL_W }}
+              style={{ left: xl, top: bandH + rowH, width: MONZO_LABEL_W }}
             >
               {VALUES.map((v) => (
-                <div
-                  key={v}
-                  className={classes.expLabel}
-                  data-zero={v === 0 ? 'true' : undefined}
-                  style={{ height: rowH }}
-                >
-                  {expText(v)}
-                </div>
+                <Hint key={v} k="monzoLabelSet" dynamic={`Set all 13 primes to ${expText(v)}`}>
+                  <button
+                    type="button"
+                    className={classes.expLabel}
+                    data-testid="monzo-label"
+                    data-value={v}
+                    data-zero={v === 0 ? 'true' : undefined}
+                    style={{ height: rowH }}
+                    aria-label={`Set all primes to ${expText(v)}`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setAll(v)}
+                  >
+                    {expText(v)}
+                  </button>
+                </Hint>
               ))}
             </div>
             <div
               ref={gridRef}
               className={classes.matrix}
-              style={{ left: x0 + MONZO_LABEL_W, top: rowH, width: gridW, height: gridH }}
+              style={{ left: xg, top: bandH + rowH, width: gridW, height: gridH }}
               data-testid="monzo-matrix"
-              onMouseEnter={() => onOver?.(true)}
               onMouseLeave={() => {
                 onHover?.(null);
-                onOver?.(false);
               }}
               // hovering only previews (M9e): the hovered cell goes up to the picker, nothing is painted
               onMouseMove={(e) => {
@@ -385,6 +665,7 @@ export function MonzoPanel({
                   return;
                 }
                 e.preventDefault();
+                freeze.current = null;
                 lastPos.current = { x: e.clientX, y: e.clientY };
                 stroke.current = { snap: [...cur.current] };
                 prevCell.current = null;
@@ -400,6 +681,7 @@ export function MonzoPanel({
                   setCol(MONZO_PRIMES.indexOf(c.prime), c.value);
                 }
                 // K14: with Alt held the cell was set in the shown view and the shown (inverted) value is added
+                freeze.current = null;
                 onAddMonzo(e.altKey);
               }}
             >
@@ -458,22 +740,11 @@ export function MonzoPanel({
             </div>
           </>
         ) : (
-          <div
-            className={classes.rowsGrid}
-            data-testid="monzo-rows"
-            onMouseEnter={() => onOver?.(true)}
-            onMouseLeave={() => onOver?.(false)}
-          >
+          <div className={classes.rowsGrid} data-testid="monzo-rows">
             {MONZO_PRIMES.map((p, j) => {
               const v = clampExp(monzo[p]);
               return (
-                <div
-                  key={p}
-                  className={classes.monzoRow}
-                  data-testid="monzo-row"
-                  data-prime={p}
-                  style={{ gridColumn: j < half ? 1 : 2, gridRow: (j % half) + 1 }}
-                >
+                <div key={p} className={classes.monzoRow} data-testid="monzo-row" data-prime={p}>
                   <span className={classes.rowPrime}>{p}</span>
                   <Button
                     size="compact-xs"
@@ -500,6 +771,12 @@ export function MonzoPanel({
                   >
                     +
                   </Button>
+                  <RowSplit
+                    part={split.parts[j]}
+                    norm={splitSetting.norm}
+                    split={split}
+                    octaves={splitSetting.octaves}
+                  />
                 </div>
               );
             })}
@@ -524,11 +801,64 @@ export function MonzoPanel({
               { value: 'rows', label: 'Rows' },
             ]}
           />
-          <Button size="compact-xs" variant="default" data-testid="monzo-reset" onClick={onReset}>
+          <Tip k="monzoNorm" as="control">
+            <SegmentedControl
+              size="xs"
+              aria-label="Norm"
+              data-testid="monzo-norm"
+              value={splitSetting.norm}
+              onChange={(v) =>
+                onSplitSetting?.({ norm: v === 'l2' ? 'l2' : v === 'linf' ? 'linf' : 'l1' })
+              }
+              data={[
+                { value: 'l1', label: 'L1' },
+                { value: 'l2', label: 'L2' },
+                { value: 'linf', label: 'L-inf' },
+              ]}
+            />
+          </Tip>
+          <Tip k="monzoOctaves" as="control">
+            <label className={classes.metaCheck}>
+              <input
+                type="checkbox"
+                data-testid="monzo-octaves"
+                checked={splitSetting.octaves}
+                onChange={(e) => onSplitSetting?.({ octaves: e.currentTarget.checked })}
+              />
+              Count octaves
+            </label>
+          </Tip>
+          <Tip k="monzoFit" as="control">
+            <label className={classes.metaCheck}>
+              <input
+                type="checkbox"
+                data-testid="monzo-fit"
+                checked={splitSetting.fit}
+                onChange={(e) => onSplitSetting?.({ fit: e.currentTarget.checked })}
+              />
+              Fit bars
+            </label>
+          </Tip>
+          <Button
+            size="compact-xs"
+            variant="default"
+            data-testid="monzo-reset"
+            onClick={() => {
+              freeze.current = null;
+              onReset();
+            }}
+          >
             Reset
           </Button>
           {view === 'rows' && (
-            <Button size="compact-xs" data-testid="monzo-add" onClick={(e) => onAddMonzo(e.altKey)}>
+            <Button
+              size="compact-xs"
+              data-testid="monzo-add"
+              onClick={(e) => {
+                freeze.current = null;
+                onAddMonzo(e.altKey);
+              }}
+            >
               Add
             </Button>
           )}

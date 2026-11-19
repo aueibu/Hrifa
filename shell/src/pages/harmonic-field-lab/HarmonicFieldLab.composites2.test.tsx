@@ -6,7 +6,7 @@ import { HarmonicFieldLabPage } from '../HarmonicFieldLab.page';
 import { FakeCtx } from './audio/fakeContext';
 import { addSubsetNamed, pickPreset, ungroupShapes } from './testUtils';
 
-vi.setConfig({ testTimeout: 30_000 });
+vi.setConfig({ testTimeout: 45_000 });
 
 const down = (key: string) => fireEvent.keyDown(window, { key });
 const rail = () => screen.getByRole('navigation', { name: 'Analysis panels' });

@@ -132,3 +132,27 @@ describe('relColor settings (M8o H-37, M9c H-40: Hue, Brightness, Radius per vie
     });
   });
 });
+
+describe('monzoSplit setting (M9f, H-42: the Monzo header split)', () => {
+  it('absent or damaged reads L1 / octaves on; a good field is kept, the other falls back', () => {
+    const d = { norm: 'l1', octaves: true, fit: false };
+    expect(defaultUi().monzoSplit).toEqual(d);
+    expect(sanitizeSettings(null).monzoSplit).toEqual(d);
+    expect(sanitizeSettings({ panel: 'keys' }).monzoSplit).toEqual(d);
+    expect(sanitizeSettings({ monzoSplit: 'bad' }).monzoSplit).toEqual(d);
+    expect(sanitizeSettings({ monzoSplit: { norm: 'l9', octaves: 'yes' } }).monzoSplit).toEqual(d);
+    expect(sanitizeSettings({ monzoSplit: { norm: 'linf', octaves: 3 } }).monzoSplit).toEqual({
+      norm: 'linf',
+      octaves: true,
+      fit: false,
+    });
+    expect(
+      sanitizeSettings({ monzoSplit: { norm: 'l2', octaves: false, fit: true } }).monzoSplit
+    ).toEqual({
+      norm: 'l2',
+      octaves: false,
+      fit: true,
+    });
+    expect(sanitizeSettings({ monzoSplit: { fit: 'yes' } }).monzoSplit).toEqual(d);
+  });
+});

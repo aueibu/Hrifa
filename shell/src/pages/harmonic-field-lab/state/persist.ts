@@ -78,6 +78,7 @@ import {
 } from './libraryState';
 import { canonicalPattern } from './patterns';
 import { sanitizePins } from './pins';
+import { sanitizeMonzoSplit } from './primeSplit';
 import {
   ANCHORS,
   MAX_CARDS,
@@ -261,6 +262,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     heBlur: intIn(raw.heBlur, HE_BLUR_MIN, HE_BLUR_MAX, d.heBlur),
     // optional (Scala-tools M8o, H-37): the Relative picker's Color menu; each field falls back to Prime / Fixed / Exact; no write on mount
     relColor: sanitizeRelColor(raw.relColor),
+    // optional (Scala-tools M9f, H-42): the Monzo header's prime split, Norm (L1, L2, L-inf), Count octaves and Fit bars (look 1); absent or damaged = L1 / on, field by field; no write on mount
+    monzoSplit: sanitizeMonzoSplit(raw.monzoSplit),
     // optional (Scala-tools M3, H-20): canonical added-pitch texts; bad entries dropped, at most 4; absent = none; no write on mount
     pairsAdded: sanitizeAdded(raw.pairsAdded),
     // optional (Scala-tools M7c, H-30): the chord library's filters, checked rows (at most 40), open shapes and comparison; each falls back to its default; no write on mount

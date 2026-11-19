@@ -2903,6 +2903,44 @@ const entries = {
       'pinBar',
     ],
   },
+  monzoSplit: {
+    term: 'Prime split (Monzo header)',
+    text: "The bars above the prime numbers show how much each prime adds to the complexity of the interval the colors measure now: the painted one (or the cell under the pointer, or its inverse while Alt is held); with Color measure Landing, or while the backtick is held, its landing from 1/1. A prime's size is its exponent times log2 of the prime. The percent is its share of the total, and the corner shows the total. The band is always reserved, so nothing moves. Hover a bar or a prime for the exact numbers. Set Norm, Count octaves and Fit bars next to Matrix | Rows. Example: 81/80 is 2 at -4, 3 at +4, 5 at -1: 2 is 4.00, 3 is 6.34, 5 is 2.32, so 32 %, 50 %, 18 % of 12.66.",
+    see: [
+      'monzoNorm',
+      'monzoOctaves',
+      'monzoFit',
+      'monzoLabelSet',
+      'monzoShift',
+      'relColorMeasure',
+      'pinBar',
+    ],
+  },
+  monzoFit: {
+    term: 'Fit bars (prime split)',
+    text: 'Off (the default): a bar is the share of the total of its prime. On: the tallest counted bar fills the bar zone and the others are drawn in proportion to it (L1: size over the biggest size; L2: squares over the biggest square); the numbers do not change. L-inf already does this. Saved across reloads. Example: 81/80, L1: bars 32, 50, 18 off; 63, 100, 37 on, numbers 32, 50, 18 either way.',
+    see: ['monzoSplit', 'monzoOctaves'],
+  },
+  monzoLabelSet: {
+    term: 'Exponent label (Monzo matrix)',
+    text: 'Click a label in the left column to set all 13 primes to that exponent at once; 0 clears them all, like Reset. It sets the value, it does not add a note. While Alt is held the matrix shows the inverse, and the label sets the shown value (the store gets its negative). Example: click +1 and every prime is +1, [1 1 1 1 1 1 1 1 1 1 1 1 1>.',
+    see: ['monzoShift', 'monzoSplit'],
+  },
+  monzoShift: {
+    term: 'Shift buttons (Monzo matrix)',
+    text: 'The + button (on the +1 row) adds 1 to every prime that is used, the - button (on the -1 row) subtracts 1; unused primes stay 0. The set of primes is fixed when you start shifting and kept across shifts, so a prime may pass through 0 and come back; painting, Reset, a label, a typed step or an Add starts a new set. A shift past +12 or -12 is refused (the button is disabled and says which prime). While Alt is held it shifts the shown values. Not saved. Example: 81/80 [-4 4 -1>: + gives [-3 5 0>, + again [-2 6 1>, then - twice returns to 81/80.',
+    see: ['monzoLabelSet', 'monzoSplit'],
+  },
+  monzoNorm: {
+    term: 'Norm (prime split)',
+    text: 'How the prime sizes are combined. L1 (the default, Tenney): the sizes add; the percent is the share of the sum and the total is the Tenney height. L2 (Tenney-Euclidean): the squares add; the percent is the share of the squared total, so the biggest prime counts for more, and the total is the square root. L-inf: only the biggest counts; the total is its size, the bars are relative to it and "max" marks it. Saved across reloads. Example: 81/80, L1: 32, 50, 18 % of 12.66; L2: 26, 65, 9 % of 7.85; L-inf: bars 63, 100, 37 % and "max" over 3 (6.34).',
+    see: ['monzoSplit', 'monzoOctaves'],
+  },
+  monzoOctaves: {
+    term: 'Count octaves (prime split)',
+    text: 'On (the default): the 2s in the interval count like any prime. Off: prime 2 is left out of every sum, so the split shows only the odd primes, and prime 2 keeps its slot with a dashed outline bar at the height it would have, no number. Useful when the octave is just where the interval was folded. Saved across reloads. Example: 81/80, L1: on gives 32, 50, 18 % of 12.66; off gives 73 % (3) and 27 % (5) of 8.66.',
+    see: ['monzoSplit', 'monzoNorm'],
+  },
   relColorPreset: {
     term: 'Color preset',
     text: 'One click sets Hue, Brightness and (in Near) Radius for a question. Families: which harmonic family, how simple (Radius Tenney, Hue Prime, Brightness Off). Ear vs paper: simple on paper vs recognizable to the ear (Tenney, Prime, Harmonic entropy). Tuning check: which notes are sharp or flat, how far (Tenney, Error sign, |error|). Consonance: the two consonance models against each other (Radius Harmonic entropy, Hue Off, Brightness Roughness). Interval classes: where each interval class sits, by complexity (Radius Odd limit, Interval class, Tenney). Plain: position only. The channels stay editable; after you change one so that it matches no preset the select shows Custom. Rings and Monzo have no Radius, so a preset sets only their Hue and Brightness. Example: pick Tuning check in Near and 5/4 (13.7 c flat) is cyan, band 2.',
