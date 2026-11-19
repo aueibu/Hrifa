@@ -48,6 +48,14 @@ export function ChordPanelBridge({
     }
   }, [wanted, targetId, screensetId, api]);
 
+  // Is the panel on screen (open, front tab of its docker, docker expanded and visible)? The Stage's own answer
+  // (`isShown`), read after every commit of this bridge: a tab switch or collapse changes the screenset the page passes
+  // down, and the Stage has rendered it by the time this effect runs (reading it during render would be one step behind).
+  // Selection mode (M6c) does nothing while it is false; `setPanelShown` ignores an unchanged value.
+  useEffect(() => {
+    session.setPanelShown(!!api?.isShown(CHORDS_PANEL));
+  });
+
   const last = useRef({ id: screensetId, open });
   useEffect(() => {
     const before = last.current;

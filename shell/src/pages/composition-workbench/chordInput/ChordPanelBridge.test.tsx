@@ -27,6 +27,7 @@ function api(isOpen = false): StageApi {
     open: vi.fn(),
     close: vi.fn(),
     isOpen: vi.fn(() => isOpen),
+    isShown: vi.fn(() => isOpen),
   } as unknown as StageApi;
 }
 

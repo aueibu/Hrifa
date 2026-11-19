@@ -37,7 +37,7 @@ import {
   useOptionalChordSession,
 } from '../chordInput/ChordSessionProvider';
 import { mergeChordInserts } from '../chordInput/placeChords';
-import { useChordGhosts } from '../chordInput/useChordGhosts';
+import { useChordGhosts, useSelectionGhosts } from '../chordInput/useChordGhosts';
 import { runClipAction } from '../clipActionRunner';
 import { CLIP_SLOT, nextReveal, type RevealRequest } from '../clipEditorSession';
 import {
@@ -1026,6 +1026,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     },
     onPickerClosed: () => chordHostRef.current.onPickerClosed(),
   }));
+  // Selection mode: ghosts on every selected note, exactly what Insert would add (M6c).
+  const selectionGhosts = useSelectionGhosts(chordTarget, edo, notes);
   // The claim lasts while this clip is the open item (this body is keyed by clip): it is taken on
   // mount and released on unmount, so another host's claim in between wins and a release here
   // hands the session back to it.
@@ -1207,7 +1209,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
             : null
         }
         reveal={reveal}
-        ghostNotes={chordGhosts}
+        ghostNotes={chordGhosts ?? selectionGhosts}
         onAnchorHover={session.hoverFromRoll}
         onAnchorClick={(anchor) => {
           // A plain click opens the stored mode; Ctrl (Cmd) opens common-tone mode for this click only.

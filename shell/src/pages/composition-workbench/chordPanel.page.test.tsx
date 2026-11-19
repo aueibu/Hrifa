@@ -310,4 +310,30 @@ describe('the Chords panel on the page Stage', () => {
     expect(screen.getByRole('tab', { name: 'Chords' })).toHaveAttribute('aria-selected', 'false');
     expect(screen.getByRole('tab', { name: 'Modules' })).toHaveAttribute('aria-selected', 'true');
   }, 30_000);
+
+  it('M6c: selection mode follows the Stage: the panel behind another tab is off screen (ghosts and Insert off), in front it works', async () => {
+    const user = userEvent.setup();
+    seed();
+    render(<CompositionWorkbenchPage />);
+    const roll = await openClip(user, 'Alpha');
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '7' });
+    await screen.findByRole('tab', { name: 'Chords' });
+    fireEvent.contextMenu(screen.getByRole('tab', { name: 'Chords' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Detail' }));
+    await waitFor(() => expect(chordsDocker('desk')).toBe('Detail'));
+    roll.focus();
+    fireEvent.keyDown(roll, { key: '1' });
+    await waitFor(() => expect(chordSession().getState().pickerWanted).toBe(false));
+    expect(chordSession().getState().panelShown).toBe(true);
+
+    // Modules in front of Chords: the panel is off screen, selection mode is idle.
+    await user.click(screen.getByRole('tab', { name: 'Modules' }));
+    await waitFor(() => expect(chordSession().getState().panelShown).toBe(false));
+    expect(chordSession().isSelectionMode()).toBe(false);
+
+    await user.click(screen.getByRole('tab', { name: 'Chords' }));
+    await waitFor(() => expect(chordSession().getState().panelShown).toBe(true));
+    expect(chordSession().isSelectionMode()).toBe(true);
+  }, 30_000);
 });

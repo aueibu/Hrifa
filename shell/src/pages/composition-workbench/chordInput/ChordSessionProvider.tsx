@@ -40,7 +40,7 @@ export function ChordSessionProvider({
   // the host's; the session checks the scope (`handleKey`).
   const selectionMode = useChordSessionValue(
     session,
-    (state) => state.target !== null && !state.pickerWanted
+    (state) => state.target !== null && !state.pickerWanted && state.panelShown
   );
   const keysOn = pickerOpen || selectionMode;
   useEffect(() => {

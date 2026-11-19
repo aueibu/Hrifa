@@ -126,6 +126,11 @@ export interface ChordSessionState {
   targetVersion: number;
   /** Whether the active target wants the picker shown. */
   pickerWanted: boolean;
+  /**
+   * Is the Chords panel on screen (open, the front tab of its docker, the docker visible)? The page's
+   * `ChordPanelBridge` reports it from the Stage; a host without a Stage leaves it true. Selection mode needs it.
+   */
+  panelShown: boolean;
   anchor: ChordAnchor | null;
   /** The tool's own scale, or null for the project's. Never written to the project. */
   override: ProjectPitchSet | null;
@@ -146,19 +151,20 @@ export interface ChordSessionState {
 /** Where the audition-only picker (no target, or nothing selected) sounds its chords from: middle C. */
 export const AUDITION_ANCHOR: ChordAnchor = { pitchMidicents: 6000, start: 0, step: 1 };
 
-const INITIAL: Omit<ChordSessionState, 'target' | 'targetVersion' | 'pickerWanted'> = {
-  anchor: null,
-  override: null,
-  voicing: DEFAULT_VOICING,
-  mode: 'root',
-  ctrlOpen: false,
-  continuous: false,
-  allPitches: false,
-  tier: 'simple',
-  hoverChord: null,
-  pinnedChord: null,
-  hoverCell: null,
-};
+const INITIAL: Omit<ChordSessionState, 'target' | 'targetVersion' | 'pickerWanted' | 'panelShown'> =
+  {
+    anchor: null,
+    override: null,
+    voicing: DEFAULT_VOICING,
+    mode: 'root',
+    ctrlOpen: false,
+    continuous: false,
+    allPitches: false,
+    tier: 'simple',
+    hoverChord: null,
+    pinnedChord: null,
+    hoverCell: null,
+  };
 
 /** The release function of a claim; `changed()` tells the session the target's fields changed. */
 export type ChordClaim = (() => void) & { changed(): void };
@@ -182,7 +188,10 @@ export class ChordSession {
     target: null,
     targetVersion: 0,
     pickerWanted: false,
+    panelShown: true,
   };
+  /** The selected notes (pitch@onset) last seen in selection mode; null outside it. A change resets the pin. */
+  private selectionKey: string | null = null;
   private listeners = new Set<() => void>();
   private claims: { target: ChordTarget }[] = [];
 
@@ -241,6 +250,7 @@ export class ChordSession {
           targetVersion: this.state.targetVersion + 1,
           pickerWanted: target.wantsPicker?.() ?? true,
         });
+        this.trackSelection();
       }
     };
     return release;
@@ -261,9 +271,44 @@ export class ChordSession {
       target,
       targetVersion: this.state.targetVersion + 1,
       pickerWanted: target ? (target.wantsPicker?.() ?? true) : false,
+      panelShown: this.state.panelShown,
     };
+    this.selectionKey = null;
+    this.trackSelection();
     this.listeners.forEach((listener) => listener());
   }
+
+  /**
+   * Selection mode: a NEW selection (a different set of notes) clears the pinned chord, so it shows no ghosts until a
+   * chord is hovered or clicked again. The same notes (an insert keeps the anchors; an undo restoring them) do not.
+   * Outside selection mode it only forgets the last selection.
+   */
+  private trackSelection() {
+    if (!this.isSelectionMode()) {
+      this.selectionKey = null;
+      return;
+    }
+    const key = (this.selectionAnchors() ?? [])
+      .map((anchor) => `${anchor.pitchMidicents}@${anchor.start}`)
+      .join('|');
+    const previous = this.selectionKey;
+    this.selectionKey = key;
+    if (previous !== null && previous !== key) {
+      this.set({ pinnedChord: null });
+    }
+  }
+
+  /** The page's Stage reports whether the Chords panel is on screen; hidden, selection mode does nothing. */
+  setPanelShown = (shown: boolean) => {
+    if (this.state.panelShown === shown) {
+      return;
+    }
+    const clear = !shown && this.state.target !== null && !this.state.pickerWanted;
+    this.set(
+      clear ? { panelShown: false, hoverChord: null, pinnedChord: null } : { panelShown: shown }
+    );
+    this.trackSelection();
+  };
 
   // --- the picker adapter (the session is the only caller) -------------------------------------
 
@@ -299,8 +344,14 @@ export class ChordSession {
 
   /** Selection mode: a claim whose tool is not Chords, so the picker acts on the host's selected notes. */
   isSelectionMode(): boolean {
-    const { target, pickerWanted } = this.state;
-    return target !== null && !pickerWanted;
+    const { target, pickerWanted, panelShown } = this.state;
+    return target !== null && !pickerWanted && panelShown;
+  }
+
+  /** A claim whose tool is not Chords while the panel is off screen: the session does nothing for the panel. */
+  private isIdle(): boolean {
+    const { target, pickerWanted, panelShown } = this.state;
+    return target !== null && !pickerWanted && !panelShown;
   }
 
   /**
@@ -478,20 +529,30 @@ export class ChordSession {
   }
 
   /**
+   * The insert requests of a chord on EVERY selected note of `target` (the one list Insert hands the host, and the
+   * list the roll's selection ghosts are computed from). `null`: `target` is not the active claim, or nothing is selected.
+   */
+  selectionRequests(chord: Chord, target: ChordTarget): ChordInsertRequest[] | null {
+    if (this.state.target !== target) {
+      return null;
+    }
+    const anchors = this.selectionAnchors();
+    return anchors ? anchors.map((anchor) => this.requestFor(chord, anchor, target)) : null;
+  }
+
+  /**
    * Selection mode insert: the chord goes onto EACH selected note, as if that note had been clicked with the Chords
    * tool, in one host step. Nothing selected (or only a time range): nothing happens (the ready line says why).
    */
   private insertOnSelection(chord: Chord) {
     const target = this.state.target;
-    const anchors = this.selectionAnchors();
     // Fail closed: a host that reports a selection but cannot insert several chords in one step places nothing (one
     // undo step per chord is not offered); the ready line says so.
-    if (!target || !anchors?.length || !target.insertMany) {
+    const requests = target ? this.selectionRequests(chord, target) : null;
+    if (!target || !requests?.length || !target.insertMany) {
       return;
     }
-    const placed = target.insertMany(
-      anchors.map((anchor) => this.requestFor(chord, anchor, target))
-    );
+    const placed = target.insertMany(requests);
     if (placed !== false) {
       this.clearGhosts();
     }
@@ -499,6 +560,9 @@ export class ChordSession {
 
   /** Places a chord at the anchor through the host (one insert, one undo step for a roll host); in selection mode, on the selected notes. */
   insertChord = (chord: Chord) => {
+    if (this.isIdle()) {
+      return;
+    }
     if (this.isSelectionMode()) {
       this.insertOnSelection(chord);
       return;
@@ -639,6 +703,9 @@ export class ChordSession {
    */
   handleKey = (event: KeyboardEvent) => {
     const host = this.state.target;
+    if (this.isIdle()) {
+      return;
+    }
     const selectionMode = this.isSelectionMode();
     // Selection mode keeps the roll's keys the roll's: only focus inside the picker or its panel frame is ours.
     if (!host || (!selectionMode && host.visible?.() === false)) {
