@@ -115,6 +115,13 @@ export interface ChordPickerProps {
   previewGate?: 'click' | 'ctrl-click';
   /** Double-click or Enter: place the chord. */
   onInsert(chord: Chord): void;
+  /**
+   * Why a double-click or Enter would place nothing right now (the ready line's own text), or null/absent: it will place.
+   * Audition always works; the chord buttons only say the reason in their tooltip.
+   */
+  insertBlockedReason?: string | null;
+  /** Selection mode: there is no anchor to move and no continuous insert, so those controls and key hints are hidden. */
+  selectionMode?: boolean;
   onClose(): void;
 }
 
@@ -141,6 +148,8 @@ export function ChordPicker({
   onPin,
   previewGate = 'click',
   onInsert,
+  insertBlockedReason = null,
+  selectionMode = false,
   onClose,
   controlRef,
   continuous = false,
@@ -263,7 +272,9 @@ export function ChordPicker({
       aria-current={chordKey(chord, role) === tabbableKey ? 'true' : undefined}
       data-chord-button=""
       data-chord-key={chordKey(chord, role)}
-      title={chord.name}
+      title={
+        insertBlockedReason ? `${chord.name} (audition only: ${insertBlockedReason})` : chord.name
+      }
       className={classes.chord}
       onMouseEnter={() => onHover(chord)}
       onFocus={() => {
@@ -359,16 +370,18 @@ export function ChordPicker({
               Extended
             </Button>
           </Button.Group>
-          <Button
-            size="compact-xs"
-            variant={continuous ? 'filled' : 'default'}
-            aria-pressed={continuous}
-            disabled={!onContinuousChange}
-            title="Continuous insert (I): after an insert the anchor moves on by the chord length"
-            onClick={() => onContinuousChange?.(!continuous)}
-          >
-            Continuous
-          </Button>
+          {!selectionMode && (
+            <Button
+              size="compact-xs"
+              variant={continuous ? 'filled' : 'default'}
+              aria-pressed={continuous}
+              disabled={!onContinuousChange}
+              title="Continuous insert (I): after an insert the anchor moves on by the chord length"
+              onClick={() => onContinuousChange?.(!continuous)}
+            >
+              Continuous
+            </Button>
+          )}
           <Tooltip
             events={{ hover: true, focus: true, touch: true }}
             multiline
@@ -376,7 +389,9 @@ export function ChordPicker({
             withArrow
             label={
               <>
-                {CHORD_SHORTCUTS.map(([keys, what]) => (
+                {CHORD_SHORTCUTS.filter(
+                  ([keys]) => !selectionMode || (keys !== 'Shift+arrows' && keys !== 'I')
+                ).map(([keys, what]) => (
                   <div key={keys}>
                     {keys}: {what}
                   </div>
@@ -611,8 +626,9 @@ export function ChordPicker({
               : ''}
           </Text>
           <Text size="xs">
-            Keys: arrows browse, Enter inserts, Alt+arrows voicing, Shift+arrows move the anchor, I
-            continuous.
+            {selectionMode
+              ? 'Keys: arrows browse, Enter inserts, Alt+arrows voicing.'
+              : 'Keys: arrows browse, Enter inserts, Alt+arrows voicing, Shift+arrows move the anchor, I continuous.'}
           </Text>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ChordPanelStandIn } from '../chordInput/ChordPanelStandIn';
 import { chordsOnRoot, chordsWithCommonTone } from '../chordInput/chords';
+import { ChordSessionProvider } from '../chordInput/ChordSessionProvider';
 import { CompositionSettingsProvider, useCompositionSettings } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
 import { DEVELOPER_OPTIONS_KEY } from '../developerOptions';
@@ -8,9 +10,7 @@ import { canUndo, resetHistory, undo } from '../history';
 import type { NoteEventValue } from '../melodicization';
 import { packet, type DataItem } from '../model';
 import { musicalDuration, musicalPosition, rational } from '../musicalTime';
-import { NOTE_EDITOR_PREFERENCES_KEY } from '../noteEditorPreferences';
 import type { Snippet } from '../snippet';
-import { CanvasTakeoverProvider, CanvasTakeoverSlot } from './canvasTakeover';
 import { NoteClipEditor } from './NoteClipEditor';
 
 // The audition path: a stand-in audio engine that makes no sound and records what was played.
@@ -24,20 +24,17 @@ vi.mock('../audio/AudioEngineProvider', () => ({
 let desk: ReturnType<typeof useDesk>;
 let settingsApi: ReturnType<typeof useCompositionSettings>;
 
-function Harness({ takeover = false }: { takeover?: boolean }) {
+// The chord picker is a page panel (M6a): the editor and the panel share one chord session, and the stand-in shows the
+// panel while the Chords tool wants it (what the page's bridge makes the dock Stage do).
+function Harness() {
   desk = useDesk();
   settingsApi = useCompositionSettings();
   const clip = desk.snippets[0];
-  const editor = clip && <NoteClipEditor snippet={clip} />;
-  return takeover ? (
-    <CanvasTakeoverProvider>
-      <div>
-        <CanvasTakeoverSlot />
-        {editor}
-      </div>
-    </CanvasTakeoverProvider>
-  ) : (
-    editor
+  return (
+    <ChordSessionProvider>
+      {clip && <NoteClipEditor snippet={clip} />}
+      <ChordPanelStandIn />
+    </ChordSessionProvider>
   );
 }
 
@@ -82,11 +79,11 @@ function seededClip(): Snippet {
   };
 }
 
-async function open(options: { takeover?: boolean; seed?: Snippet } = {}) {
+async function open(options: { seed?: Snippet } = {}) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
-        <Harness takeover={options.takeover} />
+        <Harness />
       </DeskProvider>
     </CompositionSettingsProvider>
   );
@@ -130,15 +127,15 @@ beforeEach(() => {
 });
 
 describe('the Chords tool picker in the note clip editor', () => {
-  it('opens a dock beside the roll while the tool is active, and not otherwise', async () => {
+  it('wants the chord panel while the tool is active, and not otherwise', async () => {
     const roll = await open();
-    expect(document.querySelector('[data-chord-host]')).toBeNull();
+    expect(document.querySelector('[data-chord-panel]')).toBeNull();
     roll.focus();
     fireEvent.keyDown(roll, { key: '7' });
-    expect(document.querySelector('[data-chord-host="dock"]')).not.toBeNull();
+    expect(document.querySelector('[data-chord-panel]')).not.toBeNull();
     expect(screen.getByText(/Click the roll where a chord should go/)).toBeInTheDocument();
     fireEvent.keyDown(roll, { key: '1' });
-    expect(document.querySelector('[data-chord-host]')).toBeNull();
+    expect(document.querySelector('[data-chord-panel]')).toBeNull();
   });
 
   it('in C major, clicking A and double-clicking Am at first inversion places C4 E4 A4 at the click onset', async () => {
@@ -323,30 +320,6 @@ describe('the Chords tool picker in the note clip editor', () => {
     expect(anchor.dataset.labelPlacement).toBe('side');
     expect(anchor.querySelector('[class*="ghostSideLabel"]')?.textContent).toBe('A4');
     ghosts('hover').forEach((el) => expect(el.textContent).toBe(''));
-  });
-
-  it('shows the same picker in the takeover when that host is chosen, and the choice is remembered per viewer', async () => {
-    const user = userEvent.setup();
-    const roll = await open({ takeover: true });
-    clickAnchor(roll, 69);
-    const dock = document.querySelector('[data-chord-host="dock"]') as HTMLElement;
-    expect(dock).not.toBeNull();
-    expect(chord('Am')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Expand over canvas' }));
-    const slot = document.querySelector('[data-slot="canvas-takeover"]') as HTMLElement;
-    expect(slot.querySelector('[data-chord-host="takeover"]')).not.toBeNull();
-    expect(document.querySelector('[data-chord-host="dock"]')).toBeNull();
-    expect(JSON.parse(localStorage.getItem(NOTE_EDITOR_PREFERENCES_KEY)!).chordHost).toBe(
-      'takeover'
-    );
-    // Same body, same behaviour: hover previews and double-click places.
-    await user.hover(within(slot).getByRole('button', { name: 'Am' }));
-    expect(ghosts('hover')).toHaveLength(3);
-    await user.dblClick(within(slot).getByRole('button', { name: 'Am' }));
-    expect(pitches().map((entry) => entry.pitch)).toEqual([6900, 7200, 7600]);
-    // The roll stays where it is under the takeover.
-    expect(screen.getByRole('group', { name: /Note clip piano roll/ })).toBeInTheDocument();
   });
 
   const played = () =>

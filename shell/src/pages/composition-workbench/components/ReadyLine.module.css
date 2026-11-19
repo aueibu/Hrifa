@@ -1,0 +1,32 @@
+/* The ready line: one fixed-height row under a panel header, so a change of state never moves anything below it. */
+.line {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: var(--mantine-font-size-xs);
+  gap: 0.375rem;
+  height: 1.75rem;
+  min-width: 0;
+  padding: 0 0.5rem;
+}
+
+/* Waiting and No target: muted, plus their icon. */
+.line[data-state='waiting'],
+.line[data-state='no-target'] {
+  color: var(--text-muted);
+}
+
+.icon {
+  flex: 0 0 auto;
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -8,10 +8,10 @@ import { resetHistory } from '../history';
 import type { NoteEventValue } from '../melodicization';
 import { rational } from '../musicalTime';
 import { WorkbenchSessions } from '../WorkbenchSessions';
-import { ChordPickerHost } from './ChordPickerHost';
-import { ChordPickerPanel } from './ChordPickerPanel';
+import { ChordPanelStandIn } from './ChordPanelStandIn';
 import { ChordSession } from './chordSession';
 import { ChordSessionProvider, useChordSelector, useChordSession } from './ChordSessionProvider';
+import { ChordsPanel } from './ChordsPanel';
 
 // The audition path: a stand-in audio engine that makes no sound and records what was played.
 const engine = vi.hoisted(() => ({
@@ -64,9 +64,7 @@ function ProgressionList({ lastRequest }: { lastRequest?: { current: unknown } }
       >
         Choose position
       </button>
-      <ChordPickerHost host="dock" onHostChange={() => undefined}>
-        <ChordPickerPanel />
-      </ChordPickerHost>
+      <ChordsPanel />
     </div>
   );
 }
@@ -110,11 +108,36 @@ describe('a second chord host that is not a clip', () => {
     render(
       <CompositionSettingsProvider>
         <WorkbenchSessions>
-          <ChordPickerPanel />
+          <ChordsPanel />
         </WorkbenchSessions>
       </CompositionSettingsProvider>
     );
-    expect(screen.getByText(/No chord target/)).toBeInTheDocument();
+    expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
+      'No target: open a clip to insert'
+    );
+  });
+
+  it('with no claim the panel still auditions: a chord click sounds, nothing is inserted (A7)', async () => {
+    const user = userEvent.setup();
+    render(
+      <CompositionSettingsProvider>
+        <WorkbenchSessions>
+          <ChordsPanel />
+        </WorkbenchSessions>
+      </CompositionSettingsProvider>
+    );
+    expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
+      'No target: open a clip to insert'
+    );
+    // No Close button (nothing to clear) and no claim, but the picker is there and sounds.
+    expect(screen.queryByRole('button', { name: 'Close chord picker' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'C' }));
+    await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
+    // Insert (double-click) does nothing without a target.
+    await user.dblClick(screen.getByRole('button', { name: 'C' }));
+    expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
+      'No target: open a clip to insert'
+    );
   });
 
   it('a keyed anchor move blocks the hover ghost until the pointer reports another cell', () => {
@@ -189,7 +212,12 @@ describe('the clip editor under WorkbenchSessions', () => {
     function Harness() {
       desk = useDesk();
       const clip = desk.snippets[0];
-      return clip && <NoteClipEditor snippet={clip} />;
+      return (
+        <>
+          {clip && <NoteClipEditor snippet={clip} />}
+          <ChordPanelStandIn />
+        </>
+      );
     }
     mountWithDesk(<Harness />);
     await waitFor(() => expect(desk.loading).toBe(false));
@@ -231,7 +259,13 @@ describe('the clip editor under WorkbenchSessions', () => {
     // The editor opens: the last claim wins (the session resets, so the list anchor is gone).
     await user.click(screen.getByRole('button', { name: 'Toggle editor' }));
     await screen.findByRole('group', { name: /Note clip piano roll/ });
-    expect(screen.queryByRole('button', { name: 'C' })).toBeNull();
+    // (the editor's tool is not Chords: selection mode, nothing selected, so the panel only auditions)
+    expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
+      'Select a note, or use the Chords tool'
+    );
+    expect(screen.getByRole('list', { name: 'Progression' }).children).toHaveLength(1);
+    await user.dblClick(screen.getByRole('button', { name: 'C' }));
+    expect(screen.getByRole('list', { name: 'Progression' }).children).toHaveLength(1);
     // The editor closes: the list is the active claim again and works.
     await user.click(screen.getByRole('button', { name: 'Toggle editor' }));
     await waitFor(() =>
@@ -241,51 +275,6 @@ describe('the clip editor under WorkbenchSessions', () => {
     await user.dblClick(screen.getByRole('button', { name: 'C' }));
     expect(screen.getByRole('list', { name: 'Progression' }).children).toHaveLength(2);
     expect(pitches()).toEqual([]);
-  });
-});
-
-describe('the editor strip close with another host holding the claim', () => {
-  it('leaves the editor Chords tool and does not call the other host picker-closed hook', async () => {
-    const user = userEvent.setup();
-    const otherClosed = vi.fn();
-    const session = new ChordSession();
-    function Harness() {
-      desk = useDesk();
-      const clip = desk.snippets[0];
-      return clip && <NoteClipEditor snippet={clip} />;
-    }
-    render(
-      <CompositionSettingsProvider>
-        <DeskProvider>
-          <WorkbenchSessions chordSession={session}>
-            <Harness />
-          </WorkbenchSessions>
-        </DeskProvider>
-      </CompositionSettingsProvider>
-    );
-    await waitFor(() => expect(desk.loading).toBe(false));
-    act(() => {
-      desk.addBlankClip('notes', rational(4));
-    });
-    const roll = await screen.findByRole('group', { name: /Note clip piano roll/ });
-    roll.focus();
-    fireEvent.keyDown(roll, { key: '7' });
-    expect(screen.getByRole('button', { name: 'Close Chords' })).toBeInTheDocument();
-    // A second host claims after the editor: it holds the active claim.
-    let release = () => {};
-    act(() => {
-      release = session.claimChordTarget({
-        id: 'other',
-        pitchSet: defaultProjectPitchSet(12),
-        edo: 12,
-        insert: () => undefined,
-        onPickerClosed: otherClosed,
-      });
-    });
-    await user.click(screen.getByRole('button', { name: 'Close Chords' }));
-    expect(screen.queryByRole('button', { name: 'Close Chords' })).toBeNull();
-    expect(otherClosed).not.toHaveBeenCalled();
-    release();
   });
 });
 

@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { defaultProjectPitchSet } from '../compositionSettings';
+import { chordsOnRoot } from './chords';
 import { ChordSession, type ChordTarget } from './chordSession';
+import { makePitchSet } from './pitchSet';
 
 function target(id: string, extra: Partial<ChordTarget> = {}): ChordTarget {
   return { id, pitchSet: defaultProjectPitchSet(12), edo: 12, insert: () => undefined, ...extra };
@@ -83,22 +85,17 @@ describe('the chord session claim model', () => {
     other();
   });
 
-  it('forwards the picker adapter to the active target only', () => {
+  it('reports the closed picker to the active target only', () => {
     const session = new ChordSession();
     expect(session.reportPickerClosed()).toBe(false);
-    const openA = vi.fn();
     const closeA = vi.fn();
     const closeB = vi.fn();
-    session.claimChordTarget(target('a', { openPicker: openA, onPickerClosed: closeA }));
+    session.claimChordTarget(target('a', { onPickerClosed: closeA }));
     const releaseB = session.claimChordTarget(target('b', { onPickerClosed: closeB }));
-    session.showPicker();
-    expect(openA).not.toHaveBeenCalled();
     expect(session.reportPickerClosed()).toBe(true);
     expect(closeB).toHaveBeenCalledTimes(1);
     releaseB();
-    session.showPicker();
-    session.hidePicker();
-    expect(openA).toHaveBeenCalledTimes(1);
+    expect(session.reportPickerClosed()).toBe(true);
     expect(closeA).toHaveBeenCalledTimes(1);
   });
 
@@ -112,5 +109,55 @@ describe('the chord session claim model', () => {
     expect(listener).not.toHaveBeenCalled();
     session.setHoverCell({ pitchMidicents: 6000, start: 0, step: 1 });
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('selection mode (M6b)', () => {
+  const cMajor = chordsOnRoot(makePitchSet(12, [0, 2, 4, 5, 7, 9, 11]), 0).find(
+    (c) => c.name === 'C'
+  )!;
+  const g4 = { start: 3, duration: 1, pitchMidicents: 6700 };
+  const c4 = { start: 1, duration: 1, pitchMidicents: 6000 };
+  const c5 = { start: 1, duration: 1, pitchMidicents: 7200 };
+  const selecting = (notes: (typeof g4)[], extra: Partial<ChordTarget> = {}) => {
+    const session = new ChordSession();
+    session.claimChordTarget(
+      target('a', { wantsPicker: () => false, selectedNotes: () => notes, ...extra })
+    );
+    return session;
+  };
+
+  it('orders the anchors by onset, then pitch, whatever order the notes are stored in', () => {
+    const forward = selecting([c4, c5, g4]).selectionAnchors();
+    const reversed = selecting([g4, c5, c4]).selectionAnchors();
+    const key = (list: typeof forward) => list?.map((a) => [a.start, a.pitchMidicents]);
+    expect(key(forward)).toEqual([
+      [1, 6000],
+      [1, 7200],
+      [3, 6700],
+    ]);
+    expect(key(reversed)).toEqual(key(forward));
+  });
+
+  it('the view anchor is the earliest, then lowest, selected note', () => {
+    const session = selecting([g4, c5, c4]);
+    expect(session.viewAnchor()).toMatchObject({ start: 1, pitchMidicents: 6000 });
+  });
+
+  it('fail closed: with selectedNotes but no insertMany nothing is inserted, not even one by one', () => {
+    const insert = vi.fn();
+    const session = selecting([c4, g4], { insert });
+    session.insertChord(cMajor);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it('inserts all anchors through insertMany in one call, in anchor order', () => {
+    const insertMany = vi.fn();
+    const session = selecting([g4, c4], { insertMany });
+    session.insertChord(cMajor);
+    expect(insertMany).toHaveBeenCalledTimes(1);
+    expect(
+      insertMany.mock.calls[0][0].map((r: { anchor: { start: number } }) => r.anchor.start)
+    ).toEqual([1, 3]);
   });
 });

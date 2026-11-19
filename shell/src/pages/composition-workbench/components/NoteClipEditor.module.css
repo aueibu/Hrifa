@@ -18,19 +18,13 @@
   min-width: 0;
 }
 
-/* The Stage that hosts the roll and, while the Chords tool is active, the chord picker (editorStage.ts). */
+/* The roll fills the clip editor panel; the chord picker is its own page panel (M6a). */
 .work {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-}
-
-/* The Stage fills its area rather than the window. */
-.work [data-stage-root] {
-  flex: 1 1 0;
-  height: auto;
 }
 
 .header {

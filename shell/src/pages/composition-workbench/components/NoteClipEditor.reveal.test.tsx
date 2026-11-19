@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ChordPanelStandIn } from '../chordInput/ChordPanelStandIn';
+import { ChordSessionProvider } from '../chordInput/ChordSessionProvider';
 import { CompositionSettingsProvider } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
 import { resetHistory } from '../history';
@@ -31,7 +33,13 @@ let desk: ReturnType<typeof useDesk>;
 function Harness() {
   desk = useDesk();
   const clip = desk.snippets[0];
-  return clip && <NoteClipEditor snippet={clip} />;
+  // The picker is the page's Chords panel (M6a): the stand-in shows it while the tool wants it, Enter inserts through it.
+  return (
+    <ChordSessionProvider>
+      {clip && <NoteClipEditor snippet={clip} />}
+      <ChordPanelStandIn />
+    </ChordSessionProvider>
+  );
 }
 
 const rowY = (midi: number) => (127 - midi) * 22 + 11;

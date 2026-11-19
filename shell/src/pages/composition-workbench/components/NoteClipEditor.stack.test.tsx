@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen, userEvent, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ChordPanelStandIn } from '../chordInput/ChordPanelStandIn';
+import { ChordSessionProvider } from '../chordInput/ChordSessionProvider';
 import { CompositionSettingsProvider } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
 import { canUndo, resetHistory, undo } from '../history';
@@ -76,7 +78,10 @@ async function open(seed: Snippet) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
-        <Harness />
+        <ChordSessionProvider>
+          <Harness />
+          <ChordPanelStandIn />
+        </ChordSessionProvider>
       </DeskProvider>
     </CompositionSettingsProvider>
   );
@@ -275,7 +280,7 @@ describe('stacking chords onto existing notes', () => {
     useTool(roll, '1');
     click(roll, 60, 10);
     expect(screen.queryByText(/\(note\)/)).toBeNull();
-    expect(document.querySelector('[data-chord-host]')).toBeNull();
+    expect(document.querySelector('[data-chord-panel]')).toBeNull();
     expect(items()).toHaveLength(1);
   });
 });

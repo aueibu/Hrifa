@@ -1,6 +1,12 @@
 /**
- * The Stage inside the note clip editor (M9b): which modules it hosts, its layout key, and the pure rules for its
- * default layout and for migrating the old dock preferences. No React here; NoteClipEditor wires it.
+ * LEGACY (M6a): the Stage inside the note clip editor is gone (the roll fills the clip editor panel and the chord
+ * picker is the page's `chords` panel). What remains is the description of the OLD layout, still read once when a
+ * project with no screenset store is seeded (`layout/workbenchScreensets.ts` folds `hrifa.stage.layout.workbench-editor.v1`
+ * and `chordDockWidth` into the default screensets), and used by `lib/stage/migrate.test.ts`. Nothing renders from it.
+ * Move it next to `lib/stage/migrate.ts` and delete this file when that shared path can be edited.
+ *
+ * The old design: which modules it hosted, its layout key, and the pure rules for its default layout and for migrating
+ * the old dock preferences. No React here.
  *
  * Two modules, both closures built in the editor body (the chord session and the roll's view state stay there):
  * the roll and the chord picker. The picker is in the layout only while the Chords tool is active and its host is the

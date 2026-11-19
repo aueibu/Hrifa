@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { cleanup, render, screen, userEvent, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CanvasTakeoverProvider, CanvasTakeoverSlot } from '../components/canvasTakeover';
 import { defaultProjectPitchSet, type ProjectPitchSet } from '../compositionSettings';
-import type { ChordHost } from '../noteEditorPreferences';
 import { ChordPicker, type ChordPickerMode } from './ChordPicker';
-import { ChordPickerHost } from './ChordPickerHost';
 import { chordsWithCommonTone } from './chords';
 import type { ChordTier } from './chordTemplates';
 import { chromaticSet } from './pitchSet';
@@ -220,55 +217,6 @@ describe('ChordPicker', () => {
     expect(
       screen.getByText('Hover previews. Click auditions. Double-click or Enter inserts.')
     ).toBeInTheDocument();
-  });
-});
-
-describe('ChordPicker hosts: one body, no host-specific props', () => {
-  function Hosted({ initial }: { initial: ChordHost }) {
-    const [host, setHost] = useState<ChordHost>(initial);
-    return (
-      <CanvasTakeoverProvider>
-        <div>
-          <CanvasTakeoverSlot />
-          <ChordPickerHost host={host} onHostChange={setHost} onClose={() => undefined}>
-            <Stateful callbacks={spies()} />
-          </ChordPickerHost>
-        </div>
-      </CanvasTakeoverProvider>
-    );
-  }
-
-  it('renders the same body in the dock and in the takeover, and the button moves it between them', async () => {
-    const user = userEvent.setup();
-    render(<Hosted initial="dock" />);
-    const slot = () => document.querySelector('[data-slot="canvas-takeover"]') as HTMLElement;
-
-    const dockFrame = document.querySelector('[data-chord-host="dock"]') as HTMLElement;
-    expect(dockFrame).not.toBeNull();
-    expect(slot().contains(dockFrame)).toBe(false);
-    const dockNames = chordButtons();
-    expect(within(dockFrame).getByRole('group', { name: 'Chord picker' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Expand over canvas' }));
-    const takeoverFrame = document.querySelector('[data-chord-host="takeover"]') as HTMLElement;
-    expect(takeoverFrame).not.toBeNull();
-    expect(document.querySelector('[data-chord-host="dock"]')).toBeNull();
-    expect(slot().contains(takeoverFrame)).toBe(true);
-    expect(within(takeoverFrame).getByRole('group', { name: 'Chord picker' })).toBeInTheDocument();
-    expect(chordButtons()).toEqual(dockNames);
-
-    await user.click(screen.getByRole('button', { name: 'Dock beside roll' }));
-    expect(document.querySelector('[data-chord-host="dock"]')).not.toBeNull();
-  });
-
-  it('shows the dock when a takeover is asked for but the stage has no slot', () => {
-    render(
-      <ChordPickerHost host="takeover" onHostChange={() => undefined}>
-        <Stateful callbacks={spies()} />
-      </ChordPickerHost>
-    );
-    expect(document.querySelector('[data-chord-host="dock"]')).not.toBeNull();
-    expect(screen.getByRole('group', { name: 'Chord picker' })).toBeInTheDocument();
   });
 });
 

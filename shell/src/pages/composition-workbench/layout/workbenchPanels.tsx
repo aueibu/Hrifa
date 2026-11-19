@@ -1,5 +1,6 @@
 /**
- * The workbench's panel kinds for the dock Stage (one-Stage M5): `canvas`, `desk`, `module-detail` and `clip-editor`.
+ * The workbench's panel kinds for the dock Stage (one-Stage M5, M6a): `canvas`, `desk`, `module-detail`, `clip-editor`
+ * and `chords` (the chord picker; it reads the page chord session, so it needs nothing from the page's panel nodes).
  * The kinds are static (module-level), so the registry is built once. The page owns what each panel shows and hands the
  * four elements down through `WorkbenchPanelsContext`: the Stage renders a panel through a portal at its own place in
  * the tree, so context from above the Stage reaches the panels, and a page render updates them as it did before the Stage.
@@ -11,8 +12,10 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { PanelKind } from '../../../components/Stage/dock';
 import { HEIGHT_CLASSES, WIDTH_CLASSES, type SlotSize } from '../../../lib/stage';
+import { ChordsPanel } from '../chordInput/ChordsPanel';
 import {
   CANVAS_PANEL,
+  CHORDS_PANEL,
   CLIP_EDITOR_PANEL,
   DESK_PANEL,
   MODULE_DETAIL_PANEL,
@@ -81,5 +84,13 @@ export const WORKBENCH_KINDS: readonly PanelKind[] = [
     minSize: MIN_SIZE,
     home: 'Detail',
     render: () => <PanelSlot which="clipEditor" scroll />,
+  },
+  {
+    id: CHORDS_PANEL,
+    title: 'Chords',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    home: 'Tools',
+    render: () => <ChordsPanel />,
   },
 ];

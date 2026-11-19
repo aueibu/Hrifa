@@ -36,20 +36,29 @@ export function ChordSessionProvider({
   const targetId = useChordSessionValue(session, (state) => state.target?.id ?? null);
   const anchor = useChordSessionValue(session, (state) => state.anchor);
   const pickerOpen = wanted && anchored;
+  // Selection mode (a claim whose tool is not Chords): the keys are ours only with focus inside the picker, and Esc stays
+  // the host's; the session checks the scope (`handleKey`).
+  const selectionMode = useChordSessionValue(
+    session,
+    (state) => state.target !== null && !state.pickerWanted
+  );
+  const keysOn = pickerOpen || selectionMode;
   useEffect(() => {
-    if (!pickerOpen) {
+    if (!keysOn) {
       return undefined;
     }
     const onKey = (event: KeyboardEvent) => session.handleKey(event);
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', session.handleKeyUp, true);
-    window.addEventListener('keydown', session.handleEscape);
+    if (pickerOpen) {
+      window.addEventListener('keydown', session.handleEscape);
+    }
     return () => {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', session.handleKeyUp, true);
       window.removeEventListener('keydown', session.handleEscape);
     };
-  }, [pickerOpen, session]);
+  }, [keysOn, pickerOpen, session]);
   // After a Shift+arrow anchor move the picker has re-listed the chords (its effects ran first).
   useEffect(() => {
     session.afterAnchorChange();

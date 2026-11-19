@@ -14,10 +14,8 @@
  * (`scope()`: the host's root element) plus the shared attributes `data-chord-picker` and
  * `data-chord-scope`; it never reads editor state.
  *
- * The session is the only caller of the picker's open and close (`showPicker`, `hidePicker`,
- * `reportPickerClosed` go through the target's adapter: `wantsPicker`, `openPicker`, `closePicker`).
- * Until M6 the picker lives in the editor's v1 Stage and the editor maps "the host wants the picker"
- * to its `pickerInStage` rule itself.
+ * Since M6a the picker is the page's `chords` panel: the page's `ChordPanelBridge` shows it when a claim starts
+ * wanting it (the target's `wantsPicker`), and reports the person closing it to the active claim's host. Leaving the tool never closes it.
  */
 import type { ProjectPitchSet } from '../compositionSettings';
 import { readDeveloperOptions } from '../developerOptions';
@@ -71,12 +69,28 @@ export interface ChordTarget {
   /** The length a placed chord takes when no note is stacked on; null or absent: one grid step. */
   entryLength?: number | null;
   entryVelocity?: number | null;
+  /** A name the ready line shows for a host that is not a roll ("Insert into <label>"); absent: a generic wording. */
+  label?: string;
+  /** The host's meter ("3/4"), for the ready line's "bar X beat Y"; absent: 4/4. */
+  meter?: string;
   /** The empty-state text while the host has no anchor yet. */
   hint?: string;
   /** The note a click on a cell means (stacking), or undefined. A list host has no notes. */
   noteAt?(cell: ChordCell): ChordNoteHit | undefined;
   /** Places the chord; `false` means nothing was placed (the session then keeps its anchor and ghosts). */
   insert(request: ChordInsertRequest): boolean | void;
+  /**
+   * Selection mode (the host's tool is not Chords, M6b, design 7.7): the notes the host has selected, as the stack-on
+   * notes the panel inserts onto. `null`: nothing is selected; `[]`: a selection that holds no notes (a time range).
+   * Read at call time, from the same pruned, derived selection the host shows. Absent: the host has no selection
+   * (a list host), so selection mode has nothing to act on. Call `claim.changed()` when it changes.
+   */
+  selectedNotes?(): ChordNoteHit[] | null;
+  /**
+   * Places the chords of several anchors in ONE step (one undo step for a roll host); `false`: nothing was placed.
+   * Required for selection mode: a host with `selectedNotes` and no `insertMany` gets a waiting ready line and no insert.
+   */
+  insertMany?(requests: ChordInsertRequest[]): boolean | void;
   /** The anchor was set by a click or a key (today the page's `onChordAnchor`). */
   onAnchor?(anchor: { pitchMidicents: number; onset: number }): void;
   /** A keyed anchor move wants the host's view to follow (the roll scrolls). */
@@ -93,7 +107,6 @@ export interface ChordTarget {
   visible?(): boolean;
   /** The picker adapter: does the host want the picker shown (the Chords tool is on)? Absent: yes. */
   wantsPicker?(): boolean;
-  openPicker?(): void;
   /** The user closed the picker: the host leaves its tool. */
   onPickerClosed?(): void;
 }
@@ -129,6 +142,9 @@ export interface ChordSessionState {
   /** The grid cell under the pointer (display only: a one-step ghost). */
   hoverCell: ChordCell | null;
 }
+
+/** Where the audition-only picker (no target, or nothing selected) sounds its chords from: middle C. */
+export const AUDITION_ANCHOR: ChordAnchor = { pitchMidicents: 6000, start: 0, step: 1 };
 
 const INITIAL: Omit<ChordSessionState, 'target' | 'targetVersion' | 'pickerWanted'> = {
   anchor: null,
@@ -251,14 +267,6 @@ export class ChordSession {
 
   // --- the picker adapter (the session is the only caller) -------------------------------------
 
-  showPicker() {
-    this.state.target?.openPicker?.();
-  }
-
-  hidePicker() {
-    this.state.target?.onPickerClosed?.();
-  }
-
   /** The user closed the picker's tab or frame: the host leaves its tool. */
   reportPickerClosed(): boolean {
     const target = this.state.target;
@@ -275,17 +283,86 @@ export class ChordSession {
     return this.state.ctrlOpen ? 'common' : this.state.mode;
   }
 
-  private chordLength(): number {
-    const { anchor, target } = this.state;
-    return anchor?.note?.duration ?? target?.entryLength ?? anchor?.step ?? 1;
+  private chordLength(anchor: ChordAnchor | null = this.currentAnchor()): number {
+    return anchor?.note?.duration ?? this.state.target?.entryLength ?? anchor?.step ?? 1;
   }
 
   /** Common-tone mode anchors the chord tone that has the clicked pitch class; root mode, the root. */
-  private anchorPc(): number | undefined {
-    const { anchor, target } = this.state;
+  private anchorPc(anchor: ChordAnchor | null = this.currentAnchor()): number | undefined {
+    const { target } = this.state;
     return this.effectiveMode() === 'common' && anchor && target
       ? pitchClassOf(anchor.pitchMidicents, target.edo)
       : undefined;
+  }
+
+  // --- selection mode (M6b) ---------------------------------------------------------------------
+
+  /** Selection mode: a claim whose tool is not Chords, so the picker acts on the host's selected notes. */
+  isSelectionMode(): boolean {
+    const { target, pickerWanted } = this.state;
+    return target !== null && !pickerWanted;
+  }
+
+  /**
+   * The anchors of the host's selected notes, each built by the same rule as a click on that note (its exact pitch
+   * snapped to the grid, its own onset, length and velocity), ordered by onset, then pitch. `null`: the host reports
+   * nothing selected or has no selection; `[]`: a selection with no notes. Notes at the same pitch and onset count once.
+   */
+  selectionAnchors(): ChordAnchor[] | null {
+    const target = this.state.target;
+    const notes = target?.selectedNotes?.() ?? null;
+    if (!target || notes === null) {
+      return null;
+    }
+    const seen = new Set<string>();
+    const anchors: ChordAnchor[] = [];
+    // Earliest onset first, then lowest pitch (not the host's data order): the merge, the view anchor and the result are
+    // the same whatever order the notes are stored in.
+    const ordered = [...notes].sort(
+      (a, b) => a.start - b.start || a.pitchMidicents - b.pitchMidicents
+    );
+    for (const note of ordered) {
+      const key = `${note.pitchMidicents}@${note.start}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        const cell = {
+          pitchMidicents: note.pitchMidicents,
+          start: note.start,
+          step: target.entryLength ?? 1,
+        };
+        anchors.push(this.anchorOnNote(target, cell, note));
+      }
+    }
+    return anchors;
+  }
+
+  /** What the picker lists chords from and sounds with in selection mode: the earliest, then lowest, selected note, else middle C. */
+  viewAnchor(): ChordAnchor {
+    return this.selectionAnchors()?.[0] ?? AUDITION_ANCHOR;
+  }
+
+  /** The anchor the picker acts on now: the set anchor (Chords tool, or no claim), or in selection mode the view anchor. */
+  private currentAnchor(): ChordAnchor | null {
+    return this.isSelectionMode() ? this.viewAnchor() : this.state.anchor;
+  }
+
+  /** The stack-on-note anchor (the rule of W-22): the note's exact pitch (snapped), its actual onset, length and velocity. */
+  private anchorOnNote(target: ChordTarget, cell: ChordCell, hit?: ChordNoteHit): ChordAnchor {
+    const anchor: ChordAnchor = {
+      pitchMidicents: snapToEdo(cell.pitchMidicents, target.edo),
+      start: cell.start,
+      step: cell.step,
+    };
+    if (hit) {
+      anchor.pitchMidicents = snapToEdo(hit.pitchMidicents, target.edo);
+      anchor.start = hit.start;
+      anchor.note = {
+        duration: hit.duration,
+        velocity: hit.velocity,
+        pitchMidicents: hit.pitchMidicents,
+      };
+    }
+    return anchor;
   }
 
   // --- plain setters (the picker's props) ------------------------------------------------------
@@ -342,22 +419,8 @@ export class ChordSession {
     if (!target) {
       return;
     }
-    const snapped: ChordAnchor = {
-      pitchMidicents: snapToEdo(click.pitchMidicents, target.edo),
-      start: click.start,
-      step: click.step,
-    };
-    const hit = target.noteAt?.(click);
-    if (hit) {
-      // Stacking on an existing note: its exact pitch and actual onset, its own length and velocity.
-      snapped.pitchMidicents = snapToEdo(hit.pitchMidicents, target.edo);
-      snapped.start = hit.start;
-      snapped.note = {
-        duration: hit.duration,
-        velocity: hit.velocity,
-        pitchMidicents: hit.pitchMidicents,
-      };
-    }
+    // A note under the click is stacked on: its exact pitch and actual onset, its own length and velocity.
+    const snapped = this.anchorOnNote(target, click, target.noteAt?.(click));
     this.setAnchor(snapped, { ctrl: click.ctrlKey === true });
   };
 
@@ -399,23 +462,53 @@ export class ChordSession {
     this.auditionSink?.(notes, velocity);
   };
 
-  /** Places a chord at the anchor through the host (one insert, one undo step for a roll host). */
+  /** The insert request for a chord at one anchor: the default placement, before any host rule. */
+  private requestFor(chord: Chord, anchor: ChordAnchor, target: ChordTarget): ChordInsertRequest {
+    const length = this.chordLength(anchor);
+    const anchorPc = this.anchorPc(anchor);
+    return {
+      chord,
+      anchor,
+      voicing: this.state.voicing,
+      length,
+      anchorPc,
+      notes: chordNotes(chord, anchor, this.state.voicing, length, anchorPc),
+      entryVelocity: target.entryVelocity ?? undefined,
+    };
+  }
+
+  /**
+   * Selection mode insert: the chord goes onto EACH selected note, as if that note had been clicked with the Chords
+   * tool, in one host step. Nothing selected (or only a time range): nothing happens (the ready line says why).
+   */
+  private insertOnSelection(chord: Chord) {
+    const target = this.state.target;
+    const anchors = this.selectionAnchors();
+    // Fail closed: a host that reports a selection but cannot insert several chords in one step places nothing (one
+    // undo step per chord is not offered); the ready line says so.
+    if (!target || !anchors?.length || !target.insertMany) {
+      return;
+    }
+    const placed = target.insertMany(
+      anchors.map((anchor) => this.requestFor(chord, anchor, target))
+    );
+    if (placed !== false) {
+      this.clearGhosts();
+    }
+  }
+
+  /** Places a chord at the anchor through the host (one insert, one undo step for a roll host); in selection mode, on the selected notes. */
   insertChord = (chord: Chord) => {
-    const { anchor, target, voicing, continuous } = this.state;
+    if (this.isSelectionMode()) {
+      this.insertOnSelection(chord);
+      return;
+    }
+    const { anchor, target, continuous } = this.state;
     if (!anchor || !target) {
       return;
     }
     const length = this.chordLength();
-    const anchorPc = this.anchorPc();
-    const placed = target.insert({
-      chord,
-      anchor,
-      voicing,
-      length,
-      anchorPc,
-      notes: chordNotes(chord, anchor, voicing, length, anchorPc),
-      entryVelocity: target.entryVelocity ?? undefined,
-    });
+    const placed = target.insert(this.requestFor(chord, anchor, target));
     if (placed === false) {
       return;
     }
@@ -431,14 +524,15 @@ export class ChordSession {
 
   /** Pins a chord's ghost; sounds it only when asked. */
   pinChord = (chord: Chord, { audition }: { audition: boolean }) => {
-    const { anchor, target, voicing } = this.state;
+    const { target, voicing } = this.state;
+    const anchor = this.currentAnchor();
     if (!anchor) {
       return;
     }
     this.set({ pinnedChord: chord });
     if (audition) {
       this.audition(
-        chordNotes(chord, anchor, voicing, this.chordLength(), this.anchorPc()),
+        chordNotes(chord, anchor, voicing, this.chordLength(anchor), this.anchorPc(anchor)),
         target?.entryVelocity ?? undefined
       );
     }
@@ -454,7 +548,8 @@ export class ChordSession {
     { audition, fallback }: { audition: boolean; fallback: Chord | null }
   ) => {
     this.set({ voicing: next });
-    const { anchor, target, pinnedChord, hoverChord } = this.state;
+    const { target, pinnedChord, hoverChord } = this.state;
+    const anchor = this.currentAnchor();
     const chord = pinnedChord ?? hoverChord ?? fallback;
     if (!chord || !anchor) {
       return;
@@ -462,7 +557,7 @@ export class ChordSession {
     this.set({ pinnedChord: chord });
     if (audition) {
       this.audition(
-        chordNotes(chord, anchor, next, this.chordLength(), this.anchorPc()),
+        chordNotes(chord, anchor, next, this.chordLength(anchor), this.anchorPc(anchor)),
         target?.entryVelocity ?? undefined
       );
     }
@@ -544,19 +639,22 @@ export class ChordSession {
    */
   handleKey = (event: KeyboardEvent) => {
     const host = this.state.target;
-    if (!host || host.visible?.() === false) {
+    const selectionMode = this.isSelectionMode();
+    // Selection mode keeps the roll's keys the roll's: only focus inside the picker or its panel frame is ours.
+    if (!host || (!selectionMode && host.visible?.() === false)) {
       return;
     }
     if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey) {
       return;
     }
     const target = event.target as HTMLElement | null;
-    const inScope =
-      !(target instanceof Element) ||
-      target === document.body ||
-      target === document.documentElement ||
-      !!host.scope?.()?.contains(target) ||
-      !!target.closest(CHORD_SCOPE);
+    const inScope = selectionMode
+      ? target instanceof Element && !!target.closest(CHORD_SCOPE)
+      : !(target instanceof Element) ||
+        target === document.body ||
+        target === document.documentElement ||
+        !!host.scope?.()?.contains(target) ||
+        !!target.closest(CHORD_SCOPE);
     if (
       !inScope ||
       // Controls with their own arrow keys (splitters, sliders, tabs, menus, accordions).
@@ -578,6 +676,10 @@ export class ChordSession {
     const dy = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
     if (dx || dy) {
       if (event.altKey && event.shiftKey) {
+        return;
+      }
+      // Selection mode has no anchor to move: Shift+arrow is not ours.
+      if (selectionMode && event.shiftKey) {
         return;
       }
       handled();
@@ -612,7 +714,12 @@ export class ChordSession {
         }
         this.insertChord(chord);
       }
-    } else if (event.key.toLowerCase() === 'i' && !event.altKey && !event.shiftKey) {
+    } else if (
+      event.key.toLowerCase() === 'i' &&
+      !event.altKey &&
+      !event.shiftKey &&
+      !selectionMode
+    ) {
       handled();
       if (event.repeat) {
         return;

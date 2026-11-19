@@ -62,9 +62,9 @@ export interface NoteEditorPreferences {
   laneHeight: number | null;
   /** The Actions panel sections that are open (several at once; all open until the viewer closes some). */
   actionSections: ActionSectionId[];
-  /** Where the Chords tool's picker sits: the dock beside the roll, or the takeover of the canvas area. */
+  /** LEGACY (M6a): where the picker sat. Only read once, to seed the `chords` panel's place of a screenset that has none. */
   chordHost: ChordHost;
-  /** The chord dock's width in pixels; null until the viewer has dragged it (the default is used). */
+  /** LEGACY (M6a): the old dock's width in pixels, read once to seed the width of `Tools` for a project with no screenset store. */
   chordDockWidth: number | null;
 }
 

@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
 } from 'react';
 import { Badge, Button, Menu, Text, Title, VisuallyHidden } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
@@ -25,35 +24,19 @@ import {
   type PianoRollViewState,
   type VelocityRamp,
 } from '../../../components/PianoRoll';
-import {
-  browserStorage,
-  createStageRegistry,
-  loadLayout,
-  saveLayout,
-  Stage,
-} from '../../../components/Stage';
-import {
-  HEIGHT_CLASSES,
-  WIDTH_CLASSES,
-  locate,
-  pxToRem,
-  removeModule,
-  type Layout,
-} from '../../../lib/stage';
-import { ChordPickerHost } from '../chordInput/ChordPickerHost';
-import { ChordPickerPanel } from '../chordInput/ChordPickerPanel';
 import type {
   ChordCell,
   ChordClaim,
   ChordInsertRequest,
+  ChordNoteHit,
   ChordTarget,
 } from '../chordInput/chordSession';
 import {
   ChordSessionProvider,
-  useChordSelector,
   useChordSession,
   useOptionalChordSession,
 } from '../chordInput/ChordSessionProvider';
+import { mergeChordInserts } from '../chordInput/placeChords';
 import { useChordGhosts } from '../chordInput/useChordGhosts';
 import { runClipAction } from '../clipActionRunner';
 import { CLIP_SLOT, nextReveal, type RevealRequest } from '../clipEditorSession';
@@ -69,15 +52,6 @@ import { freezeClipProperties, readClipProperties } from '../clipProperties';
 import { registerClipEditor, type ClipEditorProps } from '../clipTypes';
 import { useCompositionSettings } from '../compositionSettings';
 import { useDesk } from '../desk';
-import {
-  CHORDS_MODULE,
-  EDITOR_STAGE_KEY,
-  FALLBACK_STAGE_WIDTH_REM,
-  ROLL_MODULE,
-  defaultEditorLayout,
-  hasBothModules,
-  migratedPickerRem,
-} from '../editorStage';
 import { inInputScope, isTyping } from '../inputScope';
 import { useInputScope } from '../InputScopeProvider';
 import type { DataPacket } from '../model';
@@ -128,12 +102,12 @@ import {
   type NoteSelection,
   type TimeRange,
 } from '../noteSelection';
+import { barBeatText } from '../positionWording';
 import { selectionKeyOf, type RotationSessionCore } from '../rotationSession';
 import { pitchLabel } from '../routeTreatments';
 import { scaleDegreeColor } from '../scaleDegreeColor';
 import { jsonEqual } from '../snippet';
 import { parseMeter } from '../transport';
-import { useCanvasTakeoverElement } from './canvasTakeover';
 import classes from './NoteClipEditor.module.css';
 
 /** The editor id the Notes clip type names (clipTypes.ts). */
@@ -350,15 +324,10 @@ function describeNote(packet: DataPacket, id: string, meter: string): string {
   if (!item || !isNoteItem(item)) {
     return '';
   }
-  const { numerator, denominator } = parseMeter(meter);
-  const barLength = (numerator * 4) / denominator;
-  const beatLength = 4 / denominator;
   const onset = rationalToNumber(item.value.onset.quarterNotes);
-  const bar = Math.floor(onset / barLength + 1e-9);
-  const beat = (onset - bar * barLength) / beatLength + 1;
   const order = navigationOrder(packet);
   const name = item.value.pitches.map((midicents) => pitchLabel(midicents)).join(' ');
-  return `${name} at bar ${bar + 1} beat ${Number(beat.toFixed(2))}, selected, ${order.indexOf(id) + 1} of ${order.length}`;
+  return `${name} at ${barBeatText(onset, meter)}, selected, ${order.indexOf(id) + 1} of ${order.length}`;
 }
 
 /**
@@ -386,9 +355,6 @@ export function noteAtCell(
   }
   return best;
 }
-
-/** The "nothing stored" marker `loadLayout` hands back (compared by identity). */
-const NO_STORED_LAYOUT: Layout = { version: 1, columns: [] };
 
 function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const { commitSnippetEditById, latestSnippetById, loading, locked } = useDesk();
@@ -435,7 +401,6 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   // The chord session (page level, or private when no WorkbenchSessions is above): the anchor, the
   // picker's values, the hover cell and the W-20 keys live there. This editor is a HOST of it: it
   // claims it while this clip is open (below) and reads the anchor, hover cell and ghosts.
-  const chordAnchored = useChordSelector((state) => state.anchor !== null);
   // Any tool change ends the ramp (it is a Paint-tool secondary selection) and a waiting pick.
   function setTool(next: string) {
     if (next === 'chords' && tool !== 'chords') {
@@ -974,30 +939,26 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
    * is dropped, so nothing is split, trimmed or deleted. The new ones take the note's velocity.
    * Returns false when nothing was placed (the session then keeps its anchor and ghosts).
    */
-  function insertChord({ anchor, notes: tones, entryVelocity }: ChordInsertRequest): boolean {
-    let placed: PianoRollNewNote[] = tones;
-    if (anchor.note) {
-      const velocity = anchor.note.velocity;
-      const tolerance = Math.min(50, 1200 / edo / 2);
-      placed = placed
-        .filter(
-          (tone) =>
-            !notes.some(
-              (note) =>
-                Math.abs(note.pitchMidicents - tone.pitchMidicents) <= tolerance + 1e-9 &&
-                note.start < tone.start + tone.duration - 1e-9 &&
-                note.start + note.duration > tone.start + 1e-9
-            )
-        )
-        .map((tone) => (velocity === undefined ? tone : { ...tone, velocity }));
-    }
+  function insertChord(request: ChordInsertRequest): boolean {
+    return insertChords([request]);
+  }
+
+  /**
+   * One or several chords (selection mode puts one on each selected note) in ONE commit: the stack rule per request and
+   * no pitch entered twice across requests (`placeChords.ts`); a single request is exactly the Chords tool's insert.
+   */
+  function insertChords(requests: ChordInsertRequest[]): boolean {
+    const placed: PianoRollNewNote[] = mergeChordInserts(requests, notes, edo);
     if (placed.length === 0) {
       return false;
     }
+    const entryVelocity = requests[0]?.entryVelocity;
     const ids = placed.map(() => newNoteItemId(snippet.id));
     commit(
       (current) => addNotes(current, placed, ids, entryVelocity),
-      (next) => selectIds(next, ids)
+      // Chords tool: the inserted notes become the selection. Selection mode (B2): the person's selection (the anchors)
+      // stays, so the next insert stacks on the same notes again.
+      chordsActive ? (next) => selectIds(next, ids) : undefined
     );
     return true;
   }
@@ -1012,10 +973,21 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     chordsActive,
     noteAt: (cell: ChordCell) => noteAtCell(notes, cell),
     insert: insertChord,
+    insertMany: insertChords,
+    // Selection mode: the notes of the selection this editor shows (pruned and derived, like the page's selection chain).
+    selectedNotes: (): ChordNoteHit[] | null => {
+      const shown = selectionRef.current;
+      if (shown.ids.length === 0) {
+        // A time selection with no notes is a range (a roll note needs a pitch): an empty list, not null.
+        return shown.kind === 'time' && shown.range ? [] : null;
+      }
+      const ids = new Set(shown.ids);
+      return notes.filter((note) => ids.has(note.sourceId ?? note.id));
+    },
     onAnchor: (anchor: { pitchMidicents: number; onset: number }) => onChordAnchor?.(anchor),
     revealAnchor: (range: Parameters<NonNullable<ChordTarget['revealAnchor']>>[0]) =>
       clipSession.dispatch({ type: 'reveal', target: range }),
-    openPicker: () => setTool('chords'),
+    meter: clipMeter,
     onPickerClosed: () => setTool(toolBeforeChords.current),
   };
   const chordHostRef = useRef(chordHost);
@@ -1037,14 +1009,21 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     hint: "Click the roll where a chord should go. Its pitch becomes the chord's root; Ctrl/Cmd+click picks the role it plays in a chord. Click an existing note to stack a chord on it.",
     noteAt: (cell) => chordHostRef.current.noteAt(cell),
     insert: (request) => chordHostRef.current.insert(request),
+    insertMany: (requests) => chordHostRef.current.insertMany(requests),
+    selectedNotes: () => chordHostRef.current.selectedNotes(),
     onAnchor: (anchor) => chordHostRef.current.onAnchor(anchor),
     revealAnchor: (range) => chordHostRef.current.revealAnchor(range),
     // The pointer tracker and the scope helper are M4b: the session asks this editor for its root.
     scope: () => editorRoot.current,
-    // The adapter until M6: the picker is wanted while the Chords tool is on; the v1 Stage's
-    // pickerInStage rule (below) decides where it is drawn.
+    // The roll is hidden (another tab in front, a collapsed or other-screenset docker): the panel parks it
+    // with `inert`, and the W-20 keys are not captured then (design 8.4).
+    visible: () => !editorRoot.current?.closest('[inert]'),
+    // The picker is a page panel (M6a): it is wanted while the Chords tool is on, and the page's
+    // ChordPanelBridge shows the panel when that turns true.
     wantsPicker: () => chordHostRef.current.chordsActive,
-    openPicker: () => chordHostRef.current.openPicker(),
+    get meter() {
+      return chordHostRef.current.meter;
+    },
     onPickerClosed: () => chordHostRef.current.onPickerClosed(),
   }));
   // The claim lasts while this clip is the open item (this body is keyed by clip): it is taken on
@@ -1061,111 +1040,16 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   }, [session, chordTarget]);
   useLayoutEffect(() => {
     chordClaim.current?.changed();
-  }, [chordsActive, settings.pitchSet, edo, preferences.entryLength, preferences.entryVelocity]);
-
-  // The Stage that hosts the roll and the chord picker (M9b). Both modules are closures over this component's
-  // state (the chord session, the roll's view, selection and audition stay here): their render functions are
-  // read through `stageNodes`, refreshed every render, so the registry is built once and never remounts a module.
-  // The picker is in the layout only while the Chords tool is active and its host is the dock; with the takeover as
-  // host (or another tool) the Stage shows the roll alone.
-  const takeoverSlot = useCanvasTakeoverElement();
-  const pickerInTakeover = chordsActive && preferences.chordHost === 'takeover' && !!takeoverSlot;
-  const pickerInStage = chordsActive && !pickerInTakeover;
-  const stageArea = useRef<HTMLDivElement | null>(null);
-  const [stageWidthRem, setStageWidthRem] = useState(0);
-  useLayoutEffect(() => {
-    const el = stageArea.current;
-    if (!el) {
-      return undefined;
-    }
-    const read = () => {
-      const width = el.getBoundingClientRect().width;
-      if (width > 0) {
-        const root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-        setStageWidthRem(pxToRem(width, root));
-      }
-    };
-    read();
-    if (typeof ResizeObserver === 'undefined') {
-      return undefined;
-    }
-    const observer = new ResizeObserver(read);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  const stageNodes = useRef<{ roll: ReactNode; chords: ReactNode }>({ roll: null, chords: null });
-  const [stageRegistry] = useState(() =>
-    createStageRegistry(
-      [
-        { id: ROLL_MODULE, title: 'Piano roll' },
-        { id: CHORDS_MODULE, title: 'Chords' },
-      ].map(({ id, title }) => ({
-        id,
-        title,
-        sizes: WIDTH_CLASSES.flatMap((width) =>
-          HEIGHT_CLASSES.map((height) => ({ width, height }))
-        ),
-        minSize: { width: 'narrow', height: 'short' } as const,
-        render: () => (id === ROLL_MODULE ? stageNodes.current.roll : stageNodes.current.chords),
-      }))
-    )
-  );
-  // The viewer's arrangement; null until they change it (the default is derived from the measured width, with the
-  // old `chordDockWidth` preference carried over as the picker's width).
-  const [arrangement, setArrangement] = useState<Layout | null>(() => {
-    const stored = loadLayout(
-      browserStorage(),
-      stageRegistry.meta,
-      NO_STORED_LAYOUT,
-      EDITOR_STAGE_KEY
-    );
-    return stored !== NO_STORED_LAYOUT && hasBothModules(stored) ? stored : null;
-  });
-  const fullStageLayout = useMemo(
-    () =>
-      arrangement ??
-      defaultEditorLayout(stageWidthRem, migratedPickerRem(preferences.chordDockWidth)),
-    [arrangement, stageWidthRem, preferences.chordDockWidth]
-  );
-  const stageLayout = useMemo(
-    () => (pickerInStage ? fullStageLayout : removeModule(fullStageLayout, CHORDS_MODULE)),
-    [pickerInStage, fullStageLayout]
-  );
-  const stageLayoutRef = useRef(stageLayout);
-  stageLayoutRef.current = stageLayout;
-  const stageEdit = useRef({ pickerInStage, leaveChords: () => {} });
-  stageEdit.current = {
-    pickerInStage,
-    // This editor's own tool restore, never routed through the session: another host may hold the claim.
-    leaveChords: () => setTool(toolBeforeChords.current),
-  };
-  const updateStageLayout = useCallback((fn: (l: Layout) => Layout) => {
-    // The roll alone has nothing to arrange; while the picker is hidden the layout is the viewer's, untouched.
-    if (!stageEdit.current.pickerInStage) {
-      return;
-    }
-    const base = stageLayoutRef.current;
-    const next = fn(base);
-    if (next === base || !locate(next, ROLL_MODULE)) {
-      return; // no change, or an attempt to close the roll (it is the editor)
-    }
-    if (!locate(next, CHORDS_MODULE)) {
-      // Closing the picker from its strip is the same as leaving the Chords tool; the arrangement keeps its place.
-      stageEdit.current.leaveChords();
-      return;
-    }
-    stageLayoutRef.current = next;
-    setArrangement(next);
-  }, []);
-  useEffect(() => {
-    if (arrangement) {
-      saveLayout(browserStorage(), arrangement, EDITOR_STAGE_KEY);
-      // The stored layout carries the width from now on: the old pixel preference is spent.
-      if (preferences.chordDockWidth !== null) {
-        updatePreferences({ chordDockWidth: null });
-      }
-    }
-  }, [arrangement, preferences.chordDockWidth, updatePreferences]);
+    // The selection is part of what the panel shows in selection mode (its ready line and the notes Insert acts on).
+  }, [
+    chordsActive,
+    settings.pitchSet,
+    edo,
+    preferences.entryLength,
+    preferences.entryVelocity,
+    selection,
+    notes,
+  ]);
 
   // One unified panel: the roll, the velocity lane and the single scrollbar, the palette beside all three.
   const rollNode = (
@@ -1373,17 +1257,6 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
       />
     </div>
   );
-  const pickerNode = (
-    <ChordPickerHost
-      host={preferences.chordHost}
-      onHostChange={(chordHost) => updatePreferences({ chordHost })}
-      onClose={chordAnchored ? session.closePicker : undefined}
-    >
-      <ChordPickerPanel />
-    </ChordPickerHost>
-  );
-  stageNodes.current = { roll: rollNode, chords: pickerNode };
-
   return (
     <div className={classes.editor} ref={editorRoot} data-note-editor-scope="">
       <div className={classes.header}>
@@ -1444,15 +1317,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
           </Menu>
         </div>
       </div>
-      <div className={classes.work} ref={stageArea}>
-        <Stage
-          registry={stageRegistry}
-          layout={stageLayout}
-          update={updateStageLayout}
-          widthRem={stageWidthRem > 0 ? stageWidthRem : FALLBACK_STAGE_WIDTH_REM}
-        />
-      </div>
-      {pickerInTakeover && pickerNode}
+      <div className={classes.work}>{rollNode}</div>
     </div>
   );
 }

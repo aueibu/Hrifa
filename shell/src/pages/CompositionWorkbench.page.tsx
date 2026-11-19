@@ -25,11 +25,8 @@ import {
 import { Surface } from '../components/Surface/Surface';
 import type { Screenset } from '../lib/stage';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
+import { ChordPanelBridge } from './composition-workbench/chordInput/ChordPanelBridge';
 import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
-import {
-  CanvasTakeoverProvider,
-  CanvasTakeoverSlot,
-} from './composition-workbench/components/canvasTakeover';
 import {
   BlankFloor,
   ClipEditorSlot,
@@ -77,12 +74,10 @@ import {
   acceptsScreensetStore,
   bringPanelForward,
   CLIP_EDITOR_PANEL,
-  isPanelShown,
   MODULE_DETAIL_PANEL,
   parseStoredScreensets,
   screensetForCanvas,
   seedStoreFromStorage,
-  CANVAS_PANEL,
 } from './composition-workbench/layout/workbenchScreensets';
 import type { PatchDocument } from './composition-workbench/model';
 import { loadSavedPatch } from './composition-workbench/persistence';
@@ -483,14 +478,6 @@ export function CompositionWorkbenchPage() {
     );
   }
 
-  // The picker's takeover slot lives in the canvas panel and covers it, so it is offered only while the canvas and
-  // the clip editor (whose roll the picker sits beside) are both showing.
-  // The Stage's own check adds its narrow rule (a parked canvas); it lags one render behind, which is accepted.
-  const takeoverAvailable =
-    isPanelShown(screenset, CANVAS_PANEL) &&
-    isPanelShown(screenset, CLIP_EDITOR_PANEL) &&
-    stageApi?.isShown(CANVAS_PANEL) !== false;
-
   // What each panel shows; the Stage places them (workbenchPanels.tsx). They read the page's state as the old
   // split pane did, so a page render updates them.
   const panelNodes: WorkbenchPanelNodes = {
@@ -509,7 +496,6 @@ export function CompositionWorkbenchPage() {
           onTidy={placeCompositionModules}
           onAddModule={addCompositionModule}
         />
-        <CanvasTakeoverSlot />
       </>
     ),
     desk: (
@@ -594,6 +580,8 @@ export function CompositionWorkbenchPage() {
                     inspectorTarget={shownInspectorTarget}
                     clipId={editorClipTarget}
                   >
+                    {/* Shows the Chords panel while the Chords tool wants it, and reports the person closing it. */}
+                    <ChordPanelBridge screenset={screenset} api={stageApi} />
                     <AppShell
                       header={{ height: 56 }}
                       footer={{ height: 39 }}
@@ -669,18 +657,16 @@ export function CompositionWorkbenchPage() {
                               )}
                               <div className={classes.stageColumn} ref={stageBox.ref}>
                                 <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
-                                  <CanvasTakeoverProvider available={takeoverAvailable}>
-                                    <WorkbenchPanelsContext.Provider value={panelNodes}>
-                                      <DockStage
-                                        registry={WORKBENCH_REGISTRY}
-                                        screenset={screenset}
-                                        update={updateScreenset}
-                                        widthRem={stageBox.widthRem}
-                                        heightRem={stageBox.heightRem}
-                                        onApi={onStageApi}
-                                      />
-                                    </WorkbenchPanelsContext.Provider>
-                                  </CanvasTakeoverProvider>
+                                  <WorkbenchPanelsContext.Provider value={panelNodes}>
+                                    <DockStage
+                                      registry={WORKBENCH_REGISTRY}
+                                      screenset={screenset}
+                                      update={updateScreenset}
+                                      widthRem={stageBox.widthRem}
+                                      heightRem={stageBox.heightRem}
+                                      onApi={onStageApi}
+                                    />
+                                  </WorkbenchPanelsContext.Provider>
                                 </ModuleInspectorSlotContext.Provider>
                               </div>
                               {settingsOpened && (

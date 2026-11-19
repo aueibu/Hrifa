@@ -1,22 +1,14 @@
-/* The frame around the picker body: the same header in both hosts; width is the host's. */
+/* The Chords panel's frame: it fills its docker; the Stage owns the width. */
 .frame {
   background: var(--panel);
   color: var(--text);
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
+  height: 100%;
   min-height: 0;
   min-width: 0;
-}
-
-.frame[data-chord-host='dock'] {
-  border-radius: var(--radius-panel);
-  /* Fills the Stage slot that hosts it; the Stage owns the width. */
-  flex: 1 1 0;
   overflow: hidden;
-}
-
-.frame[data-chord-host='takeover'] {
-  height: 100%;
 }
 
 .header {
@@ -24,6 +16,10 @@
   background: var(--panel-header);
   display: flex;
   gap: 0.5rem;
+  /* Fixed: the 1.375rem compact-xs Close button plus the padding, so the ready line below never moves when it appears. */
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  height: 1.875rem;
   justify-content: space-between;
   padding: 0.25rem 0.5rem;
 }

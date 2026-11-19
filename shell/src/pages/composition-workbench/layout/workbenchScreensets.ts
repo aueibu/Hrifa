@@ -8,7 +8,8 @@
  * `ui.detail-collapsed.v1` (`Detail` collapsed), `ui.workspace-view.v1` (the active screenset), the open clip target (which
  * Detail tab is in front), the per-viewer editor arrangement `hrifa.stage.layout.workbench-editor.v1` and the per-viewer
  * `chordHost` and `chordDockWidth` of `hrifa.note-editor.v1` (where the Chords place points and how wide `Tools` is).
- * The old keys stay in storage and are not read again once the store exists.
+ * The old keys stay in storage and are not read again once the store exists, except by the one-time upgrade
+ * (`upgradeChordsPlaces`): a stored screenset with no `chords` place gets one from `chordHost` (M6a, decision 2a).
  */
 import {
   dockerHolding,
@@ -19,7 +20,9 @@ import {
   parseLayout,
   parseScreensetStore,
   setActive,
+  treeDockers,
   type LayoutV1,
+  type Place,
   type Screenset,
   type ScreensetStore,
 } from '../../../lib/stage';
@@ -30,8 +33,8 @@ export const CANVAS_PANEL = 'canvas';
 export const DESK_PANEL = 'desk';
 export const MODULE_DETAIL_PANEL = 'module-detail';
 export const CLIP_EDITOR_PANEL = 'clip-editor';
-/** Not a panel in M5 (the picker still lives in the clip editor's own Stage); only its remembered place is seeded. */
-export const CHORDS_PLACE_ID = 'chords';
+/** The chord picker panel (M6a); its home is the `Tools` docker. */
+export const CHORDS_PANEL = 'chords';
 
 /** The panels the workbench page registers. */
 export const WORKBENCH_PANEL_IDS = [
@@ -39,16 +42,11 @@ export const WORKBENCH_PANEL_IDS = [
   DESK_PANEL,
   MODULE_DETAIL_PANEL,
   CLIP_EDITOR_PANEL,
+  CHORDS_PANEL,
 ] as const;
 
-/**
- * Ids a stored screenset may name: the registered panels plus `chords`, whose place is remembered for M6 (a place for an
- * id outside this set would be dropped on every parse).
- */
-export const WORKBENCH_KNOWN_IDS: ReadonlySet<string> = new Set([
-  ...WORKBENCH_PANEL_IDS,
-  CHORDS_PLACE_ID,
-]);
+/** Ids a stored screenset may name (a place or a tab for an id outside this set is dropped on every parse). */
+export const WORKBENCH_KNOWN_IDS: ReadonlySet<string> = new Set(WORKBENCH_PANEL_IDS);
 
 export const EDITOR_LAYOUT_KEY = 'hrifa.stage.layout.workbench-editor.v1';
 export const NOTE_EDITOR_KEY = 'hrifa.note-editor.v1';
@@ -108,7 +106,7 @@ function baseScreenset(top: Top, collapsed: boolean, detailActive: string): Scre
       [top.panel]: { docker: DOCKER_TOP, name: top.name, index: 0 },
       [MODULE_DETAIL_PANEL]: { docker: DOCKER_DETAIL, name: DETAIL_NAME, index: 0 },
       [CLIP_EDITOR_PANEL]: { docker: DOCKER_DETAIL, name: DETAIL_NAME, index: 1 },
-      [CHORDS_PLACE_ID]: { docker: DOCKER_TOOLS, name: TOOLS_NAME, index: 0 },
+      [CHORDS_PANEL]: { docker: DOCKER_TOOLS, name: TOOLS_NAME, index: 0 },
     },
     tree: {
       kind: 'split',
@@ -187,7 +185,7 @@ export function seedWorkbenchScreensets(
       baseScreenset(top, collapsed, detailActive),
       {
         known: WORKBENCH_KNOWN_IDS,
-        // The takeover's own "Chords" docker would halve the canvas; it waits for M6, which uses the place below.
+        // The takeover's own "Chords" docker would halve the canvas; the takeover becomes a place instead (below).
         chordHost: 'dock',
         pickerRem,
         detail: DETAIL_NAME,
@@ -195,13 +193,58 @@ export function seedWorkbenchScreensets(
         canvas: top.name,
       }
     );
-    const place =
-      inputs.chordHost === 'takeover'
-        ? { ...folded.lastDocker, [CHORDS_PLACE_ID]: { docker: '', name: 'Chords', index: 0 } }
-        : folded.lastDocker;
-    return { ...folded, lastDocker: place, name: top.screensetName };
+    // Decision 2a: a project that used the takeover opens the picker as a tab of the screenset's top docker.
+    const takeoverPlace =
+      inputs.chordHost === 'takeover' ? chordsPlaceFor(folded, 'takeover') : null;
+    const lastDocker = takeoverPlace
+      ? { ...folded.lastDocker, [CHORDS_PANEL]: takeoverPlace }
+      : folded.lastDocker;
+    return { ...folded, lastDocker, name: top.screensetName };
   });
   return makeStore(sets, inputs.workspaceView === 'desk' ? 'desk' : 'canvas');
+}
+
+/**
+ * Where the `chords` panel opens in `screenset` for a viewer whose `chordHost` preference is `host` (M6a, decision
+ * 2a, refined S4). `takeover`: the docker holding the Canvas panel (else the screenset's top docker), as a last tab, so the picker opens in
+ * front of the canvas like the old takeover did; in the Desk screenset it is the Tools docker (the takeover never covered the desk). `dock`: the docker named `Tools`, or null
+ * when the screenset has none (the panel's home, `Tools`, then resolves to the screenset's default docker).
+ */
+export function chordsPlaceFor(screenset: Screenset, host: 'dock' | 'takeover'): Place | null {
+  const dockers = treeDockers(screenset.tree);
+  // S4: the takeover never covered the Desk screenset, so its seed there is the Tools docker like every other project.
+  if (host === 'takeover' && screenset.id !== 'desk') {
+    // The docker that holds the Canvas panel (the one the takeover covered), else the screenset's top docker.
+    const top = dockerHolding(screenset.tree, CANVAS_PANEL) ?? dockers[0];
+    return top ? { docker: top.id, name: top.name, index: top.tabs.length } : null;
+  }
+  const tools = dockers.find((d) => d.name.toLowerCase() === TOOLS_NAME.toLowerCase());
+  return tools ? { docker: tools.id, name: tools.name, index: 0 } : null;
+}
+
+/**
+ * The one-time upgrade (M6a): a stored screenset with no `chords` place (a store from before the picker was a panel), or
+ * with M5's placeholder place (docker `''`, written for a takeover project), gets the place `chordsPlaceFor` gives.
+ * A screenset that already has a place is returned as it is, so this is idempotent and never moves a place the person made.
+ */
+export function upgradeChordsPlaces(
+  store: ScreensetStore,
+  host: 'dock' | 'takeover'
+): ScreensetStore {
+  let changed = false;
+  const screensets: Record<string, Screenset> = {};
+  for (const [id, s] of Object.entries(store.screensets)) {
+    const place = s.lastDocker[CHORDS_PANEL];
+    const needs = !place || place.docker === '';
+    const next = needs ? chordsPlaceFor(s, host) : null;
+    if (next) {
+      changed = true;
+      screensets[id] = { ...s, lastDocker: { ...s.lastDocker, [CHORDS_PANEL]: next } };
+    } else {
+      screensets[id] = s;
+    }
+  }
+  return changed ? { ...store, screensets } : store;
 }
 
 /** Read the old keys (a missing, unreadable or invalid value is "not stored"). Never throws. */
@@ -285,12 +328,23 @@ export function seedStoreFromStorage(): ScreensetStore {
   }
 }
 
+/** The viewer's `chordHost` preference (`dock` unless it says `takeover`); never throws. */
+function storedChordHost(): 'dock' | 'takeover' {
+  try {
+    return readLegacyLayoutInputs(localStorage, compositionStateKeys).chordHost;
+  } catch {
+    return 'dock';
+  }
+}
+
 /** `usePersistentState`'s migrate step: sanitize a stored value; anything unusable becomes the seeded store. */
 export const parseStoredScreensets = (raw: unknown): ScreensetStore => {
   // The seed (which reads the old keys) is built only when the stored value is unusable.
   const unusable = {} as ScreensetStore;
   const parsed = parseScreensetStore(raw, WORKBENCH_KNOWN_IDS, { fallback: unusable });
-  return parsed === unusable ? seedStoreFromStorage() : parsed;
+  return parsed === unusable
+    ? seedStoreFromStorage()
+    : upgradeChordsPlaces(parsed, storedChordHost());
 };
 
 /**
