@@ -525,7 +525,7 @@ describe('visualizer views (v3)', () => {
     expect(viewOf(a, 'viz2')).toBe('edo');
     expect(setView(a, 'viz1', 'iso')).toBe(a);
     expect(setView(a, 'viz1', 'lattice')).toEqual(DEFAULT_LAYOUT);
-    expect(VIZ_VIEWS).toHaveLength(5);
+    expect(VIZ_VIEWS).toHaveLength(6);
     expect(VIZ_VIEWS).toContain('roughness');
   });
 

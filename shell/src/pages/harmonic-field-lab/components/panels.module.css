@@ -3025,3 +3025,34 @@ p.inputError {
 .mxBig .spec {
   font-size: var(--lab-fs-body);
 }
+
+/* JI reach view (M10): the fold chevron right of a target's ratio (look 2); size and rotation from .foldChevron */
+.reachChevron {
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+  vertical-align: middle;
+}
+
+/* a target row that unfolds: the whole row is the click target */
+.spec tbody tr.reachRow {
+  cursor: pointer;
+}
+
+/* the tolerance box with its words */
+.reachTol {
+  align-items: center;
+  color: var(--text-muted);
+  display: inline-flex;
+  font-size: var(--lab-fs-small);
+  gap: 0.25rem;
+}
+
+/* the unfolded pair rows (a pair outside the tolerance is the best pair shown alone, dimmed) */
+.spec tbody tr.reachPair {
+  background: var(--panel-slot);
+  cursor: pointer;
+}
+
+.spec tbody tr.reachPair[data-outside='true'] {
+  color: var(--text-muted);
+}

@@ -36,14 +36,22 @@ export const PANEL_IDS: readonly PanelId[] = [
 export const isViz = (id: PanelId): id is VizId => (VIZ_IDS as readonly string[]).includes(id);
 
 /** What a visualizer panel shows. */
-export type VizView = 'lattice' | 'edo' | 'dissonance' | 'roughness' | 'iso';
-export const VIZ_VIEWS: readonly VizView[] = ['lattice', 'edo', 'dissonance', 'roughness', 'iso'];
+export type VizView = 'lattice' | 'edo' | 'dissonance' | 'roughness' | 'iso' | 'reach';
+export const VIZ_VIEWS: readonly VizView[] = [
+  'lattice',
+  'edo',
+  'dissonance',
+  'roughness',
+  'iso',
+  'reach',
+];
 export const VIZ_VIEW_LABEL: Record<VizView, string> = {
   lattice: 'Lattice',
   edo: 'EDO fit',
   dissonance: 'Dissonance curve',
   roughness: 'Live roughness',
   iso: 'Isomorphic keyboard',
+  reach: 'JI reach',
 };
 /** A visualizer's name: its number and its current view, e.g. "Visualizer 2 \u2013 EDO fit". */
 export const vizName = (id: VizId, view: VizView): string =>

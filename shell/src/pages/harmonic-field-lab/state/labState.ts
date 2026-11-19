@@ -111,6 +111,7 @@ import {
   type UpdateUndo,
 } from './generatorLibrary';
 import { REL_COLOR_DEFAULT, type RelColor } from './intervalColor';
+import { REACH_DEFAULT, type ReachSettings } from './jiReach';
 import { DEFAULT_LAYOUT, type Layout, type PanelId, type VizId } from './layout';
 import type { LibSort } from './librarySort';
 import {
@@ -260,6 +261,8 @@ export interface UiSettings {
   monzoSplit: MonzoSplit;
   /** Harmonic entropy (M9, H-39): the blur s in cents, 8 to 20 (default 17), one value for the Dissonance view, the picker Color metric and the Near overlay. Optional in storage. */
   heBlur: number;
+  /** JI reach view (M10, H-43): the odd limit (5, 7, 9, 11, 13 or 15; default 7) and the tolerance in cents (0 to 100; default 15). Optional in storage. */
+  reach: ReachSettings;
   /** The Pairs panel's added pitches (M3, H-20): canonical texts ("3/2", "701.955 c"), at most 4. Optional in storage. */
   pairsAdded: string[];
   /** The chord library dialog's search text and filters, Checked only included (M7c, H-30); kept when the dialog closes and across reloads. Optional in storage. */
@@ -418,6 +421,7 @@ export function defaultUi(): UiSettings {
     relColor: { ...REL_COLOR_DEFAULT },
     monzoSplit: { ...MONZO_SPLIT_DEFAULT },
     heBlur: HE_BLUR_DEFAULT,
+    reach: { ...REACH_DEFAULT },
     pairsAdded: [],
     libFilters: defaultLibFilters(),
     libChecked: [],

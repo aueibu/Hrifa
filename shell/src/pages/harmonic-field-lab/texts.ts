@@ -3225,7 +3225,7 @@ const entries = {
     term: 'Visualizer view',
     help: [
       p(
-        'A visualizer panel can show any of five views: Lattice, EDO fit, Dissonance curve, Live roughness or Isomorphic keyboard. The panel is named after the view it shows; pick another from this menu.'
+        'A visualizer panel can show any of six views: Lattice, EDO fit, Dissonance curve, Live roughness, Isomorphic keyboard or JI reach. The panel is named after the view it shows; pick another from this menu.'
       ),
       example(
         'leave the first visualizer on Lattice and switch the second to EDO fit to see the grid and the tuning fit together.'
@@ -3237,7 +3237,7 @@ const entries = {
         'There are five visualizer panels in the rail, so you can keep several views side by side.'
       ),
     ],
-    see: ['lattice', 'edoFit', 'dissCurve', 'liveRoughness', 'isoKeyboard'],
+    see: ['lattice', 'edoFit', 'dissCurve', 'liveRoughness', 'isoKeyboard', 'jiReach'],
   },
   vizPopOut: {
     term: 'Open in a large window',
@@ -3563,6 +3563,69 @@ const entries = {
     term: 'Keyboard readout',
     text: 'How many field notes appear on the grid, and how many hexagons are blank. Example: if it reads "7 of 8 · 31 blank", it means seven of the eight field notes are reachable within the tolerance and about half the grid has no match.',
     see: ['isoKeyboard'],
+  },
+  jiReach: {
+    term: 'JI reach',
+    help: [
+      p(
+        'Which just intervals your subset can play. For each ratio of the odd-limit diamond (the target) it finds the closest pair of your notes and the note nearest it above the mode root. Errors are in cents: orange sharp, cyan flat.'
+      ),
+      keys([
+        {
+          key: 'Click a row',
+          does: 'unfold its pairs (a lone pair plays)',
+        },
+        { key: 'Point at a row or a pair', does: 'light its two notes on the ring' },
+        { key: 'Hold {key:holdOwn} or {key:holdField}', does: 'plays the scale pair you point at' },
+        { key: 'Hold {key:holdExact}', does: 'plays the pure pair, built up from the lower note' },
+        { key: 'Click a pair', does: 'play it' },
+      ]),
+      example(
+        'Harmonics 8 to 15 at the 7-limit: all 12 targets are played exactly by some pair, but from the root (mode 1) only 3 of the 12 are within 15 c.'
+      ),
+    ],
+    teaching: [
+      p(
+        'The summary has one line per prime: the misfit is the sum of the squared errors of 3/2, 5/4, 7/4, 11/8 and 13/8 up to that prime, and Worst is the target the subset plays worst.'
+      ),
+      p('Compare 12-EDO and 31-EDO: at the 7-limit 12-EDO has a misfit of 1163.0 and 31-EDO 28.6.'),
+    ],
+    see: ['reachLimit', 'reachTol', 'reachAny', 'reachRoot', 'reachSummary', 'edoFit'],
+  },
+  reachLimit: {
+    term: 'Odd limit (JI reach)',
+    text: 'The largest odd number allowed in a target ratio: 5, 7, 9, 11, 13 or 15. A higher limit adds more targets (6 at the 5-limit, 12 at the 7-limit, 40 at the 13-limit). Example: 7/6 is a 7-limit target, so it appears at 7 and above but not at 5.',
+    see: ['jiReach', 'reachTol'],
+  },
+  reachTol: {
+    term: 'Within (JI reach)',
+    text: 'How close, in cents, a pair must be to a target to count as playing it. It sets the "of 12" counts and which pairs an unfolded row lists; the error shown is always exact. Example: with 15 c, the 5/4 of 12-EDO (13.7 c sharp) counts; with 10 c it does not.',
+    see: ['jiReach', 'reachLimit', 'cents'],
+  },
+  reachExpandAll: {
+    term: 'Expand all (JI reach)',
+    text: 'Unfolds every target row that has several pairs, so the pairs within the tolerance show. A target with one pair is that pair and does not unfold. It is not remembered.',
+    see: ['reachCollapseAll', 'jiReach'],
+  },
+  reachCollapseAll: {
+    term: 'Collapse all (JI reach)',
+    text: 'Folds every target row back to its single line. It is not remembered.',
+    see: ['reachExpandAll', 'jiReach'],
+  },
+  reachAny: {
+    term: 'Any two notes',
+    text: 'The best error over every ordered pair of subset notes, the two notes (degree numbers, an up arrow when the interval passes the repeat) and how many pairs are within the tolerance (times N). Example: in Harmonics 8 to 15, 3/2 reads 0 c, 1\u21925, \u00d73: the pairs 8 to 12, 10 to 15 and 12 to 9 above.',
+    see: ['jiReach', 'reachRoot'],
+  },
+  reachRoot: {
+    term: 'From the root',
+    text: 'The note of the subset nearest the target above the current mode root, with its error. It follows the mode, so changing the mode moves the root. Example: for 7/6 in Harmonics 8 to 15 from 1/1 the nearest note is 9/8, 63 c flat.',
+    see: ['jiReach', 'reachAny', 'modes'],
+  },
+  reachSummary: {
+    term: 'JI reach summary',
+    text: 'One line per prime limit. Misfit is the cumulative Fokker misfit; Any two and From root count the targets of that limit within the tolerance; Worst is the target with the biggest error. At a limit that is not prime (9 or 15) an extra last line rates the whole diamond; its misfit shows "-" because the misfit is per prime. Example: 12-EDO at the 5-limit misfit is 191.1, and 31-EDO is 27.5.',
+    see: ['jiReach', 'reachLimit'],
   },
 } satisfies Record<string, TextEntrySource>;
 

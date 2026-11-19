@@ -1,6 +1,6 @@
 /**
  * A generic visualizer panel: titled by its current view (a menu in its header strip switches it among Lattice, EDO
- * fit, Dissonance curve, Live roughness and Isomorphic keyboard), with a pop-out that opens the same view full size in a window.
+ * fit, Dissonance curve, Live roughness, Isomorphic keyboard and JI reach), with a pop-out that opens the same view full size in a window.
  */
 import { useState } from 'react';
 import { ActionIcon, Menu, Modal } from '@mantine/core';
@@ -11,6 +11,7 @@ import { EdoFitBody } from './EdoFitView';
 import { ChevronDownIcon, ExpandIcon } from './icons';
 import { IsoBody } from './IsoView';
 import { LatticeBody } from './LatticePanel';
+import { ReachBody } from './ReachView';
 import { RoughnessBody } from './RoughnessView';
 import { Strip, Tip, useViz } from './ui';
 import mock from './lab.module.css';
@@ -29,6 +30,8 @@ export function VizContent({ id, view, big }: { id: VizId; view: VizView; big?: 
       return <RoughnessBody id={id} />;
     case 'iso':
       return <IsoBody id={id} />;
+    case 'reach':
+      return <ReachBody />;
   }
 }
 

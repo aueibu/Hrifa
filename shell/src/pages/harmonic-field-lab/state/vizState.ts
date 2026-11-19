@@ -59,6 +59,7 @@ export const VIEW_TIP: Record<VizView, TipKey> = {
   dissonance: 'dissCurve',
   roughness: 'liveRoughness',
   iso: 'isoKeyboard',
+  reach: 'jiReach',
 };
 
 /** The title of a visualizer panel: its current view's name. */

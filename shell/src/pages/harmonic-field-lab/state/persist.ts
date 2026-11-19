@@ -44,6 +44,7 @@ import {
 } from './generate';
 import { OWNER_KEY_RE } from './generatorLibrary';
 import { sanitizeRelColor } from './intervalColor';
+import { sanitizeReach } from './jiReach';
 import {
   CMP_REFS,
   SCALE_DIRS,
@@ -260,6 +261,8 @@ export function sanitizeSettings(raw: unknown): UiSettings {
     pins: sanitizePins(raw.pins),
     // optional (Scala-tools M9, H-39): the harmonic entropy blur s in cents (8 to 20, one value lab-wide); absent or damaged = 17; no write on mount
     heBlur: intIn(raw.heBlur, HE_BLUR_MIN, HE_BLUR_MAX, d.heBlur),
+    // optional (Scala-tools M10, H-43): the JI reach view's odd limit and tolerance; each field falls back to 7 / 15 c; no write on mount
+    reach: sanitizeReach(raw.reach),
     // optional (Scala-tools M8o, H-37): the Relative picker's Color menu; each field falls back to Prime / Fixed / Exact; no write on mount
     relColor: sanitizeRelColor(raw.relColor),
     // optional (Scala-tools M9f, H-42): the Monzo header's prime split, Norm (L1, L2, L-inf), Count octaves and Fit bars (look 1); absent or damaged = L1 / on, field by field; no write on mount

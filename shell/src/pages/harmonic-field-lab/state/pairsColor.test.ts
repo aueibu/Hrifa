@@ -156,3 +156,22 @@ describe('monzoSplit setting (M9f, H-42: the Monzo header split)', () => {
     expect(sanitizeSettings({ monzoSplit: { fit: 'yes' } }).monzoSplit).toEqual(d);
   });
 });
+
+describe('reach setting (M10, H-43: the JI reach view)', () => {
+  it('absent or damaged reads 7 / 15 c; each field is checked on its own', () => {
+    const d = { limit: 7, tol: 15 };
+    expect(defaultUi().reach).toEqual(d);
+    expect(sanitizeSettings(null).reach).toEqual(d);
+    expect(sanitizeSettings({ panel: 'keys' }).reach).toEqual(d);
+    expect(sanitizeSettings({ reach: 'bad' }).reach).toEqual(d);
+    expect(sanitizeSettings({ reach: { limit: 8, tol: 'x' } }).reach).toEqual(d);
+    expect(sanitizeSettings({ reach: { limit: 13 } }).reach).toEqual({ limit: 13, tol: 15 });
+    expect(sanitizeSettings({ reach: { tol: 5.5 } }).reach).toEqual({ limit: 7, tol: 5.5 });
+    expect(sanitizeSettings({ reach: { limit: 15, tol: 400 } }).reach).toEqual({
+      limit: 15,
+      tol: 100,
+    });
+    expect(sanitizeSettings({ reach: { limit: 9, tol: -3 } }).reach).toEqual({ limit: 9, tol: 0 });
+    expect(sanitizeSettings({ reach: { tol: Infinity } }).reach).toEqual(d);
+  });
+});

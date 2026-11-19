@@ -20,6 +20,7 @@ import { VIEW_TIP, type VizSettings } from '../state/vizState';
 import type { TipKey } from '../texts';
 import { PinIcon } from './icons';
 import { PinMenu } from './PinMenu';
+import { reachSummary } from './ReachView';
 import { Tip, useLab } from './ui';
 import classes from './lab.module.css';
 
@@ -73,6 +74,8 @@ function vizSummary(view: VizView, s: VizSettings, lab: Lab, ranks: AxisRank[]):
             .map((c) => c.note)
         ).size
       } of ${lab.base.field.length}`;
+    case 'reach':
+      return reachSummary(lab.base, lab.state.ui.reach);
   }
 }
 
