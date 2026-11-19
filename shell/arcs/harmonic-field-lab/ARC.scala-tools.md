@@ -1,5 +1,7 @@
 # ARC: Lab interval content, chord library and generator tools (from Scala and tuning theory)
 
+**CLOSED 2026-11-19 (all milestones M1 to M10 committed; last `7267b61`). Archived as `ARC.scala-tools.md`. Open items: `shell/BACKLOG.md` `[harmonic-field-lab]`.**
+
 **Approved by the human 2026-11-16 (shell rule 16), as drafted.** Workstream folder `arcs/harmonic-field-lab` (previous arc archived as `ARC.native-tooltips.md`). Gate `check:hfl` and DECISIONS prefix `H` already exist (next id `H-17`), so there is no setup commit.
 
 ## Goal
