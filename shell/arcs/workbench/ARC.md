@@ -139,6 +139,16 @@ Each milestone is small enough for one builder run and has criteria a command or
   - [x] `DECISIONS.md` row: the command channel and the selection chain (W-47)
 - Human checkpoint after: no
 - Done 2026-11-18. Found: the page does not mount `WorkbenchSessions` (M5 shipped without it), so in the running app the editor uses its private sessions; page wiring is a BACKLOG item (entry-file lock), before or with M6.
+- Checkpoint decisions (the human, 2026-11-18): do the page wiring as its own step (M4c) before M6, not folded into M6.
+
+### M4c: Mount `WorkbenchSessions` in the page (no UI change) (added 2026-11-18)
+- Scope: `src/pages/CompositionWorkbench.page.tsx` (lock) and owned workbench paths. The page wraps the Stage (and anything that renders a `NoteClipEditor`, chord picker or clip actions panel) in `<WorkbenchSessions inspectorTarget={...} clipId={editorClipTarget}>`, so the editor, the chord picker host and the clip actions panel share the page's chord session, clip editor session and input scope instead of private ones. No React key above the Stage. Existing behaviour unchanged.
+- Acceptance:
+  - [x] `check:workbench` passes; `src/pages/CompositionWorkbench.page.test.tsx` and `clipPanel.page.test.tsx` pass; no existing test weakened
+  - [x] New page-level tests: the editor in the page uses the shared sessions (e.g. the chord picker host and the editor see the same anchor; switching clips resets the editor's state without remounting the desk or canvas); `useWorkbenchSelection()` inside the page resolves the live note, clip and module targets
+  - [x] BACKLOG item "Mount `WorkbenchSessions` in the page" removed; workbench `ARCHITECTURE.md` and the `WorkbenchSessions.tsx` comments say it is mounted
+- Human checkpoint after: no
+- Done 2026-11-18 (no behavior change; W-39 and W-47 text updated, no new DECISIONS row).
 
 ### R1: Module runtime, step 1: output store and module registry (no UI change) (added 2026-11-18; runs before M5)
 - Scope: owned workbench paths plus `src/pages/CompositionWorkbench.page.tsx` (lock). (1) A new `src/pages/composition-workbench/runtime/` folder: `outputStore.ts`, a pure external store for published outputs (`publish(instanceId, outputs)` with today's equality rule from `reconcileCompositionOutputs`, `prune(liveInstanceIds)`, `get(ref)`, a stable `list()` snapshot that changes identity only when an output changes, `subscribe`), and a `useOutputs` hook over it via `useSyncExternalStore`. (2) `runtime/moduleRegistry.tsx`: ONE table `moduleId -> { stateKeys, ports?, render(props) }` replacing the page's `instanceStateKeys`, `routedModulePorts` and the if/else render chain (page lines about 95-224 and 754-926); the canvas's own port table (`CompositionCanvas.tsx:99`) reads its port ids from the registry if the shapes allow without behaviour change (labels may stay in the canvas). (3) A memoised per-instance host component with stable callbacks, so a publish no longer re-renders every module: source modules (no `outputs` prop) do not re-render when another module publishes. (4) The page uses the store; `bindModulePort` reads the store instead of closing over the outputs state (stable callback). No module file changes its logic in R1 (only imports if unavoidable). Modules still publish from their effects (R2 moves that).

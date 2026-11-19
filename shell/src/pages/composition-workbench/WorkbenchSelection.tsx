@@ -56,7 +56,7 @@ export function WorkbenchSelectionProvider({
 
 const noSubscribe = () => () => undefined;
 
-/** The selection chain, or null when no provider is above (the page does not mount one yet). */
+/** The selection chain, or null when no provider is above (the page mounts one through `WorkbenchSessions`). */
 export function useWorkbenchSelection(): WorkbenchSelectionValue | null {
   return useContext(WorkbenchSelectionContext);
 }

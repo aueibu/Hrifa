@@ -14,12 +14,12 @@ import { WorkbenchSelectionProvider } from './WorkbenchSelection';
  * session (M4a), the clip editor session, the input scope tracker and the read-only selection chain
  * (M4b).
  *
- * Not mounted by the page yet: mounting it needs an edit of the page entry file (a locked shared
- * path); in the running app every editor uses its own private sessions (tests wrap it themselves).
- * Everything that reads a session also works WITHOUT this wrapper above it by mounting
- * a private one (`NoteClipEditor` does), so it can be adopted without touching consumers.
+ * Mounted by the page (M4c) around the whole app shell, with no key, so every editor, the picker
+ * host and the inspector share one set of sessions. Everything that reads a session also works
+ * WITHOUT this wrapper above it by mounting a private one (`NoteClipEditor` does), which is what
+ * tests that render an editor alone get.
  *
- * Page wiring (when mounted): pass `inspectorTarget` and `clipId` (the page's `editorClipTarget`) so the
+ * Page wiring: the page passes `inspectorTarget` and `clipId` (the page's `editorClipTarget`) so the
  * selection chain can read them; the stored shapes stay where they are.
  *
  * It needs the composition settings provider and the audio engine provider above it (the audition

@@ -17,3 +17,4 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| src/pages/CompositionWorkbench.page.tsx | workbench | 2026-11-18 | M4c: mount WorkbenchSessions around the Stage |

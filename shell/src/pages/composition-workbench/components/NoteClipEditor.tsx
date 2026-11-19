@@ -1459,8 +1459,8 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
 
 /** The piano-roll editor for note clips. Keyed by clip, so switching clips resets the view state. */
 export function NoteClipEditor({ snippet, onChordAnchor }: ClipEditorProps) {
-  // The chord session of WorkbenchSessions when one is above; otherwise a private one (today's page
-  // and every test), so the editor works either way.
+  // The chord session of WorkbenchSessions when one is above; otherwise a private one (tests and hosts
+  // outside the page; the page mounts WorkbenchSessions since M4c), so the editor works either way.
   const shared = useOptionalChordSession();
   const sharedClip = useOptionalClipEditorSession();
   let body = (
