@@ -21,7 +21,6 @@ import {
   type PianoRollGridSource,
   type PianoRollNewNote,
   type PianoRollNote,
-  type PianoRollProps,
   type PianoRollRange,
   type PianoRollViewState,
   type VelocityRamp,
@@ -57,6 +56,15 @@ import {
 } from '../chordInput/ChordSessionProvider';
 import { useChordGhosts } from '../chordInput/useChordGhosts';
 import { runClipAction } from '../clipActionRunner';
+import { CLIP_SLOT, nextReveal, type RevealRequest } from '../clipEditorSession';
+import {
+  ClipEditorSessionProvider,
+  useClipAttachment,
+  useClipEditorSession,
+  useClipSlot,
+  useCommand,
+  useOptionalClipEditorSession,
+} from '../ClipEditorSessionProvider';
 import { freezeClipProperties, readClipProperties } from '../clipProperties';
 import { registerClipEditor, type ClipEditorProps } from '../clipTypes';
 import { useCompositionSettings } from '../compositionSettings';
@@ -70,6 +78,8 @@ import {
   hasBothModules,
   migratedPickerRem,
 } from '../editorStage';
+import { inInputScope, isTyping } from '../inputScope';
+import { useInputScope } from '../InputScopeProvider';
 import type { DataPacket } from '../model';
 import { rationalToNumber } from '../musicalTime';
 import {
@@ -331,23 +341,6 @@ interface ActiveRamp {
   selectionKey: string;
 }
 
-/** Marks the editor's root and the clip actions panel: the scope of the editor's window-level keys. */
-const EDITOR_SCOPE = '[data-note-editor-scope]';
-
-/**
- * Whether a key event's target is in the editor's scope: inside the editor or the actions panel, or
- * (with `orBody`) nowhere in particular (the page body or the window).
- */
-function inEditorScope(target: EventTarget | null, orBody = false): boolean {
-  if (!(target instanceof Element)) {
-    return orBody;
-  }
-  return (
-    !!target.closest(EDITOR_SCOPE) ||
-    (orBody && (target === document.body || target === document.documentElement))
-  );
-}
-
 /**
  * What a screen reader hears when Alt+arrow lands on a note: its pitch name, where it starts (bar
  * and beat in the clip's meter), and its place in the navigation order.
@@ -403,16 +396,41 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   const { packet } = snippet;
   // Transient view state: tool, selection (events and the time they occupy), zoom and scroll live in
   // this component only. They are never recorded in the history and never written to the packet.
-  const [view, setView] = useState(() => openingView(packet));
+  const clipSession = useClipEditorSession();
+  const clipId = snippet.id;
+  useClipAttachment(clipSession, clipId);
+  const [view, setView] = useClipSlot(clipSession, clipId, CLIP_SLOT.view, () =>
+    openingView(packet)
+  );
   // Pencil on an empty clip, Pointer otherwise.
-  const [tool, setToolState] = useState(() => (packet.items.length > 0 ? 'pointer' : 'pencil'));
+  const [tool, setToolState] = useClipSlot<string>(clipSession, clipId, CLIP_SLOT.tool, () =>
+    packet.items.length > 0 ? 'pointer' : 'pencil'
+  );
   // The tool to go back to when the picker's Stage strip closes it (that is leaving the Chords tool).
-  const toolBeforeChords = useRef('pointer');
-  const [rampState, setRampState] = useState<ActiveRamp | null>(null);
+  const toolBeforeChords = useMemo(
+    () => clipSession.peek(clipId, CLIP_SLOT.toolBeforeChords, () => 'pointer'),
+    [clipSession, clipId]
+  );
+  const [rampState, setRampState] = useClipSlot<ActiveRamp | null>(
+    clipSession,
+    clipId,
+    CLIP_SLOT.ramp,
+    () => null
+  );
   // The pick-pitch mode the inspector's Invert / Make equal > Pitch put the editor in (the second part
   // of a two-part action). Editor-side only, like the selection: never in the packet or the history.
-  const [pick, setPick] = useState<PickPitchRequest | null>(null);
-  const [rotationState, setRotationState] = useState<ActiveRotation | null>(null);
+  const [pick, setPick] = useClipSlot<PickPitchRequest | null>(
+    clipSession,
+    clipId,
+    CLIP_SLOT.pick,
+    () => null
+  );
+  const [rotationState, setRotationState] = useClipSlot<ActiveRotation | null>(
+    clipSession,
+    clipId,
+    CLIP_SLOT.rotation,
+    () => null
+  );
   const session = useChordSession();
   // The chord session (page level, or private when no WorkbenchSessions is above): the anchor, the
   // picker's values, the hover cell and the W-20 keys live there. This editor is a HOST of it: it
@@ -435,50 +453,39 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   // The selection remembers the packet it was last computed against (`basis`). When the packet is
   // something else (an undo of a move, another tab's change), the range falls back to the time the
   // selected notes now occupy instead of showing a stale band.
-  const [selectionState, setSelectionState] = useState<SelectionState>(() => ({
-    selection: emptyNoteSelection,
-    basis: packet,
-    moves: [],
-  }));
+  const [selectionState, setSelectionState] = useClipSlot<SelectionState>(
+    clipSession,
+    clipId,
+    CLIP_SLOT.selection,
+    () => ({
+      selection: emptyNoteSelection,
+      basis: packet,
+      moves: [],
+    })
+  );
   const [notice, setNotice] = useState<string | null>(null);
   // Keyboard selection moves ask the roll to scroll the new note into view (token: once per press).
-  const [reveal, setReveal] = useState<NonNullable<PianoRollProps['reveal']> | null>(null);
+  const [reveal, setReveal] = useClipSlot<RevealRequest | null>(
+    clipSession,
+    clipId,
+    CLIP_SLOT.reveal,
+    () => null
+  );
   const editorRoot = useRef<HTMLDivElement | null>(null);
-  // Whether a pointer button is down anywhere: any drag or lane gesture is one, and the arrow keys
-  // must not edit under it. Window listeners so a release outside the roll still counts.
-  const pointerHeld = useRef(false);
+  // Panel commands (design 7.3): the session routes a reveal (once per press; a repeat counts), a
+  // clear of the chord anchor and a focus of the roll here.
+  useCommand(clipSession, 'reveal', (command) =>
+    setReveal((current) => nextReveal(current, command.target))
+  );
+  useCommand(clipSession, 'clearAnchor', () => session.closePicker());
+  useCommand(clipSession, 'focus', () => {
+    editorRoot.current?.querySelector<HTMLElement>('[data-tool]')?.focus();
+  });
+  // The pointer tracker and the pointer-inside test are the input scope's (inputScope.ts), installed
+  // by WorkbenchSessions or privately here when none is above.
+  const inputScope = useInputScope();
   // An Alt+arrow was handled since Alt went down: its keyup must not reach the browser's menu bar.
   const altArrowHandled = useRef(false);
-  // Whether the pointer is over the editor (scopes the ramp's Escape together with the focus).
-  const pointerInside = useRef(false);
-  useEffect(() => {
-    const down = () => {
-      pointerHeld.current = true;
-    };
-    const up = () => {
-      pointerHeld.current = false;
-    };
-    // A button that is no longer down (its release was lost, such as to a context menu) ends it too.
-    const move = (event: PointerEvent) => {
-      if (event.buttons === 0 && pointerHeld.current) {
-        pointerHeld.current = false;
-      }
-    };
-    window.addEventListener('pointerdown', down, true);
-    window.addEventListener('pointerup', up, true);
-    window.addEventListener('pointercancel', up, true);
-    window.addEventListener('pointermove', move, true);
-    window.addEventListener('lostpointercapture', up, true);
-    window.addEventListener('blur', up);
-    return () => {
-      window.removeEventListener('pointerdown', down, true);
-      window.removeEventListener('pointerup', up, true);
-      window.removeEventListener('pointercancel', up, true);
-      window.removeEventListener('pointermove', move, true);
-      window.removeEventListener('lostpointercapture', up, true);
-      window.removeEventListener('blur', up);
-    };
-  }, []);
   const selection = useMemo(
     () => currentSelection(selectionState, packet),
     [selectionState, packet]
@@ -487,8 +494,19 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   // a key press under auto-repeat that lands before the next render never reads a stale one.
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
+  // Published for the page's read-only selection chain, which must show what this editor shows (the
+  // pruned, derived selection), not the raw stored slot. `selection` is memoized, so this only fires
+  // on a real change.
+  useEffect(() => {
+    clipSession.write(clipId, CLIP_SLOT.shownSelection, () => emptyNoteSelection, selection);
+  }, [clipSession, clipId, selection]);
   // What assistive technology hears when Alt+arrow moves the selection.
-  const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncement] = useClipSlot(
+    clipSession,
+    clipId,
+    CLIP_SLOT.announcement,
+    () => ''
+  );
 
   const selectionKey = selection.ids.join('\u0000');
   // The ramp stays active until another edit (the packet's notes are no longer the ones it wrote), a
@@ -510,17 +528,15 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     }
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      const typing =
-        target &&
-        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+      const typing = isTyping(target);
       // Only while the focus or the pointer is in the editor: not from an unrelated control.
-      if (event.key === 'Escape' && !typing && (pointerInside.current || inEditorScope(target))) {
+      if (event.key === 'Escape' && !typing && (inputScope.pointerInside || inInputScope(target))) {
         setRampState(null);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [rampActive]);
+  }, [rampActive, inputScope]);
 
   // The rotation session is live while the notes and the selection are exactly what the last press
   // left; anything else (another edit, a selection change, an undo or redo) ends it for good.
@@ -548,16 +564,13 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     }
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      const typing =
-        target &&
-        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-      if (typing || event.ctrlKey || event.metaKey || event.altKey) {
+      if (isTyping(target) || event.ctrlKey || event.metaKey || event.altKey) {
         return;
       }
       if (event.key === 'Escape') {
         event.preventDefault();
         setPick(null);
-      } else if (event.key === 'Enter' && pick?.onDefault && inEditorScope(target, true)) {
+      } else if (event.key === 'Enter' && pick?.onDefault && inInputScope(target, true)) {
         event.preventDefault();
         const apply = pick.onDefault;
         setPick(null);
@@ -911,7 +924,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
       if (chosen !== null) {
         setSelection(() => selectIds(latest, [chosen]));
         setAnnouncement(describeNote(latest, chosen, clipMeter));
-        setReveal((current) => ({ id: chosen, token: (current?.token ?? 0) + 1 }));
+        clipSession.dispatch({ type: 'reveal', target: { id: chosen } });
       }
       return true;
     }
@@ -1001,7 +1014,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
     insert: insertChord,
     onAnchor: (anchor: { pitchMidicents: number; onset: number }) => onChordAnchor?.(anchor),
     revealAnchor: (range: Parameters<NonNullable<ChordTarget['revealAnchor']>>[0]) =>
-      setReveal((current) => ({ ...range, token: (current?.token ?? 0) + 1 })),
+      clipSession.dispatch({ type: 'reveal', target: range }),
     openPicker: () => setTool('chords'),
     onPickerClosed: () => setTool(toolBeforeChords.current),
   };
@@ -1175,7 +1188,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
           !arrowTarget.isContentEditable &&
           !['INPUT', 'TEXTAREA', 'SELECT'].includes(arrowTarget.tagName)
         ) {
-          if (pick || pointerHeld.current) {
+          if (pick || inputScope.pointerHeld) {
             // Ignored while a pick waits or a gesture runs, but Alt+Left/Right is still the
             // browser's Back/Forward and must not navigate away mid-gesture.
             if (
@@ -1372,17 +1385,7 @@ function NoteClipEditorBody({ snippet, onChordAnchor }: ClipEditorProps) {
   stageNodes.current = { roll: rollNode, chords: pickerNode };
 
   return (
-    <div
-      className={classes.editor}
-      ref={editorRoot}
-      data-note-editor-scope=""
-      onPointerEnter={() => {
-        pointerInside.current = true;
-      }}
-      onPointerLeave={() => {
-        pointerInside.current = false;
-      }}
-    >
+    <div className={classes.editor} ref={editorRoot} data-note-editor-scope="">
       <div className={classes.header}>
         <div className={classes.title}>
           <Title order={2} size="xs">
@@ -1459,9 +1462,14 @@ export function NoteClipEditor({ snippet, onChordAnchor }: ClipEditorProps) {
   // The chord session of WorkbenchSessions when one is above; otherwise a private one (today's page
   // and every test), so the editor works either way.
   const shared = useOptionalChordSession();
-  const body = (
+  const sharedClip = useOptionalClipEditorSession();
+  let body = (
     <NoteClipEditorBody key={snippet.id} snippet={snippet} onChordAnchor={onChordAnchor} />
   );
+  // The same for the clip editor session: a private one without WorkbenchSessions above.
+  if (!sharedClip) {
+    body = <ClipEditorSessionProvider>{body}</ClipEditorSessionProvider>;
+  }
   return shared ? body : <ChordSessionProvider>{body}</ChordSessionProvider>;
 }
 
