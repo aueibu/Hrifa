@@ -494,6 +494,270 @@ def directsum(a):
     run.say(f"done: {len(fams)} families by size {by_k}, {len(types)} geometric types -> {run.out}")
     return by_k
 
+# ----------------------------------------------------------------------------- U.V generator: types + place
+#
+# A family is P = U.V and Q = U*.V or U.V* (a mirrored factor), with P and Q both plain note sets.
+# U = {0, u1, ..} is a note set; V = {0, v1, ..} minus {w1, ..} may carry minus terms.
+# `types` works symbolically: every minus term of P (and of Q) must cancel a plus term, which is a
+# linear equation between the unknown intervals u, v, w. A depth-first search over which plus term
+# each minus term cancels gives every possible cancellation pattern; solving its equations generically
+# gives the most general family of that pattern (a TYPE), as points in an abstract lattice Z^r.
+# `place` then lays each type into a real gamut: it maps the type's r basis intervals to intervals of
+# the gamut in every way, and keeps the placements where both P and Q fit and stay distinct.
+
+def _nullspace(rows, n):
+    """integer basis of {x in Q^n : rows . x = 0}"""
+    M = [[Fraction(c) for c in r] for r in rows]
+    piv_cols, r = [], 0
+    for c in range(n):
+        p = next((i for i in range(r, len(M)) if M[i][c] != 0), None)
+        if p is None: continue
+        M[r], M[p] = M[p], M[r]
+        pv = M[r][c]
+        M[r] = [x / pv for x in M[r]]
+        for i in range(len(M)):
+            if i != r and M[i][c] != 0:
+                f = M[i][c]
+                M[i] = [x - f * y for x, y in zip(M[i], M[r])]
+        piv_cols.append(c); r += 1
+    free = [c for c in range(n) if c not in piv_cols]
+    basis = []
+    for fc in free:
+        x = [Fraction(0)] * n
+        x[fc] = Fraction(1)
+        for i, pc in enumerate(piv_cols):
+            x[pc] = -M[i][fc]
+        den = 1
+        for v in x: den = den * v.denominator // gcd(den, v.denominator)
+        basis.append([int(v * den) for v in x])
+    return basis
+
+
+class _Sym:
+    """symbolic setup for U (nu notes) times V (vp plus terms incl. 0, vm minus terms)"""
+    def __init__(self, nu, vp, vm):
+        self.n = (nu - 1) + (vp - 1) + vm
+        e = lambda i: tuple(1 if j == i else 0 for j in range(self.n))
+        z = (0,) * self.n
+        self.U = [z] + [e(i) for i in range(nu - 1)]
+        self.Vp = [z] + [e(nu - 1 + i) for i in range(vp - 1)]
+        self.Vm = [e(nu - 1 + vp - 1 + i) for i in range(vm)]
+
+    @staticmethod
+    def terms(U, Vp, Vm):
+        return [(add(u, v), 1) for u in U for v in Vp] + [(add(u, w), -1) for u in U for w in Vm]
+
+    def P(self):
+        return self.terms(self.U, self.Vp, self.Vm)
+
+    def Q(self, flip):
+        if flip == "U":
+            return self.terms([neg(u) for u in self.U], self.Vp, self.Vm)
+        return self.terms(self.U, [neg(v) for v in self.Vp], [neg(w) for w in self.Vm])
+
+
+def _realise(rows, n):
+    B = _nullspace(rows, n) if rows else [[1 if i == j else 0 for i in range(n)] for j in range(n)]
+    return B   # unknown j  ->  (B[0][j], ..., B[r-1][j])
+
+
+def _place_terms(terms, B):
+    r = len(B)
+    out = {}
+    for sym, c in terms:
+        pt = tuple(sum(B[s][j] * sym[j] for j in range(len(sym))) for s in range(r))
+        out[pt] = out.get(pt, 0) + c
+    return out
+
+
+def _nondegenerate(sym, B):
+    def distinct(L):
+        pts = [tuple(sum(B[s][j] * x[j] for j in range(len(x))) for s in range(len(B))) for x in L]
+        return len(set(pts)) == len(pts)
+    return distinct(sym.U) and distinct(sym.Vp + sym.Vm)
+
+
+def _dfs(sym, rows, stage, flip, out, stats):
+    """stage 'P': cancel P's minus terms; stage 'Q': then cancel Q's."""
+    stats["nodes"] += 1
+    B = _realise(rows, sym.n)
+    if not B or not _nondegenerate(sym, B):
+        return
+    for which in ("P", "Q") if stage == "Q" else ("P",):
+        terms = sym.P() if which == "P" else sym.Q(flip)
+        val = _place_terms(terms, B)
+        bad = [(pt, c) for pt, c in val.items() if c < 0]
+        if bad:
+            # first uncancelled minus term: try every plus term to cancel it
+            pt0 = min(bad)[0]
+            minus_syms = [s for s, c in terms if c < 0 and _place_terms([(s, 1)], B).popitem()[0] == pt0]
+            plus_syms = [s for s, c in terms if c > 0]
+            ms = minus_syms[0]
+            tried = set()
+            for ps in plus_syms:
+                row = tuple(a - b for a, b in zip(ms, ps))
+                if row in tried or not any(row): continue
+                tried.add(row)
+                q = _place_terms([(ps, 1)], B).popitem()[0]
+                if q == pt0: continue
+                _dfs(sym, rows + [list(row)], stage, flip, out, stats)
+            return
+        if any(c > 1 for c in val.values()):
+            return
+    if stage == "P":
+        _dfs(sym, rows, "Q", flip, out, stats)
+        return
+    P = [pt for pt, c in _place_terms(sym.P(), B).items() if c == 1]
+    Q = [pt for pt, c in _place_terms(sym.Q(flip), B).items() if c == 1]
+    if len(P) != len(Q) or canon(P) == canon(Q):
+        return
+    out.append((P, Q, flip, len(B)))
+
+
+def _joint_basis_coords(P, Q):
+    """express P and Q in a basis of the lattice spanned by all their differences; the basis vectors
+    are themselves differences, so any placement maps them to intervals of the target lattice.
+    Returns (r, P coords, Q coords) canonical up to basis change, translation, negation and P<->Q."""
+    pts = [(p, 0) for p in P] + [(q, 1) for q in Q]
+    o = P[0]
+    D = [sub(p, o) for p, _ in pts]
+    r, cols = rank_and_cols(D)
+    if r == 0 or r > 3:
+        return None
+    D = [tuple(p[c] for c in cols) for p in D]
+    diffs = sorted({sub(p, q) for p in D for q in D if p != q})
+    g = 0
+    for t in itertools.combinations(diffs, r):
+        g = gcd(g, abs(_det([list(v) for v in zip(*t)]) if r > 1 else t[0][0]))
+    if g == 0:
+        return None
+    best = None
+    for Bv in itertools.permutations(diffs, r):
+        det = _det([list(v) for v in zip(*Bv)]) if r > 1 else Bv[0][0]
+        if abs(det) != g: continue
+        cs = []
+        for p in D:
+            x = _solve(Bv, p) if r > 1 else ((p[0] // det,) if p[0] % det == 0 else None)
+            if x is None: break
+            cs.append(x)
+        else:
+            for sg in (1, -1):
+                X = [tuple(sg * a for a in x) for x in cs]
+                m = min(X)
+                X = [sub(x, m) for x in X]
+                A = tuple(sorted(X[:len(P)])); Bq = tuple(sorted(X[len(P):]))
+                key = min((A, Bq), (Bq, A))
+                if best is None or key < best: best = key
+    return r, best
+
+
+def types_mode(a):
+    out_path = a.out
+    os.makedirs(out_path, exist_ok=True)
+    results = {}
+    t0 = time.time()
+    for nu, vp, vm in a.shape:
+        sym = _Sym(nu, vp, vm)
+        k = nu * vp - nu * vm
+        for flip in ("U", "V"):
+            found, stats = [], {"nodes": 0}
+            _dfs(sym, [], "P", flip, found, stats)
+            new = 0
+            for P, Q, fl, r in found:
+                jb = _joint_basis_coords(P, Q)
+                if jb is None: continue
+                rk, key = jb
+                if key not in results:
+                    results[key] = {"k": len(P), "rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm,
+                                    "flip": fl, "P": [list(x) for x in key[0]], "Q": [list(x) for x in key[1]]}
+                    new += 1
+            print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {stats['nodes']:,} search nodes, "
+                  f"{len(found)} patterns, {new} new types ({time.time()-t0:.0f}s)", flush=True)
+    with open(os.path.join(out_path, "uv_types.jsonl"), "w") as fh:
+        for i, t in enumerate(sorted(results.values(), key=lambda t: (t["k"], t["rank"], t["P"])), 1):
+            t["type"] = i
+            fh.write(json.dumps(t) + "\n")
+            print(f"  type {i}: k={t['k']} rank {t['rank']}  P={t['P']}  Q={t['Q']}")
+    print(f"{len(results)} types -> {os.path.join(out_path, 'uv_types.jsonl')}")
+    return list(results.values())
+
+
+_PL = None
+
+
+def _pl_init(G, D, types):
+    global _PL
+    _PL = (G, set(G), D, set(D), types)
+
+
+def _pl_job(args):
+    ti, i1 = args
+    G, Gset, D, Dset, types = _PL
+    t = types[ti]
+    P0 = [tuple(x) for x in t["P"]]; Q0 = [tuple(x) for x in t["Q"]]
+    r = t["rank"]
+    allp = P0 + Q0
+    out = []
+    g1 = D[i1]
+    for rest in itertools.product(D, repeat=r - 1):
+        gs = (g1,) + rest
+        img = lambda x: tuple(sum(x[s] * gs[s][d] for s in range(r)) for d in range(len(g1)))
+        # quick reject: every point of P and of Q, relative to the first, must be an interval of the gamut
+        P = [img(x) for x in P0]
+        p0 = P[0]
+        if any(sub(p, p0) not in Dset for p in P[1:]): continue
+        Q = [img(x) for x in Q0]
+        q0 = Q[0]
+        if any(sub(q, q0) not in Dset for q in Q[1:]): continue
+        if len(set(P)) != len(P) or len(set(Q)) != len(Q): continue
+        cp, cq = canon(P), canon(Q)
+        if cp == cq: continue
+        if not (fits(P, Gset, G) and fits(Q, Gset, G)): continue
+        out.append(tuple(sorted([cp, cq])))
+    return ti, out
+
+
+def place_mode(a):
+    primes = tuple(a.primes); G = gamut(primes, a.odd)
+    run = Run(a.out)
+    types = [json.loads(l) for l in open(a.types)]
+    types = [t for t in types if (not a.k or t["k"] in a.k)]
+    D = sorted({sub(p, q) for p in G for q in G if p != q})
+    run.say(f"place: primes {primes}, odd limit {a.odd}, gamut {len(G)} notes, {len(D):,} intervals, "
+            f"{len(types)} types, {a.workers} workers")
+    for t in types:
+        if t["rank"] > 2:
+            run.say(f"  type {t['type']} (k={t['k']}) has rank {t['rank']}: |intervals|^{t['rank']} placements, "
+                    f"~{len(D)**t['rank']:.1e}; skipped unless --allow-rank3")
+    types = [t for t in types if t["rank"] <= 2 or a.allow_rank3]
+    seen, fams = set(), []
+    t0 = time.time()
+    jobs = [(ti, i1) for ti in range(len(types)) for i1 in range(len(D))]
+    per_type = {}
+    with Pool(a.workers, initializer=_pl_init, initargs=(G, D, types)) as pool:
+        done = 0; last = 0
+        for ti, part in pool.imap_unordered(_pl_job, jobs, chunksize=16):
+            for key in part:
+                if key in seen: continue
+                seen.add(key)
+                t = types[ti]
+                per_type[t["type"]] = per_type.get(t["type"], 0) + 1
+                fams.append((t["k"], [list(key[0]), list(key[1])],
+                             {"mechanism": f"uv type {t['type']}", "uv_type": t["type"]}))
+            done += 1
+            if time.time() - t0 - last > 60:
+                last = time.time() - t0
+                run.say(f"    {100*done/len(jobs):5.1f}% of placements, {len(fams)} families, {last/60:.1f} min")
+    fams.sort(key=lambda f: (f[0], f[1]))
+    write_families(run, fams, primes, len(G), {})
+    by_k = {}
+    for k, _, _ in fams: by_k[k] = by_k.get(k, 0) + 1
+    with open(os.path.join(run.out, "summary.csv"), "w") as fh:
+        fh.write("notes,families,gamut_size\n")
+        for k in sorted(by_k): fh.write(f"{k},{by_k[k]},{len(G)}\n")
+    run.say(f"done: {len(fams)} families {by_k}; per uv type {per_type} ({(time.time()-t0)/60:.1f} min) -> {run.out}")
+    return by_k
+
 # ----------------------------------------------------------------------------- estimate / selftest
 def estimate(a):
     primes = tuple(a.primes); G = gamut(primes, a.odd); Gset = set(G)
@@ -536,11 +800,20 @@ def selftest(a):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("exhaustive", "directsum", "estimate", "selftest"):
+    for name in ("exhaustive", "directsum", "estimate", "selftest", "types", "place"):
         p = sp.add_parser(name)
         p.add_argument("--workers", type=int, default=max(1, cpu_count() - 1))
         if name == "selftest": continue
+        if name == "types":
+            p.add_argument("--shape", nargs="+", required=True, metavar="U,V+,V-",
+                           help="factor sizes, e.g. 3,3,1 = 3-note U times V with 3 plus terms (incl. 0) and 1 minus term")
+            p.add_argument("--out", required=True)
+            continue
         p.add_argument("--primes", type=int, nargs="+", required=True)
+        if name == "place":
+            p.add_argument("--types", required=True, help="uv_types.jsonl from the types mode")
+            p.add_argument("--k", type=int, nargs="*", default=None, help="only types with these note counts")
+            p.add_argument("--allow-rank3", action="store_true")
         p.add_argument("--odd", type=int, required=True, help="odd limit of the gamut")
         if name in ("exhaustive", "estimate"):
             p.add_argument("--k", type=int, nargs="+", required=True)
@@ -554,12 +827,15 @@ def main():
             p.add_argument("--mem-gb", type=float, default=8.0)
         if name == "directsum":
             p.add_argument("--sizes", nargs="+", default=["3x3", "3x4", "3x5", "4x4"])
-        if name in ("exhaustive", "directsum"):
+        if name in ("exhaustive", "directsum", "place"):
             p.add_argument("--out", required=True)
     a = ap.parse_args()
     if getattr(a, "workdir", "x") is None:
         a.workdir = os.path.join(a.out, "work")
-    {"exhaustive": exhaustive, "directsum": directsum, "estimate": estimate, "selftest": selftest}[a.cmd](a)
+    if a.cmd == "types":
+        a.shape = [tuple(int(x) for x in sh.split(",")) for sh in a.shape]
+    {"exhaustive": exhaustive, "directsum": directsum, "estimate": estimate, "selftest": selftest,
+     "types": types_mode, "place": place_mode}[a.cmd](a)
 
 
 if __name__ == "__main__":
