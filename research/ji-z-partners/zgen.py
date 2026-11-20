@@ -235,87 +235,174 @@ def write_families(run, fams, primes, Gsize, extra):
                                  "shape_Q": [list(p) for p in key[1]]}) + "\n")
     return types
 
-# ----------------------------------------------------------------------------- exhaustive mode
+# ----------------------------------------------------------------------------- exhaustive mode (disk-backed)
+#
+# Pass 1  every k-subset is enumerated, but only ONE representative per set class is kept: the
+#         subset is emitted only if it is the canonical orientation (not the inverted copy) and its
+#         lowest note is the lowest place in the gamut where that shape fits. Each emitted class
+#         writes one 8-byte fingerprint hash to bucket file  hash % B . Jobs are (first, second note)
+#         pairs, so they are small and evenly sized; finished jobs are logged so a run can resume.
+# Pass 2  each bucket is loaded, sorted and scanned; a fingerprint hash seen twice is a candidate.
+# Pass 3  candidates are recomputed exactly (fingerprint + class), which removes hash collisions.
+#
+# Disk per k ~ 8 bytes x set classes. RAM in pass 2 ~ 8-16 bytes x (classes / buckets) per merge worker.
+from array import array
+
 _G = None
+_GSET = None
+_FLAG = None
 
 
-def _init(G):
-    global _G
-    _G = G
+def _init(G, flagged=None):
+    global _G, _GSET, _FLAG
+    _G, _GSET, _FLAG = G, set(G), flagged
 
 
-def _exh_job(args):
-    """all k-subsets whose smallest gamut index is i0. Returns {fp_hash: {class_hash, ...}}"""
-    i0, k, shard, nshards = args
-    G = _G
-    out = {}
-    first = G[i0]
-    for rest in itertools.combinations(range(i0 + 1, len(G)), k - 1):
-        S = [first] + [G[j] for j in rest]
-        f = enc(fingerprint(S))
-        if nshards > 1 and f % nshards != shard: continue
-        c = enc(canon(S))
-        s = out.get(f)
-        if s is None: out[f] = c
-        elif isinstance(s, set): s.add(c)
-        elif s != c: out[f] = {s, c}
-    return out
+def _emit(S, G, Gset):
+    """S sorted by gamut order. True if S is its class's unique representative."""
+    m = S[0]
+    N = [sub(p, m) for p in S]
+    Nn = norm([neg(p) for p in S])
+    if Nn < tuple(N):
+        return False                       # the inverted copy represents this class
+    for g in G:                            # first place (in gamut order) where the shape fits
+        if g >= m:
+            return True
+        if all(add(g, p) in Gset for p in N):
+            return False
+    return True
 
 
-def _exh_exact(args):
-    i0, k, flagged = args
-    G = _G
+from hashlib import blake2b
+
+
+def _fp_hash(fp):
+    """64-bit blake2b of the exact fingerprint (Python's own int/tuple hashes collide systematically)"""
+    return int.from_bytes(blake2b(bytes(c + 128 for v in fp for c in v), digest_size=8).digest(), "little")
+
+
+def _p1_job(args):
+    i0, i1, k, nb, wdir = args
+    G, Gset = _G, _GSET
+    bufs = {}
+    n = 0
+    head = [G[i0], G[i1]]
+    for rest in itertools.combinations(range(i1 + 1, len(G)), k - 2):
+        S = head + [G[j] for j in rest]
+        if not _emit(S, G, Gset):
+            continue
+        h = _fp_hash(fingerprint(S))
+        b = h % nb
+        a = bufs.get(b)
+        if a is None:
+            a = bufs[b] = array("Q")
+        a.append(h)
+        n += 1
+    for b, a in bufs.items():                 # one file per (job, bucket), written atomically: resume stays exact
+        d = os.path.join(wdir, f"b{b:04d}")
+        fn = os.path.join(d, f"j{i0}_{i1}.bin")
+        with open(fn + ".tmp", "wb") as fh:
+            a.tofile(fh)
+        os.replace(fn + ".tmp", fn)
+    return (i0, i1), n
+
+
+def _p2_bucket(args):
+    wdir, b = args
+    vals = array("Q")
+    d = os.path.join(wdir, f"b{b:04d}")
+    for f in os.listdir(d):
+        if f.endswith(".bin"):
+            with open(os.path.join(d, f), "rb") as fh:
+                vals.frombytes(fh.read())
+    lst = sorted(vals)
+    del vals
+    flagged = []
+    for i in range(1, len(lst)):
+        if lst[i] == lst[i - 1] and (i == 1 or lst[i - 1] != lst[i - 2]):
+            flagged.append(lst[i])
+    return b, len(lst), flagged
+
+
+def _p3_job(args):
+    i0, i1, k = args
+    G, Gset, flagged = _G, _GSET, _FLAG
     res = {}
-    first = G[i0]
-    for rest in itertools.combinations(range(i0 + 1, len(G)), k - 1):
-        S = [first] + [G[j] for j in rest]
+    head = [G[i0], G[i1]]
+    for rest in itertools.combinations(range(i1 + 1, len(G)), k - 2):
+        S = head + [G[j] for j in rest]
+        if not _emit(S, G, Gset):
+            continue
         fp = fingerprint(S)
-        if enc(fp) in flagged:
+        if _fp_hash(fp) in flagged:
             res.setdefault(fp, set()).add(canon(S))
     return res
 
 
 def exhaustive(a):
     primes = tuple(a.primes); G = gamut(primes, a.odd)
+    assert set(G) == {neg(p) for p in G}, "gamut must be inversion-symmetric (odd-limit gamuts are)"
     run = Run(a.out)
-    run.say(f"exhaustive: primes {primes}, odd limit {a.odd}, gamut {len(G)} notes, k = {a.k}, {a.workers} workers")
+    run.say(f"exhaustive: primes {primes}, odd limit {a.odd}, gamut {len(G)} notes, k = {a.k}, "
+            f"{a.workers} workers, {a.buckets} buckets, work dir {a.workdir}")
     fams_all, summary = [], []
-    with Pool(a.workers, initializer=_init, initargs=(G,)) as pool:
-        for k in a.k:
-            t0 = time.time()
-            starts = list(range(len(G) - k + 1))
-            n_sub = comb(len(G), k)
-            run.say(f"  k={k}: {n_sub:,} subsets in {len(starts)} jobs x {a.shards} shard(s)")
-            n_classes, flagged = 0, set()
-            for shard in range(a.shards):
-              jobs = [(i, k, shard, a.shards) for i in starts]
-              merged = {}
-              done = 0
-              for part in pool.imap_unordered(_exh_job, jobs):
-                for f, c in part.items():
-                    s = merged.get(f)
-                    cs = c if isinstance(c, set) else {c}
-                    if s is None: merged[f] = cs if len(cs) > 1 else c
-                    else:
-                        if not isinstance(s, set): s = {s}
-                        s |= cs
-                        merged[f] = s if len(s) > 1 else next(iter(s))
-                done += 1
-                if done % max(1, len(jobs) // 10) == 0:
-                    run.say(f"    pass 1 shard {shard+1}/{a.shards}: {done}/{len(jobs)} jobs, {time.time()-t0:.0f}s")
-              n_classes += sum(len(s) if isinstance(s, set) else 1 for s in merged.values())
-              flagged |= {f for f, s in merged.items() if isinstance(s, set)}
-              del merged
-            run.say(f"    {n_classes:,} set classes, {len(flagged)} candidate fingerprints; exact pass")
-            exact = {}
-            for part in pool.imap_unordered(_exh_exact, [(i, k, flagged) for i in starts]):
+    for k in a.k:
+        assert k >= 3
+        t0 = time.time()
+        wdir = os.path.join(a.workdir, f"k{k}")
+        for b in range(a.buckets):
+            os.makedirs(os.path.join(wdir, f"b{b:04d}"), exist_ok=True)
+        meta = os.path.join(wdir, "meta.json")
+        if os.path.exists(meta):
+            m = json.load(open(meta))
+            assert m == {"primes": list(primes), "odd": a.odd, "buckets": a.buckets}, \
+                f"{wdir} holds a different run ({m}); delete it or use another --workdir"
+        else:
+            json.dump({"primes": list(primes), "odd": a.odd, "buckets": a.buckets}, open(meta, "w"))
+        donef = os.path.join(wdir, "pass1_done.txt")
+        done = set()
+        if os.path.exists(donef):
+            done = {tuple(map(int, l.split())) for l in open(donef) if l.strip()}
+        jobs = [(i0, i1) for i0 in range(len(G)) for i1 in range(i0 + 1, len(G)) if len(G) - i1 - 1 >= k - 2]
+        weight = {j: comb(len(G) - j[1] - 1, k - 2) for j in jobs}
+        jobs.sort(key=lambda j: -weight[j])                    # big jobs first: better load balance
+        todo = [j for j in jobs if j not in done]
+        total_w = sum(weight.values()); done_w = sum(weight[j] for j in done)
+        run.say(f"  k={k}: {comb(len(G), k):,} subsets in {len(jobs)} jobs ({len(done)} already done)")
+        # ---- pass 1
+        if todo:
+            with Pool(a.workers, initializer=_init, initargs=(G,)) as pool, open(donef, "a") as dfh:
+                last = 0
+                for j, n in pool.imap_unordered(_p1_job, [(i0, i1, k, a.buckets, wdir) for i0, i1 in todo]):
+                    dfh.write(f"{j[0]} {j[1]}\n"); dfh.flush()
+                    done_w += weight[j]
+                    el = time.time() - t0
+                    if el - last > 60 or done_w == total_w:
+                        last = el
+                        frac = done_w / total_w
+                        run.say(f"    pass 1: {100*frac:5.1f}% of subsets, {el/60:.1f} min elapsed")
+        # ---- pass 2
+        run.say(f"    pass 2: counting fingerprints in {a.buckets} buckets ({a.merge_workers} at a time)")
+        n_classes, flagged = 0, set()
+        with Pool(a.merge_workers) as pool:
+            for b, n, fl in pool.imap_unordered(_p2_bucket, [(wdir, b) for b in range(a.buckets)]):
+                n_classes += n; flagged.update(fl)
+        run.say(f"    {n_classes:,} set classes, {len(flagged):,} candidate fingerprints; pass 3 (exact)")
+        # ---- pass 3
+        exact = {}
+        with Pool(a.workers, initializer=_init, initargs=(G, flagged)) as pool:
+            for part in pool.imap_unordered(_p3_job, [(i0, i1, k) for i0, i1 in jobs]):
                 for fp, cs in part.items():
                     exact.setdefault(fp, set()).update(cs)
-            fams = [sorted(cs) for fp, cs in sorted(exact.items()) if len(cs) >= 2]
-            run.say(f"  k={k}: {len(fams)} Z-families ({time.time()-t0:.0f}s)")
-            summary.append((k, n_sub, n_classes, len(fams)))
-            for m in fams:
-                fams_all.append((k, [list(x) for x in m], {"mechanism": "exhaustive"}))
+        fams = [sorted(cs) for fp, cs in sorted(exact.items()) if len(cs) >= 2]
+        run.say(f"  k={k}: {len(fams)} Z-families ({(time.time()-t0)/60:.1f} min)")
+        summary.append((k, comb(len(G), k), n_classes, len(fams)))
+        for m in fams:
+            fams_all.append((k, [list(x) for x in m], {"mechanism": "exhaustive"}))
+        with open(os.path.join(run.out, f"families_k{k}.json"), "w") as fh:   # checkpoint per k
+            json.dump([[list(map(list, x)) for x in m] for m in fams], fh)
+        if not a.keep_work:
+            import shutil; shutil.rmtree(wdir)
     types = write_families(run, fams_all, primes, len(G), {})
     with open(os.path.join(run.out, "summary.csv"), "w") as fh:
         fh.write("notes,subsets,set_classes,z_families,gamut_size\n")
@@ -409,31 +496,34 @@ def directsum(a):
 
 # ----------------------------------------------------------------------------- estimate / selftest
 def estimate(a):
-    primes = tuple(a.primes); G = gamut(primes, a.odd)
-    print(f"gamut: primes {primes}, odd limit {a.odd}: {len(G)} notes")
-    k = min(a.k)
-    sample = list(itertools.islice(itertools.combinations(G, k), 200000))
-    t = time.time()
-    for S in sample: enc(fingerprint(S)); enc(canon(list(S)))
-    rate = len(sample) / (time.time() - t)
-    print(f"measured {rate:,.0f} subsets/s per core at k={k} with {sys.implementation.name}")
+    primes = tuple(a.primes); G = gamut(primes, a.odd); Gset = set(G)
+    print(f"gamut: primes {primes}, odd limit {a.odd}: {len(G)} notes; {sys.implementation.name}, {a.workers} workers")
     for k in a.k:
-        n = comb(len(G), k)
-        sec = 2 * n / rate * (k / min(a.k)) ** 2 / a.workers    # two passes; per-subset cost grows ~k^2
-        cls = n / 3                                   # ~3 subsets per class (measured on the odd-123 run)
-        gb = cls * 150 / 1e9                          # ~150 bytes per stored class in the pass-1 table
-        shards = max(1, int(gb / a.mem_gb) + 1) if gb > a.mem_gb else 1
-        print(f"  exhaustive k={k}: {n:,} subsets, about {sec/60*shards:,.1f} min on {a.workers} workers; "
-              f"pass-1 table ~{gb:,.1f} GB -> use --shards {shards} for {a.mem_gb} GB RAM")
-    for na, nb in ((3, 3), (3, 4), (3, 5), (4, 4)):
-        print(f"  directsum {na}x{nb}: shapes come from {comb(len(G), na):,} and {comb(len(G), nb):,} subsets; "
-              f"the run log prints the exact shape-pair count before the pair loop starts")
+        # time the real pass-1 work on a spread of jobs, and measure the share of subsets that are class representatives
+        jobs = [(i0, i0 + 1 + d) for i0 in range(0, len(G) // 2, max(1, len(G) // 12)) for d in (0, 3)]
+        n = emitted = 0; t = time.time()
+        for i0, i1 in jobs:
+            if len(G) - i1 - 1 < k - 2: continue
+            head = [G[i0], G[i1]]
+            for rest in itertools.islice(itertools.combinations(range(i1 + 1, len(G)), k - 2), 4000):
+                S = head + [G[j] for j in rest]; n += 1
+                if _emit(S, G, Gset):
+                    emitted += 1; _fp_hash(fingerprint(S))
+        rate = n / (time.time() - t)
+        total = comb(len(G), k)
+        classes = total * emitted / max(n, 1)
+        hours = 2 * total / rate / a.workers / 3600            # pass 1 + pass 3
+        disk = classes * 8 / 1e9
+        buckets = max(1, int(classes * 24 / (a.mem_gb * 1e9 / 2)) + 1)   # ~24 B/class while sorting (pypy), 2 merge workers
+        print(f"  k={k}: {total:,} subsets, ~{classes:,.0f} classes; ~{hours*60:,.1f} min on {a.workers} workers "
+              f"({rate:,.0f} subsets/s/core); disk ~{disk:,.1f} GB; suggest --buckets {buckets} with --merge-workers 2")
 
 
 def selftest(a):
     import tempfile
     d = tempfile.mkdtemp(prefix="zgen_selftest_")
-    ns = argparse.Namespace(primes=[3, 5], odd=123, k=[6, 7], workers=a.workers, shards=2, out=os.path.join(d, "exh"))
+    ns = argparse.Namespace(primes=[3, 5], odd=123, k=[6, 7], workers=a.workers, buckets=4, merge_workers=2,
+                            workdir=os.path.join(d, "work"), keep_work=False, out=os.path.join(d, "exh"))
     s = exhaustive(ns)
     assert [x[3] for x in s] == [7, 8], s
     assert [x[2] for x in s] == [415386, 2017653], s
@@ -455,7 +545,11 @@ def main():
         if name in ("exhaustive", "estimate"):
             p.add_argument("--k", type=int, nargs="+", required=True)
         if name == "exhaustive":
-            p.add_argument("--shards", type=int, default=1, help="split pass 1 by fingerprint to cap RAM (CPU x shards)")
+            p.add_argument("--buckets", type=int, default=16, help="disk buckets; more buckets = less RAM in pass 2")
+            p.add_argument("--merge-workers", type=int, default=2, help="buckets merged in parallel in pass 2")
+            p.add_argument("--workdir", default=None, help="scratch dir for bucket files (default OUT/work); "
+                           "re-running with the same OUT resumes pass 1")
+            p.add_argument("--keep-work", action="store_true", help="keep bucket files after each k")
         if name == "estimate":
             p.add_argument("--mem-gb", type=float, default=8.0)
         if name == "directsum":
@@ -463,6 +557,8 @@ def main():
         if name in ("exhaustive", "directsum"):
             p.add_argument("--out", required=True)
     a = ap.parse_args()
+    if getattr(a, "workdir", "x") is None:
+        a.workdir = os.path.join(a.out, "work")
     {"exhaustive": exhaustive, "directsum": directsum, "estimate": estimate, "selftest": selftest}[a.cmd](a)
 
 
