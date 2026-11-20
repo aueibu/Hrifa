@@ -113,7 +113,7 @@ Homometry in Z² is equivalent to P(x,y)·P(1/x,1/y) = Q(x,y)·Q(1/x,1/y). Laure
 
   ![direct sum](figs/fig5_direct_sum.png)
 
-* **Signed-factor families** (4,029; the canon's "sporadic" families plus 1,145 at 9, 12, 15 and 16) cannot be split into two plain note sets. One factor carries a −1 coefficient. Every family at 6, 7, 8, 10, 11, 13 and 14 notes is of this type, as the canon's pitfall table predicts. The most common signed factor is **x³ − x² + 1**, which lies purely on the line of fifths ({1, 27/16} minus 9/8). Flipping it gives x³ − x + 1. It drives families at every k from 7 to 16.
+* **Signed-factor families** (4,029; the canon's "sporadic" families 892 at sizes A + B cannot build, plus 3,137 at 9, 12, 15 and 16) cannot be split into two plain note sets. One factor carries a −1 coefficient. Every family at 6, 7, 8, 10, 11, 13 and 14 notes is of this type, as the canon's pitfall table predicts. The most common signed factor is **x³ − x² + 1**, which lies purely on the line of fifths ({1, 27/16} minus 9/8). Flipping it gives x³ − x + 1. It drives families at every k from 7 to 16.
 * Of the 4,029 families with no 0/1 split, 2,228 contain a smaller reported Z-pair after deleting 1–3 notes from each member (`contained_family` column). That is descriptive, not causal.
 
 ![mechanism](figs/fig2_mechanism.png)
