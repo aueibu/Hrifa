@@ -1,0 +1,6 @@
+tables/families.csv
+tables/factors.csv
+tables/edo.csv
+brute_k*.jsonl
+*.log
+__pycache__/
