@@ -2,13 +2,43 @@
 
 Scripts are in this folder, tables are in `tables/` and plots are in `figs/`. The raw archive is not committed (42 MB); see [Re-running](#re-running).
 
+**Context.** This is the Google Cloud run from step 31 of *Ratio rhythm: timeline and canon* ("add 7, push to 12 and 16 notes"), here at 5-limit, odd limit ≤ 123, 1–16 notes. It is a **JI-level** search, the first of the three levels in the canon's Canon 6 table. Section 0 shows where the results sit against the canon. The original handoff for this analysis described the linear-ring reading (level 3) and the ring sweep (step 19). Those are separate threads, and this archive holds no data for them.
+
 ## TL;DR
 
-1. **The archive is not a ring-reading search.** It holds one run, `run_5lim_odd123`. That run enumerated every 1–16-note subset of a 35-pitch 5-limit gamut, about 12.6 billion subsets. It looked for **lattice homometry**: sets with the same multiset of interval classes (exact octave-reduced ratios, up to inversion), not the same ring interval vector. So the handoff's ring-size/divisibility questions cannot be answered from this data. The *prime-limit-preserving* question (avenue 1) can, and the answer is a strong yes.
-2. **Everything checks out.** All 30,065 families pass every definitional check. An independent brute force reproduces the set-class counts and the exact family lists for every k from 2 to 10.
-3. **One mechanism explains everything.** Read each set as a polynomial ∑ x^a y^b, where 3^a·5^b is the note. Every family is then P = U·V with partner Q = U·V*, where V* = V(1/x, 1/y) is V's inversion mirror. In **all** 30,065 families exactly one irreducible factor is flipped. In 87% (26,036) of families both factors are plain note sets, so P = A⊕B is a "chord of chords" and the partner is A⊕(−B). The smallest non-symmetric note set has 3 notes, which is why families spike at k = 9, 12 and 15 (and at 16 = 4×4).
-4. **The partner never needs a new prime here.** The partner usually shares most of its notes with the original: 5 of 7, 7 of 9, 12 of 16.
-5. **Lattice and ring readings are disjoint so far.** No lattice Z-pair with k ≤ 9 is a ring Z-pair under any choice of 1/1. Tempering into EDOs, however, keeps most of them. In 53-EDO almost all stay Z-pairs, and one k = 6 family becomes the Forte pair **6-Z12 / 6-Z41** in 12-EDO.
+1. **A JI-level run.** The archive holds one run, `run_5lim_odd123`. It enumerated every 1–16-note subset of a 35-pitch 5-limit gamut, about 12.6 billion subsets. It looked for JI Z-pairs: sets with the same multiset of octave-reduced intervals (a ratio identified with its inversion). This is **not** the ring interval vector. The ring-size and divisibility questions belong to the separate ring sweep, and this data can't answer them (section 6).
+2. **Everything checks out.** All 30,065 families pass every definitional check. An independent brute force reproduces the set-class counts and the exact family lists for every k from 2 to 10. Restricted to odd limit ≤ 75, the families reproduce the canon's earlier odd-limit-75 counts exactly.
+3. **One mechanism explains everything, sporadic families included.** Read each set as a polynomial ∑ x^a y^b, where 3^a·5^b is the note. Every family is then P = U·V with partner Q = U·V*, where V* = V(1/x, 1/y) is V's inversion mirror. In **all** 30,065 families exactly one irreducible factor is flipped. In 87% (26,036) of families both factors are plain note sets, so P = A⊕B is a "chord of chords" and the partner is A⊕(−B). This is the canon's A + B construction, and it accounts for the spikes at 9, 12, 15 and 16. The remaining 13% (the canon's "sporadic" families) are the same law with one factor carrying a −1 coefficient.
+4. **The canon's open question on 15, 16 and 13 notes is answered.** Families spike at 15 notes (13,364) and stay high at 16 (1,875), while 13 notes stays near zero (49). Partners stay in the 5-limit and keep most notes: 5 of 7, 7 of 9, 12 of 16.
+5. **The canon's levels are confirmed.** No JI pair with 9 or fewer notes is a linear-ring pair under any choice of 1/1, which fits "linear-ring pairs are a voicing-level relation". Tempering into EDOs, however, keeps most of them. In 53-EDO almost all stay Z-pairs, and one k = 6 family becomes the Forte pair **6-Z12 / 6-Z41** in 12-EDO.
+
+## 0. Against the canon
+
+**Already established in the canon** (Canon 6, "The JI-level search"; pitfalls). This run confirms each of these at a larger scale:
+* the A + B construction (Rosenblatt and Seymour) and its sizes 9, 12, 15 and 16;
+* no JI pairs below 6 notes;
+* depth over breadth: stacked 3s and 5s, not more primes;
+* short fingerprints give chance matches. The log's candidate counts exceed the exact family counts at k = 10, 11, 12, 15 and 16, for example 92 candidates against 25 families at k = 11.
+
+**Consistency with the earlier odd-limit-75 search** (`subgamut.py 75`). Family counts for odd limit ≤ 75 (29 notes), counting families whose members both fit that gamut:
+
+| notes | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| canon, odd-limit 75 | 5 | 1 | 4 | 1,108 | 110 | 0 | 2,539 | – | – | – | – |
+| this run, restricted to odd-limit 75 | 5 | 1 | 4 | 1,108 | 110 | 0 | 2,539 | 0 | 62 | 1,684 | 110 |
+| this run, odd-limit 123 | 7 | 8 | 10 | 2,968 | 295 | 25 | 10,966 | 49 | 498 | 13,364 | 1,875 |
+
+The first seven columns agree exactly. The last four extend the odd-limit-75 counts to 13–16 notes.
+
+**Open items from the canon's checklist:**
+
+| canon item | status after this run |
+|---|---|
+| Do 15 and 16 notes spike and 13 stay near zero? | **Yes.** 8.7 and 1.0 families per million set classes at 15 and 16, against 0.07 at 13 (section 3). |
+| Why do the smallest JI pairs have every interval distinct? Classify the sporadic families. | **Partly.** All 7 six-note pairs have 15 distinct intervals out of 15. That stops at 7 notes, where the average is 16 of 21, so it is specific to size 6. Sporadic families follow the factor law with a signed factor (section 3). Cataloguing the signed factors is the remaining step. |
+| A canonical form for shapes | **Candidate.** For 5-limit, a family canonicalized under the 12 symmetries of the triangular 3/5 lattice (including the 3 ↔ 5 swap): 30,065 families give 23,199 shapes (section 5). For 7-limit, use permutations of the prime axes in the same way. |
+| Is the 13-odd-limit diamond Z-free at every size? | Not addressed: this gamut is 5-limit only. |
+| Add the targeted search to the Spectrum lens, reporting log/linear holds | Supporting data: the EDO table (section 6) gives the log-ring survival rates, and linear-ring survival is 0 for 9 or fewer notes. |
 
 ## 1. What is in the archive
 
@@ -23,7 +53,7 @@ The upload `…results.tgz.gz` is gzip on top of a `.tgz`, so it needs a double 
 
 Inferences worth stating:
 
-* **"Z-related" here means lattice homometry.** Two sets are related when their ± difference vectors in Z² (prime exponents, octaves ignored) agree as multisets, and they are not related by translation (transposition) or negation (otonal/utonal inversion). No ring L is involved.
+* **"Z-related" here means the JI level (lattice homometry).** Two sets are related when their ± difference vectors in Z² (prime exponents, octaves ignored) agree as multisets, and they are not related by translation (transposition) or negation (otonal/utonal inversion). No ring L is involved.
 * **Every family has exactly 2 members.** There are no triples or larger groups.
 * **`ratios` is re-rooted.** Each member is transposed so that one of its notes is 1/1. As a result, 37,541 of 60,130 members list notes that are not literally in the gamut. Every one of them fits the gamut after a transposition, so this is a display choice, not an error.
 
@@ -83,7 +113,7 @@ Homometry in Z² is equivalent to P(x,y)·P(1/x,1/y) = Q(x,y)·Q(1/x,1/y). Laure
 
   ![direct sum](figs/fig5_direct_sum.png)
 
-* **Signed-factor families** (4,029) cannot be split into two plain note sets. One factor carries a −1 coefficient. All the k = 6, 7, 8, 10, 11, 13, 14 families are of this type. The most common signed factor is **x³ − x² + 1**, which lies purely on the line of fifths ({1, 27/16} minus 9/8). Flipping it gives x³ − x + 1. It drives families at every k from 7 to 16.
+* **Signed-factor families** (4,029; the canon's "sporadic" families plus 1,145 at 9, 12, 15 and 16) cannot be split into two plain note sets. One factor carries a −1 coefficient. Every family at 6, 7, 8, 10, 11, 13 and 14 notes is of this type, as the canon's pitfall table predicts. The most common signed factor is **x³ − x² + 1**, which lies purely on the line of fifths ({1, 27/16} minus 9/8). Flipping it gives x³ − x + 1. It drives families at every k from 7 to 16.
 * Of the 4,029 families with no 0/1 split, 2,228 contain a smaller reported Z-pair after deleting 1–3 notes from each member (`contained_family` column). That is descriptive, not causal.
 
 ![mechanism](figs/fig2_mechanism.png)
@@ -91,7 +121,7 @@ Homometry in Z² is equivalent to P(x,y)·P(1/x,1/y) = Q(x,y)·Q(1/x,1/y). Laure
 ## 4. Prime limit
 
 * Both members of every family are 5-limit, and both use the 5 axis. There are no 3-limit members. Members span 2–5 rows of the 5 axis: 5 rows in 20,457 cases, 4 rows in 8,204.
-* This search confines partners to the gamut, so **"primes introduced by the partner" is 0 everywhere**. The handoff's earlier observation that partners "almost always introduce a new prime" was an artifact of the ring reading. In the lattice reading, prime-limit-preserving partners are the norm.
+* This search confines partners to the gamut, so **"primes introduced by the partner" is 0 everywhere**. The handoff's examples of partners that add a prime, such as 1/1 9/8 3/2 15/8 ↔ 1/1 9/8 11/8 3/2, have 4 or 5 notes. That is below the JI minimum of 6, so they must be linear-ring (voicing-level) pairs, and the observation belongs to that level. At the JI level, partners that keep the prime limit are the norm.
 * **Infinitely many exist.** Any two non-symmetric 5-limit note sets A, B with all sums distinct give the pair A⊕B, A⊕(−B), and there are infinitely many such A, B.
 * There is no plot of introduced primes, because the distribution is identically 0.
 
@@ -118,8 +148,8 @@ All k = 6 and 7 families, rooted on their simplest note:
 
 ## 6. Rhythm side and the ring reading
 
-* **Ring reading** (`ring` column, k ≤ 9, 2,993 families): I tried every choice of 1/1 for both members, so k² rootings. In 1,307 families no rooting ever gives the two members the same L. In the other 1,686 some rootings do share L, but the ring interval vectors never match. **No lattice Z-pair with k ≤ 9 is a ring Z-pair.** The two notions are mathematically different (Z² differences vs. Z_L slot differences), and this data does not bridge them.
-* **Tempering** (`edo.py`, `tables/edo.csv`): a homomorphism Z² → Z_n preserves difference multisets. So each pair becomes either a collision, a TnI-equivalent pair (the Z-relation is "tempered out"), or a genuine EDO Z-pair.
+* **Linear ring, the canon's level 3** (`ring` column, k ≤ 9, 2,993 families): I tried every choice of 1/1 for both members, so k² rootings. In 1,307 families no rooting ever gives the two members the same L. In the other 1,686 some rootings do share L, but the ring interval vectors never match. **No lattice Z-pair with k ≤ 9 is a ring Z-pair.** The two notions are mathematically different (Z² differences vs. Z_L slot differences, the canon's difference tones). This is consistent with the canon: JI pairs are shared by every re-rooting, and linear-ring pairs belong to one voicing.
+* **Log ring, the canon's level 2: tempering** (`edo.py`, `tables/edo.csv`). The canon says log-ring pairs are "usually inherited" from the JI level, and this puts numbers on it. a homomorphism Z² → Z_n preserves difference multisets. So each pair becomes either a collision, a TnI-equivalent pair (the Z-relation is "tempered out"), or a genuine EDO Z-pair.
 
   | | 12-EDO | 19 | 22 | 31 | 53-EDO |
   |---|---|---|---|---|---|
@@ -127,7 +157,8 @@ All k = 6 and 7 families, rooted on their simplest note:
   | tempered to TnI-equivalent | 274 | 1,089 | 2,058 | 901 | 320 |
   | collision | 29,790 | 28,098 | 24,580 | 28,098 | 0 |
 
-  In 12-EDO, 81/80 vanishes and the gamut collapses. The one survivor is family #3 (k = 6): {1 10/9 6/5 32/25 128/75 16/9} ↔ {25/24 10/9 6/5 5/4 8/5 16/9}. It tempers to the **Forte pair 6-Z12 [012467] / 6-Z41 [012368]**, interval vector ⟨332232⟩. The 4-note all-interval pair on 8 cannot occur here, because there are no lattice families below k = 6.
+  In 12-EDO, 81/80 vanishes and the gamut collapses. The one survivor is family #3 (k = 6): {1 10/9 6/5 32/25 128/75 16/9} ↔ {25/24 10/9 6/5 5/4 8/5 16/9}. It tempers to the **Forte pair 6-Z12 [012467] / 6-Z41 [012368]**, interval vector ⟨332232⟩. The 4-note all-interval pairs on 8 and 13 can't occur here, because there are no JI families below 6 notes. Those are pure ring phenomena.
+* **The ring-divisibility law** (3 to 6 onsets on rings 6–61) is a property of Z_L, not of JI sets. It needs its own ring sweep; see proposal 5.
 
 ## 7. Musically promising pairs (`tables/shortlist_k6_9.csv`)
 
@@ -146,8 +177,11 @@ The k = 9 direct sums are the stand-outs: simple 5-limit nine-note "scales" that
 
 ## 8. Proposed next steps (ranked)
 
-1. **Generate families directly instead of enumerating subsets.** *Highest value, cheap (seconds to minutes).* The factor law says a family is a pair (U, V) with V non-self-mirror, plus the condition that both U·V and U·V* are 0/1. Build every product of small note sets and signed polynomials, then filter by gamut and by 0/1-ness. Test: it must reproduce this run's 30,065 families exactly. After that it scales to larger k, larger gamuts and higher limits without the 2^35 wall.
-2. **7-limit (Z³) prime-limit-preserving families.** First validate the generator with a small exhaustive run. The 7-limit odd-limit-27 gamut has 45 notes:
+Re-ranked against the canon. `ji_zsets.py` already has the A + B construction and the targeted search, so those are not proposed again.
+
+1. **Catalogue and generate the sporadic families.** *Highest value, cheap.* The new piece is the signed factors: x³−x²+1 and its relatives (`tables/flipped_factor_V.csv`). Generate families as U·V and U·V* over small 0/1 sets U and small signed V, keeping pairs where both products are 0/1. This covers every size, including 6, 7, 8, 10, 11, 13 and 14, which A + B can't build. Test: it must reproduce all 30,065 families. It then answers "why are the smallest pairs all-distinct?" and gives the shape catalogue. Seconds to minutes.
+2. **Shape canonical form as a catalogue key.** Adopt the lattice-symmetry key (section 5) for 5-limit, extend it to prime-axis permutations for 7-limit, and re-count shapes in the earlier 7-limit runs. This tests the canon's "adding 7 gave no new shape" claim. Cheap.
+3. **7-limit exhaustive run to validate the generator.** The 7-limit odd-limit-27 gamut has 45 notes:
 
    | k ≤ | subsets | runtime at the run's ~4.8 M subsets/s (3 cores) |
    |---|---|---|
@@ -155,14 +189,13 @@ The k = 9 direct sums are the stand-outs: simple 5-limit nine-note "scales" that
    | 10 | 4.4·10⁹ | ≈ 15 min |
    | 12 | 4.3·10¹⁰ | ≈ 2.5 h |
 
-   Then use the generator. Open questions: does the 3-note-factor dominance persist, and do 7-limit-only families appear at k < 6? (In Z³ there is more room, but the minimal-size theory says probably not.) **I have not run any of these. Tell me which ones to run.**
-3. **Classify the signed-factor (sporadic) families.** These are the 7 + 8 + 10 small ones, plus x³ − x² + 1 and its relatives. Find the minimal homometric pairs in Z² and decide whether the k = 6 list is a finite catalogue of shapes. Cheap and theory-heavy.
-4. **Map JI families to Forte Z-pairs through tempering.** Which of the 15 hexachord Z-pairs (and the tetrachord/pentachord pairs) have 5-limit realizations, and in which EDOs do the Z-relations survive? 53-EDO keeps almost everything, and 12-EDO kills almost everything. Cheap with the generator.
-5. **Lattice mirrors as "multipliers."** 246 partners are reflections, mostly the major ↔ minor swap. Count how many families are explained by GL₂(Z) maps beyond the 12 lattice symmetries, and look at whether the mirror families are musically the dualist ones. Cheap.
-6. **Ring-reading divisibility law (the handoff's original avenue 3).** This needs its own search, because this data is lattice-based and the two notions do not overlap (§6). Rings with L ≤ 64 and k ≤ 7, sets containing 0, total about 5·10⁸ subsets: minutes in numpy with fingerprint hashing. L ≤ 120 at k = 8 is about 10¹¹ and needs the theory (Rosenblatt; Amiot's DFT) instead of brute force.
-7. **Extend the same gamut to all k ≤ 35.** In Z² the complement of a family is not a family. All 2^35 ≈ 3.4·10¹⁰ subsets would take about 2 h on the same VM, with roughly 400 GB of scratch by the log's own ratio. Low value now that the generator explains the structure.
-8. **DFT phase view.** On the torus, P̂ and Q̂ differ exactly by the phase of V̂/V̂*, which is 2·arg V̂. The factor law already answers this. Remaining work: plots only.
-9. **Listening and consonance scoring** of the shortlist (Tenney height, harmonic entropy), and A/B-ing the k = 9 direct sums. Cheap. Most useful once (1) gives a larger pool.
+   **None of these has been run. Tell me which to run.**
+4. **Targeted search in the Spectrum lens** (canon app item). Use the factor view to explain each partner: report the flipped factor, whether it is an A + B pair, and whether the pair survives the current log ring (EDO table) and the linear ring (so far, never). Implementation work, no new search.
+5. **Ring-divisibility law (Canon 6 open theory question).** This is a separate thread from this archive. It needs a fresh ring sweep. Rings with L ≤ 64 and up to 7 onsets, sets containing 0, total about 5·10⁸ subsets: minutes in numpy with fingerprint hashing. Pair it with theory, since homometry on Z_L is equal DFT magnitudes (Rosenblatt; Amiot). Larger rings, such as L ≤ 120 with 8 onsets (about 10¹¹ subsets), need the theory rather than brute force.
+6. **Map JI families to Forte Z-pairs through tempering.** Which hexachord Z-pairs have 5-limit realizations, and in which EDOs do they survive? Cheap with the generator.
+7. **Lattice mirrors.** 246 partners are reflections, mostly the major ↔ minor swap. Count GL₂(Z) relations beyond the 12 lattice symmetries. Cheap.
+8. **Listening and consonance scoring** of the shortlist, with the see-and-hear view in the lab. Cheap.
+9. **All k ≤ 35 on this gamut.** About 2 h and roughly 400 GB of scratch. Low value now that the factor law explains the structure.
 
 ## Re-running
 
@@ -177,6 +210,7 @@ python3 analyze.py $D               # families.csv, link patterns, ring check (~
 python3 factor.py 3                 # sympy factor classification (~10 min on 3 procs)
 python3 figures.py $D               # tables + PNGs
 python3 edo.py                      # tempering
+python3 subgamut.py 75              # consistency with the odd-limit-75 search
 ```
 
 Dependencies: numpy, pandas, matplotlib, networkx (link-pattern isomorphism) and sympy (factorisation only).
