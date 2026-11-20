@@ -542,6 +542,8 @@ class _Sym:
         self.U = [z] + [e(i) for i in range(nu - 1)]
         self.Vp = [z] + [e(nu - 1 + i) for i in range(vp - 1)]
         self.Vm = [e(nu - 1 + vp - 1 + i) for i in range(vm)]
+        # groups of interchangeable labels (used to skip relabelled duplicates in the search)
+        self.groups = [list(range(0, nu - 1)), list(range(nu - 1, nu - 1 + vp - 1))]
 
     @staticmethod
     def terms(U, Vp, Vm):
@@ -577,8 +579,43 @@ def _nondegenerate(sym, B):
     return distinct(sym.U) and distinct(sym.Vp + sym.Vm)
 
 
+def _rref_key(rows, n):
+    """canonical form of the equation system (reduced row echelon form, primitive integer rows).
+    Systems with the same key have the same solutions, so the search below them is identical."""
+    M = [[Fraction(c) for c in r] for r in rows]
+    r = 0
+    for c in range(n):
+        p = next((i for i in range(r, len(M)) if M[i][c] != 0), None)
+        if p is None: continue
+        M[r], M[p] = M[p], M[r]
+        pv = M[r][c]
+        M[r] = [x / pv for x in M[r]]
+        for i in range(len(M)):
+            if i != r and M[i][c] != 0:
+                f = M[i][c]
+                M[i] = [x - f * y for x, y in zip(M[i], M[r])]
+        r += 1
+    out = []
+    for row in M[:r]:
+        den = 1
+        for x in row: den = den * x.denominator // gcd(den, x.denominator)
+        ints = [int(x * den) for x in row]
+        g = 0
+        for x in ints: g = gcd(g, abs(x))
+        out.append(tuple(x // g for x in ints))
+    return tuple(out)
+
+
 def _dfs(sym, rows, stage, flip, out, stats):
-    """stage 'P': cancel P's minus terms; stage 'Q': then cancel Q's."""
+    """stage 'P': cancel P's minus terms; stage 'Q': then cancel Q's.
+    Pruning: (1) a system already explored (same solutions, reached in another order) is skipped;
+    (2) labels that no equation mentions yet are interchangeable, so only the lowest-numbered one
+    of each group is tried as a new cancellation partner."""
+    key = (stage, _rref_key(rows, sym.n))
+    if key in stats["seen"]:
+        stats["skipped"] += 1
+        return
+    stats["seen"].add(key)
     stats["nodes"] += 1
     B = _realise(rows, sym.n)
     if not B or not _nondegenerate(sym, B):
@@ -593,8 +630,16 @@ def _dfs(sym, rows, stage, flip, out, stats):
             minus_syms = [s for s, c in terms if c < 0 and _place_terms([(s, 1)], B).popitem()[0] == pt0]
             plus_syms = [s for s, c in terms if c > 0]
             ms = minus_syms[0]
+            touched = {j for rw in rows for j, c in enumerate(rw) if c} | {j for j, c in enumerate(ms) if c}
+            first_free = []
+            for g in sym.groups:
+                free = [j for j in g if j not in touched]
+                first_free.append((set(free), free[0] if free else None))
             tried = set()
             for ps in plus_syms:
+                if any(any(ps[j] != 0 and j in free and j != f0 for j in free) for free, f0 in first_free):
+                    stats["sym_skipped"] += 1
+                    continue
                 row = tuple(a - b for a, b in zip(ms, ps))
                 if row in tried or not any(row): continue
                 tried.add(row)
@@ -660,7 +705,7 @@ def types_mode(a):
         sym = _Sym(nu, vp, vm)
         k = nu * vp - nu * vm
         for flip in ("U", "V"):
-            found, stats = [], {"nodes": 0}
+            found, stats = [], {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set()}
             _dfs(sym, [], "P", flip, found, stats)
             new = 0
             for P, Q, fl, r in found:
@@ -671,7 +716,8 @@ def types_mode(a):
                     results[key] = {"k": len(P), "rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm,
                                     "flip": fl, "P": [list(x) for x in key[0]], "Q": [list(x) for x in key[1]]}
                     new += 1
-            print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {stats['nodes']:,} search nodes, "
+            print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {stats['nodes']:,} search nodes "
+                  f"({stats['skipped']:,} repeats and {stats['sym_skipped']:,} relabellings pruned), "
                   f"{len(found)} patterns, {new} new types ({time.time()-t0:.0f}s)", flush=True)
     with open(os.path.join(out_path, "uv_types.jsonl"), "w") as fh:
         for i, t in enumerate(sorted(results.values(), key=lambda t: (t["k"], t["rank"], t["P"])), 1):
