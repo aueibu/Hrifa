@@ -15,7 +15,7 @@ const SETS = [
   [11, 7, 16],
   [7, 5, 11],
 ];
-const WIDTHS = Array.from({ length: 42 - 6 + 1 }, (_, i) => 6 + i); // 6..42 steps
+const WIDTHS = Array.from({ length: 48 - 6 + 1 }, (_, i) => 6 + i); // one window size per catalog, 6..48 steps
 
 type Span = { low: number; size: number; centre: number };
 
