@@ -1,6 +1,12 @@
 # ARC: Ratio Rhythm Lab (`ratio-rhythm`)
 
-Status: **draft, awaiting the human's approval** (2026-11-20). Nothing is built until it is approved; then the `check:ratio-rhythm` setup (rule 16), then C0.
+Status: **approved 2026-11-20** with the decisions below; setup (rule 16), then C0.
+
+## Approval decisions (2026-11-20)
+- Look: the Harmonic Field Lab conventions (`arcs/harmonic-field-lab/UI-CONVENTIONS.md`), as `affine-focus` adopted them. The human: "harmonic lab style".
+- Name and route: "Ratio Rhythm Lab" at `/ratio-rhythm`. The human: "That works".
+- Data source: `zgen.py` is canonical for family counts and types (`ji_zsets.py` stays for the targeted search and EDO mode). A converter under `research/ji-z-partners/` is allowed. The human: "If zgen is the canonical one yes".
+- Added milestone D1 at the human's request: "a milestone maybe to get better centralized data somewhere and to run anything else we need on the VM".
 
 ## Goal
 Bring the Ratio rhythm lab into `shell/` at `/ratio-rhythm`, replacing the claude.ai artifact (snapshot in `reference/ratio-rhythm-lab.html`, 1,747 lines, about 120 functions). The math moves into a pure, tested library `src/lib/ratio-rhythm/` whose tests are the worked numbers of the canon (`_Ideas/Rhythm-As-Pitch/Ratio rhythm timeline and canon.md`, the project's source of truth); the page is then rebuilt on that library in stages, each looked at by the human before polish. Why now: the research (canon, `zgen.py`, results) lives in the repo and moves quickly, but the artifact cannot read repo files, run tests or be edited by Claude Code sessions. The JI search itself stays in Python (`research/ji-z-partners/zgen.py`, run on the VM); the page gets the fast targeted partner search in TypeScript and reads a committed catalog file.
@@ -21,10 +27,11 @@ Bring the Ratio rhythm lab into `shell/` at `/ratio-rhythm`, replacing the claud
 - **Pitch and time:** exact ratios (numerator, denominator as integers or bigint where the LCD can overflow; the rates reading reaches 259,350 slots) and integer slots inside the library. Cents only for display and audio. Nothing is converted to midicents (W-1 applies only at a later Workbench handoff, out of scope here). Monzo helpers may be imported read-only from `src/lib/harmonic-field/` (H-1); C0 decides which.
 - **Persistence:** one per-page key, `hrifa.ratio-rhythm.v1` (inputs, chosen lens, catalog). The artifact's `rrl-catalog` cannot be read from the shell (different origin): the catalog gets a "paste text" import that accepts the artifact's "Copy as text" output.
 - **Audio:** page-local Web Audio (the artifact's synthesized pulses), started only by a click. Never played by an agent without asking (memory rule). No dependency on the workbench audio engine.
-- **Look:** decided at M4 (open question 1); the default proposal is the Harmonic Field Lab conventions that `affine-focus` also adopted (`arcs/harmonic-field-lab/UI-CONVENTIONS.md`, theme roles only, type scale tokens). American spelling everywhere.
+- **Look:** the Harmonic Field Lab conventions that `affine-focus` also adopted (`arcs/harmonic-field-lab/UI-CONVENTIONS.md`, theme roles only, type scale tokens); decided at approval. American spelling everywhere.
+- **JI data:** one canonical home, built in D1: `research/ji-z-partners/data/` with a manifest of every run. The page's catalog file is generated from it by the converter, never edited by hand.
 - **DECISIONS prefix:** `RR` (registered in the first `DECISIONS.md` row if a cross-arc decision is needed).
 
-- Owned paths: `src/lib/ratio-rhythm/`, `src/pages/ratio-rhythm/`, `arcs/ratio-rhythm/`
+- Owned paths: `src/lib/ratio-rhythm/`, `src/pages/ratio-rhythm/`, `arcs/ratio-rhythm/`; outside `shell/`: `research/ji-z-partners/data/` and the converter `research/ji-z-partners/catalog.py` (D1). The rest of `research/ji-z-partners/` (`zgen.py`, `HANDOFF.md`) is edited only when D1 needs it, and `HANDOFF.md` is kept in step.
 - Shared paths it may touch: `package.json` (new-arc setup for `check:ratio-rhythm` only), `src/pages/RatioRhythm.page.tsx`, `src/Router.tsx`, `src/data/applets.ts` (M4 registration), `shell/ARCHITECTURE.md` ("Who consumes what" row, M9). `src/lib/harmonic-field/` is import-only: no edits (owned by the harmonic-field-lab workstream).
 - Check command: `corepack yarn check:ratio-rhythm`, modeled on `check:affine-focus`: `npm run typecheck && oxfmt -c oxfmt.config.mjs --check --no-error-on-unmatched-pattern "src/lib/ratio-rhythm/**/*.{ts,tsx}" "src/pages/ratio-rhythm/**/*.{ts,tsx}" && oxlint -c oxlint.config.mjs --no-error-on-unmatched-pattern src/lib/ratio-rhythm src/pages/ratio-rhythm && stylelint "src/pages/ratio-rhythm/**/*.css" --cache --allow-empty-input && vitest run --passWithNoTests src/lib/ratio-rhythm src/pages/ratio-rhythm`
 - Concurrency: same checkout and branch as the other arcs; the orchestrator commits at the end of every milestone with path-scoped `git add <paths>` and `git commit -- <paths>` only (never `git add -A` or a bare `git commit`; on an `index.lock` error retry, never delete the lock) and removes lock rows only after that commit; after writing a lock row re-read `arcs/LOCKS.md` (on a duplicate the earlier row wins, or the human decides); use the `RR-` prefix for `DECISIONS.md` rows.
@@ -35,7 +42,7 @@ Bring the Ratio rhythm lab into `shell/` at `/ratio-rhythm`, replacing the claud
 
 ## Non-goals
 - No changes to `src/lib/harmonic-field/`, `src/pages/harmonic-field-lab/`, `src/pages/composition-workbench/`, the shared components or the theme.
-- No JI exhaustive search, `zgen.py` port or Python in the browser; no cloud runs from this arc.
+- No JI exhaustive search, `zgen.py` port or Python in the browser. VM runs happen only through D1, launched by the human.
 - No Workbench integration yet (sending a rhythm to the workbench, a shared lattice with the lab): later arc, logged in `BACKLOG.md`.
 - The artifact is not deleted; it is frozen with a pointer at M9.
 
@@ -74,8 +81,19 @@ Library milestones (M1 to M3) are pure TS with Node tests (`*.test.ts`); their s
   - [ ] Linear-ring pair: 1/1 10/9 9/8 89/72 3/2 7/4 ~ 1/1 9/8 89/72 5/4 3/2 29/18 holds on the 1/1 rooting (72) and on none of the other five
 - Human checkpoint after: no
 
+### D1: JI data hub and VM runs (outside `shell/`)
+Research work, not page work: it follows `research/ji-z-partners/HANDOFF.md` ("How the user works"). Heavy runs happen on the human's VM; the orchestrator writes code and gives exact commands, one per block, with runtime and cost first; Python runs locally only when the human asks.
+- Step 1, inventory: list every result that exists (the VM's `/home/austin`: `place_*`, `run_*`, `uv*/`; local `_Ideas/Rhythm-As-Pitch/run_*`; the original cloud `results.tgz`), with sizes and what each holds. **Human checkpoint:** where the large files live (in the repo under a size cap, or a Cloud Storage bucket with the repo keeping the manifest), before step 2.
+- Step 2, the hub: `research/ji-z-partners/data/` with `manifest.json` (one entry per run: gamut primes, odd limit and size, sizes k, mode `exhaustive` / `place` / `directsum`, `zgen.py` commit and md5, date, machine, counts per k, where the full output lives), per-run `summary.csv` and `types.jsonl`, small family files committed; `catalog.py` turns the hub into the page's catalog JSON (under `src/lib/ratio-rhythm/data/`).
+- Step 3, VM runs: a run sheet `research/ji-z-partners/data/RUNS.md` with each pending run, its command, expected result and estimated runtime, and how to pack and bring results back. Pending now: 5-limit odd ≤ 123 `types` + `place` at 10, 11, 13 and 14 notes (expected 292 of 295, 25 of 25, 41 of 49, 495 of 498); 7- and 11-limit odd ≤ 123 at 10 notes and up; the 13-odd-limit diamond at 9 to 12 notes; the EDO run 5 to 31 (`ji_zsets.py`). The human launches each run; results go into the hub as they arrive.
+- Acceptance:
+  - [ ] The manifest lists every run in `HANDOFF.md`'s results table with matching counts, and says where each full output lives
+  - [ ] `catalog.py` turns the 7-limit odd ≤ 75 run into a catalog file with 8 families at 8 notes (types 91: 5, 92: 3)
+  - [ ] `RUNS.md` has a command, expected result and runtime for every pending run; `HANDOFF.md` points to the hub
+- Human checkpoint after: yes (and at the step 1 storage decision)
+
 ### M3: Library: JI level and catalog
-- Scope: `src/lib/ratio-rhythm/` (`lattice.ts`, `jiContent.ts`, `jiPartners.ts` (targeted search, from the artifact's `latPartners` and `research/ji-z-partners/` / `ji_zsets.py`), `catalog.ts` (schema and loader for a committed catalog JSON built from `zgen.py` output), tests), plus a small converter script under `research/ji-z-partners/` only if the human agrees (that folder is outside `shell/`).
+- Scope: `src/lib/ratio-rhythm/` (`lattice.ts`, `jiContent.ts`, `jiPartners.ts` (targeted search, from the artifact's `latPartners` and `ji_zsets.py`), `catalog.ts` (schema and loader for the catalog JSON that D1's `catalog.py` generates), tests).
 - Acceptance:
   - [ ] `check:ratio-rhythm` passes
   - [ ] The stacked-fifths pair {0, 1, 4, 10, 12, 17} and {0, 1, 8, 11, 13, 17} share JI interval content; the targeted search finds each from the other
@@ -90,7 +108,7 @@ Library milestones (M1 to M3) are pure TS with Node tests (`*.test.ts`); their s
   - [ ] `check:ratio-rhythm` passes
   - [ ] `/ratio-rhythm` is registered and listed on Home
   - [ ] Typing the worked example shows ring 72, the five onsets with ratio labels, the fingerprint and odd-harmonic form, the three names, and the Spectrum lens with strengths up to ⌊L/2⌋ and its partners
-- Human checkpoint after: **yes** (the look; decide open questions 1 and 2 here)
+- Human checkpoint after: **yes** (the look)
 
 ### M5: The other prism lenses
 - Scope: `src/pages/ratio-rhythm/` (Ancestry, Evenness, Isochrony, Tuning, Meter, Grouping lenses; Z-relation views: chord rings, pair table, arrow dials; the finder with progress and cancel)
@@ -136,4 +154,4 @@ Library milestones (M1 to M3) are pure TS with Node tests (`*.test.ts`); their s
 - Any decision about look, sound, or musical taste not specified above.
 
 ## Budget
-Max 2 builder attempts per milestone; then stop and report. Estimate: 10 steps (C0 to M9), each one builder run plus one reviewer run, and one `check:ratio-rhythm` gate per milestone (gates on this machine take about 2 to 6 minutes). The library milestones are the cheapest and carry most of the value; the page milestones cost more because each waits for a look and may need a polish round.
+Max 2 builder attempts per milestone; then stop and report. Estimate: 11 steps (C0 to M9 plus D1), each one builder run plus one reviewer run, and one `check:ratio-rhythm` gate per milestone (gates on this machine take about 2 to 6 minutes). The library milestones are the cheapest and carry most of the value; the page milestones cost more because each waits for a look and may need a polish round.
