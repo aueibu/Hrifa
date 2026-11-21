@@ -29,8 +29,9 @@ Interval Placement keeps its idea and gets a sound scoring core and a better wor
 - **Hand-off contracts (human, 2026-11-20):** this arc defines the first versions of the three contracts the lab planned (PitchContext, Preview, Emit), with the lab's names, recorded as a shared DECISIONS row so the lab adopts them later instead of inventing its own. The human asked to be told clearly before that step starts (M6).
 - **Model reset (human, 2026-11-20).** The human rejected the M2c scenarios (order, lean, evenness, voicing terms) as "arbitrary buttons" that left the original idea: "For order - this was originally done exhaustively and then the user was given a catalog. The order is just a calculation of all combinations possible - the goal was the spacing idea." "The exploration came after the initial input." "We started with the essential intervals and then discussed the spacing as an alternative to the fixed octave windows." Consequences:
   - Kept: the essential-interval concept; exhaustive orderings and a catalog; the **spacing** as the replacement for fixed octave windows (Close / Open / Wide / Vast are presets of it); the new scoring and ranking; the fixes to the M2 quirks (notes leaving the window, silent drops and merges, the repulsion no-op, odd bias attached to the position); dragging through the register and the nearby search, but only as **exploration after the catalog**, on a chosen entry; the portability work.
-  - Withdrawn: the M2b "play mode" as the main mode; lean and evenness as knobs; order as a user choice; the SATB-explorer voicing vocabulary (gaps, shape names) as measures and filters ("too heavy handed and prescriptive"); `SCENARIOS.M2c.md` and its listening page (kept as a record only).
-  - Process lesson: check every proposal against "Design decisions already made" before turning it into questions for the human.
+  - Not the default any more (the human, same day: "they didnt have to go, I just was taken aback by how final you posited everything"): the M2b play mode as the main mode, order as a user choice. **Optional extras on top of the catalog, added when they earn their place**, never replacing it: dragging and nudging, the nearby search, lean, evenness, and the SATB-explorer vocabulary (gaps, shape names) as information rather than rules. `SCENARIOS.M2c.md` and its listening page are a record of those extras, not a spec.
+  - **The core (human, 2026-11-20):** "the original idea ... is basically just evenly spacing the essential intervals within a given span", then "letting the user browse the results which were originally sorted by a given score". "No matter what there will always be a way to implement the combination search for a given input set", because "the idea of voicing a chord with the essential intervals placed in a given order 7 5 11 vs 5 7 11 and the scoring of them and the window they can span are not mutually exclusive." The octave windows came from thinking of orchestral sections and their colors.
+  - Process lesson: check every proposal against "Design decisions already made" before turning it into questions, and present options as proposals, not as settled.
 - **Revision checkpoint decisions (human, 2026-11-20):**
   1. ~~The new M2c (play-mode and Explore functions in the lib, scenarios first) before the mock: yes.~~ M2c is redefined by the model reset (catalog first).
   2. Look: the shared kit for panel chrome and controls, the lab's rules for tooltips and help text; the mock lists every place they differ.
@@ -184,7 +185,7 @@ Facts from the C0 redo (2026-11-20) and the rule each one gives:
 
 ### M2c: The catalog with the spacing (no UI)
 - Scope: owned `src/lib/interval-placement/` + tests + README. The original model with the spacing range in place of fixed octave windows and the M2 quirks fixed. (Rewritten 2026-11-20 by the model reset; the earlier play-mode M2c and `SCENARIOS.M2c.md` are withdrawn.)
-- First (with the human, before any builder): how the spans sit inside the spacing, derived from the original engines' intent and the human's own words, shown on the human's examples. No new knobs are proposed unless the human asks for them.
+- Core rule (the human, 2026-11-20): the essential intervals are **evenly spaced within the span**, in every ordering; the catalog is sorted by a score. Extras (lean, dragging, nearby search) are optional layers for later. Before the builder: the human's examples of even spacing, and the window-as-register-region question.
 - Acceptance (to be completed once the spacing behavior is agreed):
   - [ ] Every ordering is placed within the spacing; no note leaves it; an ordering that cannot fit is reported, never dropped silently; collisions and shared notes are reported.
   - [ ] Catalog: deduplicated pitch sets listing their orderings, scored, with the weighted ranking and Pareto layers (`paretoLayers`); worker-ready chunked iteration with the cap.
@@ -240,7 +241,7 @@ Page `ARCHITECTURE.md` (including the portability rules and the M6 contracts) an
 - (answered at approval, 2026-11-13: three scores yes, v1/v2 dropped; workspace as a generic local copy; Bowling et al. download allowed.)
 - (answered at M2b, 2026-11-13: shared notes allowed and shown; spread is a numeric range with optional named presets.)
 - (answered at the revision, 2026-11-20: see "Revision checkpoint decisions"; then the model reset.)
-- **Next, M2c:** how the spans sit inside the spacing (the "spacing idea"), from the original brief and the engines' intent. To be worked out with the human from their own description first, then shown on their examples.
+- **Next, M2c:** the core is even spacing of the essential intervals within the span, for every ordering (the human, 2026-11-20). Open: whether the window can also be a register region (the orchestral-section idea behind the octave windows), not only a width.
 - Later (catalog ranking): the exact harmonicity-leaning default weights.
 
 ## Stop-and-ask conditions

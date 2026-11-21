@@ -1,6 +1,6 @@
 # SCENARIOS M2c: play mode and Explore (WITHDRAWN 2026-11-20)
 
-**Withdrawn by the model reset (ARC.md, "Model reset").** The human rejected these questions: they framed order, lean, evenness and voicing terms as user choices, which replaced the app's own model (input, then the exhaustive catalog, then exploration). Kept as a record only; do not build from it.
+**Not a spec (ARC.md, "Model reset").** These questions framed order, lean, evenness and voicing terms as required choices, which replaced the app's own model (input, evenly spaced catalog of every ordering, then exploration). The human later clarified that these ideas can stay as optional extras on top of the catalog; this file records them, it is not what gets built first.
 
 Nothing here is built. Every number comes from the real scoring library, with candidate placement rules prototyped in `m2c/scen.ts` (run command at the top of that file).
 
