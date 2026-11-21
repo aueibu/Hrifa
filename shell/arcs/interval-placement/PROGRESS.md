@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
-- Current milestone: M2b
-- State: M2b decided by the human; paused before M3 (usage limit)
+- Current milestone: ARC revision (after M2b)
+- State: ARC revised 2026-11-20 for the M2b decisions and the standalone-but-portable direction; awaiting the human's OK and the open questions in ARC.md
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -23,6 +23,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | Merge | 2026-11-20: branch `claude/interval-placement-app-0ejurh` merged into `main` (`2bf1572`), 208 commits behind. Conflicts only in shared docs (`package.json`, `DECISIONS.md`, `ARCHITECTURE.md`), resolved by keeping both sides. Human note: this arc is older than the project-wide decisions made on `main` since 2026-11-13; `main`'s decisions win where they differ. | `check:interval-placement` GREEN, 315 tests | Before the ARC rewrite, re-run C0 against `main` (notably the Stage layout core and shared `components/Stage`, DECISIONS STAGE-1..8, which may replace the planned generic `workspace/` copy). |
 | Prefix | 2026-11-20: human renamed this arc's DECISIONS prefix from `I` (single letters read as silly and will run out), first to `INTPLC`, then, by the human's choice, to `INTERVALPLACEMENT` (the folder name without hyphens, now rule 16). Rows and every reference renamed (INTERVALPLACEMENT-1..3). | — | Comment-only change in `src/lib/consonance/types.ts`. |
 | Check name | 2026-11-20: human asked to follow rule 16's `check:<arc>`: `check:ip` renamed to `check:interval-placement` in `package.json` and every reference (this file's older rows included, so the commands here run as written); rule 16 now says the script uses the full folder name. | `check:interval-placement` run after the rename | Also edited the text of DECISIONS INTERVALPLACEMENT-1 (its `check:` mention), like the prefix rename. |
+| C0 redo | 2026-11-20 read-only scan of `main`: `DockStage` is importable without workbench code (page owns its `ScreensetStore`); shared kit `src/components/InspectorKit/` used only by the dock and the spike (lab has its own `ui.tsx`); no key-owner registry (workbench `inputScope.ts` is page-local; DockStage listens on window for F6/Alt+G/Alt+digit and skips handled events); no shared audio (`AudioEngine`, `useModulePreview` are workbench page code, `HeldVoices` a plan; `sonify.ts` self-contained); workbench stores page-local and replaceable (W-45); W-44 decided, not built; no PitchContext/Preview/Emit type in `src/`. No locks; other arcs: affine-focus at a human checkpoint, ratio-rhythm approved (C0 done), workbench Timeline ARC draft, lab none active. Nothing imports our page folder or the two libs except the libs themselves. | — | Rules in ARC "Portability". |
+| ARC revision | Proposed UI, Parameters, Portability (new), Non-goals, M2c (new), M3–M6 (M6 = hand-off contracts, flagged for the human), Final step, Open questions rewritten. | — | Awaiting the human's OK. |
 
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-13, released 2026-11-13 after `86a859f` (Setup).
@@ -32,7 +34,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
-Resume here. M2b decisions are recorded in ARC.md (M2b "Checkpoint decisions"). Next: rewrite ARC "Proposed UI" and M3–M5 to match them (play mode A+B: draggable structure and spans, whole steps plus a cents fine-drag modifier, register limits, spread as a numeric range with optional named presets, lean, evenness; Explore panel C+D: neighbourhood search with an extend-scope setting that explains cost, shared notes allowed and shown, Pareto-layer vs weighted ranking toggle; old engines removed; force-based spacing to BACKLOG), get the human's OK on the edited ARC, then brief the M3 mock.
+Resume here. The ARC was revised 2026-11-20 (see the "ARC revision" row). Next: get the human's OK on the revision and answers to ARC "Open questions"; write the answers back as checkpoint decisions; then M2c scenarios (`SCENARIOS.M2c.md`) for the human to confirm before the M2c builder. Before M6, tell the human clearly that the hand-off contract step is next (they asked).
 
 ## Handoff notes (for any other session or account)
 - Branch: `claude/interval-placement-app-0ejurh` on `aueibu/Hrifa` (not yet merged to `main`). Check it out, then read `shell/CLAUDE.md`, this folder's `ARC.md` and this file.

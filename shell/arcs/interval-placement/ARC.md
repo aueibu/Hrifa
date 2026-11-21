@@ -1,19 +1,19 @@
 # ARC: Interval Placement: rigorous, register-aware scoring + panel workspace
 
-**Status: APPROVED (2026-11-13).** M1, M2 done; M2b decided by the human (see M2b checkpoint decisions). Next: fold those decisions into Proposed UI and M3–M5, then M3 mock. Paused 2026-11-13 at the human's request (usage limit).
+**Status: APPROVED (2026-11-13); REVISED 2026-11-20, awaiting the human's OK on the revision.** M1, M2 done; M2b decided by the human. Branch merged into `main` 2026-11-20. Revision: Proposed UI and M3–M6 rewritten for the M2b decisions and the "standalone but portable" direction (see "Portability"), after a C0 re-scan against `main` (PROGRESS, "C0 redo"). Next after the OK: M3 mock.
 
 ## Goal
 Interval Placement keeps its idea and gets a sound scoring core and a better workspace:
 
-1. **The idea stays.** You name a few *essential* intervals; each placement adds a relation from the new notes to every note already placed, and the rest of the chord's intervals (the *induced* ones) fall out of that. The window width is the wide-vs-narrow constraint in steps, and the placement engines decide where the spans gravitate (low, high, centred, spread).
+1. **The idea stays.** You name a few *essential* intervals; each placement adds a relation from the new notes to every note already placed, and the rest of the chord's intervals (the *induced* ones) fall out of that. How the spans are placed is redesigned (M2b): you move the structure through the register yourself, spread and lean shape it, and an Explore panel searches the placements nearby.
 2. **Scoring is rebuilt on published, tested models** (see "Scoring model"), computed at the real pitch you hear, so a major 3rd low, the same 3rd an octave up and a major 10th all score differently for acoustic reasons, not hand-tuned factors. The scores describe what the induced relations sound like; they do not impose orchestration rules.
 3. **The engine and the scoring become pure TS libraries** (`src/lib/consonance/`, `src/lib/interval-placement/`) so the Composition Workbench can later use them as a voicing engine without importing a page.
-4. **The page is rebuilt as a panel workspace** in the style of the approved harmonic-field-lab layout (rail, pinned columns, stacks, splitters), starting with a **mock** the human approves before anything live is built.
+4. **The page is rebuilt as a standalone panel workspace that can later move into the Composition Workbench unchanged** (see "Portability"): its panels live on the shared dock Stage the workbench uses, it looks and behaves like the harmonic-field lab and the workbench, and it talks to its host only through three small hand-off contracts. It starts with a **mock** the human approves before anything live is built.
 
 ## Design decisions already made (from the human)
 - The concept is relational (essential intervals, induced relations fall out), **not** orchestration rules. No spacing rules or low-interval-limit tables. (2026-11-13)
 - Window width is a stepped wide/narrow categorisation; it may be improved. (2026-11-13)
-- The engines exist to shift emphasis (fit within the window and span, then gravitate low / high / truly centred). Keep them. (2026-11-13)
+- ~~The engines exist to shift emphasis (fit within the window and span, then gravitate low / high / truly centred). Keep them. (2026-11-13)~~ Superseded at the M2b checkpoint: no old engine is kept; spread and lean replace them.
 - Scoring must account for both the absolute register of each note and the intervals themselves (M3 low vs M3 + octave on the same root vs either at C4 or C6). It should follow academically rigorous metrics without sacrificing the app's creativity. (2026-11-13)
 - The current v1/v2 scoring is largely a vestige of early back-and-forth and may be replaced. (2026-11-13)
 - Process: same as the harmonic-field-lab arc: an ARC the human approves, then a mock reviewed in rounds before the live UI. The harmonic-field-lab's panel and modular approach worked well; follow it. (2026-11-13)
@@ -21,10 +21,12 @@ Interval Placement keeps its idea and gets a sound scoring core and a better wor
 - **Approval (human, 2026-11-13):**
   - The three scores (interference, periodicity, harmonicity) are the right set; more are welcome if they earn their place (see "Descriptive measures" below, added at approval). v1 and v2 scoring are dropped, not kept as a legacy toggle.
   - The **Pareto-front plot** is a headline view for reading results; the **per-interval contribution view** and **must-have / must-not-have interval constraints** are wanted.
-  - Panel workspace: a generic copy in our page folder, written so that promoting it to a shared component later is a smooth port; the human sees the mode being reused by later apps.
+  - ~~Panel workspace: a generic copy in our page folder, written so that promoting it to a shared component later is a smooth port; the human sees the mode being reused by later apps.~~ Superseded 2026-11-20: the shared dock Stage (`src/components/Stage/dock/`) now exists and is the shell's reusable workspace (the human decided the lab moves onto it too, workbench D6), so this arc uses it instead of copying the lab's column layout.
   - The M1 builder may download the Bowling et al. (2018) ratings (check the licence). If the download fails, report the exact citation and DOI needed and the human will source the file.
   - The M3 mock questions (shared notes, window steps, default weights) wait until the human sees the mock and has them clarified.
 - **Placement controls get redesigned, not just carried over (human, 2026-11-13, during M1).** The golden test exists only to verify that the move into the lib is faithful; it is not a commitment to keep the old behaviour, and it may be retired once the redesign replaces the engines. The human wants to reimplement the placement controls "from a much more solidly grounded point", for example a window re-envisioned as something interactive (moving a structure up and down ad hoc and watching the scores change), and to be consulted at a checkpoint with usable ideas that improve on the old ones. Hence M2 ports and verifies only, and the new M2b proposes the redesign for the human to choose from before the mock.
+- **Standalone but portable (human, 2026-11-20).** Like the harmonic-field lab's plan: the page is its own app now and can be ported into the Composition Workbench when the time comes; "the UI and styling and behavior would always remain unified" with the lab and the workbench. On `main`, `main`'s project-wide decisions win where this arc (planned 2026-11-13) differs.
+- **Hand-off contracts (human, 2026-11-20):** this arc defines the first versions of the three contracts the lab planned (PitchContext, Preview, Emit), with the lab's names, recorded as a shared DECISIONS row so the lab adopts them later instead of inventing its own. The human asked to be told clearly before that step starts (M6).
 
 ## Diagnosis of the current page (2026-11-13, measured with a probe of the current code)
 - Scoring runs at a fixed 55 Hz (A1) for the window's bottom, whatever base note is chosen; playback uses the base note (default C4). Changing the base note never changes the ranking.
@@ -52,24 +54,38 @@ All scores take **absolute frequencies** (from the base pitch), so register and 
 Key references (as verified by the M1 builder against the reference packages' bibliographies): Plomp & Levelt 1965 (*JASA* 38(4)); Hutchinson & Knopoff 1978 (*Interface*, now *J. New Music Research* 7(1)); Sethares 1993 (*JASA* 94) and 2005; Mashinter 2006 (*Empirical Musicology Review*); Stolzenburg 2015 (*J. Math. & Music* 9); Milne 2013 (thesis) and Milne & Holland 2016 (*J. Math. & Music* 10); Harrison & Pearce 2018 (ISMIR) and 2020 (*Psychological Review* 127(2)); Bowling, Purves & Gill 2018 (*PNAS* 115(1)); Johnson-Laird et al. 2012 (*Music Perception* 30(1)); Schwartz et al. 2003 (*J. Neurosci.* 23(18)). McDermott, Lehr & Oxenham 2010 (*Current Biology*) is background for the harmonicity-leaning default only; it is not used in code. The M1 builder checks every citation used in code comments and the reader text.
 
 ## Proposed UI (confirmed or changed at the M3 mock checkpoint)
-One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggio / chord / interval pairs, timbre), left rail picking panels with live one-line summaries, centre always visible, right side pinned columns with stacks and splitters, a thin keyboard/fretboard dock. DAW density, tooltips instead of paragraphs.
+One-screen workspace on the **shared dock Stage** (`src/components/Stage/dock/`, as the workbench uses it): named dockers in a split tree, panels as tabs that can be moved, sent and docked, screenset tabs and the Panels menu. A thin top bar for transport (arpeggio / chord / interval pairs, timbre). DAW density, tooltips instead of paragraphs. Every item below is a **panel** (a Stage module with `id`, `title`, `home`, `sizes`, `render(size)`); none knows which page hosts it. The default screenset is proposed in the mock.
 
-- **Centre, always visible: the placement unit.** Interval chips (each with its value and essential marking), EDO, base pitch as an absolute note, and the placement controls **as chosen at the M2b checkpoint** (today's window width, engines, odd bias and the draft gravity idea are inputs to that redesign, not fixed). Below it, the spans plot for the selected voicing.
-- **Results panel:** ranked list (total, worst relation, note count, collisions flagged) with the weight slider and the interval constraints (must have / must not have chips), plus the **Pareto map** (any two axes, default interference × harmonicity; front highlighted; dominated points dimmed; hover cross-highlights the list; click selects).
-- **Relations panel:** the induced-interval triangle (every pair: interval, octave span, its roughness at its register, essential vs induced marked) and per-note contribution bars.
-- **Register panel:** the selected configuration slid through the register (scores vs bottom pitch), so the M3-low-vs-high idea is visible as a curve.
-- **Visualizer panel(s)** with a view selector: Spectrum (all partials with critical-band overlaps, showing where roughness comes from), Interval counts / interval-class grid (today's), Periodicity (the "≈ a:b:c" ratio chord).
-- **Reader / glossary:** replaces `ScoringInfoModal`; every score's definition, an example and its citation, from one `texts.ts`.
+- **Placement panel (home: centre).** Interval chips (value, essential marking), tuning (EDO) and base pitch as an absolute note, then the **play mode** (M2b A + B):
+  - A **register strip**: the voicing on a pitch axis with the **register limits** drawn as bounds. Drag the whole structure up or down, or **one span alone**, one tuning step per notch; a modifier key gives fine drag in cents.
+  - **Spread**: a numeric range (octaves or cents) with optional named presets over it; **lean** (low ↔ centred ↔ high); **evenness** (equal gaps ↔ weighted by span size).
+  - Shared notes are allowed and **marked** wherever a duplicate (shared note) was created.
+  - Below: the spans plot for the current voicing, with its scores live (about 2 ms per move).
+- **Register panel.** The current voicing slid through the register (scores against bottom note), with "you are here".
+- **Explore panel (M2b C + D).** Searches placements of the same essential intervals **in a neighbourhood around the current voicing** by default; a setting extends the scope up to the whole register limits and states the candidate count and estimated time before running. Must-have / must-not-have interval chips, note-count range, shared notes allowed (and shown). The **Pareto map** (any two axes, layers coloured, front highlighted, hover cross-highlights the list, click makes it the current voicing) and a list whose ranking **toggles between Pareto layer and the weighted mix** (weight slider). Runs in a Web Worker; results stream in.
+- **Relations panel.** The induced-interval triangle (every pair: interval, octave span, its roughness at its register, essential vs induced marked) and per-note contribution bars.
+- **Visualizer panel** with a view selector: Spectrum (partials with critical-band overlaps), Interval counts / interval-class grid (today's), Periodicity (the "≈ a:b:c" ratio chord), Keyboard / Fretboard (today's, 12-EDO only).
+- **Reader / glossary.** Replaces `ScoringInfoModal`; every score's definition, an example and its citation, from one `texts.ts` in the lab's help-text format.
+- Old controls retired: window width as spread, the four engines, odd bias (M2b decision 6; force-based spacing goes to BACKLOG).
 
 ## Parameters
 - **Owned paths:** `src/lib/consonance/` (new: pure TS scoring, no React/DOM), `src/lib/interval-placement/` (new: pure TS placement engine, no React/DOM), `src/pages/interval-placement/` (today unowned: components, state, mock, tests, `texts.ts`, `settings.ts`, the page's `ARCHITECTURE.md`), `arcs/interval-placement/`.
-- **Shared paths it may touch** (row in `arcs/LOCKS.md` while edited, written by the orchestrator): `package.json` (Setup only: add `check:interval-placement`); `src/pages/IntervalPlacement.page.tsx` (standing shared entry, M4); `src/Router.tsx` (M3 mock route, retired in M5); `src/theme/diagram.ts` (only if `resolveIntervalPlacementStyle` needs new roles; stop and ask first); `ARCHITECTURE.md` (M1 and Final: the two libs and the page in the map and "Who consumes what"). `DECISIONS.md`/`BACKLOG.md` need no lock for our own rows.
+- **Shared paths it may touch** (row in `arcs/LOCKS.md` while edited, written by the orchestrator): `package.json` (Setup only: add `check:interval-placement`); `src/pages/IntervalPlacement.page.tsx` (standing shared entry, M4); `src/Router.tsx` (M3 mock route, retired in M5); `DECISIONS.md` row for the shared hand-off contracts (M6, no lock needed for our own row); `src/theme/diagram.ts` (only if `resolveIntervalPlacementStyle` needs new roles; stop and ask first); `ARCHITECTURE.md` (M1 and Final: the two libs and the page in the map and "Who consumes what"). `DECISIONS.md`/`BACKLOG.md` need no lock for our own rows.
 - **Taking over the page folder:** `src/pages/interval-placement/` has no active arc today, so it is a shared path until this ARC is approved; approval of this ARC is the human's OK, and Setup adds the `DECISIONS.md` row (INTERVALPLACEMENT-1) that makes it owned by this arc.
 - **Check command:** `corepack yarn check:interval-placement` = `npm run typecheck`, then `oxfmt --check` and `oxlint` scoped to `src/lib/consonance`, `src/lib/interval-placement` and `src/pages/interval-placement` (both with `--no-error-on-unmatched-pattern`), stylelint scoped (`--allow-empty-input`), `vitest run --passWithNoTests` over the same three folders. Modelled on `check:hfl`. If red only because of other arcs' files, stop and report (shell rule 14).
 - **DECISIONS prefix:** `INTERVALPLACEMENT`, registered in our first row. Rows due: INTERVALPLACEMENT-1 arc ownership of `src/pages/interval-placement/` (Setup); INTERVALPLACEMENT-2 the libs' pitch representation (M1); INTERVALPLACEMENT-3 the scoring model and ranking (M1); any theme-role change.
 - **Pitch representation:** notes are cents above an absolute reference plus the reference in Hz (a voicing = `{refHz, cents[]}`); EDO steps are an input convenience (`steps × 1200 / edo`). Midicents (W-1) and Hz are derived only at the edge (audio, a later workbench handoff). This makes the libs EDO-agnostic and ready for the BACKLOG non-EDO pitch item.
-- **Panel workspace code (decided at approval):** the harmonic-field-lab panel system (`Panels.tsx`, `Rail.tsx`, `PinMenu.tsx`, `state/layout.ts`, `panels.module.css`, about 2.2k lines) is owned by that arc and hard-wired to its panel ids, so it can't be imported as is. We build a generic version inside our page folder (`workspace/`), following its behaviour and look: panel ids, titles, summaries and renderers are passed in (no page-specific imports inside `workspace/`), its layout state and persistence are self-contained, and it has its own tests, so promoting it to `src/components/` later is a move, not a rewrite. A `[shared]` BACKLOG item records the promotion.
-- **Persistence:** shell pattern (`loadSettings`/`saveSettings`/`sanitizeSettings`). New keys `hrifa.interval-placement.settings.v2` (migrated from `…v1`: intervals, EDO, base, window, engine params, odd bias, tuning) and `…layout.v1`. Bad data falls back to defaults.
+- **Workspace:** the shared dock Stage, consumed as is (see "Portability"). No copy of the lab's column layout. If the Stage needs a change to host this page, stop and ask (it is shared code under `src/components/`).
+- **Persistence:** shell pattern (`loadSettings`/`saveSettings`/`sanitizeSettings`). Keys: `hrifa.interval-placement.settings.v2` (migrated from `…v1`: intervals, EDO, base, register limits, spread, lean, evenness, timbre; old window and engine fields map to the nearest new values or are dropped) and `hrifa.interval-placement.ui.screensets.v1` (the page's own `ScreensetStore`, as the workbench's W-42 key). Bad data falls back to defaults.
+
+## Portability (standalone now, workbench later; human 2026-11-20)
+Facts from the C0 redo (2026-11-20) and the rule each one gives:
+- **Layout.** `DockStage` has no imports from the workbench page; a page builds a registry (`createStageRegistry`), owns its `ScreensetStore` and passes `screenset`/`update`. Only the workbench and the `/stage` spike use it today. **Rule:** each panel is a Stage module that renders from its size class alone and reads page state through the store below, never through props from the page, so registering the same modules in the workbench later is the port.
+- **Look.** The shell's shared panel kit is `src/components/InspectorKit/` (`Panel`, `Section`, `Row`, `Num`, `Toggle`, fields, `Tip`; one `compact` density), used today only by the dock and the spike; the lab has its own `ui.tsx` and is meant to adopt the kit later (STAGE-19). **Rule:** panel chrome and controls come from the kit; text, tooltips and the reader follow the lab's help-text rules (the lab page's `ARCHITECTURE.md` "Help text", `arcs/harmonic-field-lab/UI-CONVENTIONS.md`): short labels, glossary `texts.ts`, tooltip order (term, live line, help, Keys, Example), nothing moves (fixed numeric slots, reserved space), theme roles only (`--mark-blue` hover, `--mark-green` sounding, `--mark-yellow` pinned). Where the kit and the lab disagree, the mock shows it and the human decides (open question).
+- **Keys.** No shared key-owner registry exists (BACKLOG plan item only); the workbench's `inputScope.ts` is page-local; `DockStage` itself listens on the window for F6/Alt+G/Alt+digit and skips events a panel already handled. Known clashes with the workbench: `v`, digits, `[` `]`, `-` `=`, Alt+digit (lab steering notes). **Rule:** no window or document key listeners; keys are handled on the panel's own element while it has focus, and call `preventDefault` when used; key names live in one table (the lab's pattern) so a later registry can take them over; avoid the clashing keys and Alt+digit.
+- **State.** The workbench's stores (`runtime/stateStore.ts`, `outputStore.ts`) are page-local and explicitly replaceable (W-45). **Rule:** one small external store in our page folder (`useSyncExternalStore`, selectors), pure evaluators for placement and scoring (already the two libs), panels that may be hidden without losing state. No imports from `src/pages/composition-workbench/`.
+- **Audio.** No shared audio interface exists (`AudioEngine`, `useModulePreview` are workbench page code; `HeldVoices` is a plan). `sonify.ts` is self-contained Web Audio. **Rule:** panels never call `sonify.ts` directly; they call a small Preview interface (play a voicing, stop) that the standalone page implements with `sonify.ts`, so a host can supply its own sound later. No new shared audio code (non-goal).
+- **Hand-off contracts (M6).** PitchContext in (tuning and reference pitch from the host), Preview (above), Emit out (a voicing with exact pitches: fractional midicents plus the EDO step or ratio, W-44's `exact`, decided but not built). Nothing of the kind exists in `src/` yet. M4 uses page-local versions of PitchContext and Preview; M6 settles all three as shared contracts with the human.
 - **Performance:** placement runs in a Web Worker with a cap on orderings (default 5,040 = 7 intervals; above it, results stream in and the UI says how many are left). The main thread never blocks for more than one frame.
 - **Theme:** shell roles and `--mark-<hue>` only, per `src/theme/THEMING.md`. No hex.
 - **Concurrency:** same checkout and branch as the other arcs. Path-scoped commits only (`git add <paths>`, `git commit -- <paths>`; never `git add -A` or a bare `git commit`; on `index.lock` retry, never delete it). Lock rows removed only after the commit. Builders run only the tests of the files they touched; the orchestrator runs `check:interval-placement` once per milestone.
@@ -85,6 +101,8 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
 - No Composition Workbench module in this arc (the workbench folder belongs to the workbench arc). This arc only makes the libs ready and writes the integration plan.
 - No edits to `src/lib/harmonic-field/` or the harmonic-field-lab page (read and compare only). No new shared audio code.
 - No keyboard/fretboard support for non-12 EDOs (BACKLOG).
+- No changes to the dock Stage, `InspectorKit` or other shared components: consume only; a needed change is a stop-and-ask.
+- No port into the workbench in this arc: the page is made portable, and M6 defines the contracts; the port itself is a later arc.
 
 ## Milestones
 
@@ -156,41 +174,68 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
 - Next: update "Proposed UI" and M3–M5 to these decisions, then build the M3 mock.
 - Human checkpoint after: **yes** (the human chooses the placement design; the M3 mock and M4/M5 follow that choice, and the ARC is updated before M3)
 
-### M3: Workspace mock
-- Scope: a mock route `/interval-placement/mock` (locked `src/Router.tsx`), built from shell components and our generic `workspace/`, static real numbers from M1/M2 for the default `11 7 16` in 12-EDO on C2 (plus one 31-EDO example), no live maths.
+### M2c: Placement library for the play mode and Explore (no UI)
+- Scope: owned `src/lib/interval-placement/` + tests + README. The M2b decisions as pure functions, before any UI uses them.
+- Scenarios first (shell rule 7): `arcs/interval-placement/SCENARIOS.M2c.md`, the human's concrete cases for spread, lean, evenness, dragging one span, shared notes and the neighbourhood search, on `11 7 16` in 12-EDO from C2, each choice shown where the options give different results. Confirmed by the human before the builder starts.
 - Acceptance:
-  - [ ] Every panel in "Proposed UI" present with real static data: placement unit with plot, Results (list + Pareto map with axis pickers + constraint chips), Relations, Register, Visualizer (Spectrum, Interval counts, Periodicity), Reader, transport bar, dock; rail with summaries, pin left/right, stacks up to three with splitters, Stack-with menu.
-  - [ ] Screenshots at 1500 px and 1100 px, light and dark (dev server + headless Chromium, throwaway profile), with a "what changed and why" list mapped to the Diagnosis.
+  - [ ] `shapeVoicing(intervals, {registerLimits, spread, lean, evenness})` places the essential spans deterministically from the scenarios; never leaves the register limits; reports shared notes.
+  - [ ] `moveVoicing` (whole structure or one span by steps or cents) clamps to the limits and reports collisions and shared notes.
+  - [ ] `exploreNeighbourhood(voicing, scope, constraints)` as a chunked iterator (worker-ready) with a cost estimate (`candidateCount`, `estimatedMs`) before running; Pareto layers (`paretoLayers`) beside the weighted mix.
+  - [ ] The four old engines and the golden test retired (PROGRESS note), with the old page still running on its own `engine.ts` until M5.
+  - [ ] `check:interval-placement` green; path-scoped commit.
+- Human checkpoint after: no (the scenarios table is the checkpoint, before the build)
+
+### M3: Workspace mock
+- Scope: a mock route `/interval-placement/mock` (locked `src/Router.tsx`) on the shared dock Stage with the shared kit, static real numbers from M1/M2/M2c for the default `11 7 16` in 12-EDO on C2 (plus one 31-EDO example), no live maths. Panels written as Stage modules from the start (size-class rendering), so M4 swaps the data, not the layout.
+- Acceptance:
+  - [ ] Every panel in "Proposed UI" present with real static data, in a proposed default screenset; dockers, tabs, send-to and the Panels menu work as in the workbench.
+  - [ ] Look: kit chrome, the lab's tooltip and help-text format on at least the Placement and Explore panels; any place where the kit and the lab differ is listed for the human.
+  - [ ] Screenshots at 1500 px and 1100 px, light and dark (dev server + headless Chromium, throwaway profile), with a "what changed and why" list mapped to the Diagnosis and the M2b decisions.
+  - [ ] Thin slice, human first (shell rule 7, look changes): no reviewer, gate or commit of look work until the human has looked.
 - Checkpoint decisions (human, …):
 - Human checkpoint after: **yes** (rounds of review until approved, as harmonic-field-lab M4)
 
 ### M4: Live workspace
 - Scope: owned page folder; locked `src/pages/IntervalPlacement.page.tsx` (renders the live workspace).
 - Acceptance:
-  - [ ] `/interval-placement` shows the approved layout driven by one page state; the placement unit is live through `src/lib/interval-placement/` in a Web Worker; scores through `src/lib/consonance/`.
-  - [ ] Playback at the real base pitch (scored register = heard register), selection by identity (as today), hover cross-highlight across every view.
-  - [ ] Persistence `…settings.v2` (migrated from `…v1`, tested with real v1 data and bad data) and `…layout.v1`.
+  - [ ] `/interval-placement` shows the approved layout from one external page store; the play mode is live through `src/lib/interval-placement/`, Explore in a Web Worker, scores through `src/lib/consonance/`.
+  - [ ] Portability rules hold (see "Portability"): panels read the store, not page props; no window or document key listeners; no imports from `src/pages/composition-workbench/`; playback only through the page-local Preview interface; tuning and base pitch come from a page-local PitchContext.
+  - [ ] Playback at the real base pitch (scored register = heard register), selection by identity, hover cross-highlight across every view.
+  - [ ] Persistence `…settings.v2` (migrated from `…v1`, tested with real v1 data and bad data) and `…ui.screensets.v1`.
   - [ ] Panels may keep mock content where noted in the report.
-  - [ ] Tests: state reducers, persistence, worker protocol (with a fake worker), page tests for input and selection; `check:interval-placement` green.
+  - [ ] Tests: store and reducers, persistence, worker protocol (with a fake worker), a test that fails if a panel module registers a window key listener, page tests for input and selection; `check:interval-placement` green.
 - Human checkpoint after: **yes** (ears and feel)
 
 ### M5: Live panels + retire the old code
 - Scope: owned page folder; locked `src/Router.tsx` (retire the mock route).
 - Acceptance:
-  - [ ] Results list + Map, Relations, Register, Visualizer views and Reader all live.
-  - [ ] Old modules removed: `intervalMath.ts` scoring, `psychoacousticsV2.ts`, `ScoringInfoModal.tsx`, the old engine copies (now in the lib); nothing else imports them.
+  - [ ] Explore (map + list), Register, Relations, Visualizer views and Reader all live.
+  - [ ] Old modules removed: `engine.ts`, `intervalMath.ts` scoring, `psychoacousticsV2.ts`, `ScoringInfoModal.tsx`, `PlacementForm.tsx`'s engine controls; nothing else imports them.
   - [ ] Feature-parity checklist against today's page (every control accounted for, or dropped with the human's OK).
   - [ ] Mock route retired; `check:interval-placement` green.
 - Human checkpoint after: **yes**
 
+### M6: Hand-off contracts (PitchContext, Preview, Emit) — **tell the human before starting**
+- The human asked to be warned before this step. It starts only after the human says go, and is kept small: no workbench code changes, no port.
+- Scope: owned page folder (`contracts/` or similar, pure types plus the standalone implementations) and the lab's planned names; a shared `DECISIONS.md` row; `ARCHITECTURE.md` (locked) "Who consumes what".
+- Scenarios first: `SCENARIOS.M6.md`, a handful of concrete cases in plain words, each showing what goes in and what comes out (e.g. "the workbench project is in 19-EDO at A4 = 440: what does Placement receive?", "you press Emit on a 31-EDO voicing: what notes, with what exact pitch, does the host get?", "the host plays a preview and you move the structure mid-sound"). Confirmed by the human before any type is written.
+- Acceptance:
+  - [ ] PitchContext (in), Preview (play / stop by voicing), Emit (a voicing out with fractional midicents and the exact identity: EDO step or ratio, per W-44) as small TS types with the standalone page's implementations; the page runs only through them.
+  - [ ] A fake host in a test drives all three (a different tuning in, a recorded preview, a captured emit).
+  - [ ] DECISIONS row (shared contract) naming who should adopt it (the lab seams arc, the workbench port); BACKLOG `[harmonic-field-lab]` and `[workbench]` items.
+  - [ ] `check:interval-placement` green.
+- Human checkpoint after: **yes**
+
 ## Final step
-Page `ARCHITECTURE.md` and both lib `README.md`s complete. A **Workbench integration plan** in `src/lib/interval-placement/README.md`: the proposed module (inputs: a `pitch`/`interval` list or a `chordInput` Chord, optional previous voicing; output: `list | pitch | midicent | pitchMaterial` with one bracketed group per voicing and the scores in item metadata), and how it could offer a "best voicing" option beside `chordInput/voicing.ts`. Reviewer over the full arc diff. Archive as `ARC.scoring-workspace.md` / `PROGRESS.scoring-workspace.md`. BACKLOG items: `[workbench]` the module; `[shared]` promote the panel workspace; (the `[shared]` one-roughness item is already in BACKLOG since 2026-11-20, broadened to "One shared library of perception models and measures"); `[interval-placement]` keyboard/fretboard for other EDOs, ratio/cents interval input, voice-leading cost against a previous voicing.
+Page `ARCHITECTURE.md` (including the portability rules and the M6 contracts) and both lib `README.md`s complete. A **Workbench port plan** in the page's `ARCHITECTURE.md`: which panels register as workbench Stage panels, what the workbench supplies for PitchContext, Preview and Emit, what changes in the store, and how a "best voicing" option could sit beside `chordInput/voicing.ts` (the workbench's packets and routing are replaceable, W-45, so the plan targets the contracts, not today's packets). Reviewer over the full arc diff. Archive as `ARC.scoring-workspace.md` / `PROGRESS.scoring-workspace.md`. BACKLOG items: `[workbench]` the port; `[harmonic-field-lab]` adopt the M6 contracts in the seams arc; `[interval-placement]` force-based spacing (M2b decision 6), keyboard/fretboard for other EDOs, ratio/cents interval input, voice-leading cost against a previous voicing. (The `[shared]` perception-models item is already in BACKLOG since 2026-11-20.)
 
 ## Open questions (answer at approval or at the milestone where they matter)
 - (answered at approval, 2026-11-13: three scores yes, v1/v2 dropped; workspace as a generic local copy; Bowling et al. download allowed.)
-- M3 (human wants to see the mock first): should essential intervals be allowed to **share a note** as an option (e.g. 4 and 3 stacking into one triad), or stay always separate spans as now?
-- M3: window width steps: half-octaves with names (close, open, wide, …) or keep whole octaves?
-- M3: default ranking weights: equal standardised weights, or harmonicity-leaning (McDermott et al. 2010 found harmonicity the stronger predictor of preference)?
+- (answered at M2b, 2026-11-13: shared notes allowed and shown; spread is a numeric range with optional named presets.)
+- Revision approval (2026-11-20): OK with the new M2c (library functions for the play mode and Explore, scenarios first) before the mock?
+- M3: look source where the shared kit and the lab differ: kit chrome plus the lab's text rules (proposed), or the lab's look throughout until the lab adopts the kit?
+- M3: names for the spread presets: Close (≤ 1 oct) / Open (1–2) / Wide (2–3) / Vast (≥ 3), or Clustered / Close / Open / Spread?
+- M3: default ranking weights for the weighted mix: equal standardised weights, or harmonicity-leaning (McDermott et al. 2010 found harmonicity the stronger predictor of preference)?
 
 ## Stop-and-ask conditions
 - A criterion can't be met after 2 builder attempts.
