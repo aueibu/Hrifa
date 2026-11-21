@@ -107,13 +107,14 @@
     <div class="row" style="justify-content:space-between"><h2 id="countTitle">Collections</h2><span class="status" id="countNote"></span></div>
     <div class="row"><span class="lbl">By span</span><div class="chips" id="spans"></div></div>
     <div class="scroll"><table>
-      <thead><tr><th>#</th><th>Steps</th><th>Notes</th><th>Span</th><th>Gaps</th><th>Evenness</th><th>Roughness</th><th>Harmonicity</th><th>Build</th></tr></thead>
+      <thead><tr><th>#</th><th>Steps</th><th>Notes</th><th>Span</th><th>Gaps</th><th>Hung set</th><th>Evenness</th><th>Roughness</th><th>Harmonicity</th><th>Build</th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
     <div class="row"><button id="more" type="button" hidden>Show 200 more</button><span class="muted small">Evenness is the spread of the gaps (0 = all gaps equal). Roughness: lower is smoother. Harmonicity: higher is more fused.</span></div>
   </div>
 
   <div class="panel" id="detail"></div>
+  <div class="panel" id="web"></div>
 </div>
 <button class="stop-all" id="stopAll" type="button">Stop sound</button>
 
@@ -132,7 +133,11 @@ const ivName = (n) => {
 const REQ_COLORS = ['--s-a', '--s-b', '--s-c', '--s-d', '--s-e'];
 const SORTS = [['span', 'Span'], ['evenness', 'Evenness'], ['rough', 'Roughness'], ['harm', 'Harmonicity']];
 const DIRS = [['any', 'Either'], ['above', 'Above'], ['below', 'Below']];
-const S = { req: [], sec: [], k: 5, spanMax: 48, root: 36, chains: true, dir: 'any', attach: [], sort: 'span', spanSel: null, list: [], shown: 200, sel: null, rot: 0 };
+const S = { req: [], sec: [], k: 5, spanMax: 48, root: 36, chains: true, dir: 'any', attach: [], sort: 'span', spanSel: null, list: [], shown: 200, sel: null, rot: 0,
+  pv: { min: 2, side: 'hung', mirror: true, pick: null } };
+// the hung notes of a collection (the build shown), and that set moved to start on 0
+const shadow = (c) => c.units.flatMap((u) => u.hung.map((h) => h.note)).sort((a, b) => a - b);
+const shape = (xs) => xs.map((x) => x - xs[0]);
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -217,15 +222,15 @@ function draw() {
   $('rows').innerHTML = xs.slice(0, S.shown).map((c, i) => {
     const key = c.notes.join(' ');
     return `<tr data-key="${key}" tabindex="0" class="${key === S.sel ? 'sel' : ''}"><td>${i + 1}</td><td class="mono">${key}</td><td>${c.notes.map((s) => noteName(S.root + s)).join(' ')}</td>` +
-      `<td>${c.span}</td><td class="mono">${c.gaps.join(' ')}</td><td>${c.evenness.toFixed(2)}</td><td>${c.rough.toFixed(3)}</td><td>${c.harm.toFixed(3)}</td>` +
+      `<td>${c.span}</td><td class="mono">${c.gaps.join(' ')}</td><td class="mono">${shape(shadow(c)).join(' ')}</td><td>${c.evenness.toFixed(2)}</td><td>${c.rough.toFixed(3)}</td><td>${c.harm.toFixed(3)}</td>` +
       `<td>${c.chained ? '<span class="tag">chain</span>' : ''}</td></tr>`;
-  }).join('') || `<tr><td colspan="9" class="muted">No collection fits. Try more hanging intervals, a larger span, or allow chains.</td></tr>`;
+  }).join('') || `<tr><td colspan="10" class="muted">No collection fits. Try more hanging intervals, a larger span, or allow chains.</td></tr>`;
   $('more').hidden = xs.length <= S.shown;
   drawDetail();
 }
 $('spans').addEventListener('click', (e) => { const b = e.target.closest('[data-span]'); if (!b) return; S.spanSel = b.dataset.span === '' ? null : Number(b.dataset.span); S.shown = 200; draw(); });
 $('more').addEventListener('click', () => { S.shown += 200; draw(); });
-const pickRow = (tr) => { if (!tr) return; S.sel = tr.dataset.key; S.rot = 0; document.querySelectorAll('#rows tr.sel').forEach((r) => r.classList.remove('sel')); tr.classList.add('sel'); drawDetail(); };
+const pickRow = (tr) => { if (!tr) return; S.sel = tr.dataset.key; S.rot = 0; S.pv.pick = null;document.querySelectorAll('#rows tr.sel').forEach((r) => r.classList.remove('sel')); tr.classList.add('sel'); drawDetail(); };
 $('rows').addEventListener('click', (e) => pickRow(e.target.closest('tr[data-key]')));
 $('rows').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickRow(e.target.closest('tr[data-key]')); } });
 
@@ -302,7 +307,7 @@ function scala(c) {
 function drawDetail() {
   const host = $('detail');
   const c = S.sel && S.list.find((x) => x.notes.join(' ') === S.sel);
-  if (!c) { host.innerHTML = '<h2>Collection</h2><p class="muted">Pick a row to see its structure and hear it.</p>'; return; }
+  if (!c) { host.innerHTML = '<h2>Collection</h2><p class="muted">Pick a row to see its structure and hear it.</p>'; drawWeb(null); return; }
   const units = unitSequence(c);
   const midis = c.notes.map((s) => S.root + s);
   const seqMidis = units.flatMap((u) => u.seq).map((s) => S.root + s);
@@ -338,7 +343,125 @@ function drawDetail() {
     try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (e) { done(false); }
     if (what === 'scl') $('sclText').select();
   }));
+  drawWeb(c);
 }
+
+// ---------- hung tones alone, and pivots between collections ----------
+// A pivot partner B is placed (moved by t steps, optionally mirrored) so that some of this collection's hung tones land
+// on B's hung tones (or on any of B's notes). Exact steps, not pitch classes: these are non-octave collections.
+function pivots(c) {
+  const SA = shadow(c), key = c.notes.join(' '), out = [], { min, side, mirror } = S.pv;
+  if (SA.length < min) return out;
+  for (const b of S.list) {
+    const hb = shadow(b), forms = [{ notes: b.notes, hung: hb, m: false }];
+    if (mirror) {
+      const inv = b.notes.map((n) => b.span - n).sort((x, y) => x - y);
+      if (inv.join(' ') !== b.notes.join(' ')) forms.push({ notes: inv, hung: hb.map((n) => b.span - n).sort((x, y) => x - y), m: true });
+    }
+    for (const f of forms) {
+      const tgt = side === 'hung' ? f.hung : f.notes, cnt = new Map();
+      for (const a of SA) for (const x of tgt) cnt.set(a - x, (cnt.get(a - x) || 0) + 1);
+      let best = null;
+      for (const [t, n] of cnt) {
+        if (n < min || (!f.m && t === 0 && b.notes.join(' ') === key)) continue;
+        const moved = f.notes.map((x) => x + t), union = [...new Set([...c.notes, ...moved])].sort((x, y) => x - y);
+        const cand = { b, m: f.m, t, notes: moved, hung: f.hung.map((x) => x + t), shared: SA.filter((a) => tgt.includes(a - t)), union };
+        if (!best || n > best.shared.length || (n === best.shared.length && union.length < best.union.length) ||
+          (n === best.shared.length && union.length === best.union.length && union.at(-1) - union[0] < best.union.at(-1) - best.union[0])) best = cand;
+      }
+      if (best) out.push(best);
+    }
+  }
+  return out.sort((x, y) => y.shared.length - x.shared.length || x.union.length - y.union.length || (x.union.at(-1) - x.union[0]) - (y.union.at(-1) - y.union[0]));
+}
+const pvKey = (p) => `${p.b.notes.join(' ')}|${p.m ? 1 : 0}|${p.t}`;
+const shift = (t) => (t === 0 ? 'in place' : `${t > 0 ? 'up' : 'down'} ${Math.abs(t)} (${ivName(Math.abs(t))})`);
+function pivotSvg(c, p) {
+  const lo = Math.min(c.notes[0], p.notes[0]), hi = Math.max(c.notes.at(-1), p.notes.at(-1));
+  const H = 300, top = 16, bot = 16, span = Math.max(hi - lo, 12), y = (s) => top + (H - top - bot) * (1 - (s - lo) / span);
+  const W = 300, xa = 110, xb = 220;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="This collection beside the pivot partner, shared hung tones joined">`;
+  for (let o = Math.ceil(lo / 12) * 12; o <= hi; o += 12) s += `<line x1="0" x2="${W}" y1="${y(o)}" y2="${y(o)}" stroke="var(--grid)"/><text x="2" y="${y(o) - 3}" font-size="10" fill="var(--muted)">${noteName(S.root + o)}</text>`;
+  s += `<text x="${xa}" y="11" font-size="10" text-anchor="middle" fill="var(--muted)">this</text><text x="${xb}" y="11" font-size="10" text-anchor="middle" fill="var(--muted)">partner</text>`;
+  const ha = new Set(shadow(c)), hb = new Set(p.hung), sh = new Set(p.shared);
+  for (const n of c.notes) if (p.notes.includes(n)) {
+    const piv = sh.has(n);
+    s += `<line x1="${xa + 7}" x2="${xb - 7}" y1="${y(n)}" y2="${y(n)}" stroke="${piv ? 'var(--accent)' : 'var(--line)'}" stroke-width="${piv ? 2.5 : 1}" ${piv ? '' : 'stroke-dasharray="3 3"'}/>`;
+  }
+  const dot = (x, n, hung, piv) => `<circle cx="${x}" cy="${y(n)}" r="${piv ? 6.5 : 5}" fill="${hung ? 'var(--surface)' : 'var(--fg)'}" stroke="${piv ? 'var(--accent)' : 'var(--fg)'}" stroke-width="${piv ? 2.5 : 1.5}"/>`;
+  for (const n of c.notes) { s += dot(xa, n, ha.has(n), sh.has(n)); s += `<text x="${xa - 12}" y="${y(n) + 4}" font-size="11" text-anchor="end" fill="var(--fg)" font-family="var(--font-mono)">${noteName(S.root + n)}</text>`; }
+  for (const n of p.notes) { s += dot(xb, n, hb.has(n), sh.has(n)); s += `<text x="${xb + 12}" y="${y(n) + 4}" font-size="11" fill="var(--fg)" font-family="var(--font-mono)">${noteName(S.root + n)}</text>`; }
+  return s + '</svg>';
+}
+function drawWeb(c) {
+  const host = $('web');
+  if (!c) { host.innerHTML = ''; return; }
+  const SA = shadow(c), sh = shape(SA), pv = S.pv;
+  const gaps = SA.slice(1).map((x, i) => x - SA[i]);
+  const list = pivots(c), shown = list.slice(0, 100);
+  const pick = (pv.pick && list.find((p) => pvKey(p) === pv.pick)) || null;
+  const nm = (xs) => xs.map((n) => noteName(S.root + n)).join(' ');
+  host.innerHTML = `<h2>Hung tones alone</h2>
+    ${SA.length ? `<div class="notes">${nm(SA)} <span class="muted">· steps ${sh.join(' ')}</span></div>
+    <div class="facts"><span>notes <b>${SA.length}</b></span>${SA.length > 1 ? `<span>span <b>${sh.at(-1)}</b> (${ivName(sh.at(-1))})</span><span>gaps <b>${gaps.join(' ')}</b> (${gaps.map(ivName).join(', ')})</span>` : ''}
+      <span>at steps <b>${SA.join(' ')}</b> of the collection</span></div>
+    <div class="btns"><button type="button" data-wplay="hchord">Play together</button><button type="button" data-wplay="hup">Play upward</button><button type="button" data-wcopy="hung">Copy steps</button><span class="status" id="webCopy"></span></div>` :
+      '<p class="muted">This collection has no hung tones: every note is part of a required interval.</p>'}
+    <p class="muted small">The hung tones are the notes outside the required intervals, taken from the build drawn above. On their own they make a second, smaller collection: the shadow of the first.</p>
+    <h2 style="margin-top:8px">Pivots: collections that share hung tones</h2>
+    <div class="row"><span class="lbl">Share at least</span><input id="pvMin" type="number" min="1" max="10" value="${pv.min}" aria-label="Shared tones needed"><span class="muted small">tones</span></div>
+    <div class="row"><span class="lbl">On the partner</span><span class="row">${[['hung', 'Its hung tones'], ['any', 'Any of its notes']].map(([v, l]) => `<button type="button" data-pvside="${v}" class="${pv.side === v ? 'on' : ''}" aria-pressed="${pv.side === v}">${l}</button>`).join('')}</span>
+      <label class="check"><input type="checkbox" id="pvMirror" ${pv.mirror ? 'checked' : ''}> include mirror images</label></div>
+    ${SA.length < pv.min ? `<p class="muted">This collection has ${SA.length} hung tone${SA.length === 1 ? '' : 's'}, fewer than ${pv.min}. ${SA.length === 1 ? 'One tone alone meets every collection at some shift, so a pivot needs at least two.' : ''}</p>` :
+      `<p class="status">${list.length.toLocaleString()} partner${list.length === 1 ? '' : 's'} in the list above${list.length > 100 ? ', best 100 shown' : ''}. Each is moved so its tones land on this collection's hung tones; the shift that shares the most is used.</p>
+      <div class="scroll" style="max-height:340px;overflow-y:auto"><table>
+        <thead><tr><th>#</th><th>Partner</th><th>Moved</th><th>Shared tones</th><th>Partner's hung set</th><th>Together</th><th>Span</th></tr></thead>
+        <tbody id="pvRows">${shown.map((p, i) => `<tr data-pv="${pvKey(p)}" tabindex="0" class="${pick && pvKey(p) === pvKey(pick) ? 'sel' : ''}"><td>${i + 1}</td><td class="mono">${p.b.notes.join(' ')}${p.m ? ' <span class="tag">mirror</span>' : ''}</td>` +
+          `<td>${shift(p.t)}</td><td><b>${p.shared.length}</b> · ${nm(p.shared)}</td><td class="mono">${shape(p.hung).join(' ')}</td><td>${p.union.length} notes</td><td>${p.union.at(-1) - p.union[0]}</td></tr>`).join('') ||
+          '<tr><td colspan="7" class="muted">No collection in the list shares that many. Lower the number, or let the partner use any of its notes.</td></tr>'}</tbody>
+      </table></div>`}
+    ${pick ? `<div class="detail" style="margin-top:6px">
+      <div>${pivotSvg(c, pick)}<div class="legend"><span>● required · ○ hung · <span style="color:var(--accent)">ringed and joined: shared hung tones (the pivot)</span> · dashed: other notes in common</span></div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+        <div><div class="lbl" style="min-width:0">Partner, ${p_desc(pick)}</div><div class="notes">${nm(pick.notes)}</div></div>
+        <div><div class="lbl" style="min-width:0">Both together</div><div class="notes">${nm(pick.union)} <span class="muted">· steps ${shape(pick.union).join(' ')}</span></div>
+          <div class="facts"><span>notes <b>${pick.union.length}</b></span><span>span <b>${pick.union.at(-1) - pick.union[0]}</b></span></div></div>
+        <div class="btns"><button type="button" data-wplay="pchord">Play partner</button><button type="button" data-wplay="pseq">This, then partner</button><button type="button" data-wplay="uchord">Play both together</button>
+          <button type="button" data-wcopy="union">Copy steps of both</button><button type="button" id="pvOpen">Open the partner</button></div>
+        <p class="muted small">Open the partner to make it the current collection: its own hung tones then lead on to the next partners, one step further into the web.</p>
+      </div></div>` : (list.length ? '<p class="muted small">Pick a partner to see the two side by side.</p>' : '')}`;
+  const sync = () => { S.pv.min = Math.max(1, Number($('pvMin').value) || 1); S.pv.pick = null; drawWeb(c); };
+  $('pvMin').addEventListener('change', sync);
+  $('pvMirror').addEventListener('change', () => { S.pv.mirror = $('pvMirror').checked; S.pv.pick = null; drawWeb(c); });
+  host.querySelectorAll('[data-pvside]').forEach((b) => b.addEventListener('click', () => { S.pv.side = b.dataset.pvside; S.pv.pick = null; drawWeb(c); }));
+  const rows = $('pvRows');
+  const choose = (tr) => { if (!tr) return; S.pv.pick = tr.dataset.pv; drawWeb(c); };
+  if (rows) {
+    rows.addEventListener('click', (e) => choose(e.target.closest('tr[data-pv]')));
+    rows.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(e.target.closest('tr[data-pv]')); } });
+  }
+  const m = (xs) => xs.map((n) => S.root + n);
+  host.querySelectorAll('[data-wplay]').forEach((b) => b.addEventListener('click', () => {
+    const w = b.dataset.wplay;
+    if (w === 'hchord') play(m(SA), 'chord', b);
+    else if (w === 'hup') play(m(SA), 'line', b);
+    else if (w === 'pchord') play(m(pick.notes), 'chord', b);
+    else if (w === 'uchord') play(m(pick.union), 'chord', b);
+    else if (w === 'pseq') playPair(m(c.notes), m(pick.notes), b);
+  }));
+  host.querySelectorAll('[data-wcopy]').forEach((b) => b.addEventListener('click', () => {
+    const text = b.dataset.wcopy === 'hung' ? sh.join(' ') : shape(pick.union).join(' ');
+    const done = (ok) => { const n = $('webCopy'); if (n) n.textContent = ok ? 'Copied' : 'Copy failed'; };
+    try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (e) { done(false); }
+  }));
+  if ($('pvOpen')) $('pvOpen').addEventListener('click', () => {
+    S.sel = pick.b.notes.join(' '); S.rot = 0; S.pv.pick = null;
+    if (S.spanSel !== null && pick.b.span !== S.spanSel) S.spanSel = null;
+    draw();
+    $('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+const p_desc = (p) => `${p.m ? 'mirrored and ' : ''}moved ${shift(p.t)}`;
 
 // ---------- audio ----------
 let ctx = null, master = null, live = [];
@@ -367,6 +490,15 @@ function play(midis, mode, btn) {
   else midis.forEach((m, i) => tone(m, t0 + i * 0.32, 0.9, 0.16));
   btn.classList.add('playing');
   setTimeout(() => btn.classList.remove('playing'), mode === 'chord' ? 2600 : midis.length * 320 + 1200);
+}
+// two chords one after the other (a pivot: this collection, then the partner)
+function playPair(a, b, btn) {
+  stopAll();
+  const c = audio(), t0 = c.currentTime + 0.05;
+  a.forEach((m) => tone(m, t0, 1.6, 0.18 / Math.sqrt(a.length)));
+  b.forEach((m) => tone(m, t0 + 1.8, 2.0, 0.18 / Math.sqrt(b.length)));
+  btn.classList.add('playing');
+  setTimeout(() => btn.classList.remove('playing'), 4400);
 }
 $('stopAll').addEventListener('click', stopAll);
 
