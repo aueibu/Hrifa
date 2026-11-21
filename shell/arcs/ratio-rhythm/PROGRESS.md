@@ -105,6 +105,19 @@ Per rhythm pair, best alignment (most shared onsets); the moved part D_A → D_B
 ### 7 notes, rootings, mechanisms: write-up in `research/ji-z-partners/LINEAR_RING.md` (2026-11-21)
 7 notes on the same rings (`hdisk`, 1.27 billion voicings, 75 min on 2 cores): 300,580 rhythm pairs, 9,117,317 voicing pairs, no within pairs. Rooting check over all pairs: 5 notes all single-rooting; 6 notes 1,650 and 7 notes 5,566 match at two rootings, all line pairs (Z-pairs on the integer line) seen from their bottom or top note, except 4 at 7 notes; proof that every line pair matches again at its top note is in LINEAR_RING.md §4. Mechanisms: one block of notes shifted by a ring element (half the ring 93% / 77% / 64% at 5 / 6 / 7 notes, third-ring share 1% → 4% → 25%), the rest one block at another alignment or two blocks; 8 unexplained 7-note pairs, all on ring 48. Tables in `research/ji-z-partners/tables/linring/`. The VM's temp buckets (20 GB) were deleted after the checks; family lists remain in `~/zruns/linring/`.
 
+### D1 batch stopped after scraping (2026-11-21 ~14:00 UTC, human: "scrape what data they have found and then stop the search", then "that sounds sensible" to scrape-all-and-stop)
+After 10.5 h the 11/13/14-note `types` searches had finished only 11 V and 14 `7,3,1` U/V; `14,2,1` had 0 patterns after ~200M nodes per flip (seen set cleared ~20 times). The types found so far were read out of the running PyPy processes: `gdb` attaches and calls `PyPyRun_SimpleString` to run `data/vm/scrape_payload.py`, which finds the search callbacks through `gc.get_objects()` (PyPy's JIT hides the frames) and dumps `pats` (workers) and `done` (parent, finished searches). Lessons from tests on copies (`scrape_test*.sh`): stopping a busy worker at a random instruction can crash it (heap inconsistent) → break at `clock_gettime` first (safe point); never `SIGSTOP` a process before injecting (gdb's malloc gets interrupted) → scrape the parent while it runs, then pause it so a worker crash cannot tear down siblings. Validated: scraped union = the uninterrupted run's 249 types, identical set. Live (`live_scrape.sh`): 12 of 13 processes scraped, counts equal the last log lines; **lost** 14-note `7,4,2` flip U (3,913 types; payload hit a None type key — the bf618a4 untyped-key bug — and the worker died afterwards; payload now skips None keys). Batch killed, marked `~/zruns/d1_k10-14_v2/STOPPED` (recover.sh will not relaunch it).
+
+Partial types (`~/zruns/scrape_merge/uv{11,13,14}`, `merge_scrape.py`): 11 notes 1,416, 13 notes 40, 14 notes 2,453. Placed (`place_partial.sh`, zgen_v4, all families pass `verify_families.py`):
+
+| notes | 5-limit odd ≤ 123 | expected (exhaustive) | 7-limit odd ≤ 123, rank ≤ 2 |
+|---|---|---|---|
+| 11 | **25** | 25 (complete) | 0 |
+| 13 | 1 | 41 | 0 |
+| 14 | 305 | 495 | 133 |
+
+Local backups: `C:\Users\apoor\zruns_backup\zruns_scrape_2026-11-21_1400.tgz` (scrapes, merges, placements, batch logs). Rank-3 types are skipped in 7-limit (as in the batch).
+
 ### Spot preemption handling (2026-11-21, human: "you should start it, and rerun from wherever we left off")
 VM settings: Spot, termination action STOP (disk survives), automaticRestart off. While a session runs, the watcher checks `gcloud ... describe` after 3 failed polls, starts the VM, and runs `~/zgen/recover.sh` (`data/vm/recover.sh`): relaunches `resume_batch.sh` (D1 batch: finished steps skipped; types that were running restart with `zgen_v4.py --checkpoint`, see HANDOFF.md) and `run_k7.sh` (linring, resumable by `.done` markers). The batch running now (bf618a4) has no checkpoints: a preemption loses its 11/13/14-note searches (started 03:30 UTC). Local backup of finished VM results: `C:\Users\apoor\zruns_backup\zruns_2026-11-21_0705.tgz`. Another session (tmux `ipcat`, chord voicing catalog) shares the VM and gets the cores when the linring run ends.
 

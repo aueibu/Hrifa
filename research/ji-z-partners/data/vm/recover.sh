@@ -3,7 +3,8 @@
 # Other sessions' jobs (e.g. ipcat) are theirs to restart.
 cd ~/zruns || exit 1
 if ! tmux has-session -t zruns 2>/dev/null; then
-  if grep -q "all done" d1_k10-14_v2/status.txt 2>/dev/null; then echo "batch already finished"
+  if [ -f d1_k10-14_v2/STOPPED ]; then echo "batch stopped on purpose (see d1_k10-14_v2/STOPPED); not relaunched"
+  elif grep -q "all done" d1_k10-14_v2/status.txt 2>/dev/null; then echo "batch already finished"
   else tmux new-session -d -s zruns "bash $HOME/zgen/resume_batch.sh d1_k10-14_v2" && echo "batch resumed in tmux zruns"; fi
 fi
 if ! tmux has-session -t linring 2>/dev/null; then
