@@ -8,6 +8,7 @@
   :root {
     --bg: #f6f6f3; --surface: #ffffff; --line: #d9d9d2; --grid: #ececE6; --fg: #1d1f22; --muted: #5d6168;
     --c1: #2a78d6; --c2: #eb6834; --k1: #1baf7a; --k2: #eda100; --k3: #6250d6; --hi: #2a78d61f;
+    --band: #eef1f7; --cband: #d6deee; --shared: #b4562a; --win: #b4562a; --s-a: #2f5fb3; --s-b: #2b7a4b; --s-c: #8a4fb0; --s-d: #b07a12; --s-e: #a8326e;
     --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
     --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
@@ -15,12 +16,12 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
-      --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; --hi: #3987e52e; color-scheme: dark;
+      --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; --hi: #3987e52e; --band: #222a37; --cband: #33405a; --shared: #f0996b; --win: #f0996b; --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; --s-e: #ec8fbd; color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
-    --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; --hi: #3987e52e; color-scheme: dark;
+    --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; --hi: #3987e52e; --band: #222a37; --cband: #33405a; --shared: #f0996b; --win: #f0996b; --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; --s-e: #ec8fbd; color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body {
@@ -86,6 +87,7 @@
   <div id="panels" class="wrap" style="gap:20px"></div>
 </div>
 
+<script>/*MIXVIEW*/</script>
 <script>
 const D = /*DATA*/null;
 const NS = D.n;
@@ -369,64 +371,75 @@ const get = (key) => perN((n) => D[n][key]);
   REDRAW.push(drawSum);
   drawSum();
 
-  // lookup grid: rows = the mixes, columns = the simple set's orderings, cells = stacked chords
+  // lookup: one map per mix and a side-by-side compare (the browse page's map and chord columns, shared mixview.js)
   const ex = document.createElement('div');
   ex.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:10px';
-  ex.innerHTML = '<h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">Look up a set: every mix, every ordering</h3><div class="toggle" id="mx-controls"></div><div class="tablewrap" id="mx-out"></div><p class="muted" style="font-size:0.85rem">Each cell is one chord, highest note on top, named from C2 (the bottom of the window). Rows: the simple set, then each mix. Columns: the orderings of the simple set (a mix\'s ordering is shown above its chord). Tinted: same pitch classes as the simple chord in that column. ★ = smoothest ordering in its row. Simple windows up to 24; 2 and 3 intervals.</p>';
+  ex.innerHTML = '<h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">Look up a set: every mix, every ordering, every window</h3><div class="toggle" id="mx-controls"></div><div id="mx-out" style="display:flex;flex-direction:column;gap:10px"></div><p class="muted" style="font-size:0.85rem">From the catalog: 2 and 3 intervals, simple windows up to 24. The browse page builds the same view for any set you type, including 2 4 7, and plays the chords.</p>';
   el.appendChild(ex);
   const XN = NS.filter((n) => C[n].explorer && C[n].explorer.length);
-  const xs = { n: XN.includes(3) ? 3 : XN[0], set: '2 4 5', rule: 0, w: 12, off: 12 };
+  const xs = { n: XN.includes(3) ? 3 : XN[0], set: '2 4 5', rule: 'equal', metric: 'rough', off: 12, sel: null };
   const ctl = ex.querySelector('#mx-controls'), out = ex.querySelector('#mx-out');
-  const nm = (s) => s.split(' ').map(Number).sort((a, b) => b - a).map((x) => noteName(x)).join('<br>');
-  const pcsOf = (s) => [...new Set(s.split(' ').map((x) => +x % 12))].sort((a, b) => a - b).join(' ');
+  const XMETRICS = { rough: ['roughness', 1, (v) => v.toFixed(3)], harm: ['harmonicity', -1, (v) => v.toFixed(3)] };
+  const models = new Map();
+  const modelOf = (n, set) => {
+    const key = n + '|' + set;
+    if (models.has(key)) return models.get(key);
+    const e = C[n].explorer.find((q) => q.set === set);
+    const simple = e.set.split(' ').map(Number);
+    let mismatch = 0;
+    const variants = e.variants.slice().sort((a, b) => a.k - b.k).map((v) => {
+      const vs = v.set.split(' ').map(Number), pool = vs.slice(), comp = [];
+      for (const x of simple) { const i = pool.indexOf(x); if (i >= 0) pool.splice(i, 1); else comp.push(x); }
+      const P = v.rows.map((r) => {
+        const rule = r[0] ? 'shared' : 'equal', order = r[1].split(' ').map(Number);
+        const pl = MIX.place(rule, order, r[2]);
+        if (pl.notes.join(' ') !== r[3]) mismatch++;
+        return { rule, order: r[1], W: r[2], ...pl, rough: r[4], harm: r[5] };
+      });
+      return { set: vs, k: v.k, comp, P };
+    });
+    if (mismatch) console.warn(`mix view: ${mismatch} placements differ from the catalog for ${set}`);
+    const windows = [...new Set(variants[0].P.map((p) => p.W))].filter((w) => w <= 24).sort((a, b) => a - b);
+    const m = { variants, windows };
+    models.set(key, m);
+    return m;
+  };
   const drawEx = () => {
     const list = C[xs.n].explorer;
     if (!list.find((e) => e.set === xs.set)) xs.set = list[0].set;
-    const e = list.find((q) => q.set === xs.set);
-    const simple = e.variants.find((v) => v.k === 0);
-    const wins = [...new Set(simple.rows.map((r) => r[2]))].filter((w) => w <= 24).sort((a, b) => a - b);
-    if (!wins.includes(xs.w)) xs.w = wins.includes(12) ? 12 : wins[0];
     ctl.innerHTML = XN.map((n) => `<button type="button" data-n="${n}" class="${xs.n === n ? 'on' : ''}">${n} intervals</button>`).join('') +
       `<label>set <select id="mx-set">${list.map((q) => `<option ${q.set === xs.set ? 'selected' : ''}>${q.set}</option>`).join('')}</select></label>` +
-      RULES.map(([, name], i) => `<button type="button" data-rule="${i}" class="${xs.rule === i ? 'on' : ''}">${name}</button>`).join('') +
-      `<label>simple window <input type="range" id="mx-w" min="${wins[0]}" max="${wins[wins.length - 1]}" value="${xs.w}"> <b style="font-family:var(--font-mono)">${xs.w}</b></label>` +
-      [[12, 'mixes in W + 12'], [0, 'mixes in the same W']].map(([o, l]) => `<button type="button" data-off="${o}" class="${xs.off === o ? 'on' : ''}">${l}</button>`).join('');
-    ctl.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', () => { xs.n = +b.dataset.n; drawEx(); }));
-    ctl.querySelectorAll('[data-rule]').forEach((b) => b.addEventListener('click', () => { xs.rule = +b.dataset.rule; drawEx(); }));
+      RULES.map(([r, name]) => `<button type="button" data-rule="${r}" class="${xs.rule === r ? 'on' : ''}">${name}</button>`).join('') +
+      Object.entries(XMETRICS).map(([k, [l]]) => `<button type="button" data-m="${k}" class="${xs.metric === k ? 'on' : ''}">${l}</button>`).join('') +
+      [[12, 'mixes in windows 12 wider'], [0, 'mixes in the same windows']].map(([o, l]) => `<button type="button" data-off="${o}" class="${xs.off === o ? 'on' : ''}">${l}</button>`).join('');
+    ctl.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', () => { xs.n = +b.dataset.n; xs.sel = null; drawEx(); }));
+    ctl.querySelectorAll('[data-rule]').forEach((b) => b.addEventListener('click', () => { xs.rule = b.dataset.rule; drawEx(); }));
+    ctl.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { xs.metric = b.dataset.m; drawEx(); }));
     ctl.querySelectorAll('[data-off]').forEach((b) => b.addEventListener('click', () => { xs.off = +b.dataset.off; drawEx(); }));
-    ctl.querySelector('#mx-set').addEventListener('change', (ev) => { xs.set = ev.target.value; drawEx(); });
-    ctl.querySelector('#mx-w').addEventListener('input', (ev) => { xs.w = +ev.target.value; drawEx(); });
-    const SMAX = MAXIV - 12;
-    const simpleRows = simple.rows.filter((r) => r[0] === xs.rule && r[2] === xs.w);
-    const ords = simpleRows.map((r) => r[1]);
-    const simplePcs = new Map(simpleRows.map((r) => [r[1], pcsOf(r[3])]));
-    let h = `<table class="ex"><tr><th style="text-align:left">set</th><th style="text-align:left">window</th>${ords.map((o) => `<th style="text-align:left">${o}</th>`).join('')}</tr>`;
-    for (const v of [...e.variants].sort((a, b) => a.k - b.k)) {
-      const w = v.k === 0 ? xs.w : xs.w + xs.off;
-      const rows = v.rows.filter((r) => r[0] === xs.rule && r[2] === w);
-      const best = rows.length ? Math.min(...rows.map((r) => r[4])) : null;
-      const cells = ords.map((o) => {
-        const hits = rows.filter((r) => r[1].split(' ').map((x) => (+x > SMAX ? +x - 12 : +x)).join(' ') === o);
-        if (!hits.length) return '<td class="names muted">—</td>';
-        const same = hits.every((r) => pcsOf(r[3]) === simplePcs.get(o));
-        return `<td class="names" style="vertical-align:bottom;${v.k && same ? 'background:var(--hi);' : ''}">${hits.map((r) => `${v.k ? `<div class="muted" style="font-size:0.72rem">${r[1]}</div>` : ''}<div style="font-family:var(--font-mono);font-size:0.78rem;line-height:1.25">${nm(r[3])}</div><div class="muted" style="font-size:0.72rem">${r[4].toFixed(2)}${r[4] === best ? ' ★' : ''}</div>`).join('<hr style="border:0;border-top:1px solid var(--line);margin:3px 0">')}</td>`;
-      }).join('');
-      h += `<tr style="border-top:1px solid var(--line)"><td style="vertical-align:top"><b>${v.set}</b><div class="muted" style="font-size:0.72rem">${v.k ? kName(v.k, xs.n) : 'simple'}</div></td><td style="vertical-align:top">${rows.length ? w : `${w}: too small`}</td>${cells}</tr>`;
-    }
-    out.innerHTML = h + '</table>';
+    ctl.querySelector('#mx-set').addEventListener('change', (ev) => { xs.set = ev.target.value; xs.sel = null; drawEx(); });
+    const [mName, dir, fmt] = XMETRICS[xs.metric];
+    MIX.render(out, modelOf(xs.n, xs.set), {
+      rule: xs.rule, ruleName: RULES.find((r) => r[0] === xs.rule)[1], metric: xs.metric, dir, fmt, metricName: mName, offset: xs.off,
+      name: noteName, colors: ['var(--s-a)', 'var(--s-b)', 'var(--s-c)', 'var(--s-d)', 'var(--s-e)'], sel: xs.sel,
+      onSelect: (sel) => { xs.sel = sel; drawEx(); },
+      scores: [['rough', 'roughness', (v) => v.toFixed(3)], ['harm', 'harmonicity', (v) => v.toFixed(3)]],
+    });
   };
   drawEx();
 }
-// 11. heatmap
+// 11. heatmap, with a zoom into the sets behind a cell
 {
-  const el = panel('Where the smooth chords are', 'Average roughness of the smoothest ordering, by the largest interval in the set (rows) and the window size (columns). Darker is rougher. The empty triangle is where the window is smaller than the largest interval.');
+  const el = panel('Where the smooth chords are', 'Average roughness of the smoothest ordering, by the largest interval in the set (rows) and the window size (columns). Darker is rougher. The empty triangle is where the window is smaller than the largest interval. Click a cell to zoom in on the interval sets behind it.');
   const tg = document.createElement('div');
   tg.className = 'toggle';
   el.appendChild(tg);
   const host = document.createElement('div');
   host.className = 'facets';
   el.appendChild(host);
-  const state = { n: NS.includes(3) ? 3 : NS[0] };
+  const lg = el.appendChild(Object.assign(document.createElement('div'), { className: 'legend heatlegend' }));
+  const zoom = el.appendChild(Object.assign(document.createElement('div'), { className: 'zoom' }));
+  zoom.style.cssText = 'display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px;position:relative';
+  const state = { n: NS.includes(3) ? 3 : NS[0], cell: null, show: 'smooth', pick: null };
   const stops = [[205, 226, 251], [158, 197, 244], [109, 167, 236], [57, 135, 229], [37, 106, 191], [24, 79, 149], [16, 66, 129]];
   const ramp = (t) => {
     const p = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(p)), f = p - i;
@@ -435,7 +448,7 @@ const get = (key) => perN((n) => D[n][key]);
   };
   const draw = () => {
     tg.innerHTML = NS.map((n) => `<button type="button" class="${state.n === n ? 'on' : ''}" data-n="${n}">${n} intervals</button>`).join('');
-    tg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.n = +b.dataset.n; draw(); }));
+    tg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.n = +b.dataset.n; state.cell = null; state.pick = null; draw(); }));
     const cells = D[state.n].heat.filter((c) => c.window >= WR.lo && c.window <= WR.hi);
     const vals = cells.map((c) => c.best);
     const lo = Math.min(...vals), hi = Math.max(...vals);
@@ -443,8 +456,10 @@ const get = (key) => perN((n) => D[n][key]);
     for (const [rule, name] of RULES) {
       const NW = WR.hi - WR.lo + 1, cw = Math.max(8, Math.min(28, Math.floor(480 / NW))), chh = 12, L = 34, T = 8, W = L + NW * cw + 10, H = T + MAXIV * chh + 30;
       let s = '';
-      for (const c of cells.filter((q) => q.rule === rule))
-        s += `<rect x="${L + (c.window - WR.lo) * cw}" y="${T + (MAXIV - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp((c.best - lo) / (hi - lo))}"><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)}</title></rect>`;
+      for (const c of cells.filter((q) => q.rule === rule)) {
+        const on = state.cell && state.cell.rule === rule && state.cell.L === c.largest && state.cell.W === c.window;
+        s += `<rect data-rule="${rule}" data-l="${c.largest}" data-w="${c.window}" style="cursor:pointer" x="${L + (c.window - WR.lo) * cw}" y="${T + (MAXIV - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp((c.best - lo) / (hi - lo))}" ${on ? 'stroke="var(--win)" stroke-width="2"' : ''}><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)} (click to zoom in)</title></rect>`;
+      }
       for (const v of [1, 6, 12, MAXIV]) s += `<text x="${L - 4}" y="${T + (MAXIV - v) * chh + 10}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
       const hs = NW <= 16 ? 1 : NW <= 30 ? 2 : NW <= 48 ? 6 : 12;
       for (let v = Math.ceil(WR.lo / hs) * hs; v <= WR.hi; v += hs) s += `<text x="${L + (v - WR.lo) * cw + cw / 2}" y="${T + MAXIV * chh + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
@@ -452,10 +467,77 @@ const get = (key) => perN((n) => D[n][key]);
       const f = document.createElement('div');
       f.className = 'facet';
       f.innerHTML = `<h3>${name} (rows: largest interval)</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Roughness heatmap, ${name}, ${state.n} intervals">${s}</svg>`;
+      f.querySelector('svg').addEventListener('click', (ev) => {
+        const t = ev.target;
+        if (!t.dataset || !t.dataset.rule) return;
+        state.cell = { rule: t.dataset.rule, L: +t.dataset.l, W: +t.dataset.w };
+        state.pick = null;
+        draw();
+        zoom.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
       host.appendChild(f);
     }
-    const lg = el.querySelector('.heatlegend') || el.appendChild(Object.assign(document.createElement('div'), { className: 'legend heatlegend' }));
-    lg.innerHTML = `<span>${lo.toFixed(2)} smooth <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> rough ${hi.toFixed(2)}</span><span>hover a cell for its value</span>`;
+    lg.innerHTML = `<span>${lo.toFixed(2)} smooth <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> rough ${hi.toFixed(2)}</span><span>hover a cell for its value; click it to zoom in</span>`;
+    drawZoom();
+  };
+
+  // the zoom: every set with that largest interval, windows W-6 .. W+6, colored by its smoothest ordering's roughness
+  const drawZoom = () => {
+    if (!state.cell) { zoom.innerHTML = '<p class="muted" style="font-size:0.9rem">Click a heatmap cell to see the interval sets behind it.</p>'; return; }
+    const { rule, L, W: Wc } = state.cell, B = D[state.n].best;
+    const ruleName = RULES.find((r) => r[0] === rule)[1];
+    const w0 = Math.max(L, Wc - 6), w1 = Math.min(WMAX, Wc + 6);
+    const wins = Array.from({ length: w1 - w0 + 1 }, (_, i) => w0 + i);
+    const roughAt = (i, w) => { const v = B[rule][i][w - B.w0[i]]; return v === undefined || v === null ? null : v / 1000; };
+    const ids = B.sets.map((_, i) => i).filter((i) => B.w0[i] === L || (+B.sets[i].split(' ').pop() === L));
+    ids.sort((a, b) => roughAt(a, Wc) - roughAt(b, Wc));
+    const N = 40;
+    const shown = state.show === 'all' ? ids : state.show === 'rough' ? ids.slice(-N).reverse() : ids.slice(0, N);
+    const vals = shown.flatMap((i) => wins.map((w) => roughAt(i, w)).filter((v) => v !== null));
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const cw = 30, rh = 16, T = 20, labelW = 16 + 8 * Math.max(...shown.map((i) => B.sets[i].length));
+    const W = labelW + wins.length * cw + 8, H = T + shown.length * rh + 4;
+    let s = '';
+    wins.forEach((w, j) => { s += `<text x="${labelW + j * cw + cw / 2}" y="${T - 6}" text-anchor="middle" font-size="10" fill="${w === Wc ? 'var(--fg)' : 'var(--muted)'}" font-weight="${w === Wc ? 600 : 400}" font-family="var(--font-mono)">${w}</text>`; });
+    shown.forEach((i, r) => {
+      const y = T + r * rh;
+      s += `<text x="${labelW - 8}" y="${y + 12}" text-anchor="end" font-size="11" fill="var(--fg)" font-family="var(--font-mono)">${B.sets[i]}</text>`;
+      wins.forEach((w, j) => {
+        const v = roughAt(i, w);
+        if (v === null) return;
+        const sel = state.pick && state.pick.i === i && state.pick.w === w;
+        s += `<rect data-i="${i}" data-w="${w}" style="cursor:pointer" x="${labelW + j * cw + 1}" y="${y + 1}" width="${cw - 2}" height="${rh - 2}" rx="2" fill="${ramp((v - lo) / (hi - lo || 1))}" ${sel ? 'stroke="var(--fg)" stroke-width="2"' : w === Wc ? 'stroke="var(--win)" stroke-width="1"' : ''}><title>${B.sets[i]}, window ${w}: ${v.toFixed(3)}, smoothest ordering ${B.ords[i][B[rule + 'Ord'][i][w - B.w0[i]]]}</title></rect>`;
+      });
+    });
+    const opts = [['smooth', `${Math.min(N, ids.length)} smoothest`], ['rough', `${Math.min(N, ids.length)} roughest`], ['all', `all ${ids.length}`]];
+    zoom.innerHTML = `<h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">${ruleName}: sets whose largest interval is ${L}, windows ${w0}–${w1}</h3>` +
+      `<p class="muted" style="font-size:0.85rem">Each cell is the roughness of that set's smoothest ordering in that window; rows sorted smoothest first at window ${Wc} (outlined). Colors use this zoom's own range, ${lo.toFixed(2)} to ${hi.toFixed(2)}, so small differences show. Click a cell to see its chord.</p>` +
+      `<div class="toggle">${opts.map(([k, l]) => `<button type="button" data-show="${k}" class="${state.show === k ? 'on' : ''}">${l}</button>`).join('')}</div>` +
+      `<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start"><div style="overflow:auto;max-height:560px;min-width:0;flex:1 1 360px"><svg class="chart" viewBox="0 0 ${W} ${H}" style="max-width:${W * 1.4}px" role="img" aria-label="Zoom: sets with largest interval ${L} by window">${s}</svg></div><div id="zoom-pick" style="flex:0 1 auto"></div></div>`;
+    zoom.querySelectorAll('[data-show]').forEach((b) => b.addEventListener('click', () => { state.show = b.dataset.show; drawZoom(); }));
+    zoom.querySelector('svg').addEventListener('click', (ev) => {
+      const t = ev.target;
+      if (!t.dataset || t.dataset.i === undefined) return;
+      state.pick = { i: +t.dataset.i, w: +t.dataset.w };
+      drawZoom();
+    });
+    const pk = zoom.querySelector('#zoom-pick');
+    if (!state.pick) { pk.innerHTML = '<p class="muted" style="font-size:0.85rem;max-width:22ch">Click a cell to draw its chord here.</p>'; return; }
+    const { i, w } = state.pick;
+    const ord = B.ords[i][B[rule + 'Ord'][i][w - B.w0[i]]];
+    const order = ord.split(' ').map(Number);
+    const p = { ...MIX.place(rule, order, w), W: w };
+    const HI = Math.max(24, w), step = Math.max(5, Math.min(10, 360 / HI)), top = 10;
+    const g = { HI, H: top + HI * step + 10, y: (m) => top + (HI - m) * step };
+    const sizes = [...new Set(B.sets[i].split(' ').map(Number))];
+    const colors = ['var(--s-a)', 'var(--s-b)', 'var(--s-c)', 'var(--s-d)', 'var(--s-e)'];
+    let ax = `<svg width="38" height="${g.H}" aria-hidden="true">`;
+    for (let m = 0; m <= HI; m += 12) ax += `<text x="34" y="${g.y(m) + 4}" text-anchor="end" font-size="11" font-family="var(--font-mono)" fill="var(--muted)">${noteName(m)}</text>`;
+    pk.innerHTML = `<div style="display:flex;gap:12px;align-items:flex-start"><div style="display:flex">${ax}</svg>${MIX.colSvg(p, g, (sz) => colors[sizes.indexOf(sz)] || 'var(--muted)')}</div>` +
+      `<div style="display:flex;flex-direction:column;gap:4px;font-size:0.88rem;max-width:30ch"><div class="muted" style="font-size:0.78rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">${B.sets[i]} · window ${w}</div>` +
+      `<div>smoothest ordering <b style="font-family:var(--font-mono)">${ord}</b></div><div style="font-family:var(--font-mono)">${p.notes.map(noteName).join(' ')}</div>` +
+      `<div class="muted">${p.spans.map((sp) => `${sp.size}: ${noteName(sp.low)}–${noteName(sp.low + sp.size)}`).join('<br>')}</div>` +
+      `<div class="muted">roughness <b style="color:var(--fg)">${roughAt(i, w).toFixed(3)}</b> · merged notes <b style="color:var(--fg)">${p.merges}</b></div></div></div>`;
   };
   REDRAW.push(draw);
   draw();

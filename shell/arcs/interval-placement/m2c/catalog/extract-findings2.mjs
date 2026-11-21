@@ -39,6 +39,26 @@ for (const file of files) {
   r.heat = q(`WITH g AS (SELECT p.rule, s.largest, p.window, MIN(p.rough) best FROM placements p JOIN sets s USING (set_id)
         GROUP BY p.rule, p.set_id, p.window)
       SELECT rule, largest, window, AVG(best) best FROM g GROUP BY rule, largest, window ORDER BY rule, largest, window`);
+  // per set, per rule: the smoothest ordering and its roughness at every window (largest .. wmax), for the heatmap's
+  // zoom (the page rebuilds the chord from rule, ordering and window). Ties: the lowest ordering index.
+  {
+    const setsAll = q('SELECT set_id, intervals, largest FROM sets ORDER BY set_id');
+    const ords = new Map();
+    for (const o of q('SELECT set_id, ord, ordering FROM orderings ORDER BY set_id, ord')) (ords.get(o.set_id) || ords.set(o.set_id, []).get(o.set_id)).push(o.ordering);
+    const best = { sets: setsAll.map((s) => s.intervals), ords: setsAll.map((s) => ords.get(s.set_id)), w0: setsAll.map((s) => Math.max(s.largest, 1)) };
+    for (const rule of ['equal', 'shared']) {
+      const rough = setsAll.map(() => []), ord = setsAll.map(() => []);
+      for (const x of db.prepare('SELECT set_id, window, MIN(ord) ord, rough FROM placements WHERE rule = ? AND rank_rough = 1 GROUP BY set_id, window').iterate(rule)) {
+        const i = x.set_id, j = x.window - best.w0[i];
+        rough[i][j] = Math.round(x.rough * 1000);
+        ord[i][j] = x.ord;
+      }
+      best[rule] = rough;
+      best[rule + 'Ord'] = ord;
+    }
+    r.best = best;
+  }
+  lap('best per set');
   r.totals = q(`SELECT (SELECT COUNT(*) FROM placements) placements, (SELECT COUNT(DISTINCT notes) FROM placements) chords, (SELECT COUNT(*) FROM sets) sets`)[0];
   lap('heat and totals');
 

@@ -77,6 +77,7 @@
   .twins { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
   svg.chart { width: 100%; height: auto; display: block; touch-action: none; }
   .stop-all { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 2px 10px rgba(0,0,0,0.15); padding: 8px 14px; }
+  .panel[hidden] { display: none; }
   @media (max-width: 560px) { .detail { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
@@ -94,6 +95,7 @@
       <label class="muted" for="wmax">to</label><input id="wmax" type="number" min="1" max="72" value="36"><span class="muted">steps</span></div>
     <div class="row"><span class="lbl">Root</span><select id="root" aria-label="Lowest note of every window"><option value="24">C1</option><option value="36" selected>C2</option><option value="48">C3</option><option value="60">C4</option></select>
       <span class="muted" style="font-size:0.85rem">the bottom of every window; only roughness depends on it</span></div>
+    <div class="row"><span class="lbl">Compound</span><label class="check"><input type="checkbox" id="mixOn"> also build the compound mixes (each interval, then each pair, ... an octave larger)</label></div>
     <div class="row"><button id="go" type="button">Build catalog</button><span class="status" id="status"></span></div>
   </div>
 
@@ -116,6 +118,13 @@
     <div class="runs" id="runs"></div>
   </div>
 
+  <div class="panel" id="mixPanel" hidden>
+    <h2>Compound mixes</h2>
+    <p class="muted">One map per mix: the set as typed, then with one interval an octave larger, then two, then all. Same rows (orderings) and colors as the map above, on one color scale for every map, using the spacing and measure chosen above (the filters do not apply here). With every interval compound in windows 12 wider, the chord is always the simple chord with its top notes an octave higher and its bottom notes unmoved; the mixes in between are mostly different chords. A dark dot marks a mix that keeps the simple chord's pitch classes.</p>
+    <div class="row"><span class="lbl">Mix windows</span><span id="mixCtl" class="row"></span><span class="status" id="mixStatus"></span></div>
+    <div id="mixHost" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
   <div class="panel">
     <h2 id="colsTitle">Best chords</h2>
     <div class="score"><div class="axis" id="axis"></div><div class="cols" id="cols" role="listbox" aria-label="Best chords"></div></div>
@@ -133,6 +142,7 @@
 <button class="stop-all" id="stopAll" type="button">Stop sound</button>
 
 <script type="text/plain" id="coreSrc">/*CORE*/</script>
+<script>/*MIXVIEW*/</script>
 <script>
 const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
 const noteName = (m) => NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
@@ -148,7 +158,8 @@ const SPAN_COLORS = ['--s-a', '--s-b', '--s-c', '--s-d', '--s-e'];
 const S = { data: null, rule: 'equal', metric: 'rough', sel: null, root: 36, intervals: [] };
 
 // ---------- worker ----------
-const worker = new Worker(URL.createObjectURL(new Blob([document.getElementById('coreSrc').textContent], { type: 'text/javascript' })));
+const CORE_URL = URL.createObjectURL(new Blob([document.getElementById('coreSrc').textContent], { type: 'text/javascript' }));
+const worker = new Worker(CORE_URL);
 let jobId = 0;
 worker.onmessage = (ev) => {
   const m = ev.data;
@@ -175,10 +186,12 @@ function build() {
   S.intervals = inp.intervals; S.root = inp.base;
   st.textContent = 'Building…';
   worker.postMessage({ id: ++jobId, ...inp });
+  buildMixes(inp);
 }
 document.getElementById('go').addEventListener('click', build);
 for (const id of ['intervals', 'wmin', 'wmax']) document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') build(); });
 document.getElementById('root').addEventListener('change', build);
+document.getElementById('mixOn').addEventListener('change', build);
 
 /** Join scores, compute ranks and Pareto layers per (rule, window). */
 function prepare(m) {
@@ -410,10 +423,56 @@ function renderBand() {
   document.getElementById('bandLegend').innerHTML = series.map((sr) => `<span><i style="display:inline-block;width:16px;height:3px;border-radius:2px;background:${sr.color}"></i>${sr.name}</span>`).join('') + (groups.size > 6 ? `<span>(${groups.size - 6} more curves not drawn)</span>` : '');
 }
 
+// ---------- compound mixes (shared view: mixview.js) ----------
+// Each mix is its own catalog, built by a second worker over windows wmin..wmax + 12 so it can be shown in the same
+// windows or in windows 12 wider than the set as typed.
+const mixWorker = new Worker(CORE_URL);
+let mixBatch = 0;
+S.mix = null; S.mixOff = 12; S.mixSel = null;
+const mixStatus = (t) => { document.getElementById('mixStatus').textContent = t; };
+mixWorker.onmessage = (ev) => {
+  const m = ev.data;
+  if (!S.mix || Math.floor(m.id / 1000) !== S.mix.batch) return;
+  const vi = m.id % 1000, total = S.mix.variants.length - 1;
+  if (m.type === 'progress') { mixStatus(`Mix ${vi} of ${total} (${S.mix.variants[vi].set.join(' ')}): scoring ${m.done.toLocaleString()} of ${m.total.toLocaleString()} chords…`); return; }
+  S.mix.variants[vi].P = prepare(m).placements;
+  const left = S.mix.variants.filter((v, i) => i && !v.P).length;
+  mixStatus(left ? `${total - left} of ${total} mixes built…` : `${total} mixes built.`);
+  renderMix();
+};
+function buildMixes(inp) {
+  const panel = document.getElementById('mixPanel');
+  if (!document.getElementById('mixOn').checked) { S.mix = null; panel.hidden = true; return; }
+  panel.hidden = false;
+  if (inp.intervals.length > 4) { S.mix = null; mixStatus('Compound mixes are built for 2 to 4 intervals (5 would mean 31 more catalogs).'); renderMix(); return; }
+  const vs = MIX.variants(inp.intervals);
+  S.mix = { batch: ++mixBatch, variants: vs.map((v) => ({ ...v, P: null })) };
+  S.mixSel = null;
+  vs.forEach((v, i) => { if (i) mixWorker.postMessage({ id: S.mix.batch * 1000 + i, intervals: v.set, wmin: inp.wmin, wmax: inp.wmax + 12, base: inp.base }); });
+  mixStatus(`Building ${vs.length - 1} mixes…`);
+}
+function renderMix() {
+  const host = document.getElementById('mixHost'), ctl = document.getElementById('mixCtl');
+  if (!S.mix || !S.data) { host.innerHTML = ''; ctl.innerHTML = ''; return; }
+  S.mix.variants[0].P = S.data.placements;
+  buttons(ctl, [{ v: 12, label: 'mixes in windows 12 wider' }, { v: 0, label: 'mixes in the same windows' }], (it) => it.v === S.mixOff, (it) => { S.mixOff = it.v; renderMix(); });
+  const ready = [];
+  for (const v of S.mix.variants) { if (!v.P) break; ready.push(v); }
+  const m = metric();
+  MIX.render(host, { variants: ready, windows: S.data.windows }, {
+    rule: S.rule, ruleName: RULES.find((r) => r[0] === S.rule)[1], metric: m[0], dir: m[2], fmt: m[3], metricName: m[1], offset: S.mixOff,
+    name: (st) => noteName(st + S.root), colors: SPAN_COLORS.map((c) => `var(${c})`), sel: S.mixSel,
+    onSelect: (sel) => { S.mixSel = sel; renderMix(); },
+    play: (notes, mode, btn) => play(notes.map((n) => n + S.root), mode, btn),
+    scores: [['rough', 'roughness', (v) => v.toFixed(3)], ['harm', 'harmonicity', (v) => v.toFixed(3)], ['per', 'periodicity', (v) => v.toFixed(2)]],
+  });
+}
+
 function render() {
   renderControls();
   if (!S.data) return;
   renderMap();
+  renderMix();
   renderCols();
   renderDetail();
   renderBand();
