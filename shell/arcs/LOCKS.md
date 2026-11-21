@@ -17,3 +17,4 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| package.json | ratio-rhythm | 2026-11-20 | new-arc setup: add check:ratio-rhythm |
