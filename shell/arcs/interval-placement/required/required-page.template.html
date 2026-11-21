@@ -1,0 +1,374 @@
+<title>Required Interval Collections</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+  /* Layout: inputs; filters (Schillinger's style questions); summary by span; the list; the chosen collection drawn as
+     a structure (simultaneous) and as directional units (sequential). Same look as the Interval Placement pages. */
+  :root {
+    --bg: #f6f6f3; --surface: #ffffff; --line: #d9d9d2; --grid: #ececE6; --fg: #1d1f22; --muted: #5d6168;
+    --accent: #2f5fb3; --accent-soft: #e3eaf7; --warn: #b4562a;
+    --s-a: #2f5fb3; --s-b: #2b7a4b; --s-c: #8a4fb0; --s-d: #b07a12; --s-e: #a8326e; --hang: #6b7079;
+    --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+      --accent: #8fb0ee; --accent-soft: #243149; --warn: #f0996b;
+      --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; --s-e: #ec8fbd; --hang: #a2a7ae; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+    --accent: #8fb0ee; --accent-soft: #243149; --warn: #f0996b;
+    --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; --s-e: #ec8fbd; --hang: #a2a7ae; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 72px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; margin: 0; text-wrap: balance; }
+  h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; margin: 0; }
+  p { margin: 0; max-width: 78ch; }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.85rem; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lbl { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); min-width: 8.5em; }
+  button, input, select, textarea { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 10px; }
+  button { cursor: pointer; font-weight: 500; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.on, button.playing { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  input[type=number] { width: 4.5em; font-family: var(--font-mono); }
+  input[type=text] { font-family: var(--font-mono); width: 10em; }
+  label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+  .names { font-size: 0.85rem; color: var(--muted); }
+  .status { font-size: 0.88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .error { color: var(--warn); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-variant-numeric: tabular-nums; cursor: pointer; background: var(--bg); color: var(--fg); font-size: 0.85rem; }
+  .chip b { font-family: var(--font-mono); font-weight: 500; }
+  .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .scroll { overflow-x: auto; min-width: 0; }
+  table { border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; width: 100%; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 4px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  td.mono { font-family: var(--font-mono); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: var(--bg); }
+  tbody tr.sel td { background: var(--accent-soft); }
+  .tag { font-size: 0.72rem; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--muted); }
+  .detail { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 20px; align-items: start; }
+  .notes { font-family: var(--font-mono); font-size: 1.05rem; }
+  .facts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .facts b { color: var(--fg); font-weight: 600; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--muted); align-items: center; }
+  .sw { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+  textarea { font-family: var(--font-mono); width: 100%; min-height: 9em; resize: vertical; }
+  svg { display: block; max-width: 100%; height: auto; }
+  .units { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--font-mono); font-size: 0.82rem; }
+  .unit { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; background: var(--bg); }
+  .stop-all { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 2px 10px rgba(0,0,0,0.15); padding: 8px 14px; }
+  @media (max-width: 640px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Required Interval Collections</h1>
+    <p>Name the intervals a collection must contain, the intervals allowed to <b>hang off</b> its notes, and how many notes it has. The page finds every collection that fits: each required interval is its own pair of notes, and every other note hangs off a note already there by one of the hanging intervals. The result is a pitch collection that does not repeat at the octave; play it together as a chord or one after another as a line.</p>
+    <p class="muted small">In Schillinger's terms (Book II, 8 B; Book IX, ch. 8) the required notes are the neutral or rest tones, a hung note is an auxiliary leading into the note it hangs from, and a neutral tone with its auxiliaries is a directional unit. His style questions are the filters below: which neutral tones take auxiliaries, at what interval, built upward or downward.</p>
+  </header>
+
+  <div class="panel">
+    <div class="row"><span class="lbl">Required</span><input id="req" type="text" value="3 19" aria-label="Required intervals in steps"><span class="names" id="reqNames"></span></div>
+    <div class="row"><span class="lbl">Hanging</span><input id="sec" type="text" value="5" aria-label="Hanging intervals in steps"><span class="names" id="secNames"></span></div>
+    <div class="row"><span class="lbl">Notes</span><input id="k" type="number" min="2" max="10" value="5" aria-label="Notes in the collection">
+      <span class="lbl" style="min-width:0;margin-left:12px">Span at most</span><input id="spanMax" type="number" min="0" max="96" value="48" aria-label="Largest span in steps, 0 for no limit"><span class="muted small">steps (0 = no limit)</span></div>
+    <div class="row"><span class="lbl">Lowest note</span><select id="root" aria-label="Lowest note"><option value="24">C1</option><option value="36" selected>C2</option><option value="48">C3</option><option value="60">C4</option></select>
+      <span class="muted small">only roughness depends on it</span></div>
+    <div class="row"><button id="go" type="button">Find collections</button><span class="status" id="status"></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="row"><span class="lbl">Chains</span><label class="check"><input type="checkbox" id="chains" checked> a note may hang off a hung note</label></div>
+    <div class="row"><span class="lbl">Direction</span><span class="row" id="dirs"></span><span class="muted small">where a hung note sits against the note it hangs from</span></div>
+    <div class="row"><span class="lbl">Hang from</span><span class="row" id="attach"></span></div>
+    <div class="row"><span class="lbl">Sort</span><span class="row" id="sorts"></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h2 id="countTitle">Collections</h2><span class="status" id="countNote"></span></div>
+    <div class="row"><span class="lbl">By span</span><div class="chips" id="spans"></div></div>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Steps</th><th>Notes</th><th>Span</th><th>Gaps</th><th>Evenness</th><th>Roughness</th><th>Harmonicity</th><th>Build</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="row"><button id="more" type="button" hidden>Show 200 more</button><span class="muted small">Evenness is the spread of the gaps (0 = all gaps equal). Roughness: lower is smoother. Harmonicity: higher is more fused.</span></div>
+  </div>
+
+  <div class="panel" id="detail"></div>
+</div>
+<button class="stop-all" id="stopAll" type="button">Stop sound</button>
+
+<script type="text/plain" id="coreSrc">/*CORE*/</script>
+<script>
+const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const noteName = (m) => NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+const IV = ['P1', 'm2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7'];
+// 19 -> P5+8 (compound fifth), 31 -> P5+2×8, 24 -> 2×P8
+const ivName = (n) => {
+  const o = Math.floor(n / 12), r = n % 12;
+  if (!o) return IV[r];
+  if (!r) return o === 1 ? 'P8' : `${o}×P8`;
+  return `${IV[r]}+${o === 1 ? '' : o + '×'}8`;
+};
+const REQ_COLORS = ['--s-a', '--s-b', '--s-c', '--s-d', '--s-e'];
+const SORTS = [['span', 'Span'], ['evenness', 'Evenness'], ['rough', 'Roughness'], ['harm', 'Harmonicity']];
+const DIRS = [['any', 'Either'], ['above', 'Above'], ['below', 'Below']];
+const S = { req: [], sec: [], k: 5, spanMax: 48, root: 36, chains: true, dir: 'any', attach: [], sort: 'span', spanSel: null, list: [], shown: 200, sel: null, rot: 0 };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+// ---------- worker ----------
+const worker = new Worker(URL.createObjectURL(new Blob([$('coreSrc').textContent], { type: 'text/javascript' })));
+let jobId = 0;
+worker.onmessage = (ev) => {
+  const m = ev.data;
+  if (m.id !== jobId) return;
+  if (m.type === 'progress') { $('status').textContent = m.total ? `scoring ${m.done.toLocaleString()} of ${m.total.toLocaleString()}…` : 'searching…'; return; }
+  S.list = m.list; S.truncated = m.truncated; S.shown = 200;
+  const keep = S.sel && S.list.find((c) => c.notes.join(' ') === S.sel);
+  if (!keep) { S.sel = null; S.rot = 0; }
+  $('status').textContent = '';
+  draw();
+};
+worker.onerror = (e) => { $('status').innerHTML = `<span class="error">The search failed: ${esc(e.message || 'unknown error')}</span>`; };
+
+function parseList(s) {
+  return s.trim().split(/[\s,]+/).filter(Boolean).map(Number);
+}
+function readInputs() {
+  const req = parseList($('req').value), sec = parseList($('sec').value);
+  const k = Number($('k').value), spanMax = Number($('spanMax').value);
+  const bad = (xs) => xs.some((x) => !Number.isInteger(x) || x < 1 || x > 48);
+  if (!req.length || req.length > 5 || bad(req)) return 'Required: 1 to 5 intervals, each a whole number of steps from 1 to 48.';
+  if (sec.length > 6 || bad(sec)) return 'Hanging: up to 6 intervals, each a whole number of steps from 1 to 48.';
+  if (!Number.isInteger(k) || k < 2 || k > 10) return 'Notes: a whole number from 2 to 10.';
+  if (!Number.isInteger(spanMax) || spanMax < 0) return 'Span: a whole number of steps, or 0 for no limit.';
+  if (k > 2 * req.length && !sec.length) return `With no hanging intervals, ${req.length} required interval${req.length > 1 ? 's' : ''} give at most ${2 * req.length} notes.`;
+  if (JSON.stringify(req) !== JSON.stringify(S.req)) S.attach = req.map(() => true);
+  Object.assign(S, { req, sec, k, spanMax, root: Number($('root').value) });
+  return null;
+}
+function run() {
+  const err = readInputs();
+  if (err) { $('status').innerHTML = `<span class="error">${esc(err)}</span>`; return; }
+  drawControls();
+  jobId++;
+  $('status').textContent = 'searching…';
+  worker.postMessage({ id: jobId, base: S.root, opts: { req: S.req, sec: S.sec, k: S.k, chains: S.chains, dir: S.dir, attach: S.attach, spanMax: S.spanMax, maxChords: 60000 } });
+}
+
+// ---------- controls ----------
+function names(xs) { return xs.map((x) => `${x} = ${ivName(x)}`).join(', '); }
+function drawControls() {
+  $('reqNames').innerHTML = S.req.map((x, i) => `<span style="color:var(${REQ_COLORS[i % 5]})">${x} = ${ivName(x)}</span>`).join(', ');
+  $('secNames').textContent = names(S.sec);
+  $('dirs').innerHTML = DIRS.map(([v, l]) => `<button type="button" data-dir="${v}" class="${S.dir === v ? 'on' : ''}" aria-pressed="${S.dir === v}">${l}</button>`).join('');
+  $('attach').innerHTML = S.req.map((x, i) => `<label class="check"><input type="checkbox" data-att="${i}" ${S.attach[i] ? 'checked' : ''}> <span style="color:var(${REQ_COLORS[i % 5]})">${ivName(x)}</span> notes</label>`).join('') + '<span class="muted small">which required notes may take hung notes</span>';
+  $('sorts').innerHTML = SORTS.map(([v, l]) => `<button type="button" data-sort="${v}" class="${S.sort === v ? 'on' : ''}" aria-pressed="${S.sort === v}">${l}</button>`).join('');
+}
+$('dirs').addEventListener('click', (e) => { const b = e.target.closest('[data-dir]'); if (!b) return; S.dir = b.dataset.dir; run(); });
+$('attach').addEventListener('change', (e) => { const c = e.target.closest('[data-att]'); if (!c) return; S.attach[Number(c.dataset.att)] = c.checked; run(); });
+$('sorts').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; S.sort = b.dataset.sort; S.shown = 200; drawControls(); draw(); });
+$('chains').addEventListener('change', () => { S.chains = $('chains').checked; run(); });
+const newSearch = () => { S.spanSel = null; run(); };
+$('go').addEventListener('click', newSearch);
+for (const id of ['req', 'sec', 'k', 'spanMax']) $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') newSearch(); });
+$('root').addEventListener('change', run);
+
+// ---------- list ----------
+function sorted() {
+  const key = S.sort, dir = key === 'harm' ? -1 : 1;
+  let xs = S.list.slice();
+  if (S.spanSel !== null) xs = xs.filter((c) => c.span === S.spanSel);
+  return xs.sort((a, b) => dir * (a[key] - b[key]) || a.span - b.span || a.evenness - b.evenness || a.notes.join(' ').localeCompare(b.notes.join(' ')));
+}
+function draw() {
+  const all = S.list, chained = all.filter((c) => c.chained).length;
+  $('countTitle').textContent = `${all.length.toLocaleString()} collection${all.length === 1 ? '' : 's'}`;
+  $('countNote').innerHTML = (all.length ? `mirror images counted once · ${chained ? `${chained.toLocaleString()} need a chain` : 'none needs a chain'}` : '') +
+    (S.truncated ? ' · <span class="error">the search stopped at 60,000 collections: lower the span limit to see all of them</span>' : '');
+  const bySpan = new Map();
+  for (const c of all) bySpan.set(c.span, (bySpan.get(c.span) || 0) + 1);
+  if (S.spanSel !== null && !bySpan.has(S.spanSel)) S.spanSel = null;
+  $('spans').innerHTML = `<button type="button" class="chip ${S.spanSel === null ? 'on' : ''}" data-span="">all</button>` +
+    [...bySpan.entries()].sort((a, b) => a[0] - b[0]).map(([s, n]) => `<button type="button" class="chip ${S.spanSel === s ? 'on' : ''}" data-span="${s}"><b>${s}</b> · ${n}</button>`).join('');
+  const xs = sorted();
+  if (!S.sel && xs.length) S.sel = xs[0].notes.join(' ');
+  $('rows').innerHTML = xs.slice(0, S.shown).map((c, i) => {
+    const key = c.notes.join(' ');
+    return `<tr data-key="${key}" tabindex="0" class="${key === S.sel ? 'sel' : ''}"><td>${i + 1}</td><td class="mono">${key}</td><td>${c.notes.map((s) => noteName(S.root + s)).join(' ')}</td>` +
+      `<td>${c.span}</td><td class="mono">${c.gaps.join(' ')}</td><td>${c.evenness.toFixed(2)}</td><td>${c.rough.toFixed(3)}</td><td>${c.harm.toFixed(3)}</td>` +
+      `<td>${c.chained ? '<span class="tag">chain</span>' : ''}</td></tr>`;
+  }).join('') || `<tr><td colspan="9" class="muted">No collection fits. Try more hanging intervals, a larger span, or allow chains.</td></tr>`;
+  $('more').hidden = xs.length <= S.shown;
+  drawDetail();
+}
+$('spans').addEventListener('click', (e) => { const b = e.target.closest('[data-span]'); if (!b) return; S.spanSel = b.dataset.span === '' ? null : Number(b.dataset.span); S.shown = 200; draw(); });
+$('more').addEventListener('click', () => { S.shown += 200; draw(); });
+const pickRow = (tr) => { if (!tr) return; S.sel = tr.dataset.key; S.rot = 0; document.querySelectorAll('#rows tr.sel').forEach((r) => r.classList.remove('sel')); tr.classList.add('sel'); drawDetail(); };
+$('rows').addEventListener('click', (e) => pickRow(e.target.closest('tr[data-key]')));
+$('rows').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickRow(e.target.closest('tr[data-key]')); } });
+
+// ---------- detail ----------
+function unitSequence(c) {
+  // each directional unit: its hung notes, farthest first, then the neutral tone (a unit ends on its neutral tone)
+  const units = c.units.map((u) => {
+    const depth = new Map([[u.neutral, 0]]);
+    for (const h of u.hung) depth.set(h.note, depth.get(h.parent) + 1);
+    const hung = u.hung.slice().sort((a, b) => depth.get(b.note) - depth.get(a.note) || a.note - b.note).map((h) => h.note);
+    return { neutral: u.neutral, seq: [...hung, u.neutral] };
+  });
+  const r = ((S.rot % units.length) + units.length) % units.length;
+  return units.slice(r).concat(units.slice(0, r));
+}
+function structureSvg(c) {
+  const H = 300, top = 16, bot = 16, span = Math.max(c.span, 12), y = (s) => top + (H - top - bot) * (1 - s / span);
+  const W = 230, xN = 150;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="Structure of the collection: required intervals as bars, hung notes with arrows into the note they hang from">`;
+  for (let o = 0; o <= span; o += 12) s += `<line x1="0" x2="${W}" y1="${y(o)}" y2="${y(o)}" stroke="var(--grid)"/><text x="2" y="${y(o) - 3}" font-size="10" fill="var(--muted)">${noteName(S.root + o)}</text>`;
+  const reqEdges = c.edges.filter((e) => e.req), secEdges = c.edges.filter((e) => !e.req);
+  reqEdges.forEach((e, i) => {
+    const x = 40 + i * 16, col = `var(${REQ_COLORS[e.idx % 5]})`;
+    s += `<line x1="${x}" x2="${x}" y1="${y(e.a)}" y2="${y(e.b)}" stroke="${col}" stroke-width="3" stroke-linecap="round"/>`;
+    for (const n of [e.a, e.b]) s += `<line x1="${x}" x2="${xN}" y1="${y(n)}" y2="${y(n)}" stroke="${col}" stroke-width="1" stroke-dasharray="2 3"/>`;
+  });
+  // hung notes: arrow from the hung note into the note it hangs from
+  const parentOf = new Map();
+  for (const u of c.units) for (const h of u.hung) parentOf.set(h.note, h.parent);
+  for (const [n, p] of parentOf) {
+    const x = xN + 26, y1 = y(n), y2 = y(p), d = y2 > y1 ? 1 : -1;
+    s += `<path d="M ${xN + 6} ${y1} L ${x} ${y1} L ${x} ${y2 - d * 6}" fill="none" stroke="var(--hang)" stroke-width="1.5"/>`;
+    s += `<path d="M ${x - 4} ${y2 - d * 8} L ${x} ${y2 - d * 2} L ${x + 4} ${y2 - d * 8} Z" fill="var(--hang)"/>`;
+    s += `<line x1="${x}" x2="${xN + 6}" y1="${y2}" y2="${y2}" stroke="var(--hang)" stroke-width="1" stroke-dasharray="2 2"/>`;
+  }
+  // links between separate required pieces (a secondary edge joining two required notes)
+  for (const e of secEdges) if (!parentOf.has(e.a) && !parentOf.has(e.b)) {
+    const x = xN + 44;
+    s += `<line x1="${x}" x2="${x}" y1="${y(e.a)}" y2="${y(e.b)}" stroke="var(--hang)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  }
+  for (const n of c.notes) {
+    const hung = parentOf.has(n);
+    s += `<circle cx="${xN}" cy="${y(n)}" r="5" fill="${hung ? 'var(--surface)' : 'var(--fg)'}" stroke="var(--fg)" stroke-width="1.5"/>`;
+    s += `<text x="${xN - 10}" y="${y(n) + 4}" font-size="11" text-anchor="end" fill="var(--fg)" font-family="var(--font-mono)">${noteName(S.root + n)}</text>`;
+  }
+  return s + '</svg>';
+}
+function sequenceSvg(c, units) {
+  const seq = units.flatMap((u) => u.seq.map((n) => ({ n, neutral: n === u.neutral })));
+  const H = 180, top = 12, bot = 14, span = Math.max(c.span, 12), y = (s) => top + (H - top - bot) * (1 - s / span);
+  const step = 34, W = Math.max(200, 30 + seq.length * step);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="The collection as directional units in time">`;
+  for (let o = 0; o <= span; o += 12) s += `<line x1="0" x2="${W}" y1="${y(o)}" y2="${y(o)}" stroke="var(--grid)"/>`;
+  let x = 20, k = 0;
+  for (const u of units) {
+    const x0 = x - 10;
+    const pts = u.seq.map((n, i) => [x + i * step, y(n)]);
+    s += `<rect x="${x0}" y="${top - 6}" width="${u.seq.length * step - 4}" height="${H - top - bot + 12}" rx="6" fill="none" stroke="var(--line)"/>`;
+    if (pts.length > 1) s += `<polyline points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="var(--hang)" stroke-width="1.5"/>`;
+    u.seq.forEach((n, i) => {
+      const neutral = i === u.seq.length - 1;
+      s += `<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="5" fill="${neutral ? 'var(--fg)' : 'var(--surface)'}" stroke="var(--fg)" stroke-width="1.5"/>`;
+      s += `<text x="${pts[i][0]}" y="${H - 2}" font-size="9" text-anchor="middle" fill="var(--muted)" font-family="var(--font-mono)">${noteName(S.root + n)}</text>`;
+    });
+    x += u.seq.length * step + 4; k++;
+  }
+  return s + '</svg>';
+}
+function scala(c) {
+  const lines = [`! collection-${c.notes.join('-')}.scl`, '!', `Collection ${c.notes.join(' ')} (required ${S.req.join(' ')}, hanging ${S.sec.join(' ') || 'none'}), repeats at its span`, ` ${c.notes.length - 1}`, '!'];
+  for (const n of c.notes.slice(1)) lines.push(` ${(n * 100).toFixed(1)}`);
+  return lines.join('\n') + '\n';
+}
+function drawDetail() {
+  const host = $('detail');
+  const c = S.sel && S.list.find((x) => x.notes.join(' ') === S.sel);
+  if (!c) { host.innerHTML = '<h2>Collection</h2><p class="muted">Pick a row to see its structure and hear it.</p>'; return; }
+  const units = unitSequence(c);
+  const midis = c.notes.map((s) => S.root + s);
+  const seqMidis = units.flatMap((u) => u.seq).map((s) => S.root + s);
+  host.innerHTML = `<h2>Collection</h2>
+    <div class="notes">${c.notes.map((s) => noteName(S.root + s)).join(' ')} <span class="muted">· steps ${c.notes.join(' ')}</span></div>
+    <div class="facts"><span>span <b>${c.span}</b> (${ivName(c.span)})</span><span>gaps <b>${c.gaps.join(' ')}</b></span><span>evenness <b>${c.evenness.toFixed(2)}</b></span>
+      <span>roughness <b>${c.rough.toFixed(3)}</b></span><span>harmonicity <b>${c.harm.toFixed(3)}</b></span><span>builds that fit the filters <b>${c.builds >= 400 ? '400+' : c.builds}</b></span>${c.chained ? '<span><b>needs a chain</b></span>' : ''}</div>
+    <div class="btns"><button type="button" data-play="chord">Play together</button><button type="button" data-play="up">Play upward</button><button type="button" data-play="units">Play as directional units</button></div>
+    <div class="detail">
+      <div style="display:flex;flex-direction:column;gap:6px"><div class="lbl" style="min-width:0">Together: the structure</div>${structureSvg(c)}
+        <div class="legend">${c.edges.filter((e) => e.req).map((e) => `<span><span class="sw" style="background:var(${REQ_COLORS[e.idx % 5]})"></span>${ivName(e.size)} ${noteName(S.root + e.a)}–${noteName(S.root + e.b)}</span>`).join('')}
+          <span>● required note · ○ hung note, arrow into the note it hangs from</span></div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="row" style="justify-content:space-between"><div class="lbl" style="min-width:0">One after another: directional units</div>
+        <div class="btns"><button type="button" data-rot="-1" aria-label="Rotate the units backward">◀ rotate</button><button type="button" data-rot="1" aria-label="Rotate the units forward">rotate ▶</button></div></div>
+        <div class="scroll">${sequenceSvg(c, units)}</div>
+        <div class="units">${units.map((u) => `<span class="unit">${u.seq.map((n) => noteName(S.root + n)).join(' → ')}</span>`).join('')}</div>
+        <p class="muted small">Each box is one unit: the hung notes lead into their required note, which comes last. Rotating moves whole units and never changes the inside of one (Schillinger's circular permutation).</p>
+        <div class="lbl" style="min-width:0;margin-top:6px">Take it further</div>
+        <div class="btns"><button type="button" data-copy="steps">Copy steps</button><button type="button" data-copy="cents">Copy cents</button><button type="button" data-copy="scl">Copy Scala file</button><span class="status" id="copyNote"></span></div>
+        <textarea id="sclText" readonly aria-label="Scala file text">${esc(scala(c))}</textarea>
+        <p class="muted small">The Scala file repeats the collection at its span (${c.span} steps), not at the octave.</p>
+      </div>
+    </div>`;
+  host.querySelectorAll('[data-play]').forEach((b) => b.addEventListener('click', () => {
+    const mode = b.dataset.play;
+    play(mode === 'units' ? seqMidis : midis, mode === 'chord' ? 'chord' : 'line', b);
+  }));
+  host.querySelectorAll('[data-rot]').forEach((b) => b.addEventListener('click', () => { S.rot += Number(b.dataset.rot); drawDetail(); }));
+  host.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
+    const what = b.dataset.copy;
+    const text = what === 'steps' ? c.notes.join(' ') : what === 'cents' ? c.notes.map((n) => n * 100).join(' ') : scala(c);
+    const done = (ok) => { $('copyNote').textContent = ok ? 'Copied' : 'Select the text and copy it'; };
+    try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (e) { done(false); }
+    if (what === 'scl') $('sclText').select();
+  }));
+}
+
+// ---------- audio ----------
+let ctx = null, master = null, live = [];
+function audio() {
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination); }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function stopAll() { for (const n of live) { try { n.stop(); } catch (e) {} } live = []; document.querySelectorAll('button.playing').forEach((b) => b.classList.remove('playing')); }
+function tone(midi, start, dur, level) {
+  const c = audio(), f = 440 * Math.pow(2, (midi - 69) / 12), g = c.createGain();
+  g.gain.setValueAtTime(0, start); g.gain.linearRampToValueAtTime(level, start + 0.02);
+  g.gain.setTargetAtTime(level * 0.6, start + 0.05, 0.4); g.gain.setTargetAtTime(0, start + dur, 0.12);
+  g.connect(master);
+  for (let k = 1; k <= 6; k++) {
+    if (f * k > 12000) break;
+    const o = c.createOscillator(), pg = c.createGain();
+    pg.gain.value = 1 / k; o.frequency.value = f * k; o.connect(pg); pg.connect(g); o.start(start); o.stop(start + dur + 0.8);
+    live.push(o);
+  }
+}
+function play(midis, mode, btn) {
+  stopAll();
+  const c = audio(), t0 = c.currentTime + 0.05;
+  if (mode === 'chord') midis.forEach((m) => tone(m, t0, 2.2, 0.18 / Math.sqrt(midis.length)));
+  else midis.forEach((m, i) => tone(m, t0 + i * 0.32, 0.9, 0.16));
+  btn.classList.add('playing');
+  setTimeout(() => btn.classList.remove('playing'), mode === 'chord' ? 2600 : midis.length * 320 + 1200);
+}
+$('stopAll').addEventListener('click', stopAll);
+
+run();
+</script>
