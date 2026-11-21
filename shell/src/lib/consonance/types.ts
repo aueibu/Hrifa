@@ -1,7 +1,7 @@
 /** Shared types for the consonance library. Pure TypeScript: no React, no DOM, no fs. */
 
 /**
- * A voicing: notes as cents above an absolute reference pitch, plus the reference in Hz (decision INTPLC-2).
+ * A voicing: notes as cents above an absolute reference pitch, plus the reference in Hz (decision INTERVALPLACEMENT-2).
  * `cents` need not be sorted. EDO steps are an input convenience (`steps * 1200 / edo`); Hz and midicents are derived
  * only at the edge.
  */

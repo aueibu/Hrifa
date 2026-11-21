@@ -6,7 +6,7 @@ for ranking. No React, no DOM, no fs (the tests read the CC0 datasets with `node
 the Interval Placement arc (`arcs/interval-placement`) and meant to be usable later as a voicing scorer in the
 Composition Workbench.
 
-Inputs are **absolute frequencies in Hz** plus a timbre. A voicing is `{refHz, cents[]}` (decision INTPLC-2): cents above an
+Inputs are **absolute frequencies in Hz** plus a timbre. A voicing is `{refHz, cents[]}` (decision INTERVALPLACEMENT-2): cents above an
 absolute reference pitch; EDO steps are only an input convenience (`voicingFromSteps(refHz, steps, edo)`). Nothing
 assumes 12-EDO: the same functions score 12-, 19- and 31-EDO chords, just intonation, or any cents.
 

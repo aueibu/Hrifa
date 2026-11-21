@@ -63,19 +63,19 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
 
 ## Parameters
 - **Owned paths:** `src/lib/consonance/` (new: pure TS scoring, no React/DOM), `src/lib/interval-placement/` (new: pure TS placement engine, no React/DOM), `src/pages/interval-placement/` (today unowned: components, state, mock, tests, `texts.ts`, `settings.ts`, the page's `ARCHITECTURE.md`), `arcs/interval-placement/`.
-- **Shared paths it may touch** (row in `arcs/LOCKS.md` while edited, written by the orchestrator): `package.json` (Setup only: add `check:ip`); `src/pages/IntervalPlacement.page.tsx` (standing shared entry, M4); `src/Router.tsx` (M3 mock route, retired in M5); `src/theme/diagram.ts` (only if `resolveIntervalPlacementStyle` needs new roles; stop and ask first); `ARCHITECTURE.md` (M1 and Final: the two libs and the page in the map and "Who consumes what"). `DECISIONS.md`/`BACKLOG.md` need no lock for our own rows.
-- **Taking over the page folder:** `src/pages/interval-placement/` has no active arc today, so it is a shared path until this ARC is approved; approval of this ARC is the human's OK, and Setup adds the `DECISIONS.md` row (INTPLC-1) that makes it owned by this arc.
-- **Check command:** `corepack yarn check:ip` = `npm run typecheck`, then `oxfmt --check` and `oxlint` scoped to `src/lib/consonance`, `src/lib/interval-placement` and `src/pages/interval-placement` (both with `--no-error-on-unmatched-pattern`), stylelint scoped (`--allow-empty-input`), `vitest run --passWithNoTests` over the same three folders. Modelled on `check:hfl`. If red only because of other arcs' files, stop and report (shell rule 14).
-- **DECISIONS prefix:** `INTPLC`, registered in our first row. Rows due: INTPLC-1 arc ownership of `src/pages/interval-placement/` (Setup); INTPLC-2 the libs' pitch representation (M1); INTPLC-3 the scoring model and ranking (M1); any theme-role change.
+- **Shared paths it may touch** (row in `arcs/LOCKS.md` while edited, written by the orchestrator): `package.json` (Setup only: add `check:interval-placement`); `src/pages/IntervalPlacement.page.tsx` (standing shared entry, M4); `src/Router.tsx` (M3 mock route, retired in M5); `src/theme/diagram.ts` (only if `resolveIntervalPlacementStyle` needs new roles; stop and ask first); `ARCHITECTURE.md` (M1 and Final: the two libs and the page in the map and "Who consumes what"). `DECISIONS.md`/`BACKLOG.md` need no lock for our own rows.
+- **Taking over the page folder:** `src/pages/interval-placement/` has no active arc today, so it is a shared path until this ARC is approved; approval of this ARC is the human's OK, and Setup adds the `DECISIONS.md` row (INTERVALPLACEMENT-1) that makes it owned by this arc.
+- **Check command:** `corepack yarn check:interval-placement` = `npm run typecheck`, then `oxfmt --check` and `oxlint` scoped to `src/lib/consonance`, `src/lib/interval-placement` and `src/pages/interval-placement` (both with `--no-error-on-unmatched-pattern`), stylelint scoped (`--allow-empty-input`), `vitest run --passWithNoTests` over the same three folders. Modelled on `check:hfl`. If red only because of other arcs' files, stop and report (shell rule 14).
+- **DECISIONS prefix:** `INTERVALPLACEMENT`, registered in our first row. Rows due: INTERVALPLACEMENT-1 arc ownership of `src/pages/interval-placement/` (Setup); INTERVALPLACEMENT-2 the libs' pitch representation (M1); INTERVALPLACEMENT-3 the scoring model and ranking (M1); any theme-role change.
 - **Pitch representation:** notes are cents above an absolute reference plus the reference in Hz (a voicing = `{refHz, cents[]}`); EDO steps are an input convenience (`steps × 1200 / edo`). Midicents (W-1) and Hz are derived only at the edge (audio, a later workbench handoff). This makes the libs EDO-agnostic and ready for the BACKLOG non-EDO pitch item.
 - **Panel workspace code (decided at approval):** the harmonic-field-lab panel system (`Panels.tsx`, `Rail.tsx`, `PinMenu.tsx`, `state/layout.ts`, `panels.module.css`, about 2.2k lines) is owned by that arc and hard-wired to its panel ids, so it can't be imported as is. We build a generic version inside our page folder (`workspace/`), following its behaviour and look: panel ids, titles, summaries and renderers are passed in (no page-specific imports inside `workspace/`), its layout state and persistence are self-contained, and it has its own tests, so promoting it to `src/components/` later is a move, not a rewrite. A `[shared]` BACKLOG item records the promotion.
 - **Persistence:** shell pattern (`loadSettings`/`saveSettings`/`sanitizeSettings`). New keys `hrifa.interval-placement.settings.v2` (migrated from `…v1`: intervals, EDO, base, window, engine params, odd bias, tuning) and `…layout.v1`. Bad data falls back to defaults.
 - **Performance:** placement runs in a Web Worker with a cap on orderings (default 5,040 = 7 intervals; above it, results stream in and the UI says how many are left). The main thread never blocks for more than one frame.
 - **Theme:** shell roles and `--mark-<hue>` only, per `src/theme/THEMING.md`. No hex.
-- **Concurrency:** same checkout and branch as the other arcs. Path-scoped commits only (`git add <paths>`, `git commit -- <paths>`; never `git add -A` or a bare `git commit`; on `index.lock` retry, never delete it). Lock rows removed only after the commit. Builders run only the tests of the files they touched; the orchestrator runs `check:ip` once per milestone.
+- **Concurrency:** same checkout and branch as the other arcs. Path-scoped commits only (`git add <paths>`, `git commit -- <paths>`; never `git add -A` or a bare `git commit`; on `index.lock` retry, never delete it). Lock rows removed only after the commit. Builders run only the tests of the files they touched; the orchestrator runs `check:interval-placement` once per milestone.
 
 ## Preconditions
-- `check:ip` exists and is green before M1 (created at Setup with the rule-15 flags so it is green with no code). If red only because of other arcs' files, not ours to fix.
+- `check:interval-placement` exists and is green before M1 (created at Setup with the rule-15 flags so it is green with no code). If red only because of other arcs' files, not ours to fix.
 - Owned and locked paths are clean before each builder brief.
 - `corepack yarn test` run once before M1 to record the baseline.
 
@@ -89,7 +89,7 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
 ## Milestones
 
 ### Setup (orchestrator, shell rule 16, after approval)
-- Take the `package.json` lock, add `check:ip`, commit `arcs/interval-placement/` + `package.json`, release the lock. Append `DECISIONS.md` INTPLC-1 (registers prefix INTPLC; this arc owns `src/pages/interval-placement/`).
+- Take the `package.json` lock, add `check:interval-placement`, commit `arcs/interval-placement/` + `package.json`, release the lock. Append `DECISIONS.md` INTERVALPLACEMENT-1 (registers prefix INTERVALPLACEMENT; this arc owns `src/pages/interval-placement/`).
 
 ### C0: Context scan
 - Read `ARCHITECTURE.md`, `DECISIONS.md`, `BACKLOG.md`, the Status of every other arc, `arcs/LOCKS.md`, `src/theme/THEMING.md`, the harmonic-field-lab page `ARCHITECTURE.md` (panel workspace behaviour) and `src/lib/harmonic-field/README.md` (scorers we compare against). Confirm nothing outside the page imports from `src/pages/interval-placement/`.
@@ -109,7 +109,7 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
   - [ ] EDO-agnostic: the same functions score 12-, 19- and 31-EDO chords and JI; 31-EDO's 7/4 approximation has lower periodicity than a 12-EDO tritone.
   - [ ] Cross-check: the Sethares option orders a fixed chord set the same way as `src/lib/harmonic-field`'s `scoreRoughness` (imported read-only in a test).
   - [ ] A comparison table (about 15 chords: dyads at three registers, triads, tetrads, clusters, compound voicings, the default `11 7 16` placements) with every score, pasted into PROGRESS for the human. If the Bowling et al. data is available (Open questions), also a Spearman correlation per score, reported, not gated.
-  - [ ] Lib `README.md` documents each model with its citation and known simplifications; `ARCHITECTURE.md` lists the lib; `DECISIONS.md` INTPLC-2 (pitch representation) and INTPLC-3 (scoring model) appended. `check:ip` green; path-scoped commit.
+  - [ ] Lib `README.md` documents each model with its citation and known simplifications; `ARCHITECTURE.md` lists the lib; `DECISIONS.md` INTERVALPLACEMENT-2 (pitch representation) and INTERVALPLACEMENT-3 (scoring model) appended. `check:interval-placement` green; path-scoped commit.
 - References found at C0 (2026-11-13), read-only clones outside the repo (re-clone with `GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/pmcharrison/<name> /home/user/pmcharrison/<name>` if missing):
   - `dycon` (MIT): `R/hutch.R` Hutchinson & Knopoff 1978 roughness, `R/sethares.R`, `R/vassilakis.R`.
   - `stolz15` (MIT): `R/main.R` Stolzenburg 2015 relative periodicity (smoothed).
@@ -135,7 +135,7 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
   - [ ] Works in cents: a 19-EDO and a JI input place correctly.
   - [ ] Constraints: must-not-have removes every voicing containing the interval (exact and octave-equivalent modes); must-have keeps only voicings containing it; the number filtered out is reported; tests for both, including a constraint that removes everything (empty result, no error).
   - [ ] Descriptive measures (span, note count, centroid, lowest note, distinct induced intervals, collisions) computed per voicing.
-  - [ ] `check:ip` green; path-scoped commit.
+  - [ ] `check:interval-placement` green; path-scoped commit.
 - Result (2026-11-13): done (see PROGRESS M2 rows; quirk list in the lib README feeds M2b). Orchestrator decision for M2b to revisit: merged voicings keep every ordering's essential pairs and flag `essentialVaries`.
 - Human checkpoint after: no
 
@@ -171,7 +171,7 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
   - [ ] Playback at the real base pitch (scored register = heard register), selection by identity (as today), hover cross-highlight across every view.
   - [ ] Persistence `…settings.v2` (migrated from `…v1`, tested with real v1 data and bad data) and `…layout.v1`.
   - [ ] Panels may keep mock content where noted in the report.
-  - [ ] Tests: state reducers, persistence, worker protocol (with a fake worker), page tests for input and selection; `check:ip` green.
+  - [ ] Tests: state reducers, persistence, worker protocol (with a fake worker), page tests for input and selection; `check:interval-placement` green.
 - Human checkpoint after: **yes** (ears and feel)
 
 ### M5: Live panels + retire the old code
@@ -180,7 +180,7 @@ One-screen workspace, harmonic-field-lab style: thin top bar (transport: arpeggi
   - [ ] Results list + Map, Relations, Register, Visualizer views and Reader all live.
   - [ ] Old modules removed: `intervalMath.ts` scoring, `psychoacousticsV2.ts`, `ScoringInfoModal.tsx`, the old engine copies (now in the lib); nothing else imports them.
   - [ ] Feature-parity checklist against today's page (every control accounted for, or dropped with the human's OK).
-  - [ ] Mock route retired; `check:ip` green.
+  - [ ] Mock route retired; `check:interval-placement` green.
 - Human checkpoint after: **yes**
 
 ## Final step
@@ -196,7 +196,7 @@ Page `ARCHITECTURE.md` and both lib `README.md`s complete. A **Workbench integra
 - A criterion can't be met after 2 builder attempts.
 - An expected value in a test turns out to be wrong in theory, or a cited paper says something other than this ARC claims (report it; don't silently change the test or the claim).
 - A change outside a milestone's scope or Owned/Shared paths, or to shared shell code (theme, audio, shared components), `ARCHITECTURE.md` contracts, or the page's `ARCHITECTURE.md` contracts.
-- A shared path we need is locked by another arc, or `check:ip` is red only because of another arc's files.
+- A shared path we need is locked by another arc, or `check:interval-placement` is red only because of another arc's files.
 - A change would break loading of saved v1 settings.
 - Any decision about layout, wording, look or sound beyond the approved mock or existing patterns.
 
