@@ -19,6 +19,9 @@ to re-score with `scoreVoicing` as a check (the build stops if any differs by mo
 
 Timing (2026-11-21, this PC, 11 workers): n = 3, max 24, wmax 48, bases C2 and C3, with rounding variants: 65 s,
 843,552 placements, 676,945 distinct chords, 371,414 shapes, 178 MB.
+n = 4, same settings: 32.5 min (shapes 20 min, roughness 4 min per root, pass 1 1 min, writing and indexes 2.5 min),
+19,451,288 placements, 15,521,278 distinct chords, 8,899,469 shapes, 324 pitch-class classes, 4.3 GB; Node needs
+`--max-old-space-size` raised (about 4.5 GB resident). Shapes dominate: on the VM (16 cores) they would take about 14 min.
 
 ## How it is fast
 
