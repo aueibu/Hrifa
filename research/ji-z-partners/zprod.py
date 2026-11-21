@@ -19,6 +19,10 @@ Search, for one gamut G:
      or inversion of P; group by interval content (zgen fingerprint) into families.
 Families with no factor of at most --max-terms terms are not found (compare with an exhaustive run).
 
+--interval-odd q (the agreed principle: intervallic odd limit): the gamut is odd <= q (unless --odd says
+otherwise) and every interval inside P must have odd limit <= q. Checked during the U search: each P note
+that becomes final is tested against all earlier final notes. Q has the same intervals, so it fits too.
+
 usage (pypy3, on the VM):
   pypy3 zprod.py --zgen ~/zgen/zgen_v4.py --primes 3 5 --odd 123 --k 10 --workers 8 --out DIR
 writes DIR/k<k>/families.jsonl (zgen format; check with verify_families.py) and DIR/summary.csv
@@ -29,7 +33,7 @@ from math import gcd
 from multiprocessing import Pool
 
 Z = None
-_G = _GSET = _BOX = _ARGS = None
+_G = _GSET = _BOX = _ARGS = _DSET = None
 
 
 def load_zgen(path):
@@ -256,6 +260,10 @@ def search_U(V, ks):
     pos_max = usum_max + max_neg
     state = {"usum": 0, "pos": 0, "neg": 0, "nodes": 0}
     budget = _ARGS.max_nodes
+    # --interval-odd: P points already final with coefficient 1, in order (a stack, trimmed on backtrack);
+    # every new final P note must make an allowed interval (difference in _DSET) with each of them
+    DS = _DSET
+    notes = []
 
     class Budget(Exception):
         pass
@@ -283,11 +291,20 @@ def search_U(V, ks):
                 for v, a in Vs:
                     Q[add(u, v)] += c * a
             ok = True
+            nn = len(notes)
             for p in finP[i]:
                 x = P[p]
                 if x < 0 or x > 1 or (x == 1 and p not in _GSET):
                     ok = False
                     break
+                if x == 1 and DS is not None:
+                    for r in notes:
+                        if sub(p, r) not in DS:
+                            ok = False
+                            break
+                    if not ok:
+                        break
+                    notes.append(p)
             if ok:
                 for q in finQ[i]:
                     x = Q[q]
@@ -306,6 +323,7 @@ def search_U(V, ks):
                     state["pos"] -= c
                 else:
                     state["neg"] += c
+            del notes[nn:]
             if c:
                 for v, a in V:
                     P[add(u, v)] -= c * a
@@ -320,11 +338,14 @@ def search_U(V, ks):
 
 
 def _init(G, args):
-    global _G, _GSET, _BOX, _ARGS, Z
+    global _G, _GSET, _BOX, _ARGS, Z, _DSET
     _G, _GSET, _ARGS = G, set(G), args
+    Z = load_zgen(args.zgen)
+    # allowed intervals: the odd <= q gamut is closed under negation, so it is the set of differences
+    # (lattice vectors) whose ratio has odd limit <= q
+    _DSET = set(Z.gamut(args.primes, args.interval_odd)) if args.interval_odd else None
     dim = len(G[0])
     _BOX = ([min(p[i] for p in G) for i in range(dim)], [max(p[i] for p in G) for i in range(dim)])
-    Z = load_zgen(args.zgen)
 
 
 def _job(V):
@@ -365,7 +386,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--zgen", required=True, help="path to zgen.py (helpers and output format)")
     ap.add_argument("--primes", type=int, nargs="+", required=True)
-    ap.add_argument("--odd", type=int, required=True)
+    ap.add_argument("--odd", type=int, default=0, help="gamut: notes of odd limit <= this (default: --interval-odd)")
+    ap.add_argument("--interval-odd", type=int, default=0,
+                    help="only sets whose every interval has odd limit <= q (pruned during the U search); "
+                         "the partner has the same intervals, so it fits the odd <= q gamut too")
     ap.add_argument("--k", type=int, nargs="+", required=True)
     ap.add_argument("--shapes", nargs="+", default=["2,1", "3,1", "3,2", "4,1", "4,2"],
                     help="V shapes vp,vm (plus terms incl. the lowest, minus terms)")
@@ -383,6 +407,10 @@ def main():
     global Z
     Z = load_zgen(a.zgen)
     run = Z.Run(a.out)
+    if not a.odd:
+        if not a.interval_odd:
+            ap.error("give --odd or --interval-odd")
+        a.odd = a.interval_odd
     G = Z.gamut(a.primes, a.odd)
     shapes = [tuple(int(x) for x in s.split(",")) for s in a.shapes]
     dim = len(G[0])
@@ -390,7 +418,8 @@ def main():
     bounds = extent if a.vmax <= 0 else [min(a.vmax, e) for e in extent]
     H = hull_lattice(G)
     run.say(f"gamut {len(G)} notes ({a.primes}, odd <= {a.odd}), {len(H)} lattice points in its hull; k {a.k}; "
-            f"V shapes {shapes}, |coord| <= {bounds}; U coefficients {a.ucoeffs}")
+            f"V shapes {shapes}, |coord| <= {bounds}; U coefficients {a.ucoeffs}"
+            + (f"; intervallic odd limit <= {a.interval_odd}" if a.interval_odd else ""))
     t0 = time.time()
     if a.count_only:
         for sh in shapes:
