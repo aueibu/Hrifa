@@ -1,0 +1,390 @@
+<title>Rhythm Crystals</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+  /* Rhythm crystals (Wallin's crystal chords moved into time): every cell is entered at every onset of the others on a
+     cycle of pulses. Pulses hit more than once are accents. Mirroring a cell gives a Z-twin. Same look as the
+     Interval Placement side pages. */
+  :root {
+    --bg: #f6f6f3; --surface: #ffffff; --line: #d9d9d2; --grid: #ececE6; --fg: #1d1f22; --muted: #5d6168;
+    --accent: #2f5fb3; --accent-soft: #e3eaf7; --warn: #b4562a; --twin: #8a4fb0; --twin-soft: #efe5f6; --ok: #2b7a4b;
+    --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+      --accent: #8fb0ee; --accent-soft: #243149; --warn: #f0996b; --twin: #c79ae6; --twin-soft: #33264a; --ok: #79c79a; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+    --accent: #8fb0ee; --accent-soft: #243149; --warn: #f0996b; --twin: #c79ae6; --twin-soft: #33264a; --ok: #79c79a; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 72px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; margin: 0; text-wrap: balance; }
+  h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; margin: 0; }
+  p { margin: 0; max-width: 78ch; }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.85rem; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lbl { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); min-width: 7em; }
+  button, input, select { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 10px; }
+  button { cursor: pointer; font-weight: 500; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.playing { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  input[type=number] { width: 5em; font-family: var(--font-mono); }
+  input.cell { font-family: var(--font-mono); width: min(100%, 26em); }
+  .read { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .error { color: var(--warn); }
+  .rows { display: flex; flex-direction: column; gap: 14px; }
+  .rrow { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .rhead { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 0.88rem; }
+  .rhead b { font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; }
+  .tag { font-size: 0.75rem; border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; color: var(--muted); }
+  .tag.z { border-color: var(--twin); color: var(--twin); background: var(--twin-soft); }
+  .tag.ok { border-color: var(--ok); color: var(--ok); }
+  .mono { font-family: var(--font-mono); }
+  .scroll { overflow-x: auto; min-width: 0; padding-bottom: 2px; }
+  svg { display: block; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .btns button { padding: 2px 8px; font-size: 0.8rem; }
+  .sep { border-top: 1px solid var(--line); }
+  .stop-all { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 2px 10px rgba(0,0,0,0.15); padding: 8px 14px; }
+  .formats { font-size: 0.85rem; color: var(--muted); display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; }
+  .formats code { font-family: var(--font-mono); color: var(--fg); }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Rhythm Crystals</h1>
+    <p>Rolf Wallin builds a crystal chord by stacking one germ interval on every note made by another. In time, that is a canon: play cell 1 starting at every onset of cell 2 (and of cell 3), on a cycle of pulses. Where copies land on the same pulse the attack gets heavier, so the result is a rhythm with its own accents. Mirroring a lopsided cell gives a <b style="color:var(--twin)">Z-twin</b>: a different rhythm with exactly the same time distances between its attacks, accents included.</p>
+  </header>
+
+  <div class="panel">
+    <div class="row"><span class="lbl">Start from</span><select id="example" aria-label="Example to start from"></select><span class="read" id="exNote"></span></div>
+    <div class="row"><span class="lbl">Cycle</span><input id="L" type="number" min="2" max="512" value="24" aria-label="Pulses in the cycle"><span class="read">pulses</span>
+      <button type="button" id="fit">Fit without wrapping</button><span class="read" id="fitNote"></span></div>
+    <div id="cells" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="row"><label class="read"><input type="checkbox" id="three"> use a third cell</label></div>
+    <details><summary class="read">What a cell can be</summary>
+      <div class="formats" style="margin-top:6px">
+        <code>0 3 4</code><span>pulse numbers, counted from 0 (pitch steps from the placement pages work the same way: a step becomes a pulse)</span>
+        <code>x..xx</code><span>a step grid; a digit is a heavier attack (<code>x..2x</code>)</span>
+        <code>⟨1 1 3 3 3 4⟩</code><span>a rhythm name from the Ratio rhythm lab (the gaps); <code>15·6 ⟨…⟩</code> and <code>&lt;1 1 3&gt;</code> work too</span>
+        <code>1/1 9/8 5/4 3/2</code><span>JI ratios, read on the lab's linear ring: the common denominator is the ring, each ratio r lands on pulse (r − 1) × ring</span>
+        <code>11x3</code><span>Wallin's germ: an interval repeated (0 11 22); several germs in one cell are stacked (<code>11x2 15x2</code>)</span>
+      </div></details>
+  </div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h2>Crystal and twins</h2>
+      <div class="row"><span class="lbl" style="min-width:0">Pulse</span><input id="ms" type="number" min="40" max="1000" value="125" aria-label="Milliseconds per pulse"><span class="read">ms</span><span class="read" id="bpm"></span></div></div>
+    <p class="read" id="summary"></p>
+    <div class="rows" id="out"></div>
+  </div>
+</div>
+<button class="stop-all" id="stopAll" type="button">Stop sound</button>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+const lcm = (a, b) => (a / gcd(a, b)) * b;
+const mod = (x, L) => ((x % L) + L) % L;
+const CELL_NAMES = ['Cell 1', 'Cell 2', 'Cell 3'];
+
+// Examples: each names where its cells come from (other pages of this project).
+const EXAMPLES = [
+  { name: 'Lopsided canon', L: 24, cells: ['x..xx', '0 8 10'], note: 'two lopsided cells: the twin is a true Z-twin' },
+  { name: 'Lab Z-pair rhythm as the entries', L: 15, cells: ['0 1 3', '⟨1 1 3 3 3 4⟩'], note: 'cell 2 is the canon\'s 15·6 Z-pair rhythm (Canon 6)' },
+  { name: 'Required collection and its hung set', L: 48, cells: ['0 3 8 13 19', '0 11 14'], note: 'cell 1: 0 3 8 13 19 from the required-intervals page; cell 2: the hung set C♯ C Eb (0 11 14) from its 7-note search' },
+  { name: 'JI scale entered at a findings chord', L: 48, cells: ['1/1 9/8 5/4 3/2 5/3', '0 1 10 11 12'], note: 'cell 1: a 5-limit scale on its linear ring (24); cell 2: C2 C♯2 B♭2 B2 C3, the chord 26 input sets make' },
+  { name: 'Wallin\'s germs', L: 47, cells: ['11x2', '15x2', '20x2'], note: 'his example germs (maj 7, 8 + m3, 8 + m6), two of each: every cell is symmetric, so there is no new twin' },
+  { name: 'Perfect canon', L: 12, cells: ['0 1 5', '0 3 6 9'], note: 'every pulse hit exactly once (a tiling canon); even entries, so the twin only turns it around' },
+];
+
+// ---------- parsing ----------
+// returns { w: Map pulse -> weight (not yet wrapped), kind, ring (a cycle the input implies, or 0), error }
+function parseCell(text) {
+  const t = text.trim();
+  if (!t) return { error: 'empty' };
+  const add = (m, p, v = 1) => m.set(p, (m.get(p) || 0) + v);
+  // a lab rhythm name: gaps between attacks
+  const ang = t.match(/[⟨<]([^⟩>]*)[⟩>]/);
+  if (ang) {
+    const g = ang[1].trim().split(/[\s,|]+/).filter(Boolean);
+    // the one-token barline form ⟨113|334⟩ uses single digits
+    const gaps = g.length === 1 || /\|/.test(ang[1]) ? ang[1].replace(/[\s|]/g, '').split('').map(Number) : g.map(Number);
+    if (!gaps.length || gaps.some((x) => !Number.isInteger(x) || x < 1)) return { error: 'gaps must be whole numbers of pulses, 1 or more' };
+    const m = new Map(); let p = 0;
+    for (const x of gaps) { add(m, p); p += x; }
+    return { w: m, kind: 'rhythm name (gaps)', ring: p };
+  }
+  // a step grid
+  const toks = t.split(/[\s,;]+/).filter(Boolean);
+  const germ = (x) => /^\d+[x×*]\d+$/.test(x);
+  if (/^[xX.\-1-9]+$/.test(t) && /[xX.\-]/.test(t) && !germ(t)) {
+    const m = new Map();
+    [...t].forEach((ch, i) => { if (ch === 'x' || ch === 'X') add(m, i); else if (/[1-9]/.test(ch)) add(m, i, Number(ch)); });
+    if (!m.size) return { error: 'the grid has no attacks' };
+    // trailing rests mean the grid is a whole cycle
+    return { w: m, kind: 'step grid', ring: t.length > Math.max(...m.keys()) + 1 ? t.length : 0 };
+  }
+  // JI ratios on the linear ring
+  if (toks.some((x) => x.includes('/'))) {
+    const rs = [];
+    for (const x of toks) {
+      const mm = x.match(/^(\d+)(?:\/(\d+))?$/);
+      if (!mm) return { error: `"${x}" is not a ratio` };
+      const n = Number(mm[1]), d = mm[2] ? Number(mm[2]) : 1, g = gcd(n, d);
+      if (!d || n < d || n > 2 * d) return { error: `${x}: the linear ring reads ratios from 1/1 up to 2/1` };
+      if (!rs.some((r) => r.n === n / g && r.d === d / g)) rs.push({ n: n / g, d: d / g });
+    }
+    if (!rs.some((r) => r.n === 1 && r.d === 1)) rs.push({ n: 1, d: 1 });
+    const ring = rs.reduce((a, r) => lcm(a, r.d), 1);
+    if (ring > 4096) return { error: `the ring would be ${ring} pulses: too large` };
+    const m = new Map();
+    for (const r of rs) if (!(r.n === 2 && r.d === 1)) add(m, (r.n - r.d) * (ring / r.d));
+    return { w: m, kind: `JI ratios on a ring of ${ring}`, ring };
+  }
+  // Wallin germs: 11x3 = 0 11 22; several are stacked
+  if (toks.every(germ)) {
+    let m = new Map([[0, 1]]);
+    for (const x of toks) {
+      const [g, k] = x.split(/[x×*]/).map(Number);
+      if (!g || !k || k > 32) return { error: `${x}: germ and count must be whole numbers, count up to 32` };
+      const next = new Map();
+      for (const [p, v] of m) for (let i = 0; i < k; i++) add(next, p + i * g, v);
+      m = next;
+    }
+    return { w: m, kind: 'germs (Wallin)', ring: 0 };
+  }
+  // pulse numbers
+  const nums = toks.map(Number);
+  if (nums.some((x) => !Number.isInteger(x))) return { error: 'use pulse numbers, a grid, a ⟨gaps⟩ name, ratios or germs like 11x3' };
+  const m = new Map();
+  for (const x of nums) add(m, x);
+  return { w: m, kind: 'pulses', ring: 0 };
+}
+
+// ---------- the crystal ----------
+// sum of the cells on the cycle, weights multiplied; flips[i] mirrors cell i
+function crystal(cells, L, flips) {
+  let acc = new Map([[0, 1]]);
+  cells.forEach((c, i) => {
+    const next = new Map(), s = flips[i] ? -1 : 1;
+    for (const [p, a] of acc) for (const [q, b] of c.w) { const k = mod(p + s * q, L); next.set(k, (next.get(k) || 0) + a * b); }
+    acc = next;
+  });
+  const w = new Array(L).fill(0);
+  for (const [p, v] of acc) w[p] = v;
+  return w;
+}
+const rotKeys = (w) => w.map((_, r) => w.slice(r).concat(w.slice(0, r)).join(','));
+// weighted cyclic autocorrelation: how much weight sits at every time distance (the rhythm's interval content)
+const autoc = (w) => w.map((_, d) => w.reduce((s, v, i) => s + v * w[(i + d) % w.length], 0)).join(',');
+const onsets = (w) => w.flatMap((v, i) => (v ? [i] : []));
+const gapsOf = (A, L) => A.map((a, i) => (i + 1 < A.length ? A[i + 1] : L + A[0]) - a);
+// the Ratio rhythm lab's class name (rhythmName / clsName in its reference snapshot): L·k ⟨smallest rotation or mirror of the gaps⟩
+function className(A, L) {
+  if (!A.length) return '—';
+  let g = gapsOf(A, L);
+  const gg = g.reduce((a, b) => gcd(a, b)); g = g.map((x) => x / gg);
+  const less = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
+  let best = null;
+  for (const src of [g, g.slice().reverse()]) for (let r = 0; r < src.length; r++) { const t = src.slice(r).concat(src.slice(0, r)); if (!best || less(t, best)) best = t; }
+  return `${L / gg}·${A.length} ⟨${best.join(' ')}⟩`;
+}
+const gridText = (w) => w.map((v) => (v === 0 ? '.' : v === 1 ? 'x' : v < 10 ? String(v) : '9')).join('');
+const ratiosText = (A, L) => A.map((s) => { const n = L + s, g = gcd(n, L); return `${n / g}/${L / g}`; }).join(' ');
+
+// ---------- state and inputs ----------
+const S = { L: 24, cells: ['', '', ''], three: false };
+function drawCells() {
+  const n = S.three ? 3 : 2;
+  $('cells').innerHTML = Array.from({ length: n }, (_, i) => `<div class="row"><span class="lbl">${CELL_NAMES[i]}</span><input class="cell" data-cell="${i}" type="text" value="${esc(S.cells[i])}" aria-label="${CELL_NAMES[i]}"><span class="read" id="read${i}"></span></div>`).join('');
+  $('cells').querySelectorAll('input').forEach((inp) => inp.addEventListener('input', () => { S.cells[Number(inp.dataset.cell)] = inp.value; compute(); }));
+}
+function loadExample(i) {
+  const e = EXAMPLES[i];
+  S.L = e.L; S.cells = [...e.cells, '', ''].slice(0, 3); S.three = e.cells.length > 2;
+  $('L').value = S.L; $('three').checked = S.three; $('exNote').textContent = e.note;
+  drawCells(); compute();
+}
+$('example').innerHTML = EXAMPLES.map((e, i) => `<option value="${i}">${esc(e.name)}</option>`).join('');
+$('example').addEventListener('change', () => loadExample(Number($('example').value)));
+$('L').addEventListener('input', () => { const v = Math.round(Number($('L').value)); if (v >= 2 && v <= 512) { S.L = v; compute(); } });
+$('three').addEventListener('change', () => { S.three = $('three').checked; drawCells(); compute(); });
+$('ms').addEventListener('input', () => compute());
+$('fit').addEventListener('click', () => {
+  const cells = parsed().filter((c) => c.w);
+  if (!cells.length) return;
+  // no wrap: the cycle must hold the largest sum of the cells' last pulses, plus one pulse after it
+  const lo = cells.reduce((s, c) => s + Math.min(...c.w.keys()), 0), hi = cells.reduce((s, c) => s + Math.max(...c.w.keys()), 0);
+  S.L = Math.max(2, hi - lo + 1); $('L').value = S.L; compute();
+});
+const parsed = () => S.cells.slice(0, S.three ? 3 : 2).map(parseCell);
+
+// ---------- output ----------
+let ROWS = [];
+function compute() {
+  const n = S.three ? 3 : 2, L = S.L, cells = parsed();
+  const ms = Math.max(40, Math.min(1000, Number($('ms').value) || 125));
+  $('bpm').textContent = `(${(60000 / ms).toFixed(0)} pulses a minute; 4 pulses to a beat = ${(15000 / ms).toFixed(0)} bpm)`;
+  cells.forEach((c, i) => {
+    const el = $(`read${i}`);
+    if (!el) return;
+    if (c.error) { el.innerHTML = `<span class="error">${esc(c.error)}</span>`; return; }
+    const ps = [...c.w.keys()].sort((a, b) => a - b);
+    const wrap = ps.some((p) => p < 0 || p >= L);
+    el.innerHTML = `${esc(c.kind)} · pulses ${ps.join(' ')}${c.ring && c.ring !== L ? ` · <button type="button" data-ring="${c.ring}">use its cycle (${c.ring})</button>` : ''}${wrap ? ' · <span class="error">wraps around the cycle</span>' : ''}`;
+  });
+  document.querySelectorAll('[data-ring]').forEach((b) => b.addEventListener('click', () => { S.L = Number(b.dataset.ring); $('L').value = S.L; compute(); }));
+  const lastMax = cells.filter((c) => c.w).reduce((s, c) => s + Math.max(...c.w.keys()) - Math.min(...c.w.keys()), 0);
+  $('fitNote').textContent = cells.every((c) => c.w) ? (lastMax + 1 > L ? `copies wrap around: the stacked cells need ${lastMax + 1} pulses` : 'no copy wraps around') : '';
+  if (cells.some((c) => c.error)) { $('summary').textContent = 'Fix the cells above.'; $('out').innerHTML = ''; ROWS = []; return; }
+  const base = crystal(cells, L, cells.map(() => false));
+  const baseRot = new Set(rotKeys(base)), baseRef = new Set(rotKeys(base.slice().reverse()));
+  ROWS = [];
+  cells.forEach((c, i) => ROWS.push({ kind: 'cell', label: CELL_NAMES[i], w: crystal([c], L, [false]) }));
+  ROWS.push({ kind: 'crystal', label: 'Crystal', w: base });
+  // twins: mirror any set of cells that leaves cell 1 alone (mirroring every cell only mirrors the whole crystal)
+  const seen = new Set([...baseRot]);
+  let zt = 0;
+  for (let mask = 1; mask < 1 << (n - 1); mask++) {
+    const flips = [false, ...Array.from({ length: n - 1 }, (_, j) => !!(mask & (1 << j)))];
+    const w = crystal(cells, L, flips);
+    const which = flips.map((f, i) => (f ? CELL_NAMES[i].toLowerCase() : null)).filter(Boolean).join(' and ');
+    const key = w.join(',');
+    let status;
+    if (baseRot.has(key)) status = 'same';
+    else if (baseRef.has(key)) status = 'mirror';
+    else if (seen.has(key)) status = 'repeat';
+    else {
+      // the attacks alone (no accents) may still be the crystal's, rotated or reversed: then only the accents moved
+      const on = (x) => x.map((v) => (v ? 1 : 0));
+      const bare = on(w).join(','), bRot = rotKeys(on(base)), bRef = rotKeys(on(base).reverse());
+      status = bRot.includes(bare) || bRef.includes(bare) ? 'accents' : 'z';
+      zt++;
+    }
+    for (const k of rotKeys(w)) seen.add(k);
+    ROWS.push({ kind: 'twin', label: `Twin: ${which} mirrored`, w, status, same: autoc(w) === autoc(base) });
+  }
+  const hits = base.filter((v) => v).length, heavy = base.filter((v) => v > 1).length;
+  const perfect = base.every((v) => v === 1);
+  $('summary').innerHTML = `${hits} of ${L} pulses attacked, ${heavy} of them more than once.` +
+    (perfect ? ' <span class="tag ok">perfect canon: every pulse hit exactly once</span>' : '') +
+    ` ${zt ? `<b style="color:var(--twin)">${zt} Z-twin${zt > 1 ? 's' : ''}</b>.` : 'No new twin: every cell after the first is symmetric (or mirroring it only turns the crystal around).'}`;
+  draw(ms);
+}
+function gridSvg(w, color) {
+  const L = w.length, cw = Math.max(9, Math.min(22, Math.floor(1000 / L))), h = 26, max = Math.max(...w, 1);
+  let s = `<svg width="${L * cw + 2}" height="${h + 14}" viewBox="0 0 ${L * cw + 2} ${h + 14}" role="img" aria-label="Step grid">`;
+  w.forEach((v, i) => {
+    const x = 1 + i * cw;
+    s += `<rect x="${x}" y="1" width="${cw - 2}" height="${h}" rx="3" fill="${v ? color : 'none'}" fill-opacity="${v ? 0.35 + 0.65 * (v / max) : 0}" stroke="${i % 4 === 0 ? 'var(--muted)' : 'var(--line)'}" stroke-width="1"/>`;
+    if (v > 1) s += `<text x="${x + (cw - 2) / 2}" y="${h / 2 + 5}" font-size="11" text-anchor="middle" fill="var(--surface)" font-family="var(--font-mono)" font-weight="600">${v}</text>`;
+    if (i % 4 === 0) s += `<text x="${x}" y="${h + 12}" font-size="9" fill="var(--muted)" font-family="var(--font-mono)">${i}</text>`;
+  });
+  return s + '</svg>';
+}
+function draw(ms) {
+  const L = S.L, n = S.three ? 3 : 2;
+  $('out').innerHTML = ROWS.map((r, ri) => {
+    const A = onsets(r.w), color = r.kind === 'twin' ? 'var(--twin)' : r.kind === 'crystal' ? 'var(--accent)' : 'var(--muted)';
+    const status = r.kind !== 'twin' ? '' : r.status === 'z' ? `<span class="tag z">Z-twin${r.same ? ': same time distances, accents included' : ''}</span>` :
+      r.status === 'accents' ? `<span class="tag z">Z-twin in the accents only: the same attacks, the accents moved</span>` :
+      r.status === 'same' ? '<span class="tag">same rhythm, rotated</span>' : r.status === 'mirror' ? '<span class="tag">the crystal played backwards</span>' : '<span class="tag">same as another twin</span>';
+    const useBtns = Array.from({ length: n }, (_, i) => `<button type="button" data-use="${ri}|${i}">→ ${CELL_NAMES[i].toLowerCase()}</button>`).join('');
+    return `${r.kind === 'crystal' ? '<div class="sep"></div>' : ''}<div class="rrow">
+      <div class="rhead"><b style="color:${r.kind === 'cell' ? 'var(--fg)' : color}">${esc(r.label)}</b>${status}<span class="mono">${className(A, L)}</span><span class="read">${A.length} attacks${r.w.some((v) => v > 1) ? `, heaviest ${Math.max(...r.w)}` : ''}</span></div>
+      <div class="scroll">${gridSvg(r.w, color)}</div>
+      <div class="btns"><button type="button" data-play="${ri}|loop">Play 4 cycles</button>${r.kind === 'twin' ? `<button type="button" data-play="${ri}|pair">Crystal, then this</button>` : ''}<button type="button" data-play="${ri}|scale">Play as a scale</button>
+        <span class="read">copy:</span><button type="button" data-copy="${ri}|pulses">pulses</button><button type="button" data-copy="${ri}|grid">grid</button><button type="button" data-copy="${ri}|gaps">gaps ⟨⟩</button><button type="button" data-copy="${ri}|ratios">ratios for the lab</button>
+        ${r.kind !== 'cell' ? `<span class="read">use as:</span>${useBtns}` : ''}<span class="read" id="note${ri}"></span></div>
+    </div>`;
+  }).join('');
+  $('out').querySelectorAll('[data-play]').forEach((b) => b.addEventListener('click', () => {
+    const [ri, mode] = b.dataset.play.split('|'), r = ROWS[Number(ri)];
+    if (mode === 'loop') playLoop([r.w], ms, b);
+    else if (mode === 'pair') playLoop([ROWS.find((x) => x.kind === 'crystal').w, r.w], ms, b);
+    else playScale(onsets(r.w), L, b);
+  }));
+  $('out').querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
+    const [ri, what] = b.dataset.copy.split('|'), r = ROWS[Number(ri)], A = onsets(r.w);
+    const text = what === 'pulses' ? A.join(' ') : what === 'grid' ? gridText(r.w) : what === 'gaps' ? `⟨${gapsOf(A, L).join(' ')}⟩` : ratiosText(A, L);
+    const done = (ok) => { $(`note${ri}`).textContent = ok ? `copied: ${text.length > 60 ? text.slice(0, 60) + '…' : text}` : 'copy failed'; };
+    try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (e) { done(false); }
+  }));
+  $('out').querySelectorAll('[data-use]').forEach((b) => b.addEventListener('click', () => {
+    const [ri, ci] = b.dataset.use.split('|').map(Number);
+    S.cells[ci] = gridText(ROWS[ri].w).replace(/\.+$/, '');
+    drawCells(); compute();
+  }));
+}
+
+// ---------- audio (only on a click) ----------
+let ctx = null, master = null, live = [], timer = null;
+function audio() {
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.6; master.connect(ctx.destination); }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function stopAll() {
+  for (const n of live) { try { n.stop(); } catch (e) {} }
+  live = []; clearTimeout(timer);
+  document.querySelectorAll('button.playing').forEach((b) => b.classList.remove('playing'));
+}
+function click(t, level, f) {
+  const c = audio(), o = c.createOscillator(), g = c.createGain();
+  o.frequency.value = f; o.type = 'triangle';
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.09);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.1); live.push(o);
+}
+// each rhythm loops 4 cycles; heavier pulses are louder and a little lower; the first pulse of each cycle is marked softly
+function playLoop(rows, ms, btn) {
+  stopAll();
+  const c = audio(), step = ms / 1000, L = rows[0].length;
+  let t = c.currentTime + 0.06;
+  for (const w of rows) {
+    const max = Math.max(...w, 1);
+    for (let k = 0; k < 4; k++) for (let i = 0; i < L; i++) {
+      if (i === 0) click(t, 0.05, 2400);
+      if (w[i]) click(t, 0.12 + 0.28 * (w[i] / max), 900 - 250 * (w[i] / max));
+      t += step;
+    }
+    t += step * 2;
+  }
+  btn.classList.add('playing');
+  timer = setTimeout(() => btn.classList.remove('playing'), (t - c.currentTime) * 1000);
+}
+// the linear-ring reading (the lab's): pulse s of a ring of L is the ratio (L + s) / L above 220 Hz
+function playScale(A, L, btn) {
+  stopAll();
+  const c = audio();
+  let t = c.currentTime + 0.06;
+  for (const s of A) {
+    const f = 220 * (L + s) / L, o = c.createOscillator(), g = c.createGain();
+    o.frequency.value = f; o.type = 'triangle';
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.18, t + 0.02); g.gain.setTargetAtTime(0, t + 0.25, 0.08);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.7); live.push(o);
+    t += 0.3;
+  }
+  btn.classList.add('playing');
+  timer = setTimeout(() => btn.classList.remove('playing'), (t - c.currentTime) * 1000 + 300);
+}
+$('stopAll').addEventListener('click', stopAll);
+
+loadExample(0);
+</script>
