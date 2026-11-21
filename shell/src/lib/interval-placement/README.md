@@ -4,7 +4,7 @@ Pure TypeScript placement engine (no React, no DOM, no fs, no Worker code). You 
 library places them as spans inside a **window** (an absolute bottom pitch plus a width) in every distinct ordering,
 and reports for each result which pairs of notes are the essential spans and which are **induced** (the rest of the
 chord's intervals). Scoring lives in `../consonance`; a placed voicing is that library's `Voicing` (`{refHz, cents[]}`,
-decision I-2), so `scoreVoicing(voicing)` works on it directly.
+decision INTPLC-2), so `scoreVoicing(voicing)` works on it directly.
 
 Status: milestone M2 **ports and verifies**. The four engines are the old page's, carried over unchanged (see
 "Golden test"); the placement controls are redesigned in M2b, and the engines may be replaced then. No gravity control.
