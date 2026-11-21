@@ -45,6 +45,14 @@ VM run (2026-11-21, started 06:55 UTC): `~/ipcat` (Node 24 at `~/ipcat/node`), t
 `nice -n 10 ./node/bin/node --disable-warning=ExperimentalWarning build2.mjs --n 2,3,4,5 --max 17 --wmax 60 --out out --max-workers 2 --reserve-gb 6`
 (2 workers at most, as agreed with the JI Z-relation session that shares the VM).
 
+The VM is a Spot machine; the JI session relaunches it after a preemption. Recovery (2026-11-21):
+- `run.sh` is the run command (tmux `ipcat`, window `run`); it writes `out/all-done` on a clean finish.
+- `watch.sh` (window `watch`) raises the worker cap to 14 (`out/max-workers`) once no `zgen.py` is left.
+- `ensure.sh` starts both unless the run is going or finished; it resets the cap to 2 first. It is in the user's
+  crontab as `@reboot sleep 90 && ~/ipcat/ensure.sh >> ~/ipcat/boot.log`, so a relaunched VM resumes on its own.
+- `pcwatch.sh` (on the PC, run by Claude in the background) polls the VM status every 3 min, runs `ensure.sh` after a
+  relaunch (and every 15 min while up), and exits after handling a relaunch or when the catalog is finished.
+
 ## How it is fast
 
 1. One pass builds every placement into typed-array columns and collects distinct chords keyed by a 49-bit note mask.
