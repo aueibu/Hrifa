@@ -1,5 +1,7 @@
-// M2c thin slice: the original "even spacing" catalog (the old `uniform` engine, unchanged) for the human to browse and
-// hear, over a range of spans, scored with the new models. Not the library change; that follows the human's look.
+// M2c thin slice: the original "even spacing" catalog for the human to browse and hear, over a range of spans, scored
+// with the new models. Engine: prefix-slack at the old page's defaults (alpha 0.3, beta 1, rho 0.5), the old page's
+// default mode and the one the human used (their screenshot: 7 11 16 in 24 steps = 4 5 7 11 16 23). An earlier version
+// used `uniform` by mistake. Not the library change; that follows the human's look.
 // Run from shell/: npx esbuild arcs/interval-placement/m2c/catalog.ts --bundle --platform=node --format=esm --outfile=/tmp/c.mjs && node /tmp/c.mjs > catalog.json
 import { placeIntervals } from '../../../src/lib/interval-placement/index';
 import { scoreVoicing, midiToHz } from '../../../src/lib/consonance/index';
@@ -17,9 +19,10 @@ for (const set of SETS) {
     const res = placeIntervals({
       intervals: set.map((s) => ({ cents: s * 100 })),
       window: { bottomHz: midiToHz(BASE_MIDI), widthSteps: W },
-      distribution: 'uniform',
+      distribution: 'prefixSlack',
       stepCents: 100,
     });
+    out.push({ set: set.join(' '), width: W, skipped: res.skipped, orderings: res.orderings.total, summary: true });
     for (const v of res.voicings) {
       const steps = v.cents.map((c) => Math.round(c / 100));
       const fits = steps[0] >= 0 && steps[steps.length - 1] <= W;
