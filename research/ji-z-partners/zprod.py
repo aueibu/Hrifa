@@ -136,15 +136,65 @@ def reversal(V):
     return normalize({neg(p): c for p, c in V})
 
 
-def gen_V(bounds, shapes):
-    """yield signed V (tuple of (point, coeff)), lowest point 0 with coeff +1, for each (vp, vm) shape"""
+def _det(M):
+    n = len(M)
+    if n == 1:
+        return M[0][0]
+    if n == 2:
+        return M[0][0] * M[1][1] - M[0][1] * M[1][0]
+    return sum((-1) ** j * M[0][j] * _det([row[:j] + row[j + 1:] for row in M[1:]]) for j in range(n))
+
+
+def hull_lattice(G):
+    """all lattice points of the convex hull of G (facets from d-subsets of G; exact integer arithmetic)"""
+    dim = len(G[0])
+    lo = [min(p[i] for p in G) for i in range(dim)]
+    hi = [max(p[i] for p in G) for i in range(dim)]
+    box = list(itertools.product(*[range(lo[i], hi[i] + 1) for i in range(dim)]))
+    if dim == 1:
+        return set(box)
+    facets = set()
+    for S in itertools.combinations(G, dim):
+        D = [sub(p, S[0]) for p in S[1:]]
+        # normal: cofactors of the (dim-1) x dim matrix D
+        n = tuple((-1) ** j * _det([row[:j] + row[j + 1:] for row in D]) for j in range(dim))
+        if not any(n):
+            continue
+        c = sum(a * b for a, b in zip(n, S[0]))
+        vals = [sum(a * b for a, b in zip(n, p)) - c for p in G]
+        if all(v <= 0 for v in vals):
+            facets.add((n, c))
+        elif all(v >= 0 for v in vals):
+            facets.add((tuple(-a for a in n), -c))
+    return {x for x in box if all(sum(a * b for a, b in zip(n, x)) <= c for n, c in facets)}
+
+
+def gen_V(bounds, shapes, H):
+    """yield signed V (tuple of (point, coeff)), lowest point 0 with coeff +1, for each (vp, vm) shape.
+    Only factors that fit inside the gamut's hull after some transposition: hull(P) = hull(U) + hull(V)
+    lies in the gamut's hull, so a factor that cannot fit there never gives a product in the gamut.
+    The fit is checked while the plus points are chosen (pruning early); minus points lie in the plus
+    points' hull, so they fit wherever the plus points do."""
     dim = len(bounds)
     box = lex_positive_box(bounds)
+    Hs = set(H)
+    zero = (0,) * dim
+
+    def plus_sets(need, start, chosen, T):
+        if need == 0:
+            yield chosen
+            return
+        for j in range(start, len(box)):
+            v = box[j]
+            T2 = [t for t in T if add(t, v) in Hs]
+            if T2:
+                yield from plus_sets(need - 1, j + 1, chosen + [v], T2)
+
     # no duplicate check is needed: 0 is the lexicographically smallest plus point and every minus point
     # lies in the hull of the plus points (so is larger), so each V is generated once, already normalized
     for vp, vm in shapes:
-        for rest in itertools.combinations(box, vp - 1):
-            plus = [(0,) * dim] + list(rest)
+        for rest in plus_sets(vp - 1, 0, [], list(Hs)):
+            plus = [zero] + list(rest)
             if vm == 0:
                 cands = [()]
             else:
@@ -293,6 +343,24 @@ def _job(V):
     return V, dict(found), n, complete
 
 
+def write_families_fast(run, fams, primes, Gsize):
+    """zgen's families.jsonl format without the type classification (gl_canon is very slow for wide
+    3-D families); type fields are null. verify_families.py and union_fams.py do not need them."""
+    with open(os.path.join(run.out, "families.jsonl"), "w") as fh:
+        for i, (k, members, ex) in enumerate(fams, 1):
+            fp = Z.fingerprint(members[0])
+            rec = {"family": i, "notes": k, "primes": list(primes), "gamut_size": Gsize, "type": None,
+                   "type_rank": None, "members": [Z.member_record(M, primes) for M in members],
+                   "interval_classes": [str(min(Z.ratio(v, primes), 2 / Z.ratio(v, primes))) for v in fp],
+                   "distinct_interval_classes": len(set(fp))}
+            rec.update(ex)
+            fh.write(json.dumps(rec) + "\n")
+
+
+def _job_chunk(chunk):
+    return [_job(V) for V in chunk]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--zgen", required=True, help="path to zgen.py (helpers and output format)")
@@ -308,6 +376,8 @@ def main():
     ap.add_argument("--max-nodes", type=int, default=2_000_000,
                     help="search steps per factor V before it is stopped and reported (0 = no limit)")
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--count-only", action="store_true", help="only count the factors V per shape, no search")
+    ap.add_argument("--no-types", action="store_true", help="write families without the (slow) type classification")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     global Z
@@ -318,31 +388,61 @@ def main():
     dim = len(G[0])
     extent = [max(p[i] for p in G) - min(p[i] for p in G) for i in range(dim)]
     bounds = extent if a.vmax <= 0 else [min(a.vmax, e) for e in extent]
-    run.say(f"gamut {len(G)} notes ({a.primes}, odd <= {a.odd}); k {a.k}; V shapes {shapes}, |coord| <= {bounds}; "
-            f"U coefficients {a.ucoeffs}")
+    H = hull_lattice(G)
+    run.say(f"gamut {len(G)} notes ({a.primes}, odd <= {a.odd}), {len(H)} lattice points in its hull; k {a.k}; "
+            f"V shapes {shapes}, |coord| <= {bounds}; U coefficients {a.ucoeffs}")
     t0 = time.time()
+    if a.count_only:
+        for sh in shapes:
+            t1 = time.time()
+            c = sum(1 for _ in gen_V(bounds, [sh], H))
+            run.say(f"  shape {sh[0]},{sh[1]}: {c:,} factors V that fit the hull ({time.time() - t1:.0f}s)")
+        return
     allf = collections.defaultdict(set)
     nprod = 0
     n = 0
     stopped = []
-    # the pool is started before any factor is generated, and factors are fed in batches, so neither the
-    # parent nor the forked workers ever hold the full factor list (it is millions of tuples)
+    # The pool is started before any factor is generated, and factors are fed in small chunks with a
+    # bounded number in flight (rolling: a new chunk goes out as soon as one comes back), so the parent
+    # never holds the full factor list and no worker waits for a slow factor elsewhere (a batch barrier
+    # left 75% of the CPU idle in 3-D).
+    done_q = collections.deque()
     with Pool(a.workers, initializer=_init, initargs=(G, a)) as pool:
-        gen = gen_V(bounds, shapes)
+        gen = gen_V(bounds, shapes, H)
+        inflight = 0
+        limit = a.workers * 4
+        exhausted = False
+        last_report = time.time()
         while True:
-            batch = list(itertools.islice(gen, 50_000))
-            if not batch:
+            while not exhausted and inflight < limit:
+                chunk = list(itertools.islice(gen, 500))
+                if not chunk:
+                    exhausted = True
+                    break
+                pool.apply_async(_job_chunk, (chunk,), callback=done_q.append,
+                                 error_callback=lambda e: done_q.append(e))
+                inflight += 1
+            if exhausted and inflight == 0:
                 break
-            for V, found, cnt, complete in pool.imap_unordered(_job, batch, chunksize=16):
+            if not done_q:
+                time.sleep(0.02)
+                continue
+            item = done_q.popleft()
+            if isinstance(item, BaseException):
+                raise RuntimeError(f"a worker failed: {item!r}")      # never wait forever for a lost chunk
+            for V, found, cnt, complete in item:
                 n += 1
                 nprod += cnt
                 if not complete:
                     stopped.append(V)
                 for key, members in found.items():
                     allf[key] |= members
-            fams = sum(1 for (k, _), m in allf.items() if len(m) >= 2)
-            run.say(f"  {n:,} factors, {nprod:,} products, {fams} families, "
-                    f"{len(stopped)} factors stopped at the node budget, {time.time() - t0:.0f}s")
+            inflight -= 1
+            if time.time() - last_report > 60:
+                last_report = time.time()
+                fams = sum(1 for (k, _), m in allf.items() if len(m) >= 2)
+                run.say(f"  {n:,} factors, {nprod:,} products, {fams} families, "
+                        f"{len(stopped)} factors stopped at the node budget, {time.time() - t0:.0f}s")
     run.say(f"{n:,} factors V searched")
     if stopped:
         with open(os.path.join(a.out, "stopped_factors.jsonl"), "w") as fh:
@@ -355,7 +455,10 @@ def main():
         fams = [(k, [list(m) for m in sorted(ms)], {"mechanism": "zprod U*V, V flipped"})
                 for (kk, fp), ms in sorted(allf.items()) if kk == k and len(ms) >= 2]
         sub_run = Z.Run(os.path.join(a.out, f"k{k}"))
-        Z.write_families(sub_run, fams, a.primes, len(G), {})
+        if a.no_types:
+            write_families_fast(sub_run, fams, a.primes, len(G))
+        else:
+            Z.write_families(sub_run, fams, a.primes, len(G), {})
         sizes = collections.Counter(len(f[1]) for f in fams)
         rows.append({"k": k, "families": len(fams), "family_sizes": dict(sorted(sizes.items()))})
         run.say(f"k={k}: {len(fams)} families (members per family: {dict(sorted(sizes.items()))})")

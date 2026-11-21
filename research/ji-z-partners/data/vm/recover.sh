@@ -11,4 +11,8 @@ if ! tmux has-session -t linring 2>/dev/null; then
   if grep -q "ALL DONE" linring/run_k7.status 2>/dev/null; then echo "linring run already finished"
   else (cd linring && echo "$(date -u +%H:%M:%S) RESUMED after preemption" >> run_k7.status && tmux new-session -d -s linring "bash run_k7.sh") && echo "linring run resumed in tmux linring"; fi
 fi
+if ! tmux has-session -t zprod 2>/dev/null; then
+  if grep -q "RUN7 DONE" zprod/run_7lim.out 2>/dev/null; then echo "7-limit zprod run already finished"
+  elif [ -f zprod/run_7lim.out ]; then (cd zprod && echo "$(date -u +%H:%M) RESUMED after preemption" >> run_7lim.out && tmux new-session -d -s zprod "W=12 bash $HOME/zgen/run_7lim.sh >> run_7lim.out 2>&1") && echo "7-limit zprod run resumed in tmux zprod (finished steps are skipped)"; fi
+fi
 tmux ls
