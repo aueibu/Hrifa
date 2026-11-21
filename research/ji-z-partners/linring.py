@@ -257,6 +257,166 @@ def search(a):
     print(f"done in {time.time() - t0:.0f}s", flush=True)
 
 
+# ------------------------------------------------------------------ harmonic-series rings
+# Gamut per ring L: every harmonic h in [L, 2L) whose largest prime factor is <= the limit
+# (slot p = h - L). Each Z-family (same circular distances) is written to disk per ring; one rhythm
+# pair gives many voicing pairs (every rotation that puts an onset on slot 0 is another voicing).
+
+def max_prime(n):
+    m, p = 1, 2
+    while p * p <= n:
+        while n % p == 0:
+            m, n = p, n // p
+        p += 1
+    return max(m, n) if n > 1 else m
+
+
+def odd_form_h(hs):
+    odds = []
+    for h in hs:
+        while h % 2 == 0:
+            h //= 2
+        odds.append(h)
+    g = 0
+    for o in odds:
+        g = math.gcd(g, o)
+    return tuple(sorted(o // g for o in odds))
+
+
+def _hjob(args):
+    L, ks, plim, out = args
+    slots = [p for p in range(L) if max_prime(L + p) <= plim]
+    assert slots[0] == 0
+    rows = []
+    for k in ks:
+        t0 = time.time()
+        buckets = {}
+        nv = 0
+        for comb in itertools.combinations(range(1, len(slots)), k - 1):
+            g = L
+            for i in comb:
+                g = math.gcd(g, slots[i])
+                if g == 1:
+                    break
+            if g != 1:
+                continue
+            nv += 1
+            s = [0] + [slots[i] for i in comb]
+            h = hash(circ_key(s, L))
+            m = 0
+            for i in comb:
+                m |= 1 << i
+            e = buckets.get(h)
+            if e is None:
+                buckets[h] = m
+            elif isinstance(e, list):
+                e.append(m)
+            else:
+                buckets[h] = [e, m]
+        n_fam = n_cls_pairs = n_vp = n_within = 0
+        within_scales = set()
+        with open(os.path.join(out, f"fam_L{L}_k{k}.jsonl"), "w") as f:
+            for e in buckets.values():
+                if not isinstance(e, list):
+                    continue
+                exact = collections.defaultdict(list)
+                for m in e:
+                    s = [0] + [slots[i] for i in range(1, len(slots)) if m >> i & 1]
+                    exact[circ_key(s, L)].append(s)
+                for grp in exact.values():
+                    classes = collections.defaultdict(list)
+                    for s in grp:
+                        classes[ring_canon(s, L)].append(s)
+                    if len(classes) < 2:
+                        continue
+                    cl = list(classes.values())
+                    n_fam += 1
+                    n_cls_pairs += len(cl) * (len(cl) - 1) // 2
+                    forms = [[odd_form_h([L + p for p in s]) for s in c] for c in cl]
+                    w = 0
+                    for a in range(len(cl)):
+                        for b in range(a + 1, len(cl)):
+                            n_vp += len(cl[a]) * len(cl[b])
+                            fb = collections.Counter(forms[b])
+                            for fa in forms[a]:
+                                if fb[fa]:
+                                    w += fb[fa]
+                                    within_scales.add(fa)
+                    n_within += w
+                    f.write(json.dumps({"L": L, "k": k, "classes": cl}) + "\n")
+        rows.append({"L": L, "k": k, "slots_in_gamut": len(slots), "voicings": nv, "z_families": n_fam,
+                     "rhythm_pairs": n_cls_pairs, "voicing_pairs": n_vp, "within_voicing_pairs": n_within,
+                     "within_scales": len(within_scales), "seconds": round(time.time() - t0, 1)})
+    return rows
+
+
+def harmonic(a):
+    os.makedirs(a.out, exist_ok=True)
+    jobs = [(L, a.k, a.prime_limit, a.out) for L in sorted(a.rings, reverse=True)]
+    rows = []
+    with Pool(a.workers) as pool:
+        for r in pool.imap_unordered(_hjob, jobs):
+            for row in r:
+                print("  ", row, flush=True)
+            rows.extend(r)
+    rows.sort(key=lambda r: (r["k"], r["L"]))
+    with open(os.path.join(a.out, "summary.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader(); w.writerows(rows)
+
+
+def odd_limit(ratios):
+    m = 1
+    for r in ratios:
+        for x in (r.numerator, r.denominator):
+            while x % 2 == 0:
+                x //= 2
+            m = max(m, x)
+    return m
+
+
+def report(a):
+    """simplest cross pairs (by odd limit of the pair) and every within-scale pair, with rooting tables"""
+    out = collections.defaultdict(lambda: {"cross": [], "within": []})
+    for name in sorted(os.listdir(a.out)):
+        if not (name.startswith("fam_L") and name.endswith(".jsonl")):
+            continue
+        for fam in load_jsonl(os.path.join(a.out, name)):
+            L, k, cl = fam["L"], fam["k"], fam["classes"]
+            for i in range(len(cl)):
+                for j in range(i + 1, len(cl)):
+                    for sa in cl[i]:
+                        A = [Fraction(L + p, L) for p in sa]
+                        for sb in cl[j]:
+                            B = [Fraction(L + p, L) for p in sb]
+                            within = odd_form_h([L + p for p in sa]) == odd_form_h([L + p for p in sb])
+                            ol = max(odd_limit(A), odd_limit(B))
+                            out[k]["within" if within else "cross"].append((ol, L, sa, sb))
+    rows = []
+    with open(os.path.join(a.out, "report.jsonl"), "w") as f:
+        for k in sorted(out):
+            for kind in ("within", "cross"):
+                lst = sorted(out[k][kind], key=lambda x: (x[0], x[1], x[2], x[3]))
+                keep = lst if kind == "within" and len(lst) <= a.max_within else lst[: a.top]
+                for ol, L, sa, sb in keep:
+                    A = [Fraction(L + p, L) for p in sa]
+                    B = [Fraction(L + p, L) for p in sb]
+                    rt = rooting_table(A, None if kind == "within" else B)
+                    f.write(json.dumps({"k": k, "kind": kind, "L": L, "odd_limit": ol, "A": fstr(A), "B": fstr(B),
+                                        "A_slots": sa, "B_slots": sb, "rootings": rt}) + "\n")
+                rows.append({"k": k, "kind": kind, "voicing_pairs": len(lst), "listed": len(keep),
+                             "simplest_odd_limit": lst[0][0] if lst else ""})
+                print("  ", rows[-1], flush=True)
+    with open(os.path.join(a.out, "report_summary.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader(); w.writerows(rows)
+
+
+def load_jsonl(path):
+    with open(path) as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest="mode", required=True)
@@ -267,6 +427,16 @@ def main():
     p.add_argument("--k", type=int, nargs="+", required=True)
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--out", required=True)
+    p = sp.add_parser("harmonic", help="harmonic-series rings: every harmonic L..2L up to a prime limit")
+    p.add_argument("--rings", type=int, nargs="+", required=True)
+    p.add_argument("--prime-limit", type=int, default=89)
+    p.add_argument("--k", type=int, nargs="+", required=True)
+    p.add_argument("--workers", type=int, default=2)
+    p.add_argument("--out", required=True)
+    p = sp.add_parser("report", help="after harmonic: simplest pairs with rooting tables")
+    p.add_argument("--out", required=True)
+    p.add_argument("--top", type=int, default=200, help="cross pairs listed per k")
+    p.add_argument("--max-within", type=int, default=5000, help="list every within pair if at most this many")
     p = sp.add_parser("pair", help="check two voicings: linear-ring Z-pair? and their rooting table")
     p.add_argument("--A", required=True, help='ratios, e.g. "1 10/9 9/8 89/72 3/2 7/4"')
     p.add_argument("--B", required=True)
@@ -285,7 +455,7 @@ def main():
         print("modes B:", [(str(m[0]), m[2]) for m in modes(B)])
         print("rootings:", rooting_table(A, None if same else B))
         return
-    search(a)
+    {"search": search, "harmonic": harmonic, "report": report}[a.mode](a)
 
 
 if __name__ == "__main__":

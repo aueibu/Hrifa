@@ -88,6 +88,17 @@ Definitions agreed with the human: a voicing is a ratio set containing 1/1 on it
 - Check: `pair` on the canon example gives ring 72, cross, modes on 72/80/81/89/54/63, rootings only 1/1–1/1 on 72 (matches the canon).
 - **5-limit odd ≤ 123 (35 ratios, 104 ring sizes), 5–10 notes, 112 s on 2 cores:** voicings = C(34, k−1) exactly; pairs: 5: 0, **6: 2 cross**, 7–10: 0; no within-scale pairs. The two: ring 18 `1 10/9 4/3 25/18 3/2 5/3` ~ `1 4/3 25/18 3/2 5/3 16/9` (swap 10/9 ↔ 16/9, slots 2 ↔ 14) and ring 27 `1 10/9 32/27 4/3 40/27 5/3` ~ `1 4/3 40/27 5/3 16/9 50/27`; both only at the 1/1 rooting. Reason for the scarcity: a prime-limit gamut puts few ratios on any one ring; the canon pair lives in the harmonic series (89, 29, 63 over 72). Results on the VM in `~/zruns/linring/`.
 
+### Harmonic-series rings (2026-11-21, human: "move to harmonic series ... bump up our prime harmonic limit to 89")
+Gamut per ring L: every harmonic h in [L, 2L) with largest prime factor ≤ 89 (slot h − L); voicings must have LCD exactly L. `linring.py harmonic` (writes each Z-family per ring) and `report` (simplest 200 cross pairs per size by odd limit, every within pair, rooting tables). Rings 24 36 48 60 72 80 81 90 96 120, 5–6 notes, ~13 min on 2 cores; output `~/zruns/linring/h89_k56/` on the VM; the canon 72 pair is among ring 72's families.
+
+| ring L | 24 | 36 | 48 | 60 | 72 | 80 | 81 | 90 | 96 | 120 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| slots in gamut | 24 | 36 | 48 | 54 | 62 | 67 | 68 | 73 | 77 | 92 |
+| 5 notes: rhythm pairs | 30 | 46 | 100 | 145 | 225 | 293 | 0 | 413 | 357 | 568 |
+| 6 notes: rhythm pairs | 285 | 947 | 2,004 | 3,919 | 6,010 | 7,087 | 2,097 | 10,294 | 12,612 | 22,476 |
+
+Voicing pairs (each rotation that puts an onset on 1/1 is another voicing): 52,610 at 5 notes, 1,740,868 at 6. **Within-scale pairs: 0**, and this is forced: a mode's ring size keeps the odd part of its root's harmonic number (canon, Canon 3), distinct notes of one scale have distinct odd parts, so two rootings of one scale are never on the same ring. All 400 listed cross pairs match at one rooting only (the one found); whether any cross pair matches at two rootings is not checked over the full lists. Simplest pairs: odd limit 7, ring 60: `1 7/6 7/5 8/5 5/3 7/4` ~ `1 7/6 5/4 7/5 8/5 5/3` (swap 7/4 ↔ 5/4, slots 45 ↔ 15); odd limit 9, ring 60: `1 7/6 6/5 5/4 5/3 9/5` ~ `1 7/6 6/5 5/3 7/4 9/5`; odd limit 11 at 5 notes, ring 24: `1 9/8 7/6 11/8 5/3` ~ `1 9/8 4/3 11/8 11/6`. 65 of the 200 simplest 6-note pairs share 5 notes (one-note swaps).
+
 ## Next action
 0. Direction (a) follow-ups, if wanted: comma behind each tempered-out family; complement-closed coverage; brute totals for 41 (feasible with bracelet enumeration, direction (b)); 11, 13, 14-note types when the batch finishes.
 1. Check the VM batch (commands above); handle finished sizes (verify, record in this file).
