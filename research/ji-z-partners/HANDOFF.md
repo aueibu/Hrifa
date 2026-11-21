@@ -39,8 +39,13 @@ The latest file's md5 is whatever is committed. The VM copy was verified at `04c
 | 5-limit odd 123 | 35 | 7 ✓ | 8 ✓ | 10 ✓ |
 | 7-limit odd 27 | 45 | 3 ✓ | 0 ✓ | – |
 | 7-limit odd 63 | 79 | 19 ✓ | 2 | 7 |
+| 7-limit odd 75 | 85 | 20* | 2* | 8 ✓ |
 | 7-limit odd 123 | 99 | 26 | 22 | 20 |
 | 11-limit odd 123 | 225 | 56 | 40 | 29 |
+
+\* Exhaustive only (old `ji_zsets.py` run in `_Ideas/Rhythm-As-Pitch/run_7lim_odd75`); not yet placed.
+
+**Placement vs exhaustive cost (7-limit odd 75, 8 notes, 2026-11-20, local PC, 12 threads, PyPy).** The exhaustive `ji_zsets.py` run needed over 306 min for pass 1 alone, plus passes 2 and 3, and left 129 GB of working files. `zgen.py types --shape 4,3,1 8,2,1` took 19 s (102 types), and `zgen.py place --primes 3 5 7 --odd 75 --allow-rank3 --workers 11` took 9 s. Both found the same 8 families (types 91: 5 and 92: 3), identical interval content family by family. That is at least a 650× speedup (28 s against 306+ min) with no scratch disk use.
 
 Types: 6 notes, shape `3,3,1`, gives 2 types and only 1 geometric shape (the canon's 1-D {0,1,4,10,12,17} pair is that shape on a single axis). 7 notes, `7,2,1`, gives 24 types: 18 rank-1, plus rank-2 types 19, 20 and 21 occur in JI. 8 notes, `4,3,1` and `8,2,1`, gives 102 types: 91, 92, 95 and 96 occur in 5-limit.
 
