@@ -1,5 +1,5 @@
 // M2c thin slice: the even-spacing catalog for the human to browse and hear, over a range of spans, scored with the new
-// models. Two engines:
+// models. Three engines (also 'shared': the shared centre range, equally spaced, see sharedCentres):
 //  - 'equal' (default, 2026-11-20): the centres of the intervals are equally spaced in pitch, as far apart as the span
 //    allows; each interval's bottom note is rounded once to the nearest step (halves round down). With 2+ intervals the
 //    chord always reaches both the bottom and the top of the span (the binding pair has one interval at each edge).
@@ -57,6 +57,60 @@ function equalCentres(order: number[], L: number): Span[] | null {
   });
 }
 
+/**
+ * Shared centre range (the human's original, deliberate rule, 2026-11-20): every centre lives in one range set by the
+ * largest interval, [max d/2, L − max d/2], and the centres are equally spaced across it (first at the bottom of the
+ * range, last at the top), so every ordering uses the same centre positions; the order only decides which interval sits
+ * on which centre. No room blend; each interval's bottom note rounded once to the nearest step (halves down).
+ */
+function sharedCentres(order: number[], L: number): Span[] | null {
+  const n = order.length;
+  const half = Math.max(...order) / 2;
+  const lo = half;
+  const hi = L - half;
+  if (lo > hi + 1e-9) return null;
+  return order.map((d, k) => {
+    const centre = n === 1 ? L / 2 : lo + (k * (hi - lo)) / (n - 1);
+    const low = Math.ceil(centre - d / 2 - 0.5 - 1e-9); // nearest step, halves round down
+    return { low, size: d, centre };
+  });
+}
+
+function catalogOf(engine: string, set: number[], W: number, place: (order: number[], L: number) => Span[] | null) {
+  const byKey = new Map<string, { spans: Span[]; orders: string[]; steps: number[]; shared: number[] }>();
+  let skipped = 0;
+  const ords = orderings(set);
+  for (const order of ords) {
+    const spans = place(order, W);
+    if (!spans) {
+      skipped++;
+      continue;
+    }
+    const ends = spans.flatMap((s) => [s.low, s.low + s.size]);
+    const steps = [...new Set(ends)].sort((a, b) => a - b);
+    const shared = steps.filter((x) => ends.filter((y) => y === x).length > 1);
+    const key = steps.join(',');
+    const hit = byKey.get(key);
+    if (hit) hit.orders.push(order.join(' '));
+    else byKey.set(key, { spans, orders: [order.join(' ')], steps, shared });
+  }
+  const rows: unknown[] = [{ engine, set: set.join(' '), width: W, skipped, orderings: ords.length, summary: true }];
+  for (const v of byKey.values()) {
+    rows.push({
+      engine,
+      set: set.join(' '),
+      width: W,
+      orders: v.orders,
+      spans: v.spans,
+      midi: v.steps.map((x) => x + BASE_MIDI),
+      sharedMidi: v.shared.map((x) => x + BASE_MIDI),
+      fits: v.steps[0] >= 0 && v.steps[v.steps.length - 1] <= W,
+      ...score(v.steps),
+    });
+  }
+  return rows;
+}
+
 function score(steps: number[]) {
   const s = scoreVoicing({ refHz: midiToHz(BASE_MIDI), cents: steps.map((x) => x * 100) }, { decompose: false });
   return { rough: s.interference.hutchinsonKnopoff.total, harmP: s.harmonicity.pitch.value, per: s.periodicity.value };
@@ -65,38 +119,8 @@ function score(steps: number[]) {
 const out: unknown[] = [];
 for (const set of SETS) {
   for (const W of WIDTHS) {
-    // ---- equal centres (default) ----
-    const byKey = new Map<string, { spans: Span[]; orders: string[]; steps: number[]; shared: number[] }>();
-    let skipped = 0;
-    const ords = orderings(set);
-    for (const order of ords) {
-      const spans = equalCentres(order, W);
-      if (!spans) {
-        skipped++;
-        continue;
-      }
-      const ends = spans.flatMap((s) => [s.low, s.low + s.size]);
-      const steps = [...new Set(ends)].sort((a, b) => a - b);
-      const shared = steps.filter((x) => ends.filter((y) => y === x).length > 1);
-      const key = steps.join(',');
-      const hit = byKey.get(key);
-      if (hit) hit.orders.push(order.join(' '));
-      else byKey.set(key, { spans, orders: [order.join(' ')], steps, shared });
-    }
-    out.push({ engine: 'equal', set: set.join(' '), width: W, skipped, orderings: ords.length, summary: true });
-    for (const v of byKey.values()) {
-      out.push({
-        engine: 'equal',
-        set: set.join(' '),
-        width: W,
-        orders: v.orders,
-        spans: v.spans,
-        midi: v.steps.map((x) => x + BASE_MIDI),
-        sharedMidi: v.shared.map((x) => x + BASE_MIDI),
-        fits: v.steps[0] >= 0 && v.steps[v.steps.length - 1] <= W,
-        ...score(v.steps),
-      });
-    }
+    out.push(...catalogOf('equal', set, W, equalCentres)); // equal centres (default)
+    out.push(...catalogOf('shared', set, W, sharedCentres)); // shared centre range, equally spaced
 
     // ---- prefix-slack (old default) ----
     const res = placeIntervals({
