@@ -27,7 +27,10 @@ Bring the Ratio rhythm lab into `shell/` at `/ratio-rhythm`, replacing the claud
 - **Pitch and time:** exact ratios (numerator, denominator as integers or bigint where the LCD can overflow; the rates reading reaches 259,350 slots) and integer slots inside the library. Cents only for display and audio. Nothing is converted to midicents (W-1 applies only at a later Workbench handoff, out of scope here). Monzo helpers may be imported read-only from `src/lib/harmonic-field/` (H-1); C0 decides which.
 - **Persistence:** one per-page key, `hrifa.ratio-rhythm.v1` (inputs, chosen lens, catalog). The artifact's `rrl-catalog` cannot be read from the shell (different origin): the catalog gets a "paste text" import that accepts the artifact's "Copy as text" output.
 - **Audio:** page-local Web Audio (the artifact's synthesized pulses), started only by a click. Never played by an agent without asking (memory rule). No dependency on the workbench audio engine.
-- **Look:** the Harmonic Field Lab conventions that `affine-focus` also adopted (`arcs/harmonic-field-lab/UI-CONVENTIONS.md`, theme roles only, type scale tokens); decided at approval. American spelling everywhere.
+- **Look:** the Harmonic Field Lab conventions that `affine-focus` also adopted (`arcs/harmonic-field-lab/UI-CONVENTIONS.md`, theme roles only, type scale tokens); decided at approval. American spelling everywhere. Follow the route affine-focus took: copy, never import lab page components; one page stylesheet `RatioRhythm.module.css`; local MiniRing, card and fold components. Two corrections to affine's example (C0): the eight `--lab-fs-*` type tokens are defined on the page's `.root`, not on `:root`; error displays (quantization shift, tempering error) use the signed error color of H-25 and H-38 (orange sharp, cyan flat, neutral exact, five bands), not the older cyan-to-red sweep in `arcs/affine-focus/ARC.md`; parse errors use `--text-danger` (H-18).
+- **Reuse from `src/lib/harmonic-field/`** (import-only, by file, never the `index.ts` barrel): `types.ts` (`Monzo`, `Note`), `intervals.ts` (`factorInt`, `ratioNote`, `mFrac`, `mAdd`, `mulNotes`, `mCents`, `oddLimit`, `primeLimit`, `tenneyHeight`, `reduceInto`, `fmtRatio`, `PRIMES`). The ratio parser requires exact ratios (reject `m === null`). gcd, lcm and LCD are written locally in bigint (the lab exports none).
+- **Time:** integer slots per cycle inside the library; seconds only at the audio edge; W-2 (exact quarter-note rationals) applies at a later Workbench handoff. Recorded as RR-1.
+- **Testing the finder:** its time limit takes an injected deadline or step budget, so tests never wait on real time.
 - **JI data:** one canonical home, built in D1: `research/ji-z-partners/data/` with a manifest of every run. The page's catalog file is generated from it by the converter, never edited by hand.
 - **DECISIONS prefix:** `RR` (registered in the first `DECISIONS.md` row if a cross-arc decision is needed).
 
@@ -93,7 +96,7 @@ Research work, not page work: it follows `research/ji-z-partners/HANDOFF.md` ("H
 - Human checkpoint after: yes (and at the step 1 storage decision)
 
 ### M3: Library: JI level and catalog
-- Scope: `src/lib/ratio-rhythm/` (`lattice.ts`, `jiContent.ts`, `jiPartners.ts` (targeted search, from the artifact's `latPartners` and `ji_zsets.py`), `catalog.ts` (schema and loader for the catalog JSON that D1's `catalog.py` generates), tests).
+- Scope: `src/lib/ratio-rhythm/` (`lattice.ts`, `jiContent.ts`, `jiPartners.ts` (targeted search, from the artifact's `latPartners` and `_Ideas/Rhythm-As-Pitch/ji_zsets.py`), `catalog.ts` (schema and loader for the catalog JSON that D1's `catalog.py` generates), tests).
 - Acceptance:
   - [ ] `check:ratio-rhythm` passes
   - [ ] The stacked-fifths pair {0, 1, 4, 10, 12, 17} and {0, 1, 8, 11, 13, 17} share JI interval content; the targeted search finds each from the other
