@@ -88,6 +88,11 @@ Library milestones (M1 to M3) are pure TS with Node tests (`*.test.ts`); their s
   - [ ] Finder: the cheapest fix for that set moves two notes by 5 slots in total and gives 1/1 6/5 7/5 5/3 26/15 9/5 (ring 15) with partner 1/1 4/3 7/5 23/15 26/15 9/5
   - [ ] Linear-ring pair: 1/1 10/9 9/8 89/72 3/2 7/4 ~ 1/1 9/8 89/72 5/4 3/2 29/18 holds on the 1/1 rooting (72) and on none of the other five
 - Human checkpoint after: no
+- Checkpoint decisions (2026-11-20, from the lab comparison before building):
+  - Interval content: the library computes both the folded distance counts (what Z-partners share) and the lab's per-step spectrum (unfolded sizes per generic step, the lab's `SpectrumRow` shape `{k, sizes:[{size,count}], variety}`). Written as lab chips, `2 ×1, 3 ×2`, never as a digit string `⟨…⟩`. Example, `3-3-2` on 8: distances `2 ×1, 3 ×2`; 1st step `2 ×1, 3 ×2`, 2nd step `5 ×2, 6 ×1`. The human added: "keep in mind as we build this that it does relate to the pitch domain still; we can be mindful of those threads" — each module states its pitch-domain counterpart (canon, "The pitch–rhythm map").
+  - Groupings: flat groupings use `+` with no spaces (`3+3+2`); rhythm names stay hyphenated (`3-3-2`). The human first took hyphens, then after the reasons were given: "I would like to use the + there, it makes sense to me as a rhythm grouping." Proximity trees use ` + ` with each bracket's total shown (`53 = 31 (8 + 9 (1 + 8) + 14) + 22`). One formatter.
+  - Stern–Brocot ancestry: ratio chips for parents and children as in the lab, plus the run-letter path as one text line (E(5, 53) = 5/53: path L¹⁰ R L R from the continued fraction [0; 10, 1, 1, 2]; parents 2/21, 3/32; children 7/74, 8/85). Parents reuse the lab's `sternBrocotAncestry` (`src/lib/harmonic-field/sternBrocot.ts`) by file import.
+  - Propriety: included, computed on slots in `spectrum.ts` (proper / strictly proper per the lab's `propriety` rule; a maximally even rhythm has at most 2 sizes per step).
 
 ### D1: JI data hub and VM runs (outside `shell/`)
 Research work, not page work: it follows `research/ji-z-partners/HANDOFF.md` ("How the user works"). Heavy runs happen on the human's VM; the orchestrator writes code and gives exact commands, one per block, with runtime and cost first; Python runs locally only when the human asks.
