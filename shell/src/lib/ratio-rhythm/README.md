@@ -45,11 +45,13 @@ Gaps are divided by their GCD first.
 
 - Scale name: the gaps from the root. Rhythm name: smallest rotation (numeric lexicographic).
   Class name: smallest of all rotations and reversals.
-- Short form `⟨334113⟩`: digits run together when every gap is below 10; if any gap is 10 or more, all
-  gaps are space-separated: `⟨8 1 9 18 36⟩`.
-- Long class form: `15·6 ⟨1 1 3 3 3 4⟩` (L·k, always spaced).
-- One-token form: the rhythm string with a barline before the root's gap, `⟨113|334⟩`. Spaced
-  gaps set the barline off with spaces: `⟨1 9 18 36 | 8⟩`. With rotational symmetry the first
-  equivalent position is used; when that is position 0 no barline is written.
-- `parseName` accepts both spacings, optional brackets and (with brackets) an `L·k` prefix; any whitespace inside means space-separated gaps; a bar-less string
-  with no whitespace is read digit by digit.
+- Written like the Harmonic Field Lab's step patterns (`2-2 on 4`): gaps joined by hyphens at every
+  size, no brackets: `3-3-4-1-1-3`, `8-1-9-18-36` (human, 2026-11-20; the canon's `⟨334113⟩` form
+  is not used).
+- Long class form: `15·6 1-1-3-3-3-4`.
+- One-token form: the rhythm name with a barline in place of the hyphen before the root's gap,
+  `1-1-3|3-3-4`, `1-9-18-36|8`. With rotational symmetry the first equivalent position is used;
+  when the root's gap comes first the barline leads: `|1-2-1-2-1-2`.
+- `parseName` takes hyphens or spaces between gaps, at most one barline and an optional `L·k`
+  prefix, and ignores angle brackets (so the old artifact's `⟨8 1 9 18 36⟩` text reads). A run of
+  digits with no separator is one gap.
