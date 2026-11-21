@@ -46,5 +46,10 @@ The human changed the canon's status (ARC.md, "Approval decisions": compare ever
 - For M5 (Tuning lens): show tempering as the lab shows deviation (signed cents vs EDO targets, `k\m` labels, severity colors via `deviation.ts` `edoTargets`, `fmtSigned`), on top of M1's val math.
 - For M2: compare with the lab's `sternBrocot.ts` (Euclid parents), `shape.ts` `intervalSpectrum` (cyclic interval content by step) and `intervalPairs.ts` before writing evenness and ring Z code; reuse by file import where it fits, and bring naming or format differences to the human.
 
+## D1 early work (2026-11-20, human's request during M2)
+- VM is now `c4d-highcpu-16` (16 vCPUs, 30 GB, 500 GB Hyperdisk), per the human.
+- `zgen.py types` was single-core; at the human's request ("why not just plan to split cores now?") each shape × flip search now runs in its own process with output merged in fixed order (identical to `--workers 1`). Not run here (no Python locally, `HANDOFF.md` rule); the human verifies on the VM by comparing `--workers 1` and the default on the known 8-note shapes (102 types). Finer splitting inside one search (would help `13,2,1`, which has only 2 searches) waits for timings.
+- Commands for the 10, 11, 13 and 14-note 5-limit odd ≤ 123 placements and the 7-limit odd ≤ 123 follow-ups were given in chat; results to land in the D1 hub.
+
 ## Next action
 Land branch `ratio-rhythm-m1` on main (fast-forward), then start M2 with a lab comparison first (the three modules above, plus how the lab names and shows the same things), bring any naming or format differences to the human, then a fresh builder.

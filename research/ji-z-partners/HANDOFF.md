@@ -24,7 +24,7 @@ JI Z-pairs: two pitch sets (octave-reduced ratios, as points in the prime-expone
 |---|---|
 | `exhaustive` | every k-subset of an odd-limit gamut; disk-backed (`--buckets`), resumable, exact class counts |
 | `directsum` | chord-on-roots families directly (`--sizes 3x3 3x4 3x5 4x4`) |
-| `types --shape a,b,c ...` | all cancellation types for U (a notes) × V (b plus terms incl. 0, c minus terms); pruned DFS |
+| `types --shape a,b,c ...` | all cancellation types for U (a notes) × V (b plus terms incl. 0, c minus terms); pruned DFS. Since 2026-11-20 each shape × flip (U/V) search runs in its own process (`--workers`, default all cores but one): 2 searches per shape, so `13,2,1` uses 2 cores and `7,3,1 7,4,2 14,2,1` uses 6. Output is merged in fixed order and is identical to `--workers 1`. |
 | `place --types FILE` | lay types into a gamut; `--allow-rank3` for 3-parameter types (slow in big gamuts) |
 | `estimate`, `selftest` | cost estimate; regression test against the 5-limit odd-123 run |
 

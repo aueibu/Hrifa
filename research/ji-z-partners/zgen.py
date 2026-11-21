@@ -696,29 +696,62 @@ def _joint_basis_coords(P, Q):
     return r, best
 
 
+def _types_job(job):
+    """one independent search: one shape, one flip. Each search has its own pruning state (as it
+    always had), so running them in parallel loses no pruning."""
+    i, nu, vp, vm, flip = job
+    t = time.time()
+    sym = _Sym(nu, vp, vm)
+    found, stats = [], {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set()}
+    _dfs(sym, [], "P", flip, found, stats)
+    pats = []
+    for P, Q, fl, r in found:
+        jb = _joint_basis_coords(P, Q)
+        if jb is None: continue
+        rk, key = jb
+        pats.append((key, rk, len(P), fl))
+    return i, (stats["nodes"], stats["skipped"], stats["sym_skipped"]), len(found), pats, time.time() - t
+
+
 def types_mode(a):
     out_path = a.out
     os.makedirs(out_path, exist_ok=True)
     results = {}
     t0 = time.time()
-    for nu, vp, vm in a.shape:
-        sym = _Sym(nu, vp, vm)
+    jobs = [(i, nu, vp, vm, flip) for i, ((nu, vp, vm), flip)
+            in enumerate((sh, f) for sh in a.shape for f in ("U", "V"))]
+    w = max(1, min(a.workers, len(jobs)))
+    print(f"{len(jobs)} independent searches (each shape x flip U/V) on {w} worker(s)", flush=True)
+    done = {}
+    if w == 1:
+        it = map(_types_job, jobs)
+        pool = None
+    else:
+        pool = Pool(w)
+        it = pool.imap_unordered(_types_job, jobs)
+    try:
+        for res in it:
+            done[res[0]] = res
+            _, nu, vp, vm, flip = jobs[res[0]]
+            print(f"  finished U {nu} x V {vp}+/{vm}-, flip {flip}: {res[1][0]:,} nodes in {res[4]:.0f}s "
+                  f"({len(done)}/{len(jobs)} done, {time.time()-t0:.0f}s elapsed)", flush=True)
+    finally:
+        if pool is not None:
+            pool.close()
+            pool.join()
+    # merge in the fixed job order, so the output is identical to a one-worker run
+    for i, nu, vp, vm, flip in jobs:
+        _, (nodes, skipped, sym_skipped), nfound, pats, secs = done[i]
         k = nu * vp - nu * vm
-        for flip in ("U", "V"):
-            found, stats = [], {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set()}
-            _dfs(sym, [], "P", flip, found, stats)
-            new = 0
-            for P, Q, fl, r in found:
-                jb = _joint_basis_coords(P, Q)
-                if jb is None: continue
-                rk, key = jb
-                if key not in results:
-                    results[key] = {"k": len(P), "rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm,
-                                    "flip": fl, "P": [list(x) for x in key[0]], "Q": [list(x) for x in key[1]]}
-                    new += 1
-            print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {stats['nodes']:,} search nodes "
-                  f"({stats['skipped']:,} repeats and {stats['sym_skipped']:,} relabellings pruned), "
-                  f"{len(found)} patterns, {new} new types ({time.time()-t0:.0f}s)", flush=True)
+        new = 0
+        for key, rk, kp, fl in pats:
+            if key not in results:
+                results[key] = {"k": kp, "rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm,
+                                "flip": fl, "P": [list(x) for x in key[0]], "Q": [list(x) for x in key[1]]}
+                new += 1
+        print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {nodes:,} search nodes "
+              f"({skipped:,} repeats and {sym_skipped:,} relabellings pruned), "
+              f"{nfound} patterns, {new} new types ({secs:.0f}s)", flush=True)
     with open(os.path.join(out_path, "uv_types.jsonl"), "w") as fh:
         for i, t in enumerate(sorted(results.values(), key=lambda t: (t["k"], t["rank"], t["P"])), 1):
             t["type"] = i
