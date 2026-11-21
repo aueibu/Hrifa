@@ -17,4 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| CLAUDE.md (shell/) | ratio-rhythm | 2026-11-20 | rule 16: prefixes are whole words (human request) |
