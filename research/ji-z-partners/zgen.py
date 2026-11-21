@@ -19,7 +19,9 @@ Examples:
   pypy3 zgen.py directsum  --primes 3 5 7 --odd 27 --sizes 3x3 3x4 --out run_7lim_odd27_ds
   pypy3 zgen.py selftest   # reproduces known 5-limit odd-123 results (k=6: 7 families; 3x3: 2823)
 """
-import argparse, itertools, json, os, sys, time
+import argparse, hashlib, itertools, json, os, sys, time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures.process import BrokenProcessPool
 from fractions import Fraction
 from math import gcd, comb
 from multiprocessing import Pool, cpu_count
@@ -611,12 +613,21 @@ def _dfs(sym, rows, stage, flip, out, stats):
     Pruning: (1) a system already explored (same solutions, reached in another order) is skipped;
     (2) labels that no equation mentions yet are interchangeable, so only the lowest-numbered one
     of each group is tried as a new cancellation partner."""
-    key = (stage, _rref_key(rows, sym.n))
+    # a 16-byte digest of the canonical system, not the system itself: the set of explored systems
+    # can hold millions of entries (collision chance ~ n^2 / 2^129, negligible)
+    key = hashlib.blake2b(repr((stage, _rref_key(rows, sym.n))).encode(), digest_size=16).digest()
     if key in stats["seen"]:
         stats["skipped"] += 1
         return
+    if len(stats["seen"]) >= stats.get("seen_max", 1 << 62):
+        # the set only prunes repeated work, so clearing it keeps results exact (some work repeats)
+        stats["seen"].clear()
+        stats["cleared"] = stats.get("cleared", 0) + 1
     stats["seen"].add(key)
     stats["nodes"] += 1
+    if stats.get("report") and time.time() - stats["t_last"] > 60:
+        stats["t_last"] = time.time()
+        stats["report"](stats)
     B = _realise(rows, sym.n)
     if not B or not _nondegenerate(sym, B):
         return
@@ -656,7 +667,7 @@ def _dfs(sym, rows, stage, flip, out, stats):
     Q = [pt for pt, c in _place_terms(sym.Q(flip), B).items() if c == 1]
     if len(P) != len(Q) or canon(P) == canon(Q):
         return
-    out.append((P, Q, flip, len(B)))
+    out(P, Q, flip, len(B))
 
 
 def _joint_basis_coords(P, Q):
@@ -699,18 +710,42 @@ def _joint_basis_coords(P, Q):
 def _types_job(job):
     """one independent search: one shape, one flip. Each search has its own pruning state (as it
     always had), so running them in parallel loses no pruning."""
-    i, nu, vp, vm, flip = job
+    i, nu, vp, vm, flip, seen_max = job
     t = time.time()
     sym = _Sym(nu, vp, vm)
-    found, stats = [], {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set()}
-    _dfs(sym, [], "P", flip, found, stats)
-    pats = []
-    for P, Q, fl, r in found:
+    # patterns are reduced to their type as soon as they are found (first occurrence kept, in order),
+    # so memory holds one entry per type instead of every raw pattern
+    pats = {}
+    count = [0]
+
+    def found(P, Q, fl, r):
+        count[0] += 1
         jb = _joint_basis_coords(P, Q)
-        if jb is None: continue
+        if jb is None: return
         rk, key = jb
-        pats.append((key, rk, len(P), fl))
-    return i, (stats["nodes"], stats["skipped"], stats["sym_skipped"]), len(found), pats, time.time() - t
+        if key not in pats:
+            pats[key] = (key, rk, len(P), fl)
+
+    def report(st):
+        print(f"    U {nu} x V {vp}+/{vm}-, flip {flip}: {st['nodes']:,} nodes, {len(st['seen']):,} systems kept, "
+              f"{count[0]:,} patterns, {len(pats)} types, {_rss_mb()} MB, "
+              f"{st.get('cleared', 0)} clears, {time.time()-t:.0f}s", flush=True)
+
+    stats = {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set(), "report": report, "t_last": time.time(),
+             "seen_max": seen_max}
+    _dfs(sym, [], "P", flip, found, stats)
+    return i, (stats["nodes"], stats["skipped"], stats["sym_skipped"]), count[0], list(pats.values()), time.time() - t
+
+
+def _rss_mb():
+    try:
+        with open("/proc/self/status") as fh:
+            for line in fh:
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) // 1024
+    except OSError:
+        pass
+    return "?"
 
 
 def types_mode(a):
@@ -718,29 +753,35 @@ def types_mode(a):
     os.makedirs(out_path, exist_ok=True)
     results = {}
     t0 = time.time()
-    jobs = [(i, nu, vp, vm, flip) for i, ((nu, vp, vm), flip)
+    jobs = [(i, nu, vp, vm, flip, a.seen_max) for i, ((nu, vp, vm), flip)
             in enumerate((sh, f) for sh in a.shape for f in ("U", "V"))]
     w = max(1, min(a.workers, len(jobs)))
     print(f"{len(jobs)} independent searches (each shape x flip U/V) on {w} worker(s)", flush=True)
     done = {}
+
+    def finished(res):
+        done[res[0]] = res
+        _, nu, vp, vm, flip, _ = jobs[res[0]]
+        print(f"  finished U {nu} x V {vp}+/{vm}-, flip {flip}: {res[1][0]:,} nodes in {res[4]:.0f}s "
+              f"({len(done)}/{len(jobs)} done, {time.time()-t0:.0f}s elapsed)", flush=True)
+
     if w == 1:
-        it = map(_types_job, jobs)
-        pool = None
+        for job in jobs:
+            finished(_types_job(job))
     else:
-        pool = Pool(w)
-        it = pool.imap_unordered(_types_job, jobs)
-    try:
-        for res in it:
-            done[res[0]] = res
-            _, nu, vp, vm, flip = jobs[res[0]]
-            print(f"  finished U {nu} x V {vp}+/{vm}-, flip {flip}: {res[1][0]:,} nodes in {res[4]:.0f}s "
-                  f"({len(done)}/{len(jobs)} done, {time.time()-t0:.0f}s elapsed)", flush=True)
-    finally:
-        if pool is not None:
-            pool.close()
-            pool.join()
+        # ProcessPoolExecutor, not Pool: if a worker is killed (for example by the out-of-memory killer)
+        # the run stops with an error instead of waiting forever for the lost search
+        with ProcessPoolExecutor(max_workers=w) as ex:
+            futs = [ex.submit(_types_job, job) for job in jobs]
+            try:
+                for f in as_completed(futs):
+                    finished(f.result())
+            except BrokenProcessPool:
+                print("ERROR: a search process died (out of memory? check `sudo dmesg | tail`); "
+                      "the types run is incomplete and nothing was written", flush=True)
+                sys.exit(3)
     # merge in the fixed job order, so the output is identical to a one-worker run
-    for i, nu, vp, vm, flip in jobs:
+    for i, nu, vp, vm, flip, _ in jobs:
         _, (nodes, skipped, sym_skipped), nfound, pats, secs = done[i]
         k = nu * vp - nu * vm
         new = 0
@@ -887,6 +928,9 @@ def main():
             p.add_argument("--shape", nargs="+", required=True, metavar="U,V+,V-",
                            help="factor sizes, e.g. 3,3,1 = 3-note U times V with 3 plus terms (incl. 0) and 1 minus term")
             p.add_argument("--out", required=True)
+            p.add_argument("--seen-max", type=int, default=10_000_000,
+                           help="explored systems remembered per search (~100 bytes each) before the memory is "
+                                "cleared; only pruning, so results are exact at any value (default 10,000,000)")
             continue
         p.add_argument("--primes", type=int, nargs="+", required=True)
         if name == "place":

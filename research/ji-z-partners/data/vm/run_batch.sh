@@ -74,12 +74,27 @@ pipeline() { # k "shapes" expected-5-limit
   place "$k" 7lim "3 5 7" "" "new"
 }
 
-pipeline 11 "11,2,1" "25" &
-pipeline 10 "5,3,1 10,2,1 5,4,2" "292" &
-pipeline 13 "13,2,1" "41" &
-pipeline 14 "7,3,1 7,4,2 14,2,1" "495" &
-wait
+# memory watch: a line every 5 minutes, so a squeeze shows in status.txt (types caps its memory per
+# search with --seen-max; a killed worker now stops its run with an error instead of hanging)
+OOM0=$(sudo -n dmesg 2>/dev/null | grep -c "Killed process")
+( while sleep 300; do
+    note "mem $(free -m | awk '/Mem/{print $3}') MB used of $(free -m | awk '/Mem/{print $2}'), $(pgrep -c pypy3) pypy3 processes"
+  done ) &
+WATCH=$!
 
+pipeline 11 "11,2,1" "25" &
+P11=$!
+pipeline 10 "5,3,1 10,2,1 5,4,2" "292" &
+P10=$!
+pipeline 13 "13,2,1" "41" &
+P13=$!
+pipeline 14 "7,3,1 7,4,2 14,2,1" "495" &
+P14=$!
+wait $P11 $P10 $P13 $P14
+kill $WATCH 2>/dev/null
+
+OOM1=$(sudo -n dmesg 2>/dev/null | grep -c "Killed process")
+note "out-of-memory kills during this batch: $((OOM1 - OOM0))"
 note "all done"
 echo "finished: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> machine.txt
 cd "$HOME/zruns" && tar czf "$BATCH.tgz" "$BATCH" && note "packed $HOME/zruns/$BATCH.tgz"
