@@ -118,6 +118,19 @@ Partial types (`~/zruns/scrape_merge/uv{11,13,14}`, `merge_scrape.py`): 11 notes
 
 Local backups: `C:\Users\apoor\zruns_backup\zruns_scrape_2026-11-21_1400.tgz` (scrapes, merges, placements, batch logs). Rank-3 types are skipped in 7-limit (as in the batch).
 
+### Product search `zprod.py` (2026-11-21, human: "Approach two seems more comprehensive go ahead")
+Builds families directly in a gamut as P = U·V with a small signed factor V flipped (Q = U·V*): V with vp plus terms (lowest at 0) and vm minus terms at lattice points of the hull of the plus terms (cancellation cycles force this), vectors up to the gamut's extent; U any integer polynomial found by a lexicographic DFS over candidate points (hull(P) = hull(U) + hull(V)), pruning when a P or Q coefficient leaves 0/1 or a P point leaves the gamut; Q must fit the gamut after a transposition or inversion. A first version with V on a line only found 32/295 at 10 notes: most families need a two-dimensional flipped factor (e.g. P = (x² − xy + y² + 1)(x² + xy + x + y² + y)).
+5-limit odd ≤ 123, shapes 2,1 3,1 3,2 4,1 4,2 (9,779,902 factors V), U coefficients 0/1/2, 8 cores:
+
+| notes | zprod | exhaustive | time |
+|---|---|---|---|
+| 10 | 294 (all identical to exhaustive members) | 295 | 147 s |
+| 11 | 25 (= placement) | 25 | 142 s for 11+13+14 |
+| 13 | **49** | 49 | |
+| 14 | 496 (includes all 305 scraped-placement families) | 498 | |
+
+The 10-note miss is both-signed: (x² − x + y + 1)(x⁶y + x⁵y − x³y + x³ + x² + xy² + y²). U coefficient −1 needs a bound (`--max-neg`; unbounded it stalled). 7-limit needs a pruned V enumeration (3-D: over a billion V by the same listing). Output on the VM: `~/zruns/zprod/`.
+
 ### Spot preemption handling (2026-11-21, human: "you should start it, and rerun from wherever we left off")
 VM settings: Spot, termination action STOP (disk survives), automaticRestart off. While a session runs, the watcher checks `gcloud ... describe` after 3 failed polls, starts the VM, and runs `~/zgen/recover.sh` (`data/vm/recover.sh`): relaunches `resume_batch.sh` (D1 batch: finished steps skipped; types that were running restart with `zgen_v4.py --checkpoint`, see HANDOFF.md) and `run_k7.sh` (linring, resumable by `.done` markers). The batch running now (bf618a4) has no checkpoints: a preemption loses its 11/13/14-note searches (started 03:30 UTC). Local backup of finished VM results: `C:\Users\apoor\zruns_backup\zruns_2026-11-21_0705.tgz`. Another session (tmux `ipcat`, chord voicing catalog) shares the VM and gets the cores when the linring run ends.
 
