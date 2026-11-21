@@ -10,7 +10,7 @@
 //
 //  - the cap can be changed during the run by writing a number to <out>/max-workers.
 //
-// Usage: node build2.mjs --n 2,3,4,5 --max 17 --wmax 60 --out <dir> [--max-workers 15] [--reserve-gb 6]
+// Usage: node build2.mjs --n 2,3,4,5 --max 17 --wmax 60 --out <dir> [--max-workers 15] [--reserve-gb 6] [--min-largest 18]
 //   [--headroom 1] [--worker-heap-mb 768] [--verify 200]
 import { Worker } from 'node:worker_threads';
 import { cpus, loadavg, freemem } from 'node:os';
@@ -24,6 +24,8 @@ const arg = (name: string, def: string) => { const i = process.argv.indexOf(`--$
 const NS = arg('n', '2,3,4,5').split(',').map(Number);
 const MAX = Number(arg('max', '17'));
 const WMIN = Number(arg('wmin', '1'));
+// Only sets whose largest interval is at least this (an addendum run that extends --max without redoing smaller sets).
+const MIN_LARGEST = Number(arg('min-largest', '1'));
 const WMAX = Number(arg('wmax', '60'));
 const OUT = arg('out', 'catalog-v2');
 const NPROC = cpus().length;
@@ -72,9 +74,9 @@ CREATE TABLE IF NOT EXISTS sets (set_id INTEGER PRIMARY KEY, n INTEGER, interval
 CREATE TABLE IF NOT EXISTS orderings (set_id INTEGER, ord INTEGER, ordering TEXT, PRIMARY KEY (set_id, ord)) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS done_sets (set_id INTEGER PRIMARY KEY, rows INTEGER, finished TEXT);
 CREATE TABLE IF NOT EXISTS placements (${COLUMNS.map((c) => `${c} ${['rule', 'notes', 'down_notes', 'up_notes'].includes(c) ? 'TEXT' : ['band', 'round_max', 'round_mean', 'rough', 'rough_c3', 'harm_pitch', 'harm_pc', 'periodicity', 'down_rough', 'down_harm', 'up_rough', 'up_harm'].includes(c) ? 'REAL' : 'INTEGER'}`).join(', ')});`);
-  const sets = multisets(n, MAX);
+  const sets = multisets(n, MAX).filter((s) => s[n - 1] >= MIN_LARGEST);
   const metaGet = db.prepare('SELECT value FROM meta WHERE key = ?');
-  const params = JSON.stringify({ n, max: MAX, wmin: WMIN, wmax: WMAX, bases: BASES });
+  const params = JSON.stringify({ n, max: MAX, wmin: WMIN, wmax: WMAX, bases: BASES, ...(MIN_LARGEST > 1 ? { minLargest: MIN_LARGEST } : {}) });
   const prev = metaGet.get('params') as { value: string } | undefined;
   if (prev && prev.value !== params) throw new Error(`${file} was built with other parameters: ${prev.value}`);
   if ((metaGet.get('finalized') as { value: string } | undefined)?.value === '1') { log(`n=${n}: already finished, skipping`); db.close(); return; }
@@ -82,7 +84,7 @@ CREATE TABLE IF NOT EXISTS placements (${COLUMNS.map((c) => `${c} ${['rule', 'no
     db.exec('BEGIN');
     const meta = db.prepare('INSERT INTO meta VALUES (?, ?)');
     for (const [k, v] of Object.entries({
-      params, n, max_interval: MAX, window_min: WMIN, window_max: WMAX, bases_midi: BASES.join(','),
+      params, n, max_interval: MAX, min_largest: MIN_LARGEST, window_min: WMIN, window_max: WMAX, bases_midi: BASES.join(','),
       rules: 'equal = equal centers (chord fills the window); shared = shared center range [M/2, W-M/2], centers equally spaced',
       rounding: "bottom note = nearest step to (center - size/2); ties round toward the middle of the window (centred exactly on the middle: down); down_* / up_* = every tie rounded down / up",
       scores: 'rough = Hutchinson-Knopoff interference total from C2 (lower smoother); rough_c3 = the same from C3; harm_pitch = pitch-space harmonicity (higher more fused); harm_pc = pitch-class harmonicity; periodicity = Stolzenburg (lower simpler)',

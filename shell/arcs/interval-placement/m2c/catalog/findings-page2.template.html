@@ -1,0 +1,422 @@
+<title>Placement Catalog Findings</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+  /* Layout: one reading column; each finding is a panel with a sentence, a chart (one facet per cardinality), a legend
+     and a table. Rule colors are fixed: equal centers = slot 1, shared range = slot 2. */
+  :root {
+    --bg: #f6f6f3; --surface: #ffffff; --line: #d9d9d2; --grid: #ececE6; --fg: #1d1f22; --muted: #5d6168;
+    --c1: #2a78d6; --c2: #eb6834; --k1: #1baf7a; --k2: #eda100; --k3: #6250d6; --hi: #2a78d61f;
+    --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+      --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; --hi: #3987e52e; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+    --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; --hi: #3987e52e; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 64px;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.8rem; margin: 0; text-wrap: balance; }
+  h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; margin: 0; text-wrap: balance; }
+  p { margin: 0; max-width: 78ch; }
+  .muted { color: var(--muted); }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats b { color: var(--fg); font-family: var(--font-mono); font-weight: 500; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .facets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+  .facet { position: relative; min-width: 0; }
+  .facet h3 { margin: 0 0 4px; font-size: 0.85rem; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+  svg.chart { width: 100%; height: auto; display: block; touch-action: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { display: inline-block; width: 16px; height: 3px; border-radius: 2px; }
+  .box { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-variant-numeric: tabular-nums; box-shadow: 0 2px 8px rgba(0,0,0,0.14); white-space: nowrap; z-index: 2; }
+  .tip .k { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  th, td { padding: 2px 10px 2px 0; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  .seg { display: flex; flex-direction: column; gap: 8px; }
+  .segrow { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 10px; align-items: center; font-size: 0.85rem; }
+  .segbar { display: flex; height: 26px; gap: 2px; }
+  .segbar div { border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #fff; font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; }
+  .segbar div.dark-text { color: #0b0b0b; }
+  .toggle { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .toggle button, .toggle select { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+  .toggle button.on { border-color: var(--c1); color: var(--c1); }
+  .toggle label { font-size: 0.85rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+  .toggle input[type=range] { width: 180px; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+  .ramp { display: inline-block; width: 140px; height: 10px; border-radius: 3px; vertical-align: middle; }
+  .callout { border-left: 3px solid var(--c1); padding: 6px 12px; background: var(--hi); border-radius: 0 6px 6px 0; max-width: 78ch; }
+  table.ex td { font-family: var(--font-mono); font-size: 0.78rem; }
+  table.ex td.names { text-align: left; font-family: var(--font-body); }
+  table.ex tr.best td { font-weight: 600; }
+  table.ex th, table.ex td { padding: 3px 14px 3px 0; }
+  .twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Placement Catalog Findings</h1>
+    <p id="intro"></p>
+    <div class="stats" id="stats"></div>
+  </header>
+  <div id="panels" class="wrap" style="gap:20px"></div>
+</div>
+
+<script>
+const D = /*DATA*/null;
+const NS = D.n;
+const MAXIV = D[NS[0]].meta.max, WMAX = D[NS[0]].meta.wmax;
+const RULES = [['equal', 'equal centers', 'var(--c1)'], ['shared', 'shared center range', 'var(--c2)']];
+const pct = (v) => (100 * v).toFixed(v < 0.1 ? 1 : 0) + '%';
+const num = (d) => (v) => v.toFixed(d);
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+const noteName = (step) => NAMES[step % 12] + (2 + Math.floor(step / 12)); // step 0 = C2
+const nList = (ns) => ns.length > 1 ? ns.slice(0, -1).join(', ') + ' and ' + ns[ns.length - 1] : String(ns[0]);
+
+document.getElementById('intro').innerHTML = `Every set of ${nList(NS)} essential intervals with sizes 1 to ${MAXIV} steps, in every ordering, laid out in every window from the largest interval up to ${WMAX} steps, under both spacing rules: <b style="color:var(--c1)">equal centers</b> (the centers equally spaced, every chord fills its window) and <b style="color:var(--c2)">shared center range</b> (one center range set by the largest interval, the same center positions for every ordering). Roughness is measured from C2 unless a panel says otherwise. Hover any chart for exact values; each has a table. Five intervals are still being computed.`;
+document.getElementById('stats').innerHTML = NS.map((n) =>
+  `<span>${n} intervals: <b>${D[n].totals.sets.toLocaleString()}</b> sets, <b>${D[n].totals.placements.toLocaleString()}</b> placements, <b>${D[n].totals.chords.toLocaleString()}</b> distinct chords</span>`).join('');
+
+function panel(title, text) {
+  const el = document.createElement('section');
+  el.className = 'panel';
+  el.innerHTML = `<h2>${title}</h2><p class="muted">${text}</p>`;
+  document.getElementById('panels').appendChild(el);
+  return el;
+}
+function table(el, head, rows, label = 'Table') {
+  const d = document.createElement('details');
+  d.innerHTML = `<summary>${label}</summary><div class="tablewrap"><table><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  el.appendChild(d);
+}
+function legend(el, items) {
+  const l = document.createElement('div');
+  l.className = 'legend';
+  l.innerHTML = items.map(([name, color, dash]) => `<span><i class="sw" style="background:${color};${dash ? 'background:repeating-linear-gradient(90deg,' + color + ' 0 5px,transparent 5px 8px)' : ''}"></i>${name}</span>`).join('');
+  el.appendChild(l);
+}
+
+/** Line chart with one facet per n; series = [{name, color, dash, pts:{n:[[x,y]]}}]; shared y across facets. */
+function lineChart(el, series, { yFmt, yMin = 0, yMax, xLabel = 'window size (steps)', yLabel, ns = NS }) {
+  const all = series.flatMap((s) => ns.flatMap((n) => (s.pts[n] || []).map((p) => p[1])));
+  const lo = yMin ?? Math.min(...all), hi = yMax ?? Math.max(...all) * 1.05;
+  const W = 440, H = 240, L = 46, R = 70, T = 10, B = 34;
+  const facets = document.createElement('div');
+  facets.className = 'facets';
+  for (const n of ns) {
+    const xs = series.flatMap((s) => (s.pts[n] || []).map((p) => p[0]));
+    if (!xs.length) continue;
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const x = (v) => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R);
+    const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+    let s = '';
+    const ticks = 4;
+    for (let i = 0; i <= ticks; i++) {
+      const v = lo + ((hi - lo) * i) / ticks;
+      s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${yFmt(v)}</text>`;
+    }
+    for (let v = 12; v <= 72; v += 12) if (v >= x0 && v <= x1) s += `<text x="${x(v)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+    s += `<text x="${(L + W - R) / 2}" y="${H - 3}" text-anchor="middle" font-size="11" fill="var(--muted)">${xLabel}</text>`;
+    const ends = [];
+    for (const sr of series) {
+      const p = sr.pts[n];
+      if (!p || !p.length) continue;
+      s += `<path d="${p.map((q, i) => (i ? 'L' : 'M') + x(q[0]) + ' ' + y(q[1])).join(' ')}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round" ${sr.dash ? 'stroke-dasharray="6 4"' : ''}/>`;
+      ends.push({ y: y(p[p.length - 1][1]), name: sr.short || sr.name });
+    }
+    ends.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+    for (const e of ends) s += `<text x="${W - R + 6}" y="${e.y + 4}" font-size="11" fill="var(--fg)">${esc(e.name)}</text>`;
+    s += `<line class="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+    const f = document.createElement('div');
+    f.className = 'facet';
+    f.innerHTML = `<h3>${n} intervals</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(yLabel)} against ${esc(xLabel)}, ${n} intervals">${s}</svg><div class="tip" hidden></div>`;
+    const svg = f.querySelector('svg'), tip = f.querySelector('.tip'), cross = f.querySelector('.cross');
+    svg.addEventListener('pointermove', (ev) => {
+      const r = svg.getBoundingClientRect();
+      const px = ((ev.clientX - r.left) / r.width) * W;
+      const xv = Math.round(x0 + ((px - L) / (W - L - R)) * (x1 - x0));
+      if (xv < x0 || xv > x1) { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); return; }
+      cross.setAttribute('x1', x(xv)); cross.setAttribute('x2', x(xv)); cross.setAttribute('visibility', 'visible');
+      const rows = series.map((sr) => { const q = (sr.pts[n] || []).find((p) => p[0] === xv); return q ? `<div><i class="k" style="background:${sr.color}"></i>${esc(sr.name)}: <b>${yFmt(q[1])}</b></div>` : ''; }).join('');
+      tip.innerHTML = `<div><b>${xLabel.startsWith('window') ? 'window' : xLabel.split(' (')[0]} ${xv}</b></div>${rows}`;
+      tip.hidden = false;
+      const left = (x(xv) / W) * r.width;
+      tip.style.left = Math.max(0, Math.min(left + 12, r.width - tip.offsetWidth - 4)) + 'px';
+      tip.style.top = '22px';
+    });
+    svg.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+    facets.appendChild(f);
+  }
+  el.appendChild(facets);
+}
+const byRule = (rows, key, rule) => rows.filter((r) => r.rule === rule).map((r) => [r.window, r[key]]);
+const perN = (f) => Object.fromEntries(NS.map((n) => [n, f(n)]));
+const ruleSeries = (rowsByN, key, extra = {}) => RULES.map(([rule, name, color]) => ({ name, color, ...extra, pts: perN((n) => byRule(rowsByN[n], key, rule)) }));
+const WINS = [12, 18, 24, 36, 48, 60].filter((w) => w <= WMAX);
+const tableByWindow = (el, rowsByN, key, fmt) => {
+  const rows = [];
+  for (const n of NS) for (const [rule, name] of RULES) rows.push([`${n} intervals, ${name}`, ...WINS.map((w) => { const r = rowsByN[n].find((q) => q.rule === rule && q.window === w); return r ? fmt(r[key]) : '—'; })]);
+  table(el, ['', ...WINS.map((w) => `window ${w}`)], rows);
+};
+const get = (key) => perN((n) => D[n][key]);
+
+// 1. merges
+{
+  const el = panel('How often notes merge', 'Share of placements where two interval ends land on the same note, by window size. Merges fall steadily as the window opens, and each extra interval adds collisions. In wide windows equal centers merges less than the shared range.');
+  const rows = get('byWindow');
+  lineChart(el, ruleSeries(rows, 'share_with_merge'), { yFmt: pct, yMax: 1, yLabel: 'share with a merge' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'share_with_merge', pct);
+}
+// 2. merge kinds
+{
+  const el = panel('How notes merge', 'Every pair of interval ends that land on the same note, by kind. Stacking: one interval\'s top on another\'s bottom. Nesting: two bottoms, or two tops, together. Equal centers mostly stacks; the shared range nests far more often.');
+  const KINDS = [['stack', 'stacking (top on bottom)', 'var(--k1)', false], ['bottom', 'nesting: two bottoms', 'var(--k2)', true], ['top', 'nesting: two tops', 'var(--k3)', false]];
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  const trows = [];
+  for (const n of NS) for (const [rule, name] of RULES) {
+    const r = D[n].mergeKinds.find((q) => q.rule === rule);
+    const tot = r.stack + r.bottom + r.top;
+    if (!tot) continue;
+    seg.innerHTML += `<div class="segrow"><span>${n} intervals,<br>${name}</span><div class="segbar">${KINDS.map(([k, label, c, darkText]) => `<div class="${darkText ? 'dark-text' : ''}" style="flex:${r[k]};background:${c}" title="${label}: ${r[k].toLocaleString()} (${pct(r[k] / tot)})">${r[k] / tot > 0.04 ? pct(r[k] / tot) : ''}</div>`).join('')}</div></div>`;
+    trows.push([`${n} intervals, ${name}`, ...KINDS.map(([k]) => `${r[k].toLocaleString()} (${pct(r[k] / tot)})`)]);
+  }
+  el.appendChild(seg);
+  const l = document.createElement('div');
+  l.className = 'legend';
+  l.innerHTML = KINDS.map(([, label, c]) => `<span><i class="box" style="background:${c}"></i>${label}</span>`).join('');
+  el.appendChild(l);
+  table(el, ['', ...KINDS.map((k) => k[1])], trows);
+}
+// 3. note counts
+{
+  const el = panel('How many notes the chords end up with', 'Each placement starts with two notes per interval; every merge removes one. Share of placements by final note count, over all windows.');
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  const trows = [];
+  const shades = ['#104281', '#256abf', '#3987e5', '#6da7ec', '#9ec5f4', '#cde2fb', '#e3eefb'];
+  for (const n of NS) for (const [rule, name] of RULES) {
+    const rs = D[n].noteCounts.filter((q) => q.rule === rule).sort((a, b) => b.notes - a.notes);
+    const tot = rs.reduce((s, q) => s + q.placements, 0);
+    seg.innerHTML += `<div class="segrow"><span>${n} intervals,<br>${name}</span><div class="segbar">${rs.map((q, i) => `<div class="${i >= 3 ? 'dark-text' : ''}" style="flex:${q.placements};background:${shades[i] || shades[shades.length - 1]}" title="${q.notes} notes: ${pct(q.placements / tot)}">${q.placements / tot > 0.06 ? q.notes + ' · ' + pct(q.placements / tot) : ''}</div>`).join('')}</div></div>`;
+    trows.push([`${n} intervals, ${name}`, rs.map((q) => `${q.notes} notes: ${pct(q.placements / tot)}`).join(' · ')]);
+  }
+  el.appendChild(seg);
+  const l = document.createElement('div');
+  l.className = 'legend';
+  l.innerHTML = '<span>darkest = all notes distinct; each lighter step = one more merge</span>';
+  el.appendChild(l);
+  table(el, ['', 'by note count'], trows);
+}
+// 4. grid robustness and mirror
+{
+  const el = panel('Does the rule decide the chord, or the grid?', 'Solid: share of placements where no interval end falls on an exact half step, so rounding has no choice and the rule alone decides the chord. Dashed: share where the reversed ordering gives the exact mirror image. The shared range\'s fixed center grid keeps landing on half steps; its remaining mirror breaks are all intervals centered exactly on the middle of the window.');
+  const rows = get('byWindow');
+  const s = [...ruleSeries(rows, 'share_grid_robust').map((x) => ({ ...x, name: x.name + ': grid-robust', short: 'robust' })),
+    ...ruleSeries(rows, 'share_mirror_ok').map((x) => ({ ...x, name: x.name + ': mirror exact', short: 'mirror', dash: true }))];
+  lineChart(el, s, { yFmt: pct, yMax: 1, yLabel: 'share' });
+  legend(el, [...RULES.map(([, n, c]) => [n + ': grid-robust', c]), ...RULES.map(([, n, c]) => [n + ': mirror exact', c, true])]);
+  tableByWindow(el, rows, 'share_grid_robust', pct);
+}
+// 5. rounding twins
+{
+  const el = panel('Would a different rounding pick a different winner?', 'The catalog rounds a tie (an interval end on an exact half step) toward the middle of the window. It also stores the twins: the same placement with every tie rounded down, and with every tie rounded up. Share of interval sets, per window, whose smoothest ordering changes if the whole catalog used the down twin (solid) or the up twin (dashed). Where this is low the winner does not depend on the rounding convention.');
+  const rows = get('winnerChange');
+  const s = [...ruleSeries(rows, 'down').map((x) => ({ ...x, name: x.name + ': all ties down', short: 'down' })),
+    ...ruleSeries(rows, 'up').map((x) => ({ ...x, name: x.name + ': all ties up', short: 'up', dash: true }))];
+  lineChart(el, s, { yFmt: pct, yMax: null, yLabel: 'share whose winner changes' });
+  legend(el, [...RULES.map(([, n, c]) => [n + ': all ties down', c]), ...RULES.map(([, n, c]) => [n + ': all ties up', c, true])]);
+  tableByWindow(el, rows, 'down', pct);
+}
+// 6. scores
+{
+  const el = panel('Roughness as the window opens', 'Average roughness (from C2) of the smoothest ordering for each interval set, by window. Lower is smoother. Wider windows are smoother, as the notes spread out of each other\'s critical bands.');
+  const rows = get('scores');
+  lineChart(el, ruleSeries(rows, 'mean_best_rough'), { yFmt: num(2), yLabel: 'mean best roughness' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'mean_best_rough', num(3));
+}
+{
+  const el = panel('Harmonicity as the window opens', 'Average pitch-space harmonicity of the best-fusing ordering for each interval set, by window. Higher means the chord fits one harmonic series better.');
+  const rows = get('scores');
+  lineChart(el, ruleSeries(rows, 'mean_best_harm'), { yFmt: num(2), yMin: null, yLabel: 'mean best harmonicity' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'mean_best_harm', num(3));
+}
+// 7. pareto
+{
+  const el = panel('Is there one best ordering, or a trade-off?', 'For each interval set and window, the orderings that no other ordering beats on both roughness and harmonicity (the first Pareto layer). Share of sets where a single ordering is both the smoothest and the best-fusing, so the catalog has one clear winner. Otherwise the user is choosing between smoother and more fused. The table gives the average number of orderings on that first layer.');
+  const rows = get('scores');
+  lineChart(el, ruleSeries(rows, 'one_winner'), { yFmt: pct, yMax: 1, yLabel: 'share with one clear winner' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'mean_front', num(2));
+}
+// 8. agreement
+{
+  const el = panel('Do the two rules pick the same smoothest ordering?', 'Share of interval sets where equal centers and the shared range agree on which ordering is smoothest, by window.');
+  const s = [{ name: 'rules agree', color: 'var(--fg)', pts: perN((n) => D[n].agreement.map((r) => [r.window, r.same])) }];
+  lineChart(el, s, { yFmt: pct, yMax: 1, yLabel: 'share agreeing' });
+  table(el, ['', ...WINS.map((w) => `window ${w}`)], NS.map((n) => [`${n} intervals`, ...WINS.map((w) => { const r = D[n].agreement.find((q) => q.window === w); return r ? pct(r.same) : '—'; })]));
+}
+// 9. register
+{
+  const el = panel('Does the register change the winner?', 'Share of interval sets, per window, whose smoothest ordering changes when the root moves from C2 up an octave to C3. Only roughness depends on register; harmonicity does not.');
+  const rows = get('winnerChange');
+  lineChart(el, ruleSeries(rows, 'root'), { yFmt: pct, yMax: null, yLabel: 'share that changes' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'root', pct);
+}
+// 10. simple vs compound mixes
+{
+  const C = D.compound;
+  const el = panel('Simple intervals against their compound versions', `Some or all of a set's intervals made an octave larger: for 2 4 5, one compound (14 4 5, 2 16 5, 2 4 17), two (14 16 5, 14 4 17, 2 16 17) or all three (14 16 17). The sizes stop at ${MAXIV}, so only sets whose intervals are all ${MAXIV - 12} or smaller have every mix here; a second run with sizes 18 and 19 will add sets up to 7 (including 2 4 7). Each mixed placement is compared with the simple placement of the same ordering, in a window 12 steps wider and in the same window.`);
+  const call = document.createElement('p');
+  call.className = 'callout';
+  call.innerHTML = '<b>All intervals compound: exactly predictable.</b> Checked on every pair in the catalog, both rules, every ordering: in a window 12 steps wider, the all-compound set gives the simple set\'s chord with every bottom note where it was and every top note an octave higher. Adding 12 to every interval and to the window leaves the gaps between interval centers unchanged and moves every center up 6, so bottoms stay and tops rise 12; the pitch classes are the same.<br><b>A mix (some compound, some not): mostly a different chord.</b> The intervals no longer grow together, so the centers move by different amounts and the pitch classes usually change. The charts show how often a mix keeps the simple chord\'s pitch classes.';
+  el.appendChild(call);
+  const KC = ['var(--k1)', 'var(--k2)', 'var(--k3)', 'var(--c1)'];
+  const tg = document.createElement('div');
+  tg.className = 'toggle';
+  el.appendChild(tg);
+  const host = document.createElement('div');
+  el.appendChild(host);
+  const st = { rule: 'equal' };
+  const kName = (k, n) => (k === n ? `all ${n} compound` : `${k} of ${n} compound`);
+  const drawCharts = () => {
+    tg.innerHTML = '<span class="muted" style="font-size:0.85rem">rule:</span>' + RULES.map(([rule, name]) => `<button type="button" data-r="${rule}" class="${st.rule === rule ? 'on' : ''}">${name}</button>`).join('');
+    tg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { st.rule = b.dataset.r; drawCharts(); }));
+    host.innerHTML = '';
+    const maxK = Math.max(...NS);
+    for (const [off, title] of [[12, 'Keeps the simple chord\'s pitch classes: mix in window W + 12'], [0, 'Keeps the simple chord\'s pitch classes: mix in the same window W']]) {
+      const h = document.createElement('h3');
+      h.style.cssText = 'margin:8px 0 4px;font-size:0.95rem';
+      h.textContent = title;
+      host.appendChild(h);
+      const series = [];
+      for (let k = 1; k <= maxK; k++) series.push({ name: `${k} compound`, color: KC[k - 1], pts: perN((n) => C[n].rows.filter((r) => r.k === k && r.rule === st.rule && r.offset === off).map((r) => [r.window, r.pc_same])) });
+      lineChart(host, series, { yFmt: pct, yMax: 1, yLabel: 'share keeping the pitch classes', xLabel: 'simple window W' });
+    }
+    legend(host, Array.from({ length: maxK }, (_, i) => [`${i + 1} interval${i ? 's' : ''} compound`, KC[i]]));
+  };
+  drawCharts();
+  const trows = [];
+  for (const n of NS) for (const [rule, name] of RULES) for (let k = 1; k <= n; k++) {
+    const sum = (off, f) => { const rs = C[n].rows.filter((r) => r.k === k && r.rule === rule && r.offset === off); const P = rs.reduce((s, r) => s + r.pairs, 0); return P ? rs.reduce((s, r) => s + r[f] * r.pairs, 0) / P : NaN; };
+    const sw = (off) => { const rs = C[n].rows.filter((r) => r.k === k && r.rule === rule && r.offset === off); return rs.length ? rs.reduce((s, r) => s + r.same_winner, 0) / rs.length : NaN; };
+    trows.push([`${n} intervals, ${name}, ${kName(k, n)}`, pct(sum(12, 'pc_same')), pct(sum(12, 'exact')), pct(sum(0, 'pc_same')),
+      `${sum(12, 'rough_s').toFixed(2)} → ${sum(12, 'rough_v').toFixed(2)}`, `${sum(12, 'harm_s').toFixed(2)} → ${sum(12, 'harm_v').toFixed(2)}`, pct(sw(12))]);
+  }
+  table(el, ['', 'same pitch classes (W + 12)', 'tops up an octave, nothing else moved (W + 12)', 'same pitch classes (same W)', 'roughness simple → mix (W + 12)', 'harmonicity simple → mix (W + 12)', 'same smoothest ordering (W + 12)'], trows, 'Table: all windows together');
+
+  // lookup grid: rows = the mixes, columns = the simple set's orderings, cells = stacked chords
+  const ex = document.createElement('div');
+  ex.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:10px';
+  ex.innerHTML = '<h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">Look up a set: every mix, every ordering</h3><div class="toggle" id="mx-controls"></div><div class="tablewrap" id="mx-out"></div><p class="muted" style="font-size:0.85rem">Each cell is one chord, highest note on top, named from C2 (the bottom of the window). Rows: the simple set, then each mix. Columns: the orderings of the simple set (a mix\'s ordering is shown above its chord). Tinted: same pitch classes as the simple chord in that column. ★ = smoothest ordering in its row. Simple windows up to 24; 2 and 3 intervals.</p>';
+  el.appendChild(ex);
+  const XN = NS.filter((n) => C[n].explorer && C[n].explorer.length);
+  const xs = { n: XN.includes(3) ? 3 : XN[0], set: '2 4 5', rule: 0, w: 12, off: 12 };
+  const ctl = ex.querySelector('#mx-controls'), out = ex.querySelector('#mx-out');
+  const nm = (s) => s.split(' ').map(Number).sort((a, b) => b - a).map((x) => noteName(x)).join('<br>');
+  const pcsOf = (s) => [...new Set(s.split(' ').map((x) => +x % 12))].sort((a, b) => a - b).join(' ');
+  const drawEx = () => {
+    const list = C[xs.n].explorer;
+    if (!list.find((e) => e.set === xs.set)) xs.set = list[0].set;
+    const e = list.find((q) => q.set === xs.set);
+    const simple = e.variants.find((v) => v.k === 0);
+    const wins = [...new Set(simple.rows.map((r) => r[2]))].filter((w) => w <= 24).sort((a, b) => a - b);
+    if (!wins.includes(xs.w)) xs.w = wins.includes(12) ? 12 : wins[0];
+    ctl.innerHTML = XN.map((n) => `<button type="button" data-n="${n}" class="${xs.n === n ? 'on' : ''}">${n} intervals</button>`).join('') +
+      `<label>set <select id="mx-set">${list.map((q) => `<option ${q.set === xs.set ? 'selected' : ''}>${q.set}</option>`).join('')}</select></label>` +
+      RULES.map(([, name], i) => `<button type="button" data-rule="${i}" class="${xs.rule === i ? 'on' : ''}">${name}</button>`).join('') +
+      `<label>simple window <input type="range" id="mx-w" min="${wins[0]}" max="${wins[wins.length - 1]}" value="${xs.w}"> <b style="font-family:var(--font-mono)">${xs.w}</b></label>` +
+      [[12, 'mixes in W + 12'], [0, 'mixes in the same W']].map(([o, l]) => `<button type="button" data-off="${o}" class="${xs.off === o ? 'on' : ''}">${l}</button>`).join('');
+    ctl.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', () => { xs.n = +b.dataset.n; drawEx(); }));
+    ctl.querySelectorAll('[data-rule]').forEach((b) => b.addEventListener('click', () => { xs.rule = +b.dataset.rule; drawEx(); }));
+    ctl.querySelectorAll('[data-off]').forEach((b) => b.addEventListener('click', () => { xs.off = +b.dataset.off; drawEx(); }));
+    ctl.querySelector('#mx-set').addEventListener('change', (ev) => { xs.set = ev.target.value; drawEx(); });
+    ctl.querySelector('#mx-w').addEventListener('input', (ev) => { xs.w = +ev.target.value; drawEx(); });
+    const SMAX = MAXIV - 12;
+    const simpleRows = simple.rows.filter((r) => r[0] === xs.rule && r[2] === xs.w);
+    const ords = simpleRows.map((r) => r[1]);
+    const simplePcs = new Map(simpleRows.map((r) => [r[1], pcsOf(r[3])]));
+    let h = `<table class="ex"><tr><th style="text-align:left">set</th><th style="text-align:left">window</th>${ords.map((o) => `<th style="text-align:left">${o}</th>`).join('')}</tr>`;
+    for (const v of [...e.variants].sort((a, b) => a.k - b.k)) {
+      const w = v.k === 0 ? xs.w : xs.w + xs.off;
+      const rows = v.rows.filter((r) => r[0] === xs.rule && r[2] === w);
+      const best = rows.length ? Math.min(...rows.map((r) => r[4])) : null;
+      const cells = ords.map((o) => {
+        const hits = rows.filter((r) => r[1].split(' ').map((x) => (+x > SMAX ? +x - 12 : +x)).join(' ') === o);
+        if (!hits.length) return '<td class="names muted">—</td>';
+        const same = hits.every((r) => pcsOf(r[3]) === simplePcs.get(o));
+        return `<td class="names" style="vertical-align:bottom;${v.k && same ? 'background:var(--hi);' : ''}">${hits.map((r) => `${v.k ? `<div class="muted" style="font-size:0.72rem">${r[1]}</div>` : ''}<div style="font-family:var(--font-mono);font-size:0.78rem;line-height:1.25">${nm(r[3])}</div><div class="muted" style="font-size:0.72rem">${r[4].toFixed(2)}${r[4] === best ? ' ★' : ''}</div>`).join('<hr style="border:0;border-top:1px solid var(--line);margin:3px 0">')}</td>`;
+      }).join('');
+      h += `<tr style="border-top:1px solid var(--line)"><td style="vertical-align:top"><b>${v.set}</b><div class="muted" style="font-size:0.72rem">${v.k ? kName(v.k, xs.n) : 'simple'}</div></td><td style="vertical-align:top">${rows.length ? w : `${w}: too small`}</td>${cells}</tr>`;
+    }
+    out.innerHTML = h + '</table>';
+  };
+  drawEx();
+}
+// 11. heatmap
+{
+  const el = panel('Where the smooth chords are', 'Average roughness of the smoothest ordering, by the largest interval in the set (rows) and the window size (columns). Darker is rougher. The empty triangle is where the window is smaller than the largest interval.');
+  const tg = document.createElement('div');
+  tg.className = 'toggle';
+  el.appendChild(tg);
+  const host = document.createElement('div');
+  host.className = 'facets';
+  el.appendChild(host);
+  const state = { n: NS.includes(3) ? 3 : NS[0] };
+  const stops = [[205, 226, 251], [158, 197, 244], [109, 167, 236], [57, 135, 229], [37, 106, 191], [24, 79, 149], [16, 66, 129]];
+  const ramp = (t) => {
+    const p = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(p)), f = p - i;
+    const c = stops[i].map((v, k) => Math.round(v + (stops[i + 1][k] - v) * f));
+    return `rgb(${c.join(',')})`;
+  };
+  const draw = () => {
+    tg.innerHTML = NS.map((n) => `<button type="button" class="${state.n === n ? 'on' : ''}" data-n="${n}">${n} intervals</button>`).join('');
+    tg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.n = +b.dataset.n; draw(); }));
+    const cells = D[state.n].heat;
+    const vals = cells.map((c) => c.best);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    host.innerHTML = '';
+    for (const [rule, name] of RULES) {
+      const cw = 8, chh = 12, L = 34, T = 8, W = L + WMAX * cw + 10, H = T + MAXIV * chh + 30;
+      let s = '';
+      for (const c of cells.filter((q) => q.rule === rule))
+        s += `<rect x="${L + (c.window - 1) * cw}" y="${T + (MAXIV - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp((c.best - lo) / (hi - lo))}"><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)}</title></rect>`;
+      for (const v of [1, 6, 12, MAXIV]) s += `<text x="${L - 4}" y="${T + (MAXIV - v) * chh + 10}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+      for (let v = 12; v <= WMAX; v += 12) s += `<text x="${L + (v - 1) * cw + 4}" y="${T + MAXIV * chh + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+      s += `<text x="${L + (WMAX / 2) * cw}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--muted)">window size</text>`;
+      const f = document.createElement('div');
+      f.className = 'facet';
+      f.innerHTML = `<h3>${name} (rows: largest interval)</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Roughness heatmap, ${name}, ${state.n} intervals">${s}</svg>`;
+      host.appendChild(f);
+    }
+    const lg = el.querySelector('.heatlegend') || el.appendChild(Object.assign(document.createElement('div'), { className: 'legend heatlegend' }));
+    lg.innerHTML = `<span>${lo.toFixed(2)} smooth <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> rough ${hi.toFixed(2)}</span><span>hover a cell for its value</span>`;
+  };
+  draw();
+}
+</script>

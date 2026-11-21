@@ -53,6 +53,17 @@ The VM is a Spot machine; the JI session relaunches it after a preemption. Recov
 - `pcwatch.sh` (on the PC, run by Claude in the background) polls the VM status every 3 min, runs `ensure.sh` after a
   relaunch (and every 15 min while up), and exits after handling a relaunch or when the catalog is finished.
 
+Addendum (human, 2026-11-21): sizes 18 and 19 (octave + augmented 4th and perfect 5th) for the same cardinalities and
+windows. `--min-largest 18 --max 19` builds only the sets that contain an 18 or 19, into `out19/` (set ids there are
+local to the addendum; join with the main catalog on `sets.intervals`). `run19.sh` runs it; `next.sh` (tmux window
+`next`) waits for `out/all-done` and starts it through `ensure.sh`, which also picks the right job after a reboot.
+
+Findings page v2: `extract-findings2.mjs <out.json> catalog-n2.sqlite catalog-n3.sqlite ...` then inject the JSON into
+`findings-page2.template.html` at `/*DATA*/null`. It adds the rounding twins, the C3 root, Pareto fronts and the
+simple-vs-compound comparison. Checked on every pair (n = 2, 3, 4, both rules): a set with every interval +12 in a
+window +12 is the simple chord with every top note an octave higher and every bottom unmoved. Mixes (some intervals
+compound) mostly change the pitch classes.
+
 ## How it is fast
 
 1. One pass builds every placement into typed-array columns and collects distinct chords keyed by a 49-bit note mask.
