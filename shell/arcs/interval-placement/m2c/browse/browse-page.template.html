@@ -1,0 +1,423 @@
+<title>Interval Placement Browser</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+  /* Layout: input bar; overview map (orderings x windows) with the winner track; filters; chord columns; detail; band
+     chart. One input set's whole catalog, computed in a background worker with the real scoring library. */
+  :root {
+    --bg: #f6f6f3; --surface: #ffffff; --line: #d9d9d2; --grid: #ececE6; --fg: #1d1f22; --muted: #5d6168;
+    --accent: #2f5fb3; --accent-soft: #e3eaf7; --band: #eef1f7; --cband: #d6deee; --shared: #b4562a; --win: #b4562a;
+    --s-a: #2f5fb3; --s-b: #2b7a4b; --s-c: #8a4fb0; --s-d: #b07a12; --s-e: #a8326e;
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+      --accent: #8fb0ee; --accent-soft: #243149; --band: #222a37; --cband: #33405a; --shared: #f0996b; --win: #f0996b;
+      --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; --s-e: #ec8fbd;
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #0ca30c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+    --accent: #8fb0ee; --accent-soft: #243149; --band: #222a37; --cband: #33405a; --shared: #f0996b; --win: #f0996b;
+    --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; --s-e: #ec8fbd;
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #0ca30c; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 72px;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; margin: 0; text-wrap: balance; }
+  h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; margin: 0; }
+  p { margin: 0; max-width: 78ch; }
+  .muted { color: var(--muted); }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lbl { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); min-width: 7em; }
+  button, input, select { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 10px; }
+  button { cursor: pointer; font-weight: 500; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.on, button.playing { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  input[type=number] { width: 4.5em; font-family: var(--font-mono); }
+  input[type=text] { font-family: var(--font-mono); width: 12em; }
+  label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+  .status { font-size: 0.88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .error { color: var(--shared); }
+  .scroll { overflow-x: auto; min-width: 0; }
+  .mapwrap { position: relative; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-variant-numeric: tabular-nums; box-shadow: 0 2px 8px rgba(0,0,0,0.14); white-space: nowrap; z-index: 3; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; color: var(--muted); align-items: center; }
+  .ramp { display: inline-block; width: 140px; height: 10px; border-radius: 3px; vertical-align: middle; }
+  .runs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.85rem; }
+  .run { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-variant-numeric: tabular-nums; cursor: pointer; background: var(--bg); color: var(--fg); }
+  .run b { font-family: var(--font-mono); font-weight: 500; }
+  .cols { display: flex; gap: 2px; overflow-x: auto; min-width: 0; padding-bottom: 6px; }
+  .score { display: flex; min-width: 0; }
+  .axis { flex: none; }
+  .col { flex: none; width: 60px; display: flex; flex-direction: column; align-items: center; gap: 2px; border-radius: 6px; padding: 4px 0; cursor: pointer; border: 1px solid transparent; background: none; color: inherit; font: inherit; }
+  .col:hover { border-color: var(--line); }
+  .col.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .col .rk { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+  .col .val { font-family: var(--font-mono); font-size: 0.75rem; }
+  .col .ord { font-family: var(--font-mono); font-size: 0.66rem; color: var(--muted); line-height: 1.2; text-align: center; }
+  .detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; align-items: start; }
+  .notes { font-family: var(--font-mono); font-size: 1rem; }
+  .facts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .facts b { color: var(--fg); font-weight: 600; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .twins { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+  svg.chart { width: 100%; height: auto; display: block; touch-action: none; }
+  .stop-all { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 2px 10px rgba(0,0,0,0.15); padding: 8px 14px; }
+  @media (max-width: 560px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Interval Placement Browser</h1>
+    <p>Type a set of essential intervals (steps of 12-EDO). The page lays them out in <b>every ordering</b> at <b>every window size</b> in your range, under both spacing rules, and scores each chord with the same models as the app, computed here in your browser. Browse the whole catalog: the map shows every ordering at every window, the columns show the best chords, and the detail plays any one of them.</p>
+  </header>
+
+  <div class="panel">
+    <div class="row"><span class="lbl">Intervals</span><input id="intervals" type="text" value="11 7 16" aria-label="Intervals in steps, separated by spaces">
+      <span class="muted" style="font-size:0.85rem">2 to 5 intervals, 1 to 36 steps each</span></div>
+    <div class="row"><span class="lbl">Window sizes</span><span id="presets" class="row"></span>
+      <label class="muted" for="wmin">from</label><input id="wmin" type="number" min="1" max="72" value="13">
+      <label class="muted" for="wmax">to</label><input id="wmax" type="number" min="1" max="72" value="36"><span class="muted">steps</span></div>
+    <div class="row"><span class="lbl">Root</span><select id="root" aria-label="Lowest note of every window"><option value="24">C1</option><option value="36" selected>C2</option><option value="48">C3</option><option value="60">C4</option></select>
+      <span class="muted" style="font-size:0.85rem">the bottom of every window; only roughness depends on it</span></div>
+    <div class="row"><button id="go" type="button">Build catalog</button><span class="status" id="status"></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="row"><span class="lbl">Spacing</span><span id="rules" class="row"></span></div>
+    <div class="row"><span class="lbl">Measure</span><span id="metrics" class="row"></span></div>
+    <div class="row"><span class="lbl">Filters</span>
+      <label class="check"><input type="checkbox" id="fNoMerge"> no merged notes</label>
+      <label class="check"><input type="checkbox" id="fRobust"> decided by the rule (no rounding tie)</label>
+      <label class="check"><input type="checkbox" id="fPareto"> Pareto layer 1 only</label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Every ordering at every window</h2>
+    <p class="muted" id="mapNote">Rows are orderings (low to high), columns are window sizes. Darker is better on the chosen measure. The outlined cell in each column is that window's best ordering. Filtered-out cells are faded. Click a cell to open that chord.</p>
+    <div class="mapwrap scroll"><svg id="map" class="chart" role="img" aria-label="Map of orderings by window size"></svg><div class="tip" id="mapTip" hidden></div></div>
+    <div class="legend" id="mapLegend"></div>
+    <div class="lbl" style="min-width:0">Best ordering as the window grows</div>
+    <div class="runs" id="runs"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="colsTitle">Best chords</h2>
+    <div class="score"><div class="axis" id="axis"></div><div class="cols" id="cols" role="listbox" aria-label="Best chords"></div></div>
+  </div>
+
+  <div class="panel" id="detail"></div>
+
+  <div class="panel">
+    <h2>How the center band grows with the window</h2>
+    <p class="muted">Highest minus lowest center, by window size, one line per ordering (orderings with the same curve share a line).</p>
+    <svg id="band" class="chart" role="img" aria-label="Center band size against window size"></svg>
+    <div class="legend" id="bandLegend"></div>
+  </div>
+</div>
+<button class="stop-all" id="stopAll" type="button">Stop sound</button>
+
+<script type="text/plain" id="coreSrc">/*CORE*/</script>
+<script>
+const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const noteName = (m) => NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+const RULES = [['equal', 'Equal centers'], ['shared', 'Shared center range']];
+const METRICS = [
+  ['rough', 'Roughness', 1, (v) => v.toFixed(3), 'lower is smoother'],
+  ['harm', 'Harmonicity', -1, (v) => v.toFixed(3), 'higher is more fused'],
+  ['per', 'Periodicity', 1, (v) => v.toFixed(2), 'lower is simpler'],
+  ['merges', 'Merged notes', 1, (v) => String(v), 'fewer is better'],
+];
+const PRESETS = [['Close', 6, 12], ['Open', 13, 24], ['Wide', 25, 36], ['Vast', 37, 48]];
+const SPAN_COLORS = ['--s-a', '--s-b', '--s-c', '--s-d', '--s-e'];
+const S = { data: null, rule: 'equal', metric: 'rough', sel: null, root: 36, intervals: [] };
+
+// ---------- worker ----------
+const worker = new Worker(URL.createObjectURL(new Blob([document.getElementById('coreSrc').textContent], { type: 'text/javascript' })));
+let jobId = 0;
+worker.onmessage = (ev) => {
+  const m = ev.data;
+  if (m.id !== jobId) return;
+  const st = document.getElementById('status');
+  if (m.type === 'progress') { st.textContent = `Scoring ${m.done.toLocaleString()} of ${m.total.toLocaleString()} distinct chords…`; return; }
+  S.data = prepare(m);
+  st.textContent = `${S.data.placements.length.toLocaleString()} placements (${S.data.orderings.length} orderings × ${S.data.windows.length} window sizes × 2 rules), ${Object.keys(m.scores).length.toLocaleString()} distinct chords scored.`;
+  S.sel = null;
+  render();
+};
+function readInputs() {
+  const iv = document.getElementById('intervals').value.trim().split(/[\s,]+/).map(Number);
+  const wmin = Math.round(+document.getElementById('wmin').value), wmax = Math.round(+document.getElementById('wmax').value);
+  if (iv.length < 2 || iv.length > 5 || iv.some((x) => !Number.isInteger(x) || x < 1 || x > 36)) return 'Enter 2 to 5 whole numbers from 1 to 36, separated by spaces.';
+  if (!(wmax >= wmin) || wmin < 1 || wmax > 72) return 'Window sizes must be whole numbers from 1 to 72, with "from" no larger than "to".';
+  if (wmax < Math.max(...iv)) return `The largest window (${wmax}) is smaller than the largest interval (${Math.max(...iv)}): nothing fits. Raise "to".`;
+  return { intervals: iv, wmin, wmax, base: +document.getElementById('root').value };
+}
+function build() {
+  const st = document.getElementById('status');
+  const inp = readInputs();
+  if (typeof inp === 'string') { st.innerHTML = `<span class="error">${inp}</span>`; return; }
+  S.intervals = inp.intervals; S.root = inp.base;
+  st.textContent = 'Building…';
+  worker.postMessage({ id: ++jobId, ...inp });
+}
+document.getElementById('go').addEventListener('click', build);
+for (const id of ['intervals', 'wmin', 'wmax']) document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') build(); });
+document.getElementById('root').addEventListener('change', build);
+
+/** Join scores, compute ranks and Pareto layers per (rule, window). */
+function prepare(m) {
+  const P = m.placements.map((p) => ({ ...p, ...m.scores[p.key], merges: p.spans.length * 2 - p.notes.length }));
+  const windows = [...new Set(P.map((p) => p.W))].sort((a, b) => a - b);
+  for (const rule of ['equal', 'shared']) for (const W of windows) {
+    const g = P.filter((p) => p.rule === rule && p.W === W);
+    let left = g.slice(), L = 1;
+    while (left.length) {
+      const front = left.filter((a) => !left.some((b) => b.rough <= a.rough && b.harm >= a.harm && (b.rough < a.rough || b.harm > a.harm)));
+      for (const a of front) a.layer = L;
+      left = left.filter((a) => !front.includes(a));
+      L++;
+    }
+  }
+  return { placements: P, windows, orderings: m.orderings, scores: m.scores };
+}
+const metric = () => METRICS.find((x) => x[0] === S.metric);
+const better = (a, b) => metric()[2] * (a[S.metric] - b[S.metric]); // < 0 means a is better
+const passes = (p) => (!document.getElementById('fNoMerge').checked || p.merges === 0) &&
+  (!document.getElementById('fRobust').checked || p.ties === 0) && (!document.getElementById('fPareto').checked || p.layer === 1);
+for (const id of ['fNoMerge', 'fRobust', 'fPareto']) document.getElementById(id).addEventListener('change', () => render());
+
+// ---------- controls ----------
+function buttons(el, items, isOn, onClick) {
+  el.innerHTML = '';
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = it.label; if (isOn(it)) b.classList.add('on');
+    b.addEventListener('click', () => onClick(it));
+    el.appendChild(b);
+  }
+}
+function renderControls() {
+  buttons(document.getElementById('rules'), RULES.map(([v, l]) => ({ v, label: l })), (it) => it.v === S.rule, (it) => { S.rule = it.v; S.sel = null; render(); });
+  buttons(document.getElementById('metrics'), METRICS.map(([v, l]) => ({ v, label: l })), (it) => it.v === S.metric, (it) => { S.metric = it.v; render(); });
+  buttons(document.getElementById('presets'), PRESETS.map(([n, a, b]) => ({ label: `${n} ${a}–${b}`, a, b })),
+    (it) => +document.getElementById('wmin').value === it.a && +document.getElementById('wmax').value === it.b,
+    (it) => { document.getElementById('wmin').value = it.a; document.getElementById('wmax').value = it.b; build(); renderControls(); });
+}
+
+// ---------- audio ----------
+let ctx = null, master = null, live = [];
+function audio() {
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination); }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function stopAll() { for (const n of live) { try { n.stop(); } catch (e) {} } live = []; document.querySelectorAll('button.playing').forEach((b) => b.classList.remove('playing')); }
+function tone(midi, start, dur, level) {
+  const c = audio(), f = 440 * Math.pow(2, (midi - 69) / 12), g = c.createGain();
+  g.gain.setValueAtTime(0, start); g.gain.linearRampToValueAtTime(level, start + 0.02);
+  g.gain.setTargetAtTime(level * 0.6, start + 0.05, 0.4); g.gain.setTargetAtTime(0, start + dur, 0.12);
+  g.connect(master);
+  for (let k = 1; k <= 6; k++) {
+    if (f * k > 12000) break;
+    const o = c.createOscillator(), pg = c.createGain();
+    pg.gain.value = 1 / k; o.frequency.value = f * k; o.connect(pg); pg.connect(g); o.start(start); o.stop(start + dur + 0.8);
+    live.push(o);
+  }
+}
+function play(midis, mode, btn) {
+  stopAll();
+  const c = audio(), t0 = c.currentTime + 0.05, level = 0.18 / Math.sqrt(midis.length);
+  if (mode === 'chord') midis.forEach((m) => tone(m, t0, 2.2, level));
+  else midis.forEach((m, i) => tone(m, t0 + i * 0.32, 2.8 - i * 0.2, level));
+  btn.classList.add('playing');
+  setTimeout(() => btn.classList.remove('playing'), mode === 'chord' ? 2600 : midis.length * 320 + 2000);
+}
+document.getElementById('stopAll').addEventListener('click', stopAll);
+
+// ---------- color ramp (darker = better) ----------
+const STOPS = [[226, 236, 250], [158, 197, 244], [109, 167, 236], [57, 135, 229], [37, 106, 191], [24, 79, 149], [16, 66, 129]];
+const ramp = (t) => {
+  const p = Math.max(0, Math.min(1, t)) * (STOPS.length - 1), i = Math.min(STOPS.length - 2, Math.floor(p)), f = p - i;
+  return `rgb(${STOPS[i].map((v, k) => Math.round(v + (STOPS[i + 1][k] - v) * f)).join(',')})`;
+};
+
+// ---------- overview map ----------
+function renderMap() {
+  const d = S.data, svg = document.getElementById('map');
+  const rows = d.orderings, cols = d.windows;
+  const P = d.placements.filter((p) => p.rule === S.rule);
+  const vals = P.map((p) => p[S.metric]);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const good = (v) => (hi === lo ? 1 : metric()[2] === 1 ? (hi - v) / (hi - lo) : (v - lo) / (hi - lo));
+  const labelW = 14 + 9 * Math.max(...rows.map((r) => r.length)), cw = 18, rh = 18, T = 22;
+  const W = labelW + cols.length * cw + 8, H = T + rows.length * rh + 6;
+  let s = '';
+  cols.forEach((w, j) => { if (w % 6 === 0 || j === 0 || j === cols.length - 1) s += `<text x="${labelW + j * cw + cw / 2}" y="${T - 7}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${w}</text>`; });
+  rows.forEach((r, i) => { s += `<text x="${labelW - 8}" y="${T + i * rh + 13}" text-anchor="end" font-size="11" fill="var(--fg)" font-family="var(--font-mono)">${r}</text>`; });
+  const best = new Map();
+  for (const w of cols) {
+    const g = P.filter((p) => p.W === w && passes(p));
+    if (g.length) best.set(w, g.reduce((a, b) => (better(b, a) < 0 ? b : a)));
+  }
+  for (const p of P) {
+    const i = rows.indexOf(p.order), j = cols.indexOf(p.W);
+    const x = labelW + j * cw, y = T + i * rh;
+    const isBest = best.get(p.W) === p, isSel = S.sel === p;
+    s += `<rect data-k="${i}:${j}" x="${x + 1}" y="${y + 1}" width="${cw - 2}" height="${rh - 2}" rx="3" fill="${ramp(good(p[S.metric]))}" opacity="${passes(p) ? 1 : 0.15}" ${isBest ? 'stroke="var(--win)" stroke-width="2"' : ''}/>`;
+    if (p.merges) s += `<circle cx="${x + cw - 5}" cy="${y + 5}" r="2" fill="var(--shared)" pointer-events="none"/>`;
+    if (isSel) s += `<rect x="${x}" y="${y}" width="${cw}" height="${rh}" rx="4" fill="none" stroke="var(--fg)" stroke-width="2" pointer-events="none"/>`;
+  }
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.minWidth = Math.min(W, 1200) + 'px';
+  svg.innerHTML = s;
+  const tip = document.getElementById('mapTip');
+  const at = (ev) => { const k = ev.target.getAttribute && ev.target.getAttribute('data-k'); if (!k) return null; const [i, j] = k.split(':').map(Number); return P.find((p) => p.order === rows[i] && p.W === cols[j]); };
+  svg.onpointermove = (ev) => {
+    const p = at(ev);
+    if (!p) { tip.hidden = true; return; }
+    tip.innerHTML = `<b>${p.order}</b>, window ${p.W}<br>${p.notes.map((n) => noteName(n + S.root)).join(' ')}<br>${METRICS.map((m) => `${m[1].toLowerCase()} ${m[3](p[m[0]])}`).join(' · ')}${p.ties ? '<br>rounding tie' : ''}`;
+    tip.hidden = false;
+    const wrap = svg.parentElement.getBoundingClientRect();
+    tip.style.left = Math.min(ev.clientX - wrap.left + svg.parentElement.scrollLeft + 14, svg.parentElement.scrollWidth - tip.offsetWidth - 4) + 'px';
+    tip.style.top = (ev.clientY - wrap.top + 14) + 'px';
+  };
+  svg.onpointerleave = () => { tip.hidden = true; };
+  svg.onclick = (ev) => { const p = at(ev); if (p) { S.sel = p; render(); } };
+  const m = metric();
+  document.getElementById('mapLegend').innerHTML = `<span>${m[1]}: ${m[3](metric()[2] === 1 ? hi : lo)} <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> ${m[3](metric()[2] === 1 ? lo : hi)} (${m[4]})</span><span><i style="display:inline-block;width:12px;height:12px;border:2px solid var(--win);border-radius:3px"></i> best in its window</span><span><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--shared)"></i> has a merged note</span>`;
+  // winner runs
+  const runs = [];
+  for (const w of cols) {
+    const b = best.get(w);
+    const last = runs[runs.length - 1];
+    if (b && last && last.order === b.order && last.to === w - 1) { last.to = w; last.items.push(b); }
+    else if (b) runs.push({ order: b.order, from: w, to: w, items: [b] });
+  }
+  document.getElementById('runs').innerHTML = runs.length ? runs.map((r, i) => `<button type="button" class="run" data-i="${i}">windows ${r.from === r.to ? r.from : r.from + '–' + r.to}: <b>${r.order}</b></button>`).join('') : '<span class="muted">No chord passes the filters.</span>';
+  document.querySelectorAll('#runs .run').forEach((b) => b.addEventListener('click', () => { const r = runs[+b.dataset.i]; S.sel = r.items.reduce((a, c) => (better(c, a) < 0 ? c : a)); render(); }));
+}
+
+// ---------- chord columns ----------
+function geom(maxW) {
+  const LO = 0, HI = Math.max(maxW, 24), step = Math.max(5, Math.min(10, 360 / (HI - LO))), top = 10;
+  return { LO, HI, top, H: top + (HI - LO) * step + 10, y: (n) => top + (HI - n) * step };
+}
+function colSvg(p, g) {
+  const W = 56;
+  let s = `<svg width="${W}" height="${g.H}" aria-hidden="true">`;
+  for (let n = 0; n <= g.HI; n += 12) s += `<line x1="0" x2="${W}" y1="${g.y(n)}" y2="${g.y(n)}" stroke="var(--grid)"/>`;
+  s += `<rect x="4" y="${g.y(p.W)}" width="${W - 8}" height="${g.y(0) - g.y(p.W)}" rx="3" fill="var(--band)"/>`;
+  const cs = p.spans.map((x) => x.centre), cmin = Math.min(...cs), cmax = Math.max(...cs);
+  s += `<rect x="4" y="${g.y(cmax)}" width="${W - 8}" height="${Math.max(1.5, g.y(cmin) - g.y(cmax))}" rx="2" fill="var(--cband)"/>`;
+  const n = p.spans.length, gap = (W - 16) / n;
+  const sizes = [...new Set(S.intervals.slice().sort((a, b) => a - b))];
+  p.spans.forEach((sp, i) => {
+    const x = 8 + gap * (i + 0.5), col = `var(${SPAN_COLORS[sizes.indexOf(sp.size)] || '--muted'})`;
+    s += `<line x1="${x}" x2="${x}" y1="${g.y(sp.low)}" y2="${g.y(sp.low + sp.size)}" stroke="${col}" stroke-width="2.5" stroke-linecap="round"/>`;
+    s += `<circle cx="${x}" cy="${g.y(sp.low)}" r="3" fill="${col}"/><circle cx="${x}" cy="${g.y(sp.low + sp.size)}" r="3" fill="${col}"/>`;
+    s += `<line x1="${x - 6}" x2="${x + 6}" y1="${g.y(sp.centre)}" y2="${g.y(sp.centre)}" stroke="var(--fg)" stroke-width="2" stroke-linecap="round"/>`;
+  });
+  for (const m of p.shared) s += `<rect x="3" y="${g.y(m) - 3}" width="${W - 6}" height="6" rx="3" fill="none" stroke="var(--shared)" stroke-width="1.5"/>`;
+  return s + '</svg>';
+}
+function renderCols() {
+  const d = S.data;
+  const list = d.placements.filter((p) => p.rule === S.rule && passes(p));
+  // one column per distinct chord (keep its best-placed ordering), best first
+  const byKey = new Map();
+  for (const p of list) { const q = byKey.get(p.key); if (!q) byKey.set(p.key, { ...p, orders: [p.order + ' @' + p.W] }); else q.orders.push(p.order + ' @' + p.W); }
+  const chords = [...byKey.values()].sort(better).slice(0, 80);
+  document.getElementById('colsTitle').textContent = `Best chords (${Math.min(80, byKey.size)} of ${byKey.size} distinct chords that pass the filters, by ${metric()[1].toLowerCase()})`;
+  const g = geom(Math.max(...d.windows));
+  let ax = `<svg width="38" height="${g.H}" aria-hidden="true">`;
+  for (let n = 0; n <= g.HI; n += 12) ax += `<text x="34" y="${g.y(n) + 4}" text-anchor="end" font-size="11" font-family="var(--font-mono)" fill="var(--muted)">${noteName(n + S.root)}</text>`;
+  document.getElementById('axis').innerHTML = ax + '</svg>';
+  const cols = document.getElementById('cols');
+  cols.innerHTML = '';
+  chords.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'col' + (S.sel && S.sel.key === c.key ? ' sel' : '');
+    b.setAttribute('role', 'option');
+    b.setAttribute('aria-label', `${i + 1}: ${c.notes.map((n) => noteName(n + S.root)).join(' ')}`);
+    b.innerHTML = colSvg(c, g) + `<span class="rk">${i + 1}</span><span class="val">${metric()[3](c[S.metric])}</span><span class="ord">${c.order}<br>window ${c.W}${c.orders.length > 1 ? '<br>+' + (c.orders.length - 1) + ' more' : ''}</span>`;
+    b.addEventListener('click', () => { S.sel = d.placements.find((p) => p.rule === S.rule && p.order === c.order && p.W === c.W); render(); });
+    cols.appendChild(b);
+  });
+}
+
+// ---------- detail ----------
+function renderDetail() {
+  const el = document.getElementById('detail');
+  const p = S.sel;
+  if (!p) { el.innerHTML = '<p class="muted">Click a cell in the map, a winner, or a chord column to see it here and hear it.</p>'; return; }
+  const name = (notes) => notes.map((n) => noteName(n + S.root)).join(' ');
+  const scoresOf = (key) => S.data.scores[key];
+  const twin = (label, key) => { const sc = scoresOf(key); const notes = key.split(' ').map(Number); return `<div>${label}: <span class="notes" style="font-size:0.9rem">${name(notes)}</span> · roughness ${sc.rough.toFixed(3)} · harmonicity ${sc.harm.toFixed(3)} <button type="button" data-play="${key}">Chord</button></div>`; };
+  el.innerHTML = `<div class="detail"><div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+      <div class="lbl" style="min-width:0">${RULES.find((r) => r[0] === p.rule)[1]} · ordering ${p.order} · window ${p.W}</div>
+      <div class="notes">${name(p.notes)}</div>
+      <div class="facts">${p.spans.map((sp) => `<span>${sp.size}: ${noteName(sp.low + S.root)}–${noteName(sp.low + sp.size + S.root)}, center ${sp.centre.toFixed(2)}</span>`).join('')}</div>
+      <div class="facts"><span>roughness <b>${p.rough.toFixed(3)}</b></span><span>harmonicity <b>${p.harm.toFixed(3)}</b></span><span>periodicity <b>${p.per.toFixed(2)}</b></span><span>Pareto layer <b>${p.layer}</b></span></div>
+      <div class="facts"><span>${p.notes.length} notes</span><span>merged notes <b>${p.merges}</b>${p.shared.length ? ' (' + p.shared.map((n) => noteName(n + S.root)).join(', ') + ')' : ''}</span><span>center band <b>${p.band.toFixed(2)}</b></span><span>${p.ties ? `<b>${p.ties}</b> rounding tie(s)` : 'no rounding tie: the rule alone decides this chord'}</span></div>
+      ${p.ties ? `<div class="twins"><div class="lbl" style="min-width:0">Rounding twins (every tie rounded down / up)</div>${twin('down', p.down)}${twin('up', p.up)}</div>` : ''}
+    </div><div class="btns"><button type="button" data-mode="chord">Chord</button><button type="button" data-mode="arp">Arpeggio</button></div></div>`;
+  el.querySelectorAll('button[data-mode]').forEach((b) => b.addEventListener('click', () => play(p.notes.map((n) => n + S.root), b.dataset.mode, b)));
+  el.querySelectorAll('button[data-play]').forEach((b) => b.addEventListener('click', () => play(b.dataset.play.split(' ').map((n) => +n + S.root), 'chord', b)));
+}
+
+// ---------- band chart ----------
+function renderBand() {
+  const d = S.data, svg = document.getElementById('band');
+  const groups = new Map();
+  for (const o of d.orderings) {
+    const pts = d.windows.map((w) => { const p = d.placements.find((q) => q.rule === S.rule && q.order === o && q.W === w); return [w, p.band]; });
+    const key = pts.map((q) => q[1].toFixed(6)).join(',');
+    if (!groups.has(key)) groups.set(key, { orders: [], pts });
+    groups.get(key).orders.push(o);
+  }
+  const series = [...groups.values()].slice(0, 6).map((g, i) => ({ ...g, color: `var(--c${i + 1})`, name: g.orders.length === d.orderings.length ? 'all orderings' : g.orders.length > 2 ? `${g.orders[0]} +${g.orders.length - 1}` : g.orders.join(' / ') }));
+  const W = 640, H = 220, L = 40, R = 150, T = 10, B = 30;
+  const x0 = d.windows[0], x1 = d.windows[d.windows.length - 1];
+  const maxY = Math.max(1, ...series.flatMap((s) => s.pts.map((q) => q[1])));
+  const x = (v) => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R), y = (v) => T + (1 - v / maxY) * (H - T - B);
+  let s = '';
+  for (let i = 0; i <= 4; i++) { const v = (maxY * i) / 4; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${v.toFixed(0)}</text>`; }
+  for (const w of d.windows) if (w % 6 === 0) s += `<text x="${x(w)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${w}</text>`;
+  const ends = [];
+  for (const sr of series) { s += `<path d="${sr.pts.map((q, i) => (i ? 'L' : 'M') + x(q[0]) + ' ' + y(q[1])).join(' ')}" fill="none" stroke="${sr.color}" stroke-width="2"/>`; ends.push({ y: y(sr.pts[sr.pts.length - 1][1]), name: sr.name }); }
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+  for (const e of ends) s += `<text x="${W - R + 6}" y="${e.y + 4}" font-size="11" fill="var(--fg)" font-family="var(--font-mono)">${e.name}</text>`;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+  document.getElementById('bandLegend').innerHTML = series.map((sr) => `<span><i style="display:inline-block;width:16px;height:3px;border-radius:2px;background:${sr.color}"></i>${sr.name}</span>`).join('') + (groups.size > 6 ? `<span>(${groups.size - 6} more curves not drawn)</span>` : '');
+}
+
+function render() {
+  renderControls();
+  if (!S.data) return;
+  renderMap();
+  renderCols();
+  renderDetail();
+  renderBand();
+}
+renderControls();
+build();
+</script>
