@@ -69,7 +69,22 @@ The human changed the canon's status (ARC.md, "Approval decisions": compare ever
 - **To do when sizes finish:** verify with `pypy3 ~/zgen/verify_families.py ~/zgen/zgen.py <families.jsonl>`; rerun all 7-limit placements with `--allow-rank3` (feasible: ~2.3e8 per rank-3 type at 10 notes); optionally exhaustive spot checks; bring results into the D1 hub after the storage decision (D1 step 1 question still open).
 - **Research directions agreed in discussion (none started):** (1) place types into rings via vals (tempering = homomorphism to Z_n): cheap, tests which JI pairs survive N-EDO and how much of each ring's Z-pairs is JI-shaped; recommended first. (2) bracelet enumeration (Sawada) + interval-vector hashing for complete ring sweeps. (3) ring analogue of factoring: per divisor d, prime ideals in Q(ζ_d), swap conjugates; pure Python/sympy for class-number-1 conductors (ring sizes like 12, 16, 24, 36, 48, 60), PARI/GP needed for 53 and 72; read arXiv:2412.08997 first. Also: Scala scale sweep with `zfactor.py`; M3's JI partner panel could use factoring if a JS multivariate factorizer is practical.
 
+## Direction (a): types carried into rings (2026-11-21, started at the human's "yes lets go")
+`research/ji-z-partners/ringtypes.py` (pure Python, pypy3 on the VM, `~/zruns/rings/`, tmux `rings`; ran on spare cores beside the batch). Each type (P, Q in Z^r) is sent through every map Z^r → Z_n (all basis images, mirror pairs counted once); every JI family read through any val in any gamut is one of these images, so this gives all ring Z-pairs with a JI shape (a lower bound only as far as the type files are complete: no doubled-note or both-signed mechanism, no 9-note chord-on-roots). Types used: 6 notes 2 (`3,3,1`, made here), 7 notes 24 (`7,2,1`, made here), 8 notes 102, 10 notes 847 (counts match the handoff). Brute-force totals (sets containing 0, dihedral classes) checked against 12-EDO: 29/38/50 classes and 1/3/15 Z-pairs at 4/5/6 notes. The join asserts every type image is in the brute list: passed. Tables in `research/ji-z-partners/tables/rings/`; per-pair lists (43 MB) stay on the VM in `~/zruns/rings/out/`.
+- **Share of each ring's Z-pairs that is JI-shaped** (`coverage.csv`):
+
+  | notes | 12 | 16 | 17 | 19 | 22 | 24 | 31 |
+  |---|---|---|---|---|---|---|---|
+  | 6 | 1/15 | 6/37 | 8/16 | 12/21 | 15/70 | 23/300 | 50/70 |
+  | 7 | 0/3 | 18/52 | 16/24 | 36/57 | 55/385 | 54/783 | 150/230 |
+  | 8 | 0/1 | 24/195 | 32/52 | 72/90 | 95/645 | 100/3,013 | 330/960 |
+  | 10 | 0/0 | 6/37 | **24/24** | 126/156 | 505/1,790 | 695/10,710 | 3,420/9,903 |
+
+  Prime rings (17, 19, 31) are mostly JI-shaped; composite rings (16, 22, 24) mostly are not, which fits ring-only mechanisms that use subgroups (the ring-divisibility thread). 12-EDO: the only JI-shaped hexachord pair is 6-Z12/6-Z41, as in `ANALYSIS.md`. Complements are Z-related on a ring, so a pair missed at k may be JI-shaped at n − k (16: k = 6 and 10 give the same 6/37); a "JI-shaped up to complement" count is not made yet. Rings 41, 53, 72 have no brute total (too big); JI-shaped pairs there at 10 notes: 41: see `types_summary.csv`, 53: 24,518, 72: 62,408.
+- **Placed 10-note families through patent vals** (`vals_*_summary.csv`): 5-limit (294): Z-pairs kept in 12/15/17/19/22/24/27/31/41/46/53/72-EDO = 0/1/10/43/98/0/131/49/288/223/288/288; no collisions in 41, 53, 72. 7-limit (90 rank ≤ 2): 0/1/10/18/16/12/27/48/85/71/89/86. In 53 and 72 the same 6 families (115, 128, 226, 257, 269, 287) become rotations/reflections of their partner: both EDOs temper out the kleisma (15625/15552), so these partners are transpositions or inversions up to a kleisma shift. 41-EDO loses a different 6 (122, 135, 169, 173, 215, 266); which comma does it is not checked yet (guess: magic comma 3125/3072).
+
 ## Next action
+0. Direction (a) follow-ups, if wanted: comma behind each tempered-out family; complement-closed coverage; brute totals for 41 (feasible with bracelet enumeration, direction (b)); 11, 13, 14-note types when the batch finishes.
 1. Check the VM batch (commands above); handle finished sizes (verify, record in this file).
 2. Human lands `ratio-rhythm-lib` on main.
 3. D1 step 1: inventory and the storage decision with the human; then M3 (JI level and catalog), starting with a lab comparison and the factoring decision.
