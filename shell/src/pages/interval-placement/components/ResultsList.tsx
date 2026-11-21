@@ -174,7 +174,9 @@ export function ResultsList({ records, selectedPerm, onSelect }: ResultsListProp
                   borderRadius: 4,
                   cursor: 'pointer',
                   background:
-                    rec.perm.join(',') === selectedKey ? 'var(--mantine-color-blue-light)' : undefined,
+                    rec.perm.join(',') === selectedKey
+                      ? 'var(--mantine-color-blue-light)'
+                      : undefined,
                 }}
               >
                 <Text size="xs" ff="monospace">

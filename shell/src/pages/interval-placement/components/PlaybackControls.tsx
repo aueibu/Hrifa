@@ -16,7 +16,12 @@ const TIMBRE_OPTIONS: Array<{ value: Timbre; label: string }> = [
   { value: 'guitar', label: 'Guitar' },
 ];
 
-export function PlaybackControls({ pitches, endpoints, baseMidi, edoSteps }: PlaybackControlsProps) {
+export function PlaybackControls({
+  pitches,
+  endpoints,
+  baseMidi,
+  edoSteps,
+}: PlaybackControlsProps) {
   const [timbre, setTimbre] = useState<Timbre>('sine');
   const disabled = pitches.length === 0;
   return (
