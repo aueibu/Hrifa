@@ -771,6 +771,92 @@ if (Z && Z.groups.length) {
   drawDetail();
 }
 
+// 13. From pitches back to input sets (human, 2026-11-21: "you can start with selected intervals to place pitches or you
+// can take arbitrary placed pitches and then create an interval list"). Any collection: its exact producers, and the
+// nearest chords the placement does make (MIX.nearest, in a worker).
+{
+  const el = panel('From any pitches back to input sets',
+    `Type any collection as steps (0 = the lowest note). The page lists every input set of ${nList(NS)} intervals, ordering, rule and window whose placement makes exactly that collection, transposed anywhere. Most collections have none: the placement fills its window and spaces the interval centers evenly, which hand-placed notes rarely do. So it also lists the nearest chords the placement does make, with the same number of notes, ranked by how many steps the notes have to move.`);
+  const form = el.appendChild(Object.assign(document.createElement('div'), { className: 'toggle' }));
+  form.innerHTML = `<label>notes <input id="rv-notes" type="text" value="0 4 7 11 14" style="font-family:var(--font-mono);width:14em;font-size:0.85rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:3px 8px" aria-label="Notes in steps"></label>
+    <label>move at most <input id="rv-reach" type="number" min="0" max="8" value="3" style="width:4em;font-size:0.85rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:3px 6px" aria-label="Most steps the notes may move in total"> steps in total</label>
+    <button type="button" id="rv-go">Find</button><span class="muted" id="rv-status" aria-live="polite"></span>`;
+  const out = el.appendChild(document.createElement('div'));
+  out.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+  const mixSrc = [...document.scripts].find((s) => s.textContent.includes('const MIX = (() =>')).textContent;
+  const w = new Worker(URL.createObjectURL(new Blob([mixSrc + `
+self.onmessage = (e) => {
+  const { id, notes, o } = e.data;
+  let last = 0;
+  const res = MIX.nearest(notes, { ...o, onProgress: (d, t) => { const now = Date.now(); if (now - last > 200) { last = now; self.postMessage({ id, d, t }); } } });
+  self.postMessage({ id, res: res.slice(0, 300), total: res.length });
+};`], { type: 'text/javascript' })));
+  let job = 0, cur = null;
+  const st = { pick: null };
+  const nameAny = (s) => NAMES[((s % 12) + 12) % 12] + (2 + Math.floor(s / 12)); // a moved note can fall below C2
+  const names = (xs) => xs.map(noteName).join(' ');
+  const ruleName = (r) => (r === 'equal' ? 'equal centers' : 'shared center range');
+  const prodTable = (ps, more) => `<div class="tablewrap" style="max-height:300px;overflow-y:auto"><table><tr><th>intervals</th><th>set</th><th>ordering</th><th>rule</th><th>window</th><th>lowest note</th><th></th></tr>` +
+    ps.map((p, i) => `<tr><td>${p.n}</td><td>${p.set}</td><td>${p.order}</td><td>${ruleName(p.rule)}</td><td>${p.W}</td><td>${p.low ? `${p.low} up` : 'bottom'}</td><td><button type="button" data-open="${i}">Open in the heatmap tile</button></td></tr>`).join('') +
+    `</table></div>${more ? `<p class="muted" style="font-size:0.85rem">${more}</p>` : ''}`;
+  const wireOpen = (host, ps) => host.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => {
+    const p = ps[+b.dataset.open];
+    if (window.openTile) window.openTile({ n: p.n, set: p.set, rule: p.rule, order: p.order, W: p.W });
+  }));
+  const draw = () => {
+    if (!cur) { out.innerHTML = ''; return; }
+    const { notes, res, total, reach } = cur;
+    const exact = res.find((f) => f.steps === 0), near = res.filter((f) => f.steps > 0);
+    const pick = near.find((f) => f.shape === st.pick) || null;
+    out.innerHTML = `<div><b>${names(notes)}</b> <span class="muted">· steps ${notes.join(' ')} · ${notes.length} notes, span ${notes.at(-1)}</span></div>` +
+      (exact ? `<div class="callout">Made exactly by <b>${exact.count}</b> placement${exact.count === 1 ? '' : 's'} from <b>${exact.sets}</b> input set${exact.sets === 1 ? '' : 's'}.</div>` +
+        prodTable(exact.producers, exact.count > exact.producers.length ? `First ${exact.producers.length} of ${exact.count} shown.` : '') :
+        `<div class="callout">No placement makes exactly this collection.</div>`) +
+      `<h3 style="margin:6px 0 0;font-size:1rem">Nearest chords the placement makes</h3>` +
+      (near.length ? `<p class="muted" style="font-size:0.85rem">${(total - (exact ? 1 : 0)).toLocaleString()} chord${total - (exact ? 1 : 0) === 1 ? '' : 's'} within ${reach} step${reach === 1 ? '' : 's'}${total > 300 ? ', closest 300 shown' : ''}. The whole chord may be transposed for free; "change" shows which notes move. Pick a row for its input sets.</p>
+        <div class="tablewrap" style="max-height:380px;overflow-y:auto"><table><tr><th>chord (steps)</th><th>notes</th><th>steps moved</th><th>notes moved</th><th>change</th><th>input sets</th><th>placements</th></tr>` +
+        near.map((f) => `<tr data-shape="${f.shape}" tabindex="0" style="cursor:pointer;${pick && pick.shape === f.shape ? 'background:var(--hi)' : ''}"><td>${f.shape}</td><td class="names">${names(f.shape.split(' ').map(Number))}</td><td>${f.steps}</td><td>${f.moved}</td>` +
+          `<td class="names">${f.moves.map(([a, b]) => `${nameAny(a)} → ${nameAny(b)}`).join(', ')}</td><td>${f.sets}</td><td>${f.count}</td></tr>`).join('') + `</table></div>` :
+        `<p class="muted">Nothing within ${reach} step${reach === 1 ? '' : 's'}. Allow more movement.</p>`) +
+      (pick ? `<div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px"><div><b>${pick.shape}</b> <span class="muted">· made by ${pick.count} placement${pick.count === 1 ? '' : 's'} from ${pick.sets} input set${pick.sets === 1 ? '' : 's'}</span></div>` +
+        prodTable(pick.producers, pick.count > pick.producers.length ? `First ${pick.producers.length} of ${pick.count} shown.` : '') + '</div>' : '');
+    out.querySelectorAll('tr[data-shape]').forEach((tr) => {
+      const choose = () => { st.pick = tr.dataset.shape; draw(); };
+      tr.addEventListener('click', choose);
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(); } });
+    });
+    const tables = out.querySelectorAll('.tablewrap');
+    if (exact) wireOpen(tables[0], exact.producers);
+    if (pick) wireOpen(tables[tables.length - 1], pick.producers);
+  };
+  w.onmessage = (ev) => {
+    const m = ev.data;
+    if (m.id !== job) return;
+    if (!m.res) { document.getElementById('rv-status').textContent = `searching… ${Math.round((100 * m.d) / m.t)}%`; return; }
+    cur.res = m.res; cur.total = m.total; st.pick = null;
+    document.getElementById('rv-status').textContent = `${((Date.now() - cur.t0) / 1000).toFixed(1)} s`;
+    draw();
+  };
+  const go = () => {
+    const raw = document.getElementById('rv-notes').value.trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    const reach = Math.round(+document.getElementById('rv-reach').value);
+    const status = document.getElementById('rv-status');
+    if (!raw.length || raw.some((x) => !Number.isInteger(x))) { status.textContent = 'Notes: whole numbers of steps, separated by spaces.'; return; }
+    const notes = [...new Set(raw)].sort((a, b) => a - b).map((x, _, a) => x - a[0]);
+    const kmax = 2 * Math.max(...NS);
+    if (notes.length < 2 || notes.length > kmax) { status.textContent = `Notes: 2 to ${kmax} different notes (${Math.max(...NS)} intervals have at most ${kmax} ends).`; return; }
+    if (notes.at(-1) > WMAX) { status.textContent = `The span is ${notes.at(-1)} steps; the catalog's windows stop at ${WMAX}.`; return; }
+    if (!(reach >= 0 && reach <= 8)) { status.textContent = 'Move at most: 0 to 8 steps.'; return; }
+    job++;
+    cur = { notes, reach, res: null, total: 0, t0: Date.now() };
+    out.innerHTML = '';
+    status.textContent = 'searching…';
+    w.postMessage({ id: job, notes, o: { ns: NS, max: MAXIV, wmax: WMAX, reach } });
+  };
+  document.getElementById('rv-go').addEventListener('click', go);
+  for (const id of ['rv-notes', 'rv-reach']) document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+}
+
 // the window filter bar
 {
   const bar = document.getElementById('filterbar');

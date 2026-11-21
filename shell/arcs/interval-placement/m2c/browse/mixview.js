@@ -76,6 +76,62 @@ const MIX = (() => {
     }
     return out;
   }
+  /**
+   * Any pitch collection back to input sets (human, 2026-11-21: "you can start with selected intervals to place pitches
+   * or you can take arbitrary placed pitches and then create an interval list"). Builds every placement whose chord has
+   * the same number of notes and a span within `reach` steps of the target, and keeps the chords whose shape (notes
+   * minus the lowest) is at most `reach` steps from the target's, after the best transposition. Distance 0 = the exact
+   * producers. target: sorted steps; o: { ns, max, wmax, reach, onProgress? }.
+   * Returns [{ shape, steps, moved, t, moves: [[from, to]], count, sets, producers: [{ n, set, rule, order, W, low }] }].
+   */
+  function nearest(target, o) {
+    const T = target.map((x) => x - target[0]), k = T.length, span = T[k - 1], R = o.reach;
+    const found = new Map();
+    const perms = (xs) => {
+      if (xs.length <= 1) return [xs.slice()];
+      const res = [], seen = new Set();
+      xs.forEach((x, i) => { if (seen.has(x)) return; seen.add(x); for (const r of perms(xs.filter((_, j) => j !== i))) res.push([x, ...r]); });
+      return res;
+    };
+    const score = (notes, n, ms, rule, ord, W) => {
+      if (notes.length !== k) return;
+      const lo = notes[0], d = notes.map((x, i) => x - lo - T[i]);
+      if (Math.abs(notes[k - 1] - lo - span) > R) return;
+      const t = d.slice().sort((a, b) => a - b)[(k - 1) >> 1];
+      let steps = 0, moved = 0;
+      for (const x of d) { const a = Math.abs(x - t); steps += a; if (a) moved++; }
+      if (steps > R) return;
+      const shape = notes.map((x) => x - lo).join(' ');
+      let f = found.get(shape);
+      if (!f) {
+        f = { shape, steps, moved, t, moves: T.map((x, i) => [x, x + d[i] - t]).filter(([a, b]) => a !== b), count: 0, sets: new Set(), producers: [] };
+        found.set(shape, f);
+      }
+      f.count++; f.sets.add(`${n}|${ms.join(' ')}`);
+      if (f.producers.length < 40) f.producers.push({ n, set: ms.join(' '), rule, order: ord.join(' '), W, low: lo });
+    };
+    const ns = o.ns.filter((n) => 2 * n >= k);
+    let done = 0;
+    for (const n of ns) {
+      const top = Math.min(o.max, span + R), ms = [];
+      const rec = (from) => {
+        if (ms.length === n) {
+          const M = ms[n - 1];
+          const wlo = Math.max(M, span - R), weq = Math.min(o.wmax, span + R), wsh = Math.min(o.wmax, span + R + M + 1);
+          if (wlo > wsh) return;
+          for (const ord of perms(ms)) {
+            for (let W = wlo; W <= weq; W++) score(place('equal', ord, W).notes, n, ms, 'equal', ord, W);
+            for (let W = wlo; W <= wsh; W++) score(place('shared', ord, W).notes, n, ms, 'shared', ord, W);
+          }
+          return;
+        }
+        for (let i = from; i <= top; i++) { ms.push(i); rec(i); ms.pop(); if (n === ns[ns.length - 1] && ms.length === 0 && o.onProgress) o.onProgress(++done, top); }
+      };
+      rec(1);
+    }
+    return [...found.values()].map((f) => ({ ...f, sets: f.sets.size }))
+      .sort((a, b) => a.steps - b.steps || a.moved - b.moved || b.sets - a.sets || a.shape.localeCompare(b.shape, undefined, { numeric: true }));
+  }
   /** Every mix of a set, simple first, then by how many intervals are compound. comp = the simple values raised. */
   function variants(iv) {
     const s = iv.slice().sort((a, b) => a - b), seen = new Map();
@@ -219,5 +275,5 @@ const MIX = (() => {
         (o.play ? `<div style="display:flex;gap:6px"><button type="button" data-i="${i}" data-mode="chord">Chord</button><button type="button" data-i="${i}" data-mode="arp">Arpeggio</button></div>` : '') + '</div>').join('')}</div></div>`;
     if (o.play) det.querySelectorAll('button[data-mode]').forEach((b) => b.addEventListener('click', () => o.play(shown[+b.dataset.i][0].notes, b.dataset.mode, b)));
   }
-  return { place, producers, variants, reduce, pcs, render, colSvg, ramp };
+  return { place, producers, nearest, variants, reduce, pcs, render, colSvg, ramp };
 })();
