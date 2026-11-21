@@ -140,7 +140,8 @@ def gen_V(bounds, shapes):
     """yield signed V (tuple of (point, coeff)), lowest point 0 with coeff +1, for each (vp, vm) shape"""
     dim = len(bounds)
     box = lex_positive_box(bounds)
-    seen = set()
+    # no duplicate check is needed: 0 is the lexicographically smallest plus point and every minus point
+    # lies in the hull of the plus points (so is larger), so each V is generated once, already normalized
     for vp, vm in shapes:
         for rest in itertools.combinations(box, vp - 1):
             plus = [(0,) * dim] + list(rest)
@@ -156,9 +157,6 @@ def gen_V(bounds, shapes):
                 for p in minus:
                     terms[p] = -1
                 V = normalize(terms)
-                if V in seen:
-                    continue
-                seen.add(V)
                 R = reversal(V)
                 if R == V or R == normalize({p: -c for p, c in V}):
                     continue
@@ -171,10 +169,10 @@ def search_U(V, ks):
     Vs = reversal(V)
     vsum = sum(c for _, c in V)
     if vsum <= 0:
-        return []
+        return [], True
     targets = sorted({k // vsum for k in ks if k % vsum == 0})
     if not targets:
-        return []
+        return [], True
     usum_max = max(targets)
     dim = len(_G[0])
     lo, hi = _BOX
@@ -184,7 +182,7 @@ def search_U(V, ks):
     cand = [u for u in itertools.product(*[range(lo[i] - vlo[i], hi[i] - vhi[i] + 1) for i in range(dim)])]
     cand.sort()
     if not cand:
-        return []
+        return [], True
     idx = {u: i for i, u in enumerate(cand)}
     # when is each P / Q point final? after its last (largest-index) contributor is decided
     def finals(W):
@@ -206,9 +204,16 @@ def search_U(V, ks):
     # (--max-neg) and so the positive mass (target + negative mass)
     max_neg = _ARGS.max_neg
     pos_max = usum_max + max_neg
-    state = {"usum": 0, "pos": 0, "neg": 0}
+    state = {"usum": 0, "pos": 0, "neg": 0, "nodes": 0}
+    budget = _ARGS.max_nodes
+
+    class Budget(Exception):
+        pass
 
     def rec(i):
+        state["nodes"] += 1
+        if budget and state["nodes"] > budget:
+            raise Budget
         if i == len(cand):
             if state["usum"] in targets:
                 Ps = [p for p, c in P.items() if c == 1]
@@ -257,8 +262,11 @@ def search_U(V, ks):
                 for v, a in Vs:
                     Q[add(u, v)] -= c * a
 
-    rec(0)
-    return res
+    try:
+        rec(0)
+    except Budget:
+        return res, False          # search for this V stopped at the node budget: possibly incomplete
+    return res, True
 
 
 def _init(G, args):
@@ -272,7 +280,8 @@ def _init(G, args):
 def _job(V):
     found = collections.defaultdict(set)
     n = 0
-    for P, Q in search_U(V, _ARGS.k):
+    prods, complete = search_U(V, _ARGS.k)
+    for P, Q in prods:
         n += 1
         cp, cq = Z.canon(P), Z.canon(Q)
         if cp == cq:
@@ -281,7 +290,7 @@ def _job(V):
             continue
         fp = Z.fingerprint(cp)
         found[(len(cp), fp)].update((cp, cq))
-    return V, dict(found), n
+    return V, dict(found), n, complete
 
 
 def main():
@@ -296,6 +305,8 @@ def main():
                     help="largest |coordinate| of a V vector (0 = the gamut's extent in each dimension)")
     ap.add_argument("--ucoeffs", type=int, nargs="+", default=[0, 1, 2])
     ap.add_argument("--max-neg", type=int, default=1, help="largest total of negative U coefficients (if -1 allowed)")
+    ap.add_argument("--max-nodes", type=int, default=2_000_000,
+                    help="search steps per factor V before it is stopped and reported (0 = no limit)")
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
@@ -307,20 +318,38 @@ def main():
     dim = len(G[0])
     extent = [max(p[i] for p in G) - min(p[i] for p in G) for i in range(dim)]
     bounds = extent if a.vmax <= 0 else [min(a.vmax, e) for e in extent]
-    Vs = list(gen_V(bounds, shapes))
-    run.say(f"gamut {len(G)} notes ({a.primes}, odd <= {a.odd}); k {a.k}; V shapes {shapes}, |coord| <= {bounds}: "
-            f"{len(Vs)} factors V; U coefficients {a.ucoeffs}")
+    run.say(f"gamut {len(G)} notes ({a.primes}, odd <= {a.odd}); k {a.k}; V shapes {shapes}, |coord| <= {bounds}; "
+            f"U coefficients {a.ucoeffs}")
     t0 = time.time()
     allf = collections.defaultdict(set)
     nprod = 0
+    n = 0
+    stopped = []
+    # the pool is started before any factor is generated, and factors are fed in batches, so neither the
+    # parent nor the forked workers ever hold the full factor list (it is millions of tuples)
     with Pool(a.workers, initializer=_init, initargs=(G, a)) as pool:
-        for n, (V, found, cnt) in enumerate(pool.imap_unordered(_job, Vs, chunksize=4), 1):
-            nprod += cnt
-            for key, members in found.items():
-                allf[key] |= members
-            if n % 2000 == 0 or n == len(Vs):
-                fams = sum(1 for (k, _), m in allf.items() if len(m) >= 2)
-                run.say(f"  {n}/{len(Vs)} factors, {nprod:,} products, {fams} families, {time.time() - t0:.0f}s")
+        gen = gen_V(bounds, shapes)
+        while True:
+            batch = list(itertools.islice(gen, 50_000))
+            if not batch:
+                break
+            for V, found, cnt, complete in pool.imap_unordered(_job, batch, chunksize=16):
+                n += 1
+                nprod += cnt
+                if not complete:
+                    stopped.append(V)
+                for key, members in found.items():
+                    allf[key] |= members
+            fams = sum(1 for (k, _), m in allf.items() if len(m) >= 2)
+            run.say(f"  {n:,} factors, {nprod:,} products, {fams} families, "
+                    f"{len(stopped)} factors stopped at the node budget, {time.time() - t0:.0f}s")
+    run.say(f"{n:,} factors V searched")
+    if stopped:
+        with open(os.path.join(a.out, "stopped_factors.jsonl"), "w") as fh:
+            for V in stopped:
+                fh.write(json.dumps([[list(p), c] for p, c in V]) + "\n")
+        run.say(f"WARNING: {len(stopped)} factors hit --max-nodes {a.max_nodes}; their U search is incomplete "
+                f"(listed in stopped_factors.jsonl)")
     rows = []
     for k in a.k:
         fams = [(k, [list(m) for m in sorted(ms)], {"mechanism": "zprod U*V, V flipped"})
