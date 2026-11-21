@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
 - Current milestone: M2c (scenarios)
-- State: ARC revision approved 2026-11-20 with answers recorded (ARC "Revision checkpoint decisions"); next: write `SCENARIOS.M2c.md` for the human
+- State: `SCENARIOS.M2c.md` written 2026-11-20 (Q1-Q8, numbers from `m2c/scen.ts` on the real libs); awaiting the human's answers
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
