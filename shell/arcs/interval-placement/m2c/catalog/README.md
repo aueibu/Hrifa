@@ -23,6 +23,28 @@ n = 4, same settings: 32.5 min (shapes 20 min, roughness 4 min per root, pass 1 
 19,451,288 placements, 15,521,278 distinct chords, 8,899,469 shapes, 324 pitch-class classes, 4.3 GB; Node needs
 `--max-old-space-size` raised (about 4.5 GB resident). Shapes dominate: on the VM (16 cores) they would take about 14 min.
 
+## v2: streaming, resumable, machine-sharing (`build2.ts`, `worker2.ts`)
+
+For the big run (human, 2026-11-21: cardinalities 2–5, sizes 1–17, windows up to 60, every placement stored, roots C2
+and C3), on the shared GCP VM. Differences from v1:
+
+- Each worker builds and scores one whole interval set and returns finished rows; memory stays constant whatever the
+  size of the run. Scores are stored with each placement (no global chord table), so writes only append.
+- Resumable: each set's rows and its `done_sets` mark are committed together; rerun the same command to continue.
+- Shares the machine: run under `nice -n 10`; workers follow the load average (`--max-workers` caps them, default
+  CPUs − 1); no new set starts while MemAvailable is below `--reserve-gb` (default 6); worker heaps are capped
+  (`--worker-heap-mb`, default 768).
+- One file per cardinality (`catalog-n<k>.sqlite`); indexes, summaries and a 200-row check against `scoreVoicing` are
+  built when a cardinality finishes.
+- Same columns as v1's `placement_view`, plus `rough_c3`, `harm_pc`, the rounding twins' notes and scores
+  (`down_*`, `up_*`) and the chord structure, all on the placement row. Verified: a killed-and-resumed run equals an
+  uninterrupted one exactly; v1 and v2 agree on every placement they share.
+
+VM run (2026-11-21, started 06:55 UTC): `~/ipcat` (Node 24 at `~/ipcat/node`), tmux session `ipcat`, log
+`~/ipcat/run.log`, output `~/ipcat/out/`. Command:
+`nice -n 10 ./node/bin/node --disable-warning=ExperimentalWarning build2.mjs --n 2,3,4,5 --max 17 --wmax 60 --out out --max-workers 2 --reserve-gb 6`
+(2 workers at most, as agreed with the JI Z-relation session that shares the VM).
+
 ## How it is fast
 
 1. One pass builds every placement into typed-array columns and collects distinct chords keyed by a 49-bit note mask.
