@@ -7,13 +7,14 @@ Status: **approved 2026-11-20** with the decisions below; setup (rule 16), then 
 - Name and route: "Ratio Rhythm Lab" at `/ratio-rhythm`. The human: "That works".
 - Data source: `zgen.py` is canonical for family counts and types (`ji_zsets.py` stays for the targeted search and EDO mode). A converter under `research/ji-z-partners/` is allowed. The human: "If zgen is the canonical one yes".
 - Added milestone D1 at the human's request: "a milestone maybe to get better centralized data somewhere and to run anything else we need on the VM".
+- Canon status changed (2026-11-20, after M1): "Canon was sort of a snapshot of my understanding and where we were at. Everything in this should be compared against harmonic lab and general UI principles for improvement." The canon is the source of the math facts (numbers checked by tests), not of names, formats or presentation. Every milestone (library and page) first compares what it is about to build with how the Harmonic Field Lab already does the same thing (`src/lib/harmonic-field/README.md`, `arcs/harmonic-field-lab/UI-CONVENTIONS.md`, the lab page) and with general UI principles, and brings the differences to the human as proposals with an example where the options differ. A canon statement that turns out wrong is noted in `PROGRESS.md`; the canon file itself is not corrected.
 
 ## Goal
 Bring the Ratio rhythm lab into `shell/` at `/ratio-rhythm`, replacing the claude.ai artifact (snapshot in `reference/ratio-rhythm-lab.html`, 1,747 lines, about 120 functions). The math moves into a pure, tested library `src/lib/ratio-rhythm/` whose tests are the worked numbers of the canon (`_Ideas/Rhythm-As-Pitch/Ratio rhythm timeline and canon.md`, the project's source of truth); the page is then rebuilt on that library in stages, each looked at by the human before polish. Why now: the research (canon, `zgen.py`, results) lives in the repo and moves quickly, but the artifact cannot read repo files, run tests or be edited by Claude Code sessions. The JI search itself stays in Python (`research/ji-z-partners/zgen.py`, run on the VM); the page gets the fast targeted partner search in TypeScript and reads a committed catalog file.
 
 ## Parameters
 
-- **Source of behavior:** the snapshot `arcs/ratio-rhythm/reference/ratio-rhythm-lab.html` (artifact version 1795220968-b833, read 2026-11-20) for what the app does, and the canon for what the math must give. Where they disagree, the canon wins and the difference is logged in `PROGRESS.md`. Builders read the whole relevant part of the snapshot before porting it (port-applet skill, step 1).
+- **Source of behavior:** the snapshot `arcs/ratio-rhythm/reference/ratio-rhythm-lab.html` (artifact version 1795220968-b833, read 2026-11-20) for what the app does, and the canon for what the math must give. Where they disagree on a number, the math decides (checked by hand or by an independent computation) and the difference is logged in `PROGRESS.md`. Names, formats and presentation follow the comparison with the lab (see "Canon status changed" above), not the canon or the artifact by default. Builders read the whole relevant part of the snapshot before porting it (port-applet skill, step 1).
 - **What the artifact has** (function groups in the snapshot):
   - Grouping trees: `countSplits`, `sampleNode`, `sampleSeq`, `layout`, `weights`, `syncScore`, rule controls (cycles 2 to 96 pulses, leaf sizes 1 to 9, at most 2, 3, 4 or any parts per split).
   - Ring and tuning: `parseRatios`, `lcdOf`, `linearRing`, `logRing`, `gapsOf`, `modeOf`, `quantGrid`, `bitsLost`, `distinctCount`, `factorize`.
@@ -69,6 +70,10 @@ Library milestones (M1 to M3) are pure TS with Node tests (`*.test.ts`); their s
   - [ ] Names: `15·6 ⟨1 1 3 3 3 4⟩`; scale `⟨334113⟩` decodes to slots 0, 3, 6, 10, 11, 12 and 1/1 6/5 7/5 5/3 26/15 9/5; one-token `⟨113|334⟩`; the 72 example's scale `⟨8 1 9 18 36⟩`, rhythm `⟨1 9 18 36 8⟩`, class `⟨1 8 36 18 9⟩`
   - [ ] Equal cycles vs equal pulse: common grid 6,480 for the example; equal-pulse lengths 72, 80, 81, 90, 108 tatums
 - Human checkpoint after: no
+- Checkpoint decisions (2026-11-20, after M1 was built):
+  - Names follow the Harmonic Field Lab's step patterns, not the canon: gaps joined by hyphens at every size, no angle brackets (`3-3-4-1-1-3`, `8-1-9-18-36`, class `15·6 1-1-3-3-3-4`). The human: "I like the lab style but I think the 'on x' notation is tough to parse at length. I do think some kind of marker makes the most sense."
+  - The root marker is a barline in place of the hyphen before the root's gap (`1-1-3|3-3-4`, `1-9-18-36|8`), leading when the root's gap comes first (`|1-1-3-3-3-4`). Chosen over square brackets and a raised dot.
+  - The canon file is not corrected (it is a snapshot); the 17-EDO note stays in `PROGRESS.md`.
 
 ### M2: Library: evenness, grouping, meter, perception, ring Z-relations
 - Scope: `src/lib/ratio-rhythm/` (`euclid.ts`, `grouping.ts`, `meter.ts`, `distance.ts`, `spectrum.ts`, `zring.ts`, `finder.ts`, tests). The finder is cancellable with a time limit (the artifact's 15 s), so the page can run it without freezing.

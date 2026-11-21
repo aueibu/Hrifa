@@ -36,8 +36,15 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Open questions for human
 - D1 step 1: where large result files live (repo under a size cap, or a Cloud Storage bucket). Asked after the inventory.
-- Canon fix for 17-EDO: change the Canon 2 table's "Why" for 17 (merge by rounding on the log ring; 81/80 is +1 on the patent val), or drop 17 from the row? Not blocking.
-- One-token form when the root's gap comes first: no barline (`⟨113334⟩`, current) or a leading barline (`⟨|113334⟩`, the canon read literally)? Not blocking.
+- (Resolved 2026-11-20) Canon fix for 17-EDO: not corrected; the canon is a snapshot. One-token root marker: decided as part of the names change (ARC.md, M1 checkpoint decisions).
+
+## M1 follow-up: lab comparison (2026-11-20)
+The human changed the canon's status (ARC.md, "Approval decisions": compare everything with the Harmonic Field Lab and general UI principles). Comparison of M1 with `src/lib/harmonic-field/`:
+- Ratio input: M1 parses through the lab's `parseInterval`: same input rules. Keep.
+- Names: changed to the lab's hyphen style with a barline root marker (human's choice; ARC.md M1 checkpoint decisions). `names.ts`, `names.test.ts` (17 tests) and README updated by the orchestrator.
+- Ratio text: M1 has its own bigint `ratioStr`; the lab's `fmtRatio` takes a `Note`. Same output for reduced ratios; keep local (bigint), check at M4 that the page shows ratios as the lab does.
+- For M5 (Tuning lens): show tempering as the lab shows deviation (signed cents vs EDO targets, `k\m` labels, severity colors via `deviation.ts` `edoTargets`, `fmtSigned`), on top of M1's val math.
+- For M2: compare with the lab's `sternBrocot.ts` (Euclid parents), `shape.ts` `intervalSpectrum` (cyclic interval content by step) and `intervalPairs.ts` before writing evenness and ring Z code; reuse by file import where it fits, and bring naming or format differences to the human.
 
 ## Next action
-Land branch `ratio-rhythm-m1` on main (fast-forward), then start M2 (evenness, grouping, meter, perception, ring Z-relations, finder) with a fresh builder.
+Land branch `ratio-rhythm-m1` on main (fast-forward), then start M2 with a lab comparison first (the three modules above, plus how the lab names and shows the same things), bring any naming or format differences to the human, then a fresh builder.

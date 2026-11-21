@@ -3,8 +3,10 @@
  *  - scale: the gaps written from the root (slot 0);
  *  - rhythm: the smallest rotation of the gap list (numeric lexicographic), direction kept;
  *  - class: the smallest of all rotations and reversals.
- * Short forms run digits together when every gap is below 10, otherwise gaps are space-separated.
- * The long class form is `L·k ⟨g g g⟩` (always spaced).
+ * Written as in the Harmonic Field Lab's step patterns (`2-2 on 4`): gaps joined by hyphens at
+ * every size, no brackets. The root is marked inside the rhythm name by a barline in place of the
+ * hyphen before the root's gap (`1-1-3|3-3-4`; a leading `|` when the root's gap comes first).
+ * The long class form is `L·k 1-1-3-3-3-4`. Decided by the human 2026-11-20 (ARC.md, M1).
  */
 import { gcdAll, type Ratio } from './ratios';
 import { gapsOf, slotRatio, slotsOfGaps } from './ring';
@@ -102,37 +104,24 @@ export function nameOf(slots: number[], L: number): RhythmName {
   };
 }
 
-/** Inner text of a short form: digits run together when every gap < 10, else space-separated. */
-export function gapText(gaps: number[]): string {
-  return gaps.every((g) => g < 10) ? gaps.join('') : gaps.join(' ');
-}
-
-/** Short form, used for scale, rhythm and class names: `⟨334113⟩` or `⟨8 1 9 18 36⟩`. */
+/** Short form, used for scale, rhythm and class names: `3-3-4-1-1-3`, `8-1-9-18-36`. */
 export function fmtShort(gaps: number[]): string {
-  return `⟨${gapText(gaps)}⟩`;
+  return gaps.join('-');
 }
 
-/** Long class name: `15·6 ⟨1 1 3 3 3 4⟩`. */
+/** Long class name: `15·6 1-1-3-3-3-4`. */
 export function fmtClassLong(name: RhythmName): string {
-  return `${name.L}·${name.k} ⟨${name.cls.join(' ')}⟩`;
+  return `${name.L}·${name.k} ${fmtShort(name.cls)}`;
 }
 
 /**
- * One-token form: the rhythm string with a barline before the root's gap, `⟨113|334⟩`.
- * With spaced gaps the barline is set off by spaces: `⟨1 9 18 36 | 8⟩`. When the root's gap
- * is the first one (rootAt 0) no barline is written, so the string reads as the rhythm itself.
+ * One-token form: the rhythm name with a barline in place of the hyphen before the root's gap,
+ * `1-1-3|3-3-4`, `1-9-18-36|8`. When the root's gap comes first (rootAt 0, including a rhythm
+ * with rotational symmetry) the barline leads: `|1-2-1-2-1-2`.
  */
 export function fmtOneToken(name: RhythmName): string {
   const { rhythm, rootAt } = name;
-  if (rootAt === 0) {
-    return fmtShort(rhythm);
-  }
-  const head = rhythm.slice(0, rootAt);
-  const tail = rhythm.slice(rootAt);
-  if (rhythm.every((g) => g < 10)) {
-    return `⟨${head.join('')}|${tail.join('')}⟩`;
-  }
-  return `⟨${head.join(' ')} | ${tail.join(' ')}⟩`;
+  return `${fmtShort(rhythm.slice(0, rootAt))}|${fmtShort(rhythm.slice(rootAt))}`;
 }
 
 export interface ParsedName {
@@ -142,21 +131,18 @@ export interface ParsedName {
 }
 
 /**
- * Parse a short name (angle brackets optional; with brackets, an `L·k` prefix before them is
- * ignored). Whitespace anywhere inside means the gaps are space-separated; otherwise each
- * character is one digit. Null if malformed.
+ * Parse a name: gaps separated by hyphens (or spaces), at most one barline, an optional `L·k`
+ * prefix. Angle brackets are ignored, so the old artifact's spaced text (`⟨1 9 18 36⟩`) still
+ * reads. A run of digits with no separator is one gap. Null if malformed.
  */
 export function parseName(text: string): ParsedName | null {
-  const open = text.indexOf('⟨');
-  const close = text.indexOf('⟩');
-  let inner = open >= 0 && close > open ? text.slice(open + 1, close) : text;
-  inner = inner.trim();
+  const inner = text
+    .replace(/[⟨⟩]/g, ' ')
+    .replace(/^\s*\d+\s*·\s*\d+\s+/, '')
+    .trim();
   if (!inner) {
     return null;
   }
-  // The digit-run form never contains whitespace, so any whitespace (even only around the
-  // barline, as in `⟨1 | 12⟩`) means the gaps are space-separated.
-  const spaced = /\s/.test(inner);
   const parts = inner.split('|');
   if (parts.length > 2) {
     return null;
@@ -165,7 +151,7 @@ export function parseName(text: string): ParsedName | null {
   let bar = 0;
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i].trim();
-    const items = part ? (spaced ? part.split(/\s+/) : part.split('')) : [];
+    const items = part ? part.split(/\s*-\s*|\s+/) : [];
     for (const it of items) {
       if (!/^\d+$/.test(it) || Number(it) < 1) {
         return null;
