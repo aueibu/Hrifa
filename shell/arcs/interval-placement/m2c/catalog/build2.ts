@@ -8,6 +8,8 @@
 //    [1, --max-workers]; extra workers retire after their current set;
 //  - no new set is started while MemAvailable is below --reserve-gb; each worker's heap is capped.
 //
+//  - the cap can be changed during the run by writing a number to <out>/max-workers.
+//
 // Usage: node build2.mjs --n 2,3,4,5 --max 17 --wmax 60 --out <dir> [--max-workers 15] [--reserve-gb 6]
 //   [--headroom 1] [--worker-heap-mb 768] [--verify 200]
 import { Worker } from 'node:worker_threads';
@@ -50,6 +52,14 @@ function multisets(n: number, max: number): number[][] {
   };
   rec(1, []);
   return out;
+}
+/** The worker cap can be changed while the run goes: write a number to <out>/max-workers (read every 30 s). */
+function liveMaxWorkers(): number {
+  try {
+    const v = Number(readFileSync(join(OUT, 'max-workers'), 'utf8').trim());
+    if (Number.isInteger(v) && v >= 1) return Math.min(v, NPROC);
+  } catch { /* no control file: use --max-workers */ }
+  return MAX_WORKERS;
 }
 const fmtDur = (ms: number) => { const m = Math.round(ms / 60000); return m >= 120 ? `${(m / 60).toFixed(1)} h` : `${m} min`; };
 
@@ -129,7 +139,7 @@ CREATE TABLE IF NOT EXISTS placements (${COLUMNS.map((c) => `${c} ${['rule', 'no
       const tick = () => {
         const ours = pool.filter((p) => p.busy).length;
         const others = Math.max(0, loadavg()[0] - ours);
-        target = Math.max(1, Math.min(MAX_WORKERS, Math.floor(NPROC - others - HEADROOM)));
+        target = Math.max(1, Math.min(liveMaxWorkers(), Math.floor(NPROC - others - HEADROOM)));
         const live = pool.filter((p) => !p.retire);
         if (live.length < target) for (let k = live.length; k < target; k++) feed(spawn());
         else if (live.length > target) live.slice(target).forEach((p) => { p.retire = true; if (!p.busy) feed(p); });
