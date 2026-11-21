@@ -31,7 +31,11 @@ for (const set of SETS) {
         set: set.join(' '),
         width: W,
         orders: v.perms.map((p) => p.perm.map((c) => Math.round(c / 100)).join(' ')),
-        spans: v.perms[0].endpoints.map(([lo, hi]) => ({ low: Math.round(lo / 100), size: Math.round((hi - lo) / 100) })),
+        spans: v.perms[0].endpoints.map(([lo, hi], i) => ({
+          low: Math.round(lo / 100),
+          size: Math.round((hi - lo) / 100),
+          centre: v.meta.centersCents[i] / 100, // the engine's exact centre (steps above the bottom); the anchor is its floor
+        })),
         midi: steps.map((x) => x + BASE_MIDI),
         sharedMidi: v.collisions.map((c) => Math.round(c.cents / 100) + BASE_MIDI),
         fits,
