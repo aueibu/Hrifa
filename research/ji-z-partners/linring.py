@@ -365,6 +365,257 @@ def harmonic(a):
         w.writeheader(); w.writerows(rows)
 
 
+# ------------------------------------------------------------------ disk-backed, resumable (large k)
+# Phase 1, one job per (ring, first index): voicings go to hash buckets on disk as (hash, code) int64
+# pairs; code packs the slot indices 7 bits each. Phase 2, one job per (ring, bucket): group a bucket
+# exactly and write its Z-families. Every job writes a .done marker; rerunning skips finished jobs
+# (survives a Spot preemption: rerun the same command).
+
+def _encode(comb):
+    c = 0
+    for i in comb:
+        c = (c << 7) | i
+    return c
+
+
+def _decode(c, n):
+    out = []
+    for _ in range(n):
+        out.append(c & 127)
+        c >>= 7
+    return out[::-1]
+
+
+def _gamut_slots(L, plim):
+    return [p for p in range(L) if max_prime(L + p) <= plim]
+
+
+def _n_buckets(L, k, plim):
+    n = len(_gamut_slots(L, plim))
+    return max(1, min(512, math.comb(n - 1, k - 1) // 3_000_000 + 1))
+
+
+def _family_stats(L, cl):
+    forms = [[odd_form_h([L + p for p in s]) for s in c] for c in cl]
+    vp = within = 0
+    ws = set()
+    for a in range(len(cl)):
+        for b in range(a + 1, len(cl)):
+            vp += len(cl[a]) * len(cl[b])
+            fb = collections.Counter(forms[b])
+            for fa in forms[a]:
+                if fb[fa]:
+                    within += fb[fa]
+                    ws.add(fa)
+    return vp, within, ws
+
+
+def _p1(args):
+    from array import array
+    L, k, i, plim, out = args
+    d = os.path.join(out, "tmp", f"L{L}_k{k}")
+    done = os.path.join(d, f"p1_i{i}.done")
+    if os.path.exists(done):
+        return L, k, i, None
+    slots = _gamut_slots(L, plim)
+    nb = _n_buckets(L, k, plim)
+    bufs = [array("q") for _ in range(nb)]
+    nv = 0
+    part = os.path.join(d, f"p1_i{i}")
+    if os.path.isdir(part):            # interrupted earlier: its buckets are incomplete, start over
+        for name in os.listdir(part):
+            os.remove(os.path.join(part, name))
+    os.makedirs(part, exist_ok=True)
+    def flush():
+        for b in range(nb):
+            if bufs[b]:
+                with open(os.path.join(part, f"b{b}.bin"), "ab") as f:
+                    bufs[b].tofile(f)
+                bufs[b] = array("q")
+    buffered = 0
+    si = slots[i]
+    for rest in itertools.combinations(range(i + 1, len(slots)), k - 2):
+        g = math.gcd(L, si)
+        if g != 1:
+            for j in rest:
+                g = math.gcd(g, slots[j])
+                if g == 1:
+                    break
+            if g != 1:
+                continue
+        nv += 1
+        s = [0, si] + [slots[j] for j in rest]
+        h = hash(circ_key(s, L))
+        bufs[h % nb].extend((h, _encode((i,) + rest)))
+        buffered += 1
+        if buffered >= 2_000_000:
+            flush(); buffered = 0
+    flush()
+    with open(done, "w") as f:
+        f.write(str(nv))
+    return L, k, i, nv
+
+
+def _p2(args):
+    from array import array
+    L, k, b, plim, out = args
+    d = os.path.join(out, "tmp", f"L{L}_k{k}")
+    done = os.path.join(d, f"p2_b{b}.done")
+    fam_path = os.path.join(out, "fam", f"fam_L{L}_k{k}_b{b}.jsonl")
+    if os.path.exists(done):
+        with open(done) as f:
+            return json.load(f)
+    slots = _gamut_slots(L, plim)
+    buckets = {}
+    for name in os.listdir(d):
+        path = os.path.join(d, name, f"b{b}.bin")
+        if not (name.startswith("p1_i") and os.path.isfile(path)):
+            continue
+        a = array("q")
+        with open(path, "rb") as f:
+            a.frombytes(f.read())
+        for t in range(0, len(a), 2):
+            h, c = a[t], a[t + 1]
+            e = buckets.get(h)
+            if e is None:
+                buckets[h] = c
+            elif isinstance(e, list):
+                e.append(c)
+            else:
+                buckets[h] = [e, c]
+    st = {"L": L, "k": k, "b": b, "z_families": 0, "rhythm_pairs": 0, "voicing_pairs": 0,
+          "within_voicing_pairs": 0, "within_scales": []}
+    ws = set()
+    os.makedirs(os.path.dirname(fam_path), exist_ok=True)
+    with open(fam_path + ".part", "w") as f:
+        for e in buckets.values():
+            if not isinstance(e, list):
+                continue
+            exact = collections.defaultdict(list)
+            for c in e:
+                s = [0] + [slots[j] for j in _decode(c, k - 1)]
+                exact[circ_key(s, L)].append(s)
+            for grp in exact.values():
+                classes = collections.defaultdict(list)
+                for s in grp:
+                    classes[ring_canon(s, L)].append(s)
+                if len(classes) < 2:
+                    continue
+                cl = list(classes.values())
+                vp, within, w = _family_stats(L, cl)
+                st["z_families"] += 1
+                st["rhythm_pairs"] += len(cl) * (len(cl) - 1) // 2
+                st["voicing_pairs"] += vp
+                st["within_voicing_pairs"] += within
+                ws |= w
+                f.write(json.dumps({"L": L, "k": k, "classes": cl}) + "\n")
+    os.replace(fam_path + ".part", fam_path)
+    st["within_scales"] = [list(x) for x in ws]
+    with open(done, "w") as f:
+        json.dump(st, f)
+    return st
+
+
+def hdisk(a):
+    os.makedirs(a.out, exist_ok=True)
+    t0 = time.time()
+    p1 = []
+    for L in sorted(a.rings, reverse=True):
+        n = len(_gamut_slots(L, a.prime_limit))
+        for k in a.k:
+            p1 += [(L, k, i, a.prime_limit, a.out) for i in range(1, n - k + 2)]
+    # biggest first (small first index = most combinations)
+    p1.sort(key=lambda j: -math.comb(len(_gamut_slots(j[0], a.prime_limit)) - 1 - j[2], j[1] - 2))
+    nv = collections.Counter()
+    with Pool(a.workers) as pool:
+        for c, (L, k, i, v) in enumerate(pool.imap_unordered(_p1, p1), 1):
+            if v is None:
+                with open(os.path.join(a.out, "tmp", f"L{L}_k{k}", f"p1_i{i}.done")) as f:
+                    v = int(f.read())
+            nv[(L, k)] += v
+            if c % 50 == 0 or c == len(p1):
+                print(f"  phase 1: {c}/{len(p1)} jobs, {sum(nv.values()):,} voicings, {time.time() - t0:.0f}s", flush=True)
+        p2 = [(L, k, b, a.prime_limit, a.out) for L in sorted(a.rings, reverse=True) for k in a.k
+              for b in range(_n_buckets(L, k, a.prime_limit))]
+        agg = {}
+        for c, st in enumerate(pool.imap_unordered(_p2, p2), 1):
+            g = agg.setdefault((st["L"], st["k"]), {"z_families": 0, "rhythm_pairs": 0, "voicing_pairs": 0,
+                                                    "within_voicing_pairs": 0, "within_scales": set()})
+            for x in ("z_families", "rhythm_pairs", "voicing_pairs", "within_voicing_pairs"):
+                g[x] += st[x]
+            g["within_scales"] |= {tuple(w) for w in st["within_scales"]}
+            if c % 50 == 0 or c == len(p2):
+                print(f"  phase 2: {c}/{len(p2)} buckets, {time.time() - t0:.0f}s", flush=True)
+    rows = []
+    for (L, k), g in sorted(agg.items(), key=lambda kv: (kv[0][1], kv[0][0])):
+        rows.append({"L": L, "k": k, "slots_in_gamut": len(_gamut_slots(L, a.prime_limit)), "voicings": nv[(L, k)],
+                     "z_families": g["z_families"], "rhythm_pairs": g["rhythm_pairs"],
+                     "voicing_pairs": g["voicing_pairs"], "within_voicing_pairs": g["within_voicing_pairs"],
+                     "within_scales": len(g["within_scales"])})
+        print("  ", rows[-1], flush=True)
+    with open(os.path.join(a.out, "summary.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader(); w.writerows(rows)
+    print(f"done in {time.time() - t0:.0f}s; delete {os.path.join(a.out, 'tmp')} once checked", flush=True)
+
+
+def fam_files(out):
+    for root in (out, os.path.join(out, "fam")):
+        if os.path.isdir(root):
+            for name in sorted(os.listdir(root)):
+                if name.startswith("fam_L") and name.endswith(".jsonl"):
+                    yield os.path.join(root, name)
+
+
+def rootcheck(a):
+    """every voicing pair in every family: all rootings (re-rooted modes) that are linear-ring Z-pairs"""
+    stats = collections.defaultdict(collections.Counter)
+    multi = []
+    t0 = time.time()
+    for path in fam_files(a.out):
+        for fam in load_jsonl(path):
+            L, k, cl = fam["L"], fam["k"], fam["classes"]
+            cache = {}
+            def mds(s):
+                t = tuple(s)
+                if t not in cache:
+                    ms = modes([Fraction(L + p, L) for p in s])
+                    idx = collections.defaultdict(list)
+                    for m in ms:
+                        idx[(m[2], m[4])].append(m)
+                    cache[t] = idx
+                return cache[t]
+            for i in range(len(cl)):
+                for j in range(i + 1, len(cl)):
+                    for sa in cl[i]:
+                        ia = mds(sa)
+                        for sb in cl[j]:
+                            ib = mds(sb)
+                            rt = []
+                            for key, ma in ia.items():
+                                for mb in ib.get(key, ()):
+                                    for x in ma:
+                                        if x[5] != mb[5]:
+                                            rt.append([str(x[0]), str(mb[0]), key[0]])
+                            assert rt, (L, sa, sb)
+                            stats[k]["pairs"] += 1
+                            stats[k][f"rootings_{len(rt)}"] += 1
+                            if len(rt) > 1 and len(multi) < a.max_list:
+                                multi.append({"k": k, "L": L, "A": fstr(Fraction(L + p, L) for p in sa),
+                                              "B": fstr(Fraction(L + p, L) for p in sb), "rootings": rt})
+        print(f"  {os.path.basename(path)} done, {time.time() - t0:.0f}s", flush=True)
+    with open(os.path.join(a.out, "rootcheck_multi.jsonl"), "w") as f:
+        for r in multi:
+            f.write(json.dumps(r) + "\n")
+    rows = [{"k": k, **dict(sorted(c.items()))} for k, c in sorted(stats.items())]
+    keys = sorted({x for r in rows for x in r}, key=lambda x: (x != "k", x != "pairs", x))
+    with open(os.path.join(a.out, "rootcheck.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=keys, restval=0)
+        w.writeheader(); w.writerows(rows)
+    for r in rows:
+        print("  ", r, flush=True)
+
+
 def odd_limit(ratios):
     m = 1
     for r in ratios:
@@ -377,35 +628,40 @@ def odd_limit(ratios):
 
 def report(a):
     """simplest cross pairs (by odd limit of the pair) and every within-scale pair, with rooting tables"""
-    out = collections.defaultdict(lambda: {"cross": [], "within": []})
-    for name in sorted(os.listdir(a.out)):
-        if not (name.startswith("fam_L") and name.endswith(".jsonl")):
-            continue
-        for fam in load_jsonl(os.path.join(a.out, name)):
+    import heapq
+    # keep only the simplest a.top pairs per (k, kind) in a bounded heap; count everything
+    heaps = collections.defaultdict(list)
+    counts = collections.Counter()
+    for path in fam_files(a.out):
+        for fam in load_jsonl(path):
             L, k, cl = fam["L"], fam["k"], fam["classes"]
+            ols = [[(odd_limit([Fraction(L + p, L) for p in s]), odd_form_h([L + p for p in s])) for s in c] for c in cl]
             for i in range(len(cl)):
                 for j in range(i + 1, len(cl)):
-                    for sa in cl[i]:
-                        A = [Fraction(L + p, L) for p in sa]
-                        for sb in cl[j]:
-                            B = [Fraction(L + p, L) for p in sb]
-                            within = odd_form_h([L + p for p in sa]) == odd_form_h([L + p for p in sb])
-                            ol = max(odd_limit(A), odd_limit(B))
-                            out[k]["within" if within else "cross"].append((ol, L, sa, sb))
+                    for sa, (oa, fa) in zip(cl[i], ols[i]):
+                        for sb, (ob, fb) in zip(cl[j], ols[j]):
+                            kind = "within" if fa == fb else "cross"
+                            counts[(k, kind)] += 1
+                            item = (-max(oa, ob), -L, [-x for x in sa], [-x for x in sb])
+                            hp = heaps[(k, kind)]
+                            cap = a.max_within if kind == "within" else a.top
+                            if len(hp) < cap:
+                                heapq.heappush(hp, item)
+                            elif item > hp[0]:
+                                heapq.heapreplace(hp, item)
     rows = []
     with open(os.path.join(a.out, "report.jsonl"), "w") as f:
-        for k in sorted(out):
+        for k in sorted({k for k, _ in counts} | {k for k, _ in heaps}):
             for kind in ("within", "cross"):
-                lst = sorted(out[k][kind], key=lambda x: (x[0], x[1], x[2], x[3]))
-                keep = lst if kind == "within" and len(lst) <= a.max_within else lst[: a.top]
+                keep = sorted((-o, -L, [-x for x in sa], [-x for x in sb]) for o, L, sa, sb in heaps[(k, kind)])
                 for ol, L, sa, sb in keep:
                     A = [Fraction(L + p, L) for p in sa]
                     B = [Fraction(L + p, L) for p in sb]
                     rt = rooting_table(A, None if kind == "within" else B)
                     f.write(json.dumps({"k": k, "kind": kind, "L": L, "odd_limit": ol, "A": fstr(A), "B": fstr(B),
                                         "A_slots": sa, "B_slots": sb, "rootings": rt}) + "\n")
-                rows.append({"k": k, "kind": kind, "voicing_pairs": len(lst), "listed": len(keep),
-                             "simplest_odd_limit": lst[0][0] if lst else ""})
+                rows.append({"k": k, "kind": kind, "voicing_pairs": counts[(k, kind)], "listed": len(keep),
+                             "simplest_odd_limit": keep[0][0] if keep else ""})
                 print("  ", rows[-1], flush=True)
     with open(os.path.join(a.out, "report_summary.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
@@ -433,6 +689,15 @@ def main():
     p.add_argument("--k", type=int, nargs="+", required=True)
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--out", required=True)
+    p = sp.add_parser("hdisk", help="as harmonic, disk-backed and resumable (rerun the same command)")
+    p.add_argument("--rings", type=int, nargs="+", required=True)
+    p.add_argument("--prime-limit", type=int, default=89)
+    p.add_argument("--k", type=int, nargs="+", required=True)
+    p.add_argument("--workers", type=int, default=2)
+    p.add_argument("--out", required=True)
+    p = sp.add_parser("rootcheck", help="all rootings of every voicing pair in DIR's families")
+    p.add_argument("--out", required=True)
+    p.add_argument("--max-list", type=int, default=100000)
     p = sp.add_parser("report", help="after harmonic: simplest pairs with rooting tables")
     p.add_argument("--out", required=True)
     p.add_argument("--top", type=int, default=200, help="cross pairs listed per k")
@@ -455,7 +720,7 @@ def main():
         print("modes B:", [(str(m[0]), m[2]) for m in modes(B)])
         print("rootings:", rooting_table(A, None if same else B))
         return
-    {"search": search, "harmonic": harmonic, "report": report}[a.mode](a)
+    {"search": search, "harmonic": harmonic, "hdisk": hdisk, "rootcheck": rootcheck, "report": report}[a.mode](a)
 
 
 if __name__ == "__main__":
