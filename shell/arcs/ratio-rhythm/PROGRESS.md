@@ -12,7 +12,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | --------- | ------ | ----------- | ---------------------- |
 | Draft | `ARC.md` drafted 2026-11-20; artifact snapshot saved to `reference/ratio-rhythm-lab.html` (version 1795220968-b833) | none | |
 | Approval | approved 2026-11-20 | none | harmonic lab style; "Ratio Rhythm Lab" at `/ratio-rhythm`; `zgen.py` canonical, converter allowed; D1 (data hub and VM runs) added before M3. See `ARC.md`, "Approval decisions". |
-| Setup | `check:ratio-rhythm` added under a `package.json` lock (commits b393880, lock released ab18e44) | not yet run (the worktree has no `node_modules`; run before M1) | |
+| Setup | `check:ratio-rhythm` added under a `package.json` lock (rebased onto main as 49802cc, lock released 56a2fd0; landed on main at 7265093) | green 2026-11-20 on main (Node 24.18.1, 6 workers, 5 s, no tests yet) | |
 | C0 | done 2026-11-20 | none | Scan result below. ARC.md corrected: type sizes copied under page-prefixed names (`--rrl-fs-*`) on `:root`, signed error color H-25/H-38, `--text-danger` for parse errors, exact harmonic-field imports, time rule, finder deadline injection, `ji_zsets.py` path. RATIORHYTHM-1 added (registers prefix RATIORHYTHM, renamed from RR, then RATRHY; rule 16 as reworded on main 2026-11-20: the arc folder name in capitals with the hyphens dropped). |
 
 ## C0 scan result (2026-11-20)
@@ -31,4 +31,4 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - D1 step 1: where large result files live (repo under a size cap, or a Cloud Storage bucket). Asked after the inventory.
 
 ## Next action
-Run `check:ratio-rhythm` once (Node 24, from a checkout with `node_modules`) to confirm it is green, then start M1 with a fresh builder.
+Start M1 (library: rings, tuning, modes, names) with a fresh builder, briefed with the M1 acceptance list and the canon's worked numbers.
