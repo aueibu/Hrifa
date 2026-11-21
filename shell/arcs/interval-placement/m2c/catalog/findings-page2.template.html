@@ -69,6 +69,10 @@
   table.ex td.names { text-align: left; font-family: var(--font-body); }
   table.ex tr.best td { font-weight: 600; }
   table.ex th, table.ex td { padding: 3px 14px 3px 0; }
+  .filterbar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 0; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 0.85rem; }
+  .filterbar input[type=number] { font: inherit; width: 4.5em; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 2px 6px; }
+  .filterbar button { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+  .filterbar button.on { border-color: var(--c1); color: var(--c1); }
   .twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; }
 </style>
 
@@ -78,6 +82,7 @@
     <p id="intro"></p>
     <div class="stats" id="stats"></div>
   </header>
+  <div class="filterbar" id="filterbar"></div>
   <div id="panels" class="wrap" style="gap:20px"></div>
 </div>
 
@@ -85,6 +90,8 @@
 const D = /*DATA*/null;
 const NS = D.n;
 const MAXIV = D[NS[0]].meta.max, WMAX = D[NS[0]].meta.wmax;
+const WR = { lo: 1, hi: WMAX }; // the page's window filter
+const REDRAW = [];
 const RULES = [['equal', 'equal centers', 'var(--c1)'], ['shared', 'shared center range', 'var(--c2)']];
 const pct = (v) => (100 * v).toFixed(v < 0.1 ? 1 : 0) + '%';
 const num = (d) => (v) => v.toFixed(d);
@@ -104,8 +111,9 @@ function panel(title, text) {
   document.getElementById('panels').appendChild(el);
   return el;
 }
-function table(el, head, rows, label = 'Table') {
+function table(el, head, rows, label = 'Table', host = null) {
   const d = document.createElement('details');
+  if (host) { d.open = !!host.querySelector('details[open]'); host.innerHTML = ''; el = host; }
   d.innerHTML = `<summary>${label}</summary><div class="tablewrap"><table><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`;
   el.appendChild(d);
 }
@@ -116,69 +124,94 @@ function legend(el, items) {
   el.appendChild(l);
 }
 
-/** Line chart with one facet per n; series = [{name, color, dash, pts:{n:[[x,y]]}}]; shared y across facets. */
+/** Line chart with one facet per n; series = [{name, color, dash, pts:{n:[[x,y]]}}]; shared y across facets.
+ *  Follows the page's window filter (WR): only points with lo <= x <= hi are drawn; redrawn when the filter changes. */
 function lineChart(el, series, { yFmt, yMin = 0, yMax, xLabel = 'window size (steps)', yLabel, ns = NS }) {
-  const all = series.flatMap((s) => ns.flatMap((n) => (s.pts[n] || []).map((p) => p[1])));
-  const lo = yMin ?? Math.min(...all), hi = yMax ?? Math.max(...all) * 1.05;
-  const W = 440, H = 240, L = 46, R = 70, T = 10, B = 34;
   const facets = document.createElement('div');
   facets.className = 'facets';
-  for (const n of ns) {
-    const xs = series.flatMap((s) => (s.pts[n] || []).map((p) => p[0]));
-    if (!xs.length) continue;
-    const x0 = Math.min(...xs), x1 = Math.max(...xs);
-    const x = (v) => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R);
-    const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
-    let s = '';
-    const ticks = 4;
-    for (let i = 0; i <= ticks; i++) {
-      const v = lo + ((hi - lo) * i) / ticks;
-      s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${yFmt(v)}</text>`;
-    }
-    for (let v = 12; v <= 72; v += 12) if (v >= x0 && v <= x1) s += `<text x="${x(v)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
-    s += `<text x="${(L + W - R) / 2}" y="${H - 3}" text-anchor="middle" font-size="11" fill="var(--muted)">${xLabel}</text>`;
-    const ends = [];
-    for (const sr of series) {
-      const p = sr.pts[n];
-      if (!p || !p.length) continue;
-      s += `<path d="${p.map((q, i) => (i ? 'L' : 'M') + x(q[0]) + ' ' + y(q[1])).join(' ')}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round" ${sr.dash ? 'stroke-dasharray="6 4"' : ''}/>`;
-      ends.push({ y: y(p[p.length - 1][1]), name: sr.short || sr.name });
-    }
-    ends.sort((a, b) => a.y - b.y);
-    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
-    for (const e of ends) s += `<text x="${W - R + 6}" y="${e.y + 4}" font-size="11" fill="var(--fg)">${esc(e.name)}</text>`;
-    s += `<line class="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
-    const f = document.createElement('div');
-    f.className = 'facet';
-    f.innerHTML = `<h3>${n} intervals</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(yLabel)} against ${esc(xLabel)}, ${n} intervals">${s}</svg><div class="tip" hidden></div>`;
-    const svg = f.querySelector('svg'), tip = f.querySelector('.tip'), cross = f.querySelector('.cross');
-    svg.addEventListener('pointermove', (ev) => {
-      const r = svg.getBoundingClientRect();
-      const px = ((ev.clientX - r.left) / r.width) * W;
-      const xv = Math.round(x0 + ((px - L) / (W - L - R)) * (x1 - x0));
-      if (xv < x0 || xv > x1) { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); return; }
-      cross.setAttribute('x1', x(xv)); cross.setAttribute('x2', x(xv)); cross.setAttribute('visibility', 'visible');
-      const rows = series.map((sr) => { const q = (sr.pts[n] || []).find((p) => p[0] === xv); return q ? `<div><i class="k" style="background:${sr.color}"></i>${esc(sr.name)}: <b>${yFmt(q[1])}</b></div>` : ''; }).join('');
-      tip.innerHTML = `<div><b>${xLabel.startsWith('window') ? 'window' : xLabel.split(' (')[0]} ${xv}</b></div>${rows}`;
-      tip.hidden = false;
-      const left = (x(xv) / W) * r.width;
-      tip.style.left = Math.max(0, Math.min(left + 12, r.width - tip.offsetWidth - 4)) + 'px';
-      tip.style.top = '22px';
-    });
-    svg.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
-    facets.appendChild(f);
-  }
   el.appendChild(facets);
+  const vis = (s, n) => (s.pts[n] || []).filter((p) => p[0] >= WR.lo && p[0] <= WR.hi);
+  const draw = () => {
+    facets.innerHTML = '';
+    const all = series.flatMap((s) => ns.flatMap((n) => vis(s, n).map((p) => p[1])));
+    if (!all.length) { facets.innerHTML = '<p class="muted" style="font-size:0.85rem">No data in this window range.</p>'; return; }
+    const lo = yMin ?? Math.min(...all), hi = yMax ?? Math.max(...all) * 1.05;
+    const W = 440, H = 240, L = 46, R = 70, T = 10, B = 34;
+    for (const n of ns) {
+      const xs = series.flatMap((s) => vis(s, n).map((p) => p[0]));
+      if (!xs.length) continue;
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), span = x1 - x0;
+      const step = span <= 12 ? 1 : span <= 24 ? 2 : span <= 48 ? 6 : 12;
+      const x = (v) => L + ((v - x0) / (span || 1)) * (W - L - R);
+      const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+      let s = '';
+      const ticks = 4;
+      for (let i = 0; i <= ticks; i++) {
+        const v = lo + ((hi - lo) * i) / ticks;
+        s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${yFmt(v)}</text>`;
+      }
+      for (let v = Math.ceil(x0 / step) * step; v <= x1; v += step) s += `<text x="${x(v)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+      s += `<text x="${(L + W - R) / 2}" y="${H - 3}" text-anchor="middle" font-size="11" fill="var(--muted)">${xLabel}</text>`;
+      const ends = [];
+      for (const sr of series) {
+        const p = vis(sr, n);
+        if (!p.length) continue;
+        s += `<path d="${p.map((q, i) => (i ? 'L' : 'M') + x(q[0]) + ' ' + y(q[1])).join(' ')}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round" ${sr.dash ? 'stroke-dasharray="6 4"' : ''}/>`;
+        if (span <= 16 || p.length === 1) s += p.map((q) => `<circle cx="${x(q[0])}" cy="${y(q[1])}" r="4" fill="${sr.dash ? 'var(--surface)' : sr.color}" stroke="${sr.dash ? sr.color : 'var(--surface)'}" stroke-width="2"/>`).join('');
+        ends.push({ y: y(p[p.length - 1][1]), name: sr.short || sr.name });
+      }
+      ends.sort((a, b) => a.y - b.y);
+      for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+      for (const e of ends) s += `<text x="${W - R + 6}" y="${e.y + 4}" font-size="11" fill="var(--fg)">${esc(e.name)}</text>`;
+      s += `<line class="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+      const f = document.createElement('div');
+      f.className = 'facet';
+      f.innerHTML = `<h3>${n} intervals</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(yLabel)} against ${esc(xLabel)}, ${n} intervals">${s}</svg><div class="tip" hidden></div>`;
+      const svg = f.querySelector('svg'), tip = f.querySelector('.tip'), cross = f.querySelector('.cross');
+      svg.addEventListener('pointermove', (ev) => {
+        const r = svg.getBoundingClientRect();
+        const px = ((ev.clientX - r.left) / r.width) * W;
+        const xv = Math.round(x0 + ((px - L) / (W - L - R)) * span);
+        if (xv < x0 || xv > x1) { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); return; }
+        cross.setAttribute('x1', x(xv)); cross.setAttribute('x2', x(xv)); cross.setAttribute('visibility', 'visible');
+        const rows = series.map((sr) => { const q = (sr.pts[n] || []).find((p) => p[0] === xv); return q ? `<div><i class="k" style="background:${sr.color}"></i>${esc(sr.name)}: <b>${yFmt(q[1])}</b></div>` : ''; }).join('');
+        tip.innerHTML = `<div><b>${xLabel.startsWith('window') ? 'window' : xLabel.split(' (')[0]} ${xv}</b></div>${rows}`;
+        tip.hidden = false;
+        const left = (x(xv) / W) * r.width;
+        tip.style.left = Math.max(0, Math.min(left + 12, r.width - tip.offsetWidth - 4)) + 'px';
+        tip.style.top = '22px';
+      });
+      svg.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+      facets.appendChild(f);
+    }
+  };
+  REDRAW.push(draw);
+  draw();
 }
 const byRule = (rows, key, rule) => rows.filter((r) => r.rule === rule).map((r) => [r.window, r[key]]);
 const perN = (f) => Object.fromEntries(NS.map((n) => [n, f(n)]));
 const ruleSeries = (rowsByN, key, extra = {}) => RULES.map(([rule, name, color]) => ({ name, color, ...extra, pts: perN((n) => byRule(rowsByN[n], key, rule)) }));
-const WINS = [12, 18, 24, 36, 48, 60].filter((w) => w <= WMAX);
-const tableByWindow = (el, rowsByN, key, fmt) => {
-  const rows = [];
-  for (const n of NS) for (const [rule, name] of RULES) rows.push([`${n} intervals, ${name}`, ...WINS.map((w) => { const r = rowsByN[n].find((q) => q.rule === rule && q.window === w); return r ? fmt(r[key]) : '—'; })]);
-  table(el, ['', ...WINS.map((w) => `window ${w}`)], rows);
+const winsShown = () => {
+  if (WR.hi - WR.lo <= 12) return Array.from({ length: WR.hi - WR.lo + 1 }, (_, i) => WR.lo + i);
+  const step = WR.hi - WR.lo <= 24 ? 2 : 6;
+  const out = [WR.lo];
+  for (let w = Math.ceil((WR.lo + 1) / step) * step; w < WR.hi; w += step) out.push(w);
+  out.push(WR.hi);
+  return out;
 };
+/** A table whose columns are windows; redrawn when the window filter changes. */
+const windowTable = (el, rowsOf, label = 'Table') => {
+  const host = document.createElement('div');
+  el.appendChild(host);
+  const draw = () => { const ws = winsShown(); table(el, ['', ...ws.map((w) => `window ${w}`)], rowsOf(ws), label, host); };
+  REDRAW.push(draw);
+  draw();
+};
+const tableByWindow = (el, rowsByN, key, fmt) => windowTable(el, (ws) => {
+  const rows = [];
+  for (const n of NS) for (const [rule, name] of RULES) rows.push([`${n} intervals, ${name}`, ...ws.map((w) => { const r = rowsByN[n].find((q) => q.rule === rule && q.window === w); return r ? fmt(r[key]) : '—'; })]);
+  return rows;
+});
 const get = (key) => perN((n) => D[n][key]);
 
 // 1. merges
@@ -278,7 +311,7 @@ const get = (key) => perN((n) => D[n][key]);
   const el = panel('Do the two rules pick the same smoothest ordering?', 'Share of interval sets where equal centers and the shared range agree on which ordering is smoothest, by window.');
   const s = [{ name: 'rules agree', color: 'var(--fg)', pts: perN((n) => D[n].agreement.map((r) => [r.window, r.same])) }];
   lineChart(el, s, { yFmt: pct, yMax: 1, yLabel: 'share agreeing' });
-  table(el, ['', ...WINS.map((w) => `window ${w}`)], NS.map((n) => [`${n} intervals`, ...WINS.map((w) => { const r = D[n].agreement.find((q) => q.window === w); return r ? pct(r.same) : '—'; })]));
+  windowTable(el, (ws) => NS.map((n) => [`${n} intervals`, ...ws.map((w) => { const r = D[n].agreement.find((q) => q.window === w); return r ? pct(r.same) : '—'; })]));
 }
 // 9. register
 {
@@ -321,14 +354,20 @@ const get = (key) => perN((n) => D[n][key]);
     legend(host, Array.from({ length: maxK }, (_, i) => [`${i + 1} interval${i ? 's' : ''} compound`, KC[i]]));
   };
   drawCharts();
+  const sumHost = document.createElement('div');
+  el.appendChild(sumHost);
+  const drawSum = () => {
   const trows = [];
   for (const n of NS) for (const [rule, name] of RULES) for (let k = 1; k <= n; k++) {
-    const sum = (off, f) => { const rs = C[n].rows.filter((r) => r.k === k && r.rule === rule && r.offset === off); const P = rs.reduce((s, r) => s + r.pairs, 0); return P ? rs.reduce((s, r) => s + r[f] * r.pairs, 0) / P : NaN; };
-    const sw = (off) => { const rs = C[n].rows.filter((r) => r.k === k && r.rule === rule && r.offset === off); return rs.length ? rs.reduce((s, r) => s + r.same_winner, 0) / rs.length : NaN; };
+    const sum = (off, f) => { const rs = C[n].rows.filter((r) => r.k === k && r.rule === rule && r.offset === off && r.window >= WR.lo && r.window <= WR.hi); const P = rs.reduce((s, r) => s + r.pairs, 0); return P ? rs.reduce((s, r) => s + r[f] * r.pairs, 0) / P : NaN; };
+    const sw = (off) => { const rs = C[n].rows.filter((r) => r.k === k && r.rule === rule && r.offset === off && r.window >= WR.lo && r.window <= WR.hi); return rs.length ? rs.reduce((s, r) => s + r.same_winner, 0) / rs.length : NaN; };
     trows.push([`${n} intervals, ${name}, ${kName(k, n)}`, pct(sum(12, 'pc_same')), pct(sum(12, 'exact')), pct(sum(0, 'pc_same')),
       `${sum(12, 'rough_s').toFixed(2)} → ${sum(12, 'rough_v').toFixed(2)}`, `${sum(12, 'harm_s').toFixed(2)} → ${sum(12, 'harm_v').toFixed(2)}`, pct(sw(12))]);
   }
-  table(el, ['', 'same pitch classes (W + 12)', 'tops up an octave, nothing else moved (W + 12)', 'same pitch classes (same W)', 'roughness simple → mix (W + 12)', 'harmonicity simple → mix (W + 12)', 'same smoothest ordering (W + 12)'], trows, 'Table: all windows together');
+  table(el, ['', 'same pitch classes (W + 12)', 'tops up an octave, nothing else moved (W + 12)', 'same pitch classes (same W)', 'roughness simple → mix (W + 12)', 'harmonicity simple → mix (W + 12)', 'same smoothest ordering (W + 12)'], trows, `Table: simple windows ${WR.lo} to ${WR.hi} together`, sumHost);
+  };
+  REDRAW.push(drawSum);
+  drawSum();
 
   // lookup grid: rows = the mixes, columns = the simple set's orderings, cells = stacked chords
   const ex = document.createElement('div');
@@ -397,18 +436,19 @@ const get = (key) => perN((n) => D[n][key]);
   const draw = () => {
     tg.innerHTML = NS.map((n) => `<button type="button" class="${state.n === n ? 'on' : ''}" data-n="${n}">${n} intervals</button>`).join('');
     tg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.n = +b.dataset.n; draw(); }));
-    const cells = D[state.n].heat;
+    const cells = D[state.n].heat.filter((c) => c.window >= WR.lo && c.window <= WR.hi);
     const vals = cells.map((c) => c.best);
     const lo = Math.min(...vals), hi = Math.max(...vals);
     host.innerHTML = '';
     for (const [rule, name] of RULES) {
-      const cw = 8, chh = 12, L = 34, T = 8, W = L + WMAX * cw + 10, H = T + MAXIV * chh + 30;
+      const NW = WR.hi - WR.lo + 1, cw = Math.max(8, Math.min(28, Math.floor(480 / NW))), chh = 12, L = 34, T = 8, W = L + NW * cw + 10, H = T + MAXIV * chh + 30;
       let s = '';
       for (const c of cells.filter((q) => q.rule === rule))
-        s += `<rect x="${L + (c.window - 1) * cw}" y="${T + (MAXIV - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp((c.best - lo) / (hi - lo))}"><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)}</title></rect>`;
+        s += `<rect x="${L + (c.window - WR.lo) * cw}" y="${T + (MAXIV - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp((c.best - lo) / (hi - lo))}"><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)}</title></rect>`;
       for (const v of [1, 6, 12, MAXIV]) s += `<text x="${L - 4}" y="${T + (MAXIV - v) * chh + 10}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
-      for (let v = 12; v <= WMAX; v += 12) s += `<text x="${L + (v - 1) * cw + 4}" y="${T + MAXIV * chh + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
-      s += `<text x="${L + (WMAX / 2) * cw}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--muted)">window size</text>`;
+      const hs = NW <= 16 ? 1 : NW <= 30 ? 2 : NW <= 48 ? 6 : 12;
+      for (let v = Math.ceil(WR.lo / hs) * hs; v <= WR.hi; v += hs) s += `<text x="${L + (v - WR.lo) * cw + cw / 2}" y="${T + MAXIV * chh + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+      s += `<text x="${L + (NW / 2) * cw}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--muted)">window size</text>`;
       const f = document.createElement('div');
       f.className = 'facet';
       f.innerHTML = `<h3>${name} (rows: largest interval)</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Roughness heatmap, ${name}, ${state.n} intervals">${s}</svg>`;
@@ -417,6 +457,30 @@ const get = (key) => perN((n) => D[n][key]);
     const lg = el.querySelector('.heatlegend') || el.appendChild(Object.assign(document.createElement('div'), { className: 'legend heatlegend' }));
     lg.innerHTML = `<span>${lo.toFixed(2)} smooth <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> rough ${hi.toFixed(2)}</span><span>hover a cell for its value</span>`;
   };
+  REDRAW.push(draw);
   draw();
+}
+
+// the window filter bar
+{
+  const bar = document.getElementById('filterbar');
+  const PRESETS = [[1, WMAX, 'all'], [1, 12, '1–12'], [12, 24, '12–24'], [24, 36, '24–36'], [36, 48, '36–48'], [48, WMAX, '48–' + WMAX]];
+  const render = () => {
+    bar.innerHTML = `<b>Windows</b><label>from <input type="number" id="wr-lo" min="1" max="${WMAX}" value="${WR.lo}"></label><label>to <input type="number" id="wr-hi" min="1" max="${WMAX}" value="${WR.hi}"></label>` +
+      PRESETS.map(([lo, hi, l]) => `<button type="button" data-lo="${lo}" data-hi="${hi}" class="${WR.lo === lo && WR.hi === hi ? 'on' : ''}">${l}</button>`).join('') +
+      '<span class="muted">applies to every chart, table and the heatmap; the lookup grids keep their own window</span>';
+    bar.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => set(+b.dataset.lo, +b.dataset.hi)));
+    const lo = bar.querySelector('#wr-lo'), hi = bar.querySelector('#wr-hi');
+    lo.addEventListener('change', () => set(+lo.value, WR.hi));
+    hi.addEventListener('change', () => set(WR.lo, +hi.value));
+  };
+  const set = (lo, hi) => {
+    lo = Math.max(1, Math.min(WMAX, Math.round(lo) || 1)); hi = Math.max(1, Math.min(WMAX, Math.round(hi) || WMAX));
+    if (lo > hi) [lo, hi] = [hi, lo];
+    WR.lo = lo; WR.hi = hi;
+    render();
+    for (const f of REDRAW) f();
+  };
+  render();
 }
 </script>
