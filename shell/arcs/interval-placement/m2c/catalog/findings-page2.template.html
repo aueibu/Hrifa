@@ -91,6 +91,7 @@
 <script>/*MIXVIEW*/</script>
 <script>
 const D = /*DATA*/null;
+const Z = /*ZPAIRS*/null;
 const NS = D.n;
 const MAXIV = D[NS[0]].meta.max, WMAX = D[NS[0]].meta.wmax;
 const WR = { lo: 1, hi: WMAX }; // the page's window filter
@@ -629,8 +630,10 @@ const get = (key) => perN((n) => D[n][key]);
     zWorker.postMessage({ key, notes, o: { ns: NS, max: MAXIV, wmax: WMAX } });
   };
   const goTo = (p) => {
-    const B0 = D[state.n].best;
-    TRAIL.push({ label: `${B0.sets[state.pick.i]} · window ${state.pick.w}`, state: JSON.parse(JSON.stringify({ n: state.n, cell: state.cell, pick: state.pick, tileRule: state.tileRule, tileSel: state.tileSel, show: state.show })) });
+    if (state.pick) {
+      const B0 = D[state.n].best;
+      TRAIL.push({ label: `${B0.sets[state.pick.i]} · window ${state.pick.w}`, state: JSON.parse(JSON.stringify({ n: state.n, cell: state.cell, pick: state.pick, tileRule: state.tileRule, tileSel: state.tileSel, show: state.show })) });
+    }
     const i = D[p.n].best.sets.indexOf(p.set);
     Object.assign(state, { n: p.n, cell: { rule: p.rule, L: +p.set.split(' ').pop(), W: p.W }, pick: { i, w: p.W }, tileRule: p.rule, tileSel: p.order, show: 'all' });
     draw();
@@ -685,8 +688,87 @@ const get = (key) => perN((n) => D[n][key]);
       }).join('')}</div>`;
     zh.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => goTo(links[+b.dataset.go])));
   };
+  window.openTile = goTo; // other panels open a set's tile: { n, set, rule, order, W }
   REDRAW.push(draw);
   draw();
+}
+
+// 12. Z-related chords with register kept (human, 2026-11-21: "a meta level z-relation where the entire structure is
+// considered (not just stopping with the octave equivalence)"): the same multiset of all pairwise distances in steps,
+// but not a transposition or mirror of each other (homometric sets). Data: extract-zpairs.mjs.
+if (Z && Z.groups.length) {
+  const el = panel('Z-related chords, register kept',
+    `Two chords are Z-related here when every distance between two of their notes, counted in steps with no octave reduction, is the same, yet neither is a transposition or mirror image of the other. Out of ${Z.classes.toLocaleString()} different chords with 6 or more notes from the ${Z.sources.length === 2 ? '3- and 4-interval' : 'scanned'} sets, ${Z.groups.length} pairs are Z-related. Fewer than 6 notes cannot be: on a line of pitches the distances pin down smaller chords.`);
+  const sizesOf = (c) => [...new Set(c.producers.map((p) => p.n))];
+  const k = (g) => g.chords[0].shape.split(' ').length;
+  // the counting rule, as a table from the data
+  const rule = document.createElement('div');
+  rule.className = 'muted';
+  rule.style.cssText = 'font-size:0.88rem;display:flex;flex-direction:column;gap:6px';
+  const cnt = {};
+  const who = (c) => { const s = sizesOf(c); return s.length > 1 ? `${s.join(' or ')} intervals` : `only ${s[0]} intervals`; };
+  for (const g of Z.groups) { const key = `${k(g)}|${g.chords.map(who).sort().join(' / ')}`; cnt[key] = (cnt[key] || 0) + 1; }
+  rule.innerHTML = `<p style="margin:0">Why one chord can come from a 3-interval set and a 4-interval set: n intervals have 2n ends, so a chord of k notes made from n intervals has exactly <b style="color:var(--fg)">2n − k merged notes</b>. A 6-note chord comes from 3 intervals with nothing merged, or from 4 intervals with two ends landing on notes already there. 7- and 8-note chords need 4 intervals (1 and 0 merged). This holds for every producer below.</p>` +
+    `<div class="tablewrap"><table><tr><th>notes</th><th>sets that can make chord A / chord B</th><th>pairs</th></tr>${Object.entries(cnt).map(([key, v]) => { const [kk, w] = key.split('|'); return `<tr><td>${kk}</td><td>${w}</td><td>${v}</td></tr>`; }).join('')}</table></div>`;
+  el.appendChild(rule);
+  const tg = el.appendChild(Object.assign(document.createElement('div'), { className: 'toggle' }));
+  const detail = el.appendChild(document.createElement('div'));
+  detail.style.cssText = 'border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px';
+  const list = el.appendChild(Object.assign(document.createElement('div'), { className: 'tablewrap' }));
+  list.style.maxHeight = '420px';
+  list.style.overflowY = 'auto';
+  const st = { notes: 'all', both: false, g: 0, pick: [null, null] };
+  const mono = 'font-family:var(--font-mono)';
+  const names = (shape) => shape.split(' ').map(Number).map(noteName).join(' ');
+  const made = (c) => sizesOf(c).map((n) => `${n}: ${c.producers.filter((p) => p.n === n).length}`).join(' · ');
+  const drawList = () => {
+    const ks = [...new Set(Z.groups.map(k))];
+    tg.innerHTML = [['all', 'all pairs'], ...ks.map((x) => [String(x), `${x} notes`])].map(([v, l]) => `<button type="button" data-k="${v}" class="${st.notes === v ? 'on' : ''}">${l}</button>`).join('') +
+      `<button type="button" data-both class="${st.both ? 'on' : ''}">made by 3- and 4-interval sets</button>`;
+    tg.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => { st.notes = b.dataset.k; drawList(); }));
+    tg.querySelector('[data-both]').addEventListener('click', () => { st.both = !st.both; drawList(); });
+    const shown = Z.groups.map((g, i) => [g, i]).filter(([g]) => (st.notes === 'all' || k(g) === +st.notes) && (!st.both || g.chords.some((c) => sizesOf(c).length > 1)));
+    list.innerHTML = `<table><thead><tr><th>#</th><th>notes</th><th>chord A</th><th>chord B</th><th>sets making A (by size)</th><th>sets making B</th></tr></thead><tbody>${shown.map(([g, i]) =>
+      `<tr data-g="${i}" style="cursor:pointer;${i === st.g ? 'background:var(--hi)' : ''}"><td>${i + 1}</td><td>${k(g)}</td><td style="${mono}">${g.chords[0].shape}</td><td style="${mono}">${g.chords[1].shape}</td><td>${made(g.chords[0])}</td><td>${made(g.chords[1])}</td></tr>`).join('')}</tbody></table>`;
+    list.querySelectorAll('tr[data-g]').forEach((r) => r.addEventListener('click', () => { st.g = +r.dataset.g; st.pick = [null, null]; drawList(); drawDetail(); }));
+  };
+  const drawDetail = () => {
+    const g = Z.groups[st.g];
+    // which producer each side shows: the chosen one, else the first 3-interval one, else the first
+    const shownP = g.chords.map((c, ci) => c.producers[st.pick[ci] ?? Math.max(0, c.producers.findIndex((p) => p.n === 3))]);
+    const placed = shownP.map((p) => { const r = p.rules.equal ? 'equal' : 'shared'; const [ord, W, notes, mirrored, rough] = p.rules[r]; return { p, rule: r, ord, W, notes, mirrored, rough, pl: { ...MIX.place(r, ord.split(' ').map(Number), W), W } }; });
+    const HI = Math.max(24, ...placed.map((x) => x.W)), step = Math.max(5, Math.min(10, 360 / HI)), top = 10;
+    const gg = { HI, H: top + HI * step + 10, y: (m) => top + (HI - m) * step };
+    const colors = ['var(--s-a)', 'var(--s-b)', 'var(--s-c)', 'var(--s-d)', 'var(--s-e)'];
+    let ax = `<svg width="38" height="${gg.H}" aria-hidden="true">`;
+    for (let m = 0; m <= HI; m += 12) ax += `<text x="34" y="${gg.y(m) + 4}" text-anchor="end" font-size="11" font-family="var(--font-mono)" fill="var(--muted)">${noteName(m)}</text>`;
+    ax += '</svg>';
+    const side = (c, ci) => {
+      const x = placed[ci], sizes = [...new Set(x.p.set.split(' ').map(Number))];
+      const groupsBy = sizesOf(c).map((n) => {
+        const ps = c.producers.map((p, pi) => [p, pi]).filter(([p]) => p.n === n);
+        const kk = c.shape.split(' ').length;
+        return `<div style="display:flex;flex-direction:column;gap:4px"><div class="muted" style="font-size:0.8rem">${n} intervals · ${2 * n - kk} merged note${2 * n - kk === 1 ? '' : 's'} · ${ps.length} set${ps.length === 1 ? '' : 's'}</div>` +
+          `<div class="toggle">${ps.map(([p, pi]) => `<button type="button" data-side="${ci}" data-p="${pi}" class="${p === x.p ? 'on' : ''}" style="${mono}">${p.set}</button>`).join('')}</div></div>`;
+      }).join('');
+      return `<div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 300px">` +
+        `<div class="muted" style="font-size:0.78rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">chord ${'AB'[ci]}</div>` +
+        `<div style="${mono}">${c.shape} <span class="muted">(${names(c.shape)})</span></div>` +
+        `<div style="display:flex;gap:12px;align-items:flex-start"><div style="display:flex">${ax}${MIX.colSvg(x.pl, gg, (sz) => colors[sizes.indexOf(sz)] || 'var(--muted)')}</div>` +
+        `<div style="display:flex;flex-direction:column;gap:3px;font-size:0.88rem"><div>set <b style="${mono}">${x.p.set}</b>, ordering <span style="${mono}">${x.ord}</span>, ${RULES.find((r) => r[0] === x.rule)[1]}, window ${x.W}</div>` +
+        `<div style="${mono}">${x.notes.split(' ').map(Number).map(noteName).join(' ')}</div>` +
+        `<div class="muted">${x.mirrored ? 'placed as the mirror image (upside down) of chord ' + 'AB'[ci] + '; ' : ''}merged notes <b style="color:var(--fg)">${x.pl.merges}</b> · roughness <b style="color:var(--fg)">${x.rough.toFixed(3)}</b></div>` +
+        `<div><button type="button" data-open="${ci}">Open this set's tile</button></div></div></div>` + groupsBy + '</div>';
+    };
+    detail.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline"><h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">Pair ${st.g + 1}: ${g.chords[0].shape.split(' ').length}-note chords</h3>` +
+      `<span class="muted" style="font-size:0.85rem">shared distances <span style="${mono};color:var(--fg)">${g.content}</span></span></div>` +
+      `<p class="muted" style="font-size:0.85rem;margin:0">Both chords are drawn from one set that makes them (a 3-interval set when there is one); click another set to see how it builds the same chord, and open its tile to step into the atlas from there.</p>` +
+      `<div style="display:flex;flex-wrap:wrap;gap:24px">${g.chords.map(side).join('')}</div>`;
+    detail.querySelectorAll('[data-side]').forEach((b) => b.addEventListener('click', () => { st.pick[+b.dataset.side] = +b.dataset.p; drawDetail(); }));
+    detail.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => { const x = placed[+b.dataset.open]; window.openTile({ n: x.p.n, set: x.p.set, rule: x.rule, order: x.ord, W: x.W }); }));
+  };
+  drawList();
+  drawDetail();
 }
 
 // the window filter bar

@@ -132,6 +132,17 @@ equal centers always fill the window (lowest note 0, top note W) and shared cent
 steps in from either edge (checked on the whole catalog), so only a few windows and only the chord's own gaps as
 intervals need trying.
 
+### Z-related chords with register kept (`extract-zpairs.mjs`)
+
+The human's "meta level z-relation where the entire structure is considered (not just stopping with the octave
+equivalence)": chords with the same multiset of all pairwise distances in steps (no octave reduction) that are not a
+transposition or mirror of each other (homometric sets; they need 6+ notes). `node extract-zpairs.mjs <out.json>
+--index chord-index.sqlite catalog-n3.sqlite catalog-n4.sqlite` writes the JSON the findings page reads (5th argument of
+`inject-findings.mjs`) and tables `zpairs(group_id, member, shape, note_count, content, sets, cards)` and
+`zproducers(group_id, member, n, intervals, rule, ordering, window, notes, mirrored, merges)` into the index.
+n = 3–4: 89 pairs among 1.9 M chord classes (18 with 6 notes, 30 with 7, 41 with 8). A k-note chord from n intervals
+has 2n − k merged notes (checked on every producer), so only 6-note chords can come from both 3- and 4-interval sets.
+
 ## Example queries
 
 ```sql
