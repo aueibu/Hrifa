@@ -110,6 +110,28 @@ compound) mostly change the pitch classes.
 - `placement_view`: placements joined with set, ordering and chord (the easy table to query).
 - `summary_merges(rule, window, ...)`, `summary_winners(rule, set_id, window, best_rough_orderings)`.
 
+## Chord index: different input sets, same chord (`build-chord-index.mjs`)
+
+The human's "semi-arbitrary type of z relation": two input sets whose placements land on exactly the same notes.
+`node build-chord-index.mjs <out.sqlite> catalog-n2.sqlite catalog-n3.sqlite ...` (v2 catalogs, any mix of
+cardinalities; n = 2–4 took 4 min and 354 MB) writes:
+
+- `chords(chord_id, notes, shape, note_count, rough, harm_pitch, sets, cards, producers)`: every chord made by two or
+  more different sets (`cards` = which cardinalities make it, e.g. `3 4`; `shape` = notes minus the lowest).
+- `producers(chord_id, n, intervals, rule, ordering, window)`: every placement that lands on one of those chords.
+- `shapes(shape, note_count, sets, cards, chords)`: the same with transpositions counted as one chord.
+- `summary(scope, key, chords, multi, max_sets)`: `all`, `shape`, and per `window`.
+
+```sql
+-- every set that makes C2 C#2 Bb2 B2 C3
+SELECT n, intervals, rule, ordering, window FROM producers JOIN chords USING (chord_id) WHERE notes = '0 1 10 11 12';
+```
+
+The findings page finds the same thing for one chord without the index (`MIX.producers` in `../browse/mixview.js`):
+equal centers always fill the window (lowest note 0, top note W) and shared center range sits at most ceil(max / 2)
+steps in from either edge (checked on the whole catalog), so only a few windows and only the chord's own gaps as
+intervals need trying.
+
 ## Example queries
 
 ```sql

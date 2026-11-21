@@ -569,6 +569,7 @@ const get = (key) => perN((n) => D[n][key]);
     const firstOf = new Map();
     for (const r of rows) if (!firstOf.has(r.key)) firstOf.set(r.key, r.order);
     const sel = rows.find((r) => r.order === state.tileSel) || rows.find((r) => r.order === cellOrd) || rows[0];
+    state.tileSel = sel.order;
     const rl = rows[0].rough, rh = rows[rows.length - 1].rough;
     const HI = Math.max(24, w), step = Math.max(5, Math.min(10, 360 / HI)), top = 10;
     const g = { HI, H: top + HI * step + 10, y: (m) => top + (HI - m) * step };
@@ -586,7 +587,8 @@ const get = (key) => perN((n) => D[n][key]);
         `<span style="${mono};font-size:0.75rem">${r.order}</span>` +
         `<span style="display:block;width:40px;height:6px;border-radius:3px;background:${ramp((r.rough - rl) / (rh - rl || 1))}"></span>` +
         `<span class="muted" style="${mono};font-size:0.72rem">${r.rough.toFixed(3)}</span>` +
-        `<span style="font-size:0.68rem;color:var(--win);min-height:1em">${inCell ? 'in the cell' : ''}</span></div>`;
+        `<span style="font-size:0.68rem;color:var(--win);min-height:1em">${inCell ? 'in the cell' : ''}</span>` +
+        `<span data-zkey="${r.key}" title="other input sets that make exactly this chord" style="font-size:0.68rem;color:var(--fg);font-weight:600;min-height:1em"></span></div>`;
     };
     const distinct = firstOf.size;
     const tr = (r, k) => `<tr data-ord="${r.order}" style="cursor:pointer;${r === sel ? 'background:var(--hi)' : ''}"><td>${k + 1}</td><td style="${mono}">${r.order}${r.order === cellOrd ? ' <span style="color:var(--win)">●</span>' : ''}</td>` +
@@ -594,16 +596,94 @@ const get = (key) => perN((n) => D[n][key]);
       `<td class="muted">${firstOf.get(r.key) !== r.order ? 'same chord as ' + firstOf.get(r.key) : ''}</td></tr>`;
     host.innerHTML =
       `<div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline"><h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">Every chord in this tile: ${set} in window ${w}</h3>` +
-      `<div class="toggle">${RULES.map(([k, l]) => `<button type="button" data-trule="${k}" class="${k === rule ? 'on' : ''}">${l}</button>`).join('')}</div></div>` +
-      `<p class="muted" style="font-size:0.85rem">${rows.length} orderings, ${distinct} different chord${distinct === 1 ? '' : 's'}, smoothest first. The cell shows the smoothest one (marked “in the cell”). The bar under each chord is its roughness on this tile's own range, ${rl.toFixed(3)} to ${rh.toFixed(3)}. Click a chord or a table row to read it.</p>` +
+      `<div class="toggle">${RULES.map(([k, l]) => `<button type="button" data-trule="${k}" class="${k === rule ? 'on' : ''}">${l}</button>`).join('')}` +
+      (TRAIL.length ? `<button type="button" data-back>← back to ${TRAIL[TRAIL.length - 1].label}</button>` : '') + `</div></div>` +
+      `<p class="muted" style="font-size:0.85rem">${rows.length} orderings, ${distinct} different chord${distinct === 1 ? '' : 's'}, smoothest first. The cell shows the smoothest one (marked “in the cell”). The bar under each chord is its roughness on this tile's own range, ${rl.toFixed(3)} to ${rh.toFixed(3)}; “+N sets” means N other input sets make exactly that chord. Click a chord or a table row to read it.</p>` +
       `<div style="overflow-x:auto"><div style="display:flex;align-items:flex-start;gap:2px;width:max-content"><div style="position:sticky;left:0;background:var(--surface);padding-top:6px">${ax}</div>${rows.map(col).join('')}</div></div>` +
       `<div style="display:flex;flex-direction:column;gap:3px;margin:10px 0;font-size:0.9rem"><div class="muted" style="font-size:0.78rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">ordering ${sel.order} · ${RULES.find((r) => r[0] === rule)[1]}</div>` +
       `<div style="${mono}">${sel.notes.map(noteName).join(' ')}</div>` +
       `<div class="muted" style="display:flex;flex-wrap:wrap;gap:2px 14px">${sel.spans.map((sp) => `<span>${sp.size}: ${noteName(sp.low)}–${noteName(sp.low + sp.size)}</span>`).join('')}</div>` +
       `<div class="muted">roughness <b style="color:var(--fg)">${sel.rough.toFixed(3)}</b> · harmonicity <b style="color:var(--fg)">${sel.harm.toFixed(3)}</b> · merged notes <b style="color:var(--fg)">${sel.merges}</b></div></div>` +
-      `<div class="tablewrap"><table><thead><tr><th>#</th><th>ordering</th><th>notes</th><th>roughness</th><th>harmonicity</th><th>merged notes</th><th></th></tr></thead><tbody>${rows.map(tr).join('')}</tbody></table></div>`;
+      `<div class="tablewrap"><table><thead><tr><th>#</th><th>ordering</th><th>notes</th><th>roughness</th><th>harmonicity</th><th>merged notes</th><th></th></tr></thead><tbody>${rows.map(tr).join('')}</tbody></table></div>` +
+      `<div id="tile-z" data-key="${sel.key}" style="margin-top:14px;display:flex;flex-direction:column;gap:6px"></div>`;
     host.querySelectorAll('[data-trule]').forEach((b) => b.addEventListener('click', () => { state.tileRule = b.dataset.trule; drawTile(); }));
     host.querySelectorAll('[data-ord]').forEach((el) => el.addEventListener('click', () => { state.tileSel = el.dataset.ord; drawTile(); }));
+    const back = host.querySelector('[data-back]');
+    if (back) back.addEventListener('click', () => { Object.assign(state, TRAIL.pop().state); draw(); });
+    askZ(sel.notes);
+    rows.forEach((r) => askZ(r.notes));
+    paintZ();
+  };
+
+  // ---- same chord, other sets (human, 2026-11-21: "a semi-arbitrary type of z relation") ----
+  // MIX.producers searches every set of 2..4 intervals (sizes up to the catalog's max, windows up to its max) whose
+  // placement is exactly the chord's notes; it runs in its own worker (up to ~2 s for an 8-note chord).
+  const mixSrc = [...document.scripts].find((s) => s.textContent.includes('const MIX = (() =>')).textContent;
+  const zWorker = new Worker(URL.createObjectURL(new Blob([mixSrc + '\nself.onmessage = (e) => self.postMessage({ key: e.data.key, res: MIX.producers(e.data.notes, e.data.o) });'], { type: 'text/javascript' })));
+  const ZR = new Map(), zAsked = new Set(), TRAIL = [];
+  zWorker.onmessage = (ev) => { ZR.set(ev.data.key, ev.data.res); paintZ(); };
+  const askZ = (notes) => {
+    const key = notes.join(' ');
+    if (ZR.has(key) || zAsked.has(key)) return;
+    zAsked.add(key);
+    zWorker.postMessage({ key, notes, o: { ns: NS, max: MAXIV, wmax: WMAX } });
+  };
+  const goTo = (p) => {
+    const B0 = D[state.n].best;
+    TRAIL.push({ label: `${B0.sets[state.pick.i]} · window ${state.pick.w}`, state: JSON.parse(JSON.stringify({ n: state.n, cell: state.cell, pick: state.pick, tileRule: state.tileRule, tileSel: state.tileSel, show: state.show })) });
+    const i = D[p.n].best.sets.indexOf(p.set);
+    Object.assign(state, { n: p.n, cell: { rule: p.rule, L: +p.set.split(' ').pop(), W: p.W }, pick: { i, w: p.W }, tileRule: p.rule, tileSel: p.order, show: 'all' });
+    draw();
+    zoom.querySelector('#zoom-tile').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const paintZ = () => {
+    const host = zoom.querySelector('#zoom-tile');
+    if (!host || !state.pick) return;
+    const set = D[state.n].best.sets[state.pick.i], me = `${state.n}:${set}`;
+    const others = (r) => new Set(r.filter((p) => `${p.n}:${p.set}` !== me).map((p) => `${p.n}:${p.set}`)).size;
+    host.querySelectorAll('[data-zkey]').forEach((el) => {
+      const r = ZR.get(el.dataset.zkey);
+      const c = r ? others(r) : 0;
+      el.textContent = !r ? '…' : c ? `+${c} set${c === 1 ? '' : 's'}` : '';
+    });
+    const zh = host.querySelector('#tile-z');
+    if (!zh) return;
+    const r = ZR.get(zh.dataset.key);
+    const head = '<h4 style="margin:0;font-size:0.95rem;font-family:var(--font-display)">Same chord, other input sets</h4>';
+    if (!r) { zh.innerHTML = head + '<p class="muted" style="font-size:0.85rem">Looking for every other set that makes this chord…</p>'; return; }
+    const groups = new Map();
+    for (const p of r) (groups.get(`${p.n}:${p.set}`) || groups.set(`${p.n}:${p.set}`, []).get(`${p.n}:${p.set}`)).push(p);
+    const sel = { rule: state.tileRule, order: state.tileSel, W: state.pick.w };
+    const list = [...groups].sort(([a], [b]) => (+a.split(':')[0] - +b.split(':')[0]) || a.localeCompare(b, undefined, { numeric: true }));
+    const links = [];
+    // one button per rule and window; the orderings that land on the chord are listed beside it, the first one opens
+    const btns = (ps) => {
+      const byRW = new Map();
+      for (const p of ps) {
+        if (p.n === state.n && p.set === set && p.rule === sel.rule && p.W === sel.W && p.order === sel.order) continue;
+        const k = `${p.rule}|${p.W}`;
+        (byRW.get(k) || byRW.set(k, []).get(k)).push(p);
+      }
+      return [...byRW.values()].map((g) => {
+        const p = g[0], can = D[p.n] && D[p.n].best.sets.includes(p.set);
+        links.push(p);
+        const txt = `${RULES.find((x) => x[0] === p.rule)[1]} · window ${p.W}`;
+        const ords = g.length <= 3 ? `ordering${g.length > 1 ? 's' : ''} ${g.map((x) => x.order).join(', ')}` : `${g.length} orderings`;
+        return (can ? `<button type="button" data-go="${links.length - 1}">${txt}</button>` : `<span style="font-size:0.85rem">${txt}</span>`) +
+          `<span class="muted" style="font-size:0.8rem;font-family:var(--font-mono)">${ords}</span>`;
+      });
+    };
+    const n = others(r);
+    zh.innerHTML = head +
+      `<p class="muted" style="font-size:0.85rem">${n ? `Exactly these notes are also the result of <b style="color:var(--fg)">${n}</b> other input set${n === 1 ? '' : 's'}` : 'No other input set makes exactly these notes'} (searched: ${NS[0]}–${NS[NS.length - 1]} intervals, sizes 1–${MAXIV}, windows up to ${WMAX}). Click one to open its tile.</p>` +
+      `<div style="display:flex;flex-direction:column;gap:4px">${list.map(([k, ps]) => {
+        const bs = btns(ps);
+        if (!bs.length) return '';
+        const mine = k === me;
+        return `<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"><span style="font-family:var(--font-mono);min-width:10ch;font-weight:${mine ? 400 : 600}">${ps[0].set}</span>` +
+          `<span class="toggle">${mine ? '<span class="muted" style="font-size:0.85rem">this set, also as</span>' : ''}${bs.join('')}</span></div>`;
+      }).join('')}</div>`;
+    zh.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => goTo(links[+b.dataset.go])));
   };
   REDRAW.push(draw);
   draw();

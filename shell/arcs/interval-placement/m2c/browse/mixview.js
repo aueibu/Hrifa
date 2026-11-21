@@ -34,6 +34,48 @@ const MIX = (() => {
     const shared = notes.filter((x) => ends.filter((y) => y === x).length > 1);
     return { spans, notes, shared, ties, merges: ends.length - notes.length, band: Math.max(...cs) - Math.min(...cs) };
   }
+  /**
+   * The reverse lookup (human, 2026-11-21, "a semi-arbitrary type of z relation"): every input set, ordering, rule and
+   * window whose placement is exactly these notes (steps from the window's bottom). Each interval of a producing set is a
+   * gap between two of the notes, so only those gaps are tried. Equal centers always fill the window (lowest note 0, top
+   * note W); shared center range sits at most ceil(max / 2) steps in from either edge (checked on the whole catalog).
+   * o: { ns: cardinalities to search, max: largest interval, wmax: largest window }. Returns [{ n, set, rule, order, W }].
+   */
+  function producers(notes, o) {
+    const k = notes.length, top = notes[k - 1], key = notes.join(' ');
+    const gaps = new Set();
+    for (let i = 0; i < k; i++) for (let j = i + 1; j < k; j++) if (notes[j] - notes[i] <= o.max) gaps.add(notes[j] - notes[i]);
+    const G = [...gaps].sort((a, b) => a - b);
+    // the lowest note is the bottom of some interval and the top note the top of one
+    const fromLow = new Set(notes.slice(1).map((x) => x - notes[0])), toTop = new Set(notes.slice(0, -1).map((x) => top - x));
+    const ends = (ms) => ms.some((x) => fromLow.has(x)) && ms.some((x) => toTop.has(x));
+    const slack = Math.ceil(o.max / 2);
+    const out = [];
+    const perms = (xs) => {
+      if (xs.length <= 1) return [xs.slice()];
+      const res = [], seen = new Set();
+      xs.forEach((x, i) => { if (seen.has(x)) return; seen.add(x); for (const r of perms(xs.filter((_, j) => j !== i))) res.push([x, ...r]); });
+      return res;
+    };
+    const tryOrder = (ms, ord) => {
+      const M = ms[ms.length - 1];
+      if (notes[0] === 0 && top >= M && top <= o.wmax && place('equal', ord, top).notes.join(' ') === key) out.push({ n: ms.length, set: ms.join(' '), rule: 'equal', order: ord.join(' '), W: top });
+      if (notes[0] > slack) return;
+      for (let W = Math.max(top, M); W <= Math.min(top + slack, o.wmax); W++) {
+        if (place('shared', ord, W).notes.join(' ') === key) out.push({ n: ms.length, set: ms.join(' '), rule: 'shared', order: ord.join(' '), W });
+      }
+    };
+    for (const n of o.ns) {
+      if (2 * n < k) continue; // every note is the end of some interval
+      const ms = [];
+      const rec = (from) => {
+        if (ms.length === n) { if (ends(ms)) for (const ord of perms(ms)) tryOrder(ms, ord); return; }
+        for (let i = from; i < G.length; i++) { ms.push(G[i]); rec(i); ms.pop(); }
+      };
+      rec(0);
+    }
+    return out;
+  }
   /** Every mix of a set, simple first, then by how many intervals are compound. comp = the simple values raised. */
   function variants(iv) {
     const s = iv.slice().sort((a, b) => a - b), seen = new Map();
@@ -177,5 +219,5 @@ const MIX = (() => {
         (o.play ? `<div style="display:flex;gap:6px"><button type="button" data-i="${i}" data-mode="chord">Chord</button><button type="button" data-i="${i}" data-mode="arp">Arpeggio</button></div>` : '') + '</div>').join('')}</div></div>`;
     if (o.play) det.querySelectorAll('button[data-mode]').forEach((b) => b.addEventListener('click', () => o.play(shown[+b.dataset.i][0].notes, b.dataset.mode, b)));
   }
-  return { place, variants, reduce, pcs, render, colSvg, ramp };
+  return { place, producers, variants, reduce, pcs, render, colSvg, ramp };
 })();
