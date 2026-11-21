@@ -26,7 +26,9 @@ const N = Number(arg('n', '3'));
 const MAX = Number(arg('max', '24'));
 const WMAX = Number(arg('wmax', '48'));
 const OUT = arg('out', `catalog-n${N}.sqlite`);
-const BASE_MIDI = Number(arg('base', '36'));
+// roots for roughness (MIDI); the first is the main one (chords.rough, ranks, Pareto layers); all go to rough_by_base
+const BASES = arg('bases', arg('base', '36')).split(',').map(Number);
+const BASE_MIDI = BASES[0];
 const WORKERS = Number(arg('workers', String(Math.max(1, availableParallelism() - 1))));
 const VERIFY = Number(arg('verify', '200'));
 const STEP_CENTS = 100;
@@ -73,7 +75,23 @@ const centresShared = (order: number[], W: number, out: Float64Array) => {
   const h = Math.max(...order) / 2;
   for (let k = 0; k < n; k++) out[k] = h + (k * (W - 2 * h)) / (n - 1);
 };
-const lowOf = (c: number, d: number) => Math.ceil(c - d / 2 - 0.5 - 1e-9); // nearest step, halves round down
+/**
+ * Bottom note of an interval of size d centred at c in a window of W: the nearest step to c − d/2. A tie (exact half
+ * step) is broken by `tie`: 0 = toward the middle of the window (the main rule: it keeps reversed orderings exact
+ * mirror images; an interval centred exactly on the middle rounds down), 1 = down, 2 = up (the comparison variants).
+ */
+const TIE_EPS = 1e-9;
+let tiesHit = 0;
+function lowOf(c: number, d: number, W: number, tie: number) {
+  const x = c - d / 2;
+  const f = Math.floor(x + TIE_EPS);
+  const frac = x - f;
+  if (Math.abs(frac - 0.5) > TIE_EPS) return Math.round(x);
+  tiesHit++;
+  if (tie === 1) return f;
+  if (tie === 2) return f + 1;
+  return c < W / 2 - TIE_EPS ? f + 1 : f;
+}
 
 // ---------- columns (typed arrays, grown in chunks) ----------
 class Col<T extends Float64Array | Float32Array | Uint32Array | Uint16Array | Uint8Array> {
@@ -100,6 +118,7 @@ const P = {
   rule: u8(), set: u32(), ord: u16(), window: u8(), chord: u32(),
   merges: u8(), mStack: u8(), mBottom: u8(), mTop: u8(),
   roundMax: f32(), roundMean: f32(), band: f32(), essExtra: u8(), mirrorOk: u8(),
+  ties: u8(), chordDown: u32(), chordUp: u32(),
 };
 
 // ---------- pass 1: placements ----------
@@ -117,14 +136,15 @@ const isLow = new Uint8Array(2 * N);
 const notes = new Int32Array(2 * N);
 const diffCount = new Int32Array(WMAX + 1);
 
-function place(rule: number, order: number[], W: number) {
+function place(rule: number, order: number[], W: number, tie = 0) {
   (rule === 0 ? centresEqual : centresShared)(order, W, centres);
   let mask = 0;
   ends.length = 0;
   noteCount.fill(0);
   let rMax = 0, rSum = 0;
+  tiesHit = 0;
   for (let k = 0; k < N; k++) {
-    const lo = lowOf(centres[k], order[k]);
+    const lo = lowOf(centres[k], order[k], W, tie);
     lows[k] = lo;
     const err = Math.abs(lo - (centres[k] - order[k] / 2));
     rMax = Math.max(rMax, err);
@@ -137,7 +157,16 @@ function place(rule: number, order: number[], W: number) {
     if (e < 0 || e > W) throw new Error(`note outside window: rule ${rule} order ${order} W ${W}`);
     if (noteCount[e]++ === 0) mask += POW2[e];
   }
-  return { mask, rMax, rMean: rSum / N };
+  return { mask, rMax, rMean: rSum / N, ties: tiesHit };
+}
+function chordId(mask: number) {
+  let id = chordIndex.get(mask);
+  if (id === undefined) {
+    id = chordMask.len;
+    chordIndex.set(mask, id);
+    chordMask.push(mask);
+  }
+  return id;
 }
 function mirrorMask(mask: number, W: number) {
   let m = 0;
@@ -156,7 +185,7 @@ for (let s = 0; s < sets.length; s++) {
     for (let rule = 0; rule < 2; rule++) {
       for (let o = 0; o < orders.length; o++) {
         const order = orders[o];
-        const { mask, rMax, rMean } = place(rule, order, W);
+        const { mask, rMax, rMean, ties } = place(rule, order, W);
         // merges and their kinds (pairs of coinciding ends)
         let mStack = 0, mBottom = 0, mTop = 0;
         for (let a = 0; a < ends.length; a++)
@@ -176,17 +205,16 @@ for (let s = 0; s < sets.length; s++) {
         // mirror: the reversed order should give the chord upside down
         const rev = place(rule, revOrders[o], W).mask;
         const mirrorOk = rev === mirrorMask(mask, W) ? 1 : 0;
+        // rounding variants: every tie rounded down, every tie rounded up (same chord as the main one when no tie)
+        const id = chordId(mask);
+        const idDown = ties ? chordId(place(rule, order, W, 1).mask) : id;
+        const idUp = ties ? chordId(place(rule, order, W, 2).mask) : id;
         // restore the forward placement's centres for the band (place() overwrote them)
         (rule === 0 ? centresEqual : centresShared)(order, W, centres);
         let cMin = Infinity, cMax = -Infinity;
         for (let k = 0; k < N; k++) { cMin = Math.min(cMin, centres[k]); cMax = Math.max(cMax, centres[k]); }
 
-        let id = chordIndex.get(mask);
-        if (id === undefined) {
-          id = chordMask.len;
-          chordIndex.set(mask, id);
-          chordMask.push(mask);
-        }
+        P.ties.push(ties); P.chordDown.push(idDown); P.chordUp.push(idUp);
         P.rule.push(rule); P.set.push(s); P.ord.push(o); P.window.push(W); P.chord.push(id);
         P.merges.push(2 * N - nn); P.mStack.push(mStack); P.mBottom.push(mBottom); P.mTop.push(mTop);
         P.roundMax.push(rMax); P.roundMean.push(rMean); P.band.push(cMax - cMin); P.essExtra.push(essExtra); P.mirrorOk.push(mirrorOk);
@@ -247,20 +275,20 @@ for (let c = 0; c < NC; c++) {
 log(`scoring keys: ${NC} chords (roughness), ${shapeKeys.length} shapes (harmonicity + periodicity), ${pcKeys.length} pitch-class classes`);
 
 // ---------- pass 2: parallel scoring ----------
-async function scoreAll(kind: 'rough' | 'shape' | 'pc', keys: ArrayLike<number>, width: number): Promise<Float64Array> {
+async function scoreAll(kind: 'rough' | 'shape' | 'pc', keys: ArrayLike<number>, width: number, baseMidi = BASE_MIDI): Promise<Float64Array> {
   const out = new Float64Array(keys.length * width);
   const chunk = 2000;
   const jobs: { id: number; start: number; keys: Float64Array }[] = [];
   for (let s = 0; s < keys.length; s += chunk) jobs.push({ id: jobs.length, start: s, keys: Float64Array.from(Array.prototype.slice.call(keys, s, s + chunk)) });
   const workers = Array.from({ length: Math.min(WORKERS, jobs.length || 1) }, () =>
-    new Worker(new URL('./worker.mjs', import.meta.url), { workerData: { baseMidi: BASE_MIDI, stepCents: STEP_CENTS } }));
+    new Worker(new URL('./worker.mjs', import.meta.url), { workerData: { stepCents: STEP_CENTS } }));
   let next = 0, done = 0;
   await new Promise<void>((resolve, reject) => {
     if (jobs.length === 0) return resolve();
     const feed = (w: Worker) => {
       if (next >= jobs.length) return;
       const j = jobs[next++];
-      w.postMessage({ id: j.id, kind, keys: j.keys });
+      w.postMessage({ id: j.id, kind, keys: j.keys, baseMidi });
     };
     for (const w of workers) {
       w.on('message', (m: { id: number; out: Float64Array }) => {
@@ -276,8 +304,12 @@ async function scoreAll(kind: 'rough' | 'shape' | 'pc', keys: ArrayLike<number>,
   await Promise.all(workers.map((w) => w.terminate()));
   return out;
 }
-const rough = await scoreAll('rough', chordMask.data.subarray(0, NC), 1);
-log('roughness done');
+const roughByBase: Float64Array[] = [];
+for (const b of BASES) {
+  roughByBase.push(await scoreAll('rough', chordMask.data.subarray(0, NC), 1, b));
+  log(`roughness done (base MIDI ${b})`);
+}
+const rough = roughByBase[0];
 const shapeScores = await scoreAll('shape', shapeKeys, 2);
 log('shapes done');
 const pcScores = await scoreAll('pc', pcKeys, 1);
@@ -294,6 +326,10 @@ for (let i = 0; i < Math.min(VERIFY, NC); i++) {
     Math.abs(s.harmonicity.pitch.value - shapeScores[2 * C.shapeId[c]]),
     Math.abs(s.periodicity.value - shapeScores[2 * C.shapeId[c] + 1]),
     Math.abs(s.harmonicity.pitchClass.value - pcScores[C.pcId[c]]));
+  for (let b = 1; b < BASES.length; b++) {
+    const sb = scoreVoicing({ refHz: midiToHz(BASES[b]), cents: notes.map((x) => x * STEP_CENTS) }, { decompose: false });
+    maxDiff = Math.max(maxDiff, Math.abs(sb.interference.hutchinsonKnopoff.total - roughByBase[b][c]));
+  }
 }
 log(`verify: largest difference vs scoreVoicing over ${Math.min(VERIFY, NC)} chords = ${maxDiff.toExponential(2)}`);
 if (maxDiff > 1e-6) throw new Error('cached scores differ from scoreVoicing');
@@ -340,13 +376,16 @@ CREATE TABLE chords (chord_id INTEGER PRIMARY KEY, mask INTEGER, notes TEXT, not
   gaps_octave INTEGER, distinct_intervals INTEGER, rough REAL, harm_pitch REAL, harm_pc REAL, periodicity REAL);
 CREATE TABLE placements (rule TEXT, set_id INTEGER, ord INTEGER, window INTEGER, chord_id INTEGER, merges INTEGER,
   merge_stack INTEGER, merge_bottom INTEGER, merge_top INTEGER, round_max REAL, round_mean REAL, band REAL,
-  essential_extra INTEGER, mirror_ok INTEGER, rank_rough INTEGER, rank_harm INTEGER, pareto_layer INTEGER);`);
+  essential_extra INTEGER, mirror_ok INTEGER, rank_rough INTEGER, rank_harm INTEGER, pareto_layer INTEGER,
+  ties INTEGER, chord_down INTEGER, chord_up INTEGER);
+CREATE TABLE rough_by_base (chord_id INTEGER, base_midi INTEGER, rough REAL, PRIMARY KEY (chord_id, base_midi)) WITHOUT ROWID;`);
 const ins = (sql: string) => db.prepare(sql);
 db.exec('BEGIN');
 const meta = ins('INSERT INTO meta VALUES (?, ?)');
 for (const [k, v] of Object.entries({ n: N, max_interval: MAX, window_max: WMAX, base_midi: BASE_MIDI, step_cents: STEP_CENTS,
   rules: 'equal = equal centers (chord fills the window); shared = shared center range [M/2, W-M/2], centers equally spaced',
-  rounding: "each interval's bottom note = nearest step to (center - size/2), halves down",
+  rounding: "each interval's bottom note = nearest step to (center - size/2); a tie (exact half step) rounds toward the middle of the window (an interval centred exactly on the middle rounds down); chord_down / chord_up = the same placement with every tie rounded down / up",
+  bases_midi: BASES.join(','),
   scores: 'rough = Hutchinson-Knopoff interference total (lower smoother); harm_pitch = pitch-space harmonicity (higher more fused); harm_pc = pitch-class harmonicity; periodicity = Stolzenburg smoothed log periodicity (lower simpler)',
   built: new Date().toISOString() })) meta.run(k, String(v));
 const sIns = ins('INSERT INTO sets VALUES (?, ?, ?, ?)');
@@ -364,11 +403,14 @@ for (let c = 0; c < NC; c++) {
     C.pc[c], pcCount, C.centroid[c], C.gapMin[c], C.gapMax[c], C.gapsOct[c], C.distinctInts[c],
     rough[c], shapeScores[2 * C.shapeId[c]], pcScores[C.pcId[c]], shapeScores[2 * C.shapeId[c] + 1]);
 }
-const pIns = ins('INSERT INTO placements VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+const rbIns = ins('INSERT INTO rough_by_base VALUES (?, ?, ?)');
+for (let b = 0; b < BASES.length; b++) for (let c = 0; c < NC; c++) rbIns.run(c, BASES[b], roughByBase[b][c]);
+const pIns = ins('INSERT INTO placements VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
 for (let i = 0; i < NP; i++) {
   pIns.run(RULES[P.rule.data[i]], P.set.data[i], P.ord.data[i], P.window.data[i], P.chord.data[i], P.merges.data[i],
     P.mStack.data[i], P.mBottom.data[i], P.mTop.data[i], P.roundMax.data[i], P.roundMean.data[i], P.band.data[i],
-    P.essExtra.data[i], P.mirrorOk.data[i], rankRough[i], rankHarm[i], layer[i]);
+    P.essExtra.data[i], P.mirrorOk.data[i], rankRough[i], rankHarm[i], layer[i],
+    P.ties.data[i], P.chordDown.data[i], P.chordUp.data[i]);
   if (i % 2_000_000 === 0 && i) log(`  wrote ${i}/${NP} placements`);
 }
 db.exec('COMMIT');
@@ -381,8 +423,13 @@ CREATE VIEW placement_view AS
   SELECT p.rule, s.intervals AS "set", o.ordering, p.window, c.notes, c.note_count, p.merges, p.merge_stack, p.merge_bottom,
     p.merge_top, c.span, c.pc_mask, c.gap_min, c.gap_max, c.gaps_octave, c.distinct_intervals, p.round_max, p.round_mean,
     p.band, p.essential_extra, p.mirror_ok, c.rough, c.harm_pitch, c.harm_pc, c.periodicity, p.rank_rough, p.rank_harm,
-    p.pareto_layer, p.set_id, p.ord, p.chord_id
+    p.pareto_layer, p.ties, (p.chord_down = p.chord_id AND p.chord_up = p.chord_id) AS grid_robust, p.chord_down, p.chord_up,
+    p.set_id, p.ord, p.chord_id
   FROM placements p JOIN sets s USING (set_id) JOIN orderings o USING (set_id, ord) JOIN chords c USING (chord_id);
+CREATE TABLE summary_rounding AS
+  SELECT rule, window, COUNT(*) AS placements, AVG(ties > 0) AS share_with_tie,
+    AVG(chord_down = chord_id AND chord_up = chord_id) AS share_grid_robust, AVG(mirror_ok) AS share_mirror_ok
+  FROM placements GROUP BY rule, window;
 CREATE TABLE summary_merges AS
   SELECT rule, window, COUNT(*) AS placements, AVG(merges) AS avg_merges, AVG(merges > 0) AS share_with_merge,
     SUM(merge_stack) AS stack_pairs, SUM(merge_bottom) AS bottom_pairs, SUM(merge_top) AS top_pairs,

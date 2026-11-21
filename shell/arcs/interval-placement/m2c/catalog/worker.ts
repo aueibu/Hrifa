@@ -7,8 +7,8 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { interference, harmonicity, periodicity, DEFAULT_TIMBRE, midiToHz } from '../../../../src/lib/consonance/index';
 
-const { baseMidi, stepCents } = workerData as { baseMidi: number; stepCents: number };
-const baseHz = midiToHz(baseMidi);
+const { stepCents } = workerData as { stepCents: number };
+let baseHz = midiToHz(36);
 
 function notesOf(mask: number): number[] {
   const out: number[] = [];
@@ -22,8 +22,9 @@ function notesOf(mask: number): number[] {
 }
 const hz = (steps: number[]) => steps.map((s) => baseHz * 2 ** ((s * stepCents) / 1200));
 
-parentPort!.on('message', (job: { id: number; kind: 'rough' | 'shape' | 'pc'; keys: Float64Array }) => {
+parentPort!.on('message', (job: { id: number; kind: 'rough' | 'shape' | 'pc'; keys: Float64Array; baseMidi: number }) => {
   const { kind, keys } = job;
+  baseHz = midiToHz(job.baseMidi); // only roughness depends on it; shapes and pitch classes are register-free
   const width = kind === 'shape' ? 2 : 1;
   const out = new Float64Array(keys.length * width);
   for (let i = 0; i < keys.length; i++) {

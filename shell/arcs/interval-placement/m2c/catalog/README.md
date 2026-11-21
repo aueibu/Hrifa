@@ -17,7 +17,8 @@ Options: `--n` intervals per set, `--max` largest interval size, `--wmax` larges
 MIDI (default 36 = C2; only roughness depends on it), `--workers` (default: logical CPUs - 1), `--verify` how many chords
 to re-score with `scoreVoicing` as a check (the build stops if any differs by more than 1e-6).
 
-Timing (2026-11-21, this PC, 11 workers): n = 3, max 24, wmax 48: 49 s, 843,552 placements, 472,799 distinct chords, 122 MB.
+Timing (2026-11-21, this PC, 11 workers): n = 3, max 24, wmax 48, bases C2 and C3, with rounding variants: 65 s,
+843,552 placements, 676,945 distinct chords, 371,414 shapes, 178 MB.
 
 ## How it is fast
 
@@ -32,9 +33,15 @@ Timing (2026-11-21, this PC, 11 workers): n = 3, max 24, wmax 48: 49 s, 843,552 
 - `equal`: interval centers equally spaced, as far apart as the window allows; every chord fills its window.
 - `shared`: one center range for every interval, [largest/2, window - largest/2], centers equally spaced across it;
   every ordering uses the same center positions.
-- Both: each interval's bottom note is the nearest step to (center - size/2), **halves round down**. Known effect: when
-  an odd interval's center falls on a whole step, its bottom note is a half step off and rounds down, so the reversed
-  ordering is not always the exact mirror image (`mirror_ok = 0`).
+- Both: each interval's bottom note is the nearest step to (center - size/2). A **tie** (exact half step) rounds
+  **toward the middle of the window** (human, 2026-11-21), which makes a reversed ordering the exact mirror image of the
+  forward one. The one case no rounding can make symmetric: an interval centred exactly on the window's middle with its
+  ends on half steps (it rounds down). Verified on n = 3: every `mirror_ok = 0` row has such a middle tie, and every
+  row without one mirrors exactly. With 3 intervals the shared rule always centres the middle interval on the middle,
+  so about half its placements hit this case.
+- Rounding variants (the human's idea from the JI Z-relation work: round both ways and see what is invariant):
+  `chord_down` / `chord_up` are the same placement with every tie rounded down / up; `grid_robust` (in the view) is 1
+  when all three are the same chord, i.e. the rule alone decides the chord.
 
 ## Schema
 
@@ -50,7 +57,12 @@ Timing (2026-11-21, this PC, 11 workers): n = 3, max 24, wmax 48: 49 s, 843,552 
   `merge_top` = coinciding end pairs that are top-on-bottom (stacking), two bottoms, two tops (nesting); `round_max`,
   `round_mean` = how far bottom notes moved to the grid (steps); `band` = highest minus lowest center;
   `essential_extra` = extra occurrences of an essential size among all note pairs; ranks are dense within
-  (rule, set, window), 1 = best (roughness lowest, pitch harmonicity highest); `pareto_layer` on those two scores.
+  (rule, set, window), 1 = best (roughness lowest, pitch harmonicity highest); `pareto_layer` on those two scores;
+  `ties` = intervals whose bottom note was an exact half step; `chord_down`, `chord_up` = the rounding variants.
+- `rough_by_base(chord_id, base_midi, rough)`: roughness at every root given with `--bases` (default only 36 = C2;
+  `chords.rough`, ranks and layers use the first). A new root only re-scores roughness: harmonicity and periodicity are
+  register-free.
+- `summary_rounding(rule, window, ...)`: share of placements with a tie, grid-robust, mirror-exact.
 - `placement_view`: placements joined with set, ordering and chord (the easy table to query).
 - `summary_merges(rule, window, ...)`, `summary_winners(rule, set_id, window, best_rough_orderings)`.
 
