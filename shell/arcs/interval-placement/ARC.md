@@ -1,6 +1,6 @@
 # ARC: Interval Placement: rigorous, register-aware scoring + panel workspace
 
-**Status: APPROVED (2026-11-13); REVISED 2026-11-20, awaiting the human's OK on the revision.** M1, M2 done; M2b decided by the human. Branch merged into `main` 2026-11-20. Revision: Proposed UI and M3–M6 rewritten for the M2b decisions and the "standalone but portable" direction (see "Portability"), after a C0 re-scan against `main` (PROGRESS, "C0 redo"). Next after the OK: M3 mock.
+**Status: APPROVED (2026-11-13); REVISION APPROVED 2026-11-20 (see "Revision checkpoint decisions").** M1, M2 done; M2b decided by the human. Branch merged into `main` 2026-11-20. Revision: Proposed UI and M3–M6 rewritten for the M2b decisions and the "standalone but portable" direction (see "Portability"), after a C0 re-scan against `main` (PROGRESS, "C0 redo"). Next: M2c scenarios for the human to confirm.
 
 ## Goal
 Interval Placement keeps its idea and gets a sound scoring core and a better workspace:
@@ -27,6 +27,11 @@ Interval Placement keeps its idea and gets a sound scoring core and a better wor
 - **Placement controls get redesigned, not just carried over (human, 2026-11-13, during M1).** The golden test exists only to verify that the move into the lib is faithful; it is not a commitment to keep the old behaviour, and it may be retired once the redesign replaces the engines. The human wants to reimplement the placement controls "from a much more solidly grounded point", for example a window re-envisioned as something interactive (moving a structure up and down ad hoc and watching the scores change), and to be consulted at a checkpoint with usable ideas that improve on the old ones. Hence M2 ports and verifies only, and the new M2b proposes the redesign for the human to choose from before the mock.
 - **Standalone but portable (human, 2026-11-20).** Like the harmonic-field lab's plan: the page is its own app now and can be ported into the Composition Workbench when the time comes; "the UI and styling and behavior would always remain unified" with the lab and the workbench. On `main`, `main`'s project-wide decisions win where this arc (planned 2026-11-13) differs.
 - **Hand-off contracts (human, 2026-11-20):** this arc defines the first versions of the three contracts the lab planned (PitchContext, Preview, Emit), with the lab's names, recorded as a shared DECISIONS row so the lab adopts them later instead of inventing its own. The human asked to be told clearly before that step starts (M6).
+- **Revision checkpoint decisions (human, 2026-11-20):**
+  1. The new M2c (play-mode and Explore functions in the lib, scenarios first) before the mock: yes.
+  2. Look: the shared kit for panel chrome and controls, the lab's rules for tooltips and help text; the mock lists every place they differ.
+  3. Spread presets: **Close (≤ 1 oct), Open (1–2 oct), Wide (2–3 oct), Vast (≥ 3 oct)**, each only a preset of the numeric spread range. Checked 2026-11-20: the affine-focus project has no spread vocabulary; the workbench's chord voicing (`chordInput/voicing.ts`, `SpreadStyle = 'close' | 'open' | 'drop2' | 'drop3'`) uses "close" and "open" as voicing *procedures* (close = smallest stack; open = alternate voices up an octave). They are compatible in practice (a close voicing spans under an octave, an open triad usually 1–2 octaves), but the reader text must say ours are span ranges, and the M6 / port plan notes the overlap.
+  4. Default ranking weights: **harmonicity-leaning** (McDermott, Lehr & Oxenham 2010: harmonicity the stronger predictor of preference). `EQUAL_WEIGHTS` stays available as a preset. The exact default weights, and which harmonicity carries the lean (pitch-space harmonicity separates voicings of one interval set; pitch-class harmonicity barely does, M2b), are proposed in the M2c scenarios with an example where they rank differently from equal weights.
 
 ## Diagnosis of the current page (2026-11-13, measured with a probe of the current code)
 - Scoring runs at a fixed 55 Hz (A1) for the window's bottom, whatever base note is chosen; playback uses the base note (default C4). Changing the base note never changes the ranking.
@@ -232,10 +237,8 @@ Page `ARCHITECTURE.md` (including the portability rules and the M6 contracts) an
 ## Open questions (answer at approval or at the milestone where they matter)
 - (answered at approval, 2026-11-13: three scores yes, v1/v2 dropped; workspace as a generic local copy; Bowling et al. download allowed.)
 - (answered at M2b, 2026-11-13: shared notes allowed and shown; spread is a numeric range with optional named presets.)
-- Revision approval (2026-11-20): OK with the new M2c (library functions for the play mode and Explore, scenarios first) before the mock?
-- M3: look source where the shared kit and the lab differ: kit chrome plus the lab's text rules (proposed), or the lab's look throughout until the lab adopts the kit?
-- M3: names for the spread presets: Close (≤ 1 oct) / Open (1–2) / Wide (2–3) / Vast (≥ 3), or Clustered / Close / Open / Spread?
-- M3: default ranking weights for the weighted mix: equal standardised weights, or harmonicity-leaning (McDermott et al. 2010 found harmonicity the stronger predictor of preference)?
+- (answered at the revision, 2026-11-20: see "Revision checkpoint decisions".)
+- M2c scenarios: the exact harmonicity-leaning default weights and which harmonicity carries them.
 
 ## Stop-and-ask conditions
 - A criterion can't be met after 2 builder attempts.

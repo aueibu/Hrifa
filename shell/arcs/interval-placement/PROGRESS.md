@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
-- Current milestone: ARC revision (after M2b)
-- State: ARC revised 2026-11-20 for the M2b decisions and the standalone-but-portable direction; awaiting the human's OK and the open questions in ARC.md
+- Current milestone: M2c (scenarios)
+- State: ARC revision approved 2026-11-20 with answers recorded (ARC "Revision checkpoint decisions"); next: write `SCENARIOS.M2c.md` for the human
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -24,7 +24,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | Prefix | 2026-11-20: human renamed this arc's DECISIONS prefix from `I` (single letters read as silly and will run out), first to `INTPLC`, then, by the human's choice, to `INTERVALPLACEMENT` (the folder name without hyphens, now rule 16). Rows and every reference renamed (INTERVALPLACEMENT-1..3). | — | Comment-only change in `src/lib/consonance/types.ts`. |
 | Check name | 2026-11-20: human asked to follow rule 16's `check:<arc>`: `check:ip` renamed to `check:interval-placement` in `package.json` and every reference (this file's older rows included, so the commands here run as written); rule 16 now says the script uses the full folder name. | `check:interval-placement` run after the rename | Also edited the text of DECISIONS INTERVALPLACEMENT-1 (its `check:` mention), like the prefix rename. |
 | C0 redo | 2026-11-20 read-only scan of `main`: `DockStage` is importable without workbench code (page owns its `ScreensetStore`); shared kit `src/components/InspectorKit/` used only by the dock and the spike (lab has its own `ui.tsx`); no key-owner registry (workbench `inputScope.ts` is page-local; DockStage listens on window for F6/Alt+G/Alt+digit and skips handled events); no shared audio (`AudioEngine`, `useModulePreview` are workbench page code, `HeldVoices` a plan; `sonify.ts` self-contained); workbench stores page-local and replaceable (W-45); W-44 decided, not built; no PitchContext/Preview/Emit type in `src/`. No locks; other arcs: affine-focus at a human checkpoint, ratio-rhythm approved (C0 done), workbench Timeline ARC draft, lab none active. Nothing imports our page folder or the two libs except the libs themselves. | — | Rules in ARC "Portability". |
-| ARC revision | Proposed UI, Parameters, Portability (new), Non-goals, M2c (new), M3–M6 (M6 = hand-off contracts, flagged for the human), Final step, Open questions rewritten. | — | Awaiting the human's OK. |
+| ARC revision | Proposed UI, Parameters, Portability (new), Non-goals, M2c (new), M3–M6 (M6 = hand-off contracts, flagged for the human), Final step, Open questions rewritten. | — | Approved by the human 2026-11-20: M2c yes; kit chrome + lab text rules; presets Close/Open/Wide/Vast (workbench `voicing.ts` uses close/open as procedures: compatible, noted); harmonicity-leaning default weights (exact values in M2c scenarios). |
 
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-13, released 2026-11-13 after `86a859f` (Setup).
@@ -34,7 +34,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
-Resume here. The ARC was revised 2026-11-20 (see the "ARC revision" row). Next: get the human's OK on the revision and answers to ARC "Open questions"; write the answers back as checkpoint decisions; then M2c scenarios (`SCENARIOS.M2c.md`) for the human to confirm before the M2c builder. Before M6, tell the human clearly that the hand-off contract step is next (they asked).
+Resume here. The ARC revision is approved (2026-11-20). Next: M2c scenarios (`SCENARIOS.M2c.md`) for the human to confirm before the M2c builder. Before M6, tell the human clearly that the hand-off contract step is next (they asked).
 
 ## Handoff notes (for any other session or account)
 - Branch: `claude/interval-placement-app-0ejurh` on `aueibu/Hrifa` (not yet merged to `main`). Check it out, then read `shell/CLAUDE.md`, this folder's `ARC.md` and this file.
