@@ -30,6 +30,10 @@ JI Z-pairs: two pitch sets (octave-reduced ratios, as points in the prime-expone
 
 The latest file's md5 is whatever is committed. The VM copy was verified at `04c007b3954ad06b7fe51079073fc9e3`, the commit "prune repeated equation systems".
 
+## Partners by factoring (`zfactor.py`, 2026-11-21)
+
+Rosenblatt & Seymour, "The Structure of Homometric Sets", SIAM J. Alg. Disc. Meth. 3 (1982), Thms 2.3 and 2.4 (Z^n) and Section 3: two sets have the same interval content exactly when their polynomials are the same prime factors with some factors reversed (any integer coefficients). So the factor law above is a theorem, the doubled-note and both-signed families are ordinary cases of it, and every Z-partner of a given set in the whole infinite lattice comes from factoring its polynomial once and trying the reversals. It does not hold on cyclic groups (rhythm rings, EDOs). `zfactor.py ratios "1 6/5 ..."` lists all partners (aligned to share the most notes with the input) or proves there are none; `zfactor.py check families.jsonl` re-derives every family. Needs sympy (on the VM: `pypy3 -m pip install --user sympy`). Checked on the VM: all 295 exhaustive 10-note 5-limit odd 123 families recovered in 17 s (exhaustive search: 34 min), no partner outside the gamut for any of them; the Rosenblatt–Seymour 1-D example; 5-limit family 3. Ptolemy's JI major, the 5-limit JI chromatic and 1 10/9 9/8 5/4 3/2 have no Z-partner anywhere.
+
 ## Results so far (6–8 notes)
 
 ✓ means an exhaustive search gave the same count. Unmarked entries are placements, which matched in every case that was checked.
