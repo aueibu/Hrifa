@@ -1,0 +1,1747 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ratio rhythm lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDF0F4; --sheet:#F9FAFC; --ink:#1B2340; --muted:#586179; --rule:#CBD2DD;
+  --accent:#B97D00; --accent-soft:#F5E4B8; --onset:#1F7F79; --group:#DCE2EB; --group-alt:#E9EDF3; --open:#98A1B4;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11172A; --sheet:#182036; --ink:#E3E7F0; --muted:#98A1B7; --rule:#2D3750;
+    --accent:#F0B43A; --accent-soft:#3B3322; --onset:#4DB6AE; --group:#263049; --group-alt:#1F2840; --open:#5D6781;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11172A; --sheet:#182036; --ink:#E3E7F0; --muted:#98A1B7; --rule:#2D3750;
+  --accent:#F0B43A; --accent-soft:#3B3322; --onset:#4DB6AE; --group:#263049; --group-alt:#1F2840; --open:#5D6781;
+  color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:28px 20px 48px}
+h1{font-family:Spectral,Georgia,serif;font-weight:600;font-size:clamp(28px,4.5vw,40px);line-height:1.1;margin:0 0 8px;letter-spacing:-0.01em}
+.lede{max-width:62ch;color:var(--muted);margin:0 0 24px}
+h2,h3{font-family:Spectral,Georgia,serif;font-weight:600;margin:0}
+h3{font-size:20px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px 24px;padding:16px 0 20px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.rule label,.rule .lbl{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+.rule .help{font-size:13px;color:var(--muted);margin-top:4px}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:34px;height:34px;border:1px solid var(--rule);background:var(--sheet);border-radius:6px}
+.stepper input{width:64px;height:34px;text-align:center;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);font:inherit}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button,.seg button{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--rule);background:var(--sheet);border-radius:6px}
+.chips button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+#onsets{width:100%;height:34px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);font:inherit;padding:0 10px}
+
+.stage{padding:22px 0 8px}
+.formula{font-family:Spectral,Georgia,serif;font-size:clamp(22px,3.6vw,32px);line-height:1.25;margin:0 0 14px;word-break:break-word}
+.formula .q{color:var(--muted);font-style:italic}
+#diagram{overflow-x:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:8px 4px}
+#diagram svg{display:block}
+.legend{font-size:13px;color:var(--muted);margin:8px 0 0;max-width:80ch}
+
+svg .br{fill:none;stroke:var(--ink);stroke-width:1.6}
+svg .br.open{stroke:var(--open);stroke-dasharray:4 3}
+svg .br.sel{stroke:var(--accent);stroke-width:3}
+svg .pill{fill:var(--sheet)}
+svg .blabel{font-family:Spectral,Georgia,serif;font-size:14px;fill:var(--ink);text-anchor:middle}
+svg .blabel.open{fill:var(--muted);font-style:italic}
+svg .blabel.sel{fill:var(--accent);font-weight:600}
+svg .hit{fill:transparent;cursor:pointer}
+svg .nd:focus{outline:none}
+svg .nd:focus-visible .hit{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:2 2}
+svg .g0{fill:var(--group)} svg .g1{fill:var(--group-alt)}
+svg .gopen{fill:none;stroke:var(--open);stroke-dasharray:3 3}
+svg .sep{stroke:var(--rule);stroke-width:1}
+svg .num{font-size:11px;fill:var(--muted);text-anchor:middle}
+svg .wbar{fill:var(--muted);opacity:.55}
+svg .wbar.top{fill:var(--accent);opacity:1}
+svg .onset{fill:var(--onset)}
+svg .onset.sync{stroke:var(--accent);stroke-width:3}
+
+.work{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:28px;margin-top:22px}
+@media (max-width:820px){.work{grid-template-columns:1fr}}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:14px}
+.tabs button{border:none;background:none;padding:8px 14px;border-bottom:3px solid transparent;font-weight:700;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.panel[hidden]{display:none}
+.sel-head{margin-bottom:10px}
+.range{font-family:"Atkinson Hyperlegible",sans-serif;font-size:14px;font-weight:400;color:var(--muted);margin-left:6px}
+.path{font-size:14px;color:var(--muted);margin:4px 0 0}
+.link{background:none;border:none;padding:0;color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.actions button{border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:6px 12px;font-size:14px}
+.actions button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.ktabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
+.ktabs button{border:1px solid var(--rule);background:transparent;border-radius:999px;padding:3px 12px;font-size:14px}
+.ktabs button[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;max-height:380px;overflow:auto;padding:2px}
+.opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:7px 10px;text-align:left}
+.opt .f{font-family:Spectral,Georgia,serif;font-size:17px}
+.opt .c{font-size:12px;color:var(--muted)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.small{font-size:14px}
+.muted{color:var(--muted)}
+.done{color:var(--onset);font-weight:700}
+.empty{padding:14px;border:1px dashed var(--rule);border-radius:8px;color:var(--muted)}
+
+aside{font-size:15px}
+aside dl{margin:0;display:grid;gap:14px}
+aside dt{font-size:14px;color:var(--muted)}
+aside dd{margin:2px 0 0;font-family:Spectral,Georgia,serif;font-size:24px;line-height:1.2;word-break:break-all}
+aside dd.prose{font-family:"Atkinson Hyperlegible",sans-serif;font-size:15px;word-break:normal}
+aside .notes{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+aside .notes p{margin:0 0 8px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btnrow button{border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:6px 12px;font-size:14px}
+.btnrow button.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+.views{display:flex;gap:4px;margin:0 0 22px;border-bottom:1px solid var(--rule)}
+.views button{border:none;background:none;padding:10px 16px 8px;font-family:Spectral,Georgia,serif;font-size:19px;color:var(--muted);border-bottom:3px solid transparent}
+.views button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.view[hidden]{display:none}
+:root{--c-four:#2A86A8;--c-anc:#7A63B8;--c-even:#4F78B0;--c-iso:#3E968E;--c-tune:#6F9440;--c-meter:#B8862A;--c-group:#B5577A;--c-lat:#C0653B}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--c-four:#5DBEE0;--c-anc:#A893E0;--c-even:#7FA6DD;--c-iso:#5CC0B6;--c-tune:#9CC46A;--c-meter:#E6B556;--c-group:#E08AAB;--c-lat:#E8935E}}
+:root[data-theme="dark"]{--c-four:#5DBEE0;--c-anc:#A893E0;--c-even:#7FA6DD;--c-iso:#5CC0B6;--c-tune:#9CC46A;--c-meter:#E6B556;--c-group:#E08AAB;--c-lat:#E8935E}
+.prules{display:grid;grid-template-columns:minmax(0,2fr) repeat(auto-fit,minmax(170px,1fr));gap:16px 24px;padding:16px 0 18px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+@media (max-width:700px){.prules{grid-template-columns:1fr}}
+#pratios{width:100%;height:36px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);font-family:Spectral,Georgia,serif;font-size:17px;padding:0 10px}
+#pN,#pgrid{width:76px;height:34px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);font:inherit;text-align:center}
+.modes{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;align-items:center}
+.modes .lbl2{font-size:14px;font-weight:700;margin-right:4px}
+.modes button{border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:3px 12px;font-family:Spectral,Georgia,serif;font-size:15px}
+.modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pinfo{font-size:14px;color:var(--muted);margin:12px 0 0;max-width:90ch}
+.pinfo strong{color:var(--ink);font-weight:700}
+.perr{margin-top:12px}
+.pgrid{display:grid;grid-template-columns:minmax(260px,430px) minmax(0,1fr);gap:28px;margin-top:20px;align-items:start}
+@media (max-width:820px){.pgrid{grid-template-columns:1fr}}
+#ring{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:6px}
+#ring svg{display:block;width:100%;height:auto}
+.ringcap{font-size:13px;color:var(--muted);margin:8px 2px 0}
+.rail{display:grid;gap:8px}
+.lens{display:grid;grid-template-columns:1fr auto;gap:2px 14px;align-items:baseline;text-align:left;border:1px solid var(--rule);border-left:6px solid var(--lc);background:transparent;border-radius:6px;padding:9px 12px}
+.lens .ln{font-weight:700}
+.lens .lv{font-family:Spectral,Georgia,serif;font-size:20px;text-align:right}
+.lens .ls{grid-column:1 / -1;font-size:13px;color:var(--muted)}
+.lens[aria-pressed="true"]{background:var(--sheet);border-color:var(--lc)}
+.ldetail{margin-top:24px;padding-top:16px;border-top:3px solid var(--lc)}
+.ldetail h3{margin-bottom:6px}
+.ldetail p{max-width:80ch}
+.tblwrap{overflow-x:auto;margin:10px 0}
+.tbl{border-collapse:collapse;font-size:14px;min-width:100%}
+.tbl th{text-align:left;font-weight:700;color:var(--muted);padding:5px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.tbl td{padding:5px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl tr.pick{cursor:pointer}
+.tbl tr.pick:hover td{background:var(--group-alt)}
+.tbl tr[aria-selected="true"] td{background:var(--accent-soft)}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chiprow button{border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:3px 10px;font-family:Spectral,Georgia,serif;font-size:16px}
+.chiprow button[aria-pressed="true"]{border-color:var(--lc);background:var(--accent-soft)}
+.chiprow .k{font-family:"Atkinson Hyperlegible",sans-serif;font-size:12px;color:var(--muted);margin-left:4px}
+.inline{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0}
+.bigf{font-family:Spectral,Georgia,serif;font-size:22px;margin:6px 0 10px}
+
+.pname{display:flex;flex-wrap:wrap;gap:8px 26px;align-items:flex-end;margin-top:14px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet)}
+.pname .nb{display:flex;flex-direction:column}
+.pname .nl{font-size:12px;color:var(--muted)}
+.pname .nv{font-family:Spectral,Georgia,serif;font-size:18px}
+.pname .help2{flex-basis:100%;font-size:12px;color:var(--muted)}
+.pname button,.pcat button{border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:4px 10px;font-size:13px}
+.zdiff{color:var(--accent);font-weight:700}
+details.pcat{margin-top:10px}
+details.pcat summary{cursor:pointer;font-weight:700;font-size:14px}
+.zrow3{font-size:12px;color:var(--muted);display:block}
+
+.seqwrap{margin-top:22px;padding-top:14px;border-top:1px solid var(--rule)}
+.seqctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:6px 0 10px}
+.seqscroll{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--sheet)}
+.seqrow{display:flex;align-items:center;min-width:max-content;border-bottom:1px solid var(--rule)}
+.seqrow:last-child{border-bottom:none}
+.seqhead{position:sticky;left:0;z-index:1;display:flex;align-items:center;gap:8px;width:210px;min-width:210px;padding:6px 8px;background:var(--sheet);border-right:1px solid var(--rule)}
+.seqhead .t{display:flex;flex-direction:column;font-size:13px;line-height:1.25;overflow:hidden}
+.seqhead .t small{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.seqbtn{width:30px;height:30px;flex:none;border:1px solid var(--rule);border-radius:50%;background:var(--paper);font-size:12px;line-height:1}
+.seqbtn[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+svg .ph{stroke:var(--accent);stroke-width:2}
+svg .rc{fill:none;stroke:var(--rule);stroke-width:1.5}
+svg .tick{stroke:var(--rule);stroke-width:1}
+svg .tick.db{stroke:var(--ink);stroke-width:2}
+svg .on{fill:var(--ink)}
+svg .olab{font-family:Spectral,Georgia,serif;font-size:13px;fill:var(--ink)}
+svg .ghost{fill:var(--sheet);stroke:var(--lc);stroke-width:2.2}
+svg .gl{stroke:var(--lc);stroke-width:1.6;stroke-dasharray:3 2;fill:none}
+svg .ctext{font-family:Spectral,Georgia,serif;fill:var(--ink);text-anchor:middle}
+svg .csub{font-size:12px;fill:var(--muted);text-anchor:middle}
+
+.latgrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;margin-top:14px;align-items:start}
+@media (max-width:820px){.latgrid{grid-template-columns:1fr}}
+#latsvg{width:100%;height:auto;display:block;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;touch-action:none;cursor:grab}
+#latsvg:active{cursor:grabbing}
+.latpl{stroke:none;opacity:.2}.latgA{fill:var(--onset)}.latgB{fill:var(--accent)}
+.latgl{stroke:var(--rule);stroke-width:1}
+.latedge{stroke-width:2;fill:none}.latedA{stroke:var(--onset)}.latedB{stroke:var(--accent);stroke-dasharray:4 3}
+.latda{fill:var(--onset)}.latdb{fill:none;stroke:var(--accent);stroke-width:2.5}.latdo{fill:var(--open)}
+.latlab{font-size:11px;fill:var(--ink)}.latlabB{fill:var(--accent)}
+.lataxis{stroke:var(--muted);stroke-width:1.5}.lataxl{font-size:12px;fill:var(--muted)}
+.latkey{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin:0 3px 0 8px}
+.latkey.ka{background:var(--onset)}.latkey.kb{border:2.5px solid var(--accent)}.latkey.ko{background:var(--open)}
+.latlist{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow:auto;border:1px solid var(--rule);border-radius:8px;padding:6px;margin-top:10px}
+.lathead{font-weight:700;font-size:13px;margin:6px 4px 2px}
+.latrow{display:flex;justify-content:space-between;gap:10px;align-items:baseline;text-align:left;border:1px solid transparent;background:transparent;border-radius:6px;padding:6px 8px}
+.latrow[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.latsel{margin-top:10px}.latsel .rr{font-family:Spectral,Georgia,serif;font-size:16px;word-break:break-word}
+.latchip{display:inline-block;border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:2px 10px;margin:4px 4px 0 0;font-size:14px}
+.latchip i{color:var(--muted);font-style:normal}
+.btnrow button.on{background:var(--accent-soft);border-color:var(--accent)}
+.latinfo{margin-top:18px}
+button.latchip{font:inherit;cursor:pointer}button.latchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.lativ{stroke:var(--lc,var(--accent));stroke-width:5;opacity:.5;stroke-linecap:round}
+.latttl{font-size:15px;font-weight:700;fill:var(--ink)}
+.latflab{paint-order:stroke;stroke:var(--sheet);stroke-width:3px;font-size:11px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Ratio rhythm lab</h1>
+  <p class="lede">Ratios heard as rhythm. Build grouping hierarchies for a cycle of pulses, or look at a set of ratios through several reference points at once.</p>
+  <nav class="views" role="tablist" aria-label="Tools">
+    <button role="tab" id="v-trees" aria-selected="true" aria-controls="view-trees">Grouping trees</button>
+    <button role="tab" id="v-prism" aria-selected="false" aria-controls="view-prism">Ratio prism</button>
+  </nav>
+  <div class="view" id="view-trees" role="tabpanel" aria-labelledby="v-trees">
+  <p class="lede" style="margin-top:-8px">Split a cycle of pulses into groups, then split those groups again. Build a hierarchy from the top down, or pick the bottom-level groups first and bracket them. Both routes reach the same catalog.</p>
+
+  <section class="rules" aria-label="Rules">
+    <div class="rule">
+      <label for="n">Pulses in the cycle</label>
+      <div class="stepper">
+        <button id="nminus" aria-label="Fewer pulses">−</button>
+        <input id="n" type="number" min="2" max="96" value="8" inputmode="numeric">
+        <button id="nplus" aria-label="More pulses">+</button>
+      </div>
+      <div class="help">2 to 96.</div>
+    </div>
+    <div class="rule">
+      <span class="lbl" id="leaflbl">Smallest groups allowed</span>
+      <div class="chips" id="leaves" role="group" aria-labelledby="leaflbl"></div>
+      <div class="help">The sizes a group can have when it isn’t split any further.</div>
+    </div>
+    <div class="rule">
+      <span class="lbl" id="blbl">Most parts per split</span>
+      <div class="seg" id="maxb" role="group" aria-labelledby="blbl"></div>
+      <div class="help">2 keeps every split binary.</div>
+    </div>
+    <div class="rule">
+      <label for="onsets">Onsets (optional)</label>
+      <input id="onsets" type="text" placeholder="e.g. 1 4 6" autocomplete="off">
+      <div class="help">Pulse numbers, counting from 1. Scores syncopation against the tree.</div>
+    </div>
+  </section>
+
+  <section class="stage" aria-label="Current hierarchy">
+    <p class="formula" id="formula"></p>
+    <div id="diagram"></div>
+    <p class="legend">Click a bracket to select that group. Dashed brackets are groups you haven’t decided yet. Bars under the pulse numbers show each pulse’s weight: one level for every group that starts there, so the downbeat is always tallest.</p>
+    <div class="btnrow">
+      <button class="primary" id="randAll">Random hierarchy</button>
+      <button id="fillOpen">Fill open groups at random</button>
+      <button id="reset">Start over</button>
+    </div>
+  </section>
+
+  <section class="work">
+    <div>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-top" aria-selected="true" aria-controls="panel-top">Top down</button>
+        <button role="tab" id="tab-bottom" aria-selected="false" aria-controls="panel-bottom">Bottom up</button>
+      </div>
+      <div class="panel" id="panel-top" role="tabpanel" aria-labelledby="tab-top"></div>
+      <div class="panel" id="panel-bottom" role="tabpanel" aria-labelledby="tab-bottom" hidden></div>
+    </div>
+    <aside id="stats" aria-label="Counts"></aside>
+  </section>
+  </div>
+
+  <div class="view" id="view-prism" role="tabpanel" aria-labelledby="v-prism" hidden>
+    <p class="lede" style="margin-top:-8px">Enter a set of ratios and see it as onsets on a ring. Each lens compares the rhythm to a different reference, so you can see what changes depending on the question you ask.</p>
+    <section class="prules" aria-label="Ratio set">
+      <div class="rule">
+        <label for="pratios">Ratios (octave-reduced; 1/1 is added if missing)</label>
+        <input id="pratios" type="text" value="1/1 10/9 9/8 5/4 3/2" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="rule">
+        <span class="lbl" id="preadlbl">Reading</span>
+        <div class="seg" id="pread" role="group" aria-labelledby="preadlbl"></div>
+        <div class="help" id="preadhelp"></div>
+      </div>
+      <div class="rule" id="pNrule">
+        <label for="pN">Ring size (log reading)</label>
+        <input id="pN" type="number" min="2" max="400" value="53" inputmode="numeric">
+        <div class="help">Equal divisions of the octave.</div>
+      </div>
+    </section>
+    <div class="modes" id="pmodes"></div>
+    <p class="pinfo" id="pinfo"></p>
+    <div class="pname" id="pname"></div>
+    <details class="pcat" id="pcat"><summary id="pcatsum">Catalog</summary><div id="pcatbody"></div></details>
+    <div class="pgrid">
+      <div><div id="ring"></div><p class="ringcap" id="ringcap"></p></div>
+      <div class="rail" id="rail" role="group" aria-label="Lenses"></div>
+    </div>
+    <div class="seqwrap" id="seqview"></div>
+    <div class="ldetail" id="ldetail"></div>
+  </div>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const CAP=240;
+const S={n:8,leaves:new Set([1,2,3]),maxB:0,onsets:[],mode:'top',root:null,sel:null,k:2,surface:null,brList:[],loaded:null,nodes:[]};
+let T=[],Ck=[],P=[],SB=[];
+const fmt=x=>x.toLocaleString('en-US');
+const bOf=m=>S.maxB===0?m:Math.min(S.maxB,m);
+
+function compute(){
+  const n=S.n;
+  T=new Array(n+1).fill(0n);
+  Ck=[];for(let k=0;k<=n;k++)Ck.push(new Array(n+1).fill(0n));
+  for(let m=1;m<=n;m++){
+    for(let k=2;k<=bOf(m);k++){let s=0n;for(let a=1;a<=m-k+1;a++)s+=T[a]*Ck[k-1][m-a];Ck[k][m]=s;}
+    let t=S.leaves.has(m)?1n:0n;for(let k=2;k<=bOf(m);k++)t+=Ck[k][m];
+    T[m]=t;Ck[1][m]=t;
+  }
+  P=new Array(n+1).fill(0n);P[0]=1n;
+  for(let m=1;m<=n;m++)for(const l of S.leaves)if(l<=m)P[m]+=P[m-l];
+  SB=new Array(n+1).fill(0n);const D=[];for(let k=0;k<=n;k++)D.push(new Array(n+1).fill(0n));
+  SB[1]=1n;D[1][1]=1n;
+  for(let j=2;j<=n;j++){let t=0n;for(let k=2;k<=bOf(j);k++){let s=0n;for(let a=1;a<=j-k+1;a++)s+=SB[a]*D[k-1][j-a];D[k][j]=s;t+=s;}SB[j]=t;D[1][j]=t;}
+  const Q=[];for(let m=0;m<=n;m++)Q.push(new Array(n+1).fill(0n));Q[0][0]=1n;
+  for(let m=1;m<=n;m++)for(let j=1;j<=m;j++){let s=0n;for(const l of S.leaves)if(l<=m)s+=Q[m-l][j-1];Q[m][j]=s;}
+  let c=0n;for(let j=1;j<=n;j++)c+=Q[n][j]*SB[j];S.check=c;
+}
+
+function countSplits(m,k){
+  let prev=[];for(let x=0;x<=m;x++)prev.push(x>0&&T[x]>0n?1n:0n);
+  const one=prev.slice();
+  for(let kk=2;kk<=k;kk++){const cur=new Array(m+1).fill(0n);for(let x=1;x<=m;x++){let s=0n;for(let a=1;a<x;a++)s+=one[a]*prev[x-a];cur[x]=s;}prev=cur;}
+  return prev[m];
+}
+function* splitGen(m,k){
+  const a=[];
+  function* rec(rem,kk){
+    if(kk===1){if(T[rem]>0n){a.push(rem);yield a.slice();a.pop();}return;}
+    for(let x=1;x<=rem-kk+1;x++){if(T[x]===0n)continue;a.push(x);yield* rec(rem-x,kk-1);a.pop();}
+  }
+  yield* rec(m,k);
+}
+function* surfGen(n){
+  const L=[...S.leaves].sort((x,y)=>x-y);const a=[];
+  function* rec(rem){if(rem===0){yield a.slice();return;}for(const l of L){if(l>rem)break;a.push(l);yield* rec(rem-l);a.pop();}}
+  yield* rec(n);
+}
+function* compsGen(len,k){
+  const a=[];
+  function* rec(rem,kk){if(kk===1){a.push(rem);yield a.slice();a.pop();return;}for(let x=1;x<=rem-kk+1;x++){a.push(x);yield* rec(rem-x,kk-1);a.pop();}}
+  yield* rec(len,k);
+}
+function* bracket(sz,i,j){
+  const len=j-i;
+  if(len===1){yield {size:sz[i],kind:'leaf',children:[]};return;}
+  let total=0;for(let q=i;q<j;q++)total+=sz[q];
+  for(let k=2;k<=bOf(len);k++){
+    for(const blocks of compsGen(len,k)){
+      const ranges=[];let x=i;for(const b of blocks){ranges.push([x,x+b]);x+=b;}
+      for(const kids of prod(sz,ranges,0))yield {size:total,kind:'split',children:kids};
+    }
+  }
+}
+function* prod(sz,ranges,idx){
+  if(idx===ranges.length){yield [];return;}
+  for(const t of bracket(sz,ranges[idx][0],ranges[idx][1]))for(const rest of prod(sz,ranges,idx+1))yield [t,...rest];
+}
+
+function randBig(max){
+  if(max<=1n)return 0n;
+  const bits=max.toString(2).length+32;let r=0n;
+  for(let i=0;i<bits;i+=30)r=(r<<30n)|BigInt(Math.floor(Math.random()*2**30));
+  return r%max;
+}
+function sampleNode(m){
+  let r=randBig(T[m]);
+  if(S.leaves.has(m)){if(r===0n)return {size:m,kind:'leaf',children:[]};r-=1n;}
+  for(let k=2;k<=bOf(m);k++){if(r<Ck[k][m])return {size:m,kind:'split',children:sampleSeq(k,m)};r-=Ck[k][m];}
+  return {size:m,kind:'leaf',children:[]};
+}
+function sampleSeq(k,m){
+  if(k===1)return [sampleNode(m)];
+  let r=randBig(Ck[k][m]);
+  for(let a=1;a<=m-k+1;a++){const w=T[a]*Ck[k-1][m-a];if(r<w)return [sampleNode(a),...sampleSeq(k-1,m-a)];r-=w;}
+  return [sampleNode(m)];
+}
+const strip=nd=>({size:nd.size,kind:nd.kind,children:nd.children.map(strip)});
+
+function layout(nd,start,depth,out,parent){
+  nd.start=start;nd.depth=depth;nd.parent=parent;out.push(nd);
+  if(nd.kind==='split'){let x=start;for(const c of nd.children){layout(c,x,depth+1,out,nd);x+=c.size;}}
+}
+function fmtNode(nd){
+  if(nd.kind==='leaf')return String(nd.size);
+  if(nd.kind==='open')return `<span class="q">${nd.size}?</span>`;
+  return nd.children.map(c=>c.kind==='split'?'('+fmtNode(c)+')':fmtNode(c)).join(' + ');
+}
+function fmtPlain(nd){return fmtNode(nd).replace(/<[^>]+>/g,'');}
+function weights(){
+  const w=new Array(S.n).fill(1);
+  for(const nd of S.nodes)w[nd.start]+=1;
+  return w;
+}
+function syncScore(w){
+  const n=S.n;const ons=[...new Set(S.onsets)].sort((a,b)=>a-b);
+  if(!ons.length)return null;
+  let tot=0;const per=[];
+  for(let i=0;i<ons.length;i++){
+    const a=ons[i],b=i+1<ons.length?ons[i+1]:ons[0]+n;
+    let mx=-1;for(let r=a+1;r<b;r++)mx=Math.max(mx,w[r%n]);
+    const s=Math.max(0,mx-w[a]);tot+=s;per.push([a,s]);
+  }
+  return {tot,per};
+}
+
+function newRoot(){S.root={size:S.n,kind:'open',children:[]};S.sel=S.root;S.loaded=null;}
+
+function draw(){
+  const nodes=S.nodes;const n=S.n;
+  const maxD=Math.max(...nodes.map(d=>d.depth));
+  const wrap=$('#diagram');const avail=(wrap.clientWidth||640)-10;
+  const cell=Math.max(24,Math.min(60,Math.floor(avail/n)));
+  const padX=4,rowH=32,top=8;
+  const stripY=top+(maxD+1)*rowH+6,stripH=34,numY=stripY+stripH+15,wTop=numY+6,wMaxH=34;
+  const W=padX*2+cell*n,H=wTop+wMaxH+6;
+  const w=weights();const maxW=Math.max(...w);
+  const sy=syncScore(w);const syncSet=new Set(sy?sy.per.filter(p=>p[1]>0).map(p=>p[0]):[]);
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bracket diagram of the current hierarchy">`;
+  // groups in strip (terminal nodes)
+  let alt=0;
+  for(const nd of nodes){
+    if(nd.kind==='split')continue;
+    const x=padX+nd.start*cell;
+    if(nd.kind==='open')s+=`<rect class="gopen" x="${x+1}" y="${stripY+1}" width="${nd.size*cell-2}" height="${stripH-2}" rx="3"/>`;
+    else{s+=`<rect class="${alt%2?'g1':'g0'}" x="${x}" y="${stripY}" width="${nd.size*cell}" height="${stripH}"/>`;alt++;}
+  }
+  for(let p=1;p<n;p++){const x=padX+p*cell;s+=`<line class="sep" x1="${x}" y1="${stripY}" x2="${x}" y2="${stripY+stripH}"/>`;}
+  // onsets
+  const ons=new Set(S.onsets);const r=Math.min(cell*0.26,9);
+  for(const o of ons){const cx=padX+o*cell+cell/2;s+=`<circle class="onset${syncSet.has(o)?' sync':''}" cx="${cx}" cy="${stripY+stripH/2}" r="${r}"/>`;}
+  // numbers and weights
+  for(let p=0;p<n;p++){
+    const cx=padX+p*cell+cell/2;
+    s+=`<text class="num" x="${cx}" y="${numY}">${p+1}</text>`;
+    const h=Math.max(3,Math.round(wMaxH*w[p]/maxW));
+    s+=`<rect class="wbar${w[p]===maxW?' top':''}" x="${cx-Math.min(cell*0.3,9)}" y="${wTop+wMaxH-h}" width="${Math.min(cell*0.6,18)}" height="${h}" rx="1.5"/>`;
+  }
+  // brackets
+  nodes.forEach((nd,i)=>{
+    const x0=padX+nd.start*cell+3,x1=padX+(nd.start+nd.size)*cell-3,y=top+nd.depth*rowH+14;
+    const cls=nd===S.sel?'sel':(nd.kind==='open'?'open':'');
+    const lab=nd.kind==='open'?nd.size+'?':String(nd.size);
+    const lw=lab.length*8+12,mx=(x0+x1)/2;
+    s+=`<g class="nd" data-i="${i}" tabindex="0" role="button" aria-label="Group of ${nd.size} pulses, ${nd.start+1} to ${nd.start+nd.size}${nd.kind==='open'?', undecided':''}">`;
+    s+=`<rect class="hit" x="${x0-2}" y="${y-13}" width="${x1-x0+4}" height="26"/>`;
+    s+=`<path class="br ${cls}" d="M${x0} ${y+9} V${y} H${x1} V${y+9}"/>`;
+    s+=`<rect class="pill" x="${mx-lw/2}" y="${y-9}" width="${lw}" height="18" rx="4"/>`;
+    s+=`<text class="blabel ${cls}" x="${mx}" y="${y+5}">${lab}</text></g>`;
+  });
+  s+='</svg>';
+  wrap.innerHTML=s;
+  wrap.querySelectorAll('.nd').forEach(g=>{
+    const pick=()=>{S.sel=S.nodes[+g.dataset.i];setMode('top');refresh();};
+    g.addEventListener('click',pick);
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+  });
+}
+
+function renderFormula(){
+  const r=S.root;let f;
+  if(r.kind==='open')f=`<span class="q">${r.size}?</span> <span class="muted" style="font-size:.6em">not split yet</span>`;
+  else if(r.kind==='leaf')f=`${r.size} <span class="muted" style="font-size:.6em">as one group</span>`;
+  else f=fmtNode(r);
+  $('#formula').innerHTML=f;
+}
+
+function listSizes(){return [...S.leaves].sort((a,b)=>a-b).join(', ');}
+
+function renderTop(){
+  const el=$('#panel-top');
+  if(T[S.n]===0n){el.innerHTML=`<p class="empty">No hierarchy of ${S.n} pulses can be built from groups of ${listSizes()||'no sizes'}. Allow another smallest size, such as 1 or 3.</p>`;return;}
+  const nd=S.sel||S.root;const m=nd.size;
+  const path=[];let p=nd;while(p){path.unshift(p);p=p.parent;}
+  let h=`<div class="sel-head"><h3>Group of ${m}<span class="range">pulses ${nd.start+1}–${nd.start+m}</span></h3>`;
+  if(path.length>1)h+=`<p class="path">Path from the top: ${path.map(q=>q===nd?`<strong>${q.size}</strong>`:`<button class="link" data-sel="${S.nodes.indexOf(q)}">${q.size}</button>`).join(' › ')}</p>`;
+  h+='</div><div class="actions">';
+  if(S.leaves.has(m))h+=`<button data-act="leaf" aria-pressed="${nd.kind==='leaf'}">Keep as one group</button>`;
+  if(nd.kind!=='open')h+=`<button data-act="clear">Undo this choice</button>`;
+  if(T[m]>0n)h+=`<button data-act="rand">Fill this group at random</button>`;
+  h+='</div>';
+  const ks=[];for(let k=2;k<=bOf(m);k++)if(Ck[k][m]>0n)ks.push(k);
+  if(!ks.length){
+    h+=`<p class="muted small">A group of ${m} can’t be split under these rules${S.leaves.has(m)?', so it stays one group':''}.</p>`;
+  }else{
+    if(!ks.includes(S.k))S.k=ks[0];
+    h+=`<div class="ktabs" role="tablist" aria-label="Number of parts">${ks.map(k=>`<button role="tab" data-k="${k}" aria-selected="${k===S.k}">${k} parts</button>`).join('')}</div>`;
+    const total=countSplits(m,S.k);const opts=[];
+    for(const c of splitGen(m,S.k)){opts.push(c);if(opts.length>=CAP)break;}
+    h+=`<p class="muted small">${fmt(total)} way${total===1n?'':'s'} to split ${m} into ${S.k} parts${total>BigInt(opts.length)?`; showing the first ${opts.length}`:''}. The number under each split is how many complete hierarchies it leads to.</p>`;
+    const cur=nd.kind==='split'?nd.children.map(q=>q.size).join(','):'';
+    h+=`<div class="opts">${opts.map(c=>{const t=c.reduce((acc,x)=>acc*T[x],1n);return `<button class="opt" data-split="${c.join(',')}" aria-pressed="${cur===c.join(',')}"><span class="f">${c.join(' + ')}</span><span class="c">${fmt(t)} hierarch${t===1n?'y':'ies'}</span></button>`;}).join('')}</div>`;
+  }
+  const open=S.nodes.filter(q=>q.kind==='open');
+  if(open.length)h+=`<p class="small" style="margin-top:14px">Still open: ${open.map(q=>`<button class="link" data-sel="${S.nodes.indexOf(q)}">${q.size} at pulse ${q.start+1}</button>`).join(', ')}</p>`;
+  else h+=`<p class="small done" style="margin-top:14px">Every group is decided. This is one complete hierarchy.</p>`;
+  el.innerHTML=h;
+}
+
+function renderBottom(){
+  const el=$('#panel-bottom');
+  if(P[S.n]===0n){el.innerHTML=`<p class="empty">No sequence of groups sized ${listSizes()||'(none)'} adds up to ${S.n}. Allow another smallest size.</p>`;return;}
+  let h='';
+  if(!S.surface){
+    const list=[];for(const c of surfGen(S.n)){list.push(c);if(list.length>=CAP)break;}
+    h+=`<h3>Bottom-level groups</h3><p class="muted small">${fmt(P[S.n])} way${P[S.n]===1n?'':'s'} to fill ${S.n} pulses with groups of ${listSizes()}${P[S.n]>BigInt(list.length)?`; showing the first ${list.length}`:''}. Pick one to see every way to bracket it.</p>`;
+    h+=`<div class="opts">${list.map(c=>`<button class="opt" data-surf="${c.join(',')}"><span class="f">${c.join(' + ')}</span><span class="c">${fmt(SB[c.length])} bracketing${SB[c.length]===1n?'':'s'}</span></button>`).join('')}</div>`;
+  }else{
+    const sz=S.surface;
+    h+=`<p class="small"><button class="link" data-back="1">All bottom-level sequences</button></p>`;
+    h+=`<h3>Bracketings of ${sz.join(' + ')}</h3>`;
+    if(!S.brList.length){
+      if(sz.length===1)S.brList=[{size:sz[0],kind:'leaf',children:[]}];
+      else{for(const t of bracket(sz,0,sz.length)){S.brList.push(t);if(S.brList.length>=CAP)break;}}
+    }
+    const tot=SB[sz.length];
+    h+=`<p class="muted small">${fmt(tot)} way${tot===1n?'':'s'} to group these ${sz.length} part${sz.length===1?'':'s'}${tot>BigInt(S.brList.length)?`; showing the first ${S.brList.length}`:''}. Each one loads into the diagram, where you can keep editing it from the top down.</p>`;
+    h+=`<div class="opts">${S.brList.map((t,i)=>{const k=fmtPlain(t);return `<button class="opt" data-br="${i}" aria-pressed="${S.loaded===k}"><span class="f">${t.kind==='leaf'?t.size+' as one group':fmtNode(t)}</span></button>`;}).join('')}</div>`;
+  }
+  el.innerHTML=h;
+}
+
+function renderStats(){
+  const n=S.n,tot=T[n];
+  let h='<dl>';
+  h+=`<div><dt>Hierarchies of ${n} pulses under these rules</dt><dd>${fmt(tot)}</dd></div>`;
+  h+=`<div><dt>Bottom-level sequences</dt><dd>${fmt(P[n])}</dd></div>`;
+  if(tot>0n)h+=`<div><dt>Check</dt><dd class="prose">Adding up the bracketings of every bottom-level sequence gives ${fmt(S.check)}${S.check===tot?', the same total as building from the top':', which should match the top-down total'}.</dd></div>`;
+  const open=S.nodes.filter(q=>q.kind==='open');
+  if(open.length&&tot>0n){let rem=1n;for(const q of open)rem*=T[q.size];h+=`<div><dt>Ways to finish the current tree</dt><dd>${fmt(rem)}</dd></div>`;}
+  const sy=syncScore(weights());
+  if(sy){
+    const hits=sy.per.filter(p=>p[1]>0);
+    h+=`<div><dt>Syncopation of your onsets</dt><dd>${sy.tot}</dd>${hits.length?`<dd class="prose">From pulse ${hits.map(p=>`${p[0]+1} (+${p[1]})`).join(', ')}, where a stronger pulse falls in the silence that follows.</dd>`:`<dd class="prose">Every onset is followed only by weaker or equal pulses.</dd>`}</div>`;
+  }
+  h+='</dl><div class="notes">';
+  const L=[...S.leaves].sort((a,b)=>a-b).join(',');
+  if(L==='1,2')h+='<p>With groups of 1 and 2, the number of bottom-level sequences follows the Fibonacci numbers.</p>';
+  if(L==='2,3')h+='<p>With groups of 2 and 3, the number of bottom-level sequences follows the Padovan numbers.</p>';
+  if(S.maxB===2)h+='<p>With binary splits only, the bracketings of a sequence of k groups follow the Catalan numbers.</p>';
+  if(S.maxB===0)h+='<p>With any number of parts per split, the bracketings of a sequence of k groups follow the little Schröder numbers: 1, 1, 3, 11, 45, 197…</p>';
+  h+='<p>Syncopation uses the Longuet-Higgins and Lee rule with the weights shown under the diagram. Changing the tree changes the score.</p></div>';
+  $('#stats').innerHTML=h;
+}
+
+function refresh(){
+  S.nodes=[];layout(S.root,0,0,S.nodes,null);
+  if(!S.nodes.includes(S.sel))S.sel=S.root;
+  renderFormula();draw();renderTop();renderBottom();renderStats();
+}
+function selectNextOpen(fallback){
+  S.nodes=[];layout(S.root,0,0,S.nodes,null);
+  S.sel=S.nodes.find(q=>q.kind==='open')||fallback;
+}
+function setMode(m){
+  S.mode=m;
+  $('#tab-top').setAttribute('aria-selected',m==='top');$('#tab-bottom').setAttribute('aria-selected',m==='bottom');
+  $('#panel-top').hidden=m!=='top';$('#panel-bottom').hidden=m!=='bottom';
+}
+function rulesChanged(){S.surface=null;S.brList=[];compute();newRoot();refresh();}
+
+// controls
+function renderRuleControls(){
+  $('#leaves').innerHTML=[1,2,3,4,5,6,7,8,9].map(v=>`<button data-l="${v}" aria-pressed="${S.leaves.has(v)}" aria-label="Allow groups of ${v}">${v}</button>`).join('');
+  $('#maxb').innerHTML=[[2,'2'],[3,'3'],[4,'4'],[0,'Any']].map(([v,l])=>`<button data-b="${v}" aria-pressed="${S.maxB===v}">${l}</button>`).join('');
+}
+$('#leaves').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const v=+b.dataset.l;S.leaves.has(v)?S.leaves.delete(v):S.leaves.add(v);renderRuleControls();rulesChanged();});
+$('#maxb').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.maxB=+b.dataset.b;renderRuleControls();rulesChanged();});
+function setN(v){v=Math.max(2,Math.min(96,Math.round(+v||8)));S.n=v;$('#n').value=v;S.onsets=S.onsets.filter(o=>o<v);rulesChanged();}
+$('#n').addEventListener('change',e=>setN(e.target.value));
+$('#nminus').addEventListener('click',()=>setN(S.n-1));
+$('#nplus').addEventListener('click',()=>setN(S.n+1));
+$('#onsets').addEventListener('input',e=>{
+  S.onsets=(e.target.value.match(/\d+/g)||[]).map(Number).filter(x=>x>=1&&x<=S.n).map(x=>x-1);
+  refresh();
+});
+$('#tab-top').addEventListener('click',()=>setMode('top'));
+$('#tab-bottom').addEventListener('click',()=>setMode('bottom'));
+$('#randAll').addEventListener('click',()=>{if(T[S.n]===0n)return;S.root=sampleNode(S.n);S.sel=S.root;S.loaded=null;refresh();});
+$('#fillOpen').addEventListener('click',()=>{
+  if(T[S.n]===0n)return;
+  for(const q of S.nodes)if(q.kind==='open'&&T[q.size]>0n){const t=sampleNode(q.size);q.kind=t.kind;q.children=t.children;}
+  refresh();
+});
+$('#reset').addEventListener('click',()=>{newRoot();refresh();});
+
+$('#panel-top').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const nd=S.sel;
+  if(b.dataset.sel!==undefined){S.sel=S.nodes[+b.dataset.sel];refresh();return;}
+  if(b.dataset.k){S.k=+b.dataset.k;renderTop();return;}
+  if(b.dataset.split){nd.kind='split';nd.children=b.dataset.split.split(',').map(x=>({size:+x,kind:'open',children:[]}));S.loaded=null;selectNextOpen(nd);refresh();return;}
+  const a=b.dataset.act;
+  if(a==='leaf'){nd.kind='leaf';nd.children=[];selectNextOpen(nd);}
+  else if(a==='clear'){nd.kind='open';nd.children=[];}
+  else if(a==='rand'){const t=sampleNode(nd.size);nd.kind=t.kind;nd.children=t.children;}
+  S.loaded=null;refresh();
+});
+$('#panel-bottom').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.back){S.surface=null;S.brList=[];renderBottom();return;}
+  if(b.dataset.surf){S.surface=b.dataset.surf.split(',').map(Number);S.brList=[];renderBottom();return;}
+  if(b.dataset.br!==undefined){const t=S.brList[+b.dataset.br];S.root=strip(t);S.sel=S.root;S.loaded=fmtPlain(t);refresh();return;}
+});
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(draw,120);});
+
+renderRuleControls();compute();newRoot();refresh();
+</script>
+<script>
+/* ===== Ratio prism: pure math ===== */
+const PR={text:'1/1 10/9 9/8 5/4 3/2',reading:'linear',N:53,mode:0,lens:'even',grid:16,meterSel:0,meterCmp:null,fourJ:null,zShow:null,zcache:{},zf:null,zprev:null,zmode:'move',zmax:6,f0:110,harm:12,pair:null,seqDur:null,seqRef:null,seqMode:'cycle',seqText:null,seqBeat:1,seqOn:new Set(),seqKey:'',addSizes:new Set([3,5]),sbSel:null};
+function gcdN(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
+function lcmN(a,b){return a/gcdN(a,b)*b;}
+function mkR(n,d){if(!(n>0&&d>0))return null;while(n<d)n*=2;while(n>=2*d)d*=2;const g=gcdN(n,d);return {n:n/g,d:d/g};}
+const rv=r=>r.n/r.d;
+const rstr=r=>`${r.n}/${r.d}`;
+function parseRatios(txt){
+  const toks=txt.split(/[\s,;]+/).filter(Boolean);const out=[],bad=[];
+  for(const t of toks){const m=t.match(/^(\d+)(?:\/(\d+))?$/);const r=m?mkR(+m[1],m[2]?+m[2]:1):null;
+    if(!r){bad.push(t);continue;} if(!out.some(x=>x.n===r.n&&x.d===r.d))out.push(r);}
+  let added=false;if(!out.some(x=>x.n===1&&x.d===1)){out.push({n:1,d:1});added=true;}
+  out.sort((a,b)=>rv(a)-rv(b));return {ratios:out.slice(0,24),bad,added,cut:out.length>24};
+}
+function modeOf(rs,root){return rs.map(r=>mkR(r.n*root.d,r.d*root.n)).sort((a,b)=>rv(a)-rv(b));}
+function lcdOf(rs){let L=1;for(const r of rs){L=lcmN(L,r.d);if(L>1e12)return null;}return L;}
+function linearRing(rs){
+  const L=lcdOf(rs);if(!L)return null;
+  return {L,ons:rs.map(r=>({slot:(r.n-r.d)*(L/r.d),ratios:[r]}))};
+}
+function logRing(rs,N){
+  const m=new Map();
+  for(const r of rs){const s=((Math.round(Math.log2(rv(r))*N))%N+N)%N;if(!m.has(s))m.set(s,[]);m.get(s).push(r);}
+  return {L:N,ons:[...m.entries()].sort((a,b)=>a[0]-b[0]).map(([slot,ratios])=>({slot,ratios}))};
+}
+function gapsOf(A,L){return A.map((a,i)=>(i+1<A.length?A[i+1]:L+A[0])-a);}
+function euclid(k,n){const p=[];for(let i=0;i<k;i++)p.push(Math.floor(i*n/k));return p;}
+function align(A,E,L){
+  const k=A.length;let best=null;const cands=new Set();
+  for(const a of A)for(const e of E)cands.add(((a-e)%L+L)%L);
+  for(const s of cands){
+    const B=E.map(e=>(e+s)%L).sort((x,y)=>x-y);
+    for(let j=0;j<k;j++)for(const sh of [-L,0,L]){
+      let c=0;const m=[];
+      for(let i=0;i<k;i++){const idx=(i+j)%k;const b=B[idx]+(i+j>=k?L:0)+sh;c+=Math.abs(A[i]-b);m.push(b);}
+      if(!best||c<best.cost)best={cost:c,match:m.map(b=>((b%L)+L)%L)};
+    }
+  }
+  return best;
+}
+const variance=g=>{const mu=g.reduce((a,b)=>a+b,0)/g.length;return g.reduce((a,b)=>a+(b-mu)**2,0)/g.length;};
+function factorize(L){const f=[];let x=L;for(let p=2;p*p<=x;p++)while(x%p===0){f.push(p);x/=p;}if(x>1)f.push(x);return f;}
+function uniquePerms(arr,cap){
+  const res=[],cnt=new Map();arr.forEach(a=>cnt.set(a,(cnt.get(a)||0)+1));
+  const keys=[...cnt.keys()].sort((a,b)=>a-b),cur=[];
+  (function rec(){if(res.length>=cap)return;if(cur.length===arr.length){res.push(cur.slice());return;}
+    for(const k of keys)if(cnt.get(k)>0){cnt.set(k,cnt.get(k)-1);cur.push(k);rec();cur.pop();cnt.set(k,cnt.get(k)+1);}})();
+  return res;
+}
+function divisiveScore(L,order,A){
+  const sizes=[L];let z=L;for(const f of order){z/=f;sizes.push(z);}
+  const top=sizes.length;
+  const w=p=>{if(p===0)return top;let c=0;for(const s of sizes)if(p%s===0)c++;return c;};
+  const maxBetween=(a,b)=>{for(let j=0;j<sizes.length;j++){const s=sizes[j];const nx=(Math.floor(a/s)+1)*s;if(nx<b)return top-j;}return -1;};
+  let sync=0;const per=[];
+  A.forEach((a,i)=>{const b=i+1<A.length?A[i+1]:L;const s=Math.max(0,maxBetween(a,b)-w(a));sync+=s;per.push(s);});
+  return {sync,weights:A.map(w),per,top,beat:sizes[1]||1};
+}
+function arrayScore(L,warr,A){
+  let sync=0;const per=[];
+  A.forEach((a,i)=>{const b=i+1<A.length?A[i+1]:L;let mx=-1;for(let r=a+1;r<b;r++)mx=Math.max(mx,warr[r%L]);const s=Math.max(0,mx-warr[a]);sync+=s;per.push(s);});
+  return {sync,weights:A.map(a=>warr[a]),per,top:Math.max(...warr)};
+}
+
+function hierDivisive(L,order){
+  const sizes=[L];let z=L;for(const f of order){z/=f;sizes.push(z);}const top=sizes.length;
+  return {kind:'div',name:order.join('×'),order,sizes,top,beat:sizes[1]||1,
+    w:p=>{p=((p%L)+L)%L;if(p===0)return top;let c=0;for(const x of sizes)if(p%x===0)c++;return c;},
+    maxBetween:(a,b)=>{for(let j=0;j<sizes.length;j++){const x=sizes[j];const nx=(Math.floor(a/x)+1)*x;if(nx<b)return top-j;}return -1;}};
+}
+function hierArray(L,warr,name,kind,extra){
+  return Object.assign({kind,name,top:Math.max(...warr),warr,w:p=>warr[((p%L)+L)%L],
+    maxBetween:(a,b)=>{let mx=-1;for(let r=a+1;r<b;r++)mx=Math.max(mx,warr[r%L]);return mx;}},extra||{});
+}
+function scoreH(h,A,L){
+  let sync=0;const per=[];
+  A.forEach((a,i)=>{const b=i+1<A.length?A[i+1]:A[0]+L;const x=Math.max(0,h.maxBetween(a,b)-h.w(a));sync+=x;per.push(x);});
+  return {sync,per,weights:A.map(a=>h.w(a))};
+}
+function additiveSearch(A,L,sizes){
+  const on=new Array(L+1).fill(false);A.forEach(a=>on[a]=true);
+  const prevOn=new Array(L).fill(-1);let last=-1;for(let p=0;p<L;p++){if(on[p])last=p;prevOn[p]=last;}
+  const cost=(s,t)=>{if(t>=L)return 0;const o=prevOn[t-1];if(o<=s)return 0;return on[t]?0:1;};
+  const dist=new Array(L+1).fill(null),best=new Array(L+1).fill(null);
+  dist[L]=new Map([[0,1n]]);best[L]={sync:0,hits:0,len:0};
+  for(let st=L-1;st>=0;st--){
+    let m=null,b=null;
+    for(const len of sizes){const t=st+len;if(t>L||!dist[t])continue;const c=cost(st,t);
+      if(!m)m=new Map();for(const [v,n] of dist[t])m.set(v+c,(m.get(v+c)||0n)+n);
+      const cand={sync:best[t].sync+c,hits:best[t].hits+(on[st]?1:0),len};
+      if(!b||cand.sync<b.sync||(cand.sync===b.sync&&cand.hits>b.hits))b=cand;}
+    dist[st]=m;best[st]=b;
+  }
+  if(!dist[0])return null;
+  const groups=[];let x=0;while(x<L){groups.push(best[x].len);x+=best[x].len;}
+  const d=[...dist[0].entries()].sort((a,b)=>a[0]-b[0]);
+  return {groups,minSync:best[0].sync,dist:d,total:d.reduce((a,e)=>a+e[1],0n)};
+}
+
+function dft(pos,j){let re=0,im=0;for(const x of pos){re+=Math.cos(2*Math.PI*j*x);im-=Math.sin(2*Math.PI*j*x);}return {mag:Math.hypot(re,im),ph:Math.atan2(im,re)};}
+function ivOf(A,L){const H=L>>1,c=new Array(H+1).fill(0);for(let i=0;i<A.length;i++)for(let j=i+1;j<A.length;j++){const d=Math.abs(A[i]-A[j]);c[Math.min(d,L-d)]++;}return c;}
+function canonKey(S,L){let best=null;for(const sg of [1,-1]){const s=S.map(x=>((sg*x)%L+L)%L);for(const a of s){const t=s.map(x=>(x-a+L)%L).sort((x,y)=>x-y).join(',');if(best===null||t<best)best=t;}}return best;}
+function zPartners(A,L,cap){
+  const k=A.length,target=ivOf(A,L),cnt=new Array(target.length).fill(0),cur=[0],found=new Map(),me=canonKey(A,L);
+  let steps=0,aborted=false;
+  (function rec(start){
+    if(aborted)return;
+    if(cur.length===k){const key=canonKey(cur,L);if(key!==me&&!found.has(key))found.set(key,key.split(',').map(Number));return;}
+    for(let x=start;x<L;x++){
+      if(++steps>cap){aborted=true;return;}
+      let bad=false;for(const y of cur){const d=Math.min(x-y,L-x+y);cnt[d]++;if(cnt[d]>target[d])bad=true;}
+      if(!bad){cur.push(x);rec(x+1);cur.pop();}
+      for(const y of cur){const d=Math.min(x-y,L-x+y);cnt[d]--;}
+      if(aborted)return;
+    }
+  })(1);
+  return {partners:[...found.values()],aborted,steps};
+}
+
+function* zCandidates(A,L,maxD,addOne){
+  const k=A.length,delta=new Array(k).fill(0);
+  function* rec(i,rem,x){
+    if(i===k){if(rem)return;const P=A.map((a,j)=>((a+delta[j])%L+L)%L);if(x!==null)P.push(x);yield {P,delta:delta.slice(),x};return;}
+    if(i===0){yield* rec(1,rem,x);return;}
+    for(let v=-rem;v<=rem;v++){delta[i]=v;yield* rec(i+1,rem-Math.abs(v),x);}
+    delta[i]=0;
+  }
+  for(let dd=addOne?0:1;dd<=maxD;dd++){
+    if(addOne){for(let x=1;x<L;x++){if(A.includes(x))continue;yield* rec(0,dd,x);}}
+    else yield* rec(0,dd,null);
+    yield {levelDone:dd};
+  }
+}
+function startZFind(){
+  const R=PD.R,A=R.A,L=R.L;const addOne=PR.zmode==='add';
+  const st={key:`${L}|${A.join(',')}|${PR.zmode}|${PR.zmax}`,addOne,running:true,level:addOne?0:1,res:[],tested:0,d:null,timedOut:false,stopped:false,t0:Date.now()};
+  PR.zf=st;PR.zprev=null;
+  const gen=zCandidates(A,L,PR.zmax,addOne),me=canonKey(A,L),memo=new Map();let seen=new Set();
+  const finish=()=>{st.running=false;st.ms=Date.now()-st.t0;if(st.res.length&&st.d===null){st.d=st.level;st.partial=true;}renderPrism();};
+  function step(){
+    if(PR.zf!==st)return;
+    if(st.stopped){finish();return;}
+    const t=performance.now();
+    while(performance.now()-t<30){
+      const n=gen.next();
+      if(n.done){finish();return;}
+      const v=n.value;
+      if(v.levelDone!==undefined){if(st.res.length){st.d=v.levelDone;finish();return;}st.level=v.levelDone+1;seen=new Set();continue;}
+      if(new Set(v.P).size<v.P.length)continue;
+      const key=canonKey(v.P,L);if(key===me||seen.has(key))continue;seen.add(key);
+      let z=memo.get(key);
+      if(z===undefined){const zz=zPartners(v.P.slice().sort((a,b)=>a-b),L,3e5);z=zz.partners.length?zz.partners[0]:null;memo.set(key,z);st.tested++;}
+      if(z&&st.res.length<24)st.res.push({...v,partner:z,pal:alignTo(v.P,z,L).Q});
+    }
+    if(Date.now()-st.t0>15000){st.timedOut=true;finish();return;}
+    const el=document.getElementById('zstatus');
+    if(el)el.textContent=`Searching ${st.addOne?'additions with ':''}movement ${st.level}… ${st.tested.toLocaleString('en-US')} rhythms tested.`;
+    setTimeout(step,0);
+  }
+  renderPrism();setTimeout(step,0);
+}
+function cmpArr(a,b){for(let i=0;i<a.length;i++)if(a[i]!==b[i])return a[i]-b[i];return 0;}
+function slotsToGaps(S,L){const t=S.slice().sort((a,b)=>a-b);return t.map((x,i)=>(i+1<t.length?t[i+1]:L+t[0])-x);}
+function rhythmName(S,L){
+  let g=slotsToGaps(S,L);const k=g.length;const gg=g.reduce((a,b)=>gcdN(a,b));g=g.map(x=>x/gg);
+  let rhy=null,bi=0;for(let r=0;r<k;r++){const t=g.slice(r).concat(g.slice(0,r));if(!rhy||cmpArr(t,rhy)<0){rhy=t;bi=r;}}
+  let cls=rhy,mir=false;const rv=g.slice().reverse();for(let r=0;r<k;r++){const t=rv.slice(r).concat(rv.slice(0,r));if(cmpArr(t,cls)<0){cls=t;mir=true;}}
+  const t=S.slice().sort((a,b)=>a-b);const ri=Math.max(0,t.indexOf(0));const j=((ri-bi)%k+k)%k+1;
+  return {cls,rhy,j,L:L/gg,k,mir,factor:gg};
+}
+const fmtG=g=>`⟨${g.join(' ')}⟩`;
+const clsName=(S,L)=>{const n=rhythmName(S,L);return `${n.L}·${n.k} ${fmtG(n.cls)}`;};
+function alignTo(A,P,L){
+  const As=new Set(A);let best=null;
+  for(const sg of [1,-1])for(let sh=0;sh<L;sh++){
+    const Q=P.map(x=>((sg*x+sh)%L+L)%L).sort((a,b)=>a-b);
+    const lost=A.filter(x=>!Q.includes(x)).sort((a,b)=>a-b),gain=Q.filter(x=>!As.has(x)).sort((a,b)=>a-b);
+    let dist=0;lost.forEach((x,i)=>{const dd=Math.abs(x-gain[i]);dist+=Math.min(dd,L-dd);});
+    const sc=[Q.filter(x=>As.has(x)).length,Q.includes(0)?1:0,-dist,sg===1?1:0];
+    let better=!best;if(best){for(let i=0;i<sc.length;i++){if(sc[i]!==best.sc[i]){better=sc[i]>best.sc[i];break;}}}
+    if(better)best={Q,sc,mir:sg===-1,shared:sc[0]};
+  }
+  return best;
+}
+function zCell(arr,L,other){
+  const lin=PR.reading==='linear';const os=other?new Set(other):null;
+  const lab=x=>{const t=lin?rstr(mkR(L+x,L)):Math.round(x*1200/L)+'¢';return os&&!os.has(x)?`<span class="zdiff">${t}</span>`:t;};
+  return `<td style="white-space:normal;min-width:170px"><span style="font-family:Spectral,Georgia,serif;font-size:16px">${arr.map(lab).join(' ')}</span><span class="zrow3">pulses ${arr.map(pulse).join(' ')}</span><span class="zrow3">onset slots ${arr.join(' ')}</span></td>`;
+}
+PR.catalog=(()=>{try{return JSON.parse(localStorage.getItem('rrl-catalog')||'[]');}catch(e){return [];}})();
+function saveCat(){try{localStorage.setItem('rrl-catalog',JSON.stringify(PR.catalog));}catch(e){}}
+function makeEntry(S,L,z,note){
+  const n=rhythmName(S,L);const lin=PR.reading==='linear';
+  const vals=S.slice().sort((a,b)=>a-b).map(x=>lin?rstr(mkR(L+x,L)):Math.round(x*1200/L)+'¢').join(' ');
+  return {cls:`${n.L}·${n.k} ${fmtG(n.cls)}`,scale:`${fmtG(n.rhy)}@${n.j}`,vals,reading:lin?'linear':`log ${L}`,z:z||'',note:note||''};
+}
+function addCat(e){if(!PR.catalog.some(x=>x.scale===e.scale&&x.cls===e.cls&&x.vals===e.vals)){PR.catalog.push(e);saveCat();}}
+function catText(){return ['Class\tScale\tRatios or steps\tReading\tZ-partners\tNote'].concat(PR.catalog.map(e=>[e.cls,e.scale,e.vals,e.reading,e.z,e.note].join('\t'))).join('\n');}
+function renderCatalog(){
+  $('#pcatsum').textContent=`Catalog (${PR.catalog.length})`;
+  if(!PR.catalog.length){$('#pcatbody').innerHTML='<p class="muted small">Nothing here yet. Use “Add to catalog” on the current set or on any Z-partner. The catalog is kept in this browser.</p>';return;}
+  $('#pcatbody').innerHTML=`<div class="tblwrap"><table class="tbl"><tr><th>Class</th><th>Scale</th><th>Ratios or steps</th><th>Z-partners</th><th></th></tr>${PR.catalog.map((e,i)=>`<tr><td>${e.cls}</td><td>${e.scale}</td><td style="white-space:normal">${e.vals}<span class="zrow3">${e.reading}${e.note?'; '+e.note:''}</span></td><td style="white-space:normal">${e.z||'<span class="muted">not searched</span>'}</td><td style="white-space:nowrap"><button class="link" data-catplay="${i}">Play</button> · ${e.reading==='linear'?`<button class="link" data-catload="${i}">Load</button> · `:''}<button class="link" data-catdel="${i}">Remove</button></td></tr>`).join('')}</table></div>
+  <div class="btnrow"><button data-cat="copy">Copy as text</button><button data-cat="clear">Clear catalog</button></div><textarea id="cattext" readonly style="width:100%;height:90px;margin-top:8px;font:12px ui-monospace,Menlo,monospace;background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-radius:6px" aria-label="Catalog as tab-separated text">${catText()}</textarea>`;
+}
+function zStatusFor(A,L){const zr=PR.zcache[`${L}|${A.join(',')}`];if(!zr)return '';return zr.partners.length?zr.partners.map(p=>clsName(p,L)).join('; '):'none';}
+
+let ACTX=null,ASRC=null;
+const speedToHz=v=>0.5*Math.pow(1760,v/1000);
+const hzToSpeed=f=>1000*Math.log(f/0.5)/Math.log(1760);
+function noteName(f){const n=Math.round(12*Math.log2(f/440))+57;const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];const cents=Math.round(100*(12*Math.log2(f/440)+57-n));return `${names[((n%12)+12)%12]}${Math.floor(n/12)}${cents?` ${cents>0?'+':'−'}${Math.abs(cents)}¢`:''}`;}
+function speedLabel(f){return f<20?`one cycle every ${(1/f).toFixed(f<1?2:3)} s (${(60*f).toFixed(f<1?1:0)} cycles per minute): heard as rhythm`:`${f.toFixed(1)} Hz, near ${noteName(f)}: heard as pitch`;}
+function synthPulse(S,L,f0,dur,sr){
+  const n=Math.floor(dur*sr),buf=new Float32Array(n),P=sr/f0,half=8;
+  for(let c=0;c*P<n+half;c++)for(const a of S){const pos=(c+a/L)*P;const i0=Math.max(0,Math.ceil(pos-half)),i1=Math.min(n-1,Math.floor(pos+half));
+    for(let i=i0;i<=i1;i++){const x=i-pos;const sc=Math.abs(x)<1e-9?1:Math.sin(Math.PI*x)/(Math.PI*x);buf[i]+=sc*(0.5+0.5*Math.cos(Math.PI*x/half));}}
+  let m=0;for(let i=0;i<n;i++)m+=buf[i];m/=n;for(let i=0;i<n;i++)buf[i]-=m;
+  const fade=Math.floor(0.01*sr);for(let i=0;i<fade&&i<n;i++){buf[i]*=i/fade;buf[n-1-i]*=i/fade;}
+  return buf;
+}
+function playPair(which){
+  const p=PR.pair;if(!p)return;
+  try{if(!ACTX)ACTX=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+  if(ACTX.state==='suspended')ACTX.resume();
+  if(ASRC){try{ASRC.stop();}catch(e){}ASRC=null;}
+  if(which==='stop')return;
+  const sr=ACTX.sampleRate,f0=PR.f0,dur=Math.min(8,Math.max(2.5,2/f0));
+  const a=synthPulse(p.X,p.L,f0,dur,sr),b=synthPulse(p.Y,p.L,f0,dur,sr);
+  let pk=1e-9;for(const v of a)pk=Math.max(pk,Math.abs(v));for(const v of b)pk=Math.max(pk,Math.abs(v));const g=0.8/pk;
+  let parts=which==='A'?[a]:which==='B'?[b]:[a,b,a,b];
+  const gap=Math.floor(0.35*sr);const total=parts.reduce((t,x)=>t+x.length,0)+gap*(parts.length-1);
+  const ab=ACTX.createBuffer(1,total,sr);const ch=ab.getChannelData(0);let o=0;
+  parts.forEach((x,i)=>{for(let j=0;j<x.length;j++)ch[o+j]=x[j]*g;o+=x.length+gap;});
+  const src=ACTX.createBufferSource();src.buffer=ab;src.connect(ACTX.destination);src.start();ASRC=src;
+}
+function wavePlot(X,Y,L,H,lab){
+  const W=640,h=96,gap=34,N=480;
+  const curve=S=>{const pts=[];for(let i=0;i<=N;i++){const th=2*Math.PI*i/N;let v=0;for(const a of S){const d=th-2*Math.PI*a/L;for(let j=1;j<=H;j++)v+=Math.cos(j*d);}pts.push(v);}return pts;};
+  const cx=curve(X),cy=curve(Y);let mx=1e-9;for(const v of cx.concat(cy))mx=Math.max(mx,Math.abs(v));
+  const row=(pts,S,y0,title,color)=>{let d='';pts.forEach((v,i)=>{const x=40+(W-50)*i/N,y=y0+h/2-(h/2-4)*v/mx;d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);});
+    let g=`<text x="40" y="${y0-6}" style="font-size:13px;fill:var(--ink)">${title}</text><line x1="40" x2="${W-10}" y1="${y0+h/2}" y2="${y0+h/2}" stroke="var(--rule)"/><path d="${d}" style="fill:none;stroke:${color};stroke-width:1.8"/>`;
+    for(const a of S){const x=40+(W-50)*a/L;g+=`<line x1="${x}" x2="${x}" y1="${y0+h+2}" y2="${y0+h+9}" style="stroke:var(--ink);stroke-width:2"/>`;}
+    return g;};
+  return `<svg viewBox="0 0 ${W} ${2*h+2*gap+20}" width="100%" style="max-width:${W}px" role="img" aria-label="One period of each waveform">${row(cx,X,gap,'Yours','var(--ink)')}${row(cy,Y,2*gap+h+6,lab,'var(--lc)')}</svg>`;
+}
+
+const SEQ={timer:null,raf:null,start:0,next:0,dur:4,rows:[]};
+const fmtT=x=>x>=100?Math.round(x).toLocaleString('en-US'):x>=10?x.toFixed(1):x.toFixed(2);
+function seqLab(L){const d=PR.seqDur;let t=`${fmtT(d)} s per cycle (${fmtT(60/d)} cycles per minute); ${fmtT(L/d)} slots per second (${fmtT(60*L/d)} per minute)`;if(PR.seqMode==='pulse'&&PD&&PD.root){t=`This mode, rooted on ${rstr(PD.root)}, lasts ${rstr(PD.root)} × the 1/1 mode’s cycle: `+t;const L1=PR.reading==='linear'?lcdOf(PD.all):null;if(L1&&PR.seqRef)t+=`. Fundamental pulse held at ${fmtT(L1/PR.seqRef)} per second${L1*seqRho()!==L?`; each slot of this ${fmtNum(L)}-slot ring is ${fmtT(L1*seqRho()/L)} pulses`:''}`;}return t;}
+const seqRho=()=>PD&&PD.root?rv(PD.root):1;
+function seqBpm(L){return +(60*(L/PR.seqBeat)/PR.seqDur).toFixed(2);}
+const SEQ_FREQ=[880,587,1175,740,1480,659,1319,988];
+function seqClick(t,freq,acc){const o=ACTX.createOscillator(),g=ACTX.createGain();o.type='triangle';o.frequency.value=freq;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(acc?0.5:0.28,t+0.002);g.gain.exponentialRampToValueAtTime(0.0008,t+0.09);o.connect(g);g.connect(ACTX.destination);o.start(t);o.stop(t+0.1);}
+function seqStop(){if(SEQ.timer)clearInterval(SEQ.timer);if(SEQ.raf)cancelAnimationFrame(SEQ.raf);SEQ.timer=null;SEQ.raf=null;SEQ.rows=[];document.querySelectorAll('svg .ph').forEach(l=>l.setAttribute('visibility','hidden'));}
+function seqPlay(rows,dur){
+  seqStop();if(!rows.length)return;
+  try{if(!ACTX)ACTX=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+  if(ACTX.state==='suspended')ACTX.resume();
+  SEQ.rows=rows;SEQ.dur=dur;SEQ.start=ACTX.currentTime+0.12;SEQ.next=SEQ.start;
+  const tick=()=>{while(SEQ.next<ACTX.currentTime+0.35){for(const r of SEQ.rows)for(const a of r.S)seqClick(SEQ.next+dur*a/r.L,r.freq,a===0);SEQ.next+=dur;}};
+  tick();SEQ.timer=setInterval(tick,40);
+  const anim=()=>{const t=ACTX.currentTime-SEQ.start;const fr=t<0?0:(t/dur)%1;
+    document.querySelectorAll('svg .ph').forEach(l=>{const w=+l.dataset.w,x0=+l.dataset.x0;const x=x0+fr*w;l.setAttribute('x1',x);l.setAttribute('x2',x);l.setAttribute('visibility','visible');});
+    SEQ.raf=requestAnimationFrame(anim);};
+  SEQ.raf=requestAnimationFrame(anim);
+}
+function seqRows(){
+  const R=PD.R,L=R.L,A=R.A,lin=PR.reading==='linear';const nm=x=>lin?rstr(mkR(L+x,L)):Math.round(x*1200/L)+'¢';
+  const rows=[{id:'you',label:'Yours',S:A}];
+  const zr=PR.zcache[`${L}|${A.join(',')}`];
+  if(zr)zr.partners.slice(0,6).forEach((p,i)=>rows.push({id:'z'+i,label:`Z-partner ${i+1}`,S:alignTo(A,p,L).Q,diff:A}));
+  const zfOk=PR.zf&&PR.zf.key.startsWith(`${L}|${A.join(',')}|`);
+  if(zfOk&&PR.zprev&&PR.zf.res[PR.zprev.i]){const r=PR.zf.res[PR.zprev.i];const P=r.P.slice().sort((a,b)=>a-b);rows.push({id:'fm'+PR.zprev.i,label:'Finder: changed',S:P,diff:A});rows.push({id:'fp'+PR.zprev.i,label:'Finder: its partner',S:r.pal||r.partner,diff:P});}
+  rows.forEach((r,i)=>{r.L=L;r.freq=SEQ_FREQ[i%SEQ_FREQ.length];r.sub=r.S.map(nm).join(' ');});
+  return rows;
+}
+function renderSeq(ld){
+  const el=document.getElementById('seqview');const R=PD.R,L=R.L;
+  const key=`${PR.reading}|${L}|${R.A.join(',')}`;
+  if(key!==PR.seqKey){PR.seqKey=key;PR.seqOn=new Set();seqStop();}
+  if(PR.seqText!==PR.text||PR.seqDur===null){PR.seqText=PR.text;PR.seqDur=Math.min(12,Math.max(2,Math.round(L/12*2)/2));PR.seqRef=PR.seqDur/seqRho();}
+  if(PR.seqMode==='pulse'){if(PR.seqRef===null)PR.seqRef=PR.seqDur/seqRho();PR.seqDur=PR.seqRef*seqRho();}
+  const rows=seqRows();
+  let h=`<h3>Grid preview</h3><p class="small">Your rhythm on a step grid, with any Z-partners found in the Spectrum lens (turned to line up with yours, differing onsets highlighted). Press ▶ on any rows to hear them; rows you turn on play together, each with its own click.</p>`;
+  const pulse=PR.seqMode==='pulse';
+  h+=`<div class="seqctl"><span class="small"><strong>Timing across re-rootings</strong></span><span class="seg">${[['cycle','Equal cycles'],['pulse','Equal pulse']].map(([v,l])=>`<button data-seqmode="${v}" aria-pressed="${PR.seqMode===v}">${l}</button>`).join('')}</span><span class="small muted" style="flex-basis:100%">${pulse?'The pulse of the shared fundamental stays fixed, so a mode rooted on r lasts r times as long as the 1/1 mode: switching roots is a metric modulation by the root ratio.':'Every re-rooting lasts the same time, so each mode’s slots get shorter or longer to fit its ring.'}</span></div>`;
+  h+=`<div class="seqctl"><label class="small" for="seqdur"><strong>${pulse?'Cycle of the 1/1 mode':'Cycle length'}</strong></label><input id="seqdur" type="range" min="0.25" max="16" step="0.25" value="${Math.min(16,Math.max(0.25,pulse?PR.seqRef:PR.seqDur))}" style="width:200px"><span class="small" id="seqdurlab">${seqLab(L)}</span></div><div class="seqctl" style="margin-top:0"><label class="small" for="seqbeat"><strong>One beat =</strong></label><input id="seqbeat" type="number" min="1" max="${L}" step="1" value="${PR.seqBeat}" style="width:64px;height:30px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);font:inherit;text-align:center"><span class="small">slot${PR.seqBeat===1?'':'s'}, so</span><input id="seqbpm" type="number" min="1" step="any" value="${seqBpm(L)}" style="width:92px;height:30px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);font:inherit;text-align:center"><span class="small">BPM (type a tempo to set the cycle length)</span><button data-seqact="stop" style="border:1px solid var(--rule);background:var(--sheet);border-radius:6px;padding:4px 12px">Stop</button></div>`;
+  if(L>400){el.innerHTML=h+`<p class="muted small">The grid is drawn for rings up to 400 slots; this one has ${fmtNum(L)}. Playback still works.</p><div class="btnrow"><button class="seqbtn" data-seq="you" aria-pressed="${PR.seqOn.has('you')}">▶</button></div>`;return;}
+  const cw=Math.max(6,Math.min(24,Math.floor(860/L))),Wd=L*cw+8,rh=26;
+  let msel=ld&&ld.meter&&ld.meter.sel?ld.meter.sel.h:null;
+  const wts=msel?Array.from({length:L},(_,p)=>msel.w(p)):null;const top=msel?msel.top:1;
+  let step=Math.ceil(26/cw);{let st=step;while(st<=L&&L%st)st++;if(st<=L/2)step=st;}
+  // header
+  let hdr=`<svg width="${Wd}" height="30" role="img" aria-label="Pulse numbers${msel?' and meter weights':''}">`;
+  for(let p=0;p<L;p++){const x=4+p*cw;if(wts){const hh=Math.max(1,12*(wts[p]-1)/Math.max(1,top-1));hdr+=`<rect x="${x+1}" y="${28-hh}" width="${Math.max(1,cw-2)}" height="${hh}" style="fill:var(--muted);opacity:.5"/>`;}
+    if(p%step===0)hdr+=`<text x="${x+cw/2}" y="11" text-anchor="middle" style="font-size:10px;fill:var(--muted)">${p+1}</text>`;}
+  hdr+='</svg>';
+  let body=`<div class="seqrow"><div class="seqhead"><span class="t"><strong style="font-size:12px">Pulse</strong><small>${msel?'bars: meter weight ('+msel.name.slice(0,24)+')':''}</small></span></div>${hdr}</div>`;
+  rows.forEach(r=>{const set=new Set(r.S),dif=r.diff?new Set(r.diff):null;
+    let g=`<svg width="${Wd}" height="${rh}" role="img" aria-label="${r.label} on the grid">`;
+    for(let p=0;p<L;p++){const x=4+p*cw;const shade=wts?0.04+0.22*(wts[p]-1)/Math.max(1,top-1):(p%step===0?0.12:0.03);
+      g+=`<rect x="${x}" y="3" width="${cw-1}" height="${rh-6}" style="fill:var(--muted);opacity:${shade.toFixed(3)}"/>`;
+      if(set.has(p))g+=`<rect x="${x}" y="3" width="${cw-1}" height="${rh-6}" rx="2" style="fill:${dif&&!dif.has(p)?'var(--accent)':'var(--ink)'}"/>`;}
+    g+=`<line class="ph" x1="4" x2="4" y1="0" y2="${rh}" data-x0="4" data-w="${L*cw}" visibility="hidden"/></svg>`;
+    body+=`<div class="seqrow"><div class="seqhead"><button class="seqbtn" data-seq="${r.id}" aria-pressed="${PR.seqOn.has(r.id)}" aria-label="Play ${r.label}">▶</button><span class="t"><span>${r.label}</span><small title="${r.sub}">${r.sub}</small></span></div>${g}</div>`;});
+  el.innerHTML=h+`<div class="seqscroll">${body}</div>${rows.length===1?`<p class="muted small">No Z-partners on the grid yet. Search for them in the Spectrum lens${R.k>=5?', or use its finder to make one appear':''}.</p>`:''}`;
+  if(SEQ.rows.length)requestAnimationFrame(()=>{});
+}
+function seqRefresh(){const rows=seqRows().filter(r=>PR.seqOn.has(r.id));seqPlay(rows,PR.seqDur);}
+const andList=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+function rotations(A,L,j){const r=A.map(a=>((a-A[j])%L+L)%L).sort((x,y)=>x-y);return r;}
+function weightStrips(L,A,rows){
+  const cw=Math.max(2,Math.min(16,Math.floor(720/L)));const W=L*cw+8,rowH=64,gap=30;
+  let s=`<svg viewBox="0 0 ${W} ${rows.length*(rowH+gap)}" width="100%" style="max-width:${W}px" role="img" aria-label="Stacked weight maps">`;
+  rows.forEach((x,i)=>{const y0=i*(rowH+gap)+20;
+    s+=`<text x="4" y="${y0-6}" style="font-size:13px;fill:var(--ink)">${x.label}</text>`;
+    for(let p=0;p<L;p++){const w=x.h.w(p);const hh=Math.max(1.5,(rowH-16)*w/x.h.top);
+      s+=`<rect x="${4+p*cw+0.5}" y="${y0+rowH-16-hh}" width="${Math.max(1,cw-1)}" height="${hh}" style="fill:${x.color};opacity:${w===x.h.top?1:0.6}"/>`;}
+    for(const a of A)s+=`<circle cx="${4+a*cw+cw/2}" cy="${y0+rowH-7}" r="${Math.min(4,cw/2+1)}" class="on"/>`;
+  });
+  return s+'</svg>';
+}
+function proximityTree(A,L){
+  const g=gapsOf(A,L);let cl=g.map(s=>({size:s,kind:'leaf',children:[]}));let bw=g.slice(0,-1);
+  const mk=run=>run.length===1?run[0]:{size:run.reduce((a,c)=>a+c.size,0),kind:'split',children:run};
+  while(cl.length>1){
+    const mn=Math.min(...bw);const nc=[],nb=[];let run=[cl[0]];
+    for(let i=0;i<bw.length;i++){if(bw[i]===mn)run.push(cl[i+1]);else{nc.push(mk(run));nb.push(bw[i]);run=[cl[i+1]];}}
+    nc.push(mk(run));cl=nc;bw=nb;
+  }
+  return cl[0];
+}
+function treeDepth(t){return t.kind==='split'?1+Math.max(...t.children.map(treeDepth)):0;}
+function treeFmt(t){return t.kind!=='split'?String(t.size):t.children.map(c=>c.kind==='split'?'('+treeFmt(c)+')':String(c.size)).join(' + ');}
+function sbPath(p,q){
+  // continued fraction runs; returns runs [{dir,t}], visited nodes, parents
+  const cf=[];let a=p,b=q;while(b){cf.push(Math.floor(a/b));[a,b]=[b,a%b];}
+  cf[cf.length-1]-=1;
+  let L=[0,1],R=[1,0];const runs=[],nodes=[[1,1]];
+  cf.forEach((t,i)=>{if(t<=0)return;const dir=i%2===0?'R':'L';
+    if(dir==='R')L=[L[0]+t*R[0],L[1]+t*R[1]];else R=[R[0]+t*L[0],R[1]+t*L[1]];
+    runs.push({dir,t});nodes.push([L[0]+R[0],L[1]+R[1]]);});
+  return {runs,nodes,left:L,right:R};
+}
+function quantGrid(R,M,tieUp=true){
+  const {L,ons}=R;let ties=0;
+  const res=ons.map(o=>{const num=o.slot*M;const q0=Math.floor(num/L);const rem=num-q0*L;let up=2*rem>L||(2*rem===L&&tieUp);if(2*rem===L)ties++;const q=up?q0+1:q0;return {o,q:q%M,qraw:q,exact:rem===0,err:o.slot/L-q/M};});
+  return {res,ties};
+}
+function distinctCount(arr){return new Set(arr).size;}
+function bitsLost(targets){const c=new Map();targets.forEach(t=>c.set(t,(c.get(t)||0)+1));const k=targets.length;let h=0;for(const n of c.values())h+=(n/k)*Math.log2(n);return h;}
+
+/* ===== Ratio prism: UI ===== */
+const LENSES=[
+  ['anc','Ancestry','--c-anc'],['even','Evenness','--c-even'],['iso','Isochrony','--c-iso'],['four','Spectrum','--c-four'],
+  ['tune','Tuning','--c-tune'],['meter','Meter','--c-meter'],['group','Grouping','--c-group'],['lat','Lattice','--c-lat']];
+let PD=null;
+const pulse=s=>s+1;
+const labelOf=o=>o.ratios.map(rstr).join(' = ');
+function prismCompute(){
+  const pr=parseRatios(PR.text);const all=pr.ratios;
+  if(PR.mode>=all.length)PR.mode=0;
+  const root=all[PR.mode];const rs=modeOf(all,root);
+  const R=PR.reading==='linear'?linearRing(rs):logRing(rs,PR.N);
+  PD={pr,all,root,rs,R};
+  if(!R)return;
+  R.A=R.ons.map(o=>o.slot);R.k=R.A.length;R.gaps=gapsOf(R.A,R.L);
+}
+function fmtNum(x,d=2){return Number.isInteger(x)?x.toLocaleString('en-US'):x.toFixed(d);}
+function lensData(){
+  const R=PD.R;const {L,A,k}=R;const out={};
+  // evenness
+  const E=euclid(k,L);const al=align(A,E,L);const eg=gapsOf(E,L);
+  out.even={value:`${fmtNum(al.cost)}`,sub:`slots of swap distance from the most even ${k}-in-${fmtNum(L)}`,ghost:al.match.map(b=>b/L),links:A.map((a,i)=>[a/L,al.match[i]/L]),al,eg};
+  // isochrony
+  if(L%k===0){const I=Array.from({length:k},(_,i)=>i*L/k);const ai=align(A,I,L);
+    out.iso={value:fmtNum(ai.cost),sub:`slots of swap distance from ${k} equal steps of ${fmtNum(L/k)}`,ghost:ai.match.map(b=>b/L),links:A.map((a,i)=>[a/L,ai.match[i]/L]),ai,ok:true};}
+  else out.iso={value:'n/a',sub:`${k} onsets don’t divide ${fmtNum(L)} slots evenly`,ok:false,ghost:[],links:[]};
+  // tuning
+  if(PR.reading==='linear'){
+    const M=PR.grid;const qu=quantGrid(R,M,true),qd=quantGrid(R,M,false);
+    const tg=qu.res.map(x=>x.q);const merges=k-distinctCount(tg);
+    const rms=Math.sqrt(qu.res.reduce((a,x)=>a+x.err**2,0)/k);
+    const robust=[];for(let m=2;m<=96&&robust.length<14;m++){const a=quantGrid(R,m,true).res.map(x=>x.q),b=quantGrid(R,m,false).res.map(x=>x.q);if(distinctCount(a)===k&&distinctCount(b)===k)robust.push(m);}
+    out.tune={value:merges?`${merges} merge${merges>1?'s':''}`:'no merges',sub:`on a grid of ${M}: ${bitsLost(tg).toFixed(2)} bits lost, ${qu.res.filter(x=>x.exact).length} of ${k} exact`,
+      ghost:qu.res.map(x=>x.q/M),links:qu.res.map(x=>[x.o.slot/L,x.q/M]),qu,qd,merges,rms,robust,M};
+  }else{
+    const N=L;const rows=[];
+    for(const o of R.ons)for(const r of o.ratios){const c=1200*Math.log2(rv(r));let sc=o.slot*1200/N;let e=sc-c;if(e<-600)e+=1200;if(e>600)e-=1200;rows.push({r,o,c,e});}
+    const rawk=rows.length;const merges=rawk-k;const rms=Math.sqrt(rows.reduce((a,x)=>a+x.e**2,0)/rawk);
+    const commas=[];for(const o of R.ons)if(o.ratios.length>1)for(let i=0;i<o.ratios.length;i++)for(let j=i+1;j<o.ratios.length;j++){const a=o.ratios[i],b=o.ratios[j];const big=rv(a)>rv(b)?a:b,sm=big===a?b:a;let n=big.n*sm.d,d=big.d*sm.n;const g=gcdN(n,d);n/=g;d/=g;commas.push({a:sm,b:big,n,d,c:1200*Math.log2(n/d),slot:o.slot});}
+    const robust=[];for(let m=2;m<=96&&robust.length<14;m++){const s=new Set(PD.rs.map(r=>((Math.round(Math.log2(rv(r))*m))%m+m)%m));if(s.size===PD.rs.length)robust.push(m);}
+    const tgt=rows.map(x=>x.o.slot);
+    out.tune={value:`${rms.toFixed(1)}¢ RMS`,sub:`rounding to ${N} steps: ${merges?`${merges} merge${merges>1?'s':''}`:'no merges'}, ${bitsLost(tgt).toFixed(2)} bits lost`,
+      ghost:rows.map(x=>x.c/1200),links:rows.map(x=>[x.c/1200,x.o.slot/N]),rows,commas,merges,rms,robust,log:true};
+  }
+  // spectrum
+  {
+    const J=Math.min(Math.floor(L/2),200);const pos=A.map(a=>a/L);const epos=euclid(k,L).map(x=>x/L);
+    const coeffs=[];for(let j=1;j<=J;j++){const c=dft(pos,j);coeffs.push({j,mag:c.mag/k,ph:c.ph,e:dft(epos,j).mag/k});}
+    let top=coeffs[0];for(const c of coeffs)if(c.mag>top.mag+1e-9)top=c;
+    if(PR.fourJ===null||PR.fourJ>J)PR.fourJ=k<=J?k:top.j;
+    const sc=coeffs[PR.fourJ-1];let gh=[];
+    const zk=`${L}|${A.join(',')}`;const zr=PR.zcache[zk];
+    let lk=[];
+    const zfOk=PR.zf&&PR.zf.key.startsWith(`${L}|${A.join(',')}|`);
+    if(zfOk&&PR.zprev&&PR.zf.res[PR.zprev.i]){const r=PR.zf.res[PR.zprev.i];
+      if(PR.zprev.kind==='mod'){gh=r.P.map(x=>x/L);lk=A.map((a,j)=>[a/L,r.P[j]/L]);}
+      else gh=(r.pal||r.partner).map(x=>x/L);}
+    else if(zr&&PR.zShow!==null&&zr.partners[PR.zShow])gh=alignTo(A,zr.partners[PR.zShow],L).Q.map(x=>x/L);
+    else if(sc&&sc.j<=96){const x0=((-sc.ph/(2*Math.PI*sc.j))%1+1)%1;gh=Array.from({length:sc.j},(_,m)=>(x0+m/sc.j)%1);}
+    out.four={value:top?`${top.j}: ${top.mag.toFixed(2)}`:'n/a',sub:top?`strongest periodicity: how close the onsets come to dividing the cycle into ${top.j}`:'',coeffs,J,top,sel:sc,ghost:gh,links:lk,zk,zr,zfOk,zal:zr?zr.partners.slice(0,24).map(p=>alignTo(A,p,L)):[]};
+  }
+  // meter
+  const opts=[];
+  if(L>1&&L<=1e12){for(const o of uniquePerms(factorize(L),5040)){const h=hierDivisive(L,o);opts.push({h,...scoreH(h,A,L)});}}
+  let addRes=null;
+  const addSz=[...PR.addSizes].sort((x,y)=>x-y);
+  if(L<=2000&&addSz.length){
+    addRes=additiveSearch(A,L,addSz);
+    if(addRes){const warr=new Array(L).fill(1);let x=0;const starts=[];for(const g of addRes.groups){warr[x]+=1;starts.push(x);x+=g;}warr[0]+=1;
+      const h=hierArray(L,warr,`Additive (${andList(addSz.map(x=>x+'s'))}): ${addRes.groups.join(' ')}`,'add',{groups:addRes.groups,starts});
+      opts.push({h,...scoreH(h,A,L)});}
+  }
+  if(typeof S!=='undefined'&&S.n===L&&S.nodes&&S.nodes.length>1){
+    const w=new Array(L).fill(1);for(const nd of S.nodes)w[nd.start]+=1;
+    const h=hierArray(L,w,'Grouping tree (other tab)','tree',{starts:S.root.kind==='split'?S.root.children.map(c=>c.start):[0]});
+    opts.push({h,...scoreH(h,A,L)});
+  }
+  const wsum=o=>o.weights.reduce((x,y)=>x+y/o.h.top,0);
+  opts.sort((x,y)=>x.sync-y.sync||wsum(y)-wsum(x));
+  if(PR.meterSel>=opts.length)PR.meterSel=0;
+  if(PR.meterCmp!==null&&(PR.meterCmp>=opts.length||PR.meterCmp===PR.meterSel))PR.meterCmp=null;
+  const sel=opts[PR.meterSel];
+  let mg=[];
+  if(sel){if(sel.h.starts)mg=sel.h.starts.map(x=>x/L);else if(L/sel.h.beat<=96)mg=Array.from({length:L/sel.h.beat},(_,i)=>i*sel.h.beat/L);}
+  const gsArr=R.gaps,minG=Math.min(...gsArr),meanG=L/k;
+  const pairs=minG*3<=meanG?gsArr.map((g,i)=>g===minG?[i,(i+1)%k]:null).filter(Boolean):[];
+  out.meter={value:opts.length?`${opts[0].sync}`:'n/a',sub:opts.length?`lowest syncopation, from ${opts.length.toLocaleString('en-US')} hierarch${opts.length===1?'y':'ies'}; best ${opts[0].h.name.length>40?opts[0].h.name.slice(0,40)+'…':opts[0].h.name}`:'needs a ring larger than 1',
+    opts,sel,ghost:mg,links:[],prime:factorize(L).length===1,addRes,addSz,pairs};
+  // grouping
+  const tree=proximityTree(A,L);
+  out.group={value:`${treeDepth(tree)} level${treeDepth(tree)===1?'':'s'}`,sub:treeFmt(tree),tree,ghost:[],links:[]};
+  // ancestry
+  const g=gcdN(k,L);const p=k/g,q=L/g;let sb=null;
+  if(p<q)sb=sbPath(p,q);
+  const lp=sb?sb.left:null,rp=sb?sb.right:null;
+  const selF=PR.sbSel&&PR.sbSel.L===L&&PR.sbSel.k===k?PR.sbSel.f:[p,q];
+  let ag=[];if(selF[1]<=4000&&selF[0]<selF[1]){const pos=euclid(selF[0],selF[1]);ag=pos.map(x=>x/selF[1]);}
+  out.anc={value:`${p}/${q}`,sub:sb?`parents ${lp[0]}/${lp[1]} and ${rp[0]}/${rp[1]}`.replace(/(^| )0\/1/,'$1edge 0/1').replace(/1\/0/,'edge 1/0'):'every slot is an onset',sb,p,q,g,selF,ghost:ag,links:[]};
+  {const pr=PR.lat&&PR.lat.cache[latSetKey()];const Pf=latUsed(PD.rs);
+    out.lat={value:pr?(pr.list.length?`${pr.list.length} partner${pr.list.length>1?'s':''}`:'no partners'):(Pf.length?Pf.join('·'):'octaves'),sub:'ratios as points on the prime lattice, plus a browser of known Z-relations',ghost:[],links:[]};}
+  return out;
+}
+function ringSVG(R,ld,lensKey){
+  const S0=380,cx=190,cy=190,Rr=128;
+  const ang=f=>2*Math.PI*f-Math.PI/2;
+  const pt=(f,r)=>[cx+r*Math.cos(ang(f)),cy+r*Math.sin(ang(f))];
+  let s=`<svg viewBox="0 0 ${S0} ${S0}" role="img" aria-label="Ring of ${R.L} slots with ${R.k} onsets">`;
+  s+=`<circle class="rc" cx="${cx}" cy="${cy}" r="${Rr}"/>`;
+  if(R.L<=160)for(let i=0;i<R.L;i++){const [x1,y1]=pt(i/R.L,Rr-5),[x2,y2]=pt(i/R.L,Rr+5);s+=`<line class="tick${i===0?' db':''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;}
+  else{const [x1,y1]=pt(0,Rr-7),[x2,y2]=pt(0,Rr+7);s+=`<line class="tick db" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;}
+  const L=ld[lensKey];
+  for(const [a,b] of L.links){if(Math.abs(a-b)<1e-12)continue;const [x1,y1]=pt(a,Rr),[x2,y2]=pt(b,Rr-22);s+=`<line class="gl" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;}
+  for(const f of L.ghost){const [x,y]=pt(f,Rr-22);s+=`<circle class="ghost" cx="${x}" cy="${y}" r="5.5"/>`;}
+  let prev=-9,lvl=0;
+  R.ons.forEach(o=>{const f=o.slot/R.L;const [x,y]=pt(f,Rr);s+=`<circle class="on" cx="${x}" cy="${y}" r="6"/>`;
+    const a=ang(f);lvl=(a-prev<0.3)?(lvl+1)%3:0;prev=a;const rr=Rr+20+lvl*17;const [lx,ly]=pt(f,rr);
+    const anchor=Math.cos(a)>0.25?'start':Math.cos(a)<-0.25?'end':'middle';
+    s+=`<text class="olab" x="${lx}" y="${ly+4}" text-anchor="${anchor}">${labelOf(o)}</text>`;});
+  s+=`<text class="ctext" x="${cx}" y="${cy-4}" font-size="26">${fmtNum(R.L)}</text><text class="csub" x="${cx}" y="${cy+16}">slots, ${R.k} onsets</text>`;
+  return s+'</svg>';
+}
+/* ===== Lattice lens: JI Z-relations as shapes on the prime lattice ===== */
+const LAT_BASE=[3,5,7];
+const LAT_AX6=[[-2,0,0,0,0,1],[-2,0,0,0,1,0],[-2,0,0,1,-1,0],[-2,0,0,1,0,-1],[-2,0,1,0,1,-1],[-2,0,1,1,-1,0],[-2,0,1,1,0,-1],[-2,1,0,1,-1,0],[-2,1,0,1,-1,1],[-1,-1,0,0,0,1],[-1,-1,0,0,1,0],[-1,-1,1,0,1,-1],[-1,-1,1,0,1,0],[-1,0,-1,0,0,1],[-1,0,0,0,0,1],[-1,0,0,0,1,-1],[-1,0,0,0,1,0],[-1,0,1,0,1,-1],[-1,1,-1,0,0,1],[0,-1,0,0,0,1]];
+const LAT_AX7=[[-1,0,0,-1,0,1],[-1,0,0,-1,1,0]];
+const LAT_SH=[
+  {k:6,A:[[0,0],[0,1],[1,-1],[2,0],[2,2],[3,2]],B:[[0,0],[0,1],[1,3],[2,1],[2,3],[3,2]],ax:LAT_AX6},
+  {k:7,A:[[0,0],[0,1],[1,0],[1,1],[3,0],[5,1],[6,0]],B:[[0,0],[0,1],[3,0],[4,1],[5,0],[5,1],[6,0]],ax:LAT_AX7}];
+function latNd(v,P){let n=1,d=1;v.forEach((e,i)=>{if(e>0)n*=P[i]**e;else if(e<0)d*=P[i]**(-e);});return [n,d];}
+const latOdd=(v,P)=>Math.max(...latNd(v,P));
+const latRat=(v,P)=>{const [n,d]=latNd(v,P);return mkR(n,d);};
+const latRaw=(v,P)=>{const [n,d]=latNd(v,P);return d===1?String(n):`${n}/${d}`;};
+function latVec(r,P){let n=r.n,d=r.d;while(n%2===0)n/=2;while(d%2===0)d/=2;const v=P.map(()=>0);
+  P.forEach((p,i)=>{while(n%p===0){n/=p;v[i]++;}while(d%p===0){d/=p;v[i]--;}});return n===1&&d===1?v:null;}
+function latUsed(rs){const s=new Set();for(const r of rs)for(let x of [r.n,r.d]){while(x%2===0)x/=2;for(let p=3;p*p<=x;p+=2)while(x%p===0){s.add(p);x/=p;}if(x>1)s.add(x);}return [...s].sort((a,b)=>a-b);}
+function latCenter(S,P){
+  const m=P.length,lo=[],hi=[];for(let i=0;i<m;i++){lo.push(Math.min(...S.map(p=>p[i])));hi.push(Math.max(...S.map(p=>p[i])));}
+  let best=null;const w=new Array(m).fill(0);
+  (function rec(i){if(i===m){const T=S.map(p=>p.map((x,j)=>x+w[j]));const o=Math.max(...T.map(p=>latOdd(p,P)));const c=w.reduce((a,x)=>a+Math.abs(x),0);
+      if(!best||o<best.o||(o===best.o&&c<best.c))best={o,c,T};return;}
+    for(let x=-hi[i]-4;x<=-lo[i]+4;x++){w[i]=x;rec(i+1);}})(0);
+  return best.T;
+}
+const latSub=(a,b)=>a.map((x,i)=>x-b[i]);
+function latCd(v){for(const x of v){if(x>0)return v;if(x<0)return v.map(y=>-y);}return v;}
+function latContent(S){const c=new Map();for(let i=0;i<S.length;i++)for(let j=i+1;j<S.length;j++){const k=latCd(latSub(S[j],S[i])).join(',');c.set(k,(c.get(k)||0)+1);}return c;}
+function latContentKey(S){return [...latContent(S).entries()].sort((a,b)=>a[0]<b[0]?-1:1).join(';');}
+function latClass(S){let best=null;for(const T of [S,S.map(p=>p.map(x=>-x))]){const s=[...T].sort((a,b)=>{for(let i=0;i<a.length;i++)if(a[i]!==b[i])return a[i]-b[i];return 0;});const m=s[0];const u=s.map(p=>p.map((x,i)=>x-m[i]).join(',')).join(';');if(best===null||u<best)best=u;}return best;}
+function latPartners(S,maxMs=1500){
+  const k=S.length,d=S[0].length,zero=new Array(d).fill(0);
+  const cnt=latContent(S);const D=[];for(const key of cnt.keys())D.push(key.split(',').map(Number));
+  const C=[];for(const c of D){C.push(c);C.push(c.map(x=>-x));}
+  const rem=new Map(cnt),cls=latClass(S),seen=new Set(),res=[];
+  const cur=[zero];let nodes=0,timedOut=false;const t0=performance.now();
+  (function rec(start){
+    if(timedOut)return;
+    if((++nodes&2047)===0&&performance.now()-t0>maxMs){timedOut=true;return;}
+    if(cur.length===k){const c=latClass(cur);if(c!==cls&&!seen.has(c)){seen.add(c);res.push(cur.map(p=>p.slice()));}return;}
+    for(let i=start;i<C.length;i++){
+      const c=C[i],used=[];let ok=true;
+      for(const p of cur){const dk=latCd(latSub(c,p)).join(',');const r=rem.get(dk);if(!r){ok=false;break;}rem.set(dk,r-1);used.push(dk);}
+      if(ok){cur.push(c);rec(i+1);cur.pop();}
+      for(const dk of used)rem.set(dk,rem.get(dk)+1);
+      if(timedOut)return;
+    }
+  })(0);
+  return {list:res,timedOut,nodes};
+}
+function latPlace(T,A){ // translate/invert partner T to overlap A as much as possible
+  const aset=new Set(A.map(String));let best=null;
+  for(const inv of [false,true]){const U=inv?T.map(p=>p.map(x=>-x)):T;
+    for(const a of A)for(const u of U){const w=latSub(a,u);const V=U.map(p=>p.map((x,i)=>x+w[i]));
+      const ov=V.filter(p=>aset.has(String(p))).length;const cost=V.reduce((s,p)=>s+p.reduce((q,x)=>q+Math.abs(x),0),0);
+      if(!best||ov>best.ov||(ov===best.ov&&cost<best.cost))best={ov,cost,V};}}
+  return best.V;
+}
+let LAT_CAT=null;
+function latCat(){
+  if(LAT_CAT)return LAT_CAT;
+  const out=[];
+  for(const sh of LAT_SH)for(const ax of sh.ax){
+    const u=ax.slice(0,3),v=ax.slice(3);
+    const mp=S=>S.map(([x,y])=>[0,1,2].map(i=>x*u[i]+y*v[i]));
+    const A=latCenter(mp(sh.A),LAT_BASE),B=latCenter(mp(sh.B),LAT_BASE);
+    out.push({k:sh.k,u,v,A,B,sA:sh.A,sB:sh.B,lim:Math.max(...A.concat(B).map(p=>latOdd(p,LAT_BASE))),ok:latContentKey(A)===latContentKey(B)});
+  }
+  out.sort((a,b)=>a.k-b.k||a.lim-b.lim);
+  out.forEach((e,i)=>{e.i=i;});
+  return (LAT_CAT=out);
+}
+const latAxName=(v)=>latRaw(v,LAT_BASE);
+const latName=(e)=>`${latAxName(e.u)} and ${latAxName(e.v)}`;
+function latMatMul(a,b){return a.map((_,i)=>[0,1,2].map(j=>a[i][0]*b[0][j]+a[i][1]*b[1][j]+a[i][2]*b[2][j]));}
+const latRx=t=>[[1,0,0],[0,Math.cos(t),-Math.sin(t)],[0,Math.sin(t),Math.cos(t)]];
+const latRy=t=>[[Math.cos(t),0,Math.sin(t)],[0,1,0],[-Math.sin(t),0,Math.cos(t)]];
+const latM0=()=>latMatMul(latRx(0.5),latRy(-0.6));
+function latSt(){
+  if(!PR.lat)PR.lat={src:'cat',ci:0,M:latM0(),others:false,pi:0,cache:{},view:'flat',iv:null};
+  return PR.lat;
+}
+function latDisplayPrimes(Pfull,vecs){
+  if(Pfull.length<=3){const P=Pfull.slice();for(const b of [3,5,7,11,13,17,19,23])if(P.length<3&&!P.includes(b))P.push(b);return {P:P.sort((a,b)=>a-b),hidden:[]};}
+  const w=Pfull.map((p,i)=>[p,vecs.reduce((s,v)=>s+Math.abs(v[i]),0)]).sort((a,b)=>b[1]-a[1]);
+  const P=w.slice(0,3).map(x=>x[0]).sort((a,b)=>a-b);return {P,hidden:Pfull.filter(p=>!P.includes(p))};
+}
+function latSetKey(){return PD.rs.map(rstr).join(' ');}
+function latSetData(){ // the current set as lattice vectors
+  const st=latSt(),key=latSetKey();
+  if(st.setKey===key&&st.setData)return st.setData;
+  const Pf=latUsed(PD.rs);const P=Pf.length?Pf:[3];
+  const vecs=PD.rs.map(r=>latVec(r,P));
+  const dd=latDisplayPrimes(P,vecs);
+  const k=PD.rs.length;
+  st.setKey=key;st.setData={Pf:P,vecs,k,disp:dd};st.pi=0;
+  if(!st.cache[key]&&k>=3&&k<=8){st.cache[key]=latPartners(vecs,400);}
+  return st.setData;
+}
+function latPartnersFor(){const key=latSetKey();return latSt().cache[key]||null;}
+function latScene(){
+  const st=latSt();
+  const mk=(vecs,P,Pd,sc)=>{const pts=vecs.map((v,i)=>({v:Pd.map(p=>{const j=P.indexOf(p);return j<0?0:v[j];}),lab:rstr(latRat(v,P)),sc:sc?sc[i]:null}));
+    const edges=[];for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      if(sc){if(Math.abs(sc[i][0]-sc[j][0])+Math.abs(sc[i][1]-sc[j][1])===1)edges.push([i,j]);}
+      else{const d=latSub(vecs[i],vecs[j]);const nz=d.filter(x=>x);if(nz.length===1&&Math.abs(nz[0])===1)edges.push([i,j]);}}
+    return {pts,edges};};
+  if(st.src==='cat'){
+    const e=latCat()[st.ci];
+    const A=mk(e.A,LAT_BASE,LAT_BASE,e.sA),B=mk(e.B,LAT_BASE,LAT_BASE,e.sB);
+    let O=[];
+    if(st.others){const own=new Set(e.A.concat(e.B).map(String));const sk=new Set();
+      for(const x of latCat())if(x.k===e.k&&x!==e)for(const p of x.A.concat(x.B)){const s=String(p);if(!own.has(s)&&!sk.has(s)){sk.add(s);O.push({v:p,lab:rstr(latRat(p,LAT_BASE))});}}}
+    return {P:LAT_BASE,A,B,O,plane:{u:e.u,v:e.v,e},hidden:[],Afull:e.A,Bfull:e.B,PA:LAT_BASE};
+  }
+  const sd=latSetData();const pr=latPartnersFor();
+  const P=sd.disp.P;
+  const A=mk(sd.vecs,sd.Pf,P,null);
+  let B={pts:[],edges:[]},O=[],Bfull=null;
+  if(pr&&pr.list.length){
+    const pi=Math.min(st.pi,pr.list.length-1);
+    const placed=pr.list.map(T=>latPlace(T,sd.vecs));
+    Bfull=placed[pi];B=mk(Bfull,sd.Pf,P,null);
+    if(st.others){const own=new Set(sd.vecs.concat(Bfull).map(String));
+      placed.forEach((T,i)=>{if(i===pi)return;T.forEach(p=>{if(!own.has(String(p)))O.push({v:P.map(q=>{const j=sd.Pf.indexOf(q);return j<0?0:p[j];}),lab:rstr(latRat(p,sd.Pf))});});});}
+  }
+  return {P,A,B,O,plane:null,hidden:sd.disp.hidden,Afull:sd.vecs,Bfull,PA:sd.Pf};
+}
+function latPlanar(pts){ // returns unit normal if the points are coplanar, else null
+  if(pts.length<3)return null;const p0=pts[0].v;let n=null;
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];const cr=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  for(let i=1;i<pts.length&&!n;i++)for(let j=i+1;j<pts.length&&!n;j++){const c=cr(sub(pts[i].v,p0),sub(pts[j].v,p0));if(c.some(x=>x))n=c;}
+  if(!n)return null;
+  for(const p of pts){const d=sub(p.v,p0);if(Math.abs(d[0]*n[0]+d[1]*n[1]+d[2]*n[2])>1e-9)return null;}
+  const l=Math.hypot(...n);return n.map(x=>x/l);
+}
+function latFace(){
+  const st=latSt(),sc=latScene();let n=null,u=null;
+  if(sc.plane){u=sc.plane.u.slice();n=latPlanar(sc.A.pts);}
+  else n=latPlanar(sc.A.pts);
+  if(!n)return false;
+  if(!u){const a=sc.A.pts;const p0=a[0].v;for(const p of a){const d=[p.v[0]-p0[0],p.v[1]-p0[1],p.v[2]-p0[2]];if(d.some(x=>x)){u=d;break;}}}
+  let l=Math.hypot(...u);let e1=u.map(x=>x/l);
+  const dot=e1[0]*n[0]+e1[1]*n[1]+e1[2]*n[2];e1=e1.map((x,i)=>x-dot*n[i]);l=Math.hypot(...e1);e1=e1.map(x=>x/l);
+  const e2=[n[1]*e1[2]-n[2]*e1[1],n[2]*e1[0]-n[0]*e1[2],n[0]*e1[1]-n[1]*e1[0]];
+  st.M=[e1,e2,n];return true;
+}
+function latRotate(dx,dy){const st=latSt();st.M=latMatMul(latRx(dy),latMatMul(latRy(dx),st.M));}
+
+function latDrawFlat(el,st){
+  const e=latCat()[st.ci],W=560,H=380;
+  const all=e.sA.concat(e.sB),xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const pw=W/2-14,gw=x1-x0+1,gh=y1-y0+1,cell=Math.min(50,(pw-40)/Math.max(1,gw-1+0.6),(H-130)/Math.max(1,gh-1+0.6));
+  let g='';
+  [[e.sA,e.A,'a',0],[e.sB,e.B,'b',1]].forEach(([sh,vec,t,pi])=>{
+    const px0=14+pi*(W/2),ox=px0+(pw-(gw-1)*cell)/2,oy=78+(H-150-(gh-1)*cell)/2;
+    const X=p=>ox+(p[0]-x0)*cell,Y=p=>oy+(y1-p[1])*cell;
+    g+=`<text x="${px0+pw/2}" y="32" text-anchor="middle" class="latttl ${t==='b'?'latlabB':''}">${t==='a'?'First set':'Its Z-partner'}</text>`;
+    for(let x=x0;x<=x1;x++)g+=`<line x1="${X([x,0])}" y1="${Y([0,y0])-cell*.4}" x2="${X([x,0])}" y2="${Y([0,y1])+cell*.4}" class="latgl"/>`;
+    for(let y=y0;y<=y1;y++)g+=`<line x1="${X([x0,0])-cell*.4}" y1="${Y([0,y])}" x2="${X([x1,0])+cell*.4}" y2="${Y([0,y])}" class="latgl"/>`;
+    for(let i=0;i<sh.length;i++)for(let j=i+1;j<sh.length;j++)if(Math.abs(sh[i][0]-sh[j][0])+Math.abs(sh[i][1]-sh[j][1])===1)
+      g+=`<line x1="${X(sh[i])}" y1="${Y(sh[i])}" x2="${X(sh[j])}" y2="${Y(sh[j])}" class="latedge ${t==='a'?'latedA':'latedB'}"/>`;
+    if(st.iv)for(let i=0;i<vec.length;i++)for(let j=i+1;j<vec.length;j++)if(latCd(latSub(vec[j],vec[i])).join(',')===st.iv)
+      g+=`<line x1="${X(sh[i])}" y1="${Y(sh[i])}" x2="${X(sh[j])}" y2="${Y(sh[j])}" class="lativ"/>`;
+    sh.forEach((q,i)=>{const lab=rstr(latRat(vec[i],LAT_BASE));
+      g+=t==='a'?`<circle cx="${X(q)}" cy="${Y(q)}" r="7" class="latda"><title>${lab}</title></circle>`:`<circle cx="${X(q)}" cy="${Y(q)}" r="9" class="latdb"><title>${lab}</title></circle>`;
+      g+=`<text x="${X(q)}" y="${Y(q)-14}" text-anchor="middle" class="latlab latflab ${t==='b'?'latlabB':''}">${lab}</text>`;});
+  });
+  g+=`<text x="${W/2}" y="${H-16}" text-anchor="middle" class="lataxl">across: each step is ×${latAxName(e.u)}     up: each step is ×${latAxName(e.v)}</text>`;
+  el.innerHTML=g;
+}
+function latDraw(){
+  const el=document.getElementById('latsvg');if(!el)return;
+  const st0=latSt();
+  if(st0.view==='flat'){if(st0.src==='cat'){latDrawFlat(el,st0);return;}latFace();}
+  const st=latSt(),sc=latScene(),M=st.M;
+  const W=560,H=380,cx=W/2,cy=H/2-4;
+  const core=sc.A.pts.concat(sc.B.pts);
+  const c=[0,1,2].map(i=>core.reduce((s,p)=>s+p.v[i],0)/Math.max(1,core.length));
+  const tf=v=>{const d=[v[0]-c[0],v[1]-c[1],v[2]-c[2]];return [0,1,2].map(r=>M[r][0]*d[0]+M[r][1]*d[1]+M[r][2]*d[2]);};
+  let R=1.5;for(const p of core.concat(sc.O)){const q=tf(p.v);R=Math.max(R,Math.hypot(...q));}
+  if(st.others===false&&sc.plane===null)R=R;
+  const s=Math.min(64,150/R);
+  const sx=q=>cx+q[0]*s,sy=q=>cy-q[1]*s;
+  let g='';
+  const lineP=(a,b,cls,extra='')=>{const qa=tf(a),qb=tf(b);return `<line x1="${sx(qa).toFixed(1)}" y1="${sy(qa).toFixed(1)}" x2="${sx(qb).toFixed(1)}" y2="${sy(qb).toFixed(1)}" class="${cls}" ${extra}/>`;};
+  // plane grids for the catalog view
+  if(sc.plane){
+    const {u,v,e}=sc.plane;
+    for(const [pts,shp,cls] of [[sc.A.pts,e.sA,'latgA'],[sc.B.pts,e.sB,'latgB']]){
+      const org=pts[0].v.map((x,i)=>x-(shp[0][0]*u[i]+shp[0][1]*v[i]));
+      const xs=shp.map(p=>p[0]),ys=shp.map(p=>p[1]);const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+      const at=(x,y)=>org.map((o,i)=>o+x*u[i]+y*v[i]);
+      const poly=[at(x0-.5,y0-.5),at(x1+.5,y0-.5),at(x1+.5,y1+.5),at(x0-.5,y1+.5)].map(tf).map(q=>`${sx(q).toFixed(1)},${sy(q).toFixed(1)}`).join(' ');
+      g+=`<polygon points="${poly}" class="latpl ${cls}"/>`;
+      for(let x=x0;x<=x1;x++)g+=lineP(at(x,y0-.5),at(x,y1+.5),'latgl');
+      for(let y=y0;y<=y1;y++)g+=lineP(at(x0-.5,y),at(x1+.5,y),'latgl');
+    }
+  }
+  if(st.iv){const hl=(F,pts)=>{if(!F)return;for(let i=0;i<F.length;i++)for(let j=i+1;j<F.length;j++)if(latCd(latSub(F[j],F[i])).join(',')===st.iv)g+=lineP(pts[i].v,pts[j].v,'lativ');};hl(sc.Afull,sc.A.pts);hl(sc.Bfull,sc.B.pts);}
+  // other points (faint)
+  const dots=[];
+  for(const p of sc.O){const q=tf(p.v);dots.push({q,t:'o',p});}
+  for(const [e1,e2] of sc.A.edges)g+=lineP(sc.A.pts[e1].v,sc.A.pts[e2].v,'latedge latedA');
+  for(const [e1,e2] of sc.B.edges)g+=lineP(sc.B.pts[e1].v,sc.B.pts[e2].v,'latedge latedB');
+  for(const p of sc.A.pts)dots.push({q:tf(p.v),t:'a',p});
+  for(const p of sc.B.pts)dots.push({q:tf(p.v),t:'b',p});
+  dots.sort((a,b)=>a.q[2]-b.q[2]);
+  const lab=(sc.A.pts.length+sc.B.pts.length+sc.O.length)<=18;
+  for(const d of dots){
+    const f=(d.q[2]/R+1)/2,r=(d.t==='o'?3.2:5)+f*2.6,op=(0.55+0.45*f).toFixed(2);
+    const x=sx(d.q).toFixed(1),y=sy(d.q).toFixed(1);
+    if(d.t==='o')g+=`<circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" class="latdo" opacity="${(op*0.8).toFixed(2)}"><title>${d.p.lab}</title></circle>`;
+    else if(d.t==='a')g+=`<circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" class="latda" opacity="${op}"><title>${d.p.lab}</title></circle>`;
+    else g+=`<circle cx="${x}" cy="${y}" r="${(r+3).toFixed(1)}" class="latdb" opacity="${op}"><title>${d.p.lab}</title></circle>`;
+    if(lab&&d.t!=='o')g+=`<text x="${(+x+8+r).toFixed(1)}" y="${(+y+4).toFixed(1)}" class="latlab ${d.t==='b'?'latlabB':''}" opacity="${op}">${d.p.lab}</text>`;
+  }
+  // axis gnomon
+  const gx=52,gy=H-44;
+  sc.P.forEach((p,i)=>{const ax=M[0][i]*36,ay=-M[1][i]*36,az=M[2][i];
+    g+=`<line x1="${gx}" y1="${gy}" x2="${(gx+ax).toFixed(1)}" y2="${(gy+ay).toFixed(1)}" class="lataxis" opacity="${(0.55+0.45*(az+1)/2).toFixed(2)}"/><text x="${(gx+ax*1.28).toFixed(1)}" y="${(gy+ay*1.28+4).toFixed(1)}" class="lataxl" text-anchor="middle">×${p}</text>`;});
+  el.innerHTML=g;
+}
+function latChips(S,P){
+  const cm=latContent(S);const items=[];
+  for(const [k,n] of cm){const v=k.split(',').map(Number);let r=latRat(v,P);const inv=mkR(r.d,r.n);if(rv(inv)<rv(r))r=inv;items.push({r,n,k});}
+  items.sort((a,b)=>rv(a.r)-rv(b.r));
+  const iv=latSt().iv;return items.map(x=>`<button class="latchip" data-lat="iv:${x.k}" aria-pressed="${iv===x.k}">${rstr(x.r)}${x.n>1?` <i>×${x.n}</i>`:''}</button>`).join('');
+}
+function latHTML(){
+  const st=latSt();const cat=latCat();
+  const flat=st.view==='flat';
+  let h=`<h3>Lattice</h3><p>Every just-intonation pitch, with octaves removed, is a point on a lattice: each step along an axis multiplies by 3, 5 or 7. A scale is then a <em>shape</em> of dots. Two scales are Z-related when their shapes contain exactly the same set of dot-to-dot differences without being shifted or flipped copies of each other.</p>`;
+  h+=`<div class="seg" id="latsrc" role="group" aria-label="What to show"><button data-lat="src:cat" aria-pressed="${st.src==='cat'}">Known Z-relations</button><button data-lat="src:set" aria-pressed="${st.src==='set'}">This set and its partners</button></div>`;
+  h+=`<div class="latgrid"><div class="latview"><svg id="latsvg" viewBox="0 0 560 380" role="img" tabindex="0" aria-label="Rotatable lattice view. Arrow keys turn it."></svg>
+  <div class="btnrow"><button data-lat="view:${flat?'3d':'flat'}">${flat?'Show in prime space (3D)':'Show flat shape'}</button>${flat?'':`<button data-lat="rot:l" aria-label="Turn left">◀</button><button data-lat="rot:r" aria-label="Turn right">▶</button><button data-lat="rot:u" aria-label="Turn up">▲</button><button data-lat="rot:d" aria-label="Turn down">▼</button><button data-lat="reset">Reset view</button><button data-lat="face">Face the plane</button><button data-lat="others" aria-pressed="${st.others}" class="${st.others?'on':''}">${st.src==='cat'?'Show other families of this shape':'Show other partners'}</button>`}</div>
+  <p class="legend">${flat?(st.src==='cat'?'Both sets drawn on the shape’s own grid. Tap an interval below to highlight every pair of dots that makes it, in both sets.':'Your set and its partner, seen face-on where they lie flat (use 3D if they don’t).'):'Drag to turn. Each ×p label is one step along that prime.'} <span class="latkey ka"></span> first set <span class="latkey kb"></span> partner ${flat?'':'<span class="latkey ko"></span> other points'}</p></div>`;
+  h+=`<div class="latside">`;
+  let infoSets=null;
+  if(st.src==='cat'){
+    const e=cat[st.ci];
+    h+=`<div class="latlist" role="listbox" aria-label="Known Z-relations">`;
+    let lastk=0;
+    for(const x of cat){
+      if(x.k!==lastk){lastk=x.k;h+=`<div class="lathead">${x.k}-note shape · ${cat.filter(y=>y.k===x.k).length} families</div>`;}
+      h+=`<button class="latrow" data-lat="sel:${x.i}" aria-pressed="${x.i===st.ci}"><span>Axes ${latName(x)}</span><span class="muted small">odd limit ${x.lim}</span></button>`;
+    }
+    h+=`</div>`;
+    const rt=(S)=>modeOf(S.map(v=>latRat(v,LAT_BASE)),latRat(S[0],LAT_BASE)).map(rstr).join(' ');
+    h+=`<div class="latsel"><p><strong>Axes ${latName(e)}.</strong> The same ${e.k}-note shape, laid out along those two intervals.</p>
+    <p class="small"><span class="latkey ka"></span> <span class="rr">${rt(e.A)}</span><br><span class="latkey kb"></span> <span class="rr">${rt(e.B)}</span></p>
+    <div class="btnrow"><button data-lat="load:A">Load first set</button><button data-lat="load:B">Load partner</button></div></div>`;
+    infoSets={S:e.A,P:LAT_BASE,ok:e.ok};
+  }else{
+    const sd=latSetData(),pr=latPartnersFor();
+    if(sd.vecs.some(v=>!v))h+=`<p>This set can’t be placed on the lattice.</p>`;
+    else if(sd.k<3)h+=`<p>Add a few more ratios. Z-relations need at least 6 notes, and none are known below that in just intonation.</p>`;
+    else{
+      h+=`<p>Your set uses the primes <strong>${sd.Pf.join(', ')}</strong>${sd.disp.hidden.length?`, but only ${sd.disp.P.join(', ')} are drawn (${sd.disp.hidden.join(', ')} hidden)`:''}.</p>`;
+      if(!pr)h+=`<div class="btnrow"><button class="primary" data-lat="search">Find JI Z-partners of this set</button></div><p class="muted small">Searches every shape that uses only your set’s own intervals, so a finished search is complete.</p>`;
+      else if(!pr.list.length)h+=`<p><strong>No partners.</strong> ${pr.timedOut?'The search ran out of time before finishing, so a partner may still exist.':'The search finished: no other set has exactly these intervals.'}</p>`;
+      else{
+        h+=`<p><strong>${pr.list.length} partner${pr.list.length>1?'s':''}</strong>${pr.timedOut?' so far (search timed out)':''}. Pick one to draw it.</p><div class="latlist">`;
+        pr.list.forEach((T,i)=>{h+=`<button class="latrow" data-lat="pk:${i}" aria-pressed="${i===Math.min(st.pi,pr.list.length-1)}"><span>Partner ${i+1}</span><span class="muted small">odd limit ${Math.max(...T.map(p=>latOdd(p,sd.Pf)))}</span></button>`;});
+        h+=`</div>`;
+        const i=Math.min(st.pi,pr.list.length-1),T=pr.list[i];
+        h+=`<div class="latsel"><p class="small"><span class="rr">${modeOf(T.map(v=>latRat(v,sd.Pf)),latRat(T[0],sd.Pf)).map(rstr).join(' ')}</span></p><div class="btnrow"><button data-lat="load:P">Load this partner</button></div></div>`;
+        infoSets={S:sd.vecs,P:sd.Pf,ok:latContentKey(sd.vecs)===latContentKey(T)};
+      }
+      if(!infoSets&&sd.vecs.every(v=>v))infoSets={S:sd.vecs,P:sd.Pf,ok:null};
+    }
+  }
+  h+=`</div></div>`;
+  if(infoSets){const n=latContent(infoSets.S).size;
+    h+=`<div class="latinfo"><h3>Shared intervals</h3><p class="small">${infoSets.ok===true?'Both sets contain exactly these intervals':infoSets.ok===false?'Check failed for these intervals':'Intervals in your set'} (each interval and its octave inverse count as one; ×n means it occurs n times). Tap one to highlight it.</p><div class="latchips">${latChips(infoSets.S,infoSets.P)}</div></div>`;}
+  return h;
+}
+function latMount(){
+  const el=document.getElementById('latsvg');if(!el)return;
+  latDraw();
+  let drag=null;
+  el.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};el.setPointerCapture(e.pointerId);});
+  el.addEventListener('pointermove',e=>{if(!drag)return;latRotate((e.clientX-drag.x)*0.01,-(e.clientY-drag.y)*0.01);drag={x:e.clientX,y:e.clientY};latDraw();});
+  const end=()=>{drag=null;};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+  el.addEventListener('keydown',e=>{const m={ArrowLeft:[-.2,0],ArrowRight:[.2,0],ArrowUp:[0,.2],ArrowDown:[0,-.2]}[e.key];if(!m)return;e.preventDefault();latRotate(m[0],m[1]);latDraw();});
+}
+function latLoad(vecs,P){
+  const rl=vecs.map(v=>latRat(v,P));const rs=modeOf(rl,rl[0]);const txt=rs.map(rstr).join(' ');
+  PR.text=txt;$('#pratios').value=txt;PR.reading='linear';PR.mode=0;PR.applied=null;PR.fourJ=null;PR.zShow=null;PR.zf=null;PR.zprev=null;PR.sbSel=null;PR.meterSel=0;PR.meterCmp=null;
+  const st=latSt();st.src='set';st.pi=0;renderPrism();
+}
+$('#ldetail').addEventListener('click',e=>{
+  const b=e.target.closest('[data-lat]');if(!b)return;
+  const [a,x]=b.dataset.lat.split(':');const st=latSt();
+  if(a==='src'){st.src=x;renderPrism();return;}
+  if(a==='sel'){st.ci=+x;renderPrism();return;}
+  if(a==='pk'){st.pi=+x;renderPrism();return;}
+  if(a==='view'){st.view=x;renderPrism();return;}
+  if(a==='iv'){st.iv=st.iv===x?null:x;renderPrism();return;}
+  if(a==='others'){st.others=!st.others;renderPrism();return;}
+  if(a==='search'){const sd=latSetData();st.cache[latSetKey()]=latPartners(sd.vecs,2500);renderPrism();return;}
+  if(a==='rot'){const m={l:[-.25,0],r:[.25,0],u:[0,.25],d:[0,-.25]}[x];latRotate(m[0],m[1]);latDraw();return;}
+  if(a==='reset'){st.M=latM0();latDraw();return;}
+  if(a==='face'){if(latFace())latDraw();return;}
+  if(a==='load'){
+    if(st.src==='cat'){const en=latCat()[st.ci];latLoad(x==='A'?en.A:en.B,LAT_BASE);}
+    else{const sd=latSetData(),pr=latPartnersFor();if(pr&&pr.list.length)latLoad(pr.list[Math.min(st.pi,pr.list.length-1)],sd.Pf);}
+  }
+});
+
+function detailHTML(ld){
+  const R=PD.R,L=R.L,k=R.k,A=R.A,key=PR.lens,d=ld[key];
+  if(key==='lat')return latHTML();
+  const onsetCells=R.ons.map(o=>`<th class="r">${labelOf(o)}</th>`).join('');
+  if(key==='even'){
+    const cnt=new Map();d.eg.forEach(x=>cnt.set(x,(cnt.get(x)||0)+1));
+    const evenDesc=[...cnt.entries()].sort((a,b)=>b[0]-a[0]).map(([g,c])=>`${c} × ${fmtNum(g)}`).join(' and ');
+    return `<h3>Evenness</h3><p>The reference is the maximally even rhythm with the same number of onsets on the same ring: ${evenDesc}. It’s unique up to rotation, so it works as a fixed zero point. The ghost shows its nearest rotation, with a line for each onset’s move.</p>
+    <div class="tblwrap"><table class="tbl"><tr><th></th><th class="r">Your rhythm</th><th class="r">Most even</th></tr>
+    <tr><td>Gaps (slots)</td><td class="r">${R.gaps.map(fmtNum).join(', ')}</td><td class="r">${d.eg.map(fmtNum).join(', ')}</td></tr>
+    <tr><td>Smallest and largest gap</td><td class="r">${fmtNum(Math.min(...R.gaps))} and ${fmtNum(Math.max(...R.gaps))}</td><td class="r">${fmtNum(Math.min(...d.eg))} and ${fmtNum(Math.max(...d.eg))}</td></tr>
+    <tr><td>Distinct gap sizes</td><td class="r">${new Set(R.gaps).size}</td><td class="r">${new Set(d.eg).size}</td></tr>
+    <tr><td>Gap variance</td><td class="r">${fmtNum(variance(R.gaps))}</td><td class="r">${fmtNum(variance(d.eg))}</td></tr></table></div>
+    <p>Swap distance: <strong>${fmtNum(d.al.cost)} slots</strong> in total, or ${(d.al.cost/L/k*100).toFixed(2)}% of the cycle per onset on average.</p>`;
+  }
+  if(key==='iso'){
+    if(!d.ok)return `<h3>Isochrony</h3><p>Perfectly equal spacing needs the number of onsets to divide the ring. ${k} doesn’t divide ${fmtNum(L)}, so there’s no isochronous reference here. The Evenness lens is the closest substitute.</p>`;
+    return `<h3>Isochrony</h3><p>The reference is ${k} equal steps of ${fmtNum(L/k)} slots. The ghost shows the best rotation. Swap distance: <strong>${fmtNum(d.ai.cost)} slots</strong>.</p>`;
+  }
+  if(key==='four'){
+    const cs=d.coeffs,J=d.J;
+    const bw=Math.max(7,Math.min(22,Math.floor(640/J))),W=J*bw+40,Hh=150,base=120;
+    let svg=`<svg viewBox="0 0 ${W} ${Hh}" width="100%" style="max-width:${W}px" role="img" aria-label="Fourier magnitudes">`;
+    svg+=`<line x1="30" y1="${base}" x2="${W-6}" y2="${base}" stroke="var(--rule)"/><line x1="30" y1="${base-100}" x2="${W-6}" y2="${base-100}" stroke="var(--rule)" stroke-dasharray="3 3"/><text x="4" y="${base-96}" style="font-size:11px;fill:var(--muted)">1</text><text x="4" y="${base+4}" style="font-size:11px;fill:var(--muted)">0</text>`;
+    cs.forEach((c,i)=>{const x=34+i*bw,h=100*c.mag,he=100*c.e,on=c.j===PR.fourJ;
+      svg+=`<g data-fj="${c.j}" style="cursor:pointer"><rect x="${x}" y="${base-100}" width="${bw-2}" height="100" fill="transparent"/><rect x="${x}" y="${base-h}" width="${bw-3}" height="${Math.max(1,h)}" style="fill:var(--lc);opacity:${on?1:0.55}"/><line x1="${x-1}" x2="${x+bw-2}" y1="${base-he}" y2="${base-he}" style="stroke:var(--ink);stroke-width:2"/>${(J<=40||c.j===1||c.j%5===0||on)?`<text x="${x+(bw-3)/2}" y="${base+14}" text-anchor="middle" style="font-size:10px;fill:${on?'var(--ink)':'var(--muted)'};font-weight:${on?700:400}">${c.j}</text>`:''}</g>`;});
+    svg+='</svg>';
+    const sc=d.sel;
+    let h=`<h3>Spectrum</h3><p>The discrete Fourier transform asks, for each j, how close the onsets come to dividing the cycle into j equal parts: 1 means perfectly, 0 means not at all. Here j isn’t a slot: it counts beats per cycle, so it’s the j-th harmonic of the cycle itself. j = 2 tests for a half-cycle pulse, j = 3 for thirds, and so on up to half the ring size. Bars are your rhythm; the dark ticks are the most even ${k}-in-${fmtNum(L)} rhythm. Click a bar to draw that j-fold division on the ring.</p><div class="tblwrap">${svg}</div>`;
+    // phase comparison for a shown partner
+    {
+      let X=null,Y=null,lab='';
+      const zr=d.zr;
+      if(zr&&PR.zShow!==null&&d.zal[PR.zShow]){X=A;Y=d.zal[PR.zShow].Q;lab=`Partner ${PR.zShow+1}`;}
+      else if(d.zfOk&&PR.zprev&&PR.zf.res[PR.zprev.i]){const r=PR.zf.res[PR.zprev.i];X=r.P.slice().sort((a,b)=>a-b);Y=r.pal||r.partner;lab='its Z-partner';}
+      if(X&&Y){
+        const lin=PR.reading==='linear';
+        const nm=x=>lin?rstr(mkR(L+x,L)):Math.round(x*1200/L)+'¢';
+        const res=(S,j)=>{let cx=0,cy=0;for(const a of S){const t=2*Math.PI*j*a/L;cx+=Math.sin(t);cy-=Math.cos(t);}return {x:cx/k,y:cy/k,m:Math.hypot(cx,cy)/k};};
+        let maxdm=0;for(let j=1;j<=J;j++)maxdm=Math.max(maxdm,Math.abs(res(X,j).m-res(Y,j).m));
+        h+=`<h4 style="margin:18px 0 4px;font-size:16px">Why yours and ${lab} match</h4>`;
+        // 1. shared distances
+        const pairsOf=S=>{const m=new Map();for(let i=0;i<S.length;i++)for(let j2=i+1;j2<S.length;j2++){const dd=Math.abs(S[j2]-S[i]);const c=Math.min(dd,L-dd);if(!m.has(c))m.set(c,[]);m.get(c).push([S[i],S[j2]]);}return m;};
+        const PX=pairsOf(X),PY=pairsOf(Y);const ds=[...PX.keys()].sort((p,q)=>p-q);const H=Math.floor(L/2);
+        const col=dd=>`hsl(${Math.round(300*dd/Math.max(1,H))} 60% 48%)`;
+        const chordRing=(S,title)=>{const R0=86,c=110;const pt=a=>{const t=2*Math.PI*a/L;return [c+R0*Math.sin(t),c-R0*Math.cos(t)];};
+          let g=`<svg viewBox="0 0 220 240" width="220" role="img" aria-label="${title}: every pair of onsets joined by a chord colored by its distance"><circle cx="${c}" cy="${c}" r="${R0}" class="rc"/>`;
+          const pm=pairsOf(S);for(const [dd,ps] of pm)for(const [p,q] of ps){const [x1,y1]=pt(p),[x2,y2]=pt(q);g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${col(dd)};stroke-width:2;opacity:.85"/>`;}
+          for(const a of S){const [x,y]=pt(a);g+=`<circle cx="${x}" cy="${y}" r="4.5" class="on"/>`;}
+          return g+`<text x="${c}" y="232" text-anchor="middle" style="font-size:13px;fill:var(--ink)">${title}</text></svg>`;};
+        h+=`<p class="small"><strong>1. Every distance appears in both.</strong> Each chord joins two onsets and is colored by the distance between them. The two rings have exactly the same set of chord colors and counts, made from different pairs of onsets. That’s what a Z-relation is: the same distances, assembled differently.</p>`;
+        h+=`<div class="inline" style="gap:18px">${chordRing(X,'Yours')}${chordRing(Y,lab.charAt(0).toUpperCase()+lab.slice(1))}</div>`;
+        h+=`<div class="tblwrap"><table class="tbl"><tr><th>Distance (slots)</th><th>Yours: pairs</th><th>${lab.charAt(0).toUpperCase()+lab.slice(1)}: pairs</th></tr>${ds.map(dd=>`<tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${col(dd)};vertical-align:-1px;margin-right:6px"></span>${dd}${PX.get(dd).length>1?` ×${PX.get(dd).length}`:''}</td><td>${PX.get(dd).map(([p,q])=>`${nm(p)}–${nm(q)}`).join(', ')}</td><td>${(PY.get(dd)||[]).map(([p,q])=>`${nm(p)}–${nm(q)}`).join(', ')}</td></tr>`).join('')}</table></div>`;
+        if(lin)h+=`<p class="muted small">On the linear ring the same slot distance can be a different ratio in each rhythm, because a slot near the top of the ring is a smaller ratio than one near the bottom.</p>`;
+        // 2. arrows per j
+        const Jd=Math.min(J,64);
+        let dials='';for(let j=1;j<=Jd;j++){const a=res(X,j),b2=res(Y,j);const on=j===PR.fourJ;const r0=24,cc=32;
+          dials+=`<svg viewBox="0 0 64 80" width="64" data-fj="${j}" style="cursor:pointer" role="img" aria-label="j ${j}"><circle cx="${cc}" cy="${cc}" r="${r0}" style="fill:none;stroke:${on?'var(--lc)':'var(--rule)'};stroke-width:${on?2:1}"/>`+
+            `<line x1="${cc}" y1="${cc}" x2="${cc+r0*a.x}" y2="${cc+r0*a.y}" style="stroke:var(--ink);stroke-width:2.5;stroke-linecap:round"/>`+
+            `<line x1="${cc}" y1="${cc}" x2="${cc+r0*b2.x}" y2="${cc+r0*b2.y}" style="stroke:var(--lc);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:3 2"/>`+
+            `<text x="${cc}" y="74" text-anchor="middle" style="font-size:11px;fill:${on?'var(--ink)':'var(--muted)'};font-weight:${on?700:400}">${j}</text></svg>`;}
+        h+=`<p class="small"><strong>2. Same strengths, different directions.</strong> For each j, wrap the onsets around the circle j times and average them into one arrow. The arrow’s length is the Fourier magnitude (the bar above); its direction is the phase. Solid is yours, dashed is the partner’s: every pair has the same length (they differ by at most ${maxdm<1e-9?'rounding error':maxdm.toExponential(1)}) and only the direction differs. Click a dial to open it.</p><div style="display:flex;flex-wrap:wrap;gap:2px">${dials}</div>`;
+        if(J>Jd)h+=`<p class="muted small">Dials shown for j up to ${Jd}.</p>`;
+        // 3. selected j, wrapped onsets
+        const j=Math.min(PR.fourJ||1,J);const a=res(X,j),b2=res(Y,j);
+        const c=120,R1=96,R2=80;const wp=(S,R,cls,st)=>S.map(x=>{const t=2*Math.PI*j*x/L;return `<circle cx="${c+R*Math.sin(t)}" cy="${c-R*Math.cos(t)}" r="5" ${st}/>`;}).join('');
+        let big=`<svg viewBox="0 0 240 240" width="240" role="img" aria-label="Onsets wrapped ${j} times around the circle"><circle cx="${c}" cy="${c}" r="${R1}" class="rc"/><circle cx="${c}" cy="${c}" r="${R2}" class="rc" style="stroke-dasharray:3 3"/>`+
+          wp(X,R1,'','style="fill:var(--ink)"')+wp(Y,R2,'','style="fill:var(--sheet);stroke:var(--lc);stroke-width:2"')+
+          `<line x1="${c}" y1="${c}" x2="${c+R1*a.x}" y2="${c+R1*a.y}" style="stroke:var(--ink);stroke-width:3;stroke-linecap:round"/><line x1="${c}" y1="${c}" x2="${c+R1*b2.x}" y2="${c+R1*b2.y}" style="stroke:var(--lc);stroke-width:3;stroke-linecap:round;stroke-dasharray:4 3"/></svg>`;
+        h+=`<p class="small"><strong>3. Inside one dial: j = ${j}.</strong> Each onset is moved to ${j} times its position around the circle (yours on the outer ring, the partner’s on the inner one). Where the dots bunch up, the arrow is long; where they spread out evenly, it’s short. Both sets bunch up by the same amount (length ${a.m.toFixed(3)}) in different places.</p><div class="inline">${big}</div>`;
+        h+=`<p class="muted small">The directions on their own look random, because they depend on how each rhythm happens to be turned. What’s fixed is that every arrow pair has equal length.</p>`;
+        {
+          PR.pair={X,Y,L,lab};const Hmax=Math.max(1,Math.min(64,Math.floor(L/2)));if(PR.harm>Hmax)PR.harm=Hmax;const Lab=lab.charAt(0).toUpperCase()+lab.slice(1);
+          h+=`<p class="small" style="margin-top:20px"><strong>4. See and hear it.</strong> Speed the cycle up and each rhythm becomes a periodic waveform. Because the two share every harmonic strength, at pitch speeds they should sound close to identical, even though their waveforms look different. Slow it down and they separate into two different rhythms.</p>`;
+          h+=`<div class="inline"><label class="small" for="fspeed"><strong>Cycle speed</strong></label><input id="fspeed" type="range" min="0" max="1000" step="1" value="${Math.round(hzToSpeed(PR.f0))}" style="flex:1;min-width:180px"><span class="seg">${[[1,'Rhythm'],[20,'Threshold'],[110,'Pitch']].map(([v,l])=>`<button data-fpreset="${v}">${l}</button>`).join('')}</span></div><p class="small" id="fspeedlab">${speedLabel(PR.f0)}</p>`;
+          h+=`<div class="btnrow"><button class="primary" data-audio="A">Play yours</button><button class="primary" data-audio="B">Play ${lab}</button><button data-audio="alt">Alternate them</button><button data-audio="stop">Stop</button></div>`;
+          h+=`<div class="inline" style="margin-top:14px"><label class="small" for="fharm"><strong>Harmonics drawn</strong></label><input id="fharm" type="range" min="1" max="${Hmax}" step="1" value="${PR.harm}" style="flex:1;min-width:180px"><span class="small" id="fharmlab">1 to ${PR.harm}</span></div>`;
+          h+=`<div class="tblwrap" id="wplot">${wavePlot(X,Y,L,PR.harm,Lab)}</div>`;
+          h+=`<p class="muted small">The plot shows one period built from harmonics 1 to n with each rhythm’s own strengths and directions; ticks mark the onsets. Fewer harmonics give smoother shapes, but the two never match, because their directions differ. The sound uses the full pulse train. Ears are mostly insensitive to phase in steady tones, though at low pitches with many harmonics some difference can still come through.</p>`;
+        }
+      }else if(zr&&zr.partners.length){h+=`<p class="muted small">Click “Show” on a Z-partner below to compare its phases with yours.</p>`;}
+    }
+    if(sc)h+=`<p>At j = ${sc.j}: yours <strong>${sc.mag.toFixed(3)}</strong>, most even ${sc.e.toFixed(3)}.${sc.j===k?' At j equal to the number of onsets, the most even rhythm is the maximum possible, so this bar is another measure of evenness.':''}</p>`;
+    h+=`<p class="muted small">${J<Math.floor(L/2)?`Showing j from 1 to ${J} of ${fmtNum(Math.floor(L/2))}.`:`j runs from 1 to ${J}, half the ring: beyond that the magnitudes repeat in mirror image.`}</p>`;
+    // interval vector + Z
+    const ivc=ivOf(A,L);const nz=ivc.map((c,dd)=>c&&dd?`${dd}${c>1?` ×${c}`:''}`:null).filter(Boolean);
+    h+=`<h4 style="margin:18px 0 4px;font-size:16px">Interval vector and Z-partners</h4><p>Your rhythm’s interval vector (every circular distance between every pair of onsets, in slots): ${nz.join(', ')}. Two rhythms share an interval vector exactly when they share every Fourier magnitude above, differing only in phase. A different rhythm with the same vector is a Z-partner.</p>`;
+    if(L>2000)h+=`<p class="muted small">The Z-partner search runs on rings up to 2,000 slots.</p>`;
+    else if(!d.zr)h+=`<div class="btnrow"><button data-act="zsearch">Search this ring for Z-partners</button></div>`;
+    else{
+      const zr=d.zr;
+      if(!zr.partners.length)h+=`<p><strong>No Z-partners</strong>${zr.aborted?' found before the search limit':''}: every ${k}-onset rhythm on this ring with the same interval vector is a rotation or reflection of yours.</p>`;
+      else{
+        const lin=PR.reading==='linear';const zal=d.zal;
+        h+=`<p><strong>${zr.partners.length} Z-partner${zr.partners.length>1?'s':''}</strong>${zr.aborted?' found before the search limit':''}. Each partner is turned (rotated, or mirrored if that fits better) to share as many onsets with yours as possible; the onsets that differ are highlighted. ${lin?'Every slot on the linear ring is the ratio (ring + slot) / ring, so each partner is a real ratio set you can load.':'In the log reading steps are shown in cents, rounded; partners can’t be loaded as exact ratios.'}</p>`;
+        h+=`<div class="tblwrap"><table class="tbl"><tr><th></th><th>${lin?'Ratios':'Steps'}</th><th></th></tr><tr><td><strong>Yours</strong><span class="zrow3">${clsName(A,L)}</span></td>${zCell(A,L,null)}<td></td></tr>${zr.partners.slice(0,24).map((p,i)=>{const al=zal[i];const Q=al.Q;
+          const lost=A.filter(x=>!Q.includes(x)),gain=Q.filter(x=>!A.includes(x));const nm=x=>lin?rstr(mkR(L+x,L)):Math.round(x*1200/L)+'¢';
+          return `<tr><td>Partner ${i+1}<span class="zrow3">${clsName(p,L)}</span><span class="zrow3">shares ${al.shared} of ${k}${al.mir?', mirrored':''}</span><span class="zrow3">swaps ${lost.map(nm).join(', ')} for ${gain.map(nm).join(', ')}</span></td>${zCell(Q,L,A)}<td style="white-space:nowrap"><button class="link" data-zp="${i}">${PR.zShow===i?'Showing':'Show'}</button>${lin?` · <button class="link" data-zload="${i}">Load as the scale</button>`:''} · <button class="link" data-zcat="${i}">Add to catalog</button></td></tr>`;}).join('')}</table></div>`;
+        if(zr.partners.length>24)h+=`<p class="muted small">Showing 24 of ${zr.partners.length}.</p>`;
+      }
+      h+=`<p class="muted small">In a sweep of rings 6 to 61, 3-onset rhythms never had Z-partners, 4-onset ones did only on rings divisible by 4 or 13, and 5-onset ones only on rings divisible by 2 or 5. With 6 onsets, every prime ring tested (13 to 47) had them.</p>`;
+    }
+
+    // finder
+    h+=`<h4 style="margin:22px 0 4px;font-size:16px">Make a Z-partner appear</h4>`;
+    if(L>400||k>12)h+=`<p class="muted small">The finder runs on rings up to 400 slots with up to 12 onsets.</p>`;
+    else{
+      h+=`<p>Search for the smallest change that gives your rhythm a Z-partner. The cost is the total number of slots moved, smallest first; pulse 1 stays put.</p>`;
+      h+=`<div class="inline"><span class="seg">${[['move','Move onsets'],['add','Add one onset (plus moves)']].map(([v,l])=>`<button data-zmode="${v}" aria-pressed="${PR.zmode===v}">${l}</button>`).join('')}</span><label class="small" for="zmax">Up to</label><input id="zmax" type="number" min="1" max="12" value="${PR.zmax}" style="width:60px;height:34px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);font:inherit;text-align:center"><span class="small">slots of movement</span></div>`;
+      const st=PR.zf&&d.zfOk&&PR.zf.key===`${L}|${A.join(',')}|${PR.zmode}|${PR.zmax}`?PR.zf:null;
+      if(st&&st.running)h+=`<p id="zstatus" class="small">Searching…</p><div class="btnrow"><button data-act="zstop">Stop</button></div>`;
+      else h+=`<div class="btnrow"><button class="primary" data-act="zfind">Find the smallest change</button></div>`;
+      if(st&&!st.running){
+        const label=i=>labelOf(R.ons[i]);
+        const ratioAt=x=>PR.reading==='linear'?rstr(mkR(L+x,L)):`step ${pulse(x)}`;
+        if(!st.res.length){
+          h+=`<p>No change ${st.addOne?'adding one onset ':''}with up to ${st.stopped||st.timedOut?st.level-1:PR.zmax} slot${PR.zmax===1?'':'s'} of movement gives a Z-partner${st.timedOut?' (the search reached its 15-second limit)':st.stopped?' (stopped early)':''}. ${st.addOne?'Try a larger movement limit.':k===5&&L%2&&L%5?'On this ring, 5-onset rhythms never have Z-partners (see the note above), so try adding an onset.':'Try a larger limit, or add an onset.'}</p>`;
+        }else{
+          h+=`<p><strong>${st.res.length}${st.res.length>=24?'+':''} change${st.res.length>1?'s':''}</strong> with the minimum cost of <strong>${st.d} slot${st.d===1?'':'s'}</strong>${st.addOne?(st.d===0?', just adding one onset':' plus one added onset'):''}${st.partial?' (the search stopped partway through this level, so there may be more at the same cost)':''}. “Show” draws the changed rhythm as the ghost, with lines for each move; “Partner” draws its Z-partner.</p>`;
+          h+=`<div class="tblwrap"><table class="tbl"><tr><th>Change</th><th>New rhythm</th><th>Its Z-partner</th><th></th></tr>${st.res.map((r,i)=>{
+            const parts=[];r.delta.forEach((dv,j)=>{if(dv)parts.push(`${label(j)} ${dv>0?'+':'−'}${Math.abs(dv)} → ${ratioAt(r.P[j])}`);});
+            if(r.x!==null&&r.x!==undefined)parts.push(PR.reading==='linear'?`add ${ratioAt(r.x)} at pulse ${pulse(r.x)}`:`add an onset at step ${pulse(r.x)}`);
+            const pv=PR.zprev&&PR.zprev.i===i?PR.zprev.kind:null;
+            return `<tr><td style="white-space:normal;max-width:300px">${parts.join('; ')}</td>${zCell(r.P.slice().sort((a,b)=>a-b),L,null)}${zCell(r.pal||r.partner,L,r.P)}<td style="white-space:nowrap"><button class="link" data-zprev="mod:${i}">${pv==='mod'?'Showing':'Show'}</button> · <button class="link" data-zprev="partner:${i}">${pv==='partner'?'Showing':'Partner'}</button>${PR.reading==='linear'?` · <button class="link" data-zuse="${i}">Use these ratios</button>`:''}</td></tr>`;}).join('')}</table></div>`;
+          h+=`<p class="muted small">${PR.reading==='linear'?'Ratios are relative to the current root. Each partner is turned to share as many onsets as possible with the new rhythm; highlighted onsets are the ones that differ.':'In the log reading each step is shown in cents, rounded. Each partner is turned to share as many onsets as possible with the new rhythm.'} ${st.tested.toLocaleString('en-US')} rhythms tested in ${(st.ms/1000).toFixed(1)} s.</p>`;
+        }
+      }
+    }
+    return h;
+  }
+  if(key==='tune'){
+    if(d.log){
+      let h=`<h3>Tuning</h3><p>Each ratio’s exact log position (ghost) is rounded to the nearest of ${L} equal steps (solid). Errors in cents:</p>
+      <div class="tblwrap"><table class="tbl"><tr><th>Ratio</th><th class="r">Exact</th><th class="r">Step</th><th class="r">Error</th></tr>${d.rows.map(x=>`<tr><td>${rstr(x.r)}</td><td class="r">${x.c.toFixed(1)}¢</td><td class="r">${pulse(x.o.slot)} of ${L}</td><td class="r">${x.e>=0?'+':''}${x.e.toFixed(1)}¢</td></tr>`).join('')}</table></div>`;
+      h+=d.commas.length?`<p>Tempered-out commas (pairs that landed on the same step): ${d.commas.map(c=>`${rstr(c.b)} ÷ ${rstr(c.a)} = <strong>${c.n}/${c.d}</strong> (${c.c.toFixed(1)}¢)`).join('; ')}.</p>`:`<p>No two ratios share a step, so no comma is tempered out.</p>`;
+      h+=`<p>Ring sizes up to 96 that keep every ratio distinct: ${d.robust.length?d.robust.join(', ')+(d.robust.length>=14?', …':''):'none'}.</p>`;
+      return h;
+    }
+    let h=`<h3>Tuning</h3><div class="inline"><label for="pgrid"><strong>Quantize to a grid of</strong></label><input id="pgrid" type="number" min="2" max="2000" value="${d.M}" inputmode="numeric"><span class="muted small">slots. The ghost shows where each onset lands.</span></div>
+    <div class="tblwrap"><table class="tbl"><tr><th>Ratio</th><th class="r">Exact pulse (of ${fmtNum(L)})</th><th class="r">Grid pulse (of ${d.M})</th><th class="r">Shift (% of cycle)</th></tr>${d.qu.res.map(x=>`<tr><td>${labelOf(x.o)}</td><td class="r">${fmtNum(pulse(x.o.slot))}</td><td class="r">${pulse(x.q)}</td><td class="r">${(x.err*-100).toFixed(2)}</td></tr>`).join('')}</table></div>`;
+    const groups=new Map();d.qu.res.forEach(x=>{if(!groups.has(x.q))groups.set(x.q,[]);groups.get(x.q).push(labelOf(x.o));});
+    const mg=[...groups.values()].filter(v=>v.length>1);
+    h+=`<p>${mg.length?`Merged onto one grid pulse: ${mg.map(v=>v.join(' + ')).join('; ')}.`:'Every onset keeps its own grid pulse.'} Information lost: <strong>${bitsLost(d.qu.res.map(x=>x.q)).toFixed(2)} bits</strong>. RMS shift: ${(d.rms*100).toFixed(2)}% of the cycle. Exact landings: ${d.qu.res.filter(x=>x.exact).length} of ${k}.</p>`;
+    if(d.qu.ties)h+=`<p class="muted small">${d.qu.ties} onset${d.qu.ties>1?'s land':' lands'} exactly halfway between grid pulses. This table rounds those up; rounding down ${distinctCount(d.qd.res.map(x=>x.q))!==distinctCount(d.qu.res.map(x=>x.q))?'changes the merges':'gives the same merges'}.</p>`;
+    h+=`<p>${d.M%L===0?'This grid is a multiple of the ring, so it’s lossless.':`Only multiples of ${fmtNum(L)} are lossless.`} Grids up to 96 that keep every onset distinct under either tie rule: ${d.robust.length?d.robust.join(', ')+(d.robust.length>=14?', …':''):'none'}.</p>`;
+    return h;
+  }
+  if(key==='meter'){
+    const lab=i=>labelOf(R.ons[i]);
+    let h=`<h3>Meter</h3><p>Each hierarchy gives every pulse a weight: one level for every group that starts there. Syncopation follows Longuet-Higgins and Lee: an onset scores when a stronger pulse falls in the silence after it. Click a row to select it; its main beats appear as the ghost.</p>`;
+    if(d.prime)h+=`<p>${fmtNum(L)} is prime, so its only divisive hierarchy is flat. Additive groupings (below) and trees from Grouping trees give it real structure.</p>`;
+    // additive search controls
+    h+=`<h4 style="margin:16px 0 4px;font-size:16px">Scale → meter</h4>`;
+    h+=`<div class="inline"><span class="small"><strong>Additive search: groups of</strong></span><span class="chiprow" style="margin:0">${[2,3,4,5,6,7].map(v=>`<button data-add="${v}" aria-pressed="${PR.addSizes.has(v)}">${v}</button>`).join('')}</span></div>`;
+    if(L>2000)h+=`<p class="muted small">Additive search runs on rings up to 2,000 slots.</p>`;
+    else if(!d.addSz.length)h+=`<p class="muted small">Pick at least one group size to search additive groupings.</p>`;
+    else if(!d.addRes)h+=`<p class="muted small">No sequence of groups of ${andList(d.addSz.map(String))} adds up to ${fmtNum(L)}.</p>`;
+    else{
+      const ar=d.addRes;const atMin=ar.dist.find(e=>e[0]===ar.minSync)[1];
+      h+=`<p class="small">Searched all ${fmt(ar.total)} groupings of ${fmtNum(L)} into ${andList(d.addSz.map(x=>x+'s'))} (weights: downbeat 3, group starts 2, other pulses 1). ${fmt(atMin)} reach the minimum syncopation of <strong>${ar.minSync}</strong>; the one in the table also puts the most onsets on group starts.</p>`;
+      h+=`<p class="muted small">Syncopation counts: ${ar.dist.slice(0,10).map(([v,n])=>`${v}: ${fmt(n)}`).join(', ')}${ar.dist.length>10?', …':''}</p>`;
+      if(L<=96)h+=`<div class="btnrow" style="margin-top:4px"><button data-act="addToTree">Open the best additive grouping in Grouping trees</button></div>`;
+    }
+    if(!d.opts.length)return h+'<p>No hierarchy to score.</p>';
+    const shown=d.opts.slice(0,40);
+    const onsetCells=R.ons.map(o=>`<th class="r">${labelOf(o)}</th>`).join('');
+    const pairCol=d.pairs.length?`<th>Closest pair: stronger side</th>`:'';
+    const side=o=>d.pairs.map(([i,j])=>{const wi=o.weights[i],wj=o.weights[j];return wi===wj?'even':(wi>wj?lab(i):lab(j));}).join('; ');
+    h+=`<div class="tblwrap"><table class="tbl"><tr><th>Hierarchy (top to bottom)</th>${onsetCells}<th class="r">Syncopation</th>${pairCol}<th></th></tr>${shown.map((o,i)=>`<tr class="pick" tabindex="0" data-meter="${i}" aria-selected="${i===PR.meterSel}"><td style="white-space:normal;max-width:300px">${o.h.name}</td>${o.weights.map(w=>`<td class="r">${w}</td>`).join('')}<td class="r"><strong>${o.sync}</strong></td>${d.pairs.length?`<td>${side(o)}</td>`:''}<td>${i===PR.meterSel?'<span class="muted small">selected</span>':`<button class="link" data-cmp="${i}">${PR.meterCmp===i?'Comparing':'Compare'}</button>`}</td></tr>`).join('')}</table></div>`;
+    if(d.opts.length>40)h+=`<p class="muted small">Showing the best 40 of ${d.opts.length.toLocaleString('en-US')}.</p>`;
+    h+=`<p class="muted small">Weights are on each hierarchy’s own scale (its downbeat is its top weight), so compare syncopation within a hierarchy type more than across types.${d.opts.some(o=>o.h.kind==='tree')?' A tree built from these onsets (like the proximity tree) can’t syncopate against them, so a score of 0 there is expected.':''}</p>`;
+    const sel=d.sel;
+    if(d.pairs.length&&sel){
+      h+=`<p>In <strong>${sel.h.name}</strong>, ${d.pairs.map(([i,j])=>{const wi=sel.weights[i],wj=sel.weights[j];return wi===wj?`${lab(i)} and ${lab(j)} are equally strong`:`${wi>wj?lab(i):lab(j)} is structural and ${wi>wj?lab(j):lab(i)} is ornamental`;}).join('; ')}. That’s the side of the comma this meter picks.</p>`;
+    }
+    // meter -> scale
+    if(sel){
+      h+=`<h4 style="margin:18px 0 4px;font-size:16px">Meter → scale</h4><p class="small">Keep <strong>${sel.h.name}</strong> and move the downbeat to each onset in turn. ${PR.reading==='log'?'On the log ring, these rotations are exactly the modes.':'On the linear ring, re-rooted modes live on rings of different sizes, so this compares rotations of the same necklace instead.'}</p>`;
+      const rows=R.ons.map((o,j)=>{const Ar=rotations(A,L,j);return {j,o,...scoreH(sel.h,Ar,L)};}).sort((x,y)=>x.sync-y.sync);
+      h+=`<div class="tblwrap"><table class="tbl"><tr><th>Downbeat on</th><th class="r">Syncopation</th><th>Onset weights (from the downbeat)</th></tr>${rows.map(r=>`<tr><td>${labelOf(r.o)}</td><td class="r"><strong>${r.sync}</strong></td><td>${r.weights.join(', ')}</td></tr>`).join('')}</table></div>`;
+      if(L<=5000){let bestS=Infinity,cnt=0,first=0;for(let sh=0;sh<L;sh++){const Ar=A.map(a=>((a-sh)%L+L)%L).sort((x,y)=>x-y);const v=scoreH(sel.h,Ar,L).sync;if(v<bestS){bestS=v;cnt=1;first=sh;}else if(v===bestS)cnt++;}
+        h+=`<p class="small">Across all ${fmtNum(L)} possible downbeat positions, the lowest syncopation is <strong>${bestS}</strong>, reached by ${cnt} of them (the first is pulse ${pulse(first)} of the original ring).</p>`;}
+    }
+    // compare
+    if(sel&&PR.meterCmp!==null){
+      const other=d.opts[PR.meterCmp];
+      h+=`<h4 style="margin:18px 0 4px;font-size:16px">Side by side</h4>`;
+      if(L<=1500)h+=`<div class="tblwrap">${weightStrips(L,A,[{h:sel.h,label:'Selected: '+sel.h.name,color:'var(--lc)'},{h:other.h,label:'Compared: '+other.h.name,color:'var(--muted)'}])}</div>`;
+      h+=`<div class="tblwrap"><table class="tbl"><tr><th>Onset</th><th class="r">Selected</th><th class="r">Compared</th><th>Change</th></tr>${R.ons.map((o,i)=>{const a=sel.weights[i]/sel.h.top,b=other.weights[i]/other.h.top;const ch=Math.abs(a-b)<1e-9?'same':(b>a?'stronger in compared':'weaker in compared');return `<tr><td>${labelOf(o)}</td><td class="r">${sel.weights[i]} of ${sel.h.top}</td><td class="r">${other.weights[i]} of ${other.h.top}</td><td>${ch}</td></tr>`;}).join('')}<tr><td><strong>Syncopation</strong></td><td class="r"><strong>${sel.sync}</strong></td><td class="r"><strong>${other.sync}</strong></td><td></td></tr></table></div>`;
+      h+=`<div class="btnrow"><button data-act="clearCmp">Stop comparing</button></div>`;
+    }
+    if(L<=96)h+=`<div class="btnrow"><button data-act="sendOnsets">Build a hierarchy for these onsets by hand</button></div>`;
+    return h;
+  }
+  if(key==='group'){
+    let h=`<h3>Grouping</h3><p>Proximity grouping merges the closest onsets first, then works outward, so the tree comes from the rhythm itself. Each bottom-level group runs from one onset to the next.</p><p class="bigf">${treeFmt(d.tree)}</p>`;
+    h+=L<=96?`<div class="btnrow"><button data-act="toTree">Open this tree in Grouping trees</button></div><p class="muted small">It loads with your onsets marked, so you can edit the tree and watch the syncopation score.</p>`:`<p class="muted small">Grouping trees handles cycles up to 96 pulses, so this ring is too large to open there.</p>`;
+    return h;
+  }
+  if(key==='anc'){
+    if(!d.sb)return `<h3>Ancestry</h3><p>Every slot is an onset, so this rhythm sits at 1/1, the root of the tree.</p>`;
+    const node=(f,extra='')=>{const on=d.selF[0]===f[0]&&d.selF[1]===f[1];const edge=(f[0]===0||f[1]===0);return edge?`<button disabled>${f[0]}/${f[1]}<span class="k">edge</span></button>`:`<button data-sb="${f[0]}/${f[1]}" aria-pressed="${on}">${f[0]}/${f[1]}${extra?`<span class="k">${extra}</span>`:''}</button>`;};
+    const p=d.p,q=d.q,lp=d.sb.left,rp=d.sb.right;
+    let h=`<h3>Ancestry</h3><p>${k} onsets in ${fmtNum(L)} slots sits at <strong>${p}/${q}</strong> in the Stern–Brocot tree${d.g>1?`, since ${k}/${fmtNum(L)} reduces; the most even rhythm is ${p}-in-${q} repeated ${d.g} times`:''}. Path from 1/1: ${d.sb.runs.map(r=>r.dir+(r.t>1?`<sup>${r.t}</sup>`:'')).join(' ')||'none'}.</p>`;
+    h+=`${d.sb.nodes.length>2?`<p class="small muted">Turning points on the way down</p><div class="chiprow">${d.sb.nodes.slice(1,-1).slice(-12).map(f=>node(f)).join('')}</div>`:''}`;
+    h+=`<p class="small muted">This node, its parents, and its children</p><div class="chiprow">${node([p,q],'here')}${node(lp,'left parent')}${node(rp,'right parent')}${node([p+lp[0],q+lp[1]],'child')}${node([p+rp[0],q+rp[1]],'child')}</div>`;
+    const f=d.selF;
+    if(f[1]<=400){const gs=gapsOf(euclid(f[0],f[1]),f[1]);h+=`<p>Most even ${f[0]}-in-${f[1]}: gaps ${gs.join(', ')}. The ghost draws it on your ring by angle.</p>`;}
+    else{const a=Math.floor(f[1]/f[0]),b=f[1]%f[0];h+=`<p>Most even ${f[0]}-in-${fmtNum(f[1])}: ${f[0]-b} gaps of ${fmtNum(a)}${b?` and ${b} of ${fmtNum(a+1)}`:''}.</p>`;}
+    if(f[0]===p&&f[1]===q&&lp[0]>0&&rp[1]>0&&q<=400){
+      const gr=gapsOf(euclid(rp[0],rp[1]),rp[1]),gl=gapsOf(euclid(lp[0],lp[1]),lp[1]);
+      h+=`<p>It’s built from its parents: the right parent’s gaps (${gr.join(', ')}) followed by the left parent’s (${gl.join(', ')}).</p>`;
+    }
+    return h;
+  }
+  return '';
+}
+function renderPrism(){
+  prismCompute();
+  $('#pread').innerHTML=[['linear','Linear'],['log','Log']].map(([v,l])=>`<button data-r="${v}" aria-pressed="${PR.reading===v}">${l}</button>`).join('');
+  $('#preadhelp').textContent=PR.reading==='linear'?'Position is ratio − 1; the ring size is the common denominator.':'Position is log₂ of the ratio, rounded to the ring.';
+  $('#pNrule').style.display=PR.reading==='log'?'':'none';
+  const {pr,all,R}=PD;
+  $('#pmodes').innerHTML=`<span class="lbl2">Rooted on</span>`+all.map((r,i)=>`<button data-mode="${i}" aria-pressed="${i===PR.mode}">${rstr(r)}</button>`).join('');
+  let info='';
+  if(pr.bad.length)info+=`Ignored ${pr.bad.map(b=>`“${b}”`).join(', ')}: enter ratios like 5/4 or whole numbers. `;
+  if(pr.added)info+='Added 1/1. ';
+  if(pr.cut)info+='Only the first 24 ratios are used. ';
+  if(PR.applied&&PR.text===$('#pratios').value)info+=PR.appliedMsg||`Loaded from the Z-partner finder, written relative to ${PR.applied} as 1/1. `;
+  if(!R){$('#pname').innerHTML='';$('#seqview').innerHTML='';seqStop();$('#pinfo').innerHTML=info+'The common denominator is too large for a ring here. Try the log reading.';$('#ring').innerHTML='';$('#rail').innerHTML='';$('#ldetail').innerHTML='';return;}
+  if(R.k<2){$('#pname').innerHTML='';$('#seqview').innerHTML='';seqStop();$('#pinfo').innerHTML=info+'Enter at least two different ratios.';$('#ring').innerHTML='';$('#rail').innerHTML='';$('#ldetail').innerHTML='';return;}
+  if(PR.reading==='linear'){
+    const sizes=all.map(r=>lcdOf(modeOf(all,r)));
+    const Lh=lcdOf(all);let odd='';
+    if(Lh){const oh=all.map(r=>{let h=r.n*(Lh/r.d);while(h%2===0)h/=2;return h;}).sort((a,b)=>a-b);odd=` Odd-harmonic form: <strong>{${oh.join(', ')}}</strong>.`;}
+    info+=`Ring sizes of the modes (the set’s fingerprint): <strong>${sizes.map(x=>x?fmtNum(x):'too large').join(', ')}</strong>.${odd}`;
+  }else info+=`Log reading on ${R.L} equal steps per octave.`;
+  $('#pinfo').innerHTML=info;
+  {const n=rhythmName(R.A,R.L);const lin=PR.reading==='linear';
+   $('#pname').innerHTML=`<div class="nb"><span class="nl">Class (up to rotation and mirror image)</span><span class="nv">${n.L}·${n.k} ${fmtG(n.cls)}</span></div><div class="nb"><span class="nl">Rhythm (up to rotation)</span><span class="nv">${fmtG(n.rhy)}</span></div><div class="nb"><span class="nl">${lin?'Scale (this exact ratio set)':'Tempered scale (these exact steps)'}</span><span class="nv">${fmtG(n.rhy)}@${n.j}</span></div><button data-cat="addcur">Add to catalog</button><span class="help2">Names list the gaps between onsets in slots${n.factor>1?`, reduced from a ring of ${fmtNum(R.L)} to ${fmtNum(n.L)} because every gap shares a factor of ${n.factor}`:''}. @ marks which onset of the rhythm is ${lin?'1/1':'the root'}, counting from 1.${n.mir?' The class form is the mirror image of this rhythm.':''}</span>`;}
+  renderCatalog();
+  const ld=lensData();
+  const color=(LENSES.find(l=>l[0]===PR.lens)||LENSES[1])[2];
+  $('#ring').style.setProperty('--lc',`var(${color})`);
+  $('#ring').innerHTML=ringSVG(R,ld,PR.lens);
+  $('#ringcap').textContent=PR.lens==='lat'?'Solid dots are your onsets, starting from the top. The lattice view is below.':`Solid dots are your onsets, starting from the top. Hollow dots are the ${LENSES.find(l=>l[0]===PR.lens)[1].toLowerCase()} reference.`;
+  $('#rail').innerHTML=LENSES.map(([id,name,c])=>`<button class="lens" data-lens="${id}" aria-pressed="${PR.lens===id}" style="--lc:var(${c})"><span class="ln">${name}</span><span class="lv">${ld[id].value}</span><span class="ls">${ld[id].sub}</span></button>`).join('');
+  const det=$('#ldetail');det.style.setProperty('--lc',`var(${color})`);det.innerHTML=detailHTML(ld);if(PR.lens==='lat')latMount();renderSeq(ld);
+}
+// prism events
+let ptm;
+$('#pratios').addEventListener('input',e=>{clearTimeout(ptm);ptm=setTimeout(()=>{PR.text=e.target.value;PR.applied=null;PR.mode=0;PR.fourJ=null;PR.zShow=null;PR.zf=null;PR.zprev=null;PR.sbSel=null;PR.meterSel=0;PR.meterCmp=null;renderPrism();},250);});
+$('#pread').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;PR.reading=b.dataset.r;PR.meterSel=0;PR.fourJ=null;PR.zShow=null;PR.zf=null;PR.zprev=null;PR.meterCmp=null;PR.sbSel=null;renderPrism();});
+$('#pN').addEventListener('change',e=>{PR.N=Math.max(2,Math.min(400,Math.round(+e.target.value||53)));e.target.value=PR.N;PR.meterSel=0;PR.fourJ=null;PR.zShow=null;PR.zf=null;PR.zprev=null;PR.meterCmp=null;PR.sbSel=null;renderPrism();});
+$('#pmodes').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;PR.mode=+b.dataset.mode;PR.meterSel=0;PR.fourJ=null;PR.zShow=null;PR.zf=null;PR.zprev=null;PR.meterCmp=null;PR.sbSel=null;renderPrism();});
+$('#rail').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;PR.lens=b.dataset.lens;renderPrism();});
+$('#ldetail').addEventListener('click',e=>{const g=e.target.closest('[data-fj]');if(g){PR.fourJ=+g.dataset.fj;if(g.tagName.toLowerCase()!=='svg'){PR.zShow=null;PR.zprev=null;}renderPrism();}});
+$('#ldetail').addEventListener('input',e=>{
+  if(e.target.id==='fspeed'){PR.f0=speedToHz(+e.target.value);const l=document.getElementById('fspeedlab');if(l)l.textContent=speedLabel(PR.f0);}
+  if(e.target.id==='fharm'){PR.harm=+e.target.value;const l=document.getElementById('fharmlab');if(l)l.textContent=`1 to ${PR.harm}`;const p=PR.pair;const w=document.getElementById('wplot');if(p&&w)w.innerHTML=wavePlot(p.X,p.Y,p.L,PR.harm,p.lab.charAt(0).toUpperCase()+p.lab.slice(1));}
+});
+$('#ldetail').addEventListener('change',e=>{if(e.target.id==='zmax'){PR.zmax=Math.max(1,Math.min(12,Math.round(+e.target.value||6)));PR.zf=null;PR.zprev=null;renderPrism();return;}if(e.target.id==='pgrid'){PR.grid=Math.max(2,Math.min(2000,Math.round(+e.target.value||16)));renderPrism();}});
+$('#ldetail').addEventListener('click',e=>{
+  const b=e.target.closest('button');
+  if(b&&b.dataset.cmp!==undefined){PR.meterCmp=PR.meterCmp===+b.dataset.cmp?null:+b.dataset.cmp;renderPrism();return;}
+  const tr=e.target.closest('tr[data-meter]');if(tr&&!b){const v=+tr.dataset.meter;if(PR.meterCmp===v)PR.meterCmp=null;PR.meterSel=v;renderPrism();return;}
+  if(!b)return;
+  if(b.dataset.zmode){PR.zmode=b.dataset.zmode;PR.zmax=PR.zmode==='add'?Math.min(PR.zmax,3):PR.zmax;PR.zf=null;PR.zprev=null;renderPrism();return;}
+  if(b.dataset.act==='zfind'){startZFind();return;}
+  if(b.dataset.act==='zstop'){if(PR.zf)PR.zf.stopped=true;return;}
+  if(b.dataset.zprev){const [kind,i]=b.dataset.zprev.split(':');PR.zprev=PR.zprev&&PR.zprev.kind===kind&&PR.zprev.i===+i?null:{kind,i:+i};PR.zShow=null;renderPrism();return;}
+  if(b.dataset.zuse!==undefined){const r=PR.zf.res[+b.dataset.zuse];const L=PD.R.L,root=PD.root;
+    const rat=r.P.slice().sort((a,b)=>a-b).map(x=>mkR(L+x,L));
+    const txt=rat.map(rstr).join(' ');PR.text=txt;$('#pratios').value=txt;PR.mode=0;PR.applied=rstr(root);PR.appliedMsg=null;
+    PR.zf=null;PR.zprev=null;PR.zShow=null;PR.meterSel=0;PR.meterCmp=null;PR.fourJ=null;renderPrism();return;}
+  if(b.dataset.zcat!==undefined){const R=PD.R;const zr=PR.zcache[`${R.L}|${R.A.join(',')}`];const Q=alignTo(R.A,zr.partners[+b.dataset.zcat],R.L).Q;addCat(makeEntry(Q,R.L,clsName(R.A,R.L),'Z-partner')); if(!PR.catalog.some(x=>x.cls===clsName(R.A,R.L)&&x.vals===makeEntry(R.A,R.L).vals))addCat(makeEntry(R.A,R.L,zStatusFor(R.A,R.L)));b.textContent='Added';renderCatalog();return;}
+  if(b.dataset.audio){playPair(b.dataset.audio);return;}
+  if(b.dataset.fpreset){PR.f0=+b.dataset.fpreset;const r=document.getElementById('fspeed');if(r)r.value=Math.round(hzToSpeed(PR.f0));const l=document.getElementById('fspeedlab');if(l)l.textContent=speedLabel(PR.f0);return;}
+  if(b.dataset.zp!==undefined){const v=+b.dataset.zp;PR.zShow=PR.zShow===v?null:v;renderPrism();return;}
+  if(b.dataset.zload!==undefined){const R=PD.R,L=R.L;const key=`${L}|${R.A.join(',')}`;let p=alignTo(R.A,PR.zcache[key].partners[+b.dataset.zload],L).Q;if(!p.includes(0)){const m=p[0];p=p.map(x=>x-m);}
+    const prev=PD.rs.map(rstr).join(' ');const txt=p.map(x=>rstr(mkR(L+x,L))).join(' ');
+    PR.text=txt;$('#pratios').value=txt;PR.mode=0;PR.applied='partner';PR.appliedMsg=`Loaded a Z-partner of ${prev}. Both have the same interval vector on a ring of ${fmtNum(L)}. `;
+    PR.zf=null;PR.zprev=null;PR.zShow=null;PR.meterSel=0;PR.meterCmp=null;PR.fourJ=null;renderPrism();return;}
+  if(b.dataset.act==='zsearch'){b.textContent='Searching…';b.disabled=true;setTimeout(()=>{const R=PD.R;PR.zcache[`${R.L}|${R.A.join(',')}`]=zPartners(R.A,R.L,4e7);PR.zShow=null;renderPrism();},30);return;}
+  if(b.dataset.add){const v=+b.dataset.add;PR.addSizes.has(v)?PR.addSizes.delete(v):PR.addSizes.add(v);PR.meterSel=0;PR.meterCmp=null;renderPrism();return;}
+  if(b.dataset.act==='clearCmp'){PR.meterCmp=null;renderPrism();return;}
+  if(b.dataset.act==='addToTree'){const ld=lensData();const ar=ld.meter.addRes;const t={size:PD.R.L,kind:'split',children:ar.groups.map(g=>({size:g,kind:'leaf',children:[]}))};loadIntoTrees(PD.R.L,t,PD.R.A);return;}
+  if(b.dataset.sb){const [a,c]=b.dataset.sb.split('/').map(Number);PR.sbSel={L:PD.R.L,k:PD.R.k,f:[a,c]};renderPrism();return;}
+  if(b.dataset.act==='toTree'){const ld=lensData();loadIntoTrees(PD.R.L,ld.group.tree,PD.R.A);return;}
+  if(b.dataset.act==='sendOnsets'){loadIntoTrees(PD.R.L,null,PD.R.A);return;}
+});
+$('#ldetail').addEventListener('keydown',e=>{const tr=e.target.closest('tr[data-meter]');if(tr&&(e.key==='Enter'||e.key===' ')){e.preventDefault();PR.meterSel=+tr.dataset.meter;renderPrism();}});
+function loadIntoTrees(L,tree,A){
+  S.n=L;$('#n').value=L;S.surface=null;S.brList=[];compute();
+  if(tree){S.root=strip(tree);S.sel=S.root;S.loaded=null;}else newRoot();
+  S.onsets=A.slice();$('#onsets').value=A.map(a=>a+1).join(' ');
+  showView('trees');setMode('top');refresh();window.scrollTo({top:0,behavior:'smooth'});
+}
+$('#pname').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.cat==='addcur'){const R=PD.R;addCat(makeEntry(R.A,R.L,zStatusFor(R.A,R.L)));b.textContent='Added';renderCatalog();$('#pcat').open=true;}});
+$('#pcatbody').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.catplay!==undefined){const en=PR.catalog[+b.dataset.catplay];let S,L;
+    if(en.reading==='linear'){const rs=parseRatios(en.vals).ratios;const R=linearRing(modeOf(rs,rs[0]));if(!R)return;L=R.L;S=R.ons.map(o=>o.slot);}
+    else{L=+en.reading.split(' ')[1];S=[...new Set(en.vals.split(' ').map(c=>((Math.round(parseFloat(c)*L/1200))%L+L)%L))].sort((a,b)=>a-b);}
+    PR.seqOn=new Set();document.querySelectorAll('#seqview .seqbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
+    seqPlay([{S,L,freq:SEQ_FREQ[0]}],PR.seqDur||Math.min(12,Math.max(2,L/6)));b.textContent='Playing';setTimeout(()=>{b.textContent='Play';},1500);return;}
+  if(b.dataset.catdel!==undefined){PR.catalog.splice(+b.dataset.catdel,1);saveCat();renderCatalog();return;}
+  if(b.dataset.catload!==undefined){const en=PR.catalog[+b.dataset.catload];PR.text=en.vals;$('#pratios').value=en.vals;PR.reading='linear';PR.mode=0;PR.applied=null;PR.zf=null;PR.zprev=null;PR.zShow=null;PR.meterSel=0;PR.meterCmp=null;PR.fourJ=null;renderPrism();return;}
+  if(b.dataset.cat==='clear'){if(confirm('Remove every entry from the catalog?')){PR.catalog=[];saveCat();renderCatalog();}return;}
+  if(b.dataset.cat==='copy'){const t=catText();const ta=document.getElementById('cattext');
+    const done=()=>{b.textContent='Copied';setTimeout(()=>{b.textContent='Copy as text';},1500);};
+    try{if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,()=>{ta.select();document.execCommand&&document.execCommand('copy');done();});}else{ta.select();document.execCommand('copy');done();}}catch(err){ta.select();}
+    return;}
+});
+$('#seqview').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.seqmode){PR.seqMode=b.dataset.seqmode;PR.seqRef=PR.seqDur/seqRho();renderSeq(lensData());if(PR.seqOn.size)seqRefresh();return;}
+  if(b.dataset.seqact==='stop'){PR.seqOn=new Set();seqStop();document.querySelectorAll('#seqview .seqbtn').forEach(x=>x.setAttribute('aria-pressed','false'));return;}
+  if(b.dataset.seq){const id=b.dataset.seq;PR.seqOn.has(id)?PR.seqOn.delete(id):PR.seqOn.add(id);b.setAttribute('aria-pressed',PR.seqOn.has(id));seqRefresh();}
+});
+$('#seqview').addEventListener('input',e=>{const L=PD.R.L;
+  const upd=(skip)=>{const l=document.getElementById('seqdurlab');if(l)l.textContent=seqLab(L);const bp=document.getElementById('seqbpm');if(bp&&skip!=='bpm')bp.value=seqBpm(L);const sl=document.getElementById('seqdur');if(sl&&skip!=='dur')sl.value=Math.min(16,Math.max(0.25,PR.seqMode==='pulse'?PR.seqRef:PR.seqDur));};
+  if(e.target.id==='seqdur'){if(PR.seqMode==='pulse'){PR.seqRef=+e.target.value;PR.seqDur=PR.seqRef*seqRho();}else{PR.seqDur=+e.target.value;PR.seqRef=PR.seqDur/seqRho();}upd('dur');}
+  if(e.target.id==='seqbeat'){const v=Math.round(+e.target.value);if(v>=1&&v<=L){PR.seqBeat=v;upd();}}
+  if(e.target.id==='seqbpm'){const v=+e.target.value;if(v>0){PR.seqDur=Math.min(60,Math.max(0.05,60*(L/PR.seqBeat)/v));PR.seqRef=PR.seqDur/seqRho();upd('bpm');}}
+});
+$('#seqview').addEventListener('change',e=>{if(['seqdur','seqbpm'].includes(e.target.id)&&PR.seqOn.size)seqRefresh();if(e.target.id==='seqbeat'){renderSeq(lensData());}});
+function showView(v){
+  $('#v-trees').setAttribute('aria-selected',v==='trees');$('#v-prism').setAttribute('aria-selected',v==='prism');
+  $('#view-trees').hidden=v!=='trees';$('#view-prism').hidden=v!=='prism';
+  if(v==='trees'){seqStop();PR.seqOn=new Set();refresh();}else renderPrism();
+}
+$('#v-trees').addEventListener('click',()=>showView('trees'));
+$('#v-prism').addEventListener('click',()=>showView('prism'));
+
+</script>
+</body>
+</html>
