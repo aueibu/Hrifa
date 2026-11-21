@@ -507,28 +507,49 @@ def directsum(a):
 # `place` then lays each type into a real gamut: it maps the type's r basis intervals to intervals of
 # the gamut in every way, and keeps the placements where both P and Q fit and stay distinct.
 
-def _nullspace(rows, n):
-    """integer basis of {x in Q^n : rows . x = 0}"""
-    M = [[Fraction(c) for c in r] for r in rows]
-    piv_cols, r = [], 0
+def _int_rref(rows, n):
+    """reduced row echelon form in integers only (no Fraction): returns (pivot columns, rows), each row
+    primitive with a positive pivot and zeros in every other pivot column. The reduced form of a row
+    space is unique, so this equals the old Fraction version row for row (it was 3/4 of the run time)."""
+    M = [list(r) for r in rows]
+    piv, r = [], 0
     for c in range(n):
         p = next((i for i in range(r, len(M)) if M[i][c] != 0), None)
         if p is None: continue
         M[r], M[p] = M[p], M[r]
-        pv = M[r][c]
-        M[r] = [x / pv for x in M[r]]
+        pr = M[r]
+        pv = pr[c]
         for i in range(len(M)):
-            if i != r and M[i][c] != 0:
+            if i != r:
                 f = M[i][c]
-                M[i] = [x - f * y for x, y in zip(M[i], M[r])]
-        piv_cols.append(c); r += 1
+                if f:
+                    row = [pv * x - f * y for x, y in zip(M[i], pr)]
+                    g = 0
+                    for x in row: g = gcd(g, x)
+                    if g > 1: row = [x // g for x in row]
+                    M[i] = row
+        piv.append(c); r += 1
+    out = []
+    for i in range(r):
+        row = M[i]
+        g = 0
+        for x in row: g = gcd(g, x)
+        if row[piv[i]] < 0: g = -g
+        out.append(tuple(x // g for x in row))
+    return piv, out
+
+
+def _nullspace(rows, n):
+    """integer basis of {x in Q^n : rows . x = 0}"""
+    piv_cols, R = _int_rref(rows, n)
     free = [c for c in range(n) if c not in piv_cols]
     basis = []
     for fc in free:
         x = [Fraction(0)] * n
         x[fc] = Fraction(1)
         for i, pc in enumerate(piv_cols):
-            x[pc] = -M[i][fc]
+            if R[i][fc]:
+                x[pc] = Fraction(-R[i][fc], R[i][pc])
         den = 1
         for v in x: den = den * v.denominator // gcd(den, v.denominator)
         basis.append([int(v * den) for v in x])
@@ -584,6 +605,11 @@ def _nondegenerate(sym, B):
 def _rref_key(rows, n):
     """canonical form of the equation system (reduced row echelon form, primitive integer rows).
     Systems with the same key have the same solutions, so the search below them is identical."""
+    return tuple(_int_rref(rows, n)[1])
+
+
+def _rref_key_frac(rows, n):
+    """the original Fraction version of _rref_key, kept only as a reference to test _int_rref against"""
     M = [[Fraction(c) for c in r] for r in rows]
     r = 0
     for c in range(n):
@@ -647,7 +673,13 @@ def _dfs(sym, rows, stage, flip, out, stats):
                 free = [j for j in g if j not in touched]
                 first_free.append((set(free), free[0] if free else None))
             tried = set()
-            for ps in plus_syms:
+            depth = len(rows)
+            for j, ps in enumerate(plus_syms):
+                if depth < 2 and stage == "P":
+                    # rough progress: which branch the search is in at the first two levels
+                    prog = stats.setdefault("prog", [])
+                    del prog[depth:]
+                    prog.append((j + 1, len(plus_syms)))
                 if any(any(ps[j] != 0 and j in free and j != f0 for j in free) for free, f0 in first_free):
                     stats["sym_skipped"] += 1
                     continue
@@ -717,24 +749,41 @@ def _types_job(job):
     # so memory holds one entry per type instead of every raw pattern
     pats = {}
     count = [0]
+    untyped = []   # patterns whose type key could not be built (no basis of own intervals at the minimal det)
+    n_untyped = [0]
 
     def found(P, Q, fl, r):
         count[0] += 1
         jb = _joint_basis_coords(P, Q)
         if jb is None: return
         rk, key = jb
+        if key is None:
+            n_untyped[0] += 1
+            if len(untyped) < 1000:
+                untyped.append({"rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm, "flip": fl,
+                                "P": [list(x) for x in P], "Q": [list(x) for x in Q]})
+            return
         if key not in pats:
             pats[key] = (key, rk, len(P), fl)
 
     def report(st):
-        print(f"    U {nu} x V {vp}+/{vm}-, flip {flip}: {st['nodes']:,} nodes, {len(st['seen']):,} systems kept, "
+        prog = st.get("prog", [])
+        where = ""
+        if prog:
+            frac, scale = 0.0, 1.0
+            for i, n in prog:
+                frac += (i - 1) / n * scale
+                scale /= n
+            where = "branch " + " > ".join(f"{i}/{n}" for i, n in prog) + f" (~{100 * frac:.0f}%, rough), "
+        print(f"    U {nu} x V {vp}+/{vm}-, flip {flip}: {where}{st['nodes']:,} nodes, {len(st['seen']):,} systems kept, "
               f"{count[0]:,} patterns, {len(pats)} types, {_rss_mb()} MB, "
               f"{st.get('cleared', 0)} clears, {time.time()-t:.0f}s", flush=True)
 
     stats = {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set(), "report": report, "t_last": time.time(),
              "seen_max": seen_max}
     _dfs(sym, [], "P", flip, found, stats)
-    return i, (stats["nodes"], stats["skipped"], stats["sym_skipped"]), count[0], list(pats.values()), time.time() - t
+    return (i, (stats["nodes"], stats["skipped"], stats["sym_skipped"]), count[0], list(pats.values()),
+            time.time() - t, n_untyped[0], untyped)
 
 
 def _rss_mb():
@@ -781,8 +830,11 @@ def types_mode(a):
                       "the types run is incomplete and nothing was written", flush=True)
                 sys.exit(3)
     # merge in the fixed job order, so the output is identical to a one-worker run
+    untyped_all, n_untyped_all = [], 0
     for i, nu, vp, vm, flip, _ in jobs:
-        _, (nodes, skipped, sym_skipped), nfound, pats, secs = done[i]
+        _, (nodes, skipped, sym_skipped), nfound, pats, secs, n_untyped, untyped = done[i]
+        n_untyped_all += n_untyped
+        untyped_all.extend(untyped)
         k = nu * vp - nu * vm
         new = 0
         for key, rk, kp, fl in pats:
@@ -793,6 +845,13 @@ def types_mode(a):
         print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {nodes:,} search nodes "
               f"({skipped:,} repeats and {sym_skipped:,} relabellings pruned), "
               f"{nfound} patterns, {new} new types ({secs:.0f}s)", flush=True)
+    if n_untyped_all:
+        with open(os.path.join(out_path, "untyped_patterns.jsonl"), "w") as fh:
+            for u in untyped_all:
+                fh.write(json.dumps(u) + "\n")
+        print(f"WARNING: {n_untyped_all:,} patterns had no type key (no basis of their own intervals reaches the "
+              f"minimal determinant); they are NOT in uv_types.jsonl, so placements may miss their families. "
+              f"First {len(untyped_all)} saved to untyped_patterns.jsonl", flush=True)
     with open(os.path.join(out_path, "uv_types.jsonl"), "w") as fh:
         for i, t in enumerate(sorted(results.values(), key=lambda t: (t["k"], t["rank"], t["P"])), 1):
             t["type"] = i
