@@ -1,11 +1,11 @@
 # ARC: Interval Placement: rigorous, register-aware scoring + panel workspace
 
-**Status: APPROVED (2026-11-13); REVISION APPROVED 2026-11-20 (see "Revision checkpoint decisions").** M1, M2 done; M2b decided by the human. Branch merged into `main` 2026-11-20. Revision: Proposed UI and M3–M6 rewritten for the M2b decisions and the "standalone but portable" direction (see "Portability"), after a C0 re-scan against `main` (PROGRESS, "C0 redo"). Next: M2c scenarios for the human to confirm.
+**Status: APPROVED (2026-11-13); MODEL RESET 2026-11-20 (see "Model reset").** M1, M2 done. Branch merged into `main` 2026-11-20. The M2b "play mode" (spread / lean / evenness knobs on one hand-shaped voicing, with search off to the side) replaced the app's own model and is withdrawn; the flow is input, then the exhaustive catalog, then exploration of a chosen entry. Portability work stands. Next: settle with the human how spans sit inside the spacing (from the original brief), then rewrite M2c.
 
 ## Goal
 Interval Placement keeps its idea and gets a sound scoring core and a better workspace:
 
-1. **The idea stays.** You name a few *essential* intervals; each placement adds a relation from the new notes to every note already placed, and the rest of the chord's intervals (the *induced* ones) fall out of that. How the spans are placed is redesigned (M2b): you move the structure through the register yourself, spread and lean shape it, and an Explore panel searches the placements nearby.
+1. **The idea stays.** You name a few *essential* intervals; each placement adds a relation from the new notes to every note already placed, and the rest of the chord's intervals (the *induced* ones) fall out of that. The flow (human, 2026-11-20): **input** (the essential intervals plus a **spacing**, the range of widths the chord may take, replacing the old fixed octave windows) → **catalog** (every ordering placed within the spacing, scored, listed to sort and filter: the order is part of the enumeration, never a user choice) → **exploration** of an entry picked from the catalog (move it through the register, nudge a span, see nearby alternatives).
 2. **Scoring is rebuilt on published, tested models** (see "Scoring model"), computed at the real pitch you hear, so a major 3rd low, the same 3rd an octave up and a major 10th all score differently for acoustic reasons, not hand-tuned factors. The scores describe what the induced relations sound like; they do not impose orchestration rules.
 3. **The engine and the scoring become pure TS libraries** (`src/lib/consonance/`, `src/lib/interval-placement/`) so the Composition Workbench can later use them as a voicing engine without importing a page.
 4. **The page is rebuilt as a standalone panel workspace that can later move into the Composition Workbench unchanged** (see "Portability"): its panels live on the shared dock Stage the workbench uses, it looks and behaves like the harmonic-field lab and the workbench, and it talks to its host only through three small hand-off contracts. It starts with a **mock** the human approves before anything live is built.
@@ -13,7 +13,7 @@ Interval Placement keeps its idea and gets a sound scoring core and a better wor
 ## Design decisions already made (from the human)
 - The concept is relational (essential intervals, induced relations fall out), **not** orchestration rules. No spacing rules or low-interval-limit tables. (2026-11-13)
 - Window width is a stepped wide/narrow categorisation; it may be improved. (2026-11-13)
-- ~~The engines exist to shift emphasis (fit within the window and span, then gravitate low / high / truly centred). Keep them. (2026-11-13)~~ Superseded at the M2b checkpoint: no old engine is kept; spread and lean replace them.
+- The engines exist to shift emphasis (fit within the window and span, then gravitate low / high / truly centred). Keep them. (2026-11-13) (The M2b checkpoint replaced them with spread and lean knobs; withdrawn by the model reset 2026-11-20. Their intent stands; the bugs found at M2 are fixed, and how spans sit inside the spacing is settled with the human from this intent.)
 - Scoring must account for both the absolute register of each note and the intervals themselves (M3 low vs M3 + octave on the same root vs either at C4 or C6). It should follow academically rigorous metrics without sacrificing the app's creativity. (2026-11-13)
 - The current v1/v2 scoring is largely a vestige of early back-and-forth and may be replaced. (2026-11-13)
 - Process: same as the harmonic-field-lab arc: an ARC the human approves, then a mock reviewed in rounds before the live UI. The harmonic-field-lab's panel and modular approach worked well; follow it. (2026-11-13)
@@ -27,12 +27,16 @@ Interval Placement keeps its idea and gets a sound scoring core and a better wor
 - **Placement controls get redesigned, not just carried over (human, 2026-11-13, during M1).** The golden test exists only to verify that the move into the lib is faithful; it is not a commitment to keep the old behaviour, and it may be retired once the redesign replaces the engines. The human wants to reimplement the placement controls "from a much more solidly grounded point", for example a window re-envisioned as something interactive (moving a structure up and down ad hoc and watching the scores change), and to be consulted at a checkpoint with usable ideas that improve on the old ones. Hence M2 ports and verifies only, and the new M2b proposes the redesign for the human to choose from before the mock.
 - **Standalone but portable (human, 2026-11-20).** Like the harmonic-field lab's plan: the page is its own app now and can be ported into the Composition Workbench when the time comes; "the UI and styling and behavior would always remain unified" with the lab and the workbench. On `main`, `main`'s project-wide decisions win where this arc (planned 2026-11-13) differs.
 - **Hand-off contracts (human, 2026-11-20):** this arc defines the first versions of the three contracts the lab planned (PitchContext, Preview, Emit), with the lab's names, recorded as a shared DECISIONS row so the lab adopts them later instead of inventing its own. The human asked to be told clearly before that step starts (M6).
+- **Model reset (human, 2026-11-20).** The human rejected the M2c scenarios (order, lean, evenness, voicing terms) as "arbitrary buttons" that left the original idea: "For order - this was originally done exhaustively and then the user was given a catalog. The order is just a calculation of all combinations possible - the goal was the spacing idea." "The exploration came after the initial input." "We started with the essential intervals and then discussed the spacing as an alternative to the fixed octave windows." Consequences:
+  - Kept: the essential-interval concept; exhaustive orderings and a catalog; the **spacing** as the replacement for fixed octave windows (Close / Open / Wide / Vast are presets of it); the new scoring and ranking; the fixes to the M2 quirks (notes leaving the window, silent drops and merges, the repulsion no-op, odd bias attached to the position); dragging through the register and the nearby search, but only as **exploration after the catalog**, on a chosen entry; the portability work.
+  - Withdrawn: the M2b "play mode" as the main mode; lean and evenness as knobs; order as a user choice; the SATB-explorer voicing vocabulary (gaps, shape names) as measures and filters ("too heavy handed and prescriptive"); `SCENARIOS.M2c.md` and its listening page (kept as a record only).
+  - Process lesson: check every proposal against "Design decisions already made" before turning it into questions for the human.
 - **Revision checkpoint decisions (human, 2026-11-20):**
-  1. The new M2c (play-mode and Explore functions in the lib, scenarios first) before the mock: yes.
+  1. ~~The new M2c (play-mode and Explore functions in the lib, scenarios first) before the mock: yes.~~ M2c is redefined by the model reset (catalog first).
   2. Look: the shared kit for panel chrome and controls, the lab's rules for tooltips and help text; the mock lists every place they differ.
-  3. Spread presets: **Close (≤ 1 oct), Open (1–2 oct), Wide (2–3 oct), Vast (≥ 3 oct)**, each only a preset of the numeric spread range. Checked 2026-11-20: the affine-focus project has no spread vocabulary; the workbench's chord voicing (`chordInput/voicing.ts`, `SpreadStyle = 'close' | 'open' | 'drop2' | 'drop3'`) uses "close" and "open" as voicing *procedures* (close = smallest stack; open = alternate voices up an octave). They are compatible in practice (a close voicing spans under an octave, an open triad usually 1–2 octaves), but the reader text must say ours are span ranges, and the M6 / port plan notes the overlap.
+  3. Spacing presets: **Close (≤ 1 oct), Open (1–2 oct), Wide (2–3 oct), Vast (≥ 3 oct)**, each only a preset of the numeric spacing range (stands after the model reset). Checked 2026-11-20: the affine-focus project has no spread vocabulary; the workbench's chord voicing (`chordInput/voicing.ts`, `SpreadStyle = 'close' | 'open' | 'drop2' | 'drop3'`) uses "close" and "open" as voicing *procedures* (close = smallest stack; open = alternate voices up an octave). They are compatible in practice (a close voicing spans under an octave, an open triad usually 1–2 octaves), but the reader text must say ours are span ranges, and the M6 / port plan notes the overlap.
   4. Default ranking weights: **harmonicity-leaning** (McDermott, Lehr & Oxenham 2010: harmonicity the stronger predictor of preference). `EQUAL_WEIGHTS` stays available as a preset. The exact default weights, and which harmonicity carries the lean (pitch-space harmonicity separates voicings of one interval set; pitch-class harmonicity barely does, M2b), are proposed in the M2c scenarios with an example where they rank differently from equal weights.
-  5. **Shared voicing vocabulary with the SATB Voicing Explorer** (the human's artifact, https://claude.ai/artifact/KvGDuDE2pFEkzT5XL3mVUu, read 2026-11-20; the human meant it, not affine-focus, for question 3). Presets stay span ranges; add the explorer's **gaps** (per adjacent pair of sounding notes, low to high: whole octaves between them, `g = floor(cents / 1200)`; `gaps` = number of pairs with g ≥ 1; `gSum` = Σg, the explorer's texture) as descriptive measures and Explore filters (e.g. "no gap of an octave or more"); show the explorer's **shape name** (close, drop 2, drop 3, drop 2&4, drop 2&3, reverse) for four-note voicings, as the explorer and the workbench's `voicing.ts` name them. The explorer's "shell" (whole-chord octave lift) is the play mode's register move.
+  5. ~~**Shared voicing vocabulary with the SATB Voicing Explorer**~~ Withdrawn by the model reset ("too heavy handed and prescriptive"); kept here as a record: (the human's artifact, https://claude.ai/artifact/KvGDuDE2pFEkzT5XL3mVUu, read 2026-11-20; the human meant it, not affine-focus, for question 3). Presets stay span ranges; add the explorer's **gaps** (per adjacent pair of sounding notes, low to high: whole octaves between them, `g = floor(cents / 1200)`; `gaps` = number of pairs with g ≥ 1; `gSum` = Σg, the explorer's texture) as descriptive measures and Explore filters (e.g. "no gap of an octave or more"); show the explorer's **shape name** (close, drop 2, drop 3, drop 2&4, drop 2&3, reverse) for four-note voicings, as the explorer and the workbench's `voicing.ts` name them. The explorer's "shell" (whole-chord octave lift) is the play mode's register move.
 
 ## Diagnosis of the current page (2026-11-13, measured with a probe of the current code)
 - Scoring runs at a fixed 55 Hz (A1) for the window's bottom, whatever base note is chosen; playback uses the base note (default C4). Changing the base note never changes the ranking.
@@ -52,7 +56,7 @@ All scores take **absolute frequencies** (from the base pitch), so register and 
 - **Harmonicity (template / virtual pitch).** Milne-style spectral template matching (as used in Harrison & Pearce 2020), applied in **pitch space, not pitch-class space**, so octave placement still counts. Continuous, needs no ratio rounding, works in any EDO or non-EDO tuning.
 - **Relations view.** Every score is decomposed per induced dyad (each relation's own roughness at its real register) and per note (marginal contribution = score with the note minus score without it). This is the app's "each placement adds a relation to every other" idea made measurable.
 - **Ranking.** Totals, not per-pair means; the worst relation is reported separately. Default list order = a weighted mix (user slider) of the scores standardised within the candidate set; the **Pareto map** shows the front (voicings nothing beats on both chosen axes). Axes default to interference × harmonicity and can be any two scores or descriptive measures.
-- **Descriptive measures (not consonance, added at approval).** Cheap, exact facts that make good map axes and filters: span (cents), note count, register centroid (mean log-frequency), lowest note, number of distinct induced intervals (relational richness), collisions, and (added 2026-11-20, SATB Voicing Explorer vocabulary) `gaps` / `gSum` and the four-note shape name. They are never mixed into the consonance scores.
+- **Descriptive measures (not consonance, added at approval).** Cheap, exact facts that make good map axes and filters: span (cents), note count, register centroid (mean log-frequency), lowest note, number of distinct induced intervals (relational richness), and collisions. They are never mixed into the consonance scores.
 - **Interval constraints.** Must-have and must-not-have intervals (by size, optionally octave-equivalent, e.g. "no induced minor 9th", "must contain a perfect 5th somewhere"). Must-not-have filters candidates out; must-have keeps only voicings that contain the interval as an essential or induced pair. Applied in the placement lib, so the workbench gets them too.
 - **Dropped:** v1 (`intervalMath.ts` scoring), v2's harmonicity and harmonic entropy. (v2's ERB roughness survives as the Sethares option.)
 - **Validation:** sanity orderings in tests (below) and, if the data can be obtained with a usable licence, a correlation against the listener ratings for all 12-TET dyads, triads and tetrads in Bowling, Purves & Gill (2018, *PNAS*), the dataset Harrison & Pearce also used. See Open questions.
@@ -62,17 +66,15 @@ Key references (as verified by the M1 builder against the reference packages' bi
 ## Proposed UI (confirmed or changed at the M3 mock checkpoint)
 One-screen workspace on the **shared dock Stage** (`src/components/Stage/dock/`, as the workbench uses it): named dockers in a split tree, panels as tabs that can be moved, sent and docked, screenset tabs and the Panels menu. A thin top bar for transport (arpeggio / chord / interval pairs, timbre). DAW density, tooltips instead of paragraphs. Every item below is a **panel** (a Stage module with `id`, `title`, `home`, `sizes`, `render(size)`); none knows which page hosts it. The default screenset is proposed in the mock.
 
-- **Placement panel (home: centre).** Interval chips (value, essential marking), tuning (EDO) and base pitch as an absolute note, then the **play mode** (M2b A + B):
-  - A **register strip**: the voicing on a pitch axis with the **register limits** drawn as bounds. Drag the whole structure up or down, or **one span alone**, one tuning step per notch; a modifier key gives fine drag in cents.
-  - **Spread**: a numeric range (octaves or cents) with optional named presets over it; **lean** (low ↔ centred ↔ high); **evenness** (equal gaps ↔ weighted by span size).
-  - Shared notes are allowed and **marked** wherever a duplicate (shared note) was created.
-  - Below: the spans plot for the current voicing, with its scores live (about 2 ms per move).
-- **Register panel.** The current voicing slid through the register (scores against bottom note), with "you are here".
-- **Explore panel (M2b C + D).** Searches placements of the same essential intervals **in a neighbourhood around the current voicing** by default; a setting extends the scope up to the whole register limits and states the candidate count and estimated time before running. Must-have / must-not-have interval chips, note-count range, gap filter, shared notes allowed (and shown). The **Pareto map** (any two axes, layers coloured, front highlighted, hover cross-highlights the list, click makes it the current voicing) and a list whose ranking **toggles between Pareto layer and the weighted mix** (weight slider). Runs in a Web Worker; results stream in.
+The panels follow the flow (model reset, 2026-11-20): input, catalog, exploration.
+
+- **Input panel (home: centre).** Interval chips (value, essential marking), tuning (EDO) and base pitch as an absolute note, and the **spacing**: the range of widths the chord may take (replacing the fixed octave windows), with Close / Open / Wide / Vast as presets. How the spans sit inside the spacing follows the original engines' intent ("fit within the window and span, then gravitate low / high / truly centred") with the M2 bugs fixed; its exact behavior is settled with the human (Open questions).
+- **Catalog panel.** Every ordering placed within the spacing (exhaustive, as the original page; the order is part of the enumeration), scored, deduplicated (identical pitch sets once, listing the orderings that made them), collisions and shared notes shown, never silently dropped. The list (total, worst relation, note count, flags) with the weight slider and must-have / must-not-have interval chips, plus the **Pareto map** (any two axes, layers colored, hover cross-highlights the list, click selects). Runs in a Web Worker; results stream in for large interval sets.
+- **Exploration panels (after the catalog, on the selected entry).** Register: the selected voicing slid through the register (scores against bottom note, "you are here"), drag it up or down and hear the cost; nudge one span; nearby alternatives around the selected entry. Details are settled when the catalog works (not before).
 - **Relations panel.** The induced-interval triangle (every pair: interval, octave span, its roughness at its register, essential vs induced marked) and per-note contribution bars.
 - **Visualizer panel** with a view selector: Spectrum (partials with critical-band overlaps), Interval counts / interval-class grid (today's), Periodicity (the "≈ a:b:c" ratio chord), Keyboard / Fretboard (today's, 12-EDO only).
 - **Reader / glossary.** Replaces `ScoringInfoModal`; every score's definition, an example and its citation, from one `texts.ts` in the lab's help-text format.
-- Old controls retired: window width as spread, the four engines, odd bias (M2b decision 6; force-based spacing goes to BACKLOG).
+- Fixed octave window widths are replaced by the spacing range. Whether the four engines survive as named spacing behaviors, and what happens to odd bias, is part of the spacing question (Open questions).
 
 ## Parameters
 - **Owned paths:** `src/lib/consonance/` (new: pure TS scoring, no React/DOM), `src/lib/interval-placement/` (new: pure TS placement engine, no React/DOM), `src/pages/interval-placement/` (today unowned: components, state, mock, tests, `texts.ts`, `settings.ts`, the page's `ARCHITECTURE.md`), `arcs/interval-placement/`.
@@ -82,7 +84,7 @@ One-screen workspace on the **shared dock Stage** (`src/components/Stage/dock/`,
 - **DECISIONS prefix:** `INTERVALPLACEMENT`, registered in our first row. Rows due: INTERVALPLACEMENT-1 arc ownership of `src/pages/interval-placement/` (Setup); INTERVALPLACEMENT-2 the libs' pitch representation (M1); INTERVALPLACEMENT-3 the scoring model and ranking (M1); any theme-role change.
 - **Pitch representation:** notes are cents above an absolute reference plus the reference in Hz (a voicing = `{refHz, cents[]}`); EDO steps are an input convenience (`steps × 1200 / edo`). Midicents (W-1) and Hz are derived only at the edge (audio, a later workbench handoff). This makes the libs EDO-agnostic and ready for the BACKLOG non-EDO pitch item.
 - **Workspace:** the shared dock Stage, consumed as is (see "Portability"). No copy of the lab's column layout. If the Stage needs a change to host this page, stop and ask (it is shared code under `src/components/`).
-- **Persistence:** shell pattern (`loadSettings`/`saveSettings`/`sanitizeSettings`). Keys: `hrifa.interval-placement.settings.v2` (migrated from `…v1`: intervals, EDO, base, register limits, spread, lean, evenness, timbre; old window and engine fields map to the nearest new values or are dropped) and `hrifa.interval-placement.ui.screensets.v1` (the page's own `ScreensetStore`, as the workbench's W-42 key). Bad data falls back to defaults.
+- **Persistence:** shell pattern (`loadSettings`/`saveSettings`/`sanitizeSettings`). Keys: `hrifa.interval-placement.settings.v2` (migrated from `…v1`: intervals, EDO, base, spacing range, timbre; the old window width maps to the matching spacing, the remaining engine fields per the agreed spacing behavior) and `hrifa.interval-placement.ui.screensets.v1` (the page's own `ScreensetStore`, as the workbench's W-42 key). Bad data falls back to defaults.
 
 ## Portability (standalone now, workbench later; human 2026-11-20)
 Facts from the C0 redo (2026-11-20) and the rule each one gives:
@@ -169,7 +171,7 @@ Facts from the C0 redo (2026-11-20) and the rule each one gives:
 - Acceptance:
   - [ ] Proposal written, with a recommendation, the open choices listed as questions, and a sketch of what each option looks like in the M3 workspace.
   - [ ] Any numbers in it come from the libs (reproducible command or test named).
-- Checkpoint decisions (human, 2026-11-13, on `placement-proposal.md` section 5):
+- Checkpoint decisions (human, 2026-11-13, on `placement-proposal.md` section 5). **Partly withdrawn by the model reset (2026-11-20):** items 1 (play mode as the main mode), 6's engine removal and the lean/evenness knobs no longer hold; the spacing range (2), dragging (3), nearby search (4), shared notes shown (5) and the ranking toggle (7) stand, with dragging and search as exploration after the catalog.
   1. Tiered approach approved: **A + B as the play mode, C + D as the Explore panel.**
   2. **Spread = a numeric range (octaves or cents) as the universal control.** Named steps only as optional presets over that range; the human wants name proposals. Orchestrator proposal (to confirm at M3): Close (≤ 1 oct), Open (1–2 oct), Wide (2–3 oct), Vast (≥ 3 oct), each just a preset of the range; alternative set borrowed from spacing terms: Clustered / Close / Open / Spread.
   3. **Drag single spans as well as the whole structure.** Step = one tuning step; a modifier key gives fine drag in cents.
@@ -180,23 +182,21 @@ Facts from the C0 redo (2026-11-20) and the rule each one gives:
 - Next: update "Proposed UI" and M3–M5 to these decisions, then build the M3 mock.
 - Human checkpoint after: **yes** (the human chooses the placement design; the M3 mock and M4/M5 follow that choice, and the ARC is updated before M3)
 
-### M2c: Placement library for the play mode and Explore (no UI)
-- Scope: owned `src/lib/interval-placement/` + tests + README. The M2b decisions as pure functions, before any UI uses them.
-- Scenarios first (shell rule 7): `arcs/interval-placement/SCENARIOS.M2c.md`, the human's concrete cases for spread, lean, evenness, dragging one span, shared notes and the neighbourhood search, on `11 7 16` in 12-EDO from C2, each choice shown where the options give different results. Confirmed by the human before the builder starts.
-- Acceptance:
-  - [ ] `shapeVoicing(intervals, {registerLimits, spread, lean, evenness})` places the essential spans deterministically from the scenarios; never leaves the register limits; reports shared notes.
-  - [ ] `moveVoicing` (whole structure or one span by steps or cents) clamps to the limits and reports collisions and shared notes.
-  - [ ] `exploreNeighbourhood(voicing, scope, constraints)` as a chunked iterator (worker-ready) with a cost estimate (`candidateCount`, `estimatedMs`) before running; Pareto layers (`paretoLayers`) beside the weighted mix.
-  - [ ] Measures `gaps`, `gSum` and the four-note shape name (decision 5), with tests on the explorer's own cases (e.g. a close Cmaj7 = 0 gaps, `close`; the same chord as drop 2 = shape `drop 2`); Explore accepts a gap filter.
-  - [ ] The four old engines and the golden test retired (PROGRESS note), with the old page still running on its own `engine.ts` until M5.
+### M2c: The catalog with the spacing (no UI)
+- Scope: owned `src/lib/interval-placement/` + tests + README. The original model with the spacing range in place of fixed octave windows and the M2 quirks fixed. (Rewritten 2026-11-20 by the model reset; the earlier play-mode M2c and `SCENARIOS.M2c.md` are withdrawn.)
+- First (with the human, before any builder): how the spans sit inside the spacing, derived from the original engines' intent and the human's own words, shown on the human's examples. No new knobs are proposed unless the human asks for them.
+- Acceptance (to be completed once the spacing behavior is agreed):
+  - [ ] Every ordering is placed within the spacing; no note leaves it; an ordering that cannot fit is reported, never dropped silently; collisions and shared notes are reported.
+  - [ ] Catalog: deduplicated pitch sets listing their orderings, scored, with the weighted ranking and Pareto layers (`paretoLayers`); worker-ready chunked iteration with the cap.
+  - [ ] Golden test retired or rewritten for the agreed behavior (PROGRESS note); the old page keeps its own `engine.ts` until M5.
   - [ ] `check:interval-placement` green; path-scoped commit.
-- Human checkpoint after: no (the scenarios table is the checkpoint, before the build)
+- Human checkpoint after: yes (the catalog for `11 7 16` and one other interval set of the human's choosing, heard and read before the mock)
 
 ### M3: Workspace mock
 - Scope: a mock route `/interval-placement/mock` (locked `src/Router.tsx`) on the shared dock Stage with the shared kit, static real numbers from M1/M2/M2c for the default `11 7 16` in 12-EDO on C2 (plus one 31-EDO example), no live maths. Panels written as Stage modules from the start (size-class rendering), so M4 swaps the data, not the layout.
 - Acceptance:
   - [ ] Every panel in "Proposed UI" present with real static data, in a proposed default screenset; dockers, tabs, send-to and the Panels menu work as in the workbench.
-  - [ ] Look: kit chrome, the lab's tooltip and help-text format on at least the Placement and Explore panels; any place where the kit and the lab differ is listed for the human.
+  - [ ] Look: kit chrome, the lab's tooltip and help-text format on at least the Input and Catalog panels; any place where the kit and the lab differ is listed for the human.
   - [ ] Screenshots at 1500 px and 1100 px, light and dark (dev server + headless Chromium, throwaway profile), with a "what changed and why" list mapped to the Diagnosis and the M2b decisions.
   - [ ] Thin slice, human first (shell rule 7, look changes): no reviewer, gate or commit of look work until the human has looked.
 - Checkpoint decisions (human, …):
@@ -205,7 +205,7 @@ Facts from the C0 redo (2026-11-20) and the rule each one gives:
 ### M4: Live workspace
 - Scope: owned page folder; locked `src/pages/IntervalPlacement.page.tsx` (renders the live workspace).
 - Acceptance:
-  - [ ] `/interval-placement` shows the approved layout from one external page store; the play mode is live through `src/lib/interval-placement/`, Explore in a Web Worker, scores through `src/lib/consonance/`.
+  - [ ] `/interval-placement` shows the approved layout from one external page store; the catalog is live through `src/lib/interval-placement/` in a Web Worker, scores through `src/lib/consonance/`; exploration panels as agreed after M2c.
   - [ ] Portability rules hold (see "Portability"): panels read the store, not page props; no window or document key listeners; no imports from `src/pages/composition-workbench/`; playback only through the page-local Preview interface; tuning and base pitch come from a page-local PitchContext.
   - [ ] Playback at the real base pitch (scored register = heard register), selection by identity, hover cross-highlight across every view.
   - [ ] Persistence `…settings.v2` (migrated from `…v1`, tested with real v1 data and bad data) and `…ui.screensets.v1`.
@@ -216,7 +216,7 @@ Facts from the C0 redo (2026-11-20) and the rule each one gives:
 ### M5: Live panels + retire the old code
 - Scope: owned page folder; locked `src/Router.tsx` (retire the mock route).
 - Acceptance:
-  - [ ] Explore (map + list), Register, Relations, Visualizer views and Reader all live.
+  - [ ] Catalog (map + list), exploration panels, Relations, Visualizer views and Reader all live.
   - [ ] Old modules removed: `engine.ts`, `intervalMath.ts` scoring, `psychoacousticsV2.ts`, `ScoringInfoModal.tsx`, `PlacementForm.tsx`'s engine controls; nothing else imports them.
   - [ ] Feature-parity checklist against today's page (every control accounted for, or dropped with the human's OK).
   - [ ] Mock route retired; `check:interval-placement` green.
@@ -239,8 +239,9 @@ Page `ARCHITECTURE.md` (including the portability rules and the M6 contracts) an
 ## Open questions (answer at approval or at the milestone where they matter)
 - (answered at approval, 2026-11-13: three scores yes, v1/v2 dropped; workspace as a generic local copy; Bowling et al. download allowed.)
 - (answered at M2b, 2026-11-13: shared notes allowed and shown; spread is a numeric range with optional named presets.)
-- (answered at the revision, 2026-11-20: see "Revision checkpoint decisions".)
-- M2c scenarios: the exact harmonicity-leaning default weights and which harmonicity carries them.
+- (answered at the revision, 2026-11-20: see "Revision checkpoint decisions"; then the model reset.)
+- **Next, M2c:** how the spans sit inside the spacing (the "spacing idea"), from the original brief and the engines' intent. To be worked out with the human from their own description first, then shown on their examples.
+- Later (catalog ranking): the exact harmonicity-leaning default weights.
 
 ## Stop-and-ask conditions
 - A criterion can't be met after 2 builder attempts.

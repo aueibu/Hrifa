@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
-- Current milestone: M2c (scenarios)
-- State: `SCENARIOS.M2c.md` written 2026-11-20 (Q1-Q8, numbers from `m2c/scen.ts` on the real libs); awaiting the human's answers
+- Current milestone: M2c (the catalog with the spacing), before any builder
+- State: model reset 2026-11-20 (ARC "Model reset"): flow is input, then exhaustive catalog, then exploration; the spacing range replaces fixed octave windows. Next: work out with the human how spans sit inside the spacing, from their own description of the original idea.
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -25,6 +25,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | Check name | 2026-11-20: human asked to follow rule 16's `check:<arc>`: `check:ip` renamed to `check:interval-placement` in `package.json` and every reference (this file's older rows included, so the commands here run as written); rule 16 now says the script uses the full folder name. | `check:interval-placement` run after the rename | Also edited the text of DECISIONS INTERVALPLACEMENT-1 (its `check:` mention), like the prefix rename. |
 | C0 redo | 2026-11-20 read-only scan of `main`: `DockStage` is importable without workbench code (page owns its `ScreensetStore`); shared kit `src/components/InspectorKit/` used only by the dock and the spike (lab has its own `ui.tsx`); no key-owner registry (workbench `inputScope.ts` is page-local; DockStage listens on window for F6/Alt+G/Alt+digit and skips handled events); no shared audio (`AudioEngine`, `useModulePreview` are workbench page code, `HeldVoices` a plan; `sonify.ts` self-contained); workbench stores page-local and replaceable (W-45); W-44 decided, not built; no PitchContext/Preview/Emit type in `src/`. No locks; other arcs: affine-focus at a human checkpoint, ratio-rhythm approved (C0 done), workbench Timeline ARC draft, lab none active. Nothing imports our page folder or the two libs except the libs themselves. | — | Rules in ARC "Portability". |
 | ARC revision | Proposed UI, Parameters, Portability (new), Non-goals, M2c (new), M3–M6 (M6 = hand-off contracts, flagged for the human), Final step, Open questions rewritten. | — | Approved by the human 2026-11-20: M2c yes; kit chrome + lab text rules; presets Close/Open/Wide/Vast (workbench `voicing.ts` uses close/open as procedures: compatible, noted); harmonicity-leaning default weights (exact values in M2c scenarios). |
+| M2c scenarios (withdrawn) | `SCENARIOS.M2c.md` (Q1-Q8) and a listening page (https://claude.ai/artifact/9REo4XYa13XdUMVvHzNQRH) built on the M2b play mode. The human rejected them: lean, order, evenness and voicing terms were "arbitrary buttons" that replaced the app's model; "the order is just a calculation of all combinations possible - the goal was the spacing idea"; "the exploration came after the initial input". | — | Cause (orchestrator): M2b's play mode replaced the catalog model and was never checked against "Design decisions already made"; the scenarios then asked the human to define its knobs. ARC rewritten (Model reset). |
 
 ## Shared touches (locks taken)
 - `package.json`: taken 2026-11-13, released 2026-11-13 after `86a859f` (Setup).
@@ -34,7 +35,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
-Resume here. The ARC revision is approved (2026-11-20). Next: M2c scenarios (`SCENARIOS.M2c.md`) for the human to confirm before the M2c builder. Before M6, tell the human clearly that the hand-off contract step is next (they asked).
+Resume here. Model reset 2026-11-20 (ARC "Model reset"). Next: M2c starts from the human's own description of the spacing idea (how spans sit inside the spacing range), checked against "Design decisions already made"; no new knobs unless the human asks. Before M6, tell the human clearly that the hand-off contract step is next (they asked).
 
 ## Handoff notes (for any other session or account)
 - Branch: `claude/interval-placement-app-0ejurh` on `aueibu/Hrifa` (not yet merged to `main`). Check it out, then read `shell/CLAUDE.md`, this folder's `ARC.md` and this file.
