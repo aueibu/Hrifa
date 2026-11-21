@@ -1,0 +1,297 @@
+<title>Placement Catalog Findings</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+  /* Layout: one reading column; each finding is a panel with a sentence, a chart (two facets: 3 and 4 intervals), a
+     legend and a table. Rule colors are fixed: equal centers = slot 1, shared range = slot 2. */
+  :root {
+    --bg: #f6f6f3; --surface: #ffffff; --line: #d9d9d2; --grid: #ececE6; --fg: #1d1f22; --muted: #5d6168;
+    --c1: #2a78d6; --c2: #eb6834; --k1: #1baf7a; --k2: #eda100; --k3: #6250d6;
+    --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+      --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #2a2e34; --fg: #e8e9eb; --muted: #a2a7ae;
+    --c1: #3987e5; --c2: #d95926; --k1: #199e70; --k2: #c98500; --k3: #9085e9; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 64px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.8rem; margin: 0; text-wrap: balance; }
+  h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; margin: 0; text-wrap: balance; }
+  p { margin: 0; max-width: 74ch; }
+  .muted { color: var(--muted); }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats b { color: var(--fg); font-family: var(--font-mono); font-weight: 500; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .facets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+  .facet { position: relative; min-width: 0; }
+  .facet h3 { margin: 0 0 4px; font-size: 0.85rem; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+  svg.chart { width: 100%; height: auto; display: block; touch-action: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { display: inline-block; width: 16px; height: 3px; border-radius: 2px; }
+  .box { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-variant-numeric: tabular-nums; box-shadow: 0 2px 8px rgba(0,0,0,0.14); white-space: nowrap; z-index: 2; }
+  .tip .k { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  details summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  th, td { padding: 2px 10px 2px 0; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  .seg { display: flex; flex-direction: column; gap: 8px; }
+  .segrow { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 10px; align-items: center; font-size: 0.85rem; }
+  .segbar { display: flex; height: 26px; gap: 2px; }
+  .segbar div { border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #fff; font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; }
+  .segbar div.dark-text { color: #0b0b0b; }
+  .toggle { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toggle button { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+  .toggle button.on { border-color: var(--c1); color: var(--c1); }
+  button:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+  .ramp { display: inline-block; width: 140px; height: 10px; border-radius: 3px; vertical-align: middle; }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Placement Catalog Findings</h1>
+    <p>Every set of 3 and 4 essential intervals with sizes 1 to 24 steps, in every ordering, laid out in every window from the largest interval up to 48 steps, under both spacing rules: <b style="color:var(--c1)">equal centers</b> (the centers equally spaced, every chord fills its window) and <b style="color:var(--c2)">shared center range</b> (one center range set by the largest interval, the same center positions for every ordering). Roughness is measured from C2. Hover any chart for exact values; each has a table.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+  <div id="panels" class="wrap" style="gap:20px"></div>
+</div>
+
+<script>
+const D = /*DATA*/null;
+const RULES = [['equal', 'equal centers', 'var(--c1)'], ['shared', 'shared center range', 'var(--c2)']];
+const pct = (v) => (100 * v).toFixed(v < 0.1 ? 1 : 0) + '%';
+const num = (d) => (v) => v.toFixed(d);
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+document.getElementById('stats').innerHTML = [3, 4].map((n) =>
+  `<span>${n} intervals: <b>${D[n].totals.sets.toLocaleString()}</b> sets, <b>${D[n].totals.placements.toLocaleString()}</b> placements, <b>${D[n].totals.chords.toLocaleString()}</b> distinct chords</span>`).join('');
+
+function panel(title, text) {
+  const el = document.createElement('section');
+  el.className = 'panel';
+  el.innerHTML = `<h2>${title}</h2><p class="muted">${text}</p>`;
+  document.getElementById('panels').appendChild(el);
+  return el;
+}
+function table(el, head, rows) {
+  const d = document.createElement('details');
+  d.innerHTML = `<summary>Table</summary><div class="tablewrap"><table><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  el.appendChild(d);
+}
+function legend(el, items) {
+  const l = document.createElement('div');
+  l.className = 'legend';
+  l.innerHTML = items.map(([name, color, dash]) => `<span><i class="sw" style="background:${color};${dash ? 'background:repeating-linear-gradient(90deg,' + color + ' 0 5px,transparent 5px 8px)' : ''}"></i>${name}</span>`).join('');
+  el.appendChild(l);
+}
+
+/** Line chart with one facet per n; series = [{name, color, dash, pts:{3:[[x,y]], 4:[[x,y]]}}]; shared y across facets. */
+function lineChart(el, series, { yFmt, yMin = 0, yMax, xLabel = 'window size (steps)', yLabel }) {
+  const all = series.flatMap((s) => [3, 4].flatMap((n) => (s.pts[n] || []).map((p) => p[1])));
+  const lo = yMin ?? Math.min(...all), hi = yMax ?? Math.max(...all) * 1.05;
+  const W = 520, H = 250, L = 46, R = 92, T = 10, B = 34;
+  const facets = document.createElement('div');
+  facets.className = 'facets';
+  for (const n of [3, 4]) {
+    const xs = series.flatMap((s) => (s.pts[n] || []).map((p) => p[0]));
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const x = (v) => L + ((v - x0) / (x1 - x0 || 1)) * (W - L - R);
+    const y = (v) => T + (1 - (v - lo) / (hi - lo || 1)) * (H - T - B);
+    let s = '';
+    const ticks = 4;
+    for (let i = 0; i <= ticks; i++) {
+      const v = lo + ((hi - lo) * i) / ticks;
+      s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${yFmt(v)}</text>`;
+    }
+    for (const v of [6, 12, 18, 24, 30, 36, 42, 48]) if (v >= x0 && v <= x1) s += `<text x="${x(v)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+    s += `<text x="${(L + W - R) / 2}" y="${H - 3}" text-anchor="middle" font-size="11" fill="var(--muted)">${xLabel}</text>`;
+    const ends = [];
+    for (const sr of series) {
+      const p = sr.pts[n];
+      if (!p || !p.length) continue;
+      s += `<path d="${p.map((q, i) => (i ? 'L' : 'M') + x(q[0]) + ' ' + y(q[1])).join(' ')}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round" ${sr.dash ? 'stroke-dasharray="6 4"' : ''}/>`;
+      ends.push({ y: y(p[p.length - 1][1]), name: sr.short || sr.name });
+    }
+    ends.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+    for (const e of ends) s += `<text x="${W - R + 6}" y="${e.y + 4}" font-size="11" fill="var(--fg)">${esc(e.name)}</text>`;
+    s += `<line class="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+    const f = document.createElement('div');
+    f.className = 'facet';
+    f.innerHTML = `<h3>${n} intervals</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(yLabel)} against window size, ${n} intervals">${s}</svg><div class="tip" hidden></div>`;
+    const svg = f.querySelector('svg'), tip = f.querySelector('.tip'), cross = f.querySelector('.cross');
+    svg.addEventListener('pointermove', (ev) => {
+      const r = svg.getBoundingClientRect();
+      const px = ((ev.clientX - r.left) / r.width) * W;
+      const xv = Math.round(x0 + ((px - L) / (W - L - R)) * (x1 - x0));
+      if (xv < x0 || xv > x1) { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); return; }
+      cross.setAttribute('x1', x(xv)); cross.setAttribute('x2', x(xv)); cross.setAttribute('visibility', 'visible');
+      const rows = series.map((sr) => { const q = (sr.pts[n] || []).find((p) => p[0] === xv); return q ? `<div><i class="k" style="background:${sr.color}"></i>${esc(sr.name)}: <b>${yFmt(q[1])}</b></div>` : ''; }).join('');
+      tip.innerHTML = `<div><b>window ${xv}</b></div>${rows}`;
+      tip.hidden = false;
+      const left = (x(xv) / W) * r.width;
+      tip.style.left = Math.max(0, Math.min(left + 12, r.width - tip.offsetWidth - 4)) + 'px';
+      tip.style.top = '22px';
+    });
+    svg.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+    facets.appendChild(f);
+  }
+  el.appendChild(facets);
+}
+const byRule = (rows, key, rule) => rows.filter((r) => r.rule === rule).map((r) => [r.window, r[key]]);
+const ruleSeries = (rowsByN, key) => RULES.map(([rule, name, color]) => ({ name, color, pts: { 3: byRule(rowsByN[3], key, rule), 4: byRule(rowsByN[4], key, rule) } }));
+const tableByWindow = (el, rowsByN, key, fmt) => {
+  const wins = [12, 18, 24, 30, 36, 42, 48];
+  const rows = [];
+  for (const n of [3, 4]) for (const [rule, name] of RULES) rows.push([`${n} intervals, ${name}`, ...wins.map((w) => { const r = rowsByN[n].find((q) => q.rule === rule && q.window === w); return r ? fmt(r[key]) : '—'; })]);
+  table(el, ['', ...wins.map((w) => `window ${w}`)], rows);
+};
+
+// 1. merges
+{
+  const el = panel('How often notes merge', 'Share of placements where two interval ends land on the same note, by window size. Merges fall steadily as the window opens. Four intervals collide far more than three; in wide windows equal centers merges less than the shared range.');
+  const rows = { 3: D[3].byWindow, 4: D[4].byWindow };
+  lineChart(el, ruleSeries(rows, 'share_with_merge'), { yFmt: pct, yMax: 1, yLabel: 'share with a merge' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'share_with_merge', pct);
+}
+// 2. merge kinds
+{
+  const el = panel('How notes merge', 'Every pair of interval ends that land on the same note, by kind. Stacking: one interval\'s top on another\'s bottom. Nesting: two bottoms, or two tops, together. Equal centers mostly stacks; the shared range nests as often as it stacks.');
+  const KINDS = [['stack', 'stacking (top on bottom)', 'var(--k1)', false], ['bottom', 'nesting: two bottoms', 'var(--k2)', true], ['top', 'nesting: two tops', 'var(--k3)', false]];
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  const trows = [];
+  for (const n of [3, 4]) for (const [rule, name] of RULES) {
+    const r = D[n].mergeKinds.find((q) => q.rule === rule);
+    const tot = r.stack + r.bottom + r.top;
+    seg.innerHTML += `<div class="segrow"><span>${n} intervals,<br>${name}</span><div class="segbar">${KINDS.map(([k, label, c, darkText]) => `<div class="${darkText ? 'dark-text' : ''}" style="flex:${r[k]};background:${c}" title="${label}: ${r[k].toLocaleString()} (${pct(r[k] / tot)})">${pct(r[k] / tot)}</div>`).join('')}</div></div>`;
+    trows.push([`${n} intervals, ${name}`, ...KINDS.map(([k]) => `${r[k].toLocaleString()} (${pct(r[k] / tot)})`)]);
+  }
+  el.appendChild(seg);
+  const l = document.createElement('div');
+  l.className = 'legend';
+  l.innerHTML = KINDS.map(([, label, c]) => `<span><i class="box" style="background:${c}"></i>${label}</span>`).join('');
+  el.appendChild(l);
+  table(el, ['', ...KINDS.map((k) => k[1])], trows);
+}
+// 3. note counts
+{
+  const el = panel('How many notes the chords end up with', 'Each placement starts with two notes per interval; every merge removes one. Share of placements by final note count, over all windows.');
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  const trows = [];
+  const shades = ['#104281', '#256abf', '#3987e5', '#6da7ec', '#9ec5f4'];
+  for (const n of [3, 4]) for (const [rule, name] of RULES) {
+    const rs = D[n].noteCounts.filter((q) => q.rule === rule).sort((a, b) => b.notes - a.notes);
+    const tot = rs.reduce((s, q) => s + q.placements, 0);
+    seg.innerHTML += `<div class="segrow"><span>${n} intervals,<br>${name}</span><div class="segbar">${rs.map((q, i) => `<div class="${i >= 3 ? 'dark-text' : ''}" style="flex:${q.placements};background:${shades[i] || '#cde2fb'}" title="${q.notes} notes: ${pct(q.placements / tot)}">${q.placements / tot > 0.05 ? q.notes + ' · ' + pct(q.placements / tot) : ''}</div>`).join('')}</div></div>`;
+    trows.push([`${n} intervals, ${name}`, ...rs.map((q) => `${q.notes} notes: ${pct(q.placements / tot)}`)]);
+  }
+  el.appendChild(seg);
+  const l = document.createElement('div');
+  l.className = 'legend';
+  l.innerHTML = '<span>darkest = all notes distinct; each lighter step = one more merge</span>';
+  el.appendChild(l);
+  table(el, ['', 'by note count'], trows.map((r) => [r[0], r.slice(1).join(' · ')]));
+}
+// 4. grid robustness and mirror
+{
+  const el = panel('Does the rule decide the chord, or the grid?', 'Share of placements where no interval end falls on an exact half step, so rounding has no choice and the rule alone decides the chord (solid). Dashed: share where the reversed ordering gives the exact mirror image. The shared range\'s fixed center grid keeps landing on half steps; its remaining mirror breaks are all intervals centered exactly on the middle of the window.');
+  const rows = { 3: D[3].byWindow, 4: D[4].byWindow };
+  const s = [...ruleSeries(rows, 'share_grid_robust').map((x) => ({ ...x, name: x.name + ': grid-robust', short: 'robust' })),
+    ...ruleSeries(rows, 'share_mirror_ok').map((x) => ({ ...x, name: x.name + ': mirror exact', short: 'mirror', dash: true }))];
+  lineChart(el, s, { yFmt: pct, yMax: 1, yLabel: 'share' });
+  legend(el, [...RULES.map(([, n, c]) => [n + ': grid-robust', c]), ...RULES.map(([, n, c]) => [n + ': mirror exact', c, true])]);
+  tableByWindow(el, rows, 'share_grid_robust', pct);
+}
+// 5. scores
+{
+  const el = panel('Roughness as the window opens', 'Average roughness (from C2) of the smoothest ordering for each interval set, by window. Lower is smoother. Wider windows are smoother, as the notes spread out of each other\'s critical bands, and equal centers gives the smoother best chord at every window size, for both 3 and 4 intervals.');
+  const rows = { 3: D[3].scores, 4: D[4].scores };
+  lineChart(el, ruleSeries(rows, 'mean_best_rough'), { yFmt: num(2), yLabel: 'mean best roughness' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'mean_best_rough', num(3));
+}
+{
+  const el = panel('Harmonicity as the window opens', 'Average pitch-space harmonicity of the best-fusing ordering for each interval set, by window. Higher means the chord fits one harmonic series better. It rises with the window, with a dip in the tightest windows, and equal centers is ahead at nearly every size.');
+  const rows = { 3: D[3].scores, 4: D[4].scores };
+  lineChart(el, ruleSeries(rows, 'mean_best_harm'), { yFmt: num(2), yMin: null, yLabel: 'mean best harmonicity' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'mean_best_harm', num(3));
+}
+// 6. agreement
+{
+  const el = panel('Do the two rules pick the same smoothest ordering?', 'Share of interval sets where equal centers and the shared range agree on which ordering is smoothest, by window. They rarely agree: about one set in five with 3 intervals and about one in ten with 4, at every window size. The choice of rule changes which ordering wins, not just how the chords look.');
+  const s = [{ name: 'rules agree', color: 'var(--fg)', pts: { 3: D[3].agreement.map((r) => [r.window, r.same]), 4: D[4].agreement.map((r) => [r.window, r.same]) } }];
+  lineChart(el, s, { yFmt: pct, yMax: 1, yLabel: 'share agreeing' });
+  const wins = [12, 18, 24, 30, 36, 42, 48];
+  table(el, ['', ...wins.map((w) => `window ${w}`)], [3, 4].map((n) => [`${n} intervals`, ...wins.map((w) => { const r = D[n].agreement.find((q) => q.window === w); return r ? pct(r.same) : '—'; })]));
+}
+// 7. register
+{
+  const el = panel('Does the register change the winner?', 'Share of (set, window) groups whose smoothest chord changes when the root moves from C2 up an octave to C3. Only roughness depends on register; this is how much the winner depends on it: roughly one group in six to eight with 3 intervals and one in four to six with 4, rising with the window for the shared range.');
+  const rows = { 3: D[3].rootChange, 4: D[4].rootChange };
+  lineChart(el, ruleSeries(rows, 'changed'), { yFmt: pct, yMax: null, yLabel: 'share that changes' });
+  legend(el, RULES.map(([, n, c]) => [n, c]));
+  tableByWindow(el, rows, 'changed', pct);
+}
+// 8. heatmap
+{
+  const el = panel('Where the smooth chords are', 'Average roughness of the smoothest ordering, by the largest interval in the set (rows) and the window size (columns). Darker is rougher. The empty triangle is where the window is smaller than the largest interval.');
+  const tg = document.createElement('div');
+  tg.className = 'toggle';
+  el.appendChild(tg);
+  const host = document.createElement('div');
+  host.className = 'facets';
+  el.appendChild(host);
+  const state = { n: 3 };
+  const stops = [[205, 226, 251], [158, 197, 244], [109, 167, 236], [57, 135, 229], [37, 106, 191], [24, 79, 149], [16, 66, 129]];
+  const ramp = (t) => {
+    const p = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(p)), f = p - i;
+    const c = stops[i].map((v, k) => Math.round(v + (stops[i + 1][k] - v) * f));
+    return `rgb(${c.join(',')})`;
+  };
+  const draw = () => {
+    tg.innerHTML = [3, 4].map((n) => `<button type="button" class="${state.n === n ? 'on' : ''}" data-n="${n}">${n} intervals</button>`).join('');
+    tg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.n = +b.dataset.n; draw(); }));
+    const cells = D[state.n].heat;
+    const vals = cells.map((c) => c.best);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    host.innerHTML = '';
+    for (const [rule, name] of RULES) {
+      const cw = 9, chh = 9, L = 34, T = 8, W = L + 48 * cw + 10, H = T + 24 * chh + 30;
+      let s = '';
+      for (const c of cells.filter((q) => q.rule === rule))
+        s += `<rect x="${L + (c.window - 1) * cw}" y="${T + (24 - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp((c.best - lo) / (hi - lo))}"><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)}</title></rect>`;
+      for (const v of [1, 6, 12, 18, 24]) s += `<text x="${L - 4}" y="${T + (24 - v) * chh + 8}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+      for (const v of [12, 24, 36, 48]) s += `<text x="${L + (v - 1) * cw + 4}" y="${T + 24 * chh + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+      s += `<text x="${L + 24 * cw}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--muted)">window size</text>`;
+      const f = document.createElement('div');
+      f.className = 'facet';
+      f.innerHTML = `<h3>${name} (rows: largest interval)</h3><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Roughness heatmap, ${name}, ${state.n} intervals">${s}</svg>`;
+      host.appendChild(f);
+    }
+    const lg = el.querySelector('.heatlegend') || el.appendChild(Object.assign(document.createElement('div'), { className: 'legend heatlegend' }));
+    lg.innerHTML = `<span>${lo.toFixed(2)} smooth <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> rough ${hi.toFixed(2)}</span><span>hover a cell for its value</span>`;
+  };
+  draw();
+}
+</script>
