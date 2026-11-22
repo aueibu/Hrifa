@@ -149,6 +149,59 @@ def _det(M):
     return sum((-1) ** j * M[0][j] * _det([row[:j] + row[j + 1:] for row in M[1:]]) for j in range(n))
 
 
+def _facets(G):
+    """facet inequalities n.x <= c of hull(G) for a full-dimensional G (from d-subsets of G: O(|G|^(d+1)))"""
+    dim = len(G[0])
+    facets = set()
+    for S in itertools.combinations(G, dim):
+        D = [sub(p, S[0]) for p in S[1:]]
+        n = tuple((-1) ** j * _det([row[:j] + row[j + 1:] for row in D]) for j in range(dim))
+        if not any(n):
+            continue
+        c = sum(a * b for a, b in zip(n, S[0]))
+        vals = [sum(a * b for a, b in zip(n, p)) - c for p in G]
+        if all(v <= 0 for v in vals):
+            facets.add((n, c))
+        elif all(v >= 0 for v in vals):
+            facets.add((tuple(-a for a in n), -c))
+    return facets
+
+
+def hull_lattice_fast(G):
+    """same result as hull_lattice, exact, without scanning all d-subsets of G: facets are found on a small
+    set C of hull vertices (the lexicographically largest maximizer of each direction in {-2..2}^d is a
+    vertex), then every point of G is tested against them; points outside join C and the loop repeats.
+    When no point of G is outside, G lies in hull(C) and C is a subset of G, so hull(C) = hull(G)."""
+    G = [tuple(p) for p in G]
+    dim = len(G[0])
+    if dim == 1:
+        return hull_lattice(G)
+    C = set()
+    for d in itertools.product(range(-2, 3), repeat=dim):
+        if any(d):
+            C.add(max(G, key=lambda p: (sum(a * b for a, b in zip(d, p)), p)))
+    if _rank([sub(p, G[0]) for p in G]) < dim:
+        return hull_lattice(G)
+    while True:
+        C_list = sorted(C)
+        if _rank([sub(p, C_list[0]) for p in C_list]) < dim:  # not full-dimensional yet: widen
+            C |= set(G)
+            continue
+        facets = _facets(C_list)
+        outside = set()
+        for n, c in facets:
+            worst = max(G, key=lambda p: (sum(a * b for a, b in zip(n, p)), p))
+            if sum(a * b for a, b in zip(n, worst)) > c:
+                outside.add(worst)  # the point furthest beyond a facet is a vertex of hull(G)
+        if not outside:
+            break
+        C |= outside
+    lo = [min(p[i] for p in G) for i in range(dim)]
+    hi = [max(p[i] for p in G) for i in range(dim)]
+    box = itertools.product(*[range(lo[i], hi[i] + 1) for i in range(dim)])
+    return {x for x in box if all(sum(a * b for a, b in zip(n, x)) <= c for n, c in facets)}
+
+
 def hull_lattice(G):
     """all lattice points of the convex hull of G (facets from d-subsets of G; exact integer arithmetic)"""
     dim = len(G[0])
@@ -459,7 +512,7 @@ def main():
                     HD = {tuple(x) for x in c["HD"]}
                     run.say(f"--fast: allowed-interval hull loaded from {cache}")
         if HD is None:
-            HD = hull_lattice(D)
+            HD = hull_lattice_fast(D)   # = hull_lattice(D), validated on the 11-limit q 45, 63, 99 caches
             if cache:
                 tmp = f"{cache}.{os.getpid()}.tmp"
                 with open(tmp, "w") as fh:
