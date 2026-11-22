@@ -58,8 +58,14 @@ windows. `--min-largest 18 --max 19` builds only the sets that contain an 18 or 
 local to the addendum; join with the main catalog on `sets.intervals`). `run19.sh` runs it; `next.sh` (tmux window
 `next`) waits for `out/all-done` and starts it through `ensure.sh`, which also picks the right job after a reboot.
 
-Findings page v2: `extract-findings2.mjs <out.json> catalog-n2.sqlite catalog-n3.sqlite ...` then inject the JSON into
-`findings-page2.template.html` at `/*DATA*/null`. It adds the rounding twins, the C3 root, Pareto fronts and the
+Findings page v2: `extract-findings2.mjs <out.json> [--index chord-index.sqlite] [--zpairs zpairs.json]
+catalog-n2.sqlite ...` then inject the JSON into `findings-page2.template.html` at `/*DATA*/null`. Several files per
+cardinality (the main run and the 18-19 addendum) are combined: counts add, averages are weighted by group sizes,
+per-set tables are joined, distinct chords are counted across the files, and compound mixes pair across them. The
+JSON is also the durable reference (human, 2026-11-21): `provenance` (date, script hash, every source's counts and
+full meta), `fields` (what every table and unit means) and, with `--index`, `chordIndex` (summary, sets-per-chord
+histograms, cardinality mixes, the 50 chords and shapes per note count made by the most input sets, with producers).
+It adds the rounding twins, the C3 root, Pareto fronts and the
 simple-vs-compound comparison. Checked on every pair (n = 2, 3, 4, both rules): a set with every interval +12 in a
 window +12 is the simple chord with every top note an octave higher and every bottom unmoved. Mixes (some intervals
 compound) mostly change the pitch classes.
