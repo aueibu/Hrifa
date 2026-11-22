@@ -47,7 +47,24 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
+**After a /clear on 2026-11-21 evening: read "Session state 2026-11-21 evening" below first.** It lists two jobs running on the VM, the pending 20–24 decision and the uncommitted crystal page.
+
 Resume here. Model reset 2026-11-20 (ARC "Model reset"). Next: M2c starts from the human's own description of the spacing idea (how spans sit inside the spacing range), checked against "Design decisions already made"; no new knobs unless the human asks. Before M6, tell the human clearly that the hand-off contract step is next (they asked).
+
+## Session state 2026-11-21 evening (times EST; the human wants EST and no UTC)
+- **Catalog v2 is complete.** Main run (sizes 1–17, n = 2–5, windows to 60) in `~/ipcat/out/`; the 18–19 addendum (sets whose largest interval is 18 or 19, `--min-largest 18 --max 19`) in `~/ipcat/out19/`, finished 8:13 pm with indexes (verify vs scoreVoicing 8e-15). Placements: n=5 131.6 M (main) + 89.7 M (addendum); about 233 M in all, 61 GB of catalogs. The ipcat cap is 14 (`~/ipcat/cap`, `out/max-workers`); the z search is done for now and the human allowed all cores.
+- **Running on the VM (started about 8:15–8:20 pm, nice 10, detached with setsid):**
+  - Chord index n = 2–5, both runs: `~/ipcat/index/build-chord-index.mjs` → `chord-index-n2-5.sqlite`, log `chord-index.log` (read all rows in 17.5 min, "indexed" at 31 min; chords/producers/shapes next; expected done within a few hours).
+  - Z-pairs n = 3–5: `~/ipcat/index/extract-zpairs2.mjs` (new, disk-backed; repo copy `m2c/catalog/extract-zpairs2.mjs`, verified identical to the old script on n = 3–4: 89 groups) → `zpairs-n3-5.json` + tables in `zpairs-work.sqlite`, log `zpairs.log`. 54,457,533 classes with 6+ notes; stops after pass 1 if groups exceed 2,000,000 members (exit 2).
+  - Check with `ssh gvm 'tail -3 ~/ipcat/index/*.log; pgrep -fa "[n]ode/bin/node"'`. If the VM was preempted, rerun the same commands (they start over; outputs are rebuilt from scratch).
+- **When both finish:** copy the zpairs tables into the chord index (`ATTACH 'zpairs-work.sqlite' AS z; CREATE TABLE zpairs AS SELECT * FROM z.zpairs; ...` with its index), download only `zpairs-n3-5.json` (and a findings JSON re-extracted on the VM), rebuild the findings page. The n = 5 heatmap zoom data does not fit the 16 MB page: plan agreed with the human: separate JSON data files published beside the page (`files`), one per cardinality and largest interval, fetched when a heatmap cell is clicked. Then ask the human before stopping the VM.
+- **20–24 addendum (not started; the human asked for an estimate):** counts from `count-addendum.mjs` (scratch, calibrated exactly against the 18–19 run): windows to 60: n=4 15.6 M, n=5 424 M placements (≈ 13.5 h on the c4d-16 at 0.52 M/min, ≈ 15 h with indexes, ≈ 120 GB); windows to 72: n=5 556 M (≈ 19 h). Open decisions for the human: windows 60 or 72; option A (run on this VM, recommended), B (add an `n2-highcpu-48` Spot VM and split by largest interval: 20–21 on the c4d = 130 M, 22–24 on the N2 = 294 M, ≈ 4.5 h, needs the human's OK as billable), C (retry the C4D quota after 48 h, then resize to c4d-highcpu-64).
+- **Quota (2026-11-21):** CPUs (all regions) 64 and Hyperdisk Balanced 1,000 GB approved; CPUs per VM family C4D us-central1 stays 24 (denied; "wait 48h ... billing history"). So the C4D VM cannot grow past 16 yet; other families with quota: N2 200, C2D 100.
+- **Side pages this session (all published, see the Log rows above):**
+  - Required-interval explorer: hung tones alone + pivot partners (committed aacfd24).
+  - Findings page panel 13, reverse lookup from any pitches (committed 2d138a1).
+  - Rhythm crystals `crystal/rhythm-crystal.html` (https://claude.ai/artifact/JmCnVCcmqMB4YejTc3sM81): committed at d2f5411 without the "How it is built" view and the Schillinger fit mode (Book I, Ch. 12, distributive powers); those are in the working tree, published (version 3), **not committed** until the human has looked.
+  - `crystal/HANDOFF.md`: the human's next topic, fitting ("shrink to fit") in pitch: melodic, harmonic, "shimmering overtonal structures"; they want to discuss it in a new session.
 
 ## Handoff notes (for any other session or account)
 - Branch: `claude/interval-placement-app-0ejurh` on `aueibu/Hrifa` (not yet merged to `main`). Check it out, then read `shell/CLAUDE.md`, this folder's `ARC.md` and this file.
