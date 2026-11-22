@@ -7,6 +7,8 @@
 #   chord4_neg  4,0 with U up to two -1 coefficients            (widened form, WIDE=1 only)
 # usage: PRIMES="3 5 7" Q=243 W=16 TAG=l7q243 [WIDE=1] bash conj_s.sh >> ~/zruns/zprod/${TAG}_conjS.out
 PRIMES=${PRIMES:-"3 5 7"}; Q=${Q:-243}; W=${W:-16}; TAG=${TAG:-l7q$Q}; WIDE=${WIDE:-0}
+ZPROD=${ZPROD:-~/zgen/zprod_fast.py}   # HC=dir: cache the allowed-interval hull (zprod --hull-cache)
+HCARG=""; [ -n "$HC" ] && HCARG="--hull-cache $HC"
 D=~/zruns/zprod/$TAG; C=$D/conjS; mkdir -p $C; cd ~/zruns/zprod
 until grep -q "LADDER DONE" ~/zruns/zprod/$TAG.out; do sleep 60; done
 KS="6 7 8 9 10 11 12 13 14 15 16"
@@ -14,7 +16,7 @@ run() {
   n=$1; shift
   if [ -f $C/$n/summary.csv ]; then echo "$n already done"; return; fi
   t=$(date +%s); echo "$(date +%H:%M) $n start"
-  pypy3 ~/zgen/zprod_fast.py --fast --zgen ~/zgen/zgen_v4.py --primes $PRIMES --interval-odd $Q --workers $W \
+  pypy3 $ZPROD --fast $HCARG --zgen ~/zgen/zgen_v4.py --primes $PRIMES --interval-odd $Q --workers $W \
     --no-types --k $KS --out $C/$n "$@" > $C/$n.out 2>&1
   echo "$(date +%H:%M) $n exit $? in $(( $(date +%s) - t ))s: $(grep -h 'WARNING' $C/$n.out | cut -c1-60)"
 }
