@@ -6,14 +6,14 @@
 # Then: check against the exhaustive odd <= 123 catalog (every family there with q <= Q must be found; extras
 # are expected) and score by intervallic odd limit.
 # usage: Q=729 W=14 bash run_l5q729.sh >> ~/zruns/zprod/l5q729.out
-Q=${Q:-729}; W=${W:-14}
-D=~/zruns/zprod/l5q$Q; mkdir -p $D; cd ~/zruns/zprod
+Q=${Q:-729}; W=${W:-14}; ZP=${ZP:-zprod_iol.py}; EXTRA=${EXTRA:-}; TAG=${TAG:-}
+D=~/zruns/zprod/l5q$Q$TAG; mkdir -p $D; cd ~/zruns/zprod
 KS="6 7 8 9 10 11 12 13 14 15 16"
 step() {  # name, then zprod arguments
   n=$1; shift
   if [ -f $D/$n/summary.csv ]; then echo "$n already done"; return; fi
   t=$(date +%s); echo "$(date +%H:%M) $n start"
-  pypy3 ~/zgen/zprod_iol.py --zgen ~/zgen/zgen_v4.py --primes 3 5 --interval-odd $Q --workers $W --no-types \
+  pypy3 ~/zgen/$ZP $EXTRA --zgen ~/zgen/zgen_v4.py --primes 3 5 --interval-odd $Q --workers $W --no-types \
     --out $D/$n "$@" > $D/$n.out 2>&1
   echo "$(date +%H:%M) $n exit $? in $(( $(date +%s) - t ))s: $(grep -h 'WARNING' $D/$n.out | cut -c1-60)"
   grep -h '^k=' $D/$n.out

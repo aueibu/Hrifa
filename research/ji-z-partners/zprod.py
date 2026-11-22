@@ -33,7 +33,7 @@ from math import gcd
 from multiprocessing import Pool
 
 Z = None
-_G = _GSET = _BOX = _ARGS = _DSET = None
+_G = _GSET = _BOX = _ARGS = _DSET = _HD = None
 
 
 def load_zgen(path):
@@ -173,16 +173,24 @@ def hull_lattice(G):
     return {x for x in box if all(sum(a * b for a, b in zip(n, x)) <= c for n, c in facets)}
 
 
-def gen_V(bounds, shapes, H):
+def gen_V(bounds, shapes, H, HD=None):
     """yield signed V (tuple of (point, coeff)), lowest point 0 with coeff +1, for each (vp, vm) shape.
     Only factors that fit inside the gamut's hull after some transposition: hull(P) = hull(U) + hull(V)
     lies in the gamut's hull, so a factor that cannot fit there never gives a product in the gamut.
     The fit is checked while the plus points are chosen (pruning early); minus points lie in the plus
-    points' hull, so they fit wherever the plus points do."""
+    points' hull, so they fit wherever the plus points do.
+    --fast (HD = lattice points of the hull of the allowed intervals): instead, every difference of two
+    plus points must lie in HD. Exact: for any direction f, width_f(V) <= width_f(P) (Newton polytopes:
+    hull(P) = hull(U) + hull(V)) <= max f over the allowed intervals, since every difference of two
+    notes of P is an allowed interval; so V - V lies in the hull of the allowed intervals. Minus points
+    lie in the plus points' hull, so their differences do too."""
     dim = len(bounds)
-    box = lex_positive_box(bounds)
-    Hs = set(H)
     zero = (0,) * dim
+    if HD is not None:
+        box = [v for v in lex_positive_box(bounds) if v in HD]
+    else:
+        box = lex_positive_box(bounds)
+    Hs = set(H)
 
     def plus_sets(need, start, chosen, T):
         if need == 0:
@@ -190,6 +198,10 @@ def gen_V(bounds, shapes, H):
             return
         for j in range(start, len(box)):
             v = box[j]
+            if HD is not None:
+                if all(sub(v, w) in HD for w in chosen):
+                    yield from plus_sets(need - 1, j + 1, chosen + [v], T)
+                continue
             T2 = [t for t in T if add(t, v) in Hs]
             if T2:
                 yield from plus_sets(need - 1, j + 1, chosen + [v], T2)
@@ -229,12 +241,21 @@ def search_U(V, ks):
         return [], True
     usum_max = max(targets)
     dim = len(_G[0])
-    lo, hi = _BOX
-    # candidate U points: u + v inside the bounding box for every term v of V
-    vlo = [min(p[i] for p, _ in V) for i in range(dim)]
-    vhi = [max(p[i] for p, _ in V) for i in range(dim)]
-    cand = [u for u in itertools.product(*[range(lo[i] - vlo[i], hi[i] - vhi[i] + 1) for i in range(dim)])]
-    cand.sort()
+    fast = _HD is not None
+    if fast:
+        # --fast: U's lowest point is 0 (coefficient forced to 1 below), so P's lowest note is 0 and each set
+        # is built once, not at every transposition (lex-min of a product = sum of the lex-mins; V's is 0
+        # with coefficient +1 and P's lowest coefficient is 1). U - U lies in the hull of the allowed
+        # intervals (same width argument as for V in gen_V), so every U point is in _HD.
+        zero = (0,) * dim
+        cand = sorted(u for u in _HD if u >= zero)
+    else:
+        lo, hi = _BOX
+        # candidate U points: u + v inside the bounding box for every term v of V
+        vlo = [min(p[i] for p, _ in V) for i in range(dim)]
+        vhi = [max(p[i] for p, _ in V) for i in range(dim)]
+        cand = [u for u in itertools.product(*[range(lo[i] - vlo[i], hi[i] - vhi[i] + 1) for i in range(dim)])]
+        cand.sort()
     if not cand:
         return [], True
     idx = {u: i for i, u in enumerate(cand)}
@@ -280,7 +301,7 @@ def search_U(V, ks):
                     res.append((Ps, Qs))
             return
         u = cand[i]
-        for c in ucoeffs:
+        for c in ((1,) if fast and i == 0 else ucoeffs):
             if c > 0 and state["pos"] + c > pos_max:
                 continue
             if c < 0 and state["neg"] - c > max_neg:
@@ -294,7 +315,7 @@ def search_U(V, ks):
             nn = len(notes)
             for p in finP[i]:
                 x = P[p]
-                if x < 0 or x > 1 or (x == 1 and p not in _GSET):
+                if x < 0 or x > 1 or (x == 1 and not fast and p not in _GSET):
                     ok = False
                     break
                 if x == 1 and DS is not None:
@@ -337,9 +358,9 @@ def search_U(V, ks):
     return res, True
 
 
-def _init(G, args):
-    global _G, _GSET, _BOX, _ARGS, Z, _DSET
-    _G, _GSET, _ARGS = G, set(G), args
+def _init(G, args, HD=None):
+    global _G, _GSET, _BOX, _ARGS, Z, _DSET, _HD
+    _G, _GSET, _ARGS, _HD = G, set(G), args, HD
     Z = load_zgen(args.zgen)
     # allowed intervals: the odd <= q gamut is closed under negation, so it is the set of differences
     # (lattice vectors) whose ratio has odd limit <= q
@@ -357,8 +378,8 @@ def _job(V):
         cp, cq = Z.canon(P), Z.canon(Q)
         if cp == cq:
             continue
-        if not (Z.fits(Q, _GSET, _G) or Z.fits([neg(q) for q in Q], _GSET, _G)):
-            continue
+        if _HD is None and not (Z.fits(Q, _GSET, _G) or Z.fits([neg(q) for q in Q], _GSET, _G)):
+            continue       # (--fast: no gamut; Q has P's intervals, so it meets the interval limit too)
         fp = Z.fingerprint(cp)
         found[(len(cp), fp)].update((cp, cq))
     return V, dict(found), n, complete
@@ -390,6 +411,9 @@ def main():
     ap.add_argument("--interval-odd", type=int, default=0,
                     help="only sets whose every interval has odd limit <= q (pruned during the U search); "
                          "the partner has the same intervals, so it fits the odd <= q gamut too")
+    ap.add_argument("--fast", action="store_true",
+                    help="with --interval-odd: no gamut; factors V pruned by the allowed intervals' hull and U "
+                         "anchored at 0, so each set is built once (exact; see gen_V and search_U)")
     ap.add_argument("--k", type=int, nargs="+", required=True)
     ap.add_argument("--shapes", nargs="+", default=["2,1", "3,1", "3,2", "4,1", "4,2"],
                     help="V shapes vp,vm (plus terms incl. the lowest, minus terms)")
@@ -416,7 +440,17 @@ def main():
     dim = len(G[0])
     extent = [max(p[i] for p in G) - min(p[i] for p in G) for i in range(dim)]
     bounds = extent if a.vmax <= 0 else [min(a.vmax, e) for e in extent]
-    H = hull_lattice(G)
+    HD = None
+    if a.fast:
+        if not a.interval_odd:
+            ap.error("--fast needs --interval-odd")
+        D = Z.gamut(a.primes, a.interval_odd)          # allowed intervals (closed under negation)
+        HD = hull_lattice(D)
+        bounds = [max(abs(p[i]) for p in D) for i in range(dim)]
+        H = HD
+        run.say(f"--fast: {len(D)} allowed intervals, {len(HD)} lattice points in their hull")
+    else:
+        H = hull_lattice(G)
     run.say(f"gamut {len(G)} notes ({a.primes}, odd <= {a.odd}), {len(H)} lattice points in its hull; k {a.k}; "
             f"V shapes {shapes}, |coord| <= {bounds}; U coefficients {a.ucoeffs}"
             + (f"; intervallic odd limit <= {a.interval_odd}" if a.interval_odd else ""))
@@ -424,7 +458,7 @@ def main():
     if a.count_only:
         for sh in shapes:
             t1 = time.time()
-            c = sum(1 for _ in gen_V(bounds, [sh], H))
+            c = sum(1 for _ in gen_V(bounds, [sh], H, HD))
             run.say(f"  shape {sh[0]},{sh[1]}: {c:,} factors V that fit the hull ({time.time() - t1:.0f}s)")
         return
     allf = collections.defaultdict(set)
@@ -436,8 +470,8 @@ def main():
     # never holds the full factor list and no worker waits for a slow factor elsewhere (a batch barrier
     # left 75% of the CPU idle in 3-D).
     done_q = collections.deque()
-    with Pool(a.workers, initializer=_init, initargs=(G, a)) as pool:
-        gen = gen_V(bounds, shapes, H)
+    with Pool(a.workers, initializer=_init, initargs=(G, a, HD)) as pool:
+        gen = gen_V(bounds, shapes, H, HD)
         inflight = 0
         limit = a.workers * 4
         exhausted = False
