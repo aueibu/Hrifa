@@ -121,9 +121,10 @@
         <select id="droneRange" aria-label="Drone range"><option value="55">drone near 55–110 Hz</option><option value="110" selected>drone near 110–220 Hz</option><option value="220">drone near 220–440 Hz</option></select>
         <button type="button" id="droneOct" class="playing" aria-pressed="true">Drone octave: on</button>
         <button type="button" id="droneSine" aria-pressed="false">Drone bare sine: off</button>
+        <select id="droneStyle" aria-label="Drone style"><option value="steady" selected>drone holds</option><option value="pulsed">drone pulses</option><option value="auto">drone pulses below hearing</option></select>
       </div>
       <div class="btns">
-        <button type="button" id="pulseBtn" aria-pressed="false">Pulse: off</button>
+        <button type="button" id="pulseBtn" aria-pressed="false">Note pulses: off</button>
       </div>
       <div class="btns">
         <span class="lbl" style="min-width:0">Reverb</span>
@@ -374,8 +375,9 @@ function drawFacts(r, notes) {
     <span>Below the lowest note</span><span>${interval(lowest.cents - r.fundCents)} (the lowest note is harmonic ${r.partials[0]})</span>
     <span>Is it played?</span><span>${has1 ? 'yes, the lowest note is the fundamental' : 'no, the fundamental is missing (implied)'}</span>
     <span>Your 1/1</span><span>${Math.abs(baseErr) <= 0.05 && baseK >= 1 ? `harmonic ${baseK} of this series` : baseK >= 1 && Math.abs(baseErr) <= (+$('cap').value || 20) ? `near harmonic ${baseK} (${baseErr > 0 ? '+' : '−'}${Math.abs(baseErr).toFixed(1)}¢)` : 'not on a harmonic of this series'}</span>
-    <span>As a pulse</span><span>${pulse.text}</span>`;
-  $('pulseNote').textContent = `Drone: the fundamental raised by whole octaves into the chosen range (${fmtHz(droneHz(F))} Hz)${DRONE_SINE ? ' as a bare sine' : ''}${DRONE_OCT ? ', with its octave' : ', one pitch only'}. Pulse: ${pulse.text}.`;
+    <span>Drone</span><span>${dronePulses(F) ? `pulses ${droneRateText(F)}` : 'holds'}${DRONE_STYLE === 'auto' ? ' (pulses below hearing)' : ''}</span>
+    <span>Note pulses</span><span>${pulse.text}</span>`;
+  $('pulseNote').textContent = `Drone: the fundamental raised by whole octaves into the chosen range (${fmtHz(droneHz(F))} Hz)${DRONE_SINE ? ' as a bare sine' : ''}${DRONE_OCT ? ', with its octave' : ', one pitch only'}, ${dronePulses(F) ? `struck ${droneRateText(F)}` : 'held'}. Note pulses: ${pulse.text}.`;
 }
 
 // the pulse reading: slow the series by k octaves until the busiest note is at most 8 pulses per second;
@@ -424,7 +426,7 @@ function drawSeries(r, notes) {
       s += `<line class="drone-mark" x1="${x}" x2="${x}" y1="24" y2="${H - 44}" stroke="${css('--twin')}" stroke-width="2" stroke-dasharray="5 4" opacity="${op}" pointer-events="none"/>`;
     }
     const x = X(dH), end = x > W * 0.6;
-    s += `<text class="drone-label" x="${x + (end ? -6 : 6)}" y="18" font-size="11" text-anchor="${end ? 'end' : 'start'}" fill="${css('--twin')}" font-family="IBM Plex Sans, sans-serif">drone ${fmtHz(droneHz(F))} Hz = harmonic ${dH >= 1 ? dH : `1/${1 / dH}`}${DRONE_SINE ? ', bare sine' : ''}${DRONE_OCT ? ' (its octave fainter)' : ''}</text>`;
+    s += `<text class="drone-label" x="${x + (end ? -6 : 6)}" y="18" font-size="11" text-anchor="${end ? 'end' : 'start'}" fill="${css('--twin')}" font-family="IBM Plex Sans, sans-serif">drone ${fmtHz(droneHz(F))} Hz = harmonic ${dH >= 1 ? dH : `1/${1 / dH}`}${DRONE_SINE ? ', bare sine' : ''}${dronePulses(F) ? `, pulsing ${droneRate(F).r.toFixed(2)}/s` : ''}${DRONE_OCT ? ' (its octave fainter)' : ''}</text>`;
   }
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', W); svg.setAttribute('height', H);
   svg.innerHTML = s;
@@ -654,6 +656,34 @@ function applyDroneVoice() {
   const lv = droneLevels();
   for (const { g, role } of drone.oscs) g.gain.setTargetAtTime(lv[role], ctx.currentTime, 0.05);
 }
+// drone style: holds, pulses, or pulses only while the fundamental is below hearing. A pulsing drone is the same tone
+// re-struck at the fundamental moved by whole octaves into 1 to 2 strikes per second (so always an octave of the true
+// fundamental); a scheduler checks every 50 ms, so it switches by itself when a note change crosses the hearing limit.
+const DRONE_LEVEL = 0.16;
+let DRONE_STYLE = 'steady';
+function droneRate(F) { let r = F, k = 0; while (r >= 2) { r /= 2; k++; } while (r < 1) { r *= 2; k--; } return { r, k }; }
+const dronePulses = (F) => DRONE_STYLE === 'pulsed' || (DRONE_STYLE === 'auto' && F < HEARING);
+function droneRateText(F) {
+  const { r, k } = droneRate(F);
+  return `${r.toFixed(2)} per second (the fundamental ${k >= 0 ? 'slowed' : 'raised'} ${Math.abs(k)} octave${Math.abs(k) === 1 ? '' : 's'})`;
+}
+function droneTick() {
+  if (!drone || !CUR) return;
+  const g = drone.gain.gain, now = ctx.currentTime, want = dronePulses(hz(CUR.r.fundCents));
+  if (want !== drone.pulsing) {
+    drone.pulsing = want;
+    g.cancelScheduledValues(now);
+    if (want) drone.next = now + 0.05;
+    else g.setTargetAtTime(DRONE_LEVEL, now, 0.1);
+  }
+  if (!want) return;
+  while (drone.next < now + 0.3) {
+    const t = drone.next, period = 1 / droneRate(hz(CUR.r.fundCents)).r;
+    g.setTargetAtTime(DRONE_LEVEL * 1.2, t, 0.006);     // strike
+    g.setTargetAtTime(0, t + 0.03, period * 0.3);       // decay before the next strike
+    drone.next = t + period;
+  }
+}
 function droneHz(F) { const lo = +$('droneRange').value; let f = F; while (f < lo) f *= 2; while (f >= 2 * lo) f /= 2; return f; }
 function droneOn() {
   const c = audio(), gain = c.createGain();
@@ -666,7 +696,7 @@ function droneOn() {
     o.connect(lp); lp.connect(g); g.connect(gain); o.start();
     return { o, g, mult, role };
   });
-  drone = { oscs, gain };
+  drone = { oscs, gain, pulsing: false, next: 0, timer: setInterval(droneTick, 50) };
   $('droneBtn').textContent = 'Drone: on'; $('droneBtn').classList.add('playing'); $('droneBtn').setAttribute('aria-pressed', 'true');
   render();   // tunes the drone and marks it on the drawing
 }
@@ -674,6 +704,7 @@ function droneOff() {
   const was = !!drone;
   if (drone) {
     const c = ctx, d = drone;
+    clearInterval(d.timer);
     d.gain.gain.cancelScheduledValues(c.currentTime); d.gain.gain.setTargetAtTime(0, c.currentTime, 0.15);
     setTimeout(() => d.oscs.forEach(({ o }) => { try { o.stop(); } catch (e) {} }), 900);
   }
@@ -685,7 +716,7 @@ function droneOff() {
 function pulseOn() {
   const c = audio();
   pulse = { next: c.currentTime + 0.1, timer: setInterval(pulseTick, 50) };
-  $('pulseBtn').textContent = 'Pulse: on'; $('pulseBtn').classList.add('playing'); $('pulseBtn').setAttribute('aria-pressed', 'true');
+  setToggle('pulseBtn', 'Note pulses', true);
   pulseTick();
 }
 function pulseTick() {
@@ -705,7 +736,7 @@ function pulseTick() {
 function pulseOff() {
   if (pulse) clearInterval(pulse.timer);
   pulse = null;
-  $('pulseBtn').textContent = 'Pulse: off'; $('pulseBtn').classList.remove('playing'); $('pulseBtn').setAttribute('aria-pressed', 'false');
+  setToggle('pulseBtn', 'Note pulses', false);
 }
 function followAudio() {
   heldSync();
@@ -713,6 +744,7 @@ function followAudio() {
     if (!CUR) return;
     const f = droneHz(hz(CUR.r.fundCents));
     for (const { o, mult } of drone.oscs) o.frequency.setTargetAtTime(f * mult, ctx.currentTime, 0.12);
+    droneTick();
   }
 }
 // replay: walk the trail, one step every 2.5 s, playing each step's notes (the drone follows if it is on)
@@ -740,6 +772,7 @@ $('add').addEventListener('keydown', (e) => { if (e.key === 'Enter') { addText($
 $('base').addEventListener('change', render);
 $('cap').addEventListener('change', () => { S.pick = null; render(); });
 $('droneRange').addEventListener('change', render);
+$('droneStyle').addEventListener('change', () => { DRONE_STYLE = $('droneStyle').value; render(); });
 $('droneOct').addEventListener('click', () => { DRONE_OCT = !DRONE_OCT; setToggle('droneOct', 'Drone octave', DRONE_OCT); applyDroneVoice(); render(); });
 $('droneSine').addEventListener('click', () => { DRONE_SINE = !DRONE_SINE; setToggle('droneSine', 'Drone bare sine', DRONE_SINE); applyDroneVoice(); render(); });
 $('noteSine').addEventListener('click', () => {
