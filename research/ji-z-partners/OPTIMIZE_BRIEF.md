@@ -45,17 +45,24 @@ Runs in pypy3 with a multiprocessing pool fed in rolling chunks.
 - Sum-1 shapes (2,1 and 3,2) are run one note count at a time (an all-k run once found 0 of 22 seven-note
   families; cause not diagnosed, possibly the node budget).
 
+## Status after `--fast` (validated 2026-11-21)
+- `--fast` matches the slow run family for family (5-limit q <= 729, all sizes); 8 min on 2 cores
+  against 64 min on 14.
+- Complete 5-limit recipe for q <= 729 (2,376 families, equal to the exhaustive catalog's): shapes 3,1 4,1
+  4,2 3,0 4,0 5,0 (all k in one run), then 5,1 5,2, then **3,0 with `--ucoeffs -1 0 1 2 --max-neg 2`**
+  (20 s). The last 17 families were a plain 3-term chord times a 7-8 term factor with one or two -1
+  coefficients (`data/vm/gapfactor.py` shows the factorization of any missed family): flipping the
+  3-term chord with a signed U finds them. That run alone finds most families at 9/12/15 notes.
+
 ## Known gaps (where results are incomplete)
-- Families needing a factor shape that is not tried (5-term signed shapes 5,1 5,2 were left out for
-  cost before `--fast`) or a -1 coefficient in U: 17 families missed at q <= 729 (3 of 1,155 at 12 notes,
-  14 of 488 at 15), listed on the VM in `~/zruns/zprod/iol5_q729_compare.txt`.
 - Factors stopped at the per-factor node budget (`--max-nodes`, listed in `stopped_factors.jsonl`).
 - No proof that bounded factor shapes reach every family; coverage is empirical (checked against the
-  exhaustive catalog).
+  exhaustive catalog, which only covers notes within odd 123 in 5-limit and small odd limits in 7-limit).
 
 ## Ideas not tried yet (ranked by my guess of payoff)
-1. Use the 17 missed families to learn which shapes / U coefficients are needed, then add them now that
-   `--fast` makes 5-term shapes cheap.
+1. A theory question with practical payoff: is "small plus-only factor flipped, signed U" always enough?
+   If every family has some factor of bounded size (in the 5-limit data a 3-term chord often suffices),
+   the shape list could shrink to that and the search becomes far cheaper in 7-limit.
 2. Port the U search (the hot loop, `search_U.rec`) to a compiled language (C, Rust, or Cython under
    CPython); pypy is the current speed.
 3. Inversion symmetry: P and its inversion are both built (factor ~2).
