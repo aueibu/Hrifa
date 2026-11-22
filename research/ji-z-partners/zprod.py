@@ -426,6 +426,8 @@ def main():
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--count-only", action="store_true", help="only count the factors V per shape, no search")
     ap.add_argument("--no-types", action="store_true", help="write families without the (slow) type classification")
+    ap.add_argument("--hull-cache", default="",
+                    help="with --fast: directory caching the allowed intervals' hull per (primes, q)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     global Z
@@ -445,7 +447,24 @@ def main():
         if not a.interval_odd:
             ap.error("--fast needs --interval-odd")
         D = Z.gamut(a.primes, a.interval_odd)          # allowed intervals (closed under negation)
-        HD = hull_lattice(D)
+        HD = None
+        cache = None
+        if a.hull_cache:   # hull_lattice is C(len(D), dim) facet candidates: minutes to an hour at 11-limit
+            os.makedirs(a.hull_cache, exist_ok=True)
+            cache = os.path.join(a.hull_cache, f"hd_p{'-'.join(map(str, a.primes))}_q{a.interval_odd}.json")
+            if os.path.exists(cache):
+                with open(cache) as fh:
+                    c = json.load(fh)
+                if sorted(map(tuple, c["D"])) == sorted(map(tuple, D)):
+                    HD = {tuple(x) for x in c["HD"]}
+                    run.say(f"--fast: allowed-interval hull loaded from {cache}")
+        if HD is None:
+            HD = hull_lattice(D)
+            if cache:
+                tmp = f"{cache}.{os.getpid()}.tmp"
+                with open(tmp, "w") as fh:
+                    json.dump({"D": sorted(map(list, D)), "HD": sorted(map(list, HD))}, fh)
+                os.replace(tmp, cache)
         bounds = [max(abs(p[i]) for p in D) for i in range(dim)]
         H = HD
         run.say(f"--fast: {len(D)} allowed intervals, {len(HD)} lattice points in their hull")

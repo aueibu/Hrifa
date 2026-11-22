@@ -69,8 +69,11 @@ requires. 3,314 families have no 3-term factor of either sign (8 notes: 5, 10: 2
 factorization P = U*V, Q = U*V* in which V has at most 5 terms, all coefficients +1 or -1, using only
 these shapes: 3,0 with U allowed up to two -1 coefficients, and 3,1, 4,0, 4,1 with U coefficients 0/1.
 
-Status: true for all 2,376 families with q <= 729 in the catalog (section 2). Untested above q 729
-and in 7-limit.
+Status: true for all 2,376 families with q <= 729 in the catalog (section 2). Untested above q 729.
+7-limit q <= 243 (2026-11-22, `data/vm/conj_s.sh` against the 6,233-family `--fast` ladder): as stated,
+it misses one 16-note family (a plain 4-note chord times a 6-term factor with one -1). **Widened form
+S'** (3,0 and 4,0 with U up to two -1; 3,1 and 4,1 with U 0/1) finds all 6,233. This is checked against
+the ladder, not against an exhaustive 7-limit list (none exists at this q).
 
 Practical reading (for the brief, not yet run): the shape list 3,0 (signed U, `--max-neg 2`), 3,1, 4,0,
 4,1 would drop 4,2, 5,0, 5,1 and 5,2 (4,2 and 5,0 alone are 140 thousand of the 188 thousand `--fast`

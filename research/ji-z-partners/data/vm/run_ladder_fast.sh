@@ -9,13 +9,15 @@
 # then union per note count, verify, score by intervallic odd limit, cents shift.
 # usage: PRIMES="3 5 7" Q=243 W=16 TAG=l7q243 bash run_ladder_fast.sh >> ~/zruns/zprod/$TAG.out
 PRIMES=${PRIMES:-"3 5 7"}; Q=${Q:-243}; W=${W:-16}; TAG=${TAG:-l7q$Q}
+ZPROD=${ZPROD:-~/zgen/zprod_fast.py}   # HC=dir: cache the allowed-interval hull (zprod --hull-cache)
+HCARG=""; [ -n "$HC" ] && HCARG="--hull-cache $HC"
 D=~/zruns/zprod/$TAG; mkdir -p $D; cd ~/zruns/zprod
 KS="6 7 8 9 10 11 12 13 14 15 16"
 step() {  # name, then zprod arguments
   n=$1; shift
   if [ -f $D/$n/summary.csv ]; then echo "$n already done"; return; fi
   t=$(date +%s); echo "$(date +%H:%M) $n start"
-  pypy3 ~/zgen/zprod_fast.py --fast --zgen ~/zgen/zgen_v4.py --primes $PRIMES --interval-odd $Q --workers $W \
+  pypy3 $ZPROD --fast $HCARG --zgen ~/zgen/zgen_v4.py --primes $PRIMES --interval-odd $Q --workers $W \
     --no-types --out $D/$n "$@" > $D/$n.out 2>&1
   echo "$(date +%H:%M) $n exit $? in $(( $(date +%s) - t ))s: $(grep -h 'WARNING' $D/$n.out | cut -c1-60)"
   grep -h '^k=' $D/$n.out | grep -v ': 0 families' | tr '\n' ' '; echo
