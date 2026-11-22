@@ -512,7 +512,12 @@ def main():
                     HD = {tuple(x) for x in c["HD"]}
                     run.say(f"--fast: allowed-interval hull loaded from {cache}")
         if HD is None:
-            HD = hull_lattice_fast(D)   # = hull_lattice(D), validated on the 11-limit q 45, 63, 99 caches
+            # No hull computation needed: D = the lattice points of the convex set
+            # R = {x : sum_i log(p_i) max(x_i, 0) <= log q and sum_i log(p_i) max(-x_i, 0) <= log q}
+            # (numerator and denominator odd parts <= q; both sides are convex in x). conv(D) lies in R, so
+            # every lattice point of conv(D) is in D: hull_lattice(D) == D for any primes and q (checked
+            # against the brute force and the cached hulls by data/vm/check_hull_eq.py).
+            HD = {tuple(p) for p in D}
             if cache:
                 tmp = f"{cache}.{os.getpid()}.tmp"
                 with open(tmp, "w") as fh:
