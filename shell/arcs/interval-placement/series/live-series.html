@@ -74,6 +74,7 @@
   .item .sub { grid-column: 1 / -1; font-size: 0.8rem; color: var(--muted); }
   .facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; font-size: 0.88rem; }
   .facts span:nth-child(odd) { color: var(--muted); }
+  input[type=range] { padding: 0; border: 0; background: transparent; accent-color: var(--accent); width: 9em; }
   .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
   @media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } }
 </style>
@@ -113,11 +114,22 @@
       <div class="btns">
         <button type="button" id="playChord" aria-pressed="false">Notes: off</button>
         <button type="button" id="playUp" aria-pressed="false">Arpeggio: off</button>
+        <button type="button" id="noteSine" aria-pressed="false">Notes bare sine: off</button>
+      </div>
+      <div class="btns">
         <button type="button" id="droneBtn" aria-pressed="false">Drone: off</button>
         <select id="droneRange" aria-label="Drone range"><option value="55">drone near 55–110 Hz</option><option value="110" selected>drone near 110–220 Hz</option><option value="220">drone near 220–440 Hz</option></select>
         <button type="button" id="droneOct" class="playing" aria-pressed="true">Drone octave: on</button>
-        <button type="button" id="droneSine" aria-pressed="false">Bare sine: off</button>
+        <button type="button" id="droneSine" aria-pressed="false">Drone bare sine: off</button>
+      </div>
+      <div class="btns">
         <button type="button" id="pulseBtn" aria-pressed="false">Pulse: off</button>
+      </div>
+      <div class="btns">
+        <span class="lbl" style="min-width:0">Reverb</span>
+        <select id="reverb" aria-label="Reverb"><option value="dry" selected>Dry</option><option value="room">Room</option><option value="hall">Hall</option></select>
+        <span class="lbl" style="min-width:0">Mix</span>
+        <input id="mix" type="range" min="0" max="100" value="0" disabled aria-label="Reverb mix"><span class="read" id="mixRead">0%</span>
       </div>
       <p class="read" id="pulseNote"></p>
     </div>
@@ -468,23 +480,122 @@ function drawTrail() {
 let ctx = null, master = null, live = [], timer = null;
 let drone = null;                 // { oscs, gain }
 let pulse = null;                 // { timer, next, plan }
+// graph (as the Harmonic Field Lab's engine): master -> dry gain -> limiter -> out, and master -> send -> convolver -> wet gain
+// -> limiter; the limiter values are the lab's
 function audio() {
-  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.6; master.connect(ctx.destination); }
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0.6;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -8; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.3;
+    comp.connect(ctx.destination);
+    const dry = ctx.createGain(), send = ctx.createGain(), out = ctx.createGain();
+    dry.gain.value = 1; out.gain.value = 0;
+    master.connect(dry); dry.connect(comp); master.connect(send); out.connect(comp);
+    wet = { dry, send, out, conv: null, key: null, timer: null };
+    applyReverb();
+  }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
+}
+
+// ---------- reverb: copied from the Harmonic Field Lab (audio/reverb.ts and audio/engine.ts), without loading a custom impulse ----------
+// Room and Hall are decaying seeded noise (the same room every time); the mix is equal power (dry^2 + wet^2 = 1); a preset
+// change rebuilds the convolver behind a 30 ms fade; Stop sound cuts the tail (0.15 s fade, then an empty convolver).
+const BUILT_IN = { room: { seconds: 0.9, bright: 0.55, seed: 0x9e3779b1 }, hall: { seconds: 2.8, bright: 0.38, seed: 0x85ebca6b } };
+const DEFAULT_WET_MIX = 0.3, IMPULSE_ONSET = 0.002, SWAP_TC = 0.0075, SWAP_MS = 30, PANIC_WET_TC = 0.03, PANIC_WET_MS = 200, MIX_TC = 0.02;
+let REVERB = { preset: 'dry', mix: 0 };
+let wet = null;                   // { dry, send, out, conv, key, timer }
+const impulseBufs = new Map();
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeImpulse(preset, sampleRate) {
+  const { seconds, bright, seed } = BUILT_IN[preset];
+  const n = Math.max(1, Math.round(seconds * sampleRate)), onset = Math.max(1, Math.round(IMPULSE_ONSET * sampleRate));
+  const out = [];
+  for (let c = 0; c < 2; c++) {
+    const rand = mulberry32(seed + c * 0x1234567), ch = new Float32Array(n);
+    let y = 0;
+    for (let i = 0; i < n; i++) {
+      y += (rand() * 2 - 1 - y) * bright;
+      ch[i] = y * Math.exp((-6.907755 * i) / n) * Math.min(1, (i + 1) / onset);
+    }
+    out.push(ch);
+  }
+  return out;
+}
+function mixGains(mix) { const m = Number.isFinite(mix) ? Math.min(1, Math.max(0, mix)) : 0; return { dry: Math.cos((m * Math.PI) / 2), wet: Math.sin((m * Math.PI) / 2) }; }
+const wetTarget = () => (REVERB.preset === 'dry' ? 0 : mixGains(REVERB.mix).wet);
+const dryTarget = () => (REVERB.preset === 'dry' ? 1 : mixGains(REVERB.mix).dry);
+function impulseFor(key) {
+  let b = impulseBufs.get(key);
+  if (!b) {
+    const chans = makeImpulse(key, ctx.sampleRate);
+    b = ctx.createBuffer(2, chans[0].length, ctx.sampleRate);
+    chans.forEach((c, i) => b.copyToChannel(c, i));
+    impulseBufs.set(key, b);
+  }
+  return b;
+}
+function installConv(buf) {
+  const next = ctx.createConvolver();
+  next.normalize = true;          // set before the buffer: the scaling is applied when the buffer is set
+  next.buffer = buf;
+  wet.send.disconnect(); wet.send.connect(next); next.connect(wet.out);
+  try { if (wet.conv) wet.conv.disconnect(); } catch (e) {}
+  wet.conv = next;
+}
+function fadeWetThen(tc, ms, act) {
+  if (wet.timer !== null) clearTimeout(wet.timer);
+  wet.out.gain.setTargetAtTime(0, ctx.currentTime, tc);
+  wet.timer = setTimeout(() => {
+    wet.timer = null;
+    try { act(); wet.out.gain.setTargetAtTime(wetTarget(), ctx.currentTime, 0.01); } catch (e) {}
+  }, ms);
+}
+function applyReverb() {
+  if (!ctx || !wet) return;
+  wet.dry.gain.setTargetAtTime(dryTarget(), ctx.currentTime, MIX_TC);
+  const p = REVERB.preset;
+  if (p !== 'dry' && p !== wet.key) {
+    const buf = impulseFor(p);
+    wet.key = p;
+    if (wet.conv) { fadeWetThen(SWAP_TC, SWAP_MS, () => installConv(buf)); return; }
+    installConv(buf);
+  }
+  if (wet.timer === null) wet.out.gain.setTargetAtTime(wetTarget(), ctx.currentTime, MIX_TC);
+}
+function cutReverbTail() {
+  if (wet && wet.conv && wet.key) { const key = wet.key; fadeWetThen(PANIC_WET_TC, PANIC_WET_MS, () => installConv(impulseFor(key))); }
+}
+function syncReverbUI() {
+  $('mix').value = String(Math.round(REVERB.mix * 100));
+  $('mix').disabled = REVERB.preset === 'dry';
+  $('mixRead').textContent = `${Math.round(REVERB.mix * 100)}%`;
 }
 function stopOneShots() {
   for (const n of live) { try { n.stop(); } catch (e) {} }
   live = []; clearTimeout(timer);
   $('replay').classList.remove('playing');
 }
-function stopAll() { stopOneShots(); heldOff(); arpOff(); droneOff(); pulseOff(); replaying = false; }
+function stopAll() { stopOneShots(); heldOff(); arpOff(); droneOff(); pulseOff(); replaying = false; cutReverbTail(); }
+// the notes' wave (held notes, arpeggio, trail replay): triangle, or a bare sine; pulse clicks stay triangle
+let NOTE_SINE = false;
+const noteWave = () => (NOTE_SINE ? 'sine' : 'triangle');
 function setToggle(id, name, on) {
   $(id).textContent = `${name}: ${on ? 'on' : 'off'}`; $(id).classList.toggle('playing', on); $(id).setAttribute('aria-pressed', String(on));
 }
 function tone(t, f, dur, level) {
   const c = audio(), o = c.createOscillator(), g = c.createGain();
-  o.frequency.value = f; o.type = 'triangle';
+  o.frequency.value = f; o.type = noteWave();
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + 0.02); g.gain.setTargetAtTime(0, t + dur, 0.08);
   o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.5); live.push(o);
 }
@@ -511,7 +622,7 @@ function heldSync() {
     let v = held.get(k);
     if (!v) {
       const o = c.createOscillator(), g = c.createGain();
-      o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0, c.currentTime);
+      o.type = noteWave(); o.frequency.value = f; g.gain.setValueAtTime(0, c.currentTime);
       o.connect(g); g.connect(master); o.start();
       v = { o, g }; held.set(k, v);
     }
@@ -630,7 +741,18 @@ $('base').addEventListener('change', render);
 $('cap').addEventListener('change', () => { S.pick = null; render(); });
 $('droneRange').addEventListener('change', render);
 $('droneOct').addEventListener('click', () => { DRONE_OCT = !DRONE_OCT; setToggle('droneOct', 'Drone octave', DRONE_OCT); applyDroneVoice(); render(); });
-$('droneSine').addEventListener('click', () => { DRONE_SINE = !DRONE_SINE; setToggle('droneSine', 'Bare sine', DRONE_SINE); applyDroneVoice(); render(); });
+$('droneSine').addEventListener('click', () => { DRONE_SINE = !DRONE_SINE; setToggle('droneSine', 'Drone bare sine', DRONE_SINE); applyDroneVoice(); render(); });
+$('noteSine').addEventListener('click', () => {
+  NOTE_SINE = !NOTE_SINE; setToggle('noteSine', 'Notes bare sine', NOTE_SINE);
+  if (held) for (const { o } of held.values()) o.type = noteWave();   // held notes change at once
+});
+$('reverb').addEventListener('change', () => {
+  const p = $('reverb').value;
+  // leaving Dry with a mix of 0 would change nothing you can hear: start at the lab's default mix
+  if (REVERB.preset === 'dry' && p !== 'dry' && REVERB.mix === 0) REVERB.mix = DEFAULT_WET_MIX;
+  REVERB.preset = p; syncReverbUI(); applyReverb();
+});
+$('mix').addEventListener('input', () => { REVERB.mix = +$('mix').value / 100; syncReverbUI(); applyReverb(); });
 $('playChord').addEventListener('click', () => (held ? heldOff() : heldOn()));
 $('playUp').addEventListener('click', () => (arp ? arpOff() : arpOn()));
 $('droneBtn').addEventListener('click', () => (drone ? droneOff() : droneOn()));
