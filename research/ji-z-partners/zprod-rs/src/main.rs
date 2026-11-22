@@ -178,6 +178,7 @@ impl F {
 }
 
 /// zprod._bary: solve x = sum l_i p_i, sum l_i = 1 exactly; None if no unique solution
+#[allow(dead_code)]
 fn bary(x: &[i32], pts: &[&Pt]) -> Option<Vec<F>> {
     let r = pts.len();
     let d = x.len();
@@ -236,16 +237,85 @@ fn combinations(n: usize, r: usize) -> Vec<Vec<usize>> {
     }
 }
 
+const MAXD: usize = 8; // up to 8 odd primes (23-limit)
+const MAXR: usize = MAXD + 1;
+
+/// bary() without heap allocation (it ran millions of times and 16 threads fought over the allocator):
+/// is x = sum l_i p_i, sum l_i = 1 uniquely solvable with every l_i >= 0?
+fn bary_nonneg(x: &[i32], pts: &[&[i32]; MAXR], r: usize) -> bool {
+    let d = x.len();
+    let rows = d + 1;
+    let mut a = [[F::int(0); MAXR + 1]; MAXD + 1];
+    for i in 0..d {
+        for c in 0..r {
+            a[i][c] = F::int(pts[c][i] as i128);
+        }
+        a[i][r] = F::int(x[i] as i128);
+    }
+    for c in 0..=r {
+        a[d][c] = F::int(1);
+    }
+    let mut rr = 0;
+    for c in 0..r {
+        let mut p = rr;
+        while p < rows && a[p][c].zero() {
+            p += 1;
+        }
+        if p == rows {
+            return false;
+        }
+        a.swap(rr, p);
+        let pv = a[rr][c];
+        for k in 0..=r {
+            a[rr][k] = a[rr][k].div(pv);
+        }
+        for i in 0..rows {
+            if i != rr && !a[i][c].zero() {
+                let f = a[i][c];
+                for k in 0..=r {
+                    a[i][k] = a[i][k].sub(f.mul(a[rr][k]));
+                }
+            }
+        }
+        rr += 1;
+    }
+    for i in rr..rows {
+        if !a[i][r].zero() {
+            return false;
+        }
+    }
+    (0..r).all(|i| a[i][r].n >= 0)
+}
+
 /// zprod.in_hull (Caratheodory: a convex combination of some affinely independent subset)
 fn in_hull(x: &[i32], pts: &[Pt]) -> bool {
     let d = x.len();
-    for r in 1..=pts.len().min(d + 1) {
-        for c in combinations(pts.len(), r) {
-            let sub_pts: Vec<&Pt> = c.iter().map(|&i| &pts[i]).collect();
-            if let Some(lam) = bary(x, &sub_pts) {
-                if lam.iter().all(|l| l.n >= 0) {
-                    return true;
-                }
+    assert!(d <= MAXD, "more than {MAXD} primes");
+    let n = pts.len();
+    let empty: &[i32] = &[];
+    for r in 1..=n.min(d + 1) {
+        let mut idx = [0usize; MAXR];
+        for (j, v) in idx.iter_mut().enumerate().take(r) {
+            *v = j;
+        }
+        loop {
+            let mut sp: [&[i32]; MAXR] = [empty; MAXR];
+            for j in 0..r {
+                sp[j] = &pts[idx[j]];
+            }
+            if bary_nonneg(x, &sp, r) {
+                return true;
+            }
+            let mut i = r;
+            while i > 0 && idx[i - 1] == i - 1 + n - r {
+                i -= 1;
+            }
+            if i == 0 {
+                break;
+            }
+            idx[i - 1] += 1;
+            for j in i..r {
+                idx[j] = idx[j - 1] + 1;
             }
         }
     }
@@ -257,11 +327,10 @@ fn interior_points(plus: &[Pt]) -> Vec<Pt> {
     let dim = plus[0].len();
     let lo: Vec<i32> = (0..dim).map(|i| plus.iter().map(|p| p[i]).min().unwrap()).collect();
     let hi: Vec<i32> = (0..dim).map(|i| plus.iter().map(|p| p[i]).max().unwrap()).collect();
-    let ps: HashSet<&Pt> = plus.iter().collect();
     let mut out = vec![];
     let mut x = lo.clone();
     loop {
-        if !ps.contains(&x) && in_hull(&x, plus) {
+        if !plus.iter().any(|p| *p == x) && in_hull(&x, plus) {
             out.push(x.clone());
         }
         let mut i = dim;
@@ -298,24 +367,55 @@ fn reversal(v: &Factor) -> Factor {
 // ------------------------------------------------------------------------------------------- V generation
 /// zprod.gen_V with --fast (HD = D): plus points from the lexicographically positive allowed intervals,
 /// every pairwise difference allowed; minus points among the lattice points of the plus points' hull.
+/// `comp` is that pairwise test as a table (no allocation in the inner loop).
+struct GenCtx {
+    boxv: Vec<Pt>,
+    comp: Vec<u8>, // comp[a * n + b] = 1 when boxv[a] - boxv[b] is an allowed interval
+    n: usize,
+    dim: usize,
+}
+
+impl GenCtx {
+    fn new(d: &[Pt]) -> GenCtx {
+        let dim = d[0].len();
+        let zero = vec![0; dim];
+        let dset: HashSet<Pt> = d.iter().cloned().collect();
+        let boxv: Vec<Pt> = d.iter().filter(|p| **p > zero).cloned().collect(); // lex positive allowed intervals
+        let n = boxv.len();
+        let mut comp = vec![0u8; n * n];
+        for a in 0..n {
+            for b in 0..n {
+                if dset.contains(&sub(&boxv[a], &boxv[b])) {
+                    comp[a * n + b] = 1;
+                }
+            }
+        }
+        GenCtx { boxv, comp, n, dim }
+    }
+    #[inline]
+    fn ok(&self, a: usize, b: usize) -> bool {
+        self.comp[a * self.n + b] == 1
+    }
+}
+
 /// One unit of generation work: a shape and the indices of its first one or two non-zero plus points
 /// (a valid prefix: pairwise differences allowed). The units of a shape together generate exactly what
 /// gen_v generates; two-point prefixes keep the units small (one-point ones were badly unbalanced).
 type Root = ((usize, usize), Vec<usize>);
 
-fn roots(dset: &HashSet<Pt>, boxv: &[Pt], shapes: &[(usize, usize)]) -> Vec<Root> {
+fn roots(g: &GenCtx, shapes: &[(usize, usize)]) -> Vec<Root> {
     let mut out = vec![];
     for &sh in shapes {
         if sh.0 <= 1 {
             out.push((sh, vec![]));
         } else if sh.0 == 2 {
-            for j in 0..boxv.len() {
+            for j in 0..g.n {
                 out.push((sh, vec![j]));
             }
         } else {
-            for j1 in 0..boxv.len() {
-                for j2 in j1 + 1..boxv.len() {
-                    if dset.contains(&sub(&boxv[j2], &boxv[j1])) {
+            for j1 in 0..g.n {
+                for j2 in j1 + 1..g.n {
+                    if g.ok(j2, j1) {
                         out.push((sh, vec![j1, j2]));
                     }
                 }
@@ -326,53 +426,33 @@ fn roots(dset: &HashSet<Pt>, boxv: &[Pt], shapes: &[(usize, usize)]) -> Vec<Root
 }
 
 /// gen_v restricted to one Root
-fn gen_root<Fn_: FnMut(Factor)>(dset: &HashSet<Pt>, boxv: &[Pt], dim: usize, root: &Root, emit: Fn_) {
-    gen_v_impl(dset, boxv, dim, &[root.0], &root.1, emit)
+fn gen_root<Fn_: FnMut(Factor)>(g: &GenCtx, root: &Root, emit: Fn_) {
+    gen_v_impl(g, &[root.0], &root.1, emit)
 }
 
-#[allow(dead_code)]
-fn gen_v<Fn_: FnMut(Factor)>(dset: &HashSet<Pt>, boxv: &[Pt], dim: usize, shapes: &[(usize, usize)], emit: Fn_) {
-    gen_v_impl(dset, boxv, dim, shapes, &[], emit)
-}
-
-fn gen_v_impl<Fn_: FnMut(Factor)>(
-    dset: &HashSet<Pt>,
-    boxv: &[Pt],
-    dim: usize,
-    shapes: &[(usize, usize)],
-    prefix: &[usize],
-    mut emit: Fn_,
-) {
-    fn plus_sets<G: FnMut(&[usize])>(
-        boxv: &[Pt],
-        dset: &HashSet<Pt>,
-        need: usize,
-        start: usize,
-        chosen: &mut Vec<usize>,
-        cb: &mut G,
-    ) {
+fn gen_v_impl<Fn_: FnMut(Factor)>(g: &GenCtx, shapes: &[(usize, usize)], prefix: &[usize], mut emit: Fn_) {
+    fn plus_sets<G: FnMut(&[usize])>(g: &GenCtx, need: usize, start: usize, chosen: &mut Vec<usize>, cb: &mut G) {
         if need == 0 {
             cb(chosen);
             return;
         }
-        for j in start..boxv.len() {
-            let v = &boxv[j];
-            if chosen.iter().all(|&w| dset.contains(&sub(v, &boxv[w]))) {
+        for j in start..g.n {
+            if chosen.iter().all(|&w| g.ok(j, w)) {
                 chosen.push(j);
-                plus_sets(boxv, dset, need - 1, j + 1, chosen, cb);
+                plus_sets(g, need - 1, j + 1, chosen, cb);
                 chosen.pop();
             }
         }
     }
-    let zero = vec![0; dim];
+    let zero = vec![0; g.dim];
     for &(vp, vm) in shapes {
         // with a prefix, the first non-zero plus points are fixed (roots() checked their differences)
         let mut chosen: Vec<usize> = prefix.to_vec();
         let need = vp - 1 - chosen.len();
         let start = chosen.last().map_or(0, |j| j + 1);
-        plus_sets(boxv, dset, need, start, &mut chosen, &mut |rest: &[usize]| {
+        plus_sets(g, need, start, &mut chosen, &mut |rest: &[usize]| {
             let mut plus = vec![zero.clone()];
-            plus.extend(rest.iter().map(|&j| boxv[j].clone()));
+            plus.extend(rest.iter().map(|&j| g.boxv[j].clone()));
             let minus_sets: Vec<Vec<Pt>> = if vm == 0 {
                 vec![vec![]]
             } else {
@@ -400,12 +480,18 @@ fn gen_v_impl<Fn_: FnMut(Factor)>(
 }
 
 // ------------------------------------------------------------------------------------------- U search
+/// Points used by the search lie in [-2B, 2B] per axis (U and V coordinates are within B = the largest
+/// |coordinate| of an allowed interval), so they are cells of a fixed grid: no hashing, no allocation.
+/// Differences of P points lie in [-4B, 4B]: a second encoding with a bit table of the allowed intervals.
 struct Ctx {
-    cand: Vec<Pt>,     // allowed intervals >= 0, lexicographic
+    n: usize,          // candidate U points: allowed intervals >= 0, lexicographic
+    cand_g: Vec<i64>,  // their grid cells
     dim: usize,
-    // difference lookup: enc(x) = sum x_i * stride_i on a grid with offset off_i; d in D <=> bit set
-    stride: Vec<i64>,
-    center: i64,
+    gb: Vec<i64>,      // B per axis
+    gstride: Vec<i64>, // grid (width 4B + 1)
+    gtotal: usize,
+    denc: Vec<i64>,    // per grid cell: its difference-grid code
+    dcenter: i64,
     dbits: Vec<u64>,
     dhash: HashSet<i64>,
     use_bits: bool,
@@ -415,39 +501,65 @@ struct Ctx {
     ks: Vec<i64>,
 }
 
+fn strides(width: &[i64]) -> Vec<i64> {
+    let dim = width.len();
+    let mut s = vec![1i64; dim];
+    for i in (0..dim.saturating_sub(1)).rev() {
+        s[i] = s[i + 1] * width[i + 1];
+    }
+    s
+}
+
 impl Ctx {
     fn new(d: &[Pt], args: &Args) -> Ctx {
         let dim = d[0].len();
         let b: Vec<i64> = (0..dim).map(|i| d.iter().map(|p| p[i].abs() as i64).max().unwrap()).collect();
-        // P points lie within [-2B, 2B], so their differences within [-4B, 4B]
-        let width: Vec<i64> = b.iter().map(|x| 8 * x + 1).collect();
-        let mut stride = vec![1i64; dim];
-        for i in (0..dim.saturating_sub(1)).rev() {
-            stride[i] = stride[i + 1] * width[i + 1];
-        }
-        let center: i64 = (0..dim).map(|i| 4 * b[i] * stride[i]).sum();
-        let total: i64 = width.iter().product();
-        let use_bits = total <= (1i64 << 33);
+        let gwidth: Vec<i64> = b.iter().map(|x| 4 * x + 1).collect();
+        let gstride = strides(&gwidth);
+        let gcenter: i64 = (0..dim).map(|i| 2 * b[i] * gstride[i]).sum();
+        let gtotal: usize = gwidth.iter().product::<i64>() as usize;
+        let dwidth: Vec<i64> = b.iter().map(|x| 8 * x + 1).collect();
+        let dstride = strides(&dwidth);
+        let dcenter: i64 = (0..dim).map(|i| 4 * b[i] * dstride[i]).sum();
+        let dtotal: i64 = dwidth.iter().product();
+        let use_bits = dtotal <= (1i64 << 33);
         let mut dbits = vec![];
         let mut dhash = HashSet::new();
         if use_bits {
-            dbits = vec![0u64; (total as usize + 63) / 64];
+            dbits = vec![0u64; (dtotal as usize + 63) / 64];
         }
         for p in d {
-            let e: i64 = p.iter().zip(&stride).map(|(x, s)| *x as i64 * s).sum::<i64>() + center;
+            let e: i64 = p.iter().zip(&dstride).map(|(x, s)| *x as i64 * s).sum::<i64>() + dcenter;
             if use_bits {
                 dbits[(e >> 6) as usize] |= 1 << (e & 63);
             } else {
                 dhash.insert(e);
             }
         }
+        // difference-grid code of every grid cell
+        let mut denc = vec![0i64; gtotal];
+        for (g, slot) in denc.iter_mut().enumerate() {
+            let mut rem = g as i64;
+            let mut code = 0;
+            for i in 0..dim {
+                let c = rem / gstride[i];
+                rem %= gstride[i];
+                code += (c - 2 * b[i]) * dstride[i];
+            }
+            *slot = code;
+        }
         let zero = vec![0; dim];
-        let cand: Vec<Pt> = d.iter().filter(|p| **p >= zero).cloned().collect();
+        let cand: Vec<&Pt> = d.iter().filter(|p| **p >= zero).collect();
+        let cand_g = cand.iter().map(|p| p.iter().zip(&gstride).map(|(x, s)| *x as i64 * s).sum::<i64>() + gcenter).collect();
         Ctx {
-            cand,
+            n: cand.len(),
+            cand_g,
             dim,
-            stride,
-            center,
+            gb: b,
+            gstride,
+            gtotal,
+            denc,
+            dcenter,
             dbits,
             dhash,
             use_bits,
@@ -457,12 +569,22 @@ impl Ctx {
             ks: args.k.clone(),
         }
     }
-    fn enc(&self, p: &[i32]) -> i64 {
-        p.iter().zip(&self.stride).map(|(x, s)| *x as i64 * s).sum()
+    fn goff(&self, p: &[i32]) -> i64 {
+        p.iter().zip(&self.gstride).map(|(x, s)| *x as i64 * s).sum()
+    }
+    fn decode(&self, g: usize) -> Pt {
+        let mut rem = g as i64;
+        (0..self.dim)
+            .map(|i| {
+                let c = rem / self.gstride[i];
+                rem %= self.gstride[i];
+                (c - 2 * self.gb[i]) as i32
+            })
+            .collect()
     }
     #[inline]
-    fn allowed(&self, diff_enc: i64) -> bool {
-        let e = diff_enc + self.center;
+    fn allowed(&self, diff_code: i64) -> bool {
+        let e = diff_code + self.dcenter;
         if self.use_bits {
             (self.dbits[(e >> 6) as usize] >> (e & 63)) & 1 == 1
         } else {
@@ -471,22 +593,110 @@ impl Ctx {
     }
 }
 
-struct Search<'a> {
-    ctx: &'a Ctx,
-    nv: usize,
-    nvs: usize,
-    pid: Vec<u32>, // pid[i * nv + j] = id of cand[i] + V[j]
+/// per-thread buffers, reused across factors
+struct Workspace {
+    pslot: Vec<u32>, // grid cell -> compact P id (u32::MAX = unused)
+    qslot: Vec<u32>,
+    p_cell: Vec<u32>, // compact id -> grid cell
+    q_cell: Vec<u32>,
+    pid: Vec<u32>, // pid[i * nv + j] = compact id of cand[i] + V[j]
     qid: Vec<u32>,
-    vc: Vec<i16>,
-    vsc: Vec<i16>,
-    fin_p: Vec<Vec<u32>>,
-    fin_q: Vec<Vec<u32>>,
+    last: Vec<u32>,
+    pos: Vec<u32>,
+    fin_p_off: Vec<u32>, // finals as flat lists: fin_p[fin_p_off[i]..fin_p_off[i + 1]]
+    fin_p: Vec<u32>,
+    fin_q_off: Vec<u32>,
+    fin_q: Vec<u32>,
     p_enc: Vec<i64>,
-    p_pts: Vec<Pt>,
-    q_pts: Vec<Pt>,
     pc: Vec<i16>,
     qc: Vec<i16>,
     notes: Vec<u32>,
+}
+
+impl Workspace {
+    fn new(ctx: &Ctx) -> Workspace {
+        Workspace {
+            pslot: vec![u32::MAX; ctx.gtotal],
+            qslot: vec![u32::MAX; ctx.gtotal],
+            p_cell: vec![],
+            q_cell: vec![],
+            pid: vec![],
+            qid: vec![],
+            last: vec![],
+            pos: vec![],
+            fin_p_off: vec![],
+            fin_p: vec![],
+            fin_q_off: vec![],
+            fin_q: vec![],
+            p_enc: vec![],
+            pc: vec![],
+            qc: vec![],
+            notes: vec![],
+        }
+    }
+}
+
+fn build_ids(ctx: &Ctx, off: &[i64], slot: &mut [u32], cells: &mut Vec<u32>, ids: &mut Vec<u32>) {
+    cells.clear();
+    ids.clear();
+    for i in 0..ctx.n {
+        let base = ctx.cand_g[i];
+        for &o in off {
+            let g = (base + o) as usize;
+            let mut id = slot[g];
+            if id == u32::MAX {
+                id = cells.len() as u32;
+                slot[g] = id;
+                cells.push(g as u32);
+            }
+            ids.push(id);
+        }
+    }
+}
+
+/// a point is final after its last (largest-index) contributor is decided
+fn build_finals(
+    n: usize,
+    w: usize,
+    ids: &[u32],
+    npts: usize,
+    last: &mut Vec<u32>,
+    pos: &mut Vec<u32>,
+    off: &mut Vec<u32>,
+    fin: &mut Vec<u32>,
+) {
+    last.clear();
+    last.resize(npts, 0);
+    for i in 0..n {
+        for j in 0..w {
+            last[ids[i * w + j] as usize] = i as u32;
+        }
+    }
+    off.clear();
+    off.resize(n + 1, 0);
+    for &i in last.iter() {
+        off[i as usize + 1] += 1;
+    }
+    for i in 0..n {
+        off[i + 1] += off[i];
+    }
+    fin.clear();
+    fin.resize(npts, 0);
+    pos.clear();
+    pos.extend_from_slice(&off[..n]);
+    for (p, &i) in last.iter().enumerate() {
+        fin[pos[i as usize] as usize] = p as u32;
+        pos[i as usize] += 1;
+    }
+}
+
+struct Search<'a> {
+    ctx: &'a Ctx,
+    ws: &'a mut Workspace,
+    nv: usize,
+    nvs: usize,
+    vc: Vec<i16>,
+    vsc: Vec<i16>,
     targets: Vec<i64>,
     pos_max: i32,
     usum: i64,
@@ -496,18 +706,8 @@ struct Search<'a> {
     res: Vec<(Vec<Pt>, Vec<Pt>)>,
 }
 
-fn intern(map: &mut HashMap<Pt, u32>, pts: &mut Vec<Pt>, p: Pt) -> u32 {
-    if let Some(&i) = map.get(&p) {
-        return i;
-    }
-    let i = pts.len() as u32;
-    pts.push(p.clone());
-    map.insert(p, i);
-    i
-}
-
 /// zprod.search_U with --fast; returns (products, complete)
-fn search_u(ctx: &Ctx, v: &Factor) -> (Vec<(Vec<Pt>, Vec<Pt>)>, bool) {
+fn search_u(ctx: &Ctx, ws: &mut Workspace, v: &Factor) -> (Vec<(Vec<Pt>, Vec<Pt>)>, bool) {
     let vs = reversal(v);
     let vsum: i64 = v.iter().map(|(_, c)| *c as i64).sum();
     if vsum <= 0 {
@@ -520,53 +720,33 @@ fn search_u(ctx: &Ctx, v: &Factor) -> (Vec<(Vec<Pt>, Vec<Pt>)>, bool) {
         return (vec![], true);
     }
     let usum_max = *targets.last().unwrap();
-    let n = ctx.cand.len();
-    let (nv, nvs) = (v.len(), vs.len());
-    let (mut pmap, mut qmap) = (HashMap::new(), HashMap::new());
-    let (mut p_pts, mut q_pts) = (vec![], vec![]);
-    let mut pid = Vec::with_capacity(n * nv);
-    let mut qid = Vec::with_capacity(n * nvs);
-    for u in &ctx.cand {
-        for (w, _) in v {
-            pid.push(intern(&mut pmap, &mut p_pts, add(u, w)));
+    let voff: Vec<i64> = v.iter().map(|(p, _)| ctx.goff(p)).collect();
+    let vsoff: Vec<i64> = vs.iter().map(|(p, _)| ctx.goff(p)).collect();
+    {
+        let w = &mut *ws;
+        build_ids(ctx, &voff, &mut w.pslot, &mut w.p_cell, &mut w.pid);
+        build_ids(ctx, &vsoff, &mut w.qslot, &mut w.q_cell, &mut w.qid);
+        let (np, nq) = (w.p_cell.len(), w.q_cell.len());
+        build_finals(ctx.n, v.len(), &w.pid, np, &mut w.last, &mut w.pos, &mut w.fin_p_off, &mut w.fin_p);
+        build_finals(ctx.n, vs.len(), &w.qid, nq, &mut w.last, &mut w.pos, &mut w.fin_q_off, &mut w.fin_q);
+        w.p_enc.clear();
+        for k in 0..np {
+            let g = w.p_cell[k] as usize;
+            w.p_enc.push(ctx.denc[g]);
         }
-        for (w, _) in &vs {
-            qid.push(intern(&mut qmap, &mut q_pts, add(u, w)));
-        }
+        w.pc.clear();
+        w.pc.resize(np, 0);
+        w.qc.clear();
+        w.qc.resize(nq, 0);
+        w.notes.clear();
     }
-    // a P / Q point is final after its last (largest-index) contributor is decided
-    let finals = |ids: &Vec<u32>, w: usize, npts: usize| -> Vec<Vec<u32>> {
-        let mut last = vec![0usize; npts];
-        for i in 0..n {
-            for j in 0..w {
-                last[ids[i * w + j] as usize] = i;
-            }
-        }
-        let mut out = vec![vec![]; n];
-        for (p, &i) in last.iter().enumerate() {
-            out[i].push(p as u32);
-        }
-        out
-    };
-    let fin_p = finals(&pid, nv, p_pts.len());
-    let fin_q = finals(&qid, nvs, q_pts.len());
-    let p_enc: Vec<i64> = p_pts.iter().map(|p| ctx.enc(p)).collect();
     let mut s = Search {
         ctx,
-        nv,
-        nvs,
+        ws,
+        nv: v.len(),
+        nvs: vs.len(),
         vc: v.iter().map(|(_, c)| *c as i16).collect(),
         vsc: vs.iter().map(|(_, c)| *c as i16).collect(),
-        pc: vec![0; p_pts.len()],
-        qc: vec![0; q_pts.len()],
-        pid,
-        qid,
-        fin_p,
-        fin_q,
-        p_enc,
-        p_pts,
-        q_pts,
-        notes: vec![],
         targets,
         pos_max: usum_max as i32 + ctx.max_neg,
         usum: 0,
@@ -576,7 +756,18 @@ fn search_u(ctx: &Ctx, v: &Factor) -> (Vec<(Vec<Pt>, Vec<Pt>)>, bool) {
         res: vec![],
     };
     let complete = s.rec(0);
-    (s.res, complete)
+    let res = std::mem::take(&mut s.res);
+    let w = s.ws;
+    // free the grid slots for the next factor
+    for k in 0..w.p_cell.len() {
+        let g = w.p_cell[k] as usize;
+        w.pslot[g] = u32::MAX;
+    }
+    for k in 0..w.q_cell.len() {
+        let g = w.q_cell[k] as usize;
+        w.qslot[g] = u32::MAX;
+    }
+    (res, complete)
 }
 
 impl<'a> Search<'a> {
@@ -586,19 +777,15 @@ impl<'a> Search<'a> {
         if self.ctx.max_nodes > 0 && self.nodes > self.ctx.max_nodes {
             return false;
         }
-        let n = self.ctx.cand.len();
+        let n = self.ctx.n;
         if i == n {
             if self.targets.contains(&self.usum) {
-                let ps: Vec<Pt> =
-                    self.pc.iter().enumerate().filter(|(_, &c)| c == 1).map(|(k, _)| self.p_pts[k].clone()).collect();
+                let ctx = self.ctx;
+                let ws = &*self.ws;
+                let ps: Vec<Pt> = (0..ws.pc.len()).filter(|&k| ws.pc[k] == 1).map(|k| ctx.decode(ws.p_cell[k] as usize)).collect();
                 if !ps.is_empty() {
-                    let qs: Vec<Pt> = self
-                        .qc
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, &c)| c == 1)
-                        .map(|(k, _)| self.q_pts[k].clone())
-                        .collect();
+                    let qs: Vec<Pt> =
+                        (0..ws.qc.len()).filter(|&k| ws.qc[k] == 1).map(|k| ctx.decode(ws.q_cell[k] as usize)).collect();
                     self.res.push((ps, qs));
                 }
             }
@@ -606,6 +793,9 @@ impl<'a> Search<'a> {
         }
         // --fast: U's lowest point (0, the first candidate) has coefficient 1
         let nc = if i == 0 { 1 } else { self.ctx.ucoeffs.len() };
+        let (pa, pb) = (self.ws.fin_p_off[i] as usize, self.ws.fin_p_off[i + 1] as usize);
+        let (qa, qb) = (self.ws.fin_q_off[i] as usize, self.ws.fin_q_off[i + 1] as usize);
+        let (nv, nvs) = (self.nv, self.nvs);
         for ci in 0..nc {
             let c = if i == 0 { 1 } else { self.ctx.ucoeffs[ci] };
             if c > 0 && self.pos + c > self.pos_max {
@@ -614,44 +804,51 @@ impl<'a> Search<'a> {
             if c < 0 && self.neg - c > self.ctx.max_neg {
                 continue;
             }
+            let c16 = c as i16;
             if c != 0 {
-                let c16 = c as i16;
-                for j in 0..self.nv {
-                    self.pc[self.pid[i * self.nv + j] as usize] += c16 * self.vc[j];
+                let ws = &mut *self.ws;
+                for j in 0..nv {
+                    let id = ws.pid[i * nv + j] as usize;
+                    ws.pc[id] += c16 * self.vc[j];
                 }
-                for j in 0..self.nvs {
-                    self.qc[self.qid[i * self.nvs + j] as usize] += c16 * self.vsc[j];
+                for j in 0..nvs {
+                    let id = ws.qid[i * nvs + j] as usize;
+                    ws.qc[id] += c16 * self.vsc[j];
                 }
             }
             let mut ok = true;
-            let nn = self.notes.len();
-            for t in 0..self.fin_p[i].len() {
-                let p = self.fin_p[i][t];
-                let x = self.pc[p as usize];
-                if x < 0 || x > 1 {
-                    ok = false;
-                    break;
-                }
-                if x == 1 {
-                    let ep = self.p_enc[p as usize];
-                    for &r in &self.notes {
-                        if !self.ctx.allowed(ep - self.p_enc[r as usize]) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                    if !ok {
-                        break;
-                    }
-                    self.notes.push(p);
-                }
-            }
-            if ok {
-                for &q in &self.fin_q[i] {
-                    let x = self.qc[q as usize];
+            let nn = self.ws.notes.len();
+            {
+                let ctx = self.ctx;
+                let ws = &mut *self.ws;
+                for t in pa..pb {
+                    let p = ws.fin_p[t];
+                    let x = ws.pc[p as usize];
                     if x < 0 || x > 1 {
                         ok = false;
                         break;
+                    }
+                    if x == 1 {
+                        let ep = ws.p_enc[p as usize];
+                        for &r in &ws.notes {
+                            if !ctx.allowed(ep - ws.p_enc[r as usize]) {
+                                ok = false;
+                                break;
+                            }
+                        }
+                        if !ok {
+                            break;
+                        }
+                        ws.notes.push(p);
+                    }
+                }
+                if ok {
+                    for t in qa..qb {
+                        let x = ws.qc[ws.fin_q[t] as usize];
+                        if x < 0 || x > 1 {
+                            ok = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -671,14 +868,16 @@ impl<'a> Search<'a> {
                     self.neg += c;
                 }
             }
-            self.notes.truncate(nn);
+            self.ws.notes.truncate(nn);
             if c != 0 {
-                let c16 = c as i16;
-                for j in 0..self.nv {
-                    self.pc[self.pid[i * self.nv + j] as usize] -= c16 * self.vc[j];
+                let ws = &mut *self.ws;
+                for j in 0..nv {
+                    let id = ws.pid[i * nv + j] as usize;
+                    ws.pc[id] -= c16 * self.vc[j];
                 }
-                for j in 0..self.nvs {
-                    self.qc[self.qid[i * self.nvs + j] as usize] -= c16 * self.vsc[j];
+                for j in 0..nvs {
+                    let id = ws.qid[i * nvs + j] as usize;
+                    ws.qc[id] -= c16 * self.vsc[j];
                 }
             }
             if !alive {
@@ -741,39 +940,34 @@ fn main() {
     let args = parse_args();
     let t0 = Instant::now();
     let d = gamut(&args.primes, args.q);
-    let dim = d[0].len();
-    let dset: HashSet<Pt> = d.iter().cloned().collect();
-    let zero = vec![0; dim];
-    let boxv: Vec<Pt> = d.iter().filter(|p| **p > zero).cloned().collect(); // lex positive allowed intervals
+    let g = Arc::new(GenCtx::new(&d));
     eprintln!(
         "zprod-rs: {} allowed intervals (primes {:?}, q {}), {} lexicographically positive; k {:?}; shapes {:?}; U coefficients {:?}",
         d.len(),
         args.primes,
         args.q,
-        boxv.len(),
+        g.n,
         args.k,
         args.shapes,
         args.ucoeffs
     );
-    let dset = Arc::new(dset);
-    let boxv = Arc::new(boxv);
     if args.count_only {
         // parallel over generation roots, one shape at a time
         for &sh in &args.shapes {
             let t1 = Instant::now();
-            let rs = Arc::new(roots(&dset, &boxv, &[sh]));
+            let rs = Arc::new(roots(&g, &[sh]));
             let next = Arc::new(AtomicUsize::new(0));
             let total = Arc::new(AtomicU64::new(0));
             let hs: Vec<_> = (0..args.threads)
                 .map(|_| {
-                    let (rs, next, total, dset, boxv) = (rs.clone(), next.clone(), total.clone(), dset.clone(), boxv.clone());
+                    let (rs, next, total, g) = (rs.clone(), next.clone(), total.clone(), g.clone());
                     std::thread::spawn(move || loop {
                         let i = next.fetch_add(1, Ordering::Relaxed);
                         if i >= rs.len() {
                             break;
                         }
                         let mut c = 0u64;
-                        gen_root(&dset, &boxv, dim, &rs[i], |_| c += 1);
+                        gen_root(&g, &rs[i], |_| c += 1);
                         total.fetch_add(c, Ordering::Relaxed);
                     })
                 })
@@ -788,21 +982,23 @@ fn main() {
     let ctx = Arc::new(Ctx::new(&d, &args));
     // generation and search both run in the workers: each takes the next root, generates its factors
     // and searches each one (a single generating thread was the bottleneck)
-    let rs = Arc::new(roots(&dset, &boxv, &args.shapes));
+    let rs = Arc::new(roots(&g, &args.shapes));
     let next = Arc::new(AtomicUsize::new(0));
     let (otx, orx) = sync_channel::<(u64, u64, u64, Vec<String>)>(args.threads * 4);
     let mut workers = vec![];
     for _ in 0..args.threads {
-        let (rs, next, otx, ctx, dset, boxv) = (rs.clone(), next.clone(), otx.clone(), ctx.clone(), dset.clone(), boxv.clone());
-        workers.push(std::thread::spawn(move || loop {
+        let (rs, next, otx, ctx, g) = (rs.clone(), next.clone(), otx.clone(), ctx.clone(), g.clone());
+        workers.push(std::thread::spawn(move || {
+          let mut ws = Workspace::new(&ctx);
+          loop {
             let i = next.fetch_add(1, Ordering::Relaxed);
             if i >= rs.len() {
                 break;
             }
             let (mut nf, mut np, mut ns) = (0u64, 0u64, 0u64);
             let mut lines = vec![];
-            gen_root(&dset, &boxv, dim, &rs[i], |v| {
-                let (prods, complete) = search_u(&ctx, &v);
+            gen_root(&g, &rs[i], |v| {
+                let (prods, complete) = search_u(&ctx, &mut ws, &v);
                 nf += 1;
                 np += prods.len() as u64;
                 if !complete {
@@ -813,6 +1009,7 @@ fn main() {
                 }
             });
             otx.send((nf, np, ns, lines)).unwrap();
+          }
         }));
     }
     drop(otx);
