@@ -318,3 +318,45 @@ q 3,645), holes with two or three holes ((3, 7, 2) 627, (3, 6, 2) 112, (3, 8, 3)
 merges ((5, 5, 2) about 280), G2-shaped holes ((5, 4, 1) 139, (6, 3, 1) 38) and the 16 families of
 6.4's last bullet. Next: a merge generator (choose the small signed factor, solve for the plain set),
 and the hole generator widened to two or three holes and 5-note chords.
+
+### 6.6 Merges, wider holes, and the residue: every proven family but 9 is built
+
+**Merge generator = zprod-rs with a small signed factor and a plain second factor.** The Rust factor
+search with `--shapes 3,1 4,1 4,2 --ucoeffs 0 1 --max-neg 0 --max-nodes 0` builds P = T·S, Q = T·S*
+for a small S (3 or 4 plus points, 1 or 2 minus) and a plain T. With T plain, S's minus points must lie
+inside the hull of its plus points (a minus corner would give a −1 corner of P), which is the rule the
+search uses. Checked like the others (`merge_cmp.py`, `data/vm/merge_all.sh`,
+`tables/chordsum/merge_all.out`): on all nine lists it builds every family that `overlap.py`
+describes with such a small signed factor (5-limit q 3,645: 2,453 of 2,453, 17 s), 0 missed, nothing
+outside the list.
+
+**Wider constructions (5-limit; `data/vm/wide_all.sh`):** a plain 3-, 4- or 5-note chord times a factor
+with up to 3 minus signs (`--shapes 3,0 4,0 5,0 --ucoeffs -1 0 1 --max-neg 3`: holes and merges with
+several subtracted copies), and the weight-1 factors 2,1 / 3,2 times a plain set (the 7-, 11- and
+13-note families). Then 3,0 with up to 4 minus signs at q 3,645.
+
+**Coverage, union of all constructions, family by family** (`union_cov.py`,
+`tables/chordsum/union_all.out`, `wide_all.out`):
+
+| list | families | built | left |
+|---|---|---|---|
+| 7-, 11-, 13-, 17-, 19-limit (all seven lists) | 33,315 | 100% (chord sums, one hole, small signed factor) | 0 |
+| 5-limit q <= 729 | 2,376 | 100% | 0 |
+| 5-limit q <= 2,187 | 13,700 | 13,699 | 1 |
+| 5-limit q <= 3,645 | 65,348 | 65,339 | 9 |
+
+**The residue** (`tables/chordsum/residue_5q3645.jsonl`, members as ratios): 9 families, all 5-limit,
+q 2,187 to 3,645, 13 to 16 notes: 5 whose two factors are both signed (G3) and 4 with a coefficient 2 in
+a factor. They are the 7 no-plain-chord families of section 5 plus two 15-note families whose signed
+factor has a coefficient 2. The q <= 2,187 one is the 14-note family among them.
+
+**Summary of section 6.** Every Z-family in the nine proven lists except these 9 is P = T·S, Q = T·S*
+(or T*·S) with T a plain set and S a small factor whose coefficients are +1 and at most four −1,
+and in nearly all of them one of T, S is a 3- to 5-note chord:
+- chord sum: both plain (85-99.5%);
+- hole: plain chord, the other factor with minus notes, no doubled note, each minus note removes a whole
+  chord copy that other copies already spell;
+- merge: small signed factor, plain larger set; copies overlap, each doubled note becomes one pitch.
+Each construction has an exact generator, checked against every proven list. Open: the residue as its
+own family; why more limit (more primes) leaves less room for holes and merges; and a proof that the
+constructions are complete, for which the lists are now the test bed.
