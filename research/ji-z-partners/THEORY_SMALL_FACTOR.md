@@ -255,3 +255,37 @@ rung had a capped widened step).
   P = W·U − c·U: some products land twice and the doubled notes are removed. Overlaps need
   coincidences a·u = a'·u', which are common in the 2-D 5-limit lattice and rare with more primes:
   a candidate reason for 15% leftover at 5-limit, 2% at 7-limit, under 1% beyond.
+- **Correction (6.4):** which factor is "flipped" is a free choice for these families (flipping the
+  other one gives the mirror of Q), so G1/G2 above are better defined by size; 6.4 does that.
+
+### 6.4 Holes and merges: what the leftover families are (`overlap.py`, all nine lists)
+
+Every leftover split has one plain factor T and one signed factor S = S+ − S− (S+, S− plain). Then
+P = T·S+ − T·S−: T stacked on every note of S+ (as a multiset), minus T placed on each note of S−.
+Groups by size: **G1** = T is the smaller (a 3- to 5-note chord), **G2** = S is the smaller (one
+or two minus notes). Results (`tables/chordsum/ov_*.sum`), the same for P and for Q in every family:
+
+- **Always:** no note of the stack lands more than twice; every subtracted note lands on a note of the
+  stack (never outside); no note is subtracted twice. 0 failures in 11,300 families.
+- **Hole (nearly all of G1):** the stack T·S+ has no doubled note, and T·S− (one whole copy of the
+  chord, at a note not in S+) lies entirely inside it: every note of that copy is already spelled by
+  other copies. P is the stack with a chord-shaped hole. All G1 families at 7- to 19-limit (7-limit
+  q <= 315: 262 of 262; 13-, 17-, 19-limit q <= 135: 16 of 16), and 6,685 of 7,049 at 5-limit
+  q <= 3,645. Commonest shapes (|T|, |S+|, |S−|): (3, 6, 1) 3,706, (3, 5, 1) 1,393, (3, 7, 2) 627.
+- **Merge (nearly all of G2):** copies of a larger plain set T on a small S+ overlap; each doubled
+  note meets one subtracted note and merges into one pitch (2 − 1 = 1), and the rest of the
+  subtracted copy removes single notes (1 − 1 = 0). 5-limit q <= 3,645: about 2,280 of 2,473 G2
+  families merge 1 to 3 notes; 7-limit q <= 315: 54 of 55. Commonest shapes (5, 4, 1) 1,038 (15
+  notes: 5-note T on 4 plus notes and 1 minus), (7, 3, 1) 682 (14 notes), (8, 3, 1) 315, (5, 3, 1)
+  304 (10 notes). This is where all 8-, 10- and 14-note families come from.
+- **Neither (5-limit only):** 11 + 2 families at q <= 2,187 / 3,645 with both factors signed, and 5
+  with a coefficient 2 in a factor (marked G1x/G2x).
+
+Counts (G1 / G2 / other): 19-limit q <= 135 16 / 1 / 0 (the 10-note family, a merge); 7-limit
+q <= 315 262 / 55 / 0; 5-limit q <= 729 128 / 110 / 0; q <= 2,187 1,199 / 660 / 2; q <= 3,645
+7,049 / 2,473 / 16.
+
+Next (plan step 2): generators for the hole and merge constructions, checked against the proven lists
+exactly as the chord-sum generator was. Open point for the hole generator: the full stack T·S+ may
+break the q limit while the holed set P does not, so the chord-sum shortcut (limit test on D(T)·D(S+))
+is only sufficient there.
