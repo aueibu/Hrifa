@@ -101,3 +101,33 @@ python smallfactor.py FAMILIES.jsonl --ids none4.txt --terms 5 --plus-only > sf5
 2. 7-limit: the same commands on the 7-limit exhaustive family files on the VM (odd 27, 63, 75).
    In 3 dimensions `smallfactor.py` uses the bounding box instead of the exact hull for candidate
    points: still exact, just slower. Estimated time on the VM: a few minutes in pypy3.
+
+## 5. Exact factor structure (2026-11-23): S' was asking the wrong question
+
+`factor_struct.py` (sympy, any number of primes) factors member 0's polynomial P into irreducibles over
+the integers and finds which factors are reversed in member 1 (Rosenblatt–Seymour), with no shape
+assumption. Run on all nine proven lists (5-limit q ≤ 729 / 2,187 / 3,645, 7-limit q ≤ 243 / 315,
+11-, 13-, 17-, 19-limit q ≤ 135; ~85,000 distinct families, the lists overlap) in under 2 minutes.
+Every family reconstructs (U·V = P, U·V* = Q up to shift and sign). Tables: `tables/factor_struct/`.
+
+1. **P is almost always a product of exactly two irreducible factors**: 100% at 11–19-limit q ≤ 135;
+   98.4% at 5-limit q ≤ 3,645 (64,291 two, 1,052 three, 5 four); 99.8% at 7-limit q ≤ 315.
+   With two factors the partner reverses one of them (reversing both = inverting the set).
+2. **One factor is almost always a plain chord** (all coefficients 1): at 11–19-limit q ≤ 135 a
+   3-note chord in 97–99% of families, else 4 or 5 notes. At 5- and 7-limit and higher q the
+   plain-chord factor is sometimes the larger one (6–15 notes) and the other factor is small and signed.
+3. **Only 7 distinct families have no plain-chord factor** (both factors signed), all 5-limit:
+   13 notes q 3,645 (3 + 12 terms: a weight-1 2,1 factor and a 12-term factor with a coefficient 2),
+   14 notes q 2,187 (4 + 11), 15 notes q 3,125 (7 + 7 twice, 4 + 12 with a −2), 16 notes q 3,125
+   (6 + 6 twice). List: `tables/factor_struct/nochord.tsv`.
+4. **Why S' broke:** S' fixed V as the small factor and limited U's coefficients. U is simply the other
+   irreducible factor, whatever its signs; at higher q it has more −1 coefficients. The ladder's misses
+   at 5-limit q 2,025–3,645 are mostly plain 3-, 4- or 5-note chords whose cofactor is signed.
+
+**Reformulation (conjecture T):** for a JI Z-pair, P = A·B with A, B irreducible (rarely one more
+factor), and the partner is A·B* (equivalently A*·B up to inversion). In almost every case one of A, B
+is a plain chord of 3 to 5 notes. Questions this makes precise: (a) why so few irreducible factors?
+(a generic 0/1 polynomial is irreducible; a Z-pair needs at least one non-self-reciprocal factor, and
+two seems to be the economical case); (b) which chords A admit a B with A·B and A·B* both 0/1 (a
+covering/tiling-type condition, checkable chord by chord); (c) the 7 exceptions as a separate family.
+A generator built on this (choose a small chord A, solve for B) needs no limit on B's signs.

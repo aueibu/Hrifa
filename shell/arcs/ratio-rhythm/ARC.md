@@ -104,6 +104,7 @@ Research work, not page work: it follows `research/ji-z-partners/HANDOFF.md` ("H
   - [ ] `catalog.py` turns the 7-limit odd ≤ 75 run into a catalog file with 8 families at 8 notes (types 91: 5, 92: 3)
   - [ ] `RUNS.md` has a command, expected result and runtime for every pending run; `HANDOFF.md` points to the hub
 - Human checkpoint after: yes (and at the step 1 storage decision)
+- Checkpoint decisions (2026-11-23, step 1 storage): a Cloud Storage bucket holds xz-compressed archives of every result list we keep; the compressed proven lists also go into the repo (`research/ji-z-partners/data/`); the repo keeps `manifest.json`. Nothing on the VM is deleted (raw products stay on its disk); the VM is stopped, not deleted. The human: "I like the bucket storage and compression so we can get it into the repo and then work on the catalog. After, lets return to m3" and "dont delete data". Since 2026-11-20 the results moved from `zgen.py` runs to the `zprod-rs` ladders and shape-free enumerations (see `PROGRESS.md`); the catalog is built from the proven lists.
 
 ### M3: Library: JI level and catalog
 - Scope: `src/lib/ratio-rhythm/` (`lattice.ts`, `jiContent.ts`, `jiPartners.ts` (targeted search, from the artifact's `latPartners` and `_Ideas/Rhythm-As-Pitch/ji_zsets.py`), `catalog.ts` (schema and loader for the catalog JSON that D1's `catalog.py` generates), tests).
