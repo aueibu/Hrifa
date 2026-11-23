@@ -266,7 +266,8 @@ Groups by size: **G1** = T is the smaller (a 3- to 5-note chord), **G2** = S is 
 or two minus notes). Results (`tables/chordsum/ov_*.sum`), the same for P and for Q in every family:
 
 - **Always:** no note of the stack lands more than twice; every subtracted note lands on a note of the
-  stack (never outside); no note is subtracted twice. 0 failures in 11,300 families.
+  stack (never outside); no note is subtracted twice. 0 failures in every leftover family on all nine
+  lists.
 - **Hole (nearly all of G1):** the stack T·S+ has no doubled note, and T·S− (one whole copy of the
   chord, at a note not in S+) lies entirely inside it: every note of that copy is already spelled by
   other copies. P is the stack with a chord-shaped hole. All G1 families at 7- to 19-limit (7-limit
@@ -360,3 +361,28 @@ and in nearly all of them one of T, S is a 3- to 5-note chord:
 Each construction has an exact generator, checked against every proven list. Open: the residue as its
 own family; why more limit (more primes) leaves less room for holes and merges; and a proof that the
 constructions are complete, for which the lists are now the test bed.
+
+### 6.7 The 9 residue families (`residue.py`, `tables/chordsum/residue_5q3645_factors.txt`)
+
+Exact factorization: **all 9 are still exactly two irreducible factors, and the partner flips one of
+them** (conjecture T's two-factor law holds for every proven family). Only "one factor is plain" fails.
+Weights (F(1) of the two factors) multiply to k: 1·13, 2·7, 3·5 (x3), 1·15, 4·4 (x2).
+
+| notes | family | factor terms | what fails |
+|---|---|---|---|
+| 13 | 2 | 3 + 12 | small weight-1 factor {1, −9/8, 27/16} times a set with one note counted twice (coefficient 2) |
+| 15 | 19292 | 4 + 12 | weight-1 factor with a −2 times a set with three notes counted twice |
+| 15 | 19520, 26954 | 3 + 10, 3 + 12 | plain 4:5:6 chord {1, 5/4, 3/2} times a signed factor with a coefficient 2 |
+| 14 | 480 | 4 + 11 | both signed: {1, 9/8, 5/4, −3/2} and an 11-term factor with two −1 |
+| 15 | 18591, 18592 | 7 + 7 | both signed, each 5 plus and 2 minus terms |
+| 16 | 4363, 4374 | 6 + 6 | both signed, each 5 plus and 1 minus term |
+
+So the residue is two kinds: (a) the same constructions with a note counted twice (a coefficient 2 in
+one factor: 4 families), and (b) "balanced" pairs of two mid-sized signed factors (5 families). Both
+need spread-out factors, hence large q: none below q 2,187; 1 at q <= 2,187, 9 at q <= 3,645.
+
+Hunt for more (`resclass.py`, `data/vm/res_hunt.sh`): factor searches with the residue shapes (2,1 with
+a doubled-note set; 3,0 with a signed factor containing a 2; 3,1, 5,1, 5,2 with signed second factors),
+default node budget, 5-limit, then `resclass.py` keeps families with no plain × (+1/−1) split. At
+q <= 3,645 it finds 7 of the 9 (misses two 15-note families with a coefficient ±2), so counts above are
+lower bounds.
