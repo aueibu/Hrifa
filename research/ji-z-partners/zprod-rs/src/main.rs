@@ -31,6 +31,7 @@ struct Args {
     count_only: bool,
     no_upair: bool,
     out: String,
+    cliques: usize,
 }
 
 fn parse_args() -> Args {
@@ -47,6 +48,7 @@ fn parse_args() -> Args {
         count_only: false,
         no_upair: false,
         out: String::new(),
+        cliques: 0,
     };
     let mut i = 0;
     let vals = |i: &mut usize| -> Vec<String> {
@@ -88,6 +90,7 @@ fn parse_args() -> Args {
             "--no-upair" => a.no_upair = true,
             "--selftest-hull" => SELFTEST.store(true, std::sync::atomic::Ordering::Relaxed),
             "--out" => a.out = vals(&mut i)[0].clone(),
+            "--cliques" => a.cliques = vals(&mut i)[0].parse().unwrap(),
             _ => panic!("unknown argument {key}"),
         }
         i += 1;
@@ -1179,6 +1182,105 @@ fn line_json(v: &Factor, complete: bool, prods: &[(Vec<Pt>, Vec<Pt>)]) -> String
     s
 }
 
+// ------------------------------------------------------------------------------------------- clique counts
+/// Count every k-note set (k <= maxk) that contains its lexicographically lowest note 0 and whose pairwise
+/// differences are all allowed intervals: cliques of the compatibility graph on the lexicographically
+/// positive allowed intervals (0 is joined to all of them). Each set is counted once (transpositions fixed by
+/// the lowest note). Bitset adjacency; parallel over pairs of first vertices.
+fn count_cliques(g: &GenCtx, maxk: usize, threads: usize) {
+    let n = g.n;
+    assert!(n <= 512, "clique counter handles up to 512 vertices");
+    let w = (n + 63) / 64;
+    let mut adj = vec![vec![0u64; w]; n];
+    for a in 0..n {
+        for b in 0..n {
+            if a != b && g.ok(a, b) {
+                adj[a][b / 64] |= 1 << (b % 64);
+            }
+        }
+    }
+    let adj = Arc::new(adj);
+    // counts[s] = number of cliques of s vertices among the positive intervals = sets of s + 1 notes
+    let maxs = maxk - 1;
+    let roots: Vec<(usize, usize)> = (0..n).flat_map(|a| (a + 1..n).filter(move |&b| g.ok(a, b)).map(move |b| (a, b))).collect();
+    let roots = Arc::new(roots);
+    let next = Arc::new(AtomicUsize::new(0));
+    let t0 = Instant::now();
+    let handles: Vec<_> = (0..threads)
+        .map(|_| {
+            let (adj, roots, next) = (adj.clone(), roots.clone(), next.clone());
+            std::thread::spawn(move || {
+                let mut counts = vec![0u64; maxs + 1];
+                fn rec(adj: &[Vec<u64>], cand: &[u64], depth: usize, maxs: usize, counts: &mut [u64]) {
+                    // cand: vertices that extend the current clique of `depth` vertices (all larger than its last)
+                    for (wi, &word) in cand.iter().enumerate() {
+                        let mut bits = word;
+                        while bits != 0 {
+                            let v = wi * 64 + bits.trailing_zeros() as usize;
+                            bits &= bits - 1;
+                            counts[depth + 1] += 1;
+                            if depth + 1 < maxs {
+                                // next candidates: in cand, adjacent to v, larger than v
+                                let mut ncb = [0u64; 8]; // up to 512 vertices, no allocation per node
+                                let nc = &mut ncb[..cand.len()];
+                                let mut any = false;
+                                for k in 0..cand.len() {
+                                    let mut x = cand[k] & adj[v][k];
+                                    if k < v / 64 {
+                                        x = 0;
+                                    } else if k == v / 64 {
+                                        x &= if v % 64 == 63 { 0 } else { !0u64 << (v % 64 + 1) };
+                                    }
+                                    nc[k] = x;
+                                    any |= x != 0;
+                                }
+                                if any {
+                                    rec(adj, nc, depth + 1, maxs, counts);
+                                }
+                            }
+                        }
+                    }
+                }
+                loop {
+                    let i = next.fetch_add(1, Ordering::Relaxed);
+                    if i >= roots.len() {
+                        break;
+                    }
+                    let (a, b) = roots[i];
+                    // the clique {a, b}; extend by vertices > b adjacent to both
+                    counts[2] += 1;
+                    if maxs > 2 {
+                        let w = adj[a].len();
+                        let mut cand = vec![0u64; w];
+                        for k in 0..w {
+                            let mut x = adj[a][k] & adj[b][k];
+                            if k < b / 64 {
+                                x = 0;
+                            } else if k == b / 64 {
+                                x &= if b % 64 == 63 { 0 } else { !0u64 << (b % 64 + 1) };
+                            }
+                            cand[k] = x;
+                        }
+                        rec(&adj, &cand, 2, maxs, &mut counts);
+                    }
+                }
+                counts
+            })
+        })
+        .collect();
+    let mut total = vec![0u64; maxs + 1];
+    for h in handles {
+        for (t, c) in total.iter_mut().zip(h.join().unwrap()) {
+            *t += c;
+        }
+    }
+    total[1] = n as u64;
+    for s in 1..=maxs {
+        eprintln!("  {} notes: {} sets", s + 1, total[s]);
+    }
+    eprintln!("zprod-rs cliques: done in {:.1}s", t0.elapsed().as_secs_f64());
+}
+
 // ------------------------------------------------------------------------------------------- main
 fn main() {
     let args = parse_args();
@@ -1195,6 +1297,10 @@ fn main() {
         args.shapes,
         args.ucoeffs
     );
+    if args.cliques > 0 {
+        count_cliques(&g, args.cliques, args.threads);
+        return;
+    }
     if args.count_only {
         // parallel over generation roots, one shape at a time
         for &sh in &args.shapes {
