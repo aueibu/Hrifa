@@ -55,7 +55,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 **Resume here (2026-11-23, after a /clear).** The VM jobs are done (catalog, chord index, Z pairs, findings JSON); the findings page shows the full n = 2–5 catalog (https://claude.ai/artifact/S5mFXv4KaNKHmVQDBUcRqG, live version 17, committed `d67fbb5`). Databases live in `C:\Data Files\ipcat-data\` (catalog README). **Decided: equal centers is the default spacing rule** (ARC M2c checkpoint decisions, `b4fbe80`).
 
 Next, M2c library change (acceptance complete in ARC, window = width only, decided 2026-11-23):
-1. Done 2026-11-23: builder, reviewer, fixes, gate green, committed.
+1. Done 2026-11-23: builder, reviewer, fixes, gate green, committed (`458a697`).
+   Checkpoint example prepared (scratch `rankcmp.ts`, lib output): `11 7 16`, Open (13–24), base C2, 54 chords. Pitch-class harmonicity ranks C2 G2 B2 E3 #1 and C2 F2 A2 E3 #2 (equal pc harmonicity 0.815: same pitch-class shape, maj7, so pc harmonicity cannot tell them apart); pitch-space ranks C2 A2 C3 E3 B3 #1 (pc #3) and puts C2 F2 A2 E3 at #6. Top-10 overlap 9 of 10; pitch-space harmonicity spreads twice as wide across the catalog (sd 0.114 vs 0.058).
 2. Now the human checkpoint: the catalog for `11 7 16` plus one set of the human's choice, heard and read.
 
 Still waiting on the human (not blocking): the 20–24 addendum decision; the rhythm-crystal page changes (uncommitted until looked at); `.claude/settings.json` at the repo root holds 11 allow rules from /fewer-permission-prompts, uncommitted (ask before committing). Publishing note: Google Drive hard-links fresh files, so a publish right after a build asks for full consent; wait until `stat -c %h` is 1 (memory). Before M6, tell the human clearly that the hand-off contract step is next (they asked).
