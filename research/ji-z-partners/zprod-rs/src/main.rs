@@ -1549,11 +1549,11 @@ struct EEntry {
 
 /// Enumerate the given roots on all threads, keeping the sets of hash slice `pass` (of `passes`); each thread
 /// files its entries into 16 buckets by the top bits of h1, so the buckets can be sorted in parallel.
-fn collect_roots(eg: &Arc<EnumG>, need: usize, roots: Arc<Vec<ERoot>>, threads: usize, passes: u64, pass: u64) -> Vec<Vec<Vec<EEntry>>> {
+fn collect_roots(eg: &Arc<EnumG>, need: usize, roots: Arc<Vec<ERoot>>, threads: usize, passes: u64, pass: u64, only: Option<Arc<HashSet<(u64, u64)>>>) -> Vec<Vec<Vec<EEntry>>> {
     let next = Arc::new(AtomicUsize::new(0));
     let hs: Vec<_> = (0..threads.min(roots.len()).max(1))
         .map(|_| {
-            let (eg, roots, next) = (eg.clone(), roots.clone(), next.clone());
+            let (eg, roots, next, only) = (eg.clone(), roots.clone(), next.clone(), only.clone());
             std::thread::spawn(move || {
                 let mut buckets: Vec<Vec<EEntry>> = (0..16).map(|_| Vec::new()).collect();
                 loop {
@@ -1565,6 +1565,11 @@ fn collect_roots(eg: &Arc<EnumG>, need: usize, roots: Arc<Vec<ERoot>>, threads: 
                         if passes > 1 && h1 % passes != pass {
                             return;
                         }
+                        if let Some(o) = &only {
+                            if !o.contains(&(h1, h2)) {
+                                return;
+                            }
+                        }
                         let mut s = [0u16; 16];
                         s[..len].copy_from_slice(&st[..len]);
                         buckets[(h1 >> 60) as usize].push(EEntry { h1, h2, s });
@@ -1575,6 +1580,61 @@ fn collect_roots(eg: &Arc<EnumG>, need: usize, roots: Arc<Vec<ERoot>>, threads: 
         })
         .collect();
     hs.into_iter().map(|h| h.join().unwrap()).collect()
+}
+
+/// first pass for a big group: only the hashes of slice `pass`, bucketed; returns the repeated (h1, h2)
+fn repeated_hashes(eg: &Arc<EnumG>, need: usize, roots: Arc<Vec<ERoot>>, threads: usize, passes: u64, pass: u64) -> HashSet<(u64, u64)> {
+    let next = Arc::new(AtomicUsize::new(0));
+    let hs: Vec<_> = (0..threads.min(roots.len()).max(1))
+        .map(|_| {
+            let (eg, roots, next) = (eg.clone(), roots.clone(), next.clone());
+            std::thread::spawn(move || {
+                let mut buckets: Vec<Vec<(u64, u64)>> = (0..16).map(|_| Vec::new()).collect();
+                loop {
+                    let i = next.fetch_add(1, Ordering::Relaxed);
+                    if i >= roots.len() {
+                        break;
+                    }
+                    enum_root_v3(&eg, need, roots[i], &mut |_st: &[u16; 17], _len: usize, h1: u64, h2: u64| {
+                        if passes > 1 && h1 % passes != pass {
+                            return;
+                        }
+                        buckets[(h1 >> 60) as usize].push((h1, h2));
+                    });
+                }
+                buckets
+            })
+        })
+        .collect();
+    let parts: Vec<Vec<Vec<(u64, u64)>>> = hs.into_iter().map(|h| h.join().unwrap()).collect();
+    let mut by_bucket: Vec<Vec<(u64, u64)>> = (0..16).map(|_| Vec::new()).collect();
+    for th in parts {
+        for (b, v) in th.into_iter().enumerate() {
+            if by_bucket[b].is_empty() {
+                by_bucket[b] = v;
+            } else {
+                by_bucket[b].extend(v);
+            }
+        }
+    }
+    std::thread::scope(|sc| {
+        let hs: Vec<_> = by_bucket
+            .into_iter()
+            .map(|mut v| {
+                sc.spawn(move || {
+                    v.sort_unstable();
+                    let mut out = vec![];
+                    for i in 1..v.len() {
+                        if v[i] == v[i - 1] && (out.last() != Some(&v[i])) {
+                            out.push(v[i]);
+                        }
+                    }
+                    out
+                })
+            })
+            .collect();
+        hs.into_iter().flat_map(|h| h.join().unwrap()).collect()
+    })
 }
 
 /// sort each bucket in parallel and return the runs of equal (h1, h2) of length >= 2 (as note lists, ascending)
@@ -1735,7 +1795,8 @@ fn enumerate(g: &GenCtx, args: &Args) {
             }
             let bytes = (counts[m] / 2 + 1) * ENTRY;
             if bytes > budget {
-                batches.push((vec![m], bytes / budget + 1)); // alone, in hash slices
+                // too big to keep its sets: hashes only (16 bytes per set) in slices, then a filtered second pass
+                batches.push((vec![m], (counts[m] / 2 + 1) * 16 / budget + 1));
                 continue;
             }
             if cur_bytes + bytes > budget && !cur.is_empty() {
@@ -1750,19 +1811,31 @@ fn enumerate(g: &GenCtx, args: &Args) {
         }
         let mut families = 0u64;
         let mut sliced = 0u64;
+        let mut big_groups = 0u64;
         for (groups, passes) in &batches {
             let roots: Arc<Vec<ERoot>> = Arc::new(groups.iter().flat_map(|&m| roots_by_m[m].iter().copied()).collect());
-            if *passes > 1 {
+            let big = groups.len() == 1 && (counts[groups[0]] / 2 + 1) * ENTRY > budget;
+            if big {
+                // hash-only first pass per slice, then fetch just the repeated sets
+                big_groups += 1;
                 sliced += passes - 1;
+                for pass in 0..*passes {
+                    let rep = repeated_hashes(&eg, need, roots.clone(), args.threads, *passes, pass);
+                    if rep.is_empty() {
+                        continue;
+                    }
+                    let parts = collect_roots(&eg, need, roots.clone(), args.threads, *passes, pass, Some(Arc::new(rep)));
+                    let reps = repeated(parts, need + 1);
+                    families += check_groups(&eg, g, reps, &mut w);
+                }
+                continue;
             }
-            for pass in 0..*passes {
-                let parts = collect_roots(&eg, need, roots.clone(), args.threads, *passes, pass);
-                let reps = repeated(parts, need + 1);
-                families += check_groups(&eg, g, reps, &mut w);
-            }
+            let parts = collect_roots(&eg, need, roots.clone(), args.threads, 1, 0, None);
+            let reps = repeated(parts, need + 1);
+            families += check_groups(&eg, g, reps, &mut w);
         }
         eprintln!(
-            "  k={k}: {total} sets (both orientations), largest top-note group {biggest}, {} batches, {sliced} extra slice passes, {families} families with equal interval content, {:.1}s",
+            "  k={k}: {total} sets (both orientations), largest top-note group {biggest}, {} batches ({big_groups} big groups in hash mode, {sliced} extra slices), {families} families with equal interval content, {:.1}s",
             batches.len(),
             tk.elapsed().as_secs_f64()
         );
