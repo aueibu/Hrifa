@@ -97,7 +97,7 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
   - [x] PROGRESS.md notes the scan result (2026-11-23)
 - Human checkpoint after: no
 
-### M1: Listening pass on version 5
+### M1: Listening pass on version 5 — DONE (human, 2026-11-23: "A. Yes it can move ahead of m2"; final commit 3015f6e)
 - Scope: the page as it is. The human listens; the orchestrator brings the open questions with examples where the
   options differ: drone sound and range; the Note pulses tempo rule (the busiest note at most 8 per second); the
   ladder's anchoring (lowest note exact, now, vs errors balanced across all notes: show a set where the two give a
@@ -252,14 +252,39 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
   - [ ] Thin slice; `check:live-series` passes
 - Human checkpoint after: yes (sound)
 
-### M6: A home in the app (decision first)
+### M6: A home in the app (decision first) — runs NEXT, ahead of M2–M5
 - Scope: the human decides: its own page, a Workbench module, a panel of Interval Placement, or stays standalone. Any
   app code gets an ARC revision first (owned paths, seams, check script).
 - Acceptance:
-  - [ ] Decision recorded here and in `DECISIONS.md`
+  - [x] Decision recorded here and in `DECISIONS.md` (LIVESERIES-2)
 - Human checkpoint after: yes
+- Checkpoint decisions (human, 2026-11-23, after "whats next? ... its a plain html page and has absolutely none of
+  the styling of our harmonic lab / workbench"): **A, its own page `/live-series` in the app**, and **M6 moves ahead
+  of M2** (M2–M5 are then built in the app, not on the standalone page).
+- **ARC revision for app code (2026-11-23):**
+  - Owned paths add `src/pages/live-series/` (components, state, pure core, tests, its own `ARCHITECTURE.md`).
+  - Shared paths, each under a lock in the milestone that touches it: the entry file `src/pages/LiveSeries.page.tsx`,
+    `src/Router.tsx`, `src/data/applets.ts`, `package.json` (the check script grows).
+  - Reused by import, never edited: the dock Stage `src/components/Stage/dock` (as the workbench page uses it, so the
+    panels can later move into the workbench); `src/lib/harmonic-field` (pure; e.g. `beats.ts`, the simplest-ratio
+    beat of an interval, for the per-interval reading the human asked about); the lab's audio engine
+    `src/pages/harmonic-field-lab/audio` (`VoiceEngine`: held voices, glides, the same Room / Hall reverb). The lab
+    has no active arc: importing is fine, any change to those exports is a stop-and-ask (cross-arc).
+  - Pitch stays page-local as cents + exact ratios + Hz (like H-1, INTERVALPLACEMENT-2); midicents only at a future
+    workbench edge (W-1). Persistence and the panel layout are look/storage decisions taken with the human before
+    the first builder.
+  - Check command grows to `npm run typecheck` + oxfmt / oxlint / stylelint / `vitest run --passWithNoTests` scoped to
+    `src/pages/live-series`, plus the smoke test of the standalone page while it is still the reference.
+  - Builder + reviewer pairs (shell rule); every UI brief carries the no-jumping rule word for word and the human's
+    own wording; headless runs muted.
+  - Split: **M6a** page, route, panels for notes, series, fundamental, the tuning table and listings, the series
+    drawing; the pure core (ladder, fit, commas, meet, beat rhythms, measured coincidences) ported with tests made
+    from the confirmed scenario numbers. **M6b** audio on the lab engine (drone, notes, arpeggio, pulses, listen
+    pairs, beat speed, reverb). **M6c** Beats, drawn and Phasing, drawn with their closer views. The standalone page
+    stays as the frozen reference until M6c is accepted. Each step ends with the human's look.
 
-*(approval)* M3–M5 order is open; the human may reorder or drop any of them.
+*(approval)* M3–M5 order is open; the human may reorder or drop any of them. Order after M6 (human, 2026-11-23):
+M2, then M3–M5.
 
 ## Stop-and-ask conditions
 - A criterion can't be met after 2 attempts.

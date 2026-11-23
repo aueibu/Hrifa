@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 
 ## Status
 - Arc: Live Series: drone and raga thinking on the harmonic series (`arcs/live-series`)
-- Current milestone: M1 (listening pass on version 5); Setup and C0 done 2026-11-23
-- State: awaiting human (M1 is a sound checkpoint)
+- Current milestone: M6 (a home in the app: own page `/live-series`, LIVESERIES-2), ahead of M2; M1 done 2026-11-23
+- State: awaiting human (panel layout and persistence before the first builder)
 
 ## Where the work is (read this first after a /clear)
 - **Branch** `interval-placement-live-series` on `aueibu/Hrifa`, pushed, **not merged** into `main`. It already
@@ -86,9 +86,12 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
   a taraf bed from the series; sam and tala from the ratios.
 
 ## Next action
-M1 is in the human's hands (2026-11-23, last commit 24fdb1f): everything asked so far is built and the beat speed
-fix is confirmed ("perfect that works now"). Ask the human whether M1 is done; if so, mark its acceptance in ARC.md and
-start M2 (scenario table first: the explorer's default 0 3 8 13 19 with hung A♭2 C♯3, plus one of theirs). Open:
+M1 is DONE. M6 runs next (human: own page `/live-series`, ahead of M2; ARC "ARC revision for app code", LIVESERIES-2).
+Before the first builder (look and storage are the human's): get the panel layout (screensets on the dock Stage) and
+persistence (remember notes, trail and sound settings or start fresh) decided; then M6a with a builder + reviewer
+(brief: the human's words, no-jumping rule verbatim, reuse the dock Stage, lab `VoiceEngine` in M6b, lib `beats.ts`;
+tests from the smoke's confirmed numbers); lock the entry file, Router, applets and package.json in M6a. After M6:
+M2 (scenario table first: the explorer's default 0 3 8 13 19 with hung A♭2 C♯3, plus one of theirs). Open:
 publish the current page to https://claude.ai/artifact/Mdtwb8v22H9CpnzUFnXnMW (copy to the scratchpad first, `url` =
 that link; it failed three times on 2026-11-23 with HTTP 403 on the read-back: try once in a fresh session, else ask
 whether to publish a new link); until then the human uses the local file. Candidates waiting on the human: M3 scope
