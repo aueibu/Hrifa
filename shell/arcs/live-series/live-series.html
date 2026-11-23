@@ -28,7 +28,7 @@
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
     padding-block: 24px 72px;
   }
-  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .wrap { max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
   h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; margin: 0; text-wrap: balance; }
   h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; margin: 0; }
   p { margin: 0; max-width: 78ch; }
@@ -38,7 +38,7 @@
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .lbl { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); min-width: 7em; }
   button, input, select { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 10px; }
-  button { cursor: pointer; font-weight: 500; }
+  button { cursor: pointer; font-weight: 500; font-variant-numeric: tabular-nums; }   /* digits keep one width: no jumping */
   button:hover { border-color: var(--accent); color: var(--accent); }
   button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   button.playing { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -67,6 +67,8 @@
   .chip.off .tog { color: var(--muted); text-decoration: line-through; }
   .chip .x { color: var(--muted); border-left: 1px solid var(--line); }
   .list { display: flex; flex-direction: column; gap: 4px; }
+  #ladder { position: relative; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+  #ladder .item { flex-shrink: 0; }
   .item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; align-items: baseline; text-align: left; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); width: 100%; }
   .item.sel { border-color: var(--accent); background: var(--accent-soft); }
   .item .main { font-family: var(--font-mono); font-size: 0.88rem; overflow-wrap: anywhere; }
@@ -74,8 +76,36 @@
   .item .sub { grid-column: 1 / -1; font-size: 0.8rem; color: var(--muted); }
   .facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; font-size: 0.88rem; }
   .facts span:nth-child(odd) { color: var(--muted); }
+  /* tuning readout: typed vs tuned pitch per note; the sounding column follows "Notes tuned to the series" */
+  #tune { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .tune { border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; table-layout: fixed; width: 50em; }
+  /* named-comma hint: a small triangle with a wider hover area; the name and notes are in its tooltip */
+  .hint { display: inline-block; padding: 3px 4px; margin-left: 2px; vertical-align: middle; cursor: help; line-height: 0; }
+  .hint::before { content: ""; display: inline-block; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid var(--twin); }
+  .hint:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .tune td, .tune th { overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+  .tune th { height: 24px; position: sticky; top: 0; background: var(--surface); }
+  .tune td { height: 27px; }
+  /* no jumping: the body is always 6 rows tall (empty or full) and scrolls for more notes */
+  .tune-wrap { height: calc(24px + 6 * 27px + 2px); overflow: auto; scrollbar-gutter: stable; }
+  .snd-label { display: inline-block; min-width: 8.5em; text-align: right; }
+  /* no jumping: fixed-width state words and readouts, reserved lines for text whose length varies */
+  .st { display: inline-block; min-width: 1.7em; text-align: left; }
+  #exNote { flex: 1 1 20em; min-height: 3em; }
+  #ladderNote, #pulseNote { min-height: 4.5em; }
+  #addErr { flex-basis: 100%; min-height: 1.5em; }
+  #baseName { display: inline-block; min-width: 7em; }
+  #mixRead { display: inline-block; min-width: 3.5em; }
+  .tune th { text-align: left; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding: 2px 8px; }
+  .tune td { padding: 3px 8px; border-top: 1px solid var(--grid); white-space: nowrap; }
+  .tune .snd { color: var(--accent); background: var(--accent-soft); }
+  .tune .name { color: var(--muted); }
+  .cbar { position: relative; display: inline-block; width: 64px; height: 10px; margin-left: 6px; vertical-align: middle; }
+  .cbar::before { content: ""; position: absolute; left: 0; right: 0; top: 4.5px; height: 1px; background: var(--line); }
+  .cbar::after { content: ""; position: absolute; left: 31.5px; top: 0; width: 1px; height: 10px; background: var(--muted); }
+  .cbar i { position: absolute; top: 1.5px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: var(--accent); }
   input[type=range] { padding: 0; border: 0; background: transparent; accent-color: var(--accent); width: 9em; }
-  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 16px; }
   @media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
@@ -111,6 +141,7 @@
     <div class="panel">
       <h2>Fundamental</h2>
       <div class="facts" id="facts"></div>
+      <div id="tune"></div>
       <div class="btns">
         <button type="button" id="playChord" aria-pressed="false">Notes: off</button>
         <button type="button" id="playUp" aria-pressed="false">Arpeggio: off</button>
@@ -346,6 +377,7 @@ function render() {
   else $('ladderNote').textContent = notes.every((n) => n.p != null)
     ? 'All notes are exact ratios, so the exact series is chosen; the rungs above it are simpler series that come close.'
     : 'Simplest first; each rung below is more complex and closer. The error is shared by all the notes (the lowest one moves too). The simplest is chosen unless you click another.';
+  const keepScroll = $('ladder').scrollTop;
   $('ladder').innerHTML = rungs.map((x) => {
     const f = hz(x.fundCents);
     return `<button type="button" class="item${r && x.h === r.h ? ' sel' : ''}" data-h="${x.h}">
@@ -358,11 +390,39 @@ function render() {
     const rr = ladder(active(), +$('cap').value || 20).find((x) => x.h === S.pick);
     commit(`chose ${rr ? rr.partials.join(':') : 'rung'}`, true);
   }));
+  fitLadder(keepScroll);
   drawFacts(r, notes);
   drawSeries(r, notes);
   drawTrail();
   followAudio();
+  hold();
 }
+
+// the Series list shows LADDER_ROWS rungs and scrolls inside itself for the rest (human, M1 2026-11-23); the height
+// is measured from the rows so it holds when a row wraps on a narrow screen. The scroll position survives a redraw,
+// and the chosen rung is scrolled into view (inside the list only, never the page).
+// No jumping: the list is ALWAYS 7 rows tall, whether it holds 0, 3 or 12 rungs.
+const LADDER_ROWS = 7, LADDER_GAP = 4;
+let LADDER_ROW_H = 56;            // one row's height, re-measured whenever rows exist
+function fitLadder(keep = $('ladder').scrollTop) {
+  const list = $('ladder'), items = [...list.querySelectorAll('.item')];
+  const hs = items.slice(0, LADDER_ROWS).map((x) => x.offsetHeight).filter((h) => h > 0);
+  if (hs.length) LADDER_ROW_H = Math.max(...hs);
+  list.style.height = `${LADDER_ROWS * LADDER_ROW_H + (LADDER_ROWS - 1) * LADDER_GAP + 2}px`;
+  list.scrollTop = keep;
+  const sel = list.querySelector('.item.sel');
+  if (sel && (sel.offsetTop < list.scrollTop || sel.offsetTop + sel.offsetHeight > list.scrollTop + list.clientHeight)) list.scrollTop = Math.max(0, sel.offsetTop - 4);
+}
+// Text whose length varies (descriptions, notes, facts) keeps the tallest height it has had, so a shorter text never
+// pulls the page up; the reserve is cleared on a resize, where widths change anyway.
+const HELD = ['exNote', 'ladderNote', 'facts', 'pulseNote', 'chips'];
+function hold() {
+  for (const id of HELD) {
+    const el = $(id), h = el.getBoundingClientRect().height, now = parseFloat(el.style.minHeight) || 0;   // exact, not rounded
+    if (h > now) el.style.minHeight = `${h}px`;
+  }
+}
+window.addEventListener('resize', () => { for (const id of HELD) $(id).style.minHeight = ''; fitLadder(); hold(); });
 
 function drawChips() {
   $('chips').innerHTML = S.notes.length ? S.notes.map((n, i) => `<span class="chip ${n.on ? 'on' : 'off'}">
@@ -380,8 +440,78 @@ function drawChips() {
   }));
 }
 
+// tuning readout (human, M1 2026-11-23): per active note, the typed pitch and the tuned one (its harmonic in the chosen
+// series), the difference in cents with a bar on a ±fit-limit scale, and the beats (the Hz difference: about how
+// fast the typed note wobbles against the series). The sounding column follows "Notes tuned to the series".
+// The comma column (human, M1 2026-11-23: "the table should show the comma that it makes", with "a little text hint
+// if that matches a well known / historic comma"): for ratio input, the exact ratio a note moves by against the
+// lowest note when read in this series, (k_i / k_0) / (typed_i / typed_0). 1/1 5/4 3/2 6/5 on 15:18:19:23: 5/4 moves
+// by 76/75, 3/2 by 46/45, 6/5 not at all. Tempered notes have no exact ratio ("—"). Only commas whose names are well
+// established are named; anything else shows its ratio alone.
+const COMMAS = {
+  '81/80': ['syntonic comma', 'syntonic comma (comma of Didymus): four pure fifths against a pure major third and two octaves'],
+  '531441/524288': ['Pythagorean comma', 'Pythagorean comma: twelve pure fifths against seven octaves'],
+  '64/63': ['septimal comma', "septimal comma (Archytas' comma): the gap between 16/9 and 7/4"],
+  '128/125': ['lesser diesis', 'lesser diesis: an octave against three pure major thirds'],
+  '648/625': ['greater diesis', 'greater diesis: four pure minor thirds against an octave'],
+  '32805/32768': ['schisma', 'schisma: the Pythagorean comma less the syntonic comma'],
+  '2048/2025': ['diaschisma', 'diaschisma: the lesser diesis less the syntonic comma'],
+  '15625/15552': ['kleisma', 'kleisma: six pure minor thirds fall short of a 3/1 by it'],
+  '225/224': ['septimal kleisma', 'septimal kleisma: two pure major thirds (25/16) against 14/9'],
+  '36/35': ['septimal diesis', 'septimal diesis: the gap between 6/5 and 7/6'],
+  '49/48': ['slendro diesis', 'slendro diesis: the gap between 7/6 and 8/7'],
+  '33/32': ['undecimal comma', 'undecimal comma (undecimal quarter tone): the gap between 4/3 and 11/8'],
+  '243/242': ['rastma', 'rastma: two 11/9 neutral thirds against a pure fifth'],
+};
+function commaOf(n, n0, k, k0) {
+  if (n.p == null || n0.p == null) return null;                     // tempered: no exact ratio
+  let a = k * n.q * n0.p, b = k0 * n.p * n0.q;
+  if (!Number.isSafeInteger(a) || !Number.isSafeInteger(b)) return null;
+  const g = gcd(a, b); a /= g; b /= g;
+  const key = a >= b ? `${a}/${b}` : `${b}/${a}`;
+  return { a, b, name: COMMAS[key] || null };
+}
+function drawTune(r, notes) {
+  const box = $('tune');
+  const cap = +$('cap').value || 20, F = r ? hz(r.fundCents) : 0;
+  // with no notes the same table is drawn with an empty body, so the box keeps its shape
+  const rows = r ? notes.map((n, i) => {
+    const typed = hz(n.cents), tuned = F * r.partials[i], diff = 1200 * log2(tuned / typed);
+    return { n, k: r.partials[i], typed, tuned, diff, beat: Math.abs(tuned - typed), comma: i ? commaOf(n, notes[0], r.partials[i], r.partials[0]) : 'ref' };
+  }) : [];
+  const commaCell = (c) => {
+    if (c === 'ref') return '<span class="name">lowest note</span>';
+    if (!c) return '<span class="name">—</span>';
+    if (c.a === c.b) return 'none';
+    // a named comma gets a small triangle; hovering it shows the historic name and notes (human, M1 2026-11-23)
+    const cents = 1200 * log2(c.a / c.b), size = `${c.a}/${c.b}, ${cents >= 0 ? '+' : '−'}${Math.abs(cents).toFixed(1)}¢`;
+    return `<span title="${esc(size)}">${c.a}/${c.b}</span>${c.name ? `<span class="hint" tabindex="0" title="${esc(`${size}: ${c.name[1]}`)}" aria-label="${esc(c.name[1])}"></span>` : ''}`;
+  };
+  const snd = (tunedCol) => (NOTE_TUNED === tunedCol ? ' class="snd"' : '');
+  // same table in every state (an exact rung shows 0.0¢ and no beats), fixed column widths, constant footnote and a
+  // fixed-width "sounding" label, so nothing jumps when the toggle, the rung or a value changes (human, M1 2026-11-23)
+  const head = `<div class="row" style="justify-content:space-between"><span class="lbl" style="min-width:0">Notes against the series</span><span class="read snd-label">sounding: <b>${NOTE_TUNED ? 'tuned' : 'typed'}</b></span></div>`;
+  const sign = (d) => `${d >= 0.05 ? '+' : d <= -0.05 ? '−' : ''}${Math.abs(d).toFixed(1)}¢`;
+  const body = rows.map((x) => {
+    const pos = 32 + Math.max(-1, Math.min(1, x.diff / cap)) * 28;
+    return `<tr><td>${esc(x.n.label)} <span class="name">${noteName(x.typed)}</span></td>
+      <td${snd(false)}>${fmtHz(x.typed)} Hz</td>
+      <td${snd(true)}>${fmtHz(x.tuned)} Hz <span class="name">(${x.k})</span></td>
+      <td>${sign(x.diff)}<span class="cbar" aria-hidden="true"><i style="left:${pos.toFixed(1)}px"></i></span></td>
+      <td>${commaCell(x.comma)}</td>
+      <td>${x.beat < 0.05 ? 'none' : `about ${x.beat.toFixed(1)} per second`}</td></tr>`;
+  }).join('');
+  box.innerHTML = `${head}<div class="scroll tune-wrap"><table class="tune"><colgroup><col style="width:9em"><col style="width:6.5em"><col style="width:8.5em"><col style="width:8.5em"><col style="width:8em"><col style="width:9.5em"></colgroup><thead><tr><th>note</th><th>typed</th><th>tuned (harmonic)</th><th>difference</th><th>comma</th><th>beats</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="read small">Comma: the exact ratio a note moves by against the lowest note when read in this series (ratio input only; a small triangle marks a historic comma, hover it for its name). Beats: about how fast a typed note wobbles against its harmonic, heard against the drone's overtones (faint with Drone bare sine on). The bar spans ±${cap}¢ (Show fits within).</p>`;
+}
+
 function drawFacts(r, notes) {
-  if (!r) { $('facts').innerHTML = '<span>Fundamental</span><span>—</span>'; $('pulseNote').textContent = ''; return; }
+  drawTune(r, notes);
+  if (!r) {   // same seven rows with no values, so the box keeps its shape
+    $('facts').innerHTML = ['Fundamental', 'Relative to 1/1', 'Below the lowest note', 'Is it played?', 'Your 1/1', 'Drone', 'Note pulses'].map((l) => `<span>${l}</span><span>—</span>`).join('');
+    $('pulseNote').textContent = 'Drone and Note pulses: add a note first.';
+    return;
+  }
   const F = hz(r.fundCents), lowest = notes[0];
   const baseH = 2 ** ((0 - r.fundCents) / 1200), baseK = Math.round(baseH), baseErr = 1200 * log2(baseH / baseK);
   const has1 = r.partials[0] === 1;
@@ -413,7 +543,7 @@ function pulsePlan(r, notes) {
 function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888'; }
 function drawSeries(r, notes) {
   const svg = $('draw');
-  if (!r) { svg.setAttribute('width', 10); svg.setAttribute('height', 10); svg.innerHTML = ''; return; }
+  if (!r) { svg.setAttribute('viewBox', '0 0 640 150'); svg.setAttribute('width', 640); svg.setAttribute('height', 150); svg.innerHTML = ''; return; }   // keeps its size when empty
   // while the drone plays it is harmonic dH of this series: the fundamental moved by whole octaves, so a power of 2
   // (below 1 when the fundamental is above the drone range); the axis widens to show it and its octave
   const F = hz(r.fundCents), dH = drone ? droneHz(F) / F : null;
@@ -466,7 +596,7 @@ function drawTrail() {
   const svg = $('path');
   const pts = TRAIL.map((t, i) => ({ i, c: t.series ? t.series.fundCents : null }));
   const vals = pts.filter((p) => p.c != null).map((p) => p.c);
-  if (!vals.length) { svg.innerHTML = ''; svg.setAttribute('width', 10); svg.setAttribute('height', 10); }
+  if (!vals.length) { svg.innerHTML = ''; svg.setAttribute('viewBox', '0 0 480 170'); svg.setAttribute('width', 480); svg.setAttribute('height', 170); }   // keeps its size when empty
   else {
     const hearC = 1200 * log2(HEARING / base());
     const lo = Math.min(...vals, hearC) - 150, hi = Math.max(...vals, 0) + 150;
@@ -611,8 +741,9 @@ function stopAll() { stopOneShots(); heldOff(); arpOff(); droneOff(); pulseOff()
 // the notes' wave (held notes, arpeggio, trail replay): triangle, or a bare sine; pulse clicks stay triangle
 let NOTE_SINE = false;
 const noteWave = () => (NOTE_SINE ? 'sine' : 'triangle');
+// the state word sits in a fixed-width box so "on" and "off" never change the button's width (no jumping)
 function setToggle(id, name, on) {
-  $(id).textContent = `${name}: ${on ? 'on' : 'off'}`; $(id).classList.toggle('playing', on); $(id).setAttribute('aria-pressed', String(on));
+  $(id).innerHTML = `${name}: <span class="st">${on ? 'on' : 'off'}</span>`; $(id).classList.toggle('playing', on); $(id).setAttribute('aria-pressed', String(on));
 }
 function tone(t, f, dur, level) {
   const c = audio(), o = c.createOscillator(), g = c.createGain();
@@ -724,7 +855,7 @@ function droneOn() {
     return { o, g, mult, role };
   });
   drone = { oscs, gain, pulsing: false, next: 0, timer: setInterval(droneTick, 50) };
-  $('droneBtn').textContent = 'Drone: on'; $('droneBtn').classList.add('playing'); $('droneBtn').setAttribute('aria-pressed', 'true');
+  setToggle('droneBtn', 'Drone', true);
   render();   // tunes the drone and marks it on the drawing
 }
 function droneOff() {
@@ -736,7 +867,7 @@ function droneOff() {
     setTimeout(() => d.oscs.forEach(({ o }) => { try { o.stop(); } catch (e) {} }), 900);
   }
   drone = null;
-  $('droneBtn').textContent = 'Drone: off'; $('droneBtn').classList.remove('playing'); $('droneBtn').setAttribute('aria-pressed', 'false');
+  setToggle('droneBtn', 'Drone', false);
   if (was) render();   // removes the drone mark
 }
 // pulse: a scheduler that rebuilds its plan at each sam, so changes take effect on the next cycle
@@ -807,7 +938,7 @@ $('noteSine').addEventListener('click', () => {
   if (held) for (const { o } of held.values()) o.type = noteWave();   // held notes change at once
 });
 // held notes retune at once; arpeggio and replay read the pitches at every note, pulses at the next sam
-$('noteTuned').addEventListener('click', () => { NOTE_TUNED = !NOTE_TUNED; setToggle('noteTuned', 'Notes tuned to the series', NOTE_TUNED); heldSync(); });
+$('noteTuned').addEventListener('click', () => { NOTE_TUNED = !NOTE_TUNED; setToggle('noteTuned', 'Notes tuned to the series', NOTE_TUNED); heldSync(); if (CUR) drawTune(CUR.r, CUR.notes); });
 $('reverb').addEventListener('change', () => {
   const p = $('reverb').value;
   // leaving Dry with a mix of 0 would change nothing you can hear: start at the lab's default mix
@@ -831,5 +962,8 @@ $('replay').addEventListener('click', () => (replaying ? stopAll() : replay()));
 $('clearTrail').addEventListener('click', () => { TRAIL = TRAIL.length ? [snapshot('start (trail cleared)')] : []; render(); });
 $('stopAll').addEventListener('click', stopAll);
 
+// every on/off button gets its fixed-width state word from the start
+for (const [id, name, on] of [['playChord', 'Notes', false], ['playUp', 'Arpeggio', false], ['noteSine', 'Notes bare sine', false], ['noteTuned', 'Notes tuned to the series', true],
+  ['droneBtn', 'Drone', false], ['droneOct', 'Drone octave', true], ['droneSine', 'Drone bare sine', false], ['pulseBtn', 'Note pulses', false]]) setToggle(id, name, on);
 loadExample(0);
 </script>

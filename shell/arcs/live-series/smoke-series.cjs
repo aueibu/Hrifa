@@ -183,6 +183,46 @@ check('typed pitches: C and B♭ as typed', [heldF()[0].toFixed(2), heldF()[3].t
 check('typed pitches: same four oscillators retuned', OSCS.slice(b3).filter((o) => !o.stopped).length, 4);
 $('noteTuned').click();
 $('playChord').click();
+// M1 (human 2026-11-23): the tuning readout. C E G B♭ at 4:5:6:7 (F 65.96 Hz): differences +14.6 +0.9 +16.6 −16.6¢;
+// C typed 261.63, tuned 4 x 65.96 = 263.84 Hz, beats about 2.2 per second
+const tuneRows = () => [...$('tune').querySelectorAll('tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent.trim()));
+check('readout: one row per note', tuneRows().length, 4);
+check('readout: differences', tuneRows().map((r) => r[3]), ['+14.6¢', '+0.9¢', '+16.6¢', '−16.6¢']);
+check('readout: C typed, tuned, beats', [tuneRows()[0][1], tuneRows()[0][2], tuneRows()[0][5]], ['261.6 Hz', '263.8 Hz (4)', 'about 2.2 per second']);
+check('readout: tempered notes have no comma', tuneRows().map((r) => r[4]), ['lowest note', '—', '—', '—']);
+check('readout: tuned column sounding', [$('tune').querySelector('tbody td.snd').cellIndex, /sounding: tuned/.test($('tune').textContent)], [2, true]);
+$('noteTuned').click();
+check('readout: typed column sounding after the toggle', [$('tune').querySelector('tbody td.snd').cellIndex, /sounding: typed/.test($('tune').textContent)], [1, true]);
+$('noteTuned').click();
+pick(0);
+// no jumping (human 2026-11-23): the exact rung keeps the same table, with 0.0¢ and no beats
+check('readout: exact rung keeps the table', [tuneRows().length, tuneRows().map((r) => r[3]), tuneRows().map((r) => r[4]), tuneRows().map((r) => r[5])], [4, ['0.0¢', '0.0¢', '0.0¢', '0.0¢'], ['lowest note', 'none', 'none', 'none'], ['none', 'none', 'none', 'none']]);
+// commas (human 2026-11-23): 1/1 6/5 5/4 3/2 on the simpler rung 15:18:19:23 -> 6/5 none, 5/4 76/75, 3/2 46/45 (no names)
+const clickRung = (s) => [...$('ladder').querySelectorAll('.item')].find((b) => b.querySelector('.main').textContent === s).click();
+clickRung('15 : 18 : 19 : 23');
+check('readout: commas on a simpler rung', tuneRows().map((r) => r[4]), ['lowest note', 'none', '76/75', '46/45']);
+check('readout: unnamed commas have no hint', $('tune').querySelectorAll('.hint').length, 0);
+// named commas (human: a small triangle, the name on hover): 1/1 16/9 read as 4:7 moves 16/9 down by 64/63
+// (septimal comma), read as 5:9 up by 81/80 (syntonic comma)
+pick(3); $('add').value = '1/1 16/9'; $('addBtn').click();
+const hintTitle = () => { const h = $('tune').querySelectorAll('tbody tr')[1].children[4].querySelector('.hint'); return h ? h.getAttribute('title') : null; };
+clickRung('4 : 7');
+check('readout: septimal comma: ratio only, triangle hint', [tuneRows()[1][4], hintTitle().startsWith("63/64, −27.3¢: septimal comma (Archytas' comma)")], ['63/64', true]);
+clickRung('5 : 9');
+check('readout: syntonic comma: ratio only, triangle hint', [tuneRows()[1][4], hintTitle().startsWith('81/80, +21.5¢: syntonic comma (comma of Didymus)')], ['81/80', true]);
+// no jumping: the Series list is always 7 rows tall, empty or not; the table keeps its 6-row body when empty
+check('no jumping: Series list height fixed with 2 rungs', $('ladder').style.height, '418px');
+pick(3);
+check('no jumping: Series list height fixed when empty', $('ladder').style.height, '418px');
+check('no jumping: table drawn when empty', [!!$('tune').querySelector('.tune-wrap table'), tuneRows().length], [true, 0]);
+check('no jumping: facts keep their seven rows when empty', $('facts').children.length, 14);
+pick(0);
+const foot = () => $('tune').querySelector('p').textContent;
+const foot0 = foot();
+$('droneSine').click();
+check('readout: footnote text does not change with bare sine', foot(), foot0);
+$('droneSine').click();
+check('readout: fixed column widths', [...$('tune').querySelectorAll('col')].map((c) => c.style.width), ['9em', '6.5em', '8.5em', '8.5em', '8em', '9.5em']);
 
 // reverb (the lab's presets, no custom loading)
 // M1 (human 2026-11-23): the reverb starts on Hall at 30%

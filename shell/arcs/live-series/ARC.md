@@ -124,6 +124,34 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
     at once (a glide is the tonality-flux candidate for M3). Example where it differs: C E G B♭ at 4:5:6:7 sounds
     C +14.6¢, E +0.9¢, G +16.6¢, B♭ −16.6¢ from 12-EDO when tuned. Exact ratio input changes only when a non-exact
     rung is clicked.
+  - Series list height (human, 2026-11-23): "keep the series results to like 7 long with a scroll bar for the
+    others". The list shows 7 rungs and scrolls inside itself; the chosen rung stays in view when the list redraws.
+  - Tuning readout (human, 2026-11-23: "any way to get a visual / readout for what changes with tune to series on /
+    off"; approved the proposed table): under the facts in the Fundamental panel, one row per active note: typed
+    pitch, tuned pitch (its harmonic), difference in cents with a small bar on a ±fit-limit scale, and beats (the Hz
+    difference, about how fast the typed note wobbles against the series). The sounding column is highlighted and
+    follows the toggle; a constant line notes that beats are faint with Drone bare sine on. Human, after the first
+    look: "show the same layout ... even when the result is exact. REMEMBER NO JUMPING TEXT OR BOXES": the same
+    table on an exact rung (0.0¢, beats none), fixed column widths, constant footnote, fixed-width "sounding" label. Example: C E G B♭ at 4:5:6:7: C +14.6¢ (about 2.2/s), E +0.9¢, G +16.6¢, B♭ −16.6¢.
+  - Exact ratios on a simpler rung: kept as A (they retune; the human found the commas this exposes the interesting
+    part, and asked for them to be shown). 1/1 5/4 3/2 6/5 on 15:18:19:23 moves them −19.0, −19.0, +3.9, +19.0¢.
+  - Comma column (human: "the table should show the comma that it makes", "with a little text hint if that matches
+    a well known / historic comma"): for ratio input, the exact ratio each note moves by against the lowest note,
+    (k_i / k_0) / (typed_i / typed_0); "none" on the exact rung, "—" for tempered notes. Short name beside the ratio,
+    full name and size in a tooltip, only for well-established commas (syntonic 81/80, Pythagorean, septimal 64/63,
+    lesser and greater diesis, schisma, diaschisma, kleisma, septimal kleisma, septimal diesis 36/35, slendro diesis
+    49/48, undecimal 33/32, rastma 243/242). Human after the look: "show a little hint like a small triangle ... if
+    the user hovers they can see the historic name and notes. That makes better use of screen space": the name is
+    not printed; a small triangle marks a named comma and hovering it shows the name and notes. Scenarios: 15:18:19:23 gives none, 76/75, 46/45 (unnamed); 1/1 16/9 as
+    4:7 gives 63/64 septimal comma, as 5:9 gives 81/80 syntonic comma.
+  - Page width (human: "the whole panel (and app) will need to be wider to show all this, thats fine"): page 1600 px,
+    Fundamental panel 1.5x the Series panel; the table keeps fixed widths and scrolls sideways inside itself when narrow.
+  - No jumping, the whole page (human: "IVE SAID IT MORE THAN 10 ... TIMES ITS THE WHOLE UI DESIGN PRINCIPLE"):
+    fixed-width on/off words, Series list always 7 rows tall, the table always 6 rows tall (scrolls for more, drawn
+    when empty), the facts keep their seven rows when empty, the drawings keep their height when empty, reserved
+    lines for the example note, the Series note, the drone line and the Add error, varying text keeps its tallest
+    height until a resize, tabular digits in buttons. Measured in headless Edge across 20 states: no box or button
+    moves or resizes; only the two drawings' widths follow their content inside their own scroll boxes.
 
 ### M2: Collections in from the required-interval explorer
 - Scope: bring a collection and its hung set in directly (paste or link), with hung tones marked, so the ur-chalan
