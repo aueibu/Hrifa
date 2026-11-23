@@ -48,6 +48,9 @@ def main():
     ap.add_argument("--no-types", action="store_true")
     ap.add_argument("--hull-cache", default="", help="ignored (no hull computation)")
     ap.add_argument("--rs-bin", default="")
+    ap.add_argument("--enumerate", action="store_true",
+                    help="shape-free: every set whose pairwise differences are allowed, grouped by interval content")
+    ap.add_argument("--mem-gb", type=float, default=6.0, help="with --enumerate: memory per pass (sets the pass count)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     if not a.fast or a.vmax:
@@ -61,6 +64,8 @@ def main():
            "--max-nodes", str(a.max_nodes), "--threads", str(a.workers), "--out", prod_path]
     if a.count_only:
         cmd.append("--count-only")
+    if a.enumerate:
+        cmd += ["--enum", "--mem-gb", str(a.mem_gb)]
     t0 = time.time()
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, text=True)
     for line in p.stderr:
