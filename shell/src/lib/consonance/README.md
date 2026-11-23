@@ -32,6 +32,7 @@ Import from the barrel (`./index`, or `@/lib/consonance`).
 | `EQUAL_WEIGHTS` | weights for ranking on z-scores: `{interference: −1, periodicity: 0, harmonicity: +1}` (the standardised analogue of the composite, see "Combining and ranking") |
 | `pairwise(freqsHz, timbre?, {model})` | `{matrix, worst}`: every pair of notes scored ALONE at its real register (isolated dyads, for the Relations view) |
 | `paretoFront(points, senses?)` | indices of the non-dominated points; `senses[k]` is `'min'` (default) or `'max'` per axis |
+| `paretoLayers(points, senses?)` | the points peeled into layers (layer 0 = `paretoFront`, then the front of the rest, ...); points with a NaN coordinate are left out |
 | `voicingHz`, `voicingFromSteps`, `centsToHz`, `hzToCents`, `midiToHz`, `hzToMidi` | pitch helpers (A4 = 440 Hz) |
 | `buildSpectrum`, `hutchG`, `hutchGOfY`, `hutchCbw`, `setharesPair`, `hutchRoughnessOfPartials`, `setharesRoughnessOfPartials`, `fraction`, `rationalInterval` | the building blocks, exported for the visualisers and the tests |
 

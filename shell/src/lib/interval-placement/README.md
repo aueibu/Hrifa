@@ -6,8 +6,11 @@ and reports for each result which pairs of notes are the essential spans and whi
 chord's intervals). Scoring lives in `../consonance`; a placed voicing is that library's `Voicing` (`{refHz, cents[]}`,
 decision INTERVALPLACEMENT-2), so `scoreVoicing(voicing)` works on it directly.
 
-Status: milestone M2 **ports and verifies**. The four engines are the old page's, carried over unchanged (see
-"Golden test"); the placement controls are redesigned in M2b, and the engines may be replaced then. No gravity control.
+Status: M2 ported and verified the four engines (`distribution`: `uniform`, `prefixSlack`, `prefixDominance`, `repulsion`;
+see "Golden test"); they stay unchanged beside the new code because the old page still uses its own `engine.ts` until M5.
+M2c adds the **spacing rules** (`'equal'`, the default, and `'shared'`), the **spacing range** of window widths and the
+**catalog** (every ordering at every width, one entry per pitch set, scored and ranked): see "Spacing rules" and
+"Catalog" below. No gravity control.
 
 ## API
 
@@ -137,6 +140,122 @@ unaffected, which the golden test checks.
 leave the window, and only `prefixSlack` and `prefixDominance` return null instead (when their range is empty).
 Examples, all tested: `uniform` with spans wider than the window; `prefixDominance` with a single 700 c span in 24 steps
 gives `[-100, 600]`; `repulsion` with 2000 c + 400 c in 12 steps gives notes at -800, 0, 400, 1200.
+
+## Spacing rules (M2c)
+
+The window is a **width only** (human decision, 2026-11-23): every window starts on the base pitch (`bottomHz`) and runs
+`W` grid steps up (`stepCents` = 1200 / edo, default 100). It is not a register region. Moving a chosen entry through the
+register is a later exploration step. (Shown with `11 7 16`, width 24, base C2: width only = 6 chords on C2; a C2-C5
+region would be 78 and its ranking would drift up the region, since interference falls with register.)
+
+An ordering is the list of interval sizes `d_0 ... d_{n-1}` (steps) in span order. Each interval gets a **center** `c_k`
+and its bottom note is rounded once; its top is bottom + `d_k` (exact for non-whole spans).
+
+- **`equal`** (default): `D = min over i < j of (W - (d_i + d_j)/2) / (j - i)`, `c_0 = max over k of (d_k/2 - k*D)`,
+  `c_k = c_0 + k*D`. With 2+ intervals the chord spans the whole window (lowest note 0, highest note W).
+- **`shared`**: centers spread evenly over `[M/2, W - M/2]`, `M` = the largest interval: `c_k = M/2 + k*(W - M)/(n - 1)`.
+  The centers are the same for every ordering of a set (the order only assigns intervals to them).
+- **Bottom note** = the grid step nearest to `c_k - d_k/2`, once per interval. A **tie** is an exact half step (tolerance
+  1e-9). `tieMode: 'middle'` (default) rounds a tie toward the window middle (center < W/2 rounds up, otherwise down: an
+  interval centered exactly on the middle rounds down); `'down'` and `'up'` always round that way. The three modes are the
+  catalog's **rounding twins**; each placement and occurrence reports its number of `ties`. The result is clamped to
+  `[0, floor(W - d)]` so a span stays inside the window (it matters only for non-whole spans).
+- **Cannot fit**: a window narrower than the largest interval cannot hold the ordering. `placeSpaced` returns `null` and the
+  catalog counts it per width (`cannotFit`); nothing is ever placed outside `[0, W]`.
+- **One interval** sits at the bottom of the window (center `d/2`). This is the limit of the equal-centers formula, but
+  the code special-cases it for both rules: the reference gives NaN there (0 · ∞ in `c_0`, and `shared` divides by
+  n - 1). No intervals at all throws a `RangeError`.
+- **Non-whole spans** (JI, cents): the bottom rounds to the nearest grid step that keeps the span inside the window, and the
+  top is bottom + the exact span (5/4 + 3/2 in 12 steps: the fifth wants bottom 4.98 and would end at 12.02, so it stays at
+  step 4).
+- **Mirror**: reversing an ordering gives the mirror `W - x` under `'middle'`, except, under either rule, where a center
+  is exactly `W/2` and ties (it rounds down on both sides). Equal example: `4 5 7 6` in 8 gives `0 1 2 4 6 7 8`, the
+  reverse `6 7 5 4` gives `0 2 4 6 7 8`. `11 7 16` and `7 5 11` never hit it under `equal`.
+- The reference implementation is `arcs/interval-placement/m2c/catalog/worker2.ts` (`centres`, `low`, `place`); the tests
+  copy those three functions as a fixture and compare notes and tie counts.
+- `oddBias` and the engine parameters do not apply to these rules.
+
+Examples (12-EDO, notes in steps from the base; all in `catalog.test.ts`):
+
+| Rule   | Order   | W   | Centers          | Notes                                                                                      |
+| ------ | ------- | --- | ---------------- | ------------------------------------------------------------------------------------------ |
+| equal  | 7 11 16 | 24  | 3.5, 9.75, 16    | 0 4 7 8 15 24                                                                              |
+| equal  | 7 11 16 | 20  | 3.5, 7.75, 12    | 0 2 4 7 13 20                                                                              |
+| equal  | 16 11 7 | 24  | 8, 14.25, 20.5   | 0 9 16 17 20 24 (mirror of the first row)                                                  |
+| equal  | 11 7 16 | 24  | 5.5, 10.75, 16   | 0 7 8 11 14 24                                                                             |
+| shared | 11 7 16 | 24  | 8, 12, 16        | 3 8 14 15 24 (2 ties; down twin 2 8 13 15 24, up twin 3 8 9 14 16 24; 8 is a shared note) |
+| shared | 7 11 16 | 24  | 8, 12, 16        | 5 6 8 12 17 24 (2 ties)                                                                    |
+| equal  | 7 16 11 | 19  | 3.5, 8.5, 13.5   | 0 1 7 8 17 19 (the 16 ties and rounds up; down twin 0 7 8 16 19)                           |
+| equal  | 11 16 7 | 19  | 5.5, 10.5, 15.5  | 0 2 11 12 18 19 (the 16 rounds down)                                                       |
+| equal  | 7 11 16 | 15  | n/a              | cannot fit (16 > 15): reported, never placed                                               |
+
+### Spacing range and presets
+
+A spacing range is `{fromSteps, toSteps}` or `{fromCents, toCents}` (inclusive; `from = to` is one width). It expands to
+every whole step width in it (`spacingWidths(range, stepCents)`). Presets are data: `SPACING_PRESETS_12` = close 6-12, open
+13-24, wide 25-36, vast 37-48 steps at 12-EDO. `spacingPreset(name, edo)` keeps the same octave ranges in another grid:
+each top is a whole number of octaves, and each preset after close starts one step above the previous top, so the presets
+leave no gap (19-EDO: close 10-19, open 20-38, wide 39-57, vast 58-76; close starts at half an octave, rounded).
+
+```ts
+spacingCenters(rule, sizes, W): number[]; // centers in steps
+bottomNote(center, size, W, tieMode?): { low, tie };
+placeSpaced(rule, sizes, W, tieMode?): SpacedPlacement | null; // {centers, endpoints, notes, ties}; null = cannot fit
+spacingWidths(range, stepCents): number[];
+spacingPreset(name, edo = 12): { fromSteps, toSteps };
+```
+
+## Catalog (M2c)
+
+```ts
+import {
+  buildCatalog,
+  catalogChunks,
+  rankCatalog,
+  appendOccurrence,
+  spacingPreset,
+  DEFAULT_CATALOG_WEIGHTS,
+} from './index';
+
+const result = buildCatalog(
+  {
+    intervals: [{ cents: 1100 }, { cents: 700 }, { cents: 1600 }], // or stepsToCents(d, edo)
+    bottomHz: 65.406, // the base pitch: the bottom of every window
+    spacing: spacingPreset('open'), // or {fromSteps: 24, toSteps: 24}, or {fromCents, toCents}
+    rule: 'equal', // default; or 'shared'
+    tieMode: 'middle', // default; 'down' | 'up', or a list for the rounding twins together
+    stepCents: 100, // 1200 / edo
+    constraints: { mustNotHave: [{ cents: 100 }] }, // as in M2
+    cap: 5040, // orderings looked at (DEFAULT_ORDERING_CAP); each is placed at every width
+    score: { decompose: false }, // ScoreOptions for scoreVoicing (the default skips the per-note marginals)
+  },
+  { weights: DEFAULT_CATALOG_WEIGHTS, paretoKeys: ['interference', 'harmonicityPc'] } // both optional (these are the defaults)
+);
+// { entries: RankedEntry[] (best mix first), orderings, placements, cannotFit: [{widthSteps, orderings}], filtered }
+```
+
+- Every distinct ordering (ascending lexicographic by size, as `placementChunks`) is placed at every width of the range and
+  every tie mode. **One entry per distinct pitch set** (above the same base); `entry.occurrences` lists every
+  `{widthSteps, widthCents, rule, tieMode, ties, order, perm, endpoints, essentialPairs, collisions}` that made it.
+  Collisions (shared notes) are reported per occurrence; `entry.collisions` is the first one's and `measures.collisions`
+  its count. Example: `shared` `3 4 5` at widths 5 and 6 makes `0 1 4 5` at both, by several orderings.
+- Entries carry `scores` (`scoreVoicing`), `flat` (`flatScores`), `measures` and `refHz`. Constraints are checked on the
+  pitch set (any pair of notes) before scoring; `filtered` counts rejected pitch sets.
+- `rankCatalog(entries, {weights, paretoKeys})`: `mix` = `combine` of the standardized columns (within the list) with
+  `weights` (`Partial<Record<ScoreKey, number>>`, or the `EQUAL_WEIGHTS` shape, whose `harmonicity` means `harmonicityPc`;
+  any other key, or a non-finite weight, throws a `RangeError`). The default `DEFAULT_CATALOG_WEIGHTS` is `EQUAL_WEIGHTS`
+  as written (interference -1, periodicity 0, pitch-class harmonicity +1); which harmonicity carries the
+  harmonicity-leaning default is still the human's choice (ARC revision decision 4). `layer` = the 0-based Pareto layer
+  over the two keys (default interference × `harmonicityPc`; `paretoLayers` in `../consonance/ranking.ts`, repeated
+  peeling of `paretoFront`, each key's min/max sense from `SCORE_SENSE`). Sorted by `mix`, best first. `paretoLayers`
+  costs about layers × n² (5,000 entries 0.4 s, 20,000 entries 4 s): rank in the worker for large catalogs.
+- `catalogChunks(spec, {chunkMs = 16, now})` is the worker generator: each `next()` places whole orderings until the budget
+  is spent (checked after each ordering) and yields `{entries (new, scored), extraOccurrences, orderings, placements,
+  cannotFit, filtered, elapsedMs, done}`; counters are cumulative. An entry yielded in a chunk already holds every
+  occurrence found up to that chunk's end; `extraOccurrences` carries only later occurrences of entries yielded in an
+  earlier chunk. When entries cross a worker boundary as copies, add each extra with `appendOccurrence(entry, occurrence)`
+  (idempotent); rank at the end with `rankCatalog`. `buildCatalog` is this
+  iterator run to the end, then ranked. The cap counts orderings and reports `orderings.remaining`, as `placementChunks`.
 
 ## Golden test (`golden.test.ts`)
 
