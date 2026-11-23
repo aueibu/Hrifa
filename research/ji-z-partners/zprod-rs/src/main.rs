@@ -29,6 +29,7 @@ struct Args {
     max_nodes: u64,
     threads: usize,
     count_only: bool,
+    no_upair: bool,
     out: String,
 }
 
@@ -44,6 +45,7 @@ fn parse_args() -> Args {
         max_nodes: 2_000_000,
         threads: 2,
         count_only: false,
+        no_upair: false,
         out: String::new(),
     };
     let mut i = 0;
@@ -83,6 +85,8 @@ fn parse_args() -> Args {
             "--max-nodes" => a.max_nodes = vals(&mut i)[0].parse().unwrap(),
             "--threads" => a.threads = vals(&mut i)[0].parse().unwrap(),
             "--count-only" => a.count_only = true,
+            "--no-upair" => a.no_upair = true,
+            "--selftest-hull" => SELFTEST.store(true, std::sync::atomic::Ordering::Relaxed),
             "--out" => a.out = vals(&mut i)[0].clone(),
             _ => panic!("unknown argument {key}"),
         }
@@ -350,6 +354,227 @@ fn interior_points(plus: &[Pt]) -> Vec<Pt> {
     }
 }
 
+/// exact integer determinant (Bareiss elimination), n <= MAXD
+fn det_int(m: &[[i128; MAXD]; MAXD], n: usize) -> i128 {
+    if n == 0 {
+        return 1;
+    }
+    let mut a = *m;
+    let mut sign = 1i128;
+    let mut prev = 1i128;
+    for k in 0..n - 1 {
+        if a[k][k] == 0 {
+            let mut p = k + 1;
+            while p < n && a[p][k] == 0 {
+                p += 1;
+            }
+            if p == n {
+                return 0;
+            }
+            a.swap(k, p);
+            sign = -sign;
+        }
+        for i in k + 1..n {
+            for j in k + 1..n {
+                a[i][j] = (a[i][j] * a[k][k] - a[i][k] * a[k][j]) / prev;
+            }
+        }
+        prev = a[k][k];
+    }
+    sign * a[n - 1][n - 1]
+}
+
+/// Exact membership in the convex hull of a small point set, in integers only, set up once per set.
+/// The points span an affine space of dimension r: x is in it when x - p0 = sum lambda_i b_i, solved on r
+/// coordinates (cols) with an integer adjugate and checked on the others. Inside it, the hull's facets come
+/// from r-subsets of the points projected onto cols (the projection is one-to-one on the affine space).
+struct HullTest {
+    r: usize,
+    p0: Pt,
+    cols: Vec<usize>,
+    others: Vec<usize>,
+    det: i128,
+    adj: [[i128; MAXD]; MAXD],
+    b: Vec<Pt>,
+    facets: Vec<([i128; MAXD], i128)>,
+}
+
+impl HullTest {
+    fn new(pts: &[Pt]) -> HullTest {
+        let d = pts[0].len();
+        assert!(d <= MAXD, "more than {MAXD} primes");
+        let p0 = pts[0].clone();
+        // basis of the differences, by fraction-free row reduction
+        let mut ech: Vec<(usize, Vec<i128>)> = vec![];
+        let mut b: Vec<Pt> = vec![];
+        for p in &pts[1..] {
+            let orig = sub(p, &p0);
+            let mut v: Vec<i128> = orig.iter().map(|&x| x as i128).collect();
+            for (pc, row) in &ech {
+                if v[*pc] != 0 {
+                    let (a, c) = (row[*pc], v[*pc]);
+                    for k in 0..d {
+                        v[k] = v[k] * a - row[k] * c;
+                    }
+                    let g = v.iter().fold(0i128, |g, &x| gcd(g, x));
+                    if g > 1 {
+                        for x in v.iter_mut() {
+                            *x /= g;
+                        }
+                    }
+                }
+            }
+            if let Some(pc) = v.iter().position(|&x| x != 0) {
+                ech.push((pc, v));
+                b.push(orig);
+            }
+        }
+        let r = b.len();
+        // r coordinates on which the basis is independent
+        let mut cols = vec![];
+        let mut det = 0;
+        let mut a = [[0i128; MAXD]; MAXD];
+        for c in combinations(d, r) {
+            let mut m = [[0i128; MAXD]; MAXD];
+            for j in 0..r {
+                for i in 0..r {
+                    m[j][i] = b[i][c[j]] as i128; // A[j][i] = b_i[cols_j]
+                }
+            }
+            let dt = det_int(&m, r);
+            if dt != 0 {
+                cols = c;
+                det = dt;
+                a = m;
+                break;
+            }
+        }
+        let others: Vec<usize> = (0..d).filter(|i| !cols.contains(i)).collect();
+        // adjugate of A: adj[i][j] = (-1)^(i+j) det(A without row j and column i)
+        let mut adj = [[0i128; MAXD]; MAXD];
+        for i in 0..r {
+            for j in 0..r {
+                let mut m = [[0i128; MAXD]; MAXD];
+                let mut rr = 0;
+                for row in 0..r {
+                    if row == j {
+                        continue;
+                    }
+                    let mut cc = 0;
+                    for col in 0..r {
+                        if col == i {
+                            continue;
+                        }
+                        m[rr][cc] = a[row][col];
+                        cc += 1;
+                    }
+                    rr += 1;
+                }
+                let s = if (i + j) % 2 == 0 { 1 } else { -1 };
+                adj[i][j] = s * det_int(&m, r - 1);
+            }
+        }
+        // facets of the projected points
+        let proj: Vec<Vec<i128>> = pts.iter().map(|p| cols.iter().map(|&c| (p[c] - p0[c]) as i128).collect()).collect();
+        let mut facets = vec![];
+        for s in combinations(proj.len(), r) {
+            let mut n = [0i128; MAXD];
+            for j in 0..r {
+                let mut m = [[0i128; MAXD]; MAXD];
+                for (rr, &si) in s[1..].iter().enumerate() {
+                    let mut cc = 0;
+                    for col in 0..r {
+                        if col == j {
+                            continue;
+                        }
+                        m[rr][cc] = proj[si][col] - proj[s[0]][col];
+                        cc += 1;
+                    }
+                }
+                let sg = if j % 2 == 0 { 1 } else { -1 };
+                n[j] = sg * det_int(&m, r - 1);
+            }
+            if n[..r].iter().all(|&x| x == 0) {
+                continue;
+            }
+            let dot = |q: &Vec<i128>| (0..r).map(|j| n[j] * q[j]).sum::<i128>();
+            let c = dot(&proj[s[0]]);
+            let vals: Vec<i128> = proj.iter().map(|q| dot(q) - c).collect();
+            if vals.iter().all(|&v| v <= 0) {
+                facets.push((n, c));
+            } else if vals.iter().all(|&v| v >= 0) {
+                let mut nn = [0i128; MAXD];
+                for j in 0..r {
+                    nn[j] = -n[j];
+                }
+                facets.push((nn, -c));
+            }
+        }
+        HullTest { r, p0, cols, others, det, adj, b, facets }
+    }
+
+    #[inline]
+    fn contains(&self, x: &[i32]) -> bool {
+        let r = self.r;
+        let mut y = [0i128; MAXD];
+        for j in 0..r {
+            y[j] = (x[self.cols[j]] - self.p0[self.cols[j]]) as i128;
+        }
+        if !self.others.is_empty() {
+            let mut lam = [0i128; MAXD]; // det * lambda
+            for i in 0..r {
+                lam[i] = (0..r).map(|j| self.adj[i][j] * y[j]).sum();
+            }
+            for &o in &self.others {
+                let lhs = self.det * (x[o] - self.p0[o]) as i128;
+                let rhs: i128 = (0..r).map(|i| lam[i] * self.b[i][o] as i128).sum();
+                if lhs != rhs {
+                    return false;
+                }
+            }
+        }
+        self.facets.iter().all(|(n, c)| (0..r).map(|j| n[j] * y[j]).sum::<i128>() <= *c)
+    }
+}
+
+static SELFTEST: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// interior_points with HullTest instead of the subset-by-subset test (same points, same order)
+fn interior_points_fast(plus: &[Pt]) -> Vec<Pt> {
+    let dim = plus[0].len();
+    let ht = HullTest::new(plus);
+    let lo: Vec<i32> = (0..dim).map(|i| plus.iter().map(|p| p[i]).min().unwrap()).collect();
+    let hi: Vec<i32> = (0..dim).map(|i| plus.iter().map(|p| p[i]).max().unwrap()).collect();
+    let mut out = vec![];
+    let mut x = lo.clone();
+    loop {
+        if !plus.iter().any(|p| *p == x) && ht.contains(&x) {
+            out.push(x.clone());
+        }
+        let mut i = dim;
+        loop {
+            if i == 0 {
+                if SELFTEST.load(std::sync::atomic::Ordering::Relaxed) {
+                    let slow = interior_points(plus);
+                    if slow != out {
+                        eprintln!("SELFTEST MISMATCH plus {plus:?}: fast {out:?} slow {slow:?}");
+                        std::process::exit(3);
+                    }
+                }
+                return out;
+            }
+            i -= 1;
+            if x[i] < hi[i] {
+                x[i] += 1;
+                for j in i + 1..dim {
+                    x[j] = lo[j];
+                }
+                break;
+            }
+        }
+    }
+}
+
 fn normalize(terms: &[(Pt, i32)]) -> Factor {
     let m = terms.iter().map(|(p, _)| p).min().unwrap().clone();
     let cm = terms.iter().find(|(p, _)| *p == m).unwrap().1;
@@ -456,7 +681,7 @@ fn gen_v_impl<Fn_: FnMut(Factor)>(g: &GenCtx, shapes: &[(usize, usize)], prefix:
             let minus_sets: Vec<Vec<Pt>> = if vm == 0 {
                 vec![vec![]]
             } else {
-                let inner = interior_points(&plus);
+                let inner = interior_points_fast(&plus);
                 if inner.len() < vm {
                     return;
                 }
@@ -486,6 +711,8 @@ fn gen_v_impl<Fn_: FnMut(Factor)>(g: &GenCtx, shapes: &[(usize, usize)], prefix:
 struct Ctx {
     n: usize,          // candidate U points: allowed intervals >= 0, lexicographic
     cand_g: Vec<i64>,  // their grid cells
+    cand_denc: Vec<i64>, // their difference-grid codes (U - U pruning)
+    upair: bool,
     dim: usize,
     gb: Vec<i64>,      // B per axis
     gstride: Vec<i64>, // grid (width 4B + 1)
@@ -550,10 +777,12 @@ impl Ctx {
         }
         let zero = vec![0; dim];
         let cand: Vec<&Pt> = d.iter().filter(|p| **p >= zero).collect();
-        let cand_g = cand.iter().map(|p| p.iter().zip(&gstride).map(|(x, s)| *x as i64 * s).sum::<i64>() + gcenter).collect();
+        let cand_g: Vec<i64> = cand.iter().map(|p| p.iter().zip(&gstride).map(|(x, s)| *x as i64 * s).sum::<i64>() + gcenter).collect();
         Ctx {
             n: cand.len(),
+            cand_denc: cand_g.iter().map(|&g| denc[g as usize]).collect(),
             cand_g,
+            upair: !args.no_upair,
             dim,
             gb: b,
             gstride,
@@ -611,6 +840,7 @@ struct Workspace {
     pc: Vec<i16>,
     qc: Vec<i16>,
     notes: Vec<u32>,
+    unz: Vec<u32>, // candidates with a nonzero U coefficient, in order
 }
 
 impl Workspace {
@@ -632,6 +862,7 @@ impl Workspace {
             pc: vec![],
             qc: vec![],
             notes: vec![],
+            unz: vec![],
         }
     }
 }
@@ -739,6 +970,7 @@ fn search_u(ctx: &Ctx, ws: &mut Workspace, v: &Factor) -> (Vec<(Vec<Pt>, Vec<Pt>
         w.qc.clear();
         w.qc.resize(nq, 0);
         w.notes.clear();
+        w.unz.clear();
     }
     let mut s = Search {
         ctx,
@@ -804,8 +1036,19 @@ impl<'a> Search<'a> {
             if c < 0 && self.neg - c > self.ctx.max_neg {
                 continue;
             }
+            // U - U pruning (exact): hull(P) = hull(U) + hull(V), so U is no wider than P in any direction and
+            // P's widths are bounded by the allowed intervals; any two points of U's support (negative
+            // coefficients included) differ by a lattice point of conv(D) = an allowed interval
+            if c != 0 && i > 0 && self.ctx.upair {
+                let ctx = self.ctx;
+                let e = ctx.cand_denc[i];
+                if self.ws.unz.iter().any(|&j| !ctx.allowed(e - ctx.cand_denc[j as usize])) {
+                    continue;
+                }
+            }
             let c16 = c as i16;
             if c != 0 {
+                self.ws.unz.push(i as u32);
                 let ws = &mut *self.ws;
                 for j in 0..nv {
                     let id = ws.pid[i * nv + j] as usize;
@@ -870,6 +1113,7 @@ impl<'a> Search<'a> {
             }
             self.ws.notes.truncate(nn);
             if c != 0 {
+                self.ws.unz.pop();
                 let ws = &mut *self.ws;
                 for j in 0..nv {
                     let id = ws.pid[i * nv + j] as usize;
