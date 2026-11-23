@@ -9,7 +9,23 @@ const html = fs.readFileSync(process.argv[2], 'utf8');
 const errors = [];
 // a silent fake Web Audio: records oscillators so the toggles can be checked without sound
 const OSCS = [], GAINS = [], CONVS = [];
+// a recording fake 2D canvas (jsdom has none): every canvas draw is recorded per frame so the Beats, drawn lanes can
+// be checked: TEXTS[canvas id] = the labels written in its last frame, MARKS = dashed strokes (line-up markers)
+const TEXTS = {}, MARKS = {};
+function fakeCanvas(win) {
+  win.HTMLCanvasElement.prototype.getContext = function () {
+    const id = this.id, state = { dash: false };
+    const target = {
+      setTransform() {}, clearRect() { TEXTS[id] = []; MARKS[id] = 0; },
+      fillText(t) { (TEXTS[id] = TEXTS[id] || []).push(t); },
+      setLineDash(d) { state.dash = d.length > 0; },
+      stroke() { if (state.dash) MARKS[id] = (MARKS[id] || 0) + 1; },
+    };
+    return new Proxy(target, { get: (o, k) => (k in o ? o[k] : () => {}), set: () => true });
+  };
+}
 function fakeAudio(win) {
+  fakeCanvas(win);
   const param = (v) => ({ value: v, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime(x) { this.target = x; this.calls = (this.calls || 0) + 1; }, cancelScheduledValues() {} });
   const node = () => ({ connect() {}, disconnect() {} });
   win.AudioContext = class { constructor() { this.currentTime = 0; this.state = 'running'; this.destination = node(); this.sampleRate = 48000; }
@@ -213,14 +229,14 @@ check('listen: a row off ends its pair', pairF().length, 2);
 $('stopAll').click();
 check('listen: Stop sound ends all pairs', [pairF().length, lb().every((b) => b.getAttribute('aria-pressed') === 'false')], [0, true]);
 // beat listings (human 2026-11-23: "build both listings"), C G B♭ at 4:5:6:7 listened: beats vs harmonic C 2.217,
-// G 3.769, B♭ 4.439; C–G meet at C's 3rd (784.89) and G's 2nd (784.00): 0.9/s; rhythms 3:5 4.5 s, 1:2 212 s, 6:7 3.9 s
+// G 3.769, B♭ 4.439; C–G meet at C's 3rd (784.89) and G's 2nd (784.00): 0.9/s; rhythms 3:5 (pattern 1.3 s, phases through in 68 s), 1:2 (0.5 s, 424 s), 6:7 (1.6 s, 166 s)
 const cellRows = (sel) => [...$('beatLists').querySelectorAll(`${sel} tbody tr`)].map((tr) => [...tr.children].map((td) => td.textContent.trim()));
 check('listings: placeholder below two rows on', [cellRows('.beats-iv').length, cellRows('.beats-iv')[0][0], cellRows('.beats-rh').length], [1, 'Switch on listen in two or more rows above.', 1]);
 lb()[0].click(); lb()[2].click(); lb()[3].click();
 check('listings: three pairs each', [cellRows('.beats-iv').length, cellRows('.beats-rh').length], [3, 3]);
 check('intervals: C–G', cellRows('.beats-iv')[0].slice(0, 4), ['C4–G4', '4:6 (2:3)', "C4's 3rd · G4's 2nd · 784.9 Hz", 'about 0.9 per second']);
 check('intervals: C–B♭ and G–B♭ rough', [cellRows('.beats-iv')[1][3], cellRows('.beats-iv')[2][3]], ['about 33.3 per second (rough)', 'about 53.0 per second (rough)']);
-check('rhythms between the beats', cellRows('.beats-rh').map((r) => [r[2], r[3]]), [['3:5', '4.5 s'], ['1:2', '212 s'], ['6:7', '3.9 s']]);
+check('rhythms between the beats (pattern, phases through)', cellRows('.beats-rh').map((r) => [r[2], r[3], r[4]]), [['3:5', '1.3 s', '68 s'], ['1:2', '0.5 s', '424 s'], ['6:7', '1.6 s', '166 s']]);
 const b5 = OSCS.length;
 $('beatLists').querySelector('[data-iv]').click();
 check('interval listen: the two meeting partials as sines', OSCS.slice(b5).filter((o) => !o.stopped).map(fq).sort((a, b) => a - b).map((f) => f.toFixed(2)), ['784.00', '784.89']);
@@ -228,6 +244,18 @@ lb()[2].click();
 check('interval listen ends when one of its rows is switched off', [OSCS.slice(b5).filter((o) => !o.stopped).length, cellRows('.beats-iv').length], [0, 1]);
 $('stopAll').click();
 check('listings: Stop sound clears them', cellRows('.beats-rh')[0][0], 'Switch on listen in two or more rows above.');
+// Beats, drawn (human 2026-11-23): one lane per listen; dashed markers where two note lanes peak within 30 ms. The
+// fake audio clock stays at 0, so G and B♭ start in phase now and are silent before; from 0 to +6 s they peak together at 0, 1.33, 1.59,
+// 2.92, 4.51 and 5.84 s: 6 markers (worked out from 3.7687 and 4.4391 per second)
+check('lanes: placeholder when nothing listens', TEXTS.lanes.some((t) => t.startsWith('Switch on listen')), true);
+lb()[2].click(); lb()[3].click();
+check('lanes: one lane per listen', ['G4 vs harmonic 6', 'B♭4 vs harmonic 7'].every((l) => TEXTS.lanes.includes(l)), true);
+check('lanes: G/B♭ peak together 6 times from their start to the window end', MARKS.lanes, 6);
+$('lanes').dispatchEvent(new w.MouseEvent('click', { clientY: 10, bubbles: true }));
+check('closer view: the first lane, in phase at the start', $('zoomRead').textContent, 'G4 vs harmonic 6 · second tone ahead by 0.00 of a cycle · loudness 100% of the peak');
+check('closer view: its three rows', ['first tone', 'second tone', 'the two together'].every((l) => TEXTS.zoom.includes(l)), true);
+$('stopAll').click();
+check('lanes and closer view clear on Stop sound', [TEXTS.lanes.some((t) => t.startsWith('Switch on listen')), $('zoomRead').textContent], [true, 'Click a lane above to look closer.']);
 pick(0);
 // no jumping (human 2026-11-23): the exact rung keeps the same table, with 0.0¢ and no beats
 check('readout: exact rung keeps the table', [tuneRows().length, tuneRows().map((r) => r[3]), tuneRows().map((r) => r[4]), tuneRows().map((r) => r[5])], [4, ['0.0¢', '0.0¢', '0.0¢', '0.0¢'], ['lowest note', 'none', 'none', 'none'], ['none', 'none', 'none', 'none']]);

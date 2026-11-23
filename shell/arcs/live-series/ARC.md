@@ -161,8 +161,18 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
       15 per second; "too high to hear" past the 16th partial; a listen toggle plays the two meeting partials as
       sines. C E G B♭ at 4:5:6:7 typed: C–G 0.9, C–E 10.4, E–G 17.8, E–B♭ 23.4, C–B♭ 33.3, G–B♭ 53.0 per second.
     - **Rhythms between the beats**: both beat rates, the nearest ratio p:q (p, q ≤ 8, by closeness of a/b to p/q),
-      and the line-up time 1 / |q·a − p·b|. Same chord: G 3.77 / B♭ 4.44 ≈ 6:7, every 3.9 s; C 2.22 / G 3.77 ≈ 3:5,
-      every 4.5 s; C 2.22 / B♭ 4.44 ≈ 1:2, every 212 s. Rates more than 8 times apart show the plain ratio.
+      the pattern length (p/a ≈ q/b) and the phasing time p·q / |q·a − p·b| ("never" for an exact ratio, "locked"
+      over 10 minutes). Corrected 2026-11-23: the first version showed 1 / |q·a − p·b| as "lines up every"; a
+      simulation of the peaks showed it was wrong (1.4 / 1.6 = 7:8 coincide every 5 s; C/B♭ ≈ 1:2 coincide on every
+      C beat, 0.45 s). Same chord: G/B♭ ≈ 6:7, pattern 1.6 s, phases through in 166 s; C/G ≈ 3:5, 1.3 s, 68 s;
+      C/B♭ ≈ 1:2, 0.5 s, 424 s. Rates more than 8 times apart show the plain ratio.
+  - Beats, drawn (human: "is there a way to use visual like sine wave waveforms to show how the beats and rhythms
+    coincide and phase in these modes?", then "yes do both now"): a full-width panel under the series drawing, one
+    lane per switched-on listen (note vs harmonic, interval partials), each a filled band whose outline is the beat
+    as heard, computed from each pair's actual start and retunes; an 8 s window with a playhead moving with the
+    sound; dashed markers where two note lanes' peaks actually coincide (within 30 ms); a fixed box 6 lanes tall
+    that scrolls. Plus a zoom: click a lane for a strobe view of its two tones and their sum (four cycles, frozen on
+    the first tone, the second sliding one full cycle per beat), labeled as such.
   - Series drawing width (human: "stretch the harmonic series graph to fit the whole width we have. better
     resolution available"): the drawing always fills its panel's width, empty or not, and is redrawn on a resize.
   - No jumping, the whole page (human: "IVE SAID IT MORE THAN 10 ... TIMES ITS THE WHOLE UI DESIGN PRINCIPLE"):

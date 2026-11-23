@@ -80,9 +80,14 @@
   #tune { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .tune { border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; table-layout: fixed; width: 57em; }
   .tune .listen { padding: 1px 8px; font-size: 0.78rem; }
+  /* Beats, drawn: a fixed box 6 lanes tall that scrolls; the readout is one fixed line */
+  .lanes-box { height: calc(6 * 52px); overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; border: 1px solid var(--line); border-radius: 6px; }
+  #lanes, #zoom { display: block; cursor: pointer; }
+  #zoom { cursor: default; }
+  #zoomRead { display: block; height: 1.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
   #beatLists { display: flex; flex-direction: column; gap: 4px; min-width: 0; margin-top: 6px; }
   .tune.beats-iv { width: 52.5em; }
-  .tune.beats-rh { width: 45em; }
+  .tune.beats-rh { width: 55em; }
   /* named-comma hint: a small triangle with a wider hover area; the name and notes are in its tooltip */
   .hint { display: inline-block; padding: 3px 4px; margin-left: 2px; vertical-align: middle; cursor: help; line-height: 0; }
   .hint::before { content: ""; display: inline-block; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid var(--twin); }
@@ -177,6 +182,14 @@
   <div class="panel">
     <div class="row" style="justify-content:space-between"><h2>The series, drawn</h2><span class="read">click an empty harmonic to add it as a note</span></div>
     <div class="scroll"><svg id="draw" role="img" aria-label="The harmonic series with the active notes marked"></svg></div>
+  </div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h2>Beats, drawn</h2><span class="read">8 s window · the solid line is now · dashed: two beats peak together · click a lane to look closer</span></div>
+    <div class="lanes-box" id="lanesBox"><canvas id="lanes" role="img" aria-label="Each listened pair's beat as a waveform outline over time"></canvas></div>
+    <span class="read" id="zoomRead"></span>
+    <canvas id="zoom" role="img" aria-label="Strobe view of one lane: the two tones and their sum"></canvas>
+    <p class="read small">Each lane is one switched-on listen: a note against its exact harmonic, or two notes' meeting partials. The band is the loudness of the two tones together, computed from when they started and every retune, so it matches what you hear. Closer view: a strobe view, four cycles of each tone frozen on the first tone; the second tone slides one full cycle per beat, and the sum swells when they line up and cancels when they are opposite. The tones are hundreds of cycles per second, so this view is not to real time.</p>
   </div>
 
   <div class="panel">
@@ -431,6 +444,7 @@ window.addEventListener('resize', () => {
   for (const id of HELD) $(id).style.minHeight = '';
   fitLadder(); hold();
   drawSeries(CUR ? CUR.r : null, CUR ? CUR.notes : []);   // refit the drawing to the new width
+  beatsKick();
 });
 
 function drawChips() {
@@ -520,18 +534,24 @@ function drawTune(r, notes) {
 const ORD = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
 const short = (f) => noteName(f).split(' ')[0];
 function beatText(b) { return b < 0.05 ? 'none' : `about ${b.toFixed(1)} per second${b > 15 ? ' (rough)' : ''}`; }
-// nearest p:q (p, q up to 8) to a:b by closeness of the ratios; lines up again every 1 / |q·a − p·b| seconds
+// Two beat streams at a and b per second, nearest p:q (p, q up to 8) by closeness of a/b to p/q. A near-ratio
+// polyrhythm has two times: the pattern (p beats of one against q of the other) lasts about p/a = q/b seconds, and
+// the slow phasing between the two pattern downbeats (rates a/p and b/q) comes back around every
+// p·q / |q·a − p·b| seconds. G 3.77 / B♭ 4.44 ≈ 6:7: pattern 1.6 s, phases through in about 167 s; an exact ratio
+// (1.4 / 1.6 = 7:8) never phases. (Corrected 2026-11-23: the first version showed 1 / |q·a − p·b| as a line-up time,
+// which a simulation of the peaks showed to be wrong.)
 function beatRhythm(a, b) {
-  if (a < 0.05 || b < 0.05) return { ratio: '—', every: 'no beat' };
+  if (a < 0.05 || b < 0.05) return { ratio: '—', pattern: 'no beat', phase: '—' };
   const lo = Math.min(a, b), hi = Math.max(a, b);
-  if (hi / lo > 8) return { ratio: `${a < b ? `1 : ${(b / a).toFixed(1)}` : `${(a / b).toFixed(1)} : 1`}`, every: '—' };
+  if (hi / lo > 8) return { ratio: `${a < b ? `1 : ${(b / a).toFixed(1)}` : `${(a / b).toFixed(1)} : 1`}`, pattern: '—', phase: '—' };
   let best = null;
   for (let q = 1; q <= 8; q++) for (let p = 1; p <= 8; p++) {
     const d = Math.abs(a / b - p / q);
     if (!best || d < best.d - 1e-12) best = { p, q, d };
   }
-  const slip = Math.abs(best.q * a - best.p * b), t = slip > 0 ? 1 / slip : Infinity;
-  return { ratio: `${best.p}:${best.q}`, every: t > 600 ? 'over 10 minutes (locked)' : t >= 60 ? `${Math.round(t)} s` : `${t.toFixed(1)} s` };
+  const { p, q } = best, pattern = (p / a + q / b) / 2, slip = Math.abs(q * a - p * b), t = slip > 1e-9 ? (p * q) / slip : Infinity;
+  const secs = (s) => (s >= 60 ? `${Math.round(s)} s` : `${s.toFixed(1)} s`);
+  return { ratio: `${p}:${q}`, pattern: secs(pattern), phase: t === Infinity ? 'never (exact)' : t > 600 ? 'over 10 minutes (locked)' : secs(t) };
 }
 function drawBeatLists() {
   const box = $('beatLists'), on = listenedNotes(), ps = [];
@@ -547,17 +567,17 @@ function drawBeatLists() {
   }).join('') : empty(5);
   const rhRows = ps.length ? ps.map(([x, y]) => {
     const r = beatRhythm(x.beat, y.beat);
-    return `<tr><td>${short(x.f)} / ${short(y.f)}</td><td>${x.beat.toFixed(2)} / ${y.beat.toFixed(2)} per second</td><td>${r.ratio}</td><td>${r.every}</td></tr>`;
-  }).join('') : empty(4);
+    return `<tr><td>${short(x.f)} / ${short(y.f)}</td><td>${x.beat.toFixed(2)} / ${y.beat.toFixed(2)} per second</td><td>${r.ratio}</td><td>${r.pattern}</td><td>${r.phase}</td></tr>`;
+  }).join('') : empty(5);
   box.innerHTML = `
     <div class="row"><span class="lbl" style="min-width:0">Beats between the notes</span></div>
     <div class="scroll tune-wrap"><table class="tune beats-iv"><colgroup><col style="width:8em"><col style="width:9em"><col style="width:17em"><col style="width:13em"><col style="width:5.5em"></colgroup>
       <thead><tr><th>pair</th><th>series interval</th><th>where they meet</th><th>beats (typed)</th><th>listen</th></tr></thead><tbody>${ivRows}</tbody></table></div>
     <p class="read small">Two notes at harmonics a and b meet where one's (b/g)th partial and the other's (a/g)th coincide (g = their common factor); typed, those partials are slightly apart and beat at the gap. Tuned to the series they meet exactly, so tuned is always none. Above about 15 per second the beating is heard as roughness. Listen plays the two meeting partials as sines.</p>
     <div class="row"><span class="lbl" style="min-width:0">Rhythms between the beats</span></div>
-    <div class="scroll tune-wrap"><table class="tune beats-rh"><colgroup><col style="width:8em"><col style="width:15em"><col style="width:8em"><col style="width:14em"></colgroup>
-      <thead><tr><th>pair</th><th>beats vs harmonic</th><th>nearest ratio</th><th>lines up every</th></tr></thead><tbody>${rhRows}</tbody></table></div>
-    <p class="read small">Each listened note's beat against its harmonic is a pulse stream; two streams form a polyrhythm (nearest ratio up to 8:8) and line up again every 1 / |q·a − p·b| seconds. When the two notes the shared error leaves furthest off are equally far off, their beats stand in the notes' own series ratio.</p>`;
+    <div class="scroll tune-wrap"><table class="tune beats-rh"><colgroup><col style="width:8em"><col style="width:15em"><col style="width:8em"><col style="width:10em"><col style="width:14em"></colgroup>
+      <thead><tr><th>pair</th><th>beats vs harmonic</th><th>nearest ratio</th><th>pattern lasts</th><th>phases through in</th></tr></thead><tbody>${rhRows}</tbody></table></div>
+    <p class="read small">Each listened note's beat against its harmonic is a pulse stream; two streams form a polyrhythm (nearest ratio p:q up to 8:8). One pattern (p beats against q) lasts the time shown; unless the ratio is exact, the pattern slowly slides against itself and comes back around in the last column, as in phasing music. When the two notes the shared error leaves furthest off are equally far off, their beats stand in the notes' own series ratio.</p>`;
 }
 
 function drawFacts(r, notes) {
@@ -868,17 +888,137 @@ function listenSync() {
     try { p.a.stop(ctx.currentTime + 0.4); p.b.stop(ctx.currentTime + 0.4); } catch (e) {}
     pairs.delete(k);
   }
-  if (!want.size) return;
+  if (!want.size) { beatsKick(); return; }
   const c = audio(), lv = 0.12 / Math.sqrt(want.size);
   for (const [k, [fa, fb]] of want) {
     let p = pairs.get(k);
     if (!p) {
       const g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.connect(master);
       const mk = (f) => { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g); o.start(); return o; };
-      p = { a: mk(fa), b: mk(fb), g }; pairs.set(k, p);
-    } else { p.a.frequency.setTargetAtTime(fa, c.currentTime, 0.02); p.b.frequency.setTargetAtTime(fb, c.currentTime, 0.02); }
+      // both sines start together, in phase; phi = how far the second tone has run ahead, in cycles, at time tPhi
+      p = { a: mk(fa), b: mk(fb), g, phi: 0, tPhi: c.currentTime, df: fb - fa, t0: c.currentTime }; pairs.set(k, p);
+    } else {
+      p.a.frequency.setTargetAtTime(fa, c.currentTime, 0.02); p.b.frequency.setTargetAtTime(fb, c.currentTime, 0.02);
+      p.phi += p.df * (c.currentTime - p.tPhi); p.tPhi = c.currentTime; p.df = fb - fa;   // keep the phase across a retune
+    }
     p.g.gain.setTargetAtTime(lv, c.currentTime, 0.05);
   }
+  beatsKick();
+}
+// ---------- Beats, drawn (human, M1 2026-11-23) ----------
+// The sum of two equal sines whose phases differ by phi cycles has loudness 2|cos(π·phi)|: that outline is the beat.
+const pairPhase = (p, t) => p.phi + p.df * (t - p.tPhi);
+// silent before the pair started: the lane is flat there
+const pairEnv = (p, t) => (t < p.t0 ? 0 : Math.abs(Math.cos(Math.PI * pairPhase(p, t))));
+// times in [t0, t1] where a pair's loudness peaks (its phase passes a whole number), never before it started
+function pairPeaks(p, t0, t1) {
+  t0 = Math.max(t0, p.t0);
+  if (Math.abs(p.df) < 1e-6 || t1 < t0) return [];
+  const a = pairPhase(p, t0), b = pairPhase(p, t1), out = [];
+  for (let k = Math.ceil(Math.min(a, b)); k <= Math.floor(Math.max(a, b)); k++) out.push(p.tPhi + (k - p.phi) / p.df);
+  return out.sort((x, y) => x - y);
+}
+const LANE_H = 52, LANE_ROWS = 6, WIN_BEFORE = 2, WIN_AFTER = 6, LANE_LABEL_W = 250, COINCIDE = 0.03;
+let ZOOM = null, beatsRAF = 0;
+function laneItems() {
+  const out = [], on = listenedNotes();
+  for (const x of on) { const p = pairs.get(`n:${x.key}`); if (p) out.push({ id: `n:${x.key}`, kind: 'n', label: `${short(x.f)} vs harmonic ${x.k}`, rate: x.beat, p }); }
+  for (let i = 0; i < on.length; i++) for (let j = i + 1; j < on.length; j++) {
+    const x = on[i], y = on[j], p = pairs.get(`i:${x.key}|${y.key}`);
+    if (p) { const m = meet(x, y); out.push({ id: `i:${x.key}|${y.key}`, kind: 'i', label: `${short(x.f)}–${short(y.f)} partials ${m.m} and ${m.n}`, rate: m.beat, p }); }
+  }
+  return out;
+}
+function fitCanvas(cv, W, H) {
+  const dpr = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  cv.style.width = `${W}px`; cv.style.height = `${H}px`;
+  const g = cv.getContext ? cv.getContext('2d') : null;
+  if (g) { g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); }
+  return g;
+}
+function drawLanes() {
+  const box = $('lanesBox'), cv = $('lanes'), items = laneItems();
+  const W = Math.max(480, box.clientWidth || 960), rows = Math.max(LANE_ROWS, items.length), H = rows * LANE_H;
+  const g = fitCanvas(cv, W, H);
+  if (!g) return;
+  const now = ctx ? ctx.currentTime : 0, t0 = now - WIN_BEFORE, t1 = now + WIN_AFTER, x0 = LANE_LABEL_W, x1 = W - 10;
+  const X = (t) => x0 + ((x1 - x0) * (t - t0)) / (t1 - t0);
+  const font = (px, mono) => `${px}px ${mono ? 'IBM Plex Mono, ui-monospace, monospace' : 'IBM Plex Sans, system-ui, sans-serif'}`;
+  for (let r = 0; r < rows; r++) {
+    const y = r * LANE_H, it = items[r];
+    if (it && it.id === ZOOM) { g.fillStyle = css('--twin-soft'); g.fillRect(0, y, W, LANE_H); }
+    g.strokeStyle = css('--grid'); g.lineWidth = 1; g.beginPath(); g.moveTo(0, y + LANE_H - 0.5); g.lineTo(W, y + LANE_H - 0.5); g.stroke();
+  }
+  // seconds grid
+  g.fillStyle = css('--muted'); g.font = font(10);
+  for (let s = Math.ceil(t0); s <= t1; s++) { g.strokeStyle = css('--grid'); g.beginPath(); g.moveTo(X(s), 0); g.lineTo(X(s), H); g.stroke(); }
+  if (!items.length) {
+    g.fillStyle = css('--muted'); g.font = font(13);
+    g.fillText('Switch on listen in the table or the beat listings above to draw those beats here.', 12, LANE_H / 2 + 4);
+  }
+  items.forEach((it, r) => {
+    const yc = r * LANE_H + LANE_H / 2, amp = LANE_H / 2 - 8;
+    g.fillStyle = css('--fg'); g.font = font(12); g.fillText(it.label, 12, yc - 3);
+    g.fillStyle = css('--muted'); g.font = font(11, true); g.fillText(`${it.rate.toFixed(2)} per second`, 12, yc + 13);
+    g.beginPath();
+    for (let x = x0; x <= x1; x += 2) { const t = t0 + ((x - x0) / (x1 - x0)) * (t1 - t0); g.lineTo(x, yc - pairEnv(it.p, t) * amp); }
+    for (let x = x1; x >= x0; x -= 2) { const t = t0 + ((x - x0) / (x1 - x0)) * (t1 - t0); g.lineTo(x, yc + pairEnv(it.p, t) * amp); }
+    g.closePath(); g.fillStyle = css(it.kind === 'n' ? '--accent-soft' : '--twin-soft'); g.fill();
+    g.strokeStyle = css(it.kind === 'n' ? '--accent' : '--twin'); g.lineWidth = 1.2; g.stroke();
+  });
+  // where two note lanes' peaks actually coincide (within 30 ms): a dashed mark through just those two lanes
+  const nl = items.map((it, r) => ({ it, r })).filter((o) => o.it.kind === 'n');
+  g.setLineDash([4, 3]); g.strokeStyle = css('--warn'); g.lineWidth = 1.5;
+  for (let i = 0; i < nl.length; i++) for (let j = i + 1; j < nl.length; j++) {
+    const pb = pairPeaks(nl[j].it.p, t0 - 1, t1 + 1);
+    for (const ta of pairPeaks(nl[i].it.p, t0, t1)) {
+      if (pb.some((tb) => Math.abs(tb - ta) < COINCIDE)) {
+        const x = X(ta);
+        g.beginPath();
+        for (const r of [nl[i].r, nl[j].r]) { g.moveTo(x, r * LANE_H + 4); g.lineTo(x, r * LANE_H + LANE_H - 4); }
+        g.stroke();
+      }
+    }
+  }
+  g.setLineDash([]);
+  // playhead: now
+  g.strokeStyle = css('--fg'); g.lineWidth = 1.5; g.beginPath(); g.moveTo(X(now), 0); g.lineTo(X(now), H); g.stroke();
+}
+// zoom: a strobe view of one lane: four cycles of each tone, frozen on the first; the second sits phi cycles ahead
+// and slides one full cycle per beat; their sum swells and cancels with it
+function drawZoom() {
+  const cv = $('zoom'), W = Math.max(480, $('lanesBox').clientWidth || 960), H = 170, g = fitCanvas(cv, W, H);
+  const it = laneItems().find((x) => x.id === ZOOM);
+  const ph = it && ctx ? pairPhase(it.p, ctx.currentTime) : 0, frac = ((ph % 1) + 1) % 1;
+  $('zoomRead').textContent = it
+    ? `${it.label} · second tone ahead by ${frac.toFixed(2)} of a cycle · loudness ${String(Math.round(Math.abs(Math.cos(Math.PI * frac)) * 100)).padStart(3, ' ')}% of the peak`
+    : 'Click a lane above to look closer.';
+  if (!g) return;
+  const x0 = 120, x1 = W - 10, rowsY = [30, 80, 135], amp = [18, 18, 26], CYC = 4;
+  const font = (px) => `${px}px IBM Plex Sans, system-ui, sans-serif`;
+  g.fillStyle = css('--muted'); g.font = font(12);
+  ['first tone', 'second tone', 'the two together'].forEach((l, i) => g.fillText(l, 10, rowsY[i] + 4));
+  for (const y of rowsY) { g.strokeStyle = css('--grid'); g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); }
+  if (!it) return;
+  const wave = (row, f, color, w) => {
+    g.strokeStyle = color; g.lineWidth = w; g.beginPath();
+    for (let x = x0; x <= x1; x += 1) { const u = (x - x0) / (x1 - x0); g.lineTo(x, rowsY[row] - f(u) * amp[row]); }
+    g.stroke();
+  };
+  wave(0, (u) => Math.sin(2 * Math.PI * CYC * u), css('--accent'), 1.5);
+  wave(1, (u) => Math.sin(2 * Math.PI * (CYC * u + frac)), css('--twin'), 1.5);
+  wave(2, (u) => (Math.sin(2 * Math.PI * CYC * u) + Math.sin(2 * Math.PI * (CYC * u + frac))) / 2, css('--fg'), 2);
+}
+function beatsLoop() {
+  beatsRAF = 0;
+  drawLanes(); drawZoom();
+  if (pairs.size && !document.hidden && typeof requestAnimationFrame === 'function') beatsRAF = requestAnimationFrame(beatsLoop);
+}
+// a state change redraws at once, and keeps the animation running while anything sounds
+function beatsKick() {
+  drawLanes(); drawZoom();
+  if (!beatsRAF && pairs.size && !document.hidden && typeof requestAnimationFrame === 'function') beatsRAF = requestAnimationFrame(beatsLoop);
 }
 let held = null;                  // Map: typed note (cents key) -> { o, g }; a retune glides the same oscillator
 function heldOn() { audio(); held = new Map(); setToggle('playChord', 'Notes', true); heldSync(); }
@@ -1061,6 +1201,13 @@ $('tune').addEventListener('click', (e) => {
   b.classList.toggle('playing', LISTEN.has(k)); b.setAttribute('aria-pressed', String(LISTEN.has(k)));
   drawBeatLists();
 });
+// click a lane to look closer (strobe view); clicking it again closes the closer view
+$('lanes').addEventListener('click', (e) => {
+  const r = Math.floor((e.clientY - $('lanes').getBoundingClientRect().top) / LANE_H), it = laneItems()[r];
+  ZOOM = it && ZOOM !== it.id ? it.id : null;
+  beatsKick();
+});
+document.addEventListener('visibilitychange', () => beatsKick());
 $('beatLists').addEventListener('click', (e) => {
   const b = e.target.closest('[data-iv]');
   if (!b) return;
@@ -1098,4 +1245,5 @@ $('stopAll').addEventListener('click', stopAll);
 for (const [id, name, on] of [['playChord', 'Notes', false], ['playUp', 'Arpeggio', false], ['noteSine', 'Notes bare sine', false], ['noteTuned', 'Notes tuned to the series', true],
   ['droneBtn', 'Drone', false], ['droneOct', 'Drone octave', true], ['droneSine', 'Drone bare sine', false], ['pulseBtn', 'Note pulses', false]]) setToggle(id, name, on);
 loadExample(0);
+beatsKick();   // the empty lanes and closer view, at their full size from the start
 </script>
