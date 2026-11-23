@@ -192,6 +192,7 @@ Facts from the C0 redo (2026-11-20) and the rule each one gives:
   - [ ] Golden test retired or rewritten for the agreed behavior (PROGRESS note); the old page keeps its own `engine.ts` until M5.
   - [ ] `check:interval-placement` green; path-scoped commit.
 - Human checkpoint after: yes (the catalog for `11 7 16` and one other interval set of the human's choosing, heard and read before the mock)
+- Checkpoint decisions (human, 2026-11-23): **equal centers is the default spacing rule** ("after exploring them both I want equal centers as the default"), chosen over the shared center range after the full n = 2–5 catalog on the findings page and the worked arithmetic of both rules. Equal centers: centers c₀ + k·D with D = min over slots i < j of (W − (dᵢ + dⱼ)/2)/(j − i) and c₀ = max over k of (dₖ/2 − k·D); every chord with 2+ intervals spans the whole window. Bottom note = nearest step to (center − size/2), ties toward the window middle (centered exactly on the middle: down). The shared center range (centers spread evenly over [M/2, W − M/2], M = largest interval, the same for every ordering) stays available as the second rule.
 
 ### M3: Workspace mock
 - Scope: a mock route `/interval-placement/mock` (locked `src/Router.tsx`) on the shared dock Stage with the shared kit, static real numbers from M1/M2/M2c for the default `11 7 16` in 12-EDO on C2 (plus one 31-EDO example), no live maths. Panels written as Stage modules from the start (size-class rendering), so M4 swaps the data, not the layout.
