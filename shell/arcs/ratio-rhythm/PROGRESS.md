@@ -220,7 +220,7 @@ Human: "You need to do whatever you need to have the highest q results for all p
 | --- | --- | --- | --- | --- | --- | --- |
 | 5 | q ≤ 3,645 | 65,348 | — | — | q ≤ 3,645 | = proven |
 | 7 | q ≤ 315 | 16,561 | q ≤ 405 | 57,123 | q ≤ 729 | 403,069 (09:19: widened steps with no budget added 4,435 to 398,634) |
-| 11 | q ≤ 135 | 1,209 | q ≤ 243 | 15,479 | q ≤ 405 | 283,156 |
+| 11 | q ≤ 135 | 1,209 | q ≤ 243 | 15,479 | q ≤ 405 | 283,162 (10:16: widened 3,1 no budget +6; widened 3,0 capped, 3,888 stopped) |
 | 13 | q ≤ 135 | 2,116 | q ≤ 243 (5,1/5,2 step open) | 30,483 | q ≤ 243 | 30,483 |
 | 17 | q ≤ 135 | 2,731 | — | — | q ≤ 243 | 47,044 (09:21: widened steps, budget on, +213; 11,562 widened factors still stopped) |
 **19-limit (started 9:30 Eastern per the human's note):** ladder q ≤ 135 **3,735 families** (894 s; 6: 1, 9: 1,241, 10: 1, 12: 1,553, 15: 847, 16: 92); widened steps added none (budget stops 1,006 / 534 not yet rerun); enumeration count 219 B sets (6–16 notes); **proof `e19q135_on` running since 09:54** (tmux `e19`, bin12, 16 GB, only enumeration on the VM; ~1.5–2.5 h). Ladder dir `l19q135_on`.
