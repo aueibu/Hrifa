@@ -285,7 +285,36 @@ Counts (G1 / G2 / other): 19-limit q <= 135 16 / 1 / 0 (the 10-note family, a me
 q <= 315 262 / 55 / 0; 5-limit q <= 729 128 / 110 / 0; q <= 2,187 1,199 / 660 / 2; q <= 3,645
 7,049 / 2,473 / 16.
 
-Next (plan step 2): generators for the hole and merge constructions, checked against the proven lists
-exactly as the chord-sum generator was. Open point for the hole generator: the full stack T·S+ may
-break the q limit while the holed set P does not, so the chord-sum shortcut (limit test on D(T)·D(S+))
-is only sufficient there.
+A useful fact for every generator below: if P = T·S is a 0/1 set, then Q = T·S* (or T*·S) is
+automatically 0/1 too. Its coefficients are integers with sum T(1)S(1) = k and sum of squares equal to
+the zero-lag autocorrelation of P, also k; an integer c with c² = c is 0 or 1.
+
+### 6.5 Hole generator (`holegen.py`) and coverage
+
+Hole: chord T (3 or 4 notes), set S+, one hole at the origin: P = T·S+ minus T, Q = T⁻¹·S+ minus T⁻¹.
+Because T ⊂ T·S+, every note of T is a'·c with c in S+, so c is an interval of T: C = S+ ∩ D(T) is a
+choice of T's own intervals whose stack covers T; the other notes r of S+ carry whole copies of T. The
+search tries every covering C, then every r compatible with a fixed surviving note (complete; see the
+script's docstring). The limit test is on the holed set only, so stacks whose full form breaks q are
+found too.
+
+**Exact on all nine proven lists** (`data/vm/hole_all.sh`, `tables/chordsum/hole_all.out`): the
+generated families are exactly the hole families (one hole, 3- or 4-note chord) found by `overlap.py`,
+0 missed, 0 not in the list; plus 4 / 15 / 40 families at 5-limit q <= 729 / 2,187 / 3,645 that
+`overlap.py` had described by another split. 5-limit q 3,645: 5,880 families in 25 s; 19-limit q 135:
+16 in 115 s.
+
+**Coverage** (chord sums + one-hole families; `coverage.py`, `tables/chordsum/coverage.txt`):
+
+| list | explained | left |
+|---|---|---|
+| 5-limit q <= 729 / 2,187 / 3,645 | 95.3% / 94.1% / 94.3% | 112 / 810 / 3,698 |
+| 7-limit q <= 243 / 315 | 99.6% / 99.7% | 28 / 54 (all merges) |
+| 11- to 19-limit q <= 135 | 99.9-99.97% | 1 each (the 10-note family, a merge) |
+
+What is left: merges (G2: a small signed factor of 3 or 4 plus notes and one minus, on a 5- to 8-note
+plain set: (5, 4, 1) 783 + 116, (7, 3, 1) 472 + 164, (5, 3, 1) 278, (8, 3, 1) 232 ... at 5-limit
+q 3,645), holes with two or three holes ((3, 7, 2) 627, (3, 6, 2) 112, (3, 8, 3) 88), 5-note-chord
+merges ((5, 5, 2) about 280), G2-shaped holes ((5, 4, 1) 139, (6, 3, 1) 38) and the 16 families of
+6.4's last bullet. Next: a merge generator (choose the small signed factor, solve for the plain set),
+and the hole generator widened to two or three holes and 5-note chords.
