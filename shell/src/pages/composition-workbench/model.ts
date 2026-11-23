@@ -92,104 +92,12 @@ export interface AcceptedPacket {
   topologies?: PacketFrame['topology'][];
 }
 
-export interface PortContract {
-  label: string;
-  description: string;
-  accepts: AcceptedPacket[];
-  scalarBroadcast?: boolean;
-}
-
-export interface ParameterField {
-  key: string;
-  label: string;
-  type: 'integer' | 'integerList' | 'select';
-  options?: { label: string; value: string }[];
-}
-
-export interface EvaluationContext {
-  instance: ModuleInstance;
-  inputs: Record<string, DataPacket>;
-}
-
-export interface ModuleEvaluation {
-  outputs: Record<string, DataPacket>;
-  messages: string[];
-  status: 'ready' | 'warning' | 'error';
-}
-
-export interface ModuleDefinition {
-  id: string;
-  version: string;
-  title: string;
-  description: string;
-  category: string;
-  inputs: Record<string, PortContract>;
-  outputs: Record<string, PortContract>;
-  parameters: ParameterField[];
-  defaultParameters: Record<string, unknown>;
-  evaluate(context: EvaluationContext): ModuleEvaluation;
-}
-
-export interface ModuleInstance {
-  id: string;
-  definitionId: string;
-  definitionVersion: string;
-  parameters: Record<string, unknown>;
-  order: number;
-}
-
-export interface Connection {
-  id: string;
-  fromInstanceId: string;
-  fromPort: string;
-  toInstanceId: string;
-  toPort: string;
-}
-
-export interface PatchDocument {
-  schemaVersion: 1;
-  title: string;
-  instances: ModuleInstance[];
-  connections: Connection[];
-  metadata?: Record<string, unknown>;
-}
-
-export interface ParameterFrame {
-  length: number;
-  impulses: number;
-  offset: number;
-  sourceItemIds: string[];
-}
-
-export interface ValidParameterFrame extends ParameterFrame {
-  id: string;
-  effectiveOffset: number;
-}
-
-export interface RejectedFrame extends ParameterFrame {
-  id: string;
-  reason: string;
-}
-
 export interface RhythmPattern {
   length: number;
   impulses: number;
   requestedOffset: number;
   effectiveOffset: number;
   bits: number[];
-}
-
-export interface EvaluatedModule {
-  instance: ModuleInstance;
-  definition: ModuleDefinition;
-  inputs: Record<string, DataPacket>;
-  evaluation: ModuleEvaluation;
-}
-
-export interface PatchEvaluation {
-  modules: Map<string, EvaluatedModule>;
-  order: string[];
-  errors: string[];
 }
 
 export function packet<T>(
@@ -203,7 +111,4 @@ export function packet<T>(
   return { kind, domain, items, warnings, metadata, ...semantics };
 }
 
-export function emptyPacket(kind: DataKind, domain: DataDomain): DataPacket {
-  return packet(kind, domain, []);
-}
 import type { MusicalDuration, MusicalPosition } from './musicalTime';

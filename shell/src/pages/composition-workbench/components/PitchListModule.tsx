@@ -64,7 +64,7 @@ export interface PitchListModuleProps {
 export function PitchListModule({ instanceId, instanceLabel, upstream }: PitchListModuleProps) {
   const { settings } = useCompositionSettings();
   const edo = settings.edo;
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'pitch-list');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [{ format, inlineValues }, state] = useModuleState(pitchListState, instanceId);
   const {
     format: setFormat,

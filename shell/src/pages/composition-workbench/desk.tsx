@@ -13,7 +13,6 @@ import {
   describeStorageError,
   enqueueDeskTask,
   loadDesk,
-  removeLegacyDesk,
   requestPersistentStorage,
   writeDeskNow,
 } from './deskStore';
@@ -209,24 +208,20 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   const settledRef = useRef<Snippet[] | null>(null);
   // The store's rev as this tab last read or wrote it; a write is refused if another tab moved it.
   const revRef = useRef(0);
-  // Set while a localStorage desk is not yet written to IndexedDB; removed after the first write.
-  const legacyKeyRef = useRef<string | null>(null);
   const timerRef = useRef<number | undefined>(undefined);
   // Whether the latest change belongs to a gesture (it waits longer before writing).
   const gestureRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
-    void loadDesk(compositionStateKeys.desk).then((result) => {
+    void loadDesk().then((result) => {
       if (cancelled) {
         return;
       }
       snippetsRef.current = result.snippets;
       storedRef.current = result.stored;
       revRef.current = result.rev;
-      legacyKeyRef.current = result.pendingLegacyKey ?? null;
-      // A desk only in memory (failed migration) is unsettled, so the first write retries it.
-      settledRef.current = result.pendingLegacyKey ? null : result.snippets;
+      settledRef.current = result.snippets;
       writableRef.current = result.writable;
       loadedRef.current = true;
       setSnippets(result.snippets);
@@ -263,10 +258,6 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         });
         storedRef.current = new Map(target.map((snippet) => [snippet.id, snippet]));
         settledRef.current = target;
-        if (legacyKeyRef.current) {
-          removeLegacyDesk(legacyKeyRef.current);
-          legacyKeyRef.current = null;
-        }
         setPersistError(null);
         return true;
       } catch (error) {
@@ -587,10 +578,6 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         }
         storedRef.current = new Map(next.map((snippet) => [snippet.id, snippet]));
         settledRef.current = next;
-        if (legacyKeyRef.current) {
-          removeLegacyDesk(legacyKeyRef.current);
-          legacyKeyRef.current = null;
-        }
         if (options.reloading) {
           // The page is about to reload from storage: leave what is on screen alone (replacing it
           // would republish modules and fire resets on the old page) and write nothing more.

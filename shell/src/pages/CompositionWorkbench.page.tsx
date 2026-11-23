@@ -61,8 +61,6 @@ import {
   type ModuleRouteStates,
 } from './composition-workbench/compositionWorkspace';
 import { DeskProvider } from './composition-workbench/desk';
-import { evaluatePatch } from './composition-workbench/evaluator';
-import { createDefaultPatch } from './composition-workbench/examples';
 import { recordChange, recordGroup } from './composition-workbench/history';
 import { useStageBoxRem } from './composition-workbench/layout/useStageBoxRem';
 import {
@@ -74,13 +72,11 @@ import {
   acceptsScreensetStore,
   bringPanelForward,
   CLIP_EDITOR_PANEL,
+  defaultWorkbenchScreensets,
   MODULE_DETAIL_PANEL,
   parseStoredScreensets,
   screensetForCanvas,
-  seedStoreFromStorage,
 } from './composition-workbench/layout/workbenchScreensets';
-import type { PatchDocument } from './composition-workbench/model';
-import { loadSavedPatch } from './composition-workbench/persistence';
 import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
 import { isReloading } from './composition-workbench/reloading';
 import {
@@ -119,7 +115,7 @@ function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
     return;
   }
   const keys = moduleRegistry[instance.moduleId].stateKeys.map((base) =>
-    compositionInstanceStateKey(base, instance.id, instance.moduleId)
+    compositionInstanceStateKey(base, instance.id)
   );
   try {
     keys.forEach((key) => {
@@ -141,7 +137,6 @@ function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
 const WORKBENCH_REGISTRY = buildStageRegistry(WORKBENCH_KINDS, []);
 
 export function CompositionWorkbenchPage() {
-  const [patch] = useState<PatchDocument>(() => loadSavedPatch(createDefaultPatch));
   const [activeCompositionInstanceId, setActiveCompositionInstanceId] = usePersistentState<
     string | null
   >(
@@ -174,10 +169,10 @@ export function CompositionWorkbenchPage() {
   // The inspector element the active module's setup controls are portaled into.
   const [moduleInspectorSlot, setModuleInspectorSlot] = useState<HTMLElement | null>(null);
   // The center's layout: this project's screensets (Canvas, Desk, Edit and the person's own). A project with none
-  // seeds them once from its old split, collapse and view keys; the key is never an undo step.
+  // starts with the defaults; the key is never an undo step.
   const [screensetStore, setScreensetStore] = usePersistentState(
     compositionStateKeys.screensets,
-    seedStoreFromStorage,
+    defaultWorkbenchScreensets,
     acceptsScreensetStore,
     parseStoredScreensets
   );
@@ -222,7 +217,6 @@ export function CompositionWorkbenchPage() {
     { melodicization: createDefaultModuleRouteState(modulePorts.melodicization!) },
     acceptsModuleRouteStates
   );
-  const evaluation = useMemo(() => evaluatePatch(patch), [patch]);
   // While a clip is open nothing else is selected: no module counts as active or highlighted.
   const moduleShown = editorClipTarget === null;
   const shownInstanceId = moduleShown ? activeCompositionInstanceId : null;
@@ -628,12 +622,6 @@ export function CompositionWorkbenchPage() {
                         style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}
                       >
                         <Stack gap="md">
-                          {evaluation.errors.map((error) => (
-                            <Surface key={error} p="sm">
-                              <Text c="red">{error}</Text>
-                            </Surface>
-                          ))}
-
                           <>
                             <div
                               className={classes.compositionWorkspace}

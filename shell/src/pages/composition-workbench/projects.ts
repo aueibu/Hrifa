@@ -9,7 +9,6 @@ import {
 } from './deskStore';
 import { setReloading } from './reloading';
 import { acceptsSnippets, type Snippet } from './snippet';
-import { compositionStateKeys } from './usePersistentState';
 
 /**
  * Saved projects. Everything the workbench remembers (modules, their settings, routes, the
@@ -24,7 +23,6 @@ export const workbenchStoragePrefix = 'hrifa.composition-workbench.';
 export const currentProjectKey = 'hrifa.workbench-current-project.v1';
 
 const projectFileFormat = 'hrifa-workbench-projects';
-const legacyFileFormat = 'hrifa-workbench-snapshots';
 
 export interface RestoreOptions {
   /** Also restore the transport and preview voices; off keeps the current ones. */
@@ -37,8 +35,7 @@ function workbenchKeys(storage: KeyValueStorage) {
   const keys: string[] = [];
   for (let index = 0; index < storage.length; index += 1) {
     const key = storage.key(index);
-    // The desk's key is only a legacy copy now; it is never captured, wiped or restored here.
-    if (key?.startsWith(workbenchStoragePrefix) && key !== compositionStateKeys.desk) {
+    if (key?.startsWith(workbenchStoragePrefix)) {
       keys.push(key);
     }
   }
@@ -72,10 +69,7 @@ export function restoreWorkbenchState(
     .filter((key) => !keep(key))
     .forEach((key) => storage.removeItem(key));
   Object.entries(entries)
-    .filter(
-      ([key]) =>
-        key.startsWith(workbenchStoragePrefix) && key !== compositionStateKeys.desk && !keep(key)
-    )
+    .filter(([key]) => key.startsWith(workbenchStoragePrefix) && !keep(key))
     .forEach(([key, value]) => storage.setItem(key, value));
 }
 
@@ -268,46 +262,18 @@ export async function openProject({
   return { ok: true, project: { id: project.id, name: project.name } };
 }
 
-/** An old localStorage snapshot: raw entries, with the desk (heads, or a raw desk) under its old key. */
-interface LegacySnapshot {
-  id: string;
-  name: string;
-  savedAt: string;
-  entries: Record<string, string>;
-}
-
-function isLegacySnapshot(value: unknown): value is LegacySnapshot {
-  const snapshot = value as LegacySnapshot;
+function isProjectShape(value: unknown): value is ProjectRecord {
+  const project = value as ProjectRecord;
   return (
-    Boolean(snapshot) &&
-    typeof snapshot === 'object' &&
-    typeof snapshot.id === 'string' &&
-    typeof snapshot.name === 'string' &&
-    typeof snapshot.savedAt === 'string' &&
-    Boolean(snapshot.entries) &&
-    typeof snapshot.entries === 'object' &&
-    Object.values(snapshot.entries).every((entry) => typeof entry === 'string')
+    Boolean(project) &&
+    typeof project === 'object' &&
+    typeof project.id === 'string' &&
+    typeof project.name === 'string' &&
+    typeof project.savedAt === 'string' &&
+    Boolean(project.entries) &&
+    typeof project.entries === 'object' &&
+    Object.values(project.entries).every((entry) => typeof entry === 'string')
   );
-}
-
-/** A snapshot as a project, as is: its desk entry becomes the desk (lineage absent unless it had one). */
-function projectFromLegacy(snapshot: LegacySnapshot): ProjectRecord {
-  let desk: ProjectDesk = null;
-  const raw = snapshot.entries[compositionStateKeys.desk];
-  if (raw !== undefined) {
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      desk = acceptsSnippets(parsed) ? parsed : null;
-    } catch {
-      desk = null;
-    }
-  }
-  const entries = Object.fromEntries(
-    Object.entries(snapshot.entries).filter(
-      ([key]) => key.startsWith(workbenchStoragePrefix) && key !== compositionStateKeys.desk
-    )
-  );
-  return { id: snapshot.id, name: snapshot.name, savedAt: snapshot.savedAt, entries, desk };
 }
 
 /** A project file: every project with its desk and lineage, so it can be moved between browsers. */
@@ -316,7 +282,7 @@ export function projectFileText(projects: ProjectRecord[]) {
 }
 
 /**
- * Reads an exported file (projects, or the earlier snapshots format). Imported projects get fresh
+ * Reads an exported project file. Imported projects get fresh
  * ids so they never replace saved ones; entries outside the workbench prefix are dropped, and a desk
  * that is not a valid desk is left out.
  */
@@ -331,35 +297,23 @@ export function parseProjectFile(text: string): ProjectRecord[] {
     format?: unknown;
     version?: unknown;
     projects?: unknown;
-    snapshots?: unknown;
   };
   const stamp = Date.now().toString(36);
-  if (file && file.format === legacyFileFormat && Array.isArray(file.snapshots)) {
-    if (file.version !== 1) {
-      throw new Error(`Unsupported file version: ${String(file.version)}.`);
-    }
-    return file.snapshots.filter(isLegacySnapshot).map((snapshot, index) => ({
-      ...projectFromLegacy(snapshot),
-      id: `project-${stamp}-import-${index}`,
-    }));
-  }
   if (!file || file.format !== projectFileFormat || !Array.isArray(file.projects)) {
     throw new Error('That file is not a workbench project export.');
   }
   if (file.version !== 1) {
     throw new Error(`Unsupported project file version: ${String(file.version)}.`);
   }
-  return (file.projects as ProjectRecord[])
-    .filter((project) => isLegacySnapshot(project))
-    .map((project, index) => ({
-      id: `project-${stamp}-import-${index}`,
-      name: project.name,
-      savedAt: project.savedAt,
-      entries: Object.fromEntries(
-        Object.entries(project.entries).filter(([key]) => key.startsWith(workbenchStoragePrefix))
-      ),
-      desk: acceptsSnippets(project.desk) ? project.desk : null,
-    }));
+  return (file.projects as ProjectRecord[]).filter(isProjectShape).map((project, index) => ({
+    id: `project-${stamp}-import-${index}`,
+    name: project.name,
+    savedAt: project.savedAt,
+    entries: Object.fromEntries(
+      Object.entries(project.entries).filter(([key]) => key.startsWith(workbenchStoragePrefix))
+    ),
+    desk: acceptsSnippets(project.desk) ? project.desk : null,
+  }));
 }
 
 export type { StoredProject };

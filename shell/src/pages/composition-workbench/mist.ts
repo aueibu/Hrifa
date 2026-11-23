@@ -45,7 +45,7 @@ export interface MistStratum {
   custom?: number[];
 }
 
-/** Saved settings carry this so an older meaning of `speed` is never read as the current one. */
+/** Saved settings carry this version; settings of any other version are not accepted. */
 export const mistSettingsVersion = 4;
 
 export interface MistSettings {
@@ -94,7 +94,7 @@ export const mistPresets: { id: MistPresetId; label: string }[] = [
 ];
 
 /**
- * Three strata per preset (centers keep them in separate bands, as the old lens's baselines did).
+ * Three strata per preset (centers keep them in separate bands).
  * Speeds are passes per position: Ripple 1, 1.25 and 1.5 line up every 4; Soft Drift 0.125, 0.1 and
  * 0.0625 every 80; Misty Walk 0.5, 0.75 and 1 every 4.
  */
@@ -192,56 +192,6 @@ export function acceptsMistSettings(value: unknown): value is MistSettings {
     Array.isArray(s.strata) &&
     s.strata.every(acceptsStratum)
   );
-}
-
-/**
- * Upgrades older saved shapes so every stratum keeps the same period in the same positions (a pass
- * that took 16 positions still takes 16, now as a speed of 1/16). Settings with `version` 4 are the
- * current meaning of speed (passes per position) and pass through.
- *
- * - First model: each stratum had its own `loop` in cells and a `speed` in cells per step. The period
- *   was loop ÷ speed; phase was in cells, so it becomes a fraction of the loop. A walk keeps its cell
- *   count as its points, so it keeps its shape.
- * - Second model: a field-wide `loop` length and a rate speed. The period was loop ÷ speed.
- * - Third model: no field loop, and speed was the positions one pass takes, so the rate is 1 ÷ speed.
- *
- * A speed of 0 (held still) stays 0, and a negative speed keeps its direction.
- */
-export function migrateMistSettings(value: unknown): unknown {
-  if (!value || typeof value !== 'object') {
-    return value;
-  }
-  const old = value as Record<string, unknown>;
-  if (old.version === mistSettingsVersion || !Array.isArray(old.strata)) {
-    return value;
-  }
-  const fieldLoop = isFiniteNumber(old.loop) && old.loop > 0 ? old.loop : undefined;
-  const strata = old.strata.map((candidate) => {
-    if (!candidate || typeof candidate !== 'object') {
-      return candidate;
-    }
-    const s = candidate as Record<string, unknown>;
-    if (!isFiniteNumber(s.speed)) {
-      return candidate;
-    }
-    if (isFiniteNumber(s.loop) && isFiniteNumber(s.phase) && s.loop > 0) {
-      const cells = Math.max(1, Math.round(s.loop));
-      const { loop: _cells, ...rest } = s;
-      return {
-        ...rest,
-        cycles: 1,
-        speed: s.speed / cells,
-        phase: s.phase / cells,
-        walkPoints: Math.min(maxWalkPoints, Math.max(2, cells)),
-      };
-    }
-    if (fieldLoop !== undefined) {
-      return { ...s, speed: s.speed / fieldLoop };
-    }
-    return { ...s, speed: s.speed === 0 ? 0 : 1 / s.speed };
-  });
-  const { loop: _fieldLoop, ...rest } = old;
-  return { ...rest, version: mistSettingsVersion, strata };
 }
 
 /** FNV-1a over the text, so a seed is any short string. */

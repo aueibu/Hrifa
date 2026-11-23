@@ -1,21 +1,13 @@
 // Leaf module: the stored-key table and the undo classification, so the state store can use them without importing the hook.
 export const compositionStateKeys = {
-  selectedConstructionModule: 'hrifa.composition-workbench.ui.selected-construction-module.v1',
-  moduleQuery: 'hrifa.composition-workbench.ui.module-query.v1',
   activeView: 'hrifa.composition-workbench.ui.active-view.v1',
   activeCompositionModule: 'hrifa.composition-workbench.ui.active-composition-module.v1',
   compositionInspectorTarget: 'hrifa.composition-workbench.ui.inspector-target.v1',
   editorClipTarget: 'hrifa.composition-workbench.ui.editor-clip-target.v1',
-  compositionModuleLanes: 'hrifa.composition-workbench.ui.module-lanes.v1',
-  compositionModules: 'hrifa.composition-workbench.ui.modules.v1',
   compositionInstances: 'hrifa.composition-workbench.ui.instances.v3',
-  canvasSplit: 'hrifa.composition-workbench.ui.canvas-split.v1',
-  detailCollapsed: 'hrifa.composition-workbench.ui.detail-collapsed.v1',
   inspectorOpen: 'hrifa.composition-workbench.ui.inspector-open.v1',
+  // Names the desk's undo steps; the desk itself is stored in IndexedDB, not under this key.
   desk: 'hrifa.composition-workbench.desk.snippets.v1',
-  // Retired (one-Stage M5): `workspaceView`, `canvasSplit` and `detailCollapsed` are no longer written; they seed the
-  // first `screensets` store of a project, once, and are never read again.
-  workspaceView: 'hrifa.composition-workbench.ui.workspace-view.v1',
   // The project's screensets (layout of the center, per project; one JSON value).
   screensets: 'hrifa.composition-workbench.ui.screensets.v1',
   settingsOpen: 'hrifa.composition-workbench.ui.settings-open.v1',
@@ -70,14 +62,12 @@ export const compositionStateKeys = {
   fractioningB: 'hrifa.composition-workbench.fractioning.b.v1',
   fractioningUnit: 'hrifa.composition-workbench.fractioning.preview-unit.v1',
   fractioningVolume: 'hrifa.composition-workbench.fractioning.preview-volume.v1',
-  fractioningMidiNote: 'hrifa.composition-workbench.fractioning.midi-note.v1',
   fractioningSound: 'hrifa.composition-workbench.fractioning.sound.v1',
   pairCompositionA: 'hrifa.composition-workbench.pair-composition.a.v1',
   pairCompositionB: 'hrifa.composition-workbench.pair-composition.b.v1',
   pairCompositionMode: 'hrifa.composition-workbench.pair-composition.mode.v1',
   pairCompositionUnit: 'hrifa.composition-workbench.pair-composition.preview-unit.v1',
   pairCompositionVolume: 'hrifa.composition-workbench.pair-composition.preview-volume.v1',
-  pairCompositionMidiNote: 'hrifa.composition-workbench.pair-composition.midi-note.v1',
   pairCompositionSound: 'hrifa.composition-workbench.pair-composition.sound.v1',
   scaleConstructionIntervals: 'hrifa.composition-workbench.scale-construction.intervals.v1',
   scaleConstructionRoot: 'hrifa.composition-workbench.scale-construction.root.v1',
@@ -107,20 +97,15 @@ export const compositionStateKeys = {
  * Keys whose changes never become undo steps: what is showing (selection, view, scroll, zoom,
  * panels, follow), and preview-only settings (volumes, steps, units, gates, octaves, sounds,
  * audition). Authored content (patterns, values, routes, instances, the desk) is everything else.
- * The classification lives here, beside the key list, not in each module. Dead keys are listed too.
+ * The classification lives here, beside the key list, not in each module.
  */
 export const unrecordedStateKeys: ReadonlySet<string> = new Set<string>([
   // Selection, layout and view.
-  compositionStateKeys.selectedConstructionModule,
-  compositionStateKeys.moduleQuery,
   compositionStateKeys.activeView,
   compositionStateKeys.activeCompositionModule,
   compositionStateKeys.compositionInspectorTarget,
   compositionStateKeys.editorClipTarget,
-  compositionStateKeys.canvasSplit,
-  compositionStateKeys.detailCollapsed,
   compositionStateKeys.inspectorOpen,
-  compositionStateKeys.workspaceView,
   compositionStateKeys.screensets,
   compositionStateKeys.settingsOpen,
   compositionStateKeys.melodicizationPianoRollView,
@@ -151,11 +136,9 @@ export const unrecordedStateKeys: ReadonlySet<string> = new Set<string>([
   compositionStateKeys.melodicizationVolume,
   compositionStateKeys.fractioningUnit,
   compositionStateKeys.fractioningVolume,
-  compositionStateKeys.fractioningMidiNote,
   compositionStateKeys.fractioningSound,
   compositionStateKeys.pairCompositionUnit,
   compositionStateKeys.pairCompositionVolume,
-  compositionStateKeys.pairCompositionMidiNote,
   compositionStateKeys.pairCompositionSound,
   compositionStateKeys.householderUnit,
   compositionStateKeys.householderVolume,

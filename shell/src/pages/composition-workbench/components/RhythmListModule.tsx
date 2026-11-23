@@ -44,7 +44,7 @@ export interface RhythmListModuleProps {
  * tie markers sit on the item that starts the tie (see ARCHITECTURE.md, "Rests and ties").
  */
 export function RhythmListModule({ instanceId, instanceLabel }: RhythmListModuleProps) {
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'rhythm-list');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [{ text, loop }, { text: setText, loop: setLoop }] = useModuleState(
     rhythmListState,
     instanceId

@@ -160,14 +160,8 @@ describe('usePersistentState history', () => {
   });
 
   it('creates no entries for transient keys, per-instance ones included', () => {
-    const instanceKey = compositionInstanceStateKey(
-      compositionStateKeys.mixerRollView,
-      'mixer-2',
-      'mixer'
-    );
+    const instanceKey = compositionInstanceStateKey(compositionStateKeys.mixerRollView, 'mixer-2');
     const keys = [
-      compositionStateKeys.canvasSplit,
-      compositionStateKeys.workspaceView,
       compositionStateKeys.activeCompositionModule,
       compositionStateKeys.mixerVolume,
       instanceKey,

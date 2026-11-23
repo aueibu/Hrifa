@@ -1,11 +1,23 @@
 import { fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
-import { compositionWorkbenchStorageKey } from './composition-workbench/persistence';
-import { compositionStateKeys } from './composition-workbench/usePersistentState';
+import {
+  compositionInstanceStateKey,
+  compositionStateKeys,
+} from './composition-workbench/usePersistentState';
 import { CompositionWorkbenchPage } from './CompositionWorkbench.page';
 
+// The three default instances keep their state under suffixed keys like every other instance.
+const pitchListKey = (base: string) => compositionInstanceStateKey(base, 'pitch-list');
+const melodicizationKey = (base: string) => compositionInstanceStateKey(base, 'melodicization');
+
+function clearWorkbenchState() {
+  const bases = new Set<string>(Object.values(compositionStateKeys));
+  Object.keys(localStorage)
+    .filter((key) => bases.has(key.split('.instance.')[0]))
+    .forEach((key) => localStorage.removeItem(key));
+}
+
 function renderPage() {
-  localStorage.removeItem(compositionWorkbenchStorageKey);
-  Object.values(compositionStateKeys).forEach((key) => localStorage.removeItem(key));
+  clearWorkbenchState();
   return render(<CompositionWorkbenchPage />);
 }
 
@@ -177,21 +189,6 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByRole('slider', { name: 'Interference preview volume' })).toBeInTheDocument();
   }, 15_000);
 
-  it('opens a project saved with lane and row placements', () => {
-    localStorage.setItem(
-      compositionStateKeys.compositionInstances,
-      JSON.stringify([
-        { id: 'interference', moduleId: 'interference', laneId: 1, row: 1 },
-        { id: 'pitch-list', moduleId: 'pitch-list', laneId: 2, row: 1 },
-        { id: 'melodicization', moduleId: 'melodicization', laneId: 3, row: 2 },
-      ])
-    );
-    renderPersistedPage();
-    const grid = screen.getByLabelText('Composition canvas');
-    expect(grid.querySelectorAll('[data-module-slot="true"]')).toHaveLength(3);
-    expect(within(grid).getByRole('button', { name: /^Melodicization/ })).toBeInTheDocument();
-  }, 15_000);
-
   it('places any number of independently authored module instances', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -333,9 +330,9 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByText('1 groups', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
     expect(screen.getByText('3 pitches', { selector: '.mantine-Badge-label' })).toBeInTheDocument();
     await waitFor(() =>
-      expect(localStorage.getItem(compositionStateKeys.pitchCatalogOrigins)).toContain(
-        '"forteNumber":"3-11"'
-      )
+      expect(
+        localStorage.getItem(pitchListKey(compositionStateKeys.pitchCatalogOrigins))
+      ).toContain('"forteNumber":"3-11"')
     );
   }, 15_000);
 
@@ -506,13 +503,15 @@ describe('CompositionWorkbenchPage', () => {
       expect(localStorage.getItem(compositionStateKeys.activeCompositionModule)).toBe(
         '"melodicization"'
       );
-      expect(localStorage.getItem(compositionStateKeys.melodicizationVolume)).toBe('30');
+      expect(
+        localStorage.getItem(melodicizationKey(compositionStateKeys.melodicizationVolume))
+      ).toBe('30');
       expect(localStorage.getItem(compositionStateKeys.moduleRouteStates)).toContain(
         'interference'
       );
-      expect(localStorage.getItem(compositionStateKeys.melodicizationPianoRollView)).toContain(
-        '"followPlayback":true'
-      );
+      expect(
+        localStorage.getItem(melodicizationKey(compositionStateKeys.melodicizationPianoRollView))
+      ).toContain('"followPlayback":true');
     });
 
     firstRender.unmount();
@@ -541,7 +540,9 @@ describe('CompositionWorkbenchPage', () => {
       '60, 62, 64, 67, 66.5'
     );
     await waitFor(() =>
-      expect(localStorage.getItem(compositionStateKeys.pitchValues)).toBe('"60, 62, 64, 67, 66.5"')
+      expect(localStorage.getItem(pitchListKey(compositionStateKeys.pitchValues))).toBe(
+        '"60, 62, 64, 67, 66.5"'
+      )
     );
     secondRender.unmount();
     renderPersistedPage();
@@ -552,8 +553,7 @@ describe('CompositionWorkbenchPage', () => {
 
   it('refits the piano roll each time Melodicization is opened', async () => {
     const user = userEvent.setup();
-    localStorage.removeItem(compositionWorkbenchStorageKey);
-    Object.values(compositionStateKeys).forEach((key) => localStorage.removeItem(key));
+    clearWorkbenchState();
     const framedView = JSON.stringify({
       pixelsPerQuarter: 40,
       pixelsPerSemitone: 16,
@@ -562,9 +562,15 @@ describe('CompositionWorkbenchPage', () => {
       followPlayback: false,
       framed: true,
     });
-    localStorage.setItem(compositionStateKeys.melodicizationPianoRollView, framedView);
+    localStorage.setItem(
+      melodicizationKey(compositionStateKeys.melodicizationPianoRollView),
+      framedView
+    );
     const view = () =>
-      JSON.parse(localStorage.getItem(compositionStateKeys.melodicizationPianoRollView) ?? '{}');
+      JSON.parse(
+        localStorage.getItem(melodicizationKey(compositionStateKeys.melodicizationPianoRollView)) ??
+          '{}'
+      );
     // Stored before mount: rendering the page with another module open keeps the framing.
     renderPersistedPage();
     expect(view().framed).toBe(true);

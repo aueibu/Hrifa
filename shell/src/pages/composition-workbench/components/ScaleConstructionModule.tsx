@@ -130,8 +130,7 @@ export function ScaleConstructionModule({
 }: ScaleConstructionModuleProps) {
   const { settings } = useCompositionSettings();
   const edo = settings.edo;
-  const stateKey = (key: string) =>
-    compositionInstanceStateKey(key, instanceId, 'scale-construction');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [
     { intervals, root, permutationMode },
     { intervals: setIntervals, root: setRoot, permutationMode: setPermutationMode },

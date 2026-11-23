@@ -21,7 +21,7 @@ export function usePersistentState<T>(
   key: string,
   fallback: T | (() => T),
   accepts: (value: unknown) => value is T,
-  // Upgrades an older saved shape before it is validated, so old projects keep loading.
+  // Reshapes or sanitizes the stored value before it is validated.
   migrate?: (value: unknown) => unknown,
   options?: PersistentStateOptions
 ): [T, Dispatch<SetStateAction<T>>] {
@@ -35,7 +35,7 @@ export function usePersistentState<T>(
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  // Mount and migration writes persist the current value and never record.
+  // The mount write persists the current value (the stored one, or the fallback) and never records.
   useEffect(() => {
     persistState(key);
   }, [key]);
@@ -59,10 +59,7 @@ export const acceptsFiniteNumber = (value: unknown): value is number =>
 export const acceptsIntegerList = (value: unknown): value is number[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'number' && Number.isInteger(item));
 
-export function compositionInstanceStateKey(
-  baseKey: string,
-  instanceId: string,
-  legacyInstanceId: string
-) {
-  return instanceId === legacyInstanceId ? baseKey : `${baseKey}.instance.${instanceId}`;
+/** The stored key of one module instance's value: every instance uses its own suffixed key. */
+export function compositionInstanceStateKey(baseKey: string, instanceId: string) {
+  return `${baseKey}.instance.${instanceId}`;
 }

@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Timeline (`arcs/workbench`), APPROVED 2026-11-23 (human), committed a836990
-- Current milestone: B0b removals (R1 to R4 in `AUDIT.baseline.md`), then B1a
-- State: audit done and written (`AUDIT.baseline.md`): about 1,750 lines (4%) dead or legacy-read. Next: delegate removal steps 1 to 4 to builders; renames after. No locks held.
+- Current milestone: B1a (rename Snippet and clip words); B0b removals done 2026-11-23
+- State: B0b removals committed (steps 1 to 4: about 1,600 + 400 lines deleted, review done, `check:workbench` 105 files / 1,549 tests green, `check:stage` green, `check:hfl` timeouts only under load and green alone). Next: B1a. Locks released after the commit.
 
 ## Where to look
 - `ARC.md` (this arc). The previous arc and its decisions: `ARC.one-stage.md` (Integration decisions D4 meta lane, D5 pitch), `PROGRESS.one-stage.md`. Earlier archives: `ARC.chord-input.md`, `ARC.desk.md`, `ARC.clips.md`.
@@ -21,6 +21,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | B0 (2026-11-23) | design written, awaiting steer | none needed | Scout facts: five separate identity systems; no cascade on delete (Make source shows missing); only the Notes type is registered (rhythm and pitch-set packets have no type); accepts logic duplicated; a possibly dead second module registry (`registry.ts`, PatchDocument). Design: one DataBlock envelope (id, type, name, data, lineage, origin), users computed from registered referencers, collections share a shape with the derivation proposal's inputs, nodes are not data-blocks, packets unchanged. |
 | B0 confirmed (2026-11-23) | decisions recorded | none needed | S1 A; S2 to S6, S9, S10, S12 as recommended; S7 plus an open question on recoverability (BACKLOG); S8 plus a Reinterpret-as submenu; S11 reframed as the **direct path first** rule (zero nodes for any DAW task; per-type default audition; test "C major" to sound with no wiring); S13 A and B plus a Steps shaper type. New milestone B0b (audit) before the renames. W-52 logged. |
 | B0b audit (2026-11-23) | `AUDIT.baseline.md` written | none needed | Findings: the patch chain (`registry.ts`, `evaluator.ts`, `persistence.ts`, `examples.ts`, `euclidean.ts`) runs a frozen demo patch nothing saves, with red error banners on the page; five dead files; about 450 lines of legacy read (desk and snapshot migrations, screenset seeding, `editorStage.ts`, mist migration, instance-key compat); `signalTypeFor` and `isReloading` duplicates; 153 history comments. Plan: removal steps 1 to 4, then renames. |
+| B0b removals (2026-11-23) | done, committed | `check:workbench` green (105 files, 1,549 tests); `check:stage` green (31 files, 400 tests); `check:hfl`: 6 timeouts in lab tests under load, the 5 files pass alone (53 tests) | Deleted: the demo patch chain and 5 dead files (11 files, about 1,340 lines), screenset seeding and `editorStage.ts`, the desk, snapshot, laneId, mist, interference and instance-key legacy, `alignParameterPackets`, `RhythmPatternPreview`, the stored midiNote Tone fallback. `signalTypeFor` iterates the registry in an explicit order. Every module instance now stores state under `<base>.instance.<instanceId>` (baseline reset: the human's dev browser opens the three default modules with defaults once). Review found one stale test (fixed), stale docs (fixed), and a wrong BACKLOG claim (fixed). Kept: `AcceptedPacket` for the type registry, restore-version functions on the desk. Shared: `src/lib/stage/migrate.test.ts` edited under a lock; `foldEditorLayout` dead code logged in BACKLOG. |
 
 ## Shared touches (locks taken)
 None yet.
@@ -29,4 +30,4 @@ None yet.
 - Approve the revised `ARC.md` (milestones C0, T0 to T6b).
 
 ## Next action
-**RESUME HERE (2026-11-23):** audit written. Delegate removal step 1 (R1 + R2) to a builder: brief = `AUDIT.baseline.md` R1/R2, confirm where live port acceptance lives before deleting `acceptsPacket`, update tests that import removed code, `check:fast` on touched files only, never the gate; then reviewer; orchestrator runs `check:workbench` once after steps 1 to 4 and commits path-scoped. Then B1a to B1c.
+**RESUME HERE (2026-11-23):** B0b is committed. Next B1a: delegate the rename of `Snippet`, "clip" and "snippet" to a builder by compiler rename (see `VOCABULARY.md` Rename rules and `AUDIT.baseline.md` R5 for which files are Notes-specific versus generic): `clipTypes.ts` becomes `dataBlockTypes.ts`, `snippet.ts` becomes `dataBlock.ts`, storage names change with the words (baseline reset). The page entry file lock stays for the renames. Scout first for outside uses (only `CompositionWorkbench.page.tsx`). Then B1b (module to node), B1c (screenset to workspace, shared Stage: lock, `check:stage`, `check:hfl`), then B1 and B2.

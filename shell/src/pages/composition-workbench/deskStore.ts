@@ -227,21 +227,10 @@ export interface LoadedDesk {
   writable: boolean;
   /** A reason to warn about, if any. */
   error?: string;
-  /** Set while a localStorage desk is in memory but not yet safely in IndexedDB. */
-  pendingLegacyKey?: string;
 }
 
 const storedOf = (snippets: Snippet[]) =>
   new Map(snippets.map((snippet) => [snippet.id, snippet] as const));
-
-/** Removes the localStorage copy of the desk once IndexedDB holds it. Never throws. */
-export function removeLegacyDesk(legacyKey: string) {
-  try {
-    localStorage.removeItem(legacyKey);
-  } catch {
-    // The copy is in IndexedDB now; a stale key is harmless.
-  }
-}
 
 interface RawDesk {
   order: unknown[] | null;
@@ -252,13 +241,11 @@ interface RawDesk {
 const plural = (count: number, one: string, many: string) => (count === 1 ? one : many);
 
 /**
- * Reads the desk, and on first use moves a v1 desk over from localStorage: copied into IndexedDB
- * first, and the localStorage key removed only once that write succeeded (if the copy fails, the key
- * is reported as pending so a later successful write removes it). Corrupt or newer data in either
- * place is left untouched. A record named in the order but missing is skipped, and a record the
- * order lacks is appended, both with a warning; only unreadable or newer data locks the desk.
+ * Reads the desk from IndexedDB. Corrupt or newer data is left untouched. A record named in the
+ * order but missing is skipped, and a record the order lacks is appended, both with a warning; only
+ * unreadable or newer data locks the desk.
  */
-export function loadDesk(legacyKey: string): Promise<LoadedDesk> {
+export function loadDesk(): Promise<LoadedDesk> {
   return enqueueDeskTask(async () => {
     let raw: RawDesk;
     try {
@@ -326,35 +313,7 @@ export function loadDesk(legacyKey: string): Promise<LoadedDesk> {
         error: 'The saved desk is damaged or from a newer version, so it was left untouched.',
       };
     }
-    let legacy: Snippet[] | null = null;
-    try {
-      const text = localStorage.getItem(legacyKey);
-      if (text !== null) {
-        const parsed: unknown = JSON.parse(text);
-        legacy = acceptsSnippets(parsed) ? parsed : null;
-      }
-    } catch {
-      legacy = null;
-    }
-    if (!legacy || legacy.length === 0) {
-      return { snippets: [], stored: new Map(), rev, writable: true };
-    }
-    let written: number;
-    try {
-      written = await writeDeskNow({ snippets: legacy, stored: new Map(), expectedRev: rev });
-    } catch (error) {
-      // Keep working from memory; the localStorage copy stays until a write succeeds.
-      return {
-        snippets: legacy,
-        stored: new Map(),
-        rev,
-        writable: true,
-        error: describeStorageError(error),
-        pendingLegacyKey: legacyKey,
-      };
-    }
-    removeLegacyDesk(legacyKey);
-    return { snippets: legacy, stored: storedOf(legacy), rev: written, writable: true };
+    return { snippets: [], stored: new Map(), rev, writable: true };
   });
 }
 

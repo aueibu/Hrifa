@@ -40,15 +40,6 @@ export const GRID_OPTIONS: GridOption[] = [
 export const ACTION_SECTION_IDS = ['time', 'pitch', 'values', 'clipboard'] as const;
 export type ActionSectionId = (typeof ACTION_SECTION_IDS)[number];
 
-/** The named slots the chord picker can occupy (chordInput/ChordPickerHost.tsx). */
-export const CHORD_HOSTS = ['dock', 'takeover'] as const;
-export type ChordHost = (typeof CHORD_HOSTS)[number];
-
-/** The chord dock's width bounds and default, in pixels (14rem, 30rem, a generous ceiling). */
-export const MIN_CHORD_DOCK_WIDTH = 224;
-export const DEFAULT_CHORD_DOCK_WIDTH = 480;
-export const MAX_CHORD_DOCK_WIDTH = 1600;
-
 export interface NoteEditorPreferences {
   /** Quarter notes; null until the viewer has set one (the grid unit is used). */
   entryLength: number | null;
@@ -62,10 +53,6 @@ export interface NoteEditorPreferences {
   laneHeight: number | null;
   /** The Actions panel sections that are open (several at once; all open until the viewer closes some). */
   actionSections: ActionSectionId[];
-  /** LEGACY (M6a): where the picker sat. Only read once, to seed the `chords` panel's place of a screenset that has none. */
-  chordHost: ChordHost;
-  /** LEGACY (M6a): the old dock's width in pixels, read once to seed the width of `Tools` for a project with no screenset store. */
-  chordDockWidth: number | null;
 }
 
 const defaults: NoteEditorPreferences = {
@@ -75,8 +62,6 @@ const defaults: NoteEditorPreferences = {
   velocityLaneCollapsed: false,
   laneHeight: null,
   actionSections: [...ACTION_SECTION_IDS],
-  chordHost: 'dock',
-  chordDockWidth: null,
 };
 
 const listeners = new Set<() => void>();
@@ -135,14 +120,6 @@ export function readNoteEditorPreferences(): NoteEditorPreferences {
           ? parsed.laneHeight
           : null,
       actionSections: knownSections(parsed.actionSections),
-      chordHost: parsed.chordHost === 'takeover' ? 'takeover' : 'dock',
-      chordDockWidth:
-        typeof parsed.chordDockWidth === 'number' &&
-        Number.isFinite(parsed.chordDockWidth) &&
-        parsed.chordDockWidth >= MIN_CHORD_DOCK_WIDTH &&
-        parsed.chordDockWidth <= MAX_CHORD_DOCK_WIDTH
-          ? parsed.chordDockWidth
-          : null,
     };
   } catch {
     // A damaged value reads as the defaults.
@@ -167,11 +144,6 @@ export function writeNoteEditorPreferences(patch: Partial<NoteEditorPreferences>
   if (next.laneHeight !== null) {
     next.laneHeight = Number.isFinite(next.laneHeight)
       ? Math.min(MAX_VELOCITY_LANE_HEIGHT, Math.max(MIN_VELOCITY_LANE_HEIGHT, next.laneHeight))
-      : null;
-  }
-  if (next.chordDockWidth !== null) {
-    next.chordDockWidth = Number.isFinite(next.chordDockWidth)
-      ? Math.min(MAX_CHORD_DOCK_WIDTH, Math.max(MIN_CHORD_DOCK_WIDTH, next.chordDockWidth))
       : null;
   }
   next.actionSections = knownSections(next.actionSections);

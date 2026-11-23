@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@test-utils';
 import { DeskProvider, useDesk } from './desk';
-import { deskStoreIdle, loadDesk } from './deskStore';
+import { deskStoreIdle, loadDesk, writeDeskNow } from './deskStore';
 import type { Snippet } from './snippet';
 
 /** Renders the desk and waits for its saved copy to load (it starts in a loading state). */
@@ -16,5 +16,10 @@ export async function storedDesk(desk: ReturnType<typeof useDesk>): Promise<Snip
     await desk.flushDesk();
   });
   await deskStoreIdle();
-  return (await loadDesk('hrifa.test.no-legacy-desk')).snippets;
+  return (await loadDesk()).snippets;
+}
+
+/** Puts a desk into the (fresh, per-test) IndexedDB, as if an earlier session had saved it. */
+export async function seedDesk(snippets: Snippet[]) {
+  await writeDeskNow({ snippets, stored: new Map(), expectedRev: 0 });
 }

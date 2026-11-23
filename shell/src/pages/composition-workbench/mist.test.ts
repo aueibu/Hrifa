@@ -8,7 +8,6 @@ import {
   defaultStratum,
   mistChordsPacket,
   mistVoicesPacket,
-  migrateMistSettings,
   mistRepeat,
   passesPerRepeat,
   playingStep,
@@ -252,107 +251,6 @@ describe('saved settings', () => {
     expect(acceptsMistSettings(null)).toBe(false);
     const bad = settingsWith([{ ...defaultStratum(), waveform: 'custom', custom: [1] }]);
     expect(acceptsMistSettings(bad)).toBe(false);
-  });
-
-  const base = {
-    seed: 'mist',
-    steps: 16,
-    start: 0,
-    stride: 1,
-    interpolation: 'linear',
-    mapLow: 48,
-    mapHigh: 72,
-    mapStep: 1,
-  };
-
-  it("upgrades the first model (a loop in cells and a rate), keeping each stratum's period", () => {
-    const old = {
-      ...base,
-      strata: [
-        {
-          enabled: true,
-          waveform: 'sine',
-          loop: 16,
-          speed: 1,
-          phase: 4,
-          center: 0,
-          amplitude: 1,
-          walkStep: 0.25,
-          smoothing: 1,
-        },
-        {
-          enabled: true,
-          waveform: 'walk',
-          loop: 24,
-          speed: 0.5,
-          phase: 0,
-          center: 1,
-          amplitude: 1,
-          walkStep: 0.25,
-          smoothing: 2,
-        },
-        {
-          enabled: true,
-          waveform: 'sine',
-          loop: 8,
-          speed: 0,
-          phase: 0,
-          center: 0,
-          amplitude: 1,
-          walkStep: 0.25,
-          smoothing: 1,
-        },
-      ],
-    };
-    const migrated = migrateMistSettings(old);
-    expect(acceptsMistSettings(migrated)).toBe(true);
-    const { strata } = migrated as MistSettings;
-    // Old passes took 16 / 1 = 16 and 24 / 0.5 = 48 positions: speeds of 1/16 and 1/48.
-    expect(strata[0].speed).toBeCloseTo(1 / 16);
-    expect(strata[1].speed).toBeCloseTo(1 / 48);
-    expect(strata[2].speed).toBe(0);
-    expect(strata[0].phase).toBeCloseTo(0.25);
-    // A walk keeps its cell count as its points, so it keeps its shape.
-    expect(strata[1].walkPoints).toBe(24);
-  });
-
-  it('upgrades the second model (a field loop length and a rate)', () => {
-    const second = {
-      ...base,
-      loop: 16,
-      strata: [
-        { ...defaultStratum(), speed: 1 },
-        { ...defaultStratum(), speed: 1.5 },
-        { ...defaultStratum(), speed: -2 },
-      ],
-    };
-    const migrated = migrateMistSettings(second);
-    expect(acceptsMistSettings(migrated)).toBe(true);
-    const { strata } = migrated as MistSettings;
-    expect(strata[0].speed).toBeCloseTo(1 / 16);
-    expect(strata[1].speed).toBeCloseTo(1.5 / 16);
-    expect(strata[2].speed).toBeCloseTo(-2 / 16);
-    expect('loop' in (migrated as object)).toBe(false);
-  });
-
-  it('upgrades the third model (speed was positions per pass)', () => {
-    const third = {
-      ...base,
-      strata: [
-        { ...defaultStratum(), speed: 16 },
-        { ...defaultStratum(), speed: 8 },
-        { ...defaultStratum(), speed: 0 },
-        { ...defaultStratum(), speed: -4 },
-      ],
-    };
-    const migrated = migrateMistSettings(third);
-    expect(acceptsMistSettings(migrated)).toBe(true);
-    const { strata } = migrated as MistSettings;
-    expect(strata.map((s) => s.speed)).toEqual([1 / 16, 1 / 8, 0, -1 / 4]);
-  });
-
-  it('passes current settings through untouched', () => {
-    expect(migrateMistSettings(defaultMistSettings())).toEqual(defaultMistSettings());
   });
 });
 

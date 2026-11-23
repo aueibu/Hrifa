@@ -36,8 +36,6 @@ vi.mock('./audio/AudioEngineProvider', () => ({
   }),
 }));
 
-const LEGACY = compositionStateKeys.desk;
-
 function notes(count: number, shift = 0): DataItem[] {
   return Array.from({ length: count }, (_unused, index) => ({
     id: `note:${index}`,
@@ -115,7 +113,7 @@ describe('desk storage in IndexedDB', () => {
     expect(second.result.current.snippets).toEqual(live);
     expect(acceptsSnippets(second.result.current.snippets)).toBe(true);
     // Nothing about the desk is in localStorage.
-    expect(localStorage.getItem(LEGACY)).toBeNull();
+    expect(localStorage.getItem(compositionStateKeys.desk)).toBeNull();
     second.unmount();
   });
 
@@ -142,57 +140,6 @@ describe('desk storage in IndexedDB', () => {
   });
 });
 
-describe('migration from localStorage', () => {
-  it('moves a v1 desk over once, removing the key only after the write', async () => {
-    const legacy = [clip('old-1'), clip('old-2')];
-    localStorage.setItem(LEGACY, JSON.stringify(legacy));
-    const first = await renderDesk();
-    expect(first.result.current.snippets).toEqual(legacy);
-    expect(localStorage.getItem(LEGACY)).toBeNull();
-    expect((await loadDesk('x')).snippets).toEqual(legacy);
-    first.unmount();
-
-    // Once: a later legacy value is not copied over the migrated desk.
-    localStorage.setItem(LEGACY, JSON.stringify([clip('stray')]));
-    const second = await renderDesk();
-    expect(second.result.current.snippets.map((snippet) => snippet.id)).toEqual(['old-1', 'old-2']);
-    expect(localStorage.getItem(LEGACY)).not.toBeNull();
-    second.unmount();
-  });
-
-  it('keeps the localStorage key when the IndexedDB write fails', async () => {
-    const legacy = [clip('old-1')];
-    localStorage.setItem(LEGACY, JSON.stringify(legacy));
-    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
-      throw new DOMException('full', 'QuotaExceededError');
-    });
-    const { result, unmount } = await renderDesk();
-    // Still usable from memory, still safe in localStorage, and the failure is reported.
-    expect(result.current.snippets).toEqual(legacy);
-    expect(localStorage.getItem(LEGACY)).toBe(JSON.stringify(legacy));
-    expect(result.current.persistError).toBe('Browser storage is full.');
-    // Let the unmount flush (which retries the migration, and fails) finish inside this test.
-    unmount();
-    await deskStoreIdle();
-  });
-
-  it.each([
-    ['not JSON', '{nope'],
-    ['a newer schema', JSON.stringify([{ ...clip('x'), schemaVersion: 2 }])],
-    [
-      'a malformed lineage',
-      JSON.stringify([{ ...clip('x'), lineage: { head: 'h', versions: [] } }]),
-    ],
-  ])('neither migrates nor deletes %s', async (_name, raw) => {
-    localStorage.setItem(LEGACY, raw);
-    const { result } = await renderDesk();
-    expect(result.current.snippets).toEqual([]);
-    expect(localStorage.getItem(LEGACY)).toBe(raw);
-    expect((await loadDesk('x')).snippets).toEqual([]);
-    expect(result.current.persistError).toBeNull();
-  });
-});
-
 describe('loading', () => {
   it('writes nothing before the initial load resolves, and refuses changes meanwhile', async () => {
     const saved = [clip('kept-1'), clip('kept-2')];
@@ -215,10 +162,7 @@ describe('loading', () => {
     await deskStoreIdle();
     expect(put).not.toHaveBeenCalled();
     expect(del).not.toHaveBeenCalled();
-    expect((await loadDesk('x')).snippets.map((snippet) => snippet.id)).toEqual([
-      'kept-1',
-      'kept-2',
-    ]);
+    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['kept-1', 'kept-2']);
   });
 
   it('shows a loading state, then the desk', async () => {
@@ -313,7 +257,7 @@ describe('save failures', () => {
       timeout: DESK_WRITE_DEBOUNCE_MS * 10,
     });
     // The failed write was retried in full: all three clips are stored.
-    expect((await loadDesk('x')).snippets).toHaveLength(3);
+    expect((await loadDesk()).snippets).toHaveLength(3);
   });
 
   it('reports the failure through flushDesk and the context', async () => {
@@ -456,7 +400,7 @@ describe('two tabs and damaged storage', () => {
     await storedDesk(result.current);
 
     // Another tab adds a clip.
-    const other = await loadDesk('x');
+    const other = await loadDesk();
     await enqueueDeskTask(() =>
       writeDeskNow({
         snippets: [...other.snippets, clip('theirs')],
@@ -475,7 +419,7 @@ describe('two tabs and damaged storage', () => {
       'The desk changed in another tab. Reload to see the latest version.'
     );
     // Their desk is intact, not orphaned by our order.
-    expect((await loadDesk('x')).snippets.map((snippet) => snippet.id)).toEqual(['a', 'theirs']);
+    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['a', 'theirs']);
   });
 
   it('keeps writing in sequence when nothing else touched the desk', async () => {
@@ -530,7 +474,7 @@ describe('two tabs and damaged storage', () => {
     ).rejects.toThrow('full');
     vi.restoreAllMocks();
     expect(await rawClips('readonly', (store) => store.getAll())).toEqual([]);
-    expect((await loadDesk('x')).rev).toBe(0);
+    expect((await loadDesk()).rev).toBe(0);
   });
 
   it('retries a blocked open, then reports it and closes connections that open late', async () => {
@@ -540,7 +484,7 @@ describe('two tabs and damaged storage', () => {
       requests.push(request);
       return request as unknown as IDBOpenDBRequest;
     });
-    const loading = loadDesk('x');
+    const loading = loadDesk();
     for (let attempt = 1; attempt <= OPEN_BLOCKED_RETRIES + 1; attempt += 1) {
       await waitFor(() => expect(requests).toHaveLength(attempt));
       await waitFor(() => expect(typeof requests[attempt - 1].onblocked).toBe('function'));
@@ -570,28 +514,9 @@ describe('two tabs and damaged storage', () => {
       }
       return real(name, version);
     });
-    const loaded = await loadDesk('x');
+    const loaded = await loadDesk();
     expect(loaded.writable).toBe(true);
     expect(calls).toBe(2);
-  });
-
-  it('removes the localStorage key after the first successful write following a failed migration', async () => {
-    const legacy = [clip('old-1')];
-    localStorage.setItem(LEGACY, JSON.stringify(legacy));
-    const failing = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
-      throw new DOMException('full', 'QuotaExceededError');
-    });
-    const { result } = await renderDesk();
-    expect(localStorage.getItem(LEGACY)).not.toBeNull();
-    failing.mockRestore();
-
-    act(() => result.current.addSnippet(clip('new')));
-    expect((await storedDesk(result.current)).map((snippet) => snippet.id)).toEqual([
-      'old-1',
-      'new',
-    ]);
-    expect(localStorage.getItem(LEGACY)).toBeNull();
-    expect(result.current.persistError).toBeNull();
   });
 });
 
@@ -607,7 +532,7 @@ describe('write timing and cost', () => {
     expect(put).not.toHaveBeenCalled();
     await waitFor(() => expect(put).toHaveBeenCalled(), { timeout: 3000 });
     await deskStoreIdle();
-    expect((await loadDesk('x')).snippets[0].lineage!.versions).toHaveLength(2);
+    expect((await loadDesk()).snippets[0].lineage!.versions).toHaveLength(2);
   });
 
   it('does not re-measure the whole history on each edit', () => {

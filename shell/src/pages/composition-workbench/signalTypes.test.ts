@@ -1,5 +1,5 @@
 import { packet, type DataPacket } from './model';
-import { signalTypeFor, signalTypeRegistry } from './signalTypes';
+import { signalTypeFor, signalTypeOrder, signalTypeRegistry } from './signalTypes';
 
 function samplePacket(domain: DataPacket['domain'], kind: DataPacket['kind'] = 'list'): DataPacket {
   return packet(kind, domain, [{ id: '0', value: 1, provenance: [] }]);
@@ -22,6 +22,20 @@ describe('signalTypeFor', () => {
   it('falls back to numeric for everything else, including undefined', () => {
     expect(signalTypeFor(samplePacket('integer'))).toBe('numeric');
     expect(signalTypeFor(undefined)).toBe('numeric');
+  });
+});
+
+describe('signalTypeOrder', () => {
+  it('lists every registry entry once, pitch then rhythm then the numeric fallback', () => {
+    expect(signalTypeOrder).toEqual(['pitch', 'rhythm', 'numeric']);
+    expect([...signalTypeOrder].sort()).toEqual(Object.keys(signalTypeRegistry).sort());
+  });
+
+  it('resolves a packet matching two predicates to the earlier one', () => {
+    const source = samplePacket('pitch');
+    expect(signalTypeRegistry.pitch.matches(source)).toBe(true);
+    expect(signalTypeRegistry.numeric.matches(source)).toBe(true);
+    expect(signalTypeFor(source)).toBe('pitch');
   });
 });
 

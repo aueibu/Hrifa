@@ -1,10 +1,10 @@
-import { useMemo } from "react";
-import { useDeveloperOptions } from "../developerOptions";
-import { buildChordGhosts, type ChordGhostNotes } from "./chordGhosts";
-import type { Chord } from "./chords";
-import type { ChordTarget } from "./chordSession";
-import { useChordSelector, useChordSession } from "./ChordSessionProvider";
-import { mergeChordInserts, type ExistingNote } from "./placeChords";
+import { useMemo } from 'react';
+import { useDeveloperOptions } from '../developerOptions';
+import { buildChordGhosts, type ChordGhostNotes } from './chordGhosts';
+import type { Chord } from './chords';
+import type { ChordTarget } from './chordSession';
+import { useChordSelector, useChordSession } from './ChordSessionProvider';
+import { mergeChordInserts, type ExistingNote } from './placeChords';
 
 /**
  * Selection mode (M6c): the ghosts of the chord the picker would insert on EVERY selected note of this host's
@@ -16,11 +16,11 @@ import { mergeChordInserts, type ExistingNote } from "./placeChords";
 export function useSelectionGhosts(
   target: ChordTarget,
   edo: number,
-  existing: readonly ExistingNote[],
+  existing: readonly ExistingNote[]
 ): ChordGhostNotes | undefined {
   const session = useChordSession();
   const selectionOn = useChordSelector(
-    (state) => state.target === target && !state.pickerWanted && state.panelShown,
+    (state) => state.target === target && !state.pickerWanted && state.panelShown
   );
   const targetVersion = useChordSelector((state) => state.targetVersion);
   const hoverChord = useChordSelector((state) => state.hoverChord);
@@ -33,9 +33,9 @@ export function useSelectionGhosts(
       return undefined;
     }
     const ghosts: ChordGhostNotes = [];
-    const shown: [Chord | null, "pinned" | "hover"][] = [
-      [pinnedChord, "pinned"],
-      [hoverChord && hoverChord.name === pinnedChord?.name ? null : hoverChord, "hover"],
+    const shown: [Chord | null, 'pinned' | 'hover'][] = [
+      [pinnedChord, 'pinned'],
+      [hoverChord && hoverChord.name === pinnedChord?.name ? null : hoverChord, 'hover'],
     ];
     for (const [chord, variant] of shown) {
       const requests = chord ? session.selectionRequests(chord, target) : null;
@@ -76,7 +76,7 @@ export function useSelectionGhosts(
 export function useChordGhosts(
   active: boolean,
   edo: number,
-  entryLength: number | null | undefined,
+  entryLength: number | null | undefined
 ): ChordGhostNotes | undefined {
   const anchor = useChordSelector((state) => state.anchor);
   const hoverCell = useChordSelector((state) => state.hoverCell);
@@ -114,6 +114,6 @@ export function useChordGhosts(
       edo,
       entryLength,
       chordAnchorLabel,
-    ],
+    ]
   );
 }

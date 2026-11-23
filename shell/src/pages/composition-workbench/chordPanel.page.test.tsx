@@ -4,7 +4,9 @@ import { dockerHolding, parseScreensetStore, type ScreensetStore } from '../../l
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import type { ChordSession } from './chordInput/chordSession';
 import { defaultProjectPitchSet } from './compositionSettings';
+import { seedDesk } from './deskTestUtils';
 import { resetHistory } from './history';
+import { storeDefaultScreensets } from './layout/screensetFixtures';
 import { WORKBENCH_KNOWN_IDS } from './layout/workbenchScreensets';
 import type { NoteEventValue } from './melodicization';
 import { packet } from './model';
@@ -86,9 +88,9 @@ function noteClip(id: string, name: string): Snippet {
   };
 }
 
-function seed(view: 'canvas' | 'desk' = 'desk') {
-  localStorage.setItem(compositionStateKeys.desk, JSON.stringify([noteClip('clip-a', 'Alpha')]));
-  localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify(view));
+async function seed(view: 'canvas' | 'desk' = 'desk') {
+  await seedDesk([noteClip('clip-a', 'Alpha')]);
+  storeDefaultScreensets({ active: view });
 }
 
 function storedStore(): ScreensetStore {
@@ -137,7 +139,7 @@ describe('the Chords panel on the page Stage', () => {
 
   it('A1, A5, A4, B6: the Chords tool opens the panel in Tools first, a moved tab keeps the picker state, leaving the tool keeps the panel, closing it leaves the tool, and the tool reopens it where it was put', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     const roll = await openClip(user, 'Alpha');
     expect(screen.queryByRole('tab', { name: 'Chords' })).toBeNull();
@@ -253,7 +255,7 @@ describe('the Chords panel on the page Stage', () => {
 
   it('A8 and A6: with the roll hidden behind the Modules tab the picker stays and the keys are not captured; flipping screensets keeps the picker and the anchor', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     const roll = await openClip(user, 'Alpha');
     roll.focus();
@@ -288,7 +290,7 @@ describe('the Chords panel on the page Stage', () => {
 
   it('A6: a tab (Modules) the person put in front of Chords stays in front, and Chords stays open, after a flip to the other screenset and back', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     const roll = await openClip(user, 'Alpha');
     roll.focus();
@@ -313,7 +315,7 @@ describe('the Chords panel on the page Stage', () => {
 
   it('M6c: selection mode follows the Stage: the panel behind another tab is off screen (ghosts and Insert off), in front it works', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     const roll = await openClip(user, 'Alpha');
     roll.focus();

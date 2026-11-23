@@ -85,12 +85,9 @@ export const signalTypeRegistry: Record<SignalTypeId, SignalTypeDefinition<unkno
   numeric: numericSignalType as SignalTypeDefinition<unknown>,
 };
 
+/** Order in which `signalTypeFor` tries the registry; the first match wins, numeric matches everything. */
+export const signalTypeOrder: readonly SignalTypeId[] = ['pitch', 'rhythm', 'numeric'];
+
 export function signalTypeFor(source?: DataPacket): SignalTypeId {
-  if (pitchSignalType.matches(source)) {
-    return 'pitch';
-  }
-  if (rhythmSignalType.matches(source)) {
-    return 'rhythm';
-  }
-  return 'numeric';
+  return signalTypeOrder.find((id) => signalTypeRegistry[id].matches(source)) ?? 'numeric';
 }

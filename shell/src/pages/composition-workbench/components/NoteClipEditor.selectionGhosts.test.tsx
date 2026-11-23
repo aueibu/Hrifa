@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, userEvent, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChordPanelStandIn } from '../chordInput/ChordPanelStandIn';
 import type { ChordSession } from '../chordInput/chordSession';
 import { ChordSessionProvider, useChordSession } from '../chordInput/ChordSessionProvider';
+import { ChordPanelStandIn } from '../chordInput/chordTestUtils';
 import { CompositionSettingsProvider } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
 import { resetHistory } from '../history';

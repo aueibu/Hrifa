@@ -22,9 +22,8 @@ import { createOutputStore } from './outputStore';
 import { deleteState, resetStateStore, setState } from './stateStore';
 
 const textKey = (id: string) =>
-  compositionInstanceStateKey(compositionStateKeys.rhythmListText, id, 'rhythm-list');
-const pitchKey = (id: string) =>
-  compositionInstanceStateKey(compositionStateKeys.pitchValues, id, 'pitch-list');
+  compositionInstanceStateKey(compositionStateKeys.rhythmListText, id);
+const pitchKey = (id: string) => compositionInstanceStateKey(compositionStateKeys.pitchValues, id);
 
 const note = (stored: string) => JSON.stringify(stored);
 
@@ -175,7 +174,7 @@ describe('module runners (no views mounted)', () => {
       compositionStateKeys.rhythmListLoop,
       compositionStateKeys.rhythmListSound,
       compositionStateKeys.rhythmListVolume,
-    ].map((base) => compositionInstanceStateKey(base, 'rhythm-1', 'rhythm-list'));
+    ].map((base) => compositionInstanceStateKey(base, 'rhythm-1'));
     recordGroup(() => {
       keys.forEach((key) => {
         const previous = localStorage.getItem(key);

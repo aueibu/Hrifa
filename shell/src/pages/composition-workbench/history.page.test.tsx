@@ -2,7 +2,7 @@ import { render, screen, userEvent, within } from '@test-utils';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import { canUndo, resetHistory } from './history';
-import { compositionStateKeys } from './usePersistentState';
+import { compositionInstanceStateKey, compositionStateKeys } from './usePersistentState';
 
 describe('workbench page history', () => {
   beforeEach(() => {
@@ -51,7 +51,7 @@ describe('workbench page history', () => {
     const values = screen.getByRole('textbox', { name: 'Pitch values' });
     await user.clear(values);
     await user.type(values, '61, 62');
-    const stateKey = compositionStateKeys.pitchValues;
+    const stateKey = compositionInstanceStateKey(compositionStateKeys.pitchValues, 'pitch-list');
     const stored = localStorage.getItem(stateKey);
     expect(stored).toContain('61');
 

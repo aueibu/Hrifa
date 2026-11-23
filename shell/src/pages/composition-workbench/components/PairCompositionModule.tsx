@@ -41,26 +41,18 @@ interface PairCompositionModuleProps {
 }
 
 export function PairCompositionModule({ instanceId, instanceLabel }: PairCompositionModuleProps) {
-  const stateKey = (key: string) =>
-    compositionInstanceStateKey(key, instanceId, 'pair-composition');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [{ a, b, mode }, { a: setA, b: setB, mode: setMode }] = useModuleState(
     pairCompositionState,
     instanceId
   );
-  const [midiNote, setMidiNote] = usePersistentState(
-    stateKey(compositionStateKeys.pairCompositionMidiNote),
-    48,
-    acceptsFiniteNumber
-  );
-  // The preview's sound: the primary rhythm voice unless overridden here. A pitch saved before
-  // voices existed (anything but the old default C3) still counts as a Tone override.
+  // The preview's sound: the primary rhythm voice unless overridden here.
   const [soundSetting, setSoundSetting] = usePersistentState<SoundOverride | null>(
     stateKey(compositionStateKeys.pairCompositionSound),
     null,
     (value): value is SoundOverride | null => value === null || isSoundOverride(value)
   );
-  const soundOverride: SoundOverride | null =
-    soundSetting ?? (midiNote !== 48 ? { type: 'tone', midicents: midiNote * 100 } : null);
+  const soundOverride: SoundOverride | null = soundSetting;
   const [previewVolume, setPreviewVolume] = usePersistentState(
     stateKey(compositionStateKeys.pairCompositionVolume),
     30,
@@ -106,7 +98,6 @@ export function PairCompositionModule({ instanceId, instanceLabel }: PairComposi
     setA(3);
     setB(2);
     setMode('balancing');
-    setMidiNote(48);
     setSoundSetting(null);
     setPreviewVolume(30);
     preview.setStatus('Pair Composition module reset.');
@@ -202,7 +193,6 @@ export function PairCompositionModule({ instanceId, instanceLabel }: PairComposi
                   value={soundOverride}
                   onChange={(sound) => {
                     setSoundSetting(sound);
-                    setMidiNote(48);
                   }}
                 />
               </div>

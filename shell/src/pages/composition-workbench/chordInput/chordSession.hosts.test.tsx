@@ -8,10 +8,10 @@ import { resetHistory } from '../history';
 import type { NoteEventValue } from '../melodicization';
 import { rational } from '../musicalTime';
 import { WorkbenchSessions } from '../WorkbenchSessions';
-import { ChordPanelStandIn } from './ChordPanelStandIn';
 import { ChordSession } from './chordSession';
 import { ChordSessionProvider, useChordSelector, useChordSession } from './ChordSessionProvider';
 import { ChordsPanel } from './ChordsPanel';
+import { ChordPanelStandIn } from './chordTestUtils';
 
 // The audition path: a stand-in audio engine that makes no sound and records what was played.
 const engine = vi.hoisted(() => ({

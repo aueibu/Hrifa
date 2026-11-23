@@ -3,13 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import type { ChordSession } from './chordInput/chordSession';
 import { CLIP_SLOT, type ClipEditorSession } from './clipEditorSession';
+import { seedDesk } from './deskTestUtils';
 import { resetHistory } from './history';
+import { storeDefaultScreensets } from './layout/screensetFixtures';
 import type { NoteEventValue } from './melodicization';
 import { packet } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
 import type { NoteSelection } from './noteSelection';
 import type { Snippet } from './snippet';
-import { compositionStateKeys } from './usePersistentState';
 import type { WorkbenchSelectionValue } from './WorkbenchSelection';
 
 // The page mounts the real `WorkbenchSessions`; this wrapper hands it sessions the test can see and
@@ -86,12 +87,9 @@ function noteClip(id: string, name: string): Snippet {
   };
 }
 
-function seed() {
-  localStorage.setItem(
-    compositionStateKeys.desk,
-    JSON.stringify([noteClip('clip-a', 'Alpha'), noteClip('clip-b', 'Beta')])
-  );
-  localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify('desk'));
+async function seed() {
+  await seedDesk([noteClip('clip-a', 'Alpha'), noteClip('clip-b', 'Beta')]);
+  storeDefaultScreensets({ active: 'desk' });
 }
 
 async function openClip(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -117,7 +115,7 @@ describe('the page mounts WorkbenchSessions', () => {
 
   it('the open clip editor claims the page chord session and resets it per clip, without remounting the desk', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     const alphaName = await screen.findByDisplayValue('Alpha');
     expect(chordSession().getState().target).toBeNull();
@@ -145,7 +143,7 @@ describe('the page mounts WorkbenchSessions', () => {
 
   it('releases the claim when the clip editor closes, so the chord state is gone', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     await openClip(user, 'Alpha');
     await screen.findByRole('group', { name: /Note clip piano roll/ });
@@ -166,7 +164,7 @@ describe('the page mounts WorkbenchSessions', () => {
 
   it('useWorkbenchSelection resolves the live module, clip and note targets', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     await screen.findByDisplayValue('Alpha');
     // No clip open: the stored module target (the default Interference module).
