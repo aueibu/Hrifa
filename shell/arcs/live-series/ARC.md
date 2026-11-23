@@ -162,7 +162,7 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
       sines. C E G B♭ at 4:5:6:7 typed: C–G 0.9, C–E 10.4, E–G 17.8, E–B♭ 23.4, C–B♭ 33.3, G–B♭ 53.0 per second.
     - **Rhythms between the beats**: both beat rates, the nearest ratio p:q (p, q ≤ 8, by closeness of a/b to p/q),
       the pattern length (p/a ≈ q/b) and the phasing time p·q / |q·a − p·b| ("never" for an exact ratio, "locked"
-      over 10 minutes). Corrected 2026-11-23: the first version showed 1 / |q·a − p·b| as "lines up every"; a
+      over 10 minutes) (superseded by measured columns: see "Phasing, drawn" below). Corrected 2026-11-23: the first version showed 1 / |q·a − p·b| as "lines up every"; a
       simulation of the peaks showed it was wrong (1.4 / 1.6 = 7:8 coincide every 5 s; C/B♭ ≈ 1:2 coincide on every
       C beat, 0.45 s). Same chord: G/B♭ ≈ 6:7, pattern 1.6 s, phases through in 166 s; C/G ≈ 3:5, 1.3 s, 68 s;
       C/B♭ ≈ 1:2, 0.5 s, 424 s. Rates more than 8 times apart show the plain ratio.
@@ -173,6 +173,21 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
     sound; dashed markers where two note lanes' peaks actually coincide (within 30 ms); a fixed box 6 lanes tall
     that scrolls. Plus a zoom: click a lane for a strobe view of its two tones and their sum (four cycles, frozen on
     the first tone, the second sliding one full cycle per beat), labeled as such.
+  - Phasing, drawn and listen toggles in both lane panels (human: "how can we visualize the rhythm between the beats
+    in the same way - that macro phasing syncs up at its own period too right?", then "yes build both now. Can we
+    also have the listen toggles placed in both of these panels?"). Second correction of the rhythm columns: the
+    beats are unaccented, so "phases through in p·q/|q·a − p·b|" (166 s for G/B♭) only exists if beats are numbered
+    and cannot be heard; formulas twice mispredicted the simulation, so the columns are now MEASURED from the live
+    pairs over the next 10 minutes: "pattern lasts" (p/a), "together (within 30 ms) about every" (mean gap between
+    coincidences) and "longest wait". Starting together: G/B♭ every 1.0 s, longest 1.6 s (never audibly apart);
+    C/G 2.0 s, 3.2 s; C/B♭ 1.4 s, 156 s (locked for a stretch, then out of step for over two minutes); 1.4/1.6
+    exact 7:8: 5.0 s, 5.0 s. **Phasing, drawn**: one row per pair of notes (all pairs, scrolling), a 5-minute window
+    (1 min back, 4 ahead) with the playhead; for each peak of the slower stream a bar whose height is how close the
+    other stream's nearest peak is (full = together, flat at 120 ms or more), together (< 30 ms) bars marked;
+    closer view: click a row for both streams as tick rows over about two patterns around now, coinciding ticks
+    marked, readout "nearest peaks now N ms apart". **Toggles**: Beats, drawn has one row per note (always) plus
+    rows for interval pairs among listened notes, each with its listen toggle; Phasing, drawn's toggle turns both
+    notes of its pair on or off; all toggles stay in sync with the table and the listings.
   - Series drawing width (human: "stretch the harmonic series graph to fit the whole width we have. better
     resolution available"): the drawing always fills its panel's width, empty or not, and is redrawn on a resize.
   - No jumping, the whole page (human: "IVE SAID IT MORE THAN 10 ... TIMES ITS THE WHOLE UI DESIGN PRINCIPLE"):

@@ -236,7 +236,9 @@ lb()[0].click(); lb()[2].click(); lb()[3].click();
 check('listings: three pairs each', [cellRows('.beats-iv').length, cellRows('.beats-rh').length], [3, 3]);
 check('intervals: C–G', cellRows('.beats-iv')[0].slice(0, 4), ['C4–G4', '4:6 (2:3)', "C4's 3rd · G4's 2nd · 784.9 Hz", 'about 0.9 per second']);
 check('intervals: C–B♭ and G–B♭ rough', [cellRows('.beats-iv')[1][3], cellRows('.beats-iv')[2][3]], ['about 33.3 per second (rough)', 'about 53.0 per second (rough)']);
-check('rhythms between the beats (pattern, phases through)', cellRows('.beats-rh').map((r) => [r[2], r[3], r[4]]), [['3:5', '1.3 s', '68 s'], ['1:2', '0.5 s', '424 s'], ['6:7', '1.6 s', '166 s']]);
+// rhythm columns MEASURED from the peaks over the next 10 minutes (second correction), all starting together here:
+// matches a separate simulation (avg.mjs): G/B♭ every 1.00 s, longest 1.59; C/G 1.98, 3.16; C/B♭ 1.44, 156.5 (shown as 156 s)
+check('rhythms between the beats (ratio, pattern, together every, longest wait)', cellRows('.beats-rh').map((r) => [r[2], r[3], r[4], r[5]]), [['3:5', '1.3 s', '2.0 s', '3.2 s'], ['1:2', '0.5 s', '1.4 s', '156 s'], ['6:7', '1.6 s', '1.0 s', '1.6 s']]);
 const b5 = OSCS.length;
 $('beatLists').querySelector('[data-iv]').click();
 check('interval listen: the two meeting partials as sines', OSCS.slice(b5).filter((o) => !o.stopped).map(fq).sort((a, b) => a - b).map((f) => f.toFixed(2)), ['784.00', '784.89']);
@@ -244,18 +246,30 @@ lb()[2].click();
 check('interval listen ends when one of its rows is switched off', [OSCS.slice(b5).filter((o) => !o.stopped).length, cellRows('.beats-iv').length], [0, 1]);
 $('stopAll').click();
 check('listings: Stop sound clears them', cellRows('.beats-rh')[0][0], 'Switch on listen in two or more rows above.');
-// Beats, drawn (human 2026-11-23): one lane per listen; dashed markers where two note lanes peak within 30 ms. The
-// fake audio clock stays at 0, so G and B♭ start in phase now and are silent before; from 0 to +6 s they peak together at 0, 1.33, 1.59,
-// 2.92, 4.51 and 5.84 s: 6 markers (worked out from 3.7687 and 4.4391 per second)
-check('lanes: placeholder when nothing listens', TEXTS.lanes.some((t) => t.startsWith('Switch on listen')), true);
-lb()[2].click(); lb()[3].click();
-check('lanes: one lane per listen', ['G4 vs harmonic 6', 'B♭4 vs harmonic 7'].every((l) => TEXTS.lanes.includes(l)), true);
+// Beats, drawn and Phasing, drawn (human 2026-11-23, with "the listen toggles placed in both of these panels"): one
+// row per note / per pair of notes, each with a listen toggle kept in sync with the table. Dashed markers where two
+// note lanes peak within 30 ms: the fake audio clock stays at 0, so G and B♭ start in phase now and are silent before;
+// from 0 to +6 s they peak together at 0, 1.33, 1.59, 2.92, 4.51 and 5.84 s: 6 markers (from 3.7687 and 4.4391 per s)
+const laneNames = (id) => [...$(id).querySelectorAll('.ll-name')].map((e) => e.textContent);
+const laneBtns = (id) => [...$(id).querySelectorAll('button.listen')];
+const pressed = (bs) => bs.map((b) => b.getAttribute('aria-pressed'));
+check('lanes: one row per note, all off', [laneNames('laneLabels'), pressed(laneBtns('laneLabels'))], [['C4 vs harmonic 4', 'E4 vs harmonic 5', 'G4 vs harmonic 6', 'B♭4 vs harmonic 7'], ['false', 'false', 'false', 'false']]);
+check('phasing: one row per pair of notes', laneNames('phaseLabels'), ['C4 / E4', 'C4 / G4', 'C4 / B♭4', 'E4 / G4', 'E4 / B♭4', 'G4 / B♭4']);
+laneBtns('phaseLabels')[5].click();
+check('phasing listen turns both notes on, in every place', [pressed(lb()), pressed(laneBtns('laneLabels').slice(0, 4)), laneBtns('phaseLabels')[5].getAttribute('aria-pressed')], [['false', 'false', 'true', 'true'], ['false', 'false', 'true', 'true'], 'true']);
 check('lanes: G/B♭ peak together 6 times from their start to the window end', MARKS.lanes, 6);
-$('lanes').dispatchEvent(new w.MouseEvent('click', { clientY: 10, bubbles: true }));
-check('closer view: the first lane, in phase at the start', $('zoomRead').textContent, 'G4 vs harmonic 6 · second tone ahead by 0.00 of a cycle · loudness 100% of the peak');
+check('lanes: a row for the listened pair\'s meeting partials', laneNames('laneLabels')[4], 'G4–B♭4 partials 7 and 6');
+$('lanes').dispatchEvent(new w.MouseEvent('click', { clientY: 2 * 52 + 10, bubbles: true }));
+check('closer view: the G lane, in phase at the start', $('zoomRead').textContent, 'G4 vs harmonic 6 · second tone ahead by 0.00 of a cycle · loudness 100% of the peak');
 check('closer view: its three rows', ['first tone', 'second tone', 'the two together'].every((l) => TEXTS.zoom.includes(l)), true);
+$('phase').dispatchEvent(new w.MouseEvent('click', { clientY: 5 * 52 + 10, bubbles: true }));
+check('phasing closer view: G / B♭ together now', [$('pzoomRead').textContent, ['G4 beats', 'B♭4 beats'].every((l) => TEXTS.pzoom.includes(l))], ['G4 / B♭4 · 6:7 · nearest peaks around now   0 ms apart', true]);
+laneBtns('laneLabels')[0].click();
+check('a note listen from the lanes panel shows in the table', pressed(lb()), ['true', 'false', 'true', 'true']);
+laneBtns('phaseLabels')[5].click();
+check('phasing listen with both on turns both off', pressed(lb()), ['true', 'false', 'false', 'false']);
 $('stopAll').click();
-check('lanes and closer view clear on Stop sound', [TEXTS.lanes.some((t) => t.startsWith('Switch on listen')), $('zoomRead').textContent], [true, 'Click a lane above to look closer.']);
+check('both closer views clear on Stop sound', [$('zoomRead').textContent, $('pzoomRead').textContent, pressed(laneBtns('laneLabels'))], ['Click a lane above to look closer.', 'Click a row above to look closer.', ['false', 'false', 'false', 'false']]);
 pick(0);
 // no jumping (human 2026-11-23): the exact rung keeps the same table, with 0.0¢ and no beats
 check('readout: exact rung keeps the table', [tuneRows().length, tuneRows().map((r) => r[3]), tuneRows().map((r) => r[4]), tuneRows().map((r) => r[5])], [4, ['0.0¢', '0.0¢', '0.0¢', '0.0¢'], ['lowest note', 'none', 'none', 'none'], ['none', 'none', 'none', 'none']]);
