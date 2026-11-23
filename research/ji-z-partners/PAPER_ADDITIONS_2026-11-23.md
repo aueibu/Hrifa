@@ -29,6 +29,7 @@ This session could read the doc but not edit it, so the additions are here. Each
 | 11 | q ≤ 135 | 1,209 | q ≤ 243 | 15,479 | q ≤ 405 | 283,156 |
 | 13 | q ≤ 135 | 2,116 | q ≤ 243 * | 30,483 | q ≤ 243 | 30,483 |
 | 17 | q ≤ 135 | 2,731 | — | — | q ≤ 243 | 47,044 |
+| 19 | (q ≤ 135 running) | — | — | — | q ≤ 135 | 3,735 |
 
 "Fully checked" = every ladder step rerun with no node budget and the widened signed-U steps added (* 13-limit: the 5,1/5,2 step still has 15,205 stopped factors). "Highest q" rungs ran on the 2026-11-23 deadline without those checks (5,1/5,2 step stopped by hand at 7-limit q 729, 11-limit q 405 and 17-limit q 243; budget-stopped factors not all rerun), so their counts are lower bounds twice over. No 7-, 11- or 13-note pair appears in any of these rungs except at 5-limit (above).
 
