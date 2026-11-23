@@ -94,7 +94,7 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
 - Read `shell/ARCHITECTURE.md`, `DECISIONS.md`, `BACKLOG.md`, every other arc's Status, `arcs/LOCKS.md`; note
   anything that touches pitch representation, audio or the Interval Placement and lab pages.
 - Acceptance:
-  - [ ] PROGRESS.md notes the scan result
+  - [x] PROGRESS.md notes the scan result (2026-11-23)
 - Human checkpoint after: no
 
 ### M1: Listening pass on version 5

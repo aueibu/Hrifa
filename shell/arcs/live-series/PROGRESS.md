@@ -4,8 +4,8 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 
 ## Status
 - Arc: Live Series: drone and raga thinking on the harmonic series (`arcs/live-series`)
-- Current milestone: Setup (approved 2026-11-23)
-- State: in progress
+- Current milestone: M1 (listening pass on version 5); Setup and C0 done 2026-11-23
+- State: awaiting human (M1 is a sound checkpoint)
 
 ## Where the work is (read this first after a /clear)
 - **Branch** `interval-placement-live-series` on `aueibu/Hrifa`, pushed, **not merged** into `main`. It already
@@ -38,18 +38,47 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 | v4 (aa007e2) | Human: notes' wave? (it was triangle) "can we toggle bare sine there too? Can we use the reverb implement (minus custom loading) from the harmonic lab too?". Notes bare sine; lab reverb copied by value (`audio/reverb.ts`, `audio/engine.ts`: Room 0.9 s / Hall 2.8 s seeded noise, equal-power mix, Dry → preset starts at 0.3, 30 ms swap fade, Stop cuts the tail, lab limiter). | 63 checks | |
 | v5 (8e3b4ed) | Human expected a drone that pulses when too low (offered at the start, built as note streams instead). Chose: drone style menu with all three (holds / pulses / pulses below hearing) and rate = fundamental moved by whole octaves into 1–2 per second (A = 1/1 6/5 5/4 3/2: 1.64/s; B = 4:5:6: 1.02/s with "pulses"). Pulse renamed Note pulses. | 73 checks; headless Edge no errors | Human: "looks cool"; later "all good" after briefly thinking the page was broken. |
 | Draft (2026-11-23) | Human: "catch me up ... so that we can write its progress/arc and clear"; chose "its own arc" over a side-study handoff. ARC.md drafted; smoke test saved into the arc folder (jsdom path now optional). | smoke 73, green from the new path | Awaiting approval of the *(approval)* items in ARC.md. |
-| Setup (2026-11-23) | Human approved ARC.md with no changes. Step 1: branch already contains `origin/main` (79c4a3e), nothing to merge. Step 2: page moved to `arcs/live-series/live-series.html` (no relative links to fix); Interval Placement side-study pointer updated. Step 3: `package.json` lock taken, `check:live-series` added, `LIVESERIES-1` registered in `DECISIONS.md`. | `check:live-series` green: 73 checks, no script errors | Lock taken in this worktree's `arcs/LOCKS.md` (the main checkout's table was empty; worktree isolation blocks writing there). |
+| Setup (2026-11-23) | Human approved ARC.md with no changes. Step 1: branch already contains `origin/main` (79c4a3e), nothing to merge. Step 2: page moved to `arcs/live-series/live-series.html` (no relative links to fix); Interval Placement side-study pointer updated. Step 3: `package.json` lock taken, `check:live-series` added, `LIVESERIES-1` registered in `DECISIONS.md`. | `check:live-series` green: 73 checks, no script errors | Lock taken in this worktree's `arcs/LOCKS.md` (the main checkout's table was empty; worktree isolation blocks writing there). Committed 75790d6, then the lock row removed. Step 4: the live artifact was read and is byte-identical to the moved page (only the publish wrapper differs), so no republish was needed; the next content change publishes from `arcs/live-series/live-series.html` (copy to the scratchpad first: the file has 2 hard links because of Google Drive) with `url` set to the same link. |
+| C0 (2026-11-23) | Context scan done (section "C0 scan result" below): no locks, no conflicts, no importers; overlaps noted (Harmonic ring backlog item, ratio-rhythm for M5, required-interval explorer location for M2). | no code change; gate last green at Setup | Read directly after the scan agent stopped on the org spend limit. |
+
+## C0 scan result (2026-11-23, main checkout's coordination docs)
+- **Locks**: none held by any arc (main checkout's `arcs/LOCKS.md` is empty).
+- **Other arcs**: `interval-placement` at M2c (model reset 2026-11-20, catalog with the spacing, before any builder);
+  `ratio-rhythm` at M1 on `main` (its live work is on the `ratio-rhythm-arc` / `ratio-rhythm-lib` branches: JI
+  Z-relation enumeration); `affine-focus` awaiting the human at M3 + M4; `workbench` Timeline arc drafted, awaiting
+  approval; `stage` and `structure` finished; `harmonic-field-lab` has no active arc. None touches this arc's paths.
+- **Imports**: no `src/` file imports from `arcs/`; nothing reads the page, so moving it broke nothing.
+- **DECISIONS**: main and this branch agree except for the new `LIVESERIES-1`. Contracts that matter only at M6 (app
+  code): W-1 (pitch in midicents in packets), W-2 (time as quarter-note rationals), H-1 (the lab's monzo + cents in
+  `src/lib/harmonic-field/`), INTERVALPLACEMENT-2 (a voicing is `{refHz, cents[]}`), RATIORHYTHM-1 (exact ratios and
+  integer slots per cycle; seconds only at the audio edge). The page keeps cents + exact ratios + Hz, which matches
+  H-1 / INTERVALPLACEMENT-2 in spirit; M6 picks one edge conversion.
+- **Overlaps to reuse, not duplicate**:
+  - BACKLOG `[interval-placement]` "Harmonic ring: a chord's span read as a harmonic series, with affine maps on it"
+    (2026-11-21): same rule as this page's ladder (L = harmonic number of the lowest note, round every note to its
+    nearest harmonic, the choice of L is the real decision; example 0 3 8 14 19 fits L = 5 at 35¢ or L = 22 at 14¢).
+    Its home is open ("the required-intervals explorer or the Ratio rhythm lab"). Bring this to the human at M1
+    (ladder anchoring) and M5 (the ring of harmonics L..top as a rhythm cycle is the tala question).
+  - `ratio-rhythm` (LCD rings, integer slots per cycle) is the natural source for M5 (sam and tala); compare its names
+    and formats before inventing any (memory: the canon is math facts only; check names with the lab).
+  - The required-interval explorer for M2 lives in `arcs/interval-placement/required/` (`core.ts`, `required.ts`,
+    `required-page.template.html`), owned by the interval-placement arc: read its collection and hung-set format,
+    copy by value, never edit it.
+- **Audio**: the lab's reverb is copied by value (Non-goals); no shared audio contract is touched before M6.
 
 ## Shared touches (locks taken)
 - `package.json` (Setup, 2026-11-23: the `check:live-series` script); released after the setup commit.
 
 ## Open questions for human
-- Approve ARC.md, including: the workstream name `live-series`; the DECISIONS prefix `LIVESERIES`; the check command
-  (the smoke test via `check:live-series`); moving the page into `arcs/live-series/`; the order of M3–M5.
 - When to merge the branch into `main` (it carries only the side study commits and this draft).
 - Open from the side study (M1): drone sound and range, Note pulses tempo rule, ladder anchoring, reverb defaults.
 - Bigger directions held for M2–M5: hung-set input from the required-interval explorer; alap as revealing the field;
   a taraf bed from the series; sam and tala from the ratios.
 
 ## Next action
-Ask the human to approve ARC.md (with the *(approval)* items); on approval run Setup steps 1–4, then C0.
+M1, listening pass on version 5: bring the human the four open questions one at a time, each with an example where the
+options give DIFFERENT results (plain words, exact control names): drone sound and range; the Note pulses tempo rule
+(busiest note at most 8 per second); ladder anchoring (lowest note exact vs errors balanced: find a set where the two
+give a different fundamental, and mention the Harmonic ring backlog item's L = 5 / L = 22 example); reverb defaults.
+Write every answer under "Checkpoint decisions" in ARC.md before building. Never press a sound control in a browser
+without asking.
