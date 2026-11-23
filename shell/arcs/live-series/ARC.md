@@ -134,6 +134,21 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
   - [ ] Thin slice; `check:live-series` passes
 - Human checkpoint after: yes (sound)
 
+- Early decisions (human, 2026-11-23, before M3 starts; "I like both of these"):
+  - Shaded tones for **andolan**, rule B: a note's pitch as an exact harmonic in the rival ladder rungs (rungs 2–6
+    from the current one). It decides which notes sway, which way and how far; notes every rung agrees on stay
+    steady. Scenario: C E♭ A♭ D♭ G (0 3 8 13 19), rung 1 10:12:16:21:30: C −8 to +1¢ and G −8 to +1¢ steady,
+    E♭ −15 to −21¢ (sways flat), A♭ −8 to −15¢, D♭ +10 to +19¢ (sways sharp).
+  - Shaded tones for **meend** targets, rule A: the nearest unused harmonics of the current series (h−1, h+1),
+    skipping listed notes and their octaves, halved to 2h±1 when too wide. Same scenario: C 9/10 −182, 11/10 +165;
+    E♭ 11/12 −151, 13/12 +139 (halved 23/24 −74, 25/24 +71); A♭ 17/16 +105, 31/32 −55 (15 = G skipped); D♭ 22/21
+    +81, 41/42 −42 (20 = C skipped); G 29/30 −59, 31/30 +57 (halved ±29).
+  - Candidates, not yet confirmed: widen M3 to "two motions" (reveal with Sa fixed; re-root with notes fixed);
+    tonality flux (Partch): on a re-root the notes glide to their exact harmonics in the new series. Same scenario:
+    rung 1 → 2 moves only D♭, by 64/63 (27.3¢), into the new root; rung 2 → 3 moves E♭ by 81/80 (−21.5¢), D♭ by
+    95/96 (−18.1¢), A♭ by 215/216 (−8.0¢); later rungs move voices by under 12¢. Andolan (rule B) is that flux
+    hinted at and not taken.
+
 ### M4: Taraf: a bed from the series
 - Scope: resonators tuned to the current series' harmonics that sound only when a played note excites them
   (sympathetic strings), replacing a looping bed.
