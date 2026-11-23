@@ -22,13 +22,17 @@ This session could read the doc but not edit it, so the additions are here. Each
 
 **Highest q reached (2026-11-23).** Proven = shape-free enumeration (with the ladder matching where both ran). Ladder = factor search with no node budget and widened signed-U steps: a lower bound, since above about q 2,000 (5-limit) the ladder misses families whose U needs more −1 coefficients.
 
-| Limit | Proven complete to | Families (proven) | Ladder reached | Families (ladder, lower bound) |
-| --- | --- | --- | --- | --- |
-| 5 | q ≤ 3,645 | 65,348 | q ≤ 3,645 | (= proven) |
-| 7 | q ≤ 315 | 16,561 | q ≤ 405 [729 pending] | 57,123 |
-| 11 | q ≤ 135 | 1,209 | q ≤ 243 [405 pending] | 15,479 |
-| 13 | q ≤ 135 | 2,116 | q ≤ 243 | 30,483 (6–7-term step open) |
-| 17 | q ≤ 135 | 2,731 | q ≤ 243 | 46,831 before checks [pending] |
+| Limit | Proven complete to | Families (proven) | Ladder: fully checked | Families | Ladder: highest q | Families (lower bound) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 5 | q ≤ 3,645 | 65,348 | — | — | q ≤ 3,645 | (= proven) |
+| 7 | q ≤ 315 | 16,561 | q ≤ 405 | 57,123 | q ≤ 729 | 398,634 |
+| 11 | q ≤ 135 | 1,209 | q ≤ 243 | 15,479 | q ≤ 405 | 283,156 |
+| 13 | q ≤ 135 | 2,116 | q ≤ 243 * | 30,483 | q ≤ 243 | 30,483 |
+| 17 | q ≤ 135 | 2,731 | — | — | q ≤ 243 | 46,831 |
+
+"Fully checked" = every ladder step rerun with no node budget and the widened signed-U steps added (* 13-limit: the 5,1/5,2 step still has 15,205 stopped factors). "Highest q" rungs ran on the 2026-11-23 deadline without those checks (5,1/5,2 step stopped by hand at 7-limit q 729, 11-limit q 405 and 17-limit q 243; budget-stopped factors not all rerun), so their counts are lower bounds twice over. No 7-, 11- or 13-note pair appears in any of these rungs except at 5-limit (above).
+
+By size (ladder, lower bounds): 7-limit q ≤ 729: 6: 9, 8: 4, 9: 17,927, 10: 199, 12: 105,861, 14: 411, 15: 229,932, 16: 44,291. 11-limit q ≤ 405: 6: 6, 8: 2, 9: 19,357, 10: 56, 12: 89,258, 14: 67, 15: 149,864, 16: 24,546. 17-limit q ≤ 243: 6: 2, 8: 1, 9: 7,827, 10: 20, 12: 18,929, 14: 4, 15: 17,593, 16: 2,455. 13-limit q ≤ 243: 6: 2, 8: 1, 9: 5,847, 10: 19, 12: 13,166, 14: 4, 15: 10,247, 16: 1,197.
 
 5-limit q ≤ 3,645 by size: 6: 8, 7: 4, 8: 12, 9: 4,060, 10: 316, 11: 3, 12: 20,060, 13: 3, 14: 704, 15: 34,089, 16: 6,089. **The first 11-note pair** appears at 5-limit q ≤ 2,187 (one family) and **the first 13-note pairs** at q ≤ 3,645 (three).
 
