@@ -41,10 +41,15 @@ check('1/1 readout', /harmonic 20 of this series/.test($('facts').textContent), 
 // Example 1: 12-EDO C E G, B♭, D
 pick(1);
 check('C E G first rung', trail()[0], '4 : 5 : 6');
-check('C E G B♭ chosen', trail()[1], '20 : 25 : 30 : 36');
-// cap 15 changes the chosen series for C E G B♭ D
+// M1 (human 2026-11-23): the error is shared, so C E G B♭ fits 4:5:6:7 (±16.6¢, F 65.96 Hz), not 20:25:30:36
+check('C E G B♭ chosen (error shared)', trail()[1], '4 : 5 : 6 : 7');
+$('trail').children[1].click();
+check('C E G B♭ worst error', $('ladder').querySelector('.item.sel .side').textContent, 'worst 16.6¢');
+check('C E G B♭ fundamental', $('facts').textContent.match(/([\d.]+) Hz/)[1], '65.96');
+$('trail').children[2].click();
+// cap 15 changes the chosen series for C E G B♭ D: 23:29:34:41:51 (errors −11.2 −12.3 +12.3 −11.6 +10.3¢, checked by hand)
 $('cap').value = '15'; $('cap').dispatchEvent(new w.Event('change'));
-check('C E G B♭ D at 15¢', sel(), '24 : 30 : 36 : 43 : 54');
+check('C E G B♭ D at 15¢', sel(), '23 : 29 : 34 : 41 : 51');
 check('ladder ascends in complexity', ladder().map((s) => +s.split(' : ')[0]).every((v, i, a) => !i || v > a[i - 1]), true);
 // click a later rung
 const rungs = $('ladder').querySelectorAll('.item');
@@ -93,9 +98,11 @@ check('no drone mark while off', $('draw').querySelectorAll('.drone-mark').lengt
 $('droneBtn').click();
 check('drone button on', [$('droneBtn').textContent, $('droneBtn').getAttribute('aria-pressed')], ['Drone: on', 'true']);
 check('drone mark + octave', $('draw').querySelectorAll('.drone-mark').length, 2);
+check('drone range defaults to 55–110 Hz', $('droneRange').value, '55');
+check('drone label (55 range)', $('draw').querySelector('.drone-label').textContent.startsWith('drone 104.7 Hz = harmonic 8'), true);
+$('droneRange').value = '110'; $('droneRange').dispatchEvent(new w.Event('change'));
 check('drone label (110 range)', $('draw').querySelector('.drone-label').textContent.startsWith('drone 209.3 Hz = harmonic 16'), true);
 $('droneRange').value = '55'; $('droneRange').dispatchEvent(new w.Event('change'));
-check('drone label (55 range)', $('draw').querySelector('.drone-label').textContent.startsWith('drone 104.7 Hz = harmonic 8'), true);
 $('chips').querySelector('[data-tog="1"]').click();        // 5/4 off -> 6/5 3/2 left... plus 1/1
 check('drone follows the series', $('draw').querySelector('.drone-label').textContent.includes('harmonic'), true);
 // voice switches: the drone's three layers are the last three gains created (saw, sine, octave)
@@ -119,11 +126,12 @@ $('droneSine').click();
 check('back to default', [lvl(gSaw), lvl(gSine), lvl(gOct)], [0.35, 0.8, 0.35]);
 $('droneBtn').click();
 check('drone mark gone when off', $('draw').querySelectorAll('.drone-mark').length, 0);
-// fundamental above the drone range: 1/1 = 880 Hz, C E G -> F = 220 Hz; range 55 -> drone 55 Hz = harmonic 1/4
+// fundamental above the drone range: 1/1 = 880 Hz, C E G -> 4:5:6 with the error shared: F = 220 Hz raised 5.87¢
+// (half of E +13.7¢ and G −2.0¢) = 220.75 Hz; range 55 -> drone 55.19 Hz = harmonic 1/4
 pick(1); $('base').value = '880'; $('base').dispatchEvent(new w.Event('change'));
 $('trail').children[0].click();
 $('droneBtn').click();
-check('drone below the fundamental', $('draw').querySelector('.drone-label').textContent.startsWith('drone 55.00 Hz = harmonic 1/4'), true);
+check('drone below the fundamental', $('draw').querySelector('.drone-label').textContent.startsWith('drone 55.19 Hz = harmonic 1/4'), true);
 $('droneBtn').click(); $('base').value = '261.63'; $('base').dispatchEvent(new w.Event('change'));
 
 pick(0);
@@ -155,14 +163,15 @@ check('back to triangle', [...new Set(heldNow().map((o) => o.type))], ['triangle
 $('playChord').click();
 
 // reverb (the lab's presets, no custom loading)
-check('reverb starts Dry, mix disabled', [$('reverb').value, $('mix').disabled, $('mixRead').textContent], ['dry', true, '0%']);
+// M1 (human 2026-11-23): the reverb starts on Hall at 30%
+check('reverb starts Hall 30%', [$('reverb').value, $('mix').disabled, $('mixRead').textContent], ['hall', false, '30%']);
 check('no custom option', [...$('reverb').options].map((o) => o.value), ['dry', 'room', 'hall']);
-$('reverb').value = 'room'; $('reverb').dispatchEvent(new w.Event('change'));
-check('Room starts at the lab default mix', [$('mix').disabled, $('mixRead').textContent], [false, '30%']);
-const conv = CONVS[CONVS.length - 1];
-check('convolver normalized, 0.9 s stereo impulse', [conv.normalize, conv.buffer.numberOfChannels, conv.buffer.length], [true, 2, 43200]);
+const conv = CONVS[0];
+check('first sound installs Hall: normalized 2.8 s stereo impulse', [CONVS.length >= 1, conv.normalize, conv.buffer.numberOfChannels, conv.buffer.length], [true, true, 2, 134400]);
 const ir = conv.buffer.getChannelData(0);
-check('impulse decays (start louder than end)', Math.abs(ir[2000]) + Math.abs(ir[3000]) > Math.abs(ir[43000]) + Math.abs(ir[43100]), true);
+check('impulse decays (start louder than end)', Math.abs(ir[2000]) + Math.abs(ir[3000]) > Math.abs(ir[130000]) + Math.abs(ir[130100]), true);
+$('reverb').value = 'room'; $('reverb').dispatchEvent(new w.Event('change'));
+check('Room keeps the mix', [$('mix').disabled, $('mixRead').textContent], [false, '30%']);
 $('mix').value = '55'; $('mix').dispatchEvent(new w.Event('input'));
 check('mix moves', $('mixRead').textContent, '55%');
 $('reverb').value = 'dry'; $('reverb').dispatchEvent(new w.Event('change'));
@@ -189,6 +198,15 @@ check('B pulsed: decays between strikes', group.gain.target, 0);
 setStyle('steady');
 check('steady: holds', [factDrone(), group.gain.target], ['holds', 0.16]);
 check('note pulses renamed', $('pulseBtn').textContent, 'Note pulses: off');
+// M1 (human 2026-11-23): Note pulses at most 4 per second by default, a toggle for 8. Here 4:5:6 at F 65.41 Hz:
+// the busiest note (6) is 392 per second; 4/s slows 7 octaves (cycle 1.96 s), 8/s slows 6 (cycle 0.98 s)
+check('pulse rate default 4/s', [$('pulseRate').textContent, $('pulseRate').getAttribute('aria-pressed'), /slowed 7 octaves: one cycle every 1\.96 s/.test($('facts').textContent)], ['Note pulses: at most 4 per second', 'false', true]);
+$('pulseRate').click();
+check('pulse rate toggles to 8/s', [$('pulseRate').textContent, $('pulseRate').getAttribute('aria-pressed'), /slowed 6 octaves: one cycle every 0\.98 s/.test($('facts').textContent)], ['Note pulses: at most 8 per second', 'true', true]);
+$('pulseBtn').click();
+check('note pulses run at 8/s', $('pulseBtn').textContent, 'Note pulses: on');
+$('pulseRate').click();
+check('pulse rate back to 4/s', /one cycle every 1\.96 s/.test($('facts').textContent), true);
 
 $('stopAll').click();
 check('stop sound turns every toggle off', [$('playChord').textContent, $('playUp').textContent, $('droneBtn').textContent, $('pulseBtn').textContent], ['Notes: off', 'Arpeggio: off', 'Drone: off', 'Note pulses: off']);

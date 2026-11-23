@@ -39,6 +39,7 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 | v5 (8e3b4ed) | Human expected a drone that pulses when too low (offered at the start, built as note streams instead). Chose: drone style menu with all three (holds / pulses / pulses below hearing) and rate = fundamental moved by whole octaves into 1–2 per second (A = 1/1 6/5 5/4 3/2: 1.64/s; B = 4:5:6: 1.02/s with "pulses"). Pulse renamed Note pulses. | 73 checks; headless Edge no errors | Human: "looks cool"; later "all good" after briefly thinking the page was broken. |
 | Draft (2026-11-23) | Human: "catch me up ... so that we can write its progress/arc and clear"; chose "its own arc" over a side-study handoff. ARC.md drafted; smoke test saved into the arc folder (jsdom path now optional). | smoke 73, green from the new path | Awaiting approval of the *(approval)* items in ARC.md. |
 | Setup (2026-11-23) | Human approved ARC.md with no changes. Step 1: branch already contains `origin/main` (79c4a3e), nothing to merge. Step 2: page moved to `arcs/live-series/live-series.html` (no relative links to fix); Interval Placement side-study pointer updated. Step 3: `package.json` lock taken, `check:live-series` added, `LIVESERIES-1` registered in `DECISIONS.md`. | `check:live-series` green: 73 checks, no script errors | Lock taken in this worktree's `arcs/LOCKS.md` (the main checkout's table was empty; worktree isolation blocks writing there). Committed 75790d6, then the lock row removed. Step 4: the live artifact was read and is byte-identical to the moved page (only the publish wrapper differs), so no republish was needed; the next content change publishes from `arcs/live-series/live-series.html` (copy to the scratchpad first: the file has 2 hard links because of Google Drive) with `url` set to the same link. |
+| M1 attempt 1 (2026-11-23) | Human answered the four questions (ARC.md "Checkpoint decisions" under M1). Built directly: ladder shares the error (`fitAt` + recentering with re-rounding, up to 4 passes; a rung counts only if its lowest harmonic stays h); Note pulses at most 4/s with a toggle to 8/s (button `pulseRate`, takes effect at the next sam); drone range default 55–110 Hz; reverb default Hall 30%. Not yet built: the low drone range (rule question open, see below). | `check:live-series` 80 checks, green | Re-rounding finds fits the lowest-note-exact rounding misses: C E G B♭ D at 15¢ is now 23:29:34:41:51 (±12.3¢, checked by hand). Publish to the artifact link failed twice (read-back HTTP 403, same time as the org spend limit); live page is still v5. |
 | C0 (2026-11-23) | Context scan done (section "C0 scan result" below): no locks, no conflicts, no importers; overlaps noted (Harmonic ring backlog item, ratio-rhythm for M5, required-interval explorer location for M2). | no code change; gate last green at Setup | Read directly after the scan agent stopped on the org spend limit. |
 
 ## C0 scan result (2026-11-23, main checkout's coordination docs)
@@ -76,9 +77,9 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
   a taraf bed from the series; sam and tala from the ratios.
 
 ## Next action
-M1, listening pass on version 5: bring the human the four open questions one at a time, each with an example where the
-options give DIFFERENT results (plain words, exact control names): drone sound and range; the Note pulses tempo rule
-(busiest note at most 8 per second); ladder anchoring (lowest note exact vs errors balanced: find a set where the two
-give a different fundamental, and mention the Harmonic ring backlog item's L = 5 / L = 22 example); reverb defaults.
-Write every answer under "Checkpoint decisions" in ARC.md before building. Never press a sound control in a browser
-without asking.
+M1, waiting on the human: (1) the rule for the low drone range ("keep drone in 20 to 55 range too"): A = the octave
+27.5–55 Hz, B = the octave 20–40 Hz, C = the true fundamental when it is 20–55 Hz, else the nearest octave inside
+(examples: JI example's end F 13.08 Hz gives 52.3 / 26.2 / 26.2; 1/1 7/6 3/2 F 43.6 Hz gives 43.6 / 21.8 / 43.6);
+(2) confirm "b-toggle for both" = 4/s default with a toggle to 8/s. Then build the range, rerun the gate, republish
+v6 (copy to the scratchpad, `url` = the artifact link; retry the publish that failed with HTTP 403), and the human
+listens (M1 human checkpoint). Never press a sound control in a browser without asking.

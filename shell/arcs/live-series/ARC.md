@@ -103,9 +103,19 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
   ladder's anchoring (lowest note exact, now, vs errors balanced across all notes: show a set where the two give a
   different fundamental); reverb defaults.
 - Acceptance:
-  - [ ] Every answer written under "Checkpoint decisions" here
+  - [x] Every answer written under "Checkpoint decisions" here
   - [ ] Agreed changes made; `check:live-series` passes with new checks for them
 - Human checkpoint after: yes (sound)
+- Checkpoint decisions (human, 2026-11-23, answering the four M1 questions):
+  - Ladder anchoring: **B, the error is shared** across all notes (the fundamental moves so the worst error is as
+    small as it can be for each rung) instead of the lowest note being exact. Example where they differ: C E G B♭
+    (0 4 7 10, 20¢): now 20:25:30:36 at 13.08 Hz; with B 4:5:6:7 at 65.96 Hz (±16.6¢). Exact ratio sets unchanged.
+  - Note pulses tempo: "b-toggle for both", read as a toggle between at most 4 per second (B, the default) and at
+    most 8 per second (A, the old rule). C E G: cycle 1.96 s at 4/s, 0.98 s at 8/s. *(reading to confirm)*
+  - Drone sound: keep as is. Default range: "select 50-110 range by default", read as the existing "near 55–110 Hz".
+    Add a lower range: "keep drone in 20 to 55 range too" (rule to confirm: the drone is always one octave of the
+    fundamental, so the window must be one octave wide).
+  - Reverb default: **Hall at 30%** (was Dry).
 
 ### M2: Collections in from the required-interval explorer
 - Scope: bring a collection and its hung set in directly (paste or link), with hung tones marked, so the ur-chalan

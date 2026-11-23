@@ -118,19 +118,20 @@
       </div>
       <div class="btns">
         <button type="button" id="droneBtn" aria-pressed="false">Drone: off</button>
-        <select id="droneRange" aria-label="Drone range"><option value="55">drone near 55–110 Hz</option><option value="110" selected>drone near 110–220 Hz</option><option value="220">drone near 220–440 Hz</option></select>
+        <select id="droneRange" aria-label="Drone range"><option value="55" selected>drone near 55–110 Hz</option><option value="110">drone near 110–220 Hz</option><option value="220">drone near 220–440 Hz</option></select>
         <button type="button" id="droneOct" class="playing" aria-pressed="true">Drone octave: on</button>
         <button type="button" id="droneSine" aria-pressed="false">Drone bare sine: off</button>
         <select id="droneStyle" aria-label="Drone style"><option value="steady" selected>drone holds</option><option value="pulsed">drone pulses</option><option value="auto">drone pulses below hearing</option></select>
       </div>
       <div class="btns">
         <button type="button" id="pulseBtn" aria-pressed="false">Note pulses: off</button>
+        <button type="button" id="pulseRate" aria-pressed="false">Note pulses: at most 4 per second</button>
       </div>
       <div class="btns">
         <span class="lbl" style="min-width:0">Reverb</span>
-        <select id="reverb" aria-label="Reverb"><option value="dry" selected>Dry</option><option value="room">Room</option><option value="hall">Hall</option></select>
+        <select id="reverb" aria-label="Reverb"><option value="dry">Dry</option><option value="room">Room</option><option value="hall" selected>Hall</option></select>
         <span class="lbl" style="min-width:0">Mix</span>
-        <input id="mix" type="range" min="0" max="100" value="0" disabled aria-label="Reverb mix"><span class="read" id="mixRead">0%</span>
+        <input id="mix" type="range" min="0" max="100" value="30" aria-label="Reverb mix"><span class="read" id="mixRead">30%</span>
       </div>
       <p class="read" id="pulseNote"></p>
     </div>
@@ -200,26 +201,41 @@ function exactSeries(notes) {
   const partials = k.map((x) => x / G);
   return { h: partials[0], partials, errs: partials.map(() => 0), worst: 0, exact: true, fundRatio: [G, L], fundCents: 1200 * log2(G / L) };
 }
-// Ladder: try each whole number h as the lowest note's harmonic number (the lowest note taken as exact), round every
-// other note to its nearest harmonic, keep h when its worst error beats every simpler h. Two notes on one harmonic
-// is not a fit. The first rung is the simplest series within the cap; each later rung is more complex and closer.
+// Ladder: try each whole number h as the lowest note's harmonic number, round every note to its nearest harmonic,
+// then share the error (human, M1 2026-11-23): move the fundamental so the sharpest and flattest notes are equally
+// far off, and round again if that changes a harmonic. Keep h when its worst error beats every simpler h. Two notes
+// on one harmonic is not a fit. The first rung is the simplest series within the cap; each later rung is more complex
+// and closer. Example: C E G B♭ (0 4 7 10) within 20¢ is 4:5:6:7 (±16.6¢), not 20:25:30:36 (lowest note exact).
+function fitAt(notes, fundCents) {
+  const partials = [], errs = [];
+  for (const n of notes) {
+    const x = 2 ** ((n.cents - fundCents) / 1200), k = Math.round(x);
+    if (k < 1 || (partials.length && k === partials[partials.length - 1])) return null;
+    partials.push(k); errs.push(1200 * log2(x / k));
+  }
+  return { partials, errs };
+}
 function ladder(notes, cap) {
   const rungs = [];
   if (!notes.length) return rungs;
   const lo = notes[0].cents;
   let best = Infinity;
   for (let h = 1; h <= HMAX; h++) {
-    const partials = [], errs = [];
-    let worst = 0, ok = true;
-    for (const n of notes) {
-      const x = h * 2 ** ((n.cents - lo) / 1200), k = Math.round(x);
-      if (k < 1 || (partials.length && k === partials[partials.length - 1])) { ok = false; break; }
-      const e = 1200 * log2(x / k);
-      partials.push(k); errs.push(e); worst = Math.max(worst, Math.abs(e));
+    let fund = lo - 1200 * log2(h), fit = fitAt(notes, fund);
+    for (let i = 0; fit && i < 4; i++) {
+      const mid = (Math.max(...fit.errs) + Math.min(...fit.errs)) / 2;
+      if (Math.abs(mid) < 1e-9) break;
+      fund += mid;
+      const next = fitAt(notes, fund);
+      const same = next && next.partials.every((k, j) => k === fit.partials[j]);
+      fit = next;
+      if (same) break;
     }
-    if (!ok || worst > cap || worst >= best - 0.05) continue;
+    if (!fit || fit.partials[0] !== h) continue;
+    const worst = Math.max(...fit.errs.map(Math.abs));
+    if (worst > cap || worst >= best - 0.05) continue;
     best = worst;
-    rungs.push({ h, partials, errs, worst, exact: false, fundCents: lo - 1200 * log2(h) });
+    rungs.push({ h, partials: fit.partials, errs: fit.errs, worst, exact: false, fundCents: fund });
     if (worst < CLOSE) break;
   }
   const ex = exactSeries(notes);
@@ -328,7 +344,7 @@ function render() {
   else if (!rungs.length) $('ladderNote').textContent = `No series up to harmonic ${HMAX} fits these notes within ${cap}¢. Raise "Show fits within".`;
   else $('ladderNote').textContent = notes.every((n) => n.p != null)
     ? 'All notes are exact ratios, so the exact series is chosen; the rungs above it are simpler series that come close.'
-    : 'Simplest first; each rung below is more complex and closer. The simplest is chosen unless you click another.';
+    : 'Simplest first; each rung below is more complex and closer. The error is shared by all the notes (the lowest one moves too). The simplest is chosen unless you click another.';
   $('ladder').innerHTML = rungs.map((x) => {
     const f = hz(x.fundCents);
     return `<button type="button" class="item${r && x.h === r.h ? ' sel' : ''}" data-h="${x.h}">
@@ -380,12 +396,14 @@ function drawFacts(r, notes) {
   $('pulseNote').textContent = `Drone: the fundamental raised by whole octaves into the chosen range (${fmtHz(droneHz(F))} Hz)${DRONE_SINE ? ' as a bare sine' : ''}${DRONE_OCT ? ', with its octave' : ', one pitch only'}, ${dronePulses(F) ? `struck ${droneRateText(F)}` : 'held'}. Note pulses: ${pulse.text}.`;
 }
 
-// the pulse reading: slow the series by k octaves until the busiest note is at most 8 pulses per second;
-// each note n then pulses n times per cycle, and every stream meets again at the cycle's start (sam).
+// the pulse reading: slow the series by k octaves until the busiest note is at most PULSE_MAX pulses per second
+// (4 by default, 8 on the toggle: human, M1 2026-11-23); each note n then pulses n times per cycle, and every stream
+// meets again at the cycle's start (sam).
+let PULSE_MAX = 4;
 function pulsePlan(r, notes) {
   const F = hz(r.fundCents), top = r.partials[r.partials.length - 1];
   let k = 0;
-  while ((top * F) / 2 ** k > 8 && k < 40) k++;
+  while ((top * F) / 2 ** k > PULSE_MAX && k < 40) k++;
   const cycle = 2 ** k / F;
   return { k, cycle, text: `${fmtHz(F)} per second, slowed ${k} octave${k === 1 ? '' : 's'}: one cycle every ${cycle.toFixed(2)} s, notes pulse ${r.partials.join(', ')} times per cycle` };
 }
@@ -506,7 +524,7 @@ function audio() {
 // change rebuilds the convolver behind a 30 ms fade; Stop sound cuts the tail (0.15 s fade, then an empty convolver).
 const BUILT_IN = { room: { seconds: 0.9, bright: 0.55, seed: 0x9e3779b1 }, hall: { seconds: 2.8, bright: 0.38, seed: 0x85ebca6b } };
 const DEFAULT_WET_MIX = 0.3, IMPULSE_ONSET = 0.002, SWAP_TC = 0.0075, SWAP_MS = 30, PANIC_WET_TC = 0.03, PANIC_WET_MS = 200, MIX_TC = 0.02;
-let REVERB = { preset: 'dry', mix: 0 };
+let REVERB = { preset: 'hall', mix: DEFAULT_WET_MIX };   // default Hall at 30% (human, M1 2026-11-23)
 let wet = null;                   // { dry, send, out, conv, key, timer }
 const impulseBufs = new Map();
 function mulberry32(seed) {
@@ -790,6 +808,13 @@ $('playChord').addEventListener('click', () => (held ? heldOff() : heldOn()));
 $('playUp').addEventListener('click', () => (arp ? arpOff() : arpOn()));
 $('droneBtn').addEventListener('click', () => (drone ? droneOff() : droneOn()));
 $('pulseBtn').addEventListener('click', () => (pulse ? pulseOff() : pulseOn()));
+// takes effect at the next sam when Note pulses are on (the plan is rebuilt once per cycle)
+$('pulseRate').addEventListener('click', () => {
+  PULSE_MAX = PULSE_MAX === 4 ? 8 : 4;
+  $('pulseRate').textContent = `Note pulses: at most ${PULSE_MAX} per second`;
+  $('pulseRate').setAttribute('aria-pressed', String(PULSE_MAX === 8)); $('pulseRate').classList.toggle('playing', PULSE_MAX === 8);
+  render();
+});
 $('undo').addEventListener('click', () => { if (TRAIL.length > 1) { TRAIL.pop(); restore(TRAIL.length - 1); } else if (TRAIL.length === 1) { TRAIL.pop(); S = { notes: [], pick: null }; render(); } });
 $('replay').addEventListener('click', () => (replaying ? stopAll() : replay()));
 $('clearTrail').addEventListener('click', () => { TRAIL = TRAIL.length ? [snapshot('start (trail cleared)')] : []; render(); });
