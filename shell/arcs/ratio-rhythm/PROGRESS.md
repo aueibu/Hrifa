@@ -222,7 +222,7 @@ Human: "You need to do whatever you need to have the highest q results for all p
 | 7 | q ≤ 315 | 16,561 | q ≤ 405 | 57,123 | q ≤ 729 | 403,069 (09:19: widened steps with no budget added 4,435 to 398,634) |
 | 11 | q ≤ 135 | 1,209 | q ≤ 243 | 15,479 | q ≤ 405 | 283,156 |
 | 13 | q ≤ 135 | 2,116 | q ≤ 243 (5,1/5,2 step open) | 30,483 | q ≤ 243 | 30,483 |
-| 17 | q ≤ 135 | 2,731 | — | — | q ≤ 243 | 46,831 |
+| 17 | q ≤ 135 | 2,731 | — | — | q ≤ 243 | 47,044 (09:21: widened steps, budget on, +213; 11,562 widened factors still stopped) |
 7 notes (proven): 7-limit q ≤ 2,187 5 families (new 7-limit pair at q 1,701); 11-limit q ≤ 1,215 only the q 1,215 pair; 13-limit q ≤ 729 none. First 11-note pair: 5-limit q ≤ 2,187; first 13-note pairs: 5-limit q ≤ 3,645 (3). Ladder dirs `~/zruns/zprod/l<L>q<Q>_on`, enumerations `e<L>q<Q>_on`, `en7_*`; summary log `overnight.out`. Paper text: `research/ji-z-partners/PAPER_ADDITIONS_2026-11-23.md` (the doc was read-only from this session: paste it, or re-grant edit access). Still running after 08:50: `nb` (17-limit q 243 NB), `widen`/`wnb` (11-limit q 405, 17-limit q 243, 7-limit q 729 after NB), `widen2` (widened steps on 7-limit q 729 and 11-limit q 405). Lessons: OOM kills are silent and the wrapper prints exit 0 (check for `zprod-rs exited with -9`); run at most one 16 GB enumeration at a time; a rung needs NB + widened steps before its count means anything.
 
 ## Next action
