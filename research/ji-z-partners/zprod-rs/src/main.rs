@@ -1195,7 +1195,7 @@ fn line_json(v: &Factor, complete: bool, prods: &[(Vec<Pt>, Vec<Pt>)]) -> String
 /// the lowest note). Bitset adjacency; parallel over pairs of first vertices.
 fn count_cliques(g: &GenCtx, maxk: usize, threads: usize) {
     let n = g.n;
-    assert!(n <= 512, "clique counter handles up to 512 vertices");
+    assert!(n <= 1024, "clique counter handles up to 1,024 vertices");
     let w = (n + 63) / 64;
     let mut adj = vec![vec![0u64; w]; n];
     for a in 0..n {
@@ -1227,7 +1227,7 @@ fn count_cliques(g: &GenCtx, maxk: usize, threads: usize) {
                             counts[depth + 1] += 1;
                             if depth + 1 < maxs {
                                 // next candidates: in cand, adjacent to v, larger than v
-                                let mut ncb = [0u64; 8]; // up to 512 vertices, no allocation per node
+                                let mut ncb = [0u64; 16]; // up to 1,024 vertices, no allocation per node
                                 let nc = &mut ncb[..cand.len()];
                                 let mut any = false;
                                 for k in 0..cand.len() {
@@ -1315,7 +1315,7 @@ fn splitmix(x: &mut u64) -> u64 {
 impl EnumG {
     fn new(g: &GenCtx) -> EnumG {
         let n = g.n;
-        assert!(n <= 512, "enumeration handles up to 512 positive intervals");
+        assert!(n <= 1024, "enumeration handles up to 1,024 positive intervals");
         let w = (n + 63) / 64;
         let pos: HashMap<&Pt, u16> = g.boxv.iter().enumerate().map(|(i, p)| (p, i as u16)).collect();
         let mut adj = vec![vec![0u64; w]; n];
@@ -1342,47 +1342,179 @@ impl EnumG {
     }
 }
 
-/// all kept k-note sets of one root pair (a, b); leaf(clique (without 0), h1, h2)
-fn enum_root<L: FnMut(&[u16], u64, u64)>(eg: &EnumG, k: usize, a: u16, b: u16, leaf: &mut L) {
-    let w = eg.adj[0].len();
-    let need = k - 1; // vertices besides 0
-    let mut stack = [0u16; 16];
-    let mut h1s = [0u64; 17];
-    let mut h2s = [0u64; 17];
-    let mut hos = [0u64; 17];
-    // add vertex v as the d-th vertex (0-based) of the clique
-    let push = |stack: &mut [u16; 16], h1s: &mut [u64; 17], h2s: &mut [u64; 17], hos: &mut [u64; 17], d: usize, v: u16| {
-        let (mut x1, mut x2) = (h1s[d].wrapping_add(eg.r1[v as usize]), h2s[d].wrapping_add(eg.r2[v as usize]));
-        for &u in &stack[..d] {
-            let di = eg.d(v, u) as usize;
-            x1 = x1.wrapping_add(eg.r1[di]);
-            x2 = x2.wrapping_add(eg.r2[di]);
+const MAXW: usize = 16; // bitset words: up to 1,024 positive intervals
+
+impl EnumG {
+    /// index of the difference of two distinct vertices (the lexicographically positive one)
+    #[inline]
+    fn dd(&self, a: u16, b: u16) -> u16 {
+        if a > b {
+            self.d(a, b)
+        } else {
+            self.d(b, a)
         }
-        stack[d] = v;
-        h1s[d + 1] = x1;
-        h2s[d + 1] = x2;
-        hos[d + 1] = hos[d].wrapping_add(eg.ro[v as usize]);
-    };
+    }
+}
+
+/// Sets are processed by their top note m (lexicographically largest). The largest difference in a set is
+/// top minus lowest = m, and Z-partners have the same differences, so partners always share m: each group
+/// can be checked on its own (no global passes).
+fn group_cand(eg: &EnumG, m: usize) -> [u64; MAXW] {
+    let mut c = [0u64; MAXW];
+    for kk in 0..eg.adj[0].len() {
+        let mut x = eg.adj[m][kk];
+        if kk > m / 64 {
+            x = 0;
+        } else if kk == m / 64 {
+            x &= (1u64 << (m % 64)) - 1; // vertices below m
+        }
+        c[kk] = x;
+    }
+    c
+}
+
+#[inline]
+fn above(x: u64, kk: usize, v: usize) -> u64 {
+    // keep bits of word kk that are above vertex v
+    if kk < v / 64 {
+        0
+    } else if kk == v / 64 {
+        if v % 64 == 63 {
+            0
+        } else {
+            x & (!0u64 << (v % 64 + 1))
+        }
+    } else {
+        x
+    }
+}
+
+/// roots of group m: the first one or two vertices below m (pairs when at least 2 are needed)
+fn group_roots(eg: &EnumG, m: usize, need: usize) -> Vec<(u16, u16)> {
+    let c = group_cand(eg, m);
+    let w = eg.adj[0].len();
+    let mut out = vec![];
+    for a in 0..m {
+        if (c[a / 64] >> (a % 64)) & 1 == 0 {
+            continue;
+        }
+        if need == 1 {
+            out.push((a as u16, u16::MAX));
+            continue;
+        }
+        for b in a + 1..m {
+            if (c[b / 64] >> (b % 64)) & 1 == 1 && (eg.adj[a][b / 64] >> (b % 64)) & 1 == 1 {
+                out.push((a as u16, b as u16));
+            }
+        }
+    }
+    let _ = w;
+    out
+}
+
+/// candidates after a root: below m, joined to m, a and b, above the root's last vertex
+fn root_cand(eg: &EnumG, m: usize, a: u16, b: u16) -> [u64; MAXW] {
+    let c = group_cand(eg, m);
+    let mut x = [0u64; MAXW];
+    let last = if b == u16::MAX { a as usize } else { b as usize };
+    for kk in 0..eg.adj[0].len() {
+        let mut y = c[kk] & eg.adj[a as usize][kk];
+        if b != u16::MAX {
+            y &= eg.adj[b as usize][kk];
+        }
+        x[kk] = above(y, kk, last);
+    }
+    x
+}
+
+/// number of sets (both orientations) in group m: cliques of `need` vertices below m joined to m
+fn group_count(eg: &Arc<EnumG>, m: usize, need: usize, threads: usize) -> u64 {
+    fn rec(eg: &EnumG, cand: &[u64], left: usize) -> u64 {
+        // left = vertices still to add; count the ways
+        if left == 0 {
+            return 1;
+        }
+        if left == 1 {
+            return cand.iter().map(|x| x.count_ones() as u64).sum();
+        }
+        let mut total = 0;
+        for (wi, &word) in cand.iter().enumerate() {
+            let mut bits = word;
+            while bits != 0 {
+                let v = wi * 64 + bits.trailing_zeros() as usize;
+                bits &= bits - 1;
+                let mut nb = [0u64; MAXW];
+                let nc = &mut nb[..cand.len()];
+                let mut any = false;
+                for kk in 0..cand.len() {
+                    nc[kk] = above(cand[kk] & eg.adj[v][kk], kk, v);
+                    any |= nc[kk] != 0;
+                }
+                if any {
+                    total += rec(eg, nc, left - 1);
+                }
+            }
+        }
+        total
+    }
+    let roots = Arc::new(group_roots(eg, m, need));
+    if roots.is_empty() {
+        return 0;
+    }
+    let next = Arc::new(AtomicUsize::new(0));
+    let used = if need == 1 { 0 } else { 2 };
+    let w = eg.adj[0].len();
+    let hs: Vec<_> = (0..threads.min(roots.len()))
+        .map(|_| {
+            let (eg, roots, next) = (eg.clone(), roots.clone(), next.clone());
+            std::thread::spawn(move || {
+                let mut c = 0u64;
+                loop {
+                    let i = next.fetch_add(1, Ordering::Relaxed);
+                    if i >= roots.len() {
+                        break;
+                    }
+                    let (a, b) = roots[i];
+                    if need == 1 {
+                        c += 1;
+                        continue;
+                    }
+                    let cand = root_cand(&eg, m, a, b);
+                    c += rec(&eg, &cand[..w], need - used);
+                }
+                c
+            })
+        })
+        .collect();
+    hs.into_iter().map(|h| h.join().unwrap()).sum()
+}
+
+/// enumerate the kept sets of group m in parallel; leaf(stack = [m, C ascending], h1, h2)
+fn group_parallel<A: Send + 'static, F>(eg: &Arc<EnumG>, m: usize, need: usize, threads: usize, make: fn() -> A, fold: F) -> Vec<A>
+where
+    F: Fn(&mut A, &[u16], u64, u64) + Send + Sync + 'static + Clone,
+{
+    #[allow(clippy::too_many_arguments)]
     fn rec<L: FnMut(&[u16], u64, u64)>(
         eg: &EnumG,
         need: usize,
         d: usize,
         cand: &[u64],
-        stack: &mut [u16; 16],
-        h1s: &mut [u64; 17],
-        h2s: &mut [u64; 17],
-        hos: &mut [u64; 17],
+        stack: &mut [u16; 17],
+        h1s: &mut [u64; 18],
+        h2s: &mut [u64; 18],
+        hos: &mut [u64; 18],
         leaf: &mut L,
     ) {
         if d == need {
-            // keep the set or its inversion: inversion = {m - s}, m = last (lexicographically largest) vertex
-            let m = stack[d - 1];
+            // keep one of the set and its inversion {m - s}: compare order-sensitive hashes
+            let m = stack[0];
             let mut hinv = eg.ro[m as usize];
-            for &s in &stack[..d - 1] {
+            for &s in &stack[1..=d] {
                 hinv = hinv.wrapping_add(eg.ro[eg.d(m, s) as usize]);
             }
-            if hos[d] <= hinv {
-                leaf(&stack[..d], h1s[d], h2s[d]);
+            if hos[d + 1] <= hinv {
+                leaf(&stack[..=d], h1s[d + 1], h2s[d + 1]);
             }
             return;
         }
@@ -1391,33 +1523,17 @@ fn enum_root<L: FnMut(&[u16], u64, u64)>(eg: &EnumG, k: usize, a: u16, b: u16, l
             while bits != 0 {
                 let v = wi * 64 + bits.trailing_zeros() as usize;
                 bits &= bits - 1;
-                // push v
-                let (mut x1, mut x2) = (h1s[d].wrapping_add(eg.r1[v]), h2s[d].wrapping_add(eg.r2[v]));
-                for &u in &stack[..d] {
-                    let di = eg.d(v as u16, u) as usize;
-                    x1 = x1.wrapping_add(eg.r1[di]);
-                    x2 = x2.wrapping_add(eg.r2[di]);
-                }
-                stack[d] = v as u16;
-                h1s[d + 1] = x1;
-                h2s[d + 1] = x2;
-                hos[d + 1] = hos[d].wrapping_add(eg.ro[v]);
+                push(eg, stack, h1s, h2s, hos, d + 1, v as u16);
                 if d + 1 == need {
                     rec(eg, need, d + 1, cand, stack, h1s, h2s, hos, leaf);
                     continue;
                 }
-                let mut ncb = [0u64; 8];
-                let nc = &mut ncb[..cand.len()];
+                let mut nb = [0u64; MAXW];
+                let nc = &mut nb[..cand.len()];
                 let mut any = false;
                 for kk in 0..cand.len() {
-                    let mut x = cand[kk] & eg.adj[v][kk];
-                    if kk < v / 64 {
-                        x = 0;
-                    } else if kk == v / 64 {
-                        x &= if v % 64 == 63 { 0 } else { !0u64 << (v % 64 + 1) };
-                    }
-                    nc[kk] = x;
-                    any |= x != 0;
+                    nc[kk] = above(cand[kk] & eg.adj[v][kk], kk, v);
+                    any |= nc[kk] != 0;
                 }
                 if any {
                     rec(eg, need, d + 1, nc, stack, h1s, h2s, hos, leaf);
@@ -1425,50 +1541,47 @@ fn enum_root<L: FnMut(&[u16], u64, u64)>(eg: &EnumG, k: usize, a: u16, b: u16, l
             }
         }
     }
-    push(&mut stack, &mut h1s, &mut h2s, &mut hos, 0, a);
-    push(&mut stack, &mut h1s, &mut h2s, &mut hos, 1, b);
-    if need == 2 {
-        rec(eg, need, 2, &[], &mut stack, &mut h1s, &mut h2s, &mut hos, leaf);
-        return;
-    }
-    let mut ccb = [0u64; 8];
-    let cand = &mut ccb[..w];
-    for kk in 0..w {
-        let mut x = eg.adj[a as usize][kk] & eg.adj[b as usize][kk];
-        let bb = b as usize;
-        if kk < bb / 64 {
-            x = 0;
-        } else if kk == bb / 64 {
-            x &= if bb % 64 == 63 { 0 } else { !0u64 << (bb % 64 + 1) };
+    /// put v at stack position p (0 = the top note m); hashes over all pairs with 0 and with stack[..p]
+    fn push(eg: &EnumG, stack: &mut [u16; 17], h1s: &mut [u64; 18], h2s: &mut [u64; 18], hos: &mut [u64; 18], p: usize, v: u16) {
+        let (mut x1, mut x2) = (h1s[p].wrapping_add(eg.r1[v as usize]), h2s[p].wrapping_add(eg.r2[v as usize]));
+        for &u in &stack[..p] {
+            let di = eg.dd(v, u) as usize;
+            x1 = x1.wrapping_add(eg.r1[di]);
+            x2 = x2.wrapping_add(eg.r2[di]);
         }
-        cand[kk] = x;
+        stack[p] = v;
+        h1s[p + 1] = x1;
+        h2s[p + 1] = x2;
+        hos[p + 1] = hos[p].wrapping_add(eg.ro[v as usize]);
     }
-    rec(eg, need, 2, cand, &mut stack, &mut h1s, &mut h2s, &mut hos, leaf);
-}
-
-/// run enum_root over all root pairs in parallel; each thread folds leaves into its own accumulator
-fn enum_parallel<A: Send + 'static, F>(eg: &Arc<EnumG>, k: usize, threads: usize, make: fn() -> A, fold: F) -> Vec<A>
-where
-    F: Fn(&mut A, &[u16], u64, u64) + Send + Sync + 'static + Clone,
-{
-    let n = eg.n;
-    let roots: Vec<(u16, u16)> = (0..n)
-        .flat_map(|a| (a + 1..n).filter(move |&b| (eg.adj[a][b / 64] >> (b % 64)) & 1 == 1).map(move |b| (a as u16, b as u16)))
-        .collect();
-    let roots = Arc::new(roots);
+    let roots = Arc::new(group_roots(eg, m, need));
+    if roots.is_empty() {
+        return vec![];
+    }
     let next = Arc::new(AtomicUsize::new(0));
-    let hs: Vec<_> = (0..threads)
+    let w = eg.adj[0].len();
+    let hs: Vec<_> = (0..threads.min(roots.len()))
         .map(|_| {
             let (eg, roots, next, fold) = (eg.clone(), roots.clone(), next.clone(), fold.clone());
             std::thread::spawn(move || {
                 let mut acc = make();
+                let mut stack = [0u16; 17];
+                let (mut h1s, mut h2s, mut hos) = ([0u64; 18], [0u64; 18], [0u64; 18]);
                 loop {
                     let i = next.fetch_add(1, Ordering::Relaxed);
                     if i >= roots.len() {
                         break;
                     }
                     let (a, b) = roots[i];
-                    enum_root(&eg, k, a, b, &mut |c: &[u16], h1, h2| fold(&mut acc, c, h1, h2));
+                    push(&eg, &mut stack, &mut h1s, &mut h2s, &mut hos, 0, m as u16);
+                    push(&eg, &mut stack, &mut h1s, &mut h2s, &mut hos, 1, a);
+                    let mut d = 1;
+                    if b != u16::MAX {
+                        push(&eg, &mut stack, &mut h1s, &mut h2s, &mut hos, 2, b);
+                        d = 2;
+                    }
+                    let cand = root_cand(&eg, m, a, b);
+                    rec(&eg, need, d, &cand[..w], &mut stack, &mut h1s, &mut h2s, &mut hos, &mut |c: &[u16], h1, h2| fold(&mut acc, c, h1, h2));
                 }
                 acc
             })
@@ -1486,93 +1599,95 @@ fn enumerate(g: &GenCtx, args: &Args) {
     for &k in &args.k {
         let k = k as usize;
         assert!((3..=16).contains(&k), "k from 3 to 16");
-        // pass count from a quick count of the kept sets (about half of all sets)
-        let counts = enum_parallel(&eg, k, args.threads, || 0u64, |a: &mut u64, _c: &[u16], _h1, _h2| *a += 1);
-        let kept: u64 = counts.iter().sum();
-        let passes = ((kept * 16) / budget.max(1) + 1).max(1);
+        let need = k - 2; // notes besides 0 and the top note
         let tk = Instant::now();
-        let mut families = 0u64;
-        let mut groups = 0u64;
-        for pass in 0..passes {
-            // pass A: hashes of this slice, repeated ones
-            let parts = enum_parallel(&eg, k, args.threads, Vec::<(u64, u64)>::new, move |v: &mut Vec<(u64, u64)>, _c: &[u16], h1, h2| {
-                if h1 % passes == pass {
-                    v.push((h1, h2));
-                }
-            });
-            let mut all: Vec<(u64, u64)> = parts.into_iter().flatten().collect();
-            all.sort_unstable();
-            let mut rep: HashSet<(u64, u64)> = HashSet::new();
-            for i in 1..all.len() {
-                if all[i] == all[i - 1] {
-                    rep.insert(all[i]);
-                }
-            }
-            drop(all);
-            if rep.is_empty() {
+        let (mut total, mut families, mut biggest, mut extra_passes) = (0u64, 0u64, 0u64, 0u64);
+        for m in 0..n {
+            let cnt = group_count(&eg, m, need, args.threads);
+            if cnt == 0 {
                 continue;
             }
-            // pass B: note lists of the repeated hashes
-            let rep = Arc::new(rep);
-            let rep2 = rep.clone();
-            let parts = enum_parallel(&eg, k, args.threads, Vec::<((u64, u64), Vec<u16>)>::new, move |v: &mut Vec<((u64, u64), Vec<u16>)>, c: &[u16], h1, h2| {
-                if h1 % passes == pass && rep2.contains(&(h1, h2)) {
-                    v.push(((h1, h2), c.to_vec()));
+            total += cnt;
+            biggest = biggest.max(cnt);
+            let passes = ((cnt / 2 + 1) * 16) / budget.max(1) + 1;
+            extra_passes += passes - 1;
+            for pass in 0..passes {
+                let parts = group_parallel(&eg, m, need, args.threads, Vec::<(u64, u64)>::new, move |v: &mut Vec<(u64, u64)>, _c: &[u16], h1, h2| {
+                    if h1 % passes == pass {
+                        v.push((h1, h2));
+                    }
+                });
+                let mut all: Vec<(u64, u64)> = parts.into_iter().flatten().collect();
+                all.sort_unstable();
+                let mut rep: HashSet<(u64, u64)> = HashSet::new();
+                for i in 1..all.len() {
+                    if all[i] == all[i - 1] {
+                        rep.insert(all[i]);
+                    }
                 }
-            });
-            let mut by: HashMap<(u64, u64), Vec<Vec<u16>>> = HashMap::new();
-            for (h, c) in parts.into_iter().flatten() {
-                by.entry(h).or_default().push(c);
-            }
-            // exact check: difference lists and canonical forms
-            for (_, sets) in by {
-                let mut exact: HashMap<Vec<u16>, Vec<Vec<u16>>> = HashMap::new();
-                for c in sets {
-                    let mut diffs: Vec<u16> = c.clone(); // differences to 0
-                    for i in 0..c.len() {
-                        for j in 0..i {
-                            diffs.push(eg.d(c[i], c[j]));
+                drop(all);
+                if rep.is_empty() {
+                    continue;
+                }
+                let rep = Arc::new(rep);
+                let rep2 = rep.clone();
+                let parts = group_parallel(&eg, m, need, args.threads, Vec::<((u64, u64), Vec<u16>)>::new, move |v: &mut Vec<((u64, u64), Vec<u16>)>, c: &[u16], h1, h2| {
+                    if h1 % passes == pass && rep2.contains(&(h1, h2)) {
+                        let mut s: Vec<u16> = c[1..].to_vec(); // C ascending, then the top note
+                        s.push(c[0]);
+                        v.push(((h1, h2), s));
+                    }
+                });
+                let mut by: HashMap<(u64, u64), Vec<Vec<u16>>> = HashMap::new();
+                for (h, c) in parts.into_iter().flatten() {
+                    by.entry(h).or_default().push(c);
+                }
+                for (_, sets) in by {
+                    let mut exact: HashMap<Vec<u16>, Vec<Vec<u16>>> = HashMap::new();
+                    for c in sets {
+                        let mut diffs: Vec<u16> = c.clone(); // differences to 0
+                        for i in 0..c.len() {
+                            for j in 0..i {
+                                diffs.push(eg.dd(c[i], c[j]));
+                            }
+                        }
+                        diffs.sort_unstable();
+                        let top = *c.last().unwrap();
+                        let mut inv: Vec<u16> = c[..c.len() - 1].iter().map(|&s| eg.d(top, s)).collect();
+                        inv.push(top);
+                        inv.sort_unstable();
+                        let canon = if inv < c { inv } else { c };
+                        let e = exact.entry(diffs).or_default();
+                        if !e.contains(&canon) {
+                            e.push(canon);
                         }
                     }
-                    diffs.sort_unstable();
-                    // canonical form: min of the set and its inversion (both as sorted vertex lists)
-                    let m = *c.last().unwrap();
-                    let mut inv: Vec<u16> = c[..c.len() - 1].iter().map(|&s| eg.d(m, s)).collect();
-                    inv.push(m);
-                    inv.sort_unstable();
-                    let canon = if inv < c { inv } else { c };
-                    let e = exact.entry(diffs).or_default();
-                    if !e.contains(&canon) {
-                        e.push(canon);
+                    for (_, mut members) in exact {
+                        if members.len() < 2 {
+                            continue;
+                        }
+                        families += 1;
+                        members.sort();
+                        let pts = |c: &Vec<u16>| -> Vec<Pt> {
+                            let mut v = vec![vec![0; g.dim]];
+                            v.extend(c.iter().map(|&i| g.boxv[i as usize].clone()));
+                            v
+                        };
+                        let p0 = pts(&members[0]);
+                        let prods: Vec<(Vec<Pt>, Vec<Pt>)> = members[1..].iter().map(|m| (p0.clone(), pts(m))).collect();
+                        w.write_all(line_json(&vec![], true, &prods).as_bytes()).unwrap();
+                        w.write_all(b"\n").unwrap();
                     }
-                }
-                for (_, mut members) in exact {
-                    if members.len() < 2 {
-                        continue;
-                    }
-                    groups += 1;
-                    families += 1;
-                    members.sort();
-                    let pts = |c: &Vec<u16>| -> Vec<Pt> {
-                        let mut v = vec![vec![0; g.dim]];
-                        v.extend(c.iter().map(|&i| g.boxv[i as usize].clone()));
-                        v
-                    };
-                    let p0 = pts(&members[0]);
-                    let prods: Vec<(Vec<Pt>, Vec<Pt>)> = members[1..].iter().map(|m| (p0.clone(), pts(m))).collect();
-                    w.write_all(line_json(&vec![], true, &prods).as_bytes()).unwrap();
-                    w.write_all(b"\n").unwrap();
                 }
             }
         }
         eprintln!(
-            "  k={k}: {kept} sets kept (one of each set/inversion pair), {passes} pass(es), {families} families with equal interval content ({groups} groups), {:.1}s",
+            "  k={k}: {total} sets (both orientations), largest top-note group {biggest}, {extra_passes} extra slice passes, {families} families with equal interval content, {:.1}s",
             tk.elapsed().as_secs_f64()
         );
     }
     w.flush().unwrap();
-    let _ = n;
-    eprintln!("zprod-rs enum: done in {:.1}s", t0.elapsed().as_secs_f64());
+    eprintln!("zprod-rs enum: done in {:.1}s ({n} positive intervals)", t0.elapsed().as_secs_f64());
 }
 
 // ------------------------------------------------------------------------------------------- main
