@@ -219,7 +219,7 @@ Human: "You need to do whatever you need to have the highest q results for all p
 | Limit | Proven (enumeration) | Families | Ladder fully checked (no budget + widened) | Families | Ladder highest q (lower bound) | Families |
 | --- | --- | --- | --- | --- | --- | --- |
 | 5 | q ≤ 3,645 | 65,348 | — | — | q ≤ 3,645 | = proven |
-| 7 | q ≤ 315 | 16,561 | q ≤ 405 | 57,123 | q ≤ 729 | 398,634 |
+| 7 | q ≤ 315 | 16,561 | q ≤ 405 | 57,123 | q ≤ 729 | 403,069 (09:19: widened steps with no budget added 4,435 to 398,634) |
 | 11 | q ≤ 135 | 1,209 | q ≤ 243 | 15,479 | q ≤ 405 | 283,156 |
 | 13 | q ≤ 135 | 2,116 | q ≤ 243 (5,1/5,2 step open) | 30,483 | q ≤ 243 | 30,483 |
 | 17 | q ≤ 135 | 2,731 | — | — | q ≤ 243 | 46,831 |
