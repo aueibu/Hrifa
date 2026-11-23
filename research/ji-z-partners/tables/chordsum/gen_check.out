@@ -1,0 +1,10 @@
+15:19 11q135: 5s; # check ev2_11q135: 1209 proven families, 1200 generated, generated pairs not in the list: {} # chord sums in tsv 1200; generated 1200; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:19 13q135: 18s; # check en13q135: 2116 proven families, 2099 generated, generated pairs not in the list: {} # chord sums in tsv 2099; generated 2099; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:20 17q135: 40s; # check en17q135: 2731 proven families, 2714 generated, generated pairs not in the list: {} # chord sums in tsv 2714; generated 2714; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:21 19q135: 82s; # check e19q135_on: 3735 proven families, 3718 generated, generated pairs not in the list: {} # chord sums in tsv 3718; generated 3718; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:21 5q729: 2s; # check ev2_5q729: 2376 proven families, 2138 generated, generated pairs not in the list: {} # chord sums in tsv 2138; generated 2138; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:21 7q243: 6s; # check ev2_7q243: 6233 proven families, 6051 generated, generated pairs not in the list: {} # chord sums in tsv 6051; generated 6051; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:21 7q315: 17s; # check e7q315_on: 16561 proven families, 16244 generated, generated pairs not in the list: {} # chord sums in tsv 16244; generated 16244; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:22 5q2187: 12s; # check e5q2187_on: 13700 proven families, 11839 generated, generated pairs not in the list: {} # chord sums in tsv 11839; generated 11839; missed 0 (by notes {}); generated but not marked chord sum 0 
+15:22 5q3645: 53s; # check e5q3645_on: 65348 proven families, 55810 generated, generated pairs not in the list: {} # chord sums in tsv 55810; generated 55810; missed 0 (by notes {}); generated but not marked chord sum 0 
+GEN CHECK DONE

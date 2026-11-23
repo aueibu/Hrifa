@@ -131,3 +131,127 @@ is a plain chord of 3 to 5 notes. Questions this makes precise: (a) why so few i
 two seems to be the economical case); (b) which chords A admit a B with A·B and A·B* both 0/1 (a
 covering/tiling-type condition, checkable chord by chord); (c) the 7 exceptions as a separate family.
 A generator built on this (choose a small chord A, solve for B) needs no limit on B's signs.
+
+## 6. Plain form of T: almost every pair is a "chord sum" (2026-11-23 evening)
+
+Notation as in the Harmonic Field Lab: a chord is written `a:b:c` (otonal) and its mirror
+`1/(a:b:c)` (utonal). For a set A, A⁻¹ = {1/r : r in A} is its mirror; A·U = {a·u} is the product
+set. U is "the second factor": any set of ratios, no order or other meaning.
+
+`chordsum.py` (plain CPython, exact; 68 s on the 19-limit list) tests the plain form of T directly:
+**P = A·U and Q = A⁻¹·U**, with A a small chord (coefficients all 1), U a plain set (coefficients
+0/1) and no product a·u landing twice. The easy direction is standard (such pairs always share their
+interval content); the data says the converse almost always holds. Call such a pair a **chord sum**.
+
+Example (19-limit list, 9 notes, q 45; checked by multiplying out): A = 4:5:6 = {1, 5/4, 3/2},
+A⁻¹ = 1/(4:5:6) = {1, 4/3, 8/5}, U = {1, 9/8, 7/4}. A·U = {1, 35/32, 9/8, 5/4, 21/16, 45/32, 3/2,
+27/16, 7/4} (member 0 transposed by 16/9); A⁻¹·U = {1, 9/8, 7/6, 4/3, 7/5, 3/2, 8/5, 7/4, 9/5}
+(member 1).
+
+19-limit q <= 135 (proven list, 3,735 families): **3,718 (99.5%) are chord sums.**
+
+| notes | chord sums | A, U | exceptions |
+|---|---|---|---|
+| 9 | 1,234 | 3-note chord, 3-note U (both factors are 3-note chords) | 7: 3-note chord, signed 5-term U |
+| 12 | 1,547 | 3-note chord, 4-note U | 6: 3-note chord, signed 6-term U |
+| 15 | 845 | 3-note chord, 5-note U | 2: 3-note chord, signed 7-term U |
+| 16 | 92 | 4-note chord, 4-note U | none |
+| 6 | 0 | | 1: 3-note chord, signed 4-term U |
+| 10 | 0 | | 1: no 3- or 4-note chord factor |
+
+Chord vocabulary (up to transposition and mirror): 587 chords; the top 8 cover half of all
+(family, chord) hits, the top 82 cover 80%. 4:5:6 (same pitch classes as 3:4:5) alone is in 1,117
+families; next 5:7:8, 6:7:10, 6:7:8, 9:10:12 (about 290 each). Distinct chords by highest prime:
+5: 20, 7: 83, 11: 179, 13: 107, 17: 84, 19: 114.
+
+Consequences: (a) a **constructive generator** (choose A, choose U, keep A·U and A⁻¹·U when no
+product lands twice, they are not a transposition or mirror of each other, and they stay inside the q
+limit) reaches 99.5% of this list without any search; (b) every catalog entry can be explained as
+"A·U and A⁻¹·U" with A an `a:b:c` chord.
+
+### 6.1 All nine proven lists (step 1, `chordsum_fs.py`, sympy, every grouping of the factors tried)
+
+Run on the VM in about 90 s for all nine lists (`data/vm/cs_all.sh`; summaries and a q-band table in
+`tables/chordsum/`). The 19-limit count agrees with `chordsum.py` (3,718).
+
+| list | families | chord sums | share | (A, U) sizes 3x3 / 3x4 / 3x5 / 4x4 |
+|---|---|---|---|---|
+| 5-limit q <= 729 | 2,376 | 2,138 | 90.0% | 584 / 1,073 / 451 / 30 |
+| 5-limit q <= 2,187 | 13,700 | 11,839 | 86.4% | 1,594 / 5,049 / 4,608 / 588 |
+| 5-limit q <= 3,645 | 65,348 | 55,810 | 85.4% | 3,856 / 18,316 / 28,280 / 5,358 |
+| 7-limit q <= 243 | 6,233 | 6,051 | 97.1% | 1,374 / 2,906 / 1,610 / 161 |
+| 7-limit q <= 315 | 16,561 | 16,244 | 98.1% | 2,338 / 6,908 / 6,121 / 877 |
+| 11-limit q <= 135 | 1,209 | 1,200 | 99.3% | 601 / 493 / 100 / 6 |
+| 13-limit q <= 135 | 2,116 | 2,099 | 99.2% | 868 / 900 / 289 / 42 |
+| 17-limit q <= 135 | 2,731 | 2,714 | 99.4% | 1,033 / 1,158 / 465 / 58 |
+| 19-limit q <= 135 | 3,735 | 3,718 | 99.5% | 1,234 / 1,547 / 845 / 92 |
+
+- **Chord sums occur only at 9, 12, 15 and 16 notes** (A and U of 3x3, 3x4, 3x5, 4x4). This is
+  forced: a 2-note set is its own mirror (up to transposition), and a chord sum with a mirror-symmetric
+  A or U is trivial (Q is P mirrored), so both factors need 3 or more notes, and k <= 16 leaves only
+  these four products. Every 6-, 7-, 8-, 10-, 11-, 13- and 14-note family is something else.
+- **The share falls with q at 5-limit** (q-band table: about 93% of the 9/12/15/16-note families up to
+  q 729, 86-88% from q 730 to 3,645); at 7-limit it stays at 97-99% up to q 405; at 11- to 19-limit
+  q <= 135 it is 99.3-99.6%.
+- **What the other families are** (best valid split): mostly a 3-note chord whose cofactor has −1
+  coefficients (5-limit q <= 3,645: 3,712 with a 7-term cofactor, 1,413 with 6 terms, 632 with 9 ...),
+  then a small signed factor (V shape 3,1 or 4,1: weight 2 or 3) with a plain cofactor, which covers
+  the 8-, 10- and 14-note families.
+- **Chords A** (smallest `a:b:c` form up to transposition and mirror; 3:4:5 = 4:5:6 pitch classes):
+  3:4:5 leads in every list; 5-limit q <= 3,645: 1,366 distinct (3:4:5, 5:6:9, 8:10:15, 5:8:9, 8:9:15
+  ...); 7-limit q <= 315: 669 (3:4:5, 5:6:9, 6:7:9, 4:6:7, 4:5:7 ...); 19-limit q <= 135: 347
+  (3:4:5 1,042, then 5:6:7, 4:5:7, 5:6:9, 4:6:7 at about 260-275 each; one best A per family).
+
+### 6.2 Constructive generator (step 2, `chordgen.py`)
+
+Two facts make generation direct. The intervals of A·U are the products D(A)·D(U), and D(A⁻¹) = D(A),
+so A·U and A⁻¹·U pass the odd-limit test together. A product lands twice exactly when D(A) and D(U)
+share an interval other than 1, again the same for both. So for each chord A (up to transposition and
+mirror) let E_A = {d allowed : d·δ allowed for every δ in D(A), d not in D(A)}; every U containing 1
+with all its intervals in E_A gives a valid pair, kept unless Q is a transposition or mirror of P.
+Families are the unordered pair of members, each up to transposition and mirror.
+
+**The generator lists every chord-sum family exactly**, so its output is a complete list of chord sums
+(up to 16 notes) at any limit and q, and a lower bound for all Z-families. Check against all nine
+proven lists (`data/vm/gen_check.sh`, `tables/chordsum/gen_check.out`): in every list the generated
+families are exactly the families `chordsum_fs.py` marked (0 missed, 0 not in the list). Times
+(Python, 16 workers): 11-limit q 135 5 s, 13-limit 18 s, 19-limit q 135 82 s (the enumeration proof
+took 12,591 s), 5-limit q 3,645 53 s, 7-limit q 315 17 s.
+
+**Against the highest ladder rungs** (`data/vm/gen_ladder.sh`, `tables/chordsum/gen_ladder.out`):
+
+| rung | ladder families | chord sums generated | generation time | chord sums the ladder missed |
+|---|---|---|---|---|
+| 13-limit q <= 243 | 30,483 | 30,057 | 100 s | 0 |
+| 17-limit q <= 243 | 47,044 | 46,460 | 349 s | 0 |
+| 7-limit q <= 729 | 403,069 | 391,458 | 53 s | 0 |
+| 11-limit q <= 405 | 283,162 | 280,969 | 101 s | **1** |
+
+So at these rungs the chord sums are complete; anything the ladder still lacks is a leftover family
+(6.3). The one miss (`tables/chordsum/gen_11q405.strays.jsonl`, checked independently: same interval
+content, not a transposition or mirror): 9 notes, q 385, A = {1, 11/9, 4/3}, U = {1, 7/6, 35/18};
+members {1, 7/6, 4/3, 11/9, 14/9, 35/27, 35/18, 77/54, 385/324} and {1, 7/6, 11/6, 11/9, 35/18,
+77/54, 77/72, 385/216, 385/324}. 11-limit q <= 405 is therefore at least **283,163** families (that
+rung had a capped widened step).
+
+### 6.3 The leftover groups (families that are not chord sums)
+
+`leftover_tab.py` (`tables/chordsum/leftover_groups.md`), from the best valid split P = V·U, Q = V*·U:
+
+| list | leftover | G1 chord · signed U | G2 signed V · plain U | G3 both signed |
+|---|---|---|---|---|
+| 5-limit q <= 3,645 | 9,538 (14.6%) | 7,076 | 2,455 | 7 |
+| 7-limit q <= 315 | 317 (1.9%) | 262 | 55 | 0 |
+| 13- and 19-limit q <= 135 | 17 (the same 17) | 16 | 1 | 0 |
+
+- G1: V is a 3-note chord (sometimes 4), U has −1 coefficients (5-limit: U of 7 terms 3,712, 6 terms
+  1,413, 9 terms 632). All note counts, mostly 12 and 15.
+- G2: V has one −1 (shapes 3,1 and 4,1), U plain: 5-limit 4,1 · 5 notes 1,038 (15 notes), 3,1 · 7
+  notes 682 (14 notes), 3,1 · 8 or 5 notes; this is where all 8-, 10- and 14-note families live.
+- G3: both signed: only the 7 families of section 5, item 3.
+- No leftover at 13- to 19-limit q <= 135 uses 17 or 19.
+- Working reading (hypothesis, not tested): both groups are products **with overlaps**. In a chord sum
+  no product lands twice; in G1 (U = U+ − U−) P = A·U+ − A·U−, and in G2 (V = W − x^c, W plain)
+  P = W·U − c·U: some products land twice and the doubled notes are removed. Overlaps need
+  coincidences a·u = a'·u', which are common in the 2-D 5-limit lattice and rare with more primes:
+  a candidate reason for 15% leftover at 5-limit, 2% at 7-limit, under 1% beyond.
