@@ -212,6 +212,22 @@ lb()[2].click();
 check('listen: a row off ends its pair', pairF().length, 2);
 $('stopAll').click();
 check('listen: Stop sound ends all pairs', [pairF().length, lb().every((b) => b.getAttribute('aria-pressed') === 'false')], [0, true]);
+// beat listings (human 2026-11-23: "build both listings"), C G B♭ at 4:5:6:7 listened: beats vs harmonic C 2.217,
+// G 3.769, B♭ 4.439; C–G meet at C's 3rd (784.89) and G's 2nd (784.00): 0.9/s; rhythms 3:5 4.5 s, 1:2 212 s, 6:7 3.9 s
+const cellRows = (sel) => [...$('beatLists').querySelectorAll(`${sel} tbody tr`)].map((tr) => [...tr.children].map((td) => td.textContent.trim()));
+check('listings: placeholder below two rows on', [cellRows('.beats-iv').length, cellRows('.beats-iv')[0][0], cellRows('.beats-rh').length], [1, 'Switch on listen in two or more rows above.', 1]);
+lb()[0].click(); lb()[2].click(); lb()[3].click();
+check('listings: three pairs each', [cellRows('.beats-iv').length, cellRows('.beats-rh').length], [3, 3]);
+check('intervals: C–G', cellRows('.beats-iv')[0].slice(0, 4), ['C4–G4', '4:6 (2:3)', "C4's 3rd · G4's 2nd · 784.9 Hz", 'about 0.9 per second']);
+check('intervals: C–B♭ and G–B♭ rough', [cellRows('.beats-iv')[1][3], cellRows('.beats-iv')[2][3]], ['about 33.3 per second (rough)', 'about 53.0 per second (rough)']);
+check('rhythms between the beats', cellRows('.beats-rh').map((r) => [r[2], r[3]]), [['3:5', '4.5 s'], ['1:2', '212 s'], ['6:7', '3.9 s']]);
+const b5 = OSCS.length;
+$('beatLists').querySelector('[data-iv]').click();
+check('interval listen: the two meeting partials as sines', OSCS.slice(b5).filter((o) => !o.stopped).map(fq).sort((a, b) => a - b).map((f) => f.toFixed(2)), ['784.00', '784.89']);
+lb()[2].click();
+check('interval listen ends when one of its rows is switched off', [OSCS.slice(b5).filter((o) => !o.stopped).length, cellRows('.beats-iv').length], [0, 1]);
+$('stopAll').click();
+check('listings: Stop sound clears them', cellRows('.beats-rh')[0][0], 'Switch on listen in two or more rows above.');
 pick(0);
 // no jumping (human 2026-11-23): the exact rung keeps the same table, with 0.0¢ and no beats
 check('readout: exact rung keeps the table', [tuneRows().length, tuneRows().map((r) => r[3]), tuneRows().map((r) => r[4]), tuneRows().map((r) => r[5])], [4, ['0.0¢', '0.0¢', '0.0¢', '0.0¢'], ['lowest note', 'none', 'none', 'none'], ['none', 'none', 'none', 'none']]);

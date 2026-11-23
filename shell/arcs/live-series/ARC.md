@@ -154,6 +154,15 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
     per second); several rows on = all their beats at once (the "reference harmonics" idea, opted into by hand). The
     pair follows rung and note changes live; Stop sound ends all. Column renamed "beats vs harmonic" (the longer name did not fit a fixed column).
     **Mode C to come in M4**: a tanpura-like drone that sounds the series' harmonics, so notes beat against the drone.
+  - Two beat listings (human: "build both listings"), under the tuning table, for pairs among the rows whose listen
+    is on; fixed boxes 6 rows tall that scroll, with a placeholder row below two rows on:
+    - **Beats between the notes**: for notes at harmonics a and b (g = gcd), note 1's (b/g)th partial meets note 2's
+      (a/g)th; typed beat = |(b/g)·f1 − (a/g)·f2|; tuned is always none (said once in the footnote); "rough" above
+      15 per second; "too high to hear" past the 16th partial; a listen toggle plays the two meeting partials as
+      sines. C E G B♭ at 4:5:6:7 typed: C–G 0.9, C–E 10.4, E–G 17.8, E–B♭ 23.4, C–B♭ 33.3, G–B♭ 53.0 per second.
+    - **Rhythms between the beats**: both beat rates, the nearest ratio p:q (p, q ≤ 8, by closeness of a/b to p/q),
+      and the line-up time 1 / |q·a − p·b|. Same chord: G 3.77 / B♭ 4.44 ≈ 6:7, every 3.9 s; C 2.22 / G 3.77 ≈ 3:5,
+      every 4.5 s; C 2.22 / B♭ 4.44 ≈ 1:2, every 212 s. Rates more than 8 times apart show the plain ratio.
   - Series drawing width (human: "stretch the harmonic series graph to fit the whole width we have. better
     resolution available"): the drawing always fills its panel's width, empty or not, and is redrawn on a resize.
   - No jumping, the whole page (human: "IVE SAID IT MORE THAN 10 ... TIMES ITS THE WHOLE UI DESIGN PRINCIPLE"):

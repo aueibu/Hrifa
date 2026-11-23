@@ -80,6 +80,9 @@
   #tune { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .tune { border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; table-layout: fixed; width: 57em; }
   .tune .listen { padding: 1px 8px; font-size: 0.78rem; }
+  #beatLists { display: flex; flex-direction: column; gap: 4px; min-width: 0; margin-top: 6px; }
+  .tune.beats-iv { width: 52.5em; }
+  .tune.beats-rh { width: 45em; }
   /* named-comma hint: a small triangle with a wider hover area; the name and notes are in its tooltip */
   .hint { display: inline-block; padding: 3px 4px; margin-left: 2px; vertical-align: middle; cursor: help; line-height: 0; }
   .hint::before { content: ""; display: inline-block; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid var(--twin); }
@@ -143,6 +146,7 @@
       <h2>Fundamental</h2>
       <div class="facts" id="facts"></div>
       <div id="tune"></div>
+      <div id="beatLists"></div>
       <div class="btns">
         <button type="button" id="playChord" aria-pressed="false">Notes: off</button>
         <button type="button" id="playUp" aria-pressed="false">Arpeggio: off</button>
@@ -511,8 +515,54 @@ function drawTune(r, notes) {
     <p class="read small">Comma: the exact ratio a note moves by against the lowest note when read in this series (ratio input only; a small triangle marks a historic comma, hover it for its name). Beats vs harmonic: how fast a typed note wobbles against its own exact harmonic in this series (not against 1/1). The drone sounds only some of these harmonics, so most of this beating is otherwise not heard: <b>listen</b> plays the typed note and its harmonic together as two plain sines; switch on several rows to hear them all at once. The bar spans ±${cap}¢ (Show fits within).</p>`;
 }
 
+// Two beat listings (human, M1 2026-11-23: "build both listings"), for pairs among the rows whose listen is on.
+// Each is the same fixed box in every state: 6 rows tall, scrolling for more, a placeholder row below two rows on.
+const ORD = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+const short = (f) => noteName(f).split(' ')[0];
+function beatText(b) { return b < 0.05 ? 'none' : `about ${b.toFixed(1)} per second${b > 15 ? ' (rough)' : ''}`; }
+// nearest p:q (p, q up to 8) to a:b by closeness of the ratios; lines up again every 1 / |q·a − p·b| seconds
+function beatRhythm(a, b) {
+  if (a < 0.05 || b < 0.05) return { ratio: '—', every: 'no beat' };
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  if (hi / lo > 8) return { ratio: `${a < b ? `1 : ${(b / a).toFixed(1)}` : `${(a / b).toFixed(1)} : 1`}`, every: '—' };
+  let best = null;
+  for (let q = 1; q <= 8; q++) for (let p = 1; p <= 8; p++) {
+    const d = Math.abs(a / b - p / q);
+    if (!best || d < best.d - 1e-12) best = { p, q, d };
+  }
+  const slip = Math.abs(best.q * a - best.p * b), t = slip > 0 ? 1 / slip : Infinity;
+  return { ratio: `${best.p}:${best.q}`, every: t > 600 ? 'over 10 minutes (locked)' : t >= 60 ? `${Math.round(t)} s` : `${t.toFixed(1)} s` };
+}
+function drawBeatLists() {
+  const box = $('beatLists'), on = listenedNotes(), ps = [];
+  for (let i = 0; i < on.length; i++) for (let j = i + 1; j < on.length; j++) ps.push([on[i], on[j]]);
+  const empty = (cols) => `<tr><td colspan="${cols}" class="name">Switch on listen in two or more rows above.</td></tr>`;
+  const ivRows = ps.length ? ps.map(([x, y]) => {
+    const m = meet(x, y), g = gcd(x.k, y.k), pk = `${x.key}|${y.key}`, onIv = LISTEN_IV.has(pk);
+    const interval = g > 1 ? `${x.k}:${y.k} (${x.k / g}:${y.k / g})` : `${x.k}:${y.k}`;
+    return `<tr><td>${short(x.f)}–${short(y.f)}</td><td>${interval}</td>
+      <td>${short(x.f)}'s ${ORD(m.m)} · ${short(y.f)}'s ${ORD(m.n)}${m.high ? '' : ` · ${fmtHz(m.fa)} Hz`}</td>
+      <td>${m.high ? 'too high to hear' : beatText(m.beat)}</td>
+      <td>${m.high ? '' : `<button type="button" class="listen${onIv ? ' playing' : ''}" data-iv="${pk}" aria-pressed="${onIv}" aria-label="Listen to the meeting partials of ${short(x.f)} and ${short(y.f)}">listen</button>`}</td></tr>`;
+  }).join('') : empty(5);
+  const rhRows = ps.length ? ps.map(([x, y]) => {
+    const r = beatRhythm(x.beat, y.beat);
+    return `<tr><td>${short(x.f)} / ${short(y.f)}</td><td>${x.beat.toFixed(2)} / ${y.beat.toFixed(2)} per second</td><td>${r.ratio}</td><td>${r.every}</td></tr>`;
+  }).join('') : empty(4);
+  box.innerHTML = `
+    <div class="row"><span class="lbl" style="min-width:0">Beats between the notes</span></div>
+    <div class="scroll tune-wrap"><table class="tune beats-iv"><colgroup><col style="width:8em"><col style="width:9em"><col style="width:17em"><col style="width:13em"><col style="width:5.5em"></colgroup>
+      <thead><tr><th>pair</th><th>series interval</th><th>where they meet</th><th>beats (typed)</th><th>listen</th></tr></thead><tbody>${ivRows}</tbody></table></div>
+    <p class="read small">Two notes at harmonics a and b meet where one's (b/g)th partial and the other's (a/g)th coincide (g = their common factor); typed, those partials are slightly apart and beat at the gap. Tuned to the series they meet exactly, so tuned is always none. Above about 15 per second the beating is heard as roughness. Listen plays the two meeting partials as sines.</p>
+    <div class="row"><span class="lbl" style="min-width:0">Rhythms between the beats</span></div>
+    <div class="scroll tune-wrap"><table class="tune beats-rh"><colgroup><col style="width:8em"><col style="width:15em"><col style="width:8em"><col style="width:14em"></colgroup>
+      <thead><tr><th>pair</th><th>beats vs harmonic</th><th>nearest ratio</th><th>lines up every</th></tr></thead><tbody>${rhRows}</tbody></table></div>
+    <p class="read small">Each listened note's beat against its harmonic is a pulse stream; two streams form a polyrhythm (nearest ratio up to 8:8) and line up again every 1 / |q·a − p·b| seconds. When the two notes the shared error leaves furthest off are equally far off, their beats stand in the notes' own series ratio.</p>`;
+}
+
 function drawFacts(r, notes) {
   drawTune(r, notes);
+  drawBeatLists();
   if (!r) {   // same seven rows with no values, so the box keeps its shape
     $('facts').innerHTML = ['Fundamental', 'Relative to 1/1', 'Below the lowest note', 'Is it played?', 'Your 1/1', 'Drone', 'Note pulses'].map((l) => `<span>${l}</span><span>—</span>`).join('');
     $('pulseNote').textContent = 'Drone and Note pulses: add a note first.';
@@ -748,8 +798,9 @@ function stopOneShots() {
 }
 function stopAll() {
   stopOneShots(); heldOff(); arpOff(); droneOff(); pulseOff(); replaying = false;
-  LISTEN.clear(); if (ctx) listenSync();
+  LISTEN.clear(); LISTEN_IV.clear(); if (ctx) listenSync();
   for (const b of $('tune').querySelectorAll('[data-listen]')) { b.classList.remove('playing'); b.setAttribute('aria-pressed', 'false'); }
+  drawBeatLists();
   cutReverbTail();
 }
 // the notes' wave (held notes, arpeggio, trail replay): triangle, or a bare sine; pulse clicks stay triangle
@@ -786,20 +837,40 @@ function noteHz() {
 // several rows on = all their beats at once. Pairs follow rung and note changes live; a note switched off or removed
 // ends its pair; Stop sound ends all.
 const LISTEN = new Set();         // typed-note keys (cents) whose pair is on
-const pairs = new Map();          // key -> { a, b, g }
+const LISTEN_IV = new Set();      // 'keyA|keyB' (lower note first): interval pairs whose meeting partials are on
+const pairs = new Map();          // voice key ('n:' note, 'i:' interval) -> { a, b, g }
+// the listened notes in pitch order, with what the listings and the pairs need
+function listenedNotes() {
+  if (!CUR) return [];
+  const F = hz(CUR.r.fundCents);
+  return CUR.notes.map((n, i) => ({ key: n.cents.toFixed(3), n, f: hz(n.cents), k: CUR.r.partials[i], beat: Math.abs(hz(n.cents) - F * CUR.r.partials[i]) }))
+    .filter((x) => LISTEN.has(x.key));
+}
+// two notes at harmonics a and b: note x's (b/g)th partial meets note y's (a/g)th; typed, they beat at the gap
+const MEET_MAX = 16;
+function meet(x, y) {
+  const g = gcd(x.k, y.k), m = y.k / g, n = x.k / g, fa = m * x.f, fb = n * y.f;
+  return { m, n, fa, fb, beat: Math.abs(fa - fb), high: m > MEET_MAX || n > MEET_MAX };
+}
 function listenSync() {
-  const rows = new Map();
-  if (CUR) { const F = hz(CUR.r.fundCents); CUR.notes.forEach((n, i) => rows.set(n.cents.toFixed(3), [hz(n.cents), F * CUR.r.partials[i]])); }
-  for (const k of [...LISTEN]) if (!rows.has(k)) LISTEN.delete(k);
-  for (const [k, p] of pairs) if (!LISTEN.has(k)) {
+  const want = new Map(), all = new Map();
+  if (CUR) { const F = hz(CUR.r.fundCents); CUR.notes.forEach((n, i) => all.set(n.cents.toFixed(3), { f: hz(n.cents), k: CUR.r.partials[i], F })); }
+  for (const k of [...LISTEN]) if (!all.has(k)) LISTEN.delete(k);
+  for (const k of LISTEN) { const x = all.get(k); want.set(`n:${k}`, [x.f, x.F * x.k]); }
+  for (const pk of [...LISTEN_IV]) {
+    const [a, b] = pk.split('|');
+    const m = LISTEN.has(a) && LISTEN.has(b) ? meet(all.get(a), all.get(b)) : null;
+    if (!m || m.high) { LISTEN_IV.delete(pk); continue; }   // a row switched off ends its intervals
+    want.set(`i:${pk}`, [m.fa, m.fb]);
+  }
+  for (const [k, p] of pairs) if (!want.has(k)) {
     p.g.gain.cancelScheduledValues(ctx.currentTime); p.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
     try { p.a.stop(ctx.currentTime + 0.4); p.b.stop(ctx.currentTime + 0.4); } catch (e) {}
     pairs.delete(k);
   }
-  if (!LISTEN.size) return;
-  const c = audio(), lv = 0.12 / Math.sqrt(LISTEN.size);
-  for (const k of LISTEN) {
-    const [fa, fb] = rows.get(k);
+  if (!want.size) return;
+  const c = audio(), lv = 0.12 / Math.sqrt(want.size);
+  for (const [k, [fa, fb]] of want) {
     let p = pairs.get(k);
     if (!p) {
       const g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.connect(master);
@@ -988,6 +1059,15 @@ $('tune').addEventListener('click', (e) => {
   if (LISTEN.has(k)) LISTEN.delete(k); else LISTEN.add(k);
   listenSync();
   b.classList.toggle('playing', LISTEN.has(k)); b.setAttribute('aria-pressed', String(LISTEN.has(k)));
+  drawBeatLists();
+});
+$('beatLists').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-iv]');
+  if (!b) return;
+  const k = b.dataset.iv;
+  if (LISTEN_IV.has(k)) LISTEN_IV.delete(k); else LISTEN_IV.add(k);
+  listenSync();
+  b.classList.toggle('playing', LISTEN_IV.has(k)); b.setAttribute('aria-pressed', String(LISTEN_IV.has(k)));
 });
 // held notes retune at once; arpeggio and replay read the pitches at every note, pulses at the next sam
 $('noteTuned').addEventListener('click', () => { NOTE_TUNED = !NOTE_TUNED; setToggle('noteTuned', 'Notes tuned to the series', NOTE_TUNED); heldSync(); if (CUR) drawTune(CUR.r, CUR.notes); });
