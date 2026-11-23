@@ -1,7 +1,7 @@
 # ARC: Live Series: drone and raga thinking on the harmonic series
 
-**Status: DRAFT, awaiting the human's approval (2026-11-23).** Nothing in "Setup" or the milestones runs before
-approval. Items marked *(approval)* are proposals the human confirms or changes.
+**Status: APPROVED by the human 2026-11-23 with no changes** (every *(approval)* item below accepted as written:
+workstream `live-series`, prefix `LIVESERIES`, the check command, the page move, M3–M5 in the order given).
 
 ## Goal
 
@@ -21,7 +21,7 @@ standalone page until the human decides its home in the app (M6).
 
 ## Where it starts (the side study, 2026-11-22)
 
-`shell/arcs/interval-placement/series/live-series.html`, version 5 at
+`shell/arcs/interval-placement/series/live-series.html` (moved to `shell/arcs/live-series/live-series.html` in Setup), version 5 at
 https://claude.ai/artifact/Mdtwb8v22H9CpnzUFnXnMW, branch `interval-placement-live-series` (6f39a2b → 8e3b4ed,
 pushed, not merged). Every human decision so far, in order (details in PROGRESS.md, "Log"):
 
@@ -51,7 +51,9 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
   `DECISIONS.md` (this arc's rows), `BACKLOG.md` (this arc's items). Nothing in `src/` before M6.
 - Check command *(approval)*: `corepack yarn check:live-series` = `node arcs/live-series/smoke-series.cjs
   arcs/live-series/live-series.html` (the jsdom smoke with a silent fake Web Audio; exit 0 = all checks pass and no
-  script errors). Node 24 (portable copy at `C:\Users\apoor\tools\node-v24.18.1-win-x64`). When M6 adds app code, the
+  script errors). Node 24 (portable copy at `C:\Users\apoor\tools\node-v24.18.1-win-x64`). In a worktree without
+  `node_modules`, Yarn refuses to run scripts ("Couldn't find the node_modules state file"): run `npm run
+  check:live-series` there with `NODE_PATH` set to the main checkout's `shell/node_modules`. When M6 adds app code, the
   script grows the usual tsc / format / lint / vitest steps.
 - Sound: the page never makes sound on load; every sound starts on a click. Claude never presses a sound control in
   a browser without asking (it plays on the human's machine). Sound is checked with the fake Web Audio in the smoke

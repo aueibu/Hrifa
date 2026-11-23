@@ -4,22 +4,25 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 
 ## Status
 - Arc: Live Series: drone and raga thinking on the harmonic series (`arcs/live-series`)
-- Current milestone: Draft (ARC.md awaiting the human's approval)
-- State: awaiting human
+- Current milestone: Setup (approved 2026-11-23)
+- State: in progress
 
 ## Where the work is (read this first after a /clear)
-- **Branch** `interval-placement-live-series` on `aueibu/Hrifa`, pushed, **not merged** into `main`. `origin/main`
-  has moved since the branch was cut (79c4a3e); Setup step 1 brings the branch up to date.
+- **Branch** `interval-placement-live-series` on `aueibu/Hrifa`, pushed, **not merged** into `main`. It already
+  contains `origin/main` (79c4a3e) as of 2026-11-23.
 - **Worktree** used so far: `C:\Data Files\Projects\Hrifa\.claude\worktrees\lexicon` (hand-made; `EnterWorktree(name)`
   fails on this Drive checkout, so `git worktree add` by hand, then `EnterWorktree(path)`). The worktree has no
   `node_modules`: pass the main checkout's jsdom to the smoke test.
-- **Page** (until Setup moves it): `shell/arcs/interval-placement/series/live-series.html`, published at
-  https://claude.ai/artifact/Mdtwb8v22H9CpnzUFnXnMW (version 5). Republish from the same file path to keep the link.
+- **Page**: `shell/arcs/live-series/live-series.html` (moved in Setup from
+  `arcs/interval-placement/series/`), published at https://claude.ai/artifact/Mdtwb8v22H9CpnzUFnXnMW (version 5).
+  Republish with `url` set to that link to keep it.
+- **Gate**: `corepack yarn check:live-series` from `shell/` (Node 24). In this worktree Yarn refuses to run scripts
+  (no install state): `NODE_PATH="C:/Data Files/Projects/Hrifa/shell/node_modules" npm run check:live-series`.
 - **Smoke test**: `shell/arcs/live-series/smoke-series.cjs` (73 checks: the confirmed scenario numbers, every
   control, a silent fake Web Audio for drone, notes, arpeggio, reverb and drone styles). From `shell/`, with Node 24:
   `"C:/Users/apoor/tools/node-v24.18.1-win-x64/node.exe" arcs/live-series/smoke-series.cjs
-  arcs/interval-placement/series/live-series.html "C:/Data Files/Projects/Hrifa/shell/node_modules/jsdom"`.
-  Exit 0, "all checks passed", "no script errors" (last run 2026-11-23).
+  arcs/live-series/live-series.html "C:/Data Files/Projects/Hrifa/shell/node_modules/jsdom"`.
+  Exit 0, "all checks passed", "no script errors" (last run 2026-11-23, via `check:live-series`).
 - **Real-browser check**: headless Edge loads the page with no console errors (2026-11-22). Command pattern: `msedge
   --headless=new --disable-gpu --user-data-dir=<scratch> --enable-logging=stderr --virtual-time-budget=3000
   --dump-dom file:///<copy of the page>`.
@@ -35,9 +38,10 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 | v4 (aa007e2) | Human: notes' wave? (it was triangle) "can we toggle bare sine there too? Can we use the reverb implement (minus custom loading) from the harmonic lab too?". Notes bare sine; lab reverb copied by value (`audio/reverb.ts`, `audio/engine.ts`: Room 0.9 s / Hall 2.8 s seeded noise, equal-power mix, Dry → preset starts at 0.3, 30 ms swap fade, Stop cuts the tail, lab limiter). | 63 checks | |
 | v5 (8e3b4ed) | Human expected a drone that pulses when too low (offered at the start, built as note streams instead). Chose: drone style menu with all three (holds / pulses / pulses below hearing) and rate = fundamental moved by whole octaves into 1–2 per second (A = 1/1 6/5 5/4 3/2: 1.64/s; B = 4:5:6: 1.02/s with "pulses"). Pulse renamed Note pulses. | 73 checks; headless Edge no errors | Human: "looks cool"; later "all good" after briefly thinking the page was broken. |
 | Draft (2026-11-23) | Human: "catch me up ... so that we can write its progress/arc and clear"; chose "its own arc" over a side-study handoff. ARC.md drafted; smoke test saved into the arc folder (jsdom path now optional). | smoke 73, green from the new path | Awaiting approval of the *(approval)* items in ARC.md. |
+| Setup (2026-11-23) | Human approved ARC.md with no changes. Step 1: branch already contains `origin/main` (79c4a3e), nothing to merge. Step 2: page moved to `arcs/live-series/live-series.html` (no relative links to fix); Interval Placement side-study pointer updated. Step 3: `package.json` lock taken, `check:live-series` added, `LIVESERIES-1` registered in `DECISIONS.md`. | `check:live-series` green: 73 checks, no script errors | Lock taken in this worktree's `arcs/LOCKS.md` (the main checkout's table was empty; worktree isolation blocks writing there). |
 
 ## Shared touches (locks taken)
-- None yet. Setup will take `package.json` (the `check:live-series` script).
+- `package.json` (Setup, 2026-11-23: the `check:live-series` script); released after the setup commit.
 
 ## Open questions for human
 - Approve ARC.md, including: the workstream name `live-series`; the DECISIONS prefix `LIVESERIES`; the check command
