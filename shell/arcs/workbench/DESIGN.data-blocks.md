@@ -48,13 +48,14 @@ registerDataBlockType({
   createBlank(request),  // New
   preview?,              // the thumbnail renderer (SnippetPreview today)
   editorId?, playable?, actions?,   // as today
+  audition?(data),       // default audition plan, so any data-block can be heard with no wiring (see 'Direct path first')
   refs?(data): Ref[],    // what this type's data points at (collections, modifiers, strips): feeds users
 })
 ```
 
 A new type is **one registration**. The desk, persistence, capture, the picker and the delete check never branch on type (today's rule, now made true for types other than Notes). A new **node type** keeps its own registry (nodes are not data-blocks) but declares which data-block types its inputs accept, using the same `accepts`, so the picker filters the same way. The duplicated accepts logic and `signalTypeFor`'s hard-coded order are folded into the registry in B1.
 
-**First types to register** (so every existing packet has a type and the picker can filter): Notes (`events | note`, exists), Pitch set (`list | pitch`), Pitch classes (`list | pitchClass`), Rhythm (inter-onset `list | duration`, and rhythm patterns), Values (`list | integer/rational`), Collection (record), Curve (packet kind `curve`, row S13). A "chord" is a Pitch set with a role until a case shows it needs its own type.
+**First types to register** (so every existing packet has a type and the picker can filter): Notes (`events | note`, exists), Pitch set (`list | pitch`), Pitch classes (`list | pitchClass`), Rhythm (inter-onset `list | duration`, and rhythm patterns), Values (`list | integer/rational`), Collection (record), Curve (packet kind `curve`, row S13), Steps (S13, shaped in T0). A "chord" is a Pitch set with a role until a case shows it needs its own type.
 
 ### References and users
 
@@ -98,5 +99,23 @@ Cast: data-block **R** = Rhythm "Clave" (used by a data-block node N1 on the can
 - `registry.ts`, `PatchDocument` and `Connection` (old patch model) are checked for liveness in B1b and deleted if dead.
 - Names: `DataBlock`, `registerDataBlockType`, `dataBlockUsers`, `DataBlockMenu`, `DataBlockField`; the project-level module for references `dataBlockRefs.ts`.
 
-## 5. Steering
-Reply "ok" to take every recommendation, or change rows by number. The row that matters most is **S1** (what delete does to a used data-block), then **S3** (shared edit); the others follow from Blender with no case where you would feel a difference until the timeline exists.
+## 5. Decisions (human, 2026-11-23)
+
+| Row | Answer |
+|---|---|
+| S1 | **A**: delete, users show "missing"; the confirm lists the users. |
+| S2, S3, S4, S5, S6, S9, S10, S12 | As recommended. S12: **A** (the project has its own data-block; decided with scenarios in T0). |
+| S7 | As recommended (lineage is history, not use). Question raised: can lineage recreate a removed ancestor, and should it? See "Open follow-ups" below. |
+| S8 | As recommended, **plus a submenu** in the picker: the main list shows exact matches; a second list, "Reinterpret as ...", shows types the input could read after an explicit conversion, each saying what the conversion does (Notes to Pitch set drops the timing). Never silent. |
+| S11 | The human could not answer as asked; the underlying worry is wiring "80 things to get a scale to play". Answered by the **direct path first** rule below. The node tree stays one canvas (A) for now. |
+| S13 | **A and B**, plus a second shaper type: **Steps** (discrete steps over continuous content: stepped volume, filter) beside **Curve** (a smooth shape read at note onsets for discrete content, or continuously). Bitwig's curves/steps distinction is made in the data-block itself. Onset versus glide is decided in T0 with examples. |
+
+### Direct path first (rule, human worry 2026-11-23)
+The node tree is the **optional advanced layer**, not the way to get anything done. Everything a DAW user does must work with **zero nodes**: a data-block can be edited in its own editor (the piano roll edits a Notes data-block directly), auditioned, placed on a track as a strip and played. Blender precedent: you do not wire nodes to move a cube, and a new material arrives with its default node tree already connected. Concretely:
+- Each data-block type registers a **default audition** (`audition(data) -> PerformancePlan`): Notes play as written; a Pitch set plays as an ascending scale; a Rhythm plays as clicks; a Collection plays its roles realized by the default modifier. Today only Notes can be audited ("Only note snippets can be auditioned"); B1 registers the rest.
+- A track plays strips through a **default sound** with no routing step; nodes (the Mixer and the rest) add live processing only when the user asks.
+- **Acceptance test for the arc (B2 and T4):** from a Pitch set data-block "C major" on the desk to hearing it, no wiring: audition it from the desk, drag it onto a track, press Play. Anything that needs a connection to do this is a bug in the plan.
+
+### Open follow-ups
+- **Can lineage recreate a removed ancestor?** Today no. A derived data-block holds a pointer (`derivedFrom`: source id and version id) and the pitches as heard; it does not hold the ancestor's content, and its items' provenance names source item ids, not their values. So once the ancestor is deleted, it is gone, except for **undo** (session history) and a project saved earlier. Should it be recoverable? Recommendation: **not automatically.** Storing a snapshot of every input inside every descendant costs space on every derivation to cover a rare case, and the version tree already caps at 500 versions. Better: (1) the delete confirm names descendants, so you see what would lose its source; (2) a descendant keeps its pitches, so nothing audible is lost; (3) the derivation proposal's "snapshot plus recipe" later lets a descendant **rebuild a missing input's *recipe***, not its content. If you want recoverability, the cheap version is a "Recently deleted" holding area on the desk that keeps a deleted data-block until Purge. Logged in BACKLOG as a question; decide when the derivation arc starts.
+- **Steps type**: its payload shape (a list of values on a grid, frame in pulses or quarter notes) is designed in T0 with examples, together with Curve.
