@@ -117,6 +117,13 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
     55–110 option), over B (20–40 Hz) and C (the true fundamental when 20–55 Hz). JI example's end (F 13.08 Hz):
     52.3 Hz; 1/1 7/6 3/2 (F 43.6 Hz): 43.6 Hz.
   - Reverb default: **Hall at 30%** (was Dry).
+  - Notes tuned to the series (human, 2026-11-23, after asking "the notes stay tuned to their tempered pitches?
+    what??"): until now only the drone and the pulse counts followed the chosen rung; the notes played the typed
+    pitch. Now held notes, Arpeggio, Replay and the pulse clicks sound at the chosen series' exact harmonics by
+    default, with a toggle **Notes tuned to the series: on / off** to hear the typed pitches. A rung click retunes
+    at once (a glide is the tonality-flux candidate for M3). Example where it differs: C E G B♭ at 4:5:6:7 sounds
+    C +14.6¢, E +0.9¢, G +16.6¢, B♭ −16.6¢ from 12-EDO when tuned. Exact ratio input changes only when a non-exact
+    rung is clicked.
 
 ### M2: Collections in from the required-interval explorer
 - Scope: bring a collection and its hung set in directly (paste or link), with hung tones marked, so the ur-chalan

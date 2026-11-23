@@ -115,6 +115,7 @@
         <button type="button" id="playChord" aria-pressed="false">Notes: off</button>
         <button type="button" id="playUp" aria-pressed="false">Arpeggio: off</button>
         <button type="button" id="noteSine" aria-pressed="false">Notes bare sine: off</button>
+        <button type="button" id="noteTuned" class="playing" aria-pressed="true">Notes tuned to the series: on</button>
       </div>
       <div class="btns">
         <button type="button" id="droneBtn" aria-pressed="false">Drone: off</button>
@@ -627,7 +628,15 @@ function click(t, level, f) {
 }
 // held notes: a toggle; every active note sounds until switched off, and the set follows changes live
 // (an added note fades in, a removed one fades out, the level rebalances for the note count)
-let held = null;                  // Map: Hz key -> { o, g }
+// the notes' pitches: by default the chosen series' exact harmonics (fundamental x partial), so the notes agree with
+// the drone; with "Notes tuned to the series" off, the typed pitches (human, M1 2026-11-23)
+let NOTE_TUNED = true;
+function noteHz() {
+  if (!CUR) return [];
+  const { r, notes } = CUR;
+  return notes.map((n, i) => (NOTE_TUNED ? hz(r.fundCents + 1200 * log2(r.partials[i])) : hz(n.cents)));
+}
+let held = null;                  // Map: typed note (cents key) -> { o, g }; a retune glides the same oscillator
 function heldOn() { audio(); held = new Map(); setToggle('playChord', 'Notes', true); heldSync(); }
 function heldOff() {
   if (held) for (const { o, g } of held.values()) { g.gain.cancelScheduledValues(ctx.currentTime); g.gain.setTargetAtTime(0, ctx.currentTime, 0.08); try { o.stop(ctx.currentTime + 0.6); } catch (e) {} }
@@ -635,7 +644,7 @@ function heldOff() {
 }
 function heldSync() {
   if (!held) return;
-  const c = ctx, want = new Map((CUR ? CUR.notes : []).map((n) => { const f = hz(n.cents); return [f.toFixed(3), f]; }));
+  const fs = noteHz(), c = ctx, want = new Map((CUR ? CUR.notes : []).map((n, i) => [n.cents.toFixed(3), fs[i]]));
   for (const [k, { o, g }] of held) if (!want.has(k)) { g.gain.setTargetAtTime(0, c.currentTime, 0.08); try { o.stop(c.currentTime + 0.6); } catch (e) {} held.delete(k); }
   const lv = 0.3 / Math.sqrt(Math.max(1, want.size));
   for (const [k, f] of want) {
@@ -645,7 +654,7 @@ function heldSync() {
       o.type = noteWave(); o.frequency.value = f; g.gain.setValueAtTime(0, c.currentTime);
       o.connect(g); g.connect(master); o.start();
       v = { o, g }; held.set(k, v);
-    }
+    } else v.o.frequency.setTargetAtTime(f, c.currentTime, 0.02);   // retune at once (a slow glide is M3's flux)
     v.g.gain.setTargetAtTime(lv, c.currentTime, 0.06);
   }
 }
@@ -656,7 +665,7 @@ function arpOn() { const c = audio(); arp = { next: c.currentTime + 0.05, i: 0, 
 function arpTick() {
   if (!arp) return;
   while (arp.next < ctx.currentTime + 0.2) {
-    const fs = CUR ? CUR.notes.map((n) => hz(n.cents)) : [];
+    const fs = noteHz();
     if (arp.i >= fs.length) arp.i = 0;
     if (fs.length) tone(arp.next, fs[arp.i], 0.45, 0.2);
     arp.i++;
@@ -744,7 +753,7 @@ function pulseTick() {
     const { r, notes } = CUR, plan = pulsePlan(r, notes), t0 = pulse.next, F = hz(r.fundCents);
     click(t0, 0.35, Math.max(40, droneHz(F)));                   // sam
     r.partials.forEach((n, i) => {
-      let f = hz(notes[i].cents); while (f > 1800) f /= 2; while (f < 150) f *= 2;
+      let f = noteHz()[i]; while (f > 1800) f /= 2; while (f < 150) f *= 2;
       const lv = 0.14 / Math.sqrt(r.partials.length);
       for (let j = 1; j < n; j++) click(t0 + (j * plan.cycle) / n, lv, f);
     });
@@ -776,7 +785,7 @@ function replay() {
   const step = () => {
     if (!replaying || i >= TRAIL.length) { replaying = false; $('replay').classList.remove('playing'); return; }
     restore(i++);
-    if (CUR && !held && !arp) { const c = audio(), fs = CUR.notes.map((n) => hz(n.cents)), lv = 0.3 / Math.sqrt(fs.length); for (const f of fs) tone(c.currentTime + 0.05, f, 1.9, lv); }
+    if (CUR && !held && !arp) { const c = audio(), fs = noteHz(), lv = 0.3 / Math.sqrt(fs.length); for (const f of fs) tone(c.currentTime + 0.05, f, 1.9, lv); }
     timer = setTimeout(step, 2500);
   };
   step();
@@ -797,6 +806,8 @@ $('noteSine').addEventListener('click', () => {
   NOTE_SINE = !NOTE_SINE; setToggle('noteSine', 'Notes bare sine', NOTE_SINE);
   if (held) for (const { o } of held.values()) o.type = noteWave();   // held notes change at once
 });
+// held notes retune at once; arpeggio and replay read the pitches at every note, pulses at the next sam
+$('noteTuned').addEventListener('click', () => { NOTE_TUNED = !NOTE_TUNED; setToggle('noteTuned', 'Notes tuned to the series', NOTE_TUNED); heldSync(); });
 $('reverb').addEventListener('change', () => {
   const p = $('reverb').value;
   // leaving Dry with a mix of 0 would change nothing you can hear: start at the lab's default mix

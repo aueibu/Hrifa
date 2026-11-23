@@ -166,6 +166,24 @@ $('noteSine').click();
 check('back to triangle', [...new Set(heldNow().map((o) => o.type))], ['triangle']);
 $('playChord').click();
 
+// M1 (human 2026-11-23): notes tuned to the series by default, a toggle for the typed pitches.
+// C E G B♭ at 4:5:6:7 with the error shared: the fundamental moves up 14.6¢ (half of B♭ +31.2¢ and G −2.0¢),
+// so tuned C sits 14.6¢ above 12-EDO; typed pitches are C 261.63 Hz and B♭ 466.17 Hz
+pick(1); $('trail').children[1].click();
+check('notes tuned: default on', [$('noteTuned').textContent, $('noteTuned').getAttribute('aria-pressed')], ['Notes tuned to the series: on', 'true']);
+const b3 = OSCS.length;
+$('playChord').click();
+const fq = (o) => (o.frequency.target !== undefined ? o.frequency.target : o.frequency.value);
+const heldF = () => OSCS.slice(b3).filter((o) => !o.stopped).map(fq).sort((a, b) => a - b);
+check('tuned: notes are 4:5:6:7', heldF().map((f) => +((f / heldF()[0]) * 4).toFixed(4)), [4, 5, 6, 7]);
+check('tuned: C 14.6¢ above 12-EDO', +(1200 * Math.log2(heldF()[0] / 261.63)).toFixed(1), 14.6);
+$('noteTuned').click();
+check('typed pitches: button', [$('noteTuned').textContent, $('noteTuned').getAttribute('aria-pressed')], ['Notes tuned to the series: off', 'false']);
+check('typed pitches: C and B♭ as typed', [heldF()[0].toFixed(2), heldF()[3].toFixed(2)], ['261.63', '466.17']);
+check('typed pitches: same four oscillators retuned', OSCS.slice(b3).filter((o) => !o.stopped).length, 4);
+$('noteTuned').click();
+$('playChord').click();
+
 // reverb (the lab's presets, no custom loading)
 // M1 (human 2026-11-23): the reverb starts on Hall at 30%
 check('reverb starts Hall 30%', [$('reverb').value, $('mix').disabled, $('mixRead').textContent], ['hall', false, '30%']);
