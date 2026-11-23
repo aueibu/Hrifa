@@ -1,0 +1,13 @@
+17:06 q 3645 w21c2: exit 0 1s 
+17:07 q 3645 c30n3: exit 0 49s WARNING: 2 factors hit --max-nodes 2000000; their U search is incomplete (listed in stoppe 
+17:07 q 3645 s31n2: exit 0 2s 
+17:07 q 3645 s51n1: exit 0 29s 
+17:10 q 3645 s52n2: exit 0 143s 
+# 54621 distinct families in 5 runs; residue 7: 13 notes q 3645: 1, 14 notes q 2187: 1, 15 notes q 3125: 3, 16 notes q 3125: 2
+17:10 q 6561 w21c2: exit 0 1s WARNING: 5 factors hit --max-nodes 2000000; their U search is incomplete (listed in stoppe 
+17:12 q 6561 c30n3: exit 0 123s WARNING: 81 factors hit --max-nodes 2000000; their U search is incomplete (listed in stopp 
+17:12 q 6561 s31n2: exit 0 7s WARNING: 19 factors hit --max-nodes 2000000; their U search is incomplete (listed in stopp 
+17:13 q 6561 s51n1: exit 0 60s 
+17:20 q 6561 s52n2: exit 0 372s 
+# 146198 distinct families in 5 runs; residue 59: 13 notes q 3645: 1, 13 notes q 6075: 2, 13 notes q 6561: 12, 14 notes q 2187: 1, 14 notes q 6561: 13, 15 notes q 3125: 3, 15 notes q 5625: 2, 15 notes q 6561: 3, 16 notes q 3125: 2, 16 notes q 6075: 1, 16 notes q 6561: 19
+RES HUNT DONE

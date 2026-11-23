@@ -385,4 +385,9 @@ Hunt for more (`resclass.py`, `data/vm/res_hunt.sh`): factor searches with the r
 a doubled-note set; 3,0 with a signed factor containing a 2; 3,1, 5,1, 5,2 with signed second factors),
 default node budget, 5-limit, then `resclass.py` keeps families with no plain × (+1/−1) split. At
 q <= 3,645 it finds 7 of the 9 (misses two 15-note families with a coefficient ±2), so counts above are
-lower bounds.
+lower bounds. **At q <= 6,561 it finds 59 residue families** (`tables/chordsum/residue_q6561.jsonl`,
+`res_hunt.out`; the searches took 2 s to 6 min each, 146,198 distinct families in all): all still two
+irreducible factors with one flipped; 39 with a coefficient 2 next to a 3-term factor (terms 3+15 17,
+3+12 15, 3+13 4, 3+14 2, 3+10 1), 20 with both factors signed (4+9 6, 7+7 5, 4+11 4, 6+6 2, 4+12 2,
+4+10 1). 47 of the 59 are at exactly q = 6,561 = 3^8. So the residue is real and grows with q; none is
+known at 7-limit or above, where the proven ranges stop below q 2,187.
