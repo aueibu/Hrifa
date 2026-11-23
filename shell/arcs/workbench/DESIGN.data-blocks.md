@@ -54,7 +54,7 @@ registerDataBlockType({
 
 A new type is **one registration**. The desk, persistence, capture, the picker and the delete check never branch on type (today's rule, now made true for types other than Notes). A new **node type** keeps its own registry (nodes are not data-blocks) but declares which data-block types its inputs accept, using the same `accepts`, so the picker filters the same way. The duplicated accepts logic and `signalTypeFor`'s hard-coded order are folded into the registry in B1.
 
-**First types to register** (so every existing packet has a type and the picker can filter): Notes (`events | note`, exists), Pitch set (`list | pitch`), Pitch classes (`list | pitchClass`), Rhythm (inter-onset `list | duration`, and rhythm patterns), Values (`list | integer/rational`), Collection (record). A "chord" is a Pitch set with a role until a case shows it needs its own type.
+**First types to register** (so every existing packet has a type and the picker can filter): Notes (`events | note`, exists), Pitch set (`list | pitch`), Pitch classes (`list | pitchClass`), Rhythm (inter-onset `list | duration`, and rhythm patterns), Values (`list | integer/rational`), Collection (record), Curve (packet kind `curve`, row S13). A "chord" is a Pitch set with a role until a case shows it needs its own type.
 
 ### References and users
 
@@ -88,6 +88,7 @@ Cast: data-block **R** = Rhythm "Clave" (used by a data-block node N1 on the can
 | S10 | **A modifier's output notes.** | Derived, never stored (arc rule): no data-block, no users. "Bake" writes a Notes data-block with `derivedFrom`. | As described. |
 | S11 | **Is the node tree a data-block?** | **A. No, one canvas as today.** **B. Yes now**: several canvases, tree reuse. | **A**, door left open (nothing in B1 or B2 depends on it). |
 | S12 | **Does the project itself have a data-block** (tempo, meter, pitch context as channels; markers switch them)? | A. Yes: the "project" data-block with channels; the meta track shows it. B. A special meta lane type. | **A**, decided in T0 with scenarios; B0 only reserves the type. |
+| S13 | **A drawn curve that shapes other material** (gradual transposition of Notes C4 D4 E4 G4 on beats 0 to 3 by a curve rising 0 to +200 cents over four beats; or a volume swell). | **A. Curve as a data-block, applied by a modifier** (`source`, `curve`, blend mode Replace, Add or Multiply): result 6000, 6250, 6500, 6850 (sampled at each onset). **B. NLA-style blend of two tracks**: works only when both are continuous channels on the same property (two volume curves, one Multiply over the other); Notes have no pitch channel to blend into. **C. Fold the curve into the notes' own data**: loses the curve (cannot redraw, reuse or count users). | **A** for discrete content (Notes, Pitch sets); **B** for continuous channels (volume, tempo). The curve is a data-block of type Curve (packet kind `curve`, the frame says the axis: time, pitch or index). Open for T0 with examples: sample at the onset (the four values above) or glide within the note (pitch bend). |
 
 ## 4. Orchestrator-decided (logged `orchestrator-decided`, vetoable)
 - One registry for data-block types, extending `clipTypes.ts` (no second registry); node types keep theirs and use the same `accepts`.
