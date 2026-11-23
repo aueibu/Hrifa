@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: Interval Placement: rigorous, register-aware scoring + panel workspace (`arcs/interval-placement`)
 - Current milestone: M2c (the catalog with the spacing), before any builder
-- State: model reset 2026-11-20 (ARC "Model reset"): flow is input, then exhaustive catalog, then exploration; the spacing range replaces fixed octave windows. Next: work out with the human how spans sit inside the spacing, from their own description of the original idea.
+- State: default rule decided 2026-11-23 (equal centers); the M2c acceptance and the builder brief are next (see "Next action").
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
@@ -49,9 +49,15 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - See ARC.md "Open questions" (approval items first).
 
 ## Next action
-**After a /clear on 2026-11-21 evening: read "Session state 2026-11-21 evening" below first.** It lists two jobs running on the VM, the pending 20–24 decision and the uncommitted crystal page.
+**Resume here (2026-11-23, after a /clear).** The VM jobs are done (catalog, chord index, Z pairs, findings JSON); the findings page shows the full n = 2–5 catalog (https://claude.ai/artifact/S5mFXv4KaNKHmVQDBUcRqG, live version 17, committed `d67fbb5`). Databases live in `C:\Data Files\ipcat-data\` (catalog README). **Decided: equal centers is the default spacing rule** (ARC M2c checkpoint decisions, `b4fbe80`).
 
-Resume here. Model reset 2026-11-20 (ARC "Model reset"). Next: M2c starts from the human's own description of the spacing idea (how spans sit inside the spacing range), checked against "Design decisions already made"; no new knobs unless the human asks. Before M6, tell the human clearly that the hand-off contract step is next (they asked).
+Next, M2c library change:
+1. Complete the M2c acceptance in ARC.md from the decided rule (equal centers default, shared center range as the second rule, the tie rule, both checked against the catalog's placements), with the human's examples as tests. Open question to settle first, with a recommended answer: can the window also be a register region (the orchestral-section idea), or only a width? (Recommend: width only in the library; register comes from the base pitch and the exploration step after the catalog.)
+2. Then a builder for `src/lib/interval-placement/`, a reviewer, `check:interval-placement`, a path-scoped commit, and the human checkpoint (catalog for `11 7 16` plus one set of the human's choice).
+
+Still waiting on the human (not blocking): the 20–24 addendum decision; the rhythm-crystal page changes (uncommitted until looked at); `.claude/settings.json` at the repo root holds 11 allow rules from /fewer-permission-prompts, uncommitted (ask before committing). Publishing note: Google Drive hard-links fresh files, so a publish right after a build asks for full consent; wait until `stat -c %h` is 1 (memory). Before M6, tell the human clearly that the hand-off contract step is next (they asked).
+
+Older context: "Session state 2026-11-21 evening" below (VM work, now complete).
 
 ## Session state 2026-11-21 evening (times EST; the human wants EST and no UTC)
 - **Catalog v2 is complete.** Main run (sizes 1–17, n = 2–5, windows to 60) in `~/ipcat/out/`; the 18–19 addendum (sets whose largest interval is 18 or 19, `--min-largest 18 --max 19`) in `~/ipcat/out19/`, finished 8:13 pm with indexes (verify vs scoreVoicing 8e-15). Placements: n=5 131.6 M (main) + 89.7 M (addendum); about 233 M in all, 61 GB of catalogs. The ipcat cap is 14 (`~/ipcat/cap`, `out/max-workers`); the z search is done for now and the human allowed all cores.
