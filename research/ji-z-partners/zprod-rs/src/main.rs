@@ -1195,7 +1195,7 @@ fn line_json(v: &Factor, complete: bool, prods: &[(Vec<Pt>, Vec<Pt>)]) -> String
 /// the lowest note). Bitset adjacency; parallel over pairs of first vertices.
 fn count_cliques(g: &GenCtx, maxk: usize, threads: usize) {
     let n = g.n;
-    assert!(n <= 1024, "clique counter handles up to 1,024 vertices");
+    assert!(n <= 64 * MAXW, "clique counter handles up to 2,048 vertices");
     let w = (n + 63) / 64;
     let mut adj = vec![vec![0u64; w]; n];
     for a in 0..n {
@@ -1227,7 +1227,7 @@ fn count_cliques(g: &GenCtx, maxk: usize, threads: usize) {
                             counts[depth + 1] += 1;
                             if depth + 1 < maxs {
                                 // next candidates: in cand, adjacent to v, larger than v
-                                let mut ncb = [0u64; 16]; // up to 1,024 vertices, no allocation per node
+                                let mut ncb = [0u64; MAXW]; // up to 2,048 vertices, no allocation per node
                                 let nc = &mut ncb[..cand.len()];
                                 let mut any = false;
                                 for k in 0..cand.len() {
@@ -1315,7 +1315,7 @@ fn splitmix(x: &mut u64) -> u64 {
 impl EnumG {
     fn new(g: &GenCtx) -> EnumG {
         let n = g.n;
-        assert!(n <= 1024, "enumeration handles up to 1,024 positive intervals");
+        assert!(n <= 64 * MAXW, "enumeration handles up to 2,048 positive intervals");
         let w = (n + 63) / 64;
         let pos: HashMap<&Pt, u16> = g.boxv.iter().enumerate().map(|(i, p)| (p, i as u16)).collect();
         let mut adj = vec![vec![0u64; w]; n];
@@ -1342,7 +1342,7 @@ impl EnumG {
     }
 }
 
-const MAXW: usize = 16; // bitset words: up to 1,024 positive intervals
+const MAXW: usize = 32; // bitset words: up to 2,048 positive intervals (was 16 / 1,024 through bin11)
 
 impl EnumG {
     /// index of the difference of two distinct vertices (the lexicographically positive one)
