@@ -292,6 +292,33 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
   notes, the chosen rung, the trail and the sound settings (drone, reverb, beat speed, toggles) are kept per viewer
   and come back on reload; nothing ever sounds on its own.
 
+- Mountable full view (human, 2026-11-23: "yes, lets do both. full slice", after reading the module-surfaces idea,
+  `arcs/workbench/PROPOSAL.module-surfaces.md`): the page is built as Live Series' **full view**, a component that
+  can later mount inside a host (the workbench Detail docker) with nothing that only works as a whole page.
+
+#### M6a acceptance (full scope, builder + reviewer)
+- [ ] Route `/live-series` (`src/Router.tsx`), Home entry (`src/data/applets.ts`), entry `src/pages/LiveSeries.page.tsx`
+      that only wraps the view in the lab-style top bar; the view itself is `src/pages/live-series/LiveSeriesView.tsx`
+      (props for its storage key and initial state; no window-level layout assumptions; listeners scoped to it).
+- [ ] The lab's workspace look copied by value (top bar, panel frames, type, spacing, colors through THEMING roles),
+      read from the lab's own components and CSS; no hex, no new look.
+- [ ] One page, panels in the confirmed order: Notes; Series and Fundamental + Sound side by side; Notes against the
+      series (tuning table, comma column with the historic-comma triangle, beats) with Beats between the notes and
+      Rhythms between the beats; The series, drawn (fills its width; click an empty harmonic adds it); Trail (list,
+      path drawing, Step back, Clear; Replay arrives with sound). Beats, drawn and Phasing, drawn come in M6c.
+- [ ] Sound controls and listen toggles are present in their final places and sizes but disabled until M6b (no jumping
+      when they come alive); nothing sounds in M6a.
+- [ ] The pure core ported to `src/pages/live-series/core/` with unit tests taken from the confirmed numbers (the
+      smoke test's scenarios: the JI path and trail moves, 12-EDO ladders with the error shared, 23:29:34:41:51 at 15¢,
+      the required-interval default, commas 76/75 46/45 63/64 81/80 with names, interval meetings C–G 0.9 / C–B♭ 33.3 /
+      G–B♭ 53.0, rhythm ratios and measured togetherness from a shared start: G/B♭ 1.0 s and 1.6 s, C/G 2.0 s and
+      3.2 s, C/B♭ 1.4 s and 156 s).
+- [ ] No jumping anywhere: fixed row counts with scrolling (Series list 7 rows, tables 6), fixed column widths, fixed
+      state words, the same element in every state (empty, exact, typed/tuned), reserved lines for varying text.
+- [ ] Remember per viewer under `hrifa.live-series.v1` (sanitized on load): notes, chosen rung, trail and settings
+      (1/1, steps, fit limit, notes tuned, drone range, style, octave, bare sine, pulse rate, reverb, beat speed).
+- [ ] `check:live-series` passes.
+
 *(approval)* M3–M5 order is open; the human may reorder or drop any of them. Order after M6 (human, 2026-11-23):
 M2, then M3–M5.
 

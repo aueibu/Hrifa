@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 ## Status
 - Arc: Live Series: drone and raga thinking on the harmonic series (`arcs/live-series`)
 - Current milestone: M6 (a home in the app: own page `/live-series`, LIVESERIES-2), ahead of M2; M1 done 2026-11-23
-- State: layout and storage decided (LIVESERIES-3); awaiting the go for the M6a builder
+- State: M6a builder running (full scope; mountable full view); locks taken in this worktree (main checkout lock table not writable from here)
 
 ## Where the work is (read this first after a /clear)
 - **Branch** `interval-placement-live-series` on `aueibu/Hrifa`, pushed, **not merged** into `main`. It already

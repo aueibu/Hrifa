@@ -17,3 +17,7 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| src/pages/LiveSeries.page.tsx | live-series | 2026-11-23 | M6a: the new page's entry file |
+| src/Router.tsx | live-series | 2026-11-23 | M6a: the /live-series route |
+| src/data/applets.ts | live-series | 2026-11-23 | M6a: the Home entry for Live Series |
+| package.json | live-series | 2026-11-23 | M6a: check:live-series grows to typecheck, format, lint, stylelint, vitest |
