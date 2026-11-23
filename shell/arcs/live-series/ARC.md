@@ -283,6 +283,15 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
     pairs, beat speed, reverb). **M6c** Beats, drawn and Phasing, drawn with their closer views. The standalone page
     stays as the frozen reference until M6c is accepted. Each step ends with the human's look.
 
+- Layout and storage (human, 2026-11-23, before the first builder): **one page, everything on it**, in the order of
+  the chosen preview (Notes; Series and Fundamental + Sound side by side; Notes against the series with the beat
+  listings; The series, drawn; Beats, drawn with its closer view; Phasing, drawn with its closer view; Trail), with
+  the note "I think that we can get everything onto one page like we have for harmonic lab". So the page copies the
+  Harmonic Field Lab's workspace look (top bar, panel styling, its CSS values) by value from the lab's own components,
+  and does NOT use the dock Stage (supersedes that part of the ARC revision above; LIVESERIES-3). **Remember**: the
+  notes, the chosen rung, the trail and the sound settings (drone, reverb, beat speed, toggles) are kept per viewer
+  and come back on reload; nothing ever sounds on its own.
+
 *(approval)* M3–M5 order is open; the human may reorder or drop any of them. Order after M6 (human, 2026-11-23):
 M2, then M3–M5.
 
