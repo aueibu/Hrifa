@@ -18,8 +18,8 @@ for spec in "3 5:729:ev12_5q729:l5q729_rs_v6" "3 5 7:243:ev12_7q243:l7q243_rs_v6
 done
 if [ $ok = 1 ]; then
   echo "$(date +%H:%M) BIN12 VALIDATED (compare times: bin11 7-limit q 243 107 s)"
-  bash ~/zgen/enum_run.sh "3 5 7 11 13" 1215 en7_13q1215 none 7
-  [ -s en7_13q1215/k7/families.jsonl ] && python3 ~/zgen/usesp.py en7_13q1215/k7/families.jsonl
+  echo "13-limit q 1215 k7 deferred (625 B sets; full lists first)"
+
 else
   echo "$(date +%H:%M) BIN12 VALIDATION FAILED: 13-limit q 1215 not run"
 fi
