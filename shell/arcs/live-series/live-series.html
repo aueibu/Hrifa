@@ -133,10 +133,10 @@
   </header>
 
   <div class="panel">
-    <div class="row"><span class="lbl">Start from</span><select id="example" aria-label="Example to start from"></select><span class="read" id="exNote"></span></div>
-    <div class="row"><span class="lbl">1/1</span><input id="base" type="number" min="20" max="2000" step="0.01" value="261.63" aria-label="Frequency of 1/1 in Hz"><span class="read">Hz</span><span class="read" id="baseName"></span>
-      <span class="lbl" style="min-width:0;margin-left:10px">Steps are</span><input id="edo" type="number" min="1" max="999" value="12" aria-label="Steps per octave"><span class="read">per octave</span></div>
-    <div class="row"><span class="lbl">Add notes</span><input id="add" class="cell" type="text" placeholder="5/4 3/2   or   0 4 7   or   386c" aria-label="Notes to add"><button type="button" id="addBtn">Add</button><span class="read error" id="addErr"></span></div>
+    <div class="row"><span class="lbl">Start from</span><select autocomplete="off" id="example" aria-label="Example to start from"></select><span class="read" id="exNote"></span></div>
+    <div class="row"><span class="lbl">1/1</span><input autocomplete="off" id="base" type="number" min="20" max="2000" step="0.01" value="261.63" aria-label="Frequency of 1/1 in Hz"><span class="read">Hz</span><span class="read" id="baseName"></span>
+      <span class="lbl" style="min-width:0;margin-left:10px">Steps are</span><input autocomplete="off" id="edo" type="number" min="1" max="999" value="12" aria-label="Steps per octave"><span class="read">per octave</span></div>
+    <div class="row"><span class="lbl">Add notes</span><input autocomplete="off" id="add" class="cell" type="text" placeholder="5/4 3/2   or   0 4 7   or   386c" aria-label="Notes to add"><button type="button" id="addBtn">Add</button><span class="read error" id="addErr"></span></div>
     <details><summary class="read">What a note can be</summary>
       <div class="formats" style="margin-top:6px">
         <code>5/4</code><span>a JI ratio above 1/1 (kept exact: a set of ratios has exactly one series)</span>
@@ -151,7 +151,7 @@
   <div class="two">
     <div class="panel">
       <div class="row" style="justify-content:space-between"><h2>Series</h2>
-        <div class="row"><span class="lbl" style="min-width:0">Show fits within</span><input id="cap" type="number" min="1" max="100" value="20" aria-label="Largest error shown, in cents"><span class="read">cents</span></div></div>
+        <div class="row"><span class="lbl" style="min-width:0">Show fits within</span><input autocomplete="off" id="cap" type="number" min="1" max="100" value="20" aria-label="Largest error shown, in cents"><span class="read">cents</span></div></div>
       <p class="read" id="ladderNote"></p>
       <div class="list" id="ladder"></div>
     </div>
@@ -168,10 +168,10 @@
       </div>
       <div class="btns">
         <button type="button" id="droneBtn" aria-pressed="false">Drone: off</button>
-        <select id="droneRange" aria-label="Drone range"><option value="27.5">drone near 27.5–55 Hz</option><option value="55" selected>drone near 55–110 Hz</option><option value="110">drone near 110–220 Hz</option><option value="220">drone near 220–440 Hz</option></select>
+        <select autocomplete="off" id="droneRange" aria-label="Drone range"><option value="27.5">drone near 27.5–55 Hz</option><option value="55" selected>drone near 55–110 Hz</option><option value="110">drone near 110–220 Hz</option><option value="220">drone near 220–440 Hz</option></select>
         <button type="button" id="droneOct" class="playing" aria-pressed="true">Drone octave: on</button>
         <button type="button" id="droneSine" aria-pressed="false">Drone bare sine: off</button>
-        <select id="droneStyle" aria-label="Drone style"><option value="steady" selected>drone holds</option><option value="pulsed">drone pulses</option><option value="auto">drone pulses below hearing</option></select>
+        <select autocomplete="off" id="droneStyle" aria-label="Drone style"><option value="steady" selected>drone holds</option><option value="pulsed">drone pulses</option><option value="auto">drone pulses below hearing</option></select>
       </div>
       <div class="btns">
         <button type="button" id="pulseBtn" aria-pressed="false">Note pulses: off</button>
@@ -179,9 +179,9 @@
       </div>
       <div class="btns">
         <span class="lbl" style="min-width:0">Reverb</span>
-        <select id="reverb" aria-label="Reverb"><option value="dry">Dry</option><option value="room">Room</option><option value="hall" selected>Hall</option></select>
+        <select autocomplete="off" id="reverb" aria-label="Reverb"><option value="dry">Dry</option><option value="room">Room</option><option value="hall" selected>Hall</option></select>
         <span class="lbl" style="min-width:0">Mix</span>
-        <input id="mix" type="range" min="0" max="100" value="30" aria-label="Reverb mix"><span class="read" id="mixRead">30%</span>
+        <input autocomplete="off" id="mix" type="range" min="0" max="100" value="30" aria-label="Reverb mix"><span class="read" id="mixRead">30%</span>
       </div>
       <p class="read" id="pulseNote"></p>
     </div>
@@ -193,7 +193,7 @@
   </div>
 
   <div class="panel">
-    <div class="row" style="justify-content:space-between"><div class="row"><h2>Beats, drawn</h2><label class="row speed"><span class="lbl" style="min-width:0">Beat speed</span><select data-speed aria-label="Beat speed"><option value="1" selected>1 (real)</option><option value="0.5">½</option><option value="0.25">¼</option><option value="0.125">⅛</option></select></label></div><span class="read">8 s window · the solid line is now · dashed: two beats peak together · click a lane to look closer</span></div>
+    <div class="row" style="justify-content:space-between"><div class="row"><h2>Beats, drawn</h2><label class="row speed"><span class="lbl" style="min-width:0">Beat speed</span><select autocomplete="off" data-speed aria-label="Beat speed"><option value="1" selected>1 (real)</option><option value="0.5">½</option><option value="0.25">¼</option><option value="0.125">⅛</option></select></label></div><span class="read">8 s window · the solid line is now · dashed: two beats peak together · click a lane to look closer</span></div>
     <div class="lanes-box" id="lanesBox"><div class="lanes-grid"><div class="lane-labels" id="laneLabels"></div><canvas id="lanes" role="img" aria-label="Each listened pair's beat as a waveform outline over time"></canvas></div></div>
     <span class="read" id="zoomRead"></span>
     <canvas id="zoom" role="img" aria-label="Strobe view of one lane: the two tones and their sum"></canvas>
@@ -201,7 +201,7 @@
   </div>
 
   <div class="panel">
-    <div class="row" style="justify-content:space-between"><div class="row"><h2>Phasing, drawn</h2><label class="row speed"><span class="lbl" style="min-width:0">Beat speed</span><select data-speed aria-label="Beat speed"><option value="1" selected>1 (real)</option><option value="0.5">½</option><option value="0.25">¼</option><option value="0.125">⅛</option></select></label></div><span class="read">5 min window, 1 min back · the solid line is now · tall = the two beats peak together · click a row to look closer</span></div>
+    <div class="row" style="justify-content:space-between"><div class="row"><h2>Phasing, drawn</h2><label class="row speed"><span class="lbl" style="min-width:0">Beat speed</span><select autocomplete="off" data-speed aria-label="Beat speed"><option value="1" selected>1 (real)</option><option value="0.5">½</option><option value="0.25">¼</option><option value="0.125">⅛</option></select></label></div><span class="read">5 min window, 1 min back · the solid line is now · tall = the two beats peak together · click a row to look closer</span></div>
     <div class="lanes-box" id="phaseBox"><div class="lanes-grid"><div class="lane-labels" id="phaseLabels"></div><canvas id="phase" role="img" aria-label="For each pair of listened notes, how close their beat peaks fall over five minutes"></canvas></div></div>
     <span class="read" id="pzoomRead"></span>
     <canvas id="pzoom" role="img" aria-label="Both beat streams of one pair as tick rows around now"></canvas>
@@ -916,6 +916,8 @@ function meet(x, y) {
   return { m, n, fa, fb, beat: Math.abs(fa - fb), high: m > MEET_MAX || n > MEET_MAX };
 }
 function listenSync() {
+  // the menu is the source of truth, so what it shows is always what is heard (a browser can refill a menu on reload)
+  BEAT_SPEED = +(document.querySelector('[data-speed]') || { value: 1 }).value || 1;
   const want = new Map(), all = new Map();
   if (CUR) { const F = hz(CUR.r.fundCents); CUR.notes.forEach((n, i) => all.set(n.cents.toFixed(3), { f: hz(n.cents), k: CUR.r.partials[i], F })); }
   for (const k of [...LISTEN]) if (!all.has(k)) LISTEN.delete(k);
@@ -1370,6 +1372,14 @@ $('phase').addEventListener('click', (e) => {
   beatsKick();
 });
 document.addEventListener('visibilitychange', () => beatsKick());
+// when the page is shown again (reload, back/forward), take the menus' values as the settings so the two never disagree
+window.addEventListener('pageshow', () => {
+  const first = document.querySelector('[data-speed]');
+  for (const s of document.querySelectorAll('[data-speed]')) s.value = first.value;
+  DRONE_STYLE = $('droneStyle').value;
+  REVERB.preset = $('reverb').value; REVERB.mix = (+$('mix').value || 0) / 100; syncReverbUI(); applyReverb();
+  listenSync(); refreshListenUI(); render();
+});
 // held notes retune at once; arpeggio and replay read the pitches at every note, pulses at the next sam
 $('noteTuned').addEventListener('click', () => { NOTE_TUNED = !NOTE_TUNED; setToggle('noteTuned', 'Notes tuned to the series', NOTE_TUNED); heldSync(); if (CUR) drawTune(CUR.r, CUR.notes); });
 $('reverb').addEventListener('change', () => {
