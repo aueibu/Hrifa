@@ -146,6 +146,16 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
     4:7 gives 63/64 septimal comma, as 5:9 gives 81/80 syntonic comma.
   - Page width (human: "the whole panel (and app) will need to be wider to show all this, thats fine"): page 1600 px,
     Fundamental panel 1.5x the Series panel; the table keeps fixed widths and scrolls sideways inside itself when narrow.
+  - Hearing the beats (human: "for the beats readout is that beating compared to 1/1 or what? Is there a way we can
+    let the user audition that? Was the intention for pulsing to carry that info? I feel like it hides it."): the
+    column is each typed note against its own exact harmonic, not against 1/1; the drone sounds only some harmonics
+    and the pulses carry rhythm, not mistuning. Chosen: **mode A now**, a latched **listen** toggle on each row
+    playing the typed note and its exact harmonic as two sines (G at 4:5:6:7: 392.00 and 395.77 Hz, about 3.8 beats
+    per second); several rows on = all their beats at once (the "reference harmonics" idea, opted into by hand). The
+    pair follows rung and note changes live; Stop sound ends all. Column renamed "beats vs harmonic" (the longer name did not fit a fixed column).
+    **Mode C to come in M4**: a tanpura-like drone that sounds the series' harmonics, so notes beat against the drone.
+  - Series drawing width (human: "stretch the harmonic series graph to fit the whole width we have. better
+    resolution available"): the drawing always fills its panel's width, empty or not, and is redrawn on a resize.
   - No jumping, the whole page (human: "IVE SAID IT MORE THAN 10 ... TIMES ITS THE WHOLE UI DESIGN PRINCIPLE"):
     fixed-width on/off words, Series list always 7 rows tall, the table always 6 rows tall (scrolls for more, drawn
     when empty), the facts keep their seven rows when empty, the drawings keep their height when empty, reserved

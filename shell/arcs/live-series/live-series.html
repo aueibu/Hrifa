@@ -78,7 +78,8 @@
   .facts span:nth-child(odd) { color: var(--muted); }
   /* tuning readout: typed vs tuned pitch per note; the sounding column follows "Notes tuned to the series" */
   #tune { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .tune { border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; table-layout: fixed; width: 50em; }
+  .tune { border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; table-layout: fixed; width: 57em; }
+  .tune .listen { padding: 1px 8px; font-size: 0.78rem; }
   /* named-comma hint: a small triangle with a wider hover area; the name and notes are in its tooltip */
   .hint { display: inline-block; padding: 3px 4px; margin-left: 2px; vertical-align: middle; cursor: help; line-height: 0; }
   .hint::before { content: ""; display: inline-block; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid var(--twin); }
@@ -422,7 +423,11 @@ function hold() {
     if (h > now) el.style.minHeight = `${h}px`;
   }
 }
-window.addEventListener('resize', () => { for (const id of HELD) $(id).style.minHeight = ''; fitLadder(); hold(); });
+window.addEventListener('resize', () => {
+  for (const id of HELD) $(id).style.minHeight = '';
+  fitLadder(); hold();
+  drawSeries(CUR ? CUR.r : null, CUR ? CUR.notes : []);   // refit the drawing to the new width
+});
 
 function drawChips() {
   $('chips').innerHTML = S.notes.length ? S.notes.map((n, i) => `<span class="chip ${n.on ? 'on' : 'off'}">
@@ -477,7 +482,7 @@ function drawTune(r, notes) {
   // with no notes the same table is drawn with an empty body, so the box keeps its shape
   const rows = r ? notes.map((n, i) => {
     const typed = hz(n.cents), tuned = F * r.partials[i], diff = 1200 * log2(tuned / typed);
-    return { n, k: r.partials[i], typed, tuned, diff, beat: Math.abs(tuned - typed), comma: i ? commaOf(n, notes[0], r.partials[i], r.partials[0]) : 'ref' };
+    return { n, key: n.cents.toFixed(3), k: r.partials[i], typed, tuned, diff, beat: Math.abs(tuned - typed), comma: i ? commaOf(n, notes[0], r.partials[i], r.partials[0]) : 'ref' };
   }) : [];
   const commaCell = (c) => {
     if (c === 'ref') return '<span class="name">lowest note</span>';
@@ -499,10 +504,11 @@ function drawTune(r, notes) {
       <td${snd(true)}>${fmtHz(x.tuned)} Hz <span class="name">(${x.k})</span></td>
       <td>${sign(x.diff)}<span class="cbar" aria-hidden="true"><i style="left:${pos.toFixed(1)}px"></i></span></td>
       <td>${commaCell(x.comma)}</td>
-      <td>${x.beat < 0.05 ? 'none' : `about ${x.beat.toFixed(1)} per second`}</td></tr>`;
+      <td>${x.beat < 0.05 ? 'none' : `about ${x.beat.toFixed(1)} per second`}</td>
+      <td><button type="button" class="listen${LISTEN.has(x.key) ? ' playing' : ''}" data-listen="${x.key}" aria-pressed="${LISTEN.has(x.key)}" aria-label="Listen to ${esc(x.n.label)} against its harmonic">listen</button></td></tr>`;
   }).join('');
-  box.innerHTML = `${head}<div class="scroll tune-wrap"><table class="tune"><colgroup><col style="width:9em"><col style="width:6.5em"><col style="width:8.5em"><col style="width:8.5em"><col style="width:8em"><col style="width:9.5em"></colgroup><thead><tr><th>note</th><th>typed</th><th>tuned (harmonic)</th><th>difference</th><th>comma</th><th>beats</th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="read small">Comma: the exact ratio a note moves by against the lowest note when read in this series (ratio input only; a small triangle marks a historic comma, hover it for its name). Beats: about how fast a typed note wobbles against its harmonic, heard against the drone's overtones (faint with Drone bare sine on). The bar spans ±${cap}¢ (Show fits within).</p>`;
+  box.innerHTML = `${head}<div class="scroll tune-wrap"><table class="tune"><colgroup><col style="width:9em"><col style="width:6.5em"><col style="width:8.5em"><col style="width:8.5em"><col style="width:8em"><col style="width:11em"><col style="width:5.5em"></colgroup><thead><tr><th>note</th><th>typed</th><th>tuned (harmonic)</th><th>difference</th><th>comma</th><th>beats vs harmonic</th><th>listen</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="read small">Comma: the exact ratio a note moves by against the lowest note when read in this series (ratio input only; a small triangle marks a historic comma, hover it for its name). Beats vs harmonic: how fast a typed note wobbles against its own exact harmonic in this series (not against 1/1). The drone sounds only some of these harmonics, so most of this beating is otherwise not heard: <b>listen</b> plays the typed note and its harmonic together as two plain sines; switch on several rows to hear them all at once. The bar spans ±${cap}¢ (Show fits within).</p>`;
 }
 
 function drawFacts(r, notes) {
@@ -543,13 +549,16 @@ function pulsePlan(r, notes) {
 function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888'; }
 function drawSeries(r, notes) {
   const svg = $('draw');
-  if (!r) { svg.setAttribute('viewBox', '0 0 640 150'); svg.setAttribute('width', 640); svg.setAttribute('height', 150); svg.innerHTML = ''; return; }   // keeps its size when empty
+  // the drawing always fills its panel's width (human, M1 2026-11-23: "stretch the harmonic series graph to fit the
+  // whole width"), empty or not, so it never resizes with its content; it is redrawn on a window resize
+  const W = Math.max(320, svg.parentElement.clientWidth || 640);
+  if (!r) { svg.setAttribute('viewBox', `0 0 ${W} 150`); svg.setAttribute('width', W); svg.setAttribute('height', 150); svg.innerHTML = ''; return; }
   // while the drone plays it is harmonic dH of this series: the fundamental moved by whole octaves, so a power of 2
   // (below 1 when the fundamental is above the drone range); the axis widens to show it and its octave
   const F = hz(r.fundCents), dH = drone ? droneHz(F) / F : null;
   const top = Math.max(...r.partials, dH ? dH * 2 : 1), N = Math.max(8, Math.min(512, Math.ceil(top * 1.15) + 1));
   const nMin = dH && dH < 1 ? dH / 1.3 : 1;
-  const W = Math.max(640, Math.min(1400, 60 * (log2(N) - log2(nMin)) * 2 + 120)), H = 150, x0 = 30, x1 = W - 20;
+  const H = 150, x0 = 30, x1 = W - 20;
   const X = (n) => x0 + ((x1 - x0) * (log2(n) - log2(nMin))) / (log2(N) - log2(nMin));
   const on = new Map(r.partials.map((k, i) => [k, i]));
   let s = '';
@@ -737,7 +746,12 @@ function stopOneShots() {
   live = []; clearTimeout(timer);
   $('replay').classList.remove('playing');
 }
-function stopAll() { stopOneShots(); heldOff(); arpOff(); droneOff(); pulseOff(); replaying = false; cutReverbTail(); }
+function stopAll() {
+  stopOneShots(); heldOff(); arpOff(); droneOff(); pulseOff(); replaying = false;
+  LISTEN.clear(); if (ctx) listenSync();
+  for (const b of $('tune').querySelectorAll('[data-listen]')) { b.classList.remove('playing'); b.setAttribute('aria-pressed', 'false'); }
+  cutReverbTail();
+}
 // the notes' wave (held notes, arpeggio, trail replay): triangle, or a bare sine; pulse clicks stay triangle
 let NOTE_SINE = false;
 const noteWave = () => (NOTE_SINE ? 'sine' : 'triangle');
@@ -766,6 +780,34 @@ function noteHz() {
   if (!CUR) return [];
   const { r, notes } = CUR;
   return notes.map((n, i) => (NOTE_TUNED ? hz(r.fundCents + 1200 * log2(r.partials[i])) : hz(n.cents)));
+}
+// listen pairs (human, M1 2026-11-23, "mode A"): a latched toggle per row of the tuning table plays the typed note
+// and its exact harmonic in the chosen series together as two plain sines, so the beat shown in the row is heard;
+// several rows on = all their beats at once. Pairs follow rung and note changes live; a note switched off or removed
+// ends its pair; Stop sound ends all.
+const LISTEN = new Set();         // typed-note keys (cents) whose pair is on
+const pairs = new Map();          // key -> { a, b, g }
+function listenSync() {
+  const rows = new Map();
+  if (CUR) { const F = hz(CUR.r.fundCents); CUR.notes.forEach((n, i) => rows.set(n.cents.toFixed(3), [hz(n.cents), F * CUR.r.partials[i]])); }
+  for (const k of [...LISTEN]) if (!rows.has(k)) LISTEN.delete(k);
+  for (const [k, p] of pairs) if (!LISTEN.has(k)) {
+    p.g.gain.cancelScheduledValues(ctx.currentTime); p.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+    try { p.a.stop(ctx.currentTime + 0.4); p.b.stop(ctx.currentTime + 0.4); } catch (e) {}
+    pairs.delete(k);
+  }
+  if (!LISTEN.size) return;
+  const c = audio(), lv = 0.12 / Math.sqrt(LISTEN.size);
+  for (const k of LISTEN) {
+    const [fa, fb] = rows.get(k);
+    let p = pairs.get(k);
+    if (!p) {
+      const g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.connect(master);
+      const mk = (f) => { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g); o.start(); return o; };
+      p = { a: mk(fa), b: mk(fb), g }; pairs.set(k, p);
+    } else { p.a.frequency.setTargetAtTime(fa, c.currentTime, 0.02); p.b.frequency.setTargetAtTime(fb, c.currentTime, 0.02); }
+    p.g.gain.setTargetAtTime(lv, c.currentTime, 0.05);
+  }
 }
 let held = null;                  // Map: typed note (cents key) -> { o, g }; a retune glides the same oscillator
 function heldOn() { audio(); held = new Map(); setToggle('playChord', 'Notes', true); heldSync(); }
@@ -898,6 +940,7 @@ function pulseOff() {
 }
 function followAudio() {
   heldSync();
+  if (ctx) listenSync();
   if (drone && ctx) {
     if (!CUR) return;
     const f = droneHz(hz(CUR.r.fundCents));
@@ -936,6 +979,15 @@ $('droneSine').addEventListener('click', () => { DRONE_SINE = !DRONE_SINE; setTo
 $('noteSine').addEventListener('click', () => {
   NOTE_SINE = !NOTE_SINE; setToggle('noteSine', 'Notes bare sine', NOTE_SINE);
   if (held) for (const { o } of held.values()) o.type = noteWave();   // held notes change at once
+});
+// listen toggles in the tuning table (the table is redrawn often, so one listener on its box)
+$('tune').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-listen]');
+  if (!b) return;
+  const k = b.dataset.listen;
+  if (LISTEN.has(k)) LISTEN.delete(k); else LISTEN.add(k);
+  listenSync();
+  b.classList.toggle('playing', LISTEN.has(k)); b.setAttribute('aria-pressed', String(LISTEN.has(k)));
 });
 // held notes retune at once; arpeggio and replay read the pitches at every note, pulses at the next sam
 $('noteTuned').addEventListener('click', () => { NOTE_TUNED = !NOTE_TUNED; setToggle('noteTuned', 'Notes tuned to the series', NOTE_TUNED); heldSync(); if (CUR) drawTune(CUR.r, CUR.notes); });

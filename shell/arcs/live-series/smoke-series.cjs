@@ -194,6 +194,24 @@ check('readout: tuned column sounding', [$('tune').querySelector('tbody td.snd')
 $('noteTuned').click();
 check('readout: typed column sounding after the toggle', [$('tune').querySelector('tbody td.snd').cellIndex, /sounding: typed/.test($('tune').textContent)], [1, true]);
 $('noteTuned').click();
+// listen pairs (human 2026-11-23, mode A): G at 4:5:6:7 plays typed 392.00 Hz and its harmonic 6 x 65.9615 = 395.77 Hz as
+// two sines, beating 3.8 per second as its row says; two rows on = two pairs; Stop sound ends them
+check('readout: beats header', $('tune').querySelectorAll('th')[5].textContent, 'beats vs harmonic');
+const b4 = OSCS.length;
+const lb = () => [...$('tune').querySelectorAll('[data-listen]')];
+const pairF = () => OSCS.slice(b4).filter((o) => !o.stopped).map(fq).sort((a, b) => a - b);
+lb()[2].click();
+check('listen: G typed + harmonic as two sines', [pairF().map((f) => f.toFixed(2)), [...new Set(OSCS.slice(b4).map((o) => o.type))], lb()[2].getAttribute('aria-pressed')], [['392.00', '395.77'], ['sine'], 'true']);
+check('listen: the beat is the row\'s number', (pairF()[1] - pairF()[0]).toFixed(1), tuneRows()[2][5].match(/[\d.]+/)[0]);
+lb()[3].click();
+check('listen: two rows on = two pairs', [pairF().length, lb()[3].getAttribute('aria-pressed')], [4, 'true']);
+$('cap').value = '30'; $('cap').dispatchEvent(new w.Event('change'));
+check('listen: pairs survive a redraw', [pairF().length, lb()[2].getAttribute('aria-pressed')], [4, 'true']);
+$('cap').value = '20'; $('cap').dispatchEvent(new w.Event('change'));
+lb()[2].click();
+check('listen: a row off ends its pair', pairF().length, 2);
+$('stopAll').click();
+check('listen: Stop sound ends all pairs', [pairF().length, lb().every((b) => b.getAttribute('aria-pressed') === 'false')], [0, true]);
 pick(0);
 // no jumping (human 2026-11-23): the exact rung keeps the same table, with 0.0¢ and no beats
 check('readout: exact rung keeps the table', [tuneRows().length, tuneRows().map((r) => r[3]), tuneRows().map((r) => r[4]), tuneRows().map((r) => r[5])], [4, ['0.0¢', '0.0¢', '0.0¢', '0.0¢'], ['lowest note', 'none', 'none', 'none'], ['none', 'none', 'none', 'none']]);
@@ -222,7 +240,7 @@ const foot0 = foot();
 $('droneSine').click();
 check('readout: footnote text does not change with bare sine', foot(), foot0);
 $('droneSine').click();
-check('readout: fixed column widths', [...$('tune').querySelectorAll('col')].map((c) => c.style.width), ['9em', '6.5em', '8.5em', '8.5em', '8em', '9.5em']);
+check('readout: fixed column widths', [...$('tune').querySelectorAll('col')].map((c) => c.style.width), ['9em', '6.5em', '8.5em', '8.5em', '8em', '11em', '5.5em']);
 
 // reverb (the lab's presets, no custom loading)
 // M1 (human 2026-11-23): the reverb starts on Hall at 30%
