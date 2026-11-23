@@ -102,6 +102,10 @@ check('drone range defaults to 55–110 Hz', $('droneRange').value, '55');
 check('drone label (55 range)', $('draw').querySelector('.drone-label').textContent.startsWith('drone 104.7 Hz = harmonic 8'), true);
 $('droneRange').value = '110'; $('droneRange').dispatchEvent(new w.Event('change'));
 check('drone label (110 range)', $('draw').querySelector('.drone-label').textContent.startsWith('drone 209.3 Hz = harmonic 16'), true);
+// M1 (human 2026-11-23): a low range, the octave 27.5–55 Hz; F 13.08 Hz -> 52.3 Hz = harmonic 4
+check('range options', [...$('droneRange').options].map((o) => o.value), ['27.5', '55', '110', '220']);
+$('droneRange').value = '27.5'; $('droneRange').dispatchEvent(new w.Event('change'));
+check('drone label (27.5 range)', $('draw').querySelector('.drone-label').textContent.startsWith('drone 52.33 Hz = harmonic 4'), true);
 $('droneRange').value = '55'; $('droneRange').dispatchEvent(new w.Event('change'));
 $('chips').querySelector('[data-tog="1"]').click();        // 5/4 off -> 6/5 3/2 left... plus 1/1
 check('drone follows the series', $('draw').querySelector('.drone-label').textContent.includes('harmonic'), true);

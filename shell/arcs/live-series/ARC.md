@@ -104,17 +104,18 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
   different fundamental); reverb defaults.
 - Acceptance:
   - [x] Every answer written under "Checkpoint decisions" here
-  - [ ] Agreed changes made; `check:live-series` passes with new checks for them
+  - [x] Agreed changes made; `check:live-series` passes with new checks for them (82 checks, 2026-11-23)
 - Human checkpoint after: yes (sound)
 - Checkpoint decisions (human, 2026-11-23, answering the four M1 questions):
   - Ladder anchoring: **B, the error is shared** across all notes (the fundamental moves so the worst error is as
     small as it can be for each rung) instead of the lowest note being exact. Example where they differ: C E G B♭
     (0 4 7 10, 20¢): now 20:25:30:36 at 13.08 Hz; with B 4:5:6:7 at 65.96 Hz (±16.6¢). Exact ratio sets unchanged.
   - Note pulses tempo: "b-toggle for both", read as a toggle between at most 4 per second (B, the default) and at
-    most 8 per second (A, the old rule). C E G: cycle 1.96 s at 4/s, 0.98 s at 8/s. *(reading to confirm)*
+    most 8 per second (A, the old rule). C E G: cycle 1.96 s at 4/s, 0.98 s at 8/s. Confirmed by the human ("B - okay").
   - Drone sound: keep as is. Default range: "select 50-110 range by default", read as the existing "near 55–110 Hz".
-    Add a lower range: "keep drone in 20 to 55 range too" (rule to confirm: the drone is always one octave of the
-    fundamental, so the window must be one octave wide).
+    Add a lower range: "keep drone in 20 to 55 range too". Rule chosen: **A, the octave 27.5–55 Hz** (one below the
+    55–110 option), over B (20–40 Hz) and C (the true fundamental when 20–55 Hz). JI example's end (F 13.08 Hz):
+    52.3 Hz; 1/1 7/6 3/2 (F 43.6 Hz): 43.6 Hz.
   - Reverb default: **Hall at 30%** (was Dry).
 
 ### M2: Collections in from the required-interval explorer
