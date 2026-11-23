@@ -193,7 +193,7 @@
   </div>
 
   <div class="panel">
-    <div class="row" style="justify-content:space-between"><h2>Beats, drawn</h2><span class="read">8 s window · the solid line is now · dashed: two beats peak together · click a lane to look closer</span></div>
+    <div class="row" style="justify-content:space-between"><div class="row"><h2>Beats, drawn</h2><label class="row speed"><span class="lbl" style="min-width:0">Beat speed</span><select data-speed aria-label="Beat speed"><option value="1" selected>1 (real)</option><option value="0.5">½</option><option value="0.25">¼</option><option value="0.125">⅛</option></select></label></div><span class="read">8 s window · the solid line is now · dashed: two beats peak together · click a lane to look closer</span></div>
     <div class="lanes-box" id="lanesBox"><div class="lanes-grid"><div class="lane-labels" id="laneLabels"></div><canvas id="lanes" role="img" aria-label="Each listened pair's beat as a waveform outline over time"></canvas></div></div>
     <span class="read" id="zoomRead"></span>
     <canvas id="zoom" role="img" aria-label="Strobe view of one lane: the two tones and their sum"></canvas>
@@ -201,7 +201,7 @@
   </div>
 
   <div class="panel">
-    <div class="row" style="justify-content:space-between"><h2>Phasing, drawn</h2><span class="read">5 min window, 1 min back · the solid line is now · tall = the two beats peak together · click a row to look closer</span></div>
+    <div class="row" style="justify-content:space-between"><div class="row"><h2>Phasing, drawn</h2><label class="row speed"><span class="lbl" style="min-width:0">Beat speed</span><select data-speed aria-label="Beat speed"><option value="1" selected>1 (real)</option><option value="0.5">½</option><option value="0.25">¼</option><option value="0.125">⅛</option></select></label></div><span class="read">5 min window, 1 min back · the solid line is now · tall = the two beats peak together · click a row to look closer</span></div>
     <div class="lanes-box" id="phaseBox"><div class="lanes-grid"><div class="lane-labels" id="phaseLabels"></div><canvas id="phase" role="img" aria-label="For each pair of listened notes, how close their beat peaks fall over five minutes"></canvas></div></div>
     <span class="read" id="pzoomRead"></span>
     <canvas id="pzoom" role="img" aria-label="Both beat streams of one pair as tick rows around now"></canvas>
@@ -585,12 +585,14 @@ function nearestGaps(pa, pb, t0, t1) {   // for each peak of pa in [t0, t1]: [ti
   }
   return out;
 }
+// The live pairs run at the beat speed, so their peaks are in heard time: measure over 10 real minutes (AHEAD /
+// speed heard) with the 30 ms window scaled the same way, and report the times scaled back to real time.
 function togetherStats(pa, pb, from) {
-  const slow = Math.abs(pa.df) <= Math.abs(pb.df) ? [pa, pb] : [pb, pa];
-  const hits = nearestGaps(slow[0], slow[1], from, from + AHEAD).filter(([, d]) => d < TOGETHER).map(([t]) => t);
+  const s = BEAT_SPEED, slow = Math.abs(pa.df) <= Math.abs(pb.df) ? [pa, pb] : [pb, pa];
+  const hits = nearestGaps(slow[0], slow[1], from, from + AHEAD / s).filter(([, d]) => d < TOGETHER / s).map(([t]) => t);
   if (hits.length < 2) return { every: hits.length ? 'once in 10 minutes' : 'not in 10 minutes', longest: '—' };
   const gaps = hits.slice(1).map((t, i) => t - hits[i]);
-  return { every: secs(gaps.reduce((s, g) => s + g, 0) / gaps.length), longest: secs(Math.max(hits[0] - from, ...gaps)) };
+  return { every: secs((s * gaps.reduce((a, g) => a + g, 0)) / gaps.length), longest: secs(s * Math.max(hits[0] - from, ...gaps)) };
 }
 function drawBeatLists() {
   const box = $('beatLists'), on = listenedNotes(), ps = [];
@@ -896,6 +898,7 @@ function noteHz() {
 // and its exact harmonic in the chosen series together as two plain sines, so the beat shown in the row is heard;
 // several rows on = all their beats at once. Pairs follow rung and note changes live; a note switched off or removed
 // ends its pair; Stop sound ends all.
+let BEAT_SPEED = 1;               // 1, ½, ¼ or ⅛: listen pairs only (Notes, Arpeggio and the drone keep the real tuning)
 const LISTEN = new Set();         // typed-note keys (cents) whose pair is on
 const LISTEN_IV = new Set();      // 'keyA|keyB' (lower note first): interval pairs whose meeting partials are on
 const pairs = new Map();          // voice key ('n:' note, 'i:' interval) -> { a, b, g }
@@ -916,12 +919,15 @@ function listenSync() {
   const want = new Map(), all = new Map();
   if (CUR) { const F = hz(CUR.r.fundCents); CUR.notes.forEach((n, i) => all.set(n.cents.toFixed(3), { f: hz(n.cents), k: CUR.r.partials[i], F })); }
   for (const k of [...LISTEN]) if (!all.has(k)) LISTEN.delete(k);
-  for (const k of LISTEN) { const x = all.get(k); want.set(`n:${k}`, [x.f, x.F * x.k]); }
+  // Beat speed (human, M1 2026-11-23): the typed note (or the lower meeting partial) stays; its partner moves to
+  // fa + (fb − fa) × speed, so every beat and every rhythm between beats slows by the same factor
+  const slowed = (fa, fb) => [fa, fa + (fb - fa) * BEAT_SPEED];
+  for (const k of LISTEN) { const x = all.get(k); want.set(`n:${k}`, slowed(x.f, x.F * x.k)); }
   for (const pk of [...LISTEN_IV]) {
     const [a, b] = pk.split('|');
     const m = LISTEN.has(a) && LISTEN.has(b) ? meet(all.get(a), all.get(b)) : null;
     if (!m || m.high) { LISTEN_IV.delete(pk); continue; }   // a row switched off ends its intervals
-    want.set(`i:${pk}`, [m.fa, m.fb]);
+    want.set(`i:${pk}`, slowed(m.fa, m.fb));
   }
   for (const [k, p] of pairs) if (!want.has(k)) {
     p.g.gain.cancelScheduledValues(ctx.currentTime); p.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
@@ -962,6 +968,9 @@ const LANE_H = 52, LANE_ROWS = 6, LABEL_COL = 260, WIN_BEFORE = 2, WIN_AFTER = 6
 const PH_BEFORE = 60, PH_AFTER = 240, PH_FLAT = 0.12;   // Phasing, drawn: 5-minute window; bars flat at 120 ms apart
 let ZOOM = null, PZOOM = null, beatsRAF = 0;
 const listenBtn = (attr, on, label) => `<button type="button" class="listen${on ? ' playing' : ''}" ${attr} aria-pressed="${on}" aria-label="${esc(label)}">listen</button>`;
+// a row's rate: the real one, and the heard one when the beat speed is slowed
+const SPEED_NAMES = { 1: '1', 0.5: '½', 0.25: '¼', 0.125: '⅛' };
+const heardSub = (b) => `${b.toFixed(2)} per second${BEAT_SPEED < 1 ? ` · heard at ${SPEED_NAMES[BEAT_SPEED]}: ${(b * BEAT_SPEED).toFixed(2)}` : ''}`;
 // every active note with what the lanes need, listened or not
 function allNotes() {
   if (!CUR) return [];
@@ -973,13 +982,13 @@ function allNotes() {
 function beatRows() {
   const out = [], notes = allNotes(), on = notes.filter((x) => LISTEN.has(x.key));
   for (const x of notes) {
-    out.push({ id: `n:${x.key}`, kind: 'n', label: `${short(x.f)} vs harmonic ${x.k}`, sub: `${x.beat.toFixed(2)} per second`, p: pairs.get(`n:${x.key}`) || null,
+    out.push({ id: `n:${x.key}`, kind: 'n', label: `${short(x.f)} vs harmonic ${x.k}`, sub: heardSub(x.beat), p: pairs.get(`n:${x.key}`) || null,
       toggle: listenBtn(`data-listen="${x.key}"`, LISTEN.has(x.key), `Listen to ${short(x.f)} against its harmonic`) });
   }
   for (let i = 0; i < on.length; i++) for (let j = i + 1; j < on.length; j++) {
     const x = on[i], y = on[j], m = meet(x, y), pk = `${x.key}|${y.key}`;
     if (m.high) continue;
-    out.push({ id: `i:${pk}`, kind: 'i', label: `${short(x.f)}–${short(y.f)} partials ${m.m} and ${m.n}`, sub: `${m.beat.toFixed(2)} per second`, p: pairs.get(`i:${pk}`) || null,
+    out.push({ id: `i:${pk}`, kind: 'i', label: `${short(x.f)}–${short(y.f)} partials ${m.m} and ${m.n}`, sub: heardSub(m.beat), p: pairs.get(`i:${pk}`) || null,
       toggle: listenBtn(`data-iv="${pk}"`, LISTEN_IV.has(pk), `Listen to the meeting partials of ${short(x.f)} and ${short(y.f)}`) });
   }
   return out;
@@ -1343,6 +1352,12 @@ function onListenClick(e) {
   if (b.dataset.listen) toggleNote(b.dataset.listen); else if (b.dataset.iv) toggleIv(b.dataset.iv); else toggleBoth(b.dataset.both);
 }
 for (const id of ['tune', 'beatLists', 'laneLabels', 'phaseLabels']) $(id).addEventListener('click', onListenClick);
+// the beat speed menus (one in each lane panel) are one setting; a change retunes the sounding pairs smoothly
+for (const sel of document.querySelectorAll('[data-speed]')) sel.addEventListener('change', () => {
+  BEAT_SPEED = +sel.value;
+  for (const other of document.querySelectorAll('[data-speed]')) other.value = sel.value;
+  listenSync(); refreshListenUI();
+});
 // click a sounding lane or row to look closer; clicking it again closes the closer view
 $('lanes').addEventListener('click', (e) => {
   const r = Math.floor((e.clientY - $('lanes').getBoundingClientRect().top) / LANE_H), it = beatRows()[r];

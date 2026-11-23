@@ -188,6 +188,14 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
     marked, readout "nearest peaks now N ms apart". **Toggles**: Beats, drawn has one row per note (always) plus
     rows for interval pairs among listened notes, each with its listen toggle; Phasing, drawn's toggle turns both
     notes of its pair on or off; all toggles stay in sync with the table and the listings.
+  - Beat speed (human: "possible to add a playback override to hear the beats or rhythm slowed down by 1/2 etc?",
+    then "so that would change the actual played note? I'm willing to try it"): one global **Beat speed: 1, ½, ¼, ⅛**
+    (option A), shown in both lane panels and kept in sync. It shrinks each listen pair's detuning: the typed note
+    (or the lower meeting partial) stays, its partner moves to fa + (fb − fa) × speed, so every beat and every
+    rhythm between beats slows by the same factor (ratios kept). G at 4:5:6:7, ½: 392.00 and 393.89 Hz, 1.88 per
+    second. Lanes, closer views and phasing bars follow what is heard; row labels show the real rate and the heard
+    one; the listings stay in real values (the measured rhythm columns are scaled back to real time). Notes,
+    Arpeggio and the drone are never changed. A speed change retunes the sounding pairs smoothly.
   - Series drawing width (human: "stretch the harmonic series graph to fit the whole width we have. better
     resolution available"): the drawing always fills its panel's width, empty or not, and is redrawn on a resize.
   - No jumping, the whole page (human: "IVE SAID IT MORE THAN 10 ... TIMES ITS THE WHOLE UI DESIGN PRINCIPLE"):

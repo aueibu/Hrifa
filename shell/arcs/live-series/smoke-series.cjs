@@ -264,6 +264,20 @@ check('closer view: the G lane, in phase at the start', $('zoomRead').textConten
 check('closer view: its three rows', ['first tone', 'second tone', 'the two together'].every((l) => TEXTS.zoom.includes(l)), true);
 $('phase').dispatchEvent(new w.MouseEvent('click', { clientY: 5 * 52 + 10, bubbles: true }));
 check('phasing closer view: G / B♭ together now', [$('pzoomRead').textContent, ['G4 beats', 'B♭4 beats'].every((l) => TEXTS.pzoom.includes(l))], ['G4 / B♭4 · 6:7 · nearest peaks around now   0 ms apart', true]);
+// beat speed (human 2026-11-23, "I'm willing to try it"): at ½ the typed notes stay and their partners move halfway:
+// G 392.00 + 3.77 × ½ = 393.89 Hz, B♭ 466.17 − 4.44 × ½ = 463.95 Hz; both menus agree; the G row shows the real and the
+// heard rate; the 30 ms window is heard time (15 ms real at ½), so of the real coincidences only 0 and 2.92 s (9.7 ms apart)
+// stay, heard at 0 and 5.84 s: 2 marks in the 8 s window; the
+// rhythm listing stays real (G/B♭ together about every 1.0 s)
+const speedSel = () => [...d.querySelectorAll('[data-speed]')];
+const running = () => OSCS.filter((o) => !o.stopped).map(fq).map((f) => f.toFixed(2));
+speedSel()[1].value = '0.5'; speedSel()[1].dispatchEvent(new w.Event('change'));
+check('beat speed ½: partners move halfway, menus agree', [running().includes('393.89'), running().includes('463.95'), running().includes('392.00'), speedSel().map((s) => s.value)], [true, true, true, ['0.5', '0.5']]);
+check('beat speed ½: G row shows real and heard rates', $('laneLabels').querySelectorAll('.ll-sub')[2].textContent, '3.77 per second · heard at ½: 1.88');
+check('beat speed ½: G/B♭ marks spread out (2 in the window)', MARKS.lanes, 2);
+check('beat speed ½: rhythm listing stays real', cellRows('.beats-rh')[0].slice(4), ['1.0 s', '1.6 s']);
+speedSel()[0].value = '1'; speedSel()[0].dispatchEvent(new w.Event('change'));
+check('beat speed back to 1: partner at the exact harmonic again', [running().includes('395.77'), MARKS.lanes], [true, 6]);
 laneBtns('laneLabels')[0].click();
 check('a note listen from the lanes panel shows in the table', pressed(lb()), ['true', 'false', 'true', 'true']);
 laneBtns('phaseLabels')[5].click();
