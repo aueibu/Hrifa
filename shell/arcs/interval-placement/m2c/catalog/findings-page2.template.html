@@ -555,7 +555,9 @@ const get = (key) => perN((n) => D[n][key]);
     const ids = B.sets.map((_, i) => i).filter((i) => B.w0[i] === L || (+B.sets[i].split(' ').pop() === L));
     ids.sort((a, b) => roughAt(a, Wc) - roughAt(b, Wc));
     const N = 40;
-    const shown = state.show === 'all' ? ids : state.show === 'rough' ? ids.slice(-N).reverse() : ids.slice(0, N);
+    // "all" lists the sets by their intervals, smallest first (human, 2026-11-23); the other two views stay by roughness
+    const byIntervals = (a, b) => { const x = B.sets[a].split(' ').map(Number), y = B.sets[b].split(' ').map(Number); for (let k = 0; k < x.length; k++) if (x[k] !== y[k]) return x[k] - y[k]; return 0; };
+    const shown = state.show === 'all' ? ids.slice().sort(byIntervals) : state.show === 'rough' ? ids.slice(-N).reverse() : ids.slice(0, N);
     const vals = shown.flatMap((i) => wins.map((w) => roughAt(i, w)).filter((v) => v !== null));
     const lo = Math.min(...vals), hi = Math.max(...vals);
     const cw = 30, rh = 16, T = 20, labelW = 16 + 8 * Math.max(...shown.map((i) => B.sets[i].length));
@@ -574,7 +576,7 @@ const get = (key) => perN((n) => D[n][key]);
     });
     const opts = [['smooth', `${Math.min(N, ids.length)} smoothest`], ['rough', `${Math.min(N, ids.length)} roughest`], ['all', `all ${ids.length}`]];
     zoom.innerHTML = `<h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">${ruleName}: sets whose largest interval is ${L}, windows ${w0}–${w1}</h3>` +
-      `<p class="muted" style="font-size:0.85rem">Each cell is the roughness of that set's smoothest ordering in that window; rows sorted smoothest first at window ${Wc} (outlined). Colors use this zoom's own range, ${lo.toFixed(2)} to ${hi.toFixed(2)}, so small differences show. Click a cell to see its chord.</p>` +
+      `<p class="muted" style="font-size:0.85rem">Each cell is the roughness of that set's smoothest ordering in that window; ${state.show === 'all' ? `rows sorted by their intervals, smallest first; window ${Wc} outlined` : `rows sorted ${state.show === 'rough' ? 'roughest' : 'smoothest'} first at window ${Wc} (outlined)`}. Colors use this zoom's own range, ${lo.toFixed(2)} to ${hi.toFixed(2)}, so small differences show. Click a cell to see its chord.</p>` +
       `<div class="toggle">${opts.map(([k, l]) => `<button type="button" data-show="${k}" class="${state.show === k ? 'on' : ''}">${l}</button>`).join('')}</div>` +
       `<div style="overflow:auto;max-height:560px;min-width:0"><svg class="chart" viewBox="0 0 ${W} ${H}" style="max-width:${W * 1.4}px" role="img" aria-label="Zoom: sets with largest interval ${L} by window">${s}</svg></div><div id="zoom-tile" style="border-top:1px solid var(--line);padding-top:12px"></div>`;
     zoom.querySelectorAll('[data-show]').forEach((b) => b.addEventListener('click', () => { state.show = b.dataset.show; drawZoom(); }));
