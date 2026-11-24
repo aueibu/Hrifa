@@ -1,0 +1,952 @@
+<title>Z-Pair Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+/* Layout: a one-screen instrument like the Harmonic Field Lab: a filter bar over a 2 x 2 grid of panels on the page
+   tier (gaps, no lines); plots sit on the screen tier. Values copied from shell/src/theme (tokens.ts ramps, the role
+   mapping of semantic.ts, Radix steps of radix.ts) and the lab's prime colors (state/intervalColor.ts primeColor /
+   primeTextColor). */
+:root {
+  --gray-0: #f3f0ea; --gray-1: #ece8e0; --gray-2: #ddd7cc; --gray-3: #b8b0a3; --gray-4: #8c8478;
+  --gray-5: #6f685e; --gray-6: #554f47;
+  --dark-0: #e6e3df; --dark-2: #b4b1ad; --dark-3: #a19e9a; --dark-4: #85827e; --dark-5: #464442;
+  --dark-6: #3a3836; --dark-7: #32302e; --dark-8: #2a2826; --dark-9: #1d1b19;
+  --white: #fbf9f5; --black: #1b1814;
+  --accent: #00729f;
+
+  /* roles, light (semantic.ts) */
+  --surface: var(--gray-0);
+  --panel: var(--white);
+  --panel-well: var(--gray-1);
+  --panel-slot: var(--gray-1);
+  --panel-raised: var(--white);
+  --grid: color-mix(in srgb, var(--gray-3) 40%, var(--gray-2));
+  --chrome: var(--gray-2);
+  --border: var(--gray-2);
+  --control-border: var(--gray-4);
+  --text: var(--black);
+  --text-muted: var(--gray-6);
+  --text-subtle: var(--gray-5);
+
+  /* Radix steps used here (radix.ts, light) */
+  --rx-red-9: #e5484d; --rx-red-11: #ce2c31;
+  --rx-orange-9: #f76b15; --rx-orange-11: #cc4e00;
+  --rx-yellow-9: #ffe629; --rx-yellow-11: #9e6c00;
+  --rx-green-9: #30a46c; --rx-green-11: #218358;
+  --rx-cyan-9: #00a2c7; --rx-cyan-11: #107d98;
+  --rx-blue-3: #e6f4fe; --rx-blue-4: #d5efff; --rx-blue-5: #c2e5ff; --rx-blue-6: #acd8fc; --rx-blue-7: #8ec8f6;
+  --rx-blue-8: #5eb1ef; --rx-blue-9: #0090ff; --rx-blue-11: #0d74ce; --rx-blue-12: #113264;
+  --rx-violet-9: #6e56cf; --rx-violet-11: #6550b9;
+  --rx-pink-9: #d6409f; --rx-pink-11: #c2298a;
+
+  /* type scale (lab.module.css) */
+  --fs-tiny: 0.6875rem; --fs-small: 0.75rem; --fs-body: 0.8125rem; --fs-title: 0.875rem; --fs-display: 1.5rem;
+  --radius: 0.25rem;
+  --font-text: Figtree, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, Consolas, monospace;
+  --font-head: Fraunces, Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: var(--dark-8); --panel: var(--dark-7); --panel-well: var(--dark-9); --panel-slot: var(--dark-6);
+    --panel-raised: var(--dark-6);
+    --grid: color-mix(in srgb, var(--dark-4) 28%, var(--dark-5));
+    --chrome: color-mix(in srgb, var(--dark-4) 38%, var(--dark-5));
+    --border: var(--dark-5); --control-border: var(--dark-4);
+    --text: var(--dark-0); --text-muted: var(--dark-2); --text-subtle: var(--dark-3);
+    --rx-red-9: #e5484d; --rx-red-11: #ff9592; --rx-orange-9: #f76b15; --rx-orange-11: #ffa057;
+    --rx-yellow-9: #ffe629; --rx-yellow-11: #f5e147; --rx-green-9: #30a46c; --rx-green-11: #3dd68c;
+    --rx-cyan-9: #00a2c7; --rx-cyan-11: #4ccce6;
+    --rx-blue-3: #0d2847; --rx-blue-4: #003362; --rx-blue-5: #004074; --rx-blue-6: #104d87; --rx-blue-7: #205d9e;
+    --rx-blue-8: #2870bd; --rx-blue-9: #0090ff; --rx-blue-11: #70b8ff; --rx-blue-12: #c2e6ff;
+    --rx-violet-9: #6e56cf; --rx-violet-11: #baa7ff; --rx-pink-9: #d6409f; --rx-pink-11: #ff8dcc;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --surface: var(--dark-8); --panel: var(--dark-7); --panel-well: var(--dark-9); --panel-slot: var(--dark-6);
+  --panel-raised: var(--dark-6);
+  --grid: color-mix(in srgb, var(--dark-4) 28%, var(--dark-5));
+  --chrome: color-mix(in srgb, var(--dark-4) 38%, var(--dark-5));
+  --border: var(--dark-5); --control-border: var(--dark-4);
+  --text: var(--dark-0); --text-muted: var(--dark-2); --text-subtle: var(--dark-3);
+  --rx-red-9: #e5484d; --rx-red-11: #ff9592; --rx-orange-9: #f76b15; --rx-orange-11: #ffa057;
+  --rx-yellow-9: #ffe629; --rx-yellow-11: #f5e147; --rx-green-9: #30a46c; --rx-green-11: #3dd68c;
+  --rx-cyan-9: #00a2c7; --rx-cyan-11: #4ccce6;
+  --rx-blue-3: #0d2847; --rx-blue-4: #003362; --rx-blue-5: #004074; --rx-blue-6: #104d87; --rx-blue-7: #205d9e;
+  --rx-blue-8: #2870bd; --rx-blue-9: #0090ff; --rx-blue-11: #70b8ff; --rx-blue-12: #c2e6ff;
+  --rx-violet-9: #6e56cf; --rx-violet-11: #baa7ff; --rx-pink-9: #d6409f; --rx-pink-11: #ff8dcc;
+  color-scheme: dark;
+}
+/* the lab's prime colors (primeColor = Radix step 9 on its wheel slot, primeTextColor = step 11) */
+:root {
+  --prime-3: var(--rx-red-9); --prime-3-text: var(--rx-red-11);
+  --prime-5: color-mix(in oklch, var(--rx-green-9) 67%, var(--rx-cyan-9));
+  --prime-5-text: color-mix(in oklch, var(--rx-green-11) 67%, var(--rx-cyan-11));
+  --prime-7: color-mix(in oklch, var(--rx-violet-9) 33%, var(--rx-pink-9));
+  --prime-7-text: color-mix(in oklch, var(--rx-violet-11) 33%, var(--rx-pink-11));
+  --prime-11: var(--rx-yellow-9); --prime-11-text: var(--rx-yellow-11);
+  --prime-13: color-mix(in oklch, var(--rx-blue-9) 67%, var(--rx-violet-9));
+  --prime-13-text: color-mix(in oklch, var(--rx-blue-11) 67%, var(--rx-violet-11));
+  --prime-17: color-mix(in oklch, var(--rx-red-9) 33%, var(--rx-orange-9));
+  --prime-17-text: color-mix(in oklch, var(--rx-red-11) 33%, var(--rx-orange-11));
+  --prime-19: var(--rx-cyan-9); --prime-19-text: var(--rx-cyan-11);
+  --prime-23: color-mix(in oklch, var(--rx-pink-9) 67%, var(--rx-red-9));
+  --prime-23-text: color-mix(in oklch, var(--rx-pink-11) 67%, var(--rx-red-11));
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--surface); color: var(--text); font-family: var(--font-text); font-size: var(--fs-body);
+  line-height: 1.3; margin: 0; overflow: hidden;
+}
+.app {
+  display: grid; gap: 0.25rem; height: 100%;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+  padding-block: 0.25rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.panel {
+  background: var(--panel); border-radius: var(--radius); min-height: 0; min-width: 0;
+  display: flex; flex-direction: column; gap: 0.375rem; padding: 0.5rem;
+}
+.bar { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.bar h1 { font-family: var(--font-head); font-size: 1.125rem; font-weight: 600; margin: 0 0.25rem 0 0; white-space: nowrap; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.head h2 { font-size: var(--fs-small); font-weight: 600; margin: 0; }
+.head .note { color: var(--text-muted); font-size: var(--fs-tiny); text-align: right; }
+.group { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; }
+.name { color: var(--text-muted); font-size: var(--fs-small); margin-right: 0.125rem; }
+.chip {
+  align-items: center; background: var(--panel-slot); border: 1px solid var(--control-border); border-radius: var(--radius);
+  color: var(--text-muted); cursor: pointer; display: inline-flex; font: inherit; font-size: var(--fs-small);
+  gap: 0.25rem; justify-content: center; min-width: 2.25rem; padding: 0.1875rem 0;
+  font-variant-numeric: tabular-nums;
+}
+/* the lab's switchChip (lab.module.css): accent fill and contrast text while on */
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--white); }
+.chip[aria-pressed="false"]:hover { background: var(--chrome); }
+.chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dot { border-radius: 50%; display: inline-block; height: 0.5rem; width: 0.5rem; }
+select {
+  background: var(--panel-slot); border: 1px solid var(--control-border); border-radius: var(--radius);
+  color: var(--text); font: inherit; font-size: var(--fs-small); height: 1.625rem; padding: 0 0.25rem;
+}
+.sw.ramp { width: 4rem; }
+input[type="number"] {
+  background: var(--panel-slot); border: 1px solid var(--control-border); border-radius: var(--radius);
+  color: var(--text); font: inherit; font-size: var(--fs-small); height: 1.625rem; padding: 0 0.375rem; width: 4.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.check { align-items: center; color: var(--text-muted); cursor: pointer; display: inline-flex; font-size: var(--fs-small); gap: 0.375rem; }
+.check input { accent-color: var(--accent); margin: 0; }
+.check:has(input:checked) { color: var(--text); }
+.readout { color: var(--text-muted); font-size: var(--fs-small); margin-left: auto; min-width: 21rem; text-align: right; font-variant-numeric: tabular-nums; }
+.readout b { color: var(--text); font-weight: 600; }
+.screen { background: var(--panel-well); border-radius: var(--radius); flex: 1; min-height: 0; position: relative; }
+.screen canvas { display: block; height: 100%; inset: 0; position: absolute; width: 100%; }
+.status { color: var(--text-muted); inset: 0; position: absolute; display: grid; place-items: center; font-size: var(--fs-small); }
+
+/* heat map: fixed rows and columns, cells change fill only */
+.heat {
+  display: grid; flex: 1; gap: 2px; min-height: 0;
+  grid-template-columns: 2.25rem repeat(var(--cols), minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  font-size: var(--fs-tiny); font-variant-numeric: tabular-nums;
+}
+.heat .hd { align-items: end; color: var(--text-muted); display: flex; justify-content: center; padding-bottom: 2px; white-space: nowrap; }
+.heat .rh { align-items: center; color: var(--text-muted); display: flex; justify-content: flex-end; padding-right: 0.375rem; }
+.cell {
+  align-items: center; border-radius: 2px; color: var(--rx-blue-12); display: flex; justify-content: center;
+  min-width: 0; overflow: hidden; white-space: nowrap;
+}
+.cell.zero { background: var(--panel-slot); color: var(--text-subtle); }
+.cell.none { background: repeating-linear-gradient(135deg, transparent 0 4px, var(--grid) 4px 5px); color: transparent; }
+.cell.part { box-shadow: inset 0 0 0 1px var(--text-subtle); }
+.cell.out { opacity: 0.28; }
+.cell.s4 { background: var(--rx-blue-4); } .cell.s5 { background: var(--rx-blue-5); } .cell.s6 { background: var(--rx-blue-6); }
+.cell.s7 { background: var(--rx-blue-7); } .cell.s8 { background: var(--rx-blue-8); }
+.legend { align-items: center; color: var(--text-muted); display: flex; flex-wrap: wrap; font-size: var(--fs-tiny); gap: 0.25rem 0.75rem; }
+.legend span { align-items: center; display: inline-flex; gap: 0.25rem; }
+.sw { border-radius: 2px; display: inline-block; height: 0.625rem; width: 0.875rem; }
+
+.side { display: grid; gap: 0.25rem; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; min-width: 0; }
+.detail { overflow: hidden; }
+.detail .body { display: grid; gap: 0.75rem; min-height: 0; overflow-y: auto; align-content: start; }
+.fam { display: grid; gap: 0.25rem; }
+.chip.more { justify-self: start; padding: 0.1875rem 0.5rem; }
+.chip.more:hover { background: var(--chrome); }
+.kv { display: flex; flex-wrap: wrap; gap: 0.125rem 0.875rem; font-size: var(--fs-small); }
+.kv span { color: var(--text-muted); }
+.kv b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.member { background: var(--panel-slot); border-radius: var(--radius); display: grid; gap: 0.125rem; padding: 0.375rem 0.5rem; }
+.member .label { color: var(--text-muted); font-size: var(--fs-tiny); }
+.member .ratios { font-family: var(--font-mono); font-size: var(--fs-small); word-spacing: 0.25em; }
+.empty { color: var(--text-muted); font-size: var(--fs-small); }
+.l3 .heat { flex: none; grid-auto-rows: 1.05rem; }
+
+.tip {
+  background: var(--panel-raised); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18); color: var(--text); font-size: var(--fs-small); left: 0; max-width: 18rem;
+  padding: 0.375rem 0.5rem; pointer-events: none; position: fixed; top: 0; z-index: 20; font-variant-numeric: tabular-nums;
+}
+.tip .t-v { font-weight: 600; }
+.tip .t-n { color: var(--text-muted); }
+.tip .row { align-items: center; display: flex; gap: 0.375rem; }
+.tip .key { display: inline-block; height: 2px; width: 0.75rem; }
+
+@media (max-width: 760px) {
+  body { overflow: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 22rem 20rem 22rem 22rem; height: auto; }
+  .side { grid-row: auto; }
+  .readout { margin-left: 0; min-width: 0; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app" id="app">
+  <section class="panel bar" aria-label="Filters">
+    <h1>Z-Pair Explorer</h1>
+    <div class="group" id="limits"><span class="name">Highest prime</span></div>
+    <div class="group" id="notes"><span class="name">Notes</span></div>
+    <div class="group">
+      <span class="name">q</span>
+      <input type="number" id="qmin" min="1" max="177147" value="1" aria-label="Smallest q">
+      <span class="name">to</span>
+      <input type="number" id="qmax" min="1" max="177147" value="177147" aria-label="Largest q">
+    </div>
+    <label class="check"><input type="checkbox" id="ladder"> Ladder results (at least)</label>
+    <div class="readout" id="readout">Loading families…</div>
+  </section>
+
+  <section class="panel" aria-label="Smallest gap by q">
+    <div class="head">
+      <h2 id="scatterTitle">Smallest gap (c) by q</h2>
+      <div class="group">
+        <label class="name" for="axX">X</label><select id="axX"></select>
+        <label class="name" for="axY">Y</label><select id="axY"></select>
+        <label class="name" for="axC">Color</label><select id="axC"></select>
+      </div>
+    </div>
+    <div class="screen" id="scatterBox"><canvas id="scatter"></canvas><div class="status" id="scatterStatus">Loading…</div></div>
+    <div class="legend" id="scatterLegend"></div>
+  </section>
+
+  <section class="panel" aria-label="Note counts by q">
+    <div class="head"><h2>Note counts by q</h2><span class="note">families per cell; columns end at each q</span></div>
+    <div class="heat" id="heat"></div>
+    <div class="legend">
+      <span><i class="sw" style="background: var(--panel-slot)"></i>searched, none</span>
+      <span><i class="sw" style="background: repeating-linear-gradient(135deg, transparent 0 3px, var(--grid) 3px 4px)"></i>not searched</span>
+      <span><i class="sw" style="box-shadow: inset 0 0 0 1px var(--text-subtle)"></i>searched for some selected primes only</span>
+      <span>≥ ladder count (at least)</span>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Families by q">
+    <div class="head"><h2>Families by q</h2><span class="note">cumulative, every family using primes up to the limit · solid proven, dashed at least</span></div>
+    <div class="screen" id="linesBox"><canvas id="lines"></canvas></div>
+  </section>
+
+  <div class="side">
+    <section class="panel detail" aria-label="Selected family">
+      <div class="head"><h2>Selected family</h2><span class="note" id="detailNote"></span></div>
+      <div class="body" id="detail"><p class="empty">Click a point in Smallest gap by q to list every family there with its ratios.</p></div>
+    </section>
+    <section class="panel l3" aria-label="3-limit">
+      <div class="head"><h2>3-limit, chain of fifths</h2><span class="note">proven to q = 3<sup>20</sup> · 1,106 families · none below 3<sup>11</sup></span></div>
+      <div class="heat" id="heat3"></div>
+    </section>
+  </div>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+'use strict';
+const PRIMES = [5, 7, 11, 13, 17, 19, 23];
+const NOTES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+// heat-map columns end at the q values where some search stops, so each cell is either searched or not
+const QBINS = [45, 75, 99, 135, 243, 315, 405, 729, 1215, 2187, 3645, 6561, 10935, 19683, 32805, 59049, 98415, 177147];
+const XTICKS = [27, 45, 75, 135, 243, 405, 729, 1215, 2187, 3645, 6561, 10935, 19683, 32805, 59049, 98415, 177147];
+const fmtK = (v) => v >= 10000 ? Math.round(v / 1000) + 'k' : v >= 1000 ? (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(v);
+/* keep only ticks at least 34 px apart on a log axis */
+function spacedTicks(list, f) {
+  const out = []; let last = -1e9;
+  for (const t of list) { const px = f(t); if (Math.abs(px - last) >= 34) { out.push(t); last = px; } }
+  return out;
+}
+const fmt = (n) => n.toLocaleString('en-US');
+const $ = (id) => document.getElementById(id);
+
+const state = { limits: new Set(PRIMES), notes: new Set(NOTES), qmin: 1, qmax: 177147, ladder: false, sel: [] }; // sel: every family at the clicked point
+let D = null; // { n, proven, p, k, lb, q, gmin, gmax, members[], coverage, ladderCoverage, limit3, gmaxAll, qminAll }
+
+async function gunzip(b64) {
+  const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const stream = new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function load() {
+  const res = await fetch('zdata.json');
+  if (!res.ok) throw new Error('zdata.json: ' + res.status);
+  const j = await res.json();
+  const raw = await gunzip(j.cols);
+  // columns (explorer_pack.py): q as uint32, then p, k, lb, gmin*10, gmax*10 as uint16
+  const n = j.n;
+  const q = new Uint32Array(raw.buffer, raw.byteOffset, n);
+  const u = new Uint16Array(raw.buffer, raw.byteOffset + 4 * n, 5 * n);
+  const col = (i) => u.subarray(i * n, (i + 1) * n);
+  const mem = new TextDecoder().decode(await gunzip(j.members)).split('\n');
+  D = { n, proven: j.proven, p: col(0), k: col(1), lb: col(2), q, gmin: col(3), gmax: col(4), members: mem,
+        coverage: j.coverage, ladderCoverage: j.ladderCoverage, limit3: j.limit3, ladderChunks: j.ladderChunks || [] };
+  // fixed axis ranges over all families (not the filters), so axes stay put while filtering
+  let g0 = 0, g1 = 0, sp = 0, q0 = 1e9, q1 = 0;
+  for (let i = 0; i < n; i++) {
+    if (D.gmin[i] > g0) g0 = D.gmin[i];
+    if (D.gmax[i] > g1) g1 = D.gmax[i];
+    if (D.gmax[i] - D.gmin[i] > sp) sp = D.gmax[i] - D.gmin[i];
+    if (D.q[i] < q0) q0 = D.q[i];
+    if (D.q[i] > q1) q1 = D.q[i];
+  }
+  D.max = { gmin: g0 / 10, gmax: g1 / 10, spread: sp / 10, q: q1 };
+  D.qminAll = q0;
+  state.qmax = q1;
+  for (const id of ['qmin', 'qmax']) $(id).max = String(q1);
+  $('qmax').value = String(q1);
+}
+
+/* ---------------------------------------------------------------- coverage */
+const noteRange = (s) => { const [a, b] = s.split('-').map(Number); return [a, b ?? a]; };
+function provenTo(p, k) {
+  let best = 0;
+  for (const c of D.coverage) { const [a, b] = noteRange(c.notes); if (c.limit >= p && k >= a && k <= b) best = Math.max(best, c.q); }
+  return best;
+}
+function ladderTo(p, k) {
+  let best = 0;
+  for (const c of D.ladderCoverage) { const [a, b] = noteRange(c.notes); if (c.limit >= p && k >= a && k <= b) best = Math.max(best, c.q); }
+  return best;
+}
+/* the q up to which every selected note count is searched, for limit p */
+function reachFor(p, notes, ladder) {
+  let lo = Infinity;
+  for (const k of notes) lo = Math.min(lo, ladder ? Math.max(provenTo(p, k), ladderTo(p, k)) : provenTo(p, k));
+  return lo === Infinity ? 0 : lo;
+}
+
+/* ---------------------------------------------------------------- colors from CSS */
+const colorCache = {};
+function cssColor(name) {
+  const probe = $('app');
+  const v = getComputedStyle(probe).getPropertyValue(name).trim();
+  const el = document.createElement('span');
+  el.style.color = v; el.hidden = true; document.body.appendChild(el);
+  const c = getComputedStyle(el).color; el.remove();
+  return c;
+}
+function refreshColors() {
+  for (const p of PRIMES) { colorCache[p] = cssColor('--prime-' + p); colorCache[p + 't'] = cssColor('--prime-' + p + '-text'); }
+  for (const r of ['--text', '--text-muted', '--text-subtle', '--grid', '--panel-well', '--border']) colorCache[r] = cssColor(r);
+  for (let g = 0; g < 8; g++) {
+    const pct = Math.round(((g + 0.5) / 8) * 100);
+    colorCache['ramp' + g] = cssExpr(`color-mix(in oklch, var(--rx-blue-11) ${pct}%, var(--rx-blue-6))`);
+  }
+}
+function cssExpr(expr) {
+  const el = document.createElement('span');
+  el.style.color = expr; el.hidden = true; $('app').appendChild(el);
+  const c = getComputedStyle(el).color; el.remove();
+  return c;
+}
+
+/* ---------------------------------------------------------------- filters */
+function visible(i) {
+  return state.limits.has(D.p[i]) && state.notes.has(D.k[i]) && D.q[i] >= state.qmin && D.q[i] <= state.qmax
+    && (state.ladder || D.lb[i] === 0);
+}
+
+function buildControls() {
+  const lim = $('limits');
+  for (const p of PRIMES) {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button'; b.id = 'lim-' + p; b.setAttribute('aria-pressed', 'true');
+    b.textContent = String(p);
+    b.title = `Families whose highest prime is ${p}`;
+    b.addEventListener('click', () => toggle(state.limits, p, b));
+    lim.appendChild(b);
+  }
+  const nt = $('notes');
+  for (const k of NOTES) {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button'; b.id = 'k-' + k; b.setAttribute('aria-pressed', 'true');
+    b.textContent = String(k);
+    b.addEventListener('click', () => toggle(state.notes, k, b));
+    nt.appendChild(b);
+  }
+  const onQ = () => {
+    const top = D ? D.max.q : 177147;
+    let a = Math.max(1, Math.min(top, Math.round(+$('qmin').value || 1)));
+    let z = Math.max(1, Math.min(top, Math.round(+$('qmax').value || top)));
+    if (a > z) [a, z] = [z, a];
+    state.qmin = a; state.qmax = z; render();
+  };
+  $('qmin').addEventListener('change', onQ); $('qmax').addEventListener('change', onQ);
+  $('ladder').addEventListener('change', (e) => { state.ladder = e.target.checked; render(); });
+  // scatter axes and color: any field a family has
+  const AXIS_KEYS = ['q', 'gmin', 'gmax', 'spread', 'k', 'p'];
+  const fill = (id, keys, labelOf, value) => {
+    const s = $(id);
+    for (const key of keys) { const o = document.createElement('option'); o.value = key; o.textContent = labelOf(key); s.appendChild(o); }
+    s.value = value;
+  };
+  const axisLabel = (key) => FIELDS[key].label;
+  fill('axX', AXIS_KEYS, axisLabel, axes.x);
+  fill('axY', AXIS_KEYS, axisLabel, axes.y);
+  fill('axC', ['p', ...AXIS_KEYS.filter((key) => key !== 'p'), 'none'],
+    (key) => key === 'p' ? 'Highest prime (prime colors)' : key === 'none' ? 'One color' : FIELDS[key].label + ' (intensity)', axes.c);
+  for (const [id, key] of [['axX', 'x'], ['axY', 'y'], ['axC', 'c']]) {
+    $(id).addEventListener('change', (e) => { axes[key] = e.target.value; if (D) drawScatter(); });
+  }
+}
+function toggle(set, v, btn) {
+  if (set.has(v)) { if (set.size === 1) return; set.delete(v); } else set.add(v);
+  btn.setAttribute('aria-pressed', String(set.has(v)));
+  render();
+}
+
+/* ---------------------------------------------------------------- canvas helpers */
+function setupCanvas(cv) {
+  const box = cv.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(10, Math.floor(box.width)), h = Math.max(10, Math.floor(box.height));
+  if (cv.width !== w * dpr || cv.height !== h * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+const M = { l: 44, r: 14, t: 18, b: 24 };
+function xScaleFor(w) {
+  const lo = Math.max(state.qmin, Math.floor(D.qminAll * 0.85)), hi = Math.max(lo + 1, state.qmax);
+  const a = Math.log(lo), b = Math.log(hi);
+  const f = (q) => M.l + (Math.log(q) - a) / (b - a) * (w - M.l - M.r);
+  f.lo = lo; f.hi = hi;
+  return f;
+}
+function drawXAxis(ctx, x, w, h) {
+  ctx.font = '11px Figtree, system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of spacedTicks(XTICKS.filter((v) => v >= x.lo && v <= x.hi), x)) {
+    const px = x(t);
+    ctx.strokeStyle = colorCache['--grid']; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px + 0.5, M.t); ctx.lineTo(px + 0.5, h - M.b); ctx.stroke();
+    ctx.fillStyle = colorCache['--text-muted'];
+    ctx.fillText(fmtK(t), px, h - M.b + 5);
+  }
+}
+function hatch(ctx, x0, x1, y0, y1) {
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip();
+  ctx.strokeStyle = colorCache['--grid']; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let s = x0 - (y1 - y0); s < x1; s += 6) { ctx.moveTo(s, y1); ctx.lineTo(s + (y1 - y0), y0); }
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------------------------------------------------------------- scatter: configurable x, y and color */
+const FIELDS = {
+  q: { label: 'q', get: (i) => D.q[i], kind: 'log' },
+  gmin: { label: 'Smallest gap (c)', get: (i) => D.gmin[i] / 10, kind: 'lin' },
+  gmax: { label: 'Largest gap (c)', get: (i) => D.gmax[i] / 10, kind: 'lin' },
+  spread: { label: 'Gap spread (c)', get: (i) => (D.gmax[i] - D.gmin[i]) / 10, kind: 'lin' },
+  k: { label: 'Notes', get: (i) => D.k[i], kind: 'band', values: NOTES },
+  p: { label: 'Highest prime', get: (i) => D.p[i], kind: 'band', values: PRIMES },
+};
+const axes = { x: 'q', y: 'gmin', c: 'p' };
+const RAMP = 8; // intensity steps: Radix blue step 6 (faint) to step 11 (strong), in both schemes
+function niceMax(v) {
+  for (const s of [5, 10, 20, 25, 50, 100, 200, 250, 500]) if (v / s <= 7) return { step: s, max: Math.max(s, Math.ceil(v / s) * s) };
+  return { step: 1000, max: Math.ceil(v / 1000) * 1000 };
+}
+/* one axis from a0 (value low) to a1 (value high), in canvas pixels */
+function axisFor(key, a0, a1) {
+  const F = FIELDS[key];
+  if (F.kind === 'log') {
+    const lo = Math.max(state.qmin, Math.floor(D.qminAll * 0.85)), hi = Math.max(lo + 1, state.qmax);
+    const la = Math.log(lo), lb = Math.log(hi);
+    const f = (v) => a0 + (Math.log(v) - la) / (lb - la) * (a1 - a0);
+    return { kind: 'log', lo, hi, f,
+      ticks: spacedTicks(XTICKS.filter((t) => t >= lo && t <= hi), f).map((t) => ({ v: t, label: fmtK(t) })) };
+  }
+  if (F.kind === 'band') {
+    const n = F.values.length, bw = (a1 - a0) / n;
+    return { kind: 'band', bw: Math.abs(bw), f: (v) => a0 + (F.values.indexOf(v) + 0.5) * bw,
+      ticks: F.values.map((v) => ({ v, label: String(v) })) };
+  }
+  const { step, max } = niceMax(D.max[key]);
+  const ticks = [];
+  for (let v = 0; v <= max; v += step) ticks.push({ v, label: v + ' c' });
+  return { kind: 'lin', lo: 0, hi: max, f: (v) => a0 + (v / max) * (a1 - a0), ticks };
+}
+/* fixed sideways offset inside a band, so families with the same note count or prime do not all stack */
+const jit = (i, salt) => ((Math.imul(i + 1, salt) >>> 0) / 4294967296 - 0.5) * 0.76;
+function colorGroup(i) {
+  if (axes.c === 'p') return PRIMES.indexOf(D.p[i]);
+  if (axes.c === 'none') return 0;
+  const F = FIELDS[axes.c], v = F.get(i);
+  let t;
+  if (F.kind === 'log') t = (Math.log(v) - Math.log(D.qminAll)) / (Math.log(D.max.q) - Math.log(D.qminAll));
+  else if (F.kind === 'band') t = F.values.indexOf(v) / (F.values.length - 1);
+  else t = v / D.max[axes.c];
+  return Math.max(0, Math.min(RAMP - 1, Math.floor(t * RAMP)));
+}
+function groupColor(g) {
+  if (axes.c === 'p') return colorCache[PRIMES[g]];
+  if (axes.c === 'none') return colorCache['--text-muted'];
+  return colorCache['ramp' + g];
+}
+let hit = null; // { w, h, idx: Int32Array (row + 1), cnt: Uint16Array, posOf }
+function drawScatter() {
+  const cv = $('scatter');
+  const { ctx, w, h } = setupCanvas(cv);
+  const X = axisFor(axes.x, M.l, w - M.r), Y = axisFor(axes.y, h - M.b, M.t);
+  const XF = FIELDS[axes.x], YF = FIELDS[axes.y];
+  const posOf = (i) => {
+    let px = X.f(XF.get(i)), py = Y.f(YF.get(i));
+    if (X.kind === 'band') px += jit(i, 2654435761) * X.bw;
+    if (Y.kind === 'band') py += jit(i, 40503) * Y.bw;
+    return [Math.round(px), Math.round(py)];
+  };
+  // grid and ticks (bands get no grid line: their label sits on the band's middle)
+  ctx.font = '11px Figtree, system-ui, sans-serif'; ctx.lineWidth = 1;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of Y.ticks) {
+    const py = Math.round(Y.f(t.v)) + 0.5;
+    if (Y.kind !== 'band') { ctx.strokeStyle = colorCache['--grid']; ctx.beginPath(); ctx.moveTo(M.l, py); ctx.lineTo(w - M.r, py); ctx.stroke(); }
+    ctx.fillStyle = colorCache['--text-muted']; ctx.fillText(t.label, M.l - 6, py);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of X.ticks) {
+    const px = Math.round(X.f(t.v)) + 0.5;
+    if (X.kind !== 'band') { ctx.strokeStyle = colorCache['--grid']; ctx.beginPath(); ctx.moveTo(px, M.t); ctx.lineTo(px, h - M.b); ctx.stroke(); }
+    ctx.fillStyle = colorCache['--text-muted']; ctx.fillText(t.label, px, h - M.b + 5);
+  }
+  // coverage (only meaningful with q across): past the furthest search among the selected primes is not searched
+  if (axes.x === 'q') {
+    const lims = [...state.limits];
+    // furthest q any selected size is searched for any selected prime (6-9-note proofs reach far past 10-16)
+    const furthest = (p) => Math.max(...[...state.notes].map((k) => Math.max(provenTo(p, k), state.ladder ? ladderTo(p, k) : 0)));
+    const reach = Math.max(...lims.map(furthest));
+    if (reach < X.hi) {
+      const x0 = Math.max(M.l, X.f(Math.max(reach, X.lo)));
+      hatch(ctx, x0, w - M.r, M.t, h - M.b);
+      ctx.fillStyle = colorCache['--text-muted']; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      if (w - M.r - x0 > 70) ctx.fillText('not searched', x0 + 6, M.t + 4);
+    }
+    const ends = new Map();
+    for (const p of lims) { const e = reachFor(p, state.notes, false); if (e >= X.lo && e < X.hi) (ends.get(e) ?? ends.set(e, []).get(e)).push(p); }
+    ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+    let labelRow = 0;
+    for (const [e, ps] of [...ends].sort((a, b) => a[0] - b[0])) {
+      const px = Math.round(X.f(e)) + 0.5;
+      ctx.strokeStyle = colorCache['--text-subtle'];
+      ctx.beginPath(); ctx.moveTo(px, M.t); ctx.lineTo(px, h - M.b); ctx.stroke();
+      ctx.fillStyle = colorCache['--text-muted']; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      ctx.fillText(`${ps.join(', ')}: all sizes proven to ${fmt(e)}`, px - 4, M.t + 4 + 13 * (labelRow++ % 3));
+    }
+    ctx.setLineDash([]);
+  }
+  // points: one mark per pixel and color group; proven filled first, ladder-only hollow on top;
+  // within each, the low groups first (low primes, faint intensity) so the rarer and stronger ones sit on top
+  const W = Math.ceil(w), H = Math.ceil(h);
+  const idx = new Int32Array(W * H), cnt = new Uint16Array(W * H);
+  const nG = axes.c === 'p' ? PRIMES.length : axes.c === 'none' ? 1 : RAMP;
+  const groups = [0, 1].map(() => Array.from({ length: nG }, () => []));
+  for (let i = 0; i < D.n; i++) if (visible(i)) groups[D.lb[i]][colorGroup(i)].push(i);
+  for (const lbPass of [0, 1]) {
+    for (let g = 0; g < nG; g++) {
+      const rows = groups[lbPass][g];
+      if (!rows.length) continue;
+      const occ = new Uint8Array(W * H);
+      ctx.fillStyle = groupColor(g); ctx.strokeStyle = groupColor(g); ctx.lineWidth = 1;
+      if (lbPass) ctx.beginPath();
+      for (const i of rows) {
+        const [px, py] = posOf(i);
+        if (px < 0 || py < 0 || px >= W || py >= H) continue;
+        const o = py * W + px;
+        if (cnt[o] < 65535) cnt[o]++;
+        idx[o] = i + 1;
+        if (occ[o]) continue;
+        occ[o] = 1;
+        if (lbPass) ctx.rect(px - 1.5, py - 1.5, 3, 3); else ctx.fillRect(px - 1, py - 1, 2.5, 2.5);
+      }
+      if (lbPass) ctx.stroke();
+    }
+  }
+  hit = { w: W, h: H, idx, cnt, posOf };
+  // selection: a --text outline (THEMING.md selection rule)
+  const selRow = state.sel.find((i) => visible(i));
+  if (selRow !== undefined) {
+    const [px, py] = posOf(selRow);
+    ctx.strokeStyle = colorCache['--text']; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.stroke();
+  }
+  $('scatterStatus').hidden = true;
+  $('scatterTitle').textContent = `${YF.label} by ${XF.label}`;
+  drawScatterLegend();
+}
+function drawScatterLegend() {
+  const lg = $('scatterLegend'); lg.textContent = '';
+  if (axes.c === 'p') {
+    for (const p of PRIMES) {
+      const s = document.createElement('span');
+      const dot = document.createElement('i'); dot.className = 'dot'; dot.style.background = `var(--prime-${p})`;
+      if (!state.limits.has(p)) s.style.opacity = '0.4';
+      s.append(dot, document.createTextNode(`${p}-limit`));
+      lg.appendChild(s);
+    }
+  } else if (axes.c !== 'none') {
+    const F = FIELDS[axes.c];
+    const lo = F.kind === 'log' ? fmt(D.qminAll) : F.kind === 'band' ? String(F.values[0]) : '0 c';
+    const hi = F.kind === 'log' ? fmt(D.max.q) : F.kind === 'band' ? String(F.values[F.values.length - 1]) : fmt(Math.round(D.max[axes.c])) + ' c';
+    const s = document.createElement('span');
+    const bar = document.createElement('i'); bar.className = 'sw ramp';
+    bar.style.background = `linear-gradient(to right, ${Array.from({ length: RAMP }, (_, g) => colorCache['ramp' + g]).join(', ')})`;
+    s.append(document.createTextNode(`${F.label}: ${lo}`), bar, document.createTextNode(hi));
+    lg.appendChild(s);
+  }
+  const s = document.createElement('span');
+  const sq = document.createElement('i'); sq.className = 'sw'; sq.style.cssText = 'width:0.5rem;height:0.5rem;border:1px solid var(--text-muted);border-radius:0';
+  s.append(sq, document.createTextNode('hollow: ladder only (at least)'));
+  if (!state.ladder) s.style.opacity = '0.4';
+  lg.appendChild(s);
+  const note = document.createElement('span');
+  note.textContent = 'gap = step between neighboring notes in either set, octave included · click a point to list its families';
+  lg.appendChild(note);
+}
+function nearestHit(mx, my) {
+  if (!hit) return -1;
+  let best = -1, bd = 1e9;
+  const r = 7;
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const X = Math.round(mx) + dx, Y = Math.round(my) + dy;
+    if (X < 0 || Y < 0 || X >= hit.w || Y >= hit.h) continue;
+    const o = Y * hit.w + X;
+    if (hit.idx[o] && dx * dx + dy * dy < bd) { bd = dx * dx + dy * dy; best = o; }
+  }
+  return best;
+}
+
+/* ---------------------------------------------------------------- heat map: note counts by q */
+function binOf(q) { for (let b = 0; b < QBINS.length; b++) if (q <= QBINS[b]) return b; return QBINS.length - 1; }
+function stepFor(n) { return n < 10 ? 4 : n < 100 ? 5 : n < 1000 ? 6 : n < 10000 ? 7 : 8; }
+function drawHeat() {
+  const counts = NOTES.map(() => QBINS.map(() => 0));
+  for (let i = 0; i < D.n; i++) {
+    if (!state.limits.has(D.p[i]) || !state.notes.has(D.k[i]) || D.q[i] < state.qmin || D.q[i] > state.qmax) continue;
+    if (D.lb[i] && !state.ladder) continue;
+    counts[NOTES.indexOf(D.k[i])][binOf(D.q[i])]++;
+  }
+  const el = $('heat');
+  el.style.setProperty('--cols', QBINS.length);
+  el.textContent = '';
+  const corner = document.createElement('div'); corner.className = 'hd'; corner.textContent = 'q ≤'; el.appendChild(corner);
+  for (const b of QBINS) { const d = document.createElement('div'); d.className = 'hd'; d.textContent = fmtK(b); el.appendChild(d); }
+  NOTES.forEach((k, r) => {
+    const rh = document.createElement('div'); rh.className = 'rh'; rh.textContent = k;
+    if (!state.notes.has(k)) rh.style.opacity = '0.4';
+    el.appendChild(rh);
+    QBINS.forEach((hi, b) => {
+      const lo = b ? QBINS[b - 1] + 1 : 1;
+      const c = document.createElement('div');
+      const n = counts[r][b];
+      let proven = 0, ladder = 0, none = 0;
+      for (const p of state.limits) {
+        if (provenTo(p, k) >= hi) proven++;
+        else if (state.ladder && ladderTo(p, k) >= hi) ladder++;
+        else none++;
+      }
+      const searched = proven + ladder;
+      const out = !state.notes.has(k) || hi < state.qmin || lo > state.qmax;
+      let cls = 'cell';
+      let text = '';
+      if (!searched) cls += ' none';
+      else {
+        const atLeast = ladder > 0 || none > 0;
+        text = (atLeast ? '≥' : '') + (n >= 1000 ? fmtK(n) : fmt(n));
+        cls += n ? ' s' + stepFor(n) : ' zero';
+        if (none) cls += ' part';
+      }
+      if (out) cls += ' out';
+      c.className = cls; c.textContent = text;
+      const status = !searched ? 'not searched' : none ? 'searched for some selected primes only (at least)'
+        : ladder ? 'at least (ladder)' : 'proven complete';
+      c.dataset.tip = `${k} notes, q ${fmt(lo)}–${fmt(hi)}|${searched ? fmt(n) + ' families' : '—'}|${status}`;
+      el.appendChild(c);
+    });
+  });
+}
+
+/* ---------------------------------------------------------------- lines: families by q */
+let linesHit = null;
+function drawLines() {
+  const cv = $('lines');
+  const { ctx, w, h } = setupCanvas(cv);
+  const x = xScaleFor(w);
+  // histogram of q per highest prime, notes filter applied (limits filter picks the curves)
+  const hist = {};
+  for (const p of PRIMES) hist[p] = new Uint32Array(D.max.q + 1);
+  for (let i = 0; i < D.n; i++) {
+    if (!state.notes.has(D.k[i]) || (D.lb[i] && !state.ladder)) continue;
+    hist[D.p[i]][D.q[i]]++;
+  }
+  const curves = [];
+  let ymaxv = 1;
+  for (const L of PRIMES) {
+    if (!state.limits.has(L)) continue;
+    const proven = reachFor(L, state.notes, false), reach = reachFor(L, state.notes, state.ladder);
+    if (!reach) continue;
+    const end = Math.min(reach, x.hi);
+    const cum = new Uint32Array(end + 1);
+    let run = 0;
+    for (let q = 1; q <= end; q++) { for (const p of PRIMES) if (p <= L) run += hist[p][q]; cum[q] = run; }
+    ymaxv = Math.max(ymaxv, run);
+    curves.push({ L, proven, end, cum });
+  }
+  const ymaxLog = Math.ceil(Math.log10(Math.max(10, ymaxv)));
+  const y = (v) => h - M.b - (Math.log10(Math.max(1, v)) / ymaxLog) * (h - M.t - M.b);
+  ctx.font = '11px Figtree, system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let e = 0; e <= ymaxLog; e++) {
+    const py = Math.round(y(10 ** e)) + 0.5;
+    ctx.strokeStyle = colorCache['--grid']; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(M.l, py); ctx.lineTo(w - M.r, py); ctx.stroke();
+    ctx.fillStyle = colorCache['--text-muted']; ctx.fillText(e >= 3 ? fmt(10 ** e / 1000) + 'k' : fmt(10 ** e), M.l - 6, py);
+  }
+  drawXAxis(ctx, x, w, h);
+  const labels = [];
+  for (const c of curves) {
+    const start = Math.max(1, x.lo);
+    const seg = (from, to, dash) => {
+      if (to < from) return;
+      ctx.setLineDash(dash); ctx.strokeStyle = colorCache[c.L]; ctx.lineWidth = 2;
+      ctx.beginPath();
+      let prev = c.cum[from];
+      ctx.moveTo(x(from), y(prev));
+      for (let q = from + 1; q <= to; q++) {
+        if (c.cum[q] !== prev) { ctx.lineTo(x(q), y(prev)); prev = c.cum[q]; ctx.lineTo(x(q), y(prev)); }
+      }
+      ctx.lineTo(x(to), y(prev));
+      ctx.stroke();
+    };
+    const pe = Math.min(c.proven, c.end);
+    seg(start, pe, []);
+    if (c.end > pe) seg(Math.max(start, pe), c.end, [5, 4]);
+    ctx.setLineDash([]);
+    const v = c.cum[c.end];
+    labels.push({ L: c.L, x: x(c.end), y: y(v), text: `${c.L}: ${c.end > pe ? '≥' : ''}${fmt(v)}` });
+  }
+  // direct labels at line ends, nudged apart vertically
+  labels.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 12) labels[i].y = labels[i - 1].y + 12;
+  ctx.textBaseline = 'middle';
+  for (const lb of labels) {
+    const right = lb.x > w - 90;
+    ctx.textAlign = right ? 'right' : 'left';
+    ctx.fillStyle = colorCache[lb.L + 't'];
+    ctx.fillText(lb.text, right ? lb.x - 6 : lb.x + 6, right ? lb.y - 8 : lb.y);
+  }
+  linesHit = { x, curves, w, h };
+}
+
+/* ---------------------------------------------------------------- 3-limit */
+function drawLimit3() {
+  const el = $('heat3');
+  const spans = Object.keys(D.limit3).map(Number).sort((a, b) => a - b);
+  const ks = [...new Set(spans.flatMap((s) => Object.keys(D.limit3[s]).map(Number)))].sort((a, b) => a - b);
+  el.style.setProperty('--cols', spans.length);
+  el.textContent = '';
+  const corner = document.createElement('div'); corner.className = 'hd'; corner.textContent = 'q = 3^'; el.appendChild(corner);
+  for (const s of spans) { const d = document.createElement('div'); d.className = 'hd'; d.textContent = s; el.appendChild(d); }
+  for (const k of ks) {
+    const rh = document.createElement('div'); rh.className = 'rh'; rh.textContent = k; el.appendChild(rh);
+    for (const s of spans) {
+      const n = D.limit3[s][k] ?? 0;
+      const c = document.createElement('div');
+      c.className = 'cell ' + (n ? 's' + stepFor(n) : 'zero');
+      c.textContent = n ? n : '';
+      c.dataset.tip = `${k} notes, q = 3^${s} = ${fmt(3 ** s)}|${fmt(n)} new families at this q|proven complete`;
+      el.appendChild(c);
+    }
+  }
+}
+
+/* ---------------------------------------------------------------- detail: every family at the clicked point */
+const chunkCache = new Map();
+function ladderLines(c) {
+  if (!chunkCache.has(c.file)) {
+    chunkCache.set(c.file, fetch(c.file)
+      .then((r) => { if (!r.ok) throw new Error(c.file + ': ' + r.status); return r.json(); })
+      .then(async (j) => new TextDecoder().decode(await gunzip(j.members)).split('\n')));
+  }
+  return chunkCache.get(c.file);
+}
+async function membersOf(i) {
+  if (i < D.proven) return D.members[i];
+  const c = D.ladderChunks.find((ch) => i >= ch.start && i < ch.start + ch.count);
+  if (!c) throw new Error('no ratio file for this row');
+  return (await ladderLines(c))[i - c.start];
+}
+function familyBlock(i) {
+  const box = document.createElement('div'); box.className = 'fam';
+  const kv = document.createElement('div'); kv.className = 'kv';
+  const add = (name, val) => { const s = document.createElement('span'); s.textContent = name + ' '; const b = document.createElement('b'); b.textContent = val; s.appendChild(b); kv.appendChild(s); };
+  add('Notes', D.k[i]); add('q', fmt(D.q[i])); add('Highest prime', D.p[i]);
+  add('Smallest gap', (D.gmin[i] / 10).toFixed(1) + ' c'); add('Largest gap', (D.gmax[i] / 10).toFixed(1) + ' c');
+  add('From', D.lb[i] ? 'ladder (at least)' : 'proven list');
+  box.appendChild(kv);
+  const ratios = [];
+  for (const label of ['Set A', 'Set B (same intervals)']) {
+    const m = document.createElement('div'); m.className = 'member';
+    const l = document.createElement('div'); l.className = 'label'; l.textContent = label;
+    const r = document.createElement('div'); r.className = 'ratios'; r.textContent = 'Loading ratios…';
+    m.append(l, r); box.appendChild(m); ratios.push(r);
+  }
+  membersOf(i).then((line) => { const [a, b] = line.split('|'); ratios[0].textContent = a; ratios[1].textContent = b; })
+    .catch((e) => { ratios[0].textContent = 'Could not load the ratios (' + e.message + ').'; ratios[1].textContent = ''; });
+  return box;
+}
+const PAGE = 50;
+function showDetail(rows) {
+  const el = $('detail'); el.textContent = ''; el.scrollTop = 0;
+  if (!rows.length) {
+    const p = document.createElement('p'); p.className = 'empty';
+    p.textContent = 'Click a point in Smallest gap by q to list every family there with its ratios.';
+    el.appendChild(p); $('detailNote').textContent = ''; return;
+  }
+  const nL = rows.filter((i) => D.lb[i]).length;
+  $('detailNote').textContent = `${fmt(rows.length)} ${rows.length === 1 ? 'family' : 'families'} at this point`
+    + (nL ? ` · ${fmt(nL)} ladder only` : '');
+  let shown = 0;
+  const more = document.createElement('button'); more.type = 'button'; more.className = 'chip more';
+  const addPage = () => {
+    const end = Math.min(rows.length, shown + PAGE);
+    for (; shown < end; shown++) el.insertBefore(familyBlock(rows[shown]), more);
+    more.hidden = shown >= rows.length;
+    more.textContent = `Show ${fmt(Math.min(PAGE, rows.length - shown))} more (${fmt(rows.length - shown)} left)`;
+  };
+  more.addEventListener('click', addPage);
+  el.appendChild(more);
+  addPage();
+}
+
+/* ---------------------------------------------------------------- tooltip */
+const tip = $('tip');
+function showTip(ev, rows) {
+  tip.textContent = '';
+  for (const r of rows) {
+    const d = document.createElement('div'); d.className = 'row';
+    if (r.key) { const k = document.createElement('i'); k.className = 'key'; k.style.background = r.key; d.appendChild(k); }
+    const s = document.createElement('span'); s.className = r.cls || ''; s.textContent = r.text; d.appendChild(s);
+    tip.appendChild(d);
+  }
+  tip.hidden = false;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = ev.clientX + 14, top = ev.clientY + 14;
+  if (left + tw > window.innerWidth - 8) left = ev.clientX - tw - 14;
+  if (top + th > window.innerHeight - 8) top = ev.clientY - th - 14;
+  tip.style.transform = `translate(${left}px, ${top}px)`;
+}
+function hideTip() { tip.hidden = true; }
+
+function wireHover() {
+  const sc = $('scatter');
+  const pos = (ev) => { const r = sc.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; };
+  sc.addEventListener('pointermove', (ev) => {
+    const o = nearestHit(...pos(ev));
+    if (o < 0) { hideTip(); sc.style.cursor = 'default'; return; }
+    sc.style.cursor = 'pointer';
+    const i = hit.idx[o] - 1, n = hit.cnt[o];
+    showTip(ev, [
+      { text: `${D.k[i]} notes · q ${fmt(D.q[i])} · ${D.p[i]}-limit`, cls: 't-v', key: colorCache[D.p[i]] },
+      { text: `gaps ${(D.gmin[i] / 10).toFixed(1)} to ${(D.gmax[i] / 10).toFixed(1)} c` },
+      { text: (D.lb[i] ? 'ladder only (at least)' : 'proven list') + (n > 1 ? ` · ${fmt(n)} families here, click to list them` : ''), cls: 't-n' },
+    ]);
+  });
+  sc.addEventListener('pointerleave', hideTip);
+  sc.addEventListener('click', (ev) => {
+    const o = nearestHit(...pos(ev));
+    const rows = [];
+    if (o >= 0) {
+      // every shown family drawn on that pixel (same rounding as drawScatter)
+      for (let i = 0; i < D.n; i++) {
+        if (!visible(i)) continue;
+        const [px, py] = hit.posOf(i);
+        if (py * hit.w + px === o) rows.push(i);
+      }
+      rows.sort((a, b) => D.lb[a] - D.lb[b] || D.k[a] - D.k[b] || D.q[a] - D.q[b] || D.gmin[a] - D.gmin[b]);
+    }
+    state.sel = rows; showDetail(rows); drawScatter();
+  });
+  const ln = $('lines');
+  ln.addEventListener('pointermove', (ev) => {
+    if (!linesHit) return;
+    const r = ln.getBoundingClientRect(); const mx = ev.clientX - r.left;
+    const { x } = linesHit;
+    if (mx < M.l || mx > linesHit.w - M.r) { hideTip(); return; }
+    const q = Math.round(Math.exp(Math.log(x.lo) + (mx - M.l) / (linesHit.w - M.l - M.r) * (Math.log(x.hi) - Math.log(x.lo))));
+    const rows = [{ text: `q ≤ ${fmt(q)}`, cls: 't-v' }];
+    for (const c of linesHit.curves) {
+      const t = q > c.end ? 'not searched' : (q > Math.min(c.proven, c.end) ? '≥ ' : '') + fmt(c.cum[q]);
+      rows.push({ text: `${t} · ${c.L}-limit`, key: colorCache[c.L] });
+    }
+    showTip(ev, rows);
+  });
+  ln.addEventListener('pointerleave', hideTip);
+  for (const id of ['heat', 'heat3']) {
+    $(id).addEventListener('pointermove', (ev) => {
+      const t = ev.target.closest('.cell');
+      if (!t) { hideTip(); return; }
+      const [a, b, c] = t.dataset.tip.split('|');
+      showTip(ev, [{ text: b, cls: 't-v' }, { text: a }, { text: c, cls: 't-n' }]);
+    });
+    $(id).addEventListener('pointerleave', hideTip);
+  }
+}
+
+/* ---------------------------------------------------------------- render */
+function render() {
+  if (!D) return;
+  let total = 0, lbn = 0;
+  for (let i = 0; i < D.n; i++) if (visible(i)) { total++; if (D.lb[i]) lbn++; }
+  const ro = $('readout'); ro.textContent = '';
+  const b = document.createElement('b'); b.textContent = fmt(total);
+  ro.append(b, document.createTextNode(state.ladder ? ` families shown · ${fmt(total - lbn)} proven, ${fmt(lbn)} ladder only` : ` families shown · all from proven lists`));
+  drawScatter(); drawHeat(); drawLines();
+}
+
+(async () => {
+  buildControls();
+  try {
+    await load();
+  } catch (e) {
+    $('scatterStatus').textContent = 'Could not load the family data (' + e.message + ').';
+    $('readout').textContent = '';
+    return;
+  }
+  refreshColors();
+  drawLimit3();
+  wireHover();
+  render();
+  let pending = 0;
+  new ResizeObserver(() => { cancelAnimationFrame(pending); pending = requestAnimationFrame(() => { drawScatter(); drawLines(); }); })
+    .observe($('scatterBox'));
+  const restyle = () => { refreshColors(); render(); };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', restyle);
+  new MutationObserver(restyle).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>

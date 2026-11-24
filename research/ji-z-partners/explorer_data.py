@@ -11,7 +11,8 @@ lists is kept once), and writes a columnar JSON file:
   lb     0 = in a proven list, 1 = found only by a ladder rung (a lower bound; only with --ladder)
   m      the two members of every family (proven and ladder), each a space-separated list of ratios, in row order
          (only with --members)
-plus "coverage": the proven rectangles (highest prime <= P, q <= Q, note counts) from data/manifest.json, and
+plus "coverage": the proven rectangles (highest prime <= P, q <= Q, note counts) from data/manifest.json and
+data/manifest_2026-11-24.json (the 6-9-note night), and
 "ladderCoverage": the ladder rungs read (with --ladder).
 
 Family identity: each member's lattice points (odd primes 3..19) translated so the lexicographically lowest point
@@ -32,9 +33,13 @@ import json, math, os, re, sys, tarfile
 from fractions import Fraction
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PRIMES = (3, 5, 7, 11, 13, 17, 19)
-LADDER_RUNGS = {"l7q405_on": (7, 405), "l7q729_on": (7, 729), "l11q243_on": (11, 243), "l11q405_on": (11, 405),
-                "l13q243_on": (13, 243), "l17q243_on": (17, 243)}
+PRIMES = (3, 5, 7, 11, 13, 17, 19, 23)
+# ladder rungs read with --ladder: name -> (limit, q, note counts); the k789L rungs are from the 2026-11-24 night
+# (bucket archive_2026-11-24/k6789_ladders.tar.xz), only where they reach past the proofs
+LADDER_RUNGS = {"l7q405_on": (7, 405, "6-16"), "l7q729_on": (7, 729, "6-16"), "l11q243_on": (11, 243, "6-16"),
+                "l11q405_on": (11, 405, "6-16"), "l13q243_on": (13, 243, "6-16"), "l17q243_on": (17, 243, "6-16"),
+                "k789L_l13q405": (13, 405, "7-9"), "k789L_l17q405": (17, 405, "7-9"), "k789L_l19q405": (19, 405, "7-9")}
+MANIFESTS = ("manifest.json", "manifest_2026-11-24.json")
 
 
 def odd(n):
@@ -56,7 +61,7 @@ def monzo(fr):
         v.append(e)
     rest = odd(n) * odd(d)
     if rest != 1:
-        raise ValueError(f"{fr} uses a prime above 19")
+        raise ValueError(f"{fr} uses a prime above 23")
     return tuple(v)
 
 
@@ -91,13 +96,18 @@ def describe(members):
 
 
 def proven_lines(src):
-    """Yield families.jsonl lines from .tar.xz archives or already extracted folders."""
+    """Yield families.jsonl lines from .tar.xz archives or already extracted folders.
+    An archive holding several runs (k6789_proofs.tar.xz) also holds runs that were capped or failed: only run folders
+    with summary.csv (written when an enumeration finishes) are read from such an archive. Single-run archives have no
+    summary.csv and are read whole."""
     for name in sorted(os.listdir(src)):
         path = os.path.join(src, name)
         if name.endswith(".tar.xz"):
             with tarfile.open(path, "r:xz") as t:
+                done = {m.name.split("/")[0] for m in t.getmembers() if m.name.endswith("/summary.csv")}
+            with tarfile.open(path, "r:xz") as t:
                 for m in t:
-                    if m.isfile() and re.search(r"/k\d+/families\.jsonl$", m.name):
+                    if m.isfile() and re.search(r"/k\d+/families\.jsonl$", m.name) and (not done or m.name.split("/")[0] in done):
                         yield from t.extractfile(m)
         elif os.path.isdir(path):
             for kd in sorted(os.listdir(path)):
@@ -117,8 +127,8 @@ def main():
     while "--extra" in args:
         i = args.index("--extra"); extras.append(args[i + 1]); del args[i:i + 2]
     src, out = args
-    manifest = json.load(open(os.path.join(HERE, "data", "manifest.json")))
-    proven = [r for r in manifest["runs"] if r["status"] == "proven"]
+    proven = [r for mf in MANIFESTS for r in json.load(open(os.path.join(HERE, "data", mf)))["runs"]
+              if r["status"] == "proven"]
 
     def ks(r):
         a, _, b = r["note_counts"].partition("-")
@@ -152,7 +162,7 @@ def main():
             for name in sorted(os.listdir(ladder_dir)):
                 if name not in LADDER_RUNGS:
                     continue
-                ladder_cover.append({"limit": LADDER_RUNGS[name][0], "q": LADDER_RUNGS[name][1], "notes": "6-16",
+                ladder_cover.append({"limit": LADDER_RUNGS[name][0], "q": LADDER_RUNGS[name][1], "notes": LADDER_RUNGS[name][2],
                                      "run": name})
                 d = os.path.join(ladder_dir, name)
                 for fn in sorted(os.listdir(d)):

@@ -2,8 +2,8 @@
 """explorer_pack.py: pack explorer_data.py's JSON (built with --members) into the files the Z-pair explorer fetches.
 
 OUTDIR/zdata.json: n, proven, coverage, ladderCoverage, limit3 ({span: {notes: families}} from
-  tables/limit3/enum3_span20.txt), cols (base64 of gzip of little-endian uint16 columns p, k, lb, q, gmin*10, gmax*10,
-  each n long, in that order), members (base64 of gzip of UTF-8 text, one line per proven family in row order:
+  tables/limit3/enum3_span20.txt), cols (base64 of gzip of little-endian columns, each n long: q as uint32, then
+  p, k, lb, gmin*10, gmax*10 as uint16), members (base64 of gzip of UTF-8 text, one line per proven family in row order:
   set A, "|", set B), ladderChunks ([{p, start, count, file}]: where each ladder chunk's rows sit).
 OUTDIR/zmem-l<p>[-<part>].json: one per highest prime (split further when large), {p, start, count, members} with
   members as above for the ladder-only rows start .. start+count-1. The page loads a chunk only when a ladder family
@@ -38,8 +38,9 @@ def main():
     n, proven = d["count"], d["proven"]
     assert len(d["m"]) == n, "explorer_data.py must be run with --members (all rows)"
     assert all(v == 0 for v in d["lb"][:proven]) and all(v == 1 for v in d["lb"][proven:]), "rows not sorted by lb"
-    cols = [d["p"], d["k"], d["lb"], d["q"], [round(g * 10) for g in d["gmin"]], [round(g * 10) for g in d["gmax"]]]
-    raw = b"".join(struct.pack(f"<{n}H", *c) for c in cols)
+    # q first as uint32 (5-limit 6-note proofs reach q 177,147, past uint16), then the uint16 columns
+    cols = [d["p"], d["k"], d["lb"], [round(g * 10) for g in d["gmin"]], [round(g * 10) for g in d["gmax"]]]
+    raw = struct.pack(f"<{n}I", *d["q"]) + b"".join(struct.pack(f"<{n}H", *c) for c in cols)
     lines = [f"{a}|{b}" for a, b in d["m"]]
     l3 = limit3()
     assert sum(sum(v.values()) for v in l3.values()) == 1106, "3-limit total must be 1,106"
