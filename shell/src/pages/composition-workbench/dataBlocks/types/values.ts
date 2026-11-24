@@ -8,6 +8,8 @@ export function registerValuesType() {
   return registerDataBlockType({
     id: VALUES_TYPE_ID,
     label: 'Values',
+    family: 'generic',
+    channels: [],
     payload: 'packet',
     accepts: (packet) =>
       (packet.kind === 'list' || packet.kind === 'value') &&

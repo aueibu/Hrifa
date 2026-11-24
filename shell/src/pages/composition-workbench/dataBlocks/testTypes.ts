@@ -27,6 +27,8 @@ function packetBlock(request: BlankRequest, typeId: string, p: DataPacket): Pack
 export const pitchSetTestType: DataBlockTypeDef = {
   id: 'pitch-set-test',
   label: 'Pitch set',
+  family: 'pitch',
+  channels: ['pitch'],
   payload: 'packet',
   accepts: (p) => p.kind === 'list' && p.domain === 'pitch',
   createBlank: (request) => packetBlock(request, 'pitch-set-test', packet('list', 'pitch', [])),
@@ -42,6 +44,8 @@ export const pitchSetTestType: DataBlockTypeDef = {
 export const rhythmTestType: DataBlockTypeDef = {
   id: 'rhythm-test',
   label: 'Rhythm',
+  family: 'time',
+  channels: ['onset'],
   payload: 'packet',
   accepts: (p) => p.kind === 'list' && p.domain === 'duration',
   createBlank: (request) => packetBlock(request, 'rhythm-test', packet('list', 'duration', [])),
@@ -51,6 +55,8 @@ export const rhythmTestType: DataBlockTypeDef = {
 export const notesTestType: DataBlockTypeDef = {
   id: 'notes-test',
   label: 'Notes',
+  family: 'placed',
+  channels: ['onset', 'duration', 'pitch', 'amplitude'],
   payload: 'packet',
   accepts: (p) => p.kind === 'events' && p.domain === 'note',
   createBlank: (request) => packetBlock(request, 'notes-test', packet('events', 'note', [])),
@@ -65,6 +71,8 @@ export interface CollectionTestData {
 export const collectionTestType: DataBlockTypeDef = {
   id: 'collection-test',
   label: 'Collection',
+  family: 'composite',
+  channels: [],
   payload: 'record',
   validate: (data) => {
     const entries = (data as Partial<CollectionTestData> | undefined)?.entries;

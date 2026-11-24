@@ -64,3 +64,11 @@ Cast: **Melody** = C4 D4 E4 G4, quarters on beats 0, 1, 2, 3, velocity 0.7. **Ma
 - **Q1**: not yet: timbre stays on the voice or bus. The human raised a larger question: filters and other sound parameters, and the app's total audio playback capability versus MIDI out. Side discussion, not in this arc's scope.
 - **Q2**: yes, amplitude is a channel of every Notes block, and the DAW **0 to 127** scale replaces today's 0 to 1 for ease of cross use. Default: 64 or a project setting. This changes a stored contract (see the session reply for the migration question); decide the storage rule before implementing.
 - **Q3**: "warp grid" is fine for now.
+
+## 7. Amplitude rule (human-approved 2026-11-24, W-62)
+- **Storage:** a number from 0 to 127 (the DAW scale), fractional allowed, rounded to 3 decimals whenever an operator writes it (removes float noise such as 70 x 1.3 = 91.00000000000001; 1/1000 of a MIDI step is finer than MIDI 2.0's 16-bit velocity).
+- **Display and editing:** whole numbers in the UI.
+- **Output:** MIDI or sample playback rounds to the nearest whole number and clamps to 1 to 127. A note at amplitude 0 is omitted from MIDI out and from playback (MIDI note-on with velocity 0 means note-off); it stays in the data, matching "silence, don't remove" (M1).
+- **Default:** 64, or a project setting.
+- **Migration:** replaces today's 0 to 1 `velocity` (about 15 places: editor, transforms, Mixer, plans, engine, rhythm previews, Melodicization's fixed 1) as its own step with scenarios, after R2; the engine's current `round(v x 127)` soundfont mapping and the 0..1 clamp are the first places to change.
+- Time stays exact rational and pitch fractional midicents; amplitude is a continuous quantity with no alignment needs, so it needs neither exactness nor integers.

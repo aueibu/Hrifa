@@ -11,6 +11,8 @@ export function registerPitchClassesType() {
   return registerDataBlockType({
     id: PITCH_CLASSES_TYPE_ID,
     label: 'Pitch classes',
+    family: 'pitch',
+    channels: ['pitch'],
     payload: 'packet',
     accepts: (packet) =>
       (packet.kind === 'list' || packet.kind === 'events') && packet.domain === 'pitchClass',

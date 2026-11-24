@@ -83,11 +83,21 @@ export interface DuplicateRequest {
   createdAt: string;
 }
 
+/** What a composer browses by. Never decides a stored type (the stored `typeId` does). */
+export type DataBlockFamily = 'pitch' | 'time' | 'placed' | 'composite' | 'generic';
+
+/** A channel a type holds (design note channels, sections 2 and 5). */
+export type DataBlockChannel = 'onset' | 'duration' | 'pitch' | 'amplitude' | 'timbre';
+
 interface DataBlockTypeBase {
   /** Stable id, also what an input's `accepts` list names. */
   id: string;
   /** Wording in the picker. */
   label: string;
+  /** For browsing and filtering only (W-61). */
+  family: DataBlockFamily;
+  /** The channels the type holds; empty for a type that holds none (values, generic lists). */
+  channels: readonly DataBlockChannel[];
   createBlank(request: BlankRequest): StoredDataBlock;
   preview?: PreviewRef;
   editorId?: string;
@@ -168,9 +178,19 @@ export function packetTypesAccepting(packet: DataPacket): PacketDataBlockType[] 
   );
 }
 
-/** Chooses the type to store a node's packet under (the first registered match), or undefined. */
+/** Every registered type of a family, in registration order. Browsing only: it never decides a stored type. */
+export function dataBlockTypesByFamily(family: DataBlockFamily): readonly DataBlockTypeDef[] {
+  return dataBlockTypes().filter((def) => def.family === family);
+}
+
+/**
+ * Chooses the type to store a node's packet under (W-61): the first matching NON-generic type, else
+ * the first matching generic type (generic last, whatever the registering order), or undefined.
+ * Only used at capture time; a stored `typeId` is never re-guessed.
+ */
 export function chooseTypeId(packet: DataPacket): string | undefined {
-  return packetTypesAccepting(packet)[0]?.id;
+  const matches = packetTypesAccepting(packet);
+  return (matches.find((def) => def.family !== 'generic') ?? matches[0])?.id;
 }
 
 export type AuditionSupport = { supported: true } | { supported: false; reason: string };

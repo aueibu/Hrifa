@@ -23,8 +23,8 @@ function show(held: DataPacket) {
 
 describe('SendToDeskButton', () => {
   it.each([
-    ['a bank of interval', sample('bank', 'interval', 7), 'bank of interval'],
-    ['a list of boolean', sample('list', 'boolean', true), 'list of boolean'],
+    ['a value of cycleLength', sample('value', 'cycleLength', 7), 'value of cycleLength'],
+    ['a tree of integer', sample('tree', 'integer', 7), 'tree of integer'],
   ])('is disabled for %s, with the reason on hover', (_name, held, kindOfDomain) => {
     show(held);
     const button = screen.getByRole('button', { name: 'Send to desk' });
@@ -33,6 +33,11 @@ describe('SendToDeskButton', () => {
       'title',
       `No data-block type holds this output yet (${kindOfDomain}).`
     );
+  });
+
+  it('is enabled for a bank of interval, which the generic Bank holds', () => {
+    show(sample('bank', 'interval', 7));
+    expect(screen.getByRole('button', { name: 'Send to desk' })).toBeEnabled();
   });
 
   it('is enabled for a packet a type accepts and sends it to the desk', async () => {

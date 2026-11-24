@@ -11,6 +11,8 @@ export function registerNotesType() {
   return registerDataBlockType({
     id: NOTES_TYPE_ID,
     label: 'Notes',
+    family: 'placed',
+    channels: ['onset', 'duration', 'pitch', 'amplitude'],
     payload: 'packet',
     accepts: (packet) => packet.kind === 'events' && packet.domain === 'note',
     createBlank: (request) =>

@@ -11,6 +11,7 @@ import { packet, type DataKind, type DataDomain, type DataPacket } from '../../m
 import { musicalDuration, rational, rationalFromNumber } from '../../musicalTime';
 import { generatePairComposition, pairCompositionDurationPacket } from '../../pairComposition';
 import { interpretPitchList } from '../../pitch';
+import { evaluateDataBlockSource } from '../../runtime/evaluators/dataBlockSource';
 import {
   melodicFormsPacket,
   scalePitchClassPacket,
@@ -25,7 +26,10 @@ import {
 import {
   chooseTypeId,
   dataBlockTypes,
+  dataBlockTypesByFamily,
+  getDataBlockType,
   packetTypesAccepting,
+  registerDataBlockType,
   validateBlock,
   type BlankRequest,
   type PacketBlock,
@@ -86,19 +90,25 @@ const realSamples: [string, DataPacket, string][] = [
   ['a melodicization', melody.packet, 'notes'],
 ];
 
-/** Real outputs no type holds today (human 2026-11-24: lists and banks of intervals are on hold). */
-const realUnaccepted: [string, DataPacket][] = [
-  ['an interval list (scale construction)', scaleSequencePacket(scaleSequence([2, 2, 1]), 's')],
-  ['an interval bank (melodic forms)', melodicFormsPacket([2, 2, 1], 'circular', 's')],
-  ['an interval bank (scale evolution stages)', scaleEvolutionStagesPacket(evolution, 'e')],
-  ['a pitch-class bank (scale evolution)', stagePitchClassesPacket(evolution, 0, 'e')],
+/** Real outputs no specific type holds: the generic List or Bank takes them (W-61), domain intact. */
+const realGeneric: [string, DataPacket, 'list' | 'bank'][] = [
+  [
+    'an interval list (scale construction)',
+    scaleSequencePacket(scaleSequence([2, 2, 1]), 's'),
+    'list',
+  ],
+  ['an interval bank (melodic forms)', melodicFormsPacket([2, 2, 1], 'circular', 's'), 'bank'],
+  ['an interval bank (scale evolution stages)', scaleEvolutionStagesPacket(evolution, 'e'), 'bank'],
+  ['a pitch-class bank (scale evolution)', stagePitchClassesPacket(evolution, 0, 'e'), 'bank'],
   [
     'a duration bank (householder candidates)',
     householderCandidatesPacket(candidates, rhythm, [], 'h', 'reflect', {}),
+    'bank',
   ],
   [
     'an integer or rational bank (mist voices)',
     mistVoicesPacket('m', defaultMistSettings(), mistSampling),
+    'bank',
   ],
 ];
 
@@ -121,32 +131,126 @@ const samples: [string, DataPacket, string][] = [
 ];
 
 describe('the built-in packet types', () => {
-  it('registers Notes, Pitch set, Pitch classes, Rhythm and Values', () => {
-    expect(dataBlockTypes().map((type) => type.id)).toEqual([
-      'notes',
-      'pitch-set',
-      'pitch-classes',
-      'rhythm',
-      'values',
+  it('registers Notes, Pitch set, Pitch classes, Rhythm, Values, List and Bank', () => {
+    expect(dataBlockTypes().map((type) => [type.id, type.family, [...type.channels]])).toEqual([
+      ['notes', 'placed', ['onset', 'duration', 'pitch', 'amplitude']],
+      ['pitch-set', 'pitch', ['pitch']],
+      ['pitch-classes', 'pitch', ['pitch']],
+      ['rhythm', 'time', ['onset']],
+      ['values', 'generic', []],
+      ['list', 'generic', []],
+      ['bank', 'generic', []],
     ]);
   });
 
-  it.each(samples)('%s is accepted by exactly one type', (_name, sampled, expected) => {
-    expect(packetTypesAccepting(sampled).map((type) => type.id)).toEqual([expected]);
-    expect(chooseTypeId(sampled)).toBe(expected);
+  it('lists the types of a family, for browsing only', () => {
+    expect(dataBlockTypesByFamily('pitch').map((type) => type.id)).toEqual([
+      'pitch-set',
+      'pitch-classes',
+    ]);
+    expect(dataBlockTypesByFamily('generic').map((type) => type.id)).toEqual([
+      'values',
+      'list',
+      'bank',
+    ]);
+    expect(dataBlockTypesByFamily('composite')).toEqual([]);
   });
 
-  it.each(realUnaccepted)(
-    'has no type yet for %s (named, so adding one is a deliberate change)',
-    (_name, unaccepted) => {
-      expect(packetTypesAccepting(unaccepted)).toEqual([]);
-      expect(chooseTypeId(unaccepted)).toBeUndefined();
+  it.each(samples)(
+    '%s is chosen as its type; no other specific type accepts it',
+    (_n, held, id) => {
+      expect(chooseTypeId(held)).toBe(id);
+      const specific = packetTypesAccepting(held).filter((type) => type.family !== 'generic');
+      expect(specific.map((type) => type.id)).toEqual(id === 'values' ? [] : [id]);
     }
   );
 
-  it('accepts nothing for a packet no type describes', () => {
+  it.each(realGeneric)('captures %s as a %s with the domain intact', (_name, held, expected) => {
+    expect(packetTypesAccepting(held).map((type) => type.id)).toEqual([expected]);
+    expect(chooseTypeId(held)).toBe(expected);
+    const captured = captureDataBlock({
+      id: 'g',
+      createdAt: '2026-11-24T00:00:00Z',
+      name: 'g',
+      packet: held,
+      nodeInstance: 'x',
+    });
+    expect(captured.ok && captured.dataBlock.typeId).toBe(expected);
+    expect(captured.ok && captured.dataBlock.payload.packet.domain).toBe(held.domain);
+    expect(captured.ok && validateBlock(captured.dataBlock)).toBeNull();
+  });
+
+  it('keeps a pitch list a Pitch set and an integer list Values, though List also accepts them', () => {
+    const pitches = sample('list', 'pitch', 6000);
+    const integers = sample('list', 'integer', 3);
+    expect(packetTypesAccepting(pitches).map((type) => type.id)).toEqual(['pitch-set', 'list']);
+    expect(chooseTypeId(pitches)).toBe('pitch-set');
+    expect(chooseTypeId(integers)).toBe('values');
+  });
+
+  it('puts generic last whatever the registering order', () => {
+    // Registered after List, so an order-based pick would choose List; the priority must not.
+    const remove = registerDataBlockType({
+      id: 'late-text',
+      label: 'Late text',
+      family: 'pitch',
+      channels: [],
+      payload: 'packet',
+      accepts: (held) => held.kind === 'list' && held.domain === 'text',
+      createBlank: (request) => getDataBlockType('list')!.createBlank(request),
+    });
+    try {
+      const texts = sample('list', 'text', 'a');
+      expect(packetTypesAccepting(texts).map((type) => type.id)).toEqual(['list', 'late-text']);
+      expect(chooseTypeId(texts)).toBe('late-text');
+    } finally {
+      remove();
+    }
+  });
+
+  it('still accepts nothing for a kind no type describes', () => {
     expect(chooseTypeId(sample('value', 'cycleLength', 7))).toBeUndefined();
-    expect(chooseTypeId(sample('list', 'boolean', true))).toBeUndefined();
+    expect(chooseTypeId(sample('tree', 'integer', 1))).toBeUndefined();
+    expect(chooseTypeId(sample('layers', 'note', 1))).toBeUndefined();
+    expect(chooseTypeId(sample('curve', 'rational', 1))).toBeUndefined();
+    expect(chooseTypeId(sample('events', 'boolean', true))).toBeUndefined();
+  });
+
+  it('accepts every list and bank kind in some type', () => {
+    for (const domain of ['boolean', 'symbol', 'interval', 'cycleLength'] as const) {
+      expect(chooseTypeId(sample('list', domain, 1))).toBe('list');
+      expect(chooseTypeId(sample('bank', domain, 1))).toBe('bank');
+    }
+  });
+
+  it('publishes a List or Bank block through Make source unchanged', () => {
+    for (const held of [sample('list', 'interval', 2), sample('bank', 'boolean', true)]) {
+      const captured = captureDataBlock({
+        id: 'g',
+        createdAt: '2026-11-24T00:00:00Z',
+        name: 'g',
+        packet: held,
+        nodeInstance: 'x',
+      });
+      const dataBlock = captured.ok ? (captured.dataBlock as PacketBlock) : undefined;
+      const { outputs } = evaluateDataBlockSource(
+        {},
+        { dataBlock },
+        { instanceId: 's', instanceLabel: 'S' }
+      );
+      expect(outputs).toHaveLength(1);
+      expect(outputs[0].packet).toBe(dataBlock?.payload.packet);
+      expect(outputs[0].packet).toMatchObject({ kind: held.kind, domain: held.domain });
+    }
+  });
+
+  it('has no audition for List and Bank, and says why', () => {
+    expect(getDataBlockType('list')?.noAuditionReason).toBe(
+      'A List has no sound of its own; use Hear as ... or a node.'
+    );
+    expect(getDataBlockType('bank')?.noAuditionReason).toBe(
+      'A Bank has no sound of its own; use Hear as ... or a node.'
+    );
   });
 
   it('has an audition only for Notes, which refuses when empty', () => {

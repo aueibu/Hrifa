@@ -8,6 +8,8 @@ export function registerPitchSetType() {
   return registerDataBlockType({
     id: PITCH_SET_TYPE_ID,
     label: 'Pitch set',
+    family: 'pitch',
+    channels: ['pitch'],
     payload: 'packet',
     accepts: (packet) => packet.kind === 'list' && packet.domain === 'pitch',
     createBlank: (request) =>

@@ -12,6 +12,8 @@ export function registerRhythmType() {
   return registerDataBlockType({
     id: RHYTHM_TYPE_ID,
     label: 'Rhythm',
+    family: 'time',
+    channels: ['onset'],
     payload: 'packet',
     accepts: (packet) =>
       (packet.kind === 'list' && packet.domain === 'duration') || packet.domain === 'rhythmPattern',

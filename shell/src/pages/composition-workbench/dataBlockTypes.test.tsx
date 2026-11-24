@@ -55,6 +55,8 @@ describe('the data-block-type registry', () => {
       'Pitch classes',
       'Rhythm',
       'Values',
+      'List',
+      'Bank',
     ]);
     expect(
       dataBlockTypes()
@@ -116,6 +118,8 @@ describe('the data-block-type registry', () => {
     const remove = registerDataBlockType({
       id: 'throwaway',
       label: 'Throwaway',
+      family: 'generic',
+      channels: [],
       payload: 'packet',
       accepts: (candidate) => candidate.kind === 'list' && candidate.domain === 'text',
       editorId: 'throwaway-editor',

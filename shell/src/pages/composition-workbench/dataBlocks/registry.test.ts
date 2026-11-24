@@ -63,6 +63,8 @@ describe('R1: a new type is one registration', () => {
     register({
       id: 'curve-test',
       label: 'Curve',
+      family: 'generic',
+      channels: [],
       payload: 'packet',
       accepts: (p) => p.kind === 'curve',
       createBlank: (request) => ({
@@ -88,6 +90,8 @@ describe('R1: a new type is one registration', () => {
     register({
       id: 'pitch-wide-test',
       label: 'Wide',
+      family: 'pitch',
+      channels: [],
       payload: 'packet',
       accepts: () => true,
       createBlank: pitchSetTestType.createBlank,
