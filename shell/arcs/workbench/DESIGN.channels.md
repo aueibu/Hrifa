@@ -1,4 +1,4 @@
-# Design: channels, shapes and operators (2026-11-24, human answered in section 6; M3 and the audio-capabilities side discussion open)
+# Design: channels, shapes and operators (2026-11-24, human answered in section 6; the audio-capabilities side discussion and the velocity storage rule open)
 
 Why: the registry's types should follow what music varies along and what a composer does to it. The human, 2026-11-24: pitch is frequency; rhythm is onsets in time; amplitude is volume; articulation blends onset, sounding duration and tone color; timbre is the tone color of a sound. Ideas to support: a **lattice** applied to a melody (drag segments like a photo editor's warp mesh over time and pitch) and a **mask** (one stream silences or accents another; accent "spills" from the rhythm domain into amplitude). No tonal-theory terms are used here.
 
@@ -55,7 +55,7 @@ Cast: **Melody** = C4 D4 E4 G4, quarters on beats 0, 1, 2, 3, velocity 0.7. **Ma
 ## 6. Human answers (2026-11-24)
 - **M1** agreed: gate by silencing by default, removing as an explicit option.
 - **M2** revised: the mask operator gets **reach controls**, a width for each item of the mask (a "hitbox" before and after each mask onset, in beats), not only exact onset. Width 0 is the exact-onset case. **Touch** is a toggle: any note whose sounding span overlaps a mask item's span at any point is affected (the old option c). The user also chooses what the mask is (a Rhythm, or Notes used for their onsets and durations).
-- **M3** open: the human needs clearer musical examples before deciding whether a mask reads the mask stream's pitches (see the examples in the session reply; to be added here once settled).
+- **M3** decided (2026-11-24): two separate operators. The **mask** reads timing only (the mask stream's onsets and durations, with the reach and touch controls from M2); its pitches play no part. A **pitch filter** is a separate operator that reads pitch classes only (keep or silence notes whose pitch class is in a chosen set, with invert like M5). Build order: mask first, pitch filter later unless the human asks otherwise.
 - **M4** agreed: Multiply and Set to are both options.
 - **M5** yes: Invert toggle.
 - **M6** agreed: piecewise-linear now; smooth later. Pitch results will need a choice between free pitch and snap to the project or section tuning (EDO or scale); the warp's pitch output is a good first test of how that snap works.
