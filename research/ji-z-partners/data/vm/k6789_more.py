@@ -61,6 +61,37 @@ def reach():
     return r
 
 
+GROWTH = float(os.environ.get("GROWTH", 15))  # observed cost growth per rung for 9 notes: 5x (7-limit) to 20x+
+
+
+def durations9():
+    """seconds of the finished runs that included 9 notes, per limit and q (from the chains' logs)"""
+    d = {}
+    for name in ("k789.out", "k6789_more.out"):
+        p = os.path.join(Z, name)
+        if not os.path.exists(p):
+            continue
+        for line in open(p, errors="replace"):
+            m = re.search(r"(k789|k6789)_l(\d+)q(\d+) ENUM DONE\s+\((\d+)s\)", line)
+            if m:
+                d.setdefault(int(m.group(2)), {})[int(m.group(3))] = int(m.group(4))
+    return d
+
+
+def too_costly(L, q, cap):
+    """projected time of the 9-note rung q from the last finished rung below it; True when it cannot fit the cap"""
+    below = {qq: s for qq, s in durations9().get(L, {}).items() if qq < q}
+    if not below:
+        return False
+    last = max(below)
+    steps = len([x for x in QS if last < x <= q])
+    est = below[last] * GROWTH ** steps
+    if est > cap:
+        log(f"skip limit {L} q {q}: last rung q {last} took {below[last]}s, estimate {int(est)}s > cap {cap}s")
+        return True
+    return False
+
+
 def capped_rungs():
     out = {}
     for line in open(os.path.join(Z, "k789.out")):
@@ -126,6 +157,9 @@ def climb(prefix, ks, kkey, budget, run_cap, jump, skip=()):
                 log(f"phase {prefix}: {'stop time' if now() > at(STOP) else 'budget'} reached")
                 return
             q = nextq[L]
+            if "9" in ks.split() and too_costly(L, q, min(run_cap, int(left))):
+                del nextq[L]
+                continue
             res = run(prefix, ks, L, q, min(run_cap, int(left)))
             if res == "done":
                 n = next_rung(q, L, jump)
@@ -143,7 +177,8 @@ def main():
     while subprocess.run(["tmux", "has-session", "-t", "k789p"], capture_output=True).returncode == 0:
         time.sleep(60)
     capped = capped_rungs()
-    log(f"k789 chain ended; capped {capped}; reach {reach()}")
+    capped = {L: q for L, q in capped.items() if not too_costly(L, q, CAP)}
+    log(f"k789 chain ended; retrying {capped}; reach {reach()}")
     failed = set()
     for L, q in sorted(capped.items()):  # A
         if now() > at(STOP):
