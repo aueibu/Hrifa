@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { CompositionNodeInstance } from './compositionWorkspace';
 import {
+  deleteBlockFromProject,
   makeSingleUser,
   nodeReferencer,
   purge,
@@ -21,7 +22,6 @@ import {
   type RemapPreview,
   type UserEntry,
 } from './dataBlocks/dataBlockRefs';
-import { isPacketBlock } from './dataBlocks/registry';
 import { newDataBlockId, useDesk } from './desk';
 import { recordGroup } from './history';
 
@@ -65,7 +65,8 @@ export function DataBlockOpsProvider({
   setInstances: Dispatch<SetStateAction<CompositionNodeInstance[]>>;
   children: ReactNode;
 }) {
-  const { dataBlocks, latestDataBlockList, applyDataBlockList } = useDesk();
+  // Every block the desk holds, records included: a record counts as a user of what it references.
+  const { allDataBlocks: dataBlocks, latestDataBlockList, applyDataBlockList } = useDesk();
   // The latest instances (a render can lag a write made earlier in the same event).
   const instancesRef = useRef(instances);
   instancesRef.current = instances;
@@ -82,10 +83,7 @@ export function DataBlockOpsProvider({
         return result;
       }
       const next = result.project;
-      const desk = next.dataBlocks.filter(isPacketBlock);
-      if (desk.length !== next.dataBlocks.length) {
-        return { ok: false, error: 'The desk holds packet data-blocks only for now.' };
-      }
+      const desk = next.dataBlocks;
       let failure: OpResult = { ok: true };
       recordGroup(() => {
         if (!sameList(desk, before.dataBlocks) && !applyDataBlockList(desk)) {
@@ -109,7 +107,7 @@ export function DataBlockOpsProvider({
         const before = latestProject();
         return apply(before, {
           ok: true,
-          project: { ...before, dataBlocks: before.dataBlocks.filter((block) => block.id !== id) },
+          project: deleteBlockFromProject(before, id),
         });
       },
       makeSingleUser(id, user) {

@@ -4,6 +4,7 @@ import {
   dataBlockTypeOf,
   duplicateBlock,
   isBlockEmpty,
+  isPacketBlock,
   repointBlockRef,
   type Ref,
   type StoredDataBlock,
@@ -196,6 +197,18 @@ export function deleteImpact(project: RefsProject, id: string): DeleteImpact {
   return { users: dataBlockUsers(project, id), descendants: dataBlockDescendants(project, id) };
 }
 
+/**
+ * Deletes a data-block (O0, W-66): the block goes, and every record slot that held it is blanked
+ * through the type's `mapRefs` (the record stays, the slot is null: references blank on delete, never
+ * fall back). Make source nodes are left alone and show "missing" as before (S1).
+ */
+export function deleteBlockFromProject(project: RefsProject, id: string): RefsProject {
+  const blanked = dataBlockUsers(project, id)
+    .filter((entry) => entry.ownerKind === blockReferencer.name)
+    .reduce((next, entry) => blockReferencer.repoint(next, entry, null), project);
+  return { ...blanked, dataBlocks: blanked.dataBlocks.filter((block) => block.id !== id) };
+}
+
 export type RefsResult = { ok: true; project: RefsProject } | { ok: false; error: string };
 
 export type MakeSingleUserResult =
@@ -320,6 +333,16 @@ export function unusedDataBlocks(project: RefsProject): StoredDataBlock[] {
     )
   );
   return project.dataBlocks.filter((dataBlock) => !used.has(dataBlock.id));
+}
+
+/**
+ * What the desk offers to purge and filters as Unused (O0): the unused blocks the desk DISPLAYS, which
+ * are the packet blocks. A record block has no card until the Outliner (O2a), so an unused record is
+ * never listed and a purge can never delete a block the user cannot see. Users are still counted
+ * across every block, so a packet a record references is not unused.
+ */
+export function unusedDeskBlocks(project: RefsProject): StoredDataBlock[] {
+  return unusedDataBlocks(project).filter(isPacketBlock);
 }
 
 /** The ids a manual Purge would delete (the list it shows first). */

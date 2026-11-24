@@ -7,12 +7,7 @@ import { pitchClassConversionRefusal, type PacketBlock } from '../dataBlock';
 import { EnsureDataBlockOps, useDataBlockOps, type OpResult } from '../dataBlockOps';
 import { getConversion } from '../dataBlocks/acceptance';
 import { auditionBlock, HEAR_AS_CONVERSION_IDS } from '../dataBlocks/audition';
-import {
-  dataBlockUsers,
-  deleteImpact,
-  purgePlan,
-  unusedDataBlocks,
-} from '../dataBlocks/dataBlockRefs';
+import { dataBlockUsers, deleteImpact, unusedDeskBlocks } from '../dataBlocks/dataBlockRefs';
 import { makeSourceRefusal, type AuditionSettings } from '../dataBlocks/registry';
 import { useDesk } from '../desk';
 import { transportRhythmContext } from '../rhythmRealization';
@@ -134,7 +129,9 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
   const [opError, setOpError] = useState<string | null>(null);
   const [snapPrompt, setSnapPrompt] = useState<{ id: string; message: string } | null>(null);
   const project = ops.project;
-  const unusedIds = new Set(unusedDataBlocks(project).map((block) => block.id));
+  // Hidden-record rule (O0): the filter and Purge consider only the blocks this view displays
+  // (packets); an unused record has no card, so it is never listed or purged here.
+  const unusedIds = new Set(unusedDeskBlocks(project).map((block) => block.id));
   const shown = onlyUnused ? dataBlocks.filter((block) => unusedIds.has(block.id)) : dataBlocks;
 
   function report(result: OpResult) {
@@ -172,7 +169,7 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                 : 'List the unused data-blocks and delete them after you confirm. Nothing is ever purged automatically.'
             }
             onClick={() => {
-              setPurgeIds(purgePlan(project));
+              setPurgeIds([...unusedIds]);
               setPurgeOpen((current) => !current);
             }}
           >
@@ -501,7 +498,7 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                           <Text size="xs">
                             Used by {impact.users.length}:{' '}
                             {impact.users.map((user) => user.label).join(', ')}. They will show it
-                            as missing.
+                            as missing or blank.
                           </Text>
                         ) : (
                           <Text size="xs">Nothing uses it.</Text>

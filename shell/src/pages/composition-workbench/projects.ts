@@ -1,5 +1,6 @@
 import { STORAGE_KEY as settingsStorageKey } from './compositionSettings';
-import { acceptsDataBlocks, type PacketBlock } from './dataBlock';
+import { acceptsDataBlocks } from './dataBlock';
+import type { StoredDataBlock } from './dataBlocks/registry';
 import type { ReplaceDeskOptions } from './desk';
 import {
   describeStorageError,
@@ -81,7 +82,7 @@ export function newProjectId(now = new Date()) {
 export const defaultProjectName = (now: Date) => `Project ${now.toLocaleString()}`;
 
 /** The desk as the project holds it: null when the desk was not readable, so open leaves it alone. */
-export type ProjectDesk = PacketBlock[] | null;
+export type ProjectDesk = StoredDataBlock[] | null;
 
 export function createProject(
   name: string,
@@ -170,11 +171,11 @@ export async function saveProject({
 }
 
 export interface OpenableDesk {
-  dataBlocks: PacketBlock[];
+  allDataBlocks: StoredDataBlock[];
   loading: boolean;
   locked: boolean;
   replaceDesk(
-    dataBlocks: PacketBlock[],
+    dataBlocks: StoredDataBlock[],
     options?: ReplaceDeskOptions
   ): Promise<{ ok: true } | { ok: false; error: string }>;
 }
@@ -216,7 +217,7 @@ export async function openProject({
       error: 'The saved desk could not be read, so nothing was opened and the desk is untouched.',
     };
   }
-  const previousDesk = desk?.dataBlocks;
+  const previousDesk = desk?.allDataBlocks;
   const previousEntries = captureWorkbenchState(storage);
   // From here the old page must not write anything (see reloading.ts); undone on every failure.
   setReloading(true);

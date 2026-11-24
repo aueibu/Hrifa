@@ -327,7 +327,7 @@ describe('a failed or refused open', () => {
   it('refuses while the desk is loading or locked, and for a project that is gone', async () => {
     const rendered = await seeded();
     const replaceDesk = vi.fn();
-    const base: OpenableDesk = { dataBlocks: [], loading: false, locked: false, replaceDesk };
+    const base: OpenableDesk = { allDataBlocks: [], loading: false, locked: false, replaceDesk };
     const loading = await openProject({
       id: rendered.id,
       desk: { ...base, loading: true },
@@ -467,7 +467,7 @@ describe('the page closing for a reload', () => {
     const rendered = await openSeeded();
     const real = rendered.result.current;
     const desk: OpenableDesk = {
-      dataBlocks: real.dataBlocks,
+      allDataBlocks: real.allDataBlocks,
       loading: false,
       locked: false,
       replaceDesk: (dataBlocks, options) =>

@@ -8,6 +8,9 @@ Blender research (2026-11-23): the human read Blender's manual and found that it
 
 Reading: `RESEARCH.blender.md` (this folder), `PROPOSAL.derivation-graph.md`, the workbench `src/pages/composition-workbench/ARCHITECTURE.md` sections "The desk" (clips, clip properties, the edit contract and versions, history, projects) and "Direction: rolling playback and arrangement"; `ARC.one-stage.md` "Integration decisions" D4 (the meta lane) and D5 (W-44, fractional midicents plus exact identity); DECISIONS W-41 to W-50.
 
+## Re-plan (human, 2026-11-24): objects first, then modifiers, then node trees
+The human, after trying the audition and desk: the structure is wrong for what comes next. Their words: "create something like the blender outliner and allow the user to place empty objects there. This then allows us to keep our nodes and fit them in as we migrate. A better structure allows us to implement modifiers and transforms without having to retrofit things." So the middle layer is **Scene, Object and Modifier as data-blocks in the registry**, evaluated by one pure, memoized function into a `PerformancePlan`; the timeline becomes a VIEW of objects (their spans), not a second structure of strips. Source of truth: `SCENARIOS.objects.md` (confirmed 2026-11-24) and `HANDOFF.data-model.md`. Milestones O0 to O4c below replace R4 (dropped: Blender's Collection groups objects and has no roles; an object with a data slot and modifier inputs does that job) and T0 to T6b (superseded: T2 becomes the Arranger view O2b; the realization of T3 is a modifier on an object, O3; Bake is Apply; markers and meta track return after O2b). Phase B (node layer) is replaced by O4. Everything above this paragraph (B0 to R3, B2) stands.
+
 ## Goal
 The workbench has an **Arrange** panel on the dock Stage where **material of any kind is placed in time** — a pitch set, a block chord, a rhythm, pitch classes, notes (any desk clip; the desk already holds any packet kind) — on tracks along a bar ruler, and where **realizations** combine that material into notes over time: a pitch strip and a rhythm strip interact and produce the realization, which stays live (change a strip and the notes follow) and plays on the transport. A realization is a processor placed in time rather than on the canvas; it reuses the modules' pure evaluators (R2, `runtime/evaluators/`; Melodicization already turns inter-onset durations plus pitch material into notes), so combining rules are written once. When a result is wanted fixed, an operation **bakes** it into a note clip (like freezing a DAW track). Then a **meta track** above everything holds sections: labels first ("chorus", "development"), then pitch context per section (EDO, key or scale) that realizations, the clip editor and transforms follow inside that span (D4). The canvas stays where material and processors are made and explored; the desk stays where material is kept; the timeline is where material meets time and other material.
 
@@ -111,7 +114,7 @@ Source of truth: `SCENARIOS.registry.md` (confirmed 2026-11-24). Only the contra
 - Acceptance: [ ] `check:workbench` and the page test pass [ ] "C major"-style Pitch set audible from the desk with no wiring
 - Human checkpoint after: **yes** (the human listens)
 
-#### R4: Collection type
+#### R4: Collection type: DROPPED 2026-11-24 (superseded by the object phase O0 to O4c; kept for reference only)
 - Scope: Collection record (named entries, role plus reference, two entries of one role allowed, a missing reference shows as missing), its referencer, its audition through the Melodicization evaluator in cycle or stop-at-shortest mode; two melodies in one collection layer from the same start. Read the OpenMusic manual (voice, poly) before any composite beyond this.
 - Acceptance: [ ] `check:workbench` passes [ ] tests from A7 and R4 rows
 - Human checkpoint after: **yes** (the human listens: Ring A on Clave in both modes)
@@ -123,6 +126,47 @@ Source of truth: `SCENARIOS.registry.md` (confirmed 2026-11-24). Only the contra
 ### Phase B (node layer), planned after R4 with its own scenarios (`SCENARIOS.registry.md` Part 3)
 Each node declares its inputs and outputs against the registry (N1 to N5); the connection check and the picker read one `accepts`; `signalTypeFor` and the signal type table fold into the registry; Make source disconnects wires that no longer fit and says which. One node at a time, Melodicization first.
 
+## Object phase (re-plan 2026-11-24; replaces Phase B, R4 and T0 to T6b)
+Scenarios first: `SCENARIOS.objects.md` (confirmed by the human 2026-11-24). Object contract: Scene, Object, Collection and Node tree are record types in the existing registry (`validate`, `refs`, `mapRefs`); references blank on delete (never a fallback); modifiers live inline on the object; mapping (Loop, Stretch, One-shot) is the object's, applied AFTER the node tree or modifiers produce ONE cycle; evaluation is pure and two-stage memoized (cycle result keyed by data-block versions and modifier params; mapping and placement keyed by span); no override layer (a hand-edit of a modified object asks to Apply first). Direct path first: scene, object, desk data-block, native modifier and Play with zero nodes. A scene has one root collection (no separate `objectRefs`). Panels register in `layout/workbenchPanels.tsx` and `workbenchWorkspaces.ts` (workbench-owned); the page entry file is a shared path (lock). Reviewer standing question applies (DECISIONS rows W-66 and W-67).
+
+### O0: The desk stores any registered data-block
+- **DONE 2026-11-24 (W-68):** the family filter moved to O2a (records have no card until the Outliner). Scope as built: `desk.tsx`, `deskStore.ts`, `dataBlock.ts`, the history `deskStep`, loading validation and the desk cards accept `StoredDataBlock` (packets and records) instead of `PacketBlock`; a family filter on the desk (default shows what it shows today: packets; records by family `placed` and `composite`); a throwaway test record type in `dataBlocks/testTypes.ts` proves store, reload, undo, delete impact and make single user for a record; no visible change for packets.
+- Acceptance: [ ] `check:workbench` passes [ ] page test passes [ ] tests: a record block round-trips through the desk store and history, its `refs` count as users, delete blanks the slot
+- Human checkpoint after: no
+
+### O1: Scene, Object, Collection records and `evaluateScene` (pure)
+- Scope: new folder `scene/`: record types `scene` (name, root collection ref, markers), `object` (name, parentRef, timeSpan, registerSpan, primaryDataRef, mapping, modifiers, mute), `collection` (name, memberRefs, mute); `evaluateScene(project, context) -> PerformancePlan` per `SCENARIOS.objects.md` rows 1, 2, 5, 6, 7 (Loop, Stretch, One-shot over the object's span, child start relative to parent with a deleted parent keeping the child's place, a child played to its parent's end, blank and empty silence, scene length to the end of the object spans, circular parent guard, mute); the audition core's `build` reused for the primary data (no second copy of realization logic); two-stage memo.
+- Acceptance: [ ] `check:workbench` passes [ ] unit tests from the confirmed rows with the son clave numbers (Loop 80 attacks, Stretch attacks at quarters 0, 12, 24, 40, 48, One-shot 5 attacks then silence) [ ] DECISIONS rows W-66 (object contract) and W-67 (evaluation)
+- Human checkpoint after: no
+
+### O2a: Outliner, Properties and Play (thin slice)
+- Scope: three or four panels on the Stage (Outliner: tree of the scene with mute, user counts, Add Empty and Add Object; Properties: name, parent, time span, register span, data-block picker through the shared data-block menu, Loop | Stretch | One-shot, modifier list shell); a scene Play on the transport. No Arranger. Smallest version to try, then stop.
+- Acceptance: [ ] `check:workbench` passes [ ] one page test [ ] no layout shift on select, add or delete (measured in a browser)
+- Human checkpoint after: **yes** (look, feel and sound; no reviewer polish or commit of polish before the human has tried it)
+
+### O2b: Arranger view
+- Scope: horizontal view of objects as blocks by time span and register; select, move, resize, playhead with the transport. A view of the same objects, never its own data.
+- Human checkpoint after: **yes** (look and feel)
+
+### O3: Native modifiers and Apply
+- Scope: modifier stack on objects (reorder, mute); Transpose to pitch set, Harmonize (chord engine), Melodicize (`melodicize`), each reading its pitch set or rhythm by reference; a missing reference silences the object and Properties says which is missing (row 3); Apply bakes ONE cycle into a new Notes data-block, clears the modifiers, keeps the mapping (row 4); a hand-edit of a modified object asks to Apply first.
+- Acceptance: [ ] `check:workbench` passes [ ] tests from rows 3 and 4 [ ] DECISIONS row
+- Human checkpoint after: **yes** (listen)
+
+### O4a: Headless graph evaluator
+- Scope: extract from `runtime/NodeEvaluationRunner.tsx` and `useNodeEvaluation.ts` a non-React function that evaluates a node tree (instances, routes, per-node state) into outputs; the canvas keeps using it with no visible change.
+- Acceptance: [ ] `check:workbench` passes [ ] node tests evaluate a tree headless and equal the runner's outputs
+- Human checkpoint after: no
+
+### O4b: Node trees as data-blocks
+- Scope: `node-tree` record (instances, routes and each node's persisted state), the canvas edits the active tree, a header bar (picker, New, Make single user, users), unattached scratch trees stay alive (the playground).
+- Human checkpoint after: **yes** (look)
+
+### O4c: Group Input and Output, and the Node tree modifier
+- Scope: Group Input and Output nodes, a Node tree modifier on objects (tree outputs one cycle; mapping after).
+- Human checkpoint after: **yes** (listen)
+
+### Superseded plan kept for reference: T0 to T6b (do not build from these; their content moved into O2b and later)
 ### T0: Scenarios (no code)
 - Scope: `arcs/workbench/SCENARIOS.T.md`, with a recommended answer per row from `RESEARCH.blender.md` section 5 (NLA table) and section 6 (markers); where the human has not changed it, the recommendation stands: a strip references its clip (B0), **extrapolation per strip** (Hold Forward so a short pitch strip governs a long rhythm strip, or Nothing), crop, repeat, scale and reverse live on the strip, tracks combine by order plus Replace or Add, double-click is tweak mode (edit the clip in place, Pin toggles clip time or timeline time), meta strips and placed collections, mute, solo and lock per track and mute per strip, bake as Push Down in reverse, sections are shared markers (a marker bound to a pitch context is the T6b model). The human's concrete cases, each choice shown with an example where the options give different results. First question: **how strips get associated** — (A) by overlap in time (a realization track combines whatever pitch and rhythm strips sit above it at each moment), (B) by an explicit link between two strips, (C) by a realize strip whose pitch source, rhythm source and rule are chosen in its settings, or a mix (e.g. C's rule with A's overlap). Then: which combining rules come first (Melodicization's; others from the canvas modules); what happens where the pitch and rhythm strips have different lengths or start at different bars; what tracks are (typed by material kind, or free); a strip as a reference to its desk clip (edit once, every use follows) or a copy, and "make single user"; bake (realization → note clip) and what stays linked; what a sounding track owns (sound, volume, mute, solo); what happens when a source clip is deleted; one tempo and meter or changes; how material gets onto the timeline first (Send to timeline, then drag); the Arrange panel's place in the screensets; how the canvas modules relate (can a canvas module's output be a strip?).
 - Acceptance:

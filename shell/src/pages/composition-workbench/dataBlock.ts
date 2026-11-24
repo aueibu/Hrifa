@@ -242,10 +242,10 @@ export function captureDataBlock(request: CaptureRequest): CaptureResult {
  * Edit a data-block's note. Returns a new data-block: only `note` differs, and `packet`, `id` and
  * `createdAt` are the same references. Blank text clears the note (the key is removed).
  */
-export function editDataBlockNote(dataBlock: PacketBlock, note: string): PacketBlock {
+export function editDataBlockNote<T extends StoredDataBlock>(dataBlock: T, note: string): T {
   const { note: _previous, ...rest } = dataBlock;
   const trimmed = note.trim();
-  return trimmed ? { ...rest, note: trimmed } : rest;
+  return (trimmed ? { ...rest, note: trimmed } : rest) as unknown as T;
 }
 
 /**
@@ -928,30 +928,38 @@ function acceptsEditedHead(dataBlock: PacketBlock) {
 }
 
 /**
- * Whether one stored value is a sound data-block for the desk: the current envelope (`schemaVersion`
- * 2), a packet payload, a well-formed lineage, and the registry's `validateBlock` (its type is
- * registered and accepts its packet). A record payload is not a desk block yet (R4).
+ * Whether one stored value is a sound data-block for the desk (O0): the current envelope
+ * (`schemaVersion` 2), a payload of exactly one kind, and the registry's `validateBlock` (its type is
+ * registered and accepts the payload). A packet also needs a packet shape and a well-formed lineage;
+ * a record needs JSON-safe data and no lineage (only packets have a version tree).
  */
-export function acceptsDataBlock(entry: unknown): entry is PacketBlock {
+export function acceptsDataBlock(entry: unknown): entry is StoredDataBlock {
   if (typeof entry !== 'object' || entry === null) {
     return false;
   }
-  const dataBlock = entry as Partial<PacketBlock>;
-  const payload = dataBlock.payload as Partial<PacketBlock['payload']> | undefined;
-  return (
+  const dataBlock = entry as Partial<StoredDataBlock>;
+  const payload = dataBlock.payload as Partial<StoredDataBlock['payload']> | undefined;
+  const envelope =
     dataBlock.schemaVersion === DATA_BLOCK_SCHEMA_VERSION &&
     typeof dataBlock.id === 'string' &&
     typeof dataBlock.typeId === 'string' &&
     typeof dataBlock.name === 'string' &&
     typeof dataBlock.createdAt === 'string' &&
     (dataBlock.note === undefined || typeof dataBlock.note === 'string') &&
-    (dataBlock.lineage === undefined || acceptsLineage(dataBlock.lineage)) &&
     typeof payload === 'object' &&
-    payload !== null &&
-    payload.kind === 'packet' &&
-    isPacketShape(payload.packet) &&
-    validateBlock(dataBlock as StoredDataBlock) === null
-  );
+    payload !== null;
+  if (!envelope) {
+    return false;
+  }
+  let shaped = false;
+  if (payload.kind === 'packet') {
+    shaped =
+      (dataBlock.lineage === undefined || acceptsLineage(dataBlock.lineage)) &&
+      isPacketShape((payload as { packet?: unknown }).packet);
+  } else if (payload.kind === 'record') {
+    shaped = dataBlock.lineage === undefined && isJsonSafe((payload as { data?: unknown }).data);
+  }
+  return shaped && validateBlock(dataBlock as StoredDataBlock) === null;
 }
 
 /**
@@ -971,7 +979,7 @@ export function isLegacyDataBlock(entry: unknown): boolean {
  * that fails `acceptsDataBlock` makes the whole value unaccepted, so the stored desk is left
  * untouched rather than loaded with a hole (the desk shows it locked).
  */
-export function acceptsDataBlocks(value: unknown): value is PacketBlock[] {
+export function acceptsDataBlocks(value: unknown): value is StoredDataBlock[] {
   return Array.isArray(value) && value.every(acceptsDataBlock);
 }
 

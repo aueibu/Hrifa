@@ -523,6 +523,8 @@ directly from a node.
 
 The desk is where material is set aside to be reused, and where it is authored. Everything else in the workbench derives its output from something; the desk holds data-blocks: copies the composer chose to keep (capture, Send to desk, duplicate, convert) or blank data-blocks started from nothing and edited directly in the editor of their type (below). A data-block can be placed back into a node tree as a source (Make source). Not built: any "Assign register" step that turns pitch classes back into playable notes, editors for data-block types other than Notes, a lineage viewer, and a timeline or arranger.
 
+The desk store holds any registered block, packet or record (O0): `desk.allDataBlocks` is the whole list (storage, undo, project save and open, the refs operations), and `desk.dataBlocks` is the packet blocks only, which is what the cards show. A record block is stored, loaded (validated by its type), undone, counted as a user and blanked on delete through `mapRefs` (`deleteBlockFromProject`), but has no card until the Outliner (O2a); Unused and Purge count only displayed blocks (`unusedDeskBlocks`), so a purge never deletes a hidden record.
+
 ### Data-blocks and their types
 
 A data-block is the registry's stored envelope (`dataBlocks/registry.ts`; `dataBlock.ts` holds the packet-block functions):

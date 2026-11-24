@@ -1,11 +1,13 @@
-import { acceptsDataBlocks, isLegacyDataBlock, type PacketBlock } from './dataBlock';
+import { acceptsDataBlocks, isLegacyDataBlock } from './dataBlock';
+import type { StoredDataBlock } from './dataBlocks/registry';
 // Registers the built-in data-block types before any stored block is checked against them.
 import './dataBlocks/types';
 
 /**
  * The desk's storage: IndexedDB, by a small hand-written wrapper. Each data-block is its own record (so a
  * write touches only data-blocks that changed), plus one `order` record naming them in desk order and a
- * `rev` counter that is bumped on every write. The stored data-block is the registry's `PacketBlock`
+ * `rev` counter that is bumped on every write. The stored data-block is the registry's `StoredDataBlock` (a packet or a record block;
+ * a record has no card on the desk yet, O0)
  * (envelope `schemaVersion` 2, with its `typeId`), lineage included. Blocks of the earlier envelope
  * (`schemaVersion` 1) are dropped on load, not migrated (baseline reset, W-60). Every operation opens and closes its own connection, and all of them run through one
  * queue, so reads and writes never interleave within a tab. Across tabs, `rev` is compared inside
@@ -130,7 +132,7 @@ async function withDb<T>(use: (db: IDBDatabase) => Promise<T>) {
 
 export interface DeskWrite {
   /** The whole desk in order. */
-  dataBlocks: PacketBlock[];
+  dataBlocks: StoredDataBlock[];
   /** Data-blocks (by reference) already stored, so only changed or new ones are written. */
   stored: ReadonlyMap<string, unknown>;
   /** The `rev` this tab last read or wrote; the write is refused if the store has moved on. */
@@ -221,7 +223,7 @@ export function resetPersistRequest() {
 }
 
 export interface LoadedDesk {
-  dataBlocks: PacketBlock[];
+  dataBlocks: StoredDataBlock[];
   /** The data-blocks known to be in IndexedDB (by reference), for the next incremental write. */
   stored: Map<string, unknown>;
   /** The stored `rev` this was read at; the next write must expect it. */
@@ -343,7 +345,7 @@ export interface StoredProject {
 
 /** A saved project with its whole desk, lineage included (null: the desk is left as it is on open). */
 export interface ProjectRecord extends Omit<StoredProject, 'hasDesk'> {
-  desk: PacketBlock[] | null;
+  desk: StoredDataBlock[] | null;
 }
 
 /** Projects, newest first. Reads no desks. */
