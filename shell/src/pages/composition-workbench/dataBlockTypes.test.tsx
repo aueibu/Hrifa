@@ -49,15 +49,11 @@ const blank = (typeId: string, overrides: Partial<BlankRequest> = {}) => {
 
 describe('the data-block-type registry', () => {
   it('lists the built-in packet types, and only Notes has an editor', () => {
-    expect(dataBlockTypes().map((type) => type.label)).toEqual([
-      'Notes',
-      'Pitch set',
-      'Pitch classes',
-      'Rhythm',
-      'Values',
-      'List',
-      'Bank',
-    ]);
+    expect(
+      dataBlockTypes()
+        .filter((type) => type.payload === 'packet')
+        .map((type) => type.label)
+    ).toEqual(['Notes', 'Pitch set', 'Pitch classes', 'Rhythm', 'Values', 'List', 'Bank']);
     expect(
       dataBlockTypes()
         .filter((type) => type.editorId)
@@ -71,7 +67,11 @@ describe('the data-block-type registry', () => {
       expect(acceptsDataBlocks([dataBlock])).toBe(true);
       expect(validateBlock(dataBlock)).toBeNull();
       expect(dataBlock.typeId).toBe(type.id);
-      expect(isPacketBlock(dataBlock) && dataBlock.payload.packet.items).toEqual([]);
+      if (isPacketBlock(dataBlock)) {
+        expect(dataBlock.payload.packet.items).toEqual([]);
+      } else {
+        expect(dataBlock.payload.kind).toBe('record');
+      }
       expect(dataBlock.lineage).toBeUndefined();
     }
   });

@@ -197,15 +197,45 @@ export function deleteImpact(project: RefsProject, id: string): DeleteImpact {
   return { users: dataBlockUsers(project, id), descendants: dataBlockDescendants(project, id) };
 }
 
+/** The owner's `onRefDeleted` hook applied to the slot `entry` names (before the slot is blanked). */
+function applyRefDeleted(
+  project: RefsProject,
+  entry: UserEntry,
+  deleted: StoredDataBlock,
+  blocks: readonly StoredDataBlock[]
+): RefsProject {
+  return {
+    ...project,
+    dataBlocks: project.dataBlocks.map((block) => {
+      const def = dataBlockTypeOf(block);
+      if (
+        block.id !== entry.ownerId ||
+        entry.slot === undefined ||
+        isPacketBlock(block) ||
+        def?.payload !== 'record' ||
+        !def.onRefDeleted
+      ) {
+        return block;
+      }
+      const data = def.onRefDeleted(block.payload.data, entry.slot, deleted, blocks);
+      return { ...block, payload: { kind: 'record', data } };
+    }),
+  };
+}
+
 /**
  * Deletes a data-block (O0, W-66): the block goes, and every record slot that held it is blanked
  * through the type's `mapRefs` (the record stays, the slot is null: references blank on delete, never
  * fall back). Make source nodes are left alone and show "missing" as before (S1).
  */
 export function deleteBlockFromProject(project: RefsProject, id: string): RefsProject {
+  const deleted = project.dataBlocks.find((block) => block.id === id);
   const blanked = dataBlockUsers(project, id)
     .filter((entry) => entry.ownerKind === blockReferencer.name)
-    .reduce((next, entry) => blockReferencer.repoint(next, entry, null), project);
+    .reduce((next, entry) => {
+      const hooked = deleted ? applyRefDeleted(next, entry, deleted, project.dataBlocks) : next;
+      return blockReferencer.repoint(hooked, entry, null);
+    }, project);
   return { ...blanked, dataBlocks: blanked.dataBlocks.filter((block) => block.id !== id) };
 }
 

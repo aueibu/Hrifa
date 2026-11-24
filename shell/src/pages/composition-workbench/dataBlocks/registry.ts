@@ -188,6 +188,17 @@ export interface RecordDataBlockType extends DataBlockTypeBase {
   refs?(data: unknown): SlotRef[];
   /** The data with every reference replaced by `fn(slot, ref)`; `null` clears it. */
   mapRefs?(data: unknown, fn: (slot: string, ref: Ref) => Ref | null): unknown;
+  /**
+   * Called by a delete for each slot that points at the deleted block, BEFORE `mapRefs` blanks it
+   * (the deleted block is still in `blocks`). Returns the new data, so a record can keep what the
+   * reference gave it (an object keeps its world start when its parent goes, W-68).
+   */
+  onRefDeleted?(
+    data: unknown,
+    slot: string,
+    deleted: StoredDataBlock,
+    blocks: readonly StoredDataBlock[]
+  ): unknown;
 }
 
 export type DataBlockTypeDef = PacketDataBlockType | RecordDataBlockType;

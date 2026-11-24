@@ -1,3 +1,4 @@
+import { registerSceneTypes } from '../../scene/sceneTypes';
 import { registerBankType } from './bank';
 import { registerListType } from './list';
 import { registerNotesType } from './notes';
@@ -19,6 +20,7 @@ registerRhythmType();
 registerValuesType();
 registerListType();
 registerBankType();
+registerSceneTypes();
 
 export { NOTES_TYPE_ID } from './notes';
 export { PITCH_CLASSES_TYPE_ID } from './pitchClasses';
