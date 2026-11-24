@@ -621,7 +621,7 @@ Make source places a data-block on the canvas as a `data-block-source` node (`Da
 
 ### References and users
 
-`dataBlockRefs.ts` (pure, node env, no storage or React; W-57) computes who uses a data-block. A reference is `{ id, version? }`; a **referencer** is registered with `registerReferencer({ name, refs(project), repoint(project, entry, toId | null), accepts? })`, and `dataBlockUsers(project, id)` / `dataBlockUserCount` walk the registry over `RefsProject { dataBlocks, instances, extra? }`. Users are never stored and never listed by hand. The only real referencer today is the Make source node (`nodeReferencer`: `dataBlockId` on a `data-block-source` instance, label "<instance label> (node)"); a collection, a timeline strip or a modifier input is one more registration (tests register fake ones).
+`dataBlocks/dataBlockRefs.ts` (pure, node env, no storage or React; W-57) (built-in `data-block` referencer, W-59: a registered record type's `refs(data)` entries, each under a stable `slot`, are users with no hand-written referencer; a `UserEntry` carries `slot`, and unlink, make single user and remap match on kind, owner and slot; `registerReferencer` throws on a duplicate name; `missingRefs` lists references to blocks no longer on the desk) computes who uses a data-block. A reference is `{ id, version? }`; a **referencer** is registered with `registerReferencer({ name, refs(project), repoint(project, entry, toId | null), accepts? })`, and `dataBlockUsers(project, id)` / `dataBlockUserCount` walk the registry over `RefsProject { dataBlocks, instances, extra? }`. Users are never stored and never listed by hand. The only real referencer today is the Make source node (`nodeReferencer`: `dataBlockId` on a `data-block-source` instance, label "<instance label> (node)"); a collection, a timeline strip or a modifier input is one more registration (tests register fake ones).
 
 Not users: `origin`, `lineage.derivedFrom`, the editor target, the inspector target, pins. Deleting a data-block breaks none of them. `dataBlockDescendants` (by `derivedFrom`, transitive) names what loses its source; `deleteImpact` returns `{ users, descendants }` for the delete confirm. Delete does not cascade: users show "missing".
 
@@ -643,6 +643,16 @@ The shape this implies:
 Stopgaps to treat as stopgaps, working and tested but not to be deepened: `PlaybackRequest.loop` and its transport loop points, the mixer's horizon and truncated pass, and the whole-pass unrolling in `compileMixerPlan`. The window function and scheduler should replace them, with the loop path kept only where a short seamless pass is genuinely simpler.
 
 An arrangement also needs what streaming alone does not give: a timeline model (data-blocks, positions, tracks, a tempo and meter map), editing, and committed multi-stream packets. What a committed multi-stream packet is (the `layers` kind) is deliberately undecided; see the Mixer section, which publishes none.
+
+## Data-block registry (rebuild, R0)
+
+`dataBlocks/` holds the ground-up registry (W-58, W-59). Nothing registers in it yet except tests; R1 registers the real types and moves callers (and the stored `DataBlock`) to the envelope. `dataBlockTypes.ts` stays until then.
+
+- Envelope (`registry.ts`): `{ schemaVersion, id, typeId, name, note?, createdAt, origin?, lineage?, payload }`, `payload` one of `{ kind: 'packet', packet }` or `{ kind: 'record', data }`. The type is stored; records have no version tree.
+- `registerDataBlockType(def)` (a duplicate id throws), `dataBlockTypes()`, `getDataBlockType(id)`, `dataBlockTypeOf(block)` (by stored `typeId`), `chooseTypeId(packet)`, `validateBlock`, `duplicateBlock`, `isBlockEmpty`, `auditionSupport(def)`, `auditionRefusal(block)`. A def: `{ id, label, payload, createBlank, preview?, editorId?, audition?, noAuditionReason?, duplicate?, isEmpty? }`, plus `accepts(packet)` on packet types (choose and validate only) and `validate`, `refs`, `mapRefs` on record types. No React: `preview` is an id or `{ id, options }`.
+- `acceptance.ts`: `registerConversion({ id, from, to, label, describe, convert })` per type pair; an `InputSpec` is `{ accepts, conversions? }`; `typesAccepting`, `reinterpretOptions`, `pickerFor` (exact, then reinterpret) and `applyConversion`. Nothing converts unless one is chosen and applied.
+- `dataBlockRefs.ts` (moved here): see "References and users" in "The desk".
+- `testTypes.ts`: test-only types (pitch-set-like, rhythm-like, notes-like, collection record).
 
 ## Rules for extending the vocabulary
 

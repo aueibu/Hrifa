@@ -1,6 +1,15 @@
-import { compositionInstanceLabel, type CompositionNodeInstance } from './compositionWorkspace';
-import { duplicateDataBlock, type DataBlock } from './dataBlock';
-import { makeSourceRefusal } from './dataBlockTypes';
+import { compositionInstanceLabel, type CompositionNodeInstance } from '../compositionWorkspace';
+import {
+  blockRefs,
+  dataBlockTypeOf,
+  duplicateBlock,
+  isBlockEmpty,
+  repointBlockRef,
+  type Ref,
+  type StoredDataBlock,
+} from './registry';
+
+export type { Ref };
 
 /**
  * References and users (W-57). A data-block's users are never stored and never counted from a
@@ -18,19 +27,13 @@ import { makeSourceRefusal } from './dataBlockTypes';
  * inspector target and pins. Deleting a data-block breaks none of them.
  */
 
-/** A pointer at a data-block. `version` pins a version; absent follows the head. */
-export interface Ref {
-  id: string;
-  version?: string;
-}
-
 /**
  * The state that references live in. `dataBlocks` is the desk, `instances` the canvas nodes (the Make
  * source nodes hold `dataBlockId`). `extra` is where a later referencer keeps its own state (a
  * collection record, the timeline's strips); the registry hands the whole project to every referencer.
  */
 export interface RefsProject {
-  dataBlocks: DataBlock[];
+  dataBlocks: StoredDataBlock[];
   instances: CompositionNodeInstance[];
   extra?: Record<string, unknown>;
 }
@@ -43,8 +46,8 @@ export interface UserEntry {
   /** As shown to the person: "Data-block 2 (node)", "bar 9 (strip)". */
   label: string;
   ref: Ref;
-  /** The role the reference fills, when its owner has roles (a collection's "rhythm"). */
-  role?: string;
+  /** The owner's stable key for this reference, when it holds several (a collection entry's slot). */
+  slot?: string;
 }
 
 export interface Referencer {
@@ -53,19 +56,22 @@ export interface Referencer {
   /** Every reference this kind of owner holds, over the whole project. */
   refs(project: RefsProject): UserEntry[];
   /**
-   * Points the one reference `entry` (told apart by ownerId, role and version) at `toId`, or clears
+   * Points the one reference `entry` (told apart by owner and slot) at `toId`, or clears
    * it (`null`: unlink). It drops any pinned `version`: a version id means nothing on a copy or on
    * another data-block. Returns the next project; an unknown owner returns it unchanged.
    */
   repoint(project: RefsProject, entry: UserEntry, toId: string | null): RefsProject;
   /** Why this owner cannot take `target` (Remap refuses), or null. Absent: it takes anything. */
-  accepts?(target: DataBlock, entry: UserEntry): string | null;
+  accepts?(target: StoredDataBlock, entry: UserEntry): string | null;
 }
 
 const referencers = new Map<string, Referencer>();
 
-/** Registers (or replaces, by name) a referencer. Returns a function that removes it again. */
+/** Registers a referencer. A duplicate name throws. Returns a function that removes it again. */
 export function registerReferencer(referencer: Referencer): () => void {
+  if (referencers.has(referencer.name)) {
+    throw new Error(`Referencer "${referencer.name}" is already registered.`);
+  }
   referencers.set(referencer.name, referencer);
   return () => {
     if (referencers.get(referencer.name) === referencer) {
@@ -107,6 +113,41 @@ export const nodeReferencer: Referencer = {
 
 registerReferencer(nodeReferencer);
 
+/** Why a data-block cannot be a Make source, or null: an empty one would publish nothing yet. */
+export function makeSourceRefusal(block: StoredDataBlock): string | null {
+  return isBlockEmpty(block)
+    ? 'This data-block is empty, so a source made from it would publish nothing yet.'
+    : null;
+}
+
+/**
+ * Data-blocks that hold references: a record type's `refs(data)` feeds users with no hand-written
+ * referencer, and `mapRefs` (through `repointBlockRef`) serves unlink, remap and make single user.
+ */
+export const blockReferencer: Referencer = {
+  name: 'data-block',
+  refs: ({ dataBlocks }) =>
+    dataBlocks.flatMap((block) =>
+      blockRefs(block).map(({ slot, ref }) => ({
+        ownerKind: 'data-block',
+        ownerId: block.id,
+        label: `${block.name} (${dataBlockTypeOf(block)?.label ?? 'data-block'})`,
+        ref: ref.version === undefined ? { id: ref.id } : { id: ref.id, version: ref.version },
+        slot,
+      }))
+    ),
+  repoint: (project, entry, toId) => ({
+    ...project,
+    dataBlocks: project.dataBlocks.map((block) =>
+      block.id === entry.ownerId && entry.slot !== undefined
+        ? repointBlockRef(block, { slot: entry.slot, ref: entry.ref }, toId)
+        : block
+    ),
+  }),
+};
+
+registerReferencer(blockReferencer);
+
 /** Everything that uses `id`, from every registered referencer, in registration then project order. */
 export function dataBlockUsers(project: RefsProject, id: string): UserEntry[] {
   return [...referencers.values()].flatMap((referencer) =>
@@ -123,7 +164,7 @@ export function dataBlockUserCount(project: RefsProject, id: string): number {
  * `lineage.derivedFrom`. They are history, not users: a delete leaves them untouched, and the
  * confirm names them because their "derived from" will point at nothing.
  */
-export function dataBlockDescendants(project: RefsProject, id: string): DataBlock[] {
+export function dataBlockDescendants(project: RefsProject, id: string): StoredDataBlock[] {
   const found = new Set<string>();
   const frontier = [id];
   while (frontier.length > 0) {
@@ -144,7 +185,7 @@ export function dataBlockDescendants(project: RefsProject, id: string): DataBloc
 
 export interface DeleteImpact {
   users: UserEntry[];
-  descendants: DataBlock[];
+  descendants: StoredDataBlock[];
 }
 
 /**
@@ -158,7 +199,7 @@ export function deleteImpact(project: RefsProject, id: string): DeleteImpact {
 export type RefsResult = { ok: true; project: RefsProject } | { ok: false; error: string };
 
 export type MakeSingleUserResult =
-  | { ok: true; project: RefsProject; copy: DataBlock }
+  | { ok: true; project: RefsProject; copy: StoredDataBlock }
   | { ok: false; error: string };
 
 function findUser(project: RefsProject, id: string, user: UserEntry): UserEntry | undefined {
@@ -166,8 +207,7 @@ function findUser(project: RefsProject, id: string, user: UserEntry): UserEntry 
     (entry) =>
       entry.ownerKind === user.ownerKind &&
       entry.ownerId === user.ownerId &&
-      entry.role === user.role &&
-      entry.ref.version === user.ref.version
+      entry.slot === user.slot
   );
 }
 
@@ -187,7 +227,7 @@ export function makeSingleUser(
   if (index < 0 || !entry || !referencer) {
     return { ok: false, error: 'That is not a user of this data-block.' };
   }
-  const copy = duplicateDataBlock(project.dataBlocks[index], request);
+  const copy = duplicateBlock(project.dataBlocks[index], request);
   const dataBlocks = [...project.dataBlocks];
   dataBlocks.splice(index + 1, 0, copy);
   return {
@@ -208,10 +248,10 @@ export function unlinkUser(project: RefsProject, user: UserEntry): RefsResult {
         .refs(project)
         .find(
           (candidate) =>
+            candidate.ownerKind === user.ownerKind &&
             candidate.ownerId === user.ownerId &&
-            candidate.role === user.role &&
-            candidate.ref.id === user.ref.id &&
-            candidate.ref.version === user.ref.version
+            candidate.slot === user.slot &&
+            candidate.ref.id === user.ref.id
         )
     : undefined;
   if (!referencer || !entry) {
@@ -274,7 +314,7 @@ export function remapUsers(project: RefsProject, fromId: string, toId: string): 
 }
 
 /** S6: the data-blocks nothing uses. Nothing is ever dropped automatically. */
-export function unusedDataBlocks(project: RefsProject): DataBlock[] {
+export function unusedDataBlocks(project: RefsProject): StoredDataBlock[] {
   const used = new Set(
     [...referencers.values()].flatMap((referencer) =>
       referencer.refs(project).map((entry) => entry.ref.id)
@@ -296,4 +336,15 @@ export function purge(project: RefsProject, plannedIds: readonly string[]): Refs
   const unused = new Set(purgePlan(project));
   const doomed = new Set(plannedIds.filter((id) => unused.has(id)));
   return { ...project, dataBlocks: project.dataBlocks.filter((block) => !doomed.has(block.id)) };
+}
+
+/**
+ * References that point at a data-block no longer on the desk. They are users of nothing, show as
+ * "missing", and never block saving or any operation here.
+ */
+export function missingRefs(project: RefsProject): UserEntry[] {
+  const present = new Set(project.dataBlocks.map((block) => block.id));
+  return [...referencers.values()].flatMap((referencer) =>
+    referencer.refs(project).filter((entry) => !present.has(entry.ref.id))
+  );
 }

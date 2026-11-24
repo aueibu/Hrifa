@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { CompositionNodeInstance } from './compositionWorkspace';
-import type { DataBlock } from './dataBlock';
+import type { CompositionNodeInstance } from '../compositionWorkspace';
+import { packet, type DataItem } from '../model';
 import {
   dataBlockDescendants,
   dataBlockUserCount,
@@ -18,10 +18,11 @@ import {
   type RefsProject,
   type UserEntry,
 } from './dataBlockRefs';
-import { packet, type DataItem } from './model';
+import { registerDataBlockType, type PacketBlock } from './registry';
+import { notesTestType, pitchSetTestType, rhythmTestType } from './testTypes';
 
 /** The B0 cast: R "Clave" (rhythm), R2 a second rhythm, P "Ring A" (pitch set), M "Melody" (notes). */
-function rhythmBlock(id: string, name: string, values: number[]): DataBlock {
+function rhythmBlock(id: string, name: string, values: number[]): PacketBlock {
   const items: DataItem<number>[] = values.map((value, index) => ({
     id: `${id}:${index}`,
     value,
@@ -30,13 +31,17 @@ function rhythmBlock(id: string, name: string, values: number[]): DataBlock {
   return {
     schemaVersion: 1,
     id,
+    typeId: 'rhythm-test',
     name,
     createdAt: '2026-11-23T00:00:00Z',
-    packet: packet('list', 'duration', items, [], undefined, { role: 'interOnset' }),
+    payload: {
+      kind: 'packet',
+      packet: packet('list', 'duration', items, [], undefined, { role: 'interOnset' }),
+    },
   };
 }
 
-function pitchBlock(id: string, name: string): DataBlock {
+function pitchBlock(id: string, name: string): PacketBlock {
   const items: DataItem<number>[] = [6000, 6200, 6400].map((value, index) => ({
     id: `${id}:${index}`,
     value,
@@ -45,9 +50,10 @@ function pitchBlock(id: string, name: string): DataBlock {
   return {
     schemaVersion: 1,
     id,
+    typeId: 'pitch-set-test',
     name,
     createdAt: '2026-11-23T00:00:00Z',
-    packet: packet('list', 'pitch', items),
+    payload: { kind: 'packet', packet: packet('list', 'pitch', items) },
   };
 }
 
@@ -86,7 +92,7 @@ const collectionReferencer: Referencer = {
               ownerId: extraOf(project).collection.id,
               label: `Collection ${extraOf(project).collection.id} (${entry.role})`,
               ref: { id: entry.id },
-              role: entry.role,
+              slot: entry.role,
             },
           ]
     ),
@@ -99,7 +105,7 @@ const collectionReferencer: Referencer = {
         collection: {
           ...extra.collection,
           roles: extra.collection.roles.map((role) =>
-            role.role === entry.role ? { ...role, id: toId } : role
+            role.role === entry.slot ? { ...role, id: toId } : role
           ),
         },
       },
@@ -143,7 +149,13 @@ function project(overrides: Partial<RefsProject> = {}): RefsProject {
 
 const unregister: (() => void)[] = [];
 beforeEach(() => {
-  unregister.push(registerReferencer(collectionReferencer), registerReferencer(stripReferencer));
+  unregister.push(
+    registerDataBlockType(rhythmTestType),
+    registerDataBlockType(pitchSetTestType),
+    registerDataBlockType(notesTestType),
+    registerReferencer(collectionReferencer),
+    registerReferencer(stripReferencer)
+  );
 });
 afterEach(() => {
   unregister.splice(0).forEach((remove) => remove());
@@ -162,7 +174,7 @@ describe('users (S1)', () => {
     const users = dataBlockUsers(project(), 'R');
     expect(users.map((entry) => entry.ownerKind).sort()).toEqual(['collection', 'node', 'strip']);
     expect(users.find((entry) => entry.ownerKind === 'node')?.label).toBe('Data-block (node)');
-    expect(users.find((entry) => entry.ownerKind === 'collection')?.role).toBe('rhythm');
+    expect(users.find((entry) => entry.ownerKind === 'collection')?.slot).toBe('rhythm');
     expect(dataBlockUserCount(project(), 'R')).toBe(3);
   });
 
@@ -194,7 +206,7 @@ describe('users (S1)', () => {
   });
 });
 
-function derivedFrom(id: string, versionId: string | null = null): DataBlock['lineage'] {
+function derivedFrom(id: string, versionId: string | null = null): PacketBlock['lineage'] {
   return {
     head: 'v0',
     versions: [{ id: 'v0', parentId: null, at: '2026-11-23T00:00:00Z', operation: 'duplicate' }],
@@ -424,7 +436,7 @@ describe('roles and pinned versions', () => {
       'node',
       'strip',
     ]);
-    const accent = users.find((entry) => entry.role === 'accent');
+    const accent = users.find((entry) => entry.slot === 'accent');
     if (!accent) {
       throw new Error('no accent user');
     }
