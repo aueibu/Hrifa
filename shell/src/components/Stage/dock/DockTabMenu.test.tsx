@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dockerHolding, treeDockers, type Screenset } from '../../../lib/stage';
-import { arrangementA, screenset } from '../../../lib/stage/fixtures';
+import { dockerHolding, treeDockers, type Workspace } from '../../../lib/stage';
+import { arrangementA, workspace } from '../../../lib/stage/fixtures';
 import type { StageStorage } from '../persistence';
 import { createStageRegistry, type StageModule } from '../registry';
 import { DockStage } from './DockStage';
@@ -39,8 +39,8 @@ const mod = (id: string, over: Partial<StageModule> = {}): StageModule => ({
   ...over,
 });
 const REGISTRY = createStageRegistry(
-  ['canvas', 'clip-editor', 'chords', 'sets', 'voicings'].map((id) =>
-    mod(id, id === 'clip-editor' ? { title: 'Clip editor' } : {})
+  ['canvas', 'data-block-editor', 'chords', 'sets', 'voicings'].map((id) =>
+    mod(id, id === 'data-block-editor' ? { title: 'Data-block editor' } : {})
   )
 );
 
@@ -50,23 +50,23 @@ function fakeStorage(): StageStorage & { map: Map<string, string> } {
 }
 
 function Host({ storage, showTabClose }: { storage?: StageStorage; showTabClose?: boolean }) {
-  const [s, setS] = useState<Screenset>(() => screenset(arrangementA));
+  const [s, setS] = useState<Workspace>(() => workspace(arrangementA));
   return (
     <>
       <DockStage
         registry={REGISTRY}
-        screenset={s}
+        workspace={s}
         update={setS}
         widthRem={100}
         heightRem={50}
         storage={storage}
         showTabClose={showTabClose}
       />
-      <output data-testid="screenset">{JSON.stringify(s)}</output>
+      <output data-testid="workspace">{JSON.stringify(s)}</output>
     </>
   );
 }
-const stored = () => JSON.parse(screen.getByTestId('screenset').textContent!) as Screenset;
+const stored = () => JSON.parse(screen.getByTestId('workspace').textContent!) as Workspace;
 const dockerOf = (panel: string) => dockerHolding(stored().tree, panel);
 const tab = (name: string) => screen.getByRole('tab', { name });
 const active = () => document.activeElement as HTMLElement | null;

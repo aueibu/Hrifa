@@ -1,40 +1,40 @@
-/** The screenset meta-tab strip: roving keyboard, add, rename, duplicate, delete (never the last). */
+/** The workspace meta-tab strip: roving keyboard, add, rename, duplicate, delete (never the last). */
 import { useState } from 'react';
 import { act, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { describe, expect, it, vi } from 'vitest';
-import { makeDocker, makeScreenset, makeStore, type ScreensetStore } from '../../../lib/stage';
+import { makeDocker, makeWorkspace, makeStore, type WorkspaceStore } from '../../../lib/stage';
 import {
-  addScreenset,
-  deleteScreenset,
-  duplicateScreenset,
-  renameScreenset,
-  setActiveScreenset,
-} from './screensetStore';
-import { ScreensetTabs } from './ScreensetTabs';
+  addWorkspace,
+  deleteWorkspace,
+  duplicateWorkspace,
+  renameWorkspace,
+  setActiveWorkspace,
+} from './workspaceStore';
+import { WorkspaceTabs } from './WorkspaceTabs';
 
 vi.setConfig({ testTimeout: 15_000 });
 
 const set = (id: string, name: string) =>
-  makeScreenset({ id, name, tree: makeDocker('d1', 'Main', ['canvas']) });
+  makeWorkspace({ id, name, tree: makeDocker('d1', 'Main', ['canvas']) });
 const three = () => makeStore([set('x', 'Canvas'), set('y', 'Desk'), set('z', 'Edit')], 'x');
 
-function Host({ initial = three() }: { initial?: ScreensetStore }) {
+function Host({ initial = three() }: { initial?: WorkspaceStore }) {
   const [st, setSt] = useState(initial);
   return (
     <>
-      <ScreensetTabs
+      <WorkspaceTabs
         store={st}
-        onActivate={(id) => setSt((s) => setActiveScreenset(s, id))}
-        onAdd={() => setSt((s) => addScreenset(s))}
-        onRename={(id, name) => setSt((s) => renameScreenset(s, id, name))}
-        onDuplicate={(id) => setSt((s) => duplicateScreenset(s, id))}
-        onDelete={(id) => setSt((s) => deleteScreenset(s, id))}
+        onActivate={(id) => setSt((s) => setActiveWorkspace(s, id))}
+        onAdd={() => setSt((s) => addWorkspace(s))}
+        onRename={(id, name) => setSt((s) => renameWorkspace(s, id, name))}
+        onDuplicate={(id) => setSt((s) => duplicateWorkspace(s, id))}
+        onDelete={(id) => setSt((s) => deleteWorkspace(s, id))}
       />
       <output data-testid="store">{JSON.stringify(st)}</output>
     </>
   );
 }
-const stored = () => JSON.parse(screen.getByTestId('store').textContent!) as ScreensetStore;
+const stored = () => JSON.parse(screen.getByTestId('store').textContent!) as WorkspaceStore;
 const tab = (name: string) => screen.getByRole('tab', { name });
 const active = () => document.activeElement as HTMLElement | null;
 const names = () =>
@@ -42,8 +42,8 @@ const names = () =>
     .getAllByRole('tab')
     .map((t) => t.textContent);
 
-describe('ScreensetTabs', () => {
-  it('shows one tab per screenset in order, the active one selected, one Tab stop', () => {
+describe('WorkspaceTabs', () => {
+  it('shows one tab per workspace in order, the active one selected, one Tab stop', () => {
     render(<Host />);
     expect(names()).toEqual(['Canvas', 'Desk', 'Edit']);
     expect(tab('Canvas')).toHaveAttribute('aria-selected', 'true');
@@ -57,7 +57,7 @@ describe('ScreensetTabs', () => {
   it('a click activates through the callback', async () => {
     const onActivate = vi.fn();
     render(
-      <ScreensetTabs
+      <WorkspaceTabs
         store={three()}
         onActivate={onActivate}
         onAdd={vi.fn()}
@@ -91,19 +91,19 @@ describe('ScreensetTabs', () => {
     render(<Host />);
     const list = screen.getByRole('tablist');
     expect(within(list).queryAllByRole('button')).toHaveLength(0);
-    expect(list.contains(screen.getByRole('button', { name: 'Add screenset' }))).toBe(false);
+    expect(list.contains(screen.getByRole('button', { name: 'Add workspace' }))).toBe(false);
     expect(list.contains(screen.getByRole('button', { name: 'Menu for Canvas' }))).toBe(false);
   });
 
-  it('adds a screenset (a copy of the active one) and focuses its tab', async () => {
+  it('adds a workspace (a copy of the active one) and focuses its tab', async () => {
     render(<Host />);
-    await userEvent.click(screen.getByRole('button', { name: 'Add screenset' }));
-    expect(names()).toEqual(['Canvas', 'Desk', 'Edit', 'Screenset 4']);
+    await userEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+    expect(names()).toEqual(['Canvas', 'Desk', 'Edit', 'Workspace 4']);
     expect(stored().active).toBe('s4');
-    expect(active()).toBe(tab('Screenset 4'));
+    expect(active()).toBe(tab('Workspace 4'));
   });
 
-  it('duplicates the active screenset right after it', async () => {
+  it('duplicates the active workspace right after it', async () => {
     render(<Host />);
     await userEvent.click(tab('Desk'));
     await userEvent.click(screen.getByRole('button', { name: 'Menu for Desk' }));
@@ -116,13 +116,13 @@ describe('ScreensetTabs', () => {
     render(<Host />);
     await userEvent.click(screen.getByRole('button', { name: 'Menu for Canvas' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Rename...' }));
-    const input = await screen.findByRole('textbox', { name: 'Screenset name' });
+    const input = await screen.findByRole('textbox', { name: 'Workspace name' });
     expect(input).toHaveValue('Canvas');
     await userEvent.clear(input);
     await userEvent.type(input, '{Enter}');
-    expect(await screen.findByText('Enter a name for the screenset.')).toBeInTheDocument();
+    expect(await screen.findByText('Enter a name for the workspace.')).toBeInTheDocument();
     await userEvent.type(input, 'desk{Enter}');
-    expect(await screen.findByText('A screenset named "desk" already exists.')).toBeInTheDocument();
+    expect(await screen.findByText('A workspace named "desk" already exists.')).toBeInTheDocument();
     await userEvent.clear(input);
     await userEvent.type(input, 'Arrange{Enter}');
     await waitFor(() => expect(names()).toEqual(['Arrange', 'Desk', 'Edit']));
@@ -130,7 +130,7 @@ describe('ScreensetTabs', () => {
     expect(active()).toBe(screen.getByRole('button', { name: 'Menu for Arrange' }));
   });
 
-  it('deletes the active screenset, activating a neighbour, but never the last one', async () => {
+  it('deletes the active workspace, activating a neighbour, but never the last one', async () => {
     render(<Host />);
     await userEvent.click(screen.getByRole('button', { name: 'Menu for Canvas' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }));

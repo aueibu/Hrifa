@@ -239,7 +239,7 @@ describe('the operators panel', () => {
     expect(pitchOf('n3')).toEqual([6700]);
     // Still selected (the same note, now an octave up), and the roll kept it.
     expect(roll).toHaveAccessibleName(/1 selected/);
-    // Root + exactly one edit, committed under its own operation (not a hand edit); the freeze of
+    // Root + exactly one edit, committed under its own operator (not a hand edit); the freeze of
     // the old data-block's properties rode in the same version.
     expect(versions().map((version) => version.operation)).toEqual([
       'original',

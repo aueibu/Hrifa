@@ -1,22 +1,22 @@
 import { fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { dockerHolding, parseScreensetStore, type ScreensetStore } from '../../../lib/stage';
+import { dockerHolding, parseWorkspaceStore, type WorkspaceStore } from '../../../lib/stage';
 import { CompositionWorkbenchPage } from '../../CompositionWorkbench.page';
 import { canUndo, resetHistory } from '../history';
 import { compositionStateKeys } from '../usePersistentState';
-import { storeDefaultScreensets } from './screensetFixtures';
-import { WORKBENCH_KNOWN_IDS } from './workbenchScreensets';
+import { WORKBENCH_KNOWN_IDS } from './workbenchWorkspaces';
+import { storeDefaultWorkspaces } from './workspaceFixtures';
 
 const footerTab = (name: string) =>
   within(screen.getByRole('contentinfo')).getByRole('tab', { name });
 
-function storedStore(): ScreensetStore {
-  const raw = localStorage.getItem(compositionStateKeys.screensets);
+function storedStore(): WorkspaceStore {
+  const raw = localStorage.getItem(compositionStateKeys.workspaces);
   if (raw === null) {
-    throw new Error('no screenset store was stored');
+    throw new Error('no workspace store was stored');
   }
-  return parseScreensetStore(raw, WORKBENCH_KNOWN_IDS, {
-    fallback: undefined as unknown as ScreensetStore,
+  return parseWorkspaceStore(raw, WORKBENCH_KNOWN_IDS, {
+    fallback: undefined as unknown as WorkspaceStore,
   });
 }
 
@@ -28,7 +28,7 @@ function clearProject() {
 describe('the workbench center on the dock Stage', () => {
   beforeEach(clearProject);
 
-  it('keeps the canvas and every node editor mounted when screensets flip, and outputs still reach a routed node', async () => {
+  it('keeps the canvas and every node editor mounted when workspaces flip, and outputs still reach a routed node', async () => {
     const user = userEvent.setup();
     render(<CompositionWorkbenchPage />);
     const canvas = screen.getByLabelText('Composition canvas');
@@ -44,13 +44,13 @@ describe('the workbench center on the dock Stage', () => {
     const editorBefore = document.querySelector('input[aria-label="Generator 1 pattern"]');
     expect(editorBefore).not.toBeNull();
 
-    // Desk and Edit screensets: the canvas is the very same element afterwards, parked then back.
+    // Desk and Edit workspaces: the canvas is the very same element afterwards, parked then back.
     await user.click(footerTab('Desk'));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'New data-block' })).toBeVisible()
     );
     expect(canvas.closest('[inert]')).not.toBeNull();
-    // Interference changes its resultant while the Desk screenset shows: Melodicization still gets it.
+    // Interference changes its resultant while the Desk workspace shows: Melodicization still gets it.
     fireEvent.change(document.querySelector('input[aria-label="Generator 1 pattern"]')!, {
       target: { value: '4' },
     });
@@ -63,7 +63,7 @@ describe('the workbench center on the dock Stage', () => {
     expect(screen.getByLabelText('Composition canvas')).toBe(canvas);
     expect(canvas.closest('[inert]')).toBeNull();
     expect(document.querySelector('input[aria-label="Generator 1 pattern"]')).toBe(editorBefore);
-    // flipping screensets is layout, never an undo step
+    // flipping workspaces is layout, never an undo step
     expect(canUndo()).toBe(true); // the routing above is
     resetHistory();
     await user.click(footerTab('Desk'));
@@ -71,7 +71,7 @@ describe('the workbench center on the dock Stage', () => {
     expect(canUndo()).toBe(false);
   }, 40_000);
 
-  it('restores the active screenset and a docker sent elsewhere after a reload', async () => {
+  it('restores the active workspace and a docker sent elsewhere after a reload', async () => {
     const user = userEvent.setup();
     const first = render(<CompositionWorkbenchPage />);
     await user.click(footerTab('Desk'));
@@ -86,7 +86,7 @@ describe('the workbench center on the dock Stage', () => {
     fireEvent.contextMenu(deskTab);
     await user.click(await screen.findByRole('menuitem', { name: 'Tools' }));
     await waitFor(() =>
-      expect(dockerHolding(storedStore().screensets.desk.tree, 'desk')?.name).toBe('Tools')
+      expect(dockerHolding(storedStore().workspaces.desk.tree, 'desk')?.name).toBe('Tools')
     );
     expect(canUndo()).toBe(false);
     first.unmount();
@@ -102,7 +102,7 @@ describe('the workbench center on the dock Stage', () => {
 
   it('clears the open data-block target when its data-block is deleted while the data-block editor tab is closed', async () => {
     const user = userEvent.setup();
-    storeDefaultScreensets({ active: 'desk' });
+    storeDefaultWorkspaces({ active: 'desk' });
     render(<CompositionWorkbenchPage />);
     await waitFor(
       () => expect(screen.getByRole('button', { name: 'New data-block' })).toBeEnabled(),

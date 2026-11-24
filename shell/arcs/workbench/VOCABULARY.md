@@ -29,6 +29,7 @@ Sources: `RESEARCH.blender.md` (the manual pages) and the Blender manual's own t
 | **Channel** | One aspect over time (pitch, velocity, volume, tempo) inside a data-block, shown as a row | F-curve channel (Dope Sheet row) | (new) |
 | **Marker** | A named point or span on the time ruler shared by every time view; may be bound to a pitch context | Marker | section (meta lane) |
 | **Workspace** | A saved arrangement of panels | Workspace | screenset |
+| **Kept words** | `instrument` in `audio/` is the sound source (a synth voice, not a tool); `processor` is the SpessaSynth library class; **velocity lane** is the shared piano roll's own part (`VelocityLane`, `velocityLane` preference keys). These are not renamed. | (none) | (kept, B1c, W-56) |
 | **Tweak mode** | Edit a strip's data-block in place while the timeline shows where it sits | Tweak mode | (new) |
 | **Bake** | Freeze a modifier's result into a data-block | Bake / Apply | (unchanged) |
 

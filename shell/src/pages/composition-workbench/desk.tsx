@@ -74,7 +74,7 @@ interface DeskContextValue {
   ): Promise<{ ok: true } | { ok: false; error: string }>;
   /**
    * Ends the data-block's hand-edit session so its next edit starts a new version (an editor calls this
-   * when it closes or another data-block becomes its target). Idle time and a different operation end a
+   * when it closes or another data-block becomes its target). Idle time and a different operator end a
    * session too.
    */
   endEditSession(dataBlockId: string): void;
@@ -105,7 +105,7 @@ interface DeskContextValue {
   ): PitchClassConversionResult;
   /**
    * The edit contract: replace the data-block's packet in place (same id, name and position), adding an
-   * `operation` provenance step to each added or modified item. One global undo step per gesture. A packet
+   * operator provenance step to each added or modified item. One global undo step per gesture. A packet
    * deeply equal to the current one changes nothing (`ok`, no history entry); an invalid packet or
    * an unknown id is refused and the desk is untouched. A `coalesceKey` makes a gesture's edits one
    * undo step (undo is per gesture; versions are per edit session, see `commitDataBlockEdit`).

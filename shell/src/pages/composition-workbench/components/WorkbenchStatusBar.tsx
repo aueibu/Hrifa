@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ActionIcon, Text } from '@mantine/core';
-import { ScreensetTabs, type ScreensetTabsProps } from '../../../components/Stage/dock';
+import { WorkspaceTabs, type WorkspaceTabsProps } from '../../../components/Stage/dock';
 import { useHoverInfo } from './hoverInfo';
 import classes from './WorkbenchStatusBar.module.css';
 
@@ -8,7 +8,7 @@ import classes from './WorkbenchStatusBar.module.css';
 const idleText = 'Hover over a control, a note or a line for details.';
 
 /**
- * The strip along the bottom of the workbench, after Bitwig's: the inspector toggle and the screenset
+ * The strip along the bottom of the workbench, after Bitwig's: the inspector toggle and the workspace
  * meta-tabs (Canvas, Desk, Edit and the person's own) at the left, the explanation of whatever the
  * pointer is on in the middle, and the Panels menu and settings toggle at the right. The middle is
  * driven by `data-info` attributes (see `useHoverInfo`), so only this component updates as the
@@ -19,15 +19,15 @@ export function WorkbenchStatusBar({
   onToggleInspector,
   settingsOpen,
   onToggleSettings,
-  screensets,
+  workspaces: workspaces,
   panelsMenu,
 }: {
   inspectorOpen: boolean;
   onToggleInspector(): void;
   settingsOpen: boolean;
   onToggleSettings(): void;
-  /** The screenset store and its operations (the Stage's `ScreensetTabs`). */
-  screensets: ScreensetTabsProps;
+  /** The workspace store and its operations (the Stage's `WorkspaceTabs`). */
+  workspaces: WorkspaceTabsProps;
   /** The Panels menu, placed before the settings toggle. */
   panelsMenu?: ReactNode;
 }) {
@@ -61,10 +61,10 @@ export function WorkbenchStatusBar({
           </svg>
         </ActionIcon>
         <div
-          className={classes.screensets}
-          data-info="Screensets: arrangements of the canvas, desk, nodes and data-block editor. Switch, add, rename or duplicate them."
+          className={classes.workspaces}
+          data-info="Workspaces: arrangements of the canvas, desk, nodes and data-block editor. Switch, add, rename or duplicate them."
         >
-          <ScreensetTabs {...screensets} />
+          <WorkspaceTabs {...workspaces} />
         </div>
       </div>
       <Text

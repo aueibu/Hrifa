@@ -6,7 +6,7 @@ import * as dataBlockNode from './dataBlock';
 import { DATA_BLOCK_DEFAULTS_KEY } from './dataBlockPreferences';
 import { seedDesk } from './deskTestUtils';
 import { canUndo, resetHistory } from './history';
-import { storeDefaultScreensets } from './layout/screensetFixtures';
+import { storeDefaultWorkspaces } from './layout/workspaceFixtures';
 import { packet } from './model';
 import { compositionStateKeys } from './usePersistentState';
 
@@ -32,13 +32,13 @@ function dataBlock(id: string, name: string) {
 // The dock keeps its own permanent role="status" notice, so the data-block editor's status is found by its text.
 const dataBlockStatus = () =>
   screen.getByText('No editor for this data-block yet.').closest('[role="status"]') as HTMLElement;
-// The screenset meta-tabs in the footer (the docker tabs have their own, same-named, tabs).
+// The workspace meta-tabs in the footer (the docker tabs have their own, same-named, tabs).
 const footerTab = (name: string) =>
   within(screen.getByRole('contentinfo')).getByRole('tab', { name });
 
 async function seed(options: { view?: 'canvas' | 'desk'; collapsed?: boolean } = {}) {
   await seedDesk([dataBlock('block-a', 'Alpha'), dataBlock('block-b', 'Beta')]);
-  storeDefaultScreensets({ active: options.view ?? 'desk', detailCollapsed: !!options.collapsed });
+  storeDefaultWorkspaces({ active: options.view ?? 'desk', detailCollapsed: !!options.collapsed });
 }
 
 async function card(name: string) {
@@ -244,7 +244,7 @@ describe('New data-block', () => {
   });
 
   async function renderEmptyDesk() {
-    storeDefaultScreensets({ active: 'desk', detailCollapsed: true });
+    storeDefaultWorkspaces({ active: 'desk', detailCollapsed: true });
     render(<CompositionWorkbenchPage />);
     // Disabled until the desk has loaded, so enabled means ready.
     // The loading view and the loaded view are different elements, so look the button up each time.

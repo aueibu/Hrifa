@@ -1,6 +1,6 @@
 /**
- * The dock spike's panels, registry and the three target arrangements as screensets (throwaway, like the other spike
- * modules). `canvas` is `keepMounted` so switching screenset keeps it alive. `note` is a `multiple` kind: its instances
+ * The dock spike's panels, registry and the three target arrangements as workspaces (throwaway, like the other spike
+ * modules). `canvas` is `keepMounted` so switching workspace keeps it alive. `note` is a `multiple` kind: its instances
  * (`note:<key>`) come from the page's persisted instance list (the dynamic registry, design 1.4). The Panels menu reaches
  * the Stage API through `DockStage`'s `onApi` prop.
  */
@@ -10,11 +10,11 @@ import { buildStageRegistry, type PanelKind } from '../../../components/Stage/do
 import type { StageRegistry } from '../../../components/Stage/registry';
 import {
   makeDocker,
-  makeScreenset,
+  makeWorkspace,
   makeStore,
   slotSizeAttr,
-  type Screenset,
-  type ScreensetStore,
+  type Workspace,
+  type WorkspaceStore,
   type SlotSize,
 } from '../../../lib/stage';
 import { NotesStandin } from '../standins/NotesStandin';
@@ -61,7 +61,7 @@ const standin = (id: string, title: string, over: Partial<PanelKind> = {}): Pane
 export const DOCK_KINDS: readonly PanelKind[] = [
   standin('canvas', 'Canvas', { keepMounted: true, home: 'Canvas' }),
   standin('desk', 'Desk', { home: 'Canvas' }),
-  standin('clip-editor', 'Clip editor', {
+  standin('data-block-editor', 'Data-block editor', {
     home: 'Detail',
     render: (size) => <RollStandin size={size} />,
   }),
@@ -87,14 +87,14 @@ export const NEW_INSTANCE_KINDS = DOCK_KINDS.filter((k) => k.multiple).map(({ id
   title,
 }));
 
-/** The registry with no instances (what the stored screensets are checked against in tests). */
+/** The registry with no instances (what the stored workspaces are checked against in tests). */
 export const DOCK_REGISTRY: StageRegistry = buildStageRegistry(DOCK_KINDS, []);
 
 const dock = makeDocker;
 
 /** (a) A top docker over a bottom area whose right-hand docker holds three tabs. */
-const arrangementA = (): Screenset =>
-  makeScreenset({
+const arrangementA = (): Workspace =>
+  makeWorkspace({
     id: 'a',
     name: '(a) Top over bottom, three tabs',
     tree: {
@@ -108,7 +108,7 @@ const arrangementA = (): Screenset =>
             kind: 'split',
             dir: 'row',
             children: [
-              { weight: 1, node: dock('a2', 'Detail', ['clip-editor']) },
+              { weight: 1, node: dock('a2', 'Detail', ['data-block-editor']) },
               { rem: 30, node: dock('a3', 'Tools', ['chords', 'sets', 'voicings'], 'chords') },
             ],
           },
@@ -118,8 +118,8 @@ const arrangementA = (): Screenset =>
   });
 
 /** (b) Left, centre and right dockers with one tab each. */
-const arrangementB = (): Screenset =>
-  makeScreenset({
+const arrangementB = (): Workspace =>
+  makeWorkspace({
     id: 'b',
     name: '(b) Left, centre, right',
     tree: {
@@ -134,8 +134,8 @@ const arrangementB = (): Screenset =>
   });
 
 /** (c) A top docker over a bottom split into left and right; the right one is empty. */
-const arrangementC = (): Screenset =>
-  makeScreenset({
+const arrangementC = (): Workspace =>
+  makeWorkspace({
     id: 'c',
     name: '(c) Top over left and right',
     tree: {
@@ -149,7 +149,7 @@ const arrangementC = (): Screenset =>
             kind: 'split',
             dir: 'row',
             children: [
-              { weight: 0.5, node: dock('c2', 'Detail', ['clip-editor']) },
+              { weight: 0.5, node: dock('c2', 'Detail', ['data-block-editor']) },
               { weight: 0.5, node: dock('c3', 'Tools') },
             ],
           },
@@ -158,10 +158,10 @@ const arrangementC = (): Screenset =>
     },
   });
 
-export const DEFAULT_ARRANGEMENTS: readonly Screenset[] = [
+export const DEFAULT_ARRANGEMENTS: readonly Workspace[] = [
   arrangementA(),
   arrangementB(),
   arrangementC(),
 ];
 
-export const defaultDockStore = (): ScreensetStore => makeStore(DEFAULT_ARRANGEMENTS, 'a');
+export const defaultDockStore = (): WorkspaceStore => makeStore(DEFAULT_ARRANGEMENTS, 'a');

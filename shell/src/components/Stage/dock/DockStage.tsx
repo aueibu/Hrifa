@@ -1,10 +1,10 @@
 /**
- * The dock Stage: renders a screenset (a split tree of named dockers holding tabbed panels) through the registry. It
- * lives beside the old column Stage (`../Stage.tsx`), which it does not touch. The caller owns the screenset state and
- * passes `screenset` and `update`; this component owns no layout data.
+ * The dock Stage: renders a workspace (a split tree of named dockers holding tabbed panels) through the registry. It
+ * lives beside the old column Stage (`../Stage.tsx`), which it does not touch. The caller owns the workspace state and
+ * passes `workspace` and `update`; this component owns no layout data.
  *
  * Mounted once, parked not detached (supersedes the old Stage's hidden-detached rule for this component):
- * - every panel that is open, and every `keepMounted` panel (open or not, in this screenset or not), is rendered
+ * - every panel that is open, and every `keepMounted` panel (open or not, in this workspace or not), is rendered
  *   exactly once at the root through `createPortal` into a stable host element (parking.ts);
  * - the host is moved into its docker's body (the active tab visible, the other tabs parked in place in the same grid
  *   cell), or into a park box for a collapsed or narrow-hidden docker (at the last measured size, else the solver's) or
@@ -57,7 +57,7 @@ import {
   type DockerId,
   type Edge,
   type PanelId,
-  type Screenset,
+  type Workspace,
 } from '../../../lib/stage';
 import { DEFAULT_DENSITY, tokenStyle } from '../../InspectorKit';
 import { browserStorage, type StageStorage } from '../persistence';
@@ -93,9 +93,9 @@ import classes from './dock.module.css';
 
 export interface DockStageProps {
   registry: StageRegistry;
-  screenset: Screenset;
-  /** Apply a change to the latest screenset (a React state updater). */
-  update(fn: (s: Screenset) => Screenset): void;
+  workspace: Workspace;
+  /** Apply a change to the latest workspace (a React state updater). */
+  update(fn: (s: Workspace) => Workspace): void;
   /**
    * The size in rem. When absent the Stage measures its own root (ResizeObserver); until the first measurement the
    * size counts as 0.
@@ -106,7 +106,7 @@ export interface DockStageProps {
   showSizes?: boolean;
   /**
    * Hands the Stage API to code OUTSIDE the Stage (a Panels menu in the page header). Called with the API after mount
-   * (the object is stable: it reads the latest registry and screenset when called, so a registry rebuild does not
+   * (the object is stable: it reads the latest registry and workspace when called, so a registry rebuild does not
    * change it) and with `null` on unmount. Inside the Stage use `useStageApi()`.
    */
   onApi?: (api: StageApi | null) => void;
@@ -121,7 +121,7 @@ export interface DockStageProps {
 }
 
 /** The docker an edit created: the id present after and not before. */
-const createdDocker = (before: Screenset, after: Screenset): DockerId | undefined => {
+const createdDocker = (before: Workspace, after: Workspace): DockerId | undefined => {
   const had = new Set(treeDockers(before.tree).map((d) => d.id));
   return treeDockers(after.tree).find((d) => !had.has(d.id))?.id;
 };
@@ -157,7 +157,7 @@ interface ParkBox {
 
 export function DockStage({
   registry,
-  screenset,
+  workspace: workspace,
   update: updateProp,
   widthRem: widthProp,
   heightRem: heightProp,
@@ -183,7 +183,7 @@ export function DockStage({
   // `update` is read through a ref so an inline function from the host cannot change the API (and loop through `onApi`)
   const updateRef = useRef(updateProp);
   updateRef.current = updateProp;
-  const update = useCallback((fn: (s: Screenset) => Screenset) => updateRef.current(fn), []);
+  const update = useCallback((fn: (s: Workspace) => Workspace) => updateRef.current(fn), []);
   const hosts = useRef(new Map<string, HTMLDivElement>());
   const hostFor = (id: string) => {
     let host = hosts.current.get(id);
@@ -273,11 +273,11 @@ export function DockStage({
   const [selected, setSelected] = useState<DockerId | undefined>(undefined);
   const minOf = useMemo(() => dockerMinOf(registry.meta), [registry]);
   const geometry = useMemo(
-    () => layoutTree(screenset, widthRem, heightRem, { minOf, selected }),
-    [screenset, widthRem, heightRem, minOf, selected]
+    () => layoutTree(workspace, widthRem, heightRem, { minOf, selected }),
+    [workspace, widthRem, heightRem, minOf, selected]
   );
-  const latest = useRef({ screenset, geometry, widthRem, heightRem, selected });
-  latest.current = { screenset, geometry, widthRem, heightRem, selected };
+  const latest = useRef({ workspace: workspace, geometry, widthRem, heightRem, selected });
+  latest.current = { workspace: workspace, geometry, widthRem, heightRem, selected };
 
   /* ------------------------------------------------------------------ edits */
   // ONE permanent role=status element; only its text changes. Every refusal is a new request: the text is cleared and
@@ -305,23 +305,23 @@ export function DockStage({
   // (instances come and go) and always judge against the latest one
   const registryRef = useRef(registry);
   registryRef.current = registry;
-  const guard = useCallback((s: Screenset, next: Screenset, select?: DockerId) => {
+  const guard = useCallback((s: Workspace, next: Workspace, select?: DockerId) => {
     const { widthRem: w, heightRem: h, selected: sel } = latest.current;
     return guardedTree(s, next, registryRef.current.meta, w, h, select ?? sel);
   }, []);
   /**
    * A layout edit that must respect minimums (sends, new dockers, resizes). `what` names it in the refusal notice;
    * `select` is the docker the narrow rule must keep open while judging it and that becomes the selected docker once
-   * the edit is accepted: a send's destination, or (a function of the screenset before and after) the docker the edit
+   * the edit is accepted: a send's destination, or (a function of the workspace before and after) the docker the edit
    * created. A refused edit selects nothing.
    */
   const applyGuarded = useCallback(
     (
-      fn: (s: Screenset) => Screenset,
+      fn: (s: Workspace) => Workspace,
       what?: string,
-      select?: DockerId | ((before: Screenset, after: Screenset) => DockerId | undefined)
+      select?: DockerId | ((before: Workspace, after: Workspace) => DockerId | undefined)
     ): boolean => {
-      const cur = latest.current.screenset;
+      const cur = latest.current.workspace;
       const want = fn(cur);
       const sel = typeof select === 'function' ? select(cur, want) : select;
       const refused = want !== cur && guard(cur, want, sel) === cur;
@@ -341,7 +341,7 @@ export function DockStage({
 
   /**
    * THE send action: the Send-to menu, the API and a drop all come through here. Guarded (W-30) with the destination (or
-   * the newly created docker) counted as selected; a refused edit leaves the screenset unchanged and shows the status
+   * the newly created docker) counted as selected; a refused edit leaves the workspace unchanged and shows the status
    * line; the selection moves only after an accepted edit. Returns whether the edit was accepted (a no-op, such as a
    * same-docker drop that changes no index, is not).
    */
@@ -352,7 +352,7 @@ export function DockStage({
       }
       if (
         target.kind === 'root' &&
-        sendToRoot(latest.current.screenset, panel, target.edge) === latest.current.screenset
+        sendToRoot(latest.current.workspace, panel, target.edge) === latest.current.workspace
       ) {
         setNotice('No room for another split at the Stage edge.');
         return false;
@@ -381,10 +381,10 @@ export function DockStage({
   /** Select a docker (ring it, expand it if collapsed) and, by default, move focus to its active tab. */
   const selectDockerNow = useCallback(
     (id: DockerId, focus: boolean) => {
-      if (!findDocker(latest.current.screenset.tree, id)) {
+      if (!findDocker(latest.current.workspace.tree, id)) {
         return;
       }
-      if ((latest.current.screenset.collapsed ?? []).includes(id)) {
+      if ((latest.current.workspace.collapsed ?? []).includes(id)) {
         update((s) => setCollapsed(s, id, false));
       }
       setSelected(id);
@@ -403,7 +403,7 @@ export function DockStage({
   }, []);
   const cycleDocker = useCallback(
     (delta: 1 | -1) => {
-      const order = treeDockers(latest.current.screenset.tree);
+      const order = treeDockers(latest.current.workspace.tree);
       if (order.length === 0) {
         return;
       }
@@ -436,7 +436,7 @@ export function DockStage({
     (cmd: DockCommand): boolean => {
       const n = dockerNumber(cmd);
       if (n !== null) {
-        const d = treeDockers(latest.current.screenset.tree)[n - 1];
+        const d = treeDockers(latest.current.workspace.tree)[n - 1];
         if (!d) {
           return false;
         }
@@ -499,7 +499,7 @@ export function DockStage({
 
   const api = useMemo<StageApi>(() => {
     const homeOf = (id: PanelId) => registryRef.current.meta.get(id)?.home;
-    const runShow = (s: Screenset, id: PanelId) => {
+    const runShow = (s: Workspace, id: PanelId) => {
       let next = openPanel(s, id, { home: homeOf(id) });
       const d = dockerHolding(next.tree, id);
       if (d) {
@@ -522,7 +522,7 @@ export function DockStage({
           return;
         }
         update((s) => runShow(s, id).next);
-        const d = runShow(latest.current.screenset, id).docker;
+        const d = runShow(latest.current.workspace, id).docker;
         if (d) {
           setSelected(d.id);
           if (opts?.focus) {
@@ -536,7 +536,7 @@ export function DockStage({
       sendTo(id, target) {
         sendToTarget(id, target);
       },
-      isOpen: (id) => dockerHolding(latest.current.screenset.tree, id) !== null,
+      isOpen: (id) => dockerHolding(latest.current.workspace.tree, id) !== null,
       isShown(id) {
         const p = placement(id);
         return !!p && p.docker.active === id && p.state === 'open';
@@ -732,7 +732,7 @@ export function DockStage({
         eatClick();
         if (result && !result.noop && sendToTarget(panel, result.target)) {
           const t = result.target;
-          const tree = latest.current.screenset.tree;
+          const tree = latest.current.workspace.tree;
           const dest = t.kind === 'docker' ? findDocker(tree, t.docker) : null;
           const before = dockerHolding(tree, panel);
           setNotice(
@@ -790,7 +790,7 @@ export function DockStage({
         sendToTarget(p.panel, { kind: 'split', beside: p.beside, edge: p.edge, name });
       } else {
         applyGuarded(
-          (s) => splitDocker(s, p.beside, p.edge, { name })?.screenset ?? s,
+          (s) => splitDocker(s, p.beside, p.edge, { name })?.workspace ?? s,
           'add a docker there',
           createdDocker
         );
@@ -811,7 +811,7 @@ export function DockStage({
         update((s) => setActive(s, docker, panel));
       },
       rename: (docker, name) => {
-        if (!canRenameDocker(latest.current.screenset, docker, name)) {
+        if (!canRenameDocker(latest.current.workspace, docker, name)) {
           return false;
         }
         update((s) => renameDocker(s, docker, name));
@@ -819,7 +819,7 @@ export function DockStage({
       },
       newDockerPrompt: (beside, edge) => setPrompt({ beside, edge }),
       remove: (docker) => {
-        const order = treeDockers(latest.current.screenset.tree);
+        const order = treeDockers(latest.current.workspace.tree);
         const at = order.findIndex((d) => d.id === docker);
         const rest = order.filter((d) => d.id !== docker);
         update((s) => removeDocker(s, docker));
@@ -831,7 +831,7 @@ export function DockStage({
       },
       setCollapsed: (docker, collapsed) => update((s) => setCollapsed(s, docker, collapsed)),
       closeTab: (panel) => {
-        const d = dockerHolding(latest.current.screenset.tree, panel);
+        const d = dockerHolding(latest.current.workspace.tree, panel);
         update((s) => closePanel(s, panel));
         if (d) {
           requestFocus({ kind: 'docker', docker: d.id });
@@ -857,7 +857,7 @@ export function DockStage({
         requestFocus({ kind: 'tab', panel });
       },
       toggleSizing: (docker) => {
-        const { screenset: cur, geometry: geo } = latest.current;
+        const { workspace: cur, geometry: geo } = latest.current;
         const to = toggledSizing(cur, geo, docker);
         if (to) {
           applyGuarded((s) => setDockerSizing(s, docker, to), 'change its size');
@@ -871,7 +871,7 @@ export function DockStage({
 
   /* ------------------------------------------------------------------ what is rendered, and where it is held */
   const keepMounted = [...registry.meta.values()].filter((m) => m.keepMounted).map((m) => m.id);
-  const renderIds = [...new Set([...openPanels(screenset.tree), ...keepMounted])].filter((id) =>
+  const renderIds = [...new Set([...openPanels(workspace.tree), ...keepMounted])].filter((id) =>
     registry.modules.has(id)
   );
 
@@ -892,7 +892,7 @@ export function DockStage({
         return known;
       }
       if (placementOf.state === 'collapsed') {
-        expanded ??= solveTree(screenset.tree, widthRem, heightRem, {
+        expanded ??= solveTree(workspace.tree, widthRem, heightRem, {
           minOf,
           collapsed: [],
           selected,
@@ -909,7 +909,7 @@ export function DockStage({
     if (own) {
       return own;
     }
-    const place = screenset.lastDocker[id];
+    const place = workspace.lastDocker[id];
     return (place && lastRem.current.get(`d:${place.docker}`)) || STAGE_MIN;
   };
   for (const id of renderIds) {
@@ -998,7 +998,7 @@ export function DockStage({
                 uid={uid}
                 selected={selected === p.docker.id}
                 canRemove={geometry.dockers.length > 1}
-                sizing={dockerSizing(screenset.tree, p.docker.id)}
+                sizing={dockerSizing(workspace.tree, p.docker.id)}
                 showTabClose={showTabClose}
                 onToggleTabClose={toggleTabClose}
                 actions={actions}

@@ -44,7 +44,7 @@ export interface DataBlockVersion {
   /** The version this one was made from; null for the single root. */
   parentId: string | null;
   at: string;
-  /** What produced it: `original`, an edit operation such as `edit`, or a derivation name. */
+  /** What produced it: `original`, an edit operator such as `edit`, or a derivation name. */
   operation: string;
   /** The snapshot. Absent on the head version only (see `DataBlock.lineage`). */
   packet?: DataPacket;
@@ -466,7 +466,7 @@ export interface CommitOptions {
   /**
    * Marks a hand edit (typing, dragging in an editor): hand edits are grouped into sessions. Without
    * it the edit is a meaningful moment (a transform, a rhythm edit, a conversion) and always makes a
-   * version of its own, whatever the operation is called.
+   * version of its own, whatever the operator is called.
    */
   handEdit?: boolean;
 }
@@ -477,16 +477,16 @@ export interface CommitOptions {
  * (never aliasing it).
  *
  * Provenance: items that are `added` (id not in the old packet) or `modified` (value, label or tie
- * differ) gain a step whose `transformation` is `operation` and whose parameters record `dataBlockId`,
+ * differ) gain a step whose `transformation` is the operator name and whose parameters record `dataBlockId`,
  * `versionId` and `change`; unchanged items get none. Item ids are the caller's obligation: an
  * editor must keep the id of an item it moves or changes, and nothing here enforces it.
  *
  * Versions: the first edit creates the root version from the pre-edit packet; every edit then
  * appends a child of the current head and makes it the head (so editing after a restore branches).
  * Edit sessions: a hand edit (`options.handEdit`) that continues the data-block's open session (same
- * operation, same head version, within `EDIT_SESSION_IDLE_MS` of the previous edit, no
+ * operator, same head version, within `EDIT_SESSION_IDLE_MS` of the previous edit, no
  * `endEditSession` between) amends the head version in place instead of adding one; its provenance
- * is stamped once, relative to the version before the session. Any other operation, a restore, an
+ * is stamped once, relative to the version before the session. Any other operator, a restore, an
  * idle pause or an explicit end starts a new version. Undo is not tied to versions: the data-blocks
  * before and after each commit are separate immutable values.
  * A packet deeply equal to the current one returns the same data-block unchanged. Reordering items is a
@@ -502,7 +502,7 @@ export function commitDataBlockEdit(
   options: CommitOptions = {}
 ): DataBlockEditResult {
   if (!operation.trim()) {
-    return { ok: false, error: 'An edit needs an operation name.' };
+    return { ok: false, error: 'An edit needs an operator name.' };
   }
   if (!isJsonSafe(newPacket)) {
     return { ok: false, error: 'The edited packet is not plain JSON data, so it was not saved.' };

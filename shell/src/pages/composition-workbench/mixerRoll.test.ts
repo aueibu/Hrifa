@@ -2,9 +2,9 @@ import { compileMixerPlan, channelBusId, defaultChannelConfig } from './mixer';
 import { mixerChannelColor } from './mixerChannels';
 import {
   cycleProgress,
-  laneView,
-  lanePlayhead,
-  mixerLane,
+  channelRollView as channelRollView,
+  channelPlayhead as channelPlayhead,
+  mixerChannelRoll as mixerChannelRoll,
   mixerRoll,
   mixerRollGrid,
 } from './mixerRoll';
@@ -88,7 +88,7 @@ describe('mixerRollGrid', () => {
   });
 });
 
-describe('mixerLane', () => {
+describe('mixerChannelRoll', () => {
   const material = channel('a', 4, [0, 1, 3]).material;
   const config = (loop: 'free' | 'once' | 'restart-with-longest', offset: number) => ({
     loop,
@@ -96,58 +96,58 @@ describe('mixerLane', () => {
   });
 
   it('shows one cycle, rotated by the offset for a looping channel', () => {
-    const lane = mixerLane(material, config('free', 2), 0);
-    expect(lane.duration).toBe(4);
+    const channelRoll = mixerChannelRoll(material, config('free', 2), 0);
+    expect(channelRoll.duration).toBe(4);
     // Hits at 0, 1, 3 rotated by 2 land at 2, 3, 1.
-    expect(lane.notes.map((note) => note.start).sort()).toEqual([1, 2, 3]);
-    expect(lane.notes.every((note) => note.color === mixerChannelColor(0))).toBe(true);
+    expect(channelRoll.notes.map((note) => note.start).sort()).toEqual([1, 2, 3]);
+    expect(channelRoll.notes.every((note) => note.color === mixerChannelColor(0))).toBe(true);
   });
 
-  it('delays a one-shot by its offset and lengthens its lane to match', () => {
-    const lane = mixerLane(material, config('once', 2), 1);
-    expect(lane.duration).toBe(6);
-    expect(lane.notes.map((note) => note.start)).toEqual([2, 3, 5]);
-    expect(lane.notes[0].color).toBe(mixerChannelColor(1));
+  it('delays a one-shot by its offset and lengthens its roll to match', () => {
+    const channelRoll = mixerChannelRoll(material, config('once', 2), 1);
+    expect(channelRoll.duration).toBe(6);
+    expect(channelRoll.notes.map((note) => note.start)).toEqual([2, 3, 5]);
+    expect(channelRoll.notes[0].color).toBe(mixerChannelColor(1));
   });
 });
 
-describe('laneView', () => {
+describe('channelRollView', () => {
   it('keeps the shared time scale and frames the view so the roll does not refit it', () => {
-    const view = laneView([{ pitchMidicents: 6000 }, { pitchMidicents: 6100 }], 37, 140);
+    const view = channelRollView([{ pitchMidicents: 6000 }, { pitchMidicents: 6100 }], 37, 140);
     expect(view.pixelsPerQuarter).toBe(37);
     expect(view.framed).toBe(true);
     expect(view.scrollLeft).toBe(0);
   });
 
-  it('fits pitch zoom to the lane, within limits', () => {
+  it('fits pitch zoom to the channel roll, within limits', () => {
     const narrow = [{ pitchMidicents: 6000 }, { pitchMidicents: 6100 }];
     const wide = [{ pitchMidicents: 3600 }, { pitchMidicents: 9600 }];
-    expect(laneView(narrow, 30, 140).pixelsPerSemitone).toBeGreaterThan(
-      laneView(wide, 30, 140).pixelsPerSemitone
+    expect(channelRollView(narrow, 30, 140).pixelsPerSemitone).toBeGreaterThan(
+      channelRollView(wide, 30, 140).pixelsPerSemitone
     );
-    expect(laneView(wide, 30, 140).pixelsPerSemitone).toBe(12);
-    expect(laneView([], 30, 140).pixelsPerSemitone).toBeGreaterThanOrEqual(12);
+    expect(channelRollView(wide, 30, 140).pixelsPerSemitone).toBe(12);
+    expect(channelRollView([], 30, 140).pixelsPerSemitone).toBeGreaterThanOrEqual(12);
   });
 });
 
-describe('lanePlayhead', () => {
+describe('channelPlayhead', () => {
   it('wraps a free channel at its own period', () => {
-    expect(lanePlayhead(7, { loop: 'free', period: 3, offset: 0 }, 4)).toBe(1);
+    expect(channelPlayhead(7, { loop: 'free', period: 3, offset: 0 }, 4)).toBe(1);
   });
 
   it('resets a restart-with-longest channel at each block of the longest cycle', () => {
     const restart = { loop: 'restart-with-longest' as const, period: 3, offset: 0 };
-    expect(lanePlayhead(3.5, restart, 4)).toBe(0.5);
+    expect(channelPlayhead(3.5, restart, 4)).toBe(0.5);
     // At position 4.5 the longest cycle has restarted, so the short one restarts with it.
-    expect(lanePlayhead(4.5, restart, 4)).toBe(0.5);
-    expect(lanePlayhead(3.9, restart, 4)).toBeCloseTo(0.9);
+    expect(channelPlayhead(4.5, restart, 4)).toBe(0.5);
+    expect(channelPlayhead(3.9, restart, 4)).toBeCloseTo(0.9);
   });
 
   it('runs a one-shot once in pass time and holds at its end', () => {
     const once = { loop: 'once' as const, period: 3, offset: 2 };
-    expect(lanePlayhead(1, once, 4)).toBe(1);
-    expect(lanePlayhead(4, once, 4)).toBe(4);
-    expect(lanePlayhead(9, once, 4)).toBe(5);
+    expect(channelPlayhead(1, once, 4)).toBe(1);
+    expect(channelPlayhead(4, once, 4)).toBe(4);
+    expect(channelPlayhead(9, once, 4)).toBe(5);
   });
 });
 

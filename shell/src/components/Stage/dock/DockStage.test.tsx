@@ -7,10 +7,10 @@ import {
   makeDocker,
   slotSizeAttr,
   treeDockers,
-  type Screenset,
+  type Workspace,
   type SlotSize,
 } from '../../../lib/stage';
-import { arrangementA, arrangementC, screenset } from '../../../lib/stage/fixtures';
+import { arrangementA, arrangementC, workspace } from '../../../lib/stage/fixtures';
 import { createStageRegistry, type StageModule } from '../registry';
 import { DockStage } from './DockStage';
 import { useStageApi, type StageApi } from './stageApi';
@@ -94,7 +94,7 @@ const mod = (id: string, over: Partial<StageModule> = {}): StageModule => ({
 const REGISTRY = createStageRegistry([
   mod('canvas', { keepMounted: true }),
   mod('desk'),
-  mod('clip-editor', { title: 'Clip editor', home: 'Detail' }),
+  mod('data-block-editor', { title: 'Data-block editor', home: 'Detail' }),
   mod('chords', { home: 'Tools' }),
   mod('sets'),
   mod('voicings'),
@@ -111,8 +111,8 @@ function Harness({
   widthRem = 100,
   heightRem = 50,
 }: {
-  initial: Screenset;
-  alt?: Screenset;
+  initial: Workspace;
+  alt?: Workspace;
   widthRem?: number;
   heightRem?: number;
 }) {
@@ -121,7 +121,7 @@ function Harness({
     <>
       <DockStage
         registry={REGISTRY}
-        screenset={s}
+        workspace={s}
         update={setS}
         widthRem={widthRem}
         heightRem={heightRem}
@@ -129,20 +129,20 @@ function Harness({
       />
       {alt && (
         <button type="button" onClick={() => setS((cur) => (cur === initial ? alt : initial))}>
-          toggle screenset
+          toggle workspace
         </button>
       )}
-      <output data-testid="screenset">{JSON.stringify(s)}</output>
+      <output data-testid="workspace">{JSON.stringify(s)}</output>
     </>
   );
 }
-const stored = () => JSON.parse(screen.getByTestId('screenset').textContent!) as Screenset;
+const stored = () => JSON.parse(screen.getByTestId('workspace').textContent!) as Workspace;
 const dockerOf = (panel: string) => dockerHolding(stored().tree, panel);
 const hostOf = (id: string) => document.querySelector<HTMLElement>(`[data-panel-host="${id}"]`)!;
 const region = (name: string) => screen.getByRole('region', { name });
 const notice = () => document.querySelector('p[role="status"]');
-const A = () => screenset(arrangementA);
-const C = () => screenset(arrangementC);
+const A = () => workspace(arrangementA);
+const C = () => workspace(arrangementC);
 
 /** The tab menu belongs to the ACTIVE tab (one button after the strip), so activate the tab first. */
 async function sendFromMenu(panelTitle: string, entry: string | RegExp) {
@@ -222,11 +222,11 @@ describe('dockers', () => {
   it('shows an emptied docker as a strip and lets it accept a panel', async () => {
     render(<Harness initial={C()} />);
     expect(region('Tools')).toHaveAttribute('data-state', 'empty');
-    await sendFromMenu('Clip editor', 'Tools');
+    await sendFromMenu('Data-block editor', 'Tools');
     expect(region('Detail')).toHaveAttribute('data-state', 'empty'); // emptied, still there, named
     expect(region('Tools')).toHaveAttribute('data-state', 'open');
-    expect(dockerOf('clip-editor')?.name).toBe('Tools');
-    expect(mounts['clip-editor']).toBe(1);
+    expect(dockerOf('data-block-editor')?.name).toBe('Tools');
+    expect(mounts['data-block-editor']).toBe(1);
     expect(treeDockers(stored().tree)).toHaveLength(3);
   });
 
@@ -366,14 +366,14 @@ describe('parking', () => {
 });
 
 describe('keepMounted', () => {
-  it('survives a screenset change without remounting, parked while it is in no docker', async () => {
-    const other = screenset(makeDocker('x1', 'Other', ['sets']) as never, 'other');
+  it('survives a workspace change without remounting, parked while it is in no docker', async () => {
+    const other = workspace(makeDocker('x1', 'Other', ['sets']) as never, 'other');
     render(<Harness initial={A()} alt={other} />);
     await userEvent.click(screen.getByRole('button', { name: 'inc canvas' }));
     expect(screen.getByTestId('n-canvas')).toHaveTextContent('1');
     expect(hostOf('canvas').closest('[data-dock-body]')).not.toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'toggle screenset' }));
+    await userEvent.click(screen.getByRole('button', { name: 'toggle workspace' }));
     expect(screen.getByRole('region', { name: 'Other' })).toBeInTheDocument();
     expect(hostOf('canvas').isConnected).toBe(true);
     expect(hostOf('canvas').closest('[data-park]')?.getAttribute('data-park')).toBe(
@@ -382,14 +382,14 @@ describe('keepMounted', () => {
     expect(hostOf('canvas')).toHaveAttribute('inert');
     expect(screen.queryByTestId('n-chords')).not.toBeInTheDocument(); // not keepMounted: unmounted
 
-    await userEvent.click(screen.getByRole('button', { name: 'toggle screenset' }));
+    await userEvent.click(screen.getByRole('button', { name: 'toggle workspace' }));
     expect(screen.getByTestId('n-canvas')).toHaveTextContent('1');
     expect(mounts.canvas).toBe(1);
     expect(hostOf('canvas').closest('[data-dock-body]')).not.toBeNull();
   });
 
   it('mounts a keepMounted panel that was never open, once', () => {
-    render(<Harness initial={screenset(makeDocker('x1', 'Other', ['sets']) as never)} />);
+    render(<Harness initial={workspace(makeDocker('x1', 'Other', ['sets']) as never)} />);
     expect(mounts.canvas).toBe(1);
     expect(hostOf('canvas').closest('[data-park]')).not.toBeNull();
     expect(api).toBeDefined();
@@ -397,8 +397,8 @@ describe('keepMounted', () => {
 });
 
 describe('guarded sends (W-30)', () => {
-  const row = (a: string[], b: string[]): Screenset =>
-    screenset({
+  const row = (a: string[], b: string[]): Workspace =>
+    workspace({
       kind: 'split',
       dir: 'row',
       children: [
@@ -480,9 +480,9 @@ describe('hosts are never detached', () => {
     return detached;
   }
 
-  it('through collapse, expand, sending out the last tab and a screenset switch', async () => {
+  it('through collapse, expand, sending out the last tab and a workspace switch', async () => {
     const detached = watchDetaches();
-    const other = screenset(makeDocker('x1', 'Other', ['sets']) as never, 'other');
+    const other = workspace(makeDocker('x1', 'Other', ['sets']) as never, 'other');
     render(<Harness initial={C()} alt={other} />);
 
     // collapse and expand Canvas (two tabs, one keepMounted)
@@ -493,16 +493,16 @@ describe('hosts are never detached', () => {
     expect(region('Canvas')).toHaveAttribute('data-state', 'open');
 
     // send the last tab of Detail out (Detail becomes an empty strip)
-    await sendFromMenu('Clip editor', 'Tools');
+    await sendFromMenu('Data-block editor', 'Tools');
     expect(region('Detail')).toHaveAttribute('data-state', 'empty');
 
-    // switch to a screenset without the keepMounted canvas and back
-    await userEvent.click(screen.getByRole('button', { name: 'toggle screenset' }));
-    await userEvent.click(screen.getByRole('button', { name: 'toggle screenset' }));
+    // switch to a workspace without the keepMounted canvas and back
+    await userEvent.click(screen.getByRole('button', { name: 'toggle workspace' }));
+    await userEvent.click(screen.getByRole('button', { name: 'toggle workspace' }));
 
     expect(detached).toEqual([]);
     expect(mounts.canvas).toBe(1);
-    expect(mounts['clip-editor']).toBe(1);
+    expect(mounts['data-block-editor']).toBe(1);
   });
 
   it('adopts a newly opened panel into its docker before its own layout effects run', () => {
@@ -524,8 +524,8 @@ describe('hosts are never detached', () => {
 });
 
 describe('selection and the status line', () => {
-  const row3 = (): Screenset =>
-    screenset({
+  const row3 = (): Workspace =>
+    workspace({
       kind: 'split',
       dir: 'row',
       children: [
@@ -547,9 +547,9 @@ describe('selection and the status line', () => {
 
   it('ignores a send of an unregistered panel id', () => {
     render(<Harness initial={A()} />);
-    const before = screen.getByTestId('screenset').textContent;
+    const before = screen.getByTestId('workspace').textContent;
     act(() => api.sendTo('nope', { kind: 'docker', docker: 'd2' }));
-    expect(screen.getByTestId('screenset').textContent).toBe(before);
+    expect(screen.getByTestId('workspace').textContent).toBe(before);
   });
 
   it('keeps one status element, restarts its timer on a repeated refusal and announces it again', () => {
@@ -557,7 +557,7 @@ describe('selection and the status line', () => {
     try {
       render(
         <Harness
-          initial={screenset({
+          initial={workspace({
             kind: 'split',
             dir: 'row',
             children: [

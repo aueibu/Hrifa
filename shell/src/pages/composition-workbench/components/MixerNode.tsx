@@ -50,9 +50,9 @@ import {
 } from '../mixerChannels';
 import {
   cycleProgress,
-  lanePlayhead,
-  laneView,
-  mixerLane,
+  channelPlayhead,
+  channelRollView,
+  mixerChannelRoll,
   mixerRoll,
   mixerRollGrid,
 } from '../mixerRoll';
@@ -145,14 +145,14 @@ export function MixerNode({
     defaultPianoRollView,
     acceptsRollView
   );
-  const [rollMode, setRollMode] = usePersistentState<'composite' | 'lanes'>(
+  const [rollMode, setRollMode] = usePersistentState<'composite' | 'channels'>(
     stateKey(compositionStateKeys.mixerRollMode),
     'composite',
-    (value): value is 'composite' | 'lanes' => value === 'composite' || value === 'lanes'
+    (value): value is 'composite' | 'channels' => value === 'composite' || value === 'channels'
   );
-  // The lanes' shared time scale in pixels per quarter note; null fits the longest cycle.
-  const [laneScale, setLaneScale] = usePersistentState<number | null>(
-    stateKey(compositionStateKeys.mixerLaneScale),
+  // The channel rolls' shared time scale in pixels per quarter note; null fits the longest cycle.
+  const [channelScale, setChannelScale] = usePersistentState<number | null>(
+    stateKey(compositionStateKeys.mixerChannelScale),
     null,
     (value): value is number | null =>
       value === null || (typeof value === 'number' && Number.isFinite(value) && value > 0)
@@ -161,8 +161,8 @@ export function MixerNode({
   // Quarter notes since the material began, not wrapped: counts cycles and passes.
   const [elapsed, setElapsed] = useState(0);
   const playedPass = useRef(1);
-  const lanesRef = useRef<HTMLDivElement>(null);
-  const [lanesWidth, setLanesWidth] = useState(0);
+  const channelRollsRef = useRef<HTMLDivElement>(null);
+  const [channelRollsWidth, setChannelRollsWidth] = useState(0);
 
   const ports = Object.keys(routeState);
   const settingsFor = (port: string): MixerChannelSettings => ({
@@ -326,7 +326,7 @@ export function MixerNode({
 
   // Each ready channel's own cycle, drawn on one shared time scale so a short cycle is visibly
   // shorter than a long one, as clips of different lengths are in a clip launcher.
-  const lanes = useMemo(
+  const channelRolls = useMemo(
     () =>
       mix.channels.flatMap(({ port, index, material }) => {
         if (material.status !== 'ready') {
@@ -341,7 +341,7 @@ export function MixerNode({
             channel,
             period: rationalToNumber(material.material.period.quarterNotes),
             offset: rationalToNumber(offset.quarterNotes),
-            ...mixerLane(material.material, { loop: channel.loop, offset }, index),
+            ...mixerChannelRoll(material.material, { loop: channel.loop, offset }, index),
           },
         ];
       }),
@@ -351,33 +351,41 @@ export function MixerNode({
   );
   const longestLoop = Math.max(
     1,
-    ...lanes.filter((lane) => lane.channel.loop !== 'once').map((lane) => lane.period)
+    ...channelRolls
+      .filter((channelRoll) => channelRoll.channel.loop !== 'once')
+      .map((channelRoll) => channelRoll.period)
   );
-  const longestLane = Math.max(1, ...lanes.map((lane) => lane.duration));
-  const LANE_KEYBOARD_WIDTH = 72;
-  const autoLaneScale = Math.min(
+  const longestChannelRoll = Math.max(
+    1,
+    ...channelRolls.map((channelRoll) => channelRoll.duration)
+  );
+  const CHANNEL_ROLL_KEYBOARD_WIDTH = 72;
+  const autoChannelScale = Math.min(
     192,
-    Math.max(4, ((lanesWidth || 720) - LANE_KEYBOARD_WIDTH - 24) / longestLane)
+    Math.max(
+      4,
+      ((channelRollsWidth || 720) - CHANNEL_ROLL_KEYBOARD_WIDTH - 24) / longestChannelRoll
+    )
   );
-  const sharedScale = laneScale ?? autoLaneScale;
-  const LANE_HEIGHT = 140;
+  const sharedScale = channelScale ?? autoChannelScale;
+  const CHANNEL_ROLL_HEIGHT = 140;
   // How far a channel is through the whole pass, from one sync point to the next.
-  const progressFor = (lane: (typeof lanes)[number]) =>
+  const progressFor = (channelRoll: (typeof channelRolls)[number]) =>
     mix.compiled?.plan
       ? cycleProgress(
           preview.playing ? playhead : 0,
           roll.duration,
-          { loop: lane.channel.loop, period: lane.period },
+          { loop: channelRoll.channel.loop, period: channelRoll.period },
           longestLoop
         )
       : undefined;
 
   useEffect(() => {
-    const element = lanesRef.current;
-    if (!element || rollMode !== 'lanes') {
+    const element = channelRollsRef.current;
+    if (!element || rollMode !== 'channels') {
       return;
     }
-    const observer = new ResizeObserver(([entry]) => setLanesWidth(entry.contentRect.width));
+    const observer = new ResizeObserver(([entry]) => setChannelRollsWidth(entry.contentRect.width));
     observer.observe(element);
     return () => observer.disconnect();
   }, [rollMode]);
@@ -484,13 +492,13 @@ export function MixerNode({
                   size="xs"
                   aria-label="Roll view"
                   value={rollMode}
-                  onChange={(value) => setRollMode(value as 'composite' | 'lanes')}
+                  onChange={(value) => setRollMode(value as 'composite' | 'channels')}
                   data={[
                     { value: 'composite', label: 'Composite' },
-                    { value: 'lanes', label: 'Per channel' },
+                    { value: 'channels', label: 'Per channel' },
                   ]}
                 />
-                {rollMode === 'lanes' && (
+                {rollMode === 'channels' && (
                   <Group gap={4} wrap="nowrap">
                     <Text size="xs" c="dimmed">
                       Shared time scale
@@ -498,24 +506,24 @@ export function MixerNode({
                     <ActionIcon
                       size="sm"
                       variant="default"
-                      aria-label="Zoom lanes out"
-                      onClick={() => setLaneScale(Math.max(2, sharedScale * 0.8))}
+                      aria-label="Zoom channels out"
+                      onClick={() => setChannelScale(Math.max(2, sharedScale * 0.8))}
                     >
                       −
                     </ActionIcon>
                     <ActionIcon
                       size="sm"
                       variant="default"
-                      aria-label="Zoom lanes in"
-                      onClick={() => setLaneScale(Math.min(256, sharedScale * 1.25))}
+                      aria-label="Zoom channels in"
+                      onClick={() => setChannelScale(Math.min(256, sharedScale * 1.25))}
                     >
                       +
                     </ActionIcon>
                     <Button
                       size="compact-xs"
                       variant="subtle"
-                      disabled={laneScale === null}
-                      onClick={() => setLaneScale(null)}
+                      disabled={channelScale === null}
+                      onClick={() => setChannelScale(null)}
                     >
                       Fit longest
                     </Button>
@@ -551,11 +559,11 @@ export function MixerNode({
                   height={320}
                 />
               ) : (
-                <div ref={lanesRef}>
+                <div ref={channelRollsRef}>
                   <Stack gap="xs">
-                    {lanes.map((lane) => {
-                      const progress = progressFor(lane);
-                      const unit = lane.channel.loop === 'free' ? 'cycle' : 'restart';
+                    {channelRolls.map((channelRoll) => {
+                      const progress = progressFor(channelRoll);
+                      const unit = channelRoll.channel.loop === 'free' ? 'cycle' : 'restart';
                       const cycle = progress
                         ? preview.playing
                           ? ` · ${unit} ${progress.current} of ${progress.cycles}${truncated ? ' (preview)' : ''}`
@@ -564,15 +572,16 @@ export function MixerNode({
                             }`
                         : '';
                       const loopLabel =
-                        loopPolicyOptions.find((option) => option.value === lane.channel.loop)
-                          ?.label ?? lane.channel.loop;
+                        loopPolicyOptions.find(
+                          (option) => option.value === channelRoll.channel.loop
+                        )?.label ?? channelRoll.channel.loop;
                       return (
-                        <div key={lane.port}>
+                        <div key={channelRoll.port}>
                           <Group gap="xs" mb={2} wrap="nowrap">
                             <span
                               aria-hidden="true"
                               style={{
-                                background: mixerChannelColor(lane.index),
+                                background: mixerChannelColor(channelRoll.index),
                                 borderRadius: 2,
                                 flex: 'none',
                                 height: 10,
@@ -580,11 +589,15 @@ export function MixerNode({
                               }}
                             />
                             <Text size="xs" fw={700}>
-                              Ch {lane.index + 1}
+                              Ch {channelRoll.index + 1}
                             </Text>
                             <Text size="xs" c="dimmed">
-                              {describeChannelLength(lane.period, pulseQuarters, barQuarters)} ·{' '}
-                              {loopLabel}
+                              {describeChannelLength(
+                                channelRoll.period,
+                                pulseQuarters,
+                                barQuarters
+                              )}{' '}
+                              · {loopLabel}
                               {cycle}
                             </Text>
                           </Group>
@@ -592,38 +605,42 @@ export function MixerNode({
                             <div style={{ marginBottom: 4 }}>
                               <CycleProgressBar
                                 progress={progress}
-                                color={mixerChannelColor(lane.index)}
+                                color={mixerChannelColor(channelRoll.index)}
                                 unit={unit}
-                                ariaLabel={`Channel ${lane.index + 1} progress to realignment`}
+                                ariaLabel={`Channel ${channelRoll.index + 1} progress to realignment`}
                               />
                             </div>
                           )}
                           <PianoRoll
-                            ariaLabel={`Channel ${lane.index + 1} cycle`}
-                            notes={lane.notes}
-                            duration={lane.duration}
+                            ariaLabel={`Channel ${channelRoll.index + 1} cycle`}
+                            notes={channelRoll.notes}
+                            duration={channelRoll.duration}
                             gridLines={mixerRollGrid(
-                              lane.duration,
+                              channelRoll.duration,
                               meterNumerator,
                               meterDenominator
                             )}
-                            view={laneView(lane.notes, sharedScale, LANE_HEIGHT)}
+                            view={channelRollView(
+                              channelRoll.notes,
+                              sharedScale,
+                              CHANNEL_ROLL_HEIGHT
+                            )}
                             onViewChange={() => undefined}
                             playhead={
                               preview.playing
-                                ? lanePlayhead(
+                                ? channelPlayhead(
                                     playhead,
                                     {
-                                      loop: lane.channel.loop,
-                                      period: lane.period,
-                                      offset: lane.offset,
+                                      loop: channelRoll.channel.loop,
+                                      period: channelRoll.period,
+                                      offset: channelRoll.offset,
                                     },
                                     longestLoop
                                   )
                                 : 0
                             }
                             isPlaying={preview.playing}
-                            height={LANE_HEIGHT}
+                            height={CHANNEL_ROLL_HEIGHT}
                             showToolbar={false}
                           />
                         </div>
@@ -637,7 +654,7 @@ export function MixerNode({
                   Showing the first {roll.notes.length} of {roll.total} events.
                 </Text>
               )}
-              {!lanes.length && rollMode === 'lanes' && (
+              {!channelRolls.length && rollMode === 'channels' && (
                 <Text size="xs" c="dimmed" mt={4}>
                   Connect a source to a channel to see its cycle.
                 </Text>
@@ -651,10 +668,12 @@ export function MixerNode({
             {mix.channels.map(({ port, index, binding, material }) => {
               const channel = settingsFor(port);
               const isRhythm = material.status === 'ready' && material.source === 'rhythm';
-              // In the lanes view the bar sits on each lane instead.
-              const stripLane =
-                rollMode === 'composite' ? lanes.find((lane) => lane.port === port) : undefined;
-              const stripProgress = stripLane ? progressFor(stripLane) : undefined;
+              // In the per-channel view the bar sits on each channel roll instead.
+              const stripChannelRoll =
+                rollMode === 'composite'
+                  ? channelRolls.find((channelRoll) => channelRoll.port === port)
+                  : undefined;
+              const stripProgress = stripChannelRoll ? progressFor(stripChannelRoll) : undefined;
               return (
                 <Surface key={port} p="sm" aria-label={`Channel ${index + 1}`}>
                   <Stack gap="xs">

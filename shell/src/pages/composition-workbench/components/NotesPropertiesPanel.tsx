@@ -18,7 +18,7 @@ import {
 } from '../notesProperties';
 import { isValidMeter } from '../transport';
 
-/** The operation name of a property edit. Not a hand edit: each one is a version of its own. */
+/** The operator name of a property edit. Not a hand edit: each one is a version of its own. */
 export const NOTES_PROPERTIES_OPERATION = 'edit-properties';
 
 interface FieldProps {

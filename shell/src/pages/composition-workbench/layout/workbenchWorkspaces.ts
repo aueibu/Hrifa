@@ -1,17 +1,17 @@
 /**
- * The workbench's screensets: the panel ids, the three default screensets (Canvas, Desk, Edit), and the small pure
- * helpers the page needs around the store. No React. The page stores the result under `compositionStateKeys.screensets`
+ * The workbench's workspaces: the panel ids, the three default workspaces (Canvas, Desk, Edit), and the small pure
+ * helpers the page needs around the store. No React. The page stores the result under `compositionStateKeys.workspaces`
  * (a project key, never an undo step); a project with no stored store, or an unusable one, gets the defaults.
  */
 import {
   dockerHolding,
   makeDocker,
-  makeScreenset,
+  makeWorkspace,
   makeStore,
-  parseScreensetStore,
+  parseWorkspaceStore,
   setActive,
-  type Screenset,
-  type ScreensetStore,
+  type Workspace,
+  type WorkspaceStore,
 } from '../../../lib/stage';
 
 export const CANVAS_PANEL = 'canvas';
@@ -30,10 +30,10 @@ export const WORKBENCH_PANEL_IDS = [
   CHORDS_PANEL,
 ] as const;
 
-/** Ids a stored screenset may name (a place or a tab for an id outside this set is dropped on every parse). */
+/** Ids a stored workspace may name (a place or a tab for an id outside this set is dropped on every parse). */
 export const WORKBENCH_KNOWN_IDS: ReadonlySet<string> = new Set(WORKBENCH_PANEL_IDS);
 
-/** Default top weights of the default screensets. */
+/** Default top weights of the default workspaces. */
 export const DEFAULT_TOP_WEIGHT = 0.6;
 export const EDIT_TOP_WEIGHT = 0.3;
 /** The `Tools` strip's width in rem. */
@@ -47,9 +47,9 @@ export const TOOLS_NAME = 'Tools';
 
 type Top = { id: string; name: string; panel: string; topWeight: number };
 
-/** One default screenset: `top` over (`Detail` beside an empty `Tools`). */
-function baseScreenset(top: Top): Screenset {
-  return makeScreenset({
+/** One default workspace: `top` over (`Detail` beside an empty `Tools`). */
+function baseWorkspace(top: Top): Workspace {
+  return makeWorkspace({
     id: top.id,
     name: top.name,
     defaultDocker: DOCKER_DETAIL,
@@ -93,78 +93,78 @@ function baseScreenset(top: Top): Screenset {
 }
 
 /**
- * The three default screensets: Canvas and Desk at 0.6 over 0.4, Edit at 0.3 over 0.7, `Detail` open on the node panel,
+ * The three default workspaces: Canvas and Desk at 0.6 over 0.4, Edit at 0.3 over 0.7, `Detail` open on the node panel,
  * `Tools` empty at 30rem, the chord picker remembered at `Tools`. Canvas is active.
  */
-export function defaultWorkbenchScreensets(): ScreensetStore {
-  // `name` is the top docker's name; the screenset's own name is `screensetName` (Edit's top docker is the Canvas one).
-  const tops: (Top & { screensetName: string })[] = [
+export function defaultWorkbenchWorkspaces(): WorkspaceStore {
+  // `name` is the top docker's name; the workspace's own name is `workspaceName` (Edit's top docker is the Canvas one).
+  const tops: (Top & { workspaceName: string })[] = [
     {
       id: 'canvas',
       name: 'Canvas',
-      screensetName: 'Canvas',
+      workspaceName: 'Canvas',
       panel: CANVAS_PANEL,
       topWeight: DEFAULT_TOP_WEIGHT,
     },
     {
       id: 'desk',
       name: 'Desk',
-      screensetName: 'Desk',
+      workspaceName: 'Desk',
       panel: DESK_PANEL,
       topWeight: DEFAULT_TOP_WEIGHT,
     },
     {
       id: 'edit',
       name: 'Canvas',
-      screensetName: 'Edit',
+      workspaceName: 'Edit',
       panel: CANVAS_PANEL,
       topWeight: EDIT_TOP_WEIGHT,
     },
   ];
   return makeStore(
-    tops.map((top) => ({ ...baseScreenset(top), name: top.screensetName })),
+    tops.map((top) => ({ ...baseWorkspace(top), name: top.workspaceName })),
     'canvas'
   );
 }
 
 /** A cheap shape check for a stored store (the parse that runs first has already sanitized it). */
-export function acceptsScreensetStore(value: unknown): value is ScreensetStore {
+export function acceptsWorkspaceStore(value: unknown): value is WorkspaceStore {
   if (!value || typeof value !== 'object') {
     return false;
   }
-  const v = value as Partial<ScreensetStore>;
+  const v = value as Partial<WorkspaceStore>;
   return (
     v.version === 1 &&
     typeof v.active === 'string' &&
     Array.isArray(v.order) &&
-    !!v.screensets &&
-    typeof v.screensets === 'object' &&
-    !!v.screensets[v.active]
+    !!v.workspaces &&
+    typeof v.workspaces === 'object' &&
+    !!v.workspaces[v.active]
   );
 }
 
 /**
  * Is `panel` showing to the person: open, the front tab of its docker, and that docker not collapsed. (The Stage's own
- * `isShown` also counts the narrow rule; the page uses this one so it can read the screenset it is rendering.)
+ * `isShown` also counts the narrow rule; the page uses this one so it can read the workspace it is rendering.)
  */
-export function isPanelShown(screenset: Screenset, panel: string): boolean {
-  const docker = dockerHolding(screenset.tree, panel);
-  return !!docker && docker.active === panel && !(screenset.collapsed ?? []).includes(docker.id);
+export function isPanelShown(workspace: Workspace, panel: string): boolean {
+  const docker = dockerHolding(workspace.tree, panel);
+  return !!docker && docker.active === panel && !(workspace.collapsed ?? []).includes(docker.id);
 }
 
 /** `usePersistentState`'s migrate step: sanitize a stored value; anything unusable becomes the default store. */
-export const parseStoredScreensets = (raw: unknown): ScreensetStore => {
-  const unusable = {} as ScreensetStore;
-  const parsed = parseScreensetStore(raw, WORKBENCH_KNOWN_IDS, { fallback: unusable });
-  return parsed === unusable ? defaultWorkbenchScreensets() : parsed;
+export const parseStoredWorkspaces = (raw: unknown): WorkspaceStore => {
+  const unusable = {} as WorkspaceStore;
+  const parsed = parseWorkspaceStore(raw, WORKBENCH_KNOWN_IDS, { fallback: unusable });
+  return parsed === unusable ? defaultWorkbenchWorkspaces() : parsed;
 };
 
 /**
- * Where "Make source" goes: the screenset that shows the canvas. The active one when it has the canvas open, else the
- * `canvas` screenset, else the first with the canvas open; null when no screenset opens the canvas.
+ * Where "Make source" goes: the workspace that shows the canvas. The active one when it has the canvas open, else the
+ * `canvas` workspace, else the first with the canvas open; null when no workspace opens the canvas.
  */
-export function screensetForCanvas(store: ScreensetStore): string | null {
-  const opens = (id: string) => !!dockerHolding(store.screensets[id].tree, CANVAS_PANEL);
+export function workspaceForCanvas(store: WorkspaceStore): string | null {
+  const opens = (id: string) => !!dockerHolding(store.workspaces[id].tree, CANVAS_PANEL);
   if (opens(store.active)) {
     return store.active;
   }
@@ -175,17 +175,17 @@ export function screensetForCanvas(store: ScreensetStore): string | null {
 }
 
 /**
- * `panel` comes to the front of its docker in EVERY screenset that has it open (nothing is expanded or opened). The
- * Detail tab follows the exclusive target (a data-block or a node), so it must hold in the screensets that are not showing too.
+ * `panel` comes to the front of its docker in EVERY workspace that has it open (nothing is expanded or opened). The
+ * Detail tab follows the exclusive target (a data-block or a node), so it must hold in the workspaces that are not showing too.
  */
-export function bringPanelForward(store: ScreensetStore, panel: string): ScreensetStore {
+export function bringPanelForward(store: WorkspaceStore, panel: string): WorkspaceStore {
   let changed = false;
-  const screensets: Record<string, Screenset> = {};
-  for (const [id, s] of Object.entries(store.screensets)) {
+  const workspaces: Record<string, Workspace> = {};
+  for (const [id, s] of Object.entries(store.workspaces)) {
     const docker = dockerHolding(s.tree, panel);
     const next = docker && docker.active !== panel ? setActive(s, docker.id, panel) : s;
     changed = changed || next !== s;
-    screensets[id] = next;
+    workspaces[id] = next;
   }
-  return changed ? { ...store, screensets } : store;
+  return changed ? { ...store, workspaces: workspaces } : store;
 }

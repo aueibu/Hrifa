@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrangementA, arrangementC, screenset } from './fixtures';
+import { arrangementA, arrangementC, workspace } from './fixtures';
 import {
   closePanel,
   openPanel,
@@ -23,7 +23,7 @@ import {
   normalizeTree,
   openPanels,
   treeDockers,
-  type Screenset,
+  type Workspace,
   type Split,
   type TreeNode,
 } from './tree';
@@ -35,8 +35,8 @@ function deepFreeze<T>(o: T): T {
   }
   return o;
 }
-const A = () => deepFreeze(screenset(structuredClone(arrangementA), 'a'));
-const sortedPanels = (s: Screenset) => [...openPanels(s.tree)].sort();
+const A = () => deepFreeze(workspace(structuredClone(arrangementA), 'a'));
+const sortedPanels = (s: Workspace) => [...openPanels(s.tree)].sort();
 
 describe('normalizeTree', () => {
   const d = (id: string) => makeDocker(id, id, [id]);
@@ -130,7 +130,7 @@ describe('sendTo', () => {
   });
   it('inserts at an index and moves the active tab on removal', () => {
     const s = sendTo(A(), 'sets', { kind: 'docker', docker: 'd2', index: 0 });
-    expect(findDocker(s.tree, 'd2')!.tabs).toEqual(['sets', 'clip-editor']);
+    expect(findDocker(s.tree, 'd2')!.tabs).toEqual(['sets', 'data-block-editor']);
     // 'chords' was active in d3 and stays; sending the active one hands over to the next tab.
     const t = sendTo(A(), 'chords', { kind: 'docker', docker: 'd2' });
     expect(findDocker(t.tree, 'd3')!.active).toBe('sets');
@@ -183,7 +183,7 @@ describe('sendTo', () => {
     const made = splitDocker(A(), 'd1', 'right', { name: 'Chords', min: 30 })!;
     expect(made.docker.tabs).toEqual([]);
     const inner = (
-      made.screenset.tree as { children: { node: { children: { min?: number }[] } }[] }
+      made.workspace.tree as { children: { node: { children: { min?: number }[] } }[] }
     ).children[0].node;
     expect(inner.children[1].min).toBe(30);
     expect(splitDocker(A(), 'nope', 'right')).toBeNull();
@@ -223,7 +223,7 @@ describe('close and reopen with the remembered place', () => {
     expect(resolvePlace(s, 'sets').via).toBe('first');
     // A docker named "tools" appears again with a different id.
     const made = splitDocker(s, 'd2', 'right', { name: 'tools' })!;
-    s = made.screenset;
+    s = made.workspace;
     const r = resolvePlace(s, 'sets');
     expect(r.via).toBe('name');
     expect(r.docker!.id).toBe(made.docker.id);
@@ -235,7 +235,7 @@ describe('close and reopen with the remembered place', () => {
     s = removeDocker(s, 'd3');
     expect(resolvePlace(s, 'sets', 'Detail')).toMatchObject({ via: 'home', docker: { id: 'd2' } });
     expect(resolvePlace(s, 'sets', 'Nowhere').via).toBe('first');
-    const withDefault: Screenset = { ...s, defaultDocker: 'd2' };
+    const withDefault: Workspace = { ...s, defaultDocker: 'd2' };
     expect(resolvePlace(withDefault, 'sets', 'Nowhere')).toMatchObject({
       via: 'default',
       docker: { id: 'd2' },
@@ -245,7 +245,7 @@ describe('close and reopen with the remembered place', () => {
     expect(dockerHolding(s.tree, 'sets')!.id).toBe('d2');
   });
   it('opening a panel with a stale index clamps and a closed panel in an empty docker joins it', () => {
-    let s = screenset(structuredClone(arrangementC));
+    let s = workspace(structuredClone(arrangementC));
     s = sendTo(s, 'desk', { kind: 'docker', docker: 'd3' });
     s = closePanel(s, 'desk');
     s = openPanel(s, 'desk');
@@ -261,7 +261,7 @@ describe('close and reopen with the remembered place', () => {
     const bare = {
       ...s,
       tree: { kind: 'split', dir: 'row', children: [] },
-    } as unknown as Screenset;
+    } as unknown as Workspace;
     const made = openPanel(bare, 'canvas', { rootName: 'Main' });
     expect(made.tree).toMatchObject({ kind: 'docker', name: 'Main', tabs: ['canvas'] });
   });
@@ -284,7 +284,7 @@ describe('dockers', () => {
   it('removing a docker closes its tabs and remembers their places; the last docker stays', () => {
     let s = removeDocker(A(), 'd3');
     expect(s.lastDocker.sets).toEqual({ docker: 'd3', name: 'Tools', index: 1 });
-    expect(sortedPanels(s)).toEqual(['canvas', 'clip-editor']);
+    expect(sortedPanels(s)).toEqual(['canvas', 'data-block-editor']);
     s = removeDocker(s, 'd2');
     expect(removeDocker(s, 'd1')).toBe(s);
     const keep = A();
@@ -323,8 +323,8 @@ describe('dockers', () => {
 });
 
 describe('resizeSplit with minimums', () => {
-  const row = (): Screenset =>
-    screenset({
+  const row = (): Workspace =>
+    workspace({
       kind: 'split',
       dir: 'row',
       children: [
@@ -361,7 +361,7 @@ describe('resizeSplit with minimums', () => {
     expect(at[0]).toBeCloseTo(before[0], 2);
     expect(at[1]).toBeCloseTo(25, 2);
     // Fixed first, weighted second.
-    const u = screenset({
+    const u = workspace({
       kind: 'split',
       dir: 'row',
       children: [

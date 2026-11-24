@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { makeDocker, setDockerSizing } from '../../../lib/stage';
-import { arrangementA, screenset } from '../../../lib/stage/fixtures';
+import { arrangementA, workspace } from '../../../lib/stage/fixtures';
 import { layoutTree } from './dockLayout';
 import { dockerSizing, toggledSizing } from './dockSizing';
 
 describe('docker sizing', () => {
-  const s = screenset(arrangementA);
+  const s = workspace(arrangementA);
   const geo = layoutTree(s, 100, 50);
 
   it('tells fixed from flexible slots, and the root has none', () => {

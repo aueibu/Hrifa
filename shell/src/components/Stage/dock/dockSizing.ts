@@ -1,13 +1,13 @@
 /**
  * Fixed or flexible: what a docker's slot is now, and the value that makes it the other kind without moving anything.
- * Pure; reads the screenset tree and the geometry the Stage already computed.
+ * Pure; reads the workspace tree and the geometry the Stage already computed.
  */
 import {
   isDocker,
   treeDockers,
   weightOf,
   type DockerId,
-  type Screenset,
+  type Workspace,
   type SplitChild,
   type TreeNode,
 } from '../../../lib/stage';
@@ -50,7 +50,7 @@ const round6 = (x: number) => Math.round(x * 1e6) / 1e6;
  * `rem`, or a `weight` that gives it the same share against its flexible siblings. Null for the root.
  */
 export function toggledSizing(
-  s: Screenset,
+  s: Workspace,
   geometry: TreeGeometry,
   id: DockerId
 ): { rem: number } | { weight: number } | null {

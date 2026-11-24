@@ -26,7 +26,7 @@ import { pitchLabel } from './routeTreatments';
  * `pitches` may be a chord, so moving or resizing acts on the whole event.
  */
 
-/** The one operation name every hand edit of notes commits under, so a run of them is one session. */
+/** The one operator name every hand edit of notes commits under, so a run of them is one session. */
 export const NOTE_EDIT_OPERATION = 'edit-notes';
 
 const MAX_MIDICENTS = 12700;

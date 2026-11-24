@@ -11,11 +11,11 @@ import {
   dockerHolding,
   makeDocker,
   treeDepth,
-  type Screenset,
+  type Workspace,
   type SlotSize,
   type TreeNode,
 } from '../../../lib/stage';
-import { arrangementA, screenset } from '../../../lib/stage/fixtures';
+import { arrangementA, workspace } from '../../../lib/stage/fixtures';
 import { createStageRegistry, type StageModule } from '../registry';
 import { layoutTree } from './dockLayout';
 import { DockStage } from './DockStage';
@@ -51,7 +51,7 @@ const rectPx = (left: number, top: number, width: number, height: number) =>
     y: top,
   }) as DOMRect;
 
-let geometry = layoutTree(screenset(arrangementA), W, H);
+let geometry = layoutTree(workspace(arrangementA), W, H);
 const rectOfDocker = (id: string) => {
   const p = geometry.dockers.find((d) => d.docker.id === id)!;
   return { x: p.x * PX, y: p.y * PX, w: p.width * PX, h: p.height * PX };
@@ -61,7 +61,7 @@ beforeEach(() => {
   for (const k of Object.keys(mounts)) {
     delete mounts[k];
   }
-  geometry = layoutTree(screenset(arrangementA), W, H);
+  geometry = layoutTree(workspace(arrangementA), W, H);
   (window as unknown as { ResizeObserver: unknown }).ResizeObserver = FakeResizeObserver;
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
     if (this.hasAttribute('data-dock-root')) {
@@ -112,7 +112,7 @@ const mod = (id: string, over: Partial<StageModule> = {}): StageModule => ({
 });
 const REGISTRY = createStageRegistry([
   mod('canvas', { keepMounted: true }),
-  mod('clip-editor', { title: 'Clip editor', home: 'Detail' }),
+  mod('data-block-editor', { title: 'Data-block editor', home: 'Detail' }),
   mod('chords', { home: 'Tools' }),
   mod('sets'),
   mod('voicings'),
@@ -120,28 +120,28 @@ const REGISTRY = createStageRegistry([
   mod('api', { keepMounted: true, render: () => <ApiGrab /> }),
 ]);
 
-function Harness({ initial, widthRem = W }: { initial: Screenset; widthRem?: number }) {
+function Harness({ initial, widthRem = W }: { initial: Workspace; widthRem?: number }) {
   const [s, setS] = useState(initial);
   return (
     <>
       <DockStage
         registry={REGISTRY}
-        screenset={s}
+        workspace={s}
         update={setS}
         widthRem={widthRem}
         heightRem={H}
       />
-      <output data-testid="screenset">{JSON.stringify(s)}</output>
+      <output data-testid="workspace">{JSON.stringify(s)}</output>
     </>
   );
 }
-const stored = () => JSON.parse(screen.getByTestId('screenset').textContent!) as Screenset;
-const raw = () => screen.getByTestId('screenset').textContent;
+const stored = () => JSON.parse(screen.getByTestId('workspace').textContent!) as Workspace;
+const raw = () => screen.getByTestId('workspace').textContent;
 const tab = (name: string) => screen.getByRole('tab', { name });
 const shield = () => document.querySelector('[data-dock-shield]');
 const preview = () => document.querySelector<HTMLElement>('[data-dock-preview]');
 const notice = () => document.querySelector('p[role="status"]');
-const A = () => screenset(arrangementA);
+const A = () => workspace(arrangementA);
 
 const ev = (x: number, y: number) => ({
   clientX: x,
@@ -252,7 +252,7 @@ describe('drag-to-dock', () => {
     expect(dockerHolding(stored().tree, 'chords')?.tabs).toEqual(['sets', 'voicings', 'chords']);
   });
 
-  it('produces the same screenset as the equivalent menu choice', async () => {
+  it('produces the same workspace as the equivalent menu choice', async () => {
     const viaMenu = render(<Harness initial={A()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu for Chords' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Send to new docker: Left' }));
@@ -313,8 +313,8 @@ describe('drag-to-dock', () => {
     expect(raw()).toBe(before);
   });
 
-  it('leaves the screenset unchanged and shows the status line when the drop is refused', async () => {
-    const row = screenset({
+  it('leaves the workspace unchanged and shows the status line when the drop is refused', async () => {
+    const row = workspace({
       kind: 'split',
       dir: 'row',
       children: [
@@ -431,7 +431,7 @@ describe('drag-to-dock', () => {
       };
       n += 1;
     }
-    const deep = screenset(tree);
+    const deep = workspace(tree);
     render(<Harness initial={deep} />);
     const before = raw();
     act(() => api.sendTo('chords', { kind: 'root', edge: 'left' } as never));

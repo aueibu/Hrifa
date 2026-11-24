@@ -10,15 +10,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   dockerHolding,
   makeDocker,
-  makeScreenset,
-  parseScreensetStore,
+  makeWorkspace,
+  parseWorkspaceStore,
   reconcile,
   treeDockers,
-  type Screenset,
+  type Workspace,
   type SplitChild,
   type TreeNode,
 } from '../../../lib/stage';
-import { arrangementA, arrangementC, screenset } from '../../../lib/stage/fixtures';
+import { arrangementA, arrangementC, workspace } from '../../../lib/stage/fixtures';
 import { createStageRegistry, type StageModule, type StageRegistry } from '../registry';
 import { DockStage } from './DockStage';
 import { knownPanelIds, useStageRegistry, type PanelKind } from './instances';
@@ -102,7 +102,7 @@ const mod = (id: string, over: Partial<StageModule> = {}): StageModule => ({
 const REGISTRY = createStageRegistry([
   mod('canvas', { keepMounted: true }),
   mod('desk'),
-  mod('clip-editor', { title: 'Clip editor', home: 'Detail' }),
+  mod('data-block-editor', { title: 'Data-block editor', home: 'Detail' }),
   mod('chords', { home: 'Tools' }),
   mod('sets'),
   mod('voicings'),
@@ -111,12 +111,12 @@ const REGISTRY = createStageRegistry([
 ]);
 
 interface HostProps {
-  initial: Screenset;
+  initial: Workspace;
   registry?: StageRegistry;
   widthRem?: number;
   kinds?: { id: string; title: string }[];
   onNewInstance?: (kind: string) => void;
-  onScreenset?: (s: Screenset) => void;
+  onWorkspace?: (s: Workspace) => void;
 }
 function Host({
   initial,
@@ -124,16 +124,16 @@ function Host({
   widthRem = 100,
   kinds,
   onNewInstance,
-  onScreenset,
+  onWorkspace: onWorkspace,
 }: HostProps) {
   const [s, setS] = useState(initial);
   const [api, setApi] = useState<StageApi | null>(null);
-  onScreenset?.(s);
+  onWorkspace?.(s);
   return (
     <>
       <PanelsMenu
         registry={registry.meta}
-        screenset={s}
+        workspace={s}
         api={api}
         kinds={kinds}
         onNewInstance={onNewInstance}
@@ -141,24 +141,24 @@ function Host({
       <input aria-label="outside" />
       <DockStage
         registry={registry}
-        screenset={s}
+        workspace={s}
         update={setS}
         widthRem={widthRem}
         heightRem={50}
         onApi={setApi}
       />
-      <output data-testid="screenset">{JSON.stringify(s)}</output>
+      <output data-testid="workspace">{JSON.stringify(s)}</output>
     </>
   );
 }
 
-const stored = () => JSON.parse(screen.getByTestId('screenset').textContent!) as Screenset;
+const stored = () => JSON.parse(screen.getByTestId('workspace').textContent!) as Workspace;
 const dockerOf = (panel: string) => dockerHolding(stored().tree, panel);
 const region = (name: string) => screen.getByRole('region', { name });
 const tab = (name: string) => screen.getByRole('tab', { name });
 const hostOf = (id: string) => document.querySelector<HTMLElement>(`[data-panel-host="${id}"]`);
-const A = () => screenset(arrangementA);
-const C = () => screenset(arrangementC);
+const A = () => workspace(arrangementA);
+const C = () => workspace(arrangementC);
 const focus = (el: HTMLElement) => act(() => el.focus());
 const active = () => document.activeElement as HTMLElement | null;
 const selectedDocker = () =>
@@ -341,7 +341,7 @@ describe('docker shortcuts', () => {
     expect(active()).toBe(tab('Canvas'));
     key(F6);
     expect(selectedDocker()).toBe('Detail');
-    expect(active()).toBe(tab('Clip editor'));
+    expect(active()).toBe(tab('Data-block editor'));
     key({ ...F6, shiftKey: true });
     expect(selectedDocker()).toBe('Canvas');
     key({ ...F6, shiftKey: true }); // wraps to the last
@@ -364,7 +364,7 @@ describe('docker shortcuts', () => {
     focus(tab('Chords'));
     expect(key(altDigit(2))).toBe(false);
     expect(selectedDocker()).toBe('Detail');
-    expect(active()).toBe(tab('Clip editor'));
+    expect(active()).toBe(tab('Data-block editor'));
     key(altDigit(1));
     expect(selectedDocker()).toBe('Canvas');
     key(altDigit(3));
@@ -398,13 +398,13 @@ describe('docker shortcuts', () => {
     await userEvent.keyboard('{ArrowUp}{Enter}'); // Tools was the selected docker's row; up is Detail
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(selectedDocker()).toBe('Detail');
-    expect(active()).toBe(tab('Clip editor'));
+    expect(active()).toBe(tab('Data-block editor'));
 
     key({ key: 'g', code: 'KeyG', altKey: true });
     await screen.findByRole('dialog', { name: 'Go to docker' });
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(active()).toBe(tab('Clip editor'));
+    expect(active()).toBe(tab('Data-block editor'));
   });
 
   it('selecting a collapsed docker expands it', () => {
@@ -434,7 +434,7 @@ describe('docker shortcuts', () => {
   it('leaves a key a panel already handled alone', async () => {
     render(
       <Host
-        initial={screenset({
+        initial={workspace({
           kind: 'split',
           dir: 'row',
           children: [
@@ -500,7 +500,7 @@ describe('acceptance chain and guards', () => {
   it('drops a focus request whose target never appears; a later render does not move focus', async () => {
     function Frozen() {
       const [s, setS] = useState(
-        screenset({
+        workspace({
           kind: 'split',
           dir: 'row',
           children: [
@@ -530,7 +530,7 @@ describe('acceptance chain and guards', () => {
           <input aria-label="elsewhere" />
           <DockStage
             registry={REGISTRY}
-            screenset={s}
+            workspace={s}
             update={() => {}}
             widthRem={100}
             heightRem={50}
@@ -634,7 +634,7 @@ describe('menu entries added in M3c', () => {
   });
 
   it('disables the size entry for the root docker', async () => {
-    render(<Host initial={screenset(makeDocker('only', 'Only', ['canvas']))} />);
+    render(<Host initial={workspace(makeDocker('only', 'Only', ['canvas']))} />);
     await userEvent.click(dockerMenu('Only'));
     expect(await screen.findByRole('menuitem', { name: 'Make fixed size' })).toBeDisabled();
   });
@@ -655,7 +655,7 @@ describe('menu entries added in M3c', () => {
   });
 
   it('disables Send to (not an empty list) when there is no other docker', async () => {
-    render(<Host initial={screenset(makeDocker('only', 'Only', ['canvas', 'sets']))} />);
+    render(<Host initial={workspace(makeDocker('only', 'Only', ['canvas', 'sets']))} />);
     await userEvent.click(tabMenu('Canvas'));
     expect(
       await screen.findByRole('menuitem', { name: 'Send to (no other docker)' })
@@ -683,7 +683,7 @@ describe('menu entries added in M3c', () => {
 
   it('Escape in the name prompt cancels and changes nothing', async () => {
     render(<Host initial={A()} />);
-    const before = screen.getByTestId('screenset').textContent;
+    const before = screen.getByTestId('workspace').textContent;
     await userEvent.click(tabMenu('Chords'));
     await userEvent.click(
       await screen.findByRole('menuitem', { name: 'Send to new docker: Below' })
@@ -691,7 +691,7 @@ describe('menu entries added in M3c', () => {
     await screen.findByRole('textbox', { name: 'Docker name' });
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(screen.getByTestId('screenset').textContent).toBe(before);
+    expect(screen.getByTestId('workspace').textContent).toBe(before);
     expect(active()).toBe(tab('Chords'));
   });
 
@@ -766,7 +766,7 @@ describe('the Panels menu', () => {
     await userEvent.hover(within(menu).getByRole('menuitem', { name: 'Go to docker' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: /^Detail/ }));
     expect(selectedDocker()).toBe('Detail');
-    expect(active()).toBe(tab('Clip editor'));
+    expect(active()).toBe(tab('Data-block editor'));
   });
 });
 
@@ -790,7 +790,7 @@ describe('a dynamic registry', () => {
     },
   ];
   const base = () =>
-    makeScreenset({
+    makeWorkspace({
       id: 's',
       name: 's',
       tree: {
@@ -833,13 +833,13 @@ describe('a dynamic registry', () => {
         </button>
         <DockStage
           registry={registry}
-          screenset={s}
+          workspace={s}
           update={setS}
           widthRem={100}
           heightRem={50}
           onApi={setApi}
         />
-        <output data-testid="screenset">{JSON.stringify(s)}</output>
+        <output data-testid="workspace">{JSON.stringify(s)}</output>
       </>
     );
   }
@@ -878,16 +878,16 @@ describe('a dynamic registry', () => {
     expect(unmounts['note:2']).toBeUndefined();
   });
 
-  it('knows an instance id before a stored screenset is parsed', () => {
+  it('knows an instance id before a stored workspace is parsed', () => {
     const raw = JSON.stringify(base());
     const known = knownPanelIds(KINDS, [{ kind: 'note', key: '1' }]);
-    const keep = parseScreensetStore(raw, known, {
-      fallback: { version: 1, active: 'x', order: [], screensets: {} },
+    const keep = parseWorkspaceStore(raw, known, {
+      fallback: { version: 1, active: 'x', order: [], workspaces: {} },
     });
-    expect(dockerHolding(keep.screensets.s.tree, 'note:1')).not.toBeNull();
-    const lost = parseScreensetStore(raw, knownPanelIds(KINDS, []), {
-      fallback: { version: 1, active: 'x', order: [], screensets: {} },
+    expect(dockerHolding(keep.workspaces.s.tree, 'note:1')).not.toBeNull();
+    const lost = parseWorkspaceStore(raw, knownPanelIds(KINDS, []), {
+      fallback: { version: 1, active: 'x', order: [], workspaces: {} },
     });
-    expect(dockerHolding(lost.screensets.s.tree, 'note:1')).toBeNull();
+    expect(dockerHolding(lost.workspaces.s.tree, 'note:1')).toBeNull();
   });
 });

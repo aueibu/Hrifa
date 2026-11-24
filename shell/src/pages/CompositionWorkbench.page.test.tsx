@@ -71,7 +71,7 @@ describe('CompositionWorkbenchPage', () => {
   it('opens in the node-first composition view', () => {
     renderPage();
     // Exactly these tabs and no other (a node must not get one): the Canvas, Nodes and Data-block editor docker
-    // tabs and the Canvas, Desk and Edit screenset tabs in the footer.
+    // tabs and the Canvas, Desk and Edit workspace tabs in the footer.
     expect(
       screen
         .getAllByRole('tab')

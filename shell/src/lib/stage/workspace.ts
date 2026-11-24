@@ -1,29 +1,26 @@
 /**
- * The stored shape of the screensets: ONE JSON value per project (`ScreensetStore`). No storage access here: the page
+ * The stored shape of the workspaces: ONE JSON value per project (`WorkspaceStore`). No storage access here: the page
  * owns reading and writing the string (per project, M5). Parsing never throws and sanitises entry by entry: unknown
  * panel ids and repeats are dropped, bad numbers repaired, malformed dockers and splits repaired or dropped, an invalid
- * store falls back to the config's default store, an `active` that does not exist falls back to the first screenset.
- * A version-2 screenset is accepted as is (sanitised); a version-1 layout (`{ version: 1, columns }`) is migrated with
- * `layoutV1ToScreenset`. A bare screenset or a bare v1 layout in place of a store becomes a store of one.
+ * store falls back to the config's default store, an `active` that does not exist falls back to the first workspace.
+ * A workspace is accepted as is (sanitised). A bare workspace in place of a store becomes a store of one.
  */
-import { layoutV1ToScreenset, type LayoutV1ToScreensetOpts } from './migrate';
-import { parseLayout } from './persist';
 import type { ModuleRegistry } from './registry';
 import {
-  SCREENSET_STORE_VERSION,
-  SCREENSET_VERSION,
+  WORKSPACE_STORE_VERSION,
+  WORKSPACE_VERSION,
   SPLIT_MAX_DEPTH,
   isDocker,
   makeDocker,
-  makeScreenset,
+  makeWorkspace,
   nextDockerId,
   normalizeTree,
   treeDockers,
   uniqueName,
   type Docker,
   type Place,
-  type Screenset,
-  type ScreensetStore,
+  type Workspace,
+  type WorkspaceStore,
   type SplitChild,
   type TreeNode,
 } from './tree';
@@ -31,11 +28,9 @@ import {
 type Known = ReadonlySet<string> | ModuleRegistry | undefined;
 const isKnown = (known: Known, id: string): boolean => (known ? known.has(id) : true);
 
-export interface ScreensetParseConfig {
-  /** The store used when nothing valid can be read (the shipped default screensets). */
-  fallback: ScreensetStore;
-  /** Options for migrating version-1 layouts (titles, id renames). `id` and `name` are set per screenset. */
-  migrate?: Omit<LayoutV1ToScreensetOpts, 'id' | 'name'>;
+export interface WorkspaceParseConfig {
+  /** The store used when nothing valid can be read (the shipped default workspaces). */
+  fallback: WorkspaceStore;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
@@ -130,11 +125,11 @@ function capDepth(node: TreeNode, level: number): TreeNode {
   };
 }
 
-function sanitizeScreenset(
+function sanitizeWorkspace(
   raw: Record<string, unknown>,
   known: Known,
   id: string
-): Screenset | null {
+): Workspace | null {
   const ctx: SanitizeCtx = {
     known,
     panels: new Set(),
@@ -185,7 +180,7 @@ function sanitizeScreenset(
     ? [...new Set(raw.collapsed.filter((x): x is string => typeof x === 'string' && ids.has(x)))]
     : [];
   const name = typeof raw.name === 'string' && raw.name.trim() !== '' ? raw.name.trim() : id;
-  return makeScreenset({
+  return makeWorkspace({
     id,
     name,
     tree,
@@ -199,42 +194,15 @@ function sanitizeScreenset(
 }
 
 /**
- * Read one stored screenset: version 2 is sanitised, a version-1 layout is migrated. Null when it is neither or
- * nothing usable remains. `id` is the key it is stored under.
+ * Read one stored workspace: sanitised. Null when it is not one or nothing usable remains. `id` is the key it is stored under.
  */
-export function parseScreenset(
-  raw: unknown,
-  known: Known,
-  id: string,
-  migrate: ScreensetParseConfig['migrate'] = undefined
-): Screenset | null {
+export function parseWorkspace(raw: unknown, known: Known, id: string): Workspace | null {
   try {
     if (!isObj(raw)) {
       return null;
     }
-    if (raw.version === SCREENSET_VERSION && raw.tree !== undefined) {
-      return sanitizeScreenset(raw, known, id);
-    }
-    if (raw.tree === undefined && Array.isArray(raw.columns) && raw.version === 1) {
-      // Rename first, then drop unknown ids (the old id may be absent from the registry), as foldEditorLayout does.
-      const rename = migrate?.rename ?? {};
-      const parsed = parseLayout(JSON.stringify(raw), undefined, { version: 1, columns: [] });
-      const renamed = parseLayout(
-        JSON.stringify({
-          ...parsed,
-          columns: parsed.columns.map((c) => ({
-            ...c,
-            slots: c.slots.map((p) => (Object.hasOwn(rename, p) ? rename[p] : p)),
-          })),
-        }),
-        known,
-        { version: 1, columns: [] }
-      );
-      if (raw.columns.length > 0 && renamed.columns.length === 0) {
-        return null;
-      }
-      const name = typeof raw.name === 'string' && raw.name.trim() !== '' ? raw.name.trim() : id;
-      return layoutV1ToScreenset(renamed, { ...migrate, rename: undefined, id, name });
+    if (raw.version === WORKSPACE_VERSION && raw.tree !== undefined) {
+      return sanitizeWorkspace(raw, known, id);
     }
     return null;
   } catch {
@@ -242,12 +210,12 @@ export function parseScreenset(
   }
 }
 
-/** Read the project's screenset store from a stored string (or an already parsed value). Never throws. */
-export function parseScreensetStore(
+/** Read the project's workspace store from a stored string (or an already parsed value). Never throws. */
+export function parseWorkspaceStore(
   raw: string | null | undefined | unknown,
   known: Known,
-  config: ScreensetParseConfig
-): ScreensetStore {
+  config: WorkspaceParseConfig
+): WorkspaceStore {
   try {
     let value: unknown = raw;
     if (typeof raw === 'string') {
@@ -256,33 +224,33 @@ export function parseScreensetStore(
     if (!isObj(value)) {
       return config.fallback;
     }
-    const screensets: Record<string, Screenset> = {};
+    const workspaces: Record<string, Workspace> = {};
     let order: string[] = [];
-    if (isObj(value.screensets)) {
-      if (value.version !== SCREENSET_STORE_VERSION) {
+    if (isObj(value.workspaces)) {
+      if (value.version !== WORKSPACE_STORE_VERSION) {
         return config.fallback;
       }
       const keys = [
         ...(Array.isArray(value.order)
           ? value.order.filter((k): k is string => typeof k === 'string')
           : []),
-        ...Object.keys(value.screensets),
+        ...Object.keys(value.workspaces),
       ];
       for (const key of keys) {
-        if (screensets[key] || !Object.hasOwn(value.screensets, key)) {
+        if (workspaces[key] || !Object.hasOwn(value.workspaces, key)) {
           continue;
         }
-        const s = parseScreenset(value.screensets[key], known, key, config.migrate);
+        const s = parseWorkspace(value.workspaces[key], known, key);
         if (s) {
-          screensets[key] = s;
+          workspaces[key] = s;
           order.push(key);
         }
       }
     } else {
       const id = typeof value.id === 'string' && value.id !== '' ? value.id : 'main';
-      const s = parseScreenset(value, known, id, config.migrate);
+      const s = parseWorkspace(value, known, id);
       if (s) {
-        screensets[s.id] = s;
+        workspaces[s.id] = s;
         order = [s.id];
       }
     }
@@ -290,12 +258,12 @@ export function parseScreensetStore(
       return config.fallback;
     }
     const active =
-      typeof value.active === 'string' && screensets[value.active] ? value.active : order[0];
-    return { version: SCREENSET_STORE_VERSION, active, order, screensets };
+      typeof value.active === 'string' && workspaces[value.active] ? value.active : order[0];
+    return { version: WORKSPACE_STORE_VERSION, active, order, workspaces: workspaces };
   } catch {
     return config.fallback;
   }
 }
 
 /** The string to store for a store. */
-export const serializeScreensetStore = (store: ScreensetStore): string => JSON.stringify(store);
+export const serializeWorkspaceStore = (store: WorkspaceStore): string => JSON.stringify(store);

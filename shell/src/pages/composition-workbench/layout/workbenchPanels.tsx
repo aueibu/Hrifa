@@ -7,7 +7,7 @@
  *
  * `canvas`, `desk` and `node-detail` are `keepMounted`: the canvas measures its box, the desk keeps its scroll and
  * edit sessions, and the node editors publish their outputs from effects (until R2 and R3 move that out), so none
- * of them may unmount when its screenset does not show it or the person closes its tab.
+ * of them may unmount when its workspace does not show it or the person closes its tab.
  */
 import { createContext, useContext, type ReactNode } from 'react';
 import type { PanelKind } from '../../../components/Stage/dock';
@@ -19,7 +19,7 @@ import {
   DATA_BLOCK_EDITOR_PANEL,
   DESK_PANEL,
   NODE_DETAIL_PANEL,
-} from './workbenchScreensets';
+} from './workbenchWorkspaces';
 import classes from '../CompositionWorkbench.module.css';
 
 export interface WorkbenchPanelNodes {

@@ -1028,7 +1028,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
     revealAnchor: (range) => chordHostRef.current.revealAnchor(range),
     // The pointer tracker and the scope helper are M4b: the session asks this editor for its root.
     scope: () => editorRoot.current,
-    // The roll is hidden (another tab in front, a collapsed or other-screenset docker): the panel parks it
+    // The roll is hidden (another tab in front, a collapsed or other-workspace docker): the panel parks it
     // with `inert`, and the W-20 keys are not captured then (design 8.4).
     visible: () => !editorRoot.current?.closest('[inert]'),
     // The picker is a page panel (M6a): it is wanted while the Chords tool is on, and the page's

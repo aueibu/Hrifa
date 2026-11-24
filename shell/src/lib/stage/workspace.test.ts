@@ -1,34 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { arrangementA, arrangementB, arrangementC, registry, screenset } from './fixtures';
+import { arrangementA, arrangementB, arrangementC, registry, workspace } from './fixtures';
 import { setActive } from './ops';
-import { parseScreenset, parseScreensetStore, serializeScreensetStore } from './screenset';
-import { makeDocker, makeScreenset, makeStore, treeDockers, type TreeNode } from './tree';
+import { makeDocker, makeWorkspace, makeStore, treeDockers, type TreeNode } from './tree';
+import { parseWorkspace, parseWorkspaceStore, serializeWorkspaceStore } from './workspace';
 
 const fallback = makeStore([
-  makeScreenset({ id: 'default', name: 'Default', tree: makeDocker('d1', 'Main') }),
+  makeWorkspace({ id: 'default', name: 'Default', tree: makeDocker('d1', 'Main') }),
 ]);
 const config = { fallback };
 
 const depth = (n: TreeNode): number =>
   n.kind === 'docker' ? 1 : 1 + Math.max(...n.children.map((c) => depth(c.node)));
 
-describe('screenset store: parse and serialise', () => {
+describe('workspace store: parse and serialise', () => {
   it('builds, serialises and parses back the three target arrangements', () => {
     const store = makeStore(
-      [screenset(arrangementA, 'a'), screenset(arrangementB, 'b'), screenset(arrangementC, 'c')],
+      [workspace(arrangementA, 'a'), workspace(arrangementB, 'b'), workspace(arrangementC, 'c')],
       'b'
     );
-    const back = parseScreensetStore(serializeScreensetStore(store), registry, config);
+    const back = parseWorkspaceStore(serializeWorkspaceStore(store), registry, config);
     expect(back).toEqual(store);
     expect(back.order).toEqual(['a', 'b', 'c']);
     // The empty Tools docker of (c) persists through the round trip.
-    const tools = treeDockers(back.screensets.c.tree).find((d) => d.name === 'Tools')!;
+    const tools = treeDockers(back.workspaces.c.tree).find((d) => d.name === 'Tools')!;
     expect(tools.tabs).toEqual([]);
     expect(tools.active).toBeNull();
   });
 
   it('keeps active tabs, remembered places, collapsed and default docker', () => {
-    let a = screenset(arrangementA, 'a');
+    let a = workspace(arrangementA, 'a');
     a = setActive(a, 'd3', 'voicings');
     a = {
       ...a,
@@ -36,9 +36,9 @@ describe('screenset store: parse and serialise', () => {
       collapsed: ['d3'],
       defaultDocker: 'd2',
     };
-    const back = parseScreensetStore(serializeScreensetStore(makeStore([a])), registry, config);
-    expect(back.screensets.a).toEqual(a);
-    expect(treeDockers(back.screensets.a.tree).find((d) => d.id === 'd3')!.active).toBe('voicings');
+    const back = parseWorkspaceStore(serializeWorkspaceStore(makeStore([a])), registry, config);
+    expect(back.workspaces.a).toEqual(a);
+    expect(treeDockers(back.workspaces.a.tree).find((d) => d.id === 'd3')!.active).toBe('voicings');
   });
 
   it('drops unknown panel ids and repeats and repairs the active tab', () => {
@@ -46,9 +46,9 @@ describe('screenset store: parse and serialise', () => {
       version: 1,
       active: 's',
       order: ['s'],
-      screensets: {
+      workspaces: {
         s: {
-          version: 2,
+          version: 1,
           id: 's',
           name: 'S',
           tree: {
@@ -84,7 +84,7 @@ describe('screenset store: parse and serialise', () => {
         },
       },
     };
-    const s = parseScreensetStore(JSON.stringify(raw), registry, config).screensets.s;
+    const s = parseWorkspaceStore(JSON.stringify(raw), registry, config).workspaces.s;
     const [a, b] = treeDockers(s.tree);
     expect(a.tabs).toEqual(['canvas']);
     expect(a.active).toBe('canvas');
@@ -94,7 +94,7 @@ describe('screenset store: parse and serialise', () => {
 
   it('dedupes docker ids and names and repairs bad sizes', () => {
     const raw = {
-      version: 2,
+      version: 1,
       id: 's',
       name: 'S',
       tree: {
@@ -110,7 +110,7 @@ describe('screenset store: parse and serialise', () => {
         ],
       },
     };
-    const s = parseScreenset(raw, registry, 's')!;
+    const s = parseWorkspace(raw, registry, 's')!;
     const ds = treeDockers(s.tree);
     expect(new Set(ds.map((d) => d.id)).size).toBe(2);
     expect(new Set(ds.map((d) => d.name.toLowerCase())).size).toBe(2);
@@ -121,9 +121,9 @@ describe('screenset store: parse and serialise', () => {
     ).toBe(true);
   });
 
-  it('a bad active falls back to the first screenset and the order is rebuilt', () => {
-    const store = makeStore([screenset(arrangementA, 'a'), screenset(arrangementB, 'b')]);
-    const back = parseScreensetStore(
+  it('a bad active falls back to the first workspace and the order is rebuilt', () => {
+    const store = makeStore([workspace(arrangementA, 'a'), workspace(arrangementB, 'b')]);
+    const back = parseWorkspaceStore(
       JSON.stringify({ ...store, active: 'zzz', order: ['b'] }),
       registry,
       config
@@ -147,7 +147,7 @@ describe('screenset store: parse and serialise', () => {
         ],
       };
     }
-    const s = parseScreenset({ version: 2, id: 's', name: 's', tree: node }, registry, 's')!;
+    const s = parseWorkspace({ version: 1, id: 's', name: 's', tree: node }, registry, 's')!;
     expect(depth(s.tree)).toBeLessThanOrEqual(6);
     expect(
       treeDockers(s.tree)
@@ -156,56 +156,16 @@ describe('screenset store: parse and serialise', () => {
     ).toEqual(['canvas', 'desk']);
   });
 
-  it('migrates a version-1 layout, bare or inside a store', () => {
-    const v1 = { version: 1, columns: [{ slots: ['canvas'], width: 40 }, { slots: ['desk'] }] };
-    const bare = parseScreensetStore(JSON.stringify(v1), registry, config);
-    expect(bare.order).toEqual(['main']);
-    expect(bare.screensets.main.tree).toMatchObject({ kind: 'split', dir: 'row' });
-    const inStore = parseScreensetStore(
-      JSON.stringify({ version: 1, active: 'old', order: ['old'], screensets: { old: v1 } }),
-      registry,
-      config
-    );
-    expect(inStore.screensets.old.id).toBe('old');
-    expect(treeDockers(inStore.screensets.old.tree).map((d) => d.tabs[0])).toEqual([
-      'canvas',
-      'desk',
-    ]);
-  });
-
-  it('renames ids before dropping unknown ones when migrating a v1 layout', () => {
-    const reg = new Set(['clip-editor', 'chords']);
-    const v1 = {
-      version: 1,
-      columns: [
-        { slots: ['roll'], width: 40 },
-        { slots: ['chords'], width: 28 },
-      ],
-    };
-    const store = parseScreensetStore(JSON.stringify(v1), reg, {
-      fallback,
-      migrate: { rename: { roll: 'clip-editor' } },
-    });
-    expect(treeDockers(store.screensets.main.tree).flatMap((d) => d.tabs)).toEqual([
-      'clip-editor',
-      'chords',
-    ]);
-    expect(Object.keys(store.screensets.main.lastDocker).sort()).toEqual(['chords', 'clip-editor']);
-    // Without the rename the unknown 'roll' is dropped.
-    const plain = parseScreensetStore(JSON.stringify(v1), reg, { fallback });
-    expect(treeDockers(plain.screensets.main.tree).flatMap((d) => d.tabs)).toEqual(['chords']);
-  });
-
-  it('does not treat a newer object with columns but no tree as v1, and checks the store version', () => {
+  it('rejects an object with columns but no tree, and checks the store version', () => {
     expect(
-      parseScreensetStore(
-        JSON.stringify({ version: 2, columns: [{ slots: ['canvas'] }] }),
+      parseWorkspaceStore(
+        JSON.stringify({ version: 1, columns: [{ slots: ['canvas'] }] }),
         registry,
         config
       )
     ).toBe(fallback);
-    const store = makeStore([screenset(arrangementA, 'a')]);
-    expect(parseScreensetStore(JSON.stringify({ ...store, version: 7 }), registry, config)).toBe(
+    const store = makeStore([workspace(arrangementA, 'a')]);
+    expect(parseWorkspaceStore(JSON.stringify({ ...store, version: 7 }), registry, config)).toBe(
       fallback
     );
   });
@@ -221,18 +181,16 @@ describe('screenset store: parse and serialise', () => {
       '"str"',
       '5',
       {},
-      { screensets: 5 },
-      { screensets: { a: 5, b: null, c: { version: 2, tree: 5 } } },
-      { version: 1, columns: 'x' },
-      { version: 1, columns: [{ slots: ['nope'] }] },
-      { version: 2, tree: { kind: 'split', dir: 'diag', children: [] } },
+      { workspaces: 5 },
+      { workspaces: { a: 5, b: null, c: { version: 1, tree: 5 } } },
+      { version: 1, tree: { kind: 'split', dir: 'diag', children: [] } },
     ];
     for (const g of garbage) {
       const raw = typeof g === 'string' || g == null ? g : JSON.stringify(g);
-      expect(parseScreensetStore(raw, registry, config)).toBe(fallback);
+      expect(parseWorkspaceStore(raw, registry, config)).toBe(fallback);
     }
     const cyc: Record<string, unknown> = {};
     cyc.self = cyc;
-    expect(() => parseScreensetStore(cyc, registry, config)).not.toThrow();
+    expect(() => parseWorkspaceStore(cyc, registry, config)).not.toThrow();
   });
 });

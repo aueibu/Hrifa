@@ -2,7 +2,7 @@ import { act } from 'react';
 import { render } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StageApi } from '../../../components/Stage/dock';
-import { makeDocker, makeScreenset, type Screenset } from '../../../lib/stage';
+import { makeDocker, makeWorkspace, type Workspace } from '../../../lib/stage';
 import { CompositionSettingsProvider, defaultProjectPitchSet } from '../compositionSettings';
 import { ChordPanelBridge } from './ChordPanelBridge';
 import { ChordSession, type ChordTarget } from './chordSession';
@@ -16,10 +16,10 @@ vi.mock('../audio/AudioEngineProvider', () => ({
   }),
 }));
 
-const withChords = (id = 's1'): Screenset =>
-  makeScreenset({ id, name: id, tree: makeDocker('d1', 'D', ['chords', 'other'], 'chords') });
-const withoutChords = (id = 's1'): Screenset =>
-  makeScreenset({ id, name: id, tree: makeDocker('d1', 'D', ['other'], 'other') });
+const withChords = (id = 's1'): Workspace =>
+  makeWorkspace({ id, name: id, tree: makeDocker('d1', 'D', ['chords', 'other'], 'chords') });
+const withoutChords = (id = 's1'): Workspace =>
+  makeWorkspace({ id, name: id, tree: makeDocker('d1', 'D', ['other'], 'other') });
 
 function api(isOpen = false): StageApi {
   return {
@@ -41,16 +41,16 @@ function target(extra: Partial<ChordTarget> = {}): ChordTarget {
   };
 }
 
-function mount(session: ChordSession, stage: StageApi, screenset: Screenset) {
-  const tree = (s: Screenset) => (
+function mount(session: ChordSession, stage: StageApi, workspace: Workspace) {
+  const tree = (s: Workspace) => (
     <CompositionSettingsProvider>
       <ChordSessionProvider session={session}>
-        <ChordPanelBridge screenset={s} api={stage} />
+        <ChordPanelBridge workspace={s} api={stage} />
       </ChordSessionProvider>
     </CompositionSettingsProvider>
   );
-  const view = render(tree(screenset));
-  return { rerender: (s: Screenset) => view.rerender(tree(s)) };
+  const view = render(tree(workspace));
+  return { rerender: (s: Workspace) => view.rerender(tree(s)) };
 }
 
 describe('ChordPanelBridge', () => {
@@ -80,7 +80,7 @@ describe('ChordPanelBridge', () => {
     expect(stage.close).not.toHaveBeenCalled();
   });
 
-  it('shows the panel again in the screenset it is flipped to while the claim still wants it', () => {
+  it('shows the panel again in the workspace it is flipped to while the claim still wants it', () => {
     const session = new ChordSession();
     const stage = api();
     const view = mount(session, stage, withChords('a'));
@@ -94,7 +94,7 @@ describe('ChordPanelBridge', () => {
     expect(stage.open).toHaveBeenCalledWith('chords');
   });
 
-  it('a screenset flip leaves a panel that is already open alone (A6)', () => {
+  it('a workspace flip leaves a panel that is already open alone (A6)', () => {
     const session = new ChordSession();
     const stage = api(true);
     const view = mount(session, stage, withChords('a'));
@@ -120,7 +120,7 @@ describe('ChordPanelBridge', () => {
     expect(first).not.toHaveBeenCalled();
   });
 
-  it('does not report a close while the claim does not want the picker, nor a change of screenset', () => {
+  it('does not report a close while the claim does not want the picker, nor a change of workspace', () => {
     const session = new ChordSession();
     const closed = vi.fn();
     let wants = false;
@@ -134,7 +134,7 @@ describe('ChordPanelBridge', () => {
     // Another tool is active: closing the tab just closes it.
     view.rerender(withoutChords('a'));
     expect(closed).not.toHaveBeenCalled();
-    // The tool is on and the panel is open: a flip to a screenset without it is not a close (it is shown there).
+    // The tool is on and the panel is open: a flip to a workspace without it is not a close (it is shown there).
     view.rerender(withChords('a'));
     wants = true;
     act(() => changed());

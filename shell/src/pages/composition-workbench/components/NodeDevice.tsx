@@ -13,7 +13,7 @@ interface NodeDeviceProps {
   onReset?(): void;
   /** The controls a user reaches for repeatedly to shape the result. */
   controls: ReactNode;
-  /** The result: strips, lanes, lists. */
+  /** The result: strips, rows, lists. */
   children: ReactNode;
   footer?: ReactNode;
 }

@@ -13,16 +13,16 @@ export {
   type SplitterPlacement,
 } from './dockLayout';
 export { PanelsMenu, type PanelsMenuProps } from './PanelsMenu';
-export { ScreensetTabs, type ScreensetTabsProps } from './ScreensetTabs';
+export { WorkspaceTabs, type WorkspaceTabsProps } from './WorkspaceTabs';
 export {
-  addScreenset,
-  canNameScreenset,
-  deleteScreenset,
-  duplicateScreenset,
-  renameScreenset,
-  setActiveScreenset,
-  takenScreensetNames,
-} from './screensetStore';
+  addWorkspace,
+  canNameWorkspace,
+  deleteWorkspace,
+  duplicateWorkspace,
+  renameWorkspace,
+  setActiveWorkspace,
+  takenWorkspaceNames,
+} from './workspaceStore';
 export {
   buildStageRegistry,
   instanceId,

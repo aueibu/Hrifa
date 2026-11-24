@@ -23,8 +23,8 @@
   text-align: center;
 }
 
-/* The screenset meta-tabs (the Stage's ScreensetTabs draws the strip itself). */
-.screensets {
+/* The workspace meta-tabs (the Stage's WorkspaceTabs draws the strip itself). */
+.workspaces {
   margin-left: 0.5rem;
   min-width: 0;
 }

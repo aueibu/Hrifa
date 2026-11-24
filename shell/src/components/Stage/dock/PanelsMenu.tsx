@@ -5,18 +5,18 @@
  * with `multiple` gets a "New <kind> instance" entry (the host creates the instance; see instances.ts). "Go to docker"
  * is a submenu of the dockers by name; the keys are shown from the one key map (keyMap.ts).
  *
- * The page gets `api` from `DockStage`'s `onApi` prop and passes the same `screenset` it gives the Stage.
+ * The page gets `api` from `DockStage`'s `onApi` prop and passes the same `workspace` it gives the Stage.
  */
 import { Fragment, useRef } from 'react';
 import { Button, Menu } from '@mantine/core';
-import { openPanels, treeDockers, type ModuleRegistry, type Screenset } from '../../../lib/stage';
+import { openPanels, treeDockers, type ModuleRegistry, type Workspace } from '../../../lib/stage';
 import { isReservedPanelId } from './instances';
 import { dockerCommandFor, keyLabel } from './keyMap';
 import type { StageApi } from './stageApi';
 
 export interface PanelsMenuProps {
   registry: ModuleRegistry;
-  screenset: Screenset;
+  workspace: Workspace;
   /** From `onApi`; null before the Stage has mounted (the menu then opens with its entries disabled). */
   api: StageApi | null;
   /** The `multiple` kinds that get a "New instance" entry. */
@@ -44,16 +44,16 @@ const Check = () => (
 
 export function PanelsMenu({
   registry,
-  screenset,
+  workspace: workspace,
   api,
   kinds = [],
   onNewInstance,
   label = 'Panels',
 }: PanelsMenuProps) {
   const button = useRef<HTMLButtonElement>(null);
-  const open = new Set(openPanels(screenset.tree));
+  const open = new Set(openPanels(workspace.tree));
   const panels = [...registry.values()].filter((m) => !isReservedPanelId(m.id));
-  const dockers = treeDockers(screenset.tree);
+  const dockers = treeDockers(workspace.tree);
   const off = api === null;
   return (
     // returnFocus is off: Show moves focus to the panel's tab; Open and the rest put it back on the button themselves

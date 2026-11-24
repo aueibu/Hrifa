@@ -6,7 +6,7 @@ import type { DataBlock } from './dataBlock';
 import { DATA_BLOCK_SLOT, type DataBlockEditorSession } from './dataBlockEditorSession';
 import { seedDesk } from './deskTestUtils';
 import { resetHistory } from './history';
-import { storeDefaultScreensets } from './layout/screensetFixtures';
+import { storeDefaultWorkspaces } from './layout/workspaceFixtures';
 import type { NoteEventValue } from './melodicization';
 import { packet } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
@@ -89,7 +89,7 @@ function notesDataBlock(id: string, name: string): DataBlock {
 
 async function seed() {
   await seedDesk([notesDataBlock('block-a', 'Alpha'), notesDataBlock('block-b', 'Beta')]);
-  storeDefaultScreensets({ active: 'desk' });
+  storeDefaultWorkspaces({ active: 'desk' });
 }
 
 async function openDataBlock(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -150,7 +150,7 @@ describe('the page mounts WorkbenchSessions', () => {
     act(() => {
       chordSession().setAnchor({ pitchMidicents: 6000, start: 0, step: 1 });
     });
-    // Selecting a node (the canvas screenset) clears the data-block target and unmounts the editor.
+    // Selecting a node (the canvas workspace) clears the data-block target and unmounts the editor.
     await user.click(screen.getByRole('tab', { name: 'Canvas' }));
     await user.click(
       within(screen.getByLabelText('Composition canvas')).getByRole('button', {

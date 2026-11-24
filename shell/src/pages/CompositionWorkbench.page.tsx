@@ -12,18 +12,18 @@ import {
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
-  addScreenset,
+  addWorkspace,
   buildStageRegistry,
-  deleteScreenset,
+  deleteWorkspace,
   DockStage,
-  duplicateScreenset,
+  duplicateWorkspace,
   PanelsMenu,
-  renameScreenset,
-  setActiveScreenset,
+  renameWorkspace,
+  setActiveWorkspace,
   type StageApi,
 } from '../components/Stage/dock';
 import { Surface } from '../components/Surface/Surface';
-import type { Screenset } from '../lib/stage';
+import type { Workspace } from '../lib/stage';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { ChordPanelBridge } from './composition-workbench/chordInput/ChordPanelBridge';
 import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
@@ -69,14 +69,14 @@ import {
   type WorkbenchPanelNodes,
 } from './composition-workbench/layout/workbenchPanels';
 import {
-  acceptsScreensetStore,
+  acceptsWorkspaceStore,
   bringPanelForward,
   DATA_BLOCK_EDITOR_PANEL,
-  defaultWorkbenchScreensets,
+  defaultWorkbenchWorkspaces,
   NODE_DETAIL_PANEL,
-  parseStoredScreensets,
-  screensetForCanvas,
-} from './composition-workbench/layout/workbenchScreensets';
+  parseStoredWorkspaces,
+  workspaceForCanvas,
+} from './composition-workbench/layout/workbenchWorkspaces';
 import { PreviewRegistryProvider } from './composition-workbench/previewRegistry';
 import { isReloading } from './composition-workbench/reloading';
 import {
@@ -168,25 +168,25 @@ export function CompositionWorkbenchPage() {
   );
   // The inspector element the active node's setup controls are portaled into.
   const [nodeInspectorSlot, setNodeInspectorSlot] = useState<HTMLElement | null>(null);
-  // The center's layout: this project's screensets (Canvas, Desk, Edit and the person's own). A project with none
+  // The center's layout: this project's workspaces (Canvas, Desk, Edit and the person's own). A project with none
   // starts with the defaults; the key is never an undo step.
-  const [screensetStore, setScreensetStore] = usePersistentState(
-    compositionStateKeys.screensets,
-    defaultWorkbenchScreensets,
-    acceptsScreensetStore,
-    parseStoredScreensets
+  const [workspaceStore, setWorkspaceStore] = usePersistentState(
+    compositionStateKeys.workspaces,
+    defaultWorkbenchWorkspaces,
+    acceptsWorkspaceStore,
+    parseStoredWorkspaces
   );
-  const screenset: Screenset = screensetStore.screensets[screensetStore.active];
-  const updateScreenset = useCallback(
-    (fn: (s: Screenset) => Screenset) =>
-      setScreensetStore((store) => {
-        const current = store.screensets[store.active];
+  const workspace: Workspace = workspaceStore.workspaces[workspaceStore.active];
+  const updateWorkspace = useCallback(
+    (fn: (s: Workspace) => Workspace) =>
+      setWorkspaceStore((store) => {
+        const current = store.workspaces[store.active];
         const next = fn(current);
         return next === current
           ? store
-          : { ...store, screensets: { ...store.screensets, [store.active]: next } };
+          : { ...store, workspaces: { ...store.workspaces, [store.active]: next } };
       }),
-    [setScreensetStore]
+    [setWorkspaceStore]
   );
   // The Stage's functions, for the callbacks below (show a panel, which also expands its docker) and the Panels menu.
   const stageBox = useStageBoxRem();
@@ -259,7 +259,7 @@ export function CompositionWorkbenchPage() {
   }, [compositionInstances, outputStore, evaluationStore]);
 
   // The front tab of the Detail docker follows the exclusive target (a data-block, or a node): when the target flips, the
-  // matching panel comes to the front in every screenset (expanding nothing). A click on the other tab does not change
+  // matching panel comes to the front in every workspace (expanding nothing). A click on the other tab does not change
   // the target, and stays until the target flips again.
   const editorOpen = editorTarget !== null;
   // Starts at the mount value, so a reload keeps the stored tab choice; the rule applies only when the target flips.
@@ -270,8 +270,8 @@ export function CompositionWorkbenchPage() {
     }
     lastEditorOpen.current = editorOpen;
     const panel = editorOpen ? DATA_BLOCK_EDITOR_PANEL : NODE_DETAIL_PANEL;
-    setScreensetStore((store) => bringPanelForward(store, panel));
-  }, [editorOpen, setScreensetStore]);
+    setWorkspaceStore((store) => bringPanelForward(store, panel));
+  }, [editorOpen, setWorkspaceStore]);
 
   // The latest data-block target, read by the stable bindNodePort below.
   const editorTargetRef = useRef(editorTarget);
@@ -492,10 +492,10 @@ export function CompositionWorkbenchPage() {
         onOpenDataBlock={(dataBlock) => openDataBlockEditor(dataBlock.id)}
         onMakeSource={(dataBlock) => {
           addCompositionNode('data-block-source', undefined, dataBlock.id);
-          // Back to a screenset that shows the canvas, where the new source node appears.
-          const target = screensetForCanvas(screensetStore);
+          // Back to a workspace that shows the canvas, where the new source node appears.
+          const target = workspaceForCanvas(workspaceStore);
           if (target !== null) {
-            setScreensetStore((store) => setActiveScreenset(store, target));
+            setWorkspaceStore((store) => setActiveWorkspace(store, target));
           }
         }}
       />
@@ -570,7 +570,7 @@ export function CompositionWorkbenchPage() {
                     dataBlockId={editorTarget}
                   >
                     {/* Shows the Chords panel while the Chords tool wants it, and reports the person closing it. */}
-                    <ChordPanelBridge screenset={screenset} api={stageApi} />
+                    <ChordPanelBridge workspace={workspace} api={stageApi} />
                     <AppShell
                       header={{ height: 56 }}
                       footer={{ height: 39 }}
@@ -643,8 +643,8 @@ export function CompositionWorkbenchPage() {
                                   <WorkbenchPanelsContext.Provider value={panelNodes}>
                                     <DockStage
                                       registry={WORKBENCH_REGISTRY}
-                                      screenset={screenset}
-                                      update={updateScreenset}
+                                      workspace={workspace}
+                                      update={updateWorkspace}
                                       widthRem={stageBox.widthRem}
                                       heightRem={stageBox.heightRem}
                                       onApi={onStageApi}
@@ -669,21 +669,21 @@ export function CompositionWorkbenchPage() {
                           onToggleInspector={() => setInspectorOpen((open) => !open)}
                           settingsOpen={settingsOpened}
                           onToggleSettings={() => setSettingsOpened((open) => !open)}
-                          screensets={{
-                            store: screensetStore,
+                          workspaces={{
+                            store: workspaceStore,
                             onActivate: (id) =>
-                              setScreensetStore((st) => setActiveScreenset(st, id)),
-                            onAdd: () => setScreensetStore((st) => addScreenset(st)),
+                              setWorkspaceStore((st) => setActiveWorkspace(st, id)),
+                            onAdd: () => setWorkspaceStore((st) => addWorkspace(st)),
                             onRename: (id, name) =>
-                              setScreensetStore((st) => renameScreenset(st, id, name)),
+                              setWorkspaceStore((st) => renameWorkspace(st, id, name)),
                             onDuplicate: (id) =>
-                              setScreensetStore((st) => duplicateScreenset(st, id)),
-                            onDelete: (id) => setScreensetStore((st) => deleteScreenset(st, id)),
+                              setWorkspaceStore((st) => duplicateWorkspace(st, id)),
+                            onDelete: (id) => setWorkspaceStore((st) => deleteWorkspace(st, id)),
                           }}
                           panelsMenu={
                             <PanelsMenu
                               registry={WORKBENCH_REGISTRY.meta}
-                              screenset={screenset}
+                              workspace={workspace}
                               api={stageApi}
                             />
                           }

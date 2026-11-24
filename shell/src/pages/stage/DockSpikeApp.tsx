@@ -1,38 +1,38 @@
 /**
  * The dock Stage spike page (arc workbench, one-Stage M3a and M3c): a top bar (Home link, title, the Panels menu, "Show
- * sizes", "Saved JSON", Reset arrangement, colour scheme) over the DockStage, with the screenset meta-tab strip under it.
- * The three target arrangements are three screensets of one store, saved under `hrifa.stage.dockspike.v1` (an older
- * single-screenset value still loads, as a store of one); switching screenset is a store change (the keepMounted canvas
+ * sizes", "Saved JSON", Reset arrangement, colour scheme) over the DockStage, with the workspace meta-tab strip under it.
+ * The three target arrangements are three workspaces of one store, saved under `hrifa.stage.dockspike.v1` (an older
+ * single-workspace value still loads, as a store of one); switching workspace is a store change (the keepMounted canvas
  * stays alive). `note` panels are instances of a `multiple` kind: the instance list is persisted beside the store, read
  * BEFORE the store is parsed so stored `note:<key>` tabs are known, and the registry is rebuilt as instances are added.
- * Spike only: the panels and the page chrome are throwaway. The page owns the screenset store, DockStage owns none.
+ * Spike only: the panels and the page chrome are throwaway. The page owns the workspace store, DockStage owns none.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Anchor, AppShell, Button, Checkbox, Group, Text } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
-  addScreenset,
-  deleteScreenset,
+  addWorkspace,
+  deleteWorkspace,
   DockStage,
-  duplicateScreenset,
+  duplicateWorkspace,
   instanceId,
   knownPanelIds,
   PanelsMenu,
-  renameScreenset,
-  ScreensetTabs,
-  setActiveScreenset,
+  renameWorkspace,
+  WorkspaceTabs,
+  setActiveWorkspace,
   useStageRegistry,
   type PanelInstance,
   type StageApi,
 } from '../../components/Stage/dock';
 import { browserStorage, type StageStorage } from '../../components/Stage/persistence';
 import {
-  parseScreensetStore,
-  serializeScreensetStore,
+  parseWorkspaceStore,
+  serializeWorkspaceStore,
   stageStorageKey,
-  type Screenset,
-  type ScreensetStore,
+  type Workspace,
+  type WorkspaceStore,
 } from '../../lib/stage';
 import {
   DEFAULT_ARRANGEMENTS,
@@ -46,7 +46,7 @@ export const DOCK_SPIKE_KEY = 'hrifa.stage.dockspike.v1';
 export const DOCK_SPIKE_INSTANCES_KEY = 'hrifa.stage.dockspike.instances.v1';
 
 export interface DockSpikeAppProps {
-  /** Where the screensets are stored (tests pass a fake); defaults to localStorage. */
+  /** Where the workspaces are stored (tests pass a fake); defaults to localStorage. */
   storage?: StageStorage;
 }
 
@@ -74,19 +74,19 @@ function loadInstances(storage: StageStorage | undefined): PanelInstance[] {
 
 export function DockSpikeApp({ storage }: DockSpikeAppProps) {
   const store = useMemo(() => storage ?? browserStorage(), [storage]);
-  // the instance list is read first: the ids it makes must exist before the stored screensets are parsed
+  // the instance list is read first: the ids it makes must exist before the stored workspaces are parsed
   const [initial] = useState(() => {
     const instances = loadInstances(store);
     return {
       instances,
-      saved: parseScreensetStore(
+      saved: parseWorkspaceStore(
         read(store, DOCK_SPIKE_KEY),
         knownPanelIds(DOCK_KINDS, instances),
         { fallback: defaultDockStore() }
       ),
     };
   });
-  const [saved, setSaved] = useState<ScreensetStore>(initial.saved);
+  const [saved, setSaved] = useState<WorkspaceStore>(initial.saved);
   const [instances, setInstances] = useState<PanelInstance[]>(initial.instances);
   const registry = useStageRegistry(DOCK_KINDS, instances);
   const [api, setApi] = useState<StageApi | null>(null);
@@ -94,7 +94,7 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
   const [showSizes, setShowSizes] = useState(false);
   const [showJson, setShowJson] = useState(false);
 
-  const json = useMemo(() => serializeScreensetStore(saved), [saved]);
+  const json = useMemo(() => serializeWorkspaceStore(saved), [saved]);
   useEffect(() => {
     try {
       store?.setItem(stageStorageKey(DOCK_SPIKE_KEY), json);
@@ -113,12 +113,12 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
     }
   }, [store, instances]);
 
-  const screenset: Screenset = saved.screensets[saved.active];
-  const update = useCallback((fn: (s: Screenset) => Screenset) => {
+  const workspace: Workspace = saved.workspaces[saved.active];
+  const update = useCallback((fn: (s: Workspace) => Workspace) => {
     setSaved((st) => {
-      const cur = st.screensets[st.active];
+      const cur = st.workspaces[st.active];
       const next = fn(cur);
-      return next === cur ? st : { ...st, screensets: { ...st.screensets, [st.active]: next } };
+      return next === cur ? st : { ...st, workspaces: { ...st.workspaces, [st.active]: next } };
     });
   }, []);
 
@@ -153,7 +153,7 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
           <Group gap="sm" wrap="nowrap">
             <PanelsMenu
               registry={registry.meta}
-              screenset={screenset}
+              workspace={workspace}
               api={api}
               kinds={NEW_INSTANCE_KINDS}
               onNewInstance={addInstance}
@@ -174,7 +174,7 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
               size="compact-xs"
               variant="default"
               onClick={() =>
-                update(() => DEFAULT_ARRANGEMENTS.find((a) => a.id === saved.active) ?? screenset)
+                update(() => DEFAULT_ARRANGEMENTS.find((a) => a.id === saved.active) ?? workspace)
               }
             >
               Reset arrangement
@@ -188,19 +188,19 @@ export function DockSpikeApp({ storage }: DockSpikeAppProps) {
           <div className={classes.stageBox}>
             <DockStage
               registry={registry}
-              screenset={screenset}
+              workspace={workspace}
               update={update}
               showSizes={showSizes}
               onApi={setApi}
             />
           </div>
-          <ScreensetTabs
+          <WorkspaceTabs
             store={saved}
-            onActivate={(id) => setSaved((st) => setActiveScreenset(st, id))}
-            onAdd={() => setSaved((st) => addScreenset(st))}
-            onRename={(id, name) => setSaved((st) => renameScreenset(st, id, name))}
-            onDuplicate={(id) => setSaved((st) => duplicateScreenset(st, id))}
-            onDelete={(id) => setSaved((st) => deleteScreenset(st, id))}
+            onActivate={(id) => setSaved((st) => setActiveWorkspace(st, id))}
+            onAdd={() => setSaved((st) => addWorkspace(st))}
+            onRename={(id, name) => setSaved((st) => renameWorkspace(st, id, name))}
+            onDuplicate={(id) => setSaved((st) => duplicateWorkspace(st, id))}
+            onDelete={(id) => setSaved((st) => deleteWorkspace(st, id))}
           />
           {showJson && (
             <pre className={classes.json} data-testid="dock-json">

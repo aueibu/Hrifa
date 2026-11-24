@@ -4,7 +4,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Timeline (`arcs/workbench`), APPROVED 2026-11-23 (human), committed a836990
-- Current milestone: B1c (screenset to workspace); B1a, B1b done 2026-11-23
+- Current milestone: B1 (references and users); B1a, B1b, B1c done 2026-11-23 (B1c checkpoint: human look pending)
 - State: B1a committed (data-block vocabulary: Snippet and clip renamed everywhere in the page folder; gate green 105 files / 1,548 tests; review fixed). Next: B1b. Page-entry lock held; vite.config.mjs and ARCHITECTURE.md locks released after the commit.
 
 ## Where to look
@@ -24,6 +24,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | B0b removals (2026-11-23) | done, committed | `check:workbench` green (105 files, 1,549 tests); `check:stage` green (31 files, 400 tests); `check:hfl`: 6 timeouts in lab tests under load, the 5 files pass alone (53 tests) | Deleted: the demo patch chain and 5 dead files (11 files, about 1,340 lines), screenset seeding and `editorStage.ts`, the desk, snapshot, laneId, mist, interference and instance-key legacy, `alignParameterPackets`, `RhythmPatternPreview`, the stored midiNote Tone fallback. `signalTypeFor` iterates the registry in an explicit order. Every module instance now stores state under `<base>.instance.<instanceId>` (baseline reset: the human's dev browser opens the three default modules with defaults once). Review found one stale test (fixed), stale docs (fixed), and a wrong BACKLOG claim (fixed). Kept: `AcceptedPacket` for the type registry, restore-version functions on the desk. Shared: `src/lib/stage/migrate.test.ts` edited under a lock; `foldEditorLayout` dead code logged in BACKLOG. |
 | B1a (2026-11-23) | done, committed | `check:workbench` green (105 files, 1,548 tests; one obsolete IndexedDB v1-to-v2 upgrade test removed); page test 21/21 | Two builders (generic data-block names; Notes-specific names and operators), review fixed: two leftover CLIP symbols, an operation string in the doc, damaged comments, the operators panel heading, `snip-` test ids, stale BACKLOG names. Stored names changed (W-54). `vite.config.mjs` DOM_TESTS entry updated (locked). Left for B1c: the Stage's own fixtures still use the panel id `clip-editor` (`src/lib/stage`, `src/pages/stage`). UI wording is longer in three places ("New data-block" button, "Data-block editor" tab, inspector header): the reviewer checked the containers wrap or truncate; the human should look. |
 | B1b (2026-11-23) | done, committed | `check:workbench` green twice (105 files, 1,548 tests) | ts-morph rename, 154 files (41 moves): module to node, patch (canvas graph) to node tree; `Module.tsx` is `NodeShell`; stored names in W-55 (`nodeId`, two localStorage keys, `origin.nodeInstance`, `sourceNodeInstance`, panel id `node-detail`). Review FAIL fixed: the TSX used `classes.nodeHost/nodeSlot/nodeIndicator/nodeParameterRow` but the CSS still defined `module*` (tsc and tests cannot see this); CSS selectors and comments renamed. BACKLOG: B1c item for Stage fixtures' old panel ids; stale names fixed. The human should look at any node (parameter rows, inspector setup controls, header accent bar). The three CSS files keep their old file names. |
+| B1c (2026-11-23) | done, committed, human checkpoint | `check:workbench` green (105 files, 1,548 tests); `check:stage` green (30 files, 384 tests; v1 migration tests deleted) | screenset to workspace in Stage, lib/stage, spike page, workbench (W-56); Stage v1 layout migration deleted; mixer lane to channel (`MixerChannelRoll`, `attackRow`); operation error text to operator (field rename in BACKLOG); kept: instrument*, processor, PianoRoll velocity lane. Review PASS: docs and lock-row gaps fixed. `check:hfl` not run (Splitter untouched). |
 
 ## Shared touches (locks taken)
 None yet.
@@ -32,4 +33,4 @@ None yet.
 - Approve the revised `ARC.md` (milestones C0, T0 to T6b).
 
 ## Next action
-**RESUME HERE (2026-11-23):** B1a and B1b are committed. Next B1c (screenset to workspace, shared Stage: lock, `check:stage`, `check:hfl`), then B1 and B2. Ask the human to look at the three longer labels when convenient.
+**RESUME HERE (2026-11-23):** B1a, B1b and B1c are committed (B1c waits on the human look at the workspace tabs, labels and mixer "Per channel" view). Next: B1 (references and users, pure TS), then B2 (data-block menu). Open: mixer zoom wording and the two meanings of workspace (BACKLOG).

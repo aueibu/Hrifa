@@ -8,8 +8,8 @@ export const compositionStateKeys = {
   inspectorOpen: 'hrifa.composition-workbench.ui.inspector-open.v1',
   // Names the desk's undo steps; the desk itself is stored in IndexedDB, not under this key.
   desk: 'hrifa.composition-workbench.desk.data-blocks.v1',
-  // The project's screensets (layout of the center, per project; one JSON value).
-  screensets: 'hrifa.composition-workbench.ui.screensets.v1',
+  // The project's workspaces (layout of the center, per project; one JSON value).
+  workspaces: 'hrifa.composition-workbench.ui.workspaces.v1',
   settingsOpen: 'hrifa.composition-workbench.ui.settings-open.v1',
   nodeRouteStates: 'hrifa.composition-workbench.routing.node-routes.v1',
   melodicizationBindings: 'hrifa.composition-workbench.routing.melodicization.v1',
@@ -90,7 +90,7 @@ export const compositionStateKeys = {
   mixerVolume: 'hrifa.composition-workbench.mixer.volume.v1',
   mixerRollView: 'hrifa.composition-workbench.mixer.roll-view.v1',
   mixerRollMode: 'hrifa.composition-workbench.mixer.roll-mode.v1',
-  mixerLaneScale: 'hrifa.composition-workbench.mixer.lane-scale.v1',
+  mixerChannelScale: 'hrifa.composition-workbench.mixer.channel-scale.v1',
 } as const;
 
 /**
@@ -106,13 +106,13 @@ export const unrecordedStateKeys: ReadonlySet<string> = new Set<string>([
   compositionStateKeys.compositionInspectorTarget,
   compositionStateKeys.editorTarget,
   compositionStateKeys.inspectorOpen,
-  compositionStateKeys.screensets,
+  compositionStateKeys.workspaces,
   compositionStateKeys.settingsOpen,
   compositionStateKeys.melodicizationPianoRollView,
   compositionStateKeys.melodicizationInspector,
   compositionStateKeys.mixerRollView,
   compositionStateKeys.mixerRollMode,
-  compositionStateKeys.mixerLaneScale,
+  compositionStateKeys.mixerChannelScale,
   compositionStateKeys.mistViewSpan,
   compositionStateKeys.mistRunSpeed,
   compositionStateKeys.rhythmEditCellWidth,

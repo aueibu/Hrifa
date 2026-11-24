@@ -217,7 +217,7 @@ export function InterferenceNode({ instanceId, instanceLabel }: InterferenceNode
                   generatorAttackTimes(pattern, generated.result.recurrence)
                 );
                 return (
-                  <div className={classes.attackLane} key={drafts[generatorIndex].id}>
+                  <div className={classes.attackRow} key={drafts[generatorIndex].id}>
                     <Text ff="monospace" size="xs">
                       G{generatorIndex + 1}
                     </Text>

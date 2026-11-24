@@ -290,7 +290,7 @@ export const nodeRegistry: Record<CompositionNodeId, NodeRegistryEntry> = {
       compositionStateKeys.mixerVolume,
       compositionStateKeys.mixerRollView,
       compositionStateKeys.mixerRollMode,
-      compositionStateKeys.mixerLaneScale,
+      compositionStateKeys.mixerChannelScale,
     ],
     // The mixer's inlets are its channels, which the receiver's route state owns, so it declares
     // none here; the empty list still marks it as a routed node.

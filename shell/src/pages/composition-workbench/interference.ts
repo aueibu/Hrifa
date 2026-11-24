@@ -261,7 +261,7 @@ export function interferenceGeneratorDurationPacket(
         {
           sourceNodeInstance: 'interference',
           sourceItemIds: [generator.id],
-          transformation: 'interference-generator-lane',
+          transformation: 'interference-generator-row',
           parameters: {
             generatorId: generator.id,
             generatorIndex,

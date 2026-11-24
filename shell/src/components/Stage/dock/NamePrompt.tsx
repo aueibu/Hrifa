@@ -1,7 +1,7 @@
 /**
  * A small name prompt (a Mantine modal with one text input): Enter confirms, Escape or Cancel cancels, an empty or taken
  * name is refused with a message and the prompt stays open. Used for "New docker..." (the docker menu and the tab menu)
- * and for renaming a screenset. The caller owns what happens next (including where focus goes: the modal does not
+ * and for renaming a workspace. The caller owns what happens next (including where focus goes: the modal does not
  * return it, `returnFocus` is off, so the caller can put it where its action leads).
  */
 import { useState } from 'react';
@@ -16,7 +16,7 @@ export interface NamePromptProps {
   initial: string;
   /** Names that are taken (case-insensitive). */
   taken: readonly string[];
-  /** "docker" or "screenset", for the refusal message. */
+  /** "docker" or "workspace", for the refusal message. */
   noun?: string;
   confirmLabel?: string;
   onConfirm(name: string): void;

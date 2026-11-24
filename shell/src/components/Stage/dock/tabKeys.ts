@@ -1,7 +1,7 @@
 /**
  * Roving focus for a tablist with manual activation (WAI-ARIA tabs): the arrows, Home and End move FOCUS between the
  * `[role=tab]` buttons of the list and never activate one (Enter or Space on a button click it). Shared by the docker
- * strips and the screenset strip. DOM only; wraps around at the ends.
+ * strips and the workspace strip. DOM only; wraps around at the ends.
  */
 export type RoveKey = 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End';
 

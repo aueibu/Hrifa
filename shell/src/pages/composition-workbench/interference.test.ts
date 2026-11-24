@@ -76,7 +76,7 @@ describe('interference generation', () => {
     });
   });
 
-  it('publishes an individual generator as its own cyclic inter-onset lane', () => {
+  it('publishes an individual generator as its own cyclic inter-onset row', () => {
     const output = interferenceGeneratorDurationPacket(
       [2, 1, 3],
       { id: 'generator-a', label: 'Generator 1' },
@@ -97,7 +97,7 @@ describe('interference generation', () => {
     expect(output.items.map((item) => item.value)).toEqual([2, 1, 3]);
     expect(output.items[0].provenance[0]).toMatchObject({
       sourceItemIds: ['generator-a'],
-      transformation: 'interference-generator-lane',
+      transformation: 'interference-generator-row',
     });
   });
 

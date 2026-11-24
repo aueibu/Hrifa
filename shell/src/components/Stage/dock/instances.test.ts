@@ -28,7 +28,7 @@ describe('dynamic registry helpers', () => {
     expect(parseInstanceId('x:')).toBeNull();
   });
 
-  it('knows the single kinds and the instances of multiple kinds before any screenset is parsed', () => {
+  it('knows the single kinds and the instances of multiple kinds before any workspace is parsed', () => {
     const known = knownPanelIds(KINDS, [
       { kind: 'set', key: '1' },
       { kind: 'set', key: '2' },

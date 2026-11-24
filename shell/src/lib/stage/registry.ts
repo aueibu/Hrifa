@@ -18,7 +18,7 @@ export interface ModuleMeta {
   home?: string;
   /** The kind may have several instances (ids `<kind>:<instanceKey>`). */
   multiple?: boolean;
-  /** Stays mounted, parked, when closed, hidden or not in the active screenset. */
+  /** Stays mounted, parked, when closed, hidden or not in the active workspace. */
   keepMounted?: boolean;
 }
 

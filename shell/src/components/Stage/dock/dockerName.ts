@@ -1,4 +1,4 @@
-/** Validation of a docker (or screenset) name typed in a prompt: not empty, not taken (case-insensitive). */
+/** Validation of a docker (or workspace) name typed in a prompt: not empty, not taken (case-insensitive). */
 export function validateName(
   name: string,
   taken: readonly string[],

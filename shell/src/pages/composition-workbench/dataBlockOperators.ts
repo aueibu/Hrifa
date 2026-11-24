@@ -90,7 +90,7 @@ export type OperatorResult =
   | { ok: false; error: string };
 
 export interface Operator {
-  /** Stable id; the version's operation is `transform-<id>`. */
+  /** Stable id; the version's operator name is `transform-<id>`. */
   id: string;
   label: string;
   /** For grouping in a menu or the inspector (for example `Transform`). */
@@ -101,5 +101,5 @@ export interface Operator {
   run(packet: DataPacket, context: OperatorContext, params: OperatorParams): OperatorResult;
 }
 
-/** The operation name a operator's version is committed under. */
+/** The operator name an operator's version is committed under. */
 export const operatorOperation = (id: string) => `transform-${id}`;

@@ -2,7 +2,7 @@
  * One docker: a labelled region. Open, it has a strip (the docker NAME, a tablist with one tab per panel, then the tab
  * menu and the docker menu as ordinary buttons) over a body that holds the hosts of all its tabs. Collapsed, empty or
  * narrow-hidden, it is a thin labelled strip. The component owns no layout data: every change goes out through
- * `actions` (DockStage turns them into screenset edits).
+ * `actions` (DockStage turns them into workspace edits).
  *
  * Keyboard (design 4.4): the tablist has one Tab stop (the active tab); arrows, Home and End move focus between tabs
  * without activating; Enter or Space activates (a button click); Delete closes; Alt+Left and Alt+Right reorder; Escape

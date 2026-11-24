@@ -1,43 +1,43 @@
 /**
- * The screenset meta-tab strip (design 5.4), a presentational skeleton: one tab per screenset in `store.order`, the
- * active one marked; the page owns the store and applies the pure operations in screensetStore.ts through the callbacks.
+ * The workspace meta-tab strip (design 5.4), a presentational skeleton: one tab per workspace in `store.order`, the
+ * active one marked; the page owns the store and applies the pure operations in workspaceStore.ts through the callbacks.
  *
  * Keyboard: the tablist has one Tab stop (the active tab); arrows, Home and End move focus without activating; Enter or
  * Space activate (a button click). Like the docker strips, the "+" button and the menu button are NOT in the tablist: the
- * menu (Rename, Duplicate, Delete) belongs to the ACTIVE screenset. Delete is disabled for the last screenset. Rename asks
+ * menu (Rename, Duplicate, Delete) belongs to the ACTIVE workspace. Delete is disabled for the last workspace. Rename asks
  * for a name (the shared prompt: empty and taken names refused).
  */
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ActionIcon, Menu } from '@mantine/core';
-import type { ScreensetId, ScreensetStore } from '../../../lib/stage';
+import type { WorkspaceId, WorkspaceStore } from '../../../lib/stage';
 import { StripTool } from '../../InspectorKit';
 import { DownIcon } from '../icons';
 import { NamePrompt } from './NamePrompt';
-import { takenScreensetNames } from './screensetStore';
 import { isRoveKey, roveFocus } from './tabKeys';
+import { takenWorkspaceNames } from './workspaceStore';
 import classes from './dock.module.css';
 
-export interface ScreensetTabsProps {
-  store: ScreensetStore;
-  onActivate(id: ScreensetId): void;
-  /** Add a screenset (a copy of the active one, "Screenset N"; see `addScreenset`). */
+export interface WorkspaceTabsProps {
+  store: WorkspaceStore;
+  onActivate(id: WorkspaceId): void;
+  /** Add a workspace (a copy of the active one, "Workspace N"; see `addWorkspace`). */
   onAdd(): void;
-  onRename(id: ScreensetId, name: string): void;
-  onDuplicate(id: ScreensetId): void;
-  onDelete(id: ScreensetId): void;
+  onRename(id: WorkspaceId, name: string): void;
+  onDuplicate(id: WorkspaceId): void;
+  onDelete(id: WorkspaceId): void;
 }
 
-export function ScreensetTabs({
+export function WorkspaceTabs({
   store,
   onActivate,
   onAdd,
   onRename,
   onDuplicate,
   onDelete,
-}: ScreensetTabsProps) {
+}: WorkspaceTabsProps) {
   const list = useRef<HTMLDivElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
-  const [renaming, setRenaming] = useState<ScreensetId | null>(null);
+  const [renaming, setRenaming] = useState<WorkspaceId | null>(null);
   // focus goes to the active tab after an action that changes which one it is (add, duplicate, delete)
   const refocus = useRef<'tab' | 'menu' | null>(null);
   useEffect(() => {
@@ -49,7 +49,7 @@ export function ScreensetTabs({
     refocus.current = null;
   });
 
-  const active = store.screensets[store.active];
+  const active = store.workspaces[store.active];
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
     if (
@@ -66,14 +66,14 @@ export function ScreensetTabs({
   };
 
   return (
-    <div className={classes.screensets} data-screenset-strip>
+    <div className={classes.workspaces} data-workspace-strip>
       {/* roving tabindex lives on the tabs, not the list */}
       {/* oxlint-disable-next-line jsx-a11y/interactive-supports-focus */}
       <div
         ref={list}
         role="tablist"
-        aria-label="Screensets"
-        className={classes.screensetTabs}
+        aria-label="Workspaces"
+        className={classes.workspaceTabs}
         onKeyDown={onKeyDown}
       >
         {store.order.map((id) => {
@@ -82,19 +82,19 @@ export function ScreensetTabs({
             <div
               key={id}
               role="presentation"
-              className={classes.screensetTabWrap}
+              className={classes.workspaceTabWrap}
               data-active={isActive}
             >
               <button
                 type="button"
                 role="tab"
-                className={classes.screensetTab}
+                className={classes.workspaceTab}
                 aria-selected={isActive}
                 tabIndex={isActive ? 0 : -1}
-                data-screenset-id={id}
+                data-workspace-id={id}
                 onClick={() => onActivate(id)}
               >
-                {store.screensets[id].name}
+                {store.workspaces[id].name}
               </button>
             </div>
           );
@@ -104,8 +104,8 @@ export function ScreensetTabs({
         size="sm"
         variant="subtle"
         color="gray"
-        aria-label="Add screenset"
-        title="Add screenset"
+        aria-label="Add workspace"
+        title="Add workspace"
         onClick={() => {
           refocus.current = 'tab';
           onAdd();
@@ -143,14 +143,14 @@ export function ScreensetTabs({
           </Menu.Dropdown>
         </Menu>
       )}
-      {renaming !== null && store.screensets[renaming] && (
+      {renaming !== null && store.workspaces[renaming] && (
         <NamePrompt
           opened
-          title="Rename screenset"
-          label="Screenset name"
-          initial={store.screensets[renaming].name}
-          taken={takenScreensetNames(store, renaming)}
-          noun="screenset"
+          title="Rename workspace"
+          label="Workspace name"
+          initial={store.workspaces[renaming].name}
+          taken={takenWorkspaceNames(store, renaming)}
+          noun="workspace"
           confirmLabel="Rename"
           onConfirm={(name) => {
             onRename(renaming, name);

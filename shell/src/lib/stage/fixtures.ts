@@ -1,6 +1,6 @@
 /** Shared test fixtures for the tree tests: the three target arrangements of the design. Not exported from index.ts. */
 import { createRegistry, type ModuleMeta } from './registry';
-import { makeDocker, makeScreenset, type Screenset, type TreeNode } from './tree';
+import { makeDocker, makeWorkspace, type Workspace, type TreeNode } from './tree';
 
 export const meta = (id: string, over: Partial<ModuleMeta> = {}): ModuleMeta => ({
   id,
@@ -14,20 +14,23 @@ export const registry = createRegistry(
   [
     'canvas',
     'desk',
-    'clip-editor',
+    'data-block-editor',
     'chords',
     'sets',
     'voicings',
     'visualizer',
     'roll',
-    'module-detail',
+    'node-detail',
   ].map((id) =>
-    meta(id, id === 'clip-editor' ? { home: 'Detail' } : id === 'chords' ? { home: 'Tools' } : {})
+    meta(
+      id,
+      id === 'data-block-editor' ? { home: 'Detail' } : id === 'chords' ? { home: 'Tools' } : {}
+    )
   )
 );
 
-export const screenset = (tree: TreeNode, id = 's'): Screenset =>
-  makeScreenset({ id, name: id, tree });
+export const workspace = (tree: TreeNode, id = 's'): Workspace =>
+  makeWorkspace({ id, name: id, tree });
 
 /** (a) A top docker over a bottom area whose right-hand docker holds three tabs. */
 export const arrangementA: TreeNode = {
@@ -41,7 +44,7 @@ export const arrangementA: TreeNode = {
         kind: 'split',
         dir: 'row',
         children: [
-          { weight: 1, node: makeDocker('d2', 'Detail', ['clip-editor']) },
+          { weight: 1, node: makeDocker('d2', 'Detail', ['data-block-editor']) },
           { rem: 30, node: makeDocker('d3', 'Tools', ['chords', 'sets', 'voicings'], 'chords') },
         ],
       },
@@ -72,7 +75,7 @@ export const arrangementC: TreeNode = {
         kind: 'split',
         dir: 'row',
         children: [
-          { weight: 0.5, node: makeDocker('d2', 'Detail', ['clip-editor']) },
+          { weight: 0.5, node: makeDocker('d2', 'Detail', ['data-block-editor']) },
           { weight: 0.5, node: makeDocker('d3', 'Tools', [], null) },
         ],
       },

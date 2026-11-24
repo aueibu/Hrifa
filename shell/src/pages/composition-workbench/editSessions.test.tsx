@@ -81,7 +81,7 @@ describe('edit sessions', () => {
     expect(acceptsDataBlocks([current])).toBe(true);
   });
 
-  it('end on endEditSession, on idle time, on a different operation and on a restore', () => {
+  it('end on endEditSession, on idle time, on a different operator and on a restore', () => {
     let current = commit(dataBlock('s2'), 1, 'edit', 0);
     current = commit(current, 2, 'edit', 1000);
     expect(current.lineage!.versions).toHaveLength(2);

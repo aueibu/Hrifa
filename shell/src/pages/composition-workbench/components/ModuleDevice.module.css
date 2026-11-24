@@ -56,7 +56,7 @@
   gap: var(--mantine-spacing-xs);
 }
 
-/* Strips and lanes keep their natural height; a child that should flex sets its own `flex`. */
+/* Strips and rows keep their natural height; a child that should flex sets its own `flex`. */
 .view > * {
   flex: none;
 }

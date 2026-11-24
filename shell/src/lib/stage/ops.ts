@@ -1,5 +1,5 @@
 /**
- * Operations on a screenset (the split tree plus remembered places). Every one is pure: it returns a new Screenset and
+ * Operations on a workspace (the split tree plus remembered places). Every one is pure: it returns a new Workspace and
  * never mutates its input; an unknown id or an impossible request returns the very same object (`next === prev` means
  * "did nothing"). Every operation that moves or closes a panel records its place in the same step. Named dockers
  * persist when emptied: only `removeDocker` deletes one. No React, no storage.
@@ -27,7 +27,7 @@ import {
   type DockerId,
   type Edge,
   type PanelId,
-  type Screenset,
+  type Workspace,
   type SplitChild,
   type TreeNode,
 } from './tree';
@@ -35,7 +35,7 @@ import {
 const clampIndex = (i: number, len: number) =>
   Math.min(len, Math.max(0, Number.isFinite(i) ? Math.trunc(i) : len));
 
-const withTree = (s: Screenset, tree: TreeNode): Screenset =>
+const withTree = (s: Workspace, tree: TreeNode): Workspace =>
   tree === s.tree ? s : { ...s, tree: normalizeTree(tree) };
 
 /** A docker without `panel`; the active tab becomes the next one (the previous when it was the last). */
@@ -61,8 +61,8 @@ export type Target =
   | { kind: 'docker'; docker: DockerId; index?: number }
   | { kind: 'split'; beside: DockerId; edge: Edge; name?: string; min?: number };
 
-/** A name that is free in the screenset: the wanted one made unique, or "Docker N". */
-function freshName(s: Screenset, wanted: string | undefined): string {
+/** A name that is free in the workspace: the wanted one made unique, or "Docker N". */
+function freshName(s: Workspace, wanted: string | undefined): string {
   const names = treeDockers(s.tree).map((d) => d.name);
   const w = wanted?.trim();
   return w ? uniqueName(names, w) : defaultDockerName(names);
@@ -73,17 +73,17 @@ function freshName(s: Screenset, wanted: string | undefined): string {
  * "Docker N" and is made unique; `min` sets the new slot's minimum.
  */
 export function splitDocker(
-  s: Screenset,
+  s: Workspace,
   beside: DockerId,
   edge: Edge,
   opts: { name?: string; min?: number } = {}
-): { screenset: Screenset; docker: Docker } | null {
+): { workspace: Workspace; docker: Docker } | null {
   if (!findDocker(s.tree, beside)) {
     return null;
   }
   const docker = makeDocker(nextDockerId(usedDockerIds(s)), freshName(s, opts.name));
   const tree = splitTree(s.tree, beside, edge, docker, { newMin: opts.min });
-  return { screenset: withTree(s, tree), docker };
+  return { workspace: withTree(s, tree), docker };
 }
 
 /**
@@ -91,7 +91,7 @@ export function splitDocker(
  * persists, possibly empty); a closed panel opens. The destination place is recorded. A same-docker target with no
  * index change does nothing; one with an index reorders.
  */
-export function sendTo(s: Screenset, panel: PanelId, target: Target): Screenset {
+export function sendTo(s: Workspace, panel: PanelId, target: Target): Workspace {
   const src = dockerHolding(s.tree, panel);
   if (target.kind === 'docker') {
     const dest = findDocker(s.tree, target.docker);
@@ -119,12 +119,12 @@ export function sendTo(s: Screenset, panel: PanelId, target: Target): Screenset 
     return s;
   }
   const docker = { ...made.docker, tabs: [panel], active: panel };
-  const tree = mapDocker(made.screenset.tree, docker.id, () => docker);
-  return recordPlace({ ...made.screenset, tree }, panel, docker, 0);
+  const tree = mapDocker(made.workspace.tree, docker.id, () => docker);
+  return recordPlace({ ...made.workspace, tree }, panel, docker, 0);
 }
 
 /** Move an open panel to tab `index` of its own docker. */
-export function reorderTab(s: Screenset, panel: PanelId, index: number): Screenset {
+export function reorderTab(s: Workspace, panel: PanelId, index: number): Workspace {
   const d = dockerHolding(s.tree, panel);
   if (!d) {
     return s;
@@ -138,7 +138,7 @@ export function reorderTab(s: Screenset, panel: PanelId, index: number): Screens
 }
 
 /** Make `panel` the active tab of `docker`. */
-export function setActive(s: Screenset, docker: DockerId, panel: PanelId): Screenset {
+export function setActive(s: Workspace, docker: DockerId, panel: PanelId): Workspace {
   const d = findDocker(s.tree, docker);
   if (!d || !d.tabs.includes(panel) || d.active === panel) {
     return s;
@@ -151,7 +151,7 @@ export function setActive(s: Screenset, docker: DockerId, panel: PanelId): Scree
 
 /* ------------------------------------------------------------------------------------------------ close, open */
 /** Close a panel (it leaves its docker, which persists) and remember where it was. Not open: no-op. */
-export function closePanel(s: Screenset, panel: PanelId): Screenset {
+export function closePanel(s: Workspace, panel: PanelId): Workspace {
   const d = dockerHolding(s.tree, panel);
   if (!d) {
     return s;
@@ -168,10 +168,10 @@ export function closePanel(s: Screenset, panel: PanelId): Screenset {
  * is never guarded; a newly opened panel's place is recorded.
  */
 export function openPanel(
-  s: Screenset,
+  s: Workspace,
   panel: PanelId,
   opts: { home?: string; rootName?: string } = {}
-): Screenset {
+): Workspace {
   const open = dockerHolding(s.tree, panel);
   if (open) {
     return setActive(s, open.id, panel);
@@ -196,7 +196,7 @@ export function openPanel(
 
 /* ------------------------------------------------------------------------------------------------ dockers */
 /** Would `name` be a valid new name for `docker` (not empty, unique case-insensitively among the others)? */
-export function canRenameDocker(s: Screenset, docker: DockerId, name: string): boolean {
+export function canRenameDocker(s: Workspace, docker: DockerId, name: string): boolean {
   const n = name.trim();
   return (
     n !== '' &&
@@ -208,7 +208,7 @@ export function canRenameDocker(s: Screenset, docker: DockerId, name: string): b
 }
 
 /** Rename a docker, keeping the unique-name rule (a clash or an empty name does nothing). Places follow the name. */
-export function renameDocker(s: Screenset, docker: DockerId, name: string): Screenset {
+export function renameDocker(s: Workspace, docker: DockerId, name: string): Workspace {
   const d = findDocker(s.tree, docker);
   const n = name.trim();
   if (!d || d.name === n || !canRenameDocker(s, docker, n)) {
@@ -227,7 +227,7 @@ export function renameDocker(s: Screenset, docker: DockerId, name: string): Scre
  * Explicitly remove a docker: its tabs close with their places recorded (pointing at the removed docker, so a docker
  * recreated under the same name takes them back) and the tree is normalised. The last docker cannot be removed.
  */
-export function removeDocker(s: Screenset, docker: DockerId): Screenset {
+export function removeDocker(s: Workspace, docker: DockerId): Workspace {
   const d = findDocker(s.tree, docker);
   if (!d || treeDockers(s.tree).length <= 1) {
     return s;
@@ -236,7 +236,7 @@ export function removeDocker(s: Screenset, docker: DockerId): Screenset {
   if (!tree) {
     return s;
   }
-  let next: Screenset = { ...s, tree: normalizeTree(tree) };
+  let next: Workspace = { ...s, tree: normalizeTree(tree) };
   d.tabs.forEach((p, i) => {
     next = recordPlace(next, p, d, i);
   });
@@ -254,7 +254,7 @@ export function removeDocker(s: Screenset, docker: DockerId): Screenset {
 }
 
 /** Collapse or expand a docker. */
-export function setCollapsed(s: Screenset, docker: DockerId, collapsed: boolean): Screenset {
+export function setCollapsed(s: Workspace, docker: DockerId, collapsed: boolean): Workspace {
   if (!findDocker(s.tree, docker)) {
     return s;
   }
@@ -270,10 +270,10 @@ export function setCollapsed(s: Screenset, docker: DockerId, collapsed: boolean)
 
 /** Make the docker's slot fixed (`{ rem }`) or flexible (`{ weight }`). The root has no slot: no-op. */
 export function setDockerSizing(
-  s: Screenset,
+  s: Workspace,
   docker: DockerId,
   sizing: { rem: number } | { weight: number }
-): Screenset {
+): Workspace {
   const value = 'rem' in sizing ? sizing.rem : sizing.weight;
   if (!Number.isFinite(value) || value <= 0) {
     return s;
@@ -310,7 +310,7 @@ export function setDockerSizing(
 }
 
 /** Make a docker the target for panels with no other place. `null` clears it. */
-export function setDefaultDocker(s: Screenset, docker: DockerId | null): Screenset {
+export function setDefaultDocker(s: Workspace, docker: DockerId | null): Workspace {
   if (docker === null) {
     if (s.defaultDocker === undefined) {
       return s;
@@ -333,13 +333,13 @@ export function setDefaultDocker(s: Screenset, docker: DockerId | null): Screens
  * weighted one is re-weighted against the other flexible siblings, so those keep their sizes. Refused (no-op) when the minimums do not fit.
  */
 export function resizeSplit(
-  s: Screenset,
+  s: Workspace,
   path: readonly number[],
   index: number,
   firstRem: number,
   lengthRem: number,
   opts: SolveOptions = {}
-): Screenset {
+): Workspace {
   const node = nodeAt(s.tree, path);
   if (!node || isDocker(node) || !node.children[index] || !node.children[index + 1]) {
     return s;
@@ -426,13 +426,13 @@ export function resizeSplit(
 
 /* ------------------------------------------------------------------------------------------------ reconcile */
 /**
- * Close every tab whose panel is not in `known` and drop its remembered place (the host calls this on every screenset
+ * Close every tab whose panel is not in `known` and drop its remembered place (the host calls this on every workspace
  * of a project when an instance is deleted). Dockers persist. The same object when nothing is unknown.
  */
 export function reconcile(
-  s: Screenset,
+  s: Workspace,
   known: ReadonlySet<string> | ReadonlyMap<string, unknown>
-): Screenset {
+): Workspace {
   const gone = openPanels(s.tree).filter((p) => !known.has(p));
   let tree = s.tree;
   for (const p of gone) {

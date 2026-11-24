@@ -9,7 +9,7 @@ import {
   type DockerState,
   type TreeNode,
 } from '../../../lib/stage';
-import { arrangementA, arrangementB, arrangementC, screenset } from '../../../lib/stage/fixtures';
+import { arrangementA, arrangementB, arrangementC, workspace } from '../../../lib/stage/fixtures';
 import {
   dropTarget,
   layoutTree,
@@ -22,7 +22,7 @@ import {
 
 describe('layoutTree', () => {
   it('lays arrangement (b) out as three dockers and two splitters that tile the box', () => {
-    const g = layoutTree(screenset(arrangementB), 100, 40);
+    const g = layoutTree(workspace(arrangementB), 100, 40);
     const [a, b, c] = g.dockers;
     expect([a.x, a.width]).toEqual([0, 20]);
     expect([b.x, b.width]).toEqual([20.5, 55]);
@@ -36,7 +36,7 @@ describe('layoutTree', () => {
   });
 
   it('lays arrangement (a) out as a top docker over a bottom row, with splitter bounds', () => {
-    const g = layoutTree(screenset(arrangementA), 100, 50);
+    const g = layoutTree(workspace(arrangementA), 100, 50);
     const [top, left, right] = g.dockers;
     expect(top.docker.name).toBe('Canvas');
     expect(top.y).toBe(0);
@@ -80,7 +80,7 @@ describe('layoutTree: nothing covers a splitter', () => {
         [40, 20],
         [20, 10],
       ]) {
-        const g = layoutTree(screenset(tree), w, h);
+        const g = layoutTree(workspace(tree), w, h);
         expect(g.splitters.length).toBeGreaterThan(0);
         for (const s of g.splitters) {
           expect(s.width).toBeGreaterThan(0);
@@ -368,7 +368,7 @@ describe('dropTarget', () => {
 });
 
 describe('sendToRoot', () => {
-  const s = () => screenset(arrangementA);
+  const s = () => workspace(arrangementA);
   it('wraps the whole tree with a new docker holding the panel, on each edge', () => {
     for (const edge of ['left', 'right', 'top', 'bottom'] as const) {
       const before = s();
@@ -412,7 +412,7 @@ describe('sendToRoot', () => {
     ];
     for (const [, tree, panel] of cases) {
       for (const edge of ['left', 'right', 'top', 'bottom'] as const) {
-        const before = screenset(tree);
+        const before = workspace(tree);
         const next = sendToRoot(before, panel, edge);
         expect(next).not.toBe(before);
         const root = next.tree as { kind: 'split'; dir: string; children: { node: TreeNode }[] };
@@ -451,12 +451,12 @@ describe('sendToRoot', () => {
       };
       n += 1;
     }
-    const deep = screenset(tree);
+    const deep = workspace(tree);
     expect(sendToRoot(deep, 'p', 'left')).toBe(deep);
   });
 
   it('does nothing when the panel is the only tab of the only docker', () => {
-    const lone = screenset(makeDocker('a', 'A', ['p']));
+    const lone = workspace(makeDocker('a', 'A', ['p']));
     expect(sendToRoot(lone, 'p', 'left')).toBe(lone);
   });
 });

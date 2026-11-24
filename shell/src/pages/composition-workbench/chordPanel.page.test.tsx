@@ -1,14 +1,14 @@
 import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { dockerHolding, parseScreensetStore, type ScreensetStore } from '../../lib/stage';
+import { dockerHolding, parseWorkspaceStore, type WorkspaceStore } from '../../lib/stage';
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import type { ChordSession } from './chordInput/chordSession';
 import { defaultProjectPitchSet } from './compositionSettings';
 import type { DataBlock } from './dataBlock';
 import { seedDesk } from './deskTestUtils';
 import { resetHistory } from './history';
-import { storeDefaultScreensets } from './layout/screensetFixtures';
-import { WORKBENCH_KNOWN_IDS } from './layout/workbenchScreensets';
+import { WORKBENCH_KNOWN_IDS } from './layout/workbenchWorkspaces';
+import { storeDefaultWorkspaces } from './layout/workspaceFixtures';
 import type { NoteEventValue } from './melodicization';
 import { packet } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
@@ -90,20 +90,20 @@ function notesDataBlock(id: string, name: string): DataBlock {
 
 async function seed(view: 'canvas' | 'desk' = 'desk') {
   await seedDesk([notesDataBlock('block-a', 'Alpha')]);
-  storeDefaultScreensets({ active: view });
+  storeDefaultWorkspaces({ active: view });
 }
 
-function storedStore(): ScreensetStore {
-  return parseScreensetStore(
-    localStorage.getItem(compositionStateKeys.screensets) ?? 'null',
+function storedStore(): WorkspaceStore {
+  return parseWorkspaceStore(
+    localStorage.getItem(compositionStateKeys.workspaces) ?? 'null',
     WORKBENCH_KNOWN_IDS,
     {
-      fallback: undefined as unknown as ScreensetStore,
+      fallback: undefined as unknown as WorkspaceStore,
     }
   );
 }
-const chordsDocker = (screenset: string) =>
-  dockerHolding(storedStore().screensets[screenset].tree, 'chords')?.name ?? null;
+const chordsDocker = (workspace: string) =>
+  dockerHolding(storedStore().workspaces[workspace].tree, 'chords')?.name ?? null;
 
 const footerTab = (name: string) =>
   within(screen.getByRole('contentinfo')).getByRole('tab', { name });
@@ -257,7 +257,7 @@ describe('the Chords panel on the page Stage', () => {
     );
   }, 30_000);
 
-  it('A8 and A6: with the roll hidden behind the Nodes tab the picker stays and the keys are not captured; flipping screensets keeps the picker and the anchor', async () => {
+  it('A8 and A6: with the roll hidden behind the Nodes tab the picker stays and the keys are not captured; flipping workspaces keeps the picker and the anchor', async () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
@@ -282,7 +282,7 @@ describe('the Chords panel on the page Stage', () => {
     const moved = chordSession().getState().anchor!;
     expect(moved.start).toBeGreaterThan(anchored.start);
 
-    // A6: to the Canvas screenset and back; the picker state is as it was left.
+    // A6: to the Canvas workspace and back; the picker state is as it was left.
     await user.click(footerTab('Canvas'));
     await waitFor(() => expect(footerTab('Canvas')).toHaveAttribute('aria-selected', 'true'));
     expect(chordSession().getState().anchor).toBe(moved);
@@ -292,7 +292,7 @@ describe('the Chords panel on the page Stage', () => {
     expect(screen.getByRole('tab', { name: 'Chords' })).toBeInTheDocument();
   }, 30_000);
 
-  it('A6: a tab (Nodes) the person put in front of Chords stays in front, and Chords stays open, after a flip to the other screenset and back', async () => {
+  it('A6: a tab (Nodes) the person put in front of Chords stays in front, and Chords stays open, after a flip to the other workspace and back', async () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);

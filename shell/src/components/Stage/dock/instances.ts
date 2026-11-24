@@ -2,12 +2,12 @@
  * Dynamic registry helpers (design 1.4). A KIND is a panel definition; a kind with `multiple` has instances whose panel
  * ids are `<kind>:<instanceKey>`, where the key is persisted by the HOST in its own data. The host rebuilds the
  * `StageRegistry` when its instance list changes (`useStageRegistry`), and builds the set of ids that exist BEFORE it
- * parses the stored screensets (`knownPanelIds`), so a stored `module:<id>` tab is not dropped as unknown.
+ * parses the stored workspaces (`knownPanelIds`), so a stored `module:<id>` tab is not dropped as unknown.
  *
  * What the Stage does with a rebuilt registry (DockStage): hosts are keyed by panel id, so a panel whose id survives keeps
  * its mount and its state; a panel that left the registry is not rendered, its host is removed and its measurements
- * forgotten. The stored screensets still name a removed instance until the host calls `reconcile(screenset, known)` on
- * every screenset of the project (ops.ts), which closes its tabs and drops its places.
+ * forgotten. The stored workspaces still name a removed instance until the host calls `reconcile(workspace, known)` on
+ * every workspace of the project (ops.ts), which closes its tabs and drops its places.
  */
 import { useMemo, type ReactNode } from 'react';
 import type { SlotSize } from '../../../lib/stage';

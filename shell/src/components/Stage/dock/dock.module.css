@@ -392,8 +392,8 @@
   outline-offset: -2px;
 }
 
-/* the screenset meta-tab strip (ScreensetTabs): a thin strip under the Stage, tabs like the docker tabs */
-.screensets {
+/* the workspace meta-tab strip (WorkspaceTabs): a thin strip under the Stage, tabs like the docker tabs */
+.workspaces {
   align-items: center;
   background: var(--panel-header);
   box-sizing: border-box;
@@ -405,7 +405,7 @@
   padding: 0 0.25rem 0 0.5rem;
 }
 
-.screensetTabs {
+.workspaceTabs {
   align-items: stretch;
   display: flex;
   flex: 0 1 auto;
@@ -415,7 +415,7 @@
   overflow: hidden;
 }
 
-.screensetTabWrap {
+.workspaceTabWrap {
   align-items: center;
   border-radius: 0 0 var(--radius-control) var(--radius-control);
   color: var(--text-muted);
@@ -423,12 +423,12 @@
   min-width: 0;
 }
 
-.screensetTabWrap[data-active='true'] {
+.workspaceTabWrap[data-active='true'] {
   background: var(--panel-body);
   color: var(--text);
 }
 
-.screensetTab {
+.workspaceTab {
   background: none;
   border: 0;
   color: inherit;
@@ -441,7 +441,7 @@
   white-space: nowrap;
 }
 
-.screensetTab:focus-visible {
+.workspaceTab:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }

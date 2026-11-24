@@ -38,7 +38,7 @@ import {
   type Layout,
   type ModuleMeta,
   type ModuleRegistry,
-  type Screenset,
+  type Workspace,
 } from '../../lib/stage';
 
 const WIDTH_FLOOR_REM = [SIZE_MIN_WIDTH_REM, SIZE_SMALL_MAX_REM, SIZE_LARGE_MIN_REM] as const;
@@ -354,7 +354,7 @@ export const dockerMinOf =
  * to a strip is not a problem: that is how a narrow window is handled.
  */
 export function treeMinProblems(
-  s: Screenset,
+  s: Workspace,
   registry: ModuleRegistry,
   widthRem: number,
   heightRem: number,
@@ -386,13 +386,13 @@ export function treeMinProblems(
  * (refused). With no measured size (width or height not above 0) nothing can be judged and `next` is returned.
  */
 export function guardedTree(
-  prev: Screenset,
-  next: Screenset,
+  prev: Workspace,
+  next: Workspace,
   registry: ModuleRegistry,
   widthRem: number,
   heightRem: number,
   selected?: string
-): Screenset {
+): Workspace {
   if (next === prev || !(widthRem > 0) || !(heightRem > 0)) {
     return next;
   }

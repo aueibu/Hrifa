@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createStageRegistry } from '../../components/Stage/registry';
 import { dockerMinOf, guardedTree, treeMinProblems } from '../../components/Stage/stageOps';
-import { meta, registry, screenset } from './fixtures';
+import { meta, registry, workspace } from './fixtures';
 import { sendTo } from './ops';
 import { makeDocker } from './tree';
 
@@ -22,7 +22,7 @@ describe('stageOps tree rules', () => {
   });
 
   it('refuses a change that leaves an open docker below its minimum, allows one already broken', () => {
-    const prev = screenset({
+    const prev = workspace({
       kind: 'split',
       dir: 'row',
       children: [
@@ -57,6 +57,6 @@ describe('stageOps tree rules', () => {
       keepMounted: true,
     });
     expect(Object.keys(wide.meta.get('wide')!).sort()).toEqual(['id', 'minSize', 'sizes', 'title']);
-    expect(registry.get('clip-editor')!.home).toBe('Detail');
+    expect(registry.get('data-block-editor')!.home).toBe('Detail');
   });
 });

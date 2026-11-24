@@ -509,7 +509,7 @@
   overflow-wrap: anywhere;
 }
 
-.attackLane {
+.attackRow {
   align-items: center;
   display: grid;
   gap: var(--mantine-spacing-xs);

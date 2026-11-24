@@ -81,22 +81,22 @@ export function mixerRollGrid(duration: number, meterNumerator: number, meterDen
   return lines;
 }
 
-export interface MixerLane {
+export interface MixerChannelRoll {
   notes: PianoRollNote[];
-  /** Quarter notes the lane spans: one cycle, or the offset plus the cycle for a one-shot. */
+  /** Quarter notes the channel roll spans: one cycle, or the offset plus the cycle for a one-shot. */
   duration: number;
 }
 
 /**
- * One channel's own cycle as a lane. A looping channel's offset rotates the cycle (what wraps past
+ * One channel's own cycle as a roll. A looping channel's offset rotates the cycle (what wraps past
  * the end reappears at the start), as it does in the mix; a one-shot is delayed by its offset, so
- * its lane runs from the start of the pass to the end of its one play.
+ * its roll runs from the start of the pass to the end of its one play.
  */
-export function mixerLane(
+export function mixerChannelRoll(
   material: ChannelMaterial,
   config: { loop: LoopPolicy; offset: MusicalDuration },
   channelIndex: number
-): MixerLane {
+): MixerChannelRoll {
   const period = material.period.quarterNotes;
   const offset = config.offset.quarterNotes;
   const once = config.loop === 'once';
@@ -124,11 +124,11 @@ const MIN_PITCH_ZOOM = 12;
 const MAX_PITCH_ZOOM = 36;
 
 /**
- * A lane's view: the shared time scale, and a pitch zoom and scroll fitted to this lane's own
- * notes so a click rhythm and a wide melody each fill their lane. `framed` stops the roll from
+ * A channel roll's view: the shared time scale, and a pitch zoom and scroll fitted to this channel's own
+ * notes so a click rhythm and a wide melody each fill their roll. `framed` stops the roll from
  * re-fitting its time scale to its own width, which is what would defeat the shared scale.
  */
-export function laneView(
+export function channelRollView(
   notes: Pick<PianoRollNote, 'pitchMidicents'>[],
   pixelsPerQuarter: number,
   scrollerHeight: number
@@ -156,12 +156,12 @@ export function laneView(
 }
 
 /**
- * Where a channel's own playhead is, in its lane, given the mix's position within its pass (in
+ * Where a channel's own playhead is, in its roll, given the mix's position within its pass (in
  * quarter notes). A free channel wraps at its own period; one that restarts with the longest
  * wraps within each block of the longest cycle, so it visibly resets; a one-shot runs once, in
  * pass time, and holds at the end.
  */
-export function lanePlayhead(
+export function channelPlayhead(
   position: number,
   channel: { loop: LoopPolicy; period: number; offset: number },
   longest: number

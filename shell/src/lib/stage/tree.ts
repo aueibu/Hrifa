@@ -1,26 +1,26 @@
 /**
- * The Stage split tree (version 2 layout): named leaf dockers holding tabs, nested row and column splits, and the
- * screenset that wraps a tree with the remembered places of its panels. Plain serialisable data plus the pure helpers
+ * The Stage split tree (version 1 layout): named leaf dockers holding tabs, nested row and column splits, and the
+ * workspace that wraps a tree with the remembered places of its panels. Plain serialisable data plus the pure helpers
  * every other module here builds on. Panels live outside the tree, keyed by id (the registry); the tree holds ids and
  * numbers only. No React, no storage.
  *
  * Names: the design's `Node` is `TreeNode` here (`Node` is a DOM global) and its `Child` is `SplitChild`.
  *
- * Invariants (kept by `normalizeTree` and by the operations in ops.ts, enforced on parse in screenset.ts):
+ * Invariants (kept by `normalizeTree` and by the operations in ops.ts, enforced on parse in workspace.ts):
  *  - a split has two or more children (a one-child split is replaced by its child);
  *  - a split nested directly in a split of the same direction is merged into its parent only when the nested split's own
  *    size is a weight and every merged child is a weight (weights are rescaled so proportions hold); a split with any
  *    fixed `rem` child is never merged, so no size changes;
- *  - each panel id is in at most one docker of a screenset; dockers are never deleted when emptied.
+ *  - each panel id is in at most one docker of a workspace; dockers are never deleted when emptied.
  */
 import type { ModuleId } from './registry';
 
 export type PanelId = ModuleId;
 export type DockerId = string;
-export type ScreensetId = string;
+export type WorkspaceId = string;
 
-export const SCREENSET_VERSION = 2;
-export const SCREENSET_STORE_VERSION = 1;
+export const WORKSPACE_VERSION = 1;
+export const WORKSPACE_STORE_VERSION = 1;
 /** The deepest a tree may nest on parse (a lone docker is depth 1). */
 export const SPLIT_MAX_DEPTH = 6;
 
@@ -28,7 +28,7 @@ export interface Docker {
   kind: 'docker';
   /** Stable, generated, never shown. */
   id: DockerId;
-  /** User-chosen and mutable; unique (case-insensitive) within a screenset. */
+  /** User-chosen and mutable; unique (case-insensitive) within a workspace. */
   name: string;
   /** Open panels in tab order; may be empty (the docker persists as a strip). */
   tabs: PanelId[];
@@ -62,9 +62,9 @@ export interface Place {
   index: number;
 }
 
-export interface Screenset {
-  version: 2;
-  id: ScreensetId;
+export interface Workspace {
+  version: 1;
+  id: WorkspaceId;
   name: string;
   tree: TreeNode;
   /** Remembered place per panel, closed panels included. */
@@ -74,12 +74,12 @@ export interface Screenset {
 }
 
 /** One JSON value per project. */
-export interface ScreensetStore {
+export interface WorkspaceStore {
   version: 1;
-  active: ScreensetId;
+  active: WorkspaceId;
   /** Meta-tab order. */
-  order: ScreensetId[];
-  screensets: Record<ScreensetId, Screenset>;
+  order: WorkspaceId[];
+  workspaces: Record<WorkspaceId, Workspace>;
 }
 
 export type Edge = 'left' | 'right' | 'top' | 'bottom';
@@ -98,16 +98,16 @@ export const makeDocker = (
   active: active === undefined ? (tabs[0] ?? null) : active,
 });
 
-export function makeScreenset(init: {
-  id: ScreensetId;
+export function makeWorkspace(init: {
+  id: WorkspaceId;
   name: string;
   tree: TreeNode;
   lastDocker?: Record<PanelId, Place>;
   collapsed?: DockerId[];
   defaultDocker?: DockerId;
-}): Screenset {
-  const s: Screenset = {
-    version: SCREENSET_VERSION,
+}): Workspace {
+  const s: Workspace = {
+    version: WORKSPACE_VERSION,
     id: init.id,
     name: init.name,
     tree: init.tree,
@@ -122,17 +122,17 @@ export function makeScreenset(init: {
   return s;
 }
 
-export function makeStore(screensets: readonly Screenset[], active?: ScreensetId): ScreensetStore {
-  const record: Record<ScreensetId, Screenset> = {};
-  for (const s of screensets) {
+export function makeStore(workspaces: readonly Workspace[], active?: WorkspaceId): WorkspaceStore {
+  const record: Record<WorkspaceId, Workspace> = {};
+  for (const s of workspaces) {
     record[s.id] = s;
   }
-  const order = screensets.map((s) => s.id);
+  const order = workspaces.map((s) => s.id);
   return {
-    version: SCREENSET_STORE_VERSION,
+    version: WORKSPACE_STORE_VERSION,
     active: active !== undefined && record[active] ? active : (order[0] ?? ''),
     order,
-    screensets: record,
+    workspaces: record,
   };
 }
 
@@ -181,8 +181,8 @@ export function nodeAt(tree: TreeNode, path: readonly number[]): TreeNode | null
 }
 
 /* ------------------------------------------------------------------------------------------------ names and ids */
-/** Every docker id the screenset has used or remembers (tree, places, collapsed, default). */
-export function usedDockerIds(s: Screenset): Set<DockerId> {
+/** Every docker id the workspace has used or remembers (tree, places, collapsed, default). */
+export function usedDockerIds(s: Workspace): Set<DockerId> {
   const ids = new Set<DockerId>(treeDockers(s.tree).map((d) => d.id));
   for (const p of Object.values(s.lastDocker)) {
     ids.add(p.docker);

@@ -1,6 +1,6 @@
 /**
  * `useStageApi()`: the plain functions a panel (or its host) uses to arrange the Stage. Provided by `DockStage` through
- * a React context. None of them reaches beyond the screenset `update` function the DockStage was given.
+ * a React context. None of them reaches beyond the workspace `update` function the DockStage was given.
  *
  * - `open(id)`: put a closed panel back where it last was (remembered place, then its home docker). Never guarded.
  * - `show(id)`: open it if closed, make it its docker's active tab and expand its docker if collapsed (and bring a
@@ -16,7 +16,7 @@
  * - `goToDocker()`: open the "Go to docker" list (Alt+G).
  *
  * The same object is handed to the page by `DockStage`'s `onApi` prop (for a Panels menu outside the Stage). It is stable
- * (it reads the latest registry and screenset when called).
+ * (it reads the latest registry and workspace when called).
  */
 import { createContext, useContext } from 'react';
 import type { DockerId, PanelId, Target } from '../../../lib/stage';

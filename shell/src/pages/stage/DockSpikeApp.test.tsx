@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import type { StageStorage } from '../../components/Stage/persistence';
-import { parseScreensetStore, stageStorageKey, treeDockers, dockerHolding } from '../../lib/stage';
+import { parseWorkspaceStore, stageStorageKey, treeDockers, dockerHolding } from '../../lib/stage';
 import { theme } from '../../theme';
 import { dockProbe, DOCK_REGISTRY, defaultDockStore } from './dockSpike/panels';
 import { DOCK_SPIKE_KEY, DockSpikeApp } from './DockSpikeApp';
@@ -55,7 +55,7 @@ function fakeStorage(): StageStorage & { map: Map<string, string> } {
   };
 }
 const savedStore = (s: ReturnType<typeof fakeStorage>) =>
-  parseScreensetStore(s.map.get(DOCK_SPIKE_KEY), DOCK_REGISTRY.meta, {
+  parseWorkspaceStore(s.map.get(DOCK_SPIKE_KEY), DOCK_REGISTRY.meta, {
     fallback: defaultDockStore(),
   });
 
@@ -78,13 +78,13 @@ describe('dock spike', () => {
     expect(dockProbe.canvas).toBe(1);
   });
 
-  it('closes and reopens a panel from the Panels menu, saves the screenset and reloads it', async () => {
+  it('closes and reopens a panel from the Panels menu, saves the workspace and reloads it', async () => {
     const storage = fakeStorage();
     const { unmount } = render(<DockSpikeApp storage={storage} />);
     await userEvent.click(screen.getByRole('button', { name: 'Panels' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Close Voicings' }));
     expect(screen.queryByRole('tab', { name: 'Voicings' })).not.toBeInTheDocument();
-    expect(dockerHolding(savedStore(storage).screensets.a.tree, 'voicings')).toBeNull();
+    expect(dockerHolding(savedStore(storage).workspaces.a.tree, 'voicings')).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Panels' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Open Voicings' }));
@@ -101,14 +101,14 @@ describe('dock spike', () => {
     expect(
       within(screen.getByRole('region', { name: 'Detail' })).getByRole('tab', { name: 'Sets' })
     ).toBeInTheDocument();
-    expect(treeDockers(savedStore(storage).screensets.a.tree)).toHaveLength(3);
+    expect(treeDockers(savedStore(storage).workspaces.a.tree)).toHaveLength(3);
   });
 
   it('shows the saved JSON on request', async () => {
     render(<DockSpikeApp storage={fakeStorage()} />);
     expect(screen.queryByTestId('dock-json')).not.toBeInTheDocument();
     await userEvent.click(screen.getByLabelText('Saved JSON'));
-    expect(screen.getByTestId('dock-json').textContent).toContain('"screensets"');
+    expect(screen.getByTestId('dock-json').textContent).toContain('"workspaces"');
   });
 
   it('resets the active arrangement to its default', async () => {
@@ -121,9 +121,9 @@ describe('dock spike', () => {
   });
 });
 
-describe('dock spike screensets and instances', () => {
+describe('dock spike workspaces and instances', () => {
   const tabs = () =>
-    within(screen.getByRole('tablist', { name: 'Screensets' }))
+    within(screen.getByRole('tablist', { name: 'Workspaces' }))
       .getAllByRole('tab')
       .map((t) => t.textContent);
 
@@ -136,12 +136,12 @@ describe('dock spike screensets and instances', () => {
     expect(within(menu).queryByText(/__|bridge/i)).not.toBeInTheDocument();
   });
 
-  it('adds, duplicates and deletes screensets on the strip; keepMounted panels stay mounted through switches', async () => {
+  it('adds, duplicates and deletes workspaces on the strip; keepMounted panels stay mounted through switches', async () => {
     const storage = fakeStorage();
     render(<DockSpikeApp storage={storage} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Add screenset' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
     expect(tabs()).toHaveLength(4);
-    expect(screen.getByRole('tab', { name: 'Screenset 4' })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: 'Workspace 4' })).toHaveAttribute(
       'aria-selected',
       'true'
     );
@@ -149,17 +149,17 @@ describe('dock spike screensets and instances', () => {
     expect(screen.getByRole('region', { name: 'Tools' })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('tab', { name: '(b) Left, centre, right' }));
-    await userEvent.click(screen.getByRole('tab', { name: 'Screenset 4' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Menu for Screenset 4' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Workspace 4' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Menu for Workspace 4' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }));
     expect(tabs()).toHaveLength(3);
     expect(dockProbe.canvas).toBe(1); // mounted once across every switch, add and delete
     expect(savedStore(storage).order).toHaveLength(3);
   });
 
-  it('loads an older single-screenset value as a store of one', () => {
+  it('loads an older single-workspace value as a store of one', () => {
     const storage = fakeStorage();
-    const old = defaultDockStore().screensets.a;
+    const old = defaultDockStore().workspaces.a;
     // the key the spike reads goes through stageStorageKey: write it the same way
     storage.setItem(stageStorageKey(DOCK_SPIKE_KEY), JSON.stringify(old));
     render(<DockSpikeApp storage={storage} />);
@@ -180,7 +180,7 @@ describe('dock spike screensets and instances', () => {
     expect(dockProbe['note:1']).toBe(1);
     expect(dockProbe.canvas).toBe(1);
 
-    // reload: the instance list is read before the stored screensets are parsed, so the tab is still known
+    // reload: the instance list is read before the stored workspaces are parsed, so the tab is still known
     unmount();
     render(<DockSpikeApp storage={storage} />);
     expect(

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@test-utils';
-import { defaultWorkbenchScreensets } from '../layout/workbenchScreensets';
+import { defaultWorkbenchWorkspaces } from '../layout/workbenchWorkspaces';
 import { InfoBarActiveContext, InfoTooltip } from './hoverInfo';
 import { WorkbenchStatusBar } from './WorkbenchStatusBar';
 
@@ -11,7 +11,7 @@ function Harness({
   active = 'canvas',
   onActivate = vi.fn(),
 }) {
-  const store = { ...defaultWorkbenchScreensets(), active };
+  const store = { ...defaultWorkbenchWorkspaces(), active };
   return (
     <InfoBarActiveContext.Provider value>
       <div>
@@ -26,7 +26,7 @@ function Harness({
         onToggleInspector={onToggle}
         settingsOpen={settingsOpen}
         onToggleSettings={onSettings}
-        screensets={{
+        workspaces={{
           store,
           onActivate,
           onAdd: vi.fn(),
@@ -40,7 +40,7 @@ function Harness({
 }
 
 describe('workbench status bar', () => {
-  it('shows the screensets as meta-tabs and switches between them, marking the current one', () => {
+  it('shows the workspaces as meta-tabs and switches between them, marking the current one', () => {
     const onActivate = vi.fn();
     render(<Harness active="canvas" onActivate={onActivate} />);
     const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent);

@@ -29,7 +29,7 @@ import {
   type PanelId,
   type Target,
   type DockerState,
-  type Screenset,
+  type Workspace,
   type SolveOptions,
   type TreeNode,
 } from '../../../lib/stage';
@@ -76,7 +76,7 @@ const round4 = (x: number) => Math.round(x * 1e4) / 1e4;
 
 /** The geometry of `s.tree` in a `width` by `height` rem box. */
 export function layoutTree(
-  s: Pick<Screenset, 'tree' | 'collapsed'>,
+  s: Pick<Workspace, 'tree' | 'collapsed'>,
   width: number,
   height: number,
   opts: SolveOptions = {}
@@ -348,10 +348,10 @@ export function dropTarget(input: DropInput): DropResult | null {
 /**
  * A new docker holding `panel`, spanning the whole `edge` of the Stage, wrapped around the ORIGINAL tree: no existing
  * docker is resized or reordered (ids, names, rem and weights untouched). The panel leaves its docker (an emptied
- * docker stays as a strip); the new docker gets a quarter of the room. The same screenset object when it cannot be
+ * docker stays as a strip); the new docker gets a quarter of the room. The same workspace object when it cannot be
  * done (the panel is the only tab of the only docker, or the depth limit would be exceeded).
  */
-export function sendToRoot(s: Screenset, panel: PanelId, edge: Edge): Screenset {
+export function sendToRoot(s: Workspace, panel: PanelId, edge: Edge): Workspace {
   const src = dockerHolding(s.tree, panel);
   const dockers = treeDockers(s.tree);
   if (src && dockers.length === 1 && src.tabs.length === 1) {

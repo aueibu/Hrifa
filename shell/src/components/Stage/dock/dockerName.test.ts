@@ -9,7 +9,7 @@ describe('validateName', () => {
 
   it('refuses an empty name', () => {
     expect(validateName('', [])).toBe('Enter a name for the docker.');
-    expect(validateName('   ', ['Main'], 'screenset')).toBe('Enter a name for the screenset.');
+    expect(validateName('   ', ['Main'], 'workspace')).toBe('Enter a name for the workspace.');
   });
 
   it('refuses a taken name, ignoring case and spaces', () => {
